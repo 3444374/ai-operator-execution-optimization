@@ -389,6 +389,14 @@ SAOR-Release 不能在 correctness/failure 不退化、总吞吐基本不损失�
 FIFO 和 shared DRR 至少改善一项预注册的 worst-Job tail/SLO/service-lag 指标，则淘汰 SAOR；
 若 DRR 已达到相同 Pareto 前沿，则保留 DRR，不再包装新算法。
 
+2026-08-14 将这一判据落实为独立、仍锁定的 Project mechanism formal contract：同一 bounded-
+ready observation 下报告 FIFO/DRR/VTC-style/strict-priority/SAOR，VTC-style 作为主公平参照；
+headline 采用 foreground P99 与 completion-accounted service lag，保护 throughput、bulk JCT、
+class SLO、longest no-service。SAOR 的 debt guard 另外必须由 lossless ledger 证明 recovery request
+完成且 debt 从 critical 降回 cap 以下，报告 empirical repayment time；这仍不是理论 repayment
+bound。frozen-static 不产生 registered-ready ledger，因此该公平指标是 `not_applicable`，不能用
+伪造 credit lifecycle 让它参加同口径 lag 排名，也不能因此误杀共同性能矩阵。
+
 VTC artifact 已公开 overload、proportional、on/off、Poisson short/long、increase 和 distribution
 shift suites，可借其 **workload shape 与指标定义**，但实现仍是 S-LoRA artifact，不能和本项目
 upstream vLLM 做绝对性能排名。
@@ -896,11 +904,12 @@ tok/s +7.30%、foreground P99 −33.62%，但 foreground SLO violation 仍约 39
 当前数学与实验边界据此收紧：
 
 1. FIFO/DRR/VTC-style 是 Project coordinator 内的标准算法 controls，不是 Daft/Ray/vLLM 原生实现；
-2. 下一步只做同一 2-Job manifest/arrival/PG source-sink/服务签名下的 Daft Native、Daft Ray、
-   Ray Data、project frozen-static 与 proposed 系统级 matched comparison；原生臂不注入 Project
-   K/W、credit 或 bounded-ready；
+2. 系统层继续做同一 2-Job manifest/arrival/PG source-sink/服务签名下的 Daft Native、Daft Ray、
+   Ray Data、project frozen-static 与 proposed matched comparison；原生臂不注入 Project K/W、
+   credit 或 bounded-ready；机制层另用已冻结、位置平衡的 1+3 Project 合同，先完成 final
+   rehearsal 的 completion/repayment 证据审核，再决定是否解锁 formal；
 3. 即使完整 Project 系统超过原生框架，也不能把差值全部归因于 guarded-debt selector；
-4. 只有业务合同明确要求比 30s 更紧的 foreground tail，并预注册接受相应 efficiency/bulk-JCT
-   代价后，才有理由另起 selector formal；否则贡献收敛为 bounded ready-state exposure + 简单
-   guarded release，或淘汰复杂 selector；
+4. 新机制合同已把 foreground P99/lag 5% headline 和 throughput/bulk-JCT/SLO/no-service
+   non-inferiority 数值化；formal 结果若不过，保留为 valid negative，贡献收敛为 bounded
+   ready-state exposure + 简单 guarded release，或淘汰复杂 selector；
 5. reservation、4-Job、dynamic K 和理论 $O(1/V)$/fairness/SLO 保证继续后置。

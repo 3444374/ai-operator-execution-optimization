@@ -1059,6 +1059,31 @@ violation 0。相对 VTC-style，proposed 的 foreground P99 −31.78%、lag P95
 formal。即使完整 Project 系统相对原生框架更快，也不能把全部收益归给 guarded-debt selector。
 完整报告见 `experiments/results/state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/`。
 
+#### Project mechanism 1+3 预注册合同（2026-08-14，尚未授权 formal）
+
+历史双轮只用于发现折中点，不能事后补 margin。新的独立配置冻结一个位置平衡 seed：六臂在三次
+formal 中各占三个不同顺序位置；每轮包含 frozen-static、bounded-ready FIFO、DRR、VTC-style、
+strict-priority 与 proposed $0.125W_e$。static 的 registered-ready completion fairness 明确为
+`not_applicable`，仍参加吞吐/JCT/P99/SLO；其余五臂该 evidence 必须为 `ok`。
+
+主决策相对 bounded-ready VTC-style 做 paired-by-repeat 算术平均：foreground P99 或 completion
+service-lag P95 至少一个改善 5%，且该 headline 每次 repeat 方向不反转。同时全部满足：
+throughput ratio≥0.95、bulk JCT ratio≤1.05、bulk SLO violation delta≤0.05、foreground SLO
+violation≤0.01、longest no-service ratio≤1.05 且绝对值≤30s。proposed 还必须出现 recovery grant、
+对应 request completion、debt-critical episode 完整退出，repayment P95≤30s、unresolved=0。
+work conservation 不只依赖 `avoidable_idle=0`：若 drain 窗口达到 trace resolution，还必须用
+endpoint head-fit/active/waiting trace 证明剩余 Job 没有“队首可装下却仍等待”的样本；低于采样
+分辨率时明确 N/A，不伪造 pass。
+FIFO/DRR/VTC-style 的均值向量另做 empirical nondominance 审计；strict-priority 只作边界 control。
+这些阈值是本轮 formal 前冻结的操作合同，不是理论 VTC/DRF/Pareto efficiency 保证。
+
+runner 把证据有效性与性能 claim 分离：1+3、correctness、observation、fairness/mechanism ledger
+完整时实验可以是 valid；若任何 effect/non-inferiority 不过，则结论是“valid negative”，不能把它
+改写成运行无效。当前合同状态为 `locked_pending_rehearsal/formal_authorized=false`；先在服务器
+运行最终 wrapper rehearsal，审核后登记 validation SHA，另一个提交才能解锁 formal。native-
+system matched comparison 继续作为完整系统层证据，不能替代该机制主命题，也不与内部 selector
+表混排。
+
 dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen lower/upper、
 state-observed no-op、threshold/deadband、governor 和 offline oracle。
 
@@ -1192,7 +1217,7 @@ organization 是输入，多模态是外部有效性验证。若同 observation 
 | 2026-08-13 | `saor-v0.5.4-matched-ready-observed` | frozen-static 与 bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt 在同 observation 下完成两轮；新增 completion-accounted lag、最长无服务、ready bytes/CPU/memory 重汇总 | 2×4090 双轮 development rehearsal；12/12 cell、0 incident；仓库 compact + 服务器完整 archive | proposed 相对 VTC-style 用 4.81% 吞吐、5.15% bulk JCT 和 22.68% no-service 代价换 31.78% fg P99 与 11.67% lag 改善；记为 observed nondominated tradeoff，不判 selector victory、不授权 formal。当时冻结的 bridge 下一行已完成 |
 | 2026-08-13 | `saor-v0.5.5-observation-bridge-observed` | frozen-static/single-head shared FIFO/bounded-ready FIFO 在同 K/W、FIFO、manifest 与服务签名下完成双轮 | 2×4090 双轮 development rehearsal；6/6 cell、0 incident；Project implementation + compact/full archive | shared capacity 解释效率提升与 foreground 隔离损失；bounded-ready 额外提升效率并部分恢复 foreground，但 FIFO 仍约 40% SLO violation。bridge 完成，dynamic 证据收紧为 fixed-envelope Job 份额/ordering；下一步只做 native-system matched comparison |
 | 2026-08-14 | `saor-v0.5.6-native-system-matched-local` | 八个唯一物理臂的本地合同/薄编排 + 两层离线 fail-closed 汇总；系统表 5 臂，Project sanity 表 4 臂，共享同一 SAOR run | 本地 synthetic/corruption unit tests；未连接服务器、未运行 GPU/rehearsal/formal | 只完成可执行基础设施。共同 Job release `[0,5]`、Job 内 eager、PostgreSQL source→validated gather 计时；FIFO 全名为 **Project bounded-ready + global FIFO matched-control**；native request tail 不支持时为 `unavailable`。后续只能按 runtime preflight→static readiness→small correctness/local fake rehearsal→review→单独授权 GPU execution 推进 |
-| 2026-08-14 | `saor-v0.5.7-fail-closed-evidence` | 修正 avoidable-idle 的事件域 `hold_start`；matched-ready cell pass 强制 completion fairness evidence；runtime Job ID 必须非空/单 Job 一致/跨 Job 唯一；selector/bridge readiness 冻结 effective K/W 与 weights | 211 项 SAOR/shared-credit/shared-vLLM 回归 + 旧完整 artifact 重汇总 + 新 2×4090 四臂 development regression | 旧全矩阵 `validation=passed` 降为 diagnostic：五个 bounded-ready 臂各 Job 512/512 lifecycle，frozen-static 0/512。新回归四臂均 exactly-once/Job ID 合同通过；$0.125W_e$ recovery=1 通过，$0.25W_e$ recovery=0 被 runner fail closed。formal 继续锁定，性能重复不增加 |
+| 2026-08-14 | `saor-v0.5.7-fail-closed-evidence` | 修正 avoidable-idle 的事件域 `hold_start`；matched-ready 对五个 bounded 臂强制 completion fairness，frozen-static 按生产路径标 N/A；runtime Job ID 必须非空/单 Job 一致/跨 Job 唯一；selector/bridge readiness 冻结 effective K/W 与 weights | SAOR/shared-credit/shared-vLLM 回归 + 旧完整 artifact applicability 复核 + 新 2×4090 四臂 development regression | 旧五个 bounded-ready 臂各 Job 512/512 lifecycle，frozen-static 0/512；等待最终语义重签 validation，跨 static lag 不排名。新回归四臂均 exactly-once/Job ID 合同通过；$0.125W_e$ recovery=1，$0.25W_e$ recovery=0 被 runner fail closed。formal 继续锁定，性能重复不增加 |
 
 状态只允许按以下顺序变化：
 

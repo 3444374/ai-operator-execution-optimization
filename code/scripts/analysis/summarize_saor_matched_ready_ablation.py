@@ -15,8 +15,8 @@ import json
 import math
 from pathlib import Path
 
-from src.experiments.shared_vllm.metrics import (
-    completion_accounted_service_fairness,
+from src.experiments.saor.project_mechanism_formal import (
+    completion_fairness_from_raw,
 )
 
 
@@ -92,90 +92,7 @@ def _completion_fairness_from_raw(
     row: dict[str, str],
 ) -> dict[str, float | int | str]:
     """Replay registered-ready service fairness from per-request raw traces."""
-
-    if not (root / "jobs").is_dir():
-        return completion_accounted_service_fairness(
-            [
-                {
-                    "ready_lifecycle_complete": False,
-                    "ready_lifecycle_rows": [],
-                }
-                for _index in range(2)
-            ],
-            (1, 1),
-        )
-    evidence = []
-    order = int(row["order_index"])
-    phase = row["phase"]
-    repeat = int(row["repeat_index"])
-    scenario = row["scenario_id"]
-    for job_index in range(2):
-        stem = (
-            f"{order:03d}_{phase}_{repeat}_{scenario}_job{job_index}"
-        )
-        request_path = root / "jobs" / f"{stem}.requests.csv"
-        submission_path = root / "jobs" / f"{stem}.submissions.csv"
-        if not request_path.is_file() or not submission_path.is_file():
-            return completion_accounted_service_fairness(
-                [
-                    {
-                        "ready_lifecycle_complete": False,
-                        "ready_lifecycle_rows": [],
-                    }
-                    for _index in range(2)
-                ],
-                (1, 1),
-            )
-        requests = _read(request_path)
-        submissions = _read(submission_path)
-        service_by_id = {}
-        for request in requests:
-            submission_id = str(request.get("submission_id", "") or "")
-            actual_output = request.get("actual_output_tokens", "")
-            output_work = int(
-                actual_output
-                if actual_output not in (None, "")
-                else request.get("client_estimated_output_tokens", "")
-                or request["estimated_output_tokens"]
-            )
-            service_by_id[submission_id] = (
-                float(request["completion_epoch_s"]),
-                int(request["prompt_tokens"]) + output_work,
-            )
-        lifecycle = []
-        for submission in submissions:
-            ready = submission.get("ready_epoch_s", "")
-            registered = submission.get("credit_registered_epoch_s", "")
-            granted = submission.get("credit_granted_epoch_s", "")
-            if not ready and not registered and not granted:
-                continue
-            submission_id = str(submission.get("submission_id", "") or "")
-            if (
-                not ready
-                or not registered
-                or not granted
-                or submission_id not in service_by_id
-            ):
-                raise ValueError(
-                    f"{stem} has an incomplete registered-ready service join"
-                )
-            completion, work = service_by_id[submission_id]
-            lifecycle.append(
-                {
-                    "registered_epoch_s": float(registered),
-                    "completion_epoch_s": completion,
-                    "actual_work": work,
-                }
-            )
-        evidence.append(
-            {
-                "ready_lifecycle_complete": (
-                    bool(requests) and len(lifecycle) == len(requests)
-                ),
-                "ready_lifecycle_rows": lifecycle,
-            }
-        )
-    return completion_accounted_service_fairness(evidence, (1, 1))
+    return completion_fairness_from_raw(root, row)
 
 
 def summarize(
@@ -280,6 +197,10 @@ def summarize(
                 completion_fairness["completion_service_lag_status"]
                 == "ok:registered_backlog_completion_accounted_empirical"
             )
+            fairness_evidence_applicable = bounded
+            fairness_gate = bool(
+                not fairness_evidence_applicable or fairness_evidence
+            )
             mechanism = bool(
                 not proposed
                 or (
@@ -309,12 +230,13 @@ def summarize(
                 correctness
                 and observation
                 and mechanism
-                and fairness_evidence
+                and fairness_gate
             )
             if not cell_passed:
                 errors.append(
                     f"round {round_index} {scenario_id} failed correctness, "
-                    "observation, mechanism, or completion-fairness evidence"
+                    "observation, mechanism, or applicable "
+                    "completion-fairness evidence"
                 )
             metrics.append(
                 {
@@ -326,7 +248,11 @@ def summarize(
                     "correctness_passed": correctness,
                     "observation_passed": observation,
                     "mechanism_passed": mechanism,
+                    "fairness_evidence_applicable": (
+                        fairness_evidence_applicable
+                    ),
                     "fairness_evidence_passed": fairness_evidence,
+                    "fairness_gate_passed": fairness_gate,
                     "cell_evidence_passed": cell_passed,
                     "evaluation_scope": "single_tenant_multi_job",
                     "fairness_mode": "differentiated_service",

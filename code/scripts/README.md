@@ -61,9 +61,25 @@ external VTC-style、strict-priority 与 proposed 对所有 Job 使用同一 bou
 request/work/logical-bytes 上限。该 profile 不包含、也不能替代任何原生系统 baseline；
 通过只允许 1--2 轮 development rehearsal。
 `analysis/summarize_saor_matched_ready_ablation.py` 随后 fail-closed 校验六臂身份、
-correctness、全 Job ready lifecycle 和 proposed 的 guarded-debt 机制证据，输出原始臂指标，
+correctness、五个 bounded-ready 臂的全 Job ready lifecycle 和 proposed 的 guarded-debt 机制证据；
+frozen-static 生产路径不经过 shared-credit ledger，其 completion service lag 明确标为
+`not_applicable`，但仍用共同可见的 JCT/P99/SLO/吞吐评价，输出原始臂指标，
 但固定写明 `selector_victory_decided=false`、`formal_authorized=false`；效应量与
 non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 胜出。
+
+`experiments/run_saor_project_mechanism.py` 是独立 Project mechanism 矩阵的 audit-aware
+入口。它绑定 `saor_project_mechanism_formal_contract.json`，运行前复用 matched-ready
+readiness audit，并把合同 SHA 与 readiness 写入 output root。当前合同状态是
+`locked_pending_rehearsal/formal_authorized=false`，因此 wrapper 只允许 `--rehearsal`；即使有人
+遗漏命令行约定，非 rehearsal 也会 fail closed。正式配置使用位置平衡种子，使六臂在三次
+formal 中各占三个不同序位，而不是让 proposed 连续固定在首位。
+
+`analysis/summarize_saor_project_mechanism_formal.py` 只接受经过上述 wrapper、完整 1+3、18 个
+formal cell 的证据。static 的 registered-ready fairness 为不适用；五个 bounded-ready 臂必须
+有 completion-accounted service lag/最长无服务证据；proposed 还必须闭合 recovery grant→request
+completion→debt below-cap episode。工具将 evidence validity 与 claim gate 分开：有效实验即使
+未过 5% headline、吞吐/bulk JCT/SLO/no-service non-inferiority 或 repayment 门也保持有效负结果，
+不会把性能失败伪装成无效运行。
 
 `analysis/audit_saor_formal_readiness.py --profile ready_observation_bridge`
 审计三臂 Project observation bridge：frozen-static/single-head、shared FIFO/single-head、

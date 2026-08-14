@@ -1,7 +1,7 @@
 ---
 experiment_id: saor-matched-ready-selector-rehearsal-20260813
 date: 2026-08-13
-status: completed-development-rehearsal-diagnostic-after-fairness-gate-audit
+status: completed-development-rehearsal-awaiting-corrected-applicability-revalidation
 evidence_level: two-independent-fixed-order-gpu-rehearsals
 execution_commit: 2d3a49308702c3fcf3b2a75cf4319fc2ac2d9a9d
 analysis_commit: 1af46401e873cec88119253a8bdd663da515a490
@@ -12,10 +12,12 @@ conclusion: observed-nondominated-tradeoff-not-selector-victory
 # SAOR matched-ready selector 双轮归因 rehearsal
 
 > 2026-08-14 证据门复核：本报告中的 GPU 性能、SLO、correctness 以及五个 bounded-ready 臂的
-> lifecycle 数据不变；但旧汇总在 frozen-static completion fairness 为 `unavailable` 时仍允许
-> cell 通过，因此旧的全矩阵 `validation.status=passed` 已撤销，当前身份为 diagnostic。
-> frozen-static 只保留 performance/isolation 参照，不进入同口径 service-lag 排名；修复后的
-> summarizer 会对此 fail closed。下文保留旧输出字段以便审计，不代表 formal gate 仍通过。
+> lifecycle 数据不变。旧汇总没有显式编码公平指标 applicability；第一版修复又错误地要求
+> frozen-static 也必须有 shared-credit ledger。最终语义是：五个 bounded-ready 臂的 completion
+> fairness 必须 `ok`，frozen-static 因生产路径不经过 shared credit 而为 `not_applicable`，只参加
+> performance/isolation 比较，不能进入同口径 service-lag 排名，也不应误杀整张矩阵。旧
+> `validation.json` 由最终代码重新签发前只作历史输出；无论重签结果如何，本实验仍是 n=2
+> development attribution，`formal_authorized=false`。
 
 ## 1. 实验目的
 
@@ -69,7 +71,7 @@ controls；这些 bounded-ready 副本也不冒充 vendor-native baseline。
 | proposed 机制 | 两轮均有 512 次 SLO-priority grant、9/12 次 debt-recovery grant；avoidable idle=0、foreign-over-critical=0、recovery in-flight max=1 |
 | 资源指标 | 每个 cell 的 model/resource/MFU status 均为 `ok`；使用 during-run time-series 聚合，不使用单点 GPU snapshot |
 | 稳定性 | 各臂 tokens/s 双轮 sample CV 为 0.08%–0.58% |
-| 汇总结果 | 旧分析提交曾输出 `validation.status=passed`；2026-08-14 新门禁复核后降为 diagnostic，因为 frozen-static completion fairness evidence 不可用。`selector_victory_decided=false`、`formal_authorized=false` 不变 |
+| 汇总结果 | 旧分析提交曾输出 `validation.status=passed`，但没有显式 applicability。最终规则要求五个 bounded 臂 fairness=`ok`，static=`not_applicable` 且 fairness gate 通过；等待用最终代码重签。`selector_victory_decided=false`、`formal_authorized=false` 不变 |
 
 ### 3.1 runner 有效性修复
 

@@ -412,6 +412,15 @@ def bounded_saor_event_summary(
         "bounded_saor_event_count": 0,
         "bounded_saor_slo_priority_grants": 0,
         "bounded_saor_debt_recovery_grants": 0,
+        "bounded_saor_recovery_completions": 0,
+        "bounded_saor_unmatched_recovery_grants": 0,
+        "bounded_saor_recovery_completion_p95_s": 0.0,
+        "bounded_saor_recovery_completion_max_s": 0.0,
+        "bounded_saor_debt_repayment_episodes": 0,
+        "bounded_saor_debt_repayment_completed": 0,
+        "bounded_saor_debt_repayment_unresolved": 0,
+        "bounded_saor_debt_repayment_p95_s": 0.0,
+        "bounded_saor_debt_repayment_max_s": 0.0,
         "bounded_saor_fallback_grants": 0,
         "bounded_saor_hold_count": 0,
         "bounded_saor_hold_completed_count": 0,
@@ -440,6 +449,20 @@ def bounded_saor_event_summary(
     sequences: dict[str, list[int]] = {}
     hold_durations = []
     max_recovery = 0
+
+    def pairs(value: object) -> dict[str, float]:
+        decoded = json.loads(value) if isinstance(value, str) else value
+        return {
+            str(key): float(item)
+            for key, item in (decoded or ())
+        }
+
+    recovery_grants: dict[tuple[str, str], float] = {}
+    recovery_grants_missing_id = 0
+    recovery_completion_durations: list[float] = []
+    debt_episode_starts: dict[tuple[str, str], float] = {}
+    debt_episode_durations: list[float] = []
+    debt_episode_count = 0
     for event in all_events:
         endpoint_id = str(event["endpoint_id"])
         sequences.setdefault(endpoint_id, []).append(int(event["event_seq"]))
@@ -448,6 +471,52 @@ def bounded_saor_event_summary(
         max_recovery = max(max_recovery, len(recovery))
         if event.get("action") == "hold_end":
             hold_durations.append(float(event.get("hold_duration_s", 0.0)))
+    for endpoint_id, endpoint_events in {
+        endpoint: sorted(
+            (
+                event
+                for event in all_events
+                if str(event["endpoint_id"]) == endpoint
+            ),
+            key=lambda event: int(event["event_seq"]),
+        )
+        for endpoint in sequences
+    }.items():
+        for event in endpoint_events:
+            event_time = float(
+                event.get("event_epoch_s", event.get("event_time_s", 0.0))
+            )
+            request_id = str(event.get("selected_request_id", ""))
+            if (
+                event.get("action") == "grant"
+                and event.get("tier") == "debt_recovery"
+            ):
+                if request_id:
+                    recovery_grants[(endpoint_id, request_id)] = event_time
+                else:
+                    recovery_grants_missing_id += 1
+            if event.get("action") == "completion" and request_id:
+                started = recovery_grants.pop(
+                    (endpoint_id, request_id),
+                    None,
+                )
+                if started is not None:
+                    recovery_completion_durations.append(
+                        max(0.0, event_time - started)
+                    )
+
+            debts = pairs(event.get("debt_by_job", ()))
+            caps = pairs(event.get("debt_cap_by_job", ()))
+            for job_id, cap in caps.items():
+                key = (endpoint_id, job_id)
+                critical = debts.get(job_id, 0.0) >= cap
+                if critical and key not in debt_episode_starts:
+                    debt_episode_starts[key] = event_time
+                    debt_episode_count += 1
+                elif not critical and key in debt_episode_starts:
+                    debt_episode_durations.append(
+                        max(0.0, event_time - debt_episode_starts.pop(key))
+                    )
     sequence_complete = all(
         sequence == list(range(1, len(sequence) + 1))
         for sequence in sequences.values()
@@ -468,6 +537,37 @@ def bounded_saor_event_summary(
             "bounded_saor_debt_recovery_grants": sum(
                 event.get("action") == "grant" and event.get("tier") == "debt_recovery"
                 for event in mechanism_events
+            ),
+            "bounded_saor_recovery_completions": len(
+                recovery_completion_durations
+            ),
+            "bounded_saor_unmatched_recovery_grants": (
+                len(recovery_grants) + recovery_grants_missing_id
+            ),
+            "bounded_saor_recovery_completion_p95_s": (
+                percentile(recovery_completion_durations, 95)
+                if recovery_completion_durations
+                else 0.0
+            ),
+            "bounded_saor_recovery_completion_max_s": max(
+                recovery_completion_durations,
+                default=0.0,
+            ),
+            "bounded_saor_debt_repayment_episodes": debt_episode_count,
+            "bounded_saor_debt_repayment_completed": len(
+                debt_episode_durations
+            ),
+            "bounded_saor_debt_repayment_unresolved": len(
+                debt_episode_starts
+            ),
+            "bounded_saor_debt_repayment_p95_s": (
+                percentile(debt_episode_durations, 95)
+                if debt_episode_durations
+                else 0.0
+            ),
+            "bounded_saor_debt_repayment_max_s": max(
+                debt_episode_durations,
+                default=0.0,
             ),
             "bounded_saor_fallback_grants": sum(
                 event.get("action") == "grant" and event.get("tier") == "saor_fallback"

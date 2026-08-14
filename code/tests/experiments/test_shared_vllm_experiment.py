@@ -193,9 +193,16 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "bounded_saor_event_sequence_complete": True,
             "bounded_saor_slo_priority_grants": 1,
             "bounded_saor_debt_recovery_grants": 1,
+            "bounded_saor_recovery_completions": 1,
+            "bounded_saor_unmatched_recovery_grants": 0,
+            "bounded_saor_debt_repayment_episodes": 1,
+            "bounded_saor_debt_repayment_completed": 1,
+            "bounded_saor_debt_repayment_unresolved": 0,
             "bounded_saor_avoidable_idle_events": 0,
             "bounded_saor_foreign_grant_over_debt_critical_events": 0,
             "bounded_saor_recovery_inflight_max": 1,
+            "active_set_post_drain_applicable": True,
+            "active_set_post_work_conserving_passed": True,
         }
 
         _validate_rehearsal_record(scenario, record)
@@ -203,6 +210,11 @@ class SharedVllmExperimentTests(unittest.TestCase):
             _validate_rehearsal_record(
                 scenario,
                 {**record, "bounded_saor_event_sequence_complete": False},
+            )
+        with self.assertRaisesRegex(RuntimeError, "work-conservation"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "active_set_post_work_conserving_passed": False},
             )
 
     def test_bounded_ready_rehearsal_requires_epoch_join(self) -> None:
@@ -233,9 +245,16 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "bounded_saor_event_sequence_complete": True,
             "bounded_saor_slo_priority_grants": 1,
             "bounded_saor_debt_recovery_grants": 1,
+            "bounded_saor_recovery_completions": 1,
+            "bounded_saor_unmatched_recovery_grants": 0,
+            "bounded_saor_debt_repayment_episodes": 1,
+            "bounded_saor_debt_repayment_completed": 1,
+            "bounded_saor_debt_repayment_unresolved": 0,
             "bounded_saor_avoidable_idle_events": 0,
             "bounded_saor_foreign_grant_over_debt_critical_events": 0,
             "bounded_saor_recovery_inflight_max": 1,
+            "active_set_post_drain_applicable": True,
+            "active_set_post_work_conserving_passed": True,
             "bounded_ready_event_status": "ok:actor_event_join",
             "bounded_ready_lifecycle_complete": True,
             "bounded_ready_intervals": 2,
@@ -867,6 +886,61 @@ class SharedVllmExperimentTests(unittest.TestCase):
         )
         self.assertFalse(summary["bounded_saor_event_sequence_complete"])
 
+    def test_bounded_saor_event_ledger_measures_repayment_completion(self) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "selected_request_id": "foreground-0",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 11.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "bulk-recovery-0",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": (
+                    '[["bulk", "bulk-recovery-0"]]'
+                ),
+                "constraint_conflict": False,
+                "avoidable_idle": False,
+                "foreign_grant_over_debt_critical": False,
+            },
+            {
+                "event_seq": 3,
+                "event_epoch_s": 15.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "selected_request_id": "bulk-recovery-0",
+                "debt_by_job": '[["bulk", 0.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_recovery_completions"], 1)
+        self.assertEqual(summary["bounded_saor_unmatched_recovery_grants"], 0)
+        self.assertEqual(
+            summary["bounded_saor_recovery_completion_max_s"],
+            4.0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 1)
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
+        self.assertEqual(summary["bounded_saor_debt_repayment_max_s"], 5.0)
+
     def test_vtc_templates_expand_unequal_job_counts(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -1209,7 +1283,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(rows[0]["event_seq"], 1)
         self.assertEqual(rows[0]["tier"], "slo_priority")
-        self.assertEqual(rows[0]["schema_version"], 2)
+        self.assertEqual(rows[0]["schema_version"], 3)
         self.assertIn("observed_epoch_s", rows[0])
 
     def test_bounded_ready_join_rejects_foreign_fallback(self) -> None:

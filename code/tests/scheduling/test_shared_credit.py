@@ -215,6 +215,12 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
         self.assertEqual(coordinator.drain_release_events("gpu0"), ())
 
         coordinator.release("bulk-recovery", job_id="bulk", actual_work=80)
+        completion = coordinator.drain_release_events("gpu0")
+        self.assertEqual(
+            [(event.action, event.tier, event.selected_request_id)
+             for event in completion],
+            [("completion", "service_completion", "bulk-recovery")],
+        )
         self.assertNotIn(
             ("bulk", "bulk-recovery"),
             coordinator.snapshot("gpu0").recovery_inflight_by_job,

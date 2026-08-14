@@ -1296,6 +1296,43 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 `code/scripts/analysis/summarize_saor_matched_ready_ablation.py` 只做证据完整性汇总；其
 `validation.json` 不授权 formal，也不自动判 selector 胜负。
 
+独立 Project mechanism 的下一轮只允许通过合同 wrapper 做 rehearsal：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_project_mechanism.py \
+  --rehearsal \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --config deploy/autodl/saor_project_mechanism_formal.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+同机已冻结的 logical Arrow payload envelope 为
+`SAOR_READY_PAYLOAD_BYTES_LIMIT_PER_JOB=67108864`（64 MiB/Job），已写入该 2×4090 专属 env
+example；它来自 matched-ready evidence，不是 bounded-priority 推断，也不是跨硬件默认值。机器、
+workload、row representation 或 ready-window 签名变化时必须重新校准。
+
+当前 evaluation contract 明确是 `formal_authorized=false`。rehearsal 必须产生 completion service
+lag、最长无服务、recovery completion、debt-repayment episode 与零 unresolved debt，审核并冻结
+其 validation SHA 后才允许通过单独提交把合同改成 `formal_ready`。禁止直接删除 `--rehearsal`。
+解锁后的 formal 汇总入口为：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_project_mechanism_formal.py \
+  --matrix-root "$ARTIFACT_ROOT/saor_project_mechanism_formal_<unique-id>" \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --output-dir "$ARTIFACT_ROOT/saor_project_mechanism_formal_summary_<unique-id>"
+```
+
+这张表只比较 Project 内部 matched-observation selector。Daft Native、Daft Ray、Ray Data 的
+native-system matched comparison 仍是另一张表，两者不能互相代替或混合排名。
+
 错峰 Job 的有效性按 profiler 实际跨过 replay barrier 的 lateness/skew 判定；
 barrier→first-submit 属于 selector 的排队结果，必须进入等待、JCT 和 SLO 比较，不能再作为
 启动失败门禁。否则 FIFO/DRR 等允许 ready Job 等待 credit 的策略会被系统性误拒绝。

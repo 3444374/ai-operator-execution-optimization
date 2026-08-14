@@ -57,10 +57,10 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 foreground SLO 零违约；SAOR 约 12.28K tok/s、foreground P99 17.85s。SAOR 用约 4.8%
 吞吐和约 5.2% bulk JCT 代价进一步降低 tail，属于观测到的非支配折中点，但固定顺序 n=2、
 selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`，不写 selector 胜出。
-2026-08-14 fail-closed 复核进一步确认：旧汇总没有要求 completion fairness evidence 可用，且
-avoidable-idle 事件名检查错误。五个 bounded-ready 臂的性能、SLO 和完整生命周期事实仍保留，
-但 frozen-static 缺 registered-ready ledger，不能与它作同口径 service-lag 比较；旧全矩阵
-`passed` 降为 diagnostic。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，并冻结内部
+2026-08-14 fail-closed 复核进一步确认：旧汇总没有显式区分 completion fairness applicability，且
+avoidable-idle 事件名检查错误。最终规则要求五个 bounded-ready 臂 evidence=`ok`；frozen-static
+缺 registered-ready ledger，故该指标为 N/A、不能作同口径 service-lag 比较，但不误杀共同性能
+矩阵。旧 validation 等待最终代码重签。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，并冻结内部
 消融各臂的 effective K/W 与 weights。完成新门禁服务器回归前不得解锁 formal。
 修复提交 `15201946` 的同机四臂 development regression 已完成：所有请求 exactly-once、Job ID
 合同通过，$0.125W_e$ 触发一次 recovery；$0.25W_e$ 再次因 recovery=0 被 runner 正确 fail closed。
@@ -205,8 +205,12 @@ PostgreSQL source
   双轮归因，以及 single-head shared FIFO→bounded-ready FIFO 的 observation bridge。proposed
   相对 VTC-style 用约 4.8% 吞吐、5.2% bulk JCT 和更长 no-service interval 换取约 31.8%
   foreground P99 改善，是观测非支配折中而不是 selector 胜出；固定顺序 n=2 且未预注册
-  selector non-inferiority margin，故 `formal_authorized=false`。下一步必须补同一 2-Job workload
-  的 Daft Native/Daft Ray/Ray Data native/project static/proposed 系统级 matched comparison；
+  selector non-inferiority margin，故历史结果保持 `formal_authorized=false`。现已另建位置平衡的
+  Project mechanism 1+3 合同，冻结 VTC-style 为公平参照、5% headline、吞吐/bulk JCT/SLO/
+  longest-no-service 非劣与 30s empirical debt-repayment 门；wrapper 当前仍锁定 rehearsal，必须先
+  产生 completion→repayment 闭环证据并登记 validation SHA，不能直接跑 formal。并行的系统问题
+  仍需补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
+  matched comparison；
   原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
@@ -284,7 +288,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
    40/40 和 Project observe-only 24/24 也已归档。DuckDB 四作业仍停在 capability gate，不为开题
    扩展 formal。
 5. SAOR bounded-ready、matched-ready selector 归因和 observation bridge 已完成 development
-   rehearsal；旧全矩阵公平门因 frozen-static 缺 lifecycle 已降为 diagnostic。下一步先完成
+   rehearsal；旧全矩阵公平门等待按“bounded 必须 ok、static N/A”最终 applicability 重签。下一步先完成
    fail-closed 门禁服务器回归，再准备同一 2-Job 合同的 native-system matched comparison；不直接
    启动 selector 1+3 formal，也不扩 cap、4-Job、reservation 或 dynamic K。
 6. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。

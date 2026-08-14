@@ -2,11 +2,12 @@
 
 Date: 2026-07-20（最后更新：2026-08-14；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
-但 2026-08-14 fail-closed 复核发现旧汇总允许 frozen-static 在 completion fairness
-`unavailable` 时通过，故旧的全矩阵 `passed` 已降为 diagnostic；性能与五个 bounded-ready 臂的
-生命周期事实保留，跨 static 的同口径公平结论不成立。`formal_authorized=false`；single-head +
-shared FIFO observation bridge 双轮已完成，下一步先闭合门禁回归，再准备同一 2-Job 合同的
-native-system matched comparison；原生 baseline 不接入 bounded-ready，dynamic-K 仍退出主线）
+2026-08-14 fail-closed 复核发现旧汇总没有显式编码 completion fairness applicability；最终规则
+要求五个 bounded-ready 臂 evidence=`ok`，frozen-static 因不经过 shared credit 而标为
+`not_applicable`，不参加 service-lag 排名但不误杀性能矩阵。历史 GPU 事实保留，旧 validation 等待
+最终代码重签；`formal_authorized=false`。下一步先跑新的 Project mechanism final rehearsal，再
+独立准备同一 2-Job native-system matched comparison；原生 baseline 不接 bounded-ready，
+dynamic-K 仍退出主线）
 
 2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
 两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故
@@ -101,16 +102,22 @@ project bounded-ready + FIFO、DRR/WFQ、external VTC-style、strict-priority �
 ready-window、active K/W、ready bytes、arrival/cache/服务合同。接入 bounded-ready 的 FIFO/DRR/
 VTC 只是这些项目内标准算法的 matched controls，不替代 no-bounded-ready 版本；Daft、Ray Data、
 vLLM 或产品原生 baseline 继续使用各自调度且不接 bounded-ready。
-只有 proposed 超过最强项目简单 Pareto 前沿才启动 1+3 formal；否则贡献收敛为 bounded ready-state
-exposure + 最小 guarded release，或淘汰复杂 selector。
-formal 另需把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
+现已把这项证明义务落为独立 Project mechanism 合同：六臂使用位置平衡的 1 warm-up + 3 formal
+计划，VTC-style 是主公平参照，FIFO/DRR 同表报告，strict-priority 只作 SLO 边界 control；
+headline 是 foreground P99 或 completion service lag 至少改善 5%，保护项是 throughput≥0.95×、
+bulk JCT≤1.05×、bulk SLO delta≤0.05、foreground miss≤0.01、longest no-service≤1.05×且≤30s。
+proposed 还必须 debt-repayment P95≤30s、unresolved=0。当前合同
+`locked_pending_rehearsal/formal_authorized=false`，必须先重跑最终六臂 rehearsal 并冻结 validation
+SHA，不能用历史 n=2 结果事后解锁。
+formal 把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。
 
 当前执行顺序进一步冻结为“两层证据都要”。六臂 Project 内部 selector attribution 已从两个
 独立 rehearsal root 完成：12/12 cell、12,288/12,288 requests、0 incident；旧分析合同曾输出
-`validation=passed`，但 2026-08-14 fail-closed 复核后已降为 diagnostic。固定顺序、每臂 n=2，
-故 `selector_victory_decided=false`、`formal_authorized=false`。双轮均值下
+`validation=passed`，但没有显式 fairness applicability，等待按 bounded=`ok`、static=N/A 的最终
+语义重签。固定顺序、每臂 n=2，
+故 `selector_victory_decided=false`、历史 artifact 的 `formal_authorized=false` 不变。双轮均值下
 DRR/VTC-style 为 12.90K tok/s、foreground P99 27.23/26.16s、30s SLO violation 0；guarded debt
 为 12.28K tok/s、foreground P99 17.85s、SLO violation 0。相对 VTC-style，guarded debt 用
 约 4.8% 吞吐、5.2% bulk JCT 和 22.7% longest-no-service 代价换取 31.8% foreground P99 与

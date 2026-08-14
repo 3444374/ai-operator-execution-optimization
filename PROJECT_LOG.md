@@ -6659,8 +6659,9 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - matched-ready 汇总现在要求 completion fairness 状态为完整 registered-backlog completion
   accounting，缺 lifecycle 的 cell 必须失败；不再允许公平指标 `unavailable` 但 matrix passed。
 - 对服务器旧完整 artifact 的只读复核显示五个 bounded-ready 臂每 Job 均有 512/512 lifecycle，
-  frozen-static 为 0/512。因此旧性能/SLO 事实和 bounded-ready 臂内经验 lag 保留，但旧全矩阵
-  `passed` 撤销为 diagnostic，跨 static 的同口径 fairness claim 不成立。
+  frozen-static 为 0/512。随后 applicability 审核修正了第一版判断：static 生产路径不经过 shared
+  credit，该指标应为 N/A 而不是 fail；五个 bounded 臂仍必须 ok。旧 validation 等待按最终语义
+  重签，跨 static 的同口径 fairness claim 仍不成立。
 - runner 新增强制 runtime `job_id` 非空、单 Job 内一致且并发 Job 间唯一；selector/bridge
   readiness 新增 effective K/W 与 `(1,1)` weights 冻结，防止身份或资源漂移污染归因。
 - 本地 211 项相关回归已通过。修复前在服务器启动的一次 bounded-priority rehearsal 已主动
@@ -6671,3 +6672,25 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   512+512 request、exactly-once，实际 Job ID 非空/组内唯一，endpoint 最终 drain；$0.125W_e$ 产生
   1 次 debt recovery 并通过，$0.25W_e$ recovery=0，被 runner 以 1 个 unrecovered mechanism
   incident 正确 fail closed。该结果只验证门禁没有假通过或误杀，不计入性能重复、不解锁 formal。
+
+## 2026-08-14 冻结独立 Project mechanism formal 合同与 repayment 证据
+
+- 修正 matched-ready 汇总 applicability：frozen-static 的生产路径不经过 shared credit，因而
+  registered-ready completion service lag 为 `not_applicable`，不再被公平门永久误杀；五个
+  bounded-ready selector 仍必须有完整 lifecycle。测试 fixture 同步删除 static 的伪 credit
+  时间戳，覆盖真实混合路径。
+- bounded SAOR release ledger schema 3 新增 `service_completion` 事件；离线指标配对 debt-recovery grant
+  与 request completion，并从 debt≥cap 到 debt<cap 计算 empirical repayment episode、P95/max 与
+  unresolved。runner rehearsal 要求 recovery completion、episode complete、unresolved=0；这仍是
+  completion-granularity 经验指标，不称理论 repayment bound。
+- 新增独立 Project mechanism 配置、合同、runner 与 formal summarizer。六臂使用 seed 20260821，
+  保证各策略在三次 formal 中占三个不同序位；VTC-style 是主公平参照，5% foreground P99/lag
+  headline 与 throughput/bulk JCT/SLO/no-service/repayment 保护边界已在 formal 前冻结。实验有效性
+  与 claim gate 分开，性能门失败保留为 valid negative。
+- 当前合同仍为 `locked_pending_rehearsal/formal_authorized=false`。必须先用 wrapper 运行最终六臂
+  rehearsal、审核 completion/repayment evidence 并登记 validation SHA，才可由单独提交解锁；
+  native-system matched comparison 仍独立回答系统层问题，不能替代机制主命题。
+- 服务器旧 `15201946` 四臂回归已生成 1,158,038-byte 完整归档，SHA256
+  `ba8015c870e55899668d9cc35769395b7199b0b07c96e2904b57d064fce1796d`；仓库补存 manifest、
+  四份 record、八份 Job summary 与四份 release ledger。该旧回归早于 completion ledger，只用于
+  门禁复算，不进入 formal 或 repayment 结论。

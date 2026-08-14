@@ -13,7 +13,19 @@ from unittest.mock import patch
 
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.common.manifests import write_manifest
-from src.experiments.shared_vllm.config import SharedVllmConfig, SharedVllmScenario
+from src.experiments.saor.project_mechanism_formal import (
+    EXPECTED_SCENARIOS as PROJECT_FORMAL_SCENARIOS,
+    PROPOSED as PROJECT_FORMAL_PROPOSED,
+    VTC as PROJECT_FORMAL_VTC,
+    load_contract as load_project_formal_contract,
+    sha256_file as project_formal_sha256,
+    validate_contract as validate_project_formal_contract,
+)
+from src.experiments.shared_vllm.config import (
+    SharedVllmConfig,
+    SharedVllmScenario,
+    load_config,
+)
 from src.experiments.shared_vllm.direct_control import run_direct_control
 
 
@@ -54,9 +66,112 @@ OBSERVATION_BRIDGE_SUMMARY = _load(
     "summarize_saor_ready_observation_bridge",
     "code/scripts/analysis/summarize_saor_ready_observation_bridge.py",
 )
+PROJECT_FORMAL_SUMMARY = _load(
+    "summarize_saor_project_mechanism_formal",
+    "code/scripts/analysis/summarize_saor_project_mechanism_formal.py",
+)
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_project_formal_summary_keeps_static_fairness_not_applicable(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrix = root / "matrix"
+            contract_path = root / "contract.json"
+            contract = load_project_formal_contract(
+                REPOSITORY
+                / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+            )
+            contract["status"] = "formal_ready"
+            contract["formal_authorized"] = True
+            contract["rehearsal_validation"] = {"sha256": "test-rehearsal"}
+            contract_path.write_text(
+                json.dumps(contract),
+                encoding="utf-8",
+            )
+            self._write_project_formal_matrix(
+                matrix,
+                contract,
+                project_formal_sha256(contract_path),
+            )
+
+            result = PROJECT_FORMAL_SUMMARY.summarize(
+                matrix,
+                contract_path,
+                root / "summary",
+            )
+
+            self.assertTrue(result["evidence_valid"])
+            self.assertTrue(result["claim_gate_passed"])
+            formal_rows = list(
+                csv.DictReader(
+                    (root / "summary/formal_runs.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            static = [
+                row for row in formal_rows
+                if row["scenario_id"]
+                == "active_set_project_frozen_static"
+            ]
+            self.assertEqual(len(static), 3)
+            self.assertTrue(
+                all(
+                    row["fairness_evidence_applicable"] == "False"
+                    and row["fairness_gate_passed"] == "True"
+                    for row in static
+                )
+            )
+
+    def test_project_formal_decision_separates_validity_from_claim(self) -> None:
+        contract = load_project_formal_contract(
+            REPOSITORY
+            / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+        )
+        decision = contract["decision_contract"]
+        metrics = []
+        for scenario_id, (policy, _observation) in PROJECT_FORMAL_SCENARIOS.items():
+            for repeat in range(1, 4):
+                row = {
+                    "scenario_id": scenario_id,
+                    "policy": policy,
+                    "repeat_index": repeat,
+                    "tokens_per_s": 100.0,
+                    "bulk_jct_s": 100.0,
+                    "foreground_p99_s": 20.0,
+                    "bulk_slo_violation": 0.5,
+                    "foreground_slo_violation": 0.0,
+                    "completion_service_lag_p95_work": 100.0,
+                    "completion_longest_no_service_s": 10.0,
+                    "bounded_saor_debt_repayment_p95_s": 10.0,
+                    "bounded_saor_debt_repayment_unresolved": 0,
+                }
+                if scenario_id == PROJECT_FORMAL_PROPOSED:
+                    row["tokens_per_s"] = 96.0
+                    row["bulk_jct_s"] = 104.0
+                    row["foreground_p99_s"] = 18.0
+                    row["completion_service_lag_p95_work"] = 94.0
+                metrics.append(row)
+
+        passed, _paired = PROJECT_FORMAL_SUMMARY.evaluate_decision(
+            metrics,
+            decision,
+        )
+        self.assertTrue(passed["claim_gate_passed"])
+
+        for row in metrics:
+            if row["scenario_id"] == PROJECT_FORMAL_PROPOSED:
+                row["tokens_per_s"] = 90.0
+        failed, _paired = PROJECT_FORMAL_SUMMARY.evaluate_decision(
+            metrics,
+            decision,
+        )
+        self.assertFalse(failed["claim_gate_passed"])
+        self.assertFalse(failed["throughput_noninferior"])
+
     def test_ready_observation_bridge_separates_the_two_effects(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -115,6 +230,27 @@ class SaorFormalToolsTests(unittest.TestCase):
             )
             self.assertFalse(result["selector_victory_decided"])
             self.assertFalse(result["formal_authorized"])
+            with (root / "summary/ablation_metrics.csv").open(
+                encoding="utf-8"
+            ) as handle:
+                metrics = list(csv.DictReader(handle))
+            static = next(
+                row for row in metrics
+                if row["scenario_id"]
+                == "active_set_project_frozen_static"
+            )
+            self.assertEqual(static["fairness_evidence_applicable"], "False")
+            self.assertEqual(static["fairness_evidence_passed"], "False")
+            self.assertEqual(static["fairness_gate_passed"], "True")
+            self.assertEqual(static["cell_evidence_passed"], "True")
+            bounded = [
+                row for row in metrics
+                if row["fairness_evidence_applicable"] == "True"
+            ]
+            self.assertEqual(len(bounded), 5)
+            self.assertTrue(
+                all(row["fairness_evidence_passed"] == "True" for row in bounded)
+            )
 
     def test_matched_ready_summary_fails_without_completion_fairness(
         self,
@@ -362,18 +498,22 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(len(validation["mechanism_reclassifications"]), 2)
 
     def test_repository_formal_env_covers_template_contract(self) -> None:
-        template = (
-            REPOSITORY / "deploy/autodl/saor_active_set_release.example.json"
-        ).read_text(encoding="utf-8")
+        template_paths = (
+            "deploy/autodl/saor_active_set_release.example.json",
+            "deploy/autodl/saor_project_mechanism_formal.example.json",
+        )
         env_example = (
             REPOSITORY / "deploy/autodl/saor_active_set_formal.env.example"
         ).read_text(encoding="utf-8")
-        required = set(re.findall(r"\$\{([A-Z][A-Z0-9_]*)\}", template))
         provided = set(
             re.findall(r"^export ([A-Z][A-Z0-9_]*)=", env_example, re.MULTILINE)
         )
-
-        self.assertEqual(required - provided, {"DATABASE_URL"})
+        for relative in template_paths:
+            template = (REPOSITORY / relative).read_text(encoding="utf-8")
+            required = set(
+                re.findall(r"\$\{([A-Z][A-Z0-9_]*)\}", template)
+            )
+            self.assertEqual(required - provided, {"DATABASE_URL"})
         self.assertIn("export COMPLETION_PROTOCOL=chat_completions", env_example)
         self.assertIn("/v1/chat/completions", env_example)
         self.assertIn("export SAOR_ARRIVAL_TIME_SCALE=0.0001", env_example)
@@ -625,6 +765,29 @@ class SaorFormalToolsTests(unittest.TestCase):
                     / "deploy/autodl/saor_matched_ready_selector_ablation.example.json",
                     profile="matched_ready_selector_ablation",
                 )
+                project_formal_path = (
+                    REPOSITORY
+                    / "deploy/autodl/saor_project_mechanism_formal.example.json"
+                )
+                project_formal_result = AUDIT.audit(
+                    project_formal_path,
+                    profile="matched_ready_selector_ablation",
+                )
+                project_formal_config = load_config(project_formal_path)
+                project_formal_contract = load_project_formal_contract(
+                    REPOSITORY
+                    / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+                )
+                project_contract_errors = validate_project_formal_contract(
+                    project_formal_contract,
+                    project_formal_config,
+                    formal_run=False,
+                )
+                project_formal_lock_errors = validate_project_formal_contract(
+                    project_formal_contract,
+                    project_formal_config,
+                    formal_run=True,
+                )
                 observation_bridge_result = AUDIT.audit(
                     REPOSITORY
                     / "deploy/autodl/saor_ready_observation_bridge.example.json",
@@ -669,6 +832,12 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(bounded_ready_result["scenario_count"], 4)
         self.assertEqual(matched_ready_result["status"], "passed")
         self.assertEqual(matched_ready_result["scenario_count"], 6)
+        self.assertEqual(project_formal_result["status"], "passed")
+        self.assertEqual(project_contract_errors, [])
+        self.assertEqual(
+            project_formal_lock_errors,
+            ["formal run is not authorized by the frozen contract"],
+        )
         self.assertEqual(observation_bridge_result["status"], "passed")
         self.assertEqual(observation_bridge_result["scenario_count"], 3)
         self.assertEqual(drift_result["status"], "failed")
@@ -1081,7 +1250,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "bounded_saor_recovery_inflight_max": 1 if proposed else 0,
                 }
             )
-            if include_fairness:
+            if include_fairness and bounded:
                 for job_index in range(2):
                     stem = (
                         f"{order_index:03d}_warmup_1_{scenario_id}_"
@@ -1112,6 +1281,154 @@ class SaorFormalToolsTests(unittest.TestCase):
                             }
                         ],
                     )
+        SaorFormalToolsTests._write_group_rows(root / "group_runs.csv", rows)
+
+    @staticmethod
+    def _write_project_formal_matrix(
+        root: Path,
+        contract: dict[str, object],
+        contract_sha256: str,
+    ) -> None:
+        (root / "jobs").mkdir(parents=True)
+        (root / "project_mechanism_contract.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "contract_path": "test",
+                    "contract_sha256": contract_sha256,
+                    "contract": contract,
+                    "readiness": {"status": "passed"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        (root / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "execution_mode": "configured_matrix",
+                    "incidents": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        rows = []
+        scenarios = tuple(PROJECT_FORMAL_SCENARIOS.items())
+        for repeat in range(1, 4):
+            for scenario_index, (
+                scenario_id,
+                (policy, observation),
+            ) in enumerate(scenarios):
+                order_index = 6 + (repeat - 1) * 6 + scenario_index
+                bounded = observation == "bounded_concrete_pre_registration"
+                proposed = scenario_id == PROJECT_FORMAL_PROPOSED
+                rows.append(
+                    {
+                        "scenario_id": scenario_id,
+                        "policy": policy,
+                        "ready_observation_contract": observation,
+                        "phase": "formal",
+                        "repeat_index": repeat,
+                        "order_index": order_index,
+                        "execution_mode": "configured_matrix",
+                        "incidents": 0,
+                        "actor_worker_failures": 0,
+                        "metrics_status": "ok",
+                        "resource_metrics_status": "ok",
+                        "active_set_lifecycle_passed": True,
+                        "job_arrived_rows": "[1, 1]",
+                        "job_completed_rows": "[1, 1]",
+                        "job_failed_rows": "[0, 0]",
+                        "job_jct_s": "[100, 30]",
+                        "job_p99_s": (
+                            "[70, 18]" if proposed else "[70, 20]"
+                        ),
+                        "job_slo_violation_ratio": "[0.5, 0]",
+                        "job_slo_goodput_per_s": "[1, 1]",
+                        "job_slo_token_goodput_per_s": "[20, 20]",
+                        "tokens_per_s": 96 if proposed else 100,
+                        "duration_s": 100,
+                        "mfu_estimate": 0.4,
+                        "jain_fairness": 0.9,
+                        "bounded_ready_event_status": (
+                            "ok:actor_event_join"
+                            if bounded else "not_applicable"
+                        ),
+                        "bounded_ready_lifecycle_complete": bounded,
+                        "bounded_ready_jobs_with_intervals": 2 if bounded else 0,
+                        "bounded_ready_intervals": 2 if bounded else 0,
+                        "bounded_ready_max_ready_requests_seen": 2 if bounded else 0,
+                        "bounded_ready_max_ready_work_seen": 100 if bounded else 0,
+                        "bounded_ready_max_ready_payload_bytes_seen": 1000 if bounded else 0,
+                        "bounded_ready_foreign_fallback_events": 0,
+                        "bounded_saor_event_status": (
+                            "ok:lossless_ledger" if proposed else "unavailable"
+                        ),
+                        "bounded_saor_event_sequence_complete": proposed,
+                        "bounded_saor_slo_priority_grants": 1 if proposed else 0,
+                        "bounded_saor_debt_recovery_grants": 1 if proposed else 0,
+                        "bounded_saor_recovery_completions": 1 if proposed else 0,
+                        "bounded_saor_unmatched_recovery_grants": 0,
+                        "bounded_saor_debt_repayment_episodes": 1 if proposed else 0,
+                        "bounded_saor_debt_repayment_completed": 1 if proposed else 0,
+                        "bounded_saor_debt_repayment_unresolved": 0,
+                        "bounded_saor_debt_repayment_p95_s": 10 if proposed else 0,
+                        "bounded_saor_recovery_completion_p95_s": 5 if proposed else 0,
+                        "bounded_saor_avoidable_idle_events": 0,
+                        "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+                        "bounded_saor_recovery_inflight_max": 1 if proposed else 0,
+                        "active_set_post_drain_status": (
+                            "ok:observed_work_conserving_drain"
+                            if proposed else "not_applicable"
+                        ),
+                        "active_set_post_drain_applicable": proposed,
+                        "active_set_post_work_conserving_passed": proposed,
+                    }
+                )
+                if bounded:
+                    for job_index in range(2):
+                        stem = (
+                            f"{order_index:03d}_formal_{repeat}_{scenario_id}_"
+                            f"job{job_index}"
+                        )
+                        submission_id = (
+                            f"{scenario_id}-{repeat}-job{job_index}-r0"
+                        )
+                        SaorFormalToolsTests._write_group_rows(
+                            root / "jobs" / f"{stem}.requests.csv",
+                            [
+                                {
+                                    "submission_id": submission_id,
+                                    "completion_epoch_s": 2.0 + job_index,
+                                    "prompt_tokens": 10,
+                                    "actual_output_tokens": 10,
+                                    "client_estimated_output_tokens": 10,
+                                    "estimated_output_tokens": 10,
+                                }
+                            ],
+                        )
+                        SaorFormalToolsTests._write_group_rows(
+                            root / "jobs" / f"{stem}.submissions.csv",
+                            [
+                                {
+                                    "submission_id": submission_id,
+                                    "ready_epoch_s": 0.0,
+                                    "credit_registered_epoch_s": 0.1,
+                                    "credit_granted_epoch_s": 0.2,
+                                }
+                            ],
+                        )
+        for scenario_id, (policy, observation) in scenarios:
+            rows.append(
+                {
+                    **rows[0],
+                    "scenario_id": scenario_id,
+                    "policy": policy,
+                    "ready_observation_contract": observation,
+                    "phase": "warmup",
+                    "repeat_index": 1,
+                }
+            )
         SaorFormalToolsTests._write_group_rows(root / "group_runs.csv", rows)
 
     @staticmethod

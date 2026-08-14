@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "evidence_role": "fail_closed_code_regression_not_performance_repeat",
+  "repository_commit": "15201946",
+  "source_root": "/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_rehearsal_15201946_regression_20260814",
+  "source_archive": "/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_rehearsal_15201946_regression_20260814.tar.gz",
+  "source_archive_size_bytes": 1158038,
+  "source_archive_sha256": "ba8015c870e55899668d9cc35769395b7199b0b07c96e2904b57d064fce1796d",
+  "compact_evidence": {
+    "manifest": "manifest.json",
+    "completed_group_table": "group_runs.csv",
+    "all_four_group_records": "records/*.json",
+    "all_eight_job_summaries": "job_runs/*.runs.csv",
+    "all_four_release_ledgers": "release_events/*.release_events.csv"
+  },
+  "known_boundary": "The failed final cell is absent from group_runs.csv by fail-closed design and is preserved in records/003_*.json. Per-request and resource time series remain in the content-addressed full archive.",
+  "formal_authorized": false
+}

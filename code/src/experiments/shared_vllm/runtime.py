@@ -165,7 +165,7 @@ class _RayCreditObserver:
         )
         return [
             {
-                "schema_version": 2,
+                "schema_version": 3,
                 "observed_epoch_s": observed_epoch_s,
                 "elapsed_s": observed_epoch_s - origin_epoch_s,
                 **_event_mapping(event),

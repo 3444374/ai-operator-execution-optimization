@@ -440,6 +440,20 @@ class FairEndpointCreditCoordinator:
                     lease.estimated_work if actual_work is None else actual_work
                 ),
             )
+            if self._policy in {
+                "saor_bounded_priority",
+                "saor_bounded_ready",
+            }:
+                self._record_release_event(
+                    endpoint_id,
+                    action="completion",
+                    tier="service_completion",
+                    lease=lease,
+                    states=self._bounded_saor_states(
+                        endpoint_id,
+                        include_job_ids=(job_id,),
+                    ),
+                )
         self._grant_waiters(endpoint_id)
 
     def finish_job(self, job_id: str) -> None:
@@ -979,6 +993,8 @@ class FairEndpointCreditCoordinator:
     def _bounded_saor_states(
         self,
         endpoint_id: str,
+        *,
+        include_job_ids: tuple[str, ...] = (),
     ) -> tuple[SaorBoundedHeadState, ...]:
         request_limit, work_limit = self._capacities[endpoint_id]
         active_requests: dict[str, int] = {}
@@ -996,6 +1012,7 @@ class FairEndpointCreditCoordinator:
             for job_id, queue in self._waiting[endpoint_id].items()
             if queue
         )
+        jobs.update(include_job_ids)
         order = {
             job_id: index for index, job_id in enumerate(self._job_order[endpoint_id])
         }
@@ -1069,7 +1086,11 @@ class FairEndpointCreditCoordinator:
             and target.target_job_id in debt_critical
             and target.reclaim_debt > 0
         )
-        selected_lease = lease if action in {"register", "grant"} else None
+        selected_lease = (
+            lease
+            if action in {"register", "grant", "completion"}
+            else None
+        )
         seq = self._release_event_seq[endpoint_id] + 1
         self._release_event_seq[endpoint_id] = seq
         self._release_events[endpoint_id].append(

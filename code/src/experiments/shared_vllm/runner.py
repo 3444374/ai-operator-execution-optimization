@@ -175,6 +175,18 @@ def _validate_rehearsal_record(
         if (
             int(record.get("bounded_saor_slo_priority_grants", 0)) < 1
             or int(record.get("bounded_saor_debt_recovery_grants", 0)) < 1
+            or int(record.get("bounded_saor_recovery_completions", 0)) < 1
+            or int(
+                record.get("bounded_saor_unmatched_recovery_grants", -1)
+            )
+            != 0
+            or int(record.get("bounded_saor_debt_repayment_episodes", 0)) < 1
+            or int(record.get("bounded_saor_debt_repayment_completed", 0))
+            != int(record.get("bounded_saor_debt_repayment_episodes", -1))
+            or int(
+                record.get("bounded_saor_debt_repayment_unresolved", -1)
+            )
+            != 0
             or int(record.get("bounded_saor_avoidable_idle_events", -1)) != 0
             or int(
                 record.get(
@@ -186,6 +198,13 @@ def _validate_rehearsal_record(
             or int(record.get("bounded_saor_recovery_inflight_max", 2)) > 1
         ):
             raise RuntimeError("rehearsal bounded-SAOR mechanism gate failed")
+        if (
+            record.get("active_set_post_drain_applicable") is True
+            and record.get("active_set_post_work_conserving_passed") is not True
+        ):
+            raise RuntimeError(
+                "rehearsal bounded-SAOR post-drain work-conservation gate failed"
+            )
     observation_contract = (
         scenario.ready_observation_contract
         if ready_observation_contract is None
@@ -1389,7 +1408,7 @@ def _run_group(
                 final_credit,
                 sort_keys=True,
             ),
-            "release_event_trace_schema_version": 2,
+            "release_event_trace_schema_version": 3,
             "release_event_trace_path": str(
                 Path("traces") / f"{run_stem}.release_events.csv"
             ),
@@ -1480,7 +1499,7 @@ def _run_group(
                 ],
                 "final_credit_snapshots": final_credit,
                 "credit_capture_error": capture_error,
-                "release_event_trace_schema_version": 1,
+                "release_event_trace_schema_version": 3,
                 "release_event_trace_path": str(
                     Path("traces") / f"{run_stem}.release_events.csv"
                 ),

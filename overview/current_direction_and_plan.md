@@ -36,8 +36,10 @@
   proposed 双轮归因：DRR/VTC-style 约 12.90K tok/s、fg P99 27.23/26.16s、30s SLO 零违约；
   proposed 12.28K tok/s、fg P99 17.85s。proposed 是用约 4.8% 吞吐与约 5.2% bulk JCT 换 tail
   的观测非支配折中点，不是 selector winner；固定顺序 n=2，`formal_authorized=false`。
-  下一步补 Daft Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched
-  comparison。`single-head + shared FIFO` bridge 已完成：shared capacity 使 tok/s +25.96%
+  现已另建位置平衡六臂 1+3 Project mechanism 合同，冻结 5% headline 与 throughput/JCT/SLO/
+  no-service/repayment 保护边界；当前只授权 final rehearsal，不直接跑 formal。系统层另补 Daft
+  Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched comparison。
+  `single-head + shared FIFO` bridge 已完成：shared capacity 使 tok/s +25.96%
   但 fg P99 +99.17%；bounded-ready 在同 FIFO 下再使 tok/s +7.30%、fg P99 −33.62%，但
   fg SLO violation 仍约 39.7%。FIFO/DRR/VTC 为 Project 本地实现的标准算法 controls，不是
   Daft/Ray/vLLM 原生实现；reservation 仍后置。
@@ -132,9 +134,11 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    DRR/WFQ、VTC-style、strict-priority 与 proposed 双轮归因，以及 single-head shared FIFO→
    bounded-ready FIFO observation bridge 均已完成。proposed 是以约 4.8% 吞吐和约 5.2% bulk
    JCT 代价换更低 foreground tail 的观测非支配折中，不是 selector winner；固定顺序 n=2，
-   `formal_authorized=false`。下一步只做 Daft Native/Daft Ray/Ray Data/project frozen-static/
-   proposed 的同一 2-Job native-system matched comparison；原生 baseline 继续使用自身调度。
-   期间不事后补 selector margin，不扫 cap，不跑 selector formal、4-Job/reservation/dynamic K。
+   历史结果的 `formal_authorized=false` 不变。下一步先用新合同跑一次最终 Project mechanism
+   rehearsal，确认 completion fairness 与 debt repayment evidence；审核并登记 validation SHA 后
+   才能单独解锁 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
+   2-Job native-system matched comparison 独立推进，原生 baseline 继续使用自身调度。期间不扫
+   cap，不跑 4-Job/reservation/dynamic K。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。

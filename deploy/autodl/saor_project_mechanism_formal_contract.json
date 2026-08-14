@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "experiment_id": "saor_project_mechanism_formal",
+  "status": "locked_pending_rehearsal",
+  "formal_authorized": false,
+  "readiness_profile": "matched_ready_selector_ablation",
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
+  "comparison_scope": "project_internal_matched_observation",
+  "fairness_scope": "single_tenant_multi_job_differentiated_service",
+  "rehearsal_validation": null,
+  "decision_contract": {
+    "reference_scenario_id": "active_set_project_bounded_ready_vtc_style",
+    "reported_comparators": [
+      "active_set_project_bounded_ready_fifo",
+      "active_set_project_bounded_ready_drr",
+      "active_set_project_bounded_ready_vtc_style"
+    ],
+    "boundary_control": "active_set_project_bounded_ready_strict_priority",
+    "primary_rule": "any_headline_and_all_protected",
+    "headline_metrics": [
+      "foreground_p99_s",
+      "completion_service_lag_p95_work"
+    ],
+    "headline_relative_improvement_min": 0.05,
+    "require_each_repeat_headline_nonnegative": true,
+    "throughput_ratio_min": 0.95,
+    "bulk_jct_ratio_max": 1.05,
+    "bulk_slo_violation_delta_max": 0.05,
+    "foreground_slo_violation_max": 0.01,
+    "longest_no_service_ratio_max": 1.05,
+    "longest_no_service_absolute_max_s": 30.0,
+    "debt_repayment_p95_max_s": 30.0,
+    "debt_repayment_unresolved_max": 0,
+    "aggregation": "paired_by_repeat_arithmetic_mean",
+    "claim_language": "baseline-relative empirical constrained Pareto support"
+  }
+}

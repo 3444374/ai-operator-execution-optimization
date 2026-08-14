@@ -164,9 +164,26 @@ scenario ID 中的 `0125k/025k` 实际乘的是 endpoint work limit。本轮只�
 该目录保存 manifest、四份 group record、逐 Job request/submission/runs CSV、resource/credit/
 release-event trace；不与原 2026-08-13 两轮数据合并。
 
+本次回归的完整只读归档已经补做内容寻址：
+
+```text
+/root/autodl-tmp/experiment-artifacts/
+  saor_bounded_priority_rehearsal_15201946_regression_20260814.tar.gz
+size 1158038 bytes
+SHA256 ba8015c870e55899668d9cc35769395b7199b0b07c96e2904b57d064fce1796d
+```
+
+仓库内新增 `raw/regression_20260814/` compact evidence，包含原始 manifest、三个已追加的
+group rows、四份 group record、八份逐 Job summary 和四份 release-event ledger。最后一个
+$0.25W_e$ cell 按 fail-closed 语义未追加到 `group_runs.csv`，但其原始 record 已保留；逐请求与
+resource time series 留在上述内容寻址归档。本轮运行早于 completion/debt-repayment ledger
+扩展，因而不能用来声称经验 repayment bound，新的 Project mechanism rehearsal 必须重新产生
+该证据。
+
 ## 原始材料
 
 仓库内 compact evidence 位于 `raw/`：preflight/readiness、两轮 manifest/group runs、8 份 group
 record、fail-closed gate/mechanism summary、validation、artifact provenance 与
-`ready_set_gap_summary.csv`。逐请求/submission/resource/event 全量原始证据留在上述服务器归档；
+`ready_set_gap_summary.csv`，以及 `regression_20260814/` 的独立代码回归证据。逐请求/submission/
+resource/event 全量原始证据留在上述服务器归档；
 本报告的交叉验证数字由该归档复算。

@@ -781,6 +781,16 @@ finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向�
 reservation、4-Job 或图像；项目内部 matched-observation gate 通过后先完成 2-Job formal，再只选一个
 不调参 held-out（reverse/simultaneous arrival、on/off burst 或 prefix-rich）。
 
+2026-08-14 进一步把“完成 2-Job formal”拆成 fail-closed 两步。新的 Project mechanism 配置用
+位置平衡 seed，三次 formal 中每个 selector 占三个不同序位；evaluation contract 预先冻结
+VTC-style 主参照、foreground P99/empirical completion-lag 5% headline、throughput/bulk JCT/
+class SLO/longest-no-service non-inferiority。SAOR 必须从 lossless ledger 证明 recovery grant 对应的
+request 已完成，并观测 debt 从 `>=cap` 回到 `<cap`，报告 repayment P95 与 unresolved episode；
+这只是 completion-granularity empirical repayment，不是理论 bound。当前 contract 仍为
+`locked_pending_rehearsal/formal_authorized=false`，先用 final rehearsal 固定 validation SHA。
+frozen-static 因不经过 shared credit，其 registered-ready lag 是 N/A，只参加共同性能/SLO比较；
+不能伪造 credit lifecycle，也不能用该 N/A 误杀整张矩阵。
+
 #### 5.7.7 模式优先级矩阵
 
 ```

@@ -1,5 +1,20 @@
 # Learning Notes
 
+## 2026-08-14 为什么“recovery grant 出现过”还不等于债务已偿还
+
+一次 `debt_recovery` grant 只证明 selector 选中过欠服务 Job，不能证明该请求完成，更不能证明
+累计 debt 已回到 cap 以下。新的 lossless ledger 因此增加 `service_completion`，离线按 endpoint+
+request ID 配对 grant→completion，并把 debt 从 `>=cap` 到 `<cap` 定义为一个 empirical repayment
+episode。formal rehearsal 必须同时满足 completion≥1、unmatched grant=0、episode 全部完成、
+unresolved=0；P95 repayment 还要在冻结的 30s 边界内。这是请求完成粒度的经验指标，不是 decode-
+token 级的理论偿还上界。
+
+Project mechanism 的“实验有效”与“方法胜出”也分开：correctness、ready observation、公平与机制
+ledger 完整时，实验有效；只有 foreground P99/lag headline 和吞吐、bulk JCT、SLO、最长无服务、
+repayment 保护项同时通过，才支持当前 workload 下的 constrained-Pareto claim。门没过应报告
+valid negative，不能把它重新命名成坏实验。frozen-static 没有 registered-ready ledger，所以该
+公平指标为 N/A，但仍参加吞吐/JCT/P99/SLO 比较。
+
 ## 2026-08-13 为什么还要补 single-head shared FIFO
 
 当前 frozen-static 与 bounded-ready FIFO 之间同时变化了两件事：每个 Job 的固定分区变成共享
