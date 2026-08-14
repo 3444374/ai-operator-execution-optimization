@@ -135,7 +135,10 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    bounded-ready FIFO observation bridge 均已完成。proposed 是以约 4.8% 吞吐和约 5.2% bulk
    JCT 代价换更低 foreground tail 的观测非支配折中，不是 selector winner；固定顺序 n=2，
    历史结果的 `formal_authorized=false` 不变。下一步先用新合同跑一次最终 Project mechanism
-   rehearsal，确认 completion fairness 与 debt repayment evidence；审核并登记 validation SHA 后
+   rehearsal。首个 root 已证明单 recovery 在途不能形成 debt repayment 并 fail closed；修正为
+   residual-aware projected-debt work budget 后，须用全新 root 确认 completion fairness、离线
+   projection/overshoot 门及由显式 `finish_job` 区分的完整/censored repayment evidence；
+   审核并登记 validation SHA 后
    才能单独解锁 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
    2-Job native-system matched comparison 独立推进，原生 baseline 继续使用自身调度。期间不扫
    cap，不跑 4-Job/reservation/dynamic K。

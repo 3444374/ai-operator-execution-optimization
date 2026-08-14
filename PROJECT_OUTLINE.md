@@ -207,8 +207,13 @@ PostgreSQL source
   foreground P99 改善，是观测非支配折中而不是 selector 胜出；固定顺序 n=2 且未预注册
   selector non-inferiority margin，故历史结果保持 `formal_authorized=false`。现已另建位置平衡的
   Project mechanism 1+3 合同，冻结 VTC-style 为公平参照、5% headline、吞吐/bulk JCT/SLO/
-  longest-no-service 非劣与 30s empirical debt-repayment 门；wrapper 当前仍锁定 rehearsal，必须先
-  产生 completion→repayment 闭环证据并登记 validation SHA，不能直接跑 formal。并行的系统问题
+  longest-no-service 非劣与 30s empirical debt-repayment 门；首次最终 rehearsal 在 SAOR cell
+  发现单 recovery 在途无法赶上 debt 产生，10/10 recovery completion 仍留下 2 个未退出 episode，
+  已正确 fail closed。修正版使用 residual-aware projected-debt work budget，按活动集同时计入
+  全部 own active work 与 foreign residual，并由 schema 5 raw event 离线复算；wrapper 仍锁定
+  rehearsal，必须先用全新 root 产生至少一个 completion→repayment 闭环、只用显式 `finish_job`
+  单列 demand-terminated censored episode，并
+  登记 validation SHA，不能直接跑 formal。并行的系统问题
   仍需补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
   matched comparison；
   原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；

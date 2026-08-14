@@ -8,7 +8,20 @@ import csv
 import json
 import math
 import statistics
+import sys
 from pathlib import Path
+
+CODE_ROOT = next(
+    parent
+    for parent in Path(__file__).resolve().parents
+    if (parent / "src").is_dir()
+)
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.experiments.shared_vllm.metrics import (  # noqa: E402
+    bounded_saor_event_summary,
+)
 
 
 EXPECTED = {
@@ -67,45 +80,44 @@ def _truth(value: object) -> bool:
     return str(value).strip().lower() in {"1", "true"}
 
 
-def _event_summary(events: list[dict[str, str]]) -> dict[str, int | bool]:
-    sequences: dict[str, list[int]] = {}
-    recovery_max = 0
-    for event in events:
-        sequences.setdefault(event["endpoint_id"], []).append(
-            int(event["event_seq"])
-        )
-        recovery_max = max(
-            recovery_max,
-            len(json.loads(event.get("recovery_inflight_by_job", "[]"))),
-        )
-    complete = bool(events) and all(
-        sequence == list(range(1, len(sequence) + 1))
-        for sequence in sequences.values()
-    )
+def _event_summary(events: list[dict[str, str]]) -> dict[str, object]:
+    summary = bounded_saor_event_summary(events)
+    versions = {
+        int(event.get("schema_version", "0") or 0)
+        for event in events
+    }
+    projection_required = any(version >= 5 for version in versions)
     return {
-        "event_sequence_complete": complete,
+        "event_sequence_complete": summary[
+            "bounded_saor_event_sequence_complete"
+        ],
         "event_count": len(events),
-        "slo_priority_grants": sum(
-            event.get("action") == "grant"
-            and event.get("tier") == "slo_priority"
-            for event in events
-        ),
-        "debt_recovery_grants": sum(
-            event.get("action") == "grant"
-            and event.get("tier") == "debt_recovery"
-            for event in events
-        ),
-        "constraint_conflicts": sum(
-            _truth(event.get("constraint_conflict")) for event in events
-        ),
-        "recovery_inflight_max": recovery_max,
-        "avoidable_idle_events": sum(
-            _truth(event.get("avoidable_idle")) for event in events
-        ),
-        "foreign_grant_events": sum(
-            _truth(event.get("foreign_grant_over_debt_critical"))
-            for event in events
-        ),
+        "slo_priority_grants": summary["bounded_saor_slo_priority_grants"],
+        "debt_recovery_grants": summary["bounded_saor_debt_recovery_grants"],
+        "constraint_conflicts": summary["bounded_saor_constraint_conflicts"],
+        "recovery_inflight_requests_max": summary[
+            "bounded_saor_recovery_inflight_max"
+        ],
+        "recovery_inflight_work_max": summary[
+            "bounded_saor_recovery_inflight_work_max"
+        ],
+        "projection_required": projection_required,
+        "projection_status": summary["bounded_saor_projection_status"],
+        "projection_violation_events": summary[
+            "bounded_saor_projection_violation_events"
+        ],
+        "recovery_estimation_overrun_events": summary[
+            "bounded_saor_recovery_estimation_overrun_events"
+        ],
+        "projection_estimation_overrun_events": summary[
+            "bounded_saor_projection_estimation_overrun_events"
+        ],
+        "avoidable_idle_events": summary[
+            "bounded_saor_avoidable_idle_events"
+        ],
+        "foreign_grant_events": summary[
+            "bounded_saor_foreign_grant_over_debt_critical_events"
+        ],
     }
 
 
@@ -210,7 +222,23 @@ def summarize(
                     and mechanism["debt_recovery_grants"] >= 1
                     and mechanism["avoidable_idle_events"] == 0
                     and mechanism["foreign_grant_events"] == 0
-                    and mechanism["recovery_inflight_max"] <= 1
+                    and (
+                        not mechanism["projection_required"]
+                        or (
+                            mechanism["projection_status"]
+                            == "ok:offline_recomputed"
+                            and mechanism["projection_violation_events"] == 0
+                            and mechanism["recovery_inflight_work_max"] > 0
+                            and mechanism[
+                                "projection_estimation_overrun_events"
+                            ]
+                            == 0
+                            and mechanism[
+                                "recovery_estimation_overrun_events"
+                            ]
+                            == 0
+                        )
+                    )
                 )
                 if policy == "saor_bounded_ready":
                     ready_join_passed = bool(

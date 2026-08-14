@@ -68,6 +68,9 @@ def _write(path: Path, rows: list[dict[str, object]]) -> None:
 def _cell_metrics(
     root: Path,
     row: dict[str, str],
+    *,
+    expected_phase: str = "formal",
+    expected_execution_mode: str = "configured_matrix",
 ) -> tuple[dict[str, object], list[str]]:
     scenario_id = row["scenario_id"]
     expected_policy, observation_contract = EXPECTED_SCENARIOS[scenario_id]
@@ -85,8 +88,8 @@ def _cell_metrics(
     correctness = bool(
         row.get("policy") == expected_policy
         and row.get("ready_observation_contract") == observation_contract
-        and row.get("phase") == "formal"
-        and row.get("execution_mode") == "configured_matrix"
+        and row.get("phase") == expected_phase
+        and row.get("execution_mode") == expected_execution_mode
         and int(row.get("incidents", "-1")) == 0
         and int(row.get("actor_worker_failures", "-1")) == 0
         and row.get("metrics_status") == "ok"
@@ -128,10 +131,50 @@ def _cell_metrics(
             and int(row.get("bounded_saor_unmatched_recovery_grants", "-1"))
             == 0
             and int(row.get("bounded_saor_debt_repayment_episodes", "0")) >= 1
+            and int(row.get("bounded_saor_debt_repayment_completed", "0")) >= 1
             and int(row.get("bounded_saor_debt_repayment_completed", "0"))
+            + int(
+                row.get(
+                    "bounded_saor_debt_repayment_censored_no_demand",
+                    "0",
+                )
+            )
             == int(row.get("bounded_saor_debt_repayment_episodes", "-1"))
             and int(row.get("bounded_saor_debt_repayment_unresolved", "-1"))
             == 0
+            and row.get("bounded_saor_projection_status")
+            == "ok:offline_recomputed"
+            and int(row.get("bounded_saor_projection_checked_events", "0"))
+            >= 1
+            and int(row.get("bounded_saor_projection_checked_events", "-1"))
+            == int(row.get("bounded_saor_projection_expected_events", "-2"))
+            and int(row.get("bounded_saor_projection_violation_events", "-1"))
+            == 0
+            and int(
+                row.get(
+                    "bounded_saor_projected_overshoot_bound_violation_events",
+                    "-1",
+                )
+            )
+            == 0
+            and int(
+                row.get(
+                    "bounded_saor_projection_estimation_overrun_events",
+                    "-1",
+                )
+            )
+            == 0
+            and int(
+                row.get(
+                    "bounded_saor_recovery_estimation_overrun_events",
+                    "-1",
+                )
+            )
+            == 0
+            and float(
+                row.get("bounded_saor_recovery_inflight_work_max", "0")
+            )
+            > 0
             and int(row.get("bounded_saor_avoidable_idle_events", "-1")) == 0
             and int(
                 row.get(
@@ -140,7 +183,6 @@ def _cell_metrics(
                 )
             )
             == 0
-            and int(row.get("bounded_saor_recovery_inflight_max", "2")) <= 1
             and int(row.get("bounded_ready_foreign_fallback_events", "-1"))
             == 0
             and row.get("active_set_post_drain_status")
@@ -196,6 +238,67 @@ def _cell_metrics(
         ),
         "bounded_saor_debt_repayment_unresolved": int(
             row.get("bounded_saor_debt_repayment_unresolved", "0") or 0
+        ),
+        "bounded_saor_debt_repayment_completed": int(
+            row.get("bounded_saor_debt_repayment_completed", "0") or 0
+        ),
+        "bounded_saor_debt_repayment_censored_no_demand": int(
+            row.get(
+                "bounded_saor_debt_repayment_censored_no_demand",
+                "0",
+            )
+            or 0
+        ),
+        "bounded_saor_recovery_inflight_work_max": float(
+            row.get("bounded_saor_recovery_inflight_work_max", "0") or 0
+        ),
+        "bounded_saor_recovery_inflight_work_at_repayment_max": float(
+            row.get(
+                "bounded_saor_recovery_inflight_work_at_repayment_max",
+                "0",
+            )
+            or 0
+        ),
+        "bounded_saor_debt_repayment_overshoot_work_max": float(
+            row.get(
+                "bounded_saor_debt_repayment_overshoot_work_max",
+                "0",
+            )
+            or 0
+        ),
+        "bounded_saor_projected_overshoot_work_max": float(
+            row.get("bounded_saor_projected_overshoot_work_max", "0") or 0
+        ),
+        "bounded_saor_projected_overshoot_bound_max": float(
+            row.get(
+                "bounded_saor_projected_overshoot_bound_max",
+                "0",
+            )
+            or 0
+        ),
+        "bounded_saor_projection_violation_events": int(
+            row.get("bounded_saor_projection_violation_events", "0") or 0
+        ),
+        "bounded_saor_projected_overshoot_bound_violation_events": int(
+            row.get(
+                "bounded_saor_projected_overshoot_bound_violation_events",
+                "0",
+            )
+            or 0
+        ),
+        "bounded_saor_recovery_estimation_overrun_events": int(
+            row.get(
+                "bounded_saor_recovery_estimation_overrun_events",
+                "0",
+            )
+            or 0
+        ),
+        "bounded_saor_projection_estimation_overrun_events": int(
+            row.get(
+                "bounded_saor_projection_estimation_overrun_events",
+                "0",
+            )
+            or 0
         ),
     }
     return metrics, errors
@@ -307,6 +410,30 @@ def evaluate_decision(
             for row in proposed
         )
         <= int(decision["debt_repayment_unresolved_max"]),
+        "debt_repayment_observed": min(
+            int(row["bounded_saor_debt_repayment_completed"])
+            for row in proposed
+        )
+        >= int(decision["debt_repayment_completed_min"]),
+        "projection_recomputed_without_violation": max(
+            int(row["bounded_saor_projection_violation_events"])
+            for row in proposed
+        )
+        == 0,
+        "discrete_overshoot_bound_satisfied": max(
+            int(
+                row[
+                    "bounded_saor_projected_overshoot_bound_violation_events"
+                ]
+            )
+            for row in proposed
+        )
+        == 0,
+        "projection_estimate_upper_bound_satisfied": max(
+            int(row["bounded_saor_projection_estimation_overrun_events"])
+            for row in proposed
+        )
+        == 0,
     }
 
     mean_rows = {
@@ -400,6 +527,122 @@ def _arm_summary(metrics: list[dict[str, object]]) -> list[dict[str, object]]:
             )
         rows.append(summary)
     return rows
+
+
+def rehearsal_safety(
+    proposed: dict[str, object],
+    decision: dict[str, object],
+) -> dict[str, bool]:
+    """Apply frozen absolute safety gates without ranking rehearsal arms."""
+
+    return {
+        "foreground_slo_satisfied": float(
+            proposed["foreground_slo_violation"]
+        )
+        <= float(decision["foreground_slo_violation_max"]),
+        "longest_no_service_absolute": float(
+            proposed["completion_longest_no_service_s"]
+        )
+        <= float(decision["longest_no_service_absolute_max_s"]),
+        "debt_repayment_bounded_empirically": float(
+            proposed["bounded_saor_debt_repayment_p95_s"]
+        )
+        <= float(decision["debt_repayment_p95_max_s"]),
+        "debt_repayment_resolved": int(
+            proposed["bounded_saor_debt_repayment_unresolved"]
+        )
+        <= int(decision["debt_repayment_unresolved_max"]),
+        "debt_repayment_observed": int(
+            proposed["bounded_saor_debt_repayment_completed"]
+        )
+        >= int(decision["debt_repayment_completed_min"]),
+        "projection_recomputed_without_violation": int(
+            proposed["bounded_saor_projection_violation_events"]
+        )
+        == 0,
+        "projection_estimate_upper_bound_satisfied": int(
+            proposed["bounded_saor_projection_estimation_overrun_events"]
+        )
+        == 0,
+    }
+
+
+def validate_rehearsal_root(
+    root: Path,
+    contract_path: Path,
+) -> dict[str, object]:
+    """Validate one six-arm rehearsal without making a performance claim."""
+
+    errors: list[str] = []
+    contract = load_contract(contract_path)
+    try:
+        snapshot = json.loads(
+            (root / "project_mechanism_contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        manifest = json.loads(
+            (root / "manifest.json").read_text(encoding="utf-8")
+        )
+        rows = read_csv(root / "group_runs.csv")
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"rehearsal evidence is unreadable: {exc}") from exc
+    if snapshot.get("contract_sha256") != sha256_file(contract_path):
+        errors.append("rehearsal contract snapshot does not match input contract")
+    if snapshot.get("contract") != contract:
+        errors.append("rehearsal contract payload drifted")
+    if snapshot.get("readiness", {}).get("status") != "passed":
+        errors.append("rehearsal lacks a passed readiness snapshot")
+    if (
+        manifest.get("status") != "completed"
+        or manifest.get("execution_mode") != "rehearsal"
+        or manifest.get("incidents")
+    ):
+        errors.append("rehearsal manifest is incomplete or incident-bearing")
+    if len(rows) != len(EXPECTED_SCENARIOS):
+        errors.append("rehearsal must contain exactly one cell per frozen arm")
+    if {row.get("scenario_id") for row in rows} != set(EXPECTED_SCENARIOS):
+        errors.append("rehearsal does not contain the frozen six-arm set")
+    metrics: list[dict[str, object]] = []
+    for row in rows:
+        scenario_id = row.get("scenario_id", "")
+        if scenario_id not in EXPECTED_SCENARIOS:
+            continue
+        cell, cell_errors = _cell_metrics(
+            root,
+            row,
+            expected_phase="warmup",
+            expected_execution_mode="rehearsal",
+        )
+        metrics.append(cell)
+        errors.extend(cell_errors)
+    proposed = next(
+        (row for row in metrics if row["scenario_id"] == PROPOSED),
+        None,
+    )
+    decision = contract.get("decision_contract")
+    safety: dict[str, bool] = {}
+    if proposed is None or not isinstance(decision, dict):
+        errors.append("rehearsal lacks proposed metrics or decision contract")
+    else:
+        safety = rehearsal_safety(proposed, decision)
+        if not all(safety.values()):
+            errors.append("rehearsal proposed arm failed a frozen absolute gate")
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "status": "passed" if not errors else "failed",
+        "formal_authorized": False,
+        "performance_ranking_decided": False,
+        "absolute_safety_gates": safety,
+        "errors": errors,
+    }
+    (root / "rehearsal_validation.json").write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    if errors:
+        raise ValueError("; ".join(errors))
+    return payload
 
 
 def summarize(

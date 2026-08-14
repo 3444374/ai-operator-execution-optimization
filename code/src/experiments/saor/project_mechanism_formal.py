@@ -137,6 +137,30 @@ def validate_contract(
                 )
         if decision.get("require_each_repeat_headline_nonnegative") is not True:
             errors.append("headline direction must hold in every formal repeat")
+        if decision.get("debt_repayment_completed_min") != 1:
+            errors.append("formal requires at least one completed repayment episode")
+        if (
+            decision.get("debt_repayment_censored_policy")
+            != "explicit_finish_job_after_source_exhausted_and_credit_drained"
+        ):
+            errors.append("debt repayment censoring policy drifted")
+        if (
+            decision.get("recovery_projection")
+            != "raw_plus_weighted_foreign_residual_minus_weighted_all_own_inflight"
+        ):
+            errors.append("debt recovery projection contract drifted")
+        if (
+            decision.get("projection_work_estimate_upper_bound_required")
+            is not True
+        ):
+            errors.append("formal requires projection-work estimate upper bounds")
+        if decision.get("projection_offline_recompute_required") is not True:
+            errors.append("formal requires independent projection recomputation")
+        if (
+            decision.get("discrete_overshoot_bound")
+            != "(1-phi_i)*candidate_estimated_work"
+        ):
+            errors.append("discrete recovery overshoot bound drifted")
 
     authorized = payload.get("formal_authorized") is True
     if authorized:

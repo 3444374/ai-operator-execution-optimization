@@ -12,6 +12,8 @@ from .saor import (
     SaorBoundedHeadState,
     SaorReleaseConfig,
     SaorReleaseState,
+    bounded_saor_recovery_required,
+    project_bounded_saor_debt,
     select_bounded_saor_release,
     select_saor_release_job,
 )
@@ -60,7 +62,20 @@ class SaorReleaseEvent:
     fitting_jobs: tuple[str, ...] = ()
     debt_by_job: tuple[tuple[str, float], ...] = ()
     debt_cap_by_job: tuple[tuple[str, float], ...] = ()
-    recovery_inflight_by_job: tuple[tuple[str, str], ...] = ()
+    active_set_jobs: tuple[str, ...] = ()
+    active_set_weight_sum: float = 0.0
+    weight_by_job: tuple[tuple[str, float], ...] = ()
+    projection_own_inflight_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_foreign_residual_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_candidate_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_target_share_by_job: tuple[tuple[str, float], ...] = ()
+    projected_debt_before_by_job: tuple[tuple[str, float], ...] = ()
+    projected_debt_after_by_job: tuple[tuple[str, float], ...] = ()
+    projected_overshoot_bound_by_job: tuple[tuple[str, float], ...] = ()
+    recovery_inflight_by_job: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    recovery_inflight_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_estimation_overrun_work: int = 0
+    recovery_estimation_overrun_work: int = 0
     active_requests: int = 0
     active_work: int = 0
     avoidable_idle: bool = False
@@ -98,7 +113,8 @@ class EndpointCreditSnapshot:
     granted_work_by_job: tuple[tuple[str, int], ...]
     attained_service_by_job: tuple[tuple[str, int], ...]
     fairness_debt_by_job: tuple[tuple[str, float], ...]
-    recovery_inflight_by_job: tuple[tuple[str, str], ...] = ()
+    recovery_inflight_by_job: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    recovery_inflight_work_by_job: tuple[tuple[str, int], ...] = ()
     guard_hold_target_job_id: str = ""
     guard_hold_target_request_id: str = ""
     guard_reclaim_debt: int = 0
@@ -214,7 +230,7 @@ class FairEndpointCreditCoordinator:
         self._saor_slo_target_s: dict[str, float] = {}
         self._priority_windows_s: dict[str, float] = {}
         self._fairness_debt_caps: dict[str, float] = {}
-        self._recovery_inflight: dict[str, dict[str, str]] = {
+        self._recovery_inflight: dict[str, dict[str, dict[str, int]]] = {
             endpoint_id: {} for endpoint_id in capacities
         }
         self._guard_holds: dict[str, _GuardHold | None] = {
@@ -425,20 +441,25 @@ class FairEndpointCreditCoordinator:
                 counters[job_id] = counters.get(job_id, 0) + (
                     actual_work - lease.estimated_work
                 )
+        recovery_estimated_work = 0
         if self._policy in {
             "saor",
             "saor_bounded_priority",
             "saor_bounded_ready",
         }:
             recovery = self._recovery_inflight[endpoint_id]
-            if recovery.get(job_id) == request_id:
-                del recovery[job_id]
+            recovery_requests = recovery.get(job_id)
+            if recovery_requests is not None:
+                recovery_estimated_work = recovery_requests.pop(request_id, 0)
+                if not recovery_requests:
+                    del recovery[job_id]
+            completed_work = (
+                lease.estimated_work if actual_work is None else actual_work
+            )
             self._update_saor_fairness_debt(
                 endpoint_id,
                 completed_job_id=job_id,
-                completed_work=(
-                    lease.estimated_work if actual_work is None else actual_work
-                ),
+                completed_work=completed_work,
             )
             if self._policy in {
                 "saor_bounded_priority",
@@ -453,6 +474,16 @@ class FairEndpointCreditCoordinator:
                         endpoint_id,
                         include_job_ids=(job_id,),
                     ),
+                    projection_estimation_overrun_work=max(
+                        0,
+                        completed_work - lease.estimated_work,
+                    ),
+                    recovery_estimation_overrun_work=max(
+                        0,
+                        completed_work - recovery_estimated_work,
+                    )
+                    if recovery_estimated_work
+                    else 0,
                 )
         self._grant_waiters(endpoint_id)
 
@@ -466,6 +497,18 @@ class FairEndpointCreditCoordinator:
         )
         if has_active or has_waiting:
             raise ValueError("cannot finish a job with outstanding credit")
+        if self._policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+            for endpoint_id in self._capacities:
+                self._record_release_event(
+                    endpoint_id,
+                    action="finish_job",
+                    tier="job_lifecycle_complete",
+                    event_job_id=job_id,
+                    states=self._bounded_saor_states(
+                        endpoint_id,
+                        include_job_ids=(job_id,),
+                    ),
+                )
         self._finished_jobs.add(job_id)
         for endpoint_id in self._capacities:
             self._grant_waiters(endpoint_id)
@@ -547,7 +590,18 @@ class FairEndpointCreditCoordinator:
                 sorted(self._fairness_debt[endpoint_id].items())
             ),
             recovery_inflight_by_job=tuple(
-                sorted(self._recovery_inflight[endpoint_id].items())
+                (job_id, tuple(sorted(request_work)))
+                for job_id, request_work in sorted(
+                    self._recovery_inflight[endpoint_id].items()
+                )
+                if request_work
+            ),
+            recovery_inflight_work_by_job=tuple(
+                (job_id, sum(request_work.values()))
+                for job_id, request_work in sorted(
+                    self._recovery_inflight[endpoint_id].items()
+                )
+                if request_work
             ),
             guard_hold_target_job_id=(
                 self._guard_holds[endpoint_id].target_job_id
@@ -883,10 +937,7 @@ class FairEndpointCreditCoordinator:
             if not states:
                 return
             has_critical = any(
-                state.ready
-                and state.debt_cap is not None
-                and state.release.fairness_debt >= state.debt_cap
-                and not state.recovery_inflight
+                bounded_saor_recovery_required(state, states)
                 for state in states
             )
             if not any(state.release.eligible for state in states) and not has_critical:
@@ -922,7 +973,10 @@ class FairEndpointCreditCoordinator:
             lease = self._waiting[endpoint_id][job_id].popleft()
             self._queued_request_keys.remove((lease.job_id, lease.request_id))
             if selected.tier == "debt_recovery":
-                self._recovery_inflight[endpoint_id][job_id] = lease.request_id
+                self._recovery_inflight[endpoint_id].setdefault(
+                    job_id,
+                    {},
+                )[lease.request_id] = lease.estimated_work
             self._activate(endpoint_id, lease)
             self._record_release_event(
                 endpoint_id,
@@ -958,10 +1012,27 @@ class FairEndpointCreditCoordinator:
             )
             return False
         states = self._bounded_saor_states(endpoint_id)
+        held_state = next(
+            (
+                state
+                for state in states
+                if state.release.job_id == hold.target_job_id
+            ),
+            None,
+        )
+        if held_state is None or not bounded_saor_recovery_required(
+            held_state,
+            states,
+        ):
+            self._close_guard_hold(endpoint_id, hold, states=states)
+            return False
         self._close_guard_hold(endpoint_id, hold, states=states)
         queue.popleft()
         self._queued_request_keys.remove((lease.job_id, lease.request_id))
-        self._recovery_inflight[endpoint_id][lease.job_id] = lease.request_id
+        self._recovery_inflight[endpoint_id].setdefault(
+            lease.job_id,
+            {},
+        )[lease.request_id] = lease.estimated_work
         self._activate(endpoint_id, lease)
         self._record_release_event(
             endpoint_id,
@@ -1057,6 +1128,11 @@ class FairEndpointCreditCoordinator:
                     recovery_inflight=(
                         job_id in self._recovery_inflight[endpoint_id]
                     ),
+                    recovery_inflight_work=sum(
+                        self._recovery_inflight[endpoint_id]
+                        .get(job_id, {})
+                        .values()
+                    ),
                 )
             )
         return tuple(states)
@@ -1070,16 +1146,20 @@ class FairEndpointCreditCoordinator:
         states: tuple[SaorBoundedHeadState, ...],
         lease: CreditLease | None = None,
         target: _GuardHold | None = None,
+        event_job_id: str = "",
         constraint_conflict: bool = False,
         hold_duration_s: float = 0.0,
+        projection_estimation_overrun_work: int = 0,
+        recovery_estimation_overrun_work: int = 0,
     ) -> None:
+        projections = {
+            state.release.job_id: project_bounded_saor_debt(state, states)
+            for state in states
+        }
         debt_critical = {
             state.release.job_id
             for state in states
-            if state.ready
-            and state.debt_cap is not None
-            and state.release.fairness_debt >= state.debt_cap
-            and not state.recovery_inflight
+            if bounded_saor_recovery_required(state, states)
         }
         target_is_concrete = (
             target is not None
@@ -1102,7 +1182,9 @@ class FairEndpointCreditCoordinator:
                 action=action,
                 tier=tier,
                 selected_job_id=(
-                    selected_lease.job_id if selected_lease is not None else ""
+                    selected_lease.job_id
+                    if selected_lease is not None
+                    else event_job_id
                 ),
                 selected_request_id=(
                     selected_lease.request_id
@@ -1142,8 +1224,66 @@ class FairEndpointCreditCoordinator:
                         if state.debt_cap is not None
                     )
                 ),
+                active_set_jobs=tuple(
+                    state.release.job_id for state in states
+                ),
+                active_set_weight_sum=sum(
+                    state.release.weight for state in states
+                ),
+                weight_by_job=tuple(
+                    (state.release.job_id, state.release.weight)
+                    for state in states
+                ),
+                projection_own_inflight_work_by_job=tuple(
+                    (state.release.job_id, state.release.active_work)
+                    for state in states
+                ),
+                projection_foreign_residual_work_by_job=tuple(
+                    (
+                        job_id,
+                        projection.foreign_residual_work,
+                    )
+                    for job_id, projection in projections.items()
+                ),
+                projection_candidate_work_by_job=tuple(
+                    (state.release.job_id, state.head_work)
+                    for state in states
+                ),
+                projection_target_share_by_job=tuple(
+                    (job_id, projection.target_share)
+                    for job_id, projection in projections.items()
+                ),
+                projected_debt_before_by_job=tuple(
+                    (job_id, projection.debt_before_candidate)
+                    for job_id, projection in projections.items()
+                ),
+                projected_debt_after_by_job=tuple(
+                    (job_id, projection.debt_after_candidate)
+                    for job_id, projection in projections.items()
+                ),
+                projected_overshoot_bound_by_job=tuple(
+                    (job_id, projection.discrete_overshoot_bound)
+                    for job_id, projection in projections.items()
+                ),
                 recovery_inflight_by_job=tuple(
-                    sorted(self._recovery_inflight[endpoint_id].items())
+                    (job_id, tuple(sorted(request_work)))
+                    for job_id, request_work in sorted(
+                        self._recovery_inflight[endpoint_id].items()
+                    )
+                    if request_work
+                ),
+                recovery_estimation_overrun_work=(
+                    recovery_estimation_overrun_work
+                ),
+                projection_estimation_overrun_work=(
+                    projection_estimation_overrun_work
+                ),
+                recovery_inflight_work_by_job=tuple(
+                    (job_id, sum(request_work.values()))
+                    for job_id, request_work in sorted(
+                        self._recovery_inflight[endpoint_id].items()
+                    )
+                    if request_work
                 ),
                 active_requests=self._active_requests[endpoint_id],
                 active_work=self._active_work[endpoint_id],

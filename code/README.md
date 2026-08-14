@@ -670,6 +670,9 @@ Daft/Ray Data 观察臂。两个 endpoint shard 共享显式进程 wall deadline
 survivor、保存 job evidence 并 fail closed；HTTP 单 request timeout 不替代该生命周期门。
 项目 static/shared 因果 A/B 仍由
 `src/experiments/shared_vllm/` 执行。
+其中 `saor_projection_evidence.py` 是 selector-neutral 的离线证据边界：只从 schema-5 raw
+event 的 debt、active set、weights、own/foreign/candidate work 重算 projected debt 和离散
+overshoot bound，不调用在线 SAOR selector，避免实现与验证共享同一个公式错误。
 
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
 token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验

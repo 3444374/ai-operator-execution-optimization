@@ -31,7 +31,13 @@
     "longest_no_service_ratio_max": 1.05,
     "longest_no_service_absolute_max_s": 30.0,
     "debt_repayment_p95_max_s": 30.0,
+    "debt_repayment_completed_min": 1,
     "debt_repayment_unresolved_max": 0,
+    "debt_repayment_censored_policy": "explicit_finish_job_after_source_exhausted_and_credit_drained",
+    "recovery_projection": "raw_plus_weighted_foreign_residual_minus_weighted_all_own_inflight",
+    "projection_work_estimate_upper_bound_required": true,
+    "projection_offline_recompute_required": true,
+    "discrete_overshoot_bound": "(1-phi_i)*candidate_estimated_work",
     "aggregation": "paired_by_repeat_arithmetic_mean",
     "claim_language": "baseline-relative empirical constrained Pareto support"
   }

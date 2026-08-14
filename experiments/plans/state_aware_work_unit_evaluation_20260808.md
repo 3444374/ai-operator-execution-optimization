@@ -354,8 +354,8 @@ reservation。
 | 层级 | 动作 | 不能被什么覆盖 |
 |---:|---|---|
 | 0 | correctness、lifecycle、freshness、request/work fit | 任意吞吐、优先级或公平 score |
-| 1a | $F_j\ge H_j$ 且无 recovery lease 在途时，先选 fitting 的最大 $F_j/H_j$；每 Job 至多一个 recovery lease；发出后立即恢复普通选择 | 避免 completion 校正前过量 recovery，也不为 recovery request 整段执行时间保留全局空槽 |
-| 1b | debt-critical ready head 暂时不 fit 时，只针对该确定 head 建立 `guard_reclaim_hold`，直到 $D_e^{reclaim}=\max\{0,\overline W_i^{resource}-(K_e^{work}-R_e^{active})\}=0$ | 防止 foreground 小请求反复填充碎片；能 fit 后立即只发一个 recovery lease，不等待整份 quota |
+| 1a | 对每个 ready head 重算 $\widehat F_j^+=F_j+\phi_jV_{-j}-(1-\phi_j)U_j$；若 $\widehat F_j^+\ge H_j$，先选 projected-debt ratio 最大的 fitting head，并把候选 work 立即加入 own in-flight commitment | 同时计入 critical 前普通 own work、recovery work 与不可抢占 foreign residual；按 work budget 停止追加，不按 request 个数限流 |
+| 1b | projected-debt-critical ready head 暂时不 fit 时，只针对该确定 head 建立 `guard_reclaim_hold`，直到 $D_e^{reclaim}=\max\{0,\overline W_i^{resource}-(K_e^{work}-R_e^{active})\}=0$；resume 前重新检查 projection | 防止 foreground 小请求反复填充碎片；活动集或在途 work 变化后不再 critical 时立即撤销 hold |
 | 2 | 否则选已进入 priority window 的最高 $p_j$；同级按最少剩余 SLO 预算 | SAOR 普通 entitlement score |
 | 3 | 无 guard/priority 触发时回退现有 SAOR selector | 只处理剩余普通共享机会 |
 | 4 | 普通高优先级 Job 当前无 fitting head 时，继续选择其他 fitting head | 禁止 strict-priority 的 avoidable idle；不覆盖 1b 的硬 guard reclaim |
@@ -398,7 +398,7 @@ debt units。配置字段的 fraction 乘 `work_limit`，不是 request K；历�
 | foreground | P99≤30.7s，SLO violation≤1% |
 | efficiency | tokens/s≥9,984，即相对 static 9,508 至少约 +5% |
 | bulk protection | SLO violation≤0.723；slowdown 只作诊断，不作硬门 |
-| mechanism | `avoidable_idle=0`；guard hold 的 count/total/P95/max 与 reclaim debt 单列；priority/debt tier 均实际触发；每 Job recovery lease≤1；debt-critical fitting head 被 foreign grant 越过次数=0 |
+| mechanism | `avoidable_idle=0`；guard hold 的 count/total/P95/max 与 reclaim debt 单列；priority/debt tier 均实际触发；projected-debt-critical 决策点 foreign grant=0；own/foreign work projection、pre-grant own + candidate = post-grant active-work 守恒、并发 recovery work 与 grant→completion 完整可审计 |
 | stability/结论 | 两个短 repeat 方向一致；只决定是否值得注册 formal，不发布 winner claim |
 
 若两个 cap 均不能同时通过 foreground、bulk 和 efficiency 门，则停止密集扫描 cap/权重并审计
@@ -1070,7 +1070,13 @@ strict-priority 与 proposed $0.125W_e$。static 的 registered-ready completion
 service-lag P95 至少一个改善 5%，且该 headline 每次 repeat 方向不反转。同时全部满足：
 throughput ratio≥0.95、bulk JCT ratio≤1.05、bulk SLO violation delta≤0.05、foreground SLO
 violation≤0.01、longest no-service ratio≤1.05 且绝对值≤30s。proposed 还必须出现 recovery grant、
-对应 request completion、debt-critical episode 完整退出，repayment P95≤30s、unresolved=0。
+对应 request completion和至少一个 debt-critical episode 完整退出，repayment P95≤30s、
+unresolved=0；只有 scheduler 在 source exhausted 且该 Job 的 ready/waiting/active/recovery 全空
+后发出的显式 `finish_job`，才能把仍 critical 的 episode 记为 right-censored。瞬时 ready 空窗不能
+censor，censored 不进入 repayment P95，也不能替代至少一个完整 episode。event schema 5 保存
+raw active-set/weight/own/foreign/candidate 字段与 runtime projection；离线必须独立重算且
+violation=0，fixed-output-cap 下所有 projection work 的 actual 不得超过 estimate，最后一个不可拆请求的
+projected overshoot 不得超过 $(1-\phi_i)c_{max}$。
 work conservation 不只依赖 `avoidable_idle=0`：若 drain 窗口达到 trace resolution，还必须用
 endpoint head-fit/active/waiting trace 证明剩余 Job 没有“队首可装下却仍等待”的样本；低于采样
 分辨率时明确 N/A，不伪造 pass。
@@ -1079,8 +1085,12 @@ FIFO/DRR/VTC-style 的均值向量另做 empirical nondominance 审计；strict-
 
 runner 把证据有效性与性能 claim 分离：1+3、correctness、observation、fairness/mechanism ledger
 完整时实验可以是 valid；若任何 effect/non-inferiority 不过，则结论是“valid negative”，不能把它
-改写成运行无效。当前合同状态为 `locked_pending_rehearsal/formal_authorized=false`；先在服务器
-运行最终 wrapper rehearsal，审核后登记 validation SHA，另一个提交才能解锁 formal。native-
+改写成运行无效。当前合同状态为 `locked_pending_rehearsal/formal_authorized=false`。首个最终
+wrapper rehearsal 在最后 SAOR cell 正确 fail closed：10/10 recovery grant/completion，但 0/2
+debt episode 完整退出，暴露“每 Job 单 recovery lease”无法保证 repayment 的一般性反例。修复
+不是无界 critical drain，而是 residual-aware projected-debt work budget：计入所有 own active work
+与 foreign residual，并注册离散 overshoot bound。必须用全新 root 重跑并审核后登记 validation
+SHA，另一个提交才能解锁 formal。native-
 system matched comparison 继续作为完整系统层证据，不能替代该机制主命题，也不与内部 selector
 表混排。
 
@@ -1270,7 +1280,7 @@ runtime 使用 shared credit，replay batching 使用 flush policy，通用执�
 事件级账本消除 250 ms sampling 对 release 机制判定的假阴性。
 
 **Architecture:** 纯函数只对一组 Job-head state 做词典序选择；engine-independent shared-credit
-coordinator 持有 completion-corrected debt、单 recovery lease 与 hold episode；scheduler 只把
+coordinator 持有 completion-corrected debt、per-Job recovery request set 与 hold episode；scheduler 只把
 request arrival epoch 转成剩余 SLO 预算；Ray/client、profiler 和 shared-vLLM runner 只做 typed
 transport、配置与证据落盘。首轮 workload 保持 2 Job，通用接口不从 Job 名称、到达次序或
 `foreground` 字符串推断业务语义。
@@ -1287,8 +1297,10 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 | 7 | ✅ 完成并推送 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖；commit `8600044` |
 | 8 | ✅ 双轮 GPU gate 完成、未晋级 | single-head bounded-priority 两 cap 均未过 foreground 门；$0.25W_e$ 第 2 轮机制门 fail-closed，定位为 ready-backlog observation gap；未启动 formal |
 | 9 | ✅ bounded-ready 修订与双轮 gate 完成 | $0.125W_e$ 通过开发门，$0.25W_e$ 被 bulk guard 拒绝；后续同窗口 selector attribution 与 FIFO observation bridge 也已完成，SAOR 是观测非支配折中，不是 selector winner |
+| 10 | 🟡 final rehearsal 反例已修、待全新 root 重跑 | 单 recovery 在途产生 10/10 completion 仍留下 2 个 unresolved episode；改为 residual-aware projected-debt work budget、显式 finish lifecycle、离线投影复算与 completed/censored/unresolved ledger，formal 继续锁定 |
 
-下方 checkbox 是已经执行完毕的历史复现清单，现统一勾选；真实 GPU 判决仍以 Task 8/9 和对应
+下方 checkbox 是已经执行完毕的历史复现清单，现统一勾选；其中“单 recovery lease”语义已被
+Task 10 的反例推翻，不再是当前算法约束。真实 GPU 判决仍以 Task 8/9/10 和对应
 results 报告为准。不得把 `formal_registration_candidate`、development 性能变化或观测非支配点
 写成 formal/winner。
 

@@ -1318,8 +1318,16 @@ example；它来自 matched-ready evidence，不是 bounded-priority 推断，�
 workload、row representation 或 ready-window 签名变化时必须重新校准。
 
 当前 evaluation contract 明确是 `formal_authorized=false`。rehearsal 必须产生 completion service
-lag、最长无服务、recovery completion、debt-repayment episode 与零 unresolved debt，审核并冻结
-其 validation SHA 后才允许通过单独提交把合同改成 `formal_ready`。禁止直接删除 `--rehearsal`。
+lag、最长无服务、recovery completion、至少一个完整 debt-repayment episode 与零 unresolved
+debt。right-censored 只接受 scheduler 在 source exhausted 且 Job ready/waiting/active/recovery
+全部排空后的显式 `finish_job`，瞬时 ready 空窗不算 demand 终止；censored 不进入 repayment P95，
+也不能替代完整 episode。release-event schema 5 还要求保存 raw active-set/weight/own/foreign/
+candidate work，由离线汇总独立重算 projection，检查全部 projection work 的 estimate upper bound 与最后一个
+不可拆 request 的单 quantum overshoot bound。审核并冻结 validation SHA 后才允许通过单独提交把合同改成
+`formal_ready`。禁止直接删除 `--rehearsal`。
+wrapper 成功跑完六臂后会自动写 `rehearsal_validation.json`；它只检查证据链及 proposed 的冻结
+absolute foreground SLO、longest-no-service、repayment/projection 门，不在单次 rehearsal 上决定
+任何 arm 排名或效应大小。
 解锁后的 formal 汇总入口为：
 
 ```bash

@@ -397,6 +397,60 @@ class SLO、longest no-service。SAOR 的 debt guard 另外必须由 lossless le
 bound。frozen-static 不产生 registered-ready ledger，因此该公平指标是 `not_applicable`，不能用
 伪造 credit lifecycle 让它参加同口径 lag 排名，也不能因此误杀共同性能矩阵。
 
+2026-08-14 最终六臂 rehearsal 首次运行给出一个一般性反例：原“每 Job 最多一个 recovery
+lease 在途”的实现虽然产生 10/10 recovery grant/completion，但两个 endpoint 的 bulk debt 最终
+仍约为 37,973/38,981，高于 $H_B=8,192$。原因是 recovery request 完成之前，新释放 slot 继续
+进入 foreground；foreground completion 产生 debt 的速率可以长期高于单 recovery completion 的
+偿还速率。因此“发生 recovery grant”不推出 debt bounded 或 repayment，原单在途机制被撤销。
+
+不能把修复写成“解除单 recovery 限制后持续发满”。修正版使用 **residual-aware projected-debt
+budget**。令 release epoch $t$ 的竞争活动集为 $A(t)$，
+$\phi_i(t)=w_i/\sum_{j\in A(t)}w_j$；$U_i(t)$ 是 Job $i$ 的全部在途估计 work（包括进入
+critical 前的普通请求与 recovery 请求），$V_{-i}(t)$ 是其他 Job 已授予、不可抢占的 residual
+work。当前 debt 的保守完成投影为
+
+$$
+\widehat D_i^+(t)=D_i(t)+\phi_i(t)V_{-i}(t)-(1-\phi_i(t))U_i(t).
+$$
+
+若 $i$ concrete-ready 且 $\widehat D_i^+(t)\ge H_i$，才为不可拆候选 $r$ 追加一份 recovery
+commitment；追加后的投影为
+
+$$
+\widehat D_i^{after}(t,r)=\widehat D_i^+(t)-(1-\phi_i(t))\widehat c_r.
+$$
+
+选择循环每次 grant 后都重新构造 active set、$\phi_i$、own in-flight 与 foreign residual；因此
+前一张 recovery 会立即计入下一次投影，而不是等 completion 后才“看见”。已经进入 vLLM 的请求
+仍不抢占，内部仍是 FCFS + continuous batching。令 completion $n$ 的 actual work 为 $c_n$，
+completion-corrected 债务递推仍为
+
+$$
+D_i(n+1)=\left[D_i(n)+\phi_i(n)c_n-\mathbf 1\{j_n=i\}c_n\right]^+.
+$$
+
+在活动集冻结、formal 的 fixed-output-cap 估计满足 $c_r\le\widehat c_r$、且相同 Job 的候选
+quantum 不超过 $c_{max}$ 的区间，最后一张不可拆 recovery 可以跨过阈值，但投影 overshoot 满足
+
+$$
+0 < H_i-\widehat D_i^{after}\le(1-\phi_i)c_{max}.
+$$
+
+实际 completion overshoot 还需加 cost prediction error 与活动集变化项；因此 formal 不是相信
+runtime 写出的 projection，而是从 event ledger 的 raw debt、active set、weights、own/foreign
+work 和 candidate work 离线重算，并以“pre-grant own work + selected candidate = post-grant
+active work”再次检查 work 守恒；要求 projection violation=0、fixed-cap 下所有投影 work 的
+estimate overrun=0，并同时报告实际 overshoot。若 cost 高估，completion correction 后 debt 仍
+critical 就重新进入 recovery；若低估，记录 overrun 并使 formal fail closed。该离散界限制的是
+承诺偿还 work，不限制 recovery request 数。
+
+若活动集变化，每个 release epoch 重新计算 $\phi_i$；有限偿还结论只针对竞争 Job 持续积压且
+服务率存在正下界的区间。demand 消失只由 scheduler 在 source exhausted、ready/waiting/active/
+recovery 全部排空后调用的显式 `finish_job` 事件确认；`ready_jobs=[]` 的瞬时快照既不完成也不
+censor episode。显式结束时仍 critical 的 episode 才记为 right-censored；正式门要求至少一个
+完整 episode，censored 单列，持续可偿还但 run 结束的 unresolved 必须为 0。该条件命题仍需
+最终 trace 核对假设与常数，不能仅凭代码结构宣布定理完成。
+
 VTC artifact 已公开 overload、proportional、on/off、Poisson short/long、increase 和 distribution
 shift suites，可借其 **workload shape 与指标定义**，但实现仍是 S-LoRA artifact，不能和本项目
 upstream vLLM 做绝对性能排名。
@@ -753,15 +807,27 @@ $$
 \mathcal U_e(n)=\left\{j\in E_e(n):p_j>0,\ d_{i_j}-t_n\le g_j\right\}.
 $$
 
-另设 $r_j^{guard}\in\{0,1\}$ 表示 Job $j$ 是否已有一个由 debt guard 释放、但尚未完成的
-recovery lease。必须等该 lease completion、用 actual work 校正 $F_j$ 后才允许为同一 Job 再发
-一个 recovery lease；否则一个 `while capacity` 循环会在 debt 尚未下降时连续过量释放。
+单 recovery request flag 已被最终 rehearsal 反例推翻。令 $U_j(n)$ 为 Job $j$ 的全部 active
+估计 work（不区分普通/recovery 标签），$V_{-j}(n)=\sum_{k\ne j}U_k(n)$ 为不可抢占 foreign
+residual。每个 release epoch 重新计算
 
-据此把 debt-critical ready 集与其中能装入的子集分别定义为
+$$
+\widehat F_j^+(n)=F_j(n)+\rho_j(n)V_{-j}(n)-(1-\rho_j(n))U_j(n),
+$$
+
+并把候选队首 $i_j$ grant 后的投影定义为
+
+$$
+\widehat F_j^{after}(n,i_j)=
+\widehat F_j^+(n)-(1-\rho_j(n))\overline W_{i_j}^{resource}.
+$$
+
+据此把 projected-debt-critical ready 集与其中能装入的子集分别定义为
 
 $$
 \mathcal G_e^{ready}(n)=
-\left\{j\in B_e(n):Q_{j,model}(n)>0,\ F_j(n)\ge H_j,\ r_j^{guard}=0\right\},
+\left\{j\in B_e(n):Q_{j,model}(n)>0,\ \widehat F_j^+(n)\ge H_j,\
+\rho_j(n)<1\right\},
 $$
 
 $$
@@ -773,8 +839,8 @@ $$
 | 层级 | 候选/选择键 | 解释 |
 |---:|---|---|
 | 0 | correctness、lifecycle、freshness、request/work fit | 任一失败立即拒绝动作或 fail-closed 到冻结策略 |
-| 1a | 若 $\mathcal G_e^{fit}\ne\varnothing$，最大化 $F_j/H_j$；并列时先剩余预算更少，再用稳定 `job_id`；选中后置 $r_j^{guard}=1$ | debt guard 覆盖业务优先级；同一 Job 一次只承诺一个待 actual-work 校正的 recovery lease；该 lease 发出后立即恢复其余容量的普通选择，不等待其完成才解除全局 guard |
-| 1b | 若 $\mathcal G_e^{ready}\ne\varnothing$ 但 $\mathcal G_e^{fit}=\varnothing$，只针对最大 $F_j/H_j$ 的确定队首建立 `guard_reclaim_hold`，其 reclaim debt 为 $D_e^{reclaim}=\max\{0,\overline W_{i_j}^{resource}-(K_e^{work}-R_e^{active})\}$；在 $D_e^{reclaim}>0$ 时不发其他新 lease | 防止小 foreground head 反复填补碎片、使 bulk 永远不能 fit；一旦 $D_e^{reclaim}=0$ 立即执行 1a，不等待预留整份 Job quota |
+| 1a | 若 $\mathcal G_e^{fit}\ne\varnothing$，最大化 $\widehat F_j^+/H_j$；并列时用 arrival order 与稳定 `job_id`；grant 后该 request 立即进入 $U_j$，下一次循环重新投影 | debt guard 覆盖业务优先级；限制的是承诺偿还 work，不是 request 个数；最后一个不可拆 request 可以跨阈值 |
+| 1b | 若 $\mathcal G_e^{ready}\ne\varnothing$ 但 $\mathcal G_e^{fit}=\varnothing$，只针对最大 $\widehat F_j^+/H_j$ 的确定队首建立 `guard_reclaim_hold`，其 reclaim debt 为 $D_e^{reclaim}=\max\{0,\overline W_{i_j}^{resource}-(K_e^{work}-R_e^{active})\}$；fit 时先重算 projection，不再 critical 就撤销 hold | 防止小 foreground head 反复填补碎片；不把活动集变化后的过时 guard 继续执行 |
 | 2 | 否则若 $\mathcal U_e\ne\varnothing$，先最大 $p_j$，再最小 $d_{i_j}-t_n$，再用 SAOR fallback | 只在还没触发服务债务上界时给关键 Job deadline/criticality 优先级 |
 | 3 | 否则运行现有 SAOR entitlement/fairness selector | 保留 idle borrowing、active-set reclaim 和普通共享效率 |
 | 4 | 只有 priority-window Job（而非 debt-critical Job）当前不 fit 时，才在其余 fitting heads 中继续 2–3 | 不复制 strict-priority 为普通高优先级 Job 留空的行为；debt guard 的 1b 仍可显式 drain |
@@ -800,16 +866,17 @@ $p_j=0$ 且 $H_j=+\infty$ 时的退化情形。二者因此可作为同一实现
 |---|---|---|
 | envelope safety | selector 只从 $E_e(n)$ 选择，故不会由 release 动作主动越过 request/work cap | 需要 $\overline W^{resource}\ge W^{actual}$；若仍用 point estimate，只是经验安全 |
 | constraint-work-conserving | 除 debt-critical head 的 `guard_reclaim_hold` 和 freshness/failure 外，$E_e(n)\ne\varnothing$ 时规则必返回一个 fitting head | 不等于 GPU 永不空闲；guard hold 必须单列，不能算 avoidable idle，也不能从 denominator 隐去 |
-| 2-Job release 非饥饿 | 若共同积压时 $\rho_B\ge\rho_{min}>0$、每个 completion actual work≥$c_{min}>0$，则 bulk 从 debt=0 开始，在至多 $\lceil H_B/(\rho_{min}c_{min})\rceil+1$ 个 foreign completions 后进入 guard；此后第一个 fitting release opportunity 必须给 bulk | 只界定“获得一个 recovery lease”的机会，不界定该请求在 vLLM 内的完成时刻或 service lag；head 最终 fit 还要求 active 请求有界完成 |
+| 2-Job release 非饥饿 | 若共同积压时 $\rho_B\ge\rho_{min}>0$、每个 completion actual work≥$c_{min}>0$，则 bulk 从 debt=0 开始，在至多 $\lceil H_B/(\rho_{min}c_{min})\rceil+1$ 个 foreign completions 后进入 projected guard；此后只要 $\widehat F_B^+\ge H_B$，fitting foreign head 不能越过 bulk | 只界定外部 release 顺序；completion/service-lag 仍要求 active 请求有界完成与正的最低服务率 |
+| 离散 projected overshoot | 活动集冻结且 $W^{actual}\le\overline W^{resource}$ 时，最后一个不可拆 recovery 的 $H_j-\widehat F_j^{after}\le(1-\rho_j)c_{max}$ | 实际 overshoot 另含预测误差/活动集变化；formal 必须离线复算并要求 estimate overrun=0 |
 | SLO | 可证明选择顺序忠实于显式 priority/deadline；不能证明任意负载下满足 30s SLO | 非抢占、未知 service 与 capacity-region 外 arrival 会使 SLO/公平约束冲突；需报告 `constraint_conflict` 和 miss |
 | 任意 Job 数 | 接口、集合和选择键不含 2-Job 特判 | 首个实现/短测只覆盖 2 Job；N-Job debt bound、重入 counter-lift 与 heterogeneous weight 证明留待两 Job 过门后 |
 
 release 非饥饿界直接来自每个 foreign completion 令 $F_B$ 至少增加
-$\rho_{min}c_{min}$；达到 $H_B$ 后，词典序层 1 不允许 fitting foreign head 越过 bulk。若 bulk
-暂时不 fit，层 1b 停止新 release，使有界 active work 排空。这个命题刻意不声称 $F_B$ 本身被
-$H_B$ 上界：bulk recovery lease 完成前，已有 foreground 仍可继续完成并增加 debt；外部控制器
-不能约束 vLLM 内部完成顺序。要获得 completion/service-lag bound，还需要服务时间上界和更强的
-engine bridge，目前不具备。
+$\rho_{min}c_{min}$；projected 层 1 同时预记全部 own completion 的潜在偿还与 foreign residual 的
+潜在增债，避免 completion 延迟期间重复承诺整个 envelope。若 bulk 暂时不 fit，层 1b 停止新
+release，使有界 active work 排空；每次状态变化都重算 $\rho_B$。这个命题仍不声称任意负载下
+$F_B\le H_B$：外部控制器不能约束 vLLM 内部完成顺序，且活动集会变化。要获得无条件
+completion/service-lag bound，还需要服务时间上界和更强的 engine bridge，目前不具备。
 
 理论来源只迁移可用部分：DRR 提供 deficit/packet-quantization 思路，VTC 提供 actual-token
 accounting、active client 与 work-conserving 公平语义，EDF 只提供 deadline 排序模式。SAOR 位于
@@ -855,7 +922,7 @@ strict-priority 的无限 cap 极限，故不进入首轮。
 | foreground | P99≤30.7s，SLO violation≤1% | 不劣于本轮 static P99 29.2s 的 5% 容差 |
 | efficiency | tokens/s≥9,984 | 至少超过本轮 static 9,508 tok/s 约 5% |
 | bulk protection | SLO violation≤0.723；slowdown 只作诊断，不作首轮硬门 | request-level SLO 能暴露“总 Job JCT 尚可、但大量请求超时”；strict-priority 已给出这种反例 |
-| mechanism | `avoidable_idle=0`，guard hold 的 count/total/P95/max 与 reclaim debt 单列；priority/debt tier 均实际触发；同 Job recovery lease≤1；debt-critical fitting head 被 foreign grant 越过次数=0 | 排除“结果好但策略没真正动作”、无限/无目标 hold、过量 recovery 与采样假阴性 |
+| mechanism | `avoidable_idle=0`，guard hold 的 count/total/P95/max 与 reclaim debt 单列；priority/debt tier 均实际触发；projected-debt-critical 决策点 foreign grant=0；raw active-set/own/foreign/candidate work 可离线复算；并发 recovery work、grant→completion、完整/censored/unresolved episode 全部可审计 | 排除“结果好但策略没真正动作”、无限/无目标 hold、completion 延迟造成过量承诺与采样假阴性 |
 | stability | 两个短 repeat 方向一致；不将其写成 formal 结论 | 只筛选是否值得注册 formal |
 
 停止规则：两个有限 cap 均不能同时通过 foreground、bulk 与 efficiency 门时，不继续密集扫描

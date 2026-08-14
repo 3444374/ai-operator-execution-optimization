@@ -181,12 +181,60 @@ def _validate_rehearsal_record(
             )
             != 0
             or int(record.get("bounded_saor_debt_repayment_episodes", 0)) < 1
+            or int(record.get("bounded_saor_debt_repayment_completed", 0)) < 1
             or int(record.get("bounded_saor_debt_repayment_completed", 0))
+            + int(
+                record.get(
+                    "bounded_saor_debt_repayment_censored_no_demand",
+                    0,
+                )
+            )
             != int(record.get("bounded_saor_debt_repayment_episodes", -1))
             or int(
                 record.get("bounded_saor_debt_repayment_unresolved", -1)
             )
             != 0
+            or record.get("bounded_saor_projection_status")
+            != "ok:offline_recomputed"
+            or int(
+                record.get("bounded_saor_projection_checked_events", 0)
+            )
+            < 1
+            or int(
+                record.get("bounded_saor_projection_checked_events", -1)
+            )
+            != int(
+                record.get("bounded_saor_projection_expected_events", -2)
+            )
+            or int(
+                record.get("bounded_saor_projection_violation_events", -1)
+            )
+            != 0
+            or int(
+                record.get(
+                    "bounded_saor_projected_overshoot_bound_violation_events",
+                    -1,
+                )
+            )
+            != 0
+            or int(
+                record.get(
+                    "bounded_saor_projection_estimation_overrun_events",
+                    -1,
+                )
+            )
+            != 0
+            or int(
+                record.get(
+                    "bounded_saor_recovery_estimation_overrun_events",
+                    -1,
+                )
+            )
+            != 0
+            or float(
+                record.get("bounded_saor_recovery_inflight_work_max", 0)
+            )
+            <= 0
             or int(record.get("bounded_saor_avoidable_idle_events", -1)) != 0
             or int(
                 record.get(
@@ -195,7 +243,6 @@ def _validate_rehearsal_record(
                 )
             )
             != 0
-            or int(record.get("bounded_saor_recovery_inflight_max", 2)) > 1
         ):
             raise RuntimeError("rehearsal bounded-SAOR mechanism gate failed")
         if (
@@ -1408,7 +1455,7 @@ def _run_group(
                 final_credit,
                 sort_keys=True,
             ),
-            "release_event_trace_schema_version": 3,
+            "release_event_trace_schema_version": 5,
             "release_event_trace_path": str(
                 Path("traces") / f"{run_stem}.release_events.csv"
             ),
@@ -1499,7 +1546,7 @@ def _run_group(
                 ],
                 "final_credit_snapshots": final_credit,
                 "credit_capture_error": capture_error,
-                "release_event_trace_schema_version": 3,
+                "release_event_trace_schema_version": 5,
                 "release_event_trace_path": str(
                     Path("traces") / f"{run_stem}.release_events.csv"
                 ),

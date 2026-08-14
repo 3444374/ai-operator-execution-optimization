@@ -94,6 +94,7 @@ class SaorBoundedHeadState:
     head_work: int
     ready: bool
     recovery_inflight: bool
+    recovery_inflight_work: int = 0
 
     def __post_init__(self) -> None:
         if (
@@ -132,6 +133,16 @@ class SaorBoundedHeadState:
             raise ValueError("only a ready head can be eligible")
         if not isinstance(self.recovery_inflight, bool):
             raise ValueError("recovery_inflight must be a boolean")
+        if (
+            not isinstance(self.recovery_inflight_work, int)
+            or isinstance(self.recovery_inflight_work, bool)
+            or self.recovery_inflight_work < 0
+        ):
+            raise ValueError("recovery inflight work must be non-negative")
+        if self.recovery_inflight != (self.recovery_inflight_work > 0):
+            raise ValueError("recovery inflight flag and work must agree")
+        if self.recovery_inflight_work > self.release.active_work:
+            raise ValueError("recovery inflight work must be active Job work")
 
 
 @dataclass(frozen=True)
@@ -148,6 +159,78 @@ class SaorBoundedSelection:
     constraint_conflict: bool = False
 
 
+@dataclass(frozen=True)
+class SaorDebtProjection:
+    """Completion-accounting projection for one bounded-SAOR Job head."""
+
+    total_weight: float
+    target_share: float
+    own_inflight_work: int
+    foreign_residual_work: int
+    candidate_work: int
+    debt_before_candidate: float
+    debt_after_candidate: float
+    discrete_overshoot_bound: float
+
+
+def project_bounded_saor_debt(
+    state: SaorBoundedHeadState,
+    states: tuple[SaorBoundedHeadState, ...],
+) -> SaorDebtProjection:
+    """Project debt after all non-preemptible active work and one candidate.
+
+    The completion update for Job ``i`` changes its debt by
+    ``+phi_i*c`` for foreign work and ``-(1-phi_i)*c`` for its own work.
+    Active work uses the admission estimate, which is an upper bound under the
+    formal fixed-output-cap contract; completion correction remains the source
+    of truth.  The active-set share is recomputed for every decision.
+    """
+
+    total_weight = sum(item.release.weight for item in states)
+    if total_weight <= 0:
+        raise ValueError("bounded SAOR active-set weight must be positive")
+    target_share = state.release.weight / total_weight
+    own_work = state.release.active_work
+    foreign_work = sum(
+        item.release.active_work
+        for item in states
+        if item.release.job_id != state.release.job_id
+    )
+    candidate_work = state.head_work if state.ready else 0
+    repayment_fraction = max(0.0, 1.0 - target_share)
+    before = (
+        state.release.fairness_debt
+        + target_share * foreign_work
+        - repayment_fraction * own_work
+    )
+    after = before - repayment_fraction * candidate_work
+    return SaorDebtProjection(
+        total_weight=total_weight,
+        target_share=target_share,
+        own_inflight_work=own_work,
+        foreign_residual_work=foreign_work,
+        candidate_work=candidate_work,
+        debt_before_candidate=before,
+        debt_after_candidate=after,
+        discrete_overshoot_bound=repayment_fraction * candidate_work,
+    )
+
+
+def bounded_saor_recovery_required(
+    state: SaorBoundedHeadState,
+    states: tuple[SaorBoundedHeadState, ...],
+) -> bool:
+    """Return whether one more indivisible recovery request is justified."""
+
+    if not state.ready or state.debt_cap is None:
+        return False
+    projection = project_bounded_saor_debt(state, states)
+    return bool(
+        state.release.weight < projection.total_weight
+        and projection.debt_before_candidate >= state.debt_cap
+    )
+
+
 def select_bounded_saor_release(
     states: tuple[SaorBoundedHeadState, ...],
     *,
@@ -159,8 +242,10 @@ def select_bounded_saor_release(
     """Choose one release by debt, bounded SLO priority, then SAOR.
 
     The only non-work-conserving action is a reclaim hold for one concrete,
-    ready, debt-critical head that does not yet fit.  A recovery lease already
-    in flight suppresses another recovery grant until completion correction.
+    ready, projected-debt-critical head that does not yet fit.  The projection
+    accounts for all own active work and all non-preemptible foreign residual,
+    so completion delay cannot fill the whole envelope with duplicate recovery
+    commitments.  Existing model-service work remains non-preemptive.
     """
 
     if request_limit <= 0 or work_limit <= 0:
@@ -189,14 +274,14 @@ def select_bounded_saor_release(
     critical = tuple(
         state
         for state in states
-        if state.ready
-        and state.debt_cap is not None
-        and state.release.fairness_debt >= state.debt_cap
-        and not state.recovery_inflight
+        if bounded_saor_recovery_required(state, states)
     )
     fitting_critical = tuple(state for state in critical if state.release.eligible)
     debt_key = lambda state: (
-        -state.release.fairness_debt / float(state.debt_cap),
+        -project_bounded_saor_debt(
+            state,
+            states,
+        ).debt_before_candidate / float(state.debt_cap),
         state.release.arrival_order,
         state.release.job_id,
     )

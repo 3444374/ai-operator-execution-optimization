@@ -10,6 +10,9 @@ from src.observability.metrics import (
     percentile,
     vllm_metric_delta_stats,
 )
+from src.experiments.shared_vllm.saor_projection_evidence import (
+    audit_saor_debt_projections,
+)
 
 
 def group_metric_delta(
@@ -418,6 +421,7 @@ def bounded_saor_event_summary(
         "bounded_saor_recovery_completion_max_s": 0.0,
         "bounded_saor_debt_repayment_episodes": 0,
         "bounded_saor_debt_repayment_completed": 0,
+        "bounded_saor_debt_repayment_censored_no_demand": 0,
         "bounded_saor_debt_repayment_unresolved": 0,
         "bounded_saor_debt_repayment_p95_s": 0.0,
         "bounded_saor_debt_repayment_max_s": 0.0,
@@ -430,6 +434,20 @@ def bounded_saor_event_summary(
         "bounded_saor_reclaim_debt_max": 0,
         "bounded_saor_constraint_conflicts": 0,
         "bounded_saor_recovery_inflight_max": 0,
+        "bounded_saor_recovery_inflight_work_max": 0.0,
+        "bounded_saor_recovery_inflight_work_at_repayment_max": 0.0,
+        "bounded_saor_debt_repayment_overshoot_work_max": 0.0,
+        "bounded_saor_projection_status": "unavailable:no_projection_evidence",
+        "bounded_saor_projection_checked_events": 0,
+        "bounded_saor_projection_expected_events": 0,
+        "bounded_saor_projection_violation_events": 0,
+        "bounded_saor_projected_overshoot_work_max": 0.0,
+        "bounded_saor_projected_overshoot_bound_max": 0.0,
+        "bounded_saor_projected_overshoot_bound_violation_events": 0,
+        "bounded_saor_projection_estimation_overrun_events": 0,
+        "bounded_saor_projection_estimation_overrun_work_max": 0,
+        "bounded_saor_recovery_estimation_overrun_events": 0,
+        "bounded_saor_recovery_estimation_overrun_work_max": 0,
         "bounded_saor_avoidable_idle_events": 0,
         "bounded_saor_foreign_grant_over_debt_critical_events": 0,
     }
@@ -449,6 +467,7 @@ def bounded_saor_event_summary(
     sequences: dict[str, list[int]] = {}
     hold_durations = []
     max_recovery = 0
+    max_recovery_work = 0.0
 
     def pairs(value: object) -> dict[str, float]:
         decoded = json.loads(value) if isinstance(value, str) else value
@@ -457,18 +476,39 @@ def bounded_saor_event_summary(
             for key, item in (decoded or ())
         }
 
+    def truth(value: object) -> bool:
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true"}
+        return bool(value)
+
+    projection_audit = audit_saor_debt_projections(mechanism_events)
+
     recovery_grants: dict[tuple[str, str], float] = {}
     recovery_grants_missing_id = 0
     recovery_completion_durations: list[float] = []
     debt_episode_starts: dict[tuple[str, str], float] = {}
     debt_episode_durations: list[float] = []
+    debt_episode_overshoots: list[float] = []
+    repayment_inflight_work: list[float] = []
     debt_episode_count = 0
+    debt_episode_censored = 0
     for event in all_events:
         endpoint_id = str(event["endpoint_id"])
         sequences.setdefault(endpoint_id, []).append(int(event["event_seq"]))
         raw_recovery = event.get("recovery_inflight_by_job", ())
         recovery = json.loads(raw_recovery) if isinstance(raw_recovery, str) else raw_recovery
-        max_recovery = max(max_recovery, len(recovery))
+        recovery_request_count = sum(
+            len(request_ids) if isinstance(request_ids, (list, tuple)) else 1
+            for _job_id, request_ids in recovery
+        )
+        max_recovery = max(max_recovery, recovery_request_count)
+        recovery_work = pairs(
+            event.get("recovery_inflight_work_by_job", ())
+        )
+        max_recovery_work = max(
+            max_recovery_work,
+            sum(recovery_work.values()),
+        )
         if event.get("action") == "hold_end":
             hold_durations.append(float(event.get("hold_duration_s", 0.0)))
     for endpoint_id, endpoint_events in {
@@ -507,15 +547,33 @@ def bounded_saor_event_summary(
 
             debts = pairs(event.get("debt_by_job", ()))
             caps = pairs(event.get("debt_cap_by_job", ()))
+            recovery_work = pairs(
+                event.get("recovery_inflight_work_by_job", ())
+            )
+            lifecycle_complete_job = (
+                str(event.get("selected_job_id", ""))
+                if event.get("action") == "finish_job"
+                else ""
+            )
             for job_id, cap in caps.items():
                 key = (endpoint_id, job_id)
                 critical = debts.get(job_id, 0.0) >= cap
-                if critical and key not in debt_episode_starts:
+                if critical and lifecycle_complete_job == job_id:
+                    if key in debt_episode_starts:
+                        debt_episode_starts.pop(key)
+                        debt_episode_censored += 1
+                elif critical and key not in debt_episode_starts:
                     debt_episode_starts[key] = event_time
                     debt_episode_count += 1
                 elif not critical and key in debt_episode_starts:
                     debt_episode_durations.append(
                         max(0.0, event_time - debt_episode_starts.pop(key))
+                    )
+                    debt_episode_overshoots.append(
+                        max(0.0, cap - debts.get(job_id, 0.0))
+                    )
+                    repayment_inflight_work.append(
+                        recovery_work.get(job_id, 0.0)
                     )
     sequence_complete = all(
         sequence == list(range(1, len(sequence) + 1))
@@ -557,6 +615,9 @@ def bounded_saor_event_summary(
             "bounded_saor_debt_repayment_completed": len(
                 debt_episode_durations
             ),
+            "bounded_saor_debt_repayment_censored_no_demand": (
+                debt_episode_censored
+            ),
             "bounded_saor_debt_repayment_unresolved": len(
                 debt_episode_starts
             ),
@@ -594,16 +655,75 @@ def bounded_saor_event_summary(
                 default=0,
             ),
             "bounded_saor_constraint_conflicts": sum(
-                bool(event.get("constraint_conflict"))
+                truth(event.get("constraint_conflict"))
                 for event in mechanism_events
             ),
             "bounded_saor_recovery_inflight_max": max_recovery,
+            "bounded_saor_recovery_inflight_work_max": max_recovery_work,
+            "bounded_saor_recovery_inflight_work_at_repayment_max": max(
+                repayment_inflight_work,
+                default=0.0,
+            ),
+            "bounded_saor_debt_repayment_overshoot_work_max": max(
+                debt_episode_overshoots,
+                default=0.0,
+            ),
+            "bounded_saor_projection_status": (
+                "ok:offline_recomputed"
+                if projection_audit.schema_detected
+                and projection_audit.violation_events == 0
+                else "invalid:offline_projection_mismatch"
+                if projection_audit.schema_detected
+                else "unavailable:legacy_event_schema"
+            ),
+            "bounded_saor_projection_checked_events": (
+                projection_audit.checked_events
+            ),
+            "bounded_saor_projection_expected_events": (
+                projection_audit.expected_events
+            ),
+            "bounded_saor_projection_violation_events": (
+                projection_audit.violation_events
+            ),
+            "bounded_saor_projected_overshoot_work_max": max(
+                projection_audit.projected_overshoots,
+                default=0.0,
+            ),
+            "bounded_saor_projected_overshoot_bound_max": max(
+                projection_audit.projected_overshoot_bounds,
+                default=0.0,
+            ),
+            "bounded_saor_projected_overshoot_bound_violation_events": (
+                projection_audit.overshoot_bound_violation_events
+            ),
+            "bounded_saor_recovery_estimation_overrun_events": sum(
+                int(event.get("recovery_estimation_overrun_work", 0)) > 0
+                for event in all_events
+            ),
+            "bounded_saor_projection_estimation_overrun_events": sum(
+                int(event.get("projection_estimation_overrun_work", 0)) > 0
+                for event in all_events
+            ),
+            "bounded_saor_projection_estimation_overrun_work_max": max(
+                (
+                    int(event.get("projection_estimation_overrun_work", 0))
+                    for event in all_events
+                ),
+                default=0,
+            ),
+            "bounded_saor_recovery_estimation_overrun_work_max": max(
+                (
+                    int(event.get("recovery_estimation_overrun_work", 0))
+                    for event in all_events
+                ),
+                default=0,
+            ),
             "bounded_saor_avoidable_idle_events": sum(
-                bool(event.get("avoidable_idle"))
+                truth(event.get("avoidable_idle"))
                 for event in mechanism_events
             ),
             "bounded_saor_foreign_grant_over_debt_critical_events": sum(
-                bool(event.get("foreign_grant_over_debt_critical"))
+                truth(event.get("foreign_grant_over_debt_critical"))
                 for event in mechanism_events
             ),
         }

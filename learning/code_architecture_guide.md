@@ -68,6 +68,11 @@ schema。旧的 6 个 `profile_*` 和 11 个 scheduling 兼容壳已删除，避
 `serving/backends/` 已按公共合同、embedding、completion 拆分；
 `experiments/shared_vllm/` 已按 config、runtime、evidence、metrics、runner 拆分。三个包的
 `__init__.py` 继续导出原来的公共 API，因此调用方不需要知道内部文件位置。
+SAOR 的在线 selector 与离线数学验证也分开：`scheduling/submission_control/saor.py` 只根据
+当前 debt、活动集和在途 work 决定下一条请求；
+`experiments/shared_vllm/saor_projection_evidence.py` 不调用 selector，而是从落盘的原始
+event 字段重新计算同一决策。这样即使在线公式写错，验证器仍能用独立手段把 rehearsal 判失败，
+不会出现“实现和测试共同相信同一个错误结果”。
 
 `scripts/` 已按 data/services/baselines/profiling/experiments/analysis 分组，`tests/`
 按生产域镜像。数百条当前复现命令已同步迁移；已执行实验的 raw manifest 不改写，因为

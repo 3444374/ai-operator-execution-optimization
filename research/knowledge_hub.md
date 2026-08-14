@@ -785,8 +785,13 @@ reservation、4-Job 或图像；项目内部 matched-observation gate 通过后�
 位置平衡 seed，三次 formal 中每个 selector 占三个不同序位；evaluation contract 预先冻结
 VTC-style 主参照、foreground P99/empirical completion-lag 5% headline、throughput/bulk JCT/
 class SLO/longest-no-service non-inferiority。SAOR 必须从 lossless ledger 证明 recovery grant 对应的
-request 已完成，并观测 debt 从 `>=cap` 回到 `<cap`，报告 repayment P95 与 unresolved episode；
-这只是 completion-granularity empirical repayment，不是理论 bound。当前 contract 仍为
+request 已完成，并观测 debt 从 `>=cap` 回到 `<cap`，报告 repayment P95、right-censored 与
+unresolved episode；censored 不进入 repayment P95，且不能替代至少一个完整 episode。这只是
+completion-granularity empirical repayment，不是理论 bound。首个最终 rehearsal 已用反例证明
+“每 Job 单 recovery 在途”不能保证 repayment；修正版不是无界 drain，而是 residual-aware
+projected-debt work budget：按活动集权重同时核算所有 own active work 和不可抢占 foreign
+residual，显式 `finish_job` 才能 censor，离线从 raw event 重算 projection 与单 quantum
+overshoot bound。当前 contract 仍为
 `locked_pending_rehearsal/formal_authorized=false`，先用 final rehearsal 固定 validation SHA。
 frozen-static 因不经过 shared credit，其 registered-ready lag 是 N/A，只参加共同性能/SLO比较；
 不能伪造 credit lifecycle，也不能用该 N/A 误杀整张矩阵。

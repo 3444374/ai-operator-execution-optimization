@@ -17,6 +17,9 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts.analysis.audit_saor_formal_readiness import audit  # noqa: E402
+from scripts.analysis.summarize_saor_project_mechanism_formal import (  # noqa: E402
+    validate_rehearsal_root,
+)
 from scripts.experiments.run_ai_operator_scenarios import (  # noqa: E402
     wait_for_idle,
 )
@@ -80,7 +83,10 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(snapshot, indent=2) + "\n",
             encoding="utf-8",
         )
-    return run_experiment(options, idle_gate=wait_for_idle)
+    result = run_experiment(options, idle_gate=wait_for_idle)
+    if result == 0 and options.rehearsal:
+        validate_rehearsal_root(options.output_dir, contract_path)
+    return result
 
 
 if __name__ == "__main__":

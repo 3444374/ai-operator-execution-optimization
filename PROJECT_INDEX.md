@@ -453,7 +453,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/infrastructure/config_env.py` | 文本、图像、shared-vLLM 和 baseline 配置共用的严格 `${ENV_VAR}` 展开 | unset 立即失败；完整 scalar 保留 JSON 数值/布尔类型 |
 | `code/src/experiments/shared_vllm/config.py` / `evidence.py` / `runner.py` / `direct_control.py` | 多作业场景、每 job immutable manifest、统一 direct/project 交错执行、stagger/weight、组级正确性与公平证据 | 运行异质多 job 前确认 manifest 互斥、source offset=0；direct 只匹配 request bound，不冒充 work-credit envelope |
 | `code/src/infrastructure/environment.py` | machine profile、Python 能力与模型/数据资产检查/补齐核心 | 默认只读，安装下载由薄 CLI 显式触发 |
-| `code/src/experiments/shared_vllm/` | Shared-vLLM 编排包：config/runner/direct-control/runtime/evidence/metrics | 配置校验、统一 direct/project 交错、credit 语义、并发执行、exactly-once、分层 active-set 门禁与公平性汇总 |
+| `code/src/experiments/shared_vllm/` | Shared-vLLM 编排包：config/runner/direct-control/runtime/evidence/metrics + `saor_projection_evidence.py` | 配置校验、统一 direct/project 交错、credit 语义、并发执行、exactly-once、分层 active-set 门禁；SAOR schema-5 projection 由 selector-neutral 模块从 raw event 独立复算 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
 | `learning/AGENTS.md` | 学习讲解规则 | 写学习材料前读 |

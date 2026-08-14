@@ -73,6 +73,76 @@ PROJECT_FORMAL_SUMMARY = _load(
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_project_rehearsal_validator_writes_absolute_gate_result(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "matrix"
+            root.mkdir()
+            contract_path = Path(directory) / "contract.json"
+            contract = load_project_formal_contract(
+                REPOSITORY
+                / "deploy/autodl/saor_project_mechanism_formal_contract.json"
+            )
+            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            (root / "project_mechanism_contract.json").write_text(
+                json.dumps(
+                    {
+                        "contract_sha256": project_formal_sha256(contract_path),
+                        "contract": contract,
+                        "readiness": {"status": "passed"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "execution_mode": "rehearsal",
+                        "incidents": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self._write_group_rows(
+                root / "group_runs.csv",
+                [
+                    {"scenario_id": scenario_id}
+                    for scenario_id in PROJECT_FORMAL_SCENARIOS
+                ],
+            )
+
+            def fake_cell(_root, row, **_kwargs):
+                return (
+                    {
+                        "scenario_id": row["scenario_id"],
+                        "foreground_slo_violation": 0.0,
+                        "completion_longest_no_service_s": 10.0,
+                        "bounded_saor_debt_repayment_p95_s": 10.0,
+                        "bounded_saor_debt_repayment_unresolved": 0,
+                        "bounded_saor_debt_repayment_completed": 1,
+                        "bounded_saor_projection_violation_events": 0,
+                        "bounded_saor_projection_estimation_overrun_events": 0,
+                    },
+                    [],
+                )
+
+            with patch.object(
+                PROJECT_FORMAL_SUMMARY,
+                "_cell_metrics",
+                side_effect=fake_cell,
+            ):
+                result = PROJECT_FORMAL_SUMMARY.validate_rehearsal_root(
+                    root,
+                    contract_path,
+                )
+
+            self.assertEqual(result["status"], "passed")
+            self.assertFalse(result["formal_authorized"])
+            self.assertFalse(result["performance_ranking_decided"])
+            self.assertTrue((root / "rehearsal_validation.json").is_file())
+
     def test_project_formal_summary_keeps_static_fairness_not_applicable(
         self,
     ) -> None:
@@ -148,6 +218,15 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "completion_longest_no_service_s": 10.0,
                     "bounded_saor_debt_repayment_p95_s": 10.0,
                     "bounded_saor_debt_repayment_unresolved": 0,
+                    "bounded_saor_debt_repayment_completed": (
+                        1
+                        if scenario_id == PROJECT_FORMAL_PROPOSED
+                        else 0
+                    ),
+                    "bounded_saor_projection_violation_events": 0,
+                    "bounded_saor_projected_overshoot_bound_violation_events": 0,
+                    "bounded_saor_projection_estimation_overrun_events": 0,
+                    "bounded_saor_recovery_estimation_overrun_events": 0,
                 }
                 if scenario_id == PROJECT_FORMAL_PROPOSED:
                     row["tokens_per_s"] = 96.0
@@ -171,6 +250,30 @@ class SaorFormalToolsTests(unittest.TestCase):
         )
         self.assertFalse(failed["claim_gate_passed"])
         self.assertFalse(failed["throughput_noninferior"])
+
+        for row in metrics:
+            if row["scenario_id"] == PROJECT_FORMAL_PROPOSED:
+                row["tokens_per_s"] = 96.0
+                row["foreground_slo_violation"] = 0.02
+                row["completion_longest_no_service_s"] = 31.0
+        unsafe, _paired = PROJECT_FORMAL_SUMMARY.evaluate_decision(
+            metrics,
+            decision,
+        )
+        self.assertFalse(unsafe["claim_gate_passed"])
+        self.assertFalse(unsafe["foreground_slo_satisfied"])
+        self.assertFalse(unsafe["longest_no_service_absolute"])
+        proposed = next(
+            row
+            for row in metrics
+            if row["scenario_id"] == PROJECT_FORMAL_PROPOSED
+        )
+        rehearsal_safety = PROJECT_FORMAL_SUMMARY.rehearsal_safety(
+            proposed,
+            decision,
+        )
+        self.assertFalse(rehearsal_safety["foreground_slo_satisfied"])
+        self.assertFalse(rehearsal_safety["longest_no_service_absolute"])
 
     def test_ready_observation_bridge_separates_the_two_effects(self) -> None:
         with TemporaryDirectory() as directory:
@@ -342,6 +445,25 @@ class SaorFormalToolsTests(unittest.TestCase):
                 (root / "summary/validation.json").read_text(encoding="utf-8")
             )
             self.assertEqual(validation["status"], "failed")
+
+    def test_legacy_bounded_gate_counts_recovery_requests_and_work(self) -> None:
+        summary = BOUNDED_SUMMARY._event_summary(
+            [
+                {
+                    "event_seq": "1",
+                    "endpoint_id": "endpoint-0",
+                    "action": "grant",
+                    "tier": "debt_recovery",
+                    "recovery_inflight_by_job": '[ ["bulk", ["r1", "r2"]] ]',
+                    "recovery_inflight_work_by_job": '[["bulk", 160]]',
+                    "avoidable_idle": "False",
+                    "foreign_grant_over_debt_critical": "False",
+                }
+            ]
+        )
+
+        self.assertEqual(summary["recovery_inflight_requests_max"], 2)
+        self.assertEqual(summary["recovery_inflight_work_max"], 160.0)
 
     def test_priority_reachability_summary_passes_only_with_audited_action(
         self,
@@ -1374,6 +1496,23 @@ class SaorFormalToolsTests(unittest.TestCase):
                         "bounded_saor_debt_repayment_unresolved": 0,
                         "bounded_saor_debt_repayment_p95_s": 10 if proposed else 0,
                         "bounded_saor_recovery_completion_p95_s": 5 if proposed else 0,
+                        "bounded_saor_projection_status": (
+                            "ok:offline_recomputed"
+                            if proposed else "not_applicable"
+                        ),
+                        "bounded_saor_projection_checked_events": (
+                            1 if proposed else 0
+                        ),
+                        "bounded_saor_projection_expected_events": (
+                            1 if proposed else 0
+                        ),
+                        "bounded_saor_projection_violation_events": 0,
+                        "bounded_saor_projected_overshoot_bound_violation_events": 0,
+                        "bounded_saor_projection_estimation_overrun_events": 0,
+                        "bounded_saor_recovery_estimation_overrun_events": 0,
+                        "bounded_saor_recovery_inflight_work_max": (
+                            80 if proposed else 0
+                        ),
                         "bounded_saor_avoidable_idle_events": 0,
                         "bounded_saor_foreign_grant_over_debt_critical_events": 0,
                         "bounded_saor_recovery_inflight_max": 1 if proposed else 0,

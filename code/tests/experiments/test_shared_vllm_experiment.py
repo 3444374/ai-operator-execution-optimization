@@ -198,6 +198,14 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "bounded_saor_debt_repayment_episodes": 1,
             "bounded_saor_debt_repayment_completed": 1,
             "bounded_saor_debt_repayment_unresolved": 0,
+            "bounded_saor_projection_status": "ok:offline_recomputed",
+            "bounded_saor_projection_checked_events": 1,
+            "bounded_saor_projection_expected_events": 1,
+            "bounded_saor_projection_violation_events": 0,
+            "bounded_saor_projected_overshoot_bound_violation_events": 0,
+            "bounded_saor_projection_estimation_overrun_events": 0,
+            "bounded_saor_recovery_estimation_overrun_events": 0,
+            "bounded_saor_recovery_inflight_work_max": 80,
             "bounded_saor_avoidable_idle_events": 0,
             "bounded_saor_foreign_grant_over_debt_critical_events": 0,
             "bounded_saor_recovery_inflight_max": 1,
@@ -250,6 +258,14 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "bounded_saor_debt_repayment_episodes": 1,
             "bounded_saor_debt_repayment_completed": 1,
             "bounded_saor_debt_repayment_unresolved": 0,
+            "bounded_saor_projection_status": "ok:offline_recomputed",
+            "bounded_saor_projection_checked_events": 1,
+            "bounded_saor_projection_expected_events": 1,
+            "bounded_saor_projection_violation_events": 0,
+            "bounded_saor_projected_overshoot_bound_violation_events": 0,
+            "bounded_saor_projection_estimation_overrun_events": 0,
+            "bounded_saor_recovery_estimation_overrun_events": 0,
+            "bounded_saor_recovery_inflight_work_max": 80,
             "bounded_saor_avoidable_idle_events": 0,
             "bounded_saor_foreign_grant_over_debt_critical_events": 0,
             "bounded_saor_recovery_inflight_max": 1,
@@ -895,6 +911,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "action": "completion",
                 "tier": "service_completion",
                 "selected_request_id": "foreground-0",
+                "ready_jobs": '["bulk"]',
                 "debt_by_job": '[["bulk", 60.0]]',
                 "debt_cap_by_job": '[["bulk", 50.0]]',
                 "recovery_inflight_by_job": "[]",
@@ -906,6 +923,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "action": "grant",
                 "tier": "debt_recovery",
                 "selected_request_id": "bulk-recovery-0",
+                "ready_jobs": '["bulk"]',
                 "debt_by_job": '[["bulk", 60.0]]',
                 "debt_cap_by_job": '[["bulk", 50.0]]',
                 "recovery_inflight_by_job": (
@@ -922,6 +940,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "action": "completion",
                 "tier": "service_completion",
                 "selected_request_id": "bulk-recovery-0",
+                "ready_jobs": "[]",
                 "debt_by_job": '[["bulk", 0.0]]',
                 "debt_cap_by_job": '[["bulk", 50.0]]',
                 "recovery_inflight_by_job": "[]",
@@ -938,8 +957,312 @@ class SharedVllmExperimentTests(unittest.TestCase):
         )
         self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 1)
         self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            0,
+        )
         self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
         self.assertEqual(summary["bounded_saor_debt_repayment_max_s"], 5.0)
+
+    def test_bounded_saor_debt_episode_is_censored_when_demand_ends(
+        self,
+    ) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r1",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": '[["bulk", ["r1"]]]',
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 15.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "selected_request_id": "r1",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+            {
+                "event_seq": 3,
+                "event_epoch_s": 16.0,
+                "endpoint_id": "task-0",
+                "action": "finish_job",
+                "tier": "job_lifecycle_complete",
+                "selected_job_id": "bulk",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 1)
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 0)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            1,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
+
+    def test_bounded_saor_event_ledger_counts_concurrent_recovery_requests(
+        self,
+    ) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r1",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": '[["bulk", ["r1", "r2"]]]',
+                "recovery_inflight_work_by_job": '[["bulk", 160]]',
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 11.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r2",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": '[["bulk", ["r1", "r2"]]]',
+                "recovery_inflight_work_by_job": '[["bulk", 160]]',
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_recovery_inflight_max"], 2)
+        self.assertEqual(
+            summary["bounded_saor_recovery_inflight_work_max"],
+            160.0,
+        )
+
+    def test_bounded_saor_temporary_ready_gap_is_not_censored(self) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r0",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 12.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "ready_jobs": "[]",
+                "active_work": 100,
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+            {
+                "event_seq": 3,
+                "event_epoch_s": 15.0,
+                "endpoint_id": "task-0",
+                "action": "register",
+                "tier": "ready_registration",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+            {
+                "event_seq": 4,
+                "event_epoch_s": 20.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 40.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
+        self.assertEqual(summary["bounded_saor_debt_repayment_max_s"], 10.0)
+
+    def test_bounded_saor_ordinary_active_work_does_not_censor(self) -> None:
+        summary = bounded_saor_event_summary(
+            [
+                {
+                    "event_seq": 1,
+                    "event_epoch_s": 10.0,
+                    "endpoint_id": "task-0",
+                    "action": "grant",
+                    "tier": "debt_recovery",
+                    "selected_request_id": "r0",
+                    "ready_jobs": "[]",
+                    "active_work": 100,
+                    "debt_by_job": '[["bulk", 60.0]]',
+                    "debt_cap_by_job": '[["bulk", 50.0]]',
+                }
+            ]
+        )
+
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 1)
+
+    def test_bounded_saor_mixed_episode_outcomes_remain_distinct(self) -> None:
+        summary = bounded_saor_event_summary(
+            [
+                {
+                    "event_seq": 1,
+                    "event_epoch_s": 10.0,
+                    "endpoint_id": "task-0",
+                    "action": "grant",
+                    "tier": "debt_recovery",
+                    "selected_request_id": "r0",
+                    "debt_by_job": (
+                        '[["bulk", 60], ["foreground", 60], ["other", 60]]'
+                    ),
+                    "debt_cap_by_job": (
+                        '[["bulk", 50], ["foreground", 50], ["other", 50]]'
+                    ),
+                },
+                {
+                    "event_seq": 2,
+                    "event_epoch_s": 15.0,
+                    "endpoint_id": "task-0",
+                    "action": "completion",
+                    "tier": "service_completion",
+                    "debt_by_job": (
+                        '[["bulk", 40], ["foreground", 60], ["other", 60]]'
+                    ),
+                    "debt_cap_by_job": (
+                        '[["bulk", 50], ["foreground", 50], ["other", 50]]'
+                    ),
+                },
+                {
+                    "event_seq": 3,
+                    "event_epoch_s": 16.0,
+                    "endpoint_id": "task-0",
+                    "action": "finish_job",
+                    "tier": "job_lifecycle_complete",
+                    "selected_job_id": "foreground",
+                    "debt_by_job": (
+                        '[["foreground", 60], ["other", 60]]'
+                    ),
+                    "debt_cap_by_job": (
+                        '[["foreground", 50], ["other", 50]]'
+                    ),
+                },
+            ]
+        )
+
+        self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 3)
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            1,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 1)
+
+    def test_bounded_saor_projection_is_recomputed_from_raw_fields(self) -> None:
+        event = {
+            "schema_version": 5,
+            "event_seq": 1,
+            "event_epoch_s": 10.0,
+            "endpoint_id": "task-0",
+            "action": "grant",
+            "tier": "debt_recovery",
+            "selected_job_id": "bulk",
+            "selected_request_id": "r1",
+            "ready_jobs": '["bulk", "foreground"]',
+            "fitting_jobs": '["bulk", "foreground"]',
+            "active_set_jobs": '["bulk", "foreground"]',
+            "active_set_weight_sum": 2.0,
+            "weight_by_job": '[["bulk", 1], ["foreground", 1]]',
+            "projection_own_inflight_work_by_job": (
+                '[["bulk", 100], ["foreground", 100]]'
+            ),
+            "projection_foreign_residual_work_by_job": (
+                '[["bulk", 100], ["foreground", 100]]'
+            ),
+            "projection_candidate_work_by_job": (
+                '[["bulk", 80], ["foreground", 20]]'
+            ),
+            "projection_target_share_by_job": (
+                '[["bulk", 0.5], ["foreground", 0.5]]'
+            ),
+            "debt_by_job": '[["bulk", 130], ["foreground", 0]]',
+            "debt_cap_by_job": '[["bulk", 100]]',
+            "projected_debt_before_by_job": (
+                '[["bulk", 130], ["foreground", 0]]'
+            ),
+            "projected_debt_after_by_job": (
+                '[["bulk", 90], ["foreground", -10]]'
+            ),
+            "projected_overshoot_bound_by_job": (
+                '[["bulk", 40], ["foreground", 10]]'
+            ),
+            "recovery_inflight_by_job": '[["bulk", ["r1"]]]',
+            "recovery_inflight_work_by_job": '[["bulk", 80]]',
+            "active_work": 280,
+            "foreign_grant_over_debt_critical": False,
+        }
+
+        summary = bounded_saor_event_summary([event])
+
+        self.assertEqual(
+            summary["bounded_saor_projection_status"],
+            "ok:offline_recomputed",
+        )
+        self.assertEqual(
+            summary["bounded_saor_projected_overshoot_work_max"],
+            10.0,
+        )
+        self.assertEqual(
+            summary["bounded_saor_projected_overshoot_bound_max"],
+            40.0,
+        )
+        corrupted = dict(event)
+        corrupted["projected_debt_before_by_job"] = (
+            '[["bulk", 129], ["foreground", 0]]'
+        )
+        invalid = bounded_saor_event_summary([corrupted])
+        self.assertEqual(
+            invalid["bounded_saor_projection_status"],
+            "invalid:offline_projection_mismatch",
+        )
+        broken_conservation = dict(event)
+        broken_conservation["active_work"] = 200
+        invalid = bounded_saor_event_summary([broken_conservation])
+        self.assertEqual(
+            invalid["bounded_saor_projection_status"],
+            "invalid:offline_projection_mismatch",
+        )
 
     def test_vtc_templates_expand_unequal_job_counts(self) -> None:
         with TemporaryDirectory() as temporary:
@@ -1283,7 +1606,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(rows[0]["event_seq"], 1)
         self.assertEqual(rows[0]["tier"], "slo_priority")
-        self.assertEqual(rows[0]["schema_version"], 3)
+        self.assertEqual(rows[0]["schema_version"], 5)
         self.assertIn("observed_epoch_s", rows[0])
 
     def test_bounded_ready_join_rejects_foreign_fallback(self) -> None:

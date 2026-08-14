@@ -106,9 +106,15 @@ vLLM 或产品原生 baseline 继续使用各自调度且不接 bounded-ready。
 计划，VTC-style 是主公平参照，FIFO/DRR 同表报告，strict-priority 只作 SLO 边界 control；
 headline 是 foreground P99 或 completion service lag 至少改善 5%，保护项是 throughput≥0.95×、
 bulk JCT≤1.05×、bulk SLO delta≤0.05、foreground miss≤0.01、longest no-service≤1.05×且≤30s。
-proposed 还必须 debt-repayment P95≤30s、unresolved=0。当前合同
-`locked_pending_rehearsal/formal_authorized=false`，必须先重跑最终六臂 rehearsal 并冻结 validation
-SHA，不能用历史 n=2 结果事后解锁。
+proposed 还必须至少一个完整 debt-repayment episode、P95≤30s、unresolved=0；ready demand
+终止造成的 right-censored episode 单列，不能计入 repayment P95 或替代完整 episode。首个最终
+六臂 rehearsal 的前五臂通过，SAOR 虽有 512 priority、10 recovery grant/completion，却留下
+2 个未跨回 cap 的 episode，因而正确 fail closed；这证明原“单 recovery 在途”不能保证
+repayment。代码已改为 residual-aware projected-debt work budget：所有 own active work 与
+non-preemptible foreign residual 都进入投影，显式 `finish_job` 才能 censor，schema 5 由离线
+汇总独立复算并检查单 request quantum overshoot。当前合同仍是
+`locked_pending_rehearsal/formal_authorized=false`，必须用全新 root 重跑并冻结 validation SHA，
+不能用历史 n=2 或本次失败结果事后解锁。
 formal 把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。

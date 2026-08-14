@@ -6694,3 +6694,29 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `ba8015c870e55899668d9cc35769395b7199b0b07c96e2904b57d064fce1796d`；仓库补存 manifest、
   四份 record、八份 Job summary 与四份 release ledger。该旧回归早于 completion ledger，只用于
   门禁复算，不进入 formal 或 repayment 结论。
+
+## 2026-08-14 最终 rehearsal 反例与 projected-debt 修正
+
+- 服务器 `12be6fa2` 六臂 rehearsal 的 frozen-static、bounded-ready FIFO/DRR/VTC-style/
+  strict-priority 五臂均完成；最后 SAOR 臂由新 repayment 门正确 fail closed。账本为 512 次
+  SLO-priority、10 次 debt-recovery grant、10 次对应 completion、0 unmatched，但两个 endpoint
+  的 bulk debt 最终约 37,973/38,981，均未跨回 $H_B=8,192$，2 个 episode unresolved。
+- 该结果构成一般性反例：每 Job 仅允许一个 recovery request 在途时，等待它完成期间继续释放的
+  foreground work 可以让 debt 产生速率长期高于偿还速率；“发生 recovery”不等于 debt bounded。
+  本次失败 root 保留，不计入性能重复、不授权 formal。
+- 拒绝“解除单 recovery 后把所有 slot 发满”的直接修复。selector 改为 residual-aware
+  projected-debt work budget：$\widehat D_i^+=D_i+\phi_iV_{-i}-(1-\phi_i)U_i$，其中 $U_i$
+  包含 Job $i$ 进入 critical 前的普通 active work 与 recovery work，$V_{-i}$ 包含其他 Job 已授予、
+  不可抢占的 residual；候选 grant 后立即扣除 $(1-\phi_i)\widehat c_r$ 并重算 active set。
+  最后一张不可拆 request 允许跨阈值，但 projection overshoot 不得超过一个 request quantum 加预测
+  误差。已进入 vLLM 的请求仍不抢占，内部 FCFS/continuous batching 不变。
+- release-event schema 升至 5，保存 raw debt、active set、weights、own/foreign in-flight、candidate
+  work、runtime projection、recovery request/work set 与 estimate overrun；离线汇总不信任 runtime
+  派生值，而是从 raw 字段逐事件重算，并交叉检查 pre-grant own + selected candidate 等于
+  post-grant active work 后 fail closed。旧 bounded-priority summarizer 不再把有
+  recovery 的 Job 数误当 request 数，也不再保留 `<=1 request` 的过时门。
+- repayment 指标按 survival 语义区分 completed、显式 lifecycle 终止造成的 right-censored 与真正
+  unresolved。只有 scheduler 在 source exhausted 且 ready/waiting/active/recovery 全空后调用的
+  `finish_job` 可以 censor；瞬时 `ready_jobs=[]` 不可推断 demand 永久消失。正式门仍要求至少一个
+  completed、P95≤30s、unresolved=0，censored 不冒充完成。完成反例测试、全套回归和干净提交后，
+  才能用全新 root 重跑 final rehearsal。
