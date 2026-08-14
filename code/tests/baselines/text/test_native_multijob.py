@@ -324,7 +324,13 @@ class NativeMultiJobTests(unittest.TestCase):
                 load_native_multijob_config(path)
 
     def test_command_audit_redacts_secret_and_rejects_project_controls(self) -> None:
-        self.assertEqual(redact_command(["--api-key", "secret"]), ["--api-key", "<redacted>"])
+        self.assertEqual(redact_command(["--api-key", "secret"]), ["--api-key", "***"])
+        self.assertEqual(
+            redact_command(
+                ["--database-url", "postgresql://user:password@db.example/test"]
+            ),
+            ["--database-url", "postgresql://user:***@db.example/test"],
+        )
         with self.assertRaisesRegex(ValueError, "prohibited"):
             audit_command(["runner", "--max-active-work", "65536"])
 
@@ -454,6 +460,45 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertIn("gpu_summary", record)
             self.assertIn("gauge_summary", record)
             self.assertFalse((output_dir / "matrix_index.json").exists())
+
+    def test_single_cell_persists_redacted_database_url_but_executes_raw_url(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._config(root)
+            payload = json.loads(config_path.read_text(encoding="utf-8"))
+            raw_url = "postgresql://runner:sensitive@db.example:5432/ai_operator"
+            payload["source"]["database_url"] = raw_url
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            config = load_native_multijob_config(config_path)
+            output_dir = root / "single-cell"
+            clock = iter(100.0 + index * 0.001 for index in range(1000))
+            executed: list[list[str]] = []
+
+            def capture(command: list[str], **kwargs: object) -> _FakeProcess:
+                executed.append(command)
+                return _FakeProcess(command, **kwargs)
+
+            run_native_multijob_cell(
+                config,
+                config.arms[0],
+                NativeRunIdentity("formal", 1, 0),
+                output_dir,
+                runner_script="runner.py",
+                popen_factory=capture,
+                queue_waiter=self._queues,
+                counter_sampler=self._counters,
+                now=lambda: next(clock),
+                repository_commit="abc123",
+                cell_instrumenter=self._instrumentation,
+            )
+
+            persisted = "\n".join(
+                path.read_text(encoding="utf-8")
+                for path in (output_dir / "jobs").glob("*/commands.json")
+            )
+            self.assertTrue(any(raw_url in command for command in executed))
+            self.assertNotIn("sensitive", persisted)
+            self.assertIn("postgresql://runner:***@db.example:5432/ai_operator", persisted)
 
     def test_gate_only_runs_each_four_job_arm_once_and_is_not_rankable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

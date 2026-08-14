@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import csv
 import json
+import math
 import random
 import subprocess
 from dataclasses import dataclass
@@ -142,6 +143,7 @@ class MatchedSystemConfig:
     warmup_repeats: int
     formal_repeats: int
     selector_sanity_development_repeats: int
+    matrix_output_root: str
     gpu_formal_locally_authorized: bool
     matched_manifest_status: str
     arms: tuple[MatchedArm, ...]
@@ -158,7 +160,9 @@ class ScheduledMatchedCell:
     report_blocks: tuple[str, ...]
 
 
-def load_matched_system_config(path: Path) -> MatchedSystemConfig:
+def load_matched_system_config(
+    path: Path, *, allow_existing_matrix_output_root: bool = False
+) -> MatchedSystemConfig:
     """Load a portable config and reject every mismatch before execution."""
 
     decoded = expand_structure(json.loads(path.read_text(encoding="utf-8")), "config")
@@ -177,6 +181,9 @@ def load_matched_system_config(path: Path) -> MatchedSystemConfig:
             decoded.get("selector_sanity_development_repeats"),
             "selector_sanity_development_repeats",
         ),
+        matrix_output_root=_resolve_config_path(
+            decoded.get("matrix_output_root"), "matrix_output_root", config_directory
+        ),
         gpu_formal_locally_authorized=_boolean(
             decoded.get("gpu_formal_locally_authorized"), "gpu_formal_locally_authorized"
         ),
@@ -185,7 +192,10 @@ def load_matched_system_config(path: Path) -> MatchedSystemConfig:
         ),
         arms=arms,
     )
-    errors = _validation_errors(config)
+    errors = _validation_errors(
+        config,
+        check_matrix_output_root=not allow_existing_matrix_output_root,
+    )
     if errors:
         raise ValueError("; ".join(errors))
     return config
@@ -200,7 +210,16 @@ def balanced_matched_schedule(
         raise ValueError("unsupported schedule phase")
     if repeat < 1:
         raise ValueError("repeat must be positive")
-    arm_ids = list(REQUIRED_ARM_IDS)
+    phase_arm_ids = {
+        "warmup": REQUIRED_ARM_IDS,
+        "formal": SYSTEM_ARM_IDS,
+        "selector_sanity_development": tuple(
+            arm_id
+            for arm_id in SELECTOR_SANITY_ARM_IDS
+            if arm_id != "project_bounded_ready_saor_0125we"
+        ),
+    }
+    arm_ids = list(phase_arm_ids[phase])
     random.Random(f"{config.seed}:{phase}").shuffle(arm_ids)
     rotation = (repeat - 1) % len(arm_ids)
     ordered = arm_ids[rotation:] + arm_ids[:rotation]
@@ -244,6 +263,7 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
         "calibration_paths": {
             arm.arm_id: arm.calibration_path for arm in config.arms
         },
+        "matrix_output_root": config.matrix_output_root,
         "gpu_formal_locally_authorized": config.gpu_formal_locally_authorized,
         "planned_schedule": [
             {
@@ -416,6 +436,20 @@ def _validate_cell_evidence(
             raise RuntimeError(f"output artifact {name} is missing or empty")
     if normalize_request_tail_status(arm.unsupported_request_tails) != evidence["request_tail_status"]:
         raise RuntimeError("unsupported request-tail evidence drifted")
+    try:
+        if arm.kind == "native":
+            evidence["queue_final"] = validate_native_final_queue(
+                evidence.get("queue_final"),
+                f"{cell.phase}-{cell.repeat}-{arm.arm_id}",
+            )
+        else:
+            evidence["shared_credit_final"] = validate_project_final_credit(
+                evidence.get("shared_credit_final"),
+                f"{cell.phase}-{cell.repeat}-{arm.arm_id}",
+                frozen_static=arm.arm_id == "project_frozen_static",
+            )
+    except ValueError as error:
+        raise RuntimeError(str(error)) from error
     command = evidence.get("command", [])
     if arm.kind == "native" and any(
         token in " ".join(str(item) for item in command).lower()
@@ -452,10 +486,17 @@ def run_matched_system(
     """Run the balanced eight-arm matrix; executors retain all instrumentation."""
 
     del instrumenter  # Deliberately injected for asserting the outer layer never samples.
-    matrix_root = config_path.parent / "matrix_index.json"
-    if matrix_root.exists():
-        raise FileExistsError(f"matrix output root already exists: {matrix_root}")
-    config = load_matched_system_config(config_path)
+    config = load_matched_system_config(
+        config_path, allow_existing_matrix_output_root=True
+    )
+    matrix_output_root = Path(config.matrix_output_root)
+    try:
+        matrix_output_root.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as error:
+        raise FileExistsError(
+            f"matrix output root already exists: {matrix_output_root}"
+        ) from error
+    matrix_index = matrix_output_root / "matrix_index.json"
     repository_commit = repository_commit_getter()
     if not repository_commit:
         raise RuntimeError("repository commit must be non-empty")
@@ -463,15 +504,22 @@ def run_matched_system(
         "schema_version": 1,
         "status": "running",
         "repository_commit": repository_commit,
+        "repeat_contract": {
+            "warmup": config.warmup_repeats,
+            "formal": config.formal_repeats,
+            "selector_sanity_development": (
+                config.selector_sanity_development_repeats
+            ),
+        },
         "schedule": [
             cell.__dict__ for cell in _all_cells(config, rehearsal=rehearsal)
         ],
         "cells": [],
     }
-    _atomic_json(matrix_root, index)
+    _atomic_json(matrix_index, index)
     try:
         lease = host_lease_acquirer(
-            config_path.parent,
+            matrix_output_root,
             repository_commit=repository_commit,
         )
     except Exception as exc:
@@ -481,13 +529,13 @@ def run_matched_system(
                 "lease_error": f"{type(exc).__name__}: {exc}",
             }
         )
-        _atomic_json(matrix_root, index)
+        _atomic_json(matrix_index, index)
         raise
     by_id = {arm.arm_id: arm for arm in config.arms}
     try:
         for ordinal, cell in enumerate(_all_cells(config, rehearsal=rehearsal)):
             arm = by_id[cell.arm_id]
-            output_dir = Path(arm.output_root) / (
+            output_dir = matrix_output_root / "cells" / (
                 f"{ordinal:03d}_{cell.phase}_{cell.repeat:02d}_{arm.arm_id}"
             )
             running = {
@@ -501,7 +549,7 @@ def run_matched_system(
                 "status": "running",
             }
             index["cells"].append(running)  # type: ignore[index]
-            _atomic_json(matrix_root, index)
+            _atomic_json(matrix_index, index)
             try:
                 try:
                     idle_gate("before")
@@ -536,11 +584,11 @@ def run_matched_system(
                     {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
                 )
                 index["status"] = "failed"
-                _atomic_json(matrix_root, index)
+                _atomic_json(matrix_index, index)
                 raise
-            _atomic_json(matrix_root, index)
+            _atomic_json(matrix_index, index)
         index["status"] = "completed"
-        _atomic_json(matrix_root, index)
+        _atomic_json(matrix_index, index)
         return index
     finally:
         lease.release()  # type: ignore[union-attr]
@@ -570,7 +618,9 @@ def _load_arm(value: object, config_directory: Path) -> MatchedArm:
     )
 
 
-def _validation_errors(config: MatchedSystemConfig) -> list[str]:
+def _validation_errors(
+    config: MatchedSystemConfig, *, check_matrix_output_root: bool = True
+) -> list[str]:
     errors: list[str] = []
     arm_ids = tuple(arm.arm_id for arm in config.arms)
     if len(arm_ids) != len(set(arm_ids)) or set(arm_ids) != set(REQUIRED_ARM_IDS) or len(arm_ids) != len(REQUIRED_ARM_IDS):
@@ -581,6 +631,12 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
         errors.append("matched_manifest_status must be ready_frozen")
     if config.gpu_formal_locally_authorized:
         errors.append("local authorization never permits GPU formal execution")
+    if config.selector_sanity_development_repeats > config.formal_repeats:
+        errors.append(
+            "selector_sanity_development_repeats must not exceed formal_repeats"
+        )
+    if check_matrix_output_root and Path(config.matrix_output_root).exists():
+        errors.append("matrix_output_root already exists")
     output_roots = [arm.output_root for arm in config.arms]
     if len(output_roots) != len(set(output_roots)):
         errors.append("output_root values must be unique")
@@ -656,6 +712,102 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
     if saor and (saor.project_value("policy") != "saor_bounded_ready" or saor.project_value("ready_observation") != "bounded_concrete_pre_registration" or saor.project_value("debt_caps") != (0.125, None)):
         errors.append("SAOR must use bounded-ready policy/observation and debt caps [0.125, null]")
     return errors
+
+
+def _decode_json_container(value: object, run_id: str, field: str) -> object:
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{run_id} {field} is not valid JSON") from error
+    return value
+
+
+def _finite_number(value: object, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be numeric")
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError(f"{name} must be finite")
+    return parsed
+
+
+def validate_native_final_queue(
+    value: object, run_id: str
+) -> dict[str, dict[str, object]]:
+    """Canonicalize and require an empty final queue from a native system."""
+
+    decoded = _decode_json_container(value, run_id, "queue_final")
+    if not isinstance(decoded, dict) or not decoded:
+        raise ValueError(f"{run_id} native queue_final has an invalid schema")
+    output: dict[str, dict[str, object]] = {}
+    for endpoint, state in decoded.items():
+        if not str(endpoint) or not isinstance(state, dict):
+            raise ValueError(f"{run_id} native queue_final has an invalid schema")
+        if not {"running", "waiting"}.issubset(state):
+            raise ValueError(f"{run_id} native queue_final lacks live fields")
+        if any(
+            _finite_number(state[name], f"{run_id} queue_final {name}") != 0
+            for name in ("running", "waiting")
+        ):
+            raise ValueError(f"{run_id} native final queue is not empty")
+        output[str(endpoint)] = dict(state)
+    return output
+
+
+def validate_project_final_credit(
+    value: object, run_id: str, *, frozen_static: bool
+) -> list[dict[str, object]]:
+    """Canonicalize Project credit snapshots and reject every live remainder."""
+
+    decoded = _decode_json_container(value, run_id, "shared_credit_final")
+    if frozen_static:
+        if decoded != []:
+            raise ValueError(f"{run_id} frozen-static shared_credit_final must be []")
+        return []
+    if not isinstance(decoded, list) or not decoded:
+        raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
+    scalar_live = (
+        "active_requests", "active_work", "waiting_requests", "waiting_work",
+    )
+    mapping_live = (
+        "active_by_job", "active_work_by_job", "waiting_by_job",
+        "waiting_work_by_job", "waiting_head_work_by_job",
+    )
+    required = {
+        "endpoint_id", "request_limit", "work_limit", *scalar_live, *mapping_live,
+    }
+    output: list[dict[str, object]] = []
+    endpoint_ids: set[str] = set()
+    for raw_snapshot in decoded:
+        if not isinstance(raw_snapshot, dict) or not required.issubset(raw_snapshot):
+            raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
+        snapshot = dict(raw_snapshot)
+        endpoint_id = str(snapshot["endpoint_id"])
+        if not endpoint_id or endpoint_id in endpoint_ids:
+            raise ValueError(f"{run_id} shared_credit_final has invalid endpoint IDs")
+        endpoint_ids.add(endpoint_id)
+        if any(
+            _finite_number(snapshot[name], f"{run_id} shared credit {name}") <= 0
+            for name in ("request_limit", "work_limit")
+        ):
+            raise ValueError(f"{run_id} shared credit limits must be positive")
+        for name in mapping_live:
+            child = _decode_json_container(
+                snapshot[name], run_id, f"shared credit {name}"
+            )
+            if not isinstance(child, (list, dict)):
+                raise ValueError(
+                    f"{run_id} shared credit {name} must encode a container"
+                )
+            snapshot[name] = child
+        if any(
+            _finite_number(snapshot[name], f"{run_id} shared credit {name}") != 0
+            for name in scalar_live
+        ) or any(snapshot[name] not in ([], {}) for name in mapping_live):
+            raise ValueError(f"{run_id} final shared credit is not empty")
+        output.append(snapshot)
+    return output
 
 
 def _freeze(value: object) -> object:

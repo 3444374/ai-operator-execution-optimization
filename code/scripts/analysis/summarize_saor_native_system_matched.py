@@ -23,6 +23,8 @@ from src.experiments.saor.native_system_matched import (
     REQUIRED_ARM_IDS,
     SELECTOR_SANITY_ARM_IDS,
     SYSTEM_ARM_IDS,
+    validate_native_final_queue,
+    validate_project_final_credit,
 )
 
 
@@ -121,60 +123,11 @@ def _decode_json_value(value: object, run_id: str, field: str) -> object:
 
 
 def _native_queue_empty(value: object, run_id: str) -> None:
-    decoded = _decode_json_value(value, run_id, "queue_final")
-    if not isinstance(decoded, dict) or not decoded:
-        raise ValueError(f"{run_id} native queue_final has an invalid schema")
-    for endpoint, state in decoded.items():
-        if not str(endpoint) or not isinstance(state, dict):
-            raise ValueError(f"{run_id} native queue_final has an invalid schema")
-        if not {"running", "waiting"}.issubset(state):
-            raise ValueError(f"{run_id} native queue_final lacks live fields")
-        if any(
-            _finite(state[name], f"{run_id} queue_final {name}") != 0
-            for name in ("running", "waiting")
-        ):
-            raise ValueError(f"{run_id} native final queue is not empty")
+    validate_native_final_queue(value, run_id)
 
 
 def _project_credit_empty(value: object, run_id: str, *, frozen_static: bool) -> None:
-    decoded = _decode_json_value(value, run_id, "shared_credit_final")
-    if frozen_static and decoded == []:
-        return
-    if not isinstance(decoded, list) or not decoded:
-        raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
-    scalar_live = (
-        "active_requests", "active_work", "waiting_requests", "waiting_work",
-    )
-    mapping_live = (
-        "active_by_job", "active_work_by_job", "waiting_by_job",
-        "waiting_work_by_job", "waiting_head_work_by_job",
-    )
-    for snapshot in decoded:
-        if not isinstance(snapshot, dict) or not {
-            "endpoint_id", "request_limit", "work_limit", *scalar_live, *mapping_live,
-        }.issubset(snapshot):
-            raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
-        if not str(snapshot["endpoint_id"]):
-            raise ValueError(f"{run_id} shared_credit_final lacks endpoint_id")
-        for name in mapping_live:
-            value = snapshot[name]
-            if isinstance(value, str):
-                try:
-                    value = json.loads(value)
-                except json.JSONDecodeError as error:
-                    raise ValueError(
-                        f"{run_id} shared credit {name} is malformed JSON"
-                    ) from error
-            if not isinstance(value, (list, dict)):
-                raise ValueError(
-                    f"{run_id} shared credit {name} must encode a container"
-                )
-            snapshot[name] = value
-        if any(
-            _finite(snapshot[name], f"{run_id} shared credit {name}") != 0
-            for name in scalar_live
-        ) or any(snapshot[name] not in ([], {}) for name in mapping_live):
-            raise ValueError(f"{run_id} final shared credit is not empty")
+    validate_project_final_credit(value, run_id, frozen_static=frozen_static)
 
 
 def _validate_source(job: dict[str, Any], run_id: str) -> None:
@@ -563,6 +516,22 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
             cell for cell in raw_cells
             if isinstance(cell, dict) and cell.get("phase") == "formal"
         ]
+        development_cells = [
+            cell for cell in raw_cells
+            if isinstance(cell, dict)
+            and cell.get("phase") == "selector_sanity_development"
+        ]
+        repeat_contract = index.get("repeat_contract", {})
+        if not isinstance(repeat_contract, dict):
+            raise ValueError("matrix index lacks repeat contract")
+        formal_repeats = int(repeat_contract.get("formal", 0))
+        development_repeats = int(
+            repeat_contract.get("selector_sanity_development", 0)
+        )
+        if formal_repeats != FORMAL_REPEATS:
+            raise ValueError("formal matrix must retain the frozen three repeats")
+        if development_repeats < 1 or development_repeats > formal_repeats:
+            raise ValueError("selector development repeat contract is invalid")
 
         def physical_id(cell: dict[str, Any]) -> str:
             return str(
@@ -583,19 +552,38 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
                 int(cell.get("repeat", 0)) for cell in formal_cells
                 if cell.get("arm_id") == arm_id
             )
-            for arm_id in REQUIRED_ARM_IDS
+            for arm_id in SYSTEM_ARM_IDS
         }
-        if any(repeats != [1, 2, 3] for repeats in observed.values()):
-            raise ValueError("every required arm must have formal repeats [1, 2, 3]")
-        if len(formal_cells) != len(REQUIRED_ARM_IDS) * FORMAL_REPEATS:
-            raise ValueError("formal matrix must contain exactly eight arms by three repeats")
+        if any(
+            repeats != list(range(1, formal_repeats + 1))
+            for repeats in observed.values()
+        ):
+            raise ValueError("every system arm must have all formal repeats")
+        if len(formal_cells) != len(SYSTEM_ARM_IDS) * formal_repeats:
+            raise ValueError("formal matrix has an invalid system-arm shape")
+        development_arm_ids = tuple(
+            arm_id for arm_id in SELECTOR_SANITY_ARM_IDS
+            if arm_id != "project_bounded_ready_saor_0125we"
+        )
+        development_observed = {
+            arm_id: sorted(
+                int(cell.get("repeat", 0)) for cell in development_cells
+                if cell.get("arm_id") == arm_id
+            )
+            for arm_id in development_arm_ids
+        }
+        if any(
+            repeats != list(range(1, development_repeats + 1))
+            for repeats in development_observed.values()
+        ) or len(development_cells) != len(development_arm_ids) * development_repeats:
+            raise ValueError("selector development matrix has an invalid control-arm shape")
 
         project_limits = {
             (
                 int(cell.get("request_limit_per_endpoint", -1)),
                 int(cell.get("work_limit_per_endpoint", -1)),
             )
-            for cell in formal_cells
+            for cell in formal_cells + development_cells
             if cell.get("arm_id") not in SYSTEM_ARM_IDS[:3]
         }
         if (
@@ -613,7 +601,11 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
             run_rows.append(run)
             job_rows.extend(jobs)
             resource_rows.append(resource)
-        run_rows.sort(key=lambda row: (int(row["repeat"]), int(row["order_index"])))
+        phase_order = {"warmup": 0, "formal": 1, "selector_sanity_development": 2}
+        run_rows.sort(key=lambda row: (
+            phase_order[str(row["phase"])], int(row["repeat"]),
+            int(row["order_index"]),
+        ))
         job_rows.sort(
             key=lambda row: (
                 int(row["repeat"]), str(row["run_id"]), str(row["job_role"])
@@ -627,6 +619,19 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
                 if row["arm_id"] == arm_id and row["phase"] == "formal"
             ]
 
+        def selector_rows_for(arm_id: str) -> list[dict[str, object]]:
+            phase = (
+                "formal"
+                if arm_id == "project_bounded_ready_saor_0125we"
+                else "selector_sanity_development"
+            )
+            return [
+                row for row in run_rows
+                if row["arm_id"] == arm_id
+                and row["phase"] == phase
+                and int(row["repeat"]) <= development_repeats
+            ]
+
         system = [
             _summary_row(
                 arm_id, rows_for(arm_id), job_rows, "complete_system_empirical"
@@ -635,16 +640,18 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
         ]
         selector = [
             _summary_row(
-                arm_id, rows_for(arm_id), job_rows, "project_internal_sanity"
+                arm_id, selector_rows_for(arm_id), job_rows, "project_internal_sanity"
             )
             for arm_id in SELECTOR_SANITY_ARM_IDS
         ]
         system_saor = next(row for row in system if row["arm_id"].endswith("0125we"))
         selector_saor = next(row for row in selector if row["arm_id"].endswith("0125we"))
         if (
-            system_saor["physical_run_ids"] != selector_saor["physical_run_ids"]
-            or system_saor["service_tokens_per_s_repeats"]
-            != selector_saor["service_tokens_per_s_repeats"]
+            json.loads(str(system_saor["physical_run_ids"]))[:development_repeats]
+            != json.loads(str(selector_saor["physical_run_ids"]))
+            or json.loads(str(system_saor["service_tokens_per_s_repeats"]))[
+                :development_repeats
+            ] != json.loads(str(selector_saor["service_tokens_per_s_repeats"]))
         ):
             raise ValueError("SAOR reports do not originate from the same physical runs")
 
@@ -656,7 +663,12 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
         _write_csv(
             staging_dir / "resource_summary.csv",
             [
-                _resource_summary_row(arm_id, rows_for(arm_id), resource_rows)
+                _resource_summary_row(
+                    arm_id,
+                    rows_for(arm_id) if arm_id in SYSTEM_ARM_IDS
+                    else selector_rows_for(arm_id),
+                    resource_rows,
+                )
                 for arm_id in REQUIRED_ARM_IDS
             ],
         )

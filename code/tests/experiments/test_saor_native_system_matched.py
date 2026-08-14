@@ -68,11 +68,12 @@ class MatchedSystemContractTest(unittest.TestCase):
             system_saor = next(row for row in system if row["arm_id"].endswith("0125we"))
             selector_saor = next(row for row in selector if row["arm_id"].endswith("0125we"))
             self.assertEqual(
-                system_saor["physical_run_ids"], selector_saor["physical_run_ids"]
+                json.loads(system_saor["physical_run_ids"])[:2],
+                json.loads(selector_saor["physical_run_ids"]),
             )
             self.assertEqual(
-                system_saor["service_tokens_per_s_repeats"],
-                selector_saor["service_tokens_per_s_repeats"],
+                json.loads(system_saor["service_tokens_per_s_repeats"])[:2],
+                json.loads(selector_saor["service_tokens_per_s_repeats"]),
             )
             self.assertEqual(
                 json.loads(system_saor["physical_run_ids"]),
@@ -97,6 +98,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertTrue(all(float(row["overlap_s"]) > 0 for row in first_jobs))
             self.assertEqual(system_saor["formal_repeats"], "3")
+            self.assertEqual(selector_saor["formal_repeats"], "2")
             self.assertEqual(
                 json.loads(system_saor["database_operator_e2e_s_repeats"]),
                 [10.0, 11.0, 12.0],
@@ -106,6 +108,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual(system_saor["report_role"], "complete_system_empirical")
             self.assertEqual(selector_saor["report_role"], "project_internal_sanity")
             self.assertEqual(len(resources), 8)
+            self.assertEqual(
+                len(all_runs),
+                len(SYSTEM_ARM_IDS) * 3
+                + (len(SELECTOR_SANITY_ARM_IDS) - 1) * 2,
+            )
             self.assertFalse(any("winner" in key.lower() for row in system for key in row))
             self.assertFalse(any("winner" in key.lower() for row in selector for key in row))
             self.assertNotIn("formal_authorized=true", json.dumps(validation).lower())
@@ -828,16 +835,40 @@ class MatchedSystemContractTest(unittest.TestCase):
     def test_two_tables_schedule_one_shared_saor_cell_per_repeat(self) -> None:
         with self._config() as path:
             config = load_matched_system_config(path)
-        schedule = balanced_matched_schedule(config, phase="formal", repeat=1)
-        self.assertEqual({cell.arm_id for cell in schedule}, set(REQUIRED_ARM_IDS))
+        warmup = balanced_matched_schedule(config, phase="warmup", repeat=1)
+        formal = balanced_matched_schedule(config, phase="formal", repeat=1)
+        development = balanced_matched_schedule(
+            config, phase="selector_sanity_development", repeat=1
+        )
+        self.assertEqual({cell.arm_id for cell in warmup}, set(REQUIRED_ARM_IDS))
+        self.assertEqual({cell.arm_id for cell in formal}, set(SYSTEM_ARM_IDS))
         self.assertEqual(
-            sum(cell.arm_id == "project_bounded_ready_saor_0125we" for cell in schedule),
+            {cell.arm_id for cell in development},
+            set(SELECTOR_SANITY_ARM_IDS) - {"project_bounded_ready_saor_0125we"},
+        )
+        self.assertEqual(
+            sum(cell.arm_id == "project_bounded_ready_saor_0125we" for cell in formal),
             1,
         )
+        self.assertFalse(any(
+            cell.arm_id == "project_bounded_ready_saor_0125we"
+            for cell in development
+        ))
         self.assertNotEqual(
-            tuple(cell.arm_id for cell in schedule),
+            tuple(cell.arm_id for cell in formal),
             tuple(cell.arm_id for cell in balanced_matched_schedule(config, phase="formal", repeat=2)),
         )
+
+    def test_selector_development_repeats_cannot_exceed_formal_repeats(self) -> None:
+        with self._config() as path:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            raw["selector_sanity_development_repeats"] = 4
+            path.write_text(json.dumps(raw), encoding="utf-8")
+            with self.assertRaisesRegex(
+                ValueError,
+                "selector_sanity_development_repeats must not exceed formal_repeats",
+            ):
+                load_matched_system_config(path)
 
     def test_audit_emits_readiness_evidence_without_execution(self) -> None:
         with self._config() as path:
@@ -885,6 +916,9 @@ class MatchedSystemContractTest(unittest.TestCase):
         environment["PROJECT_ACTOR_WORKERS_PER_ENDPOINT"] = "1"
         environment["PROJECT_RAY_ACTOR_MAX_CONCURRENCY"] = "256"
         with TemporaryDirectory() as temporary:
+            environment["SAOR_MATRIX_OUTPUT_ROOT"] = str(
+                Path(temporary) / "matrix-output"
+            )
             for index, name in enumerate(
                 sorted(key for key in environment if key.endswith("OUTPUT_ROOT"))
             ):
@@ -1003,9 +1037,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertEqual(
                 sum(item[1] == "project_bounded_ready_saor_0125we" for item in calls),
-                config.warmup_repeats
-                + config.formal_repeats
-                + config.selector_sanity_development_repeats,
+                config.warmup_repeats + config.formal_repeats,
             )
             saor = [
                 record for record in result["cells"]
@@ -1018,7 +1050,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual(idle_calls, [item for _ in expected for item in ("before", "after")])
             self.assertEqual(instrumenter_calls, [])
             self.assertTrue(lease.released)
-            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            persisted = json.loads(
+                (Path(config.matrix_output_root) / "matrix_index.json").read_text()
+            )
             self.assertEqual(persisted["status"], "completed")
             self.assertEqual(len(persisted["cells"]), len(expected))
 
@@ -1051,7 +1085,9 @@ class MatchedSystemContractTest(unittest.TestCase):
                 )
 
             self.assertEqual(calls, [cell.arm_id for cell in first_two])
-            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            persisted = json.loads(
+                (Path(config.matrix_output_root) / "matrix_index.json").read_text()
+            )
             self.assertEqual(persisted["status"], "failed")
             self.assertEqual(persisted["cells"][-1]["status"], "failed")
             self.assertIn("cell exploded", persisted["cells"][-1]["error"])
@@ -1086,7 +1122,9 @@ class MatchedSystemContractTest(unittest.TestCase):
                 )
 
             self.assertEqual(idle_calls, ["before", "after"])
-            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            persisted = json.loads(
+                (path.parent / "matrix-output" / "matrix_index.json").read_text()
+            )
             self.assertIn("executor failed", persisted["cells"][0]["error"])
             self.assertIn(
                 "after idle failed",
@@ -1119,7 +1157,7 @@ class MatchedSystemContractTest(unittest.TestCase):
 
     def test_matrix_rejects_existing_output_root_before_lease(self) -> None:
         with self._config() as path:
-            (path.parent / "matrix_index.json").write_text("{}", encoding="utf-8")
+            (path.parent / "matrix-output").mkdir()
             with self.assertRaisesRegex(FileExistsError, "matrix output root"):
                 run_matched_system(
                     path,
@@ -1143,7 +1181,9 @@ class MatchedSystemContractTest(unittest.TestCase):
                         (_ for _ in ()).throw(RuntimeError("lease unavailable"))
                     ),
                 )
-            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            persisted = json.loads(
+                (path.parent / "matrix-output" / "matrix_index.json").read_text()
+            )
             self.assertEqual(persisted["status"], "failed")
             self.assertIn("lease unavailable", persisted["lease_error"])
 
@@ -1205,6 +1245,48 @@ class MatchedSystemContractTest(unittest.TestCase):
                         repository_commit_getter=lambda: "abc123",
                         host_lease_acquirer=lambda *_args, **_kwargs: lease,
                     )
+
+    def test_matrix_rejects_missing_or_live_system_final_state_online(self) -> None:
+        cases = {
+            "native missing queue": (
+                "daft_native",
+                lambda evidence: evidence.pop("queue_final"),
+            ),
+            "bounded Project live credit": (
+                "project_bounded_ready_fifo",
+                lambda evidence: evidence["shared_credit_final"][0].update(
+                    {"waiting_requests": 1}
+                ),
+            ),
+            "frozen-static synthetic credit": (
+                "project_frozen_static",
+                lambda evidence: evidence.update(
+                    {"shared_credit_final": [{"endpoint_id": "endpoint-0"}]}
+                ),
+            ),
+        }
+        for name, (target, mutate) in cases.items():
+            with self.subTest(name=name), self._config() as path:
+                lease = SimpleNamespace(released=False)
+                lease.release = lambda: setattr(lease, "released", True)
+
+                def executor(arm, identity, output_dir):
+                    evidence = self._cell_evidence(arm, identity, output_dir)
+                    if arm.arm_id == target:
+                        mutate(evidence)
+                    return evidence
+
+                with self.assertRaisesRegex(RuntimeError, "queue|credit"):
+                    run_matched_system(
+                        path,
+                        native_executor=executor,
+                        project_executor=executor,
+                        idle_gate=lambda _position: None,
+                        instrumenter=lambda *_args: None,
+                        repository_commit_getter=lambda: "abc123",
+                        host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                    )
+                self.assertTrue(lease.released)
 
     def test_cli_accepts_runner_profiler_and_lifecycle_options(self) -> None:
         options = parse_args(
@@ -1311,6 +1393,34 @@ class MatchedSystemContractTest(unittest.TestCase):
             "request_tail_status": normalize_request_tail_status(
                 arm.unsupported_request_tails
             ),
+            **(
+                {"queue_final": {
+                    "endpoint-0": {"running": 0, "waiting": 0},
+                    "endpoint-1": {"running": 0, "waiting": 0},
+                }}
+                if arm.kind == "native"
+                else {
+                    "shared_credit_final": (
+                        []
+                        if arm.arm_id == "project_frozen_static"
+                        else [{
+                            "endpoint_id": "endpoint-0",
+                            "request_limit": 8,
+                            "work_limit": 65536,
+                            "active_requests": 0,
+                            "active_work": 0,
+                            "waiting_requests": 0,
+                            "waiting_work": 0,
+                            "active_by_job": "[]",
+                            "active_work_by_job": "{}",
+                            "waiting_by_job": "[]",
+                            "waiting_work_by_job": "{}",
+                            "waiting_head_work_by_job": "[]",
+                            "max_active_requests_seen": 8,
+                        }]
+                    )
+                }
+            ),
             "output_paths": {"commands": str(output_dir / "commands.json")},
             "status": "passed",
         }
@@ -1324,33 +1434,45 @@ class MatchedSystemContractTest(unittest.TestCase):
     def _write_complete_summary_fixture(cls, matrix_root: Path) -> None:
         matrix_root.mkdir(parents=True)
         cells = []
-        for repeat in range(1, 4):
-            for order_index, arm_id in enumerate(REQUIRED_ARM_IDS):
-                run_id = f"formal-{repeat}-{arm_id}"
-                run_root = matrix_root / "runs" / run_id
-                run_root.mkdir(parents=True)
-                resource_path = run_root / "resources.csv"
-                resource_path.write_text(
+        phase_specs = (
+            ("formal", 3, SYSTEM_ARM_IDS),
+            (
+                "selector_sanity_development",
+                2,
+                tuple(
+                    arm_id for arm_id in SELECTOR_SANITY_ARM_IDS
+                    if arm_id != "project_bounded_ready_saor_0125we"
+                ),
+            ),
+        )
+        for phase, repeats, arm_ids in phase_specs:
+            for repeat in range(1, repeats + 1):
+                for order_index, arm_id in enumerate(arm_ids):
+                    run_id = f"{phase}-{repeat}-{arm_id}"
+                    run_root = matrix_root / "runs" / run_id
+                    run_root.mkdir(parents=True)
+                    resource_path = run_root / "resources.csv"
+                    resource_path.write_text(
                     "observed_epoch_s,gpu_utilization_pct,gpu_power_w,running,waiting,kv_usage,mfu_fraction\n"
                     f"{1000 + repeat * 20 + 1},80,300,8,0,0.4,0.2\n",
                     encoding="utf-8",
                 )
-                command_path = run_root / "commands.json"
-                command = ["runner", "--adapter", arm_id]
-                command_path.write_text(json.dumps(command), encoding="utf-8")
-                start = float(1000 + repeat * 20)
-                duration = float(9 + repeat)
-                is_native = arm_id in SYSTEM_ARM_IDS[:3]
-                report_blocks = []
-                if arm_id in SYSTEM_ARM_IDS:
-                    report_blocks.append("system")
-                if arm_id in SELECTOR_SANITY_ARM_IDS:
-                    report_blocks.append("selector_sanity")
-                cells.append(
+                    command_path = run_root / "commands.json"
+                    command = ["runner", "--adapter", arm_id]
+                    command_path.write_text(json.dumps(command), encoding="utf-8")
+                    start = float(1000 + repeat * 20)
+                    duration = float(9 + repeat)
+                    is_native = arm_id in SYSTEM_ARM_IDS[:3]
+                    report_blocks = []
+                    if arm_id in SYSTEM_ARM_IDS:
+                        report_blocks.append("system")
+                    if arm_id in SELECTOR_SANITY_ARM_IDS:
+                        report_blocks.append("selector_sanity")
+                    cells.append(
                     {
                         "run_id": run_id,
                         "arm_id": arm_id,
-                        "phase": "formal",
+                        "phase": phase,
                         "repeat": repeat,
                         "order_index": order_index,
                         "report_blocks": report_blocks,
@@ -1473,6 +1595,11 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "schema_version": 1,
                     "status": "completed",
                     "repository_commit": "abc123",
+                    "repeat_contract": {
+                        "warmup": 0,
+                        "formal": 3,
+                        "selector_sanity_development": 2,
+                    },
                     "cells": cells,
                 }
             ),
@@ -1512,7 +1639,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             arms = [native("daft_native", "daft"), native("daft_ray", "daft"), native("ray_data_http", "ray_data"), project("project_frozen_static", "static_partition"), project("project_bounded_ready_fifo", "shared_fifo"), project("project_bounded_ready_drr", "shared_drr"), project("project_bounded_ready_vtc_style", "external_vtc"), project("project_bounded_ready_saor_0125we", "saor_bounded_ready")]
             for arm in arms[4:]: arm["ready_observation"] = "bounded_concrete_pre_registration"
             arms[7]["debt_caps"] = [0.125, None]
-            self.path.write_text(json.dumps({"schema_version": 1, "seed": 7, "warmup_repeats": 1, "formal_repeats": 3, "selector_sanity_development_repeats": 2, "gpu_formal_locally_authorized": False, "matched_manifest_status": "ready_frozen", "arms": arms}), encoding="utf-8")
+            self.path.write_text(json.dumps({"schema_version": 1, "seed": 7, "warmup_repeats": 1, "formal_repeats": 3, "selector_sanity_development_repeats": 2, "matrix_output_root": "matrix-output", "gpu_formal_locally_authorized": False, "matched_manifest_status": "ready_frozen", "arms": arms}), encoding="utf-8")
         def __enter__(self) -> Path: return self.path
         def __exit__(self, *args: object) -> None: self._temporary.cleanup()
 

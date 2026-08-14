@@ -3,7 +3,8 @@
 ## SAOR native-system matched readiness
 
 The CLI config trio is `saor_native_system_matched.example.json` (eight-arm
-contract), `saor_native_system_matched_native.example.json` (the three
+identity contract plus one exclusive `SAOR_MATRIX_OUTPUT_ROOT`),
+`saor_native_system_matched_native.example.json` (the three
 framework-owned native arms), and
 `saor_native_system_matched_project.example.json` (frozen-static plus four
 Project selector scenarios). All three must be supplied together; the matrix
@@ -15,6 +16,13 @@ prevents it from passing even with a supplied SHA. Operators must create and
 commit a real two-Job matched request manifest, set its SHA, and change the
 status to `ready_frozen` before readiness can pass. Relative manifest and output
 paths are resolved from this example config's directory.
+
+The matrix index, host lease, and every physical cell directory are created
+below the fresh matrix output root; an existing root is rejected. Warm-up covers
+all eight identities, formal executes only the five complete-system arms, and
+selector development executes only bounded-ready FIFO/DRR/VTC-style. The
+selector report reuses the first matching formal SAOR cells, so SAOR is not
+rerun merely to populate the second table.
 
 The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
 timestamps are measured separately: the observed Job 1 minus Job 0 offset and

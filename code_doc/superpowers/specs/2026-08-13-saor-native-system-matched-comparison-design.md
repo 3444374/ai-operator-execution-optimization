@@ -80,6 +80,13 @@ Job-level eager arrivals, whereas the earlier matched-ready selector rehearsal
 used per-request arrival replay; selector ordering is allowed to be
 arrival-regime dependent.
 
+The phase schedule makes that reuse literal: warm-up runs all eight unique arm
+identities once; formal runs only the five complete-system arms for three
+repeats; selector-sanity development runs only FIFO/DRR/VTC-style for one or two
+repeats. Its SAOR rows are the first matching formal SAOR repeats, identified by
+the same physical run IDs. Development repeats therefore cannot exceed formal
+repeats, and no executed cell exists solely to be discarded by the reports.
+
 `bounded-ready FIFO` does **not** mean that bounded-ready is an intrinsic part
 of the FIFO algorithm. A selector decision can be written as
 
@@ -196,10 +203,13 @@ model or start Ray jobs.
 
 ### 4.2 Thin global orchestrator
 
-The orchestrator creates a deterministic balanced order across the eight unique
-arms. The matrix index records both block membership and physical arm identity
-so the one SAOR execution can feed both summaries without being rerun under a
-different configuration.
+The orchestrator creates a deterministic balanced order within each phase's
+eligible arm set while the static contract still contains eight unique arm
+identities. The matrix index records phase, block membership, and physical arm
+identity so each formal SAOR execution can feed both summaries without being
+rerun under a different configuration. A required fresh `matrix_output_root`
+owns the index, host lease, matrix state, and every cell directory; paths beside
+the checked-in config are never used as mutable run state.
 For each cell it:
 
 1. waits for service idle and obtains the host runner lease;

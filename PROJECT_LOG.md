@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-08-14 SAOR matched matrix 最终合同收口
+
+- 物理执行调整为：warm-up 覆盖八个身份，formal 只跑五个 complete-system 臂，selector
+  development 只跑 FIFO/DRR/VTC-style；selector 表复用前 N 个 formal SAOR run ID，不再
+  为第二张表重复执行或丢弃 SAOR cell。
+- 新增必填 `matrix_output_root`；matrix index、host lease、state 与 cell 目录统一位于该
+  全新独占根目录下。目录已存在或 development repeats 超过 formal repeats 时 fail closed。
+- native queue 与 Project shared-credit 终态校验前移到在线完成门；离线汇总复用同一组规范化
+  validator。frozen-static 必须为 `[]`，bounded Project 必须保留真实 endpoint snapshot，且
+  live scalar/per-Job 状态清空；limit、历史峰值与累计字段允许非零。
+- native 命令证据改用公共参数脱敏器：持久化 JSON 不再包含 API secret 或数据库 URL 密码，
+  实际子进程命令保持原值。本轮只跑本地测试，未连接 server/GPU、未跑 rehearsal/formal、
+  未同步 Wiki。
+
 ## 2026-08-14 SAOR producer schema 与 validation-last 发布修正
 
 - Task3 native/Project normalizer 将既有 flat unavailable tail 合同统一转换为中性 nested

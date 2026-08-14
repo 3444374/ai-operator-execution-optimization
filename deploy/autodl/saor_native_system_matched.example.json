@@ -4,6 +4,7 @@
   "warmup_repeats": 1,
   "formal_repeats": 3,
   "selector_sanity_development_repeats": 2,
+  "matrix_output_root": "${SAOR_MATRIX_OUTPUT_ROOT}",
   "gpu_formal_locally_authorized": false,
   "matched_manifest_status": "placeholder_not_ready",
   "arms": [

@@ -26,6 +26,7 @@ from typing import Callable, Literal, Mapping, Sequence
 
 from src.baselines.common.cell_instrumentation import instrumented_cell
 from src.baselines.common.contracts import BaselineRequestResult
+from src.baselines.common.redact import redact_argument_list
 from src.baselines.common.manifests import partition_summary, read_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import validate_results
@@ -467,13 +468,9 @@ def build_shard_command(
 
 
 def redact_command(command: Sequence[str]) -> list[str]:
-    """Preserve reproducible arguments while never persisting an API secret."""
+    """Preserve reproducible arguments without persisting any known secret."""
 
-    redacted = list(command)
-    for index, token in enumerate(redacted[:-1]):
-        if token == "--api-key":
-            redacted[index + 1] = "<redacted>"
-    return redacted
+    return redact_argument_list(list(command))
 
 
 def audit_command(command: Sequence[str]) -> None:

@@ -4,7 +4,7 @@
 
 **Goal:** Build a fail-closed local execution and analysis path for the two-Job Daft Native/Daft Ray/Ray Data/Project comparison plus the same-regime Project bounded-ready FIFO/DRR/VTC-style/SAOR selector sanity block.
 
-**Architecture:** Preserve the existing native and Project scheduler owners. Extend each path only enough to expose a common PostgreSQL-source-to-validated-gather cell contract, then use a thin matrix module to validate eight unique arms, generate a balanced schedule, invoke one cell at a time, and retain atomic evidence. A separate offline summarizer emits the system and Project-internal tables and never declares a winner or authorizes formal.
+**Architecture:** Preserve the existing native and Project scheduler owners. Extend each path only enough to expose a common PostgreSQL-source-to-validated-gather cell contract, then use a thin matrix module to validate eight unique arm identities and invoke the phase-eligible cells under one exclusive artifact root. Warm-up runs all eight identities, formal runs the five system arms, and selector development runs FIFO/DRR/VTC-style while reusing the first formal SAOR repeats. A separate offline summarizer emits the system and Project-internal tables and never declares a winner or authorizes formal.
 
 **Tech Stack:** Python 3.12+, dataclasses, JSON/CSV, `unittest`, existing PostgreSQL/Daft/Ray/vLLM adapters and shared-vLLM runner.
 
@@ -12,6 +12,7 @@
 
 - Required unique arms are exactly `daft_native`, `daft_ray`, `ray_data_http`, `project_frozen_static`, `project_bounded_ready_fifo`, `project_bounded_ready_drr`, `project_bounded_ready_vtc_style`, and `project_bounded_ready_saor_0125we`.
 - The system table contains the three native arms, Project frozen-static, and Project bounded-ready SAOR; the selector-sanity table contains Project bounded-ready FIFO/DRR/VTC-style/SAOR. The same physical SAOR cell feeds both tables.
+- `matrix_output_root` is required and must not exist; the index, lease, state, and cells all live below it. Selector-development repeats cannot exceed formal repeats.
 - FIFO/DRR/VTC-style are Project controls, never native baselines. `bounded-ready FIFO` means `Project bounded-ready + global FIFO matched-control`; bounded-ready is not part of the FIFO algorithm.
 - All Project selector-sanity arms share the same visible ready-set contract, maximum request/work envelope, ready bytes, actor topology, source, organizer, and non-selector arguments.
 - Native arms keep framework-owned batching/backpressure/scheduling and must reject Project K/W, credit, coordinator, router, or bounded-ready flags.
@@ -231,7 +232,8 @@ manifest paths, native calibration variables, and frozen Project K/W variables.
 It must contain no real host, credential, remote username, or runtime output.
 Set `warmup_repeats=1`, `formal_repeats=3`, and
 `selector_sanity_development_repeats=2`; readiness records that GPU formal is
-not locally authorized.
+not locally authorized. Require `${SAOR_MATRIX_OUTPUT_ROOT}` for the fresh
+artifact root.
 
 - [ ] **Step 7: Run Task 2 tests**
 
