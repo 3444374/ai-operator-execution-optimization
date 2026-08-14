@@ -179,7 +179,9 @@ raw clock/counter，而不是直接依据列名解释。
 feeding-saturation 又是另一层门：GPU utilization、MFU、功率、running/waiting 均不能替代
 “策略吞吐÷同 workload/protocol/model/service-signature bounded ceiling”。旧 ceiling 即使 manifest、
 协议和服务参数高度匹配，只要缺当前合同要求的模型/tokenizer/template identity，就只能先报告
-诊断比值，再补当前签名 ceiling；门槛仍按预注册 95% 执行。
+诊断比值，再补当前签名 ceiling；门槛仍按预注册 95% 执行。本次当前签名 direct/SAOR 分别为
+13,684.90/12,713.03 tok/s，即 92.898%；因此结论是 evidence-valid feeding-negative，而不是“GPU
+已经很忙所以可以继续 formal”。
 
 本次 profiler CSV 字段发生变化，下一轮必须使用新的结果目录，不能向旧 header
 追加。vLLM 版本若不暴露 histogram bucket，TTFT/ITL 分位状态会是 unavailable；

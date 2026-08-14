@@ -1317,14 +1317,15 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 example；它来自 matched-ready evidence，不是 bounded-priority 推断，也不是跨硬件默认值。机器、
 workload、row representation 或 ready-window 签名变化时必须重新校准。
 
-当前 evaluation contract 明确是 `formal_authorized=false`。rehearsal 必须产生 completion service
+当前 evaluation contract 明确是 `locked_failed_feeding/formal_authorized=false`。rehearsal 必须产生 completion service
 lag、最长无服务、recovery completion、至少一个完整 debt-repayment episode 与零 unresolved
 debt。right-censored 只接受 scheduler 在 source exhausted 且 Job ready/waiting/active/recovery
 全部排空后的显式 `finish_job`，瞬时 ready 空窗不算 demand 终止；censored 不进入 repayment P95，
 也不能替代完整 episode。release-event schema 5 还要求保存 raw active-set/weight/own/foreign/
 candidate work，由离线汇总独立重算 projection，检查全部 projection work 的 estimate upper bound 与最后一个
-不可拆 request 的单 quantum overshoot bound。审核并冻结 validation SHA 后才允许通过单独提交把合同改成
-`formal_ready`。禁止直接删除 `--rehearsal`。
+不可拆 request 的单 quantum overshoot bound。机制审核和 validation SHA 已冻结，但当前完整签名
+feeding ceiling 仅为 92.898%（低于 95%），因此本合同禁止改成 `formal_ready`。禁止直接删除
+`--rehearsal`。
 wrapper 成功跑完六臂后会自动写 `rehearsal_validation.json`；它只检查证据链及 proposed 的冻结
 absolute foreground SLO、longest-no-service、repayment/projection 门，不在单次 rehearsal 上决定
 任何 arm 排名或效应大小。
@@ -1348,8 +1349,8 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   --output "$ARTIFACT_ROOT/prompt_overhead_audit.json"
 ```
 
-独立审核与全组件复算完成后，只补一个当前签名 direct bounded ceiling；它不接 Project
-bounded-ready/credit，也不进入六臂 selector 排名：
+独立审核与全组件复算完成后，当前签名 direct bounded ceiling 已跑完；它不接 Project
+bounded-ready/credit，也不进入六臂 selector 排名。以下命令只用于复现封存负证据：
 
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" \
@@ -1374,7 +1375,8 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 
 summarizer 返回 0 表示证据结构有效，不等于 feeding 通过；必须读取
 `feeding_gate_passed`。若 ratio<0.95，保留 `failed_feeding` root 并停止 formal，不重跑六臂、
-不调 K/W、$0.125W_e$ 或 95% 门槛。
+不调 K/W、$0.125W_e$ 或 95% 门槛。当前 root 的 ratio=92.898%，所以后续“解锁后的 formal”
+命令仅保留为合同说明，当前不得执行。
 
 解锁后的 formal 汇总入口为：
 

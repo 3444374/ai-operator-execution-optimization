@@ -119,11 +119,10 @@ non-preemptible foreign residual 都进入投影，显式 `finish_job` 才能 ce
 6,144-request audit 通过，15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108
 projection 一致且 estimate/overshoot 门通过。单次相对 VTC-style 的 service lag P95 −13.15%、
 longest no-service +0.014%。授权字段逐项绑定、不完整 fairness trace 的 fail-closed 路径和六臂
-全组件重汇总已经完成；当前合同为
-`locked_pending_formal_readiness/formal_authorized=false`。历史高度匹配 direct ceiling 为
-13,676.08 tok/s，对应 SAOR feeding=92.96%<95%，但旧 compact 证据缺当前完整 model artifact
-identity，只能作为诊断性失败信号。下一步只补当前签名 bounded ceiling；若仍低于 95%，本候选
-保留为 valid feeding-negative，不启动 1+3 formal，也不改 95% 门或冻结 $0.125W_e$。不能用历史
+全组件重汇总已经完成；当前完整签名 direct ceiling 为 13,684.90 tok/s，封存 SAOR 为
+12,713.03 tok/s，feeding ratio=92.898%<95%，且 evidence valid。合同已冻结为
+`locked_failed_feeding/formal_authorized=false`；本候选保留为 valid feeding-negative，不启动 1+3
+formal，也不改 95% 门、K/W 或冻结 $0.125W_e$。不能用历史
 n=2 或单次 rehearsal 直接宣布胜出；授权/报告修正本身不要求重跑六臂 rehearsal。
 formal 把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token

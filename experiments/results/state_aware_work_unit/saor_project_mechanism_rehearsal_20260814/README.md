@@ -58,18 +58,17 @@ prompt 字段仍原样保留。
 mean/p95 为 97.03%/100%，running mean/p95 为 119.32/232，waiting mean/p95/max 为
 1.16/8/35，KV mean/p95 为 0.418/0.521。
 
-feeding-saturation 仍未通过正式证据门。仓库内 2026-08-12 的
-`active_set_direct_no_job` 三次 formal 均值为 13,676.08 tok/s；它与本次使用相同 2×4090、
-vLLM 0.25.1/Qwen2.5-7B、FCFS/chunked-prefill/prefix-cache、K128、chat-completions、
-256 output cap、0.0001 replay scale、5s offset，以及完全相同的两个 manifest SHA。本次 endpoint
-prompt delta 也同为 636,378，说明服务侧有效输入 work 一致。按该历史 ceiling 计算，六臂 feeding
-ratio 依次为 68.91%、92.97%、92.83%、92.56%、87.51%、92.96%，均低于 95%。
+feeding-saturation 已由当前完整签名的独立新 root 做出正式负判决。direct bounded ceiling 为
+13,684.90 tok/s，封存 SAOR 为 12,713.03 tok/s，feeding ratio 为 **92.898%**，低于预注册
+95%。ceiling wrapper 已逐字段匹配 model/tokenizer/template、服务参数、协议、K/W、manifest、
+arrival 与 prompt work，且 `evidence_valid=true`，因此这不是缺证据或环境失败，而是有效的
+`failed_feeding`。完整报告见
+[SAOR 当前签名 feeding ceiling](../saor_project_feeding_ceiling_20260814/README.md)。
 
-但旧 direct compact evidence 没有保存本次新冻结的 tokenizer/config/chat-template 文件 SHA，
-因此这些比值只登记为**高度匹配的历史诊断**，不冒充完全同签名的正式门禁结论。它已经构成
-明确风险信号：即使新的当前签名 ceiling 只复现约 13.68K tok/s，SAOR 也会以 92.96% 失败。
-formal 前必须补一个当前签名、独立新 root 的 direct bounded ceiling cell；通过条件仍是 ≥95%，
-不能因 GPU utilization 97% 或差距只有约 2 个百分点而改门槛。
+direct GPU utilization mean 为 98.83%、MFU 为 55.39%，SAOR 分别为 97.03%/47.91%；两者 GPU
+utilization 都接近 100%，仍存在 7.10% 吞吐差，进一步证明 GPU utilization 不能替代 service
+feeding。当前合同已冻结为 `locked_failed_feeding/formal_authorized=false`，不启动 1+3，也不因
+差距接近门槛而改 K/W、$0.125W_e$ 或 95% 门。
 
 ### 3.3 SAOR 机制门
 
@@ -213,18 +212,18 @@ work-cost audit，得到相同 input-files manifest SHA 与每 cell actual/estim
 配对百分比、五个登记 SHA、96/96 recovery、15/15 repayment、1,108/1,108 projection、
 GPU utilization 97.03% 和 MFU 47.91% 均可由 raw 复核。相关本地测试 170 项通过。
 
-**formal 启动审核尚未通过。** 这是授权与报告合同缺口，不推翻本 rehearsal 的机制证据：
+**formal 不启动。** 当前签名 feeding-negative 不推翻本 rehearsal 的机制证据，但阻断性能归因：
 
 1. 授权 validator 已改为逐字段绑定本 root 的 `validation_sha256`、commit、root、archive、
    `valid_rehearsal` 与 review 状态；任一漂移都有负例测试。当前合同进入
-   `locked_pending_formal_readiness/formal_authorized=false`，没有因此自动解锁；
+   `locked_failed_feeding/formal_authorized=false`；即使仅手动翻转授权布尔值也会被负证据拒绝；
 2. 公平 trace 不完整分支已改为包含 submission 文件名的 fail-closed `ValueError`，不再因未定义
    变量抛出不可解释的 `NameError`；
 3. 六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、CPU/内存、能耗和 pipeline stage 已从封存 raw
    重汇总。通用 group resource summary 也新增双 GPU 功率/能量积分，后续 formal 会直接落列；
-4. feeding 仍是唯一性能合规阻断项。历史高度匹配 ceiling 给出 SAOR 92.96%的失败信号，但缺当前
-   完整 artifact signature，故仍需一个当前签名 direct cell，不能把历史值升级成正式 pass/fail。
-4. predecessor failed root 目前只在合同中登记名称和 SHA，仓库内没有可复核实物。若“失败 root
+4. 当前完整签名 ceiling 给出 92.898%，`evidence_valid=true` 且 `feeding_gate_passed=false`；
+   这是终止当前候选 formal 的有效前置负结果，不再是待补项。
+5. predecessor failed root 目前只在合同中登记名称和 SHA，仓库内没有可复核实物。若“失败 root
    永久保留”是硬要求，还须登记可访问归档位置或外部 manifest；这不影响当前有效 root 的核真。
 
 ## 6. 对课题的含义
@@ -239,10 +238,9 @@ SLO、隔离、公平和机制证据。
 1. 保留本 root 与所有 SHA 不变；它已通过独立证据复核，不因后续授权代码修正重写 raw；
 2. 授权 schema/证据绑定、`stem` fail-closed 分支和全组件重汇总已经关闭；保留 selector 与封存
    root 不变；
-3. 新建当前签名的 bounded direct ceiling root，只补 ceiling 对照，不重跑或调参本六臂；若 SAOR
-   ratio 仍低于 95%，停止 formal 授权并保留为有效 feeding-negative；
-4. feeding 门关闭后，由单独提交显式授权并重跑 readiness，再执行冻结的 position-balanced
-   `1 warm-up + 3 formal`；不再调整门槛、workload、参数或 $0.125W_e$，失败即记录 valid negative；
+3. 当前签名 ceiling 已完成并以 92.898% fail closed；停止本合同的 position-balanced 1+3；
+4. 若继续定位 7.10% gap，另立 diagnostic 分解 W envelope、actor transport 和 Project 路径固定
+   开销，不修改本合同或重跑六臂追正；
 5. 原生 Daft Native/Daft Ray/Ray Data matched comparison 作为独立系统层证据推进。
 
 ## 证据与完整性

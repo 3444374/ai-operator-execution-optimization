@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "status": "failed_feeding",
+  "evidence_valid": true,
+  "feeding_gate_passed": false,
+  "ratio_min": 0.95,
+  "project_scenario_id": "active_set_project_bounded_ready_guarded_debt_0125we",
+  "ceiling_scenario_id": "active_set_project_direct_bounded_ceiling",
+  "project_tokens_per_s": 12713.02535346175,
+  "ceiling_tokens_per_s": 13684.897101379862,
+  "feeding_ratio": 0.9289821661998381,
+  "errors": []
+}

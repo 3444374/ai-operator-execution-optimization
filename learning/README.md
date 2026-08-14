@@ -490,7 +490,7 @@ strict-priority 的 foreground P99 更低，是以吞吐、bulk JCT/SLO 和最�
 latency boundary control；当前没有理论下界，不能称“理论边界”。frozen-static 不经过 shared-credit
 registered-ready ledger，因此 lag/no-service 是 N/A，不是 0。
 
-独立审核已经确认本 rehearsal 的 raw、SHA、指标和代码口径一致，但 formal 仍不能启动：授权合同的
-SHA 字段尚未与 validator 统一并绑定 commit/root/archive，报告还缺同签名 bounded-client feeding
-ratio 与六臂全组件汇总。关闭这些门、用新 validator 复核封存 artifact 并重跑 readiness 后，才运行
-冻结的 `1 warm-up + 3 formal`；该 formal 检验稳定性，不再用于调阈值追正。
+独立审核已经确认本 rehearsal 的 raw、SHA、指标和代码口径一致；授权字段和六臂全组件汇总也已
+补齐。但当前完整签名 bounded-client 为 13,684.90 tok/s，SAOR 为 12,713.03 tok/s，feeding ratio
+只有 92.898%，没有达到预注册 95%。所以机制 rehearsal 仍有效，当前性能 formal 却必须停止：
+不能因为 GPU utilization 接近 100% 而跳过门禁，也不能调 K/W、降低阈值或重跑到通过。

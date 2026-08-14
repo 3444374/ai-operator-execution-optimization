@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "matched_ready_to_run",
+  "reference_contract_sha256": "a52066ca50584fb4321e17b23a7b41754fafc668577ffcf921d2d33bbd029633",
+  "reference_config_sha256": "2a38363494935bbefd8ca830bb0795d478b33b4753415d07c8bb156c33e54ae5",
+  "ceiling_config_sha256": "eca442cff77109b6b02663fde34244cc05a9a08d156ef25af817bbe4a584d527",
+  "work_cost_calibration_identity": {
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "model_config_sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+    "tokenizer_config_sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "tokenizer_json_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "message_shape": "single_user_message_no_system",
+    "prompt_format": "raw",
+    "return_token_ids": true
+  }
+}

@@ -16,6 +16,7 @@ from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.common.manifests import write_manifest
 from src.experiments.saor.project_mechanism_formal import (
     EXPECTED_SCENARIOS as PROJECT_FORMAL_SCENARIOS,
+    FROZEN_FEEDING_EVIDENCE,
     PROPOSED as PROJECT_FORMAL_PROPOSED,
     REVIEWED_REHEARSAL_EVIDENCE,
     VTC as PROJECT_FORMAL_VTC,
@@ -1541,6 +1542,33 @@ class SaorFormalToolsTests(unittest.TestCase):
                     project_formal_config,
                     formal_run=True,
                 )
+                feeding_authorization_drift_errors = {}
+                for field, replacement in {
+                    "status": "passed",
+                    "repository_commit": "0" * 40,
+                    "root_id": "different-feeding-root",
+                    "validation_sha256": "0" * 64,
+                    "archive_sha256": "1" * 64,
+                    "evidence_valid": False,
+                    "feeding_gate_passed": True,
+                    "ratio_min": 0.94,
+                    "project_tokens_per_s": 12714.0,
+                    "ceiling_tokens_per_s": 13685.0,
+                    "feeding_ratio": 0.95,
+                }.items():
+                    drifted_feeding_authorization = json.loads(
+                        json.dumps(project_formal_contract)
+                    )
+                    drifted_feeding_authorization["feeding_validation"][
+                        field
+                    ] = replacement
+                    feeding_authorization_drift_errors[field] = (
+                        validate_project_formal_contract(
+                            drifted_feeding_authorization,
+                            project_formal_config,
+                            formal_run=False,
+                        )
+                    )
                 authorization_drift_errors = {}
                 for field, replacement in {
                     "status": "passed_pending_independent_review",
@@ -1627,7 +1655,10 @@ class SaorFormalToolsTests(unittest.TestCase):
             project_formal_lock_errors,
             ["formal run is not authorized by the frozen contract"],
         )
-        self.assertEqual(project_authorized_errors, [])
+        self.assertEqual(
+            project_authorized_errors,
+            ["formal authorization requires a valid passed feeding gate"],
+        )
         self.assertEqual(feeding_config_errors, [])
         self.assertIn(
             "feeding ceiling common_args drifted",
@@ -1636,6 +1667,15 @@ class SaorFormalToolsTests(unittest.TestCase):
         for field, errors in authorization_drift_errors.items():
             self.assertIn(
                 f"formal rehearsal evidence {field} drifted",
+                errors,
+            )
+        self.assertEqual(
+            project_formal_contract["feeding_validation"],
+            FROZEN_FEEDING_EVIDENCE,
+        )
+        for field, errors in feeding_authorization_drift_errors.items():
+            self.assertIn(
+                f"formal feeding evidence {field} drifted",
                 errors,
             )
         self.assertEqual(observation_bridge_result["status"], "passed")

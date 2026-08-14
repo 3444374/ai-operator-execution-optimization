@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment_id": "saor_project_mechanism_formal",
-  "status": "locked_pending_formal_readiness",
+  "status": "locked_failed_feeding",
   "formal_authorized": false,
   "readiness_profile": "matched_ready_selector_ablation",
   "warmup_runs_per_scenario": 1,
@@ -16,6 +16,19 @@
     "archive_sha256": "5f267dc5847529e8dcea7a4415d52a3e1675a4a983c5190c164ef67af552cedd",
     "performance_ranking_decided": false,
     "valid_rehearsal": true
+  },
+  "feeding_validation": {
+    "status": "failed_feeding",
+    "repository_commit": "c988622a643699925faeeb3cecc4c351913b728b",
+    "root_id": "saor_project_feeding_ceiling_c988622a_20260814_retry2",
+    "validation_sha256": "6c656f25b8128fe102a06b65093c8be7e593f182029febc68201af265cdba3d5",
+    "archive_sha256": "ebf5c35a699ff034891855d14c3332dbe42dabef3ede1f0641d3ac18a4079fb2",
+    "evidence_valid": true,
+    "feeding_gate_passed": false,
+    "ratio_min": 0.95,
+    "project_tokens_per_s": 12713.02535346175,
+    "ceiling_tokens_per_s": 13684.897101379862,
+    "feeding_ratio": 0.9289821661998381
   },
   "work_cost_contract": {
     "completion_protocol": "chat_completions",

@@ -796,10 +796,10 @@ cap=256 的 6,144-request audit 通过，15/15 repayment completed、P95 3.234s�
 1,108/1,108 projection 一致；单次相对 VTC-style lag P95 −13.15%、longest no-service
 +0.014%，尚不判 winner。独立 raw/SHA 复核已通过。authorization 已逐字段绑定 validation SHA、
 commit/root/archive/valid-rehearsal，公平 trace 错误分支已 fail closed，六臂服务延迟、资源/能耗与
-pipeline 也已从封存 raw 重汇总；当前 contract 为
-`locked_pending_formal_readiness/formal_authorized=false`。历史高度匹配 direct ceiling 暗示 SAOR
-feeding=92.96%<95%，但因旧证据缺当前完整 artifact identity，只作诊断信号；补当前签名 ceiling
-后若仍不过 95%，停止 formal 授权并记录 valid feeding-negative，不改门槛或 $0.125W_e$。
+pipeline 也已从封存 raw 重汇总。当前完整签名 direct ceiling 为 13,684.90 tok/s，封存 SAOR 为
+12,713.03 tok/s，feeding ratio=92.898%<95%；证据结构有效，因此 contract 已冻结为
+`locked_failed_feeding/formal_authorized=false`，停止当前 1+3 formal，不改门槛、K/W 或
+$0.125W_e$。**来源类型：本地 GPU ceiling 事实。**
 **来源类型：合理推断。** lag 绝对差 8,231.5 work 约等于 $1.005H_B$，说明结果与 debt-cap
 作用方向一致；因 lag 是目标邻近指标，不能脱离 JCT/P99/SLO/no-service/throughput 保护写成用户收益。
 frozen-static 因不经过 shared credit，其 registered-ready lag 是 N/A，只参加共同性能/SLO比较；

@@ -70,8 +70,8 @@ non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 
 `experiments/run_saor_project_mechanism.py` 是独立 Project mechanism 矩阵的 audit-aware
 入口。它绑定 `saor_project_mechanism_formal_contract.json`，运行前复用 matched-ready
 readiness audit，并把合同 SHA 与 readiness 写入 output root。最终 rehearsal 已通过并登记证据
-SHA，独立审核后合同已进入
-`locked_pending_formal_readiness/formal_authorized=false`，因此 wrapper 仍只允许
+SHA，独立审核后又由当前签名 ceiling 确认 feeding=92.898%<95%，合同已进入
+`locked_failed_feeding/formal_authorized=false`，因此 wrapper 仍只允许
 `--rehearsal`；即使有人
 遗漏命令行约定，非 rehearsal 也会 fail closed。正式配置使用位置平衡种子，使六臂在三次
 formal 中各占三个不同序位，而不是让 proposed 连续固定在首位。授权 validator 逐字段绑定已审核
@@ -89,7 +89,8 @@ ceiling 与六臂 reference 的 endpoints、服务元数据、K/W、common args�
 calibration、manifest、rows 和 arrival。它明确禁止 bounded-ready/credit，调度所有权属于 direct
 HTTP semaphore + vLLM FCFS。`analysis/summarize_saor_feeding_ceiling.py` 再区分 evidence validity
 与 ≥95% feeding gate：合法的 92% 结果写为 `failed_feeding` 且退出码仍允许归档，不会被伪装成
-基础设施失败或自动授权 formal。
+基础设施失败或自动授权 formal。当前冻结结果为 direct 13,684.90 tok/s、SAOR 12,713.03 tok/s、
+ratio=92.898%，因此当前合同不再等待 ceiling，而是终止 formal。
 
 `analysis/audit_chat_prompt_overhead.py` 从 `jobs/*.requests.csv` 与
 `jobs/*.submissions.csv` 按 submission ID 独立重算

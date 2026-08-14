@@ -1115,20 +1115,20 @@ formal readiness 必须按以下顺序关闭，任一未完成则保持锁定：
 
 1. **已完成**：统一授权 schema；contract 与 validator 使用同一个 `validation_sha256` 字段，并同时等值绑定
    rehearsal `repository_commit`、`root_id`、`archive_sha256` 与 `valid_rehearsal=true`；随后才允许
-   已完成的独立审核结果登记为 evidence；如需增加中间状态，应明确为
-   `locked_pending_formal_readiness`，再由独立提交切为 `formal_ready/formal_authorized=true`；
+   已完成的独立审核结果登记为 evidence；
 2. **已完成**：修复 completion fairness 不完整 trace 分支的未定义 `stem`，加入缺 registration/grant/completion
    join 时必须结构化 fail-closed 的反例；
-3. **待完成**：登记同 workload/protocol/model/service signature 的 bounded-client feeding ratio。
-   历史高度匹配 direct ceiling 对应 SAOR 92.96%<95%，但缺当前完整 artifact identity，故只作
-   诊断性失败信号；补当前签名 ceiling，GPU utilization、running 或 MFU 均不能替代 ≥95% 门；
+3. **已完成且失败**：同 workload/protocol/model/service signature 的 bounded-client ceiling 为
+   13,684.90 tok/s，封存 SAOR 为 12,713.03 tok/s，feeding ratio=92.898%<95%。证据有效，故合同
+   冻结为 `locked_failed_feeding/formal_authorized=false`；GPU utilization、running 或 MFU 均不能
+   替代 ≥95% 门；
 4. **已完成**：从已有 raw 重汇总六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、energy 与 pipeline stage；
    不可恢复项显式 `unavailable`，不得由 before/after 或单点快照补造；
 5. predecessor failed root 若作为永久审计证据保留，登记可访问 archive location/manifest；仅有
    名称和 SHA 不能证明实物仍可取；
-6. 用修正后的 validator 复核封存 rehearsal，通过后重跑 formal readiness，再运行冻结的
-   position-balanced `1 warm-up + 3 formal`。不改 workload、阈值、$0.125W_e$ 或 selector；未过
-   effect/protection 门即记录 valid negative。
+6. **终止当前 formal 路径**：不运行冻结的 position-balanced `1 warm-up + 3 formal`，不改
+   workload、阈值、K/W、$0.125W_e$ 或 selector。若研究 7.10% gap，另立诊断合同，不复活本合同
+   追正。
 
 lag P95 还应同时报告 work 与 envelope 归一化值：VTC-style 为 $0.955W_e$、SAOR 为
 $0.830W_e$，差值 8,231.5 work，约为 $1.005H_B$。这是 debt-cap 作用方向的机制一致性证据，
@@ -1338,7 +1338,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 | 7 | ✅ 完成并推送 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖；commit `8600044` |
 | 8 | ✅ 双轮 GPU gate 完成、未晋级 | single-head bounded-priority 两 cap 均未过 foreground 门；$0.25W_e$ 第 2 轮机制门 fail-closed，定位为 ready-backlog observation gap；未启动 formal |
 | 9 | ✅ bounded-ready 修订与双轮 gate 完成 | $0.125W_e$ 通过开发门，$0.25W_e$ 被 bulk guard 拒绝；后续同窗口 selector attribution 与 FIFO observation bridge 也已完成，SAOR 是观测非支配折中，不是 selector winner |
-| 10 | ✅ final rehearsal/独立证据审核与授权代码修复已通过；formal 仍锁定 | `63d17300` 六臂 0 incident；固定 output cap=256 的 6,144-request audit 通过，96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved；1,108/1,108 projection 一致。授权逐字段绑定、fairness fail-closed 反例与全组件复算已完成；历史 ceiling 暗示 feeding=92.96%<95%，仍须补当前签名 direct cell，不能据 rehearsal 判 winner或自动跑 formal |
+| 10 | ✅ final rehearsal 有效；❌ 当前候选 formal 因 feeding 门终止 | `63d17300` 六臂 0 incident；固定 output cap=256 的 6,144-request audit 通过，96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved；1,108/1,108 projection 一致。当前完整签名 direct ceiling 13,684.90 tok/s 对 SAOR 12,713.03，ratio=92.898%<95%；合同 `locked_failed_feeding/false`，不启动 1+3 |
 
 下方 checkbox 是已经执行完毕的历史复现清单，现统一勾选；其中“单 recovery lease”语义已被
 Task 10 的反例推翻，不再是当前算法约束。真实 GPU 判决仍以 Task 8/9/10 和对应

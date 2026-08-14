@@ -6791,12 +6791,11 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `SharedVllmConfig.completion_work_cost` 仍从 `common_args` 字符串反向解析；后续可在 config load
   边界一次解析为字段，避免再次混淆同名 token 量。该重构不与 formal 授权修复捆绑，防止扩大
   下一次服务器运行的代码差异。
-- 性能合规仍缺同 workload/protocol/model/service signature 的 bounded-client feeding ratio，以及
-  六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、energy 与 pipeline stage 全组件汇总。可从 raw
-  恢复的先重汇总，不可恢复项标 `unavailable`；GPU utilization/MFU 不替代 feeding 门。
-- 只有上述代码/证据门关闭、单独提交显式切换 `formal_ready/formal_authorized=true` 并重跑
-  readiness 后，才运行冻结的 position-balanced 1+3 formal；不再调 workload、阈值、
-  $0.125W_e$ 或 selector，失败保留为 valid negative。
+- 后续提交已关闭上述缺口：六臂全组件由封存 raw 重汇总，当前完整签名 bounded-client ceiling
+  也已完成。最终 direct 13,684.90 tok/s 对 SAOR 12,713.03，feeding=92.898%<95%；这是
+  evidence-valid 的负判决，不能由 GPU utilization/MFU 替代。
+- 当前合同冻结为 `locked_failed_feeding/formal_authorized=false`，不运行 position-balanced 1+3；
+  不再调 workload、阈值、K/W、$0.125W_e$ 或 selector 追正。
 
 ## 2026-08-14 SAOR formal-readiness 授权修复与全组件复算
 
@@ -6820,3 +6819,20 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `validate_results()`，但返回的 Job evidence 没有显式携带 group schema 后来新增的
   expected/completed/exactly-once 三字段。现由 direct adapter 在成功的一对一校验后写出这三个
   字段并加回归断言；两个失败 root 均保留为 infrastructure/schema diagnostic，不作 feeding 数据。
+
+## 2026-08-14 SAOR 当前签名 feeding-negative 与 formal 终止
+
+- 在 `c988622a` 上用全新 root 完成唯一 `direct_no_job` bounded ceiling。wrapper 逐字段匹配封存
+  SAOR reference 的 model/tokenizer/template、服务参数、chat-completions、K/W、calibration、
+  manifest、rows、arrival 与 prompt work；1,024/1,024 exactly-once、0 incident，summarizer 给出
+  `evidence_valid=true`。
+- direct 为 13,684.8971 tok/s，封存 SAOR 为 12,713.0254 tok/s，feeding ratio=0.928982，低于
+  冻结 0.95 门；结果状态为 `failed_feeding`。archive SHA256 为
+  `ebf5c35a699ff034891855d14c3332dbe42dabef3ede1f0641d3ac18a4079fb2`。
+- direct/SAOR GPU utilization mean 分别为 98.83%/97.03%，MFU 为 55.39%/47.91%；近似满 GPU
+  utilization 仍伴随 7.10% service gap，再次确认单看利用率不可靠。
+- formal contract 新增逐字段冻结的 feeding evidence 并改为
+  `locked_failed_feeding/formal_authorized=false`。validator 在人工翻转 authorization 时仍要求
+  `evidence_valid=true AND feeding_gate_passed=true`，因此不能绕过该负结果。
+- 当前六臂 rehearsal 的机制闭环仍有效，但性能归因 1+3 停止。若继续研究 7.10% gap，必须另立
+  diagnostic/候选合同分解 W envelope、actor transport 与固定路径开销，不修改原合同或重跑追正。

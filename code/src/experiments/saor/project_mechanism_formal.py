@@ -66,6 +66,30 @@ REVIEWED_REHEARSAL_EVIDENCE: dict[str, object] = {
 }
 
 
+# Engineering decision: this exact-signature direct ceiling is a valid
+# negative prerequisite, not a missing measurement. Keep the measured
+# throughput values as evidence identity and refuse formal authorization while
+# the frozen feeding gate is false. A future candidate must use a new contract
+# rather than rewriting this result or lowering the threshold.
+FROZEN_FEEDING_EVIDENCE: dict[str, object] = {
+    "status": "failed_feeding",
+    "repository_commit": "c988622a643699925faeeb3cecc4c351913b728b",
+    "root_id": "saor_project_feeding_ceiling_c988622a_20260814_retry2",
+    "validation_sha256": (
+        "6c656f25b8128fe102a06b65093c8be7e593f182029febc68201af265cdba3d5"
+    ),
+    "archive_sha256": (
+        "ebf5c35a699ff034891855d14c3332dbe42dabef3ede1f0641d3ac18a4079fb2"
+    ),
+    "evidence_valid": True,
+    "feeding_gate_passed": False,
+    "ratio_min": 0.95,
+    "project_tokens_per_s": 12713.02535346175,
+    "ceiling_tokens_per_s": 13684.897101379862,
+    "feeding_ratio": 0.9289821661998381,
+}
+
+
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -383,6 +407,14 @@ def validate_contract(
         ):
             errors.append("discrete recovery overshoot bound drifted")
 
+    feeding = payload.get("feeding_validation")
+    if not isinstance(feeding, dict):
+        errors.append("mechanism contract lacks frozen feeding evidence")
+    else:
+        for key, expected in FROZEN_FEEDING_EVIDENCE.items():
+            if feeding.get(key) != expected:
+                errors.append(f"formal feeding evidence {key} drifted")
+
     if authorized:
         if payload.get("status") != "formal_ready":
             errors.append("authorized contract status must be formal_ready")
@@ -395,11 +427,17 @@ def validate_contract(
                     errors.append(
                         f"formal rehearsal evidence {key} drifted"
                     )
-    else:
-        if payload.get("status") != "locked_pending_formal_readiness":
+        if not isinstance(feeding, dict) or (
+            feeding.get("evidence_valid") is not True
+            or feeding.get("feeding_gate_passed") is not True
+        ):
             errors.append(
-                "unauthorized reviewed contract must remain "
-                "locked_pending_formal_readiness"
+                "formal authorization requires a valid passed feeding gate"
+            )
+    else:
+        if payload.get("status") != "locked_failed_feeding":
+            errors.append(
+                "feeding-negative contract must remain locked_failed_feeding"
             )
     if formal_run and not authorized:
         errors.append("formal run is not authorized by the frozen contract")
