@@ -47,6 +47,25 @@ EXPECTED_SCENARIOS = {
 }
 
 
+# Engineering decision: formal authorization is tied to the one independently
+# reviewed rehearsal artifact.  Presence or shape checks are insufficient here:
+# changing any identity field must require another explicit review and code
+# update before a formal run can be authorized.
+REVIEWED_REHEARSAL_EVIDENCE: dict[str, object] = {
+    "status": "passed_independent_review",
+    "repository_commit": "63d1730058923609808bec6e3b91ed26a2cd581a",
+    "root_id": "saor_project_mechanism_rehearsal_63d17300_20260814",
+    "validation_sha256": (
+        "4f19e0b70c13d4a67a24015ff33444a95a8bab4b773052b62716bfc39540b668"
+    ),
+    "archive_sha256": (
+        "5f267dc5847529e8dcea7a4415d52a3e1675a4a983c5190c164ef67af552cedd"
+    ),
+    "performance_ranking_decided": False,
+    "valid_rehearsal": True,
+}
+
+
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -368,11 +387,20 @@ def validate_contract(
         if payload.get("status") != "formal_ready":
             errors.append("authorized contract status must be formal_ready")
         rehearsal = payload.get("rehearsal_validation")
-        if not isinstance(rehearsal, dict) or not rehearsal.get("sha256"):
+        if not isinstance(rehearsal, dict):
             errors.append("formal authorization requires frozen rehearsal evidence")
+        else:
+            for key, expected in REVIEWED_REHEARSAL_EVIDENCE.items():
+                if rehearsal.get(key) != expected:
+                    errors.append(
+                        f"formal rehearsal evidence {key} drifted"
+                    )
     else:
-        if payload.get("status") != "locked_pending_rehearsal":
-            errors.append("unauthorized contract must remain locked_pending_rehearsal")
+        if payload.get("status") != "locked_pending_formal_readiness":
+            errors.append(
+                "unauthorized reviewed contract must remain "
+                "locked_pending_formal_readiness"
+            )
     if formal_run and not authorized:
         errors.append("formal run is not authorized by the frozen contract")
     return errors
@@ -472,7 +500,8 @@ def completion_fairness_from_raw(
                 or submission_id not in service_by_id
             ):
                 raise ValueError(
-                    f"{stem} has an incomplete registered-ready service join"
+                    f"{submission_path.name} has an incomplete "
+                    "registered-ready service join"
                 )
             completion, work = service_by_id[submission_id]
             lifecycle.append(

@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -16,11 +17,17 @@ from src.baselines.common.manifests import write_manifest
 from src.experiments.saor.project_mechanism_formal import (
     EXPECTED_SCENARIOS as PROJECT_FORMAL_SCENARIOS,
     PROPOSED as PROJECT_FORMAL_PROPOSED,
+    REVIEWED_REHEARSAL_EVIDENCE,
     VTC as PROJECT_FORMAL_VTC,
     completion_fairness_from_raw,
     load_contract as load_project_formal_contract,
     sha256_file as project_formal_sha256,
     validate_contract as validate_project_formal_contract,
+)
+from src.experiments.saor.feeding_ceiling import (
+    CEILING_SCENARIO,
+    summarize_feeding_ceiling,
+    validate_ceiling_config,
 )
 from src.experiments.shared_vllm.config import (
     CompletionWorkCostConfig,
@@ -426,6 +433,69 @@ class SaorFormalToolsTests(unittest.TestCase):
             )
             self.assertEqual(fairness["completion_service_lag_p95_work"], 24.5)
 
+    def test_completion_fairness_rejects_incomplete_lifecycle_with_path(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            jobs = root / "jobs"
+            jobs.mkdir()
+            scenario_id = "cell"
+            row = {
+                "order_index": "0",
+                "phase": "warmup",
+                "repeat_index": "1",
+                "scenario_id": scenario_id,
+            }
+            for job_index in range(2):
+                stem = f"000_warmup_1_{scenario_id}_job{job_index}"
+                submission_id = f"submission-{job_index}"
+                self._write_group_rows(
+                    jobs / f"{stem}.requests.csv",
+                    [
+                        self._work_request_row(
+                            scenario_id=scenario_id,
+                            job_id=f"job-{job_index}",
+                            endpoint_id=f"endpoint-{job_index}",
+                            submission_id=submission_id,
+                            doc_id=str(job_index),
+                            completion_epoch_s=float(job_index + 1),
+                        )
+                    ],
+                )
+                self._write_group_rows(
+                    jobs / f"{stem}.submissions.csv",
+                    [
+                        self._work_submission_row(
+                            job_id=f"job-{job_index}",
+                            endpoint_id=f"endpoint-{job_index}",
+                            submission_id=submission_id,
+                            doc_id=str(job_index),
+                            ready_epoch_s=0.1,
+                            registered_epoch_s=0.2,
+                            granted_epoch_s=(0.3 if job_index else ""),
+                        )
+                    ],
+                )
+
+            with self.assertRaisesRegex(
+                ValueError,
+                (
+                    "000_warmup_1_cell_job0.submissions.csv has an "
+                    "incomplete registered-ready service join"
+                ),
+            ):
+                completion_fairness_from_raw(
+                    root,
+                    row,
+                    work_cost=CompletionWorkCostConfig(
+                        "chat_completions",
+                        29,
+                        "fixed_output_cap",
+                        10,
+                    ),
+                )
+
     def test_matrix_work_audit_rejects_missing_frozen_arm(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -460,6 +530,70 @@ class SaorFormalToolsTests(unittest.TestCase):
             self.assertTrue(
                 any("matrix cells differ" in error for error in result["errors"])
             )
+
+    def test_feeding_ceiling_separates_valid_negative_from_bad_evidence(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            ceiling = root / "ceiling"
+            project.mkdir()
+            ceiling.mkdir()
+            common = {
+                "phase": "warmup",
+                "execution_mode": "rehearsal",
+                "metrics_status": "ok",
+                "resource_metrics_status": "ok",
+                "request_manifest_sha256": '["a", "b"]',
+                "arrival_offsets_s": "[0.0, 5.0]",
+                "job_arrived_rows": "[512, 512]",
+                "job_completed_rows": "[512, 512]",
+                "job_failed_rows": "[0, 0]",
+                "job_exactly_once": "[true, true]",
+                "request_success_delta": "1024",
+                "prompt_tokens_delta": "636378",
+            }
+            self._write_group_rows(
+                project / "group_runs.csv",
+                [
+                    {
+                        "scenario_id": PROJECT_FORMAL_PROPOSED,
+                        "policy": "saor_bounded_ready",
+                        "tokens_per_s": "100",
+                        **common,
+                    }
+                ],
+            )
+            self._write_group_rows(
+                ceiling / "group_runs.csv",
+                [
+                    {
+                        "scenario_id": CEILING_SCENARIO,
+                        "policy": "direct_no_job",
+                        "tokens_per_s": "110",
+                        **common,
+                    }
+                ],
+            )
+
+            result = summarize_feeding_ceiling(project, ceiling)
+            self.assertTrue(result["evidence_valid"])
+            self.assertFalse(result["feeding_gate_passed"])
+            self.assertEqual(result["status"], "failed_feeding")
+
+            rows = list(
+                csv.DictReader(
+                    (ceiling / "group_runs.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            rows[0]["request_manifest_sha256"] = '["x", "y"]'
+            self._write_group_rows(ceiling / "group_runs.csv", rows)
+            invalid = summarize_feeding_ceiling(project, ceiling)
+            self.assertFalse(invalid["evidence_valid"])
+            self.assertEqual(invalid["status"], "invalid_evidence")
 
     def test_project_rehearsal_validator_writes_absolute_gate_result(
         self,
@@ -563,7 +697,9 @@ class SaorFormalToolsTests(unittest.TestCase):
             )
             contract["status"] = "formal_ready"
             contract["formal_authorized"] = True
-            contract["rehearsal_validation"] = {"sha256": "test-rehearsal"}
+            contract["rehearsal_validation"] = dict(
+                REVIEWED_REHEARSAL_EVIDENCE
+            )
             contract_path.write_text(
                 json.dumps(contract),
                 encoding="utf-8",
@@ -1314,6 +1450,10 @@ class SaorFormalToolsTests(unittest.TestCase):
                     {"COMPLETION_MAX_TOKENS": "256"},
                 ):
                     project_formal_config = load_config(project_formal_path)
+                    feeding_ceiling_config = load_config(
+                        REPOSITORY
+                        / "deploy/autodl/saor_project_feeding_ceiling.example.json"
+                    )
                 project_formal_contract = load_project_formal_contract(
                     REPOSITORY
                     / "deploy/autodl/saor_project_mechanism_formal_contract.json"
@@ -1373,6 +1513,54 @@ class SaorFormalToolsTests(unittest.TestCase):
                     project_formal_config,
                     formal_run=True,
                 )
+                feeding_config_errors = validate_ceiling_config(
+                    project_formal_config,
+                    feeding_ceiling_config,
+                )
+                drifted_feeding_config = replace(
+                    feeding_ceiling_config,
+                    common_args=(
+                        *feeding_ceiling_config.common_args,
+                        "--unexpected-drift",
+                    ),
+                )
+                feeding_drift_errors = validate_ceiling_config(
+                    project_formal_config,
+                    drifted_feeding_config,
+                )
+                authorized_contract = json.loads(
+                    json.dumps(project_formal_contract)
+                )
+                authorized_contract["status"] = "formal_ready"
+                authorized_contract["formal_authorized"] = True
+                project_authorized_errors = validate_project_formal_contract(
+                    authorized_contract,
+                    project_formal_config,
+                    formal_run=True,
+                )
+                authorization_drift_errors = {}
+                for field, replacement in {
+                    "status": "passed_pending_independent_review",
+                    "repository_commit": "0" * 40,
+                    "root_id": "different-root",
+                    "validation_sha256": "0" * 64,
+                    "archive_sha256": "1" * 64,
+                    "performance_ranking_decided": True,
+                    "valid_rehearsal": False,
+                }.items():
+                    drifted_authorization = json.loads(
+                        json.dumps(authorized_contract)
+                    )
+                    drifted_authorization["rehearsal_validation"][
+                        field
+                    ] = replacement
+                    authorization_drift_errors[field] = (
+                        validate_project_formal_contract(
+                            drifted_authorization,
+                            project_formal_config,
+                            formal_run=True,
+                        )
+                    )
                 observation_bridge_result = AUDIT.audit(
                     REPOSITORY
                     / "deploy/autodl/saor_ready_observation_bridge.example.json",
@@ -1436,6 +1624,17 @@ class SaorFormalToolsTests(unittest.TestCase):
             project_formal_lock_errors,
             ["formal run is not authorized by the frozen contract"],
         )
+        self.assertEqual(project_authorized_errors, [])
+        self.assertEqual(feeding_config_errors, [])
+        self.assertIn(
+            "feeding ceiling common_args drifted",
+            feeding_drift_errors,
+        )
+        for field, errors in authorization_drift_errors.items():
+            self.assertIn(
+                f"formal rehearsal evidence {field} drifted",
+                errors,
+            )
         self.assertEqual(observation_bridge_result["status"], "passed")
         self.assertEqual(observation_bridge_result["scenario_count"], 3)
         self.assertEqual(drift_result["status"], "failed")

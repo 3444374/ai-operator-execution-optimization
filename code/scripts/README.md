@@ -70,10 +70,12 @@ non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 
 `experiments/run_saor_project_mechanism.py` 是独立 Project mechanism 矩阵的 audit-aware
 入口。它绑定 `saor_project_mechanism_formal_contract.json`，运行前复用 matched-ready
 readiness audit，并把合同 SHA 与 readiness 写入 output root。最终 rehearsal 已通过并登记证据
-SHA，但当前合同仍是 `locked_pending_rehearsal/formal_authorized=false`，因此 wrapper 仍只允许
+SHA，独立审核后合同已进入
+`locked_pending_formal_readiness/formal_authorized=false`，因此 wrapper 仍只允许
 `--rehearsal`；即使有人
 遗漏命令行约定，非 rehearsal 也会 fail closed。正式配置使用位置平衡种子，使六臂在三次
-formal 中各占三个不同序位，而不是让 proposed 连续固定在首位。
+formal 中各占三个不同序位，而不是让 proposed 连续固定在首位。授权 validator 逐字段绑定已审核
+root 的 validation SHA、commit、root ID、archive SHA 与 valid flag；不是“任意 SHA 存在”即可放行。
 
 `analysis/summarize_saor_project_mechanism_formal.py` 只接受经过上述 wrapper、完整 1+3、18 个
 formal cell 的证据。static 的 registered-ready fairness 为不适用；五个 bounded-ready 臂必须
@@ -81,6 +83,13 @@ formal cell 的证据。static 的 registered-ready fairness 为不适用；五�
 completion→debt below-cap episode。工具将 evidence validity 与 claim gate 分开：有效实验即使
 未过 5% headline、吞吐/bulk JCT/SLO/no-service non-inferiority 或 repayment 门也保持有效负结果，
 不会把性能失败伪装成无效运行。
+
+`experiments/run_saor_feeding_ceiling.py` 只运行一个 `direct_no_job` cell，并在发请求前逐字段比较
+ceiling 与六臂 reference 的 endpoints、服务元数据、K/W、common args、typed work cost、
+calibration、manifest、rows 和 arrival。它明确禁止 bounded-ready/credit，调度所有权属于 direct
+HTTP semaphore + vLLM FCFS。`analysis/summarize_saor_feeding_ceiling.py` 再区分 evidence validity
+与 ≥95% feeding gate：合法的 92% 结果写为 `failed_feeding` 且退出码仍允许归档，不会被伪装成
+基础设施失败或自动授权 formal。
 
 `analysis/audit_chat_prompt_overhead.py` 从 `jobs/*.requests.csv` 与
 `jobs/*.submissions.csv` 按 submission ID 独立重算

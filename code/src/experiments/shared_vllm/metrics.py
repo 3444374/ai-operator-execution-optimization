@@ -1402,7 +1402,17 @@ def group_resource_summary(
     *,
     start_epoch_s: float | None = None,
     end_epoch_s: float | None = None,
+    observed_tokens: int | None = None,
 ) -> dict[str, float | str]:
+    if (
+        observed_tokens is not None
+        and (
+            isinstance(observed_tokens, bool)
+            or not isinstance(observed_tokens, int)
+            or observed_tokens < 0
+        )
+    ):
+        raise ValueError("observed_tokens must be a non-negative integer")
     by_epoch: dict[float, list[dict[str, object]]] = {}
     for sample in samples:
         observed_epoch_s = float(sample["observed_epoch_s"])
@@ -1415,6 +1425,8 @@ def group_resource_summary(
             continue
         by_epoch.setdefault(observed_epoch_s, []).append(sample)
     gpu_values = []
+    gpu_power_values = []
+    timed_gpu_power: list[tuple[float, float]] = []
     running_values = []
     waiting_values = []
     kv_values = []
@@ -1422,12 +1434,16 @@ def group_resource_summary(
     host_cpu_per_core_max_pct = []
     host_memory_used_pct = []
     host_memory_available_mib = []
-    for epoch_samples in by_epoch.values():
+    for observed_epoch_s, epoch_samples in by_epoch.items():
         gpu_value = _optional_float(
             epoch_samples[0].get("gpu_utilization_pct")
         )
         if gpu_value is not None:
             gpu_values.append(gpu_value)
+        gpu_power = _optional_float(epoch_samples[0].get("gpu_power_w"))
+        if gpu_power is not None:
+            gpu_power_values.append(gpu_power)
+            timed_gpu_power.append((observed_epoch_s, gpu_power))
         running = [
             value
             for sample in epoch_samples
@@ -1464,6 +1480,9 @@ def group_resource_summary(
             "gpu_utilization_pct_mean": "",
             "gpu_utilization_pct_p95": "",
             "gpu_utilization_pct_max": "",
+            **_distribution_fields("gpu_power_w", []),
+            "gpu_energy_j": "",
+            "energy_j_per_1k_observed_tokens": "",
             "vllm_running_mean": "",
             "vllm_running_p95": "",
             "vllm_running_max": "",
@@ -1483,9 +1502,24 @@ def group_resource_summary(
         if gpu_values and running_values and waiting_values and kv_values
         else "unavailable:incomplete_samples"
     )
+    energy_j = sum(
+        (start_w + end_w) / 2.0 * (end_s - start_s)
+        for (start_s, start_w), (end_s, end_w) in zip(
+            timed_gpu_power,
+            timed_gpu_power[1:],
+        )
+    )
+    energy_observed = len(timed_gpu_power) >= 2
     return {
         "resource_metrics_status": status,
         **_distribution_fields("gpu_utilization_pct", gpu_values),
+        **_distribution_fields("gpu_power_w", gpu_power_values),
+        "gpu_energy_j": energy_j if energy_observed else "",
+        "energy_j_per_1k_observed_tokens": (
+            energy_j / observed_tokens * 1000.0
+            if energy_observed and observed_tokens
+            else ""
+        ),
         **_distribution_fields("vllm_running", running_values),
         **_distribution_fields("vllm_waiting", waiting_values),
         **_distribution_fields("vllm_kv_usage", kv_values),

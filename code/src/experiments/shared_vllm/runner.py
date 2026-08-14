@@ -1108,16 +1108,17 @@ def _run_group(
         )
         if service_metrics["metrics_status"] != "ok":
             raise RuntimeError("group vLLM metrics are unavailable")
+        observed_tokens = int(service_metrics["prompt_tokens_delta"]) + int(
+            service_metrics["generation_tokens_delta"]
+        )
         resource_metrics = group_resource_summary(
             resource_samples,
             start_epoch_s=start_epoch_s,
             end_epoch_s=group_end_epoch_s,
+            observed_tokens=observed_tokens,
         )
         if resource_metrics["resource_metrics_status"] != "ok":
             raise RuntimeError("group resource metrics are unavailable")
-        observed_tokens = int(service_metrics["prompt_tokens_delta"]) + int(
-            service_metrics["generation_tokens_delta"]
-        )
         mfu_metrics = estimate_mfu(
             estimated_flops=float(
                 service_metrics["estimated_flops_per_gpu_delta"]

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment_id": "saor_project_mechanism_formal",
-  "status": "locked_pending_rehearsal",
+  "status": "locked_pending_formal_readiness",
   "formal_authorized": false,
   "readiness_profile": "matched_ready_selector_ablation",
   "warmup_runs_per_scenario": 1,
@@ -9,7 +9,7 @@
   "comparison_scope": "project_internal_matched_observation",
   "fairness_scope": "single_tenant_multi_job_differentiated_service",
   "rehearsal_validation": {
-    "status": "passed_pending_independent_review",
+    "status": "passed_independent_review",
     "repository_commit": "63d1730058923609808bec6e3b91ed26a2cd581a",
     "root_id": "saor_project_mechanism_rehearsal_63d17300_20260814",
     "validation_sha256": "4f19e0b70c13d4a67a24015ff33444a95a8bab4b773052b62716bfc39540b668",

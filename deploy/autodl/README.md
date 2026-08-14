@@ -1348,6 +1348,34 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   --output "$ARTIFACT_ROOT/prompt_overhead_audit.json"
 ```
 
+独立审核与全组件复算完成后，只补一个当前签名 direct bounded ceiling；它不接 Project
+bounded-ready/credit，也不进入六臂 selector 排名：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_feeding_ceiling.py \
+  --rehearsal \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --reference-config deploy/autodl/saor_project_mechanism_formal.example.json \
+  --config deploy/autodl/saor_project_feeding_ceiling.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_feeding_ceiling.py \
+  --project-root "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_63d17300_20260814" \
+  --ceiling-root "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>" \
+  --output "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>/feeding_validation.json"
+```
+
+summarizer 返回 0 表示证据结构有效，不等于 feeding 通过；必须读取
+`feeding_gate_passed`。若 ratio<0.95，保留 `failed_feeding` root 并停止 formal，不重跑六臂、
+不调 K/W、$0.125W_e$ 或 95% 门槛。
+
 解锁后的 formal 汇总入口为：
 
 ```bash

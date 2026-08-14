@@ -58,6 +58,19 @@ prompt 字段仍原样保留。
 mean/p95 为 97.03%/100%，running mean/p95 为 119.32/232，waiting mean/p95/max 为
 1.16/8/35，KV mean/p95 为 0.418/0.521。
 
+feeding-saturation 仍未通过正式证据门。仓库内 2026-08-12 的
+`active_set_direct_no_job` 三次 formal 均值为 13,676.08 tok/s；它与本次使用相同 2×4090、
+vLLM 0.25.1/Qwen2.5-7B、FCFS/chunked-prefill/prefix-cache、K128、chat-completions、
+256 output cap、0.0001 replay scale、5s offset，以及完全相同的两个 manifest SHA。本次 endpoint
+prompt delta 也同为 636,378，说明服务侧有效输入 work 一致。按该历史 ceiling 计算，六臂 feeding
+ratio 依次为 68.91%、92.97%、92.83%、92.56%、87.51%、92.96%，均低于 95%。
+
+但旧 direct compact evidence 没有保存本次新冻结的 tokenizer/config/chat-template 文件 SHA，
+因此这些比值只登记为**高度匹配的历史诊断**，不冒充完全同签名的正式门禁结论。它已经构成
+明确风险信号：即使新的当前签名 ceiling 只复现约 13.68K tok/s，SAOR 也会以 92.96% 失败。
+formal 前必须补一个当前签名、独立新 root 的 direct bounded ceiling cell；通过条件仍是 ≥95%，
+不能因 GPU utilization 97% 或差距只有约 2 个百分点而改门槛。
+
 ### 3.3 SAOR 机制门
 
 - 3,244 个 lossless mechanism events，event sequence complete；
@@ -113,6 +126,60 @@ $H_B=0.125W_e=8,192$，故观测差值约为 $1.005H_B$。这与 projected-debt 
 不能把 lag 这个目标邻近指标单独解释为用户 tail 收益；仍须同时检查 JCT、P99、SLO、
 longest no-service 与吞吐保护。
 
+### 4.2 六臂模型服务延迟分解
+
+以下均来自 `group_runs.csv` 的 vLLM histogram/counter 时序聚合；单位为秒。`e2e mean` 是模型
+request 平均服务延迟，不是数据库 Job JCT。prefix hit 为命中率分数。
+
+| 臂 | e2e mean | queue mean | prefill mean | decode mean | TTFT P95/P99 | ITL P95/P99 | prefix hit |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| frozen-static | 6.620 | 0.000 | 0.238 | 6.319 | 0.851 / 1.540 | 0.050 / 0.216 | 0.130 |
+| bounded FIFO | 8.322 | 0.020 | 0.460 | 7.745 | 2.184 / 2.484 | 0.105 / 0.322 | 0.135 |
+| bounded DRR | 8.310 | 0.038 | 0.480 | 7.672 | 2.290 / 2.494 | 0.107 / 0.284 | 0.131 |
+| bounded VTC-style | 8.318 | 0.028 | 0.500 | 7.672 | 2.279 / 2.494 | 0.103 / 0.282 | 0.131 |
+| strict-priority | 7.227 | 0.154 | 0.537 | 6.431 | 3.609 / 4.722 | 0.047 / 0.149 | 0.129 |
+| **SAOR** | **8.286** | **0.026** | **0.416** | **7.726** | **2.228 / 2.492** | **0.112 / 0.282** | **0.131** |
+
+strict-priority 的 foreground request P99 很低，不等于服务端整体 TTFT P99 也低：表中 histogram
+聚合了 bulk 与 foreground 的所有请求，而 Job 表按 foreground 单独计算。这再次说明边界 control
+只能称经验性 latency control，不能把一个混合分布的 TTFT 指标解释成理论下界。
+
+### 4.3 六臂资源、压力与能耗
+
+功率是两个实验 GPU 的 `nvidia-smi power.draw` 总和；能量在 cell 的 start/end 边界内对时序功率
+做梯形积分，未计 CPU、风扇和整机基础功耗。因此它是采样估计，不是硬件能量计读数。
+
+| 臂 | GPU mean/P95 | MFU | running mean/P95 | waiting mean/P95/max | KV mean/P95 | CPU busy cores mean/P95 | power mean/P95 W | energy kJ | J/1K tok |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| frozen-static | 97.90/100 | 35.54% | 72.2/167 | 0/0/0 | 0.264/0.394 | 7.68/13.85 | 797.2/892.0 | 73.47 | 84.46 |
+| bounded FIFO | 97.24/100 | 47.78% | 120.9/230 | 1.11/9/20 | 0.416/0.530 | 9.85/15.09 | 825.1/894.0 | 56.12 | 64.49 |
+| bounded DRR | 96.69/100 | 47.86% | 118.8/251 | 1.54/10/49 | 0.417/0.525 | 5.83/13.23 | 821.7/896.0 | 56.11 | 64.50 |
+| bounded VTC-style | 95.92/100 | 47.71% | 118.2/244 | 1.15/6/48 | 0.416/0.522 | 7.35/13.96 | 818.7/895.0 | 56.31 | 64.67 |
+| strict-priority | 95.85/100 | 45.18% | 94.8/250 | 2.74/21/39 | 0.362/0.540 | 9.19/15.46 | 807.2/896.4 | 58.68 | 67.42 |
+| **SAOR** | **97.03/100** | **47.91%** | **119.3/232** | **1.16/8/35** | **0.418/0.521** | **7.21/14.73** | **824.4/897.4** | **56.22** | **64.59** |
+
+host memory used mean/P95 在六臂均约 7.73%–7.77% / 7.80%，没有出现 bounded-ready 内存压力。
+SAOR 与 VTC-style 的单位 token 能耗只差约 −0.13%，与吞吐/MFU近似持平的形状一致；单次采样
+不能据此声称能效显著改善。
+
+### 4.4 Pipeline stage（bulk / foreground）
+
+每格为两个并发 Job 各自的墙钟或累计等待秒数（bulk/foreground）；这些 Job 可并发，不能把两数
+相加当作 group E2E。`bounded wait` 是项目 admission/backpressure 累计等待，`operator wall`
+与 `e2e` 分别是算子执行和含上游准备的 Job 边界。
+
+| 臂 | DB/source fetch | actor ready | submit | bounded wait | fan-in | operator wall | Job E2E |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| frozen-static | 1.508/1.663 | 4.842/4.809 | 0.780/0.680 | 81.138/23.270 | 0.137/0.120 | 90.620/35.390 | 98.408/48.319 |
+| bounded FIFO | 1.640/1.609 | 4.941/5.005 | 0.522/0.505 | 25.652/4.938 | 0.140/0.073 | 66.820/45.779 | 74.554/58.491 |
+| bounded DRR | 1.677/1.510 | 4.799/4.931 | 0.524/0.482 | 26.712/2.413 | 0.140/0.067 | 66.857/31.867 | 74.656/44.512 |
+| bounded VTC-style | 1.638/1.570 | 5.115/5.256 | 0.518/0.496 | 27.894/1.941 | 0.146/0.072 | 66.863/32.546 | 73.961/44.553 |
+| strict-priority | 1.550/1.632 | 4.863/4.627 | 0.515/0.504 | 27.091/0.293 | 0.131/0.070 | 70.814/19.835 | 78.510/32.637 |
+| **SAOR** | **0.786/1.334** | **4.871/4.631** | **0.506/0.483** | **22.334/2.528** | **0.110/0.065** | **66.959/32.781** | **74.396/45.717** |
+
+本 workload 的 organizer collect 为 0（manifest pinned、无 repartition），submission 与 fan-in 都在
+亚秒级；主要差异来自模型执行与 admission wait，不支持把本次性能差归因到 Daft/Ray CPU 准备。
+
 ## 5. 结果解释
 
 ### 事实
@@ -148,17 +215,15 @@ GPU utilization 97.03% 和 MFU 47.91% 均可由 raw 复核。相关本地测试 
 
 **formal 启动审核尚未通过。** 这是授权与报告合同缺口，不推翻本 rehearsal 的机制证据：
 
-1. post-run contract 写入 `rehearsal_validation.validation_sha256`，但当前授权 validator 读取
-   `rehearsal_validation.sha256`；授权前必须统一字段，并同时绑定 `repository_commit`、`root_id`、
-   `archive_sha256` 与 `valid_rehearsal=true`。独立审核已经完成；若状态机需要保留中间态，应命名为
-   `locked_pending_formal_readiness`，不能继续写成“待独立审核”，再由单独提交切换
-   `formal_ready/true`；
-2. 公平 trace 不完整的 fail-closed 分支引用未定义的 `stem`，应修成可审计的 `ValueError` 并补
-   反例测试；
-3. 本报告尚未登记同签名 bounded-client 的 feeding-saturation ratio，也未把六臂 TTFT/ITL、
-   queue/prefill/decode、KV/prefix、能耗和 pipeline stage 汇总成全组件表。GPU busy 证据不能
-   代替 feeding 门；可从现有 raw 恢复的指标先重汇总，确实不可恢复的字段标明 unavailable，
-   不从单点快照补造。
+1. 授权 validator 已改为逐字段绑定本 root 的 `validation_sha256`、commit、root、archive、
+   `valid_rehearsal` 与 review 状态；任一漂移都有负例测试。当前合同进入
+   `locked_pending_formal_readiness/formal_authorized=false`，没有因此自动解锁；
+2. 公平 trace 不完整分支已改为包含 submission 文件名的 fail-closed `ValueError`，不再因未定义
+   变量抛出不可解释的 `NameError`；
+3. 六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、CPU/内存、能耗和 pipeline stage 已从封存 raw
+   重汇总。通用 group resource summary 也新增双 GPU 功率/能量积分，后续 formal 会直接落列；
+4. feeding 仍是唯一性能合规阻断项。历史高度匹配 ceiling 给出 SAOR 92.96%的失败信号，但缺当前
+   完整 artifact signature，故仍需一个当前签名 direct cell，不能把历史值升级成正式 pass/fail。
 4. predecessor failed root 目前只在合同中登记名称和 SHA，仓库内没有可复核实物。若“失败 root
    永久保留”是硬要求，还须登记可访问归档位置或外部 manifest；这不影响当前有效 root 的核真。
 
@@ -172,11 +237,11 @@ SLO、隔离、公平和机制证据。
 ## 7. 下一步
 
 1. 保留本 root 与所有 SHA 不变；它已通过独立证据复核，不因后续授权代码修正重写 raw；
-2. 修复 formal 授权 schema/证据绑定与不完整公平 trace 的 `stem` 分支，用新 validator 对本封存
-   artifact 重验；这些修改不改变 selector，无需自动重跑 rehearsal；
-3. 补同签名 bounded-client feeding ratio 与六臂全组件重汇总；如既有 bounded 数据签名不一致，
-   只补 ceiling 对照，不重跑或调参本六臂；
-4. 上述门全部关闭后，由单独提交显式授权并重跑 readiness，再执行冻结的 position-balanced
+2. 授权 schema/证据绑定、`stem` fail-closed 分支和全组件重汇总已经关闭；保留 selector 与封存
+   root 不变；
+3. 新建当前签名的 bounded direct ceiling root，只补 ceiling 对照，不重跑或调参本六臂；若 SAOR
+   ratio 仍低于 95%，停止 formal 授权并保留为有效 feeding-negative；
+4. feeding 门关闭后，由单独提交显式授权并重跑 readiness，再执行冻结的 position-balanced
    `1 warm-up + 3 formal`；不再调整门槛、workload、参数或 $0.125W_e$，失败即记录 valid negative；
 5. 原生 Daft Native/Daft Ray/Ray Data matched comparison 作为独立系统层证据推进。
 

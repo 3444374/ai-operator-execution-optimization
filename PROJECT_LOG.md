@@ -6797,3 +6797,21 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 只有上述代码/证据门关闭、单独提交显式切换 `formal_ready/formal_authorized=true` 并重跑
   readiness 后，才运行冻结的 position-balanced 1+3 formal；不再调 workload、阈值、
   $0.125W_e$ 或 selector，失败保留为 valid negative。
+
+## 2026-08-14 SAOR formal-readiness 授权修复与全组件复算
+
+- formal 授权不再读取不存在的 `rehearsal_validation.sha256`，而是逐字段等值绑定独立审核通过的
+  `63d17300` root：review status、repository commit、root ID、validation/archive SHA、
+  performance-ranking flag 与 `valid_rehearsal=true`。每个字段漂移都有负例测试；当前合同只推进到
+  `locked_pending_formal_readiness/formal_authorized=false`，没有自动解锁。
+- completion fairness 的不完整 registered-ready lifecycle 现在抛出包含 submission 文件名的
+  `ValueError`，不再引用未定义 `stem`。服务器临时 worktree 对 formal/shared-vLLM 两个测试文件
+  执行 118 tests + 7 subtests 全部通过；未运行 GPU cell、未改封存 root。
+- `group_resource_summary` 新增双 GPU 聚合功率的时序统计和梯形积分能耗，future group run 直接落
+  power/energy/J-per-1K-token；封存 rehearsal 的六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、
+  CPU/内存、能耗和 bulk/foreground pipeline stage 已重汇总进结果报告。
+- 2026-08-12 `direct_no_job` 与本 root 在硬件、manifest SHA、arrival、协议、cap、vLLM flags 和有效
+  prompt work 上高度匹配，历史 ceiling 13,676.08 tok/s 对应 SAOR feeding=92.96%<95%。旧 compact
+  evidence 未保存当前要求的 tokenizer/template artifact SHA，因此只登记为诊断性失败信号；正式
+  启动前只补一个当前签名 direct ceiling。若仍失败，停止授权并保留 valid feeding-negative，不能
+  用 GPU utilization 97% 替代或下调 95% 门槛。

@@ -2574,6 +2574,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": 0,
                 "kv_usage": 0.0,
                 "gpu_utilization_pct": "0",
+                "gpu_power_w": "100",
             },
             {
                 "observed_epoch_s": 0.0,
@@ -2582,6 +2583,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": 0,
                 "kv_usage": 0.0,
                 "gpu_utilization_pct": "0",
+                "gpu_power_w": "100",
             },
         ] + [
             {
@@ -2591,6 +2593,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": waiting,
                 "kv_usage": kv,
                 "gpu_utilization_pct": gpu,
+                "gpu_power_w": str(float(gpu) * 4),
                 "host_cpu_busy_cores": float(gpu) / 10,
                 "host_cpu_per_core_max_pct": gpu,
                 "host_memory_used_pct": 25 + epoch,
@@ -2607,10 +2610,15 @@ class SharedVllmExperimentTests(unittest.TestCase):
             samples,
             start_epoch_s=1.0,
             end_epoch_s=2.0,
+            observed_tokens=1000,
         )
 
         self.assertEqual(summary["gpu_utilization_pct_mean"], 75.0)
         self.assertEqual(summary["gpu_utilization_pct_p95"], 100.0)
+        self.assertEqual(summary["gpu_power_w_mean"], 300.0)
+        self.assertEqual(summary["gpu_power_w_p95"], 400.0)
+        self.assertEqual(summary["gpu_energy_j"], 300.0)
+        self.assertEqual(summary["energy_j_per_1k_observed_tokens"], 300.0)
         self.assertEqual(summary["vllm_running_mean"], 7.0)
         self.assertEqual(summary["vllm_running_max"], 9.0)
         self.assertEqual(summary["vllm_waiting_max"], 2.0)

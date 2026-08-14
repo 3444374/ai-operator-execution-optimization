@@ -217,11 +217,13 @@ PostgreSQL source
   独立证明当前 chat template overhead 恒为 29、`fixed_output_cap=256`，且公平 service work 使用
   endpoint total token。单次 SAOR 相对 VTC-style 吞吐 +0.43%、foreground P99 +0.11%、P95
   service lag −13.15%、longest no-service +0.014%，因此只晋级为待 1+3 验证的 Pareto 候选，
-  未证明胜出。wrapper/formal contract 仍为
-  `locked_pending_rehearsal/formal_authorized=false`；独立 raw/SHA/指标复核已通过，但 formal readiness
-  仍须统一 `validation_sha256` 授权字段并绑定 commit/root/archive/valid-rehearsal，修复不完整
-  fairness trace 的 fail-closed 分支，补同签名 feeding ratio 与六臂全组件汇总，再由单独提交授权。
-  不能直接跑 formal。并行的系统问题
+  未证明胜出。独立 raw/SHA/指标复核已通过；授权 validator 已逐字段绑定 validation SHA、
+  commit/root/archive/valid-rehearsal，不完整 fairness trace 分支也已 fail-closed 修复，六臂全组件
+  指标已重汇总。wrapper/formal contract 现为
+  `locked_pending_formal_readiness/formal_authorized=false`。历史同 manifest/协议/服务配置 direct
+  ceiling 给出 SAOR feeding=92.96%的诊断性失败信号，但旧证据缺当前完整 tokenizer/template
+  artifact identity；必须补当前签名 bounded ceiling，若仍低于 95% 则保留 feeding-negative 并停止
+  formal 授权。不能直接跑 formal。并行的系统问题
   仍需补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
   matched comparison；
   原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；
