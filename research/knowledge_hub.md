@@ -680,6 +680,28 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   project-owned FIFO。真实 trace 自动审计 borrow→reclaim→reborrow 是否发生；未发生即不能抽
   动态结论。
 
+#### 5.7.5.1 SAOR fixed-envelope formal 与 reservation 修订（2026-08-12）
+
+- **formal 事实**：2×4090/Qwen2.5-7B、fixed K128/W65536 的六 active-set + 四 solo 共
+  40/40 cell、0 incident、exactly-once。SAOR 12,393 tok/s、fg JCT/P99 57.0/50.3s、fg
+  slowdown 3.45，在 credit 臂内前台最好；static 9,508 tok/s、fg JCT/P99 36.2/29.2s、
+  slowdown 2.19、SLO violation 0%，仍是更强隔离 Pareto 点。
+- **门禁边界**：DRR/VTC rep2 的两个 Job 近乎同时结束（绝对完成时刻差约 5.8ms/4.8ms），
+  `active_set_bulk_only_post_samples=0`，使总 validation fail-closed。它说明审计器缺 simultaneous-drain 语义，
+  不证明 baseline 违反工作守恒；本轮不能发布 winner claim。
+- **第一性原理原因**：前台到达时若 bulk 已借满包络，且项目不能抢占 vLLM 已接纳请求，
+  release-only 控制的即时前台容量近似为 0，只能等 completion 回收。无 reservation 的事后
+  fairness reclaim 因而不可能免费复制 static 的即时隔离；`slo_weight=0` 又说明 formal 实际
+  验证的是 fairness-aware release，而不是 SLO-aware controller。
+- **估计误差**：project credit 臂中 foreground `actual/predicted work≈1.289`，bulk≈1.064；
+  前台低估百分比约是 bulk 的 4.5 倍。下一版 admission 必须比较 point estimate、q95 upper
+  bound 与 actual-work oracle，不能用同一 predicted token 标量同时承担资源、安全和公平。
+- **修订路线**：先离线修复 simultaneous-drain audit；再跑 foreground strict-priority
+  release-only 可达性；随后只扫 reservation $r/K=0,0.25,0.5$，采用 borrow/reclaim debt、
+  upper-bound resource credit 与 hard SLO feasible set。只有 $r<0.5K$ 达到 static fg 非劣且
+  吞吐相对 static≥5% 才晋级；否则淘汰，不扩 4-Job。完整推导见
+  `saor_model_scenario_audit_20260811.md` §11。
+
 #### 5.7.6 模式优先级矩阵
 
 ```

@@ -124,21 +124,18 @@ PostgreSQL source
 
 ### 5.3 待验证
 
-- SAOR 已实现不依赖 Daft/Ray/vLLM 的 finite-action DPP、Job-head ordered release、通用
-  exactly-once execution ledger、文本 shared-vLLM capacity adapter 与配对 trace replay。旧
-  phase-change 聚合 trace 的非因果 replay 在 6 个可计 regret 样本中 5 次匹配事后 oracle，
-  累计归一化 regret 0.0141，但没有形成真实降档证据；单次真实服务四臂 development gate
-  中，capacity-only SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对 threshold −1.46%，
-  Jain 最低，故标记 `not-promoted`。`saor-v0.4` 已将 fixed-envelope SAOR-Release 定为唯一算法
-  候选，dynamic K 标记 `parked-conditional`。fixed-envelope `saor_release` 已接入 named Ray
-  credit coordinator、completion-corrected fairness debt 和 active-set phase audit；SLO debt/理论
-  bridge 尚未闭合。现有 static/shared 两/四 Job 结果支持 active-set 分配问题；同 request K 的
-  direct no-Job control、static/FIFO/DRR/external-VTC/SAOR 六臂 active-set、project/direct matched
-  solo、分层门禁与 fail-closed 汇总已纳入统一交错 runner；commit `7c11cc7c` 的真实 2×4090
-  rehearsal 已完成 10/10、0 incident，六臂 lifecycle 与四 credit 机制门通过，但没有 formal
-  identity，故仍无 GPU formal 结果。若
-  direct/FIFO/DRR 已在同一 Pareto 前沿，淘汰 SAOR。当前尚未完成
-  该 formal 或定理证明，因此不是已胜出的 proposed 方法；
+- SAOR 的 dynamic-K capacity-only 分支仍为 `not-promoted/parked-conditional`。fixed-envelope
+  2-Job formal 已在 2×4090/Qwen2.5-7B 上完成 40/40 cell、0 incident、exactly-once：SAOR
+  12,393 tok/s、fg JCT/P99 57.0/50.3s，在 credit 臂内前台最好；static 9,508 tok/s、fg
+  JCT/P99 36.2/29.2s、SLO violation 0%，仍是更强隔离 Pareto 点。总 validation 因 DRR/VTC
+  rep2 没有 post-drain 样本而 fail-closed；两个 repeat 的 Job 完成只差约 5.8ms/4.8ms，故不能
+  写成 baseline 机制失败，也不能声称 SAOR 胜出。当前 formal 的 `slo_weight=0`，服务状态仍
+  observe-only；它验证的是 fairness-aware release，不是完整 SLO-aware controller。第一性原理
+  审计确认：无保护余量、不可抢占时，bulk 在前台到达前借满包络会形成只能等待 completion
+  清零的 reclaim debt，单靠 release score 无法复制 static 的即时隔离。候选后继收紧为
+  reservation-backed release；先修 simultaneous-drain audit，做 strict-priority 可达性、
+  reserve 0/0.25K/0.5K 和 q95/actual-work oracle，再决定是否淘汰。两 Job 未达到 static fg
+  非劣且吞吐≥static+5% 前不跑 4-Job，也不声称定理证明；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、

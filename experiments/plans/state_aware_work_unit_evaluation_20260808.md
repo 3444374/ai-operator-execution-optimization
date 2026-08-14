@@ -1,9 +1,11 @@
 # Work Unit、状态感知、动态调度与代价估计的实验计划
 
 日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
-2026-08-11 更新：新增 SAOR 动态调度设计维护入口）
+2026-08-11 更新：新增 SAOR 动态调度设计维护入口；2026-08-12 更新：fixed-envelope
+2-Job formal 已运行并 fail-closed，进入 post-formal 修订）
 
-> **动态调度算法唯一维护入口**：本文 §5.2。当前状态为 `design-candidate`，不是已完成方法，
+> **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
+> `formal-evaluated / fail-closed / directional-only`，不是已完成方法，
 > 也不替代 §5 的简单阈值/滞回控制 baseline。后续算法假设、公式、工程映射、实验门禁和
 > 结论状态统一在 §5.2 调整，避免散落到报告、代码注释或结果文档中形成不兼容版本。
 
@@ -119,8 +121,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | `saor-v0.4.3-server-ready`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | SAOR-Release 已接 fixed-envelope Ray credit runtime、统一六臂 active-set runner、matched solo、分层门禁与 fail-closed 汇总，但尚无 GPU formal；SLO debt/stage queue/理论 bridge 未完成；dynamic K 已退出主线，Safe-Capacity Governor 为 `parked-conditional`；尚未完成定理证明 |
+| policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；post-formal design audit `saor-v0.4.7-reservation-candidate`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
+| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；总 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed。SAOR 在 credit 臂内 fg 最好但未越过 static；当前实现 `slo_weight=0`，故只算 fairness/release 方向性证据，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`；尚未完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -290,6 +292,20 @@ project 五臂共享 request/work envelope；direct 只共享相同 request wind
 vLLM 配置，不声称具有 project work-credit envelope，结果显式记录
 `work_envelope_applied=false`。若 direct/FIFO/DRR 已落在相同 Pareto 前沿，淘汰 SAOR，不更换
 workload 追正。
+
+该 formal 已于 2026-08-12 运行：40/40 cell、0 incident、exactly-once；`saor_release` 和 FIFO
+机制门 3/3，通过定位性均值分别为 12,393/12,103 tok/s，SAOR fg P99 50.3s、FIFO 58.7s；
+但 static 以 9,508 tok/s 换得 fg P99 29.2s 和 0% SLO violation。总 validation 因 DRR/VTC
+rep2 `active_set_bulk_only_post_samples=0` fail-closed，不能发布 winner claim。两个失败 repeat 的 Job 完成时刻
+仅差约 5.8ms/4.8ms，优先修订审计器的 simultaneous-drain 语义，不先把它解释为 baseline
+机制失效。权威数据见
+`../results/saor_active_set_release_formal_20260812_69affc7e/README.md`。
+
+post-formal 第一性原理审计进一步给出 release-only 下界：若前台到达时 bulk 已占满总包络且
+没有保护余量，项目又不能抢占已进入 vLLM 的请求，则新前台只能等待 completion 释放 credit；
+只改 Job-head score 不可能免费复制 static 的即时隔离。下一候选因此不是继续扫 fairness 权重，
+而是 reservation-backed release：有限保护余量、空闲借用、completion reclaim、upper-bound
+resource credit 与 hard SLO feasible set。两 Job 可达性未闭环前不扩 4-Job。
 
 决定性场景固定为 `bulk-only → foreground-arrival → overlap → either-job drain`：bulk Job
 先借用总 envelope；前台 Job 到达后只在 completion 释放 credit 时回收未来份额，不抢占已
@@ -747,8 +763,8 @@ on every request completion:
 | safe capacity arms | `scheduling/core/control.py` | 中性 `CapacityArm` 已抽离；具体档位只由 calibration config 注入 |
 | finite-action DPP | `scheduling/submission_control/saor.py` | 纯策略与公平债务已单测；需用 replay 验证 service ranking/动作 regret |
 | completion/exactly-once | `scheduling/core/execution.py` | 通用 ledger 已接原 scheduler；actual-work extractor 由模态 adapter 注入 |
-| ordered release | `scheduling/submission_control/{ordered_release,shared_credit,saor}.py` + `scheduling/runtime/shared_credit_ray.py` | 纯队列合同与 fixed-envelope `saor_release` 均已单测并接 named Ray coordinator；尚待真实 GPU formal，SLO debt 暂未接通 |
-| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 统一交错、direct/project matched-solo、生命周期/机制分层门禁、rehearsal 与 fail-closed 汇总已接线；真实 2×4090 已完成 10/10 correctness rehearsal，但 0.001 replay 在 foreground 前供给不足、四 credit mechanism gate 均未过；已加入 per-endpoint pre-borrow supply readiness 并冻结独立 burst rehearsal，未产出 formal GPU 结果 |
+| ordered release | `scheduling/submission_control/{ordered_release,shared_credit,saor}.py` + `scheduling/runtime/shared_credit_ray.py` | fixed-envelope `saor_release` 已在真实 2×4090 formal 运行；SAOR mechanism 3/3，credit 臂内 fg 最好，但 static fg 更强；`slo_weight=0`，不称 SLO-aware 已接通 |
+| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 40/40、0 incident、exactly-once；总 validation 因 DRR/VTC rep2 无 post-drain 样本 fail-closed。下一步先补 simultaneous-drain=`not_applicable` 审计语义并离线 replay，不直接重跑或发布 winner claim |
 | endpoint state | vLLM/resource time series | atomic freshness/signature gate 待接；waiting/KV/GPU 不单独驱动 |
 | cost model | CE1--CE5/WorkDescriptor | 先 replay/observe-only，过 ranking/regret 门后才进入动作 |
 
@@ -877,6 +893,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.4-transport-contract` | 第二次 2×4090 rehearsal 前八个 cell 完成，但 `solo_direct_bulk` 出现单请求 `ReadError`；服务端健康且日志为 200，定位为 direct 漏配已在 Ray actor 验证的 idle keepalive 合同。将 expiry 改为两路径共享、可注入和可审计，仍禁用 retry | 真实服务器 rehearsal + endpoint health/log + 既有 tail-drain 复现 | 传输合同修正，不改变 SAOR 算法或性能结论；旧 8/10 rehearsal 判失败，完整新目录 rerun 通过前禁止 formal |
 | 2026-08-12 | `saor-v0.4.5-active-set-supply` | 修复后真实 rehearsal 10/10、0 incident、exactly-once 通过，但 0.001 replay 的 5 s 前置阶段每 endpoint 仅约 10K bulk work，无法占满 65,536 envelope；四 credit 臂 pre-borrow 均未发生。公共 lifecycle gate 删除 outcome-dependent 的 foreground-first 条件，新增 per-endpoint pre-foreground work-envelope readiness；相同 manifest 冻结 0.0001 burst scale 复验 | 真实 group/request/credit trace + immutable manifest 离线供给计算 | correctness 通过、mechanism 未通过；不跑 formal。foreground-first 改为结果字段，禁止按性能结果过滤 baseline；新 burst rehearsal 通过前不晋级 |
 | 2026-08-12 | `saor-v0.4.6-work-conserving-gate` | 0.0001 burst rehearsal 再次 10/10、0 incident、六臂 overlap、四 credit pre-borrow=95.0%；旧 post gate 却只检查 bulk 且强制剩余 active work >50%，即使 FIFO/DRR 中 bulk 先结束，或 coordinator waiting work 已为 0。改为任一 Job 先退出后的 endpoint-local head-fit 条件，并让 rehearsal runner 自身 fail-closed | 真实 per-request completion + per-endpoint active/request/work/waiting/head-work credit trace + 单元反例 | 修正因果机制判据：包络是不可分 request 的二维上限；只有 waiting head 同时装得进 request/work envelope 却未释放才判非工作守恒。须用新 commit 完整 rerun后才能称 formal-ready |
+| 2026-08-12 | `saor-v0.4.7-reservation-candidate` | fixed-envelope 2-Job formal 40/40、0 incident、exactly-once；SAOR/FIFO mechanism 3/3，但总 gate 因 DRR/VTC rep2 无 post-drain 样本 fail-closed。SAOR 在 credit 臂内 fg 最好，仍显著落后 static。第一性原理审计确认无 reservation、不可抢占的 release-only 控制存在到达后回收下界，且 formal 的 `slo_weight=0` | 3-repeat GPU formal + credit/request trace + matched solo + 实现审计 | 状态升至 `formal-evaluated / fail-closed / directional-only`，不晋级 proposed；下一候选收紧为 reservation-backed release，先过 strict-priority 可达性、reserve 曲线和 static 非劣门，未闭环前不跑 4-Job |
 
 状态只允许按以下顺序变化：
 

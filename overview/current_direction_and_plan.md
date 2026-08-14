@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-11
+最后更新：2026-08-12
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -16,10 +16,10 @@
 - **三臂 database-E2E correctness 护栏已完成**：24/24 单元、18 formal 的 source/sink、
   exactly-once 与稳定性通过；后续 ShareGPT C32–C256 扫描证明旧 C32 direct 仅达已测峰值
   52.07%，正式原生矩阵冻结 C128，旧 154.57% 比值不作方法排名。
-- **SAOR 已收窄为 fixed-envelope active-set release**：dynamic K 的真实 development gate
-  未超过 K160/简单 threshold，已退出主线；现有多 Job 数据只支持继续检验固定总 K 内的
-  idle borrowing、reclaim、SLO/fairness release order。2×4090 fail-closed rehearsal 已通过，
-  只证明 formal 合同可执行，尚未证明 SAOR 优于 global FIFO/DRR。
+- **SAOR fixed-envelope formal 已完成但未晋级**：40/40、0 incident、exactly-once；SAOR
+  在 credit 臂内 fg JCT/P99 最好，但 static 的 fg P99 29.2s、SLO violation 0% 显著更强。
+  DRR/VTC rep2 无 post-drain 样本使总 gate fail-closed。当前实现 `slo_weight=0`，只验证了
+  fairness/release；下一候选改为有限 reservation + borrow/reclaim，不继续扫动态 K 或权重。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -73,6 +73,7 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | 65,536 active work/endpoint 达最大吞吐的 97.8% | 固定 token-aware credit 是当前简单、稳健的文本默认点 |
 | AIMD/PID/EWMA、动态 flush、多 actor 及 capacity-only SAOR 多数未过强静态门槛 | dynamic K 不作为主方法；不能声称复杂动态策略普遍胜过强静态 baseline |
 | SAOR capacity-only vs K160 约 +0.52%，且 Jain/tail 未改善 | K160/最小饱和点应固定为总 envelope；动态对象改为 Job active-set 的份额借用、回收与释放顺序 |
+| SAOR fixed-envelope 2-Job formal：SAOR 12,393 tok/s、fg P99 50.3s；static 9,508 tok/s、fg P99 29.2s、SLO 0% | SAOR 只在 credit 臂内改善前台，未越过 static；无 reservation、不可抢占的 release-only 控制存在到达后回收下界，结果仅为 directional-only |
 | 2-ep 与 4-ep cache-ON 数据组织排名反转 | 上游组织/准入价值依赖 endpoint consolidation 与 KV 饱和 regime |
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
 | CLIP 5K 串行画像：CPU 准备/actor forward=`13.8–18.3` | 图像链路存在异构流水线候选空间；尚未证明 CPU、Ray/host copy 或 PCIe 谁是主瓶颈 |
@@ -92,9 +93,10 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 2. 同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 已完成并归档。
 3. 原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B 已完成；它们没有 global
    FIFO/no project Job scheduler 对照，不能单独证明 SAOR 必要。
-4. 开题后的第一个 SAOR killer benchmark 固定总 K，比较 global FIFO、static partition、
-   shared DRR、external VTC-style 与 SAOR，场景为 bulk-only→foreground-arrival→overlap→
-   either-job drain；2-Job formal 若 SAOR 不能进入 FIFO/DRR Pareto 前沿即淘汰，不跑 4-Job。
+4. SAOR fixed-envelope 2-Job killer benchmark 已完成但 fail-closed；先修 simultaneous-drain
+   审计并离线 replay，再做 foreground strict-priority release-only 可达性和
+   reserve 0/0.25K/0.5K 单变量曲线。只有小于半包络的 reserve 同时达到 static fg 非劣与
+   吞吐≥static+5% 才保留；两 Job 未闭环前不跑 4-Job。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
