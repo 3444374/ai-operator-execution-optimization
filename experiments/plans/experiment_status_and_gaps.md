@@ -128,7 +128,10 @@ frozen-static 只能作为 performance/isolation 参照，不能参加同口径 
 同一修订还要求 runtime `job_id` 非空、单 Job 内一致且并发 Job 间唯一；selector/bridge 静态
 readiness 必须冻结每臂 effective K/W 和 `(1,1)` weights。一次在修复前启动的 bounded-priority
 服务器 rehearsal 已主动中断并保留为 diagnostic root，未产生 completed run，禁止续跑或进入
-结果。native-system matched 仍因真实 manifest/calibration/env 未冻结而保持锁定；当前
+结果。修复提交 `15201946` 随后从全新 root 完成四臂回归：四臂均 exactly-once、Job ID 合同
+通过，$0.125W_e$ 以 1 次 debt recovery 通过；$0.25W_e$ 再次因 recovery=0 被 runner fail closed，整个
+manifest 正确标为 failed。本轮只验证门禁，不并入性能重复。native-system matched 仍因真实
+manifest/calibration/env 未冻结而保持锁定；当前
 `writeback=none` 只覆盖 PostgreSQL source→validated gather 的 operator-E2E，原生 request
 P99/SLO 可为 `unavailable`，且尚无 debt 从产生到完全偿还的时间指标或理论 bound。
 

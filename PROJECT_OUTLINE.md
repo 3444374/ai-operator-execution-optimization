@@ -62,6 +62,9 @@ avoidable-idle 事件名检查错误。五个 bounded-ready 臂的性能、SLO �
 但 frozen-static 缺 registered-ready ledger，不能与它作同口径 service-lag 比较；旧全矩阵
 `passed` 降为 diagnostic。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，并冻结内部
 消融各臂的 effective K/W 与 weights。完成新门禁服务器回归前不得解锁 formal。
+修复提交 `15201946` 的同机四臂 development regression 已完成：所有请求 exactly-once、Job ID
+合同通过，$0.125W_e$ 触发一次 recovery；$0.25W_e$ 再次因 recovery=0 被 runner 正确 fail closed。
+该回归只验证证据链，不计入性能重复，也不改变 formal 锁定状态。
 FIFO、DRR、VTC 是已有算法思想，但本实验的可执行版本均由 Project shared-credit coordinator
 实现，不是 Daft/Ray Data/upstream vLLM 的原生实现；它们应称项目内标准算法 controls。
 bounded-ready 副本只是在 Project harness 中配平候选集的 matched controls，也不表示这些算法

@@ -6667,3 +6667,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   中断并保留 diagnostic root，0 completed run，不进入结论；formal 与 native-system GPU matrix
   继续锁定。当前系统矩阵仍是 `writeback=none` operator-E2E，原生 request P99/SLO 可以
   `unavailable`，且 debt full-repayment time/bound 仍是未完成的证明与指标缺口。
+- 修复提交 `15201946` 随后在服务器从全新 root 完成四臂 development regression。四臂均完成
+  512+512 request、exactly-once，实际 Job ID 非空/组内唯一，endpoint 最终 drain；$0.125W_e$ 产生
+  1 次 debt recovery 并通过，$0.25W_e$ recovery=0，被 runner 以 1 个 unrecovered mechanism
+  incident 正确 fail closed。该结果只验证门禁没有假通过或误杀，不计入性能重复、不解锁 formal。

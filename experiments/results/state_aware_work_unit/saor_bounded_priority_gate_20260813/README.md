@@ -139,6 +139,31 @@ v0.5.1 不晋级 formal，停止该模板上的 cap 密扫，也不扩 4-Job。�
 SLO、最大 service disparity、饥饿、工作守恒与 correctness。当前 bounded 臂 Jain 约 0.72–0.75，
 且 foreground SLO violation 85%–95%，所以不能称公平改善。
 
+## 2026-08-14 fail-closed 门禁回归
+
+formal evidence 修复提交 `15201946` 在同机、同模板上重新运行一次四臂 development rehearsal。
+四臂均完成 512+512 请求且 exactly-once；八个实际 Job ID 全部非空，每组两个 Job ID 唯一；
+GPU mean 为 96.84%–98.29%，MFU status 全部为 `ok`，两个 endpoint 运行后均 drain 到
+running=waiting=0。
+
+| arm | tok/s | duration(s) | bulk/fg JCT(s) | bulk/fg P99(s) | bulk/fg SLO viol. | MFU | debt recovery | avoidable idle | runner 判定 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| static | 9,536.06 | 91.27 | 89.56 / 36.36 | 82.70 / 29.21 | 0.674 / 0.000 | 0.359 | 0 | 0 | pass |
+| SAOR release | 12,317.18 | 70.62 | 68.83 / 53.53 | 62.43 / 46.88 | 0.484 / 0.750 | 0.464 | 0 | 0 | pass |
+| bounded $0.125W_e$ | 12,358.43 | 70.40 | 68.62 / 55.88 | 62.19 / 49.22 | 0.473 / 0.805 | 0.466 | 1 | 0 | pass |
+| bounded $0.25W_e$ | 12,384.93 | 70.27 | 68.68 / 54.86 | 62.28 / 47.86 | 0.488 / 0.768 | 0.467 | **0** | 0 | **fail closed** |
+
+最后一臂没有产生预期的 debt-recovery grant，runner 因而写入 1 个 unrecovered mechanism
+incident，并把整个 manifest 标为 `failed`。这与 2026-08-13 Round 2 的失败形态一致，说明新
+Job-ID 与 evidence 修复没有误杀前三臂，也没有把既有 $0.25W_e$ 机制失败“修成通过”。历史
+scenario ID 中的 `0125k/025k` 实际乘的是 endpoint work limit。本轮只用于代码/门禁回归，
+不增加性能重复数、不改变 $0.125W_e/0.25W_e$ 的既有结论。
+
+服务器 diagnostic root：
+`/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_rehearsal_15201946_regression_20260814/`。
+该目录保存 manifest、四份 group record、逐 Job request/submission/runs CSV、resource/credit/
+release-event trace；不与原 2026-08-13 两轮数据合并。
+
 ## 原始材料
 
 仓库内 compact evidence 位于 `raw/`：preflight/readiness、两轮 manifest/group runs、8 份 group
