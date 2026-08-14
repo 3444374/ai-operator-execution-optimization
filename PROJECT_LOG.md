@@ -6815,3 +6815,8 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   evidence 未保存当前要求的 tokenizer/template artifact SHA，因此只登记为诊断性失败信号；正式
   启动前只补一个当前签名 direct ceiling。若仍失败，停止授权并保留 valid feeding-negative，不能
   用 GPU utilization 97% 替代或下调 95% 门槛。
+- ceiling 首个终端前台进程因会话挂断留下 `running/0-completed` root，第二个全新 nohup root 则在
+  record 构造时 fail closed 为 `KeyError:expected_count`。原因是 direct-control 已完成
+  `validate_results()`，但返回的 Job evidence 没有显式携带 group schema 后来新增的
+  expected/completed/exactly-once 三字段。现由 direct adapter 在成功的一对一校验后写出这三个
+  字段并加回归断言；两个失败 root 均保留为 infrastructure/schema diagnostic，不作 feeding 数据。

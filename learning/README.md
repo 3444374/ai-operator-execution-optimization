@@ -1,5 +1,17 @@
 # Learning Notes
 
+## 2026-08-14 direct ceiling 为什么也要显式 exactly-once evidence
+
+`direct_no_job` 会先用 `validate_results()` 验证 manifest request 与 HTTP completion 一一对应，但
+“内部已经校验”不等于 group record 能自动看见结论。group schema 后来统一读取
+`expected_count/completed_count/exactly_once`；direct adapter 若不显式返回这三个字段，正确完成的
+ceiling 会在 record 构造阶段以 `KeyError` fail closed。修复是在 adapter 边界把已经证明的事实
+结构化写出，而不是在 runner 里给缺失字段默认值。后者会让真正未校验的 direct 路径也可能假通过。
+
+因此 ceiling 的证据链是：immutable manifest → `validate_results()` → per-Job 三字段 → group
+exactly-once gate → feeding ratio。调度器路径与 direct 路径可以不同，但 correctness 证据合同必须
+同样完整。
+
 ## 2026-08-14 三个 output-token 字段为什么不能混用
 
 同一条 chat-completions 请求现在会看到三个容易混淆的字段：

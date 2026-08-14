@@ -207,6 +207,11 @@ def run_direct_control(
                 / jct_s,
                 "predicted_work": sum(request.estimated_work for request in requests),
                 "actual_work": sum(actual_work_by_request),
+                "expected_count": len(requests),
+                "completed_count": len(results),
+                # validate_results() above already proves a one-to-one,
+                # successful logical-request join for this direct Job.
+                "exactly_once": True,
                 "actual_prompt_work": sum(result.input_tokens for result in results),
                 "actual_output_work": sum(result.output_tokens for result in results),
                 "actual_work_source": "service_usage_prompt_plus_output",

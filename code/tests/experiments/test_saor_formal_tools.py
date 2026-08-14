@@ -1311,6 +1311,9 @@ class SaorFormalToolsTests(unittest.TestCase):
 
             self.assertEqual(len(evidence), 2)
             self.assertEqual(evidence[0]["actual_work"], 24)
+            self.assertEqual(evidence[0]["expected_count"], 2)
+            self.assertEqual(evidence[0]["completed_count"], 2)
+            self.assertTrue(evidence[0]["exactly_once"])
             self.assertEqual(
                 evidence[1]["replay_configured_start_epoch_s"], 105.0
             )
