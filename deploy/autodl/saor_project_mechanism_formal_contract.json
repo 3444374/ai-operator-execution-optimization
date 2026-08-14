@@ -9,6 +9,14 @@
   "comparison_scope": "project_internal_matched_observation",
   "fairness_scope": "single_tenant_multi_job_differentiated_service",
   "rehearsal_validation": null,
+  "work_cost_contract": {
+    "completion_protocol": "chat_completions",
+    "prompt_token_overhead_per_request": 29,
+    "calibration_method": "endpoint_usage_minus_raw_prompt_minus_actual_output",
+    "calibration_requests": 6144,
+    "observed_min_tokens": 29,
+    "observed_max_tokens": 29
+  },
   "decision_contract": {
     "reference_scenario_id": "active_set_project_bounded_ready_vtc_style",
     "reported_comparators": [

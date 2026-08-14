@@ -39,6 +39,19 @@ EXPECTED_SCENARIOS = {
 }
 
 
+def _common_argument_value(
+    args: tuple[str, ...],
+    name: str,
+) -> str | None:
+    try:
+        index = args.index(name)
+    except ValueError:
+        return None
+    if index + 1 >= len(args):
+        return None
+    return args[index + 1]
+
+
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -87,6 +100,39 @@ def validate_contract(
     }
     if observed != EXPECTED_SCENARIOS:
         errors.append("mechanism config does not match the frozen six-arm matrix")
+
+    work_cost = payload.get("work_cost_contract")
+    if not isinstance(work_cost, dict):
+        errors.append("mechanism contract lacks work_cost_contract")
+    else:
+        expected_work_cost = {
+            "completion_protocol": "chat_completions",
+            "prompt_token_overhead_per_request": 29,
+            "calibration_method": (
+                "endpoint_usage_minus_raw_prompt_minus_actual_output"
+            ),
+            "calibration_requests": 6144,
+            "observed_min_tokens": 29,
+            "observed_max_tokens": 29,
+        }
+        if work_cost != expected_work_cost:
+            errors.append("mechanism work-cost calibration contract drifted")
+        configured_protocol = _common_argument_value(
+            config.common_args,
+            "--completion-protocol",
+        )
+        configured_overhead = _common_argument_value(
+            config.common_args,
+            "--completion-prompt-token-overhead",
+        )
+        if configured_protocol != work_cost.get("completion_protocol"):
+            errors.append("mechanism completion protocol drifted from work cost")
+        try:
+            overhead = int(configured_overhead or "")
+        except ValueError:
+            overhead = -1
+        if overhead != work_cost.get("prompt_token_overhead_per_request"):
+            errors.append("mechanism prompt-token overhead drifted from calibration")
 
     schedule = build_scenario_schedule(
         tuple(EXPECTED_SCENARIOS),

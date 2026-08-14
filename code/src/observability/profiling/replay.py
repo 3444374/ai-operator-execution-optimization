@@ -47,6 +47,7 @@ def _batch_envelopes(
     completion_max_tokens: int,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
     batch_index_start: int = 0,
+    prompt_token_overhead_per_request: int = 0,
 ) -> list[PayloadEnvelope]:
     envelopes = []
     for index, batch in enumerate(batches):
@@ -60,6 +61,9 @@ def _batch_envelopes(
                 completion_max_tokens=completion_max_tokens,
                 output_cost_mode=output_cost_mode,
                 planning_batch_id=request_id,
+                prompt_token_overhead_per_request=(
+                    prompt_token_overhead_per_request
+                ),
             )
         )
     return envelopes
@@ -74,13 +78,16 @@ def _batch_envelope(
     completion_max_tokens: int,
     output_cost_mode: OutputCostMode,
     planning_batch_id: str,
+    prompt_token_overhead_per_request: int = 0,
     service_quantum_index: int = -1,
     service_quantum_oversized: bool = False,
 ) -> PayloadEnvelope:
+    if prompt_token_overhead_per_request < 0:
+        raise ValueError("prompt token overhead must be non-negative")
     prompt_tokens = sum(
         _row_prompt_tokens(batch, row_index)
         for row_index in range(batch.num_rows)
-    )
+    ) + prompt_token_overhead_per_request * batch.num_rows
     prefix_key = ""
     if "prefix_key" in batch.column_names and batch.num_rows:
         prefix_values = {
@@ -146,11 +153,13 @@ def _service_quantum_envelopes(
     completion_max_tokens: int,
     output_cost_mode: OutputCostMode,
     target_tokens: int,
+    prompt_token_overhead_per_request: int = 0,
 ) -> tuple[PayloadEnvelope, ...]:
     """Slice a planning batch between rows, never within a model request."""
 
     row_costs = [
         _row_prompt_tokens(batch, row_index)
+        + prompt_token_overhead_per_request
         + _row_output_tokens(
             batch,
             row_index,
@@ -173,6 +182,9 @@ def _service_quantum_envelopes(
                 completion_max_tokens=completion_max_tokens,
                 output_cost_mode=output_cost_mode,
                 planning_batch_id=planning_batch_id,
+                prompt_token_overhead_per_request=(
+                    prompt_token_overhead_per_request
+                ),
                 service_quantum_index=quantum_index,
                 service_quantum_oversized=quantum.oversized,
             )
@@ -188,6 +200,7 @@ def _offline_request_envelopes(
     operator: str,
     completion_max_tokens: int,
     output_cost_mode: OutputCostMode,
+    prompt_token_overhead_per_request: int = 0,
 ) -> tuple[PayloadEnvelope, ...]:
     if "doc_id" not in batch.column_names:
         raise ValueError("doc_id column is required for request expansion")
@@ -206,6 +219,9 @@ def _offline_request_envelopes(
                 completion_max_tokens=completion_max_tokens,
                 output_cost_mode=output_cost_mode,
                 planning_batch_id=planning_batch_id,
+                prompt_token_overhead_per_request=(
+                    prompt_token_overhead_per_request
+                ),
             )
         )
     return tuple(envelopes)
@@ -223,6 +239,7 @@ def _offline_batch_envelopes(
     ready_epoch_s: float,
     submission_granularity: str = "batch",
     service_quantum_tokens: int = 0,
+    prompt_token_overhead_per_request: int = 0,
     planning_sink=None,
     quantum_sink=None,
 ) -> tuple[list[PayloadEnvelope], list[RequestLifecycleSeed]]:
@@ -233,6 +250,7 @@ def _offline_batch_envelopes(
         planning_batch_id = f"{job_id}:batch:{batch_index_start + batch_offset}"
         planning_work = sum(
             _row_prompt_tokens(batch, row_index)
+            + prompt_token_overhead_per_request
             + _row_output_tokens(
                 batch,
                 row_index,
@@ -252,6 +270,9 @@ def _offline_batch_envelopes(
                 completion_max_tokens=completion_max_tokens,
                 output_cost_mode=output_cost_mode,
                 target_tokens=service_quantum_tokens,
+                prompt_token_overhead_per_request=(
+                    prompt_token_overhead_per_request
+                ),
             )
         elif submission_granularity == "request":
             batch_envelopes = _offline_request_envelopes(
@@ -261,6 +282,9 @@ def _offline_batch_envelopes(
                 operator=operator,
                 completion_max_tokens=completion_max_tokens,
                 output_cost_mode=output_cost_mode,
+                prompt_token_overhead_per_request=(
+                    prompt_token_overhead_per_request
+                ),
             )
         elif submission_granularity == "batch":
             batch_envelopes = (
@@ -272,6 +296,9 @@ def _offline_batch_envelopes(
                     completion_max_tokens=completion_max_tokens,
                     output_cost_mode=output_cost_mode,
                     planning_batch_id=planning_batch_id,
+                    prompt_token_overhead_per_request=(
+                        prompt_token_overhead_per_request
+                    ),
                 ),
             )
         else:
@@ -372,7 +399,10 @@ def _row_arrivals(
     table: pa.Table | pa.RecordBatch,
     completion_max_tokens: int,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
+    prompt_token_overhead_per_request: int = 0,
 ) -> list[RowArrival]:
+    if prompt_token_overhead_per_request < 0:
+        raise ValueError("prompt token overhead must be non-negative")
     if "arrival_time_s" not in table.column_names:
         raise ValueError("arrival_time_s column is required for arrival replay")
     previous_arrival_s: float | None = None
@@ -410,7 +440,9 @@ def _row_arrivals(
             RowArrival(
                 row_id=str(row_value),
                 arrival_s=arrival_s,
-                prompt_tokens=prompt_tokens,
+                prompt_tokens=(
+                    prompt_tokens + prompt_token_overhead_per_request
+                ),
                 estimated_output_tokens=_row_output_tokens(
                     table,
                     index,
@@ -538,6 +570,11 @@ def _arrival_replay_envelopes(
                     "output_cost_mode",
                     "fixed_output_cap",
                 ),
+                prompt_token_overhead_per_request=getattr(
+                    args,
+                    "completion_prompt_token_overhead",
+                    0,
+                ),
             ):
                 if (
                     previous_arrival_s is not None
@@ -640,6 +677,11 @@ def _arrival_replay_envelopes(
                     "fixed_output_cap",
                 ),
                 target_tokens=args.service_quantum_tokens,
+                prompt_token_overhead_per_request=getattr(
+                    args,
+                    "completion_prompt_token_overhead",
+                    0,
+                ),
             )
             if quantum_sink is not None:
                 quantum_sink.extend(
@@ -698,7 +740,7 @@ def _arrival_replay_envelopes(
                     request_id=f"{job_id}:row:{row.row_id}",
                     submission_id=submission_id,
                     doc_id=row.row_id,
-                    prompt_tokens=row.prompt_tokens,
+                    prompt_tokens=_row_prompt_tokens(row.payload_ref, 0),
                     estimated_output_tokens=row.estimated_output_tokens,
                     prefix_key=row.prefix_key,
                     arrival_epoch_s=arrival_epoch_s,

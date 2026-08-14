@@ -427,6 +427,32 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         ):
             profile._validate_completion_observation_args(invalid)
 
+    def test_prompt_token_overhead_requires_chat_completion_protocol(self) -> None:
+        valid = profile.parse_args(
+            [
+                "--operator",
+                "ai_complete",
+                "--completion-protocol",
+                "chat_completions",
+                "--completion-prompt-token-overhead",
+                "29",
+            ]
+        )
+        profile._validate_completion_observation_args(valid)
+
+        invalid = profile.parse_args(
+            [
+                "--operator",
+                "ai_complete",
+                "--completion-protocol",
+                "completions",
+                "--completion-prompt-token-overhead",
+                "29",
+            ]
+        )
+        with self.assertRaisesRegex(SystemExit, "requires .* chat_completions"):
+            profile._validate_completion_observation_args(invalid)
+
     def test_http_actor_definition_receives_safe_ray_options(self) -> None:
         ray = _RecordingRay()
         options = RayWorkerOptions(0.25, actor_max_concurrency=4)
@@ -1246,6 +1272,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             job_start_epoch_s=10.0,
             ready_epoch_s=10.1,
             submission_granularity="request",
+            prompt_token_overhead_per_request=29,
         )
 
         self.assertEqual(
@@ -1260,6 +1287,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [item.request.planning_batch_id for item in envelopes],
             ["job:batch:0", "job:batch:0"],
         )
+        self.assertEqual(
+            [item.request.prompt_tokens for item in envelopes],
+            [32, 34],
+        )
+        self.assertEqual([item.prompt_tokens for item in seeds], [3, 5])
         self.assertEqual(
             [item.request.preferred_endpoint_id for item in envelopes],
             ["endpoint-1", "endpoint-0"],
@@ -2032,6 +2064,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         arrivals = profile_replay._row_arrivals(
             table,
             completion_max_tokens=5,
+            prompt_token_overhead_per_request=29,
         )
 
         self.assertEqual(
@@ -2046,8 +2079,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 for item in arrivals
             ],
             [
-                ("11", 2.5, 7, 5, "shared"),
-                ("12", 2.75, 9, 5, "other"),
+                ("11", 2.5, 36, 5, "shared"),
+                ("12", 2.75, 38, 5, "other"),
             ],
         )
         for index, arrival in enumerate(arrivals):
@@ -2542,6 +2575,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             max_inflight=8,
             arrival_time_scale=0.001,
             submission_granularity="request",
+            completion_max_tokens=4,
+            completion_prompt_token_overhead=29,
             _replay_clock=_DeterministicReplayClock(),
         )
         table = pa.table(
@@ -2562,7 +2597,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 [table],
                 args,
                 job_id="job",
-                operator="ai_embed",
+                operator="ai_complete",
                 service_observation=lambda: ReplayServiceObservation(
                     fresh=False,
                     running=None,
@@ -2590,6 +2625,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [1, 1],
         )
         self.assertEqual(
+            [item.request.prompt_tokens for item in envelopes],
+            [39, 49],
+        )
+        self.assertEqual(
             [item.request.preferred_endpoint_id for item in envelopes],
             ["endpoint-1", "endpoint-0"],
         )
@@ -2601,7 +2640,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             {item.latency_granularity for item in seeds},
             {"request"},
         )
-        self.assertEqual(packing, [(30, 2)])
+        self.assertEqual([item.prompt_tokens for item in seeds], [10, 20])
+        self.assertEqual(packing, [(96, 2)])
 
     def test_service_quantum_granularity_expands_replay_batch_without_row_split(
         self,

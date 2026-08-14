@@ -81,6 +81,14 @@ completion→debt below-cap episode。工具将 evidence validity 与 claim gate
 未过 5% headline、吞吐/bulk JCT/SLO/no-service non-inferiority 或 repayment 门也保持有效负结果，
 不会把性能失败伪装成无效运行。
 
+`analysis/audit_chat_prompt_overhead.py` 从 `jobs/*.requests.csv` 与
+`jobs/*.submissions.csv` 按 submission ID 独立重算
+`service total - raw prompt - actual output`。它只接受一请求一 submission、全完成、非负且
+全体一致的开销，并可冻结 expected overhead/request count；输出包含每个输入文件 SHA。该值绑定
+模型 revision、chat template 与 completion protocol，不是跨服务常数，也不能由 runtime
+summary 自证。request trace 保留 raw prompt token；只有 admission/credit 的 effective work
+加入该校准项。
+
 `analysis/audit_saor_formal_readiness.py --profile ready_observation_bridge`
 审计三臂 Project observation bridge：frozen-static/single-head、shared FIFO/single-head、
 shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity，第二段在 FIFO 固定时

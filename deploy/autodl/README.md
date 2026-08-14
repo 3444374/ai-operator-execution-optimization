@@ -1328,6 +1328,23 @@ candidate work，由离线汇总独立重算 projection，检查全部 projectio
 wrapper 成功跑完六臂后会自动写 `rehearsal_validation.json`；它只检查证据链及 proposed 的冻结
 absolute foreground SLO、longest-no-service、repayment/projection 门，不在单次 rehearsal 上决定
 任何 arm 排名或效应大小。
+
+chat completions 的服务侧模板可能为每条请求增加 prompt token。正式配置用
+`COMPLETION_PROMPT_TOKEN_OVERHEAD` 冻结该模型/template/protocol 签名的每请求开销；当前值 29
+来自同一六臂 rehearsal 的 6,144 条 request/submission 原始证据，不能照搬到另一模型或模板。
+运行时 request CSV 继续记录 manifest 的 raw prompt token，admission/credit work 才使用
+`raw + calibrated overhead`。每次签名变化先执行离线审计，禁止为通过 estimated-work 上界而放宽
+门禁：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_chat_prompt_overhead.py \
+  --matrix-root "$ARTIFACT_ROOT/<completed-rehearsal-root>" \
+  --expected-overhead "$COMPLETION_PROMPT_TOKEN_OVERHEAD" \
+  --expected-requests 6144 \
+  --output "$ARTIFACT_ROOT/prompt_overhead_audit.json"
+```
+
 解锁后的 formal 汇总入口为：
 
 ```bash

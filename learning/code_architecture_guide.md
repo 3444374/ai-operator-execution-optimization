@@ -74,6 +74,13 @@ SAOR 的在线 selector 与离线数学验证也分开：`scheduling/submission_
 event 字段重新计算同一决策。这样即使在线公式写错，验证器仍能用独立手段把 rehearsal 判失败，
 不会出现“实现和测试共同相信同一个错误结果”。
 
+文本 work 也分 raw observation 与 effective admission 两层。request evidence 永久保存 tokenizer
+对原始 prompt 的计数；chat template 的服务侧固定开销由
+`analysis/audit_chat_prompt_overhead.py` 从 request/submission join 独立校准。调度器只消费
+`raw prompt + calibrated protocol/template overhead + output estimate`，不能把模型特定的 29
+写进 selector，也不能把加过 overhead 的值伪装成原始 prompt evidence。这使估计上界既能覆盖
+真实服务 work，又保留跨模型重新校准所需的原始数据。
+
 `scripts/` 已按 data/services/baselines/profiling/experiments/analysis 分组，`tests/`
 按生产域镜像。数百条当前复现命令已同步迁移；已执行实验的 raw manifest 不改写，因为
 其中的旧路径属于证据的一部分。`data/materializers/text.py` 等剩余大文件后续仍按一次

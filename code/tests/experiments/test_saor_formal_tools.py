@@ -70,9 +70,117 @@ PROJECT_FORMAL_SUMMARY = _load(
     "summarize_saor_project_mechanism_formal",
     "code/scripts/analysis/summarize_saor_project_mechanism_formal.py",
 )
+PROMPT_OVERHEAD_AUDIT = _load(
+    "audit_chat_prompt_overhead",
+    "code/scripts/analysis/audit_chat_prompt_overhead.py",
+)
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_prompt_overhead_audit_recomputes_uniform_chat_cost(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            jobs = root / "jobs"
+            jobs.mkdir()
+            self._write_group_rows(
+                jobs / "cell.requests.csv",
+                [
+                    {
+                        "submission_id": "job:request:1",
+                        "scenario_id": "cell",
+                        "status": "completed",
+                        "prompt_tokens": 36,
+                        "actual_output_tokens": 256,
+                    },
+                    {
+                        "submission_id": "job:request:2",
+                        "scenario_id": "cell",
+                        "status": "completed",
+                        "prompt_tokens": 41,
+                        "actual_output_tokens": 100,
+                    },
+                ],
+            )
+            self._write_group_rows(
+                jobs / "cell.submissions.csv",
+                [
+                    {
+                        "submission_id": "job:request:1",
+                        "status": "completed",
+                        "rows": 1,
+                        "token_count": 321,
+                    },
+                    {
+                        "submission_id": "job:request:2",
+                        "status": "completed",
+                        "rows": 1,
+                        "token_count": 170,
+                    },
+                ],
+            )
+
+            result = PROMPT_OVERHEAD_AUDIT.audit_prompt_overhead(
+                root,
+                expected_overhead=29,
+                expected_requests=2,
+            )
+
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["overhead_distribution"], {"29": 2})
+
+    def test_prompt_overhead_audit_fails_nonuniform_or_batched_evidence(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            jobs = root / "jobs"
+            jobs.mkdir()
+            self._write_group_rows(
+                jobs / "cell.requests.csv",
+                [
+                    {
+                        "submission_id": "job:request:1",
+                        "scenario_id": "cell",
+                        "status": "completed",
+                        "prompt_tokens": 36,
+                        "actual_output_tokens": 256,
+                    },
+                    {
+                        "submission_id": "job:request:2",
+                        "scenario_id": "cell",
+                        "status": "completed",
+                        "prompt_tokens": 41,
+                        "actual_output_tokens": 100,
+                    },
+                ],
+            )
+            self._write_group_rows(
+                jobs / "cell.submissions.csv",
+                [
+                    {
+                        "submission_id": "job:request:1",
+                        "status": "completed",
+                        "rows": 1,
+                        "token_count": 321,
+                    },
+                    {
+                        "submission_id": "job:request:2",
+                        "status": "completed",
+                        "rows": 2,
+                        "token_count": 171,
+                    },
+                ],
+            )
+
+            result = PROMPT_OVERHEAD_AUDIT.audit_prompt_overhead(
+                root,
+                expected_overhead=29,
+                expected_requests=2,
+            )
+
+            self.assertEqual(result["status"], "failed")
+            self.assertTrue(any("rows=2" in error for error in result["errors"]))
+
     def test_project_rehearsal_validator_writes_absolute_gate_result(
         self,
     ) -> None:
@@ -637,6 +745,7 @@ class SaorFormalToolsTests(unittest.TestCase):
             )
             self.assertEqual(required - provided, {"DATABASE_URL"})
         self.assertIn("export COMPLETION_PROTOCOL=chat_completions", env_example)
+        self.assertIn("export COMPLETION_PROMPT_TOKEN_OVERHEAD=29", env_example)
         self.assertIn("/v1/chat/completions", env_example)
         self.assertIn("export SAOR_ARRIVAL_TIME_SCALE=0.0001", env_example)
         self.assertIn(
@@ -835,12 +944,13 @@ class SaorFormalToolsTests(unittest.TestCase):
                 "DATABASE_URL": "postgresql://postgres:postgres@localhost/db",
                 "SOURCE_MAX_PROMPT_TOKENS": "1500",
                 "COMPLETION_ENDPOINT_URLS": (
-                    "http://127.0.0.1:8000/v1/completions,"
-                    "http://127.0.0.1:8001/v1/completions"
+                    "http://127.0.0.1:8000/v1/chat/completions,"
+                    "http://127.0.0.1:8001/v1/chat/completions"
                 ),
                 "COMPLETION_MODEL": "qwen",
                 "COMPLETION_HTTP_KEEPALIVE_EXPIRY_S": "4",
-                "COMPLETION_PROTOCOL": "completions",
+                "COMPLETION_PROTOCOL": "chat_completions",
+                "COMPLETION_PROMPT_TOKEN_OVERHEAD": "29",
                 "COMPLETION_MAX_TOKENS": "8",
                 "MODEL_METRICS_URLS": (
                     "http://127.0.0.1:8000/metrics,"
@@ -905,6 +1015,18 @@ class SaorFormalToolsTests(unittest.TestCase):
                     project_formal_config,
                     formal_run=False,
                 )
+                drifted_work_cost_contract = dict(project_formal_contract)
+                drifted_work_cost_contract["work_cost_contract"] = dict(
+                    project_formal_contract["work_cost_contract"]
+                )
+                drifted_work_cost_contract["work_cost_contract"][
+                    "prompt_token_overhead_per_request"
+                ] = 28
+                project_work_cost_errors = validate_project_formal_contract(
+                    drifted_work_cost_contract,
+                    project_formal_config,
+                    formal_run=False,
+                )
                 project_formal_lock_errors = validate_project_formal_contract(
                     project_formal_contract,
                     project_formal_config,
@@ -956,6 +1078,9 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(matched_ready_result["scenario_count"], 6)
         self.assertEqual(project_formal_result["status"], "passed")
         self.assertEqual(project_contract_errors, [])
+        self.assertTrue(
+            any("work-cost calibration" in error for error in project_work_cost_errors)
+        )
         self.assertEqual(
             project_formal_lock_errors,
             ["formal run is not authorized by the frozen contract"],
@@ -973,7 +1098,10 @@ class SaorFormalToolsTests(unittest.TestCase):
             any("weights drift" in error for error in drift_result["errors"])
         )
         self.assertIsNone(priority_result["direct_contract"])
-        self.assertEqual(result["direct_contract"]["protocol"], "completions")
+        self.assertEqual(
+            result["direct_contract"]["protocol"],
+            "chat_completions",
+        )
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
         self.assertEqual(result["direct_contract"]["keepalive_expiry_s"], 4.0)
         self.assertEqual(

@@ -60,6 +60,7 @@
     "--completion-endpoint-urls", "${COMPLETION_ENDPOINT_URLS}",
     "--completion-model", "${COMPLETION_MODEL}",
     "--completion-protocol", "${COMPLETION_PROTOCOL}",
+    "--completion-prompt-token-overhead", "${COMPLETION_PROMPT_TOKEN_OVERHEAD}",
     "--completion-max-tokens", "${COMPLETION_MAX_TOKENS}",
     "--completion-return-token-ids",
     "--completion-prompt-format", "raw",

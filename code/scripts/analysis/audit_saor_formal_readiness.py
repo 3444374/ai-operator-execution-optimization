@@ -298,6 +298,18 @@ def audit(
     if configured_cap <= 0:
         errors.append("formal matrix requires a positive completion max token cap")
     try:
+        prompt_token_overhead = int(
+            _argument_value(
+                config.common_args,
+                "--completion-prompt-token-overhead",
+                "0",
+            )
+        )
+    except ValueError:
+        prompt_token_overhead = -1
+    if prompt_token_overhead < 0:
+        errors.append("completion prompt token overhead must be non-negative")
+    try:
         arrival_time_scale = float(
             _argument_value(config.common_args, "--arrival-time-scale", "nan")
         )
@@ -428,7 +440,7 @@ def audit(
         )
         for endpoint_index in range(len(config.endpoint_ids)):
             work = sum(
-                request.estimated_work
+                request.estimated_work + prompt_token_overhead
                 for request in bulk_requests
                 if request.endpoint_index == endpoint_index
                 and (
@@ -503,6 +515,7 @@ def audit(
             min_pre_foreground_envelopes
         ),
         "pre_foreground_predicted_work_by_endpoint": pre_foreground_work,
+        "completion_prompt_token_overhead": prompt_token_overhead,
         "service_metadata": dict(config.service_metadata),
         "scenario_resource_contracts": scenario_resource_contracts,
         "calibration_contract": (

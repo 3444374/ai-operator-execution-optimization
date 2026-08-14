@@ -143,6 +143,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="completions",
     )
     parser.add_argument(
+        "--completion-prompt-token-overhead",
+        type=int,
+        default=0,
+        help=(
+            "Calibrated service-side prompt tokens added per request by the "
+            "selected protocol/template. This is part of admission work, not "
+            "a cross-model constant."
+        ),
+    )
+    parser.add_argument(
         "--completion-http-transport",
         choices=["urllib", "httpx_async"],
         default="urllib",

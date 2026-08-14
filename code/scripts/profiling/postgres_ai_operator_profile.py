@@ -1399,6 +1399,22 @@ def _validate_completion_observation_args(args: argparse.Namespace) -> None:
         raise SystemExit("--source-max-prompt-tokens must be positive")
     if args.source_row_offset < 0:
         raise SystemExit("--source-row-offset must be non-negative")
+    if (
+        not isinstance(args.completion_prompt_token_overhead, int)
+        or isinstance(args.completion_prompt_token_overhead, bool)
+        or args.completion_prompt_token_overhead < 0
+    ):
+        raise SystemExit(
+            "--completion-prompt-token-overhead must be a non-negative integer"
+        )
+    if args.completion_prompt_token_overhead and (
+        args.operator != "ai_complete"
+        or args.completion_protocol != "chat_completions"
+    ):
+        raise SystemExit(
+            "non-zero completion prompt overhead requires "
+            "--operator ai_complete and --completion-protocol chat_completions"
+        )
     uses_compatible_completion_options = (
         args.completion_return_token_ids
         or args.completion_ignore_eos
@@ -1823,6 +1839,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_ignore_eos": args.completion_ignore_eos,
             "completion_prompt_format": args.completion_prompt_format,
             "completion_protocol": args.completion_protocol,
+            "completion_prompt_token_overhead": (
+                args.completion_prompt_token_overhead
+                if args.operator == "ai_complete"
+                else ""
+            ),
             "completion_http_transport": (
                 args.completion_http_transport
                 if args.operator == "ai_complete"
@@ -2436,6 +2457,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     epoch_clock=lifecycle_epoch_clock,
                     output_cost_mode=args.output_cost_mode,
                     completion_max_tokens=args.completion_max_tokens,
+                    completion_prompt_token_overhead=(
+                        args.completion_prompt_token_overhead
+                    ),
                     submission_state=actor_submission_state,
                     per_endpoint_limit=per_endpoint_inflight_limit,
                     per_endpoint_work_limit=per_endpoint_work_limit,
@@ -2478,6 +2502,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     completion_temperature=args.completion_temperature,
                     completion_protocol=args.completion_protocol,
                     completion_ignore_eos=args.completion_ignore_eos,
+                    completion_prompt_token_overhead=(
+                        args.completion_prompt_token_overhead
+                    ),
                 )
             if replay_envelopes is not None:
                 raise RuntimeError("arrival replay requires a Ray executor")
@@ -2610,6 +2637,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         ),
                         submission_granularity=args.submission_granularity,
                         service_quantum_tokens=args.service_quantum_tokens,
+                        prompt_token_overhead_per_request=(
+                            args.completion_prompt_token_overhead
+                        ),
                         quantum_sink=service_quanta,
                     )
                 )
@@ -3088,6 +3118,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_ignore_eos": args.completion_ignore_eos,
             "completion_prompt_format": args.completion_prompt_format,
             "completion_protocol": args.completion_protocol,
+            "completion_prompt_token_overhead": (
+                args.completion_prompt_token_overhead
+                if args.operator == "ai_complete"
+                else ""
+            ),
             "completion_http_transport": (
                 args.completion_http_transport
                 if args.operator == "ai_complete"

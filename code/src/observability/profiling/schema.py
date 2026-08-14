@@ -20,7 +20,8 @@ FORMAL_RESULT_FIELDS = tuple(
     token_budget_target_service_ms token_budget_arrival_ewma_alpha
     embedding_dim embedding_vector_dim
     completion_max_tokens completion_return_token_ids completion_ignore_eos completion_prompt_format
-    completion_protocol completion_http_transport completion_http_keepalive_expiry_s
+    completion_protocol completion_prompt_token_overhead
+    completion_http_transport completion_http_keepalive_expiry_s
     completion_temperature
     output_cost_mode
     output_cost_source packing_cost_unit

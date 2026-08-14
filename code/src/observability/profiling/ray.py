@@ -349,6 +349,7 @@ def submit_with_backpressure(
     epoch_clock=None,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
     completion_max_tokens: int = 0,
+    completion_prompt_token_overhead: int = 0,
     actors: Sequence[object] | None = None,
     submission_state: ActorSubmissionState | None = None,
     per_endpoint_limit: int | None = None,
@@ -418,6 +419,9 @@ def submit_with_backpressure(
                     else 0
                 ),
                 output_cost_mode=output_cost_mode,
+                prompt_token_overhead_per_request=(
+                    completion_prompt_token_overhead
+                ),
             )
         )
         topology = _endpoint_topology(
@@ -663,6 +667,7 @@ def submit_ray_tasks(
     completion_temperature: float | None = None,
     completion_protocol: str = "completions",
     completion_ignore_eos: bool = False,
+    completion_prompt_token_overhead: int = 0,
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
@@ -711,6 +716,9 @@ def submit_ray_tasks(
             if operator == "ai_complete"
             else 0,
             output_cost_mode=output_cost_mode,
+            prompt_token_overhead_per_request=(
+                completion_prompt_token_overhead
+            ),
         )
     )
     if model_backend == "fake":
