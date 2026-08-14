@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-13
+更新时间：2026-08-14
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -60,8 +60,8 @@ selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`
 2026-08-14 fail-closed 复核进一步确认：旧汇总没有显式区分 completion fairness applicability，且
 avoidable-idle 事件名检查错误。最终规则要求五个 bounded-ready 臂 evidence=`ok`；frozen-static
 缺 registered-ready ledger，故该指标为 N/A、不能作同口径 service-lag 比较，但不误杀共同性能
-矩阵。旧 validation 等待最终代码重签。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，并冻结内部
-消融各臂的 effective K/W 与 weights。完成新门禁服务器回归前不得解锁 formal。
+矩阵。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，冻结内部消融各臂的 effective
+K/W、weights 与 fixed output cap。最终六臂 rehearsal 已完成，但在独立审核前仍不得解锁 formal。
 修复提交 `15201946` 的同机四臂 development regression 已完成：所有请求 exactly-once、Job ID
 合同通过，$0.125W_e$ 触发一次 recovery；$0.25W_e$ 再次因 recovery=0 被 runner 正确 fail closed。
 该回归只验证证据链，不计入性能重复，也不改变 formal 锁定状态。
@@ -210,10 +210,16 @@ PostgreSQL source
   longest-no-service 非劣与 30s empirical debt-repayment 门；首次最终 rehearsal 在 SAOR cell
   发现单 recovery 在途无法赶上 debt 产生，10/10 recovery completion 仍留下 2 个未退出 episode，
   已正确 fail closed。修正版使用 residual-aware projected-debt work budget，按活动集同时计入
-  全部 own active work 与 foreign residual，并由 schema 5 raw event 离线复算；wrapper 仍锁定
-  rehearsal，必须先用全新 root 产生至少一个 completion→repayment 闭环、只用显式 `finish_job`
-  单列 demand-terminated censored episode，并
-  登记 validation SHA，不能直接跑 formal。并行的系统问题
+  全部 own active work 与 foreign residual，并由 schema 5 raw event 离线复算。旧 `d6259f5f`
+  root 因缺少逐请求固定输出上界门降为 diagnostic；最终 `63d17300` 全新六臂 root 才是有效
+  rehearsal：96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved，
+  1,108/1,108 projection 离线一致，estimate/overshoot-bound violation 均为 0；6,144 条 request
+  独立证明当前 chat template overhead 恒为 29、`fixed_output_cap=256`，且公平 service work 使用
+  endpoint total token。单次 SAOR 相对 VTC-style 吞吐 +0.43%、foreground P99 +0.11%、P95
+  service lag −13.15%、longest no-service +0.014%，因此只晋级为待 1+3 验证的 Pareto 候选，
+  未证明胜出。wrapper/formal contract 仍为
+  `locked_pending_rehearsal/formal_authorized=false`；须先独立审核已登记的 validation/archive SHA，
+  不能直接跑 formal。并行的系统问题
   仍需补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
   matched comparison；
   原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；

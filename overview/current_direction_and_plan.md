@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-13
+最后更新：2026-08-14
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -37,7 +37,8 @@
   proposed 12.28K tok/s、fg P99 17.85s。proposed 是用约 4.8% 吞吐与约 5.2% bulk JCT 换 tail
   的观测非支配折中点，不是 selector winner；固定顺序 n=2，`formal_authorized=false`。
   现已另建位置平衡六臂 1+3 Project mechanism 合同，冻结 5% headline 与 throughput/JCT/SLO/
-  no-service/repayment 保护边界；当前只授权 final rehearsal，不直接跑 formal。系统层另补 Daft
+  no-service/repayment 保护边界；`63d17300` final rehearsal 已通过固定 output cap 与 repayment
+  证据门，当前只进入独立审核，仍不授权 formal。系统层另补 Daft
   Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched comparison。
   `single-head + shared FIFO` bridge 已完成：shared capacity 使 tok/s +25.96%
   但 fg P99 +99.17%；bounded-ready 在同 FIFO 下再使 tok/s +7.30%、fg P99 −33.62%，但
@@ -134,12 +135,13 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    DRR/WFQ、VTC-style、strict-priority 与 proposed 双轮归因，以及 single-head shared FIFO→
    bounded-ready FIFO observation bridge 均已完成。proposed 是以约 4.8% 吞吐和约 5.2% bulk
    JCT 代价换更低 foreground tail 的观测非支配折中，不是 selector winner；固定顺序 n=2，
-   历史结果的 `formal_authorized=false` 不变。下一步先用新合同跑一次最终 Project mechanism
-   rehearsal。首个 root 已证明单 recovery 在途不能形成 debt repayment 并 fail closed；修正为
-   residual-aware projected-debt work budget 后，须用全新 root 确认 completion fairness、离线
-   projection/overshoot 门及由显式 `finish_job` 区分的完整/censored repayment evidence；
-   审核并登记 validation SHA 后
-   才能单独解锁 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
+   历史结果的 `formal_authorized=false` 不变。首个最终 root 已证明单 recovery 在途不能形成
+   debt repayment 并 fail closed；修正为 residual-aware projected-debt work budget 后，最终
+   `63d17300` 全新六臂 rehearsal 已通过：固定 admission output cap=256 的 6,144-request audit
+   通过，15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 离线投影一致。
+   单次 SAOR 相对 VTC-style 的 service lag P95 改善 13.15%，longest no-service 仅 +0.014%，
+   故只说明值得做 1+3，不是 winner。审核已登记的 validation/archive SHA 后
+   才能由单独提交解锁 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
    2-Job native-system matched comparison 独立推进，原生 baseline 继续使用自身调度。期间不扫
    cap，不跑 4-Job/reservation/dynamic K。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。

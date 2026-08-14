@@ -451,6 +451,26 @@ censor episode。显式结束时仍 critical 的 episode 才记为 right-censore
 完整 episode，censored 单列，持续可偿还但 run 结束的 unresolved 必须为 0。该条件命题仍需
 最终 trace 核对假设与常数，不能仅凭代码结构宣布定理完成。
 
+最终 `63d17300` 全新六臂 GPU rehearsal 已完成这一步经验核对，但没有把条件命题升级为普遍
+定理。结果为 96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 censored/
+unresolved；1,108/1,108 raw projection 事件离线复算一致，projection violation、fixed-cap
+estimate overrun、单 quantum overshoot-bound violation均为 0。最大同时 recovery commitment
+为 28 requests/38,248 work，repayment 时为 32,294 work，说明限制对象确为 work 而非请求数。
+实际 repayment overshoot 最大 619.5，projected overshoot 最大 758.0，观测 bound 最大 876.0。
+
+旧 root 的 845 个 estimate overrun 并非算法随机失效，而是 chat-completions 服务侧模板对每条
+请求固定添加了 29 prompt tokens。旧/新 root 各 6,144 条原始 request/submission join 均得到
+严格分布 `{29: 6144}`；当前实现因此保存 raw prompt evidence，同时只在 admission effective
+work 中加入签名化 overhead。模型、tokenizer、chat template、message shape 或 protocol 变化时
+必须重新校准，29 不进入 selector 常量或定理假设。
+
+最终有效 root 还逐请求冻结并验证 `output_bound_source=fixed_output_cap`、cap=256；客户端事后
+重分词只作诊断，不能放大 admission estimate。性能上，单次 SAOR 相对同 observation 的
+VTC-style 吞吐 +0.43%、foreground P99 +0.11%、P95 completion service lag −13.15%、longest
+no-service +0.014%，保护门未越界。这支持“机制可运行且是 Pareto 候选”，不支持“SAOR 已胜出”。
+只有独立审核后的位置平衡 1+3
+formal 才能检验该差异是否稳定；若仍越界，应保留为 valid negative。
+
 VTC artifact 已公开 overload、proportional、on/off、Poisson short/long、increase 和 distribution
 shift suites，可借其 **workload shape 与指标定义**，但实现仍是 S-LoRA artifact，不能和本项目
 upstream vLLM 做绝对性能排名。

@@ -6748,3 +6748,25 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   512 的放大上界。因此该 root 降为 diagnostic，不算最终有效 rehearsal。实现新增 typed
   `output_bound_source/completion_max_tokens`、合同/config 等值检查与逐行 estimate==cap 门，并加入
   257 必须失败的反例；须在新提交和全新 root 上重跑六臂。
+
+## 2026-08-14 固定 admission 输出上界后的有效 final rehearsal
+
+- `63d17300` 将 `output_bound_source=fixed_output_cap` 与 `completion_max_tokens=256` 纳入 typed
+  work-cost config、formal contract 和 readiness 等值检查；离线 audit 逐请求要求
+  `estimated_output_tokens==256`，并用 257 必须失败的反例防止 trace 自报放大上界。
+- 服务器受影响回归 338 项通过；从全新 root 运行最终六臂 rehearsal，6/6 cell、0 incident、
+  6,144/6,144 requests exactly-once。work-cost schema 3 证明 total/input/output 均来自 endpoint
+  usage、prompt overhead 分布 `{29: 6144}`、六臂 `actual≤estimate` 越界均为 0；独立 CLI 重算与
+  wrapper audit 哈希同为
+  `602dfc28e7b3f1dbbf1b1ad5c3d72bf559ef1aa481b2b871d332d2de28a2bb5e`。
+- SAOR 机制账本为 3,244 events、512 priority grants、96/96 recovery grant/completion、15/15
+  repayment completed、P95/max 3.234s、0 censored/unresolved；1,108/1,108 projection 离线一致，
+  estimate/projection/overshoot-bound/avoidable-idle/foreign-critical-grant violation 均为 0。
+- 单次 SAOR 为 12,713.03 tok/s、MFU 47.91%、foreground P99 25.504s。相对同 observation
+  VTC-style，吞吐 +0.43%、foreground P99 +0.11%、P95 service lag −13.15%、longest no-service
+  +0.014%；只达到 service-lag headline，不能据单个 warm-up 决定排名。
+- rehearsal validation SHA256 为
+  `4f19e0b70c13d4a67a24015ff33444a95a8bab4b773052b62716bfc39540b668`，完整 113-file archive
+  SHA256 为 `5f267dc5847529e8dcea7a4415d52a3e1675a4a983c5190c164ef67af552cedd`。仓库保存 compact
+  evidence 与完整归档；合同只登记 `passed_pending_independent_review`，状态仍为
+  `locked_pending_rehearsal/formal_authorized=false`，不自动运行位置平衡 1+3 formal。

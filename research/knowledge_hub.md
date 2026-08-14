@@ -791,8 +791,12 @@ completion-granularity empirical repayment，不是理论 bound。首个最终 r
 “每 Job 单 recovery 在途”不能保证 repayment；修正版不是无界 drain，而是 residual-aware
 projected-debt work budget：按活动集权重同时核算所有 own active work 和不可抢占 foreign
 residual，显式 `finish_job` 才能 censor，离线从 raw event 重算 projection 与单 quantum
-overshoot bound。当前 contract 仍为
-`locked_pending_rehearsal/formal_authorized=false`，先用 final rehearsal 固定 validation SHA。
+overshoot bound。最终 `63d17300` 全新六臂 final rehearsal 已 passed：固定 admission output
+cap=256 的 6,144-request audit 通过，15/15 repayment completed、P95 3.234s、0 unresolved，
+1,108/1,108 projection 一致；单次相对 VTC-style lag P95 −13.15%、longest no-service
++0.014%，尚不判 winner。当前 contract 保持
+`locked_pending_rehearsal/formal_authorized=false`，先独立复核 candidate validation/archive SHA，
+再由单独提交决定是否授权 formal。
 frozen-static 因不经过 shared credit，其 registered-ready lag 是 N/A，只参加共同性能/SLO比较；
 不能伪造 credit lifecycle，也不能用该 N/A 误杀整张矩阵。
 

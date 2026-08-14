@@ -2,11 +2,12 @@
 
 Date: 2026-07-20（最后更新：2026-08-14；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
-2026-08-14 fail-closed 复核发现旧汇总没有显式编码 completion fairness applicability；最终规则
-要求五个 bounded-ready 臂 evidence=`ok`，frozen-static 因不经过 shared credit 而标为
-`not_applicable`，不参加 service-lag 排名但不误杀性能矩阵。历史 GPU 事实保留，旧 validation 等待
-最终代码重签；`formal_authorized=false`。下一步先跑新的 Project mechanism final rehearsal，再
-独立准备同一 2-Job native-system matched comparison；原生 baseline 不接 bounded-ready，
+2026-08-14 fail-closed 复核已将 completion fairness applicability、Job identity、K/W/weights、
+projected-debt repayment 和 admission work-cost 上界统一闭环。最终 `63d17300` 六臂 rehearsal
+6/6、0 incident，6,144-request fixed-output-cap audit 与 15/15 repayment episode 均通过；
+`formal_authorized=false`，单次结果不判策略排名。下一步先独立审核 validation/archive SHA，再
+决定是否授权位置平衡 1+3 Project mechanism formal，并独立准备同一 2-Job native-system matched
+comparison；原生 baseline 不接 bounded-ready，
 dynamic-K 仍退出主线）
 
 2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
@@ -112,9 +113,13 @@ proposed 还必须至少一个完整 debt-repayment episode、P95≤30s、unreso
 2 个未跨回 cap 的 episode，因而正确 fail closed；这证明原“单 recovery 在途”不能保证
 repayment。代码已改为 residual-aware projected-debt work budget：所有 own active work 与
 non-preemptible foreign residual 都进入投影，显式 `finish_job` 才能 censor，schema 5 由离线
-汇总独立复算并检查单 request quantum overshoot。当前合同仍是
-`locked_pending_rehearsal/formal_authorized=false`，必须用全新 root 重跑并冻结 validation SHA，
-不能用历史 n=2 或本次失败结果事后解锁。
+汇总独立复算并检查单 request quantum overshoot。旧 `d6259f5f` root 因缺少逐请求固定输出上界
+门而降为 diagnostic；最终 `63d17300` 全新六臂 root 6/6、0 incident，固定 cap=256 的
+6,144-request audit 通过，15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108
+projection 一致且 estimate/overshoot 门通过。单次相对 VTC-style 的 service lag P95 −13.15%、
+longest no-service +0.014%。当前合同为
+`locked_pending_rehearsal/formal_authorized=false`，已登记 candidate validation/archive SHA；必须
+独立复核后由单独提交解锁，不能用历史 n=2 或单次 rehearsal 直接宣布胜出。
 formal 把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。
