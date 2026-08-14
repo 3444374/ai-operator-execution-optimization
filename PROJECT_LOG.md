@@ -6720,3 +6720,31 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `finish_job` 可以 censor；瞬时 `ready_jobs=[]` 不可推断 demand 永久消失。正式门仍要求至少一个
   completed、P95≤30s、unresolved=0，censored 不冒充完成。完成反例测试、全套回归和干净提交后，
   才能用全新 root 重跑 final rehearsal。
+
+## 2026-08-14 endpoint-work 口径、d625 diagnostic 与输出上界门
+
+- `5b9b0a59` 将 chat-completions 的服务侧 prompt overhead 做成模型/template/protocol 签名化
+  配置，request trace 保留 raw prompt；新增独立 auditor 从 request/submission 原始 CSV 重算
+  endpoint total/input/output work、六臂矩阵完整性与 `actual≤admission estimate`，而不是让 runtime
+  summary 自证。服务器受影响套件累计 322 项通过。
+- 首个 `5b9b0a59` root 在 static 首 cell 正确 fail closed：audit 错把 post-hoc 输出文本重分词
+  207 当作 admission estimate 256，导致伪报 `1286>1237`。`d6259f5f` 修正为使用冻结的
+  `estimated_output_tokens`，并加入 `1001+29+256=1286` 反例测试；服务器目标测试 31 项通过。
+- 全新 `d6259f5f` 六臂 root 6/6、0 incident，6,144/6,144 endpoint-source work join，prompt
+  overhead 分布 `{29: 6144}`，六臂 estimate overrun 均为 0；runtime env 补齐五个通用路径后
+  environment preflight 为 `ok`。work-cost audit/validation/archive SHA 已写入冻结合同。
+- SAOR 96/96 recovery grant/completion、11/11 repayment completed、P95/max 6.775s、0 censored/
+  unresolved；1,097/1,097 projection 离线一致，projection/estimate/overshoot-bound violation、
+  avoidable idle 与 debt-critical foreign grant 均为 0。完整 112-file archive SHA256 为
+  `a7787edf4812829ce156676f78ceaa7e91994b0aa8c5fafb3a1f6d1fc6b39a4b`。
+- 单次性能：SAOR 12,691.09 tok/s、MFU 47.83%、foreground P99 25.426s。相对同 observation
+  VTC-style，吞吐 +0.19%、foreground P99 −1.15%、P95 service lag −15.61%、longest no-service
+  −0.13%；单次保护门未越界，但 rehearsal validator 明确 `performance_ranking_decided=false`。
+  因此不判 selector 胜出、不自动授权 formal；合同仍为
+  `locked_pending_rehearsal/formal_authorized=false`，下一步先独立审核，再由单独提交决定是否解锁
+  位置平衡 1+3 formal。
+- 后续审核指出 `d6259f5f` audit 虽使用正确的 execution-time `estimated_output_tokens`，但尚未
+  从合同独立冻结 `output_cost_mode=fixed_output_cap`、cap=256，也未逐请求拒绝 trace 自报 257/
+  512 的放大上界。因此该 root 降为 diagnostic，不算最终有效 rehearsal。实现新增 typed
+  `output_bound_source/completion_max_tokens`、合同/config 等值检查与逐行 estimate==cap 门，并加入
+  257 必须失败的反例；须在新提交和全新 root 上重跑六臂。

@@ -1,5 +1,29 @@
 # Learning Notes
 
+## 2026-08-14 三个 output-token 字段为什么不能混用
+
+同一条 chat-completions 请求现在会看到三个容易混淆的字段：
+
+- `estimated_output_tokens`：请求进入调度器前冻结的 admission estimate。本实验使用
+  `fixed_output_cap`，所以每条都必须严格等于 `completion_max_tokens=256`；它决定 K/W credit
+  是否允许请求进入。
+- `actual_output_tokens`：endpoint 实际生成的 token 数，来自 endpoint usage 或返回 token IDs；
+  completion 时用它修正实际服务量。
+- `client_estimated_output_tokens`：客户端把最终文本重新分词得到的事后诊断值。由于服务端和
+  客户端的文本清理/模板/tokenizer 边界可能不同，它不等于 admission estimate，也不能反过来
+  决定已经发生的调度。
+
+真实反例中 raw prompt=1001、chat template overhead=29、endpoint output=256，因此服务 work 为
+`1001+29+256=1286`；客户端重分词只有 207。审计若误用 207，会伪报 estimate 1237 并误杀正确
+运行。反过来，审计若无条件信任 trace 报出的 estimate=257/512，又可能把真实低估掩盖掉。
+所以当前 fail-closed 合同同时冻结 `output_bound_source=fixed_output_cap` 与 cap=256，并逐请求要求
+trace estimate 恰好等于 cap；实际 work 再检查不超过这个执行前上界。这是防止证据自报放大上界
+的工程决策，不是新的调度算法。
+
+`d6259f5f` 六臂 root 的 6,144 条请求实际都满足 estimate=256，并提供有价值的诊断性能；但它的
+validator 当时还没有上述逐行 equality gate，所以只能叫 diagnostic rehearsal。只有加入该 gate
+后的新提交、新 root 再次通过，才能叫最终有效 rehearsal；两者都不能自动授权 formal。
+
 ## 2026-08-14 为什么“recovery grant 出现过”还不等于债务已偿还
 
 一次 `debt_recovery` grant 只证明 selector 选中过欠服务 Job，不能证明该请求完成，更不能证明

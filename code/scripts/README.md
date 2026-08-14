@@ -69,8 +69,9 @@ non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 
 
 `experiments/run_saor_project_mechanism.py` 是独立 Project mechanism 矩阵的 audit-aware
 入口。它绑定 `saor_project_mechanism_formal_contract.json`，运行前复用 matched-ready
-readiness audit，并把合同 SHA 与 readiness 写入 output root。当前合同状态是
-`locked_pending_rehearsal/formal_authorized=false`，因此 wrapper 只允许 `--rehearsal`；即使有人
+readiness audit，并把合同 SHA 与 readiness 写入 output root。最终 rehearsal 已通过并登记证据
+SHA，但当前合同仍是 `locked_pending_rehearsal/formal_authorized=false`，因此 wrapper 仍只允许
+`--rehearsal`；即使有人
 遗漏命令行约定，非 rehearsal 也会 fail closed。正式配置使用位置平衡种子，使六臂在三次
 formal 中各占三个不同序位，而不是让 proposed 连续固定在首位。
 
@@ -87,7 +88,8 @@ completion→debt below-cap episode。工具将 evidence validity 与 claim gate
 全体一致的开销，并可冻结 expected overhead/request count；输出包含每个输入文件 SHA。该值绑定
 模型 revision、chat template 与 completion protocol，不是跨服务常数，也不能由 runtime
 summary 自证。request trace 保留 raw prompt token；只有 admission/credit 的 effective work
-加入该校准项。
+加入该校准项。正式 fixed-cap 合同还要求每条 `estimated_output_tokens` 严格等于冻结的
+`completion_max_tokens`；客户端对输出文本的事后重分词只作诊断，不能充当 admission estimate。
 
 `analysis/audit_saor_formal_readiness.py --profile ready_observation_bridge`
 审计三臂 Project observation bridge：frozen-static/single-head、shared FIFO/single-head、

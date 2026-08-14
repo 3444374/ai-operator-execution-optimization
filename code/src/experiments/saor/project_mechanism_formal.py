@@ -78,9 +78,21 @@ def work_cost_from_contract(
     overhead = work_cost.get("prompt_token_overhead_per_request")
     if not isinstance(overhead, int) or isinstance(overhead, bool) or overhead < 0:
         raise ValueError("mechanism prompt overhead is invalid")
+    output_bound_source = work_cost.get("output_bound_source")
+    if output_bound_source != "fixed_output_cap":
+        raise ValueError("mechanism output bound source is invalid")
+    completion_max_tokens = work_cost.get("completion_max_tokens")
+    if (
+        not isinstance(completion_max_tokens, int)
+        or isinstance(completion_max_tokens, bool)
+        or completion_max_tokens <= 0
+    ):
+        raise ValueError("mechanism completion max tokens is invalid")
     return CompletionWorkCostConfig(
         protocol=protocol,
         prompt_token_overhead_per_request=overhead,
+        output_bound_source=output_bound_source,
+        completion_max_tokens=completion_max_tokens,
     )
 
 
@@ -208,6 +220,8 @@ def validate_contract(
         expected_work_cost = {
             "completion_protocol": "chat_completions",
             "prompt_token_overhead_per_request": 29,
+            "output_bound_source": "fixed_output_cap",
+            "completion_max_tokens": 256,
             "calibration_method": (
                 "endpoint_usage_prompt_tokens_minus_raw_prompt_tokens"
             ),
@@ -416,6 +430,10 @@ def completion_fairness_from_raw(
             protocol=protocol,
             prompt_token_overhead_per_request=int(
                 summary.get("completion_prompt_token_overhead", "")
+            ),
+            output_bound_source=summary.get("output_cost_mode", ""),
+            completion_max_tokens=int(
+                summary.get("completion_max_tokens", "")
             ),
         )
     try:

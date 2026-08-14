@@ -264,10 +264,13 @@ def join_request_submission_work(
                 f"{item_context}: prompt overhead {overhead} != "
                 f"{work_cost.prompt_token_overhead_per_request}"
             )
-        estimated_work = work_cost.estimated_work(
-            raw_prompt,
-            admission_estimated_output,
-        )
+        try:
+            estimated_work = work_cost.estimated_work(
+                raw_prompt,
+                admission_estimated_output,
+            )
+        except ValueError as exc:
+            raise ValueError(f"{item_context}: {exc}") from exc
         if require_estimate_upper_bound and actual_work > estimated_work:
             raise ValueError(
                 f"{item_context}: actual work {actual_work} exceeds estimate "
@@ -493,7 +496,7 @@ def audit_work_cost_matrix(
             f"audited request count {len(all_joined)} != {expected_requests}"
         )
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "status": "passed" if all_joined and not errors else "failed",
         "matrix_root": str(resolved_root),
         "completion_protocol": work_cost.protocol,
@@ -501,6 +504,8 @@ def audit_work_cost_matrix(
         "prompt_token_overhead_per_request": (
             work_cost.prompt_token_overhead_per_request
         ),
+        "output_bound_source": work_cost.output_bound_source,
+        "completion_max_tokens": work_cost.completion_max_tokens,
         "expected_cells": len(expected_cells),
         "observed_cells": len(rows_by_cell),
         "expected_requests": expected_requests,

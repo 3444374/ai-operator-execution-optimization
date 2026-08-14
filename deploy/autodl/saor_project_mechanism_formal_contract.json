@@ -8,10 +8,20 @@
   "formal_repeats": 3,
   "comparison_scope": "project_internal_matched_observation",
   "fairness_scope": "single_tenant_multi_job_differentiated_service",
-  "rehearsal_validation": null,
+  "rehearsal_validation": {
+    "status": "diagnostic_passed_missing_output_cap_gate",
+    "repository_commit": "d6259f5f5eb32e5f14dfb98d514e8c1454dd5276",
+    "root_id": "saor_project_mechanism_rehearsal_d6259f5f_20260814",
+    "validation_sha256": "ec13cec5bbce6c99777b5bfa5e639691d178964a56fa42361117cf5f2017bc2a",
+    "archive_sha256": "a7787edf4812829ce156676f78ceaa7e91994b0aa8c5fafb3a1f6d1fc6b39a4b",
+    "performance_ranking_decided": false,
+    "valid_rehearsal": false
+  },
   "work_cost_contract": {
     "completion_protocol": "chat_completions",
     "prompt_token_overhead_per_request": 29,
+    "output_bound_source": "fixed_output_cap",
+    "completion_max_tokens": 256,
     "calibration_method": "endpoint_usage_prompt_tokens_minus_raw_prompt_tokens",
     "calibration_requests": 6144,
     "observed_min_tokens": 29,
@@ -30,12 +40,12 @@
       "return_token_ids": true
     },
     "calibration_evidence": {
-      "status": "locked_pending_source_verified_rehearsal",
+      "status": "source_verified_rehearsal",
       "predecessor_failed_root": "saor_project_mechanism_rehearsal_d85724fb_20260814",
       "predecessor_failed_archive_sha256": "d6173313aeb9cc2ca60d2c5084fc346bfe8d3f7424546b1ae723cb3d485cfa4b",
-      "calibration_artifact_sha256": null,
-      "input_files_manifest_sha256": null,
-      "validated_archive_sha256": null
+      "calibration_artifact_sha256": "3513d45054fd0bc7e9627980fb30356d4b41965cbe6e1951091c057a5c1a3efe",
+      "input_files_manifest_sha256": "f1a212de47b63455eb3d0f2e9651ad6eafd2503b9216443ae6d89d0ee3f6928c",
+      "validated_archive_sha256": "a7787edf4812829ce156676f78ceaa7e91994b0aa8c5fafb3a1f6d1fc6b39a4b"
     }
   },
   "decision_contract": {

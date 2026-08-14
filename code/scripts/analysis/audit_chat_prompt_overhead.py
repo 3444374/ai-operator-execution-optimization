@@ -32,6 +32,7 @@ def _args() -> argparse.Namespace:
     parser.add_argument("--matrix-root", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--expected-overhead", required=True, type=int)
+    parser.add_argument("--expected-output-cap", required=True, type=int)
     parser.add_argument("--expected-requests-per-cell", type=int, default=1024)
     parser.add_argument("--phase", default="warmup")
     parser.add_argument("--repeat-index", type=int, default=1)
@@ -40,13 +41,19 @@ def _args() -> argparse.Namespace:
 
 def main() -> int:
     args = _args()
-    if args.expected_overhead < 0 or args.expected_requests_per_cell <= 0:
+    if (
+        args.expected_overhead < 0
+        or args.expected_output_cap <= 0
+        or args.expected_requests_per_cell <= 0
+    ):
         raise SystemExit("work-cost expectations must be non-negative/positive")
     result = audit_work_cost_matrix(
         args.matrix_root,
         work_cost=CompletionWorkCostConfig(
             protocol="chat_completions",
             prompt_token_overhead_per_request=args.expected_overhead,
+            output_bound_source="fixed_output_cap",
+            completion_max_tokens=args.expected_output_cap,
         ),
         expected_scenarios=EXPECTED_SCENARIOS,
         expected_phase=args.phase,

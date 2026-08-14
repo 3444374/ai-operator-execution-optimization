@@ -219,6 +219,60 @@ class CompletionWorkCostConfig:
 
     protocol: Literal["completions", "chat_completions"]
     prompt_token_overhead_per_request: int
+    output_bound_source: Literal[
+        "prompt_only",
+        "fixed_output_cap",
+        "trace_target_output",
+    ]
+    completion_max_tokens: int
+
+    def __post_init__(self) -> None:
+        if self.protocol not in {"completions", "chat_completions"}:
+            raise ValueError("completion protocol is unsupported")
+        if (
+            not isinstance(self.prompt_token_overhead_per_request, int)
+            or isinstance(self.prompt_token_overhead_per_request, bool)
+            or self.prompt_token_overhead_per_request < 0
+        ):
+            raise ValueError("prompt token overhead must be non-negative")
+        if self.output_bound_source not in {
+            "prompt_only",
+            "fixed_output_cap",
+            "trace_target_output",
+        }:
+            raise ValueError("output bound source is unsupported")
+        if (
+            not isinstance(self.completion_max_tokens, int)
+            or isinstance(self.completion_max_tokens, bool)
+            or self.completion_max_tokens < 0
+        ):
+            raise ValueError("completion max tokens must be non-negative")
+
+    def validate_estimated_output_tokens(self, value: int) -> None:
+        """Reject trace estimates that do not follow the configured source."""
+
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError(
+                "estimated_output_tokens must be a non-negative integer"
+            )
+        # Engineering decision: the evidence trace must not be able to enlarge
+        # its own upper bound after admission. Formal currently freezes the
+        # fixed-cap branch; the other modes retain their native constraints.
+        if self.output_bound_source == "fixed_output_cap":
+            if value != self.completion_max_tokens:
+                raise ValueError(
+                    "estimated_output_tokens does not equal the configured "
+                    "completion cap"
+                )
+        elif self.output_bound_source == "prompt_only":
+            if value != 0:
+                raise ValueError(
+                    "prompt-only work must estimate zero output tokens"
+                )
+        elif value > self.completion_max_tokens:
+            raise ValueError(
+                "trace output estimate exceeds the configured completion cap"
+            )
 
     def estimated_work(
         self,
@@ -227,10 +281,10 @@ class CompletionWorkCostConfig:
     ) -> int:
         for value, name in (
             (raw_prompt_tokens, "raw_prompt_tokens"),
-            (estimated_output_tokens, "estimated_output_tokens"),
         ):
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 raise ValueError(f"{name} must be a non-negative integer")
+        self.validate_estimated_output_tokens(estimated_output_tokens)
         return (
             raw_prompt_tokens
             + self.prompt_token_overhead_per_request
@@ -295,6 +349,18 @@ class SharedVllmConfig:
         return CompletionWorkCostConfig(
             protocol=protocol,
             prompt_token_overhead_per_request=overhead,
+            output_bound_source=_argument_value(
+                self.common_args,
+                "--output-cost-mode",
+                "prompt_only",
+            ),
+            completion_max_tokens=int(
+                _argument_value(
+                    self.common_args,
+                    "--completion-max-tokens",
+                    "0",
+                )
+            ),
         )
 
     @property

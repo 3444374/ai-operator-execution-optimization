@@ -1341,7 +1341,10 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/audit_chat_prompt_overhead.py \
   --matrix-root "$ARTIFACT_ROOT/<completed-rehearsal-root>" \
   --expected-overhead "$COMPLETION_PROMPT_TOKEN_OVERHEAD" \
-  --expected-requests 6144 \
+  --expected-output-cap "$COMPLETION_MAX_TOKENS" \
+  --expected-requests-per-cell 1024 \
+  --phase warmup \
+  --repeat-index 1 \
   --output "$ARTIFACT_ROOT/prompt_overhead_audit.json"
 ```
 

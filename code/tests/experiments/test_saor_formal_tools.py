@@ -105,7 +105,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                         completion_epoch_s=2.0,
                         raw_prompt_tokens=41,
                         output_tokens=100,
-                        estimated_output_tokens=100,
+                        estimated_output_tokens=256,
                     ),
                 ],
             )
@@ -155,7 +155,12 @@ class SaorFormalToolsTests(unittest.TestCase):
             joined = join_request_submission_work(
                 requests,
                 submissions,
-                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                work_cost=CompletionWorkCostConfig(
+                    "chat_completions",
+                    29,
+                    "fixed_output_cap",
+                    256,
+                ),
                 context="cell",
                 require_endpoint_usage=True,
                 require_estimate_upper_bound=True,
@@ -193,7 +198,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                         completion_epoch_s=2.0,
                         raw_prompt_tokens=41,
                         output_tokens=100,
-                        estimated_output_tokens=100,
+                        estimated_output_tokens=256,
                     ),
                 ],
             )
@@ -243,6 +248,8 @@ class SaorFormalToolsTests(unittest.TestCase):
                     work_cost=CompletionWorkCostConfig(
                         "chat_completions",
                         29,
+                        "fixed_output_cap",
+                        256,
                     ),
                     context="cell",
                     require_endpoint_usage=True,
@@ -274,7 +281,12 @@ class SaorFormalToolsTests(unittest.TestCase):
             join_request_submission_work(
                 [request],
                 [fallback],
-                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                work_cost=CompletionWorkCostConfig(
+                    "chat_completions",
+                    29,
+                    "fixed_output_cap",
+                    9,
+                ),
                 context="cell",
                 require_endpoint_usage=True,
                 require_estimate_upper_bound=True,
@@ -283,7 +295,12 @@ class SaorFormalToolsTests(unittest.TestCase):
             join_request_submission_work(
                 [request],
                 [submission],
-                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                work_cost=CompletionWorkCostConfig(
+                    "chat_completions",
+                    29,
+                    "fixed_output_cap",
+                    9,
+                ),
                 context="cell",
                 require_endpoint_usage=True,
                 require_estimate_upper_bound=True,
@@ -316,7 +333,12 @@ class SaorFormalToolsTests(unittest.TestCase):
         joined = join_request_submission_work(
             [request],
             [submission],
-            work_cost=CompletionWorkCostConfig("chat_completions", 29),
+            work_cost=CompletionWorkCostConfig(
+                "chat_completions",
+                29,
+                "fixed_output_cap",
+                256,
+            ),
             context="cell",
             require_endpoint_usage=True,
             require_estimate_upper_bound=True,
@@ -324,6 +346,25 @@ class SaorFormalToolsTests(unittest.TestCase):
 
         self.assertEqual(joined[0].actual_work, 1286)
         self.assertEqual(joined[0].estimated_work, 1286)
+
+        inflated = {**request, "estimated_output_tokens": 257}
+        with self.assertRaisesRegex(
+            ValueError,
+            "does not equal the configured completion cap",
+        ):
+            join_request_submission_work(
+                [inflated],
+                [submission],
+                work_cost=CompletionWorkCostConfig(
+                    "chat_completions",
+                    29,
+                    "fixed_output_cap",
+                    256,
+                ),
+                context="cell",
+                require_endpoint_usage=True,
+                require_estimate_upper_bound=True,
+            )
 
     def test_completion_fairness_charges_endpoint_total_work(self) -> None:
         with TemporaryDirectory() as directory:
@@ -371,7 +412,12 @@ class SaorFormalToolsTests(unittest.TestCase):
             fairness = completion_fairness_from_raw(
                 root,
                 row,
-                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                work_cost=CompletionWorkCostConfig(
+                    "chat_completions",
+                    29,
+                    "fixed_output_cap",
+                    10,
+                ),
             )
 
             self.assertEqual(
@@ -398,7 +444,12 @@ class SaorFormalToolsTests(unittest.TestCase):
 
             result = audit_work_cost_matrix(
                 root,
-                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                work_cost=CompletionWorkCostConfig(
+                    "chat_completions",
+                    29,
+                    "fixed_output_cap",
+                    10,
+                ),
                 expected_scenarios=PROJECT_FORMAL_SCENARIOS,
                 expected_phase="warmup",
                 expected_repeat_indexes=(1,),
@@ -1258,7 +1309,11 @@ class SaorFormalToolsTests(unittest.TestCase):
                     project_formal_path,
                     profile="matched_ready_selector_ablation",
                 )
-                project_formal_config = load_config(project_formal_path)
+                with patch.dict(
+                    os.environ,
+                    {"COMPLETION_MAX_TOKENS": "256"},
+                ):
+                    project_formal_config = load_config(project_formal_path)
                 project_formal_contract = load_project_formal_contract(
                     REPOSITORY
                     / "deploy/autodl/saor_project_mechanism_formal_contract.json"
@@ -1277,6 +1332,28 @@ class SaorFormalToolsTests(unittest.TestCase):
                 ] = 28
                 project_work_cost_errors = validate_project_formal_contract(
                     drifted_work_cost_contract,
+                    project_formal_config,
+                    formal_run=False,
+                )
+                drifted_output_bound_contract = json.loads(
+                    json.dumps(project_formal_contract)
+                )
+                drifted_output_bound_contract["work_cost_contract"][
+                    "output_bound_source"
+                ] = "trace_target_output"
+                project_output_bound_errors = validate_project_formal_contract(
+                    drifted_output_bound_contract,
+                    project_formal_config,
+                    formal_run=False,
+                )
+                drifted_output_cap_contract = json.loads(
+                    json.dumps(project_formal_contract)
+                )
+                drifted_output_cap_contract["work_cost_contract"][
+                    "completion_max_tokens"
+                ] = 257
+                project_output_cap_errors = validate_project_formal_contract(
+                    drifted_output_cap_contract,
                     project_formal_config,
                     formal_run=False,
                 )
@@ -1344,6 +1421,12 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(project_contract_errors, [])
         self.assertTrue(
             any("work-cost" in error for error in project_work_cost_errors)
+        )
+        self.assertTrue(
+            any("output bound" in error for error in project_output_bound_errors)
+        )
+        self.assertTrue(
+            any("completion_max_tokens" in error for error in project_output_cap_errors)
         )
         self.assertIn(
             "predecessor calibration archive SHA is invalid",
@@ -1887,6 +1970,8 @@ class SaorFormalToolsTests(unittest.TestCase):
                             {
                                 "completion_protocol": "chat_completions",
                                 "completion_prompt_token_overhead": 29,
+                                "output_cost_mode": "fixed_output_cap",
+                                "completion_max_tokens": 10,
                             }
                         ],
                     )
@@ -2038,6 +2123,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                                 submission_id=submission_id,
                                 doc_id=f"doc-{repeat}-{job_index}",
                                 completion_epoch_s=2.0 + job_index,
+                                estimated_output_tokens=256,
                                 phase="formal",
                                 repeat_index=repeat,
                             )
