@@ -289,6 +289,42 @@ class SaorFormalToolsTests(unittest.TestCase):
                 require_estimate_upper_bound=True,
             )
 
+    def test_work_join_uses_admission_estimate_not_text_retokenization(
+        self,
+    ) -> None:
+        request = self._work_request_row(
+            scenario_id="cell",
+            job_id="job",
+            endpoint_id="endpoint-0",
+            submission_id="submission-1",
+            doc_id="1",
+            completion_epoch_s=1.0,
+            raw_prompt_tokens=1001,
+            output_tokens=256,
+            estimated_output_tokens=256,
+            client_estimated_output_tokens=207,
+        )
+        submission = self._work_submission_row(
+            job_id="job",
+            endpoint_id="endpoint-0",
+            submission_id="submission-1",
+            doc_id="1",
+            raw_prompt_tokens=1001,
+            output_tokens=256,
+        )
+
+        joined = join_request_submission_work(
+            [request],
+            [submission],
+            work_cost=CompletionWorkCostConfig("chat_completions", 29),
+            context="cell",
+            require_endpoint_usage=True,
+            require_estimate_upper_bound=True,
+        )
+
+        self.assertEqual(joined[0].actual_work, 1286)
+        self.assertEqual(joined[0].estimated_work, 1286)
+
     def test_completion_fairness_charges_endpoint_total_work(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1600,6 +1636,7 @@ class SaorFormalToolsTests(unittest.TestCase):
         raw_prompt_tokens: int = 10,
         output_tokens: int = 10,
         estimated_output_tokens: int = 10,
+        client_estimated_output_tokens: int | None = None,
         phase: str = "warmup",
         repeat_index: int = 1,
     ) -> dict[str, object]:
@@ -1617,7 +1654,11 @@ class SaorFormalToolsTests(unittest.TestCase):
             "error_type": "",
             "prompt_tokens": raw_prompt_tokens,
             "actual_output_tokens": output_tokens,
-            "client_estimated_output_tokens": estimated_output_tokens,
+            "client_estimated_output_tokens": (
+                estimated_output_tokens
+                if client_estimated_output_tokens is None
+                else client_estimated_output_tokens
+            ),
             "estimated_output_tokens": estimated_output_tokens,
             "output_token_source": "endpoint_request",
             "total_tokens": raw_prompt_tokens + output_tokens,

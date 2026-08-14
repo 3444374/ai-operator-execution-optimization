@@ -189,9 +189,13 @@ def join_request_submission_work(
             "actual_output_tokens",
             item_context,
         )
-        client_estimated_output = _nonnegative_int(
+        # ``client_estimated_output_tokens`` is a post-hoc client-side
+        # retokenization of the returned text. It is diagnostic evidence, not
+        # the estimate charged by admission. The admission estimate is stored
+        # separately and equals the output cap for fixed-output-cap runs.
+        admission_estimated_output = _nonnegative_int(
             request,
-            "client_estimated_output_tokens",
+            "estimated_output_tokens",
             item_context,
         )
         actual_work = _nonnegative_int(
@@ -262,7 +266,7 @@ def join_request_submission_work(
             )
         estimated_work = work_cost.estimated_work(
             raw_prompt,
-            client_estimated_output,
+            admission_estimated_output,
         )
         if require_estimate_upper_bound and actual_work > estimated_work:
             raise ValueError(
