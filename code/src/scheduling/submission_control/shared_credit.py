@@ -1126,7 +1126,9 @@ class FairEndpointCreditCoordinator:
                 ),
                 active_requests=self._active_requests[endpoint_id],
                 active_work=self._active_work[endpoint_id],
-                avoidable_idle=(action == "hold" and not target_is_concrete),
+                avoidable_idle=(
+                    action == "hold_start" and not target_is_concrete
+                ),
                 foreign_grant_over_debt_critical=(
                     action == "grant"
                     and bool(debt_critical)

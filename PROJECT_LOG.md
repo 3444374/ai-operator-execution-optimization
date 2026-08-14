@@ -6651,3 +6651,19 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   硬件/endpoint、correctness 和指标 schema 全部一致时才复用，否则重跑。第一轮 selector
   rehearsal 的约 12.9K DRR/VTC-style 与约 12.27K proposed 目前仅来自对话中间回报，未见完整
   仓库 artifact，故只登记为待核验停止信号，不改实验结论。
+
+## 2026-08-14 修复 SAOR formal evidence 假通过路径
+
+- 代码审核发现 bounded-priority 的实际 barrier 事件为 `hold_start`，旧 avoidable-idle 汇总却
+  检查不存在的 `hold`；现统一真实事件语义，并增加面向 non-concrete target 的可触发正例测试。
+- matched-ready 汇总现在要求 completion fairness 状态为完整 registered-backlog completion
+  accounting，缺 lifecycle 的 cell 必须失败；不再允许公平指标 `unavailable` 但 matrix passed。
+- 对服务器旧完整 artifact 的只读复核显示五个 bounded-ready 臂每 Job 均有 512/512 lifecycle，
+  frozen-static 为 0/512。因此旧性能/SLO 事实和 bounded-ready 臂内经验 lag 保留，但旧全矩阵
+  `passed` 撤销为 diagnostic，跨 static 的同口径 fairness claim 不成立。
+- runner 新增强制 runtime `job_id` 非空、单 Job 内一致且并发 Job 间唯一；selector/bridge
+  readiness 新增 effective K/W 与 `(1,1)` weights 冻结，防止身份或资源漂移污染归因。
+- 本地 211 项相关回归已通过。修复前在服务器启动的一次 bounded-priority rehearsal 已主动
+  中断并保留 diagnostic root，0 completed run，不进入结论；formal 与 native-system GPU matrix
+  继续锁定。当前系统矩阵仍是 `writeback=none` operator-E2E，原生 request P99/SLO 可以
+  `unavailable`，且 debt full-repayment time/bound 仍是未完成的证明与指标缺口。

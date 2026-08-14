@@ -2253,6 +2253,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "estimated_output_tokens": "20",
                 "endpoint_id": f"task-{index % 2}",
                 "submit_epoch_s": str(index + 0.1),
+                "job_id": "42",
             }
             for index, latency in enumerate((1.0, 2.0, 3.0, 100.0))
         ]
@@ -2265,6 +2266,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "arrival_replay_observed_start_epoch_s": "100.0",
                 "max_ready_requests_seen": "3",
                 "max_ready_work_seen": "90",
+                "job_id": "42",
             }
         ]
         submission_rows = [
@@ -2317,6 +2319,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "actor_worker_failures": "0",
             "max_ready_requests_seen": "2",
             "max_ready_work_seen": "90",
+            "job_id": "43",
         }]
         request_rows = [{
             "request_id": "request-0",
@@ -2332,6 +2335,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "client_estimated_output_tokens": "20",
             "estimated_output_tokens": "20",
             "endpoint_id": "task-0",
+            "job_id": "43",
         }]
         # The production submission schema intentionally has no
         # submit_epoch_s; that timestamp is owned by the request trace.
@@ -2368,6 +2372,33 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "actual_work": 30,
             }],
         )
+
+        request_rows[0]["job_id"] = ""
+        with patch(
+            "src.experiments.shared_vllm.evidence._read_csv",
+            side_effect=[summary_rows, request_rows, submission_rows],
+        ):
+            with self.assertRaisesRegex(RuntimeError, "missing runtime job ID"):
+                shared_vllm._validate_job_evidence(
+                    options,
+                    scenario,
+                    GroupRunIdentity("formal", 1, 0),
+                    0,
+                )
+
+    def test_concurrent_runtime_job_ids_must_be_unique(self) -> None:
+        shared_vllm._validate_runtime_job_ids(
+            [{"runtime_job_id": "41"}, {"runtime_job_id": "42"}]
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "must be unique"):
+            shared_vllm._validate_runtime_job_ids(
+                [{"runtime_job_id": "41"}, {"runtime_job_id": "41"}]
+            )
+        with self.assertRaisesRegex(RuntimeError, "missing runtime job ID"):
+            shared_vllm._validate_runtime_job_ids(
+                [{"runtime_job_id": "41"}, {"runtime_job_id": ""}]
+            )
 
     def test_jain_fairness_handles_equal_weight_and_zero_service(self) -> None:
         self.assertEqual(jain_fairness([100.0, 100.0]), 1.0)
@@ -2787,6 +2818,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "slo_violation_ratio": 0.0,
                 "slo_goodput_per_s": 64.0,
                 "predicted_work": 100,
+                "runtime_job_id": "41",
                 "endpoint_counts": {"task-0": 32, "task-1": 32},
                 "actor_worker_failures": 1,
                 "replay_configured_start_epoch_s": 100.0,

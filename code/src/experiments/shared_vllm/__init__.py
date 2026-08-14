@@ -19,6 +19,7 @@ from .evidence import (
     _validate_final_credit,
     _validate_job_evidence,
     _validate_replay_starts,
+    _validate_runtime_job_ids,
     _validate_runner_topology,
 )
 from .metrics import (

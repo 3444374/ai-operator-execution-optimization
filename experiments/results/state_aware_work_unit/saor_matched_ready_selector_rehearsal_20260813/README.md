@@ -1,7 +1,7 @@
 ---
 experiment_id: saor-matched-ready-selector-rehearsal-20260813
 date: 2026-08-13
-status: completed-development-rehearsal-formal-not-authorized
+status: completed-development-rehearsal-diagnostic-after-fairness-gate-audit
 evidence_level: two-independent-fixed-order-gpu-rehearsals
 execution_commit: 2d3a49308702c3fcf3b2a75cf4319fc2ac2d9a9d
 analysis_commit: 1af46401e873cec88119253a8bdd663da515a490
@@ -10,6 +10,12 @@ conclusion: observed-nondominated-tradeoff-not-selector-victory
 ---
 
 # SAOR matched-ready selector 双轮归因 rehearsal
+
+> 2026-08-14 证据门复核：本报告中的 GPU 性能、SLO、correctness 以及五个 bounded-ready 臂的
+> lifecycle 数据不变；但旧汇总在 frozen-static completion fairness 为 `unavailable` 时仍允许
+> cell 通过，因此旧的全矩阵 `validation.status=passed` 已撤销，当前身份为 diagnostic。
+> frozen-static 只保留 performance/isolation 参照，不进入同口径 service-lag 排名；修复后的
+> summarizer 会对此 fail closed。下文保留旧输出字段以便审计，不代表 formal gate 仍通过。
 
 ## 1. 实验目的
 
@@ -63,7 +69,7 @@ controls；这些 bounded-ready 副本也不冒充 vendor-native baseline。
 | proposed 机制 | 两轮均有 512 次 SLO-priority grant、9/12 次 debt-recovery grant；avoidable idle=0、foreign-over-critical=0、recovery in-flight max=1 |
 | 资源指标 | 每个 cell 的 model/resource/MFU status 均为 `ok`；使用 during-run time-series 聚合，不使用单点 GPU snapshot |
 | 稳定性 | 各臂 tokens/s 双轮 sample CV 为 0.08%–0.58% |
-| 汇总结果 | `validation.status=passed`、`ready_for_preregistered_pareto_review`；同时固定 `selector_victory_decided=false`、`formal_authorized=false` |
+| 汇总结果 | 旧分析提交曾输出 `validation.status=passed`；2026-08-14 新门禁复核后降为 diagnostic，因为 frozen-static completion fairness evidence 不可用。`selector_victory_decided=false`、`formal_authorized=false` 不变 |
 
 ### 3.1 runner 有效性修复
 
@@ -81,7 +87,8 @@ controls；这些 bounded-ready 副本也不冒充 vendor-native baseline。
   授权 formal；
 - writeback=none，无 PostgreSQL sink、质量或价格结论；能耗字段未形成可排名证据；
 - static 没有 complete registered-ready ledger，其 completion-accounted service lag 为
-  `unavailable`；CSV 中的 0 是不可用占位，不表示 static 的 lag 为零。
+  `unavailable`；CSV 中的 0 是不可用占位，不表示 static 的 lag 为零。2026-08-14 起这不再只是
+  结果限制，而是 cell-pass 的硬门：缺少该证据会使全矩阵 validation fail closed。
 
 ## 4. 指标定义
 
@@ -245,4 +252,5 @@ SHA256 d98f22689f4745fd7eb3b4557a17224234bdeb69b89a00d416b4abdd9576a14c
 ```
 
 紧凑汇总由分析提交 `1af46401` 从执行提交 `2d3a4930` 的原始事件离线重算；它没有修改任何
-GPU 结果或补造 static 的 service lag。
+GPU 结果或补造 static 的 service lag。2026-08-14 门禁复核保留该旧 validation 作为审计历史，
+不再将其 `passed` 字段解释为当前合同下的通过证据。

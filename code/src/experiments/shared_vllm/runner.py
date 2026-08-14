@@ -61,6 +61,7 @@ from .evidence import (
     _validate_final_credit,
     _validate_job_evidence,
     _validate_replay_starts,
+    _validate_runtime_job_ids,
     _validate_runner_topology,
     _write_json_atomic,
     _write_trace_rows_atomic,
@@ -989,6 +990,7 @@ def _run_group(
                 for job_index in range(scenario.job_count)
             ]
         )
+        _validate_runtime_job_ids(job_evidence)
         if config.job_internal_arrival_contract == "eager":
             if len(eager_job_launches) != len(job_evidence):
                 raise RuntimeError("eager Job launch evidence is incomplete")

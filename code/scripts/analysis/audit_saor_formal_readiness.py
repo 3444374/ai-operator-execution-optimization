@@ -153,6 +153,41 @@ def audit(
         errors.append(
             "ready observation contract does not match the selected profile"
         )
+    scenario_resource_contracts = {
+        scenario.scenario_id: {
+            "request_limit_per_endpoint": scenario.endpoint_limits(
+                config.request_limit_per_endpoint,
+                config.work_limit_per_endpoint,
+            )[0],
+            "work_limit_per_endpoint": scenario.endpoint_limits(
+                config.request_limit_per_endpoint,
+                config.work_limit_per_endpoint,
+            )[1],
+            "weights": list(scenario.weights),
+        }
+        for scenario in config.scenarios
+    }
+    if profile in {
+        "matched_ready_selector_ablation",
+        "ready_observation_bridge",
+    }:
+        expected_limits = (
+            config.request_limit_per_endpoint,
+            config.work_limit_per_endpoint,
+        )
+        for scenario in config.scenarios:
+            if scenario.endpoint_limits(
+                config.request_limit_per_endpoint,
+                config.work_limit_per_endpoint,
+            ) != expected_limits:
+                errors.append(
+                    f"{scenario.scenario_id} effective request/work limits "
+                    "drift from the frozen root contract"
+                )
+            if scenario.weights != (1, 1):
+                errors.append(
+                    f"{scenario.scenario_id} weights drift from frozen (1, 1)"
+                )
     if profile in {
         "bounded_priority_development",
         "bounded_ready_development",
@@ -469,6 +504,7 @@ def audit(
         ),
         "pre_foreground_predicted_work_by_endpoint": pre_foreground_work,
         "service_metadata": dict(config.service_metadata),
+        "scenario_resource_contracts": scenario_resource_contracts,
         "calibration_contract": (
             {
                 "path": config.calibration_contract.path,

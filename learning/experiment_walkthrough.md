@@ -1277,3 +1277,22 @@ request P99/SLO 就写 `unavailable` 和原因，不能用 Job barrier 或 0 填
 当前完成的是本地 offline summarizer 与 corruption tests，不是服务器/GPU 结果。后续精确顺序是：
 runtime preflight → static readiness → small correctness/local fake rehearsal → review → separately
 authorized GPU execution。用户已取消本轮服务器 rehearsal，因此不能把 GPU evidence 标为完成。
+
+## 2026-08-14：为什么“指标不可用”不能仍让 cell 通过
+
+fail-closed 不只是“文件存在、请求完成、没有异常”。如果某个 cell 要支持公平性判断，它还必须
+拥有能计算该公平指标的原始事件。matched-ready 旧汇总虽然把 frozen-static 的
+completion service lag 标成 `unavailable`，却没有把这个状态放进 `cell_passed`，所以一个缺少
+公平证据的 cell 仍能显示通过。这会把“诚实地写了不可用”错误升级成“公平门通过”。
+
+新合同把 correctness、observation、mechanism 和 fairness evidence 四层同时作为通过条件。
+五个 bounded-ready 臂有 registered-ready→completion 生命周期，可以在共同积压区间计算经验
+service lag 与最长无服务；frozen-static 没有同一账本，只能参与吞吐、JCT、tail 和 isolation
+比较。它不能用 0 填充，也不能用 Job 完成时间冒充 request completion ledger。若以后需要把
+static 纳入同口径公平排名，应增加不改变其调度所有权的 observation-only ledger，再完整重跑。
+
+work-conservation 也必须校验真实事件域。coordinator 开始 reclaim barrier 时记录的是
+`hold_start`，不是抽象名字 `hold`；检查不存在的事件会让“avoidable idle=0”几乎恒成立。现在
+任何面向非 concrete head 的 `hold_start` 都会被正例测试捕获并使门禁失败。类似地，runtime
+`job_id` 必须非空、单 Job 内一致且并发 Job 间唯一，否则 service 被归到哪个 Job 都不可验证；
+selector 消融还必须冻结相同 effective K/W 与 weights，避免资源合同漂移伪装成算法差异。

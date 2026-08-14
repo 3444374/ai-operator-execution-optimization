@@ -166,18 +166,23 @@ def _validate_job_evidence(
         raise RuntimeError(f"job {job_index} has duplicate request IDs")
     if any(not _request_trace_succeeded(row) for row in request_rows):
         raise RuntimeError(f"job {job_index} contains failed requests")
-    runtime_job_ids = {
-        str(row.get("job_id", ""))
+    request_job_ids = [
+        str(row.get("job_id", "") or "").strip()
         for row in request_rows
-        if str(row.get("job_id", ""))
-    }
-    if len(runtime_job_ids) > 1:
+    ]
+    if any(not job_id for job_id in request_job_ids):
+        raise RuntimeError(f"job {job_index} has a missing runtime job ID")
+    runtime_job_ids = set(request_job_ids)
+    if len(runtime_job_ids) != 1:
         raise RuntimeError(f"job {job_index} has inconsistent runtime job IDs")
-    runtime_job_id = (
-        runtime_job_ids.pop()
-        if runtime_job_ids
-        else str(summary.get("job_id", "") or f"job-{job_index}")
-    )
+    runtime_job_id = runtime_job_ids.pop()
+    summary_job_id = str(summary.get("job_id", "") or "").strip()
+    if not summary_job_id:
+        raise RuntimeError(f"job {job_index} summary has a missing runtime job ID")
+    if summary_job_id != runtime_job_id:
+        raise RuntimeError(
+            f"job {job_index} summary/request runtime job IDs disagree"
+        )
     arrival = [float(row["arrival_epoch_s"]) for row in request_rows]
     completion = [float(row["completion_epoch_s"]) for row in request_rows]
     e2e = [float(row["e2e_s"]) for row in request_rows]
@@ -373,6 +378,21 @@ def _validate_job_evidence(
             summary.get("ready_payload_bytes_transition_p95", "0") or 0
         ),
     }
+
+
+def _validate_runtime_job_ids(
+    job_evidence: list[dict[str, object]],
+) -> None:
+    """Require one stable, unique runtime identity per concurrent Job."""
+
+    runtime_job_ids = [
+        str(evidence.get("runtime_job_id", "") or "").strip()
+        for evidence in job_evidence
+    ]
+    if any(not job_id for job_id in runtime_job_ids):
+        raise RuntimeError("concurrent Job evidence has a missing runtime job ID")
+    if len(runtime_job_ids) != len(set(runtime_job_ids)):
+        raise RuntimeError("concurrent Job runtime IDs must be unique")
 
 def _sum_semicolon_integers(value: object) -> int:
     fields = [

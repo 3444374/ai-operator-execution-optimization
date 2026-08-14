@@ -57,6 +57,11 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 foreground SLO 零违约；SAOR 约 12.28K tok/s、foreground P99 17.85s。SAOR 用约 4.8%
 吞吐和约 5.2% bulk JCT 代价进一步降低 tail，属于观测到的非支配折中点，但固定顺序 n=2、
 selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`，不写 selector 胜出。
+2026-08-14 fail-closed 复核进一步确认：旧汇总没有要求 completion fairness evidence 可用，且
+avoidable-idle 事件名检查错误。五个 bounded-ready 臂的性能、SLO 和完整生命周期事实仍保留，
+但 frozen-static 缺 registered-ready ledger，不能与它作同口径 service-lag 比较；旧全矩阵
+`passed` 降为 diagnostic。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，并冻结内部
+消融各臂的 effective K/W 与 weights。完成新门禁服务器回归前不得解锁 formal。
 FIFO、DRR、VTC 是已有算法思想，但本实验的可执行版本均由 Project shared-credit coordinator
 实现，不是 Daft/Ray Data/upstream vLLM 的原生实现；它们应称项目内标准算法 controls。
 bounded-ready 副本只是在 Project harness 中配平候选集的 matched controls，也不表示这些算法
@@ -276,8 +281,9 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
    40/40 和 Project observe-only 24/24 也已归档。DuckDB 四作业仍停在 capability gate，不为开题
    扩展 formal。
 5. SAOR bounded-ready、matched-ready selector 归因和 observation bridge 已完成 development
-   rehearsal；下一步只做同一 2-Job 合同的 native-system matched comparison，不直接启动 selector
-   1+3 formal，也不扩 cap、4-Job、reservation 或 dynamic K。
+   rehearsal；旧全矩阵公平门因 frozen-static 缺 lifecycle 已降为 diagnostic。下一步先完成
+   fail-closed 门禁服务器回归，再准备同一 2-Job 合同的 native-system matched comparison；不直接
+   启动 selector 1+3 formal，也不扩 cap、4-Job、reservation 或 dynamic K。
 6. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 2026-08-11 修正后的文本 phase-change 门禁显示：A-only K160 相对 K128 的每 endpoint

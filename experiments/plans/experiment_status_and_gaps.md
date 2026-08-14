@@ -2,9 +2,11 @@
 
 Date: 2026-07-20（最后更新：2026-08-14；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
-SAOR 是观测到的非支配折中点但未形成 selector victory，`formal_authorized=false`；single-head +
-shared FIFO observation bridge 双轮已完成，下一步只补同一 2-Job 合同的 native-system matched comparison；
-原生 baseline 不接入 bounded-ready，dynamic-K 仍退出主线）
+但 2026-08-14 fail-closed 复核发现旧汇总允许 frozen-static 在 completion fairness
+`unavailable` 时通过，故旧的全矩阵 `passed` 已降为 diagnostic；性能与五个 bounded-ready 臂的
+生命周期事实保留，跨 static 的同口径公平结论不成立。`formal_authorized=false`；single-head +
+shared FIFO observation bridge 双轮已完成，下一步先闭合门禁回归，再准备同一 2-Job 合同的
+native-system matched comparison；原生 baseline 不接入 bounded-ready，dynamic-K 仍退出主线）
 
 2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
 两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故
@@ -106,13 +108,29 @@ registered-ready backlog、completion-accounted empirical lag、三个 JCT 反�
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。
 
 当前执行顺序进一步冻结为“两层证据都要”。六臂 Project 内部 selector attribution 已从两个
-独立 rehearsal root 完成：12/12 cell、12,288/12,288 requests、0 incident；validation passed，
-但固定顺序、每臂 n=2，故 `selector_victory_decided=false`、`formal_authorized=false`。双轮均值下
+独立 rehearsal root 完成：12/12 cell、12,288/12,288 requests、0 incident；旧分析合同曾输出
+`validation=passed`，但 2026-08-14 fail-closed 复核后已降为 diagnostic。固定顺序、每臂 n=2，
+故 `selector_victory_decided=false`、`formal_authorized=false`。双轮均值下
 DRR/VTC-style 为 12.90K tok/s、foreground P99 27.23/26.16s、30s SLO violation 0；guarded debt
 为 12.28K tok/s、foreground P99 17.85s、SLO violation 0。相对 VTC-style，guarded debt 用
 约 4.8% 吞吐、5.2% bulk JCT 和 22.7% longest-no-service 代价换取 31.8% foreground P99 与
 11.7% completion-lag P95 改善，是观测到的非支配折中点，不是 selector 胜出。完整报告见
 `experiments/results/state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/`。
+
+本次复核发现两条假通过路径：coordinator 实际记录的 barrier 动作为 `hold_start`，旧统计却
+检查不存在的 `hold`，导致 avoidable-idle 零事件门几乎恒真；matched-ready 汇总也没有把
+completion fairness 的可用性纳入 cell pass。新合同要求非 concrete head 的 `hold_start` 必须
+计为 avoidable idle，且每个进入公平比较的 cell 都必须具备完整 registered-ready completion
+ledger。服务器旧完整 artifact 显示五个 bounded-ready 臂每 Job 均有 512/512 lifecycle，
+frozen-static 为 0/512；因此旧性能、SLO 与 bounded-ready 臂内的经验 lag 数值保留，但
+frozen-static 只能作为 performance/isolation 参照，不能参加同口径 service-lag 排名。
+
+同一修订还要求 runtime `job_id` 非空、单 Job 内一致且并发 Job 间唯一；selector/bridge 静态
+readiness 必须冻结每臂 effective K/W 和 `(1,1)` weights。一次在修复前启动的 bounded-priority
+服务器 rehearsal 已主动中断并保留为 diagnostic root，未产生 completed run，禁止续跑或进入
+结果。native-system matched 仍因真实 manifest/calibration/env 未冻结而保持锁定；当前
+`writeback=none` 只覆盖 PostgreSQL source→validated gather 的 operator-E2E，原生 request
+P99/SLO 可为 `unavailable`，且尚无 debt 从产生到完全偿还的时间指标或理论 bound。
 
 下一阶段必须在相同 2-Job manifest、Job 级 `bulk@0s → foreground@5s` 且 Job 内 eager 的共同
 原生到达形态、PG source、

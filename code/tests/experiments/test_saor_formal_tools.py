@@ -116,6 +116,29 @@ class SaorFormalToolsTests(unittest.TestCase):
             self.assertFalse(result["selector_victory_decided"])
             self.assertFalse(result["formal_authorized"])
 
+    def test_matched_ready_summary_fails_without_completion_fairness(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrix = root / "round-1"
+            self._write_matched_ready_matrix(
+                matrix,
+                include_fairness=False,
+            )
+
+            with self.assertRaisesRegex(ValueError, "completion-fairness"):
+                MATCHED_READY_SUMMARY.summarize(
+                    (matrix,), root / "summary"
+                )
+
+            validation = json.loads(
+                (root / "summary/validation.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(validation["status"], "failed")
+
     def test_bounded_gate_uses_lossless_events_not_sampled_snapshots(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -607,6 +630,28 @@ class SaorFormalToolsTests(unittest.TestCase):
                     / "deploy/autodl/saor_ready_observation_bridge.example.json",
                     profile="ready_observation_bridge",
                 )
+                drift_config = root / "matched-ready-drift.json"
+                drift_payload = json.loads(
+                    (
+                        REPOSITORY
+                        / "deploy/autodl/saor_matched_ready_selector_ablation.example.json"
+                    ).read_text(encoding="utf-8")
+                )
+                drift_payload["scenarios"][1][
+                    "request_limit_per_endpoint"
+                ] = 64
+                drift_payload["scenarios"][1][
+                    "work_limit_per_endpoint"
+                ] = 32768
+                drift_payload["scenarios"][2]["weights"] = [1, 2]
+                drift_config.write_text(
+                    json.dumps(drift_payload),
+                    encoding="utf-8",
+                )
+                drift_result = AUDIT.audit(
+                    drift_config,
+                    profile="matched_ready_selector_ablation",
+                )
             environment["SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES"] = "1"
             with patch.dict(os.environ, environment, clear=True):
                 insufficient_supply = AUDIT.audit(
@@ -626,6 +671,16 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(matched_ready_result["scenario_count"], 6)
         self.assertEqual(observation_bridge_result["status"], "passed")
         self.assertEqual(observation_bridge_result["scenario_count"], 3)
+        self.assertEqual(drift_result["status"], "failed")
+        self.assertTrue(
+            any(
+                "request/work limits" in error
+                for error in drift_result["errors"]
+            )
+        )
+        self.assertTrue(
+            any("weights drift" in error for error in drift_result["errors"])
+        )
         self.assertIsNone(priority_result["direct_contract"])
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
@@ -945,8 +1000,14 @@ class SaorFormalToolsTests(unittest.TestCase):
         return rows
 
     @staticmethod
-    def _write_matched_ready_matrix(root: Path) -> None:
+    def _write_matched_ready_matrix(
+        root: Path,
+        *,
+        include_fairness: bool = True,
+    ) -> None:
         root.mkdir(parents=True)
+        if include_fairness:
+            (root / "jobs").mkdir()
         (root / "manifest.json").write_text(
             json.dumps(
                 {
@@ -967,7 +1028,10 @@ class SaorFormalToolsTests(unittest.TestCase):
         )
         scenarios = tuple(MATCHED_READY_SUMMARY.EXPECTED.items())
         rows = []
-        for scenario_id, (policy, identity, observation) in scenarios:
+        for order_index, (
+            scenario_id,
+            (policy, identity, observation),
+        ) in enumerate(scenarios):
             bounded = observation == "bounded_concrete_pre_registration"
             proposed = policy == "saor_bounded_ready"
             rows.append(
@@ -977,6 +1041,8 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "experiment_identity": identity,
                     "ready_observation_contract": observation,
                     "phase": "warmup",
+                    "repeat_index": 1,
+                    "order_index": order_index,
                     "execution_mode": "rehearsal",
                     "incidents": 0,
                     "actor_worker_failures": 0,
@@ -1015,6 +1081,37 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "bounded_saor_recovery_inflight_max": 1 if proposed else 0,
                 }
             )
+            if include_fairness:
+                for job_index in range(2):
+                    stem = (
+                        f"{order_index:03d}_warmup_1_{scenario_id}_"
+                        f"job{job_index}"
+                    )
+                    submission_id = f"{scenario_id}-job{job_index}-r0"
+                    SaorFormalToolsTests._write_group_rows(
+                        root / "jobs" / f"{stem}.requests.csv",
+                        [
+                            {
+                                "submission_id": submission_id,
+                                "completion_epoch_s": 2.0 + job_index,
+                                "prompt_tokens": 10,
+                                "actual_output_tokens": 10,
+                                "client_estimated_output_tokens": 10,
+                                "estimated_output_tokens": 10,
+                            }
+                        ],
+                    )
+                    SaorFormalToolsTests._write_group_rows(
+                        root / "jobs" / f"{stem}.submissions.csv",
+                        [
+                            {
+                                "submission_id": submission_id,
+                                "ready_epoch_s": 0.0,
+                                "credit_registered_epoch_s": 0.1,
+                                "credit_granted_epoch_s": 0.2,
+                            }
+                        ],
+                    )
         SaorFormalToolsTests._write_group_rows(root / "group_runs.csv", rows)
 
     @staticmethod

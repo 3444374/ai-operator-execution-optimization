@@ -276,6 +276,10 @@ def summarize(
             )
             proposed = expected_identity[0] == "saor_bounded_ready"
             completion_fairness = _completion_fairness_from_raw(root, row)
+            fairness_evidence = bool(
+                completion_fairness["completion_service_lag_status"]
+                == "ok:registered_backlog_completion_accounted_empirical"
+            )
             mechanism = bool(
                 not proposed
                 or (
@@ -301,11 +305,16 @@ def summarize(
                     == 0
                 )
             )
-            cell_passed = correctness and observation and mechanism
+            cell_passed = (
+                correctness
+                and observation
+                and mechanism
+                and fairness_evidence
+            )
             if not cell_passed:
                 errors.append(
                     f"round {round_index} {scenario_id} failed correctness, "
-                    "observation, or mechanism evidence"
+                    "observation, mechanism, or completion-fairness evidence"
                 )
             metrics.append(
                 {
@@ -317,6 +326,7 @@ def summarize(
                     "correctness_passed": correctness,
                     "observation_passed": observation,
                     "mechanism_passed": mechanism,
+                    "fairness_evidence_passed": fairness_evidence,
                     "cell_evidence_passed": cell_passed,
                     "evaluation_scope": "single_tenant_multi_job",
                     "fairness_mode": "differentiated_service",

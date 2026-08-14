@@ -14,6 +14,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
+    _GuardHold,
 )
 from src.scheduling.submission_control.saor import (  # noqa: E402
     SaorReleaseConfig,
@@ -21,6 +22,25 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_hold_start_marks_nonconcrete_guard_as_avoidable_idle(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="saor_bounded_priority",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        coordinator._record_release_event(
+            "gpu0",
+            action="hold_start",
+            tier="guard_reclaim_hold",
+            target=_GuardHold("bulk", "r0", 80, 20, 0.0, False),
+            states=(),
+        )
+
+        event = coordinator.drain_release_events("gpu0")[0]
+        self.assertTrue(event.avoidable_idle)
+
     def test_matched_ready_fifo_records_selector_neutral_lifecycle(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (1, 100)},
