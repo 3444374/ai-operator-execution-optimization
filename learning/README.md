@@ -1,5 +1,23 @@
 # Learning Notes
 
+## 2026-08-16 为什么 formal 授权必须是独立 artifact
+
+配置里的一个布尔值或命令行 `--force` 不能证明“这次运行已经被审核”：它们既不绑定代码版本，也不
+绑定 manifest 和完整配置，甚至可能在默认命令中被意外打开。native-system matched runner 现在把
+授权改成独立 JSON artifact，精确绑定 repository commit、原始 config SHA、解析后的 config
+fingerprint 和 frozen manifest SHA。任何一个字段漂移，都会在创建输出目录、获取机器 lease、调用
+Daft/Ray/Project executor 之前失败，所以“未授权”不会留下一个看似可用的空实验目录。
+
+汇总端不能只信 runner 写出的 `passed`。它会重新计算 authorization SHA、contract snapshot SHA、
+manifest 内容 SHA，并逐臂核对 service signature、scheduler owner，逐 cell 核对 commit/config/
+manifest/schedule 身份。这样 runner 和验证器即使分别看到一份结构正确的 JSON，也不能把不同代码、
+不同 workload 或被替换 scheduler 的结果拼进同一排名。
+
+失败证据也不能删除。现在失败矩阵保留 `all_runs.csv`，其中每个已记录 cell 都有原始 `status` 和
+`failure_reason`；但 `system_summary.csv`、selector、Job 和 resource 性能排名全部禁止发布。这一区分
+很重要：保留失败事实是可复现性，发布不完整排名则会制造选择性报告。当前改动只是本地安全 hotfix，
+服务器关闭且 native-system GPU/formal 仍停止，没有产生新的性能结论。
+
 ## 2026-08-15 怎么把 7.10% 拆成 W 代价和 Project 路径代价
 
 旧 feeding gate 只比较了两个跨时间点：direct K-only 为 13,684.90 tok/s，完整 SAOR Project

@@ -130,10 +130,16 @@ shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity�
 dispatch 前联合加载 matched/native/Project 三份配置并执行 readiness 与执行器绑定审计，随后
 平衡编排 8 个唯一物理臂（3 个原生系统臂、Project frozen-static、3 个 Project selector
 sanity 臂和共享的 proposed 臂）。`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
-cell；runner 与模板均不授予 GPU formal 执行权限。
+cell。非 rehearsal 还必须显式传入独立 `--formal-authorization` artifact；该 artifact 精确绑定
+repository commit、原始 config SHA、resolved-config fingerprint 和 frozen manifest SHA。runner
+在创建输出目录、获取 host lease 或调用 executor 之前完成校验。当前 native-system GPU/formal
+仍停止，仓库不随模板提供有效授权。
 
-`analysis/summarize_saor_native_system_matched.py` 是该矩阵的纯离线、fail-closed 汇总入口，
-只读已提交的 `matrix_index.json` 与资源 trace，不连接服务。它输出 `all_runs.csv`、五臂
+`analysis/summarize_saor_native_system_matched.py` 是该矩阵的薄 CLI；可复用的纯离线、
+fail-closed 核心位于 `src/experiments/saor/native_system_summary.py`，不连接服务。CLI 要求同一个
+独立 formal authorization artifact。核心在生成排名前重算 authorization/contract snapshot/config
+fingerprint/manifest/service signature/scheduler owner/schedule/index/cell identity。通过时输出
+`all_runs.csv`、五臂
 `system_summary.csv`、四臂 `project_selector_sanity.csv`、`job_summary.csv`、
 `resource_summary.csv` 和固定边界的 `validation.json`。同一个 SAOR 物理 run 同时投影到两张表；
 内部 FIFO 的完整名称是 **Project bounded-ready + global FIFO matched-control**，不是原生
@@ -146,8 +152,9 @@ live 容器解码后再存入 evidence。终态校验按真实 native `queue_fin
 `shared_credit_final` schema 只检查实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。
 六个输出先写相邻 staging；发布 CSV 前先原子写入非 passed 的 `publishing` marker，五个 CSV 逐个
 替换，最后才原子发布 passed `validation.json`。消费者只可把 `validation.json.status=passed` 视为
-有效代次；失败重跑会移除旧 CSV，只保留 failed `validation.json`。工具不产生 winner，也固定
-`formal_authorized=false`。
+有效代次；失败/篡改矩阵会删除旧性能表，但保留含所有已记录 cell 的 `all_runs.csv`
+（`status/failure_reason`）和 failed `validation.json`，不得发布性能排名。工具不产生 winner；passed
+只表示提供的独立 formal authorization 与封存证据身份一致，不会自行启动实验。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data

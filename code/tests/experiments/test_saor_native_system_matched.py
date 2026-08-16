@@ -21,15 +21,19 @@ from src.baselines.common.manifests import write_manifest
 from src.baselines.text.orchestration.native_multijob import load_native_multijob_config
 from src.experiments.shared_vllm.config import load_config as load_project_config
 from src.experiments.saor.native_system_matched import (
+    FORMAL_AUTHORIZATION_SCOPE,
     REQUIRED_ARM_IDS,
     SELECTOR_SANITY_ARM_IDS,
     SYSTEM_ARM_IDS,
     _validate_actual_job_offset,
     audit_matched_system_config,
     balanced_matched_schedule,
+    formal_authorization_requirements,
     load_matched_system_config,
     normalize_request_tail_status,
     run_matched_system,
+    sha256_file,
+    sha256_payload,
 )
 from scripts.experiments.run_saor_native_system_matched import (
     _normalize_native,
@@ -38,10 +42,10 @@ from scripts.experiments.run_saor_native_system_matched import (
     _validate_executor_bindings,
     parse_args,
 )
-from scripts.analysis.summarize_saor_native_system_matched import (
+from src.experiments.saor.native_system_summary import (
     summarize_matched_system,
 )
-import scripts.analysis.summarize_saor_native_system_matched as summary_module
+import src.experiments.saor.native_system_summary as summary_module
 
 
 class MatchedSystemContractTest(unittest.TestCase):
@@ -50,9 +54,13 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
+            authorization = self._write_complete_summary_fixture(matrix_root)
 
-            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            self.assertTrue(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
 
             system = self._read_csv(output_dir / "system_summary.csv")
             selector = self._read_csv(output_dir / "project_selector_sanity.csv")
@@ -115,14 +123,13 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertFalse(any("winner" in key.lower() for row in system for key in row))
             self.assertFalse(any("winner" in key.lower() for row in selector for key in row))
-            self.assertNotIn("formal_authorized=true", json.dumps(validation).lower())
             self.assertEqual(
                 validation,
                 {
                     "status": "passed",
                     "comparison_scope": "complete_system_empirical_plus_project_internal_sanity",
                     "selector_victory_decided": False,
-                    "formal_authorized": False,
+                    "formal_authorized": True,
                     "native_baseline_count": 3,
                     "project_control_count": 5,
                 },
@@ -209,17 +216,78 @@ class MatchedSystemContractTest(unittest.TestCase):
                 root = Path(temporary)
                 matrix_root = root / "matrix"
                 output_dir = root / "summary"
-                self._write_complete_summary_fixture(matrix_root)
+                authorization = self._write_complete_summary_fixture(matrix_root)
                 index_path = matrix_root / "matrix_index.json"
                 index = json.loads(index_path.read_text(encoding="utf-8"))
                 corrupt(index, matrix_root)
                 index_path.write_text(json.dumps(index), encoding="utf-8")
 
-                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+                self.assertFalse(summarize_matched_system(
+                    matrix_root,
+                    output_dir,
+                    formal_authorization_path=authorization,
+                ))
                 validation = json.loads(
                     (output_dir / "validation.json").read_text(encoding="utf-8")
                 )
                 self.assertEqual(validation["status"], "failed")
+
+    def test_summary_revalidates_every_frozen_identity(self) -> None:
+        def cell_owner(index: dict[str, object], _root: Path) -> None:
+            index["cells"][0]["scheduler_owner"] = "project"
+
+        def cell_manifest(index: dict[str, object], _root: Path) -> None:
+            index["cells"][0]["manifest_sha256"] = "f" * 64
+
+        def cell_service(index: dict[str, object], _root: Path) -> None:
+            index["cells"][0]["service_signature"] = {"model": "other"}
+
+        def cell_commit(index: dict[str, object], _root: Path) -> None:
+            index["cells"][0]["repository_commit"] = "other"
+
+        def index_commit(index: dict[str, object], _root: Path) -> None:
+            index["repository_commit"] = "other"
+
+        def config_fingerprint(index: dict[str, object], _root: Path) -> None:
+            index["config_fingerprint"] = "e" * 64
+
+        def manifest_contents(_index: dict[str, object], root: Path) -> None:
+            (root / "frozen-manifest.jsonl").write_text(
+                '{"tampered": true}\n', encoding="utf-8"
+            )
+
+        mutations = {
+            "scheduler owner": cell_owner,
+            "cell manifest SHA": cell_manifest,
+            "service signature": cell_service,
+            "cell commit": cell_commit,
+            "index commit": index_commit,
+            "config fingerprint": config_fingerprint,
+            "manifest contents": manifest_contents,
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name), TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                matrix_root = root / "matrix"
+                output_dir = root / "summary"
+                authorization = self._write_complete_summary_fixture(matrix_root)
+                index_path = matrix_root / "matrix_index.json"
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                mutate(index, matrix_root)
+                index_path.write_text(json.dumps(index), encoding="utf-8")
+
+                self.assertFalse(summarize_matched_system(
+                    matrix_root,
+                    output_dir,
+                    formal_authorization_path=authorization,
+                ))
+                self.assertEqual(
+                    json.loads((output_dir / "validation.json").read_text())[
+                        "status"
+                    ],
+                    "failed",
+                )
+                self.assertFalse((output_dir / "system_summary.csv").exists())
 
     def test_summary_accepts_real_credit_history_but_rejects_each_live_field(self) -> None:
         mutations: dict[str, object] = {
@@ -238,7 +306,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 root = Path(temporary)
                 matrix_root = root / "matrix"
                 output_dir = root / "summary"
-                self._write_complete_summary_fixture(matrix_root)
+                authorization = self._write_complete_summary_fixture(matrix_root)
                 index_path = matrix_root / "matrix_index.json"
                 index = json.loads(index_path.read_text(encoding="utf-8"))
                 project = next(
@@ -250,7 +318,11 @@ class MatchedSystemContractTest(unittest.TestCase):
                 project["shared_credit_final"] = json.dumps(credit)
                 index_path.write_text(json.dumps(index), encoding="utf-8")
 
-                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+                self.assertFalse(summarize_matched_system(
+                    matrix_root,
+                    output_dir,
+                    formal_authorization_path=authorization,
+                ))
                 validation = json.loads(
                     (output_dir / "validation.json").read_text(encoding="utf-8")
                 )
@@ -261,7 +333,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
+            authorization = self._write_complete_summary_fixture(matrix_root)
             index_path = matrix_root / "matrix_index.json"
             index = json.loads(index_path.read_text(encoding="utf-8"))
             cell = index["cells"][0]
@@ -269,7 +341,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             cell["jobs"][1]["actual_launch_epoch_s"] += 0.1
             index_path.write_text(json.dumps(index), encoding="utf-8")
 
-            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            self.assertTrue(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             jobs = [
                 row for row in self._read_csv(output_dir / "job_summary.csv")
                 if row["run_id"] == cell["run_id"]
@@ -289,7 +365,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
+            authorization = self._write_complete_summary_fixture(matrix_root)
             index_path = matrix_root / "matrix_index.json"
             index = json.loads(index_path.read_text(encoding="utf-8"))
             project = next(
@@ -301,7 +377,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             project["shared_credit_final"] = json.dumps(credit)
             index_path.write_text(json.dumps(index), encoding="utf-8")
 
-            self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertFalse(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             self.assertEqual(
                 json.loads((output_dir / "validation.json").read_text())["status"],
                 "failed",
@@ -312,17 +392,31 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
-            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            authorization = self._write_complete_summary_fixture(matrix_root)
+            self.assertTrue(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             index_path = matrix_root / "matrix_index.json"
             index = json.loads(index_path.read_text(encoding="utf-8"))
+            index["status"] = "failed"
             index["cells"][0]["status"] = "failed"
+            index["cells"][0]["error"] = "cell exploded"
             index_path.write_text(json.dumps(index), encoding="utf-8")
 
-            self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertFalse(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             self.assertEqual(
-                {path.name for path in output_dir.iterdir()}, {"validation.json"}
+                {path.name for path in output_dir.iterdir()},
+                {"all_runs.csv", "validation.json"},
             )
+            failed_rows = self._read_csv(output_dir / "all_runs.csv")
+            self.assertEqual(failed_rows[0]["status"], "failed")
+            self.assertEqual(failed_rows[0]["failure_reason"], "cell exploded")
             self.assertEqual(
                 json.loads((output_dir / "validation.json").read_text())["status"],
                 "failed",
@@ -333,8 +427,12 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
-            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            authorization = self._write_complete_summary_fixture(matrix_root)
+            self.assertTrue(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             real_write_csv = summary_module._write_csv
             calls = 0
 
@@ -346,9 +444,14 @@ class MatchedSystemContractTest(unittest.TestCase):
                 real_write_csv(path, rows)
 
             with patch.object(summary_module, "_write_csv", side_effect=fail_third_write):
-                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+                self.assertFalse(summarize_matched_system(
+                    matrix_root,
+                    output_dir,
+                    formal_authorization_path=authorization,
+                ))
             self.assertEqual(
-                {path.name for path in output_dir.iterdir()}, {"validation.json"}
+                {path.name for path in output_dir.iterdir()},
+                {"all_runs.csv", "validation.json"},
             )
 
     def test_publish_failure_never_exposes_old_passed_validation(self) -> None:
@@ -356,8 +459,12 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
-            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            authorization = self._write_complete_summary_fixture(matrix_root)
+            self.assertTrue(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             real_replace = Path.replace
             publish_count = 0
             observed_statuses = []
@@ -374,10 +481,15 @@ class MatchedSystemContractTest(unittest.TestCase):
                 return real_replace(source, target)
 
             with patch.object(Path, "replace", new=fail_second_csv):
-                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+                self.assertFalse(summarize_matched_system(
+                    matrix_root,
+                    output_dir,
+                    formal_authorization_path=authorization,
+                ))
             self.assertNotIn("passed", observed_statuses)
             self.assertEqual(
-                {path.name for path in output_dir.iterdir()}, {"validation.json"}
+                {path.name for path in output_dir.iterdir()},
+                {"all_runs.csv", "validation.json"},
             )
             self.assertEqual(
                 json.loads((output_dir / "validation.json").read_text())["status"],
@@ -389,7 +501,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             root = Path(temporary)
             matrix_root = root / "matrix"
             output_dir = root / "summary"
-            self._write_complete_summary_fixture(matrix_root)
+            authorization = self._write_complete_summary_fixture(matrix_root)
             index_path = matrix_root / "matrix_index.json"
             index = json.loads(index_path.read_text(encoding="utf-8"))
             native = next(
@@ -400,7 +512,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             }
             index_path.write_text(json.dumps(index), encoding="utf-8")
 
-            self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertFalse(summarize_matched_system(
+                matrix_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
             self.assertEqual(
                 json.loads((output_dir / "validation.json").read_text())["status"],
                 "failed",
@@ -990,6 +1106,7 @@ class MatchedSystemContractTest(unittest.TestCase):
 
     def test_matrix_runs_each_physical_cell_once_in_balanced_order(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             config = load_matched_system_config(path)
             expected = [
                 cell
@@ -1026,6 +1143,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 instrumenter=lambda *args: instrumenter_calls.append(args),
                 repository_commit_getter=lambda: "abc123",
                 host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                formal_authorization_path=authorization,
             )
 
             self.assertEqual(
@@ -1056,8 +1174,103 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual(persisted["status"], "completed")
             self.assertEqual(len(persisted["cells"]), len(expected))
 
+    def test_non_rehearsal_requires_authorization_before_any_side_effect(self) -> None:
+        with self._config() as path:
+            output_root = path.parent / "matrix-output"
+            executor_calls: list[str] = []
+            lease_calls: list[str] = []
+
+            with self.assertRaisesRegex(PermissionError, "authorization"):
+                run_matched_system(
+                    path,
+                    native_executor=lambda arm, *_args: executor_calls.append(
+                        arm.arm_id
+                    ),
+                    project_executor=lambda arm, *_args: executor_calls.append(
+                        arm.arm_id
+                    ),
+                    idle_gate=lambda _position: None,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: lease_calls.append(
+                        "lease"
+                    ),
+                    formal_authorization_path=None,
+                )
+
+            self.assertFalse(output_root.exists())
+            self.assertEqual(executor_calls, [])
+            self.assertEqual(lease_calls, [])
+
+    def test_formal_authorization_rejects_identity_drift_before_side_effects(self) -> None:
+        mutations = {
+            "repository commit": lambda value: value.__setitem__(
+                "repository_commit", "other-commit"
+            ),
+            "config SHA": lambda value: value.__setitem__(
+                "config_sha256", "f" * 64
+            ),
+            "resolved config fingerprint": lambda value: value.__setitem__(
+                "resolved_config_sha256", "e" * 64
+            ),
+            "manifest SHA": lambda value: value.__setitem__(
+                "manifest_sha256", "d" * 64
+            ),
+            "schema extension": lambda value: value.__setitem__("force", True),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name), self._config() as path:
+                authorization = self._write_formal_authorization(path)
+                artifact = json.loads(authorization.read_text(encoding="utf-8"))
+                mutate(artifact)
+                authorization.write_text(json.dumps(artifact), encoding="utf-8")
+                lease_calls: list[str] = []
+
+                with self.assertRaisesRegex(PermissionError, "authorization"):
+                    run_matched_system(
+                        path,
+                        native_executor=lambda *_args: {},
+                        project_executor=lambda *_args: {},
+                        idle_gate=lambda _position: None,
+                        instrumenter=lambda *_args: None,
+                        repository_commit_getter=lambda: "abc123",
+                        host_lease_acquirer=lambda *_args, **_kwargs: (
+                            lease_calls.append("lease")
+                        ),
+                        formal_authorization_path=authorization,
+                    )
+
+                self.assertFalse((path.parent / "matrix-output").exists())
+                self.assertEqual(lease_calls, [])
+
+    def test_formal_authorization_rejects_config_changed_after_review(self) -> None:
+        with self._config() as path:
+            authorization = self._write_formal_authorization(path)
+            config = json.loads(path.read_text(encoding="utf-8"))
+            config["seed"] = 999
+            path.write_text(json.dumps(config), encoding="utf-8")
+            lease_calls: list[str] = []
+
+            with self.assertRaisesRegex(PermissionError, "authorization"):
+                run_matched_system(
+                    path,
+                    native_executor=lambda *_args: {},
+                    project_executor=lambda *_args: {},
+                    idle_gate=lambda _position: None,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: (
+                        lease_calls.append("lease")
+                    ),
+                    formal_authorization_path=authorization,
+                )
+
+            self.assertFalse((path.parent / "matrix-output").exists())
+            self.assertEqual(lease_calls, [])
+
     def test_matrix_retains_first_failure_stops_and_releases_lease(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             config = load_matched_system_config(path)
             first_two = balanced_matched_schedule(
                 config, phase="warmup", repeat=1
@@ -1082,6 +1295,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     instrumenter=lambda *_args: None,
                     repository_commit_getter=lambda: "abc123",
                     host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                    formal_authorization_path=authorization,
                 )
 
             self.assertEqual(calls, [cell.arm_id for cell in first_two])
@@ -1099,6 +1313,7 @@ class MatchedSystemContractTest(unittest.TestCase):
 
     def test_matrix_preserves_primary_error_and_records_after_idle_error(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             lease = SimpleNamespace(released=False)
             lease.release = lambda: setattr(lease, "released", True)
             idle_calls: list[str] = []
@@ -1119,6 +1334,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     instrumenter=lambda *_args: None,
                     repository_commit_getter=lambda: "abc123",
                     host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                    formal_authorization_path=authorization,
                 )
 
             self.assertEqual(idle_calls, ["before", "after"])
@@ -1133,6 +1349,7 @@ class MatchedSystemContractTest(unittest.TestCase):
 
     def test_matrix_attempts_after_idle_when_before_idle_fails(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             lease = SimpleNamespace(released=False)
             lease.release = lambda: setattr(lease, "released", True)
             idle_calls: list[str] = []
@@ -1151,12 +1368,14 @@ class MatchedSystemContractTest(unittest.TestCase):
                     instrumenter=lambda *_args: None,
                     repository_commit_getter=lambda: "abc123",
                     host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                    formal_authorization_path=authorization,
                 )
 
             self.assertEqual(idle_calls, ["before", "after"])
 
     def test_matrix_rejects_existing_output_root_before_lease(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             (path.parent / "matrix-output").mkdir()
             with self.assertRaisesRegex(FileExistsError, "matrix output root"):
                 run_matched_system(
@@ -1165,10 +1384,13 @@ class MatchedSystemContractTest(unittest.TestCase):
                     project_executor=lambda *_args: {},
                     idle_gate=lambda _position: None,
                     instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    formal_authorization_path=authorization,
                 )
 
     def test_matrix_records_lease_acquisition_failure(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             with self.assertRaisesRegex(RuntimeError, "lease unavailable"):
                 run_matched_system(
                     path,
@@ -1180,6 +1402,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     host_lease_acquirer=lambda *_args, **_kwargs: (
                         (_ for _ in ()).throw(RuntimeError("lease unavailable"))
                     ),
+                    formal_authorization_path=authorization,
                 )
             persisted = json.loads(
                 (path.parent / "matrix-output" / "matrix_index.json").read_text()
@@ -1189,6 +1412,7 @@ class MatchedSystemContractTest(unittest.TestCase):
 
     def test_matrix_rejects_missing_job_overlap_evidence(self) -> None:
         with self._config() as path:
+            authorization = self._write_formal_authorization(path)
             lease = SimpleNamespace(released=False)
             lease.release = lambda: setattr(lease, "released", True)
 
@@ -1206,6 +1430,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     instrumenter=lambda *_args: None,
                     repository_commit_getter=lambda: "abc123",
                     host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                    formal_authorization_path=authorization,
                 )
             self.assertTrue(lease.released)
 
@@ -1229,6 +1454,7 @@ class MatchedSystemContractTest(unittest.TestCase):
         }
         for name, mutate in mutations.items():
             with self.subTest(name=name), self._config() as path:
+                authorization = self._write_formal_authorization(path)
                 lease = SimpleNamespace(released=False)
                 lease.release = lambda: setattr(lease, "released", True)
 
@@ -1244,6 +1470,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         instrumenter=lambda *_args: None,
                         repository_commit_getter=lambda: "abc123",
                         host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                        formal_authorization_path=authorization,
                     )
 
     def test_matrix_rejects_missing_or_live_system_final_state_online(self) -> None:
@@ -1267,6 +1494,7 @@ class MatchedSystemContractTest(unittest.TestCase):
         }
         for name, (target, mutate) in cases.items():
             with self.subTest(name=name), self._config() as path:
+                authorization = self._write_formal_authorization(path)
                 lease = SimpleNamespace(released=False)
                 lease.release = lambda: setattr(lease, "released", True)
 
@@ -1285,6 +1513,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         instrumenter=lambda *_args: None,
                         repository_commit_getter=lambda: "abc123",
                         host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                        formal_authorization_path=authorization,
                     )
                 self.assertTrue(lease.released)
 
@@ -1341,6 +1570,24 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual({item.phase for item in calls}, {"warmup"})
             self.assertEqual({item.repeat for item in calls}, {1})
             self.assertEqual(len({item.arm_id for item in calls}), 8)
+
+    @staticmethod
+    def _write_formal_authorization(
+        config_path: Path,
+        repository_commit: str = "abc123",
+    ) -> Path:
+        config = load_matched_system_config(
+            config_path,
+            allow_existing_matrix_output_root=True,
+        )
+        artifact = formal_authorization_requirements(
+            config_path,
+            config,
+            repository_commit,
+        )
+        path = config_path.parent / "formal-authorization.json"
+        path.write_text(json.dumps(artifact), encoding="utf-8")
+        return path
 
     @staticmethod
     def _cell_evidence(arm, identity, output_dir: Path) -> dict[str, object]:
@@ -1431,8 +1678,45 @@ class MatchedSystemContractTest(unittest.TestCase):
             return list(csv.DictReader(stream))
 
     @classmethod
-    def _write_complete_summary_fixture(cls, matrix_root: Path) -> None:
+    def _write_complete_summary_fixture(cls, matrix_root: Path) -> Path:
         matrix_root.mkdir(parents=True)
+        manifest_path = matrix_root / "frozen-manifest.jsonl"
+        manifest_path.write_text("{}\n", encoding="utf-8")
+        manifest_sha256 = sha256_file(manifest_path)
+        service_signature = {"model": "test", "service": "vllm"}
+        scheduler_owners = {
+            arm_id: (
+                "daft" if arm_id.startswith("daft_") else
+                "ray_data" if arm_id == "ray_data_http" else "project"
+            )
+            for arm_id in REQUIRED_ARM_IDS
+        }
+        resolved_config = {
+            "schema_version": 1,
+            "arms": [
+                {
+                    "arm_id": arm_id,
+                    "scheduler_owner": scheduler_owners[arm_id],
+                    "manifest_path": str(manifest_path),
+                    "manifest_sha256": manifest_sha256,
+                    "service_signature": service_signature,
+                }
+                for arm_id in REQUIRED_ARM_IDS
+            ],
+        }
+        authorization = {
+            "schema_version": 1,
+            "status": "authorized",
+            "scope": FORMAL_AUTHORIZATION_SCOPE,
+            "formal_authorized": True,
+            "repository_commit": "abc123",
+            "config_sha256": "c" * 64,
+            "resolved_config_sha256": sha256_payload(resolved_config),
+            "manifest_sha256": manifest_sha256,
+        }
+        authorization_path = matrix_root.parent / "formal-authorization.json"
+        authorization_path.write_text(json.dumps(authorization), encoding="utf-8")
+        authorization_sha256 = sha256_file(authorization_path)
         cells = []
         phase_specs = (
             ("formal", 3, SYSTEM_ARM_IDS),
@@ -1480,6 +1764,15 @@ class MatchedSystemContractTest(unittest.TestCase):
                             "daft" if arm_id.startswith("daft_") else
                             "ray_data" if arm_id == "ray_data_http" else "project"
                         ),
+                        "repository_commit": authorization["repository_commit"],
+                        "config_sha256": authorization["config_sha256"],
+                        "config_fingerprint": authorization[
+                            "resolved_config_sha256"
+                        ],
+                        "authorization_sha256": authorization_sha256,
+                        "manifest_path": str(manifest_path),
+                        "manifest_sha256": manifest_sha256,
+                        "service_signature": service_signature,
                         "implementation_source": (
                             "official_native_single_cell_runner"
                             if is_native else "project_shared_vllm_single_cell_runner"
@@ -1589,22 +1882,57 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "work_limit_per_endpoint": 65536 if not is_native else None,
                     }
                 )
+        snapshot_path = matrix_root / "matrix_contract_snapshot.json"
+        snapshot_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "runtime_identity": {
+                        **authorization,
+                        "authorization_sha256": authorization_sha256,
+                        "execution_mode": "formal",
+                    },
+                    "resolved_config": resolved_config,
+                }
+            ),
+            encoding="utf-8",
+        )
         (matrix_root / "matrix_index.json").write_text(
             json.dumps(
                 {
                     "schema_version": 1,
                     "status": "completed",
                     "repository_commit": "abc123",
+                    "execution_mode": "formal",
+                    "config_sha256": authorization["config_sha256"],
+                    "config_fingerprint": authorization[
+                        "resolved_config_sha256"
+                    ],
+                    "manifest_sha256": manifest_sha256,
+                    "authorization_sha256": authorization_sha256,
+                    "contract_snapshot_sha256": sha256_file(snapshot_path),
+                    "service_signature": service_signature,
+                    "scheduler_owners": scheduler_owners,
                     "repeat_contract": {
                         "warmup": 0,
                         "formal": 3,
                         "selector_sanity_development": 2,
                     },
+                    "schedule": [
+                        {
+                            field: cell[field]
+                            for field in (
+                                "arm_id", "phase", "repeat", "order_index"
+                            )
+                        }
+                        for cell in cells
+                    ],
                     "cells": cells,
                 }
             ),
             encoding="utf-8",
         )
+        return authorization_path
 
     class _ConfigPath:
         def __init__(self, owner: "MatchedSystemContractTest") -> None:
