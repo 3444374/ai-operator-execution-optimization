@@ -20,6 +20,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.experiments.saor.feeding_gap_diagnostic import (  # noqa: E402
     load_diagnostic_contract,
     sha256_file,
+    sha256_lf_normalized_text_file,
     validate_diagnostic_config,
     validate_prior_failed_lock,
 )
@@ -62,7 +63,9 @@ def main(argv: list[str] | None = None) -> int:
         "may_change_prior_feeding_decision": False,
         "prior_decision_preserved": "locked_failed_feeding",
         "diagnostic_contract_sha256": sha256_file(contract_path),
-        "prior_failed_contract_sha256": sha256_file(prior_path),
+        "prior_failed_contract_sha256": sha256_lf_normalized_text_file(
+            prior_path
+        ),
         "reference_config_sha256": sha256_file(reference_path),
         "diagnostic_config_sha256": sha256_file(options.config_path),
     }

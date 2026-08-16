@@ -24,6 +24,7 @@ from src.experiments.saor.feeding_gap_diagnostic import (
     classify_feeding_gap,
     load_diagnostic_contract,
     sha256_file,
+    sha256_lf_normalized_text_file,
     summarize_feeding_gap,
     validate_diagnostic_config,
     validate_prior_failed_lock,
@@ -72,6 +73,27 @@ class FeedingGapDiagnosticTests(unittest.TestCase):
         prior_payload = json.loads(prior.read_text(encoding="utf-8"))
         self.assertEqual(prior_payload["status"], "locked_failed_feeding")
         self.assertIs(prior_payload["formal_authorized"], False)
+
+    def test_text_contract_hash_ignores_only_crlf_translation(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            lf_path = root / "lf.json"
+            crlf_path = root / "crlf.json"
+            changed_path = root / "changed.json"
+            lf_path.write_bytes(b'{"status":"locked"}\n')
+            crlf_path.write_bytes(b'{"status":"locked"}\r\n')
+            changed_path.write_bytes(b'{"status":"changed"}\r\n')
+
+            expected = sha256_lf_normalized_text_file(lf_path)
+
+            self.assertEqual(
+                sha256_lf_normalized_text_file(crlf_path),
+                expected,
+            )
+            self.assertNotEqual(
+                sha256_lf_normalized_text_file(changed_path),
+                expected,
+            )
 
     def test_structured_clean_gate_requires_all_three_subsystems(self) -> None:
         config = self._config(())
@@ -222,7 +244,9 @@ class FeedingGapDiagnosticTests(unittest.TestCase):
                         "status": "diagnostic_only_ready",
                         "may_change_prior_feeding_decision": False,
                         "diagnostic_contract_sha256": sha256_file(contract_path),
-                        "prior_failed_contract_sha256": sha256_file(prior_path),
+                        "prior_failed_contract_sha256": (
+                            sha256_lf_normalized_text_file(prior_path)
+                        ),
                     }
                 ),
                 encoding="utf-8",

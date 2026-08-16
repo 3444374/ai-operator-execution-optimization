@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-08-16 修复 SAOR feeding-gap 合同锁跨平台假阴性
+
+- 根因是 Windows `core.autocrlf=true` 将工作区 JSON 转为 CRLF，而已冻结的合同
+  SHA 按仓库 LF 字节生成；内容未漂移时会被误判为 `prior failed-feeding contract
+  SHA drifted`。
+- 新增仅用于文本合同的 LF 规范化 SHA；归档、manifest、配置等其他证据继续使用
+  原始字节 SHA，保持 fail-closed 边界。runner、离线汇总和测试快照统一使用该语义。
+- 新增 LF/CRLF 等价且内容变化仍失败的回归测试；同时规范化 feeding-ceiling 原始
+  CSV 的提交换行。未连接服务器、未运行 GPU/rehearsal/formal，也未改变既有实验结论。
+
 ## 2026-08-14 SAOR matched matrix 最终合同收口
 
 - 物理执行调整为：warm-up 覆盖八个身份，formal 只跑五个 complete-system 臂，selector

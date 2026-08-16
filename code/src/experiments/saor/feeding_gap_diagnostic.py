@@ -37,6 +37,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_lf_normalized_text_file(path: Path) -> str:
+    """Hash a text contract without platform-specific CRLF differences."""
+
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def load_diagnostic_contract(path: Path) -> dict[str, object]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
@@ -65,7 +71,9 @@ def validate_prior_failed_lock(
         errors.append("prior contract is no longer locked_failed_feeding")
     if prior.get("formal_authorized") is not False:
         errors.append("prior contract unexpectedly authorizes formal")
-    if prior_identity.get("contract_sha256") != sha256_file(prior_contract_path):
+    if prior_identity.get(
+        "contract_sha256"
+    ) != sha256_lf_normalized_text_file(prior_contract_path):
         errors.append("prior failed-feeding contract SHA drifted")
     feeding = prior.get("feeding_validation")
     if not isinstance(feeding, dict):
@@ -227,9 +235,9 @@ def summarize_feeding_gap(
             diagnostic_contract_sha256
         ):
             errors.append("diagnostic runtime contract SHA drifted")
-        if snapshot.get("prior_failed_contract_sha256") != sha256_file(
-            prior_contract_path
-        ):
+        if snapshot.get(
+            "prior_failed_contract_sha256"
+        ) != sha256_lf_normalized_text_file(prior_contract_path):
             errors.append("diagnostic runtime prior-contract SHA drifted")
         if snapshot.get("may_change_prior_feeding_decision") is not False:
             errors.append("diagnostic runtime snapshot may change prior decision")
