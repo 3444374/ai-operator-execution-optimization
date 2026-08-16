@@ -10,7 +10,13 @@ framework-owned native arms), and
 Project selector scenarios). All three must be supplied together; the matrix
 runner rejects missing or drifting executor bindings. Resolve their environment
 variables, then run the read-only audit; it sends no model request and starts no
-Ray process. GPU formal is explicitly not locally authorized. The shipped
+Ray process. GPU formal is explicitly stopped and not locally authorized. A
+non-rehearsal runner invocation additionally requires an independently issued
+`--formal-authorization` JSON artifact that exactly binds repository commit,
+raw config SHA, resolved-config fingerprint, and frozen manifest SHA. This check
+runs before output-root creation, host-lease acquisition, or executor dispatch.
+The repository ships no valid authorization artifact, and `--force` or the legacy
+config boolean cannot replace it. The shipped
 manifest is structural only: `matched_manifest_status=placeholder_not_ready`
 prevents it from passing even with a supplied SHA. Operators must create and
 commit a real two-Job matched request manifest, set its SHA, and change the
@@ -23,6 +29,13 @@ all eight identities, formal executes only the five complete-system arms, and
 selector development executes only bounded-ready FIFO/DRR/VTC-style. The
 selector report reuses the first matching formal SAOR cells, so SAOR is not
 rerun merely to populate the second table.
+
+The offline summarizer also requires the same authorization artifact and
+recomputes the contract snapshot, manifest, service signature, scheduler owner,
+schedule, index, and cell identities. Failed or tampered matrices retain
+`all_runs.csv` with `status/failure_reason` and a failed validation, but publish
+no performance summary. Do not run either the GPU matrix or formal path until
+this hotfix has received independent review and a later explicit authorization.
 
 The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
 timestamps are measured separately: the observed Job 1 minus Job 0 offset and

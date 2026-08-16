@@ -3,16 +3,16 @@
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
-SAOR native-system matched infrastructure is locally complete through its offline
-two-layer summarizer. The system layer contains Daft Native, Daft Ray, Ray Data,
-Project frozen-static, and bounded-ready SAOR; the Project-internal sanity layer
-contains bounded-ready FIFO/DRR/VTC-style/SAOR, with one shared physical SAOR run.
-This is tested local infrastructure only: no server/GPU rehearsal or formal evidence
-has been produced. The fail-closed summarizer validates native queue and Project credit
-end-state schemas separately, computes Job JCT from nominal scheduled release while retaining
-actual-launch jitter diagnostics, and keeps unsupported native request P99 and SLO independently
-`unavailable` with reasons. Publication is fail-closed rather than generation-atomic: a non-passed
-marker precedes individual CSV replacement, and passed `validation.json` is published last.
+SAOR native-system matched infrastructure is locally implemented but remains stopped for GPU/formal
+execution. A non-rehearsal run now requires a separate authorization artifact that exactly binds the
+repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
+runner creates an output root, acquires a host lease, or calls an executor. The reusable offline core
+lives in `src/experiments/saor/native_system_summary.py`; the CLI is parameter parsing only. Before
+publishing any ranking, the core recomputes the authorization, contract snapshot, manifest, service
+signature, scheduler-owner map, schedule, index, and per-cell identities. A failed or tampered matrix
+publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system,
+selector, Job, and resource ranking tables are withheld. This is local safety infrastructure, not new
+server/GPU evidence and not an authorization to resume the stopped experiment.
 
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:

@@ -57,6 +57,7 @@ class CliOptions:
     rehearsal: bool
     resume: bool
     recover_stale_lease: bool
+    formal_authorization: Path | None
 
 
 def _argument_value(arguments: tuple[str, ...], flag: str) -> str:
@@ -264,6 +265,7 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
     parser.add_argument("--start-delay-s", type=float, default=15.0)
     parser.add_argument("--rehearsal", action="store_true")
+    parser.add_argument("--formal-authorization", type=Path)
     args = parser.parse_args(argv)
     metrics_urls = tuple(item.strip() for item in args.metrics_urls.split(",") if item.strip())
     if not metrics_urls:
@@ -283,6 +285,11 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
         rehearsal=args.rehearsal,
         resume=False,
         recover_stale_lease=False,
+        formal_authorization=(
+            args.formal_authorization.resolve()
+            if args.formal_authorization is not None
+            else None
+        ),
     )
 
 
@@ -525,6 +532,7 @@ def run(options: CliOptions) -> dict[str, object]:
         instrumenter=lambda *_args: None,
         repository_commit_getter=lambda: repository_commit,
         rehearsal=options.rehearsal,
+        formal_authorization_path=options.formal_authorization,
     )
 
 

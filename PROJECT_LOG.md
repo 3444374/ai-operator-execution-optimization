@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-16 native-system formal fail-closed hotfix（本地）
+
+- 从 `main@d4dfdbfe` 建立 `codex/native-system-formal-hotfix`，继续停止 native-system matched
+  GPU/formal；本次只修改本地合同、证据工具和测试，不连接服务器、不运行 GPU cell。
+- 非 rehearsal runner 改为强制独立 authorization artifact，精确绑定 repository commit、原始
+  config SHA、resolved-config fingerprint 与 frozen manifest SHA；校验发生在 output-root 创建、
+  host lease 和 executor 调用之前，旧配置布尔值与 `--force` 均不能授权。
+- 将汇总业务逻辑从 `code/scripts/` 迁入 `code/src/experiments/saor/native_system_summary.py`；CLI 只做
+  参数解析。汇总端重新计算 authorization、contract snapshot、manifest、service signature、
+  scheduler owner、schedule、index 与 per-cell identity，阻止跨代码/配置/workload 拼表。
+- 失败或被篡改的矩阵现在保留 `all_runs.csv` 的 `status/failure_reason`，同时删除/禁止 system、
+  selector、Job、resource 性能排名，仅发布 failed validation。针对未授权零副作用、授权漂移、
+  六类身份篡改和失败证据保留的本地回归已加入；不改变既有 SAOR mechanism/feeding-negative 结果。
+- native-system 定向测试 40 项、SAOR 相关测试 117 项通过；全仓 discover 执行 1,081 项，其中
+  1,073 项通过、8 项在加载阶段因本机未安装 `pyarrow`/`psycopg` 未执行，无代码断言失败。compileall、
+  `git diff --check` 与变更文件隐私扫描通过；本机没有 `ruff`，因此未把 lint 伪报为已通过。
+
 ## 2026-08-16 修复 SAOR feeding-gap 合同锁跨平台假阴性
 
 - 根因是 Windows `core.autocrlf=true` 将工作区 JSON 转为 CRLF，而已冻结的合同

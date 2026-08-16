@@ -28,6 +28,7 @@ SELECTOR_SANITY_ARM_IDS = (
 REQUIRED_ARM_IDS = tuple(dict.fromkeys(SYSTEM_ARM_IDS + SELECTOR_SANITY_ARM_IDS))
 NOMINAL_JOB_OFFSET_S = 5.0
 ACTUAL_CHILD_OFFSET_TOLERANCE_S = 0.25
+FORMAL_AUTHORIZATION_SCOPE = "saor_native_system_matched_formal"
 
 _PROJECT_FIELDS = {
     "k_per_endpoint", "work_limit_per_endpoint", "ready_bytes", "actor_topology",
@@ -298,6 +299,129 @@ def _atomic_json(path: Path, payload: object) -> None:
     temporary.replace(path)
 
 
+def sha256_file(path: Path) -> str:
+    """Return the immutable SHA-256 identity of one artifact."""
+
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def resolved_matched_system_identity(
+    config: MatchedSystemConfig,
+) -> dict[str, object]:
+    """Build a secret-safe resolved identity for authorization and replay."""
+
+    arms = []
+    for arm in config.arms:
+        source = dict(arm.source)
+        database_url = str(source.pop("database_url", ""))
+        source["database_url_sha256"] = hashlib.sha256(
+            database_url.encode("utf-8")
+        ).hexdigest()
+        arms.append(
+            {
+                "arm_id": arm.arm_id,
+                "kind": arm.kind,
+                "scheduler_owner": arm.scheduler_owner,
+                "manifest_path": arm.manifest_path,
+                "manifest_sha256": arm.manifest_sha256,
+                "endpoint_ids": list(arm.endpoint_ids),
+                "service_signature": dict(arm.service_signature),
+                "protocol": arm.protocol,
+                "output_cap": arm.output_cap,
+                "arrival_offsets_s": list(arm.arrival_offsets_s),
+                "job_internal_arrival_contract": (
+                    arm.job_internal_arrival_contract
+                ),
+                "performance_writeback_mode": arm.performance_writeback_mode,
+                "source": source,
+                "organizer": arm.organizer,
+                "calibration_path": arm.calibration_path,
+                "project_contract": dict(arm.project_contract),
+            }
+        )
+    return {
+        "schema_version": 1,
+        "seed": config.seed,
+        "warmup_repeats": config.warmup_repeats,
+        "formal_repeats": config.formal_repeats,
+        "selector_sanity_development_repeats": (
+            config.selector_sanity_development_repeats
+        ),
+        "matched_manifest_status": config.matched_manifest_status,
+        "arms": arms,
+    }
+
+
+def sha256_payload(payload: object) -> str:
+    """Return the canonical JSON SHA-256 identity of a resolved contract."""
+
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def formal_authorization_requirements(
+    config_path: Path,
+    config: MatchedSystemConfig,
+    repository_commit: str,
+) -> dict[str, object]:
+    """Return the exact fields an independent formal authorization must bind."""
+
+    if not repository_commit:
+        raise ValueError("repository commit must be non-empty")
+    manifests = {arm.manifest_sha256 for arm in config.arms}
+    if len(manifests) != 1:
+        raise ValueError("formal authorization requires one frozen manifest SHA")
+    return {
+        "schema_version": 1,
+        "status": "authorized",
+        "scope": FORMAL_AUTHORIZATION_SCOPE,
+        "formal_authorized": True,
+        "repository_commit": repository_commit,
+        "config_sha256": sha256_file(config_path),
+        "resolved_config_sha256": sha256_payload(
+            resolved_matched_system_identity(config)
+        ),
+        "manifest_sha256": next(iter(manifests)),
+    }
+
+
+def validate_formal_authorization(
+    authorization_path: Path | None,
+    requirements: dict[str, object],
+) -> str:
+    """Fail closed unless a separate artifact exactly matches the frozen run."""
+
+    if authorization_path is None:
+        raise PermissionError("formal authorization artifact is required")
+    if not authorization_path.is_file():
+        raise PermissionError("formal authorization artifact is missing")
+    try:
+        artifact = json.loads(authorization_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise PermissionError("formal authorization artifact is invalid") from error
+    if not isinstance(artifact, dict) or set(artifact) != set(requirements):
+        raise PermissionError("formal authorization schema is invalid")
+    drift = [
+        field
+        for field, expected in requirements.items()
+        if artifact.get(field) != expected
+    ]
+    if drift:
+        raise PermissionError(
+            "formal authorization identity drift: " + ", ".join(drift)
+        )
+    return sha256_file(authorization_path)
+
+
 def _repository_commit() -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -333,6 +457,7 @@ def _validate_cell_evidence(
     cell: ScheduledMatchedCell,
     evidence: dict[str, object],
     repository_commit: str,
+    runtime_identity: dict[str, object],
 ) -> dict[str, object]:
     """Normalize one executor result and reject incomplete comparison evidence."""
 
@@ -469,6 +594,12 @@ def _validate_cell_evidence(
         "repeat": cell.repeat,
         "order_index": cell.order_index,
         "repository_commit": repository_commit,
+        "config_sha256": runtime_identity["config_sha256"],
+        "config_fingerprint": runtime_identity["resolved_config_sha256"],
+        "authorization_sha256": runtime_identity["authorization_sha256"],
+        "manifest_path": arm.manifest_path,
+        "manifest_sha256": arm.manifest_sha256,
+        "service_signature": dict(arm.service_signature),
     }
 
 
@@ -482,6 +613,7 @@ def run_matched_system(
     repository_commit_getter: Callable[[], str] = _repository_commit,
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
     rehearsal: bool = False,
+    formal_authorization_path: Path | None = None,
 ) -> dict[str, object]:
     """Run the balanced eight-arm matrix; executors retain all instrumentation."""
 
@@ -489,6 +621,27 @@ def run_matched_system(
     config = load_matched_system_config(
         config_path, allow_existing_matrix_output_root=True
     )
+    repository_commit = repository_commit_getter()
+    requirements = formal_authorization_requirements(
+        config_path,
+        config,
+        repository_commit,
+    )
+    authorization_sha256 = (
+        ""
+        if rehearsal
+        else validate_formal_authorization(
+            formal_authorization_path,
+            requirements,
+        )
+    )
+    runtime_identity = {
+        **requirements,
+        "status": "rehearsal_not_applicable" if rehearsal else "authorized",
+        "formal_authorized": not rehearsal,
+        "authorization_sha256": authorization_sha256,
+        "execution_mode": "rehearsal" if rehearsal else "formal",
+    }
     matrix_output_root = Path(config.matrix_output_root)
     try:
         matrix_output_root.mkdir(parents=True, exist_ok=False)
@@ -497,13 +650,30 @@ def run_matched_system(
             f"matrix output root already exists: {matrix_output_root}"
         ) from error
     matrix_index = matrix_output_root / "matrix_index.json"
-    repository_commit = repository_commit_getter()
-    if not repository_commit:
-        raise RuntimeError("repository commit must be non-empty")
+    contract_snapshot = matrix_output_root / "matrix_contract_snapshot.json"
+    _atomic_json(
+        contract_snapshot,
+        {
+            "schema_version": 1,
+            "runtime_identity": runtime_identity,
+            "resolved_config": resolved_matched_system_identity(config),
+        },
+    )
+    contract_snapshot_sha256 = sha256_file(contract_snapshot)
     index: dict[str, object] = {
         "schema_version": 1,
         "status": "running",
         "repository_commit": repository_commit,
+        "execution_mode": runtime_identity["execution_mode"],
+        "config_sha256": runtime_identity["config_sha256"],
+        "config_fingerprint": runtime_identity["resolved_config_sha256"],
+        "manifest_sha256": runtime_identity["manifest_sha256"],
+        "authorization_sha256": authorization_sha256,
+        "contract_snapshot_sha256": contract_snapshot_sha256,
+        "service_signature": dict(config.arms[0].service_signature),
+        "scheduler_owners": {
+            arm.arm_id: arm.scheduler_owner for arm in config.arms
+        },
         "repeat_contract": {
             "warmup": config.warmup_repeats,
             "formal": config.formal_repeats,
@@ -546,6 +716,14 @@ def run_matched_system(
                 "repeat": cell.repeat,
                 "order_index": cell.order_index,
                 "repository_commit": repository_commit,
+                "config_sha256": runtime_identity["config_sha256"],
+                "config_fingerprint": runtime_identity[
+                    "resolved_config_sha256"
+                ],
+                "authorization_sha256": authorization_sha256,
+                "manifest_path": arm.manifest_path,
+                "manifest_sha256": arm.manifest_sha256,
+                "service_signature": dict(arm.service_signature),
                 "status": "running",
             }
             index["cells"].append(running)  # type: ignore[index]
@@ -561,6 +739,7 @@ def run_matched_system(
                         cell,
                         executor(arm, cell, output_dir),
                         repository_commit,
+                        runtime_identity,
                     )
                     running.update(completed)
                     primary_error: Exception | None = None
