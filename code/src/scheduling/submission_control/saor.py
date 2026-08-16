@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, replace
-from typing import Mapping
+from typing import Literal, Mapping
 
 from ..core.control import CapacityArm
 
@@ -80,6 +80,248 @@ class SaorReleaseSelection:
     entitlement_deficit: float
     active_share: float
     target_share: float
+
+
+@dataclass(frozen=True)
+class SaorBoundedHeadState:
+    """One Job head with explicit priority, SLO, and fairness bounds."""
+
+    release: SaorReleaseState
+    priority: int
+    remaining_slo_budget_s: float | None
+    priority_window_s: float | None
+    debt_cap: float | None
+    head_work: int
+    ready: bool
+    recovery_inflight: bool
+    recovery_inflight_work: int = 0
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.priority, int)
+            or isinstance(self.priority, bool)
+            or self.priority < 0
+        ):
+            raise ValueError("priority must be a non-negative integer")
+        if self.priority > 0 and self.ready and (
+            self.remaining_slo_budget_s is None
+            or self.priority_window_s is None
+        ):
+            raise ValueError("priority requires remaining SLO budget and window")
+        if self.remaining_slo_budget_s is not None and not math.isfinite(
+            self.remaining_slo_budget_s
+        ):
+            raise ValueError("remaining SLO budget must be finite")
+        if self.priority_window_s is not None and (
+            not math.isfinite(self.priority_window_s)
+            or self.priority_window_s <= 0
+        ):
+            raise ValueError("priority window must be finite and positive")
+        if self.debt_cap is not None and (
+            not math.isfinite(self.debt_cap) or self.debt_cap <= 0
+        ):
+            raise ValueError("debt cap must be finite and positive")
+        if (
+            not isinstance(self.head_work, int)
+            or isinstance(self.head_work, bool)
+            or self.head_work < 0
+        ):
+            raise ValueError("head work must be a non-negative integer")
+        if self.ready != (self.head_work > 0):
+            raise ValueError("ready state and head work must agree")
+        if self.release.eligible and not self.ready:
+            raise ValueError("only a ready head can be eligible")
+        if not isinstance(self.recovery_inflight, bool):
+            raise ValueError("recovery_inflight must be a boolean")
+        if (
+            not isinstance(self.recovery_inflight_work, int)
+            or isinstance(self.recovery_inflight_work, bool)
+            or self.recovery_inflight_work < 0
+        ):
+            raise ValueError("recovery inflight work must be non-negative")
+        if self.recovery_inflight != (self.recovery_inflight_work > 0):
+            raise ValueError("recovery inflight flag and work must agree")
+        if self.recovery_inflight_work > self.release.active_work:
+            raise ValueError("recovery inflight work must be active Job work")
+
+
+@dataclass(frozen=True)
+class SaorBoundedSelection:
+    action: Literal["grant", "hold"]
+    tier: Literal[
+        "debt_recovery",
+        "guard_reclaim_hold",
+        "slo_priority",
+        "saor_fallback",
+    ]
+    job_id: str | None
+    reclaim_debt: int = 0
+    constraint_conflict: bool = False
+
+
+@dataclass(frozen=True)
+class SaorDebtProjection:
+    """Completion-accounting projection for one bounded-SAOR Job head."""
+
+    total_weight: float
+    target_share: float
+    own_inflight_work: int
+    foreign_residual_work: int
+    candidate_work: int
+    debt_before_candidate: float
+    debt_after_candidate: float
+    discrete_overshoot_bound: float
+
+
+def project_bounded_saor_debt(
+    state: SaorBoundedHeadState,
+    states: tuple[SaorBoundedHeadState, ...],
+) -> SaorDebtProjection:
+    """Project debt after all non-preemptible active work and one candidate.
+
+    The completion update for Job ``i`` changes its debt by
+    ``+phi_i*c`` for foreign work and ``-(1-phi_i)*c`` for its own work.
+    Active work uses the admission estimate, which is an upper bound under the
+    formal fixed-output-cap contract; completion correction remains the source
+    of truth.  The active-set share is recomputed for every decision.
+    """
+
+    total_weight = sum(item.release.weight for item in states)
+    if total_weight <= 0:
+        raise ValueError("bounded SAOR active-set weight must be positive")
+    target_share = state.release.weight / total_weight
+    own_work = state.release.active_work
+    foreign_work = sum(
+        item.release.active_work
+        for item in states
+        if item.release.job_id != state.release.job_id
+    )
+    candidate_work = state.head_work if state.ready else 0
+    repayment_fraction = max(0.0, 1.0 - target_share)
+    before = (
+        state.release.fairness_debt
+        + target_share * foreign_work
+        - repayment_fraction * own_work
+    )
+    after = before - repayment_fraction * candidate_work
+    return SaorDebtProjection(
+        total_weight=total_weight,
+        target_share=target_share,
+        own_inflight_work=own_work,
+        foreign_residual_work=foreign_work,
+        candidate_work=candidate_work,
+        debt_before_candidate=before,
+        debt_after_candidate=after,
+        discrete_overshoot_bound=repayment_fraction * candidate_work,
+    )
+
+
+def bounded_saor_recovery_required(
+    state: SaorBoundedHeadState,
+    states: tuple[SaorBoundedHeadState, ...],
+) -> bool:
+    """Return whether one more indivisible recovery request is justified."""
+
+    if not state.ready or state.debt_cap is None:
+        return False
+    projection = project_bounded_saor_debt(state, states)
+    return bool(
+        state.release.weight < projection.total_weight
+        and projection.debt_before_candidate >= state.debt_cap
+    )
+
+
+def select_bounded_saor_release(
+    states: tuple[SaorBoundedHeadState, ...],
+    *,
+    request_limit: int,
+    work_limit: int,
+    active_work: int,
+    config: SaorReleaseConfig,
+) -> SaorBoundedSelection:
+    """Choose one release by debt, bounded SLO priority, then SAOR.
+
+    The only non-work-conserving action is a reclaim hold for one concrete,
+    ready, projected-debt-critical head that does not yet fit.  The projection
+    accounts for all own active work and all non-preemptible foreign residual,
+    so completion delay cannot fill the whole envelope with duplicate recovery
+    commitments.  Existing model-service work remains non-preemptive.
+    """
+
+    if request_limit <= 0 or work_limit <= 0:
+        raise ValueError("SAOR release limits must be positive")
+    if active_work < 0 or active_work > work_limit:
+        raise ValueError("active work must lie inside the work limit")
+    if not states:
+        raise ValueError("bounded SAOR requires at least one Job state")
+    job_ids = tuple(state.release.job_id for state in states)
+    if len(job_ids) != len(set(job_ids)):
+        raise ValueError("bounded SAOR states must contain each Job once")
+    if any(state.head_work > work_limit for state in states):
+        raise ValueError("ready head exceeds work limit")
+
+    fitting = tuple(
+        state for state in states if state.ready and state.release.eligible
+    )
+    priority = tuple(
+        state
+        for state in fitting
+        if state.priority > 0
+        and state.remaining_slo_budget_s is not None
+        and state.priority_window_s is not None
+        and state.remaining_slo_budget_s <= state.priority_window_s
+    )
+    critical = tuple(
+        state
+        for state in states
+        if bounded_saor_recovery_required(state, states)
+    )
+    fitting_critical = tuple(state for state in critical if state.release.eligible)
+    debt_key = lambda state: (
+        -project_bounded_saor_debt(
+            state,
+            states,
+        ).debt_before_candidate / float(state.debt_cap),
+        state.release.arrival_order,
+        state.release.job_id,
+    )
+    if fitting_critical:
+        selected = min(fitting_critical, key=debt_key)
+        conflict = any(item.release.job_id != selected.release.job_id for item in priority)
+        return SaorBoundedSelection(
+            "grant", "debt_recovery", selected.release.job_id, 0, conflict
+        )
+    if critical:
+        selected = min(critical, key=debt_key)
+        reclaim = max(0, selected.head_work - (work_limit - active_work))
+        conflict = any(item.release.job_id != selected.release.job_id for item in priority)
+        return SaorBoundedSelection(
+            "hold",
+            "guard_reclaim_hold",
+            selected.release.job_id,
+            reclaim,
+            conflict,
+        )
+    if priority:
+        selected = min(
+            priority,
+            key=lambda state: (
+                -state.priority,
+                float(state.remaining_slo_budget_s),
+                state.release.arrival_order,
+                state.release.job_id,
+            ),
+        )
+        return SaorBoundedSelection("grant", "slo_priority", selected.release.job_id)
+    if not fitting:
+        raise ValueError("bounded SAOR requires a fitting head or reclaim target")
+    selected = select_saor_release_job(
+        tuple(state.release for state in states),
+        request_limit=request_limit,
+        work_limit=work_limit,
+        config=config,
+    )
+    return SaorBoundedSelection("grant", "saor_fallback", selected.job_id)
 
 
 def select_saor_release_job(

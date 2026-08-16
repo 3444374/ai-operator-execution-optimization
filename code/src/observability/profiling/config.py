@@ -103,3 +103,65 @@ def ray_worker_options(
             else 1
         ),
     )
+
+
+def validate_shared_credit_policy_args(args: argparse.Namespace) -> None:
+    """Fail closed on bounded-priority policy inputs before runtime setup."""
+
+    observation = args.shared_ready_observation_contract
+    ready_bytes = args.shared_ready_payload_bytes_limit
+    if observation == "bounded_concrete_pre_registration":
+        if not args.shared_credit_coordinator_name:
+            raise SystemExit(
+                "bounded ready observation requires shared credit"
+            )
+        if args.submission_granularity != "request":
+            raise SystemExit(
+                "bounded ready observation requires request granularity"
+            )
+        if ready_bytes <= 0:
+            raise SystemExit(
+                "bounded ready observation requires a positive logical "
+                "payload-byte limit"
+            )
+    elif ready_bytes != 0:
+        raise SystemExit(
+            "shared ready payload-byte limit requires bounded ready observation"
+        )
+
+    if args.shared_credit_policy not in {
+        "saor_bounded_priority",
+        "saor_bounded_ready",
+    }:
+        return
+    if not args.arrival_replay:
+        raise SystemExit("bounded priority requires arrival replay")
+    if args.submission_granularity != "request":
+        raise SystemExit("bounded priority requires request granularity")
+    slo_ms = float(args.shared_credit_job_slo_ms)
+    window_ms = float(args.shared_credit_priority_window_ms)
+    cap = float(args.shared_credit_job_debt_cap_work)
+    acquire_timeout_s = (
+        args.completion_request_timeout_s
+        if args.operator == "ai_complete"
+        else args.embedding_request_timeout_s
+    )
+    if not math.isfinite(acquire_timeout_s) or acquire_timeout_s <= 0:
+        raise SystemExit("shared-credit acquire timeout must be positive")
+    if args.shared_credit_job_priority > 0 and (
+        not math.isfinite(slo_ms)
+        or not math.isfinite(window_ms)
+        or slo_ms <= 0
+        or window_ms <= 0
+    ):
+        raise SystemExit(
+            "bounded priority Job requires a positive SLO target and priority window"
+        )
+    if cap < 0 or not math.isfinite(cap):
+        raise SystemExit("bounded priority debt cap must be finite and non-negative")
+    if args.shared_credit_job_priority == 0 and window_ms != 0:
+        raise SystemExit("priority window requires positive Job priority")
+    if args.shared_credit_job_priority == 0 and slo_ms != 0:
+        raise SystemExit("Job SLO target requires positive Job priority")
+    if args.shared_credit_job_priority > 0 and cap != 0:
+        raise SystemExit("priority Job and debt-cap Job must be explicit distinct roles")

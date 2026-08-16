@@ -14,6 +14,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
+    _GuardHold,
 )
 from src.scheduling.submission_control.saor import (  # noqa: E402
     SaorReleaseConfig,
@@ -21,6 +22,799 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_hold_start_marks_nonconcrete_guard_as_avoidable_idle(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="saor_bounded_priority",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        coordinator._record_release_event(
+            "gpu0",
+            action="hold_start",
+            tier="guard_reclaim_hold",
+            target=_GuardHold("bulk", "r0", 80, 20, 0.0, False),
+            states=(),
+        )
+
+        event = coordinator.drain_release_events("gpu0")[0]
+        self.assertTrue(event.avoidable_idle)
+
+    def test_matched_ready_fifo_records_selector_neutral_lifecycle(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="fifo",
+            record_ready_lifecycle_events=True,
+        )
+
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="r0",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=10,
+            )
+        )
+        events = coordinator.drain_release_events("gpu0")
+        self.assertEqual(
+            [(event.action, event.tier) for event in events],
+            [
+                ("register", "ready_registration"),
+                ("grant", "selector_grant:fifo"),
+            ],
+        )
+
+    def test_native_style_fifo_does_not_record_project_ready_events(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="fifo",
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="r0",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=10,
+            )
+        )
+        self.assertEqual(coordinator.drain_release_events("gpu0"), ())
+
+    def test_bounded_ready_policy_uses_bounded_priority_selector(self) -> None:
+        epochs = iter((100.0, 101.0))
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="saor_bounded_ready",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+            epoch_clock=lambda: next(epochs),
+        )
+
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="r0",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=10,
+                priority=1,
+                slo_budget_remaining_s=1.0,
+                priority_window_s=30.0,
+            )
+        )
+        events = coordinator.drain_release_events("gpu0")
+        self.assertEqual(
+            [(event.action, event.selected_request_id) for event in events],
+            [("register", "r0"), ("grant", "r0")],
+        )
+        self.assertEqual(
+            [event.event_epoch_s for event in events],
+            [100.0, 101.0],
+        )
+
+    @staticmethod
+    def bounded_coordinator(
+        *,
+        request_limit: int = 3,
+        work_limit: int = 300,
+    ) -> FairEndpointCreditCoordinator:
+        return FairEndpointCreditCoordinator(
+            {"gpu0": (request_limit, work_limit)},
+            quantum=100,
+            policy="saor_bounded_priority",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+    def test_bounded_priority_requires_explicit_stable_job_contract(self) -> None:
+        coordinator = self.bounded_coordinator(request_limit=1, work_limit=100)
+
+        with self.assertRaisesRegex(ValueError, "priority requires"):
+            coordinator.try_acquire(
+                request_id="invalid",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=10,
+                priority=1,
+            )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="valid",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=10,
+                priority=1,
+                slo_budget_remaining_s=20.0,
+                priority_window_s=30.0,
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "stable priority window"):
+            coordinator.try_acquire(
+                request_id="changed",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=10,
+                priority=1,
+                slo_budget_remaining_s=19.0,
+                priority_window_s=10.0,
+            )
+
+    def test_bounded_priority_bounds_multiple_recovery_leases_by_work(
+        self,
+    ) -> None:
+        coordinator = self.bounded_coordinator(
+            request_limit=6,
+            work_limit=600,
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-active",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-residual",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 200.0
+        for index in range(3):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=f"bulk-recovery-{index}",
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=80,
+                    fairness_debt_cap=100.0,
+                )
+            )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-priority",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=80,
+                priority=1,
+                slo_budget_remaining_s=4.0,
+                priority_window_s=30.0,
+            )
+        )
+
+        events = coordinator.drain_release_events("gpu0")
+        recovery = [event for event in events if event.tier == "debt_recovery"]
+        self.assertEqual(
+            [event.selected_request_id for event in recovery],
+            ["bulk-recovery-0", "bulk-recovery-1", "bulk-recovery-2"],
+        )
+        self.assertEqual(events[-1].tier, "slo_priority")
+        # Hand oracle: D+=200+0.5*100-0.5*100=200. Three 80-work
+        # commitments cross H=100; 240 <= 200 required + one 80 quantum.
+        self.assertEqual(
+            coordinator.snapshot("gpu0").recovery_inflight_by_job,
+            (
+                (
+                    "bulk",
+                    (
+                        "bulk-recovery-0",
+                        "bulk-recovery-1",
+                        "bulk-recovery-2",
+                    ),
+                ),
+            ),
+        )
+        self.assertEqual(
+            coordinator.snapshot("gpu0").recovery_inflight_work_by_job,
+            (("bulk", 240),),
+        )
+
+    def test_bounded_priority_recovery_reduces_debt_during_overlap(
+        self,
+    ) -> None:
+        coordinator = self.bounded_coordinator(request_limit=5, work_limit=500)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-active",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-residual",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 180.0
+        for request_id in ("recovery-0", "recovery-1"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=80,
+                    fairness_debt_cap=100.0,
+                )
+            )
+
+        coordinator.release("recovery-0", job_id="bulk", actual_work=80)
+
+        debt = dict(coordinator.snapshot("gpu0").fairness_debt_by_job)
+        self.assertEqual(debt["bulk"], 140.0)
+        events = coordinator.drain_release_events("gpu0")
+        recovery = [event for event in events if event.tier == "debt_recovery"]
+        self.assertEqual(len(recovery), 2)
+        completion = [event for event in events if event.action == "completion"][-1]
+        self.assertEqual(dict(completion.debt_by_job)["bulk"], 140.0)
+
+    def test_bounded_priority_completion_correction_reenters_recovery(
+        self,
+    ) -> None:
+        coordinator = self.bounded_coordinator(request_limit=3, work_limit=300)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-active",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-residual",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 180.0
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="recovery-overestimate",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=80,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="recovery-after-correction",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=20,
+                fairness_debt_cap=100.0,
+            )
+        )
+
+        coordinator.release(
+            "recovery-overestimate",
+            job_id="bulk",
+            actual_work=40,
+        )
+
+        events = coordinator.drain_release_events("gpu0")
+        recovery_ids = [
+            event.selected_request_id
+            for event in events
+            if event.tier == "debt_recovery"
+        ]
+        self.assertEqual(
+            recovery_ids,
+            ["recovery-overestimate", "recovery-after-correction"],
+        )
+
+    def test_bounded_priority_underestimate_exits_and_records_overrun(
+        self,
+    ) -> None:
+        coordinator = self.bounded_coordinator(request_limit=3, work_limit=300)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-active",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-residual",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 130.0
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="recovery-underestimate",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=80,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground-waiting",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=20,
+                priority=1,
+                slo_budget_remaining_s=4.0,
+                priority_window_s=30.0,
+            )
+        )
+
+        coordinator.release(
+            "recovery-underestimate",
+            job_id="bulk",
+            actual_work=160,
+        )
+
+        events = coordinator.drain_release_events("gpu0")
+        completion = [
+            event
+            for event in events
+            if event.action == "completion"
+            and event.selected_request_id == "recovery-underestimate"
+        ][0]
+        self.assertEqual(completion.projection_estimation_overrun_work, 80)
+        self.assertEqual(completion.recovery_estimation_overrun_work, 80)
+        self.assertEqual(events[-1].tier, "slo_priority")
+
+    def test_bounded_priority_reclaim_hold_targets_ready_head_then_resumes(
+        self,
+    ) -> None:
+        coordinator = self.bounded_coordinator(request_limit=4, work_limit=200)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-active",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-active",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=50,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-recovery",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=120,
+                fairness_debt_cap=100.0,
+            )
+        )
+        coordinator.release(
+            "foreground-active",
+            job_id="foreground",
+            actual_work=400,
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground-waiting",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=20,
+                priority=1,
+                slo_budget_remaining_s=4.0,
+                priority_window_s=30.0,
+            )
+        )
+        held = coordinator.snapshot("gpu0")
+        self.assertEqual(held.guard_hold_target_job_id, "bulk")
+        self.assertEqual(held.guard_reclaim_debt, 20)
+
+        coordinator.release("bulk-active", job_id="bulk", actual_work=100)
+
+        resumed = coordinator.snapshot("gpu0")
+        self.assertEqual(
+            resumed.active_by_job,
+            (("bulk", 1), ("foreground", 1)),
+        )
+        self.assertEqual(resumed.guard_hold_target_job_id, "")
+        events = coordinator.drain_release_events("gpu0")
+        actions = [(event.action, event.tier) for event in events]
+        self.assertIn(("hold_start", "guard_reclaim_hold"), actions)
+        self.assertIn(("hold_end", "guard_reclaim_hold"), actions)
+        self.assertIn(("grant", "debt_recovery"), actions)
+        self.assertLess(
+            next(i for i, item in enumerate(actions) if item == ("hold_end", "guard_reclaim_hold")),
+            next(
+                i
+                for i, event in enumerate(events)
+                if event.action == "grant"
+                and event.tier == "slo_priority"
+                and event.selected_request_id == "foreground-waiting"
+            ),
+        )
+
+    def test_bounded_priority_unready_debt_and_nonfitting_priority_do_not_hold(
+        self,
+    ) -> None:
+        coordinator = self.bounded_coordinator(request_limit=2, work_limit=100)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="active",
+                job_id="other",
+                endpoint_id="gpu0",
+                estimated_work=80,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 100.0
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="priority-too-large",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=80,
+                priority=1,
+                slo_budget_remaining_s=1.0,
+                priority_window_s=30.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="fallback",
+                job_id="other",
+                endpoint_id="gpu0",
+                estimated_work=20,
+            )
+        )
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(snapshot.guard_hold_target_job_id, "")
+        self.assertEqual(snapshot.active_by_job, (("other", 2),))
+
+    def test_bounded_priority_debt_uses_actual_completion_work(self) -> None:
+        coordinator = self.bounded_coordinator(request_limit=2, work_limit=200)
+        for job_id in ("a", "b"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=f"{job_id}-active",
+                    job_id=job_id,
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+
+        coordinator.release("a-active", job_id="a", actual_work=60)
+
+        self.assertEqual(
+            coordinator.snapshot("gpu0").fairness_debt_by_job,
+            (("a", 0.0), ("b", 30.0)),
+        )
+
+    def test_bounded_priority_hold_event_is_auditable_and_capacity_is_safe(
+        self,
+    ) -> None:
+        now = [0.0]
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (3, 200)},
+            quantum=100,
+            policy="saor_bounded_priority",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+            clock=lambda: now[0],
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-active",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=100.0,
+            )
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="foreground-active",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=50,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-recovery",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=120,
+                fairness_debt_cap=100.0,
+            )
+        )
+        coordinator.release(
+            "foreground-active",
+            job_id="foreground",
+            actual_work=400,
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground-waiting",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=20,
+                priority=1,
+                slo_budget_remaining_s=4.0,
+                priority_window_s=30.0,
+            )
+        )
+        held = coordinator.snapshot("gpu0")
+        self.assertLessEqual(held.active_requests, held.request_limit)
+        self.assertLessEqual(held.active_work, held.work_limit)
+
+        now[0] = 2.5
+        coordinator.release("bulk-active", job_id="bulk", actual_work=100)
+        events = coordinator.drain_release_events("gpu0")
+        hold_end = next(event for event in events if event.action == "hold_end")
+        self.assertEqual(hold_end.target_job_id, "bulk")
+        self.assertEqual(hold_end.head_work, 120)
+        self.assertEqual(hold_end.reclaim_debt, 20)
+        self.assertEqual(hold_end.hold_duration_s, 2.5)
+        self.assertFalse(hold_end.avoidable_idle)
+        self.assertFalse(hold_end.foreign_grant_over_debt_critical)
+
+    def test_bounded_priority_rejects_oversized_work_before_queueing(self) -> None:
+        coordinator = self.bounded_coordinator(request_limit=1, work_limit=100)
+
+        with self.assertRaisesRegex(ValueError, "exceeds endpoint work limit"):
+            coordinator.try_acquire(
+                request_id="oversized",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=101,
+                fairness_debt_cap=25.0,
+            )
+
+        self.assertEqual(coordinator.snapshot("gpu0").waiting_requests, 0)
+
+    def test_cancel_waiter_removes_timed_out_request_and_guard_hold(self) -> None:
+        coordinator = self.bounded_coordinator(request_limit=2, work_limit=100)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="active",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=80,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 100.0
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="timed-out",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=40,
+                fairness_debt_cap=100.0,
+            )
+        )
+
+        self.assertTrue(
+            coordinator.cancel_waiter("timed-out", job_id="bulk")
+        )
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(snapshot.waiting_requests, 0)
+        self.assertEqual(snapshot.guard_hold_target_request_id, "")
+        self.assertFalse(
+            coordinator.cancel_waiter("timed-out", job_id="bulk")
+        )
+
+    def test_strict_priority_reclaims_future_releases_without_preemption(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        for request_id in ("bulk-active-0", "bulk-active-1"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                    priority=0,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-waiting",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+            )
+        )
+
+        coordinator.release("bulk-active-0", job_id="bulk", actual_work=100)
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(
+            snapshot.active_by_job,
+            (("bulk", 1), ("foreground", 1)),
+        )
+        self.assertEqual(snapshot.waiting_by_job, (("bulk", 1),))
+
+    def test_strict_priority_requires_stable_job_priority(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        coordinator.try_acquire(
+            request_id="first",
+            job_id="foreground",
+            endpoint_id="gpu0",
+            estimated_work=100,
+            priority=1,
+        )
+
+        with self.assertRaisesRegex(ValueError, "stable priority"):
+            coordinator.try_acquire(
+                request_id="second",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=2,
+            )
+
+    def test_strict_priority_holds_bulk_during_foreground_refill_gap(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        for request_id in ("bulk-active-0", "bulk-active-1"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                    priority=0,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-waiting",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground-only",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+            )
+        )
+        coordinator.release("bulk-active-0", job_id="bulk")
+
+        coordinator.release("bulk-active-1", job_id="bulk")
+
+        self.assertEqual(
+            coordinator.snapshot("gpu0").active_by_job,
+            (("foreground", 1),),
+        )
+        self.assertEqual(
+            coordinator.snapshot("gpu0").waiting_by_job,
+            (("bulk", 1),),
+        )
+        coordinator.release("foreground-only", job_id="foreground")
+        self.assertEqual(coordinator.snapshot("gpu0").active_requests, 0)
+        coordinator.finish_job("foreground")
+        self.assertEqual(
+            coordinator.snapshot("gpu0").active_by_job,
+            (("bulk", 1),),
+        )
+
+    def test_finish_job_rejects_outstanding_credit(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        coordinator.try_acquire(
+            request_id="active",
+            job_id="foreground",
+            endpoint_id="gpu0",
+            estimated_work=100,
+            priority=1,
+        )
+
+        with self.assertRaisesRegex(ValueError, "outstanding credit"):
+            coordinator.finish_job("foreground")
+
+    def test_bounded_finish_job_emits_explicit_lifecycle_event(self) -> None:
+        coordinator = self.bounded_coordinator(request_limit=1, work_limit=100)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="bulk-final",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                fairness_debt_cap=50.0,
+            )
+        )
+        coordinator.release("bulk-final", job_id="bulk", actual_work=100)
+        coordinator.drain_release_events("gpu0")
+
+        coordinator.finish_job("bulk")
+
+        event = coordinator.drain_release_events("gpu0")[-1]
+        self.assertEqual(event.action, "finish_job")
+        self.assertEqual(event.tier, "job_lifecycle_complete")
+        self.assertEqual(event.selected_job_id, "bulk")
+        self.assertEqual(event.recovery_inflight_by_job, ())
+
     def test_capacity_downshift_drains_active_leases_without_revocation(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (2, 200)},

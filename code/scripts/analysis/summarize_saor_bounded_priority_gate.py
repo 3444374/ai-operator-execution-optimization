@@ -1,0 +1,350 @@
+#!/usr/bin/env python3
+"""Fail-closed two-round development gate for bounded-priority SAOR."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+import statistics
+import sys
+from pathlib import Path
+
+CODE_ROOT = next(
+    parent
+    for parent in Path(__file__).resolve().parents
+    if (parent / "src").is_dir()
+)
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.experiments.shared_vllm.metrics import (  # noqa: E402
+    bounded_saor_event_summary,
+)
+
+
+EXPECTED = {
+    "active_set_static_partition": "static_partition",
+    "active_set_saor_release": "saor_release",
+    "active_set_saor_bounded_priority_0125k": "saor_bounded_priority",
+    "active_set_saor_bounded_priority_025k": "saor_bounded_priority",
+}
+BOUNDED_READY_EXPECTED = {
+    "active_set_static_partition": "static_partition",
+    "active_set_saor_release": "saor_release",
+    "active_set_saor_bounded_ready_0125k": "saor_bounded_ready",
+    "active_set_saor_bounded_ready_025k": "saor_bounded_ready",
+}
+P99_LIMIT_S = 30.7
+FOREGROUND_SLO_LIMIT = 0.01
+BULK_SLO_LIMIT = 0.723
+THROUGHPUT_FLOOR = 9984.0
+
+
+def _args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--matrix-root", action="append", required=True, type=Path)
+    parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--profile",
+        choices=("bounded_priority", "bounded_ready"),
+        default="bounded_priority",
+    )
+    return parser.parse_args()
+
+
+def _read(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _write(path: Path, rows: list[dict[str, object]]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _array(row: dict[str, str], key: str) -> list[float]:
+    values = json.loads(row[key])
+    if not isinstance(values, list) or len(values) != 2:
+        raise ValueError(f"{key} must contain two values")
+    resolved = [float(value) for value in values]
+    if any(not math.isfinite(value) for value in resolved):
+        raise ValueError(f"{key} contains non-finite values")
+    return resolved
+
+
+def _truth(value: object) -> bool:
+    return str(value).strip().lower() in {"1", "true"}
+
+
+def _event_summary(events: list[dict[str, str]]) -> dict[str, object]:
+    summary = bounded_saor_event_summary(events)
+    versions = {
+        int(event.get("schema_version", "0") or 0)
+        for event in events
+    }
+    projection_required = any(version >= 5 for version in versions)
+    return {
+        "event_sequence_complete": summary[
+            "bounded_saor_event_sequence_complete"
+        ],
+        "event_count": len(events),
+        "slo_priority_grants": summary["bounded_saor_slo_priority_grants"],
+        "debt_recovery_grants": summary["bounded_saor_debt_recovery_grants"],
+        "constraint_conflicts": summary["bounded_saor_constraint_conflicts"],
+        "recovery_inflight_requests_max": summary[
+            "bounded_saor_recovery_inflight_max"
+        ],
+        "recovery_inflight_work_max": summary[
+            "bounded_saor_recovery_inflight_work_max"
+        ],
+        "projection_required": projection_required,
+        "projection_status": summary["bounded_saor_projection_status"],
+        "projection_violation_events": summary[
+            "bounded_saor_projection_violation_events"
+        ],
+        "recovery_estimation_overrun_events": summary[
+            "bounded_saor_recovery_estimation_overrun_events"
+        ],
+        "projection_estimation_overrun_events": summary[
+            "bounded_saor_projection_estimation_overrun_events"
+        ],
+        "avoidable_idle_events": summary[
+            "bounded_saor_avoidable_idle_events"
+        ],
+        "foreign_grant_events": summary[
+            "bounded_saor_foreign_grant_over_debt_critical_events"
+        ],
+    }
+
+
+def summarize(
+    roots: tuple[Path, ...],
+    output: Path,
+    *,
+    profile: str = "bounded_priority",
+) -> dict[str, object]:
+    expected = (
+        EXPECTED
+        if profile == "bounded_priority"
+        else BOUNDED_READY_EXPECTED
+        if profile == "bounded_ready"
+        else None
+    )
+    if expected is None:
+        raise ValueError(f"unknown bounded gate profile: {profile}")
+    errors: list[str] = []
+    gate_rows: list[dict[str, object]] = []
+    mechanism_rows: list[dict[str, object]] = []
+    identities: list[tuple[str, str, str]] = []
+    if len(roots) != 2:
+        errors.append("bounded gate requires exactly two matrix roots")
+    for round_index, root in enumerate(roots, start=1):
+        try:
+            manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+            rows = _read(root / "group_runs.csv")
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"round {round_index} evidence is unreadable: {exc}")
+            continue
+        if (
+            manifest.get("status") != "completed"
+            or manifest.get("execution_mode") != "rehearsal"
+            or manifest.get("incidents")
+        ):
+            errors.append(f"round {round_index} is not a clean rehearsal")
+        service_signature = json.dumps(
+            manifest.get("redacted_config", {}).get("service_metadata", {}),
+            sort_keys=True,
+        )
+        identities.append(
+            (
+                str(manifest.get("config_fingerprint", "")),
+                str(manifest.get("repository_commit", "")),
+                service_signature,
+            )
+        )
+        observed = {row.get("scenario_id", ""): row.get("policy", "") for row in rows}
+        if observed != expected or len(rows) != 4:
+            errors.append(f"round {round_index} does not contain the frozen four arms")
+        for scenario_id, policy in expected.items():
+            selected = [row for row in rows if row.get("scenario_id") == scenario_id]
+            if len(selected) != 1:
+                continue
+            row = selected[0]
+            correctness = bool(
+                row.get("execution_mode") == "rehearsal"
+                and row.get("phase") == "warmup"
+                and int(row.get("incidents", "-1")) == 0
+                and row.get("metrics_status") == "ok"
+                and row.get("resource_metrics_status") == "ok"
+                and int(row.get("actor_worker_failures", "-1")) == 0
+                and _truth(row.get("active_set_lifecycle_passed"))
+                and _array(row, "job_arrived_rows")
+                == _array(row, "job_completed_rows")
+                and _array(row, "job_failed_rows") == [0.0, 0.0]
+            )
+            p99 = _array(row, "job_p99_s")
+            slo = _array(row, "job_slo_violation_ratio")
+            throughput = float(row["tokens_per_s"])
+            gate = {
+                "round": round_index,
+                "scenario_id": scenario_id,
+                "policy": policy,
+                "correctness_passed": correctness,
+                "tokens_per_s": throughput,
+                "foreground_p99_s": p99[1],
+                "foreground_slo_violation": slo[1],
+                "bulk_slo_violation": slo[0],
+                "foreground_passed": p99[1] <= P99_LIMIT_S and slo[1] <= FOREGROUND_SLO_LIMIT,
+                "efficiency_passed": throughput >= THROUGHPUT_FLOOR,
+                "bulk_protection_passed": slo[0] <= BULK_SLO_LIMIT,
+            }
+            if policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+                event_path = root / row.get("release_event_trace_path", "")
+                if not event_path.is_file():
+                    errors.append(
+                        f"round {round_index} {scenario_id} event ledger is missing"
+                    )
+                    mechanism = _event_summary([])
+                else:
+                    mechanism = _event_summary(_read(event_path))
+                    if not mechanism["event_sequence_complete"]:
+                        errors.append(
+                            f"round {round_index} {scenario_id} event ledger "
+                            "has a gap, duplicate, or empty sequence"
+                        )
+                mechanism_passed = bool(
+                    mechanism["event_sequence_complete"]
+                    and mechanism["slo_priority_grants"] >= 1
+                    and mechanism["debt_recovery_grants"] >= 1
+                    and mechanism["avoidable_idle_events"] == 0
+                    and mechanism["foreign_grant_events"] == 0
+                    and (
+                        not mechanism["projection_required"]
+                        or (
+                            mechanism["projection_status"]
+                            == "ok:offline_recomputed"
+                            and mechanism["projection_violation_events"] == 0
+                            and mechanism["recovery_inflight_work_max"] > 0
+                            and mechanism[
+                                "projection_estimation_overrun_events"
+                            ]
+                            == 0
+                            and mechanism[
+                                "recovery_estimation_overrun_events"
+                            ]
+                            == 0
+                        )
+                    )
+                )
+                if policy == "saor_bounded_ready":
+                    ready_join_passed = bool(
+                        row.get("bounded_ready_event_status")
+                        == "ok:actor_event_join"
+                        and _truth(row.get("bounded_ready_lifecycle_complete"))
+                        and int(
+                            row.get("bounded_ready_foreground_intervals", "0")
+                        )
+                        >= 1
+                        and int(
+                            row.get(
+                                "bounded_ready_foreground_max_ready_requests_seen",
+                                "0",
+                            )
+                        )
+                        >= 2
+                        and int(
+                            row.get(
+                                "bounded_ready_foreground_max_ready_work_seen",
+                                "0",
+                            )
+                        )
+                        > 0
+                        and int(
+                            row.get(
+                                "bounded_ready_foreign_fallback_events",
+                                "-1",
+                            )
+                        )
+                        == 0
+                    )
+                    mechanism["ready_join_passed"] = ready_join_passed
+                    mechanism_passed = mechanism_passed and ready_join_passed
+                mechanism_rows.append(
+                    {"round": round_index, "scenario_id": scenario_id, **mechanism}
+                )
+            else:
+                mechanism_passed = True
+            gate["mechanism_passed"] = mechanism_passed
+            gate["all_gates_passed"] = bool(
+                correctness
+                and gate["foreground_passed"]
+                and gate["efficiency_passed"]
+                and gate["bulk_protection_passed"]
+                and mechanism_passed
+            )
+            gate_rows.append(gate)
+    if identities and (any(not all(identity) for identity in identities) or len(set(identities)) != 1):
+        errors.append("rounds do not share config fingerprint, commit, and service signature")
+    caps = tuple(expected)[-2:]
+    cap_pass = {
+        cap: len([row for row in gate_rows if row["scenario_id"] == cap]) == 2
+        and all(row["all_gates_passed"] for row in gate_rows if row["scenario_id"] == cap)
+        for cap in caps
+    }
+    if any(cap_pass.values()):
+        conclusion = "formal_registration_candidate"
+    elif all(
+        row["foreground_passed"]
+        for row in gate_rows
+        if row["scenario_id"] in caps
+    ) and any(row["scenario_id"] in caps for row in gate_rows):
+        conclusion = "constraint_conflict_stop"
+    else:
+        conclusion = "diagnostic_only"
+    status = "passed" if not errors else "failed"
+    output.mkdir(parents=True, exist_ok=True)
+    if gate_rows:
+        _write(output / "gate_summary.csv", gate_rows)
+    if mechanism_rows:
+        _write(output / "mechanism_summary.csv", mechanism_rows)
+    payload: dict[str, object] = {
+        "schema_version": 2,
+        "profile": profile,
+        "status": status,
+        "conclusion": conclusion if not errors else "diagnostic_only",
+        "matrix_roots": [str(root) for root in roots],
+        "cap_passed_both_rounds": cap_pass,
+        "thresholds": {
+            "foreground_p99_s": P99_LIMIT_S,
+            "foreground_slo_violation": FOREGROUND_SLO_LIMIT,
+            "bulk_slo_violation": BULK_SLO_LIMIT,
+            "tokens_per_s": THROUGHPUT_FLOOR,
+        },
+        "slowdown_is_diagnostic_only": True,
+        "errors": errors,
+    }
+    (output / "validation.json").write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    if errors:
+        raise ValueError("; ".join(errors))
+    return payload
+
+
+def main() -> int:
+    args = _args()
+    summarize(
+        tuple(path.resolve() for path in args.matrix_root),
+        args.output_dir.resolve(),
+        profile=args.profile,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

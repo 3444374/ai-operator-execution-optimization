@@ -16,6 +16,26 @@ HttpTransport = Callable[
     [str, dict[str, object]],
     Awaitable[dict[str, Any]],
 ]
+RequestWorkEstimator = Callable[[ChatRequest], int]
+
+
+@dataclass(frozen=True)
+class HttpAdmissionEvent:
+    """One post-transition snapshot from an endpoint-local HTTP gate."""
+
+    event_epoch_s: float
+    action: Literal["acquire", "release"]
+    doc_id: int
+    endpoint_index: int
+    estimated_work: int
+    active_requests: int
+    active_work: int
+    request_limit: int
+    work_limit: int | None
+    admission_wait_s: float
+
+
+AdmissionEventSink = Callable[[HttpAdmissionEvent], None]
 
 
 @dataclass(frozen=True)
@@ -44,6 +64,42 @@ class TimedHttpJob:
     job_id: str
     requests: tuple[ChatRequest, ...]
     arrival_offset_s: float = 0.0
+
+
+class _EndpointWorkGate:
+    """Atomically reserve request slots and estimated work for one endpoint."""
+
+    def __init__(self, request_limit: int, work_limit: int) -> None:
+        self._request_limit = request_limit
+        self._work_limit = work_limit
+        self._active_requests = 0
+        self._active_work = 0
+        self._condition = asyncio.Condition()
+
+    async def acquire(self, estimated_work: int) -> tuple[int, int]:
+        if estimated_work > self._work_limit:
+            raise ValueError(
+                "one request estimated work exceeds the endpoint work limit"
+            )
+        async with self._condition:
+            await self._condition.wait_for(
+                lambda: (
+                    self._active_requests < self._request_limit
+                    and self._active_work + estimated_work <= self._work_limit
+                )
+            )
+            self._active_requests += 1
+            self._active_work += estimated_work
+            return self._active_requests, self._active_work
+
+    async def release(self, estimated_work: int) -> tuple[int, int]:
+        async with self._condition:
+            self._active_requests -= 1
+            self._active_work -= estimated_work
+            if self._active_requests < 0 or self._active_work < 0:
+                raise RuntimeError("endpoint work gate accounting underflow")
+            self._condition.notify_all()
+            return self._active_requests, self._active_work
 
 
 def _validate_config(
@@ -130,10 +186,31 @@ async def _run_requests(
     requests: tuple[ChatRequest, ...],
     config: BoundedHttpConfig,
     transport: HttpTransport,
+    *,
+    work_limit_per_endpoint: int | None = None,
+    request_work_estimator: RequestWorkEstimator | None = None,
+    admission_event_sink: AdmissionEventSink | None = None,
 ) -> tuple[BaselineRequestResult, ...]:
+    if work_limit_per_endpoint is not None and work_limit_per_endpoint <= 0:
+        raise ValueError("work_limit_per_endpoint must be positive")
+    if work_limit_per_endpoint is not None and request_work_estimator is None:
+        raise ValueError("a work limit requires a request work estimator")
     semaphores = tuple(
         asyncio.Semaphore(config.concurrency_per_endpoint) for _ in config.endpoint_urls
     )
+    work_gates = (
+        tuple(
+            _EndpointWorkGate(
+                config.concurrency_per_endpoint,
+                work_limit_per_endpoint,
+            )
+            for _ in config.endpoint_urls
+        )
+        if work_limit_per_endpoint is not None
+        else ()
+    )
+    active_requests = [0] * len(config.endpoint_urls)
+    active_work = [0] * len(config.endpoint_urls)
     loop = asyncio.get_running_loop()
     if config.replay_start_epoch_s is not None:
         remaining_s = config.replay_start_epoch_s - time.time()
@@ -157,8 +234,21 @@ async def _run_requests(
                 await asyncio.sleep(remaining_s)
         submitted_at_s = time.time()
         local_index = request.endpoint_index - config.endpoint_index_offset
-        async with semaphores[local_index]:
-            started_at_s = time.time()
+        estimated_work = (
+            request_work_estimator(request)
+            if request_work_estimator is not None
+            else 0
+        )
+        if (
+            isinstance(estimated_work, bool)
+            or not isinstance(estimated_work, int)
+            or estimated_work < 0
+        ):
+            raise ValueError(
+                "request work estimator must return a non-negative integer"
+            )
+
+        async def execute() -> BaselineRequestResult:
             try:
                 prompt = request_prompt(request)
                 payload: dict[str, object] = {
@@ -206,6 +296,84 @@ async def _run_requests(
                     finish_reason=None,
                 )
 
+        if work_gates:
+            counts = await work_gates[local_index].acquire(estimated_work)
+            started_at_s = time.time()
+            if admission_event_sink is not None:
+                admission_event_sink(
+                    HttpAdmissionEvent(
+                        event_epoch_s=started_at_s,
+                        action="acquire",
+                        doc_id=request.doc_id,
+                        endpoint_index=request.endpoint_index,
+                        estimated_work=estimated_work,
+                        active_requests=counts[0],
+                        active_work=counts[1],
+                        request_limit=config.concurrency_per_endpoint,
+                        work_limit=work_limit_per_endpoint,
+                        admission_wait_s=started_at_s - submitted_at_s,
+                    )
+                )
+            try:
+                return await execute()
+            finally:
+                counts = await work_gates[local_index].release(estimated_work)
+                if admission_event_sink is not None:
+                    admission_event_sink(
+                        HttpAdmissionEvent(
+                            event_epoch_s=time.time(),
+                            action="release",
+                            doc_id=request.doc_id,
+                            endpoint_index=request.endpoint_index,
+                            estimated_work=estimated_work,
+                            active_requests=counts[0],
+                            active_work=counts[1],
+                            request_limit=config.concurrency_per_endpoint,
+                            work_limit=work_limit_per_endpoint,
+                            admission_wait_s=0.0,
+                        )
+                    )
+
+        async with semaphores[local_index]:
+            started_at_s = time.time()
+            active_requests[local_index] += 1
+            active_work[local_index] += estimated_work
+            if admission_event_sink is not None:
+                admission_event_sink(
+                    HttpAdmissionEvent(
+                        event_epoch_s=started_at_s,
+                        action="acquire",
+                        doc_id=request.doc_id,
+                        endpoint_index=request.endpoint_index,
+                        estimated_work=estimated_work,
+                        active_requests=active_requests[local_index],
+                        active_work=active_work[local_index],
+                        request_limit=config.concurrency_per_endpoint,
+                        work_limit=None,
+                        admission_wait_s=started_at_s - submitted_at_s,
+                    )
+                )
+            try:
+                return await execute()
+            finally:
+                active_requests[local_index] -= 1
+                active_work[local_index] -= estimated_work
+                if admission_event_sink is not None:
+                    admission_event_sink(
+                        HttpAdmissionEvent(
+                            event_epoch_s=time.time(),
+                            action="release",
+                            doc_id=request.doc_id,
+                            endpoint_index=request.endpoint_index,
+                            estimated_work=estimated_work,
+                            active_requests=active_requests[local_index],
+                            active_work=active_work[local_index],
+                            request_limit=config.concurrency_per_endpoint,
+                            work_limit=None,
+                            admission_wait_s=0.0,
+                        )
+                    )
+
     return tuple(await asyncio.gather(*(run_one(row) for row in requests)))
 
 
@@ -213,13 +381,24 @@ async def run_bounded_http(
     requests: Iterable[ChatRequest],
     config: BoundedHttpConfig,
     transport: HttpTransport | None = None,
+    *,
+    work_limit_per_endpoint: int | None = None,
+    request_work_estimator: RequestWorkEstimator | None = None,
+    admission_event_sink: AdmissionEventSink | None = None,
 ) -> tuple[BaselineRequestResult, ...]:
     """Run one Chat Completions request per row with endpoint-local bounds."""
 
     materialized = tuple(requests)
     _validate_config(materialized, config)
     if transport is not None:
-        return await _run_requests(materialized, config, transport)
+        return await _run_requests(
+            materialized,
+            config,
+            transport,
+            work_limit_per_endpoint=work_limit_per_endpoint,
+            request_work_estimator=request_work_estimator,
+            admission_event_sink=admission_event_sink,
+        )
 
     try:
         import httpx
@@ -261,6 +440,9 @@ async def run_bounded_http(
             materialized,
             config,
             http_transport,
+            work_limit_per_endpoint=work_limit_per_endpoint,
+            request_work_estimator=request_work_estimator,
+            admission_event_sink=admission_event_sink,
         )
 
 
@@ -268,6 +450,10 @@ async def run_bounded_http_jobs(
     jobs: Iterable[TimedHttpJob],
     config: BoundedHttpConfig,
     transport: HttpTransport | None = None,
+    *,
+    work_limit_per_endpoint: int | None = None,
+    request_work_estimator: RequestWorkEstimator | None = None,
+    admission_event_sink: AdmissionEventSink | None = None,
 ) -> dict[str, tuple[BaselineRequestResult, ...]]:
     """Replay multiple logical jobs through one shared direct-client control.
 
@@ -312,7 +498,19 @@ async def run_bounded_http_jobs(
                 )
             )
 
-    results = await run_bounded_http(merged, config, transport=transport)
+    optional: dict[str, object] = {}
+    if work_limit_per_endpoint is not None:
+        optional["work_limit_per_endpoint"] = work_limit_per_endpoint
+    if request_work_estimator is not None:
+        optional["request_work_estimator"] = request_work_estimator
+    if admission_event_sink is not None:
+        optional["admission_event_sink"] = admission_event_sink
+    results = await run_bounded_http(
+        merged,
+        config,
+        transport=transport,
+        **optional,
+    )
     grouped: dict[str, list[BaselineRequestResult]] = {
         job_id: [] for job_id in job_ids
     }

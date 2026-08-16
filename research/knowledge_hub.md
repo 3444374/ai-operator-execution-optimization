@@ -1,6 +1,6 @@
 # 知识库总汇：数据库 AI 负载的上游执行链路优化
 
-生成日期：2026-07-16（2026-07-17 更新：新增 §10 Daft+Ray 多模态与具身智能）
+生成日期：2026-07-16（最近更新：2026-08-13，新增多 Job 多文献评价合同）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -351,7 +351,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | HedraRAG (SOSP 2025) | RAG 中 CPU/GPU 协调 | 仅 RAG，非通用 AI SQL |
 | Parrot (OSDI 2024) | Semantic variable prompt 共享 | 仅 GPU 侧，不涉及上游 |
 | Clipper (NSDI 2017) | AIMD 自适应 batching | 不涉及 LLM、token、continuous batching |
+| DRF / Pisces / DRFT | 多资源或多租户的 share guarantee、weighted fairness、work conservation、隔离与 admission control | 资源模型分别是集群 slot、KV-store/服务和事务；当前项目未证明 dominant share 或事务级 guarantee |
+| Themis / Tiresias / Pollux | finish-time fairness、attained service/starvation、useful progress/goodput | 面向 gang-scheduled DL training；只迁移独占/保留份额反事实和评价，不迁移训练统计效率或 placement 机制 |
 | VTC (OSDI 2024) | token-cost 公平、work-conserving service counter | 位于 serving scheduler 内，不含数据库数据组织和 Daft/Ray runtime |
+| DLPM / Agentix | prefix locality 与 fairness/load balance；程序级 attained service/JCT | DLPM 是预印本且机制在 serving 层；Agentix 的程序 DAG/agent 语义不等于数据库 Job |
 | Llumnix (OSDI 2024) | 多实例动态调度与 KV live migration | 依赖 serving 内部迁移，不覆盖固定 endpoint 的上游 shared credit |
 | LOTUS / Palimpzest / Abacus | semantic operator 的质量、成本和物理计划优化 | 不研究固定模型服务下的最小饱和 active work 和 request-level refill |
 | SemBench (PVLDB 2026) | 多系统、多模态 semantic query benchmark | 提供 workload/指标，不提出上游调度算法 |
@@ -670,8 +673,8 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   unfinished work、active-set entitlement、idle borrowing/reclaim、fairness/SLO debt 和
   completion-driven Job-head release 验证多 Job；动态 K 标记为 `parked-conditional`。现有
   static/shared 对照尚未排除同 K global FIFO/no project Job scheduler 已经足够好，因此下一项
-  formal 必须把 global FIFO 与 DRR 设为 killer baseline；任一简单策略达到同一 Pareto 前沿即
-  淘汰 SAOR。详细模型与 benchmark 见
+  formal 前必须把 global FIFO 与 DRR 作为**项目内部简单消融**；任一简单策略达到同一 Pareto
+  前沿即淘汰 SAOR。Daft/Ray Data/产品原生 baseline 保持各自调度，不注入项目机制。详细模型与 benchmark 见
   `saor_model_scenario_audit_20260811.md`。
 - **2026-08-12 工程边界**：`saor_release` 已接入共享 Ray credit runtime；它只在离线校准并
   按签名冻结的 $K^*$ 内选择 fitting Job head，不在线调 K。当前 completion 更新 fairness debt，
@@ -687,22 +690,124 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   slowdown 3.45，在 credit 臂内前台最好；static 9,508 tok/s、fg JCT/P99 36.2/29.2s、
   slowdown 2.19、SLO violation 0%，仍是更强隔离 Pareto 点。
 - **门禁边界**：DRR/VTC rep2 的两个 Job 近乎同时结束（绝对完成时刻差约 5.8ms/4.8ms），
-  `active_set_bulk_only_post_samples=0`，使总 validation fail-closed。它说明审计器缺 simultaneous-drain 语义，
-  不证明 baseline 违反工作守恒；本轮不能发布 winner claim。
-- **第一性原理原因**：前台到达时若 bulk 已借满包络，且项目不能抢占 vLLM 已接纳请求，
-  release-only 控制的即时前台容量近似为 0，只能等 completion 回收。无 reservation 的事后
-  fairness reclaim 因而不可能免费复制 static 的即时隔离；`slo_weight=0` 又说明 formal 实际
-  验证的是 fairness-aware release，而不是 SLO-aware controller。
+  `active_set_bulk_only_post_samples=0`，使原始 validation fail-closed。它说明审计器缺 simultaneous-drain
+  语义，不证明 baseline 违反工作守恒。
+- **分辨率修订**：post-drain 是区间性质。若两 Job 完成间隔小于 trace 周期且该开区间内无
+  样本，则证据既不能证明工作守恒，也不能证伪，正确三值语义是 `not_applicable`，而不是
+  `false`。冻结 250 ms 规则后的 compact replay 将 DRR/VTC rep2 重分类，四 credit 臂 effective
+  12/12；随后 `ed168d8` 在服务器完整 artifact 上运行默认 summarizer，resolution-aware v2
+  validation passed、`full_formal_validation_updated=true`。长于一个周期仍无样本、新 schema 明确
+  applicable 或任一前置机制失败仍保持 fail-closed。
+- **第一性原理原因（经 reachability 短测修正）**：前台到达时已占用 lease 仍不可抢占，但未来
+  completion 可被 lexicographic release 立即导向 foreground。两轮 strict-priority 短测达到 fg
+  JCT/P99 20.04/14.27s、SLO 0%，同时保留 11,791 tok/s，说明 reservation 不是已知 foreground
+  存活信号下 2-Job reachability 的必要条件。current SAOR 差的主因是 soft entitlement/fairness
+  score 与 foreground tail/SLO 目标错位；hard priority 的代价是 bulk SLO 0.801 与潜在 starvation。
 - **估计误差**：project credit 臂中 foreground `actual/predicted work≈1.289`，bulk≈1.064；
   前台低估百分比约是 bulk 的 4.5 倍。下一版 admission 必须比较 point estimate、q95 upper
   bound 与 actual-work oracle，不能用同一 predicted token 标量同时承担资源、安全和公平。
-- **修订路线**：先离线修复 simultaneous-drain audit；再跑 foreground strict-priority
-  release-only 可达性；随后只扫 reservation $r/K=0,0.25,0.5$，采用 borrow/reclaim debt、
-  upper-bound resource credit 与 hard SLO feasible set。只有 $r<0.5K$ 达到 static fg 非劣且
-  吞吐相对 static≥5% 才晋级；否则淘汰，不扩 4-Job。完整推导见
+- **修订路线**：先把 strict priority 收紧为 lexicographic SLO priority + 有界 priority window 或
+  service-lag cap；其余时间回到 DRR/SAOR。reservation $r/K$ 与 upper-bound work credit 只作未知
+  到达、多 foreground 和预测误差下的鲁棒性消融。达到 static fg 非劣、吞吐相对 static≥5%、
+  bulk lag/SLO 不越界才晋级；否则淘汰，不扩 4-Job。完整推导见
   `saor_model_scenario_audit_20260811.md` §11。
+- **release-only upper bound 实现状态**：已实现并完成两轮 GPU 短测。前台
+  Job 注册后，未来释放 credit 只给前台；已进入 vLLM 的 bulk lease 不撤销，前台 `finish_job`
+  后恢复 bulk。group evidence 记录 `[bulk,foreground]=[0,1]`，独立判门要求 fg P99≤30.7s、
+  fg SLO violation≤1%。实测 fg P99 14.27s、SLO 0%，但 formal repeats=0；它只诊断 release-only
+  可达域，不能称 SAOR 改进或通用 hard-priority 策略胜出。
 
-#### 5.7.6 模式优先级矩阵
+#### 5.7.6 多 Job 评价模式：不是只看 VTC 或 Jain（2026-08-13）
+
+当前评价主体冻结为**单租户内多个 Job/workload class**：`job_id` 是应用/实验合同给出的逻辑
+调度身份，request 是工作量载体。因此当前只声称 intra-tenant Job fairness/service
+differentiation，不把 flat `job_id` 记账改名为 tenant fairness。多租户是兼容的后续扩展而非当前
+formal blocker：外层先按稳定 `principal_id` 聚合 tenant entitlement/debt 和 buffer cap，内层再
+复用现有 Job-level ready observation、priority/SLO、borrowing/reclaim；届时须另验 tenant floor、
+anti-splitting、双层 debt/reclaim 和非抢占请求的恢复时间，不能自动继承当前公平性质。
+
+文献交叉后冻结四个互补视角：DRF/Pisces/DRFT 约束“份额与隔离如何定义”，Themis/Tiresias/
+Pollux 约束“Job 完成体验和未知时长如何评价”，VTC/DLPM 约束“共同积压服务差与 locality
+冲突”，Sarathi-Serve/DistServe/Llumnix 约束“SLO goodput 和 tail”。任何单篇都不能单独成为
+本项目判定多 Job 调度好坏的完整依据。
+
+每个 Job 固定三种反事实：`multi/full-solo` 看总体干扰，`multi/reserved-solo` 看经验性保留份额
+非劣，`policy-multi/static-multi` 看同竞争条件下 scheduler 增量。共同积压窗口另报 weighted
+actual service、empirical GPS lag、最长连续无服务和 avoidable idle；用户层另报 worst-Job
+JCT/P99/SLO。Jain 只表示均匀度：所有 Job 相对 static 都改善而 Jain 下降时，正确表述是
+“baseline-relative empirical JCT Pareto improvement, uneven benefit”，不是单凭 Jain 判定正式
+公平性质失败；高 Jain 也可能只是所有 Job 同样慢。
+
+现有文本四 Job compact evidence 能计算三个 JCT 反事实，但不能事后还原 event-level lag 或
+starvation。新 formal 必须保存无损 completion event、ready/backlogged interval、active-set/
+weight 变化和 actual work；没有证明时，理论 service bound、DRF sharing incentive、Themis
+finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向量和 normalized capacity
+未校准前只作 stage mechanism，不冒充 dominant-resource fairness。完整公式与晋级合同见
+`evaluation_metrics_survey_20260731.md` §9.3 和
+`../experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.10–5.2.12。
+
+#### 5.7.6.1 Bounded-ready 正结果后的归因审核（2026-08-13）
+
+- **开发事实**：在相同 2×4090、K128/$W_e=65,536$、long bulk→5s 后 short foreground 合同下，
+  bounded-ready $H_B=0.125W_e$ 两轮达到 12,355/12,367 tok/s、foreground P99
+  18.15/17.58s、foreground miss 0%、bulk 30s miss 65.8%/66.6%，通过开发门；$0.25W_e$
+  因 bulk miss 75.2%/74.4% 被拒绝。旧文档的 `0.125K/0.25K` 是显示误名：实现实际计算
+  `fraction × endpoint work_limit`，不是 request K。
+- **归因缺口**：`saor_bounded_ready` 同时改变 concrete-ready pre-registration/execution path 与
+  priority/debt selector。现有 static/old-SAOR/FIFO/DRR/VTC 使用 single-head observation，不能回答
+  “简单 selector 获得同一个 ready set 后是否已经足够”。当前事实只支持 bounded-ready + guarded
+  priority 组合可行，不能把约 30% 吞吐与 foreground tail 改善全部归因给 SAOR 算法。
+- **最小决定性门**：在 formal 前把 ready-window 从 selector 解耦，只在 Project 路径内部用相同
+  active K/W、ready bytes、arrival、服务与 cache 合同比较 bounded-ready + FIFO、DRR/WFQ、
+  external VTC-style、strict-priority/EDF 和 proposed。它们是 internal controls/ablations，不是
+  原生 baseline；Daft、Ray Data、vLLM 或产品路径保留原生调度。若简单策略进入同一 Pareto 前沿，论文贡献收敛为 **bounded
+  ready-state exposure contract + 最小 guarded release**，删除不必要的复杂 selector；只有
+  proposed 有独立增量才进入 1+3 formal。
+- **公平分轨**：当前 equal-share Job/class 场景评价 weighted service lag、worst Job 和 work conservation；
+  foreground/bulk 是 differentiated service，评价 foreground SLO isolation + bulk reserved-share
+  JCT/max lag/longest no-service。bulk 30s 在 static 下已约 67% miss，缺外部业务依据时只作相对
+  static guard，不称绝对 bulk SLO。
+- **指标修正**：用户 E2E backlog 从 arrival 开始，scheduler 公平 backlog 从
+  concrete-ready/registered 开始；completion 时才入账的 actual work 只能构造
+  `completion-accounted empirical service lag`。Jain 需配合 max/P95 lag、min/mean、最长无服务、
+  三个 JCT 反事实和 request/token SLO goodput。bounded-ready 另报 ready requests/work/bytes、host
+  memory、coordinator CPU 与 registration→grant tail，避免只匹配 active envelope 却隐藏缓冲成本。
+- **文献补充**：VTC/DLPM 约束共同积压服务与 prefix-locality，Themis/Pollux/PCS 支持 Job 完成
+  反事实与多目标 Pareto，JITServe/SCORPIO/ProServe 支持 SLO token goodput、输出不确定性与
+  priority 隔离；Agentix/BatchGen 支持把 program/job/batch 作为一等调度对象。它们多数位于
+  serving 内部，只迁移指标、work accounting 与 oracle，不作为上游同层 executable baseline。
+
+当前方向裁决为 `Accept with Revisions / attribution-gate-first`。formal 前不继续扫 cap、dynamic K、
+reservation、4-Job 或图像；项目内部 matched-observation gate 通过后先完成 2-Job formal，再只选一个
+不调参 held-out（reverse/simultaneous arrival、on/off burst 或 prefix-rich）。
+
+2026-08-14 进一步把“完成 2-Job formal”拆成 fail-closed 两步。新的 Project mechanism 配置用
+位置平衡 seed，三次 formal 中每个 selector 占三个不同序位；evaluation contract 预先冻结
+VTC-style 主参照、foreground P99/empirical completion-lag 5% headline、throughput/bulk JCT/
+class SLO/longest-no-service non-inferiority。SAOR 必须从 lossless ledger 证明 recovery grant 对应的
+request 已完成，并观测 debt 从 `>=cap` 回到 `<cap`，报告 repayment P95、right-censored 与
+unresolved episode；censored 不进入 repayment P95，且不能替代至少一个完整 episode。这只是
+completion-granularity empirical repayment，不是理论 bound。首个最终 rehearsal 已用反例证明
+“每 Job 单 recovery 在途”不能保证 repayment；修正版不是无界 drain，而是 residual-aware
+projected-debt work budget：按活动集权重同时核算所有 own active work 和不可抢占 foreign
+residual，显式 `finish_job` 才能 censor，离线从 raw event 重算 projection 与单 quantum
+overshoot bound。**来源类型：本地 GPU rehearsal 事实。** 最终 `63d17300` 全新六臂 final rehearsal 已 passed：固定 admission output
+cap=256 的 6,144-request audit 通过，15/15 repayment completed、P95 3.234s、0 unresolved，
+1,108/1,108 projection 一致；单次相对 VTC-style lag P95 −13.15%、longest no-service
++0.014%，尚不判 winner。独立 raw/SHA 复核已通过。authorization 已逐字段绑定 validation SHA、
+commit/root/archive/valid-rehearsal，公平 trace 错误分支已 fail closed，六臂服务延迟、资源/能耗与
+pipeline 也已从封存 raw 重汇总。当前完整签名 direct ceiling 为 13,684.90 tok/s，封存 SAOR 为
+12,713.03 tok/s，feeding ratio=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA
+已绑定，足以执行一次性 gate 负判决。由于 PG/Ray clean 未结构化落盘且 n=1，不能声称稳定损失
+7.10%；contract 已冻结为
+`locked_failed_feeding/formal_authorized=false`，停止当前 1+3 formal，不改门槛、K/W 或
+$0.125W_e$。**来源类型：本地 GPU ceiling 事实。**
+**来源类型：合理推断。** lag 绝对差 8,231.5 work 约等于 $1.005H_B$，说明结果与 debt-cap
+作用方向一致；因 lag 是目标邻近指标，不能脱离 JCT/P99/SLO/no-service/throughput 保护写成用户收益。
+frozen-static 因不经过 shared credit，其 registered-ready lag 是 N/A，只参加共同性能/SLO比较；
+不能伪造 credit lifecycle，也不能用该 N/A 误杀整张矩阵。
+
+#### 5.7.7 模式优先级矩阵
 
 ```
                     落地难度 →

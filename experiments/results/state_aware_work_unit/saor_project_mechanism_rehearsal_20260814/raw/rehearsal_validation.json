@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "formal_authorized": false,
+  "performance_ranking_decided": false,
+  "absolute_safety_gates": {
+    "foreground_slo_satisfied": true,
+    "longest_no_service_absolute": true,
+    "debt_repayment_bounded_empirically": true,
+    "debt_repayment_resolved": true,
+    "debt_repayment_observed": true,
+    "projection_recomputed_without_violation": true,
+    "projection_estimate_upper_bound_satisfied": true
+  },
+  "work_cost_audit_status": "passed",
+  "work_cost_audit_input_files_manifest_sha256": "84954a3a97a81e4607ead91d1b528057d099893736ac6a6e3dc179fb306479fb",
+  "errors": []
+}

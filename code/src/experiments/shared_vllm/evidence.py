@@ -21,6 +21,7 @@ from .config import (
     SharedVllmScenario,
     _csv_argument_values,
 )
+from .work_evidence import join_request_submission_work
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 
@@ -56,16 +57,20 @@ def _validate_replay_starts(
             raise RuntimeError(
                 f"job {index} crossed replay barrier before its deadline"
             )
-        lateness = actual_submit - configured
-        if lateness < -0.01 or lateness > max_lateness_s:
+        if barrier_lateness > max_lateness_s:
             raise RuntimeError(
                 f"job {index} missed replay start deadline by "
-                f"{lateness:.6f}s"
+                f"{barrier_lateness:.6f}s"
             )
-        # Submission is intentionally downstream of admission/credit control.
-        # Its delay is bounded above, but cross-job launch skew must be judged
-        # at the replay barrier or the scheduler behavior being measured can
-        # invalidate an otherwise synchronized run.
+        # First submission is intentionally downstream of admission/credit
+        # control.  Its post-barrier delay is an experimental outcome, not a
+        # launch-validity condition; bounding it here would reject selectors
+        # that deliberately queue a ready Job.  It may never precede the
+        # observed replay barrier.
+        if actual_submit < observed - 0.01:
+            raise RuntimeError(
+                f"job {index} submitted before crossing its replay barrier"
+            )
         normalized_barrier_starts.append(observed - offset_s)
     if (
         normalized_barrier_starts
@@ -108,6 +113,8 @@ def _validate_job_evidence(
     scenario: SharedVllmScenario,
     identity: GroupRunIdentity,
     job_index: int,
+    *,
+    config: SharedVllmConfig | None = None,
 ) -> dict[str, object]:
     run_stem = (
         f"{identity.order_index:03d}_{identity.phase}_"
@@ -162,59 +169,179 @@ def _validate_job_evidence(
         raise RuntimeError(f"job {job_index} has duplicate request IDs")
     if any(not _request_trace_succeeded(row) for row in request_rows):
         raise RuntimeError(f"job {job_index} contains failed requests")
-    runtime_job_ids = {
-        str(row.get("job_id", ""))
+    request_job_ids = [
+        str(row.get("job_id", "") or "").strip()
         for row in request_rows
-        if str(row.get("job_id", ""))
-    }
-    if len(runtime_job_ids) > 1:
+    ]
+    if any(not job_id for job_id in request_job_ids):
+        raise RuntimeError(f"job {job_index} has a missing runtime job ID")
+    runtime_job_ids = set(request_job_ids)
+    if len(runtime_job_ids) != 1:
         raise RuntimeError(f"job {job_index} has inconsistent runtime job IDs")
-    runtime_job_id = (
-        runtime_job_ids.pop()
-        if runtime_job_ids
-        else str(summary.get("job_id", "") or f"job-{job_index}")
-    )
+    runtime_job_id = runtime_job_ids.pop()
+    summary_job_id = str(summary.get("job_id", "") or "").strip()
+    if not summary_job_id:
+        raise RuntimeError(f"job {job_index} summary has a missing runtime job ID")
+    if summary_job_id != runtime_job_id:
+        raise RuntimeError(
+            f"job {job_index} summary/request runtime job IDs disagree"
+        )
     arrival = [float(row["arrival_epoch_s"]) for row in request_rows]
     completion = [float(row["completion_epoch_s"]) for row in request_rows]
     e2e = [float(row["e2e_s"]) for row in request_rows]
     submission_starts = [
         float(row["submit_epoch_s"]) for row in request_rows
     ]
+    request_submit_by_submission_id: dict[str, float] = {}
+    for row in request_rows:
+        submission_id = str(row.get("submission_id", "") or "")
+        if not submission_id:
+            continue
+        if submission_id in request_submit_by_submission_id:
+            raise RuntimeError(
+                f"job {job_index} has duplicate submission IDs in the "
+                "request trace"
+            )
+        request_submit_by_submission_id[submission_id] = float(
+            row["submit_epoch_s"]
+        )
+    ready_lifecycle_rows = []
+    for row in submission_rows:
+        ready_raw = row.get("ready_epoch_s", "")
+        registered_raw = row.get("credit_registered_epoch_s", "")
+        granted_raw = row.get("credit_granted_epoch_s", "")
+        if not ready_raw and not registered_raw and not granted_raw:
+            continue
+        if not ready_raw or not registered_raw or not granted_raw:
+            raise RuntimeError(
+                f"job {job_index} has an incomplete ready lifecycle"
+            )
+        ready_epoch_s = float(ready_raw)
+        registered_epoch_s = float(registered_raw)
+        granted_epoch_s = float(granted_raw)
+        submission_id = str(row.get("submission_id", "") or "")
+        if submission_id not in request_submit_by_submission_id:
+            raise RuntimeError(
+                f"job {job_index} cannot join ready lifecycle submission "
+                f"{submission_id or '<missing>'!r} to the request trace"
+            )
+        # The submission trace owns actor/credit lifecycle timestamps, while
+        # the request trace owns the scheduler submit timestamp. Join the two
+        # schemas by submission_id instead of assuming a duplicate timestamp
+        # column in the submission trace.
+        submit_epoch_s = request_submit_by_submission_id[submission_id]
+        if not (
+            ready_epoch_s
+            <= registered_epoch_s
+            <= granted_epoch_s
+            <= submit_epoch_s
+        ):
+            raise RuntimeError(
+                f"job {job_index} has an unordered ready lifecycle"
+            )
+        ready_lifecycle_rows.append(
+            {
+                "request_id": submission_id,
+                "endpoint_id": row["endpoint_id"],
+                "ready_epoch_s": ready_epoch_s,
+                "registered_epoch_s": registered_epoch_s,
+                "granted_epoch_s": granted_epoch_s,
+                "submit_epoch_s": submit_epoch_s,
+            }
+        )
     slo_met = [
         str(row.get("slo_met", "")).strip().lower() == "true"
         for row in request_rows
     ]
     jct_s = max(completion) - min(arrival)
     completed_in_slo = sum(slo_met)
-    actual_prompt_work = sum(int(row["prompt_tokens"]) for row in request_rows)
-    actual_output_work_by_request = []
-    for row in request_rows:
-        observed = row.get("actual_output_tokens")
-        fallback = (
-            row.get("client_estimated_output_tokens")
-            or row["estimated_output_tokens"]
+    if config is not None and config.fail_closed_rehearsal:
+        joined_work = join_request_submission_work(
+            request_rows,
+            submission_rows,
+            work_cost=config.completion_work_cost,
+            context=f"{scenario.scenario_id}/job-{job_index}",
+            require_endpoint_usage=True,
+            require_estimate_upper_bound=True,
         )
-        actual_output_work_by_request.append(
-            int(observed) if observed not in (None, "") else int(fallback)
+        work_by_submission_id = {
+            item.submission_id: item for item in joined_work
+        }
+        actual_prompt_work = sum(
+            item.endpoint_prompt_tokens for item in joined_work
         )
-    actual_work_by_request = [
-        int(row["prompt_tokens"]) + output_work
-        for row, output_work in zip(request_rows, actual_output_work_by_request)
-    ]
+        actual_output_work_by_request = [
+            work_by_submission_id[str(row["submission_id"])].endpoint_output_tokens
+            for row in request_rows
+        ]
+        actual_work_by_request = [
+            work_by_submission_id[str(row["submission_id"])].actual_work
+            for row in request_rows
+        ]
+        predicted_work = sum(item.estimated_work for item in joined_work)
+        estimate_overrun_count = sum(
+            item.actual_work > item.estimated_work for item in joined_work
+        )
+        estimate_overrun_max = max(
+            (
+                item.actual_work - item.estimated_work
+                for item in joined_work
+            ),
+            default=0,
+        )
+        actual_work_source = "endpoint_usage_total_tokens"
+    else:
+        actual_prompt_work = sum(
+            int(row["prompt_tokens"]) for row in request_rows
+        )
+        actual_output_work_by_request = []
+        for row in request_rows:
+            observed = row.get("actual_output_tokens")
+            fallback = (
+                row.get("client_estimated_output_tokens")
+                or row["estimated_output_tokens"]
+            )
+            actual_output_work_by_request.append(
+                int(observed) if observed not in (None, "") else int(fallback)
+            )
+        actual_work_by_request = [
+            int(row["prompt_tokens"]) + output_work
+            for row, output_work in zip(
+                request_rows,
+                actual_output_work_by_request,
+            )
+        ]
+        predicted_work = sum(
+            int(row["prompt_tokens"])
+            + int(
+                row["client_estimated_output_tokens"]
+                or row["estimated_output_tokens"]
+            )
+            for row in request_rows
+        )
+        estimate_overrun_count = 0
+        estimate_overrun_max = 0
+        actual_work_source = "raw_prompt_plus_request_output"
+    request_service_by_submission_id = {
+        str(row.get("submission_id", "") or ""): (
+            float(row["completion_epoch_s"]),
+            actual_work_by_request[index],
+        )
+        for index, row in enumerate(request_rows)
+        if str(row.get("submission_id", "") or "")
+    }
+    for lifecycle in ready_lifecycle_rows:
+        completion_epoch_s, actual_request_work = (
+            request_service_by_submission_id[str(lifecycle["request_id"])]
+        )
+        lifecycle["completion_epoch_s"] = completion_epoch_s
+        lifecycle["actual_work"] = actual_request_work
     actual_work = sum(actual_work_by_request)
     slo_token_goodput = sum(
         work
         for work, met in zip(actual_work_by_request, slo_met)
         if met
     ) / jct_s
-    predicted_work = sum(
-        int(row["prompt_tokens"])
-        + int(
-            row["client_estimated_output_tokens"]
-            or row["estimated_output_tokens"]
-        )
-        for row in request_rows
-    )
     endpoint_counts: dict[str, int] = {}
     for row in request_rows:
         endpoint_id = row["endpoint_id"]
@@ -222,6 +349,12 @@ def _validate_job_evidence(
             endpoint_counts.get(endpoint_id, 0) + 1
         )
     return {
+        "completed_count": len(request_rows),
+        "expected_count": expected_rows,
+        "exactly_once": (
+            len(request_rows) == expected_rows
+            and len(submission_rows) == expected_rows
+        ),
         "jct_s": jct_s,
         "p99_s": percentile(e2e, 99),
         "completion_lag_s": max(completion) - max(arrival),
@@ -232,9 +365,9 @@ def _validate_job_evidence(
         "actual_work": actual_work,
         "actual_prompt_work": actual_prompt_work,
         "actual_output_work": sum(actual_output_work_by_request),
-        "actual_work_source": (
-            "prompt_plus_actual_or_client_estimate_fallback"
-        ),
+        "actual_work_source": actual_work_source,
+        "actual_work_estimate_overrun_count": estimate_overrun_count,
+        "actual_work_estimate_overrun_max": estimate_overrun_max,
         "source_row_offset": expected_offset,
         "request_manifest_path": observed_manifest,
         "request_manifest_sha256": str(
@@ -262,7 +395,51 @@ def _validate_job_evidence(
             or 0
         ),
         "replay_actual_submit_start_epoch_s": min(submission_starts),
+        "ready_lifecycle_rows": ready_lifecycle_rows,
+        "ready_lifecycle_complete": len(ready_lifecycle_rows) == expected_rows,
+        "max_ready_requests_seen": int(
+            summary.get("max_ready_requests_seen", "0") or 0
+        ),
+        "max_ready_work_seen": int(
+            summary.get("max_ready_work_seen", "0") or 0
+        ),
+        "max_ready_payload_bytes_seen": int(
+            summary.get("max_ready_payload_bytes_seen", "0") or 0
+        ),
+        "ready_requests_transition_mean": float(
+            summary.get("ready_requests_transition_mean", "0") or 0
+        ),
+        "ready_requests_transition_p95": float(
+            summary.get("ready_requests_transition_p95", "0") or 0
+        ),
+        "ready_work_transition_mean": float(
+            summary.get("ready_work_transition_mean", "0") or 0
+        ),
+        "ready_work_transition_p95": float(
+            summary.get("ready_work_transition_p95", "0") or 0
+        ),
+        "ready_payload_bytes_transition_mean": float(
+            summary.get("ready_payload_bytes_transition_mean", "0") or 0
+        ),
+        "ready_payload_bytes_transition_p95": float(
+            summary.get("ready_payload_bytes_transition_p95", "0") or 0
+        ),
     }
+
+
+def _validate_runtime_job_ids(
+    job_evidence: list[dict[str, object]],
+) -> None:
+    """Require one stable, unique runtime identity per concurrent Job."""
+
+    runtime_job_ids = [
+        str(evidence.get("runtime_job_id", "") or "").strip()
+        for evidence in job_evidence
+    ]
+    if any(not job_id for job_id in runtime_job_ids):
+        raise RuntimeError("concurrent Job evidence has a missing runtime job ID")
+    if len(runtime_job_ids) != len(set(runtime_job_ids)):
+        raise RuntimeError("concurrent Job runtime IDs must be unique")
 
 def _sum_semicolon_integers(value: object) -> int:
     fields = [
@@ -350,15 +527,17 @@ def _terminate_processes(processes: list[subprocess.Popen]) -> None:
 def _write_trace_rows_atomic(
     path: Path,
     rows: list[dict[str, object]],
+    *,
+    fieldnames: tuple[str, ...] | None = None,
 ) -> None:
-    if not rows:
+    if not rows and fieldnames is None:
         return
-    fieldnames = list(rows[0])
-    if any(list(row) != fieldnames for row in rows):
+    output_fields = list(fieldnames or tuple(rows[0]))
+    if any(list(row) != output_fields for row in rows):
         raise ValueError("trace rows have inconsistent schemas")
     temporary = path.with_suffix(path.suffix + ".tmp")
     with temporary.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=output_fields)
         writer.writeheader()
         writer.writerows(rows)
     os.replace(temporary, path)
@@ -488,6 +667,7 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,
         "endpoint_ids": config.endpoint_ids,
+        "service_signature": dict(config.service_signature),
         "request_limit_per_endpoint": config.request_limit_per_endpoint,
         "work_limit_per_endpoint": config.work_limit_per_endpoint,
         "credit_quantum": config.credit_quantum,
@@ -498,6 +678,10 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "scenarios": [asdict(item) for item in config.scenarios],
         "service_metadata": dict(config.service_metadata),
         "fail_closed_rehearsal": config.fail_closed_rehearsal,
+        "ready_observation_contract": config.ready_observation_contract,
+        "ready_payload_bytes_limit_per_job": (
+            config.ready_payload_bytes_limit_per_job
+        ),
         "calibration_contract": (
             {
                 "path": config.calibration_contract.path,

@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-09
+更新时间：2026-08-14
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -48,10 +48,53 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 - endpoint routing、idle borrowing 与故障迁移；
 - 多 job fair queue、JCT、tail、SLO 和公平性。
 
-固定静态 credit 是默认强 baseline。现有证据已将动态 K 标记为 `parked-conditional`；主候选
+原生 baseline 必须保留被测系统自己的 batching/backpressure/scheduler；项目 frozen-static 是
+同栈静态参照，不冒充原生 baseline。现有证据已将动态 K 标记为 `parked-conditional`；主候选
 固定总 envelope，只动态决定活跃 Job 间的份额借用、completion-time 回收与 release order。
-它必须同时超过 global FIFO/no project Job scheduler 和简单 DRR/VTC-style 强 baseline；吞吐
-接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
+项目 selector 必须在相同 bounded-ready observation 下超过 FIFO、DRR/VTC-style 等项目内部
+消融；吞吐接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
+2026-08-13 双轮 matched-ready rehearsal 已完成：DRR/VTC-style 约 12.90K tok/s 且 30s
+foreground SLO 零违约；SAOR 约 12.28K tok/s、foreground P99 17.85s。SAOR 用约 4.8%
+吞吐和约 5.2% bulk JCT 代价进一步降低 tail，属于观测到的非支配折中点，但固定顺序 n=2、
+selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`，不写 selector 胜出。
+2026-08-14 fail-closed 复核进一步确认：旧汇总没有显式区分 completion fairness applicability，且
+avoidable-idle 事件名检查错误。最终规则要求五个 bounded-ready 臂 evidence=`ok`；frozen-static
+缺 registered-ready ledger，故该指标为 N/A、不能作同口径 service-lag 比较，但不误杀共同性能
+矩阵。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，冻结内部消融各臂的 effective
+K/W、weights 与 fixed output cap。最终六臂 rehearsal 已完成，但在独立审核前仍不得解锁 formal。
+修复提交 `15201946` 的同机四臂 development regression 已完成：所有请求 exactly-once、Job ID
+合同通过，$0.125W_e$ 触发一次 recovery；$0.25W_e$ 再次因 recovery=0 被 runner 正确 fail closed。
+该回归只验证证据链，不计入性能重复，也不改变 formal 锁定状态。
+FIFO、DRR、VTC 是已有算法思想，但本实验的可执行版本均由 Project shared-credit coordinator
+实现，不是 Daft/Ray Data/upstream vLLM 的原生实现；它们应称项目内标准算法 controls。
+bounded-ready 副本只是在 Project harness 中配平候选集的 matched controls，也不表示这些算法
+包含本项目机制。报告中必须显式区分实现来源、scheduler owner 和 observation contract。
+论文的完整系统价值另用同一 2-Job/PG/vLLM/资源合同下的 Daft Native、Daft Ray、Ray Data
+native、project frozen-static 与 proposed 作 system-level matched comparison：原生臂保留自身
+调度且不注入 Project K/W，Project 两臂冻结同 K/W。该比较只能说明完整系统经验表现；要单独
+ready-observation bridge 已用双轮 GPU rehearsal 完成：static→single-head shared FIFO 使 tok/s
++25.96% 但 foreground P99 +99.17%；同 FIFO 下 single-head→bounded-ready 再使 tok/s +7.30%、
+foreground P99 −33.62%，但前台 SLO violation 仍约 39.7%。这分离了共享效率、隔离损失和
+observation 增量，也证明 observation 不能替代 selector/service differentiation。
+历史 JSONL native multi-job 结果把 PG export 放在计时外，且 Daft/Ray Data 当前只可靠提供
+shard/Job barrier，不满足新 system-level PG source/sink 与 request-tail schema，禁止直接拼表。
+
+当前主场景是**单租户多 Job/workload class**，不是多租户资源管理；按 `job_id` 记账与当前范围
+一致。多 Job 不由单一 VTC/Jain 指标判定。每个 Job 同时报 `multi/full-solo`（总体干扰）、
+`multi/reserved-solo`（经验性保留份额非劣）和 `policy-multi/static-multi`（同竞争调度增量）；
+共同积压窗口另报 weighted actual service、empirical GPS lag、最长连续无服务和 avoidable idle，
+用户层报 worst-Job JCT/P99/SLO。公平与隔离分开：另以固定 victim + aggressor step/burst 报 P99
+放大、goodput loss、SLO violation delta 与恢复时间。`group JCT` 等同本批 workload makespan，
+仍须与 per-Job/request tail 同报。评价采用明确保护约束下的多目标/Pareto，不压成 composite。
+baseline-relative empirical Pareto improvement 不等于 DRF Pareto efficiency；Jain 只表示均匀度，
+不能单独证明或否定 share guarantee。
+
+多租户是兼容的后续扩展，不阻塞当前 formal：现有 Job-level ready observation、work/debt、固定
+envelope、completion release 和 idle borrowing/reclaim 作为内层保持不变；外层新增稳定
+principal identity、tenant entitlement/debt 与 per-tenant buffer cap。只有进入该 scope 后才运行
+同一 principal 的 1/2/4-Job 抗拆分门；flat `job_id` 竞争不能直接改名为 tenant fairness。
+两层组合仍须重验 tenant floor、Job priority 不越权、双层 debt/reclaim 和非抢占请求下的恢复
+时间，不能自动继承当前 Job-level 公平性质。
 
 ### 2.3 共同使能组件：算子代价估计
 
@@ -83,6 +126,7 @@ PostgreSQL source
 - 写回采用 PostgreSQL + pgvector、COPY + deferred index，属于统一 correctness/E2E guardrail，不是独立研究内容。
 - 正式 baseline 必须由被测系统拥有执行与调度；项目只做 source、sink、质量审计和指标适配。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
+- `BoundedReadyWindow` 属于项目方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在项目内部 selector 归因消融中保持一致。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。
 - 性能参数绑定“机器 + 模型/服务配置 + 协议 + workload 分布/规模”签名，签名变化重新校准；
   同一签名只校准一次并复用冻结合同。K 不是逐实验手调，也不在 SAOR formal 中在线变化。
@@ -114,8 +158,11 @@ PostgreSQL source
 - 图像 matched-resource 静态执行结构有可重复收益：主报告冻结约 13%–15% operator-JCT 改善；旧 45.7% 资源不匹配，不再使用。
 - 多 Job 干扰已从两作业扩展到受控 `short@0s → 3 long@5s`：Project full/quarter
   single 将 quota 与竞争分离；三条原生路径全部 Job 均出现轨内退化。Project shared 相对
-  static 总吞吐 +8.68%、short JCT −72.23%，但 Jain 0.960→0.923且 long 收益/稳定性不均，
-  支撑 idle borrowing 与 fairness guard 同时存在的研究问题，不证明 dynamic 普遍胜出。
+  static 总吞吐 +8.68%，四个 Job JCT 分别 −72.23%/−8.28%/−20.24%/−52.66%，因此在
+  效率/JCT 子向量上是相对 static 的经验性 Pareto 改善；但 raw-work Jain 0.960→0.923、
+  long 收益/稳定性不均，且 long1/2 相对 quarter-solo 仍慢 29%/14%。这支撑 idle borrowing
+  与 fairness/SLO guard 同时存在的研究问题，不证明 dynamic 普遍胜出、份额保证或理论
+  Pareto efficiency。
 
 ### 5.2 条件性
 
@@ -127,15 +174,61 @@ PostgreSQL source
 - SAOR 的 dynamic-K capacity-only 分支仍为 `not-promoted/parked-conditional`。fixed-envelope
   2-Job formal 已在 2×4090/Qwen2.5-7B 上完成 40/40 cell、0 incident、exactly-once：SAOR
   12,393 tok/s、fg JCT/P99 57.0/50.3s，在 credit 臂内前台最好；static 9,508 tok/s、fg
-  JCT/P99 36.2/29.2s、SLO violation 0%，仍是更强隔离 Pareto 点。总 validation 因 DRR/VTC
-  rep2 没有 post-drain 样本而 fail-closed；两个 repeat 的 Job 完成只差约 5.8ms/4.8ms，故不能
-  写成 baseline 机制失败，也不能声称 SAOR 胜出。当前 formal 的 `slo_weight=0`，服务状态仍
+  JCT/P99 36.2/29.2s、SLO violation 0%，仍是更强隔离 Pareto 点。原始 validation 的 DRR/VTC
+  rep2 假阴性已按 250 ms trace-resolution 规则修复；服务器完整 artifact 的 resolution-aware v2
+  validation passed、credit mechanism effective 12/12，原 failed 文件只作审计历史。仍不能声称
+  SAOR 胜出。当前 formal 的 `slo_weight=0`，服务状态仍
   observe-only；它验证的是 fairness-aware release，不是完整 SLO-aware controller。第一性原理
-  审计确认：无保护余量、不可抢占时，bulk 在前台到达前借满包络会形成只能等待 completion
-  清零的 reclaim debt，单靠 release score 无法复制 static 的即时隔离。候选后继收紧为
-  reservation-backed release；先修 simultaneous-drain audit，做 strict-priority 可达性、
-  reserve 0/0.25K/0.5K 和 q95/actual-work oracle，再决定是否淘汰。两 Job 未达到 static fg
-  非劣且吞吐≥static+5% 前不跑 4-Job，也不声称定理证明；
+  审计确认：soft fairness release score 无法复制 static 的即时隔离；但 strict-priority 两轮 GPU
+  短测达到 11,791 tok/s、fg P99 14.27s、SLO 0%，说明已知 foreground 存活信号下 release-only
+  可达。`saor-v0.5` 已冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
+  completion-corrected actual-work debt cap 优先阻止饥饿，无 guard 时回退 SAOR；debt-critical
+  ready head 不 fit 时只为该队首建立 reclaim barrier，其余只在 fitting heads 间选择；首轮只做
+  两 Job 的 $0.125W_e/0.25W_e$ 两个 cap（$W_e$ 是 endpoint work limit，不是 request K）。v0.5.1 已完成 selector/coordinator/scheduler/Ray/runner、
+  timeout 清理、lossless event ledger、readiness 与两轮汇总器；事件机制门不再依赖 250 ms
+  snapshot。旧 single-head 双轮 GPU development gate 没有 cap 晋级：$0.25W_e$ 第 2 轮 debt-recovery=0，两个
+  cap 的 fg P99 约 49–56s、SLO violation 85%–95%。request/event 交叉验证定位 per-Job 单-head
+  pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；该失败版本状态为
+  `development-run/not-promoted/not-formal-registered`。2026-08-13 已完成独立
+  `saor_bounded_ready` 修订：旧
+  bounded-priority 保持单-head 回归语义，新路径只预注册已经到达的具体 request，窗口由冻结
+  effective K 与 endpoint 数×W 自动派生；submission trace schema 6 分开 ready、registered、
+  granted、submit/service；coordinator release-event schema 2 对 ready registration 与 grant
+  统一记录 request ID 和 epoch。runner 先用 submission trace 证明 concrete-ready lifecycle 完整，
+  再在 actor 同一时钟域内配对 foreground register→grant，并 fail closed 检查区间内 foreign
+  fallback=0。两轮 GPU development gate 已完成：$0.125W_e$ 两轮以约 12.36K tok/s、foreground
+  P99 17.58–18.15s、foreground SLO 0% 和 bulk SLO 65.8%–66.6% 通过全部门，注册 formal
+  candidate；$0.25W_e$ 因 bulk 30s miss 74.4%–75.2% 两轮越界拒绝。状态为
+  `development-gated/formal-registration-candidate-0125k-only`，不是 formal 胜出。post-hoc
+  归因审核确认 bounded-ready 同时改变 observation/execution path 与 selector；随后已完成
+  **项目内部** FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 的同 ready-window
+  双轮归因，以及 single-head shared FIFO→bounded-ready FIFO 的 observation bridge。proposed
+  相对 VTC-style 用约 4.8% 吞吐、5.2% bulk JCT 和更长 no-service interval 换取约 31.8%
+  foreground P99 改善，是观测非支配折中而不是 selector 胜出；固定顺序 n=2 且未预注册
+  selector non-inferiority margin，故历史结果保持 `formal_authorized=false`。现已另建位置平衡的
+  Project mechanism 1+3 合同，冻结 VTC-style 为公平参照、5% headline、吞吐/bulk JCT/SLO/
+  longest-no-service 非劣与 30s empirical debt-repayment 门；首次最终 rehearsal 在 SAOR cell
+  发现单 recovery 在途无法赶上 debt 产生，10/10 recovery completion 仍留下 2 个未退出 episode，
+  已正确 fail closed。修正版使用 residual-aware projected-debt work budget，按活动集同时计入
+  全部 own active work 与 foreign residual，并由 schema 5 raw event 离线复算。旧 `d6259f5f`
+  root 因缺少逐请求固定输出上界门降为 diagnostic；最终 `63d17300` 全新六臂 root 才是有效
+  rehearsal：96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved，
+  1,108/1,108 projection 离线一致，estimate/overshoot-bound violation 均为 0；6,144 条 request
+  独立证明当前 chat template overhead 恒为 29、`fixed_output_cap=256`，且公平 service work 使用
+  endpoint total token。单次 SAOR 相对 VTC-style 吞吐 +0.43%、foreground P99 +0.11%、P95
+  service lag −13.15%、longest no-service +0.014%，在 feeding gate 前只构成 Pareto 候选，
+  未证明胜出。独立 raw/SHA/指标复核已通过；授权 validator 已逐字段绑定 validation SHA、
+  commit/root/archive/valid-rehearsal，不完整 fairness trace 分支也已 fail-closed 修复，六臂全组件
+  指标已重汇总。当前一次性完整签名 direct ceiling 为 13,684.90 tok/s，SAOR
+  feeding=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA 已绑定，足以按冻结 gate
+  停止当前 formal，但缺结构化 PG/Ray clean record，不能声称稳定损失 7.10%。wrapper/formal contract 已冻结为
+  `locked_failed_feeding/formal_authorized=false`，当前 1+3 formal 停止。不能下调门槛、调 K/W 或
+  重跑六臂追正。当前仅先做同签名 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W
+  的三臂 1+3 配对诊断，分别隔离 W envelope 与 Project plumbing；旧负判决不可被诊断结果撤销。
+  代码/合同/结构化 PG-Ray-endpoint clean gate 已就绪，服务器关机故尚无新性能数据。诊断后才补
+  同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
+  matched comparison；
+  原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、
@@ -154,10 +247,11 @@ PostgreSQL source
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已进入
   `parked-conditional` 清单；当前不实现，主路径完成后仅在真实 reuse opportunity≥10% 且扣除
   lookup/build/refresh 后 oracle 潜力≥5% 时重新激活。
-- 图像 short→3×long 多作业已完成 immutable manifest、64-row correctness gate 和一次
-  full-size overlap rehearsal；DuckDB bounded-output 四作业已完成 128-row native gate。
-  两者均未启动 formal、不能用于系统排名或策略收益；图像 proposed 角色已与具体算法名
-  解耦，后续状态感知/动态调度调整只需版本化并重跑 project static/proposed。
+- 图像 short→3×long 多作业已完成原生 Daft built-in/Ray Data 40/40 runs、30 formal group，
+  Project staged descriptor + observe-only snapshot 也已完成 24/24 group；这些结果只证明各原生
+  执行图内的多 Job 干扰和 Project 观测接入，不证明动态策略胜出。DuckDB bounded-output 四作业
+  仅完成 128-row native gate，single controls/formal 尚未运行且不阻塞当前主线。图像 proposed
+  角色已与具体算法名解耦，后续状态感知/动态调度调整只需版本化并重跑 project static/proposed。
 
 ### 5.4 不能声称
 
@@ -207,11 +301,14 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成。图像 production descriptor builder 与 fresh snapshot 已以 observe-only 方式接入 project runner，legacy model-pixel credit 和调度决策保持不变；原生图像 single→four-job 40/40 passed，Project observe-only 24/24 passed、99K formal rows exactly-once、snapshot 100% fresh/构建均值 0.141 ms。static/proposed group JCT 只差 0.98%，因此只验收观测接入；stage controller 决策接线和 CE5 在线驱动仍待验证，不能将原生观察或 observe-only 写成动态方法胜出。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
-4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成。图像 Daft built-in/Ray Data/project
-   四作业和 DuckDB bounded-output 四作业只完成冻结准备，不跑 formal；图像使用 0.5s
-   offset 并要求实际 overlap。后续先完成 capability/rehearsal，再跑 native 一次；项目
-   感知/动态实现调整后只重跑同 manifest 的 project static/proposed。
-5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
+4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成；图像 Daft built-in/Ray Data 原生四作业
+   40/40 和 Project observe-only 24/24 也已归档。DuckDB 四作业仍停在 capability gate，不为开题
+   扩展 formal。
+5. SAOR bounded-ready、matched-ready selector 归因和 observation bridge 已完成 development
+   rehearsal；旧全矩阵公平门等待按“bounded 必须 ok、static N/A”最终 applicability 重签。下一步先完成
+   fail-closed 门禁服务器回归，再准备同一 2-Job 合同的 native-system matched comparison；不直接
+   启动 selector 1+3 formal，也不扩 cap、4-Job、reservation 或 dynamic K。
+6. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 2026-08-11 修正后的文本 phase-change 门禁显示：A-only K160 相对 K128 的每 endpoint
 service rate 提升 7.77%，低压升档动机成立；但 B=2.5/3.5/4.5 均未在两个 ON 周期、

@@ -30,6 +30,12 @@ Cortex AISQL 把 `AI_COMPLETE`、`AI_EMBED`、`AI_FILTER`、`AI_CLASSIFY` 和语
 
 Orca 提出 iteration-level scheduling，vLLM 通过 PagedAttention 和 continuous batching 提高 KV 利用率与吞吐，Sarathi-Serve 通过 chunked prefill 缓解 prefill/decode 干扰[11-13]。DistServe、Parrot、Llumnix、公平 LLM serving 与 SGLang 继续研究阶段分离、prefix 共享、动态调度和多租户公平性[14-17,31]。
 
+多作业评价还不能只依赖 VTC 或 Jain。DRF、Pisces 与 DRFT 分别从多资源份额、全局
+work-conserving 隔离和数据库事务资源记账定义公平性质；Themis、Tiresias 与 Pollux 从
+finish time、attained service、饥饿和 useful progress 评价作业体验[32-37]。本课题据此同时
+使用 full-solo、reserved-solo 和 static-multi 三种反事实，并把共同积压 service lag、
+worst-Job JCT/P99 与 SLO 作为独立维度；Jain 只描述分配均匀度，不替代份额保证。
+
 这些系统把“已经到达服务端的请求”作为基本输入。它们不负责解释数据库行如何组合成请求，也不知道 source scan、作业剩余 work、结果 exactly-once 或数据库 sink。因而，本课题不重复 vLLM 内部调度，而是在其上游形成容量受控的请求流，并将 vLLM 指标作为可观测信号而不是待修改对象。
 
 ### 2.3 分布式数据执行与异构流水线
@@ -111,7 +117,7 @@ Ray 以 task 和 actor 支撑分布式 AI 应用，Ray Data 的 Streaming Batch 
 
 ### 4.3 状态观测与固定上限调度实现
 
-当前调度器已实现完成即回收、最少工作量路由、共享公平工作量额度，以及固定总上限内的阶段感知有序释放策略。后者按作业应得份额缺口、等待工作量、公平债务和可选时限压力，对能够放入剩余额度的作业头请求排序，不改变请求数与工作量总上限。该策略已接入具名 Ray 协调器、配置和 active-set trace；目前完成的是运行时实现与单元门禁，尚未取得正式 GPU 对照结果。SLO 债务和阶段队列对释放动作的完整接线仍是后续工作。
+当前调度器已实现完成即回收、最少工作量路由、共享公平工作量额度，以及固定总上限内的阶段感知有序释放策略。后者按作业应得份额缺口、等待工作量、公平债务和可选时限压力，对能够放入剩余额度的作业头请求排序，不改变请求数与工作量总上限。该策略已接入具名 Ray 协调器、配置和 active-set trace，并已完成双卡两作业的重复对照：它在共享额度策略中改善了前台尾延迟，但没有越过静态分区的隔离点，因此只形成方向性证据，不构成方法胜出。SLO 债务和阶段队列对释放动作的完整接线仍是后续工作。
 
 ### 4.4 算子代价估计方法
 
@@ -196,10 +202,14 @@ Project eager 多 Job 配对随后补齐 full-pool single、half-pool single、s
 从而把quota-only与真实竞争分离。full→quarter使short JCT +180.38%，在相同quarter上限
 下加入其它Job又使static short +60.40%；shared相对static使short/long1/2/3 JCT分别
 −72.23%/−8.28%/−20.24%/−52.66%，group throughput +8.68%、MFU +8.56个百分点，
-但Jain 0.960→0.923且long收益与CV不均。Daft Native、Daft Ray、Ray Data保持各自
+所以按三次formal均值，在效率/JCT子向量上构成相对static的经验性Pareto改善；但raw-work Jain
+0.960→0.923，表示收益分配更不均。shared相对quarter-solo的JCT比为
+0.45/1.29/1.14/0.68，long1/2未达到经验性保留份额非劣。Daft Native、Daft Ray、Ray Data保持各自
 vendor-owned graph，未注入项目调度；它们的short与三个long相对各自single也全部退化，
 并分别呈现high-waiting/high-KV或low-running/low-MFU。四Job证据因此支持idle borrowing
-与fairness/SLO guard必须同时设计，不支持Project或dynamic普遍胜出。
+与fairness/SLO guard必须同时设计，不支持Project或dynamic普遍胜出；这里不是完整多目标
+Pareto改善，也不是DRF Pareto efficiency，Jain也不是share guarantee。历史紧凑数据不能还原event-level
+service lag/starvation，相关保证留待带无损completion/backlog ledger的新formal验证。
 
 ![原生执行图中 Short 与全部 Long Job 的四 Job 归一化影响](../../figures/opening_figure_set/main_png/P09_文本多作业_原生路径并发干扰.png)
 
@@ -277,14 +287,14 @@ observe-only 记录，不驱动 credit 或路由，而且 shared/static group JC
 |---|---|---|---|
 | Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，图像 production builder 已接入正式 Project runner | staged organization 尚未证明胜出；文本正式 runner 的同类 descriptor 接线仍待完成 |
 | 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已采集；图像 stage snapshot 已以 observe-only 方式接入，并校验 freshness 与 calibration signature | snapshot 尚未驱动正式 active-work/release 动作，尚无独立性能增量 |
-| 动态与多作业调度 | 两 Job 与四 Job 配对显示前台/long 干扰、idle borrowing、arrival-regime dependence 及效率—公平权衡 | 完成回收、最少工作量路由、共享公平额度和固定上限有序释放均已接入运行时 | 在同一总上限下完成全局 FIFO、静态分区、DRR/VTC 风格与有序释放的 GPU 对照；补齐 SLO 债务和阶段队列输入 |
+| 动态与多作业调度 | 两 Job 与四 Job 配对显示前台/long 干扰、idle borrowing、arrival-regime dependence 及效率—公平权衡 | 完成回收、最少工作量路由、共享公平额度和固定上限有序释放均已接入运行时；固定上限两作业 GPU 对照已完成，但有序释放未越过静态隔离点 | 先用非抢占前台优先诊断 release-only 可达域，再评估有限保护余量；补齐 SLO 债务和阶段队列输入 |
 | 算子代价估计 | 20 contexts 的选错代价为 12.0%–86.5%，简单 proxy 决策失败 | CE1–CE5 离线估计器和 context leave-one-out 已完成，CE5 为 marginal pass | 尚未在线驱动 organization/routing/credit，也未验证跨模态 remaining work 与 SLO 收益 |
 
-后续先完成状态缺失和过期时的回退检查，再在同一总容量下比较全局先来先服务、静态分区、简单公平队列与有序释放，并按数据组织、路由、公平共享的顺序做单因素消融。不在同一次实验中同时改变全部部件，以免无法归因。
+同一总容量下的全局先来先服务、静态分区、简单公平队列与有序释放两作业对照已经完成；结果显示无保护、不可抢占的有序释放不能免费复制静态分区的前台隔离。后续先做非抢占前台优先可达性诊断，再单变量评估有限保护余量，并按数据组织、路由、公平共享的顺序做消融。不在同一次实验中同时改变全部部件，以免无法归因。
 
 #### 4.6.12 阶段性结论与后续验证重点
 
-阶段性证据表明：固定行数不是稳定的工作量代理；固定资源下存在最小饱和在途工作量；运行状态会随输入压力改变；ShareGPT 在并发 32、128、256 时分别呈现供给不足、接近饱和和过量排队；原生单 Job 下 Daft Native/Ray 与 Ray Data 当前路径呈现过量排队与供给不足两种外部压力形态。文本与图像的多 Job 并发都会影响短任务和长任务，且干扰形态依赖作业与执行图。共享额度呈现效率、隔离与公平权衡；数据组织策略的相对表现受服务压力影响；图像同资源实验给出了静态阶段组织的可重复信号；统一三臂数据库端到端正确性护栏已经闭合。轻量代价模型也显示了配置选择价值，但仍属于文本场景下的初步证据。下一阶段将在固定总并发上限下比较全局 FIFO、静态配额、DRR/VTC 风格公平队列与状态感知有序释放；若简单策略已经处于相同的吞吐、尾延迟与公平性前沿，则不再增加控制器复杂度。
+阶段性证据表明：固定行数不是稳定的工作量代理；固定资源下存在最小饱和在途工作量；运行状态会随输入压力改变；ShareGPT 在并发 32、128、256 时分别呈现供给不足、接近饱和和过量排队；原生单 Job 下 Daft Native/Ray 与 Ray Data 当前路径呈现过量排队与供给不足两种外部压力形态。文本与图像的多 Job 并发都会影响短任务和长任务，且干扰形态依赖作业与执行图。共享额度呈现效率、隔离与公平权衡；固定上限两作业对照进一步表明，有序释放在共享额度策略中改善前台尾延迟，但静态分区仍是更强隔离点。数据组织策略的相对表现受服务压力影响；图像同资源实验给出了静态阶段组织的可重复信号；统一三臂数据库端到端正确性护栏已经闭合。轻量代价模型也显示了配置选择价值，但仍属于文本场景下的初步证据。下一阶段只验证非抢占 release 的可达上界和有限保护余量；若简单策略或静态点已处于相同前沿，则不再增加控制器复杂度。
 
 ## 5. 进度安排
 
@@ -386,3 +396,15 @@ observe-only 记录，不驱动 credit 或路由，而且 shared/static group JC
 [30] Y. Yuan, et al. NeuStream: Bridging Deep Learning Serving and Stream Processing. In: Proceedings of the Twentieth European Conference on Computer Systems. 2025
 
 [31] L. Zheng, L. Yin, Z. Xie, et al. SGLang: Efficient Execution of Structured Language Model Programs. In: Advances in Neural Information Processing Systems 37. 2024
+
+[32] A. Ghodsi, M. Zaharia, B. Hindman, et al. Dominant Resource Fairness: Fair Allocation of Multiple Resource Types. In: 8th USENIX Symposium on Networked Systems Design and Implementation. 2011
+
+[33] D. Shue, M. J. Freedman, A. Shaikh. Performance Isolation and Fairness for Multi-Tenant Cloud Storage. In: 10th USENIX Symposium on Operating Systems Design and Implementation. 2012
+
+[34] A. Cheng, A. Kabcenell, X. Shi, et al. Fair Transaction Processing for Multi-Tenant Databases. Proceedings of the VLDB Endowment, 2025, 18(8): 2602-2615
+
+[35] K. Mahajan, A. Balasubramanian, A. Singhvi, et al. Themis: Fair and Efficient GPU Cluster Scheduling. In: 17th USENIX Symposium on Networked Systems Design and Implementation. 2020
+
+[36] J. Gu, M. Chowdhury, K. G. Shin, et al. Tiresias: A GPU Cluster Manager for Distributed Deep Learning. In: 16th USENIX Symposium on Networked Systems Design and Implementation. 2019
+
+[37] A. Qiao, S. K. Choe, S. J. Subramanya, et al. Pollux: Co-adaptive Cluster Scheduling for Goodput-Optimized Deep Learning. In: 15th USENIX Symposium on Operating Systems Design and Implementation. 2021

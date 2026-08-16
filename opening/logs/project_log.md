@@ -730,3 +730,12 @@
   四张目录页分别高亮当前章节。
 - 26/26 页逐页渲染、0 空占位符、26/26 notes 来源、画布溢出与逐页目视检查通过；本机已用
   Microsoft PowerPoint 成功打开，正式答辩前仍需在最终投影机器确认字体与比例。
+
+## 2026-08-13 Claim Matrix 同步 bounded-ready 归因门
+
+- 只更新 Claim Matrix 中“固定总并发上限下的状态感知有序释放”一项，不改报告正文、PPT 或
+  飞书：证据等级仍为未证明；补入 bounded-ready $0.125W_e$ 双轮 development 结果和
+  $0.25W_e$ bulk guard 拒绝。
+- 下一步从“继续实现有界 guard”改为“先让 FIFO/DRR/VTC/strict-priority 使用相同 ready-window
+  做归因门，通过后才 formal”。若简单 selector 已在同一 Pareto 前沿，则收敛为 observation
+  contract 或淘汰复杂 selector；这收紧而非提升开题 claim。

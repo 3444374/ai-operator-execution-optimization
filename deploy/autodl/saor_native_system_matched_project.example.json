@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "experiment_id": "saor_native_system_matched_project",
+  "seed": 20260813,
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
+  "endpoint_ids": ["endpoint-0", "endpoint-1"],
+  "service_signature": {
+    "model": "${COMPLETION_MODEL}",
+    "service": "${VLLM_VERSION}"
+  },
+  "request_limit_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
+  "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
+  "credit_quantum": 2048,
+  "shared_credit_namespace": "saor-native-system-matched",
+  "ready_payload_bytes_limit_per_job": "${PROJECT_READY_BYTES}",
+  "job_internal_arrival_contract": "eager",
+  "calibration_contract": {
+    "path": "${SAOR_MATRIX_CALIBRATION}",
+    "expected": {
+      "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
+      "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
+      "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
+      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"
+    }
+  },
+  "saor_release_control": {
+    "entitlement_weight": 1.0,
+    "queue_weight": 0.0,
+    "fairness_weight": 1.0,
+    "slo_weight": 0.0
+  },
+  "common_args": [
+    "--database-url", "${DATABASE_URL}",
+    "--source-workload-name", "${SAOR_MATCHED_WORKLOAD}",
+    "--operator", "ai_complete", "--executor", "ray_actor",
+    "--actor-workers-per-endpoint", "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
+    "--ray-actor-max-concurrency", "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
+    "--completion-model", "${COMPLETION_MODEL}",
+    "--completion-protocol", "${COMPLETION_PROTOCOL}",
+    "--completion-max-tokens", "${COMPLETION_MAX_TOKENS}",
+    "--organizer", "${SAOR_ORGANIZER}",
+    "--writeback-mode", "none"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "project_frozen_static", "policy": "static_partition",
+      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
+    },
+    {
+      "scenario_id": "project_bounded_ready_fifo", "policy": "shared_fifo",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
+    },
+    {
+      "scenario_id": "project_bounded_ready_drr", "policy": "shared_drr",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
+    },
+    {
+      "scenario_id": "project_bounded_ready_vtc_style", "policy": "external_vtc",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
+    },
+    {
+      "scenario_id": "project_bounded_ready_saor_0125we",
+      "policy": "saor_bounded_ready",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "priorities": [0, 1], "slo_targets_s": [null, 30],
+      "priority_windows_s": [null, 30],
+      "debt_cap_fractions": [0.125, null],
+      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
+    }
+  ]
+}

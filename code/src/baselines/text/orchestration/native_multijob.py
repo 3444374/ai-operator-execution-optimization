@@ -22,10 +22,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Literal, Mapping, Sequence
 
 from src.baselines.common.cell_instrumentation import instrumented_cell
 from src.baselines.common.contracts import BaselineRequestResult
+from src.baselines.common.redact import redact_argument_list
 from src.baselines.common.manifests import partition_summary, read_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import validate_results
@@ -53,6 +54,9 @@ _BANNED_COMMAND_TOKENS = frozenset(
         "max-active-work",
         "project-profiler",
         "project_static",
+        "coordinator",
+        "shared-ready",
+        "shared_ready",
         "--inflight",
         "--router",
         "--credit",
@@ -69,6 +73,14 @@ class NativeMultiJobJob:
     manifest_sha256: str
     offset_s: float
     endpoint_summary: dict[str, object]
+
+
+@dataclass(frozen=True)
+class TimedPostgresManifestSource:
+    """PostgreSQL source that is loaded and verified inside every shard."""
+
+    database_url: str
+    workload_name: str
 
 
 @dataclass(frozen=True)
@@ -93,7 +105,12 @@ class NativeMultiJobConfig:
     experiment_id: str
     output_root: Path
     endpoint_urls: tuple[str, str]
+    endpoint_ids: tuple[str, ...]
     model: str
+    service_signature: tuple[tuple[str, object], ...]
+    protocol: str | None
+    output_cap: int | None
+    organizer: str | None
     api_key_env: str | None
     service_prefix_caching: str
     service_max_num_seqs: int
@@ -105,7 +122,19 @@ class NativeMultiJobConfig:
     schedule_seed: int
     endpoint_work_skew_max: float
     minimum_measurement_seconds: float
+    source: TimedPostgresManifestSource | None
+    job_internal_arrival_contract: Literal["manifest_timed", "eager"]
     arms: tuple[NativeMultiJobArm, ...]
+
+
+@dataclass(frozen=True)
+class NativeRunIdentity:
+    """Explicit identity supplied by the matrix that owns cell ordering."""
+
+    phase: str
+    repeat: int
+    order_index: int
+    run_id: str | None = None
 
 
 def _atomic_json(path: Path, payload: object) -> None:
@@ -261,12 +290,30 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         "formal_repeats", "schedule_seed", "endpoint_work_skew_max", "arms",
         "minimum_measurement_seconds",
     }
+    matrix_optional = {
+        "endpoint_ids", "service_signature", "protocol", "output_cap", "organizer",
+        "source", "job_internal_arrival_contract",
+    }
     missing = required - set(payload)
-    unknown = set(payload) - required
+    unknown = set(payload) - required - matrix_optional
     if missing or unknown:
         raise ValueError(f"config fields invalid: missing={sorted(missing)} unknown={sorted(unknown)}")
     if payload["schema_version"] != 1 or payload["formal"] is not True:
         raise ValueError("native multi-job runner requires schema_version=1 and formal=true")
+    source_raw = payload.get("source")
+    if source_raw is not None:
+        if not isinstance(source_raw, dict) or set(source_raw) != {
+            "kind", "database_url", "workload_name"
+        }:
+            raise ValueError("source must define kind, database_url, and workload_name")
+        if source_raw["kind"] != "timed_postgres_manifest":
+            raise ValueError("rankable native source must be timed_postgres_manifest")
+    arrival_contract = _string(
+        payload.get("job_internal_arrival_contract", "eager"),
+        "job_internal_arrival_contract",
+    )
+    if arrival_contract != "eager":
+        raise ValueError("native multi-job job_internal_arrival_contract must be eager")
     output_root = Path(_string(payload["output_root"], "output_root"))
     if output_root.exists():
         raise FileExistsError(f"output_root already exists: {output_root}")
@@ -277,6 +324,22 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     service = payload["service"]
     if not isinstance(service, dict) or set(service) != {"prefix_caching", "max_num_seqs", "max_num_batched_tokens"}:
         raise ValueError("service must contain prefix_caching, max_num_seqs, max_num_batched_tokens")
+    model = _string(payload["model"], "model")
+    signature = payload.get("service_signature", {})
+    if not isinstance(signature, dict):
+        raise ValueError("service_signature must be an object")
+    if signature:
+        if _string(signature.get("model"), "service_signature.model") != model:
+            raise ValueError("service_signature.model must equal model")
+        _string(signature.get("service"), "service_signature.service")
+    endpoint_ids = payload.get("endpoint_ids", [])
+    if endpoint_ids and (
+        not isinstance(endpoint_ids, list)
+        or len(endpoint_ids) != 2
+        or len(set(endpoint_ids)) != 2
+        or any(not isinstance(item, str) or not item for item in endpoint_ids)
+    ):
+        raise ValueError("endpoint_ids must contain two unique non-empty strings")
     prefix = _string(service["prefix_caching"], "service.prefix_caching")
     if prefix not in {"enabled", "disabled", "unknown"}:
         raise ValueError("service.prefix_caching must be enabled/disabled/unknown")
@@ -298,7 +361,21 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         experiment_id=_string(payload["experiment_id"], "experiment_id"),
         output_root=output_root,
         endpoint_urls=(endpoints[0], endpoints[1]),
-        model=_string(payload["model"], "model"),
+        endpoint_ids=tuple(endpoint_ids),
+        model=model,
+        service_signature=tuple(sorted(signature.items())),
+        protocol=(
+            _string(payload["protocol"], "protocol")
+            if "protocol" in payload else None
+        ),
+        output_cap=(
+            _positive_int(payload["output_cap"], "output_cap")
+            if "output_cap" in payload else None
+        ),
+        organizer=(
+            _string(payload["organizer"], "organizer")
+            if "organizer" in payload else None
+        ),
         api_key_env=api_key_env,
         service_prefix_caching=prefix,
         service_max_num_seqs=_positive_int(service["max_num_seqs"], "service.max_num_seqs"),
@@ -312,6 +389,14 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         minimum_measurement_seconds=_positive_float(
             payload["minimum_measurement_seconds"], "minimum_measurement_seconds"
         ),
+        source=(
+            TimedPostgresManifestSource(
+                database_url=_string(source_raw["database_url"], "source.database_url"),
+                workload_name=_string(source_raw["workload_name"], "source.workload_name"),
+            )
+            if source_raw is not None else None
+        ),
+        job_internal_arrival_contract=arrival_contract,
         arms=arms,
     )
 
@@ -341,6 +426,7 @@ def build_shard_command(
     endpoint_index: int, endpoint_url: str, output_dir: Path, model: str,
     service_prefix_caching: str, service_max_num_seqs: int,
     service_max_num_batched_tokens: int, api_key: str | None,
+    source: TimedPostgresManifestSource | None = None,
 ) -> list[str]:
     """Build one official adapter invocation; no project scheduler flag is accepted."""
 
@@ -354,6 +440,14 @@ def build_shard_command(
         str(service_max_num_seqs), "--service-max-num-batched-tokens",
         str(service_max_num_batched_tokens),
     ]
+    if source is not None:
+        command.extend(
+            [
+                "--database-url", source.database_url,
+                "--source-workload-name", source.workload_name,
+                "--timed-postgres-source",
+            ]
+        )
     if arm.ray_address is not None:
         command.extend(["--ray-address", arm.ray_address])
     if arm.adapter == "duckdb_ai":
@@ -374,13 +468,9 @@ def build_shard_command(
 
 
 def redact_command(command: Sequence[str]) -> list[str]:
-    """Preserve reproducible arguments while never persisting an API secret."""
+    """Preserve reproducible arguments without persisting any known secret."""
 
-    redacted = list(command)
-    for index, token in enumerate(redacted[:-1]):
-        if token == "--api-key":
-            redacted[index + 1] = "<redacted>"
-    return redacted
+    return redact_argument_list(list(command))
 
 
 def audit_command(command: Sequence[str]) -> None:
@@ -427,10 +517,15 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         "scheduler_owner",
         "custom_scheduling_code",
         "formal_baseline_eligible",
+        "source_kind",
+        "source_timing_boundary",
+        "source_read_s",
+        "source_validation_status",
     )
+    provenance_fields = required[:5]
     mismatches = {
         field: {"expected": expected.get(field) if field != "adapter" else arm.adapter, "observed": summary.get(field)}
-        for field in required
+        for field in provenance_fields
         if summary.get(field) != (arm.adapter if field == "adapter" else expected.get(field))
     }
     if mismatches:
@@ -440,6 +535,15 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         or summary["formal_baseline_eligible"] is not True
     ):
         raise ValueError(f"native framework shard contains non-native scheduling evidence: {summary_path}")
+    source_expected = {
+        "source_kind": "timed_postgres_manifest",
+        "source_timing_boundary": "inside_job_barrier",
+        "source_validation_status": "ok",
+    }
+    if any(summary.get(field) != value for field, value in source_expected.items()):
+        raise ValueError(f"shard source timing mismatch for {arm.arm_id}: {summary_path}")
+    if not isinstance(summary["source_read_s"], (int, float)) or summary["source_read_s"] < 0:
+        raise ValueError(f"shard source_read_s is invalid: {summary_path}")
     return {field: summary[field] for field in required}
 
 
@@ -529,7 +633,7 @@ def _run_job(
             model=config.model, service_prefix_caching=config.service_prefix_caching,
             service_max_num_seqs=config.service_max_num_seqs,
             service_max_num_batched_tokens=config.service_max_num_batched_tokens,
-            api_key=api_key,
+            api_key=api_key, source=config.source,
         )
         for index in (0, 1)
     ]
@@ -595,7 +699,8 @@ def _run_job(
         record.update({
             "status": "passed", "exactly_once": True,
             "shard_provenance": provenance,
-            "completed_count": len(results), "input_tokens": input_tokens,
+            "completed_count": len(results), "expected_count": len(requests),
+            "input_tokens": input_tokens,
             "output_tokens": output_tokens, "total_tokens": input_tokens + output_tokens,
             "job_barrier_tokens_per_s": (
                 (input_tokens + output_tokens) / (ended - launched) if ended > launched else 0.0
@@ -624,6 +729,123 @@ def _initial_index(config: NativeMultiJobConfig) -> dict[str, object]:
         ],
         "runs": [],
     }
+
+
+def run_native_multijob_cell(
+    config: NativeMultiJobConfig,
+    arm: NativeMultiJobArm,
+    identity: NativeRunIdentity,
+    output_dir: Path,
+    *,
+    runner_script: str | Path,
+    popen_factory: Callable[..., subprocess.Popen[object]] = subprocess.Popen,
+    queue_waiter: Callable[[tuple[str, ...], float], Mapping[int, Mapping[str, int]]] = wait_for_idle,
+    counter_sampler: Callable[[tuple[str, ...]], Mapping[int, Mapping[str, int]]] = sample_vllm_token_counters,
+    now: Callable[[], float] = time.time,
+    repository_commit: str,
+    cell_instrumenter: Callable[..., object] = instrumented_cell,
+) -> dict[str, object]:
+    """Execute one native physical cell without scheduling or acquiring a lease."""
+
+    if identity.phase not in {
+        "gate", "warmup", "formal", "selector_sanity_development",
+    }:
+        raise ValueError("native cell phase is unsupported")
+    if identity.repeat <= 0 or identity.order_index < 0:
+        raise ValueError("native cell repeat/order_index must be valid")
+    if not repository_commit:
+        raise ValueError("repository_commit must be non-empty")
+    output_dir.mkdir(parents=True)
+    for job in arm.jobs:
+        _assert_immutable(job)
+    run_id = identity.run_id or (
+        f"{identity.phase}_{identity.repeat:02d}_{identity.order_index:03d}_{arm.arm_id}"
+    )
+    record: dict[str, object] = {
+        "run_id": run_id,
+        "phase": identity.phase,
+        "repeat": identity.repeat,
+        "order_index": identity.order_index,
+        "interleaved_position": identity.order_index,
+        "arm_id": arm.arm_id,
+        "adapter": arm.adapter,
+        "job_count": len(arm.jobs),
+        "output_root": str(output_dir),
+        "repository_commit": repository_commit,
+        "status": "running",
+    }
+    metrics_urls = tuple(_metrics_url(url) for url in config.endpoint_urls)
+    api_key = os.environ.get(config.api_key_env) if config.api_key_env else None
+    if config.api_key_env and not api_key:
+        raise ValueError(f"api_key_env is not set: {config.api_key_env}")
+    try:
+        queue_before = queue_waiter(metrics_urls, config.idle_timeout_s)
+        counters_before = counter_sampler(metrics_urls)
+        gpu_trace = output_dir / "gpu_resource.csv"
+        with cell_instrumenter(metrics_urls, gpu_trace) as instrumentation:  # type: ignore[attr-defined]
+            t0 = now() + config.launch_lead_s
+            record["t0_epoch_s"] = t0
+            with ThreadPoolExecutor(max_workers=len(arm.jobs)) as pool:
+                futures = [
+                    pool.submit(
+                        _run_job,
+                        target_epoch_s=t0 + job.offset_s,
+                        arm=arm,
+                        job=job,
+                        arm_root=output_dir,
+                        runner_script=runner_script,
+                        config=config,
+                        api_key=api_key,
+                        popen_factory=popen_factory,
+                        now=now,
+                    )
+                    for job in arm.jobs
+                ]
+                jobs = [future.result() for future in futures]
+            queue_after = queue_waiter(metrics_urls, config.idle_timeout_s)
+        counters_after = counter_sampler(metrics_urls)
+        service = _counter_delta(counters_before, counters_after)
+        service_path = output_dir / "service_counters.json"
+        _atomic_json(service_path, service)
+        arm_barrier_jct_s = now() - t0
+        record.update(
+            {
+                "jobs": jobs,
+                "queue_before": queue_before,
+                "queue_final": queue_after,
+                "service_counters": str(service_path),
+                "gpu_resource_trace": str(gpu_trace),
+                "gpu_summary": instrumentation.gpu_summary,
+                "gauge_summary": instrumentation.gauge_summary,
+                "vllm_latency_deltas": instrumentation.ttft_deltas,
+                "arm_barrier_jct_s": arm_barrier_jct_s,
+                "status": "passed" if all(job["status"] == "passed" for job in jobs) else "failed",
+                "exactly_once": all(job.get("exactly_once") is True for job in jobs),
+            }
+        )
+        record["comparison_eligible"] = (
+            identity.phase == "formal"
+            and record["status"] == "passed"
+            and arm_barrier_jct_s >= config.minimum_measurement_seconds
+        )
+        record["duration_status"] = (
+            "gate_not_ranked"
+            if identity.phase == "gate"
+            else f"{identity.phase}_not_ranked"
+            if identity.phase != "formal"
+            else "passed"
+            if record["comparison_eligible"]
+            else "below_minimum_not_rankable"
+        )
+        total_tokens = sum(int(job.get("total_tokens", 0)) for job in jobs)
+        record["group_barrier_tokens_per_s"] = (
+            total_tokens / arm_barrier_jct_s if arm_barrier_jct_s > 0 else 0.0
+        )
+        if record["status"] != "passed":
+            record["error"] = "RuntimeError: one or more native job shards failed"
+    except Exception as exc:
+        record.update({"status": "failed", "error": f"{type(exc).__name__}: {exc}"})
+    return record
 
 
 def run_native_multijob(
@@ -696,76 +918,33 @@ def run_native_multijob(
                     ordinal += 1
                     run_id = f"{ordinal:03d}_{phase}_{repeat:02d}_{arm.arm_id}"
                     arm_root = config.output_root / "runs" / run_id
-                    arm_root.mkdir(parents=True)
-                    for job in arm.jobs:
-                        _assert_immutable(job)
-                    record: dict[str, object] = {
+                    record = {
                         "run_id": run_id, "phase": phase, "repeat": repeat,
-                        "interleaved_position": position, "arm_id": arm.arm_id,
-                        "adapter": arm.adapter, "job_count": len(arm.jobs),
-                        "output_root": str(arm_root), "status": "running",
+                        "order_index": position, "interleaved_position": position,
+                        "arm_id": arm.arm_id, "adapter": arm.adapter,
+                        "job_count": len(arm.jobs), "output_root": str(arm_root),
+                        "repository_commit": repository_commit, "status": "running",
                     }
                     index["runs"].append(record)  # type: ignore[index]
                     _atomic_json(index_path, index)
-                    try:
-                        queue_before = queue_waiter(metrics_urls, config.idle_timeout_s)
-                        counters_before = counter_sampler(metrics_urls)
-                        gpu_trace = arm_root / "gpu_resource.csv"
-                        with cell_instrumenter(metrics_urls, gpu_trace) as instrumentation:  # type: ignore[attr-defined]
-                            t0 = now() + config.launch_lead_s
-                            record["t0_epoch_s"] = t0
-                            with ThreadPoolExecutor(max_workers=len(arm.jobs)) as pool:
-                                futures = [
-                                    pool.submit(
-                                        _run_job, target_epoch_s=t0 + job.offset_s, arm=arm, job=job,
-                                        arm_root=arm_root, runner_script=runner_script, config=config,
-                                        api_key=api_key, popen_factory=popen_factory, now=now,
-                                    )
-                                    for job in arm.jobs
-                                ]
-                                jobs = [future.result() for future in futures]
-                            # Keep the instrumentation's final metrics snapshot idle so
-                            # histogram deltas and the next arm cannot overlap.
-                            queue_after = queue_waiter(metrics_urls, config.idle_timeout_s)
-                        counters_after = counter_sampler(metrics_urls)
-                        service = _counter_delta(counters_before, counters_after)
-                        _atomic_json(arm_root / "service_counters.json", service)
-                        record.update({
-                            "jobs": jobs, "queue_before": queue_before, "queue_final": queue_after,
-                            "service_counters": str(arm_root / "service_counters.json"),
-                            "gpu_resource_trace": str(gpu_trace),
-                            "gpu_summary": instrumentation.gpu_summary,
-                            "gauge_summary": instrumentation.gauge_summary,
-                            "vllm_latency_deltas": instrumentation.ttft_deltas,
-                            "arm_barrier_jct_s": now() - t0,
-                            "status": "passed" if all(job["status"] == "passed" for job in jobs) else "failed",
-                            "exactly_once": all(job.get("exactly_once") is True for job in jobs),
-                        })
-                        record["comparison_eligible"] = (
-                            phase == "formal"
-                            and record["status"] == "passed"
-                            and record["arm_barrier_jct_s"]
-                            >= config.minimum_measurement_seconds
-                        )
-                        if phase == "gate":
-                            record["duration_status"] = "gate_not_ranked"
-                        elif phase == "warmup":
-                            record["duration_status"] = "warmup_not_ranked"
-                        else:
-                            record["duration_status"] = (
-                                "passed"
-                                if record["comparison_eligible"]
-                                else "below_minimum_not_rankable"
-                            )
-                        total_tokens = sum(int(job.get("total_tokens", 0)) for job in jobs)
-                        record["group_barrier_tokens_per_s"] = total_tokens / record["arm_barrier_jct_s"] if record["arm_barrier_jct_s"] > 0 else 0.0
-                        if record["status"] != "passed":
-                            raise RuntimeError("one or more native job shards failed")
-                    except Exception as exc:
-                        record.update({"status": "failed", "error": f"{type(exc).__name__}: {exc}"})
+                    completed = run_native_multijob_cell(
+                        config,
+                        arm,
+                        NativeRunIdentity(phase, repeat, position, run_id),
+                        arm_root,
+                        runner_script=runner_script,
+                        popen_factory=popen_factory,
+                        queue_waiter=queue_waiter,
+                        counter_sampler=counter_sampler,
+                        now=now,
+                        repository_commit=repository_commit,
+                        cell_instrumenter=cell_instrumenter,
+                    )
+                    record.update(completed)
+                    if record["status"] != "passed":
                         index.update({"status": "failed", "comparison_admission": "not_rankable", "failed_run": run_id})
                         _atomic_json(index_path, index)
-                        raise
+                        raise RuntimeError(str(record.get("error", "native cell failed")))
                     _atomic_json(index_path, index)
     except Exception:
         raise

@@ -22,9 +22,10 @@
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
 
 `analysis/audit_saor_formal_readiness.py` 在不发送请求的前提下 fail-closed 校验固定包络 SAOR
-十 scenario 矩阵、1+3 合同、FCFS 声明、calibration selection、manifest 行数/SHA/endpoint
-覆盖和 direct/project 请求等价字段。正式 runner 的 `--rehearsal` 只产生每 scenario 一个
-warmup identity；通过后才可用新目录运行配置中的 formal。
+十 scenario formal，或用 `--profile priority_reachability` 校验 static/SAOR/foreground
+strict-priority 三臂诊断；共同检查 1+3、FCFS 声明、calibration selection、manifest
+行数/SHA/endpoint 覆盖。formal profile 还检查 direct/project 请求等价字段。正式 runner 的
+`--rehearsal` 只产生每 scenario 一个 warmup identity；通过后才可用新目录运行配置中的 formal。
 
 `analysis/summarize_saor_active_set.py` 要求十个 scenario 各 1 warm-up + 3 formal、0 incident，
 并把六臂 workload lifecycle 与四个 credit 策略 mechanism gate 分开审计。rehearsal 本身
@@ -33,6 +34,120 @@ fail-closed：metrics/resources、lifecycle 或适用的 borrow/reclaim/work-con
 solo 和 direct solo 复算 work-rate slowdown/Jain，输出 `formal_summary.csv`、
 `per_job_slowdown.csv` 与 `validation.json`；不把 direct 的 request bound 误标为 work-credit
 等资源 envelope，也不产生 theorem 或 dynamic-K claim。
+
+同一汇总器的 `--mechanism-only` 只从 compact `group_runs.csv` 回放 credit mechanism。
+post-drain 完成间隔低于 250 ms trace 周期且区间内没有样本时记为不适用；有时间窗/样本时仍
+fail-closed。输出 `mechanism_gate_replay.json` 明确不升级完整 formal validation。
+
+`analysis/summarize_saor_priority_reachability.py` 汇总 static、SAOR 与 non-preemptive
+foreground strict-priority 三臂 1+3 诊断。它要求 group evidence 中 priority 动作为 `[0,1]`，
+并以 foreground P99≤30.7s、SLO violation≤1% 判 release-only 上界是否可达；吞吐只作语境，
+该诊断不构成 SAOR 或 reservation 策略胜出。
+
+`analysis/summarize_saor_bounded_priority_gate.py` 是 bounded-priority SAOR
+候选的 fail-closed 本地开发门。它只接受两轮干净 rehearsal，每轮固定包含 static、
+release-only SAOR、0.125K 和 0.25K debt-cap 四臂，并重算正确性、前台尾延迟/SLO、
+吞吐、bulk 保护和机制门。机制证据只来自无损 release-event ledger；账本缺失、为空、
+序号缺口或重复都会失败。采样 credit snapshot 仅供诊断，既不能否决短于采样周期的真实
+转换，也不能单独满足机制门。通过只得到 `formal_registration_candidate`，不构成正式性能结果。
+同一脚本的 `--profile bounded_ready` 只接受新 `saor_bounded_ready` 两档 scenario，并额外
+要求 submission lifecycle 与 actor-side release-event request join 完整、foreground
+register→grant
+区间非空、区间内 foreign fallback=0；旧 bounded-priority profile 保持不变。
+
+`analysis/audit_saor_formal_readiness.py --profile matched_ready_selector_ablation`
+审计六臂项目内部归因合同：project frozen-static 不使用 bounded-ready；FIFO、DRR、
+external VTC-style、strict-priority 与 proposed 对所有 Job 使用同一 bounded-ready
+request/work/logical-bytes 上限。该 profile 不包含、也不能替代任何原生系统 baseline；
+通过只允许 1--2 轮 development rehearsal。
+`analysis/summarize_saor_matched_ready_ablation.py` 随后 fail-closed 校验六臂身份、
+correctness、五个 bounded-ready 臂的全 Job ready lifecycle 和 proposed 的 guarded-debt 机制证据；
+frozen-static 生产路径不经过 shared-credit ledger，其 completion service lag 明确标为
+`not_applicable`，但仍用共同可见的 JCT/P99/SLO/吞吐评价，输出原始臂指标，
+但固定写明 `selector_victory_decided=false`、`formal_authorized=false`；效应量与
+non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 胜出。
+
+`experiments/run_saor_project_mechanism.py` 是独立 Project mechanism 矩阵的 audit-aware
+入口。它绑定 `saor_project_mechanism_formal_contract.json`，运行前复用 matched-ready
+readiness audit，并把合同 SHA 与 readiness 写入 output root。最终 rehearsal 已通过并登记证据
+SHA，独立审核后又由当前签名 ceiling 确认 feeding=92.898%<95%，合同已进入
+`locked_failed_feeding/formal_authorized=false`，因此 wrapper 仍只允许
+`--rehearsal`；即使有人
+遗漏命令行约定，非 rehearsal 也会 fail closed。正式配置使用位置平衡种子，使六臂在三次
+formal 中各占三个不同序位，而不是让 proposed 连续固定在首位。授权 validator 逐字段绑定已审核
+root 的 validation SHA、commit、root ID、archive SHA 与 valid flag；不是“任意 SHA 存在”即可放行。
+
+`analysis/summarize_saor_project_mechanism_formal.py` 只接受经过上述 wrapper、完整 1+3、18 个
+formal cell 的证据。static 的 registered-ready fairness 为不适用；五个 bounded-ready 臂必须
+有 completion-accounted service lag/最长无服务证据；proposed 还必须闭合 recovery grant→request
+completion→debt below-cap episode。工具将 evidence validity 与 claim gate 分开：有效实验即使
+未过 5% headline、吞吐/bulk JCT/SLO/no-service non-inferiority 或 repayment 门也保持有效负结果，
+不会把性能失败伪装成无效运行。
+
+`experiments/run_saor_feeding_ceiling.py` 只运行一个 `direct_no_job` cell，并在发请求前逐字段比较
+ceiling 与六臂 reference 的 endpoints、服务元数据、K/W、common args、typed work cost、
+calibration、manifest、rows 和 arrival。它明确禁止 bounded-ready/credit，调度所有权属于 direct
+HTTP semaphore + vLLM FCFS。`analysis/summarize_saor_feeding_ceiling.py` 再区分 evidence validity
+与 ≥95% feeding gate：合法的 92% 结果写为 `failed_feeding` 且退出码仍允许归档，不会被伪装成
+基础设施失败或自动授权 formal。当前冻结结果为 direct 13,684.90 tok/s、SAOR 12,713.03 tok/s、
+ratio=92.898%，因此当前合同不再等待 ceiling，而是终止 formal。
+汇总 CLI 现在强制传入 evaluation contract 与 project/ceiling 两个完整 archive；只有 group CSV、
+manifest commit/config/root、运行时合同快照、rehearsal validation 和 archive SHA 全部匹配，才会
+设置 `evidence_valid=true`。可复用 runner 参数解析和 endpoint idle gate 位于
+`src/experiments/shared_vllm/{cli,preflight}.py`，feeding CLI 不再跨 `scripts/` 导入。
+
+`experiments/run_saor_feeding_gap_diagnostic.py` 是终止 formal 后唯一允许的文本差距归因入口。
+它验证旧合同仍为 `locked_failed_feeding` 且 SHA 未变，再执行 D0 direct K-only、D1 direct K+W、
+P0 bounded-ready FIFO K+W 的平衡 `1+3` diagnostic matrix。D1 使用 endpoint-local typed-work
+reservation/completion release，但不读取 Job 身份、权重或 ready window，因此是 Project diagnostic
+control，不是原生 baseline。入口会先结构化保存 PG/Ray/全部 endpoint clean gate；失败 root 不得
+续跑或覆盖。
+
+`analysis/summarize_saor_feeding_gap_diagnostic.py` 从 group、direct admission ledger、P0 credit trace
+和 Job runs 重算 W/request occupancy、admission wait、Ray submit/actor-ready、vLLM、MFU、TTFT/ITL、
+JCT/SLO 与 energy，并对三个 measured repeat 配对计算 D1/D0 和 P0/D1。缺任一证据族只输出
+`invalid_evidence`；四种 0.95 分类均显式保留旧负判决，不能授权 SAOR formal。
+
+`analysis/audit_chat_prompt_overhead.py` 从 `jobs/*.requests.csv` 与
+`jobs/*.submissions.csv` 按 submission ID 独立重算
+`service total - raw prompt - actual output`。它只接受一请求一 submission、全完成、非负且
+全体一致的开销，并可冻结 expected overhead/request count；输出包含每个输入文件 SHA。该值绑定
+模型 revision、chat template 与 completion protocol，不是跨服务常数，也不能由 runtime
+summary 自证。request trace 保留 raw prompt token；只有 admission/credit 的 effective work
+加入该校准项。正式 fixed-cap 合同还要求每条 `estimated_output_tokens` 严格等于冻结的
+`completion_max_tokens`；客户端对输出文本的事后重分词只作诊断，不能充当 admission estimate。
+
+`analysis/audit_saor_formal_readiness.py --profile ready_observation_bridge`
+审计三臂 Project observation bridge：frozen-static/single-head、shared FIFO/single-head、
+shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity，第二段在 FIFO 固定时
+隔离 single-head→bounded-ready。配置入口为
+`deploy/autodl/saor_ready_observation_bridge.example.json`。
+`analysis/summarize_saor_ready_observation_bridge.py` 要求一到两个干净 rehearsal root，输出
+`bridge_metrics.csv` 与 `bridge_effects.csv`，同时固定 native baseline 数为 0、两个效应均为
+`decided=false`、`formal_authorized=false`；该桥是项目内部归因，不是原生系统比较。
+
+`experiments/run_saor_native_system_matched.py` 是本地系统级 matched matrix 编排入口。它在
+dispatch 前联合加载 matched/native/Project 三份配置并执行 readiness 与执行器绑定审计，随后
+平衡编排 8 个唯一物理臂（3 个原生系统臂、Project frozen-static、3 个 Project selector
+sanity 臂和共享的 proposed 臂）。`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
+cell；runner 与模板均不授予 GPU formal 执行权限。
+
+`analysis/summarize_saor_native_system_matched.py` 是该矩阵的纯离线、fail-closed 汇总入口，
+只读已提交的 `matrix_index.json` 与资源 trace，不连接服务。它输出 `all_runs.csv`、五臂
+`system_summary.csv`、四臂 `project_selector_sanity.csv`、`job_summary.csv`、
+`resource_summary.csv` 和固定边界的 `validation.json`。同一个 SAOR 物理 run 同时投影到两张表；
+内部 FIFO 的完整名称是 **Project bounded-ready + global FIFO matched-control**，不是原生
+baseline。原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
+非空原因；P99 与 SLO 分别输出 status/value/reason，任一不可用时不得生成跨系统排名。Job JCT
+按预注册的 nominal release→completion 计算，actual launch/offset/deviation 仅保留为启动抖动与
+overlap 诊断。Task3 normalizer 把 legacy flat unavailable tail 转为中性 nested
+`request_p99/slo → status/value/reason`，并把 `_snapshot_mapping` 产生的五类 JSON-encoded per-Job
+live 容器解码后再存入 evidence。终态校验按真实 native `queue_final` 与 Project
+`shared_credit_final` schema 只检查实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。
+六个输出先写相邻 staging；发布 CSV 前先原子写入非 passed 的 `publishing` marker，五个 CSV 逐个
+替换，最后才原子发布 passed `validation.json`。消费者只可把 `validation.json.status=passed` 视为
+有效代次；失败重跑会移除旧 CSV，只保留 failed `validation.json`。工具不产生 winner，也固定
+`formal_authorized=false`。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data

@@ -77,6 +77,18 @@ def _scheduler_metrics(result: SchedulerResult) -> dict:
         "max_active_work_per_endpoint_seen": (
             result.max_active_work_per_endpoint_seen
         ),
+        "max_ready_requests_seen": result.max_ready_requests_seen,
+        "max_ready_work_seen": result.max_ready_work_seen,
+        "max_ready_payload_bytes_seen": (
+            result.max_ready_payload_bytes_seen
+        ),
+        "ready_requests_transition_samples": (
+            result.ready_requests_transition_samples
+        ),
+        "ready_work_transition_samples": result.ready_work_transition_samples,
+        "ready_payload_bytes_transition_samples": (
+            result.ready_payload_bytes_transition_samples
+        ),
         "bounded_wait_s": result.bounded_wait_s,
         "avg_bounded_wait_s": result.avg_bounded_wait_s,
         "fanin_s": result.fanin_s,
@@ -113,6 +125,28 @@ def _shared_credit_client(
             if config.get("saor_release") is not None
             else None
         ),
+        record_ready_lifecycle_events=(
+            config.get("ready_observation_contract")
+            == "bounded_concrete_pre_registration"
+        ),
+    )
+
+
+def _shared_ready_window_limits(
+    max_inflight: int,
+    endpoint_ids: Sequence[str],
+    config: Mapping[str, object] | None,
+) -> tuple[int, int | None, int | None]:
+    """Derive the ready window from the frozen Job K and endpoint W."""
+
+    if not config or config.get("ready_observation_contract") != (
+        "bounded_concrete_pre_registration"
+    ):
+        return 1, None, None
+    return (
+        max_inflight,
+        int(config["work_limit"]) * len(endpoint_ids),
+        int(config["ready_payload_bytes_limit"]),
     )
 
 
@@ -129,6 +163,14 @@ def _run_static_scheduler(
     per_endpoint_work_limit: int | None = None,
     shared_credit=None,
     job_weight: int = 1,
+    job_priority: int = 0,
+    job_slo_target_s: float | None = None,
+    job_priority_window_s: float | None = None,
+    job_fairness_debt_cap: float | None = None,
+    shared_credit_acquire_timeout_s: float | None = None,
+    shared_ready_request_limit: int = 1,
+    shared_ready_work_limit: int | None = None,
+    shared_ready_payload_bytes_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -143,6 +185,15 @@ def _run_static_scheduler(
         per_endpoint_work_limit,
         shared_credit,
         job_weight,
+        job_priority,
+        None,
+        job_slo_target_s,
+        job_priority_window_s,
+        job_fairness_debt_cap,
+        shared_credit_acquire_timeout_s,
+        shared_ready_request_limit,
+        shared_ready_work_limit,
+        shared_ready_payload_bytes_limit,
     )
 
 
@@ -159,7 +210,15 @@ def _run_scheduler(
     per_endpoint_work_limit: int | None = None,
     shared_credit=None,
     job_weight: int = 1,
+    job_priority: int = 0,
     per_endpoint_admission: Mapping[str, object] | None = None,
+    job_slo_target_s: float | None = None,
+    job_priority_window_s: float | None = None,
+    job_fairness_debt_cap: float | None = None,
+    shared_credit_acquire_timeout_s: float | None = None,
+    shared_ready_request_limit: int = 1,
+    shared_ready_work_limit: int | None = None,
+    shared_ready_payload_bytes_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -174,6 +233,16 @@ def _run_scheduler(
         per_endpoint_admission=per_endpoint_admission,
         shared_credit=shared_credit,
         job_weight=job_weight,
+        job_priority=job_priority,
+        job_slo_target_s=job_slo_target_s,
+        job_priority_window_s=job_priority_window_s,
+        job_fairness_debt_cap=job_fairness_debt_cap,
+        shared_credit_acquire_timeout_s=shared_credit_acquire_timeout_s,
+        shared_ready_request_limit=shared_ready_request_limit,
+        shared_ready_work_limit=shared_ready_work_limit,
+        shared_ready_payload_bytes_limit=(
+            shared_ready_payload_bytes_limit
+        ),
         actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
@@ -248,6 +317,7 @@ def _run_per_endpoint_dynamic_scheduler(
         None,
         None,
         1,
+        0,
         endpoint_gates,
     )
     new_events = trace_events[trace_start:]
@@ -279,6 +349,7 @@ def submit_with_backpressure(
     epoch_clock=None,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
     completion_max_tokens: int = 0,
+    completion_prompt_token_overhead: int = 0,
     actors: Sequence[object] | None = None,
     submission_state: ActorSubmissionState | None = None,
     per_endpoint_limit: int | None = None,
@@ -348,6 +419,9 @@ def submit_with_backpressure(
                     else 0
                 ),
                 output_cost_mode=output_cost_mode,
+                prompt_token_overhead_per_request=(
+                    completion_prompt_token_overhead
+                ),
             )
         )
         topology = _endpoint_topology(
@@ -409,6 +483,17 @@ def submit_with_backpressure(
                 endpoint_ids,
                 shared_credit_config,
             )
+            (
+                ready_request_limit,
+                ready_work_limit,
+                ready_payload_bytes_limit,
+            ) = (
+                _shared_ready_window_limits(
+                    max_inflight,
+                    endpoint_ids,
+                    shared_credit_config,
+                )
+            )
             results, metrics = _run_static_scheduler(
                 ray_module,
                 envelopes,
@@ -426,6 +511,34 @@ def submit_with_backpressure(
                     if shared_credit_config
                     else 1
                 ),
+                (
+                    shared_credit_config.get("job_priority", 0)
+                    if shared_credit_config
+                    else 0
+                ),
+                (
+                    shared_credit_config.get("job_slo_target_s")
+                    if shared_credit_config
+                    else None
+                ),
+                (
+                    shared_credit_config.get("job_priority_window_s")
+                    if shared_credit_config
+                    else None
+                ),
+                (
+                    shared_credit_config.get("job_fairness_debt_cap")
+                    if shared_credit_config
+                    else None
+                ),
+                (
+                    shared_credit_config.get("acquire_timeout_s")
+                    if shared_credit_config
+                    else None
+                ),
+                ready_request_limit,
+                ready_work_limit,
+                ready_payload_bytes_limit,
             )
     metrics.update(
         {
@@ -554,6 +667,7 @@ def submit_ray_tasks(
     completion_temperature: float | None = None,
     completion_protocol: str = "completions",
     completion_ignore_eos: bool = False,
+    completion_prompt_token_overhead: int = 0,
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
@@ -602,6 +716,9 @@ def submit_ray_tasks(
             if operator == "ai_complete"
             else 0,
             output_cost_mode=output_cost_mode,
+            prompt_token_overhead_per_request=(
+                completion_prompt_token_overhead
+            ),
         )
     )
     if model_backend == "fake":
@@ -712,6 +829,15 @@ def submit_ray_tasks(
         endpoint_ids,
         shared_credit_config,
     )
+    (
+        ready_request_limit,
+        ready_work_limit,
+        ready_payload_bytes_limit,
+    ) = _shared_ready_window_limits(
+        max_inflight,
+        endpoint_ids,
+        shared_credit_config,
+    )
     return _run_static_scheduler(
         ray_module,
         envelopes,
@@ -729,6 +855,34 @@ def submit_ray_tasks(
             if shared_credit_config
             else 1
         ),
+        (
+            shared_credit_config.get("job_priority", 0)
+            if shared_credit_config
+            else 0
+        ),
+        (
+            shared_credit_config.get("job_slo_target_s")
+            if shared_credit_config
+            else None
+        ),
+        (
+            shared_credit_config.get("job_priority_window_s")
+            if shared_credit_config
+            else None
+        ),
+        (
+            shared_credit_config.get("job_fairness_debt_cap")
+            if shared_credit_config
+            else None
+        ),
+        (
+            shared_credit_config.get("acquire_timeout_s")
+            if shared_credit_config
+            else None
+        ),
+        ready_request_limit,
+        ready_work_limit,
+        ready_payload_bytes_limit,
     )
 
 

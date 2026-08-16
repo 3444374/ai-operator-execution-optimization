@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "experiment_id": "saor_bounded_priority_development_gate",
+  "config_fingerprint": "a3d19323a510f30fdbf0b33c82877971052a2efc6e5dec6b7bda021f9b0c582a",
+  "repository_commit": "2de6f931ef50a19ffaf33661f66c5e91295e5ac5",
+  "run_instance_id": "saor_bounded_priority_gate_20260813_2de6f93_r2-a7d00291caed",
+  "execution_mode": "rehearsal",
+  "redacted_config": {
+    "experiment_id": "saor_bounded_priority_development_gate",
+    "seed": 20260812,
+    "warmup_runs_per_scenario": 1,
+    "formal_repeats": 0,
+    "endpoint_ids": [
+      "endpoint-0",
+      "endpoint-1"
+    ],
+    "request_limit_per_endpoint": 128,
+    "work_limit_per_endpoint": 65536,
+    "credit_quantum": 2048,
+    "shared_credit_namespace": "ai-operator-saor-bounded-priority",
+    "gpu_peak_tflops": 165.0,
+    "mfu_precision": "bf16_dense_fp32_accumulate",
+    "common_args": [
+      "--database-url",
+      "***",
+      "--source-max-prompt-tokens",
+      "1500",
+      "--operator",
+      "ai_complete",
+      "--executor",
+      "ray_actor",
+      "--actor-workers-per-endpoint",
+      "8",
+      "--ray-actor-max-concurrency",
+      "32",
+      "--ray-worker-num-cpus",
+      "0.25",
+      "--completion-http-transport",
+      "httpx_async",
+      "--completion-http-keepalive-expiry-s",
+      "4",
+      "--model-backend",
+      "compatible_http",
+      "--completion-endpoint-urls",
+      "http://127.0.0.1:8000/v1/chat/completions,http://127.0.0.1:8001/v1/chat/completions",
+      "--completion-model",
+      "qwen2.5-7b",
+      "--completion-protocol",
+      "chat_completions",
+      "--completion-max-tokens",
+      "256",
+      "--completion-return-token-ids",
+      "--completion-prompt-format",
+      "raw",
+      "--completion-temperature",
+      "0",
+      "--completion-request-timeout-s",
+      "300",
+      "--model-metrics-urls",
+      "http://127.0.0.1:8000/metrics,http://127.0.0.1:8001/metrics",
+      "--endpoint-gpu-ids",
+      "0,1",
+      "--source-workload-name",
+      "sharegpt_multiturn",
+      "--source-order",
+      "arrival_time",
+      "--data-source",
+      "daft_postgres",
+      "--organizer",
+      "daft",
+      "--daft-runner",
+      "native",
+      "--batching-policy",
+      "token_budget",
+      "--token-budget",
+      "6144",
+      "--ray-batch-rows",
+      "256",
+      "--output-cost-mode",
+      "fixed_output_cap",
+      "--cost-model-id",
+      "qwen2.5-7b",
+      "--cost-tokenizer-id",
+      "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+      "--arrival-replay",
+      "--arrival-time-scale",
+      "0.0001",
+      "--scheduling-policy",
+      "static",
+      "--endpoint-routing",
+      "manifest_pinned",
+      "--token-budget-policy",
+      "static",
+      "--flush-policy",
+      "fixed_timeout",
+      "--flush-timeout-ms",
+      "50",
+      "--flush-max-wait-ms",
+      "50",
+      "--writeback-mode",
+      "none",
+      "--request-slo-ms",
+      "30000",
+      "--gpu-peak-tflops",
+      "165",
+      "--mfu-precision",
+      "bf16_dense_fp32_accumulate"
+    ],
+    "scenarios": [
+      {
+        "scenario_id": "active_set_static_partition",
+        "policy": "static_partition",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0,
+          5.0
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/long_512.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/short_512.jsonl"
+        ],
+        "rows_per_jobs": [
+          512,
+          512
+        ],
+        "request_limit_per_endpoint": null,
+        "work_limit_per_endpoint": null,
+        "priorities": [],
+        "slo_targets_s": [],
+        "priority_windows_s": [],
+        "debt_cap_fractions": []
+      },
+      {
+        "scenario_id": "active_set_saor_release",
+        "policy": "saor_release",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0,
+          5.0
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/long_512.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/short_512.jsonl"
+        ],
+        "rows_per_jobs": [
+          512,
+          512
+        ],
+        "request_limit_per_endpoint": null,
+        "work_limit_per_endpoint": null,
+        "priorities": [],
+        "slo_targets_s": [],
+        "priority_windows_s": [],
+        "debt_cap_fractions": []
+      },
+      {
+        "scenario_id": "active_set_saor_bounded_priority_0125k",
+        "policy": "saor_bounded_priority",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0,
+          5.0
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/long_512.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/short_512.jsonl"
+        ],
+        "rows_per_jobs": [
+          512,
+          512
+        ],
+        "request_limit_per_endpoint": null,
+        "work_limit_per_endpoint": null,
+        "priorities": [
+          0,
+          1
+        ],
+        "slo_targets_s": [
+          null,
+          30.0
+        ],
+        "priority_windows_s": [
+          null,
+          30.0
+        ],
+        "debt_cap_fractions": [
+          0.125,
+          null
+        ]
+      },
+      {
+        "scenario_id": "active_set_saor_bounded_priority_025k",
+        "policy": "saor_bounded_priority",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0,
+          5.0
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/long_512.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/short_512.jsonl"
+        ],
+        "rows_per_jobs": [
+          512,
+          512
+        ],
+        "request_limit_per_endpoint": null,
+        "work_limit_per_endpoint": null,
+        "priorities": [
+          0,
+          1
+        ],
+        "slo_targets_s": [
+          null,
+          30.0
+        ],
+        "priority_windows_s": [
+          null,
+          30.0
+        ],
+        "debt_cap_fractions": [
+          0.25,
+          null
+        ]
+      }
+    ],
+    "service_metadata": {
+      "chunked_prefill": true,
+      "compilation_mode": "default",
+      "enforce_eager": false,
+      "gpu_memory_utilization": 0.9,
+      "max_num_batched_tokens": 8192,
+      "max_num_seqs": 256,
+      "mfu_metrics": true,
+      "prefix_caching": true,
+      "scheduling_policy": "fcfs",
+      "vllm_version": "0.25.1"
+    },
+    "fail_closed_rehearsal": true,
+    "calibration_contract": {
+      "path": "/root/autodl-tmp/experiment-artifacts/opening_multijob_calibration_selection_20260808.json",
+      "sha256": "bc2042d74bfa4c5c9bf49d9abcd5e911d56e2be581e185d4eb586e155d53aa41",
+      "selection": {
+        "project_active_work_per_endpoint": 65536,
+        "project_actor_workers_per_endpoint": 8,
+        "project_ray_actor_max_concurrency": 32,
+        "project_ray_worker_num_cpus": 0.25,
+        "project_static_k_per_endpoint": 128
+      }
+    },
+    "state_aware_control": null,
+    "saor_capacity_control": null,
+    "saor_release_control": {
+      "entitlement_weight": 1.0,
+      "queue_weight": 0.0,
+      "fairness_weight": 1.0,
+      "slo_weight": 0.0
+    }
+  },
+  "schedule": [
+    {
+      "scenario_id": "active_set_static_partition",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 0,
+      "random_seed": 20260812
+    },
+    {
+      "scenario_id": "active_set_saor_release",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 1,
+      "random_seed": 20260812
+    },
+    {
+      "scenario_id": "active_set_saor_bounded_priority_0125k",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 2,
+      "random_seed": 20260812
+    },
+    {
+      "scenario_id": "active_set_saor_bounded_priority_025k",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 3,
+      "random_seed": 20260812
+    }
+  ],
+  "completed_runs": [
+    {
+      "scenario_id": "active_set_static_partition",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 0,
+      "random_seed": 20260812,
+      "policy": "static_partition",
+      "job_count": 2,
+      "record_path": "records/000_warmup_1_active_set_static_partition.json"
+    },
+    {
+      "scenario_id": "active_set_saor_release",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 1,
+      "random_seed": 20260812,
+      "policy": "saor_release",
+      "job_count": 2,
+      "record_path": "records/001_warmup_1_active_set_saor_release.json"
+    },
+    {
+      "scenario_id": "active_set_saor_bounded_priority_0125k",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 2,
+      "random_seed": 20260812,
+      "policy": "saor_bounded_priority",
+      "job_count": 2,
+      "record_path": "records/002_warmup_1_active_set_saor_bounded_priority_0125k.json"
+    }
+  ],
+  "incidents": [
+    {
+      "scenario_id": "active_set_saor_bounded_priority_025k",
+      "phase": "warmup",
+      "repeat_index": 1,
+      "order_index": 3,
+      "random_seed": 20260812,
+      "reason": "RuntimeError:rehearsal bounded-SAOR mechanism gate failed",
+      "recovered": false
+    }
+  ],
+  "status": "failed"
+}

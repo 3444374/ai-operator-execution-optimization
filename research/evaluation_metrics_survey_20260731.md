@@ -1,6 +1,6 @@
 # 评估指标调研：AI 算子与推理服务文献 + 数据库厂商基准
 
-首次整理：2026-07-31；最近更新：2026-08-05
+首次整理：2026-07-31；最近更新：2026-08-13
 调研工具：`nature-academic-search` + `deep-research`（lit-review 口径），以一个后台工作流执行（15 个抽取 agent + 1 个综合 agent）。
 证据范围：项目已有 49 篇精读笔记 + `baseline_reference.md` 已核验的数据库厂商官方
 文档与标准 benchmark；论文数字优先回到本地精读笔记和一手论文，产品场景优先回到
@@ -126,10 +126,16 @@
 
 | 指标 | 定义 | 文献 | 厂商/标准 | 状态 |
 |---|---|---|---|---|
-| Jain fairness index | 0–1 公平指数 | CoLoRA、ProServe | — | ✅ |
-| **Service disparity（跨客户端累计服务差 + 上界）** | 持续 backlogged 客户端累计 virtual token counter 最大/平均差及理论上界 | VTC、DLPM | — | 🔴 |
+| Weighted attained-service Jain | 共同积压窗口内，对实际完成服务按 Job 权重归一化后计算 0–1 均匀度 | VTC、DLPM、Pisces | — | ✅（描述性指标） |
+| **Empirical service lag/disparity** | 动态活跃集下实际完成服务相对理想加权份额的累计 lag，以及共同积压 Job 间的服务差 | VTC、DLPM、DRFT | — | 🟡（需事件级 trace） |
+| **Theoretical service bound / share guarantee** | 在论文假设下证明任意持续积压 Job 的服务差上界、最低份额或分享激励 | DRF、DRFT、VTC、DLPM | — | 🔴（当前未证明） |
+| Reserved-share finish-time ratio | 并发策略 JCT / 同 Job 独占其保留份额时的 JCT；检验经验性份额非劣，不等同 DRF sharing incentive 或 Themis 定理 | Themis、DRF、DRFT | — | 🟡（文本四 Job 已有控制） |
+| Solo-normalized slowdown/progress | 并发 JCT / 满资源独占 JCT，及其倒数；同时报告 worst Job 和分布 | Tiresias、Themis、Agentix | — | ✅ |
+| Starvation / max continuous no-service | Job 持续 eligible/backlogged 却未获得完成服务的最长区间、等待年龄与未完成请求 | Tiresias、DRFT | — | 🟡（新 formal 需补） |
+| Work conservation / avoidable idle | 存在可装入的 eligible ready work 时仍有安全容量空闲的比例 | DRF、Pisces、VTC | — | ✅（机制 trace） |
+| SLO goodput / priority isolation | 达到 TTFT/TBT/JCT SLO 的有效服务率，以及优先级 Job 的尾延迟和违约率 | Sarathi-Serve、DistServe、Llumnix | — | ✅ |
 | Throttled interactions / delayed users / token waste | 过载限流交互数/推迟用户/无效 token | FairServe | — | 🟡 |
-| Per-job max-P99 / max-JCT fairness | 最差 job 维度公平 | —（项目比文献更严） | — | ✅ |
+| Per-job max-P99 / max-JCT | 最差 Job 的用户体验与隔离结果；不是服务份额性质的替代 | Tiresias、Llumnix、Agentix | — | ✅ |
 
 ### 3.7 Cost / Energy
 
@@ -192,11 +198,14 @@
 3. **KV cache 利用率与 GPU 利用率已采**——`vllm_kv_cache_usage_perc` after + mean/p50/p95/max 时间序列、`gpu_utilization_pct` 系列、`gpu_memory_used_mib`、`mfu_estimate`（`vllm:estimated_flops_per_gpu_total` 法，留 `model_flops_per_token/gpu_peak_tflops` 全参数）。**本地代码事实**。
 4. **物理 cost-per-token 已采**——`energy_j_per_1k_observed_tokens` 把能耗折算到 token，是 Perf/W 的 token 级表达（Splitwise/Big-ANN 关心但少有论文落到 token）。**本地代码事实**。
 5. **调度级严谨性审计是差异化点**——exactly-once 请求审计 + completion-lag + HOL-age + credit-held 四件套，加 control/submission/resource/flush trace；文献笔记反复标注 inflight/queue 时序为缺失项，本项目强制采集（`code/AGENTS.md` §6）。**本地代码事实**。
-6. **公平性比多数文献更严**——除 Jain（中位）外还报 per-job 聚合吞吐 / max P99 / max JCT（最差 job 维度）。**本地代码事实**。
+6. **公平性已有多视角基础，但还没有正式保证**——已报 weighted-service Jain、per-job
+   吞吐/JCT/P99、solo-normalized progress 和 work-conserving trace；其中 Jain 与最坏 Job
+   都是经验指标，不能替代共同积压窗口的 service lag、保留份额反事实或理论上界。
+   **本地代码事实 + 文献边界判断**。
 7. **prefix 分组信号已采**——`prefix_group_ratio` + 按 endpoint 分组的 `actor_worker_submission_counts`，具备补 prefix cache hit rate 的数据基础（只需新增两个 vLLM Counter 采集）。
 8. **代价模型四件套（MAE/RMSE/R²/MAPE）已落地**，且已识别 Q-Error/Spearman/ranking 为计划补充项——方向与 Heinrich SIGMOD2025 方法论分水岭一致。
 
-> 结论：throughput / 尾延迟 / SLO attainment / MFU+KV 利用率 / 能耗 / Jain+max-JCT 公平 / exactly-once 审计 / 控制 trace 八大类，项目已覆盖或优于多数文献。下列缺口是**细分项**，不是大类缺失。
+> 结论：throughput / 尾延迟 / SLO attainment / MFU+KV 利用率 / 能耗 / 多视角公平 / exactly-once 审计 / 控制 trace 八大类，项目均已有指标入口；但公平性目前是**经验评价框架**，不能写成已达到 DRF、VTC、DRFT 或 Themis 的理论性质。下列缺口决定哪些公平结论能够晋级。
 
 ---
 
@@ -220,7 +229,7 @@
 | 5 | Cost per million tokens（$/M tokens，input/output 分计） | 已有能耗口径 `energy_j_per_1k_observed_tokens`，换算 $/M tokens 即可与 Snowflake credits/M tokens、BigQuery token billing、Oracle provider-call avoidance 对齐——课题产品化定位（vs 商业 DB AI 函数）的成本对话界面。 | 低：后处理换算（需选定单价假设并标注）。 |
 | 6 | Padding waste ratio（BucketServe Eq.(2) WasteRatio + 跨桶期望浪费） | 已有 `packing_budget_utilization_mean/p95`（≈1−waste），补显式 `(Smax−Savg)/Smax` 与跨桶期望浪费——length-align/token-budget 分组策略的**直接量化收益**证据。 | 低：后处理。 |
 | 7 | Q-Error 多分位 + Spearman ρ + Pick Rate / Selected Runtime | 已计划补但未实采。Heinrich SIGMOD2025 是方法论分水岭：**Q-Error 精度 ≠ 优化质量**，必须配 Selected Runtime/Surpassed Plans/Spearman ρ 才能评估"代价估计→active-work/K 初始化/路由"决策的真实收益。当前仅 MAE/RMSE/R²/MAPE 无法回答"预测准了是否选对了配置"。 | 中：`estimate_operator_cost.py` 增 ranking 输出。 |
-| 8 | Service disparity（VTC/DLPM 式跨 job 累计服务差 + 上界） | 本项目 active-work/credit 即属 attained-service 调度族，VTC/DLPM 的累计 virtual-token-counter 服务差及上界是该族最直接公平量化。当前只有 Jain（中位）+ max-JCT，缺累计服务差；`credit-held` 是相关信号但非跨 job 服务差。 | 中：多 job trace 增累计服务量聚合。 |
+| 8 | Event-level service lag/disparity + starvation | 本项目 active-work/credit 属 attained-service 调度族。VTC/DLPM 的累计服务差、DRFT 的份额保证和 Tiresias 的 attained-service/starvation 视角共同说明：Jain 与最终 JCT 不足以识别“某 Job 曾长期得不到服务”。新 formal 应从 completion event 与 backlog interval 重建动态理想份额、max/P95 lag、最长连续无服务和偿还时间；没有证明时不输出理论上界。 | 中：必须保存无损 completion ledger 与 ready/backlogged interval，历史紧凑 CSV 只能算最终反事实比率。 |
 | 9 | Recall@10 / nDCG@10（AI_EMBED 写回 pgvector 后下游检索质量） | 多模态泛化验证写回 pgvector 后未验证下游检索质量。上游调度不改变嵌入值，但需 recall@k/nDCG@10 **证伪"批处理/写回引入质量偏差"**，闭合写回→检索产品化论证。pgvector README 已给对照采集法（`SET LOCAL enable_indexscan=off`）。 | 中：下游评估脚本。 |
 
 ### P2（低成本严谨性差异化 + 鲁棒性立体证据）
@@ -233,9 +242,9 @@
 
 **2026-08-04 实现状态（代码事实，尚非新实验结果）**：上述 12 项已接入下一轮
 采集/后处理链路。P0 由 vLLM histogram bucket delta 与 prefix counter 直接采集；
-P1 的 token-goodput、padding、代价决策指标和多 job service disparity 已进入代码，
+P1 的 token-goodput、padding、代价决策指标和描述性 multi-job service disparity 已进入代码，
 Recall/nDCG 需要显式 relevance 真值；P2 由 SLO-scale 字段和 formal-repeat 后处理器
-输出。商业成本只有显式输入 input/output 单价才计算。理论 service-disparity bound、
+输出。empirical GPS lag/starvation 仍需新的 lossless ready/backlogged ledger 语义。商业成本只有显式输入 input/output 单价才计算。理论 service-disparity bound、
 没有 ground truth 的检索质量、没有价格的 $/M tokens 均保持 `unavailable`，不生成
 替代数值。主 profiler schema 已变化，后续必须新建结果目录，不能向旧 CSV 追加。
 
@@ -268,7 +277,7 @@ Recall/nDCG 需要显式 relevance 真值；P2 由 SLO-scale 字段和 formal-re
 ## 8. 下一步与落点
 
 1. **P0 三条优先**——TTFT 分位、ITL 分布、prefix cache hit rate。改动集中在 `code/src/metrics.py` + `code/src/baselines/ceilings/vllm_bench.py`，不触策略代码；先在 cache-ON 路由实验上补采，**直接服务当前 prefix 结论的隔离消融**（4-ep/7B 或 2-ep/1.5B、人为缩 KV 制造可控淘汰率）。登记到 `experiments/plans/experiment_status_and_gaps.md` 指标缺口区。
-2. **P1 与代价模型计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 `research/knowledge_hub.md` §5.7 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、service disparity、recall@k 作为对应研究内容实验的附加报告项。
+2. **P1 与代价模型/多 Job 正式计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 `research/knowledge_hub.md` §5.7 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、三个 JCT 反事实、empirical service lag/starvation 和 recall@k 作为对应研究内容实验的附加报告项。
 3. **P2 作为报告期统一处理**——Variance/CI、SLO Scale、CV、regression count、调度开销% 在正式结果报告与 `figures/` 绘图阶段一次性补齐。
 4. 本文件作为 `research/` 的指标体系参考入口；后续新实验设计指标时先查本目录 §3，避免重复造指标或漏报文献标准项。
 
@@ -616,7 +625,130 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 | **资源/成本** | GPU busy/MFU，CPU 利用率，峰值显存/内存，J/1k-token 或 J/image，$/M-token 或 $/M-row | 判断提速来自利用率提升还是额外资源 |
 | **机制与控制面** | 实际 prompt/output work、batch work 分布、active work、Ray pending/pre-submit wait、vLLM running/waiting/KV、credit 持有时间、HOL、提交/调用次数 | 解释为何有效，并揭示队列从一个层级迁移到另一个层级 |
 
-多 job 实验另报 Jain fairness、service disparity、各 job JCT/p99 与最大 SLO 违反率；不能只报聚合吞吐。
+多 job 实验另报以下四层结果；不能只报聚合吞吐，也不能用单一 Jain 或综合分数代替约束。
+
+#### 第四层：多 Job 的反事实、服务公平与晋级规则
+
+先冻结**当前评价主体与未来层级**。本项目当前正式问题是**单租户内多个 Job/workload class**
+共享同一模型服务：Job/query 是调度单元，request 是工作量载体。在这个范围内，以 `job_id`
+维护权重、priority、attained service 和 SLO 是合理的，评价的是 intra-tenant Job fairness/
+service differentiation，不要求现在实现 tenant identity 或 anti-splitting。
+
+正常数据库/湖仓若以后扩到多个 tenant/account/resource group，则 entitlement 不能继续按所有
+`job_id` 平铺，否则同一客户把一个 workload 拆成多个并发 Job 可能获得多份权重。扩展时记录：
+
+```text
+principal_id（tenant/account/resource group）
+  → workload_class（interactive / batch / maintenance / AI）
+    → job_id / query_id
+      → request_id
+```
+
+多租户权重、最低份额和累计 attained service 应先在 `principal_id` 层聚合记账，再按合同在
+workload class/Job 内部分配。当前 Job-level SAOR 可作为内层 scheduler，ready observation、work
+计量、fixed envelope、completion accounting、idle borrowing/reclaim 和 SLO debt 均可复用；新增
+的是外层 tenant entitlement/debt 与 per-tenant ready/buffer cap。只在多个主体同时 backlogged 的
+窗口评价 share fairness；需求不足的主体未使用份额不算“少分”，空闲份额应允许其他主体借用。
+因此多租户是兼容的后续扩展，不是当前 formal blocker。当前结果准确称为**单租户多 Job 的受控
+logical Job-stream fairness**，不外推为 tenant fairness。只有未来使用 tenant-fairness claim 时，
+才增加稳定 principal identity、层次记账与同一 principal 的 1/2/4-Job anti-splitting 门。
+
+这种兼容性是架构兼容，而不是零改动或公平性质自动继承。未来外层 tenant 选择与内层 Job
+选择需要分别维护 debt/floor；tenant 内 strict priority 不得绕过其他 tenant 的最低份额；两层
+idle borrowing/reclaim 不能形成重复 reservation 或 avoidable idle；已进入未修改 vLLM 的
+request 仍不可抢占。因此当前算法无需为多租户重写，但多租户版本必须重新验证 work
+conservation、reclaim latency、tenant/Job 两层 service lag 和 worst-tenant SLO。
+
+先区分评价对象。当前 **equal-share fairness** 把单租户内同权/显式权重 Job/workload class
+视为平等参与者，主看共同
+积压 attained service、lag 与 work conservation；**differentiated service** 允许 foreground
+业务优先级高于 bulk，主看 foreground SLO isolation，同时给 bulk 设置 service/JCT/starvation
+下界。两者不能共用“延迟越接近越公平”的判据：当前 long bulk + delayed foreground 属于
+后者；若 bulk 的 30s deadline 没有外部应用语义，它只能作相对 static miss-rate guard，主要
+保护指标应是 reserved-share JCT、max/P95 service lag、最长 no-service 与 work goodput。
+
+先为每个 Job $i$ 冻结三个互补反事实：
+
+| 比率 | 定义 | 回答的问题 | 不能替代的性质 |
+|---|---|---|---|
+| **满资源干扰比** $R_i^{full}=JCT_i^{policy,multi}/JCT_i^{\mathrm{full\text{-}solo}}$ | 与同 Job 独占全部资源相比，并发造成多少端到端退化 | 用户实际承受的 interference/slowdown | 不区分份额缩小和真实竞争 |
+| **保留份额非劣比** $R_i^{reserve}=JCT_i^{policy,multi}/JCT_i^{\mathrm{reserved\text{-}solo}}$ | policy 是否至少达到同 Job 独占名义保留份额时的经验性能 | 检查 share floor 是否在这个 workload 上兑现 | 不是 DRF sharing incentive，也不是 Themis finish-time fairness 定理 |
+| **同竞争调度效应** $R_i^{sched}=JCT_i^{policy,multi}/JCT_i^{static,multi}$ | 同一 Job 集、资源、到达和上限下，只换 scheduler 后谁受益/受损 | 识别调度器的因果增量 | 不能说明相对独占是否仍很慢 |
+
+评价向量采用**约束下多目标/Pareto**，而不是把吞吐、JCT、Jain 和能耗压成一个加权总分：
+
+1. **有效性硬门**：语义、质量、exactly-once、资源/上限、arrival fidelity、feeding 和稳定性先通过；
+2. **效率与 SLO**：correct throughput、SLO goodput、group JCT、P95/P99、能耗。`group JCT`
+   定义为共同 group start/ready barrier 到最后一个 Job 完成的 wall time，即本批 workload 的
+   makespan；不再新增一个同义 `makespan` headline。它必须与 per-Job/request tail 同报，因为
+   相近 group JCT 可能掩盖某类请求的严重排队；
+3. **服务份额**：共同积压窗口的 weighted actual service、max/P95 empirical GPS lag、按 work
+   envelope/quantum 归一化的 lag、偿还时间、`min/mean`、`max/min`、最长连续无服务和 avoidable idle；
+4. **作业完成体验与隔离**：三个反事实比率、worst Job/class、SLO miss、JCT/P99 spread。
+   fairness 回答“共同积压时是否按 entitlement 得到服务”，isolation 回答“aggressor 增压是否
+   伤害无辜 victim”，两者不得合并。除 `multi/full-solo` 外，对固定 victim workload 另做 matched
+   noisy-neighbor step/burst：
+
+   $$
+   I_i^{P99}=\frac{P99_i^{\mathrm{aggressor\ burst}}}{P99_i^{\mathrm{matched\ normal}}},\qquad
+   L_i^{goodput}=1-\frac{Goodput_i^{\mathrm{aggressor\ burst}}}{Goodput_i^{\mathrm{matched\ normal}}},
+   \qquad
+   \Delta V_i^{SLO}=V_i^{burst}-V_i^{normal}.
+   $$
+
+   报告 worst-victim 三项、victim 最大 waiting age，以及 aggressor drain 后 victim 恢复到预注册
+   稳态带所需时间。normal/burst 两臂保持 victim arrival/work、总资源和服务配置不变，只改变
+   aggressor offered load；否则不能把 workload mix 变化归因成 isolation；
+   当前 selector attribution gate 和首个 2-Job formal 不为该指标新增实验臂；它在核心 formal
+   闭合后复用计划中已经登记的一个 held-out on/off/burst 场景，避免 scope expansion；
+5. **分配描述**：raw-work Jain 与 normalized-progress Jain 仅描述“均匀程度”。不把
+   `slowdown Jain` 增加为独立 headline：对 slowdown 或其倒数做 Jain 会受非线性变换影响，且
+   所有主体同样慢时仍可能接近 1。Jain 下降而所有 Job JCT 都相对 static 改善时，应写成
+   “**基线相对的经验性 JCT Pareto 改善，但收益分配更不均**”，不能仅凭 Jain 宣判正式公平性质
+   变坏；反之，高 Jain 也可能只是所有 Job 同样慢。正式保护看 max slowdown、worst-Job/class
+   P99/SLO、service lag 和最长 no-service。
+
+候选晋级需预注册“至少一个 headline 改善约 5%”的 effect-size 门，以及**每个保护指标各自的方向和非劣/SLO 边界**。保护边界不能事后用“无不可接受退化”概括，也不应强行共用 5%；应在看到候选标签前，根据业务 SLO、correctness 要求和 baseline repeat 噪声冻结。只有所有保护约束满足、至少一个 headline 越过 effect-size 门，才称该 workload 上相对指定 baseline 的经验性 Pareto improvement。理论 Pareto efficiency、sharing incentive、strategy-proofness、service-difference bound 或 finish-time fairness 只有在相应模型假设和证明完整时才能使用。
+
+**现有证据的可行性分级**：
+
+- 历史四 Job 紧凑数据已有 full/quarter single、static/shared multi，可直接计算三个 JCT 反事实、worst Job 和 normalized progress；
+- 历史汇总不能无损重建每个共同积压区间的动态理想份额、max continuous no-service 或 event-level lag，因此不能事后补出 VTC/DLPM 式界；
+- 新 formal 必须保存 completion event、request ready/backlogged interval、active-set/weight 变化、release/submit/complete 时间和实际完成 work。当前代码已有 completion ledger 与 `service_disparity_bound_status=unavailable:not_proven` 的 fail-closed 语义，可在此基础上补 empirical GPS lag；
+- 图像的 CPU prepare、ready bytes 与 GPU model work 先作为**分阶段机制维度**分别报告。只有证明了可同时消费的资源向量、归一化容量和 dominant share 语义后，才把 DRF 式多资源公平作为 headline；否则不能把 token/frame 标量或阶段利用率直接称为 dominant resource fairness。
+
+backlog 起点按层次分开：用户等待用 `arrival→completion`，上游 scheduler 公平只从请求
+`concrete-ready/credit-registered` 开始；尚未由 source/Daft 物化的请求不是 coordinator 可选择的
+backlog。若 actual service 只在 completion 时记账，指标应称 `completion-accounted empirical
+service lag`，而不是连续 token service 或 VTC bound。请求尾延迟按 class/job 报 P50/P95/P99，
+并拆 ready→registered、registered→grant、grant→submit、submit→completion；SLO goodput 同时报
+request/s 与 token/work/s，防止短请求条数掩盖资源占用。
+
+#### 第五层：项目内部同 observation 的算法归因与隐藏缓冲成本
+
+动态策略必须同时匹配“选择器看到什么”和“选择器怎么选”。如果 proposed 预注册多个 concrete
+ready request，而 FIFO/DRR/VTC 仍只看到单 Job head，则差异混合了 pre-registration/prefetch、
+head-of-line visibility 与 selector；不能全部归因给公平或 SLO 算法。正确顺序是：
+
+1. direct bounded HTTP 单列 saturation ceiling，不作公平 baseline；
+2. Daft Native、Ray Data 与产品 baseline 保留各自原生 batching/backpressure/scheduling，禁止
+   注入项目 bounded-ready；它们评价完整 runtime graph，不进入 project selector 排名；
+3. project frozen-static 作同栈隔离/Pareto reference，不简称原生 baseline；
+4. project bounded-ready + FIFO、DRR/WFQ、external VTC-style、strict-priority/EDF 与 proposed
+   共享同一 ready-window、active K/W、ready bytes 和 immutable arrival trace；这些都是项目内部
+   controls/ablations，只有 proposed 是候选方法；
+5. old single-head policy 只作 observation-gap 消融；in-engine VTC/DLPM/JITServe/Llumnix 等只作
+   理论/系统上界参考，没有原实现同层复现时不冒充 executable baseline。
+
+在 proposed 及其项目内部 attribution arms 中，所有 Job 都必须应用同一 bounded-ready 上限；
+原生 baseline 不受此要求。bounded-ready 可能不扩大 active K/W，却增加 active 之外的 host buffer。故资源等价门还需报告
+ready requests/work/bytes mean/P95/max、host memory、coordinator CPU、registration→grant tail 与
+随 Job 数的扩展。文本 token work 不能约束 payload bytes；图像必须显式 byte-bounded，否则不能
+称与 static 同一 memory/backpressure envelope。
+
+prefix cache ON 时采用 balanced/interleaved repeats，并明示 warm-cache steady-state 或 cell reset；
+保存每 cell cache counter 起止值。所有“无恶化”按预注册 non-inferiority/equivalence margin 和
+配对差异判断，不以两次 rehearsal 均值接近替代统计结论。
 
 ### 9.4 AI 算子代价估计：文献真正看重的指标
 
@@ -728,7 +860,21 @@ operator JCT
 - Output-length uncertainty: [Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions](https://arxiv.org/abs/2604.00499)
 - SLA/goodput scheduling: [Past-Future Scheduler for LLM Serving under SLA Guarantees](https://arxiv.org/abs/2507.10150)
 - Fairness work accounting: [VTC: Fairness Scheduling for Serving Large Language Models](https://www.usenix.org/conference/osdi24/presentation/sheng)
+- Multi-resource fairness: [Dominant Resource Fairness](https://www.usenix.org/conference/nsdi11/dominant-resource-fairness-fair-allocation-multiple-resource-types)
+- Multi-tenant work conservation and isolation: [Pisces](https://www.usenix.org/system/files/conference/osdi12/osdi12-final-215.pdf)
+- Transaction-level share guarantees: [Fair Transaction Processing for Multi-Tenant Database Systems](https://doi.org/10.14778/3742728.3742751)
+- Finish-time fairness: [Themis](https://www.usenix.org/conference/nsdi20/presentation/mahajan)
+- Attained service and starvation control: [Tiresias](https://www.usenix.org/conference/nsdi19/presentation/gu)
+- Goodput-aware scheduling: [Pollux](https://www.usenix.org/conference/osdi21/presentation/qiao)
+- Prefix locality with fairness: [DLPM](https://arxiv.org/abs/2501.14312)（预印本）
+- Program-level attained service: [Agentix](https://www.usenix.org/conference/nsdi26/presentation/luo)
+- Batch inference as a first-class execution mode: [BatchGen](https://www.usenix.org/conference/osdi26/presentation/xu-tairan)
 - Chunked prefill/service metrics: [Sarathi-Serve](https://www.usenix.org/conference/osdi24/presentation/agrawal)
+- SLO-constrained serving capacity: [DistServe](https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin)
+- Tail and priority isolation: [Llumnix](https://www.usenix.org/conference/osdi24/presentation/sun-biao)
+- SLO token goodput under imprecise request information: [JITServe](https://www.usenix.org/conference/nsdi26/presentation/zhang-wei)
+- Heterogeneous SLO scheduling: [SCORPIO](https://arxiv.org/abs/2505.23022)（预印本）
+- Priority-aware serving: [ProServe](https://arxiv.org/abs/2512.12928)（预印本）
 - Prediction fragility and tail risk: [Beyond Prediction: Tail-Aware Scheduling for LLM Serving](https://arxiv.org/abs/2606.18431)
 
 产品场景和可安装性的一手入口统一维护在

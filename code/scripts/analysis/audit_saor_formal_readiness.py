@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed static preflight for the fixed-envelope SAOR formal matrix."""
+"""Fail-closed static preflight for frozen SAOR active-set matrices."""
 
 from __future__ import annotations
 
@@ -41,16 +41,94 @@ EXPECTED = {
     "solo_direct_bulk": ("direct_no_job", 1),
     "solo_direct_foreground": ("direct_no_job", 1),
 }
+PRIORITY_REACHABILITY_EXPECTED = {
+    "active_set_static_partition": ("static_partition", 2),
+    "active_set_saor_release": ("saor_release", 2),
+    "active_set_foreground_strict_priority": (
+        "foreground_strict_priority",
+        2,
+    ),
+}
+BOUNDED_PRIORITY_EXPECTED = {
+    "active_set_static_partition": ("static_partition", 2),
+    "active_set_saor_release": ("saor_release", 2),
+    "active_set_saor_bounded_priority_0125k": (
+        "saor_bounded_priority",
+        2,
+    ),
+    "active_set_saor_bounded_priority_025k": (
+        "saor_bounded_priority",
+        2,
+    ),
+}
+BOUNDED_READY_EXPECTED = {
+    "active_set_static_partition": ("static_partition", 2),
+    "active_set_saor_release": ("saor_release", 2),
+    "active_set_saor_bounded_ready_0125k": ("saor_bounded_ready", 2),
+    "active_set_saor_bounded_ready_025k": ("saor_bounded_ready", 2),
+}
+MATCHED_READY_ABLATION_EXPECTED = {
+    "active_set_project_frozen_static": ("static_partition", 2),
+    "active_set_project_bounded_ready_fifo": ("shared_fifo", 2),
+    "active_set_project_bounded_ready_drr": ("shared_drr", 2),
+    "active_set_project_bounded_ready_vtc_style": ("external_vtc", 2),
+    "active_set_project_bounded_ready_strict_priority": (
+        "foreground_strict_priority",
+        2,
+    ),
+    "active_set_project_bounded_ready_guarded_debt_0125we": (
+        "saor_bounded_ready",
+        2,
+    ),
+}
+READY_OBSERVATION_BRIDGE_EXPECTED = {
+    "active_set_project_frozen_static": ("static_partition", 2),
+    "active_set_project_single_head_shared_fifo": ("shared_fifo", 2),
+    "active_set_project_bounded_ready_fifo": ("shared_fifo", 2),
+}
 
 
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--profile",
+        choices=(
+            "formal",
+            "priority_reachability",
+            "bounded_priority_development",
+            "bounded_ready_development",
+            "matched_ready_selector_ablation",
+            "ready_observation_bridge",
+        ),
+        default="formal",
+    )
     return parser.parse_args()
 
 
-def audit(config_path: Path) -> dict[str, object]:
+def audit(
+    config_path: Path,
+    *,
+    profile: str = "formal",
+) -> dict[str, object]:
+    expected = (
+        EXPECTED
+        if profile == "formal"
+        else PRIORITY_REACHABILITY_EXPECTED
+        if profile == "priority_reachability"
+        else BOUNDED_PRIORITY_EXPECTED
+        if profile == "bounded_priority_development"
+        else BOUNDED_READY_EXPECTED
+        if profile == "bounded_ready_development"
+        else MATCHED_READY_ABLATION_EXPECTED
+        if profile == "matched_ready_selector_ablation"
+        else READY_OBSERVATION_BRIDGE_EXPECTED
+        if profile == "ready_observation_bridge"
+        else None
+    )
+    if expected is None:
+        raise ValueError(f"unknown readiness profile: {profile}")
     raw_config = json.loads(config_path.resolve().read_text(encoding="utf-8"))
     config = load_config(config_path.resolve())
     errors: list[str] = []
@@ -64,12 +142,154 @@ def audit(config_path: Path) -> dict[str, object]:
         scenario.scenario_id: (scenario.policy, scenario.job_count)
         for scenario in config.scenarios
     }
-    if observed != EXPECTED:
-        errors.append("scenario matrix does not match the frozen ten-scenario contract")
-    try:
-        direct = direct_control_contract(config)
-    except (TypeError, ValueError) as exc:
-        errors.append(f"direct request contract is invalid: {exc}")
+    if observed != expected:
+        errors.append(f"scenario matrix does not match the frozen {profile} contract")
+    expected_observation_contract = (
+        "bounded_concrete_pre_registration"
+        if profile == "bounded_ready_development"
+        else "single_head"
+    )
+    if config.ready_observation_contract != expected_observation_contract:
+        errors.append(
+            "ready observation contract does not match the selected profile"
+        )
+    scenario_resource_contracts = {
+        scenario.scenario_id: {
+            "request_limit_per_endpoint": scenario.endpoint_limits(
+                config.request_limit_per_endpoint,
+                config.work_limit_per_endpoint,
+            )[0],
+            "work_limit_per_endpoint": scenario.endpoint_limits(
+                config.request_limit_per_endpoint,
+                config.work_limit_per_endpoint,
+            )[1],
+            "weights": list(scenario.weights),
+        }
+        for scenario in config.scenarios
+    }
+    if profile in {
+        "matched_ready_selector_ablation",
+        "ready_observation_bridge",
+    }:
+        expected_limits = (
+            config.request_limit_per_endpoint,
+            config.work_limit_per_endpoint,
+        )
+        for scenario in config.scenarios:
+            if scenario.endpoint_limits(
+                config.request_limit_per_endpoint,
+                config.work_limit_per_endpoint,
+            ) != expected_limits:
+                errors.append(
+                    f"{scenario.scenario_id} effective request/work limits "
+                    "drift from the frozen root contract"
+                )
+            if scenario.weights != (1, 1):
+                errors.append(
+                    f"{scenario.scenario_id} weights drift from frozen (1, 1)"
+                )
+    if profile in {
+        "bounded_priority_development",
+        "bounded_ready_development",
+    }:
+        bounded_policy = (
+            "saor_bounded_priority"
+            if profile == "bounded_priority_development"
+            else "saor_bounded_ready"
+        )
+        bounded = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy == bounded_policy
+        ]
+        if [scenario.priorities for scenario in bounded] != [(0, 1), (0, 1)]:
+            errors.append("bounded priority roles must be explicit bulk=0/foreground=1")
+        if [scenario.slo_targets_s for scenario in bounded] != [
+            (None, 30.0),
+            (None, 30.0),
+        ]:
+            errors.append("bounded priority foreground SLO must be frozen at 30s")
+        if [scenario.priority_windows_s for scenario in bounded] != [
+            (None, 30.0),
+            (None, 30.0),
+        ]:
+            errors.append("bounded priority window must be frozen at 30s")
+        if [scenario.debt_cap_fractions for scenario in bounded] != [
+            (0.125, None),
+            (0.25, None),
+        ]:
+            errors.append(
+                "bounded debt caps must be frozen at 0.125W_e and 0.25W_e"
+            )
+    if profile == "matched_ready_selector_ablation":
+        project_controls = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy != "static_partition"
+        ]
+        if not project_controls or any(
+            scenario.ready_observation_contract
+            != "bounded_concrete_pre_registration"
+            for scenario in project_controls
+        ):
+            errors.append(
+                "every project selector ablation must use matched bounded-ready"
+            )
+        static = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy == "static_partition"
+        ]
+        if len(static) != 1 or static[0].ready_observation_contract != "single_head":
+            errors.append(
+                "project frozen-static reference must not use bounded-ready"
+            )
+        proposed = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy == "saor_bounded_ready"
+        ]
+        if (
+            len(proposed) != 1
+            or proposed[0].priorities != (0, 1)
+            or proposed[0].slo_targets_s != (None, 30.0)
+            or proposed[0].priority_windows_s != (None, 30.0)
+            or proposed[0].debt_cap_fractions != (0.125, None)
+        ):
+            errors.append(
+                "proposed must freeze H_B=0.125W_e and foreground SLO at 30s"
+            )
+    if profile == "ready_observation_bridge":
+        by_id = {scenario.scenario_id: scenario for scenario in config.scenarios}
+        static = by_id.get("active_set_project_frozen_static")
+        single_head = by_id.get("active_set_project_single_head_shared_fifo")
+        bounded = by_id.get("active_set_project_bounded_ready_fifo")
+        if (
+            static is None
+            or static.policy != "static_partition"
+            or static.ready_observation_contract != "single_head"
+        ):
+            errors.append("bridge static reference must use single-head observation")
+        if (
+            single_head is None
+            or single_head.policy != "shared_fifo"
+            or single_head.ready_observation_contract != "single_head"
+        ):
+            errors.append("bridge shared-capacity control must use single-head FIFO")
+        if (
+            bounded is None
+            or bounded.policy != "shared_fifo"
+            or bounded.ready_observation_contract
+            != "bounded_concrete_pre_registration"
+        ):
+            errors.append("bridge observation control must use bounded-ready FIFO")
+    if profile == "formal":
+        try:
+            direct = direct_control_contract(config)
+        except (TypeError, ValueError) as exc:
+            errors.append(f"direct request contract is invalid: {exc}")
+            direct = None
+    else:
         direct = None
     manifests: dict[str, dict[str, object]] = {}
     configured_cap = int(
@@ -77,6 +297,18 @@ def audit(config_path: Path) -> dict[str, object]:
     )
     if configured_cap <= 0:
         errors.append("formal matrix requires a positive completion max token cap")
+    try:
+        prompt_token_overhead = int(
+            _argument_value(
+                config.common_args,
+                "--completion-prompt-token-overhead",
+                "0",
+            )
+        )
+    except ValueError:
+        prompt_token_overhead = -1
+    if prompt_token_overhead < 0:
+        errors.append("completion prompt token overhead must be non-negative")
     try:
         arrival_time_scale = float(
             _argument_value(config.common_args, "--arrival-time-scale", "nan")
@@ -208,7 +440,7 @@ def audit(config_path: Path) -> dict[str, object]:
         )
         for endpoint_index in range(len(config.endpoint_ids)):
             work = sum(
-                request.estimated_work
+                request.estimated_work + prompt_token_overhead
                 for request in bulk_requests
                 if request.endpoint_index == endpoint_index
                 and (
@@ -273,6 +505,7 @@ def audit(config_path: Path) -> dict[str, object]:
         "status": status,
         "errors": errors,
         "experiment_id": config.experiment_id,
+        "profile": profile,
         "scenario_count": len(config.scenarios),
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,
@@ -282,7 +515,9 @@ def audit(config_path: Path) -> dict[str, object]:
             min_pre_foreground_envelopes
         ),
         "pre_foreground_predicted_work_by_endpoint": pre_foreground_work,
+        "completion_prompt_token_overhead": prompt_token_overhead,
         "service_metadata": dict(config.service_metadata),
+        "scenario_resource_contracts": scenario_resource_contracts,
         "calibration_contract": (
             {
                 "path": config.calibration_contract.path,
@@ -311,7 +546,7 @@ def audit(config_path: Path) -> dict[str, object]:
 
 def main() -> int:
     args = _args()
-    result = audit(args.config)
+    result = audit(args.config, profile=args.profile)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     if result["status"] != "passed":

@@ -1162,6 +1162,73 @@ H2D 占 steady wall≥20%，且 pinned/降字节/overlap 让 E2E 改善≥5%，P
 60s 稳态、交错三重复下比较 Daft built-in、官方 ResNet18 parity、Ray Data native graph 和 project；并用
 GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。
 
+## 2026-08-12：为什么 5 ms 的 drain window 不能被 250 ms 采样器判失败
+
+active-set 机制门要检查“一个 Job 结束后，剩余 Job 是否工作守恒地拿到新释放额度”。但这个
+性质只有在 post-drain 区间足够长、或区间内确实采到状态时才可检验。formal 中 DRR/VTC 的
+一个 repeat，两 Job 只相差约 5.8/4.8 ms 完成，而 runner 每 250 ms 采一次 credit；零样本是
+采样分辨率的必然结果，不等于调度器没有回收。
+
+修订后的三值逻辑是：区间内有样本就按 head-fit 检查；没有样本但区间至少一个采样周期，仍
+fail-closed；区间短于一个周期且无样本，记为 `not_applicable`。旧 compact 数据按这个规则
+回放后，四个 credit 臂 12/12 effective pass，但这只修复机制审计，不能改变 SAOR 仍落后
+static 前台隔离点的实验事实，也不能替代服务器完整 raw validation。
+
+下一项 strict-priority 也是诊断，不是新算法胜出：前台到达后停止发新 bulk credit，但不撤销
+已进入 vLLM 的请求。如果连这个 release-only 上界都不能把前台 P99 拉到 30.7 s 以内，就说明
+主要瓶颈是不可抢占的在途工作，应停止扫描 score 权重并转向显式、有限的保护余量。
+
+### bounded-priority SAOR 为什么不是“把前台权重调大”
+
+新候选把冲突写成明确顺序，而不是让一个软分数同时承担 SLO 与公平：先保证 request/work
+硬容量；若某 Job 的 completion-corrected actual-work 债务达到 cap，先给它一个 recovery
+请求；若它已经有 ready 队首但当前碎片装不下，只为这个确定队首暂缓 foreign grant，释放到
+刚好能装下时发一张 recovery 后立刻解除 barrier。没有 debt guard 时，才检查显式 priority
+window 与剩余 SLO 预算；都未触发则回到旧 SAOR。普通高优先级队首装不下时仍允许其他 fitting
+请求，避免 strict priority 的无谓空转。
+
+“每 Job 最多一张 recovery 在途”很重要：公平债务按实际 completion work 校正；如果在第一张
+recovery 尚未完成时连续补发，控制器只能根据预测值过度补偿。barrier 也只针对 `ready &&
+debt-critical && non-fitting` 的具体队首；unfinished 但尚无 ready 请求时保留容量，只会把未知
+未来变成不可审计 reservation。
+
+机制真值现在来自 coordinator 的无损事件账本。每个 endpoint 的事件序号必须从 1 连续递增，
+priority/debt grant、hold 起止、reclaim debt、冲突和 recovery in-flight 都逐事件保存；250 ms
+snapshot 只用来画 phase/资源状态。这样 5 ms 的真实转换不会是假阴性，但缺账本、空账本、跳号
+或重复仍会 fail closed。当前只证明代码语义与证据链闭合；服务器已关闭，两档 cap 的 GPU
+rehearsal 尚未运行，不能据此声称前台、bulk 或吞吐已改善。
+
+### 为什么下一版要暴露 bounded ready set，而不是继续调 cap
+
+双轮开发门后来显示：所有已经注册的 foreground head 都获得了 priority，但一个 Job 的本地
+scheduler 会同步等这个 head 拿到 credit，之后才读取并注册下一条 request。于是“数据库/Daft
+已经有很多 ready 请求”和“coordinator 眼里这个 Job 暂时没有 waiter”可以同时成立。数学模型把
+前者当作 backlog，实际 selector 却只能看到后者；此时继续放大 priority 或 debt cap 不能修复
+观测缺口。
+
+`saor_bounded_ready` 因此采用具体请求的有界预注册。窗口 request 上限直接等于该 Job 已冻结的
+有效 K，work 上限等于 endpoint 数乘每 endpoint 共享 W；它们是已有安全包络的派生量，不是新的
+workload 特调参数。只有从 source iterator 已实际到达的 request 才能进入窗口，单条 request
+仍保持完整，不进行 token 级拆分。credit grant 以后才提交到 Ray/vLLM，因此 vLLM 仍负责 FCFS、
+continuous batching、chunked prefill 与 KV 管理。
+
+观测被拆成五个不同事实：source/Daft 尚未产出的 backlog、scheduler ready、coordinator
+registered、credit granted、vLLM running/waiting。提交 trace 的 ready→registered、
+registered→granted、granted→submit、submit→service 分段可以区分上游供给、共享调度和模型服务
+排队；coordinator event 对 register/grant 都记录 request ID 与 epoch。runner 先用提交 trace
+确认 concrete-ready 请求没有丢失，再只在 actor 的同一时钟域内配对 foreground
+register→grant，检查该 endpoint 区间内是否误发 foreign fallback，避免把 Ray RPC 返回延迟误算成
+调度器等待。GPU utilization 只作资源旁证。旧
+`saor_bounded_priority` 不改写，仍可作为同 selector、
+不同 observation contract 的回归基线。现在只完成本地 exactly-once/cancel/timeout/finite-window
+与静态门禁。首次 GPU rehearsal 的两个 Job 均完成模型执行，但 runner 在审计阶段发现
+submission trace 并没有 `submit_epoch_s`，遂按 fail-closed 规则停止。正确合同是：submission
+trace 提供 ready/registered/granted，request trace 提供 submit，并以 `submission_id` 一对一连接；
+不能为修审计而在两份 trace 中复制时钟字段。该连接已补生产 schema 回归测试。修复后的两个
+全新 rehearsal root 中，0.125K 两轮同时通过 foreground、bulk、效率与机制门，0.25K 两轮因
+bulk SLO 越界拒绝。它说明 observation contract 是旧结果的重要断点，但仍只是 formal
+registration gate，不能据此声称 SAOR 已正式改善 tail、吞吐或公平。
+
 ## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
 
 Daft built-in 和 project 都输出 512 维向量，但前者由 provider 决定 processor、dtype
@@ -1191,3 +1258,41 @@ capture 的 `.npz.manifest.json` 也必须复制同一份输出合同元数据�
 归一化”这种静态提示代替本次实际参数。旧 artifact 的 sidecar 原文应保留并在结果报告中
 标注元数据缺陷；不能为了让历史记录看起来整齐而事后改写 raw 文件。合同判定以同次运行的
 schema v11 CSV/arm manifest 为准，并可用 `.npz` 重新运行 parity probe 复核。
+
+## 2026-08-14：为什么 SAOR matched comparison 必须分成两张表
+
+这次基础设施回答两个不同问题。系统表比较 Daft Native、Daft Ray、Ray Data、Project
+frozen-static 和 Project bounded-ready SAOR 五个完整系统；内部 sanity 表只比较 Project
+bounded-ready FIFO、DRR、VTC-style 与 SAOR 四个 selector。FIFO 臂的完整身份是
+**Project bounded-ready + global FIFO matched-control**：bounded-ready 是 Project 提供的共同
+可见 ready set，不是 FIFO 算法本身，也不是 Daft/Ray Data 原生能力。
+
+同一个 SAOR 物理 run 同时进入两表，不能为两种报告角色各跑一个“看起来相同”的 SAOR。
+所有臂使用 Job release `[0,5]`、Job 内 eager 的共同到达；每个 Job 的计时包含 PostgreSQL
+source/materialization，直到 validated gather。吞吐只用
+`(prompt_tokens_delta + generation_tokens_delta) / database_operator_e2e_s`；bulk/foreground
+JCT 从各自 release 到完成，且真实 overlap 必须大于零。原生系统若没有共同真实 request clock，
+request P99/SLO 就写 `unavailable` 和原因，不能用 Job barrier 或 0 填充。
+
+当前完成的是本地 offline summarizer 与 corruption tests，不是服务器/GPU 结果。后续精确顺序是：
+runtime preflight → static readiness → small correctness/local fake rehearsal → review → separately
+authorized GPU execution。用户已取消本轮服务器 rehearsal，因此不能把 GPU evidence 标为完成。
+
+## 2026-08-14：为什么“指标不可用”不能仍让 cell 通过
+
+fail-closed 不只是“文件存在、请求完成、没有异常”。如果某个 cell 要支持公平性判断，它还必须
+拥有能计算该公平指标的原始事件。matched-ready 旧汇总虽然把 frozen-static 的
+completion service lag 标成 `unavailable`，却没有把这个状态放进 `cell_passed`，所以一个缺少
+公平证据的 cell 仍能显示通过。这会把“诚实地写了不可用”错误升级成“公平门通过”。
+
+新合同把 correctness、observation、mechanism 和 fairness evidence 四层同时作为通过条件。
+五个 bounded-ready 臂有 registered-ready→completion 生命周期，可以在共同积压区间计算经验
+service lag 与最长无服务；frozen-static 没有同一账本，只能参与吞吐、JCT、tail 和 isolation
+比较。它不能用 0 填充，也不能用 Job 完成时间冒充 request completion ledger。若以后需要把
+static 纳入同口径公平排名，应增加不改变其调度所有权的 observation-only ledger，再完整重跑。
+
+work-conservation 也必须校验真实事件域。coordinator 开始 reclaim barrier 时记录的是
+`hold_start`，不是抽象名字 `hold`；检查不存在的事件会让“avoidable idle=0”几乎恒成立。现在
+任何面向非 concrete head 的 `hold_start` 都会被正例测试捕获并使门禁失败。类似地，runtime
+`job_id` 必须非空、单 Job 内一致且并发 Job 间唯一，否则 service 被归到哪个 Job 都不可验证；
+selector 消融还必须冻结相同 effective K/W 与 weights，避免资源合同漂移伪装成算法差异。

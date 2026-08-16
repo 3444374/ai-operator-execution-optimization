@@ -9,8 +9,12 @@ from dataclasses import dataclass
 from collections.abc import Callable
 
 from .saor import (
+    SaorBoundedHeadState,
     SaorReleaseConfig,
     SaorReleaseState,
+    bounded_saor_recovery_required,
+    project_bounded_saor_debt,
+    select_bounded_saor_release,
     select_saor_release_job,
 )
 
@@ -22,6 +26,7 @@ class CreditLease:
     endpoint_id: str
     estimated_work: int
     enqueued_at_s: float = 0.0
+    slo_deadline_s: float | None = None
 
     def __post_init__(self) -> None:
         if not self.request_id or not self.job_id or not self.endpoint_id:
@@ -30,6 +35,61 @@ class CreditLease:
             raise ValueError("estimated_work must be positive")
         if not math.isfinite(self.enqueued_at_s) or self.enqueued_at_s < 0:
             raise ValueError("enqueued_at_s must be finite and non-negative")
+        if self.slo_deadline_s is not None and not math.isfinite(
+            self.slo_deadline_s
+        ):
+            raise ValueError("slo_deadline_s must be finite when present")
+
+
+@dataclass(frozen=True)
+class SaorReleaseEvent:
+    """Lossless evidence for one bounded-SAOR grant or hold transition."""
+
+    event_seq: int
+    event_time_s: float
+    event_epoch_s: float
+    endpoint_id: str
+    action: str
+    tier: str
+    selected_job_id: str = ""
+    selected_request_id: str = ""
+    target_job_id: str = ""
+    head_work: int = 0
+    reclaim_debt: int = 0
+    hold_duration_s: float = 0.0
+    constraint_conflict: bool = False
+    ready_jobs: tuple[str, ...] = ()
+    fitting_jobs: tuple[str, ...] = ()
+    debt_by_job: tuple[tuple[str, float], ...] = ()
+    debt_cap_by_job: tuple[tuple[str, float], ...] = ()
+    active_set_jobs: tuple[str, ...] = ()
+    active_set_weight_sum: float = 0.0
+    weight_by_job: tuple[tuple[str, float], ...] = ()
+    projection_own_inflight_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_foreign_residual_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_candidate_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_target_share_by_job: tuple[tuple[str, float], ...] = ()
+    projected_debt_before_by_job: tuple[tuple[str, float], ...] = ()
+    projected_debt_after_by_job: tuple[tuple[str, float], ...] = ()
+    projected_overshoot_bound_by_job: tuple[tuple[str, float], ...] = ()
+    recovery_inflight_by_job: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    recovery_inflight_work_by_job: tuple[tuple[str, int], ...] = ()
+    projection_estimation_overrun_work: int = 0
+    recovery_estimation_overrun_work: int = 0
+    active_requests: int = 0
+    active_work: int = 0
+    avoidable_idle: bool = False
+    foreign_grant_over_debt_critical: bool = False
+
+
+@dataclass(frozen=True)
+class _GuardHold:
+    target_job_id: str
+    target_request_id: str
+    head_work: int
+    reclaim_debt: int
+    started_at_s: float
+    constraint_conflict: bool
 
 
 @dataclass(frozen=True)
@@ -53,10 +113,16 @@ class EndpointCreditSnapshot:
     granted_work_by_job: tuple[tuple[str, int], ...]
     attained_service_by_job: tuple[tuple[str, int], ...]
     fairness_debt_by_job: tuple[tuple[str, float], ...]
+    recovery_inflight_by_job: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    recovery_inflight_work_by_job: tuple[tuple[str, int], ...] = ()
+    guard_hold_target_job_id: str = ""
+    guard_hold_target_request_id: str = ""
+    guard_reclaim_debt: int = 0
+    guard_hold_age_s: float = 0.0
 
 
 class FairEndpointCreditCoordinator:
-    """Shared endpoint credit with DRR or an arrival-ordered FIFO control.
+    """Shared endpoint credit with fair and diagnostic release controls.
 
     This class is engine independent. A Ray named actor can own one instance so
     schedulers from separate database jobs observe the same endpoint capacity.
@@ -69,20 +135,39 @@ class FairEndpointCreditCoordinator:
         quantum: int,
         policy: str = "drr",
         saor_release_config: SaorReleaseConfig | None = None,
+        record_ready_lifecycle_events: bool = False,
         clock: Callable[[], float] = time.monotonic,
+        epoch_clock: Callable[[], float] = time.time,
     ) -> None:
         if not capacities:
             raise ValueError("capacities must not be empty")
         if quantum <= 0:
             raise ValueError("quantum must be positive")
-        if policy not in {"drr", "fifo", "vtc", "saor"}:
+        if policy not in {
+            "drr",
+            "fifo",
+            "vtc",
+            "saor",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+            "strict_priority",
+        }:
             raise ValueError(
-                "shared credit policy must be drr, fifo, vtc, or saor"
+                "shared credit policy must be drr, fifo, vtc, saor, "
+                "saor_bounded_priority, saor_bounded_ready, or strict_priority"
             )
-        if policy == "saor" and saor_release_config is None:
+        if (
+            policy in {"saor", "saor_bounded_priority", "saor_bounded_ready"}
+            and saor_release_config is None
+        ):
             raise ValueError("saor shared credit requires release configuration")
-        if policy != "saor" and saor_release_config is not None:
-            raise ValueError("SAOR release configuration is only valid for saor")
+        if (
+            policy not in {"saor", "saor_bounded_priority", "saor_bounded_ready"}
+            and saor_release_config is not None
+        ):
+            raise ValueError(
+                "SAOR release configuration is only valid for SAOR policies"
+            )
         for endpoint_id, (request_limit, work_limit) in capacities.items():
             if not endpoint_id:
                 raise ValueError("endpoint IDs must be non-empty")
@@ -92,7 +177,11 @@ class FairEndpointCreditCoordinator:
         self._quantum = quantum
         self._policy = policy
         self._saor_release_config = saor_release_config
+        self._record_ready_lifecycle_events = bool(
+            record_ready_lifecycle_events
+        )
         self._clock = clock
+        self._epoch_clock = epoch_clock
         self._active: dict[tuple[str, str], CreditLease] = {}
         self._active_work: dict[str, int] = {
             endpoint_id: 0 for endpoint_id in capacities
@@ -120,6 +209,8 @@ class FairEndpointCreditCoordinator:
             endpoint_id: deque() for endpoint_id in capacities
         }
         self._weights: dict[str, int] = {}
+        self._priorities: dict[str, int] = {}
+        self._finished_jobs: set[str] = set()
         self._deficits: dict[tuple[str, str], int] = {}
         self._job_order: dict[str, list[str]] = {
             endpoint_id: [] for endpoint_id in capacities
@@ -137,6 +228,20 @@ class FairEndpointCreditCoordinator:
             endpoint_id: {} for endpoint_id in capacities
         }
         self._saor_slo_target_s: dict[str, float] = {}
+        self._priority_windows_s: dict[str, float] = {}
+        self._fairness_debt_caps: dict[str, float] = {}
+        self._recovery_inflight: dict[str, dict[str, dict[str, int]]] = {
+            endpoint_id: {} for endpoint_id in capacities
+        }
+        self._guard_holds: dict[str, _GuardHold | None] = {
+            endpoint_id: None for endpoint_id in capacities
+        }
+        self._release_events: dict[str, deque[SaorReleaseEvent]] = {
+            endpoint_id: deque() for endpoint_id in capacities
+        }
+        self._release_event_seq: dict[str, int] = {
+            endpoint_id: 0 for endpoint_id in capacities
+        }
 
     def try_acquire(
         self,
@@ -146,9 +251,15 @@ class FairEndpointCreditCoordinator:
         endpoint_id: str,
         estimated_work: int,
         weight: int = 1,
+        priority: int = 0,
         slo_target_s: float | None = None,
+        slo_budget_remaining_s: float | None = None,
+        priority_window_s: float | None = None,
+        fairness_debt_cap: float | None = None,
     ) -> bool:
         request_key = (job_id, request_id)
+        if job_id in self._finished_jobs:
+            raise ValueError("a finished job cannot acquire new credit")
         if request_key in self._active:
             return True
         if endpoint_id not in self._capacities:
@@ -165,9 +276,14 @@ class FairEndpointCreditCoordinator:
             )
         if weight <= 0:
             raise ValueError("weight must be positive")
+        if not isinstance(priority, int) or isinstance(priority, bool) or priority < 0:
+            raise ValueError("priority must be a non-negative integer")
         previous_weight = self._weights.setdefault(job_id, weight)
         if previous_weight != weight:
             raise ValueError("a job must use one stable weight")
+        previous_priority = self._priorities.setdefault(job_id, priority)
+        if previous_priority != priority:
+            raise ValueError("a job must use one stable priority")
         if self._policy == "saor":
             if slo_target_s is not None and (
                 not math.isfinite(slo_target_s) or slo_target_s <= 0
@@ -180,13 +296,46 @@ class FairEndpointCreditCoordinator:
             current_target = 0.0 if slo_target_s is None else float(slo_target_s)
             if previous_target != current_target:
                 raise ValueError("a job must use one stable SLO target")
+        if self._policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+            if priority > 0 and (
+                slo_budget_remaining_s is None or priority_window_s is None
+            ):
+                raise ValueError(
+                    "bounded SAOR priority requires SLO budget and priority window"
+                )
+            if slo_budget_remaining_s is not None and not math.isfinite(
+                slo_budget_remaining_s
+            ):
+                raise ValueError("SLO budget must be finite when present")
+            window = 0.0 if priority_window_s is None else float(priority_window_s)
+            if priority_window_s is not None and (
+                not math.isfinite(window) or window <= 0
+            ):
+                raise ValueError("priority window must be finite and positive")
+            cap = 0.0 if fairness_debt_cap is None else float(fairness_debt_cap)
+            if fairness_debt_cap is not None and (
+                not math.isfinite(cap) or cap <= 0
+            ):
+                raise ValueError("fairness debt cap must be finite and positive")
+            previous_window = self._priority_windows_s.setdefault(job_id, window)
+            if previous_window != window:
+                raise ValueError("a job must use one stable priority window")
+            previous_cap = self._fairness_debt_caps.setdefault(job_id, cap)
+            if previous_cap != cap:
+                raise ValueError("a job must use one stable fairness debt cap")
         if request_key not in self._queued_request_keys:
+            enqueued_at_s = self._clock()
             lease = CreditLease(
                 request_id,
                 job_id,
                 endpoint_id,
                 estimated_work,
-                self._clock(),
+                enqueued_at_s,
+                (
+                    enqueued_at_s + slo_budget_remaining_s
+                    if slo_budget_remaining_s is not None
+                    else None
+                ),
             )
             job_queues = self._waiting[endpoint_id]
             if job_id not in job_queues:
@@ -211,8 +360,57 @@ class FairEndpointCreditCoordinator:
             self._queued_request_keys.add(request_key)
             if self._policy == "fifo":
                 self._fifo_order[endpoint_id].append(request_key)
+            if (
+                self._policy == "saor_bounded_ready"
+                or self._record_ready_lifecycle_events
+            ):
+                self._record_release_event(
+                    endpoint_id,
+                    action="register",
+                    tier="ready_registration",
+                    lease=lease,
+                    states=(
+                        self._bounded_saor_states(endpoint_id)
+                        if self._policy == "saor_bounded_ready"
+                        else ()
+                    ),
+                )
         self._grant_waiters(endpoint_id)
         return request_key in self._active
+
+    def cancel_waiter(self, request_id: str, *, job_id: str) -> bool:
+        """Remove one queued acquisition without revoking an active lease."""
+
+        request_key = (job_id, request_id)
+        if request_key in self._active:
+            return False
+        if request_key not in self._queued_request_keys:
+            return False
+        endpoint_id = next(
+            endpoint_id
+            for endpoint_id, job_queues in self._waiting.items()
+            if any(
+                lease.request_id == request_id
+                for lease in job_queues.get(job_id, ())
+            )
+        )
+        queue = self._waiting[endpoint_id][job_id]
+        self._waiting[endpoint_id][job_id] = deque(
+            lease for lease in queue if lease.request_id != request_id
+        )
+        self._queued_request_keys.remove(request_key)
+        if self._policy == "fifo":
+            self._fifo_order[endpoint_id] = deque(
+                key for key in self._fifo_order[endpoint_id] if key != request_key
+            )
+        hold = self._guard_holds[endpoint_id]
+        if hold is not None and (
+            hold.target_job_id,
+            hold.target_request_id,
+        ) == request_key:
+            self._close_guard_hold(endpoint_id, hold)
+        self._grant_waiters(endpoint_id)
+        return True
 
     def release(
         self,
@@ -243,15 +441,77 @@ class FairEndpointCreditCoordinator:
                 counters[job_id] = counters.get(job_id, 0) + (
                     actual_work - lease.estimated_work
                 )
-        if self._policy == "saor":
+        recovery_estimated_work = 0
+        if self._policy in {
+            "saor",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+        }:
+            recovery = self._recovery_inflight[endpoint_id]
+            recovery_requests = recovery.get(job_id)
+            if recovery_requests is not None:
+                recovery_estimated_work = recovery_requests.pop(request_id, 0)
+                if not recovery_requests:
+                    del recovery[job_id]
+            completed_work = (
+                lease.estimated_work if actual_work is None else actual_work
+            )
             self._update_saor_fairness_debt(
                 endpoint_id,
                 completed_job_id=job_id,
-                completed_work=(
-                    lease.estimated_work if actual_work is None else actual_work
-                ),
+                completed_work=completed_work,
             )
+            if self._policy in {
+                "saor_bounded_priority",
+                "saor_bounded_ready",
+            }:
+                self._record_release_event(
+                    endpoint_id,
+                    action="completion",
+                    tier="service_completion",
+                    lease=lease,
+                    states=self._bounded_saor_states(
+                        endpoint_id,
+                        include_job_ids=(job_id,),
+                    ),
+                    projection_estimation_overrun_work=max(
+                        0,
+                        completed_work - lease.estimated_work,
+                    ),
+                    recovery_estimation_overrun_work=max(
+                        0,
+                        completed_work - recovery_estimated_work,
+                    )
+                    if recovery_estimated_work
+                    else 0,
+                )
         self._grant_waiters(endpoint_id)
+
+    def finish_job(self, job_id: str) -> None:
+        """Close one Job lifecycle after every lease and waiter drains."""
+
+        has_active = any(lease.job_id == job_id for lease in self._active.values())
+        has_waiting = any(
+            job_queues.get(job_id)
+            for job_queues in self._waiting.values()
+        )
+        if has_active or has_waiting:
+            raise ValueError("cannot finish a job with outstanding credit")
+        if self._policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+            for endpoint_id in self._capacities:
+                self._record_release_event(
+                    endpoint_id,
+                    action="finish_job",
+                    tier="job_lifecycle_complete",
+                    event_job_id=job_id,
+                    states=self._bounded_saor_states(
+                        endpoint_id,
+                        include_job_ids=(job_id,),
+                    ),
+                )
+        self._finished_jobs.add(job_id)
+        for endpoint_id in self._capacities:
+            self._grant_waiters(endpoint_id)
 
     def snapshot(self, endpoint_id: str) -> EndpointCreditSnapshot:
         if endpoint_id not in self._capacities:
@@ -329,7 +589,56 @@ class FairEndpointCreditCoordinator:
             fairness_debt_by_job=tuple(
                 sorted(self._fairness_debt[endpoint_id].items())
             ),
+            recovery_inflight_by_job=tuple(
+                (job_id, tuple(sorted(request_work)))
+                for job_id, request_work in sorted(
+                    self._recovery_inflight[endpoint_id].items()
+                )
+                if request_work
+            ),
+            recovery_inflight_work_by_job=tuple(
+                (job_id, sum(request_work.values()))
+                for job_id, request_work in sorted(
+                    self._recovery_inflight[endpoint_id].items()
+                )
+                if request_work
+            ),
+            guard_hold_target_job_id=(
+                self._guard_holds[endpoint_id].target_job_id
+                if self._guard_holds[endpoint_id] is not None
+                else ""
+            ),
+            guard_hold_target_request_id=(
+                self._guard_holds[endpoint_id].target_request_id
+                if self._guard_holds[endpoint_id] is not None
+                else ""
+            ),
+            guard_reclaim_debt=(
+                self._guard_holds[endpoint_id].reclaim_debt
+                if self._guard_holds[endpoint_id] is not None
+                else 0
+            ),
+            guard_hold_age_s=(
+                max(
+                    0.0,
+                    self._clock() - self._guard_holds[endpoint_id].started_at_s,
+                )
+                if self._guard_holds[endpoint_id] is not None
+                else 0.0
+            ),
         )
+
+    def drain_release_events(
+        self,
+        endpoint_id: str,
+    ) -> tuple[SaorReleaseEvent, ...]:
+        """Return each bounded-SAOR event once, in coordinator order."""
+
+        if endpoint_id not in self._capacities:
+            raise ValueError(f"unknown endpoint_id: {endpoint_id}")
+        events = tuple(self._release_events[endpoint_id])
+        self._release_events[endpoint_id].clear()
+        return events
 
     def update_capacity(
         self,
@@ -366,6 +675,12 @@ class FairEndpointCreditCoordinator:
             return
         if self._policy == "saor":
             self._grant_saor_waiters(endpoint_id)
+            return
+        if self._policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+            self._grant_bounded_saor_waiters(endpoint_id)
+            return
+        if self._policy == "strict_priority":
+            self._grant_strict_priority_waiters(endpoint_id)
             return
         request_limit, work_limit = self._capacities[endpoint_id]
         job_order = self._job_order[endpoint_id]
@@ -415,26 +730,7 @@ class FairEndpointCreditCoordinator:
             request_key = (lease.job_id, lease.request_id)
             self._queued_request_keys.remove(request_key)
             self._deficits[deficit_key] -= lease.estimated_work
-            self._active[request_key] = lease
-            self._active_requests[endpoint_id] += 1
-            self._active_work[endpoint_id] += lease.estimated_work
-            self._max_active_requests[endpoint_id] = max(
-                self._max_active_requests[endpoint_id],
-                self._active_requests[endpoint_id],
-            )
-            self._max_active_work[endpoint_id] = max(
-                self._max_active_work[endpoint_id],
-                self._active_work[endpoint_id],
-            )
-            granted_requests = self._granted_requests[endpoint_id]
-            granted_requests[lease.job_id] = (
-                granted_requests.get(lease.job_id, 0) + 1
-            )
-            granted_work = self._granted_work[endpoint_id]
-            granted_work[lease.job_id] = (
-                granted_work.get(lease.job_id, 0)
-                + lease.estimated_work
-            )
+            self._activate(endpoint_id, lease)
             visits_without_grant = 0
 
     def _grant_vtc_waiters(self, endpoint_id: str) -> None:
@@ -474,6 +770,47 @@ class FairEndpointCreditCoordinator:
                 self._attained_service[endpoint_id].get(job_id, 0)
                 + lease.estimated_work
             )
+            self._activate(endpoint_id, lease)
+
+    def _grant_strict_priority_waiters(self, endpoint_id: str) -> None:
+        """Grant the highest-priority fitting head without revoking leases.
+
+        This policy is a diagnostic upper bound for release-only foreground
+        protection.  It is non-preemptive: priority changes only which queued
+        Job receives newly freed credit.  While a higher-priority Job remains
+        unfinished, newly freed capacity is held for that Job instead of being
+        refilled by a lower-priority Job.
+        """
+
+        request_limit, work_limit = self._capacities[endpoint_id]
+        order = {
+            job_id: index
+            for index, job_id in enumerate(self._job_order[endpoint_id])
+        }
+        while self._active_requests[endpoint_id] < request_limit:
+            unfinished_priorities = [
+                priority
+                for job_id, priority in self._priorities.items()
+                if job_id not in self._finished_jobs
+            ]
+            active_priority = max(unfinished_priorities, default=0)
+            candidates = [
+                job_id
+                for job_id in self._job_order[endpoint_id]
+                if self._waiting[endpoint_id][job_id]
+                and self._priorities[job_id] == active_priority
+                and self._active_work[endpoint_id]
+                + self._waiting[endpoint_id][job_id][0].estimated_work
+                <= work_limit
+            ]
+            if not candidates:
+                return
+            job_id = min(
+                candidates,
+                key=lambda item: (-self._priorities[item], order[item]),
+            )
+            lease = self._waiting[endpoint_id][job_id].popleft()
+            self._queued_request_keys.remove((lease.job_id, lease.request_id))
             self._activate(endpoint_id, lease)
 
     def _vtc_job_is_inactive(self, endpoint_id: str, job_id: str) -> bool:
@@ -585,6 +922,383 @@ class FairEndpointCreditCoordinator:
             self._queued_request_keys.remove((lease.job_id, lease.request_id))
             self._activate(endpoint_id, lease)
 
+    def _grant_bounded_saor_waiters(self, endpoint_id: str) -> None:
+        """Apply debt recovery, bounded SLO priority, then SAOR fallback."""
+
+        if self._saor_release_config is None:
+            raise RuntimeError("SAOR release configuration is missing")
+        request_limit, work_limit = self._capacities[endpoint_id]
+        while self._active_requests[endpoint_id] < request_limit:
+            if self._resume_guard_hold(endpoint_id):
+                continue
+            if self._guard_holds[endpoint_id] is not None:
+                return
+            states = self._bounded_saor_states(endpoint_id)
+            if not states:
+                return
+            has_critical = any(
+                bounded_saor_recovery_required(state, states)
+                for state in states
+            )
+            if not any(state.release.eligible for state in states) and not has_critical:
+                return
+            selected = select_bounded_saor_release(
+                states,
+                request_limit=request_limit,
+                work_limit=work_limit,
+                active_work=self._active_work[endpoint_id],
+                config=self._saor_release_config,
+            )
+            if selected.action == "hold":
+                job_id = selected.job_id or ""
+                lease = self._waiting[endpoint_id][job_id][0]
+                hold = _GuardHold(
+                    job_id,
+                    lease.request_id,
+                    lease.estimated_work,
+                    selected.reclaim_debt,
+                    self._clock(),
+                    selected.constraint_conflict,
+                )
+                self._guard_holds[endpoint_id] = hold
+                self._record_release_event(
+                    endpoint_id,
+                    action="hold_start",
+                    tier=selected.tier,
+                    target=hold,
+                    states=states,
+                )
+                return
+            job_id = selected.job_id or ""
+            lease = self._waiting[endpoint_id][job_id].popleft()
+            self._queued_request_keys.remove((lease.job_id, lease.request_id))
+            if selected.tier == "debt_recovery":
+                self._recovery_inflight[endpoint_id].setdefault(
+                    job_id,
+                    {},
+                )[lease.request_id] = lease.estimated_work
+            self._activate(endpoint_id, lease)
+            self._record_release_event(
+                endpoint_id,
+                action="grant",
+                tier=selected.tier,
+                lease=lease,
+                constraint_conflict=selected.constraint_conflict,
+                states=states,
+            )
+
+    def _resume_guard_hold(self, endpoint_id: str) -> bool:
+        hold = self._guard_holds[endpoint_id]
+        if hold is None:
+            return False
+        queue = self._waiting[endpoint_id].get(hold.target_job_id)
+        if not queue or queue[0].request_id != hold.target_request_id:
+            self._close_guard_hold(endpoint_id, hold)
+            return False
+        _, work_limit = self._capacities[endpoint_id]
+        lease = queue[0]
+        reclaim = max(
+            0,
+            lease.estimated_work - (work_limit - self._active_work[endpoint_id]),
+        )
+        if reclaim > 0:
+            self._guard_holds[endpoint_id] = _GuardHold(
+                hold.target_job_id,
+                hold.target_request_id,
+                hold.head_work,
+                reclaim,
+                hold.started_at_s,
+                hold.constraint_conflict,
+            )
+            return False
+        states = self._bounded_saor_states(endpoint_id)
+        held_state = next(
+            (
+                state
+                for state in states
+                if state.release.job_id == hold.target_job_id
+            ),
+            None,
+        )
+        if held_state is None or not bounded_saor_recovery_required(
+            held_state,
+            states,
+        ):
+            self._close_guard_hold(endpoint_id, hold, states=states)
+            return False
+        self._close_guard_hold(endpoint_id, hold, states=states)
+        queue.popleft()
+        self._queued_request_keys.remove((lease.job_id, lease.request_id))
+        self._recovery_inflight[endpoint_id].setdefault(
+            lease.job_id,
+            {},
+        )[lease.request_id] = lease.estimated_work
+        self._activate(endpoint_id, lease)
+        self._record_release_event(
+            endpoint_id,
+            action="grant",
+            tier="debt_recovery",
+            lease=lease,
+            constraint_conflict=hold.constraint_conflict,
+            states=states,
+        )
+        return True
+
+    def _close_guard_hold(
+        self,
+        endpoint_id: str,
+        hold: _GuardHold,
+        *,
+        states: tuple[SaorBoundedHeadState, ...] | None = None,
+    ) -> None:
+        self._guard_holds[endpoint_id] = None
+        self._record_release_event(
+            endpoint_id,
+            action="hold_end",
+            tier="guard_reclaim_hold",
+            target=hold,
+            hold_duration_s=max(0.0, self._clock() - hold.started_at_s),
+            states=states or self._bounded_saor_states(endpoint_id),
+        )
+
+    def _bounded_saor_states(
+        self,
+        endpoint_id: str,
+        *,
+        include_job_ids: tuple[str, ...] = (),
+    ) -> tuple[SaorBoundedHeadState, ...]:
+        request_limit, work_limit = self._capacities[endpoint_id]
+        active_requests: dict[str, int] = {}
+        active_work: dict[str, int] = {}
+        for lease in self._active.values():
+            if lease.endpoint_id != endpoint_id:
+                continue
+            active_requests[lease.job_id] = active_requests.get(lease.job_id, 0) + 1
+            active_work[lease.job_id] = (
+                active_work.get(lease.job_id, 0) + lease.estimated_work
+            )
+        jobs = set(active_requests)
+        jobs.update(
+            job_id
+            for job_id, queue in self._waiting[endpoint_id].items()
+            if queue
+        )
+        jobs.update(include_job_ids)
+        order = {
+            job_id: index for index, job_id in enumerate(self._job_order[endpoint_id])
+        }
+        now = self._clock()
+        states = []
+        for job_id in sorted(jobs):
+            queue = self._waiting[endpoint_id].get(job_id, ())
+            head = queue[0] if queue else None
+            head_work = head.estimated_work if head is not None else 0
+            fits = bool(head) and (
+                self._active_requests[endpoint_id] + 1 <= request_limit
+                and self._active_work[endpoint_id] + head_work <= work_limit
+            )
+            states.append(
+                SaorBoundedHeadState(
+                    release=SaorReleaseState(
+                        job_id=job_id,
+                        weight=float(self._weights[job_id]),
+                        active_requests=active_requests.get(job_id, 0),
+                        active_work=active_work.get(job_id, 0),
+                        waiting_work=sum(item.estimated_work for item in queue),
+                        fairness_debt=self._fairness_debt[endpoint_id].get(
+                            job_id, 0.0
+                        ),
+                        oldest_waiting_age_s=(
+                            max(0.0, now - head.enqueued_at_s) if head else 0.0
+                        ),
+                        slo_target_s=None,
+                        arrival_order=order.get(job_id, len(order)),
+                        eligible=fits,
+                    ),
+                    priority=self._priorities[job_id],
+                    remaining_slo_budget_s=(
+                        head.slo_deadline_s - now
+                        if head is not None and head.slo_deadline_s is not None
+                        else None
+                    ),
+                    priority_window_s=self._priority_windows_s.get(job_id) or None,
+                    debt_cap=self._fairness_debt_caps.get(job_id) or None,
+                    head_work=head_work,
+                    ready=head is not None,
+                    recovery_inflight=(
+                        job_id in self._recovery_inflight[endpoint_id]
+                    ),
+                    recovery_inflight_work=sum(
+                        self._recovery_inflight[endpoint_id]
+                        .get(job_id, {})
+                        .values()
+                    ),
+                )
+            )
+        return tuple(states)
+
+    def _record_release_event(
+        self,
+        endpoint_id: str,
+        *,
+        action: str,
+        tier: str,
+        states: tuple[SaorBoundedHeadState, ...],
+        lease: CreditLease | None = None,
+        target: _GuardHold | None = None,
+        event_job_id: str = "",
+        constraint_conflict: bool = False,
+        hold_duration_s: float = 0.0,
+        projection_estimation_overrun_work: int = 0,
+        recovery_estimation_overrun_work: int = 0,
+    ) -> None:
+        projections = {
+            state.release.job_id: project_bounded_saor_debt(state, states)
+            for state in states
+        }
+        debt_critical = {
+            state.release.job_id
+            for state in states
+            if bounded_saor_recovery_required(state, states)
+        }
+        target_is_concrete = (
+            target is not None
+            and target.target_job_id in debt_critical
+            and target.reclaim_debt > 0
+        )
+        selected_lease = (
+            lease
+            if action in {"register", "grant", "completion"}
+            else None
+        )
+        seq = self._release_event_seq[endpoint_id] + 1
+        self._release_event_seq[endpoint_id] = seq
+        self._release_events[endpoint_id].append(
+            SaorReleaseEvent(
+                event_seq=seq,
+                event_time_s=self._clock(),
+                event_epoch_s=self._epoch_clock(),
+                endpoint_id=endpoint_id,
+                action=action,
+                tier=tier,
+                selected_job_id=(
+                    selected_lease.job_id
+                    if selected_lease is not None
+                    else event_job_id
+                ),
+                selected_request_id=(
+                    selected_lease.request_id
+                    if selected_lease is not None
+                    else ""
+                ),
+                target_job_id=target.target_job_id if target is not None else "",
+                head_work=target.head_work if target is not None else 0,
+                reclaim_debt=target.reclaim_debt if target is not None else 0,
+                hold_duration_s=hold_duration_s,
+                constraint_conflict=(
+                    target.constraint_conflict
+                    if target is not None
+                    else constraint_conflict
+                ),
+                ready_jobs=tuple(
+                    state.release.job_id for state in states if state.ready
+                ),
+                fitting_jobs=tuple(
+                    state.release.job_id
+                    for state in states
+                    if state.release.eligible
+                ),
+                debt_by_job=tuple(
+                    sorted(
+                        (
+                            state.release.job_id,
+                            state.release.fairness_debt,
+                        )
+                        for state in states
+                    )
+                ),
+                debt_cap_by_job=tuple(
+                    sorted(
+                        (state.release.job_id, state.debt_cap)
+                        for state in states
+                        if state.debt_cap is not None
+                    )
+                ),
+                active_set_jobs=tuple(
+                    state.release.job_id for state in states
+                ),
+                active_set_weight_sum=sum(
+                    state.release.weight for state in states
+                ),
+                weight_by_job=tuple(
+                    (state.release.job_id, state.release.weight)
+                    for state in states
+                ),
+                projection_own_inflight_work_by_job=tuple(
+                    (state.release.job_id, state.release.active_work)
+                    for state in states
+                ),
+                projection_foreign_residual_work_by_job=tuple(
+                    (
+                        job_id,
+                        projection.foreign_residual_work,
+                    )
+                    for job_id, projection in projections.items()
+                ),
+                projection_candidate_work_by_job=tuple(
+                    (state.release.job_id, state.head_work)
+                    for state in states
+                ),
+                projection_target_share_by_job=tuple(
+                    (job_id, projection.target_share)
+                    for job_id, projection in projections.items()
+                ),
+                projected_debt_before_by_job=tuple(
+                    (job_id, projection.debt_before_candidate)
+                    for job_id, projection in projections.items()
+                ),
+                projected_debt_after_by_job=tuple(
+                    (job_id, projection.debt_after_candidate)
+                    for job_id, projection in projections.items()
+                ),
+                projected_overshoot_bound_by_job=tuple(
+                    (job_id, projection.discrete_overshoot_bound)
+                    for job_id, projection in projections.items()
+                ),
+                recovery_inflight_by_job=tuple(
+                    (job_id, tuple(sorted(request_work)))
+                    for job_id, request_work in sorted(
+                        self._recovery_inflight[endpoint_id].items()
+                    )
+                    if request_work
+                ),
+                recovery_estimation_overrun_work=(
+                    recovery_estimation_overrun_work
+                ),
+                projection_estimation_overrun_work=(
+                    projection_estimation_overrun_work
+                ),
+                recovery_inflight_work_by_job=tuple(
+                    (job_id, sum(request_work.values()))
+                    for job_id, request_work in sorted(
+                        self._recovery_inflight[endpoint_id].items()
+                    )
+                    if request_work
+                ),
+                active_requests=self._active_requests[endpoint_id],
+                active_work=self._active_work[endpoint_id],
+                avoidable_idle=(
+                    action == "hold_start" and not target_is_concrete
+                ),
+                foreign_grant_over_debt_critical=(
+                    action == "grant"
+                    and bool(debt_critical)
+                    and lease is not None
+                    and lease.job_id not in debt_critical
+                ),
+            )
+        )
+
     def _update_saor_fairness_debt(
         self,
         endpoint_id: str,
@@ -650,3 +1364,15 @@ class FairEndpointCreditCoordinator:
         granted_work[lease.job_id] = (
             granted_work.get(lease.job_id, 0) + lease.estimated_work
         )
+        if (
+            self._record_ready_lifecycle_events
+            and self._policy
+            not in {"saor_bounded_priority", "saor_bounded_ready"}
+        ):
+            self._record_release_event(
+                endpoint_id,
+                action="grant",
+                tier=f"selector_grant:{self._policy}",
+                lease=lease,
+                states=(),
+            )

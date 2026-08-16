@@ -143,6 +143,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="completions",
     )
     parser.add_argument(
+        "--completion-prompt-token-overhead",
+        type=int,
+        default=0,
+        help=(
+            "Calibrated service-side prompt tokens added per request by the "
+            "selected protocol/template. This is part of admission work, not "
+            "a cross-model constant."
+        ),
+    )
+    parser.add_argument(
         "--completion-http-transport",
         choices=["urllib", "httpx_async"],
         default="urllib",
@@ -257,10 +267,44 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--shared-credit-policy",
-        choices=["drr", "fifo", "vtc", "saor"],
+        choices=[
+            "drr",
+            "fifo",
+            "vtc",
+            "saor",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+            "strict_priority",
+        ],
         default="drr",
     )
+    parser.add_argument(
+        "--shared-ready-observation-contract",
+        choices=["single_head", "bounded_concrete_pre_registration"],
+        default="single_head",
+    )
+    parser.add_argument(
+        "--shared-ready-payload-bytes-limit",
+        type=int,
+        default=0,
+        help=(
+            "Per-Job logical Arrow payload-byte bound for a bounded concrete "
+            "ready window; this is not a physical RSS limit."
+        ),
+    )
     parser.add_argument("--shared-credit-job-weight", type=int, default=1)
+    parser.add_argument("--shared-credit-job-priority", type=int, default=0)
+    parser.add_argument("--shared-credit-job-slo-ms", type=float, default=0.0)
+    parser.add_argument(
+        "--shared-credit-priority-window-ms",
+        type=float,
+        default=0.0,
+    )
+    parser.add_argument(
+        "--shared-credit-job-debt-cap-work",
+        type=float,
+        default=0.0,
+    )
     parser.add_argument(
         "--saor-entitlement-weight",
         type=float,

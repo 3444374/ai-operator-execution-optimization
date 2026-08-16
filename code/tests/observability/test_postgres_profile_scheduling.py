@@ -29,6 +29,7 @@ from src.baselines.common.contracts import ChatRequest  # noqa: E402
 from src.baselines.common.manifests import write_manifest  # noqa: E402
 from src.observability.profiling import ray as profile_ray  # noqa: E402
 from src.observability.profiling import replay as profile_replay  # noqa: E402
+from src.observability.profiling import config as profile_config  # noqa: E402
 from src.scheduling.submission_control.adaptive import AimdAdmissionController  # noqa: E402
 from src.scheduling.submission_control.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.core.models import (  # noqa: E402
@@ -328,6 +329,22 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertLess(ready_index, timer_index)
         self.assertIn("actor_ready_s", profile.FORMAL_RESULT_FIELDS)
         self.assertIn("flush_trace_status", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn(
+            "max_ready_payload_bytes_seen",
+            profile.FORMAL_RESULT_FIELDS,
+        )
+        self.assertIn(
+            "ready_payload_bytes_transition_p95",
+            profile.FORMAL_RESULT_FIELDS,
+        )
+        self.assertIn(
+            "shared_ready_observation_contract",
+            profile.FORMAL_RESULT_FIELDS,
+        )
+        self.assertIn(
+            "shared_ready_payload_bytes_limit",
+            profile.FORMAL_RESULT_FIELDS,
+        )
 
     def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
         args = profile.parse_args(
@@ -408,6 +425,32 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         with self.assertRaisesRegex(
             SystemExit, "requires --request-trace-output"
         ):
+            profile._validate_completion_observation_args(invalid)
+
+    def test_prompt_token_overhead_requires_chat_completion_protocol(self) -> None:
+        valid = profile.parse_args(
+            [
+                "--operator",
+                "ai_complete",
+                "--completion-protocol",
+                "chat_completions",
+                "--completion-prompt-token-overhead",
+                "29",
+            ]
+        )
+        profile._validate_completion_observation_args(valid)
+
+        invalid = profile.parse_args(
+            [
+                "--operator",
+                "ai_complete",
+                "--completion-protocol",
+                "completions",
+                "--completion-prompt-token-overhead",
+                "29",
+            ]
+        )
+        with self.assertRaisesRegex(SystemExit, "requires .* chat_completions"):
             profile._validate_completion_observation_args(invalid)
 
     def test_http_actor_definition_receives_safe_ray_options(self) -> None:
@@ -1229,6 +1272,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             job_start_epoch_s=10.0,
             ready_epoch_s=10.1,
             submission_granularity="request",
+            prompt_token_overhead_per_request=29,
         )
 
         self.assertEqual(
@@ -1243,6 +1287,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [item.request.planning_batch_id for item in envelopes],
             ["job:batch:0", "job:batch:0"],
         )
+        self.assertEqual(
+            [item.request.prompt_tokens for item in envelopes],
+            [32, 34],
+        )
+        self.assertEqual([item.prompt_tokens for item in seeds], [3, 5])
         self.assertEqual(
             [item.request.preferred_endpoint_id for item in envelopes],
             ["endpoint-1", "endpoint-0"],
@@ -1347,6 +1396,12 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "operator_invocations",
                 "max_inflight",
                 "max_active_work_per_endpoint_seen",
+                "max_ready_requests_seen",
+                "max_ready_work_seen",
+                "max_ready_payload_bytes_seen",
+                "ready_requests_transition_samples",
+                "ready_work_transition_samples",
+                "ready_payload_bytes_transition_samples",
                 "bounded_wait_s",
                 "avg_bounded_wait_s",
                 "fanin_s",
@@ -1361,6 +1416,31 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["adaptive_downshifts"], 0)
         self.assertEqual(metrics["adaptive_upshifts"], 0)
         self.assertEqual(metrics["adaptive_limit_mean"], 4)
+
+    def test_bounded_ready_window_is_derived_from_existing_k_and_w(self) -> None:
+        self.assertEqual(
+            profile_ray._shared_ready_window_limits(
+                256,
+                ["endpoint-0", "endpoint-1"],
+                {
+                    "policy": "fifo",
+                    "work_limit": 65536,
+                    "ready_observation_contract": (
+                        "bounded_concrete_pre_registration"
+                    ),
+                    "ready_payload_bytes_limit": 1048576,
+                },
+            ),
+            (256, 131072, 1048576),
+        )
+        self.assertEqual(
+            profile_ray._shared_ready_window_limits(
+                256,
+                ["endpoint-0", "endpoint-1"],
+                {"policy": "saor_bounded_priority", "work_limit": 65536},
+            ),
+            (1, None, None),
+        )
 
     def test_service_metrics_snapshot_maps_available_vllm_gauges(self) -> None:
         with patch.object(
@@ -1984,6 +2064,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         arrivals = profile_replay._row_arrivals(
             table,
             completion_max_tokens=5,
+            prompt_token_overhead_per_request=29,
         )
 
         self.assertEqual(
@@ -1998,8 +2079,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 for item in arrivals
             ],
             [
-                ("11", 2.5, 7, 5, "shared"),
-                ("12", 2.75, 9, 5, "other"),
+                ("11", 2.5, 36, 5, "shared"),
+                ("12", 2.75, 38, 5, "other"),
             ],
         )
         for index, arrival in enumerate(arrivals):
@@ -2201,7 +2282,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         lifecycle_seeds = []
         epoch_values = iter([100.0, 100.005])
 
-        list(
+        envelopes = list(
             profile._arrival_replay_envelopes(
                 [table],
                 args,
@@ -2227,6 +2308,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [item.flush_epoch_s for item in lifecycle_seeds],
             [100.005, 100.005],
         )
+        self.assertEqual(
+            [item.request.oldest_arrival_epoch_s for item in envelopes],
+            [100.0],
+        )
 
     def test_replay_can_preserve_a_shared_fixed_epoch_origin(self) -> None:
         args = SimpleNamespace(
@@ -2247,7 +2332,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         lifecycle_seeds = []
 
-        list(
+        envelopes = list(
             profile._arrival_replay_envelopes(
                 [table],
                 args,
@@ -2268,6 +2353,105 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertEqual(lifecycle_seeds[0].arrival_epoch_s, 100.0)
         self.assertEqual(lifecycle_seeds[0].flush_epoch_s, 110.0)
+        self.assertEqual(envelopes[0].request.oldest_arrival_s, 0.0)
+        self.assertEqual(envelopes[0].request.oldest_arrival_epoch_s, 100.0)
+
+    def test_bounded_priority_profiler_requires_request_replay_contract(
+        self,
+    ) -> None:
+        common = [
+            "--dry-run",
+            "--executor",
+            "ray_task",
+            "--shared-credit-coordinator-name",
+            "bounded-test",
+            "--shared-credit-request-limit",
+            "64",
+            "--shared-credit-work-limit",
+            "65536",
+            "--shared-credit-quantum",
+            "2048",
+            "--shared-credit-policy",
+            "saor_bounded_priority",
+        ]
+        valid = profile.parse_args(
+            common
+            + [
+                "--arrival-replay",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-job-debt-cap-work",
+                "8192",
+            ]
+        )
+        profile_config.validate_shared_credit_policy_args(valid)
+
+        for extra, message in (
+            ([], "arrival replay"),
+            (["--arrival-replay"], "request granularity"),
+            (
+                [
+                    "--arrival-replay",
+                    "--submission-granularity",
+                    "request",
+                    "--shared-credit-job-priority",
+                    "1",
+                ],
+                "SLO target and priority window",
+            ),
+            (
+                [
+                    "--arrival-replay",
+                    "--submission-granularity",
+                    "request",
+                    "--shared-credit-job-debt-cap-work",
+                    "-1",
+                ],
+                "debt cap",
+            ),
+        ):
+            with self.subTest(message=message):
+                args = profile.parse_args(common + extra)
+                with self.assertRaisesRegex(SystemExit, message):
+                    profile_config.validate_shared_credit_policy_args(args)
+
+    def test_bounded_priority_profiler_accepts_explicit_foreground_slo(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--arrival-replay",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-coordinator-name",
+                "bounded-test",
+                "--shared-credit-request-limit",
+                "64",
+                "--shared-credit-work-limit",
+                "65536",
+                "--shared-credit-quantum",
+                "2048",
+                "--shared-credit-policy",
+                "saor_bounded_priority",
+                "--shared-credit-job-priority",
+                "1",
+                "--shared-credit-job-slo-ms",
+                "30000",
+                "--shared-credit-priority-window-ms",
+                "30000",
+            ]
+        )
+
+        profile_config.validate_shared_credit_policy_args(args)
 
     def test_token_budget_membership_survives_arrow_assembly(self) -> None:
         args = SimpleNamespace(
@@ -2391,6 +2575,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             max_inflight=8,
             arrival_time_scale=0.001,
             submission_granularity="request",
+            completion_max_tokens=4,
+            completion_prompt_token_overhead=29,
             _replay_clock=_DeterministicReplayClock(),
         )
         table = pa.table(
@@ -2411,7 +2597,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 [table],
                 args,
                 job_id="job",
-                operator="ai_embed",
+                operator="ai_complete",
                 service_observation=lambda: ReplayServiceObservation(
                     fresh=False,
                     running=None,
@@ -2439,6 +2625,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [1, 1],
         )
         self.assertEqual(
+            [item.request.prompt_tokens for item in envelopes],
+            [39, 49],
+        )
+        self.assertEqual(
             [item.request.preferred_endpoint_id for item in envelopes],
             ["endpoint-1", "endpoint-0"],
         )
@@ -2450,7 +2640,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             {item.latency_granularity for item in seeds},
             {"request"},
         )
-        self.assertEqual(packing, [(30, 2)])
+        self.assertEqual([item.prompt_tokens for item in seeds], [10, 20])
+        self.assertEqual(packing, [(96, 2)])
 
     def test_service_quantum_granularity_expands_replay_batch_without_row_split(
         self,
@@ -3756,6 +3947,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         "token_count": 30,
                         "input_token_count": 20,
                         "output_token_count": 10,
+                        "token_count_source": "endpoint_usage_total_tokens",
+                        "input_token_count_source": "endpoint_usage_prompt_tokens",
+                        "output_token_count_source": "endpoint_usage_completion_tokens",
                         "service_s": 0.2,
                         "service_start_epoch_s": 100.0,
                         "service_end_epoch_s": 100.2,
@@ -3773,6 +3967,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         pool_id="default",
                         endpoint_id="endpoint-1",
                         gpu_id="1",
+                        ready_epoch_s=99.0,
+                        credit_registered_epoch_s=99.1,
+                        credit_granted_epoch_s=99.5,
                         submit_epoch_s=99.9,
                         completion_epoch_s=100.2,
                         status="completed",
@@ -3826,12 +4023,29 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "RayActorError: worker unavailable",
             )
             self.assertEqual(submission[1]["rows"], "0")
-            self.assertEqual(submission[0]["schema_version"], "5")
+            self.assertEqual(submission[0]["schema_version"], "7")
+            self.assertEqual(
+                submission[0]["token_count_source"],
+                "endpoint_usage_total_tokens",
+            )
             self.assertEqual(submission[0]["submission_id"], "9:request:11")
             self.assertEqual(submission[0]["planning_batch_id"], "9:batch:0")
             self.assertEqual(submission[0]["service_quantum_index"], "1")
             self.assertEqual(submission[0]["service_quantum_oversized"], "False")
+            self.assertAlmostEqual(
+                float(submission[0]["ready_to_register_s"]),
+                0.1,
+            )
+            self.assertAlmostEqual(float(submission[0]["credit_wait_s"]), 0.4)
+            self.assertAlmostEqual(
+                float(submission[0]["grant_to_submit_s"]),
+                0.4,
+            )
             self.assertAlmostEqual(float(submission[0]["credit_held_s"]), 0.3)
+            self.assertAlmostEqual(
+                float(submission[0]["grant_to_completion_s"]),
+                0.7,
+            )
             self.assertAlmostEqual(float(submission[0]["ray_to_service_s"]), 0.1)
             self.assertEqual(
                 submission[0]["actor_worker_id"],

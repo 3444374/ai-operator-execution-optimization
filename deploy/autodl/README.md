@@ -1,5 +1,40 @@
 # AutoDL 云部署指南
 
+## SAOR native-system matched readiness
+
+The CLI config trio is `saor_native_system_matched.example.json` (eight-arm
+identity contract plus one exclusive `SAOR_MATRIX_OUTPUT_ROOT`),
+`saor_native_system_matched_native.example.json` (the three
+framework-owned native arms), and
+`saor_native_system_matched_project.example.json` (frozen-static plus four
+Project selector scenarios). All three must be supplied together; the matrix
+runner rejects missing or drifting executor bindings. Resolve their environment
+variables, then run the read-only audit; it sends no model request and starts no
+Ray process. GPU formal is explicitly not locally authorized. The shipped
+manifest is structural only: `matched_manifest_status=placeholder_not_ready`
+prevents it from passing even with a supplied SHA. Operators must create and
+commit a real two-Job matched request manifest, set its SHA, and change the
+status to `ready_frozen` before readiness can pass. Relative manifest and output
+paths are resolved from this example config's directory.
+
+The matrix index, host lease, and every physical cell directory are created
+below the fresh matrix output root; an existing root is rejected. Warm-up covers
+all eight identities, formal executes only the five complete-system arms, and
+selector development executes only bounded-ready FIFO/DRR/VTC-style. The
+selector report reuses the first matching formal SAOR cells, so SAOR is not
+rerun merely to populate the second table.
+
+The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
+timestamps are measured separately: the observed Job 1 minus Job 0 offset and
+its deviation are retained, and eligibility requires the pre-registered
+`±0.25 s` tolerance. This is not a zero-jitter claim.
+
+```bash
+python code/scripts/analysis/audit_saor_native_system_matched.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --output /tmp/saor_native_system_matched_readiness.json
+```
+
 本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
@@ -1076,6 +1111,10 @@ request/work dominant share 可观测；若仍有 waiting work，则逐 endpoint
 request slot 或 work slack 之一阻挡。若队首明明同时装得进 request/work envelope 却仍在等待，
 work-conserving 门必须失败；没有 waiting work 时允许按实际剩余量自然排空。static/direct 的
 机制门禁为 `not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
+若任一 Job 完成到另一 Job 完成的间隔小于 runner 的 250 ms trace 周期，且该区间内没有
+credit 样本，则 post-drain 没有可检验窗口，记为 `not_applicable:drain_below_trace_resolution`；
+间隔达到一个周期或区间内已有样本时仍必须过 head-fit 工作守恒门，不能用 simultaneous-drain
+规则掩盖缺失 trace。
 
 formal 前先运行纯静态 fail-closed audit；它解析模板、校准合同、十臂矩阵、manifest 行数/
 SHA/endpoint 覆盖和 direct/project 请求合同，不发送请求：
@@ -1119,6 +1158,291 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   --matrix-root "$ARTIFACT_ROOT/saor_active_set_release_formal" \
   --output-dir "$ARTIFACT_ROOT/saor_active_set_release_formal/summary"
 ```
+
+已有 Git 紧凑证据只回放机制门时使用 `--mechanism-only`；输出会显式保留
+`full_formal_validation_updated=false`，不得覆盖原始 `validation.json`：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_active_set.py \
+  --mechanism-only \
+  --matrix-root experiments/results/saor_active_set_release_formal_20260812_69affc7e \
+  --output-dir experiments/results/saor_active_set_release_formal_20260812_69affc7e/summary
+```
+
+下一项 release-only 可达性使用 `saor_priority_reachability.example.json`。三臂只比较 frozen
+static、既有 SAOR 和 foreground strict-priority；strict-priority 在前台 Job 存活期间停止新
+bulk credit，但不抢占已进入 vLLM 的 lease，前台结束后恢复 bulk。它是上游 release 能力
+upper bound，不是正式 proposed。仍须先完成本节 runtime preflight、idle/lease/endpoint/
+PG/Ray 检查，再依次运行静态 audit、独立 rehearsal 和全新 formal 目录：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile priority_reachability \
+  --config deploy/autodl/saor_priority_reachability.example.json \
+  --output "$ARTIFACT_ROOT/saor_priority_reachability_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_priority_reachability.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_priority_reachability_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_priority_reachability.py \
+  --matrix-root "$ARTIFACT_ROOT/saor_priority_reachability_formal_<unique-id>" \
+  --output-dir "$ARTIFACT_ROOT/saor_priority_reachability_formal_<unique-id>/summary"
+```
+
+汇总器要求 1+3、0 incident、exactly-once/lifecycle/metrics/resources/mechanism 全过，并从
+`group_runs.csv` 核对 strict-priority Job 动作为 `[0,1]`；fg P99>30.7s 或 SLO violation>1%
+即判 release-only 不可达。吞吐不作为这一 upper-bound gate 的通过条件，也不得从该臂直接
+声称 reservation 有效。
+
+有界优先级 SAOR 的开发门使用 `saor_bounded_priority.example.json`。模板只含四臂：冻结
+static、原 SAOR，以及 bulk fairness-debt cap 为 `0.125K_work`、`0.25K_work` 的两个候选；
+foreground 的 priority/SLO/window 显式冻结为 `1/30s/30s`，bulk 显式冻结为 priority 0，
+不允许从 Job 名或到达 offset 推断角色。新机制是否触发只认
+`traces/*.release_events.csv` 的无损事件账本；250 ms credit snapshot 只用于阶段图，不能作为
+priority/debt/hold 机制真值。服务器关闭期间只做本地静态验证；恢复后先重新执行 runtime
+preflight，再运行两个全新目录的 rehearsal，不启动 formal：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile bounded_priority_development \
+  --config deploy/autodl/saor_bounded_priority.example.json \
+  --output "$ARTIFACT_ROOT/saor_bounded_priority_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_bounded_priority.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_bounded_priority_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+静态 audit 通过只说明配置/资产合同闭合，不说明性能门通过；远端未运行时必须记录为 pending。
+
+ready-set 修订必须使用独立模板和 profile，不能覆盖旧双轮结果：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile bounded_ready_development \
+  --config deploy/autodl/saor_bounded_ready.example.json \
+  --output "$ARTIFACT_ROOT/saor_bounded_ready_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_bounded_ready.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_bounded_ready_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+必须运行两个全新 output root，再用 bounded gate 汇总器加
+`--profile bounded_ready`。窗口 request/work 上限由已校准 K/W 自动派生；不得增加手工 queue
+size 或在线调参。`ready/registered/granted/submit` 字段缺失、foreground actor-side
+register→grant interval 为空、区间内出现 foreign fallback、窗口峰值为 0、事件账本不完整或
+exactly-once 失败都只能诊断，不能注册 formal。
+
+2026-08-13 实际双轮结果：0.125K 两轮通过全部开发门，允许注册后续 formal candidate；0.25K
+两轮均因 bulk SLO violation 超过 0.723 而拒绝。后续正式矩阵必须冻结 0.125K，不得在线重选
+cap，也不得把这个两轮 rehearsal 写成 formal 结果。首次失败 root 暴露了跨 trace schema 合同：
+submission trace 的 ready/registered/granted 必须按 `submission_id` 与 request trace 的 submit
+连接；禁止为方便审计复制或伪造时间列。
+
+selector 归因必须另用项目内部消融模板，不得把原生系统塞入 bounded-ready：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile matched_ready_selector_ablation \
+  --config deploy/autodl/saor_matched_ready_selector_ablation.example.json \
+  --output "$ARTIFACT_ROOT/saor_matched_ready_selector_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_matched_ready_selector_ablation.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_matched_ready_selector_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+模板中的 `SAOR_READY_PAYLOAD_BYTES_LIMIT_PER_JOB` 是每 Job logical Arrow payload
+上限，必须由同机 rehearsal/calibration 冻结，不是物理 RSS，也不能写死为跨硬件常数。
+后五个 selector arm 的所有 Job 共用同一 request/work/bytes 窗口；project frozen-static
+保持既有静态路径。它们全部是项目内部 control/ablation，不进入原生 baseline 排名。
+完成一个或两个 root 后，用
+`code/scripts/analysis/summarize_saor_matched_ready_ablation.py` 只做证据完整性汇总；其
+`validation.json` 不授权 formal，也不自动判 selector 胜负。
+
+独立 Project mechanism 的下一轮只允许通过合同 wrapper 做 rehearsal：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_project_mechanism.py \
+  --rehearsal \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --config deploy/autodl/saor_project_mechanism_formal.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+同机已冻结的 logical Arrow payload envelope 为
+`SAOR_READY_PAYLOAD_BYTES_LIMIT_PER_JOB=67108864`（64 MiB/Job），已写入该 2×4090 专属 env
+example；它来自 matched-ready evidence，不是 bounded-priority 推断，也不是跨硬件默认值。机器、
+workload、row representation 或 ready-window 签名变化时必须重新校准。
+
+当前 evaluation contract 明确是 `locked_failed_feeding/formal_authorized=false`。rehearsal 必须产生 completion service
+lag、最长无服务、recovery completion、至少一个完整 debt-repayment episode 与零 unresolved
+debt。right-censored 只接受 scheduler 在 source exhausted 且 Job ready/waiting/active/recovery
+全部排空后的显式 `finish_job`，瞬时 ready 空窗不算 demand 终止；censored 不进入 repayment P95，
+也不能替代完整 episode。release-event schema 5 还要求保存 raw active-set/weight/own/foreign/
+candidate work，由离线汇总独立重算 projection，检查全部 projection work 的 estimate upper bound 与最后一个
+不可拆 request 的单 quantum overshoot bound。机制审核和 validation SHA 已冻结，但当前完整签名
+feeding ceiling 仅为 92.898%（低于 95%），因此本合同禁止改成 `formal_ready`。禁止直接删除
+`--rehearsal`。
+wrapper 成功跑完六臂后会自动写 `rehearsal_validation.json`；它只检查证据链及 proposed 的冻结
+absolute foreground SLO、longest-no-service、repayment/projection 门，不在单次 rehearsal 上决定
+任何 arm 排名或效应大小。
+
+chat completions 的服务侧模板可能为每条请求增加 prompt token。正式配置用
+`COMPLETION_PROMPT_TOKEN_OVERHEAD` 冻结该模型/template/protocol 签名的每请求开销；当前值 29
+来自同一六臂 rehearsal 的 6,144 条 request/submission 原始证据，不能照搬到另一模型或模板。
+运行时 request CSV 继续记录 manifest 的 raw prompt token，admission/credit work 才使用
+`raw + calibrated overhead`。每次签名变化先执行离线审计，禁止为通过 estimated-work 上界而放宽
+门禁：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_chat_prompt_overhead.py \
+  --matrix-root "$ARTIFACT_ROOT/<completed-rehearsal-root>" \
+  --expected-overhead "$COMPLETION_PROMPT_TOKEN_OVERHEAD" \
+  --expected-output-cap "$COMPLETION_MAX_TOKENS" \
+  --expected-requests-per-cell 1024 \
+  --phase warmup \
+  --repeat-index 1 \
+  --output "$ARTIFACT_ROOT/prompt_overhead_audit.json"
+```
+
+独立审核与全组件复算完成后，当前签名 direct bounded ceiling 已跑完；它不接 Project
+bounded-ready/credit，也不进入六臂 selector 排名。以下命令只用于复现封存负证据：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_feeding_ceiling.py \
+  --rehearsal \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --reference-config deploy/autodl/saor_project_mechanism_formal.example.json \
+  --config deploy/autodl/saor_project_feeding_ceiling.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_feeding_ceiling.py \
+  --project-root "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_63d17300_20260814" \
+  --ceiling-root "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>" \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --project-archive "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_63d17300_20260814.tar.gz" \
+  --ceiling-archive "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>.tar.gz" \
+  --output "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>/feeding_validation.json"
+```
+
+summarizer 返回 0 表示证据结构有效，不等于 feeding 通过；必须读取
+`feeding_gate_passed`。若 ratio<0.95，保留 `failed_feeding` root 并停止 formal，不重跑六臂、
+不调 K/W、$0.125W_e$ 或 95% 门槛。当前 root 的 ratio=92.898%，所以后续“解锁后的 formal”
+命令仅保留为合同说明，当前不得执行。
+
+feeding summarizer 不再接受只有两行 `group_runs.csv` 的孤立输入；它逐项校验两侧 group CSV、
+manifest（completed/commit/config fingerprint/root identity）、运行时合同快照、project rehearsal
+validation 与完整 archive SHA。当前 sealed output 的 `evidence_valid` 仅表示这些 artifact identity
+和 feeding 算术闭合；旧运行没有保存结构化 PostgreSQL/Ray clean gate，故另报
+`paper_reproducibility_complete=false`，不得把一次 warmup-identity ceiling 写成稳定损失估计。
+
+当前下一步不是 formal，也不是重跑 ceiling，而是独立的三臂 feeding-gap diagnostic。服务器恢复后
+先按 `deploy/runtime/README.md` 保存 `manage_environment.py check` 机器报告并恢复 PG/Ray/vLLM；随后
+必须使用全新 output root，**不要**传 `--rehearsal`（该诊断自身已冻结 `1 warm-up + 3 measured
+repeats`）：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/environment/manage_environment.py check \
+  --groups core,text,analysis \
+  --json-out "$ARTIFACT_ROOT/saor_feeding_gap_environment.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_feeding_gap_diagnostic.py \
+  --diagnostic-contract deploy/autodl/saor_feeding_gap_diagnostic_contract.json \
+  --prior-failed-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --reference-config deploy/autodl/saor_project_mechanism_formal.example.json \
+  --config deploy/autodl/saor_feeding_gap_diagnostic.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_feeding_gap_diagnostic_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_feeding_gap_diagnostic.py \
+  --output-root "$ARTIFACT_ROOT/saor_feeding_gap_diagnostic_<unique-id>" \
+  --diagnostic-contract deploy/autodl/saor_feeding_gap_diagnostic_contract.json \
+  --prior-failed-contract deploy/autodl/saor_project_mechanism_formal_contract.json
+```
+
+D0 是 direct K-only ceiling；D1 是 direct K+W diagnostic control，不是原生 baseline；P0 是
+bounded-ready FIFO Project path。wrapper 会在创建 matrix manifest 前写
+`pre_run_clean_gate.json`，分别证明 PG 无其它 non-idle session、诊断 namespace 无残留 Ray named
+actor 且 Ray CPU/GPU 无显著 held resource、两个 endpoint health 且 running/waiting 为 0。D0/D1 保存 lossless direct admission ledger；
+P0 保存 credit 与 Ray job traces。summarizer 缺任何 occupancy、admission wait、Ray submit/actor-ready、
+vLLM、MFU、TTFT/ITL、JCT/SLO 或能耗字段均返回 `invalid_evidence`。四种 0.95 判决只做差距归因，
+contract 明确禁止改变既有 `locked_failed_feeding/formal_authorized=false`。
+
+历史保留的 formal 汇总入口如下，但当前合同永久锁定，不能启动对应运行：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_project_mechanism_formal.py \
+  --matrix-root "$ARTIFACT_ROOT/saor_project_mechanism_formal_<unique-id>" \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --output-dir "$ARTIFACT_ROOT/saor_project_mechanism_formal_summary_<unique-id>"
+```
+
+这张表只比较 Project 内部 matched-observation selector。Daft Native、Daft Ray、Ray Data 的
+native-system matched comparison 仍是另一张表，两者不能互相代替或混合排名。
+
+错峰 Job 的有效性按 profiler 实际跨过 replay barrier 的 lateness/skew 判定；
+barrier→first-submit 属于 selector 的排队结果，必须进入等待、JCT 和 SLO 比较，不能再作为
+启动失败门禁。否则 FIFO/DRR 等允许 ready Job 等待 credit 的策略会被系统性误拒绝。
+first-submit 早于实际 barrier 仍然 fail closed。
 
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 

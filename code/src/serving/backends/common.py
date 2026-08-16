@@ -18,6 +18,8 @@ CompletionProtocol = Literal["completions", "chat_completions"]
 @dataclass(frozen=True)
 class CompletionEndpointResult:
     outputs: list[str]
+    prompt_tokens: int | None
+    completion_tokens: int | None
     total_tokens: int | None
     output_token_counts: list[int | None]
     finish_reasons: list[str | None]

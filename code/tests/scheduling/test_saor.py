@@ -16,6 +16,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.scheduling.core.control import CapacityArm  # noqa: E402
 from src.scheduling.submission_control.saor import (  # noqa: E402
     SaorAction,
+    SaorBoundedHeadState,
     SaorControlState,
     SaorJobState,
     SaorPolicy,
@@ -23,6 +24,7 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
     SaorReleaseConfig,
     SaorReleaseState,
     build_single_release_actions,
+    select_bounded_saor_release,
     select_saor_release_job,
     update_fairness_debts,
 )
@@ -106,6 +108,308 @@ class SaorPolicyTests(unittest.TestCase):
         )
 
         self.assertEqual(selection.job_id, "small")
+
+    @staticmethod
+    def bounded_head(
+        job_id: str,
+        *,
+        debt: float = 0.0,
+        cap: float | None = None,
+        head_work: int = 50,
+        fits: bool = True,
+        ready: bool = True,
+        priority: int = 0,
+        remaining_slo_s: float | None = None,
+        priority_window_s: float | None = None,
+        recovery_inflight: bool = False,
+        recovery_inflight_work: int = 0,
+        active_work: int = 0,
+        arrival_order: int = 0,
+    ) -> SaorBoundedHeadState:
+        if recovery_inflight and recovery_inflight_work == 0:
+            recovery_inflight_work = head_work
+        active_work = max(active_work, recovery_inflight_work)
+        return SaorBoundedHeadState(
+            release=SaorReleaseState(
+                job_id,
+                1.0,
+                active_requests=0,
+                active_work=active_work,
+                waiting_work=head_work if ready else 0,
+                fairness_debt=debt,
+                oldest_waiting_age_s=1.0,
+                slo_target_s=None,
+                arrival_order=arrival_order,
+                eligible=fits and ready,
+            ),
+            priority=priority,
+            remaining_slo_budget_s=remaining_slo_s,
+            priority_window_s=priority_window_s,
+            debt_cap=cap,
+            head_work=head_work if ready else 0,
+            ready=ready,
+            recovery_inflight=recovery_inflight,
+            recovery_inflight_work=recovery_inflight_work,
+        )
+
+    def test_bounded_release_debt_recovery_precedes_slo_priority(self) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head("bulk", debt=100, cap=100),
+                self.bounded_head(
+                    "foreground",
+                    priority=1,
+                    remaining_slo_s=1.0,
+                    priority_window_s=30.0,
+                    arrival_order=1,
+                ),
+            ),
+            request_limit=2,
+            work_limit=200,
+            active_work=100,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.action, "grant")
+        self.assertEqual(selection.tier, "debt_recovery")
+        self.assertEqual(selection.job_id, "bulk")
+        self.assertTrue(selection.constraint_conflict)
+
+    def test_bounded_release_holds_only_for_concrete_debt_head(self) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head(
+                    "bulk",
+                    debt=125,
+                    cap=100,
+                    head_work=80,
+                    fits=False,
+                ),
+                self.bounded_head("small", head_work=20, arrival_order=1),
+            ),
+            request_limit=2,
+            work_limit=200,
+            active_work=150,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.action, "hold")
+        self.assertEqual(selection.tier, "guard_reclaim_hold")
+        self.assertEqual(selection.job_id, "bulk")
+        self.assertEqual(selection.reclaim_debt, 30)
+
+    def test_bounded_release_keeps_recovery_mode_while_debt_is_critical(
+        self,
+    ) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head(
+                    "bulk",
+                    debt=150,
+                    cap=100,
+                    recovery_inflight=True,
+                ),
+                self.bounded_head(
+                    "foreground",
+                    priority=1,
+                    remaining_slo_s=2.0,
+                    priority_window_s=30.0,
+                    arrival_order=1,
+                ),
+            ),
+            request_limit=2,
+            work_limit=200,
+            active_work=100,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.tier, "debt_recovery")
+        self.assertEqual(selection.job_id, "bulk")
+
+    def test_bounded_release_counts_ordinary_own_inflight_repayment(self) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head(
+                    "bulk",
+                    debt=120,
+                    cap=100,
+                    active_work=80,
+                ),
+                self.bounded_head(
+                    "foreground",
+                    priority=1,
+                    remaining_slo_s=2.0,
+                    priority_window_s=30.0,
+                    arrival_order=1,
+                ),
+            ),
+            request_limit=4,
+            work_limit=400,
+            active_work=80,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        # Hand oracle: 120 - (1 - 1/2) * 80 = 80 < H=100.
+        self.assertEqual(selection.tier, "slo_priority")
+        self.assertEqual(selection.job_id, "foreground")
+
+    def test_bounded_release_counts_foreign_residual_debt_growth(self) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head("bulk", debt=80, cap=100),
+                self.bounded_head(
+                    "foreground",
+                    active_work=100,
+                    priority=1,
+                    remaining_slo_s=2.0,
+                    priority_window_s=30.0,
+                    arrival_order=1,
+                ),
+            ),
+            request_limit=4,
+            work_limit=400,
+            active_work=100,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        # Hand oracle: 80 + (1/2) * 100 = 130 >= H=100.
+        self.assertEqual(selection.tier, "debt_recovery")
+        self.assertEqual(selection.job_id, "bulk")
+
+    def test_bounded_release_recomputes_share_when_active_set_changes(self) -> None:
+        bulk = self.bounded_head("bulk", debt=60, cap=100)
+        foreground = self.bounded_head(
+            "foreground",
+            active_work=100,
+            priority=1,
+            remaining_slo_s=2.0,
+            priority_window_s=30.0,
+            arrival_order=1,
+        )
+        config = SaorReleaseConfig(1.0, 0.0, 1.0, 0.0)
+
+        two_job = select_bounded_saor_release(
+            (bulk, foreground),
+            request_limit=4,
+            work_limit=400,
+            active_work=100,
+            config=config,
+        )
+        three_job = select_bounded_saor_release(
+            (
+                bulk,
+                foreground,
+                self.bounded_head("newcomer", arrival_order=2),
+            ),
+            request_limit=4,
+            work_limit=400,
+            active_work=100,
+            config=config,
+        )
+
+        # Two Jobs: 60 + 1/2*100 = 110. Three Jobs: 60 + 1/3*100 < 100.
+        self.assertEqual(two_job.tier, "debt_recovery")
+        self.assertEqual(three_job.tier, "slo_priority")
+
+    def test_bounded_release_allows_only_one_discrete_crossing_quantum(
+        self,
+    ) -> None:
+        states = (
+            self.bounded_head("bulk", debt=130, cap=100, head_work=80),
+            self.bounded_head("foreground", arrival_order=1),
+        )
+
+        selected = select_bounded_saor_release(
+            states,
+            request_limit=4,
+            work_limit=400,
+            active_work=0,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        # Hand oracle: D_after=130-(1/2)*80=90; overshoot=10 <= 40.
+        self.assertEqual(selected.tier, "debt_recovery")
+        self.assertEqual(selected.job_id, "bulk")
+
+    def test_bounded_release_unready_debt_and_nonfitting_priority_do_not_hold(
+        self,
+    ) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head(
+                    "bulk",
+                    debt=100,
+                    cap=100,
+                    ready=False,
+                    fits=False,
+                ),
+                self.bounded_head(
+                    "foreground",
+                    head_work=80,
+                    fits=False,
+                    priority=1,
+                    remaining_slo_s=1.0,
+                    priority_window_s=30.0,
+                    arrival_order=1,
+                ),
+                self.bounded_head("fallback", head_work=20, arrival_order=2),
+            ),
+            request_limit=2,
+            work_limit=200,
+            active_work=150,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.action, "grant")
+        self.assertEqual(selection.tier, "saor_fallback")
+        self.assertEqual(selection.job_id, "fallback")
+
+    def test_bounded_release_priority_uses_priority_then_remaining_budget(self) -> None:
+        selection = select_bounded_saor_release(
+            (
+                self.bounded_head(
+                    "urgent-low-priority",
+                    priority=1,
+                    remaining_slo_s=-1.0,
+                    priority_window_s=30.0,
+                ),
+                self.bounded_head(
+                    "less-urgent-high-priority",
+                    priority=2,
+                    remaining_slo_s=5.0,
+                    priority_window_s=30.0,
+                    arrival_order=1,
+                ),
+                self.bounded_head(
+                    "outside-window",
+                    priority=3,
+                    remaining_slo_s=31.0,
+                    priority_window_s=30.0,
+                    arrival_order=2,
+                ),
+            ),
+            request_limit=3,
+            work_limit=300,
+            active_work=0,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.tier, "slo_priority")
+        self.assertEqual(selection.job_id, "less-urgent-high-priority")
+
+    def test_bounded_release_rejects_oversized_head_and_missing_priority_slo(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, "exceeds work limit"):
+            select_bounded_saor_release(
+                (self.bounded_head("oversized", head_work=201, fits=False),),
+                request_limit=1,
+                work_limit=200,
+                active_work=0,
+                config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+            )
+        with self.assertRaisesRegex(ValueError, "priority requires"):
+            self.bounded_head("priority", priority=1)
 
     def test_fairness_debt_breaks_equal_queue_tie(self) -> None:
         arm = CapacityArm(2, 200)

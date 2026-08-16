@@ -1,0 +1,198 @@
+{
+  "audited_requests": 6144,
+  "cell_results": {
+    "active_set_project_bounded_ready_drr:warmup:1": {
+      "actual_work": 869969,
+      "estimate_overrun_events": 0,
+      "estimate_overrun_max_work": 0,
+      "estimated_work": 898522,
+      "requests": 1024,
+      "status": "passed"
+    },
+    "active_set_project_bounded_ready_fifo:warmup:1": {
+      "actual_work": 870208,
+      "estimate_overrun_events": 0,
+      "estimate_overrun_max_work": 0,
+      "estimated_work": 898522,
+      "requests": 1024,
+      "status": "passed"
+    },
+    "active_set_project_bounded_ready_guarded_debt_0125we:warmup:1": {
+      "actual_work": 870470,
+      "estimate_overrun_events": 0,
+      "estimate_overrun_max_work": 0,
+      "estimated_work": 898522,
+      "requests": 1024,
+      "status": "passed"
+    },
+    "active_set_project_bounded_ready_strict_priority:warmup:1": {
+      "actual_work": 870420,
+      "estimate_overrun_events": 0,
+      "estimate_overrun_max_work": 0,
+      "estimated_work": 898522,
+      "requests": 1024,
+      "status": "passed"
+    },
+    "active_set_project_bounded_ready_vtc_style:warmup:1": {
+      "actual_work": 870656,
+      "estimate_overrun_events": 0,
+      "estimate_overrun_max_work": 0,
+      "estimated_work": 898522,
+      "requests": 1024,
+      "status": "passed"
+    },
+    "active_set_project_frozen_static:warmup:1": {
+      "actual_work": 869962,
+      "estimate_overrun_events": 0,
+      "estimate_overrun_max_work": 0,
+      "estimated_work": 898522,
+      "requests": 1024,
+      "status": "passed"
+    }
+  },
+  "completion_max_tokens": 256,
+  "completion_protocol": "chat_completions",
+  "errors": [],
+  "expected_cells": 6,
+  "expected_requests": 6144,
+  "input_files": [
+    {
+      "path": "group_runs.csv",
+      "sha256": "e6039a157edffe315fb4badb7574b0b32052c5f1010b3d844c225658d8f9646f"
+    },
+    {
+      "path": "jobs/000_warmup_1_active_set_project_frozen_static_job0.requests.csv",
+      "sha256": "a0bff5ebd0fb00c2538e9e1976e1fe858487f317186152df83ac5a40593ddb17"
+    },
+    {
+      "path": "jobs/000_warmup_1_active_set_project_frozen_static_job0.submissions.csv",
+      "sha256": "735c3fdd05cce5bb7ef923f41b8f89dfe3763738b7a5cfcdca4958e33661d277"
+    },
+    {
+      "path": "jobs/000_warmup_1_active_set_project_frozen_static_job1.requests.csv",
+      "sha256": "ad586efbedc5cd787e09e92dd9cd737795df338023e7e957ec6db90df6657a53"
+    },
+    {
+      "path": "jobs/000_warmup_1_active_set_project_frozen_static_job1.submissions.csv",
+      "sha256": "7bc7067e9e1bdc1b99c56e911b68e527da26416c9dd33b3592c05ea6af28ff35"
+    },
+    {
+      "path": "jobs/001_warmup_1_active_set_project_bounded_ready_fifo_job0.requests.csv",
+      "sha256": "e3c8c51b76b12dd9e475040179194ca370099937ac14309773b8324b2fbffe88"
+    },
+    {
+      "path": "jobs/001_warmup_1_active_set_project_bounded_ready_fifo_job0.submissions.csv",
+      "sha256": "deb1a334b24ef1e35b6c043d2f733306fb2d2e79b9428d2ef7cddc4f8a5a49dd"
+    },
+    {
+      "path": "jobs/001_warmup_1_active_set_project_bounded_ready_fifo_job1.requests.csv",
+      "sha256": "0145f0ca8be476970abccc6571b120c38cfd6614cc2d02c006970dedf847d63a"
+    },
+    {
+      "path": "jobs/001_warmup_1_active_set_project_bounded_ready_fifo_job1.submissions.csv",
+      "sha256": "8a39fafc6328b73b6d2372335bf17021e5e9ca5f5145d10a5331110de9d7e253"
+    },
+    {
+      "path": "jobs/002_warmup_1_active_set_project_bounded_ready_drr_job0.requests.csv",
+      "sha256": "7e481634fd5a2f6fd353db5d5d20a88f6cbae37e084b3e06f1b614b6581334a6"
+    },
+    {
+      "path": "jobs/002_warmup_1_active_set_project_bounded_ready_drr_job0.submissions.csv",
+      "sha256": "61103a26f61563bcb2906af86f0f327e138e512057a98feb7a99a1cdc9304bbf"
+    },
+    {
+      "path": "jobs/002_warmup_1_active_set_project_bounded_ready_drr_job1.requests.csv",
+      "sha256": "e7b6ffb1e4e1ee070b4c40afcc48eba6557f1b1d4075d2f1b5167b39244a2db7"
+    },
+    {
+      "path": "jobs/002_warmup_1_active_set_project_bounded_ready_drr_job1.submissions.csv",
+      "sha256": "a3b6e849d017160351b0bcc2578c4eda7afddb2ac5d6905856b28562a409f87d"
+    },
+    {
+      "path": "jobs/003_warmup_1_active_set_project_bounded_ready_vtc_style_job0.requests.csv",
+      "sha256": "c285d7271784071d60439f0e9b835c8030fbe8e1d8fda960a263e27f8057dfbb"
+    },
+    {
+      "path": "jobs/003_warmup_1_active_set_project_bounded_ready_vtc_style_job0.submissions.csv",
+      "sha256": "038ff793d6688790449aadcf24ab6c5d65b69b484b4bc182441516d795fbd171"
+    },
+    {
+      "path": "jobs/003_warmup_1_active_set_project_bounded_ready_vtc_style_job1.requests.csv",
+      "sha256": "b2e02057b3bd4ad325a02a1e3183c216e23006691d0e36557cb65d1d457b1351"
+    },
+    {
+      "path": "jobs/003_warmup_1_active_set_project_bounded_ready_vtc_style_job1.submissions.csv",
+      "sha256": "71177742efe1f18d98b4ea56d13ce74008c635b5ef9434d370238057dca50a03"
+    },
+    {
+      "path": "jobs/004_warmup_1_active_set_project_bounded_ready_strict_priority_job0.requests.csv",
+      "sha256": "3a0e0afd5f16a0513154dbf84a4861cae29f751ad19ed33db2a85b1d66e383f2"
+    },
+    {
+      "path": "jobs/004_warmup_1_active_set_project_bounded_ready_strict_priority_job0.submissions.csv",
+      "sha256": "409543369b5d17a6f1fc2a2b477ce3daae78f6adfdc666135fbd47cdac406ac9"
+    },
+    {
+      "path": "jobs/004_warmup_1_active_set_project_bounded_ready_strict_priority_job1.requests.csv",
+      "sha256": "077e724098c0814266adeef71be4ca05ad7819fd4376444d6198eeaaea6350e5"
+    },
+    {
+      "path": "jobs/004_warmup_1_active_set_project_bounded_ready_strict_priority_job1.submissions.csv",
+      "sha256": "41761f5320aee80fbd0337fc7b90df070b917fb27ed96f4d926dc5cebdcdca3e"
+    },
+    {
+      "path": "jobs/005_warmup_1_active_set_project_bounded_ready_guarded_debt_0125we_job0.requests.csv",
+      "sha256": "ee39d01a6cf72b789d132dd9bac744b693e6fd1aae90d7089f799dd18637085f"
+    },
+    {
+      "path": "jobs/005_warmup_1_active_set_project_bounded_ready_guarded_debt_0125we_job0.submissions.csv",
+      "sha256": "d63e5f5735d19047bcd3c4eae15d9ef02c3f32e5d14eced2735079b27f99f1cc"
+    },
+    {
+      "path": "jobs/005_warmup_1_active_set_project_bounded_ready_guarded_debt_0125we_job1.requests.csv",
+      "sha256": "0f9f67088367782ee94538625d371e315914c7cc23d2482e48459120ef308ffc"
+    },
+    {
+      "path": "jobs/005_warmup_1_active_set_project_bounded_ready_guarded_debt_0125we_job1.submissions.csv",
+      "sha256": "fc3e8e2b7b3483799093781be5949e9870ee899a958413b0bc23fd14b81e1ef4"
+    }
+  ],
+  "input_files_manifest_sha256": "84954a3a97a81e4607ead91d1b528057d099893736ac6a6e3dc179fb306479fb",
+  "input_token_count_sources": {
+    "endpoint_usage_prompt_tokens": 6144
+  },
+  "joined_work_schema": [
+    "scenario_id",
+    "job_id",
+    "endpoint_id",
+    "request_id",
+    "submission_id",
+    "doc_id",
+    "completion_epoch_s",
+    "raw_prompt_tokens",
+    "endpoint_prompt_tokens",
+    "endpoint_output_tokens",
+    "actual_work",
+    "estimated_work",
+    "prompt_overhead_tokens",
+    "token_count_source",
+    "input_token_count_source",
+    "output_token_count_source"
+  ],
+  "matrix_root": "/root/autodl-tmp/experiment-artifacts/saor_project_mechanism_rehearsal_63d17300_20260814",
+  "message_shape": "single_user_message_no_system",
+  "observed_cells": 6,
+  "output_bound_source": "fixed_output_cap",
+  "output_token_count_sources": {
+    "endpoint_usage_completion_tokens": 6144
+  },
+  "overhead_distribution": {
+    "29": 6144
+  },
+  "prompt_token_overhead_per_request": 29,
+  "schema_version": 3,
+  "status": "passed",
+  "token_count_sources": {
+    "endpoint_usage_total_tokens": 6144
+  }
+}

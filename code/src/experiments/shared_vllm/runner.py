@@ -36,6 +36,7 @@ from src.scheduling.runtime.saor_capacity import (
 from src.scheduling.submission_control.saor import SaorReleaseConfig
 
 from .config import (
+    DIRECT_CONTROL_POLICIES,
     GroupRunIdentity,
     RunnerOptions,
     SharedVllmConfig,
@@ -61,12 +62,16 @@ from .evidence import (
     _validate_final_credit,
     _validate_job_evidence,
     _validate_replay_starts,
+    _validate_runtime_job_ids,
     _validate_runner_topology,
     _write_json_atomic,
     _write_trace_rows_atomic,
 )
 from .metrics import (
     active_set_phase_summary,
+    bounded_saor_event_summary,
+    bounded_ready_event_summary,
+    completion_accounted_service_fairness,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
@@ -76,6 +81,7 @@ from .metrics import (
 )
 from .runtime import (
     EndpointServiceRateTracker,
+    SAOR_RELEASE_EVENT_FIELDS,
     _RayCreditObserver,
     _resource_sample,
     build_observe_only_text_state_rows,
@@ -83,12 +89,14 @@ from .runtime import (
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
+_TRACE_SAMPLE_INTERVAL_S = 0.25
 
 _REHEARSAL_CREDIT_POLICIES = {
     "shared_fifo",
     "shared_drr",
     "external_vtc",
     "saor_release",
+    "foreground_strict_priority",
 }
 
 
@@ -132,6 +140,8 @@ def _text_state_calibration_signature(config: SharedVllmConfig) -> str:
 def _validate_rehearsal_record(
     scenario: SharedVllmScenario,
     record: dict[str, object],
+    *,
+    ready_observation_contract: str | None = None,
 ) -> None:
     """Fail closed on evidence gates before a formal matrix is allowed."""
 
@@ -158,6 +168,120 @@ def _validate_rehearsal_record(
         return
     if record.get("active_set_lifecycle_passed") is not True:
         raise RuntimeError("rehearsal active-set lifecycle gate failed")
+    if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+        if record.get("bounded_saor_event_status") != "ok:lossless_ledger":
+            raise RuntimeError("rehearsal bounded-SAOR event ledger is unavailable")
+        if record.get("bounded_saor_event_sequence_complete") is not True:
+            raise RuntimeError("rehearsal bounded-SAOR event sequence is incomplete")
+        if (
+            int(record.get("bounded_saor_slo_priority_grants", 0)) < 1
+            or int(record.get("bounded_saor_debt_recovery_grants", 0)) < 1
+            or int(record.get("bounded_saor_recovery_completions", 0)) < 1
+            or int(
+                record.get("bounded_saor_unmatched_recovery_grants", -1)
+            )
+            != 0
+            or int(record.get("bounded_saor_debt_repayment_episodes", 0)) < 1
+            or int(record.get("bounded_saor_debt_repayment_completed", 0)) < 1
+            or int(record.get("bounded_saor_debt_repayment_completed", 0))
+            + int(
+                record.get(
+                    "bounded_saor_debt_repayment_censored_no_demand",
+                    0,
+                )
+            )
+            != int(record.get("bounded_saor_debt_repayment_episodes", -1))
+            or int(
+                record.get("bounded_saor_debt_repayment_unresolved", -1)
+            )
+            != 0
+            or record.get("bounded_saor_projection_status")
+            != "ok:offline_recomputed"
+            or int(
+                record.get("bounded_saor_projection_checked_events", 0)
+            )
+            < 1
+            or int(
+                record.get("bounded_saor_projection_checked_events", -1)
+            )
+            != int(
+                record.get("bounded_saor_projection_expected_events", -2)
+            )
+            or int(
+                record.get("bounded_saor_projection_violation_events", -1)
+            )
+            != 0
+            or int(
+                record.get(
+                    "bounded_saor_projected_overshoot_bound_violation_events",
+                    -1,
+                )
+            )
+            != 0
+            or int(
+                record.get(
+                    "bounded_saor_projection_estimation_overrun_events",
+                    -1,
+                )
+            )
+            != 0
+            or int(
+                record.get(
+                    "bounded_saor_recovery_estimation_overrun_events",
+                    -1,
+                )
+            )
+            != 0
+            or float(
+                record.get("bounded_saor_recovery_inflight_work_max", 0)
+            )
+            <= 0
+            or int(record.get("bounded_saor_avoidable_idle_events", -1)) != 0
+            or int(
+                record.get(
+                    "bounded_saor_foreign_grant_over_debt_critical_events",
+                    -1,
+                )
+            )
+            != 0
+        ):
+            raise RuntimeError("rehearsal bounded-SAOR mechanism gate failed")
+        if (
+            record.get("active_set_post_drain_applicable") is True
+            and record.get("active_set_post_work_conserving_passed") is not True
+        ):
+            raise RuntimeError(
+                "rehearsal bounded-SAOR post-drain work-conservation gate failed"
+            )
+    observation_contract = (
+        scenario.ready_observation_contract
+        if ready_observation_contract is None
+        else ready_observation_contract
+    )
+    if observation_contract == "bounded_concrete_pre_registration":
+        if (
+            record.get("bounded_ready_event_status") != "ok:actor_event_join"
+            or record.get("bounded_ready_lifecycle_complete") is not True
+            or int(record.get("bounded_ready_intervals", 0))
+            < scenario.job_count
+            or int(record.get("bounded_ready_jobs_with_intervals", 0))
+            != scenario.job_count
+            or int(record.get("bounded_ready_max_ready_requests_seen", 0)) < 2
+            or int(record.get("bounded_ready_max_ready_work_seen", 0)) <= 0
+            or int(
+                record.get("bounded_ready_max_ready_payload_bytes_seen", 0)
+            )
+            <= 0
+        ):
+            raise RuntimeError("rehearsal bounded-ready observation gate failed")
+        if (
+            scenario.policy == "saor_bounded_ready"
+            and int(record.get("bounded_ready_foreign_fallback_events", -1))
+            != 0
+        ):
+            raise RuntimeError("rehearsal bounded-ready observation gate failed")
+    if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+        return
     mechanism_applicable = record.get("active_set_mechanism_applicable") is True
     if scenario.policy in _REHEARSAL_CREDIT_POLICIES:
         if not mechanism_applicable:
@@ -500,7 +624,7 @@ def _run_locked(
                     options.metrics_urls,
                     options.idle_timeout_s,
                 )
-                record = _run_group(
+                record = run_shared_vllm_group_cell(
                     options,
                     config,
                     scenario,
@@ -508,7 +632,13 @@ def _run_locked(
                     idle_gate=idle_gate,
                 )
             if options.rehearsal and config.fail_closed_rehearsal:
-                _validate_rehearsal_record(scenario, record)
+                _validate_rehearsal_record(
+                    scenario,
+                    record,
+                    ready_observation_contract=(
+                        scenario.ready_observation_contract
+                    ),
+                )
         except Exception as exc:
             manifest["incidents"].append(
                 {
@@ -539,6 +669,40 @@ def _run_locked(
     _write_json_atomic(manifest_path, manifest)
     return 0
 
+def run_shared_vllm_group_cell(
+    options: RunnerOptions,
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+    identity: GroupRunIdentity,
+    *,
+    idle_gate: Callable[[str, tuple[str, ...], float], None] | None = None,
+) -> dict[str, object]:
+    """Execute one explicit Project scenario without a matrix or host lease."""
+
+    return _run_group(
+        options, config, scenario, identity, idle_gate=idle_gate
+    )
+
+
+def _wait_for_eager_job_launch(
+    target_epoch_s: float,
+    *,
+    now: Callable[[], float] = time.time,
+    sleep: Callable[[float], None] = time.sleep,
+    on_wait: Callable[[], None] | None = None,
+) -> float:
+    """Cross one absolute Job barrier without imposing request replay."""
+
+    while True:
+        current = now()
+        remaining = target_epoch_s - current
+        if remaining <= 0:
+            return current
+        if on_wait is not None:
+            on_wait()
+        sleep(min(remaining, 0.05))
+
+
 def _run_group(
     options: RunnerOptions,
     config: SharedVllmConfig,
@@ -566,7 +730,9 @@ def _run_group(
     log_handles = []
     resource_samples: list[dict[str, object]] = []
     credit_samples: list[dict[str, object]] = []
+    release_events: list[dict[str, object]] = []
     state_samples: list[dict[str, object]] = []
+    eager_job_launches: list[float] = []
     state_signature = _text_state_calibration_signature(config)
     control = config.state_aware_control
     saor_control = config.saor_capacity_control
@@ -653,6 +819,9 @@ def _run_group(
                 "shared_fifo",
                 "external_vtc",
                 "saor_release",
+                "saor_bounded_priority",
+                "saor_bounded_ready",
+                "foreground_strict_priority",
                 "state_aware_adaptive",
                 "saor_capacity",
             }
@@ -667,21 +836,36 @@ def _run_group(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
+                    else scenario.policy
+                    if scenario.policy in {
+                        "saor_bounded_priority",
+                        "saor_bounded_ready",
+                    }
+                    else "strict_priority"
+                    if scenario.policy == "foreground_strict_priority"
                     else "drr"
                 ),
                 saor_release_config=(
                     SaorReleaseConfig(
                         **asdict(config.saor_release_control)
                     )
-                    if scenario.policy == "saor_release"
+                    if scenario.policy in {
+                        "saor_release",
+                        "saor_bounded_priority",
+                        "saor_bounded_ready",
+                    }
                     and config.saor_release_control is not None
                     else None
+                ),
+                record_ready_lifecycle_events=(
+                    scenario.ready_observation_contract
+                    == "bounded_concrete_pre_registration"
                 ),
             )
         start_epoch_s = time.time() + options.start_delay_s
         commands = (
             []
-            if scenario.policy == "direct_no_job"
+            if scenario.policy in DIRECT_CONTROL_POLICIES
             else [
                 build_job_command(
                     options,
@@ -700,7 +884,9 @@ def _run_group(
             {
                 "schema_version": 1,
                 "execution_owner": (
-                    "bounded_http_then_vllm_fcfs"
+                    "bounded_http_k_work_then_vllm_fcfs"
+                    if scenario.policy == "direct_work_limited"
+                    else "bounded_http_then_vllm_fcfs"
                     if scenario.policy == "direct_no_job"
                     else "project_daft_ray_profiler"
                 ),
@@ -714,7 +900,58 @@ def _run_group(
             scrape_prometheus_metrics(url)
             for url in options.metrics_urls
         ]
-        if scenario.policy == "direct_no_job":
+
+        def sample_executor_state() -> None:
+            resource_batch = _resource_sample(
+                options.metrics_urls,
+                group_launch_epoch_s,
+            )
+            resource_samples.extend(resource_batch)
+            service_rates = service_rate_tracker.update(
+                resource_batch,
+                endpoint_ids=config.endpoint_ids,
+            )
+            if observer is None:
+                return
+            credit_batch = observer.sample(group_launch_epoch_s)
+            credit_samples.extend(credit_batch)
+            if scenario.ready_observation_contract == (
+                "bounded_concrete_pre_registration"
+            ) or scenario.policy == "saor_bounded_priority":
+                release_events.extend(
+                    observer.drain_release_events(group_launch_epoch_s)
+                )
+            state_rows = build_observe_only_text_state_rows(
+                credit_batch,
+                resource_batch,
+                endpoint_ids=config.endpoint_ids,
+                calibration_signature=state_signature,
+                service_rates=service_rates,
+            )
+            if saor_controllers and saor_control is not None:
+                state_rows = _apply_saor_capacity_control(
+                    state_rows,
+                    controllers=saor_controllers,
+                    observation_model=saor_control.observation_model,
+                    observer=observer,
+                    calibration_signature=state_signature,
+                    max_state_age_s=saor_control.max_state_age_s,
+                )
+            else:
+                state_rows = _apply_state_control(
+                    state_rows,
+                    controllers=controllers,
+                    observer=observer,
+                    calibration_signature=state_signature,
+                    max_state_age_s=(
+                        control.max_state_age_s
+                        if control is not None
+                        else 1.0
+                    ),
+                )
+            state_samples.extend(state_rows)
+
+        if scenario.policy in DIRECT_CONTROL_POLICIES:
             direct_executor = ThreadPoolExecutor(
                 max_workers=1,
                 thread_name_prefix="direct-no-job",
@@ -728,6 +965,11 @@ def _run_group(
                 run_stem=run_stem,
             )
         for job_index, command in enumerate(commands):
+            if config.job_internal_arrival_contract == "eager":
+                eager_job_launches.append(_wait_for_eager_job_launch(
+                    start_epoch_s + scenario.arrival_offsets_s[job_index],
+                    on_wait=sample_executor_state,
+                ))
             stdout_path = (
                 options.output_dir
                 / "logs"
@@ -764,48 +1006,8 @@ def _run_group(
                 raise RuntimeError(
                     f"profiler child failed with exit code {failed[0]}"
                 )
-            resource_batch = _resource_sample(
-                options.metrics_urls,
-                group_launch_epoch_s,
-            )
-            resource_samples.extend(resource_batch)
-            service_rates = service_rate_tracker.update(
-                resource_batch,
-                endpoint_ids=config.endpoint_ids,
-            )
-            if observer is not None:
-                credit_batch = observer.sample(group_launch_epoch_s)
-                credit_samples.extend(credit_batch)
-                state_rows = build_observe_only_text_state_rows(
-                    credit_batch,
-                    resource_batch,
-                    endpoint_ids=config.endpoint_ids,
-                    calibration_signature=state_signature,
-                    service_rates=service_rates,
-                )
-                if saor_controllers and saor_control is not None:
-                    state_rows = _apply_saor_capacity_control(
-                        state_rows,
-                        controllers=saor_controllers,
-                        observation_model=saor_control.observation_model,
-                        observer=observer,
-                        calibration_signature=state_signature,
-                        max_state_age_s=saor_control.max_state_age_s,
-                    )
-                else:
-                    state_rows = _apply_state_control(
-                        state_rows,
-                        controllers=controllers,
-                        observer=observer,
-                        calibration_signature=state_signature,
-                        max_state_age_s=(
-                            control.max_state_age_s
-                            if control is not None
-                            else 1.0
-                        ),
-                    )
-                state_samples.extend(state_rows)
-            time.sleep(0.25)
+            sample_executor_state()
+            time.sleep(_TRACE_SAMPLE_INTERVAL_S)
         return_codes = [process.wait() for process in processes]
         if any(code != 0 for code in return_codes):
             raise RuntimeError(
@@ -814,15 +1016,15 @@ def _run_group(
         direct_job_evidence = (
             direct_future.result() if direct_future is not None else None
         )
-        if scenario.policy == "direct_no_job":
+        if scenario.policy in DIRECT_CONTROL_POLICIES:
             if direct_job_evidence is None:
-                raise RuntimeError("direct_no_job returned no job evidence")
+                raise RuntimeError("direct control returned no job evidence")
             group_end_epoch_s = max(
                 float(item["completion_end_epoch_s"])
                 for item in direct_job_evidence
             )
             if idle_gate is None:
-                raise RuntimeError("direct_no_job requires the final idle gate")
+                raise RuntimeError("direct control requires the final idle gate")
             idle_gate(
                 options.health_url,
                 options.metrics_urls,
@@ -837,6 +1039,12 @@ def _run_group(
         final_credit = []
         if observer is not None:
             credit_samples.extend(observer.sample(group_launch_epoch_s))
+            if scenario.ready_observation_contract == (
+                "bounded_concrete_pre_registration"
+            ) or scenario.policy == "saor_bounded_priority":
+                release_events.extend(
+                    observer.drain_release_events(group_launch_epoch_s)
+                )
             final_credit = observer.final_snapshots()
         job_evidence = (
             direct_job_evidence
@@ -847,10 +1055,22 @@ def _run_group(
                     scenario,
                     identity,
                     job_index,
+                    config=config,
                 )
                 for job_index in range(scenario.job_count)
             ]
         )
+        _validate_runtime_job_ids(job_evidence)
+        if config.job_internal_arrival_contract == "eager":
+            if len(eager_job_launches) != len(job_evidence):
+                raise RuntimeError("eager Job launch evidence is incomplete")
+            for job_index, evidence in enumerate(job_evidence):
+                evidence["replay_configured_start_epoch_s"] = (
+                    start_epoch_s + scenario.arrival_offsets_s[job_index]
+                )
+                evidence["replay_observed_start_epoch_s"] = (
+                    eager_job_launches[job_index]
+                )
         _validate_replay_starts(
             job_evidence,
             expected_start_epoch_s=start_epoch_s,
@@ -891,16 +1111,17 @@ def _run_group(
         )
         if service_metrics["metrics_status"] != "ok":
             raise RuntimeError("group vLLM metrics are unavailable")
+        observed_tokens = int(service_metrics["prompt_tokens_delta"]) + int(
+            service_metrics["generation_tokens_delta"]
+        )
         resource_metrics = group_resource_summary(
             resource_samples,
             start_epoch_s=start_epoch_s,
             end_epoch_s=group_end_epoch_s,
+            observed_tokens=observed_tokens,
         )
         if resource_metrics["resource_metrics_status"] != "ok":
             raise RuntimeError("group resource metrics are unavailable")
-        observed_tokens = int(service_metrics["prompt_tokens_delta"]) + int(
-            service_metrics["generation_tokens_delta"]
-        )
         mfu_metrics = estimate_mfu(
             estimated_flops=float(
                 service_metrics["estimated_flops_per_gpu_delta"]
@@ -919,6 +1140,45 @@ def _run_group(
             job_evidence,
             scenario.weights,
         )
+        completion_fairness = completion_accounted_service_fairness(
+            job_evidence,
+            scenario.weights,
+        )
+        lag_work_limit = max(1, endpoint_work_limit)
+        direct_admission = (
+            {
+                key: value
+                for key, value in job_evidence[0].items()
+                if key.startswith("direct_")
+            }
+            if scenario.policy in DIRECT_CONTROL_POLICIES
+            else {
+                "direct_admission_trace_status": "not_applicable",
+                "direct_admission_trace_path": "",
+                "direct_admission_events": 0,
+                "direct_work_limit_applied": False,
+                "direct_request_occupancy_max": 0,
+                "direct_estimated_work_occupancy_max": 0,
+                "direct_request_occupancy_fraction_mean": 0.0,
+                "direct_estimated_work_to_reference_w_fraction_mean": 0.0,
+                "direct_request_occupancy_max_by_endpoint": "{}",
+                "direct_estimated_work_occupancy_max_by_endpoint": "{}",
+                "direct_admission_wait_p50_s": 0.0,
+                "direct_admission_wait_p95_s": 0.0,
+                "direct_admission_wait_p99_s": 0.0,
+                "direct_admission_wait_max_s": 0.0,
+            }
+        )
+        if scenario.policy in DIRECT_CONTROL_POLICIES and any(
+            {
+                key: value
+                for key, value in evidence.items()
+                if key.startswith("direct_")
+            }
+            != direct_admission
+            for evidence in job_evidence[1:]
+        ):
+            raise RuntimeError("direct admission summaries disagree across Jobs")
         record = {
             "schema_version": 2,
             "experiment_id": config.experiment_id,
@@ -927,6 +1187,17 @@ def _run_group(
             "repeat_index": identity.repeat_index,
             "order_index": identity.order_index,
             "policy": scenario.policy,
+            "experiment_identity": (
+                "project_internal_selector_ablation"
+                if scenario.ready_observation_contract
+                == "bounded_concrete_pre_registration"
+                else "project_frozen_static_reference"
+                if scenario.policy == "static_partition"
+                else "project_policy"
+            ),
+            "ready_observation_contract": (
+                scenario.ready_observation_contract
+            ),
             "job_count": scenario.job_count,
             "static_partition_count": (
                 scenario.static_partition_count
@@ -951,11 +1222,14 @@ def _run_group(
             ),
             "work_limit_per_endpoint": endpoint_work_limit,
             "request_envelope_owner": (
-                "direct_endpoint_http_semaphore"
+                "direct_endpoint_request_work_gate"
+                if scenario.policy == "direct_work_limited"
+                else "direct_endpoint_http_semaphore"
                 if scenario.policy == "direct_no_job"
                 else "project_admission"
             ),
             "work_envelope_applied": scenario.policy != "direct_no_job",
+            **direct_admission,
             "http_keepalive_expiry_s": _common_arg_value(
                 config.common_args,
                 "--completion-http-keepalive-expiry-s",
@@ -966,10 +1240,16 @@ def _run_group(
                 "actuated_saor_capacity" if saor_controllers
                 else "actuated" if controllers
                 else "actuated_saor_release"
-                if scenario.policy == "saor_release"
+                if scenario.policy in {
+                    "saor_release",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }
                 else "observe_only" if observer is not None
                 else "direct_no_job_control"
                 if scenario.policy == "direct_no_job"
+                else "direct_k_work_diagnostic_control"
+                if scenario.policy == "direct_work_limited"
                 else "unavailable"
             ),
             "runtime_state_calibration_signature": (
@@ -1005,7 +1285,9 @@ def _run_group(
             ),
             "ray_address": options.ray_address,
             "scheduler_owner": (
-                "endpoint_http_bound_then_vllm_fcfs"
+                "endpoint_http_k_work_gate_then_vllm_fcfs"
+                if scenario.policy == "direct_work_limited"
+                else "endpoint_http_bound_then_vllm_fcfs"
                 if scenario.policy == "direct_no_job"
                 else "project_daft_ray_submission_then_vllm_fcfs"
             ),
@@ -1016,6 +1298,9 @@ def _run_group(
                     "shared_fifo",
                     "external_vtc",
                     "saor_release",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                    "foreground_strict_priority",
                     "state_aware_adaptive",
                     "saor_capacity",
                 }
@@ -1035,14 +1320,77 @@ def _run_group(
                 job_evidence,
                 scenario.weights,
             ),
+            **completion_fairness,
+            "completion_service_lag_p95_work_envelopes": (
+                float(completion_fairness["completion_service_lag_p95_work"])
+                / lag_work_limit
+            ),
+            "completion_service_lag_max_work_envelopes": (
+                float(completion_fairness["completion_service_lag_max_work"])
+                / lag_work_limit
+            ),
             **shared_credit_trace_summary(
                 credit_samples,
                 work_limit_per_endpoint=endpoint_work_limit,
                 job_count=scenario.job_count,
             ),
-            **active_set_phase_summary(job_evidence, credit_samples),
+            **active_set_phase_summary(
+                job_evidence,
+                credit_samples,
+                observation_interval_s=_TRACE_SAMPLE_INTERVAL_S,
+            ),
+            **bounded_saor_event_summary(release_events),
+            **(
+                bounded_ready_event_summary(
+                    release_events,
+                    job_evidence,
+                    foreground_job_index=max(
+                        range(scenario.job_count),
+                        key=scenario.job_priority,
+                    ),
+                )
+                if scenario.ready_observation_contract
+                == "bounded_concrete_pre_registration"
+                else {
+                    "bounded_ready_event_status": "not_applicable",
+                    "bounded_ready_lifecycle_complete": False,
+                    "bounded_ready_intervals": 0,
+                    "bounded_ready_jobs_with_intervals": 0,
+                    "bounded_ready_max_ready_requests_seen": 0,
+                    "bounded_ready_max_ready_work_seen": 0,
+                    "bounded_ready_max_ready_payload_bytes_seen": 0,
+                    "bounded_ready_requests_transition_mean_max": 0.0,
+                    "bounded_ready_requests_transition_p95_max": 0.0,
+                    "bounded_ready_work_transition_mean_max": 0.0,
+                    "bounded_ready_work_transition_p95_max": 0.0,
+                    "bounded_ready_payload_bytes_transition_mean_max": 0.0,
+                    "bounded_ready_payload_bytes_transition_p95_max": 0.0,
+                    "bounded_ready_foreground_intervals": 0,
+                    "bounded_ready_foreign_fallback_events": 0,
+                    "bounded_ready_foreground_max_ready_requests_seen": 0,
+                    "bounded_ready_foreground_max_ready_work_seen": 0,
+                }
+            ),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
+            ),
+            "job_arrival_start_epoch_s": json.dumps(
+                [
+                    evidence["arrival_start_epoch_s"]
+                    for evidence in job_evidence
+                ]
+            ),
+            "job_completion_end_epoch_s": json.dumps(
+                [
+                    evidence["completion_end_epoch_s"]
+                    for evidence in job_evidence
+                ]
+            ),
+            "job_priorities": json.dumps(
+                [
+                    scenario.job_priority(index)
+                    for index in range(scenario.job_count)
+                ]
             ),
             "job_p99_s": json.dumps(
                 [evidence["p99_s"] for evidence in job_evidence]
@@ -1079,6 +1427,15 @@ def _run_group(
             ),
             "job_actual_work": json.dumps(
                 [evidence["actual_work"] for evidence in job_evidence]
+            ),
+            "job_expected_count": json.dumps(
+                [evidence["expected_count"] for evidence in job_evidence]
+            ),
+            "job_completed_count": json.dumps(
+                [evidence["completed_count"] for evidence in job_evidence]
+            ),
+            "job_exactly_once": json.dumps(
+                [evidence["exactly_once"] for evidence in job_evidence]
             ),
             **(
                 {
@@ -1144,6 +1501,11 @@ def _run_group(
                 final_credit,
                 sort_keys=True,
             ),
+            "release_event_trace_schema_version": 5,
+            "release_event_trace_path": str(
+                Path("traces") / f"{run_stem}.release_events.csv"
+            ),
+            "release_event_trace_count": len(release_events),
             "incidents": 0,
         }
         _write_trace_rows_atomic(
@@ -1164,6 +1526,13 @@ def _run_group(
             / f"{run_stem}.states.csv",
             state_samples,
         )
+        _write_trace_rows_atomic(
+            options.output_dir
+            / "traces"
+            / f"{run_stem}.release_events.csv",
+            release_events,
+            fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+        )
         _write_json_atomic(record_path, record)
         return record
     except Exception as exc:
@@ -1175,6 +1544,12 @@ def _run_group(
                 credit_samples.extend(
                     observer.sample(group_launch_epoch_s)
                 )
+                if scenario.ready_observation_contract == (
+                    "bounded_concrete_pre_registration"
+                ) or scenario.policy == "saor_bounded_priority":
+                    release_events.extend(
+                        observer.drain_release_events(group_launch_epoch_s)
+                    )
                 final_credit = observer.final_snapshots()
             except Exception as evidence_exc:
                 capture_error = redact_text(
@@ -1198,6 +1573,13 @@ def _run_group(
             / f"{run_stem}.states.csv",
             state_samples,
         )
+        _write_trace_rows_atomic(
+            options.output_dir
+            / "traces"
+            / f"{run_stem}.release_events.csv",
+            release_events,
+            fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+        )
         _write_json_atomic(
             options.output_dir
             / "traces"
@@ -1210,6 +1592,11 @@ def _run_group(
                 ],
                 "final_credit_snapshots": final_credit,
                 "credit_capture_error": capture_error,
+                "release_event_trace_schema_version": 5,
+                "release_event_trace_path": str(
+                    Path("traces") / f"{run_stem}.release_events.csv"
+                ),
+                "release_event_trace_count": len(release_events),
             },
         )
         raise

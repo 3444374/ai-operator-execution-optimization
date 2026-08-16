@@ -16,8 +16,8 @@
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |
 | `heterogeneous_ai_dataflow_execution_model_20260811.md` | CPU–GPU 异构分阶段执行模型候选：typed block、byte-bounded ready queue、SAOR 控制面、数学模型、数据通路消融与 prompt/复用/增量推理待办 |
-| `saor_model_scenario_audit_20260811.md` | SAOR capacity-only 负结果后的数学审计：fixed-envelope active-set ordered release runtime、签名化 K 校准、parked dynamic-K governor、oracle 证明骨架、公平合同与 global FIFO/DRR killer benchmark |
-| `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务论文与数据库厂商的 workload 场景、执行边界、评估指标和公平对比合同；当前 baseline 身份与运行状态不在此维护 |
+| `saor_model_scenario_audit_20260811.md` | SAOR capacity-only/fixed-envelope 数学审计；§12 冻结 $H_B/W_e$ 有界 priority/debt 与 release-opportunity 边界，并记录 bounded-ready、同窗口 selector 归因、observation bridge 及 native-system matched comparison 边界 |
+| `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务论文与数据库厂商的 workload、执行边界和指标合同；§9.3 冻结当前单租户多 Job 的 equal-share/differentiated-service、公平/隔离、三个 JCT 反事实、未来 tenant 层次、原生 baseline、同 ready-window 的项目内部消融与隐藏缓冲成本；当前运行状态不在此维护 |
 | `daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：保留 Daft 三痛点与 offline-batch 候选，已按 08-01 审计撤回“传输瓶颈/结构性空白”预设，并要求 staged baseline |
 
 ## 文献分级
@@ -58,7 +58,8 @@
 - 无 Daft/Ray 强客户端用于隔离上游框架成本。
 - Daft Native/Ray 和 Ray Data 是官方 runtime baseline。
 - LOTUS/Palimpzest 是数据库 AI 系统 baseline；SemBench 提供 workload 和多维指标。
-- VTC 是多 job service-counter 算法 baseline；Llumnix是动态负载表征参考。
+- VTC 是引擎内多 job service-counter 相关工作；本项目的 external VTC-style 复现只能标为
+  Project internal control，不能冒充原生 VTC baseline；Llumnix 是动态负载表征参考。
 - 每个 arm 独立 calibration；不要求无限调优，但必须合理强并进入平台期。
 
 完整 baseline 矩阵见 `../experiments/plans/baseline_reference.md`。

@@ -35,7 +35,9 @@ from src.experiments.shared_vllm import (  # noqa: E402
     _validate_runner_topology,
     _validate_final_credit,
     active_set_phase_summary,
+    bounded_saor_event_summary,
     build_job_command,
+    completion_accounted_service_fairness,
     cumulative_service_disparity,
     group_resource_summary,
     group_metric_delta,
@@ -43,11 +45,91 @@ from src.experiments.shared_vllm import (  # noqa: E402
     load_config,
     normalized_job_service_rates,
     run_experiment,
+    run_shared_vllm_group_cell,
     shared_credit_trace_summary,
+)
+from src.experiments.shared_vllm.runner import _wait_for_eager_job_launch
+from src.scheduling.submission_control.shared_credit import (  # noqa: E402
+    SaorReleaseEvent,
 )
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_generic_config_keeps_service_signature_optional(self) -> None:
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config.json"
+            payload = self._config_payload()
+            payload.pop("service_signature")
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            config = load_config(path)
+
+        self.assertEqual(config.service_signature, ())
+
+    def test_eager_job_launch_waits_for_absolute_job_offset(self) -> None:
+        now_values = iter((100.0, 104.0, 105.0))
+        sleeps: list[float] = []
+        samples: list[str] = []
+
+        observed = _wait_for_eager_job_launch(
+            105.0,
+            now=lambda: next(now_values),
+            sleep=lambda seconds: sleeps.append(seconds),
+            on_wait=lambda: samples.append("sample"),
+        )
+
+        self.assertEqual(sleeps, [0.05, 0.05])
+        self.assertEqual(samples, ["sample", "sample"])
+        self.assertEqual(observed, 105.0)
+
+    def test_single_group_cell_uses_explicit_identity_without_matrix_schedule(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            options, config, scenario = self._group_fixture(Path(temp_dir))
+            identity = GroupRunIdentity("formal", 2, 7)
+            expected = {"scenario_id": scenario.scenario_id, "status": "completed"}
+            with patch(
+                "src.experiments.shared_vllm.runner._run_group",
+                return_value=expected,
+            ) as group:
+                actual = run_shared_vllm_group_cell(
+                    options, config, scenario, identity
+                )
+
+            self.assertEqual(actual, expected)
+            group.assert_called_once_with(
+                options, config, scenario, identity, idle_gate=None
+            )
+
+    def test_eager_arrival_contract_omits_per_request_arrival_replay(self) -> None:
+        payload = self._config_payload(common_args=[])
+        payload["job_internal_arrival_contract"] = "eager"
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+
+        self.assertEqual(config.job_internal_arrival_contract, "eager")
+
+    def test_arrival_contract_requires_matching_replay_flag(self) -> None:
+        for contract, common_args, expected in (
+            ("manifest_timed", [], "requires --arrival-replay"),
+            ("eager", ["--arrival-replay"], "rejects --arrival-replay"),
+        ):
+            payload = self._config_payload(common_args=common_args)
+            payload["job_internal_arrival_contract"] = contract
+            with self.subTest(contract=contract), patch.object(
+                Path, "read_text", return_value=json.dumps(payload)
+            ), self.assertRaisesRegex(ValueError, expected):
+                load_config(Path("config.json"))
+
+    def test_project_config_requires_matching_explicit_service_signature(self) -> None:
+        payload = self._config_payload()
+        payload["service_signature"] = {
+            "model": "different-model",
+            "service": "vllm-test",
+        }
+        payload["common_args"].extend(["--completion-model", "qwen"])
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            with self.assertRaisesRegex(ValueError, "service_signature.model"):
+                load_config(Path("config.json"))
     def test_rehearsal_record_gate_is_fail_closed(self) -> None:
         scenario = SharedVllmScenario(
             scenario_id="active_set_saor_release",
@@ -81,6 +163,175 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 {**record, "resource_metrics_status": "unavailable"},
             )
 
+    def test_bounded_rehearsal_gate_uses_event_ledger_not_sampled_snapshot(
+        self,
+    ) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_saor_bounded_priority_0125k",
+            policy="saor_bounded_priority",
+            job_count=2,
+            rows_per_job=None,
+            rows_per_jobs=(1, 1),
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+            priorities=(0, 1),
+            slo_targets_s=(None, 30.0),
+            priority_windows_s=(None, 30.0),
+            debt_cap_fractions=(0.125, None),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            # A sampled snapshot can miss a transition shorter than 250 ms.
+            "active_set_mechanism_applicable": True,
+            "active_set_mechanism_passed": False,
+            "bounded_saor_event_status": "ok:lossless_ledger",
+            "bounded_saor_event_sequence_complete": True,
+            "bounded_saor_slo_priority_grants": 1,
+            "bounded_saor_debt_recovery_grants": 1,
+            "bounded_saor_recovery_completions": 1,
+            "bounded_saor_unmatched_recovery_grants": 0,
+            "bounded_saor_debt_repayment_episodes": 1,
+            "bounded_saor_debt_repayment_completed": 1,
+            "bounded_saor_debt_repayment_unresolved": 0,
+            "bounded_saor_projection_status": "ok:offline_recomputed",
+            "bounded_saor_projection_checked_events": 1,
+            "bounded_saor_projection_expected_events": 1,
+            "bounded_saor_projection_violation_events": 0,
+            "bounded_saor_projected_overshoot_bound_violation_events": 0,
+            "bounded_saor_projection_estimation_overrun_events": 0,
+            "bounded_saor_recovery_estimation_overrun_events": 0,
+            "bounded_saor_recovery_inflight_work_max": 80,
+            "bounded_saor_avoidable_idle_events": 0,
+            "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+            "bounded_saor_recovery_inflight_max": 1,
+            "active_set_post_drain_applicable": True,
+            "active_set_post_work_conserving_passed": True,
+        }
+
+        _validate_rehearsal_record(scenario, record)
+        with self.assertRaisesRegex(RuntimeError, "sequence is incomplete"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "bounded_saor_event_sequence_complete": False},
+            )
+        with self.assertRaisesRegex(RuntimeError, "work-conservation"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "active_set_post_work_conserving_passed": False},
+            )
+
+    def test_bounded_ready_rehearsal_requires_epoch_join(self) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_saor_bounded_ready_0125k",
+            policy="saor_bounded_ready",
+            job_count=2,
+            rows_per_job=None,
+            rows_per_jobs=(1, 1),
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+            priorities=(0, 1),
+            slo_targets_s=(None, 30.0),
+            priority_windows_s=(None, 30.0),
+            debt_cap_fractions=(0.125, None),
+            ready_observation_contract=(
+                "bounded_concrete_pre_registration"
+            ),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            "bounded_saor_event_status": "ok:lossless_ledger",
+            "bounded_saor_event_sequence_complete": True,
+            "bounded_saor_slo_priority_grants": 1,
+            "bounded_saor_debt_recovery_grants": 1,
+            "bounded_saor_recovery_completions": 1,
+            "bounded_saor_unmatched_recovery_grants": 0,
+            "bounded_saor_debt_repayment_episodes": 1,
+            "bounded_saor_debt_repayment_completed": 1,
+            "bounded_saor_debt_repayment_unresolved": 0,
+            "bounded_saor_projection_status": "ok:offline_recomputed",
+            "bounded_saor_projection_checked_events": 1,
+            "bounded_saor_projection_expected_events": 1,
+            "bounded_saor_projection_violation_events": 0,
+            "bounded_saor_projected_overshoot_bound_violation_events": 0,
+            "bounded_saor_projection_estimation_overrun_events": 0,
+            "bounded_saor_recovery_estimation_overrun_events": 0,
+            "bounded_saor_recovery_inflight_work_max": 80,
+            "bounded_saor_avoidable_idle_events": 0,
+            "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+            "bounded_saor_recovery_inflight_max": 1,
+            "active_set_post_drain_applicable": True,
+            "active_set_post_work_conserving_passed": True,
+            "bounded_ready_event_status": "ok:actor_event_join",
+            "bounded_ready_lifecycle_complete": True,
+            "bounded_ready_intervals": 2,
+            "bounded_ready_jobs_with_intervals": 2,
+            "bounded_ready_max_ready_requests_seen": 2,
+            "bounded_ready_max_ready_work_seen": 100,
+            "bounded_ready_max_ready_payload_bytes_seen": 200,
+            "bounded_ready_foreground_intervals": 1,
+            "bounded_ready_foreign_fallback_events": 0,
+            "bounded_ready_foreground_max_ready_requests_seen": 2,
+            "bounded_ready_foreground_max_ready_work_seen": 100,
+        }
+
+        _validate_rehearsal_record(scenario, record)
+        with self.assertRaisesRegex(RuntimeError, "observation gate"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "bounded_ready_foreign_fallback_events": 1},
+            )
+
+    def test_matched_fifo_requires_ready_lifecycle_not_saor_mechanism(self) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_shared_fifo_matched_ready",
+            policy="shared_fifo",
+            job_count=2,
+            rows_per_job=1,
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            "active_set_mechanism_applicable": True,
+            "active_set_mechanism_passed": True,
+            "bounded_ready_event_status": "ok:actor_event_join",
+            "bounded_ready_lifecycle_complete": True,
+            "bounded_ready_intervals": 2,
+            "bounded_ready_jobs_with_intervals": 2,
+            "bounded_ready_max_ready_requests_seen": 2,
+            "bounded_ready_max_ready_work_seen": 100,
+            "bounded_ready_max_ready_payload_bytes_seen": 200,
+        }
+
+        _validate_rehearsal_record(
+            scenario,
+            record,
+            ready_observation_contract="bounded_concrete_pre_registration",
+        )
+        with self.assertRaisesRegex(RuntimeError, "observation gate"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "bounded_ready_jobs_with_intervals": 1},
+                ready_observation_contract=(
+                    "bounded_concrete_pre_registration"
+                ),
+            )
+
     def test_rehearsal_runs_one_nonformal_cell_per_scenario(self) -> None:
         options = RunnerOptions(
             config_path=Path("config.json"),
@@ -107,6 +358,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             warmup_runs_per_scenario=1,
             formal_repeats=3,
             endpoint_ids=("endpoint-0",),
+            service_signature=(("model", "qwen"), ("service", "vllm-test")),
             request_limit_per_endpoint=1,
             work_limit_per_endpoint=1,
             credit_quantum=1,
@@ -242,6 +494,120 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(
             summary["active_set_mechanism_status"],
             "active_set_mechanism_not_observed",
+        )
+
+    def test_near_simultaneous_drain_is_below_trace_resolution(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 0.0,
+                    "completion_end_epoch_s": 68.743800,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 5.0,
+                    "completion_end_epoch_s": 68.737972,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [
+                {
+                    "observed_epoch_s": 2.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["bulk", 95]]',
+                    "active_work_by_job": '[["bulk", 95]]',
+                    "waiting_work_by_job": '[["bulk", 100]]',
+                },
+                {
+                    "observed_epoch_s": 10.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "waiting_work_by_job": '[["bulk", 20]]',
+                },
+                {
+                    "observed_epoch_s": 68.5,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 20], ["foreground", 10]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 20], ["foreground", 10]]'
+                    ),
+                    "waiting_work_by_job": '[["bulk", 10]]',
+                },
+            ],
+            observation_interval_s=0.25,
+        )
+
+        self.assertTrue(summary["active_set_mechanism_passed"])
+        self.assertFalse(summary["active_set_post_drain_applicable"])
+        self.assertEqual(summary["active_set_post_drain_observed_samples"], 0)
+        self.assertAlmostEqual(
+            summary["active_set_post_drain_duration_s"],
+            0.005828,
+        )
+        self.assertEqual(
+            summary["active_set_post_drain_status"],
+            "not_applicable:drain_below_trace_resolution",
+        )
+        self.assertEqual(
+            summary["active_set_mechanism_status"],
+            "ok:observed_borrow_reclaim_post_drain_not_applicable",
+        )
+
+    def test_resolvable_post_drain_without_sample_still_fails_closed(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 10.0,
+                    "completion_end_epoch_s": 30.0,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 15.0,
+                    "completion_end_epoch_s": 20.0,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [
+                {
+                    "observed_epoch_s": 12.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["bulk", 95]]',
+                    "active_work_by_job": '[["bulk", 95]]',
+                    "waiting_work_by_job": '[["bulk", 100]]',
+                },
+                {
+                    "observed_epoch_s": 17.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "waiting_work_by_job": '[["bulk", 20]]',
+                },
+            ],
+            observation_interval_s=0.25,
+        )
+
+        self.assertFalse(summary["active_set_mechanism_passed"])
+        self.assertTrue(summary["active_set_post_drain_applicable"])
+        self.assertEqual(summary["active_set_post_drain_observed_samples"], 0)
+        self.assertEqual(
+            summary["active_set_post_drain_status"],
+            "active_set_post_drain_not_observed",
         )
 
     def test_active_set_lifecycle_applies_without_credit_trace(self) -> None:
@@ -493,6 +859,411 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(summary["credit_idle_capacity_fraction_mean"], 0.55)
         self.assertEqual(summary["credit_borrowed_work_mean"], 10.0)
 
+    def test_bounded_saor_event_ledger_catches_five_ms_transitions(self) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_time_s": 10.000,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "slo_priority",
+                "recovery_inflight_by_job": "[]",
+                "constraint_conflict": False,
+                "avoidable_idle": False,
+                "foreign_grant_over_debt_critical": False,
+            },
+            {
+                "event_seq": 2,
+                "event_time_s": 10.005,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "recovery_inflight_by_job": '[["bulk", "r-1"]]',
+                "constraint_conflict": True,
+                "avoidable_idle": False,
+                "foreign_grant_over_debt_critical": False,
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_event_status"], "ok:lossless_ledger")
+        self.assertEqual(summary["bounded_saor_slo_priority_grants"], 1)
+        self.assertEqual(summary["bounded_saor_debt_recovery_grants"], 1)
+        self.assertEqual(summary["bounded_saor_constraint_conflicts"], 1)
+        self.assertEqual(summary["bounded_saor_recovery_inflight_max"], 1)
+
+    def test_bounded_saor_mechanism_is_unavailable_without_event_ledger(self) -> None:
+        summary = bounded_saor_event_summary([])
+
+        self.assertEqual(
+            summary["bounded_saor_event_status"],
+            "unavailable:no_event_ledger",
+        )
+        self.assertFalse(summary["bounded_saor_event_sequence_complete"])
+
+    def test_bounded_saor_event_ledger_measures_repayment_completion(self) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "selected_request_id": "foreground-0",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 11.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "bulk-recovery-0",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": (
+                    '[["bulk", "bulk-recovery-0"]]'
+                ),
+                "constraint_conflict": False,
+                "avoidable_idle": False,
+                "foreign_grant_over_debt_critical": False,
+            },
+            {
+                "event_seq": 3,
+                "event_epoch_s": 15.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "selected_request_id": "bulk-recovery-0",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 0.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_recovery_completions"], 1)
+        self.assertEqual(summary["bounded_saor_unmatched_recovery_grants"], 0)
+        self.assertEqual(
+            summary["bounded_saor_recovery_completion_max_s"],
+            4.0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 1)
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
+        self.assertEqual(summary["bounded_saor_debt_repayment_max_s"], 5.0)
+
+    def test_bounded_saor_debt_episode_is_censored_when_demand_ends(
+        self,
+    ) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r1",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": '[["bulk", ["r1"]]]',
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 15.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "selected_request_id": "r1",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+            {
+                "event_seq": 3,
+                "event_epoch_s": 16.0,
+                "endpoint_id": "task-0",
+                "action": "finish_job",
+                "tier": "job_lifecycle_complete",
+                "selected_job_id": "bulk",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": "[]",
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 1)
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 0)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            1,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
+
+    def test_bounded_saor_event_ledger_counts_concurrent_recovery_requests(
+        self,
+    ) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r1",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": '[["bulk", ["r1", "r2"]]]',
+                "recovery_inflight_work_by_job": '[["bulk", 160]]',
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 11.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r2",
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+                "recovery_inflight_by_job": '[["bulk", ["r1", "r2"]]]',
+                "recovery_inflight_work_by_job": '[["bulk", 160]]',
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_recovery_inflight_max"], 2)
+        self.assertEqual(
+            summary["bounded_saor_recovery_inflight_work_max"],
+            160.0,
+        )
+
+    def test_bounded_saor_temporary_ready_gap_is_not_censored(self) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_epoch_s": 10.0,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "selected_request_id": "r0",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+            {
+                "event_seq": 2,
+                "event_epoch_s": 12.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "ready_jobs": "[]",
+                "active_work": 100,
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+            {
+                "event_seq": 3,
+                "event_epoch_s": 15.0,
+                "endpoint_id": "task-0",
+                "action": "register",
+                "tier": "ready_registration",
+                "ready_jobs": '["bulk"]',
+                "debt_by_job": '[["bulk", 60.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+            {
+                "event_seq": 4,
+                "event_epoch_s": 20.0,
+                "endpoint_id": "task-0",
+                "action": "completion",
+                "tier": "service_completion",
+                "ready_jobs": "[]",
+                "debt_by_job": '[["bulk", 40.0]]',
+                "debt_cap_by_job": '[["bulk", 50.0]]',
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 0)
+        self.assertEqual(summary["bounded_saor_debt_repayment_max_s"], 10.0)
+
+    def test_bounded_saor_ordinary_active_work_does_not_censor(self) -> None:
+        summary = bounded_saor_event_summary(
+            [
+                {
+                    "event_seq": 1,
+                    "event_epoch_s": 10.0,
+                    "endpoint_id": "task-0",
+                    "action": "grant",
+                    "tier": "debt_recovery",
+                    "selected_request_id": "r0",
+                    "ready_jobs": "[]",
+                    "active_work": 100,
+                    "debt_by_job": '[["bulk", 60.0]]',
+                    "debt_cap_by_job": '[["bulk", 50.0]]',
+                }
+            ]
+        )
+
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            0,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 1)
+
+    def test_bounded_saor_mixed_episode_outcomes_remain_distinct(self) -> None:
+        summary = bounded_saor_event_summary(
+            [
+                {
+                    "event_seq": 1,
+                    "event_epoch_s": 10.0,
+                    "endpoint_id": "task-0",
+                    "action": "grant",
+                    "tier": "debt_recovery",
+                    "selected_request_id": "r0",
+                    "debt_by_job": (
+                        '[["bulk", 60], ["foreground", 60], ["other", 60]]'
+                    ),
+                    "debt_cap_by_job": (
+                        '[["bulk", 50], ["foreground", 50], ["other", 50]]'
+                    ),
+                },
+                {
+                    "event_seq": 2,
+                    "event_epoch_s": 15.0,
+                    "endpoint_id": "task-0",
+                    "action": "completion",
+                    "tier": "service_completion",
+                    "debt_by_job": (
+                        '[["bulk", 40], ["foreground", 60], ["other", 60]]'
+                    ),
+                    "debt_cap_by_job": (
+                        '[["bulk", 50], ["foreground", 50], ["other", 50]]'
+                    ),
+                },
+                {
+                    "event_seq": 3,
+                    "event_epoch_s": 16.0,
+                    "endpoint_id": "task-0",
+                    "action": "finish_job",
+                    "tier": "job_lifecycle_complete",
+                    "selected_job_id": "foreground",
+                    "debt_by_job": (
+                        '[["foreground", 60], ["other", 60]]'
+                    ),
+                    "debt_cap_by_job": (
+                        '[["foreground", 50], ["other", 50]]'
+                    ),
+                },
+            ]
+        )
+
+        self.assertEqual(summary["bounded_saor_debt_repayment_episodes"], 3)
+        self.assertEqual(summary["bounded_saor_debt_repayment_completed"], 1)
+        self.assertEqual(
+            summary["bounded_saor_debt_repayment_censored_no_demand"],
+            1,
+        )
+        self.assertEqual(summary["bounded_saor_debt_repayment_unresolved"], 1)
+
+    def test_bounded_saor_projection_is_recomputed_from_raw_fields(self) -> None:
+        event = {
+            "schema_version": 5,
+            "event_seq": 1,
+            "event_epoch_s": 10.0,
+            "endpoint_id": "task-0",
+            "action": "grant",
+            "tier": "debt_recovery",
+            "selected_job_id": "bulk",
+            "selected_request_id": "r1",
+            "ready_jobs": '["bulk", "foreground"]',
+            "fitting_jobs": '["bulk", "foreground"]',
+            "active_set_jobs": '["bulk", "foreground"]',
+            "active_set_weight_sum": 2.0,
+            "weight_by_job": '[["bulk", 1], ["foreground", 1]]',
+            "projection_own_inflight_work_by_job": (
+                '[["bulk", 100], ["foreground", 100]]'
+            ),
+            "projection_foreign_residual_work_by_job": (
+                '[["bulk", 100], ["foreground", 100]]'
+            ),
+            "projection_candidate_work_by_job": (
+                '[["bulk", 80], ["foreground", 20]]'
+            ),
+            "projection_target_share_by_job": (
+                '[["bulk", 0.5], ["foreground", 0.5]]'
+            ),
+            "debt_by_job": '[["bulk", 130], ["foreground", 0]]',
+            "debt_cap_by_job": '[["bulk", 100]]',
+            "projected_debt_before_by_job": (
+                '[["bulk", 130], ["foreground", 0]]'
+            ),
+            "projected_debt_after_by_job": (
+                '[["bulk", 90], ["foreground", -10]]'
+            ),
+            "projected_overshoot_bound_by_job": (
+                '[["bulk", 40], ["foreground", 10]]'
+            ),
+            "recovery_inflight_by_job": '[["bulk", ["r1"]]]',
+            "recovery_inflight_work_by_job": '[["bulk", 80]]',
+            "active_work": 280,
+            "foreign_grant_over_debt_critical": False,
+        }
+
+        summary = bounded_saor_event_summary([event])
+
+        self.assertEqual(
+            summary["bounded_saor_projection_status"],
+            "ok:offline_recomputed",
+        )
+        self.assertEqual(
+            summary["bounded_saor_projected_overshoot_work_max"],
+            10.0,
+        )
+        self.assertEqual(
+            summary["bounded_saor_projected_overshoot_bound_max"],
+            40.0,
+        )
+        corrupted = dict(event)
+        corrupted["projected_debt_before_by_job"] = (
+            '[["bulk", 129], ["foreground", 0]]'
+        )
+        invalid = bounded_saor_event_summary([corrupted])
+        self.assertEqual(
+            invalid["bounded_saor_projection_status"],
+            "invalid:offline_projection_mismatch",
+        )
+        broken_conservation = dict(event)
+        broken_conservation["active_work"] = 200
+        invalid = bounded_saor_event_summary([broken_conservation])
+        self.assertEqual(
+            invalid["bounded_saor_projection_status"],
+            "invalid:offline_projection_mismatch",
+        )
+
     def test_vtc_templates_expand_unequal_job_counts(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -558,6 +1329,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                         "warmup_runs_per_scenario": 0,
                         "formal_repeats": 1,
                         "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                        "service_signature": {"model": "test", "service": "test"},
                         "request_limit_per_endpoint": 8,
                         "work_limit_per_endpoint": 1024,
                         "credit_quantum": 128,
@@ -595,6 +1367,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                         "warmup_runs_per_scenario": 1,
                         "formal_repeats": 0,
                         "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                        "service_signature": {"model": "test", "service": "test"},
                         "request_limit_per_endpoint": 8,
                         "work_limit_per_endpoint": 4096,
                         "credit_quantum": 512,
@@ -790,6 +1563,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             },
             quantum=2048,
             policy="drr",
+            record_ready_lifecycle_events=False,
         )
         self.assertEqual(
             [call.args for call in client.snapshot.call_args_list],
@@ -809,6 +1583,153 @@ class SharedVllmExperimentTests(unittest.TestCase):
             observer.cleanup()
 
         self.assertIsNone(observer.actor)
+
+    def test_credit_observer_drains_lossless_events(self) -> None:
+        observer = shared_vllm._RayCreditObserver.__new__(
+            shared_vllm._RayCreditObserver
+        )
+        observer.ray = MagicMock()
+        observer.endpoint_ids = ("task-0",)
+        observer.actor = MagicMock()
+        event = SaorReleaseEvent(
+            event_seq=1,
+            event_time_s=12.0,
+            event_epoch_s=112.0,
+            endpoint_id="task-0",
+            action="grant",
+            tier="slo_priority",
+        )
+        observer.actor.drain_release_events.remote.return_value = (event,)
+        observer.ray.get.side_effect = lambda value: value
+
+        rows = observer.drain_release_events(100.0)
+
+        self.assertEqual(rows[0]["event_seq"], 1)
+        self.assertEqual(rows[0]["tier"], "slo_priority")
+        self.assertEqual(rows[0]["schema_version"], 5)
+        self.assertIn("observed_epoch_s", rows[0])
+
+    def test_bounded_ready_join_rejects_foreign_fallback(self) -> None:
+        job_evidence = [
+            {
+                "runtime_job_id": "bulk",
+                "ready_lifecycle_complete": True,
+                "max_ready_requests_seen": 1,
+                "max_ready_work_seen": 10,
+                "max_ready_payload_bytes_seen": 20,
+                "ready_lifecycle_rows": [
+                    {
+                        "request_id": "bulk-r0",
+                        "endpoint_id": "task-0",
+                        "registered_epoch_s": 99.0,
+                        "granted_epoch_s": 101.0,
+                    }
+                ],
+            },
+            {
+                "runtime_job_id": "foreground",
+                "ready_lifecycle_complete": True,
+                "max_ready_requests_seen": 2,
+                "max_ready_work_seen": 100,
+                "max_ready_payload_bytes_seen": 200,
+                "ready_lifecycle_rows": [
+                    {
+                        "request_id": "foreground-r0",
+                        "endpoint_id": "task-0",
+                        "registered_epoch_s": 100.0,
+                        "granted_epoch_s": 102.0,
+                    }
+                ],
+            },
+        ]
+        events = [
+            {
+                "action": "register",
+                "tier": "ready_registration",
+                "event_seq": 1,
+                "event_epoch_s": 99.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "bulk",
+                "selected_request_id": "bulk-r0",
+            },
+            {
+                "action": "register",
+                "tier": "ready_registration",
+                "event_seq": 2,
+                "event_epoch_s": 100.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "foreground",
+                "selected_request_id": "foreground-r0",
+            },
+            {
+                "action": "grant",
+                "tier": "saor_fallback",
+                "event_seq": 3,
+                "event_epoch_s": 101.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "bulk",
+                "selected_request_id": "bulk-r0",
+            },
+            {
+                "action": "grant",
+                "tier": "slo_priority",
+                "event_seq": 4,
+                "event_epoch_s": 102.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "foreground",
+                "selected_request_id": "foreground-r0",
+            },
+        ]
+
+        summary = shared_vllm.bounded_ready_event_summary(
+            events,
+            job_evidence,
+            foreground_job_index=1,
+        )
+
+        self.assertEqual(
+            summary["bounded_ready_event_status"],
+            "ok:actor_event_join",
+        )
+        self.assertEqual(summary["bounded_ready_foreign_fallback_events"], 1)
+        self.assertEqual(
+            summary["bounded_ready_foreground_max_ready_requests_seen"],
+            2,
+        )
+
+    def test_bounded_ready_join_requires_every_job_lifecycle(self) -> None:
+        evidence = [
+            {
+                "runtime_job_id": "bulk",
+                "ready_lifecycle_complete": True,
+                "max_ready_requests_seen": 2,
+                "max_ready_work_seen": 20,
+                "max_ready_payload_bytes_seen": 40,
+                "ready_lifecycle_rows": [
+                    {
+                        "request_id": "bulk-r0",
+                        "endpoint_id": "task-0",
+                        "registered_epoch_s": 100.0,
+                        "granted_epoch_s": 101.0,
+                    }
+                ],
+            },
+            {
+                "runtime_job_id": "foreground",
+                "ready_lifecycle_complete": False,
+                "max_ready_requests_seen": 0,
+                "max_ready_work_seen": 0,
+                "max_ready_payload_bytes_seen": 0,
+                "ready_lifecycle_rows": [],
+            },
+        ]
+
+        summary = shared_vllm.bounded_ready_event_summary(
+            [], evidence, foreground_job_index=1
+        )
+
+        self.assertFalse(summary["bounded_ready_lifecycle_complete"])
+        self.assertEqual(summary["bounded_ready_jobs_with_intervals"], 1)
 
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
@@ -1005,6 +1926,95 @@ class SharedVllmExperimentTests(unittest.TestCase):
             self._flag_value(command, "--shared-credit-job-weight"),
             "3",
         )
+
+    def test_foreground_strict_priority_is_separate_from_fairness_weight(
+        self,
+    ) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "strict_priority_diagnostic",
+                    "policy": "foreground_strict_priority",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "weights": [1, 1],
+                    "arrival_offsets_s": [0.0, 5.0],
+                }
+            ]
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            config = load_config(Path("config.json"))
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+
+        bulk = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+        foreground = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=1,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        self.assertEqual(
+            self._flag_value(bulk, "--shared-credit-policy"),
+            "strict_priority",
+        )
+        self.assertEqual(
+            self._flag_value(bulk, "--shared-credit-job-priority"),
+            "0",
+        )
+        self.assertEqual(
+            self._flag_value(foreground, "--shared-credit-job-priority"),
+            "1",
+        )
+        self.assertEqual(
+            self._flag_value(foreground, "--shared-credit-job-weight"),
+            "1",
+        )
+
+    def test_foreground_strict_priority_requires_unique_later_job(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "invalid_priority_diagnostic",
+                    "policy": "foreground_strict_priority",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "arrival_offsets_s": [0.0, 0.0],
+                }
+            ]
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            with self.assertRaisesRegex(ValueError, "unique later foreground"):
+                load_config(Path("config.json"))
 
     def test_arrival_offset_expands_numeric_environment_scalar(self) -> None:
         payload = self._config_payload(
@@ -1564,6 +2574,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": 0,
                 "kv_usage": 0.0,
                 "gpu_utilization_pct": "0",
+                "gpu_power_w": "100",
             },
             {
                 "observed_epoch_s": 0.0,
@@ -1572,6 +2583,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": 0,
                 "kv_usage": 0.0,
                 "gpu_utilization_pct": "0",
+                "gpu_power_w": "100",
             },
         ] + [
             {
@@ -1581,6 +2593,11 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": waiting,
                 "kv_usage": kv,
                 "gpu_utilization_pct": gpu,
+                "gpu_power_w": str(float(gpu) * 4),
+                "host_cpu_busy_cores": float(gpu) / 10,
+                "host_cpu_per_core_max_pct": gpu,
+                "host_memory_used_pct": 25 + epoch,
+                "host_memory_available_mib": 1000 - 100 * epoch,
             }
             for epoch, gpu, values in (
                 (1.0, "50", ((2, 1, 0.2), (3, 0, 0.3))),
@@ -1593,13 +2610,20 @@ class SharedVllmExperimentTests(unittest.TestCase):
             samples,
             start_epoch_s=1.0,
             end_epoch_s=2.0,
+            observed_tokens=1000,
         )
 
         self.assertEqual(summary["gpu_utilization_pct_mean"], 75.0)
         self.assertEqual(summary["gpu_utilization_pct_p95"], 100.0)
+        self.assertEqual(summary["gpu_power_w_mean"], 300.0)
+        self.assertEqual(summary["gpu_power_w_p95"], 400.0)
+        self.assertEqual(summary["gpu_energy_j"], 300.0)
+        self.assertEqual(summary["energy_j_per_1k_observed_tokens"], 300.0)
         self.assertEqual(summary["vllm_running_mean"], 7.0)
         self.assertEqual(summary["vllm_running_max"], 9.0)
         self.assertEqual(summary["vllm_waiting_max"], 2.0)
+        self.assertEqual(summary["host_cpu_busy_cores_mean"], 7.5)
+        self.assertEqual(summary["host_memory_available_mib_max"], 900.0)
 
     def test_job_evidence_reports_nearest_rank_p99(self) -> None:
         options = RunnerOptions(
@@ -1634,6 +2658,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "estimated_output_tokens": "20",
                 "endpoint_id": f"task-{index % 2}",
                 "submit_epoch_s": str(index + 0.1),
+                "job_id": "42",
             }
             for index, latency in enumerate((1.0, 2.0, 3.0, 100.0))
         ]
@@ -1644,12 +2669,23 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "actor_worker_failures": "0;0",
                 "arrival_replay_start_epoch_s": "100.0",
                 "arrival_replay_observed_start_epoch_s": "100.0",
+                "max_ready_requests_seen": "3",
+                "max_ready_work_seen": "90",
+                "job_id": "42",
             }
+        ]
+        submission_rows = [
+            {
+                "submission_id": f"request-{index}",
+                "endpoint_id": f"task-{index % 2}",
+                "submit_epoch_s": str(index + 0.1),
+            }
+            for index in range(4)
         ]
 
         with patch(
             "src.experiments.shared_vllm.evidence._read_csv",
-            side_effect=[summary_rows, request_rows, [{}] * 4],
+            side_effect=[summary_rows, request_rows, submission_rows],
         ):
             evidence = shared_vllm._validate_job_evidence(
                 options,
@@ -1660,6 +2696,114 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(evidence["p99_s"], 100.0)
         self.assertEqual(evidence["actor_worker_failures"], 0)
+        self.assertEqual(evidence["max_ready_requests_seen"], 3)
+        self.assertEqual(evidence["max_ready_work_seen"], 90)
+
+    def test_job_evidence_joins_ready_lifecycle_to_request_submit(self) -> None:
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics",),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+        scenario = SharedVllmScenario(
+            scenario_id="bounded-ready",
+            policy="saor_bounded_ready",
+            job_count=1,
+            rows_per_job=1,
+            weights=(1,),
+            arrival_offsets_s=(0.0,),
+        )
+        summary_rows = [{
+            "status": "ok",
+            "total_rows": "1",
+            "actor_worker_failures": "0",
+            "max_ready_requests_seen": "2",
+            "max_ready_work_seen": "90",
+            "job_id": "43",
+        }]
+        request_rows = [{
+            "request_id": "request-0",
+            "submission_id": "submission-0",
+            "status": "completed",
+            "error_type": "",
+            "arrival_epoch_s": "99.0",
+            "submit_epoch_s": "100.3",
+            "completion_epoch_s": "101.0",
+            "e2e_s": "2.0",
+            "slo_met": "True",
+            "prompt_tokens": "10",
+            "client_estimated_output_tokens": "20",
+            "estimated_output_tokens": "20",
+            "endpoint_id": "task-0",
+            "job_id": "43",
+        }]
+        # The production submission schema intentionally has no
+        # submit_epoch_s; that timestamp is owned by the request trace.
+        submission_rows = [{
+            "submission_id": "submission-0",
+            "endpoint_id": "task-0",
+            "ready_epoch_s": "100.0",
+            "credit_registered_epoch_s": "100.1",
+            "credit_granted_epoch_s": "100.2",
+        }]
+
+        with patch(
+            "src.experiments.shared_vllm.evidence._read_csv",
+            side_effect=[summary_rows, request_rows, submission_rows],
+        ):
+            evidence = shared_vllm._validate_job_evidence(
+                options,
+                scenario,
+                GroupRunIdentity("formal", 1, 0),
+                0,
+            )
+
+        self.assertTrue(evidence["ready_lifecycle_complete"])
+        self.assertEqual(
+            evidence["ready_lifecycle_rows"],
+            [{
+                "request_id": "submission-0",
+                "endpoint_id": "task-0",
+                "ready_epoch_s": 100.0,
+                "registered_epoch_s": 100.1,
+                "granted_epoch_s": 100.2,
+                "submit_epoch_s": 100.3,
+                "completion_epoch_s": 101.0,
+                "actual_work": 30,
+            }],
+        )
+
+        request_rows[0]["job_id"] = ""
+        with patch(
+            "src.experiments.shared_vllm.evidence._read_csv",
+            side_effect=[summary_rows, request_rows, submission_rows],
+        ):
+            with self.assertRaisesRegex(RuntimeError, "missing runtime job ID"):
+                shared_vllm._validate_job_evidence(
+                    options,
+                    scenario,
+                    GroupRunIdentity("formal", 1, 0),
+                    0,
+                )
+
+    def test_concurrent_runtime_job_ids_must_be_unique(self) -> None:
+        shared_vllm._validate_runtime_job_ids(
+            [{"runtime_job_id": "41"}, {"runtime_job_id": "42"}]
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "must be unique"):
+            shared_vllm._validate_runtime_job_ids(
+                [{"runtime_job_id": "41"}, {"runtime_job_id": "41"}]
+            )
+        with self.assertRaisesRegex(RuntimeError, "missing runtime job ID"):
+            shared_vllm._validate_runtime_job_ids(
+                [{"runtime_job_id": "41"}, {"runtime_job_id": ""}]
+            )
 
     def test_jain_fairness_handles_equal_weight_and_zero_service(self) -> None:
         self.assertEqual(jain_fairness([100.0, 100.0]), 1.0)
@@ -1710,6 +2854,62 @@ class SharedVllmExperimentTests(unittest.TestCase):
             1000.0,
         )
 
+    def test_completion_accounted_fairness_uses_registered_backlog(self) -> None:
+        evidence = [
+            {
+                "ready_lifecycle_complete": True,
+                "ready_lifecycle_rows": [
+                    {
+                        "registered_epoch_s": 0.0,
+                        "completion_epoch_s": 2.0,
+                        "actual_work": 100.0,
+                    },
+                    {
+                        "registered_epoch_s": 0.0,
+                        "completion_epoch_s": 4.0,
+                        "actual_work": 100.0,
+                    },
+                ],
+            },
+            {
+                "ready_lifecycle_complete": True,
+                "ready_lifecycle_rows": [
+                    {
+                        "registered_epoch_s": 0.0,
+                        "completion_epoch_s": 3.0,
+                        "actual_work": 100.0,
+                    },
+                ],
+            },
+        ]
+
+        metrics = completion_accounted_service_fairness(evidence, (1, 1))
+
+        self.assertEqual(
+            metrics["completion_service_lag_status"],
+            "ok:registered_backlog_completion_accounted_empirical",
+        )
+        self.assertEqual(metrics["completion_service_lag_samples"], 4)
+        self.assertEqual(metrics["completion_service_lag_max_work"], 50.0)
+        self.assertEqual(metrics["completion_longest_no_service_s"], 3.0)
+
+    def test_completion_accounted_fairness_requires_ready_lifecycle(self) -> None:
+        metrics = completion_accounted_service_fairness(
+            [
+                {
+                    "ready_lifecycle_complete": False,
+                    "ready_lifecycle_rows": [],
+                },
+                {
+                    "ready_lifecycle_complete": False,
+                    "ready_lifecycle_rows": [],
+                },
+            ],
+            (1, 1),
+        )
+
+        self.assertIn("unavailable", metrics["completion_service_lag_status"])
+
     def test_replay_start_validation_rejects_late_or_skewed_jobs(self) -> None:
         skewed_barrier = [
             {
@@ -1751,7 +2951,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             {
                 "replay_configured_start_epoch_s": 105.0,
                 "replay_observed_start_epoch_s": 105.1,
-                "replay_actual_submit_start_epoch_s": 105.8,
+                "replay_actual_submit_start_epoch_s": 113.8,
             },
         ]
 
@@ -1762,6 +2962,24 @@ class SharedVllmExperimentTests(unittest.TestCase):
             max_lateness_s=2.0,
             max_skew_s=0.5,
         )
+
+    def test_replay_start_validation_rejects_submit_before_barrier(self) -> None:
+        evidence = [
+            {
+                "replay_configured_start_epoch_s": 100.0,
+                "replay_observed_start_epoch_s": 100.1,
+                "replay_actual_submit_start_epoch_s": 100.0,
+            },
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "before crossing"):
+            _validate_replay_starts(
+                evidence,
+                expected_start_epoch_s=100.0,
+                arrival_offsets_s=(0.0,),
+                max_lateness_s=2.0,
+                max_skew_s=0.5,
+            )
 
     def test_runner_topology_rejects_duplicate_metrics_urls(self) -> None:
         with patch.object(
@@ -1957,6 +3175,13 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 / "000_formal_1_test.failure.json"
             )
             self.assertTrue(failure.exists())
+            self.assertTrue(
+                (
+                    options.output_dir
+                    / "traces"
+                    / "000_formal_1_test.release_events.csv"
+                ).exists()
+            )
             self.assertIn(
                 "exactly-once failed",
                 failure.read_text(encoding="utf-8"),
@@ -1998,6 +3223,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "slo_violation_ratio": 0.0,
                 "slo_goodput_per_s": 64.0,
                 "predicted_work": 100,
+                "runtime_job_id": "41",
                 "endpoint_counts": {"task-0": 32, "task-1": 32},
                 "actor_worker_failures": 1,
                 "replay_configured_start_epoch_s": 100.0,
@@ -2090,6 +3316,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "warmup_runs_per_scenario": 0,
             "formal_repeats": 1,
             "endpoint_ids": ["task-0", "task-1"],
+            "service_signature": {"model": "qwen", "service": "vllm-test"},
             "request_limit_per_endpoint": 256,
             "work_limit_per_endpoint": 65536,
             "credit_quantum": 2048,
@@ -2140,6 +3367,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             warmup_runs_per_scenario=0,
             formal_repeats=1,
             endpoint_ids=("task-0", "task-1"),
+            service_signature=(("model", "qwen"), ("service", "vllm-test")),
             request_limit_per_endpoint=256,
             work_limit_per_endpoint=65536,
             credit_quantum=2048,

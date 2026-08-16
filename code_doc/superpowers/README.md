@@ -11,6 +11,10 @@ Local planning artifacts produced through the Superpowers workflow for code chan
 
 Current designs:
 
+- `specs/2026-08-13-saor-native-system-matched-comparison-design.md`:
+  approved five-arm two-Job complete-system comparison, with scheduler-owner
+  isolation, common PostgreSQL timing, metric availability and fail-closed
+  evidence rules.
 - `specs/2026-07-28-dual-gpu-experiment-correctness-design.md`: dual-GPU
   experiment correctness and shared scheduling.
 - `specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md`: saturated
@@ -23,6 +27,9 @@ Current designs:
 
 Current implementation plans:
 
+- `plans/2026-08-13-saor-native-system-matched-comparison-implementation.md`:
+  TDD plan for timed PostgreSQL native source, eager Project arrival, eight-arm
+  balanced orchestration, and separate system/internal fail-closed summaries.
 - `plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md`:
   completed dual-GPU correctness foundation.
 - `plans/2026-07-29-saturated-ray-execution-foundation-implementation.md`:

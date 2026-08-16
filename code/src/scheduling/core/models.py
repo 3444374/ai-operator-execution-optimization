@@ -30,7 +30,9 @@ class BatchRequest:
     preferred_endpoint_id: str = ""
     work_units: int | None = None
     work_unit: str = "tokens"
+    estimated_payload_bytes: int = 0
     work_descriptor: WorkDescriptor | None = None
+    oldest_arrival_epoch_s: float | None = None
 
     def __post_init__(self) -> None:
         if self.row_count <= 0:
@@ -45,6 +47,14 @@ class BatchRequest:
             raise ValueError("work_units must be a non-negative integer when present")
         if not isinstance(self.work_unit, str) or not self.work_unit:
             raise ValueError("work_unit must be a non-empty string")
+        if (
+            not isinstance(self.estimated_payload_bytes, int)
+            or isinstance(self.estimated_payload_bytes, bool)
+            or self.estimated_payload_bytes < 0
+        ):
+            raise ValueError(
+                "estimated_payload_bytes must be a non-negative integer"
+            )
         if self.work_descriptor is not None:
             primary = self.work_descriptor.primary
             if self.work_units is not None and self.work_units != primary.units:
@@ -57,6 +67,13 @@ class BatchRequest:
                 )
         if not self.request_id or not self.job_id or not self.payload_id:
             raise ValueError("request_id, job_id, and payload_id must be non-empty")
+        if self.oldest_arrival_epoch_s is not None and (
+            not math.isfinite(self.oldest_arrival_epoch_s)
+            or self.oldest_arrival_epoch_s < 0
+        ):
+            raise ValueError(
+                "oldest_arrival_epoch_s must be finite and non-negative"
+            )
 
     @property
     def estimated_total_tokens(self) -> int:
@@ -269,6 +286,9 @@ class SubmissionLifecycleEvent:
     actor_worker_id: str = ""
     actor_worker_index: int = -1
     actor_worker_pid: int = 0
+    ready_epoch_s: float | None = None
+    credit_registered_epoch_s: float | None = None
+    credit_granted_epoch_s: float | None = None
 
     def __post_init__(self) -> None:
         if not self.submission_id or not self.pool_id or not self.endpoint_id:
@@ -282,6 +302,31 @@ class SubmissionLifecycleEvent:
             or self.completion_epoch_s < self.submit_epoch_s
         ):
             raise ValueError("submission lifecycle timestamps are invalid")
+        optional_times = tuple(
+            value
+            for value in (
+                self.ready_epoch_s,
+                self.credit_registered_epoch_s,
+                self.credit_granted_epoch_s,
+            )
+            if value is not None
+        )
+        if any(not math.isfinite(value) or value < 0 for value in optional_times):
+            raise ValueError("pre-submission lifecycle timestamps are invalid")
+        ordered_times = (
+            self.ready_epoch_s,
+            self.credit_registered_epoch_s,
+            self.credit_granted_epoch_s,
+            self.submit_epoch_s,
+        )
+        observed_times = tuple(
+            value for value in ordered_times if value is not None
+        )
+        if any(
+            right < left
+            for left, right in zip(observed_times, observed_times[1:])
+        ):
+            raise ValueError("pre-submission lifecycle timestamps are unordered")
 
 
 @dataclass(frozen=True)

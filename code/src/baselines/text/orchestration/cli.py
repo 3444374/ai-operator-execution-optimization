@@ -11,6 +11,7 @@ import math
 import os
 import subprocess
 import sys
+import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Sequence
@@ -48,7 +49,10 @@ from ..products import (
     run_duckdb_ai_complete,
     run_oceanbase_ai_complete,
 )
-from .postgres_manifest import load_postgres_requests
+from .postgres_manifest import (
+    load_manifest_postgres_requests,
+    load_postgres_requests,
+)
 from src.baselines.common.provenance import adapter_provenance, registered_adapters
 from src.baselines.common.results import summarize_results
 from ..frameworks import (
@@ -272,8 +276,32 @@ def _run_adapter(
 
 def _run_shard(args: argparse.Namespace) -> dict[str, object]:
     manifest = read_manifest(args.manifest)
+    source_kind = "manifest_jsonl"
+    source_timing_boundary = "outside_job"
+    source_read_s = 0.0
+    source_validation_status = "not_applicable"
+    source_manifest = manifest
+    if args.timed_postgres_source:
+        if not args.database_url or not args.source_workload_name:
+            raise ValueError(
+                "--timed-postgres-source requires --database-url and "
+                "--source-workload-name"
+            )
+        source_start = time.perf_counter()
+        with _connect_postgres(args.database_url) as connection:
+            source_manifest = load_manifest_postgres_requests(
+                connection,
+                workload_name=args.source_workload_name,
+                manifest=manifest,
+            )
+        source_read_s = time.perf_counter() - source_start
+        source_kind = "timed_postgres_manifest"
+        source_timing_boundary = "inside_job_barrier"
+        source_validation_status = "ok"
     requests = tuple(
-        request for request in manifest if request.endpoint_index == args.endpoint_index
+        request
+        for request in source_manifest
+        if request.endpoint_index == args.endpoint_index
     )
     if not requests:
         raise ValueError("selected endpoint shard is empty")
@@ -291,6 +319,10 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         **_observability_fields(args.adapter),
         "status": "dry_run" if args.dry_run else "running",
         "request_count": len(requests),
+        "source_kind": source_kind,
+        "source_timing_boundary": source_timing_boundary,
+        "source_read_s": source_read_s,
+        "source_validation_status": source_validation_status,
         "endpoint_index": args.endpoint_index,
         "endpoint_url": args.endpoint_url,
         "predicted_work": sum(request.estimated_work for request in requests),
@@ -467,7 +499,7 @@ def _connect_postgres(database_url: str):
     try:
         import psycopg
     except ImportError as exc:
-        raise RuntimeError("PostgreSQL manifest export requires psycopg") from exc
+        raise RuntimeError("PostgreSQL manifest access requires psycopg") from exc
     return psycopg.connect(database_url)
 
 
@@ -882,6 +914,9 @@ def _parser() -> argparse.ArgumentParser:
     run = commands.add_parser("run-shard")
     run.add_argument("--adapter", choices=ADAPTERS, required=True)
     run.add_argument("--manifest", required=True)
+    run.add_argument("--database-url")
+    run.add_argument("--source-workload-name")
+    run.add_argument("--timed-postgres-source", action="store_true")
     run.add_argument("--endpoint-index", type=int, required=True)
     run.add_argument("--endpoint-url", required=True)
     run.add_argument("--model", required=True)

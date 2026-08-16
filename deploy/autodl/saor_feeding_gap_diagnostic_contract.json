@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "experiment_id": "saor_feeding_gap_diagnostic",
+  "status": "locked_diagnostic_only_pending_run",
+  "execution_authorized": true,
+  "scope": "feeding_gap_attribution_only",
+  "may_change_prior_feeding_decision": false,
+  "prior_failed_feeding_lock": {
+    "contract_sha256": "f09d1eab14f45d088e4059a2b5a5bd20297206fe77b3ddba895911657025e6e7",
+    "root_id": "saor_project_feeding_ceiling_c988622a_20260814_retry2",
+    "validation_sha256": "b439fe08bbc6fe187bce3a48926a653e1a0b40938562bb0ed1f61f026a3bfbb1",
+    "archive_sha256": "ebf5c35a699ff034891855d14c3332dbe42dabef3ede1f0641d3ac18a4079fb2",
+    "required_status": "locked_failed_feeding",
+    "required_formal_authorized": false
+  },
+  "matrix": {
+    "warmups_per_arm": 1,
+    "measured_repeats_per_arm": 3,
+    "execution_order": "balanced_interleaved_by_repeat",
+    "k_per_endpoint": 128,
+    "w_per_endpoint": 65536,
+    "request_manifest_sha256": [
+      "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1",
+      "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"
+    ],
+    "arms": {
+      "feeding_gap_d0_direct_k_only": {
+        "identity": "service_capacity_ceiling",
+        "policy": "direct_no_job",
+        "request_envelope": "endpoint_local_k",
+        "work_envelope": "none"
+      },
+      "feeding_gap_d1_direct_k_work": {
+        "identity": "project_diagnostic_control_not_native_baseline",
+        "policy": "direct_work_limited",
+        "request_envelope": "endpoint_local_k",
+        "work_envelope": "endpoint_local_typed_estimated_work_completion_release",
+        "forbidden_mechanisms": [
+          "job_fairness",
+          "bounded_ready",
+          "saor_selector"
+        ]
+      },
+      "feeding_gap_p0_project_bounded_ready_fifo": {
+        "identity": "project_execution_path_control",
+        "policy": "shared_fifo",
+        "request_envelope": "endpoint_shared_k",
+        "work_envelope": "endpoint_shared_w",
+        "ready_observation": "bounded_concrete_pre_registration"
+      }
+    }
+  },
+  "decision_contract": {
+    "ratio_min": 0.95,
+    "aggregation": "paired_by_repeat_arithmetic_mean",
+    "work_envelope_primary": "D1/D0 < 0.95 and P0/D1 >= 0.95",
+    "project_path_primary": "D1/D0 >= 0.95 and P0/D1 < 0.95",
+    "work_envelope_and_project_path": "D1/D0 < 0.95 and P0/D1 < 0.95",
+    "original_gap_not_reproduced": "D1/D0 >= 0.95 and P0/D1 >= 0.95",
+    "prior_decision_policy": "classification_never_reopens_locked_failed_feeding"
+  },
+  "evidence_contract": {
+    "pre_run_clean_gate": [
+      "postgresql",
+      "ray",
+      "all_vllm_endpoints"
+    ],
+    "required_families": [
+      "request_and_work_occupancy",
+      "admission_wait",
+      "ray_submit_and_actor_ready",
+      "vllm_running_waiting_kv",
+      "mfu",
+      "ttft_itl",
+      "job_jct_slo",
+      "gpu_energy"
+    ],
+    "missing_family_policy": "invalid_evidence_no_attribution"
+  },
+  "exit_contract": {
+    "work_envelope_primary": "separate_implementation_efficiency_and_protection_cost_gates",
+    "project_path_primary": "allow_one_simple_selector_neutral_fix_only",
+    "no_simple_cause": "close_text_saor_headline_and_return_to_image_hse"
+  }
+}

@@ -166,9 +166,19 @@ def _decode_completion_endpoint_result(
             str(finish_reason) if finish_reason is not None else None
         )
     usage = decoded.get("usage") or {}
+    prompt_tokens = usage.get("prompt_tokens")
+    completion_tokens = usage.get("completion_tokens")
     total_tokens = usage.get("total_tokens")
     return CompletionEndpointResult(
         outputs=outputs,
+        prompt_tokens=(
+            int(prompt_tokens) if prompt_tokens is not None else None
+        ),
+        completion_tokens=(
+            int(completion_tokens)
+            if completion_tokens is not None
+            else None
+        ),
         total_tokens=(
             int(total_tokens) if total_tokens is not None else None
         ),
@@ -250,6 +260,9 @@ class FakeCompletionActor(_ReadyActor):
             "input_token_count": input_token_count,
             "output_token_count": output_token_count,
             "token_count": token_count,
+            "input_token_count_source": "local_text_token_count",
+            "output_token_count_source": "configured_fake_output_tokens",
+            "token_count_source": "local_input_plus_configured_fake_output",
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
@@ -453,12 +466,24 @@ def _combine_completion_endpoint_results(
         if all(result.total_tokens is not None for result in results)
         else None
     )
+    prompt_tokens = (
+        sum(result.prompt_tokens for result in results)
+        if all(result.prompt_tokens is not None for result in results)
+        else None
+    )
+    completion_tokens = (
+        sum(result.completion_tokens for result in results)
+        if all(result.completion_tokens is not None for result in results)
+        else None
+    )
     return CompletionEndpointResult(
         outputs=[
             output
             for result in results
             for output in result.outputs
         ],
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
         total_tokens=total_tokens,
         output_token_counts=[
             count
@@ -496,12 +521,41 @@ def _completion_actor_result(
     service_start_epoch: float,
 ) -> dict:
     outputs = endpoint_result.outputs
-    input_token_count = sum(text_token_count(prompt) for prompt in prompts)
-    output_token_count = sum(text_token_count(output) for output in outputs)
+    local_input_token_count = sum(text_token_count(prompt) for prompt in prompts)
+    local_output_token_count = sum(text_token_count(output) for output in outputs)
+    endpoint_output_token_count = (
+        sum(endpoint_result.output_token_counts)
+        if endpoint_result.output_token_counts
+        and all(
+            count is not None
+            for count in endpoint_result.output_token_counts
+        )
+        else None
+    )
+    if endpoint_result.prompt_tokens is not None:
+        input_token_count = endpoint_result.prompt_tokens
+        input_token_count_source = "endpoint_usage_prompt_tokens"
+    else:
+        input_token_count = local_input_token_count
+        input_token_count_source = "local_text_token_count"
+    if endpoint_result.completion_tokens is not None:
+        output_token_count = endpoint_result.completion_tokens
+        output_token_count_source = "endpoint_usage_completion_tokens"
+    elif endpoint_output_token_count is not None:
+        output_token_count = endpoint_output_token_count
+        output_token_count_source = "endpoint_token_ids"
+    else:
+        output_token_count = local_output_token_count
+        output_token_count_source = "local_text_token_count"
     token_count = (
         endpoint_result.total_tokens
         if endpoint_result.total_tokens is not None
         else input_token_count + output_token_count
+    )
+    token_count_source = (
+        "endpoint_usage_total_tokens"
+        if endpoint_result.total_tokens is not None
+        else "resolved_input_plus_output"
     )
     service_s = time.perf_counter() - service_start
     service_end_epoch = time.time()
@@ -516,6 +570,9 @@ def _completion_actor_result(
         "input_token_count": input_token_count,
         "output_token_count": output_token_count,
         "token_count": token_count,
+        "input_token_count_source": input_token_count_source,
+        "output_token_count_source": output_token_count_source,
+        "token_count_source": token_count_source,
         "service_s": service_s,
         "service_start_epoch_s": service_start_epoch,
         "service_end_epoch_s": service_end_epoch,
@@ -565,6 +622,13 @@ class OllamaCompletionActor(_ReadyActor):
             "input_token_count": input_token_count,
             "output_token_count": output_token_count,
             "token_count": token_count,
+            "input_token_count_source": "local_text_token_count",
+            "output_token_count_source": "local_text_token_count",
+            "token_count_source": (
+                "ollama_endpoint_metrics_total_tokens"
+                if endpoint_tokens is not None
+                else "local_input_plus_output"
+            ),
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,

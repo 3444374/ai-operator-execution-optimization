@@ -169,6 +169,25 @@ raw clock/counter，而不是直接依据列名解释。
 
 ## 运行边界
 
+多 Job group 的 GPU 功率不能把 endpoint 行直接相加：resource trace 的每个 endpoint 行都重复
+保存同一时刻、选定 GPU 集合的聚合 `nvidia-smi` 快照。正确做法是每个 timestamp 只取一份双卡
+总功率，再在 cell start/end 内做梯形积分。`group_resource_summary` 因此同时输出
+`gpu_power_w_{mean,p50,p95,max}`、`gpu_energy_j` 与
+`energy_j_per_1k_observed_tokens`。这些是低频采样估计，不含 CPU/整机功耗；缺少两个有效功率
+时间点时必须为空，不能填 0。历史 archive 可按同一规则离线恢复，但不能把恢复值写回原始 CSV。
+
+feeding-saturation 又是另一层门：GPU utilization、MFU、功率、running/waiting 均不能替代
+“策略吞吐÷同 workload/protocol/model/service-signature bounded ceiling”。旧 ceiling 即使 manifest、
+协议和服务参数高度匹配，只要缺当前合同要求的模型/tokenizer/template identity，就只能先报告
+诊断比值，再补当前签名 ceiling；门槛仍按预注册 95% 执行。本次当前签名 direct/SAOR 分别为
+13,684.90/12,713.03 tok/s，即 92.898%；因此结论是 evidence-valid feeding-negative，而不是“GPU
+已经很忙所以可以继续 formal”。
+
+`evidence_valid` 也必须写清适用域。本次 schema 2 表示封存 artifact identity 和 feeding arithmetic
+闭合：group、manifest、合同快照、validation、archive SHA 全匹配；它不自动证明运行前 PG/Ray
+clean，也不把单个 warmup-identity ceiling 变成稳定性统计。predicted work 若未使用同一个 typed
+chat-template overhead，只能标“坏，不用”，不能混入 normalized-service 解释。
+
 本次 profiler CSV 字段发生变化，下一轮必须使用新的结果目录，不能向旧 header
 追加。vLLM 版本若不暴露 histogram bucket，TTFT/ITL 分位状态会是 unavailable；
 价格、检索真值或多候选 decision context 缺失时同样 fail-closed。这样的“缺失”是

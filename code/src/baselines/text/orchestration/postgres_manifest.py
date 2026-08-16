@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Literal, Protocol
+from typing import Literal, Protocol, Sequence
 
 from src.baselines.common.contracts import ChatRequest
 
@@ -149,3 +149,90 @@ def load_postgres_requests(
             )
         )
     return tuple(requests)
+
+
+def load_manifest_postgres_requests(
+    connection: ConnectionLike,
+    *,
+    workload_name: str,
+    manifest: Sequence[ChatRequest],
+) -> tuple[ChatRequest, ...]:
+    """Load and verify the immutable PostgreSQL rows named by a manifest."""
+
+    if not workload_name:
+        raise ValueError("workload_name must be non-empty")
+    if not manifest:
+        raise ValueError("manifest must be non-empty")
+    doc_ids = [request.doc_id for request in manifest]
+    if len(set(doc_ids)) != len(doc_ids):
+        raise ValueError("manifest contains duplicate doc_id")
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                doc_id,
+                text,
+                arrival_time_s,
+                prompt_tokens,
+                target_output_tokens
+            FROM documents
+            WHERE workload_name = %s AND doc_id = ANY(%s)
+            ORDER BY doc_id
+            """,
+            (workload_name, doc_ids),
+        )
+        rows = cursor.fetchall()
+
+    source_by_doc_id: dict[int, tuple[str, float, int, int]] = {}
+    for raw_row in rows:
+        raw_doc_id, raw_prompt, raw_arrival_time_s, raw_prompt_tokens, raw_target = raw_row
+        doc_id = int(raw_doc_id)
+        if doc_id in source_by_doc_id:
+            raise ValueError(f"duplicate database row for doc_id={doc_id}")
+        source_by_doc_id[doc_id] = (
+            str(raw_prompt),
+            float(raw_arrival_time_s or 0.0),
+            int(raw_prompt_tokens),
+            int(raw_target),
+        )
+
+    unexpected = set(source_by_doc_id) - set(doc_ids)
+    if unexpected:
+        raise ValueError(f"unexpected database row(s): {sorted(unexpected)}")
+    verified: list[ChatRequest] = []
+    for request in manifest:
+        source = source_by_doc_id.get(request.doc_id)
+        if source is None:
+            raise ValueError(f"missing database row for doc_id={request.doc_id}")
+        prompt, arrival_time_s, prompt_tokens, target_output_tokens = source
+        canonical_hash = source_row_hash(
+            workload_name=workload_name,
+            doc_id=request.doc_id,
+            prompt=prompt,
+            arrival_time_s=arrival_time_s,
+            prompt_tokens=prompt_tokens,
+            target_output_tokens=target_output_tokens,
+        )
+        if (
+            prompt != request.prompt
+            or arrival_time_s != request.arrival_time_s
+            or prompt_tokens != request.prompt_tokens
+            or canonical_hash != request.source_row_hash
+        ):
+            raise ValueError(
+                f"immutable field mismatch for doc_id={request.doc_id}"
+            )
+        verified.append(
+            ChatRequest(
+                doc_id=request.doc_id,
+                prompt=prompt,
+                arrival_time_s=arrival_time_s,
+                prompt_tokens=prompt_tokens,
+                max_output_tokens=request.max_output_tokens,
+                estimated_output_tokens=request.estimated_output_tokens,
+                source_row_hash=canonical_hash,
+                endpoint_index=request.endpoint_index,
+            )
+        )
+    return tuple(verified)

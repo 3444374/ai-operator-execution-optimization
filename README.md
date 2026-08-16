@@ -4,14 +4,27 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-> **当前状态（2026-08-12）**：开题 framing、四级 Claim Matrix、K128 replacement
+> **当前状态（2026-08-15）**：开题 framing、四级 Claim Matrix、K128 replacement
 > database-E2E、文本原生单/多 Job 与图像静态 baseline 证据已冻结；PPT/飞书/Wiki 暂停，
 > 本地 Markdown 与 CSV 是权威来源。图像原生 single→four-job 40/40 passed；Project
 > staged descriptor + observe-only snapshot 正式矩阵也已 24/24 passed、99K formal rows
 > exactly-once，snapshot 100% fresh 且构建均值 0.141 ms，但 static/proposed group JCT 只差
 > 0.98%，不能写成 state-aware 胜出。SAOR capacity-only 未超过 K160/简单 threshold，
-> dynamic K 已退出主线；fixed-envelope 2-Job formal 已 40/40 完成但总 gate fail-closed。
-> SAOR 在 credit 臂内 fg 最好、仍未越过 static；下一候选收紧为 reservation-backed release。
+> dynamic K 已退出主线；fixed-envelope 2-Job formal 已 40/40，原始 failed gate 保留作审计。
+> resolution-aware v2 已在完整 artifact 上重汇总为 passed、credit mechanism effective 12/12；SAOR 在
+> credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 两轮短测达到 fg P99 14.27s、
+> SLO 0%，但仅是能力上界，尚非 formal/proposed。旧 single-head bounded-priority 双轮 GPU
+> development gate 因 ready-backlog 不可见而未晋级；独立 bounded-ready 修订随后完成 8/8 cell，
+> 仅 $0.125W_e$ 以约 12.36K tok/s、foreground P99 17.58–18.15s、foreground SLO 0% 通过开发门，
+> $0.25W_e$ 被 bulk guard 拒绝。同 ready-window 的 Project FIFO/DRR/VTC-style/strict-priority/
+> guarded-debt 双轮归因与 single-head→bounded-ready observation bridge 均已完成：guarded-debt
+> 是用约 4.8% 吞吐和约 5.2% bulk JCT 换取更低 foreground tail 的观测非支配折中点，不是
+> selector winner。最终六臂 rehearsal 的机制证据有效，但同签名 direct ceiling 只得到
+> 92.898% feeding ratio，合同已永久冻结为 `locked_failed_feeding/formal_authorized=false`，不跑
+> SAOR formal。下一步只先做 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W 的
+> 小型 1+3 差距归因；代码/合同已就绪但服务器关机、尚无新 GPU 结果。之后才补同一 2-Job 合同的
+> Daft Native、Daft Ray、Ray Data、project frozen-static 与 proposed 系统级 matched comparison；
+> 原生臂不注入 Project bounded-ready/K/W。4-Job、reservation 和 dynamic K 继续后置。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
@@ -162,10 +175,11 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
   多 actor 多数未超过预注册的约 5% 晋级门槛；SAOR capacity-only 开发门相对 K128
   +4.36%，但相对 K160 仅 +0.52%、相对简单 threshold −1.46%，同样未晋级。不能因“动态”
   命名就声称更优；K160 是强效率 baseline，但已有 Job B tail/Jain 代价。
-- **SAOR fixed-envelope formal 只给出方向性信号**：40/40、0 incident、exactly-once；SAOR
+- **SAOR fixed-envelope formal 给出有效但未晋级的权衡证据**：40/40、0 incident、exactly-once；SAOR
   12,393 tok/s、fg P99 50.3s，在 credit 臂内最好，但 static 以 9,508 tok/s 换得 fg P99
-  29.2s 和 0% SLO violation。DRR/VTC rep2 无 post-drain 样本使总 gate fail-closed；当前
-  `slo_weight=0`，不能称 SLO-aware 或策略胜出。
+  29.2s 和 0% SLO violation。原始 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed；
+  250 ms resolution-aware v2 已在完整 artifact 上重汇总为 passed，仅修审计假阴性、不改变排序。当前
+  `slo_weight=0`；strict-priority 两轮短测虽显著改善 fg，但 hard priority 缺少 anti-starvation/lag guard，不能称 SLO-aware 或策略胜出。`saor-v0.5.1` 双轮 development gate 未晋级：0.25K 机制不稳定，两个 cap 的 fg P99/SLO 均未过门；根因收紧为 ready-set 只暴露单个 pull head。formal、4-Job 与 reservation 消融继续阻塞。
 - **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
   4-endpoint KV 饱和时排名和 prefix-cache 行为明显分化。相关结论不能脱离 endpoint/
   KV 条件外推。

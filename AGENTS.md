@@ -14,6 +14,10 @@
 
 1. **研究内容一：数据组织策略**。探索按计算量（token 量/frame 量）而非固定行数的动态组织方式，以及按计算量相似度分组对推理效率的影响。利用异构 actor pool 实现。引擎级参数（Daft `into_batches`、`batch_size`、`repartition`）与策略级决策（token-budget、length-align、prefix-aware）共同构成数据组织优化空间。
 2. **研究内容二：调度与提交控制策略**。利用 Ray actor 的 stateful + async 能力，研究固定资源下的最小饱和 active work、request-level replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。固定静态 credit 是强 baseline；动态候选只有显著优于同上限静态策略才晋级。
+   当前正式范围是**单租户内多个 Job/workload class**，按 Job 评价份额、SLO 与隔离；不把当前
+   `job_id` 记账外推为多租户公平。多租户只作后续层次化扩展：外层 tenant entitlement/debt 与
+   per-tenant buffer cap，内层复用现有 Job-level observation、priority/SLO、debt 和 borrowing/reclaim，
+   不阻塞当前 formal。
 3. **多模态泛化验证**（正文实验，验证策略抽象不依赖数据模态）。在图像 workload（AI_EMBED/AI_CLASSIFY，CLIP/Qwen2.5-VL）上使用同一套策略代码和配置逻辑，验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。
 4. **算子代价估计**（共同使能组件，不作为独立研究内容）。首版采用简单解析模型 + profile 校准 + residual correction，预测 prompt/output work、operator service time、JCT、remaining work 和 SLO slack，服务于 active-work/K 初始化、数据组织、endpoint 路由和提交策略；评价误差、配置 ranking、决策 regret 和预测区间。
 
@@ -89,11 +93,13 @@ endpoint KV 池占 GPU 显存 0.9、无压力 max 7–10%）5 策略 50–56k �
 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76
 塌到 0.06–0.07。prefix-affinity routing 2-ep/7B 中性 −0.1%、4-ep/1.5B +5.9%
 跨门禁；matched-KV 更支持 endpoint consolidation 是驱动，4-ep 饱和深度仍未完全
-隔离→④ 多模态泛化验证（图像，同一套策略代码）——**2026-08-01 已进入实施**：
-5K CLIP 画像确认 binding 是 CPU resize/normalize，不是 H2D 或 PG bulk read；下一步
-实现 PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor→pgvector，并与 bounded direct、
-Daft Native、vLLM pooling、Ray Data、naive 做同语义对照 → ⑤ 代价模型增加独立
-时间段或新 workload 校准。当前证据
+隔离→④ 多模态泛化验证（图像，同一套策略代码）——**2026-08-13 静态/观测证据已闭合，动态待接**：
+5K CLIP 画像确认 binding 是 CPU prepare 与 driver/Ray submission 的组合，不是 H2D 或 PG bulk
+read 单点；Daft built-in、Ray Data native 与 project frozen-static 的 operator-E2E/provenance 证据
+已完成，原生图像 four-job 40/40、Project staged descriptor + observe-only 24/24 也已归档。当前只
+证明静态阶段拆分、原生多 Job 干扰和低成本状态观测，不证明 state-aware 胜出；下一步先做 HSE
+static GPU 非劣门，再接两级 stage controller、CE5 在线驱动与小规模 pgvector 质量闭环 → ⑤ 代价
+模型增加独立时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
 独立拼接，two-level adaptive 和 SLO-EWMA 均未显著优于 fixed-50，
 prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-dependent**（2-ep 无压力近似中性、4-ep KV 饱和分化 27% 且排名反转），routing

@@ -1,5 +1,111 @@
 # Learning Notes
 
+## 2026-08-15 怎么把 7.10% 拆成 W 代价和 Project 路径代价
+
+旧 feeding gate 只比较了两个跨时间点：direct K-only 为 13,684.90 tok/s，完整 SAOR Project
+路径为 12,713.03 tok/s。它足以按预注册 95% 门停止 formal，却不能回答损失来自 work envelope、
+Ray/Daft/coordinator，还是两次运行的状态波动。因此新诊断在同一轮交错三条路径：D0 只有 K，D1
+在相同 direct HTTP 上增加 W，P0 再把相同 K+W 放回 PostgreSQL→Daft→Ray→bounded-ready FIFO。
+
+读比值时先看 `D1/D0`：它只改变 W，所以低于 95% 表示 W 本身有可复现容量代价。再看
+`P0/D1`：二者都有 K+W，低于 95% 才把额外差距指向 Project plumbing。D1 不看 Job ID、权重或
+ready window，所以它不是公平算法，也不是 Daft/Ray 原生 baseline，只是一个隔离变量的 Project
+diagnostic control。即便两项都通过，也只能说旧单点 7.10% 没有在本轮复现；旧
+`locked_failed_feeding` 仍永久保留。
+
+为什么不能只看 GPU utilization：D0、D1、P0 都可能显示 GPU 约 95% 以上，但 W admission 的空洞、
+Ray actor-ready、coordinator bounded wait 或 vLLM running 深度不同，仍会产生 tokens/s 差异。因此
+诊断同时保存 request/work occupancy、admission wait、Ray submit/actor-ready、vLLM
+running/waiting/KV、MFU、TTFT/ITL、JCT/SLO 与能耗。运行前 PG/Ray/endpoint clean 也单独落盘，
+避免再次把跨时间状态混成调度代价。服务器当前关机，现阶段只有合同、代码和本地测试，没有新 GPU
+性能结论。
+
+## 2026-08-14 direct ceiling 为什么也要显式 exactly-once evidence
+
+`direct_no_job` 会先用 `validate_results()` 验证 manifest request 与 HTTP completion 一一对应，但
+“内部已经校验”不等于 group record 能自动看见结论。group schema 后来统一读取
+`expected_count/completed_count/exactly_once`；direct adapter 若不显式返回这三个字段，正确完成的
+ceiling 会在 record 构造阶段以 `KeyError` fail closed。修复是在 adapter 边界把已经证明的事实
+结构化写出，而不是在 runner 里给缺失字段默认值。后者会让真正未校验的 direct 路径也可能假通过。
+
+因此 ceiling 的证据链是：immutable manifest → `validate_results()` → per-Job 三字段 → group
+exactly-once gate → feeding ratio。调度器路径与 direct 路径可以不同，但 correctness 证据合同必须
+同样完整。
+
+## 2026-08-14 三个 output-token 字段为什么不能混用
+
+同一条 chat-completions 请求现在会看到三个容易混淆的字段：
+
+- `estimated_output_tokens`：请求进入调度器前冻结的 admission estimate。本实验使用
+  `fixed_output_cap`，所以每条都必须严格等于 `completion_max_tokens=256`；它决定 K/W credit
+  是否允许请求进入。
+- `actual_output_tokens`：endpoint 实际生成的 token 数，来自 endpoint usage 或返回 token IDs；
+  completion 时用它修正实际服务量。
+- `client_estimated_output_tokens`：客户端把最终文本重新分词得到的事后诊断值。由于服务端和
+  客户端的文本清理/模板/tokenizer 边界可能不同，它不等于 admission estimate，也不能反过来
+  决定已经发生的调度。
+
+真实反例中 raw prompt=1001、chat template overhead=29、endpoint output=256，因此服务 work 为
+`1001+29+256=1286`；客户端重分词只有 207。审计若误用 207，会伪报 estimate 1237 并误杀正确
+运行。反过来，审计若无条件信任 trace 报出的 estimate=257/512，又可能把真实低估掩盖掉。
+所以当前 fail-closed 合同同时冻结 `output_bound_source=fixed_output_cap` 与 cap=256，并逐请求要求
+trace estimate 恰好等于 cap；实际 work 再检查不超过这个执行前上界。这是防止证据自报放大上界
+的工程决策，不是新的调度算法。
+
+`d6259f5f` 六臂 root 的 6,144 条请求实际都满足 estimate=256，并提供有价值的诊断性能；但它的
+validator 当时还没有上述逐行 equality gate，所以只能叫 diagnostic rehearsal。只有加入该 gate
+后的新提交、新 root 再次通过，才能叫最终有效 rehearsal；两者都不能自动授权 formal。
+
+## 2026-08-14 为什么“recovery grant 出现过”还不等于债务已偿还
+
+一次 `debt_recovery` grant 只证明 selector 选中过欠服务 Job，不能证明该请求完成，更不能证明
+累计 debt 已回到 cap 以下。新的 lossless ledger 因此增加 `service_completion`，离线按 endpoint+
+request ID 配对 grant→completion，并把 debt 从 `>=cap` 到 `<cap` 定义为一个 empirical repayment
+episode。formal rehearsal 必须同时满足 completion≥1、unmatched grant=0、episode 全部完成、
+unresolved=0；P95 repayment 还要在冻结的 30s 边界内。这是请求完成粒度的经验指标，不是 decode-
+token 级的理论偿还上界。
+
+Project mechanism 的“实验有效”与“方法胜出”也分开：correctness、ready observation、公平与机制
+ledger 完整时，实验有效；只有 foreground P99/lag headline 和吞吐、bulk JCT、SLO、最长无服务、
+repayment 保护项同时通过，才支持当前 workload 下的 constrained-Pareto claim。门没过应报告
+valid negative，不能把它重新命名成坏实验。frozen-static 没有 registered-ready ledger，所以该
+公平指标为 N/A，但仍参加吞吐/JCT/P99/SLO 比较。
+
+## 2026-08-13 为什么还要补 single-head shared FIFO
+
+当前 frozen-static 与 bounded-ready FIFO 之间同时变化了两件事：每个 Job 的固定分区变成共享
+容量，以及调度器从只看每个 Job 的一个队首变成看见有限个 concrete-ready requests。因此二者
+的吞吐差不能全部写成 bounded-ready 的收益。新的三臂 bridge 固定同一 workload、K/W、vLLM
+FCFS 和 FIFO 顺序：`frozen-static → single-head shared FIFO` 只观察共享容量；
+`single-head shared FIFO → bounded-ready FIFO` 才观察 ready exposure 与对应执行路径。
+汇总器只报告这两个观测效应，不自动判胜负或授权 formal。这仍是项目内部消融；Daft Native、
+Daft Ray 和 Ray Data native 不接 bounded-ready，必须在另一张系统级表中比较。
+
+这里的 FIFO、DRR、VTC 名称表示复用已有调度算法思想，不表示调用了 Daft/Ray/vLLM 的原生
+实现。本实验真正运行的是项目 `shared_credit.py` 中的 coordinator 选择逻辑；被它释放的请求再
+进入 upstream vLLM FCFS + continuous batching。只有调度所有权属于 Daft/Ray Data 自己的臂才叫
+原生系统 baseline。
+
+## 2026-08-13 bounded ready-set 为什么不是扩大 K
+
+`experiment_walkthrough.md` 新增 ready-set observation 修订说明。新 policy
+`saor_bounded_ready` 不提高 endpoint K/W，也不改变 vLLM FCFS/continuous batching；它只在
+现有 K/W 内把多个已经到达的具体 request 预注册给共享 coordinator，避免每个 Job 同步等待一个
+head 时把真实 backlog 隐藏掉。旧 `saor_bounded_priority` 保留为单-head 回归对照。提交 trace
+现在分开记录 ready、registered、granted、submit 与 service，便于判断问题发生在数据准备、共享
+credit 还是 vLLM 排队。首次服务器 rehearsal 还暴露出一个跨 trace 合同问题：actor submission
+trace 只拥有 ready/registered/granted，scheduler 的 submit 时间属于 request trace，审计器必须按
+`submission_id` 显式连接，不能假设两份 CSV 重复存储同一列。该问题已用生产 schema 回归测试
+覆盖。修复后的两个独立 rehearsal root 均完成：0.125K 两轮全过 development gate，0.25K 两轮
+bulk SLO 越界。这个结果只注册 formal candidate，尚不是正式性能或公平性结论。
+
+## 2026-08-12 bounded-priority SAOR 与事件账本
+
+`experiment_walkthrough.md` 的 2026-08-12 小节新增通俗说明：为什么新候选不是简单调大
+foreground 权重，actual-work debt/recovery lease/reclaim barrier 分别解决什么问题，以及为什么
+机制真值必须来自无损事件账本而不是 250 ms snapshot。当前只完成本地代码和测试；服务器已
+关闭，两档 GPU rehearsal 尚未运行，因此该讲解不包含新性能结论。
+
 ## 2026-08-09 多 Job 共享额度的异常生命周期
 
 共享 credit actor 的生命周期必须与一个 group run 一致，而不能只在成功路径结束。
@@ -384,3 +490,34 @@ KV/waiting/GPU 信号阈值、控制周期、endpoint 数和 token/frame/pixel �
 配置或模态 adapter；动作构造还要求显式提供相对 hold 的 service/goodput/tail/energy/switch
 边际预测，缺一项就拒绝构造，核心没有静默默认。phase-change 提前停止实验目前只支持低压增档动机，
 没有建立可靠降档区，所以还不能把某个 KV 峰值写进算法。
+
+## 2026-08-14 怎样读 SAOR final rehearsal
+
+这次实验先回答“算法账本是否真的闭环”，再回答“单次性能是否值得继续”，两者不能交换顺序。
+
+1. request admission 使用运行前已知的 `raw prompt + 29 template tokens + 256 output cap`；
+2. completion 后以 endpoint total tokens 作为 actual work，修正在线 debt；
+3. 离线 service lag 复用同一 endpoint actual work，但按 registered-ready completion 重放理想份额；
+4. 96/96 recovery、15/15 repayment 与 1,108/1,108 projection 证明这个冻结 workload 中机制闭环，
+   不构成任意到达或任意预测误差下的理论界。
+
+VTC-style 的 lag P95 为 $62,607.5=0.955W_e$，SAOR 为 $54,376=0.830W_e$；差值
+8,231.5 work 约等于 debt cap $H_B=8,192$。这说明算法确实在它直接控制的“累计服务欠账”方向
+产生作用，但不能把它直接翻译成“请求快了 13.15%”：本轮 foreground P99 反而略差 0.11%，
+只是吞吐、JCT、SLO 和最长无服务均保持在冻结保护范围内。
+
+strict-priority 的 foreground P99 更低，是以吞吐、bulk JCT/SLO 和最长无完成恶化换来的经验性
+latency boundary control；当前没有理论下界，不能称“理论边界”。frozen-static 不经过 shared-credit
+registered-ready ledger，因此 lag/no-service 是 N/A，不是 0。
+
+独立审核已经确认本 rehearsal 的 raw、SHA、指标和代码口径一致；授权字段和六臂全组件汇总也已
+补齐。但当前完整签名 bounded-client 为 13,684.90 tok/s，SAOR 为 12,713.03 tok/s，feeding ratio
+只有 92.898%，没有达到预注册 95%。所以机制 rehearsal 仍有效，当前性能 formal 却必须停止：
+不能因为 GPU utilization 接近 100% 而跳过门禁，也不能调 K/W、降低阈值或重跑到通过。
+
+这里的“有效”要再拆一层：新汇总器已经证明两侧 group CSV、manifest、运行合同、validation 与
+archive SHA 属于冻结 artifact，并复算 ratio；但运行前 PostgreSQL/Ray clean 没有结构化记录，且
+ceiling 只有一个 warmup-identity cell。因此论文只能写“一次性 gate 的负判决”，不能写“稳定损失
+7.10%”。封存 direct 的 predicted work 还漏掉每请求 29 个模板 token；它不影响 actual-token
+feeding，但 predicted/normalized-service 附属字段必须禁用。新代码已通过 typed work-cost 修正未来
+证据，不修改旧 raw。

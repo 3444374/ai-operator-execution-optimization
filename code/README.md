@@ -3,6 +3,25 @@
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
+SAOR native-system matched infrastructure is locally complete through its offline
+two-layer summarizer. The system layer contains Daft Native, Daft Ray, Ray Data,
+Project frozen-static, and bounded-ready SAOR; the Project-internal sanity layer
+contains bounded-ready FIFO/DRR/VTC-style/SAOR, with one shared physical SAOR run.
+This is tested local infrastructure only: no server/GPU rehearsal or formal evidence
+has been produced. The fail-closed summarizer validates native queue and Project credit
+end-state schemas separately, computes Job JCT from nominal scheduled release while retaining
+actual-launch jitter diagnostics, and keeps unsupported native request P99 and SLO independently
+`unavailable` with reasons. Publication is fail-closed rather than generation-atomic: a non-passed
+marker precedes individual CSV replacement, and passed `validation.json` is published last.
+
+The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
+execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:
+direct K-only, direct K+W, and Project bounded-ready FIFO K+W. Its direct K+W gate is endpoint-local
+and Job-unaware, while the Project arm reuses the existing Daft/Ray/shared-credit path. The runner
+stores a structured PostgreSQL/Ray/endpoint clean gate plus lossless K/W occupancy evidence, and the
+offline summary cannot alter the sealed negative formal decision. This infrastructure is locally
+tested but has not been run on the powered-off GPU server.
+
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
@@ -246,6 +265,36 @@ bulk-borrow/foreground-reclaim/bulk-reborrow phase audit. SLO-weighted release i
 rejected until per-Job SLO debt is connected; the current executable default uses
 `slo_weight=0`.
 
+The separate development policy `saor_bounded_priority` now implements the frozen
+v0.5.1 lexicographic contract without changing `saor_release`: debt-critical fitting
+heads receive one completion-corrected recovery lease; a debt-critical ready head that
+does not fit can open a head-specific reclaim barrier; an SLO priority window is evaluated
+next; all remaining opportunities use the original SAOR selector. Per-Job priority, SLO,
+window, and debt cap are explicit configuration, never inferred from Job names or arrival
+order. Scheduler timeout cancellation removes the waiter and closes any targeted hold.
+The coordinator emits a monotonic, lossless release-event ledger; 250 ms snapshots remain
+phase/resource diagnostics and are not mechanism truth. This path is locally verified and
+development-only: no new GPU rehearsal or formal performance claim exists yet.
+
+`saor_bounded_ready` is the observation-contract revision and deliberately has a
+different policy name. The old bounded-priority path remains a single-head regression
+baseline. For the new path, each Job pre-registers only concrete, already-arrived
+requests inside a finite window derived from its existing effective K and the sum of
+per-endpoint shared W; there is no extra tuned queue-size knob and no unbounded payload
+prefetch. The coordinator therefore sees a bounded ready set while vLLM still receives
+ordinary complete requests and retains FCFS/continuous-batching ownership. Submission
+trace schema 6 separates `ready`, credit `registered`, credit `granted`, `submit`, service,
+and completion time. Release-event schema 2 records actor-side registration and grant
+events with request IDs and epoch timestamps. The group runner uses submission traces to
+prove the concrete-ready lifecycle, then pairs foreground register-to-grant events inside
+the coordinator's single clock domain and fails closed on foreign fallback;
+`max_ready_requests_seen`/`max_ready_work_seen` audit the actual
+window. Local tests cover multi-candidate visibility, exactly-once ordering, finite-work
+validation, timeout cancellation, config routing, and fail-closed gate profiles. Two independent
+GPU development rehearsals now make the 0.125K guard a formal-registration candidate; the
+0.25K guard failed its bulk-SLO bound in both rounds. This is not a completed formal comparison
+or a fairness theorem.
+
 The pure ordered-release fast path publishes validated Job-head requests with a monotonic
 sequence and releases capacity on completion. Release work and predicted epoch service are separate fields, so a
 long request is not silently treated as service completed within the current control slot.
@@ -279,13 +328,15 @@ selection, while `healthy_endpoints()` remains a pure health query. Temporary
 request/work-credit exhaustion raises typed backpressure so the scheduler
 collects a completion and retries; a manifest-pinned request keeps both its
 endpoint and that endpoint's pool.
-Arrival replay is produced through a one-element bounded queue so waiting for
+Arrival replay is produced through a one-element bounded source queue so waiting for
 the next source arrival cannot block Ray completion collection. The scheduler
 keeps submit/routing/credit/lifecycle state on its main thread: it prioritizes
 an already-ready arrival, polls `ray.wait(timeout=0)` during arrival gaps, and
 uses blocking collection only when admission or active-work capacity is full.
 This preserves offered-load saturation while releasing request-level credit
 and recording completion timestamps promptly under sparse or bursty replay.
+Only `saor_bounded_ready` adds a second, independently bounded scheduler window in
+front of shared credit; its count/work limits are inherited from the frozen K/W contract.
 
 The shared-vLLM experiment runner can pin a distinct immutable request manifest
 and source offset for every job. This is required for staggered short/long or
@@ -627,6 +678,9 @@ Daft/Ray Data 观察臂。两个 endpoint shard 共享显式进程 wall deadline
 survivor、保存 job evidence 并 fail closed；HTTP 单 request timeout 不替代该生命周期门。
 项目 static/shared 因果 A/B 仍由
 `src/experiments/shared_vllm/` 执行。
+其中 `saor_projection_evidence.py` 是 selector-neutral 的离线证据边界：只从 schema-5 raw
+event 的 debt、active set、weights、own/foreign/candidate work 重算 projected debt 和离散
+overshoot bound，不调用在线 SAOR selector，避免实现与验证共享同一个公式错误。
 
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
 token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验

@@ -1,6 +1,7 @@
 """Shared-vLLM multi-job configuration, metrics, evidence, and runner."""
 
 from .config import (
+    CompletionWorkCostConfig,
     GroupRunIdentity,
     RunnerOptions,
     SharedVllmConfig,
@@ -19,10 +20,14 @@ from .evidence import (
     _validate_final_credit,
     _validate_job_evidence,
     _validate_replay_starts,
+    _validate_runtime_job_ids,
     _validate_runner_topology,
 )
 from .metrics import (
     active_set_phase_summary,
+    bounded_ready_event_summary,
+    bounded_saor_event_summary,
+    completion_accounted_service_fairness,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
@@ -30,7 +35,12 @@ from .metrics import (
     normalized_job_service_rates,
     shared_credit_trace_summary,
 )
-from .runner import _run_group, _validate_rehearsal_record, run_experiment
+from .runner import (
+    _run_group,
+    _validate_rehearsal_record,
+    run_experiment,
+    run_shared_vllm_group_cell,
+)
 from .runtime import _RayCreditObserver
 
 __all__ = [name for name in globals() if not name.startswith("__")]

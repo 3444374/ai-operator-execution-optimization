@@ -205,6 +205,54 @@ class BoundedHttpBaselineTests(unittest.TestCase):
         )
         self.assertTrue(all("prompt" not in payload for payload in payloads))
 
+    def test_work_gate_reserves_estimated_work_and_releases_on_completion(
+        self,
+    ) -> None:
+        active = 0
+        peak = 0
+        events = []
+
+        async def fake_transport(_url: str, _payload: dict) -> dict:
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0.005)
+            active -= 1
+            return {
+                "choices": [
+                    {
+                        "message": {"content": "ok"},
+                        "finish_reason": "length",
+                    }
+                ],
+                "usage": {"prompt_tokens": 4, "completion_tokens": 8},
+            }
+
+        results = asyncio.run(
+            run_bounded_http(
+                tuple(sample_request(i, endpoint_index=0) for i in range(4)),
+                BoundedHttpConfig(
+                    endpoint_urls=("http://ep0/v1/chat/completions",),
+                    model="model",
+                    concurrency_per_endpoint=2,
+                    timeout_s=30,
+                    api_key=None,
+                ),
+                transport=fake_transport,
+                work_limit_per_endpoint=12,
+                request_work_estimator=lambda request: request.estimated_work,
+                admission_event_sink=events.append,
+            )
+        )
+
+        self.assertEqual(peak, 1)
+        self.assertEqual(len(results), 4)
+        self.assertEqual(len(events), 8)
+        self.assertLessEqual(max(event.active_requests for event in events), 2)
+        self.assertLessEqual(max(event.active_work for event in events), 12)
+        self.assertEqual(events[-1].active_requests, 0)
+        self.assertEqual(events[-1].active_work, 0)
+
     def test_ignore_eos_is_explicit_and_opt_in(self) -> None:
         payloads: list[dict[str, object]] = []
 

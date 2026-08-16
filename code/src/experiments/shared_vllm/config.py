@@ -7,6 +7,7 @@ import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from src.experiments.calibration.contracts import (
     CalibrationContract,
@@ -25,15 +26,20 @@ from src.scheduling.runtime.saor_capacity import (
 
 POLICIES = {
     "direct_no_job",
+    "direct_work_limited",
     "independent_full",
     "static_partition",
     "shared_drr",
     "shared_fifo",
     "external_vtc",
     "saor_release",
+    "saor_bounded_priority",
+    "saor_bounded_ready",
+    "foreground_strict_priority",
     "state_aware_adaptive",
     "saor_capacity",
 }
+DIRECT_CONTROL_POLICIES = {"direct_no_job", "direct_work_limited"}
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
 
@@ -59,11 +65,17 @@ _RUNNER_OWNED_FLAGS = {
     "--setup",
     "--shared-credit-coordinator-name",
     "--shared-credit-job-weight",
+    "--shared-credit-job-priority",
+    "--shared-credit-job-slo-ms",
+    "--shared-credit-priority-window-ms",
+    "--shared-credit-job-debt-cap-work",
     "--shared-credit-namespace",
     "--shared-credit-policy",
     "--shared-credit-quantum",
     "--shared-credit-request-limit",
     "--shared-credit-work-limit",
+    "--shared-ready-observation-contract",
+    "--shared-ready-payload-bytes-limit",
     "--saor-entitlement-weight",
     "--saor-fairness-weight",
     "--saor-queue-weight",
@@ -112,6 +124,11 @@ class SharedVllmScenario:
     rows_per_jobs: tuple[int, ...] = ()
     request_limit_per_endpoint: int | None = None
     work_limit_per_endpoint: int | None = None
+    priorities: tuple[int, ...] = ()
+    slo_targets_s: tuple[float | None, ...] = ()
+    priority_windows_s: tuple[float | None, ...] = ()
+    debt_cap_fractions: tuple[float | None, ...] = ()
+    ready_observation_contract: str = "single_head"
 
     def row_count(self, job_index: int) -> int:
         """Return the immutable request count for one job."""
@@ -133,6 +150,30 @@ class SharedVllmScenario:
             self.request_limit_per_endpoint or default_request_limit,
             self.work_limit_per_endpoint or default_work_limit,
         )
+
+    def job_priority(self, job_index: int) -> int:
+        """Return the explicit diagnostic priority for one Job."""
+
+        if not 0 <= job_index < self.job_count:
+            raise ValueError("job_index is outside scenario job_count")
+        if self.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+            return self.priorities[job_index]
+        if self.policy != "foreground_strict_priority":
+            return 0
+        foreground_offset = max(self.arrival_offsets_s)
+        return int(self.arrival_offsets_s[job_index] == foreground_offset)
+
+    def job_slo_target_s(self, job_index: int) -> float | None:
+        return self.slo_targets_s[job_index] if self.slo_targets_s else None
+
+    def job_priority_window_s(self, job_index: int) -> float | None:
+        return self.priority_windows_s[job_index] if self.priority_windows_s else None
+
+    def job_debt_cap_work(self, job_index: int, work_limit: int) -> float | None:
+        if not self.debt_cap_fractions:
+            return None
+        fraction = self.debt_cap_fractions[job_index]
+        return None if fraction is None else fraction * work_limit
 
 @dataclass(frozen=True)
 class StateAwareControlConfig:
@@ -175,12 +216,92 @@ class SaorReleaseControlConfig:
 
 
 @dataclass(frozen=True)
+class CompletionWorkCostConfig:
+    """Typed request-work contract shared by admission and evidence audits."""
+
+    protocol: Literal["completions", "chat_completions"]
+    prompt_token_overhead_per_request: int
+    output_bound_source: Literal[
+        "prompt_only",
+        "fixed_output_cap",
+        "trace_target_output",
+    ]
+    completion_max_tokens: int
+
+    def __post_init__(self) -> None:
+        if self.protocol not in {"completions", "chat_completions"}:
+            raise ValueError("completion protocol is unsupported")
+        if (
+            not isinstance(self.prompt_token_overhead_per_request, int)
+            or isinstance(self.prompt_token_overhead_per_request, bool)
+            or self.prompt_token_overhead_per_request < 0
+        ):
+            raise ValueError("prompt token overhead must be non-negative")
+        if self.output_bound_source not in {
+            "prompt_only",
+            "fixed_output_cap",
+            "trace_target_output",
+        }:
+            raise ValueError("output bound source is unsupported")
+        if (
+            not isinstance(self.completion_max_tokens, int)
+            or isinstance(self.completion_max_tokens, bool)
+            or self.completion_max_tokens < 0
+        ):
+            raise ValueError("completion max tokens must be non-negative")
+
+    def validate_estimated_output_tokens(self, value: int) -> None:
+        """Reject trace estimates that do not follow the configured source."""
+
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError(
+                "estimated_output_tokens must be a non-negative integer"
+            )
+        # Engineering decision: the evidence trace must not be able to enlarge
+        # its own upper bound after admission. Formal currently freezes the
+        # fixed-cap branch; the other modes retain their native constraints.
+        if self.output_bound_source == "fixed_output_cap":
+            if value != self.completion_max_tokens:
+                raise ValueError(
+                    "estimated_output_tokens does not equal the configured "
+                    "completion cap"
+                )
+        elif self.output_bound_source == "prompt_only":
+            if value != 0:
+                raise ValueError(
+                    "prompt-only work must estimate zero output tokens"
+                )
+        elif value > self.completion_max_tokens:
+            raise ValueError(
+                "trace output estimate exceeds the configured completion cap"
+            )
+
+    def estimated_work(
+        self,
+        raw_prompt_tokens: int,
+        estimated_output_tokens: int,
+    ) -> int:
+        for value, name in (
+            (raw_prompt_tokens, "raw_prompt_tokens"),
+        ):
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        self.validate_estimated_output_tokens(estimated_output_tokens)
+        return (
+            raw_prompt_tokens
+            + self.prompt_token_overhead_per_request
+            + estimated_output_tokens
+        )
+
+
+@dataclass(frozen=True)
 class SharedVllmConfig:
     experiment_id: str
     seed: int
     warmup_runs_per_scenario: int
     formal_repeats: int
     endpoint_ids: tuple[str, ...]
+    service_signature: tuple[tuple[str, object], ...]
     request_limit_per_endpoint: int
     work_limit_per_endpoint: int
     credit_quantum: int
@@ -195,6 +316,76 @@ class SharedVllmConfig:
     state_aware_control: StateAwareControlConfig | None = None
     saor_capacity_control: SaorCapacityControlConfig | None = None
     saor_release_control: SaorReleaseControlConfig | None = None
+    ready_observation_contract: str = "single_head"
+    ready_payload_bytes_limit_per_job: int = 0
+    job_internal_arrival_contract: Literal["manifest_timed", "eager"] = (
+        "manifest_timed"
+    )
+
+    @property
+    def completion_work_cost(self) -> CompletionWorkCostConfig:
+        """Expose the CLI work-cost flags as one validated typed contract."""
+
+        protocol = _argument_value(
+            self.common_args,
+            "--completion-protocol",
+            "completions",
+        )
+        if protocol not in {"completions", "chat_completions"}:
+            raise ValueError("--completion-protocol is unsupported")
+        overhead_raw = _argument_value(
+            self.common_args,
+            "--completion-prompt-token-overhead",
+            "0",
+        )
+        try:
+            overhead = int(overhead_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "--completion-prompt-token-overhead must be an integer"
+            ) from exc
+        if overhead < 0:
+            raise ValueError(
+                "--completion-prompt-token-overhead must be non-negative"
+            )
+        return CompletionWorkCostConfig(
+            protocol=protocol,
+            prompt_token_overhead_per_request=overhead,
+            output_bound_source=_argument_value(
+                self.common_args,
+                "--output-cost-mode",
+                "prompt_only",
+            ),
+            completion_max_tokens=int(
+                _argument_value(
+                    self.common_args,
+                    "--completion-max-tokens",
+                    "0",
+                )
+            ),
+        )
+
+    @property
+    def completion_tokenizer_path(self) -> Path:
+        value = _argument_value(self.common_args, "--cost-tokenizer-id", "")
+        if not value:
+            raise ValueError("--cost-tokenizer-id is required")
+        return Path(value)
+
+    @property
+    def completion_prompt_format(self) -> str:
+        value = _argument_value(
+            self.common_args,
+            "--completion-prompt-format",
+            "raw",
+        )
+        if value not in {"raw", "chatml"}:
+            raise ValueError("--completion-prompt-format is unsupported")
+        return value
+
+    @property
+    def completion_returns_token_ids(self) -> bool:
+        return "--completion-return-token-ids" in self.common_args
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -203,6 +394,22 @@ def load_config(path: Path) -> SharedVllmConfig:
     fail_closed_rehearsal = decoded.get("fail_closed_rehearsal", False)
     if not isinstance(fail_closed_rehearsal, bool):
         raise ValueError("fail_closed_rehearsal must be a boolean")
+    ready_observation_contract = decoded.get(
+        "ready_observation_contract",
+        "single_head",
+    )
+    if ready_observation_contract not in {
+        "single_head",
+        "bounded_concrete_pre_registration",
+    }:
+        raise ValueError("ready_observation_contract is unsupported")
+    ready_payload_bytes_limit_per_job = _nonnegative_integer(
+        _expand_scalar(
+            decoded.get("ready_payload_bytes_limit_per_job", 0),
+            "ready_payload_bytes_limit_per_job",
+        ),
+        "ready_payload_bytes_limit_per_job",
+    )
     experiment_id = _nonempty_string(
         decoded.get("experiment_id"),
         "experiment_id",
@@ -260,8 +467,44 @@ def load_config(path: Path) -> SharedVllmConfig:
         decoded.get("common_args", []),
         "common_args",
     )
-    if "--arrival-replay" not in common_args:
-        raise ValueError("common_args must enable --arrival-replay")
+    service_signature_raw = decoded.get("service_signature", {})
+    if not isinstance(service_signature_raw, dict):
+        raise ValueError("service_signature must be an object")
+    service_signature = tuple(
+        sorted(
+            (
+                _nonempty_string(key, "service_signature key"),
+                _expand_scalar(value, f"service_signature.{key}"),
+            )
+            for key, value in service_signature_raw.items()
+        )
+    )
+    if service_signature:
+        signature = dict(service_signature)
+        signature_model = _nonempty_string(
+            signature.get("model"), "service_signature.model"
+        )
+        _nonempty_string(signature.get("service"), "service_signature.service")
+        configured_model = _argument_value(common_args, "--completion-model", "")
+        if configured_model and signature_model != configured_model:
+            raise ValueError(
+                "service_signature.model must equal --completion-model"
+            )
+    arrival_contract = decoded.get(
+        "job_internal_arrival_contract", "manifest_timed"
+    )
+    if arrival_contract not in {"manifest_timed", "eager"}:
+        raise ValueError("job_internal_arrival_contract is unsupported")
+    replay_enabled = "--arrival-replay" in common_args
+    if arrival_contract == "manifest_timed" and not replay_enabled:
+        raise ValueError(
+            "manifest_timed job_internal_arrival_contract requires "
+            "--arrival-replay"
+        )
+    if arrival_contract == "eager" and replay_enabled:
+        raise ValueError(
+            "eager job_internal_arrival_contract rejects --arrival-replay"
+        )
     gpu_peak_tflops = _nonnegative_float(
         _argument_value(common_args, "--gpu-peak-tflops", "0"),
         "--gpu-peak-tflops",
@@ -275,13 +518,18 @@ def load_config(path: Path) -> SharedVllmConfig:
     if not isinstance(scenarios_raw, list) or not scenarios_raw:
         raise ValueError("scenarios must be a non-empty list")
     scenarios = tuple(
-        _load_scenario(item, request_limit, work_limit)
+        _load_scenario(
+            item,
+            request_limit,
+            work_limit,
+            legacy_ready_observation_contract=ready_observation_contract,
+        )
         for item in scenarios_raw
     )
     scenario_ids = [item.scenario_id for item in scenarios]
     if len(set(scenario_ids)) != len(scenario_ids):
         raise ValueError("scenario_id values must be unique")
-    if any(scenario.policy == "direct_no_job" for scenario in scenarios):
+    if any(scenario.policy in DIRECT_CONTROL_POLICIES for scenario in scenarios):
         protocol = _argument_value(
             common_args,
             "--completion-protocol",
@@ -304,7 +552,7 @@ def load_config(path: Path) -> SharedVllmConfig:
             or any(not url.endswith(expected_path) for url in endpoint_urls)
         ):
             raise ValueError(
-                "direct_no_job completion endpoints must match protocol/topology"
+                "direct control completion endpoints must match protocol/topology"
             )
     executor = _argument_value(common_args, "--executor", "")
     if executor == "ray_actor":
@@ -365,10 +613,52 @@ def load_config(path: Path) -> SharedVllmConfig:
     if uses_saor_capacity and saor_capacity_control is None:
         raise ValueError("saor_capacity policy requires saor_capacity_control")
     uses_saor_release = any(
-        scenario.policy == "saor_release" for scenario in scenarios
+        scenario.policy in {
+            "saor_release",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+        }
+        for scenario in scenarios
     )
     if uses_saor_release and saor_release_control is None:
         raise ValueError("saor_release policy requires saor_release_control")
+    bounded_ready_scenarios = tuple(
+        scenario
+        for scenario in scenarios
+        if scenario.ready_observation_contract
+        == "bounded_concrete_pre_registration"
+    )
+    if any(
+        scenario.policy == "saor_bounded_ready"
+        and scenario not in bounded_ready_scenarios
+        for scenario in scenarios
+    ):
+        raise ValueError(
+            "saor_bounded_ready requires bounded concrete pre-registration"
+        )
+    if bounded_ready_scenarios and ready_payload_bytes_limit_per_job <= 0:
+        raise ValueError(
+            "bounded concrete pre-registration requires a positive per-Job "
+            "logical payload-byte limit"
+        )
+    shared_policies = {
+        "shared_drr",
+        "shared_fifo",
+        "external_vtc",
+        "saor_release",
+        "saor_bounded_priority",
+        "saor_bounded_ready",
+        "foreground_strict_priority",
+        "state_aware_adaptive",
+        "saor_capacity",
+    }
+    if any(
+        scenario.policy not in shared_policies
+        for scenario in bounded_ready_scenarios
+    ):
+        raise ValueError(
+            "bounded concrete pre-registration requires a shared-credit policy"
+        )
     if state_aware_control is not None and (
         state_aware_control.initial_request_limit != request_limit
         or state_aware_control.work_candidates[
@@ -396,6 +686,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         warmup_runs_per_scenario=warmups,
         formal_repeats=repeats,
         endpoint_ids=tuple(endpoint_ids_raw),
+        service_signature=service_signature,
         request_limit_per_endpoint=request_limit,
         work_limit_per_endpoint=work_limit,
         credit_quantum=quantum,
@@ -410,6 +701,11 @@ def load_config(path: Path) -> SharedVllmConfig:
         state_aware_control=state_aware_control,
         saor_capacity_control=saor_capacity_control,
         saor_release_control=saor_release_control,
+        ready_observation_contract=ready_observation_contract,
+        ready_payload_bytes_limit_per_job=(
+            ready_payload_bytes_limit_per_job
+        ),
+        job_internal_arrival_contract=arrival_contract,
     )
 
 def build_job_command(
@@ -422,8 +718,8 @@ def build_job_command(
     start_epoch_s: float,
     coordinator_name: str,
 ) -> list[str]:
-    if scenario.policy == "direct_no_job":
-        raise ValueError("direct_no_job is executed in-process by the group runner")
+    if scenario.policy in DIRECT_CONTROL_POLICIES:
+        raise ValueError("direct controls are executed in-process by the group runner")
     if not 0 <= job_index < scenario.job_count:
         raise ValueError("job_index is outside scenario job_count")
     if not options.ray_address:
@@ -458,8 +754,6 @@ def build_job_command(
         str(work_limit),
         "--ray-address",
         options.ray_address,
-        "--arrival-replay-start-epoch-s",
-        str(start_epoch_s + scenario.arrival_offsets_s[job_index]),
         "--submission-granularity",
         "request",
         "--experiment-id",
@@ -485,6 +779,13 @@ def build_job_command(
         "--flush-trace-output",
         str(job_stem.with_suffix(".flush.csv")),
     ]
+    if config.job_internal_arrival_contract == "manifest_timed":
+        command.extend(
+            [
+                "--arrival-replay-start-epoch-s",
+                str(start_epoch_s + scenario.arrival_offsets_s[job_index]),
+            ]
+        )
     source_row_offset = (
         scenario.source_row_offsets[job_index]
         if scenario.source_row_offsets
@@ -503,6 +804,9 @@ def build_job_command(
         "shared_fifo",
         "external_vtc",
         "saor_release",
+        "saor_bounded_priority",
+        "saor_bounded_ready",
+        "foreground_strict_priority",
         "state_aware_adaptive",
         "saor_capacity",
     }:
@@ -525,13 +829,59 @@ def build_job_command(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
+                    else scenario.policy
+                    if scenario.policy in {
+                        "saor_bounded_priority",
+                        "saor_bounded_ready",
+                    }
+                    else "strict_priority"
+                    if scenario.policy == "foreground_strict_priority"
                     else "drr"
                 ),
                 "--shared-credit-job-weight",
                 str(scenario.weights[job_index]),
+                "--shared-credit-job-priority",
+                str(scenario.job_priority(job_index)),
+                "--shared-ready-observation-contract",
+                scenario.ready_observation_contract,
             ]
         )
-        if scenario.policy == "saor_release":
+        if scenario.ready_observation_contract == (
+            "bounded_concrete_pre_registration"
+        ):
+            command.extend(
+                [
+                    "--shared-ready-payload-bytes-limit",
+                    str(config.ready_payload_bytes_limit_per_job),
+                ]
+            )
+        if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+            slo_target_s = scenario.job_slo_target_s(job_index)
+            priority_window_s = scenario.job_priority_window_s(job_index)
+            debt_cap_work = scenario.job_debt_cap_work(
+                job_index,
+                endpoint_work_limit,
+            )
+            if slo_target_s is not None:
+                command.extend(
+                    ["--shared-credit-job-slo-ms", f"{slo_target_s * 1000:g}"]
+                )
+            if priority_window_s is not None:
+                command.extend(
+                    [
+                        "--shared-credit-priority-window-ms",
+                        f"{priority_window_s * 1000:g}",
+                    ]
+                )
+            if debt_cap_work is not None:
+                command.extend(
+                    ["--shared-credit-job-debt-cap-work", f"{debt_cap_work:g}"]
+                )
+        if scenario.policy in {
+            "saor_release",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+        }:
             control = config.saor_release_control
             if control is None:
                 raise ValueError("saor_release control configuration is missing")
@@ -553,6 +903,8 @@ def _load_scenario(
     raw: object,
     request_limit: int,
     work_limit: int,
+    *,
+    legacy_ready_observation_contract: str,
 ) -> SharedVllmScenario:
     if not isinstance(raw, dict):
         raise ValueError("each scenario must be an object")
@@ -562,6 +914,18 @@ def _load_scenario(
     policy = _nonempty_string(raw.get("policy"), "policy")
     if policy not in POLICIES:
         raise ValueError(f"unknown shared-vLLM policy: {policy}")
+    scenario_ready_observation = raw.get("ready_observation_contract")
+    if scenario_ready_observation is None:
+        scenario_ready_observation = (
+            legacy_ready_observation_contract
+            if policy == "saor_bounded_ready"
+            else "single_head"
+        )
+    if scenario_ready_observation not in {
+        "single_head",
+        "bounded_concrete_pre_registration",
+    }:
+        raise ValueError("scenario ready_observation_contract is unsupported")
     job_count = _positive_integer(raw.get("job_count"), "job_count")
     scenario_request_raw = raw.get("request_limit_per_endpoint")
     scenario_work_raw = raw.get("work_limit_per_endpoint")
@@ -592,7 +956,11 @@ def _load_scenario(
         else None
     )
     if (
-        policy in {"state_aware_adaptive", "saor_capacity", "direct_no_job"}
+        policy in {
+            "state_aware_adaptive",
+            "saor_capacity",
+            *DIRECT_CONTROL_POLICIES,
+        }
         and scenario_request_limit is not None
     ):
         raise ValueError(
@@ -659,6 +1027,55 @@ def _load_scenario(
         "arrival_offsets_s",
         job_count,
     )
+    bounded_fields = {
+        "priorities",
+        "slo_targets_s",
+        "priority_windows_s",
+        "debt_cap_fractions",
+    }
+    if policy in {"saor_bounded_priority", "saor_bounded_ready"}:
+        priorities = _nonnegative_integer_tuple(
+            raw.get("priorities"), "priorities", job_count
+        )
+        slo_targets_s = _optional_positive_float_tuple(
+            raw.get("slo_targets_s"), "slo_targets_s", job_count
+        )
+        priority_windows_s = _optional_positive_float_tuple(
+            raw.get("priority_windows_s"), "priority_windows_s", job_count
+        )
+        debt_cap_fractions = _optional_fraction_tuple(
+            raw.get("debt_cap_fractions"), "debt_cap_fractions", job_count
+        )
+        for index, priority in enumerate(priorities):
+            has_slo = slo_targets_s[index] is not None
+            has_window = priority_windows_s[index] is not None
+            has_cap = debt_cap_fractions[index] is not None
+            if priority > 0 and not (has_slo and has_window):
+                raise ValueError(
+                    "bounded priority Job requires an SLO target and priority window"
+                )
+            if priority == 0 and (has_slo or has_window):
+                raise ValueError(
+                    "non-priority Job must not define an SLO target or priority window"
+                )
+            if priority > 0 and has_cap:
+                raise ValueError("priority and debt-cap roles must remain distinct")
+    else:
+        if any(field in raw for field in bounded_fields):
+            raise ValueError(
+                "bounded per-Job fields require a bounded SAOR policy"
+            )
+        priorities = ()
+        slo_targets_s = ()
+        priority_windows_s = ()
+        debt_cap_fractions = ()
+    if policy == "foreground_strict_priority" and (
+        job_count != 2 or offsets.count(max(offsets)) != 1
+    ):
+        raise ValueError(
+            "foreground_strict_priority requires exactly two Jobs and a "
+            "unique later foreground arrival"
+        )
     source_row_offsets = _nonnegative_integer_tuple(
         raw.get("source_row_offsets", [0] * job_count),
         "source_row_offsets",
@@ -671,8 +1088,8 @@ def _load_scenario(
     )
     if any(request_manifests) and not all(request_manifests):
         raise ValueError("request_manifests must be provided for every job or none")
-    if policy == "direct_no_job" and not all(request_manifests):
-        raise ValueError("direct_no_job requires immutable request_manifests")
+    if policy in DIRECT_CONTROL_POLICIES and not all(request_manifests):
+        raise ValueError("direct controls require immutable request_manifests")
     if all(request_manifests) and any(source_row_offsets):
         raise ValueError(
             "manifest-selected jobs require zero source_row_offsets"
@@ -690,6 +1107,11 @@ def _load_scenario(
         rows_per_jobs=rows_per_jobs,
         request_limit_per_endpoint=scenario_request_limit,
         work_limit_per_endpoint=scenario_work_limit,
+        priorities=priorities,
+        slo_targets_s=slo_targets_s,
+        priority_windows_s=priority_windows_s,
+        debt_cap_fractions=debt_cap_fractions,
+        ready_observation_contract=scenario_ready_observation,
     )
 
 def _local_limits(
@@ -1231,6 +1653,38 @@ def _nonnegative_integer_tuple(
     if not isinstance(value, list) or len(value) != expected:
         raise ValueError(f"{label} must contain one value per job")
     return tuple(_nonnegative_integer(item, label) for item in value)
+
+
+def _optional_positive_float_tuple(
+    value: object,
+    label: str,
+    expected: int,
+) -> tuple[float | None, ...]:
+    if not isinstance(value, list) or len(value) != expected:
+        raise ValueError(f"{label} must contain one value per job")
+    resolved = []
+    for index, item in enumerate(value):
+        if item is None:
+            resolved.append(None)
+            continue
+        number = _nonnegative_float(
+            _expand_scalar(item, f"{label}[{index}]"), f"{label}[{index}]"
+        )
+        if number <= 0:
+            raise ValueError(f"{label} values must be positive when present")
+        resolved.append(number)
+    return tuple(resolved)
+
+
+def _optional_fraction_tuple(
+    value: object,
+    label: str,
+    expected: int,
+) -> tuple[float | None, ...]:
+    fractions = _optional_positive_float_tuple(value, label, expected)
+    if any(item is not None and item > 1 for item in fractions):
+        raise ValueError(f"{label} values must lie in (0, 1]")
+    return fractions
 
 def _optional_path_tuple(
     value: object,

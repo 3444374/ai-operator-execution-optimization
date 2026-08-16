@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "conclusion": "diagnostic_only",
+  "matrix_roots": [
+    "/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260813_2de6f93_r1",
+    "/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260813_2de6f93_r2"
+  ],
+  "cap_passed_both_rounds": {
+    "active_set_saor_bounded_priority_0125k": false,
+    "active_set_saor_bounded_priority_025k": false
+  },
+  "thresholds": {
+    "foreground_p99_s": 30.7,
+    "foreground_slo_violation": 0.01,
+    "bulk_slo_violation": 0.723,
+    "tokens_per_s": 9984.0
+  },
+  "slowdown_is_diagnostic_only": true,
+  "errors": [
+    "round 2 is not a clean rehearsal",
+    "round 2 does not contain the frozen four arms"
+  ]
+}

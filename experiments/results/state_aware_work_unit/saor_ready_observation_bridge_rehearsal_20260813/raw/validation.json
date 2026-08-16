@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "conclusion": "bridge_effects_observed",
+  "experiment_layer": "project_observation_bridge",
+  "evaluation_scope": "single_tenant_multi_job",
+  "fairness_mode": "differentiated_service",
+  "native_baseline_count": 0,
+  "round_count": 2,
+  "shared_capacity_effect_decided": false,
+  "ready_observation_effect_decided": false,
+  "formal_authorized": false,
+  "matrix_roots": [
+    "/root/autodl-tmp/experiment-artifacts/saor_ready_observation_bridge_rehearsal_3cfc5eb2_r1",
+    "/root/autodl-tmp/experiment-artifacts/saor_ready_observation_bridge_rehearsal_3cfc5eb2_r2"
+  ],
+  "errors": []
+}
