@@ -1,5 +1,23 @@
 # Learning Notes
 
+## 2026-08-16 为什么同一合同还需要 matrix instance identity
+
+commit、config、manifest、service signature 和 scheduler owner 只能说明两次矩阵运行遵守同一份
+实验合同，不能说明某个 cell 确实来自这一次物理运行。若两个 output root 使用相同合同，旧验证器
+允许把 root B 的一个 cell 替换进 root A，因为逐 cell 的这些字段仍全部相等。新的
+`matrix_instance_id` 在独立授权通过后为每次矩阵随机生成，并同时写入 contract snapshot、index 与
+所有 cell；离线验证逐项等值检查，因此跨 root 混合会 fail closed。它解决的是运行实例归属，不替代
+authorization 或 artifact SHA。
+
+证据状态也要区分“被授权运行”与“验证器核对过授权 artifact”。仓库自身始终不能宣称授权，所以即使
+summary 通过，仍写 `formal_authorized=false`；另用 `formal_authorization_verified=true` 表示本次
+sealed run 的独立授权身份已经被验证。二者合成一个布尔值会把事后证据核验误写成新的授权决定。
+
+最后，失败证据与成功 CSV 使用同一审计纪律：异常消息落盘前统一脱敏；有效 physical cell 的
+`server_version`/`pgvector_version` 必须来自 timed PostgreSQL source 的真实 shard/Job 摘要，并逐
+cell 写入 `all_runs.csv`。目录名、部署说明或配置默认值都不能代替实际版本证据。本次仅修合同与本地
+测试，native-system GPU/formal 继续停止。
+
 ## 2026-08-16 为什么 formal 授权必须是独立 artifact
 
 配置里的一个布尔值或命令行 `--force` 不能证明“这次运行已经被审核”：它们既不绑定代码版本，也不

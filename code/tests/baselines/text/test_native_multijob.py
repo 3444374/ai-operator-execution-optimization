@@ -72,6 +72,8 @@ class _FakeProcess:
                     "source_timing_boundary": "inside_job_barrier",
                     "source_read_s": 0.01,
                     "source_validation_status": "ok",
+                    "server_version": "18.4",
+                    "pgvector_version": "0.8.5",
                     **adapter_provenance(adapter).summary_fields(),
                 }
             ),
@@ -558,6 +560,30 @@ class NativeMultiJobTests(unittest.TestCase):
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")
+
+    def test_summary_missing_database_version_fails_closed(self) -> None:
+        class MissingVersionProcess(_FakeProcess):
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                super().__init__(command, **kwargs)
+                output = Path(command[command.index("--output-dir") + 1])
+                summary = json.loads((output / "summary.json").read_text())
+                summary["pgvector_version"] = "not_applicable"
+                (output / "summary.json").write_text(
+                    json.dumps(summary), encoding="utf-8"
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "native job shards failed"):
+                run_native_multijob(
+                    self._config(root),
+                    runner_script=root / "run_official_baseline.py",
+                    popen_factory=MissingVersionProcess,
+                    queue_waiter=self._queues,
+                    counter_sampler=self._counters,
+                    cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=self._ray_nofile,
+                )
 
     def test_records_commit_and_releases_host_scope_lease(self) -> None:
         class Lease:

@@ -14,6 +14,14 @@ publishes only `all_runs.csv` with `status/failure_reason` plus failed `validati
 selector, Job, and resource ranking tables are withheld. This is local safety infrastructure, not new
 server/GPU evidence and not an authorization to resume the stopped experiment.
 
+Each authorized physical matrix now receives a fresh `matrix_instance_id` after authorization and
+copies it into the immutable snapshot, index, and every cell; mixing a cell from another output root
+therefore fails offline validation. Persisted exception text is scrubbed with the shared credential
+redactor. Every valid cell and every `all_runs.csv` row also carries actual `server_version` and
+`pgvector_version`, collected from the timed PostgreSQL source evidence rather than inferred from a
+directory name. A passed summary keeps `formal_authorized=false` and records the narrower fact
+`formal_authorization_verified=true`.
+
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:
 direct K-only, direct K+W, and Project bounded-ready FIFO K+W. Its direct K+W gate is endpoint-local

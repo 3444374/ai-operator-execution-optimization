@@ -30,6 +30,16 @@ selector development executes only bounded-ready FIFO/DRR/VTC-style. The
 selector report reuses the first matching formal SAOR cells, so SAOR is not
 rerun merely to populate the second table.
 
+After authorization succeeds, the runner creates one fresh `matrix_instance_id`
+and writes it into the contract snapshot, matrix index, and every cell. The
+offline validator rejects any cell copied from another matrix root even when the
+two roots share the same commit, config, manifest, service, and authorization.
+Valid cell evidence must also carry the actual PostgreSQL `server_version` and
+`pgvector_version` observed by the timed source path; missing, unavailable, or
+drifting shard/Job versions fail closed. Persisted runner and summarizer failure
+text is credential-redacted. A passed summary reports
+`formal_authorization_verified=true` while keeping `formal_authorized=false`.
+
 The offline summarizer also requires the same authorization artifact and
 recomputes the contract snapshot, manifest, service signature, scheduler owner,
 schedule, index, and cell identities. Failed or tampered matrices retain

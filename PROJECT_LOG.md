@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-08-16 native-system evidence instance follow-up（本地）
+
+- 基于已合入的 `main@32572eec` 建立 follow-up，继续停止 native-system matched GPU/formal；不改写
+  hotfix 历史，也不连接服务器或运行 GPU cell。
+- 每次矩阵在独立授权通过后生成唯一 `matrix_instance_id`，并绑定 contract snapshot、index 与每个
+  cell；新增跨 root 替换 cell 的反例，防止同 commit/config/manifest/service 合同的两次运行互相拼接。
+- runner 和 summarizer 的所有持久化异常统一使用共享 `redact_text()`，防止数据库 DSN 凭据进入
+  `matrix_index.json`、`all_runs.csv` 或 `validation.json`。
+- 原生 timed PostgreSQL shard 与 Project Job 摘要现在必须提供一致的实际 `server_version` 和
+  `pgvector_version`；valid cell 将二者写入每条 `all_runs.csv`，缺失、不可用或跨 shard/Job 漂移均
+  fail closed。
+- passed validation 保持 `formal_authorized=false`，新增
+  `formal_authorization_verified=true` 只陈述独立 artifact 已核验，不把事后验证误写成仓库授权。
+- native-system/原生 multi-job/官方 CLI 定向回归分别 42/21/11 项通过；SAOR discover 95 项通过；
+  compileall、`git diff --check` 与 6,507 文件全仓隐私扫描通过。全仓单进程 discover 仍受既有
+  tests/src `experiments` 包名冲突、本机缺 Daft 和沙箱 Ray `sysctl` 限制影响，不将其误报为通过。
+- 本次不处理 runner 跨 scripts import 与 summary 长函数等结构债，避免扩大安全 follow-up；不改变
+  既有 SAOR mechanism rehearsal、feeding-negative 或 `locked_failed_feeding` 结论。
+
 ## 2026-08-16 native-system formal fail-closed hotfix（本地）
 
 - 从 `main@d4dfdbfe` 建立 `codex/native-system-formal-hotfix`，继续停止 native-system matched

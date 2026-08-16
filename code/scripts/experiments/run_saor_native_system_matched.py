@@ -297,6 +297,18 @@ def _normalize_native(
     arm: MatchedArm, record: dict[str, object]
 ) -> dict[str, object]:
     jobs = record["jobs"]
+    if not isinstance(jobs, list):
+        raise RuntimeError("native Job evidence must encode a list")
+    shard_provenance = [
+        shard
+        for job in jobs
+        if isinstance(job, dict)
+        for shard in job.get("shard_provenance", [])
+        if isinstance(shard, dict)
+    ]
+    versions = _consistent_database_versions(
+        shard_provenance, "native shard provenance"
+    )
     service_path = Path(str(record["service_counters"]))
     service_payload = json.loads(service_path.read_text(encoding="utf-8"))
     deltas = service_payload.get("delta", {})
@@ -308,6 +320,7 @@ def _normalize_native(
     )
     return {
         **record,
+        **versions,
         "command": record.get("command", []),
         "implementation_source": "official_native_single_cell_runner",
         "start_epoch_s": record["t0_epoch_s"],
@@ -383,6 +396,7 @@ def _normalize_project(
         summaries.append(rows[0])
     if len(summaries) != len(observed):
         raise RuntimeError("Project Job summary evidence is incomplete")
+    versions = _consistent_database_versions(summaries, "Project Job summary")
     jobs = [
         {
             "job_id": f"job-{index}",
@@ -419,6 +433,7 @@ def _normalize_project(
     command_evidence = json.loads(command_files[0].read_text(encoding="utf-8"))
     return {
         **record,
+        **versions,
         "shared_credit_final": json.dumps(shared_credit, sort_keys=True),
         "command": [
             token
@@ -451,6 +466,28 @@ def _normalize_project(
         },
         "status": "passed",
     }
+
+
+def _consistent_database_versions(
+    records: list[dict[str, object]], evidence_name: str
+) -> dict[str, str]:
+    """Require one actual PostgreSQL/pgvector identity across a physical cell."""
+
+    if not records:
+        raise RuntimeError(f"{evidence_name} is empty")
+    output: dict[str, str] = {}
+    for field in ("server_version", "pgvector_version"):
+        observed = [str(record.get(field, "")).strip() for record in records]
+        values = set(observed)
+        if any(not value for value in observed) or len(values) != 1:
+            raise RuntimeError(f"{evidence_name} {field} is missing or drifted")
+        value = next(iter(values))
+        if value.lower() in {
+            "not_applicable", "not_installed", "unavailable", "unknown",
+        }:
+            raise RuntimeError(f"{evidence_name} {field} is not actual evidence")
+        output[field] = value
+    return output
 
 
 def run(options: CliOptions) -> dict[str, object]:

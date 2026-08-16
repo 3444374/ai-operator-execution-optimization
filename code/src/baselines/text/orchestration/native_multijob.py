@@ -521,6 +521,8 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         "source_timing_boundary",
         "source_read_s",
         "source_validation_status",
+        "server_version",
+        "pgvector_version",
     )
     provenance_fields = required[:5]
     mismatches = {
@@ -544,6 +546,15 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         raise ValueError(f"shard source timing mismatch for {arm.arm_id}: {summary_path}")
     if not isinstance(summary["source_read_s"], (int, float)) or summary["source_read_s"] < 0:
         raise ValueError(f"shard source_read_s is invalid: {summary_path}")
+    for field in ("server_version", "pgvector_version"):
+        value = summary.get(field)
+        if (
+            not isinstance(value, str)
+            or not value.strip()
+            or value.strip().lower()
+            in {"not_applicable", "not_installed", "unavailable", "unknown"}
+        ):
+            raise ValueError(f"shard {field} is invalid: {summary_path}")
     return {field: summary[field] for field in required}
 
 

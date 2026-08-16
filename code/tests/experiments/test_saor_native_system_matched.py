@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -36,6 +37,7 @@ from src.experiments.saor.native_system_matched import (
     sha256_payload,
 )
 from scripts.experiments.run_saor_native_system_matched import (
+    _consistent_database_versions,
     _normalize_native,
     _normalize_project,
     _canonical_config_path,
@@ -49,6 +51,21 @@ import src.experiments.saor.native_system_summary as summary_module
 
 
 class MatchedSystemContractTest(unittest.TestCase):
+    def test_database_version_evidence_requires_every_record_and_one_value(self) -> None:
+        valid = {"server_version": "18.4", "pgvector_version": "0.8.5"}
+        self.assertEqual(
+            _consistent_database_versions([valid, dict(valid)], "test records"),
+            valid,
+        )
+        with self.assertRaisesRegex(RuntimeError, "missing or drifted"):
+            _consistent_database_versions(
+                [valid, {"server_version": "18.4"}], "test records"
+            )
+        with self.assertRaisesRegex(RuntimeError, "missing or drifted"):
+            _consistent_database_versions(
+                [valid, {**valid, "server_version": "18.3"}], "test records"
+            )
+
     def test_offline_summary_emits_two_layers_from_one_physical_saor_run(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -92,6 +109,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                 ],
             )
             first_run = next(row for row in all_runs if row["arm_id"] == "daft_native")
+            self.assertEqual(first_run["server_version"], "18.4")
+            self.assertEqual(first_run["pgvector_version"], "0.8.5")
             self.assertEqual(float(first_run["service_tokens_per_s"]), 30.0)
             self.assertEqual(first_run["request_p99_status"], "unavailable")
             self.assertTrue(first_run["request_p99_reason"])
@@ -129,7 +148,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "status": "passed",
                     "comparison_scope": "complete_system_empirical_plus_project_internal_sanity",
                     "selector_victory_decided": False,
-                    "formal_authorized": True,
+                    "formal_authorized": False,
+                    "formal_authorization_verified": True,
                     "native_baseline_count": 3,
                     "project_control_count": 5,
                 },
@@ -197,6 +217,10 @@ class MatchedSystemContractTest(unittest.TestCase):
             native = next(cell for cell in index["cells"] if cell["arm_id"] == "daft_native")
             native["command"].extend(["--max-active-work", "65536"])
 
+        def missing_database_version(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["server_version"] = "unavailable"
+
         corruptions = {
             "missing arm": missing_arm,
             "missing repeat": missing_repeat,
@@ -210,6 +234,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             "missing resource trace": missing_resource,
             "Project K/W drift": project_kw_drift,
             "native Project flag": native_project_flag,
+            "missing database version": missing_database_version,
         }
         for name, corrupt in corruptions.items():
             with self.subTest(name=name), TemporaryDirectory() as temporary:
@@ -288,6 +313,52 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "failed",
                 )
                 self.assertFalse((output_dir / "system_summary.csv").exists())
+
+    def test_summary_rejects_cell_from_another_matrix_instance(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_a = root / "matrix-a"
+            matrix_b = root / "matrix-b"
+            output_dir = root / "summary"
+            authorization = self._write_complete_summary_fixture(matrix_a)
+
+            index_a_path = matrix_a / "matrix_index.json"
+            snapshot_a_path = matrix_a / "matrix_contract_snapshot.json"
+            index_a = json.loads(index_a_path.read_text(encoding="utf-8"))
+            snapshot_a = json.loads(snapshot_a_path.read_text(encoding="utf-8"))
+            snapshot_a["runtime_identity"]["matrix_instance_id"] = "a" * 32
+            index_a["matrix_instance_id"] = "a" * 32
+            for cell in index_a["cells"]:
+                cell["matrix_instance_id"] = "a" * 32
+            snapshot_a_path.write_text(json.dumps(snapshot_a), encoding="utf-8")
+            index_a["contract_snapshot_sha256"] = sha256_file(snapshot_a_path)
+            index_a_path.write_text(json.dumps(index_a), encoding="utf-8")
+
+            shutil.copytree(matrix_a, matrix_b)
+            index_b_path = matrix_b / "matrix_index.json"
+            snapshot_b_path = matrix_b / "matrix_contract_snapshot.json"
+            index_b = json.loads(index_b_path.read_text(encoding="utf-8"))
+            snapshot_b = json.loads(snapshot_b_path.read_text(encoding="utf-8"))
+            snapshot_b["runtime_identity"]["matrix_instance_id"] = "b" * 32
+            index_b["matrix_instance_id"] = "b" * 32
+            for cell in index_b["cells"]:
+                cell["matrix_instance_id"] = "b" * 32
+            snapshot_b_path.write_text(json.dumps(snapshot_b), encoding="utf-8")
+            index_b["contract_snapshot_sha256"] = sha256_file(snapshot_b_path)
+            index_b_path.write_text(json.dumps(index_b), encoding="utf-8")
+
+            index_a["cells"][0] = index_b["cells"][0]
+            index_a_path.write_text(json.dumps(index_a), encoding="utf-8")
+
+            self.assertFalse(summarize_matched_system(
+                matrix_a,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
+            validation = json.loads(
+                (output_dir / "validation.json").read_text(encoding="utf-8")
+            )
+            self.assertIn("matrix_instance_id", " ".join(validation["errors"]))
 
     def test_summary_accepts_real_credit_history_but_rejects_each_live_field(self) -> None:
         mutations: dict[str, object] = {
@@ -402,7 +473,10 @@ class MatchedSystemContractTest(unittest.TestCase):
             index = json.loads(index_path.read_text(encoding="utf-8"))
             index["status"] = "failed"
             index["cells"][0]["status"] = "failed"
-            index["cells"][0]["error"] = "cell exploded"
+            index["cells"][0]["error"] = (
+                "cell exploded at "
+                "postgresql://postgres:postgres@localhost/test"
+            )
             index_path.write_text(json.dumps(index), encoding="utf-8")
 
             self.assertFalse(summarize_matched_system(
@@ -416,7 +490,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             failed_rows = self._read_csv(output_dir / "all_runs.csv")
             self.assertEqual(failed_rows[0]["status"], "failed")
-            self.assertEqual(failed_rows[0]["failure_reason"], "cell exploded")
+            self.assertIn(
+                "postgresql://postgres:***@localhost/test",
+                failed_rows[0]["failure_reason"],
+            )
+            self.assertNotIn("postgres:postgres@", failed_rows[0]["failure_reason"])
             self.assertEqual(
                 json.loads((output_dir / "validation.json").read_text())["status"],
                 "failed",
@@ -712,8 +790,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             (output_dir / "traces").mkdir()
             for index, total_rows in enumerate((2, 1)):
                 (output_dir / "jobs" / f"job{index}.runs.csv").write_text(
-                    "total_rows,request_manifest_validation_status,db_fetch_s\n"
-                    f"{total_rows},ok,0.1\n",
+                    "total_rows,request_manifest_validation_status,db_fetch_s,"
+                    "server_version,pgvector_version\n"
+                    f"{total_rows},ok,0.1,18.4,0.8.5\n",
                     encoding="utf-8",
                 )
             (output_dir / "traces" / "cell.commands.json").write_text(
@@ -801,7 +880,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             service_path = path.parent / "service.json"
             service_path.write_text(json.dumps({"delta": {}}), encoding="utf-8")
             normalized = _normalize_native(arm, {
-                "jobs": [], "service_counters": str(service_path),
+                "jobs": [{"shard_provenance": [{
+                    "server_version": "18.4", "pgvector_version": "0.8.5",
+                }]}], "service_counters": str(service_path),
                 "t0_epoch_s": 100.0, "arm_barrier_jct_s": 1.0,
                 "gpu_resource_trace": "resources.csv", "gpu_summary": {},
                 "gauge_summary": {},
@@ -826,7 +907,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             service_path.write_text(json.dumps({"delta": {}}), encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "request-tail"):
                 _normalize_native(malformed, {
-                    "jobs": [], "service_counters": str(service_path),
+                    "jobs": [{"shard_provenance": [{
+                        "server_version": "18.4", "pgvector_version": "0.8.5",
+                    }]}], "service_counters": str(service_path),
                     "t0_epoch_s": 100.0, "arm_barrier_jct_s": 1.0,
                     "gpu_resource_trace": "resources.csv", "gpu_summary": {},
                     "gauge_summary": {},
@@ -1173,6 +1256,22 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertEqual(persisted["status"], "completed")
             self.assertEqual(len(persisted["cells"]), len(expected))
+            matrix_instance_id = persisted["matrix_instance_id"]
+            self.assertEqual(len(matrix_instance_id), 32)
+            self.assertEqual(
+                {record["matrix_instance_id"] for record in persisted["cells"]},
+                {matrix_instance_id},
+            )
+            snapshot = json.loads(
+                (
+                    Path(config.matrix_output_root)
+                    / "matrix_contract_snapshot.json"
+                ).read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                snapshot["runtime_identity"]["matrix_instance_id"],
+                matrix_instance_id,
+            )
 
     def test_non_rehearsal_requires_authorization_before_any_side_effect(self) -> None:
         with self._config() as path:
@@ -1321,13 +1420,19 @@ class MatchedSystemContractTest(unittest.TestCase):
             def idle_gate(position: str) -> None:
                 idle_calls.append(position)
                 if position == "after":
-                    raise RuntimeError("after idle failed")
+                    raise RuntimeError(
+                        "after idle failed at "
+                        "postgresql://postgres:postgres@localhost/test"
+                    )
 
             with self.assertRaisesRegex(RuntimeError, "executor failed"):
                 run_matched_system(
                     path,
                     native_executor=lambda *_args: (_ for _ in ()).throw(
-                        RuntimeError("executor failed")
+                        RuntimeError(
+                            "executor failed at "
+                            "postgresql://postgres:postgres@localhost/test"
+                        )
                     ),
                     project_executor=lambda *_args: {},
                     idle_gate=idle_gate,
@@ -1342,8 +1447,15 @@ class MatchedSystemContractTest(unittest.TestCase):
                 (path.parent / "matrix-output" / "matrix_index.json").read_text()
             )
             self.assertIn("executor failed", persisted["cells"][0]["error"])
+            self.assertNotIn(
+                "postgres:postgres@", persisted["cells"][0]["error"]
+            )
             self.assertIn(
                 "after idle failed",
+                persisted["cells"][0]["details"]["after_idle_error"],
+            )
+            self.assertNotIn(
+                "postgres:postgres@",
                 persisted["cells"][0]["details"]["after_idle_error"],
             )
 
@@ -1400,7 +1512,10 @@ class MatchedSystemContractTest(unittest.TestCase):
                     instrumenter=lambda *_args: None,
                     repository_commit_getter=lambda: "abc123",
                     host_lease_acquirer=lambda *_args, **_kwargs: (
-                        (_ for _ in ()).throw(RuntimeError("lease unavailable"))
+                        (_ for _ in ()).throw(RuntimeError(
+                            "lease unavailable at "
+                            "postgresql://postgres:postgres@localhost/test"
+                        ))
                     ),
                     formal_authorization_path=authorization,
                 )
@@ -1409,6 +1524,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertEqual(persisted["status"], "failed")
             self.assertIn("lease unavailable", persisted["lease_error"])
+            self.assertIn(
+                "postgresql://postgres:***@localhost/test",
+                persisted["lease_error"],
+            )
+            self.assertNotIn("postgres:postgres@", persisted["lease_error"])
 
     def test_matrix_rejects_missing_job_overlap_evidence(self) -> None:
         with self._config() as path:
@@ -1450,6 +1570,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             ).write_text("gpu_utilization_pct\n80\n", encoding="utf-8"),
             "missing output": lambda evidence, root: evidence["output_paths"].update(
                 {"commands": str(root / "missing.json")}
+            ),
+            "missing database version": lambda evidence, _root: evidence.update(
+                {"pgvector_version": "not_applicable"}
             ),
         }
         for name, mutate in mutations.items():
@@ -1599,6 +1722,8 @@ class MatchedSystemContractTest(unittest.TestCase):
         )
         return {
             "command": command,
+            "server_version": "18.4",
+            "pgvector_version": "0.8.5",
             "implementation_source": "official_native" if arm.kind == "native" else "project_runner",
             "start_epoch_s": 100.0,
             "end_epoch_s": 101.0,
@@ -1717,6 +1842,7 @@ class MatchedSystemContractTest(unittest.TestCase):
         authorization_path = matrix_root.parent / "formal-authorization.json"
         authorization_path.write_text(json.dumps(authorization), encoding="utf-8")
         authorization_sha256 = sha256_file(authorization_path)
+        matrix_instance_id = "a" * 32
         cells = []
         phase_specs = (
             ("formal", 3, SYSTEM_ARM_IDS),
@@ -1765,6 +1891,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                             "ray_data" if arm_id == "ray_data_http" else "project"
                         ),
                         "repository_commit": authorization["repository_commit"],
+                        "matrix_instance_id": matrix_instance_id,
                         "config_sha256": authorization["config_sha256"],
                         "config_fingerprint": authorization[
                             "resolved_config_sha256"
@@ -1777,6 +1904,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                             "official_native_single_cell_runner"
                             if is_native else "project_shared_vllm_single_cell_runner"
                         ),
+                        "server_version": "18.4",
+                        "pgvector_version": "0.8.5",
                         "status": "passed",
                         "exactly_once": True,
                         "start_epoch_s": start,
@@ -1889,6 +2018,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "schema_version": 1,
                     "runtime_identity": {
                         **authorization,
+                        "matrix_instance_id": matrix_instance_id,
                         "authorization_sha256": authorization_sha256,
                         "execution_mode": "formal",
                     },
@@ -1903,6 +2033,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "schema_version": 1,
                     "status": "completed",
                     "repository_commit": "abc123",
+                    "matrix_instance_id": matrix_instance_id,
                     "execution_mode": "formal",
                     "config_sha256": authorization["config_sha256"],
                     "config_fingerprint": authorization[

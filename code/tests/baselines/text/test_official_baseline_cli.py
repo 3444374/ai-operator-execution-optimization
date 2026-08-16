@@ -18,13 +18,35 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.text.orchestration.cli import run_cli
+from src.baselines.text.orchestration.cli import _database_versions, run_cli
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.common.manifests import write_manifest
 from src.baselines.common.provenance import adapter_provenance
 
 
 class OfficialBaselineCliTests(unittest.TestCase):
+    def test_database_versions_are_read_from_the_live_connection(self) -> None:
+        class Cursor:
+            def __init__(self) -> None:
+                self.results = iter((("18.4",), ("0.8.5",)))
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def execute(self, _query: str) -> None:
+                return None
+
+            def fetchone(self):
+                return next(self.results)
+
+        cursor = Cursor()
+        connection = type("Connection", (), {"cursor": lambda _self: cursor})()
+
+        self.assertEqual(_database_versions(connection), ("18.4", "0.8.5"))
+
     @staticmethod
     def _write_balanced_manifest(path: Path) -> tuple[ChatRequest, ...]:
         requests = tuple(

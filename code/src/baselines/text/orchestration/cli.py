@@ -280,6 +280,8 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
     source_timing_boundary = "outside_job"
     source_read_s = 0.0
     source_validation_status = "not_applicable"
+    server_version = "not_applicable"
+    pgvector_version = "not_applicable"
     source_manifest = manifest
     if args.timed_postgres_source:
         if not args.database_url or not args.source_workload_name:
@@ -289,6 +291,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
             )
         source_start = time.perf_counter()
         with _connect_postgres(args.database_url) as connection:
+            server_version, pgvector_version = _database_versions(connection)
             source_manifest = load_manifest_postgres_requests(
                 connection,
                 workload_name=args.source_workload_name,
@@ -323,6 +326,8 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         "source_timing_boundary": source_timing_boundary,
         "source_read_s": source_read_s,
         "source_validation_status": source_validation_status,
+        "server_version": server_version,
+        "pgvector_version": pgvector_version,
         "endpoint_index": args.endpoint_index,
         "endpoint_url": args.endpoint_url,
         "predicted_work": sum(request.estimated_work for request in requests),
@@ -501,6 +506,22 @@ def _connect_postgres(database_url: str):
     except ImportError as exc:
         raise RuntimeError("PostgreSQL manifest access requires psycopg") from exc
     return psycopg.connect(database_url)
+
+
+def _database_versions(connection: object) -> tuple[str, str]:
+    """Read the actual PostgreSQL and pgvector identities for run evidence."""
+
+    with connection.cursor() as cursor:  # type: ignore[attr-defined]
+        cursor.execute("SHOW server_version")
+        server_version = str(cursor.fetchone()[0])
+        cursor.execute(
+            "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
+        )
+        extension = cursor.fetchone()
+    return (
+        server_version,
+        str(extension[0]) if extension is not None else "not_installed",
+    )
 
 
 def _export_postgres_manifest(

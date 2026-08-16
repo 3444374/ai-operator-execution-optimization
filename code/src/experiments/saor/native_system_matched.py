@@ -8,10 +8,12 @@ import json
 import math
 import random
 import subprocess
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from src.baselines.common.redact import redact_text
 from src.infrastructure.config_env import expand_structure
 from src.infrastructure.runner_lease import acquire_host_runner_lease
 
@@ -465,7 +467,7 @@ def _validate_cell_evidence(
         "implementation_source", "start_epoch_s", "end_epoch_s",
         "database_operator_e2e_s", "jobs", "service_metrics",
         "resource_metrics", "exactly_once", "request_tail_status",
-        "output_paths", "status",
+        "output_paths", "status", "server_version", "pgvector_version",
     }
     missing = sorted(required - evidence.keys())
     if missing:
@@ -474,6 +476,15 @@ def _validate_cell_evidence(
         raise RuntimeError("executor returned non-passing cell evidence")
     if evidence["exactly_once"] is not True:
         raise RuntimeError("cell exactly-once evidence failed")
+    for field in ("server_version", "pgvector_version"):
+        value = evidence[field]
+        if (
+            not isinstance(value, str)
+            or not value.strip()
+            or value.strip().lower()
+            in {"not_applicable", "not_installed", "unavailable", "unknown"}
+        ):
+            raise RuntimeError(f"cell {field} evidence is missing")
     start = evidence["start_epoch_s"]
     end = evidence["end_epoch_s"]
     boundary = evidence["database_operator_e2e_s"]
@@ -597,6 +608,7 @@ def _validate_cell_evidence(
         "config_sha256": runtime_identity["config_sha256"],
         "config_fingerprint": runtime_identity["resolved_config_sha256"],
         "authorization_sha256": runtime_identity["authorization_sha256"],
+        "matrix_instance_id": runtime_identity["matrix_instance_id"],
         "manifest_path": arm.manifest_path,
         "manifest_sha256": arm.manifest_sha256,
         "service_signature": dict(arm.service_signature),
@@ -635,8 +647,13 @@ def run_matched_system(
             requirements,
         )
     )
+    # Engineering decision: this nonce binds one authorized physical matrix
+    # instance. Generate it only after the zero-side-effect authorization gate,
+    # then copy it into the snapshot, index, and every cell.
+    matrix_instance_id = uuid.uuid4().hex
     runtime_identity = {
         **requirements,
+        "matrix_instance_id": matrix_instance_id,
         "status": "rehearsal_not_applicable" if rehearsal else "authorized",
         "formal_authorized": not rehearsal,
         "authorization_sha256": authorization_sha256,
@@ -664,6 +681,7 @@ def run_matched_system(
         "schema_version": 1,
         "status": "running",
         "repository_commit": repository_commit,
+        "matrix_instance_id": matrix_instance_id,
         "execution_mode": runtime_identity["execution_mode"],
         "config_sha256": runtime_identity["config_sha256"],
         "config_fingerprint": runtime_identity["resolved_config_sha256"],
@@ -696,7 +714,7 @@ def run_matched_system(
         index.update(
             {
                 "status": "failed",
-                "lease_error": f"{type(exc).__name__}: {exc}",
+                "lease_error": redact_text(f"{type(exc).__name__}: {exc}"),
             }
         )
         _atomic_json(matrix_index, index)
@@ -716,6 +734,7 @@ def run_matched_system(
                 "repeat": cell.repeat,
                 "order_index": cell.order_index,
                 "repository_commit": repository_commit,
+                "matrix_instance_id": matrix_instance_id,
                 "config_sha256": runtime_identity["config_sha256"],
                 "config_fingerprint": runtime_identity[
                     "resolved_config_sha256"
@@ -752,7 +771,9 @@ def run_matched_system(
                     after_idle_error = exc
                 if after_idle_error is not None:
                     running.setdefault("details", {})["after_idle_error"] = (
-                        f"{type(after_idle_error).__name__}: {after_idle_error}"
+                        redact_text(
+                            f"{type(after_idle_error).__name__}: {after_idle_error}"
+                        )
                     )
                 if primary_error is not None:
                     raise primary_error
@@ -760,7 +781,10 @@ def run_matched_system(
                     raise after_idle_error
             except Exception as exc:
                 running.update(
-                    {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
+                    {
+                        "status": "failed",
+                        "error": redact_text(f"{type(exc).__name__}: {exc}"),
+                    }
                 )
                 index["status"] = "failed"
                 _atomic_json(matrix_index, index)

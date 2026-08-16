@@ -9,6 +9,8 @@ import statistics
 from pathlib import Path
 from typing import Any
 
+from src.baselines.common.redact import redact_text
+
 from .native_system_matched import (
     FORMAL_AUTHORIZATION_SCOPE,
     REQUIRED_ARM_IDS,
@@ -43,7 +45,10 @@ def _validation(
         "status": status,
         "comparison_scope": "complete_system_empirical_plus_project_internal_sanity",
         "selector_victory_decided": False,
-        "formal_authorized": formal_authorization_verified,
+        # This repository never grants authorization. A passed summary records
+        # only that the independent run-specific artifact was verified.
+        "formal_authorized": False,
+        "formal_authorization_verified": formal_authorization_verified,
         "native_baseline_count": 3,
         "project_control_count": 5,
     }
@@ -88,6 +93,7 @@ def _publish_failed_validation(
     audit_rows: list[dict[str, object]],
     errors: list[str],
 ) -> None:
+    errors = [redact_text(str(error)) for error in errors]
     output_dir.mkdir(parents=True, exist_ok=True)
     _publish_validation(output_dir, "failing")
     for name in _RANKING_OUTPUT_NAMES:
@@ -256,6 +262,17 @@ def _normalize_cell(
         raise ValueError(f"{run_id} has unknown arm {arm_id!r}")
     if cell.get("status") != "passed" or cell.get("exactly_once") is not True:
         raise ValueError(f"{run_id} failed status/exactly-once gate")
+    versions: dict[str, str] = {}
+    for field in ("server_version", "pgvector_version"):
+        value = cell.get(field)
+        if (
+            not isinstance(value, str)
+            or not value.strip()
+            or value.strip().lower()
+            in {"not_applicable", "not_installed", "unavailable", "unknown"}
+        ):
+            raise ValueError(f"{run_id} lacks {field}")
+        versions[field] = value
     if (
         phase not in {"warmup", "formal", "selector_sanity_development"}
         or repeat < 1
@@ -349,6 +366,7 @@ def _normalize_cell(
         "order_index": order_index,
         "scheduler_owner": str(cell.get("scheduler_owner", "")),
         "implementation_source": str(cell.get("implementation_source", "")),
+        **versions,
         "report_blocks": json.dumps(cell.get("report_blocks", [])),
         "database_operator_e2e_s": duration,
         "service_prompt_tokens": prompt,
@@ -513,9 +531,10 @@ def _resource_summary_row(
 _AUDIT_FIELDS = (
     "run_id", "arm_id", "phase", "repeat", "order_index", "scheduler_owner",
     "implementation_source", "report_blocks", "status", "failure_reason",
-    "validation_status", "repository_commit", "config_sha256",
+    "validation_status", "repository_commit", "matrix_instance_id", "config_sha256",
     "config_fingerprint", "authorization_sha256", "manifest_path",
-    "manifest_sha256", "service_signature", "database_operator_e2e_s",
+    "manifest_sha256", "service_signature", "server_version", "pgvector_version",
+    "database_operator_e2e_s",
     "service_prompt_tokens", "service_generation_tokens", "service_total_tokens",
     "service_tokens_per_s", "request_p99_status", "request_p99_s",
     "request_p99_reason", "slo_status", "slo_violation_ratio", "slo_reason",
@@ -555,9 +574,12 @@ def _audit_row(
             "implementation_source": str(raw.get("implementation_source", "")),
             "report_blocks": json.dumps(raw.get("report_blocks", [])),
             "status": str(raw.get("status", "invalid_cell")),
-            "failure_reason": str(raw.get("error", "")) or failure_reason,
+            "failure_reason": redact_text(
+                str(raw.get("error", "")) or failure_reason
+            ),
             "validation_status": validation_status,
             "repository_commit": str(raw.get("repository_commit", "")),
+            "matrix_instance_id": str(raw.get("matrix_instance_id", "")),
             "config_sha256": str(raw.get("config_sha256", "")),
             "config_fingerprint": str(raw.get("config_fingerprint", "")),
             "authorization_sha256": str(raw.get("authorization_sha256", "")),
@@ -566,13 +588,15 @@ def _audit_row(
             "service_signature": json.dumps(
                 raw.get("service_signature", {}), sort_keys=True
             ),
+            "server_version": str(raw.get("server_version", "")),
+            "pgvector_version": str(raw.get("pgvector_version", "")),
             "exactly_once": raw.get("exactly_once", ""),
         }
     )
     if normalized is not None:
         row.update(normalized)
         row["status"] = str(raw.get("status", "passed"))
-        row["failure_reason"] = failure_reason
+        row["failure_reason"] = redact_text(failure_reason)
         row["validation_status"] = validation_status
     return row
 
@@ -638,6 +662,16 @@ def _load_authorized_identity(
     resolved = snapshot.get("resolved_config")
     if not isinstance(runtime, dict) or not isinstance(resolved, dict):
         raise ValueError("matrix contract snapshot identity is invalid")
+    matrix_instance_id = runtime.get("matrix_instance_id")
+    if (
+        not isinstance(matrix_instance_id, str)
+        or len(matrix_instance_id) != 32
+        or any(
+            character not in "0123456789abcdef"
+            for character in matrix_instance_id
+        )
+    ):
+        raise ValueError("matrix instance identity is invalid")
     if sha256_payload(resolved) != authorization.get("resolved_config_sha256"):
         raise ValueError("resolved config fingerprint drifted")
     identity_fields = (
@@ -656,6 +690,7 @@ def _load_authorized_identity(
         raise ValueError("runtime authorization identity is invalid")
     expected_index = {
         "repository_commit": authorization["repository_commit"],
+        "matrix_instance_id": matrix_instance_id,
         "config_sha256": authorization["config_sha256"],
         "config_fingerprint": authorization["resolved_config_sha256"],
         "manifest_sha256": authorization["manifest_sha256"],
@@ -717,6 +752,7 @@ def _load_authorized_identity(
             raise ValueError(f"cell {position} references an unknown arm")
         expected_cell = {
             "repository_commit": authorization["repository_commit"],
+            "matrix_instance_id": matrix_instance_id,
             "config_sha256": authorization["config_sha256"],
             "config_fingerprint": authorization["resolved_config_sha256"],
             "authorization_sha256": authorization_sha256,
@@ -934,9 +970,10 @@ def summarize_matched_system(
     # passed ranking visible. KeyboardInterrupt/SystemExit still propagate.
     except Exception as error:
         _remove_staging(staging_dir)
+        redacted_error = redact_text(str(error))
         _publish_failed_validation(
             output_dir,
-            _failed_audit_rows(raw_cells, str(error)),
-            [str(error)],
+            _failed_audit_rows(raw_cells, redacted_error),
+            [redacted_error],
         )
         return False
