@@ -6936,3 +6936,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   回到图像 HSE static GPU 非劣门与两级 stage controller。原生 Daft/Ray Data 多 Job comparison 排在诊断后。
 - 本地 direct gate、合同/分类、clean gate、shared-vLLM runner/runtime 与既有 SAOR/formal/config 回归共 198 项通过。服务器当前关机，未运行
   diagnostic、未产生新 GPU 性能数据。
+
+## 2026-08-16 开题背景图叙事分层修订
+
+- 按“背景现象 → 相关工作 → 研究空白 → 项目方案”的顺序复核开题前部图资产；用户指定第一个
+  总体工作流图 P02 暂不修改，本轮也不重新生成或修改 PPT。
+- P03 从项目方案预演改为大众化外部 AI 算子执行链路：输入记录、预处理与传输、请求构造、服务队列与
+  动态 batching、模型推理、结果整理与写回；删除 Work Unit、WorkDescriptor、credit、状态反馈、
+  state-aware admission/routing、typed Ray actor 和 SLO 字段。
+- P04 只保留数据库 AI、数据执行、推理服务、代价决策四层相关工作，并将结论收束为数据库任务语义与
+  模型服务运行信息衔接不足；P05 只陈述工作量表达、作业—服务状态对应、多作业共同约束三类研究空白，
+  不提前展示项目机制。
+- P06--P08 只中性化标题或标签，未改变实验数值与图形几何。权威 SVG/PNG、可编辑 Draw.io、专用图集
+  副本、逐图审计和索引已同步；概念图与数据图均完成原尺寸目视检查。

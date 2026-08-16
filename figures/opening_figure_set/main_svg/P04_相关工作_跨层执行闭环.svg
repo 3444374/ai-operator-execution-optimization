@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
 <style>text{font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif}.title{font-size:42px;font-weight:700;fill:#111827}.head{font-size:29px;font-weight:700;fill:#123B82}.name{font-size:27px;font-weight:700;fill:#111827}.tag{font-size:22px;font-weight:600;fill:#176B62}.focus{font-size:21px;font-weight:600;fill:#123B82}.sum{font-size:29px;font-weight:700;fill:#C55212}.panel{fill:#F8FAFC;stroke:#123B82;stroke-width:2}.card{fill:#FFF;stroke:#315A9A;stroke-width:1.6}.rule{stroke:#315A9A;stroke-width:1.5}</style>
-<rect width="1600" height="900" fill="#FFF"/><text x="800" y="64" text-anchor="middle" class="title">相关工作分层：各层能力成熟，跨层执行闭环仍不完整</text>
+<rect width="1600" height="900" fill="#FFF"/><text x="800" y="64" text-anchor="middle" class="title">相关工作分层：数据库、数据执行与模型服务分别演进</text>
 
 <!-- column 1 -->
 <g><rect x="30" y="100" width="370" height="655" rx="16" class="panel"/><text x="215" y="145" text-anchor="middle" class="head">数据库 AI</text>
@@ -33,5 +33,5 @@
 <g><rect x="1218" y="564" width="334" height="118" rx="12" class="card"/><text x="1385" y="601" text-anchor="middle" class="name">Abacus</text><text x="1385" y="635" text-anchor="middle" class="tag">quality / cost / latency</text><text x="1385" y="663" text-anchor="middle" class="tag">Pareto plan search</text></g>
 <line x1="1218" y1="702" x2="1552" y2="702" class="rule"/><text x="1385" y="735" text-anchor="middle" class="focus">关注：估计、放置与计划选择</text></g>
 
-<rect x="30" y="783" width="1540" height="82" rx="15" fill="#FFF8F2" stroke="#E85D04" stroke-width="2.5"/><text x="800" y="816" text-anchor="middle" class="sum">现有工作分别覆盖数据库语义、数据阶段或模型服务状态；</text><text x="800" y="851" text-anchor="middle" class="sum">跨层 work–state–control 闭环仍需系统验证</text>
+<rect x="30" y="783" width="1540" height="82" rx="15" fill="#FFF8F2" stroke="#E85D04" stroke-width="2.5"/><text x="800" y="816" text-anchor="middle" class="sum">现有工作主要优化数据库语义、数据流水线或模型服务内部机制；</text><text x="800" y="851" text-anchor="middle" class="sum">数据库任务语义与模型服务运行信息之间的衔接仍不充分</text>
 </svg>

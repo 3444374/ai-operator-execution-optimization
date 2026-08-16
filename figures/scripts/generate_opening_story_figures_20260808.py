@@ -155,7 +155,7 @@ def figure_motivation_work_state() -> None:
         ylim=(4.4, 8.7),
     )
     soft_grid(ax)
-    ax.set_title("提交控制应先标定最小近饱和点", loc="left")
+    ax.set_title("在途工作量存在最小近饱和区", loc="left")
     ax.legend(
         [Line2D([0], [0], color=BLUE, marker="o", linewidth=1.6, markersize=5)],
         ["圆点=均值；误差线=SD（n=3 formal）"],
@@ -177,7 +177,7 @@ def figure_motivation_work_state() -> None:
         )
 
     fig.suptitle(
-        "动机：描述工作量、感知运行状态、约束提交压力",
+        "动机：行数、静态上限与实际运行状态并不等价",
         fontsize=15,
         fontweight="bold",
     )
@@ -699,7 +699,7 @@ def figure_text_baseline_evidence_map() -> None:
     product_arms = [
         ("direct_static_sharded", "Direct static", GREY),
         ("duckdb_ai_static_sharded", "DuckDB AI", ORANGE),
-        ("project_frozen_static", "Project static", BLUE),
+        ("project_frozen_static", "冻结静态基线", BLUE),
     ]
     y = np.arange(len(product_arms))[::-1]
     means = [float(squad.loc[arm, "correct_rows_per_s_mean"]) for arm, _, _ in product_arms]
@@ -1345,7 +1345,7 @@ def figure_image_stage_evidence() -> None:
         )
 
     fig.suptitle(
-        "图像动机：阶段工作、传输形态和提交窗口都必须显式描述",
+        "图像动机：阶段失衡、传输形态与提交窗口共同影响执行",
         fontsize=15,
         fontweight="bold",
     )

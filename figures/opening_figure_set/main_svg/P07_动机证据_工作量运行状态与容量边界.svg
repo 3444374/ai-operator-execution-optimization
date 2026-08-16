@@ -682,7 +682,7 @@ L 951.59952 321.861864
     <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start" x="600.553253" y="37.660449" transform="rotate(-0 600.553253 37.660449)">c</text>
    </g>
    <g id="text_48">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start" x="638.165353" y="46.660517" transform="rotate(-0 638.165353 46.660517)">提交控制应先标定最小近饱和点</text>
+    <text style="font-weight: 700; font-size: 12px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start" x="638.165353" y="46.660517" transform="rotate(-0 638.165353 46.660517)">在途工作量存在最小近饱和区</text>
    </g>
    <g id="legend_1">
     <g id="line2d_54">
@@ -713,7 +713,7 @@ z
    </g>
   </g>
   <g id="text_50">
-   <text style="font-weight: 700; font-size: 15px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle" x="479.39976" y="20.1" transform="rotate(-0 479.39976 20.1)">动机：描述工作量、感知运行状态、约束提交压力</text>
+   <text style="font-weight: 700; font-size: 15px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle" x="479.39976" y="20.1" transform="rotate(-0 479.39976 20.1)">动机：行数、静态上限与实际运行状态并不等价</text>
   </g>
   <g id="text_51">
    <text style="font-size: 8.3px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle; fill: #9aa4af" x="479.39976" y="371.19376" transform="rotate(-0 479.39976 371.19376)">a：RTX 5070 / Qwen2.5-1.5B 机制证据；b–c：2×RTX 4090 / Qwen2.5-7B。点与误差线=均值±SD（n=3 formal）；65K→98K 时 P99 由 36.8s 增至 40.0s。</text>

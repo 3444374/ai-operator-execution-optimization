@@ -739,3 +739,11 @@
 - 下一步从“继续实现有界 guard”改为“先让 FIFO/DRR/VTC/strict-priority 使用相同 ready-window
   做归因门，通过后才 formal”。若简单 selector 已在同一 Pareto 前沿，则收敛为 observation
   contract 或淘汰复杂 selector；这收紧而非提升开题 claim。
+
+# 2026-08-16 开题前部图资产叙事清理
+
+- 仅修改图资产，不重新生成 PPT；P02 按用户要求保持不变。
+- P03 改为通用外部 AI 算子六阶段执行链路，删除提前出现的项目 Work Unit、credit、状态反馈、
+  准入/路由和 typed Ray actor 设计；P04 只作相关工作分层；P05 只作研究空白归纳。
+- P06--P08 仅收束标题/标签措辞，实验数值、坐标、统计量和几何均未改变。
+- 权威 SVG/PNG、Draw.io 源、开题专用图集副本与审计记录同步更新，并通过原尺寸目视复核。

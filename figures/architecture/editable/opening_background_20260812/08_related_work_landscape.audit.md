@@ -29,7 +29,7 @@
 | cost-cards | x=1218, four cards | Learned Cost Models, GRACEFUL, COSTREAM, Abacus + two labels each | native card + text | names 27 px; labels 22 px | accepted |
 | focus-lines | y=702 | four dividers | native line | 1.5 px blue | accepted |
 | focus-text | y=710..744 | four layer-focus summaries | native text | 21 px bold blue; visible at 900 px-wide preview | accepted |
-| conclusion | 30,783,1540,82 | cautious two-line research-gap statement | native card + text | orange 2.5 px border, 29 px bold; 30 px left/right and 35 px bottom canvas clearance | accepted |
+| conclusion | 30,783,1540,82 | cautious two-line separation statement | native card + text | orange 2.5 px border, 29 px bold; 30 px left/right and 35 px bottom canvas clearance | accepted |
 | icons/logos | none | no icons or commercial logos in this classification figure | none | omission is deliberate; reduces unsupported visual branding and preserves PPT readability | accepted |
 
 ## Arrow inventory
@@ -50,7 +50,7 @@ None. This is a categorical landscape, not a causal or process flow. No arrows, 
 - Removed all side-by-side label capsules after full-size rendering showed long English and Chinese labels pressing into adjacent capsules.
 - Replaced them with two centered 22 px text lines per system card; no font was reduced below the requested floor.
 - Preserved at least 16 px horizontal text clearance inside every card; system cards remain within their parent columns.
-- Reworded the bottom statement from an absolute “尚未形成统一闭环” to the evidence-bounded “仍需系统验证”.
+- Reworded the title and bottom statement to keep the page at the related-work layer: representative systems optimize database semantics, data pipelines, inference services or cost decisions separately; the connection between database task semantics and model-service runtime information remains insufficient. The figure does not introduce the project's solution vocabulary.
 
 ## Final status
 

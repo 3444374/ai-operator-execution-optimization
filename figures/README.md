@@ -83,13 +83,13 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 
 | 图 | 角色与边界 |
 |---|---|
-| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-10 已按冻结合同修正峰值标签并移除未经定义的区间色带。 |
+| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-16 将标题收束为“行数、静态上限与实际运行状态并不等价”，数据与几何不变。 |
 | `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。只在 panel 内排名；Project 没有同一 2,048-row graph→gather 正式点，图中明确标注而不混入右侧排名。2026-08-10 修正多行 y 轴标签：文本块贴近轴，块内两行居中。 |
 | `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 现有原生框架的多 Job 动机图：三条 vendor-owned 执行图的 four-job/isolated-single JCT 影响矩阵；格内同时给出 slowdown 倍率与 JCT 增幅，Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名，也不用于证明项目方法胜出。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
 | `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 吞吐与prefix-cache命中率双轨迹图：每条线连接同一策略从2-endpoint低压力到4-endpoint高压力的3次formal中位数；吞吐统一用 `k token/s`，高压力时保序策略命中约47%，重排/装箱策略降至6%–7%。不画误差线；严格feeding-saturation边界必须保留。 |
-| `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。只证明 staged work 和状态观测必要性。 |
+| `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。标题只概括阶段失衡、传输形态与提交窗口，不提前导出项目机制。 |
 | `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 纯数据图：左为 12K 同语义诊断，右为 120K matched-resource 正式对照；Direct CLIP/vLLM Pooling 等能力与角色边界改由报告独立表格呈现。 |
 | `data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | 图像四 Job 归一化干扰矩阵：列为 Short/Long 1--3，行为 Daft Built-in、Ray Data、Project static 与 Project shared；格内直标并发/独立 JCT 倍数和增幅，画法与文本原生四 Job 图统一。只作各路径内部比较；Project shared 的状态快照仅观测、不驱动动作。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 左图呈现 estimator 级 candidate pairwise；右图逐估计器完整展开 20 个 leave-one-context-out decision regret，以小菱形标中位数、同尺寸深色点标最坏 context，并同时显示平均 5%/最坏 15% 门槛；Hybrid平均2.90%、max 14.72%。Ridge逐行MAE更低但最坏选择regret更高，只称 marginal pass。 |
@@ -125,6 +125,10 @@ completion 路径；05 删除七个圆角修补 mask，并把窄卡文字改为�
 数据库 AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。
 三图已按项目事实重写并通过 Draw.io 结构检查、1600×900 与 PPT 缩放目视审计；图集副本命名为
 `P02`、`P03`、`P04`。
+
+2026-08-16 按“背景现象 → 相关工作 → 研究空白 → 项目方案”的叙事顺序再次清理图资产：P02
+暂不修改；P03 改为通用外部 AI 算子六阶段链路，删除 Work Unit、credit、状态反馈和项目后端实现；
+P04 只保留相关工作分层与衔接不足；P05 只陈述三类研究空白，不提前展示方案。本轮没有重生成 PPT。
 
 02 后续按用户局部复核再次清理：Admission 标题改用卡片整行宽度，两个 Adapter 卡重排图标、
 标题与正文安全边距；删除手绘 Daft 近似符号，改用 Daft 官方仓库的黑/洋红标识。官方 Logo 仅作

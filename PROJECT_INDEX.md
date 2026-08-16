@@ -281,7 +281,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/I/J/E/F 已通过 QA，G 不画 |
 | `figures/audit/opening_required_data_figures_20260810.md` | 从六项开题证明义务推导正文、备份、附录和明确不画的最小图集 | 决定一张实验图是否应进开题、PPT还是论文阶段前读 |
 | `figures/opening_figure_set/README.md` 与 `main_png/`、`main_svg/`、`editable_drawio/`、`backup_*` | 按 20 页答辩页码和中文用途重命名的开题专用图集：17 张 PPT 主讲图、8 张 Draw.io 概念源、2 张备份图 | 制作开题 PPT/报告时从这里选图，不再浏览整个 `report_main/`；报告正文使用其中 14 张研究/证据图，权威源仍在原目录 |
-| `figures/architecture/editable/opening_background_20260812/` | 第 2–4 页三张背景/相关工作图的 Draw.io、SVG、PNG、icon 和逐图审计 | 修改背景图文字、边框、图标或箭头时从权威源编辑 |
+| `figures/architecture/editable/opening_background_20260812/` | 第 2–4 页三张背景/相关工作图的 Draw.io、SVG、PNG、icon 和逐图审计；P03 为通用外部 AI 多阶段链路，不含项目方案 | 修改背景图文字、边框、图标或箭头时从权威源编辑 |
 | `figures/audit/opening_background_figures_20260812.md` | 第 2–4 页三图的内容边界、结构检查与视觉审计汇总 | 引用或替换三张背景图前读取 |
 | `figures/audit/opening_figure_set_manifest_20260811.md` | 开题专用图集的选图依据、源文件映射、格式合同、排除项与复制 QA | 新增、替换或同步开题图集前读取 |
 | `figures/scripts/embed_svg_assets.py` | 将 SVG 的本地相对 icon/Logo 引用机械内嵌为 data URI | 生成可单文件拖入 PowerPoint/Word 的开题图集 SVG 副本；不改权威源图 |
@@ -294,7 +294,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 四条原生/控制路径的 JCT、waiting、queue time、TTFT 原单位任务—请求主图 | 报告正文解释相近 makespan 如何掩盖请求级排队，不作框架通用排名 |
 | `figures/data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | tok/s、running、waiting、KV、MFU、GPU utilization 原单位状态补充 | 作为 JCT 的机制诊断，区分过量排队、最小饱和与欠供给 |
 | `figures/architecture/opening_ai_data_execution_boundary.png` / `.svg` | 两项研究内容 + 共同 cost estimator 的 AI Data Execution Layer 边界图 | 报告/答辩大纲解释课题范围、平台与贡献关系时使用 |
-| `figures/architecture/editable/README.md` 与 `01_research_gap`--`05_evidence_gate` 的 `.drawio/.svg/.png/.audit.md` | 2026-08-11 开题可编辑概念图候选批次：研究空白、总体闭环、Work-unit、状态感知调度、因果验证路线 | 每图文字/卡片/连接器可编辑，icon 为独立 SVG；用户逐图确认前不替换报告现行图 |
+| `figures/architecture/editable/README.md` 与 `01_research_gap`--`05_evidence_gate` 的 `.drawio/.svg/.png/.audit.md` | 开题可编辑概念图：纯研究空白、总体闭环、Work-unit、状态感知调度、后续工作计划 | 每图文字/卡片/连接器可编辑，icon 为独立 SVG；背景页不提前展示项目方案 |
 | `figures/audit/opening_editable_diagrams_manifest_20260811.md` | 六张参考图到五张必要开题图的选择、合并、样式与完成门槛合同 | 重画、替换 icon 或决定某图是否进入 PPT 前读取 |
 | `figures/audit/reference_opening_editable_20260811/` | 用户提供并经筛选的五张视觉参考图本地审计副本 | 只用于版式/icon/视觉对照，不直接进入报告或 PPT，不作为整图截图嵌入 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |

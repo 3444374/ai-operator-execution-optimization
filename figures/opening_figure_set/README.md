@@ -22,12 +22,12 @@
 | 页码 | 可读文件名 | 页面任务 | 权威源 |
 |---:|---|---|---|
 | 02 | `P02_背景_数据库AI算子外部执行链路` | 展示数据库 AI 算子、外部执行层、模型服务状态和写回闭环 | `architecture/editable/opening_background_20260812/06_ai_native_execution_architecture` |
-| 03 | `P03_背景_传统算子与外部AI执行假设` | 对照 rows/cardinality 与多阶段 work/state 的执行假设 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` |
-| 04 | `P04_相关工作_跨层执行闭环` | 按层归纳代表工作并审慎提出跨层闭环仍需系统验证 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
-| 05 | `P05_研究空白_AI数据执行层` | 从数据库侧和模型服务侧之间导出研究问题 | `architecture/editable/01_research_gap` |
+| 03 | `P03_背景_传统算子与外部AI执行假设` | 对照传统成本字段与通用外部 AI 算子的多阶段执行链路 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` |
+| 04 | `P04_相关工作_跨层执行闭环` | 按层归纳代表工作，指出数据库任务语义与服务运行信息衔接不足 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
+| 05 | `P05_研究空白_AI数据执行层` | 归纳工作量表达、作业—服务状态对应和多作业约束三类研究空白 | `architecture/editable/01_research_gap` |
 | 06 | `P06_文本基线_执行路径与可比边界` | 分开说明 database-E2E 与官方 Chat graph 的可比范围 | `data/report_main/opening_text_baseline_evidence_map` |
-| 07 | `P07_动机证据_工作量运行状态与容量边界` | 说明固定行数、固定上限不能代表真实 work 与运行状态 | `data/report_main/opening_motivation_work_state` |
-| 08 | `P08_图像阶段_准备传输与GPU执行失配` | 说明图像 prepare、transfer、model stage 必须显式建模 | `data/report_main/opening_image_stage_aware_evidence` |
+| 07 | `P07_动机证据_工作量运行状态与容量边界` | 说明行数、静态上限与实际运行状态并不等价 | `data/report_main/opening_motivation_work_state` |
+| 08 | `P08_图像阶段_准备传输与GPU执行失配` | 说明图像阶段失衡、传输形态与提交窗口共同影响执行 | `data/report_main/opening_image_stage_aware_evidence` |
 | 09 | `P09_文本多作业_原生路径并发干扰` | 证明共享模型服务下的多 Job 干扰是现实现象 | `data/report_main/opening_native_fourjob_normalized_impact` |
 | 11 | `P11_系统架构_数据组织与状态调度闭环` | 展示 work、state、bounded control 与 sink 的总体闭环 | `architecture/editable/02_system_architecture` |
 | 12 | `P12_研究内容一_WorkUnit与数据组织` | 展示分阶段 work、候选 packing 和同 budget 评价 | `architecture/editable/03_work_unit` |
