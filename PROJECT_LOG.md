@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-08-17 P07B active-work 代价显式化
+
+- 回读双 RTX 4090 / Qwen2.5-7B active-work 八档正式汇总与 24 条 formal run：每个点 n=3，
+  65K→98K 时吞吐 8.03K→8.21K token/s（+2.3%），请求 P99 36.8→40.0 s（+8.9%）。
+- 在 P07B 容量曲线的空白区补入上述真实数值，使“继续增压的劣处”在图内可见；不采用双 Y 轴，
+  不夸写为“尾延迟激增”，不把 65K 外推为其他机器、模型或 workload 的通用最优点。
+- 同步重画合成源图与 16:9 P07B PNG/SVG，刷新开题专用图集副本及图表审计；未修改或重生成 PPT。
+
 ## 2026-08-17 开题 P08A 标题修订与绘图脚本 Windows 字体修复
 
 - P08A（`opening_image_stage_aware_evidence_part1_prepare`）panel 标题由“prepare 是独立且占主导的

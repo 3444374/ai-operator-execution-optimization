@@ -27,7 +27,7 @@
 | 05 | `P05_研究空白_AI数据执行层` | 归纳工作量表达、作业—服务状态对应和多作业约束三类研究空白 | `architecture/editable/01_research_gap` |
 | 06 | `P06_文本基线_执行路径与可比边界` | 分开说明 database-E2E 与官方 Chat graph 的可比范围 | `data/report_main/opening_text_baseline_evidence_map` |
 | 07A | `P07A_动机证据_记录数与模型工作量` | 原 P07 panel a：说明相同行数仍可能对应 14.3× 工作量差异 | `data/report_main/opening_motivation_work_state_part1_work` |
-| 07B | `P07B_动机证据_运行状态与容量边界` | 原 P07 panels b–c：说明静态上限、运行状态与近饱和边界不是同一概念 | `data/report_main/opening_motivation_work_state_part2_state_capacity` |
+| 07B | `P07B_动机证据_运行状态与容量边界` | 说明静态上限、运行状态与近饱和边界不是同一概念；65K→98K 吞吐仅 +2.3%，P99 +8.9% | `data/report_main/opening_motivation_work_state_part2_state_capacity` |
 | 08A | `P08A_图像阶段_准备阶段失衡` | 原 P08 panel a：说明图像也是分阶段工作量，张数描述不了阶段压力（prepare/GPU 13.9–31.0×） | `data/report_main/opening_image_stage_aware_evidence_part1_prepare` |
 | 08B | `P08B_图像阶段_传输形态与提交窗口` | 原 P08 panels b–c：说明传输形态和 active-window 会改变执行表现 | `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window` |
 | 09 | `P09_文本多作业_原生路径并发干扰` | 证明共享模型服务下的多 Job 干扰是现实现象 | `data/report_main/opening_native_fourjob_normalized_impact` |

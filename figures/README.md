@@ -83,9 +83,9 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 
 | 图 | 角色与边界 |
 |---|---|
-| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-16 将标题收束为“行数、静态上限与实际运行状态并不等价”，数据与几何不变。 |
+| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-17 在容量曲线内补入真实代价注释：65K→98K 吞吐仅 +2.3%，P99 36.8→40.0 s（+8.9%）；不使用双 Y 轴。 |
 | `data/report_main/opening_motivation_work_state_part1_work.png` / `.svg` | 原动机三联图 panel a 的 16:9 拆分版；数值、标签和结论不变，底注改为实验配置。 |
-| `data/report_main/opening_motivation_work_state_part2_state_capacity.png` / `.svg` | 原动机三联图 panels b–c 的 16:9 拆分版；数值、标签和结论不变，底注改为实验配置。 |
+| `data/report_main/opening_motivation_work_state_part2_state_capacity.png` / `.svg` | 原动机三联图 panels b–c 的 16:9 拆分版；容量曲线直接标注 65K→98K 的吞吐增量与 P99 代价，底注保留硬件、模型、endpoint 和 formal repeat 配置。 |
 | `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。只在 panel 内排名；Project 没有同一 2,048-row graph→gather 正式点，图中明确标注而不混入右侧排名。2026-08-10 修正多行 y 轴标签：文本块贴近轴，块内两行居中。 |
 | `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 现有原生框架的多 Job 动机图：三条 vendor-owned 执行图的 four-job/isolated-single JCT 影响矩阵；格内同时给出 slowdown 倍率与 JCT 增幅，Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名，也不用于证明项目方法胜出。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |

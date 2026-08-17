@@ -156,8 +156,35 @@ def figure_motivation_work_state() -> None:
     ax.text(28, 5.25, "低供给段", ha="center", color=DARK)
     ax.text(68, 8.53, "最小近饱和点", ha="center", color=BLUE, fontweight="bold")
     ax.text(108, 8.53, "边际收益递减", ha="center", color=DARK)
+    point65 = frontier.loc[frontier["active_work_per_endpoint"].eq(65536)].iloc[0]
+    point98 = frontier.loc[frontier["active_work_per_endpoint"].eq(98304)].iloc[0]
+    throughput_gain_pct = (
+        float(point98["tokens_per_s_mean"]) / float(point65["tokens_per_s_mean"]) - 1
+    ) * 100
+    p99_gain_pct = (
+        float(point98["request_p99_s_mean"]) / float(point65["request_p99_s_mean"]) - 1
+    ) * 100
     y64 = y[np.where(x == 64)[0][0]]
     ax.text(66.5, y64 - 0.33, "65K：已测峰值的 97.8%", fontsize=8.8, color=DARK)
+    ax.text(
+        130,
+        6.25,
+        "继续增压的代价（65K→98K）\n"
+        f"吞吐仅 +{throughput_gain_pct:.1f}%\n"
+        f"P99：{float(point65['request_p99_s_mean']):.1f}→"
+        f"{float(point98['request_p99_s_mean']):.1f} s（+{p99_gain_pct:.1f}%）",
+        ha="right",
+        va="center",
+        fontsize=8.6,
+        linespacing=1.30,
+        color=DARK,
+        bbox={
+            "boxstyle": "round,pad=0.45",
+            "facecolor": "#FFF7ED",
+            "edgecolor": ORANGE,
+            "linewidth": 1.1,
+        },
+    )
     ax.set(
         xlabel="每 endpoint active work（千 token）",
         ylabel="吞吐（千 token/s）",
@@ -329,8 +356,35 @@ def figure_motivation_work_state_split() -> None:
     ax.text(28, 5.25, "低供给段", ha="center", color=DARK)
     ax.text(68, 8.53, "最小近饱和点", ha="center", color=BLUE, fontweight="bold")
     ax.text(108, 8.53, "边际收益递减", ha="center", color=DARK)
+    point65 = frontier.loc[frontier["active_work_per_endpoint"].eq(65536)].iloc[0]
+    point98 = frontier.loc[frontier["active_work_per_endpoint"].eq(98304)].iloc[0]
+    throughput_gain_pct = (
+        float(point98["tokens_per_s_mean"]) / float(point65["tokens_per_s_mean"]) - 1
+    ) * 100
+    p99_gain_pct = (
+        float(point98["request_p99_s_mean"]) / float(point65["request_p99_s_mean"]) - 1
+    ) * 100
     y64 = y[np.where(x == 64)[0][0]]
     ax.text(66.5, y64 - 0.33, "65K：已测峰值的 97.8%", fontsize=8.8, color=DARK)
+    ax.text(
+        130,
+        6.25,
+        "继续增压的代价（65K→98K）\n"
+        f"吞吐仅 +{throughput_gain_pct:.1f}%\n"
+        f"P99：{float(point65['request_p99_s_mean']):.1f}→"
+        f"{float(point98['request_p99_s_mean']):.1f} s（+{p99_gain_pct:.1f}%）",
+        ha="right",
+        va="center",
+        fontsize=8.6,
+        linespacing=1.30,
+        color=DARK,
+        bbox={
+            "boxstyle": "round,pad=0.45",
+            "facecolor": "#FFF7ED",
+            "edgecolor": ORANGE,
+            "linewidth": 1.1,
+        },
+    )
     ax.set(
         xlabel="每 endpoint active work（千 token）",
         ylabel="吞吐（千 token/s）",
