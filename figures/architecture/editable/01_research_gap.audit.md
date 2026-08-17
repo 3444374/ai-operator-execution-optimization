@@ -12,7 +12,7 @@
 - Reference: `figures/audit/reference_opening_editable_20260811/01_research_gap.png` only for three-column composition and visual grammar.
 - Output canvas: 1600 × 900, 16:9, white background.
 - Palette: database blue `#165DCC`, gap orange `#E85D04`, service purple `#5B2AA6`, conclusion green `#15803D`.
-- Every visible label is at least 18 px.
+- Typography after the 2026-08-17 readability revision: title 42 px, section headings 30 px, card titles 25 px, body/labels 20 px, conclusion 26 px. No visible text is below 20 px.
 
 ## Visible-element inventory
 
@@ -37,15 +37,17 @@ The center cards are: `工作量表达不一致`, `运行状态难以对应作�
 
 - `check_drawio.py`: passed — 58 cells, 53 vertices, 3 edges, 9 SVG-image cells, 31 text cells.
 - Draw.io, main SVG, curated SVG and private icon SVGs pass XML validation.
-- PNG: 1600 × 900 RGBA, rendered from the clean vector geometry rather than patched with masks.
-- Source scan: unique cell IDs; no hidden cell, duplicate border, full-slide raster, overlay/mask layer, stale boundary-lock object or visible font below 18 px.
-- Arrow audit: request and submit arrows have matched centerlines, line widths, head sizes and panel clearances; the feedback cue is thinner, dashed and visually subordinate.
+- Draw.io CLI is unavailable on this machine; PNG is 1600 × 900 RGBA, rendered from the asset-embedded SVG with the same geometry. It was not patched with masks.
+- Source scan: unique cell IDs; no hidden cell, duplicate border, full-slide raster, overlay/mask layer, stale boundary-lock object or visible font below 20 px.
+- Arrow audit: request and submit use fixed-size 14 × 12 px heads (`markerUnits=userSpaceOnUse`), matched 4 px strokes and 60 px paths from 5 px outside the source panel to 5 px before the target panel. Their visible line bodies remain about 47 px instead of being consumed by stroke-scaled markers. The feedback cue uses a fixed 11 × 10 px head, 2.5 px dashed stroke and the same 60 px gap path, so it remains visually subordinate but clearly directional.
 - Terminology audit: `图像表征 / 分类` replaces ambiguous `嵌入 / 分类`; proposed mechanism terms are absent from the gap cards and conclusion.
 
 ## Full-size visual audit
 
 - Inspected at native 1600 × 900 and at 960 × 540 document-width proxy.
 - All text remains inside its card with visible padding; no line crosses text or a card border.
+- The 42/30/25/20/26 px hierarchy remains readable after PPT/document scaling; enlarged body text does not wrap unexpectedly or touch icons and borders.
+- Both colored inter-panel arrows show a long, continuous line plus a compact head; the dashed feedback arrow also has a visible line body and unambiguous leftward direction.
 - Blue, orange, purple, gray and green borders are continuous and singly rendered.
 - The internal boundary paragraph and lock cards are absent from the source, not hidden or covered.
 
