@@ -1,14 +1,17 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-15；开题证据冻结，SAOR fixed-envelope formal 已
+Date: 2026-07-20（最后更新：2026-08-17；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
 2026-08-14 fail-closed 复核已将 completion fairness applicability、Job identity、K/W/weights、
 projected-debt repayment 和 admission work-cost 上界统一闭环。最终 `63d17300` 六臂 rehearsal
 6/6、0 incident，6,144-request fixed-output-cap audit 与 15/15 repayment episode 均通过；
 `formal_authorized=false`，单次结果不判策略排名。独立审核已确认 validation/archive SHA、raw
 复算和机制 counters 一致；同签名 direct ceiling 最终给出 92.898%<95% 的有效一次性负判决，
-formal 合同已永久冻结为 `locked_failed_feeding`，不再补工具或尝试解锁。当前只允许先运行独立
-D0/D1/P0 feeding-gap diagnostic，再决定是否有一个简单 selector-neutral 工程缺口；原生 Daft/Ray
+formal 合同已永久冻结为 `locked_failed_feeding`，不再补工具或尝试解锁。2026-08-17 冻结
+D0/D1/P0 feeding-gap diagnostic 已在 main@345bee2f 执行并在第 11/12 cell fail-closed 中止
+（D0 formal rep3 单请求 ReadError incident；summarizer 未运行、四判决未产生，root/archive
+完整保留，见 `experiments/results/state_aware_work_unit/saor_feeding_gap_diagnostic_20260817/`），
+重跑或接受现状待决策；原生 Daft/Ray
 Data 多 Job comparison 排在该诊断之后，原生 baseline 不接 bounded-ready，dynamic-K 仍退出主线）
 
 2026-08-15 已完成但未上服务器的最小诊断设施：D0=direct K-only、D1=direct K+W65536、
@@ -20,6 +23,17 @@ credit trace 并汇总 Ray submit/actor-ready；共同保存 vLLM、MFU、TTFT/I
 服务器关机，所以状态是 `code-and-contract-ready / gpu-unrun`，没有新性能数字。四种 0.95 配对判决
 及退出规则只见 `state_aware_work_unit_evaluation_20260808.md` §5.2，任何结果均不得修改旧
 `locked_failed_feeding`。
+
+2026-08-17 服务器冻结执行结果：preflight ok、pre-run clean gate passed、manifests/commit/合同
+一致后，矩阵在 3 warmup + 7 formal（10/12）后被 D0 formal rep3 的单请求
+`ReadError`（1/512，foreground job，keepalive 4s zero-retry 合同下任何 ReadError 即 incident）
+fail-closed 中止。官方 summarizer 未运行，四种 0.95 判决均未产生；已完成 cell 的描述性信号
+（D0/D1/P0 = 13239/12612/12457 tok/s、CV≤0.30%、D1/D0≈0.953、P0/D1≈0.989，仅 2 对非完整配对）
+只作方向参考，不构成归因。失败 root
+`saor_feeding_gap_diagnostic_345bee2f_20260817` 与 archive（SHA256 `f4b9793d…`）完整保留并已
+镜像本地；接受现状或在全新 root 重跑由用户/codex 决策。若 ReadError 复现于 D0 臂，应先独立
+审查 direct 客户端在 K-only 无 work 上限下的连接行为。完整报告见
+`experiments/results/state_aware_work_unit/saor_feeding_gap_diagnostic_20260817/README.md`。
 
 2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
 两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故

@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-17 SAOR feeding-gap diagnostic 冻结执行 fail-closed 中止（服务器）
+
+- 在 main@345bee2f 按冻结合同执行 D0/D1/P0 三臂 feeding-gap diagnostic（1 warm-up + 3 measured
+  repeats，K128/W65536，manifests SHA `8e532819…`/`85b3f90c…` 与合同一致，全新 root
+  `saor_feeding_gap_diagnostic_345bee2f_20260817`）。preflight `status=ok`（autodl_2x4090 自动
+  profile），pre-run clean gate passed（PG/Ray/双 endpoint 空闲、无残留 named actor、capacity 与
+  冻结合同一致）。
+- runner 在第 11/12 cell fail-closed 中止：D0 formal rep3 foreground job 512 条中 1 条
+  （doc_id=301913）在 endpoint-1 上 admission wait 43.5s 后约 3.1s 收到空响应 `ReadError`
+  （keepalive 4s + zero-retry 合同下任何 ReadError 即 incident）。完成 10/12 cell（3 warmup +
+  7 formal），matrix `status=failed`、incidents=1、`recovered=false`。root 完整保留并归档
+  （archive SHA256 `f4b9793d…`），未在同一 root 重跑；本地镜像已下载。
+- 官方 summarizer 未运行（前置条件"runner 正常完成"不满足），四种 0.95 判决均未产生。已完成
+  formal cell 的描述性信号：D0/D1/P0 吞吐 13239/12612/12457 tok/s（CV≤0.30%），配对比值
+  D1/D0≈0.953、P0/D1≈0.989（仅 2 对，非预注册 3 对，不构成判决）；D0 无 work 上限时 KV=1.0、
+  waiting=139，D1 加 W 后 KV=0.55、waiting=18。
+- SAOR formal 合同保持 `locked_failed_feeding/formal_authorized=false` 不变；不修改旧判决。incident
+  处置（接受现状 vs 全新 root 重跑）交还用户/codex 决策；若 ReadError 复现于 D0 臂，建议独立
+  审查 direct 客户端连接行为。报告见
+  `experiments/results/state_aware_work_unit/saor_feeding_gap_diagnostic_20260817/README.md`。
+
 ## 2026-08-17 native-system 可搬迁证据与数据库身份 follow-up（本地）
 
 - 继续在 follow-up 分支修复独立审核阻断项；未连接服务器、未运行 native-system/rehearsal/formal，
