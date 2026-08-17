@@ -16,6 +16,7 @@ import json
 import math
 import os
 import random
+import shutil
 import subprocess
 import sys
 import time
@@ -26,7 +27,8 @@ from typing import Callable, Literal, Mapping, Sequence
 
 from src.baselines.common.cell_instrumentation import instrumented_cell
 from src.baselines.common.contracts import BaselineRequestResult
-from src.baselines.common.redact import redact_argument_list
+from src.baselines.common.database_identity import DatabaseIdentity
+from src.baselines.common.redact import redact_argument_list, redact_text
 from src.baselines.common.manifests import partition_summary, read_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import validate_results
@@ -546,16 +548,74 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         raise ValueError(f"shard source timing mismatch for {arm.arm_id}: {summary_path}")
     if not isinstance(summary["source_read_s"], (int, float)) or summary["source_read_s"] < 0:
         raise ValueError(f"shard source_read_s is invalid: {summary_path}")
-    for field in ("server_version", "pgvector_version"):
-        value = summary.get(field)
-        if (
-            not isinstance(value, str)
-            or not value.strip()
-            or value.strip().lower()
-            in {"not_applicable", "not_installed", "unavailable", "unknown"}
-        ):
-            raise ValueError(f"shard {field} is invalid: {summary_path}")
+    DatabaseIdentity.from_record(summary, f"shard {summary_path}")
     return {field: summary[field] for field in required}
+
+
+def seal_native_cell_artifact_paths(
+    record: Mapping[str, object],
+    cell_root: Path,
+) -> None:
+    """Seal Job manifests and rewrite raw Job artifact locators relatively.
+
+    The returned in-memory cell record remains unchanged for immediate
+    normalization. Only JSON evidence stored under ``cell_root`` is rewritten,
+    so an archived native cell no longer depends on its original absolute path.
+    """
+
+    root = cell_root.resolve()
+    jobs = record.get("jobs", [])
+    if not isinstance(jobs, list):
+        raise ValueError("native cell jobs must be a list before sealing")
+
+    def relative_artifact(
+        raw_path: object,
+        evidence_name: str,
+        *,
+        allow_empty: bool = False,
+    ) -> str:
+        path = Path(str(raw_path)).resolve()
+        try:
+            relative = path.relative_to(root)
+        except ValueError as error:
+            raise ValueError(f"{evidence_name} escapes native cell root") from error
+        if not path.is_file() or (not allow_empty and path.stat().st_size <= 0):
+            raise ValueError(f"{evidence_name} is missing or empty")
+        return relative.as_posix()
+
+    inputs = root / "evidence" / "manifests"
+    inputs.mkdir(parents=True, exist_ok=True)
+    for position, job in enumerate(jobs):
+        if not isinstance(job, dict):
+            raise ValueError("native cell Job evidence must be an object")
+        source_manifest = Path(str(job.get("manifest", ""))).resolve()
+        manifest_sha256 = str(job.get("manifest_sha256", ""))
+        if not source_manifest.is_file() or _sha256(source_manifest) != manifest_sha256:
+            raise ValueError("native cell Job manifest identity drifted")
+        sealed_manifest = inputs / f"job-{position}-{manifest_sha256[:12]}.jsonl"
+        shutil.copyfile(source_manifest, sealed_manifest)
+        if _sha256(sealed_manifest) != manifest_sha256:
+            raise ValueError("sealed native Job manifest identity drifted")
+
+        job_id = str(job.get("job_id", ""))
+        summary_path = root / "jobs" / job_id / "job_summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if not isinstance(summary, dict):
+            raise ValueError("native Job summary must be an object before sealing")
+        summary["manifest"] = sealed_manifest.relative_to(root).as_posix()
+        shards = summary.get("shards")
+        if not isinstance(shards, list):
+            raise ValueError("native Job shard evidence must be a list before sealing")
+        for shard_index, shard in enumerate(shards):
+            if not isinstance(shard, dict):
+                raise ValueError("native Job shard evidence must be an object")
+            for field in ("log", "summary", "requests"):
+                shard[field] = relative_artifact(
+                    shard.get(field, ""),
+                    f"native Job {position} shard {shard_index} {field}",
+                    allow_empty=field == "log",
+                )
+        _atomic_json(summary_path, summary)
 
 
 def _repository_commit() -> str:
@@ -718,7 +778,11 @@ def _run_job(
             ),
         })
     except Exception as exc:
-        record.update({"status": "failed", "failure_reason": f"{type(exc).__name__}: {exc}", "exactly_once": False})
+        record.update({
+            "status": "failed",
+            "failure_reason": redact_text(f"{type(exc).__name__}: {exc}"),
+            "exactly_once": False,
+        })
     _atomic_json(job_root / "job_summary.json", record)
     return record
 
@@ -855,7 +919,10 @@ def run_native_multijob_cell(
         if record["status"] != "passed":
             record["error"] = "RuntimeError: one or more native job shards failed"
     except Exception as exc:
-        record.update({"status": "failed", "error": f"{type(exc).__name__}: {exc}"})
+        record.update({
+            "status": "failed",
+            "error": redact_text(f"{type(exc).__name__}: {exc}"),
+        })
     return record
 
 
@@ -907,7 +974,9 @@ def run_native_multijob(
                 {
                     "status": "failed",
                     "comparison_admission": "not_rankable",
-                    "runtime_preflight_error": f"{type(exc).__name__}: {exc}",
+                    "runtime_preflight_error": redact_text(
+                        f"{type(exc).__name__}: {exc}"
+                    ),
                 }
             )
             _atomic_json(index_path, index)
@@ -1004,7 +1073,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.config, runner_script=args.runner_script, gate_only=args.gate_only
         )
     except Exception as exc:
-        print(json.dumps({"status": "failed", "error": f"{type(exc).__name__}: {exc}"}))
+        print(json.dumps({
+            "status": "failed",
+            "error": redact_text(f"{type(exc).__name__}: {exc}"),
+        }))
         return 2
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result["status"] == "passed" and (

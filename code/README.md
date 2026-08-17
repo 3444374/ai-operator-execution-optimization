@@ -17,10 +17,15 @@ server/GPU evidence and not an authorization to resume the stopped experiment.
 Each authorized physical matrix now receives a fresh `matrix_instance_id` after authorization and
 copies it into the immutable snapshot, index, and every cell; mixing a cell from another output root
 therefore fails offline validation. Persisted exception text is scrubbed with the shared credential
-redactor. Every valid cell and every `all_runs.csv` row also carries actual `server_version` and
-`pgvector_version`, collected from the timed PostgreSQL source evidence rather than inferred from a
-directory name. A passed summary keeps `formal_authorized=false` and records the narrower fact
-`formal_authorization_verified=true`.
+redactor at both native-shard and matrix boundaries. The frozen manifest is sealed inside the matrix
+root; resource/output artifacts use root-relative, non-escaping paths, so moving the complete root
+does not break offline verification. Native raw Job summaries additionally seal each Job manifest and
+rewrite shard log/summary/request locators relative to the cell root; the matrix index uses a curated
+schema rather than copying arbitrary executor fields. Every valid cell and every `all_runs.csv` row also carries actual
+`server_version` and `pgvector_version`, collected from the timed PostgreSQL source evidence rather
+than inferred from a directory name. The shared typed `DatabaseIdentity` requires the same pair across
+the whole matrix, not merely a non-empty pair per cell. A passed summary keeps
+`formal_authorized=false` and records the narrower fact `formal_authorization_verified=true`.
 
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:

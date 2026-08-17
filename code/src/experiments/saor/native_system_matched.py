@@ -7,13 +7,18 @@ import csv
 import json
 import math
 import random
+import shutil
 import subprocess
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from src.baselines.common.redact import redact_text
+from src.baselines.common.database_identity import (
+    DatabaseIdentity,
+    DatabaseIdentityError,
+)
+from src.baselines.common.redact import redact_argument_list, redact_text
 from src.infrastructure.config_env import expand_structure
 from src.infrastructure.runner_lease import acquire_host_runner_lease
 
@@ -311,6 +316,52 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def relativize_matrix_evidence_path(
+    matrix_root: Path,
+    artifact_path: str | Path,
+    evidence_name: str,
+) -> tuple[Path, str]:
+    """Validate a live artifact is inside the matrix root and store it relatively."""
+
+    root = matrix_root.resolve()
+    raw_path = Path(artifact_path)
+    resolved = (
+        raw_path.resolve()
+        if raw_path.is_absolute()
+        else (root / raw_path).resolve()
+    )
+    try:
+        relative = resolved.relative_to(root)
+    except ValueError as error:
+        raise RuntimeError(
+            f"{evidence_name} escapes the matrix evidence root"
+        ) from error
+    if not resolved.exists() or (resolved.is_file() and resolved.stat().st_size <= 0):
+        raise RuntimeError(f"{evidence_name} is missing or empty")
+    return resolved, relative.as_posix()
+
+
+def resolve_matrix_evidence_path(
+    matrix_root: Path,
+    stored_path: object,
+    evidence_name: str,
+) -> Path:
+    """Resolve one stored root-relative artifact without allowing path escape."""
+
+    relative = Path(str(stored_path))
+    if relative.is_absolute() or not relative.parts:
+        raise ValueError(f"{evidence_name} must be matrix-root relative")
+    root = matrix_root.resolve()
+    resolved = (root / relative).resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError(f"{evidence_name} escapes the matrix evidence root") from error
+    if not resolved.exists() or (resolved.is_file() and resolved.stat().st_size <= 0):
+        raise ValueError(f"{evidence_name} is missing or empty")
+    return resolved
+
+
 def resolved_matched_system_identity(
     config: MatchedSystemConfig,
 ) -> dict[str, object]:
@@ -460,6 +511,7 @@ def _validate_cell_evidence(
     evidence: dict[str, object],
     repository_commit: str,
     runtime_identity: dict[str, object],
+    matrix_output_root: Path,
 ) -> dict[str, object]:
     """Normalize one executor result and reject incomplete comparison evidence."""
 
@@ -476,15 +528,10 @@ def _validate_cell_evidence(
         raise RuntimeError("executor returned non-passing cell evidence")
     if evidence["exactly_once"] is not True:
         raise RuntimeError("cell exactly-once evidence failed")
-    for field in ("server_version", "pgvector_version"):
-        value = evidence[field]
-        if (
-            not isinstance(value, str)
-            or not value.strip()
-            or value.strip().lower()
-            in {"not_applicable", "not_installed", "unavailable", "unknown"}
-        ):
-            raise RuntimeError(f"cell {field} evidence is missing")
+    try:
+        DatabaseIdentity.from_record(evidence, "cell")
+    except DatabaseIdentityError as error:
+        raise RuntimeError(str(error)) from error
     start = evidence["start_epoch_s"]
     end = evidence["end_epoch_s"]
     boundary = evidence["database_operator_e2e_s"]
@@ -540,9 +587,13 @@ def _validate_cell_evidence(
         raise RuntimeError("service token counter evidence is invalid")
     if not isinstance(resource, dict) or resource.get("resource_metrics_status") != "ok":
         raise RuntimeError("resource evidence is incomplete")
-    resource_path = Path(str(resource.get("path", "")))
-    if not resource_path.is_file() or resource_path.stat().st_size <= 0:
-        raise RuntimeError("resource trace artifact is missing or empty")
+    resource_path, resource_relative_path = relativize_matrix_evidence_path(
+        matrix_output_root,
+        str(resource.get("path", "")),
+        "resource trace artifact",
+    )
+    if not resource_path.is_file():
+        raise RuntimeError("resource trace artifact must be a file")
     with resource_path.open(encoding="utf-8", newline="") as stream:
         resource_rows = list(csv.DictReader(stream))
     if not resource_rows:
@@ -566,10 +617,16 @@ def _validate_cell_evidence(
     output_paths = evidence["output_paths"]
     if not isinstance(output_paths, dict) or not output_paths:
         raise RuntimeError("output artifact evidence is incomplete")
+    relative_output_paths: dict[str, str] = {}
     for name, value in output_paths.items():
-        artifact = Path(str(value))
-        if not artifact.exists() or (artifact.is_file() and artifact.stat().st_size <= 0):
-            raise RuntimeError(f"output artifact {name} is missing or empty")
+        artifact, relative_path = relativize_matrix_evidence_path(
+            matrix_output_root,
+            str(value),
+            f"output artifact {name}",
+        )
+        if not artifact.is_file():
+            raise RuntimeError(f"output artifact {name} must be a file")
+        relative_output_paths[str(name)] = relative_path
     if normalize_request_tail_status(arm.unsupported_request_tails) != evidence["request_tail_status"]:
         raise RuntimeError("unsupported request-tail evidence drifted")
     try:
@@ -592,8 +649,60 @@ def _validate_cell_evidence(
         for token in ("credit", "coordinator", "router", "bounded-ready", "max-active-work")
     ):
         raise RuntimeError("native dispatch contains Project flags")
+    # Engineering decision: persist a curated cell schema instead of copying
+    # executor records wholesale. Native/Project executors retain their full
+    # raw files under the cell directory; the matrix index contains only the
+    # fields the offline contract consumes, preventing stale absolute locators
+    # and unknown exception fields from leaking into the portable root.
+    job_fields = (
+        "job_id", "scheduled_launch_epoch_s", "actual_launch_epoch_s",
+        "ended_epoch_s", "completed_count", "expected_count", "actual_work",
+        "exactly_once", "shard_provenance",
+    )
+    persisted_jobs = [
+        {field: job[field] for field in job_fields if field in job}
+        for job in jobs
+    ]
+    persisted_service = {
+        field: service[field]
+        for field in (
+            "metrics_status", "prompt_tokens_delta", "generation_tokens_delta",
+            "request_success_delta",
+        )
+        if field in service
+    }
+    persisted_resource = {
+        field: resource[field]
+        for field in (
+            "resource_metrics_status", "gpu_summary", "gauge_summary",
+        )
+        if field in resource
+    }
+    persisted_resource["path"] = resource_relative_path
+    persisted: dict[str, object] = {
+        "implementation_source": evidence["implementation_source"],
+        "start_epoch_s": evidence["start_epoch_s"],
+        "end_epoch_s": evidence["end_epoch_s"],
+        "database_operator_e2e_s": evidence["database_operator_e2e_s"],
+        "jobs": persisted_jobs,
+        "service_metrics": persisted_service,
+        "resource_metrics": persisted_resource,
+        "exactly_once": evidence["exactly_once"],
+        "request_tail_status": evidence["request_tail_status"],
+        "output_paths": relative_output_paths,
+        "status": evidence["status"],
+        "server_version": evidence["server_version"],
+        "pgvector_version": evidence["pgvector_version"],
+        "command": redact_argument_list([str(item) for item in command]),
+    }
+    for field in (
+        "run_id", "queue_final", "shared_credit_final",
+        "request_limit_per_endpoint", "work_limit_per_endpoint",
+    ):
+        if field in evidence:
+            persisted[field] = evidence[field]
     return {
-        **evidence,
+        **persisted,
         "actual_job_offset_s": actual_offset_s,
         "nominal_job_offset_s": NOMINAL_JOB_OFFSET_S,
         "job_offset_deviation_s": offset_deviation_s,
@@ -609,7 +718,7 @@ def _validate_cell_evidence(
         "config_fingerprint": runtime_identity["resolved_config_sha256"],
         "authorization_sha256": runtime_identity["authorization_sha256"],
         "matrix_instance_id": runtime_identity["matrix_instance_id"],
-        "manifest_path": arm.manifest_path,
+        "manifest_path": runtime_identity["manifest_evidence_path"],
         "manifest_sha256": arm.manifest_sha256,
         "service_signature": dict(arm.service_signature),
     }
@@ -666,6 +775,13 @@ def run_matched_system(
         raise FileExistsError(
             f"matrix output root already exists: {matrix_output_root}"
         ) from error
+    sealed_manifest_relative = "evidence/frozen_manifest.jsonl"
+    sealed_manifest_path = matrix_output_root / sealed_manifest_relative
+    sealed_manifest_path.parent.mkdir(parents=True)
+    shutil.copyfile(Path(config.arms[0].manifest_path), sealed_manifest_path)
+    if sha256_file(sealed_manifest_path) != runtime_identity["manifest_sha256"]:
+        raise RuntimeError("sealed manifest SHA drifted during matrix initialization")
+    runtime_identity["manifest_evidence_path"] = sealed_manifest_relative
     matrix_index = matrix_output_root / "matrix_index.json"
     contract_snapshot = matrix_output_root / "matrix_contract_snapshot.json"
     _atomic_json(
@@ -686,6 +802,7 @@ def run_matched_system(
         "config_sha256": runtime_identity["config_sha256"],
         "config_fingerprint": runtime_identity["resolved_config_sha256"],
         "manifest_sha256": runtime_identity["manifest_sha256"],
+        "manifest_evidence_path": sealed_manifest_relative,
         "authorization_sha256": authorization_sha256,
         "contract_snapshot_sha256": contract_snapshot_sha256,
         "service_signature": dict(config.arms[0].service_signature),
@@ -740,7 +857,7 @@ def run_matched_system(
                     "resolved_config_sha256"
                 ],
                 "authorization_sha256": authorization_sha256,
-                "manifest_path": arm.manifest_path,
+                "manifest_path": sealed_manifest_relative,
                 "manifest_sha256": arm.manifest_sha256,
                 "service_signature": dict(arm.service_signature),
                 "status": "running",
@@ -759,6 +876,7 @@ def run_matched_system(
                         executor(arm, cell, output_dir),
                         repository_commit,
                         runtime_identity,
+                        matrix_output_root,
                     )
                     running.update(completed)
                     primary_error: Exception | None = None

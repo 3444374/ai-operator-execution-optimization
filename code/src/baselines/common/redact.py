@@ -12,7 +12,8 @@ provenance sidecars, failure reports).
   username / host / port / path but drop the password
   (``postgres:postgres@host`` -> ``postgres:***@host``).
 * Free text (exception messages, tracebacks) is scrubbed of embedded
-  ``scheme://user:password@host`` credentials via :func:`redact_text`.
+  ``scheme://user:password@host`` credentials and named secret assignments
+  such as ``api_key=...`` via :func:`redact_text`.
 
 Both ``--flag value`` and ``--flag=value`` forms are handled. Flag matching is
 intentionally substring-based on the lower-cased flag stem so newly added
@@ -44,6 +45,29 @@ URL_FLAGS: frozenset[str] = frozenset(
 # Matches "scheme://user:password@" embedded anywhere in free text (exception
 # messages, tracebacks) so a DSN echoed by psycopg/DuckDB cannot leak.
 _CREDENTIAL_IN_URL = re.compile(r"(://[^\s:/@]+):[^\s/@]+@")
+_QUOTED_NAMED_SECRET = re.compile(
+    r"(?i)([\"']?(?:api[_-]?key|auth[_-]?token|access[_-]?token|"
+    r"client[_-]?secret|secret|password)[\"']?\s*[:=]\s*)"
+    r"([\"'])[^\"']*\2"
+)
+_UNQUOTED_NAMED_SECRET = re.compile(
+    r"(?i)([\"']?(?:api[_-]?key|auth[_-]?token|access[_-]?token|"
+    r"client[_-]?secret|secret|password)[\"']?\s*[:=]\s*)"
+    r"(?![\"'])[^\s,;}]+"
+)
+_BEARER_SECRET = re.compile(
+    r"(?i)([\"']?authorization[\"']?\s*[:=]\s*[\"']?bearer\s+)"
+    r"[^\s,;}\]\"']+"
+)
+_CLI_SECRET = re.compile(
+    r"(?i)(--(?:api-key|auth-token|access-token|client-secret|secret|password)"
+    r"(?:=|\s+|[\"']\s*,\s*[\"']))[^\s,;}\]\"']+"
+)
+_KNOWN_TOKEN = re.compile(
+    r"\b(?:hf_[A-Za-z0-9]{8,}|sk-[A-Za-z0-9_-]{8,}|"
+    r"ghp_[A-Za-z0-9]{8,}|github_pat_[A-Za-z0-9_]{8,}|"
+    r"xox[baprs]-[A-Za-z0-9-]{8,}|AIza[A-Za-z0-9_-]{8,})\b"
+)
 
 
 def redact_database_url(value: str) -> str:
@@ -71,7 +95,14 @@ def redact_text(value: str) -> str:
 
     if not value:
         return value
-    return _CREDENTIAL_IN_URL.sub(r"\1:***@", value)
+    without_url_passwords = _CREDENTIAL_IN_URL.sub(r"\1:***@", value)
+    without_cli = _CLI_SECRET.sub(r"\1***", without_url_passwords)
+    without_quoted = _QUOTED_NAMED_SECRET.sub(
+        r"\1\2***\2", without_cli
+    )
+    without_named = _UNQUOTED_NAMED_SECRET.sub(r"\1***", without_quoted)
+    without_bearer = _BEARER_SECRET.sub(r"\1***", without_named)
+    return _KNOWN_TOKEN.sub("***", without_bearer)
 
 
 def _is_url_with_password(value: str) -> bool:

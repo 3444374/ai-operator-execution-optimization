@@ -42,6 +42,7 @@ from src.baselines.common.manifests import (
     write_manifest,
     write_manifest_metadata,
 )
+from src.baselines.common.redact import redact_text
 from ..products import (
     DuckDBAiConfig,
     OceanBaseConfig,
@@ -113,7 +114,13 @@ def _write_results(
             ),
         )
         writer.writeheader()
-        writer.writerows(asdict(result) for result in results)
+        persisted_rows = []
+        for result in results:
+            row = asdict(result)
+            if isinstance(row.get("error"), str):
+                row["error"] = redact_text(row["error"])
+            persisted_rows.append(row)
+        writer.writerows(persisted_rows)
     temporary.replace(path)
 
 
@@ -428,7 +435,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
             {
                 **base_summary,
                 "status": "failed",
-                "error": f"{type(exc).__name__}: {exc}",
+                "error": redact_text(f"{type(exc).__name__}: {exc}"),
                 "worker_failures": 1,
             },
         )
@@ -442,7 +449,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
             {
                 **base_summary,
                 "status": "failed",
-                "error": f"{type(exc).__name__}: {exc}",
+                "error": redact_text(f"{type(exc).__name__}: {exc}"),
                 "observed_result_count": len(results),
                 "failed_result_count": sum(
                     result.status != "completed" or bool(result.error) for result in results
@@ -1071,7 +1078,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         result = run_cli(sys.argv[1:] if argv is None else argv)
     except Exception as exc:
-        print(json.dumps({"status": "failed", "error": str(exc)}))
+        print(json.dumps({"status": "failed", "error": redact_text(str(exc))}))
         return 2
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result.get("status") != "failed" else 2

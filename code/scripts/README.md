@@ -158,8 +158,10 @@ live 容器解码后再存入 evidence。终态校验按真实 native `queue_fin
 有效代次；失败/篡改矩阵会删除旧性能表，但保留含所有已记录 cell 的 `all_runs.csv`
 及经统一脱敏的失败原因。passed validation 仍固定 `formal_authorized=false`，仅以独立字段
 `formal_authorization_verified=true` 表示本次运行 artifact 已通过身份核验。
-（`status/failure_reason`）和 failed `validation.json`，不得发布性能排名。工具不产生 winner；passed
-只表示提供的独立 formal authorization 与封存证据身份一致，不会自行启动实验。
+工具不产生 winner；passed 只表示提供的独立 formal authorization 与封存证据身份一致，不会自行
+启动实验。manifest 封存进 matrix root，resource/output artifact 只记录经逃逸检查的 root 相对路径；
+native Job raw summary 同步封存 per-Job manifest 并相对化 shard locator；matrix index 使用 curated
+schema，不透传 executor 的未知路径/异常字段。完整 root 归档搬迁后仍可离线复核。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data

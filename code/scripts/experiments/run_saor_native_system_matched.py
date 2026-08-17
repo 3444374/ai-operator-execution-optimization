@@ -19,11 +19,16 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts.experiments.run_ai_operator_scenarios import wait_for_idle  # noqa: E402
+from src.baselines.common.database_identity import (  # noqa: E402
+    consistent_database_versions as _consistent_database_versions,
+)
+from src.baselines.common.redact import redact_text  # noqa: E402
 from src.baselines.text.orchestration.native_multijob import (  # noqa: E402
     NativeRunIdentity,
     audit_command,
     load_native_multijob_config,
     run_native_multijob_cell,
+    seal_native_cell_artifact_paths,
 )
 from src.baselines.common.manifests import read_manifest  # noqa: E402
 from src.experiments.saor.native_system_matched import (  # noqa: E402
@@ -468,28 +473,6 @@ def _normalize_project(
     }
 
 
-def _consistent_database_versions(
-    records: list[dict[str, object]], evidence_name: str
-) -> dict[str, str]:
-    """Require one actual PostgreSQL/pgvector identity across a physical cell."""
-
-    if not records:
-        raise RuntimeError(f"{evidence_name} is empty")
-    output: dict[str, str] = {}
-    for field in ("server_version", "pgvector_version"):
-        observed = [str(record.get(field, "")).strip() for record in records]
-        values = set(observed)
-        if any(not value for value in observed) or len(values) != 1:
-            raise RuntimeError(f"{evidence_name} {field} is missing or drifted")
-        value = next(iter(values))
-        if value.lower() in {
-            "not_applicable", "not_installed", "unavailable", "unknown",
-        }:
-            raise RuntimeError(f"{evidence_name} {field} is not actual evidence")
-        output[field] = value
-    return output
-
-
 def run(options: CliOptions) -> dict[str, object]:
     native = load_native_multijob_config(options.native_config)
     project = load_project_config(options.project_config)
@@ -520,11 +503,12 @@ def run(options: CliOptions) -> dict[str, object]:
             runner_script=options.native_runner,
             repository_commit=repository_commit,
         )
+        seal_native_cell_artifact_paths(record, output_dir)
         commands = [
             command
             for job in record.get("jobs", [])
             for command in json.loads(
-                (Path(record["output_root"]) / "jobs" / job["job_id"] / "commands.json").read_text()
+                (output_dir / "jobs" / job["job_id"] / "commands.json").read_text()
             )
         ]
         for command in commands:
@@ -577,7 +561,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = run(parse_args(argv))
     except Exception as exc:
-        print(json.dumps({"status": "failed", "error": f"{type(exc).__name__}: {exc}"}))
+        print(json.dumps({
+            "status": "failed",
+            "error": redact_text(f"{type(exc).__name__}: {exc}"),
+        }))
         return 1
     print(json.dumps({"status": result["status"], "cells": len(result["cells"])}))
     return 0

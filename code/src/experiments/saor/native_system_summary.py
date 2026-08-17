@@ -9,6 +9,7 @@ import statistics
 from pathlib import Path
 from typing import Any
 
+from src.baselines.common.database_identity import DatabaseIdentity
 from src.baselines.common.redact import redact_text
 
 from .native_system_matched import (
@@ -18,6 +19,7 @@ from .native_system_matched import (
     SYSTEM_ARM_IDS,
     sha256_file,
     sha256_payload,
+    resolve_matrix_evidence_path,
     validate_native_final_queue,
     validate_project_final_credit,
 )
@@ -193,14 +195,22 @@ def _availability_metric(
 
 
 def _resource_row(
-    cell: dict[str, Any], start: float, end: float, run_id: str
+    matrix_root: Path,
+    cell: dict[str, Any],
+    start: float,
+    end: float,
+    run_id: str,
 ) -> dict[str, object]:
     resource = cell.get("resource_metrics")
     if not isinstance(resource, dict) or resource.get("resource_metrics_status") != "ok":
         raise ValueError(f"{run_id} resource metrics are unavailable")
-    path = Path(str(resource.get("path", "")))
-    if not path.is_file() or path.stat().st_size <= 0:
-        raise ValueError(f"{run_id} resource trace is missing")
+    path = resolve_matrix_evidence_path(
+        matrix_root,
+        resource.get("path", ""),
+        f"{run_id} resource trace",
+    )
+    if not path.is_file():
+        raise ValueError(f"{run_id} resource trace must be a file")
     with path.open(encoding="utf-8", newline="") as stream:
         samples = list(csv.DictReader(stream))
     absolute = [
@@ -243,6 +253,7 @@ def _resource_row(
 
 
 def _normalize_cell(
+    matrix_root: Path,
     cell: object,
 ) -> tuple[dict[str, object], list[dict[str, object]], dict[str, object]]:
     if not isinstance(cell, dict):
@@ -262,17 +273,7 @@ def _normalize_cell(
         raise ValueError(f"{run_id} has unknown arm {arm_id!r}")
     if cell.get("status") != "passed" or cell.get("exactly_once") is not True:
         raise ValueError(f"{run_id} failed status/exactly-once gate")
-    versions: dict[str, str] = {}
-    for field in ("server_version", "pgvector_version"):
-        value = cell.get(field)
-        if (
-            not isinstance(value, str)
-            or not value.strip()
-            or value.strip().lower()
-            in {"not_applicable", "not_installed", "unavailable", "unknown"}
-        ):
-            raise ValueError(f"{run_id} lacks {field}")
-        versions[field] = value
+    versions = DatabaseIdentity.from_record(cell, run_id).as_dict()
     if (
         phase not in {"warmup", "formal", "selector_sanity_development"}
         or repeat < 1
@@ -413,7 +414,9 @@ def _normalize_cell(
             ("bulk", "foreground"), scheduled_starts, actual_starts, ends
         )
     ]
-    return run_row, job_rows, _resource_row(cell, start, end, run_id)
+    return run_row, job_rows, _resource_row(
+        matrix_root, cell, start, end, run_id
+    )
 
 
 def _sample_cv(values: list[float]) -> float:
@@ -688,12 +691,24 @@ def _load_authorized_identity(
         or runtime.get("authorization_sha256") != authorization_sha256
     ):
         raise ValueError("runtime authorization identity is invalid")
+    manifest_evidence_path = runtime.get("manifest_evidence_path")
+    manifest_path = resolve_matrix_evidence_path(
+        matrix_root,
+        manifest_evidence_path,
+        "sealed manifest",
+    )
+    if (
+        not manifest_path.is_file()
+        or sha256_file(manifest_path) != authorization["manifest_sha256"]
+    ):
+        raise ValueError("sealed manifest identity drifted")
     expected_index = {
         "repository_commit": authorization["repository_commit"],
         "matrix_instance_id": matrix_instance_id,
         "config_sha256": authorization["config_sha256"],
         "config_fingerprint": authorization["resolved_config_sha256"],
         "manifest_sha256": authorization["manifest_sha256"],
+        "manifest_evidence_path": manifest_evidence_path,
         "authorization_sha256": authorization_sha256,
         "execution_mode": "formal",
     }
@@ -725,12 +740,7 @@ def _load_authorized_identity(
     ).get("service_signature"):
         raise ValueError("matrix service signature drifted")
     for arm in by_arm.values():
-        manifest_path = Path(str(arm.get("manifest_path", "")))
-        if (
-            str(arm.get("manifest_sha256", ""))
-            != authorization["manifest_sha256"]
-            or sha256_file(manifest_path) != authorization["manifest_sha256"]
-        ):
+        if str(arm.get("manifest_sha256", "")) != authorization["manifest_sha256"]:
             raise ValueError("frozen manifest identity drifted")
 
     schedule = index.get("schedule")
@@ -756,7 +766,7 @@ def _load_authorized_identity(
             "config_sha256": authorization["config_sha256"],
             "config_fingerprint": authorization["resolved_config_sha256"],
             "authorization_sha256": authorization_sha256,
-            "manifest_path": arm["manifest_path"],
+            "manifest_path": manifest_evidence_path,
             "manifest_sha256": arm["manifest_sha256"],
             "service_signature": arm["service_signature"],
             "scheduler_owner": arm["scheduler_owner"],
@@ -764,6 +774,27 @@ def _load_authorized_identity(
         for field, expected in expected_cell.items():
             if cell.get(field) != expected:
                 raise ValueError(f"cell {position} {field} identity drifted")
+        resource = cell.get("resource_metrics")
+        if not isinstance(resource, dict):
+            raise ValueError(f"cell {position} resource evidence is invalid")
+        resolve_matrix_evidence_path(
+            matrix_root,
+            resource.get("path", ""),
+            f"cell {position} resource trace",
+        )
+        output_paths = cell.get("output_paths")
+        if not isinstance(output_paths, dict) or not output_paths:
+            raise ValueError(f"cell {position} output evidence is invalid")
+        for name, stored_path in output_paths.items():
+            artifact = resolve_matrix_evidence_path(
+                matrix_root,
+                stored_path,
+                f"cell {position} output artifact {name}",
+            )
+            if not artifact.is_file():
+                raise ValueError(
+                    f"cell {position} output artifact {name} must be a file"
+                )
     return by_arm
 
 
@@ -790,6 +821,7 @@ def summarize_matched_system(
             isinstance(cell, dict) for cell in raw_cells
         ):
             raise ValueError("matrix cells must be a list")
+        DatabaseIdentity.consistent(raw_cells, "native-system matrix")
         _load_authorized_identity(
             matrix_root,
             index,
@@ -874,7 +906,7 @@ def summarize_matched_system(
         job_rows: list[dict[str, object]] = []
         resource_rows: list[dict[str, object]] = []
         for cell in raw_cells:
-            normalized, jobs, resource = _normalize_cell(cell)
+            normalized, jobs, resource = _normalize_cell(matrix_root, cell)
             run_rows.append(
                 _audit_row(
                     cell,

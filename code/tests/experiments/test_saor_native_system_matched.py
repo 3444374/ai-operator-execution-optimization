@@ -5,12 +5,14 @@ from __future__ import annotations
 import copy
 import csv
 import hashlib
+import io
 import json
 import os
 import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -42,6 +44,7 @@ from scripts.experiments.run_saor_native_system_matched import (
     _normalize_project,
     _canonical_config_path,
     _validate_executor_bindings,
+    main as matched_main,
     parse_args,
 )
 from src.experiments.saor.native_system_summary import (
@@ -155,6 +158,27 @@ class MatchedSystemContractTest(unittest.TestCase):
                 },
             )
 
+    def test_complete_matrix_root_remains_valid_after_move(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original_root = root / "matrix-original"
+            moved_root = root / "archive" / "matrix-moved"
+            output_dir = root / "summary"
+            authorization = self._write_complete_summary_fixture(original_root)
+
+            moved_root.parent.mkdir()
+            original_root.rename(moved_root)
+
+            self.assertTrue(summarize_matched_system(
+                moved_root,
+                output_dir,
+                formal_authorization_path=authorization,
+            ))
+            self.assertEqual(
+                json.loads((output_dir / "validation.json").read_text())["status"],
+                "passed",
+            )
+
     def test_offline_summary_rejects_corrupted_matrix_evidence(self) -> None:
         def missing_arm(index: dict[str, object], root: Path) -> None:
             del root
@@ -201,8 +225,15 @@ class MatchedSystemContractTest(unittest.TestCase):
             index["cells"][0]["jobs"][0]["ended_epoch_s"] = 104.0
 
         def missing_resource(index: dict[str, object], root: Path) -> None:
-            del root
-            Path(index["cells"][0]["resource_metrics"]["path"]).unlink()
+            (root / index["cells"][0]["resource_metrics"]["path"]).unlink()
+
+        def escaped_resource(index: dict[str, object], root: Path) -> None:
+            source = root / index["cells"][0]["resource_metrics"]["path"]
+            escaped = root.parent / "outside-resource.csv"
+            escaped.write_bytes(source.read_bytes())
+            index["cells"][0]["resource_metrics"]["path"] = (
+                "../outside-resource.csv"
+            )
 
         def project_kw_drift(index: dict[str, object], root: Path) -> None:
             del root
@@ -221,6 +252,10 @@ class MatchedSystemContractTest(unittest.TestCase):
             del root
             index["cells"][0]["server_version"] = "unavailable"
 
+        def database_version_drift(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["server_version"] = "18.3"
+
         corruptions = {
             "missing arm": missing_arm,
             "missing repeat": missing_repeat,
@@ -232,9 +267,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             "source outside cell": source_outside,
             "non-positive overlap": no_overlap,
             "missing resource trace": missing_resource,
+            "resource path escape": escaped_resource,
             "Project K/W drift": project_kw_drift,
             "native Project flag": native_project_flag,
             "missing database version": missing_database_version,
+            "database version drift": database_version_drift,
         }
         for name, corrupt in corruptions.items():
             with self.subTest(name=name), TemporaryDirectory() as temporary:
@@ -1216,7 +1253,23 @@ class MatchedSystemContractTest(unittest.TestCase):
                 calls.append(
                     (arm.kind, arm.arm_id, identity.repeat, identity.order_index)
                 )
-                return self._cell_evidence(arm, identity, output_dir)
+                evidence = self._cell_evidence(arm, identity, output_dir)
+                evidence["output_root"] = str(output_dir)
+                evidence["service_counters"] = str(
+                    output_dir / "service-counters.json"
+                )
+                evidence["jobs"][0]["manifest"] = str(
+                    output_dir.parent / "external-job-manifest.jsonl"
+                )
+                evidence["jobs"][0]["shards"] = [{
+                    "log": str(output_dir / "shard.log"),
+                    "summary": str(output_dir / "shard" / "summary.json"),
+                    "requests": str(output_dir / "shard" / "requests.csv"),
+                }]
+                evidence["service_metrics"]["service_counters_path"] = str(
+                    output_dir / "service-counters.json"
+                )
+                return evidence
 
             result = run_matched_system(
                 path,
@@ -1262,6 +1315,23 @@ class MatchedSystemContractTest(unittest.TestCase):
                 {record["matrix_instance_id"] for record in persisted["cells"]},
                 {matrix_instance_id},
             )
+            for record in persisted["cells"]:
+                self.assertNotIn("output_root", record)
+                self.assertNotIn("service_counters", record)
+                self.assertNotIn("manifest", record["jobs"][0])
+                self.assertNotIn("shards", record["jobs"][0])
+                self.assertNotIn(
+                    "service_counters_path", record["service_metrics"]
+                )
+                artifact_paths = [
+                    record["resource_metrics"]["path"],
+                    *record["output_paths"].values(),
+                ]
+                self.assertTrue(all(
+                    not Path(stored_path).is_absolute()
+                    and (Path(config.matrix_output_root) / stored_path).exists()
+                    for stored_path in artifact_paths
+                ))
             snapshot = json.loads(
                 (
                     Path(config.matrix_output_root)
@@ -1571,6 +1641,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             "missing output": lambda evidence, root: evidence["output_paths"].update(
                 {"commands": str(root / "missing.json")}
             ),
+            "directory is not an output artifact": (
+                lambda evidence, root: evidence["output_paths"].update(
+                    {"commands": str(root)}
+                )
+            ),
             "missing database version": lambda evidence, _root: evidence.update(
                 {"pgvector_version": "not_applicable"}
             ),
@@ -1670,6 +1745,24 @@ class MatchedSystemContractTest(unittest.TestCase):
         for flag in ("--resume", "--recover-stale-lease"):
             with self.subTest(flag=flag), self.assertRaises(SystemExit):
                 parse_args([*base, flag])
+
+    def test_cli_redacts_failure_before_stdout_logging(self) -> None:
+        simulated_key = "simulated-secret-value"
+        output = io.StringIO()
+        with (
+            patch(
+                "scripts.experiments.run_saor_native_system_matched.parse_args",
+                return_value=object(),
+            ),
+            patch(
+                "scripts.experiments.run_saor_native_system_matched.run",
+                side_effect=RuntimeError(f"api_key={simulated_key}"),
+            ),
+            redirect_stdout(output),
+        ):
+            self.assertEqual(matched_main([]), 1)
+        self.assertNotIn(simulated_key, output.getvalue())
+        self.assertIn("api_key=***", output.getvalue())
 
     def test_rehearsal_runs_all_eight_warmup_cells_once_and_no_other_phase(self) -> None:
         with self._config() as path:
@@ -1897,7 +1990,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                             "resolved_config_sha256"
                         ],
                         "authorization_sha256": authorization_sha256,
-                        "manifest_path": str(manifest_path),
+                        "manifest_path": "frozen-manifest.jsonl",
                         "manifest_sha256": manifest_sha256,
                         "service_signature": service_signature,
                         "implementation_source": (
@@ -1949,7 +2042,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         },
                         "resource_metrics": {
                             "resource_metrics_status": "ok",
-                            "path": str(resource_path),
+                            "path": resource_path.relative_to(matrix_root).as_posix(),
                         },
                         "request_tail_status": {
                             "request_p99": {
@@ -2004,8 +2097,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                         ),
                         "command": command,
                         "output_paths": {
-                            "commands": str(command_path),
-                            "resources": str(resource_path),
+                            "commands": command_path.relative_to(matrix_root).as_posix(),
+                            "resources": resource_path.relative_to(matrix_root).as_posix(),
                         },
                         "request_limit_per_endpoint": 8 if not is_native else None,
                         "work_limit_per_endpoint": 65536 if not is_native else None,
@@ -2020,6 +2113,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         **authorization,
                         "matrix_instance_id": matrix_instance_id,
                         "authorization_sha256": authorization_sha256,
+                        "manifest_evidence_path": "frozen-manifest.jsonl",
                         "execution_mode": "formal",
                     },
                     "resolved_config": resolved_config,
@@ -2040,6 +2134,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "resolved_config_sha256"
                     ],
                     "manifest_sha256": manifest_sha256,
+                    "manifest_evidence_path": "frozen-manifest.jsonl",
                     "authorization_sha256": authorization_sha256,
                     "contract_snapshot_sha256": sha256_file(snapshot_path),
                     "service_signature": service_signature,

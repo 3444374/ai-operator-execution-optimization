@@ -92,6 +92,50 @@ class RedactTextTests(unittest.TestCase):
         self.assertNotIn("postgres:postgres@", scrubbed)
         self.assertIn("postgres:***@localhost:5432", scrubbed)
 
+    def test_scrubs_named_secret_in_exception_text(self) -> None:
+        msg = (
+            "request failed: api_key=simulated-secret-value "
+            "{\"access_token\":\"another-simulated-value\"} "
+            "secret='third-simulated-value'"
+        )
+        scrubbed = redact_text(msg)
+        self.assertNotIn("simulated-secret-value", scrubbed)
+        self.assertNotIn("another-simulated-value", scrubbed)
+        self.assertNotIn("third-simulated-value", scrubbed)
+        self.assertIn("api_key=***", scrubbed)
+        self.assertIn('\"access_token\":\"***\"', scrubbed)
+
+    def test_scrubs_bearer_and_known_token_shapes(self) -> None:
+        simulated_bearer = "simulated-bearer-value"
+        simulated_token = "sk-" + "simulatedtokenvalue"
+        scrubbed = redact_text(
+            f"Authorization: Bearer {simulated_bearer}; token={simulated_token}"
+        )
+        self.assertNotIn(simulated_bearer, scrubbed)
+        self.assertNotIn(simulated_token, scrubbed)
+        self.assertIn("Authorization: Bearer ***", scrubbed)
+
+    def test_scrubs_quoted_bearer_and_stringified_cli_secrets(self) -> None:
+        simulated_values = (
+            "opaque-header-value",
+            "opaque-equals-value",
+            "opaque-cli-value",
+            "opaque-list-value",
+        )
+        message = (
+            "headers={'Authorization': 'Bearer opaque-header-value'}; "
+            "Authorization=Bearer opaque-equals-value; "
+            "runner --auth-token opaque-cli-value failed; "
+            "Command ['runner', '--api-key', 'opaque-list-value'] failed"
+        )
+        scrubbed = redact_text(message)
+        for value in simulated_values:
+            self.assertNotIn(value, scrubbed)
+        self.assertIn("'Authorization': 'Bearer ***'", scrubbed)
+        self.assertIn("Authorization=Bearer ***", scrubbed)
+        self.assertIn("--auth-token ***", scrubbed)
+        self.assertIn("--api-key', '***'", scrubbed)
+
     def test_no_credentials_returned_as_is(self) -> None:
         self.assertEqual(redact_text("some benign error"), "some benign error")
 

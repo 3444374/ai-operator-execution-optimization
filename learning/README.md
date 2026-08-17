@@ -1,5 +1,24 @@
 # Learning Notes
 
+## 2026-08-17 为什么 evidence 自包含不等于只保存一个目录名
+
+若 matrix index 保存 manifest、resource trace 和 output artifact 的绝对路径，原机器上验证通过并不代表
+归档可复核：只要把完整 root 改名、复制到另一块磁盘或解压到不同目录，验证器就会继续访问旧路径。
+正确合同是把不可变 manifest 封存进 matrix root，其他 cell 产物必须实际位于 root 内，并只保存相对
+路径。离线解析时拒绝绝对路径和 `..` 逃逸，再核验存在性与 SHA；这样“可搬迁”仍保持 fail closed，
+而不是通过跳过文件校验实现。
+
+数据库身份也必须是矩阵级事实。每个 cell 各自拥有非空 `server_version`/`pgvector_version` 只能证明
+单格有记录，不能阻止 18.4 与 18.3 混入同一排名。共享 typed `DatabaseIdentity` 现在同时服务 shard、
+runner、cell 与 summary：先拒绝 sentinel，再要求所有 cell 的版本对完全相同。
+
+最后，外层 summary 的脱敏无法清除底层已经落盘的原始异常。异常必须在 native shard summary、
+multi-job Job/cell/preflight 和外层 matrix 每个持久化边界调用同一个 `redact_text()`。模拟凭据测试扫描
+所有 JSON/CSV，而不是只检查最终报告；free-text redactor 还要覆盖 JSON quoted secret、Bearer 与已知
+token 形态，不能只测一个 `api_key=...`。matrix index 采用 curated schema，原生 raw Job summary 再
+封存 per-Job manifest 并相对化 shard artifact，避免“验证器不读取旧绝对路径”被误当成真正自包含。
+本次仍只是本地证据合同修复；未连接服务器，native-system 与 SAOR formal 均未运行。
+
 ## 2026-08-16 为什么同一合同还需要 matrix instance identity
 
 commit、config、manifest、service signature 和 scheduler owner 只能说明两次矩阵运行遵守同一份

@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-17 native-system 可搬迁证据与数据库身份 follow-up（本地）
+
+- 继续在 follow-up 分支修复独立审核阻断项；未连接服务器、未运行 native-system/rehearsal/formal，
+  SAOR `locked_failed_feeding` 判决保持不变。
+- 新增共享 typed `DatabaseIdentity`，原生 shard、Project Job normalizer、physical cell 与离线 summary
+  复用同一 actual-version/sentinel 规则；汇总额外要求全矩阵 PostgreSQL/pgvector 版本对唯一，单 cell
+  版本漂移 fail closed。
+- runner 将 frozen manifest 封存进 matrix root，resource/output evidence 只保存经 root containment
+  检查的相对路径；matrix index 改用 curated schema，native raw Job summary 另封存 per-Job manifest
+  并相对化 shard log/summary/request locator。summary 拒绝绝对路径、`..` 逃逸、目录和空 artifact，
+  因此完整 root 改名/归档搬迁后仍能复核。
+- 官方 native shard CLI 与 native multi-job 的 Job、cell、runtime-preflight、stdout 异常均在最底层
+  持久化/输出前使用 `redact_text()`；per-request CSV 与 matched runner stdout 同样脱敏。反例覆盖
+  DSN、quoted/unquoted named secret、Bearer 与已知 token 形态，避免依赖外层二次脱敏。
+- 修正 `code/scripts/README.md` 悬空残句，并同步代码入口、索引与学习说明。当前只完成本地 TDD 和合同
+  修复，GPU 实验授权状态未改变。
+- 最终本地验证共 186 项通过（SAOR discover 97、native multi-job 24、official CLI 12、原生汇总 2、
+  partition 19、async HTTP 11、redaction 16、provenance 5）；目标模块 compileall、`git diff --check`、
+  变更文件扫描及 6,507 文件全仓隐私扫描通过。未运行服务器/GPU 测试。
+
 ## 2026-08-16 native-system evidence instance follow-up（本地）
 
 - 基于已合入的 `main@32572eec` 建立 follow-up，继续停止 native-system matched GPU/formal；不改写

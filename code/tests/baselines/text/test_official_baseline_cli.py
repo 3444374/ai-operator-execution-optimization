@@ -373,7 +373,10 @@ class OfficialBaselineCliTests(unittest.TestCase):
                 doc_id=requests[0].doc_id,
                 endpoint_index=0,
                 status="failed",
-                error="http 500",
+                error=(
+                    "http 500 via postgresql://postgres:postgres@localhost/test "
+                    "api_key=simulated-secret-value"
+                ),
                 submitted_at_s=0.0,
                 started_at_s=0.0,
                 completed_at_s=0.1,
@@ -410,12 +413,58 @@ class OfficialBaselineCliTests(unittest.TestCase):
                     )
 
             self.assertTrue((output_dir / "requests.csv").exists())
+            persisted_requests = (output_dir / "requests.csv").read_text(
+                encoding="utf-8"
+            )
+            self.assertNotIn("postgres:postgres@", persisted_requests)
+            self.assertNotIn("simulated-secret-value", persisted_requests)
+            self.assertIn("api_key=***", persisted_requests)
             summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["status"], "failed")
             self.assertIn(
                 "exactly-once validation failed",
                 summary["error"],
             )
+
+    def test_adapter_exception_is_redacted_before_summary_persistence(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            self._write_balanced_manifest(manifest)
+            output_dir = root / "failed-output"
+            secret_url = "postgresql://postgres:postgres@localhost/test"
+            simulated_key = "simulated-secret-value"
+
+            with patch(
+                "src.baselines.text.orchestration.cli._run_adapter",
+                side_effect=RuntimeError(
+                    f"adapter failed via {secret_url} api_key={simulated_key}"
+                ),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "adapter failed"):
+                    run_cli(
+                        [
+                            "run-shard",
+                            "--adapter",
+                            "bounded_http",
+                            "--manifest",
+                            str(manifest),
+                            "--endpoint-index",
+                            "0",
+                            "--endpoint-url",
+                            "http://127.0.0.1:8000/v1/chat/completions",
+                            "--model",
+                            "qwen",
+                            "--output-dir",
+                            str(output_dir),
+                        ]
+                    )
+
+            persisted = (output_dir / "summary.json").read_text(encoding="utf-8")
+            self.assertNotIn("postgres:postgres@", persisted)
+            self.assertNotIn(simulated_key, persisted)
+            self.assertIn("postgresql://postgres:***@localhost/test", persisted)
+            self.assertIn("api_key=***", persisted)
 
     def test_normalize_vllm_bench_writes_shared_schema(self) -> None:
         with TemporaryDirectory() as temp_dir:

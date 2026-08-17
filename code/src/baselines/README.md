@@ -6,7 +6,7 @@
 
 | 层 | 模块 | 角色 |
 |---|---|---|
-| 共享合同 | `common/{contracts,manifests,results,gate,provenance}.py` | immutable input、exactly-once、公共指标与身份门禁 |
+| 共享合同 | `common/{contracts,manifests,results,gate,provenance,database_identity,redact}.py` | immutable input、exactly-once、公共指标、数据库版本身份与脱敏门禁 |
 | 文本服务上限 | `text/ceilings/vllm_bench.py` | 官方 vLLM Bench；不是数据库/框架 baseline |
 | 文本直接控制 | `text/controls/` | 项目自写强客户端；不是 native baseline |
 | 文本框架原生 | `text/frameworks/` | Daft prompt / Ray Data vendor API graph |

@@ -9,6 +9,7 @@ import unittest
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
@@ -27,6 +28,7 @@ from src.baselines.text.orchestration.native_multijob import (
     redact_command,
     run_native_multijob_cell,
     run_native_multijob,
+    seal_native_cell_artifact_paths,
 )
 
 
@@ -463,6 +465,48 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertIn("gauge_summary", record)
             self.assertFalse((output_dir / "matrix_index.json").exists())
 
+    def test_sealed_native_cell_artifacts_survive_root_move(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_native_multijob_config(self._config(root))
+            original = root / "single-cell"
+            moved = root / "archive" / "moved-cell"
+            clock = iter(100.0 + index * 0.001 for index in range(1000))
+            record = run_native_multijob_cell(
+                config,
+                config.arms[0],
+                NativeRunIdentity("formal", 1, 0),
+                original,
+                runner_script="runner.py",
+                popen_factory=_FakeProcess,
+                queue_waiter=self._queues,
+                counter_sampler=self._counters,
+                now=lambda: next(clock),
+                repository_commit="abc123",
+                cell_instrumenter=self._instrumentation,
+            )
+            seal_native_cell_artifact_paths(record, original)
+            moved.parent.mkdir()
+            original.rename(moved)
+
+            summaries = sorted(moved.glob("jobs/*/job_summary.json"))
+            self.assertEqual(len(summaries), 2)
+            for summary_path in summaries:
+                summary = json.loads(summary_path.read_text(encoding="utf-8"))
+                stored_paths = [
+                    summary["manifest"],
+                    *(
+                        shard[field]
+                        for shard in summary["shards"]
+                        for field in ("log", "summary", "requests")
+                    ),
+                ]
+                self.assertTrue(all(
+                    not Path(stored_path).is_absolute()
+                    and (moved / stored_path).is_file()
+                    for stored_path in stored_paths
+                ))
+
     def test_single_cell_persists_redacted_database_url_but_executes_raw_url(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -584,6 +628,70 @@ class NativeMultiJobTests(unittest.TestCase):
                     cell_instrumenter=self._instrumentation,
                     ray_nofile_probe=self._ray_nofile,
                 )
+
+    def test_native_failures_redact_secrets_in_every_persisted_artifact(self) -> None:
+        secret_url = "postgresql://postgres:postgres@localhost/test"
+        simulated_key = "simulated-secret-value"
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch(
+                "src.baselines.text.orchestration.native_multijob."
+                "_validate_shard_provenance",
+                side_effect=RuntimeError(
+                    f"provenance failed via {secret_url} api_key={simulated_key}"
+                ),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "native job shards failed"):
+                    run_native_multijob(
+                        self._config(root),
+                        runner_script=root / "run_official_baseline.py",
+                        popen_factory=_FakeProcess,
+                        queue_waiter=self._queues,
+                        counter_sampler=self._counters,
+                        cell_instrumenter=self._instrumentation,
+                        ray_nofile_probe=self._ray_nofile,
+                    )
+
+            persisted = "\n".join(
+                path.read_text(encoding="utf-8", errors="replace")
+                for path in (root / "out").rglob("*")
+                if path.is_file() and path.suffix in {".json", ".csv"}
+            )
+            self.assertNotIn("postgres:postgres@", persisted)
+            self.assertNotIn(simulated_key, persisted)
+            self.assertIn("postgresql://postgres:***@localhost/test", persisted)
+            self.assertIn("api_key=***", persisted)
+
+    def test_runtime_preflight_exception_is_redacted_before_persistence(self) -> None:
+        secret_url = "postgresql://postgres:postgres@localhost/test"
+        simulated_key = "simulated-secret-value"
+
+        def fail_preflight(_address: str) -> tuple[int, int]:
+            raise RuntimeError(
+                f"preflight failed via {secret_url} api_key={simulated_key}"
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "preflight failed"):
+                run_native_multijob(
+                    self._config(root),
+                    runner_script=root / "run_official_baseline.py",
+                    popen_factory=_FakeProcess,
+                    queue_waiter=self._queues,
+                    counter_sampler=self._counters,
+                    cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=fail_preflight,
+                )
+
+            persisted = (root / "out" / "matrix_index.json").read_text(
+                encoding="utf-8"
+            )
+            self.assertNotIn("postgres:postgres@", persisted)
+            self.assertNotIn(simulated_key, persisted)
+            self.assertIn("postgresql://postgres:***@localhost/test", persisted)
+            self.assertIn("api_key=***", persisted)
 
     def test_records_commit_and_releases_host_scope_lease(self) -> None:
         class Lease:
