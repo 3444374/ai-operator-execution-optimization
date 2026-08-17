@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-08-17 开题 P08A 标题修订与绘图脚本 Windows 字体修复
+
+- P08A（`opening_image_stage_aware_evidence_part1_prepare`）panel 标题由“prepare 是独立且占主导的
+  工作阶段”改为“图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机 M1 页“文本讲量、图像讲
+  阶段”口径；避免旧标题被读成“CPU 是主瓶颈”（当前冻结结论不支持该绝对表述）。仅改标题文案，
+  数据、布局、坐标、图例与底注均未变。
+- 修复 `generate_opening_core_evidence_figures.py` 的 Windows 中文字体回退：`font.sans-serif`
+  列表最前补入 `Microsoft YaHei`、`SimHei`（原仅 macOS 字体，Windows 回退 Arial 致 CJK 缺字
+  成方框）。该修复为环境性、不改任何图布局，但对本机重画的所有图生效。
+- 同步重画 `opening_image_stage_aware_evidence{,_part1_prepare,_part2_transfer_window}` 的
+  PNG/SVG/PDF，并刷新开题专用图集 P08A/P08B 中文名副本；`figures/README.md`、
+  `figures/opening_figure_set/README.md` 与 `figures/audit/opening_story_figures_contract_20260808.md`
+  已同步。本轮未重新生成或修改 PPT。
+
 ## 2026-08-17 开题 P07/P08 数据图拆分
 
 - 只做版面拆分，不修改实验数值、坐标、图例、注释或结论：P07 拆为记录数—模型工作量和

@@ -1596,7 +1596,7 @@ def figure_image_stage_evidence_split() -> None:
         loc="lower right",
         fontsize=7.6,
     )
-    ax.set_title("prepare 是独立且占主导的工作阶段", loc="left")
+    ax.set_title("图像也是分阶段工作量：张数描述不了阶段压力", loc="left")
     soft_grid(ax)
     fig.suptitle(
         "图像动机：阶段失衡、传输形态与提交窗口共同影响执行",

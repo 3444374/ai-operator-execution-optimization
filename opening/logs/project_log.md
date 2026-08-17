@@ -1,5 +1,13 @@
 # 开题材料 project log
 
+## 2026-08-17 P08A 标题修订与绘图脚本字体修复
+
+- P08A panel 标题改为“图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机 M1 页“文本讲量、
+  图像讲阶段”口径；仅改文案，数据与布局未变。PPT 由用户自行更新，本日志不改动 PPT 源稿。
+- 修复绘图脚本 Windows 中文字体回退（补入 Microsoft YaHei/SimHei），重画 P08A/P08B 的
+  PNG/SVG/PDF 并刷新图集中文名副本；`figures/README.md`、`figures/opening_figure_set/README.md`
+  与 `figures/audit/opening_story_figures_contract_20260808.md` 已同步。
+
 ## 2026-08-12 P02 边界与箭头修订
 
 - 将四处贴边英文混排标签改成等义紧凑中文，保持字号不变；左下“文本 / 提示词”和中间两张

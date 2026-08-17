@@ -92,7 +92,7 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
 | `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 吞吐与prefix-cache命中率双轨迹图：每条线连接同一策略从2-endpoint低压力到4-endpoint高压力的3次formal中位数；吞吐统一用 `k token/s`，高压力时保序策略命中约47%，重排/装箱策略降至6%–7%。不画误差线；严格feeding-saturation边界必须保留。 |
 | `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。标题只概括阶段失衡、传输形态与提交窗口，不提前导出项目机制。 |
-| `data/report_main/opening_image_stage_aware_evidence_part1_prepare.png` / `.svg` | 原图像动机图 panel a 的 16:9 拆分版；保留 batch 16/64/256 的中位数与 IQR。 |
+| `data/report_main/opening_image_stage_aware_evidence_part1_prepare.png` / `.svg` | 原图像动机图 panel a 的 16:9 拆分版；保留 batch 16/64/256 的中位数与 IQR。panel 标题为“图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机“文本讲量、图像讲阶段”口径，不强调 CPU 主瓶颈。 |
 | `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window.png` / `.svg` | 原图像动机图 panels b–c 的 16:9 拆分版；保留 transfer ceiling 与 active-window screening 的原始口径。 |
 | `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 纯数据图：左为 12K 同语义诊断，右为 120K matched-resource 正式对照；Direct CLIP/vLLM Pooling 等能力与角色边界改由报告独立表格呈现。 |
 | `data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | 图像四 Job 归一化干扰矩阵：列为 Short/Long 1--3，行为 Daft Built-in、Ray Data、Project static 与 Project shared；格内直标并发/独立 JCT 倍数和增幅，画法与文本原生四 Job 图统一。只作各路径内部比较；Project shared 的状态快照仅观测、不驱动动作。 |

@@ -160,6 +160,14 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 - 支持：图像 work 需要显式区分 prepare/model/tensor-transfer stage；准入窗口存在欠供给、平台与
   过量排队区间，因此需要阶段状态观测和有界提交。
 - 不支持：active32 可迁移到其他规模/机器；图像动态策略已胜；R0-R2 microprofile 可替代 operator E2E。
+- 2026-08-17 渲染修订：part1（P08A）panel 标题由“prepare 是独立且占主导的工作阶段”改为
+  “图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机 M1 页“Rows is not Work”的
+  “文本讲量、图像讲阶段”口径——避免旧标题把读者引向“CPU 是主瓶颈”（当前冻结结论不支持该绝对表述），
+  改为强调图像 work 的多阶段性。数据、布局、坐标、图例与底注均未变。同日修复绘图脚本的
+  Windows 中文字体回退：`generate_opening_core_evidence_figures.py` 的 `font.sans-serif`
+  列表最前补入 `Microsoft YaHei`、`SimHei`（原仅含 macOS 的 PingFang SC/Hiragino/Heiti，
+  Windows 上回退 Arial 致 CJK 缺字成方框）；该修复为环境性、不改任何图布局，但对本机重画的
+  所有图生效，重画后 PNG 字节因字体不同而变化属正常。
 
 ## 5.1 图像 baseline 纯数据图
 

@@ -42,6 +42,8 @@ PALE_RED = "#F9ECEA"
 
 def apply_style() -> None:
     fonts = [
+        "Microsoft YaHei",
+        "SimHei",
         "PingFang SC",
         "Hiragino Sans GB",
         "Heiti SC",
