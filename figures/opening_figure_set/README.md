@@ -8,8 +8,8 @@
 
 | 目录 | 内容 | 使用建议 |
 |---|---|---|
-| `main_png/` | 17 张 PPT 主讲图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
-| `main_svg/` | 同一 17 张 PPT 主讲图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
+| `main_png/` | 19 张 PPT 主讲候选图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
+| `main_svg/` | 同一 19 张 PPT 主讲候选图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
 | `editable_drawio/` | 8 张概念图的 Draw.io 编辑源 | 修改文字、卡片、箭头或 icon 时使用 |
 | `backup_png/` | 2 张答辩备份数据图的 PNG | 回答单 Job 排队与状态问题时使用 |
 | `backup_svg/` | 同一 2 张备份图的 SVG | 需要放大或进入文档时使用 |
@@ -26,8 +26,10 @@
 | 04 | `P04_相关工作_跨层执行闭环` | 按层归纳代表工作，指出数据库任务语义与服务运行信息衔接不足 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
 | 05 | `P05_研究空白_AI数据执行层` | 归纳工作量表达、作业—服务状态对应和多作业约束三类研究空白 | `architecture/editable/01_research_gap` |
 | 06 | `P06_文本基线_执行路径与可比边界` | 分开说明 database-E2E 与官方 Chat graph 的可比范围 | `data/report_main/opening_text_baseline_evidence_map` |
-| 07 | `P07_动机证据_工作量运行状态与容量边界` | 说明行数、静态上限与实际运行状态并不等价 | `data/report_main/opening_motivation_work_state` |
-| 08 | `P08_图像阶段_准备传输与GPU执行失配` | 说明图像阶段失衡、传输形态与提交窗口共同影响执行 | `data/report_main/opening_image_stage_aware_evidence` |
+| 07A | `P07A_动机证据_记录数与模型工作量` | 原 P07 panel a：说明相同行数仍可能对应 14.3× 工作量差异 | `data/report_main/opening_motivation_work_state_part1_work` |
+| 07B | `P07B_动机证据_运行状态与容量边界` | 原 P07 panels b–c：说明静态上限、运行状态与近饱和边界不是同一概念 | `data/report_main/opening_motivation_work_state_part2_state_capacity` |
+| 08A | `P08A_图像阶段_准备阶段失衡` | 原 P08 panel a：说明图像 prepare 是独立且占主导的工作阶段 | `data/report_main/opening_image_stage_aware_evidence_part1_prepare` |
+| 08B | `P08B_图像阶段_传输形态与提交窗口` | 原 P08 panels b–c：说明传输形态和 active-window 会改变执行表现 | `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window` |
 | 09 | `P09_文本多作业_原生路径并发干扰` | 证明共享模型服务下的多 Job 干扰是现实现象 | `data/report_main/opening_native_fourjob_normalized_impact` |
 | 11 | `P11_系统架构_数据组织与状态调度闭环` | 展示 work、state、bounded control 与 sink 的总体闭环 | `architecture/editable/02_system_architecture` |
 | 12 | `P12_研究内容一_WorkUnit与数据组织` | 展示分阶段 work、候选 packing 和同 budget 评价 | `architecture/editable/03_work_unit` |
@@ -40,7 +42,7 @@
 | 19 | `P19_研究基础与后续工作计划` | 概括已完成基础、后续工作方向与评价维度 | `architecture/editable/05_evidence_gate` |
 
 第 10 页承担研究问题归纳，第 20 页承担总结与答辩收束，当前不需要另画独立大图。开题报告正文
-仍使用 P05–P19 的 14 张研究/证据图和两张补充图；P02–P04 是 PPT 背景与相关工作专用图。
+可从 P05–P19 的拆分候选中按版面选图；P02–P04 是 PPT 背景与相关工作专用图。本轮只更新图资产，未重新生成 PPT。
 
 ## 答辩备份
 

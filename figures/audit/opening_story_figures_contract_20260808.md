@@ -91,6 +91,8 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 ## 1. Work、状态与提交压力动机
 
 文件：`data/report_main/opening_motivation_work_state.{png,svg}`。
+主讲拆分版：`opening_motivation_work_state_part1_work.{png,svg}`、
+`opening_motivation_work_state_part2_state_capacity.{png,svg}`；仅重排原 panel，底注改为实验配置。
 
 - panel a 来源：固定 16 行批次的 work 最小/最大中位数 474/6,793 token，差 14.3×。
 - panel b 来源：相同配置 W65K 下，`max_active_work_seen_mean/W` 在 high/arrival-limited
@@ -146,6 +148,8 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 ## 5. 图像 staged-work 动机
 
 文件：`data/report_main/opening_image_stage_aware_evidence.{png,svg}`。
+主讲拆分版：`opening_image_stage_aware_evidence_part1_prepare.{png,svg}`、
+`opening_image_stage_aware_evidence_part2_transfer_window.{png,svg}`；仅重排原 panel，底注改为实验配置。
 
 - panel a 来源：`image_clip_preprocess_variants_20260801/raw_repeats.csv` exact tensor path；
   batch 16/64/256 的 prepare/actor 比中位数为 13.9×/31.0×/29.5×，误差线为 IQR（n=30）。

@@ -277,10 +277,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/results/opening_project_short_all_at_t0_diagnostic_20260809/{README.md,data/}` | Project eager single 1+3 的 T0–T4 统一计时、逐次数据和 Project/Daft short 诊断 | Project T3=11.354s、Daft=11.059s；service rate/MFU 仅差约2.5%，不能用缺失的 Daft T0 做完整系统排名 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
-| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/I/J/E、单 Job 任务—请求主图、F 状态备份图及既有架构图 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
+| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/I/J/E、单 Job 任务—请求主图、F 状态备份图及既有架构图；A/D 同时输出 P07/P08 的 16:9 拆分版 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
 | `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/I/J/E/F 已通过 QA，G 不画 |
 | `figures/audit/opening_required_data_figures_20260810.md` | 从六项开题证明义务推导正文、备份、附录和明确不画的最小图集 | 决定一张实验图是否应进开题、PPT还是论文阶段前读 |
-| `figures/opening_figure_set/README.md` 与 `main_png/`、`main_svg/`、`editable_drawio/`、`backup_*` | 按 20 页答辩页码和中文用途重命名的开题专用图集：17 张 PPT 主讲图、8 张 Draw.io 概念源、2 张备份图 | 制作开题 PPT/报告时从这里选图，不再浏览整个 `report_main/`；报告正文使用其中 14 张研究/证据图，权威源仍在原目录 |
+| `figures/opening_figure_set/README.md` 与 `main_png/`、`main_svg/`、`editable_drawio/`、`backup_*` | 按 20 页答辩页码和中文用途重命名的开题专用图集：19 张 PPT 主讲候选图、8 张 Draw.io 概念源、2 张备份图；P07/P08 各拆为 A/B 两张 | 制作开题 PPT/报告时从这里选图，不再浏览整个 `report_main/`；权威源仍在原目录 |
 | `figures/architecture/editable/opening_background_20260812/` | 第 2–4 页三张背景/相关工作图的 Draw.io、SVG、PNG、icon 和逐图审计；P03 为通用外部 AI 多阶段链路，不含项目方案 | 修改背景图文字、边框、图标或箭头时从权威源编辑 |
 | `figures/audit/opening_background_figures_20260812.md` | 第 2–4 页三图的内容边界、结构检查与视觉审计汇总 | 引用或替换三张背景图前读取 |
 | `figures/audit/opening_figure_set_manifest_20260811.md` | 开题专用图集的选图依据、源文件映射、格式合同、排除项与复制 QA | 新增、替换或同步开题图集前读取 |
@@ -288,6 +288,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | Daft Native/Ray、Ray Data 的 Short 与三个 Long 的 four-job/isolated-single JCT 比值 | 证明共享服务多 Job 干扰是共同外部现象；禁止跨框架绝对 JCT 排名 |
 | `figures/data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | SQuAD database-E2E 产品轨与 ShareGPT 官方 Chat graph 轨的文本 baseline 分轨图 | 呈现 DuckDB、Daft Native/Ray、Ray Data 的可比合同与问题；禁止跨 panel 排名 |
 | `figures/data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像 prepare/model 比、R0/R1/R2 transfer ceiling 与 active-window screening | 导出 staged WorkDescriptor、阶段状态观测与有界准入；不作系统排名 |
+| `figures/data/report_main/opening_motivation_work_state_part1_work.*`、`opening_motivation_work_state_part2_state_capacity.*` | P07 原三联图按 panel a / panels b–c 拆分的 PNG/SVG | PPT/报告放大使用；数据与结论沿用原合成图 |
+| `figures/data/report_main/opening_image_stage_aware_evidence_part1_prepare.*`、`opening_image_stage_aware_evidence_part2_transfer_window.*` | P08 原三联图按 panel a / panels b–c 拆分的 PNG/SVG | PPT/报告放大使用；数据与结论沿用原合成图 |
 | `figures/data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的能力门禁、12K 诊断与 120K matched-resource 分层图 | 只有 120K Ray Data/Project panel 可排名；blocked 路径不生成性能值 |
 | `figures/data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | Daft Built-in、Ray Data、Project 的 Short 与三个 Long 在 four-job/isolated 下的 JCT 比值 | 只作各路径内部归一化；Project 状态快照仅 observe-only，不作动态收益或跨框架绝对排名 |
 | `figures/data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | Project full/quarter/static/shared 四 Job 因果分解、组效率与公平权衡 | 导出 shared work credit、idle borrowing 和 fairness/SLO guard 的设计要求 |

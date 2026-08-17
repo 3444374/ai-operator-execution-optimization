@@ -70,7 +70,7 @@ foreground/background interference, queue balance, and prefix locality.
 ### 开题专用图集
 
 开题 PPT 和开题报告不再直接从内容繁杂的 `data/report_main/` 选图。统一进入
-`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 17 张 PPT 主讲图，
+`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 19 张 PPT 主讲候选图，
 `editable_drawio/` 保存 8 张可编辑概念图，`backup_png/` 与 `backup_svg/` 只保存 2 张
 单 Job 诊断备份图。文件采用 `P页码_用途_内容` 或 `B序号_用途_内容` 的中文可读命名。
 
@@ -84,12 +84,16 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | 图 | 角色与边界 |
 |---|---|
 | `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-16 将标题收束为“行数、静态上限与实际运行状态并不等价”，数据与几何不变。 |
+| `data/report_main/opening_motivation_work_state_part1_work.png` / `.svg` | 原动机三联图 panel a 的 16:9 拆分版；数值、标签和结论不变，底注改为实验配置。 |
+| `data/report_main/opening_motivation_work_state_part2_state_capacity.png` / `.svg` | 原动机三联图 panels b–c 的 16:9 拆分版；数值、标签和结论不变，底注改为实验配置。 |
 | `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。只在 panel 内排名；Project 没有同一 2,048-row graph→gather 正式点，图中明确标注而不混入右侧排名。2026-08-10 修正多行 y 轴标签：文本块贴近轴，块内两行居中。 |
 | `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 现有原生框架的多 Job 动机图：三条 vendor-owned 执行图的 four-job/isolated-single JCT 影响矩阵；格内同时给出 slowdown 倍率与 JCT 增幅，Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名，也不用于证明项目方法胜出。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
 | `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 吞吐与prefix-cache命中率双轨迹图：每条线连接同一策略从2-endpoint低压力到4-endpoint高压力的3次formal中位数；吞吐统一用 `k token/s`，高压力时保序策略命中约47%，重排/装箱策略降至6%–7%。不画误差线；严格feeding-saturation边界必须保留。 |
 | `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。标题只概括阶段失衡、传输形态与提交窗口，不提前导出项目机制。 |
+| `data/report_main/opening_image_stage_aware_evidence_part1_prepare.png` / `.svg` | 原图像动机图 panel a 的 16:9 拆分版；保留 batch 16/64/256 的中位数与 IQR。 |
+| `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window.png` / `.svg` | 原图像动机图 panels b–c 的 16:9 拆分版；保留 transfer ceiling 与 active-window screening 的原始口径。 |
 | `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 纯数据图：左为 12K 同语义诊断，右为 120K matched-resource 正式对照；Direct CLIP/vLLM Pooling 等能力与角色边界改由报告独立表格呈现。 |
 | `data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | 图像四 Job 归一化干扰矩阵：列为 Short/Long 1--3，行为 Daft Built-in、Ray Data、Project static 与 Project shared；格内直标并发/独立 JCT 倍数和增幅，画法与文本原生四 Job 图统一。只作各路径内部比较；Project shared 的状态快照仅观测、不驱动动作。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 左图呈现 estimator 级 candidate pairwise；右图逐估计器完整展开 20 个 leave-one-context-out decision regret，以小菱形标中位数、同尺寸深色点标最坏 context，并同时显示平均 5%/最坏 15% 门槛；Hybrid平均2.90%、max 14.72%。Ridge逐行MAE更低但最坏选择regret更高，只称 marginal pass。 |

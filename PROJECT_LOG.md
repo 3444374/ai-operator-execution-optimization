@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-08-17 开题 P07/P08 数据图拆分
+
+- 只做版面拆分，不修改实验数值、坐标、图例、注释或结论：P07 拆为记录数—模型工作量和
+  运行状态—容量边界两张，P08 拆为 prepare 阶段失衡和传输形态—提交窗口两张。
+- 四张拆分图均提供 PNG/SVG；底注统一改为硬件、模型/数据、batch、重复次数和扫描范围等
+  实验配置。原两张合成图继续保留在 `figures/data/report_main/` 作为可追溯源图。
+- 开题专用图集用 P07A/P07B、P08A/P08B 替换旧合成副本，主讲候选图由 17 张变为 19 张；
+  本轮未重新生成或修改 PPT。
+
 ## 2026-08-16 native-system formal fail-closed hotfix（本地）
 
 - 从 `main@d4dfdbfe` 建立 `codex/native-system-formal-hotfix`，继续停止 native-system matched
