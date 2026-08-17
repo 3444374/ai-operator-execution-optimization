@@ -1,5 +1,53 @@
 # 开题材料 project log
 
+## 2026-08-17 P11 箭头整体调小
+
+- 用户手动调整 drawio 后，所有箭头 endSize 统一调小，重新导出并固定权威源与图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 标题条边缘突起修正
+
+- 三个面板标题条改为比 panel 各大 1 px（x-1、y-1、w+2、h+1），完全覆盖 panel 描边，顶部与左右突起消失。同步刷新权威源与图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 organizer→admission 箭头定形
+
+- 对角箭头改为左边缘出发的“┐”形正交折线，线形完整、不再“只剩箭头没有线”或穿卡。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 清除 draw.io 缓存残影
+
+- draw.io desktop 缓存把已删除的 estimate_icon 等旧元素渲染出来致画面有叠影；清缓存重新导出后残影消失。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 五处细节修正
+
+- PostgreSQL 文字框加高；organizer→admission 改完整正交折线；灰色反馈箭头改从 routing 卡底部进入与蓝线分离；state_panel 标题居中。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 灰色反馈箭头避开 validation_note
+
+- 灰色反馈箭头水平段由 y=620 移至 y=636，不再压住“同上限 frozen-static A/B”提示条两端。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 Daft 官方标识修复
+
+- Daft 图标原是 draw.io 默认占位图（base64 被截断成空 href）；后处理在 Daft 位置插入项目资产官方黑/洋红标识并删除空壳占位图。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 箭头修正与 Daft 官方标识
+
+- 灰色反馈箭头绕到卡片边缘中部，不再覆盖橙色卡片；organizer→admission 改为正交折线消除斜线；Daft 图标换为项目资产官方黑/洋红标识。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 Cost Estimator 横条上移
+
+- Shared Cost Estimator 横条移至研究内容一/二 header 正下方、工作流卡片之上（370,250），解决竖箭头穿横条问题；下移两行卡与 validation_note、研究边界框加高。重导 P11 PNG/SVG 并刷新图集副本，icon 全部归位。PPT 由用户自行更新。
+
+## 2026-08-17 P11 icon 渲染管线修复
+
+- draw.io 导出 P11 时把 11 个自绘 SVG icon 合并进单一空 symbol 致全丢；正确管线为 draw.io CLI 导 SVG → Python 按坐标把 `<use>` 换成独立 `<image>`（不能用尺寸匹配）→ headless Chrome 渲染 PNG。11 个 icon 全部归位。
+- 三处修订（两个研究内容标题 + Shared Cost Estimator 横条）一并产出最终 PNG/SVG，权威源与图集副本已同步。PPT 由用户自行更新。
+
+## 2026-08-17 P11 系统架构图：研究内容命名与 Cost Estimator 共享化
+
+- 研究内容一/二标题对齐冻结主线（分阶段 Work 表征与数据组织 / 固定容量下的状态感知调度）；
+  Cost Estimator 拆为独立 Shared Cost Estimator 横条（共同使能），WorkDescriptor 卡还原为纯 work 描述。
+- 搭建本机 drawio 渲染环境（playwright-core + Edge，`figures/scripts/render_drawio.js`），重导 P11 PNG/SVG
+  并刷新图集副本；审计已同步。PPT 由用户自行更新。
+
 ## 2026-08-17 P08B 重新定位为“AI Work 需要分阶段描述”
 
 - P08B 由平级图像动机页降为动机补充页，避免与 M1（13.9–31×）和 M2（近饱和区）重复。

@@ -1,5 +1,59 @@
 # 项目日志
 
+## 2026-08-17 P11 箭头整体调小
+
+- 用户手动调整 drawio 后，将所有箭头 endSize 统一调小（10→7、8→5、7→5/4），渲染后箭头头部明显更细。重新导出并固定权威源与图集副本。
+
+## 2026-08-17 P11 标题条边缘突起修正
+
+- 三个面板标题条（source/backend/sink header）顶部与左右边缘有 1 px 突起：panel 外框 strokeWidth=2 向内外各扩 1 px，header（无描边）未覆盖住 panel 顶部/左右描边。修复：header 改为比 panel 各大 1 px（x-1、y-1、w+2、h+1），完全覆盖 panel 描边，顶部与左右突起消失。同步刷新权威源与图集副本。
+
+## 2026-08-17 P11 organizer→admission 箭头定形
+
+- 该对角箭头两卡垂直距离仅 35 px 且水平错位，此前多次出现"只剩箭头没有线"或穿卡问题；最终定为左边缘出发、经两列间垂直通道走"┐"形正交折线（712,350→712,428→622,428），线形完整、不压任何卡片。
+
+## 2026-08-17 P11 清除 draw.io 缓存残影
+
+- 此前导出的 P11 有叠影/脏边：draw.io desktop 缓存把已删除的旧元素（estimate_icon 计算器、重复栅格文字）也渲染出来。彻底清除 `$APPDATA/draw.io` 的 Cache/Code Cache/GPUCache/IndexedDB/Local/Session Storage 后重新导出，estimate_icon 不再出现、image 元素由 53 降至 43，WorkDescriptor 卡残影消失，画面干净。
+
+## 2026-08-17 P11 文字框/箭头/居中五处细节修正
+
+- PostgreSQL source 文字框加高（job/SLO 不再被切）；`flow_organizer_admission` 改为底部出发的正交折线（完整线+箭头，不再只剩箭头）；`feedback_state_routing` 灰色反馈箭头从 routing 卡右边缘改到底部进入，与蓝色 `flow_routing_backend` 分离不再重叠；state_panel 标题与副标题改居中对齐。
+- 重导 P11 PNG/SVG 并刷新图集副本。
+
+## 2026-08-17 P11 灰色反馈箭头避开 validation_note
+
+- 灰色反馈箭头 `feedback_state_admission/routing` 的水平段原写死 y=620，正好穿过 validation_note（“同上限 frozen-static A/B”提示条，y=599–627）左右两端，将其切出缺口；改至 y=636（提示条底 627 与 state_panel 顶 645 之间的空隙），提示条恢复完整。
+
+## 2026-08-17 P11 Daft 官方标识修复
+
+- Daft 图标此前显示为 draw.io 默认占位图（蓝底白云绿山）：draw.io 导出时把 `source_daft_icon` 的 base64 截断成空 `data:image/png`，连同 11 个自绘 icon 一起丢进合并 symbol。
+- 修复：后处理时在 Daft 位置插入官方标识 `assets/02_system_architecture/daft-official.png`（黑/洋红，SHA e9715fc2…）的 `<image>`，并删除 draw.io 生成的空壳占位 `<image xlink:href="data:image/png">`。最终图 Daft 官方 logo 正确显示、无重叠。
+- 重导 P11 PNG/SVG 并刷新图集副本。
+
+## 2026-08-17 P11 箭头修正与 Daft 官方标识
+
+- 灰色反馈箭头 `feedback_state_admission/routing` waypoint 由写死 y=500 改为绕到卡片边缘中部（y=515），不再扎进 admission/routing 橙色卡片；`flow_organizer_admission` 改为左边缘出发的标准“┐”形正交折线，消除对角斜线。
+- Daft 图标由通用占位图替换为项目资产 `assets/02_system_architecture/daft-official.png`（官方黑/洋红标识，SHA e9715fc2…）。重导 P11 PNG/SVG 并刷新图集副本。
+
+## 2026-08-17 P11 Cost Estimator 横条位置上移
+
+- 按用户意见将 `Shared Cost Estimator` 横条从两行卡之间移到研究内容一/二 header 正下方、WorkDescriptor/Organizer 卡之上（370,250），解决初版 `organizer→admission` 竖箭头穿过横条文字的问题；语义“共同使能”更直观。
+- 配合下移第一行卡（290）、第二行卡（445）、validation_note（599），研究边界框加高至 480 px；重导 P11 PNG/SVG 并刷新图集副本，icon 全部归位、无越界。
+
+## 2026-08-17 P11 icon 渲染管线修复（Windows 本机）
+
+- 问题：draw.io（online/desktop GUI/headless CLI）导出 P11 时把所有 `shape=image` 内嵌 icon 合并进单一空 `<symbol>`，11 个自绘 SVG icon 全不渲染（仅 Daft 官方 PNG 独立显示）。
+- 弯路：曾把 SVG icon 转 PNG 想绕开，结果丢矢量且仍被合并；**项目约定就是独立 SVG icon，不应转 PNG**。
+- 正确管线：draw.io desktop CLI 导 SVG（`--embed-svg-images`）→ Python 按坐标顺序把 `<use>` 替换为对应 icon 的独立 `<image>`（坐标匹配，不能用尺寸匹配避免 52×52/28×28 串位）→ headless Chrome 渲染 2× PNG。11 个 icon 全部正确归位、矢量清晰。
+- P11 三处修订（两个研究内容标题 + Shared Cost Estimator 横条）随此管线一并产出最终 PNG/SVG；权威源与图集副本已同步，`02_system_architecture.audit.md` 记录完整管线。
+
+## 2026-08-17 P11 系统架构图：研究内容命名对齐与 Cost Estimator 共享化
+
+- 研究内容一标题改“分阶段 Work 表征与数据组织”，研究内容二标题改“固定容量下的状态感知调度”（对齐冻结主线，dynamic capacity 不作主线）；分区 header pill 加宽、字号微调以完整显示长标题。
+- Cost Estimator 由“WorkDescriptor+代价估计”改为独立共享组件：estimate 卡还原为纯 WorkDescriptor，新增淡紫虚线 `Shared Cost Estimator` 横条横跨两项研究内容（共同使能）；遵循“能不用箭头就不用”，未加指向箭头。所有图标保留，Daft 官方标识未改。
+- 搭建本机 drawio 渲染环境：playwright-core + 系统 Edge，`figures/scripts/render_drawio.js` 导出干净 PNG/SVG；同步刷新 P11 drawio/PNG/SVG 与图集副本，更新 `02_system_architecture.audit.md`。本轮未修改 PPT。
+
 ## 2026-08-17 开题 P08B 重新定位为“AI Work 需要分阶段描述”
 
 - P08B（`opening_image_stage_aware_evidence_part2_transfer_window`）由平级图像动机页降为动机补充页，

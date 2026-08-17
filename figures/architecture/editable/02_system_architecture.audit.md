@@ -31,8 +31,9 @@
 | I08 | 65,525,200,48 | 统一 source contract 标签 | native | 蓝色浅底 pill | accepted |
 | I09 | 335,155,760,455 | AI Data Execution Layer 研究层 | native | 橙色虚线圆角框 | accepted |
 | I10 | 365,165,700,33 | execution-layer 标题、动态候选标签 | native | 橙色标题与浅橙 pill | accepted |
-| I11 | 370,207,690,38 | 两项研究内容分区标题 | native | 蓝/橙双编码 | accepted |
-| I12 | 370,255,320,120 | WorkDescriptor + 代价估计 | native + 2 SVG | staged work、locality、SLO、uncertainty；详细字段移到图注 | accepted |
+| I11 | 370,207,690,38 | 两项研究内容分区标题：研究内容一“分阶段 Work 表征与数据组织”、研究内容二“固定容量下的状态感知调度” | native | 蓝/橙双编码 | accepted |
+| I12 | 370,255,320,120 | WorkDescriptor（纯 work 描述卡，不再挂“代价估计”） | native + 1 SVG | staged work、locality、SLO、uncertainty；详细字段移到图注 | accepted |
+| I12b | 370,378,690,29 | Shared Cost Estimator 共享横条 | native | 淡紫底 `#F6F0FF`、紫色虚线框；横跨两项研究内容，靠位置与颜色表达共享，不加残弱箭头 | accepted |
 | I13 | 730,255,330,120 | Work Organizer | native + SVG | work budget、balance、locality、BatchRequest | accepted |
 | I14 | 370,410,320,140 | 安全容量 + State-aware Admission | native + SVG | bounded active work、fresh/stale fallback | accepted |
 | I15 | 730,410,330,140 | Routing + Multi-job | native + SVG | credit、idle borrowing、fair queue、SLO guard | accepted |
@@ -87,7 +88,26 @@
 - The former sink SVG intentionally shortened the database body and bottom contour around the check badge, which made the cylinder look clipped or partially missing after scaling.
 - The icon was redrawn as a complete three-level database cylinder with closed side and bottom geometry. The validation badge is smaller and sits at the outer lower-right edge, preserving both the cylinder silhouette and the check mark.
 - The fix was applied to the independent `assets/02_system_architecture/sink.svg` source and re-embedded in the Draw.io image cell; no overlay, mask or raster patch was added.
+
+## 2026-08-17 研究内容命名与 Cost Estimator 共享化修订
+
+- 研究内容一标题由“work-unit 构造”改为“分阶段 Work 表征与数据组织”；研究内容二标题由“容量感知调度”改为“固定容量下的状态感知调度”，对齐当前冻结主线（dynamic capacity 不作主线）。两处分区 header pill 加宽至 352/338 px、字号调至 18 px 以完整显示长标题，无截断、无越界。
+- Cost Estimator 由“WorkDescriptor + 代价估计”（易被误读为研究内容一内部字段生成器）改为独立共享组件：estimate 卡还原为纯 WorkDescriptor（复用原 descriptor 图标，删除计算器 estimate 图标），新增淡紫底虚线 `Shared Cost Estimator` 横条横跨两项研究内容，表达“共同使能”。遵循 figures/AGENTS “能不用箭头就不用”，未加指向箭头，靠位置与颜色表达共享关系；所有其余图标原样保留，Daft 官方标识未改。
+- 横条最终位置：研究内容一/二 header 正下方、WorkDescriptor/Organizer 卡之上（370,250,690,30）。初版曾放在两行卡之间（378），导致 `organizer→admission` 竖箭头穿过横条文字；按用户意见移到 header 之下、工作流之上，语义“共同使能”更直观且完全避开箭头。配合将第一行卡（290）、第二行卡（445）、validation_note（599）整体下移 35 px，研究边界框加高至 480 px（底 635），无重叠、无越界。
+- 卡片下移后修正两处箭头：① 灰色反馈箭头 `feedback_state_admission/routing` 的 `<Array>` waypoint 原为写死 y=500，卡片下移后扎进 admission/routing 卡内部，改为 entryY=0.5 并把 waypoint 终点移至 y=515（卡片左/右边缘中部），从外侧绕入不再覆盖；② `flow_organizer_admission` 由底中点直连改为左边缘出发、显式 waypoint 走标准“┐”形正交折线（700,350 → 700,428 → 530,428），消除对角斜线。Daft 图标由通用占位图标替换为项目资产 `assets/02_system_architecture/daft-official.png`（官方黑/洋红标识，SHA `e9715fc2…`）的 base64。
+- 渲染：本机 Windows 环境曾尝试 playwright-core 驱动在线 draw.io 编辑器导出，但 headless 下编辑器用 Canvas 而非 SVG 渲染，icon 与文字丢失（见下条）；最终改用 draw.io desktop CLI + Python 后处理 + headless Chrome 的管线（详见下条）。同步刷新 `figures/opening_figure_set/` 的 P11 drawio/PNG/SVG 副本。
 - The regenerated 1600×900 PNG was inspected at original size. The database top, two dividers, side walls, lower closure and validation badge are all visible. Unresolved items: none.
+
+## 2026-08-17 icon 渲染管线：不要用 draw.io 导出 shape=image，也不要把 SVG icon 转 PNG
+
+- **问题**：draw.io（无论 online、desktop GUI 还是 headless CLI `-x`）在导出本图时，会把所有 `shape=image` 的内嵌图标收进**单一 `<symbol>`** 并用 `<use>` 复用；该 symbol 的 `xlink:href` 只剩 `data:image/png`（base64 数据丢失），导致全部 11 个自绘 icon 不渲染（仅 Daft 官方 PNG 独立显示）。CLI、GUI、在线版表现一致。
+- **走过的弯路**：曾把 11 个 `data:image/svg+xml;base64` icon 转成 PNG base64 想绕开，结果不仅丢失矢量（放大变糊），draw.io 仍把多张 PNG 合并成一个空 symbol，icon 依旧全丢。**不要把项目 SVG icon 转 PNG**——项目约定（见 `editable/README.md`）就是“原生 Draw.io 结构 + 独立 SVG icon”，矢量是特性不是负担。
+- **正确管线（本图当前 PNG/SVG 由此产出）**：
+  1. draw.io desktop CLI `-x -f svg --embed-svg-images` 导出 SVG（此时 icon 被合并进 1 个空 symbol，11 个 `<use>` 带正确坐标）；
+  2. Python 后处理：按**坐标顺序**（x 升序再 y 升序）把每个 `<use>` 替换为对应 icon 的独立 `<image xlink:href="data:image/svg+xml;base64,...">`，icon 数据从 drawio 源按 (name→b64) 提取。**必须用坐标匹配，不能用尺寸匹配**——descriptor/admission/backend_gpu 同为 52×52、text/image adapter 同为 28×28，尺寸匹配会串位；
+  3. headless Chrome `--screenshot` 把修补后的 SVG 渲染成 2× PNG（`--force-device-scale-factor=2`）。
+- 结果：11 个自绘 icon 全部正确归位（PostgreSQL/WorkDescriptor/Organizer/Admission 盾牌/Routing/Text/Image Adapter/GPU/Sink/Snapshot/Trace），矢量清晰、中文正常、三处 2026-08-17 修订均在。
+- 同步：权威源 `02_system_architecture.{drawio,svg,png}` 与 `figures/opening_figure_set/` 的 P11 drawio/PNG/SVG 副本均已更新为最终版。
 - 文本与图像分支明确写出各自 adapter/backend；底部复用条重复一次公共契约，跨模态结论无需读图注即可识别。
 - 文字在 1600 × 900 全尺寸预览中可读；紫色模态卡与绿色 Sink 的每一行均完全位于卡内，和边框保持安全间距，没有跨框或互相覆盖。
 - PPT 可读性：按 16:9 全屏检查，主链、四张研究卡、模态差异和反馈层无需放大即可识别；每张卡只保留 1 个标题和 1–2 行关键词。
