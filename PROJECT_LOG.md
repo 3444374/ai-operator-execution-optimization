@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-08-17 开题 P08B 重新定位为“AI Work 需要分阶段描述”
+
+- P08B（`opening_image_stage_aware_evidence_part2_transfer_window`）由平级图像动机页降为动机补充页，
+  避免与 M1（Rows≠Work 的 13.9–31×）和 M2（Capacity≠State 近饱和区）重复。suptitle 改为
+  “AI Work 需要分阶段描述”；panel b 由“瓶颈不是 PCIe，而是 host ownership-copy”改为
+  “输入表示改变阶段执行效率”（不再作过强硬件瓶颈结论）；panel c 由“提交窗口过小会欠供给，过大又积累等待”
+  改为“阶段供给不匹配导致欠供给或等待堆积”（与 M2 区分：M2 问总容量，本 panel 问阶段间流动）。
+- 仅改标题文案，数据、布局、图例、底注未变；重画 part2 PNG/SVG/PDF 并刷新图集 P08B 副本；
+  `figures/README.md`、`figures/opening_figure_set/README.md`、`figures/audit/opening_story_figures_contract_20260808.md`
+  已同步。本轮未重新生成或修改 PPT。
+
 ## 2026-08-17 P07B active-work 代价显式化
 
 - 回读双 RTX 4090 / Qwen2.5-7B active-work 八档正式汇总与 24 条 formal run：每个点 n=3，

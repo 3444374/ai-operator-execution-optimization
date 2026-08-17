@@ -1,5 +1,12 @@
 # 开题材料 project log
 
+## 2026-08-17 P08B 重新定位为“AI Work 需要分阶段描述”
+
+- P08B 由平级图像动机页降为动机补充页，避免与 M1（13.9–31×）和 M2（近饱和区）重复。
+  suptitle 改为“AI Work 需要分阶段描述”；panel b 改为“输入表示改变阶段执行效率”，panel c 改为
+  “阶段供给不匹配导致欠供给或等待堆积”。仅改标题，数据与布局未变；重画 part2 并刷新图集副本，
+  `figures/README.md`、`figures/opening_figure_set/README.md`、audit 契约已同步。PPT 由用户自行更新。
+
 ## 2026-08-17 P07B active-work 代价显式化
 
 - P07B 容量曲线补入冻结正式数据的直接注释：65K→98K 吞吐仅 +2.3%，请求 P99

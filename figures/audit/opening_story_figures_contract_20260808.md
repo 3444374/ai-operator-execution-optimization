@@ -173,6 +173,14 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
   列表最前补入 `Microsoft YaHei`、`SimHei`（原仅含 macOS 的 PingFang SC/Hiragino/Heiti，
   Windows 上回退 Arial 致 CJK 缺字成方框）；该修复为环境性、不改任何图布局，但对本机重画的
   所有图生效，重画后 PNG 字节因字体不同而变化属正常。
+- 2026-08-17 渲染修订（part2 / P08B）：page 重新定位为动机补充页“AI Work 需要分阶段描述”，
+  不再作平级新动机，以避免与 M1（Rows≠Work 的 13.9–31×）和 M2（Capacity≠State 的近饱和区）重复。
+  suptitle 由“图像动机：阶段失衡、传输形态与提交窗口共同影响执行”改为“AI Work 需要分阶段描述”；
+  panel b 标题由“瓶颈不是 PCIe，而是 host ownership-copy”改为“输入表示改变阶段执行效率”——旧标题是
+  过强的硬件瓶颈结论，改为强调 AI Work 取决于数据表示与所处阶段，导向 WorkDescriptor；panel c 标题由
+  “提交窗口过小会欠供给，过大又积累等待”改为“阶段供给不匹配导致欠供给或等待堆积”——与 M2 区分：
+  M2 问“总共允许多少 work”，本 panel 问“work 在阶段之间怎么流动”。数据、布局、图例与底注均未变；
+  本页直接证据为 prepare/transfer/model 三阶段，result/writeback 阶段在方案页统一补全，不在本页声称。
 
 ## 5.1 图像 baseline 纯数据图
 

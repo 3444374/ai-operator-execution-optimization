@@ -1733,7 +1733,7 @@ def figure_image_stage_evidence_split() -> None:
         loc="lower center",
         fontsize=7.3,
     )
-    ax.set_title("瓶颈不是 PCIe，而是 host ownership-copy", loc="left")
+    ax.set_title("输入表示改变阶段执行效率", loc="left")
     soft_grid(ax, axis="x")
 
     ax = axes[1]
@@ -1770,11 +1770,11 @@ def figure_image_stage_evidence_split() -> None:
         loc="lower right",
         fontsize=7.2,
     )
-    ax.set_title("提交窗口过小会欠供给，过大又积累等待", loc="left")
+    ax.set_title("阶段供给不匹配导致欠供给或等待堆积", loc="left")
     soft_grid(ax)
 
     fig.suptitle(
-        "图像动机：阶段失衡、传输形态与提交窗口共同影响执行",
+        "AI Work 需要分阶段描述",
         fontsize=15,
         fontweight="bold",
         y=0.94,
