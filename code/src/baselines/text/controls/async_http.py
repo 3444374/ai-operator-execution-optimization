@@ -19,6 +19,30 @@ HttpTransport = Callable[
 RequestWorkEstimator = Callable[[ChatRequest], int]
 
 
+def format_transport_error(exc: BaseException) -> str:
+    """Structured transport failure evidence without changing behavior.
+
+    Records exception type chain, message, and __cause__ context so a
+    fail-closed incident can distinguish stale keepalive, peer reset, or
+    local socket errors instead of preserving only an empty message.
+    """
+
+    parts: list[str] = []
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    depth = 0
+    while current is not None and id(current) not in seen and depth < 8:
+        seen.add(id(current))
+        message = str(current)
+        parts.append(
+            f"{type(current).__module__}.{type(current).__qualname__}"
+            f"({message!r})"
+        )
+        current = current.__cause__ or current.__context__
+        depth += 1
+    return " <- ".join(parts)
+
+
 @dataclass(frozen=True)
 class HttpAdmissionEvent:
     """One post-transition snapshot from an endpoint-local HTTP gate."""
@@ -286,7 +310,7 @@ async def _run_requests(
                     doc_id=request.doc_id,
                     endpoint_index=request.endpoint_index,
                     status="failed",
-                    error=f"{type(exc).__name__}: {exc}",
+                    error=format_transport_error(exc),
                     submitted_at_s=submitted_at_s,
                     started_at_s=started_at_s,
                     completed_at_s=time.time(),

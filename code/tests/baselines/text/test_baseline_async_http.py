@@ -509,3 +509,56 @@ class BoundedHttpBaselineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StructuredTransportErrorTests(unittest.TestCase):
+    def test_transport_error_preserves_cause_chain(self) -> None:
+        async def failing_transport(_url: str, _payload: dict) -> dict:
+            try:
+                raise ValueError("peer closed connection")
+            except ValueError as inner:
+                outer = RuntimeError("read failed")
+                raise outer from inner
+
+        results = asyncio.run(
+            run_bounded_http(
+                (sample_request(1, endpoint_index=0),),
+                BoundedHttpConfig(
+                    endpoint_urls=("http://ep0/v1/chat/completions",),
+                    model="model",
+                    concurrency_per_endpoint=1,
+                    timeout_s=30,
+                    api_key=None,
+                ),
+                transport=failing_transport,
+            )
+        )
+
+        self.assertEqual(results[0].status, "failed")
+        error = results[0].error or ""
+        self.assertIn("RuntimeError('read failed')", error)
+        self.assertIn("ValueError('peer closed connection')", error)
+        self.assertIn("<-", error)
+
+    def test_transport_error_chain_handles_cycle(self) -> None:
+        async def failing_transport(_url: str, _payload: dict) -> dict:
+            raise OSError("broken pipe")
+
+        results = asyncio.run(
+            run_bounded_http(
+                (sample_request(2, endpoint_index=0),),
+                BoundedHttpConfig(
+                    endpoint_urls=("http://ep0/v1/chat/completions",),
+                    model="model",
+                    concurrency_per_endpoint=1,
+                    timeout_s=30,
+                    api_key=None,
+                ),
+                transport=failing_transport,
+            )
+        )
+
+        self.assertEqual(results[0].status, "failed")
+        error = results[0].error or ""
+        self.assertIn("OSError('broken pipe')", error)
+        self.assertNotIn("<-", error)

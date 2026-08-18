@@ -437,8 +437,20 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
                 http_response_body_epoch_s = time.time()
                 http_response_body_s = time.perf_counter()
         except self._httpx.HTTPError as exc:
+            parts: list[str] = []
+            current: BaseException | None = exc
+            seen: set[int] = set()
+            depth = 0
+            while current is not None and id(current) not in seen and depth < 8:
+                seen.add(id(current))
+                parts.append(
+                    f"{type(current).__module__}."
+                    f"{type(current).__qualname__}({str(current)!r})"
+                )
+                current = current.__cause__ or current.__context__
+                depth += 1
             raise RuntimeError(
-                f"Completion endpoint request failed ({type(exc).__name__}): {exc}"
+                "Completion endpoint request failed: " + " <- ".join(parts)
             ) from exc
         endpoint_result = _decode_completion_endpoint_result(
             json.loads(body.decode("utf-8")),
