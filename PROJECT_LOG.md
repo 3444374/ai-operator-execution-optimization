@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-08-18 P15 panel c 箭头回退为普通连线
+
+- 用户复核后要求：panel c 不用箭头连接静态/共享两点（避免把两臂对照误读为方向性变化），删除灰色引导箭头"所有 Job 完成速率均提高"，Jain/long-spread 文字移到右下角空白区（右对齐）避免压线。
+- 数值与归一化口径不变（full-single 基线，Jain 0.988→0.876）；仅视觉编码回退。审计文件 §11 视觉编码段同步更新。
+
 ## 2026-08-18 P15 右下角公平性子图归一化基线统一
 
 - 问题：P15（`opening_multijob_interference_tradeoff`）panel c 原稿 Static 臂用 quarter-single 基线（`matched_competition_static`，扣配额损失口径）、Shared 臂用 full-single 基线（`shared_fourjob`），两臂分母不同，视觉上 Shared 的 Long 显得比 Static 差，与 panel a 的 JCT 结论表面冲突。

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "status": "diagnostic_only_ready",
+  "may_change_prior_feeding_decision": false,
+  "prior_decision_preserved": "locked_failed_feeding",
+  "diagnostic_contract_sha256": "24897d26ee541ba93a6e1bc407fce8082b1d56fa00c01597538defff60be9e32",
+  "prior_failed_contract_sha256": "f09d1eab14f45d088e4059a2b5a5bd20297206fe77b3ddba895911657025e6e7",
+  "reference_config_sha256": "2a38363494935bbefd8ca830bb0795d478b33b4753415d07c8bb156c33e54ae5",
+  "diagnostic_config_sha256": "e7d93cca2898a208ccbad3e45e63fb7962e87aead05c9bdc7d4e80a890f2e9d0"
+}
