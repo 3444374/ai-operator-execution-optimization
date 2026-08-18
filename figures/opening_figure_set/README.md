@@ -8,9 +8,9 @@
 
 | 目录 | 内容 | 使用建议 |
 |---|---|---|
-| `main_png/` | 19 张 PPT 主讲候选图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
-| `main_svg/` | 同一 19 张 PPT 主讲候选图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
-| `editable_drawio/` | 8 张概念图的 Draw.io 编辑源 | 修改文字、卡片、箭头或 icon 时使用 |
+| `main_png/` | 21 张 PPT 主讲候选图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
+| `main_svg/` | 同一 21 张 PPT 主讲候选图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
+| `editable_drawio/` | 10 张概念图的 Draw.io 编辑源 | 修改文字、卡片、箭头或 icon 时使用 |
 | `backup_png/` | 2 张答辩备份数据图的 PNG | 回答单 Job 排队与状态问题时使用 |
 | `backup_svg/` | 同一 2 张备份图的 SVG | 需要放大或进入文档时使用 |
 
@@ -33,7 +33,9 @@
 | 09 | `P09_文本多作业_原生路径并发干扰` | 证明共享模型服务下的多 Job 干扰是现实现象 | `data/report_main/opening_native_fourjob_normalized_impact` |
 | 11 | `P11_系统架构_数据组织与状态调度闭环` | 展示 work、state、bounded control 与 sink 的总体闭环 | `architecture/editable/02_system_architecture` |
 | 12 | `P12_研究内容一_WorkUnit与数据组织` | 展示分阶段 work、候选 packing 和同 budget 评价 | `architecture/editable/03_work_unit` |
+| 12A | `P12A_研究内容一_WorkDescriptor与可调度Work` | WorkDescriptor 三层结构：Work Estimation → 四分类字段（Work/Locality/Job-SLO/Confidence）→ Consumers（Organizer→BatchRequest→Scheduler）；packing 策略移至 P13 | `architecture/editable/03b_work_descriptor` |
 | 13 | `P13_数据组织_服务压力与局部性权衡` | 用数据说明组织策略具有 regime dependency | `data/report_main/opening_work_organization_regime_v2` |
+| 13A | `P13A_研究内容一_WorkOrganizer与BatchRequest` | Work Organizer 定义页：三个设计维度（Budget/Balance/Locality）+ 五臂候选策略（保序/重排分组）→ BatchRequest → Scheduler；统一比较条件框 | `architecture/editable/03c_work_organizer` |
 | 14 | `P14_研究内容二_状态感知提交与多作业调度` | 展示安全准入、共享额度、公平队列、路由与释放 | `architecture/editable/04_state_aware_scheduling` |
 | 15 | `P15_共享调度_效率隔离与公平权衡` | 展示同上限静态/共享 A/B 的条件性收益与代价 | `data/report_main/opening_multijob_interference_tradeoff` |
 | 16 | `P16_代价估计_配置选择与决策质量` | 说明代价估计要改善配置排序与 decision regret | `data/report_main/opening_cost_model_decision_quality_v2` |

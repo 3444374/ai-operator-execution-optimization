@@ -2104,14 +2104,13 @@ def _load_json_replacing_invalid_utf8(path: Path) -> dict:
 
 
 def figure_cost_decision_v3() -> None:
-    """v3: panel c 按估计器逐行展示“模型预测最优相对实际最优的偏离”。
+    """v3: 两 panel，panel b 标题注明“= 模型预测最优与实际最优的偏离”。
 
-    与 v2 的区别：v2 的 panel c 只画了 estimator 无关的候选差异（最坏候选 vs
-    实际最优，6 个估计器共用一行）。v3 的 panel c 对每个估计器分别计算其
-    “预测最优”候选的实际偏离——即 100×(预测最优候选的实际耗时 − 实际最优耗时)
-    / 实际最优耗时，等价于 decision regret，但从 candidates[].predicted_mean_s
-    的 argmin 重建，并显式校验与 selection.decision_regret_pct 一致（数值上等于
-    panel b 的点云，按“偏离”语义重新标注）。v2 文件保留不动，v3 输出到新文件。
+    与 v2 的区别：v2 曾是两 panel（配置排序 + 决策损失分布）。本版确认
+    “模型预测最优相对实际最优的偏离”在数值上等于 decision regret（由
+    candidates[].predicted_mean_s 的 argmin 重建并与 selection.decision_regret_pct
+    校验一致），因此不单独设 panel c，只在 panel b 标题和图注中写明两个说法
+    是同一个量。v2 文件保留不动，v3 输出到新文件。
     """
 
     source = (
@@ -2151,28 +2150,6 @@ def figure_cost_decision_v3() -> None:
             raise ValueError(f"{name} context regrets do not reproduce median regret")
         if not np.isclose(context_regrets.max(), regret["max"]):
             raise ValueError(f"{name} context regrets do not reproduce max regret")
-        predicted_deviation_pct = np.asarray(
-            [
-                100.0
-                * (
-                    min(
-                        fold["candidates"],
-                        key=lambda candidate: (
-                            candidate["predicted_mean_s"],
-                            candidate["candidate_id"],
-                        ),
-                    )["actual_mean_s"]
-                    - fold["selection"]["oracle_runtime"]
-                )
-                / fold["selection"]["oracle_runtime"]
-                for fold in folds
-            ],
-            dtype=float,
-        )
-        if not np.allclose(predicted_deviation_pct, context_regrets, atol=1e-6):
-            raise ValueError(
-                f"{name} predicted-best deviation must reproduce decision regret"
-            )
         rows.append(
             {
                 "label": label,
@@ -2181,20 +2158,19 @@ def figure_cost_decision_v3() -> None:
                 "median_regret": float(regret["median"]),
                 "mean_regret": float(regret["mean"]),
                 "max_regret": float(regret["max"]),
-                "predicted_deviation_pct": predicted_deviation_pct,
             }
         )
 
     fig, axes = plt.subplots(
         1,
-        3,
+        2,
         figsize=(13.2, 6.15),
         constrained_layout=False,
         sharey=True,
-        gridspec_kw={"width_ratios": [0.72, 1.80, 1.80]},
+        gridspec_kw={"width_ratios": [0.82, 2.18]},
     )
     fig.subplots_adjust(
-        left=0.085,
+        left=0.095,
         right=0.985,
         bottom=0.19,
         top=0.78,
@@ -2305,81 +2281,8 @@ def figure_cost_decision_v3() -> None:
     ax.set_xlim(-2.5, 85)
     ax.set_ylim(-0.65, len(rows) - 0.35)
     ax.set_xlabel("单个 context 的 decision regret (%)")
-    ax.set_title("b   决策损失分布（20 个场景）", loc="left", pad=10, fontsize=11.2)
-    ax.tick_params(axis="y", left=False, labelleft=False)
-    soft_grid(ax, axis="x")
-
-    ax = axes[2]
-    ax.axvspan(0, 5, color="#EAF7F5", zorder=0)
-    ax.axvspan(5, 15, color="#F3F6F7", zorder=0)
-    ax.axvline(5, color=TEAL, linestyle="--", linewidth=1.0, zorder=1)
-    ax.axvline(15, color=GREY, linestyle=":", linewidth=1.15, zorder=1)
-    for separator in row_separators:
-        ax.axhline(separator, color="#E5EAED", linewidth=0.75, zorder=1.5)
-    for row_index, (yi, row) in enumerate(zip(y, rows, strict=True)):
-        color = BLUE if row["label"] == "混合模型" else GREY
-        deviations = row["predicted_deviation_pct"]
-        rng = np.random.default_rng(20260818 + row_index)
-        jitter = np.linspace(-0.24, 0.24, len(deviations))[
-            rng.permutation(len(deviations))
-        ]
-        ax.scatter(
-            deviations,
-            yi + jitter,
-            color=color,
-            s=23,
-            alpha=0.66 if row["label"] == "混合模型" else 0.46,
-            edgecolors="white",
-            linewidths=0.35,
-            zorder=3,
-        )
-        median_deviation = float(np.median(deviations))
-        ax.scatter(
-            median_deviation,
-            yi,
-            marker="D",
-            color=color,
-            edgecolors="none",
-            linewidths=0,
-            s=38,
-            zorder=5,
-        )
-        max_index = int(np.argmax(deviations))
-        ax.scatter(
-            deviations[max_index],
-            yi + jitter[max_index],
-            color=BLUE if row["label"] == "混合模型" else worst_grey,
-            edgecolors="none",
-            linewidths=0,
-            s=23,
-            zorder=6,
-        )
-        if row["label"] == "混合模型":
-            ax.text(
-                median_deviation + 1.2,
-                yi + 0.10,
-                f"中位 {median_deviation:.1f}%",
-                color=BLUE,
-                fontsize=8.0,
-                fontweight="bold",
-                ha="left",
-                va="bottom",
-            )
-            ax.text(
-                float(deviations[max_index]) + 1.2,
-                yi - 0.20,
-                f"最大 {float(deviations[max_index]):.1f}%",
-                color=BLUE,
-                fontsize=8.0,
-                fontweight="bold",
-                ha="left",
-                va="top",
-            )
-    ax.set_xlim(-2.5, 85)
-    ax.set_ylim(-0.65, len(rows) - 0.35)
-    ax.set_xlabel("模型预测最优候选相对实际最优的偏离 (%)")
     ax.set_title(
-        "c   模型预测最优与实际最优的偏离（20 个场景）",
+        "b   决策损失分布（模型预测最优与实际最优的偏离）（20 个场景）",
         loc="left",
         pad=10,
         fontsize=11.2,
@@ -2457,12 +2360,11 @@ def figure_cost_decision_v3() -> None:
     fig.text(
         0.5,
         0.055,
-        "20-context leave-one-context-out；panel b/c 每行完整展示 20 个真实场景，纵向抖动仅用于避免同值点重叠。"
+        "20-context leave-one-context-out；panel b 每行完整展示 20 个真实场景，纵向抖动仅用于避免同值点重叠。"
         "小菱形为中位数；晋级同时要求 pairwise≥0.75、平均 regret≤5%、最坏 regret≤15%。Hybrid平均2.90%、最坏14.72%。\n"
         "逐行 MAE：Ridge 3.23s < 混合模型 3.98s，但最坏 regret 为 22.71% > 14.72%，"
-        "说明点预测误差不能替代配置排序与决策风险评价。panel c 的偏离 = 100×(预测最优候选实际耗时 − 实际最优耗时)/实际最优耗时，"
-        "由 candidates[].predicted_mean_s 的 argmin 重建，数值上等于 panel b 的 decision regret（脚本已校验一致），"
-        "按“模型预测最优 vs 实际最优”语义独立标注。",
+        "说明点预测误差不能替代配置排序与决策风险评价。panel b 的 decision regret 就是“模型预测最优与实际最优的偏离”"
+        "（= 100×(预测最优候选实际耗时 − 实际最优耗时)/实际最优耗时），两者是同一个量。",
         ha="center",
         va="bottom",
         fontsize=8.1,

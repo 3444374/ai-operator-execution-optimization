@@ -230,15 +230,19 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
   各有11/20个精确 `0.0%`，所以旧图中median=0是实际命中oracle所致，不是缺失或舍入。
   三者macro mean为3.88%/3.33%/2.90%，max为22.71%/26.89%/14.72%。绘图入口显式校验每个
   estimator恰好20 contexts，并用逐点数据重算mean/max对齐JSON summary。
-- 右 panel（2026-08-18 新增，“模型预测最优与实际最优的偏离”）：从每 fold 的
-  `candidates[].actual_mean_s` 取最坏候选、`selection.oracle_runtime` 取实际最优，计算
-  `(最坏候选 − 实际最优) / 实际最优 × 100%`（即“选到最坏候选相对实际最优慢多少”，口径与
+- 右 panel（2026-08-18 曾加“模型预测最优与实际最优的偏离”，后并入 panel b）：曾尝试两种口径。
+  其一为 estimator 无关的候选差异——从每 fold 的 `candidates[].actual_mean_s` 取最坏候选、
+  `selection.oracle_runtime` 取实际最优，`(最坏候选 − 实际最优)/实际最优×100%`（口径与
   `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`
-  §5.1 表末列一致，是 `/min` 而非 `/max` spread）。该分布与 estimator 无关（6 个估计器共用
-  同一组 fold 实测均值），因此只在首行画 20 个场景点 + 中位菱形，不逐 estimator 重复；
-  绘图脚本显式校验 6 个估计器数值完全一致。20 个场景为 2.5%–80.1%、中位 39.7%，
-  仅 1/20 ≤5%（深色点标出）——说明候选选择本身就有相对后果，是 panel a/b 决策指标的
-  动机。注意：它不是估计器的性能指标，不能写成“CE5 的偏离”。
+  §5.1 表末列一致，是 `/min` 而非 `/max` spread），20 个场景为 2.5%–80.1%、中位 39.7%、
+  仅 1/20 ≤5%；但该分布与 estimator 无关、只能画一行，不满足“六种配置各一行”。
+  其二为按估计器的“预测最优偏离”——`argmin(candidates[].predicted_mean_s)` 的实际偏离
+  `100×(预测最优候选实际耗时 − 实际最优耗时)/实际最优耗时`，经脚本校验与
+  `selection.decision_regret_pct` 完全一致（误差 <1e-6）。**结论：用户要求的“模型预测最优
+  与实际最优的偏离百分比”在数值上就是 decision regret，二者是同一个量**，因此不单独设
+  第三 panel；最终 v3 维持两 panel，panel b 标题写全为“决策损失分布（模型预测最优与
+  实际最优的偏离）（20 个场景）”，并在图注写明等价关系。v2 文件保留，v3 输出到
+  `opening_cost_model_decision_quality_v3.{png,svg}`。
 - 支持：Hybrid 同时低于 median/macro 5% 与 max 15% 门，max=14.72%，属于 marginal pass。
 - 关键反例：Ridge逐行MAE 3.23s低于Hybrid 3.98s，但max regret为22.71%而失败；因此逐行
   预测误差不能替代候选ranking与decision regret。
