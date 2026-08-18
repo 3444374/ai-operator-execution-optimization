@@ -225,7 +225,7 @@ PostgreSQL source
   `locked_failed_feeding/formal_authorized=false`，当前 1+3 formal 停止。不能下调门槛、调 K/W 或
   重跑六臂追正。当前仅先做同签名 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W
   的三臂 1+3 配对诊断，分别隔离 W envelope 与 Project plumbing；旧负判决不可被诊断结果撤销。
-  代码/合同/结构化 PG-Ray-endpoint clean gate 已就绪，服务器关机故尚无新性能数据。诊断后才补
+  代码/合同/结构化 PG-Ray-endpoint clean gate 已就绪。08-17 冻结执行因单请求 ReadError fail-closed（独立分支报告）；08-18 经三轮 transport gate（BrokenPipeError 持久连接竞态定位）后全新 root 完整重跑 12/12、0 incident，判决 `work_envelope_primary`：D1/D0=0.9238（W envelope 主导）、P0/D1=0.9982（Project 路径损失 0.18%），旧锁不变。诊断后才补
   同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
   matched comparison；
   原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；

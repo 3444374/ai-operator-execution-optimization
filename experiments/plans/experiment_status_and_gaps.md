@@ -21,6 +21,18 @@ credit trace 并汇总 Ray submit/actor-ready；共同保存 vLLM、MFU、TTFT/I
 及退出规则只见 `state_aware_work_unit_evaluation_20260808.md` §5.2，任何结果均不得修改旧
 `locked_failed_feeding`。
 
+2026-08-18 重跑完成与判决：独立审核定位 08-17 incident 为 HTTP/1.1 持久连接竞态后，先落盘
+结构化异常 cause chain（`2e4c2723`，零行为变化），三轮 transport gate 中 r1 复现
+1/1024 `httpx.ReadError('') <- httpcore.ReadError('') <- anyio.BrokenResourceError('') <-
+BrokenPipeError('[Errno 32] Broken pipe')`、r2/r3 零失败。随后全新 root
+`saor_feeding_gap_diagnostic_345bee2f_20260818_r2` 完整重跑 12/12 cell、0 incident；
+官方 summarizer `valid_diagnostic / work_envelope_primary`：D1/D0=0.9238（CV 1.0%）、
+P0/D1=0.9982（CV 1.6%）。W=65536 是主要差距来源（约 7.6% 容量换 KV 0.70→0.43、waiting
+39→1、TTFT p99 18.6→2.5s）；Project bounded-ready 路径额外损失 0.18%。`may_change_prior_feeding_decision=false`，
+旧锁不变。下一步按 exit contract 拆“实现效率/保护成本”两道门（codex 设计），原生
+matched comparison 仍排后。报告见
+`experiments/results/state_aware_work_unit/saor_feeding_gap_diagnostic_rerun_20260818/README.md`。
+
 2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
 两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故
 GPU evidence 仍未完成。输出分成五臂 complete-system empirical 表与四臂 Project-internal

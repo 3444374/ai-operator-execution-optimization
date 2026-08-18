@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-08-18 SAOR feeding-gap diagnostic 重跑完成：work_envelope_primary（服务器）
+
+- 独立审核确认 08-17 的 D0 rep3 ReadError 是 HTTP/1.1 持久连接竞态而非算法失败后，补结构化传输
+  证据（direct HTTP 与 project actor 均落盘完整异常 cause chain，请求行为与零重试合同不变，
+  `2e4c2723`，async_http 13/13 测试通过），并做三轮 D0 transport reliability gate：r1 复现
+  1/1024 `BrokenPipeError` cause chain，r2/r3 零失败——定位为低概率 stale-keepalive 竞态。
+- 全新 root `saor_feeding_gap_diagnostic_345bee2f_20260818_r2` 按原冻结合同完整重跑 12/12 cell、
+  0 incident、exactly-once；官方 summarizer 判决 `valid_diagnostic /
+  classification=work_envelope_primary`：D1/D0=0.9238（<0.95，CV 1.0%）、P0/D1=0.9982（≥0.95，
+  CV 1.6%）。W=65536 envelope 是与 direct 天花板差距的主要来源（约 7.6% 容量，换来 KV mean
+  0.70→0.43、waiting 39→1、TTFT p99 18.6→2.5s）；Project bounded-ready 执行路径额外损失仅 0.18%。
+- 按 exit contract，下一步是分开“Project K+W/direct K+W 实现效率”与“Project K+W/direct K-only
+  保护成本”两道门（codex 设计）；观测补丁建议合入 main。SAOR formal 维持
+  `locked_failed_feeding/formal_authorized=false`，`may_change_prior_feeding_decision=false` 未触碰。
+  rerun archive SHA256 `7fdf8b65…`，gate archive `52a763bf…`，均已镜像本地。报告见
+  `experiments/results/state_aware_work_unit/saor_feeding_gap_diagnostic_rerun_20260818/README.md`。
 ## 2026-08-17 native-system 可搬迁证据与数据库身份 follow-up（本地）
 
 - 继续在 follow-up 分支修复独立审核阻断项；未连接服务器、未运行 native-system/rehearsal/formal，
