@@ -59,7 +59,7 @@
 | H | `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` | 120 条逐 Job formal | `d7fa2417361fcd7b` | Project short full/quarter/static/shared=13.07/36.65/58.79/16.33 s |
 | N | `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` | 120 条逐 Job formal | `d7fa2417361fcd7b` | Daft Native/Ray/Ray Data 的 short slowdown=1.67×/1.25×/1.68×；三个 long 也均退化 |
 | H | `opening_fourjob_interference_20260809/data/combined/group_formal_runs.csv` | 75 条组级 formal | `b415c8a68e5d1139` | Project shared vs static：tok/s +8.68%，group JCT −7.97%，MFU +8.56pp |
-| H | `opening_fourjob_interference_20260809/data/combined/isolated_normalized_fairness.csv` | 6 个系统内对照 | `0d325fc6303d5a42` | matched-static/shared Jain=0.998/0.876 |
+| H | `opening_fourjob_interference_20260809/data/combined/isolated_normalized_fairness.csv` | 6 个系统内对照 | `0d325fc6303d5a42` | 同 full-single 基线 static/shared Jain=0.988/0.876（panel c 口径）；quarter-single 基线 matched-static Jain=0.998 仅作配额损失诊断 |
 | H | `opening_fourjob_interference_20260809/data/combined/long_job_spread.csv` | 15 个 formal group | `4252937ec7f81d57` | Project long JCT spread：static 1.1 s，shared 61.1 s |
 | H | `opening_multijob_interference_20260809/data/combined/summary.csv` | 10 汇总行，源自 30 formal | `3622732cf88b4fee` | 所有 two-job overlap>0；原生 short JCT +82.42%/+104.84%/+32.76% |
 | H | `opening_multijob_interference_20260809/data/combined/comparisons.csv` | 6 个预注册对比 | `33701106d0f8bda8` | project shared vs static：吞吐 +21.03%，short JCT +4.98% |
@@ -330,14 +330,24 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
   `isolated_normalized_fairness.csv` 与 `long_job_spread.csv`。
 - panel a 的每条线固定代表一个Job，依次连接独立Full、独立1/4配额、四Job Static和
   四Job Shared的JCT归一化均值，以趋势分离配额损失、真实竞争与共享策略效果；panel b
-  用无边框表直标Static/Shared的组吞吐、group JCT、MFU与变化；panel c按同一Job连接
-  Static→Shared的isolated-normalized progress，并直接报告Jain与long spread。
-  连线表示预注册受控场景顺序，不是时间序列；三次formal的SD保留在CSV/附录。
-- 视觉编码：panel a纵轴改为“归一化JCT（独立运行=1）”，panel c改为“归一化完成进度
-  （独立运行=1）”；两条数值轴不再在每个点旁重复标同一数值，准确值直接由刻度读取。
-  只有无数值坐标轴的panel b保留表内精确数字，减少冗余和标签遮挡。panel b 的变化列
-  统一使用相对变化：MFU从38.2%增至46.8%，表内写相对`+22.41%`，不再单独使用
-  `+8.56pp`；Static/Shared原值均为中性深灰，变化上涨为红、下跌为绿，并以正负号冗余编码。
+  用无边框表直标Static/Shared的组吞吐、group JCT、MFU与变化；panel c按同一Job用
+  箭头连接Static→Shared的isolated-normalized progress，并直接报告Jain与long spread。
+  连线/箭头表示预注册受控场景顺序，不是时间序列；三次formal的SD保留在CSV/附录。
+- 视觉编码：panel a纵轴改为“归一化JCT（独立运行=1）”，panel c改为“相对独立运行的
+  完成速率（独立运行=1，越高越好）”；两条数值轴不再在每个点旁重复标同一数值，准确值
+  直接由刻度读取。只有无数值坐标轴的panel b保留表内精确数字，减少冗余和标签遮挡。
+  panel b 的变化列统一使用相对变化：MFU从38.2%增至46.8%，表内写相对`+22.41%`，不再
+  单独使用`+8.56pp`；Static/Shared原值均为中性深灰，变化上涨为红、下跌为绿，并以正负号
+  冗余编码。panel c 两个测量点之间改用直线箭头，直接读出“每个 Job 从 Static 到 Shared
+  的增益方向与幅度”。
+- panel c 归一化基线修正（2026-08-18）：原稿 Static 臂误用 quarter-single 基线
+  （`matched_competition_static`，扣配额损失口径），与 Shared 臂的 full-single 基线
+  （`shared_fourjob`）分母不同，视觉上会让 Shared Long 显得比 Static 差。现两臂统一为
+  full-single 基线（`static_fourjob` vs `shared_fourjob`，均为 full-pool isolated JCT /
+  concurrent JCT）：Static 四 Job 为 0.22/0.29/0.29/0.30，Shared 为 0.80/0.31/0.37/0.63，
+  四个 Job 全部 Shared 更高，与 panel a 的 JCT 结论一致；同基线 Jain 为 0.988→0.876。
+  quarter-single 口径（Jain=0.998）仅保留作“扣除配额损失后 Static 竞争退化很均匀”的
+  诊断说明，不再与 Shared 同图比较。
 - 支持：shared credit 提高 work conservation，并显著帮助 Short，但当前 equal-weight 点的
   Jain 与 Long 间离散仍需 fairness/SLO guard；因此动态调度目标必须同时包含效率和隔离。
 - 不支持：shared/dynamic 普遍胜出、weighted/SLO 已验证、图像动态策略已胜出。

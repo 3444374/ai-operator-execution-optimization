@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-08-18 P15 右下角公平性子图归一化基线统一
+
+- 问题：P15（`opening_multijob_interference_tradeoff`）panel c 原稿 Static 臂用 quarter-single 基线（`matched_competition_static`，扣配额损失口径）、Shared 臂用 full-single 基线（`shared_fourjob`），两臂分母不同，视觉上 Shared 的 Long 显得比 Static 差，与 panel a 的 JCT 结论表面冲突。
+- 修正：panel c 两臂统一为 full-single 基线（`static_fourjob` vs `shared_fourjob`，均为 full-pool isolated JCT / concurrent JCT）。Static 四 Job = 0.22/0.29/0.29/0.30，Shared = 0.80/0.31/0.37/0.63，四个 Job 全部 Shared 更高；同基线 Jain = 0.988→0.876。实验数据不变，仅统一归一化分母。
+- 视觉：panel c 标题改为“共享调度改善所有 Job，但收益分配不均”，纵轴改为“相对独立运行的完成速率”；两个测量点改用直线箭头连接，并加灰色虚线引导箭头标注“所有 Job 完成速率均提高”。
+- quarter-single 口径（Jain=0.998）仅保留作配额损失诊断说明，记入审计文件，不再与 Shared 同图比较。
+- 更新文件：`figures/scripts/generate_opening_story_figures_20260808.py`（仅 figure H）、`figures/data/report_main/opening_multijob_interference_tradeoff.{png,svg,pdf}`、`figures/opening_figure_set/main_png|main_svg/P15_*`、`figures/audit/opening_story_figures_contract_20260808.md` §11 与数据表 H 行。
+
 ## 2026-08-17 P11 箭头整体调小
 
 - 用户手动调整 drawio 后，将所有箭头 endSize 统一调小（10→7、8→5、7→5/4），渲染后箭头头部明显更细。重新导出并固定权威源与图集副本。

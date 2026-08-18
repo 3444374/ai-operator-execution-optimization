@@ -1051,9 +1051,13 @@ def figure_multijob_interference_tradeoff() -> None:
         / "experiments/results/opening_fourjob_interference_20260809/data/combined/"
         "isolated_normalized_fairness.csv"
     )
+    # Panel c compares the two policies on one shared basis: full-pool isolated
+    # JCT / concurrent JCT. `static_fourjob` and `shared_fourjob` both use that
+    # basis; `matched_competition_static` (quarter-pool isolated baseline) is a
+    # different denominator and must not be plotted against the shared arm.
     fairness = fairness.loc[
         fairness["system"].eq("project")
-        & fairness["comparison"].isin(["matched_competition_static", "shared_fourjob"])
+        & fairness["comparison"].isin(["static_fourjob", "shared_fourjob"])
     ].copy()
     long_spread = pd.read_csv(
         ROOT
@@ -1072,11 +1076,11 @@ def figure_multijob_interference_tradeoff() -> None:
     progress = {}
     for _, row in fairness.iterrows():
         progress[str(row["comparison"])] = json.loads(row["normalized_progress_by_job"])
-    static_progress = progress["matched_competition_static"]
+    static_progress = progress["static_fourjob"]
     shared_progress = progress["shared_fourjob"]
     static_jain = float(
         fairness.loc[
-            fairness["comparison"].eq("matched_competition_static"),
+            fairness["comparison"].eq("static_fourjob"),
             "jain_normalized_progress",
         ].iloc[0]
     )
@@ -1221,31 +1225,83 @@ def figure_multijob_interference_tradeoff() -> None:
         [[static_progress[job], shared_progress[job]] for job in jobs]
     )
     policy_x = np.arange(2)
+    arrow_handles = []
     for row, (job_label, color, marker) in enumerate(
         zip(job_labels, job_colors, job_markers, strict=True)
     ):
         values = progress_values[row]
+        # Connect the two measured policy points with a straight arrow: the gain
+        # direction is visible per job without implying a continuous path.
+        arrow = FancyArrowPatch(
+            (policy_x[0], values[0]),
+            (policy_x[1], values[1]),
+            arrowstyle="-|>",
+            mutation_scale=13,
+            linewidth=1.7,
+            color=color,
+            shrinkA=0,
+            shrinkB=0,
+            zorder=3,
+        )
+        ax_fair.add_patch(arrow)
+        # Endpoints sit slightly before the arrow tip so every marker stays visible.
         ax_fair.plot(
             policy_x,
             values,
             color=color,
             marker=marker,
             markersize=5.5,
-            linewidth=1.7,
-            label=job_label,
-            zorder=3,
+            linewidth=0,
+            zorder=4,
         )
+        arrow_handles.append(
+            Line2D(
+                [],
+                [],
+                color=color,
+                marker=marker,
+                markersize=5.5,
+                linewidth=1.7,
+                label=job_label,
+            )
+        )
+    ax_fair.annotate(
+        "",
+        xy=(0.985, 0.655),
+        xytext=(0.30, 0.655),
+        xycoords=("axes fraction", "data"),
+        textcoords=("axes fraction", "data"),
+        arrowprops=dict(
+            arrowstyle="-|>",
+            mutation_scale=13,
+            lw=1.7,
+            color=GREY,
+            linestyle=(0, (4, 3)),
+        ),
+        zorder=2,
+    )
+    ax_fair.text(
+        0.31,
+        0.655,
+        "所有 Job 完成速率均提高",
+        transform=ax_fair.get_yaxis_transform(),
+        ha="left",
+        va="bottom",
+        fontsize=8.2,
+        color=GREY,
+        zorder=2,
+    )
     ax_fair.set_xticks(policy_x)
     ax_fair.set_xticklabels(["静态竞争", "共享调度"])
-    ax_fair.set_xlim(-0.18, 1.18)
-    ax_fair.set_ylim(0.25, 0.86)
-    ax_fair.set_ylabel("归一化完成进度（独立运行 = 1，越高越好）")
+    ax_fair.set_xlim(-0.30, 1.42)
+    ax_fair.set_ylim(0.18, 0.88)
+    ax_fair.set_ylabel("相对独立运行的完成速率（独立运行 = 1，越高越好）")
     soft_grid(ax_fair, axis="y")
-    ax_fair.set_title("共享调度改变各 Job 的完成进度", loc="left", pad=10)
-    ax_fair.legend(loc="upper center", frameon=False, ncol=4, fontsize=7.5)
+    ax_fair.set_title("共享调度改善所有 Job，但收益分配不均", loc="left", pad=10)
+    ax_fair.legend(handles=arrow_handles, loc="upper center", frameon=False, ncol=4, fontsize=7.5)
     ax_fair.text(
         0.02,
-        0.03,
+        0.10,
         f"Jain：{static_jain:.3f} → {shared_jain:.3f}    "
         f"Long JCT spread：{static_spread:.1f}s → {shared_spread:.1f}s",
         transform=ax_fair.transAxes,
@@ -1274,7 +1330,7 @@ def figure_multijob_interference_tradeoff() -> None:
     fig.text(
         0.5,
         -0.015,
-        "Short@0s，3×Long@5s；每条线始终代表同一个 Job，点为3次formal均值，数值由纵轴读取，不重复标注。静态/共享是同一总上限下互斥A/B臂；独立与1/4配额用于分离配额损失。",
+        "Short@0s，3×Long@5s；每条线始终代表同一个 Job，点为3次formal均值，数值由纵轴读取，不重复标注。静态/共享是同一总上限下互斥A/B臂；独立与1/4配额用于分离配额损失；panel c 两臂统一按各自独立运行（full pool）归一化，量化各 Job 保留的完成速率。",
         ha="center",
         va="top",
         fontsize=8.5,
