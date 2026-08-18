@@ -1225,87 +1225,37 @@ def figure_multijob_interference_tradeoff() -> None:
         [[static_progress[job], shared_progress[job]] for job in jobs]
     )
     policy_x = np.arange(2)
-    arrow_handles = []
     for row, (job_label, color, marker) in enumerate(
         zip(job_labels, job_colors, job_markers, strict=True)
     ):
         values = progress_values[row]
-        # Connect the two measured policy points with a straight arrow: the gain
-        # direction is visible per job without implying a continuous path.
-        arrow = FancyArrowPatch(
-            (policy_x[0], values[0]),
-            (policy_x[1], values[1]),
-            arrowstyle="-|>",
-            mutation_scale=13,
-            linewidth=1.7,
-            color=color,
-            shrinkA=0,
-            shrinkB=0,
-            zorder=3,
-        )
-        ax_fair.add_patch(arrow)
-        # Endpoints sit slightly before the arrow tip so every marker stays visible.
+        # Plain line between the two measured policy points; it marks the
+        # controlled static/shared A/B contrast, not a continuous path.
         ax_fair.plot(
             policy_x,
             values,
             color=color,
             marker=marker,
             markersize=5.5,
-            linewidth=0,
-            zorder=4,
+            linewidth=1.7,
+            label=job_label,
+            zorder=3,
         )
-        arrow_handles.append(
-            Line2D(
-                [],
-                [],
-                color=color,
-                marker=marker,
-                markersize=5.5,
-                linewidth=1.7,
-                label=job_label,
-            )
-        )
-    ax_fair.annotate(
-        "",
-        xy=(0.985, 0.655),
-        xytext=(0.30, 0.655),
-        xycoords=("axes fraction", "data"),
-        textcoords=("axes fraction", "data"),
-        arrowprops=dict(
-            arrowstyle="-|>",
-            mutation_scale=13,
-            lw=1.7,
-            color=GREY,
-            linestyle=(0, (4, 3)),
-        ),
-        zorder=2,
-    )
-    ax_fair.text(
-        0.31,
-        0.655,
-        "所有 Job 完成速率均提高",
-        transform=ax_fair.get_yaxis_transform(),
-        ha="left",
-        va="bottom",
-        fontsize=8.2,
-        color=GREY,
-        zorder=2,
-    )
     ax_fair.set_xticks(policy_x)
     ax_fair.set_xticklabels(["静态竞争", "共享调度"])
-    ax_fair.set_xlim(-0.30, 1.42)
+    ax_fair.set_xlim(-0.18, 1.18)
     ax_fair.set_ylim(0.18, 0.88)
     ax_fair.set_ylabel("相对独立运行的完成速率（独立运行 = 1，越高越好）")
     soft_grid(ax_fair, axis="y")
     ax_fair.set_title("共享调度改善所有 Job，但收益分配不均", loc="left", pad=10)
-    ax_fair.legend(handles=arrow_handles, loc="upper center", frameon=False, ncol=4, fontsize=7.5)
+    ax_fair.legend(loc="upper center", frameon=False, ncol=4, fontsize=7.5)
     ax_fair.text(
-        0.02,
-        0.10,
+        0.97,
+        0.04,
         f"Jain：{static_jain:.3f} → {shared_jain:.3f}    "
         f"Long JCT spread：{static_spread:.1f}s → {shared_spread:.1f}s",
         transform=ax_fair.transAxes,
-        ha="left",
+        ha="right",
         va="bottom",
         fontsize=8.3,
         color=DARK,
@@ -2153,7 +2103,17 @@ def _load_json_replacing_invalid_utf8(path: Path) -> dict:
     return json.loads(path.read_bytes().decode("utf-8", errors="replace"))
 
 
-def figure_cost_decision_v2() -> None:
+def figure_cost_decision_v3() -> None:
+    """v3: panel c 按估计器逐行展示“模型预测最优相对实际最优的偏离”。
+
+    与 v2 的区别：v2 的 panel c 只画了 estimator 无关的候选差异（最坏候选 vs
+    实际最优，6 个估计器共用一行）。v3 的 panel c 对每个估计器分别计算其
+    “预测最优”候选的实际偏离——即 100×(预测最优候选的实际耗时 − 实际最优耗时)
+    / 实际最优耗时，等价于 decision regret，但从 candidates[].predicted_mean_s
+    的 argmin 重建，并显式校验与 selection.decision_regret_pct 一致（数值上等于
+    panel b 的点云，按“偏离”语义重新标注）。v2 文件保留不动，v3 输出到新文件。
+    """
+
     source = (
         ROOT
         / "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/"
@@ -2191,6 +2151,28 @@ def figure_cost_decision_v2() -> None:
             raise ValueError(f"{name} context regrets do not reproduce median regret")
         if not np.isclose(context_regrets.max(), regret["max"]):
             raise ValueError(f"{name} context regrets do not reproduce max regret")
+        predicted_deviation_pct = np.asarray(
+            [
+                100.0
+                * (
+                    min(
+                        fold["candidates"],
+                        key=lambda candidate: (
+                            candidate["predicted_mean_s"],
+                            candidate["candidate_id"],
+                        ),
+                    )["actual_mean_s"]
+                    - fold["selection"]["oracle_runtime"]
+                )
+                / fold["selection"]["oracle_runtime"]
+                for fold in folds
+            ],
+            dtype=float,
+        )
+        if not np.allclose(predicted_deviation_pct, context_regrets, atol=1e-6):
+            raise ValueError(
+                f"{name} predicted-best deviation must reproduce decision regret"
+            )
         rows.append(
             {
                 "label": label,
@@ -2199,19 +2181,20 @@ def figure_cost_decision_v2() -> None:
                 "median_regret": float(regret["median"]),
                 "mean_regret": float(regret["mean"]),
                 "max_regret": float(regret["max"]),
+                "predicted_deviation_pct": predicted_deviation_pct,
             }
         )
 
     fig, axes = plt.subplots(
         1,
-        2,
+        3,
         figsize=(13.2, 6.15),
         constrained_layout=False,
         sharey=True,
-        gridspec_kw={"width_ratios": [0.82, 2.18]},
+        gridspec_kw={"width_ratios": [0.72, 1.80, 1.80]},
     )
     fig.subplots_adjust(
-        left=0.095,
+        left=0.085,
         right=0.985,
         bottom=0.19,
         top=0.78,
@@ -2323,11 +2306,89 @@ def figure_cost_decision_v2() -> None:
     ax.set_ylim(-0.65, len(rows) - 0.35)
     ax.set_xlabel("单个 context 的 decision regret (%)")
     ax.set_title("b   决策损失分布（20 个场景）", loc="left", pad=10, fontsize=11.2)
+    ax.tick_params(axis="y", left=False, labelleft=False)
+    soft_grid(ax, axis="x")
+
+    ax = axes[2]
+    ax.axvspan(0, 5, color="#EAF7F5", zorder=0)
+    ax.axvspan(5, 15, color="#F3F6F7", zorder=0)
+    ax.axvline(5, color=TEAL, linestyle="--", linewidth=1.0, zorder=1)
+    ax.axvline(15, color=GREY, linestyle=":", linewidth=1.15, zorder=1)
+    for separator in row_separators:
+        ax.axhline(separator, color="#E5EAED", linewidth=0.75, zorder=1.5)
+    for row_index, (yi, row) in enumerate(zip(y, rows, strict=True)):
+        color = BLUE if row["label"] == "混合模型" else GREY
+        deviations = row["predicted_deviation_pct"]
+        rng = np.random.default_rng(20260818 + row_index)
+        jitter = np.linspace(-0.24, 0.24, len(deviations))[
+            rng.permutation(len(deviations))
+        ]
+        ax.scatter(
+            deviations,
+            yi + jitter,
+            color=color,
+            s=23,
+            alpha=0.66 if row["label"] == "混合模型" else 0.46,
+            edgecolors="white",
+            linewidths=0.35,
+            zorder=3,
+        )
+        median_deviation = float(np.median(deviations))
+        ax.scatter(
+            median_deviation,
+            yi,
+            marker="D",
+            color=color,
+            edgecolors="none",
+            linewidths=0,
+            s=38,
+            zorder=5,
+        )
+        max_index = int(np.argmax(deviations))
+        ax.scatter(
+            deviations[max_index],
+            yi + jitter[max_index],
+            color=BLUE if row["label"] == "混合模型" else worst_grey,
+            edgecolors="none",
+            linewidths=0,
+            s=23,
+            zorder=6,
+        )
+        if row["label"] == "混合模型":
+            ax.text(
+                median_deviation + 1.2,
+                yi + 0.10,
+                f"中位 {median_deviation:.1f}%",
+                color=BLUE,
+                fontsize=8.0,
+                fontweight="bold",
+                ha="left",
+                va="bottom",
+            )
+            ax.text(
+                float(deviations[max_index]) + 1.2,
+                yi - 0.20,
+                f"最大 {float(deviations[max_index]):.1f}%",
+                color=BLUE,
+                fontsize=8.0,
+                fontweight="bold",
+                ha="left",
+                va="top",
+            )
+    ax.set_xlim(-2.5, 85)
+    ax.set_ylim(-0.65, len(rows) - 0.35)
+    ax.set_xlabel("模型预测最优候选相对实际最优的偏离 (%)")
+    ax.set_title(
+        "c   模型预测最优与实际最优的偏离（20 个场景）",
+        loc="left",
+        pad=10,
+        fontsize=11.2,
+    )
+    ax.tick_params(axis="y", left=False, labelleft=False)
     soft_grid(ax, axis="x")
 
     axes[0].set_yticks(y)
     axes[0].set_yticklabels([item["label"] for item in rows])
-    axes[1].tick_params(axis="y", left=False, labelleft=False)
     fig.legend(
         handles=[
             Line2D(
@@ -2396,16 +2457,18 @@ def figure_cost_decision_v2() -> None:
     fig.text(
         0.5,
         0.055,
-        "20-context leave-one-context-out；右图每行完整展示 20 个真实 decision regret，纵向抖动仅用于避免同值点重叠。"
+        "20-context leave-one-context-out；panel b/c 每行完整展示 20 个真实场景，纵向抖动仅用于避免同值点重叠。"
         "小菱形为中位数；晋级同时要求 pairwise≥0.75、平均 regret≤5%、最坏 regret≤15%。Hybrid平均2.90%、最坏14.72%。\n"
         "逐行 MAE：Ridge 3.23s < 混合模型 3.98s，但最坏 regret 为 22.71% > 14.72%，"
-        "说明点预测误差不能替代配置排序与决策风险评价。",
+        "说明点预测误差不能替代配置排序与决策风险评价。panel c 的偏离 = 100×(预测最优候选实际耗时 − 实际最优耗时)/实际最优耗时，"
+        "由 candidates[].predicted_mean_s 的 argmin 重建，数值上等于 panel b 的 decision regret（脚本已校验一致），"
+        "按“模型预测最优 vs 实际最优”语义独立标注。",
         ha="center",
         va="bottom",
         fontsize=8.1,
         color=GREY,
     )
-    finish(fig, "opening_cost_model_decision_quality_v2")
+    finish(fig, "opening_cost_model_decision_quality_v3")
 
 
 def _box(ax, x, y, w, h, title, detail, color) -> None:
@@ -2762,7 +2825,7 @@ def main() -> None:
         "D": figure_image_stage_evidence_set,
         "I": figure_image_baseline_evidence_map,
         "J": figure_image_fourjob_normalized_impact,
-        "E": figure_cost_decision_v2,
+        "E": figure_cost_decision_v3,
         "F": figure_native_single_job_evidence,
         "H": figure_multijob_interference_tradeoff,
         "N": figure_native_fourjob_normalized_impact,

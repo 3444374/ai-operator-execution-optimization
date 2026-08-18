@@ -221,7 +221,7 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 文件：`data/report_main/opening_cost_model_decision_quality_v2.{png,svg}`。
 
 - 来源：20-context leave-one-context-out 结果 `ce_context_loo_rerun_20260807.json`。
-- 编码：左 panel 报告 estimator 级 candidate pairwise；右 panel 从每个 estimator 的20个
+- 编码：左 panel 报告 estimator 级 candidate pairwise；中 panel 从每个 estimator 的20个
   `folds[].selection.decision_regret_pct` 逐点读取并完整展开。小点是单个 context，纵向抖动
   仅用于避免相同 regret 重叠；小菱形是20个 context 的中位数，同尺寸深色点标记
   最坏 context。浅绿
@@ -230,6 +230,15 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
   各有11/20个精确 `0.0%`，所以旧图中median=0是实际命中oracle所致，不是缺失或舍入。
   三者macro mean为3.88%/3.33%/2.90%，max为22.71%/26.89%/14.72%。绘图入口显式校验每个
   estimator恰好20 contexts，并用逐点数据重算mean/max对齐JSON summary。
+- 右 panel（2026-08-18 新增，“模型预测最优与实际最优的偏离”）：从每 fold 的
+  `candidates[].actual_mean_s` 取最坏候选、`selection.oracle_runtime` 取实际最优，计算
+  `(最坏候选 − 实际最优) / 实际最优 × 100%`（即“选到最坏候选相对实际最优慢多少”，口径与
+  `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`
+  §5.1 表末列一致，是 `/min` 而非 `/max` spread）。该分布与 estimator 无关（6 个估计器共用
+  同一组 fold 实测均值），因此只在首行画 20 个场景点 + 中位菱形，不逐 estimator 重复；
+  绘图脚本显式校验 6 个估计器数值完全一致。20 个场景为 2.5%–80.1%、中位 39.7%，
+  仅 1/20 ≤5%（深色点标出）——说明候选选择本身就有相对后果，是 panel a/b 决策指标的
+  动机。注意：它不是估计器的性能指标，不能写成“CE5 的偏离”。
 - 支持：Hybrid 同时低于 median/macro 5% 与 max 15% 门，max=14.72%，属于 marginal pass。
 - 关键反例：Ridge逐行MAE 3.23s低于Hybrid 3.98s，但max regret为22.71%而失败；因此逐行
   预测误差不能替代候选ranking与decision regret。
@@ -331,15 +340,15 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 - panel a 的每条线固定代表一个Job，依次连接独立Full、独立1/4配额、四Job Static和
   四Job Shared的JCT归一化均值，以趋势分离配额损失、真实竞争与共享策略效果；panel b
   用无边框表直标Static/Shared的组吞吐、group JCT、MFU与变化；panel c按同一Job用
-  箭头连接Static→Shared的isolated-normalized progress，并直接报告Jain与long spread。
-  连线/箭头表示预注册受控场景顺序，不是时间序列；三次formal的SD保留在CSV/附录。
+  无箭头直线连接Static→Shared的isolated-normalized progress，并直接报告Jain与long spread。
+  连线表示预注册受控场景顺序，不是时间序列；三次formal的SD保留在CSV/附录。
 - 视觉编码：panel a纵轴改为“归一化JCT（独立运行=1）”，panel c改为“相对独立运行的
   完成速率（独立运行=1，越高越好）”；两条数值轴不再在每个点旁重复标同一数值，准确值
   直接由刻度读取。只有无数值坐标轴的panel b保留表内精确数字，减少冗余和标签遮挡。
   panel b 的变化列统一使用相对变化：MFU从38.2%增至46.8%，表内写相对`+22.41%`，不再
   单独使用`+8.56pp`；Static/Shared原值均为中性深灰，变化上涨为红、下跌为绿，并以正负号
-  冗余编码。panel c 两个测量点之间改用直线箭头，直接读出“每个 Job 从 Static 到 Shared
-  的增益方向与幅度”。
+  冗余编码。panel c 只用普通连线对照两个互斥测量臂（静态/共享同上限A/B），不加箭头、
+  不加引导标注，Jain 与 long spread 文字放在右下角空白区。
 - panel c 归一化基线修正（2026-08-18）：原稿 Static 臂误用 quarter-single 基线
   （`matched_competition_static`，扣配额损失口径），与 Shared 臂的 full-single 基线
   （`shared_fourjob`）分母不同，视觉上会让 Shared Long 显得比 Static 差。现两臂统一为
