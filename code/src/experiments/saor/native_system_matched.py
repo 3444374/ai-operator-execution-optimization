@@ -13,11 +13,13 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlsplit, urlunsplit
 
 from src.baselines.common.database_identity import (
     DatabaseIdentity,
     DatabaseIdentityError,
 )
+from src.baselines.common.manifests import read_manifest
 from src.baselines.common.redact import redact_argument_list, redact_text
 from src.infrastructure.config_env import expand_structure
 from src.infrastructure.runner_lease import acquire_host_runner_lease
@@ -39,13 +41,22 @@ FORMAL_AUTHORIZATION_SCOPE = "saor_native_system_matched_formal"
 
 _PROJECT_FIELDS = {
     "k_per_endpoint", "work_limit_per_endpoint", "ready_bytes", "actor_topology",
-    "policy", "ready_observation", "debt_caps",
+    "batching_contract", "policy", "ready_observation", "debt_caps",
 }
 _COMMON_FIELDS = (
-    "manifest_path", "manifest_sha256", "endpoint_ids", "service_signature",
+    "manifest_path", "manifest_sha256", "job_manifests", "endpoint_ids", "service_signature",
     "protocol", "output_cap", "arrival_offsets_s", "job_internal_arrival_contract",
     "performance_writeback_mode", "unsupported_request_tails", "source", "organizer",
 )
+
+
+def endpoint_auxiliary_url(endpoint_url: str, path: str) -> str:
+    """Map a completion URL to the same service origin at ``path``."""
+
+    parsed = urlsplit(endpoint_url)
+    if not parsed.scheme or not parsed.netloc or not path.startswith("/"):
+        raise ValueError("endpoint URL or auxiliary path is invalid")
+    return urlunsplit((parsed.scheme, parsed.netloc, path, "", ""))
 
 
 def _validate_actual_job_offset(actual_offset_s: float) -> float:
@@ -116,6 +127,16 @@ def normalize_request_tail_status(value: object) -> dict[str, dict[str, object]]
 
 
 @dataclass(frozen=True)
+class JobManifestIdentity:
+    """One immutable Job workload bound independently of the combined view."""
+
+    job_id: str
+    path: str
+    rows: int
+    sha256: str
+
+
+@dataclass(frozen=True)
 class MatchedArm:
     """One immutable physical execution arm; no service work is performed here."""
 
@@ -125,6 +146,7 @@ class MatchedArm:
     output_root: str
     manifest_path: str
     manifest_sha256: str
+    job_manifests: tuple[JobManifestIdentity, ...]
     endpoint_ids: tuple[str, ...]
     service_signature: tuple[tuple[str, object], ...]
     protocol: str
@@ -136,6 +158,7 @@ class MatchedArm:
     source: tuple[tuple[str, object], ...]
     organizer: str
     calibration_path: str
+    calibration_sha256: str
     project_contract: tuple[tuple[str, object], ...] = ()
     raw_field_names: tuple[str, ...] = ()
 
@@ -152,6 +175,7 @@ class MatchedSystemConfig:
     formal_repeats: int
     selector_sanity_development_repeats: int
     matrix_output_root: str
+    endpoint_urls: tuple[str, ...]
     gpu_formal_locally_authorized: bool
     matched_manifest_status: str
     arms: tuple[MatchedArm, ...]
@@ -191,6 +215,10 @@ def load_matched_system_config(
         ),
         matrix_output_root=_resolve_config_path(
             decoded.get("matrix_output_root"), "matrix_output_root", config_directory
+        ),
+        endpoint_urls=tuple(
+            _string(item, "endpoint_urls")
+            for item in decoded.get("endpoint_urls", [])
         ),
         gpu_formal_locally_authorized=_boolean(
             decoded.get("gpu_formal_locally_authorized"), "gpu_formal_locally_authorized"
@@ -252,7 +280,11 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
 
     errors = _validation_errors(config)
     manifests = {
-        arm.arm_id: {"path": arm.manifest_path, "sha256": arm.manifest_sha256}
+        arm.arm_id: {
+            "path": arm.manifest_path,
+            "sha256": arm.manifest_sha256,
+            "jobs": [job.__dict__ for job in arm.job_manifests],
+        }
         for arm in config.arms
     }
     return {
@@ -270,6 +302,9 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
         ),
         "calibration_paths": {
             arm.arm_id: arm.calibration_path for arm in config.arms
+        },
+        "calibration_sha256": {
+            arm.arm_id: arm.calibration_sha256 for arm in config.arms
         },
         "matrix_output_root": config.matrix_output_root,
         "gpu_formal_locally_authorized": config.gpu_formal_locally_authorized,
@@ -314,6 +349,94 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def validate_executor_job_manifests(
+    arm: MatchedArm,
+    job_paths: tuple[str | Path, ...],
+    row_counts: tuple[int, ...],
+) -> None:
+    """Bind two executor Jobs to the frozen split and combined workload."""
+
+    if len(job_paths) != len(arm.job_manifests):
+        raise ValueError("executor must define exactly the frozen two Job manifests")
+    if row_counts != tuple(job.rows for job in arm.job_manifests):
+        raise ValueError("executor rows_per_jobs drift from frozen Job row counts")
+    combined_requests = []
+    for expected, actual_path in zip(arm.job_manifests, job_paths, strict=True):
+        path = Path(actual_path)
+        if not path.is_file():
+            raise ValueError(f"executor {expected.job_id} manifest is missing")
+        if sha256_file(path) != expected.sha256:
+            raise ValueError(f"executor {expected.job_id} manifest SHA-256 drift")
+        requests = read_manifest(path)
+        if len(requests) != expected.rows:
+            raise ValueError(f"executor {expected.job_id} manifest row-count drift")
+        combined_requests.extend(requests)
+    if tuple(combined_requests) != read_manifest(arm.manifest_path):
+        raise ValueError(
+            "executor Job manifests do not equal the authoritative matched "
+            "combined manifest in Job order"
+        )
+
+
+def validate_native_calibration_selection(
+    arm: MatchedArm,
+    *,
+    adapter: str,
+    concurrency_per_endpoint: int,
+    batch_size: int,
+) -> None:
+    """Bind a native selection artifact to the actual framework dispatch."""
+
+    selection = native_calibration_selection(arm)
+    expected = {
+        "adapter": adapter,
+        "concurrency_per_endpoint": concurrency_per_endpoint,
+        "batch_size": batch_size,
+    }
+    drift = [
+        name for name, value in expected.items()
+        if selection.get(name) != value
+    ]
+    if drift:
+        raise ValueError(
+            f"{arm.arm_id} calibration selection drift: {', '.join(drift)}"
+        )
+
+
+def native_calibration_selection(arm: MatchedArm) -> dict[str, object]:
+    """Return the evidence-bound native adapter/concurrency/batch identity."""
+
+    path = Path(arm.calibration_path)
+    if sha256_file(path) != arm.calibration_sha256:
+        raise ValueError(f"{arm.arm_id} calibration SHA-256 drift")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    selection = payload.get("selection")
+    evidence = payload.get("evidence")
+    if not isinstance(selection, dict) or not isinstance(evidence, dict):
+        raise ValueError(f"{arm.arm_id} calibration schema is invalid")
+    required = {"adapter", "concurrency_per_endpoint", "batch_size"}
+    if not required.issubset(selection):
+        raise ValueError(f"{arm.arm_id} calibration selection schema is invalid")
+    if set(evidence) != {"configuration_identity", "performance_selection"}:
+        raise ValueError(f"{arm.arm_id} calibration evidence roles are invalid")
+    identity = evidence["configuration_identity"]
+    performance = evidence["performance_selection"]
+    if not isinstance(identity, dict) or identity.get("status") != "verified":
+        raise ValueError(f"{arm.arm_id} calibration identity is unverified")
+    allowed_status = (
+        {"development_screen_only"}
+        if selection["adapter"] == "ray_data_http"
+        else {"not_applicable"}
+    )
+    if (
+        not isinstance(performance, dict)
+        or performance.get("status") not in allowed_status
+        or not str(performance.get("reason", ""))
+    ):
+        raise ValueError(f"{arm.arm_id} calibration evidence strength is invalid")
+    return {name: selection[name] for name in sorted(required)}
 
 
 def relativize_matrix_evidence_path(
@@ -381,6 +504,7 @@ def resolved_matched_system_identity(
                 "scheduler_owner": arm.scheduler_owner,
                 "manifest_path": arm.manifest_path,
                 "manifest_sha256": arm.manifest_sha256,
+                "job_manifests": [job.__dict__ for job in arm.job_manifests],
                 "endpoint_ids": list(arm.endpoint_ids),
                 "service_signature": dict(arm.service_signature),
                 "protocol": arm.protocol,
@@ -393,9 +517,17 @@ def resolved_matched_system_identity(
                 "source": source,
                 "organizer": arm.organizer,
                 "calibration_path": arm.calibration_path,
+                "calibration_sha256": arm.calibration_sha256,
+                "executor_selection": (
+                    native_calibration_selection(arm)
+                    if arm.kind == "native" else None
+                ),
                 "project_contract": dict(arm.project_contract),
             }
         )
+    metrics_urls = [
+        endpoint_auxiliary_url(url, "/metrics") for url in config.endpoint_urls
+    ]
     return {
         "schema_version": 1,
         "seed": config.seed,
@@ -405,6 +537,9 @@ def resolved_matched_system_identity(
             config.selector_sanity_development_repeats
         ),
         "matched_manifest_status": config.matched_manifest_status,
+        "endpoint_urls": list(config.endpoint_urls),
+        "metrics_urls": metrics_urls,
+        "health_url": endpoint_auxiliary_url(config.endpoint_urls[0], "/health"),
         "arms": arms,
     }
 
@@ -433,6 +568,12 @@ def formal_authorization_requirements(
     manifests = {arm.manifest_sha256 for arm in config.arms}
     if len(manifests) != 1:
         raise ValueError("formal authorization requires one frozen manifest SHA")
+    job_manifests = {
+        tuple((job.job_id, job.rows, job.sha256) for job in arm.job_manifests)
+        for arm in config.arms
+    }
+    if len(job_manifests) != 1:
+        raise ValueError("formal authorization requires one frozen two-Job split")
     return {
         "schema_version": 1,
         "status": "authorized",
@@ -444,6 +585,10 @@ def formal_authorization_requirements(
             resolved_matched_system_identity(config)
         ),
         "manifest_sha256": next(iter(manifests)),
+        "job_manifests": [
+            {"job_id": job_id, "rows": rows, "sha256": sha256}
+            for job_id, rows, sha256 in next(iter(job_manifests))
+        ],
     }
 
 
@@ -566,6 +711,14 @@ def _validate_cell_evidence(
                 }.items()
             ):
                 raise RuntimeError("timed PostgreSQL source evidence is invalid")
+    for job, expected_job in zip(jobs, arm.job_manifests, strict=True):
+        if (
+            job.get("job_id") != expected_job.job_id
+            or job.get("manifest_sha256") != expected_job.sha256
+            or job.get("expected_count") != expected_job.rows
+            or job.get("completed_count") != expected_job.rows
+        ):
+            raise RuntimeError("Job identity or frozen row boundary drifted")
     starts = [float(job["actual_launch_epoch_s"]) for job in jobs]
     actual_offset_s = starts[1] - starts[0]
     offset_deviation_s = _validate_actual_job_offset(actual_offset_s)
@@ -657,7 +810,7 @@ def _validate_cell_evidence(
     job_fields = (
         "job_id", "scheduled_launch_epoch_s", "actual_launch_epoch_s",
         "ended_epoch_s", "completed_count", "expected_count", "actual_work",
-        "exactly_once", "shard_provenance",
+        "manifest_sha256", "exactly_once", "shard_provenance",
     )
     persisted_jobs = [
         {field: job[field] for field in job_fields if field in job}
@@ -721,6 +874,13 @@ def _validate_cell_evidence(
         "manifest_path": runtime_identity["manifest_evidence_path"],
         "manifest_sha256": arm.manifest_sha256,
         "service_signature": dict(arm.service_signature),
+        "endpoint_urls": list(runtime_identity["endpoint_urls"]),
+        "metrics_urls": list(runtime_identity["metrics_urls"]),
+        "health_url": runtime_identity["health_url"],
+        "executor_selection": (
+            native_calibration_selection(arm)
+            if arm.kind == "native" else None
+        ),
     }
 
 
@@ -767,6 +927,12 @@ def run_matched_system(
         "formal_authorized": not rehearsal,
         "authorization_sha256": authorization_sha256,
         "execution_mode": "rehearsal" if rehearsal else "formal",
+        "endpoint_urls": list(config.endpoint_urls),
+        "metrics_urls": [
+            endpoint_auxiliary_url(url, "/metrics")
+            for url in config.endpoint_urls
+        ],
+        "health_url": endpoint_auxiliary_url(config.endpoint_urls[0], "/health"),
     }
     matrix_output_root = Path(config.matrix_output_root)
     try:
@@ -782,6 +948,22 @@ def run_matched_system(
     if sha256_file(sealed_manifest_path) != runtime_identity["manifest_sha256"]:
         raise RuntimeError("sealed manifest SHA drifted during matrix initialization")
     runtime_identity["manifest_evidence_path"] = sealed_manifest_relative
+    sealed_jobs: list[dict[str, object]] = []
+    for job in config.arms[0].job_manifests:
+        relative = f"evidence/{job.job_id}_manifest.jsonl"
+        sealed_path = matrix_output_root / relative
+        shutil.copyfile(Path(job.path), sealed_path)
+        if sha256_file(sealed_path) != job.sha256:
+            raise RuntimeError(
+                f"sealed {job.job_id} manifest SHA drifted during initialization"
+            )
+        sealed_jobs.append({
+            "job_id": job.job_id,
+            "rows": job.rows,
+            "sha256": job.sha256,
+            "evidence_path": relative,
+        })
+    runtime_identity["job_manifest_evidence"] = sealed_jobs
     matrix_index = matrix_output_root / "matrix_index.json"
     contract_snapshot = matrix_output_root / "matrix_contract_snapshot.json"
     _atomic_json(
@@ -803,9 +985,13 @@ def run_matched_system(
         "config_fingerprint": runtime_identity["resolved_config_sha256"],
         "manifest_sha256": runtime_identity["manifest_sha256"],
         "manifest_evidence_path": sealed_manifest_relative,
+        "job_manifest_evidence": sealed_jobs,
         "authorization_sha256": authorization_sha256,
         "contract_snapshot_sha256": contract_snapshot_sha256,
         "service_signature": dict(config.arms[0].service_signature),
+        "endpoint_urls": list(config.endpoint_urls),
+        "metrics_urls": runtime_identity["metrics_urls"],
+        "health_url": runtime_identity["health_url"],
         "scheduler_owners": {
             arm.arm_id: arm.scheduler_owner for arm in config.arms
         },
@@ -860,6 +1046,13 @@ def run_matched_system(
                 "manifest_path": sealed_manifest_relative,
                 "manifest_sha256": arm.manifest_sha256,
                 "service_signature": dict(arm.service_signature),
+                "endpoint_urls": list(config.endpoint_urls),
+                "metrics_urls": runtime_identity["metrics_urls"],
+                "health_url": runtime_identity["health_url"],
+                "executor_selection": (
+                    native_calibration_selection(arm)
+                    if arm.kind == "native" else None
+                ),
                 "status": "running",
             }
             index["cells"].append(running)  # type: ignore[index]
@@ -918,7 +1111,15 @@ def run_matched_system(
 def _load_arm(value: object, config_directory: Path) -> MatchedArm:
     if not isinstance(value, dict):
         raise ValueError("each arm must be an object")
-    missing = [field for field in _COMMON_FIELDS + ("arm_id", "kind", "scheduler_owner", "output_root", "calibration_path") if field not in value]
+    missing = [
+        field
+        for field in _COMMON_FIELDS
+        + (
+            "arm_id", "kind", "scheduler_owner", "output_root",
+            "calibration_path", "calibration_sha256",
+        )
+        if field not in value
+    ]
     if missing:
         raise ValueError("arm is missing required fields: " + ", ".join(missing))
     project_contract = tuple(sorted((key, _freeze(value[key])) for key in _PROJECT_FIELDS if key in value))
@@ -928,15 +1129,48 @@ def _load_arm(value: object, config_directory: Path) -> MatchedArm:
         output_root=_resolve_config_path(value["output_root"], "output_root", config_directory),
         manifest_path=_resolve_config_path(value["manifest_path"], "manifest_path", config_directory),
         manifest_sha256=_string(value["manifest_sha256"], "manifest_sha256"),
+        job_manifests=_load_job_manifests(value["job_manifests"], config_directory),
         endpoint_ids=tuple(value["endpoint_ids"]), service_signature=_mapping(value["service_signature"], "service_signature"),
         protocol=_string(value["protocol"], "protocol"), output_cap=_integer(value["output_cap"], "output_cap"),
         arrival_offsets_s=tuple(value["arrival_offsets_s"]), job_internal_arrival_contract=_string(value["job_internal_arrival_contract"], "job_internal_arrival_contract"),
         performance_writeback_mode=_string(value["performance_writeback_mode"], "performance_writeback_mode"),
         unsupported_request_tails=_mapping(value["unsupported_request_tails"], "unsupported_request_tails"),
         source=_mapping(value["source"], "source"), organizer=_string(value["organizer"], "organizer"),
-        calibration_path=_string(value["calibration_path"], "calibration_path"), project_contract=project_contract,
+        calibration_path=_resolve_config_path(
+            value["calibration_path"], "calibration_path", config_directory
+        ),
+        calibration_sha256=_string(
+            value["calibration_sha256"], "calibration_sha256"
+        ),
+        project_contract=project_contract,
         raw_field_names=tuple(value),
     )
+
+
+def _load_job_manifests(
+    value: object,
+    config_directory: Path,
+) -> tuple[JobManifestIdentity, ...]:
+    if not isinstance(value, list) or len(value) != 2:
+        raise ValueError("job_manifests must contain exactly two Jobs")
+    output: list[JobManifestIdentity] = []
+    for index, raw in enumerate(value):
+        if not isinstance(raw, dict) or set(raw) != {
+            "job_id", "path", "rows", "sha256",
+        }:
+            raise ValueError("job_manifests entries have an invalid schema")
+        rows = _integer(raw["rows"], f"job_manifests[{index}].rows")
+        if rows <= 0:
+            raise ValueError("job manifest rows must be positive")
+        output.append(JobManifestIdentity(
+            job_id=_string(raw["job_id"], f"job_manifests[{index}].job_id"),
+            path=_resolve_config_path(
+                raw["path"], f"job_manifests[{index}].path", config_directory
+            ),
+            rows=rows,
+            sha256=_string(raw["sha256"], f"job_manifests[{index}].sha256"),
+        ))
+    return tuple(output)
 
 
 def _validation_errors(
@@ -950,6 +1184,8 @@ def _validation_errors(
         return errors
     if config.matched_manifest_status != "ready_frozen":
         errors.append("matched_manifest_status must be ready_frozen")
+    if len(config.endpoint_urls) != 2 or len(set(config.endpoint_urls)) != 2:
+        errors.append("endpoint_urls must contain two unique frozen endpoints")
     if config.gpu_formal_locally_authorized:
         errors.append("local authorization never permits GPU formal execution")
     if config.selector_sanity_development_repeats > config.formal_repeats:
@@ -979,7 +1215,80 @@ def _validation_errors(
             errors.append(f"{arm.arm_id} manifest is missing: {path}")
         elif hashlib.sha256(path.read_bytes()).hexdigest() != arm.manifest_sha256:
             errors.append(f"{arm.arm_id} manifest SHA-256 mismatch")
-        for field in ("manifest_path", "manifest_sha256", "endpoint_ids", "service_signature", "protocol", "output_cap"):
+        if tuple(job.job_id for job in arm.job_manifests) != ("job0", "job1"):
+            errors.append(f"{arm.arm_id} must bind ordered job0/job1 manifests")
+        job_requests = []
+        for job in arm.job_manifests:
+            job_path = Path(job.path)
+            if not job_path.is_file():
+                errors.append(
+                    f"{arm.arm_id} {job.job_id} manifest is missing: {job_path}"
+                )
+                continue
+            if sha256_file(job_path) != job.sha256:
+                errors.append(
+                    f"{arm.arm_id} {job.job_id} manifest SHA-256 mismatch"
+                )
+                continue
+            try:
+                requests = read_manifest(job_path)
+            except (OSError, ValueError) as error:
+                errors.append(
+                    f"{arm.arm_id} {job.job_id} manifest is invalid: {error}"
+                )
+                continue
+            if len(requests) != job.rows:
+                errors.append(
+                    f"{arm.arm_id} {job.job_id} manifest row count mismatch"
+                )
+            if any(
+                request.max_output_tokens != arm.output_cap
+                or request.estimated_output_tokens != arm.output_cap
+                for request in requests
+            ):
+                errors.append(
+                    f"{arm.arm_id} {job.job_id} output cap drifts from service contract"
+                )
+            job_requests.extend(requests)
+        if path.is_file() and len(job_requests) == sum(
+            job.rows for job in arm.job_manifests
+        ):
+            try:
+                if tuple(job_requests) != read_manifest(path):
+                    errors.append(
+                        f"{arm.arm_id} combined manifest does not equal job0+job1"
+                    )
+            except (OSError, ValueError) as error:
+                errors.append(f"{arm.arm_id} combined manifest is invalid: {error}")
+        doc_ids = [request.doc_id for request in job_requests]
+        if len(doc_ids) != len(set(doc_ids)):
+            errors.append(f"{arm.arm_id} Job manifests contain duplicate doc_id")
+        calibration = Path(arm.calibration_path)
+        if not calibration.is_file():
+            errors.append(f"{arm.arm_id} calibration is missing: {calibration}")
+        elif sha256_file(calibration) != arm.calibration_sha256:
+            errors.append(f"{arm.arm_id} calibration SHA-256 mismatch")
+        else:
+            try:
+                calibration_payload = json.loads(
+                    calibration.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError) as error:
+                errors.append(f"{arm.arm_id} calibration is invalid: {error}")
+            else:
+                if (
+                    not isinstance(calibration_payload, dict)
+                    or calibration_payload.get("schema_version") != 1
+                    or calibration_payload.get("status") != "ready"
+                    or not isinstance(calibration_payload.get("selection"), dict)
+                ):
+                    errors.append(
+                        f"{arm.arm_id} calibration contract is not ready"
+                    )
+        for field in (
+            "manifest_path", "manifest_sha256", "job_manifests",
+            "endpoint_ids", "service_signature", "protocol", "output_cap",
+        ):
             if getattr(arm, field) != getattr(reference, field):
                 errors.append(f"{arm.arm_id} {field} drifts from matched contract")
         source = dict(arm.source)
@@ -1020,13 +1329,20 @@ def _validation_errors(
     if project_arms:
         project_reference = project_arms[0]
         for arm in project_arms:
-            for field in ("k_per_endpoint", "work_limit_per_endpoint", "ready_bytes", "actor_topology"):
+            for field in (
+                "k_per_endpoint", "work_limit_per_endpoint", "ready_bytes",
+                "actor_topology", "batching_contract",
+            ):
                 if arm.project_value(field) != project_reference.project_value(field):
                     errors.append(f"{arm.arm_id} {field} drifts across Project selector arms")
             if arm.source != project_reference.source or arm.organizer != project_reference.organizer:
                 errors.append(f"{arm.arm_id} source or organizer drifts across Project selector arms")
             if arm.calibration_path != project_reference.calibration_path:
                 errors.append(f"{arm.arm_id} calibration_path drifts across Project selector arms")
+            if arm.calibration_sha256 != project_reference.calibration_sha256:
+                errors.append(
+                    f"{arm.arm_id} calibration_sha256 drifts across Project selector arms"
+                )
             if arm.unsupported_request_tails != project_reference.unsupported_request_tails:
                 errors.append(f"{arm.arm_id} unsupported request tails drift across Project selector arms")
     saor = by_id.get("project_bounded_ready_saor_0125we")

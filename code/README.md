@@ -7,12 +7,18 @@ SAOR native-system matched infrastructure is locally implemented but remains sto
 execution. A non-rehearsal run now requires a separate authorization artifact that exactly binds the
 repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
 runner creates an output root, acquires a host lease, or calls an executor. The reusable offline core
-lives in `src/experiments/saor/native_system_summary.py`; the CLI is parameter parsing only. Before
+lives in `src/experiments/saor/native_system_summary.py`; the pre-dispatch executor-binding core lives
+in `src/experiments/saor/native_system_bindings.py`; the CLI only composes these typed components. Before
 publishing any ranking, the core recomputes the authorization, contract snapshot, manifest, service
 signature, scheduler-owner map, schedule, index, and per-cell identities. A failed or tampered matrix
 publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system,
 selector, Job, and resource ranking tables are withheld. This is local safety infrastructure, not new
 server/GPU evidence and not an authorization to resume the stopped experiment.
+
+The matched contract also freezes the concrete two-endpoint mapping and the two 512-row Job identities.
+Native Daft/Ray Data commands are rechecked offline against their evidence-bound adapter, concurrency,
+and batch selection; Project commands are separately bound to the same endpoint pair. These checks do
+not inject Project batching, credit, routing, or data organization into native-framework arms.
 
 Each authorized physical matrix now receives a fresh `matrix_instance_id` after authorization and
 copies it into the immutable snapshot, index, and every cell; mixing a cell from another output root

@@ -18,10 +18,12 @@
   "calibration_contract": {
     "path": "${SAOR_MATRIX_CALIBRATION}",
     "expected": {
+      "best_token_budget": "${PROJECT_TOKEN_BUDGET}",
       "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
       "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
       "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
-      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"
+      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
+      "project_ray_worker_num_cpus": "${PROJECT_RAY_WORKER_NUM_CPUS}"
     }
   },
   "saor_release_control": {
@@ -36,41 +38,47 @@
     "--operator", "ai_complete", "--executor", "ray_actor",
     "--actor-workers-per-endpoint", "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
     "--ray-actor-max-concurrency", "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
+    "--ray-worker-num-cpus", "${PROJECT_RAY_WORKER_NUM_CPUS}",
     "--completion-model", "${COMPLETION_MODEL}",
     "--completion-protocol", "${COMPLETION_PROTOCOL}",
     "--completion-max-tokens", "${COMPLETION_MAX_TOKENS}",
+    "--completion-endpoint-urls", "${COMPLETION_ENDPOINT_URLS}",
+    "--model-metrics-urls", "${MODEL_METRICS_URLS}",
     "--organizer", "${SAOR_ORGANIZER}",
+    "--batching-policy", "token_budget",
+    "--token-budget", "${PROJECT_TOKEN_BUDGET}",
+    "--token-budget-policy", "static",
     "--writeback-mode", "none"
   ],
   "scenarios": [
     {
       "scenario_id": "project_frozen_static", "policy": "static_partition",
-      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
       "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
     },
     {
       "scenario_id": "project_bounded_ready_fifo", "policy": "shared_fifo",
       "ready_observation_contract": "bounded_concrete_pre_registration",
-      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
       "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
     },
     {
       "scenario_id": "project_bounded_ready_drr", "policy": "shared_drr",
       "ready_observation_contract": "bounded_concrete_pre_registration",
-      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
       "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
     },
     {
       "scenario_id": "project_bounded_ready_vtc_style", "policy": "external_vtc",
       "ready_observation_contract": "bounded_concrete_pre_registration",
-      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
       "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
     },
     {
       "scenario_id": "project_bounded_ready_saor_0125we",
       "policy": "saor_bounded_ready",
       "ready_observation_contract": "bounded_concrete_pre_registration",
-      "job_count": 2, "rows_per_jobs": [2, 2], "arrival_offsets_s": [0, 5],
+      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
       "priorities": [0, 1], "slo_targets_s": [null, 30],
       "priority_windows_s": [null, 30],
       "debt_cap_fractions": [0.125, null],

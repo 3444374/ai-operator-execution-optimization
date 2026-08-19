@@ -38,12 +38,14 @@ from src.experiments.saor.native_system_matched import (
     sha256_file,
     sha256_payload,
 )
+from src.experiments.saor.native_system_bindings import (
+    canonical_config_path,
+    validate_executor_bindings,
+)
 from scripts.experiments.run_saor_native_system_matched import (
     _consistent_database_versions,
     _normalize_native,
     _normalize_project,
-    _canonical_config_path,
-    _validate_executor_bindings,
     main as matched_main,
     parse_args,
 )
@@ -54,6 +56,125 @@ import src.experiments.saor.native_system_summary as summary_module
 
 
 class MatchedSystemContractTest(unittest.TestCase):
+    def test_release_configs_freeze_full_jobs_and_native_owned_execution(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        matched = json.loads((
+            repository / "deploy/autodl/saor_native_system_matched.example.json"
+        ).read_text(encoding="utf-8"))
+        native = json.loads((
+            repository
+            / "deploy/autodl/saor_native_system_matched_native.example.json"
+        ).read_text(encoding="utf-8"))
+        project = json.loads((
+            repository
+            / "deploy/autodl/saor_native_system_matched_project.example.json"
+        ).read_text(encoding="utf-8"))
+
+        self.assertEqual(native["organizer"], "native_framework_owned")
+        native_by_id = {arm["id"]: arm for arm in native["arms"]}
+        self.assertEqual(
+            (
+                native_by_id["ray_data_http"]["concurrency_per_endpoint"],
+                native_by_id["ray_data_http"]["batch_size"],
+            ),
+            (8, 16),
+        )
+        self.assertTrue(all(
+            scenario["rows_per_jobs"] == [512, 512]
+            for scenario in project["scenarios"]
+        ))
+        self.assertIn("--batching-policy", project["common_args"])
+        self.assertIn("--token-budget", project["common_args"])
+        self.assertIn("--ray-worker-num-cpus", project["common_args"])
+        self.assertIn("--completion-endpoint-urls", project["common_args"])
+        self.assertIn("--model-metrics-urls", project["common_args"])
+        self.assertEqual(len(matched["endpoint_urls"]), 2)
+
+        matched_by_id = {arm["arm_id"]: arm for arm in matched["arms"]}
+        for arm_id in ("daft_native", "daft_ray", "ray_data_http"):
+            arm = matched_by_id[arm_id]
+            self.assertEqual(arm["organizer"], "native_framework_owned")
+            self.assertEqual(
+                [entry["job_id"] for entry in arm["job_manifests"]],
+                ["job0", "job1"],
+            )
+            self.assertEqual(
+                [entry["rows"] for entry in arm["job_manifests"]],
+                [512, 512],
+            )
+
+    def test_release_calibrations_bind_actual_native_executor_selection(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        matched = json.loads((
+            repository / "deploy/autodl/saor_native_system_matched.example.json"
+        ).read_text(encoding="utf-8"))
+        native = json.loads((
+            repository
+            / "deploy/autodl/saor_native_system_matched_native.example.json"
+        ).read_text(encoding="utf-8"))
+        native_by_id = {arm["id"]: arm for arm in native["arms"]}
+        matched_by_id = {arm["arm_id"]: arm for arm in matched["arms"]}
+
+        for arm_id in ("daft_native", "daft_ray", "ray_data_http"):
+            contract_path = (
+                repository
+                / "deploy/autodl"
+                / matched_by_id[arm_id]["calibration_path"]
+            ).resolve()
+            contract = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                hashlib.sha256(contract_path.read_bytes()).hexdigest(),
+                matched_by_id[arm_id]["calibration_sha256"],
+            )
+            self.assertEqual(
+                contract["selection"]["adapter"],
+                native_by_id[arm_id]["adapter"],
+            )
+            self.assertEqual(
+                contract["selection"]["concurrency_per_endpoint"],
+                native_by_id[arm_id]["concurrency_per_endpoint"],
+            )
+            self.assertEqual(
+                contract["selection"]["batch_size"],
+                native_by_id[arm_id]["batch_size"],
+            )
+
+    def test_release_manifest_keeps_prompts_out_of_git_and_binds_each_job(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        manifest_directory = (
+            repository
+            / "experiments/results/state_aware_work_unit"
+            / "saor_native_system_matched_manifest_20260819"
+        )
+        self.assertEqual(list(manifest_directory.glob("*.jsonl")), [])
+        matched = json.loads((
+            repository / "deploy/autodl/saor_native_system_matched.example.json"
+        ).read_text(encoding="utf-8"))
+        expected = [
+            ("job0", 512, "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"),
+            ("job1", 512, "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"),
+        ]
+        for arm in matched["arms"]:
+            self.assertEqual(
+                [
+                    (item["job_id"], item["rows"], item["sha256"])
+                    for item in arm["job_manifests"]
+                ],
+                expected,
+            )
+
+    def test_merge_is_not_formal_authorization(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        template = (
+            repository
+            / "experiments/results/state_aware_work_unit"
+            / "saor_native_system_matched_manifest_20260819"
+            / "AUTHORIZATION_TEMPLATE.md"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("merge 即视为用户签发", template)
+        self.assertIn("rehearsal", template)
+        self.assertIn("独立审核", template)
+
     def test_database_version_evidence_requires_every_record_and_one_value(self) -> None:
         valid = {"server_version": "18.4", "pgvector_version": "0.8.5"}
         self.assertEqual(
@@ -256,6 +377,68 @@ class MatchedSystemContractTest(unittest.TestCase):
             del root
             index["cells"][0]["server_version"] = "18.3"
 
+        def job_identity_drift(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["jobs"][0]["job_id"] = "job1"
+
+        def job_row_count_drift(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["jobs"][0]["completed_count"] = 1
+
+        def native_selection_command_drift(
+            index: dict[str, object], root: Path
+        ) -> None:
+            del root
+            native = next(
+                cell for cell in index["cells"]
+                if cell["arm_id"] == "ray_data_http"
+            )
+            adapter = native["command"].index("--adapter")
+            native["command"][adapter + 1] = "daft_ray"
+
+        def native_endpoint_command_drift(
+            index: dict[str, object], root: Path
+        ) -> None:
+            del root
+            native = next(
+                cell for cell in index["cells"]
+                if cell["arm_id"] == "daft_native"
+            )
+            endpoint = native["command"].index("--endpoint-url")
+            native["command"][endpoint + 1] = (
+                "http://127.0.0.1:9999/v1/chat/completions"
+            )
+
+        def native_endpoint_index_swap(
+            index: dict[str, object], root: Path
+        ) -> None:
+            del root
+            native = next(
+                cell for cell in index["cells"]
+                if cell["arm_id"] == "daft_native"
+            )
+            positions = [
+                position + 1
+                for position, token in enumerate(native["command"])
+                if token == "--endpoint-index"
+            ]
+            native["command"][positions[0]] = "1"
+            native["command"][positions[1]] = "0"
+
+        def project_metrics_command_drift(
+            index: dict[str, object], root: Path
+        ) -> None:
+            del root
+            project = next(
+                cell for cell in index["cells"]
+                if cell["arm_id"] == "project_frozen_static"
+            )
+            metrics = project["command"].index("--model-metrics-urls")
+            project["command"][metrics + 1] = (
+                "http://127.0.0.1:9000/metrics,"
+                "http://127.0.0.1:9001/metrics"
+            )
+
         corruptions = {
             "missing arm": missing_arm,
             "missing repeat": missing_repeat,
@@ -272,6 +455,12 @@ class MatchedSystemContractTest(unittest.TestCase):
             "native Project flag": native_project_flag,
             "missing database version": missing_database_version,
             "database version drift": database_version_drift,
+            "Job identity drift": job_identity_drift,
+            "Job row-count drift": job_row_count_drift,
+            "native selection command drift": native_selection_command_drift,
+            "native endpoint command drift": native_endpoint_command_drift,
+            "native endpoint-index swap": native_endpoint_index_swap,
+            "Project metrics command drift": project_metrics_command_drift,
         }
         for name, corrupt in corruptions.items():
             with self.subTest(name=name), TemporaryDirectory() as temporary:
@@ -644,11 +833,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             project_config = root / "project" / "config.json"
             expected = root / "calibration.json"
             self.assertEqual(
-                _canonical_config_path("../calibration.json", matched_config),
+                canonical_config_path("../calibration.json", matched_config),
                 str(expected.resolve()),
             )
             self.assertEqual(
-                _canonical_config_path("../calibration.json", project_config),
+                canonical_config_path("../calibration.json", project_config),
                 str(expected.resolve()),
             )
 
@@ -704,6 +893,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "VLLM_MAX_NUM_BATCHED_TOKENS": "8192", "VLLM_MAX_NUM_SEQS": "256",
                 "COMPLETION_CHAT_ENDPOINT_URL_0": "http://localhost:8000/v1/chat/completions",
                 "COMPLETION_CHAT_ENDPOINT_URL_1": "http://localhost:8001/v1/chat/completions",
+                "COMPLETION_ENDPOINT_URLS": "http://localhost:8000/v1/chat/completions,http://localhost:8001/v1/chat/completions",
+                "MODEL_METRICS_URLS": "http://localhost:8000/metrics,http://localhost:8001/metrics",
                 "RAY_ADDRESS": "ray://localhost:10001", "RAY_DATA_BATCH_SIZE": "1",
                 "RAY_DATA_CONCURRENCY_PER_ENDPOINT": "1",
                 "TEXT_BASELINES_PYTHON": sys.executable,
@@ -754,19 +945,21 @@ class MatchedSystemContractTest(unittest.TestCase):
                     estimated_output_tokens=256, source_row_hash=f"row-{index}",
                     endpoint_index=(index - 1) % 2,
                 )
-                for index in range(1, 5)
+                for index in range(1, 1025)
             )
-            write_manifest(job0, requests[:2])
-            write_manifest(job1, requests[2:])
+            write_manifest(job0, requests[:512])
+            write_manifest(job1, requests[512:])
             write_manifest(combined, requests)
             calibration = root / "calibration.json"
             calibration.write_text(json.dumps({
                 "schema_version": 1, "status": "ready",
                 "selection": {
+                    "best_token_budget": 6144,
                     "project_static_k_per_endpoint": 8,
                     "project_active_work_per_endpoint": 65536,
                     "project_actor_workers_per_endpoint": 1,
                     "project_ray_actor_max_concurrency": 256,
+                    "project_ray_worker_num_cpus": 0.25,
                 },
                 "evidence": {
                     "feeding": {"status": "passed"},
@@ -780,8 +973,26 @@ class MatchedSystemContractTest(unittest.TestCase):
             for index, arm in enumerate(raw_matched["arms"]):
                 arm["manifest_path"] = str(combined)
                 arm["manifest_sha256"] = digest
+                for job_index, job_path in enumerate((job0, job1)):
+                    arm["job_manifests"][job_index].update({
+                        "path": str(job_path),
+                        "rows": 512,
+                        "sha256": hashlib.sha256(job_path.read_bytes()).hexdigest(),
+                    })
                 arm["output_root"] = str(root / f"matched-output-{index}")
-                arm["calibration_path"] = str(calibration)
+                if arm["kind"] == "native":
+                    native_calibration = (
+                        matched_path.parent / arm["calibration_path"]
+                    ).resolve()
+                    arm["calibration_path"] = str(native_calibration)
+                    arm["calibration_sha256"] = hashlib.sha256(
+                        native_calibration.read_bytes()
+                    ).hexdigest()
+                else:
+                    arm["calibration_path"] = str(calibration)
+                    arm["calibration_sha256"] = hashlib.sha256(
+                        calibration.read_bytes()
+                    ).hexdigest()
             resolved_matched = root / "matched.json"
             resolved_matched.write_text(json.dumps(raw_matched), encoding="utf-8")
             environment = {
@@ -796,18 +1007,22 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "SAOR_ORGANIZER": "daft", "TEXT_BASELINES_PYTHON": sys.executable,
                 "COMPLETION_CHAT_ENDPOINT_URL_0": "http://localhost:8000/v1/chat/completions",
                 "COMPLETION_CHAT_ENDPOINT_URL_1": "http://localhost:8001/v1/chat/completions",
+                "COMPLETION_ENDPOINT_URLS": "http://localhost:8000/v1/chat/completions,http://localhost:8001/v1/chat/completions",
+                "MODEL_METRICS_URLS": "http://localhost:8000/metrics,http://localhost:8001/metrics",
                 "RAY_ADDRESS": "ray://localhost:10001",
                 "PROJECT_STATIC_K_PER_ENDPOINT": "8",
                 "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
+                "PROJECT_TOKEN_BUDGET": "6144",
                 "PROJECT_READY_BYTES": "4096",
                 "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "1",
                 "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "256",
+                "PROJECT_RAY_WORKER_NUM_CPUS": "0.25",
             }
             with patch.dict(os.environ, environment, clear=True):
                 matched = load_matched_system_config(resolved_matched)
                 native = load_native_multijob_config(native_path)
                 project = load_project_config(project_path)
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
 
         self.assertEqual({arm.arm_id for arm in native.arms}, set(SYSTEM_ARM_IDS[:3]))
         self.assertEqual(
@@ -828,8 +1043,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             for index, total_rows in enumerate((2, 1)):
                 (output_dir / "jobs" / f"job{index}.runs.csv").write_text(
                     "total_rows,request_manifest_validation_status,db_fetch_s,"
-                    "server_version,pgvector_version\n"
-                    f"{total_rows},ok,0.1,18.4,0.8.5\n",
+                    "server_version,pgvector_version,request_manifest_sha256\n"
+                    f"{total_rows},ok,0.1,18.4,0.8.5,"
+                    f"{arm.job_manifests[index].sha256}\n",
                     encoding="utf-8",
                 )
             (output_dir / "traces" / "cell.commands.json").write_text(
@@ -891,6 +1107,15 @@ class MatchedSystemContractTest(unittest.TestCase):
                 [True, False],
             )
             self.assertFalse(normalized["exactly_once"])
+            manifest_summary = output_dir / "jobs" / "job0.runs.csv"
+            manifest_summary.write_text(
+                "total_rows,request_manifest_validation_status,db_fetch_s,"
+                "server_version,pgvector_version,request_manifest_sha256\n"
+                f"2,ok,0.1,18.4,0.8.5,{'f' * 64}\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RuntimeError, "observed manifest SHA"):
+                _normalize_project(arm, record, output_dir)
             self.assertEqual(
                 normalized["request_tail_status"],
                 {
@@ -960,7 +1185,10 @@ class MatchedSystemContractTest(unittest.TestCase):
                 ChatRequest(**json.loads(line))
                 for line in combined.read_text(encoding="utf-8").splitlines()
             )
-            job_paths = (path.parent / "job0.jsonl", path.parent / "job1.jsonl")
+            job_paths = (
+                path.parent / "actual-job0.jsonl",
+                path.parent / "actual-job1.jsonl",
+            )
             write_manifest(job_paths[0], requests[:2])
             write_manifest(job_paths[1], requests[2:])
             source = SimpleNamespace(
@@ -968,6 +1196,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 workload_name="test",
             )
             native = SimpleNamespace(
+                endpoint_urls=matched.endpoint_urls,
                 endpoint_ids=("endpoint-0", "endpoint-1"),
                 service_signature=(("model", "test"), ("service", "vllm")),
                 protocol="completions", output_cap=256,
@@ -976,6 +1205,9 @@ class MatchedSystemContractTest(unittest.TestCase):
                 arms=tuple(
                     SimpleNamespace(
                         arm_id=arm_id,
+                        adapter=arm_id,
+                        concurrency_per_endpoint=(8 if arm_id == "ray_data_http" else 1),
+                        batch_size=(16 if arm_id == "ray_data_http" else 1),
                         jobs=tuple(
                             SimpleNamespace(manifest=job_paths[index], offset_s=float(index * 5))
                             for index in range(2)
@@ -987,6 +1219,8 @@ class MatchedSystemContractTest(unittest.TestCase):
             scenarios = tuple(
                 SimpleNamespace(
                     scenario_id=arm.arm_id,
+                    job_count=2,
+                    row_count=lambda _index: 2,
                     request_manifests=tuple(str(item) for item in job_paths),
                     source_row_offsets=(0, 0),
                     arrival_offsets_s=(0.0, 5.0), policy=arm.project_value("policy"),
@@ -1014,25 +1248,81 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "completions", "--completion-max-tokens", "256",
                     "--organizer", "daft", "--actor-workers-per-endpoint", "1",
                     "--ray-actor-max-concurrency", "256",
+                    "--ray-worker-num-cpus", "0.25",
+                    "--batching-policy", "token_budget",
+                    "--token-budget", "6144",
+                    "--token-budget-policy", "static",
+                    "--completion-endpoint-urls", ",".join(matched.endpoint_urls),
+                    "--model-metrics-urls",
+                    "http://127.0.0.1:8000/metrics,http://127.0.0.1:8001/metrics",
                 ),
-                calibration_contract=SimpleNamespace(path="project-calibration.json"),
+                calibration_contract=SimpleNamespace(
+                    path=next(
+                        arm.calibration_path
+                        for arm in matched.arms if arm.kind == "project"
+                    )
+                ),
             )
 
-            _validate_executor_bindings(matched, native, project)
+            validate_executor_bindings(matched, native, project)
+            with self.assertRaisesRegex(ValueError, "runner.metrics_urls"):
+                validate_executor_bindings(
+                    matched,
+                    native,
+                    project,
+                    runner_metrics_urls=(
+                        "http://127.0.0.1:9000/metrics",
+                        "http://127.0.0.1:9001/metrics",
+                    ),
+                )
+            native.endpoint_urls = (
+                "http://127.0.0.1:9000/v1/chat/completions",
+                "http://127.0.0.1:9001/v1/chat/completions",
+            )
+            with self.assertRaisesRegex(ValueError, "native.endpoint_urls"):
+                validate_executor_bindings(matched, native, project)
+            native.endpoint_urls = matched.endpoint_urls
+            project_args = list(project.common_args)
+            endpoint_index = project_args.index("--completion-endpoint-urls")
+            original_endpoints = project_args[endpoint_index + 1]
+            project_args[endpoint_index + 1] = (
+                "http://127.0.0.1:9000/v1/chat/completions,"
+                "http://127.0.0.1:9001/v1/chat/completions"
+            )
+            project.common_args = tuple(project_args)
+            with self.assertRaisesRegex(ValueError, "project.endpoint_urls"):
+                validate_executor_bindings(matched, native, project)
+            project_args[endpoint_index + 1] = original_endpoints
+            project.common_args = tuple(project_args)
+            ray_data = next(
+                item for item in native.arms if item.arm_id == "ray_data_http"
+            )
+            ray_data.concurrency_per_endpoint = 7
+            with self.assertRaisesRegex(ValueError, "calibration selection drift"):
+                validate_executor_bindings(matched, native, project)
+            ray_data.concurrency_per_endpoint = 8
+            project_fifo = next(
+                item for item in project.scenarios
+                if item.scenario_id == "project_bounded_ready_fifo"
+            )
+            project_fifo.row_count = lambda _index: 1
+            with self.assertRaisesRegex(ValueError, "rows_per_jobs"):
+                validate_executor_bindings(matched, native, project)
+            project_fifo.row_count = lambda _index: 2
             native.service_signature = ()
             with self.assertRaisesRegex(ValueError, "service_signature"):
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
             native.service_signature = (("model", "test"), ("service", "other"))
             with self.assertRaisesRegex(ValueError, "service_signature"):
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
             native.service_signature = (("model", "test"), ("service", "vllm"))
             project.service_signature = ()
             with self.assertRaisesRegex(ValueError, "service_signature"):
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
             project.service_signature = (("model", "test"), ("service", "vllm"))
             native.source = None
             with self.assertRaisesRegex(ValueError, "explicit source"):
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
             native.source = source
             saor = next(
                 item
@@ -1041,11 +1331,21 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             saor.debt_cap_fractions = (0.2, None)
             with self.assertRaisesRegex(ValueError, "debt_caps"):
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
             saor.debt_cap_fractions = (0.125, None)
             saor.source_row_offsets = (1, 0)
             with self.assertRaisesRegex(ValueError, "source_row_offsets"):
-                _validate_executor_bindings(matched, native, project)
+                validate_executor_bindings(matched, native, project)
+
+    def test_loader_rejects_calibration_content_changed_after_freeze(self) -> None:
+        with self._config() as path:
+            config = load_matched_system_config(path)
+            calibration = Path(config.arms[0].calibration_path)
+            payload = json.loads(calibration.read_text(encoding="utf-8"))
+            payload["selection"]["batch_size"] = 99
+            calibration.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "calibration SHA-256 mismatch"):
+                load_matched_system_config(path)
 
     def test_arm_identity_has_eight_unique_physical_arms_and_shared_saor(self) -> None:
         self.assertEqual(
@@ -1114,21 +1414,17 @@ class MatchedSystemContractTest(unittest.TestCase):
         self.assertEqual(len(report["immutable_manifest_hashes"]), 8)
         self.assertEqual(len(report["planned_schedule"]), 6)
 
-    def test_example_uses_a_literal_tracked_manifest_path_without_expansion(self) -> None:
+    def test_example_keeps_full_manifest_outside_git(self) -> None:
         repository = Path(__file__).resolve().parents[3]
         example_path = repository / "deploy/autodl/saor_native_system_matched.example.json"
         example = json.loads(example_path.read_text(encoding="utf-8"))
         paths = {arm["manifest_path"] for arm in example["arms"]}
-        self.assertEqual(len(paths), 1)
-        manifest_path = paths.pop()
-        self.assertNotIn("${", manifest_path)
-        self.assertTrue((example_path.parent / manifest_path).resolve().is_file())
+        self.assertEqual(paths, {"${SAOR_MATCHED_COMBINED_MANIFEST}"})
 
-    def test_example_cannot_pass_when_environment_and_sha_are_supplied(self) -> None:
+    def test_example_fails_when_manifest_status_flips_back_to_placeholder(self) -> None:
         repository = Path(__file__).resolve().parents[3]
         example_path = repository / "deploy/autodl/saor_native_system_matched.example.json"
         example = json.loads(example_path.read_text(encoding="utf-8"))
-        manifest = (example_path.parent / example["arms"][0]["manifest_path"]).resolve()
         environment = {
             name: "value"
             for name in {
@@ -1139,18 +1435,25 @@ class MatchedSystemContractTest(unittest.TestCase):
             }
         }
         environment["DATABASE_URL"] = "postgresql://localhost/test"
-        environment["SAOR_MATCHED_MANIFEST_SHA256"] = hashlib.sha256(manifest.read_bytes()).hexdigest()
         environment["COMPLETION_MODEL"] = "test"
         environment["VLLM_VERSION"] = "test"
         environment["COMPLETION_PROTOCOL"] = "chat_completions"
         environment["COMPLETION_MAX_TOKENS"] = "256"
+        environment["COMPLETION_CHAT_ENDPOINT_URL_0"] = (
+            "http://127.0.0.1:8000/v1/chat/completions"
+        )
+        environment["COMPLETION_CHAT_ENDPOINT_URL_1"] = (
+            "http://127.0.0.1:8001/v1/chat/completions"
+        )
         environment["SAOR_MATCHED_ROW_OFFSET"] = "0"
         environment["SAOR_ORGANIZER"] = "daft"
         environment["PROJECT_STATIC_K_PER_ENDPOINT"] = "8"
         environment["PROJECT_ACTIVE_WORK_PER_ENDPOINT"] = "65536"
+        environment["PROJECT_TOKEN_BUDGET"] = "6144"
         environment["PROJECT_READY_BYTES"] = "4096"
         environment["PROJECT_ACTOR_WORKERS_PER_ENDPOINT"] = "1"
         environment["PROJECT_RAY_ACTOR_MAX_CONCURRENCY"] = "256"
+        environment["PROJECT_RAY_WORKER_NUM_CPUS"] = "0.25"
         with TemporaryDirectory() as temporary:
             environment["SAOR_MATRIX_OUTPUT_ROOT"] = str(
                 Path(temporary) / "matrix-output"
@@ -1160,11 +1463,19 @@ class MatchedSystemContractTest(unittest.TestCase):
             ):
                 environment[name] = str(Path(temporary) / f"output-{index}")
             with patch.dict(os.environ, environment, clear=True):
-                with self.assertRaisesRegex(
-                    ValueError,
-                    "matched_manifest_status must be ready_frozen",
-                ):
-                    load_matched_system_config(example_path)
+                # The shipped manifest is now ready_frozen with a literal SHA;
+                # reverting the status to a placeholder must fail closed.
+                example["matched_manifest_status"] = "placeholder_not_ready"
+                with TemporaryDirectory() as mutated_dir:
+                    mutated_path = Path(mutated_dir) / "mutated.example.json"
+                    mutated_path.write_text(
+                        json.dumps(example), encoding="utf-8"
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "matched_manifest_status must be ready_frozen",
+                    ):
+                        load_matched_system_config(mutated_path)
 
     @staticmethod
     def _walk_values(value: object) -> list[object]:
@@ -1823,11 +2134,13 @@ class MatchedSystemContractTest(unittest.TestCase):
             "database_operator_e2e_s": 1.0,
             "jobs": [
                 {
-                    "job_id": "a",
+                    "job_id": arm.job_manifests[0].job_id,
+                    "manifest_sha256": arm.job_manifests[0].sha256,
+                    "scheduled_launch_epoch_s": 100.0,
                     "actual_launch_epoch_s": 100.0,
                     "ended_epoch_s": 106.0,
-                    "completed_count": 2,
-                    "expected_count": 2,
+                    "completed_count": arm.job_manifests[0].rows,
+                    "expected_count": arm.job_manifests[0].rows,
                     "exactly_once": True,
                     "shard_provenance": [{
                         "source_kind": "timed_postgres_manifest",
@@ -1836,11 +2149,13 @@ class MatchedSystemContractTest(unittest.TestCase):
                     }],
                 },
                 {
-                    "job_id": "b",
+                    "job_id": arm.job_manifests[1].job_id,
+                    "manifest_sha256": arm.job_manifests[1].sha256,
+                    "scheduled_launch_epoch_s": 105.0,
                     "actual_launch_epoch_s": 105.0,
                     "ended_epoch_s": 105.4,
-                    "completed_count": 2,
-                    "expected_count": 2,
+                    "completed_count": arm.job_manifests[1].rows,
+                    "expected_count": arm.job_manifests[1].rows,
                     "exactly_once": True,
                     "shard_provenance": [{
                         "source_kind": "timed_postgres_manifest",
@@ -1899,8 +2214,40 @@ class MatchedSystemContractTest(unittest.TestCase):
     def _write_complete_summary_fixture(cls, matrix_root: Path) -> Path:
         matrix_root.mkdir(parents=True)
         manifest_path = matrix_root / "frozen-manifest.jsonl"
-        manifest_path.write_text("{}\n", encoding="utf-8")
+        requests = tuple(
+            ChatRequest(
+                doc_id=index, prompt=f"p-{index}", arrival_time_s=0.0,
+                prompt_tokens=10, max_output_tokens=256,
+                estimated_output_tokens=256, source_row_hash=f"row-{index}",
+                endpoint_index=(index - 1) % 2,
+            )
+            for index in range(1, 5)
+        )
+        job_manifest_paths = (
+            matrix_root / "job0-manifest.jsonl",
+            matrix_root / "job1-manifest.jsonl",
+        )
+        write_manifest(job_manifest_paths[0], requests[:2])
+        write_manifest(job_manifest_paths[1], requests[2:])
+        write_manifest(manifest_path, requests)
         manifest_sha256 = sha256_file(manifest_path)
+        job_manifests = [
+            {
+                "job_id": f"job{index}",
+                "rows": 2,
+                "sha256": sha256_file(path),
+            }
+            for index, path in enumerate(job_manifest_paths)
+        ]
+        job_manifest_evidence = [
+            {
+                **identity,
+                "evidence_path": path.relative_to(matrix_root).as_posix(),
+            }
+            for identity, path in zip(
+                job_manifests, job_manifest_paths, strict=True
+            )
+        ]
         service_signature = {"model": "test", "service": "vllm"}
         scheduler_owners = {
             arm_id: (
@@ -1909,15 +2256,43 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             for arm_id in REQUIRED_ARM_IDS
         }
+        endpoint_urls = [
+            "http://127.0.0.1:8000/v1/chat/completions",
+            "http://127.0.0.1:8001/v1/chat/completions",
+        ]
+        metrics_urls = [
+            "http://127.0.0.1:8000/metrics",
+            "http://127.0.0.1:8001/metrics",
+        ]
+        health_url = "http://127.0.0.1:8000/health"
+        native_selections = {
+            "daft_native": {
+                "adapter": "daft_native", "concurrency_per_endpoint": 1,
+                "batch_size": 1,
+            },
+            "daft_ray": {
+                "adapter": "daft_ray", "concurrency_per_endpoint": 1,
+                "batch_size": 1,
+            },
+            "ray_data_http": {
+                "adapter": "ray_data_http", "concurrency_per_endpoint": 8,
+                "batch_size": 16,
+            },
+        }
         resolved_config = {
             "schema_version": 1,
+            "endpoint_urls": endpoint_urls,
+            "metrics_urls": metrics_urls,
+            "health_url": health_url,
             "arms": [
                 {
                     "arm_id": arm_id,
                     "scheduler_owner": scheduler_owners[arm_id],
                     "manifest_path": str(manifest_path),
                     "manifest_sha256": manifest_sha256,
+                    "job_manifests": job_manifests,
                     "service_signature": service_signature,
+                    "executor_selection": native_selections.get(arm_id),
                 }
                 for arm_id in REQUIRED_ARM_IDS
             ],
@@ -1931,6 +2306,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             "config_sha256": "c" * 64,
             "resolved_config_sha256": sha256_payload(resolved_config),
             "manifest_sha256": manifest_sha256,
+            "job_manifests": job_manifests,
         }
         authorization_path = matrix_root.parent / "formal-authorization.json"
         authorization_path.write_text(json.dumps(authorization), encoding="utf-8")
@@ -1961,11 +2337,31 @@ class MatchedSystemContractTest(unittest.TestCase):
                     encoding="utf-8",
                 )
                     command_path = run_root / "commands.json"
-                    command = ["runner", "--adapter", arm_id]
+                    is_native = arm_id in SYSTEM_ARM_IDS[:3]
+                    if is_native:
+                        selection = native_selections[arm_id]
+                        command = [
+                            token
+                            for _job in range(2)
+                            for endpoint_index, endpoint in enumerate(endpoint_urls)
+                            for token in (
+                                "runner", "run-shard", "--adapter",
+                                str(selection["adapter"]), "--concurrency",
+                                str(selection["concurrency_per_endpoint"]),
+                                "--batch-size", str(selection["batch_size"]),
+                                "--endpoint-index", str(endpoint_index),
+                                "--endpoint-url", endpoint,
+                            )
+                        ]
+                    else:
+                        command = [
+                            "profiler", "--completion-endpoint-urls",
+                            ",".join(endpoint_urls),
+                            "--model-metrics-urls", ",".join(metrics_urls),
+                        ]
                     command_path.write_text(json.dumps(command), encoding="utf-8")
                     start = float(1000 + repeat * 20)
                     duration = float(9 + repeat)
-                    is_native = arm_id in SYSTEM_ARM_IDS[:3]
                     report_blocks = []
                     if arm_id in SYSTEM_ARM_IDS:
                         report_blocks.append("system")
@@ -1993,6 +2389,10 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "manifest_path": "frozen-manifest.jsonl",
                         "manifest_sha256": manifest_sha256,
                         "service_signature": service_signature,
+                        "endpoint_urls": endpoint_urls,
+                        "metrics_urls": metrics_urls,
+                        "health_url": health_url,
+                        "executor_selection": native_selections.get(arm_id),
                         "implementation_source": (
                             "official_native_single_cell_runner"
                             if is_native else "project_shared_vllm_single_cell_runner"
@@ -2006,7 +2406,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "database_operator_e2e_s": duration,
                         "jobs": [
                             {
-                                "job_id": "job-0",
+                                "job_id": "job0",
+                                "manifest_sha256": job_manifests[0]["sha256"],
                                 "scheduled_launch_epoch_s": start,
                                 "actual_launch_epoch_s": start,
                                 "ended_epoch_s": start + 8.0,
@@ -2020,7 +2421,8 @@ class MatchedSystemContractTest(unittest.TestCase):
                                 }],
                             },
                             {
-                                "job_id": "job-1",
+                                "job_id": "job1",
+                                "manifest_sha256": job_manifests[1]["sha256"],
                                 "scheduled_launch_epoch_s": start + 5.0,
                                 "actual_launch_epoch_s": start + 5.0,
                                 "ended_epoch_s": start + 9.0,
@@ -2114,7 +2516,11 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "matrix_instance_id": matrix_instance_id,
                         "authorization_sha256": authorization_sha256,
                         "manifest_evidence_path": "frozen-manifest.jsonl",
+                        "job_manifest_evidence": job_manifest_evidence,
                         "execution_mode": "formal",
+                        "endpoint_urls": endpoint_urls,
+                        "metrics_urls": metrics_urls,
+                        "health_url": health_url,
                     },
                     "resolved_config": resolved_config,
                 }
@@ -2135,9 +2541,13 @@ class MatchedSystemContractTest(unittest.TestCase):
                     ],
                     "manifest_sha256": manifest_sha256,
                     "manifest_evidence_path": "frozen-manifest.jsonl",
+                    "job_manifest_evidence": job_manifest_evidence,
                     "authorization_sha256": authorization_sha256,
                     "contract_snapshot_sha256": sha256_file(snapshot_path),
                     "service_signature": service_signature,
+                    "endpoint_urls": endpoint_urls,
+                    "metrics_urls": metrics_urls,
+                    "health_url": health_url,
                     "scheduler_owners": scheduler_owners,
                     "repeat_contract": {
                         "warmup": 0,
@@ -2165,21 +2575,73 @@ class MatchedSystemContractTest(unittest.TestCase):
             self._temporary = tempfile.TemporaryDirectory()
             self.path = Path(self._temporary.name) / "config.json"
             manifest = Path(self._temporary.name) / "manifest.jsonl"
-            write_manifest(
-                manifest,
-                tuple(
-                    ChatRequest(
-                        doc_id=index, prompt=f"p-{index}", arrival_time_s=0.0,
-                        prompt_tokens=10, max_output_tokens=256,
-                        estimated_output_tokens=256, source_row_hash=f"row-{index}",
-                        endpoint_index=(index - 1) % 2,
-                    )
-                    for index in range(1, 5)
-                ),
+            requests = tuple(
+                ChatRequest(
+                    doc_id=index, prompt=f"p-{index}", arrival_time_s=0.0,
+                    prompt_tokens=10, max_output_tokens=256,
+                    estimated_output_tokens=256, source_row_hash=f"row-{index}",
+                    endpoint_index=(index - 1) % 2,
+                )
+                for index in range(1, 5)
             )
+            job_paths = (
+                Path(self._temporary.name) / "job0.jsonl",
+                Path(self._temporary.name) / "job1.jsonl",
+            )
+            write_manifest(job_paths[0], requests[:2])
+            write_manifest(job_paths[1], requests[2:])
+            write_manifest(manifest, requests)
             digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+            job_manifests = [
+                {
+                    "job_id": f"job{index}",
+                    "path": str(path),
+                    "rows": 2,
+                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                }
+                for index, path in enumerate(job_paths)
+            ]
+            calibration_paths: dict[str, Path] = {}
+            for arm_id, adapter, concurrency, batch in (
+                ("daft_native", "daft_native", 1, 1),
+                ("daft_ray", "daft_ray", 1, 1),
+                ("ray_data_http", "ray_data_http", 8, 16),
+            ):
+                calibration_path = (
+                    Path(self._temporary.name) / f"{arm_id}-calibration.json"
+                )
+                calibration_path.write_text(json.dumps({
+                    "schema_version": 1,
+                    "status": "ready",
+                    "selection": {
+                        "adapter": adapter,
+                        "concurrency_per_endpoint": concurrency,
+                        "batch_size": batch,
+                    },
+                    "evidence": {
+                        "configuration_identity": {"status": "verified"},
+                        "performance_selection": {
+                            "status": (
+                                "development_screen_only"
+                                if adapter == "ray_data_http"
+                                else "not_applicable"
+                            ),
+                            "reason": "test fixture",
+                        },
+                    },
+                }), encoding="utf-8")
+                calibration_paths[arm_id] = calibration_path
+            project_calibration = (
+                Path(self._temporary.name) / "project-calibration.json"
+            )
+            project_calibration.write_text(json.dumps({
+                "schema_version": 1,
+                "status": "ready",
+                "selection": {},
+            }), encoding="utf-8")
             common = {
                 "manifest_path": str(manifest), "manifest_sha256": digest,
+                "job_manifests": job_manifests,
                 "endpoint_ids": ["endpoint-0", "endpoint-1"],
                 "service_signature": {"model": "test", "service": "vllm"},
                 "protocol": "completions", "output_cap": 256,
@@ -2188,12 +2650,36 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "unsupported_request_tails": {"status": "unavailable", "reason": "unsupported"},
                 "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "postgresql://localhost/test", "workload_name": "test", "row_offset": 512}, "organizer": "daft",
             }
-            native = lambda arm_id, owner: {**common, "arm_id": arm_id, "kind": "native", "scheduler_owner": owner, "output_root": f"out/{arm_id}", "calibration_path": "native-calibration.json"}
-            project = lambda arm_id, policy: {**common, "arm_id": arm_id, "kind": "project", "scheduler_owner": "project", "output_root": f"out/{arm_id}", "policy": policy, "k_per_endpoint": 8, "work_limit_per_endpoint": 65536, "ready_bytes": 4096, "actor_topology": {"workers": 1, "concurrency": 256}, "calibration_path": "project-calibration.json"}
+            native = lambda arm_id, owner: {
+                **common, "arm_id": arm_id, "kind": "native",
+                "scheduler_owner": owner, "output_root": f"out/{arm_id}",
+                "calibration_path": str(calibration_paths[arm_id]),
+                "calibration_sha256": hashlib.sha256(
+                    calibration_paths[arm_id].read_bytes()
+                ).hexdigest(),
+            }
+            project = lambda arm_id, policy: {
+                **common, "arm_id": arm_id, "kind": "project",
+                "scheduler_owner": "project", "output_root": f"out/{arm_id}",
+                "policy": policy, "k_per_endpoint": 8,
+                "work_limit_per_endpoint": 65536, "ready_bytes": 4096,
+                "actor_topology": {
+                    "workers": 1, "concurrency": 256,
+                    "cpus_per_worker": 0.25,
+                },
+                "batching_contract": {
+                    "policy": "token_budget", "token_budget": 6144,
+                    "token_budget_policy": "static",
+                },
+                "calibration_path": str(project_calibration),
+                "calibration_sha256": hashlib.sha256(
+                    project_calibration.read_bytes()
+                ).hexdigest(),
+            }
             arms = [native("daft_native", "daft"), native("daft_ray", "daft"), native("ray_data_http", "ray_data"), project("project_frozen_static", "static_partition"), project("project_bounded_ready_fifo", "shared_fifo"), project("project_bounded_ready_drr", "shared_drr"), project("project_bounded_ready_vtc_style", "external_vtc"), project("project_bounded_ready_saor_0125we", "saor_bounded_ready")]
             for arm in arms[4:]: arm["ready_observation"] = "bounded_concrete_pre_registration"
             arms[7]["debt_caps"] = [0.125, None]
-            self.path.write_text(json.dumps({"schema_version": 1, "seed": 7, "warmup_repeats": 1, "formal_repeats": 3, "selector_sanity_development_repeats": 2, "matrix_output_root": "matrix-output", "gpu_formal_locally_authorized": False, "matched_manifest_status": "ready_frozen", "arms": arms}), encoding="utf-8")
+            self.path.write_text(json.dumps({"schema_version": 1, "seed": 7, "warmup_repeats": 1, "formal_repeats": 3, "selector_sanity_development_repeats": 2, "matrix_output_root": "matrix-output", "endpoint_urls": ["http://127.0.0.1:8000/v1/chat/completions", "http://127.0.0.1:8001/v1/chat/completions"], "gpu_formal_locally_authorized": False, "matched_manifest_status": "ready_frozen", "arms": arms}), encoding="utf-8")
         def __enter__(self) -> Path: return self.path
         def __exit__(self, *args: object) -> None: self._temporary.cleanup()
 

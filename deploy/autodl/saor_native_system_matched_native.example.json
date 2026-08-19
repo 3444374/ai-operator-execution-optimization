@@ -15,7 +15,7 @@
   },
   "protocol": "${COMPLETION_PROTOCOL}",
   "output_cap": "${COMPLETION_MAX_TOKENS}",
-  "organizer": "${SAOR_ORGANIZER}",
+  "organizer": "native_framework_owned",
   "api_key_env": null,
   "service": {
     "prefix_caching": "enabled",
@@ -60,7 +60,7 @@
     {
       "id": "ray_data_http", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}",
-      "concurrency_per_endpoint": 1, "batch_size": 1,
+      "concurrency_per_endpoint": 8, "batch_size": 16,
       "timeout_s": 300, "process_timeout_s": 360,
       "ray_address": "${RAY_ADDRESS}",
       "jobs": [

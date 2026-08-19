@@ -16,12 +16,19 @@ non-rehearsal runner invocation additionally requires an independently issued
 raw config SHA, resolved-config fingerprint, and frozen manifest SHA. This check
 runs before output-root creation, host-lease acquisition, or executor dispatch.
 The repository ships no valid authorization artifact, and `--force` or the legacy
-config boolean cannot replace it. The shipped
-manifest is structural only: `matched_manifest_status=placeholder_not_ready`
-prevents it from passing even with a supplied SHA. Operators must create and
-commit a real two-Job matched request manifest, set its SHA, and change the
-status to `ready_frozen` before readiness can pass. Relative manifest and output
-paths are resolved from this example config's directory.
+config boolean cannot replace it. Full prompt manifests remain outside Git.
+Before readiness, create the combined Git-external artifact by byte-concatenating
+the frozen Job0 then Job1 files; the loader checks combined SHA, each Job SHA and
+512-row boundary, output caps, unique document IDs, and exact concatenation.
+Project scenarios must also execute `[512,512]` rows. Relative calibration and
+output paths are resolved from the example config's directory.
+
+The native executor owns its data graph and scheduling: Daft Native/Ray use the
+vendor C1/B1 control and Ray Data uses the frozen C8/B16 graph selection. Native
+arms carry the literal `native_framework_owned` organizer identity and never
+consume the Project organizer or any Project K/W, credit, router, coordinator,
+or bounded-ready option. Common immutable endpoint pinning remains a workload
+control shared by every arm; it is not an online Project routing decision.
 
 The matrix index, host lease, and every physical cell directory are created
 below the fresh matrix output root; an existing root is rejected. Warm-up covers
@@ -39,6 +46,10 @@ Valid cell evidence must also carry the actual PostgreSQL `server_version` and
 drifting shard/Job versions fail closed. Persisted runner and summarizer failure
 text is credential-redacted. A passed summary reports
 `formal_authorization_verified=true` while keeping `formal_authorized=false`.
+
+Merge and rehearsal do not authorize formal. Run the eight-cell rehearsal first,
+independently review its sealed validation/root/archive, and only then decide
+whether to issue the separate formal artifact.
 
 The offline summarizer also requires the same authorization artifact and
 recomputes the contract snapshot, manifest, service signature, scheduler owner,

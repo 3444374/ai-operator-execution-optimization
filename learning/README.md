@@ -1,5 +1,18 @@
 # Learning Notes
 
+## 2026-08-19 为什么“同一 workload”还要绑定 endpoint、Job 和原生执行参数
+
+系统级比较不能只让 Daft、Ray Data 和 Project 读取同一份 1024 行文件。还必须证明三类执行器
+访问同一对 vLLM endpoint；Job0/Job1 分别是冻结的 512 行且没有互换；Daft/Ray Data 实际使用的
+adapter、concurrency、batch 与校准身份一致。否则即使最终都显示 1024 条完成，仍可能是在不同服务、
+不同 Job 切分或不同框架配置上运行，逐 Job JCT 和系统排名没有可比性。
+
+当前合同在 dispatch 前交叉核对 matched/native/Project 三份配置，在每个 cell 中保存 endpoint、
+Job ID/SHA/行数和原生选择身份，离线汇总再从封存命令重验。这里的共同 endpoint/manifest 只是
+实验控制；Daft Native、Daft Ray 与 Ray Data 仍分别拥有自己的 batching、backpressure 和 scheduler，
+不会继承 Project 的 token-budget、K/W、credit、bounded-ready 或 router。本次仅完成本地合同与测试，
+没有连接服务器，也没有产生新的 GPU 性能结论。
+
 ## 2026-08-17 为什么 evidence 自包含不等于只保存一个目录名
 
 若 matrix index 保存 manifest、resource trace 和 output artifact 的绝对路径，原机器上验证通过并不代表

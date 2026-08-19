@@ -30,13 +30,15 @@ from src.baselines.text.orchestration.native_multijob import (  # noqa: E402
     run_native_multijob_cell,
     seal_native_cell_artifact_paths,
 )
-from src.baselines.common.manifests import read_manifest  # noqa: E402
 from src.experiments.saor.native_system_matched import (  # noqa: E402
     MatchedArm,
     ScheduledMatchedCell,
     load_matched_system_config,
     normalize_request_tail_status,
     run_matched_system,
+)
+from src.experiments.saor.native_system_bindings import (  # noqa: E402
+    validate_executor_bindings,
 )
 from src.experiments.shared_vllm import (  # noqa: E402
     GroupRunIdentity,
@@ -63,197 +65,6 @@ class CliOptions:
     resume: bool
     recover_stale_lease: bool
     formal_authorization: Path | None
-
-
-def _argument_value(arguments: tuple[str, ...], flag: str) -> str:
-    try:
-        index = arguments.index(flag)
-    except ValueError as exc:
-        raise ValueError(f"Project config is missing {flag}") from exc
-    if index + 1 >= len(arguments):
-        raise ValueError(f"Project config {flag} has no value")
-    return arguments[index + 1]
-
-
-def _canonical_config_path(
-    value: str | Path | None,
-    config_path: str | Path | None = None,
-) -> str | None:
-    if value is None:
-        return None
-    path = Path(value)
-    if not path.is_absolute() and config_path is not None:
-        path = Path(config_path).parent / path
-    return str(path.resolve())
-
-
-def _validate_combined_manifest(
-    matched_path: str,
-    job_paths: tuple[str | Path, ...],
-) -> None:
-    if len(job_paths) != 2:
-        raise ValueError("executor must define exactly two Job manifests")
-    matched = read_manifest(matched_path)
-    combined = tuple(
-        request
-        for path in job_paths
-        for request in read_manifest(path)
-    )
-    if matched != combined:
-        raise ValueError(
-            "executor Job manifests do not equal the authoritative matched "
-            "combined manifest in Job order"
-        )
-
-
-def _validate_executor_bindings(
-    matched,
-    native,
-    project,
-    *,
-    matched_config_path: str | Path | None = None,
-    project_config_path: str | Path | None = None,
-) -> None:
-    """Fail before dispatch when actual executor contracts drift."""
-
-    native_by_id = {item.arm_id: item for item in native.arms}
-    project_by_id = {item.scenario_id: item for item in project.scenarios}
-    project_protocol = _argument_value(project.common_args, "--completion-protocol")
-    project_output_cap = int(
-        _argument_value(project.common_args, "--completion-max-tokens")
-    )
-    project_organizer = _argument_value(project.common_args, "--organizer")
-    project_database_url = _argument_value(project.common_args, "--database-url")
-    project_workload = _argument_value(
-        project.common_args, "--source-workload-name"
-    )
-    actor_topology = {
-        "workers": int(
-            _argument_value(project.common_args, "--actor-workers-per-endpoint")
-        ),
-        "concurrency": int(
-            _argument_value(project.common_args, "--ray-actor-max-concurrency")
-        ),
-    }
-    for arm in matched.arms:
-        expected_source = dict(arm.source)
-        if arm.kind == "native":
-            actual = native_by_id.get(arm.arm_id)
-            if actual is None:
-                raise ValueError(f"native config is missing arm {arm.arm_id}")
-            if native.source is None:
-                raise ValueError("native matrix config is missing explicit source")
-            comparisons = {
-                "endpoint_ids": (native.endpoint_ids, arm.endpoint_ids),
-                "service_signature": (
-                    native.service_signature, arm.service_signature
-                ),
-                "protocol": (native.protocol, arm.protocol),
-                "output_cap": (native.output_cap, arm.output_cap),
-                "arrival_offsets_s": (
-                    tuple(job.offset_s for job in actual.jobs),
-                    arm.arrival_offsets_s,
-                ),
-                "job_internal_arrival_contract": (
-                    native.job_internal_arrival_contract,
-                    arm.job_internal_arrival_contract,
-                ),
-                "organizer": (native.organizer, arm.organizer),
-                "source.database_url": (
-                    native.source.database_url,
-                    expected_source["database_url"],
-                ),
-                "source.workload_name": (
-                    native.source.workload_name,
-                    expected_source["workload_name"],
-                ),
-            }
-            _validate_combined_manifest(
-                arm.manifest_path,
-                tuple(job.manifest for job in actual.jobs),
-            )
-        else:
-            actual = project_by_id.get(arm.arm_id)
-            if actual is None:
-                raise ValueError(f"Project config is missing scenario {arm.arm_id}")
-            request_limit, work_limit = actual.endpoint_limits(
-                project.request_limit_per_endpoint,
-                project.work_limit_per_endpoint,
-            )
-            comparisons = {
-                "endpoint_ids": (project.endpoint_ids, arm.endpoint_ids),
-                "service_signature": (
-                    project.service_signature, arm.service_signature
-                ),
-                "protocol": (project_protocol, arm.protocol),
-                "output_cap": (project_output_cap, arm.output_cap),
-                "arrival_offsets_s": (
-                    actual.arrival_offsets_s, arm.arrival_offsets_s
-                ),
-                "job_internal_arrival_contract": (
-                    project.job_internal_arrival_contract,
-                    arm.job_internal_arrival_contract,
-                ),
-                "organizer": (project_organizer, arm.organizer),
-                "source.database_url": (
-                    project_database_url, expected_source["database_url"]
-                ),
-                "source.workload_name": (
-                    project_workload, expected_source["workload_name"]
-                ),
-                "source_row_offsets": (
-                    actual.source_row_offsets,
-                    tuple(
-                        expected_source.get(
-                            "source_row_offsets",
-                            (0,) * len(actual.request_manifests),
-                        )
-                    ),
-                ),
-                "k_per_endpoint": (
-                    request_limit, arm.project_value("k_per_endpoint")
-                ),
-                "work_limit_per_endpoint": (
-                    work_limit, arm.project_value("work_limit_per_endpoint")
-                ),
-                "ready_bytes": (
-                    project.ready_payload_bytes_limit_per_job,
-                    arm.project_value("ready_bytes"),
-                ),
-                "actor_topology": (
-                    tuple(sorted(actor_topology.items())),
-                    arm.project_value("actor_topology"),
-                ),
-                "policy": (actual.policy, arm.project_value("policy")),
-                "ready_observation": (
-                    actual.ready_observation_contract,
-                    arm.project_value("ready_observation") or "single_head",
-                ),
-                "debt_caps": (
-                    actual.debt_cap_fractions,
-                    arm.project_value("debt_caps") or (),
-                ),
-                "calibration_path": (
-                    _canonical_config_path(
-                        project.calibration_contract.path,
-                        project_config_path,
-                    )
-                    if project.calibration_contract is not None else None,
-                    _canonical_config_path(
-                        arm.calibration_path,
-                        matched_config_path,
-                    ),
-                ),
-            }
-            _validate_combined_manifest(
-                arm.manifest_path,
-                tuple(actual.request_manifests),
-            )
-        drift = [name for name, values in comparisons.items() if values[0] != values[1]]
-        if drift:
-            raise ValueError(
-                f"{arm.arm_id} executor contract drift: {', '.join(drift)}"
-            )
 
 
 def parse_args(argv: list[str] | None = None) -> CliOptions:
@@ -402,9 +213,19 @@ def _normalize_project(
     if len(summaries) != len(observed):
         raise RuntimeError("Project Job summary evidence is incomplete")
     versions = _consistent_database_versions(summaries, "Project Job summary")
+    observed_manifest_sha256 = [
+        str(summary.get("request_manifest_sha256", "") or "")
+        for summary in summaries
+    ]
+    for index, observed_sha256 in enumerate(observed_manifest_sha256):
+        if observed_sha256 != arm.job_manifests[index].sha256:
+            raise RuntimeError(
+                f"Project Job {index} observed manifest SHA-256 drifted"
+            )
     jobs = [
         {
-            "job_id": f"job-{index}",
+            "job_id": arm.job_manifests[index].job_id,
+            "manifest_sha256": observed_manifest_sha256[index],
             "scheduled_launch_epoch_s": float(configured[index]),
             "actual_launch_epoch_s": float(observed[index]),
             "ended_epoch_s": float(completed[index]),
@@ -477,12 +298,14 @@ def run(options: CliOptions) -> dict[str, object]:
     native = load_native_multijob_config(options.native_config)
     project = load_project_config(options.project_config)
     matched = load_matched_system_config(options.config)
-    _validate_executor_bindings(
+    validate_executor_bindings(
         matched,
         native,
         project,
         matched_config_path=options.config,
         project_config_path=options.project_config,
+        runner_metrics_urls=options.metrics_urls,
+        runner_health_url=options.health_url,
     )
     repository_commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from src.baselines.common.database_identity import DatabaseIdentity
+from src.baselines.common.manifests import read_manifest
 from src.baselines.common.redact import redact_text
 
 from .native_system_matched import (
@@ -35,6 +36,71 @@ _PROJECT_FLAG_FRAGMENTS = (
     "credit", "coordinator", "router", "bounded-ready", "bounded_ready",
     "max-active-work", "max_active_work", "ready-observation", "ready_observation",
 )
+
+
+def _command_flag_values(command: list[object], flag: str) -> list[str]:
+    """Collect every value of a repeated flag from flattened command evidence."""
+
+    values: list[str] = []
+    for index, token in enumerate(command):
+        if str(token) != flag:
+            continue
+        if index + 1 >= len(command):
+            raise ValueError(f"stored command {flag} has no value")
+        values.append(str(command[index + 1]))
+    return values
+
+
+def _validate_executor_command(
+    command: list[object],
+    arm_id: str,
+    arm_identity: dict[str, object],
+) -> None:
+    """Recheck the dispatch endpoints and native C/B/adapter from raw commands."""
+
+    endpoints = arm_identity.get("matrix_endpoint_urls")
+    if not isinstance(endpoints, list) or len(endpoints) != 2:
+        raise ValueError(f"{arm_id} lacks frozen endpoint URL identity")
+    if arm_id in SYSTEM_ARM_IDS[:3]:
+        selection = arm_identity.get("executor_selection")
+        if not isinstance(selection, dict):
+            raise ValueError(f"{arm_id} lacks native executor selection identity")
+        for flag, field in (
+            ("--adapter", "adapter"),
+            ("--concurrency", "concurrency_per_endpoint"),
+            ("--batch-size", "batch_size"),
+        ):
+            values = _command_flag_values(command, flag)
+            if len(values) != 4 or any(
+                value != str(selection.get(field)) for value in values
+            ):
+                raise ValueError(f"{arm_id} stored command {flag} drifted")
+        endpoint_indices = _command_flag_values(command, "--endpoint-index")
+        endpoint_values = _command_flag_values(command, "--endpoint-url")
+        expected_pairs = [
+            (str(index), str(endpoint))
+            for _job in range(2)
+            for index, endpoint in enumerate(endpoints)
+        ]
+        if list(zip(endpoint_indices, endpoint_values, strict=True)) != expected_pairs:
+            raise ValueError(f"{arm_id} stored endpoint-index mapping drifted")
+        return
+
+    expected_csv = ",".join(str(value) for value in endpoints)
+    endpoint_values = _command_flag_values(
+        command, "--completion-endpoint-urls"
+    )
+    if not endpoint_values or any(value != expected_csv for value in endpoint_values):
+        raise ValueError(f"{arm_id} stored Project command endpoints drifted")
+    metrics = arm_identity.get("matrix_metrics_urls")
+    if not isinstance(metrics, list) or len(metrics) != 2:
+        raise ValueError(f"{arm_id} lacks frozen metrics URL identity")
+    expected_metrics_csv = ",".join(str(value) for value in metrics)
+    metrics_values = _command_flag_values(command, "--model-metrics-urls")
+    if not metrics_values or any(
+        value != expected_metrics_csv for value in metrics_values
+    ):
+        raise ValueError(f"{arm_id} stored Project metrics endpoints drifted")
 
 
 def _validation(
@@ -255,6 +321,7 @@ def _resource_row(
 def _normalize_cell(
     matrix_root: Path,
     cell: object,
+    arm_identity: dict[str, object],
 ) -> tuple[dict[str, object], list[dict[str, object]], dict[str, object]]:
     if not isinstance(cell, dict):
         raise ValueError("matrix cell must be an object")
@@ -312,12 +379,21 @@ def _normalize_cell(
     scheduled_starts: list[float] = []
     actual_starts: list[float] = []
     ends: list[float] = []
-    for job in jobs:
+    expected_jobs = arm_identity.get("job_manifests")
+    if not isinstance(expected_jobs, list) or len(expected_jobs) != 2:
+        raise ValueError(f"{run_id} lacks frozen per-Job identity")
+    for job, expected_job in zip(jobs, expected_jobs, strict=True):
         if not isinstance(job, dict) or job.get("exactly_once") is not True:
             raise ValueError(f"{run_id} has invalid Job exactly-once evidence")
         if (
-            int(job.get("completed_count", -1)) <= 0
-            or int(job.get("completed_count", -1)) != int(job.get("expected_count", -2))
+            not isinstance(expected_job, dict)
+            or job.get("job_id") != expected_job.get("job_id")
+            or job.get("manifest_sha256") != expected_job.get("sha256")
+        ):
+            raise ValueError(f"{run_id} Job identity drifted")
+        if (
+            int(job.get("completed_count", -1)) != int(expected_job.get("rows", -2))
+            or int(job.get("expected_count", -1)) != int(expected_job.get("rows", -2))
         ):
             raise ValueError(f"{run_id} has invalid Job row accounting")
         _validate_source(job, run_id)
@@ -352,11 +428,14 @@ def _normalize_cell(
         raise ValueError(f"{run_id} native tails must be unavailable with reasons")
 
     command = cell.get("command", [])
+    if not isinstance(command, list):
+        raise ValueError(f"{run_id} command evidence must be a list")
     command_text = " ".join(str(item).lower() for item in command)
     if arm_id in SYSTEM_ARM_IDS[:3] and any(
         fragment in command_text for fragment in _PROJECT_FLAG_FRAGMENTS
     ):
         raise ValueError(f"{run_id} native command contains Project flags")
+    _validate_executor_command(command, arm_id, arm_identity)
 
     total = prompt + generation
     run_row = {
@@ -394,12 +473,17 @@ def _normalize_cell(
         ]),
         "exactly_once": True,
     }
+    role_by_id = {
+        str(expected_jobs[0]["job_id"]): "bulk",
+        str(expected_jobs[1]["job_id"]): "foreground",
+    }
     job_rows = [
         {
             "run_id": run_id,
             "arm_id": arm_id,
             "repeat": repeat,
-            "job_role": role,
+            "job_id": str(job["job_id"]),
+            "job_role": role_by_id[str(job["job_id"])],
             "scheduled_release_epoch_s": scheduled,
             "actual_launch_epoch_s": actual,
             "scheduled_launch_offset_s": scheduled - scheduled_starts[0],
@@ -410,8 +494,8 @@ def _normalize_cell(
             "overlap_s": overlap,
             "completion_order": 1 + sorted(ends).index(completion),
         }
-        for role, scheduled, actual, completion in zip(
-            ("bulk", "foreground"), scheduled_starts, actual_starts, ends
+        for job, scheduled, actual, completion in zip(
+            jobs, scheduled_starts, actual_starts, ends, strict=True
         )
     ]
     return run_row, job_rows, _resource_row(
@@ -640,7 +724,7 @@ def _load_authorized_identity(
     required_fields = {
         "schema_version", "status", "scope", "formal_authorized",
         "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256",
+        "manifest_sha256", "job_manifests",
     }
     if not isinstance(authorization, dict) or set(authorization) != required_fields:
         raise ValueError("formal authorization schema is invalid")
@@ -679,7 +763,7 @@ def _load_authorized_identity(
         raise ValueError("resolved config fingerprint drifted")
     identity_fields = (
         "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256",
+        "manifest_sha256", "job_manifests",
     )
     for field in identity_fields:
         if runtime.get(field) != authorization.get(field):
@@ -702,6 +786,43 @@ def _load_authorized_identity(
         or sha256_file(manifest_path) != authorization["manifest_sha256"]
     ):
         raise ValueError("sealed manifest identity drifted")
+    job_manifest_evidence = runtime.get("job_manifest_evidence")
+    if not isinstance(job_manifest_evidence, list):
+        raise ValueError("sealed Job manifest evidence is missing")
+    expected_jobs = authorization.get("job_manifests")
+    if not isinstance(expected_jobs, list) or len(expected_jobs) != 2:
+        raise ValueError("authorized Job manifest identity is invalid")
+    observed_jobs: list[dict[str, object]] = []
+    for expected, sealed in zip(expected_jobs, job_manifest_evidence, strict=True):
+        if not isinstance(expected, dict) or not isinstance(sealed, dict):
+            raise ValueError("sealed Job manifest evidence schema is invalid")
+        identity = {
+            field: sealed.get(field) for field in ("job_id", "rows", "sha256")
+        }
+        if identity != expected:
+            raise ValueError("sealed Job manifest identity drifted")
+        path = resolve_matrix_evidence_path(
+            matrix_root,
+            sealed.get("evidence_path"),
+            f"sealed {expected.get('job_id')} manifest",
+        )
+        if (
+            not path.is_file()
+            or sha256_file(path) != expected.get("sha256")
+            or len(read_manifest(path)) != expected.get("rows")
+        ):
+            raise ValueError("sealed Job manifest evidence drifted")
+        observed_jobs.append(dict(sealed))
+    if tuple(
+        request
+        for job in job_manifest_evidence
+        for request in read_manifest(resolve_matrix_evidence_path(
+            matrix_root,
+            job["evidence_path"],
+            "sealed Job manifest",
+        ))
+    ) != read_manifest(manifest_path):
+        raise ValueError("sealed combined manifest does not equal job0+job1")
     expected_index = {
         "repository_commit": authorization["repository_commit"],
         "matrix_instance_id": matrix_instance_id,
@@ -709,8 +830,12 @@ def _load_authorized_identity(
         "config_fingerprint": authorization["resolved_config_sha256"],
         "manifest_sha256": authorization["manifest_sha256"],
         "manifest_evidence_path": manifest_evidence_path,
+        "job_manifest_evidence": observed_jobs,
         "authorization_sha256": authorization_sha256,
         "execution_mode": "formal",
+        "endpoint_urls": resolved.get("endpoint_urls"),
+        "metrics_urls": resolved.get("metrics_urls"),
+        "health_url": resolved.get("health_url"),
     }
     for field, expected in expected_index.items():
         if index.get(field) != expected:
@@ -726,6 +851,19 @@ def _load_authorized_identity(
     }
     if set(by_arm) != set(REQUIRED_ARM_IDS):
         raise ValueError("resolved arm identity is incomplete")
+    endpoint_urls = resolved.get("endpoint_urls")
+    metrics_urls = resolved.get("metrics_urls")
+    health_url = resolved.get("health_url")
+    if (
+        not isinstance(endpoint_urls, list) or len(endpoint_urls) != 2
+        or not isinstance(metrics_urls, list) or len(metrics_urls) != 2
+        or not isinstance(health_url, str) or not health_url
+    ):
+        raise ValueError("resolved service endpoint identity is incomplete")
+    for arm in by_arm.values():
+        arm["matrix_endpoint_urls"] = endpoint_urls
+        arm["matrix_metrics_urls"] = metrics_urls
+        arm["matrix_health_url"] = health_url
     scheduler_owners = {
         arm_id: str(arm["scheduler_owner"]) for arm_id, arm in by_arm.items()
     }
@@ -770,6 +908,10 @@ def _load_authorized_identity(
             "manifest_sha256": arm["manifest_sha256"],
             "service_signature": arm["service_signature"],
             "scheduler_owner": arm["scheduler_owner"],
+            "endpoint_urls": endpoint_urls,
+            "metrics_urls": metrics_urls,
+            "health_url": health_url,
+            "executor_selection": arm.get("executor_selection"),
         }
         for field, expected in expected_cell.items():
             if cell.get(field) != expected:
@@ -822,7 +964,7 @@ def summarize_matched_system(
         ):
             raise ValueError("matrix cells must be a list")
         DatabaseIdentity.consistent(raw_cells, "native-system matrix")
-        _load_authorized_identity(
+        resolved_arms = _load_authorized_identity(
             matrix_root,
             index,
             raw_cells,
@@ -906,7 +1048,13 @@ def summarize_matched_system(
         job_rows: list[dict[str, object]] = []
         resource_rows: list[dict[str, object]] = []
         for cell in raw_cells:
-            normalized, jobs, resource = _normalize_cell(matrix_root, cell)
+            arm_id = str(cell.get("arm_id", ""))
+            arm_identity = resolved_arms.get(arm_id)
+            if arm_identity is None:
+                raise ValueError(f"matrix cell references unknown arm {arm_id!r}")
+            normalized, jobs, resource = _normalize_cell(
+                matrix_root, cell, arm_identity
+            )
             run_rows.append(
                 _audit_row(
                     cell,

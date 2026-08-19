@@ -127,16 +127,21 @@ shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity�
 `decided=false`、`formal_authorized=false`；该桥是项目内部归因，不是原生系统比较。
 
 `experiments/run_saor_native_system_matched.py` 是本地系统级 matched matrix 编排入口。它在
-dispatch 前联合加载 matched/native/Project 三份配置并执行 readiness 与执行器绑定审计，随后
+dispatch 前联合加载 matched/native/Project 三份配置，并调用
+`src/experiments/saor/native_system_bindings.py` 执行无副作用的执行器绑定审计，随后
 平衡编排 8 个唯一物理臂（3 个原生系统臂、Project frozen-static、3 个 Project selector
 sanity 臂和共享的 proposed 臂）。`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
 cell。非 rehearsal 还必须显式传入独立 `--formal-authorization` artifact；该 artifact 精确绑定
-repository commit、原始 config SHA、resolved-config fingerprint 和 frozen manifest SHA。runner
+repository commit、原始 config SHA、resolved-config fingerprint、combined manifest SHA 和
+Job0/Job1 各自的 SHA/行数。runner
 在创建输出目录、获取 host lease 或调用 executor 之前完成校验。当前 native-system GPU/formal
-仍停止，仓库不随模板提供有效授权。授权通过后，每次物理矩阵生成唯一
+仍停止，仓库不随模板提供有效授权；merge/rehearsal 均不能替代独立审核后的 formal 决定。
+readiness 同时把 native calibration 的 SHA/adapter/concurrency/batch 与实际 executor 对齐，并
+要求三类执行器访问同一冻结 endpoint pair，Project 五臂真实执行完整 512+512 行。授权通过后，每次物理矩阵生成唯一
 `matrix_instance_id`，并绑定 contract snapshot、index 与所有 cell，跨 output root 替换 cell
 会被汇总器拒绝。原生 shard 与 Project Job 摘要必须提供一致的实际 PostgreSQL/pgvector 版本；
-这些字段进入每条 `all_runs.csv`，不能用配置默认值代替。
+这些字段进入每条 `all_runs.csv`，不能用配置默认值代替。离线汇总还会按原始命令重验原生
+adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行前配置检查。
 
 `analysis/summarize_saor_native_system_matched.py` 是该矩阵的薄 CLI；可复用的纯离线、
 fail-closed 核心位于 `src/experiments/saor/native_system_summary.py`，不连接服务。CLI 要求同一个

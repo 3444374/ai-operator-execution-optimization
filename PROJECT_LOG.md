@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-08-19 native-system matched 发布合同修复（本地）
+
+- 修复候选发布配置的两项 validity blocker：Project 五臂由错误的每 Job 2 行改为完整
+  `[512,512]`；Ray Data executor 由 C1/B1 改为已冻结的 C8/B16。Daft Native/Ray 保持
+  C1/B1 vendor control，三条原生臂 organizer 明确为 `native_framework_owned`，不再消费
+  Project 的 `SAOR_ORGANIZER`，也不注入 K/W、credit、router 或 bounded-ready。
+- 完整 ShareGPT prompt manifest 因含个人信息从 Git 移除；运行时三份 manifest 留在
+  `experiment-artifacts/`。matched config 为 Job0/Job1 分别冻结 SHA 与 512 行，runner 在 dispatch
+  前验证每份 SHA/行数/output cap、跨 Job doc_id 唯一，并验证 combined=Job0+Job1；matrix root
+  同时封存三份证据，formal authorization 绑定 combined SHA 与两个 Job identity。
+- calibration 从“只比较路径”改为 path+SHA+内容+executor 联合校验。Project 继续复用通用
+  calibration loader；native 合同逐臂验证 adapter/concurrency/batch。Daft vendor default 标为
+  `performance_selection=not_applicable`，Ray Data 单次 C4/C8/C16 screen 标为
+  `development_screen_only`，不再伪称 feeding/token-budget/actor-pool 三门全部 passed。
+- Project 独立冻结 token-budget 6144、K128、W65536、8×32 actor 与 0.25 CPU/worker；新增
+  `native_system_bindings.py`，在 dispatch 前交叉核对 matched/native/Project 的实际 endpoint、
+  metrics/health、Job manifest、数据库 source、服务签名、原生 adapter/C/B 和 Project
+  K/W/batching/actor 合同。snapshot/cell 保存 endpoint 与原生选择身份，离线 summary 再从封存命令
+  重验，且逐 Job 强制 ID/SHA/行数，避免交换 Job 或 1+1 假通过。
+- formal 模板修正为：merge 只冻结实现，先跑小型 correctness/rehearsal 并独立审核，之后项目开发者
+  才可另行签发仓库外 authorization artifact；模板、布尔字段和 rehearsal 均不能自行解锁 formal。
+- 新增发布配置和反例测试，覆盖实际 512+512、native ownership、Ray Data C8/B16、逐 Job identity、
+  calibration SHA/selection 漂移与 merge 非授权语义。本轮只做本地代码/合同修复，未连接服务器、
+  未运行 native-system/rehearsal/formal；服务器 PG row-window 只读确认仍是后续 runtime preflight。
+
 ## 2026-08-17 native-system 可搬迁证据与数据库身份 follow-up（本地）
 
 - 继续在 follow-up 分支修复独立审核阻断项；未连接服务器、未运行 native-system/rehearsal/formal，
