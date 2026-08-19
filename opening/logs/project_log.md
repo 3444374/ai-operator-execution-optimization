@@ -1,5 +1,75 @@
 # 开题材料 project log
 
+## 2026-08-17 P11 箭头整体调小
+
+- 用户手动调整 drawio 后，所有箭头 endSize 统一调小，重新导出并固定权威源与图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 标题条边缘突起修正
+
+- 三个面板标题条改为比 panel 各大 1 px（x-1、y-1、w+2、h+1），完全覆盖 panel 描边，顶部与左右突起消失。同步刷新权威源与图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 organizer→admission 箭头定形
+
+- 对角箭头改为左边缘出发的“┐”形正交折线，线形完整、不再“只剩箭头没有线”或穿卡。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 清除 draw.io 缓存残影
+
+- draw.io desktop 缓存把已删除的 estimate_icon 等旧元素渲染出来致画面有叠影；清缓存重新导出后残影消失。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 五处细节修正
+
+- PostgreSQL 文字框加高；organizer→admission 改完整正交折线；灰色反馈箭头改从 routing 卡底部进入与蓝线分离；state_panel 标题居中。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 灰色反馈箭头避开 validation_note
+
+- 灰色反馈箭头水平段由 y=620 移至 y=636，不再压住“同上限 frozen-static A/B”提示条两端。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 Daft 官方标识修复
+
+- Daft 图标原是 draw.io 默认占位图（base64 被截断成空 href）；后处理在 Daft 位置插入项目资产官方黑/洋红标识并删除空壳占位图。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 箭头修正与 Daft 官方标识
+
+- 灰色反馈箭头绕到卡片边缘中部，不再覆盖橙色卡片；organizer→admission 改为正交折线消除斜线；Daft 图标换为项目资产官方黑/洋红标识。重导 P11 PNG/SVG 并刷新图集副本。PPT 由用户自行更新。
+
+## 2026-08-17 P11 Cost Estimator 横条上移
+
+- Shared Cost Estimator 横条移至研究内容一/二 header 正下方、工作流卡片之上（370,250），解决竖箭头穿横条问题；下移两行卡与 validation_note、研究边界框加高。重导 P11 PNG/SVG 并刷新图集副本，icon 全部归位。PPT 由用户自行更新。
+
+## 2026-08-17 P11 icon 渲染管线修复
+
+- draw.io 导出 P11 时把 11 个自绘 SVG icon 合并进单一空 symbol 致全丢；正确管线为 draw.io CLI 导 SVG → Python 按坐标把 `<use>` 换成独立 `<image>`（不能用尺寸匹配）→ headless Chrome 渲染 PNG。11 个 icon 全部归位。
+- 三处修订（两个研究内容标题 + Shared Cost Estimator 横条）一并产出最终 PNG/SVG，权威源与图集副本已同步。PPT 由用户自行更新。
+
+## 2026-08-17 P11 系统架构图：研究内容命名与 Cost Estimator 共享化
+
+- 研究内容一/二标题对齐冻结主线（分阶段 Work 表征与数据组织 / 固定容量下的状态感知调度）；
+  Cost Estimator 拆为独立 Shared Cost Estimator 横条（共同使能），WorkDescriptor 卡还原为纯 work 描述。
+- 搭建本机 drawio 渲染环境（playwright-core + Edge，`figures/scripts/render_drawio.js`），重导 P11 PNG/SVG
+  并刷新图集副本；审计已同步。PPT 由用户自行更新。
+
+## 2026-08-17 P08B 重新定位为“AI Work 需要分阶段描述”
+
+- P08B 由平级图像动机页降为动机补充页，避免与 M1（13.9–31×）和 M2（近饱和区）重复。
+  suptitle 改为“AI Work 需要分阶段描述”；panel b 改为“输入表示改变阶段执行效率”，panel c 改为
+  “阶段供给不匹配导致欠供给或等待堆积”。仅改标题，数据与布局未变；重画 part2 并刷新图集副本，
+  `figures/README.md`、`figures/opening_figure_set/README.md`、audit 契约已同步。PPT 由用户自行更新。
+
+## 2026-08-17 P07B active-work 代价显式化
+
+- P07B 容量曲线补入冻结正式数据的直接注释：65K→98K 吞吐仅 +2.3%，请求 P99
+  由 36.8 s 升至 40.0 s（+8.9%），明确继续增大 active work 的尾延迟代价。
+- 图中保持单一吞吐坐标轴，以独立数值框说明 P99，不使用双 Y 轴；合成源图、16:9 拆分图、
+  图集 PNG/SVG 与审计已同步。PPT 由用户自行替换，本轮未修改 PPT 源稿。
+
+## 2026-08-17 P08A 标题修订与绘图脚本字体修复
+
+- P08A panel 标题改为“图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机 M1 页“文本讲量、
+  图像讲阶段”口径；仅改文案，数据与布局未变。PPT 由用户自行更新，本日志不改动 PPT 源稿。
+- 修复绘图脚本 Windows 中文字体回退（补入 Microsoft YaHei/SimHei），重画 P08A/P08B 的
+  PNG/SVG/PDF 并刷新图集中文名副本；`figures/README.md`、`figures/opening_figure_set/README.md`
+  与 `figures/audit/opening_story_figures_contract_20260808.md` 已同步。
+
 ## 2026-08-12 P02 边界与箭头修订
 
 - 将四处贴边英文混排标签改成等义紧凑中文，保持字号不变；左下“文本 / 提示词”和中间两张
@@ -739,3 +809,19 @@
 - 下一步从“继续实现有界 guard”改为“先让 FIFO/DRR/VTC/strict-priority 使用相同 ready-window
   做归因门，通过后才 formal”。若简单 selector 已在同一 Pareto 前沿，则收敛为 observation
   contract 或淘汰复杂 selector；这收紧而非提升开题 claim。
+
+# 2026-08-16 开题前部图资产叙事清理
+
+- 仅修改图资产，不重新生成 PPT；P02 按用户要求保持不变。
+- P03 改为通用外部 AI 算子六阶段执行链路，删除提前出现的项目 Work Unit、credit、状态反馈、
+  准入/路由和 typed Ray actor 设计；P04 只作相关工作分层；P05 只作研究空白归纳。
+- P06--P08 仅收束标题/标签措辞，实验数值、坐标、统计量和几何均未改变。
+- 权威 SVG/PNG、Draw.io 源、开题专用图集副本与审计记录同步更新，并通过原尺寸目视复核。
+
+# 2026-08-17 P05 图面可读性修订
+
+- 仅调整 P05 图资产，不修改 PPT：跨栏请求/提交箭头改为固定尺寸的小箭头头和完整 60 px 线身，
+  灰色反馈箭头同步采用更小固定头与清晰虚线。
+- 标题、分区标题、卡片标题、正文/标签和结论整体放大为 42/30/25/20/26 px；同步调整文本框和
+  结论框尺寸，原文与研究空白叙事保持不变。
+- Draw.io、SVG、1600×900 PNG 和专用图集 P05 副本已同步并完成全尺寸目视检查。

@@ -59,7 +59,7 @@
 | H | `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` | 120 条逐 Job formal | `d7fa2417361fcd7b` | Project short full/quarter/static/shared=13.07/36.65/58.79/16.33 s |
 | N | `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` | 120 条逐 Job formal | `d7fa2417361fcd7b` | Daft Native/Ray/Ray Data 的 short slowdown=1.67×/1.25×/1.68×；三个 long 也均退化 |
 | H | `opening_fourjob_interference_20260809/data/combined/group_formal_runs.csv` | 75 条组级 formal | `b415c8a68e5d1139` | Project shared vs static：tok/s +8.68%，group JCT −7.97%，MFU +8.56pp |
-| H | `opening_fourjob_interference_20260809/data/combined/isolated_normalized_fairness.csv` | 6 个系统内对照 | `0d325fc6303d5a42` | matched-static/shared Jain=0.998/0.876 |
+| H | `opening_fourjob_interference_20260809/data/combined/isolated_normalized_fairness.csv` | 6 个系统内对照 | `0d325fc6303d5a42` | 同 full-single 基线 static/shared Jain=0.988/0.876（panel c 口径）；quarter-single 基线 matched-static Jain=0.998 仅作配额损失诊断 |
 | H | `opening_fourjob_interference_20260809/data/combined/long_job_spread.csv` | 15 个 formal group | `4252937ec7f81d57` | Project long JCT spread：static 1.1 s，shared 61.1 s |
 | H | `opening_multijob_interference_20260809/data/combined/summary.csv` | 10 汇总行，源自 30 formal | `3622732cf88b4fee` | 所有 two-job overlap>0；原生 short JCT +82.42%/+104.84%/+32.76% |
 | H | `opening_multijob_interference_20260809/data/combined/comparisons.csv` | 6 个预注册对比 | `33701106d0f8bda8` | project shared vs static：吞吐 +21.03%，short JCT +4.98% |
@@ -91,6 +91,8 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 ## 1. Work、状态与提交压力动机
 
 文件：`data/report_main/opening_motivation_work_state.{png,svg}`。
+主讲拆分版：`opening_motivation_work_state_part1_work.{png,svg}`、
+`opening_motivation_work_state_part2_state_capacity.{png,svg}`；仅重排原 panel，底注改为实验配置。
 
 - panel a 来源：固定 16 行批次的 work 最小/最大中位数 474/6,793 token，差 14.3×。
 - panel b 来源：相同配置 W65K 下，`max_active_work_seen_mean/W` 在 high/arrival-limited
@@ -101,6 +103,11 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 - 不支持：MFU 35% 是硬件极限；65K 对其他机器/模型仍最优；动态控制已胜静态。
 - 2026-08-10 渲染修订已完成：panel b 横轴写“运行内峰值 active work / W65K”；
   panel c 使用“低供给段—最小近饱和点—边际收益递减”，没有人为色带。
+- 2026-08-17 补充图内代价说明：由同一冻结汇总动态计算 65K→98K 吞吐 +2.3%、
+  请求 P99 36.8→40.0 s（+8.9%）。采用单轴数值注释而非双 Y 轴；不表述为“尾延迟激增”，
+  也不把 65K 外推为其他机器、模型或 workload 的通用常数。
+- 16:9 P07B 为 3840×2160、300 DPI；PNG/SVG 通过 SciPilot strict 检查和 XML 检查，
+  全尺寸目视确认代价框不遮挡曲线、误差线、图例、坐标轴或实验配置底注。
 
 ## 2. 研究边界与共同使能部件
 
@@ -146,6 +153,8 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 ## 5. 图像 staged-work 动机
 
 文件：`data/report_main/opening_image_stage_aware_evidence.{png,svg}`。
+主讲拆分版：`opening_image_stage_aware_evidence_part1_prepare.{png,svg}`、
+`opening_image_stage_aware_evidence_part2_transfer_window.{png,svg}`；仅重排原 panel，底注改为实验配置。
 
 - panel a 来源：`image_clip_preprocess_variants_20260801/raw_repeats.csv` exact tensor path；
   batch 16/64/256 的 prepare/actor 比中位数为 13.9×/31.0×/29.5×，误差线为 IQR（n=30）。
@@ -156,6 +165,22 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 - 支持：图像 work 需要显式区分 prepare/model/tensor-transfer stage；准入窗口存在欠供给、平台与
   过量排队区间，因此需要阶段状态观测和有界提交。
 - 不支持：active32 可迁移到其他规模/机器；图像动态策略已胜；R0-R2 microprofile 可替代 operator E2E。
+- 2026-08-17 渲染修订：part1（P08A）panel 标题由“prepare 是独立且占主导的工作阶段”改为
+  “图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机 M1 页“Rows is not Work”的
+  “文本讲量、图像讲阶段”口径——避免旧标题把读者引向“CPU 是主瓶颈”（当前冻结结论不支持该绝对表述），
+  改为强调图像 work 的多阶段性。数据、布局、坐标、图例与底注均未变。同日修复绘图脚本的
+  Windows 中文字体回退：`generate_opening_core_evidence_figures.py` 的 `font.sans-serif`
+  列表最前补入 `Microsoft YaHei`、`SimHei`（原仅含 macOS 的 PingFang SC/Hiragino/Heiti，
+  Windows 上回退 Arial 致 CJK 缺字成方框）；该修复为环境性、不改任何图布局，但对本机重画的
+  所有图生效，重画后 PNG 字节因字体不同而变化属正常。
+- 2026-08-17 渲染修订（part2 / P08B）：page 重新定位为动机补充页“AI Work 需要分阶段描述”，
+  不再作平级新动机，以避免与 M1（Rows≠Work 的 13.9–31×）和 M2（Capacity≠State 的近饱和区）重复。
+  suptitle 由“图像动机：阶段失衡、传输形态与提交窗口共同影响执行”改为“AI Work 需要分阶段描述”；
+  panel b 标题由“瓶颈不是 PCIe，而是 host ownership-copy”改为“输入表示改变阶段执行效率”——旧标题是
+  过强的硬件瓶颈结论，改为强调 AI Work 取决于数据表示与所处阶段，导向 WorkDescriptor；panel c 标题由
+  “提交窗口过小会欠供给，过大又积累等待”改为“阶段供给不匹配导致欠供给或等待堆积”——与 M2 区分：
+  M2 问“总共允许多少 work”，本 panel 问“work 在阶段之间怎么流动”。数据、布局、图例与底注均未变；
+  本页直接证据为 prepare/transfer/model 三阶段，result/writeback 阶段在方案页统一补全，不在本页声称。
 
 ## 5.1 图像 baseline 纯数据图
 
@@ -196,7 +221,7 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 文件：`data/report_main/opening_cost_model_decision_quality_v2.{png,svg}`。
 
 - 来源：20-context leave-one-context-out 结果 `ce_context_loo_rerun_20260807.json`。
-- 编码：左 panel 报告 estimator 级 candidate pairwise；右 panel 从每个 estimator 的20个
+- 编码：左 panel 报告 estimator 级 candidate pairwise；中 panel 从每个 estimator 的20个
   `folds[].selection.decision_regret_pct` 逐点读取并完整展开。小点是单个 context，纵向抖动
   仅用于避免相同 regret 重叠；小菱形是20个 context 的中位数，同尺寸深色点标记
   最坏 context。浅绿
@@ -205,6 +230,19 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
   各有11/20个精确 `0.0%`，所以旧图中median=0是实际命中oracle所致，不是缺失或舍入。
   三者macro mean为3.88%/3.33%/2.90%，max为22.71%/26.89%/14.72%。绘图入口显式校验每个
   estimator恰好20 contexts，并用逐点数据重算mean/max对齐JSON summary。
+- 右 panel（2026-08-18 曾加“模型预测最优与实际最优的偏离”，后并入 panel b）：曾尝试两种口径。
+  其一为 estimator 无关的候选差异——从每 fold 的 `candidates[].actual_mean_s` 取最坏候选、
+  `selection.oracle_runtime` 取实际最优，`(最坏候选 − 实际最优)/实际最优×100%`（口径与
+  `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`
+  §5.1 表末列一致，是 `/min` 而非 `/max` spread），20 个场景为 2.5%–80.1%、中位 39.7%、
+  仅 1/20 ≤5%；但该分布与 estimator 无关、只能画一行，不满足“六种配置各一行”。
+  其二为按估计器的“预测最优偏离”——`argmin(candidates[].predicted_mean_s)` 的实际偏离
+  `100×(预测最优候选实际耗时 − 实际最优耗时)/实际最优耗时`，经脚本校验与
+  `selection.decision_regret_pct` 完全一致（误差 <1e-6）。**结论：用户要求的“模型预测最优
+  与实际最优的偏离百分比”在数值上就是 decision regret，二者是同一个量**，因此不单独设
+  第三 panel；最终 v3 维持两 panel，panel b 标题写全为“决策损失分布（模型预测最优与
+  实际最优的偏离）（20 个场景）”，并在图注写明等价关系。v2 文件保留，v3 输出到
+  `opening_cost_model_decision_quality_v3.{png,svg}`。
 - 支持：Hybrid 同时低于 median/macro 5% 与 max 15% 门，max=14.72%，属于 marginal pass。
 - 关键反例：Ridge逐行MAE 3.23s低于Hybrid 3.98s，但max regret为22.71%而失败；因此逐行
   预测误差不能替代候选ranking与decision regret。
@@ -305,14 +343,24 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
   `isolated_normalized_fairness.csv` 与 `long_job_spread.csv`。
 - panel a 的每条线固定代表一个Job，依次连接独立Full、独立1/4配额、四Job Static和
   四Job Shared的JCT归一化均值，以趋势分离配额损失、真实竞争与共享策略效果；panel b
-  用无边框表直标Static/Shared的组吞吐、group JCT、MFU与变化；panel c按同一Job连接
-  Static→Shared的isolated-normalized progress，并直接报告Jain与long spread。
+  用无边框表直标Static/Shared的组吞吐、group JCT、MFU与变化；panel c按同一Job用
+  无箭头直线连接Static→Shared的isolated-normalized progress，并直接报告Jain与long spread。
   连线表示预注册受控场景顺序，不是时间序列；三次formal的SD保留在CSV/附录。
-- 视觉编码：panel a纵轴改为“归一化JCT（独立运行=1）”，panel c改为“归一化完成进度
-  （独立运行=1）”；两条数值轴不再在每个点旁重复标同一数值，准确值直接由刻度读取。
-  只有无数值坐标轴的panel b保留表内精确数字，减少冗余和标签遮挡。panel b 的变化列
-  统一使用相对变化：MFU从38.2%增至46.8%，表内写相对`+22.41%`，不再单独使用
-  `+8.56pp`；Static/Shared原值均为中性深灰，变化上涨为红、下跌为绿，并以正负号冗余编码。
+- 视觉编码：panel a纵轴改为“归一化JCT（独立运行=1）”，panel c改为“相对独立运行的
+  完成速率（独立运行=1，越高越好）”；两条数值轴不再在每个点旁重复标同一数值，准确值
+  直接由刻度读取。只有无数值坐标轴的panel b保留表内精确数字，减少冗余和标签遮挡。
+  panel b 的变化列统一使用相对变化：MFU从38.2%增至46.8%，表内写相对`+22.41%`，不再
+  单独使用`+8.56pp`；Static/Shared原值均为中性深灰，变化上涨为红、下跌为绿，并以正负号
+  冗余编码。panel c 只用普通连线对照两个互斥测量臂（静态/共享同上限A/B），不加箭头、
+  不加引导标注，Jain 与 long spread 文字放在右下角空白区。
+- panel c 归一化基线修正（2026-08-18）：原稿 Static 臂误用 quarter-single 基线
+  （`matched_competition_static`，扣配额损失口径），与 Shared 臂的 full-single 基线
+  （`shared_fourjob`）分母不同，视觉上会让 Shared Long 显得比 Static 差。现两臂统一为
+  full-single 基线（`static_fourjob` vs `shared_fourjob`，均为 full-pool isolated JCT /
+  concurrent JCT）：Static 四 Job 为 0.22/0.29/0.29/0.30，Shared 为 0.80/0.31/0.37/0.63，
+  四个 Job 全部 Shared 更高，与 panel a 的 JCT 结论一致；同基线 Jain 为 0.988→0.876。
+  quarter-single 口径（Jain=0.998）仅保留作“扣除配额损失后 Static 竞争退化很均匀”的
+  诊断说明，不再与 Shared 同图比较。
 - 支持：shared credit 提高 work conservation，并显著帮助 Short，但当前 equal-weight 点的
   Jain 与 Long 间离散仍需 fairness/SLO guard；因此动态调度目标必须同时包含效率和隔离。
 - 不支持：shared/dynamic 普遍胜出、weighted/SLO 已验证、图像动态策略已胜出。

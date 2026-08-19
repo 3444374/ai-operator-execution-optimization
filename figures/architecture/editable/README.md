@@ -6,14 +6,14 @@
 
 | 图 | 答辩任务 | 建议页面 |
 |---|---|---|
-| `01_research_gap` | 说明 Database 与 Model Service 之间的研究空白、两项研究内容与共同使能 | 第 5 页 |
+| `01_research_gap` | 说明 Database 与 Model Service 之间的三类研究空白，不提前展示项目方案 | 第 5 页 |
 | `02_system_architecture` | 总体闭环与跨模态复用：work → state → bounded control → sink | 第 11 页 |
 | `03_work_unit` | 研究内容一：分阶段 WorkDescriptor、候选 Packing 与同 work budget 评价 | 第 12–13 页 |
 | `04_state_aware_scheduling` | 研究内容二：安全容量、shared credit、fair queue、routing 与 completion release | 第 14–15 页 |
 | `05_evidence_gate` | 已有研究基础与后续工作计划 | 第 19 页 |
 | `opening_background_20260812/06_ai_native_execution_architecture` | 数据库 AI 算子外部执行工作流 | 第 2 页 |
-| `opening_background_20260812/07_traditional_vs_external_ai_operator` | 传统数据库算子与外部 AI 算子的执行假设对照 | 第 3 页 |
-| `opening_background_20260812/08_related_work_landscape` | 数据库 AI、数据执行、推理服务、代价决策的相关工作分层 | 第 4 页 |
+| `opening_background_20260812/07_traditional_vs_external_ai_operator` | 传统成本字段与通用外部 AI 多阶段执行链路对照 | 第 3 页 |
+| `opening_background_20260812/08_related_work_landscape` | 数据库 AI、数据执行、推理服务、代价决策的相关工作分层与衔接缺口 | 第 4 页 |
 
 每张图提供：
 
@@ -38,9 +38,9 @@
 6. 禁止用整页位图、白色遮罩或新卡片覆盖旧错误对象。修改时应删除错误节点并重建单一干净结构；导出前检查重复边框、共线重复路径和隐藏残片。
 7. 箭头除语义正确外还要服从统一视觉层级：同类主流程使用一致的线宽、头部尺寸、中心线和端点留白；短间距缩小头部；反馈流用更细的灰色虚线和更小头部走外围；汇合后只保留一个箭头头部。图例必须同步这些样式。
 
-`opening_background_20260812/` 是第 2–4 页的补充批次。三图均按实际项目边界重写，而不是照抄
-参考图：不使用“研究边界”内部说明，不把模型服务内部 batching 写成研究内容，不把相关工作
-缺口写成已证实结论。每张图均提供 Draw.io、SVG、1600×900 PNG 和独立审计；批次清单见同目录
+`opening_background_20260812/` 是第 2–4 页的补充批次。背景页与方案页严格分开：第 3 页只画
+大众化外部 AI 算子流程，不提前使用本项目的 Work Unit、credit 或 state-aware 控制设计；第 4 页
+只作相关工作分层和审慎问题归纳。每张图均提供 Draw.io、SVG、1600×900 PNG 和独立审计；批次清单见同目录
 `drawio_batch_manifest.json`。
 
 批次选择合同见 `../../audit/opening_editable_diagrams_manifest_20260811.md`；原始参考图仅保存在 `../../audit/reference_opening_editable_20260811/` 供视觉审计，不作为正式材料插图。

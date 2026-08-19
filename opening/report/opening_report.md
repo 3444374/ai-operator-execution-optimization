@@ -133,7 +133,9 @@ Ray 以 task 和 actor 支撑分布式 AI 应用，Ray Data 的 Streaming Batch 
 
 #### 4.6.1 动机证据：为什么需要工作量描述、状态感知与有界控制
 
-![固定行隐藏工作量、静态上限不等于运行状态](../../figures/opening_figure_set/main_png/P07_动机证据_工作量运行状态与容量边界.png)
+![固定行隐藏工作量](../../figures/opening_figure_set/main_png/P07A_动机证据_记录数与模型工作量.png)
+
+![静态上限不等于运行状态](../../figures/opening_figure_set/main_png/P07B_动机证据_运行状态与容量边界.png)
 
 固定 16 行批次的输入 token 与输出上限之和，最小和最大中位数分别为 474 与 6,793 token，相差 14.3 倍，说明行数只能表示数据库记录数量，不能代表模型计算量。同一每端点 65K 工作量上限下，高输入压力时在途工作量达到配置上限、MFU 约 35%；到达受限时峰值仅为上限的 29%、MFU 约 7%，说明静态参数不是运行状态。八档扫描还显示，每端点 65K 已达到最大已测吞吐的 97.8%；继续增加工作量主要进入边际收益递减区，P99 在 98K 时由 36.8 秒升至 40.0 秒。
 
@@ -232,7 +234,9 @@ work balance 与 locality preservation 的联合组织，不支持某个 organiz
 
 #### 4.6.7 图像分阶段工作量与状态感知动机
 
-![图像负载的阶段失衡、传输形态与在途窗口筛选](../../figures/opening_figure_set/main_png/P08_图像阶段_准备传输与GPU执行失配.png)
+![图像负载的准备阶段失衡](../../figures/opening_figure_set/main_png/P08A_图像阶段_准备阶段失衡.png)
+
+![图像负载的传输形态与在途窗口筛选](../../figures/opening_figure_set/main_png/P08B_图像阶段_传输形态与提交窗口.png)
 
 CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为
 13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor

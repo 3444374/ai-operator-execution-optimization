@@ -294,7 +294,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 6. `opening_image_baseline_evidence_map`：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的能力门禁、12K 结构诊断与 120K matched-resource 正式排名边界。
 7. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。九张正文数据图与两张单 Job 备份图已经完成可读性与证据边界审计；无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `figures/opening_figure_set/` 进入：PPT 按页码汇总 17 张主讲图，其中 P02–P04 是背景/相关工作概念图；报告正文仍使用 P05–P19 的 14 张研究/证据图。图集另列 8 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。
+权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。九张正文数据图与两张单 Job 备份图已经完成可读性与证据边界审计；无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `figures/opening_figure_set/` 进入：图集现有 19 张主讲候选图，其中 P07/P08 各按 panel a 与 panels b–c 拆成 A/B 两张，P02–P04 是背景/相关工作概念图；本轮未重新生成 PPT。图集另列 8 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。
 
 ## 8. 当前执行顺序
 

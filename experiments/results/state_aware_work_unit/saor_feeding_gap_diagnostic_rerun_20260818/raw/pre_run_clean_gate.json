@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_epoch_s": 1787024245.0021985,
+  "gate_scope": "pre_run_clean_state_not_performance_evidence",
+  "checks": {
+    "endpoints": {
+      "status": "passed",
+      "definition": "health_200_and_vllm_running_waiting_zero",
+      "observations": [
+        {
+          "endpoint_index": 0,
+          "health_status": 200,
+          "running": 0.0,
+          "waiting": 0.0,
+          "idle": true
+        },
+        {
+          "endpoint_index": 1,
+          "health_status": 200,
+          "running": 0.0,
+          "waiting": 0.0,
+          "idle": true
+        }
+      ]
+    },
+    "postgresql": {
+      "status": "passed",
+      "definition": "connectable_pgvector_and_no_other_nonidle_session_in_database",
+      "database_name": "ai_operator",
+      "server_version": "18.4 (Ubuntu 18.4-1.pgdg22.04+1)",
+      "pgvector_version": "0.8.5",
+      "other_active_sessions": 0
+    },
+    "ray": {
+      "status": "passed",
+      "definition": "alive_cluster_no_diagnostic_actor_and_no_held_cpu_gpu",
+      "alive_nodes": 1,
+      "diagnostic_named_actors": [],
+      "cluster_cpu": 32.0,
+      "available_cpu": 32.0,
+      "cluster_gpu": 2.0,
+      "available_gpu": 2.0,
+      "held_cpu": 0.0,
+      "held_gpu": 0.0
+    }
+  }
+}
