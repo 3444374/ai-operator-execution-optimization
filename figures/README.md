@@ -70,8 +70,8 @@ foreground/background interference, queue balance, and prefix locality.
 ### 开题专用图集
 
 开题 PPT 和开题报告不再直接从内容繁杂的 `data/report_main/` 选图。统一进入
-`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 19 张 PPT 主讲候选图，
-`editable_drawio/` 保存 8 张可编辑概念图，`backup_png/` 与 `backup_svg/` 只保存 2 张
+`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 21 张 PPT 主讲候选图，
+`editable_drawio/` 保存 10 张可编辑概念图，`backup_png/` 与 `backup_svg/` 只保存 2 张
 单 Job 诊断备份图。文件采用 `P页码_用途_内容` 或 `B序号_用途_内容` 的中文可读命名。
 
 完整目录、源文件映射和排除项见 `opening_figure_set/README.md`；选择与复制审计见
@@ -129,6 +129,13 @@ completion 路径；05 删除七个圆角修补 mask，并把窄卡文字改为�
 2026-08-17 再次修订 01/P05：将标题、分区、卡片标题、正文和结论分别提高到
 42/30/25/20/26 px；跨栏请求/提交箭头改为固定像素小箭头头与 60 px 完整线身，反馈箭头同步使用
 较小固定头和灰色虚线。权威源与开题专用图集副本均已同步，未修改 PPT。
+
+2026-08-18 新增 03b/P12A（WorkDescriptor 定义页）与 03c/P13A（Work Organizer 定义页）：
+按导师反馈把研究内容一拆成三页——03b 只讲 WorkDescriptor 本身（三层结构：Work Estimation
+四阶段 → Work/Locality/Job-SLO/Confidence 四分类字段 → Consumers），03c 讲 Work Organizer
+（三设计维度 + 五臂候选策略 + 统一比较条件框），原 03/P12（packing 区）保留不动。03b/03c
+均由用户手调 drawio 后按本机 draw.io CLI + 图标内联 + headless Chrome 管线渲染，图集副本
+命名为 P12A/P13A。
 
 2026-08-12 又在 `architecture/editable/opening_background_20260812/` 增补第 2–4 页三张背景图：
 数据库 AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。
