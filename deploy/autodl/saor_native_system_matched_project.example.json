@@ -53,6 +53,8 @@
     "--endpoint-routing", "manifest_pinned",
     "--completion-endpoint-urls", "${COMPLETION_ENDPOINT_URLS}",
     "--model-metrics-urls", "${MODEL_METRICS_URLS}",
+    "--gpu-peak-tflops", "${GPU_PEAK_TFLOPS}",
+    "--mfu-precision", "${MFU_PRECISION}",
     "--organizer", "${SAOR_ORGANIZER}",
     "--batching-policy", "token_budget",
     "--token-budget", "${PROJECT_TOKEN_BUDGET}",
