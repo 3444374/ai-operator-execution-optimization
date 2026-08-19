@@ -1004,6 +1004,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "SAOR_MATCHED_WORKLOAD": "test", "SAOR_MATCHED_ROW_OFFSET": "0",
                 "COMPLETION_MODEL": "test", "VLLM_VERSION": "vllm-test",
                 "COMPLETION_PROTOCOL": "chat_completions", "COMPLETION_MAX_TOKENS": "256",
+                "COMPLETION_HTTP_KEEPALIVE_EXPIRY_S": "4",
                 "SAOR_ORGANIZER": "daft", "TEXT_BASELINES_PYTHON": sys.executable,
                 "COMPLETION_CHAT_ENDPOINT_URL_0": "http://localhost:8000/v1/chat/completions",
                 "COMPLETION_CHAT_ENDPOINT_URL_1": "http://localhost:8001/v1/chat/completions",
