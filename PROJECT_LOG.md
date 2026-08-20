@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-08-20 五臂 eager SAOR profiler 阻断修复（本地）
+
+- 复核确认 `e98a0f1b` 的五臂 Project config 在 eager 合同下正确省略 `--arrival-replay`，但
+  profiler 将 `saor_bounded_ready` 与旧 `saor_bounded_priority` 一并强制 replay，导致 SAOR
+  rehearsal cell 在 runtime 初始化前稳定 `SystemExit("bounded priority requires arrival replay")`。
+- 采用保持五臂可比性的最小修复：旧 single-head bounded-priority 继续要求 replay；
+  `saor_bounded_ready` 只有在 request granularity、bounded concrete pre-registration、shared credit、
+  正 logical payload-byte limit 和 request trace 全部成立时才允许 eager。未给 SAOR 单臂注入
+  replay，也未改变
+  native arms、Job release、manifest、sink、K/W、selector 或 formal authorization 合同。
+- 机制审计确认非 replay profiler 仍生成 concrete request envelopes，typed scheduler 继续受
+  request/work/payload-bytes 窗口约束并执行 observe/register/grant/submit；同时修复第二层潜在阻断，
+  将 observed Job start epoch 同步写入 scheduler request 与 trace seed，并要求 eager bounded-ready
+  开启 request trace。新增真实 runner argv→profiler validator 回归，以及 eager accept、single-head/
+  replay/缺 trace fail-closed 反例。
+- 补充 MFU 文档：Project 继续传 peak/precision 只为 denominator 指纹和 per-path 诊断；统一 FLOP
+  numerator 不可用时五臂 publisher 仍不发布跨臂 MFU。未连接服务器、未运行 GPU、rehearsal 或 formal。
+
 ## 2026-08-20 SAOR vs DRR/VTC-on-vLLM 跨层 capability（本地，blocked）
 
 - 保留提交 `3b7f7b20` 的五臂 database-E2E、官方 S-LoRA VTC capability、历史消融和 formal

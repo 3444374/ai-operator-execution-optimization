@@ -14,8 +14,16 @@ blocker，不能在 vLLM 中重写一个近似版本后称“官方 VTC”。
 
 三个时间概念也已拆开：`job_release_time` 是共同外部到达；`arrival_replay` 是执行器内部逐请求
 回放能力；`bounded-ready` 是 SAOR 在 Job release 之后观察已经可提交的具体 work。SAOR 若在
-release 前 ready/register/submit 会直接失败。MFU 的 peak/precision 已冻结进 config SHA、resolved
+release 前 ready/register/submit 会直接失败。eager 不等于绕过 SAOR：每个 Job 启动后，profiler
+仍把组织结果拆成 concrete request envelopes，再由 bounded-ready 的 K/work/bytes 窗口执行
+register→grant→submit；同一个 observed Job start epoch 会进入 scheduler request 和 trace seed，
+供 SLO budget 与证据 join 使用。只是这些 request 不按 manifest 内的时间逐条睡眠回放。旧 single-head
+bounded-priority 因依赖逐请求到达语义仍必须 replay。
+
+MFU 的 peak/precision 已冻结进 config SHA、resolved
 fingerprint 和 cell，但因五系统没有统一可信 FLOP numerator，本轮 MFU 诚实标 unavailable。
+Project 命令继续传 peak/precision 是为了固定 denominator 和保留可复现实路径诊断，不代表已经
+获得可跨五臂排名的 numerator。
 五臂都使用 PostgreSQL `document_completions` JSON-text sink；native 由矩阵 adapter 写入、Project
 由 profiler 写入，并以执行器内存/trace 输出为独立来源做 readback 内容 digest、行数和 exactly-once
 校验。这样 database-E2E 不会退化为只量模型返回、不验证落库。

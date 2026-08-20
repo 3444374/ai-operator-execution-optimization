@@ -17,6 +17,15 @@ publishes only `all_runs.csv` with `status/failure_reason` plus failed `validati
 and resource ranking tables are withheld. This is local safety infrastructure, not new
 server/GPU evidence and not an authorization to resume the stopped experiment.
 
+The matched Project SAOR command now supports the common eager Job-internal
+arrival contract without executor-internal replay. Profiler validation permits
+this only for `saor_bounded_ready` with request granularity, bounded concrete
+pre-registration, a positive logical payload-byte limit, and request tracing.
+The observed eager Job start epoch is copied to both the scheduler request and
+trace seed, and the scheduler still executes the concrete envelope
+register/grant/submit lifecycle. Legacy
+single-head `saor_bounded_priority` remains replay-only.
+
 The matched contract also freezes the concrete two-endpoint mapping and the two 512-row Job identities.
 Native Daft/Ray Data commands are rechecked offline against their evidence-bound adapter, concurrency,
 and batch selection; Project commands are separately bound to the same endpoint pair. These checks do

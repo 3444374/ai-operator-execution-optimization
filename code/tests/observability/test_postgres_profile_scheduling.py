@@ -1291,6 +1291,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [item.request.prompt_tokens for item in envelopes],
             [32, 34],
         )
+        self.assertEqual(
+            [item.request.oldest_arrival_epoch_s for item in envelopes],
+            [10.0, 10.0],
+        )
         self.assertEqual([item.prompt_tokens for item in seeds], [3, 5])
         self.assertEqual(
             [item.request.preferred_endpoint_id for item in envelopes],

@@ -49,7 +49,22 @@ arms are not forced to implement replay. Only SAOR observes bounded concrete
 ready work, and its ready/credit-registration/submit timestamps must all be at
 or after the corresponding Job release. The frozen 4090 peak and precision are
 part of the resolved fingerprint and every cell. MFU remains `unavailable`
-until a trustworthy cross-system FLOP numerator exists.
+until a trustworthy cross-system FLOP numerator exists. The Project profiler
+still receives `--gpu-peak-tflops` and `--mfu-precision` so the denominator is
+fingerprinted and per-path diagnostics remain reproducible; the matrix
+publisher withholds cross-arm MFU because those flags do not create a uniform
+FLOP numerator for the native arms.
+
+For the eager SAOR arm, the profiler accepts `saor_bounded_ready` without
+`--arrival-replay` only when the command also carries request granularity and
+`bounded_concrete_pre_registration` with a positive logical payload-byte
+limit plus request tracing. Non-replay batches are converted to concrete
+request envelopes, and the same observed Job start epoch is written to both
+the scheduler request and trace seed before the bounded ready window performs
+register/grant/submit. The older
+single-head `saor_bounded_priority` policy still requires request-level arrival
+replay. This keeps all five arms on the same eager Job-internal visibility
+contract without removing SAOR's ready-window mechanism gate.
 
 All five arms use the same `json_text` PostgreSQL sink contract. Native arms
 materialize completion traces through the matrix adapter; Project arms use the

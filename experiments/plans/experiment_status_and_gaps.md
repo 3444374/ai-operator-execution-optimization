@@ -14,6 +14,15 @@ concrete work 的观察。MFU 的 peak=165 TFLOPS/GPU 与
 `bf16_dense_fp32_accumulate` 进入 resolved config、fingerprint、cell 和 summary 复核；因原生与
 Project 暂无统一可信 FLOP numerator，本轮 MFU 明确为 unavailable，不能用环境漂移补值。
 
+审查发现 `e98a0f1b` 仍把 `saor_bounded_ready` 与旧 single-head
+`saor_bounded_priority` 一起强制要求 `--arrival-replay`，而五臂 Project 合同正确地在 eager
+模式下拒绝该 flag，因此 SAOR rehearsal cell 会在 profiler 参数校验阶段停止。现已在本地收窄
+校验：旧 bounded-priority 继续要求 replay；bounded-ready 仅在 request granularity、
+`bounded_concrete_pre_registration`、正 payload-byte limit 和 request trace 同时成立时允许 eager。
+非 replay 执行把同一 observed Job start epoch 写入 scheduler request 与 trace seed，再通过 concrete
+request envelope 进入受 K/work/bytes 限制的 register→grant→submit 路径。
+真实 matched argv 回归已通过；服务器 rehearsal/formal 仍未运行、未授权。
+
 官方 VTC 独立 capability 合同固定 upstream commit、S-LoRA runtime owner、同栈 FCFS/VTC、
 逻辑 workload SHA 与 Job release。官方文档的 CUDA/PyTorch/Ampere 假设尚未在当前 RTX 4090/
 模型栈验证，因此 `blocked_unverified_runtime`；server validation 未运行，formal 未授权。

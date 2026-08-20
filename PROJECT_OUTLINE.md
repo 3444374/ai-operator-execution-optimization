@@ -13,6 +13,9 @@ VTC-on-vLLM reproduction 与 SAOR + native FCFS；当前 frozen installed-source
 custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修改 vLLM”的主方法边界。
 共同外部到达使用 typed Job release；request arrival replay 不再被误写成 native baseline 的必需能力。
 本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
+五臂 eager SAOR 的旧 profiler 冲突已在本地修复：只有旧 single-head bounded-priority 继续强制
+request replay；bounded-ready 在完整 concrete pre-registration 门下直接消费 eager request envelopes。
+服务器 rehearsal/formal 尚未运行。
 
 ## 1. 题目与研究对象
 
