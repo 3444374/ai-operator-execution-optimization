@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-08-20 开题报告正文精修与报告专用图集落位
+
+- 将用户确认的七部分开题报告底稿落实到 `opening/report/opening_report.md`，在不改变题目与两项研究内容的前提下完成针对性精修。
+- 第一章移除平台清单和过强宏观判断；第 2 至第 6 部分补充 DuckDB 与数据库公平调度引用，解释首次出现的英文术语，明确轻量代价估计仅为共同支撑组件，并解决前期实验与 2026 年 9 月计划重复的问题。
+- 第 4 部分补齐机制归因、数据库端到端产品轨和框架原生执行轨三类实验边界；明确 SQuAD 可比、ShareGPT 中 DuckDB 输出限制语义不完全对齐而不可混排；把图像链路收紧为算子级端到端，保留 pgvector 写回与检索质量闭环待补边界。
+- 将 29% 口径限定为运行期间在途工作峰值，将图像准备与 GPU 执行时间比统一为当前证据中的约 13.9 至 31.0 倍；不把共享额度、状态感知或图像动态策略表述为全面胜出。
+- 从已审计开题图集中复制 14 张图片到 `opening/report/figures/`，正文选择引用其中 11 张并逐图补充可比边界与证据说明；其余 3 张保留为候选，不继续增加正文图量。
+- 新增 `opening/report/opening_report_20260820_qa.md`，完成七部分结构、术语、图片路径、证据边界和 46/46 引文覆盖检查；同步更新 `opening/README.md` 与 `PROJECT_INDEX.md`。本轮未生成 Word、DOCX、PPTX，也未同步飞书或 Wiki。
+- 根据 `research/reading_notes/` 和 `research/reference/REFERENCE_INDEX.md` 增补 9 篇文献：InferDB、SmartLite、Database Perspective on LLM Inference Systems、Splitwise、Clockwork、FairServe、DLPM、Autellix 与 CONCERTO。正文分别在数据库内推理路线、推理阶段与容量管理、多作业公平和代价估计论点处引用；四篇预印本保持 arXiv 身份，不冒充正式会议或期刊论文。
+- 同步更新 `opening/slides/opening_ppt.md` 的文献基线分类表，仅维护 Markdown 内容源，不生成或覆盖 PPTX。
+
 ## 2026-08-17 native-system 可搬迁证据与数据库身份 follow-up（本地）
 
 - 继续在 follow-up 分支修复独立审核阻断项；未连接服务器、未运行 native-system/rehearsal/formal，
@@ -55,7 +66,6 @@
 - native-system 定向测试 40 项、SAOR 相关测试 117 项通过；全仓 discover 执行 1,081 项，其中
   1,073 项通过、8 项在加载阶段因本机未安装 `pyarrow`/`psycopg` 未执行，无代码断言失败。compileall、
   `git diff --check` 与变更文件隐私扫描通过；本机没有 `ruff`，因此未把 lint 伪报为已通过。
-
 ## 2026-08-16 修复 SAOR feeding-gap 合同锁跨平台假阴性
 
 - 根因是 Windows `core.autocrlf=true` 将工作区 JSON 转为 CRLF，而已冻结的合同

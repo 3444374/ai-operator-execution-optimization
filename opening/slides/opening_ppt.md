@@ -49,8 +49,8 @@ Database source
 
 | 方向 | Top 15 代表 | 核心补充 |
 |---|---|---|
-| 数据库 AI 算子 | LOTUS、Galois、GaussML | Palimpzest、SemBench、Cortex AISQL |
-| LLM serving/fairness | vLLM、Orca、Sarathi、SGLang、VTC、Llumnix、DistServe | FairServe、DLPM、Autellix、Chiron |
+| 数据库 AI 算子 | LOTUS、Galois、GaussML | Palimpzest、SemBench、Cortex AISQL、InferDB、SmartLite |
+| LLM serving/fairness | vLLM、Orca、Sarathi、SGLang、VTC、Llumnix、DistServe | Database Perspective on LLM Inference Systems、Splitwise、Clockwork、FairServe、DLPM、Autellix、Chiron |
 | Ray | Ray OSDI 2018 | Ray Data Streaming Batch、Daft 官方实现 |
 | 代价估计 | Learned Cost Models、GRACEFUL、COSTREAM、Abacus | CONCERTO、SFS |
 
