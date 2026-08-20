@@ -1,5 +1,44 @@
 # 项目日志
 
+## 2026-08-20 SAOR 多 Job 对照合同重构（本地，服务器未连接）
+
+- 将 native-system matched 从历史八臂/两表合同收敛为五臂 database-E2E：Daft Native、Daft
+  Native/Ray、Ray Data native graph、project frozen-static、SAOR。移除本轮 FIFO/DRR/VTC-style
+  selector development cells 与第二张 selector 排名；历史消融数据不删除。
+- 新增独立 official VTC/S-LoRA capability 合同，固定 upstream commit `192c2e...`、同栈 FCFS/VTC、
+  scheduler owner、逻辑 workload SHA 和 Job release。当前 4090/model/runtime 兼容性未验证，
+  状态保持 blocked；没有连接服务器、没有运行 capability、rehearsal 或 formal。
+- 把共同外部 Job release、执行器内部 arrival replay、SAOR bounded-ready observation 分成独立
+  typed 合同；SAOR release 前 ready/credit-register/submit fail closed。MFU peak/precision 进入
+  resolved config、fingerprint、matrix/cell evidence 和离线复核；统一 numerator 不可信时标 unavailable。
+- 五臂统一启用 `json_text` PostgreSQL sink：native completion trace 由 matrix adapter 写入，Project
+  由 profiler 写入；两路均从 `document_completions` 独立 readback，核对行数、内容 digest 与
+  exactly-once，sink 身份/耗时进入 cell 和 `all_runs.csv`。这只是本地合同接线，未访问数据库。
+- MFU contract 除进入 resolved fingerprint/cell/index 外，也作为 formal authorization artifact 的
+  直接字段精确匹配；同步更新 Git 内非授权模板。peak/precision 漂移不再只依赖间接 hash 被发现。
+- CLI 缩为参数解析与 `code/src` 调用；新增 typed contract/parser、validator、evidence sealer、
+  publisher 和 execution stages。失败 generation 保留 `all_runs.csv`，不发布任何 ranking；异常和
+  command 在持久化边界脱敏。
+- 纠正“本轮未连接服务器”可能被误读为“历史无 rehearsal”的表述。已知历史失败包括：
+  `9ae64db3` bounded-priority gate failure（runner mechanism guard，归档可访问，无可比性能结论）；
+  `dd83136d` server regression（fail-closed evidence regression，无可比排名）；`60e47469` feeding
+  ceiling 92.898%<95%（有效一次性 negative gate，归档可访问，不外推稳定性能）；`f1844c0f`
+  feeding-gap pre-run/diagnostic stop（fail-closed，归档可访问，无完整可比结果）。
+- 历史失败定位细表：`9ae64db3` 使用 `run_shared_vllm_experiment.py --rehearsal`，两轮 root 的
+  完整 archive 为 `saor_bounded_priority_gate_20260813_2de6f93_full.tar.gz`（SHA `be6ce0a3…`），
+  第二轮 0.25K debt-recovery=0；`dd83136d` 同入口复跑
+  `saor_bounded_priority_rehearsal_15201946_regression_20260814/`，同机制门再次拒绝；二者均无正式
+  可比排名，Git 仅保留 compact evidence/报告，完整 root/tar 为仓库外记录。
+- `60e47469` 使用 `run_saor_feeding_ceiling.py --rehearsal`，最终 root
+  `...c988622a...retry2` 与 Git 内 12-file tar 可访问，92.898%<95% 只支持一次性 feeding stop；
+  前两个失败 root 分别因 SSH 中断和 exactly-once 字段缺失，不入结果。`f1844c0f` 使用
+  `run_saor_feeding_gap_diagnostic.py`，root `saor_feeding_gap_diagnostic_345bee2f_20260817` 在
+  11/12 cell 因 1/512 zero-retry ReadError 中止，tar SHA `f4b9793d…`；未运行 summarizer、无完整
+  可比判决，compact evidence 可从该提交恢复，完整 root/tar 为仓库外镜像记录。
+- 本地验证：五臂/VTC/sink 反例合同 16/16，通过；native multi-Job 24/24，通过；experiments
+  全目录回归 229/229，通过；相关模块 `compileall`、四份 JSON schema 语法、`git diff --check`
+  与全仓 secret scan 均通过。验证过程未连接实验服务器、未调用数据库/模型 endpoint、未启动 GPU。
+
 ## 2026-08-19 native-system matched 发布合同修复（本地）
 
 - 修复候选发布配置的两项 validity blocker：Project 五臂由错误的每 Job 2 行改为完整

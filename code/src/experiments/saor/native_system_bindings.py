@@ -76,6 +76,13 @@ def _project_common_contract(project: SharedVllmConfig) -> dict[str, object]:
             project.common_args, "--model-metrics-urls"
         ),
         "database_url": argument_value(project.common_args, "--database-url"),
+        "gpu_peak_tflops_per_gpu": float(argument_value(
+            project.common_args, "--gpu-peak-tflops"
+        )),
+        "mfu_precision": argument_value(project.common_args, "--mfu-precision"),
+        "performance_writeback_mode": argument_value(
+            project.common_args, "--writeback-mode"
+        ),
         "workload_name": argument_value(
             project.common_args, "--source-workload-name"
         ),
@@ -140,6 +147,17 @@ def _native_comparisons(
             arm.job_internal_arrival_contract,
         ),
         "organizer": (native.organizer, arm.organizer),
+        "mfu.status": (native.mfu_status, arm.mfu_contract.status),
+        "mfu.gpu_peak_tflops_per_gpu": (
+            native.gpu_peak_tflops_per_gpu,
+            arm.mfu_contract.gpu_peak_tflops_per_gpu,
+        ),
+        "mfu.precision": (native.mfu_precision, arm.mfu_contract.precision),
+        "mfu.reason": (native.mfu_reason, arm.mfu_contract.reason),
+        "performance_writeback_mode": (
+            native.performance_writeback_mode,
+            arm.performance_writeback_mode,
+        ),
         "source.database_url": (
             native.source.database_url, expected_source["database_url"]
         ),
@@ -213,6 +231,15 @@ def _project_comparisons(
             arm.job_internal_arrival_contract,
         ),
         "organizer": (common["organizer"], arm.organizer),
+        "mfu.gpu_peak_tflops_per_gpu": (
+            common["gpu_peak_tflops_per_gpu"],
+            arm.mfu_contract.gpu_peak_tflops_per_gpu,
+        ),
+        "mfu.precision": (common["mfu_precision"], arm.mfu_contract.precision),
+        "performance_writeback_mode": (
+            common["performance_writeback_mode"],
+            arm.performance_writeback_mode,
+        ),
         "source.database_url": (
             common["database_url"], expected_source["database_url"]
         ),

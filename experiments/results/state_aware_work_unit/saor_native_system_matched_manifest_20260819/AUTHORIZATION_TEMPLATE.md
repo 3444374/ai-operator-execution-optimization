@@ -17,6 +17,12 @@
   "config_sha256": "<sha256 of deploy/autodl/saor_native_system_matched.example.json at merged main>",
   "resolved_config_sha256": "<sha256 of canonical resolved_matched_system_identity JSON>",
   "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+  "mfu_contract": {
+    "status": "unavailable",
+    "gpu_peak_tflops_per_gpu": 165.0,
+    "precision": "bf16_dense_fp32_accumulate",
+    "reason": "cross-system FLOP numerator is not uniformly available"
+  },
   "job_manifests": [
     {"job_id": "job0", "rows": 512, "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"},
     {"job_id": "job1", "rows": 512, "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"}
@@ -24,7 +30,8 @@
 }
 ```
 
-`resolved_config_sha256` 的计算以服务器 env 展开后的 resolved identity 为准
+`resolved_config_sha256` 的计算以服务器 env 展开后的 resolved identity 为准；`mfu_contract`
+还会作为授权 artifact 的直接字段逐项匹配，因此 peak/precision 变化即使遗漏其他审计也会 fail closed。
 （`DATABASE_URL` 在 canonical payload 中替换为其 SHA），生成命令：
 
 ```bash
@@ -56,4 +63,5 @@ PY
 
 - combined manifest（Git 外）：SHA `72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f`
 - Job0/Job1：各 512 行，SHA 分别为 `8e532819…ce9c1`、`85b3f90c…c971`
+- MFU：`status=unavailable`，但 4090 dense peak 与 precision 必须以最终 env 解析值直接写入授权 artifact。
 - config/resolved-config SHA：只在最终审核 commit 与服务器 runtime env 均冻结后计算，不在模板中预填。

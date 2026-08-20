@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-14
+最后更新：2026-08-20
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -8,6 +8,12 @@
 > README、manifest 和 CSV 为准。
 
 ## 1. 当前重点
+
+- **下一轮系统对照已收敛为五臂**：Daft Native、Daft Native/Ray、Ray Data native graph、
+  project frozen-static、SAOR，共用 vLLM FCFS、PostgreSQL source/sink 和 typed Job release。
+  原生臂不接 project K/W/credit/bounded-ready；旧 FIFO/DRR/VTC-style/strict-priority 只作历史
+  内部消融。官方 VTC 单列 S-LoRA 同栈 FCFS/VTC capability，当前因 4090/model/runtime 未验证
+  而 blocked，未授权、未上服务器、不能进入 database-E2E 排名。
 
 - **开题 framing 已冻结**：题目保持“数据库 AI 负载的执行优化与调度研究”，统一对象是
   Database 与 Model Service 之间的 AI Data Execution Layer。

@@ -7,12 +7,14 @@ SAOR native-system matched infrastructure is locally implemented but remains sto
 execution. A non-rehearsal run now requires a separate authorization artifact that exactly binds the
 repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
 runner creates an output root, acquires a host lease, or calls an executor. The reusable offline core
-lives in `src/experiments/saor/native_system_summary.py`; the pre-dispatch executor-binding core lives
-in `src/experiments/saor/native_system_bindings.py`; the CLI only composes these typed components. Before
+lives in `src/experiments/saor/native_system_summary.py`; typed contract/parser/validator/evidence/publisher,
+executor adapters, and the common PostgreSQL sink live beside it under `src/experiments/saor/`; the
+pre-dispatch executor-binding core lives in `src/experiments/saor/native_system_bindings.py`; the CLI
+only composes these typed components. Before
 publishing any ranking, the core recomputes the authorization, contract snapshot, manifest, service
 signature, scheduler-owner map, schedule, index, and per-cell identities. A failed or tampered matrix
-publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system,
-selector, Job, and resource ranking tables are withheld. This is local safety infrastructure, not new
+publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system, Job,
+and resource ranking tables are withheld. This is local safety infrastructure, not new
 server/GPU evidence and not an authorization to resume the stopped experiment.
 
 The matched contract also freezes the concrete two-endpoint mapping and the two 512-row Job identities.
@@ -32,6 +34,8 @@ schema rather than copying arbitrary executor fields. Every valid cell and every
 than inferred from a directory name. The shared typed `DatabaseIdentity` requires the same pair across
 the whole matrix, not merely a non-empty pair per cell. A passed summary keeps
 `formal_authorized=false` and records the narrower fact `formal_authorization_verified=true`.
+Every ranked cell also uses the shared `json_text` PostgreSQL sink and must pass independent
+`document_completions` row-count/content-digest readback with exactly-once evidence.
 
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:

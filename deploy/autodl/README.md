@@ -2,12 +2,12 @@
 
 ## SAOR native-system matched readiness
 
-The CLI config trio is `saor_native_system_matched.example.json` (eight-arm
+The CLI config trio is `saor_native_system_matched.example.json` (five-arm
 identity contract plus one exclusive `SAOR_MATRIX_OUTPUT_ROOT`),
 `saor_native_system_matched_native.example.json` (the three
 framework-owned native arms), and
-`saor_native_system_matched_project.example.json` (frozen-static plus four
-Project selector scenarios). All three must be supplied together; the matrix
+`saor_native_system_matched_project.example.json` (frozen-static plus SAOR).
+All three must be supplied together; the matrix
 runner rejects missing or drifting executor bindings. Resolve their environment
 variables, then run the read-only audit; it sends no model request and starts no
 Ray process. GPU formal is explicitly stopped and not locally authorized. A
@@ -31,11 +31,35 @@ or bounded-ready option. Common immutable endpoint pinning remains a workload
 control shared by every arm; it is not an online Project routing decision.
 
 The matrix index, host lease, and every physical cell directory are created
-below the fresh matrix output root; an existing root is rejected. Warm-up covers
-all eight identities, formal executes only the five complete-system arms, and
-selector development executes only bounded-ready FIFO/DRR/VTC-style. The
-selector report reuses the first matching formal SAOR cells, so SAOR is not
-rerun merely to populate the second table.
+below the fresh matrix output root; an existing root is rejected. Warm-up and
+formal both contain only the five complete-system identities. Historical
+bounded-ready FIFO/DRR/VTC-style/strict-priority evidence remains an internal
+ablation archive and is not regenerated or ranked by this runner.
+
+Every arm declares typed external Job releases (`job0@0s`, `job1@5s`). This is
+separate from executor-internal per-request arrival replay; the eager native
+arms are not forced to implement replay. Only SAOR observes bounded concrete
+ready work, and its ready/credit-registration/submit timestamps must all be at
+or after the corresponding Job release. The frozen 4090 peak and precision are
+part of the resolved fingerprint and every cell. MFU remains `unavailable`
+until a trustworthy cross-system FLOP numerator exists.
+
+All five arms use the same `json_text` PostgreSQL sink contract. Native arms
+materialize completion traces through the matrix adapter; Project arms use the
+profiler-owned sink. Both paths are independently read back from
+`document_completions`, content-digested, row-counted, and required to pass
+exactly-once validation before a cell can be ranked. Sink identity and timing
+are retained in `all_runs.csv`.
+
+`saor_official_vtc_capability.example.json` is a separate, non-executing
+capability contract for the official `Ying1123/VTC-artifact` S-LoRA stack. It
+requires same-stack FCFS and VTC arms and can publish only a serving-mechanism
+table, never this database-E2E ranking. Current 4090/model/runtime compatibility
+is unverified, so it is fail-closed (`blocked_unverified_runtime`, server not
+run, formal not authorized); do not replace it with a project vLLM reimplementation.
+Its schema maps each database Job to one VTC client and freezes the same two
+prompt-manifest SHAs, `[0,5]` releases, 256-token raw-output contract, and the
+explicitly unverified Qwen2.5-7B compatibility status.
 
 After authorization succeeds, the runner creates one fresh `matrix_instance_id`
 and writes it into the contract snapshot, matrix index, and every cell. The
@@ -47,7 +71,7 @@ drifting shard/Job versions fail closed. Persisted runner and summarizer failure
 text is credential-redacted. A passed summary reports
 `formal_authorization_verified=true` while keeping `formal_authorized=false`.
 
-Merge and rehearsal do not authorize formal. Run the eight-cell rehearsal first,
+Merge and rehearsal do not authorize formal. Run the five-cell rehearsal first,
 independently review its sealed validation/root/archive, and only then decide
 whether to issue the separate formal artifact.
 

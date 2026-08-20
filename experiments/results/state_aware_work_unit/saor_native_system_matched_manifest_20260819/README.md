@@ -1,6 +1,6 @@
 # SAOR native-system matched 两 Job 冻结 manifest（2026-08-19）
 
-> **性质**：native-system matched comparison（八臂）的两 Job immutable identity 合同。
+> **性质**：native-system matched comparison（五臂）的两 Job immutable identity 合同。
 > 完整 prompt manifest 留在 Git 外；仓库只冻结行数与 SHA，避免 workload 文本中的个人信息进入版本历史。
 
 ## 文件
@@ -14,7 +14,7 @@
 ## 生成方式
 
 在 Git 外执行 `cat long_512.jsonl short_512.jsonl > matched_long_short_1024.jsonl`（字节级拼接，Job 顺序 =
-Job0 long/bulk → Job1 short/foreground，与 `arrival_offsets_s=[0,5]` 和 Job 内 eager 合同一致）。
+Job0 long/bulk → Job1 short/foreground，与 typed `job_release_schedule=[0,5]` 和 Job 内 eager 合同一致）。
 
 两个来源 SHA 与 `saor_feeding_gap_diagnostic_contract.json`、`saor_active_set_formal.env.example`
 引用的冻结合同值逐字节一致；该两份 manifest 已被 63d17300 六臂 rehearsal、feeding ceiling、

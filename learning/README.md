@@ -1,5 +1,39 @@
 # Learning Notes
 
+## 2026-08-20 为什么现在是“五臂系统表 + 独立 VTC 机制表”
+
+五臂系统表回答完整 database-E2E 系统差异：三条 framework-owned native graph、project
+frozen-static、SAOR。native graph 不能被偷偷接上项目的 bounded-ready、K/W、credit 或 selector；
+static 也不能拥有 SAOR 的动态 ready/debt。旧 FIFO/DRR/VTC-style/strict-priority 数据仍有内部
+归因价值，但不再跟完整系统混排。
+
+官方 VTC 回答另一件事：在官方 S-LoRA serving stack 内，FCFS 换成 VTC 后发生什么。因此必须
+同栈保留 FCFS control；它不含 PostgreSQL、Daft、Ray Data 或 Project coordinator。当前 artifact
+对 CUDA/PyTorch/Ampere 的要求尚未在本项目 4090/model/runtime 上验证，所以只能登记 capability
+blocker，不能在 vLLM 中重写一个近似版本后称“官方 VTC”。
+
+三个时间概念也已拆开：`job_release_time` 是共同外部到达；`arrival_replay` 是执行器内部逐请求
+回放能力；`bounded-ready` 是 SAOR 在 Job release 之后观察已经可提交的具体 work。SAOR 若在
+release 前 ready/register/submit 会直接失败。MFU 的 peak/precision 已冻结进 config SHA、resolved
+fingerprint 和 cell，但因五系统没有统一可信 FLOP numerator，本轮 MFU 诚实标 unavailable。
+五臂都使用 PostgreSQL `document_completions` JSON-text sink；native 由矩阵 adapter 写入、Project
+由 profiler 写入，并以执行器内存/trace 输出为独立来源做 readback 内容 digest、行数和 exactly-once
+校验。这样 database-E2E 不会退化为只量模型返回、不验证落库。
+group JCT 包含 sink；per-Job JCT 截止各 Job 模型响应完成。后者不假装 post-group bulk sink
+能提供逐 Job 落库完成时钟，因此两种边界在 CSV 中分列。
+
+本次是本地合同重构，没有连接服务器，也没有启动新的 rehearsal/formal。这里的“本次未运行”不
+等于历史上从未运行：仓库已归档 2026-08-13 bounded-priority gate failure（`9ae64db3`）、
+2026-08-14 server regression（`dd83136d`）、feeding gate failure（`60e47469`）和 2026-08-17
+feeding-gap fail-closed stop（`f1844c0f`）。它们是可访问的失败/capability 证据，不是性能结论。
+
+| 失败提交 | 已知执行入口 | root / archive | 失败阶段与原因 | 有可比结论？ | 当前可访问性 |
+|---|---|---|---|---|---|
+| `9ae64db3` | `run_shared_vllm_experiment.py --rehearsal` | 两个 development root；`saor_bounded_priority_gate_20260813_2de6f93_full.tar.gz`，SHA `be6ce0a3…` | 第二轮 0.25K debt-recovery=0，runner mechanism gate fail closed | 否；只能作 diagnostic | Git 有 compact evidence；完整 tar 在历史服务器/镜像记录 |
+| `dd83136d` | 同上，formal-evidence 修复后的 regression rehearsal | `saor_bounded_priority_rehearsal_15201946_regression_20260814/` 与同名 tar | 0.25K 再次被相同机制门拒绝 | 否 | Git 报告可访问；完整 root/tar 为仓库外记录 |
+| `60e47469` | `run_saor_feeding_ceiling.py --rehearsal` | `...c988622a...retry2`；Git 内 `saor_project_feeding_ceiling_c988622a_20260814_retry2.tar.gz` | feeding 92.898% < 95%，锁定 negative gate；更早两个失败 root 分别为 SSH 中断、exactly-once 字段缺失 | 只支持该次 feeding stop，不是稳定性能排名 | 最终 12-file tar 与 compact evidence 可访问；前两个失败 root 只留审计记录 |
+| `f1844c0f` | `run_saor_feeding_gap_diagnostic.py` | `saor_feeding_gap_diagnostic_345bee2f_20260817`；tar SHA `f4b9793d…` | 第 11/12 cell 出现 1/512 zero-retry `ReadError`，未运行 summarizer | 否；10/12 仅描述性 | 原提交可恢复 compact evidence；完整 root/tar 为仓库外镜像记录，后续全新 root 重跑 |
+
 ## 2026-08-19 为什么“同一 workload”还要绑定 endpoint、Job 和原生执行参数
 
 系统级比较不能只让 Daft、Ray Data 和 Project 读取同一份 1024 行文件。还必须证明三类执行器
@@ -64,7 +98,7 @@ manifest/schedule 身份。这样 runner 和验证器即使分别看到一份结
 不同 workload 或被替换 scheduler 的结果拼进同一排名。
 
 失败证据也不能删除。现在失败矩阵保留 `all_runs.csv`，其中每个已记录 cell 都有原始 `status` 和
-`failure_reason`；但 `system_summary.csv`、selector、Job 和 resource 性能排名全部禁止发布。这一区分
+`failure_reason`；但 `system_summary.csv`、Job 和 resource 性能排名全部禁止发布。这一区分
 很重要：保留失败事实是可复现性，发布不完整排名则会制造选择性报告。当前改动只是本地安全 hotfix，
 服务器关闭且 native-system GPU/formal 仍停止，没有产生新的性能结论。
 

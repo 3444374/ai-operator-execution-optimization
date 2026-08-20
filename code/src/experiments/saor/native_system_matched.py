@@ -1,4 +1,4 @@
-"""Fail-closed eight-arm configuration and scheduling for SAOR readiness."""
+"""Fail-closed five-arm DB-E2E configuration and scheduling for SAOR."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import random
 import shutil
 import subprocess
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 from urllib.parse import urlsplit, urlunsplit
@@ -20,21 +19,29 @@ from src.baselines.common.database_identity import (
     DatabaseIdentityError,
 )
 from src.baselines.common.manifests import read_manifest
-from src.baselines.common.redact import redact_argument_list, redact_text
-from src.infrastructure.config_env import expand_structure
+from src.baselines.common.redact import redact_text
 from src.infrastructure.runner_lease import acquire_host_runner_lease
+from src.experiments.saor.native_system_contract import (
+    JobManifestIdentity,
+    JobReleaseEpoch,
+    MatchedArm,
+    MatchedSystemConfig,
+    MfuContract,
+    ScheduledMatchedCell,
+)
+from src.experiments.saor.native_system_evidence import (
+    atomic_json as seal_json,
+    persisted_command,
+    persisted_failure,
+)
+from src.experiments.saor.native_system_parser import parse_matched_system_config
 
 
 SYSTEM_ARM_IDS = (
     "daft_native", "daft_ray", "ray_data_http",
     "project_frozen_static", "project_bounded_ready_saor_0125we",
 )
-SELECTOR_SANITY_ARM_IDS = (
-    "project_bounded_ready_fifo", "project_bounded_ready_drr",
-    "project_bounded_ready_vtc_style",
-    "project_bounded_ready_saor_0125we",
-)
-REQUIRED_ARM_IDS = tuple(dict.fromkeys(SYSTEM_ARM_IDS + SELECTOR_SANITY_ARM_IDS))
+REQUIRED_ARM_IDS = SYSTEM_ARM_IDS
 NOMINAL_JOB_OFFSET_S = 5.0
 ACTUAL_CHILD_OFFSET_TOLERANCE_S = 0.25
 FORMAL_AUTHORIZATION_SCOPE = "saor_native_system_matched_formal"
@@ -45,7 +52,8 @@ _PROJECT_FIELDS = {
 }
 _COMMON_FIELDS = (
     "manifest_path", "manifest_sha256", "job_manifests", "endpoint_ids", "service_signature",
-    "protocol", "output_cap", "arrival_offsets_s", "job_internal_arrival_contract",
+    "protocol", "output_cap", "job_release_schedule", "arrival_replay_capability",
+    "job_internal_arrival_contract", "mfu_contract",
     "performance_writeback_mode", "unsupported_request_tails", "source", "organizer",
 )
 
@@ -69,6 +77,38 @@ def _validate_actual_job_offset(actual_offset_s: float) -> float:
             f"{ACTUAL_CHILD_OFFSET_TOLERANCE_S:.2f}s tolerance"
         )
     return deviation_s
+
+
+def validate_release_gated_events(
+    arm: MatchedArm,
+    jobs: list[dict[str, object]],
+) -> None:
+    """Reject SAOR observation, credit registration, or submit before Job release."""
+
+    if arm.arm_id != "project_bounded_ready_saor_0125we":
+        return
+    releases = {
+        item.job_id: item.release_time_s for item in arm.job_release_schedule
+    }
+    for job in jobs:
+        job_id = str(job.get("job_id", ""))
+        scheduled = float(job.get("scheduled_launch_epoch_s", 0.0))
+        if job_id not in releases:
+            raise RuntimeError("SAOR release evidence contains an unknown Job")
+        origin = scheduled - releases[job_id]
+        release_epoch_s = origin + releases[job_id]
+        for field in (
+            "concrete_ready_epoch_s",
+            "credit_registered_epoch_s",
+            "first_submit_epoch_s",
+        ):
+            value = job.get(field)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise RuntimeError(f"SAOR {field} release evidence is missing")
+            if float(value) + 1e-9 < release_epoch_s:
+                raise RuntimeError(
+                    f"SAOR {field} occurred before external Job release"
+                )
 
 
 def normalize_request_tail_status(value: object) -> dict[str, dict[str, object]]:
@@ -126,107 +166,19 @@ def normalize_request_tail_status(value: object) -> dict[str, dict[str, object]]
     return output
 
 
-@dataclass(frozen=True)
-class JobManifestIdentity:
-    """One immutable Job workload bound independently of the combined view."""
-
-    job_id: str
-    path: str
-    rows: int
-    sha256: str
-
-
-@dataclass(frozen=True)
-class MatchedArm:
-    """One immutable physical execution arm; no service work is performed here."""
-
-    arm_id: str
-    kind: str
-    scheduler_owner: str
-    output_root: str
-    manifest_path: str
-    manifest_sha256: str
-    job_manifests: tuple[JobManifestIdentity, ...]
-    endpoint_ids: tuple[str, ...]
-    service_signature: tuple[tuple[str, object], ...]
-    protocol: str
-    output_cap: int
-    arrival_offsets_s: tuple[float, ...]
-    job_internal_arrival_contract: str
-    performance_writeback_mode: str
-    unsupported_request_tails: tuple[tuple[str, object], ...]
-    source: tuple[tuple[str, object], ...]
-    organizer: str
-    calibration_path: str
-    calibration_sha256: str
-    project_contract: tuple[tuple[str, object], ...] = ()
-    raw_field_names: tuple[str, ...] = ()
-
-    def project_value(self, name: str) -> object | None:
-        return dict(self.project_contract).get(name)
-
-
-@dataclass(frozen=True)
-class MatchedSystemConfig:
-    """Immutable experiment-wide readiness inputs."""
-
-    seed: int
-    warmup_repeats: int
-    formal_repeats: int
-    selector_sanity_development_repeats: int
-    matrix_output_root: str
-    endpoint_urls: tuple[str, ...]
-    gpu_formal_locally_authorized: bool
-    matched_manifest_status: str
-    arms: tuple[MatchedArm, ...]
-
-
-@dataclass(frozen=True)
-class ScheduledMatchedCell:
-    """A single physical arm placement in one planned phase/repeat."""
-
-    phase: str
-    repeat: int
-    order_index: int
-    arm_id: str
-    report_blocks: tuple[str, ...]
-
-
 def load_matched_system_config(
     path: Path, *, allow_existing_matrix_output_root: bool = False
 ) -> MatchedSystemConfig:
     """Load a portable config and reject every mismatch before execution."""
 
-    decoded = expand_structure(json.loads(path.read_text(encoding="utf-8")), "config")
-    if not isinstance(decoded, dict) or decoded.get("schema_version") != 1:
-        raise ValueError("matched-system config schema_version must be 1")
-    arms_raw = decoded.get("arms")
-    if not isinstance(arms_raw, list):
-        raise ValueError("arms must be a list")
-    config_directory = path.parent.resolve()
-    arms = tuple(_load_arm(item, config_directory) for item in arms_raw)
-    config = MatchedSystemConfig(
-        seed=_integer(decoded.get("seed"), "seed"),
-        warmup_repeats=_nonnegative(decoded.get("warmup_repeats"), "warmup_repeats"),
-        formal_repeats=_nonnegative(decoded.get("formal_repeats"), "formal_repeats"),
-        selector_sanity_development_repeats=_nonnegative(
-            decoded.get("selector_sanity_development_repeats"),
-            "selector_sanity_development_repeats",
-        ),
-        matrix_output_root=_resolve_config_path(
-            decoded.get("matrix_output_root"), "matrix_output_root", config_directory
-        ),
-        endpoint_urls=tuple(
-            _string(item, "endpoint_urls")
-            for item in decoded.get("endpoint_urls", [])
-        ),
-        gpu_formal_locally_authorized=_boolean(
-            decoded.get("gpu_formal_locally_authorized"), "gpu_formal_locally_authorized"
-        ),
-        matched_manifest_status=_string(
-            decoded.get("matched_manifest_status"), "matched_manifest_status"
-        ),
-        arms=arms,
+    config = parse_matched_system_config(
+        path,
+        arm_loader=_load_arm,
+        path_resolver=_resolve_config_path,
+        integer=_integer,
+        nonnegative=_nonnegative,
+        string=_string,
+        boolean=_boolean,
     )
     errors = _validation_errors(
         config,
@@ -242,19 +194,11 @@ def balanced_matched_schedule(
 ) -> tuple[ScheduledMatchedCell, ...]:
     """Seed-shuffle then rotate physical arms, preserving the shared SAOR cell."""
 
-    if phase not in {"warmup", "formal", "selector_sanity_development"}:
+    if phase not in {"warmup", "formal"}:
         raise ValueError("unsupported schedule phase")
     if repeat < 1:
         raise ValueError("repeat must be positive")
-    phase_arm_ids = {
-        "warmup": REQUIRED_ARM_IDS,
-        "formal": SYSTEM_ARM_IDS,
-        "selector_sanity_development": tuple(
-            arm_id
-            for arm_id in SELECTOR_SANITY_ARM_IDS
-            if arm_id != "project_bounded_ready_saor_0125we"
-        ),
-    }
+    phase_arm_ids = {"warmup": REQUIRED_ARM_IDS, "formal": SYSTEM_ARM_IDS}
     arm_ids = list(phase_arm_ids[phase])
     random.Random(f"{config.seed}:{phase}").shuffle(arm_ids)
     rotation = (repeat - 1) % len(arm_ids)
@@ -265,11 +209,7 @@ def balanced_matched_schedule(
             repeat=repeat,
             order_index=index,
             arm_id=arm_id,
-            report_blocks=tuple(
-                name for name, identities in (
-                    ("system", SYSTEM_ARM_IDS), ("selector_sanity", SELECTOR_SANITY_ARM_IDS)
-                ) if arm_id in identities
-            ),
+            report_blocks=("db_e2e_system",),
         )
         for index, arm_id in enumerate(ordered)
     )
@@ -292,10 +232,7 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
         "status": "passed" if not errors else "failed",
         "errors": errors,
         "resolved_arm_identities": [arm.arm_id for arm in config.arms],
-        "report_blocks": {
-            "system": list(SYSTEM_ARM_IDS),
-            "selector_sanity": list(SELECTOR_SANITY_ARM_IDS),
-        },
+        "report_blocks": {"db_e2e_system": list(SYSTEM_ARM_IDS)},
         "immutable_manifest_hashes": manifests,
         "service_signature": (
             dict(config.arms[0].service_signature) if config.arms else {}
@@ -322,10 +259,6 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
             for phase, count in (
                 ("warmup", config.warmup_repeats),
                 ("formal", config.formal_repeats),
-                (
-                    "selector_sanity_development",
-                    config.selector_sanity_development_repeats,
-                ),
             )
             for repeat in range(1, count + 1)
         ],
@@ -333,12 +266,7 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
 
 
 def _atomic_json(path: Path, payload: object) -> None:
-    temporary = path.with_name(f".{path.name}.tmp")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    temporary.replace(path)
+    seal_json(path, payload)
 
 
 def sha256_file(path: Path) -> str:
@@ -509,7 +437,8 @@ def resolved_matched_system_identity(
                 "service_signature": dict(arm.service_signature),
                 "protocol": arm.protocol,
                 "output_cap": arm.output_cap,
-                "arrival_offsets_s": list(arm.arrival_offsets_s),
+                "job_release_schedule": [item.__dict__ for item in arm.job_release_schedule],
+                "arrival_replay_capability": arm.arrival_replay_capability,
                 "job_internal_arrival_contract": (
                     arm.job_internal_arrival_contract
                 ),
@@ -518,6 +447,7 @@ def resolved_matched_system_identity(
                 "organizer": arm.organizer,
                 "calibration_path": arm.calibration_path,
                 "calibration_sha256": arm.calibration_sha256,
+                "mfu_contract": arm.mfu_contract.__dict__,
                 "executor_selection": (
                     native_calibration_selection(arm)
                     if arm.kind == "native" else None
@@ -533,9 +463,6 @@ def resolved_matched_system_identity(
         "seed": config.seed,
         "warmup_repeats": config.warmup_repeats,
         "formal_repeats": config.formal_repeats,
-        "selector_sanity_development_repeats": (
-            config.selector_sanity_development_repeats
-        ),
         "matched_manifest_status": config.matched_manifest_status,
         "endpoint_urls": list(config.endpoint_urls),
         "metrics_urls": metrics_urls,
@@ -574,6 +501,12 @@ def formal_authorization_requirements(
     }
     if len(job_manifests) != 1:
         raise ValueError("formal authorization requires one frozen two-Job split")
+    mfu_contracts = {
+        json.dumps(arm.mfu_contract.__dict__, sort_keys=True)
+        for arm in config.arms
+    }
+    if len(mfu_contracts) != 1:
+        raise ValueError("formal authorization requires one frozen MFU contract")
     return {
         "schema_version": 1,
         "status": "authorized",
@@ -589,6 +522,7 @@ def formal_authorization_requirements(
             {"job_id": job_id, "rows": rows, "sha256": sha256}
             for job_id, rows, sha256 in next(iter(job_manifests))
         ],
+        "mfu_contract": config.arms[0].mfu_contract.__dict__,
     }
 
 
@@ -640,10 +574,6 @@ def _all_cells(
         for phase, count in (
             ("warmup", config.warmup_repeats),
             ("formal", config.formal_repeats),
-            (
-                "selector_sanity_development",
-                config.selector_sanity_development_repeats,
-            ),
         )
         for repeat in range(1, count + 1)
         for cell in balanced_matched_schedule(config, phase=phase, repeat=repeat)
@@ -664,7 +594,9 @@ def _validate_cell_evidence(
         "implementation_source", "start_epoch_s", "end_epoch_s",
         "database_operator_e2e_s", "jobs", "service_metrics",
         "resource_metrics", "exactly_once", "request_tail_status",
+        "service_fairness_metrics",
         "output_paths", "status", "server_version", "pgvector_version",
+        "mfu_contract", "sink_metrics",
     }
     missing = sorted(required - evidence.keys())
     if missing:
@@ -711,6 +643,41 @@ def _validate_cell_evidence(
                 }.items()
             ):
                 raise RuntimeError("timed PostgreSQL source evidence is invalid")
+        p99_status = job.get("request_p99_status")
+        slo_status = job.get("slo_status")
+        if arm.kind == "native":
+            if (
+                p99_status != "unavailable"
+                or slo_status != "unavailable"
+                or job.get("request_p50_s") != "unavailable"
+                or job.get("request_p95_s") != "unavailable"
+                or job.get("request_p99_s") != "unavailable"
+                or job.get("slo_violation_ratio") != "unavailable"
+                or not job.get("tail_reason")
+            ):
+                raise RuntimeError("native per-Job tail availability is invalid")
+        else:
+            p50 = job.get("request_p50_s")
+            p95 = job.get("request_p95_s")
+            p99 = job.get("request_p99_s")
+            slo = job.get("slo_violation_ratio")
+            if (
+                p99_status != "available"
+                or slo_status != "available"
+                or not isinstance(p50, (int, float))
+                or isinstance(p50, bool)
+                or float(p50) < 0
+                or not isinstance(p95, (int, float))
+                or isinstance(p95, bool)
+                or float(p95) < float(p50)
+                or not isinstance(p99, (int, float))
+                or isinstance(p99, bool)
+                or float(p99) < float(p95)
+                or not isinstance(slo, (int, float))
+                or isinstance(slo, bool)
+                or not 0 <= float(slo) <= 1
+            ):
+                raise RuntimeError("Project per-Job tail/SLO evidence is invalid")
     for job, expected_job in zip(jobs, arm.job_manifests, strict=True):
         if (
             job.get("job_id") != expected_job.job_id
@@ -719,6 +686,9 @@ def _validate_cell_evidence(
             or job.get("completed_count") != expected_job.rows
         ):
             raise RuntimeError("Job identity or frozen row boundary drifted")
+    validate_release_gated_events(arm, jobs)
+    if evidence["mfu_contract"] != arm.mfu_contract.__dict__:
+        raise RuntimeError("cell MFU peak/precision contract drifted")
     starts = [float(job["actual_launch_epoch_s"]) for job in jobs]
     actual_offset_s = starts[1] - starts[0]
     offset_deviation_s = _validate_actual_job_offset(actual_offset_s)
@@ -782,6 +752,40 @@ def _validate_cell_evidence(
         relative_output_paths[str(name)] = relative_path
     if normalize_request_tail_status(arm.unsupported_request_tails) != evidence["request_tail_status"]:
         raise RuntimeError("unsupported request-tail evidence drifted")
+    fairness = evidence["service_fairness_metrics"]
+    if not isinstance(fairness, dict) or set(fairness) != {
+        "starvation_status", "longest_no_service_s",
+        "completion_service_lag_status", "completion_service_lag_p95_work",
+        "completion_service_lag_max_work", "reason",
+    }:
+        raise RuntimeError("service fairness evidence schema is invalid")
+    if arm.kind == "native" and (
+        fairness["starvation_status"] != "unavailable"
+        or fairness["completion_service_lag_status"] != "unavailable"
+        or not fairness["reason"]
+    ):
+        raise RuntimeError("native service fairness availability must remain explicit")
+    sink = evidence["sink_metrics"]
+    if not isinstance(sink, dict) or set(sink) != {
+        "status", "mode", "table", "written_by", "expected_rows",
+        "observed_rows", "expected_digest", "observed_digest", "exactly_once",
+        "sink_wall_s", "verified_epoch_s",
+    }:
+        raise RuntimeError("PostgreSQL sink evidence schema is invalid")
+    expected_writer = "matrix_adapter" if arm.kind == "native" else "project_profiler"
+    if (
+        sink["status"] != "passed"
+        or sink["mode"] != "json_text"
+        or sink["table"] != "document_completions"
+        or sink["written_by"] != expected_writer
+        or sink["exactly_once"] is not True
+        or sink["expected_rows"] != sum(job.rows for job in arm.job_manifests)
+        or sink["observed_rows"] != sink["expected_rows"]
+        or sink["observed_digest"] != sink["expected_digest"]
+        or not isinstance(sink["sink_wall_s"], (int, float))
+        or float(sink["sink_wall_s"]) < 0
+    ):
+        raise RuntimeError("PostgreSQL sink/readback evidence failed")
     try:
         if arm.kind == "native":
             evidence["queue_final"] = validate_native_final_queue(
@@ -811,6 +815,11 @@ def _validate_cell_evidence(
         "job_id", "scheduled_launch_epoch_s", "actual_launch_epoch_s",
         "ended_epoch_s", "completed_count", "expected_count", "actual_work",
         "manifest_sha256", "exactly_once", "shard_provenance",
+        "concrete_ready_epoch_s", "credit_registered_epoch_s",
+        "first_submit_epoch_s",
+        "request_p50_s", "request_p95_s", "request_p99_status",
+        "request_p99_s", "slo_status",
+        "slo_violation_ratio", "tail_reason",
     )
     persisted_jobs = [
         {field: job[field] for field in job_fields if field in job}
@@ -842,11 +851,14 @@ def _validate_cell_evidence(
         "resource_metrics": persisted_resource,
         "exactly_once": evidence["exactly_once"],
         "request_tail_status": evidence["request_tail_status"],
+        "service_fairness_metrics": fairness,
+        "sink_metrics": sink,
         "output_paths": relative_output_paths,
         "status": evidence["status"],
         "server_version": evidence["server_version"],
         "pgvector_version": evidence["pgvector_version"],
-        "command": redact_argument_list([str(item) for item in command]),
+        "mfu_contract": evidence["mfu_contract"],
+        "command": persisted_command(list(command)),
     }
     for field in (
         "run_id", "queue_final", "shared_credit_final",
@@ -874,6 +886,7 @@ def _validate_cell_evidence(
         "manifest_path": runtime_identity["manifest_evidence_path"],
         "manifest_sha256": arm.manifest_sha256,
         "service_signature": dict(arm.service_signature),
+        "mfu_contract": arm.mfu_contract.__dict__,
         "endpoint_urls": list(runtime_identity["endpoint_urls"]),
         "metrics_urls": list(runtime_identity["metrics_urls"]),
         "health_url": runtime_identity["health_url"],
@@ -896,7 +909,7 @@ def run_matched_system(
     rehearsal: bool = False,
     formal_authorization_path: Path | None = None,
 ) -> dict[str, object]:
-    """Run the balanced eight-arm matrix; executors retain all instrumentation."""
+    """Run the balanced five-arm DB-E2E matrix; executors retain instrumentation."""
 
     del instrumenter  # Deliberately injected for asserting the outer layer never samples.
     config = load_matched_system_config(
@@ -989,6 +1002,7 @@ def run_matched_system(
         "authorization_sha256": authorization_sha256,
         "contract_snapshot_sha256": contract_snapshot_sha256,
         "service_signature": dict(config.arms[0].service_signature),
+        "mfu_contract": config.arms[0].mfu_contract.__dict__,
         "endpoint_urls": list(config.endpoint_urls),
         "metrics_urls": runtime_identity["metrics_urls"],
         "health_url": runtime_identity["health_url"],
@@ -998,9 +1012,6 @@ def run_matched_system(
         "repeat_contract": {
             "warmup": config.warmup_repeats,
             "formal": config.formal_repeats,
-            "selector_sanity_development": (
-                config.selector_sanity_development_repeats
-            ),
         },
         "schedule": [
             cell.__dict__ for cell in _all_cells(config, rehearsal=rehearsal)
@@ -1017,7 +1028,7 @@ def run_matched_system(
         index.update(
             {
                 "status": "failed",
-                "lease_error": redact_text(f"{type(exc).__name__}: {exc}"),
+                "lease_error": persisted_failure(exc),
             }
         )
         _atomic_json(matrix_index, index)
@@ -1046,6 +1057,7 @@ def run_matched_system(
                 "manifest_path": sealed_manifest_relative,
                 "manifest_sha256": arm.manifest_sha256,
                 "service_signature": dict(arm.service_signature),
+                "mfu_contract": arm.mfu_contract.__dict__,
                 "endpoint_urls": list(config.endpoint_urls),
                 "metrics_urls": runtime_identity["metrics_urls"],
                 "health_url": runtime_identity["health_url"],
@@ -1094,7 +1106,7 @@ def run_matched_system(
                 running.update(
                     {
                         "status": "failed",
-                        "error": redact_text(f"{type(exc).__name__}: {exc}"),
+                        "error": persisted_failure(exc),
                     }
                 )
                 index["status"] = "failed"
@@ -1132,7 +1144,11 @@ def _load_arm(value: object, config_directory: Path) -> MatchedArm:
         job_manifests=_load_job_manifests(value["job_manifests"], config_directory),
         endpoint_ids=tuple(value["endpoint_ids"]), service_signature=_mapping(value["service_signature"], "service_signature"),
         protocol=_string(value["protocol"], "protocol"), output_cap=_integer(value["output_cap"], "output_cap"),
-        arrival_offsets_s=tuple(value["arrival_offsets_s"]), job_internal_arrival_contract=_string(value["job_internal_arrival_contract"], "job_internal_arrival_contract"),
+        job_release_schedule=_load_job_release_schedule(value["job_release_schedule"]),
+        arrival_replay_capability=_string(
+            value["arrival_replay_capability"], "arrival_replay_capability"
+        ),
+        job_internal_arrival_contract=_string(value["job_internal_arrival_contract"], "job_internal_arrival_contract"),
         performance_writeback_mode=_string(value["performance_writeback_mode"], "performance_writeback_mode"),
         unsupported_request_tails=_mapping(value["unsupported_request_tails"], "unsupported_request_tails"),
         source=_mapping(value["source"], "source"), organizer=_string(value["organizer"], "organizer"),
@@ -1142,6 +1158,7 @@ def _load_arm(value: object, config_directory: Path) -> MatchedArm:
         calibration_sha256=_string(
             value["calibration_sha256"], "calibration_sha256"
         ),
+        mfu_contract=_load_mfu_contract(value["mfu_contract"]),
         project_contract=project_contract,
         raw_field_names=tuple(value),
     )
@@ -1173,13 +1190,49 @@ def _load_job_manifests(
     return tuple(output)
 
 
+def _load_job_release_schedule(value: object) -> tuple[JobReleaseEpoch, ...]:
+    if not isinstance(value, list) or len(value) != 2:
+        raise ValueError("job_release_schedule must contain exactly two Jobs")
+    output: list[JobReleaseEpoch] = []
+    for index, raw in enumerate(value):
+        if not isinstance(raw, dict) or set(raw) != {"job_id", "release_time_s"}:
+            raise ValueError("job_release_schedule entries have an invalid schema")
+        release_time = raw["release_time_s"]
+        if isinstance(release_time, bool) or not isinstance(release_time, (int, float)):
+            raise ValueError(f"job_release_schedule[{index}].release_time_s must be numeric")
+        output.append(JobReleaseEpoch(
+            job_id=_string(raw["job_id"], f"job_release_schedule[{index}].job_id"),
+            release_time_s=float(release_time),
+        ))
+    return tuple(output)
+
+
+def _load_mfu_contract(value: object) -> MfuContract:
+    required = {"status", "gpu_peak_tflops_per_gpu", "precision", "reason"}
+    if not isinstance(value, dict) or set(value) != required:
+        raise ValueError("mfu_contract has an invalid schema")
+    peak = value["gpu_peak_tflops_per_gpu"]
+    if isinstance(peak, bool) or not isinstance(peak, (int, float)) or float(peak) <= 0:
+        raise ValueError("mfu_contract gpu_peak_tflops_per_gpu must be positive")
+    status = _string(value["status"], "mfu_contract.status")
+    if status not in {"available", "unavailable"}:
+        raise ValueError("mfu_contract.status must be available or unavailable")
+    reason = _string(value["reason"], "mfu_contract.reason")
+    return MfuContract(
+        status=status,
+        gpu_peak_tflops_per_gpu=float(peak),
+        precision=_string(value["precision"], "mfu_contract.precision"),
+        reason=reason,
+    )
+
+
 def _validation_errors(
     config: MatchedSystemConfig, *, check_matrix_output_root: bool = True
 ) -> list[str]:
     errors: list[str] = []
     arm_ids = tuple(arm.arm_id for arm in config.arms)
     if len(arm_ids) != len(set(arm_ids)) or set(arm_ids) != set(REQUIRED_ARM_IDS) or len(arm_ids) != len(REQUIRED_ARM_IDS):
-        errors.append("arms must contain exactly the eight unique required arm IDs")
+        errors.append("arms must contain exactly the five unique required arm IDs")
     if not config.arms:
         return errors
     if config.matched_manifest_status != "ready_frozen":
@@ -1188,10 +1241,6 @@ def _validation_errors(
         errors.append("endpoint_urls must contain two unique frozen endpoints")
     if config.gpu_formal_locally_authorized:
         errors.append("local authorization never permits GPU formal execution")
-    if config.selector_sanity_development_repeats > config.formal_repeats:
-        errors.append(
-            "selector_sanity_development_repeats must not exceed formal_repeats"
-        )
     if check_matrix_output_root and Path(config.matrix_output_root).exists():
         errors.append("matrix_output_root already exists")
     output_roots = [arm.output_root for arm in config.arms]
@@ -1202,10 +1251,22 @@ def _validation_errors(
         expected_kind = "native" if arm.arm_id in SYSTEM_ARM_IDS[:3] else "project"
         if arm.kind != expected_kind:
             errors.append(f"{arm.arm_id} must be a {expected_kind} arm")
-        if arm.arrival_offsets_s != (0, 5) or arm.job_internal_arrival_contract != "eager":
-            errors.append(f"{arm.arm_id} must use eager internal arrival with offsets [0, 5]")
-        if arm.performance_writeback_mode != "none":
-            errors.append(f"{arm.arm_id} performance writeback must be none")
+        if (
+            tuple(item.job_id for item in arm.job_release_schedule) != ("job0", "job1")
+            or arm.arrival_offsets_s != (0.0, 5.0)
+            or arm.job_internal_arrival_contract != "eager"
+        ):
+            errors.append(
+                f"{arm.arm_id} must use typed job0/job1 releases at [0, 5] with eager internal arrival"
+            )
+        if arm.arrival_replay_capability != "not_used":
+            errors.append(
+                f"{arm.arm_id} request arrival replay must remain executor-internal and unused"
+            )
+        if arm.performance_writeback_mode != "json_text":
+            errors.append(
+                f"{arm.arm_id} must use the shared json_text PostgreSQL sink"
+            )
         try:
             normalize_request_tail_status(arm.unsupported_request_tails)
         except RuntimeError as error:
@@ -1288,6 +1349,7 @@ def _validation_errors(
         for field in (
             "manifest_path", "manifest_sha256", "job_manifests",
             "endpoint_ids", "service_signature", "protocol", "output_cap",
+            "job_release_schedule", "mfu_contract",
         ):
             if getattr(arm, field) != getattr(reference, field):
                 errors.append(f"{arm.arm_id} {field} drifts from matched contract")
@@ -1316,15 +1378,13 @@ def _validation_errors(
         else:
             errors.append(f"{arm.arm_id} kind must be native or project")
     by_id = {arm.arm_id: arm for arm in config.arms}
-    for arm_id in ("project_bounded_ready_fifo", "project_bounded_ready_drr", "project_bounded_ready_vtc_style"):
-        if by_id.get(arm_id) and by_id[arm_id].kind != "project":
-            errors.append(f"{arm_id} is a Project selector control, never native")
-    for arm_id in SELECTOR_SANITY_ARM_IDS:
-        if by_id.get(arm_id) and by_id[arm_id].project_value("ready_observation") != "bounded_concrete_pre_registration":
-            errors.append(f"{arm_id} must use bounded concrete pre-registration")
     frozen = by_id.get("project_frozen_static")
-    if frozen and frozen.project_value("ready_observation") == "bounded_concrete_pre_registration":
-        errors.append("project_frozen_static must not be bounded-ready")
+    if frozen and (
+        frozen.project_value("ready_observation") is not None
+        or frozen.project_value("debt_caps") is not None
+        or frozen.project_value("policy") != "static_partition"
+    ):
+        errors.append("project_frozen_static must not use bounded-ready, dynamic selection, or debt")
     project_arms = [arm for arm in config.arms if arm.kind == "project"]
     if project_arms:
         project_reference = project_arms[0]
@@ -1334,17 +1394,17 @@ def _validation_errors(
                 "actor_topology", "batching_contract",
             ):
                 if arm.project_value(field) != project_reference.project_value(field):
-                    errors.append(f"{arm.arm_id} {field} drifts across Project selector arms")
+                    errors.append(f"{arm.arm_id} {field} drifts across Project comparison arms")
             if arm.source != project_reference.source or arm.organizer != project_reference.organizer:
-                errors.append(f"{arm.arm_id} source or organizer drifts across Project selector arms")
+                errors.append(f"{arm.arm_id} source or organizer drifts across Project comparison arms")
             if arm.calibration_path != project_reference.calibration_path:
-                errors.append(f"{arm.arm_id} calibration_path drifts across Project selector arms")
+                errors.append(f"{arm.arm_id} calibration_path drifts across Project comparison arms")
             if arm.calibration_sha256 != project_reference.calibration_sha256:
                 errors.append(
-                    f"{arm.arm_id} calibration_sha256 drifts across Project selector arms"
+                    f"{arm.arm_id} calibration_sha256 drifts across Project comparison arms"
                 )
             if arm.unsupported_request_tails != project_reference.unsupported_request_tails:
-                errors.append(f"{arm.arm_id} unsupported request tails drift across Project selector arms")
+                errors.append(f"{arm.arm_id} unsupported request tails drift across Project comparison arms")
     saor = by_id.get("project_bounded_ready_saor_0125we")
     if saor and (saor.project_value("policy") != "saor_bounded_ready" or saor.project_value("ready_observation") != "bounded_concrete_pre_registration" or saor.project_value("debt_caps") != (0.125, None)):
         errors.append("SAOR must use bounded-ready policy/observation and debt caps [0.125, null]")

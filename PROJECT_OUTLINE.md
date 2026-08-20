@@ -1,8 +1,15 @@
 # 项目大纲
 
-更新时间：2026-08-14
+更新时间：2026-08-20
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
+
+当前待执行的 SAOR 系统对照冻结为五臂 database-E2E（Daft Native、Daft Native/Ray、Ray Data
+native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
+执行，不注入项目控制。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
+另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
+共同外部到达使用 typed Job release；request arrival replay 不再被误写成 native baseline 的必需能力。
+本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
 
 ## 1. 题目与研究对象
 

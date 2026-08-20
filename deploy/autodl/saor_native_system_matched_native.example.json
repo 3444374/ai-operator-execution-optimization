@@ -35,6 +35,13 @@
     "workload_name": "${SAOR_MATCHED_WORKLOAD}"
   },
   "job_internal_arrival_contract": "eager",
+  "performance_writeback_mode": "json_text",
+  "mfu_contract": {
+    "status": "unavailable",
+    "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}",
+    "precision": "${MFU_PRECISION}",
+    "reason": "cross-system FLOP numerator is not uniformly available"
+  },
   "arms": [
     {
       "id": "daft_native", "adapter": "daft_native",

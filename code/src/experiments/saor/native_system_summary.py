@@ -1,4 +1,4 @@
-"""Validate stored SAOR matched-system evidence and emit two separate summaries."""
+"""Validate stored SAOR DB-E2E evidence and emit one five-arm summary."""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ from src.baselines.common.redact import redact_text
 from .native_system_matched import (
     FORMAL_AUTHORIZATION_SCOPE,
     REQUIRED_ARM_IDS,
-    SELECTOR_SANITY_ARM_IDS,
     SYSTEM_ARM_IDS,
     sha256_file,
     sha256_payload,
@@ -24,13 +23,15 @@ from .native_system_matched import (
     validate_native_final_queue,
     validate_project_final_credit,
 )
+from .native_system_publisher import (
+    RANKING_OUTPUT_NAMES,
+    publish_failed_generation,
+)
+from .native_system_validator import validate_uniform_cell_identity
 
 
 FORMAL_REPEATS = 3
-_RANKING_OUTPUT_NAMES = (
-    "system_summary.csv", "project_selector_sanity.csv",
-    "job_summary.csv", "resource_summary.csv",
-)
+_RANKING_OUTPUT_NAMES = RANKING_OUTPUT_NAMES
 _OUTPUT_NAMES = ("all_runs.csv", *_RANKING_OUTPUT_NAMES, "validation.json")
 _PROJECT_FLAG_FRAGMENTS = (
     "credit", "coordinator", "router", "bounded-ready", "bounded_ready",
@@ -111,14 +112,14 @@ def _validation(
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "status": status,
-        "comparison_scope": "complete_system_empirical_plus_project_internal_sanity",
-        "selector_victory_decided": False,
+        "comparison_scope": "database_e2e_five_arm_system_matrix",
+        "official_vtc_evidence_included": False,
         # This repository never grants authorization. A passed summary records
         # only that the independent run-specific artifact was verified.
         "formal_authorized": False,
         "formal_authorization_verified": formal_authorization_verified,
         "native_baseline_count": 3,
-        "project_control_count": 5,
+        "project_control_count": 2,
     }
     if errors:
         payload["errors"] = errors
@@ -161,23 +162,12 @@ def _publish_failed_validation(
     audit_rows: list[dict[str, object]],
     errors: list[str],
 ) -> None:
-    errors = [redact_text(str(error)) for error in errors]
-    output_dir.mkdir(parents=True, exist_ok=True)
-    _publish_validation(output_dir, "failing")
-    for name in _RANKING_OUTPUT_NAMES:
-        path = output_dir / name
-        if path.is_file():
-            path.unlink()
-    audit_temporary = output_dir / ".all_runs.csv.failed.tmp"
-    if audit_temporary.is_file():
-        audit_temporary.unlink()
-    _write_csv(audit_temporary, audit_rows)
-    audit_temporary.replace(output_dir / "all_runs.csv")
-    temporary = output_dir / ".validation.json.failed.tmp"
-    if temporary.is_file():
-        temporary.unlink()
-    _write_json(temporary, _validation("failed", errors))
-    temporary.replace(output_dir / "validation.json")
+    publish_failed_generation(
+        output_dir,
+        audit_rows,
+        errors,
+        _validation("failed"),
+    )
 
 
 def _publish_validation(output_dir: Path, status: str) -> None:
@@ -311,7 +301,19 @@ def _resource_row(
         "energy_j": (
             power * (end - start) if power != "unavailable" else "unavailable"
         ),
-        "mfu_fraction_mean": mean("mfu_fraction"),
+        "mfu_fraction_mean": (
+            mean("mfu_fraction")
+            if isinstance(cell.get("mfu_contract"), dict)
+            and cell["mfu_contract"].get("status") == "available"
+            else "unavailable"
+        ),
+        "mfu_status": cell.get("mfu_contract", {}).get("status", "unavailable"),
+        "gpu_peak_tflops_per_gpu": cell.get("mfu_contract", {}).get(
+            "gpu_peak_tflops_per_gpu", "unavailable"
+        ),
+        "mfu_precision": cell.get("mfu_contract", {}).get(
+            "precision", "unavailable"
+        ),
         "vllm_running_mean": mean("running"),
         "vllm_waiting_mean": mean("waiting"),
         "vllm_kv_cache_usage_mean": mean("kv_usage"),
@@ -340,9 +342,14 @@ def _normalize_cell(
         raise ValueError(f"{run_id} has unknown arm {arm_id!r}")
     if cell.get("status") != "passed" or cell.get("exactly_once") is not True:
         raise ValueError(f"{run_id} failed status/exactly-once gate")
+    mfu_contract = cell.get("mfu_contract")
+    if not isinstance(mfu_contract, dict) or mfu_contract != arm_identity.get(
+        "mfu_contract"
+    ):
+        raise ValueError(f"{run_id} MFU peak/precision contract drifted")
     versions = DatabaseIdentity.from_record(cell, run_id).as_dict()
     if (
-        phase not in {"warmup", "formal", "selector_sanity_development"}
+        phase not in {"warmup", "formal"}
         or repeat < 1
     ):
         raise ValueError(f"{run_id} has invalid phase/repeat")
@@ -396,6 +403,30 @@ def _normalize_cell(
             or int(job.get("expected_count", -1)) != int(expected_job.get("rows", -2))
         ):
             raise ValueError(f"{run_id} has invalid Job row accounting")
+        if arm_id in SYSTEM_ARM_IDS[:3]:
+            if (
+                job.get("request_p99_status") != "unavailable"
+                or job.get("slo_status") != "unavailable"
+                or job.get("request_p50_s") != "unavailable"
+                or job.get("request_p95_s") != "unavailable"
+                or job.get("request_p99_s") != "unavailable"
+                or not job.get("tail_reason")
+            ):
+                raise ValueError(f"{run_id} native per-Job tails must be unavailable")
+        else:
+            job_p50 = _finite(job.get("request_p50_s"), f"{run_id} Job P50")
+            job_p95 = _finite(job.get("request_p95_s"), f"{run_id} Job P95")
+            job_p99 = _finite(job.get("request_p99_s"), f"{run_id} Job P99")
+            job_slo = _finite(
+                job.get("slo_violation_ratio"), f"{run_id} Job SLO ratio"
+            )
+            if (
+                job.get("request_p99_status") != "available"
+                or job.get("slo_status") != "available"
+                or not 0 <= job_p50 <= job_p95 <= job_p99
+                or not 0 <= job_slo <= 1
+            ):
+                raise ValueError(f"{run_id} Project per-Job tail/SLO evidence is invalid")
         _validate_source(job, run_id)
         scheduled_starts.append(
             _finite(
@@ -426,6 +457,19 @@ def _normalize_cell(
         p99_status != "unavailable" or slo_status != "unavailable"
     ):
         raise ValueError(f"{run_id} native tails must be unavailable with reasons")
+    fairness = cell.get("service_fairness_metrics")
+    if not isinstance(fairness, dict):
+        raise ValueError(f"{run_id} lacks service fairness availability")
+    sink = cell.get("sink_metrics")
+    if (
+        not isinstance(sink, dict)
+        or sink.get("status") != "passed"
+        or sink.get("mode") != "json_text"
+        or sink.get("table") != "document_completions"
+        or sink.get("exactly_once") is not True
+        or sink.get("observed_digest") != sink.get("expected_digest")
+    ):
+        raise ValueError(f"{run_id} lacks valid PostgreSQL sink/readback evidence")
 
     command = cell.get("command", [])
     if not isinstance(command, list):
@@ -449,6 +493,7 @@ def _normalize_cell(
         **versions,
         "report_blocks": json.dumps(cell.get("report_blocks", [])),
         "database_operator_e2e_s": duration,
+        "group_jct_s": duration,
         "service_prompt_tokens": prompt,
         "service_generation_tokens": generation,
         "service_total_tokens": total,
@@ -459,6 +504,25 @@ def _normalize_cell(
         "slo_status": slo_status,
         "slo_violation_ratio": slo_value,
         "slo_reason": slo_reason,
+        "starvation_status": fairness.get("starvation_status", "unavailable"),
+        "longest_no_service_s": fairness.get("longest_no_service_s", "unavailable"),
+        "completion_service_lag_status": fairness.get(
+            "completion_service_lag_status", "unavailable"
+        ),
+        "completion_service_lag_p95_work": fairness.get(
+            "completion_service_lag_p95_work", "unavailable"
+        ),
+        "completion_service_lag_max_work": fairness.get(
+            "completion_service_lag_max_work", "unavailable"
+        ),
+        "service_fairness_reason": fairness.get("reason", ""),
+        "sink_mode": sink["mode"],
+        "sink_table": sink["table"],
+        "sink_written_by": sink.get("written_by", ""),
+        "sink_expected_rows": sink.get("expected_rows", ""),
+        "sink_observed_rows": sink.get("observed_rows", ""),
+        "sink_exactly_once": sink["exactly_once"],
+        "sink_wall_s": sink.get("sink_wall_s", ""),
         "scheduled_launch_epoch_s": json.dumps(scheduled_starts),
         "actual_launch_epoch_s": json.dumps(actual_starts),
         "scheduled_launch_offset_s": json.dumps([
@@ -491,6 +555,13 @@ def _normalize_cell(
             "launch_deviation_s": actual - scheduled,
             "completion_epoch_s": completion,
             "job_jct_s": completion - scheduled,
+            "request_p50_s": job.get("request_p50_s", "unavailable"),
+            "request_p95_s": job.get("request_p95_s", "unavailable"),
+            "request_p99_status": job.get("request_p99_status", "unavailable"),
+            "request_p99_s": job.get("request_p99_s", "unavailable"),
+            "slo_status": job.get("slo_status", "unavailable"),
+            "slo_violation_ratio": job.get("slo_violation_ratio", "unavailable"),
+            "tail_reason": job.get("tail_reason", "not recorded"),
             "overlap_s": overlap,
             "completion_order": 1 + sorted(ends).index(completion),
         }
@@ -561,6 +632,9 @@ def _summary_row(
         "database_operator_e2e_s_mean": statistics.fmean(duration),
         "database_operator_e2e_s_sample_cv": _sample_cv(duration),
         "database_operator_e2e_s_repeats": json.dumps(duration),
+        "group_jct_s_mean": statistics.fmean(duration),
+        "group_jct_s_sample_cv": _sample_cv(duration),
+        "group_jct_s_repeats": json.dumps(duration),
         "bulk_jct_s_mean": statistics.fmean(bulk_jct),
         "bulk_jct_s_sample_cv": _sample_cv(bulk_jct),
         "bulk_jct_s_repeats": json.dumps(bulk_jct),
@@ -598,6 +672,14 @@ def _resource_summary_row(
         "physical_run_ids": json.dumps([row["run_id"] for row in ordered]),
         "formal_repeats": len(ordered),
     }
+    contract_fields = (
+        "mfu_status", "gpu_peak_tflops_per_gpu", "mfu_precision",
+    )
+    for field in contract_fields:
+        values = {str(by_id[str(row["run_id"])][field]) for row in ordered}
+        if len(values) != 1:
+            raise ValueError(f"{arm_id} {field} drifted across repeats")
+        output[field] = next(iter(values))
     for field in fields:
         raw = [by_id[str(row["run_id"])][field] for row in ordered]
         output[f"{field}_repeats"] = json.dumps(raw)
@@ -621,10 +703,15 @@ _AUDIT_FIELDS = (
     "validation_status", "repository_commit", "matrix_instance_id", "config_sha256",
     "config_fingerprint", "authorization_sha256", "manifest_path",
     "manifest_sha256", "service_signature", "server_version", "pgvector_version",
-    "database_operator_e2e_s",
+    "database_operator_e2e_s", "group_jct_s",
     "service_prompt_tokens", "service_generation_tokens", "service_total_tokens",
     "service_tokens_per_s", "request_p99_status", "request_p99_s",
     "request_p99_reason", "slo_status", "slo_violation_ratio", "slo_reason",
+    "starvation_status", "longest_no_service_s",
+    "completion_service_lag_status", "completion_service_lag_p95_work",
+    "completion_service_lag_max_work", "service_fairness_reason",
+    "sink_mode", "sink_table", "sink_written_by", "sink_expected_rows",
+    "sink_observed_rows", "sink_exactly_once", "sink_wall_s",
     "scheduled_launch_epoch_s", "actual_launch_epoch_s",
     "scheduled_launch_offset_s", "actual_launch_offset_s", "launch_deviation_s",
     "exactly_once",
@@ -869,6 +956,7 @@ def _load_authorized_identity(
     }
     if index.get("scheduler_owners") != scheduler_owners:
         raise ValueError("matrix scheduler-owner identity drifted")
+    validate_uniform_cell_identity(raw_cells, scheduler_owners)
     service_signatures = {
         json.dumps(arm.get("service_signature", {}), sort_keys=True)
         for arm in by_arm.values()
@@ -877,6 +965,14 @@ def _load_authorized_identity(
         iter(by_arm.values())
     ).get("service_signature"):
         raise ValueError("matrix service signature drifted")
+    mfu_contracts = {
+        json.dumps(arm.get("mfu_contract", {}), sort_keys=True)
+        for arm in by_arm.values()
+    }
+    if len(mfu_contracts) != 1 or index.get("mfu_contract") != next(
+        iter(by_arm.values())
+    ).get("mfu_contract"):
+        raise ValueError("matrix MFU peak/precision contract drifted")
     for arm in by_arm.values():
         if str(arm.get("manifest_sha256", "")) != authorization["manifest_sha256"]:
             raise ValueError("frozen manifest identity drifted")
@@ -907,6 +1003,7 @@ def _load_authorized_identity(
             "manifest_path": manifest_evidence_path,
             "manifest_sha256": arm["manifest_sha256"],
             "service_signature": arm["service_signature"],
+            "mfu_contract": arm["mfu_contract"],
             "scheduler_owner": arm["scheduler_owner"],
             "endpoint_urls": endpoint_urls,
             "metrics_urls": metrics_urls,
@@ -976,22 +1073,12 @@ def summarize_matched_system(
             cell for cell in raw_cells
             if isinstance(cell, dict) and cell.get("phase") == "formal"
         ]
-        development_cells = [
-            cell for cell in raw_cells
-            if isinstance(cell, dict)
-            and cell.get("phase") == "selector_sanity_development"
-        ]
         repeat_contract = index.get("repeat_contract", {})
         if not isinstance(repeat_contract, dict):
             raise ValueError("matrix index lacks repeat contract")
         formal_repeats = int(repeat_contract.get("formal", 0))
-        development_repeats = int(
-            repeat_contract.get("selector_sanity_development", 0)
-        )
         if formal_repeats != FORMAL_REPEATS:
             raise ValueError("formal matrix must retain the frozen three repeats")
-        if development_repeats < 1 or development_repeats > formal_repeats:
-            raise ValueError("selector development repeat contract is invalid")
 
         run_ids = [
             _physical_id(cell) for cell in raw_cells
@@ -1012,29 +1099,12 @@ def summarize_matched_system(
             raise ValueError("every system arm must have all formal repeats")
         if len(formal_cells) != len(SYSTEM_ARM_IDS) * formal_repeats:
             raise ValueError("formal matrix has an invalid system-arm shape")
-        development_arm_ids = tuple(
-            arm_id for arm_id in SELECTOR_SANITY_ARM_IDS
-            if arm_id != "project_bounded_ready_saor_0125we"
-        )
-        development_observed = {
-            arm_id: sorted(
-                int(cell.get("repeat", 0)) for cell in development_cells
-                if cell.get("arm_id") == arm_id
-            )
-            for arm_id in development_arm_ids
-        }
-        if any(
-            repeats != list(range(1, development_repeats + 1))
-            for repeats in development_observed.values()
-        ) or len(development_cells) != len(development_arm_ids) * development_repeats:
-            raise ValueError("selector development matrix has an invalid control-arm shape")
-
         project_limits = {
             (
                 int(cell.get("request_limit_per_endpoint", -1)),
                 int(cell.get("work_limit_per_endpoint", -1)),
             )
-            for cell in formal_cells + development_cells
+            for cell in formal_cells
             if cell.get("arm_id") not in SYSTEM_ARM_IDS[:3]
         }
         if (
@@ -1065,7 +1135,7 @@ def summarize_matched_system(
             )
             job_rows.extend(jobs)
             resource_rows.append(resource)
-        phase_order = {"warmup": 0, "formal": 1, "selector_sanity_development": 2}
+        phase_order = {"warmup": 0, "formal": 1}
         run_rows.sort(key=lambda row: (
             phase_order[str(row["phase"])], int(row["repeat"]),
             int(row["order_index"]),
@@ -1083,54 +1153,22 @@ def summarize_matched_system(
                 if row["arm_id"] == arm_id and row["phase"] == "formal"
             ]
 
-        def selector_rows_for(arm_id: str) -> list[dict[str, object]]:
-            phase = (
-                "formal"
-                if arm_id == "project_bounded_ready_saor_0125we"
-                else "selector_sanity_development"
-            )
-            return [
-                row for row in run_rows
-                if row["arm_id"] == arm_id
-                and row["phase"] == phase
-                and int(row["repeat"]) <= development_repeats
-            ]
-
         system = [
             _summary_row(
                 arm_id, rows_for(arm_id), job_rows, "complete_system_empirical"
             )
             for arm_id in SYSTEM_ARM_IDS
         ]
-        selector = [
-            _summary_row(
-                arm_id, selector_rows_for(arm_id), job_rows, "project_internal_sanity"
-            )
-            for arm_id in SELECTOR_SANITY_ARM_IDS
-        ]
-        system_saor = next(row for row in system if row["arm_id"].endswith("0125we"))
-        selector_saor = next(row for row in selector if row["arm_id"].endswith("0125we"))
-        if (
-            json.loads(str(system_saor["physical_run_ids"]))[:development_repeats]
-            != json.loads(str(selector_saor["physical_run_ids"]))
-            or json.loads(str(system_saor["service_tokens_per_s_repeats"]))[
-                :development_repeats
-            ] != json.loads(str(selector_saor["service_tokens_per_s_repeats"]))
-        ):
-            raise ValueError("SAOR reports do not originate from the same physical runs")
-
         staging_dir.mkdir()
         _write_csv(staging_dir / "all_runs.csv", run_rows)
         _write_csv(staging_dir / "system_summary.csv", system)
-        _write_csv(staging_dir / "project_selector_sanity.csv", selector)
         _write_csv(staging_dir / "job_summary.csv", job_rows)
         _write_csv(
             staging_dir / "resource_summary.csv",
             [
                 _resource_summary_row(
                     arm_id,
-                    rows_for(arm_id) if arm_id in SYSTEM_ARM_IDS
-                    else selector_rows_for(arm_id),
+                    rows_for(arm_id),
                     resource_rows,
                 )
                 for arm_id in REQUIRED_ARM_IDS

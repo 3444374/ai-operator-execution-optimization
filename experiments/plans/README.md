@@ -58,6 +58,11 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
 | `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但旧 SAOR 未越过 static；bounded-ready 只冻结 $0.125W_e$。同窗口 selector attribution 与 single-head→bounded-ready FIFO observation bridge 均已完成，SAOR 是观测非支配折中而非 selector winner，`formal_authorized=false`。下一步只补 Daft Native/Daft Ray/Ray Data/project static/proposed 系统级 matched comparison；原生系统 baseline 不接 bounded-ready，4-Job/reservation/dynamic K 仍后置 |
 
+2026-08-20 起，上表“系统级 matched comparison”专指五臂 database-E2E；不再生成 FIFO/DRR/
+VTC-style selector development cells。官方 VTC 使用独立 S-LoRA 同栈 FCFS/VTC capability 配置，
+只进入服务机制表，当前为兼容性未验证的 blocked 状态。历史 selector rehearsal 结果不删除，
+但不得重新标成 native baseline 或拼进五臂排名。
+
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
 arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-level

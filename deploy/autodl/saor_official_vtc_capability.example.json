@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "artifact_url": "https://github.com/Ying1123/VTC-artifact",
+  "artifact_commit": "192c2e2014c69c8c6c699d7113c3822e4db632e6",
+  "runtime_owner": "official_s_lora_artifact",
+  "capability_status": "blocked_unverified_runtime",
+  "blocker": "official artifact targets S-LoRA with documented CUDA/PyTorch/Ampere contracts; current RTX 4090 model/runtime compatibility has not been established",
+  "formal_authorized": false,
+  "server_validation": "not_run",
+  "db_e2e_ranking_eligible": false,
+  "workload": {
+    "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+    "job_manifest_sha256": [
+      "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1",
+      "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"
+    ],
+    "job_release_times_s": [0, 5],
+    "job_mapping": "one_database_job_per_vtc_client",
+    "model_contract": {
+      "system_matrix_model": "Qwen/Qwen2.5-7B-Instruct",
+      "artifact_compatibility_status": "blocked_unverified_runtime",
+      "compatibility_status": "unverified"
+    },
+    "output_contract": {
+      "max_output_tokens": 256,
+      "prompt_format": "raw",
+      "temperature": 0
+    }
+  },
+  "arms": [
+    {
+      "arm_id": "official_vtc_fcfs",
+      "scheduler_owner": "slora_fcfs",
+      "implementation_path": "fair_bench/FCFS"
+    },
+    {
+      "arm_id": "official_vtc",
+      "scheduler_owner": "vtc",
+      "implementation_path": "fair_bench/VTC"
+    }
+  ]
+}

@@ -1,5 +1,24 @@
 # 实验状态与缺口分析
 
+## 2026-08-20 SAOR 对照重构状态（覆盖旧八臂执行说明）
+
+本地合同已重构为五臂 database-E2E：Daft Native、Daft Native/Ray、Ray Data native graph、
+project frozen-static、SAOR，服务层均为同签名 vLLM FCFS。原生三臂拒绝 bounded-ready/K/W/
+credit/inflight/project selector；static 与 SAOR 只共享资源上限，static 不使用动态 ready/debt。
+旧 FIFO/DRR/VTC-style/strict-priority rehearsal 继续作为历史项目内消融证据，但不生成本轮系统
+cell、第二张 selector 表或主排名。
+
+Job release 已从 `arrival replay` 中独立成 typed `[job0@0s, job1@5s]` epoch；eager 是 Job 内部
+请求可见性，request arrival replay 是执行器内部可选能力，bounded-ready 是 SAOR 对 release 后
+concrete work 的观察。MFU 的 peak=165 TFLOPS/GPU 与
+`bf16_dense_fp32_accumulate` 进入 resolved config、fingerprint、cell 和 summary 复核；因原生与
+Project 暂无统一可信 FLOP numerator，本轮 MFU 明确为 unavailable，不能用环境漂移补值。
+
+官方 VTC 独立 capability 合同固定 upstream commit、S-LoRA runtime owner、同栈 FCFS/VTC、
+逻辑 workload SHA 与 Job release。官方文档的 CUDA/PyTorch/Ampere 假设尚未在当前 RTX 4090/
+模型栈验证，因此 `blocked_unverified_runtime`；server validation 未运行，formal 未授权。
+本轮没有连接服务器、没有运行 rehearsal/formal，也没有产生性能结论。
+
 Date: 2026-07-20（最后更新：2026-08-15；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
 2026-08-14 fail-closed 复核已将 completion fairness applicability、Job identity、K/W/weights、
@@ -21,7 +40,7 @@ credit trace 并汇总 Ray submit/actor-ready；共同保存 vLLM、MFU、TTFT/I
 及退出规则只见 `state_aware_work_unit_evaluation_20260808.md` §5.2，任何结果均不得修改旧
 `locked_failed_feeding`。
 
-2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
+2026-08-14 历史本地基础设施状态（已被 2026-08-20 五臂合同覆盖）：native-system matched comparison 的八臂合同、薄编排器与
 两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故
 GPU evidence 仍未完成。输出分成五臂 complete-system empirical 表与四臂 Project-internal
 sanity 表；共享同一个 SAOR 物理 run。FIFO 臂必须写全名 **Project bounded-ready + global

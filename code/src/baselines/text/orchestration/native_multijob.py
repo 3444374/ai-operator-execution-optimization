@@ -126,6 +126,11 @@ class NativeMultiJobConfig:
     minimum_measurement_seconds: float
     source: TimedPostgresManifestSource | None
     job_internal_arrival_contract: Literal["manifest_timed", "eager"]
+    mfu_status: str
+    gpu_peak_tflops_per_gpu: float
+    mfu_precision: str
+    mfu_reason: str
+    performance_writeback_mode: str
     arms: tuple[NativeMultiJobArm, ...]
 
 
@@ -294,7 +299,8 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     }
     matrix_optional = {
         "endpoint_ids", "service_signature", "protocol", "output_cap", "organizer",
-        "source", "job_internal_arrival_contract",
+        "source", "job_internal_arrival_contract", "mfu_contract",
+        "performance_writeback_mode",
     }
     missing = required - set(payload)
     unknown = set(payload) - required - matrix_optional
@@ -316,6 +322,29 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     )
     if arrival_contract != "eager":
         raise ValueError("native multi-job job_internal_arrival_contract must be eager")
+    performance_writeback_mode = _string(
+        payload.get("performance_writeback_mode", "none"),
+        "performance_writeback_mode",
+    )
+    if performance_writeback_mode not in {"none", "json_text"}:
+        raise ValueError("performance_writeback_mode must be none or json_text")
+    mfu_raw = payload.get("mfu_contract")
+    if mfu_raw is None:
+        # Generic native characterization predates MFU publication. It remains
+        # loadable, but its sentinel identity cannot match the SAOR matrix.
+        mfu_raw = {
+            "status": "unavailable",
+            "gpu_peak_tflops_per_gpu": 0.0,
+            "precision": "unknown",
+            "reason": "not_declared_by_generic_native_contract",
+        }
+    elif not isinstance(mfu_raw, dict) or set(mfu_raw) != {
+        "status", "gpu_peak_tflops_per_gpu", "precision", "reason",
+    }:
+        raise ValueError("native multi-job mfu_contract has an invalid schema")
+    mfu_status = _string(mfu_raw["status"], "mfu_contract.status")
+    if mfu_status not in {"available", "unavailable"}:
+        raise ValueError("mfu_contract.status must be available or unavailable")
     output_root = Path(_string(payload["output_root"], "output_root"))
     if output_root.exists():
         raise FileExistsError(f"output_root already exists: {output_root}")
@@ -399,6 +428,15 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
             if source_raw is not None else None
         ),
         job_internal_arrival_contract=arrival_contract,
+        mfu_status=mfu_status,
+        gpu_peak_tflops_per_gpu=_positive_float(
+            mfu_raw["gpu_peak_tflops_per_gpu"],
+            "mfu_contract.gpu_peak_tflops_per_gpu",
+            allow_zero=True,
+        ),
+        mfu_precision=_string(mfu_raw["precision"], "mfu_contract.precision"),
+        mfu_reason=_string(mfu_raw["reason"], "mfu_contract.reason"),
+        performance_writeback_mode=performance_writeback_mode,
         arms=arms,
     )
 

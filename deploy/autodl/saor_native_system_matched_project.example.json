@@ -59,29 +59,11 @@
     "--batching-policy", "token_budget",
     "--token-budget", "${PROJECT_TOKEN_BUDGET}",
     "--token-budget-policy", "static",
-    "--writeback-mode", "none"
+    "--writeback-mode", "json_text"
   ],
   "scenarios": [
     {
       "scenario_id": "project_frozen_static", "policy": "static_partition",
-      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
-      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
-    },
-    {
-      "scenario_id": "project_bounded_ready_fifo", "policy": "shared_fifo",
-      "ready_observation_contract": "bounded_concrete_pre_registration",
-      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
-      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
-    },
-    {
-      "scenario_id": "project_bounded_ready_drr", "policy": "shared_drr",
-      "ready_observation_contract": "bounded_concrete_pre_registration",
-      "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
-      "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
-    },
-    {
-      "scenario_id": "project_bounded_ready_vtc_style", "policy": "external_vtc",
-      "ready_observation_contract": "bounded_concrete_pre_registration",
       "job_count": 2, "rows_per_jobs": [512, 512], "arrival_offsets_s": [0, 5],
       "request_manifests": ["${SAOR_MATCHED_JOB0_MANIFEST}", "${SAOR_MATCHED_JOB1_MANIFEST}"]
     },
