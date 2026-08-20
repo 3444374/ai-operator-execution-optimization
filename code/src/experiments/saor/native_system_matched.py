@@ -48,7 +48,8 @@ FORMAL_AUTHORIZATION_SCOPE = "saor_native_system_matched_formal"
 
 _PROJECT_FIELDS = {
     "k_per_endpoint", "work_limit_per_endpoint", "ready_bytes", "actor_topology",
-    "batching_contract", "policy", "ready_observation", "debt_caps",
+    "batching_contract", "policy", "ready_observation", "debt_caps", "executor",
+    "model_service_scheduler",
 }
 _COMMON_FIELDS = (
     "manifest_path", "manifest_sha256", "job_manifests", "endpoint_ids", "service_signature",
@@ -1248,6 +1249,10 @@ def _validation_errors(
         errors.append("output_root values must be unique")
     reference = config.arms[0]
     for arm in config.arms:
+        if dict(arm.service_signature).get("scheduler") != "vllm_native_fcfs":
+            errors.append(
+                f"{arm.arm_id} service signature scheduler must be vllm_native_fcfs"
+            )
         expected_kind = "native" if arm.arm_id in SYSTEM_ARM_IDS[:3] else "project"
         if arm.kind != expected_kind:
             errors.append(f"{arm.arm_id} must be a {expected_kind} arm")
@@ -1373,8 +1378,19 @@ def _validation_errors(
             if _native_project_control_names(arm.raw_field_names):
                 errors.append(f"{arm.arm_id} native arm rejects explicit Project controls")
         elif arm.kind == "project":
-            if arm.scheduler_owner != "project":
-                errors.append(f"{arm.arm_id} project scheduler owner must be project")
+            if arm.scheduler_owner != "project_daft_ray_submission_then_vllm_fcfs":
+                errors.append(
+                    f"{arm.arm_id} project scheduler owner must be "
+                    "project_daft_ray_submission_then_vllm_fcfs"
+                )
+            if arm.organizer != "daft":
+                errors.append(f"{arm.arm_id} resolved organizer must be daft")
+            if arm.project_value("executor") != "ray_actor":
+                errors.append(f"{arm.arm_id} resolved executor must be ray_actor")
+            if arm.project_value("model_service_scheduler") != "vllm_native_fcfs":
+                errors.append(
+                    f"{arm.arm_id} model service scheduler must be vllm_native_fcfs"
+                )
         else:
             errors.append(f"{arm.arm_id} kind must be native or project")
     by_id = {arm.arm_id: arm for arm in config.arms}

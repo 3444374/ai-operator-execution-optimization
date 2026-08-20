@@ -63,6 +63,11 @@ VTC-style selector development cells。官方 VTC 使用独立 S-LoRA 同栈 FCF
 只进入服务机制表，当前为兼容性未验证的 blocked 状态。历史 selector rehearsal 结果不删除，
 但不得重新标成 native baseline 或拼进五臂排名。
 
+同日新增的 `saor_cross_layer_scheduler_capability_20260820.md` 是另一组独立能力合同：四个 headline
+arms 为 Daft Ray + native FCFS/DRR-on-vLLM reproduction/VTC-on-vLLM reproduction 与
+SAOR + native FCFS。当前 installed-source、Job identity 和 custom-FCFS parity 均未过门，状态
+blocked、server validation 未运行、formal 未授权；不得据其发布性能排名。
+
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
 arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-level

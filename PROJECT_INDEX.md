@@ -7,6 +7,7 @@
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | Unified map from implemented/tested mechanisms to code, tests, principal result directories, evidence level, current decision, and remaining validation | Read first when asking what has actually been implemented, tested, proven, rejected, or left unverified |
 | `experiments/plans/baseline_reference.md` | AI_COMPLETE / AI_EMBED / AI_CLASSIFY 的统一 baseline/benchmark 总入口 | 先确认比较层级、原生性、证据等级、指标合同与当前门禁，再进入模态执行合同 |
+| `experiments/plans/saor_cross_layer_scheduler_capability_20260820.md` | SAOR upstream 与 DRR/VTC-on-vLLM reproduction 的独立四臂 capability、vLLM 0.25.1 源码审计、identity/parity/证据门 | 当前 installed source、Daft Job identity 与 custom-FCFS parity blocked；只作设计与本地语义验证，不授权 GPU/rehearsal/formal |
 | `experiments/plans/text_native_baseline_rerun_20260802.md` | 文本 ceiling/control/vendor-native baseline 原生性审计与复测合同 | 远端重测前读取；定义 Chat/Completions 分轨、64-row validity gate、512-row calibration 与 2,048-row held-out 合同、指标和结论边界 |
 | `experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md` | 2026-07-29 文本 baseline 预注册与逐日执行历史 | 仅追溯旧实验；不再作为当前 gate、calibration 或 formal 的运行依据 |
 | `experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md` | DuckDB `ai` bounded-output 产品对比协议：任务划分、5 类共同指标、operator-only vs database-E2E 两计时边界、请求等价门禁 | 启动任何 DuckDB bounded-output 对照（句子计数 micro gate / SQuAD 短答案 / 三臂正式）前必读 |
@@ -571,6 +572,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/saor_native_system_matched_native.example.json` | Daft Native、Daft Ray、Ray Data HTTP 三个原生执行器的 source/service/protocol/manifest/MFU 合同 | 原生臂保留各自 scheduler ownership；缺失或漂移任一矩阵字段时 fail closed |
 | `deploy/autodl/saor_native_system_matched_project.example.json` | Project frozen-static 与 bounded-ready SAOR 两场景配置 | 两臂执行完整 512+512 行并冻结共同 endpoint、K/W、token-budget、actor topology；旧 selector 不在本轮矩阵 |
 | `deploy/autodl/saor_official_vtc_capability.example.json` | 官方 VTC artifact 的同栈 FCFS/VTC capability 身份、workload SHA 与 release 合同 | 只生成服务机制证据；当前 runtime compatibility blocked、server 未验证、formal 未授权；永不进入 DB-E2E 排名 |
+| `deploy/autodl/saor_cross_layer_scheduler_capability.example.json` | Daft Ray + native FCFS/DRR reproduction/VTC reproduction 与 SAOR + native FCFS 的独立四臂 capability config | 校验 class path/module SHA、前三臂禁用 Project 控制、Job identity、FCFS parity、共同指标与 claim boundary；当前 blocked |
 | `code/scripts/experiments/run_saor_native_system_matched.py` | 本地系统级 matched matrix 编排与 readiness/执行器绑定 fail-closed 入口 | `--rehearsal` 只跑 warm-up；非 rehearsal 必须在任何输出/lease/executor 副作用前验证独立 authorization artifact；异常 stdout 脱敏，当前 GPU/formal 停止 |
 | `code/src/experiments/saor/native_system_bindings.py` | matched/native/Project 三配置到真实 executor 的纯绑定校验核心 | dispatch 前核对 endpoint/metrics/health、两 Job manifest、原生 adapter/C/B 和 Project K/W/batching/actor 合同；不创建输出、不获取 lease |
 | `code/src/experiments/saor/README.md` | SAOR 可复用合同、执行、证据与官方 VTC capability 模块导航 | 修改五臂矩阵或内部历史消融代码前先核对模块边界 |
@@ -579,6 +581,11 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/experiments/saor/native_system_execution.py` | native/Project executor binding、证据规范化与五臂执行核心 | CLI 只解析参数；本模块不改变 formal authorization 的零副作用门禁 |
 | `code/src/experiments/saor/native_system_sink.py` | 五臂共同 PostgreSQL `document_completions` JSON-text sink/readback adapter | native 写入、Project 独立核验；内容 digest、行数与 exactly-once 不通过不得排名 |
 | `code/src/experiments/saor/official_vtc_capability.py` | official S-LoRA FCFS/VTC capability parser、validator 与非 DB 报告 | FCFS 缺失、artifact/owner/workload 漂移或 DB ranking 标签均失败 |
+| `code/src/experiments/saor/cross_layer_scheduler_capability.py` | 跨层四臂 typed config、readiness audit 与未来 evidence schema | blocked/formal 未授权时拒绝 performance report；不能输出同层 selector 胜负 |
+| `code/src/experiments/saor/in_engine_scheduler_logic.py` | 无 vLLM 依赖的 FCFS/DRR/VTC 语义 oracle 与 strict Job request identity codec | 验证 fixed-cap DRR、actual-service VTC、counter lift、work conservation 和非法/重复 identity 反例；不是 serving adapter |
+| `code/src/experiments/saor/vllm_0251_source_audit.py` | 冻结 vLLM 0.25.1 installed-source 版本、关键 marker 与逐文件 SHA 只读审计 | 无安装或源码漂移时 blocked；不启动模型或服务 |
+| `code/src/experiments/saor/vllm_scheduler_plugin.py` | `--scheduler-cls` skeleton：AsyncScheduler custom-FCFS parity control + blocked DRR/VTC reproduction class path | module SHA 进入 capability；installed-source/identity/parity 未过前 DRR/VTC 主动失败 |
+| `code/tests/experiments/test_saor_cross_layer_scheduler_capability.py` | 跨层 capability、Job identity、FCFS/DRR/VTC official-synthetic 语义反例测试 | 修改 class identity、DRR/VTC 语义、schema 或 blocker 时运行 |
 | `code/src/experiments/saor/native_system_summary.py` | native-system matched 封存身份校验、失败证据保留与五臂汇总核心 | 重算 authorization/snapshot/config/manifest/service/scheduler/MFU/schedule/cell identity；失败只发布带 reason 的 all-runs，不发布性能排名 |
 | `code/scripts/analysis/summarize_saor_native_system_matched.py` | native-system matched 离线汇总薄 CLI | 只解析 matrix/output/authorization 路径并调用 `src` 核心；不承载证据业务逻辑、不连接服务、不启动实验 |
 | `code/scripts/analysis/summarize_saor_active_set.py` | 六臂 active-set + 四 matched-solo 的 fail-closed formal 汇总；分离 lifecycle/mechanism gate，复算 slowdown/Jain/SLO/资源；默认路径与 compact replay 均支持 resolution-aware 语义 | runner 完成后生成可审计 formal summary；默认 passed validation 写明 v2/采样周期/重分类，`--mechanism-only` 不升级完整 validation；不产生 theorem 或 dynamic-K claim |
@@ -738,6 +745,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `service_scheduling_backpressure.md` | 研究内容二实验计划：queue-adaptive flush、actor pool 分池路由、K_max 动态控制 + Daft 引擎级参数 |
 | `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
 | `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
+| `saor_cross_layer_scheduler_capability_20260820.md` | SAOR 与 DRR/VTC-on-vLLM 的独立跨层 capability；当前只完成源码审计、骨架、纯逻辑和 schema，GPU/formal 均 blocked |
 | `experiment_status_and_gaps.md` | **实验状态与缺口分析（2026-07-20）**：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。当前实验设计的第一参考。|
 | `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：AI_EMBED 执行门禁 + AI_CLASSIFY 正式候选；ImageNet/ResNet18 单标签与 COCO/CLIP multi-label 两条质量轨道 | 设计图像实验、选择 top-1/top-5 或 mAP/F1、审计五臂 fused/staged baseline 和 host-data-path 门禁时读 |
 | `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级）：MS MARCO 文本，token ID 紧凑搬运轻，瓶颈不显现——仅作"文本下不显现"的边界对照 |

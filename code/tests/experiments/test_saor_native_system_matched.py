@@ -69,6 +69,17 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual(arm["arrival_replay_capability"], "not_used")
             self.assertIn("mfu_contract", arm)
             self.assertEqual(arm["performance_writeback_mode"], "json_text")
+            self.assertEqual(arm["service_signature"]["scheduler"], "vllm_native_fcfs")
+            if arm["kind"] == "project":
+                self.assertEqual(arm["organizer"], "${SAOR_ORGANIZER}")
+                self.assertEqual(arm["executor"], "ray_actor")
+                self.assertEqual(
+                    arm["scheduler_owner"],
+                    "project_daft_ray_submission_then_vllm_fcfs",
+                )
+                self.assertEqual(
+                    arm["model_service_scheduler"], "vllm_native_fcfs"
+                )
 
     def test_native_arm_rejects_bounded_ready_k_w_and_credit_controls(self) -> None:
         for field, value in (
@@ -82,6 +93,24 @@ class MatchedSystemContractTest(unittest.TestCase):
                 raw["arms"][0][field] = value
                 fixture.write(raw)
                 with self.assertRaisesRegex(ValueError, "native arm rejects"):
+                    load_matched_system_config(fixture.path)
+
+    def test_project_arms_require_resolved_daft_ray_actor_and_native_fcfs(self) -> None:
+        for field, value, message in (
+            ("organizer", "sequential", "organizer must be daft"),
+            ("executor", "ray_task", "executor must be ray_actor"),
+            ("scheduler_owner", "project", "scheduler owner must be"),
+            (
+                "model_service_scheduler",
+                "custom_fcfs",
+                "model service scheduler must be vllm_native_fcfs",
+            ),
+        ):
+            with self.subTest(field=field), Fixture() as fixture:
+                raw = fixture.read()
+                raw["arms"][-1][field] = value
+                fixture.write(raw)
+                with self.assertRaisesRegex(ValueError, message):
                     load_matched_system_config(fixture.path)
 
     def test_saor_observation_registration_or_submit_before_release_fails(self) -> None:
@@ -134,7 +163,10 @@ class MatchedSystemContractTest(unittest.TestCase):
             config = load_official_vtc_capability(fixture.path)
             for field, value in (
                 ("artifact_commit", "0" * 40),
-                ("scheduler_owner", "project"),
+                (
+                    "scheduler_owner",
+                    "project_daft_ray_submission_then_vllm_fcfs",
+                ),
                 ("manifest_sha256", "0" * 64),
             ):
                 with self.subTest(field=field):
@@ -200,7 +232,14 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertFalse(any((output / name).exists() for name in RANKING_OUTPUT_NAMES))
 
     def test_mixed_root_manifest_service_owner_commit_or_fingerprint_fails(self) -> None:
-        owners = {arm_id: ("daft" if arm_id.startswith("daft") else "ray_data" if arm_id == "ray_data_http" else "project") for arm_id in REQUIRED_ARM_IDS}
+        owners = {
+            arm_id: (
+                "daft" if arm_id.startswith("daft") else
+                "ray_data" if arm_id == "ray_data_http" else
+                "project_daft_ray_submission_then_vllm_fcfs"
+            )
+            for arm_id in REQUIRED_ARM_IDS
+        }
         base = {
             "repository_commit": "a" * 40,
             "matrix_instance_id": "root",
@@ -376,7 +415,10 @@ class Fixture:
             "manifest_sha256": hashlib.sha256(combined.read_bytes()).hexdigest(),
             "job_manifests": job_contract,
             "endpoint_ids": ["endpoint-0", "endpoint-1"],
-            "service_signature": {"model": "test", "service": "vllm"},
+            "service_signature": {
+                "model": "test", "service": "vllm",
+                "scheduler": "vllm_native_fcfs",
+            },
             "protocol": "completions", "output_cap": 256,
             "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}],
             "arrival_replay_capability": "not_used",
@@ -391,7 +433,7 @@ class Fixture:
             path = calibrations[arm_id]
             return {**common, "arm_id": arm_id, "kind": "native", "scheduler_owner": owner, "output_root": str(root / f"out-{arm_id}"), "calibration_path": str(path), "calibration_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
         def project(arm_id, policy):
-            return {**common, "organizer": "sequential", "arm_id": arm_id, "kind": "project", "scheduler_owner": "project", "policy": policy, "output_root": str(root / f"out-{arm_id}"), "calibration_path": str(project_calibration), "calibration_sha256": hashlib.sha256(project_calibration.read_bytes()).hexdigest(), "k_per_endpoint": 8, "work_limit_per_endpoint": 65536, "ready_bytes": 4096, "actor_topology": {"workers": 1, "concurrency": 256, "cpus_per_worker": 0.25}, "batching_contract": {"policy": "token_budget", "token_budget": 6144, "token_budget_policy": "static"}}
+            return {**common, "organizer": "daft", "arm_id": arm_id, "kind": "project", "scheduler_owner": "project_daft_ray_submission_then_vllm_fcfs", "executor": "ray_actor", "model_service_scheduler": "vllm_native_fcfs", "policy": policy, "output_root": str(root / f"out-{arm_id}"), "calibration_path": str(project_calibration), "calibration_sha256": hashlib.sha256(project_calibration.read_bytes()).hexdigest(), "k_per_endpoint": 8, "work_limit_per_endpoint": 65536, "ready_bytes": 4096, "actor_topology": {"workers": 1, "concurrency": 256, "cpus_per_worker": 0.25}, "batching_contract": {"policy": "token_budget", "token_budget": 6144, "token_budget_policy": "static"}}
         arms = [
             native("daft_native", "daft"),
             native("daft_ray", "daft"),

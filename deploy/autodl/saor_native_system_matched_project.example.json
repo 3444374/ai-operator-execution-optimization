@@ -7,7 +7,8 @@
   "endpoint_ids": ["endpoint-0", "endpoint-1"],
   "service_signature": {
     "model": "${COMPLETION_MODEL}",
-    "service": "${VLLM_VERSION}"
+    "service": "${VLLM_VERSION}",
+    "scheduler": "vllm_native_fcfs"
   },
   "request_limit_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
   "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",

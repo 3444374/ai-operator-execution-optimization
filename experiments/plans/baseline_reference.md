@@ -17,10 +17,16 @@
 > 官方 VTC 另设**服务机制组**：固定 `Ying1123/VTC-artifact@192c2e...`，只比较该 artifact
 > 同一 S-LoRA 栈内 FCFS 与 VTC。它不经过 Daft/Ray Data/PostgreSQL/Project coordinator，
 > 也不进入 database-E2E 排名。当前 4090、模型和 runtime 兼容性未证明，状态为
-> `blocked_unverified_runtime / server_validation=not_run / formal_authorized=false`；禁止在 vLLM
-> 上自写一个“VTC”替代官方 artifact。能力合同把每个 database Job 映射为一个 VTC client，冻结
+> `blocked_unverified_runtime / server_validation=not_run / formal_authorized=false`；禁止用 vLLM
+> reproduction 替代或冒充官方 artifact。能力合同把每个 database Job 映射为一个 VTC client，冻结
 > 同一两份 prompt SHA、`[0,5]` release 与 256-token/raw/temperature-0 输出语义；Qwen2.5-7B
 > 在该 S-LoRA artifact 上的兼容性明确标 `unverified`。
+>
+> 另增一个不进入五臂排名的**跨层完整系统 capability**：Daft Ray + vLLM native FCFS、同数据路径
+> + DRR-on-vLLM reproduction、同数据路径 + VTC-on-vLLM reproduction、SAOR + vLLM native
+> FCFS。官方 artifact 只作 VTC 语义参考；reproduction 名称不得省略。当前 vLLM installed-source
+> SHA、Daft→Request Job identity 与 custom-FCFS parity 均未验证，故 `blocked`，不能运行 GPU 或
+> 发布性能表。详细合同见 `saor_cross_layer_scheduler_capability_20260820.md`。
 
 > **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `research/knowledge_hub.md`。
 

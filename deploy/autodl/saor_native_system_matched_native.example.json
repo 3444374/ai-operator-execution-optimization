@@ -11,7 +11,8 @@
   "model": "${COMPLETION_MODEL}",
   "service_signature": {
     "model": "${COMPLETION_MODEL}",
-    "service": "${VLLM_VERSION}"
+    "service": "${VLLM_VERSION}",
+    "scheduler": "vllm_native_fcfs"
   },
   "protocol": "${COMPLETION_PROTOCOL}",
   "output_cap": "${COMPLETION_MAX_TOKENS}",

@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-08-20 SAOR vs DRR/VTC-on-vLLM 跨层 capability（本地，blocked）
+
+- 保留提交 `3b7f7b20` 的五臂 database-E2E、官方 S-LoRA VTC capability、历史消融和 formal
+  authorization 边界；未合并 `main`，未连接服务器、未启动 vLLM/GPU、未运行 rehearsal/formal。
+- 新增独立四臂 capability：Daft Ray + vLLM native FCFS、同 Daft/Ray 路径 + DRR-on-vLLM
+  reproduction、同路径 + VTC-on-vLLM reproduction、SAOR + vLLM native FCFS。前三臂显式拒绝
+  bounded-ready、Project K/W、shared credit、debt/recovery、上游状态感知与 Project 重排；结论只许
+  比较完整系统的跨层经验差异。
+- 审计官方 vLLM 0.25.1 tag：内置 policy 仅 FCFS/priority，`scheduler_cls` 为非公共接口；自定义
+  class 必须继承该版本 `AsyncScheduler`，否则 async scheduling 会退化。当前 Darwin runtime 无
+  vLLM/Daft/Ray/OpenAI 且无 GPU profile，实际安装源码/version/build/SHA 审计保持 blocked。
+- 新增 installed-source audit、strict typed request identity codec、FCFS/DRR/VTC 纯语义 oracle 与
+  `--scheduler-cls` skeleton。Custom FCFS 只继承 AsyncScheduler 作 parity control；DRR/VTC class
+  在 installed-source、Job identity、FCFS parity 未过门前主动失败，不以 FCFS 冒充已实现策略。
+- DRR 固定按 prompt + output cap 计费且不回溯实际完成长度；VTC 支持 active/inactive counter lift、
+  actual prompt/output service、weighted normalized counter、确定性 tie 与 work conservation。identity
+  缺失、非法、重复均 fail closed，无 default client。
+- 新增四臂 config/evidence schema，绑定 plugin SHA、共同 workload/service/correctness/指标、claim
+  boundary 和 official VTC 语义参考。当前 blockers 为 installed-source、Daft/Ray→Request Job identity
+  透传与 custom-FCFS 八项 parity，故禁止 performance report，formal 仍未授权。
+- 强化现有五臂 Project 门：resolved organizer=`daft`、executor=`ray_actor`、owner=
+  `project_daft_ray_submission_then_vllm_fcfs`、service scheduler=`vllm_native_fcfs`；真实执行前从每个
+  vLLM 进程 cmdline 确认没有 `--scheduler-cls`，缺进程或发现 custom class 均 fail closed。
+
 ## 2026-08-20 SAOR 多 Job 对照合同重构（本地，服务器未连接）
 
 - 将 native-system matched 从历史八臂/两表合同收敛为五臂 database-E2E：Daft Native、Daft

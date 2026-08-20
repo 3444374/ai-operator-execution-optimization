@@ -34,6 +34,7 @@ from src.experiments.shared_vllm import (
     run_shared_vllm_group_cell,
 )
 from src.experiments.shared_vllm.preflight import wait_for_idle
+from src.infrastructure.vllm_preflight import verify_live_vllm_scheduler
 
 
 @dataclass(frozen=True)
@@ -247,6 +248,12 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         project_config_path=options.project_config,
         runner_metrics_urls=options.metrics_urls,
         runner_health_url=options.health_url,
+    )
+    verify_live_vllm_scheduler(
+        matched.endpoint_urls,
+        None,
+        strict=True,
+        tag="saor-five-arm-native-fcfs",
     )
     repository = Path(__file__).resolve().parents[4]
     commit = subprocess.run(

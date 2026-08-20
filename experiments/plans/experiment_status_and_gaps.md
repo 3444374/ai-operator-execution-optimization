@@ -19,6 +19,12 @@ Project 暂无统一可信 FLOP numerator，本轮 MFU 明确为 unavailable，�
 模型栈验证，因此 `blocked_unverified_runtime`；server validation 未运行，formal 未授权。
 本轮没有连接服务器、没有运行 rehearsal/formal，也没有产生性能结论。
 
+新增的 SAOR vs DRR/VTC-on-vLLM 跨层 capability 与上述 official artifact、五臂矩阵均分离。纯
+FCFS/DRR/VTC oracle、strict Job identity decoder、vLLM `--scheduler-cls` skeleton、module SHA 和
+配置/evidence schema 已完成；本机无 vLLM/Daft/Ray，installed-source、Daft identity-only transport
+和 custom-FCFS 八项 parity 尚未验证。DRR/VTC class path 当前主动 blocked，不伪装成可执行实现；
+server validation `not_run`、formal `false`。
+
 Date: 2026-07-20（最后更新：2026-08-15；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
 2026-08-14 fail-closed 复核已将 completion fairness applicability、Job identity、K/W/weights、

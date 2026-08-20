@@ -19,6 +19,12 @@ For the current multi-Job comparison:
   five-arm system, per-Job, and resource tables.
 - `official_vtc_capability.py` is a separate, non-running official S-LoRA
   FCFS/VTC capability contract. It never enters the database-E2E ranking.
+- `cross_layer_scheduler_capability.py` defines the separate four-arm SAOR
+  versus DRR/VTC-on-vLLM complete-system capability and evidence boundary.
+- `in_engine_scheduler_logic.py` is the dependency-free FCFS/DRR/VTC semantic
+  oracle; `vllm_0251_source_audit.py` hashes the actual frozen install, while
+  `vllm_scheduler_plugin.py` exposes a custom-FCFS parity class and deliberately
+  blocked DRR/VTC reproduction class paths.
 
 Historical Project FIFO/DRR/VTC-style/strict-priority modules and evidence stay
 available for internal attribution, but they are not native system baselines and

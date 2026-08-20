@@ -69,6 +69,7 @@ def _project_common_contract(project: SharedVllmConfig) -> dict[str, object]:
             argument_value(project.common_args, "--completion-max-tokens")
         ),
         "organizer": argument_value(project.common_args, "--organizer"),
+        "executor": argument_value(project.common_args, "--executor"),
         "endpoint_urls": csv_argument_values(
             project.common_args, "--completion-endpoint-urls"
         ),
@@ -231,6 +232,11 @@ def _project_comparisons(
             arm.job_internal_arrival_contract,
         ),
         "organizer": (common["organizer"], arm.organizer),
+        "executor": (common["executor"], arm.project_value("executor")),
+        "model_service_scheduler": (
+            dict(project.service_signature).get("scheduler"),
+            arm.project_value("model_service_scheduler"),
+        ),
         "mfu.gpu_peak_tflops_per_gpu": (
             common["gpu_peak_tflops_per_gpu"],
             arm.mfu_contract.gpu_peak_tflops_per_gpu,

@@ -15,7 +15,9 @@ from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
     flag_value_present,
     prefix_cache_flag_enabled,
+    scheduler_cls_value,
     verify_endpoint_cmdlines,
+    verify_endpoint_scheduler_cls,
 )
 
 
@@ -66,6 +68,31 @@ class VllmPreflightPureTests(unittest.TestCase):
         self.assertTrue(flag_value_present(c, "--max-num-seqs", "256"))
         self.assertTrue(flag_value_present(c, "--max-num-batched-tokens", "8192"))
         self.assertFalse(flag_value_present(c, "--max-num-seqs", "512"))
+
+    def test_scheduler_cls_identity_distinguishes_native_and_custom(self):
+        native = self._cmd(8000)
+        custom = native + " --scheduler-cls=module.DRRScheduler"
+        self.assertIsNone(scheduler_cls_value(native))
+        self.assertEqual(scheduler_cls_value(custom), "module.DRRScheduler")
+        verify_endpoint_scheduler_cls(
+            [native], ["http://127.0.0.1:8000/v1/completions"], None
+        )
+        verify_endpoint_scheduler_cls(
+            [custom],
+            ["http://127.0.0.1:8000/v1/completions"],
+            "module.DRRScheduler",
+        )
+
+    def test_native_fcfs_gate_rejects_custom_or_malformed_scheduler_cls(self):
+        url = ["http://127.0.0.1:8000/v1/completions"]
+        with self.assertRaisesRegex(RuntimeError, "scheduler class drift"):
+            verify_endpoint_scheduler_cls(
+                [self._cmd(8000) + " --scheduler-cls module.VTCScheduler"],
+                url,
+                None,
+            )
+        with self.assertRaisesRegex(RuntimeError, "bare --scheduler-cls"):
+            scheduler_cls_value(self._cmd(8000) + " --scheduler-cls")
 
 
 if __name__ == "__main__":

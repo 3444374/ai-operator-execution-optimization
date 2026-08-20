@@ -23,6 +23,13 @@ the frozen Job0 then Job1 files; the loader checks combined SHA, each Job SHA an
 Project scenarios must also execute `[512,512]` rows. Relative calibration and
 output paths are resolved from the example config's directory.
 
+Both Project arms additionally fail closed unless the resolved runner arguments
+are exactly `--organizer daft` and `--executor ray_actor`, the matrix owner is
+`project_daft_ray_submission_then_vllm_fcfs`, and the bound service signature is
+`scheduler=vllm_native_fcfs`. Before dispatch, live vLLM process cmdlines must
+have no `--scheduler-cls`; a missing process or custom class is not accepted as
+native FCFS evidence.
+
 The native executor owns its data graph and scheduling: Daft Native/Ray use the
 vendor C1/B1 control and Ray Data uses the frozen C8/B16 graph selection. Native
 arms carry the literal `native_framework_owned` organizer identity and never
@@ -56,10 +63,20 @@ capability contract for the official `Ying1123/VTC-artifact` S-LoRA stack. It
 requires same-stack FCFS and VTC arms and can publish only a serving-mechanism
 table, never this database-E2E ranking. Current 4090/model/runtime compatibility
 is unverified, so it is fail-closed (`blocked_unverified_runtime`, server not
-run, formal not authorized); do not replace it with a project vLLM reimplementation.
+run, formal not authorized); a project reproduction cannot replace or be named
+as the official artifact.
 Its schema maps each database Job to one VTC client and freezes the same two
 prompt-manifest SHAs, `[0,5]` releases, 256-token raw-output contract, and the
 explicitly unverified Qwen2.5-7B compatibility status.
+
+`saor_cross_layer_scheduler_capability.example.json` is a second, independent
+non-running capability contract. It freezes four headline identities: Daft Ray
+with native FCFS, the same Daft Ray path with DRR-on-vLLM reproduction, the same
+path with VTC-on-vLLM reproduction, and SAOR with native FCFS. The plugin module SHA,
+forbidden Project controls on service-layer arms, identity chain, custom-FCFS
+parity checks, common metrics, and claim boundary are validated locally. The
+current file remains `blocked`: installed vLLM 0.25.1 source, Daft per-request
+Job identity transport, and native/custom FCFS parity have not been proved.
 
 After authorization succeeds, the runner creates one fresh `matrix_instance_id`
 and writes it into the contract snapshot, matrix index, and every cell. The

@@ -8,6 +8,9 @@
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
 执行，不注入项目控制。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
 另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
+另有独立的四臂跨层 capability，计划比较 Daft Ray + native FCFS/DRR-on-vLLM reproduction/
+VTC-on-vLLM reproduction 与 SAOR + native FCFS；当前 frozen installed-source、Job identity 和
+custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修改 vLLM”的主方法边界。
 共同外部到达使用 typed Job release；request arrival replay 不再被误写成 native baseline 的必需能力。
 本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
 

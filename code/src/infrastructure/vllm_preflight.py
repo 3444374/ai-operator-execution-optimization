@@ -55,6 +55,82 @@ def prefix_cache_flag_enabled(cmdline):
     return val.split("=", 1)[1].strip().lower() not in ("false", "0", "off", "no")
 
 
+def scheduler_cls_value(cmdline):
+    """Return the explicit ``--scheduler-cls`` value, or ``None`` for native.
+
+    The five-arm FCFS contract treats absence as the only accepted native-FCFS
+    identity.  A malformed bare flag fails instead of being read as native.
+    """
+
+    tokens = cmdline.split()
+    values = []
+    for index, token in enumerate(tokens):
+        if token.startswith("--scheduler-cls="):
+            values.append(token.split("=", 1)[1])
+        elif token == "--scheduler-cls":
+            if index + 1 >= len(tokens) or tokens[index + 1].startswith("--"):
+                raise RuntimeError("vLLM cmdline has a bare --scheduler-cls flag")
+            values.append(tokens[index + 1])
+    if len(values) > 1:
+        raise RuntimeError("vLLM cmdline defines --scheduler-cls more than once")
+    return values[0] if values else None
+
+
+def verify_endpoint_scheduler_cls(
+    cmdline_pool,
+    endpoint_urls,
+    expected_scheduler_cls,
+    *,
+    strict=True,
+    tag="preflight",
+):
+    """Verify the actual service-layer scheduler class for every endpoint."""
+
+    for url in endpoint_urls:
+        port = url.rsplit(":", 1)[-1].split("/")[0]
+        cmdline = cmdline_for_port(cmdline_pool, port)
+        if cmdline is None:
+            if strict:
+                raise RuntimeError(
+                    f"[{tag}][preflight] port {port}: no matching vLLM cmdline"
+                )
+            continue
+        actual = scheduler_cls_value(cmdline)
+        if actual != expected_scheduler_cls:
+            expected = expected_scheduler_cls or "vLLM native FCFS (no --scheduler-cls)"
+            observed = actual or "vLLM native FCFS (no --scheduler-cls)"
+            raise RuntimeError(
+                f"[{tag}][preflight] port {port}: scheduler class drift; "
+                f"expected {expected}, observed {observed}"
+            )
+
+
+def verify_live_vllm_scheduler(
+    endpoint_urls,
+    expected_scheduler_cls,
+    *,
+    strict=True,
+    tag="preflight",
+):
+    """Fail closed against live cmdlines and return provenance cmdlines."""
+
+    cmdlines = _read_live_cmdlines()
+    if not cmdlines:
+        if strict:
+            raise RuntimeError(
+                f"[{tag}][preflight] no live vLLM process; scheduler is unverified"
+            )
+        return cmdlines
+    verify_endpoint_scheduler_cls(
+        list(cmdlines.values()),
+        endpoint_urls,
+        expected_scheduler_cls,
+        strict=strict,
+        tag=tag,
+    )
+    return cmdlines
+
+
 def verify_endpoint_cmdlines(cmdline_pool, endpoint_urls, declared_flags, strict, tag="preflight"):
     """Pure verifier: raise (strict) or WARN (non-strict) on per-endpoint cmdline mismatches.
 
