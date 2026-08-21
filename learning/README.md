@@ -1,5 +1,20 @@
 # Learning Notes
 
+## 2026-08-21 为什么公平性可以从框架外观察，但不能从完成行数猜
+
+Daft/Ray Data 不公开内部 scheduler，不等于五臂无法比较 tail 和经验公平性。共同的
+observation-only gateway 只给每个 Job 一个独立 path，原样一次转发到同一 vLLM FCFS backend；它
+没有 queue、retry、admission、batch 或 route choice。这样框架仍拥有执行顺序，而 gateway 能统一
+记录真实 request arrival/completion 和 endpoint actual token usage。公平窗口只取两 Job 同时存在
+outstanding gateway requests 的交集，并按实际完成 token work 计算 weighted share、Jain、service
+lag 与 longest no-service。`Jain(completed_rows)` 会把两个 512-row Job 恒算成 1，不能表达服务份额。
+
+系统 headline 另用 T0--T4：T0 在 PostgreSQL 读取/child 初始化前，T1 为首批 source data，T2/T3
+为首请求到达/末请求完成，T4 为完整正确结果在内存中可见。Job/group JCT 和 correct throughput
+包含 source、转换、初始化、排队和模型执行；source/execution/service span 分列解释收益来源。
+输出无需 sink：`writeback=none` 时 completion digest 只做边界外正确性封存。within-run victim
+inflation/recovery 是隔离观测；没有 matched-solo control 时不能写成 full-solo slowdown。
+
 ## 2026-08-21 为什么 readiness 不能相信一份手写的 passed JSON
 
 readiness 是一次证据推导，不是调用者自我声明。system-preflight 现在由可运行入口实际检查 endpoint
@@ -14,8 +29,7 @@ manifest、Job 行数、sink digest、native upstream/adapter provenance 和 raw
 只有 `{}` snapshot 或单个伪 cell 的形式匹配归档无法生成 rehearsal validation；formal authorization
 还显式绑定 matched/native/Project 三份 config SHA，并把 native config 中冻结的 upstream commit 与
 adapter SHA 逐臂对照最终 cell。它绑定的是经深校验的 validation/root/archive，而不是一组可手写的
-布尔字段。本次只完成本地代码和
-CPU 合同测试，没有连接服务器，也没有运行 correctness smoke、rehearsal 或 formal。
+布尔字段。后续 `862d0008` 已用该门完成一次 gateway 前的 correctness smoke/rehearsal；formal 未运行。
 
 ## 2026-08-21 为什么“同一个 endpoint”仍不足以证明五臂可比
 
@@ -37,8 +51,8 @@ smoke、rehearsal 或 formal。服务器归档同时纠正了“五臂 rehearsal
 
 两份 `matrix_index.json` 证明 execution mode、commit、root、cell 和原因；服务器 shell history 没有保留
 逐字 argv，所以这里只写冻结 runbook 的等价入口，不把重建命令冒充原始历史。当前准确状态是：
-尚无成功、完整、可比较的五臂 rehearsal；独立审核可以授权 rehearsal，formal 仍需在 rehearsal
-归档审核后另行签发 artifact。
+gateway 前已有一次成功五臂 rehearsal，但它没有五臂统一 request tail/fairness，不能回答当前完整
+比较；新 gateway 合同仍需全新 smoke/rehearsal。formal 仍需在新 rehearsal 归档审核后另行签发。
 
 ## 2026-08-20 为什么现在是“五臂系统表 + 独立 VTC 机制表”
 
@@ -64,11 +78,9 @@ MFU 的 peak/precision 已冻结进 config SHA、resolved
 fingerprint 和 cell，但因五系统没有统一可信 FLOP numerator，本轮 MFU 诚实标 unavailable。
 Project 命令继续传 peak/precision 是为了固定 denominator 和保留可复现实路径诊断，不代表已经
 获得可跨五臂排名的 numerator。
-五臂都使用 PostgreSQL `document_completions` JSON-text sink；native 由矩阵 adapter 写入、Project
-由 profiler 写入，并以执行器内存/trace 输出为独立来源做 readback 内容 digest、行数和 exactly-once
-校验。这样 database-E2E 不会退化为只量模型返回、不验证落库。
-group JCT 包含 sink；per-Job JCT 截止各 Job 模型响应完成。后者不假装 post-group bulk sink
-能提供逐 Job 落库完成时钟，因此两种边界在 CSV 中分列。
+五臂都使用 `writeback=none`，不连接输出 sink。native/Project 分别从执行器结果写独立 completion
+evidence，按冻结 doc-id、内容 digest、行数和 exactly-once 校验；T4 是完整正确结果的内存可见时钟，
+证据文件封存不计入 JCT。
 
 本次是本地合同重构，没有连接服务器，也没有启动新的 rehearsal/formal。这里的“本次未运行”不
 等于历史上从未运行：仓库已归档 2026-08-13 bounded-priority gate failure（`9ae64db3`）、

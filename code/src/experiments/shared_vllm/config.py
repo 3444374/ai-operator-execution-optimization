@@ -104,6 +104,7 @@ class RunnerOptions:
     resume: bool = False
     recover_stale_lease: bool = False
     rehearsal: bool = False
+    observation_endpoint_urls_by_job: tuple[tuple[str, ...], ...] = ()
 
 @dataclass(frozen=True)
 class GroupRunIdentity:
@@ -753,10 +754,28 @@ def build_job_command(
         f"{identity.repeat_index}_{scenario.scenario_id}"
     )
     job_stem = options.output_dir / "jobs" / f"{run_stem}_job{job_index}"
+    common_args = list(config.common_args)
+    if options.observation_endpoint_urls_by_job:
+        if len(options.observation_endpoint_urls_by_job) != scenario.job_count:
+            raise ValueError("observation endpoint routes must cover every Job")
+        routes = options.observation_endpoint_urls_by_job[job_index]
+        if len(routes) != len(config.endpoint_ids) or any(
+            not route.endswith("/v1/chat/completions") for route in routes
+        ):
+            raise ValueError("observation endpoint route count or protocol drifted")
+        try:
+            endpoint_flag = common_args.index("--completion-endpoint-urls")
+        except ValueError as error:
+            raise ValueError(
+                "Project common_args must freeze --completion-endpoint-urls"
+            ) from error
+        if endpoint_flag + 1 >= len(common_args):
+            raise ValueError("Project completion endpoint argument is incomplete")
+        common_args[endpoint_flag + 1] = ",".join(routes)
     command = [
         str(options.python_executable),
         str(options.profiler_path),
-        *config.common_args,
+        *common_args,
         "--total-rows",
         str(scenario.row_count(job_index)),
         "--db-fetch-rows",

@@ -648,6 +648,9 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         "source_kind",
         "source_timing_boundary",
         "source_read_s",
+        "source_query_start_epoch_s",
+        "first_batch_ready_epoch_s",
+        "result_visible_epoch_s",
         "source_validation_status",
         "server_version",
         "pgvector_version",
@@ -674,6 +677,13 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         raise ValueError(f"shard source timing mismatch for {arm.arm_id}: {summary_path}")
     if not isinstance(summary["source_read_s"], (int, float)) or summary["source_read_s"] < 0:
         raise ValueError(f"shard source_read_s is invalid: {summary_path}")
+    timeline = tuple(float(summary[field]) for field in (
+        "source_query_start_epoch_s",
+        "first_batch_ready_epoch_s",
+        "result_visible_epoch_s",
+    ))
+    if not timeline[0] <= timeline[1] <= timeline[2]:
+        raise ValueError(f"shard system timeline is unordered: {summary_path}")
     DatabaseIdentity.from_record(summary, f"shard {summary_path}")
     return {field: summary[field] for field in required}
 
@@ -811,7 +821,9 @@ def _wait_for_processes(
 def _run_job(
     *, target_epoch_s: float, arm: NativeMultiJobArm, job: NativeMultiJobJob,
     arm_root: Path, runner_script: str | Path, config: NativeMultiJobConfig,
-    api_key: str | None, popen_factory: Callable[..., subprocess.Popen[object]] = subprocess.Popen,
+    api_key: str | None,
+    endpoint_urls: tuple[str, str],
+    popen_factory: Callable[..., subprocess.Popen[object]] = subprocess.Popen,
     now: Callable[[], float] = time.time,
 ) -> dict[str, object]:
     """Wait for a job's absolute launch time, then start its two native shards."""
@@ -826,7 +838,7 @@ def _run_job(
     commands = [
         build_shard_command(
             runner_script=runner_script, arm=arm, job=job, endpoint_index=index,
-            endpoint_url=config.endpoint_urls[index], output_dir=job_root / f"shard_{index}",
+            endpoint_url=endpoint_urls[index], output_dir=job_root / f"shard_{index}",
             model=config.model, service_prefix_caching=config.service_prefix_caching,
             service_max_num_seqs=config.service_max_num_seqs,
             service_max_num_batched_tokens=config.service_max_num_batched_tokens,
@@ -891,6 +903,15 @@ def _run_job(
             for result in _read_results(job_root / f"shard_{index}" / "requests.csv")
         )
         validate_results(requests, results)
+        source_query_start_epoch_s = min(
+            float(item["source_query_start_epoch_s"]) for item in provenance
+        )
+        first_batch_ready_epoch_s = min(
+            float(item["first_batch_ready_epoch_s"]) for item in provenance
+        )
+        result_visible_epoch_s = max(
+            float(item["result_visible_epoch_s"]) for item in provenance
+        )
         input_tokens = sum(result.input_tokens for result in results)
         output_tokens = sum(result.output_tokens for result in results)
         record.update({
@@ -899,8 +920,13 @@ def _run_job(
             "completed_count": len(results), "expected_count": len(requests),
             "input_tokens": input_tokens,
             "output_tokens": output_tokens, "total_tokens": input_tokens + output_tokens,
+            "source_query_start_epoch_s": source_query_start_epoch_s,
+            "first_batch_ready_epoch_s": first_batch_ready_epoch_s,
+            "result_visible_epoch_s": result_visible_epoch_s,
+            "job_barrier_jct_s": result_visible_epoch_s - launched,
             "job_barrier_tokens_per_s": (
-                (input_tokens + output_tokens) / (ended - launched) if ended > launched else 0.0
+                (input_tokens + output_tokens) / (result_visible_epoch_s - launched)
+                if result_visible_epoch_s > launched else 0.0
             ),
         })
     except Exception as exc:
@@ -945,6 +971,7 @@ def run_native_multijob_cell(
     now: Callable[[], float] = time.time,
     repository_commit: str,
     cell_instrumenter: Callable[..., object] = instrumented_cell,
+    endpoint_urls_by_job: Mapping[str, tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     """Execute one native physical cell without scheduling or acquiring a lease."""
 
@@ -956,9 +983,19 @@ def run_native_multijob_cell(
         raise ValueError("native cell repeat/order_index must be valid")
     if not repository_commit:
         raise ValueError("repository_commit must be non-empty")
-    output_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     for job in arm.jobs:
         _assert_immutable(job)
+    routed_endpoints = endpoint_urls_by_job or {
+        job.job_id: config.endpoint_urls for job in arm.jobs
+    }
+    if set(routed_endpoints) != {job.job_id for job in arm.jobs}:
+        raise ValueError("native per-Job endpoint route identities are incomplete")
+    for job_id, urls in routed_endpoints.items():
+        if len(urls) != 2 or any(
+            not url.endswith("/v1/chat/completions") for url in urls
+        ):
+            raise ValueError(f"native endpoint routes are invalid for {job_id}")
     run_id = identity.run_id or (
         f"{identity.phase}_{identity.repeat:02d}_{identity.order_index:03d}_{arm.arm_id}"
     )
@@ -997,6 +1034,7 @@ def run_native_multijob_cell(
                         runner_script=runner_script,
                         config=config,
                         api_key=api_key,
+                        endpoint_urls=routed_endpoints[job.job_id],
                         popen_factory=popen_factory,
                         now=now,
                     )
@@ -1008,7 +1046,11 @@ def run_native_multijob_cell(
         service = _counter_delta(counters_before, counters_after)
         service_path = output_dir / "service_counters.json"
         _atomic_json(service_path, service)
-        arm_barrier_jct_s = now() - t0
+        passed_jobs = [job for job in jobs if job.get("status") == "passed"]
+        arm_barrier_jct_s = (
+            max(float(job["result_visible_epoch_s"]) for job in passed_jobs) - t0
+            if len(passed_jobs) == len(jobs) else now() - t0
+        )
         record.update(
             {
                 "jobs": jobs,

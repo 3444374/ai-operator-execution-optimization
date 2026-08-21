@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
@@ -66,6 +67,7 @@ class _FakeProcess:
                     "output_tokens": 2, "output_text": "ok", "finish_reason": "stop",
                 })
         adapter = command[command.index("--adapter") + 1]
+        source_query_start_epoch_s = time.time()
         (output / "summary.json").write_text(
             json.dumps(
                 {
@@ -73,6 +75,9 @@ class _FakeProcess:
                     "source_kind": "timed_postgres_manifest",
                     "source_timing_boundary": "inside_job_barrier",
                     "source_read_s": 0.01,
+                    "source_query_start_epoch_s": source_query_start_epoch_s,
+                    "first_batch_ready_epoch_s": source_query_start_epoch_s,
+                    "result_visible_epoch_s": source_query_start_epoch_s,
                     "source_validation_status": "ok",
                     "server_version": "18.4",
                     "pgvector_version": "0.8.5",
@@ -504,6 +509,49 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertIn("gpu_summary", record)
             self.assertIn("gauge_summary", record)
             self.assertFalse((output_dir / "matrix_index.json").exists())
+
+    def test_single_cell_uses_job_labelled_observation_routes_only_at_http_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_native_multijob_config(self._config(root))
+            arm = config.arms[0]
+            routes = {
+                job.job_id: (
+                    f"http://127.0.0.1:9100/observe/{job.job_id}/endpoint-0/v1/chat/completions",
+                    f"http://127.0.0.1:9100/observe/{job.job_id}/endpoint-1/v1/chat/completions",
+                )
+                for job in arm.jobs
+            }
+            record = run_native_multijob_cell(
+                config,
+                arm,
+                NativeRunIdentity("formal", 1, 0),
+                root / "observed-cell",
+                runner_script="runner.py",
+                popen_factory=_FakeProcess,
+                queue_waiter=self._queues,
+                counter_sampler=self._counters,
+                repository_commit="abc123",
+                cell_instrumenter=self._instrumentation,
+                endpoint_urls_by_job=routes,
+            )
+
+            self.assertEqual(record["status"], "passed")
+            for job in arm.jobs:
+                commands = json.loads(
+                    (
+                        root / "observed-cell" / "jobs" / job.job_id / "commands.json"
+                    ).read_text(encoding="utf-8")
+                )
+                self.assertEqual(
+                    [
+                        command[command.index("--endpoint-url") + 1]
+                        for command in commands
+                    ],
+                    list(routes[job.job_id]),
+                )
+                self.assertIn("first_batch_ready_epoch_s", record["jobs"][0])
+                self.assertIn("result_visible_epoch_s", record["jobs"][0])
 
     def test_sealed_native_cell_artifacts_survive_root_move(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

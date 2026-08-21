@@ -2,6 +2,16 @@
 
 ## 2026-08-20 SAOR 对照重构状态（覆盖旧八臂执行说明）
 
+2026-08-21 进一步按系统比较第一性原理补齐共同观测：五臂的 T0 都是父 runner 实际释放 Job、且在
+PostgreSQL source query 与 child/Ray 初始化之前；T1 是首批 source data 进入执行器，T2/T3 来自统一
+observation-only gateway 的首请求到达/末请求完成，T4 是完整正确结果在内存中可见。headline 使用
+Job JCT=T4-T0、group JCT=max(T4)-min(T0) 与 actual completed tokens/group JCT，并分列 source、
+execution、service span。gateway 对所有臂使用同一实现，只按 Job/endpoint path 标识请求；不排队、
+不重试、不限并发、不重写 body，也不接管 Daft/Ray 的顺序、batch 或 backpressure。共同积压窗口内
+用 endpoint usage 的实际 token work 计算 weighted share/Jain、completion-accounted service lag 与
+longest no-service；另报 foreground request SLO、Job JCT SLO 和 within-run victim impact/recovery。
+full-solo slowdown 仍需独立 matched-solo control，当前 within-run 指标不得冒充该反事实。
+
 本地合同已重构为五臂 database-E2E：Daft Native、Daft Native/Ray、Ray Data native graph、
 project frozen-static、SAOR，服务层均为同签名 vLLM FCFS。原生三臂拒绝 bounded-ready/K/W/
 credit/inflight/project selector；static 与 SAOR 只共享资源上限，static 不使用动态 ready/debt。
@@ -21,12 +31,14 @@ Project 暂无统一可信 FLOP numerator，本轮 MFU 明确为 unavailable，�
 `bounded_concrete_pre_registration`、正 payload-byte limit 和 request trace 同时成立时允许 eager。
 非 replay 执行把同一 observed Job start epoch 写入 scheduler request 与 trace seed，再通过 concrete
 request envelope 进入受 K/work/bytes 限制的 register→grant→submit 路径。
-真实 matched argv 回归已通过；服务器 rehearsal/formal 仍未运行、未授权。
+真实 matched argv 回归已通过。`862d0008` 已完成一次 gateway 前的五臂 correctness smoke 与
+rehearsal，但其原生 request tail/fairness 不可用，只作可运行性历史证据；新 gateway 合同尚未在
+服务器重跑。formal 从未运行且继续禁止。
 
 官方 VTC 独立 capability 合同固定 upstream commit、S-LoRA runtime owner、同栈 FCFS/VTC、
 逻辑 workload SHA 与 Job release。官方文档的 CUDA/PyTorch/Ampere 假设尚未在当前 RTX 4090/
 模型栈验证，因此 `blocked_unverified_runtime`；server validation 未运行，formal 未授权。
-本轮没有连接服务器、没有运行 rehearsal/formal，也没有产生性能结论。
+该 capability 组没有连接服务器或运行 rehearsal/formal，也没有产生性能结论。
 
 新增的 SAOR vs DRR/VTC-on-vLLM 跨层 capability 与上述 official artifact、五臂矩阵均分离。纯
 FCFS/DRR/VTC oracle、strict Job identity decoder、vLLM `--scheduler-cls` skeleton、module SHA 和
@@ -60,8 +72,8 @@ credit trace 并汇总 Ray submit/actor-ready；共同保存 vLLM、MFU、TTFT/I
 GPU evidence 仍未完成。输出分成五臂 complete-system empirical 表与四臂 Project-internal
 sanity 表；共享同一个 SAOR 物理 run。FIFO 臂必须写全名 **Project bounded-ready + global
 FIFO matched-control**。共同到达保持 Job `[0,5]` release、Job 内 eager；PostgreSQL source
-在 Job lifecycle 内计时到 validated gather；原生 request P99/SLO 不支持时只能写
-`unavailable`+原因。后续固定顺序为 runtime preflight → static readiness → small
+在 Job lifecycle 内计时到 validated gather；旧 root 中原生 request P99/SLO 仍只能写
+`unavailable`+原因，新 gateway 合同运行后五臂才统一可用。后续固定顺序为 runtime preflight → static readiness → small
 correctness/local fake rehearsal → review → separately authorized GPU execution；当前工作不含
 server/GPU run，不把 formal/GPU 证据标成完成。
 
@@ -199,8 +211,8 @@ readiness 必须冻结每臂 effective K/W 和 `(1,1)` weights。一次在修复
 通过，$0.125W_e$ 以 1 次 debt recovery 通过；$0.25W_e$ 再次因 recovery=0 被 runner fail closed，整个
 manifest 正确标为 failed。本轮只验证门禁，不并入性能重复。native-system matched 仍因真实
 manifest/calibration/env 未冻结而保持锁定；当前
-`writeback=none` 只覆盖 PostgreSQL source→validated gather 的 operator-E2E，原生 request
-P99/SLO 可为 `unavailable`，且尚无 debt 从产生到完全偿还的时间指标或理论 bound。
+旧 `writeback=none` root 只覆盖 PostgreSQL source→validated gather 的 operator-E2E，原生 request
+P99/SLO 为 `unavailable`；新 gateway root 将补齐经验 request tail/service fairness，但仍不提供理论 bound。
 
 下一阶段必须在相同 2-Job manifest、Job 级 `bulk@0s → foreground@5s` 且 Job 内 eager 的共同
 原生到达形态、PG source、
@@ -209,8 +221,8 @@ project frozen-static 与 proposed，完成系统级 matched comparison。原生
 注入 Project K/W；Project 两臂冻结相同 K/W。历史原生数据只有完整签名和指标 schema 均匹配
 才可复用，否则重跑。已确认历史 JSONL 原生路径在计时前读 manifest，且原生 graph 不忠实暴露
 逐请求 timed replay；因此新矩阵必须把 PostgreSQL scan/materialization 放进共同
-source→validated-gather 边界，并将原生臂不具备的 request P99/SLO 明确记为 `unavailable`，不能
-复制 Job/shard completion time。冻结规格见
+source→validated-gather 边界，并通过严格透传 gateway 采集真实 request P99/SLO，不能复制
+Job/shard completion time。冻结规格见
 `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
 为避免把 arrival-regime 变化误归因给 SAOR，同一新合同还包含 1--2 次短的 Project 内部
 bounded-ready FIFO/DRR/VTC-style/SAOR sanity block；这些臂仍是 Project controls，不是原生

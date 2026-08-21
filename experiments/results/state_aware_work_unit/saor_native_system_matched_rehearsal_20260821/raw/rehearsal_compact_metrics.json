@@ -1,0 +1,83 @@
+{
+  "execution_mode": "rehearsal",
+  "formal_runs": 0,
+  "metric_applicability": {
+    "common_five_arm": [
+      "service_throughput_tokens_per_s",
+      "group_jct_s",
+      "per_job_jct_s",
+      "completion_exactly_once"
+    ],
+    "project_only": [
+      "request_p99_s",
+      "slo_violation_rate"
+    ],
+    "saor_only": [
+      "empirical_service_lag",
+      "longest_no_service_s"
+    ],
+    "unavailable": [
+      "five_arm_jain_fairness",
+      "five_arm_weighted_fairness"
+    ]
+  },
+  "observations": [
+    {
+      "arm_id": "daft_native",
+      "completion_count": 1024,
+      "group_jct_s": 67.0352,
+      "job0_jct_s": 62.1344,
+      "job1_jct_s": 61.9456,
+      "request_p99_status": "unavailable",
+      "service_throughput_tokens_per_s": 12988.31
+    },
+    {
+      "arm_id": "daft_ray",
+      "completion_count": 1024,
+      "group_jct_s": 76.1833,
+      "job0_jct_s": 71.357,
+      "job1_jct_s": 71.0912,
+      "request_p99_status": "unavailable",
+      "service_throughput_tokens_per_s": 11427.56
+    },
+    {
+      "arm_id": "ray_data_http",
+      "completion_count": 1024,
+      "group_jct_s": 183.8051,
+      "job0_jct_s": 183.6887,
+      "job1_jct_s": 177.0842,
+      "request_p99_status": "unavailable",
+      "service_throughput_tokens_per_s": 4736.43
+    },
+    {
+      "arm_id": "project_frozen_static",
+      "completion_count": 1024,
+      "group_jct_s": 100.1719,
+      "job0_jct_s": 98.4582,
+      "job0_request_p99_s": 90.7387,
+      "job0_slo_violation_rate": 1.0,
+      "job1_jct_s": 41.5967,
+      "job1_request_p99_s": 34.093,
+      "job1_slo_violation_rate": 1.0,
+      "service_lag_status": "unavailable:requires_complete_registered_ready_ledger",
+      "service_throughput_tokens_per_s": 8691.12
+    },
+    {
+      "arm_id": "project_bounded_ready_saor_0125we",
+      "completion_count": 1024,
+      "group_jct_s": 76.6713,
+      "job0_jct_s": 75.29,
+      "job0_request_p99_s": 66.7239,
+      "job0_slo_violation_rate": 1.0,
+      "job1_jct_s": 41.2144,
+      "job1_request_p99_s": 32.7144,
+      "job1_slo_violation_rate": 1.0,
+      "longest_no_service_s": 4.90866,
+      "service_lag_status": "ok:registered_backlog_completion_accounted_empirical",
+      "service_throughput_tokens_per_s": 11353.91
+    }
+  ],
+  "repository_commit": "862d0008b013278eb7d6dfa69aa40adae4c2d635",
+  "scope": "historical_pre_gateway_diagnostic_single_rehearsal_observation",
+  "status": "passed_not_formal"
+}

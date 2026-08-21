@@ -116,3 +116,17 @@ barrier、即将 `Popen` 子进程；`source_arrival_epoch_s` 表示子进程启
 lifecycle request 后的时间。前者用来核验两臂共同的 0s/5s 外部 Job release，后者保留冷启动与
 source fetch 的真实延迟。SAOR 的 concrete-ready、credit registration 和 first submit 仍分别检查
 不得早于 release，因此把两个时钟分开不会放松 eager/ready-window 机制门。
+
+五臂的 request tail 与服务公平性不再依赖 Daft/Ray 是否暴露内部 scheduler。父 runner 在 Job
+release 前启动同一份严格透传 gateway；Job0/Job1 只通过不同 path 携带 identity，仍转发到冻结的
+同一两个 backend。gateway 不排队、不重试、不限并发、不重写 body，并把 request/forward body SHA、
+dispatch delay、HTTP status 与 endpoint `usage` 写入 cell-local JSONL。离线门重新哈希 trace，并核对
+四条 Job×endpoint route 的 upstream URL。公平性只在两 Job都有 gateway outstanding request 的
+共同积压窗口内，以实际完成 token work 计算 weighted share、Jain、empirical lag 和 longest
+no-service；它不把请求数或完成行数当 work，也不把这类经验观测写成理论公平保证。
+
+系统边界同时保留五个时钟：T0=实际 Job release（在 PostgreSQL 读取和 child/Ray 初始化之前），
+T1=首批已验证 source data 进入执行器，T2/T3=gateway 观察的首请求到达/末请求完成，T4=完整结果在
+内存中通过 exactly-once/content 校验并可见。Job JCT=T4-T0，group JCT=max(T4)-min(T0)，正确吞吐=
+endpoint actual tokens/group JCT；另报 source=T1-T0、execution=T4-T1、service span=T3-T2。
+`writeback=none` 下 T4 不需要 PostgreSQL sink，完成 digest 是边界外的证据封存，不进入计时。

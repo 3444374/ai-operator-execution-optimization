@@ -328,6 +328,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertLess(ready_index, timer_index)
         self.assertIn("actor_ready_s", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn("first_batch_ready_epoch_s", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn("result_visible_epoch_s", profile.FORMAL_RESULT_FIELDS)
         self.assertIn("flush_trace_status", profile.FORMAL_RESULT_FIELDS)
         self.assertIn(
             "max_ready_payload_bytes_seen",

@@ -21,6 +21,9 @@ For the current multi-Job comparison:
 - `native_system_execution.py` owns executor adapters; `native_system_completion.py`
   validates executor completion traces against frozen manifest identities without
   writing to an output sink.
+- `native_system_observation.py` validates the common pass-through gateway trace and
+  derives T0--T4, request SLO/tails, actual-token weighted fairness/service lag, and
+  explicitly within-run (not full-solo) interference observations for all five arms.
 - `native_system_matched.py` owns authorization and cell orchestration;
   `native_system_summary.py` revalidates sealed evidence and produces only the
   five-arm system, per-Job, and resource tables.

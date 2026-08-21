@@ -484,6 +484,13 @@ def resolved_matched_system_identity(
         "endpoint_urls": list(config.endpoint_urls),
         "metrics_urls": metrics_urls,
         "health_url": endpoint_auxiliary_url(config.endpoint_urls[0], "/health"),
+        "job_observation_contracts": [
+            item.__dict__ for item in config.job_observation_contracts
+        ],
+        "observation_gateway": {
+            "mode": "pass_through_no_queue_no_retry",
+            "request_timeout_s": config.observation_gateway_request_timeout_s,
+        },
         "arms": arms,
     }
 
@@ -790,39 +797,27 @@ def _validate_cell_evidence(
                 raise RuntimeError("timed PostgreSQL source evidence is invalid")
         p99_status = job.get("request_p99_status")
         slo_status = job.get("slo_status")
-        if arm.kind == "native":
-            if (
-                p99_status != "unavailable"
-                or slo_status != "unavailable"
-                or job.get("request_p50_s") != "unavailable"
-                or job.get("request_p95_s") != "unavailable"
-                or job.get("request_p99_s") != "unavailable"
-                or job.get("slo_violation_ratio") != "unavailable"
-                or not job.get("tail_reason")
-            ):
-                raise RuntimeError("native per-Job tail availability is invalid")
-        else:
-            p50 = job.get("request_p50_s")
-            p95 = job.get("request_p95_s")
-            p99 = job.get("request_p99_s")
-            slo = job.get("slo_violation_ratio")
-            if (
-                p99_status != "available"
-                or slo_status != "available"
-                or not isinstance(p50, (int, float))
-                or isinstance(p50, bool)
-                or float(p50) < 0
-                or not isinstance(p95, (int, float))
-                or isinstance(p95, bool)
-                or float(p95) < float(p50)
-                or not isinstance(p99, (int, float))
-                or isinstance(p99, bool)
-                or float(p99) < float(p95)
-                or not isinstance(slo, (int, float))
-                or isinstance(slo, bool)
-                or not 0 <= float(slo) <= 1
-            ):
-                raise RuntimeError("Project per-Job tail/SLO evidence is invalid")
+        p50 = job.get("request_p50_s")
+        p95 = job.get("request_p95_s")
+        p99 = job.get("request_p99_s")
+        slo = job.get("slo_violation_ratio")
+        if (
+            p99_status != "available"
+            or slo_status != "available"
+            or not isinstance(p50, (int, float))
+            or isinstance(p50, bool)
+            or float(p50) < 0
+            or not isinstance(p95, (int, float))
+            or isinstance(p95, bool)
+            or float(p95) < float(p50)
+            or not isinstance(p99, (int, float))
+            or isinstance(p99, bool)
+            or float(p99) < float(p95)
+            or not isinstance(slo, (int, float))
+            or isinstance(slo, bool)
+            or not 0 <= float(slo) <= 1
+        ):
+            raise RuntimeError("gateway per-Job tail/SLO evidence is invalid")
     for job, expected_job in zip(jobs, arm.job_manifests, strict=True):
         if (
             job.get("job_id") != expected_job.job_id
@@ -900,8 +895,18 @@ def _validate_cell_evidence(
             "path": relative_path,
             "sha256": sha256_file(artifact),
         }
-    if normalize_request_tail_status(arm.unsupported_request_tails) != evidence["request_tail_status"]:
-        raise RuntimeError("unsupported request-tail evidence drifted")
+    gateway = evidence.get("observation_gateway")
+    system_observation = evidence.get("system_observation")
+    if not isinstance(gateway, dict) or not isinstance(system_observation, dict):
+        raise RuntimeError("common observation gateway evidence is missing")
+    request_tail = evidence["request_tail_status"]
+    if not isinstance(request_tail, dict) or any(
+        not isinstance(request_tail.get(metric), dict)
+        or request_tail[metric].get("status") != "available"
+        or not isinstance(request_tail[metric].get("value"), (int, float))
+        for metric in ("request_p99", "slo")
+    ):
+        raise RuntimeError("gateway-observed request-tail evidence is invalid")
     fairness = evidence["service_fairness_metrics"]
     if not isinstance(fairness, dict) or set(fairness) != {
         "starvation_status", "longest_no_service_s",
@@ -909,12 +914,56 @@ def _validate_cell_evidence(
         "completion_service_lag_max_work", "reason",
     }:
         raise RuntimeError("service fairness evidence schema is invalid")
-    if arm.kind == "native" and (
-        fairness["starvation_status"] != "unavailable"
-        or fairness["completion_service_lag_status"] != "unavailable"
+    if (
+        str(fairness["starvation_status"]).startswith("unavailable")
+        or str(fairness["completion_service_lag_status"]).startswith("unavailable")
         or not fairness["reason"]
     ):
-        raise RuntimeError("native service fairness availability must remain explicit")
+        raise RuntimeError("gateway-observed service fairness evidence is unavailable")
+    if (
+        gateway.get("status") != "passed"
+        or gateway.get("mode") != "pass_through_no_queue_no_retry"
+        or not isinstance(gateway.get("trace_sha256"), str)
+        or len(str(gateway["trace_sha256"])) != 64
+        or not isinstance(gateway.get("integrity"), dict)
+        or gateway["integrity"].get("retry_count") != 0
+        or gateway["integrity"].get("body_identity_passed") is not True
+    ):
+        raise RuntimeError("observation gateway integrity evidence failed")
+    routes = gateway.get("routes")
+    runtime_endpoints = runtime_identity.get("endpoint_urls")
+    expected_routes = {
+        (job.job_id, endpoint_id, str(runtime_endpoints[index]))
+        for job in arm.job_manifests
+        for index, endpoint_id in enumerate(arm.endpoint_ids)
+    } if isinstance(runtime_endpoints, list) else set()
+    observed_routes = {
+        (
+            str(route.get("job_id", "")),
+            str(route.get("endpoint_id", "")),
+            str(route.get("upstream_url", "")),
+        )
+        for route in routes
+        if isinstance(route, dict)
+    } if isinstance(routes, list) else set()
+    if observed_routes != expected_routes:
+        raise RuntimeError("observation gateway route binding drifted")
+    gateway_artifact = artifact_identities.get("observation_gateway_trace")
+    if (
+        not isinstance(gateway_artifact, dict)
+        or gateway.get("trace_sha256") != gateway_artifact.get("sha256")
+    ):
+        raise RuntimeError("observation gateway trace SHA-256 drifted")
+    if (
+        system_observation.get("status") != "passed"
+        or system_observation.get("timed_boundary")
+        != "job_release_before_postgres_to_validated_result_visibility"
+        or float(system_observation.get("group_jct_s", -1.0))
+        != float(evidence["database_operator_e2e_s"])
+        or not isinstance(system_observation.get("jobs"), dict)
+        or set(system_observation["jobs"]) != {job.job_id for job in arm.job_manifests}
+    ):
+        raise RuntimeError("T0-T4 system observation evidence failed")
     completion = evidence["completion_evidence"]
     if not isinstance(completion, dict) or set(completion) != {
         "status", "mode", "producer", "expected_rows", "observed_rows",
@@ -971,6 +1020,14 @@ def _validate_cell_evidence(
         "manifest_sha256", "exactly_once", "shard_provenance",
         "concrete_ready_epoch_s", "credit_registered_epoch_s",
         "first_submit_epoch_s",
+        "first_batch_ready_epoch_s", "result_visible_epoch_s",
+        "t0_job_release_epoch_s", "t1_first_batch_epoch_s",
+        "t2_first_request_epoch_s", "t3_last_request_completion_epoch_s",
+        "t4_result_visible_epoch_s", "jct_s", "source_s", "execution_s",
+        "service_span_s", "role", "weight", "request_count",
+        "actual_prompt_tokens", "actual_output_tokens", "actual_total_tokens",
+        "request_slo_s", "job_jct_slo_s", "job_jct_slo_status",
+        "job_jct_slo_violation",
         "request_p50_s", "request_p95_s", "request_p99_status",
         "request_p99_s", "slo_status",
         "slo_violation_ratio", "tail_reason",
@@ -1012,12 +1069,20 @@ def _validate_cell_evidence(
         "start_epoch_s": evidence["start_epoch_s"],
         "end_epoch_s": evidence["end_epoch_s"],
         "database_operator_e2e_s": evidence["database_operator_e2e_s"],
+        "correct_throughput_tokens_per_s": evidence[
+            "correct_throughput_tokens_per_s"
+        ],
         "jobs": persisted_jobs,
         "service_metrics": persisted_service,
         "resource_metrics": persisted_resource,
         "exactly_once": evidence["exactly_once"],
         "request_tail_status": evidence["request_tail_status"],
         "service_fairness_metrics": fairness,
+        "system_observation": system_observation,
+        "observation_gateway": {
+            **gateway,
+            "trace_path": relative_output_paths["observation_gateway_trace"],
+        },
         "completion_evidence": completion,
         "output_paths": relative_output_paths,
         "artifact_identities": artifact_identities,
@@ -1480,6 +1545,12 @@ def _validation_errors(
         errors.append("arms must contain exactly the five unique required arm IDs")
     if not config.arms:
         return errors
+    if tuple(item.job_id for item in config.job_observation_contracts) != (
+        "job0", "job1"
+    ):
+        errors.append("Job observation contracts must bind ordered job0/job1")
+    if len({item.role for item in config.job_observation_contracts}) != 2:
+        errors.append("Job observation roles must be distinct")
     try:
         validate_service_identity(dict(config.service_identity))
     except ValueError as error:

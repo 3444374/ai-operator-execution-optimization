@@ -22,6 +22,17 @@ class JobReleaseEpoch:
 
 
 @dataclass(frozen=True)
+class JobObservationIdentity:
+    """Freeze the external role, entitlement, and request SLO for one Job."""
+
+    job_id: str
+    role: str
+    weight: float
+    request_slo_s: float
+    job_jct_slo_s: float | None = None
+
+
+@dataclass(frozen=True)
 class MfuContract:
     status: str
     gpu_peak_tflops_per_gpu: float
@@ -76,6 +87,8 @@ class MatchedSystemConfig:
     matched_manifest_status: str
     service_identity: tuple[tuple[str, object], ...]
     arms: tuple[MatchedArm, ...]
+    job_observation_contracts: tuple[JobObservationIdentity, ...] = ()
+    observation_gateway_request_timeout_s: float = 600.0
 
 
 @dataclass(frozen=True)

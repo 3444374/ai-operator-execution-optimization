@@ -41,8 +41,17 @@ commit/root/cell/原因和冻结 runbook 的等价入口，不伪造历史 argv�
 argv0、`sys.prefix` 与实际 vLLM package path/version，并显式冻结 `scheduling_policy=fcfs`。
 readiness 拆为 static config、service identity、system preflight、correctness smoke 四阶段，仅四者
 全部通过才置 `rehearsal_ready=true`。三份实际 config SHA、Daft/Ray upstream tag commit 与薄
-adapter SHA 进入证据身份；formal 还必须绑定实际 rehearsal validation/root/archive SHA。以上均只在
-当前开发分支完成本地测试，尚未合并 `main`，也未连接服务器或启动新 smoke/rehearsal/formal。
+adapter SHA 进入证据身份；formal 还必须绑定实际 rehearsal validation/root/archive SHA。`862d0008`
+已在服务器完成一次 gateway 前的五臂 correctness smoke 与 rehearsal，证明可运行性但无法给原生臂
+提供同口径 request tail/fairness；formal 未运行。
+
+2026-08-21 的当前修订为五臂统一增加严格透传 observation-only gateway，并冻结 T0--T4：T0 在
+PostgreSQL 读取和 child/Ray 初始化前，T1 为首批 source data，T2/T3 为首请求到达/末请求完成，T4
+为完整正确结果在内存中可见。Job/group JCT 与 correct throughput 使用完整系统边界，同时分列
+source/execution/service span。共同 gateway 不排队、不重试、不重写、不接管原生 scheduler；只用
+endpoint actual token usage 在共同积压窗口计算 P99/SLO、weighted Jain、service lag 与最长无服务。
+within-run victim impact/recovery 可跨五臂比较，full-solo slowdown 仍需另跑 matched-solo control。
+该修订已通过本地定向测试，尚未重跑服务器 smoke/rehearsal；formal 继续禁止。
 
 ## 1. 题目与研究对象
 

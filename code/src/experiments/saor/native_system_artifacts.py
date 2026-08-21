@@ -171,6 +171,7 @@ def _validate_cell(
     arm_by_id: Mapping[str, object],
     expected: Mapping[str, object],
     expected_native_provenance: Mapping[str, Mapping[str, object]] | None,
+    expected_endpoint_urls: tuple[str, ...],
 ) -> None:
     """Re-check completion, provenance, and immutable cell identity."""
 
@@ -207,6 +208,48 @@ def _validate_cell(
             }.items()
         ):
             raise RuntimeError("matrix cell Job identity or row count drifted")
+        timeline = [
+            observed.get(field)
+            for field in (
+                "t0_job_release_epoch_s", "t1_first_batch_epoch_s",
+                "t2_first_request_epoch_s", "t3_last_request_completion_epoch_s",
+                "t4_result_visible_epoch_s",
+            )
+        ]
+        if any(
+            isinstance(value, bool) or not isinstance(value, (int, float))
+            for value in timeline
+        ) or timeline != sorted(timeline):
+            raise RuntimeError("matrix cell T0-T4 Job timeline drifted")
+    system_observation = cell.get("system_observation")
+    gateway = cell.get("observation_gateway")
+    if (
+        not isinstance(system_observation, dict)
+        or system_observation.get("status") != "passed"
+        or system_observation.get("timed_boundary")
+        != "job_release_before_postgres_to_validated_result_visibility"
+        or not isinstance(gateway, dict)
+        or gateway.get("status") != "passed"
+        or gateway.get("mode") != "pass_through_no_queue_no_retry"
+    ):
+        raise RuntimeError("matrix cell observation contract failed")
+    expected_routes = {
+        (job.job_id, endpoint_id, expected_endpoint_urls[index])
+        for job in arm.job_manifests
+        for index, endpoint_id in enumerate(arm.endpoint_ids)
+    }
+    routes = gateway.get("routes")
+    observed_routes = {
+        (
+            str(route.get("job_id", "")),
+            str(route.get("endpoint_id", "")),
+            str(route.get("upstream_url", "")),
+        )
+        for route in routes
+        if isinstance(route, dict)
+    } if isinstance(routes, list) else set()
+    if observed_routes != expected_routes:
+        raise RuntimeError("matrix cell observation gateway route drifted")
     completion = cell.get("completion_evidence")
     expected_rows = sum(job.rows for job in arm.job_manifests)
     if (
@@ -239,6 +282,14 @@ def _validate_cell(
         ):
             raise RuntimeError("matrix cell native provenance drifted from frozen config")
     _validate_cell_artifacts(root, cell)
+    identities = cell["artifact_identities"]
+    gateway_identity = identities.get("observation_gateway_trace")
+    if (
+        not isinstance(gateway_identity, dict)
+        or gateway.get("trace_path") != gateway_identity.get("path")
+        or gateway.get("trace_sha256") != gateway_identity.get("sha256")
+    ):
+        raise RuntimeError("matrix cell observation gateway trace identity drifted")
 
 
 def validate_completed_matrix_root(
@@ -364,7 +415,8 @@ def validate_completed_matrix_root(
         if not isinstance(cell, dict):
             raise RuntimeError("matrix cell is not an object")
         _validate_cell(
-            root, cell, arm_by_id, expected, expected_native_provenance
+            root, cell, arm_by_id, expected, expected_native_provenance,
+            config.endpoint_urls,
         )
     database_ids = {
         (cell.get("server_version"), cell.get("pgvector_version"))

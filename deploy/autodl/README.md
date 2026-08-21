@@ -169,7 +169,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/analysis/audit_saor_native_system_
 Readiness 是四阶段单向门：`static_config` → `service_identity` →
 `system_preflight`（endpoint health、PostgreSQL/pgvector、Ray/GPU clean、同协议 bounded
 baseline 的实际 passed root）→ `correctness_smoke`（五臂各跑一次并验证 manifest、exactly-once、
-sink）。system preflight 不能由手写 `status=passed` 代替：下面入口会实际 GET health、只读查询
+validated result visibility）。system preflight 不能由手写 `status=passed` 代替：下面入口会实际 GET health、只读查询
 PostgreSQL/pgvector、核对 Ray 无 live actor/placement group，并用 `nvidia-smi` 确认 CUDA compute
 PID 只属于已绑定 vLLM 进程树；随后重读 bounded root 的
 `run_status.json`、`gate.json` 和每 endpoint summary；readiness 使用时会再次执行这些探针并逐字段
@@ -191,7 +191,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 随后用五臂 runner 的 `--correctness-smoke --correctness-smoke-root <fresh-unique-root>` 模式；该模式
 只接受已经通过的前三阶段，不接受 smoke evidence，也不会占用 config 的 canonical rehearsal root。
 完成后把 `<smoke-root>/matrix_index.json` 传给 readiness 的
-`--correctness-smoke-evidence`。validator 会重哈希封存 manifest、两 Job 行数、每臂 sink digest、
+`--correctness-smoke-evidence`。validator 会重哈希封存 manifest、两 Job 行数、每臂 completion digest、
 native upstream/adapter provenance 和每个 raw artifact；手写 checks JSON 不能通过。前三阶段
 即使通过也保持 `rehearsal_ready=false`；只有实际 smoke root 绑定同一 commit、matched/native/
 Project 三份 config SHA 和 system-preflight SHA 后，最终报告才可置 true。五臂 runner 必须由
@@ -231,6 +231,24 @@ Project runner 会为每个 Job 同时写 lifecycle `*.requests.csv` 和独立�
 写出 `output_text`。runner 在计时边界外把其 doc-id 集合与冻结 manifest 比较，并封存内容 digest，
 不连接输出 sink。completion evidence 缺失、重复、行身份漂移或未进入 cell artifact identity 时，
 correctness smoke 必须失败。
+
+五臂 physical cell 在 Job release 前还会启动同一份 observation-only gateway。它为
+`job0/job1 × endpoint-0/endpoint-1` 生成四条 loopback path，严格一次转发到配置冻结的两个 backend；
+没有应用层 queue、semaphore、retry、cache、route choice 或 payload rewrite。Daft Native、Daft Ray、
+Ray Data 仍自行决定 batch、请求顺序与 backpressure，Project K/W 也只存在于两个 Project 臂。
+gateway trace 必须证明 body SHA 不变、retry=0、endpoint usage token 完整；archive validator 会重哈希
+trace 并核对四条 upstream binding。统一指标为：
+
+- T0：父 runner 实际释放 Job，在 PostgreSQL source 和 child/Ray 初始化之前；
+- T1：首批已验证 source data 进入执行器；T2/T3：gateway 首请求到达/末请求完成；
+- T4：完整正确结果在内存中可见；`writeback=none`，不要求输出 sink；
+- Job JCT=`T4-T0`，group JCT=`max(T4)-min(T0)`，correct throughput=actual completed tokens/group JCT；
+- 另报 source=`T1-T0`、execution=`T4-T1`、service span=`T3-T2`；
+- 在两 Job 共同 gateway backlog 内，以 actual token work 计算 weighted service share/Jain、empirical
+  service lag 与 longest no-service；请求 SLO 与 foreground Job JCT SLO 分列。
+
+within-run victim P99 inflation、aggressor 到达后的无服务时间和 drain 后 recovery 属 observation-only
+隔离证据；没有 matched-solo cell 时不得称为 full-solo slowdown 或因果隔离定理。
 
 Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
 `--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂

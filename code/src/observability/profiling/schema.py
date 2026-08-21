@@ -120,7 +120,8 @@ FORMAL_RESULT_FIELDS = tuple(
     token_cost_status input_cost_per_million_tokens_usd
     output_cost_per_million_tokens_usd observed_input_token_cost_usd
     observed_output_token_cost_usd observed_total_token_cost_usd
-    observed_cost_per_million_tokens_usd db_fetch_s
+    observed_cost_per_million_tokens_usd first_batch_ready_epoch_s
+    result_visible_epoch_s db_fetch_s
     arrow_build_s source_fetch_s organizer_from_arrow_s organizer_plan_s
     organizer_collect_s organization_policy_family
     batch_prompt_token_spread_mean prefix_group_ratio organizer_warnings

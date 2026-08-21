@@ -49,6 +49,16 @@ Every ranked cell ends at validated model completion with `writeback=none`. It m
 independent frozen-manifest doc-id, row-count, content-digest, and exactly-once trace gate; PostgreSQL
 remains the common timed source and no output-sink time enters the ranking.
 
+The five-arm comparison now places one common observation-only HTTP gateway between every Job and
+the frozen vLLM FCFS endpoints. It has no admission limit, retry, cache, route choice, or payload
+rewrite: each Job/endpoint path forwards the exact request body once and records endpoint-reported
+prompt/output tokens plus receive/completion clocks. Daft Native, Daft Ray, and Ray Data still own
+their execution order and backpressure. The common trace supplies real request P50/P95/P99, request
+SLO, weighted service share/Jain, completion-accounted service lag, and longest no-service interval
+for all five arms. Each Job also persists T0 release-before-PostgreSQL, T1 first batch, T2 first vLLM
+arrival, T3 last vLLM completion, and T4 validated in-memory result visibility; headline JCT and
+correct throughput use T0--T4, while source/execution/service spans remain separate.
+
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:
 direct K-only, direct K+W, and Project bounded-ready FIFO K+W. Its direct K+W gate is endpoint-local

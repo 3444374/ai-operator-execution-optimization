@@ -8,6 +8,7 @@ import math
 import statistics
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from src.baselines.common.database_identity import DatabaseIdentity
 from src.baselines.common.manifests import read_manifest
@@ -90,12 +91,48 @@ def _validate_executor_command(
     command: list[object],
     arm_id: str,
     arm_identity: dict[str, object],
+    observation_gateway: object,
 ) -> None:
     """Recheck the dispatch endpoints and native C/B/adapter from raw commands."""
 
     endpoints = arm_identity.get("matrix_endpoint_urls")
     if not isinstance(endpoints, list) or len(endpoints) != 2:
         raise ValueError(f"{arm_id} lacks frozen endpoint URL identity")
+    if not isinstance(observation_gateway, dict):
+        raise ValueError(f"{arm_id} lacks observation gateway evidence")
+    raw_routes = observation_gateway.get("routes")
+    if not isinstance(raw_routes, list):
+        raise ValueError(f"{arm_id} lacks observation gateway routes")
+    expected_route_bindings = {
+        (f"job{job_index}", f"endpoint-{endpoint_index}", str(endpoint))
+        for job_index in range(2)
+        for endpoint_index, endpoint in enumerate(endpoints)
+    }
+    route_bindings = {
+        (
+            str(route.get("job_id", "")),
+            str(route.get("endpoint_id", "")),
+            str(route.get("upstream_url", "")),
+        )
+        for route in raw_routes
+        if isinstance(route, dict)
+    }
+    if route_bindings != expected_route_bindings:
+        raise ValueError(f"{arm_id} observation gateway upstream binding drifted")
+
+    def validate_gateway_url(value: str, job_id: str, endpoint_id: str) -> str:
+        parsed = urlsplit(value)
+        expected_path = f"/observe/{job_id}/{endpoint_id}/v1/chat/completions"
+        if (
+            parsed.scheme != "http"
+            or parsed.hostname not in {"127.0.0.1", "localhost"}
+            or parsed.port is None
+            or parsed.path != expected_path
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(f"{arm_id} stored gateway endpoint route drifted")
+        return f"{parsed.scheme}://{parsed.netloc}"
     if arm_id in SYSTEM_ARM_IDS[:3]:
         selection = arm_identity.get("executor_selection")
         if not isinstance(selection, dict):
@@ -113,20 +150,40 @@ def _validate_executor_command(
         endpoint_indices = _command_flag_values(command, "--endpoint-index")
         endpoint_values = _command_flag_values(command, "--endpoint-url")
         expected_pairs = [
-            (str(index), str(endpoint))
-            for _job in range(2)
-            for index, endpoint in enumerate(endpoints)
+            (str(index), f"job{job}", f"endpoint-{index}")
+            for job in range(2)
+            for index in range(2)
         ]
-        if list(zip(endpoint_indices, endpoint_values, strict=True)) != expected_pairs:
+        observed_pairs = []
+        origins = set()
+        for index, (endpoint_index, endpoint_value) in enumerate(
+            zip(endpoint_indices, endpoint_values, strict=True)
+        ):
+            _, job_id, endpoint_id = expected_pairs[index]
+            origins.add(validate_gateway_url(endpoint_value, job_id, endpoint_id))
+            observed_pairs.append((endpoint_index, job_id, endpoint_id))
+        if observed_pairs != expected_pairs or len(origins) != 1:
             raise ValueError(f"{arm_id} stored endpoint-index mapping drifted")
         return
 
-    expected_csv = ",".join(str(value) for value in endpoints)
     endpoint_values = _command_flag_values(
         command, "--completion-endpoint-urls"
     )
-    if not endpoint_values or any(value != expected_csv for value in endpoint_values):
-        raise ValueError(f"{arm_id} stored Project command endpoints drifted")
+    if len(endpoint_values) != 2:
+        raise ValueError(f"{arm_id} stored Project endpoint routes are incomplete")
+    origins = set()
+    for job_index, csv_value in enumerate(endpoint_values):
+        values = csv_value.split(",")
+        if len(values) != 2:
+            raise ValueError(f"{arm_id} stored Project command endpoints drifted")
+        for endpoint_index, value in enumerate(values):
+            origins.add(
+                validate_gateway_url(
+                    value, f"job{job_index}", f"endpoint-{endpoint_index}"
+                )
+            )
+    if len(origins) != 1:
+        raise ValueError(f"{arm_id} Project Jobs used different gateway origins")
     metrics = arm_identity.get("matrix_metrics_urls")
     if not isinstance(metrics, list) or len(metrics) != 2:
         raise ValueError(f"{arm_id} lacks frozen metrics URL identity")
@@ -437,30 +494,19 @@ def _normalize_cell(
             or int(job.get("expected_count", -1)) != int(expected_job.get("rows", -2))
         ):
             raise ValueError(f"{run_id} has invalid Job row accounting")
-        if arm_id in SYSTEM_ARM_IDS[:3]:
-            if (
-                job.get("request_p99_status") != "unavailable"
-                or job.get("slo_status") != "unavailable"
-                or job.get("request_p50_s") != "unavailable"
-                or job.get("request_p95_s") != "unavailable"
-                or job.get("request_p99_s") != "unavailable"
-                or not job.get("tail_reason")
-            ):
-                raise ValueError(f"{run_id} native per-Job tails must be unavailable")
-        else:
-            job_p50 = _finite(job.get("request_p50_s"), f"{run_id} Job P50")
-            job_p95 = _finite(job.get("request_p95_s"), f"{run_id} Job P95")
-            job_p99 = _finite(job.get("request_p99_s"), f"{run_id} Job P99")
-            job_slo = _finite(
-                job.get("slo_violation_ratio"), f"{run_id} Job SLO ratio"
-            )
-            if (
-                job.get("request_p99_status") != "available"
-                or job.get("slo_status") != "available"
-                or not 0 <= job_p50 <= job_p95 <= job_p99
-                or not 0 <= job_slo <= 1
-            ):
-                raise ValueError(f"{run_id} Project per-Job tail/SLO evidence is invalid")
+        job_p50 = _finite(job.get("request_p50_s"), f"{run_id} Job P50")
+        job_p95 = _finite(job.get("request_p95_s"), f"{run_id} Job P95")
+        job_p99 = _finite(job.get("request_p99_s"), f"{run_id} Job P99")
+        job_slo = _finite(
+            job.get("slo_violation_ratio"), f"{run_id} Job SLO ratio"
+        )
+        if (
+            job.get("request_p99_status") != "available"
+            or job.get("slo_status") != "available"
+            or not 0 <= job_p50 <= job_p95 <= job_p99
+            or not 0 <= job_slo <= 1
+        ):
+            raise ValueError(f"{run_id} per-Job gateway tail/SLO evidence is invalid")
         _validate_source(job, run_id)
         scheduled_starts.append(
             _finite(
@@ -471,7 +517,12 @@ def _normalize_cell(
         actual_starts.append(
             _finite(job.get("actual_launch_epoch_s"), f"{run_id} Job actual launch")
         )
-        ends.append(_finite(job.get("ended_epoch_s"), f"{run_id} Job completion"))
+        ends.append(
+            _finite(
+                job.get("t4_result_visible_epoch_s"),
+                f"{run_id} Job result visibility",
+            )
+        )
     if any(completion <= release for completion, release in zip(ends, scheduled_starts)):
         raise ValueError(f"{run_id} completion precedes scheduled release")
     overlap = min(ends) - max(actual_starts)
@@ -487,10 +538,8 @@ def _normalize_cell(
     slo_status, slo_value, slo_reason = _availability_metric(
         request_tail, "slo", "violation_ratio", run_id
     )
-    if arm_id in SYSTEM_ARM_IDS[:3] and (
-        p99_status != "unavailable" or slo_status != "unavailable"
-    ):
-        raise ValueError(f"{run_id} native tails must be unavailable with reasons")
+    if p99_status != "available" or slo_status != "available":
+        raise ValueError(f"{run_id} gateway tails must be available")
     fairness = cell.get("service_fairness_metrics")
     if not isinstance(fairness, dict):
         raise ValueError(f"{run_id} lacks service fairness availability")
@@ -514,9 +563,22 @@ def _normalize_cell(
         fragment in command_text for fragment in _PROJECT_FLAG_FRAGMENTS
     ):
         raise ValueError(f"{run_id} native command contains Project flags")
-    _validate_executor_command(command, arm_id, arm_identity)
+    _validate_executor_command(
+        command, arm_id, arm_identity, cell.get("observation_gateway")
+    )
 
     total = prompt + generation
+    system_observation = cell.get("system_observation")
+    if not isinstance(system_observation, dict):
+        raise ValueError(f"{run_id} lacks T0-T4 system observation")
+    common_fairness = system_observation.get("service_fairness")
+    isolation = system_observation.get("isolation_observation")
+    if not isinstance(common_fairness, dict) or not isinstance(isolation, dict):
+        raise ValueError(f"{run_id} lacks fairness/isolation observation")
+    correct_throughput = _finite(
+        system_observation.get("correct_throughput_tokens_per_s"),
+        f"{run_id} correct throughput",
+    )
     run_row = {
         "run_id": run_id,
         "arm_id": arm_id,
@@ -532,7 +594,9 @@ def _normalize_cell(
         "service_prompt_tokens": prompt,
         "service_generation_tokens": generation,
         "service_total_tokens": total,
-        "service_tokens_per_s": total / duration,
+        "service_tokens_per_s": correct_throughput,
+        "correct_throughput_tokens_per_s": correct_throughput,
+        "actual_completed_tokens": system_observation.get("actual_total_tokens"),
         "request_p99_status": p99_status,
         "request_p99_s": p99_value,
         "request_p99_reason": p99_reason,
@@ -551,6 +615,26 @@ def _normalize_cell(
             "completion_service_lag_max_work", "unavailable"
         ),
         "service_fairness_reason": fairness.get("reason", ""),
+        "weighted_jain_fairness": common_fairness.get(
+            "weighted_jain_fairness", "unavailable"
+        ),
+        "weighted_service_share_by_job": json.dumps(
+            common_fairness.get("weighted_service_share_by_job", {}),
+            sort_keys=True,
+        ),
+        "common_backlog_duration_s": common_fairness.get(
+            "common_backlog_duration_s", "unavailable"
+        ),
+        "isolation_status": isolation.get("status", "unavailable"),
+        "victim_no_service_after_aggressor_release_s": isolation.get(
+            "victim_no_service_after_aggressor_release_s", "unavailable"
+        ),
+        "victim_request_p99_inflation_ratio": isolation.get(
+            "victim_request_p99_inflation_ratio", "unavailable"
+        ),
+        "victim_recovery_after_aggressor_service_end_s": isolation.get(
+            "victim_recovery_after_aggressor_service_end_s", "unavailable"
+        ),
         "completion_evidence_mode": completion_evidence["mode"],
         "completion_evidence_producer": completion_evidence.get("producer", ""),
         "completion_expected_rows": completion_evidence.get("expected_rows", ""),
@@ -588,13 +672,22 @@ def _normalize_cell(
             "actual_launch_offset_s": actual - actual_starts[0],
             "launch_deviation_s": actual - scheduled,
             "completion_epoch_s": completion,
-            "job_jct_s": completion - scheduled,
+            "job_jct_s": job.get("jct_s"),
+            "source_s": job.get("source_s"),
+            "execution_s": job.get("execution_s"),
+            "service_span_s": job.get("service_span_s"),
+            "actual_total_tokens": job.get("actual_total_tokens"),
             "request_p50_s": job.get("request_p50_s", "unavailable"),
             "request_p95_s": job.get("request_p95_s", "unavailable"),
             "request_p99_status": job.get("request_p99_status", "unavailable"),
             "request_p99_s": job.get("request_p99_s", "unavailable"),
             "slo_status": job.get("slo_status", "unavailable"),
             "slo_violation_ratio": job.get("slo_violation_ratio", "unavailable"),
+            "job_jct_slo_s": job.get("job_jct_slo_s", "unavailable"),
+            "job_jct_slo_status": job.get("job_jct_slo_status", "unavailable"),
+            "job_jct_slo_violation": job.get(
+                "job_jct_slo_violation", "unavailable"
+            ),
             "tail_reason": job.get("tail_reason", "not recorded"),
             "overlap_s": overlap,
             "completion_order": 1 + sorted(ends).index(completion),
@@ -637,6 +730,27 @@ def _summary_row(
     bulk_jct = job_values("bulk", "job_jct_s")
     foreground_jct = job_values("foreground", "job_jct_s")
     overlap = job_values("bulk", "overlap_s")
+    weighted_jain = [float(row["weighted_jain_fairness"]) for row in ordered]
+    longest_no_service = [float(row["longest_no_service_s"]) for row in ordered]
+    service_lag_p95 = [
+        float(row["completion_service_lag_p95_work"]) for row in ordered
+    ]
+    victim_no_service_raw = [
+        row["victim_no_service_after_aggressor_release_s"] for row in ordered
+    ]
+    victim_no_service = (
+        [float(value) for value in victim_no_service_raw]
+        if all(value != "unavailable" for value in victim_no_service_raw)
+        else []
+    )
+    recovery_raw = [
+        row["victim_recovery_after_aggressor_service_end_s"] for row in ordered
+    ]
+    recovery = (
+        [float(value) for value in recovery_raw]
+        if all(value != "unavailable" for value in recovery_raw)
+        else []
+    )
     availability: dict[str, tuple[set[str], set[str]]] = {}
     for metric in ("request_p99", "slo"):
         statuses = {str(row[f"{metric}_status"]) for row in ordered}
@@ -678,6 +792,25 @@ def _summary_row(
         "overlap_s_mean": statistics.fmean(overlap),
         "overlap_s_sample_cv": _sample_cv(overlap),
         "overlap_s_repeats": json.dumps(overlap),
+        "weighted_jain_fairness_mean": statistics.fmean(weighted_jain),
+        "weighted_jain_fairness_repeats": json.dumps(weighted_jain),
+        "longest_no_service_s_mean": statistics.fmean(longest_no_service),
+        "longest_no_service_s_repeats": json.dumps(longest_no_service),
+        "completion_service_lag_p95_work_mean": statistics.fmean(service_lag_p95),
+        "completion_service_lag_p95_work_repeats": json.dumps(service_lag_p95),
+        "victim_no_service_after_aggressor_release_s_mean": (
+            statistics.fmean(victim_no_service)
+            if victim_no_service else "unavailable"
+        ),
+        "victim_no_service_after_aggressor_release_s_repeats": json.dumps(
+            victim_no_service_raw
+        ),
+        "victim_recovery_after_aggressor_service_end_s_mean": (
+            statistics.fmean(recovery) if recovery else "unavailable"
+        ),
+        "victim_recovery_after_aggressor_service_end_s_repeats": json.dumps(
+            recovery_raw
+        ),
         "request_p99_status": next(iter(availability["request_p99"][0])),
         "request_p99_s_mean": p99_mean,
         "request_p99_s_repeats": p99_repeats,
@@ -739,11 +872,17 @@ _AUDIT_FIELDS = (
     "manifest_sha256", "service_signature", "server_version", "pgvector_version",
     "database_operator_e2e_s", "group_jct_s",
     "service_prompt_tokens", "service_generation_tokens", "service_total_tokens",
-    "service_tokens_per_s", "request_p99_status", "request_p99_s",
+    "service_tokens_per_s", "correct_throughput_tokens_per_s",
+    "actual_completed_tokens", "request_p99_status", "request_p99_s",
     "request_p99_reason", "slo_status", "slo_violation_ratio", "slo_reason",
     "starvation_status", "longest_no_service_s",
     "completion_service_lag_status", "completion_service_lag_p95_work",
     "completion_service_lag_max_work", "service_fairness_reason",
+    "weighted_jain_fairness", "weighted_service_share_by_job",
+    "common_backlog_duration_s", "isolation_status",
+    "victim_no_service_after_aggressor_release_s",
+    "victim_request_p99_inflation_ratio",
+    "victim_recovery_after_aggressor_service_end_s",
     "completion_evidence_mode", "completion_evidence_producer",
     "completion_expected_rows", "completion_observed_rows",
     "completion_exactly_once", "completion_output_digest",

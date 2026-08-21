@@ -10,6 +10,11 @@
   ],
   "gpu_formal_locally_authorized": false,
   "matched_manifest_status": "ready_frozen",
+  "job_observation_contracts": [
+    {"job_id": "job0", "role": "bulk", "weight": 1.0, "request_slo_s": 30.0, "job_jct_slo_s": null},
+    {"job_id": "job1", "role": "foreground", "weight": 1.0, "request_slo_s": 30.0, "job_jct_slo_s": 30.0}
+  ],
+  "observation_gateway_request_timeout_s": 600.0,
   "service_identity": {
     "model": "${COMPLETION_MODEL}",
     "model_path": "${MODEL_PATH}",
@@ -61,7 +66,7 @@
       "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager",
       "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"},
       "performance_writeback_mode": "none",
-      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails"},
+      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails; common gateway supplies runtime tails"},
       "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"},
       "organizer": "native_framework_owned",
       "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/daft_native_selection_20260808.json",
@@ -77,7 +82,7 @@
       ],
       "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"},
       "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}], "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager", "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"}, "performance_writeback_mode": "none",
-      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails"},
+      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails; common gateway supplies runtime tails"},
       "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"},
       "organizer": "native_framework_owned",
       "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/daft_ray_selection_20260808.json",
@@ -93,7 +98,7 @@
       ],
       "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"},
       "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}], "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager", "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"}, "performance_writeback_mode": "none",
-      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails"},
+      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails; common gateway supplies runtime tails"},
       "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"},
       "organizer": "native_framework_owned",
       "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/ray_data_http_selection_20260808.json",

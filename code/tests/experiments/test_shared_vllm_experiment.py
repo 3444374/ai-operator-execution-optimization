@@ -175,6 +175,55 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(profiler_args.shared_credit_job_priority, 1)
         validate_shared_credit_policy_args(profiler_args)
 
+    def test_observation_routes_replace_only_the_runtime_endpoint_urls(self) -> None:
+        direct = (
+            "http://127.0.0.1:8000/v1/chat/completions",
+            "http://127.0.0.1:8001/v1/chat/completions",
+        )
+        payload = self._config_payload(
+            common_args=["--completion-endpoint-urls", ",".join(direct)]
+        )
+        payload["job_internal_arrival_contract"] = "eager"
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+        routed = (
+            (
+                "http://127.0.0.1:9100/observe/job0/endpoint-0/v1/chat/completions",
+                "http://127.0.0.1:9100/observe/job0/endpoint-1/v1/chat/completions",
+            ),
+            (
+                "http://127.0.0.1:9100/observe/job1/endpoint-0/v1/chat/completions",
+                "http://127.0.0.1:9100/observe/job1/endpoint-1/v1/chat/completions",
+            ),
+        )
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+            observation_endpoint_urls_by_job=routed,
+        )
+
+        command = build_job_command(
+            options,
+            config,
+            config.scenarios[0],
+            GroupRunIdentity("warmup", 0, 0),
+            job_index=1,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        self.assertEqual(
+            self._flag_value(command, "--completion-endpoint-urls"),
+            ",".join(routed[1]),
+        )
+        self.assertEqual(config.common_args[-1], ",".join(direct))
+
     def test_profiler_keeps_replay_gate_for_single_head_bounded_priority(
         self,
     ) -> None:
@@ -2804,6 +2853,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "max_ready_requests_seen": "3",
                 "max_ready_work_seen": "90",
                 "job_id": "42",
+                "first_batch_ready_epoch_s": "0.5",
+                "result_visible_epoch_s": "103.5",
             }
         ]
         submission_rows = [
@@ -2857,6 +2908,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "max_ready_requests_seen": "2",
             "max_ready_work_seen": "90",
             "job_id": "43",
+            "first_batch_ready_epoch_s": "99.0",
+            "result_visible_epoch_s": "101.0",
         }]
         request_rows = [{
             "request_id": "request-0",

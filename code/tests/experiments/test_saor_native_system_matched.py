@@ -1204,6 +1204,8 @@ def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
     commands.write_text(json.dumps({"commands": [["framework", "run"]]}))
     resources = output_dir / "resources.csv"
     resources.write_text("sample_epoch_s,gpu_utilization_pct\n1.0,80\n")
+    gateway_trace = output_dir / "observation_gateway.jsonl"
+    gateway_trace.write_text('{"status":"completed"}\n', encoding="utf-8")
     (output_dir / "raw_executor.json").write_text(
         json.dumps({"status": "passed"}), encoding="utf-8"
     )
@@ -1216,6 +1218,24 @@ def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
             "scheduled_launch_epoch_s": start,
             "actual_launch_epoch_s": start,
             "ended_epoch_s": 110.0 + 5.0 * index,
+            "first_batch_ready_epoch_s": 101.0 + 5.0 * index,
+            "result_visible_epoch_s": 110.0 + 5.0 * index,
+            "t0_job_release_epoch_s": start,
+            "t1_first_batch_epoch_s": 101.0 + 5.0 * index,
+            "t2_first_request_epoch_s": 102.0 + 5.0 * index,
+            "t3_last_request_completion_epoch_s": 109.0 + 5.0 * index,
+            "t4_result_visible_epoch_s": 110.0 + 5.0 * index,
+            "jct_s": 10.0,
+            "source_s": 1.0,
+            "execution_s": 9.0,
+            "service_span_s": 7.0,
+            "role": "bulk" if index == 0 else "foreground",
+            "weight": 1.0,
+            "request_count": job.rows,
+            "actual_prompt_tokens": job.rows * 8,
+            "actual_output_tokens": job.rows * 2,
+            "actual_total_tokens": job.rows * 10,
+            "request_slo_s": 30.0,
             "completed_count": job.rows,
             "expected_count": job.rows,
             "actual_work": job.rows * 10,
@@ -1228,26 +1248,15 @@ def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
                 "source_read_s": 0.1,
             }],
         }
-        if native:
-            row.update({
-                "request_p50_s": "unavailable",
-                "request_p95_s": "unavailable",
-                "request_p99_status": "unavailable",
-                "request_p99_s": "unavailable",
-                "slo_status": "unavailable",
-                "slo_violation_ratio": "unavailable",
-                "tail_reason": "framework lacks request clocks",
-            })
-        else:
-            row.update({
-                "request_p50_s": 0.1,
-                "request_p95_s": 0.2,
-                "request_p99_status": "available",
-                "request_p99_s": 0.3,
-                "slo_status": "available",
-                "slo_violation_ratio": 0.0,
-                "tail_reason": "",
-            })
+        row.update({
+            "request_p50_s": 0.1,
+            "request_p95_s": 0.2,
+            "request_p99_status": "available",
+            "request_p99_s": 0.3,
+            "slo_status": "available",
+            "slo_violation_ratio": 0.0,
+            "tail_reason": "common observation-only gateway",
+        })
         if arm.arm_id == "project_bounded_ready_saor_0125we":
             row.update({
                 "concrete_ready_epoch_s": start,
@@ -1256,24 +1265,44 @@ def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
             })
         jobs.append(row)
     expected_rows = sum(job.rows for job in arm.job_manifests)
-    fairness = (
-        {
-            "starvation_status": "unavailable",
-            "longest_no_service_s": "unavailable",
-            "completion_service_lag_status": "unavailable",
-            "completion_service_lag_p95_work": "unavailable",
-            "completion_service_lag_max_work": "unavailable",
-            "reason": "framework lacks a completion ledger",
-        }
-        if native else {
-            "starvation_status": "available",
-            "longest_no_service_s": 0.0,
-            "completion_service_lag_status": "available",
-            "completion_service_lag_p95_work": 0.0,
-            "completion_service_lag_max_work": 0.0,
-            "reason": "",
-        }
-    )
+    fairness = {
+        "starvation_status": "ok:gateway_observed_common_backlog_completion_accounted",
+        "longest_no_service_s": 0.1,
+        "completion_service_lag_status": "ok:gateway_observed_common_backlog_completion_accounted",
+        "completion_service_lag_p95_work": 10.0,
+        "completion_service_lag_max_work": 20.0,
+        "reason": "common gateway-observed actual completed token work",
+    }
+    actual_total_tokens = sum(job.rows * 10 for job in arm.job_manifests)
+    common_fairness = {
+        "status": "ok:gateway_observed_common_backlog_completion_accounted",
+        "common_backlog_duration_s": 5.0,
+        "weighted_jain_fairness": 1.0,
+        "weighted_service_share_by_job": {"job0": 0.5, "job1": 0.5},
+        "completion_service_lag_p95_work": 10.0,
+        "completion_service_lag_max_work": 20.0,
+        "longest_no_service_s": 0.1,
+    }
+    system_observation = {
+        "schema_version": 1,
+        "status": "passed",
+        "timed_boundary": "job_release_before_postgres_to_validated_result_visibility",
+        "jobs": {job["job_id"]: dict(job) for job in jobs},
+        "group_jct_s": 15.0,
+        "correct_throughput_tokens_per_s": actual_total_tokens / 15.0,
+        "actual_total_tokens": actual_total_tokens,
+        "service_fairness": common_fairness,
+        "isolation_observation": {
+            "status": "ok:within_run_observation_only",
+            "victim_no_service_after_aggressor_release_s": 0.1,
+            "victim_request_p99_inflation_ratio": 1.1,
+        },
+        "gateway_integrity": {
+            "request_count": expected_rows,
+            "retry_count": 0,
+            "body_identity_passed": True,
+        },
+    }
     record = {
         "implementation_source": "official" if native else "project",
         "start_epoch_s": 100.0,
@@ -1289,18 +1318,36 @@ def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
             "resource_metrics_status": "ok", "path": str(resources)
         },
         "exactly_once": True,
-        "request_tail_status": (
-            {
-                metric: {
-                    "status": "unavailable", "value": "unavailable",
-                    "reason": "unsupported",
-                }
-                for metric in ("request_p99", "slo")
-            }
-        ),
+        "correct_throughput_tokens_per_s": actual_total_tokens / 15.0,
+        "request_tail_status": {
+            "request_p99": {"status": "available", "value": 0.3, "reason": "gateway"},
+            "slo": {"status": "available", "value": 0.0, "reason": "gateway"},
+        },
         "service_fairness_metrics": fairness,
+        "system_observation": system_observation,
+        "observation_gateway": {
+            "status": "passed",
+            "mode": "pass_through_no_queue_no_retry",
+            "trace_path": str(gateway_trace),
+            "trace_sha256": hashlib.sha256(gateway_trace.read_bytes()).hexdigest(),
+            "routes": [
+                {
+                    "job_id": job.job_id,
+                    "endpoint_id": f"endpoint-{endpoint_index}",
+                    "upstream_url": f"http://127.0.0.1:800{endpoint_index}/v1/chat/completions",
+                }
+                for job in arm.job_manifests
+                for endpoint_index in range(2)
+            ],
+            "integrity": {
+                "request_count": expected_rows,
+                "retry_count": 0,
+                "body_identity_passed": True,
+            },
+        },
         "output_paths": {
-            "commands": str(commands), "resources": str(resources)
+            "commands": str(commands), "resources": str(resources),
+            "observation_gateway_trace": str(gateway_trace),
         },
         "status": "passed",
         "server_version": "18.3",

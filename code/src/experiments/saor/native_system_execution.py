@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import subprocess
 import sys
@@ -33,6 +34,11 @@ from src.experiments.saor.native_system_completion import (
     collect_completion_rows,
     expected_doc_ids_from_manifests,
 )
+from src.experiments.saor.native_system_observation import (
+    JobObservationContract,
+    build_system_observation,
+    summarize_gateway_rows,
+)
 from src.experiments.shared_vllm import (
     GroupRunIdentity,
     RunnerOptions,
@@ -40,6 +46,7 @@ from src.experiments.shared_vllm import (
     run_shared_vllm_group_cell,
 )
 from src.experiments.shared_vllm.preflight import wait_for_idle
+from src.observability.request_gateway import GatewayRoute, ObservationGateway
 
 
 @dataclass(frozen=True)
@@ -143,6 +150,158 @@ def normalize_native_evidence(
     }
 
 
+def _read_gateway_trace(path: Path) -> list[dict[str, object]]:
+    """Read the cell-local passive gateway JSONL after it has stopped."""
+
+    rows = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if any(not isinstance(row, dict) for row in rows):
+        raise RuntimeError("observation gateway trace rows must be objects")
+    return rows
+
+
+def _attach_common_observation(
+    evidence: dict[str, object],
+    *,
+    trace_path: Path,
+    routes: tuple[GatewayRoute, ...],
+    contracts: tuple[JobObservationContract, ...],
+) -> dict[str, object]:
+    """Replace framework-specific pseudo tails with the common passive clock."""
+
+    jobs = evidence.get("jobs")
+    if not isinstance(jobs, list) or any(not isinstance(job, dict) for job in jobs):
+        raise RuntimeError("executor Job evidence is invalid")
+    gateway = summarize_gateway_rows(_read_gateway_trace(trace_path), contracts)
+    gateway_jobs = gateway.get("jobs")
+    if not isinstance(gateway_jobs, dict) or any(
+        int(gateway_jobs.get(str(job["job_id"]), {}).get("request_count", -1))
+        != int(job["expected_count"])
+        for job in jobs
+    ):
+        raise RuntimeError(
+            "observation gateway request count does not match exactly-once results"
+        )
+    service_metrics = evidence.get("service_metrics")
+    if not isinstance(service_metrics, dict):
+        raise RuntimeError("executor service metrics are invalid")
+    gateway_prompt = sum(
+        int(job["actual_prompt_tokens"])
+        for job in gateway_jobs.values()
+    )
+    gateway_output = sum(
+        int(job["actual_output_tokens"])
+        for job in gateway_jobs.values()
+    )
+    if (
+        int(service_metrics.get("prompt_tokens_delta", -1)) != gateway_prompt
+        or int(service_metrics.get("generation_tokens_delta", -1)) != gateway_output
+    ):
+        raise RuntimeError(
+            "gateway actual token usage does not reconcile with vLLM counters"
+        )
+    system = build_system_observation(
+        gateway,
+        t0_by_job={
+            str(job["job_id"]): float(job["actual_launch_epoch_s"])
+            for job in jobs
+        },
+        t1_by_job={
+            str(job["job_id"]): float(job["first_batch_ready_epoch_s"])
+            for job in jobs
+        },
+        t4_by_job={
+            str(job["job_id"]): float(job["result_visible_epoch_s"])
+            for job in jobs
+        },
+    )
+    observed_jobs = system["jobs"]
+    assert isinstance(observed_jobs, dict)
+    for job in jobs:
+        observed = observed_jobs[str(job["job_id"])]
+        assert isinstance(observed, dict)
+        job.update(observed)
+        job.update(
+            {
+                "request_p99_status": "available",
+                "slo_status": "available",
+                "tail_reason": "common observation-only gateway",
+                "actual_work": int(observed["actual_total_tokens"]),
+            }
+        )
+    request_count = sum(int(job["request_count"]) for job in observed_jobs.values())
+    slo_misses = sum(
+        float(job["request_slo_violation_ratio"]) * int(job["request_count"])
+        for job in observed_jobs.values()
+    )
+    request_tail_status = {
+        "request_p99": {
+            "status": "available",
+            "value": max(float(job["request_p99_s"]) for job in observed_jobs.values()),
+            "reason": "common observation-only gateway",
+        },
+        "slo": {
+            "status": "available",
+            "value": slo_misses / request_count,
+            "reason": "common observation-only gateway",
+        },
+    }
+    service_fairness = system.get("service_fairness")
+    if not isinstance(service_fairness, dict):
+        raise RuntimeError("common service fairness evidence is missing")
+    fairness_status = str(service_fairness.get("status", "unavailable"))
+    normalized_fairness = {
+        "starvation_status": fairness_status,
+        "longest_no_service_s": service_fairness.get(
+            "longest_no_service_s", "unavailable"
+        ),
+        "completion_service_lag_status": fairness_status,
+        "completion_service_lag_p95_work": service_fairness.get(
+            "completion_service_lag_p95_work", "unavailable"
+        ),
+        "completion_service_lag_max_work": service_fairness.get(
+            "completion_service_lag_max_work", "unavailable"
+        ),
+        "reason": "common gateway-observed actual completed token work",
+    }
+    trace_sha256 = hashlib.sha256(trace_path.read_bytes()).hexdigest()
+    output_paths = evidence.get("output_paths")
+    if not isinstance(output_paths, dict):
+        raise RuntimeError("executor output paths are invalid")
+    output_paths["observation_gateway_trace"] = str(trace_path)
+    evidence.update(
+        {
+            "start_epoch_s": min(
+                float(job["t0_job_release_epoch_s"])
+                for job in observed_jobs.values()
+            ),
+            "end_epoch_s": max(
+                float(job["t4_result_visible_epoch_s"])
+                for job in observed_jobs.values()
+            ),
+            "database_operator_e2e_s": system["group_jct_s"],
+            "correct_throughput_tokens_per_s": system[
+                "correct_throughput_tokens_per_s"
+            ],
+            "request_tail_status": request_tail_status,
+            "service_fairness_metrics": normalized_fairness,
+            "system_observation": system,
+            "observation_gateway": {
+                "status": "passed",
+                "mode": "pass_through_no_queue_no_retry",
+                "trace_path": str(trace_path),
+                "trace_sha256": trace_sha256,
+                "routes": [route.__dict__ for route in routes],
+                "integrity": gateway["gateway_integrity"],
+            },
+        }
+    )
+    return evidence
+
+
 def project_job_epoch_fields(
     record: dict[str, object], job_index: int
 ) -> dict[str, float]:
@@ -241,12 +400,18 @@ def normalize_project_evidence(
         "scheduled_launch_epoch_s": epochs[index]["scheduled_launch_epoch_s"],
         "actual_launch_epoch_s": epochs[index]["actual_launch_epoch_s"],
         "source_arrival_epoch_s": epochs[index]["source_arrival_epoch_s"],
+        "first_batch_ready_epoch_s": float(
+            summaries[index]["first_batch_ready_epoch_s"]
+        ),
         **({
             "concrete_ready_epoch_s": lifecycle_minima[index][0],
             "credit_registered_epoch_s": lifecycle_minima[index][1],
             "first_submit_epoch_s": epochs[index]["first_submit_epoch_s"],
         } if is_saor else {}),
         "ended_epoch_s": epochs[index]["ended_epoch_s"],
+        "result_visible_epoch_s": float(
+            summaries[index]["result_visible_epoch_s"]
+        ),
         "completed_count": int(completed_counts[index]),
         "expected_count": int(expected_counts[index]),
         "actual_work": int(actual_work[index]),
@@ -329,6 +494,16 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
     }
     project = load_project_config(options.project_config)
     matched = load_matched_system_config(options.config)
+    observation_contracts = tuple(
+        JobObservationContract(
+            job_id=item.job_id,
+            role=item.role,
+            weight=item.weight,
+            request_slo_s=item.request_slo_s,
+            job_jct_slo_s=item.job_jct_slo_s,
+        )
+        for item in matched.job_observation_contracts
+    )
     validate_executor_bindings(
         matched, native, project,
         matched_config_path=options.config,
@@ -370,6 +545,19 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
     native_by_id = {item.arm_id: item for item in native.arms}
     project_by_id = {item.scenario_id: item for item in project.scenarios}
 
+    def observed_routes(arm: MatchedArm) -> tuple[GatewayRoute, ...]:
+        """Bind every frozen Job/endpoint identity to the direct backend once."""
+
+        return tuple(
+            GatewayRoute(
+                job_id=job.job_id,
+                endpoint_id=endpoint_id,
+                upstream_url=matched.endpoint_urls[index],
+            )
+            for job in arm.job_manifests
+            for index, endpoint_id in enumerate(arm.endpoint_ids)
+        )
+
     def completion_evidence(
         arm: MatchedArm, output_dir: Path, producer: str
     ) -> dict[str, object]:
@@ -385,11 +573,24 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         )
 
     def native_executor(arm: MatchedArm, cell: ScheduledMatchedCell, output_dir: Path):
-        record = run_native_multijob_cell(
-            native, native_by_id[arm.arm_id],
-            NativeRunIdentity(cell.phase, cell.repeat, cell.order_index),
-            output_dir, runner_script=options.native_runner, repository_commit=commit,
-        )
+        routes = observed_routes(arm)
+        trace_path = output_dir / "observation_gateway.jsonl"
+        with ObservationGateway(
+            routes=routes,
+            trace_path=trace_path,
+            request_timeout_s=matched.observation_gateway_request_timeout_s,
+        ) as gateway:
+            endpoint_urls_by_job = {
+                job.job_id: gateway.urls_for_job(job.job_id, arm.endpoint_ids)
+                for job in arm.job_manifests
+            }
+            record = run_native_multijob_cell(
+                native, native_by_id[arm.arm_id],
+                NativeRunIdentity(cell.phase, cell.repeat, cell.order_index),
+                output_dir, runner_script=options.native_runner,
+                repository_commit=commit,
+                endpoint_urls_by_job=endpoint_urls_by_job,
+            )
         _require_native_cell_passed(record)
         record["completion_evidence"] = completion_evidence(
             arm, output_dir, "native_official_adapter",
@@ -403,27 +604,49 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
             native_provenance[arm.arm_id]
         )
         normalized["command"] = [token for command in commands for token in command]
-        return normalized
+        return _attach_common_observation(
+            normalized,
+            trace_path=trace_path,
+            routes=routes,
+            contracts=observation_contracts,
+        )
 
     def project_executor(arm: MatchedArm, cell: ScheduledMatchedCell, output_dir: Path):
-        runner = RunnerOptions(
-            config_path=options.project_config, profiler_path=options.profiler,
-            python_executable=options.python_executable, output_dir=output_dir,
-            health_url=options.health_url, metrics_urls=options.metrics_urls,
-            ray_address=options.ray_address, idle_timeout_s=options.idle_timeout_s,
-            start_delay_s=options.start_delay_s,
-            rehearsal=options.rehearsal or options.correctness_smoke,
-        )
-        for child in ("jobs", "logs", "traces", "records"):
-            (output_dir / child).mkdir(parents=True, exist_ok=True)
-        record = run_shared_vllm_group_cell(
-            runner, project, project_by_id[arm.arm_id],
-            GroupRunIdentity(cell.phase, cell.repeat, cell.order_index),
-        )
+        routes = observed_routes(arm)
+        trace_path = output_dir / "observation_gateway.jsonl"
+        with ObservationGateway(
+            routes=routes,
+            trace_path=trace_path,
+            request_timeout_s=matched.observation_gateway_request_timeout_s,
+        ) as gateway:
+            routed = tuple(
+                gateway.urls_for_job(job.job_id, arm.endpoint_ids)
+                for job in arm.job_manifests
+            )
+            runner = RunnerOptions(
+                config_path=options.project_config, profiler_path=options.profiler,
+                python_executable=options.python_executable, output_dir=output_dir,
+                health_url=options.health_url, metrics_urls=options.metrics_urls,
+                ray_address=options.ray_address, idle_timeout_s=options.idle_timeout_s,
+                start_delay_s=options.start_delay_s,
+                rehearsal=options.rehearsal or options.correctness_smoke,
+                observation_endpoint_urls_by_job=routed,
+            )
+            for child in ("jobs", "logs", "traces", "records"):
+                (output_dir / child).mkdir(parents=True, exist_ok=True)
+            record = run_shared_vllm_group_cell(
+                runner, project, project_by_id[arm.arm_id],
+                GroupRunIdentity(cell.phase, cell.repeat, cell.order_index),
+            )
         record["completion_evidence"] = completion_evidence(
             arm, output_dir, "project_profiler",
         )
-        return normalize_project_evidence(arm, record, output_dir)
+        return _attach_common_observation(
+            normalize_project_evidence(arm, record, output_dir),
+            trace_path=trace_path,
+            routes=routes,
+            contracts=observation_contracts,
+        )
 
     return run_matched_system(
         options.config, native_executor=native_executor,
