@@ -13,6 +13,7 @@ import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
@@ -22,6 +23,7 @@ from src.infrastructure.vllm_preflight import (
     verify_endpoint_service_identity,
     verify_endpoint_cmdlines,
     verify_endpoint_scheduler_cls,
+    verify_live_vllm_service_identity,
     verify_model_artifact_identity,
 )
 
@@ -199,6 +201,59 @@ class VllmPreflightPureTests(unittest.TestCase):
             )
             self.assertEqual(set(observed), set(endpoints))
             verify_model_artifact_identity(identity)
+
+    def test_complete_service_identity_rejects_duplicate_port_processes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            command = self._complete_cmdline(8000, model)
+            with self.assertRaisesRegex(RuntimeError, "expected one vLLM cmdline"):
+                verify_endpoint_service_identity(
+                    [command, command],
+                    ["http://127.0.0.1:8000/v1/chat/completions"],
+                    identity,
+                )
+
+    def test_live_service_identity_rejects_different_python_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoint = "http://127.0.0.1:8000/v1/chat/completions"
+            processes = {
+                "123": {
+                    "cmdline": self._complete_cmdline(8000, model),
+                    "executable": "/different/python",
+                }
+            }
+            with patch(
+                "src.infrastructure.vllm_preflight._read_live_processes",
+                return_value=processes,
+            ), self.assertRaisesRegex(RuntimeError, "Python runtime drift"):
+                verify_live_vllm_service_identity((endpoint,), identity)
 
     def test_complete_service_identity_rejects_every_runtime_drift(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -12,6 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from src.baselines.common.contracts import ChatRequest
 from src.baselines.common.manifests import write_manifest
@@ -34,6 +35,9 @@ from src.experiments.saor.native_system_publisher import (
     RANKING_OUTPUT_NAMES,
     publish_failed_generation,
 )
+from src.experiments.saor.native_system_readiness import (
+    verify_rehearsal_service_identity,
+)
 from src.experiments.saor.native_system_sink import collect_completion_rows
 from src.experiments.saor.native_system_validator import (
     validate_uniform_cell_identity,
@@ -44,6 +48,10 @@ from src.experiments.saor.official_vtc_capability import (
     load_official_vtc_capability,
 )
 from scripts.experiments.run_saor_native_system_matched import parse_args
+from src.infrastructure.vllm_preflight import (
+    VLLM_DISTRIBUTION_HASH_FIELDS,
+    VLLM_SOURCE_HASH_FIELDS,
+)
 
 
 class MatchedSystemContractTest(unittest.TestCase):
@@ -387,6 +395,26 @@ class MatchedSystemContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "project.service_identity"):
             validate_executor_bindings(matched, native, project)
 
+    def test_rehearsal_gate_reaudits_current_installed_source(self) -> None:
+        with Fixture() as fixture:
+            matched = load_matched_system_config(fixture.path)
+            identity = dict(matched.service_identity)
+            stored = exact_source_audit(identity)
+            evidence_path = fixture.path.parent / "source-audit.json"
+            evidence_path.write_text(json.dumps(stored), encoding="utf-8")
+            current = copy.deepcopy(stored)
+            current["status"] = "blocked_source_drift"
+            current["errors"] = ["installed source SHA-256 drifted"]
+            with patch(
+                "src.experiments.saor.native_system_readiness.audit_installed_vllm_0251",
+                return_value=current,
+            ), patch(
+                "src.experiments.saor.native_system_readiness.verify_live_vllm_service_identity"
+            ) as live:
+                with self.assertRaisesRegex(RuntimeError, "did not pass"):
+                    verify_rehearsal_service_identity(matched, evidence_path)
+                live.assert_not_called()
+
     def test_completion_sink_collects_independent_trace_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs"
@@ -433,6 +461,31 @@ def official_vtc_evidence(config) -> list[dict[str, object]]:
         "output_contract": dict(config.output_contract),
         "comparison_scope": "serving_mechanism_only",
     } for arm in config.arms]
+
+
+def exact_source_audit(identity: dict[str, object]) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "status": "passed",
+        "installed_version": identity["service"],
+        "package_root": "/frozen/vllm",
+        "errors": [],
+        "source_files": {
+            relative: {
+                "sha256": identity[field],
+                "expected_sha256": identity[field],
+                "markers_present": True,
+            }
+            for field, relative in VLLM_SOURCE_HASH_FIELDS.items()
+        },
+        "distribution_files": {
+            filename: {
+                "sha256": identity[field],
+                "expected_sha256": identity[field],
+            }
+            for field, filename in VLLM_DISTRIBUTION_HASH_FIELDS.items()
+        },
+    }
 
 
 class VtcFixture:

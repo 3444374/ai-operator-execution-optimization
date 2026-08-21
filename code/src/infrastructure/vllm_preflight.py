@@ -19,6 +19,7 @@ import hashlib
 import math
 import re
 import shlex
+import sys
 from pathlib import Path
 
 
@@ -201,9 +202,17 @@ def verify_endpoint_service_identity(
     observed: dict[str, dict[str, object]] = {}
     for url in endpoint_urls:
         port = url.rsplit(":", 1)[-1].split("/")[0]
-        cmdline = cmdline_for_port(cmdline_pool, port)
-        if cmdline is None:
-            raise RuntimeError(f"[{tag}][preflight] port {port}: no vLLM cmdline")
+        matching_cmdlines = [
+            command
+            for command in cmdline_pool
+            if cmdline_for_port([command], port) is not None
+        ]
+        if len(matching_cmdlines) != 1:
+            raise RuntimeError(
+                f"[{tag}][preflight] port {port}: expected one vLLM cmdline, "
+                f"observed {len(matching_cmdlines)}"
+            )
+        cmdline = matching_cmdlines[0]
         endpoint_observed: dict[str, object] = {}
         for flag, field in option_fields.items():
             endpoint_observed[field] = _required_option(
@@ -418,19 +427,33 @@ def verify_endpoint_cmdlines(cmdline_pool, endpoint_urls, declared_flags, strict
 def _read_live_cmdlines():
     """Return {pid: cmdline_str} for live vllm.entrypoints processes (Linux pgrep + /proc)."""
 
+    return {
+        pid: str(state["cmdline"])
+        for pid, state in _read_live_processes().items()
+    }
+
+
+def _read_live_processes() -> dict[str, dict[str, str]]:
+    """Return command and interpreter identity for live vLLM API processes."""
+
     import subprocess
 
     pg = subprocess.run(["pgrep", "-f", "vllm.entrypoints"], capture_output=True, text=True)
     pids = [p for p in pg.stdout.split() if p]
-    cmdlines: dict[str, str] = {}
+    processes: dict[str, dict[str, str]] = {}
     for pid in pids:
         try:
-            cmdlines[pid] = (
+            cmdline = (
                 Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
             )
         except OSError:
-            pass
-    return cmdlines
+            continue
+        try:
+            executable = str(Path(f"/proc/{pid}/exe").resolve(strict=True))
+        except OSError:
+            executable = "unavailable"
+        processes[pid] = {"cmdline": cmdline, "executable": executable}
+    return processes
 
 
 def verify_live_vllm_service_identity(
@@ -441,14 +464,29 @@ def verify_live_vllm_service_identity(
 ) -> dict[str, object]:
     """Read live Linux process state and return only non-secret identity evidence."""
 
-    cmdlines = _read_live_cmdlines()
-    if not cmdlines:
+    processes = _read_live_processes()
+    if not processes:
         raise RuntimeError(
             f"[{tag}][preflight] no live vLLM process; service identity is unverified"
         )
+    cmdlines = {pid: state["cmdline"] for pid, state in processes.items()}
     endpoints = verify_endpoint_service_identity(
         list(cmdlines.values()), endpoint_urls, expected_identity, tag=tag
     )
+    audit_executable = str(Path(sys.executable).resolve())
+    for url in endpoint_urls:
+        port = url.rsplit(":", 1)[-1].split("/")[0]
+        matching = [
+            state for state in processes.values()
+            if cmdline_for_port([state["cmdline"]], port) is not None
+        ]
+        if len(matching) != 1 or matching[0]["executable"] != audit_executable:
+            observed = matching[0]["executable"] if len(matching) == 1 else "ambiguous"
+            raise RuntimeError(
+                f"[{tag}][preflight] port {port}: service Python runtime drift; "
+                f"expected {audit_executable}, observed {observed}"
+            )
+        endpoints[url]["python_executable"] = audit_executable
     model_artifacts = verify_model_artifact_identity(expected_identity)
     return {
         "status": "passed",

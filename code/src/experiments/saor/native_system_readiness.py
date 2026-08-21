@@ -16,6 +16,7 @@ from src.experiments.saor.native_system_matched import (
     load_matched_system_config,
 )
 from src.experiments.saor.vllm_0251_source_audit import (
+    audit_installed_vllm_0251,
     validate_source_audit_evidence,
 )
 from src.experiments.shared_vllm import load_config as load_project_config
@@ -74,6 +75,8 @@ def verify_rehearsal_service_identity(
     if not isinstance(evidence, dict):
         raise RuntimeError("installed-source audit must be a JSON object")
     validate_source_audit_evidence(evidence, identity)
+    current_source = audit_installed_vllm_0251(identity)
+    validate_source_audit_evidence(current_source, identity)
     live = verify_live_vllm_service_identity(
         matched.endpoint_urls,
         identity,
@@ -85,13 +88,15 @@ def verify_rehearsal_service_identity(
             "evidence_sha256": hashlib.sha256(
                 installed_source_audit.read_bytes()
             ).hexdigest(),
-            "vllm_version": evidence["installed_version"],
+            "runtime_reaudit_status": current_source["status"],
+            "vllm_version": current_source["installed_version"],
+            "package_root": current_source["package_root"],
             "distribution_files": {
                 name: {
                     "sha256": item["sha256"],
                     "expected_sha256": item["expected_sha256"],
                 }
-                for name, item in evidence["distribution_files"].items()
+                for name, item in current_source["distribution_files"].items()
             },
             "source_files": {
                 name: {
@@ -99,7 +104,7 @@ def verify_rehearsal_service_identity(
                     "expected_sha256": item["expected_sha256"],
                     "markers_present": item["markers_present"],
                 }
-                for name, item in evidence["source_files"].items()
+                for name, item in current_source["source_files"].items()
             },
         },
         "live_service": live,

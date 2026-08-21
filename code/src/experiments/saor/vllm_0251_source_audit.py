@@ -12,6 +12,7 @@ from src.infrastructure.config_env import expand_structure
 from src.infrastructure.vllm_preflight import (
     VLLM_DISTRIBUTION_HASH_FIELDS,
     VLLM_SOURCE_HASH_FIELDS,
+    validate_service_identity,
 )
 
 
@@ -54,6 +55,7 @@ def load_expected_service_identity(path: Path) -> dict[str, object]:
     )
     if not isinstance(identity, dict):
         raise ValueError("matched service_identity must be an object")
+    validate_service_identity(identity)
     return identity
 
 

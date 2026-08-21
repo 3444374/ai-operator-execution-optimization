@@ -8,8 +8,9 @@
   chunked prefill/prefix cache/MFU metrics、compile mode、GPU memory 0.9 和 native FCFS。
 - `audit_vllm_0251_source.py` 可由服务器 vLLM Python 直接运行并落盘；marker/version 通过但未提供
   expected SHA 时保持 `blocked_expected_identity_missing`，只有 dist-info 与五个关键源码逐项精确
-  相等才 `passed`。五臂 runner 新增强制 `--installed-source-audit`，并在创建任何 cell 前重验 source
-  evidence、模型文件和每个 live endpoint 的完整显式 cmdline；任一缺失/默认不明/漂移均 fail closed。
+  相等才 `passed`。五臂 runner 新增强制 `--installed-source-audit`，并在创建任何 cell 前重验落盘
+  evidence、即时重哈希当前 install、绑定 live API 进程与审计 Python、再检查模型文件和每个 endpoint
+  的完整显式 cmdline；任一缺失/默认不明/漂移均 fail closed。
 - `audit_saor_native_system_matched.py` 修复仓库根导入，联合加载三份真实配置。默认静态报告明确写
   `static_config_passed/rehearsal_ready=false`；只有加 exact source evidence 与 `--live-service` 才可能
   报 rehearsal-ready。`start_endpoints.sh` 新增显式 `VLLM_DTYPE`，五臂 env 冻结 BF16 与显式
@@ -26,7 +27,7 @@
   未发现独立 tar；shell history 未保留逐字 argv，故只登记 matrix index 可证明的事实与等价 runbook
   入口。当前准确状态为“尚无成功、完整、可比较的五臂 rehearsal”。
 - 本地新增/受影响的 service preflight、cross-layer capability、matched matrix、shared-vLLM
-  57 项定向测试通过；`compileall`、三份 JSON、endpoint shell 语法与 diff check 通过。全仓发现器运行
+  60 项定向测试通过；`compileall`、三份 JSON、endpoint shell 语法与 diff check 通过。全仓发现器运行
   1,094 项后仅剩本机可选依赖缺失（`pyarrow`/`psycopg`）造成的 8 个导入错误；另一个断言差异由
   发现器命令临时设置 `PYTHONPATH=code` 引起，去除该环境污染后的受影响集合通过，未安装新依赖。
 - 授权顺序统一为：合入 canonical `main` 并独立审核后可显式授权 rehearsal；rehearsal 不需要 formal

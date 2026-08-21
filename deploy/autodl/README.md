@@ -131,7 +131,7 @@ its deviation are retained, and eligibility requires the pre-registered
 ```bash
 # Run from the repository root after sourcing the runtime env and this
 # matrix's frozen env. This stage is static and sends no service request.
-python code/scripts/analysis/audit_saor_native_system_matched.py \
+"$VLLM_VENV/bin/python" code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
   --native-config deploy/autodl/saor_native_system_matched_native.example.json \
   --project-config deploy/autodl/saor_native_system_matched_project.example.json \
@@ -143,9 +143,11 @@ python code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
   --output /tmp/saor_native_system_matched_vllm_source.json
 
-# Only when endpoints are already running: combine exact source evidence with
-# model artifacts and live process flags. This still sends no inference request.
-python code/scripts/analysis/audit_saor_native_system_matched.py \
+# Only when endpoints are already running: validate the saved source evidence,
+# re-hash the current vLLM install, require the live API processes to use that
+# Python runtime, then check model artifacts and process flags. This still sends
+# no inference request.
+"$VLLM_VENV/bin/python" code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
   --native-config deploy/autodl/saor_native_system_matched_native.example.json \
   --project-config deploy/autodl/saor_native_system_matched_project.example.json \

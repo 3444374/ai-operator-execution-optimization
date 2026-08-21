@@ -147,8 +147,9 @@ adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行�
 dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked。
 `analysis/audit_saor_native_system_matched.py` 可从仓库根直接运行，联合加载三份实际 config；默认只
 报告 `static_config_passed/rehearsal_ready=false`。只有显式提供前述 source evidence 并加
-`--live-service` 时，才继续核对模型 artifact 与完整 endpoint cmdline。五臂 runner 本身也强制
-接收 `--installed-source-audit`，所以不能绕过 service identity 门直接进入 rehearsal。
+`--live-service` 时，才由同一冻结 vLLM Python 即时重哈希当前 install、核对 live API 进程解释器、
+模型 artifact 与完整 endpoint cmdline。五臂 runner 本身也必须由该 Python 运行并强制接收
+`--installed-source-audit`，所以不能用旧 evidence 或另一环境绕过 service identity 门进入 rehearsal。
 
 `analysis/summarize_saor_native_system_matched.py` 是该矩阵的薄 CLI；可复用的纯离线、
 fail-closed 核心位于 `src/experiments/saor/native_system_summary.py`，不连接服务。CLI 要求同一个
