@@ -100,6 +100,15 @@ executor seam。`BaseOptimizer` 可公开接收 node list，但只承诺返回 n
 
 ```python
 @dataclass(frozen=True)
+class SemanticMapOptions:
+    examples: tuple[CanonicalSemanticExample, ...]
+    strategy: str | None
+    safe_mode: bool
+    return_explanations: bool
+    postprocessor_identity: PostprocessorIdentity | None
+    residual_model_kwargs: tuple[tuple[str, CanonicalJsonValue], ...]
+
+@dataclass(frozen=True)
 class SemanticMapPlan:
     operator_id: str
     input_columns: tuple[str, ...]
@@ -107,13 +116,19 @@ class SemanticMapPlan:
     system_prompt: str | None
     output_column: str
     return_raw_outputs: bool
+    semantic_options: SemanticMapOptions
     generation_contract: CompletionGenerationContract
     frontend_identity: FrontendIdentity
     logical_plan_sha256: str
     prompt_builder_sha256: str
 ```
 
-interface 不包含 pandas、LOTUS、Daft、Ray 或 vLLM 对象。`job_id/doc_id` 属于一次 execution context，不写进可复用逻辑计划。
+interface 不包含 pandas、LOTUS、Daft、Ray 或 vLLM 对象。`job_id/doc_id` 属于一次 execution
+context，不写进可复用逻辑计划。首版虽然只允许 `examples=()`、`strategy=None`、`safe_mode=False`、
+`return_explanations=False`、`postprocessor=None`，仍把这些默认值显式写入 canonical plan；不得因其
+当前为默认值就从 IR 和 plan SHA 中省略。`model_kwargs` 中被支持的键必须逐个消费到
+`generation_contract`，未消费键进入 `residual_model_kwargs` 后立即触发 fail-closed；正式可执行
+plan 的 residual 必须为空。
 
 ### 4.2 LOTUS adapter
 
@@ -134,9 +149,12 @@ implementation 隐藏：
 - 首先用 `BaseOptimizer` probe 核对能否无执行、无隐式副作用地取得完整 node list；
 - 若不能干净导出，则集中只读 `_nodes`，并校验 `LazyFrame` 与 `_nodes` source-layout SHA；
 - 仅接受 `SourceNode → SemMapNode` 首版子集；
-- 解析 instruction、columns、suffix、model kwargs；
+- 解析 instruction、columns、suffix、examples、strategy、safe mode、return explanations、
+  postprocessor、return-raw-output 与全部 model kwargs；
 - 生成 canonical JSON 与 logical-plan SHA；
-- 拒绝未知 node、多个 semantic nodes、cascade、GEPA/prompt rewrite、cache-on 和不可序列化 callable；
+- 逐项拒绝首版不支持的非默认 options：非空 examples、非 `None` strategy、`safe_mode=True`、
+  `return_explanations=True`、任意 postprocessor，以及任何未被 generation contract 消费的 model kwarg；
+- 拒绝未知 node、多个 semantic nodes、cascade、GEPA/prompt rewrite、cache-on 和 callable；
 - 调用冻结的 LOTUS prompt formatter 并生成逐行 request messages。
 
 所有私有 LOTUS import 只允许存在于这个 adapter。runner、scheduler、baseline summary 与 tests
@@ -216,11 +234,13 @@ LOTUS 是 Pandas-like AI data-processing framework/system，而不是 PostgreSQL
 
 - 正常 `SourceNode → SemMapNode`；
 - 缺输入列、重复输出列、非法 suffix；
+- 非空 examples、非 `None` strategy、`safe_mode=True`、`return_explanations=True`；
+- callable 与非 callable postprocessor；
+- 已支持 model kwargs 全部进入 generation contract，任一未知/残余/冲突键失败；
 - `sem_filter/sem_join/sem_agg` 等未知节点；
 - 两个 `sem_map`；
 - optimizer 改写前后 plan SHA 不同；
 - cache-on；
-- callable postprocessor；
 - pickle/AST 篡改；
 - LOTUS version/source SHA 漂移。
 

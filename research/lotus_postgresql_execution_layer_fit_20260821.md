@@ -159,9 +159,10 @@ SemMapNode.__call__()
 ```
 
 没有发现把 `SemMapNode` dispatch 给用户提供的 Daft/Ray executor 的公共参数、protocol 或 registry。
-可以自写 `BaseOptimizer`，在收到 node list 时校验并生成 Project IR；这能避免直接读取 `_nodes`，
-但它仍是 project-defined lowering pass，不是 LOTUS 官方 executor。optimizer 本身不替换 runner，也
-不提供异步 request lifecycle。
+可以自写 `BaseOptimizer` 接收并校验 node list，但其正式合同仍是 `nodes → nodes`；只有最小原型
+证明无需隐式 side effect 就能导出完整 IR 时，才采用该路径。否则使用集中、版本锁定的只读
+`_nodes` adapter。两者都是 project-defined lowering，不是 LOTUS 官方 executor，也都不替换 runner
+或提供异步 request lifecycle。
 
 **来源类型：固定版本源码审计。**
 [LazyFrame.run](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/ast/lazyframe.py#L762-L795)、
@@ -252,6 +253,11 @@ summary 不得直接访问私有字段。无论选择哪条路线，都不调用
 
 adapter 发现未知 node、多步 plan、optimizer 已改 prompt、cascade、cache 或无法解释的 model kwargs 时，
 必须 fail closed，而不是回退到 eager LOTUS 执行。
+
+首版 IR 仍须显式记录 `examples/strategy/safe_mode/return_explanations/postprocessor/model_kwargs`。
+为避免在 capability 阶段扩张语义面，首版只接受空 examples、无 strategy、`safe_mode=False`、
+`return_explanations=False`、无 postprocessor；支持的 model kwargs 必须全部被 typed generation contract
+消费，存在任何 residual key 即失败。这样“当前不支持”表现为可证伪拒绝，而不是编译成功后静默丢字段。
 
 **来源类型：源码支持的工程设计。** `BaseOptimizer` 和 `SemMapNode` 是公开 export，前者能把 node
 list 暴露给自定义 optimizer；但它只承诺 `nodes → nodes`，不承诺导出外部 IR。“optimizer 产出
@@ -370,7 +376,9 @@ capability；否则同时更换前端语义、prompt、source materialization �
 
 1. pin `lotus-ai==1.2.4` 与完整 commit/source SHA；
 2. 构造 `LazyFrame().sem_map(...)`；
-3. 通过自定义 `BaseOptimizer` lower 只包含 `SourceNode → SemMapNode` 的计划，不直接读取 `_nodes`；
+3. 比较 `BaseOptimizer` probe 与集中、只读、source-hash 锁定的 `_nodes` adapter，仅 lower
+   `SourceNode → SemMapNode`；若 optimizer 需要隐藏 collector/marker 才能导出 IR，则选择后者并
+   明确记录 private-API dependency；
 4. 生成 `SemanticMapSpec` 与逐行 typed requests；
 5. 用 fake deterministic completion 验证 output order、`doc_id/job_id`、重复/缺失和 fail-closed；
 6. 用 recording LM 对拍 LOTUS native messages，要求逐字节 prompt digest 一致；
