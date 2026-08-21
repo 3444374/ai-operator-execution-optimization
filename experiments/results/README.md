@@ -19,6 +19,7 @@
 | `state_aware_work_unit/saor_project_mechanism_rehearsal_20260814/` | frozen-static + 同 bounded-ready observation 的 FIFO/DRR/VTC-style/strict-priority/SAOR 最终六臂 Project mechanism rehearsal | `63d17300` root 6/6、0 incident，validation passed；6,144-request fixed-output-cap audit 通过，SAOR 96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 projection 一致。单次相对 VTC-style lag P95 −13.15%、no-service +0.014%；只进入独立审核，不判排名、不授权 formal。 |
 | `state_aware_work_unit/saor_native_system_matched_manifest_20260819/` | native-system matched 的 Job0/Job1 SHA、512-row、合并顺序与独立 formal 授权模板 | 完整 prompt manifest 留在 Git 外；readiness 逐 Job 校验并要求 combined=Job0+Job1。merge 与 rehearsal 均不自动授权 formal。 |
 | `state_aware_work_unit/saor_native_system_matched_calibration_20260819/` | Project selection 与 Daft Native/Daft Ray/Ray Data 原生执行 selection identity | Daft C1/B1 是 vendor control，Ray Data C8/B16 是一次 development screen 冻结点；只声明身份匹配，不夸大为统计最优。 |
+| `state_aware_work_unit/saor_native_system_matched_gateway_rehearsal_20260821/` | 五臂统一 T0--T4 与 observation-only gateway 的单次 GPU rehearsal | 5/5、exactly-once、archive validation 通过；SAOR 相对同 executor static 吞吐 +31.01%、group JCT −23.70%，但 P99/lag/no-service 变差、Jain −1.50%。只作 rehearsal 观察；0s/5s pre/post isolation 样本不足，formal 未运行。 |
 
 ## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
 

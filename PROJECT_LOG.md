@@ -14367,3 +14367,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `slo_violation_ratio` 仍保留 `unavailable`，因此 fail-closed。现由共同观测 adapter 显式把同一数值
   映射到持久化 schema，并增加“一 Job 0 miss、另一 Job 100% miss”的 red→green 回归；失败 root
   保留，不作性能结论，需在新 commit/fresh root 重跑 smoke。
+- `93271012` 已在 2×4090 服务器通过 environment check、static/live vLLM identity、PG/Ray/GPU clean、
+  bounded baseline、五臂 correctness smoke；新 fresh rehearsal 5/5 cell、每臂 1,024 requests、
+  retry=0、body/exactly-once/T0--T4 均通过。29MiB root 的 6.5MiB archive SHA 为
+  `90b47110044030c912f93ae54ecb9937554bdb8f81c6e0bcd00a449e059b28c5`，独立 validator
+  `valid_rehearsal=true`；formal 未运行。
+- 单次 rehearsal 下 SAOR 相对 Project frozen-static：correct throughput +31.01%、group/bulk JCT
+  −23.70%、foreground JCT −1.72%、单位 observed token 能耗 −25.30%；但 bulk/foreground request
+  P99 +18.70%/+24.11%、weighted Jain −1.50%、service lag P95 +42.47%、longest no-service
+  +16.75%。结论冻结为效率—tail—公平权衡，不作显著性或全面胜出声称。
+- 五臂 request P99/SLO、actual-work Jain/lag/no-service 缺口已闭合；但 5s foreground release 前多数
+  framework 尚无 victim completion，within-run P99 inflation/recovery 只可标 partial。后续若补隔离
+  因果结论，需另跑固定 guaranteed-service-overlap panel 或 matched-solo controls，不动态修改主矩阵
+  offset，不用本次 rehearsal 解锁 formal。

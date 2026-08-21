@@ -51,7 +51,12 @@ PostgreSQL 读取和 child/Ray 初始化前，T1 为首批 source data，T2/T3 �
 source/execution/service span。共同 gateway 不排队、不重试、不重写、不接管原生 scheduler；只用
 endpoint actual token usage 在共同积压窗口计算 P99/SLO、weighted Jain、service lag 与最长无服务。
 within-run victim impact/recovery 可跨五臂比较，full-solo slowdown 仍需另跑 matched-solo control。
-该修订已通过本地定向测试，尚未重跑服务器 smoke/rehearsal；formal 继续禁止。
+`93271012` 已在服务器通过四阶段 readiness、五臂 correctness smoke 与独立封存的五臂 rehearsal；
+五臂 P99/SLO/Jain/lag/no-service 现均可用。单次观察中 SAOR 相对同 executor frozen-static 的 correct
+throughput +31.01%、group/bulk JCT −23.70%，但 request P99 +18.70%/+24.11%、Jain −1.50%、
+lag P95 +42.47%，继续呈效率—尾延迟—公平权衡。0s/5s 主矩阵缺少统一 pre/post service 样本，
+victim inflation/recovery 只标 partial；full-solo 仍需独立控制。该 root 是 rehearsal，不作显著性排名，
+formal 从未运行且继续禁止。
 
 ## 1. 题目与研究对象
 

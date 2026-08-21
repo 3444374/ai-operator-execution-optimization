@@ -1,0 +1,25 @@
+{
+  "archive_sha256": "90b47110044030c912f93ae54ecb9937554bdb8f81c6e0bcd00a449e059b28c5",
+  "arm_ids": [
+    "daft_native",
+    "daft_ray",
+    "ray_data_http",
+    "project_frozen_static",
+    "project_bounded_ready_saor_0125we"
+  ],
+  "completed_cells": 5,
+  "config_sha256": "c27e184e2a9d2173f5814cad12219c2b85cd6cc5d645ba16a0105da991f3cae9",
+  "exactly_once": true,
+  "matrix_index_sha256": "580553630f2974db3f5c4925f6a2de8dd2ea5aeba67df595fa4f5801a49a5db2",
+  "matrix_instance_id": "ab18ea6561324abaa7d4346290a51bac",
+  "native_config_sha256": "90589b412355bf6ead78947eb1537788e3663bcc20f05a7ced6af7c4f281b614",
+  "project_config_sha256": "a72cf759f249b4bf7a8964e00f4d6a8acde9e7d4c7c6dd4e2a6a7a1f320b86ca",
+  "rehearsal_root": "/root/autodl-tmp/experiment-artifacts/saor_native_system_matched_gateway_rehearsal_93271012_20260821",
+  "repository_commit": "932710125bd2a57525072181a969d032763aa869",
+  "resolved_config_sha256": "9ea17ebe4ce581b7868bc679d49a3d1d6e62149dc92574c6e690677b7d102315",
+  "root_id": "saor_native_system_matched_gateway_rehearsal_93271012_20260821",
+  "schema_version": 1,
+  "scope": "saor_five_arm_rehearsal_validation",
+  "status": "passed",
+  "valid_rehearsal": true
+}

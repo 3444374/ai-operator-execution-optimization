@@ -31,9 +31,13 @@ Project 暂无统一可信 FLOP numerator，本轮 MFU 明确为 unavailable，�
 `bounded_concrete_pre_registration`、正 payload-byte limit 和 request trace 同时成立时允许 eager。
 非 replay 执行把同一 observed Job start epoch 写入 scheduler request 与 trace seed，再通过 concrete
 request envelope 进入受 K/work/bytes 限制的 register→grant→submit 路径。
-真实 matched argv 回归已通过。`862d0008` 已完成一次 gateway 前的五臂 correctness smoke 与
-rehearsal，但其原生 request tail/fairness 不可用，只作可运行性历史证据；新 gateway 合同尚未在
-服务器重跑。formal 从未运行且继续禁止。
+真实 matched argv 回归已通过。`862d0008` 的 gateway 前 rehearsal 只保留为可运行性历史证据；
+`93271012` 已在服务器完成新 gateway 合同的四阶段 readiness、五臂 correctness smoke 和独立 archive
+validation 的五臂 rehearsal。单次观察中 SAOR 相对同 executor frozen-static 的 correct throughput
++31.01%、group/bulk JCT −23.70%、foreground JCT −1.72%、单位 token 能耗 −25.30%；同时 bulk/fg
+request P99 +18.70%/+24.11%、weighted Jain −1.50%、lag P95 +42.47%、longest no-service +16.75%。
+因此只冻结为效率—tail—公平权衡，不判 selector winner。五臂共同 request tail/fairness 已可用；
+0s/5s 主矩阵的 pre/post isolation 样本仍不足，full-solo 需独立 control。formal 从未运行且继续禁止。
 
 官方 VTC 独立 capability 合同固定 upstream commit、S-LoRA runtime owner、同栈 FCFS/VTC、
 逻辑 workload SHA 与 Job release。官方文档的 CUDA/PyTorch/Ampere 假设尚未在当前 RTX 4090/
