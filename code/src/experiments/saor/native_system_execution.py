@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from src.baselines.text.orchestration.native_multijob import (
 from src.experiments.saor.native_system_bindings import validate_executor_bindings
 from src.experiments.saor.native_system_contract import MatchedArm, ScheduledMatchedCell
 from src.experiments.saor.native_system_readiness import (
-    verify_rehearsal_service_identity,
+    audit_readiness,
 )
 from src.experiments.saor.native_system_matched import (
     load_matched_system_config,
@@ -53,8 +54,15 @@ class MatchedExecutionOptions:
     idle_timeout_s: float
     start_delay_s: float
     rehearsal: bool
+    vllm_python: Path
+    runtime_identity_paths: tuple[Path, ...]
     installed_source_audit: Path
+    system_preflight_evidence: Path
+    correctness_smoke_evidence: Path
     formal_authorization: Path | None
+    rehearsal_validation: Path | None
+    rehearsal_root: Path | None
+    rehearsal_archive: Path | None
 
 
 def normalize_native_evidence(
@@ -242,6 +250,10 @@ def normalize_project_evidence(
 
 
 def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object]:
+    if Path(sys.executable).absolute() != options.python_executable.absolute():
+        raise RuntimeError(
+            "outer five-arm runner must be invoked by the declared DRIVER_PYTHON"
+        )
     native = load_native_multijob_config(options.native_config)
     project = load_project_config(options.project_config)
     matched = load_matched_system_config(options.config)
@@ -252,9 +264,25 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         runner_metrics_urls=options.metrics_urls,
         runner_health_url=options.health_url,
     )
-    service_identity_preflight = verify_rehearsal_service_identity(
-        matched, options.installed_source_audit
+    readiness = audit_readiness(
+        options.config,
+        options.native_config,
+        options.project_config,
+        live_service=True,
+        installed_source_audit=options.installed_source_audit,
+        vllm_python=options.vllm_python,
+        runtime_identity_paths=options.runtime_identity_paths,
+        system_preflight_evidence=options.system_preflight_evidence,
+        correctness_smoke_evidence=options.correctness_smoke_evidence,
     )
+    if readiness.get("rehearsal_ready") is not True:
+        raise RuntimeError("all four readiness stages must pass before matrix execution")
+    service_identity_preflight = readiness
+    vllm_runtime = readiness["service_identity"]["installed_source"]["python_runtime"]
+    if str(Path(sys.prefix).absolute()) == str(Path(vllm_runtime["sys_prefix"]).absolute()):
+        raise RuntimeError(
+            "DRIVER_PYTHON and VLLM_PYTHON must use isolated Python environments"
+        )
     repository = Path(__file__).resolve().parents[4]
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"], check=True, capture_output=True,
@@ -285,6 +313,10 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         for command in commands:
             audit_command(command)
         normalized = normalize_native_evidence(arm, record)
+        native_provenance = dict(native.native_implementation_provenance)
+        normalized["native_implementation_provenance"] = dict(
+            native_provenance[arm.arm_id]
+        )
         normalized["command"] = [token for command in commands for token in command]
         return normalized
 
@@ -320,5 +352,8 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         repository_commit_getter=lambda: commit,
         rehearsal=options.rehearsal,
         formal_authorization_path=options.formal_authorization,
+        rehearsal_validation_path=options.rehearsal_validation,
+        rehearsal_root=options.rehearsal_root,
+        rehearsal_archive=options.rehearsal_archive,
         service_identity_preflight=service_identity_preflight,
     )

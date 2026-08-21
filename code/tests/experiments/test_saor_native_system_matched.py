@@ -8,6 +8,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -26,9 +27,12 @@ from src.experiments.saor.native_system_matched import (
     SYSTEM_ARM_IDS,
     audit_matched_system_config,
     balanced_matched_schedule,
+    build_rehearsal_validation_payload,
     formal_authorization_requirements,
     load_matched_system_config,
+    run_identity_requirements,
     run_matched_system,
+    validate_rehearsal_evidence,
     validate_release_gated_events,
 )
 from src.experiments.saor.native_system_publisher import (
@@ -36,6 +40,8 @@ from src.experiments.saor.native_system_publisher import (
     publish_failed_generation,
 )
 from src.experiments.saor.native_system_readiness import (
+    validate_correctness_smoke_evidence,
+    validate_system_preflight_evidence,
     verify_rehearsal_service_identity,
 )
 from src.experiments.saor.native_system_sink import collect_completion_rows
@@ -81,6 +87,14 @@ class MatchedSystemContractTest(unittest.TestCase):
             matched["service_identity"], project["service_identity"]
         )
         self.assertTrue(project["require_complete_service_metadata"])
+        self.assertEqual(
+            set(native["native_implementation_provenance"]),
+            {"daft_native", "daft_ray", "ray_data_http"},
+        )
+        for provenance in native["native_implementation_provenance"].values():
+            self.assertEqual(len(provenance["upstream_commit"]), 40)
+            self.assertEqual(len(provenance["adapter_sha256"]), 64)
+            self.assertFalse(provenance["upstream_source_modified"])
         forbidden = {"project_bounded_ready_fifo", "project_bounded_ready_drr", "project_bounded_ready_vtc_style"}
         self.assertTrue(forbidden.isdisjoint(arm["arm_id"] for arm in matched["arms"]))
         for arm in matched["arms"]:
@@ -102,6 +116,21 @@ class MatchedSystemContractTest(unittest.TestCase):
                 self.assertEqual(
                     arm["model_service_scheduler"], "vllm_native_fcfs"
                 )
+
+    def test_active_runbooks_keep_driver_vllm_split_and_five_arm_calibration(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        autodl = (repository / "deploy/autodl/README.md").read_text(encoding="utf-8")
+        scripts = (repository / "code/scripts/README.md").read_text(encoding="utf-8")
+        calibration = (
+            repository
+            / "experiments/results/state_aware_work_unit/"
+            "saor_native_system_matched_calibration_20260819/README.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn('PYTHONPATH=code "$DRIVER_PYTHON"', autodl)
+        self.assertIn("--vllm-python", autodl)
+        self.assertIn("四阶段", scripts)
+        self.assertIn("当前五臂", calibration.splitlines()[2])
+        self.assertNotIn("八臂 native-system matched comparison 的四份", calibration)
 
     def test_native_arm_rejects_bounded_ready_k_w_and_credit_controls(self) -> None:
         for field, value in (
@@ -213,7 +242,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     load_matched_system_config(fixture.path)
         with Fixture() as fixture:
             config = load_matched_system_config(fixture.path)
-            identity = formal_authorization_requirements(
+            identity = run_identity_requirements(
                 fixture.path, config, "a" * 40
             )
             self.assertEqual(len(identity["resolved_config_sha256"]), 64)
@@ -237,6 +266,91 @@ class MatchedSystemContractTest(unittest.TestCase):
                 )
             self.assertEqual(calls, [])
             self.assertFalse(output_root.exists())
+
+    def test_rehearsal_readiness_rejects_an_existing_matrix_root(self) -> None:
+        with Fixture() as fixture:
+            config = load_matched_system_config(fixture.path)
+            output_root = Path(config.matrix_output_root)
+            output_root.mkdir()
+            with self.assertRaisesRegex(ValueError, "matrix_output_root already exists"):
+                run_matched_system(
+                    fixture.path,
+                    native_executor=lambda *_args: {},
+                    project_executor=lambda *_args: {},
+                    idle_gate=lambda *_args: None,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "b" * 40,
+                    rehearsal=True,
+                )
+
+    def test_formal_authorization_is_bound_to_actual_rehearsal_root_and_archive(self) -> None:
+        commit = "a" * 40
+        with Fixture() as fixture:
+            config = load_matched_system_config(fixture.path)
+            base = run_identity_requirements(fixture.path, config, commit)
+            root = fixture.path.parent / "reviewed-rehearsal"
+            root.mkdir()
+            archive = fixture.path.parent / "reviewed-rehearsal.tar.gz"
+            schedule = [
+                {
+                    "arm_id": arm_id, "phase": "warmup", "repeat": 1,
+                    "order_index": index, "report_blocks": ["db_e2e_system"],
+                }
+                for index, arm_id in enumerate(SYSTEM_ARM_IDS)
+            ]
+            cells = [{
+                **item,
+                "status": "passed", "exactly_once": True,
+                "repository_commit": commit,
+                "config_sha256": base["config_sha256"],
+                "config_fingerprint": base["resolved_config_sha256"],
+            } for item in schedule]
+            (root / "matrix_index.json").write_text(json.dumps({
+                "status": "completed", "execution_mode": "rehearsal",
+                "repository_commit": commit,
+                "config_sha256": base["config_sha256"],
+                "config_fingerprint": base["resolved_config_sha256"],
+                "manifest_sha256": base["manifest_sha256"],
+                "authorization_sha256": "",
+                "matrix_instance_id": "1" * 32,
+                "schedule": schedule, "cells": cells,
+                "service_identity_preflight": {
+                    "rehearsal_ready": True,
+                    "service_identity": {
+                        "installed_source": {"status": "passed"},
+                        "live_service": {"status": "passed"},
+                    },
+                },
+            }), encoding="utf-8")
+            (root / "matrix_contract_snapshot.json").write_text(
+                "{}", encoding="utf-8"
+            )
+            cell_path = root / "cells" / "000_warmup_01_daft_native"
+            cell_path.mkdir(parents=True)
+            (cell_path / "evidence.json").write_text("{}", encoding="utf-8")
+            with tarfile.open(archive, "w:gz") as stream:
+                stream.add(root, arcname=root.name)
+            validation = fixture.path.parent / "rehearsal_validation.json"
+            validation.write_text(json.dumps(build_rehearsal_validation_payload(
+                fixture.path, config, commit, root, archive
+            )), encoding="utf-8")
+            evidence = validate_rehearsal_evidence(
+                fixture.path, config, commit, validation, root, archive
+            )
+            requirements = formal_authorization_requirements(
+                fixture.path, config, commit, evidence
+            )
+            self.assertEqual(
+                requirements["rehearsal_evidence"]["archive_sha256"],
+                hashlib.sha256(archive.read_bytes()).hexdigest(),
+            )
+            forged = json.loads(validation.read_text(encoding="utf-8"))
+            forged["valid_rehearsal"] = False
+            validation.write_text(json.dumps(forged), encoding="utf-8")
+            with self.assertRaisesRegex(PermissionError, "identity drifted"):
+                validate_rehearsal_evidence(
+                    fixture.path, config, commit, validation, root, archive
+                )
 
     def test_failed_cell_stays_in_all_runs_but_no_ranking_is_published(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -313,10 +427,16 @@ class MatchedSystemContractTest(unittest.TestCase):
             "--health-url", "http://127.0.0.1:8000/health",
             "--metrics-urls", "http://127.0.0.1:8000/metrics",
             "--ray-address", "auto",
+            "--vllm-python", "/vllm/bin/python",
+            "--vllm-runtime-identity", "ep8000.json",
+            "--vllm-runtime-identity", "ep8001.json",
             "--installed-source-audit", "source-audit.json",
+            "--system-preflight-evidence", "system.json",
+            "--correctness-smoke-evidence", "smoke.json",
         ])
         self.assertIsNone(options.formal_authorization)
         self.assertFalse(options.rehearsal)
+        self.assertEqual(options.vllm_python, Path("/vllm/bin/python"))
 
     def test_readiness_and_source_audit_clis_import_from_repository_root(self) -> None:
         repository = Path(__file__).resolve().parents[3]
@@ -335,6 +455,26 @@ class MatchedSystemContractTest(unittest.TestCase):
                 self.assertEqual(completed.returncode, 0, completed.stderr)
                 self.assertNotIn("ModuleNotFoundError", completed.stderr)
 
+    def test_source_audit_cli_redacts_exception_before_persisting(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        secret = "synthetic-sensitive-value"
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "audit.json"
+            missing = Path(directory) / f"api_key={secret}" / "missing.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "code/scripts/analysis/audit_vllm_0251_source.py",
+                    "--config", str(missing), "--output", str(output),
+                ],
+                cwd=repository,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertNotIn(secret, output.read_text(encoding="utf-8"))
+
     def test_three_config_service_identity_binding_fails_on_project_drift(self) -> None:
         with Fixture() as fixture:
             matched_config = load_matched_system_config(fixture.path)
@@ -350,6 +490,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             "gpu_memory_utilization": 0.9,
             "prefix_caching": True,
             "mfu_metrics": True,
+            "scheduling_policy": "fcfs",
         }.items()))
         matched = SimpleNamespace(
             endpoint_urls=endpoints, service_identity=identity, arms=()
@@ -406,14 +547,71 @@ class MatchedSystemContractTest(unittest.TestCase):
             current["status"] = "blocked_source_drift"
             current["errors"] = ["installed source SHA-256 drifted"]
             with patch(
-                "src.experiments.saor.native_system_readiness.audit_installed_vllm_0251",
+                "src.experiments.saor.native_system_readiness.run_vllm_source_audit",
                 return_value=current,
             ), patch(
                 "src.experiments.saor.native_system_readiness.verify_live_vllm_service_identity"
             ) as live:
                 with self.assertRaisesRegex(RuntimeError, "did not pass"):
-                    verify_rehearsal_service_identity(matched, evidence_path)
+                    verify_rehearsal_service_identity(
+                        matched,
+                        fixture.path,
+                        Path(sys.executable),
+                        evidence_path,
+                        (fixture.path.parent / "runtime.json",),
+                    )
                 live.assert_not_called()
+
+    def test_readiness_requires_bound_system_preflight_and_correctness_smoke(self) -> None:
+        binding = {
+            "repository_commit": "a" * 40,
+            "config_sha256": "b" * 64,
+            "resolved_config_sha256": "c" * 64,
+            "service_identity_sha256": "d" * 64,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system = root / "system.json"
+            system.write_text(json.dumps({
+                "schema_version": 1,
+                "status": "passed",
+                "binding": binding,
+                "checks": {
+                    "endpoint_health": {"status": "passed"},
+                    "postgresql": {
+                        "status": "passed", "server_version": "18.3",
+                        "pgvector_version": "0.8.1",
+                    },
+                    "ray_gpu_clean": {"status": "passed"},
+                    "bounded_baseline": {
+                        "status": "passed", "feeding_saturation_ratio": 0.97,
+                    },
+                },
+            }), encoding="utf-8")
+            system_result = validate_system_preflight_evidence(system, binding)
+            smoke = root / "smoke.json"
+            smoke.write_text(json.dumps({
+                "schema_version": 1,
+                "status": "passed",
+                "binding": binding,
+                "system_preflight_sha256": system_result["evidence_sha256"],
+                "checks": {
+                    "manifest_validation": {"status": "passed"},
+                    "exactly_once": {"status": "passed"},
+                    "sink_validation": {"status": "passed"},
+                },
+                "completed_rows": 10,
+            }), encoding="utf-8")
+            validate_correctness_smoke_evidence(
+                smoke, binding, system_result["evidence_sha256"]
+            )
+            corrupted = json.loads(smoke.read_text(encoding="utf-8"))
+            corrupted["system_preflight_sha256"] = "e" * 64
+            smoke.write_text(json.dumps(corrupted), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "system preflight"):
+                validate_correctness_smoke_evidence(
+                    smoke, binding, system_result["evidence_sha256"]
+                )
 
     def test_completion_sink_collects_independent_trace_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -469,6 +667,12 @@ def exact_source_audit(identity: dict[str, object]) -> dict[str, object]:
         "status": "passed",
         "installed_version": identity["service"],
         "package_root": "/frozen/vllm",
+        "python_runtime": {
+            "executable_argv0": "/frozen/bin/python",
+            "sys_prefix": "/frozen",
+            "package_root": "/frozen/vllm",
+            "package_version": identity["service"],
+        },
         "errors": [],
         "source_files": {
             relative: {
@@ -604,7 +808,8 @@ class Fixture:
             "vllm_source_async_scheduler_sha256": "6" * 64,
             "vllm_source_request_queue_sha256": "7" * 64,
             "vllm_source_request_sha256": "8" * 64,
-            "scheduler": "vllm_native_fcfs", "max_model_len": 8192,
+            "scheduler": "vllm_native_fcfs", "scheduling_policy": "fcfs",
+            "max_model_len": 8192,
             "max_num_seqs": 256, "max_num_batched_tokens": 8192,
             "chunked_prefill": True, "prefix_caching": True,
             "mfu_metrics": True, "enforce_eager": False,

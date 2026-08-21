@@ -312,6 +312,7 @@ def validate_executor_bindings(
         "gpu_memory_utilization": identity["gpu_memory_utilization"],
         "prefix_caching": identity["prefix_caching"],
         "mfu_metrics": identity["mfu_metrics"],
+        "scheduling_policy": identity["scheduling_policy"],
     }.items()))
     expected_metrics = tuple(
         endpoint_auxiliary_url(url, "/metrics") for url in matched.endpoint_urls

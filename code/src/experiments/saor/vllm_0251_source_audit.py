@@ -6,6 +6,7 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 from src.infrastructure.config_env import expand_structure
@@ -159,6 +160,12 @@ def audit_installed_vllm_0251(
         "frozen_version": FROZEN_VLLM_VERSION,
         "installed_version": installed_version,
         "package_root": str(package_root),
+        "python_runtime": {
+            "executable_argv0": sys.executable,
+            "sys_prefix": sys.prefix,
+            "package_root": str(package_root),
+            "package_version": installed_version,
+        },
         "distribution_files": distribution,
         "source_files": evidence,
         "errors": errors,
@@ -174,6 +181,18 @@ def validate_source_audit_evidence(
         raise RuntimeError("installed-source audit did not pass exact hash checks")
     if evidence.get("installed_version") != expected_identity.get("service"):
         raise RuntimeError("installed-source audit vLLM version drifted")
+    runtime = evidence.get("python_runtime")
+    if not isinstance(runtime, dict):
+        raise RuntimeError("installed-source audit Python runtime identity is missing")
+    for field in ("executable_argv0", "sys_prefix", "package_root", "package_version"):
+        if not isinstance(runtime.get(field), str) or not runtime[field]:
+            raise RuntimeError(
+                f"installed-source audit Python runtime {field} is missing"
+            )
+    if runtime["package_root"] != evidence.get("package_root"):
+        raise RuntimeError("installed-source audit package path binding drifted")
+    if runtime["package_version"] != evidence.get("installed_version"):
+        raise RuntimeError("installed-source audit package version binding drifted")
     sources = evidence.get("source_files")
     distribution = evidence.get("distribution_files")
     if not isinstance(sources, dict) or not isinstance(distribution, dict):

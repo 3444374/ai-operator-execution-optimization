@@ -36,7 +36,7 @@
     "vllm_source_async_scheduler_sha256": "da6343d7e7c394a1738cf72905cbecc208003ffa461ccb441268333a3eb9f884",
     "vllm_source_request_queue_sha256": "4b8d938e5fb8152fe61030b8aa991f983fcac9a405c37ed8908045e05e82ae5e",
     "vllm_source_request_sha256": "06b1c6ad3cc0223c2036b4a2e317868fa4988391b4b024bc5e5f54672b7d2c80",
-    "scheduler": "vllm_native_fcfs", "max_model_len": 8192,
+    "scheduler": "vllm_native_fcfs", "scheduling_policy": "fcfs", "max_model_len": 8192,
     "max_num_seqs": 256, "max_num_batched_tokens": 8192,
     "chunked_prefill": true, "prefix_caching": true, "mfu_metrics": true,
     "enforce_eager": false, "compilation_mode": "vllm_compile",
@@ -50,6 +50,35 @@
     "prefix_caching": "enabled",
     "max_num_seqs": 256,
     "max_num_batched_tokens": 8192
+  },
+  "native_implementation_provenance": {
+    "daft_native": {
+      "upstream_url": "https://github.com/Eventual-Inc/Daft",
+      "upstream_version": "0.7.21",
+      "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+      "adapter_path": "${PROJECT_ROOT}/code/src/baselines/text/frameworks/daft_prompt.py",
+      "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+      "upstream_source_modified": false,
+      "adapter_diff_status": "thin_adapter_only_no_upstream_patch"
+    },
+    "daft_ray": {
+      "upstream_url": "https://github.com/Eventual-Inc/Daft",
+      "upstream_version": "0.7.21",
+      "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+      "adapter_path": "${PROJECT_ROOT}/code/src/baselines/text/frameworks/daft_prompt.py",
+      "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+      "upstream_source_modified": false,
+      "adapter_diff_status": "thin_adapter_only_no_upstream_patch"
+    },
+    "ray_data_http": {
+      "upstream_url": "https://github.com/ray-project/ray",
+      "upstream_version": "2.56.1",
+      "upstream_commit": "936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a",
+      "adapter_path": "${PROJECT_ROOT}/code/src/baselines/text/frameworks/ray_data_http.py",
+      "adapter_sha256": "4c63dd435efa2c869b74514a80e8bb9441c26d07544847b6ae9ee5620a217528",
+      "upstream_source_modified": false,
+      "adapter_diff_status": "thin_adapter_only_no_upstream_patch"
+    }
   },
   "idle_timeout_s": 300,
   "launch_lead_s": 2,

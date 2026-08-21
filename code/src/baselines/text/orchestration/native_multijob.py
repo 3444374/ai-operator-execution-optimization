@@ -64,6 +64,29 @@ _BANNED_COMMAND_TOKENS = frozenset(
         "--credit",
     }
 )
+_FROZEN_NATIVE_IMPLEMENTATIONS = {
+    "daft_native": {
+        "upstream_url": "https://github.com/Eventual-Inc/Daft",
+        "upstream_version": "0.7.21",
+        "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+        "adapter_path_suffix": "code/src/baselines/text/frameworks/daft_prompt.py",
+        "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+    },
+    "daft_ray": {
+        "upstream_url": "https://github.com/Eventual-Inc/Daft",
+        "upstream_version": "0.7.21",
+        "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+        "adapter_path_suffix": "code/src/baselines/text/frameworks/daft_prompt.py",
+        "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+    },
+    "ray_data_http": {
+        "upstream_url": "https://github.com/ray-project/ray",
+        "upstream_version": "2.56.1",
+        "upstream_commit": "936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a",
+        "adapter_path_suffix": "code/src/baselines/text/frameworks/ray_data_http.py",
+        "adapter_sha256": "4c63dd435efa2c869b74514a80e8bb9441c26d07544847b6ae9ee5620a217528",
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -133,6 +156,9 @@ class NativeMultiJobConfig:
     performance_writeback_mode: str
     arms: tuple[NativeMultiJobArm, ...]
     service_identity: tuple[tuple[str, object], ...] = ()
+    native_implementation_provenance: tuple[
+        tuple[str, tuple[tuple[str, object], ...]], ...
+    ] = ()
 
 
 @dataclass(frozen=True)
@@ -179,6 +205,54 @@ def _positive_float(value: object, field: str, *, allow_zero: bool = False) -> f
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _parse_native_implementation_provenance(
+    value: object,
+    arms: tuple[NativeMultiJobArm, ...],
+) -> tuple[tuple[str, tuple[tuple[str, object], ...]], ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, dict):
+        raise ValueError("native_implementation_provenance must be an object")
+    if set(value) != {arm.arm_id for arm in arms}:
+        raise ValueError("native implementation provenance must cover every arm")
+    required = {
+        "upstream_url", "upstream_version", "upstream_commit", "adapter_path",
+        "adapter_sha256", "upstream_source_modified", "adapter_diff_status",
+    }
+    frozen: list[tuple[str, tuple[tuple[str, object], ...]]] = []
+    for arm in arms:
+        raw = value.get(arm.arm_id)
+        expected = _FROZEN_NATIVE_IMPLEMENTATIONS.get(arm.adapter)
+        if expected is None:
+            raise ValueError(
+                f"arm {arm.arm_id} has no frozen native implementation identity"
+            )
+        if not isinstance(raw, dict) or set(raw) != required:
+            raise ValueError(f"arm {arm.arm_id} implementation provenance schema is invalid")
+        adapter_path = Path(_string(raw["adapter_path"], "adapter_path")).resolve()
+        comparisons = {
+            "upstream_url": expected["upstream_url"],
+            "upstream_version": expected["upstream_version"],
+            "upstream_commit": expected["upstream_commit"],
+            "adapter_sha256": expected["adapter_sha256"],
+            "upstream_source_modified": False,
+            "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+        }
+        drift = [name for name, item in comparisons.items() if raw.get(name) != item]
+        if not str(adapter_path).endswith(str(expected["adapter_path_suffix"])):
+            drift.append("adapter_path")
+        if not adapter_path.is_file() or _sha256(adapter_path) != raw.get("adapter_sha256"):
+            drift.append("adapter_file")
+        if drift:
+            raise ValueError(
+                f"arm {arm.arm_id} native implementation provenance drift: "
+                + ", ".join(sorted(set(drift)))
+            )
+        normalized = {**raw, "adapter_path": str(adapter_path)}
+        frozen.append((arm.arm_id, tuple(sorted(normalized.items()))))
+    return tuple(frozen)
 
 
 def _parse_job(
@@ -304,6 +378,7 @@ def load_native_multijob_config(
         "endpoint_ids", "service_signature", "protocol", "output_cap", "organizer",
         "source", "job_internal_arrival_contract", "mfu_contract",
         "performance_writeback_mode", "service_identity",
+        "native_implementation_provenance",
     }
     missing = required - set(payload)
     unknown = set(payload) - required - matrix_optional
@@ -388,6 +463,9 @@ def load_native_multijob_config(
         raise ValueError("native multi-job formal comparison requires at least two arms")
     seen_arm_ids: set[str] = set()
     arms = tuple(_parse_arm(item, seen_arm_ids=seen_arm_ids, skew_max=skew_max) for item in arms_raw)
+    native_provenance = _parse_native_implementation_provenance(
+        payload.get("native_implementation_provenance"), arms
+    )
     warmup_repeats = _positive_int(payload["warmup_repeats"], "warmup_repeats")
     if warmup_repeats != 1:
         raise ValueError("native multi-job matrix freezes warmup_repeats=1")
@@ -445,6 +523,7 @@ def load_native_multijob_config(
         performance_writeback_mode=performance_writeback_mode,
         arms=arms,
         service_identity=tuple(sorted(service_identity.items())),
+        native_implementation_provenance=native_provenance,
     )
 
 

@@ -36,15 +36,27 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
     parser.add_argument("--project-config", required=True, type=Path)
     parser.add_argument("--native-runner", required=True, type=Path)
     parser.add_argument("--profiler", required=True, type=Path)
-    parser.add_argument("--python-executable", required=True, type=Path)
+    parser.add_argument(
+        "--driver-python", "--python-executable", dest="python_executable",
+        required=True, type=Path,
+    )
     parser.add_argument("--health-url", required=True)
     parser.add_argument("--metrics-urls", required=True)
     parser.add_argument("--ray-address", required=True)
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
     parser.add_argument("--start-delay-s", type=float, default=15.0)
     parser.add_argument("--rehearsal", action="store_true")
+    parser.add_argument("--vllm-python", required=True, type=Path)
+    parser.add_argument(
+        "--vllm-runtime-identity", action="append", required=True, type=Path
+    )
     parser.add_argument("--installed-source-audit", required=True, type=Path)
+    parser.add_argument("--system-preflight-evidence", required=True, type=Path)
+    parser.add_argument("--correctness-smoke-evidence", required=True, type=Path)
     parser.add_argument("--formal-authorization", type=Path)
+    parser.add_argument("--rehearsal-validation", type=Path)
+    parser.add_argument("--rehearsal-root", type=Path)
+    parser.add_argument("--rehearsal-archive", type=Path)
     args = parser.parse_args(argv)
     metrics_urls = tuple(
         item.strip() for item in args.metrics_urls.split(",") if item.strip()
@@ -57,17 +69,35 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
         project_config=args.project_config.resolve(),
         native_runner=args.native_runner.resolve(),
         profiler=args.profiler.resolve(),
-        python_executable=args.python_executable.resolve(),
+        python_executable=args.python_executable.absolute(),
         health_url=args.health_url,
         metrics_urls=metrics_urls,
         ray_address=args.ray_address,
         idle_timeout_s=args.idle_timeout_s,
         start_delay_s=args.start_delay_s,
         rehearsal=args.rehearsal,
+        vllm_python=args.vllm_python.absolute(),
+        runtime_identity_paths=tuple(
+            item.resolve() for item in args.vllm_runtime_identity
+        ),
         installed_source_audit=args.installed_source_audit.resolve(),
+        system_preflight_evidence=args.system_preflight_evidence.resolve(),
+        correctness_smoke_evidence=args.correctness_smoke_evidence.resolve(),
         formal_authorization=(
             args.formal_authorization.resolve()
             if args.formal_authorization is not None else None
+        ),
+        rehearsal_validation=(
+            args.rehearsal_validation.resolve()
+            if args.rehearsal_validation is not None else None
+        ),
+        rehearsal_root=(
+            args.rehearsal_root.resolve()
+            if args.rehearsal_root is not None else None
+        ),
+        rehearsal_archive=(
+            args.rehearsal_archive.resolve()
+            if args.rehearsal_archive is not None else None
         ),
     )
 

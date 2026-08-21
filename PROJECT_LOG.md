@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-08-21 五臂 readiness 二次 fail-closed 修复（本地，未运行 GPU）
+
+- 修复不同 venv 共享底层解释器时 `/proc/<pid>/exe` 误判：endpoint launcher 在 exec 前封存 PID、
+  Linux start-time ticks、未解析 Python argv0、`sys.prefix`、vLLM package path/version；readiness 由
+  `DRIVER_PYTHON` 外层调用显式 `VLLM_PYTHON` 重算 source/package identity，再与 sidecar 和 live
+  `/proc` 逐项比对。新增共享底层解释器但 venv/package 不同的拒绝反例。
+- 完整服务身份新增显式 `scheduling_policy=fcfs`；`--scheduling-policy priority`、缺 flag、
+  `--scheduler-cls` 或其他 model/runtime drift 均不能登记为 native FCFS。`start_endpoints.sh` 通过
+  identity launcher 启动并显式传 FCFS。
+- readiness 改为 static config → service identity → system preflight → correctness smoke 四阶段；
+  health、PostgreSQL/pgvector、Ray/GPU clean、bounded feeding≥95% 与 smoke 的 manifest/exactly-once/
+  sink 必须绑定同一 commit、matched/native/Project 三配置 SHA，最后才可发布 rehearsal-ready。
+  fresh matrix/output root 恢复为硬门。
+- Formal authorization 新增实际 rehearsal validation/root/archive 前置：深验恰好五个 warmup cell、
+  全部 passed/exactly-once、live readiness、commit/config/matrix instance/index，再绑定 validation 与
+  archive SHA；新增只读 rehearsal validation CLI。形式匹配但无实际 rehearsal 的 JSON 不再可放行。
+- Native provenance 冻结 Daft 0.7.21 tag commit `7e52cc99…`、Ray 2.56.1 tag commit
+  `936f0d7d…`、官方 URL、版本、项目薄 adapter path/SHA 与 zero-upstream-patch 状态；加载时重算
+  adapter 文件 SHA，证据保留完整 provenance。source/readiness CLI 异常统一脱敏。
+- 当前只修改本地合同、测试和 runbook；未连接服务器，未启动 endpoint、correctness smoke、五臂
+  rehearsal 或 formal，也未合并 `main`。formal 与 DRR/VTC capability 继续锁定。
+
 ## 2026-08-21 五臂 rehearsal readiness 与完整服务身份门（只读服务器核验）
 
 - 独立审查确认 `45d4dda4` 的 eager SAOR 修复正确，但仅检查 `--scheduler-cls` 不足以证明五臂

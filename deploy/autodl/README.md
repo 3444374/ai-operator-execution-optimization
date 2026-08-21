@@ -131,30 +131,49 @@ its deviation are retained, and eligibility requires the pre-registered
 ```bash
 # Run from the repository root after sourcing the runtime env and this
 # matrix's frozen env. This stage is static and sends no service request.
-"$VLLM_VENV/bin/python" code/scripts/analysis/audit_saor_native_system_matched.py \
+DRIVER_PYTHON="${DRIVER_PYTHON:-$(command -v python)}"
+VLLM_PYTHON="$VLLM_VENV/bin/python"
+PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
   --native-config deploy/autodl/saor_native_system_matched_native.example.json \
   --project-config deploy/autodl/saor_native_system_matched_project.example.json \
   --output /tmp/saor_native_system_matched_readiness.json
 
 # Run with the vLLM Python. Marker-only evidence can never pass.
-"$VLLM_VENV/bin/python" \
+"$VLLM_PYTHON" \
   code/scripts/analysis/audit_vllm_0251_source.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
   --output /tmp/saor_native_system_matched_vllm_source.json
 
-# Only when endpoints are already running: validate the saved source evidence,
-# re-hash the current vLLM install, require the live API processes to use that
-# Python runtime, then check model artifacts and process flags. This still sends
-# no inference request.
-"$VLLM_VENV/bin/python" code/scripts/analysis/audit_saor_native_system_matched.py \
+# Only when endpoints are already running: the outer process remains the driver
+# environment. It invokes VLLM_PYTHON as a child to re-hash that install, then
+# binds each live PID/start-time/argv0/sys.prefix/package path to the launcher
+# sidecar. This still sends no inference request and remains rehearsal_ready=false.
+PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
   --native-config deploy/autodl/saor_native_system_matched_native.example.json \
   --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --vllm-python "$VLLM_PYTHON" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8000.runtime_identity.json" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8001.runtime_identity.json" \
   --installed-source-audit /tmp/saor_native_system_matched_vllm_source.json \
   --live-service \
   --output /tmp/saor_native_system_matched_live_readiness.json
 ```
+
+Readiness 是四阶段单向门：`static_config` → `service_identity` →
+`system_preflight`（endpoint health、PostgreSQL/pgvector、Ray/GPU clean、同协议 bounded
+baseline feeding ratio≥95%）→ `correctness_smoke`（manifest、exactly-once、sink）。前三阶段
+即使通过也保持 `rehearsal_ready=false`；只有 smoke artifact 绑定同一 commit、matched/native/
+Project 三份 config SHA 和 system-preflight SHA 后，最终报告才可置 true。五臂 runner 必须由
+`DRIVER_PYTHON` 启动，并显式接收 `--driver-python`、`--vllm-python`、两个 runtime sidecar、
+source/system/smoke evidence。driver 与 vLLM 的 `sys.prefix` 相同会 fail closed。
+
+Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
+`--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂
+warmup-only root 和 archive 生成 validation；formal authorization 必须逐字段绑定其 validation
+SHA、archive SHA、matrix-index SHA、matrix instance、commit 和 config fingerprint。缺任一 artifact、
+五臂不全或任一 cell 非 exactly-once 都不能进入 formal。
 
 本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 

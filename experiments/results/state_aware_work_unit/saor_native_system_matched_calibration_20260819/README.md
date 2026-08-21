@@ -1,6 +1,8 @@
 # SAOR native-system matched 冻结 calibration 绑定（2026-08-19）
 
-> **性质**：八臂 native-system matched comparison 的四份 selection identity 合同。
+> **性质**：当前五臂 native-system matched comparison 复用的四份 selection identity 合同；
+> 三份 native selection 分别对应 Daft Native、Daft Ray、Ray Data，一份 Project selection 由
+> frozen-static 与 SAOR 共同复用。历史八臂口径已停止指导执行。
 > Project 合同继续使用通用 calibration loader；native 合同由 matched runner 逐文件 SHA、adapter、
 > concurrency 和 batch size 校验，不把 vendor default 或单次 screen 夸大成三类性能门全部通过。
 

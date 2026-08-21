@@ -10,6 +10,7 @@ implementation (code/AGENTS.md §4 低耦合).
 from __future__ import annotations
 
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -151,6 +152,7 @@ class VllmPreflightPureTests(unittest.TestCase):
             "vllm_source_request_queue_sha256": "7" * 64,
             "vllm_source_request_sha256": "8" * 64,
             "scheduler": "vllm_native_fcfs",
+            "scheduling_policy": "fcfs",
             "max_model_len": 8192,
             "max_num_seqs": 256,
             "max_num_batched_tokens": 8192,
@@ -171,6 +173,7 @@ class VllmPreflightPureTests(unittest.TestCase):
             "--gpu-memory-utilization 0.9 --max-num-seqs 256 "
             "--max-num-batched-tokens 8192 --enable-prefix-caching "
             "--enable-chunked-prefill --enable-mfu-metrics "
+            "--scheduling-policy fcfs "
             f"--port {port}"
         )
 
@@ -226,7 +229,7 @@ class VllmPreflightPureTests(unittest.TestCase):
                     identity,
                 )
 
-    def test_live_service_identity_rejects_different_python_runtime(self):
+    def test_live_service_identity_rejects_shared_interpreter_different_venv(self):
         with tempfile.TemporaryDirectory() as directory:
             model = Path(directory)
             for name in (
@@ -246,14 +249,80 @@ class VllmPreflightPureTests(unittest.TestCase):
             processes = {
                 "123": {
                     "cmdline": self._complete_cmdline(8000, model),
-                    "executable": "/different/python",
+                    "argv0": "/venv-b/bin/python",
+                    "start_time_ticks": "456",
                 }
+            }
+            sidecar = model / "runtime.json"
+            sidecar.write_text(json.dumps({
+                "schema_version": 1,
+                "pid": 123,
+                "process_start_time_ticks": "456",
+                "port": 8000,
+                "python_executable_argv0": "/venv-b/bin/python",
+                "sys_prefix": "/venv-b",
+                "package_root": "/venv-b/lib/python/site-packages/vllm",
+                "package_version": "0.25.1",
+            }), encoding="utf-8")
+            audited_runtime = {
+                "executable_argv0": "/venv-a/bin/python",
+                "sys_prefix": "/venv-a",
+                "package_root": "/venv-a/lib/python/site-packages/vllm",
+                "package_version": "0.25.1",
             }
             with patch(
                 "src.infrastructure.vllm_preflight._read_live_processes",
                 return_value=processes,
             ), self.assertRaisesRegex(RuntimeError, "Python runtime drift"):
-                verify_live_vllm_service_identity((endpoint,), identity)
+                verify_live_vllm_service_identity(
+                    (endpoint,), identity, audited_runtime, (sidecar,)
+                )
+
+    def test_live_service_identity_accepts_exact_venv_package_and_pid_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json", "tokenizer_config.json", "tokenizer.json",
+                "model.safetensors.index.json", "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoint = "http://127.0.0.1:8000/v1/chat/completions"
+            processes = {"123": {
+                "cmdline": self._complete_cmdline(8000, model),
+                "argv0": "/venv-a/bin/python",
+                "start_time_ticks": "456",
+            }}
+            sidecar = model / "runtime.json"
+            runtime = {
+                "executable_argv0": "/venv-a/bin/python",
+                "sys_prefix": "/venv-a",
+                "package_root": "/venv-a/lib/python/site-packages/vllm",
+                "package_version": "0.25.1",
+            }
+            sidecar.write_text(json.dumps({
+                "schema_version": 1, "pid": 123,
+                "process_start_time_ticks": "456", "port": 8000,
+                "python_executable_argv0": runtime["executable_argv0"],
+                "sys_prefix": runtime["sys_prefix"],
+                "package_root": runtime["package_root"],
+                "package_version": runtime["package_version"],
+            }), encoding="utf-8")
+            with patch(
+                "src.infrastructure.vllm_preflight._read_live_processes",
+                return_value=processes,
+            ):
+                observed = verify_live_vllm_service_identity(
+                    (endpoint,), identity, runtime, (sidecar,)
+                )
+            self.assertEqual(
+                observed["endpoints"][endpoint]["process_identity"]["sys_prefix"],
+                "/venv-a",
+            )
 
     def test_complete_service_identity_rejects_every_runtime_drift(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -287,6 +356,9 @@ class VllmPreflightPureTests(unittest.TestCase):
                     "--gpu-memory-utilization 0.9", "--gpu-memory-utilization 0.8"
                 ),
                 "scheduler": exact + " --scheduler-cls custom.Scheduler",
+                "scheduling_policy": exact.replace(
+                    "--scheduling-policy fcfs", "--scheduling-policy priority"
+                ),
             }
             for field, cmdline in drifts.items():
                 with self.subTest(field=field), self.assertRaises(RuntimeError):

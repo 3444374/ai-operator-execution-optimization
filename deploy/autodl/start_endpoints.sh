@@ -24,6 +24,7 @@ VLLM_HOST=${VLLM_HOST:-127.0.0.1}
 VLLM_DTYPE=${VLLM_DTYPE:-auto}
 VLLM_MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-2048}
 VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.90}
+VLLM_SCHEDULING_POLICY=${VLLM_SCHEDULING_POLICY:-fcfs}
 STOP_MANAGED_ENDPOINTS=${STOP_MANAGED_ENDPOINTS:-0}
 export PATH="$VLLM_VENV/bin:$PATH"
 PYTHON="$VLLM_VENV/bin/python"
@@ -53,10 +54,16 @@ if [[ ${#GPU_ARRAY[@]} -ne ${#PORT_ARRAY[@]} ]]; then
 fi
 
 mkdir -p "$VLLM_LOG_DIR"
+LAUNCHER=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/code/scripts/serving/launch_vllm_with_identity.py
+if [[ ! -f "$LAUNCHER" ]]; then
+  echo "vLLM identity launcher not found: $LAUNCHER" >&2
+  exit 2
+fi
 
 stop_managed_endpoint() {
   local port=$1
   local pid_file="$VLLM_LOG_DIR/ep_${port}.pid"
+  local identity_file="$VLLM_LOG_DIR/ep_${port}.runtime_identity.json"
   [[ -f "$pid_file" ]] || return 0
   local pid
   pid=$(<"$pid_file")
@@ -95,13 +102,15 @@ start_endpoint() {
     echo "port $port already serves a healthy endpoint; refusing to replace it" >&2
     exit 2
   fi
-  CUDA_VISIBLE_DEVICES="$gpu" nohup "$PYTHON" \
-    -m vllm.entrypoints.openai.api_server \
+  CUDA_VISIBLE_DEVICES="$gpu" nohup "$PYTHON" "$LAUNCHER" \
+    --identity-output "$identity_file" \
+    --port "$port" -- \
     --model "$MODEL_PATH" \
     --served-model-name "$COMPLETION_MODEL" \
     --dtype "$VLLM_DTYPE" \
     --max-model-len "$VLLM_MAX_MODEL_LEN" \
     --gpu-memory-utilization "$VLLM_GPU_MEMORY_UTILIZATION" \
+    --scheduling-policy "$VLLM_SCHEDULING_POLICY" \
     --port "$port" \
     --host "$VLLM_HOST" \
     "${EXTRA_ARGS[@]}" \

@@ -19,7 +19,7 @@ import hashlib
 import math
 import re
 import shlex
-import sys
+import json
 from pathlib import Path
 
 
@@ -53,6 +53,7 @@ _REQUIRED_SERVICE_IDENTITY_FIELDS = {
     "dtype",
     "service",
     "scheduler",
+    "scheduling_policy",
     "max_model_len",
     "max_num_seqs",
     "max_num_batched_tokens",
@@ -84,6 +85,8 @@ def validate_service_identity(identity: dict[str, object]) -> None:
             raise ValueError(f"service identity {field} must be non-empty")
     if identity["scheduler"] != "vllm_native_fcfs":
         raise ValueError("service identity scheduler must be vllm_native_fcfs")
+    if identity["scheduling_policy"] != "fcfs":
+        raise ValueError("service identity scheduling_policy must be fcfs")
     if identity["dtype"] != "bfloat16":
         raise ValueError("matched service identity dtype must be bfloat16")
     if identity["service"] != "0.25.1":
@@ -193,6 +196,7 @@ def verify_endpoint_service_identity(
         "--gpu-memory-utilization": "gpu_memory_utilization",
         "--max-num-seqs": "max_num_seqs",
         "--max-num-batched-tokens": "max_num_batched_tokens",
+        "--scheduling-policy": "scheduling_policy",
     }
     boolean_fields = {
         "--enable-chunked-prefill": "chunked_prefill",
@@ -433,7 +437,20 @@ def _read_live_cmdlines():
     }
 
 
-def _read_live_processes() -> dict[str, dict[str, str]]:
+def _linux_process_start_time_ticks(pid: str) -> str:
+    """Read Linux field 22 without confusing spaces inside ``comm``."""
+
+    raw = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+    close = raw.rfind(")")
+    if close < 0:
+        raise RuntimeError(f"/proc/{pid}/stat is malformed")
+    fields_after_comm = raw[close + 2:].split()
+    if len(fields_after_comm) <= 19:
+        raise RuntimeError(f"/proc/{pid}/stat has no start time")
+    return fields_after_comm[19]
+
+
+def _read_live_processes() -> dict[str, dict[str, object]]:
     """Return command and interpreter identity for live vLLM API processes."""
 
     import subprocess
@@ -443,22 +460,48 @@ def _read_live_processes() -> dict[str, dict[str, str]]:
     processes: dict[str, dict[str, str]] = {}
     for pid in pids:
         try:
-            cmdline = (
-                Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
-            )
+            argv = [
+                token.decode("utf-8", "replace")
+                for token in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+                if token
+            ]
+            cmdline = shlex.join(argv)
+            start_time_ticks = _linux_process_start_time_ticks(pid)
         except OSError:
             continue
-        try:
-            executable = str(Path(f"/proc/{pid}/exe").resolve(strict=True))
-        except OSError:
-            executable = "unavailable"
-        processes[pid] = {"cmdline": cmdline, "executable": executable}
+        processes[pid] = {
+            "cmdline": cmdline,
+            "argv0": argv[0] if argv else "unavailable",
+            "start_time_ticks": start_time_ticks,
+        }
     return processes
+
+
+def _load_runtime_identities(paths: tuple[Path, ...]) -> dict[str, dict[str, object]]:
+    identities: dict[str, dict[str, object]] = {}
+    for path in paths:
+        decoded = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(decoded, dict):
+            raise RuntimeError(f"vLLM runtime identity must be an object: {path}")
+        required = {
+            "schema_version", "pid", "process_start_time_ticks", "port",
+            "python_executable_argv0", "sys_prefix", "package_root",
+            "package_version",
+        }
+        if decoded.get("schema_version") != 1 or set(decoded) != required:
+            raise RuntimeError(f"vLLM runtime identity fields are invalid: {path}")
+        port = str(decoded["port"])
+        if port in identities:
+            raise RuntimeError(f"duplicate vLLM runtime identity for port {port}")
+        identities[port] = decoded
+    return identities
 
 
 def verify_live_vllm_service_identity(
     endpoint_urls: tuple[str, ...],
     expected_identity: dict[str, object],
+    expected_python_runtime: dict[str, object],
+    runtime_identity_paths: tuple[Path, ...],
     *,
     tag: str = "saor-five-arm-service",
 ) -> dict[str, object]:
@@ -473,20 +516,72 @@ def verify_live_vllm_service_identity(
     endpoints = verify_endpoint_service_identity(
         list(cmdlines.values()), endpoint_urls, expected_identity, tag=tag
     )
-    audit_executable = str(Path(sys.executable).resolve())
+    expected_runtime_fields = {
+        "executable_argv0", "sys_prefix", "package_root", "package_version"
+    }
+    if set(expected_python_runtime) != expected_runtime_fields:
+        raise RuntimeError("fresh vLLM Python runtime identity is incomplete")
+    runtime_identities = _load_runtime_identities(runtime_identity_paths)
+    expected_ports = {
+        url.rsplit(":", 1)[-1].split("/")[0] for url in endpoint_urls
+    }
+    if set(runtime_identities) != expected_ports:
+        raise RuntimeError(
+            f"[{tag}][preflight] runtime identity ports drifted; "
+            f"expected {sorted(expected_ports)}, observed {sorted(runtime_identities)}"
+        )
     for url in endpoint_urls:
         port = url.rsplit(":", 1)[-1].split("/")[0]
         matching = [
-            state for state in processes.values()
+            (pid, state) for pid, state in processes.items()
             if cmdline_for_port([state["cmdline"]], port) is not None
         ]
-        if len(matching) != 1 or matching[0]["executable"] != audit_executable:
-            observed = matching[0]["executable"] if len(matching) == 1 else "ambiguous"
+        if len(matching) != 1:
+            raise RuntimeError(f"[{tag}][preflight] port {port}: live PID is ambiguous")
+        pid, process = matching[0]
+        runtime = runtime_identities.get(port)
+        if runtime is None:
             raise RuntimeError(
-                f"[{tag}][preflight] port {port}: service Python runtime drift; "
-                f"expected {audit_executable}, observed {observed}"
+                f"[{tag}][preflight] port {port}: runtime identity sidecar is missing"
             )
-        endpoints[url]["python_executable"] = audit_executable
+        comparisons = {
+            "PID": (str(runtime["pid"]), pid),
+            "process start time": (
+                str(runtime["process_start_time_ticks"]),
+                str(process["start_time_ticks"]),
+            ),
+            "unresolved Python argv0": (
+                str(runtime["python_executable_argv0"]), str(process["argv0"])
+            ),
+            "audited Python argv0": (
+                str(expected_python_runtime["executable_argv0"]),
+                str(runtime["python_executable_argv0"]),
+            ),
+            "sys.prefix": (
+                str(expected_python_runtime["sys_prefix"]), str(runtime["sys_prefix"])
+            ),
+            "vLLM package path": (
+                str(expected_python_runtime["package_root"]), str(runtime["package_root"])
+            ),
+            "vLLM package version": (
+                str(expected_python_runtime["package_version"]),
+                str(runtime["package_version"]),
+            ),
+        }
+        for label, (expected, actual) in comparisons.items():
+            if actual != expected:
+                raise RuntimeError(
+                    f"[{tag}][preflight] port {port}: service Python runtime drift "
+                    f"in {label}; expected {expected}, observed {actual}"
+                )
+        endpoints[url]["process_identity"] = {
+            "pid": int(pid),
+            "process_start_time_ticks": str(process["start_time_ticks"]),
+            "python_executable_argv0": str(runtime["python_executable_argv0"]),
+            "sys_prefix": str(runtime["sys_prefix"]),
+            "package_root": str(runtime["package_root"]),
+            "package_version": str(runtime["package_version"]),
+        }
     model_artifacts = verify_model_artifact_identity(expected_identity)
     return {
         "status": "passed",

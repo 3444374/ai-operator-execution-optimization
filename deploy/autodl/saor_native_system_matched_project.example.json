@@ -32,7 +32,7 @@
     "vllm_source_async_scheduler_sha256": "da6343d7e7c394a1738cf72905cbecc208003ffa461ccb441268333a3eb9f884",
     "vllm_source_request_queue_sha256": "4b8d938e5fb8152fe61030b8aa991f983fcac9a405c37ed8908045e05e82ae5e",
     "vllm_source_request_sha256": "06b1c6ad3cc0223c2036b4a2e317868fa4988391b4b024bc5e5f54672b7d2c80",
-    "scheduler": "vllm_native_fcfs", "max_model_len": 8192,
+    "scheduler": "vllm_native_fcfs", "scheduling_policy": "fcfs", "max_model_len": 8192,
     "max_num_seqs": 256, "max_num_batched_tokens": 8192,
     "chunked_prefill": true, "prefix_caching": true, "mfu_metrics": true,
     "enforce_eager": false, "compilation_mode": "vllm_compile",
@@ -44,7 +44,7 @@
     "compilation_mode": "vllm_compile", "chunked_prefill": true,
     "max_num_batched_tokens": 8192, "max_num_seqs": 256,
     "gpu_memory_utilization": 0.9, "prefix_caching": true,
-    "mfu_metrics": true
+    "mfu_metrics": true, "scheduling_policy": "fcfs"
   },
   "request_limit_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
   "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",

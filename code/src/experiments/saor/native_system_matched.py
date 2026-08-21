@@ -9,6 +9,7 @@ import math
 import random
 import shutil
 import subprocess
+import tarfile
 import uuid
 from pathlib import Path
 from typing import Callable
@@ -496,12 +497,12 @@ def sha256_payload(payload: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def formal_authorization_requirements(
+def run_identity_requirements(
     config_path: Path,
     config: MatchedSystemConfig,
     repository_commit: str,
 ) -> dict[str, object]:
-    """Return the exact fields an independent formal authorization must bind."""
+    """Return the immutable config/workload identity shared by every mode."""
 
     if not repository_commit:
         raise ValueError("repository commit must be non-empty")
@@ -522,9 +523,6 @@ def formal_authorization_requirements(
         raise ValueError("formal authorization requires one frozen MFU contract")
     return {
         "schema_version": 1,
-        "status": "authorized",
-        "scope": FORMAL_AUTHORIZATION_SCOPE,
-        "formal_authorized": True,
         "repository_commit": repository_commit,
         "config_sha256": sha256_file(config_path),
         "resolved_config_sha256": sha256_payload(
@@ -536,6 +534,174 @@ def formal_authorization_requirements(
             for job_id, rows, sha256 in next(iter(job_manifests))
         ],
         "mfu_contract": config.arms[0].mfu_contract.__dict__,
+    }
+
+
+def build_rehearsal_validation_payload(
+    config_path: Path,
+    config: MatchedSystemConfig,
+    repository_commit: str,
+    rehearsal_root: Path,
+    rehearsal_archive: Path,
+) -> dict[str, object]:
+    """Deep-check a completed five-arm rehearsal and derive its sealed identity."""
+
+    expected = run_identity_requirements(config_path, config, repository_commit)
+    root = rehearsal_root.resolve()
+    index_path = root / "matrix_index.json"
+    if not root.is_dir() or not index_path.is_file():
+        raise RuntimeError("rehearsal root or matrix index is missing")
+    if not rehearsal_archive.is_file():
+        raise RuntimeError("rehearsal archive is missing")
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    if not isinstance(index, dict):
+        raise RuntimeError("rehearsal matrix index must be an object")
+    try:
+        with tarfile.open(rehearsal_archive, mode="r:*") as archive:
+            members = [member for member in archive.getmembers() if member.isfile()]
+            index_members = [
+                member for member in members
+                if Path(member.name).name == "matrix_index.json"
+            ]
+            if len(index_members) != 1:
+                raise RuntimeError(
+                    "rehearsal archive must contain exactly one matrix index"
+                )
+            archived_stream = archive.extractfile(index_members[0])
+            archived_index = archived_stream.read() if archived_stream is not None else b""
+            if hashlib.sha256(archived_index).hexdigest() != sha256_file(index_path):
+                raise RuntimeError("rehearsal archive matrix index SHA drifted")
+            names = {Path(member.name).name for member in members}
+            if "matrix_contract_snapshot.json" not in names or not any(
+                "/cells/" in f"/{member.name}" for member in members
+            ):
+                raise RuntimeError(
+                    "rehearsal archive lacks contract snapshot or cell evidence"
+                )
+    except (OSError, tarfile.TarError) as exc:
+        raise RuntimeError("rehearsal archive is not a readable tar archive") from exc
+    for field, expected_value in (
+        ("status", "completed"),
+        ("execution_mode", "rehearsal"),
+        ("repository_commit", repository_commit),
+        ("config_sha256", expected["config_sha256"]),
+        ("config_fingerprint", expected["resolved_config_sha256"]),
+        ("manifest_sha256", expected["manifest_sha256"]),
+    ):
+        if index.get(field) != expected_value:
+            raise RuntimeError(f"rehearsal matrix index {field} drifted")
+    if index.get("authorization_sha256") not in (None, ""):
+        raise RuntimeError("rehearsal matrix must not carry formal authorization")
+    schedule = index.get("schedule")
+    cells = index.get("cells")
+    if not isinstance(schedule, list) or not isinstance(cells, list):
+        raise RuntimeError("rehearsal schedule/cells evidence is missing")
+    expected_arms = set(SYSTEM_ARM_IDS)
+    if (
+        len(schedule) != len(SYSTEM_ARM_IDS)
+        or {item.get("arm_id") for item in schedule if isinstance(item, dict)}
+        != expected_arms
+        or any(
+            not isinstance(item, dict)
+            or item.get("phase") != "warmup"
+            or item.get("repeat") != 1
+            for item in schedule
+        )
+    ):
+        raise RuntimeError("rehearsal schedule is not one complete five-arm warmup")
+    if (
+        len(cells) != len(SYSTEM_ARM_IDS)
+        or {item.get("arm_id") for item in cells if isinstance(item, dict)}
+        != expected_arms
+    ):
+        raise RuntimeError("rehearsal cells are not one complete five-arm set")
+    for cell in cells:
+        if (
+            not isinstance(cell, dict)
+            or cell.get("phase") != "warmup"
+            or cell.get("repeat") != 1
+            or cell.get("status") != "passed"
+            or cell.get("exactly_once") is not True
+            or cell.get("repository_commit") != repository_commit
+            or cell.get("config_sha256") != expected["config_sha256"]
+            or cell.get("config_fingerprint") != expected["resolved_config_sha256"]
+        ):
+            raise RuntimeError("rehearsal cell identity or correctness gate failed")
+    preflight = index.get("service_identity_preflight")
+    service_stage = preflight.get("service_identity") if isinstance(preflight, dict) else None
+    if (
+        not isinstance(preflight, dict)
+        or preflight.get("rehearsal_ready") is not True
+        or not isinstance(service_stage, dict)
+        or not isinstance(service_stage.get("installed_source"), dict)
+        or service_stage["installed_source"].get("status") != "passed"
+        or not isinstance(service_stage.get("live_service"), dict)
+        or service_stage["live_service"].get("status") != "passed"
+    ):
+        raise RuntimeError("rehearsal lacks passed live service identity evidence")
+    matrix_instance_id = index.get("matrix_instance_id")
+    if (
+        not isinstance(matrix_instance_id, str)
+        or len(matrix_instance_id) != 32
+        or any(character not in "0123456789abcdef" for character in matrix_instance_id)
+    ):
+        raise RuntimeError("rehearsal matrix instance identity is invalid")
+    return {
+        "schema_version": 1,
+        "status": "passed",
+        "scope": "saor_five_arm_rehearsal_validation",
+        "valid_rehearsal": True,
+        "repository_commit": repository_commit,
+        "config_sha256": expected["config_sha256"],
+        "resolved_config_sha256": expected["resolved_config_sha256"],
+        "rehearsal_root": str(root),
+        "root_id": root.name,
+        "matrix_instance_id": matrix_instance_id,
+        "matrix_index_sha256": sha256_file(index_path),
+        "archive_sha256": sha256_file(rehearsal_archive),
+        "arm_ids": list(SYSTEM_ARM_IDS),
+        "completed_cells": len(cells),
+        "exactly_once": True,
+    }
+
+
+def validate_rehearsal_evidence(
+    config_path: Path,
+    config: MatchedSystemConfig,
+    repository_commit: str,
+    rehearsal_validation_path: Path | None,
+    rehearsal_root: Path | None,
+    rehearsal_archive: Path | None,
+) -> dict[str, object]:
+    """Bind formal eligibility to actual reviewed rehearsal artifacts."""
+
+    if rehearsal_validation_path is None or rehearsal_root is None or rehearsal_archive is None:
+        raise PermissionError(
+            "formal authorization requires rehearsal validation, root, and archive"
+        )
+    expected = build_rehearsal_validation_payload(
+        config_path, config, repository_commit, rehearsal_root, rehearsal_archive
+    )
+    artifact = json.loads(rehearsal_validation_path.read_text(encoding="utf-8"))
+    if not isinstance(artifact, dict) or artifact != expected:
+        raise PermissionError("rehearsal validation artifact identity drifted")
+    return {**expected, "validation_sha256": sha256_file(rehearsal_validation_path)}
+
+
+def formal_authorization_requirements(
+    config_path: Path,
+    config: MatchedSystemConfig,
+    repository_commit: str,
+    rehearsal_evidence: dict[str, object],
+) -> dict[str, object]:
+    """Return the exact fields an independent formal authorization must bind."""
+
+    return {
+        **run_identity_requirements(config_path, config, repository_commit),
+        "status": "authorized",
+        "scope": FORMAL_AUTHORIZATION_SCOPE,
+        "formal_authorized": True,
+        "rehearsal_evidence": rehearsal_evidence,
     }
 
 
@@ -616,6 +782,21 @@ def _validate_cell_evidence(
         raise RuntimeError(f"cell evidence missing required fields: {missing}")
     if evidence["status"] != "passed":
         raise RuntimeError("executor returned non-passing cell evidence")
+    if arm.kind == "native":
+        provenance = evidence.get("native_implementation_provenance")
+        required_provenance = {
+            "upstream_url", "upstream_version", "upstream_commit",
+            "adapter_path", "adapter_sha256", "upstream_source_modified",
+            "adapter_diff_status",
+        }
+        if (
+            not isinstance(provenance, dict)
+            or set(provenance) != required_provenance
+            or provenance.get("upstream_source_modified") is not False
+            or provenance.get("adapter_diff_status")
+            != "thin_adapter_only_no_upstream_patch"
+        ):
+            raise RuntimeError("native implementation provenance is incomplete")
     if evidence["exactly_once"] is not True:
         raise RuntimeError("cell exactly-once evidence failed")
     try:
@@ -921,20 +1102,28 @@ def run_matched_system(
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
     rehearsal: bool = False,
     formal_authorization_path: Path | None = None,
+    rehearsal_validation_path: Path | None = None,
+    rehearsal_root: Path | None = None,
+    rehearsal_archive: Path | None = None,
     service_identity_preflight: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Run the balanced five-arm DB-E2E matrix; executors retain instrumentation."""
 
     del instrumenter  # Deliberately injected for asserting the outer layer never samples.
-    config = load_matched_system_config(
-        config_path, allow_existing_matrix_output_root=True
-    )
+    config = load_matched_system_config(config_path)
     repository_commit = repository_commit_getter()
-    requirements = formal_authorization_requirements(
-        config_path,
-        config,
-        repository_commit,
-    )
+    if rehearsal:
+        requirements = run_identity_requirements(
+            config_path, config, repository_commit
+        )
+    else:
+        rehearsal_evidence = validate_rehearsal_evidence(
+            config_path, config, repository_commit,
+            rehearsal_validation_path, rehearsal_root, rehearsal_archive,
+        )
+        requirements = formal_authorization_requirements(
+            config_path, config, repository_commit, rehearsal_evidence
+        )
     authorization_sha256 = (
         ""
         if rehearsal

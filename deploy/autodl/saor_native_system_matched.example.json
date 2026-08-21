@@ -34,6 +34,7 @@
     "vllm_source_request_queue_sha256": "4b8d938e5fb8152fe61030b8aa991f983fcac9a405c37ed8908045e05e82ae5e",
     "vllm_source_request_sha256": "06b1c6ad3cc0223c2036b4a2e317868fa4988391b4b024bc5e5f54672b7d2c80",
     "scheduler": "vllm_native_fcfs",
+    "scheduling_policy": "fcfs",
     "max_model_len": 8192,
     "max_num_seqs": 256,
     "max_num_batched_tokens": 8192,

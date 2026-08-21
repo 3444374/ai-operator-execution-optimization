@@ -175,6 +175,32 @@ class NativeMultiJobTests(unittest.TestCase):
             "idle_timeout_s": 1.0, "launch_lead_s": 0.0, "warmup_repeats": 1,
             "formal_repeats": 1, "schedule_seed": 9, "endpoint_work_skew_max": 0.02,
             "minimum_measurement_seconds": 0.000001,
+            "native_implementation_provenance": {
+                "daft_native": {
+                    "upstream_url": "https://github.com/Eventual-Inc/Daft",
+                    "upstream_version": "0.7.21",
+                    "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+                    "adapter_path": str(
+                        Path(__file__).resolve().parents[4]
+                        / "code/src/baselines/text/frameworks/daft_prompt.py"
+                    ),
+                    "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+                    "upstream_source_modified": False,
+                    "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+                },
+                "ray_data_http": {
+                    "upstream_url": "https://github.com/ray-project/ray",
+                    "upstream_version": "2.56.1",
+                    "upstream_commit": "936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a",
+                    "adapter_path": str(
+                        Path(__file__).resolve().parents[4]
+                        / "code/src/baselines/text/frameworks/ray_data_http.py"
+                    ),
+                    "adapter_sha256": "4c63dd435efa2c869b74514a80e8bb9441c26d07544847b6ae9ee5620a217528",
+                    "upstream_source_modified": False,
+                    "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+                },
+            },
             "arms": arms,
         }
         path = root / "config.json"
@@ -251,6 +277,7 @@ class NativeMultiJobTests(unittest.TestCase):
             arm = payload["arms"][0]
             arm["adapter"] = "duckdb_ai"
             arm["ray_address"] = None
+            payload.pop("native_implementation_provenance")
             path.write_text(json.dumps(payload), encoding="utf-8")
 
             parsed = load_native_multijob_config(path).arms[0]
@@ -272,6 +299,19 @@ class NativeMultiJobTests(unittest.TestCase):
                 command[command.index("--duckdb-max-concurrent-requests") + 1],
                 str(parsed.concurrency_per_endpoint),
             )
+
+    def test_native_upstream_commit_or_adapter_hash_drift_fails_closed(self) -> None:
+        for field, value in (
+            ("upstream_commit", "0" * 40),
+            ("adapter_sha256", "0" * 64),
+        ):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                path = self._config(Path(directory))
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload["native_implementation_provenance"]["daft_native"][field] = value
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "provenance drift"):
+                    load_native_multijob_config(path)
 
     def test_schedule_is_deterministic_and_rotates_formal_positions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -25,6 +25,14 @@ selector-sanity cell 因 `unavailable:missing_gpu_peak_tflops` 被 MFU guard 拒
 独立 tar archive；原 shell history 未保留逐字命令，因此这里只登记由 matrix index 证明的执行模式、
 commit/root/cell/原因和冻结 runbook 的等价入口，不伪造历史 argv。
 
+2026-08-21 本地 readiness 合同进一步 fail-closed：外层 runner 固定为独立 `DRIVER_PYTHON`，
+`VLLM_PYTHON` 只用于子进程 source/package 重审；live endpoint 绑定 PID、进程 start time、未解析
+argv0、`sys.prefix` 与实际 vLLM package path/version，并显式冻结 `scheduling_policy=fcfs`。
+readiness 拆为 static config、service identity、system preflight、correctness smoke 四阶段，仅四者
+全部通过才置 `rehearsal_ready=true`。三份实际 config SHA、Daft/Ray upstream tag commit 与薄
+adapter SHA 进入证据身份；formal 还必须绑定实际 rehearsal validation/root/archive SHA。以上均只在
+当前开发分支完成本地测试，尚未合并 `main`，也未连接服务器或启动新 smoke/rehearsal/formal。
+
 ## 1. 题目与研究对象
 
 题目冻结为：

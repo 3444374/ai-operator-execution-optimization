@@ -131,9 +131,9 @@ dispatch 前联合加载 matched/native/Project 三份配置，并调用
 `src/experiments/saor/native_system_bindings.py` 执行无副作用的执行器绑定审计，随后
 平衡编排 5 个唯一物理臂（3 个原生系统臂、Project frozen-static 和 proposed）。
 `--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
-cell。非 rehearsal 还必须显式传入独立 `--formal-authorization` artifact；该 artifact 精确绑定
-repository commit、原始 config SHA、resolved-config fingerprint、combined manifest SHA 和
-Job0/Job1 各自的 SHA/行数。runner
+cell。非 rehearsal 还必须显式传入独立 `--formal-authorization` artifact，以及实际 rehearsal 的
+validation/root/archive；授权精确绑定 repository commit、三份实际 config identity、resolved-config
+fingerprint、manifest/Job SHA、rehearsal matrix-index/validation/archive SHA。runner
 在创建输出目录、获取 host lease 或调用 executor 之前完成校验。当前 native-system GPU/formal
 仍停止，仓库不随模板提供有效授权；merge/rehearsal 均不能替代独立审核后的 formal 决定。
 readiness 同时把 native calibration 的 SHA/adapter/concurrency/batch 与实际 executor 对齐，并
@@ -146,10 +146,19 @@ adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行�
 `analysis/audit_vllm_0251_source.py` 必须由冻结 vLLM Python 执行，逐项比较 package version、
 dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked。
 `analysis/audit_saor_native_system_matched.py` 可从仓库根直接运行，联合加载三份实际 config；默认只
-报告 `static_config_passed/rehearsal_ready=false`。只有显式提供前述 source evidence 并加
-`--live-service` 时，才由同一冻结 vLLM Python 即时重哈希当前 install、核对 live API 进程解释器、
-模型 artifact 与完整 endpoint cmdline。五臂 runner 本身也必须由该 Python 运行并强制接收
-`--installed-source-audit`，所以不能用旧 evidence 或另一环境绕过 service identity 门进入 rehearsal。
+报告 `static_config_passed/rehearsal_ready=false`。外层始终由包含 Ray/Daft/psycopg 的
+`DRIVER_PYTHON` 运行；`--vllm-python` 只作为子进程重哈希冻结 install，并将 live PID、start time、
+未解析 argv0、`sys.prefix`、package path/version 与 endpoint launcher sidecar 绑定。服务身份通过仍不
+置 ready；还必须依次绑定 system-preflight 与 correctness-smoke evidence，四阶段全部通过才允许
+rehearsal。五臂 runner 同样必须由 `DRIVER_PYTHON` 运行，driver/vLLM 环境相同会 fail closed。
+
+`analysis/validate_saor_native_system_rehearsal.py` 只读完成的 rehearsal root 与 archive，验证恰好
+五个 warmup cell、全部 exactly-once、live readiness、commit/config identity 后封存 validation。
+该 validation/root/archive 是 formal authorization 的必填前置，不由仓库自行授权。
+
+`serving/launch_vllm_with_identity.py` 由 `deploy/autodl/start_endpoints.sh` 使用 `VLLM_PYTHON`
+调用；它在 `exec` API server 前原子写入 PID/start-time/argv0/`sys.prefix`/package sidecar，使不同
+venv 即使共享同一底层解释器也不能被 readiness 混同。
 
 `analysis/summarize_saor_native_system_matched.py` 是该矩阵的薄 CLI；可复用的纯离线、
 fail-closed 核心位于 `src/experiments/saor/native_system_summary.py`，不连接服务。CLI 要求同一个

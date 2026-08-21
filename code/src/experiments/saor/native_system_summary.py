@@ -811,7 +811,8 @@ def _load_authorized_identity(
     required_fields = {
         "schema_version", "status", "scope", "formal_authorized",
         "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256", "job_manifests",
+        "manifest_sha256", "job_manifests", "mfu_contract",
+        "rehearsal_evidence",
     }
     if not isinstance(authorization, dict) or set(authorization) != required_fields:
         raise ValueError("formal authorization schema is invalid")
@@ -850,7 +851,8 @@ def _load_authorized_identity(
         raise ValueError("resolved config fingerprint drifted")
     identity_fields = (
         "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256", "job_manifests",
+        "manifest_sha256", "job_manifests", "mfu_contract",
+        "rehearsal_evidence",
     )
     for field in identity_fields:
         if runtime.get(field) != authorization.get(field):

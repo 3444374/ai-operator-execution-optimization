@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 from src.baselines.text.orchestration.native_multijob import (
@@ -14,11 +15,11 @@ from src.experiments.saor.native_system_contract import MatchedSystemConfig
 from src.experiments.saor.native_system_matched import (
     audit_matched_system_config,
     load_matched_system_config,
+    resolved_matched_system_identity,
+    sha256_file,
+    sha256_payload,
 )
-from src.experiments.saor.vllm_0251_source_audit import (
-    audit_installed_vllm_0251,
-    validate_source_audit_evidence,
-)
+from src.experiments.saor.vllm_0251_source_audit import validate_source_audit_evidence
 from src.experiments.shared_vllm import load_config as load_project_config
 from src.infrastructure.vllm_preflight import (
     validate_service_identity,
@@ -40,12 +41,14 @@ def load_and_validate_static_readiness(
 ) -> tuple[MatchedSystemConfig, dict[str, object]]:
     """Jointly load all three real configs and validate executor bindings."""
 
-    matched = load_matched_system_config(
-        matched_config, allow_existing_matrix_output_root=True
-    )
-    native = load_native_multijob_config(
-        native_config, allow_existing_output_root=True
-    )
+    matched = load_matched_system_config(matched_config)
+    native = load_native_multijob_config(native_config)
+    if set(dict(native.native_implementation_provenance)) != {
+        "daft_native", "daft_ray", "ray_data_http"
+    }:
+        raise ValueError(
+            "matched native config lacks complete upstream/adapter provenance"
+        )
     project = load_project_config(project_config)
     validate_executor_bindings(
         matched,
@@ -56,17 +59,46 @@ def load_and_validate_static_readiness(
     )
     identity = dict(matched.service_identity)
     validate_service_identity(identity)
-    matrix_audit = audit_matched_system_config(
-        matched, check_output_roots=False
-    )
+    matrix_audit = audit_matched_system_config(matched)
     if matrix_audit["status"] != "passed":
         raise ValueError("matched config audit did not pass")
     return matched, identity
 
 
+def run_vllm_source_audit(
+    vllm_python: Path, matched_config: Path
+) -> dict[str, object]:
+    """Recompute package/source identity inside the explicit vLLM runtime."""
+
+    if not vllm_python.is_file():
+        raise RuntimeError(f"VLLM_PYTHON is missing: {vllm_python}")
+    repository = Path(__file__).resolve().parents[4]
+    script = repository / "code/scripts/analysis/audit_vllm_0251_source.py"
+    completed = subprocess.run(
+        [
+            str(vllm_python), str(script), "--config", str(matched_config),
+            "--stdout",
+        ],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    try:
+        decoded = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("VLLM_PYTHON source audit returned invalid JSON") from exc
+    if not isinstance(decoded, dict) or completed.returncode != 0:
+        raise RuntimeError("VLLM_PYTHON source audit did not pass")
+    return decoded
+
+
 def verify_rehearsal_service_identity(
     matched: MatchedSystemConfig,
+    matched_config: Path,
+    vllm_python: Path,
     installed_source_audit: Path,
+    runtime_identity_paths: tuple[Path, ...],
 ) -> dict[str, object]:
     """Require exact source hashes, model artifacts, and live process flags."""
 
@@ -75,11 +107,17 @@ def verify_rehearsal_service_identity(
     if not isinstance(evidence, dict):
         raise RuntimeError("installed-source audit must be a JSON object")
     validate_source_audit_evidence(evidence, identity)
-    current_source = audit_installed_vllm_0251(identity)
+    current_source = run_vllm_source_audit(vllm_python, matched_config)
     validate_source_audit_evidence(current_source, identity)
+    if evidence != current_source:
+        raise RuntimeError(
+            "stored installed-source audit does not match fresh VLLM_PYTHON audit"
+        )
     live = verify_live_vllm_service_identity(
         matched.endpoint_urls,
         identity,
+        current_source["python_runtime"],
+        runtime_identity_paths,
         tag="saor-five-arm-service-identity",
     )
     return {
@@ -91,6 +129,7 @@ def verify_rehearsal_service_identity(
             "runtime_reaudit_status": current_source["status"],
             "vllm_version": current_source["installed_version"],
             "package_root": current_source["package_root"],
+            "python_runtime": current_source["python_runtime"],
             "distribution_files": {
                 name: {
                     "sha256": item["sha256"],
@@ -111,6 +150,80 @@ def verify_rehearsal_service_identity(
     }
 
 
+def _load_evidence(path: Path, label: str) -> dict[str, object]:
+    try:
+        decoded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"{label} evidence is unreadable") from exc
+    if not isinstance(decoded, dict):
+        raise RuntimeError(f"{label} evidence must be a JSON object")
+    return decoded
+
+
+def validate_system_preflight_evidence(
+    path: Path, expected_binding: dict[str, object]
+) -> dict[str, object]:
+    """Validate health, database, clean Ray/GPU, and bounded-client gates."""
+
+    evidence = _load_evidence(path, "system preflight")
+    required = {"schema_version", "status", "binding", "checks"}
+    if set(evidence) != required or evidence.get("schema_version") != 1:
+        raise RuntimeError("system preflight evidence schema is invalid")
+    if evidence.get("status") != "passed" or evidence.get("binding") != expected_binding:
+        raise RuntimeError("system preflight status or binding drifted")
+    checks = evidence.get("checks")
+    names = {"endpoint_health", "postgresql", "ray_gpu_clean", "bounded_baseline"}
+    if not isinstance(checks, dict) or set(checks) != names:
+        raise RuntimeError("system preflight checks are incomplete")
+    for name in names:
+        item = checks[name]
+        if not isinstance(item, dict) or item.get("status") != "passed":
+            raise RuntimeError(f"system preflight {name} did not pass")
+    postgresql = checks["postgresql"]
+    if not postgresql.get("server_version") or not postgresql.get("pgvector_version"):
+        raise RuntimeError("system preflight PostgreSQL identity is incomplete")
+    ratio = checks["bounded_baseline"].get("feeding_saturation_ratio")
+    if (
+        isinstance(ratio, bool) or not isinstance(ratio, (int, float))
+        or float(ratio) < 0.95
+    ):
+        raise RuntimeError("system preflight bounded baseline is below 95% saturation")
+    return {"status": "passed", "evidence_sha256": sha256_file(path)}
+
+
+def validate_correctness_smoke_evidence(
+    path: Path,
+    expected_binding: dict[str, object],
+    system_preflight_sha256: str,
+) -> dict[str, object]:
+    """Validate a sealed smoke that is downstream of this exact preflight."""
+
+    evidence = _load_evidence(path, "correctness smoke")
+    required = {
+        "schema_version", "status", "binding", "system_preflight_sha256",
+        "checks", "completed_rows",
+    }
+    if set(evidence) != required or evidence.get("schema_version") != 1:
+        raise RuntimeError("correctness smoke evidence schema is invalid")
+    if evidence.get("status") != "passed" or evidence.get("binding") != expected_binding:
+        raise RuntimeError("correctness smoke status or binding drifted")
+    if evidence.get("system_preflight_sha256") != system_preflight_sha256:
+        raise RuntimeError("correctness smoke system preflight binding drifted")
+    checks = evidence.get("checks")
+    names = {"manifest_validation", "exactly_once", "sink_validation"}
+    if not isinstance(checks, dict) or set(checks) != names:
+        raise RuntimeError("correctness smoke checks are incomplete")
+    if any(
+        not isinstance(checks[name], dict) or checks[name].get("status") != "passed"
+        for name in names
+    ):
+        raise RuntimeError("correctness smoke checks did not all pass")
+    rows = evidence.get("completed_rows")
+    if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
+        raise RuntimeError("correctness smoke completed_rows must be positive")
+    return {"status": "passed", "evidence_sha256": sha256_file(path)}
+
+
 def audit_readiness(
     matched_config: Path,
     native_config: Path,
@@ -118,12 +231,33 @@ def audit_readiness(
     *,
     live_service: bool = False,
     installed_source_audit: Path | None = None,
+    vllm_python: Path | None = None,
+    runtime_identity_paths: tuple[Path, ...] = (),
+    system_preflight_evidence: Path | None = None,
+    correctness_smoke_evidence: Path | None = None,
+    repository_commit: str | None = None,
 ) -> dict[str, object]:
     """Return a report that cannot confuse static success with rehearsal readiness."""
 
     matched, identity = load_and_validate_static_readiness(
         matched_config, native_config, project_config
     )
+    if repository_commit is None:
+        repository = Path(__file__).resolve().parents[4]
+        repository_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=repository, check=True,
+            capture_output=True, text=True,
+        ).stdout.strip()
+    binding = {
+        "repository_commit": repository_commit,
+        "config_sha256": sha256_file(matched_config),
+        "native_config_sha256": sha256_file(native_config),
+        "project_config_sha256": sha256_file(project_config),
+        "resolved_config_sha256": sha256_payload(
+            resolved_matched_system_identity(matched)
+        ),
+        "service_identity_sha256": _fingerprint(identity),
+    }
     report: dict[str, object] = {
         "schema_version": 1,
         "status": "static_config_passed",
@@ -133,10 +267,14 @@ def audit_readiness(
             str(native_config.resolve()),
             str(project_config.resolve()),
         ],
-        "service_identity_sha256": _fingerprint(identity),
+        "binding": binding,
         "static_bindings": "passed",
-        "installed_source": "not_checked",
-        "live_service": "not_checked",
+        "stages": {
+            "static_config": "passed",
+            "service_identity": "not_checked",
+            "system_preflight": "not_checked",
+            "correctness_smoke": "not_checked",
+        },
     }
     if not live_service:
         return report
@@ -144,9 +282,29 @@ def audit_readiness(
         raise ValueError(
             "--live-service requires --installed-source-audit exact-SHA evidence"
         )
-    report.update(
-        verify_rehearsal_service_identity(matched, installed_source_audit)
+    if vllm_python is None or not runtime_identity_paths:
+        raise ValueError(
+            "--live-service requires --vllm-python and runtime identity sidecars"
+        )
+    report["service_identity"] = verify_rehearsal_service_identity(
+        matched, matched_config, vllm_python, installed_source_audit,
+        runtime_identity_paths,
     )
-    report["status"] = "passed"
+    report["stages"]["service_identity"] = "passed"
+    report["status"] = "service_identity_passed"
+    if system_preflight_evidence is None:
+        return report
+    system = validate_system_preflight_evidence(system_preflight_evidence, binding)
+    report["system_preflight"] = system
+    report["stages"]["system_preflight"] = "passed"
+    report["status"] = "system_preflight_passed"
+    if correctness_smoke_evidence is None:
+        return report
+    smoke = validate_correctness_smoke_evidence(
+        correctness_smoke_evidence, binding, system["evidence_sha256"]
+    )
+    report["correctness_smoke"] = smoke
+    report["stages"]["correctness_smoke"] = "passed"
+    report["status"] = "rehearsal_ready"
     report["rehearsal_ready"] = True
     return report
