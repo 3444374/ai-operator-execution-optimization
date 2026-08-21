@@ -476,6 +476,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
+| `opening/report/opening_report_20260820_qa.md` | 当前中文开题报告的模板、证据边界、术语、图表与 46 条引文审查 | 冻结或复核当前开题正文时读 |
+| `opening/report/figures/` | 开题报告正文专用图片副本与来源映射 | Markdown 转 Word 或核查图文一致性时读 |
 | `opening/report/opening_report_20260812_qa.md` | 中文开题报告模板、图表、引用、实现边界和 PPT 口径审计 | 冻结或复核开题发布材料时读 |
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
 | `opening/literature/top15_reading_notes/` | 开题精读 Top 15 拷贝 | 15/15 严格 CCF-A 正式 research paper 的自包含快照，权威版在 `research/reading_notes/` |

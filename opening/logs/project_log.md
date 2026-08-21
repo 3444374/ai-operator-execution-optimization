@@ -1,5 +1,15 @@
 # 开题材料 project log
 
+## 2026-08-20 七部分开题报告正文精修与插图
+
+- 按用户确认的修改意见精修 `report/opening_report.md`，保持学校模板七部分结构和两项研究内容不变。
+- 第一章只保留背景、问题、边界、目的与意义；研究实现细节集中在第 4.1 节。补充数据库端到端产品轨和框架原生执行轨，明确 SQuAD 与 ShareGPT 的可比边界。
+- 收紧图像执行链、动态策略和代价估计证据表述，修正 29% 峰值口径、图像阶段时间比和 2026 年 9 月进度矛盾；统一 actor、DataFrame、prefill/decode、slowdown、服务差额等术语。
+- 新建 `report/figures/` 专用图片目录，从开题审计图集复制 14 张图，正文选用 11 张，并逐图说明事实、比较条件和不能外推的结论。
+- 新增 `report/opening_report_20260820_qa.md`，验证 11 个图片引用全部存在、46 条参考文献全部被正文引用，且未出现内部实验代号。本轮没有生成或覆盖 Word、PPT、飞书与 Wiki。
+- 依据 `research/reading_notes/` 与 `research/reference/REFERENCE_INDEX.md` 新增 9 篇与正文论点直接对应的文献，覆盖数据库内推理、推理阶段与容量管理、多作业公平和代价估计；FairServe、DLPM、Autellix 和 CONCERTO 按预印本标注。
+- 同步补充 `slides/opening_ppt.md` 的文献基线分类表；只修改 Markdown 内容源，未生成或覆盖 PPTX。
+
 ## 2026-08-17 P11 箭头整体调小
 
 - 用户手动调整 drawio 后，所有箭头 endSize 统一调小，重新导出并固定权威源与图集副本。PPT 由用户自行更新。
@@ -69,7 +79,6 @@
 - 修复绘图脚本 Windows 中文字体回退（补入 Microsoft YaHei/SimHei），重画 P08A/P08B 的
   PNG/SVG/PDF 并刷新图集中文名副本；`figures/README.md`、`figures/opening_figure_set/README.md`
   与 `figures/audit/opening_story_figures_contract_20260808.md` 已同步。
-
 ## 2026-08-12 P02 边界与箭头修订
 
 - 将四处贴边英文混排标签改成等义紧凑中文，保持字号不变；左下“文本 / 提示词”和中间两张

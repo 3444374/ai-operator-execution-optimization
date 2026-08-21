@@ -78,6 +78,11 @@ foreground/background interference, queue balance, and prefix locality.
 `audit/opening_figure_set_manifest_20260811.md`。权威源仍在 `architecture/editable/` 和
 `data/report_main/`，图集只作为稳定选图入口。
 
+2026-08-20 的开题报告 Markdown 从该图集中选择 11 张图，复制到
+`opening/report/figures/` 以保证报告路径独立、后续转写 Word 方便。报告正文没有继续插入文本
+原生多作业、图像 baseline 和图像多作业三张配套图，以控制第 4.2 节图量；选择与图号映射见
+`opening/report/figures/README.md`。副本不构成新的事实源。
+
 第一性原理复审后，正文不再从“已有模块”倒推故事，而是先用动机证据分别导出
 WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像与代价估计的先验证据：
 
