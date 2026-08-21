@@ -484,6 +484,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/reading_notes/` | 精读笔记权威库（49 篇 + 模板） | 所有精读笔记单一来源；新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、FairServe、DLPM、Autellix、Chiron |
 | `research/reference/` | 当前可解析参考 PDF（21 份） | Top 15 PDF 15/15 齐全；题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
+| `research/lotus_postgresql_execution_layer_fit_20260821.md` | PostgreSQL、LOTUS 与 SAOR 的执行分层审计 | 判断 LOTUS 应作为逻辑前端、系统 baseline 还是主执行依赖；含 first-principles 边界和最小 capability gate |
+| `experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md` | LOTUS semantic frontend → project executor 详细实施计划 | 研发 LOTUS AST adapter、语义 IR、native baseline、prompt/row parity 与三臂实验前必读；禁止把 SAOR 整体移植进 LOTUS 或污染 native baseline |
 | `research/top15_ranked_papers.md` | 开题 Top 15 | 15/15 CCF-A 正式论文；按 AI 算子、LLM 调度、Ray、代价估计组织 |
 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
 | `research/evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商指标调研；含单租户多 Job 的 fairness/isolation、三个 JCT 反事实、未来 tenant 层次、原生 baseline、同 observation 项目消融与缓冲成本合同；总入口同步见 `research/knowledge_hub.md` §5.7.6 | 设计多 Job 指标、selector 因果对照或判断公平/非劣时读；不能只用 Jain、聚合吞吐或 active K/W；当前不把 tenant identity/anti-splitting 设为 formal blocker |

@@ -56,6 +56,31 @@
   artifact；审核 sealed rehearsal archive 后才考虑另行签发 formal authorization。formal 继续禁止，
   DRR/VTC capability skeleton 继续主动 blocked。
 
+## 2026-08-21 LOTUS 语义前端集成路线与研发计划（本地设计）
+
+- 固定官方 LOTUS v1.2.4 源码审计：稳定版已有 `LazyFrame`、Pydantic AST 与结构化
+  `SemMapNode`，但 `SemMapNode.__call__` 和 `LazyFrameRun.execute` 仍硬编码 LOTUS native
+  执行，没有公开 executor/backend dispatch seam；PG connector 是 SQLAlchemy + pandas materialization。
+- 从两条路线中选择“LOTUS AST 经版本锁定 adapter lowering 到项目引擎无关 semantic-plan IR”；
+  不把 Daft/Ray/SAOR、credit、trace 和 evidence 整体移植进 LOTUS。该选择保持调度 implementation
+  locality、多模态复用和未修改 LOTUS native baseline，并将 optimizer/private-plan 风险集中在单个 adapter。
+- 新建独立详细计划是因为现有 `state_aware_work_unit_evaluation` 维护 SAOR 因果实验，
+  `strategy_design_implementation_reference` 维护通用实现映射，均不适合承载第三方 semantic frontend
+  的版本 gate、AST lowering、prompt parity、native baseline 与 upstream seam 工作序列。
+- 计划冻结三臂：LOTUS native v1.2.4、LOTUS semantic frontend + project frozen-static、LOTUS
+  semantic frontend + SAOR。先做无 GPU 源码/语义 parity，再做 capability/rehearsal；不修改当前五臂
+  主矩阵、不连接服务器、不运行 GPU，也不因此获得 formal authorization。
+
+## 2026-08-21 PostgreSQL + LOTUS 执行分层审计（文献/官方接口）
+
+- 依据 LOTUS PVLDB 论文、官方仓库、database connector、`sem_map` 与 LM 文档，从第一性原理区分
+  逻辑算子语义、数据库状态/事务底座、外部物理执行和模型服务四层。
+- 冻结当前建议：不把 SAOR 主方法改成必须依赖 LOTUS；PostgreSQL 继续承担 source、Job 状态和
+  exactly-once sink，Daft/Ray + SAOR 承担物理数据组织与提交控制，vLLM 承担模型服务。
+- LOTUS 保留为逐行语义/可选逻辑前端参考及独立数据库 AI 系统 baseline。只有薄 adapter 能完整
+  透传 Job/request lifecycle、ready/inflight 与实际 work，且不重写 LOTUS optimizer 时，才考虑未来
+  `LOTUS logical operator → SAOR physical backend` capability；当前五臂主矩阵不因此重构。
+
 ## 2026-08-20 五臂 eager SAOR profiler 阻断修复（本地）
 
 - 复核确认 `e98a0f1b` 的五臂 Project config 在 eager 合同下正确省略 `--arrival-replay`，但
@@ -161,7 +186,6 @@
 - 新增发布配置和反例测试，覆盖实际 512+512、native ownership、Ray Data C8/B16、逐 Job identity、
   calibration SHA/selection 漂移与 merge 非授权语义。本轮只做本地代码/合同修复，未连接服务器、
   未运行 native-system/rehearsal/formal；服务器 PG row-window 只读确认仍是后续 runtime preflight。
-
 ## 2026-08-20 开题报告正文精修与报告专用图集落位
 
 - 将用户确认的七部分开题报告底稿落实到 `opening/report/opening_report.md`，在不改变题目与两项研究内容的前提下完成针对性精修。
