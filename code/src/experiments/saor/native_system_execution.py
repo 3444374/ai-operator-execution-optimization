@@ -28,9 +28,10 @@ from src.experiments.saor.native_system_matched import (
     normalize_request_tail_status,
     run_matched_system,
 )
-from src.experiments.saor.native_system_sink import (
+from src.experiments.saor.native_system_completion import (
+    build_completion_evidence,
     collect_completion_rows,
-    materialize_and_verify_postgres_sink,
+    expected_doc_ids_from_manifests,
 )
 from src.experiments.shared_vllm import (
     GroupRunIdentity,
@@ -137,7 +138,7 @@ def normalize_native_evidence(
             "service_counters": record["service_counters"],
             "resources": record["gpu_resource_trace"],
         },
-        "sink_metrics": record["sink_metrics"],
+        "completion_evidence": record["completion_evidence"],
         "jobs": jobs,
     }
 
@@ -311,7 +312,7 @@ def normalize_project_evidence(
                 for index, path in enumerate(completion_files)
             },
         },
-        "sink_metrics": record["sink_metrics"],
+        "completion_evidence": record["completion_evidence"],
         "status": "passed",
     }
 
@@ -369,6 +370,20 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
     native_by_id = {item.arm_id: item for item in native.arms}
     project_by_id = {item.scenario_id: item for item in project.scenarios}
 
+    def completion_evidence(
+        arm: MatchedArm, output_dir: Path, producer: str
+    ) -> dict[str, object]:
+        """Validate one cell's trace identities outside the measured boundary."""
+
+        expected = expected_doc_ids_from_manifests(
+            Path(job.path) for job in arm.job_manifests
+        )
+        return build_completion_evidence(
+            collect_completion_rows(output_dir),
+            expected_doc_ids=expected,
+            producer=producer,
+        )
+
     def native_executor(arm: MatchedArm, cell: ScheduledMatchedCell, output_dir: Path):
         record = run_native_multijob_cell(
             native, native_by_id[arm.arm_id],
@@ -376,15 +391,8 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
             output_dir, runner_script=options.native_runner, repository_commit=commit,
         )
         _require_native_cell_passed(record)
-        sink = materialize_and_verify_postgres_sink(
-            dict(arm.source)["database_url"],
-            dict(arm.source)["workload_name"],
-            collect_completion_rows(output_dir),
-            write=True,
-        )
-        record["sink_metrics"] = sink
-        record["arm_barrier_jct_s"] = (
-            float(record["arm_barrier_jct_s"]) + float(sink["sink_wall_s"])
+        record["completion_evidence"] = completion_evidence(
+            arm, output_dir, "native_official_adapter",
         )
         seal_native_cell_artifact_paths(record, output_dir)
         commands = [command for job in record.get("jobs", []) for command in json.loads((output_dir / "jobs" / job["job_id"] / "commands.json").read_text())]
@@ -412,11 +420,8 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
             runner, project, project_by_id[arm.arm_id],
             GroupRunIdentity(cell.phase, cell.repeat, cell.order_index),
         )
-        record["sink_metrics"] = materialize_and_verify_postgres_sink(
-            dict(arm.source)["database_url"],
-            dict(arm.source)["workload_name"],
-            collect_completion_rows(output_dir),
-            write=False,
+        record["completion_evidence"] = completion_evidence(
+            arm, output_dir, "project_profiler",
         )
         return normalize_project_evidence(arm, record, output_dir)
 

@@ -5,6 +5,8 @@
 > frozen-static 与 SAOR 共同复用。历史八臂口径已停止指导执行。
 > Project 合同继续使用通用 calibration loader；native 合同由 matched runner 逐文件 SHA、adapter、
 > concurrency 和 batch size 校验，不把 vendor default 或单次 screen 夸大成三类性能门全部通过。
+> 当前排名边界统一为 PostgreSQL source→validated completion，五臂 `writeback=none`；本目录的
+> selection 不绑定输出 sink，completion trace correctness 在计时边界外独立验证。
 
 ## 文件与来源
 

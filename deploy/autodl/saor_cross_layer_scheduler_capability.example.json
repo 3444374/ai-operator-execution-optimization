@@ -55,7 +55,7 @@
     }
   },
   "common_contract": {
-    "database_source_sink": "same_timed_postgresql_source_and_validated_json_text_sink_as_five_arm_matrix",
+    "database_source_sink": "same_timed_postgresql_source_and_no_writeback_completion_evidence_as_five_arm_matrix",
     "combined_manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
     "job_manifest_sha256": [
       "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1",

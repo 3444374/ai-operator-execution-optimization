@@ -18,7 +18,8 @@ selector 双轮与 single-head→bounded-ready FIFO observation bridge 均已完
 > 也不替代 §5 的简单阈值/滞回控制 baseline。后续算法假设、公式、工程映射、实验门禁和
 > 结论状态统一在 §5.2 调整，避免散落到报告、代码注释或结果文档中形成不兼容版本。
 
-> **2026-08-20 对照合同修订**：下一轮 database-E2E 只执行五臂完整系统矩阵，不再随主矩阵
+> **2026-08-21 对照合同修订**：下一轮只执行五臂 PostgreSQL-source→validated-completion
+> operator-E2E 系统矩阵，不再随主矩阵
 > 重跑 FIFO/DRR/VTC-style selector sanity。外部 `job_release_time=[0,5]` 是所有臂共同的 Job
 > 到达；`arrival_replay` 仅是执行器内部逐请求能力，本轮 eager Job 不要求 native arms 支持；
 > `bounded-ready` 仅指 SAOR 在 Job release 后观察已经 concrete/submittable 的 work。SAOR 的
@@ -1031,12 +1032,13 @@ observation-gap 定位臂。
    Daft `prompt()` Native、Daft `prompt()` Ray（两者均可执行时）、Ray Data native graph、
    project frozen-static 与 proposed $0.125W_e$。Project 两臂冻结相同 K/W；原生臂保留官方
    batching/backpressure/scheduler，不注入 Project K/W/credit/bounded-ready，但共享相同物理
-   CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 E2E throughput/MFU、group JCT、
+   CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 operator-E2E throughput/MFU、group JCT、
    per-Job JCT、资源与 correctness；逐请求 P99/SLO 只有在对应原生臂提供共同真实时钟时才报告，
    否则显式 `unavailable`。该矩阵禁止在计时前读取 JSONL；PostgreSQL scan/materialization 必须
-   位于共同 database-E2E 边界内；五臂统一 `json_text` 写入 `document_completions`，并以独立
-   completion trace 做 readback content digest、行数与 exactly-once 校验。group JCT 含 sink，
-   per-Job JCT 截止各 Job 模型响应完成。这里只能声称
+   位于共同 source→validated-completion 边界内；五臂统一 `writeback=none`，以冻结 manifest
+   doc-id 集合和独立 completion trace 做内容 digest、行数与 exactly-once 校验，不写或回读
+   `document_completions`。group/per-Job JCT 均截止对应模型响应完成；trace 验证在计时边界外。
+   这里只能声称
    完整系统的经验表现；详细冻结规格见
    `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
    旧 selector rehearsal 只保留为历史内部消融；本轮 runner 不再生成或排名同批

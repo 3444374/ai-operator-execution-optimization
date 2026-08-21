@@ -4,9 +4,9 @@
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
-当前待执行的 SAOR 系统对照冻结为五臂 database-E2E（Daft Native、Daft Native/Ray、Ray Data
+当前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
-执行，不注入项目控制。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
+执行，不注入项目控制；五臂均 `writeback=none`，不把 PostgreSQL sink 混入调度排名。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
 另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
 另有独立的四臂跨层 capability，计划比较 Daft Ray + native FCFS/DRR-on-vLLM reproduction/
 VTC-on-vLLM reproduction 与 SAOR + native FCFS；当前 frozen installed-source、Job identity 和

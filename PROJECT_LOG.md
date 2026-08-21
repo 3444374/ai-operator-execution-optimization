@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-21 五臂边界恢复为 no-writeback completion（服务器诊断后修复中）
+
+- 按冻结设计规格与用户研究目的，把五臂排名边界从错误接入的 PostgreSQL completion sink 恢复为
+  PostgreSQL source→validated model completion：matched/native/Project 三份合同统一
+  `writeback=none`，group/per-Job JCT 均截止模型完成；不写或回读 `document_completions`。
+- 删除五臂专用 sink adapter，改为 no-writeback completion evidence：以冻结两 Job manifest 的
+  `doc_id` 集合作独立 expected identity，核对 executor-owned completion trace 的缺失、重复、行数、
+  exactly-once 与内容 digest。trace validation 位于性能计时边界外，仍封入 cell/raw artifact identity。
+- 服务器在 commit `fc199b57` 上完成过一次五臂 correctness smoke（五个 warmup cell 均通过），但该
+  smoke 使用了现已撤销的 sink 合同，只保留为诊断历史，不可作为新合同 rehearsal readiness 证据；
+  formal 未运行且继续禁止。
+- smoke 后 final readiness 正确发现一个 Ray `ALIVE` actor。只读定位证明它是 Ray 2.56.1
+  `ray.llm` 官方、detached、`num_cpus=0` 的唯一 `llm_batch_telemetry/_TelemetryAgent`，只占
+  `node:__internal_head__=0.001`，不是 workload actor。clean gate 现只精确允许这一控制面身份，
+  同时新增 CPU 全空闲检查；任意其他活 actor、多个 telemetry actor、placement group、GPU 配额占用
+  或非已核验 vLLM CUDA 进程仍 fail closed。
+
 ## 2026-08-21 SAOR readiness 与 formal 证据深校验补强（本地，未运行 GPU）
 
 - 保持 `DRIVER_PYTHON` 外层与独立 `VLLM_PYTHON`；新增实际 system-preflight 入口，读取 endpoint

@@ -96,7 +96,7 @@
     "--batching-policy", "token_budget",
     "--token-budget", "${PROJECT_TOKEN_BUDGET}",
     "--token-budget-policy", "static",
-    "--writeback-mode", "json_text"
+    "--writeback-mode", "none"
   ],
   "scenarios": [
     {

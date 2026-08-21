@@ -494,16 +494,17 @@ def _normalize_cell(
     fairness = cell.get("service_fairness_metrics")
     if not isinstance(fairness, dict):
         raise ValueError(f"{run_id} lacks service fairness availability")
-    sink = cell.get("sink_metrics")
+    completion_evidence = cell.get("completion_evidence")
     if (
-        not isinstance(sink, dict)
-        or sink.get("status") != "passed"
-        or sink.get("mode") != "json_text"
-        or sink.get("table") != "document_completions"
-        or sink.get("exactly_once") is not True
-        or sink.get("observed_digest") != sink.get("expected_digest")
+        not isinstance(completion_evidence, dict)
+        or completion_evidence.get("status") != "passed"
+        or completion_evidence.get("mode") != "completion_trace_digest"
+        or completion_evidence.get("exactly_once") is not True
+        or completion_evidence.get("observed_doc_id_digest")
+        != completion_evidence.get("expected_doc_id_digest")
+        or not completion_evidence.get("output_digest")
     ):
-        raise ValueError(f"{run_id} lacks valid PostgreSQL sink/readback evidence")
+        raise ValueError(f"{run_id} lacks valid completion trace evidence")
 
     command = cell.get("command", [])
     if not isinstance(command, list):
@@ -550,13 +551,12 @@ def _normalize_cell(
             "completion_service_lag_max_work", "unavailable"
         ),
         "service_fairness_reason": fairness.get("reason", ""),
-        "sink_mode": sink["mode"],
-        "sink_table": sink["table"],
-        "sink_written_by": sink.get("written_by", ""),
-        "sink_expected_rows": sink.get("expected_rows", ""),
-        "sink_observed_rows": sink.get("observed_rows", ""),
-        "sink_exactly_once": sink["exactly_once"],
-        "sink_wall_s": sink.get("sink_wall_s", ""),
+        "completion_evidence_mode": completion_evidence["mode"],
+        "completion_evidence_producer": completion_evidence.get("producer", ""),
+        "completion_expected_rows": completion_evidence.get("expected_rows", ""),
+        "completion_observed_rows": completion_evidence.get("observed_rows", ""),
+        "completion_exactly_once": completion_evidence["exactly_once"],
+        "completion_output_digest": completion_evidence.get("output_digest", ""),
         "scheduled_launch_epoch_s": json.dumps(scheduled_starts),
         "actual_launch_epoch_s": json.dumps(actual_starts),
         "scheduled_launch_offset_s": json.dumps([
@@ -744,8 +744,9 @@ _AUDIT_FIELDS = (
     "starvation_status", "longest_no_service_s",
     "completion_service_lag_status", "completion_service_lag_p95_work",
     "completion_service_lag_max_work", "service_fairness_reason",
-    "sink_mode", "sink_table", "sink_written_by", "sink_expected_rows",
-    "sink_observed_rows", "sink_exactly_once", "sink_wall_s",
+    "completion_evidence_mode", "completion_evidence_producer",
+    "completion_expected_rows", "completion_observed_rows",
+    "completion_exactly_once", "completion_output_digest",
     "scheduled_launch_epoch_s", "actual_launch_epoch_s",
     "scheduled_launch_offset_s", "actual_launch_offset_s", "launch_deviation_s",
     "exactly_once",

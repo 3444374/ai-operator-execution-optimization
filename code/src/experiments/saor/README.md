@@ -6,7 +6,7 @@ logic. Command-line scripts under `code/scripts/` must remain thin wrappers.
 For the current multi-Job comparison:
 
 - `native_system_contract.py` and `native_system_parser.py` define the five-arm
-  database-E2E identity, typed Job releases, and MFU contract.
+  PostgreSQL-source-to-completion identity, typed Job releases, and MFU contract.
 - `native_system_validator.py`, `native_system_evidence.py`, and
   `native_system_publisher.py` reject mixed evidence, redact persisted text, and
   publish fail-closed generations.
@@ -17,14 +17,15 @@ For the current multi-Job comparison:
   recomputes bounded raw evidence instead of trusting passed booleans. A static
   or service-only pass is explicitly not rehearsal-ready.
 - `native_system_artifacts.py` deep-validates actual correctness-smoke and
-  rehearsal roots, cell artifact hashes, sink/provenance, and exact tar mirrors.
-- `native_system_execution.py` owns executor adapters; `native_system_sink.py`
-  owns the shared PostgreSQL completion sink/readback correctness boundary.
+  rehearsal roots, cell artifact hashes, completion/provenance, and exact tar mirrors.
+- `native_system_execution.py` owns executor adapters; `native_system_completion.py`
+  validates executor completion traces against frozen manifest identities without
+  writing to an output sink.
 - `native_system_matched.py` owns authorization and cell orchestration;
   `native_system_summary.py` revalidates sealed evidence and produces only the
   five-arm system, per-Job, and resource tables.
 - `official_vtc_capability.py` is a separate, non-running official S-LoRA
-  FCFS/VTC capability contract. It never enters the database-E2E ranking.
+  FCFS/VTC capability contract. It never enters the five-arm ranking.
 - `cross_layer_scheduler_capability.py` defines the separate four-arm SAOR
   versus DRR/VTC-on-vLLM complete-system capability and evidence boundary.
 - `in_engine_scheduler_logic.py` is the dependency-free FCFS/DRR/VTC semantic

@@ -59,7 +59,8 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但旧 SAOR 未越过 static；bounded-ready 只冻结 $0.125W_e$。同窗口 selector attribution 与 single-head→bounded-ready FIFO observation bridge 均已完成，SAOR 是观测非支配折中而非 selector winner，`formal_authorized=false`。下一步只补 Daft Native/Daft Ray/Ray Data/project static/proposed 系统级 matched comparison；原生系统 baseline 不接 bounded-ready，4-Job/reservation/dynamic K 仍后置 |
 | `lotus_semantic_frontend_execution_integration_20260821.md` | **LOTUS 语义前端候选 + 项目物理执行集成** | 冻结“LOTUS AST lowering 到项目 IR”而非“把 SAOR 移植进 LOTUS”的路线；定义源码 gate、module seam、prompt/row parity、native baseline、三臂实验与逐阶段停止规则。仅在当前五臂合同闭合后独立推进 |
 
-2026-08-20 起，上表“系统级 matched comparison”专指五臂 database-E2E；不再生成 FIFO/DRR/
+2026-08-21 起，上表“系统级 matched comparison”专指五臂 PostgreSQL-source→validated-completion
+operator-E2E（统一 `writeback=none`）；不再生成 FIFO/DRR/
 VTC-style selector development cells。官方 VTC 使用独立 S-LoRA 同栈 FCFS/VTC capability 配置，
 只进入服务机制表，当前为兼容性未验证的 blocked 状态。历史 selector rehearsal 结果不删除，
 但不得重新标成 native baseline 或拼进五臂排名。

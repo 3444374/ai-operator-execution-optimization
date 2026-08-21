@@ -465,13 +465,12 @@ def write_completion_evidence(
 ) -> None:
     """Write a run-scoped per-doc completion evidence CSV (``output_text`` included).
 
-    Independent of the ``document_completions`` sink: ``output_text`` is flattened
-    from the in-process ``operator_results`` (per-batch ``doc_id``/``output_text``
-    lists, mirroring ``_build_profiler_request_rows``) so a downstream reader can
-    compare this file against the sink to detect stale residual rows -- breaking
-    the circular self-reference of reading output_text FROM the sink and then
-    digesting the sink against itself. One row per doc; doc_id is unique across
-    the trace rows (enforced by ``build_request_trace_rows``).
+    ``output_text`` is flattened from the in-process ``operator_results``
+    (per-batch ``doc_id``/``output_text`` lists, mirroring
+    ``_build_profiler_request_rows``). A downstream no-writeback validator can
+    compare its doc-id set with the frozen manifest and seal a content digest.
+    One row per doc; doc_id is unique across the trace rows (enforced by
+    ``build_request_trace_rows``).
     """
 
     trace_doc_ids = [str(row.doc_id) for row in rows]

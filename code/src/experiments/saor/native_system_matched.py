@@ -726,7 +726,7 @@ def _validate_cell_evidence(
         "resource_metrics", "exactly_once", "request_tail_status",
         "service_fairness_metrics",
         "output_paths", "status", "server_version", "pgvector_version",
-        "mfu_contract", "sink_metrics",
+        "mfu_contract", "completion_evidence",
     }
     missing = sorted(required - evidence.keys())
     if missing:
@@ -915,27 +915,30 @@ def _validate_cell_evidence(
         or not fairness["reason"]
     ):
         raise RuntimeError("native service fairness availability must remain explicit")
-    sink = evidence["sink_metrics"]
-    if not isinstance(sink, dict) or set(sink) != {
-        "status", "mode", "table", "written_by", "expected_rows",
-        "observed_rows", "expected_digest", "observed_digest", "exactly_once",
-        "sink_wall_s", "verified_epoch_s",
+    completion = evidence["completion_evidence"]
+    if not isinstance(completion, dict) or set(completion) != {
+        "status", "mode", "producer", "expected_rows", "observed_rows",
+        "expected_doc_id_digest", "observed_doc_id_digest", "output_digest",
+        "exactly_once", "verified_epoch_s",
     }:
-        raise RuntimeError("PostgreSQL sink evidence schema is invalid")
-    expected_writer = "matrix_adapter" if arm.kind == "native" else "project_profiler"
+        raise RuntimeError("completion evidence schema is invalid")
+    expected_producer = (
+        "native_official_adapter" if arm.kind == "native" else "project_profiler"
+    )
     if (
-        sink["status"] != "passed"
-        or sink["mode"] != "json_text"
-        or sink["table"] != "document_completions"
-        or sink["written_by"] != expected_writer
-        or sink["exactly_once"] is not True
-        or sink["expected_rows"] != sum(job.rows for job in arm.job_manifests)
-        or sink["observed_rows"] != sink["expected_rows"]
-        or sink["observed_digest"] != sink["expected_digest"]
-        or not isinstance(sink["sink_wall_s"], (int, float))
-        or float(sink["sink_wall_s"]) < 0
+        completion["status"] != "passed"
+        or completion["mode"] != "completion_trace_digest"
+        or completion["producer"] != expected_producer
+        or completion["exactly_once"] is not True
+        or completion["expected_rows"] != sum(job.rows for job in arm.job_manifests)
+        or completion["observed_rows"] != completion["expected_rows"]
+        or completion["observed_doc_id_digest"]
+        != completion["expected_doc_id_digest"]
+        or not isinstance(completion["output_digest"], str)
+        or len(completion["output_digest"]) != 64
+        or not isinstance(completion["verified_epoch_s"], (int, float))
     ):
-        raise RuntimeError("PostgreSQL sink/readback evidence failed")
+        raise RuntimeError("completion trace correctness evidence failed")
     try:
         if arm.kind == "native":
             evidence["queue_final"] = validate_native_final_queue(
@@ -1015,7 +1018,7 @@ def _validate_cell_evidence(
         "exactly_once": evidence["exactly_once"],
         "request_tail_status": evidence["request_tail_status"],
         "service_fairness_metrics": fairness,
-        "sink_metrics": sink,
+        "completion_evidence": completion,
         "output_paths": relative_output_paths,
         "artifact_identities": artifact_identities,
         "cell_artifact_root": cell_relative_root,
@@ -1513,9 +1516,9 @@ def _validation_errors(
             errors.append(
                 f"{arm.arm_id} request arrival replay must remain executor-internal and unused"
             )
-        if arm.performance_writeback_mode != "json_text":
+        if arm.performance_writeback_mode != "none":
             errors.append(
-                f"{arm.arm_id} must use the shared json_text PostgreSQL sink"
+                f"{arm.arm_id} must end at model completion with no writeback"
             )
         try:
             normalize_request_tail_status(arm.unsupported_request_tails)

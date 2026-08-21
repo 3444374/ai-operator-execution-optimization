@@ -98,17 +98,17 @@ event 字段重新计算同一决策。这样即使在线公式写错，验证�
 
 ## 8. 五臂 runner 为什么有两层 native 入口
 
-五臂 runner 负责“先跑哪个系统、Job 何时释放、结果如何进入统一 sink”；它不会自己实现
+五臂 runner 负责“先跑哪个系统、Job 何时释放、如何验证完成证据”；它不会自己实现
 Daft 或 Ray Data 的执行图。对一个 native cell，它先调用 multi-job 编排层，把 Job0/Job1 分别拆成
 两个 endpoint shard；每个 shard 再调用 `run_official_baseline.py`，由 Daft/Ray Data 自己拥有执行
 与调度。因而 `--native-runner` 必须是后一个单 shard CLI，不能再次指向 multi-job 编排器。
 
 两类执行器的 request trace 目录不同：Project lifecycle 是 `jobs/job0.requests.csv`，native 是
 `jobs/job0/shard_0/requests.csv`。Project lifecycle 为控制 evidence，不保存生成正文；profiler 还要
-从内存中的 operator results 独立写 `jobs/job0.completions.csv`。统一 PostgreSQL sink 用后者作为
-expected content，与数据库 readback 比较 digest，不能把数据库读出值同时当 expected 和 observed。
-native shard trace 本身含 `output_text`，可以直接作为 expected。目录与 evidence 分工不同，但最终都
-要通过完成、去重、行数和内容 digest 门禁。若 native 子进程失败，适配层必须先报告已经脱敏的
+从内存中的 operator results 独立写 `jobs/job0.completions.csv`。runner 用冻结 manifest 作为
+expected doc-id 集合，对 completion trace 做完成、去重、行身份和内容 digest 门禁；它不写或回读
+`document_completions`。native shard trace 本身含 `output_text`。目录与 evidence 分工不同，但最终
+都进入同一 no-writeback correctness 合同。若 native 子进程失败，适配层必须先报告已经脱敏的
 primary failure，再停止 cell，不能让后续证据归一化用 `KeyError` 覆盖真正原因。
 
 Job release 还有两个容易混淆的时钟。`actual_launch_epoch_s` 表示父 runner 到达绝对 release

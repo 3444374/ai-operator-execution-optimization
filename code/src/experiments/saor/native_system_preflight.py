@@ -11,7 +11,7 @@ import hashlib
 import json
 import subprocess
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 from urllib.request import Request, urlopen
 
 from src.experiments.saor.native_system_contract import MatchedSystemConfig
@@ -154,10 +154,24 @@ def validate_gpu_compute_processes(
     }
 
 
+def _is_allowed_idle_control_plane_actor(item: Mapping[str, object]) -> bool:
+    """Recognize Ray's single official, zero-CPU/GPU LLM telemetry actor."""
+
+    required = item.get("required_resources")
+    return (
+        item.get("class_name") == "_TelemetryAgent"
+        and item.get("name") == "llm_batch_telemetry"
+        and item.get("ray_namespace") == "llm_batch_telemetry"
+        and item.get("is_detached") is True
+        and item.get("placement_group_id") in (None, "")
+        and required == {"node:__internal_head__": 0.001}
+    )
+
+
 def probe_ray_gpu_clean(
     ray_address: str, allowed_vllm_root_pids: tuple[int, ...]
 ) -> dict[str, object]:
-    """Require clean Ray state and reject every unrelated CUDA compute PID."""
+    """Reject live workloads while allowing Ray's inert telemetry control plane."""
 
     try:
         import ray
@@ -170,24 +184,57 @@ def probe_ray_gpu_clean(
     try:
         cluster = ray.cluster_resources()
         available = ray.available_resources()
+        total_cpu = float(cluster.get("CPU", 0.0))
+        available_cpu = float(available.get("CPU", 0.0))
         total_gpu = float(cluster.get("GPU", 0.0))
         available_gpu = float(available.get("GPU", 0.0))
-        actors = [item for item in list_actors(detail=True) if item.get("state") == "ALIVE"]
+        alive_actors = [
+            item for item in list_actors(detail=True)
+            if item.get("state") == "ALIVE"
+        ]
+        control_plane_actors = [
+            item for item in alive_actors
+            if _is_allowed_idle_control_plane_actor(item)
+        ]
+        workload_actors = [
+            item for item in alive_actors
+            if not _is_allowed_idle_control_plane_actor(item)
+        ]
         groups = [
             item for item in list_placement_groups(detail=True)
             if item.get("state") != "REMOVED"
         ]
     finally:
         ray.shutdown()
-    if total_gpu <= 0 or available_gpu != total_gpu or actors or groups:
+    if (
+        total_cpu <= 0
+        or available_cpu != total_cpu
+        or total_gpu <= 0
+        or available_gpu != total_gpu
+        or workload_actors
+        or len(control_plane_actors) > 1
+        or groups
+    ):
         raise RuntimeError("Ray/GPU cluster is not clean and fully idle")
     gpu_processes = validate_gpu_compute_processes(allowed_vllm_root_pids)
     return {
         "status": "passed",
         "ray_address": ray_address,
+        "total_cpu": total_cpu,
+        "available_cpu": available_cpu,
         "total_gpu": total_gpu,
         "available_gpu": available_gpu,
-        "alive_actor_count": len(actors),
+        "alive_workload_actor_count": len(workload_actors),
+        "allowed_control_plane_actor_count": len(control_plane_actors),
+        "allowed_control_plane_actors": [
+            {
+                "class_name": str(item.get("class_name")),
+                "name": str(item.get("name")),
+                "ray_namespace": str(item.get("ray_namespace")),
+                "required_resources": dict(item.get("required_resources")),
+            }
+            for item in control_plane_actors
+        ],
         "active_placement_group_count": len(groups),
         **gpu_processes,
     }

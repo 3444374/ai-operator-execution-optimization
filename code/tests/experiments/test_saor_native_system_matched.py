@@ -14,7 +14,7 @@ import tarfile
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 from src.baselines.common.contracts import ChatRequest
@@ -54,9 +54,13 @@ from src.experiments.saor.native_system_preflight import (
     _gpu_compute_pids,
     _is_descendant_of,
     build_system_preflight_payload,
+    probe_ray_gpu_clean,
     validate_gpu_compute_processes,
 )
-from src.experiments.saor.native_system_sink import collect_completion_rows
+from src.experiments.saor.native_system_completion import (
+    build_completion_evidence,
+    collect_completion_rows,
+)
 from src.experiments.saor.native_system_summary import (
     _validate_formal_authorization_binding,
 )
@@ -109,7 +113,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         authorization, drifted
                     )
 
-    def test_release_examples_define_exact_five_arm_db_e2e_matrix(self) -> None:
+    def test_release_examples_define_exact_five_arm_source_completion_matrix(self) -> None:
         repository = Path(__file__).resolve().parents[3]
         matched = json.loads((
             repository / "deploy/autodl/saor_native_system_matched.example.json"
@@ -156,7 +160,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             ])
             self.assertEqual(arm["arrival_replay_capability"], "not_used")
             self.assertIn("mfu_contract", arm)
-            self.assertEqual(arm["performance_writeback_mode"], "json_text")
+            self.assertEqual(arm["performance_writeback_mode"], "none")
             self.assertEqual(arm["service_signature"]["scheduler"], "vllm_native_fcfs")
             if arm["kind"] == "project":
                 self.assertEqual(arm["organizer"], "${SAOR_ORGANIZER}")
@@ -784,7 +788,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             "--database-url", "postgresql://localhost/test",
             "--gpu-peak-tflops", "82.58",
             "--mfu-precision", "bf16_dense_fp32_accumulate",
-            "--writeback-mode", "json_text",
+            "--writeback-mode", "none",
             "--source-workload-name", "test",
             "--actor-workers-per-endpoint", "1",
             "--ray-actor-max-concurrency", "256",
@@ -984,7 +988,80 @@ class MatchedSystemContractTest(unittest.TestCase):
         ), self.assertRaisesRegex(RuntimeError, "outside verified vLLM"):
             validate_gpu_compute_processes((123,))
 
-    def test_completion_sink_collects_independent_trace_content(self) -> None:
+    def test_ray_clean_probe_allows_only_official_zero_resource_telemetry(self) -> None:
+        ray_module = ModuleType("ray")
+        ray_module.is_initialized = lambda: False
+        ray_module.init = lambda **_kwargs: None
+        ray_module.shutdown = lambda: None
+        ray_module.cluster_resources = lambda: {"CPU": 32.0, "GPU": 2.0}
+        ray_module.available_resources = lambda: {"CPU": 32.0, "GPU": 2.0}
+        ray_util = ModuleType("ray.util")
+        ray_state = ModuleType("ray.util.state")
+        telemetry_actor = {
+            "state": "ALIVE",
+            "class_name": "_TelemetryAgent",
+            "name": "llm_batch_telemetry",
+            "ray_namespace": "llm_batch_telemetry",
+            "is_detached": True,
+            "required_resources": {"node:__internal_head__": 0.001},
+            "placement_group_id": None,
+        }
+        ray_state.list_actors = lambda **_kwargs: [telemetry_actor]
+        ray_state.list_placement_groups = lambda **_kwargs: []
+        ray_module.util = ray_util
+        ray_util.state = ray_state
+        with patch.dict(sys.modules, {
+            "ray": ray_module,
+            "ray.util": ray_util,
+            "ray.util.state": ray_state,
+        }), patch(
+            "src.experiments.saor.native_system_preflight.validate_gpu_compute_processes",
+            return_value={
+                "allowed_vllm_root_pids": [123],
+                "gpu_compute_pids": [456],
+                "unexpected_gpu_compute_pid_count": 0,
+            },
+        ):
+            result = probe_ray_gpu_clean("auto", (123,))
+
+        self.assertEqual(result["alive_workload_actor_count"], 0)
+        self.assertEqual(result["allowed_control_plane_actor_count"], 1)
+
+        resource_consuming_spoof = {
+            **telemetry_actor,
+            "required_resources": {
+                "node:__internal_head__": 0.001,
+                "CPU": 1.0,
+            },
+        }
+        ray_state.list_actors = lambda **_kwargs: [resource_consuming_spoof]
+        with patch.dict(sys.modules, {
+            "ray": ray_module,
+            "ray.util": ray_util,
+            "ray.util.state": ray_state,
+        }), self.assertRaisesRegex(RuntimeError, "not clean"):
+            probe_ray_gpu_clean("auto", (123,))
+
+    def test_completion_evidence_checks_ids_without_database_sink(self) -> None:
+        evidence = build_completion_evidence(
+            [(2, "b"), (1, "a")],
+            expected_doc_ids=(1, 2),
+            producer="native_official_adapter",
+        )
+        self.assertEqual(evidence["mode"], "completion_trace_digest")
+        self.assertTrue(evidence["exactly_once"])
+        self.assertEqual(evidence["expected_doc_id_digest"], evidence["observed_doc_id_digest"])
+        self.assertNotIn("table", evidence)
+        self.assertNotIn("sink_wall_s", evidence)
+
+        with self.assertRaisesRegex(RuntimeError, "doc_id set mismatch"):
+            build_completion_evidence(
+                [(1, "a")],
+                expected_doc_ids=(1, 2),
+                producer="native_official_adapter",
+            )
+
+    def test_completion_evidence_collects_independent_trace_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs"
             root.mkdir()
@@ -1000,7 +1077,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 collect_completion_rows(Path(directory)), [(1, "a"), (2, "b")]
             )
 
-    def test_completion_sink_collects_native_shard_request_traces(self) -> None:
+    def test_completion_evidence_collects_native_shard_request_traces(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs" / "job0" / "shard_0"
             root.mkdir(parents=True)
@@ -1015,7 +1092,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 collect_completion_rows(Path(directory)), [(7, "done")]
             )
 
-    def test_completion_sink_prefers_project_completion_evidence(self) -> None:
+    def test_completion_evidence_prefers_project_completion_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs"
             root.mkdir()
@@ -1038,7 +1115,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 collect_completion_rows(Path(directory)), [(7, "done")]
             )
 
-    def test_completion_sink_rejects_duplicate_doc_id(self) -> None:
+    def test_completion_evidence_rejects_duplicate_doc_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs"
             root.mkdir()
@@ -1229,17 +1306,16 @@ def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
         "server_version": "18.3",
         "pgvector_version": "0.8.1",
         "mfu_contract": arm.mfu_contract.__dict__,
-        "sink_metrics": {
+        "completion_evidence": {
             "status": "passed",
-            "mode": "json_text",
-            "table": "document_completions",
-            "written_by": "matrix_adapter" if native else "project_profiler",
+            "mode": "completion_trace_digest",
+            "producer": "native_official_adapter" if native else "project_profiler",
             "expected_rows": expected_rows,
             "observed_rows": expected_rows,
-            "expected_digest": "a" * 64,
-            "observed_digest": "a" * 64,
+            "expected_doc_id_digest": "a" * 64,
+            "observed_doc_id_digest": "a" * 64,
+            "output_digest": "b" * 64,
             "exactly_once": True,
-            "sink_wall_s": 0.1,
             "verified_epoch_s": 116.0,
         },
         "command": ["framework", "run"],
@@ -1440,7 +1516,7 @@ class Fixture:
             "arrival_replay_capability": "not_used",
             "job_internal_arrival_contract": "eager",
             "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": 82.58, "precision": "bf16_dense_fp32_accumulate", "reason": "uniform numerator unavailable"},
-            "performance_writeback_mode": "json_text",
+            "performance_writeback_mode": "none",
             "unsupported_request_tails": {"status": "unavailable", "reason": "unsupported"},
             "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "postgresql://localhost/test", "workload_name": "test"},
             "organizer": "native_framework_owned",

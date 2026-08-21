@@ -172,7 +172,7 @@ def _validate_cell(
     expected: Mapping[str, object],
     expected_native_provenance: Mapping[str, Mapping[str, object]] | None,
 ) -> None:
-    """Re-check correctness, sink, provenance, and immutable cell identity."""
+    """Re-check completion, provenance, and immutable cell identity."""
 
     arm_id = cell.get("arm_id")
     arm = arm_by_id.get(str(arm_id))
@@ -207,18 +207,21 @@ def _validate_cell(
             }.items()
         ):
             raise RuntimeError("matrix cell Job identity or row count drifted")
-    sink = cell.get("sink_metrics")
+    completion = cell.get("completion_evidence")
     expected_rows = sum(job.rows for job in arm.job_manifests)
     if (
-        not isinstance(sink, dict)
-        or sink.get("status") != "passed"
-        or sink.get("exactly_once") is not True
-        or sink.get("expected_rows") != expected_rows
-        or sink.get("observed_rows") != expected_rows
-        or not sink.get("expected_digest")
-        or sink.get("observed_digest") != sink.get("expected_digest")
+        not isinstance(completion, dict)
+        or completion.get("status") != "passed"
+        or completion.get("mode") != "completion_trace_digest"
+        or completion.get("exactly_once") is not True
+        or completion.get("expected_rows") != expected_rows
+        or completion.get("observed_rows") != expected_rows
+        or not completion.get("expected_doc_id_digest")
+        or completion.get("observed_doc_id_digest")
+        != completion.get("expected_doc_id_digest")
+        or not completion.get("output_digest")
     ):
-        raise RuntimeError("matrix cell sink/readback evidence failed")
+        raise RuntimeError("matrix cell completion evidence failed")
     if arm.kind == "native":
         provenance = cell.get("native_implementation_provenance")
         if not isinstance(provenance, dict) or set(provenance) != {

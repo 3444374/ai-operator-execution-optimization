@@ -71,12 +71,13 @@ single-head `saor_bounded_priority` policy still requires request-level arrival
 replay. This keeps all five arms on the same eager Job-internal visibility
 contract without removing SAOR's ready-window mechanism gate.
 
-All five arms use the same `json_text` PostgreSQL sink contract. Native arms
-materialize completion traces through the matrix adapter; Project arms use the
-profiler-owned sink. Both paths are independently read back from
-`document_completions`, content-digested, row-counted, and required to pass
-exactly-once validation before a cell can be ranked. Sink identity and timing
-are retained in `all_runs.csv`.
+All five arms end at the validated model-completion barrier and use
+`writeback=none`. PostgreSQL is the common timed source, not an output sink for
+this scheduling comparison. Native request traces and Project's independent
+`*.completions.csv` artifacts are checked against the frozen manifest doc-id
+set, row-counted, content-digested, and required to pass exactly-once validation
+before a cell can be ranked. No `document_completions` write/readback time enters
+JCT or `all_runs.csv`.
 
 `saor_official_vtc_capability.example.json` is a separate, non-executing
 capability contract for the official `Ying1123/VTC-artifact` S-LoRA stack. It
@@ -227,8 +228,9 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 
 Project runner 会为每个 Job 同时写 lifecycle `*.requests.csv` 和独立内容
 `*.completions.csv`。前者故意不保存输出正文；后者由 profiler 从 in-process operator results
-写出 `output_text`，用于和 profiler-owned PostgreSQL sink readback 比较 digest。两份 completion
-evidence 缺失、重复或未进入 cell artifact identity 时，correctness smoke 必须失败。
+写出 `output_text`。runner 在计时边界外把其 doc-id 集合与冻结 manifest 比较，并封存内容 digest，
+不连接输出 sink。completion evidence 缺失、重复、行身份漂移或未进入 cell artifact identity 时，
+correctness smoke 必须失败。
 
 Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
 `--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂

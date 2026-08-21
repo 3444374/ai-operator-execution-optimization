@@ -8,7 +8,7 @@ execution. A non-rehearsal run now requires a separate authorization artifact th
 repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
 runner creates an output root, acquires a host lease, or calls an executor. The reusable offline core
 lives in `src/experiments/saor/native_system_summary.py`; typed contract/parser/validator/evidence/publisher,
-executor adapters, and the common PostgreSQL sink live beside it under `src/experiments/saor/`; the
+executor adapters and no-writeback completion-evidence validator live beside it under `src/experiments/saor/`; the
 pre-dispatch executor-binding core lives in `src/experiments/saor/native_system_bindings.py`; the CLI
 only composes these typed components. The readiness layer now jointly loads all three real configs,
 requires exact vLLM distribution/source evidence, and verifies revision-bound model artifacts plus
@@ -45,8 +45,9 @@ schema rather than copying arbitrary executor fields. Every valid cell and every
 than inferred from a directory name. The shared typed `DatabaseIdentity` requires the same pair across
 the whole matrix, not merely a non-empty pair per cell. A passed summary keeps
 `formal_authorized=false` and records the narrower fact `formal_authorization_verified=true`.
-Every ranked cell also uses the shared `json_text` PostgreSQL sink and must pass independent
-`document_completions` row-count/content-digest readback with exactly-once evidence.
+Every ranked cell ends at validated model completion with `writeback=none`. It must pass an
+independent frozen-manifest doc-id, row-count, content-digest, and exactly-once trace gate; PostgreSQL
+remains the common timed source and no output-sink time enters the ranking.
 
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:
