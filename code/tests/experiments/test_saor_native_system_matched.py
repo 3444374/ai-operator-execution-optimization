@@ -23,7 +23,10 @@ from src.experiments.saor.native_system_evidence import (
     persisted_command,
     persisted_failure,
 )
-from src.experiments.saor.native_system_execution import normalize_native_evidence
+from src.experiments.saor.native_system_execution import (
+    normalize_native_evidence,
+    project_job_epoch_fields,
+)
 from src.experiments.saor.native_system_bindings import validate_executor_bindings
 from src.experiments.saor.native_system_matched import (
     REQUIRED_ARM_IDS,
@@ -1063,6 +1066,23 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "error": "RuntimeError: native runner rejected arguments",
                     },
                 )
+
+    def test_project_launch_epoch_is_distinct_from_child_source_arrival(self) -> None:
+        record = {
+            "replay_configured_start_epoch_s": "[100.0, 105.0]",
+            "replay_observed_start_epoch_s": "[100.05, 105.04]",
+            "job_arrival_start_epoch_s": "[100.8, 105.5]",
+            "replay_actual_submit_start_epoch_s": "[101.0, 105.8]",
+            "job_completion_end_epoch_s": "[120.0, 118.0]",
+        }
+
+        fields = project_job_epoch_fields(record, 1)
+
+        self.assertEqual(fields["scheduled_launch_epoch_s"], 105.0)
+        self.assertEqual(fields["actual_launch_epoch_s"], 105.04)
+        self.assertEqual(fields["source_arrival_epoch_s"], 105.5)
+        self.assertEqual(fields["first_submit_epoch_s"], 105.8)
+        self.assertEqual(fields["ended_epoch_s"], 118.0)
 
 
 def official_vtc_evidence(config) -> list[dict[str, object]]:

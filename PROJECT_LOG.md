@@ -14281,3 +14281,12 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   operator results 落 `*.completions.csv`。统一 sink 优先用这份独立 expected content 对比数据库；
   两个 Job completion evidence 也进入 cell output-path SHA/全文件 artifact manifest。第三个失败 root
   保留；该修复需在新 commit/new root 上重跑，当前仍无 rehearsal，formal 继续禁止。
+- `969ce92c` 的第四、第五个 fresh smoke 均证明 Project completion evidence 与 PostgreSQL sink
+  1024/1024、digest、exactly-once 通过，但随后被 5s release-offset 门拦下；observed child-source
+  offset 分别为 4.7191s/4.6983s，而第五次 first-submit offset 为 4.8804s。重复同向压缩排除一次性
+  抖动，根因是 Project normalizer 把 child 完成冷启动/DB fetch 后的首条 arrival 错当 actual launch；
+  native actual launch 则一直是父编排器紧邻 `Popen` 的 epoch。
+- Project Job 现用 runner 已单独记录并验证的 `replay_observed_start_epoch_s` 作为
+  `actual_launch_epoch_s`，首条 lifecycle arrival 独立保留为 `source_arrival_epoch_s`。±0.25s launcher
+  门、SAOR ready/credit/submit 不早于 release 门均保持不变；两个 timing 失败 root 原样保留，仍未
+  完成 correctness smoke/rehearsal，formal 继续禁止。

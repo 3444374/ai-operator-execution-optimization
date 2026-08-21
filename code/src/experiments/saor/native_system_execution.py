@@ -142,15 +142,50 @@ def normalize_native_evidence(
     }
 
 
+def project_job_epoch_fields(
+    record: dict[str, object], job_index: int
+) -> dict[str, float]:
+    """Separate Project launcher, child-source, submit, and completion clocks."""
+
+    sources = {
+        "scheduled_launch_epoch_s": "replay_configured_start_epoch_s",
+        "actual_launch_epoch_s": "replay_observed_start_epoch_s",
+        "source_arrival_epoch_s": "job_arrival_start_epoch_s",
+        "first_submit_epoch_s": "replay_actual_submit_start_epoch_s",
+        "ended_epoch_s": "job_completion_end_epoch_s",
+    }
+    vectors: dict[str, list[object]] = {}
+    for output_field, record_field in sources.items():
+        decoded = json.loads(str(record[record_field]))
+        if not isinstance(decoded, list) or any(
+            not isinstance(value, (int, float)) or isinstance(value, bool)
+            for value in decoded
+        ):
+            raise RuntimeError(f"Project {record_field} must encode numeric epochs")
+        vectors[output_field] = decoded
+    lengths = {len(vector) for vector in vectors.values()}
+    if len(lengths) != 1 or not 0 <= job_index < next(iter(lengths)):
+        raise RuntimeError("Project Job epoch vectors are misaligned")
+    return {
+        field: float(vector[job_index])
+        for field, vector in vectors.items()
+    }
+
+
 def normalize_project_evidence(
     arm: MatchedArm,
     record: dict[str, object],
     output_dir: Path,
 ) -> dict[str, object]:
-    configured = json.loads(str(record["replay_configured_start_epoch_s"]))
-    observed = json.loads(str(record["job_arrival_start_epoch_s"]))
-    submitted = json.loads(str(record["replay_actual_submit_start_epoch_s"]))
-    completed = json.loads(str(record["job_completion_end_epoch_s"]))
+    configured_raw = json.loads(str(record["replay_configured_start_epoch_s"]))
+    if not isinstance(configured_raw, list) or not configured_raw:
+        raise RuntimeError("Project configured Job epochs must encode a list")
+    epochs = [
+        project_job_epoch_fields(record, index)
+        for index in range(len(configured_raw))
+    ]
+    configured = [item["scheduled_launch_epoch_s"] for item in epochs]
+    observed = [item["source_arrival_epoch_s"] for item in epochs]
     actual_work = json.loads(str(record["job_actual_work"]))
     expected_counts = json.loads(str(record["job_expected_count"]))
     completed_counts = json.loads(str(record["job_completed_count"]))
@@ -202,14 +237,15 @@ def normalize_project_evidence(
     jobs = [{
         "job_id": arm.job_manifests[index].job_id,
         "manifest_sha256": observed_shas[index],
-        "scheduled_launch_epoch_s": float(configured[index]),
-        "actual_launch_epoch_s": float(observed[index]),
+        "scheduled_launch_epoch_s": epochs[index]["scheduled_launch_epoch_s"],
+        "actual_launch_epoch_s": epochs[index]["actual_launch_epoch_s"],
+        "source_arrival_epoch_s": epochs[index]["source_arrival_epoch_s"],
         **({
             "concrete_ready_epoch_s": lifecycle_minima[index][0],
             "credit_registered_epoch_s": lifecycle_minima[index][1],
-            "first_submit_epoch_s": float(submitted[index]),
+            "first_submit_epoch_s": epochs[index]["first_submit_epoch_s"],
         } if is_saor else {}),
-        "ended_epoch_s": float(completed[index]),
+        "ended_epoch_s": epochs[index]["ended_epoch_s"],
         "completed_count": int(completed_counts[index]),
         "expected_count": int(expected_counts[index]),
         "actual_work": int(actual_work[index]),

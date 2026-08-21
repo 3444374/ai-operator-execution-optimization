@@ -123,10 +123,14 @@ no performance summary. Do not run the GPU matrix before independent rehearsal
 authorization. Formal remains prohibited until the later, separate artifact is
 issued.
 
-The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
-timestamps are measured separately: the observed Job 1 minus Job 0 offset and
-its deviation are retained, and eligibility requires the pre-registered
-`±0.25 s` tolerance. This is not a zero-jitter claim.
+The configured releases are nominally exactly `[0, 5]` seconds. Launcher and
+child-source timestamps are measured separately: `actual_launch_epoch_s` is the
+parent runner crossing the absolute Job barrier immediately before `Popen`, while
+Project `source_arrival_epoch_s` is the first lifecycle arrival after child startup
+and DB fetch. The Job 1 minus Job 0 launcher offset and its deviation are retained,
+and eligibility requires the pre-registered `±0.25 s` tolerance. SAOR ready,
+credit-registration, and submit epochs must independently remain after release.
+This is not a zero-jitter claim and does not hide child startup latency.
 
 ```bash
 # Run from the repository root after sourcing the runtime env and this

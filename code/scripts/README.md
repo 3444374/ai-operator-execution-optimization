@@ -189,7 +189,9 @@ fingerprint/manifest/service signature/scheduler owner/schedule/index/cell ident
 原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
 非空原因；P99 与 SLO 分别输出 status/value/reason，任一不可用时不得生成跨系统排名。Job JCT
 按预注册的 nominal release→completion 计算，actual launch/offset/deviation 仅保留为启动抖动与
-overlap 诊断。Task3 normalizer 把 legacy flat unavailable tail 转为中性 nested
+overlap 诊断。Project 的 actual launch 是父 runner 越过绝对 release barrier 后、紧邻 `Popen`
+的 launcher epoch；子进程完成冷启动/DB fetch 后的首条 lifecycle arrival 另存为
+`source_arrival_epoch_s`，二者不得混用。Task3 normalizer 把 legacy flat unavailable tail 转为中性 nested
 `request_p99/slo → status/value/reason`，并把 `_snapshot_mapping` 产生的五类 JSON-encoded per-Job
 live 容器解码后再存入 evidence。终态校验按真实 native `queue_final` 与 Project
 `shared_credit_final` schema 只检查实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。

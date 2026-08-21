@@ -110,3 +110,9 @@ expected content，与数据库 readback 比较 digest，不能把数据库读�
 native shard trace 本身含 `output_text`，可以直接作为 expected。目录与 evidence 分工不同，但最终都
 要通过完成、去重、行数和内容 digest 门禁。若 native 子进程失败，适配层必须先报告已经脱敏的
 primary failure，再停止 cell，不能让后续证据归一化用 `KeyError` 覆盖真正原因。
+
+Job release 还有两个容易混淆的时钟。`actual_launch_epoch_s` 表示父 runner 到达绝对 release
+barrier、即将 `Popen` 子进程；`source_arrival_epoch_s` 表示子进程启动、读完 PostgreSQL 并构造首条
+lifecycle request 后的时间。前者用来核验两臂共同的 0s/5s 外部 Job release，后者保留冷启动与
+source fetch 的真实延迟。SAOR 的 concrete-ready、credit registration 和 first submit 仍分别检查
+不得早于 release，因此把两个时钟分开不会放松 eager/ready-window 机制门。

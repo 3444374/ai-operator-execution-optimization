@@ -48,7 +48,7 @@ SYSTEM_ARM_IDS = (
 )
 REQUIRED_ARM_IDS = SYSTEM_ARM_IDS
 NOMINAL_JOB_OFFSET_S = 5.0
-ACTUAL_CHILD_OFFSET_TOLERANCE_S = 0.25
+ACTUAL_LAUNCH_OFFSET_TOLERANCE_S = 0.25
 FORMAL_AUTHORIZATION_SCOPE = "saor_native_system_matched_formal"
 
 _PROJECT_FIELDS = {
@@ -74,13 +74,13 @@ def endpoint_auxiliary_url(endpoint_url: str, path: str) -> str:
 
 
 def _validate_actual_job_offset(actual_offset_s: float) -> float:
-    """Validate observed child-source timing without claiming zero jitter."""
+    """Validate observed launcher timing without claiming zero jitter."""
 
     deviation_s = actual_offset_s - NOMINAL_JOB_OFFSET_S
-    if abs(deviation_s) > ACTUAL_CHILD_OFFSET_TOLERANCE_S:
+    if abs(deviation_s) > ACTUAL_LAUNCH_OFFSET_TOLERANCE_S:
         raise RuntimeError(
-            "actual child-source offset is outside the pre-registered "
-            f"{ACTUAL_CHILD_OFFSET_TOLERANCE_S:.2f}s tolerance"
+            "actual Job launch offset is outside the pre-registered "
+            f"{ACTUAL_LAUNCH_OFFSET_TOLERANCE_S:.2f}s tolerance"
         )
     return deviation_s
 
@@ -963,7 +963,8 @@ def _validate_cell_evidence(
     # and unknown exception fields from leaking into the portable root.
     job_fields = (
         "job_id", "scheduled_launch_epoch_s", "actual_launch_epoch_s",
-        "ended_epoch_s", "completed_count", "expected_count", "actual_work",
+        "source_arrival_epoch_s", "ended_epoch_s", "completed_count",
+        "expected_count", "actual_work",
         "manifest_sha256", "exactly_once", "shard_provenance",
         "concrete_ready_epoch_s", "credit_registered_epoch_s",
         "first_submit_epoch_s",
@@ -1037,7 +1038,7 @@ def _validate_cell_evidence(
         "actual_job_offset_s": actual_offset_s,
         "nominal_job_offset_s": NOMINAL_JOB_OFFSET_S,
         "job_offset_deviation_s": offset_deviation_s,
-        "job_offset_tolerance_s": ACTUAL_CHILD_OFFSET_TOLERANCE_S,
+        "job_offset_tolerance_s": ACTUAL_LAUNCH_OFFSET_TOLERANCE_S,
         "arm_id": arm.arm_id,
         "report_blocks": list(cell.report_blocks),
         "scheduler_owner": arm.scheduler_owner,
