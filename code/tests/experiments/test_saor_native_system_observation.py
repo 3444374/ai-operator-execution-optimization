@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
+from src.experiments.saor.native_system_execution import (
+    _attach_common_observation,
+)
 from src.experiments.saor.native_system_observation import (
     JobObservationContract,
     build_system_observation,
     summarize_gateway_rows,
 )
+from src.observability.request_gateway import GatewayRoute
 
 
 def _row(
@@ -124,6 +131,56 @@ class NativeSystemObservationTest(unittest.TestCase):
                 t1_by_job={"job0": 2.6},
                 t4_by_job={"job0": 4.0},
             )
+
+    def test_common_observation_replaces_legacy_job_slo_field(self) -> None:
+        rows = [
+            _row("job0", 0, 2.0, 3.0, 10),
+            _row("job1", 1, 7.0, 47.0, 20),
+        ]
+        evidence = {
+            "jobs": [
+                {
+                    "job_id": "job0",
+                    "expected_count": 1,
+                    "actual_launch_epoch_s": 0.0,
+                    "first_batch_ready_epoch_s": 1.0,
+                    "result_visible_epoch_s": 4.0,
+                    "slo_violation_ratio": "unavailable",
+                },
+                {
+                    "job_id": "job1",
+                    "expected_count": 1,
+                    "actual_launch_epoch_s": 5.0,
+                    "first_batch_ready_epoch_s": 6.0,
+                    "result_visible_epoch_s": 48.0,
+                    "slo_violation_ratio": "unavailable",
+                },
+            ],
+            "service_metrics": {
+                "prompt_tokens_delta": 26,
+                "generation_tokens_delta": 4,
+            },
+            "output_paths": {},
+        }
+        routes = (
+            GatewayRoute("job0", "endpoint-0", "http://127.0.0.1:8000/v1/chat/completions"),
+            GatewayRoute("job1", "endpoint-1", "http://127.0.0.1:8001/v1/chat/completions"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            trace = Path(directory) / "gateway.jsonl"
+            trace.write_text(
+                "".join(json.dumps(row) + "\n" for row in rows),
+                encoding="utf-8",
+            )
+            observed = _attach_common_observation(
+                evidence,
+                trace_path=trace,
+                routes=routes,
+                contracts=self.contracts,
+            )
+
+        self.assertEqual(observed["jobs"][0]["slo_violation_ratio"], 0.0)
+        self.assertEqual(observed["jobs"][1]["slo_violation_ratio"], 1.0)
 
 
 if __name__ == "__main__":

@@ -228,6 +228,9 @@ def _attach_common_observation(
             {
                 "request_p99_status": "available",
                 "slo_status": "available",
+                "slo_violation_ratio": float(
+                    observed["request_slo_violation_ratio"]
+                ),
                 "tail_reason": "common observation-only gateway",
                 "actual_work": int(observed["actual_total_tokens"]),
             }

@@ -14360,5 +14360,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   到达后的 P99 inflation/no-service/recovery。within-run 指标不冒充 full-solo slowdown；后者仍需
   matched-solo control。
 - cell/archive validator 重新哈希 gateway trace、核对四条 Job×endpoint upstream binding，并逐 Job
-  验证 T0≤T1≤T2≤T3≤T4。当前已通过 native 26、shared-vLLM 91、matched/observation 42、gateway 2
+  验证 T0≤T1≤T2≤T3≤T4。当前已通过 native 26、shared-vLLM 91、matched/observation 43、gateway 2
   项定向测试与 compile/diff check；新合同尚未在服务器重跑 smoke/rehearsal，formal 继续禁止。
+- `5726809f` 的首个 gateway smoke 已完成 Daft Ray 转发与 token reconciliation，但 cell validator
+  发现 adapter 只写了新字段 `request_slo_violation_ratio`，旧的持久化字段
+  `slo_violation_ratio` 仍保留 `unavailable`，因此 fail-closed。现由共同观测 adapter 显式把同一数值
+  映射到持久化 schema，并增加“一 Job 0 miss、另一 Job 100% miss”的 red→green 回归；失败 root
+  保留，不作性能结论，需在新 commit/fresh root 重跑 smoke。
