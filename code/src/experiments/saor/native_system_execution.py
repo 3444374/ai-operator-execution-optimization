@@ -18,6 +18,9 @@ from src.baselines.text.orchestration.native_multijob import (
 )
 from src.experiments.saor.native_system_bindings import validate_executor_bindings
 from src.experiments.saor.native_system_contract import MatchedArm, ScheduledMatchedCell
+from src.experiments.saor.native_system_readiness import (
+    verify_rehearsal_service_identity,
+)
 from src.experiments.saor.native_system_matched import (
     load_matched_system_config,
     normalize_request_tail_status,
@@ -34,7 +37,6 @@ from src.experiments.shared_vllm import (
     run_shared_vllm_group_cell,
 )
 from src.experiments.shared_vllm.preflight import wait_for_idle
-from src.infrastructure.vllm_preflight import verify_live_vllm_scheduler
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,7 @@ class MatchedExecutionOptions:
     idle_timeout_s: float
     start_delay_s: float
     rehearsal: bool
+    installed_source_audit: Path
     formal_authorization: Path | None
 
 
@@ -249,11 +252,8 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         runner_metrics_urls=options.metrics_urls,
         runner_health_url=options.health_url,
     )
-    verify_live_vllm_scheduler(
-        matched.endpoint_urls,
-        None,
-        strict=True,
-        tag="saor-five-arm-native-fcfs",
+    service_identity_preflight = verify_rehearsal_service_identity(
+        matched, options.installed_source_audit
     )
     repository = Path(__file__).resolve().parents[4]
     commit = subprocess.run(
@@ -320,4 +320,5 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         repository_commit_getter=lambda: commit,
         rehearsal=options.rehearsal,
         formal_authorization_path=options.formal_authorization,
+        service_identity_preflight=service_identity_preflight,
     )

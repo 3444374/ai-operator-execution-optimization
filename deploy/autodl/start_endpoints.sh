@@ -21,6 +21,7 @@ VLLM_LOG_DIR=${VLLM_LOG_DIR:-/root/autodl-tmp/vllm_logs}
 GPU_IDS=${GPU_IDS:-0,1}
 PORTS=${PORTS:-8000,8001}
 VLLM_HOST=${VLLM_HOST:-127.0.0.1}
+VLLM_DTYPE=${VLLM_DTYPE:-auto}
 VLLM_MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-2048}
 VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.90}
 STOP_MANAGED_ENDPOINTS=${STOP_MANAGED_ENDPOINTS:-0}
@@ -98,7 +99,7 @@ start_endpoint() {
     -m vllm.entrypoints.openai.api_server \
     --model "$MODEL_PATH" \
     --served-model-name "$COMPLETION_MODEL" \
-    --dtype auto \
+    --dtype "$VLLM_DTYPE" \
     --max-model-len "$VLLM_MAX_MODEL_LEN" \
     --gpu-memory-utilization "$VLLM_GPU_MEMORY_UTILIZATION" \
     --port "$port" \

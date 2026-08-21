@@ -143,6 +143,13 @@ readiness 同时把 native calibration 的 SHA/adapter/concurrency/batch 与实�
 这些字段进入每条 `all_runs.csv`，不能用配置默认值代替。离线汇总还会按原始命令重验原生
 adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行前配置检查。
 
+`analysis/audit_vllm_0251_source.py` 必须由冻结 vLLM Python 执行，逐项比较 package version、
+dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked。
+`analysis/audit_saor_native_system_matched.py` 可从仓库根直接运行，联合加载三份实际 config；默认只
+报告 `static_config_passed/rehearsal_ready=false`。只有显式提供前述 source evidence 并加
+`--live-service` 时，才继续核对模型 artifact 与完整 endpoint cmdline。五臂 runner 本身也强制
+接收 `--installed-source-audit`，所以不能绕过 service identity 门直接进入 rehearsal。
+
 `analysis/summarize_saor_native_system_matched.py` 是该矩阵的薄 CLI；可复用的纯离线、
 fail-closed 核心位于 `src/experiments/saor/native_system_summary.py`，不连接服务。CLI 要求同一个
 独立 formal authorization artifact。核心在生成排名前重算 authorization/contract snapshot/config

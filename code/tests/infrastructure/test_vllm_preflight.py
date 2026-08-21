@@ -9,15 +9,20 @@ implementation (code/AGENTS.md §4 低耦合).
 
 from __future__ import annotations
 
+import hashlib
+import tempfile
 import unittest
+from pathlib import Path
 
 from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
     flag_value_present,
     prefix_cache_flag_enabled,
     scheduler_cls_value,
+    verify_endpoint_service_identity,
     verify_endpoint_cmdlines,
     verify_endpoint_scheduler_cls,
+    verify_model_artifact_identity,
 )
 
 
@@ -93,6 +98,166 @@ class VllmPreflightPureTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(RuntimeError, "bare --scheduler-cls"):
             scheduler_cls_value(self._cmd(8000) + " --scheduler-cls")
+
+    @staticmethod
+    def _service_identity(model_path: Path) -> dict[str, object]:
+        hashes = {
+            name: hashlib.sha256((model_path / name).read_bytes()).hexdigest()
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            )
+        }
+        return {
+            "model": "qwen2.5-7b",
+            "model_path": str(model_path),
+            "model_revision": "a" * 40,
+            "model_config_sha256": hashes["config.json"],
+            "tokenizer_config_sha256": hashes["tokenizer_config.json"],
+            "tokenizer_json_sha256": hashes["tokenizer.json"],
+            "model_safetensors_index_sha256": hashes[
+                "model.safetensors.index.json"
+            ],
+            "generation_config_sha256": hashes["generation_config.json"],
+            "model_weight_00001_sha256": hashes[
+                "model-00001-of-00004.safetensors"
+            ],
+            "model_weight_00002_sha256": hashes[
+                "model-00002-of-00004.safetensors"
+            ],
+            "model_weight_00003_sha256": hashes[
+                "model-00003-of-00004.safetensors"
+            ],
+            "model_weight_00004_sha256": hashes[
+                "model-00004-of-00004.safetensors"
+            ],
+            "dtype": "bfloat16",
+            "service": "0.25.1",
+            "vllm_metadata_sha256": "1" * 64,
+            "vllm_wheel_sha256": "2" * 64,
+            "vllm_record_sha256": "3" * 64,
+            "vllm_source_config_scheduler_sha256": "4" * 64,
+            "vllm_source_scheduler_sha256": "5" * 64,
+            "vllm_source_async_scheduler_sha256": "6" * 64,
+            "vllm_source_request_queue_sha256": "7" * 64,
+            "vllm_source_request_sha256": "8" * 64,
+            "scheduler": "vllm_native_fcfs",
+            "max_model_len": 8192,
+            "max_num_seqs": 256,
+            "max_num_batched_tokens": 8192,
+            "chunked_prefill": True,
+            "prefix_caching": True,
+            "mfu_metrics": True,
+            "enforce_eager": False,
+            "compilation_mode": "vllm_compile",
+            "gpu_memory_utilization": 0.9,
+        }
+
+    @staticmethod
+    def _complete_cmdline(port: int, model_path: Path) -> str:
+        return (
+            "python -m vllm.entrypoints.openai.api_server "
+            f"--model {model_path} --served-model-name qwen2.5-7b "
+            "--dtype bfloat16 --max-model-len 8192 "
+            "--gpu-memory-utilization 0.9 --max-num-seqs 256 "
+            "--max-num-batched-tokens 8192 --enable-prefix-caching "
+            "--enable-chunked-prefill --enable-mfu-metrics "
+            f"--port {port}"
+        )
+
+    def test_complete_service_identity_accepts_exact_native_fcfs_cmdlines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoints = [
+                "http://127.0.0.1:8000/v1/chat/completions",
+                "http://127.0.0.1:8001/v1/chat/completions",
+            ]
+            observed = verify_endpoint_service_identity(
+                [self._complete_cmdline(8000, model), self._complete_cmdline(8001, model)],
+                endpoints,
+                identity,
+            )
+            self.assertEqual(set(observed), set(endpoints))
+            verify_model_artifact_identity(identity)
+
+    def test_complete_service_identity_rejects_every_runtime_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoint = ["http://127.0.0.1:8000/v1/chat/completions"]
+            exact = self._complete_cmdline(8000, model)
+            drifts = {
+                "model": exact.replace("qwen2.5-7b", "other-model"),
+                "dtype": exact.replace("bfloat16", "float16"),
+                "max_num_seqs": exact.replace("--max-num-seqs 256", "--max-num-seqs 128"),
+                "max_num_batched_tokens": exact.replace(
+                    "--max-num-batched-tokens 8192", "--max-num-batched-tokens 4096"
+                ),
+                "chunked_prefill": exact.replace("--enable-chunked-prefill", ""),
+                "prefix_caching": exact.replace("--enable-prefix-caching", ""),
+                "compile_mode": exact + " --enforce-eager",
+                "gpu_memory_utilization": exact.replace(
+                    "--gpu-memory-utilization 0.9", "--gpu-memory-utilization 0.8"
+                ),
+                "scheduler": exact + " --scheduler-cls custom.Scheduler",
+            }
+            for field, cmdline in drifts.items():
+                with self.subTest(field=field), self.assertRaises(RuntimeError):
+                    verify_endpoint_service_identity(
+                        [cmdline], endpoint, identity
+                    )
+
+    def test_model_revision_binding_rejects_artifact_hash_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            (model / "config.json").write_text("drift", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "model artifact.*drift"):
+                verify_model_artifact_identity(identity)
 
 
 if __name__ == "__main__":

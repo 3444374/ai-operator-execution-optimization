@@ -19,6 +19,7 @@ def parse_matched_system_config(
     nonnegative: Callable[[object, str], int],
     string: Callable[[object, str], str],
     boolean: Callable[[object, str], bool],
+    mapping: Callable[[object, str], tuple[tuple[str, object], ...]],
 ) -> MatchedSystemConfig:
     """Parse only; semantic validation is a separate stage."""
 
@@ -46,6 +47,9 @@ def parse_matched_system_config(
         ),
         matched_manifest_status=string(
             decoded.get("matched_manifest_status"), "matched_manifest_status"
+        ),
+        service_identity=mapping(
+            decoded.get("service_identity"), "service_identity"
         ),
         arms=tuple(arm_loader(item, directory) for item in arms_raw),
     )

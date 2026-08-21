@@ -132,6 +132,7 @@ class NativeMultiJobConfig:
     mfu_reason: str
     performance_writeback_mode: str
     arms: tuple[NativeMultiJobArm, ...]
+    service_identity: tuple[tuple[str, object], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -285,7 +286,9 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
     )
 
 
-def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
+def load_native_multijob_config(
+    path: str | Path, *, allow_existing_output_root: bool = False
+) -> NativeMultiJobConfig:
     """Load the narrow single/multi-job contract and reject scheduler controls."""
 
     payload = expand_structure(json.loads(Path(path).read_text(encoding="utf-8")), "native_multijob_config")
@@ -300,7 +303,7 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     matrix_optional = {
         "endpoint_ids", "service_signature", "protocol", "output_cap", "organizer",
         "source", "job_internal_arrival_contract", "mfu_contract",
-        "performance_writeback_mode",
+        "performance_writeback_mode", "service_identity",
     }
     missing = required - set(payload)
     unknown = set(payload) - required - matrix_optional
@@ -346,7 +349,7 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     if mfu_status not in {"available", "unavailable"}:
         raise ValueError("mfu_contract.status must be available or unavailable")
     output_root = Path(_string(payload["output_root"], "output_root"))
-    if output_root.exists():
+    if output_root.exists() and not allow_existing_output_root:
         raise FileExistsError(f"output_root already exists: {output_root}")
     endpoints = payload["endpoint_urls"]
     suffix = "/v1/chat/completions"
@@ -363,6 +366,9 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         if _string(signature.get("model"), "service_signature.model") != model:
             raise ValueError("service_signature.model must equal model")
         _string(signature.get("service"), "service_signature.service")
+    service_identity = payload.get("service_identity", {})
+    if not isinstance(service_identity, dict):
+        raise ValueError("service_identity must be an object")
     endpoint_ids = payload.get("endpoint_ids", [])
     if endpoint_ids and (
         not isinstance(endpoint_ids, list)
@@ -438,6 +444,7 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         mfu_reason=_string(mfu_raw["reason"], "mfu_contract.reason"),
         performance_writeback_mode=performance_writeback_mode,
         arms=arms,
+        service_identity=tuple(sorted(service_identity.items())),
     )
 
 

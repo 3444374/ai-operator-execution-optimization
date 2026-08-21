@@ -12,6 +12,9 @@ For the current multi-Job comparison:
   publish fail-closed generations.
 - `native_system_bindings.py` checks the matched contract against the native and
   Project executor configurations before dispatch.
+- `native_system_readiness.py` composes the three-config static audit with the
+  exact installed-source evidence and complete live service-identity gate. A
+  static pass is explicitly not rehearsal-ready.
 - `native_system_execution.py` owns executor adapters; `native_system_sink.py`
   owns the shared PostgreSQL completion sink/readback correctness boundary.
 - `native_system_matched.py` owns authorization and cell orchestration;
@@ -22,7 +25,8 @@ For the current multi-Job comparison:
 - `cross_layer_scheduler_capability.py` defines the separate four-arm SAOR
   versus DRR/VTC-on-vLLM complete-system capability and evidence boundary.
 - `in_engine_scheduler_logic.py` is the dependency-free FCFS/DRR/VTC semantic
-  oracle; `vllm_0251_source_audit.py` hashes the actual frozen install, while
+  oracle; `vllm_0251_source_audit.py` hashes the actual frozen install and can
+  pass only against frozen expected distribution/source SHA values, while
   `vllm_scheduler_plugin.py` exposes a custom-FCFS parity class and deliberately
   blocked DRR/VTC reproduction class paths.
 

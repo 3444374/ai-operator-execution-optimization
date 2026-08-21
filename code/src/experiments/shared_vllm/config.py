@@ -321,6 +321,7 @@ class SharedVllmConfig:
     job_internal_arrival_contract: Literal["manifest_timed", "eager"] = (
         "manifest_timed"
     )
+    service_identity: tuple[tuple[str, object], ...] = ()
 
     @property
     def completion_work_cost(self) -> CompletionWorkCostConfig:
@@ -477,6 +478,18 @@ def load_config(path: Path) -> SharedVllmConfig:
                 _expand_scalar(value, f"service_signature.{key}"),
             )
             for key, value in service_signature_raw.items()
+        )
+    )
+    service_identity_raw = decoded.get("service_identity", {})
+    if not isinstance(service_identity_raw, dict):
+        raise ValueError("service_identity must be an object")
+    service_identity = tuple(
+        sorted(
+            (
+                _nonempty_string(key, "service_identity key"),
+                _expand_scalar(value, f"service_identity.{key}"),
+            )
+            for key, value in service_identity_raw.items()
         )
     )
     if service_signature:
@@ -706,6 +719,7 @@ def load_config(path: Path) -> SharedVllmConfig:
             ready_payload_bytes_limit_per_job
         ),
         job_internal_arrival_contract=arrival_contract,
+        service_identity=service_identity,
     )
 
 def build_job_command(

@@ -21,6 +21,7 @@ from src.baselines.common.database_identity import (
 from src.baselines.common.manifests import read_manifest
 from src.baselines.common.redact import redact_text
 from src.infrastructure.runner_lease import acquire_host_runner_lease
+from src.infrastructure.vllm_preflight import validate_service_identity
 from src.experiments.saor.native_system_contract import (
     JobManifestIdentity,
     JobReleaseEpoch,
@@ -180,6 +181,7 @@ def load_matched_system_config(
         nonnegative=_nonnegative,
         string=_string,
         boolean=_boolean,
+        mapping=_mapping,
     )
     errors = _validation_errors(
         config,
@@ -216,10 +218,19 @@ def balanced_matched_schedule(
     )
 
 
-def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object]:
+def audit_matched_system_config(
+    config: MatchedSystemConfig, *, check_output_roots: bool = True
+) -> dict[str, object]:
     """Return a read-only readiness record without starting any external system."""
 
-    errors = _validation_errors(config)
+    errors = _validation_errors(
+        config, check_matrix_output_root=check_output_roots
+    )
+    if not check_output_roots:
+        errors = [
+            error for error in errors
+            if not error.endswith("output_root already exists")
+        ]
     manifests = {
         arm.arm_id: {
             "path": arm.manifest_path,
@@ -465,6 +476,7 @@ def resolved_matched_system_identity(
         "warmup_repeats": config.warmup_repeats,
         "formal_repeats": config.formal_repeats,
         "matched_manifest_status": config.matched_manifest_status,
+        "service_identity": dict(config.service_identity),
         "endpoint_urls": list(config.endpoint_urls),
         "metrics_urls": metrics_urls,
         "health_url": endpoint_auxiliary_url(config.endpoint_urls[0], "/health"),
@@ -909,6 +921,7 @@ def run_matched_system(
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
     rehearsal: bool = False,
     formal_authorization_path: Path | None = None,
+    service_identity_preflight: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Run the balanced five-arm DB-E2E matrix; executors retain instrumentation."""
 
@@ -948,6 +961,10 @@ def run_matched_system(
         ],
         "health_url": endpoint_auxiliary_url(config.endpoint_urls[0], "/health"),
     }
+    if service_identity_preflight is not None:
+        runtime_identity["service_identity_preflight"] = (
+            service_identity_preflight
+        )
     matrix_output_root = Path(config.matrix_output_root)
     try:
         matrix_output_root.mkdir(parents=True, exist_ok=False)
@@ -1003,6 +1020,8 @@ def run_matched_system(
         "authorization_sha256": authorization_sha256,
         "contract_snapshot_sha256": contract_snapshot_sha256,
         "service_signature": dict(config.arms[0].service_signature),
+        "service_identity": dict(config.service_identity),
+        "service_identity_preflight": service_identity_preflight,
         "mfu_contract": config.arms[0].mfu_contract.__dict__,
         "endpoint_urls": list(config.endpoint_urls),
         "metrics_urls": runtime_identity["metrics_urls"],
@@ -1236,6 +1255,10 @@ def _validation_errors(
         errors.append("arms must contain exactly the five unique required arm IDs")
     if not config.arms:
         return errors
+    try:
+        validate_service_identity(dict(config.service_identity))
+    except ValueError as error:
+        errors.append(f"service_identity is invalid: {error}")
     if config.matched_manifest_status != "ready_frozen":
         errors.append("matched_manifest_status must be ready_frozen")
     if len(config.endpoint_urls) != 2 or len(set(config.endpoint_urls)) != 2:
@@ -1368,7 +1391,7 @@ def _validation_errors(
             errors.append(f"{arm.arm_id} must use an exact timed PostgreSQL source contract")
         if arm.source != reference.source:
             errors.append(f"{arm.arm_id} source drifts from matched contract")
-        if Path(arm.output_root).exists():
+        if check_matrix_output_root and Path(arm.output_root).exists():
             errors.append(f"{arm.arm_id} output_root already exists")
         if arm.kind == "native":
             if arm.scheduler_owner not in {"daft", "ray_data"}:

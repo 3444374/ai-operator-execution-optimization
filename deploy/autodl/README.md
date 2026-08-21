@@ -26,9 +26,14 @@ output paths are resolved from the example config's directory.
 Both Project arms additionally fail closed unless the resolved runner arguments
 are exactly `--organizer daft` and `--executor ray_actor`, the matrix owner is
 `project_daft_ray_submission_then_vllm_fcfs`, and the bound service signature is
-`scheduler=vllm_native_fcfs`. Before dispatch, live vLLM process cmdlines must
-have no `--scheduler-cls`; a missing process or custom class is not accepted as
-native FCFS evidence.
+`scheduler=vllm_native_fcfs`. Before dispatch, the three actual configs must
+carry one identical complete `service_identity`. The live gate verifies the
+served model/path and revision-bound artifact hashes, explicit BF16 dtype,
+vLLM distribution/source SHA-256 values, model length, `max_num_seqs`,
+`max_num_batched_tokens`, chunked prefill, prefix cache, MFU metrics,
+compile/eager mode, GPU-memory utilization, and native FCFS identity. A missing
+process, omitted explicit flag, source mismatch, model artifact drift, or any
+`--scheduler-cls` is rejected before a cell is created.
 
 The native executor owns its data graph and scheduling: Daft Native/Ray use the
 vendor C1/B1 control and Ray Data uses the frozen C8/B16 graph selection. Native
@@ -103,16 +108,20 @@ drifting shard/Job versions fail closed. Persisted runner and summarizer failure
 text is credential-redacted. A passed summary reports
 `formal_authorization_verified=true` while keeping `formal_authorized=false`.
 
-Merge and rehearsal do not authorize formal. Run the five-cell rehearsal first,
-independently review its sealed validation/root/archive, and only then decide
-whether to issue the separate formal artifact.
+Merge does not authorize GPU work. After the hotfix is merged to canonical
+`main`, an independent review may explicitly authorize a five-cell
+`--rehearsal`; rehearsal does not require or consume a formal authorization
+artifact. Only a non-rehearsal/formal invocation requires the separately issued
+`--formal-authorization` artifact, and that decision may be made only after the
+sealed rehearsal validation/root/archive has been reviewed.
 
 The offline summarizer also requires the same authorization artifact and
 recomputes the contract snapshot, manifest, service signature, scheduler owner,
 schedule, index, and cell identities. Failed or tampered matrices retain
 `all_runs.csv` with `status/failure_reason` and a failed validation, but publish
-no performance summary. Do not run either the GPU matrix or formal path until
-this hotfix has received independent review and a later explicit authorization.
+no performance summary. Do not run the GPU matrix before independent rehearsal
+authorization. Formal remains prohibited until the later, separate artifact is
+issued.
 
 The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
 timestamps are measured separately: the observed Job 1 minus Job 0 offset and
@@ -120,9 +129,29 @@ its deviation are retained, and eligibility requires the pre-registered
 `±0.25 s` tolerance. This is not a zero-jitter claim.
 
 ```bash
+# Run from the repository root after sourcing the runtime env and this
+# matrix's frozen env. This stage is static and sends no service request.
 python code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
   --output /tmp/saor_native_system_matched_readiness.json
+
+# Run with the vLLM Python. Marker-only evidence can never pass.
+"$VLLM_VENV/bin/python" \
+  code/scripts/analysis/audit_vllm_0251_source.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --output /tmp/saor_native_system_matched_vllm_source.json
+
+# Only when endpoints are already running: combine exact source evidence with
+# model artifacts and live process flags. This still sends no inference request.
+python code/scripts/analysis/audit_saor_native_system_matched.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --installed-source-audit /tmp/saor_native_system_matched_vllm_source.json \
+  --live-service \
+  --output /tmp/saor_native_system_matched_live_readiness.json
 ```
 
 本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。

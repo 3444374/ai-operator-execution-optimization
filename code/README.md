@@ -10,7 +10,9 @@ runner creates an output root, acquires a host lease, or calls an executor. The 
 lives in `src/experiments/saor/native_system_summary.py`; typed contract/parser/validator/evidence/publisher,
 executor adapters, and the common PostgreSQL sink live beside it under `src/experiments/saor/`; the
 pre-dispatch executor-binding core lives in `src/experiments/saor/native_system_bindings.py`; the CLI
-only composes these typed components. Before
+only composes these typed components. The readiness layer now jointly loads all three real configs,
+requires exact vLLM distribution/source evidence, and verifies revision-bound model artifacts plus
+the complete live endpoint identity before any cell. Before
 publishing any ranking, the core recomputes the authorization, contract snapshot, manifest, service
 signature, scheduler-owner map, schedule, index, and per-cell identities. A failed or tampered matrix
 publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system, Job,

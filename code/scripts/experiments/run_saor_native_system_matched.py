@@ -43,6 +43,7 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
     parser.add_argument("--start-delay-s", type=float, default=15.0)
     parser.add_argument("--rehearsal", action="store_true")
+    parser.add_argument("--installed-source-audit", required=True, type=Path)
     parser.add_argument("--formal-authorization", type=Path)
     args = parser.parse_args(argv)
     metrics_urls = tuple(
@@ -63,6 +64,7 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
         idle_timeout_s=args.idle_timeout_s,
         start_delay_s=args.start_delay_s,
         rehearsal=args.rehearsal,
+        installed_source_audit=args.installed_source_audit.resolve(),
         formal_authorization=(
             args.formal_authorization.resolve()
             if args.formal_authorization is not None else None

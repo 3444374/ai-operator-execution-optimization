@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-20
+更新时间：2026-08-21
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -15,7 +15,15 @@ custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修�
 本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
 五臂 eager SAOR 的旧 profiler 冲突已在本地修复：只有旧 single-head bounded-priority 继续强制
 request replay；bounded-ready 在完整 concrete pre-registration 门下直接消费 eager request envelopes。
-服务器 rehearsal/formal 尚未运行。
+当前尚无成功、可比较的完整五臂 rehearsal；formal 从未运行且继续禁止。2026-08-19
+服务器曾有两次 fail-closed rehearsal：`ea4cbb3b` 对应保留 root
+`saor_native_system_matched_matrix_20260819_r2/`，在 warmup 第 1 个 Project
+selector-sanity cell 因 `unavailable:missing_gpu_peak_tflops` 被 MFU guard 拒绝；
+`58154151` 对应保留 root `saor_native_system_matched_matrix_20260819_r3/`，在同一阶段因
+`job 0 has no unique successful summary` 被 summary guard 拒绝。两次均通过
+`run_saor_native_system_matched.py ... --rehearsal` 入口、无 formal authorization，服务器未发现
+独立 tar archive；原 shell history 未保留逐字命令，因此这里只登记由 matrix index 证明的执行模式、
+commit/root/cell/原因和冻结 runbook 的等价入口，不伪造历史 argv。
 
 ## 1. 题目与研究对象
 

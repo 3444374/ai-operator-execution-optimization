@@ -74,6 +74,7 @@ class MatchedSystemConfig:
     endpoint_urls: tuple[str, ...]
     gpu_formal_locally_authorized: bool
     matched_manifest_status: str
+    service_identity: tuple[tuple[str, object], ...]
     arms: tuple[MatchedArm, ...]
 
 

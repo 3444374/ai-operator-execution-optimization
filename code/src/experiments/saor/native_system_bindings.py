@@ -301,6 +301,18 @@ def validate_executor_bindings(
     native_by_id = {item.arm_id: item for item in native.arms}
     project_by_id = {item.scenario_id: item for item in project.scenarios}
     common = _project_common_contract(project)
+    identity = dict(matched.service_identity)
+    expected_metadata = tuple(sorted({
+        "vllm_version": identity["service"],
+        "enforce_eager": identity["enforce_eager"],
+        "compilation_mode": identity["compilation_mode"],
+        "chunked_prefill": identity["chunked_prefill"],
+        "max_num_batched_tokens": identity["max_num_batched_tokens"],
+        "max_num_seqs": identity["max_num_seqs"],
+        "gpu_memory_utilization": identity["gpu_memory_utilization"],
+        "prefix_caching": identity["prefix_caching"],
+        "mfu_metrics": identity["mfu_metrics"],
+    }.items()))
     expected_metrics = tuple(
         endpoint_auxiliary_url(url, "/metrics") for url in matched.endpoint_urls
     )
@@ -308,6 +320,26 @@ def validate_executor_bindings(
         "native.endpoint_urls": (native.endpoint_urls, matched.endpoint_urls),
         "project.endpoint_urls": (common["endpoint_urls"], matched.endpoint_urls),
         "project.metrics_urls": (common["metrics_urls"], expected_metrics),
+        "native.service_identity": (
+            native.service_identity, matched.service_identity
+        ),
+        "project.service_identity": (
+            project.service_identity, matched.service_identity
+        ),
+        "native.service.prefix_caching": (
+            native.service_prefix_caching,
+            "enabled" if identity["prefix_caching"] else "disabled",
+        ),
+        "native.service.max_num_seqs": (
+            native.service_max_num_seqs, identity["max_num_seqs"]
+        ),
+        "native.service.max_num_batched_tokens": (
+            native.service_max_num_batched_tokens,
+            identity["max_num_batched_tokens"],
+        ),
+        "project.service_metadata": (
+            project.service_metadata, expected_metadata
+        ),
     }
     if runner_metrics_urls is not None:
         global_comparisons["runner.metrics_urls"] = (

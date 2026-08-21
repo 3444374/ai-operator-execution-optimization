@@ -6,9 +6,12 @@ import copy
 import csv
 import hashlib
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from src.baselines.common.contracts import ChatRequest
 from src.baselines.common.manifests import write_manifest
@@ -16,6 +19,7 @@ from src.experiments.saor.native_system_evidence import (
     persisted_command,
     persisted_failure,
 )
+from src.experiments.saor.native_system_bindings import validate_executor_bindings
 from src.experiments.saor.native_system_matched import (
     REQUIRED_ARM_IDS,
     SYSTEM_ARM_IDS,
@@ -51,6 +55,9 @@ class MatchedSystemContractTest(unittest.TestCase):
         project = json.loads((
             repository / "deploy/autodl/saor_native_system_matched_project.example.json"
         ).read_text(encoding="utf-8"))
+        native = json.loads((
+            repository / "deploy/autodl/saor_native_system_matched_native.example.json"
+        ).read_text(encoding="utf-8"))
         self.assertEqual(
             tuple(arm["arm_id"] for arm in matched["arms"]),
             SYSTEM_ARM_IDS,
@@ -59,6 +66,13 @@ class MatchedSystemContractTest(unittest.TestCase):
             [scenario["scenario_id"] for scenario in project["scenarios"]],
             ["project_frozen_static", "project_bounded_ready_saor_0125we"],
         )
+        self.assertEqual(
+            matched["service_identity"], native["service_identity"]
+        )
+        self.assertEqual(
+            matched["service_identity"], project["service_identity"]
+        )
+        self.assertTrue(project["require_complete_service_metadata"])
         forbidden = {"project_bounded_ready_fifo", "project_bounded_ready_drr", "project_bounded_ready_vtc_style"}
         self.assertTrue(forbidden.isdisjoint(arm["arm_id"] for arm in matched["arms"]))
         for arm in matched["arms"]:
@@ -291,9 +305,87 @@ class MatchedSystemContractTest(unittest.TestCase):
             "--health-url", "http://127.0.0.1:8000/health",
             "--metrics-urls", "http://127.0.0.1:8000/metrics",
             "--ray-address", "auto",
+            "--installed-source-audit", "source-audit.json",
         ])
         self.assertIsNone(options.formal_authorization)
         self.assertFalse(options.rehearsal)
+
+    def test_readiness_and_source_audit_clis_import_from_repository_root(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        for script in (
+            "code/scripts/analysis/audit_saor_native_system_matched.py",
+            "code/scripts/analysis/audit_vllm_0251_source.py",
+        ):
+            with self.subTest(script=script):
+                completed = subprocess.run(
+                    [sys.executable, script, "--help"],
+                    cwd=repository,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                self.assertNotIn("ModuleNotFoundError", completed.stderr)
+
+    def test_three_config_service_identity_binding_fails_on_project_drift(self) -> None:
+        with Fixture() as fixture:
+            matched_config = load_matched_system_config(fixture.path)
+            identity = matched_config.service_identity
+        endpoints = matched_config.endpoint_urls
+        expected_metadata = tuple(sorted({
+            "vllm_version": "0.25.1",
+            "enforce_eager": False,
+            "compilation_mode": "vllm_compile",
+            "chunked_prefill": True,
+            "max_num_batched_tokens": 8192,
+            "max_num_seqs": 256,
+            "gpu_memory_utilization": 0.9,
+            "prefix_caching": True,
+            "mfu_metrics": True,
+        }.items()))
+        matched = SimpleNamespace(
+            endpoint_urls=endpoints, service_identity=identity, arms=()
+        )
+        native = SimpleNamespace(
+            endpoint_urls=endpoints,
+            service_identity=identity,
+            service_prefix_caching="enabled",
+            service_max_num_seqs=256,
+            service_max_num_batched_tokens=8192,
+            arms=(),
+        )
+        common_args = (
+            "--completion-protocol", "completions",
+            "--completion-max-tokens", "256",
+            "--organizer", "daft", "--executor", "ray_actor",
+            "--completion-endpoint-urls", ",".join(endpoints),
+            "--model-metrics-urls",
+            "http://127.0.0.1:8000/metrics,http://127.0.0.1:8001/metrics",
+            "--database-url", "postgresql://localhost/test",
+            "--gpu-peak-tflops", "82.58",
+            "--mfu-precision", "bf16_dense_fp32_accumulate",
+            "--writeback-mode", "json_text",
+            "--source-workload-name", "test",
+            "--actor-workers-per-endpoint", "1",
+            "--ray-actor-max-concurrency", "256",
+            "--ray-worker-num-cpus", "0.25",
+            "--batching-policy", "token_budget",
+            "--token-budget", "6144",
+            "--token-budget-policy", "static",
+        )
+        project = SimpleNamespace(
+            common_args=common_args,
+            service_identity=identity,
+            service_metadata=expected_metadata,
+            scenarios=(),
+        )
+        validate_executor_bindings(matched, native, project)
+        project.service_identity = tuple(
+            (key, "drift" if key == "dtype" else value)
+            for key, value in identity
+        )
+        with self.assertRaisesRegex(ValueError, "project.service_identity"):
+            validate_executor_bindings(matched, native, project)
 
     def test_completion_sink_collects_independent_trace_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -410,6 +502,62 @@ class Fixture:
         project_calibration.write_text(json.dumps({
             "schema_version": 1, "status": "ready", "selection": {},
         }), encoding="utf-8")
+        model = root / "model"
+        model.mkdir()
+        model_hashes = {}
+        for name in (
+            "config.json",
+            "tokenizer_config.json",
+            "tokenizer.json",
+            "model.safetensors.index.json",
+            "generation_config.json",
+            "model-00001-of-00004.safetensors",
+            "model-00002-of-00004.safetensors",
+            "model-00003-of-00004.safetensors",
+            "model-00004-of-00004.safetensors",
+        ):
+            (model / name).write_text(name, encoding="utf-8")
+            model_hashes[name] = hashlib.sha256(
+                (model / name).read_bytes()
+            ).hexdigest()
+        service_identity = {
+            "model": "test", "model_path": str(model),
+            "model_revision": "a" * 40,
+            "model_config_sha256": model_hashes["config.json"],
+            "tokenizer_config_sha256": model_hashes["tokenizer_config.json"],
+            "tokenizer_json_sha256": model_hashes["tokenizer.json"],
+            "model_safetensors_index_sha256": model_hashes[
+                "model.safetensors.index.json"
+            ],
+            "generation_config_sha256": model_hashes["generation_config.json"],
+            "model_weight_00001_sha256": model_hashes[
+                "model-00001-of-00004.safetensors"
+            ],
+            "model_weight_00002_sha256": model_hashes[
+                "model-00002-of-00004.safetensors"
+            ],
+            "model_weight_00003_sha256": model_hashes[
+                "model-00003-of-00004.safetensors"
+            ],
+            "model_weight_00004_sha256": model_hashes[
+                "model-00004-of-00004.safetensors"
+            ],
+            "dtype": "bfloat16", "service": "0.25.1",
+            "vllm_metadata_sha256": "1" * 64,
+            "vllm_wheel_sha256": "2" * 64,
+            "vllm_record_sha256": "3" * 64,
+            "vllm_source_config_scheduler_sha256": "4" * 64,
+            "vllm_source_scheduler_sha256": "5" * 64,
+            "vllm_source_async_scheduler_sha256": "6" * 64,
+            "vllm_source_request_queue_sha256": "7" * 64,
+            "vllm_source_request_sha256": "8" * 64,
+            "scheduler": "vllm_native_fcfs", "max_model_len": 8192,
+            "max_num_seqs": 256, "max_num_batched_tokens": 8192,
+            "chunked_prefill": True, "prefix_caching": True,
+            "mfu_metrics": True, "enforce_eager": False,
+            "compilation_mode": "vllm_compile",
+            "gpu_memory_utilization": 0.9,
+        }
         common = {
             "manifest_path": str(combined),
             "manifest_sha256": hashlib.sha256(combined.read_bytes()).hexdigest(),
@@ -448,7 +596,9 @@ class Fixture:
             "formal_repeats": 3, "matrix_output_root": str(root / "matrix"),
             "endpoint_urls": ["http://127.0.0.1:8000/v1/chat/completions", "http://127.0.0.1:8001/v1/chat/completions"],
             "gpu_formal_locally_authorized": False,
-            "matched_manifest_status": "ready_frozen", "arms": arms,
+            "matched_manifest_status": "ready_frozen",
+            "service_identity": service_identity,
+            "arms": arms,
         })
         return self
 

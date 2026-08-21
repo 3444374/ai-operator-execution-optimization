@@ -1,5 +1,38 @@
 # 项目日志
 
+## 2026-08-21 五臂 rehearsal readiness 与完整服务身份门（只读服务器核验）
+
+- 独立审查确认 `45d4dda4` 的 eager SAOR 修复正确，但仅检查 `--scheduler-cls` 不足以证明五臂
+  共用同一服务。新增 matched/native/Project 三配置一致的完整 `service_identity`：Qwen2.5-7B
+  revision 与模型 artifact SHA、BF16、vLLM 0.25.1 dist/source exact SHA、8192/256 capacity、
+  chunked prefill/prefix cache/MFU metrics、compile mode、GPU memory 0.9 和 native FCFS。
+- `audit_vllm_0251_source.py` 可由服务器 vLLM Python 直接运行并落盘；marker/version 通过但未提供
+  expected SHA 时保持 `blocked_expected_identity_missing`，只有 dist-info 与五个关键源码逐项精确
+  相等才 `passed`。五臂 runner 新增强制 `--installed-source-audit`，并在创建任何 cell 前重验 source
+  evidence、模型文件和每个 live endpoint 的完整显式 cmdline；任一缺失/默认不明/漂移均 fail closed。
+- `audit_saor_native_system_matched.py` 修复仓库根导入，联合加载三份真实配置。默认静态报告明确写
+  `static_config_passed/rehearsal_ready=false`；只有加 exact source evidence 与 `--live-service` 才可能
+  报 rehearsal-ready。`start_endpoints.sh` 新增显式 `VLLM_DTYPE`，五臂 env 冻结 BF16 与显式
+  chunked-prefill/capacity flags。
+- 服务器只读 `manage_environment check` 通过并保存到仓库外 preflight evidence；随后确认 endpoint
+  当前均未运行，未启动服务。读取 2026-08-19 日志确认当时有效配置为 BF16、compile/CUDA graph、
+  chunked prefill ON、prefix cache ON、8192/256、gpu-memory 0.9；模型配置/分词器/index hash 与冻结
+  revision 合同一致。读取 installed vLLM 0.25.1 的 dist/source SHA 并冻结为 expected；未发模型请求、
+  未启动 Ray/PG、未运行 correctness smoke、新 rehearsal 或 formal。
+- 纠正运行历史：`ea4cbb3b` 对应保留 root
+  `saor_native_system_matched_matrix_20260819_r2/`，在 warmup 第 1 个 Project selector-sanity cell 因
+  MFU `missing_gpu_peak_tflops` guard 失败；`58154151` 对应 `_r3/`，在同一阶段因
+  `job 0 has no unique successful summary` 失败。两者都是 rehearsal、无 formal authorization，
+  未发现独立 tar；shell history 未保留逐字 argv，故只登记 matrix index 可证明的事实与等价 runbook
+  入口。当前准确状态为“尚无成功、完整、可比较的五臂 rehearsal”。
+- 本地新增/受影响的 service preflight、cross-layer capability、matched matrix、shared-vLLM
+  57 项定向测试通过；`compileall`、三份 JSON、endpoint shell 语法与 diff check 通过。全仓发现器运行
+  1,094 项后仅剩本机可选依赖缺失（`pyarrow`/`psycopg`）造成的 8 个导入错误；另一个断言差异由
+  发现器命令临时设置 `PYTHONPATH=code` 引起，去除该环境污染后的受影响集合通过，未安装新依赖。
+- 授权顺序统一为：合入 canonical `main` 并独立审核后可显式授权 rehearsal；rehearsal 不需要 formal
+  artifact；审核 sealed rehearsal archive 后才考虑另行签发 formal authorization。formal 继续禁止，
+  DRR/VTC capability skeleton 继续主动 blocked。
+
 ## 2026-08-20 五臂 eager SAOR profiler 阻断修复（本地）
 
 - 复核确认 `e98a0f1b` 的五臂 Project config 在 eager 合同下正确省略 `--arrival-replay`，但

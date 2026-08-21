@@ -573,17 +573,19 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/saor_native_system_matched_project.example.json` | Project frozen-static 与 bounded-ready SAOR 两场景配置 | 两臂执行完整 512+512 行并冻结共同 endpoint、K/W、token-budget、actor topology；旧 selector 不在本轮矩阵 |
 | `deploy/autodl/saor_official_vtc_capability.example.json` | 官方 VTC artifact 的同栈 FCFS/VTC capability 身份、workload SHA 与 release 合同 | 只生成服务机制证据；当前 runtime compatibility blocked、server 未验证、formal 未授权；永不进入 DB-E2E 排名 |
 | `deploy/autodl/saor_cross_layer_scheduler_capability.example.json` | Daft Ray + native FCFS/DRR reproduction/VTC reproduction 与 SAOR + native FCFS 的独立四臂 capability config | 校验 class path/module SHA、前三臂禁用 Project 控制、Job identity、FCFS parity、共同指标与 claim boundary；当前 blocked |
-| `code/scripts/experiments/run_saor_native_system_matched.py` | 本地系统级 matched matrix 编排与 readiness/执行器绑定 fail-closed 入口 | `--rehearsal` 只跑 warm-up；非 rehearsal 必须在任何输出/lease/executor 副作用前验证独立 authorization artifact；异常 stdout 脱敏，当前 GPU/formal 停止 |
+| `code/scripts/experiments/run_saor_native_system_matched.py` | 本地系统级 matched matrix 编排与执行器/service identity fail-closed 入口 | 强制 exact installed-source evidence；`--rehearsal` 只跑 warm-up；非 rehearsal 还须在任何输出/lease/executor 副作用前验证独立 authorization artifact；formal 停止 |
+| `code/scripts/analysis/audit_saor_native_system_matched.py`、`audit_vllm_0251_source.py` | 三配置联合静态 readiness 与冻结 vLLM Python exact-source 证据入口 | 均可从仓库根运行；静态通过明确不是 rehearsal-ready，live 模式不发请求并核对 source/model/cmdline 完整身份 |
 | `code/src/experiments/saor/native_system_bindings.py` | matched/native/Project 三配置到真实 executor 的纯绑定校验核心 | dispatch 前核对 endpoint/metrics/health、两 Job manifest、原生 adapter/C/B 和 Project K/W/batching/actor 合同；不创建输出、不获取 lease |
 | `code/src/experiments/saor/README.md` | SAOR 可复用合同、执行、证据与官方 VTC capability 模块导航 | 修改五臂矩阵或内部历史消融代码前先核对模块边界 |
 | `code/src/experiments/saor/native_system_contract.py`、`native_system_parser.py` | 五臂矩阵 typed config 与纯解析阶段 | Job release、arrival replay capability、MFU contract 不再混用字符串偏移 |
 | `code/src/experiments/saor/native_system_validator.py`、`native_system_evidence.py`、`native_system_publisher.py` | 跨 cell 身份校验、证据封存/脱敏与原子发布阶段 | mixed root/SHA/service/owner/fingerprint fail closed；失败保留 all-runs 并移除排名 |
 | `code/src/experiments/saor/native_system_execution.py` | native/Project executor binding、证据规范化与五臂执行核心 | CLI 只解析参数；本模块不改变 formal authorization 的零副作用门禁 |
+| `code/src/experiments/saor/native_system_readiness.py` | matched/native/Project 静态绑定、installed-source evidence 与 live service identity 的组合门 | 配置通过与 rehearsal-ready 分态；source/model/runtime 任一漂移均在 cell 前失败 |
 | `code/src/experiments/saor/native_system_sink.py` | 五臂共同 PostgreSQL `document_completions` JSON-text sink/readback adapter | native 写入、Project 独立核验；内容 digest、行数与 exactly-once 不通过不得排名 |
 | `code/src/experiments/saor/official_vtc_capability.py` | official S-LoRA FCFS/VTC capability parser、validator 与非 DB 报告 | FCFS 缺失、artifact/owner/workload 漂移或 DB ranking 标签均失败 |
 | `code/src/experiments/saor/cross_layer_scheduler_capability.py` | 跨层四臂 typed config、readiness audit 与未来 evidence schema | blocked/formal 未授权时拒绝 performance report；不能输出同层 selector 胜负 |
 | `code/src/experiments/saor/in_engine_scheduler_logic.py` | 无 vLLM 依赖的 FCFS/DRR/VTC 语义 oracle 与 strict Job request identity codec | 验证 fixed-cap DRR、actual-service VTC、counter lift、work conservation 和非法/重复 identity 反例；不是 serving adapter |
-| `code/src/experiments/saor/vllm_0251_source_audit.py` | 冻结 vLLM 0.25.1 installed-source 版本、关键 marker 与逐文件 SHA 只读审计 | 无安装或源码漂移时 blocked；不启动模型或服务 |
+| `code/src/experiments/saor/vllm_0251_source_audit.py` | 冻结 vLLM 0.25.1 distribution、关键 marker 与逐文件 exact SHA 只读审计 | 缺 expected SHA、无安装或任一源码漂移均 blocked；不启动模型或服务 |
 | `code/src/experiments/saor/vllm_scheduler_plugin.py` | `--scheduler-cls` skeleton：AsyncScheduler custom-FCFS parity control + blocked DRR/VTC reproduction class path | module SHA 进入 capability；installed-source/identity/parity 未过前 DRR/VTC 主动失败 |
 | `code/tests/experiments/test_saor_cross_layer_scheduler_capability.py` | 跨层 capability、Job identity、FCFS/DRR/VTC official-synthetic 语义反例测试 | 修改 class identity、DRR/VTC 语义、schema 或 blocker 时运行 |
 | `code/src/experiments/saor/native_system_summary.py` | native-system matched 封存身份校验、失败证据保留与五臂汇总核心 | 重算 authorization/snapshot/config/manifest/service/scheduler/MFU/schedule/cell identity；失败只发布带 reason 的 all-runs，不发布性能排名 |

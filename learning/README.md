@@ -1,5 +1,28 @@
 # Learning Notes
 
+## 2026-08-21 为什么“同一个 endpoint”仍不足以证明五臂可比
+
+五臂过去只检查 endpoint 进程没有 `--scheduler-cls`。这只能证明 scheduler class 没被显式替换，
+不能阻止模型 revision、dtype、vLLM wheel/source、capacity、chunked prefill、prefix cache、
+compile/eager 或 GPU-memory 配置漂移。新合同把模型 artifact hash、vLLM dist/source exact SHA 和
+完整 runtime flags 合成一份 `service_identity`，要求 matched/native/Project 三份实际配置完全相同；
+source audit 缺 expected SHA 时永远不能返回 `passed`。live gate 再逐 endpoint 核对显式 cmdline，并
+以本地模型文件 hash 把声明 revision 绑定到实际 artifact。静态配置通过只写
+`static_config_passed/rehearsal_ready=false`，不能被误读成已可跑 rehearsal。
+
+本次服务器访问只有环境/归档/source 的只读 preflight，endpoint 当时未运行，未执行 correctness
+smoke、rehearsal 或 formal。服务器归档同时纠正了“五臂 rehearsal 从未运行”的错误表述：
+
+| commit | 等价入口 | 保留 root / archive | 阶段与失败原因 | 可比较结论 |
+|---|---|---|---|---|
+| `ea4cbb3b` | `run_saor_native_system_matched.py ... --rehearsal` | `saor_native_system_matched_matrix_20260819_r2/`；未发现独立 tar | warmup 第 1 个 Project selector-sanity cell；MFU `missing_gpu_peak_tflops` guard | 无 |
+| `58154151` | 同一 rehearsal 入口 | `saor_native_system_matched_matrix_20260819_r3/`；未发现独立 tar | 同一阶段；`job 0 has no unique successful summary` | 无 |
+
+两份 `matrix_index.json` 证明 execution mode、commit、root、cell 和原因；服务器 shell history 没有保留
+逐字 argv，所以这里只写冻结 runbook 的等价入口，不把重建命令冒充原始历史。当前准确状态是：
+尚无成功、完整、可比较的五臂 rehearsal；独立审核可以授权 rehearsal，formal 仍需在 rehearsal
+归档审核后另行签发 artifact。
+
 ## 2026-08-20 为什么现在是“五臂系统表 + 独立 VTC 机制表”
 
 五臂系统表回答完整 database-E2E 系统差异：三条 framework-owned native graph、project

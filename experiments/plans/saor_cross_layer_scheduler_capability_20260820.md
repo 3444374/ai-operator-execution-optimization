@@ -1,7 +1,8 @@
 # SAOR 与 DRR/VTC-on-vLLM 跨层比较能力合同
 
 日期：2026-08-20
-状态：`blocked`（仅完成设计、源码审计、骨架、纯逻辑测试与 schema；未连接服务器）
+状态：`blocked`（已完成设计、tag 审计、服务器 installed-source 只读取样、骨架、纯逻辑测试与
+schema；尚未在合入 `main` 后用新 CLI 生成 exact-SHA evidence，未运行 capability/GPU）
 
 ## 1. 研究问题与证据边界
 
@@ -30,9 +31,11 @@ request reordering。SAOR 保留完整上游机制，但其服务层仍是 nativ
    `priority`，同时提供 `scheduler_cls`；该配置明确把自定义 scheduler 标为非公共接口。自定义类若
    不是该版本 `AsyncScheduler` 的子类，会使 async scheduling 退化。因此 skeleton 必须继承
    `vllm.v1.core.sched.async_scheduler.AsyncScheduler`。
-2. **实际安装源码未审计**：当前 Darwin Python 没有 vLLM、Daft、Ray 或 OpenAI 包，也没有匹配
-   GPU runtime profile。`vllm_0251_source_audit.py` 已提供只读 installed-source 版本、关键文件、
-   marker 与 SHA 审计；须在冻结服务器环境运行后才可能从 blocked 转为 passed。
+2. **实际安装源码已只读取样、正式 evidence 待补**：2026-08-21 在冻结服务器 vLLM venv
+   只读确认版本为 0.25.1，并读取五个关键源文件与 dist-info 的 SHA-256；这些期望值已写入五臂
+   `service_identity`。新 `audit_vllm_0251_source.py` 只有在 marker、版本、distribution 和逐文件
+   SHA 全部精确相等时才返回 `passed`，缺 expected SHA 时保持 blocked。canonical `main` 尚未包含
+   该 CLI，且服务未启动，因此仍须合入后生成并归档 CLI evidence，不能把本次终端取样冒充完整门禁。
 
 `v0.25.1/vllm/v1/request.py` 暴露 `request_id`、`client_index` 与 trace headers；其中
 `client_index` 服务于 frontend scaling 的输出路由，不作为数据库 Job 身份。scheduler loop 同时拥有
