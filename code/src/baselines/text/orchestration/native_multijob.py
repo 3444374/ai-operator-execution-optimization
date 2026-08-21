@@ -211,6 +211,8 @@ def _parse_native_implementation_provenance(
     value: object,
     arms: tuple[NativeMultiJobArm, ...],
 ) -> tuple[tuple[str, tuple[tuple[str, object], ...]], ...]:
+    """Validate exact upstream and thin-adapter identities for native arms."""
+
     if value is None:
         return ()
     if not isinstance(value, dict):

@@ -10,7 +10,7 @@
 
 | 文件 | 臂 | 来源 |
 |---|---|---|
-| `project_frozen_selection_20260808.json` | project ×5（frozen-static/FIFO/DRR/VTC/SAOR） | 由服务器 selection 衍生并显式补齐既有 token-budget 6144 身份，SHA `55c09b95…a2c9`；selection：token-budget6144/K128/W65536/actors8/concurrency32/cpus0.25 |
+| `project_frozen_selection_20260808.json` | 当前 Project frozen-static 与 SAOR 两臂共同 selection（FIFO/DRR/VTC 仅历史消融） | 由服务器 selection 衍生并显式补齐既有 token-budget 6144 身份，SHA `55c09b95…a2c9`；selection：token-budget6144/K128/W65536/actors8/concurrency32/cpus0.25 |
 | `daft_native_selection_20260808.json` | daft_native | C1/B1 vendor-default control，SHA `c8c31f99…cd6e`；只声明配置身份已核验，不声明搜索到性能最优点 |
 | `daft_ray_selection_20260808.json` | daft_ray | C1/B1 vendor-default control，SHA `e866f945…3a23`；证据强度同上 |
 | `ray_data_http_selection_20260808.json` | ray_data_http | C8/B16，SHA `98aa11bd…d60`；来自一次 C4/C8/C16 development screen，只冻结已测峰值，不声明统计最优 |

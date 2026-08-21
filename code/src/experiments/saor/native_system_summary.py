@@ -37,6 +37,40 @@ _PROJECT_FLAG_FRAGMENTS = (
     "credit", "coordinator", "router", "bounded-ready", "bounded_ready",
     "max-active-work", "max_active_work", "ready-observation", "ready_observation",
 )
+_FORMAL_AUTHORIZATION_FIELDS = {
+    "schema_version", "status", "scope", "formal_authorized",
+    "repository_commit", "config_sha256", "native_config_sha256",
+    "project_config_sha256", "resolved_config_sha256", "manifest_sha256",
+    "job_manifests", "mfu_contract", "rehearsal_evidence",
+}
+_FORMAL_IDENTITY_FIELDS = (
+    "repository_commit", "config_sha256", "native_config_sha256",
+    "project_config_sha256", "resolved_config_sha256", "manifest_sha256",
+    "job_manifests", "mfu_contract", "rehearsal_evidence",
+)
+
+
+def _validate_formal_authorization_binding(
+    authorization: object,
+    runtime: dict[str, object],
+) -> None:
+    """Require the snapshot to bind every field in the exact formal artifact."""
+
+    if (
+        not isinstance(authorization, dict)
+        or set(authorization) != _FORMAL_AUTHORIZATION_FIELDS
+    ):
+        raise ValueError("formal authorization schema is invalid")
+    if (
+        authorization.get("schema_version") != 1
+        or authorization.get("status") != "authorized"
+        or authorization.get("scope") != FORMAL_AUTHORIZATION_SCOPE
+        or authorization.get("formal_authorized") is not True
+    ):
+        raise ValueError("formal authorization is not active for this scope")
+    for field in _FORMAL_IDENTITY_FIELDS:
+        if runtime.get(field) != authorization.get(field):
+            raise ValueError(f"runtime {field} drifted from authorization")
 
 
 def _command_flag_values(command: list[object], flag: str) -> list[str]:
@@ -808,21 +842,6 @@ def _load_authorized_identity(
     """Recompute every frozen identity before publishing any ranking."""
 
     authorization = json.loads(authorization_path.read_text(encoding="utf-8"))
-    required_fields = {
-        "schema_version", "status", "scope", "formal_authorized",
-        "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256", "job_manifests", "mfu_contract",
-        "rehearsal_evidence",
-    }
-    if not isinstance(authorization, dict) or set(authorization) != required_fields:
-        raise ValueError("formal authorization schema is invalid")
-    if (
-        authorization.get("schema_version") != 1
-        or authorization.get("status") != "authorized"
-        or authorization.get("scope") != FORMAL_AUTHORIZATION_SCOPE
-        or authorization.get("formal_authorized") is not True
-    ):
-        raise ValueError("formal authorization is not active for this scope")
     authorization_sha256 = sha256_file(authorization_path)
 
     snapshot_path = matrix_root / "matrix_contract_snapshot.json"
@@ -837,6 +856,7 @@ def _load_authorized_identity(
     resolved = snapshot.get("resolved_config")
     if not isinstance(runtime, dict) or not isinstance(resolved, dict):
         raise ValueError("matrix contract snapshot identity is invalid")
+    _validate_formal_authorization_binding(authorization, runtime)
     matrix_instance_id = runtime.get("matrix_instance_id")
     if (
         not isinstance(matrix_instance_id, str)
@@ -849,14 +869,6 @@ def _load_authorized_identity(
         raise ValueError("matrix instance identity is invalid")
     if sha256_payload(resolved) != authorization.get("resolved_config_sha256"):
         raise ValueError("resolved config fingerprint drifted")
-    identity_fields = (
-        "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256", "job_manifests", "mfu_contract",
-        "rehearsal_evidence",
-    )
-    for field in identity_fields:
-        if runtime.get(field) != authorization.get(field):
-            raise ValueError(f"runtime {field} drifted from authorization")
     if (
         runtime.get("execution_mode") != "formal"
         or runtime.get("status") != "authorized"
@@ -916,6 +928,8 @@ def _load_authorized_identity(
         "repository_commit": authorization["repository_commit"],
         "matrix_instance_id": matrix_instance_id,
         "config_sha256": authorization["config_sha256"],
+        "native_config_sha256": authorization["native_config_sha256"],
+        "project_config_sha256": authorization["project_config_sha256"],
         "config_fingerprint": authorization["resolved_config_sha256"],
         "manifest_sha256": authorization["manifest_sha256"],
         "manifest_evidence_path": manifest_evidence_path,
@@ -1000,6 +1014,8 @@ def _load_authorized_identity(
             "repository_commit": authorization["repository_commit"],
             "matrix_instance_id": matrix_instance_id,
             "config_sha256": authorization["config_sha256"],
+            "native_config_sha256": authorization["native_config_sha256"],
+            "project_config_sha256": authorization["project_config_sha256"],
             "config_fingerprint": authorization["resolved_config_sha256"],
             "authorization_sha256": authorization_sha256,
             "manifest_path": manifest_evidence_path,

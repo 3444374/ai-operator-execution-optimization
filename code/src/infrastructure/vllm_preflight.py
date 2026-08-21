@@ -478,6 +478,8 @@ def _read_live_processes() -> dict[str, dict[str, object]]:
 
 
 def _load_runtime_identities(paths: tuple[Path, ...]) -> dict[str, dict[str, object]]:
+    """Load one launcher sidecar per endpoint and reject duplicate ports."""
+
     identities: dict[str, dict[str, object]] = {}
     for path in paths:
         decoded = json.loads(path.read_text(encoding="utf-8"))

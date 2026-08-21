@@ -90,7 +90,7 @@ stop_managed_endpoint() {
       exit 2
     fi
   fi
-  rm -f "$pid_file"
+  rm -f "$pid_file" "$identity_file"
 }
 
 start_endpoint() {
@@ -98,6 +98,7 @@ start_endpoint() {
   local port=$2
   local log_file="$VLLM_LOG_DIR/ep_${port}.log"
   local pid_file="$VLLM_LOG_DIR/ep_${port}.pid"
+  local identity_file="$VLLM_LOG_DIR/ep_${port}.runtime_identity.json"
   if curl -sf "http://$VLLM_HOST:$port/health" >/dev/null 2>&1; then
     echo "port $port already serves a healthy endpoint; refusing to replace it" >&2
     exit 2

@@ -152,9 +152,20 @@ dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked
 置 ready；还必须依次绑定 system-preflight 与 correctness-smoke evidence，四阶段全部通过才允许
 rehearsal。五臂 runner 同样必须由 `DRIVER_PYTHON` 运行，driver/vLLM 环境相同会 fail closed。
 
+`analysis/run_saor_native_system_preflight.py` 是实际 system producer：从 DRIVER 环境读取 endpoint
+health、PostgreSQL/pgvector、Ray actor/placement-group 状态，并用 `nvidia-smi` 拒绝不属于已绑定
+vLLM 进程树的 CUDA compute PID；随后深校验一份在当前 vLLM
+sidecar 之后产生的 bounded HTTP passed root。readiness 不只读其布尔字段，而会重跑探针并要求
+结果完全一致。五臂 runner 的 `--correctness-smoke` 模式使用显式 fresh
+`--correctness-smoke-root` 跑一轮完整五臂；输出的 `matrix_index.json` 是第四阶段唯一接受的
+evidence，且不占用 canonical rehearsal root。
+
 `analysis/validate_saor_native_system_rehearsal.py` 只读完成的 rehearsal root 与 archive，验证恰好
 五个 warmup cell、全部 exactly-once、live readiness、commit/config identity 后封存 validation。
-该 validation/root/archive 是 formal authorization 的必填前置，不由仓库自行授权。
+它还逐文件验证 root 与 archive 完全一致，并重算每臂 raw artifact SHA、sink digest 和 native
+upstream/adapter provenance；CLI 必须同时传 `--config`、`--native-config` 与 `--project-config`，
+formal identity 显式包含三份 config SHA。该 validation/root/archive 是 formal authorization 的必填前置，
+不由仓库自行授权。
 
 `serving/launch_vllm_with_identity.py` 由 `deploy/autodl/start_endpoints.sh` 使用 `VLLM_PYTHON`
 调用；它在 `exec` API server 前原子写入 PID/start-time/argv0/`sys.prefix`/package sidecar，使不同

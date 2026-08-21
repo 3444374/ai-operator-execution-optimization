@@ -13,6 +13,8 @@ from pathlib import Path
 
 
 def _process_start_time_ticks() -> str:
+    """Read Linux process-start ticks for PID-reuse-safe sidecar binding."""
+
     raw = Path("/proc/self/stat").read_text(encoding="utf-8")
     close = raw.rfind(")")
     fields_after_comm = raw[close + 2:].split()
@@ -22,6 +24,8 @@ def _process_start_time_ticks() -> str:
 
 
 def _args() -> argparse.Namespace:
+    """Parse the sidecar destination, endpoint port, and exact server argv."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--identity-output", required=True, type=Path)
     parser.add_argument("--port", required=True, type=int)
@@ -34,6 +38,8 @@ def _args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Atomically seal this venv identity and replace the process with vLLM."""
+
     args = _args()
     spec = importlib.util.find_spec("vllm")
     if spec is None or spec.origin is None:

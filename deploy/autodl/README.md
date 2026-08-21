@@ -163,17 +163,44 @@ PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/analysis/audit_saor_native_system_
 
 Readiness 是四阶段单向门：`static_config` → `service_identity` →
 `system_preflight`（endpoint health、PostgreSQL/pgvector、Ray/GPU clean、同协议 bounded
-baseline feeding ratio≥95%）→ `correctness_smoke`（manifest、exactly-once、sink）。前三阶段
-即使通过也保持 `rehearsal_ready=false`；只有 smoke artifact 绑定同一 commit、matched/native/
+baseline 的实际 passed root）→ `correctness_smoke`（五臂各跑一次并验证 manifest、exactly-once、
+sink）。system preflight 不能由手写 `status=passed` 代替：下面入口会实际 GET health、只读查询
+PostgreSQL/pgvector、核对 Ray 无 live actor/placement group，并用 `nvidia-smi` 确认 CUDA compute
+PID 只属于已绑定 vLLM 进程树；随后重读 bounded root 的
+`run_status.json`、`gate.json` 和每 endpoint summary；readiness 使用时会再次执行这些探针并逐字段
+比较。先生成 evidence：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/run_saor_native_system_preflight.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8000.runtime_identity.json" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8001.runtime_identity.json" \
+  --ray-address "$RAY_ADDRESS" \
+  --bounded-baseline-root "$ARTIFACT_ROOT/<fresh-bounded-cell-root>" \
+  --output "$ARTIFACT_ROOT/<unique-system-preflight>.json"
+```
+
+随后用五臂 runner 的 `--correctness-smoke --correctness-smoke-root <fresh-unique-root>` 模式；该模式
+只接受已经通过的前三阶段，不接受 smoke evidence，也不会占用 config 的 canonical rehearsal root。
+完成后把 `<smoke-root>/matrix_index.json` 传给 readiness 的
+`--correctness-smoke-evidence`。validator 会重哈希封存 manifest、两 Job 行数、每臂 sink digest、
+native upstream/adapter provenance 和每个 raw artifact；手写 checks JSON 不能通过。前三阶段
+即使通过也保持 `rehearsal_ready=false`；只有实际 smoke root 绑定同一 commit、matched/native/
 Project 三份 config SHA 和 system-preflight SHA 后，最终报告才可置 true。五臂 runner 必须由
 `DRIVER_PYTHON` 启动，并显式接收 `--driver-python`、`--vllm-python`、两个 runtime sidecar、
 source/system/smoke evidence。driver 与 vLLM 的 `sys.prefix` 相同会 fail closed。
 
 Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
 `--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂
-warmup-only root 和 archive 生成 validation；formal authorization 必须逐字段绑定其 validation
+warmup-only root 和 archive 生成 validation，并同时传 matched/native/Project 三份 config；validator
+会把 native/Project config SHA 及 native upstream commit/adapter SHA 与每个 persisted native cell
+逐字段比较。formal authorization 必须逐字段绑定其 validation
 SHA、archive SHA、matrix-index SHA、matrix instance、commit 和 config fingerprint。缺任一 artifact、
-五臂不全或任一 cell 非 exactly-once 都不能进入 formal。
+五臂不全或任一 cell 非 exactly-once 都不能进入 formal；archive 必须是 root 全部文件的逐字节镜像，
+只放一个空 snapshot/单个伪 cell 的 tar 会被拒绝。
 
 本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 

@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-08-21 SAOR readiness 与 formal 证据深校验补强（本地，未运行 GPU）
+
+- 保持 `DRIVER_PYTHON` 外层与独立 `VLLM_PYTHON`；新增实际 system-preflight 入口，读取 endpoint
+  health、PostgreSQL/pgvector、Ray/GPU clean 和当前服务启动后产生的 bounded HTTP raw root。
+  readiness 会重跑 live probe 并逐字段比较，不再接受可手写的 passed checks JSON。
+- 五臂 runner 新增 `--correctness-smoke` + 显式 fresh `--correctness-smoke-root`。smoke 使用同一冻结
+  config identity，但不占 canonical rehearsal root；第四阶段只接受完整 matrix index/root，逐项
+  校验 manifest、Job counts、sink digest、native upstream/adapter provenance 与 raw artifact SHA。
+- rehearsal validator 抽出 completed-root 深校验，并要求 tar 与 root 全部文件逐字节一致；形式匹配的
+  空 snapshot/单 cell archive 不能再生成 formal 前置 validation。Native provenance 进入最终 cell/index，
+  并与 native config 的 upstream commit/adapter SHA 精确比较；formal authorization、snapshot、index、
+  cell 与离线 summary 显式绑定 matched/native/Project 三份 config SHA。
+- GPU clean 除 Ray logical resources/actor/placement group 外，再通过 `nvidia-smi` 读取实际 CUDA compute
+  PID；只允许 live-identity sidecar 对应 vLLM 根 PID 及其 Linux 子进程，其他 stray CUDA 进程 fail closed。
+- 修复 `start_endpoints.sh` 在启动函数中引用未定义 `identity_file` 的 `set -u` 阻断，并在停止 managed
+  endpoint 时清理 stale sidecar；增加共享底层解释器但 venv/vLLM 安装不同的真实反例测试。
+- 本次只执行本地 CPU/合同测试，未连接服务器，未运行 correctness smoke、rehearsal 或 formal；
+  DRR/VTC capability 继续 blocked，分支仍未合并 `main`。
+
 ## 2026-08-21 五臂 readiness 二次 fail-closed 修复（本地，未运行 GPU）
 
 - 修复不同 venv 共享底层解释器时 `/proc/<pid>/exe` 误判：endpoint launcher 在 exec 前封存 PID、

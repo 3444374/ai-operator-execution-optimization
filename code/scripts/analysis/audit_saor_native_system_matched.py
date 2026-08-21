@@ -21,6 +21,8 @@ from src.baselines.common.redact import redact_text  # noqa: E402
 
 
 def _args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse the three configs and optional live four-stage evidence."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--native-config", type=Path, required=True)
@@ -53,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
             system_preflight_evidence=args.system_preflight_evidence,
             correctness_smoke_evidence=args.correctness_smoke_evidence,
         )
-    except (OSError, RuntimeError, ValueError) as exc:
+    except Exception as exc:  # CLI boundary: redact third-party PG/Ray/HTTP errors.
         result = {
             "schema_version": 1,
             "status": "failed",

@@ -1,4 +1,9 @@
-"""Compose static config, installed-source, and live-service readiness gates."""
+"""Compose four fail-closed stages before any SAOR rehearsal may start.
+
+Static config and live service identity are followed by an actual read-only
+system preflight and a deep-validated correctness-smoke root.  Only all four
+stages together may emit ``rehearsal_ready=true``.
+"""
 
 from __future__ import annotations
 
@@ -18,6 +23,12 @@ from src.experiments.saor.native_system_matched import (
     resolved_matched_system_identity,
     sha256_file,
     sha256_payload,
+)
+from src.experiments.saor.native_system_artifacts import (
+    validate_completed_matrix_root,
+)
+from src.experiments.saor.native_system_preflight import (
+    build_system_preflight_payload,
 )
 from src.experiments.saor.vllm_0251_source_audit import validate_source_audit_evidence
 from src.experiments.shared_vllm import load_config as load_project_config
@@ -151,6 +162,8 @@ def verify_rehearsal_service_identity(
 
 
 def _load_evidence(path: Path, label: str) -> dict[str, object]:
+    """Load one readiness artifact as a required JSON object."""
+
     try:
         decoded = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -161,67 +174,86 @@ def _load_evidence(path: Path, label: str) -> dict[str, object]:
 
 
 def validate_system_preflight_evidence(
-    path: Path, expected_binding: dict[str, object]
+    path: Path,
+    expected_binding: dict[str, object],
+    matched: MatchedSystemConfig,
+    runtime_identity_paths: tuple[Path, ...],
 ) -> dict[str, object]:
-    """Validate health, database, clean Ray/GPU, and bounded-client gates."""
+    """Re-run live probes and require byte-equivalent sealed observations."""
 
     evidence = _load_evidence(path, "system preflight")
-    required = {"schema_version", "status", "binding", "checks"}
+    required = {
+        "schema_version", "status", "binding",
+        "service_runtime_not_before_mtime_ns", "inputs", "checks",
+    }
     if set(evidence) != required or evidence.get("schema_version") != 1:
         raise RuntimeError("system preflight evidence schema is invalid")
     if evidence.get("status") != "passed" or evidence.get("binding") != expected_binding:
         raise RuntimeError("system preflight status or binding drifted")
-    checks = evidence.get("checks")
-    names = {"endpoint_health", "postgresql", "ray_gpu_clean", "bounded_baseline"}
-    if not isinstance(checks, dict) or set(checks) != names:
-        raise RuntimeError("system preflight checks are incomplete")
-    for name in names:
-        item = checks[name]
-        if not isinstance(item, dict) or item.get("status") != "passed":
-            raise RuntimeError(f"system preflight {name} did not pass")
-    postgresql = checks["postgresql"]
-    if not postgresql.get("server_version") or not postgresql.get("pgvector_version"):
-        raise RuntimeError("system preflight PostgreSQL identity is incomplete")
-    ratio = checks["bounded_baseline"].get("feeding_saturation_ratio")
-    if (
-        isinstance(ratio, bool) or not isinstance(ratio, (int, float))
-        or float(ratio) < 0.95
-    ):
-        raise RuntimeError("system preflight bounded baseline is below 95% saturation")
-    return {"status": "passed", "evidence_sha256": sha256_file(path)}
+    if not runtime_identity_paths:
+        raise RuntimeError("system preflight lacks vLLM runtime sidecars")
+    not_before = max(item.stat().st_mtime_ns for item in runtime_identity_paths)
+    runtime_records = [_load_evidence(item, "vLLM runtime") for item in runtime_identity_paths]
+    try:
+        allowed_pids = tuple(int(item["pid"]) for item in runtime_records)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("vLLM runtime sidecar PID is invalid") from exc
+    if evidence.get("service_runtime_not_before_mtime_ns") != not_before:
+        raise RuntimeError("system preflight vLLM runtime epoch drifted")
+    inputs = evidence.get("inputs")
+    if not isinstance(inputs, dict) or set(inputs) != {
+        "ray_address", "bounded_baseline_root"
+    }:
+        raise RuntimeError("system preflight inputs are incomplete")
+    observed = build_system_preflight_payload(
+        expected_binding,
+        matched,
+        ray_address=str(inputs["ray_address"]),
+        bounded_baseline_root=Path(str(inputs["bounded_baseline_root"])),
+        not_before_mtime_ns=not_before,
+        allowed_vllm_root_pids=allowed_pids,
+    )
+    if evidence != observed:
+        raise RuntimeError("system preflight live observations drifted")
+    return {
+        "status": "passed",
+        "evidence_sha256": sha256_file(path),
+        "checks": observed["checks"],
+    }
 
 
 def validate_correctness_smoke_evidence(
     path: Path,
     expected_binding: dict[str, object],
     system_preflight_sha256: str,
+    matched: MatchedSystemConfig,
+    expected_native_provenance: dict[str, dict[str, object]] | None = None,
 ) -> dict[str, object]:
-    """Validate a sealed smoke that is downstream of this exact preflight."""
+    """Deep-check the actual five-arm smoke root referenced by its index."""
 
-    evidence = _load_evidence(path, "correctness smoke")
-    required = {
-        "schema_version", "status", "binding", "system_preflight_sha256",
-        "checks", "completed_rows",
+    if path.name != "matrix_index.json":
+        raise RuntimeError("correctness smoke evidence must be matrix_index.json")
+    expected = {
+        "repository_commit": expected_binding["repository_commit"],
+        "config_sha256": expected_binding["config_sha256"],
+        "resolved_config_sha256": expected_binding["resolved_config_sha256"],
+        "manifest_sha256": matched.arms[0].manifest_sha256,
     }
-    if set(evidence) != required or evidence.get("schema_version") != 1:
-        raise RuntimeError("correctness smoke evidence schema is invalid")
-    if evidence.get("status") != "passed" or evidence.get("binding") != expected_binding:
-        raise RuntimeError("correctness smoke status or binding drifted")
-    if evidence.get("system_preflight_sha256") != system_preflight_sha256:
-        raise RuntimeError("correctness smoke system preflight binding drifted")
-    checks = evidence.get("checks")
-    names = {"manifest_validation", "exactly_once", "sink_validation"}
-    if not isinstance(checks, dict) or set(checks) != names:
-        raise RuntimeError("correctness smoke checks are incomplete")
-    if any(
-        not isinstance(checks[name], dict) or checks[name].get("status") != "passed"
-        for name in names
-    ):
-        raise RuntimeError("correctness smoke checks did not all pass")
-    rows = evidence.get("completed_rows")
-    if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
-        raise RuntimeError("correctness smoke completed_rows must be positive")
-    return {"status": "passed", "evidence_sha256": sha256_file(path)}
+    index = validate_completed_matrix_root(
+        path.parent,
+        matched,
+        expected,
+        execution_mode="correctness_smoke",
+        expected_readiness_binding=expected_binding,
+        expected_system_preflight_sha256=system_preflight_sha256,
+        expected_native_provenance=expected_native_provenance,
+    )
+    return {
+        "status": "passed",
+        "evidence_sha256": sha256_file(path),
+        "root": str(path.parent.resolve()),
+        "completed_cells": len(index["cells"]),
+    }
 
 
 def audit_readiness(
@@ -242,6 +274,11 @@ def audit_readiness(
     matched, identity = load_and_validate_static_readiness(
         matched_config, native_config, project_config
     )
+    native = load_native_multijob_config(native_config)
+    expected_native_provenance = {
+        arm_id: dict(fields)
+        for arm_id, fields in native.native_implementation_provenance
+    }
     if repository_commit is None:
         repository = Path(__file__).resolve().parents[4]
         repository_commit = subprocess.run(
@@ -294,14 +331,17 @@ def audit_readiness(
     report["status"] = "service_identity_passed"
     if system_preflight_evidence is None:
         return report
-    system = validate_system_preflight_evidence(system_preflight_evidence, binding)
+    system = validate_system_preflight_evidence(
+        system_preflight_evidence, binding, matched, runtime_identity_paths
+    )
     report["system_preflight"] = system
     report["stages"]["system_preflight"] = "passed"
     report["status"] = "system_preflight_passed"
     if correctness_smoke_evidence is None:
         return report
     smoke = validate_correctness_smoke_evidence(
-        correctness_smoke_evidence, binding, system["evidence_sha256"]
+        correctness_smoke_evidence, binding, system["evidence_sha256"], matched,
+        expected_native_provenance,
     )
     report["correctness_smoke"] = smoke
     report["stages"]["correctness_smoke"] = "passed"

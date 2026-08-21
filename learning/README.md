@@ -1,5 +1,22 @@
 # Learning Notes
 
+## 2026-08-21 为什么 readiness 不能相信一份手写的 passed JSON
+
+readiness 是一次证据推导，不是调用者自我声明。system-preflight 现在由可运行入口实际检查 endpoint
+health、PostgreSQL/pgvector、Ray/GPU clean，并从 bounded HTTP root 的原始 run status、gate 和
+per-endpoint summary 重算通过状态；后续 readiness 还会重跑同一组只读探针，要求结果与封存证据
+逐字段相同。correctness smoke 则复用五臂真实 executor 跑一轮，但使用独立、显式 fresh root，避免
+占用后续 rehearsal 的 canonical root。第四阶段只接受这个 root 的 `matrix_index.json`，并重哈希
+manifest、Job 行数、sink digest、native upstream/adapter provenance 和 raw artifacts。
+
+同样，formal 不能只检查 archive 里“有一个 index、一个 snapshot、一个 cell 文件”。离线 validator
+必须重新核验完整五臂 cell 合同，并要求 tar 与 root 的全部文件集合及每个 SHA 完全一致。这样一份
+只有 `{}` snapshot 或单个伪 cell 的形式匹配归档无法生成 rehearsal validation；formal authorization
+还显式绑定 matched/native/Project 三份 config SHA，并把 native config 中冻结的 upstream commit 与
+adapter SHA 逐臂对照最终 cell。它绑定的是经深校验的 validation/root/archive，而不是一组可手写的
+布尔字段。本次只完成本地代码和
+CPU 合同测试，没有连接服务器，也没有运行 correctness smoke、rehearsal 或 formal。
+
 ## 2026-08-21 为什么“同一个 endpoint”仍不足以证明五臂可比
 
 五臂过去只检查 endpoint 进程没有 `--scheduler-cls`。这只能证明 scheduler class 没被显式替换，

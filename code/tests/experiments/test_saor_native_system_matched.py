@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import csv
 import hashlib
+import io
 import json
 import subprocess
 import sys
@@ -44,7 +46,16 @@ from src.experiments.saor.native_system_readiness import (
     validate_system_preflight_evidence,
     verify_rehearsal_service_identity,
 )
+from src.experiments.saor.native_system_preflight import (
+    _gpu_compute_pids,
+    _is_descendant_of,
+    build_system_preflight_payload,
+    validate_gpu_compute_processes,
+)
 from src.experiments.saor.native_system_sink import collect_completion_rows
+from src.experiments.saor.native_system_summary import (
+    _validate_formal_authorization_binding,
+)
 from src.experiments.saor.native_system_validator import (
     validate_uniform_cell_identity,
 )
@@ -54,6 +65,7 @@ from src.experiments.saor.official_vtc_capability import (
     load_official_vtc_capability,
 )
 from scripts.experiments.run_saor_native_system_matched import parse_args
+from scripts.analysis import run_saor_native_system_preflight as system_preflight_cli
 from src.infrastructure.vllm_preflight import (
     VLLM_DISTRIBUTION_HASH_FIELDS,
     VLLM_SOURCE_HASH_FIELDS,
@@ -61,6 +73,38 @@ from src.infrastructure.vllm_preflight import (
 
 
 class MatchedSystemContractTest(unittest.TestCase):
+    def test_summary_formal_authorization_binds_all_three_config_hashes(self) -> None:
+        authorization = {
+            "schema_version": 1,
+            "status": "authorized",
+            "scope": "saor_native_system_matched_formal",
+            "formal_authorized": True,
+            "repository_commit": "a" * 40,
+            "config_sha256": "b" * 64,
+            "native_config_sha256": "c" * 64,
+            "project_config_sha256": "d" * 64,
+            "resolved_config_sha256": "e" * 64,
+            "manifest_sha256": "f" * 64,
+            "job_manifests": [],
+            "mfu_contract": {"status": "unavailable"},
+            "rehearsal_evidence": {"validation_sha256": "1" * 64},
+        }
+        runtime = {
+            **authorization,
+            "execution_mode": "formal",
+            "authorization_sha256": "2" * 64,
+        }
+        _validate_formal_authorization_binding(authorization, runtime)
+
+        for field in ("native_config_sha256", "project_config_sha256"):
+            with self.subTest(field=field):
+                drifted = dict(runtime)
+                drifted[field] = "9" * 64
+                with self.assertRaisesRegex(ValueError, field):
+                    _validate_formal_authorization_binding(
+                        authorization, drifted
+                    )
+
     def test_release_examples_define_exact_five_arm_db_e2e_matrix(self) -> None:
         repository = Path(__file__).resolve().parents[3]
         matched = json.loads((
@@ -72,6 +116,10 @@ class MatchedSystemContractTest(unittest.TestCase):
         native = json.loads((
             repository / "deploy/autodl/saor_native_system_matched_native.example.json"
         ).read_text(encoding="utf-8"))
+        frozen_env = (
+            repository / "deploy/autodl/saor_native_system_matched.env.example"
+        ).read_text(encoding="utf-8")
+        self.assertIn("export VLLM_SCHEDULING_POLICY=fcfs", frozen_env)
         self.assertEqual(
             tuple(arm["arm_id"] for arm in matched["arms"]),
             SYSTEM_ARM_IDS,
@@ -131,6 +179,7 @@ class MatchedSystemContractTest(unittest.TestCase):
         self.assertIn("四阶段", scripts)
         self.assertIn("当前五臂", calibration.splitlines()[2])
         self.assertNotIn("八臂 native-system matched comparison 的四份", calibration)
+        self.assertNotIn("project ×5", calibration)
 
     def test_native_arm_rejects_bounded_ready_k_w_and_credit_controls(self) -> None:
         for field, value in (
@@ -287,55 +336,68 @@ class MatchedSystemContractTest(unittest.TestCase):
         commit = "a" * 40
         with Fixture() as fixture:
             config = load_matched_system_config(fixture.path)
-            base = run_identity_requirements(fixture.path, config, commit)
-            root = fixture.path.parent / "reviewed-rehearsal"
-            root.mkdir()
-            archive = fixture.path.parent / "reviewed-rehearsal.tar.gz"
-            schedule = [
-                {
-                    "arm_id": arm_id, "phase": "warmup", "repeat": 1,
-                    "order_index": index, "report_blocks": ["db_e2e_system"],
-                }
-                for index, arm_id in enumerate(SYSTEM_ARM_IDS)
-            ]
-            cells = [{
-                **item,
-                "status": "passed", "exactly_once": True,
-                "repository_commit": commit,
-                "config_sha256": base["config_sha256"],
-                "config_fingerprint": base["resolved_config_sha256"],
-            } for item in schedule]
-            (root / "matrix_index.json").write_text(json.dumps({
-                "status": "completed", "execution_mode": "rehearsal",
-                "repository_commit": commit,
-                "config_sha256": base["config_sha256"],
-                "config_fingerprint": base["resolved_config_sha256"],
-                "manifest_sha256": base["manifest_sha256"],
-                "authorization_sha256": "",
-                "matrix_instance_id": "1" * 32,
-                "schedule": schedule, "cells": cells,
-                "service_identity_preflight": {
-                    "rehearsal_ready": True,
-                    "service_identity": {
-                        "installed_source": {"status": "passed"},
-                        "live_service": {"status": "passed"},
-                    },
-                },
+            root = Path(config.matrix_output_root)
+            native_path = fixture.path.parent / "native-contract.json"
+            project_path = fixture.path.parent / "project-contract.json"
+            provenance = successful_native_provenance()
+            native_path.write_text(json.dumps({
+                "native_implementation_provenance": provenance
             }), encoding="utf-8")
-            (root / "matrix_contract_snapshot.json").write_text(
-                "{}", encoding="utf-8"
+            project_path.write_text(json.dumps({"kind": "project"}), encoding="utf-8")
+            expected = run_identity_requirements(
+                fixture.path, config, commit, native_path, project_path
             )
-            cell_path = root / "cells" / "000_warmup_01_daft_native"
-            cell_path.mkdir(parents=True)
-            (cell_path / "evidence.json").write_text("{}", encoding="utf-8")
+            preflight = {
+                "schema_version": 1,
+                "status": "rehearsal_ready",
+                "rehearsal_ready": True,
+                "binding": {
+                    "repository_commit": commit,
+                    "config_sha256": expected["config_sha256"],
+                    "resolved_config_sha256": expected["resolved_config_sha256"],
+                    "native_config_sha256": expected["native_config_sha256"],
+                    "project_config_sha256": expected["project_config_sha256"],
+                },
+                "stages": {
+                    "static_config": "passed",
+                    "service_identity": "passed",
+                    "system_preflight": "passed",
+                    "correctness_smoke": "passed",
+                },
+                "service_identity": {
+                    "installed_source": {"status": "passed"},
+                    "live_service": {"status": "passed"},
+                },
+                "system_preflight": {"status": "passed"},
+                "correctness_smoke": {"status": "passed"},
+            }
+            run_matched_system(
+                fixture.path,
+                native_executor=successful_cell_evidence,
+                project_executor=successful_cell_evidence,
+                idle_gate=lambda *_args: None,
+                instrumenter=lambda *_args: None,
+                repository_commit_getter=lambda: commit,
+                host_lease_acquirer=lambda *_args, **_kwargs: SimpleNamespace(
+                    release=lambda: None
+                ),
+                rehearsal=True,
+                service_identity_preflight=preflight,
+                native_config_path=native_path,
+                project_config_path=project_path,
+                native_implementation_provenance=provenance,
+            )
+            archive = fixture.path.parent / "reviewed-rehearsal.tar.gz"
             with tarfile.open(archive, "w:gz") as stream:
                 stream.add(root, arcname=root.name)
             validation = fixture.path.parent / "rehearsal_validation.json"
             validation.write_text(json.dumps(build_rehearsal_validation_payload(
-                fixture.path, config, commit, root, archive
+                fixture.path, config, commit, root, archive,
+                native_path, project_path, provenance,
             )), encoding="utf-8")
             evidence = validate_rehearsal_evidence(
-                fixture.path, config, commit, validation, root, archive
+                fixture.path, config, commit, validation, root, archive,
+                native_path, project_path, provenance,
             )
             requirements = formal_authorization_requirements(
                 fixture.path, config, commit, evidence
@@ -344,13 +406,175 @@ class MatchedSystemContractTest(unittest.TestCase):
                 requirements["rehearsal_evidence"]["archive_sha256"],
                 hashlib.sha256(archive.read_bytes()).hexdigest(),
             )
+            self.assertEqual(
+                requirements["native_config_sha256"],
+                hashlib.sha256(native_path.read_bytes()).hexdigest(),
+            )
+            drifted_provenance = copy.deepcopy(provenance)
+            drifted_provenance["daft_native"]["adapter_sha256"] = "e" * 64
+            with self.assertRaisesRegex(RuntimeError, "provenance"):
+                build_rehearsal_validation_payload(
+                    fixture.path, config, commit, root, archive,
+                    native_path, project_path, drifted_provenance,
+                )
             forged = json.loads(validation.read_text(encoding="utf-8"))
             forged["valid_rehearsal"] = False
             validation.write_text(json.dumps(forged), encoding="utf-8")
             with self.assertRaisesRegex(PermissionError, "identity drifted"):
                 validate_rehearsal_evidence(
-                    fixture.path, config, commit, validation, root, archive
+                    fixture.path, config, commit, validation, root, archive,
+                    native_path, project_path, provenance,
                 )
+
+            index = json.loads((root / "matrix_index.json").read_text())
+            self.assertEqual(
+                index["native_config_sha256"],
+                expected["native_config_sha256"],
+            )
+            self.assertEqual(
+                index["project_config_sha256"],
+                expected["project_config_sha256"],
+            )
+            self.assertTrue(all(
+                cell["native_config_sha256"] == expected["native_config_sha256"]
+                and cell["project_config_sha256"]
+                == expected["project_config_sha256"]
+                for cell in index["cells"]
+            ))
+            native_cells = [
+                cell for cell in index["cells"]
+                if cell["arm_id"] in {"daft_native", "daft_ray", "ray_data_http"}
+            ]
+            self.assertTrue(all(
+                "native_implementation_provenance" in cell for cell in native_cells
+            ))
+
+    def test_minimal_handwritten_rehearsal_root_cannot_authorize_formal(self) -> None:
+        commit = "a" * 40
+        with Fixture() as fixture:
+            config = load_matched_system_config(fixture.path)
+            native_path = fixture.path.parent / "native-contract.json"
+            project_path = fixture.path.parent / "project-contract.json"
+            native_path.write_text("{}", encoding="utf-8")
+            project_path.write_text("{}", encoding="utf-8")
+            provenance = successful_native_provenance()
+            base = run_identity_requirements(
+                fixture.path, config, commit, native_path, project_path
+            )
+            root = fixture.path.parent / "forged"
+            root.mkdir()
+            (root / "matrix_index.json").write_text(json.dumps({
+                "schema_version": 1,
+                "status": "completed",
+                "execution_mode": "rehearsal",
+                "repository_commit": commit,
+                "config_sha256": base["config_sha256"],
+                "config_fingerprint": base["resolved_config_sha256"],
+                "manifest_sha256": base["manifest_sha256"],
+                "authorization_sha256": "",
+                "schedule": [],
+                "cells": [],
+                "service_identity_preflight": {"rehearsal_ready": True},
+            }), encoding="utf-8")
+            (root / "matrix_contract_snapshot.json").write_text("{}")
+            archive = fixture.path.parent / "forged.tar.gz"
+            with tarfile.open(archive, "w:gz") as stream:
+                stream.add(root, arcname=root.name)
+            with self.assertRaisesRegex(RuntimeError, "snapshot|matrix"):
+                build_rehearsal_validation_payload(
+                    fixture.path, config, commit, root, archive,
+                    native_path, project_path, provenance,
+                )
+
+    def test_correctness_smoke_uses_a_separate_root_and_is_deep_validated(self) -> None:
+        commit = "a" * 40
+        with Fixture() as fixture:
+            config = load_matched_system_config(fixture.path)
+            native_path = fixture.path.parent / "native-contract.json"
+            project_path = fixture.path.parent / "project-contract.json"
+            native_path.write_text("{}", encoding="utf-8")
+            project_path.write_text("{}", encoding="utf-8")
+            provenance = successful_native_provenance()
+            expected = run_identity_requirements(
+                fixture.path, config, commit, native_path, project_path
+            )
+            binding = {
+                "repository_commit": commit,
+                "config_sha256": expected["config_sha256"],
+                "resolved_config_sha256": expected["resolved_config_sha256"],
+                "native_config_sha256": expected["native_config_sha256"],
+                "project_config_sha256": expected["project_config_sha256"],
+            }
+            system_sha = "d" * 64
+            run_matched_system(
+                fixture.path,
+                native_executor=successful_cell_evidence,
+                project_executor=successful_cell_evidence,
+                idle_gate=lambda *_args: None,
+                instrumenter=lambda *_args: None,
+                repository_commit_getter=lambda: commit,
+                host_lease_acquirer=lambda *_args, **_kwargs: SimpleNamespace(
+                    release=lambda: None
+                ),
+                correctness_smoke=True,
+                matrix_output_root_override=(
+                    fixture.path.parent / "smoke-attempt-001"
+                ),
+                service_identity_preflight={
+                    "binding": binding,
+                    "status": "system_preflight_passed",
+                    "rehearsal_ready": False,
+                    "stages": {
+                        "static_config": "passed",
+                        "service_identity": "passed",
+                        "system_preflight": "passed",
+                        "correctness_smoke": "not_checked",
+                    },
+                    "system_preflight": {
+                        "status": "passed", "evidence_sha256": system_sha
+                    },
+                },
+                native_config_path=native_path,
+                project_config_path=project_path,
+                native_implementation_provenance=provenance,
+            )
+            base_root = Path(config.matrix_output_root)
+            smoke_index = fixture.path.parent / "smoke-attempt-001" / "matrix_index.json"
+            self.assertFalse(base_root.exists())
+            result = validate_correctness_smoke_evidence(
+                smoke_index, binding, system_sha, config, provenance
+            )
+            self.assertEqual(result["completed_cells"], 5)
+            index = json.loads(smoke_index.read_text())
+            artifact = (
+                Path(result["root"])
+                / index["cells"][0]["cell_artifact_root"]
+                / "raw_executor.json"
+            )
+            artifact.write_text("tampered", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "raw artifact manifest"):
+                validate_correctness_smoke_evidence(
+                    smoke_index, binding, system_sha, config, provenance
+                )
+
+    def test_correctness_smoke_cannot_create_the_canonical_rehearsal_root(self) -> None:
+        for nested in (False, True):
+            with self.subTest(nested=nested), Fixture() as fixture:
+                config = load_matched_system_config(fixture.path)
+                canonical = Path(config.matrix_output_root)
+                override = canonical / "child" if nested else canonical
+                with self.assertRaisesRegex(ValueError, "canonical rehearsal root"):
+                    run_matched_system(
+                        fixture.path,
+                        native_executor=lambda *_args: {},
+                        project_executor=lambda *_args: {},
+                        idle_gate=lambda *_args: None,
+                        instrumenter=lambda *_args: None,
+                        repository_commit_getter=lambda: "a" * 40,
+                        correctness_smoke=True,
+                        matrix_output_root_override=override,
+                    )
+                self.assertFalse(canonical.exists())
 
     def test_failed_cell_stays_in_all_runs_but_no_ranking_is_published(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -436,13 +660,32 @@ class MatchedSystemContractTest(unittest.TestCase):
         ])
         self.assertIsNone(options.formal_authorization)
         self.assertFalse(options.rehearsal)
+        self.assertFalse(options.correctness_smoke)
         self.assertEqual(options.vllm_python, Path("/vllm/bin/python"))
+
+        smoke = parse_args([
+            "--config", "a.json", "--native-config", "n.json",
+            "--project-config", "p.json", "--native-runner", "native.py",
+            "--profiler", "profiler.py", "--driver-python", "python3",
+            "--health-url", "http://127.0.0.1:8000/health",
+            "--metrics-urls", "http://127.0.0.1:8000/metrics",
+            "--ray-address", "auto", "--vllm-python", "/vllm/bin/python",
+            "--vllm-runtime-identity", "ep8000.json",
+            "--installed-source-audit", "source-audit.json",
+            "--system-preflight-evidence", "system.json",
+            "--correctness-smoke", "--correctness-smoke-root", "smoke-root",
+        ])
+        self.assertTrue(smoke.correctness_smoke)
+        self.assertIsNone(smoke.correctness_smoke_evidence)
+        self.assertEqual(smoke.correctness_smoke_root.name, "smoke-root")
 
     def test_readiness_and_source_audit_clis_import_from_repository_root(self) -> None:
         repository = Path(__file__).resolve().parents[3]
         for script in (
             "code/scripts/analysis/audit_saor_native_system_matched.py",
+            "code/scripts/analysis/run_saor_native_system_preflight.py",
             "code/scripts/analysis/audit_vllm_0251_source.py",
+            "code/scripts/analysis/validate_saor_native_system_rehearsal.py",
         ):
             with self.subTest(script=script):
                 completed = subprocess.run(
@@ -474,6 +717,30 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertEqual(completed.returncode, 2)
             self.assertNotIn(secret, output.read_text(encoding="utf-8"))
+
+    def test_system_preflight_cli_redacts_arbitrary_third_party_exception(self) -> None:
+        class ThirdPartyFailure(Exception):
+            pass
+
+        secret = "synthetic-sensitive-value"
+        stdout = io.StringIO()
+        with patch.object(
+            system_preflight_cli,
+            "load_and_validate_static_readiness",
+            side_effect=ThirdPartyFailure(f"api_key={secret}"),
+        ), contextlib.redirect_stdout(stdout):
+            return_code = system_preflight_cli.main([
+                "--config", "matched.json",
+                "--native-config", "native.json",
+                "--project-config", "project.json",
+                "--vllm-runtime-identity", "runtime.json",
+                "--ray-address", "auto",
+                "--bounded-baseline-root", "bounded",
+                "--output", "preflight.json",
+            ])
+        self.assertEqual(return_code, 2)
+        self.assertNotIn(secret, stdout.getvalue())
+        self.assertIn("failed", stdout.getvalue())
 
     def test_three_config_service_identity_binding_fails_on_project_drift(self) -> None:
         with Fixture() as fixture:
@@ -562,15 +829,18 @@ class MatchedSystemContractTest(unittest.TestCase):
                     )
                 live.assert_not_called()
 
-    def test_readiness_requires_bound_system_preflight_and_correctness_smoke(self) -> None:
+    def test_declarative_system_preflight_and_smoke_json_cannot_pass(self) -> None:
         binding = {
             "repository_commit": "a" * 40,
             "config_sha256": "b" * 64,
             "resolved_config_sha256": "c" * 64,
             "service_identity_sha256": "d" * 64,
         }
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+        with Fixture() as fixture:
+            matched = load_matched_system_config(fixture.path)
+            root = fixture.path.parent
+            runtime = root / "runtime.json"
+            runtime.write_text(json.dumps({"pid": 123}), encoding="utf-8")
             system = root / "system.json"
             system.write_text(json.dumps({
                 "schema_version": 1,
@@ -588,13 +858,16 @@ class MatchedSystemContractTest(unittest.TestCase):
                     },
                 },
             }), encoding="utf-8")
-            system_result = validate_system_preflight_evidence(system, binding)
+            with self.assertRaisesRegex(RuntimeError, "schema"):
+                validate_system_preflight_evidence(
+                    system, binding, matched, (runtime,)
+                )
             smoke = root / "smoke.json"
             smoke.write_text(json.dumps({
                 "schema_version": 1,
                 "status": "passed",
                 "binding": binding,
-                "system_preflight_sha256": system_result["evidence_sha256"],
+                "system_preflight_sha256": "f" * 64,
                 "checks": {
                     "manifest_validation": {"status": "passed"},
                     "exactly_once": {"status": "passed"},
@@ -602,16 +875,110 @@ class MatchedSystemContractTest(unittest.TestCase):
                 },
                 "completed_rows": 10,
             }), encoding="utf-8")
-            validate_correctness_smoke_evidence(
-                smoke, binding, system_result["evidence_sha256"]
-            )
-            corrupted = json.loads(smoke.read_text(encoding="utf-8"))
-            corrupted["system_preflight_sha256"] = "e" * 64
-            smoke.write_text(json.dumps(corrupted), encoding="utf-8")
-            with self.assertRaisesRegex(RuntimeError, "system preflight"):
+            with self.assertRaisesRegex(RuntimeError, "matrix_index"):
                 validate_correctness_smoke_evidence(
-                    smoke, binding, system_result["evidence_sha256"]
+                    smoke, binding, "f" * 64, matched
                 )
+
+    def test_system_preflight_builder_rehashes_real_bounded_root(self) -> None:
+        with Fixture() as fixture:
+            matched = load_matched_system_config(fixture.path)
+            runtime = fixture.path.parent / "runtime.json"
+            runtime.write_text(json.dumps({"pid": 123}), encoding="utf-8")
+            not_before = runtime.stat().st_mtime_ns
+            root = fixture.path.parent / "bounded"
+            cell = root / "bounded_http"
+            cell.mkdir(parents=True)
+            (root / "run_status.json").write_text(json.dumps({
+                "status": "passed", "blocked_cells": []
+            }), encoding="utf-8")
+            (cell / "gate.json").write_text(json.dumps({
+                "status": "passed", "passed": True
+            }), encoding="utf-8")
+            for index, url in enumerate(matched.endpoint_urls):
+                shard = cell / f"shard_{index}"
+                shard.mkdir()
+                service = dict(matched.service_identity)
+                service_sha = hashlib.sha256(json.dumps({
+                    "model": service["model"],
+                    "protocol": matched.arms[0].protocol,
+                    "temperature": 0.0,
+                    "ignore_eos": False,
+                    "service_prefix_caching": "enabled",
+                    "service_max_num_seqs": service["max_num_seqs"],
+                    "service_max_num_batched_tokens": service["max_num_batched_tokens"],
+                }, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                (shard / "summary.json").write_text(json.dumps({
+                    "adapter": "bounded_http",
+                    "status": "completed",
+                    "exactly_once": True,
+                    "failed_count": 0,
+                    "completion_protocol": matched.arms[0].protocol,
+                    "model_name": service["model"],
+                    "service_config_sha256": service_sha,
+                    "endpoint_url": url,
+                    "tokens_per_s": 100.0 + index,
+                }), encoding="utf-8")
+            payload = build_system_preflight_payload(
+                {"repository_commit": "a" * 40}, matched,
+                ray_address="auto", bounded_baseline_root=root,
+                not_before_mtime_ns=not_before,
+                allowed_vllm_root_pids=(123,),
+                endpoint_probe=lambda urls: {
+                    "status": "passed", "endpoints": list(urls)
+                },
+                postgresql_probe=lambda _url: {
+                    "status": "passed", "server_version": "18.3",
+                    "pgvector_version": "0.8.1",
+                },
+                ray_probe=lambda address, pids: {
+                    "status": "passed", "ray_address": address,
+                    "allowed_vllm_root_pids": list(pids),
+                },
+            )
+            self.assertEqual(
+                payload["checks"]["bounded_baseline"]["total_tokens_per_s"],
+                201.0,
+            )
+            evidence = fixture.path.parent / "system-preflight.json"
+            evidence.write_text(json.dumps(payload), encoding="utf-8")
+            with patch(
+                "src.experiments.saor.native_system_readiness.build_system_preflight_payload",
+                return_value=payload,
+            ) as reprobe:
+                result = validate_system_preflight_evidence(
+                    evidence, payload["binding"], matched, (runtime,)
+                )
+
+            self.assertEqual(result["status"], "passed")
+            reprobe.assert_called_once()
+            summary = cell / "shard_0" / "summary.json"
+            corrupted = json.loads(summary.read_text())
+            corrupted["exactly_once"] = False
+            summary.write_text(json.dumps(corrupted))
+            with self.assertRaisesRegex(RuntimeError, "correctness"):
+                build_system_preflight_payload(
+                    {}, matched, ray_address="auto", bounded_baseline_root=root,
+                    not_before_mtime_ns=not_before,
+                    allowed_vllm_root_pids=(123,),
+                    endpoint_probe=lambda _urls: {"status": "passed"},
+                    postgresql_probe=lambda _url: {"status": "passed"},
+                    ray_probe=lambda _address, _pids: {"status": "passed"},
+                )
+
+    def test_gpu_process_probe_parses_compute_pids_and_rejects_unrelated_tree(self) -> None:
+        with patch(
+            "src.experiments.saor.native_system_preflight.subprocess.run",
+            return_value=SimpleNamespace(returncode=0, stdout="123\n999\n"),
+        ):
+            self.assertEqual(_gpu_compute_pids(), {123, 999})
+        self.assertTrue(_is_descendant_of(123, {123}))
+        self.assertFalse(_is_descendant_of(99999999, {123}))
+        with patch(
+            "src.experiments.saor.native_system_preflight._gpu_compute_pids",
+            return_value={123, 99999999},
+        ), self.assertRaisesRegex(RuntimeError, "outside verified vLLM"):
+            validate_gpu_compute_processes((123,))
 
     def test_completion_sink_collects_independent_trace_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -659,6 +1026,176 @@ def official_vtc_evidence(config) -> list[dict[str, object]]:
         "output_contract": dict(config.output_contract),
         "comparison_scope": "serving_mechanism_only",
     } for arm in config.arms]
+
+
+def successful_native_provenance() -> dict[str, dict[str, object]]:
+    """Return frozen native provenance matching the synthetic executors."""
+
+    record = {
+        "upstream_url": "https://example.invalid/upstream",
+        "upstream_version": "1.0",
+        "upstream_commit": "b" * 40,
+        "adapter_path": "code/src/adapter.py",
+        "adapter_sha256": "c" * 64,
+        "upstream_source_modified": False,
+        "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+    }
+    return {
+        arm_id: dict(record)
+        for arm_id in ("daft_native", "daft_ray", "ray_data_http")
+    }
+
+
+def successful_cell_evidence(arm, _cell, output_dir: Path) -> dict[str, object]:
+    """Create one fully backed synthetic executor record for contract tests."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    commands = output_dir / "commands.json"
+    commands.write_text(json.dumps({"commands": [["framework", "run"]]}))
+    resources = output_dir / "resources.csv"
+    resources.write_text("sample_epoch_s,gpu_utilization_pct\n1.0,80\n")
+    (output_dir / "raw_executor.json").write_text(
+        json.dumps({"status": "passed"}), encoding="utf-8"
+    )
+    native = arm.kind == "native"
+    jobs = []
+    for index, job in enumerate(arm.job_manifests):
+        start = 100.0 + 5.0 * index
+        row = {
+            "job_id": job.job_id,
+            "scheduled_launch_epoch_s": start,
+            "actual_launch_epoch_s": start,
+            "ended_epoch_s": 110.0 + 5.0 * index,
+            "completed_count": job.rows,
+            "expected_count": job.rows,
+            "actual_work": job.rows * 10,
+            "manifest_sha256": job.sha256,
+            "exactly_once": True,
+            "shard_provenance": [{
+                "source_kind": "timed_postgres_manifest",
+                "source_timing_boundary": "inside_job_barrier",
+                "source_validation_status": "ok",
+                "source_read_s": 0.1,
+            }],
+        }
+        if native:
+            row.update({
+                "request_p50_s": "unavailable",
+                "request_p95_s": "unavailable",
+                "request_p99_status": "unavailable",
+                "request_p99_s": "unavailable",
+                "slo_status": "unavailable",
+                "slo_violation_ratio": "unavailable",
+                "tail_reason": "framework lacks request clocks",
+            })
+        else:
+            row.update({
+                "request_p50_s": 0.1,
+                "request_p95_s": 0.2,
+                "request_p99_status": "available",
+                "request_p99_s": 0.3,
+                "slo_status": "available",
+                "slo_violation_ratio": 0.0,
+                "tail_reason": "",
+            })
+        if arm.arm_id == "project_bounded_ready_saor_0125we":
+            row.update({
+                "concrete_ready_epoch_s": start,
+                "credit_registered_epoch_s": start,
+                "first_submit_epoch_s": start,
+            })
+        jobs.append(row)
+    expected_rows = sum(job.rows for job in arm.job_manifests)
+    fairness = (
+        {
+            "starvation_status": "unavailable",
+            "longest_no_service_s": "unavailable",
+            "completion_service_lag_status": "unavailable",
+            "completion_service_lag_p95_work": "unavailable",
+            "completion_service_lag_max_work": "unavailable",
+            "reason": "framework lacks a completion ledger",
+        }
+        if native else {
+            "starvation_status": "available",
+            "longest_no_service_s": 0.0,
+            "completion_service_lag_status": "available",
+            "completion_service_lag_p95_work": 0.0,
+            "completion_service_lag_max_work": 0.0,
+            "reason": "",
+        }
+    )
+    record = {
+        "implementation_source": "official" if native else "project",
+        "start_epoch_s": 100.0,
+        "end_epoch_s": 115.0,
+        "database_operator_e2e_s": 15.0,
+        "jobs": jobs,
+        "service_metrics": {
+            "metrics_status": "ok",
+            "prompt_tokens_delta": 100,
+            "generation_tokens_delta": 10,
+        },
+        "resource_metrics": {
+            "resource_metrics_status": "ok", "path": str(resources)
+        },
+        "exactly_once": True,
+        "request_tail_status": (
+            {
+                metric: {
+                    "status": "unavailable", "value": "unavailable",
+                    "reason": "unsupported",
+                }
+                for metric in ("request_p99", "slo")
+            }
+        ),
+        "service_fairness_metrics": fairness,
+        "output_paths": {
+            "commands": str(commands), "resources": str(resources)
+        },
+        "status": "passed",
+        "server_version": "18.3",
+        "pgvector_version": "0.8.1",
+        "mfu_contract": arm.mfu_contract.__dict__,
+        "sink_metrics": {
+            "status": "passed",
+            "mode": "json_text",
+            "table": "document_completions",
+            "written_by": "matrix_adapter" if native else "project_profiler",
+            "expected_rows": expected_rows,
+            "observed_rows": expected_rows,
+            "expected_digest": "a" * 64,
+            "observed_digest": "a" * 64,
+            "exactly_once": True,
+            "sink_wall_s": 0.1,
+            "verified_epoch_s": 116.0,
+        },
+        "command": ["framework", "run"],
+    }
+    if native:
+        record.update({
+            "queue_final": {"endpoint-0": {"running": 0, "waiting": 0}},
+            "native_implementation_provenance": successful_native_provenance()[
+                arm.arm_id
+            ],
+        })
+    elif arm.arm_id == "project_frozen_static":
+        record["shared_credit_final"] = []
+    else:
+        record["shared_credit_final"] = [{
+            "endpoint_id": "endpoint-0",
+            "request_limit": 8,
+            "work_limit": 65536,
+            "active_requests": 0,
+            "active_work": 0,
+            "waiting_requests": 0,
+            "waiting_work": 0,
+            "active_by_job": {},
+            "active_work_by_job": {},
+            "waiting_by_job": {},
+            "waiting_work_by_job": {},
+            "waiting_head_work_by_job": {},
+        }]
+    return record
 
 
 def exact_source_audit(identity: dict[str, object]) -> dict[str, object]:

@@ -25,3 +25,17 @@ def test_autodl_env_uses_one_cuda_toolkit_for_flashinfer_jit() -> None:
 
     assert "CUDA_HOME=/usr/local/cuda-13.0" in env_example
     assert "CUDA_NVCC_BIN=/usr/local/cuda-13.0/bin" in env_example
+
+
+def test_start_endpoint_defines_and_cleans_its_runtime_identity_sidecar() -> None:
+    script = START_ENDPOINTS.read_text(encoding="utf-8")
+
+    identity_assignment = (
+        'local identity_file="$VLLM_LOG_DIR/ep_${port}.runtime_identity.json"'
+    )
+    start_function = script.split("start_endpoint() {", 1)[1]
+    launcher_call = '--identity-output "$identity_file"'
+
+    assert identity_assignment in start_function
+    assert start_function.index(identity_assignment) < start_function.index(launcher_call)
+    assert 'rm -f "$pid_file" "$identity_file"' in script

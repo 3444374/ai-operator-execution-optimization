@@ -45,19 +45,28 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
     parser.add_argument("--ray-address", required=True)
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
     parser.add_argument("--start-delay-s", type=float, default=15.0)
-    parser.add_argument("--rehearsal", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--correctness-smoke", action="store_true")
+    mode.add_argument("--rehearsal", action="store_true")
     parser.add_argument("--vllm-python", required=True, type=Path)
     parser.add_argument(
         "--vllm-runtime-identity", action="append", required=True, type=Path
     )
     parser.add_argument("--installed-source-audit", required=True, type=Path)
     parser.add_argument("--system-preflight-evidence", required=True, type=Path)
-    parser.add_argument("--correctness-smoke-evidence", required=True, type=Path)
+    parser.add_argument("--correctness-smoke-evidence", type=Path)
+    parser.add_argument("--correctness-smoke-root", type=Path)
     parser.add_argument("--formal-authorization", type=Path)
     parser.add_argument("--rehearsal-validation", type=Path)
     parser.add_argument("--rehearsal-root", type=Path)
     parser.add_argument("--rehearsal-archive", type=Path)
     args = parser.parse_args(argv)
+    if not args.correctness_smoke and args.correctness_smoke_evidence is None:
+        parser.error("matrix execution requires --correctness-smoke-evidence")
+    if args.correctness_smoke and args.correctness_smoke_root is None:
+        parser.error("--correctness-smoke requires --correctness-smoke-root")
+    if not args.correctness_smoke and args.correctness_smoke_root is not None:
+        parser.error("--correctness-smoke-root is valid only with --correctness-smoke")
     metrics_urls = tuple(
         item.strip() for item in args.metrics_urls.split(",") if item.strip()
     )
@@ -76,13 +85,21 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
         idle_timeout_s=args.idle_timeout_s,
         start_delay_s=args.start_delay_s,
         rehearsal=args.rehearsal,
+        correctness_smoke=args.correctness_smoke,
+        correctness_smoke_root=(
+            args.correctness_smoke_root.resolve()
+            if args.correctness_smoke_root is not None else None
+        ),
         vllm_python=args.vllm_python.absolute(),
         runtime_identity_paths=tuple(
             item.resolve() for item in args.vllm_runtime_identity
         ),
         installed_source_audit=args.installed_source_audit.resolve(),
         system_preflight_evidence=args.system_preflight_evidence.resolve(),
-        correctness_smoke_evidence=args.correctness_smoke_evidence.resolve(),
+        correctness_smoke_evidence=(
+            args.correctness_smoke_evidence.resolve()
+            if args.correctness_smoke_evidence is not None else None
+        ),
         formal_authorization=(
             args.formal_authorization.resolve()
             if args.formal_authorization is not None else None

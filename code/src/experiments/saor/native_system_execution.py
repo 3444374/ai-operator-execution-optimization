@@ -54,11 +54,13 @@ class MatchedExecutionOptions:
     idle_timeout_s: float
     start_delay_s: float
     rehearsal: bool
+    correctness_smoke: bool
+    correctness_smoke_root: Path | None
     vllm_python: Path
     runtime_identity_paths: tuple[Path, ...]
     installed_source_audit: Path
     system_preflight_evidence: Path
-    correctness_smoke_evidence: Path
+    correctness_smoke_evidence: Path | None
     formal_authorization: Path | None
     rehearsal_validation: Path | None
     rehearsal_root: Path | None
@@ -255,6 +257,10 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
             "outer five-arm runner must be invoked by the declared DRIVER_PYTHON"
         )
     native = load_native_multijob_config(options.native_config)
+    native_provenance = {
+        arm_id: dict(fields)
+        for arm_id, fields in native.native_implementation_provenance
+    }
     project = load_project_config(options.project_config)
     matched = load_matched_system_config(options.config)
     validate_executor_bindings(
@@ -273,9 +279,16 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         vllm_python=options.vllm_python,
         runtime_identity_paths=options.runtime_identity_paths,
         system_preflight_evidence=options.system_preflight_evidence,
-        correctness_smoke_evidence=options.correctness_smoke_evidence,
+        correctness_smoke_evidence=(
+            None if options.correctness_smoke else options.correctness_smoke_evidence
+        ),
     )
-    if readiness.get("rehearsal_ready") is not True:
+    if options.correctness_smoke:
+        if readiness.get("status") != "system_preflight_passed":
+            raise RuntimeError(
+                "static, service, and system stages must pass before correctness smoke"
+            )
+    elif readiness.get("rehearsal_ready") is not True:
         raise RuntimeError("all four readiness stages must pass before matrix execution")
     service_identity_preflight = readiness
     vllm_runtime = readiness["service_identity"]["installed_source"]["python_runtime"]
@@ -313,7 +326,6 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         for command in commands:
             audit_command(command)
         normalized = normalize_native_evidence(arm, record)
-        native_provenance = dict(native.native_implementation_provenance)
         normalized["native_implementation_provenance"] = dict(
             native_provenance[arm.arm_id]
         )
@@ -326,7 +338,8 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
             python_executable=options.python_executable, output_dir=output_dir,
             health_url=options.health_url, metrics_urls=options.metrics_urls,
             ray_address=options.ray_address, idle_timeout_s=options.idle_timeout_s,
-            start_delay_s=options.start_delay_s, rehearsal=options.rehearsal,
+            start_delay_s=options.start_delay_s,
+            rehearsal=options.rehearsal or options.correctness_smoke,
         )
         for child in ("jobs", "logs", "traces", "records"):
             (output_dir / child).mkdir(parents=True, exist_ok=True)
@@ -351,9 +364,14 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
         instrumenter=lambda *_args: None,
         repository_commit_getter=lambda: commit,
         rehearsal=options.rehearsal,
+        correctness_smoke=options.correctness_smoke,
+        matrix_output_root_override=options.correctness_smoke_root,
         formal_authorization_path=options.formal_authorization,
         rehearsal_validation_path=options.rehearsal_validation,
         rehearsal_root=options.rehearsal_root,
         rehearsal_archive=options.rehearsal_archive,
         service_identity_preflight=service_identity_preflight,
+        native_config_path=options.native_config,
+        project_config_path=options.project_config,
+        native_implementation_provenance=native_provenance,
     )

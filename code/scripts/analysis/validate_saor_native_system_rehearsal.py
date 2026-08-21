@@ -20,11 +20,18 @@ from src.experiments.saor.native_system_matched import (  # noqa: E402
     build_rehearsal_validation_payload,
     load_matched_system_config,
 )
+from src.baselines.text.orchestration.native_multijob import (  # noqa: E402
+    load_native_multijob_config,
+)
 
 
 def _args() -> argparse.Namespace:
+    """Parse one completed root/archive pair and its frozen run identity."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, type=Path)
+    parser.add_argument("--native-config", required=True, type=Path)
+    parser.add_argument("--project-config", required=True, type=Path)
     parser.add_argument("--repository-commit", required=True)
     parser.add_argument("--rehearsal-root", required=True, type=Path)
     parser.add_argument("--rehearsal-archive", required=True, type=Path)
@@ -33,6 +40,8 @@ def _args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Deep-validate the root/archive and write a fresh formal-input seal."""
+
     args = _args()
     try:
         if args.output.exists():
@@ -40,12 +49,20 @@ def main() -> int:
         config = load_matched_system_config(
             args.config, allow_existing_matrix_output_root=True
         )
+        native = load_native_multijob_config(args.native_config)
+        provenance = {
+            arm_id: dict(fields)
+            for arm_id, fields in native.native_implementation_provenance
+        }
         payload = build_rehearsal_validation_payload(
             args.config,
             config,
             args.repository_commit,
             args.rehearsal_root,
             args.rehearsal_archive,
+            args.native_config,
+            args.project_config,
+            provenance,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(

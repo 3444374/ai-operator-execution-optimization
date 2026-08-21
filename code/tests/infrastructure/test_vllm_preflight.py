@@ -11,11 +11,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
+import venv
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
+from scripts.serving import launch_vllm_with_identity as identity_launcher
 from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
     flag_value_present,
@@ -30,6 +35,56 @@ from src.infrastructure.vllm_preflight import (
 
 
 class VllmPreflightPureTests(unittest.TestCase):
+    def test_identity_launcher_seals_venv_before_exact_server_exec(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "site-packages" / "vllm"
+            package.mkdir(parents=True)
+            origin = package / "__init__.py"
+            origin.write_text("", encoding="utf-8")
+            sidecar = root / "runtime.json"
+            with patch.object(
+                identity_launcher,
+                "_args",
+                return_value=SimpleNamespace(
+                    identity_output=sidecar,
+                    port=8000,
+                    server_args=["--model", "/model", "--port", "8000"],
+                ),
+            ), patch.object(
+                identity_launcher.importlib.util,
+                "find_spec",
+                return_value=SimpleNamespace(origin=str(origin)),
+            ), patch.object(
+                identity_launcher.importlib.metadata,
+                "version",
+                return_value="0.25.1",
+            ), patch.object(
+                identity_launcher,
+                "_process_start_time_ticks",
+                return_value="12345",
+            ), patch.object(
+                identity_launcher.os,
+                "execv",
+                side_effect=RuntimeError("exec captured"),
+            ) as execute:
+                with self.assertRaisesRegex(RuntimeError, "exec captured"):
+                    identity_launcher.main()
+            sealed = json.loads(sidecar.read_text(encoding="utf-8"))
+            self.assertEqual(sealed["process_start_time_ticks"], "12345")
+            self.assertEqual(sealed["python_executable_argv0"], sys.executable)
+            self.assertEqual(sealed["sys_prefix"], sys.prefix)
+            self.assertEqual(sealed["package_root"], str(package.resolve()))
+            execute.assert_called_once_with(
+                sys.executable,
+                [
+                    sys.executable,
+                    "-m",
+                    "vllm.entrypoints.openai.api_server",
+                    "--model", "/model", "--port", "8000",
+                ],
+            )
+
     def _cmd(self, port, *, seqs="256", batched="8192", prefix="on"):
         flags = f"--port {port} --max-num-seqs {seqs} --max-num-batched-tokens {batched}"
         if prefix == "on":
@@ -231,7 +286,9 @@ class VllmPreflightPureTests(unittest.TestCase):
 
     def test_live_service_identity_rejects_shared_interpreter_different_venv(self):
         with tempfile.TemporaryDirectory() as directory:
-            model = Path(directory)
+            root = Path(directory)
+            model = root / "model"
+            model.mkdir()
             for name in (
                 "config.json",
                 "tokenizer_config.json",
@@ -246,10 +303,41 @@ class VllmPreflightPureTests(unittest.TestCase):
                 (model / name).write_text(name, encoding="utf-8")
             identity = self._service_identity(model)
             endpoint = "http://127.0.0.1:8000/v1/chat/completions"
+            runtimes = []
+            for name, version in (("venv-a", "0.25.1"), ("venv-b", "0.25.2")):
+                prefix = root / name
+                venv.EnvBuilder(with_pip=False, symlinks=True).create(prefix)
+                python = prefix / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+                purelib = subprocess.run(
+                    [str(python), "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"],
+                    check=True, capture_output=True, text=True,
+                ).stdout.strip()
+                package = Path(purelib) / "vllm"
+                package.mkdir()
+                (package / "__init__.py").write_text(
+                    f"__version__ = {version!r}\n", encoding="utf-8"
+                )
+                dist = Path(purelib) / f"vllm-{version}.dist-info"
+                dist.mkdir()
+                (dist / "METADATA").write_text(
+                    f"Name: vllm\nVersion: {version}\n", encoding="utf-8"
+                )
+                runtime = json.loads(subprocess.run(
+                    [str(python), "-c", (
+                        "import importlib.metadata,importlib.util,json,sys;"
+                        "s=importlib.util.find_spec('vllm');"
+                        "print(json.dumps({'executable_argv0':sys.executable,"
+                        "'sys_prefix':sys.prefix,'package_root':s.submodule_search_locations[0],"
+                        "'package_version':importlib.metadata.version('vllm')}))"
+                    )],
+                    check=True, capture_output=True, text=True,
+                ).stdout)
+                runtimes.append((python, runtime))
+            self.assertEqual(runtimes[0][0].resolve(), runtimes[1][0].resolve())
             processes = {
                 "123": {
                     "cmdline": self._complete_cmdline(8000, model),
-                    "argv0": "/venv-b/bin/python",
+                    "argv0": runtimes[1][1]["executable_argv0"],
                     "start_time_ticks": "456",
                 }
             }
@@ -259,17 +347,12 @@ class VllmPreflightPureTests(unittest.TestCase):
                 "pid": 123,
                 "process_start_time_ticks": "456",
                 "port": 8000,
-                "python_executable_argv0": "/venv-b/bin/python",
-                "sys_prefix": "/venv-b",
-                "package_root": "/venv-b/lib/python/site-packages/vllm",
-                "package_version": "0.25.1",
+                "python_executable_argv0": runtimes[1][1]["executable_argv0"],
+                "sys_prefix": runtimes[1][1]["sys_prefix"],
+                "package_root": runtimes[1][1]["package_root"],
+                "package_version": runtimes[1][1]["package_version"],
             }), encoding="utf-8")
-            audited_runtime = {
-                "executable_argv0": "/venv-a/bin/python",
-                "sys_prefix": "/venv-a",
-                "package_root": "/venv-a/lib/python/site-packages/vllm",
-                "package_version": "0.25.1",
-            }
+            audited_runtime = runtimes[0][1]
             with patch(
                 "src.infrastructure.vllm_preflight._read_live_processes",
                 return_value=processes,

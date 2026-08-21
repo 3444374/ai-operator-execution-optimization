@@ -12,10 +12,12 @@ For the current multi-Job comparison:
   publish fail-closed generations.
 - `native_system_bindings.py` checks the matched contract against the native and
   Project executor configurations before dispatch.
-- `native_system_readiness.py` composes the three-config static audit with the
-  exact installed-source evidence, an immediate current-install re-audit, and
-  the complete live service-identity/Python-runtime gate. A static pass is
-  explicitly not rehearsal-ready.
+- `native_system_readiness.py` composes four ordered gates. The live read-only
+  system producer is `native_system_preflight.py`; it probes health/PG/Ray and
+  recomputes bounded raw evidence instead of trusting passed booleans. A static
+  or service-only pass is explicitly not rehearsal-ready.
+- `native_system_artifacts.py` deep-validates actual correctness-smoke and
+  rehearsal roots, cell artifact hashes, sink/provenance, and exact tar mirrors.
 - `native_system_execution.py` owns executor adapters; `native_system_sink.py`
   owns the shared PostgreSQL completion sink/readback correctness boundary.
 - `native_system_matched.py` owns authorization and cell orchestration;
