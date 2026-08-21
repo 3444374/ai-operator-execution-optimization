@@ -72,8 +72,17 @@
 
 ## 2. 课题定位
 
-研究数据库 AI 算子外部分布式数据处理链路中，上游如何组织请求、估计工作量、控制提交节奏，
-并根据模型服务状态协调 CPU 数据准备与 GPU 推理。项目不修改 vLLM、Ray scheduler 或模型 kernel。
+研究 PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行：数据库通过 extension 中
+planner-visible operator 拥有 SQL、child plan、snapshot 和 query lifecycle，并流式交接最小必要
+row batches；LOTUS v1.2.4 直接提供 `sem_map` 语义实现，Daft/Ray/SAOR/vLLM 承担可替换物理
+执行。主路径不使用 LOTUS DataConnector/`pd.read_sql` 外拉整表。项目不 fork PostgreSQL core，
+也不修改 vLLM、Ray scheduler 或模型 kernel。权威实施计划见
+`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`。
+
+当前最短期交付是“LOTUS 语义入口迁移”：使用冻结 v1.2.4 的真实 `SemMapNode`、
+messages 和 output parser，把项目自写 UDF/manifest-like `AI_COMPLETE` 变成
+`lotus.sem_map@v1.2.4`，而 Daft/Ray/static/SAOR 只做物理 backend。先用 emulated operator
+contract 研究数据执行，再以 PostgreSQL extension/CustomScan 小规模验证真实 SQL/query lifecycle。
 
 两项研究内容保持不变：
 

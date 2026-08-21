@@ -1,5 +1,40 @@
 # 项目日志
 
+## 2026-08-21 PostgreSQL 内置 LOTUS AI 语义算子边界冻结（本地设计）
+
+- 从第一性原理重新冻结“数据库内 AI 语义算子”：PostgreSQL extension/planner-visible
+  operator 拥有 SQL、child plan、snapshot、ACL、cancel/error/result lifecycle；模型 payload 可通过
+  database-managed bounded stream 交给数据库外的 LOTUS/Daft/Ray/SAOR/vLLM，但用户不再执行
+  `SELECT/fetchall → Python → HTTP → INSERT`。这不声称 GPU 在 PostgreSQL 进程内或物理零传输。
+- 新增 `experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`
+  作为唯一权威实施主计划，冻结 PGXS/CustomScan capability、canonical plan、row stream、LOTUS
+  `sem_map` 直接复用、query correctness、T0–T5 计时、六臂 backend 矩阵、反例测试和分阶段停止门。
+  新建文件是必要的：原 LOTUS 计划只拥有 AST/prompt/runtime adapter 责任，若再承载 PostgreSQL
+  planner/executor/query-lifecycle 会混合两个独立证伪对象。
+- 直接复用冻结 `lotus-ai==1.2.4` 的真实 `SemMapNode`、prompt builder、generation options、
+  output parser 和 LM/LiteLLM 路径；主路径不调用 LOTUS DataConnector/`pd.read_sql`，因为数据已由
+  当前 PostgreSQL child plan 流式产生。
+- 明确保留两个不同的 LOTUS baseline：① 未修改 LOTUS v1.2.4
+  `DataConnector → pd.read_sql → sem_map → LM/LiteLLM` 完整产品路径，单独表报告；② 数据库内
+  `PostgreSQL AI operator + LOTUS native sem_map backend`，进入 matched backend 主矩阵。前者不导入项目
+  gateway/K/W/bounded-ready/SAOR，后者只改数据入口所有权；两者不混排归因。
+- 用户经 Q1–Q23 grilling 冻结实施/实验决策，权威计划已逐项记录答案、被后续精化
+  的关系与约束。当前首要交付改为“LOTUS 语义入口迁移”：先使用真实 v1.2.4
+  `SemMapNode`/messages/output parser 把项目 UDF/manifest-like `AI_COMPLETE` 变成
+  `lotus.sem_map@v1.2.4`，再接 emulated operator stream、各物理 backend 与 PostgreSQL
+  CustomScan 资格门；不先扩 GPU 矩阵或调 SAOR 参数。
+- 性能比较冻结为同一 artifact 内的 `operator_backend` 与 `native_full_path` 两 panel；
+  保留 LOTUS DataConnector、Daft built-in AI Function Native/Native-Ray、Ray Data native graph、项目
+  external static/SAOR 和后置但必做的 PostgreSQL row-wise HTTP AI UDF。原生臂只配置任务/环境
+  必需参数，性能值保持官方默认/示例，不注入项目调度。
+- 一手论文复核纠正 UDF 表述：Cortex 将逐行/black-box call 作动机，但无 generic
+  HTTP/Python UDF 正式臂；LOTUS 确有 `AI UDF` baseline，但部分支持 batching，非 PostgreSQL
+  逐行同步 HTTP。项目对照准确命名为
+  `PostgreSQL row-wise HTTP AI UDF (literature-motivated lower-bound control)`，不称论文原样 baseline。
+- 同步更新根规则、总纲、开题 Markdown 源、项目概览、计划索引与项目索引。当前仅
+  `design-frozen/lotus-semantic-migration-not-started`；未实现 LOTUS adapter 或 extension，未连接 GPU 服务器，未运行 smoke、rehearsal
+  或 formal，也不得把既有 manifest/profiler 实验重标为数据库内算子结论。
+
 ## 2026-08-21 五臂边界恢复为 no-writeback completion（服务器诊断后修复中）
 
 - 按冻结设计规格与用户研究目的，把五臂排名边界从错误接入的 PostgreSQL completion sink 恢复为
@@ -14307,3 +14342,23 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `actual_launch_epoch_s`，首条 lifecycle arrival 独立保留为 `source_arrival_epoch_s`。±0.25s launcher
   门、SAOR ready/credit/submit 不早于 release 门均保持不变；两个 timing 失败 root 原样保留，仍未
   完成 correctness smoke/rehearsal，formal 继续禁止。
+
+## 2026-08-21 SAOR 五臂 T0--T4 与共同公平观测合同
+
+- 保留 `862d0008` gateway 前 correctness smoke/rehearsal 作为五臂可运行性历史证据；其原生 request
+  tail、公平和 service lag 不可用，不能直接承担“吞吐、JCT、SLO、隔离、公平”完整比较。formal 未运行。
+- 新增所有五臂共用的 observation-only HTTP gateway：按 Job/endpoint path 标识，精确一次转发到
+  冻结 backend，禁止应用层 queue/admission/retry/cache/routing/payload rewrite；记录 body SHA、
+  dispatch delay、HTTP status 与 endpoint actual prompt/output tokens。Daft/Ray 仍拥有执行图、batch、
+  请求顺序和 backpressure，原生臂不注入 Project K/W 或 bounded-ready。
+- 统一系统时钟为 T0 Job release（PostgreSQL 读取与 child/Ray 初始化前）、T1 首批 source data、
+  T2 首请求到达 vLLM、T3 末请求完成、T4 完整正确结果在内存可见。headline 为 Job/group JCT 与
+  actual completed tokens/group JCT；另报 source、execution、service span。保持 `writeback=none`，
+  completion digest 在计时边界外封存，不连接输出 sink。
+- 共同 gateway backlog 内按实际完成 token work 计算 weighted service share/Jain、completion-accounted
+  empirical lag 与 longest no-service；分列 request SLO、foreground Job JCT SLO、victim 在 aggressor
+  到达后的 P99 inflation/no-service/recovery。within-run 指标不冒充 full-solo slowdown；后者仍需
+  matched-solo control。
+- cell/archive validator 重新哈希 gateway trace、核对四条 Job×endpoint upstream binding，并逐 Job
+  验证 T0≤T1≤T2≤T3≤T4。当前已通过 native 26、shared-vLLM 91、matched/observation 42、gateway 2
+  项定向测试与 compile/diff check；新合同尚未在服务器重跑 smoke/rehearsal，formal 继续禁止。

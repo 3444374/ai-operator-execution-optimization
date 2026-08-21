@@ -1,8 +1,21 @@
-# LOTUS 语义前端与项目执行调度集成计划
+# LOTUS `sem_map` 语义实现与物理 backend 集成计划
 
 更新日期：2026-08-21
-状态：`conditional-go-pending-capability-prototype`
+状态：`subplan-of-postgresql-native-operator / conditional-go-pending-capability-prototype`
 适用范围：文本 `AI_COMPLETE` / LOTUS `sem_map`；后续算子和多模态不在首轮实现范围
+
+> **权威上位计划**：数据库内 SQL/operator、PostgreSQL query lifecycle、流式 row-batch
+> 交接、系统计时边界和实施顺序统一见
+> [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](postgresql_lotus_ai_semantic_operator_implementation_20260821.md)。
+> 本文继续负责 LOTUS v1.2.4 的直接代码复用、AST/prompt/output parity、native execution
+> 和 project backend 适配细节。LOTUS 仍是 `sem_map` 语义实现所有者，不降级为仅供参考的
+> syntax；变化仅在数据入口：数据库内主路径由 PostgreSQL child plan 推送 row batches，
+> 不再由 LOTUS DataConnector/`pd.read_sql` 从数据库外部重新拉表。
+>
+> **当前交付仅限语义迁移**：先冻结 v1.2.4，证明项目使用真实
+> `SemMapNode`/messages/output semantics，把现有 UDF/manifest-like `AI_COMPLETE` 换成
+> `lotus.sem_map@v1.2.4`。未过这一门之前不扩展 GPU 矩阵、SAOR 策略、PostgreSQL
+> C extension 或其他 semantic operators。
 
 ## 1. 决策与目标
 
@@ -10,13 +23,16 @@
 
 采用：
 
-> **把 LOTUS 作为声明式 AI 语义前端接入项目执行器；不把 Daft/Ray/SAOR 整体移植进 LOTUS。**
+> **直接复用 LOTUS `sem_map` 作为数据库内 AI 算子的语义实现；PostgreSQL 拥有 SQL、
+> child plan、snapshot 和 query lifecycle，Daft/Ray/SAOR 作为可替换物理 backend。**
 
 目标架构：
 
 ```text
-PostgreSQL source / Job declaration
-    → LOTUS LazyFrame semantic plan（语义所有者）
+PostgreSQL SQL `ai.complete(...)` / Job declaration
+    → PostgreSQL planner-visible AI operator + child plan（数据库所有者）
+    → PostgreSQL-managed row-batch stream
+    → LOTUS SemMapNode/prompt/output contract（语义实现所有者）
     → LotusSemanticPlanAdapter（版本锁定的 lowering seam）
     → Project SemanticOperatorPlan（引擎无关 IR）
     → 现有 Daft/Ray + frozen-static/SAOR（物理执行所有者）
@@ -32,6 +48,11 @@ PostgreSQL → LOTUS DataConnector/LazyFrame/SemMapNode
     → vLLM → common PostgreSQL sink
 ```
 
+上面第二条仅是未修改 LOTUS 产品 baseline；它不得进入数据库内算子主路径。主路径禁止
+LOTUS DataConnector/`pd.read_sql` 重新读取数据库，只消费 PostgreSQL 当前 child plan 产生的
+row batches。物理 payload 会被数据库管理的执行通道发送到模型执行层，但用户不导出数据，
+数据库仍拥有 query lifecycle。
+
 因此后续既能回答“SAOR 相对 LOTUS native 完整系统表现如何”，也能通过
 `project frozen-static → SAOR` 回答调度增量来自哪里。
 
@@ -39,7 +60,9 @@ PostgreSQL → LOTUS DataConnector/LazyFrame/SemMapNode
 
 本计划完成的定义不是“LOTUS 能 import”，而是以下条件全部成立：
 
-1. 用户通过正式 LOTUS `LazyFrame.sem_map` 构造声明式算子，不把 `sem_map` 包在 Daft UDF 中冒充语义集成。
+1. 数据库内/仿真主路径的 `AI_COMPLETE` 必须编译为版本锁定的 LOTUS
+   `SemMapNode`/semantic plan，不把项目自写 Daft UDF 冒充语义算子；未修改 LOTUS
+   产品 baseline 则必须真实运行 `LazyFrame.sem_map`。
 2. LOTUS native 与项目执行臂使用相同逻辑计划、逐行消息内容、模型、生成合同和输出解析。
 3. 项目执行臂保留 `job_id/doc_id/request_id` 全生命周期，且一行对应一个独立模型请求和一个结果。
 4. LOTUS native 保持官方执行所有权，不接项目 K/W、bounded-ready、credit、router 或 SAOR。
@@ -302,7 +325,9 @@ scheduler，因此报告不得写“LOTUS native multi-Job fair scheduler”。
 
 1. 使用同一个 `LazyFrame.sem_map` logical plan 和同一 PostgreSQL manifest。
 2. LOTUS native 自己执行 `SemMapNode → LM → LiteLLM batch_completion`。
-3. 独立校准 LOTUS 官方 `max_batch_size/rate_limit`，选择最小稳定饱和点；cache 统一关闭。
+3. 只配置 workload/model/endpoint/PG 等任务和环境必需项；LOTUS 的
+   `max_batch_size/rate_limit` 保持官方默认或冻结官方示例值，不做性能搜索；
+   cache 按共同 workload 合同冻结并记录官方来源。
 4. 两 Job 场景使用两个独立 LOTUS Job 进程/上下文，共享同一 vLLM；外部 orchestration 只负责 `Job@release`，不接管 Job 内请求顺序。
 
 完成标准：
@@ -347,11 +372,14 @@ Tracer bullet 完成后必须转向 AST lowering；不得在 LM adapter 上继�
 
 ## 7. 实验矩阵与因果问题
 
-本能力成熟后新增独立三臂矩阵，不立刻改写当前五臂 SAOR 主矩阵：
+权威矩阵改为上位计划的单一 artifact/两个 panel：`operator_backend` 包含 LOTUS、
+Daft、Daft/Ray、Ray Data、project static 和 SAOR；`native_full_path` 包含未修改 LOTUS
+DataConnector、Daft/Ray 官方路径、项目现有路径与后置的 PostgreSQL row-wise HTTP UDF。
+本子计划只保留其中最小的语义归因 triplet：
 
 | Arm | 语义所有者 | 物理执行所有者 | bounded-ready | 回答的问题 |
 |---|---|---|---|---|
-| `lotus_native_v124` | LOTUS | LOTUS LM/LiteLLM | 否 | 官方开源数据库 AI 系统在该合同下的完整表现 |
+| `lotus_native_v124_full_path` | LOTUS | LOTUS LM/LiteLLM | 否 | 未修改 LOTUS 完整产品路径 |
 | `lotus_semantic_project_static` | LOTUS plan | project frozen-static | 否 | 换成项目物理执行栈但无 SAOR 的表现 |
 | `lotus_semantic_saor` | LOTUS plan | project SAOR | 仅该臂 | SAOR 相对同语义、同项目栈静态参照的增量 |
 
@@ -359,16 +387,18 @@ Tracer bullet 完成后必须转向 AST lowering；不得在 LM adapter 上继�
 
 系统级：
 
-- `lotus_native_v124` vs `lotus_semantic_saor`：可以说完整系统经验表现不同；不能把全部差值归因于 SAOR。
+- `lotus_native_v124_full_path` vs `lotus_semantic_saor`：可以说完整系统经验表现不同；不能把全部差值归因于 SAOR。
 
 机制级：
 
 - `lotus_semantic_project_static` vs `lotus_semantic_saor`：在合同配平后可归因于项目动态提交策略。
 
-### 7.2 若与现有五臂共同展示
+### 7.2 与现有五臂的关系
 
-LOTUS 三臂先单独通过 capability 和 rehearsal，再作为附加系统组展示。不得在旧数据的
-manifest、prompt template、source/sink 或服务签名不一致时拼表。Daft/Ray native 仍保持各自调度所有权，不能为了使用 LOTUS syntax 而注入项目 executor。
+现有五臂只作 `native_full_path` 迁移前证据。下一步先把项目语义入口换为真实
+LOTUS `sem_map` 合同，再构建两 panel。不得在旧数据的 semantic owner、manifest、prompt、
+source/result 或服务签名不一致时拼表。Daft/Ray native 仍保持各自调度所有权，
+不能为了使用 LOTUS syntax 而注入项目 executor。
 
 ## 8. 共同合同与指标
 
@@ -384,10 +414,12 @@ manifest、prompt template、source/sink 或服务签名不一致时拼表。Daf
 
 ### 8.2 database-E2E
 
-- 共同计时从 PostgreSQL source 开始，到共同 sink readback 通过结束；
+- 共同记录 `model_completion_jct`（Job release→最后模型完成）与
+  `query_visible_jct`（Job release→最后 SQL result/commit+readback）；
 - 分列 PG fetch/materialization、semantic-plan/prompt build、organize、submit、model、fan-in、sink；
 - LOTUS native 的 `pd.read_sql` 全量 materialization 与项目 Daft streaming 是系统真实差异，必须报告 host memory/CPU，不把差值全部归因于调度；
-- 另做一个共同预物化输入的 mechanism control，隔离 source materialization 差异，但不称 database-E2E。
+- operator-backend 使用从 `T0` 开始的有界 server-side-cursor stream，不得共同预物化完整输入；
+- native-full-path 保留各产品原生 source，与 operator-backend 可比 E2E，但不做纯调度归因。
 
 ### 8.3 多 Job
 

@@ -6,7 +6,13 @@
 
 研究方向：数据库 AI 负载的执行优化与调度。不回到传统数据库内核或 GPU 查询算子。
 
-**课题定位**：优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。vLLM 是文本 AI_COMPLETE 的部署平台；图像 AI_EMBED 主方法使用 typed Ray GPU actor，并以 vLLM pooling、Daft 内置 AI Function、官方多模态 benchmark 代码和 Ray Data native API graph 作分层 baseline；均不修改模型内部。Ray 作为架构设计空间，利用其 actor 模型和异步能力实现调度方案。Daft 作为数据引擎（Rust 核心 + Arrow 零拷贝 + `@daft.cls` GPU UDF），从文本阶段直接接入，多模态阶段复用同一套 pipeline 代码。项目自写 Daft UDF 只作 diagnostic reference；策略增量必须再对比冻结最佳项目静态点。
+**课题定位**：实现数据库内 planner-visible 的 AI 语义算子，并优化它通往外部模型服务的物理执行链路——数据如何由关系 child plan 流式交接、如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。首版使用 PostgreSQL 18.3 extension 注册 SQL AI operator，数据库拥有 snapshot、权限、query cancel/error/result lifecycle；直接复用 LOTUS v1.2.4 `sem_map` 的语义代码。LOTUS/Daft/Ray/SAOR/vLLM 仍可在数据库进程外作为受管理的物理执行层，用户不执行 `SELECT/fetchall → Python → HTTP → INSERT` 数据导出流程。该定位不声称物理零数据传输，也不修改 PostgreSQL core、模型内部、vLLM continuous batching 或 Ray scheduler。vLLM 是文本 AI_COMPLETE 的部署平台；图像 AI_EMBED 主方法使用 typed Ray GPU actor，并以 vLLM pooling、Daft 内置 AI Function、官方多模态 benchmark 代码和 Ray Data native API graph 作分层 baseline。项目自写 Daft UDF 只作 diagnostic reference；策略增量必须再对比冻结最佳项目静态点。
+
+**当前短期实现顺序（2026-08-21）**：先用真实、版本锁定的 LOTUS v1.2.4
+`SemMapNode`/prompt/output 语义将项目 UDF/manifest-like `AI_COMPLETE` 入口迁移为
+`lotus.sem_map@v1.2.4`，Daft/Ray/static/SAOR 只做可替换物理 backend。性能轨可先使用
+明确标注的 emulated operator contract；PostgreSQL extension/CustomScan 作真实 SQL/query-lifecycle
+资格门。当前不先扩展 GPU 矩阵、不调 SAOR 参数、不把仿真路径冒充已实现数据库内算子。
 
 **方向已收敛，策略候选池开放**：经过 2026-07-16 的讨论与文献收集，优化方向已明确收敛到上游调度（数据组织 + 提交控制），但具体策略不提前锁定——动态 batching（token-budget/length-align/prefix-aware）、K_max 自适应、queue-adaptive flush、actor pool 分池路由等均为候选方案，最终采用哪些由后续实验数据决定。新增候选策略应记入 `research/knowledge_hub.md` §5 供以后参考。
 
@@ -32,8 +38,11 @@
 ## 2. 当前边界
 
 ```text
-PostgreSQL 18.3
-  → Daft DataFrame（数据引擎，文本 df["prompt"] / 图像 df["image"]）
+PostgreSQL 18.3 SQL AI operator（extension + planner-visible CustomScan 候选）
+  → ordinary child plan：snapshot / filter / projection
+  → database-managed bounded RowEnvelope stream
+  → LOTUS `sem_map` semantic runtime（文本首版）
+  → Daft DataFrame / Ray backend（文本 df["prompt"] / 图像 df["image"]）
   → Ray 动态 Batching（token-budget / length-align / prefix-aware）
     + Ray actor 架构（异构 actor pool / queue-adaptive flush / 去中心化）
   → AI_COMPLETE（文本 LLM，主场景）/ AI_EMBED/AI_CLASSIFY（图像，多模态泛化验证）
@@ -41,7 +50,7 @@ PostgreSQL 18.3
   → PostgreSQL + pgvector（写回）
 ```
 
-不要把主线写成：改造 vLLM 或 continuous batching、改造 Ray 调度器、Daft/Ray 单纯集成、Arrow serialization 优化、传统 GPU 查询算子、模型 kernel 优化（GQA/MQA/Flash-Attention）、Python toy benchmark。
+不要把主线写成：PostgreSQL core fork、PL/Python/逐行 HTTP UDF、LOTUS DataConnector 外拉主路径、改造 vLLM 或 continuous batching、改造 Ray 调度器、Daft/Ray 单纯集成、Arrow serialization 优化、传统 GPU 查询算子、模型 kernel 优化（GQA/MQA/Flash-Attention）、Python toy benchmark。
 
 ## 3. 当前证据与下一步
 
@@ -66,8 +75,9 @@ phase-change、3:1 weighted、第二硬件与大规模参数搜索不阻塞开�
 
 **2026-08-01 工程优先级（开题冻结后恢复）**：内部已锁定 A（模型服务状态感知的请求成形/提交）+
 B（算子代价估计），首个 workload 为 image AI_EMBED (CLIP)；文本遗留实验统一
-`parked-conditional`。外部“DB↔GPU 经 Daft 桥接”scope 是否进入正式题目仍待
-导师/学长确认。CLIP 5K 规范画像已通过门禁：实用 batch（≥16）CPU 准备/GPU
+`parked-conditional`。该段的旧“DB↔GPU 外部桥接 scope 待确认”已于 2026-08-21 被新方向覆盖：
+主线现冻结为 PostgreSQL planner-visible AI 算子拥有 query lifecycle，外部 backend 只承担受管理的
+物理执行。CLIP 5K 规范画像已通过门禁：实用 batch（≥16）CPU 准备/GPU
 embed 比为 13.8–18.3，当前进入 path-B runner + image 强 baseline 建设；该画像
 仅是 motivation，不是策略胜出证据。权威顺序见
 `experiments/plans/experiment_status_and_gaps.md` §0。
@@ -214,7 +224,7 @@ batch/K/actor；禁止把两个维度同时上涨后归因。
 
 ## 8. 沟通规则
 
-对外表述：**数据库内置 AI 算子的外部分布式数据处理执行链路优化**。待确认事项见 `notes/communication_notes.md`。
+对外表述：**PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化**。这里“内置”指 SQL/planner/query lifecycle 属于数据库；模型 payload 仍由数据库管理的执行通道发送到外部物理 backend。待确认事项见 `notes/communication_notes.md`。
 
 ## 9. 更新规则
 

@@ -4,7 +4,18 @@
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
-当前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
+数据库内 AI 语义算子的权威实施入口现冻结为
+[`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)：
+PostgreSQL extension/planner-visible operator 拥有 SQL、child plan、snapshot 和 query lifecycle，
+直接复用 LOTUS v1.2.4 `sem_map` 语义代码；主路径由数据库执行器推送有界 row batches，禁止
+LOTUS DataConnector/`pd.read_sql` 外拉整表。该计划当前为
+`design-frozen/lotus-semantic-migration-not-started`，不能把既有 profiler/manifest 实验重标为
+数据库内算子结果。最短期任务是冻结 LOTUS v1.2.4，用真实 `SemMapNode`/prompt/output
+语义将项目 UDF/manifest-like `AI_COMPLETE` 替换为 `lotus.sem_map@v1.2.4`，保持
+Daft/Ray/static/SAOR 为可替换物理 backend。性能轨先用有界 server-side-cursor 仿真
+operator contract；PostgreSQL extension/CustomScan 另作数据库内 SQL/query-lifecycle 资格门。
+
+迁移前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
 执行，不注入项目控制；五臂均 `writeback=none`，不把 PostgreSQL sink 混入调度排名。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
 另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
@@ -39,11 +50,12 @@ adapter SHA 进入证据身份；formal 还必须绑定实际 rehearsal validati
 
 > 数据库 AI 负载的执行优化与调度研究
 
-统一研究对象是数据库触发后的 AI 数据执行层：
+统一研究对象是数据库内 AI 语义算子触发的外部物理执行层：
 
 ```text
-Database
-  -> AI Data Execution Layer
+PostgreSQL SQL AI operator
+  -> relational child plan / snapshot / filter / projection
+  -> database-managed AI Data Execution Layer
        -> research content 1: work-unit construction and organization
        -> research content 2: state-aware admission, routing and multi-job
        -> shared cost estimator
@@ -53,9 +65,11 @@ Database
   -> Database / Vector Sink
 ```
 
-对外口径：数据库内置 AI 算子的外部分布式数据处理执行链路优化。
+对外口径：PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化。
 
-Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，不是贡献名称。项目不修改数据库内核、vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel，也不回到传统 GPU 查询算子。
+PostgreSQL extension 提供 SQL/planner/query-lifecycle seam，但不 fork PostgreSQL core；LOTUS
+v1.2.4 直接提供 `sem_map` 语义实现。Daft、Ray、vLLM、pgvector 和 CLIP 是物理执行与验证平台，
+不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel，也不回到传统 GPU 查询算子。
 
 ## 2. 研究内容
 
@@ -143,8 +157,11 @@ SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE
 ## 3. 系统与实验边界
 
 ```text
-PostgreSQL source
-  -> Daft DataFrame / Arrow
+PostgreSQL SQL `ai.complete(...)`
+  -> planner-visible AI operator / ordinary child plan
+  -> database-managed bounded RowEnvelope stream
+  -> LOTUS `sem_map` semantic runtime
+  -> Daft DataFrame / Arrow / native backend
   -> Shared Cost Estimator + WorkDescriptor + Organizer
   -> Ray actor admission / shared credit / routing
   -> text: vLLM generation
@@ -153,7 +170,9 @@ PostgreSQL source
 ```
 
 - 写回采用 PostgreSQL + pgvector、COPY + deferred index，属于统一 correctness/E2E guardrail，不是独立研究内容。
-- 正式 baseline 必须由被测系统拥有执行与调度；项目只做 source、sink、质量审计和指标适配。
+- 数据库内算子主矩阵共享 PostgreSQL child-plan source 与 LOTUS 语义合同；正式 baseline 必须由
+  被测 backend 拥有执行与调度，项目只做数据库交接、sink、质量审计和指标适配。
+- 未修改 LOTUS DataConnector/`pd.read_sql` 路径保留为外部 LOTUS 产品 baseline，不进入数据库内算子主矩阵。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
 - `BoundedReadyWindow` 属于项目方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在项目内部 selector 归因消融中保持一致。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。

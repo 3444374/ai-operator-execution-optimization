@@ -16,7 +16,7 @@
 
 模型服务通常把输入抽象为相互独立的请求，却不了解数据库行、作业边界、剩余工作量和写回语义；数据库优化器也通常看不到模型服务内部的队列、KV 压力和完成节奏。两者之间由此形成一个新的 AI 数据执行层：它决定哪些记录组成一个 work unit、在途 work 保持多少、请求何时提交、发往哪个 endpoint，以及多个数据库作业如何共享固定 GPU 容量。
 
-本课题研究这一外部执行链路，不修改数据库内核、vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel。核心目标有两个：一是按 token、frame 等计算量而非固定行数构造 work unit，并处理负载均衡与 prefix locality 的冲突；二是依据服务容量和运行状态控制准入、路由与多作业共享，使系统以尽可能小且可控的在途 work 达到有效吞吐，同时约束尾延迟和公平性。轻量算子代价估计为两项研究内容共同提供 work、服务时间、剩余工作量和配置选择信号。
+本课题计划在 PostgreSQL 18.3 中通过 extension 注册 planner-visible 的 LOTUS `sem_map` AI 语义算子：数据库拥有 SQL、child plan、snapshot 和 query lifecycle，只把经过过滤和投影的最小 row batches 交给受管理的外部物理执行层；用户不再执行 `SELECT/fetchall → Python → HTTP → INSERT`。项目不 fork PostgreSQL core，也不修改 vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel。核心目标有两个：一是按 token、frame 等计算量而非固定行数构造 work unit，并处理负载均衡与 prefix locality 的冲突；二是依据服务容量和运行状态控制准入、路由与多作业共享，使系统以尽可能小且可控的在途 work 达到有效吞吐，同时约束尾延迟和公平性。轻量算子代价估计为两项研究内容共同提供 work、服务时间、剩余工作量和配置选择信号。该数据库内算子目前仍是 capability 计划，既有外部 runner 结果不能重标。
 
 课题的研究意义在于把“数据库如何有效驱动模型服务”作为独立的系统问题。现有数据库 AI 工作主要优化查询语义、模型调用次数或数据库内推理；模型服务工作主要优化已到达请求的批处理、KV 管理和 GPU 调度。数据库记录到模型请求之间的数据组织、提交与多作业协调仍缺少统一、可观测且可证伪的方法。应用上，本课题希望给出一套能够复现实验条件、明确适用边界的执行策略与评价方法，而不是宣称上游系统能够突破模型服务本身的容量上限。
 
@@ -80,7 +80,7 @@ Database
 
 ### 3.3 研究边界
 
-- PostgreSQL 是任务 source 与统一 sink；写回采用 PostgreSQL + pgvector、COPY + deferred index 作为工程 baseline，不单列研究内容。
+- PostgreSQL 是 SQL AI operator、关系 child plan 与 query lifecycle 所有者；LOTUS `sem_map` 提供语义实现，Daft/Ray/SAOR/vLLM 提供外部物理执行。写回采用 PostgreSQL + pgvector、COPY + deferred index 作为工程 baseline，不单列研究内容。
 - vLLM 是文本生成服务，图像主路径使用 typed Ray GPU actor；不修改服务内部 batching 或模型实现。
 - Daft 与 Ray 是数据引擎和执行机制；“使用框架”本身不构成创新。
 - 文本 `AI_COMPLETE` 是主要方法场景，图像 `AI_EMBED/AI_CLASSIFY` 用于检验 work/credit 抽象的跨模态复用。

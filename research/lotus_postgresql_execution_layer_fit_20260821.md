@@ -456,3 +456,87 @@ capability；否则同时更换前端语义、prompt、source materialization �
   - [`lotus/sem_ops/sem_map.py`](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/sem_ops/sem_map.py)
   - [`lotus/models/lm.py`](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/models/lm.py)
   - [`lotus/data_connectors/connectors.py`](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/data_connectors/connectors.py)
+
+## 10. 逐行 AI UDF 对照：Cortex 与 LOTUS 的精确证据边界
+
+### 10.1 先给结论
+
+项目计划中的 `PostgreSQL row-wise HTTP UDF` 与两篇论文讨论的**传统低层 AI 调用路径在概念上同类**：
+用户提供一个 map/filter 式函数，每个逻辑 row 或 row pair 对应独立模型判断，数据库优化器看不到足够的
+语义合同，因而难以进行语义算子替换、跨关系重写或减少调用数。但是它不能直接命名为“Cortex baseline”
+或“LOTUS 原样 baseline”：
+
+- **Cortex AISQL** 把 per-row LLM invocation、black-box operator 和 UDF 优化类比作为动机；其正式实验没有
+  一个通用 Python/HTTP/PL UDF 臂。
+- **LOTUS** 确实把 `AI UDF` 作为正式 baseline 名称，并在部分任务中运行；但论文为控制 serving
+  infrastructure，是用 **LOTUS + vLLM** 仿真实现该 programming model，而且默认支持 batch=64，
+  不是 PostgreSQL 内逐行同步 HTTP 的原样实现。
+- 因此本项目应把该臂命名为 `PostgreSQL row-wise HTTP AI UDF (lower-bound control)`，并称其为
+  **literature-motivated traditional AI-UDF control**。它是需要完整运行的边界对照，但不能借用 Cortex 或
+  LOTUS 的数值，也不能把结果外推为所有 UDF/AI Function 的共同性能。
+
+**来源类型：论文 + 固定版本官方源码 + 证据边界推断。**
+
+### 10.2 (a) 论文实际运行的 baseline 名称与实现
+
+| 论文 | 实际实验臂 | 是否是通用逐行 UDF 实现 |
+|---|---|---|
+| Cortex AISQL | §6.1 的 `Always Pull-up`、`Always Push-down`、`AI-aware Optimization`；§6.2 的 oracle-only `Llama3.3-70B` baseline、proxy-only 与 cascade；§6.3 的 `Cross Join (AI_FILTER)` 与 `AI_CLASSIFY Rewrite` | **否。**这些臂都运行在 production-release Snowflake 上，调用原生 AISQL operator。Cross Join 臂确实执行每个 row pair 的 `AI_FILTER`，oracle-only 也对全部 rows 执行原生 `AI_FILTER`，但论文没有把它们实现或命名为 generic UDF/逐行 HTTP UDF。见 [Cortex §6.1](https://arxiv.org/html/2511.07663#S6.SS1)、[§6.2/Table 2](https://arxiv.org/html/2511.07663#S6.SS2)、[§6.3/Tables 3–4](https://arxiv.org/html/2511.07663#S6.SS3)。 |
+| LOTUS | §5.1/Table 2 的 `AI UDF: map, search, map` 与 `AI UDF map, search + UQE filter`；§5.2/Table 3 的 `AI UDF` nested-loop join；§5.3/Table 6 的 point-wise `AI UDF` ranking | **是，但实现边界有三种。**FEVER 的 map-search-map 同时报 batched 与 no-batching 实测；BioDEX 的 row-wise nested-loop join 因成本过高没有完整运行，表中 2,144,560 s / 6,092,500 calls 是估算；SciFact/HellaSwag 的 point-wise ranking 给出实际 ET/calls。见 [LOTUS §5.0.1–§5.1/Table 2](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf#page=7)、[§5.2/Tables 3–5](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf#page=8)、[§5.3/Tables 6–7](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf#page=9)。 |
+
+LOTUS 对 `AI UDF` 的实现说明尤其关键：论文 §5.0.1 将其定义为 map-like、row-wise LLM operations，
+但为控制 serving infrastructure，使用 LOTUS 跑在 vLLM 上，并把可用接口限制为 `sem_map`、
+`sem_search`、`sem_sim_join`。论文 §6 Related Work 又明确说 AI UDF systems 是 low-level、
+non-declarative interface，**支持 batched-inference LLM calls**。所以 LOTUS 批评的是编程/优化抽象过低，
+不是声称 UDF 天生只能串行提交。
+
+当前冻结官方 artifact 也能核对这一物理形态：ranking 的 `llm-eval` 分支用 `sem_map` 为每个 candidate
+产生 point-wise score 后排序；`sem_map` 逐 row 构造一条 messages，再把整个 `inputs` 列表交给 LM；LM
+默认调用 LiteLLM `batch_completion(..., max_workers=max_batch_size)`。固定源码见
+[`benchmarks/reranking/bench.py` L59-L67](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/benchmarks/reranking/bench.py#L59-L67)、
+[`sem_map.py` L78-L103](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/sem_ops/sem_map.py#L78-L103)、
+[`lm.py` L261-L298](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/models/lm.py#L261-L298)。
+这些源码能证明 v1.2.4 的执行形态，但论文没有为每张表绑定一个 artifact commit，因此不能仅凭当前
+release 反推所有论文数值的逐行实现细节。
+
+### 10.3 (b) 概念上批评的传统 row-wise / black-box 路径
+
+**Cortex。** §1 先把数据库外导出、custom scripts 和手工编排 LLM API 描述为数据库失去端到端优化
+能力的旧路径；随后用“一百万行上的 `AI_FILTER` 可能每行调用一次 LLM”说明成本，并称 semantic
+operators 对 optimizer 表现为 black boxes。§5.1 更准确地说，AI operator 的 selectivity 与 hardware
+cost 未知，且其优化与传统 expensive UDF optimization 有相似性。这里的“black box”指**代价、选择率
+和放置对优化器不可见**，不等于 Cortex 实际拿 PL/Python/HTTP UDF 做了实验。见
+[Cortex §1](https://arxiv.org/html/2511.07663#S1) 与
+[§5.1/Figure 7](https://arxiv.org/html/2511.07663#S5.SS1)。
+
+**LOTUS。** §1 与 §6 批评仅提供 simple batched-inference primitives 的系统难以声明需要多个模型调用
+编排的 join、aggregation、ranking；§2 以 semantic filter 为例，naive reference execution 可以每个
+record 单独调用 LLM，而优化实现可使用轻量模型或 vector index，只把必要记录交给 LLM。该论点是
+**semantic/model-data independence 与可替换物理算法**，不是数据库请求级公平调度或 vLLM batching
+策略。见 [LOTUS §1–§2](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf#page=2) 与
+[§6 Related Work](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf#page=11)。
+
+据此，本项目的传统 control 应冻结为：数据库用户定义的 AI UDF 逐行接收 tuple、逐行形成独立模型
+request，并且 PostgreSQL planner 只看见普通函数调用，不能把该函数识别成 LOTUS `sem_map/sem_filter`
+后执行 cascade、semantic join rewrite 或 project SAOR 调度。是否允许多个独立 requests 在 HTTP client
+或 vLLM 内并发/continuous-batch，必须作为该 control 的具体物理合同单独写明；不能用“UDF”一词暗示
+它必然完全串行。
+
+### 10.4 (c) 不能声称的内容
+
+- 不能说“Cortex 论文运行了 row-wise HTTP UDF baseline”；它运行的是原生 AISQL operator 的不同计划、
+  模型配置和 rewrite。
+- 不能把 Cortex 的 `Cross Join + AI_FILTER` 称为 UDF。它是逐 row-pair 调用的**原生 semantic operator
+  baseline**，证明的是减少调用复杂度的 rewrite，不是 PostgreSQL UDF 与 AI operator 的 runtime 对比。
+- 不能说“LOTUS 的 AI UDF baseline 就是数据库逐行同步 HTTP”。论文明确用 LOTUS + vLLM 控制
+  infrastructure，并报告 batch=64 与 batched/no-batching 两种结果。
+- 不能说 LOTUS 完整运行了所有 row-wise baselines；BioDEX nested-loop AI UDF 的 latency/calls 是估算，
+  不是完整实测。
+- 不能说“UDF 无法 batching”或“每行一个逻辑 request 等于物理串行”。LOTUS 的 UDF programming-model
+  baseline 本身支持 batched inference，Cortex 的 inference engine 也可由 vLLM 管理。
+- 不能把“无法跨行编排”泛化为所有 UDF 系统完全不能组合 rows。准确表述是：普通黑盒 UDF 不向
+  optimizer 暴露足以安全执行 semantic rewrite/cascade/call-elimination 的声明式合同；具体系统仍可能
+  支持 vectorized UDF、并发、batching、缓存或手写跨行代码。
+- 本项目完整运行 PostgreSQL row-wise HTTP AI UDF 后，只能报告它在冻结实现与公平资源合同下的
+  lower-bound/control 结果；不能把差值全部归因于“数据库内置”或“SAOR”，还必须拆开 operator
+  visibility、调用数、prompt/output work、client concurrency 和 serving batching 的影响。
