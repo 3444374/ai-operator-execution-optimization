@@ -142,6 +142,11 @@ readiness 同时把 native calibration 的 SHA/adapter/concurrency/batch 与实�
 会被汇总器拒绝。原生 shard 与 Project Job 摘要必须提供一致的实际 PostgreSQL/pgvector 版本；
 这些字段进入每条 `all_runs.csv`，不能用配置默认值代替。离线汇总还会按原始命令重验原生
 adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行前配置检查。
+该入口的 `--native-runner` 是每个 shard 真正调用的 official adapter CLI，必须传
+`code/scripts/baselines/run_official_baseline.py`；不要传
+`run_text_native_multijob.py`，后者已经是另一层 multi-job 编排器。native shard 的请求证据位于
+`jobs/<job_id>/shard_<n>/requests.csv`，Project 请求证据仍位于
+`jobs/<job_id>.requests.csv`，统一 sink 显式支持并独立校验这两种布局。
 
 `analysis/audit_vllm_0251_source.py` 必须由冻结 vLLM Python 执行，逐项比较 package version、
 dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked。

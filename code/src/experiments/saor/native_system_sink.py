@@ -12,7 +12,11 @@ from pathlib import Path
 def collect_completion_rows(output_dir: Path) -> list[tuple[int, str]]:
     """Collect exactly one completed output per doc_id from executor traces."""
 
-    paths = sorted((output_dir / "jobs").glob("**/*.requests.csv"))
+    jobs_root = output_dir / "jobs"
+    paths = sorted({
+        *jobs_root.glob("**/*.requests.csv"),
+        *jobs_root.glob("**/requests.csv"),
+    })
     if not paths:
         raise RuntimeError("completion sink cannot find request traces")
     by_doc: dict[int, str] = {}

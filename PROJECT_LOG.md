@@ -14259,3 +14259,17 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 不改文字内容，将标题、分区、卡片标题、正文/标签、结论提高到 42/30/25/20/26 px，并同步扩大
   对应文本框和底部结论框；全尺寸检查无越界、意外换行、图标遮挡或边框覆盖。
 - 同步权威 Draw.io/SVG/PNG、开题专用图集 P05 副本和逐图审计；本轮未修改或重生成 PPT。
+
+## 2026-08-21 SAOR 五臂远端 correctness smoke 适配层修复
+
+- 在 reviewed `5cc31092` 上依次完成 AutoDL 环境检查、PostgreSQL/pgvector、Ray/GPU clean、双
+  vLLM 0.25.1 完整 service identity、1,024 请求 bounded HTTP baseline 和 system preflight；均通过。
+  两个 correctness smoke 失败 root 原样保留，尚未生成可比较 rehearsal，也未运行 formal。
+- 第一次 smoke 因手工把 `--native-runner` 错传为 multi-job wrapper 而失败；runbook 现明确该参数
+  必须是 `code/scripts/baselines/run_official_baseline.py`，并补全可运行 smoke 命令。
+- 第二次 smoke 的四个 Daft Ray shard 均已完成 256 请求、0 failure、exactly-once，但 native 轨迹文件
+  为 `jobs/<job>/shard_<n>/requests.csv`，统一 sink 旧 glob 只接受 Project 的
+  `*.requests.csv`，因此误报找不到 trace。sink 现显式支持两种冻结布局，并增加真实目录形态回归。
+- native runner 的失败 record 现于 artifact sealing/归一化前传播已脱敏 primary failure，避免缺失
+  `jobs` 时由 `KeyError` 覆盖真实 shard 错误。修复通过最小 red→green 回归后，待完整本地测试与全新
+  correctness smoke 验证；只有四阶段 readiness 全通过才允许五臂 rehearsal。

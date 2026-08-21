@@ -193,6 +193,34 @@ Project 三份 config SHA 和 system-preflight SHA 后，最终报告才可置 t
 `DRIVER_PYTHON` 启动，并显式接收 `--driver-python`、`--vllm-python`、两个 runtime sidecar、
 source/system/smoke evidence。driver 与 vLLM 的 `sys.prefix` 相同会 fail closed。
 
+`--native-runner` 指向单 shard official adapter CLI，而不是外层 multi-job 编排器；固定使用
+`code/scripts/baselines/run_official_baseline.py`。下面是 correctness smoke 的完整入口：
+
+```bash
+SMOKE_ROOT="$ARTIFACT_ROOT/<fresh-correctness-smoke-root>"
+test ! -e "$SMOKE_ROOT"
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_native_system_matched.py \
+  --correctness-smoke \
+  --correctness-smoke-root "$SMOKE_ROOT" \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --native-runner code/scripts/baselines/run_official_baseline.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --driver-python "$DRIVER_PYTHON" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS" \
+  --vllm-python "$VLLM_PYTHON" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8000.runtime_identity.json" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8001.runtime_identity.json" \
+  --installed-source-audit /tmp/saor_native_system_matched_vllm_source.json \
+  --system-preflight-evidence "$ARTIFACT_ROOT/<unique-system-preflight>.json" \
+  --idle-timeout-s 120 \
+  --start-delay-s 15
+```
+
 Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
 `--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂
 warmup-only root 和 archive 生成 validation，并同时传 matched/native/Project 三份 config；validator

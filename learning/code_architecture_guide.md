@@ -95,3 +95,16 @@ event 字段重新计算同一决策。这样即使在线公式写错，验证�
 - 远端行为：服务器恢复后，用文本 64 行 baseline gate、图像 256 行 resource/correctness
   gate 核对 CLI、summary schema、exactly-once 和 digest；
 - 只有远端 gate 与本地全量依赖测试都通过，才合并到 main，正式性能实验随后单独运行。
+
+## 8. 五臂 runner 为什么有两层 native 入口
+
+五臂 runner 负责“先跑哪个系统、Job 何时释放、结果如何进入统一 sink”；它不会自己实现
+Daft 或 Ray Data 的执行图。对一个 native cell，它先调用 multi-job 编排层，把 Job0/Job1 分别拆成
+两个 endpoint shard；每个 shard 再调用 `run_official_baseline.py`，由 Daft/Ray Data 自己拥有执行
+与调度。因而 `--native-runner` 必须是后一个单 shard CLI，不能再次指向 multi-job 编排器。
+
+两类执行器的 request trace 目录不同：Project 是 `jobs/job0.requests.csv`，native 是
+`jobs/job0/shard_0/requests.csv`。统一 PostgreSQL sink 的职责是同时识别两种布局，再用
+`status/doc_id/output_text` 做完成、去重和 digest 门禁；目录不同不代表输出合同不同。若 native
+子进程失败，适配层必须先报告已经脱敏的 primary failure，再停止 cell，不能让后续证据归一化用
+`KeyError` 覆盖真正原因。

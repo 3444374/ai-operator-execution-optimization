@@ -23,6 +23,7 @@ from src.experiments.saor.native_system_evidence import (
     persisted_command,
     persisted_failure,
 )
+from src.experiments.saor.native_system_execution import normalize_native_evidence
 from src.experiments.saor.native_system_bindings import validate_executor_bindings
 from src.experiments.saor.native_system_matched import (
     REQUIRED_ARM_IDS,
@@ -996,6 +997,21 @@ class MatchedSystemContractTest(unittest.TestCase):
                 collect_completion_rows(Path(directory)), [(1, "a"), (2, "b")]
             )
 
+    def test_completion_sink_collects_native_shard_request_traces(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "jobs" / "job0" / "shard_0"
+            root.mkdir(parents=True)
+            path = root / "requests.csv"
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(
+                    stream, fieldnames=("doc_id", "status", "output_text")
+                )
+                writer.writeheader()
+                writer.writerow({"doc_id": 7, "status": "completed", "output_text": "done"})
+            self.assertEqual(
+                collect_completion_rows(Path(directory)), [(7, "done")]
+            )
+
     def test_completion_sink_rejects_duplicate_doc_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs"
@@ -1010,6 +1026,20 @@ class MatchedSystemContractTest(unittest.TestCase):
                     writer.writerow({"doc_id": 1, "status": "completed", "output_text": "a"})
             with self.assertRaisesRegex(RuntimeError, "duplicate doc_id"):
                 collect_completion_rows(Path(directory))
+
+    def test_failed_native_cell_preserves_primary_failure_reason(self) -> None:
+        with Fixture() as fixture:
+            arm = load_matched_system_config(fixture.path).arms[0]
+            with self.assertRaisesRegex(
+                RuntimeError, "native runner rejected arguments"
+            ):
+                normalize_native_evidence(
+                    arm,
+                    {
+                        "status": "failed",
+                        "error": "RuntimeError: native runner rejected arguments",
+                    },
+                )
 
 
 def official_vtc_evidence(config) -> list[dict[str, object]]:

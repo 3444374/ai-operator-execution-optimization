@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.baselines.common.database_identity import consistent_database_versions
+from src.baselines.common.redact import redact_text
 from src.baselines.text.orchestration.native_multijob import (
     NativeRunIdentity,
     audit_command,
@@ -67,9 +68,21 @@ class MatchedExecutionOptions:
     rehearsal_archive: Path | None
 
 
+def _require_native_cell_passed(record: dict[str, object]) -> None:
+    """Raise the native runner's redacted primary failure before normalization."""
+
+    if record.get("status") == "passed":
+        return
+    reason = redact_text(str(
+        record.get("error") or "native cell execution did not pass"
+    ))
+    raise RuntimeError(f"native cell execution failed: {reason}")
+
+
 def normalize_native_evidence(
     arm: MatchedArm, record: dict[str, object]
 ) -> dict[str, object]:
+    _require_native_cell_passed(record)
     jobs = record["jobs"]
     if not isinstance(jobs, list):
         raise RuntimeError("native Job evidence must encode a list")
@@ -310,17 +323,17 @@ def execute_matched_system(options: MatchedExecutionOptions) -> dict[str, object
             NativeRunIdentity(cell.phase, cell.repeat, cell.order_index),
             output_dir, runner_script=options.native_runner, repository_commit=commit,
         )
-        if record.get("status") == "passed":
-            sink = materialize_and_verify_postgres_sink(
-                dict(arm.source)["database_url"],
-                dict(arm.source)["workload_name"],
-                collect_completion_rows(output_dir),
-                write=True,
-            )
-            record["sink_metrics"] = sink
-            record["arm_barrier_jct_s"] = (
-                float(record["arm_barrier_jct_s"]) + float(sink["sink_wall_s"])
-            )
+        _require_native_cell_passed(record)
+        sink = materialize_and_verify_postgres_sink(
+            dict(arm.source)["database_url"],
+            dict(arm.source)["workload_name"],
+            collect_completion_rows(output_dir),
+            write=True,
+        )
+        record["sink_metrics"] = sink
+        record["arm_barrier_jct_s"] = (
+            float(record["arm_barrier_jct_s"]) + float(sink["sink_wall_s"])
+        )
         seal_native_cell_artifact_paths(record, output_dir)
         commands = [command for job in record.get("jobs", []) for command in json.loads((output_dir / "jobs" / job["job_id"] / "commands.json").read_text())]
         for command in commands:
