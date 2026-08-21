@@ -1012,6 +1012,29 @@ class MatchedSystemContractTest(unittest.TestCase):
                 collect_completion_rows(Path(directory)), [(7, "done")]
             )
 
+    def test_completion_sink_prefers_project_completion_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "jobs"
+            root.mkdir()
+            with (root / "job0.requests.csv").open(
+                "w", encoding="utf-8", newline=""
+            ) as stream:
+                writer = csv.DictWriter(stream, fieldnames=("doc_id", "status"))
+                writer.writeheader()
+                writer.writerow({"doc_id": 7, "status": "completed"})
+            with (root / "job0.completions.csv").open(
+                "w", encoding="utf-8", newline=""
+            ) as stream:
+                writer = csv.DictWriter(
+                    stream, fieldnames=("doc_id", "status", "output_text")
+                )
+                writer.writeheader()
+                writer.writerow({"doc_id": 7, "status": "completed", "output_text": "done"})
+
+            self.assertEqual(
+                collect_completion_rows(Path(directory)), [(7, "done")]
+            )
+
     def test_completion_sink_rejects_duplicate_doc_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "jobs"

@@ -13,16 +13,21 @@ def collect_completion_rows(output_dir: Path) -> list[tuple[int, str]]:
     """Collect exactly one completed output per doc_id from executor traces."""
 
     jobs_root = output_dir / "jobs"
-    paths = sorted({
-        *jobs_root.glob("**/*.requests.csv"),
-        *jobs_root.glob("**/requests.csv"),
-    })
+    paths = sorted(jobs_root.glob("**/*.completions.csv"))
+    if not paths:
+        paths = sorted({
+            *jobs_root.glob("**/*.requests.csv"),
+            *jobs_root.glob("**/requests.csv"),
+        })
     if not paths:
         raise RuntimeError("completion sink cannot find request traces")
     by_doc: dict[int, str] = {}
     for path in paths:
         with path.open(encoding="utf-8", newline="") as stream:
-            for row in csv.DictReader(stream):
+            reader = csv.DictReader(stream)
+            if "output_text" not in (reader.fieldnames or ()):
+                raise RuntimeError("completion sink trace omits output_text")
+            for row in reader:
                 if row.get("status") != "completed":
                     raise RuntimeError("completion sink observed a failed request")
                 doc_id = int(row["doc_id"])

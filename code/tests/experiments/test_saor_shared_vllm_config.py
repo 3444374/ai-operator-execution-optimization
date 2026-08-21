@@ -67,6 +67,11 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
             self._flag(command, "--shared-ready-observation-contract"),
             "bounded_concrete_pre_registration",
         )
+        self.assertTrue(
+            self._flag(command, "--completion-evidence-output").endswith(
+                ".completions.csv"
+            )
+        )
 
     def test_matched_ready_observation_is_independent_of_selector(self) -> None:
         payload = self._bounded_priority_payload()

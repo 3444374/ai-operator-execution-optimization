@@ -230,8 +230,17 @@ def normalize_project_evidence(
     } for index in range(len(observed))]
     command_files = list((output_dir / "traces").glob("*.commands.json"))
     resource_files = list((output_dir / "traces").glob("*.resources.csv"))
-    if len(command_files) != 1 or len(resource_files) != 1:
-        raise RuntimeError("Project command/resource evidence is incomplete")
+    completion_files = sorted(
+        (output_dir / "jobs").glob("*.completions.csv")
+    )
+    if (
+        len(command_files) != 1
+        or len(resource_files) != 1
+        or len(completion_files) != len(observed)
+    ):
+        raise RuntimeError(
+            "Project command/resource/completion evidence is incomplete"
+        )
     command_evidence = json.loads(command_files[0].read_text(encoding="utf-8"))
     return {
         **record,
@@ -258,7 +267,14 @@ def normalize_project_evidence(
             "reason": "" if record.get("completion_service_lag_status") not in (None, "", "unavailable") else "completion-accounted ledger unavailable",
         },
         "mfu_contract": arm.mfu_contract.__dict__,
-        "output_paths": {"commands": str(command_files[0]), "resources": str(resource_files[0])},
+        "output_paths": {
+            "commands": str(command_files[0]),
+            "resources": str(resource_files[0]),
+            **{
+                f"completion_evidence_job{index}": str(path)
+                for index, path in enumerate(completion_files)
+            },
+        },
         "sink_metrics": record["sink_metrics"],
         "status": "passed",
     }

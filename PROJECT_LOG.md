@@ -14273,3 +14273,11 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - native runner 的失败 record 现于 artifact sealing/归一化前传播已脱敏 primary failure，避免缺失
   `jobs` 时由 `KeyError` 覆盖真实 shard 错误。修复通过最小 red→green 回归后，待完整本地测试与全新
   correctness smoke 验证；只有四阶段 readiness 全通过才允许五臂 rehearsal。
+- `0ecbc37d` 的第三个全新 smoke 已使 Daft Ray 与其 PostgreSQL sink 真实通过，也证明旧 trace glob
+  阻断闭合；随后 SAOR eager cell 完成 1,024 请求，但在 Project sink digest 门失败。只读对比确认
+  doc_id 1024/1024、无缺行，差异来自 lifecycle `*.requests.csv` 按设计不含 `output_text`，旧 adapter
+  却把缺列静默解释为空串。
+- shared-vLLM Job 命令现强制启用 profiler 既有的 `--completion-evidence-output`，直接从 in-process
+  operator results 落 `*.completions.csv`。统一 sink 优先用这份独立 expected content 对比数据库；
+  两个 Job completion evidence 也进入 cell output-path SHA/全文件 artifact manifest。第三个失败 root
+  保留；该修复需在新 commit/new root 上重跑，当前仍无 rehearsal，formal 继续禁止。

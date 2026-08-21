@@ -221,6 +221,11 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   --start-delay-s 15
 ```
 
+Project runner 会为每个 Job 同时写 lifecycle `*.requests.csv` 和独立内容
+`*.completions.csv`。前者故意不保存输出正文；后者由 profiler 从 in-process operator results
+写出 `output_text`，用于和 profiler-owned PostgreSQL sink readback 比较 digest。两份 completion
+evidence 缺失、重复或未进入 cell artifact identity 时，correctness smoke 必须失败。
+
 Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
 `--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂
 warmup-only root 和 archive 生成 validation，并同时传 matched/native/Project 三份 config；validator

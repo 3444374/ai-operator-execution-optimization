@@ -146,7 +146,10 @@ adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行�
 `code/scripts/baselines/run_official_baseline.py`；不要传
 `run_text_native_multijob.py`，后者已经是另一层 multi-job 编排器。native shard 的请求证据位于
 `jobs/<job_id>/shard_<n>/requests.csv`，Project 请求证据仍位于
-`jobs/<job_id>.requests.csv`，统一 sink 显式支持并独立校验这两种布局。
+`jobs/<job_id>.requests.csv`。Project lifecycle trace 不包含输出正文；同一命令必须另产
+`jobs/<job_id>.completions.csv`，由 profiler 直接从 in-process operator results 写出，统一 sink
+用它和 PostgreSQL readback 独立核对内容 digest。native shard 则直接用包含正文的
+`requests.csv`；两条路径都不能从数据库读出 expected text 再与数据库自比。
 
 `analysis/audit_vllm_0251_source.py` 必须由冻结 vLLM Python 执行，逐项比较 package version、
 dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked。

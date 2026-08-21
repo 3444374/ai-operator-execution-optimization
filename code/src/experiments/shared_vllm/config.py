@@ -46,6 +46,7 @@ _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
 _RUNNER_OWNED_FLAGS = {
     "--admission-scope",
     "--arrival-replay-start-epoch-s",
+    "--completion-evidence-output",
     "--control-trace-output",
     "--experiment-id",
     "--flush-trace-output",
@@ -788,6 +789,8 @@ def build_job_command(
         str(job_stem.with_suffix(".runs.csv")),
         "--request-trace-output",
         str(job_stem.with_suffix(".requests.csv")),
+        "--completion-evidence-output",
+        str(job_stem.with_suffix(".completions.csv")),
         "--submission-trace-output",
         str(job_stem.with_suffix(".submissions.csv")),
         "--flush-trace-output",

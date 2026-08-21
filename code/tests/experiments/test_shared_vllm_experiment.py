@@ -2439,6 +2439,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "--setup",
             "--shared-credit-work-limit",
             "--resource-trace-output",
+            "--completion-evidence-output",
         ):
             with self.subTest(forbidden=forbidden):
                 payload = self._config_payload(common_args=[forbidden])
