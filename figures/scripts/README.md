@@ -27,6 +27,17 @@ python figures/scripts/generate_opening_core_evidence_figures.py
 
 输出为 `figures/data/report_main/opening_*.{svg,png}`。脚本排除 warm-up，保留 formal 重复或折级分布；图像 matched-resource headline 冻结为约 13–15%，代价估计明确标注 14.72% max regret 的 marginal-pass 风险。完整设计合同与视觉 QA 见 `figures/audit/opening_core_evidence_figures_contract_20260807.md`。
 
+## 2026-08-23 代价估计三组图
+
+```powershell
+python figures\scripts\generate_opening_story_figures_20260808.py --figures E
+```
+
+选择器 `E` 生成 `opening_cost_model_decision_quality_v4.{png,svg,pdf}`。图 a 为六种估计方法各自的
+真实时间—预测时间小图，并用竖线显示每组候选均值相差的秒数；图 b、c 分别展示四种在途工作量
+上限的两两排序和错误选择造成的额外耗时。每种方法使用 20 个留出情境 × 4 种上限 = 80 组
+候选均值；输入仍为 `ce_context_loo_rerun_20260807.json`，不会生成或修改实验数据。
+
 ## Python 图表脚本
 
 ```powershell

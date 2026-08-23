@@ -52,3 +52,10 @@ The center cards are: `工作量表达不一致`, `运行状态难以对应作�
 - The internal boundary paragraph and lock cards are absent from the source, not hidden or covered.
 
 **Final status: accepted; no unresolved visual defect.**
+
+## 2026-08-23 报告用语修正
+
+- 权威图继续采用数据库侧、三项跨层能力、模型服务侧三列结构；报告中此前使用的是较旧副本，本轮已重新同步。
+- 三项能力改为“按 AI 处理需求描述工作量”“把运行状态与作业进度联系起来”“共同安排多个数据库作业”，并在卡片内写出各自动作和评价对象。
+- 数据库侧和模型服务侧的英文简写已改为中文说明；KV 首次直接写成 KV 缓存，作业和服务目标不再只写 Job / SLO。
+- 1600×900 PNG 以原始尺寸检查，左右两列的长句已经分行，没有裁切或越出卡片。

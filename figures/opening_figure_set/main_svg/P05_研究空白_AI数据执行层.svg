@@ -11,11 +11,11 @@
 
   <rect x="48" y="28" width="70" height="54" rx="10" fill="#165DCC"/>
   <text class="cn" x="83" y="64" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">01</text>
-  <text class="cn title" x="140" y="68">研究空白：数据库与模型服务之间的 AI Data Execution Layer</text>
+  <text class="cn title" x="140" y="68">数据库与模型服务之间需要补充的 AI 数据执行能力</text>
   <text class="cn small" x="1550" y="104" text-anchor="end">开题第 5 页｜研究问题</text>
 
   <text class="cn section" x="225" y="138" text-anchor="middle" fill="#165DCC">数据库侧（已有能力）</text>
-  <text class="cn section" x="800" y="138" text-anchor="middle" fill="#E85D04">尚缺少的跨层能力</text>
+  <text class="cn section" x="800" y="138" text-anchor="middle" fill="#E85D04">需要补充的三项跨层能力</text>
   <text class="cn section" x="1375" y="138" text-anchor="middle" fill="#5B2AA6">模型服务侧（已有能力）</text>
 
   <rect x="50" y="155" width="350" height="515" rx="18" fill="#F7FAFF" stroke="#165DCC" stroke-width="2"/>
@@ -24,60 +24,60 @@
 
   <g>
     <rect x="70" y="185" width="310" height="118" rx="14" fill="#fff" stroke="#165DCC" stroke-width="1.5"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTY1RENDIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8ZWxsaXBzZSBjeD0iMzQiIGN5PSIxNyIgcng9IjIzIiByeT0iOSIvPgogICAgPHBhdGggZD0iTTExIDE3djM1YzAgNSAxMCA5IDIzIDlzMjMtNCAyMy05VjE3TTExIDM0YzAgNSAxMCA5IDIzIDkgNiAwIDExLTEgMTUtMyIvPgogICAgPHJlY3QgeD0iMzYiIHk9IjM5IiB3aWR0aD0iNDIiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjMTY1RENDIiBzdHJva2U9Im5vbmUiLz4KICA8L2c+CiAgPHRleHQgeD0iNTciIHk9IjYxIiBmaWxsPSIjZmZmIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlNRTDwvdGV4dD4KPC9zdmc+Cg==" x="84" y="210" width="66" height="66"/>
+    <image href="assets/01_research_gap/db_sql.svg" x="84" y="210" width="66" height="66"/>
     <text class="cn cardtitle" x="160" y="230">任务与数据语义</text>
-    <text class="cn body" x="160" y="270">行 / 查询 / Job / SLO</text>
+    <text class="cn" x="160" y="262" font-size="18" fill="#374151"><tspan x="160">行 / 查询 / 作业</tspan><tspan x="160" dy="27">服务目标</tspan></text>
   </g>
   <g>
     <rect x="70" y="320" width="310" height="118" rx="14" fill="#fff" stroke="#165DCC" stroke-width="1.5"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTY1RENDIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMTYgMTVoMzZsMTIgMTJ2MzlIMTZ6Ii8+PHBhdGggZD0iTTUyIDE1djE0aDEyTTI1IDM3aDI4TTI1IDQ3aDIwIi8+CiAgICA8Y2lyY2xlIGN4PSI1NCIgY3k9IjU3IiByPSIxMiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Im00OCA1NyA0IDQgOC05Ii8+CiAgPC9nPgo8L3N2Zz4K" x="84" y="346" width="66" height="66"/>
-    <text class="cn cardtitle" x="160" y="365">事务与执行边界</text>
-    <text class="cn body" x="160" y="405">source / 结果 / 写回</text>
+    <image href="assets/01_research_gap/sink_semantics.svg" x="84" y="346" width="66" height="66"/>
+    <text class="cn cardtitle" x="160" y="365">输入输出与写回要求</text>
+    <text class="cn" x="160" y="397" font-size="18" fill="#374151"><tspan x="160">数据输入 / 结果对应</tspan><tspan x="160" dy="27">写回要求</tspan></text>
   </g>
   <g>
     <rect x="70" y="455" width="310" height="185" rx="14" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTY1RENDIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8Y2lyY2xlIGN4PSIyNCIgY3k9IjI3IiByPSIxNSIvPjxwYXRoIGQ9Im0zNSAzOCAxMyAxMyIvPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSIxOCIgcj0iNSIvPjxjaXJjbGUgY3g9IjY3IiBjeT0iMzgiIHI9IjUiLz48Y2lyY2xlIGN4PSI1MSIgY3k9IjU3IiByPSI1Ii8+CiAgICA8cGF0aCBkPSJtNTkgMjMgNiAxME02MyA0MmwtOSAxMU00NyA1M2wtOC05Ii8+CiAgPC9nPgo8L3N2Zz4K" x="84" y="480" width="66" height="66"/>
+    <image href="assets/01_research_gap/query_job.svg" x="84" y="480" width="66" height="66"/>
     <text class="cn cardtitle" x="160" y="505" fill="#165DCC">数据库通常不可见</text>
-    <text class="cn body" x="160" y="548"><tspan x="160">running / waiting / KV</tspan><tspan x="160" dy="34">模型服务完成节奏</tspan></text>
+    <text class="cn body" x="160" y="548"><tspan x="160">排队与正在运行的请求</tspan><tspan x="160" dy="34">KV 缓存与模型完成速度</tspan></text>
   </g>
 
   <g>
     <rect x="500" y="185" width="600" height="128" rx="14" fill="#fff" stroke="#E85D04" stroke-width="1.8"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTg1RDA0IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMTEgMTFoMzVsMTIgMTJ2MzlIMTF6Ii8+PHBhdGggZD0iTTQ2IDExdjE0aDEyTTIxIDM0aDI2TTIxIDQ0aDIwIi8+CiAgICA8cGF0aCBkPSJtNTAgNDkgMTMtNyAxMyA3djE1bC0xMyA3LTEzLTd6TTUwIDQ5bDEzIDcgMTMtN002MyA1NnYxNSIgZmlsbD0iI2ZmZiIvPgogIDwvZz4KPC9zdmc+Cg==" x="524" y="216" width="66" height="66"/>
+    <image href="assets/01_research_gap/work_unit.svg" x="524" y="216" width="66" height="66"/>
     <circle cx="628" cy="221" r="20" fill="#E85D04"/><text class="num" x="628" y="222">1</text>
-    <text class="cn cardtitle" x="662" y="228">工作量表达不一致</text>
-    <text class="cn body" x="662" y="270"><tspan x="662">数据库以记录与批次描述任务</tspan><tspan x="662" dy="32">模型执行受输入、准备与输出规模影响</tspan></text>
+    <text class="cn cardtitle" x="662" y="228">按 AI 处理需求描述工作量</text>
+    <text class="cn body" x="662" y="270"><tspan x="662">把记录转换为分阶段工作描述</tspan><tspan x="662" dy="32">组织批次时兼顾工作量与数据局部性</tspan></text>
   </g>
   <g>
     <rect x="500" y="330" width="600" height="145" rx="14" fill="#fff" stroke="#E85D04" stroke-width="1.8"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTg1RDA0IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMTAgNjFWMThNMTAgNjFoNThNMjAgNTBsMTMtMTQgMTIgOCAxNy0yMiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iNTAiIHI9IjMiIGZpbGw9IiNFODVEMDQiLz48Y2lyY2xlIGN4PSIzMyIgY3k9IjM2IiByPSIzIiBmaWxsPSIjRTg1RDA0Ii8+PGNpcmNsZSBjeD0iNDUiIGN5PSI0NCIgcj0iMyIgZmlsbD0iI0U4NUQwNCIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iMjIiIHI9IjMiIGZpbGw9IiNFODVEMDQiLz4KICAgIDxwYXRoIGQ9Ik0yOCA2OGM4LTggMTctOCAyNSAwLTggOC0xNyA4LTI1IDB6IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iNDEiIGN5PSI2OCIgcj0iNCIvPgogIDwvZz4KPC9zdmc+Cg==" x="524" y="370" width="66" height="66"/>
+    <image href="assets/01_research_gap/estimate_observe.svg" x="524" y="370" width="66" height="66"/>
     <circle cx="628" cy="367" r="20" fill="#E85D04"/><text class="num" x="628" y="368">2</text>
-    <text class="cn cardtitle" x="658" y="375">运行状态难以对应作业</text>
-    <text class="cn body" x="658" y="418"><tspan x="658">服务侧可见队列与资源状态</tspan><tspan x="658" dy="32">数据库侧需要 Job 进度与服务目标</tspan></text>
+    <text class="cn cardtitle" x="658" y="375">把运行状态与作业进度联系起来</text>
+    <text class="cn body" x="658" y="418"><tspan x="658">结合服务侧排队、缓存与完成速度</tspan><tspan x="658" dy="32">判断数据库作业的后续工作何时提交</tspan></text>
   </g>
   <g>
     <rect x="500" y="495" width="600" height="145" rx="14" fill="#FFF3E9" stroke="#E85D04" stroke-width="1.8"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTg1RDA0IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMTIgMjFoNDNNMTIgNDBoNTVNMTIgNTloNDMiLz4KICAgIDxjaXJjbGUgY3g9IjI2IiBjeT0iMjEiIHI9IjYiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI1MiIgY3k9IjQwIiByPSI2IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iMzgiIGN5PSI1OSIgcj0iNiIgZmlsbD0iI2ZmZiIvPgogICAgPHBhdGggZD0ibTU4IDE1IDkgNi05IDZNNTggNTNsOSA2LTkgNiIvPgogIDwvZz4KPC9zdmc+Cg==" x="524" y="535" width="66" height="66"/>
+    <image href="assets/01_research_gap/scheduler.svg" x="524" y="535" width="66" height="66"/>
     <circle cx="628" cy="534" r="20" fill="#E85D04"/><text class="num" x="628" y="535">3</text>
-    <text class="cn cardtitle" x="668" y="542">多作业缺少共同约束</text>
-    <text class="cn body" x="668" y="584"><tspan x="668">独立提交容易产生排队与干扰</tspan><tspan x="668" dy="32">效率、隔离与公平需要同时评价</tspan></text>
+    <text class="cn cardtitle" x="668" y="542">共同安排多个数据库作业</text>
+    <text class="cn body" x="668" y="584"><tspan x="668">共享服务能力并安排作业提交顺序</tspan><tspan x="668" dy="32">同时评价总体效率、完成时间与服务均衡</tspan></text>
   </g>
 
   <g>
     <rect x="1220" y="185" width="310" height="118" rx="14" fill="#fff" stroke="#5B2AA6" stroke-width="1.5"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPHBhdGggZD0iTTExIDE2aDQ5YzYgMCAxMCA0IDEwIDEwdjI1YzAgNi00IDEwLTEwIDEwSDM3TDIyIDcxbDMtMTBoLTRjLTYgMC0xMC00LTEwLTEweiIgZmlsbD0iIzVCMkFBNiIvPgogIDxnIGZpbGw9IiNmZmYiPjxwYXRoIGQ9Im0yOSAyOCAyIDYgNiAyLTYgMi0yIDYtMi02LTYtMiA2LTJ6Ii8+PHBhdGggZD0ibTUyIDIzIDIgNSA1IDItNSAyLTIgNS0yLTUtNS0yIDUtMnoiLz48L2c+Cjwvc3ZnPgo=" x="1238" y="210" width="66" height="66"/>
+    <image href="assets/01_research_gap/text_service.svg" x="1238" y="210" width="66" height="66"/>
     <text class="cn cardtitle" x="1310" y="230">文本生成</text><text class="cn body" x="1310" y="270">vLLM / Completion</text>
   </g>
   <g>
     <rect x="1220" y="320" width="310" height="118" rx="14" fill="#fff" stroke="#5B2AA6" stroke-width="1.5"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUIyQUE2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cmVjdCB4PSIxMCIgeT0iMTMiIHdpZHRoPSI2MCIgaGVpZ2h0PSI1NCIgcng9IjYiLz48Y2lyY2xlIGN4PSI1NCIgY3k9IjI5IiByPSI2IiBmaWxsPSIjNUIyQUE2Ii8+CiAgICA8cGF0aCBkPSJtMTUgNjAgMTctMTggMTEgMTEgOC04IDE0IDE1IiBmaWxsPSIjNUIyQUE2IiBvcGFjaXR5PSIuMjgiLz4KICA8L2c+Cjwvc3ZnPgo=" x="1238" y="346" width="66" height="66"/>
+    <image href="assets/01_research_gap/image_service.svg" x="1238" y="346" width="66" height="66"/>
     <text class="cn cardtitle" x="1310" y="365">图像表征 / 分类</text><text class="cn body" x="1310" y="405">CLIP / ViT</text>
   </g>
   <g>
     <rect x="1220" y="455" width="310" height="185" rx="14" fill="#F5F0FF" stroke="#5B2AA6" stroke-width="1.5"/>
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUIyQUE2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cmVjdCB4PSIxNyIgeT0iMTciIHdpZHRoPSI0NiIgaGVpZ2h0PSI0NiIgcng9IjYiLz48cmVjdCB4PSIyOCIgeT0iMjgiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgcng9IjMiLz4KICAgIDxwYXRoIGQ9Ik0yNyA4djlNNDAgOHY5TTUzIDh2OU0yNyA2M3Y5TTQwIDYzdjlNNTMgNjN2OU04IDI3aDlNOCA0MGg5TTggNTNoOU02MyAyN2g5TTYzIDQwaDlNNjMgNTNoOSIvPgogIDwvZz4KPC9zdmc+Cg==" x="1238" y="480" width="66" height="66"/>
+    <image href="assets/01_research_gap/gpu_state.svg" x="1238" y="480" width="66" height="66"/>
     <text class="cn cardtitle" x="1310" y="505" fill="#5B2AA6">模型服务所见</text>
-    <text class="cn body" x="1310" y="548"><tspan x="1310">可见：队列 / KV / 完成</tspan><tspan x="1310" dy="32">缺少：source / Job</tspan><tspan x="1310" dy="32">locality / sink</tspan></text>
+    <text class="cn" x="1310" y="540" font-size="18" fill="#374151"><tspan x="1310">可见：队列、KV 缓存</tspan><tspan x="1310" dy="27">和请求完成情况</tspan><tspan x="1310" dy="27">不了解：数据库输入、</tspan><tspan x="1310" dy="27">作业进度与结果去向</tspan></text>
   </g>
 
   <path d="M405 397H465" fill="none" stroke="#165DCC" stroke-width="4" marker-end="url(#arrow-blue)"/>
@@ -88,5 +88,5 @@
   <text class="cn small" x="1165" y="604" text-anchor="middle">反馈流</text>
 
   <rect x="190" y="724" width="1220" height="72" rx="12" fill="#F0FDF4" stroke="#15803D" stroke-width="1.5"/>
-  <text class="cn" x="800" y="770" text-anchor="middle" font-size="26" font-weight="700" fill="#15803D">研究问题：如何连接数据库任务语义与模型服务运行信息，并约束多作业外部执行？</text>
+  <text class="cn" x="800" y="770" text-anchor="middle" font-size="26" font-weight="700" fill="#15803D">研究问题：怎样把数据库任务信息与模型服务运行状态联系起来，并合理安排多个作业？</text>
 </svg>

@@ -66,3 +66,11 @@ Solution Overview / System Architecture。
 - 用于最终 PPT 时，可根据模板版心微调画布比例，并把图注改为 PPT 页脚或讲稿备注。
 - 用于 Word 正式报告时，可优先插入 SVG，并在正文图题中解释数据库入口、`Daft + Arrow` 数据层、`Ray` 执行层、`GPU` 模型服务和 AI 结果存储的关系。
 - 如果后续 Lance 实验结果成为重点，可将 `AI data sink` 模块拆分为 Lance 与 PostgreSQL / pgvector 两个并列落点。
+
+## 2026-08-23 开题总体关系图更新
+
+- 当前开题报告使用的权威图为 `figures/architecture/editable/02_system_architecture.{drawio,svg,png}`，画布为 1600×900。
+- 主执行路径明确为 PostgreSQL 与 Daft、工作描述、数据组织、提交控制、路由与多作业调度、文本或图像模型服务、结果收集与写回。
+- AI 算子代价估计读取工作描述与历史测量，输出预计时间和资源需求，只连接数据库优化器 / 多 SQL 调度；运行状态记录保存实际排队、运行、KV 缓存、完成速度和作业进度，只返回提交控制和路由模块。
+- 图中不再使用 `contract`、`frozen-static`、`safe capacity` 和没有展开具体动作的“闭环”标题。原始尺寸预览确认文字、卡片和箭头没有裁切、重叠或错误指向。
+- 本次报告四图的整体审计和 SHA256 见 `opening_report_minimal_figure_corrections_audit_20260823.md`。

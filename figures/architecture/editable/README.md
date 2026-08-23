@@ -6,9 +6,9 @@
 
 | 图 | 答辩任务 | 建议页面 |
 |---|---|---|
-| `01_research_gap` | 说明 Database 与 Model Service 之间的三类研究空白，不提前展示项目方案 | 第 5 页 |
-| `02_system_architecture` | 总体闭环与跨模态复用：work → state → bounded control → sink | 第 11 页 |
-| `03_work_unit` | 研究内容一：分阶段 WorkDescriptor、候选 Packing 与同 work budget 评价 | 第 12–13 页 |
+| `01_research_gap` | 说明数据库与模型服务之间需要补充的三项跨层能力，不提前展示具体候选算法 | 第 5 页 |
+| `02_system_architecture` | 数据组织、提交、模型执行和结果返回，并分开代价估计与运行状态路径 | 第 11 页 |
+| `03_work_unit` | 研究内容一：分阶段工作描述、可选代价估计结果、候选批次组织与同一上限评价 | 第 12–13 页 |
 | `04_state_aware_scheduling` | 研究内容二：安全容量、shared credit、fair queue、routing 与 completion release | 第 14–15 页 |
 | `05_evidence_gate` | 已有研究基础与后续工作计划 | 第 19 页 |
 | `opening_background_20260812/06_ai_native_execution_architecture` | 数据库 AI 算子外部执行工作流 | 第 2 页 |

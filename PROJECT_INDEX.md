@@ -279,11 +279,13 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
 | `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/I/J/E、单 Job 任务—请求主图、F 状态备份图及既有架构图；A/D 同时输出 P07/P08 的 16:9 拆分版 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
 | `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/I/J/E/F 已通过 QA，G 不画 |
+| `figures/data/report_main/opening_cost_model_decision_quality_v4.{png,svg,pdf}` | 第 29 页代价估计三组图：六种方法各自的真实—预测时间与逐候选差值、四种上限的两两排序、错误选择后的额外耗时 | 修改 PPT 或报告的代价估计证据页时使用；每种方法为 80 组候选均值，不得表述成 429 个独立预测 |
 | `figures/audit/opening_required_data_figures_20260810.md` | 从六项开题证明义务推导正文、备份、附录和明确不画的最小图集 | 决定一张实验图是否应进开题、PPT还是论文阶段前读 |
 | `figures/opening_figure_set/README.md` 与 `main_png/`、`main_svg/`、`editable_drawio/`、`backup_*` | 按 20 页答辩页码和中文用途重命名的开题专用图集：21 张 PPT 主讲候选图、10 张 Draw.io 概念源、2 张备份图；P07/P08 各拆为 A/B 两张，研究内容一新增 P12A（WorkDescriptor）/P13A（WorkOrganizer）两张概念图 | 制作开题 PPT/报告时从这里选图，不再浏览整个 `report_main/`；权威源仍在原目录 |
 | `figures/architecture/editable/opening_background_20260812/` | 第 2–4 页三张背景/相关工作图的 Draw.io、SVG、PNG、icon 和逐图审计；P03 为通用外部 AI 多阶段链路，不含项目方案 | 修改背景图文字、边框、图标或箭头时从权威源编辑 |
 | `figures/audit/opening_background_figures_20260812.md` | 第 2–4 页三图的内容边界、结构检查与视觉审计汇总 | 引用或替换三张背景图前读取 |
 | `figures/audit/opening_figure_set_manifest_20260811.md` | 开题专用图集的选图依据、源文件映射、格式合同、排除项与复制 QA | 新增、替换或同步开题图集前读取 |
+| `figures/audit/opening_report_minimal_figure_corrections_audit_20260823.md` | 开题报告图 2、图 3、图 5、图 6 的语义修正、文件同步、数值保持与视觉审计 | 修改报告关键概念图或两组文本执行路径图前读取 |
 | `figures/scripts/embed_svg_assets.py` | 将 SVG 的本地相对 icon/Logo 引用机械内嵌为 data URI | 生成可单文件拖入 PowerPoint/Word 的开题图集 SVG 副本；不改权威源图 |
 | `figures/data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | Daft Native/Ray、Ray Data 的 Short 与三个 Long 的 four-job/isolated-single JCT 比值 | 证明共享服务多 Job 干扰是共同外部现象；禁止跨框架绝对 JCT 排名 |
 | `figures/data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | SQuAD database-E2E 产品轨与 ShareGPT 官方 Chat graph 轨的文本 baseline 分轨图 | 呈现 DuckDB、Daft Native/Ray、Ray Data 的可比合同与问题；禁止跨 panel 排名 |

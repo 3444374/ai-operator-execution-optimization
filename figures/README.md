@@ -103,6 +103,7 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | 图像四 Job 归一化干扰矩阵：列为 Short/Long 1--3，行为 Daft Built-in、Ray Data、Project static 与 Project shared；格内直标并发/独立 JCT 倍数和增幅，画法与文本原生四 Job 图统一。只作各路径内部比较；Project shared 的状态快照仅观测、不驱动动作。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 左图呈现 estimator 级 candidate pairwise；右图逐估计器完整展开 20 个 leave-one-context-out decision regret，以小菱形标中位数、同尺寸深色点标最坏 context，并同时显示平均 5%/最坏 15% 门槛；Hybrid平均2.90%、max 14.72%。Ridge逐行MAE更低但最坏选择regret更高，只称 marginal pass。 |
 | `data/report_main/opening_cost_model_decision_quality_v3.png` / `.svg` | 与 v2 相同的两 panel（配置排序 + 决策损失分布），唯一区别是 panel b 标题写全为“决策损失分布（模型预测最优与实际最优的偏离）（20 个场景）”：经校验该偏离（`argmin(predicted_mean_s)` 候选的实际偏离）在数值上等于 decision regret，二者是同一个量，故不单列第三 panel。v2 保留。 |
+| `data/report_main/opening_cost_model_decision_quality_v4.png` / `.svg` / `.pdf` | PPT 第 29 页专用三组图。图 a 用六个统一坐标的小图分别展示六种估计方法的 80 组候选均值：同一横坐标上的空心点为真实时间、实心点为预测时间，竖线长度为两者相差的秒数；每幅图直标中位相对偏差和平均绝对误差。图 b 保留四种在途工作量上限的两两排序准确率，图 c 保留 20 个留出场景的选择损失，并直接标出混合模型中位数 0、平均 2.90%、最差 14.72%。该图明确显示混合模型并非单点时间预测误差最小，只支持其在当前实验中的候选排序与选择结果较好。 |
 | `data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 单 Job 主结果：Job JCT、vLLM waiting、单请求 queue time、TTFT 四项原单位对齐；说明相近 makespan 可掩盖请求级排队。Project 暂无同一 2,048-row graph→gather 正式点，故只在图注说明缺口，不用 database-E2E 或 512-row eager 诊断补位。 |
 | `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | JCT 补充诊断：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分最小饱和、过量排队与欠供给。Project 同样因计时/manifest 合同不匹配而不进入六项横向坐标。 |
 | `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | Project 机制 A/B 图：每条线固定代表同一个Job，从独立运行、1/4配额、四Job静态竞争到共享调度，直接显示配额、竞争与策略变化趋势；右侧效率表统一报告相对变化，Static/Shared原值使用中性色，仅变化列以红色上涨、绿色下跌和正负号编码；进度折线呈现效率—公平权衡。Static/Shared是同上限互斥A/B臂。 |
@@ -113,6 +114,12 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 A/T/N/C/H/D/I/J/E，新增单 Job 任务—请求主图，并保留 F 状态备份图；十一张 PNG/SVG 均已打开复核，无裁切、
 缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。当前仍未制作新的
 PPT 成品；旧 PPT 只是历史底稿。
+
+2026-08-22 为与开题报告的证据说明一致，重新生成 A/C/H/D/E 五张图并同步报告副本：A 把图内的
+`active work`、`endpoint`、`formal` 等简写改为中文含义，并明确 29% 是运行期间峰值相对于配置上限的比例；C 明确比较的是
+两种完整服务部署条件；H 的静态与共享完成进度统一使用作业独占完整资源的独立运行参照；D 不再把主机端
+传输测量写成“PCIe 不是瓶颈”的单一归因；E 改为直接说明排序准确率和决策损失参考值。数据和统计方法未改变，详细记录见
+`audit/opening_story_figures_contract_20260808.md`。
 
 ### 2026-08-11 可编辑概念图候选稿
 

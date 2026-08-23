@@ -91,7 +91,7 @@ def figure_motivation_work_state() -> None:
     )
     ax.set_yticks([1, 0])
     ax.set_yticklabels(["轻负载批次\n16 行", "重负载批次\n16 行"])
-    ax.set_xlabel("输入 + 输出上限工作量（千 token）")
+    ax.set_xlabel("预计词元工作量（千词元）")
     ax.set_xlim(0, 7.5)
     for bar, value in zip(bars, [light, heavy], strict=True):
         ax.text(
@@ -114,7 +114,7 @@ def figure_motivation_work_state() -> None:
     ax.set_title("记录数掩盖模型工作量", loc="left")
 
     ax = fig.add_subplot(gs[0, 1])
-    labels = ["高供给负载", "到达受限负载"]
+    labels = ["输入供应充足", "请求到达较慢"]
     active = [
         float(state.loc["high", "max_active_work_seen_mean"]) / 65536,
         float(state.loc["near", "max_active_work_seen_mean"]) / 65536,
@@ -124,7 +124,7 @@ def figure_motivation_work_state() -> None:
     ax.set_yticks([1, 0])
     ax.set_yticklabels(labels)
     ax.set_xlim(0, 1.12)
-    ax.set_xlabel("运行内峰值 active work / 配置上限 W65K")
+    ax.set_xlabel("运行期间在途工作峰值 / 每实例上限 65,536")
     mfus = [
         float(state.loc["high", "mfu_pct_mean"]),
         float(state.loc["near", "mfu_pct_mean"]),
@@ -133,12 +133,12 @@ def figure_motivation_work_state() -> None:
         ax.text(
             min(ratio + 0.03, 1.02),
             bar.get_y() + bar.get_height() / 2,
-            f"{ratio:.0%}; MFU {mfu:.0f}%",
+            f"达到上限 {ratio:.0%}；模型计算利用率 {mfu:.0f}%",
             va="center",
             fontsize=8.7,
         )
     soft_grid(ax, axis="x")
-    ax.set_title("静态上限不等于运行状态", loc="left")
+    ax.set_title("配置允许的上限不等于实际在途工作", loc="left")
 
     ax = fig.add_subplot(gs[0, 2])
     x = frontier["active_work_per_endpoint"].to_numpy() / 1024
@@ -153,9 +153,7 @@ def figure_motivation_work_state() -> None:
         capsize=3,
     )
     ax.axvline(64, color=BLUE, linestyle="--", linewidth=1.1)
-    ax.text(28, 5.25, "低供给段", ha="center", color=DARK)
-    ax.text(68, 8.53, "最小近饱和点", ha="center", color=BLUE, fontweight="bold")
-    ax.text(108, 8.53, "边际收益递减", ha="center", color=DARK)
+    ax.text(28, 5.25, "工作不足，吞吐较低", ha="center", color=DARK)
     point65 = frontier.loc[frontier["active_work_per_endpoint"].eq(65536)].iloc[0]
     point98 = frontier.loc[frontier["active_work_per_endpoint"].eq(98304)].iloc[0]
     throughput_gain_pct = (
@@ -169,10 +167,10 @@ def figure_motivation_work_state() -> None:
     ax.text(
         130,
         6.25,
-        "继续增压的代价（65K→98K）\n"
+        "继续增加在途工作（65K→98K）\n"
         f"吞吐仅 +{throughput_gain_pct:.1f}%\n"
         f"P99：{float(point65['request_p99_s_mean']):.1f}→"
-        f"{float(point98['request_p99_s_mean']):.1f} s（+{p99_gain_pct:.1f}%）",
+        f"{float(point98['request_p99_s_mean']):.1f} 秒（+{p99_gain_pct:.1f}%）",
         ha="right",
         va="center",
         fontsize=8.6,
@@ -186,16 +184,16 @@ def figure_motivation_work_state() -> None:
         },
     )
     ax.set(
-        xlabel="每 endpoint active work（千 token）",
-        ylabel="吞吐（千 token/s）",
+        xlabel="每个服务实例的在途工作量上限（千词元）",
+        ylabel="吞吐（千词元/秒）",
         xlim=(12, 136),
         ylim=(4.4, 8.7),
     )
     soft_grid(ax)
-    ax.set_title("在途工作量存在最小近饱和区", loc="left")
+    ax.set_title("增加在途工作到约 65K 后，吞吐已接近最高值", loc="left")
     ax.legend(
         [Line2D([0], [0], color=BLUE, marker="o", linewidth=1.6, markersize=5)],
-        ["圆点=均值；误差线=SD（n=3 formal）"],
+        ["圆点=3 次统计运行均值；误差线=标准差"],
         loc="lower right",
         fontsize=8.0,
         handlelength=2.0,
@@ -214,14 +212,14 @@ def figure_motivation_work_state() -> None:
         )
 
     fig.suptitle(
-        "动机：行数、静态上限与实际运行状态并不等价",
+        "行数、配置上限与实际在途工作量是三个不同概念",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.02,
-        "a：RTX 5070 / Qwen2.5-1.5B 机制证据；b–c：2×RTX 4090 / Qwen2.5-7B。点与误差线=均值±SD（n=3 formal）；65K→98K 时 P99 由 36.8s 增至 40.0s。",
+        "a：RTX 5070 / Qwen2.5-1.5B；b–c：2×RTX 4090 / Qwen2.5-7B。点与误差线表示 3 次统计运行的均值±标准差；上限从 65K 增至 98K 时，P99 请求延迟由 36.8 秒增至 40.0 秒。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -259,7 +257,7 @@ def figure_motivation_work_state_split() -> None:
     )
     ax.set_yticks([1, 0])
     ax.set_yticklabels(["轻负载批次\n16 行", "重负载批次\n16 行"])
-    ax.set_xlabel("输入 + 输出上限工作量（千 token）")
+    ax.set_xlabel("预计词元工作量（千词元）")
     ax.set_xlim(0, 7.5)
     for bar, value in zip(bars, [light, heavy], strict=True):
         ax.text(
@@ -281,7 +279,7 @@ def figure_motivation_work_state_split() -> None:
     soft_grid(ax, axis="x")
     ax.set_title("记录数掩盖模型工作量", loc="left")
     fig.suptitle(
-        "动机：行数、静态上限与实际运行状态并不等价",
+        "行数、配置上限与实际在途工作量是三个不同概念",
         fontsize=15,
         fontweight="bold",
         y=0.94,
@@ -289,7 +287,7 @@ def figure_motivation_work_state_split() -> None:
     fig.text(
         0.5,
         0.07,
-        "实验配置：RTX 5070，Qwen2.5-1.5B；固定 16 rows，工作量为输入 token 与输出上限之和。",
+        "实验配置：RTX 5070，Qwen2.5-1.5B；每批固定 16 条记录，预计工作量为输入词元数与输出上限之和。",
         ha="center",
         va="top",
         fontsize=9.5,
@@ -314,7 +312,7 @@ def figure_motivation_work_state_split() -> None:
     fig.subplots_adjust(left=0.10, right=0.97, bottom=0.20, top=0.78, wspace=0.28)
 
     ax = fig.add_subplot(gs[0, 0])
-    labels = ["高供给负载", "到达受限负载"]
+    labels = ["输入供应充足", "请求到达较慢"]
     active = [
         float(state.loc["high", "max_active_work_seen_mean"]) / 65536,
         float(state.loc["near", "max_active_work_seen_mean"]) / 65536,
@@ -324,7 +322,7 @@ def figure_motivation_work_state_split() -> None:
     ax.set_yticks([1, 0])
     ax.set_yticklabels(labels)
     ax.set_xlim(0, 1.12)
-    ax.set_xlabel("运行内峰值 active work / 配置上限 W65K")
+    ax.set_xlabel("运行期间在途工作峰值 / 每实例上限 65,536")
     mfus = [
         float(state.loc["high", "mfu_pct_mean"]),
         float(state.loc["near", "mfu_pct_mean"]),
@@ -333,12 +331,12 @@ def figure_motivation_work_state_split() -> None:
         ax.text(
             min(ratio + 0.03, 1.02),
             bar.get_y() + bar.get_height() / 2,
-            f"{ratio:.0%}; MFU {mfu:.0f}%",
+            f"达到上限 {ratio:.0%}；模型计算利用率 {mfu:.0f}%",
             va="center",
             fontsize=8.7,
         )
     soft_grid(ax, axis="x")
-    ax.set_title("静态上限不等于运行状态", loc="left")
+    ax.set_title("配置允许的上限不等于实际在途工作", loc="left")
 
     ax = fig.add_subplot(gs[0, 1])
     x = frontier["active_work_per_endpoint"].to_numpy() / 1024
@@ -353,9 +351,7 @@ def figure_motivation_work_state_split() -> None:
         capsize=3,
     )
     ax.axvline(64, color=BLUE, linestyle="--", linewidth=1.1)
-    ax.text(28, 5.25, "低供给段", ha="center", color=DARK)
-    ax.text(68, 8.53, "最小近饱和点", ha="center", color=BLUE, fontweight="bold")
-    ax.text(108, 8.53, "边际收益递减", ha="center", color=DARK)
+    ax.text(28, 5.25, "工作不足，吞吐较低", ha="center", color=DARK)
     point65 = frontier.loc[frontier["active_work_per_endpoint"].eq(65536)].iloc[0]
     point98 = frontier.loc[frontier["active_work_per_endpoint"].eq(98304)].iloc[0]
     throughput_gain_pct = (
@@ -369,10 +365,10 @@ def figure_motivation_work_state_split() -> None:
     ax.text(
         130,
         6.25,
-        "继续增压的代价（65K→98K）\n"
+        "继续增加在途工作（65K→98K）\n"
         f"吞吐仅 +{throughput_gain_pct:.1f}%\n"
         f"P99：{float(point65['request_p99_s_mean']):.1f}→"
-        f"{float(point98['request_p99_s_mean']):.1f} s（+{p99_gain_pct:.1f}%）",
+        f"{float(point98['request_p99_s_mean']):.1f} 秒（+{p99_gain_pct:.1f}%）",
         ha="right",
         va="center",
         fontsize=8.6,
@@ -386,22 +382,22 @@ def figure_motivation_work_state_split() -> None:
         },
     )
     ax.set(
-        xlabel="每 endpoint active work（千 token）",
-        ylabel="吞吐（千 token/s）",
+        xlabel="每个服务实例的在途工作量上限（千词元）",
+        ylabel="吞吐（千词元/秒）",
         xlim=(12, 136),
         ylim=(4.4, 8.7),
     )
     soft_grid(ax)
-    ax.set_title("在途工作量存在最小近饱和区", loc="left")
+    ax.set_title("增加在途工作到约 65K 后，吞吐已接近最高值", loc="left")
     ax.legend(
         [Line2D([0], [0], color=BLUE, marker="o", linewidth=1.6, markersize=5)],
-        ["圆点=均值；误差线=SD（n=3 formal）"],
+        ["圆点=3 次统计运行均值；误差线=标准差"],
         loc="lower right",
         fontsize=8.0,
         handlelength=2.0,
     )
     fig.suptitle(
-        "动机：行数、静态上限与实际运行状态并不等价",
+        "行数、配置上限与实际在途工作量是三个不同概念",
         fontsize=15,
         fontweight="bold",
         y=0.94,
@@ -409,7 +405,7 @@ def figure_motivation_work_state_split() -> None:
     fig.text(
         0.5,
         0.07,
-        "实验配置：2×RTX 4090，Qwen2.5-7B，2 endpoints；每点 3 次 formal，active work 按每 endpoint 扫描。",
+        "实验配置：2×RTX 4090，Qwen2.5-7B，2 个模型服务实例；每个工作量上限进行 3 次统计运行。",
         ha="center",
         va="top",
         fontsize=9.5,
@@ -478,7 +474,7 @@ def figure_work_organization_v2() -> None:
     )
     panel_defs = [
         (axes[0], throughput, "端到端吞吐", "k token/s", (35, 61)),
-        (axes[1], cache_hit * 100, "Prefix cache 命中率", "%", (0, 86)),
+        (axes[1], cache_hit * 100, "共享前缀缓存命中率", "%", (0, 86)),
     ]
     label_offsets = [
         [0.0, 0.8, -1.0, 0.0, 1.0],
@@ -520,8 +516,8 @@ def figure_work_organization_v2() -> None:
         ax.set_xticks([0, 1])
         ax.set_xticklabels(
             [
-                "低压力\n2 endpoint · KV max 7%–10%",
-                "高压力\n4 endpoint · KV max 98%–100%",
+                "低压力\n2 个服务实例 · 键值缓存峰值 7%–10%",
+                "高压力\n4 个服务实例 · 键值缓存峰值 98%–100%",
             ]
         )
         ax.set_ylabel(unit)
@@ -533,7 +529,7 @@ def figure_work_organization_v2() -> None:
         )
         soft_grid(ax, axis="y")
     fig.suptitle(
-        "压力升高后，重排策略的 Cache 命中与吞吐同步下降",
+        "服务部署条件改变后，重排方法的缓存命中率与吞吐同时下降",
         fontsize=14.5,
         fontweight="bold",
         y=0.965,
@@ -562,7 +558,7 @@ def figure_work_organization_v2() -> None:
     fig.text(
         0.5,
         -0.025,
-        "每条线连接同一策略的低→高压力3次formal中位数；实线圆点=保持输入顺序，虚线方点=重排/装箱，不画误差线。相同双卡硬件，仅endpoint拓扑与运行压力不同；说明机制，不作容量排名。",
+        "每条线连接同一方法在低、高压力条件下 3 次统计运行的中位数；实线圆点=保持输入顺序，虚线方点=重排/装箱，不画误差线。硬件相同，但服务实例数、每个实例的显存比例和运行压力同时改变；不作跨条件服务容量排名。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -929,9 +925,9 @@ def figure_text_baseline_evidence_map() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.7), constrained_layout=True)
     ax = axes[0]
     product_arms = [
-        ("direct_static_sharded", "Direct static", GREY),
+        ("direct_static_sharded", "直接静态分片", GREY),
         ("duckdb_ai_static_sharded", "DuckDB AI", ORANGE),
-        ("project_frozen_static", "冻结静态基线", BLUE),
+        ("project_frozen_static", "项目固定参数方案", BLUE),
     ]
     y = np.arange(len(product_arms))[::-1]
     means = [float(squad.loc[arm, "correct_rows_per_s_mean"]) for arm, _, _ in product_arms]
@@ -941,27 +937,28 @@ def figure_text_baseline_evidence_map() -> None:
     ax.set_yticks(y)
     ax.set_yticklabels([label for _, label, _ in product_arms])
     ax.set_xlim(0, 155)
-    ax.set_xlabel("SQuAD correct rows/s")
+    ax.set_xlabel("SQuAD 正确结果行数（行/秒）")
     for yi, value, error in zip(y, means, errors, strict=True):
         ax.text(value + 1.4, yi, f"{value:.1f} ± {error:.1f}", va="center", fontsize=8.5)
     ax.set_ylim(-1.0, 2.5)
     ax.text(
         3,
         -0.78,
-        "统一 PostgreSQL source/sink；3 次 formal\nShareGPT 中 DuckDB 有 4,921/6,144 cap 语义失败",
+        "统一 PostgreSQL 数据源与结果收集；3 次统计运行\n"
+        "ShareGPT 完整路径的请求提交速度和输出要求不同，不作排名",
         ha="left",
         va="bottom",
         fontsize=8.1,
         color=DARK,
     )
-    ax.set_title("产品 / database-E2E 轨：仅 SQuAD 可排名", loc="left")
+    ax.set_title("完整数据库执行路径：SQuAD 结果可直接比较", loc="left")
     soft_grid(ax, axis="x")
 
     ax = axes[1]
     chat_arms = [
-        ("bounded_http", "直接调用\n（容量参照）", DARK),
-        ("daft_native", "Daft Native", TEAL),
-        ("daft_ray", "Daft Ray", PURPLE),
+        ("bounded_http", "直接调用\n（服务能力参照）", DARK),
+        ("daft_native", "Daft 原生执行", TEAL),
+        ("daft_ray", "Daft Ray 执行", PURPLE),
         ("ray_data_http", "Ray Data", GREY),
     ]
     y = np.arange(len(chat_arms))[::-1]
@@ -980,25 +977,25 @@ def figure_text_baseline_evidence_map() -> None:
     ax.text(
         19.5,
         -0.78,
-        "同 Chat manifest；3 次 formal；vendor scheduler ownership\n"
-        "Project 暂无同一 2,048-row graph→gather 正式点，不混入排名",
+        "同一 ShareGPT 输入清单；3 次统计运行；调度由被测框架负责\n"
+        "项目方法尚无相同输入与计时范围的对应结果，因此不加入本组排名",
         ha="right",
         va="bottom",
         fontsize=8.1,
         color=GREY,
     )
-    ax.set_title("官方 Chat graph 轨：服务状态与供给差异", loc="left")
+    ax.set_title("框架原生执行路径：ShareGPT 模型服务吞吐", loc="left")
     soft_grid(ax, axis="x")
 
     fig.suptitle(
-        "文本 baseline 需要分轨比较，不能把不同语义与计时边界混成总排行榜",
+        "两组文本执行路径需要分别比较",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.02,
-        "两 panel 使用相同双卡模型服务，但 workload、source/sink 与输出语义合同不同；只在 panel 内比较。条末数字为均值 ± SD。",
+        "左右两图的输入、输出要求和指标不同，只能分别解释。条末数字为均值 ± 标准差。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -1072,7 +1069,7 @@ def figure_multijob_interference_tradeoff() -> None:
     ].copy()
 
     jobs = ["short", "long1", "long2", "long3"]
-    job_labels = ["Short", "Long 1", "Long 2", "Long 3"]
+    job_labels = ["短作业", "长作业 1", "长作业 2", "长作业 3"]
     progress = {}
     for _, row in fairness.iterrows():
         progress[str(row["comparison"])] = json.loads(row["normalized_progress_by_job"])
@@ -1128,7 +1125,7 @@ def figure_multijob_interference_tradeoff() -> None:
 
     normalized_jct = jct / jct[:, [0]]
     scenario_x = np.arange(4)
-    scenario_labels = ["独立运行", "1/4 配额", "四 Job\n静态竞争", "四 Job\n共享调度"]
+    scenario_labels = ["独立运行", "1/4 份额", "四作业\n静态竞争", "四作业\n共享方式"]
     job_colors = [BLUE, TEAL, ORANGE, PURPLE]
     job_markers = ["o", "s", "^", "D"]
     for row, (job_label, color, marker) in enumerate(
@@ -1150,10 +1147,10 @@ def figure_multijob_interference_tradeoff() -> None:
     ax_jct.set_xticklabels(scenario_labels)
     ax_jct.set_xlim(-0.18, 3.18)
     ax_jct.set_ylim(0.72, 5.05)
-    ax_jct.set_ylabel("归一化 JCT（独立运行 = 1，越低越好）")
-    ax_jct.set_title("Project 内同一 Job 在配额、竞争与共享调度下如何变化", loc="left", pad=12)
+    ax_jct.set_ylabel("相对完成时间（独立运行 = 1，越低越好）")
+    ax_jct.set_title("同一作业在份额减少、并发竞争和共享方式下的完成时间变化", loc="left", pad=12)
     soft_grid(ax_jct, axis="y")
-    ax_jct.legend(loc="upper left", frameon=False, ncol=4, title="每条线代表同一个 Job")
+    ax_jct.legend(loc="upper left", frameon=False, ncol=4, title="每条线代表同一个作业")
 
     static_group = group_runs.loc[group_runs["policy"].eq("static_partition")]
     shared_group = group_runs.loc[group_runs["policy"].eq("shared_work")]
@@ -1177,13 +1174,13 @@ def figure_multijob_interference_tradeoff() -> None:
             relative_change(static_throughput, shared_throughput),
         ),
         (
-            "Group JCT",
+            "整组完成时间",
             f"{static_jct:.1f}s",
             f"{shared_jct:.1f}s",
             relative_change(static_jct, shared_jct),
         ),
         (
-            "MFU",
+            "模型计算利用率",
             f"{static_mfu:.1%}",
             f"{shared_mfu:.1%}",
             relative_change(static_mfu, shared_mfu),
@@ -1219,7 +1216,7 @@ def figure_multijob_interference_tradeoff() -> None:
         ):
             ax_eff.text(x, y, value, transform=ax_eff.transAxes, ha=align, va="center", color=color)
         ax_eff.plot([0.02, 0.96], [y - 0.12, y - 0.12], transform=ax_eff.transAxes, color=LIGHT_GRID, lw=0.8)
-    ax_eff.set_title("共享调度提高总效率", loc="left", pad=10)
+    ax_eff.set_title("共享未使用份额提高总体效率", loc="left", pad=10)
 
     progress_values = np.array(
         [[static_progress[job], shared_progress[job]] for job in jobs]
@@ -1247,13 +1244,13 @@ def figure_multijob_interference_tradeoff() -> None:
     ax_fair.set_ylim(0.18, 0.88)
     ax_fair.set_ylabel("相对独立运行的完成速率（独立运行 = 1，越高越好）")
     soft_grid(ax_fair, axis="y")
-    ax_fair.set_title("共享调度改善所有 Job，但收益分配不均", loc="left", pad=10)
+    ax_fair.set_title("四个作业均更快，但改善幅度不同", loc="left", pad=10)
     ax_fair.legend(loc="upper center", frameon=False, ncol=4, fontsize=7.5)
     ax_fair.text(
         0.97,
         0.04,
-        f"Jain：{static_jain:.3f} → {shared_jain:.3f}    "
-        f"Long JCT spread：{static_spread:.1f}s → {shared_spread:.1f}s",
+        f"Jain 指数：{static_jain:.3f} → {shared_jain:.3f}    "
+        f"长作业完成时间极差：{static_spread:.1f}s → {shared_spread:.1f}s",
         transform=ax_fair.transAxes,
         ha="right",
         va="bottom",
@@ -1273,14 +1270,14 @@ def figure_multijob_interference_tradeoff() -> None:
             va="bottom",
         )
     fig.suptitle(
-        "Project 机制 A/B：共享 work credit 的效率—隔离—公平权衡",
+        "相同总容量下：共享未使用份额的效率与作业差异",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.015,
-        "Short@0s，3×Long@5s；每条线始终代表同一个 Job，点为3次formal均值，数值由纵轴读取，不重复标注。静态/共享是同一总上限下互斥A/B臂；独立与1/4配额用于分离配额损失；panel c 两臂统一按各自独立运行（full pool）归一化，量化各 Job 保留的完成速率。",
+        "短作业在0秒启动，三个长作业在5秒启动；每条线始终代表同一个作业，点为3次统计运行均值。静态分区和共享未使用份额采用相同总上限；独立运行与1/4份额用于区分份额减少和并发竞争的影响；图c统一按各作业独占完整资源时的完成时间归一化。",
         ha="center",
         va="top",
         fontsize=8.5,
@@ -1468,7 +1465,7 @@ def figure_image_stage_evidence() -> None:
     ax.set_xticklabels([str(item) for item in batches])
     ax.set(
         xlabel="每批图像数",
-        ylabel="CPU 准备时间 / GPU actor 时间",
+        ylabel="CPU 准备时间 / GPU 执行时间",
         ylim=(0, 35),
     )
     ax.legend(
@@ -1477,14 +1474,14 @@ def figure_image_stage_evidence() -> None:
         loc="lower right",
         fontsize=7.6,
     )
-    ax.set_title("prepare 是独立且占主导的工作阶段", loc="left")
+    ax.set_title("图像准备是独立且耗时较长的工作阶段", loc="left")
     soft_grid(ax)
 
     ax = axes[1]
     transfer_defs = [
-        ("r0_gpu_resident", "R0 GPU-resident", DARK, "o"),
-        ("r1_pinned_fp16", "R1 pinned FP16", TEAL, "s"),
-        ("r2_pageable_fp32", "R2 pageable FP32", ORANGE, "D"),
+        ("r0_gpu_resident", "张量已在 GPU", DARK, "o"),
+        ("r1_pinned_fp16", "不可换页主机内存（FP16）", TEAL, "s"),
+        ("r2_pageable_fp32", "普通主机内存（FP32）", ORANGE, "D"),
     ]
     y = np.arange(len(transfer_defs))[::-1]
     for yi, (mode, _, color, marker) in zip(y, transfer_defs, strict=True):
@@ -1511,13 +1508,13 @@ def figure_image_stage_evidence() -> None:
     labels = [item[1] for item in transfer_defs]
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
-    ax.set_xlabel("吞吐（千 image/s，batch=64）")
+    ax.set_xlabel("吞吐（千张图像/秒，每批 64 张）")
     ax.set_xlim(0, 10.8)
     ax.set_ylim(-0.45, 2.45)
     ax.text(
         0.98,
         0.06,
-        "R0→R1 仅约 −11%\nR0→R2 约 −80%",
+        "GPU 张量→不可换页内存：约 −11%\nGPU 张量→普通内存：约 −80%",
         transform=ax.transAxes,
         ha="right",
         va="bottom",
@@ -1530,7 +1527,7 @@ def figure_image_stage_evidence() -> None:
         loc="lower center",
         fontsize=7.3,
     )
-    ax.set_title("瓶颈不是 PCIe，而是 host ownership-copy", loc="left")
+    ax.set_title("输入表示与主机端数据组织会改变阶段效率", loc="left")
     soft_grid(ax, axis="x")
 
     ax = axes[2]
@@ -1549,10 +1546,10 @@ def figure_image_stage_evidence() -> None:
     )
     ax.scatter(windows[-1], throughput[-1], color=RED, marker="X", s=58, zorder=4)
     for window, value, wait in zip(windows, throughput, waits, strict=True):
-        ax.text(window, value + 0.055, f"wait {wait:.2f}s", ha="center", fontsize=7.7)
+        ax.text(window, value + 0.055, f"等待 {wait:.2f} 秒", ha="center", fontsize=7.7)
     ax.set(
-        xlabel="max active batches",
-        ylabel="setup 后吞吐（千 image/s）",
+        xlabel="最大在途批次数",
+        ylabel="初始化后吞吐（千张图像/秒）",
         xlim=(1, 67),
         ylim=(0.35, 1.18),
     )
@@ -1563,7 +1560,7 @@ def figure_image_stage_evidence() -> None:
             Line2D([0], [0], color=BLUE, marker="D", linewidth=0),
             Line2D([0], [0], color=RED, marker="X", linewidth=0),
         ],
-        ["点=单次 screening", "菱形=最高吞吐点", "红叉=继续增压后回退"],
+        ["圆点=单次范围筛查", "菱形=最高吞吐点", "红叉=继续增加在途批次后回落"],
         loc="lower right",
         fontsize=7.2,
     )
@@ -1583,14 +1580,14 @@ def figure_image_stage_evidence() -> None:
         )
 
     fig.suptitle(
-        "图像动机：阶段失衡、传输形态与提交窗口共同影响执行",
+        "图像工作需要区分准备、数据传递与模型执行阶段",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.02,
-        "a–b：每 cell 30 次重复，中位数与 IQR；c：5K 单次 screening，仅作窗口选择动机，不作策略胜出证据。",
+        "a–b：每种配置重复 30 次，显示中位数与四分位距；c：5K 图像单次范围筛查，只用于选择后续实验的提交窗口范围，不证明某种动态方法已经有效。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -1659,7 +1656,7 @@ def figure_image_stage_evidence_split() -> None:
     ax.set_title("图像也是分阶段工作量：张数描述不了阶段压力", loc="left")
     soft_grid(ax)
     fig.suptitle(
-        "图像动机：阶段失衡、传输形态与提交窗口共同影响执行",
+        "图像工作需要区分准备、数据传递与模型执行阶段",
         fontsize=15,
         fontweight="bold",
         y=0.94,
@@ -2200,12 +2197,12 @@ def figure_cost_decision_v3() -> None:
         )
     ax.set_xlim(0.45, 0.86)
     ax.set_ylim(-0.65, len(rows) - 0.35)
-    ax.set_xlabel("Pairwise accuracy")
+    ax.set_xlabel("候选配置两两排序准确率")
     ax.set_title("a   配置排序", loc="left", pad=10, fontsize=11.2)
     ax.text(
         0.97,
         0.96,
-        "通过门槛 ≥ 0.75",
+        "参考值 ≥ 0.75",
         transform=ax.transAxes,
         color=TEAL,
         ha="right",
@@ -2280,7 +2277,7 @@ def figure_cost_decision_v3() -> None:
             )
     ax.set_xlim(-2.5, 85)
     ax.set_ylim(-0.65, len(rows) - 0.35)
-    ax.set_xlabel("单个 context 的 decision regret (%)")
+    ax.set_xlabel("单个执行情境的决策损失 (%)")
     ax.set_title(
         "b   决策损失分布（模型预测最优与实际最优的偏离）（20 个场景）",
         loc="left",
@@ -2303,7 +2300,7 @@ def figure_cost_decision_v3() -> None:
                 markeredgecolor="white",
                 markersize=6,
                 alpha=0.58,
-                label="单个场景（每行 n=20）",
+                label="单个执行情境（每种方法 n=20）",
             ),
             Line2D(
                 [0],
@@ -2332,7 +2329,7 @@ def figure_cost_decision_v3() -> None:
                 color=TEAL,
                 linestyle="--",
                 linewidth=1.1,
-                label="平均门槛 5%",
+                label="平均损失参考值 5%",
             ),
             Line2D(
                 [0],
@@ -2340,7 +2337,7 @@ def figure_cost_decision_v3() -> None:
                 color=GREY,
                 linestyle=":",
                 linewidth=1.2,
-                label="最坏门槛 15%",
+                label="最坏情境参考值 15%",
             ),
         ],
         loc="upper center",
@@ -2352,7 +2349,7 @@ def figure_cost_decision_v3() -> None:
         columnspacing=1.35,
     )
     fig.suptitle(
-        "代价估计必须同时通过配置排序与决策风险门禁",
+        "代价估计需要同时评价配置排序与决策损失",
         fontsize=14.5,
         fontweight="bold",
         y=0.965,
@@ -2360,10 +2357,10 @@ def figure_cost_decision_v3() -> None:
     fig.text(
         0.5,
         0.055,
-        "20-context leave-one-context-out；panel b 每行完整展示 20 个真实场景，纵向抖动仅用于避免同值点重叠。"
-        "小菱形为中位数；晋级同时要求 pairwise≥0.75、平均 regret≤5%、最坏 regret≤15%。Hybrid平均2.90%、最坏14.72%。\n"
-        "逐行 MAE：Ridge 3.23s < 混合模型 3.98s，但最坏 regret 为 22.71% > 14.72%，"
-        "说明点预测误差不能替代配置排序与决策风险评价。panel b 的 decision regret 就是“模型预测最优与实际最优的偏离”"
+        "20个执行情境采用逐一留出验证；图b每行完整展示20个留出情境，纵向抖动仅用于避免相同数值的点重叠。"
+        "小菱形为中位数；参考要求为排序准确率≥0.75、平均决策损失≤5%、最坏情境损失≤15%。混合模型平均2.90%、最坏14.72%。\n"
+        "逐次执行时间平均绝对误差：Ridge 3.23s < 混合模型 3.98s，但最坏决策损失为22.71% > 14.72%，"
+        "说明点预测误差不能替代配置排序与决策损失评价。图b的决策损失就是“模型预测最优与实际最优的偏离”"
         "（= 100×(预测最优候选实际耗时 − 实际最优耗时)/实际最优耗时），两者是同一个量。",
         ha="center",
         va="bottom",
@@ -2371,6 +2368,398 @@ def figure_cost_decision_v3() -> None:
         color=GREY,
     )
     finish(fig, "opening_cost_model_decision_quality_v3")
+
+
+def figure_cost_decision_v4() -> None:
+    """三 panel：六种方法的预测偏差、四种上限排序、选择后的额外执行时间。"""
+
+    source = (
+        ROOT
+        / "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/"
+        "ce_context_loo_rerun_20260807.json"
+    )
+    estimators = _load_json_replacing_invalid_utf8(source)["estimators"]
+    names = [
+        "CE0_mean",
+        "CE1_analytical",
+        "CE2_lookup",
+        "CE3_ridge",
+        "CE4_lightgbm",
+        "CE5_hybrid",
+    ]
+    if set(estimators) != set(names):
+        raise ValueError("cost figure requires exactly CE0-CE5 estimators")
+
+    labels = ["均值", "解析模型", "查表", "岭回归", "LightGBM", "混合模型"]
+    rows = []
+    for name, label in zip(names, labels, strict=True):
+        estimator = estimators[name]
+        summary = estimator["summary"]["macro_fold_distributions"]
+        folds = sorted(estimator["folds"], key=lambda fold: fold["context_id"])
+        regrets = np.asarray(
+            [fold["selection"]["decision_regret_pct"] for fold in folds],
+            dtype=float,
+        )
+        if len(regrets) != 20:
+            raise ValueError(f"{name} must contain exactly 20 decision contexts")
+        expected = summary["decision_regret_pct"]
+        if not np.isclose(regrets.mean(), expected["mean"]):
+            raise ValueError(f"{name} regrets do not reproduce macro mean")
+        if not np.isclose(np.median(regrets), expected["median"]):
+            raise ValueError(f"{name} regrets do not reproduce median")
+        if not np.isclose(regrets.max(), expected["max"]):
+            raise ValueError(f"{name} regrets do not reproduce maximum")
+        candidates = [
+            candidate
+            for fold in folds
+            for candidate in fold["candidates"]
+        ]
+        if len(candidates) != 80:
+            raise ValueError(f"{name} must contain 20 contexts x 4 candidates")
+        actual = np.asarray(
+            [float(candidate["actual_mean_s"]) for candidate in candidates],
+            dtype=float,
+        )
+        predicted = np.asarray(
+            [float(candidate["predicted_mean_s"]) for candidate in candidates],
+            dtype=float,
+        )
+        signed_error_pct = 100 * (predicted - actual) / actual
+        rows.append(
+            {
+                "label": label,
+                "pairwise": float(
+                    summary["candidate_pairwise_accuracy"]["mean"]
+                ),
+                "regrets": regrets,
+                "median": float(expected["median"]),
+                "mean": float(expected["mean"]),
+                "max": float(expected["max"]),
+                "actual": actual,
+                "predicted": predicted,
+                "signed_error_pct": signed_error_pct,
+                "mae_s": float(np.mean(np.abs(predicted - actual))),
+                "median_abs_error_pct": float(
+                    np.median(np.abs(signed_error_pct))
+                ),
+            }
+        )
+
+    fig = plt.figure(figsize=(15.6, 6.25), constrained_layout=False)
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.60, 0.65, 1.55])
+    fig.subplots_adjust(
+        left=0.058,
+        right=0.988,
+        bottom=0.205,
+        top=0.745,
+        wspace=0.28,
+    )
+    pred_grid = gs[0, 0].subgridspec(2, 3, wspace=0.12, hspace=0.30)
+    pred_axes = [
+        fig.add_subplot(pred_grid[row_index, column_index])
+        for row_index in range(2)
+        for column_index in range(3)
+    ]
+    ax_rank = fig.add_subplot(gs[0, 1])
+    ax_regret = fig.add_subplot(gs[0, 2])
+
+    y = np.arange(len(rows))[::-1]
+    separators = (y[:-1] + y[1:]) / 2
+    method_colors = [GREY, TEAL, ORANGE, "#7D6AA5", "#4F8A6B", BLUE]
+    time_limit = 52
+    for panel_index, (ax_pred, row, color) in enumerate(
+        zip(pred_axes, rows, method_colors, strict=True)
+    ):
+        under_mask = row["predicted"] < row["actual"]
+        over_mask = ~under_mask
+        ax_pred.vlines(
+            row["actual"][under_mask],
+            row["predicted"][under_mask],
+            row["actual"][under_mask],
+            color="#3F88A8",
+            linewidth=0.65,
+            alpha=0.24,
+            zorder=1.5,
+        )
+        ax_pred.vlines(
+            row["actual"][over_mask],
+            row["actual"][over_mask],
+            row["predicted"][over_mask],
+            color=ORANGE,
+            linewidth=0.65,
+            alpha=0.24,
+            zorder=1.5,
+        )
+        ax_pred.scatter(
+            row["actual"],
+            row["actual"],
+            facecolors="white",
+            edgecolors=GREY,
+            s=10,
+            alpha=0.52,
+            linewidths=0.45,
+            zorder=2.5,
+        )
+        ax_pred.scatter(
+            row["actual"],
+            row["predicted"],
+            color=color,
+            s=13,
+            alpha=0.48,
+            edgecolors="white",
+            linewidths=0.25,
+            zorder=3,
+        )
+        ax_pred.plot(
+            [0, time_limit],
+            [0, time_limit],
+            color=DARK,
+            linewidth=0.75,
+            linestyle="--",
+            zorder=2,
+        )
+        ax_pred.set_xlim(0, time_limit)
+        ax_pred.set_ylim(0, time_limit)
+        ax_pred.set_aspect("equal", adjustable="box")
+        ax_pred.set_xticks([0, 25, 50])
+        ax_pred.set_yticks([0, 25, 50])
+        ax_pred.tick_params(labelsize=6.2, pad=1.5, length=2)
+        ax_pred.set_title(row["label"], loc="left", pad=2, fontsize=8.3)
+        ax_pred.text(
+            0.04,
+            0.94,
+            f"中位相对偏差 {row['median_abs_error_pct']:.1f}%\n平均误差 {row['mae_s']:.2f} s",
+            transform=ax_pred.transAxes,
+            ha="left",
+            va="top",
+            fontsize=6.6,
+            color=DARK,
+            bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.7, "alpha": 0.76},
+            zorder=4,
+        )
+        if panel_index // 3 == 1:
+            ax_pred.set_xlabel("实测时间 (s)", fontsize=6.8, labelpad=1.5)
+        else:
+            ax_pred.tick_params(axis="x", labelbottom=False)
+        if panel_index % 3 == 0:
+            ax_pred.set_ylabel("预测时间 (s)", fontsize=6.8, labelpad=1.5)
+        else:
+            ax_pred.tick_params(axis="y", labelleft=False)
+        soft_grid(ax_pred, axis="both")
+    fig.text(
+        0.058,
+        0.805,
+        "a   六种方法：预测时间与真实时间",
+        ha="left",
+        va="center",
+        fontsize=11.2,
+        fontweight="bold",
+    )
+    fig.text(
+        0.42,
+        0.805,
+        "空心点：真实｜实心点：预测｜竖线：相差的秒数",
+        ha="right",
+        va="center",
+        fontsize=7.2,
+        color=GREY,
+    )
+
+    ax_rank.axvspan(0.75, 0.86, color="#EAF7F5", zorder=0)
+    ax_rank.axvline(0.75, color=TEAL, linestyle="--", linewidth=1.0, zorder=1)
+    for separator in separators:
+        ax_rank.axhline(separator, color="#E5EAED", linewidth=0.75, zorder=1.5)
+    for yi, row in zip(y, rows, strict=True):
+        color = BLUE if row["label"] == "混合模型" else GREY
+        ax_rank.scatter(row["pairwise"], yi, color=color, s=46, zorder=3)
+        ax_rank.text(
+            row["pairwise"] + 0.009,
+            yi,
+            f"{row['pairwise']:.3f}",
+            color=color,
+            ha="left",
+            va="center",
+            fontsize=7.8,
+            fontweight="bold" if row["label"] == "混合模型" else "normal",
+        )
+    ax_rank.set_xlim(0.45, 0.86)
+    ax_rank.set_ylim(-0.65, len(rows) - 0.35)
+    ax_rank.set_yticks(y)
+    ax_rank.set_yticklabels([row["label"] for row in rows])
+    ax_rank.set_xlabel("两两排序准确率")
+    ax_rank.set_title("b   四种上限的快慢排序", loc="left", pad=10, fontsize=11.2)
+    ax_rank.text(
+        0.97,
+        0.96,
+        "参考值 0.75",
+        transform=ax_rank.transAxes,
+        color=TEAL,
+        ha="right",
+        va="top",
+        fontsize=7.4,
+    )
+    soft_grid(ax_rank, axis="x")
+
+    worst_grey = "#5F6B75"
+    ax_regret.axvspan(0, 5, color="#EAF7F5", zorder=0)
+    ax_regret.axvspan(5, 15, color="#F3F6F7", zorder=0)
+    ax_regret.axvline(5, color=TEAL, linestyle="--", linewidth=1.0, zorder=1)
+    ax_regret.axvline(15, color=GREY, linestyle=":", linewidth=1.15, zorder=1)
+    for separator in separators:
+        ax_regret.axhline(separator, color="#E5EAED", linewidth=0.75, zorder=1.5)
+    for row_index, (yi, row) in enumerate(zip(y, rows, strict=True)):
+        color = BLUE if row["label"] == "混合模型" else GREY
+        regrets = row["regrets"]
+        rng = np.random.default_rng(20260810 + row_index)
+        jitter = np.linspace(-0.24, 0.24, len(regrets))[rng.permutation(len(regrets))]
+        ax_regret.scatter(
+            regrets,
+            yi + jitter,
+            color=color,
+            s=22,
+            alpha=0.66 if row["label"] == "混合模型" else 0.46,
+            edgecolors="white",
+            linewidths=0.35,
+            zorder=3,
+        )
+        ax_regret.scatter(
+            row["median"],
+            yi,
+            marker="D",
+            color=color,
+            edgecolors="none",
+            s=36,
+            zorder=5,
+        )
+        max_index = int(np.argmax(regrets))
+        ax_regret.scatter(
+            regrets[max_index],
+            yi + jitter[max_index],
+            color=BLUE if row["label"] == "混合模型" else worst_grey,
+            edgecolors="none",
+            s=22,
+            zorder=6,
+        )
+        if row["label"] == "混合模型":
+            ax_regret.scatter(
+                row["mean"],
+                yi,
+                marker="^",
+                color=BLUE,
+                edgecolors="white",
+                linewidths=0.4,
+                s=48,
+                zorder=7,
+            )
+            ax_regret.text(
+                row["median"] + 1.2,
+                yi + 0.18,
+                f"中位 {row['median']:.1f}%",
+                color=BLUE,
+                fontsize=7.8,
+                fontweight="bold",
+                ha="left",
+                va="bottom",
+            )
+            ax_regret.text(
+                row["mean"] + 1.2,
+                yi - 0.02,
+                f"平均 {row['mean']:.2f}%",
+                color=BLUE,
+                fontsize=7.8,
+                fontweight="bold",
+                ha="left",
+                va="center",
+            )
+            ax_regret.text(
+                row["max"] + 1.2,
+                yi - 0.20,
+                f"最差 {row['max']:.1f}%",
+                color=BLUE,
+                fontsize=7.8,
+                fontweight="bold",
+                ha="left",
+                va="top",
+            )
+    ax_regret.set_xlim(-2.5, 85)
+    ax_regret.set_ylim(-0.65, len(rows) - 0.35)
+    ax_regret.set_xlabel("所选上限比实测最快上限多耗时 (%)")
+    ax_regret.set_title(
+        "c   六种方法选定上限后的实际结果",
+        loc="left",
+        pad=10,
+        fontsize=11.2,
+    )
+    ax_regret.set_yticks(y)
+    ax_regret.set_yticklabels([row["label"] for row in rows], fontsize=7.2)
+    ax_regret.tick_params(axis="y", left=False, labelleft=True, pad=3)
+    soft_grid(ax_regret, axis="x")
+
+    fig.legend(
+        handles=[
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                color="none",
+                markerfacecolor=GREY,
+                markeredgecolor="white",
+                markersize=5.8,
+                alpha=0.58,
+                label="单个留出场景",
+            ),
+            Line2D(
+                [0],
+                [0],
+                marker="D",
+                color="none",
+                markerfacecolor=GREY,
+                markeredgecolor="none",
+                markersize=6.0,
+                label="菱形：中位数",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=TEAL,
+                linestyle="--",
+                linewidth=1.1,
+                label="平均多耗时参考值 5%",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=GREY,
+                linestyle=":",
+                linewidth=1.2,
+                label="最差场景参考值 15%",
+            ),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.74, 0.865),
+        ncol=4,
+        frameon=False,
+        fontsize=7.4,
+        handletextpad=0.35,
+        columnspacing=1.0,
+    )
+    fig.suptitle(
+        "代价估计同时检查预测偏差、四种上限的排序和选择结果",
+        fontsize=14.5,
+        fontweight="bold",
+        y=0.965,
+    )
+    fig.text(
+        0.5,
+        0.055,
+        "图a：每种方法包含80组留一场景结果；同一横坐标上的空心点和实心点分别表示真实时间和预测时间，竖线长度表示两者相差的秒数。\n"
+        "图c：比较错误选择造成的额外耗时；混合模型的中位数为0，20个场景平均为2.90%，最差为14.72%。",
+        ha="center",
+        va="bottom",
+        fontsize=8.8,
+        color=GREY,
+    )
+    finish(fig, "opening_cost_model_decision_quality_v4")
 
 
 def _box(ax, x, y, w, h, title, detail, color) -> None:
@@ -2727,7 +3116,7 @@ def main() -> None:
         "D": figure_image_stage_evidence_set,
         "I": figure_image_baseline_evidence_map,
         "J": figure_image_fourjob_normalized_impact,
-        "E": figure_cost_decision_v3,
+        "E": figure_cost_decision_v4,
         "F": figure_native_single_job_evidence,
         "H": figure_multijob_interference_tradeoff,
         "N": figure_native_fourjob_normalized_impact,
