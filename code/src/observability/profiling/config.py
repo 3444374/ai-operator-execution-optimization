@@ -129,13 +129,29 @@ def validate_shared_credit_policy_args(args: argparse.Namespace) -> None:
             "shared ready payload-byte limit requires bounded ready observation"
         )
 
-    if args.shared_credit_policy not in {
+    policy = args.shared_credit_policy
+    if policy not in {
         "saor_bounded_priority",
         "saor_bounded_ready",
     }:
         return
-    if not args.arrival_replay:
+    if policy == "saor_bounded_priority" and not args.arrival_replay:
         raise SystemExit("bounded priority requires arrival replay")
+    if (
+        policy == "saor_bounded_ready"
+        and observation != "bounded_concrete_pre_registration"
+    ):
+        raise SystemExit(
+            "saor bounded ready requires bounded concrete pre-registration"
+        )
+    if (
+        policy == "saor_bounded_ready"
+        and not args.arrival_replay
+        and not args.request_trace_output
+    ):
+        raise SystemExit(
+            "eager saor bounded ready requires request tracing"
+        )
     if args.submission_granularity != "request":
         raise SystemExit("bounded priority requires request granularity")
     slo_ms = float(args.shared_credit_job_slo_ms)

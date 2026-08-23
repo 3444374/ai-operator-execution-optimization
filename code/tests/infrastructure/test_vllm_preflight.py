@@ -9,17 +9,82 @@ implementation (code/AGENTS.md §4 低耦合).
 
 from __future__ import annotations
 
+import hashlib
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
+import venv
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
+from scripts.serving import launch_vllm_with_identity as identity_launcher
 from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
     flag_value_present,
     prefix_cache_flag_enabled,
+    scheduler_cls_value,
+    verify_endpoint_service_identity,
     verify_endpoint_cmdlines,
+    verify_endpoint_scheduler_cls,
+    verify_live_vllm_service_identity,
+    verify_model_artifact_identity,
 )
 
 
 class VllmPreflightPureTests(unittest.TestCase):
+    def test_identity_launcher_seals_venv_before_exact_server_exec(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "site-packages" / "vllm"
+            package.mkdir(parents=True)
+            origin = package / "__init__.py"
+            origin.write_text("", encoding="utf-8")
+            sidecar = root / "runtime.json"
+            with patch.object(
+                identity_launcher,
+                "_args",
+                return_value=SimpleNamespace(
+                    identity_output=sidecar,
+                    port=8000,
+                    server_args=["--model", "/model", "--port", "8000"],
+                ),
+            ), patch.object(
+                identity_launcher.importlib.util,
+                "find_spec",
+                return_value=SimpleNamespace(origin=str(origin)),
+            ), patch.object(
+                identity_launcher.importlib.metadata,
+                "version",
+                return_value="0.25.1",
+            ), patch.object(
+                identity_launcher,
+                "_process_start_time_ticks",
+                return_value="12345",
+            ), patch.object(
+                identity_launcher.os,
+                "execv",
+                side_effect=RuntimeError("exec captured"),
+            ) as execute:
+                with self.assertRaisesRegex(RuntimeError, "exec captured"):
+                    identity_launcher.main()
+            sealed = json.loads(sidecar.read_text(encoding="utf-8"))
+            self.assertEqual(sealed["process_start_time_ticks"], "12345")
+            self.assertEqual(sealed["python_executable_argv0"], sys.executable)
+            self.assertEqual(sealed["sys_prefix"], sys.prefix)
+            self.assertEqual(sealed["package_root"], str(package.resolve()))
+            execute.assert_called_once_with(
+                sys.executable,
+                [
+                    sys.executable,
+                    "-m",
+                    "vllm.entrypoints.openai.api_server",
+                    "--model", "/model", "--port", "8000",
+                ],
+            )
+
     def _cmd(self, port, *, seqs="256", batched="8192", prefix="on"):
         flags = f"--port {port} --max-num-seqs {seqs} --max-num-batched-tokens {batched}"
         if prefix == "on":
@@ -66,6 +131,343 @@ class VllmPreflightPureTests(unittest.TestCase):
         self.assertTrue(flag_value_present(c, "--max-num-seqs", "256"))
         self.assertTrue(flag_value_present(c, "--max-num-batched-tokens", "8192"))
         self.assertFalse(flag_value_present(c, "--max-num-seqs", "512"))
+
+    def test_scheduler_cls_identity_distinguishes_native_and_custom(self):
+        native = self._cmd(8000)
+        custom = native + " --scheduler-cls=module.DRRScheduler"
+        self.assertIsNone(scheduler_cls_value(native))
+        self.assertEqual(scheduler_cls_value(custom), "module.DRRScheduler")
+        verify_endpoint_scheduler_cls(
+            [native], ["http://127.0.0.1:8000/v1/completions"], None
+        )
+        verify_endpoint_scheduler_cls(
+            [custom],
+            ["http://127.0.0.1:8000/v1/completions"],
+            "module.DRRScheduler",
+        )
+
+    def test_native_fcfs_gate_rejects_custom_or_malformed_scheduler_cls(self):
+        url = ["http://127.0.0.1:8000/v1/completions"]
+        with self.assertRaisesRegex(RuntimeError, "scheduler class drift"):
+            verify_endpoint_scheduler_cls(
+                [self._cmd(8000) + " --scheduler-cls module.VTCScheduler"],
+                url,
+                None,
+            )
+        with self.assertRaisesRegex(RuntimeError, "bare --scheduler-cls"):
+            scheduler_cls_value(self._cmd(8000) + " --scheduler-cls")
+
+    @staticmethod
+    def _service_identity(model_path: Path) -> dict[str, object]:
+        hashes = {
+            name: hashlib.sha256((model_path / name).read_bytes()).hexdigest()
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            )
+        }
+        return {
+            "model": "qwen2.5-7b",
+            "model_path": str(model_path),
+            "model_revision": "a" * 40,
+            "model_config_sha256": hashes["config.json"],
+            "tokenizer_config_sha256": hashes["tokenizer_config.json"],
+            "tokenizer_json_sha256": hashes["tokenizer.json"],
+            "model_safetensors_index_sha256": hashes[
+                "model.safetensors.index.json"
+            ],
+            "generation_config_sha256": hashes["generation_config.json"],
+            "model_weight_00001_sha256": hashes[
+                "model-00001-of-00004.safetensors"
+            ],
+            "model_weight_00002_sha256": hashes[
+                "model-00002-of-00004.safetensors"
+            ],
+            "model_weight_00003_sha256": hashes[
+                "model-00003-of-00004.safetensors"
+            ],
+            "model_weight_00004_sha256": hashes[
+                "model-00004-of-00004.safetensors"
+            ],
+            "dtype": "bfloat16",
+            "service": "0.25.1",
+            "vllm_metadata_sha256": "1" * 64,
+            "vllm_wheel_sha256": "2" * 64,
+            "vllm_record_sha256": "3" * 64,
+            "vllm_source_config_scheduler_sha256": "4" * 64,
+            "vllm_source_scheduler_sha256": "5" * 64,
+            "vllm_source_async_scheduler_sha256": "6" * 64,
+            "vllm_source_request_queue_sha256": "7" * 64,
+            "vllm_source_request_sha256": "8" * 64,
+            "scheduler": "vllm_native_fcfs",
+            "scheduling_policy": "fcfs",
+            "max_model_len": 8192,
+            "max_num_seqs": 256,
+            "max_num_batched_tokens": 8192,
+            "chunked_prefill": True,
+            "prefix_caching": True,
+            "mfu_metrics": True,
+            "enforce_eager": False,
+            "compilation_mode": "vllm_compile",
+            "gpu_memory_utilization": 0.9,
+        }
+
+    @staticmethod
+    def _complete_cmdline(port: int, model_path: Path) -> str:
+        return (
+            "python -m vllm.entrypoints.openai.api_server "
+            f"--model {model_path} --served-model-name qwen2.5-7b "
+            "--dtype bfloat16 --max-model-len 8192 "
+            "--gpu-memory-utilization 0.9 --max-num-seqs 256 "
+            "--max-num-batched-tokens 8192 --enable-prefix-caching "
+            "--enable-chunked-prefill --enable-mfu-metrics "
+            "--scheduling-policy fcfs "
+            f"--port {port}"
+        )
+
+    def test_complete_service_identity_accepts_exact_native_fcfs_cmdlines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoints = [
+                "http://127.0.0.1:8000/v1/chat/completions",
+                "http://127.0.0.1:8001/v1/chat/completions",
+            ]
+            observed = verify_endpoint_service_identity(
+                [self._complete_cmdline(8000, model), self._complete_cmdline(8001, model)],
+                endpoints,
+                identity,
+            )
+            self.assertEqual(set(observed), set(endpoints))
+            verify_model_artifact_identity(identity)
+
+    def test_complete_service_identity_rejects_duplicate_port_processes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            command = self._complete_cmdline(8000, model)
+            with self.assertRaisesRegex(RuntimeError, "expected one vLLM cmdline"):
+                verify_endpoint_service_identity(
+                    [command, command],
+                    ["http://127.0.0.1:8000/v1/chat/completions"],
+                    identity,
+                )
+
+    def test_live_service_identity_rejects_shared_interpreter_different_venv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = root / "model"
+            model.mkdir()
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoint = "http://127.0.0.1:8000/v1/chat/completions"
+            runtimes = []
+            for name, version in (("venv-a", "0.25.1"), ("venv-b", "0.25.2")):
+                prefix = root / name
+                venv.EnvBuilder(with_pip=False, symlinks=True).create(prefix)
+                python = prefix / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+                purelib = subprocess.run(
+                    [str(python), "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"],
+                    check=True, capture_output=True, text=True,
+                ).stdout.strip()
+                package = Path(purelib) / "vllm"
+                package.mkdir()
+                (package / "__init__.py").write_text(
+                    f"__version__ = {version!r}\n", encoding="utf-8"
+                )
+                dist = Path(purelib) / f"vllm-{version}.dist-info"
+                dist.mkdir()
+                (dist / "METADATA").write_text(
+                    f"Name: vllm\nVersion: {version}\n", encoding="utf-8"
+                )
+                runtime = json.loads(subprocess.run(
+                    [str(python), "-c", (
+                        "import importlib.metadata,importlib.util,json,sys;"
+                        "s=importlib.util.find_spec('vllm');"
+                        "print(json.dumps({'executable_argv0':sys.executable,"
+                        "'sys_prefix':sys.prefix,'package_root':s.submodule_search_locations[0],"
+                        "'package_version':importlib.metadata.version('vllm')}))"
+                    )],
+                    check=True, capture_output=True, text=True,
+                ).stdout)
+                runtimes.append((python, runtime))
+            self.assertEqual(runtimes[0][0].resolve(), runtimes[1][0].resolve())
+            processes = {
+                "123": {
+                    "cmdline": self._complete_cmdline(8000, model),
+                    "argv0": runtimes[1][1]["executable_argv0"],
+                    "start_time_ticks": "456",
+                }
+            }
+            sidecar = model / "runtime.json"
+            sidecar.write_text(json.dumps({
+                "schema_version": 1,
+                "pid": 123,
+                "process_start_time_ticks": "456",
+                "port": 8000,
+                "python_executable_argv0": runtimes[1][1]["executable_argv0"],
+                "sys_prefix": runtimes[1][1]["sys_prefix"],
+                "package_root": runtimes[1][1]["package_root"],
+                "package_version": runtimes[1][1]["package_version"],
+            }), encoding="utf-8")
+            audited_runtime = runtimes[0][1]
+            with patch(
+                "src.infrastructure.vllm_preflight._read_live_processes",
+                return_value=processes,
+            ), self.assertRaisesRegex(RuntimeError, "Python runtime drift"):
+                verify_live_vllm_service_identity(
+                    (endpoint,), identity, audited_runtime, (sidecar,)
+                )
+
+    def test_live_service_identity_accepts_exact_venv_package_and_pid_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json", "tokenizer_config.json", "tokenizer.json",
+                "model.safetensors.index.json", "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoint = "http://127.0.0.1:8000/v1/chat/completions"
+            processes = {"123": {
+                "cmdline": self._complete_cmdline(8000, model),
+                "argv0": "/venv-a/bin/python",
+                "start_time_ticks": "456",
+            }}
+            sidecar = model / "runtime.json"
+            runtime = {
+                "executable_argv0": "/venv-a/bin/python",
+                "sys_prefix": "/venv-a",
+                "package_root": "/venv-a/lib/python/site-packages/vllm",
+                "package_version": "0.25.1",
+            }
+            sidecar.write_text(json.dumps({
+                "schema_version": 1, "pid": 123,
+                "process_start_time_ticks": "456", "port": 8000,
+                "python_executable_argv0": runtime["executable_argv0"],
+                "sys_prefix": runtime["sys_prefix"],
+                "package_root": runtime["package_root"],
+                "package_version": runtime["package_version"],
+            }), encoding="utf-8")
+            with patch(
+                "src.infrastructure.vllm_preflight._read_live_processes",
+                return_value=processes,
+            ):
+                observed = verify_live_vllm_service_identity(
+                    (endpoint,), identity, runtime, (sidecar,)
+                )
+            self.assertEqual(
+                observed["endpoints"][endpoint]["process_identity"]["sys_prefix"],
+                "/venv-a",
+            )
+
+    def test_complete_service_identity_rejects_every_runtime_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            endpoint = ["http://127.0.0.1:8000/v1/chat/completions"]
+            exact = self._complete_cmdline(8000, model)
+            drifts = {
+                "model": exact.replace("qwen2.5-7b", "other-model"),
+                "dtype": exact.replace("bfloat16", "float16"),
+                "max_num_seqs": exact.replace("--max-num-seqs 256", "--max-num-seqs 128"),
+                "max_num_batched_tokens": exact.replace(
+                    "--max-num-batched-tokens 8192", "--max-num-batched-tokens 4096"
+                ),
+                "chunked_prefill": exact.replace("--enable-chunked-prefill", ""),
+                "prefix_caching": exact.replace("--enable-prefix-caching", ""),
+                "compile_mode": exact + " --enforce-eager",
+                "gpu_memory_utilization": exact.replace(
+                    "--gpu-memory-utilization 0.9", "--gpu-memory-utilization 0.8"
+                ),
+                "scheduler": exact + " --scheduler-cls custom.Scheduler",
+                "scheduling_policy": exact.replace(
+                    "--scheduling-policy fcfs", "--scheduling-policy priority"
+                ),
+            }
+            for field, cmdline in drifts.items():
+                with self.subTest(field=field), self.assertRaises(RuntimeError):
+                    verify_endpoint_service_identity(
+                        [cmdline], endpoint, identity
+                    )
+
+    def test_model_revision_binding_rejects_artifact_hash_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = Path(directory)
+            for name in (
+                "config.json",
+                "tokenizer_config.json",
+                "tokenizer.json",
+                "model.safetensors.index.json",
+                "generation_config.json",
+                "model-00001-of-00004.safetensors",
+                "model-00002-of-00004.safetensors",
+                "model-00003-of-00004.safetensors",
+                "model-00004-of-00004.safetensors",
+            ):
+                (model / name).write_text(name, encoding="utf-8")
+            identity = self._service_identity(model)
+            (model / "config.json").write_text("drift", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "model artifact.*drift"):
+                verify_model_artifact_identity(identity)
 
 
 if __name__ == "__main__":

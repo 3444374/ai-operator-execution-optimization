@@ -1,8 +1,62 @@
 # 项目大纲
 
-更新时间：2026-08-14
+更新时间：2026-08-21
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
+
+数据库内 AI 语义算子的权威实施入口现冻结为
+[`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)：
+PostgreSQL extension/planner-visible operator 拥有 SQL、child plan、snapshot 和 query lifecycle，
+直接复用 LOTUS v1.2.4 `sem_map` 语义代码；主路径由数据库执行器推送有界 row batches，禁止
+LOTUS DataConnector/`pd.read_sql` 外拉整表。该计划当前为
+`design-frozen/lotus-semantic-migration-not-started`，不能把既有 profiler/manifest 实验重标为
+数据库内算子结果。最短期任务是冻结 LOTUS v1.2.4，用真实 `SemMapNode`/prompt/output
+语义将项目 UDF/manifest-like `AI_COMPLETE` 替换为 `lotus.sem_map@v1.2.4`，保持
+Daft/Ray/static/SAOR 为可替换物理 backend。性能轨先用有界 server-side-cursor 仿真
+operator contract；PostgreSQL extension/CustomScan 另作数据库内 SQL/query-lifecycle 资格门。
+
+迁移前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
+native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
+执行，不注入项目控制；五臂均 `writeback=none`，不把 PostgreSQL sink 混入调度排名。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
+另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
+另有独立的四臂跨层 capability，计划比较 Daft Ray + native FCFS/DRR-on-vLLM reproduction/
+VTC-on-vLLM reproduction 与 SAOR + native FCFS；当前 frozen installed-source、Job identity 和
+custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修改 vLLM”的主方法边界。
+共同外部到达使用 typed Job release；request arrival replay 不再被误写成 native baseline 的必需能力。
+本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
+五臂 eager SAOR 的旧 profiler 冲突已在本地修复：只有旧 single-head bounded-priority 继续强制
+request replay；bounded-ready 在完整 concrete pre-registration 门下直接消费 eager request envelopes。
+当前尚无成功、可比较的完整五臂 rehearsal；formal 从未运行且继续禁止。2026-08-19
+服务器曾有两次 fail-closed rehearsal：`ea4cbb3b` 对应保留 root
+`saor_native_system_matched_matrix_20260819_r2/`，在 warmup 第 1 个 Project
+selector-sanity cell 因 `unavailable:missing_gpu_peak_tflops` 被 MFU guard 拒绝；
+`58154151` 对应保留 root `saor_native_system_matched_matrix_20260819_r3/`，在同一阶段因
+`job 0 has no unique successful summary` 被 summary guard 拒绝。两次均通过
+`run_saor_native_system_matched.py ... --rehearsal` 入口、无 formal authorization，服务器未发现
+独立 tar archive；原 shell history 未保留逐字命令，因此这里只登记由 matrix index 证明的执行模式、
+commit/root/cell/原因和冻结 runbook 的等价入口，不伪造历史 argv。
+
+2026-08-21 本地 readiness 合同进一步 fail-closed：外层 runner 固定为独立 `DRIVER_PYTHON`，
+`VLLM_PYTHON` 只用于子进程 source/package 重审；live endpoint 绑定 PID、进程 start time、未解析
+argv0、`sys.prefix` 与实际 vLLM package path/version，并显式冻结 `scheduling_policy=fcfs`。
+readiness 拆为 static config、service identity、system preflight、correctness smoke 四阶段，仅四者
+全部通过才置 `rehearsal_ready=true`。三份实际 config SHA、Daft/Ray upstream tag commit 与薄
+adapter SHA 进入证据身份；formal 还必须绑定实际 rehearsal validation/root/archive SHA。`862d0008`
+已在服务器完成一次 gateway 前的五臂 correctness smoke 与 rehearsal，证明可运行性但无法给原生臂
+提供同口径 request tail/fairness；formal 未运行。
+
+2026-08-21 的当前修订为五臂统一增加严格透传 observation-only gateway，并冻结 T0--T4：T0 在
+PostgreSQL 读取和 child/Ray 初始化前，T1 为首批 source data，T2/T3 为首请求到达/末请求完成，T4
+为完整正确结果在内存中可见。Job/group JCT 与 correct throughput 使用完整系统边界，同时分列
+source/execution/service span。共同 gateway 不排队、不重试、不重写、不接管原生 scheduler；只用
+endpoint actual token usage 在共同积压窗口计算 P99/SLO、weighted Jain、service lag 与最长无服务。
+within-run victim impact/recovery 可跨五臂比较，full-solo slowdown 仍需另跑 matched-solo control。
+`93271012` 已在服务器通过四阶段 readiness、五臂 correctness smoke 与独立封存的五臂 rehearsal；
+五臂 P99/SLO/Jain/lag/no-service 现均可用。单次观察中 SAOR 相对同 executor frozen-static 的 correct
+throughput +31.01%、group/bulk JCT −23.70%，但 request P99 +18.70%/+24.11%、Jain −1.50%、
+lag P95 +42.47%，继续呈效率—尾延迟—公平权衡。0s/5s 主矩阵缺少统一 pre/post service 样本，
+victim inflation/recovery 只标 partial；full-solo 仍需独立控制。该 root 是 rehearsal，不作显著性排名，
+formal 从未运行且继续禁止。
 
 ## 1. 题目与研究对象
 
@@ -10,11 +64,12 @@
 
 > 数据库 AI 负载的执行优化与调度研究
 
-统一研究对象是数据库触发后的 AI 数据执行层：
+统一研究对象是数据库内 AI 语义算子触发的外部物理执行层：
 
 ```text
-Database
-  -> AI Data Execution Layer
+PostgreSQL SQL AI operator
+  -> relational child plan / snapshot / filter / projection
+  -> database-managed AI Data Execution Layer
        -> research content 1: work-unit construction and organization
        -> research content 2: state-aware admission, routing and multi-job
        -> shared cost estimator
@@ -24,9 +79,11 @@ Database
   -> Database / Vector Sink
 ```
 
-对外口径：数据库内置 AI 算子的外部分布式数据处理执行链路优化。
+对外口径：PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化。
 
-Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，不是贡献名称。项目不修改数据库内核、vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel，也不回到传统 GPU 查询算子。
+PostgreSQL extension 提供 SQL/planner/query-lifecycle seam，但不 fork PostgreSQL core；LOTUS
+v1.2.4 直接提供 `sem_map` 语义实现。Daft、Ray、vLLM、pgvector 和 CLIP 是物理执行与验证平台，
+不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel，也不回到传统 GPU 查询算子。
 
 ## 2. 研究内容
 
@@ -114,8 +171,11 @@ SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE
 ## 3. 系统与实验边界
 
 ```text
-PostgreSQL source
-  -> Daft DataFrame / Arrow
+PostgreSQL SQL `ai.complete(...)`
+  -> planner-visible AI operator / ordinary child plan
+  -> database-managed bounded RowEnvelope stream
+  -> LOTUS `sem_map` semantic runtime
+  -> Daft DataFrame / Arrow / native backend
   -> Shared Cost Estimator + WorkDescriptor + Organizer
   -> Ray actor admission / shared credit / routing
   -> text: vLLM generation
@@ -124,7 +184,9 @@ PostgreSQL source
 ```
 
 - 写回采用 PostgreSQL + pgvector、COPY + deferred index，属于统一 correctness/E2E guardrail，不是独立研究内容。
-- 正式 baseline 必须由被测系统拥有执行与调度；项目只做 source、sink、质量审计和指标适配。
+- 数据库内算子主矩阵共享 PostgreSQL child-plan source 与 LOTUS 语义合同；正式 baseline 必须由
+  被测 backend 拥有执行与调度，项目只做数据库交接、sink、质量审计和指标适配。
+- 未修改 LOTUS DataConnector/`pd.read_sql` 路径保留为外部 LOTUS 产品 baseline，不进入数据库内算子主矩阵。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
 - `BoundedReadyWindow` 属于项目方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在项目内部 selector 归因消融中保持一致。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。

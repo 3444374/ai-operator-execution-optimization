@@ -14,6 +14,7 @@
 | `精读文献笔记/` | 精读笔记权威库；当前 LOTUS、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 八篇主笔记共含 65 张论文原图裁剪件；各篇选图与版本边界见目录 README 和 `figures/audit/` |
 | `reference/REFERENCE_INDEX.md` | 当前工作区 21 份可解析 PDF 的权威题录和用途 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
+| `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |
 | `heterogeneous_ai_dataflow_execution_model_20260811.md` | CPU–GPU 异构分阶段执行模型候选：typed block、byte-bounded ready queue、SAOR 控制面、数学模型、数据通路消融与 prompt/复用/增量推理待办 |

@@ -19,6 +19,12 @@ if str(CODE_ROOT) not in sys.path:
 
 from scripts.experiments.run_shared_vllm_experiment import parse_args  # noqa: E402
 import src.experiments.shared_vllm as shared_vllm  # noqa: E402
+from src.observability.profiling.cli import (  # noqa: E402
+    parse_args as parse_profiler_args,
+)
+from src.observability.profiling.config import (  # noqa: E402
+    validate_shared_credit_policy_args,
+)
 from src.experiments.shared_vllm import (  # noqa: E402
     GroupRunIdentity,
     RunnerOptions,
@@ -107,6 +113,180 @@ class SharedVllmExperimentTests(unittest.TestCase):
             config = load_config(Path("config.json"))
 
         self.assertEqual(config.job_internal_arrival_contract, "eager")
+
+    def test_eager_bounded_ready_command_passes_profiler_policy_validation(
+        self,
+    ) -> None:
+        payload = self._config_payload(
+            common_args=[],
+            scenarios=[
+                {
+                    "scenario_id": "project_bounded_ready_saor_0125we",
+                    "policy": "saor_bounded_ready",
+                    "ready_observation_contract": (
+                        "bounded_concrete_pre_registration"
+                    ),
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "priorities": [0, 1],
+                    "slo_targets_s": [None, 30],
+                    "priority_windows_s": [None, 30],
+                    "debt_cap_fractions": [0.125, None],
+                }
+            ],
+        )
+        payload["job_internal_arrival_contract"] = "eager"
+        payload["ready_payload_bytes_limit_per_job"] = 1_048_576
+        payload["saor_release_control"] = {
+            "entitlement_weight": 1.0,
+            "queue_weight": 0.0,
+            "fairness_weight": 1.0,
+            "slo_weight": 0.0,
+        }
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+
+        command = build_job_command(
+            options,
+            config,
+            config.scenarios[0],
+            GroupRunIdentity("warmup", 0, 0),
+            job_index=1,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+        profiler_args = parse_profiler_args(command[2:])
+
+        self.assertNotIn("--arrival-replay", command)
+        self.assertEqual(
+            profiler_args.shared_ready_observation_contract,
+            "bounded_concrete_pre_registration",
+        )
+        self.assertEqual(profiler_args.shared_credit_job_priority, 1)
+        validate_shared_credit_policy_args(profiler_args)
+
+    def test_observation_routes_replace_only_the_runtime_endpoint_urls(self) -> None:
+        direct = (
+            "http://127.0.0.1:8000/v1/chat/completions",
+            "http://127.0.0.1:8001/v1/chat/completions",
+        )
+        payload = self._config_payload(
+            common_args=["--completion-endpoint-urls", ",".join(direct)]
+        )
+        payload["job_internal_arrival_contract"] = "eager"
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+        routed = (
+            (
+                "http://127.0.0.1:9100/observe/job0/endpoint-0/v1/chat/completions",
+                "http://127.0.0.1:9100/observe/job0/endpoint-1/v1/chat/completions",
+            ),
+            (
+                "http://127.0.0.1:9100/observe/job1/endpoint-0/v1/chat/completions",
+                "http://127.0.0.1:9100/observe/job1/endpoint-1/v1/chat/completions",
+            ),
+        )
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+            observation_endpoint_urls_by_job=routed,
+        )
+
+        command = build_job_command(
+            options,
+            config,
+            config.scenarios[0],
+            GroupRunIdentity("warmup", 0, 0),
+            job_index=1,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        self.assertEqual(
+            self._flag_value(command, "--completion-endpoint-urls"),
+            ",".join(routed[1]),
+        )
+        self.assertEqual(config.common_args[-1], ",".join(direct))
+
+    def test_profiler_keeps_replay_gate_for_single_head_bounded_priority(
+        self,
+    ) -> None:
+        args = parse_profiler_args(
+            [
+                "--executor",
+                "ray_actor",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-coordinator-name",
+                "credits",
+                "--shared-credit-policy",
+                "saor_bounded_priority",
+            ]
+        )
+
+        with self.assertRaisesRegex(SystemExit, "requires arrival replay"):
+            validate_shared_credit_policy_args(args)
+
+    def test_profiler_rejects_bounded_ready_without_concrete_ready_contract(
+        self,
+    ) -> None:
+        args = parse_profiler_args(
+            [
+                "--executor",
+                "ray_actor",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-coordinator-name",
+                "credits",
+                "--shared-credit-policy",
+                "saor_bounded_ready",
+            ]
+        )
+
+        with self.assertRaisesRegex(
+            SystemExit,
+            "requires bounded concrete pre-registration",
+        ):
+            validate_shared_credit_policy_args(args)
+
+    def test_profiler_rejects_eager_bounded_ready_without_request_trace(
+        self,
+    ) -> None:
+        args = parse_profiler_args(
+            [
+                "--executor",
+                "ray_actor",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-coordinator-name",
+                "credits",
+                "--shared-credit-policy",
+                "saor_bounded_ready",
+                "--shared-ready-observation-contract",
+                "bounded_concrete_pre_registration",
+                "--shared-ready-payload-bytes-limit",
+                "1048576",
+            ]
+        )
+
+        with self.assertRaisesRegex(SystemExit, "requires request tracing"):
+            validate_shared_credit_policy_args(args)
 
     def test_arrival_contract_requires_matching_replay_flag(self) -> None:
         for contract, common_args, expected in (
@@ -2308,6 +2488,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "--setup",
             "--shared-credit-work-limit",
             "--resource-trace-output",
+            "--completion-evidence-output",
         ):
             with self.subTest(forbidden=forbidden):
                 payload = self._config_payload(common_args=[forbidden])
@@ -2672,6 +2853,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "max_ready_requests_seen": "3",
                 "max_ready_work_seen": "90",
                 "job_id": "42",
+                "first_batch_ready_epoch_s": "0.5",
+                "result_visible_epoch_s": "103.5",
             }
         ]
         submission_rows = [
@@ -2725,6 +2908,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "max_ready_requests_seen": "2",
             "max_ready_work_seen": "90",
             "job_id": "43",
+            "first_batch_ready_epoch_s": "99.0",
+            "result_visible_epoch_s": "101.0",
         }]
         request_rows = [{
             "request_id": "request-0",

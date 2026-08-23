@@ -2262,6 +2262,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         object_count = 0
         arrow_build_s = 0.0
         db_fetch_s = 0.0
+        first_batch_ready_epoch_s: float | None = None
         operator_results = []
         source_scan_evidence_rows: list[dict] = []
         request_lifecycle_seeds: list[RequestLifecycleSeed] = []
@@ -2564,6 +2565,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 )
             if request_manifest_guard is not None:
                 table = request_manifest_guard.validate_and_annotate(table)
+            if first_batch_ready_epoch_s is None:
+                first_batch_ready_epoch_s = time.time()
             if args.arrival_replay:
                 replay_tables.append(table)
                 processed_rows += table.num_rows
@@ -2732,6 +2735,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 request_manifest_evidence.validated_rows
             )
             request_manifest_validation_status = "ok"
+        if first_batch_ready_epoch_s is None:
+            raise RuntimeError("source produced no first batch")
+        if len(operator_results) != processed_rows or any(
+            not isinstance(result, dict) for result in operator_results
+        ):
+            raise RuntimeError(
+                "complete correct result visibility requires one result per source row"
+            )
+        result_visible_epoch_s = time.time()
 
         # The opening database-E2E comparison needs the same external wall for
         # every arm: source scan -> model execution -> unified database sink.
@@ -3551,6 +3563,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "itl_slo_target_ms": args.itl_slo_ms,
             **slo_scale_metrics,
             **cost_metrics,
+            "first_batch_ready_epoch_s": first_batch_ready_epoch_s,
+            "result_visible_epoch_s": result_visible_epoch_s,
             "db_fetch_s": round(db_fetch_s, 6),
             "arrow_build_s": round(arrow_build_s, 6),
             "source_fetch_s": round(db_fetch_s + arrow_build_s, 6),

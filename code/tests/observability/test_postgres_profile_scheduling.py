@@ -328,6 +328,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertLess(ready_index, timer_index)
         self.assertIn("actor_ready_s", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn("first_batch_ready_epoch_s", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn("result_visible_epoch_s", profile.FORMAL_RESULT_FIELDS)
         self.assertIn("flush_trace_status", profile.FORMAL_RESULT_FIELDS)
         self.assertIn(
             "max_ready_payload_bytes_seen",
@@ -1290,6 +1292,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(
             [item.request.prompt_tokens for item in envelopes],
             [32, 34],
+        )
+        self.assertEqual(
+            [item.request.oldest_arrival_epoch_s for item in envelopes],
+            [10.0, 10.0],
         )
         self.assertEqual([item.prompt_tokens for item in seeds], [3, 5])
         self.assertEqual(

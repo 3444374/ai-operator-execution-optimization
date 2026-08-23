@@ -64,6 +64,29 @@ _BANNED_COMMAND_TOKENS = frozenset(
         "--credit",
     }
 )
+_FROZEN_NATIVE_IMPLEMENTATIONS = {
+    "daft_native": {
+        "upstream_url": "https://github.com/Eventual-Inc/Daft",
+        "upstream_version": "0.7.21",
+        "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+        "adapter_path_suffix": "code/src/baselines/text/frameworks/daft_prompt.py",
+        "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+    },
+    "daft_ray": {
+        "upstream_url": "https://github.com/Eventual-Inc/Daft",
+        "upstream_version": "0.7.21",
+        "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+        "adapter_path_suffix": "code/src/baselines/text/frameworks/daft_prompt.py",
+        "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+    },
+    "ray_data_http": {
+        "upstream_url": "https://github.com/ray-project/ray",
+        "upstream_version": "2.56.1",
+        "upstream_commit": "936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a",
+        "adapter_path_suffix": "code/src/baselines/text/frameworks/ray_data_http.py",
+        "adapter_sha256": "4c63dd435efa2c869b74514a80e8bb9441c26d07544847b6ae9ee5620a217528",
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -126,7 +149,16 @@ class NativeMultiJobConfig:
     minimum_measurement_seconds: float
     source: TimedPostgresManifestSource | None
     job_internal_arrival_contract: Literal["manifest_timed", "eager"]
+    mfu_status: str
+    gpu_peak_tflops_per_gpu: float
+    mfu_precision: str
+    mfu_reason: str
+    performance_writeback_mode: str
     arms: tuple[NativeMultiJobArm, ...]
+    service_identity: tuple[tuple[str, object], ...] = ()
+    native_implementation_provenance: tuple[
+        tuple[str, tuple[tuple[str, object], ...]], ...
+    ] = ()
 
 
 @dataclass(frozen=True)
@@ -173,6 +205,56 @@ def _positive_float(value: object, field: str, *, allow_zero: bool = False) -> f
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _parse_native_implementation_provenance(
+    value: object,
+    arms: tuple[NativeMultiJobArm, ...],
+) -> tuple[tuple[str, tuple[tuple[str, object], ...]], ...]:
+    """Validate exact upstream and thin-adapter identities for native arms."""
+
+    if value is None:
+        return ()
+    if not isinstance(value, dict):
+        raise ValueError("native_implementation_provenance must be an object")
+    if set(value) != {arm.arm_id for arm in arms}:
+        raise ValueError("native implementation provenance must cover every arm")
+    required = {
+        "upstream_url", "upstream_version", "upstream_commit", "adapter_path",
+        "adapter_sha256", "upstream_source_modified", "adapter_diff_status",
+    }
+    frozen: list[tuple[str, tuple[tuple[str, object], ...]]] = []
+    for arm in arms:
+        raw = value.get(arm.arm_id)
+        expected = _FROZEN_NATIVE_IMPLEMENTATIONS.get(arm.adapter)
+        if expected is None:
+            raise ValueError(
+                f"arm {arm.arm_id} has no frozen native implementation identity"
+            )
+        if not isinstance(raw, dict) or set(raw) != required:
+            raise ValueError(f"arm {arm.arm_id} implementation provenance schema is invalid")
+        adapter_path = Path(_string(raw["adapter_path"], "adapter_path")).resolve()
+        comparisons = {
+            "upstream_url": expected["upstream_url"],
+            "upstream_version": expected["upstream_version"],
+            "upstream_commit": expected["upstream_commit"],
+            "adapter_sha256": expected["adapter_sha256"],
+            "upstream_source_modified": False,
+            "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+        }
+        drift = [name for name, item in comparisons.items() if raw.get(name) != item]
+        if not str(adapter_path).endswith(str(expected["adapter_path_suffix"])):
+            drift.append("adapter_path")
+        if not adapter_path.is_file() or _sha256(adapter_path) != raw.get("adapter_sha256"):
+            drift.append("adapter_file")
+        if drift:
+            raise ValueError(
+                f"arm {arm.arm_id} native implementation provenance drift: "
+                + ", ".join(sorted(set(drift)))
+            )
+        normalized = {**raw, "adapter_path": str(adapter_path)}
+        frozen.append((arm.arm_id, tuple(sorted(normalized.items()))))
+    return tuple(frozen)
 
 
 def _parse_job(
@@ -280,7 +362,9 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
     )
 
 
-def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
+def load_native_multijob_config(
+    path: str | Path, *, allow_existing_output_root: bool = False
+) -> NativeMultiJobConfig:
     """Load the narrow single/multi-job contract and reject scheduler controls."""
 
     payload = expand_structure(json.loads(Path(path).read_text(encoding="utf-8")), "native_multijob_config")
@@ -294,7 +378,9 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     }
     matrix_optional = {
         "endpoint_ids", "service_signature", "protocol", "output_cap", "organizer",
-        "source", "job_internal_arrival_contract",
+        "source", "job_internal_arrival_contract", "mfu_contract",
+        "performance_writeback_mode", "service_identity",
+        "native_implementation_provenance",
     }
     missing = required - set(payload)
     unknown = set(payload) - required - matrix_optional
@@ -316,8 +402,31 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     )
     if arrival_contract != "eager":
         raise ValueError("native multi-job job_internal_arrival_contract must be eager")
+    performance_writeback_mode = _string(
+        payload.get("performance_writeback_mode", "none"),
+        "performance_writeback_mode",
+    )
+    if performance_writeback_mode not in {"none", "json_text"}:
+        raise ValueError("performance_writeback_mode must be none or json_text")
+    mfu_raw = payload.get("mfu_contract")
+    if mfu_raw is None:
+        # Generic native characterization predates MFU publication. It remains
+        # loadable, but its sentinel identity cannot match the SAOR matrix.
+        mfu_raw = {
+            "status": "unavailable",
+            "gpu_peak_tflops_per_gpu": 0.0,
+            "precision": "unknown",
+            "reason": "not_declared_by_generic_native_contract",
+        }
+    elif not isinstance(mfu_raw, dict) or set(mfu_raw) != {
+        "status", "gpu_peak_tflops_per_gpu", "precision", "reason",
+    }:
+        raise ValueError("native multi-job mfu_contract has an invalid schema")
+    mfu_status = _string(mfu_raw["status"], "mfu_contract.status")
+    if mfu_status not in {"available", "unavailable"}:
+        raise ValueError("mfu_contract.status must be available or unavailable")
     output_root = Path(_string(payload["output_root"], "output_root"))
-    if output_root.exists():
+    if output_root.exists() and not allow_existing_output_root:
         raise FileExistsError(f"output_root already exists: {output_root}")
     endpoints = payload["endpoint_urls"]
     suffix = "/v1/chat/completions"
@@ -334,6 +443,9 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         if _string(signature.get("model"), "service_signature.model") != model:
             raise ValueError("service_signature.model must equal model")
         _string(signature.get("service"), "service_signature.service")
+    service_identity = payload.get("service_identity", {})
+    if not isinstance(service_identity, dict):
+        raise ValueError("service_identity must be an object")
     endpoint_ids = payload.get("endpoint_ids", [])
     if endpoint_ids and (
         not isinstance(endpoint_ids, list)
@@ -353,6 +465,9 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         raise ValueError("native multi-job formal comparison requires at least two arms")
     seen_arm_ids: set[str] = set()
     arms = tuple(_parse_arm(item, seen_arm_ids=seen_arm_ids, skew_max=skew_max) for item in arms_raw)
+    native_provenance = _parse_native_implementation_provenance(
+        payload.get("native_implementation_provenance"), arms
+    )
     warmup_repeats = _positive_int(payload["warmup_repeats"], "warmup_repeats")
     if warmup_repeats != 1:
         raise ValueError("native multi-job matrix freezes warmup_repeats=1")
@@ -399,7 +514,18 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
             if source_raw is not None else None
         ),
         job_internal_arrival_contract=arrival_contract,
+        mfu_status=mfu_status,
+        gpu_peak_tflops_per_gpu=_positive_float(
+            mfu_raw["gpu_peak_tflops_per_gpu"],
+            "mfu_contract.gpu_peak_tflops_per_gpu",
+            allow_zero=True,
+        ),
+        mfu_precision=_string(mfu_raw["precision"], "mfu_contract.precision"),
+        mfu_reason=_string(mfu_raw["reason"], "mfu_contract.reason"),
+        performance_writeback_mode=performance_writeback_mode,
         arms=arms,
+        service_identity=tuple(sorted(service_identity.items())),
+        native_implementation_provenance=native_provenance,
     )
 
 
@@ -522,6 +648,9 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         "source_kind",
         "source_timing_boundary",
         "source_read_s",
+        "source_query_start_epoch_s",
+        "first_batch_ready_epoch_s",
+        "result_visible_epoch_s",
         "source_validation_status",
         "server_version",
         "pgvector_version",
@@ -548,6 +677,13 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         raise ValueError(f"shard source timing mismatch for {arm.arm_id}: {summary_path}")
     if not isinstance(summary["source_read_s"], (int, float)) or summary["source_read_s"] < 0:
         raise ValueError(f"shard source_read_s is invalid: {summary_path}")
+    timeline = tuple(float(summary[field]) for field in (
+        "source_query_start_epoch_s",
+        "first_batch_ready_epoch_s",
+        "result_visible_epoch_s",
+    ))
+    if not timeline[0] <= timeline[1] <= timeline[2]:
+        raise ValueError(f"shard system timeline is unordered: {summary_path}")
     DatabaseIdentity.from_record(summary, f"shard {summary_path}")
     return {field: summary[field] for field in required}
 
@@ -685,7 +821,9 @@ def _wait_for_processes(
 def _run_job(
     *, target_epoch_s: float, arm: NativeMultiJobArm, job: NativeMultiJobJob,
     arm_root: Path, runner_script: str | Path, config: NativeMultiJobConfig,
-    api_key: str | None, popen_factory: Callable[..., subprocess.Popen[object]] = subprocess.Popen,
+    api_key: str | None,
+    endpoint_urls: tuple[str, str],
+    popen_factory: Callable[..., subprocess.Popen[object]] = subprocess.Popen,
     now: Callable[[], float] = time.time,
 ) -> dict[str, object]:
     """Wait for a job's absolute launch time, then start its two native shards."""
@@ -700,7 +838,7 @@ def _run_job(
     commands = [
         build_shard_command(
             runner_script=runner_script, arm=arm, job=job, endpoint_index=index,
-            endpoint_url=config.endpoint_urls[index], output_dir=job_root / f"shard_{index}",
+            endpoint_url=endpoint_urls[index], output_dir=job_root / f"shard_{index}",
             model=config.model, service_prefix_caching=config.service_prefix_caching,
             service_max_num_seqs=config.service_max_num_seqs,
             service_max_num_batched_tokens=config.service_max_num_batched_tokens,
@@ -765,6 +903,15 @@ def _run_job(
             for result in _read_results(job_root / f"shard_{index}" / "requests.csv")
         )
         validate_results(requests, results)
+        source_query_start_epoch_s = min(
+            float(item["source_query_start_epoch_s"]) for item in provenance
+        )
+        first_batch_ready_epoch_s = min(
+            float(item["first_batch_ready_epoch_s"]) for item in provenance
+        )
+        result_visible_epoch_s = max(
+            float(item["result_visible_epoch_s"]) for item in provenance
+        )
         input_tokens = sum(result.input_tokens for result in results)
         output_tokens = sum(result.output_tokens for result in results)
         record.update({
@@ -773,8 +920,13 @@ def _run_job(
             "completed_count": len(results), "expected_count": len(requests),
             "input_tokens": input_tokens,
             "output_tokens": output_tokens, "total_tokens": input_tokens + output_tokens,
+            "source_query_start_epoch_s": source_query_start_epoch_s,
+            "first_batch_ready_epoch_s": first_batch_ready_epoch_s,
+            "result_visible_epoch_s": result_visible_epoch_s,
+            "job_barrier_jct_s": result_visible_epoch_s - launched,
             "job_barrier_tokens_per_s": (
-                (input_tokens + output_tokens) / (ended - launched) if ended > launched else 0.0
+                (input_tokens + output_tokens) / (result_visible_epoch_s - launched)
+                if result_visible_epoch_s > launched else 0.0
             ),
         })
     except Exception as exc:
@@ -819,6 +971,7 @@ def run_native_multijob_cell(
     now: Callable[[], float] = time.time,
     repository_commit: str,
     cell_instrumenter: Callable[..., object] = instrumented_cell,
+    endpoint_urls_by_job: Mapping[str, tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     """Execute one native physical cell without scheduling or acquiring a lease."""
 
@@ -830,9 +983,19 @@ def run_native_multijob_cell(
         raise ValueError("native cell repeat/order_index must be valid")
     if not repository_commit:
         raise ValueError("repository_commit must be non-empty")
-    output_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     for job in arm.jobs:
         _assert_immutable(job)
+    routed_endpoints = endpoint_urls_by_job or {
+        job.job_id: config.endpoint_urls for job in arm.jobs
+    }
+    if set(routed_endpoints) != {job.job_id for job in arm.jobs}:
+        raise ValueError("native per-Job endpoint route identities are incomplete")
+    for job_id, urls in routed_endpoints.items():
+        if len(urls) != 2 or any(
+            not url.endswith("/v1/chat/completions") for url in urls
+        ):
+            raise ValueError(f"native endpoint routes are invalid for {job_id}")
     run_id = identity.run_id or (
         f"{identity.phase}_{identity.repeat:02d}_{identity.order_index:03d}_{arm.arm_id}"
     )
@@ -871,6 +1034,7 @@ def run_native_multijob_cell(
                         runner_script=runner_script,
                         config=config,
                         api_key=api_key,
+                        endpoint_urls=routed_endpoints[job.job_id],
                         popen_factory=popen_factory,
                         now=now,
                     )
@@ -882,7 +1046,11 @@ def run_native_multijob_cell(
         service = _counter_delta(counters_before, counters_after)
         service_path = output_dir / "service_counters.json"
         _atomic_json(service_path, service)
-        arm_barrier_jct_s = now() - t0
+        passed_jobs = [job for job in jobs if job.get("status") == "passed"]
+        arm_barrier_jct_s = (
+            max(float(job["result_visible_epoch_s"]) for job in passed_jobs) - t0
+            if len(passed_jobs) == len(jobs) else now() - t0
+        )
         record.update(
             {
                 "jobs": jobs,

@@ -282,6 +282,7 @@ def _run_adapter(
 
 
 def _run_shard(args: argparse.Namespace) -> dict[str, object]:
+    source_query_start_epoch_s = time.time()
     manifest = read_manifest(args.manifest)
     source_kind = "manifest_jsonl"
     source_timing_boundary = "outside_job"
@@ -308,6 +309,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         source_kind = "timed_postgres_manifest"
         source_timing_boundary = "inside_job_barrier"
         source_validation_status = "ok"
+    first_batch_ready_epoch_s = time.time()
     requests = tuple(
         request
         for request in source_manifest
@@ -332,6 +334,8 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         "source_kind": source_kind,
         "source_timing_boundary": source_timing_boundary,
         "source_read_s": source_read_s,
+        "source_query_start_epoch_s": source_query_start_epoch_s,
+        "first_batch_ready_epoch_s": first_batch_ready_epoch_s,
         "source_validation_status": source_validation_status,
         "server_version": server_version,
         "pgvector_version": pgvector_version,
@@ -458,10 +462,12 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
             },
         )
         raise
+    result_visible_epoch_s = time.time()
     normalized = {
         **base_summary,
         **result_summary,
         "status": "completed",
+        "result_visible_epoch_s": result_visible_epoch_s,
         "vllm_num_requests_running_final": (args.vllm_running_final),
         "vllm_num_requests_waiting_final": (args.vllm_waiting_final),
         "worker_failures": 0,

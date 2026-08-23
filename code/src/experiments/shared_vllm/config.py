@@ -46,6 +46,7 @@ _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
 _RUNNER_OWNED_FLAGS = {
     "--admission-scope",
     "--arrival-replay-start-epoch-s",
+    "--completion-evidence-output",
     "--control-trace-output",
     "--experiment-id",
     "--flush-trace-output",
@@ -103,6 +104,7 @@ class RunnerOptions:
     resume: bool = False
     recover_stale_lease: bool = False
     rehearsal: bool = False
+    observation_endpoint_urls_by_job: tuple[tuple[str, ...], ...] = ()
 
 @dataclass(frozen=True)
 class GroupRunIdentity:
@@ -321,6 +323,7 @@ class SharedVllmConfig:
     job_internal_arrival_contract: Literal["manifest_timed", "eager"] = (
         "manifest_timed"
     )
+    service_identity: tuple[tuple[str, object], ...] = ()
 
     @property
     def completion_work_cost(self) -> CompletionWorkCostConfig:
@@ -477,6 +480,18 @@ def load_config(path: Path) -> SharedVllmConfig:
                 _expand_scalar(value, f"service_signature.{key}"),
             )
             for key, value in service_signature_raw.items()
+        )
+    )
+    service_identity_raw = decoded.get("service_identity", {})
+    if not isinstance(service_identity_raw, dict):
+        raise ValueError("service_identity must be an object")
+    service_identity = tuple(
+        sorted(
+            (
+                _nonempty_string(key, "service_identity key"),
+                _expand_scalar(value, f"service_identity.{key}"),
+            )
+            for key, value in service_identity_raw.items()
         )
     )
     if service_signature:
@@ -706,6 +721,7 @@ def load_config(path: Path) -> SharedVllmConfig:
             ready_payload_bytes_limit_per_job
         ),
         job_internal_arrival_contract=arrival_contract,
+        service_identity=service_identity,
     )
 
 def build_job_command(
@@ -738,10 +754,28 @@ def build_job_command(
         f"{identity.repeat_index}_{scenario.scenario_id}"
     )
     job_stem = options.output_dir / "jobs" / f"{run_stem}_job{job_index}"
+    common_args = list(config.common_args)
+    if options.observation_endpoint_urls_by_job:
+        if len(options.observation_endpoint_urls_by_job) != scenario.job_count:
+            raise ValueError("observation endpoint routes must cover every Job")
+        routes = options.observation_endpoint_urls_by_job[job_index]
+        if len(routes) != len(config.endpoint_ids) or any(
+            not route.endswith("/v1/chat/completions") for route in routes
+        ):
+            raise ValueError("observation endpoint route count or protocol drifted")
+        try:
+            endpoint_flag = common_args.index("--completion-endpoint-urls")
+        except ValueError as error:
+            raise ValueError(
+                "Project common_args must freeze --completion-endpoint-urls"
+            ) from error
+        if endpoint_flag + 1 >= len(common_args):
+            raise ValueError("Project completion endpoint argument is incomplete")
+        common_args[endpoint_flag + 1] = ",".join(routes)
     command = [
         str(options.python_executable),
         str(options.profiler_path),
-        *config.common_args,
+        *common_args,
         "--total-rows",
         str(scenario.row_count(job_index)),
         "--db-fetch-rows",
@@ -774,6 +808,8 @@ def build_job_command(
         str(job_stem.with_suffix(".runs.csv")),
         "--request-trace-output",
         str(job_stem.with_suffix(".requests.csv")),
+        "--completion-evidence-output",
+        str(job_stem.with_suffix(".completions.csv")),
         "--submission-trace-output",
         str(job_stem.with_suffix(".submissions.csv")),
         "--flush-trace-output",

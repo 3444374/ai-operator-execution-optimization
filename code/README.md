@@ -7,12 +7,31 @@ SAOR native-system matched infrastructure is locally implemented but remains sto
 execution. A non-rehearsal run now requires a separate authorization artifact that exactly binds the
 repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
 runner creates an output root, acquires a host lease, or calls an executor. The reusable offline core
-lives in `src/experiments/saor/native_system_summary.py`; the CLI is parameter parsing only. Before
+lives in `src/experiments/saor/native_system_summary.py`; typed contract/parser/validator/evidence/publisher,
+executor adapters and no-writeback completion-evidence validator live beside it under `src/experiments/saor/`; the
+pre-dispatch executor-binding core lives in `src/experiments/saor/native_system_bindings.py`; the CLI
+only composes these typed components. The readiness layer now jointly loads all three real configs,
+requires exact vLLM distribution/source evidence, and verifies revision-bound model artifacts plus
+the complete live endpoint identity before any cell. Before
 publishing any ranking, the core recomputes the authorization, contract snapshot, manifest, service
 signature, scheduler-owner map, schedule, index, and per-cell identities. A failed or tampered matrix
-publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system,
-selector, Job, and resource ranking tables are withheld. This is local safety infrastructure, not new
+publishes only `all_runs.csv` with `status/failure_reason` plus failed `validation.json`; system, Job,
+and resource ranking tables are withheld. This is local safety infrastructure, not new
 server/GPU evidence and not an authorization to resume the stopped experiment.
+
+The matched Project SAOR command now supports the common eager Job-internal
+arrival contract without executor-internal replay. Profiler validation permits
+this only for `saor_bounded_ready` with request granularity, bounded concrete
+pre-registration, a positive logical payload-byte limit, and request tracing.
+The observed eager Job start epoch is copied to both the scheduler request and
+trace seed, and the scheduler still executes the concrete envelope
+register/grant/submit lifecycle. Legacy
+single-head `saor_bounded_priority` remains replay-only.
+
+The matched contract also freezes the concrete two-endpoint mapping and the two 512-row Job identities.
+Native Daft/Ray Data commands are rechecked offline against their evidence-bound adapter, concurrency,
+and batch selection; Project commands are separately bound to the same endpoint pair. These checks do
+not inject Project batching, credit, routing, or data organization into native-framework arms.
 
 Each authorized physical matrix now receives a fresh `matrix_instance_id` after authorization and
 copies it into the immutable snapshot, index, and every cell; mixing a cell from another output root
@@ -26,6 +45,19 @@ schema rather than copying arbitrary executor fields. Every valid cell and every
 than inferred from a directory name. The shared typed `DatabaseIdentity` requires the same pair across
 the whole matrix, not merely a non-empty pair per cell. A passed summary keeps
 `formal_authorized=false` and records the narrower fact `formal_authorization_verified=true`.
+Every ranked cell ends at validated model completion with `writeback=none`. It must pass an
+independent frozen-manifest doc-id, row-count, content-digest, and exactly-once trace gate; PostgreSQL
+remains the common timed source and no output-sink time enters the ranking.
+
+The five-arm comparison now places one common observation-only HTTP gateway between every Job and
+the frozen vLLM FCFS endpoints. It has no admission limit, retry, cache, route choice, or payload
+rewrite: each Job/endpoint path forwards the exact request body once and records endpoint-reported
+prompt/output tokens plus receive/completion clocks. Daft Native, Daft Ray, and Ray Data still own
+their execution order and backpressure. The common trace supplies real request P50/P95/P99, request
+SLO, weighted service share/Jain, completion-accounted service lag, and longest no-service interval
+for all five arms. Each Job also persists T0 release-before-PostgreSQL, T1 first batch, T2 first vLLM
+arrival, T3 last vLLM completion, and T4 validated in-memory result visibility; headline JCT and
+correct throughput use T0--T4, while source/execution/service spans remain separate.
 
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
 execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:

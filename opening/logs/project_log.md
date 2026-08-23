@@ -8,6 +8,21 @@
 - 第 3.2 节增加 `3.2.1 分阶段工作量表征与数据组织`、`3.2.2 固定容量下的提交、路由与多作业调度`、`3.2.3 两项研究内容的共同支撑与跨模态验证`，使长段研究内容可以按对象阅读，同时避免把代价估计误解为第三项正式研究内容。
 - 题目、两项研究内容、实验结论、46 条参考文献和 11 张正文图片均未改变；本轮未生成或覆盖 Word、PPTX、飞书与 Wiki。
 
+## 2026-08-21 数据库内 LOTUS AI 语义算子口径同步
+
+- 开题 Markdown 源统一改为计划中的 PostgreSQL 18.3 extension/planner-visible AI operator：
+  PostgreSQL 拥有 SQL、关系 child plan、snapshot 和 query lifecycle，LOTUS v1.2.4 `sem_map`
+  提供现成语义实现，Daft/Ray/SAOR/vLLM 作为可替换的外部物理 backend。
+- 纠正“数据库内=推理进程不离开 PostgreSQL”的粗略表述：主张是用户不显式
+  `fetchall/pd.read_sql` 导出数据，而是由数据库 query plan 管理最小必要 row-batch 交接；不声称
+  物理零传输或 GPU 在数据库进程内。
+- 新定位仍是 capability 设计；未完成 PostgreSQL extension 和数据库内运行证据，既有外部
+  runner 结果不重标。保留未修改 LOTUS 完整产品路径为外部 baseline，与数据库内
+  `PostgreSQL AI operator + LOTUS native sem_map backend` 分表报告。
+- 实施顺序进一步收紧：当前先将项目 UDF/manifest-like `AI_COMPLETE` 语义入口迁移到
+  真实 LOTUS v1.2.4 `sem_map`，不先扩 GPU 矩阵或调 SAOR；数据执行性能可使用明确
+  标注的 emulated operator contract，PostgreSQL extension/CustomScan 单独承担 SQL/query-lifecycle 资格门。
+
 ## 2026-08-20 七部分开题报告正文精修与插图
 
 - 按用户确认的修改意见精修 `report/opening_report.md`，保持学校模板七部分结构和两项研究内容不变。

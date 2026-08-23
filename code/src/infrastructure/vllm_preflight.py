@@ -15,7 +15,264 @@ reads and is run on the server (not unit-tested locally).
 
 from __future__ import annotations
 
+import hashlib
+import math
+import re
+import shlex
+import json
 from pathlib import Path
+
+
+SERVICE_IDENTITY_HASH_FIELDS = {
+    "model_config_sha256": "config.json",
+    "tokenizer_config_sha256": "tokenizer_config.json",
+    "tokenizer_json_sha256": "tokenizer.json",
+    "model_safetensors_index_sha256": "model.safetensors.index.json",
+    "generation_config_sha256": "generation_config.json",
+    "model_weight_00001_sha256": "model-00001-of-00004.safetensors",
+    "model_weight_00002_sha256": "model-00002-of-00004.safetensors",
+    "model_weight_00003_sha256": "model-00003-of-00004.safetensors",
+    "model_weight_00004_sha256": "model-00004-of-00004.safetensors",
+}
+VLLM_DISTRIBUTION_HASH_FIELDS = {
+    "vllm_metadata_sha256": "METADATA",
+    "vllm_wheel_sha256": "WHEEL",
+    "vllm_record_sha256": "RECORD",
+}
+VLLM_SOURCE_HASH_FIELDS = {
+    "vllm_source_config_scheduler_sha256": "config/scheduler.py",
+    "vllm_source_scheduler_sha256": "v1/core/sched/scheduler.py",
+    "vllm_source_async_scheduler_sha256": "v1/core/sched/async_scheduler.py",
+    "vllm_source_request_queue_sha256": "v1/core/sched/request_queue.py",
+    "vllm_source_request_sha256": "v1/request.py",
+}
+_REQUIRED_SERVICE_IDENTITY_FIELDS = {
+    "model",
+    "model_path",
+    "model_revision",
+    "dtype",
+    "service",
+    "scheduler",
+    "scheduling_policy",
+    "max_model_len",
+    "max_num_seqs",
+    "max_num_batched_tokens",
+    "chunked_prefill",
+    "prefix_caching",
+    "mfu_metrics",
+    "enforce_eager",
+    "compilation_mode",
+    "gpu_memory_utilization",
+    *SERVICE_IDENTITY_HASH_FIELDS,
+    *VLLM_DISTRIBUTION_HASH_FIELDS,
+    *VLLM_SOURCE_HASH_FIELDS,
+}
+_SHA256 = re.compile(r"[0-9a-f]{64}")
+_REVISION = re.compile(r"[0-9a-f]{40}")
+
+
+def validate_service_identity(identity: dict[str, object]) -> None:
+    """Validate the complete frozen model/build/runtime identity."""
+
+    missing = sorted(_REQUIRED_SERVICE_IDENTITY_FIELDS - set(identity))
+    unknown = sorted(set(identity) - _REQUIRED_SERVICE_IDENTITY_FIELDS)
+    if missing or unknown:
+        raise ValueError(
+            f"service identity fields invalid: missing={missing} unknown={unknown}"
+        )
+    for field in ("model", "model_path", "dtype", "service"):
+        if not isinstance(identity[field], str) or not identity[field]:
+            raise ValueError(f"service identity {field} must be non-empty")
+    if identity["scheduler"] != "vllm_native_fcfs":
+        raise ValueError("service identity scheduler must be vllm_native_fcfs")
+    if identity["scheduling_policy"] != "fcfs":
+        raise ValueError("service identity scheduling_policy must be fcfs")
+    if identity["dtype"] != "bfloat16":
+        raise ValueError("matched service identity dtype must be bfloat16")
+    if identity["service"] != "0.25.1":
+        raise ValueError("matched service identity vLLM version must be 0.25.1")
+    if identity["compilation_mode"] != "vllm_compile":
+        raise ValueError("matched service identity must use vllm_compile")
+    revision = identity["model_revision"]
+    if not isinstance(revision, str) or _REVISION.fullmatch(revision) is None:
+        raise ValueError("service identity model_revision must be a 40-hex commit")
+    for field in (
+        *SERVICE_IDENTITY_HASH_FIELDS,
+        *VLLM_DISTRIBUTION_HASH_FIELDS,
+        *VLLM_SOURCE_HASH_FIELDS,
+    ):
+        value = identity[field]
+        if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
+            raise ValueError(f"service identity {field} must be a SHA-256")
+    for field in ("max_model_len", "max_num_seqs", "max_num_batched_tokens"):
+        value = identity[field]
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ValueError(f"service identity {field} must be a positive integer")
+    for field in (
+        "chunked_prefill",
+        "prefix_caching",
+        "mfu_metrics",
+        "enforce_eager",
+    ):
+        if not isinstance(identity[field], bool):
+            raise ValueError(f"service identity {field} must be boolean")
+    if not identity["chunked_prefill"] or not identity["prefix_caching"]:
+        raise ValueError("matched service requires chunked prefill and prefix caching")
+    if not identity["mfu_metrics"] or identity["enforce_eager"]:
+        raise ValueError("matched service requires MFU metrics and compile mode")
+    utilization = identity["gpu_memory_utilization"]
+    if (
+        isinstance(utilization, bool)
+        or not isinstance(utilization, (int, float))
+        or not math.isfinite(float(utilization))
+        or not 0 < float(utilization) <= 1
+    ):
+        raise ValueError("service identity gpu_memory_utilization must be in (0, 1]")
+
+
+def _tokens(cmdline: str) -> list[str]:
+    try:
+        return shlex.split(cmdline)
+    except ValueError as exc:
+        raise RuntimeError(f"vLLM cmdline is not shell-tokenizable: {exc}") from exc
+
+
+def _option_values(cmdline: str, flag: str) -> list[str | None]:
+    tokens = _tokens(cmdline)
+    values: list[str | None] = []
+    for index, token in enumerate(tokens):
+        if token.startswith(f"{flag}="):
+            values.append(token.split("=", 1)[1])
+        elif token == flag:
+            if index + 1 < len(tokens) and not tokens[index + 1].startswith("--"):
+                values.append(tokens[index + 1])
+            else:
+                values.append(None)
+    return values
+
+
+def _required_option(cmdline: str, flag: str, expected: object) -> str:
+    values = _option_values(cmdline, flag)
+    if len(values) != 1 or values[0] is None:
+        raise RuntimeError(f"vLLM cmdline must define {flag} exactly once")
+    actual = str(values[0])
+    if actual != str(expected):
+        raise RuntimeError(
+            f"vLLM cmdline {flag} drift; expected {expected}, observed {actual}"
+        )
+    return actual
+
+
+def _required_boolean_flag(cmdline: str, flag: str, expected: bool) -> bool:
+    values = _option_values(cmdline, flag)
+    if len(values) != 1:
+        raise RuntimeError(f"vLLM cmdline must define {flag} exactly once")
+    value = values[0]
+    actual = True if value is None else value.lower() not in {
+        "false", "0", "off", "no"
+    }
+    if actual != expected:
+        raise RuntimeError(
+            f"vLLM cmdline {flag} drift; expected {expected}, observed {actual}"
+        )
+    return actual
+
+
+def verify_endpoint_service_identity(
+    cmdline_pool: list[str],
+    endpoint_urls: list[str] | tuple[str, ...],
+    expected_identity: dict[str, object],
+    *,
+    tag: str = "saor-five-arm-service",
+) -> dict[str, dict[str, object]]:
+    """Pure exact gate for every service process used by the five-arm matrix."""
+
+    validate_service_identity(expected_identity)
+    option_fields = {
+        "--model": "model_path",
+        "--served-model-name": "model",
+        "--dtype": "dtype",
+        "--max-model-len": "max_model_len",
+        "--gpu-memory-utilization": "gpu_memory_utilization",
+        "--max-num-seqs": "max_num_seqs",
+        "--max-num-batched-tokens": "max_num_batched_tokens",
+        "--scheduling-policy": "scheduling_policy",
+    }
+    boolean_fields = {
+        "--enable-chunked-prefill": "chunked_prefill",
+        "--enable-prefix-caching": "prefix_caching",
+        "--enable-mfu-metrics": "mfu_metrics",
+    }
+    observed: dict[str, dict[str, object]] = {}
+    for url in endpoint_urls:
+        port = url.rsplit(":", 1)[-1].split("/")[0]
+        matching_cmdlines = [
+            command
+            for command in cmdline_pool
+            if cmdline_for_port([command], port) is not None
+        ]
+        if len(matching_cmdlines) != 1:
+            raise RuntimeError(
+                f"[{tag}][preflight] port {port}: expected one vLLM cmdline, "
+                f"observed {len(matching_cmdlines)}"
+            )
+        cmdline = matching_cmdlines[0]
+        endpoint_observed: dict[str, object] = {}
+        for flag, field in option_fields.items():
+            endpoint_observed[field] = _required_option(
+                cmdline, flag, expected_identity[field]
+            )
+        for flag, field in boolean_fields.items():
+            endpoint_observed[field] = _required_boolean_flag(
+                cmdline, flag, bool(expected_identity[field])
+            )
+        if _option_values(cmdline, "--enforce-eager"):
+            raise RuntimeError(
+                "vLLM cmdline execution-mode drift; expected compile, observed eager"
+            )
+        if _option_values(cmdline, "--compilation-config"):
+            raise RuntimeError(
+                "vLLM cmdline compilation config is not the frozen 0.25.1 default"
+            )
+        actual_scheduler = scheduler_cls_value(cmdline)
+        if actual_scheduler is not None:
+            raise RuntimeError(
+                "vLLM cmdline scheduler class drift; expected native FCFS"
+            )
+        endpoint_observed.update({
+            "scheduler": "vllm_native_fcfs",
+            "enforce_eager": False,
+            "compilation_mode": "vllm_compile",
+        })
+        observed[url] = endpoint_observed
+    return observed
+
+
+def verify_model_artifact_identity(
+    expected_identity: dict[str, object],
+) -> dict[str, str]:
+    """Bind the declared model revision to the frozen local artifact hashes."""
+
+    validate_service_identity(expected_identity)
+    model_root = Path(str(expected_identity["model_path"]))
+    observed: dict[str, str] = {}
+    errors = []
+    for field, name in SERVICE_IDENTITY_HASH_FIELDS.items():
+        path = model_root / name
+        if not path.is_file():
+            errors.append(f"model artifact is missing: {path}")
+            continue
+        digest_builder = hashlib.sha256()
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+                digest_builder.update(chunk)
+        digest = digest_builder.hexdigest()
+        observed[field] = digest
+        if digest != expected_identity[field]:
+            errors.append(f"model artifact {name} hash drift")
+    if errors:
+        raise RuntimeError("; ".join(errors))
+    return observed
 
 
 def cmdline_for_port(cmdlines, port):
@@ -24,10 +281,9 @@ def cmdline_for_port(cmdlines, port):
     Pure (no /proc I/O) so it is unit-testable with synthetic cmdline strings.
     """
 
-    needles = (f"--port {port}", f"--port={port}")
-    for c in cmdlines:
-        if any(n in c for n in needles):
-            return c
+    for command in cmdlines:
+        if str(port) in _option_values(command, "--port"):
+            return command
     return None
 
 
@@ -53,6 +309,82 @@ def prefix_cache_flag_enabled(cmdline):
     if "=" not in val:
         return True  # bare flag == ON
     return val.split("=", 1)[1].strip().lower() not in ("false", "0", "off", "no")
+
+
+def scheduler_cls_value(cmdline):
+    """Return the explicit ``--scheduler-cls`` value, or ``None`` for native.
+
+    The five-arm FCFS contract treats absence as the only accepted native-FCFS
+    identity.  A malformed bare flag fails instead of being read as native.
+    """
+
+    tokens = cmdline.split()
+    values = []
+    for index, token in enumerate(tokens):
+        if token.startswith("--scheduler-cls="):
+            values.append(token.split("=", 1)[1])
+        elif token == "--scheduler-cls":
+            if index + 1 >= len(tokens) or tokens[index + 1].startswith("--"):
+                raise RuntimeError("vLLM cmdline has a bare --scheduler-cls flag")
+            values.append(tokens[index + 1])
+    if len(values) > 1:
+        raise RuntimeError("vLLM cmdline defines --scheduler-cls more than once")
+    return values[0] if values else None
+
+
+def verify_endpoint_scheduler_cls(
+    cmdline_pool,
+    endpoint_urls,
+    expected_scheduler_cls,
+    *,
+    strict=True,
+    tag="preflight",
+):
+    """Verify the actual service-layer scheduler class for every endpoint."""
+
+    for url in endpoint_urls:
+        port = url.rsplit(":", 1)[-1].split("/")[0]
+        cmdline = cmdline_for_port(cmdline_pool, port)
+        if cmdline is None:
+            if strict:
+                raise RuntimeError(
+                    f"[{tag}][preflight] port {port}: no matching vLLM cmdline"
+                )
+            continue
+        actual = scheduler_cls_value(cmdline)
+        if actual != expected_scheduler_cls:
+            expected = expected_scheduler_cls or "vLLM native FCFS (no --scheduler-cls)"
+            observed = actual or "vLLM native FCFS (no --scheduler-cls)"
+            raise RuntimeError(
+                f"[{tag}][preflight] port {port}: scheduler class drift; "
+                f"expected {expected}, observed {observed}"
+            )
+
+
+def verify_live_vllm_scheduler(
+    endpoint_urls,
+    expected_scheduler_cls,
+    *,
+    strict=True,
+    tag="preflight",
+):
+    """Fail closed against live cmdlines and return provenance cmdlines."""
+
+    cmdlines = _read_live_cmdlines()
+    if not cmdlines:
+        if strict:
+            raise RuntimeError(
+                f"[{tag}][preflight] no live vLLM process; scheduler is unverified"
+            )
+        return cmdlines
+    verify_endpoint_scheduler_cls(
+        list(cmdlines.values()),
+        endpoint_urls,
+        expected_scheduler_cls,
+        strict=strict,
+        tag=tag,
+    )
+    return cmdlines
 
 
 def verify_endpoint_cmdlines(cmdline_pool, endpoint_urls, declared_flags, strict, tag="preflight"):
@@ -99,19 +431,167 @@ def verify_endpoint_cmdlines(cmdline_pool, endpoint_urls, declared_flags, strict
 def _read_live_cmdlines():
     """Return {pid: cmdline_str} for live vllm.entrypoints processes (Linux pgrep + /proc)."""
 
+    return {
+        pid: str(state["cmdline"])
+        for pid, state in _read_live_processes().items()
+    }
+
+
+def _linux_process_start_time_ticks(pid: str) -> str:
+    """Read Linux field 22 without confusing spaces inside ``comm``."""
+
+    raw = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+    close = raw.rfind(")")
+    if close < 0:
+        raise RuntimeError(f"/proc/{pid}/stat is malformed")
+    fields_after_comm = raw[close + 2:].split()
+    if len(fields_after_comm) <= 19:
+        raise RuntimeError(f"/proc/{pid}/stat has no start time")
+    return fields_after_comm[19]
+
+
+def _read_live_processes() -> dict[str, dict[str, object]]:
+    """Return command and interpreter identity for live vLLM API processes."""
+
     import subprocess
 
     pg = subprocess.run(["pgrep", "-f", "vllm.entrypoints"], capture_output=True, text=True)
     pids = [p for p in pg.stdout.split() if p]
-    cmdlines: dict[str, str] = {}
+    processes: dict[str, dict[str, str]] = {}
     for pid in pids:
         try:
-            cmdlines[pid] = (
-                Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
-            )
+            argv = [
+                token.decode("utf-8", "replace")
+                for token in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+                if token
+            ]
+            cmdline = shlex.join(argv)
+            start_time_ticks = _linux_process_start_time_ticks(pid)
         except OSError:
-            pass
-    return cmdlines
+            continue
+        processes[pid] = {
+            "cmdline": cmdline,
+            "argv0": argv[0] if argv else "unavailable",
+            "start_time_ticks": start_time_ticks,
+        }
+    return processes
+
+
+def _load_runtime_identities(paths: tuple[Path, ...]) -> dict[str, dict[str, object]]:
+    """Load one launcher sidecar per endpoint and reject duplicate ports."""
+
+    identities: dict[str, dict[str, object]] = {}
+    for path in paths:
+        decoded = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(decoded, dict):
+            raise RuntimeError(f"vLLM runtime identity must be an object: {path}")
+        required = {
+            "schema_version", "pid", "process_start_time_ticks", "port",
+            "python_executable_argv0", "sys_prefix", "package_root",
+            "package_version",
+        }
+        if decoded.get("schema_version") != 1 or set(decoded) != required:
+            raise RuntimeError(f"vLLM runtime identity fields are invalid: {path}")
+        port = str(decoded["port"])
+        if port in identities:
+            raise RuntimeError(f"duplicate vLLM runtime identity for port {port}")
+        identities[port] = decoded
+    return identities
+
+
+def verify_live_vllm_service_identity(
+    endpoint_urls: tuple[str, ...],
+    expected_identity: dict[str, object],
+    expected_python_runtime: dict[str, object],
+    runtime_identity_paths: tuple[Path, ...],
+    *,
+    tag: str = "saor-five-arm-service",
+) -> dict[str, object]:
+    """Read live Linux process state and return only non-secret identity evidence."""
+
+    processes = _read_live_processes()
+    if not processes:
+        raise RuntimeError(
+            f"[{tag}][preflight] no live vLLM process; service identity is unverified"
+        )
+    cmdlines = {pid: state["cmdline"] for pid, state in processes.items()}
+    endpoints = verify_endpoint_service_identity(
+        list(cmdlines.values()), endpoint_urls, expected_identity, tag=tag
+    )
+    expected_runtime_fields = {
+        "executable_argv0", "sys_prefix", "package_root", "package_version"
+    }
+    if set(expected_python_runtime) != expected_runtime_fields:
+        raise RuntimeError("fresh vLLM Python runtime identity is incomplete")
+    runtime_identities = _load_runtime_identities(runtime_identity_paths)
+    expected_ports = {
+        url.rsplit(":", 1)[-1].split("/")[0] for url in endpoint_urls
+    }
+    if set(runtime_identities) != expected_ports:
+        raise RuntimeError(
+            f"[{tag}][preflight] runtime identity ports drifted; "
+            f"expected {sorted(expected_ports)}, observed {sorted(runtime_identities)}"
+        )
+    for url in endpoint_urls:
+        port = url.rsplit(":", 1)[-1].split("/")[0]
+        matching = [
+            (pid, state) for pid, state in processes.items()
+            if cmdline_for_port([state["cmdline"]], port) is not None
+        ]
+        if len(matching) != 1:
+            raise RuntimeError(f"[{tag}][preflight] port {port}: live PID is ambiguous")
+        pid, process = matching[0]
+        runtime = runtime_identities.get(port)
+        if runtime is None:
+            raise RuntimeError(
+                f"[{tag}][preflight] port {port}: runtime identity sidecar is missing"
+            )
+        comparisons = {
+            "PID": (str(runtime["pid"]), pid),
+            "process start time": (
+                str(runtime["process_start_time_ticks"]),
+                str(process["start_time_ticks"]),
+            ),
+            "unresolved Python argv0": (
+                str(runtime["python_executable_argv0"]), str(process["argv0"])
+            ),
+            "audited Python argv0": (
+                str(expected_python_runtime["executable_argv0"]),
+                str(runtime["python_executable_argv0"]),
+            ),
+            "sys.prefix": (
+                str(expected_python_runtime["sys_prefix"]), str(runtime["sys_prefix"])
+            ),
+            "vLLM package path": (
+                str(expected_python_runtime["package_root"]), str(runtime["package_root"])
+            ),
+            "vLLM package version": (
+                str(expected_python_runtime["package_version"]),
+                str(runtime["package_version"]),
+            ),
+        }
+        for label, (expected, actual) in comparisons.items():
+            if actual != expected:
+                raise RuntimeError(
+                    f"[{tag}][preflight] port {port}: service Python runtime drift "
+                    f"in {label}; expected {expected}, observed {actual}"
+                )
+        endpoints[url]["process_identity"] = {
+            "pid": int(pid),
+            "process_start_time_ticks": str(process["start_time_ticks"]),
+            "python_executable_argv0": str(runtime["python_executable_argv0"]),
+            "sys_prefix": str(runtime["sys_prefix"]),
+            "package_root": str(runtime["package_root"]),
+            "package_version": str(runtime["package_version"]),
+        }
+    model_artifacts = verify_model_artifact_identity(expected_identity)
+    return {
+        "status": "passed",
+        "process_count": len(cmdlines),
+        "endpoints": endpoints,
+        "model_revision": expected_identity["model_revision"],
+        "model_artifacts": model_artifacts,
+    }
 
 
 def verify_live_vllm_config(endpoint_urls, declared_flags, strict, tag="preflight"):

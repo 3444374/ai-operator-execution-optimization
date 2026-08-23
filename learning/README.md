@@ -1,5 +1,112 @@
 # Learning Notes
 
+## 2026-08-21 为什么公平性可以从框架外观察，但不能从完成行数猜
+
+Daft/Ray Data 不公开内部 scheduler，不等于五臂无法比较 tail 和经验公平性。共同的
+observation-only gateway 只给每个 Job 一个独立 path，原样一次转发到同一 vLLM FCFS backend；它
+没有 queue、retry、admission、batch 或 route choice。这样框架仍拥有执行顺序，而 gateway 能统一
+记录真实 request arrival/completion 和 endpoint actual token usage。公平窗口只取两 Job 同时存在
+outstanding gateway requests 的交集，并按实际完成 token work 计算 weighted share、Jain、service
+lag 与 longest no-service。`Jain(completed_rows)` 会把两个 512-row Job 恒算成 1，不能表达服务份额。
+
+系统 headline 另用 T0--T4：T0 在 PostgreSQL 读取/child 初始化前，T1 为首批 source data，T2/T3
+为首请求到达/末请求完成，T4 为完整正确结果在内存中可见。Job/group JCT 和 correct throughput
+包含 source、转换、初始化、排队和模型执行；source/execution/service span 分列解释收益来源。
+输出无需 sink：`writeback=none` 时 completion digest 只做边界外正确性封存。within-run victim
+inflation/recovery 是隔离观测；没有 matched-solo control 时不能写成 full-solo slowdown。
+
+## 2026-08-21 为什么 readiness 不能相信一份手写的 passed JSON
+
+readiness 是一次证据推导，不是调用者自我声明。system-preflight 现在由可运行入口实际检查 endpoint
+health、PostgreSQL/pgvector、Ray/GPU clean，并从 bounded HTTP root 的原始 run status、gate 和
+per-endpoint summary 重算通过状态；后续 readiness 还会重跑同一组只读探针，要求结果与封存证据
+逐字段相同。correctness smoke 则复用五臂真实 executor 跑一轮，但使用独立、显式 fresh root，避免
+占用后续 rehearsal 的 canonical root。第四阶段只接受这个 root 的 `matrix_index.json`，并重哈希
+manifest、Job 行数、sink digest、native upstream/adapter provenance 和 raw artifacts。
+
+同样，formal 不能只检查 archive 里“有一个 index、一个 snapshot、一个 cell 文件”。离线 validator
+必须重新核验完整五臂 cell 合同，并要求 tar 与 root 的全部文件集合及每个 SHA 完全一致。这样一份
+只有 `{}` snapshot 或单个伪 cell 的形式匹配归档无法生成 rehearsal validation；formal authorization
+还显式绑定 matched/native/Project 三份 config SHA，并把 native config 中冻结的 upstream commit 与
+adapter SHA 逐臂对照最终 cell。它绑定的是经深校验的 validation/root/archive，而不是一组可手写的
+布尔字段。后续 `862d0008` 已用该门完成一次 gateway 前的 correctness smoke/rehearsal；formal 未运行。
+
+## 2026-08-21 为什么“同一个 endpoint”仍不足以证明五臂可比
+
+五臂过去只检查 endpoint 进程没有 `--scheduler-cls`。这只能证明 scheduler class 没被显式替换，
+不能阻止模型 revision、dtype、vLLM wheel/source、capacity、chunked prefill、prefix cache、
+compile/eager 或 GPU-memory 配置漂移。新合同把模型 artifact hash、vLLM dist/source exact SHA 和
+完整 runtime flags 合成一份 `service_identity`，要求 matched/native/Project 三份实际配置完全相同；
+source audit 缺 expected SHA 时永远不能返回 `passed`。live gate 再逐 endpoint 核对显式 cmdline，并
+以本地模型文件 hash 把声明 revision 绑定到实际 artifact。静态配置通过只写
+`static_config_passed/rehearsal_ready=false`，不能被误读成已可跑 rehearsal。
+
+本次服务器访问只有环境/归档/source 的只读 preflight，endpoint 当时未运行，未执行 correctness
+smoke、rehearsal 或 formal。服务器归档同时纠正了“五臂 rehearsal 从未运行”的错误表述：
+
+| commit | 等价入口 | 保留 root / archive | 阶段与失败原因 | 可比较结论 |
+|---|---|---|---|---|
+| `ea4cbb3b` | `run_saor_native_system_matched.py ... --rehearsal` | `saor_native_system_matched_matrix_20260819_r2/`；未发现独立 tar | warmup 第 1 个 Project selector-sanity cell；MFU `missing_gpu_peak_tflops` guard | 无 |
+| `58154151` | 同一 rehearsal 入口 | `saor_native_system_matched_matrix_20260819_r3/`；未发现独立 tar | 同一阶段；`job 0 has no unique successful summary` | 无 |
+
+两份 `matrix_index.json` 证明 execution mode、commit、root、cell 和原因；服务器 shell history 没有保留
+逐字 argv，所以这里只写冻结 runbook 的等价入口，不把重建命令冒充原始历史。当前准确状态是：
+gateway 前已有一次成功五臂 rehearsal，但它没有五臂统一 request tail/fairness，不能回答当前完整
+比较；新 gateway 合同仍需全新 smoke/rehearsal。formal 仍需在新 rehearsal 归档审核后另行签发。
+
+## 2026-08-20 为什么现在是“五臂系统表 + 独立 VTC 机制表”
+
+五臂系统表回答完整 database-E2E 系统差异：三条 framework-owned native graph、project
+frozen-static、SAOR。native graph 不能被偷偷接上项目的 bounded-ready、K/W、credit 或 selector；
+static 也不能拥有 SAOR 的动态 ready/debt。旧 FIFO/DRR/VTC-style/strict-priority 数据仍有内部
+归因价值，但不再跟完整系统混排。
+
+官方 VTC 回答另一件事：在官方 S-LoRA serving stack 内，FCFS 换成 VTC 后发生什么。因此必须
+同栈保留 FCFS control；它不含 PostgreSQL、Daft、Ray Data 或 Project coordinator。当前 artifact
+对 CUDA/PyTorch/Ampere 的要求尚未在本项目 4090/model/runtime 上验证，所以只能登记 capability
+blocker，不能在 vLLM 中重写一个近似版本后称“官方 VTC”。
+
+三个时间概念也已拆开：`job_release_time` 是共同外部到达；`arrival_replay` 是执行器内部逐请求
+回放能力；`bounded-ready` 是 SAOR 在 Job release 之后观察已经可提交的具体 work。SAOR 若在
+release 前 ready/register/submit 会直接失败。eager 不等于绕过 SAOR：每个 Job 启动后，profiler
+仍把组织结果拆成 concrete request envelopes，再由 bounded-ready 的 K/work/bytes 窗口执行
+register→grant→submit；同一个 observed Job start epoch 会进入 scheduler request 和 trace seed，
+供 SLO budget 与证据 join 使用。只是这些 request 不按 manifest 内的时间逐条睡眠回放。旧 single-head
+bounded-priority 因依赖逐请求到达语义仍必须 replay。
+
+MFU 的 peak/precision 已冻结进 config SHA、resolved
+fingerprint 和 cell，但因五系统没有统一可信 FLOP numerator，本轮 MFU 诚实标 unavailable。
+Project 命令继续传 peak/precision 是为了固定 denominator 和保留可复现实路径诊断，不代表已经
+获得可跨五臂排名的 numerator。
+五臂都使用 `writeback=none`，不连接输出 sink。native/Project 分别从执行器结果写独立 completion
+evidence，按冻结 doc-id、内容 digest、行数和 exactly-once 校验；T4 是完整正确结果的内存可见时钟，
+证据文件封存不计入 JCT。
+
+本次是本地合同重构，没有连接服务器，也没有启动新的 rehearsal/formal。这里的“本次未运行”不
+等于历史上从未运行：仓库已归档 2026-08-13 bounded-priority gate failure（`9ae64db3`）、
+2026-08-14 server regression（`dd83136d`）、feeding gate failure（`60e47469`）和 2026-08-17
+feeding-gap fail-closed stop（`f1844c0f`）。它们是可访问的失败/capability 证据，不是性能结论。
+
+| 失败提交 | 已知执行入口 | root / archive | 失败阶段与原因 | 有可比结论？ | 当前可访问性 |
+|---|---|---|---|---|---|
+| `9ae64db3` | `run_shared_vllm_experiment.py --rehearsal` | 两个 development root；`saor_bounded_priority_gate_20260813_2de6f93_full.tar.gz`，SHA `be6ce0a3…` | 第二轮 0.25K debt-recovery=0，runner mechanism gate fail closed | 否；只能作 diagnostic | Git 有 compact evidence；完整 tar 在历史服务器/镜像记录 |
+| `dd83136d` | 同上，formal-evidence 修复后的 regression rehearsal | `saor_bounded_priority_rehearsal_15201946_regression_20260814/` 与同名 tar | 0.25K 再次被相同机制门拒绝 | 否 | Git 报告可访问；完整 root/tar 为仓库外记录 |
+| `60e47469` | `run_saor_feeding_ceiling.py --rehearsal` | `...c988622a...retry2`；Git 内 `saor_project_feeding_ceiling_c988622a_20260814_retry2.tar.gz` | feeding 92.898% < 95%，锁定 negative gate；更早两个失败 root 分别为 SSH 中断、exactly-once 字段缺失 | 只支持该次 feeding stop，不是稳定性能排名 | 最终 12-file tar 与 compact evidence 可访问；前两个失败 root 只留审计记录 |
+| `f1844c0f` | `run_saor_feeding_gap_diagnostic.py` | `saor_feeding_gap_diagnostic_345bee2f_20260817`；tar SHA `f4b9793d…` | 第 11/12 cell 出现 1/512 zero-retry `ReadError`，未运行 summarizer | 否；10/12 仅描述性 | 原提交可恢复 compact evidence；完整 root/tar 为仓库外镜像记录，后续全新 root 重跑 |
+
+## 2026-08-19 为什么“同一 workload”还要绑定 endpoint、Job 和原生执行参数
+
+系统级比较不能只让 Daft、Ray Data 和 Project 读取同一份 1024 行文件。还必须证明三类执行器
+访问同一对 vLLM endpoint；Job0/Job1 分别是冻结的 512 行且没有互换；Daft/Ray Data 实际使用的
+adapter、concurrency、batch 与校准身份一致。否则即使最终都显示 1024 条完成，仍可能是在不同服务、
+不同 Job 切分或不同框架配置上运行，逐 Job JCT 和系统排名没有可比性。
+
+当前合同在 dispatch 前交叉核对 matched/native/Project 三份配置，在每个 cell 中保存 endpoint、
+Job ID/SHA/行数和原生选择身份，离线汇总再从封存命令重验。这里的共同 endpoint/manifest 只是
+实验控制；Daft Native、Daft Ray 与 Ray Data 仍分别拥有自己的 batching、backpressure 和 scheduler，
+不会继承 Project 的 token-budget、K/W、credit、bounded-ready 或 router。本次仅完成本地合同与测试，
+没有连接服务器，也没有产生新的 GPU 性能结论。
+
 ## 2026-08-17 为什么 evidence 自包含不等于只保存一个目录名
 
 若 matrix index 保存 manifest、resource trace 和 output artifact 的绝对路径，原机器上验证通过并不代表
@@ -51,7 +158,7 @@ manifest/schedule 身份。这样 runner 和验证器即使分别看到一份结
 不同 workload 或被替换 scheduler 的结果拼进同一排名。
 
 失败证据也不能删除。现在失败矩阵保留 `all_runs.csv`，其中每个已记录 cell 都有原始 `status` 和
-`failure_reason`；但 `system_summary.csv`、selector、Job 和 resource 性能排名全部禁止发布。这一区分
+`failure_reason`；但 `system_summary.csv`、Job 和 resource 性能排名全部禁止发布。这一区分
 很重要：保留失败事实是可复现性，发布不完整排名则会制造选择性报告。当前改动只是本地安全 hotfix，
 服务器关闭且 native-system GPU/formal 仍停止，没有产生新的性能结论。
 

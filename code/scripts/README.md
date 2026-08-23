@@ -127,29 +127,71 @@ shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity�
 `decided=false`、`formal_authorized=false`；该桥是项目内部归因，不是原生系统比较。
 
 `experiments/run_saor_native_system_matched.py` 是本地系统级 matched matrix 编排入口。它在
-dispatch 前联合加载 matched/native/Project 三份配置并执行 readiness 与执行器绑定审计，随后
-平衡编排 8 个唯一物理臂（3 个原生系统臂、Project frozen-static、3 个 Project selector
-sanity 臂和共享的 proposed 臂）。`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
-cell。非 rehearsal 还必须显式传入独立 `--formal-authorization` artifact；该 artifact 精确绑定
-repository commit、原始 config SHA、resolved-config fingerprint 和 frozen manifest SHA。runner
+dispatch 前联合加载 matched/native/Project 三份配置，并调用
+`src/experiments/saor/native_system_bindings.py` 执行无副作用的执行器绑定审计，随后
+平衡编排 5 个唯一物理臂（3 个原生系统臂、Project frozen-static 和 proposed）。
+`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
+cell。非 rehearsal 还必须显式传入独立 `--formal-authorization` artifact，以及实际 rehearsal 的
+validation/root/archive；授权精确绑定 repository commit、三份实际 config identity、resolved-config
+fingerprint、manifest/Job SHA、rehearsal matrix-index/validation/archive SHA。runner
 在创建输出目录、获取 host lease 或调用 executor 之前完成校验。当前 native-system GPU/formal
-仍停止，仓库不随模板提供有效授权。授权通过后，每次物理矩阵生成唯一
+仍停止，仓库不随模板提供有效授权；merge/rehearsal 均不能替代独立审核后的 formal 决定。
+readiness 同时把 native calibration 的 SHA/adapter/concurrency/batch 与实际 executor 对齐，并
+要求三类执行器访问同一冻结 endpoint pair，Project 两臂真实执行完整 512+512 行。授权通过后，每次物理矩阵生成唯一
 `matrix_instance_id`，并绑定 contract snapshot、index 与所有 cell，跨 output root 替换 cell
 会被汇总器拒绝。原生 shard 与 Project Job 摘要必须提供一致的实际 PostgreSQL/pgvector 版本；
-这些字段进入每条 `all_runs.csv`，不能用配置默认值代替。
+这些字段进入每条 `all_runs.csv`，不能用配置默认值代替。离线汇总还会按原始命令重验原生
+adapter/concurrency/batch/endpoint 与 Project endpoint，避免只信任运行前配置检查。
+该入口的 `--native-runner` 是每个 shard 真正调用的 official adapter CLI，必须传
+`code/scripts/baselines/run_official_baseline.py`；不要传
+`run_text_native_multijob.py`，后者已经是另一层 multi-job 编排器。native shard 的请求证据位于
+`jobs/<job_id>/shard_<n>/requests.csv`，Project 请求证据仍位于
+`jobs/<job_id>.requests.csv`。Project lifecycle trace 不包含输出正文；同一命令必须另产
+`jobs/<job_id>.completions.csv`，由 profiler 直接从 in-process operator results 写出，统一 sink
+用它和 PostgreSQL readback 独立核对内容 digest。native shard 则直接用包含正文的
+`requests.csv`；两条路径都不能从数据库读出 expected text 再与数据库自比。
+
+`analysis/audit_vllm_0251_source.py` 必须由冻结 vLLM Python 执行，逐项比较 package version、
+dist-info 和五个关键 installed-source SHA；缺 expected SHA 只会 blocked。
+`analysis/audit_saor_native_system_matched.py` 可从仓库根直接运行，联合加载三份实际 config；默认只
+报告 `static_config_passed/rehearsal_ready=false`。外层始终由包含 Ray/Daft/psycopg 的
+`DRIVER_PYTHON` 运行；`--vllm-python` 只作为子进程重哈希冻结 install，并将 live PID、start time、
+未解析 argv0、`sys.prefix`、package path/version 与 endpoint launcher sidecar 绑定。服务身份通过仍不
+置 ready；还必须依次绑定 system-preflight 与 correctness-smoke evidence，四阶段全部通过才允许
+rehearsal。五臂 runner 同样必须由 `DRIVER_PYTHON` 运行，driver/vLLM 环境相同会 fail closed。
+
+`analysis/run_saor_native_system_preflight.py` 是实际 system producer：从 DRIVER 环境读取 endpoint
+health、PostgreSQL/pgvector、Ray actor/placement-group 状态，并用 `nvidia-smi` 拒绝不属于已绑定
+vLLM 进程树的 CUDA compute PID；随后深校验一份在当前 vLLM
+sidecar 之后产生的 bounded HTTP passed root。readiness 不只读其布尔字段，而会重跑探针并要求
+结果完全一致。五臂 runner 的 `--correctness-smoke` 模式使用显式 fresh
+`--correctness-smoke-root` 跑一轮完整五臂；输出的 `matrix_index.json` 是第四阶段唯一接受的
+evidence，且不占用 canonical rehearsal root。
+
+`analysis/validate_saor_native_system_rehearsal.py` 只读完成的 rehearsal root 与 archive，验证恰好
+五个 warmup cell、全部 exactly-once、live readiness、commit/config identity 后封存 validation。
+它还逐文件验证 root 与 archive 完全一致，并重算每臂 raw artifact SHA、sink digest 和 native
+upstream/adapter provenance；CLI 必须同时传 `--config`、`--native-config` 与 `--project-config`，
+formal identity 显式包含三份 config SHA。该 validation/root/archive 是 formal authorization 的必填前置，
+不由仓库自行授权。
+
+`serving/launch_vllm_with_identity.py` 由 `deploy/autodl/start_endpoints.sh` 使用 `VLLM_PYTHON`
+调用；它在 `exec` API server 前原子写入 PID/start-time/argv0/`sys.prefix`/package sidecar，使不同
+venv 即使共享同一底层解释器也不能被 readiness 混同。
 
 `analysis/summarize_saor_native_system_matched.py` 是该矩阵的薄 CLI；可复用的纯离线、
 fail-closed 核心位于 `src/experiments/saor/native_system_summary.py`，不连接服务。CLI 要求同一个
 独立 formal authorization artifact。核心在生成排名前重算 authorization/contract snapshot/config
 fingerprint/manifest/service signature/scheduler owner/schedule/index/cell identity。通过时输出
 `all_runs.csv`、五臂
-`system_summary.csv`、四臂 `project_selector_sanity.csv`、`job_summary.csv`、
-`resource_summary.csv` 和固定边界的 `validation.json`。同一个 SAOR 物理 run 同时投影到两张表；
-内部 FIFO 的完整名称是 **Project bounded-ready + global FIFO matched-control**，不是原生
-baseline。原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
+`system_summary.csv`、`job_summary.csv`、`resource_summary.csv` 和固定边界的
+`validation.json`。历史 Project selector rehearsal 不由该入口生成，也不进入系统排名。
+原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
 非空原因；P99 与 SLO 分别输出 status/value/reason，任一不可用时不得生成跨系统排名。Job JCT
 按预注册的 nominal release→completion 计算，actual launch/offset/deviation 仅保留为启动抖动与
-overlap 诊断。Task3 normalizer 把 legacy flat unavailable tail 转为中性 nested
+overlap 诊断。Project 的 actual launch 是父 runner 越过绝对 release barrier 后、紧邻 `Popen`
+的 launcher epoch；子进程完成冷启动/DB fetch 后的首条 lifecycle arrival 另存为
+`source_arrival_epoch_s`，二者不得混用。Task3 normalizer 把 legacy flat unavailable tail 转为中性 nested
 `request_p99/slo → status/value/reason`，并把 `_snapshot_mapping` 产生的五类 JSON-encoded per-Job
 live 容器解码后再存入 evidence。终态校验按真实 native `queue_final` 与 Project
 `shared_credit_final` schema 只检查实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。

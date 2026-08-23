@@ -1,4 +1,4 @@
-"""Validate stored SAOR matched-system evidence and emit two separate summaries."""
+"""Validate stored SAOR DB-E2E evidence and emit one five-arm summary."""
 
 from __future__ import annotations
 
@@ -8,14 +8,15 @@ import math
 import statistics
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from src.baselines.common.database_identity import DatabaseIdentity
+from src.baselines.common.manifests import read_manifest
 from src.baselines.common.redact import redact_text
 
 from .native_system_matched import (
     FORMAL_AUTHORIZATION_SCOPE,
     REQUIRED_ARM_IDS,
-    SELECTOR_SANITY_ARM_IDS,
     SYSTEM_ARM_IDS,
     sha256_file,
     sha256_payload,
@@ -23,18 +24,175 @@ from .native_system_matched import (
     validate_native_final_queue,
     validate_project_final_credit,
 )
+from .native_system_publisher import (
+    RANKING_OUTPUT_NAMES,
+    publish_failed_generation,
+)
+from .native_system_validator import validate_uniform_cell_identity
 
 
 FORMAL_REPEATS = 3
-_RANKING_OUTPUT_NAMES = (
-    "system_summary.csv", "project_selector_sanity.csv",
-    "job_summary.csv", "resource_summary.csv",
-)
+_RANKING_OUTPUT_NAMES = RANKING_OUTPUT_NAMES
 _OUTPUT_NAMES = ("all_runs.csv", *_RANKING_OUTPUT_NAMES, "validation.json")
 _PROJECT_FLAG_FRAGMENTS = (
     "credit", "coordinator", "router", "bounded-ready", "bounded_ready",
     "max-active-work", "max_active_work", "ready-observation", "ready_observation",
 )
+_FORMAL_AUTHORIZATION_FIELDS = {
+    "schema_version", "status", "scope", "formal_authorized",
+    "repository_commit", "config_sha256", "native_config_sha256",
+    "project_config_sha256", "resolved_config_sha256", "manifest_sha256",
+    "job_manifests", "mfu_contract", "rehearsal_evidence",
+}
+_FORMAL_IDENTITY_FIELDS = (
+    "repository_commit", "config_sha256", "native_config_sha256",
+    "project_config_sha256", "resolved_config_sha256", "manifest_sha256",
+    "job_manifests", "mfu_contract", "rehearsal_evidence",
+)
+
+
+def _validate_formal_authorization_binding(
+    authorization: object,
+    runtime: dict[str, object],
+) -> None:
+    """Require the snapshot to bind every field in the exact formal artifact."""
+
+    if (
+        not isinstance(authorization, dict)
+        or set(authorization) != _FORMAL_AUTHORIZATION_FIELDS
+    ):
+        raise ValueError("formal authorization schema is invalid")
+    if (
+        authorization.get("schema_version") != 1
+        or authorization.get("status") != "authorized"
+        or authorization.get("scope") != FORMAL_AUTHORIZATION_SCOPE
+        or authorization.get("formal_authorized") is not True
+    ):
+        raise ValueError("formal authorization is not active for this scope")
+    for field in _FORMAL_IDENTITY_FIELDS:
+        if runtime.get(field) != authorization.get(field):
+            raise ValueError(f"runtime {field} drifted from authorization")
+
+
+def _command_flag_values(command: list[object], flag: str) -> list[str]:
+    """Collect every value of a repeated flag from flattened command evidence."""
+
+    values: list[str] = []
+    for index, token in enumerate(command):
+        if str(token) != flag:
+            continue
+        if index + 1 >= len(command):
+            raise ValueError(f"stored command {flag} has no value")
+        values.append(str(command[index + 1]))
+    return values
+
+
+def _validate_executor_command(
+    command: list[object],
+    arm_id: str,
+    arm_identity: dict[str, object],
+    observation_gateway: object,
+) -> None:
+    """Recheck the dispatch endpoints and native C/B/adapter from raw commands."""
+
+    endpoints = arm_identity.get("matrix_endpoint_urls")
+    if not isinstance(endpoints, list) or len(endpoints) != 2:
+        raise ValueError(f"{arm_id} lacks frozen endpoint URL identity")
+    if not isinstance(observation_gateway, dict):
+        raise ValueError(f"{arm_id} lacks observation gateway evidence")
+    raw_routes = observation_gateway.get("routes")
+    if not isinstance(raw_routes, list):
+        raise ValueError(f"{arm_id} lacks observation gateway routes")
+    expected_route_bindings = {
+        (f"job{job_index}", f"endpoint-{endpoint_index}", str(endpoint))
+        for job_index in range(2)
+        for endpoint_index, endpoint in enumerate(endpoints)
+    }
+    route_bindings = {
+        (
+            str(route.get("job_id", "")),
+            str(route.get("endpoint_id", "")),
+            str(route.get("upstream_url", "")),
+        )
+        for route in raw_routes
+        if isinstance(route, dict)
+    }
+    if route_bindings != expected_route_bindings:
+        raise ValueError(f"{arm_id} observation gateway upstream binding drifted")
+
+    def validate_gateway_url(value: str, job_id: str, endpoint_id: str) -> str:
+        parsed = urlsplit(value)
+        expected_path = f"/observe/{job_id}/{endpoint_id}/v1/chat/completions"
+        if (
+            parsed.scheme != "http"
+            or parsed.hostname not in {"127.0.0.1", "localhost"}
+            or parsed.port is None
+            or parsed.path != expected_path
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(f"{arm_id} stored gateway endpoint route drifted")
+        return f"{parsed.scheme}://{parsed.netloc}"
+    if arm_id in SYSTEM_ARM_IDS[:3]:
+        selection = arm_identity.get("executor_selection")
+        if not isinstance(selection, dict):
+            raise ValueError(f"{arm_id} lacks native executor selection identity")
+        for flag, field in (
+            ("--adapter", "adapter"),
+            ("--concurrency", "concurrency_per_endpoint"),
+            ("--batch-size", "batch_size"),
+        ):
+            values = _command_flag_values(command, flag)
+            if len(values) != 4 or any(
+                value != str(selection.get(field)) for value in values
+            ):
+                raise ValueError(f"{arm_id} stored command {flag} drifted")
+        endpoint_indices = _command_flag_values(command, "--endpoint-index")
+        endpoint_values = _command_flag_values(command, "--endpoint-url")
+        expected_pairs = [
+            (str(index), f"job{job}", f"endpoint-{index}")
+            for job in range(2)
+            for index in range(2)
+        ]
+        observed_pairs = []
+        origins = set()
+        for index, (endpoint_index, endpoint_value) in enumerate(
+            zip(endpoint_indices, endpoint_values, strict=True)
+        ):
+            _, job_id, endpoint_id = expected_pairs[index]
+            origins.add(validate_gateway_url(endpoint_value, job_id, endpoint_id))
+            observed_pairs.append((endpoint_index, job_id, endpoint_id))
+        if observed_pairs != expected_pairs or len(origins) != 1:
+            raise ValueError(f"{arm_id} stored endpoint-index mapping drifted")
+        return
+
+    endpoint_values = _command_flag_values(
+        command, "--completion-endpoint-urls"
+    )
+    if len(endpoint_values) != 2:
+        raise ValueError(f"{arm_id} stored Project endpoint routes are incomplete")
+    origins = set()
+    for job_index, csv_value in enumerate(endpoint_values):
+        values = csv_value.split(",")
+        if len(values) != 2:
+            raise ValueError(f"{arm_id} stored Project command endpoints drifted")
+        for endpoint_index, value in enumerate(values):
+            origins.add(
+                validate_gateway_url(
+                    value, f"job{job_index}", f"endpoint-{endpoint_index}"
+                )
+            )
+    if len(origins) != 1:
+        raise ValueError(f"{arm_id} Project Jobs used different gateway origins")
+    metrics = arm_identity.get("matrix_metrics_urls")
+    if not isinstance(metrics, list) or len(metrics) != 2:
+        raise ValueError(f"{arm_id} lacks frozen metrics URL identity")
+    expected_metrics_csv = ",".join(str(value) for value in metrics)
+    metrics_values = _command_flag_values(command, "--model-metrics-urls")
+    if not metrics_values or any(
+        value != expected_metrics_csv for value in metrics_values
+    ):
+        raise ValueError(f"{arm_id} stored Project metrics endpoints drifted")
 
 
 def _validation(
@@ -45,14 +203,14 @@ def _validation(
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "status": status,
-        "comparison_scope": "complete_system_empirical_plus_project_internal_sanity",
-        "selector_victory_decided": False,
+        "comparison_scope": "database_e2e_five_arm_system_matrix",
+        "official_vtc_evidence_included": False,
         # This repository never grants authorization. A passed summary records
         # only that the independent run-specific artifact was verified.
         "formal_authorized": False,
         "formal_authorization_verified": formal_authorization_verified,
         "native_baseline_count": 3,
-        "project_control_count": 5,
+        "project_control_count": 2,
     }
     if errors:
         payload["errors"] = errors
@@ -95,23 +253,12 @@ def _publish_failed_validation(
     audit_rows: list[dict[str, object]],
     errors: list[str],
 ) -> None:
-    errors = [redact_text(str(error)) for error in errors]
-    output_dir.mkdir(parents=True, exist_ok=True)
-    _publish_validation(output_dir, "failing")
-    for name in _RANKING_OUTPUT_NAMES:
-        path = output_dir / name
-        if path.is_file():
-            path.unlink()
-    audit_temporary = output_dir / ".all_runs.csv.failed.tmp"
-    if audit_temporary.is_file():
-        audit_temporary.unlink()
-    _write_csv(audit_temporary, audit_rows)
-    audit_temporary.replace(output_dir / "all_runs.csv")
-    temporary = output_dir / ".validation.json.failed.tmp"
-    if temporary.is_file():
-        temporary.unlink()
-    _write_json(temporary, _validation("failed", errors))
-    temporary.replace(output_dir / "validation.json")
+    publish_failed_generation(
+        output_dir,
+        audit_rows,
+        errors,
+        _validation("failed"),
+    )
 
 
 def _publish_validation(output_dir: Path, status: str) -> None:
@@ -245,7 +392,19 @@ def _resource_row(
         "energy_j": (
             power * (end - start) if power != "unavailable" else "unavailable"
         ),
-        "mfu_fraction_mean": mean("mfu_fraction"),
+        "mfu_fraction_mean": (
+            mean("mfu_fraction")
+            if isinstance(cell.get("mfu_contract"), dict)
+            and cell["mfu_contract"].get("status") == "available"
+            else "unavailable"
+        ),
+        "mfu_status": cell.get("mfu_contract", {}).get("status", "unavailable"),
+        "gpu_peak_tflops_per_gpu": cell.get("mfu_contract", {}).get(
+            "gpu_peak_tflops_per_gpu", "unavailable"
+        ),
+        "mfu_precision": cell.get("mfu_contract", {}).get(
+            "precision", "unavailable"
+        ),
         "vllm_running_mean": mean("running"),
         "vllm_waiting_mean": mean("waiting"),
         "vllm_kv_cache_usage_mean": mean("kv_usage"),
@@ -255,6 +414,7 @@ def _resource_row(
 def _normalize_cell(
     matrix_root: Path,
     cell: object,
+    arm_identity: dict[str, object],
 ) -> tuple[dict[str, object], list[dict[str, object]], dict[str, object]]:
     if not isinstance(cell, dict):
         raise ValueError("matrix cell must be an object")
@@ -273,9 +433,14 @@ def _normalize_cell(
         raise ValueError(f"{run_id} has unknown arm {arm_id!r}")
     if cell.get("status") != "passed" or cell.get("exactly_once") is not True:
         raise ValueError(f"{run_id} failed status/exactly-once gate")
+    mfu_contract = cell.get("mfu_contract")
+    if not isinstance(mfu_contract, dict) or mfu_contract != arm_identity.get(
+        "mfu_contract"
+    ):
+        raise ValueError(f"{run_id} MFU peak/precision contract drifted")
     versions = DatabaseIdentity.from_record(cell, run_id).as_dict()
     if (
-        phase not in {"warmup", "formal", "selector_sanity_development"}
+        phase not in {"warmup", "formal"}
         or repeat < 1
     ):
         raise ValueError(f"{run_id} has invalid phase/repeat")
@@ -312,14 +477,36 @@ def _normalize_cell(
     scheduled_starts: list[float] = []
     actual_starts: list[float] = []
     ends: list[float] = []
-    for job in jobs:
+    expected_jobs = arm_identity.get("job_manifests")
+    if not isinstance(expected_jobs, list) or len(expected_jobs) != 2:
+        raise ValueError(f"{run_id} lacks frozen per-Job identity")
+    for job, expected_job in zip(jobs, expected_jobs, strict=True):
         if not isinstance(job, dict) or job.get("exactly_once") is not True:
             raise ValueError(f"{run_id} has invalid Job exactly-once evidence")
         if (
-            int(job.get("completed_count", -1)) <= 0
-            or int(job.get("completed_count", -1)) != int(job.get("expected_count", -2))
+            not isinstance(expected_job, dict)
+            or job.get("job_id") != expected_job.get("job_id")
+            or job.get("manifest_sha256") != expected_job.get("sha256")
+        ):
+            raise ValueError(f"{run_id} Job identity drifted")
+        if (
+            int(job.get("completed_count", -1)) != int(expected_job.get("rows", -2))
+            or int(job.get("expected_count", -1)) != int(expected_job.get("rows", -2))
         ):
             raise ValueError(f"{run_id} has invalid Job row accounting")
+        job_p50 = _finite(job.get("request_p50_s"), f"{run_id} Job P50")
+        job_p95 = _finite(job.get("request_p95_s"), f"{run_id} Job P95")
+        job_p99 = _finite(job.get("request_p99_s"), f"{run_id} Job P99")
+        job_slo = _finite(
+            job.get("slo_violation_ratio"), f"{run_id} Job SLO ratio"
+        )
+        if (
+            job.get("request_p99_status") != "available"
+            or job.get("slo_status") != "available"
+            or not 0 <= job_p50 <= job_p95 <= job_p99
+            or not 0 <= job_slo <= 1
+        ):
+            raise ValueError(f"{run_id} per-Job gateway tail/SLO evidence is invalid")
         _validate_source(job, run_id)
         scheduled_starts.append(
             _finite(
@@ -330,7 +517,12 @@ def _normalize_cell(
         actual_starts.append(
             _finite(job.get("actual_launch_epoch_s"), f"{run_id} Job actual launch")
         )
-        ends.append(_finite(job.get("ended_epoch_s"), f"{run_id} Job completion"))
+        ends.append(
+            _finite(
+                job.get("t4_result_visible_epoch_s"),
+                f"{run_id} Job result visibility",
+            )
+        )
     if any(completion <= release for completion, release in zip(ends, scheduled_starts)):
         raise ValueError(f"{run_id} completion precedes scheduled release")
     overlap = min(ends) - max(actual_starts)
@@ -346,19 +538,47 @@ def _normalize_cell(
     slo_status, slo_value, slo_reason = _availability_metric(
         request_tail, "slo", "violation_ratio", run_id
     )
-    if arm_id in SYSTEM_ARM_IDS[:3] and (
-        p99_status != "unavailable" or slo_status != "unavailable"
+    if p99_status != "available" or slo_status != "available":
+        raise ValueError(f"{run_id} gateway tails must be available")
+    fairness = cell.get("service_fairness_metrics")
+    if not isinstance(fairness, dict):
+        raise ValueError(f"{run_id} lacks service fairness availability")
+    completion_evidence = cell.get("completion_evidence")
+    if (
+        not isinstance(completion_evidence, dict)
+        or completion_evidence.get("status") != "passed"
+        or completion_evidence.get("mode") != "completion_trace_digest"
+        or completion_evidence.get("exactly_once") is not True
+        or completion_evidence.get("observed_doc_id_digest")
+        != completion_evidence.get("expected_doc_id_digest")
+        or not completion_evidence.get("output_digest")
     ):
-        raise ValueError(f"{run_id} native tails must be unavailable with reasons")
+        raise ValueError(f"{run_id} lacks valid completion trace evidence")
 
     command = cell.get("command", [])
+    if not isinstance(command, list):
+        raise ValueError(f"{run_id} command evidence must be a list")
     command_text = " ".join(str(item).lower() for item in command)
     if arm_id in SYSTEM_ARM_IDS[:3] and any(
         fragment in command_text for fragment in _PROJECT_FLAG_FRAGMENTS
     ):
         raise ValueError(f"{run_id} native command contains Project flags")
+    _validate_executor_command(
+        command, arm_id, arm_identity, cell.get("observation_gateway")
+    )
 
     total = prompt + generation
+    system_observation = cell.get("system_observation")
+    if not isinstance(system_observation, dict):
+        raise ValueError(f"{run_id} lacks T0-T4 system observation")
+    common_fairness = system_observation.get("service_fairness")
+    isolation = system_observation.get("isolation_observation")
+    if not isinstance(common_fairness, dict) or not isinstance(isolation, dict):
+        raise ValueError(f"{run_id} lacks fairness/isolation observation")
+    correct_throughput = _finite(
+        system_observation.get("correct_throughput_tokens_per_s"),
+        f"{run_id} correct throughput",
+    )
     run_row = {
         "run_id": run_id,
         "arm_id": arm_id,
@@ -370,16 +590,57 @@ def _normalize_cell(
         **versions,
         "report_blocks": json.dumps(cell.get("report_blocks", [])),
         "database_operator_e2e_s": duration,
+        "group_jct_s": duration,
         "service_prompt_tokens": prompt,
         "service_generation_tokens": generation,
         "service_total_tokens": total,
-        "service_tokens_per_s": total / duration,
+        "service_tokens_per_s": correct_throughput,
+        "correct_throughput_tokens_per_s": correct_throughput,
+        "actual_completed_tokens": system_observation.get("actual_total_tokens"),
         "request_p99_status": p99_status,
         "request_p99_s": p99_value,
         "request_p99_reason": p99_reason,
         "slo_status": slo_status,
         "slo_violation_ratio": slo_value,
         "slo_reason": slo_reason,
+        "starvation_status": fairness.get("starvation_status", "unavailable"),
+        "longest_no_service_s": fairness.get("longest_no_service_s", "unavailable"),
+        "completion_service_lag_status": fairness.get(
+            "completion_service_lag_status", "unavailable"
+        ),
+        "completion_service_lag_p95_work": fairness.get(
+            "completion_service_lag_p95_work", "unavailable"
+        ),
+        "completion_service_lag_max_work": fairness.get(
+            "completion_service_lag_max_work", "unavailable"
+        ),
+        "service_fairness_reason": fairness.get("reason", ""),
+        "weighted_jain_fairness": common_fairness.get(
+            "weighted_jain_fairness", "unavailable"
+        ),
+        "weighted_service_share_by_job": json.dumps(
+            common_fairness.get("weighted_service_share_by_job", {}),
+            sort_keys=True,
+        ),
+        "common_backlog_duration_s": common_fairness.get(
+            "common_backlog_duration_s", "unavailable"
+        ),
+        "isolation_status": isolation.get("status", "unavailable"),
+        "victim_no_service_after_aggressor_release_s": isolation.get(
+            "victim_no_service_after_aggressor_release_s", "unavailable"
+        ),
+        "victim_request_p99_inflation_ratio": isolation.get(
+            "victim_request_p99_inflation_ratio", "unavailable"
+        ),
+        "victim_recovery_after_aggressor_service_end_s": isolation.get(
+            "victim_recovery_after_aggressor_service_end_s", "unavailable"
+        ),
+        "completion_evidence_mode": completion_evidence["mode"],
+        "completion_evidence_producer": completion_evidence.get("producer", ""),
+        "completion_expected_rows": completion_evidence.get("expected_rows", ""),
+        "completion_observed_rows": completion_evidence.get("observed_rows", ""),
+        "completion_exactly_once": completion_evidence["exactly_once"],
+        "completion_output_digest": completion_evidence.get("output_digest", ""),
         "scheduled_launch_epoch_s": json.dumps(scheduled_starts),
         "actual_launch_epoch_s": json.dumps(actual_starts),
         "scheduled_launch_offset_s": json.dumps([
@@ -394,24 +655,45 @@ def _normalize_cell(
         ]),
         "exactly_once": True,
     }
+    role_by_id = {
+        str(expected_jobs[0]["job_id"]): "bulk",
+        str(expected_jobs[1]["job_id"]): "foreground",
+    }
     job_rows = [
         {
             "run_id": run_id,
             "arm_id": arm_id,
             "repeat": repeat,
-            "job_role": role,
+            "job_id": str(job["job_id"]),
+            "job_role": role_by_id[str(job["job_id"])],
             "scheduled_release_epoch_s": scheduled,
             "actual_launch_epoch_s": actual,
             "scheduled_launch_offset_s": scheduled - scheduled_starts[0],
             "actual_launch_offset_s": actual - actual_starts[0],
             "launch_deviation_s": actual - scheduled,
             "completion_epoch_s": completion,
-            "job_jct_s": completion - scheduled,
+            "job_jct_s": job.get("jct_s"),
+            "source_s": job.get("source_s"),
+            "execution_s": job.get("execution_s"),
+            "service_span_s": job.get("service_span_s"),
+            "actual_total_tokens": job.get("actual_total_tokens"),
+            "request_p50_s": job.get("request_p50_s", "unavailable"),
+            "request_p95_s": job.get("request_p95_s", "unavailable"),
+            "request_p99_status": job.get("request_p99_status", "unavailable"),
+            "request_p99_s": job.get("request_p99_s", "unavailable"),
+            "slo_status": job.get("slo_status", "unavailable"),
+            "slo_violation_ratio": job.get("slo_violation_ratio", "unavailable"),
+            "job_jct_slo_s": job.get("job_jct_slo_s", "unavailable"),
+            "job_jct_slo_status": job.get("job_jct_slo_status", "unavailable"),
+            "job_jct_slo_violation": job.get(
+                "job_jct_slo_violation", "unavailable"
+            ),
+            "tail_reason": job.get("tail_reason", "not recorded"),
             "overlap_s": overlap,
             "completion_order": 1 + sorted(ends).index(completion),
         }
-        for role, scheduled, actual, completion in zip(
-            ("bulk", "foreground"), scheduled_starts, actual_starts, ends
+        for job, scheduled, actual, completion in zip(
+            jobs, scheduled_starts, actual_starts, ends, strict=True
         )
     ]
     return run_row, job_rows, _resource_row(
@@ -448,6 +730,27 @@ def _summary_row(
     bulk_jct = job_values("bulk", "job_jct_s")
     foreground_jct = job_values("foreground", "job_jct_s")
     overlap = job_values("bulk", "overlap_s")
+    weighted_jain = [float(row["weighted_jain_fairness"]) for row in ordered]
+    longest_no_service = [float(row["longest_no_service_s"]) for row in ordered]
+    service_lag_p95 = [
+        float(row["completion_service_lag_p95_work"]) for row in ordered
+    ]
+    victim_no_service_raw = [
+        row["victim_no_service_after_aggressor_release_s"] for row in ordered
+    ]
+    victim_no_service = (
+        [float(value) for value in victim_no_service_raw]
+        if all(value != "unavailable" for value in victim_no_service_raw)
+        else []
+    )
+    recovery_raw = [
+        row["victim_recovery_after_aggressor_service_end_s"] for row in ordered
+    ]
+    recovery = (
+        [float(value) for value in recovery_raw]
+        if all(value != "unavailable" for value in recovery_raw)
+        else []
+    )
     availability: dict[str, tuple[set[str], set[str]]] = {}
     for metric in ("request_p99", "slo"):
         statuses = {str(row[f"{metric}_status"]) for row in ordered}
@@ -477,6 +780,9 @@ def _summary_row(
         "database_operator_e2e_s_mean": statistics.fmean(duration),
         "database_operator_e2e_s_sample_cv": _sample_cv(duration),
         "database_operator_e2e_s_repeats": json.dumps(duration),
+        "group_jct_s_mean": statistics.fmean(duration),
+        "group_jct_s_sample_cv": _sample_cv(duration),
+        "group_jct_s_repeats": json.dumps(duration),
         "bulk_jct_s_mean": statistics.fmean(bulk_jct),
         "bulk_jct_s_sample_cv": _sample_cv(bulk_jct),
         "bulk_jct_s_repeats": json.dumps(bulk_jct),
@@ -486,6 +792,25 @@ def _summary_row(
         "overlap_s_mean": statistics.fmean(overlap),
         "overlap_s_sample_cv": _sample_cv(overlap),
         "overlap_s_repeats": json.dumps(overlap),
+        "weighted_jain_fairness_mean": statistics.fmean(weighted_jain),
+        "weighted_jain_fairness_repeats": json.dumps(weighted_jain),
+        "longest_no_service_s_mean": statistics.fmean(longest_no_service),
+        "longest_no_service_s_repeats": json.dumps(longest_no_service),
+        "completion_service_lag_p95_work_mean": statistics.fmean(service_lag_p95),
+        "completion_service_lag_p95_work_repeats": json.dumps(service_lag_p95),
+        "victim_no_service_after_aggressor_release_s_mean": (
+            statistics.fmean(victim_no_service)
+            if victim_no_service else "unavailable"
+        ),
+        "victim_no_service_after_aggressor_release_s_repeats": json.dumps(
+            victim_no_service_raw
+        ),
+        "victim_recovery_after_aggressor_service_end_s_mean": (
+            statistics.fmean(recovery) if recovery else "unavailable"
+        ),
+        "victim_recovery_after_aggressor_service_end_s_repeats": json.dumps(
+            recovery_raw
+        ),
         "request_p99_status": next(iter(availability["request_p99"][0])),
         "request_p99_s_mean": p99_mean,
         "request_p99_s_repeats": p99_repeats,
@@ -514,6 +839,14 @@ def _resource_summary_row(
         "physical_run_ids": json.dumps([row["run_id"] for row in ordered]),
         "formal_repeats": len(ordered),
     }
+    contract_fields = (
+        "mfu_status", "gpu_peak_tflops_per_gpu", "mfu_precision",
+    )
+    for field in contract_fields:
+        values = {str(by_id[str(row["run_id"])][field]) for row in ordered}
+        if len(values) != 1:
+            raise ValueError(f"{arm_id} {field} drifted across repeats")
+        output[field] = next(iter(values))
     for field in fields:
         raw = [by_id[str(row["run_id"])][field] for row in ordered]
         output[f"{field}_repeats"] = json.dumps(raw)
@@ -537,10 +870,22 @@ _AUDIT_FIELDS = (
     "validation_status", "repository_commit", "matrix_instance_id", "config_sha256",
     "config_fingerprint", "authorization_sha256", "manifest_path",
     "manifest_sha256", "service_signature", "server_version", "pgvector_version",
-    "database_operator_e2e_s",
+    "database_operator_e2e_s", "group_jct_s",
     "service_prompt_tokens", "service_generation_tokens", "service_total_tokens",
-    "service_tokens_per_s", "request_p99_status", "request_p99_s",
+    "service_tokens_per_s", "correct_throughput_tokens_per_s",
+    "actual_completed_tokens", "request_p99_status", "request_p99_s",
     "request_p99_reason", "slo_status", "slo_violation_ratio", "slo_reason",
+    "starvation_status", "longest_no_service_s",
+    "completion_service_lag_status", "completion_service_lag_p95_work",
+    "completion_service_lag_max_work", "service_fairness_reason",
+    "weighted_jain_fairness", "weighted_service_share_by_job",
+    "common_backlog_duration_s", "isolation_status",
+    "victim_no_service_after_aggressor_release_s",
+    "victim_request_p99_inflation_ratio",
+    "victim_recovery_after_aggressor_service_end_s",
+    "completion_evidence_mode", "completion_evidence_producer",
+    "completion_expected_rows", "completion_observed_rows",
+    "completion_exactly_once", "completion_output_digest",
     "scheduled_launch_epoch_s", "actual_launch_epoch_s",
     "scheduled_launch_offset_s", "actual_launch_offset_s", "launch_deviation_s",
     "exactly_once",
@@ -637,20 +982,6 @@ def _load_authorized_identity(
     """Recompute every frozen identity before publishing any ranking."""
 
     authorization = json.loads(authorization_path.read_text(encoding="utf-8"))
-    required_fields = {
-        "schema_version", "status", "scope", "formal_authorized",
-        "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256",
-    }
-    if not isinstance(authorization, dict) or set(authorization) != required_fields:
-        raise ValueError("formal authorization schema is invalid")
-    if (
-        authorization.get("schema_version") != 1
-        or authorization.get("status") != "authorized"
-        or authorization.get("scope") != FORMAL_AUTHORIZATION_SCOPE
-        or authorization.get("formal_authorized") is not True
-    ):
-        raise ValueError("formal authorization is not active for this scope")
     authorization_sha256 = sha256_file(authorization_path)
 
     snapshot_path = matrix_root / "matrix_contract_snapshot.json"
@@ -665,6 +996,7 @@ def _load_authorized_identity(
     resolved = snapshot.get("resolved_config")
     if not isinstance(runtime, dict) or not isinstance(resolved, dict):
         raise ValueError("matrix contract snapshot identity is invalid")
+    _validate_formal_authorization_binding(authorization, runtime)
     matrix_instance_id = runtime.get("matrix_instance_id")
     if (
         not isinstance(matrix_instance_id, str)
@@ -677,13 +1009,6 @@ def _load_authorized_identity(
         raise ValueError("matrix instance identity is invalid")
     if sha256_payload(resolved) != authorization.get("resolved_config_sha256"):
         raise ValueError("resolved config fingerprint drifted")
-    identity_fields = (
-        "repository_commit", "config_sha256", "resolved_config_sha256",
-        "manifest_sha256",
-    )
-    for field in identity_fields:
-        if runtime.get(field) != authorization.get(field):
-            raise ValueError(f"runtime {field} drifted from authorization")
     if (
         runtime.get("execution_mode") != "formal"
         or runtime.get("status") != "authorized"
@@ -702,15 +1027,58 @@ def _load_authorized_identity(
         or sha256_file(manifest_path) != authorization["manifest_sha256"]
     ):
         raise ValueError("sealed manifest identity drifted")
+    job_manifest_evidence = runtime.get("job_manifest_evidence")
+    if not isinstance(job_manifest_evidence, list):
+        raise ValueError("sealed Job manifest evidence is missing")
+    expected_jobs = authorization.get("job_manifests")
+    if not isinstance(expected_jobs, list) or len(expected_jobs) != 2:
+        raise ValueError("authorized Job manifest identity is invalid")
+    observed_jobs: list[dict[str, object]] = []
+    for expected, sealed in zip(expected_jobs, job_manifest_evidence, strict=True):
+        if not isinstance(expected, dict) or not isinstance(sealed, dict):
+            raise ValueError("sealed Job manifest evidence schema is invalid")
+        identity = {
+            field: sealed.get(field) for field in ("job_id", "rows", "sha256")
+        }
+        if identity != expected:
+            raise ValueError("sealed Job manifest identity drifted")
+        path = resolve_matrix_evidence_path(
+            matrix_root,
+            sealed.get("evidence_path"),
+            f"sealed {expected.get('job_id')} manifest",
+        )
+        if (
+            not path.is_file()
+            or sha256_file(path) != expected.get("sha256")
+            or len(read_manifest(path)) != expected.get("rows")
+        ):
+            raise ValueError("sealed Job manifest evidence drifted")
+        observed_jobs.append(dict(sealed))
+    if tuple(
+        request
+        for job in job_manifest_evidence
+        for request in read_manifest(resolve_matrix_evidence_path(
+            matrix_root,
+            job["evidence_path"],
+            "sealed Job manifest",
+        ))
+    ) != read_manifest(manifest_path):
+        raise ValueError("sealed combined manifest does not equal job0+job1")
     expected_index = {
         "repository_commit": authorization["repository_commit"],
         "matrix_instance_id": matrix_instance_id,
         "config_sha256": authorization["config_sha256"],
+        "native_config_sha256": authorization["native_config_sha256"],
+        "project_config_sha256": authorization["project_config_sha256"],
         "config_fingerprint": authorization["resolved_config_sha256"],
         "manifest_sha256": authorization["manifest_sha256"],
         "manifest_evidence_path": manifest_evidence_path,
+        "job_manifest_evidence": observed_jobs,
         "authorization_sha256": authorization_sha256,
         "execution_mode": "formal",
+        "endpoint_urls": resolved.get("endpoint_urls"),
+        "metrics_urls": resolved.get("metrics_urls"),
+        "health_url": resolved.get("health_url"),
     }
     for field, expected in expected_index.items():
         if index.get(field) != expected:
@@ -726,11 +1094,25 @@ def _load_authorized_identity(
     }
     if set(by_arm) != set(REQUIRED_ARM_IDS):
         raise ValueError("resolved arm identity is incomplete")
+    endpoint_urls = resolved.get("endpoint_urls")
+    metrics_urls = resolved.get("metrics_urls")
+    health_url = resolved.get("health_url")
+    if (
+        not isinstance(endpoint_urls, list) or len(endpoint_urls) != 2
+        or not isinstance(metrics_urls, list) or len(metrics_urls) != 2
+        or not isinstance(health_url, str) or not health_url
+    ):
+        raise ValueError("resolved service endpoint identity is incomplete")
+    for arm in by_arm.values():
+        arm["matrix_endpoint_urls"] = endpoint_urls
+        arm["matrix_metrics_urls"] = metrics_urls
+        arm["matrix_health_url"] = health_url
     scheduler_owners = {
         arm_id: str(arm["scheduler_owner"]) for arm_id, arm in by_arm.items()
     }
     if index.get("scheduler_owners") != scheduler_owners:
         raise ValueError("matrix scheduler-owner identity drifted")
+    validate_uniform_cell_identity(raw_cells, scheduler_owners)
     service_signatures = {
         json.dumps(arm.get("service_signature", {}), sort_keys=True)
         for arm in by_arm.values()
@@ -739,6 +1121,14 @@ def _load_authorized_identity(
         iter(by_arm.values())
     ).get("service_signature"):
         raise ValueError("matrix service signature drifted")
+    mfu_contracts = {
+        json.dumps(arm.get("mfu_contract", {}), sort_keys=True)
+        for arm in by_arm.values()
+    }
+    if len(mfu_contracts) != 1 or index.get("mfu_contract") != next(
+        iter(by_arm.values())
+    ).get("mfu_contract"):
+        raise ValueError("matrix MFU peak/precision contract drifted")
     for arm in by_arm.values():
         if str(arm.get("manifest_sha256", "")) != authorization["manifest_sha256"]:
             raise ValueError("frozen manifest identity drifted")
@@ -764,12 +1154,19 @@ def _load_authorized_identity(
             "repository_commit": authorization["repository_commit"],
             "matrix_instance_id": matrix_instance_id,
             "config_sha256": authorization["config_sha256"],
+            "native_config_sha256": authorization["native_config_sha256"],
+            "project_config_sha256": authorization["project_config_sha256"],
             "config_fingerprint": authorization["resolved_config_sha256"],
             "authorization_sha256": authorization_sha256,
             "manifest_path": manifest_evidence_path,
             "manifest_sha256": arm["manifest_sha256"],
             "service_signature": arm["service_signature"],
+            "mfu_contract": arm["mfu_contract"],
             "scheduler_owner": arm["scheduler_owner"],
+            "endpoint_urls": endpoint_urls,
+            "metrics_urls": metrics_urls,
+            "health_url": health_url,
+            "executor_selection": arm.get("executor_selection"),
         }
         for field, expected in expected_cell.items():
             if cell.get(field) != expected:
@@ -822,7 +1219,7 @@ def summarize_matched_system(
         ):
             raise ValueError("matrix cells must be a list")
         DatabaseIdentity.consistent(raw_cells, "native-system matrix")
-        _load_authorized_identity(
+        resolved_arms = _load_authorized_identity(
             matrix_root,
             index,
             raw_cells,
@@ -834,22 +1231,12 @@ def summarize_matched_system(
             cell for cell in raw_cells
             if isinstance(cell, dict) and cell.get("phase") == "formal"
         ]
-        development_cells = [
-            cell for cell in raw_cells
-            if isinstance(cell, dict)
-            and cell.get("phase") == "selector_sanity_development"
-        ]
         repeat_contract = index.get("repeat_contract", {})
         if not isinstance(repeat_contract, dict):
             raise ValueError("matrix index lacks repeat contract")
         formal_repeats = int(repeat_contract.get("formal", 0))
-        development_repeats = int(
-            repeat_contract.get("selector_sanity_development", 0)
-        )
         if formal_repeats != FORMAL_REPEATS:
             raise ValueError("formal matrix must retain the frozen three repeats")
-        if development_repeats < 1 or development_repeats > formal_repeats:
-            raise ValueError("selector development repeat contract is invalid")
 
         run_ids = [
             _physical_id(cell) for cell in raw_cells
@@ -870,29 +1257,12 @@ def summarize_matched_system(
             raise ValueError("every system arm must have all formal repeats")
         if len(formal_cells) != len(SYSTEM_ARM_IDS) * formal_repeats:
             raise ValueError("formal matrix has an invalid system-arm shape")
-        development_arm_ids = tuple(
-            arm_id for arm_id in SELECTOR_SANITY_ARM_IDS
-            if arm_id != "project_bounded_ready_saor_0125we"
-        )
-        development_observed = {
-            arm_id: sorted(
-                int(cell.get("repeat", 0)) for cell in development_cells
-                if cell.get("arm_id") == arm_id
-            )
-            for arm_id in development_arm_ids
-        }
-        if any(
-            repeats != list(range(1, development_repeats + 1))
-            for repeats in development_observed.values()
-        ) or len(development_cells) != len(development_arm_ids) * development_repeats:
-            raise ValueError("selector development matrix has an invalid control-arm shape")
-
         project_limits = {
             (
                 int(cell.get("request_limit_per_endpoint", -1)),
                 int(cell.get("work_limit_per_endpoint", -1)),
             )
-            for cell in formal_cells + development_cells
+            for cell in formal_cells
             if cell.get("arm_id") not in SYSTEM_ARM_IDS[:3]
         }
         if (
@@ -906,7 +1276,13 @@ def summarize_matched_system(
         job_rows: list[dict[str, object]] = []
         resource_rows: list[dict[str, object]] = []
         for cell in raw_cells:
-            normalized, jobs, resource = _normalize_cell(matrix_root, cell)
+            arm_id = str(cell.get("arm_id", ""))
+            arm_identity = resolved_arms.get(arm_id)
+            if arm_identity is None:
+                raise ValueError(f"matrix cell references unknown arm {arm_id!r}")
+            normalized, jobs, resource = _normalize_cell(
+                matrix_root, cell, arm_identity
+            )
             run_rows.append(
                 _audit_row(
                     cell,
@@ -917,7 +1293,7 @@ def summarize_matched_system(
             )
             job_rows.extend(jobs)
             resource_rows.append(resource)
-        phase_order = {"warmup": 0, "formal": 1, "selector_sanity_development": 2}
+        phase_order = {"warmup": 0, "formal": 1}
         run_rows.sort(key=lambda row: (
             phase_order[str(row["phase"])], int(row["repeat"]),
             int(row["order_index"]),
@@ -935,54 +1311,22 @@ def summarize_matched_system(
                 if row["arm_id"] == arm_id and row["phase"] == "formal"
             ]
 
-        def selector_rows_for(arm_id: str) -> list[dict[str, object]]:
-            phase = (
-                "formal"
-                if arm_id == "project_bounded_ready_saor_0125we"
-                else "selector_sanity_development"
-            )
-            return [
-                row for row in run_rows
-                if row["arm_id"] == arm_id
-                and row["phase"] == phase
-                and int(row["repeat"]) <= development_repeats
-            ]
-
         system = [
             _summary_row(
                 arm_id, rows_for(arm_id), job_rows, "complete_system_empirical"
             )
             for arm_id in SYSTEM_ARM_IDS
         ]
-        selector = [
-            _summary_row(
-                arm_id, selector_rows_for(arm_id), job_rows, "project_internal_sanity"
-            )
-            for arm_id in SELECTOR_SANITY_ARM_IDS
-        ]
-        system_saor = next(row for row in system if row["arm_id"].endswith("0125we"))
-        selector_saor = next(row for row in selector if row["arm_id"].endswith("0125we"))
-        if (
-            json.loads(str(system_saor["physical_run_ids"]))[:development_repeats]
-            != json.loads(str(selector_saor["physical_run_ids"]))
-            or json.loads(str(system_saor["service_tokens_per_s_repeats"]))[
-                :development_repeats
-            ] != json.loads(str(selector_saor["service_tokens_per_s_repeats"]))
-        ):
-            raise ValueError("SAOR reports do not originate from the same physical runs")
-
         staging_dir.mkdir()
         _write_csv(staging_dir / "all_runs.csv", run_rows)
         _write_csv(staging_dir / "system_summary.csv", system)
-        _write_csv(staging_dir / "project_selector_sanity.csv", selector)
         _write_csv(staging_dir / "job_summary.csv", job_rows)
         _write_csv(
             staging_dir / "resource_summary.csv",
             [
                 _resource_summary_row(
                     arm_id,
-                    rows_for(arm_id) if arm_id in SYSTEM_ARM_IDS
-                    else selector_rows_for(arm_id),
+                    rows_for(arm_id),
                     resource_rows,
                 )
                 for arm_id in REQUIRED_ARM_IDS

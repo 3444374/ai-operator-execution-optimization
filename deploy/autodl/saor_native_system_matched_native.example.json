@@ -11,16 +11,74 @@
   "model": "${COMPLETION_MODEL}",
   "service_signature": {
     "model": "${COMPLETION_MODEL}",
-    "service": "${VLLM_VERSION}"
+    "service": "${VLLM_VERSION}",
+    "scheduler": "vllm_native_fcfs"
+  },
+  "service_identity": {
+    "model": "${COMPLETION_MODEL}",
+    "model_path": "${MODEL_PATH}",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "model_config_sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+    "tokenizer_config_sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "tokenizer_json_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "model_safetensors_index_sha256": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+    "generation_config_sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+    "model_weight_00001_sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+    "model_weight_00002_sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+    "model_weight_00003_sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+    "model_weight_00004_sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+    "dtype": "bfloat16", "service": "0.25.1",
+    "vllm_metadata_sha256": "318b32f34f0fd7896f230ce2bf1440a8525ac1e63e73c1196d8a60c0fa871373",
+    "vllm_wheel_sha256": "3195b844c385a39b126f4c647a4bee9c534d9bc9d95a3025edc887ed33933941",
+    "vllm_record_sha256": "e3ad17c2ff4dc665de3660874e2461363ba9a4c578cc705d9cee3b5b4f9657cd",
+    "vllm_source_config_scheduler_sha256": "a816cf79a3e74ffc0984f9bebb274275b26f46be8b28cb77a29388a0996263c8",
+    "vllm_source_scheduler_sha256": "e25d4c9a95abdbe8e516714ed02574d929ca0d5e8c11c4cc73b84d3a3b905443",
+    "vllm_source_async_scheduler_sha256": "da6343d7e7c394a1738cf72905cbecc208003ffa461ccb441268333a3eb9f884",
+    "vllm_source_request_queue_sha256": "4b8d938e5fb8152fe61030b8aa991f983fcac9a405c37ed8908045e05e82ae5e",
+    "vllm_source_request_sha256": "06b1c6ad3cc0223c2036b4a2e317868fa4988391b4b024bc5e5f54672b7d2c80",
+    "scheduler": "vllm_native_fcfs", "scheduling_policy": "fcfs", "max_model_len": 8192,
+    "max_num_seqs": 256, "max_num_batched_tokens": 8192,
+    "chunked_prefill": true, "prefix_caching": true, "mfu_metrics": true,
+    "enforce_eager": false, "compilation_mode": "vllm_compile",
+    "gpu_memory_utilization": 0.9
   },
   "protocol": "${COMPLETION_PROTOCOL}",
   "output_cap": "${COMPLETION_MAX_TOKENS}",
-  "organizer": "${SAOR_ORGANIZER}",
+  "organizer": "native_framework_owned",
   "api_key_env": null,
   "service": {
     "prefix_caching": "enabled",
     "max_num_seqs": 256,
     "max_num_batched_tokens": 8192
+  },
+  "native_implementation_provenance": {
+    "daft_native": {
+      "upstream_url": "https://github.com/Eventual-Inc/Daft",
+      "upstream_version": "0.7.21",
+      "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+      "adapter_path": "${PROJECT_ROOT}/code/src/baselines/text/frameworks/daft_prompt.py",
+      "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+      "upstream_source_modified": false,
+      "adapter_diff_status": "thin_adapter_only_no_upstream_patch"
+    },
+    "daft_ray": {
+      "upstream_url": "https://github.com/Eventual-Inc/Daft",
+      "upstream_version": "0.7.21",
+      "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+      "adapter_path": "${PROJECT_ROOT}/code/src/baselines/text/frameworks/daft_prompt.py",
+      "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+      "upstream_source_modified": false,
+      "adapter_diff_status": "thin_adapter_only_no_upstream_patch"
+    },
+    "ray_data_http": {
+      "upstream_url": "https://github.com/ray-project/ray",
+      "upstream_version": "2.56.1",
+      "upstream_commit": "936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a",
+      "adapter_path": "${PROJECT_ROOT}/code/src/baselines/text/frameworks/ray_data_http.py",
+      "adapter_sha256": "4c63dd435efa2c869b74514a80e8bb9441c26d07544847b6ae9ee5620a217528",
+      "upstream_source_modified": false,
+      "adapter_diff_status": "thin_adapter_only_no_upstream_patch"
+    }
   },
   "idle_timeout_s": 300,
   "launch_lead_s": 2,
@@ -35,6 +93,13 @@
     "workload_name": "${SAOR_MATCHED_WORKLOAD}"
   },
   "job_internal_arrival_contract": "eager",
+  "performance_writeback_mode": "none",
+  "mfu_contract": {
+    "status": "unavailable",
+    "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}",
+    "precision": "${MFU_PRECISION}",
+    "reason": "cross-system FLOP numerator is not uniformly available"
+  },
   "arms": [
     {
       "id": "daft_native", "adapter": "daft_native",
@@ -60,7 +125,7 @@
     {
       "id": "ray_data_http", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}",
-      "concurrency_per_endpoint": 1, "batch_size": 1,
+      "concurrency_per_endpoint": 8, "batch_size": 16,
       "timeout_s": 300, "process_timeout_s": 360,
       "ray_address": "${RAY_ADDRESS}",
       "jobs": [

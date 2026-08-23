@@ -139,7 +139,8 @@ Ray Data/project static/proposed 系统级 matched comparison，不是继续扫 
 **Project bounded-ready + global FIFO matched-control**/DRR/VTC-style/SAOR，同一 SAOR 物理
 run 复用到两表。共同到达为 Job `[0,5]` release、Job 内 eager；计时从 PostgreSQL source
 进入 Job lifecycle 到 validated gather。原生臂没有共同 request clock 时 P99/SLO 只能记
-`unavailable`+原因。服务器 rehearsal/GPU/formal 均未运行，故这不是新增性能证据。
+`unavailable`+原因。服务器已有两次五臂 runner 的 rehearsal guard failure，但尚无成功、完整、
+可比较的五臂 rehearsal；formal 从未运行，故这不是新增性能证据。
 
 ### 当前流程
 

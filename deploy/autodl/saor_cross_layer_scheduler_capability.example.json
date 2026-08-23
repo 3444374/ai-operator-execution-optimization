@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "comparison_scope": "cross_layer_complete_system_experience",
+  "capability_status": "blocked",
+  "blockers": [
+    "the current Darwin Python runtime has no installed vLLM 0.25.1 source to hash and compare with the frozen server build",
+    "Daft Native/Ray per-request Job identity propagation to vLLM Request.request_id is unverified",
+    "native/custom FCFS semantic and throughput parity has not been run"
+  ],
+  "formal_authorized": false,
+  "server_validation": "not_run",
+  "vllm_source_audit": {
+    "frozen_version": "0.25.1",
+    "tag_source_status": "audited",
+    "installed_source_status": "blocked_runtime_not_installed",
+    "tag_url": "https://github.com/vllm-project/vllm/tree/v0.25.1",
+    "scheduler_config_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/config/scheduler.py",
+    "scheduler_loop_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/sched/scheduler.py",
+    "request_queue_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/sched/request_queue.py",
+    "request_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/request.py",
+    "builtin_policies": ["fcfs", "priority"],
+    "custom_scheduler_interface": "non_public",
+    "required_base_class": "vllm.v1.core.sched.async_scheduler.AsyncScheduler",
+    "client_index_semantics": "frontend_output_routing_not_database_job_identity"
+  },
+  "scheduler_module": {
+    "path": "../../code/src/experiments/saor/vllm_scheduler_plugin.py",
+    "sha256": "4580b9e1092536dc7640aabad9b0167d916188fd087ef4b2953f355580925cc1",
+    "class_paths": {
+      "custom_fcfs": "src.experiments.saor.vllm_scheduler_plugin.CustomFCFSScheduler",
+      "drr": "src.experiments.saor.vllm_scheduler_plugin.DRRScheduler",
+      "vtc": "src.experiments.saor.vllm_scheduler_plugin.VTCScheduler"
+    }
+  },
+  "identity_contract": {
+    "status": "blocked_unverified_daft_transport",
+    "chain": "PostgreSQL job_id -> Daft/Ray request -> HTTP identity -> vLLM Request.request_id -> client_id",
+    "http_header": "X-Request-Id",
+    "encoding": "saor-xlayer.v1/jobN/32-lowercase-hex-unique-token",
+    "missing_or_invalid": "fail_closed",
+    "fallback_client_id": null,
+    "minimum_identity_only_adapter": "one stateless pass-through listener per Job that injects a unique typed X-Request-Id and never buffers, reorders, limits, or reroutes requests; use the same adapter in every headline arm only if frozen Daft lacks per-row headers"
+  },
+  "custom_fcfs_parity": {
+    "status": "blocked_not_run",
+    "checks": {
+      "request_order": "not_run",
+      "chunked_prefill": "not_run",
+      "prefix_cache": "not_run",
+      "kv_allocation": "not_run",
+      "preemption": "not_run",
+      "async_scheduling": "not_run",
+      "throughput": "not_run",
+      "module_sha": "not_run"
+    }
+  },
+  "common_contract": {
+    "database_source_sink": "same_timed_postgresql_source_and_no_writeback_completion_evidence_as_five_arm_matrix",
+    "combined_manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+    "job_manifest_sha256": [
+      "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1",
+      "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"
+    ],
+    "job_release_schedule_s": {"job0": 0, "job1": 5},
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "tokenizer_chat_template": "runtime_hash_required_before_rehearsal",
+    "vllm_version": "0.25.1",
+    "vllm_commit_build": "installed_source_and_build_hash_required_before_rehearsal",
+    "output_cap": 256,
+    "temperature": 0,
+    "ignore_eos": "must_be_frozen_equal_before_rehearsal",
+    "gpu_endpoint_kv_contract": "same_frozen_two_endpoint_2x4090_contract",
+    "timed_boundary": "postgresql_scan_materialization_to_validated_two_job_sink",
+    "correctness": "digest_and_exactly_once_required"
+  },
+  "headline_arms": [
+    {
+      "arm_id": "daft_ray_vllm_native_fcfs",
+      "display_name": "Daft Native/Ray + vLLM native FCFS",
+      "data_execution": "daft_prompt_ray_native",
+      "scheduler_owner": "daft_ray_submission_then_vllm_native_fcfs",
+      "model_service_scheduler": "vllm_native_fcfs",
+      "scheduler_cls": null,
+      "controls": {"bounded_ready": false, "project_k_w": false, "shared_credit": false, "debt_recovery": false, "upstream_state_awareness": false, "project_request_reordering": false}
+    },
+    {
+      "arm_id": "daft_ray_drr_on_vllm_reproduction",
+      "display_name": "Daft Native/Ray + DRR-on-vLLM reproduction",
+      "data_execution": "daft_prompt_ray_native",
+      "scheduler_owner": "daft_ray_submission_then_drr_on_vllm_reproduction",
+      "model_service_scheduler": "drr_on_vllm_reproduction",
+      "scheduler_cls": "src.experiments.saor.vllm_scheduler_plugin.DRRScheduler",
+      "controls": {"bounded_ready": false, "project_k_w": false, "shared_credit": false, "debt_recovery": false, "upstream_state_awareness": false, "project_request_reordering": false}
+    },
+    {
+      "arm_id": "daft_ray_vtc_on_vllm_reproduction",
+      "display_name": "Daft Native/Ray + VTC-on-vLLM reproduction",
+      "data_execution": "daft_prompt_ray_native",
+      "scheduler_owner": "daft_ray_submission_then_vtc_on_vllm_reproduction",
+      "model_service_scheduler": "vtc_on_vllm_reproduction",
+      "scheduler_cls": "src.experiments.saor.vllm_scheduler_plugin.VTCScheduler",
+      "controls": {"bounded_ready": false, "project_k_w": false, "shared_credit": false, "debt_recovery": false, "upstream_state_awareness": false, "project_request_reordering": false}
+    },
+    {
+      "arm_id": "saor_vllm_native_fcfs",
+      "display_name": "SAOR + vLLM native FCFS",
+      "data_execution": "project_daft_ray_saor",
+      "scheduler_owner": "project_daft_ray_submission_then_vllm_fcfs",
+      "model_service_scheduler": "vllm_native_fcfs",
+      "scheduler_cls": null,
+      "controls": {"bounded_ready": true, "project_k_w": true, "shared_credit": true, "debt_recovery": true, "upstream_state_awareness": true, "project_request_reordering": true}
+    }
+  ],
+  "capability_control": {
+    "arm_id": "daft_ray_custom_fcfs_capability",
+    "display_name": "Daft Native/Ray + custom FCFS capability control",
+    "data_execution": "daft_prompt_ray_native",
+    "scheduler_owner": "daft_ray_submission_then_custom_fcfs_capability",
+    "model_service_scheduler": "custom_fcfs_capability_control",
+    "scheduler_cls": "src.experiments.saor.vllm_scheduler_plugin.CustomFCFSScheduler",
+    "controls": {"bounded_ready": false, "project_k_w": false, "shared_credit": false, "debt_recovery": false, "upstream_state_awareness": false, "project_request_reordering": false}
+  },
+  "required_metrics": [
+    "database_e2e_throughput",
+    "group_jct",
+    "per_job_jct",
+    "request_p50_p95_p99_slo",
+    "service_lag",
+    "maximum_no_service_interval",
+    "starvation",
+    "work_conservation",
+    "gpu_vllm_energy",
+    "per_client_accumulated_service",
+    "correctness_exactly_once"
+  ],
+  "claim_boundary": {
+    "allowed": "complete-system empirical difference between upstream SAOR and in-engine DRR/VTC reproductions",
+    "forbidden": "same-layer selector superiority of SAOR over DRR or VTC"
+  },
+  "official_vtc_reference": {
+    "module": "src.experiments.saor.official_vtc_capability",
+    "artifact": "Ying1123/VTC-artifact@192c2e2014c69c8c6c699d7113c3822e4db632e6",
+    "role": "semantic_reference_only_not_headline_performance_arm"
+  }
+}

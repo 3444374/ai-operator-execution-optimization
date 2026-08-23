@@ -18,6 +18,18 @@ selector 双轮与 single-head→bounded-ready FIFO observation bridge 均已完
 > 也不替代 §5 的简单阈值/滞回控制 baseline。后续算法假设、公式、工程映射、实验门禁和
 > 结论状态统一在 §5.2 调整，避免散落到报告、代码注释或结果文档中形成不兼容版本。
 
+> **2026-08-21 对照合同修订**：下一轮只执行五臂 PostgreSQL-source→validated-completion
+> operator-E2E 系统矩阵，不再随主矩阵
+> 重跑 FIFO/DRR/VTC-style selector sanity。外部 `job_release_time=[0,5]` 是所有臂共同的 Job
+> 到达；`arrival_replay` 仅是执行器内部逐请求能力，本轮 eager Job 不要求 native arms 支持；
+> `bounded-ready` 仅指 SAOR 在 Job release 后观察已经 concrete/submittable 的 work。SAOR 的
+> ready、credit registration 与 submit 任一早于对应 Job release 均 fail closed。
+>
+> 官方 VTC 只在独立 S-LoRA 服务机制组比较同栈 FCFS→VTC，DB Job 映射为 VTC client，并尽量
+> 复用逻辑 manifest/release/output cap。其 artifact/runtime 不兼容属于 capability blocker，
+> 不通过本地 vLLM 重实现规避。跨栈 static→SAOR 与 FCFS→VTC 只能分别归因；两组之间仅作经验
+> 参照，不能作同表优劣结论。当前仅完成能力 schema 和 fail-closed 校验，未连接服务器。
+
 算子代价估计是下述 organization 与 admission/routing/multi-job 的共同使能部件：
 同一 calibration signature 下输出 stage/service/remaining work、SLO slack 与预测区间。
 它不单列为第三项研究内容，但必须先通过 work estimate/decision gate，才允许驱动两项策略。
@@ -1007,7 +1019,7 @@ observation-gap 定位臂。
 `saor-v0.5.2` 的 $0.125W_e$ 虽已通过双轮 development gate，但其 observation/execution path
 与 selector 同时改变；因此 formal 前的证据与归因分层如下：
 
-1. **项目内部 matched-observation selector gate（当前先运行）**：在冻结 2-Job workload 上做
+1. **项目内部 matched-observation selector gate（历史已完成，不再随主矩阵重跑）**：在冻结 2-Job workload 上做
    1--2 个 rehearsal，至少比较 project bounded-ready + FIFO、DRR/WFQ、strict-priority 与
    proposed；external VTC-style 在 event accounting 可复用时加入。所有 Job 应用同一 ready
    window，只改变选择器。这里的 FIFO/DRR/VTC-style 必须标成已有算法的
@@ -1020,15 +1032,17 @@ observation-gap 定位臂。
    Daft `prompt()` Native、Daft `prompt()` Ray（两者均可执行时）、Ray Data native graph、
    project frozen-static 与 proposed $0.125W_e$。Project 两臂冻结相同 K/W；原生臂保留官方
    batching/backpressure/scheduler，不注入 Project K/W/credit/bounded-ready，但共享相同物理
-   CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 E2E throughput/MFU、group JCT、
+   CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 operator-E2E throughput/MFU、group JCT、
    per-Job JCT、资源与 correctness；逐请求 P99/SLO 只有在对应原生臂提供共同真实时钟时才报告，
    否则显式 `unavailable`。该矩阵禁止在计时前读取 JSONL；PostgreSQL scan/materialization 必须
-   位于共同 source→validated-gather 计时边界内，主性能矩阵统一 `writeback=none`。这里只能声称
+   位于共同 source→validated-completion 边界内；五臂统一 `writeback=none`，以冻结 manifest
+   doc-id 集合和独立 completion trace 做内容 digest、行数与 exactly-once 校验，不写或回读
+   `document_completions`。group/per-Job JCT 均截止对应模型响应完成；trace 验证在计时边界外。
+   这里只能声称
    完整系统的经验表现；详细冻结规格见
    `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
-   因共同原生到达形态与旧 selector rehearsal 不同，同批基础设施另跑 1--2 次短的 Project
-   bounded-ready FIFO/DRR/VTC-style/SAOR 四臂 same-regime sanity block。它只检查 arrival regime
-   是否改变 selector 排序，不是 native baseline、不是 selector formal，也不新增参数；
+   旧 selector rehearsal 只保留为历史内部消融；本轮 runner 不再生成或排名同批
+   FIFO/DRR/VTC-style/strict-priority sanity cells；
 3. **no-bounded-ready control 与 observation 桥接（已完成）**：双轮 6/6 cell、0 incident。
    `frozen-static → single-head + shared FIFO` 使 tok/s +25.96%、group JCT −20.58%，但 fg P99
    +99.17%、fg violation +95.90 pp；`single-head + shared FIFO → bounded-ready + FIFO` 再使

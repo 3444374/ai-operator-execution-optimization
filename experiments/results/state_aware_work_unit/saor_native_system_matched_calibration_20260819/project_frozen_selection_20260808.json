@@ -1,0 +1,41 @@
+{
+  "evidence": {
+    "actor_pool": {
+      "formal_repeats": 3,
+      "frozen_shape": {
+        "actor_workers_per_endpoint": 8,
+        "ray_actor_max_concurrency": 32,
+        "ray_worker_num_cpus": 0.25
+      },
+      "scope": "same frozen shape in all selected K128 observations; not a new actor-shape optimum claim",
+      "source_path": "/root/autodl-tmp/experiment-artifacts/opening_project_feeding_calibration_sharegpt_k256_20260808_retry1/selection_contract.json",
+      "status": "passed"
+    },
+    "feeding": {
+      "feeding_ratio_to_direct_median": 1.5717949313461734,
+      "formal_repeats": 3,
+      "ratio_to_tested_project_peak": 1.0,
+      "selected_k_per_endpoint": 128,
+      "source_path": "/root/autodl-tmp/experiment-artifacts/opening_project_feeding_calibration_sharegpt_k256_20260808_retry1/selection_contract.json",
+      "source_sha256": "4d13b28454674d62638642077f39de0f6fdf2c5faa194003ead929b14567aa46",
+      "status": "passed"
+    },
+    "token_budget": {
+      "frozen_token_budget": 6144,
+      "scope": "reused unchanged from the selected database-E2E project calibration; not reselected here",
+      "source_path": "/root/autodl-tmp/experiment-artifacts/opening_project_feeding_calibration_sharegpt_k256_20260808_retry1/selection_contract.json",
+      "status": "passed"
+    }
+  },
+  "repository_commit": "5ada1ac42c5d656d8159cc5fd0f632050e1d6265",
+  "schema_version": 1,
+  "selection": {
+    "best_token_budget": 6144,
+    "project_active_work_per_endpoint": 65536,
+    "project_actor_workers_per_endpoint": 8,
+    "project_ray_actor_max_concurrency": 32,
+    "project_ray_worker_num_cpus": 0.25,
+    "project_static_k_per_endpoint": 128
+  },
+  "status": "ready"
+}

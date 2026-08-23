@@ -2,12 +2,12 @@
 
 ## SAOR native-system matched readiness
 
-The CLI config trio is `saor_native_system_matched.example.json` (eight-arm
+The CLI config trio is `saor_native_system_matched.example.json` (five-arm
 identity contract plus one exclusive `SAOR_MATRIX_OUTPUT_ROOT`),
 `saor_native_system_matched_native.example.json` (the three
 framework-owned native arms), and
-`saor_native_system_matched_project.example.json` (frozen-static plus four
-Project selector scenarios). All three must be supplied together; the matrix
+`saor_native_system_matched_project.example.json` (frozen-static plus SAOR).
+All three must be supplied together; the matrix
 runner rejects missing or drifting executor bindings. Resolve their environment
 variables, then run the read-only audit; it sends no model request and starts no
 Ray process. GPU formal is explicitly stopped and not locally authorized. A
@@ -16,19 +16,88 @@ non-rehearsal runner invocation additionally requires an independently issued
 raw config SHA, resolved-config fingerprint, and frozen manifest SHA. This check
 runs before output-root creation, host-lease acquisition, or executor dispatch.
 The repository ships no valid authorization artifact, and `--force` or the legacy
-config boolean cannot replace it. The shipped
-manifest is structural only: `matched_manifest_status=placeholder_not_ready`
-prevents it from passing even with a supplied SHA. Operators must create and
-commit a real two-Job matched request manifest, set its SHA, and change the
-status to `ready_frozen` before readiness can pass. Relative manifest and output
-paths are resolved from this example config's directory.
+config boolean cannot replace it. Full prompt manifests remain outside Git.
+Before readiness, create the combined Git-external artifact by byte-concatenating
+the frozen Job0 then Job1 files; the loader checks combined SHA, each Job SHA and
+512-row boundary, output caps, unique document IDs, and exact concatenation.
+Project scenarios must also execute `[512,512]` rows. Relative calibration and
+output paths are resolved from the example config's directory.
+
+Both Project arms additionally fail closed unless the resolved runner arguments
+are exactly `--organizer daft` and `--executor ray_actor`, the matrix owner is
+`project_daft_ray_submission_then_vllm_fcfs`, and the bound service signature is
+`scheduler=vllm_native_fcfs`. Before dispatch, the three actual configs must
+carry one identical complete `service_identity`. The live gate verifies the
+served model/path and revision-bound artifact hashes, explicit BF16 dtype,
+vLLM distribution/source SHA-256 values, model length, `max_num_seqs`,
+`max_num_batched_tokens`, chunked prefill, prefix cache, MFU metrics,
+compile/eager mode, GPU-memory utilization, and native FCFS identity. A missing
+process, omitted explicit flag, source mismatch, model artifact drift, or any
+`--scheduler-cls` is rejected before a cell is created.
+
+The native executor owns its data graph and scheduling: Daft Native/Ray use the
+vendor C1/B1 control and Ray Data uses the frozen C8/B16 graph selection. Native
+arms carry the literal `native_framework_owned` organizer identity and never
+consume the Project organizer or any Project K/W, credit, router, coordinator,
+or bounded-ready option. Common immutable endpoint pinning remains a workload
+control shared by every arm; it is not an online Project routing decision.
 
 The matrix index, host lease, and every physical cell directory are created
-below the fresh matrix output root; an existing root is rejected. Warm-up covers
-all eight identities, formal executes only the five complete-system arms, and
-selector development executes only bounded-ready FIFO/DRR/VTC-style. The
-selector report reuses the first matching formal SAOR cells, so SAOR is not
-rerun merely to populate the second table.
+below the fresh matrix output root; an existing root is rejected. Warm-up and
+formal both contain only the five complete-system identities. Historical
+bounded-ready FIFO/DRR/VTC-style/strict-priority evidence remains an internal
+ablation archive and is not regenerated or ranked by this runner.
+
+Every arm declares typed external Job releases (`job0@0s`, `job1@5s`). This is
+separate from executor-internal per-request arrival replay; the eager native
+arms are not forced to implement replay. Only SAOR observes bounded concrete
+ready work, and its ready/credit-registration/submit timestamps must all be at
+or after the corresponding Job release. The frozen 4090 peak and precision are
+part of the resolved fingerprint and every cell. MFU remains `unavailable`
+until a trustworthy cross-system FLOP numerator exists. The Project profiler
+still receives `--gpu-peak-tflops` and `--mfu-precision` so the denominator is
+fingerprinted and per-path diagnostics remain reproducible; the matrix
+publisher withholds cross-arm MFU because those flags do not create a uniform
+FLOP numerator for the native arms.
+
+For the eager SAOR arm, the profiler accepts `saor_bounded_ready` without
+`--arrival-replay` only when the command also carries request granularity and
+`bounded_concrete_pre_registration` with a positive logical payload-byte
+limit plus request tracing. Non-replay batches are converted to concrete
+request envelopes, and the same observed Job start epoch is written to both
+the scheduler request and trace seed before the bounded ready window performs
+register/grant/submit. The older
+single-head `saor_bounded_priority` policy still requires request-level arrival
+replay. This keeps all five arms on the same eager Job-internal visibility
+contract without removing SAOR's ready-window mechanism gate.
+
+All five arms end at the validated model-completion barrier and use
+`writeback=none`. PostgreSQL is the common timed source, not an output sink for
+this scheduling comparison. Native request traces and Project's independent
+`*.completions.csv` artifacts are checked against the frozen manifest doc-id
+set, row-counted, content-digested, and required to pass exactly-once validation
+before a cell can be ranked. No `document_completions` write/readback time enters
+JCT or `all_runs.csv`.
+
+`saor_official_vtc_capability.example.json` is a separate, non-executing
+capability contract for the official `Ying1123/VTC-artifact` S-LoRA stack. It
+requires same-stack FCFS and VTC arms and can publish only a serving-mechanism
+table, never this database-E2E ranking. Current 4090/model/runtime compatibility
+is unverified, so it is fail-closed (`blocked_unverified_runtime`, server not
+run, formal not authorized); a project reproduction cannot replace or be named
+as the official artifact.
+Its schema maps each database Job to one VTC client and freezes the same two
+prompt-manifest SHAs, `[0,5]` releases, 256-token raw-output contract, and the
+explicitly unverified Qwen2.5-7B compatibility status.
+
+`saor_cross_layer_scheduler_capability.example.json` is a second, independent
+non-running capability contract. It freezes four headline identities: Daft Ray
+with native FCFS, the same Daft Ray path with DRR-on-vLLM reproduction, the same
+path with VTC-on-vLLM reproduction, and SAOR with native FCFS. The plugin module SHA,
+forbidden Project controls on service-layer arms, identity chain, custom-FCFS
+parity checks, common metrics, and claim boundary are validated locally. The
+current file remains `blocked`: installed vLLM 0.25.1 source, Daft per-request
+Job identity transport, and native/custom FCFS parity have not been proved.
 
 After authorization succeeds, the runner creates one fresh `matrix_instance_id`
 and writes it into the contract snapshot, matrix index, and every cell. The
@@ -40,23 +109,155 @@ drifting shard/Job versions fail closed. Persisted runner and summarizer failure
 text is credential-redacted. A passed summary reports
 `formal_authorization_verified=true` while keeping `formal_authorized=false`.
 
+Merge does not authorize GPU work. After the hotfix is merged to canonical
+`main`, an independent review may explicitly authorize a five-cell
+`--rehearsal`; rehearsal does not require or consume a formal authorization
+artifact. Only a non-rehearsal/formal invocation requires the separately issued
+`--formal-authorization` artifact, and that decision may be made only after the
+sealed rehearsal validation/root/archive has been reviewed.
+
 The offline summarizer also requires the same authorization artifact and
 recomputes the contract snapshot, manifest, service signature, scheduler owner,
 schedule, index, and cell identities. Failed or tampered matrices retain
 `all_runs.csv` with `status/failure_reason` and a failed validation, but publish
-no performance summary. Do not run either the GPU matrix or formal path until
-this hotfix has received independent review and a later explicit authorization.
+no performance summary. Do not run the GPU matrix before independent rehearsal
+authorization. Formal remains prohibited until the later, separate artifact is
+issued.
 
-The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
-timestamps are measured separately: the observed Job 1 minus Job 0 offset and
-its deviation are retained, and eligibility requires the pre-registered
-`±0.25 s` tolerance. This is not a zero-jitter claim.
+The configured releases are nominally exactly `[0, 5]` seconds. Launcher and
+child-source timestamps are measured separately: `actual_launch_epoch_s` is the
+parent runner crossing the absolute Job barrier immediately before `Popen`, while
+Project `source_arrival_epoch_s` is the first lifecycle arrival after child startup
+and DB fetch. The Job 1 minus Job 0 launcher offset and its deviation are retained,
+and eligibility requires the pre-registered `±0.25 s` tolerance. SAOR ready,
+credit-registration, and submit epochs must independently remain after release.
+This is not a zero-jitter claim and does not hide child startup latency.
 
 ```bash
-python code/scripts/analysis/audit_saor_native_system_matched.py \
+# Run from the repository root after sourcing the runtime env and this
+# matrix's frozen env. This stage is static and sends no service request.
+DRIVER_PYTHON="${DRIVER_PYTHON:-$(command -v python)}"
+VLLM_PYTHON="$VLLM_VENV/bin/python"
+PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/analysis/audit_saor_native_system_matched.py \
   --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
   --output /tmp/saor_native_system_matched_readiness.json
+
+# Run with the vLLM Python. Marker-only evidence can never pass.
+"$VLLM_PYTHON" \
+  code/scripts/analysis/audit_vllm_0251_source.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --output /tmp/saor_native_system_matched_vllm_source.json
+
+# Only when endpoints are already running: the outer process remains the driver
+# environment. It invokes VLLM_PYTHON as a child to re-hash that install, then
+# binds each live PID/start-time/argv0/sys.prefix/package path to the launcher
+# sidecar. This still sends no inference request and remains rehearsal_ready=false.
+PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/analysis/audit_saor_native_system_matched.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --vllm-python "$VLLM_PYTHON" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8000.runtime_identity.json" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8001.runtime_identity.json" \
+  --installed-source-audit /tmp/saor_native_system_matched_vllm_source.json \
+  --live-service \
+  --output /tmp/saor_native_system_matched_live_readiness.json
 ```
+
+Readiness 是四阶段单向门：`static_config` → `service_identity` →
+`system_preflight`（endpoint health、PostgreSQL/pgvector、Ray/GPU clean、同协议 bounded
+baseline 的实际 passed root）→ `correctness_smoke`（五臂各跑一次并验证 manifest、exactly-once、
+validated result visibility）。system preflight 不能由手写 `status=passed` 代替：下面入口会实际 GET health、只读查询
+PostgreSQL/pgvector、核对 Ray 无 live actor/placement group，并用 `nvidia-smi` 确认 CUDA compute
+PID 只属于已绑定 vLLM 进程树；随后重读 bounded root 的
+`run_status.json`、`gate.json` 和每 endpoint summary；readiness 使用时会再次执行这些探针并逐字段
+比较。先生成 evidence：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/run_saor_native_system_preflight.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8000.runtime_identity.json" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8001.runtime_identity.json" \
+  --ray-address "$RAY_ADDRESS" \
+  --bounded-baseline-root "$ARTIFACT_ROOT/<fresh-bounded-cell-root>" \
+  --output "$ARTIFACT_ROOT/<unique-system-preflight>.json"
+```
+
+随后用五臂 runner 的 `--correctness-smoke --correctness-smoke-root <fresh-unique-root>` 模式；该模式
+只接受已经通过的前三阶段，不接受 smoke evidence，也不会占用 config 的 canonical rehearsal root。
+完成后把 `<smoke-root>/matrix_index.json` 传给 readiness 的
+`--correctness-smoke-evidence`。validator 会重哈希封存 manifest、两 Job 行数、每臂 completion digest、
+native upstream/adapter provenance 和每个 raw artifact；手写 checks JSON 不能通过。前三阶段
+即使通过也保持 `rehearsal_ready=false`；只有实际 smoke root 绑定同一 commit、matched/native/
+Project 三份 config SHA 和 system-preflight SHA 后，最终报告才可置 true。五臂 runner 必须由
+`DRIVER_PYTHON` 启动，并显式接收 `--driver-python`、`--vllm-python`、两个 runtime sidecar、
+source/system/smoke evidence。driver 与 vLLM 的 `sys.prefix` 相同会 fail closed。
+
+`--native-runner` 指向单 shard official adapter CLI，而不是外层 multi-job 编排器；固定使用
+`code/scripts/baselines/run_official_baseline.py`。下面是 correctness smoke 的完整入口：
+
+```bash
+SMOKE_ROOT="$ARTIFACT_ROOT/<fresh-correctness-smoke-root>"
+test ! -e "$SMOKE_ROOT"
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_native_system_matched.py \
+  --correctness-smoke \
+  --correctness-smoke-root "$SMOKE_ROOT" \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --native-config deploy/autodl/saor_native_system_matched_native.example.json \
+  --project-config deploy/autodl/saor_native_system_matched_project.example.json \
+  --native-runner code/scripts/baselines/run_official_baseline.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --driver-python "$DRIVER_PYTHON" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS" \
+  --vllm-python "$VLLM_PYTHON" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8000.runtime_identity.json" \
+  --vllm-runtime-identity "$VLLM_LOG_DIR/ep_8001.runtime_identity.json" \
+  --installed-source-audit /tmp/saor_native_system_matched_vllm_source.json \
+  --system-preflight-evidence "$ARTIFACT_ROOT/<unique-system-preflight>.json" \
+  --idle-timeout-s 120 \
+  --start-delay-s 15
+```
+
+Project runner 会为每个 Job 同时写 lifecycle `*.requests.csv` 和独立内容
+`*.completions.csv`。前者故意不保存输出正文；后者由 profiler 从 in-process operator results
+写出 `output_text`。runner 在计时边界外把其 doc-id 集合与冻结 manifest 比较，并封存内容 digest，
+不连接输出 sink。completion evidence 缺失、重复、行身份漂移或未进入 cell artifact identity 时，
+correctness smoke 必须失败。
+
+五臂 physical cell 在 Job release 前还会启动同一份 observation-only gateway。它为
+`job0/job1 × endpoint-0/endpoint-1` 生成四条 loopback path，严格一次转发到配置冻结的两个 backend；
+没有应用层 queue、semaphore、retry、cache、route choice 或 payload rewrite。Daft Native、Daft Ray、
+Ray Data 仍自行决定 batch、请求顺序与 backpressure，Project K/W 也只存在于两个 Project 臂。
+gateway trace 必须证明 body SHA 不变、retry=0、endpoint usage token 完整；archive validator 会重哈希
+trace 并核对四条 upstream binding。统一指标为：
+
+- T0：父 runner 实际释放 Job，在 PostgreSQL source 和 child/Ray 初始化之前；
+- T1：首批已验证 source data 进入执行器；T2/T3：gateway 首请求到达/末请求完成；
+- T4：完整正确结果在内存中可见；`writeback=none`，不要求输出 sink；
+- Job JCT=`T4-T0`，group JCT=`max(T4)-min(T0)`，correct throughput=actual completed tokens/group JCT；
+- 另报 source=`T1-T0`、execution=`T4-T1`、service span=`T3-T2`；
+- 在两 Job 共同 gateway backlog 内，以 actual token work 计算 weighted service share/Jain、empirical
+  service lag 与 longest no-service；请求 SLO 与 foreground Job JCT SLO 分列。
+
+within-run victim P99 inflation、aggressor 到达后的无服务时间和 drain 后 recovery 属 observation-only
+隔离证据；没有 matched-solo cell 时不得称为 full-solo slowdown 或因果隔离定理。
+
+Formal 还必须同时提供 `--rehearsal-validation`、`--rehearsal-root` 和
+`--rehearsal-archive`。先用 `validate_saor_native_system_rehearsal.py` 从实际完成的五臂
+warmup-only root 和 archive 生成 validation，并同时传 matched/native/Project 三份 config；validator
+会把 native/Project config SHA 及 native upstream commit/adapter SHA 与每个 persisted native cell
+逐字段比较。formal authorization 必须逐字段绑定其 validation
+SHA、archive SHA、matrix-index SHA、matrix instance、commit 和 config fingerprint。缺任一 artifact、
+五臂不全或任一 cell 非 exactly-once 都不能进入 formal；archive 必须是 root 全部文件的逐字节镜像，
+只放一个空 snapshot/单个伪 cell 的 tar 会被拒绝。
 
 本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 

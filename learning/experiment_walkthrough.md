@@ -11,6 +11,25 @@
 
 > **2026-07-20 拆分说明**：pre-convergence 时期的早期实验讲解（组件可行性验证、fake/CPU 动机测试、PG18.4 接入、pgvector scaling 等）已归档至 `learning/archive/early_experiments_walkthrough.md`。本文档只保留 GPU-backed 真实 embedding 画像及之后的内容（§9 起），对应项目当前 AI_COMPLETE + vLLM + Daft 主线。
 
+## 2026-08-20：怎么读下一轮 SAOR 对照
+
+下一轮不是八个 selector 的大混表，而是两张不能互换的问题表：
+
+1. database-E2E 五臂表：Daft Native、Daft Native/Ray、Ray Data native graph、project
+   frozen-static、SAOR。它共同评价 DB wall/throughput、逐 Job JCT/tail/SLO、starvation、
+   completion-accounted lag、GPU/energy/vLLM series 与 PG source/sink correctness。
+2. official VTC 服务机制表：官方 S-LoRA stack 内 FCFS 对 VTC。它只能把 FCFS→VTC 差值归因
+   给 VTC；static→SAOR 差值才归因给 SAOR。跨表只能描述经验现象，不能宣布谁胜谁。
+
+外部 `Job0@0s, Job1@5s` 决定某个 Job 何时存在。Job 内 eager 表示 release 后其请求可以立即由
+该执行器处理；arrival replay 是另一种逐请求时钟；bounded-ready 又是 SAOR 对已 concrete work
+的观察。这三者混写会造成最危险的反例：为了“公平”强迫 native framework 运行它并不拥有的
+project replay/admission，从而不再是 native baseline。
+
+当前 VTC capability 因 runtime 兼容性未证明而 blocked；本轮也没有服务器/GPU 运行。历史失败
+rehearsal 仍留在结果目录和提交历史，阅读时只用来解释哪个 guard 拒绝、证据是否可访问，不能把
+失败 guard 当成吞吐或方法优劣数据。
+
 ## 2026-08-09：为什么多 Job 实验必须真的重叠
 
 如果 short Job 在 long Job 到达前已经结束，long 不可能影响已经完成的 short；这种

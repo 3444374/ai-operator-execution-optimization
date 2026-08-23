@@ -1386,6 +1386,18 @@ def _run_group(
                     for evidence in job_evidence
                 ]
             ),
+            "job_first_batch_ready_epoch_s": json.dumps(
+                [
+                    evidence["first_batch_ready_epoch_s"]
+                    for evidence in job_evidence
+                ]
+            ),
+            "job_result_visible_epoch_s": json.dumps(
+                [
+                    evidence["result_visible_epoch_s"]
+                    for evidence in job_evidence
+                ]
+            ),
             "job_priorities": json.dumps(
                 [
                     scenario.job_priority(index)

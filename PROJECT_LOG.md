@@ -52,6 +52,263 @@
 - 当前 Wiki 同步脚本只覆盖平铺的 `research/reading_notes/*.md`，尚未覆盖新精读库的两级路径；因项目当前暂停 Wiki 同步，本轮不修改 Wiki 仓库脚本，恢复同步前需补映射。
 - 根据 LOTUS 当前精读正文和正式 PVLDB PDF 选择 Figure 1、4、6、7：分别支撑算子组合程序、事实核验 trade-off、group-by trade-off 与统计保证验证。4 张原图以 4× PDF 裁剪件放入论文目录的 `figures/`，正文补充图号与双页码来源；Figure 2/3/5 因与现有文字重复未加入。选择与视觉 QA 记录在 `figures/audit/lotus_deep_reading_figures_audit_20260821.md`。
 
+## 2026-08-21 PostgreSQL 内置 LOTUS AI 语义算子边界冻结（本地设计）
+
+- 从第一性原理重新冻结“数据库内 AI 语义算子”：PostgreSQL extension/planner-visible
+  operator 拥有 SQL、child plan、snapshot、ACL、cancel/error/result lifecycle；模型 payload 可通过
+  database-managed bounded stream 交给数据库外的 LOTUS/Daft/Ray/SAOR/vLLM，但用户不再执行
+  `SELECT/fetchall → Python → HTTP → INSERT`。这不声称 GPU 在 PostgreSQL 进程内或物理零传输。
+- 新增 `experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`
+  作为唯一权威实施主计划，冻结 PGXS/CustomScan capability、canonical plan、row stream、LOTUS
+  `sem_map` 直接复用、query correctness、T0–T5 计时、六臂 backend 矩阵、反例测试和分阶段停止门。
+  新建文件是必要的：原 LOTUS 计划只拥有 AST/prompt/runtime adapter 责任，若再承载 PostgreSQL
+  planner/executor/query-lifecycle 会混合两个独立证伪对象。
+- 直接复用冻结 `lotus-ai==1.2.4` 的真实 `SemMapNode`、prompt builder、generation options、
+  output parser 和 LM/LiteLLM 路径；主路径不调用 LOTUS DataConnector/`pd.read_sql`，因为数据已由
+  当前 PostgreSQL child plan 流式产生。
+- 明确保留两个不同的 LOTUS baseline：① 未修改 LOTUS v1.2.4
+  `DataConnector → pd.read_sql → sem_map → LM/LiteLLM` 完整产品路径，单独表报告；② 数据库内
+  `PostgreSQL AI operator + LOTUS native sem_map backend`，进入 matched backend 主矩阵。前者不导入项目
+  gateway/K/W/bounded-ready/SAOR，后者只改数据入口所有权；两者不混排归因。
+- 用户经 Q1–Q23 grilling 冻结实施/实验决策，权威计划已逐项记录答案、被后续精化
+  的关系与约束。当前首要交付改为“LOTUS 语义入口迁移”：先使用真实 v1.2.4
+  `SemMapNode`/messages/output parser 把项目 UDF/manifest-like `AI_COMPLETE` 变成
+  `lotus.sem_map@v1.2.4`，再接 emulated operator stream、各物理 backend 与 PostgreSQL
+  CustomScan 资格门；不先扩 GPU 矩阵或调 SAOR 参数。
+- 性能比较冻结为同一 artifact 内的 `operator_backend` 与 `native_full_path` 两 panel；
+  保留 LOTUS DataConnector、Daft built-in AI Function Native/Native-Ray、Ray Data native graph、项目
+  external static/SAOR 和后置但必做的 PostgreSQL row-wise HTTP AI UDF。原生臂只配置任务/环境
+  必需参数，性能值保持官方默认/示例，不注入项目调度。
+- 一手论文复核纠正 UDF 表述：Cortex 将逐行/black-box call 作动机，但无 generic
+  HTTP/Python UDF 正式臂；LOTUS 确有 `AI UDF` baseline，但部分支持 batching，非 PostgreSQL
+  逐行同步 HTTP。项目对照准确命名为
+  `PostgreSQL row-wise HTTP AI UDF (literature-motivated lower-bound control)`，不称论文原样 baseline。
+- 同步更新根规则、总纲、开题 Markdown 源、项目概览、计划索引与项目索引。当前仅
+  `design-frozen/lotus-semantic-migration-not-started`；未实现 LOTUS adapter 或 extension，未连接 GPU 服务器，未运行 smoke、rehearsal
+  或 formal，也不得把既有 manifest/profiler 实验重标为数据库内算子结论。
+
+## 2026-08-21 五臂边界恢复为 no-writeback completion（服务器诊断后修复中）
+
+- 按冻结设计规格与用户研究目的，把五臂排名边界从错误接入的 PostgreSQL completion sink 恢复为
+  PostgreSQL source→validated model completion：matched/native/Project 三份合同统一
+  `writeback=none`，group/per-Job JCT 均截止模型完成；不写或回读 `document_completions`。
+- 删除五臂专用 sink adapter，改为 no-writeback completion evidence：以冻结两 Job manifest 的
+  `doc_id` 集合作独立 expected identity，核对 executor-owned completion trace 的缺失、重复、行数、
+  exactly-once 与内容 digest。trace validation 位于性能计时边界外，仍封入 cell/raw artifact identity。
+- 服务器在 commit `fc199b57` 上完成过一次五臂 correctness smoke（五个 warmup cell 均通过），但该
+  smoke 使用了现已撤销的 sink 合同，只保留为诊断历史，不可作为新合同 rehearsal readiness 证据；
+  formal 未运行且继续禁止。
+- smoke 后 final readiness 正确发现一个 Ray `ALIVE` actor。只读定位证明它是 Ray 2.56.1
+  `ray.llm` 官方、detached、`num_cpus=0` 的唯一 `llm_batch_telemetry/_TelemetryAgent`，只占
+  `node:__internal_head__=0.001`，不是 workload actor。clean gate 现只精确允许这一控制面身份，
+  同时新增 CPU 全空闲检查；任意其他活 actor、多个 telemetry actor、placement group、GPU 配额占用
+  或非已核验 vLLM CUDA 进程仍 fail closed。
+
+## 2026-08-21 SAOR readiness 与 formal 证据深校验补强（本地，未运行 GPU）
+
+- 保持 `DRIVER_PYTHON` 外层与独立 `VLLM_PYTHON`；新增实际 system-preflight 入口，读取 endpoint
+  health、PostgreSQL/pgvector、Ray/GPU clean 和当前服务启动后产生的 bounded HTTP raw root。
+  readiness 会重跑 live probe 并逐字段比较，不再接受可手写的 passed checks JSON。
+- 五臂 runner 新增 `--correctness-smoke` + 显式 fresh `--correctness-smoke-root`。smoke 使用同一冻结
+  config identity，但不占 canonical rehearsal root；第四阶段只接受完整 matrix index/root，逐项
+  校验 manifest、Job counts、sink digest、native upstream/adapter provenance 与 raw artifact SHA。
+- rehearsal validator 抽出 completed-root 深校验，并要求 tar 与 root 全部文件逐字节一致；形式匹配的
+  空 snapshot/单 cell archive 不能再生成 formal 前置 validation。Native provenance 进入最终 cell/index，
+  并与 native config 的 upstream commit/adapter SHA 精确比较；formal authorization、snapshot、index、
+  cell 与离线 summary 显式绑定 matched/native/Project 三份 config SHA。
+- GPU clean 除 Ray logical resources/actor/placement group 外，再通过 `nvidia-smi` 读取实际 CUDA compute
+  PID；只允许 live-identity sidecar 对应 vLLM 根 PID 及其 Linux 子进程，其他 stray CUDA 进程 fail closed。
+- 修复 `start_endpoints.sh` 在启动函数中引用未定义 `identity_file` 的 `set -u` 阻断，并在停止 managed
+  endpoint 时清理 stale sidecar；增加共享底层解释器但 venv/vLLM 安装不同的真实反例测试。
+- 本次只执行本地 CPU/合同测试，未连接服务器，未运行 correctness smoke、rehearsal 或 formal；
+  DRR/VTC capability 继续 blocked，分支仍未合并 `main`。
+
+## 2026-08-21 五臂 readiness 二次 fail-closed 修复（本地，未运行 GPU）
+
+- 修复不同 venv 共享底层解释器时 `/proc/<pid>/exe` 误判：endpoint launcher 在 exec 前封存 PID、
+  Linux start-time ticks、未解析 Python argv0、`sys.prefix`、vLLM package path/version；readiness 由
+  `DRIVER_PYTHON` 外层调用显式 `VLLM_PYTHON` 重算 source/package identity，再与 sidecar 和 live
+  `/proc` 逐项比对。新增共享底层解释器但 venv/package 不同的拒绝反例。
+- 完整服务身份新增显式 `scheduling_policy=fcfs`；`--scheduling-policy priority`、缺 flag、
+  `--scheduler-cls` 或其他 model/runtime drift 均不能登记为 native FCFS。`start_endpoints.sh` 通过
+  identity launcher 启动并显式传 FCFS。
+- readiness 改为 static config → service identity → system preflight → correctness smoke 四阶段；
+  health、PostgreSQL/pgvector、Ray/GPU clean、bounded feeding≥95% 与 smoke 的 manifest/exactly-once/
+  sink 必须绑定同一 commit、matched/native/Project 三配置 SHA，最后才可发布 rehearsal-ready。
+  fresh matrix/output root 恢复为硬门。
+- Formal authorization 新增实际 rehearsal validation/root/archive 前置：深验恰好五个 warmup cell、
+  全部 passed/exactly-once、live readiness、commit/config/matrix instance/index，再绑定 validation 与
+  archive SHA；新增只读 rehearsal validation CLI。形式匹配但无实际 rehearsal 的 JSON 不再可放行。
+- Native provenance 冻结 Daft 0.7.21 tag commit `7e52cc99…`、Ray 2.56.1 tag commit
+  `936f0d7d…`、官方 URL、版本、项目薄 adapter path/SHA 与 zero-upstream-patch 状态；加载时重算
+  adapter 文件 SHA，证据保留完整 provenance。source/readiness CLI 异常统一脱敏。
+- 当前只修改本地合同、测试和 runbook；未连接服务器，未启动 endpoint、correctness smoke、五臂
+  rehearsal 或 formal，也未合并 `main`。formal 与 DRR/VTC capability 继续锁定。
+
+## 2026-08-21 五臂 rehearsal readiness 与完整服务身份门（只读服务器核验）
+
+- 独立审查确认 `45d4dda4` 的 eager SAOR 修复正确，但仅检查 `--scheduler-cls` 不足以证明五臂
+  共用同一服务。新增 matched/native/Project 三配置一致的完整 `service_identity`：Qwen2.5-7B
+  revision 与模型 artifact SHA、BF16、vLLM 0.25.1 dist/source exact SHA、8192/256 capacity、
+  chunked prefill/prefix cache/MFU metrics、compile mode、GPU memory 0.9 和 native FCFS。
+- `audit_vllm_0251_source.py` 可由服务器 vLLM Python 直接运行并落盘；marker/version 通过但未提供
+  expected SHA 时保持 `blocked_expected_identity_missing`，只有 dist-info 与五个关键源码逐项精确
+  相等才 `passed`。五臂 runner 新增强制 `--installed-source-audit`，并在创建任何 cell 前重验落盘
+  evidence、即时重哈希当前 install、绑定 live API 进程与审计 Python、再检查模型文件和每个 endpoint
+  的完整显式 cmdline；任一缺失/默认不明/漂移均 fail closed。
+- `audit_saor_native_system_matched.py` 修复仓库根导入，联合加载三份真实配置。默认静态报告明确写
+  `static_config_passed/rehearsal_ready=false`；只有加 exact source evidence 与 `--live-service` 才可能
+  报 rehearsal-ready。`start_endpoints.sh` 新增显式 `VLLM_DTYPE`，五臂 env 冻结 BF16 与显式
+  chunked-prefill/capacity flags。
+- 服务器只读 `manage_environment check` 通过并保存到仓库外 preflight evidence；随后确认 endpoint
+  当前均未运行，未启动服务。读取 2026-08-19 日志确认当时有效配置为 BF16、compile/CUDA graph、
+  chunked prefill ON、prefix cache ON、8192/256、gpu-memory 0.9；模型配置/分词器/index hash 与冻结
+  revision 合同一致。读取 installed vLLM 0.25.1 的 dist/source SHA 并冻结为 expected；未发模型请求、
+  未启动 Ray/PG、未运行 correctness smoke、新 rehearsal 或 formal。
+- 纠正运行历史：`ea4cbb3b` 对应保留 root
+  `saor_native_system_matched_matrix_20260819_r2/`，在 warmup 第 1 个 Project selector-sanity cell 因
+  MFU `missing_gpu_peak_tflops` guard 失败；`58154151` 对应 `_r3/`，在同一阶段因
+  `job 0 has no unique successful summary` 失败。两者都是 rehearsal、无 formal authorization，
+  未发现独立 tar；shell history 未保留逐字 argv，故只登记 matrix index 可证明的事实与等价 runbook
+  入口。当前准确状态为“尚无成功、完整、可比较的五臂 rehearsal”。
+- 本地新增/受影响的 service preflight、cross-layer capability、matched matrix、shared-vLLM
+  60 项定向测试通过；`compileall`、三份 JSON、endpoint shell 语法与 diff check 通过。全仓发现器运行
+  1,094 项后仅剩本机可选依赖缺失（`pyarrow`/`psycopg`）造成的 8 个导入错误；另一个断言差异由
+  发现器命令临时设置 `PYTHONPATH=code` 引起，去除该环境污染后的受影响集合通过，未安装新依赖。
+- 授权顺序统一为：合入 canonical `main` 并独立审核后可显式授权 rehearsal；rehearsal 不需要 formal
+  artifact；审核 sealed rehearsal archive 后才考虑另行签发 formal authorization。formal 继续禁止，
+  DRR/VTC capability skeleton 继续主动 blocked。
+
+## 2026-08-21 LOTUS 语义前端集成路线与研发计划（本地设计）
+
+- 固定官方 LOTUS v1.2.4 源码审计：稳定版已有 `LazyFrame`、Pydantic AST 与结构化
+  `SemMapNode`，但 `SemMapNode.__call__` 和 `LazyFrameRun.execute` 仍硬编码 LOTUS native
+  执行，没有公开 executor/backend dispatch seam；PG connector 是 SQLAlchemy + pandas materialization。
+- 从两条路线中选择“LOTUS AST 经版本锁定 adapter lowering 到项目引擎无关 semantic-plan IR”；
+  不把 Daft/Ray/SAOR、credit、trace 和 evidence 整体移植进 LOTUS。该选择保持调度 implementation
+  locality、多模态复用和未修改 LOTUS native baseline，并将 optimizer/private-plan 风险集中在单个 adapter。
+- 新建独立详细计划是因为现有 `state_aware_work_unit_evaluation` 维护 SAOR 因果实验，
+  `strategy_design_implementation_reference` 维护通用实现映射，均不适合承载第三方 semantic frontend
+  的版本 gate、AST lowering、prompt parity、native baseline 与 upstream seam 工作序列。
+- 计划冻结三臂：LOTUS native v1.2.4、LOTUS semantic frontend + project frozen-static、LOTUS
+  semantic frontend + SAOR。先做无 GPU 源码/语义 parity，再做 capability/rehearsal；不修改当前五臂
+  主矩阵、不连接服务器、不运行 GPU，也不因此获得 formal authorization。
+
+## 2026-08-21 PostgreSQL + LOTUS 执行分层审计（文献/官方接口）
+
+- 依据 LOTUS PVLDB 论文、官方仓库、database connector、`sem_map` 与 LM 文档，从第一性原理区分
+  逻辑算子语义、数据库状态/事务底座、外部物理执行和模型服务四层。
+- 冻结当前建议：不把 SAOR 主方法改成必须依赖 LOTUS；PostgreSQL 继续承担 source、Job 状态和
+  exactly-once sink，Daft/Ray + SAOR 承担物理数据组织与提交控制，vLLM 承担模型服务。
+- LOTUS 保留为逐行语义/可选逻辑前端参考及独立数据库 AI 系统 baseline。只有薄 adapter 能完整
+  透传 Job/request lifecycle、ready/inflight 与实际 work，且不重写 LOTUS optimizer 时，才考虑未来
+  `LOTUS logical operator → SAOR physical backend` capability；当前五臂主矩阵不因此重构。
+
+## 2026-08-20 五臂 eager SAOR profiler 阻断修复（本地）
+
+- 复核确认 `e98a0f1b` 的五臂 Project config 在 eager 合同下正确省略 `--arrival-replay`，但
+  profiler 将 `saor_bounded_ready` 与旧 `saor_bounded_priority` 一并强制 replay，导致 SAOR
+  rehearsal cell 在 runtime 初始化前稳定 `SystemExit("bounded priority requires arrival replay")`。
+- 采用保持五臂可比性的最小修复：旧 single-head bounded-priority 继续要求 replay；
+  `saor_bounded_ready` 只有在 request granularity、bounded concrete pre-registration、shared credit、
+  正 logical payload-byte limit 和 request trace 全部成立时才允许 eager。未给 SAOR 单臂注入
+  replay，也未改变
+  native arms、Job release、manifest、sink、K/W、selector 或 formal authorization 合同。
+- 机制审计确认非 replay profiler 仍生成 concrete request envelopes，typed scheduler 继续受
+  request/work/payload-bytes 窗口约束并执行 observe/register/grant/submit；同时修复第二层潜在阻断，
+  将 observed Job start epoch 同步写入 scheduler request 与 trace seed，并要求 eager bounded-ready
+  开启 request trace。新增真实 runner argv→profiler validator 回归，以及 eager accept、single-head/
+  replay/缺 trace fail-closed 反例。
+- 补充 MFU 文档：Project 继续传 peak/precision 只为 denominator 指纹和 per-path 诊断；统一 FLOP
+  numerator 不可用时五臂 publisher 仍不发布跨臂 MFU。未连接服务器、未运行 GPU、rehearsal 或 formal。
+
+## 2026-08-20 SAOR vs DRR/VTC-on-vLLM 跨层 capability（本地，blocked）
+
+- 保留提交 `3b7f7b20` 的五臂 database-E2E、官方 S-LoRA VTC capability、历史消融和 formal
+  authorization 边界；未合并 `main`，未连接服务器、未启动 vLLM/GPU、未运行 rehearsal/formal。
+- 新增独立四臂 capability：Daft Ray + vLLM native FCFS、同 Daft/Ray 路径 + DRR-on-vLLM
+  reproduction、同路径 + VTC-on-vLLM reproduction、SAOR + vLLM native FCFS。前三臂显式拒绝
+  bounded-ready、Project K/W、shared credit、debt/recovery、上游状态感知与 Project 重排；结论只许
+  比较完整系统的跨层经验差异。
+- 审计官方 vLLM 0.25.1 tag：内置 policy 仅 FCFS/priority，`scheduler_cls` 为非公共接口；自定义
+  class 必须继承该版本 `AsyncScheduler`，否则 async scheduling 会退化。当前 Darwin runtime 无
+  vLLM/Daft/Ray/OpenAI 且无 GPU profile，实际安装源码/version/build/SHA 审计保持 blocked。
+- 新增 installed-source audit、strict typed request identity codec、FCFS/DRR/VTC 纯语义 oracle 与
+  `--scheduler-cls` skeleton。Custom FCFS 只继承 AsyncScheduler 作 parity control；DRR/VTC class
+  在 installed-source、Job identity、FCFS parity 未过门前主动失败，不以 FCFS 冒充已实现策略。
+- DRR 固定按 prompt + output cap 计费且不回溯实际完成长度；VTC 支持 active/inactive counter lift、
+  actual prompt/output service、weighted normalized counter、确定性 tie 与 work conservation。identity
+  缺失、非法、重复均 fail closed，无 default client。
+- 新增四臂 config/evidence schema，绑定 plugin SHA、共同 workload/service/correctness/指标、claim
+  boundary 和 official VTC 语义参考。当前 blockers 为 installed-source、Daft/Ray→Request Job identity
+  透传与 custom-FCFS 八项 parity，故禁止 performance report，formal 仍未授权。
+- 强化现有五臂 Project 门：resolved organizer=`daft`、executor=`ray_actor`、owner=
+  `project_daft_ray_submission_then_vllm_fcfs`、service scheduler=`vllm_native_fcfs`；真实执行前从每个
+  vLLM 进程 cmdline 确认没有 `--scheduler-cls`，缺进程或发现 custom class 均 fail closed。
+
+## 2026-08-20 SAOR 多 Job 对照合同重构（本地，服务器未连接）
+
+- 将 native-system matched 从历史八臂/两表合同收敛为五臂 database-E2E：Daft Native、Daft
+  Native/Ray、Ray Data native graph、project frozen-static、SAOR。移除本轮 FIFO/DRR/VTC-style
+  selector development cells 与第二张 selector 排名；历史消融数据不删除。
+- 新增独立 official VTC/S-LoRA capability 合同，固定 upstream commit `192c2e...`、同栈 FCFS/VTC、
+  scheduler owner、逻辑 workload SHA 和 Job release。当前 4090/model/runtime 兼容性未验证，
+  状态保持 blocked；没有连接服务器、没有运行 capability、rehearsal 或 formal。
+- 把共同外部 Job release、执行器内部 arrival replay、SAOR bounded-ready observation 分成独立
+  typed 合同；SAOR release 前 ready/credit-register/submit fail closed。MFU peak/precision 进入
+  resolved config、fingerprint、matrix/cell evidence 和离线复核；统一 numerator 不可信时标 unavailable。
+- 五臂统一启用 `json_text` PostgreSQL sink：native completion trace 由 matrix adapter 写入，Project
+  由 profiler 写入；两路均从 `document_completions` 独立 readback，核对行数、内容 digest 与
+  exactly-once，sink 身份/耗时进入 cell 和 `all_runs.csv`。这只是本地合同接线，未访问数据库。
+- MFU contract 除进入 resolved fingerprint/cell/index 外，也作为 formal authorization artifact 的
+  直接字段精确匹配；同步更新 Git 内非授权模板。peak/precision 漂移不再只依赖间接 hash 被发现。
+- CLI 缩为参数解析与 `code/src` 调用；新增 typed contract/parser、validator、evidence sealer、
+  publisher 和 execution stages。失败 generation 保留 `all_runs.csv`，不发布任何 ranking；异常和
+  command 在持久化边界脱敏。
+- 纠正“本轮未连接服务器”可能被误读为“历史无 rehearsal”的表述。已知历史失败包括：
+  `9ae64db3` bounded-priority gate failure（runner mechanism guard，归档可访问，无可比性能结论）；
+  `dd83136d` server regression（fail-closed evidence regression，无可比排名）；`60e47469` feeding
+  ceiling 92.898%<95%（有效一次性 negative gate，归档可访问，不外推稳定性能）；`f1844c0f`
+  feeding-gap pre-run/diagnostic stop（fail-closed，归档可访问，无完整可比结果）。
+- 历史失败定位细表：`9ae64db3` 使用 `run_shared_vllm_experiment.py --rehearsal`，两轮 root 的
+  完整 archive 为 `saor_bounded_priority_gate_20260813_2de6f93_full.tar.gz`（SHA `be6ce0a3…`），
+  第二轮 0.25K debt-recovery=0；`dd83136d` 同入口复跑
+  `saor_bounded_priority_rehearsal_15201946_regression_20260814/`，同机制门再次拒绝；二者均无正式
+  可比排名，Git 仅保留 compact evidence/报告，完整 root/tar 为仓库外记录。
+- `60e47469` 使用 `run_saor_feeding_ceiling.py --rehearsal`，最终 root
+  `...c988622a...retry2` 与 Git 内 12-file tar 可访问，92.898%<95% 只支持一次性 feeding stop；
+  前两个失败 root 分别因 SSH 中断和 exactly-once 字段缺失，不入结果。`f1844c0f` 使用
+  `run_saor_feeding_gap_diagnostic.py`，root `saor_feeding_gap_diagnostic_345bee2f_20260817` 在
+  11/12 cell 因 1/512 zero-retry ReadError 中止，tar SHA `f4b9793d…`；未运行 summarizer、无完整
+  可比判决，compact evidence 可从该提交恢复，完整 root/tar 为仓库外镜像记录。
+- 本地验证：五臂/VTC/sink 反例合同 16/16，通过；native multi-Job 24/24，通过；experiments
+  全目录回归 229/229，通过；相关模块 `compileall`、四份 JSON schema 语法、`git diff --check`
+  与全仓 secret scan 均通过。验证过程未连接实验服务器、未调用数据库/模型 endpoint、未启动 GPU。
+
+## 2026-08-19 native-system matched 发布合同修复（本地）
+
+- 修复候选发布配置的两项 validity blocker：Project 五臂由错误的每 Job 2 行改为完整
+  `[512,512]`；Ray Data executor 由 C1/B1 改为已冻结的 C8/B16。Daft Native/Ray 保持
+  C1/B1 vendor control，三条原生臂 organizer 明确为 `native_framework_owned`，不再消费
+  Project 的 `SAOR_ORGANIZER`，也不注入 K/W、credit、router 或 bounded-ready。
+- 完整 ShareGPT prompt manifest 因含个人信息从 Git 移除；运行时三份 manifest 留在
+  `experiment-artifacts/`。matched config 为 Job0/Job1 分别冻结 SHA 与 512 行，runner 在 dispatch
+  前验证每份 SHA/行数/output cap、跨 Job doc_id 唯一，并验证 combined=Job0+Job1；matrix root
+  同时封存三份证据，formal authorization 绑定 combined SHA 与两个 Job identity。
+- calibration 从“只比较路径”改为 path+SHA+内容+executor 联合校验。Project 继续复用通用
+  calibration loader；native 合同逐臂验证 adapter/concurrency/batch。Daft vendor default 标为
+  `performance_selection=not_applicable`，Ray Data 单次 C4/C8/C16 screen 标为
+  `development_screen_only`，不再伪称 feeding/token-budget/actor-pool 三门全部 passed。
+- Project 独立冻结 token-budget 6144、K128、W65536、8×32 actor 与 0.25 CPU/worker；新增
+  `native_system_bindings.py`，在 dispatch 前交叉核对 matched/native/Project 的实际 endpoint、
+  metrics/health、Job manifest、数据库 source、服务签名、原生 adapter/C/B 和 Project
+  K/W/batching/actor 合同。snapshot/cell 保存 endpoint 与原生选择身份，离线 summary 再从封存命令
+  重验，且逐 Job 强制 ID/SHA/行数，避免交换 Job 或 1+1 假通过。
+- formal 模板修正为：merge 只冻结实现，先跑小型 correctness/rehearsal 并独立审核，之后项目开发者
+  才可另行签发仓库外 authorization artifact；模板、布尔字段和 rehearsal 均不能自行解锁 formal。
+- 新增发布配置和反例测试，覆盖实际 512+512、native ownership、Ray Data C8/B16、逐 Job identity、
+  calibration SHA/selection 漂移与 merge 非授权语义。本轮只做本地代码/合同修复，未连接服务器、
+  未运行 native-system/rehearsal/formal；服务器 PG row-window 只读确认仍是后续 runtime preflight。
 ## 2026-08-20 开题报告正文精修与报告专用图集落位
 
 - 将用户确认的七部分开题报告底稿落实到 `opening/report/opening_report.md`，在不改变题目与两项研究内容的前提下完成针对性精修。
@@ -14163,3 +14420,71 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - `opening/report/opening_report.md` 第二章按上述八篇文献重组，新增 AYO、关系型 LLM 查询优化和 BlendServe 三条参考文献，当前共 51 条；同时依据正式论文页面修正 Cortex AISQL 和 Ray Data Streaming Batch 题录。
 - `research/ai_operator_literature_inventory.md`、`opening/literature/reading_list.md` 和 `research/knowledge_hub.md` 同步增加八篇精读主线，原有“缺少相关研究”的概括收窄为数据库跨模态工作描述、模型服务实际状态与上游多作业提交之间的衔接问题。
 - 五个精读主笔记文件名改为与论文目录同名，并同步五份配图审计中的引用路径；本次统一提交还包含用户此前新增的 65 张论文原图、八份配图审计以及工作区中其他待提交修改。
+## 2026-08-21 SAOR 五臂远端 correctness smoke 适配层修复
+
+- 在 reviewed `5cc31092` 上依次完成 AutoDL 环境检查、PostgreSQL/pgvector、Ray/GPU clean、双
+  vLLM 0.25.1 完整 service identity、1,024 请求 bounded HTTP baseline 和 system preflight；均通过。
+  两个 correctness smoke 失败 root 原样保留，尚未生成可比较 rehearsal，也未运行 formal。
+- 第一次 smoke 因手工把 `--native-runner` 错传为 multi-job wrapper 而失败；runbook 现明确该参数
+  必须是 `code/scripts/baselines/run_official_baseline.py`，并补全可运行 smoke 命令。
+- 第二次 smoke 的四个 Daft Ray shard 均已完成 256 请求、0 failure、exactly-once，但 native 轨迹文件
+  为 `jobs/<job>/shard_<n>/requests.csv`，统一 sink 旧 glob 只接受 Project 的
+  `*.requests.csv`，因此误报找不到 trace。sink 现显式支持两种冻结布局，并增加真实目录形态回归。
+- native runner 的失败 record 现于 artifact sealing/归一化前传播已脱敏 primary failure，避免缺失
+  `jobs` 时由 `KeyError` 覆盖真实 shard 错误。修复通过最小 red→green 回归后，待完整本地测试与全新
+  correctness smoke 验证；只有四阶段 readiness 全通过才允许五臂 rehearsal。
+- `0ecbc37d` 的第三个全新 smoke 已使 Daft Ray 与其 PostgreSQL sink 真实通过，也证明旧 trace glob
+  阻断闭合；随后 SAOR eager cell 完成 1,024 请求，但在 Project sink digest 门失败。只读对比确认
+  doc_id 1024/1024、无缺行，差异来自 lifecycle `*.requests.csv` 按设计不含 `output_text`，旧 adapter
+  却把缺列静默解释为空串。
+- shared-vLLM Job 命令现强制启用 profiler 既有的 `--completion-evidence-output`，直接从 in-process
+  operator results 落 `*.completions.csv`。统一 sink 优先用这份独立 expected content 对比数据库；
+  两个 Job completion evidence 也进入 cell output-path SHA/全文件 artifact manifest。第三个失败 root
+  保留；该修复需在新 commit/new root 上重跑，当前仍无 rehearsal，formal 继续禁止。
+- `969ce92c` 的第四、第五个 fresh smoke 均证明 Project completion evidence 与 PostgreSQL sink
+  1024/1024、digest、exactly-once 通过，但随后被 5s release-offset 门拦下；observed child-source
+  offset 分别为 4.7191s/4.6983s，而第五次 first-submit offset 为 4.8804s。重复同向压缩排除一次性
+  抖动，根因是 Project normalizer 把 child 完成冷启动/DB fetch 后的首条 arrival 错当 actual launch；
+  native actual launch 则一直是父编排器紧邻 `Popen` 的 epoch。
+- Project Job 现用 runner 已单独记录并验证的 `replay_observed_start_epoch_s` 作为
+  `actual_launch_epoch_s`，首条 lifecycle arrival 独立保留为 `source_arrival_epoch_s`。±0.25s launcher
+  门、SAOR ready/credit/submit 不早于 release 门均保持不变；两个 timing 失败 root 原样保留，仍未
+  完成 correctness smoke/rehearsal，formal 继续禁止。
+
+## 2026-08-21 SAOR 五臂 T0--T4 与共同公平观测合同
+
+- 保留 `862d0008` gateway 前 correctness smoke/rehearsal 作为五臂可运行性历史证据；其原生 request
+  tail、公平和 service lag 不可用，不能直接承担“吞吐、JCT、SLO、隔离、公平”完整比较。formal 未运行。
+- 新增所有五臂共用的 observation-only HTTP gateway：按 Job/endpoint path 标识，精确一次转发到
+  冻结 backend，禁止应用层 queue/admission/retry/cache/routing/payload rewrite；记录 body SHA、
+  dispatch delay、HTTP status 与 endpoint actual prompt/output tokens。Daft/Ray 仍拥有执行图、batch、
+  请求顺序和 backpressure，原生臂不注入 Project K/W 或 bounded-ready。
+- 统一系统时钟为 T0 Job release（PostgreSQL 读取与 child/Ray 初始化前）、T1 首批 source data、
+  T2 首请求到达 vLLM、T3 末请求完成、T4 完整正确结果在内存可见。headline 为 Job/group JCT 与
+  actual completed tokens/group JCT；另报 source、execution、service span。保持 `writeback=none`，
+  completion digest 在计时边界外封存，不连接输出 sink。
+- 共同 gateway backlog 内按实际完成 token work 计算 weighted service share/Jain、completion-accounted
+  empirical lag 与 longest no-service；分列 request SLO、foreground Job JCT SLO、victim 在 aggressor
+  到达后的 P99 inflation/no-service/recovery。within-run 指标不冒充 full-solo slowdown；后者仍需
+  matched-solo control。
+- cell/archive validator 重新哈希 gateway trace、核对四条 Job×endpoint upstream binding，并逐 Job
+  验证 T0≤T1≤T2≤T3≤T4。当前已通过 native 26、shared-vLLM 91、matched/observation 43、gateway 2
+  项定向测试与 compile/diff check；新合同尚未在服务器重跑 smoke/rehearsal，formal 继续禁止。
+- `5726809f` 的首个 gateway smoke 已完成 Daft Ray 转发与 token reconciliation，但 cell validator
+  发现 adapter 只写了新字段 `request_slo_violation_ratio`，旧的持久化字段
+  `slo_violation_ratio` 仍保留 `unavailable`，因此 fail-closed。现由共同观测 adapter 显式把同一数值
+  映射到持久化 schema，并增加“一 Job 0 miss、另一 Job 100% miss”的 red→green 回归；失败 root
+  保留，不作性能结论，需在新 commit/fresh root 重跑 smoke。
+- `93271012` 已在 2×4090 服务器通过 environment check、static/live vLLM identity、PG/Ray/GPU clean、
+  bounded baseline、五臂 correctness smoke；新 fresh rehearsal 5/5 cell、每臂 1,024 requests、
+  retry=0、body/exactly-once/T0--T4 均通过。29MiB root 的 6.5MiB archive SHA 为
+  `90b47110044030c912f93ae54ecb9937554bdb8f81c6e0bcd00a449e059b28c5`，独立 validator
+  `valid_rehearsal=true`；formal 未运行。
+- 单次 rehearsal 下 SAOR 相对 Project frozen-static：correct throughput +31.01%、group/bulk JCT
+  −23.70%、foreground JCT −1.72%、单位 observed token 能耗 −25.30%；但 bulk/foreground request
+  P99 +18.70%/+24.11%、weighted Jain −1.50%、service lag P95 +42.47%、longest no-service
+  +16.75%。结论冻结为效率—tail—公平权衡，不作显著性或全面胜出声称。
+- 五臂 request P99/SLO、actual-work Jain/lag/no-service 缺口已闭合；但 5s foreground release 前多数
+  framework 尚无 victim completion，within-run P99 inflation/recovery 只可标 partial。后续若补隔离
+  因果结论，需另跑固定 guaranteed-service-overlap panel 或 matched-solo controls，不动态修改主矩阵
+  offset，不用本次 rehearsal 解锁 formal。

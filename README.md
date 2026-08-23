@@ -32,10 +32,16 @@
 > 不能据此判断动态策略有效或无效。完整边界见
 > `experiments/results/phase_change_state_aware_corrected_early_stop_20260811/`。
 
-当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。研究对象是数据库
-触发后的外部链路：数据读取与物化、代价估计与组织、准入/路由/提交、模型执行、观测
-和写回。Daft 是数据引擎，Ray actor 是可控执行机制，vLLM/CLIP 等是模型执行后端，
-PostgreSQL + pgvector 是 source/sink 工程 baseline。
+当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。目标入口是 PostgreSQL
+extension 注册的 planner-visible LOTUS `sem_map` AI 语义算子：数据库拥有 SQL、snapshot、
+child plan 和 query lifecycle，并通过受管理的 row-batch stream 接到外部物理执行层；用户不再
+执行 `SELECT/fetchall → Python → HTTP → INSERT`。Daft 是数据引擎，Ray actor 是可控执行机制，
+vLLM/CLIP 等是模型执行后端，PostgreSQL + pgvector 继续承担关系 source/result。该计划当前仅
+design frozen，既有 profiler/manifest 结果仍是外部执行证据，不能重标为数据库内算子结果。
+实施边界、LOTUS native baseline 与分阶段门禁见
+[`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)。
+当前实现优先级是先用真实 LOTUS v1.2.4 `sem_map` 语义合同替换项目自写
+UDF/manifest-like 入口，不是先扩展 GPU 矩阵或调整 SAOR 参数。
 
 后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3；当前 PG18.4 本地同构预演只能作为平台暂不可用时的替身。
 

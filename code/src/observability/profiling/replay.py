@@ -306,6 +306,16 @@ def _offline_batch_envelopes(
                 "offline envelope expansion supports batch, request, "
                 "or service_quantum"
             )
+        batch_envelopes = tuple(
+            replace(
+                envelope,
+                request=replace(
+                    envelope.request,
+                    oldest_arrival_epoch_s=job_start_epoch_s,
+                ),
+            )
+            for envelope in batch_envelopes
+        )
         envelopes.extend(batch_envelopes)
         if quantum_sink is not None and submission_granularity == "service_quantum":
             quantum_sink.extend(

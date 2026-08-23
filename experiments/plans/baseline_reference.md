@@ -6,6 +6,28 @@
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
 来源：`research/ai_operator_literature_inventory.md` 与 `research/top15_ranked_papers.md`
 
+> **2026-08-20 SAOR 对照冻结**：当前 database-E2E 主矩阵只含五个完整系统：Daft
+> Native + vLLM FCFS、Daft Native/Ray + vLLM FCFS、Ray Data native API graph +
+> vLLM FCFS、project frozen-static + vLLM FCFS、SAOR + vLLM FCFS。前三臂不接
+> bounded-ready、K/W、credit、inflight 或 project selector；frozen-static 不接 bounded-ready、
+> 动态选择或 debt；只有 SAOR 使用 concrete-ready observation、shared credit、borrowing 和
+> projected-debt recovery。FIFO/DRR/VTC-style/strict-priority 的既有数据保留为历史项目内消融，
+> 不进入这张系统表。
+>
+> 官方 VTC 另设**服务机制组**：固定 `Ying1123/VTC-artifact@192c2e...`，只比较该 artifact
+> 同一 S-LoRA 栈内 FCFS 与 VTC。它不经过 Daft/Ray Data/PostgreSQL/Project coordinator，
+> 也不进入 database-E2E 排名。当前 4090、模型和 runtime 兼容性未证明，状态为
+> `blocked_unverified_runtime / server_validation=not_run / formal_authorized=false`；禁止用 vLLM
+> reproduction 替代或冒充官方 artifact。能力合同把每个 database Job 映射为一个 VTC client，冻结
+> 同一两份 prompt SHA、`[0,5]` release 与 256-token/raw/temperature-0 输出语义；Qwen2.5-7B
+> 在该 S-LoRA artifact 上的兼容性明确标 `unverified`。
+>
+> 另增一个不进入五臂排名的**跨层完整系统 capability**：Daft Ray + vLLM native FCFS、同数据路径
+> + DRR-on-vLLM reproduction、同数据路径 + VTC-on-vLLM reproduction、SAOR + vLLM native
+> FCFS。官方 artifact 只作 VTC 语义参考；reproduction 名称不得省略。当前 vLLM installed-source
+> SHA、Daft→Request Job identity 与 custom-FCFS parity 均未验证，故 `blocked`，不能运行 GPU 或
+> 发布性能表。详细合同见 `saor_cross_layer_scheduler_capability_20260820.md`。
+
 > **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `research/knowledge_hub.md`。
 
 ---
@@ -96,14 +118,15 @@ selector 的单因素因果收益。
 当前 SAOR 系统级复测的共同到达形态冻结为 Job 级
 `bulk@0s → foreground@5s`、Job 内 eager。Daft/Ray Data 官方 graph 若没有忠实逐请求 timed
 replay 接口，不得用外部 feeder 接管其请求释放后仍称原生调度；Project 两臂也须使用同一 Job
-级形态。五臂共同计时从 PostgreSQL scan/materialization 前开始，到两 Job 全部输出 validated
-gather 结束；计时前读取 JSONL 的旧 native path 只作诊断。性能主矩阵统一不写回；小规模 sink
-exactly-once 另设 correctness gate。原生臂没有真实共同 request clock 时，P99/SLO 必须写
+级形态。五臂共同计时从 PostgreSQL scan/materialization 前开始，到两 Job 全部输出写入共同
+`document_completions` JSON-text sink 并通过独立 readback digest/exactly-once 校验结束；计时前读取
+JSONL 的旧 native path 只作诊断。group JCT/database-E2E 含共同 sink；per-Job JCT 截止该 Job
+完成模型响应，避免把 group 末尾统一 sink barrier 伪装成两个 Job 各自的完成时刻。原生臂没有
+真实共同 request clock 时，P99/SLO 必须写
 `unavailable`。详细规格见
 `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
-同一基础设施另输出 Project 内部 bounded-ready FIFO/DRR/VTC-style/SAOR 的 same-regime sanity
-表，用于防止 Job-level eager arrival 改变 selector 排序后仍沿用旧归因。该表不进入原生系统
-baseline 身份，也不因 1--2 次短测产生 selector winner/formal claim。
+历史 Project 内部 bounded-ready FIFO/DRR/VTC-style/SAOR same-regime 数据只保留为消融归档；
+本轮五臂 runner 不再生成或排名该表，也不据其产生 selector winner/formal claim。
 这里的 FIFO 全名是 `Project bounded-ready + global FIFO matched-control`：bounded-ready 不是
 FIFO 算法的组成，而是让 FIFO 与 DRR/VTC-style/SAOR 共享同一个可见候选集 $R(t)$，从而只比较
 selector score/order。完整旧方案仍是 single-head + shared FIFO；二者之间的差异属于 observation

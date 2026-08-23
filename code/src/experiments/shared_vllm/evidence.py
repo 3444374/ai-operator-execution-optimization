@@ -127,6 +127,17 @@ def _validate_job_evidence(
     if len(summary_rows) != 1 or summary_rows[0].get("status") != "ok":
         raise RuntimeError(f"job {job_index} has no unique successful summary")
     summary = summary_rows[0]
+    first_batch_ready_epoch_s = float(
+        summary.get("first_batch_ready_epoch_s", "0") or 0
+    )
+    result_visible_epoch_s = float(
+        summary.get("result_visible_epoch_s", "0") or 0
+    )
+    if (
+        first_batch_ready_epoch_s <= 0
+        or result_visible_epoch_s < first_batch_ready_epoch_s
+    ):
+        raise RuntimeError(f"job {job_index} has invalid T1/T4 evidence")
     expected_rows = scenario.row_count(job_index)
     if int(summary.get("total_rows", -1)) != expected_rows:
         raise RuntimeError(f"job {job_index} processed an unexpected row count")
@@ -376,6 +387,8 @@ def _validate_job_evidence(
         "runtime_job_id": runtime_job_id,
         "arrival_start_epoch_s": min(arrival),
         "completion_end_epoch_s": max(completion),
+        "first_batch_ready_epoch_s": first_batch_ready_epoch_s,
+        "result_visible_epoch_s": result_visible_epoch_s,
         "service_completion_events": sorted(
             zip(completion, actual_work_by_request)
         ),

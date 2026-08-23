@@ -3,49 +3,115 @@
   "seed": 20260813,
   "warmup_repeats": 1,
   "formal_repeats": 3,
-  "selector_sanity_development_repeats": 2,
   "matrix_output_root": "${SAOR_MATRIX_OUTPUT_ROOT}",
+  "endpoint_urls": [
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
+  ],
   "gpu_formal_locally_authorized": false,
-  "matched_manifest_status": "placeholder_not_ready",
+  "matched_manifest_status": "ready_frozen",
+  "job_observation_contracts": [
+    {"job_id": "job0", "role": "bulk", "weight": 1.0, "request_slo_s": 30.0, "job_jct_slo_s": null},
+    {"job_id": "job1", "role": "foreground", "weight": 1.0, "request_slo_s": 30.0, "job_jct_slo_s": 30.0}
+  ],
+  "observation_gateway_request_timeout_s": 600.0,
+  "service_identity": {
+    "model": "${COMPLETION_MODEL}",
+    "model_path": "${MODEL_PATH}",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "model_config_sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+    "tokenizer_config_sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "tokenizer_json_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "model_safetensors_index_sha256": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+    "generation_config_sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+    "model_weight_00001_sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+    "model_weight_00002_sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+    "model_weight_00003_sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+    "model_weight_00004_sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+    "dtype": "bfloat16",
+    "service": "0.25.1",
+    "vllm_metadata_sha256": "318b32f34f0fd7896f230ce2bf1440a8525ac1e63e73c1196d8a60c0fa871373",
+    "vllm_wheel_sha256": "3195b844c385a39b126f4c647a4bee9c534d9bc9d95a3025edc887ed33933941",
+    "vllm_record_sha256": "e3ad17c2ff4dc665de3660874e2461363ba9a4c578cc705d9cee3b5b4f9657cd",
+    "vllm_source_config_scheduler_sha256": "a816cf79a3e74ffc0984f9bebb274275b26f46be8b28cb77a29388a0996263c8",
+    "vllm_source_scheduler_sha256": "e25d4c9a95abdbe8e516714ed02574d929ca0d5e8c11c4cc73b84d3a3b905443",
+    "vllm_source_async_scheduler_sha256": "da6343d7e7c394a1738cf72905cbecc208003ffa461ccb441268333a3eb9f884",
+    "vllm_source_request_queue_sha256": "4b8d938e5fb8152fe61030b8aa991f983fcac9a405c37ed8908045e05e82ae5e",
+    "vllm_source_request_sha256": "06b1c6ad3cc0223c2036b4a2e317868fa4988391b4b024bc5e5f54672b7d2c80",
+    "scheduler": "vllm_native_fcfs",
+    "scheduling_policy": "fcfs",
+    "max_model_len": 8192,
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192,
+    "chunked_prefill": true,
+    "prefix_caching": true,
+    "mfu_metrics": true,
+    "enforce_eager": false,
+    "compilation_mode": "vllm_compile",
+    "gpu_memory_utilization": 0.9
+  },
   "arms": [
     {
       "arm_id": "daft_native", "kind": "native", "scheduler_owner": "daft",
       "output_root": "${SAOR_DAFT_NATIVE_OUTPUT_ROOT}",
-      "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}",
+      "manifest_path": "${SAOR_MATCHED_COMBINED_MANIFEST}", "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+      "job_manifests": [
+        {"job_id": "job0", "path": "${SAOR_MATCHED_JOB0_MANIFEST}", "rows": 512, "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"},
+        {"job_id": "job1", "path": "${SAOR_MATCHED_JOB1_MANIFEST}", "rows": 512, "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"}
+      ],
       "endpoint_ids": ["endpoint-0", "endpoint-1"],
-      "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"},
+      "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"},
       "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}",
-      "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager",
+      "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}],
+      "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager",
+      "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"},
       "performance_writeback_mode": "none",
-      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails"},
+      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails; common gateway supplies runtime tails"},
       "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"},
-      "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${DAFT_NATIVE_CALIBRATION}"
+      "organizer": "native_framework_owned",
+      "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/daft_native_selection_20260808.json",
+      "calibration_sha256": "c8c31f991eaa1706b36a6707c088c5f5b7151151fcbfa78c4fc1514b12c6cd6e"
     },
     {
       "arm_id": "daft_ray", "kind": "native", "scheduler_owner": "daft",
-      "output_root": "${SAOR_DAFT_RAY_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}",
-      "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${DAFT_RAY_CALIBRATION}"
+      "output_root": "${SAOR_DAFT_RAY_OUTPUT_ROOT}",
+      "manifest_path": "${SAOR_MATCHED_COMBINED_MANIFEST}", "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+      "job_manifests": [
+        {"job_id": "job0", "path": "${SAOR_MATCHED_JOB0_MANIFEST}", "rows": 512, "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"},
+        {"job_id": "job1", "path": "${SAOR_MATCHED_JOB1_MANIFEST}", "rows": 512, "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"}
+      ],
+      "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"},
+      "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}], "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager", "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"}, "performance_writeback_mode": "none",
+      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails; common gateway supplies runtime tails"},
+      "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"},
+      "organizer": "native_framework_owned",
+      "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/daft_ray_selection_20260808.json",
+      "calibration_sha256": "e866f945336717ff06567afd99dad02ef7c5cbb2f4e9d91b2f85275eb7053a23"
     },
     {
       "arm_id": "ray_data_http", "kind": "native", "scheduler_owner": "ray_data",
-      "output_root": "${SAOR_RAY_DATA_HTTP_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}",
-      "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${RAY_DATA_HTTP_CALIBRATION}"
+      "output_root": "${SAOR_RAY_DATA_HTTP_OUTPUT_ROOT}",
+      "manifest_path": "${SAOR_MATCHED_COMBINED_MANIFEST}", "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+      "job_manifests": [
+        {"job_id": "job0", "path": "${SAOR_MATCHED_JOB0_MANIFEST}", "rows": 512, "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"},
+        {"job_id": "job1", "path": "${SAOR_MATCHED_JOB1_MANIFEST}", "rows": 512, "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"}
+      ],
+      "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"},
+      "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}], "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager", "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"}, "performance_writeback_mode": "none",
+      "unsupported_request_tails": {"status": "unavailable", "reason": "native API does not expose request tails; common gateway supplies runtime tails"},
+      "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"},
+      "organizer": "native_framework_owned",
+      "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/ray_data_http_selection_20260808.json",
+      "calibration_sha256": "98aa11bd1cab915117a3a6c35500357a091befae8f3d5eef182adb7df9186d60"
     },
     {
-      "arm_id": "project_frozen_static", "kind": "project", "scheduler_owner": "project", "policy": "static_partition",
-      "output_root": "${SAOR_PROJECT_FROZEN_STATIC_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}", "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${PROJECT_FROZEN_CALIBRATION}", "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"}
+      "arm_id": "project_frozen_static", "kind": "project", "scheduler_owner": "project_daft_ray_submission_then_vllm_fcfs", "policy": "static_partition", "executor": "ray_actor", "model_service_scheduler": "vllm_native_fcfs",
+      "output_root": "${SAOR_PROJECT_FROZEN_STATIC_OUTPUT_ROOT}", "manifest_path": "${SAOR_MATCHED_COMBINED_MANIFEST}", "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f",
+      "job_manifests": [{"job_id": "job0", "path": "${SAOR_MATCHED_JOB0_MANIFEST}", "rows": 512, "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"}, {"job_id": "job1", "path": "${SAOR_MATCHED_JOB1_MANIFEST}", "rows": 512, "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"}],
+      "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}], "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager", "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"}, "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/project_frozen_selection_20260808.json", "calibration_sha256": "55c09b95301722d6c74e955931e35c3776c9dc9c30c6b22bbb0c0ff6f062a2c9", "batching_contract": {"policy": "token_budget", "token_budget": "${PROJECT_TOKEN_BUDGET}", "token_budget_policy": "static"}, "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}", "cpus_per_worker": "${PROJECT_RAY_WORKER_NUM_CPUS}"}
     },
     {
-      "arm_id": "project_bounded_ready_fifo", "kind": "project", "scheduler_owner": "project", "policy": "shared_fifo", "ready_observation": "bounded_concrete_pre_registration", "output_root": "${SAOR_PROJECT_FIFO_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}", "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${PROJECT_FROZEN_CALIBRATION}", "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"}
-    },
-    {
-      "arm_id": "project_bounded_ready_drr", "kind": "project", "scheduler_owner": "project", "policy": "shared_drr", "ready_observation": "bounded_concrete_pre_registration", "output_root": "${SAOR_PROJECT_DRR_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}", "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${PROJECT_FROZEN_CALIBRATION}", "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"}
-    },
-    {
-      "arm_id": "project_bounded_ready_vtc_style", "kind": "project", "scheduler_owner": "project", "policy": "external_vtc", "ready_observation": "bounded_concrete_pre_registration", "output_root": "${SAOR_PROJECT_VTC_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}", "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${PROJECT_FROZEN_CALIBRATION}", "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"}
-    },
-    {
-      "arm_id": "project_bounded_ready_saor_0125we", "kind": "project", "scheduler_owner": "project", "policy": "saor_bounded_ready", "ready_observation": "bounded_concrete_pre_registration", "debt_caps": [0.125, null], "output_root": "${SAOR_PROJECT_SAOR_OUTPUT_ROOT}", "manifest_path": "../../experiments/results/accelerated_arrival_flush_20260725/manifest.json", "manifest_sha256": "${SAOR_MATCHED_MANIFEST_SHA256}", "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager", "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "${PROJECT_FROZEN_CALIBRATION}", "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"}
+      "arm_id": "project_bounded_ready_saor_0125we", "kind": "project", "scheduler_owner": "project_daft_ray_submission_then_vllm_fcfs", "policy": "saor_bounded_ready", "executor": "ray_actor", "model_service_scheduler": "vllm_native_fcfs", "ready_observation": "bounded_concrete_pre_registration", "debt_caps": [0.125, null], "output_root": "${SAOR_PROJECT_SAOR_OUTPUT_ROOT}", "manifest_path": "${SAOR_MATCHED_COMBINED_MANIFEST}", "manifest_sha256": "72dc51b7a63ce8a35c410d3050eb9b110cb08a68a9e45928770be428058bf56f", "job_manifests": [{"job_id": "job0", "path": "${SAOR_MATCHED_JOB0_MANIFEST}", "rows": 512, "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1"}, {"job_id": "job1", "path": "${SAOR_MATCHED_JOB1_MANIFEST}", "rows": 512, "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971"}], "endpoint_ids": ["endpoint-0", "endpoint-1"], "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}", "scheduler": "vllm_native_fcfs"}, "protocol": "${COMPLETION_PROTOCOL}", "output_cap": "${COMPLETION_MAX_TOKENS}", "job_release_schedule": [{"job_id": "job0", "release_time_s": 0}, {"job_id": "job1", "release_time_s": 5}], "arrival_replay_capability": "not_used", "job_internal_arrival_contract": "eager", "mfu_contract": {"status": "unavailable", "gpu_peak_tflops_per_gpu": "${GPU_PEAK_TFLOPS}", "precision": "${MFU_PRECISION}", "reason": "cross-system FLOP numerator is not uniformly available"}, "performance_writeback_mode": "none", "unsupported_request_tails": {"status": "unavailable", "reason": "request tails are not collected"}, "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "${DATABASE_URL}", "workload_name": "${SAOR_MATCHED_WORKLOAD}", "row_offset": "${SAOR_MATCHED_ROW_OFFSET}"}, "organizer": "${SAOR_ORGANIZER}", "calibration_path": "../../experiments/results/state_aware_work_unit/saor_native_system_matched_calibration_20260819/project_frozen_selection_20260808.json", "calibration_sha256": "55c09b95301722d6c74e955931e35c3776c9dc9c30c6b22bbb0c0ff6f062a2c9", "batching_contract": {"policy": "token_budget", "token_budget": "${PROJECT_TOKEN_BUDGET}", "token_budget_policy": "static"}, "k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}", "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}", "ready_bytes": "${PROJECT_READY_BYTES}", "actor_topology": {"workers": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}", "concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}", "cpus_per_worker": "${PROJECT_RAY_WORKER_NUM_CPUS}"}
     }
   ]
 }

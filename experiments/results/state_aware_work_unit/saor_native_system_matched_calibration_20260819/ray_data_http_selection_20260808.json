@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "ready",
+  "selection": {
+    "adapter": "ray_data_http",
+    "batch_size": 16,
+    "calibration_selection": "ray-data-batch16-c8-measured-peak-of-c4-c8-c16-screen",
+    "concurrency_per_endpoint": 8,
+    "fingerprint": "b362b35c7258f8fc76c8b073ef547174583e1ecf047acf0293e979fd689a853b"
+  },
+  "evidence": {
+    "configuration_identity": {
+      "status": "verified",
+      "calibration_csv": "experiments/results/opening_text_native_gate_20260808/capability_and_raydata_calibration.csv",
+      "fingerprint_source": "deploy/autodl/opening_short_job_native_controls.example.json",
+      "formal_consumer": "experiments/results/opening_text_native_single_job_formal_20260808/"
+    },
+    "performance_selection": {
+      "status": "development_screen_only",
+      "reason": "C8/B16 was the measured peak in one C4/C8/C16 screen; it is frozen for matching, not claimed as a statistically established global optimum.",
+      "calibration_csv": "experiments/results/opening_text_native_gate_20260808/capability_and_raydata_calibration.csv",
+      "screened_concurrency_per_endpoint": [4, 8, 16]
+    }
+  }
+}

@@ -95,3 +95,38 @@ event 字段重新计算同一决策。这样即使在线公式写错，验证�
 - 远端行为：服务器恢复后，用文本 64 行 baseline gate、图像 256 行 resource/correctness
   gate 核对 CLI、summary schema、exactly-once 和 digest；
 - 只有远端 gate 与本地全量依赖测试都通过，才合并到 main，正式性能实验随后单独运行。
+
+## 8. 五臂 runner 为什么有两层 native 入口
+
+五臂 runner 负责“先跑哪个系统、Job 何时释放、如何验证完成证据”；它不会自己实现
+Daft 或 Ray Data 的执行图。对一个 native cell，它先调用 multi-job 编排层，把 Job0/Job1 分别拆成
+两个 endpoint shard；每个 shard 再调用 `run_official_baseline.py`，由 Daft/Ray Data 自己拥有执行
+与调度。因而 `--native-runner` 必须是后一个单 shard CLI，不能再次指向 multi-job 编排器。
+
+两类执行器的 request trace 目录不同：Project lifecycle 是 `jobs/job0.requests.csv`，native 是
+`jobs/job0/shard_0/requests.csv`。Project lifecycle 为控制 evidence，不保存生成正文；profiler 还要
+从内存中的 operator results 独立写 `jobs/job0.completions.csv`。runner 用冻结 manifest 作为
+expected doc-id 集合，对 completion trace 做完成、去重、行身份和内容 digest 门禁；它不写或回读
+`document_completions`。native shard trace 本身含 `output_text`。目录与 evidence 分工不同，但最终
+都进入同一 no-writeback correctness 合同。若 native 子进程失败，适配层必须先报告已经脱敏的
+primary failure，再停止 cell，不能让后续证据归一化用 `KeyError` 覆盖真正原因。
+
+Job release 还有两个容易混淆的时钟。`actual_launch_epoch_s` 表示父 runner 到达绝对 release
+barrier、即将 `Popen` 子进程；`source_arrival_epoch_s` 表示子进程启动、读完 PostgreSQL 并构造首条
+lifecycle request 后的时间。前者用来核验两臂共同的 0s/5s 外部 Job release，后者保留冷启动与
+source fetch 的真实延迟。SAOR 的 concrete-ready、credit registration 和 first submit 仍分别检查
+不得早于 release，因此把两个时钟分开不会放松 eager/ready-window 机制门。
+
+五臂的 request tail 与服务公平性不再依赖 Daft/Ray 是否暴露内部 scheduler。父 runner 在 Job
+release 前启动同一份严格透传 gateway；Job0/Job1 只通过不同 path 携带 identity，仍转发到冻结的
+同一两个 backend。gateway 不排队、不重试、不限并发、不重写 body，并把 request/forward body SHA、
+dispatch delay、HTTP status 与 endpoint `usage` 写入 cell-local JSONL。离线门重新哈希 trace，并核对
+四条 Job×endpoint route 的 upstream URL。公平性只在两 Job都有 gateway outstanding request 的
+共同积压窗口内，以实际完成 token work 计算 weighted share、Jain、empirical lag 和 longest
+no-service；它不把请求数或完成行数当 work，也不把这类经验观测写成理论公平保证。
+
+系统边界同时保留五个时钟：T0=实际 Job release（在 PostgreSQL 读取和 child/Ray 初始化之前），
+T1=首批已验证 source data 进入执行器，T2/T3=gateway 观察的首请求到达/末请求完成，T4=完整结果在
+内存中通过 exactly-once/content 校验并可见。Job JCT=T4-T0，group JCT=max(T4)-min(T0)，正确吞吐=
+endpoint actual tokens/group JCT；另报 source=T1-T0、execution=T4-T1、service span=T3-T2。
+`writeback=none` 下 T4 不需要 PostgreSQL sink，完成 digest 是边界外的证据封存，不进入计时。

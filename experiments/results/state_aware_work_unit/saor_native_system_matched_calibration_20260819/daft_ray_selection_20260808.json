@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "status": "ready",
+  "selection": {
+    "adapter": "daft_ray",
+    "batch_size": 1,
+    "calibration_selection": "vendor-owned-default-prompt-api",
+    "concurrency_per_endpoint": 1,
+    "fingerprint": "18a62a8af0b4baeb157aa7216658897a6f3dfad470bc743f4990de8da9273760"
+  },
+  "evidence": {
+    "configuration_identity": {
+      "status": "verified",
+      "calibration_csv": "experiments/results/opening_text_native_gate_20260808/capability_and_raydata_calibration.csv",
+      "fingerprint_source": "deploy/autodl/opening_short_job_native_controls.example.json",
+      "formal_consumer": "experiments/results/opening_text_native_single_job_formal_20260808/"
+    },
+    "performance_selection": {
+      "status": "not_applicable",
+      "reason": "Daft prompt() on Ray owns execution and scheduling; C1/B1 preserves the published vendor-default control and is not claimed as a searched optimum."
+    }
+  }
+}

@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
@@ -66,6 +67,7 @@ class _FakeProcess:
                     "output_tokens": 2, "output_text": "ok", "finish_reason": "stop",
                 })
         adapter = command[command.index("--adapter") + 1]
+        source_query_start_epoch_s = time.time()
         (output / "summary.json").write_text(
             json.dumps(
                 {
@@ -73,6 +75,9 @@ class _FakeProcess:
                     "source_kind": "timed_postgres_manifest",
                     "source_timing_boundary": "inside_job_barrier",
                     "source_read_s": 0.01,
+                    "source_query_start_epoch_s": source_query_start_epoch_s,
+                    "first_batch_ready_epoch_s": source_query_start_epoch_s,
+                    "result_visible_epoch_s": source_query_start_epoch_s,
                     "source_validation_status": "ok",
                     "server_version": "18.4",
                     "pgvector_version": "0.8.5",
@@ -175,6 +180,32 @@ class NativeMultiJobTests(unittest.TestCase):
             "idle_timeout_s": 1.0, "launch_lead_s": 0.0, "warmup_repeats": 1,
             "formal_repeats": 1, "schedule_seed": 9, "endpoint_work_skew_max": 0.02,
             "minimum_measurement_seconds": 0.000001,
+            "native_implementation_provenance": {
+                "daft_native": {
+                    "upstream_url": "https://github.com/Eventual-Inc/Daft",
+                    "upstream_version": "0.7.21",
+                    "upstream_commit": "7e52cc9911eb9bc6c566d83be34b44972543fbb0",
+                    "adapter_path": str(
+                        Path(__file__).resolve().parents[4]
+                        / "code/src/baselines/text/frameworks/daft_prompt.py"
+                    ),
+                    "adapter_sha256": "84a433432f2af70db42f5fc3a8ac82fb45426c31e0b457c0f1d884750372c665",
+                    "upstream_source_modified": False,
+                    "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+                },
+                "ray_data_http": {
+                    "upstream_url": "https://github.com/ray-project/ray",
+                    "upstream_version": "2.56.1",
+                    "upstream_commit": "936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a",
+                    "adapter_path": str(
+                        Path(__file__).resolve().parents[4]
+                        / "code/src/baselines/text/frameworks/ray_data_http.py"
+                    ),
+                    "adapter_sha256": "4c63dd435efa2c869b74514a80e8bb9441c26d07544847b6ae9ee5620a217528",
+                    "upstream_source_modified": False,
+                    "adapter_diff_status": "thin_adapter_only_no_upstream_patch",
+                },
+            },
             "arms": arms,
         }
         path = root / "config.json"
@@ -251,6 +282,7 @@ class NativeMultiJobTests(unittest.TestCase):
             arm = payload["arms"][0]
             arm["adapter"] = "duckdb_ai"
             arm["ray_address"] = None
+            payload.pop("native_implementation_provenance")
             path.write_text(json.dumps(payload), encoding="utf-8")
 
             parsed = load_native_multijob_config(path).arms[0]
@@ -272,6 +304,19 @@ class NativeMultiJobTests(unittest.TestCase):
                 command[command.index("--duckdb-max-concurrent-requests") + 1],
                 str(parsed.concurrency_per_endpoint),
             )
+
+    def test_native_upstream_commit_or_adapter_hash_drift_fails_closed(self) -> None:
+        for field, value in (
+            ("upstream_commit", "0" * 40),
+            ("adapter_sha256", "0" * 64),
+        ):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                path = self._config(Path(directory))
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload["native_implementation_provenance"]["daft_native"][field] = value
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "provenance drift"):
+                    load_native_multijob_config(path)
 
     def test_schedule_is_deterministic_and_rotates_formal_positions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -464,6 +509,49 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertIn("gpu_summary", record)
             self.assertIn("gauge_summary", record)
             self.assertFalse((output_dir / "matrix_index.json").exists())
+
+    def test_single_cell_uses_job_labelled_observation_routes_only_at_http_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_native_multijob_config(self._config(root))
+            arm = config.arms[0]
+            routes = {
+                job.job_id: (
+                    f"http://127.0.0.1:9100/observe/{job.job_id}/endpoint-0/v1/chat/completions",
+                    f"http://127.0.0.1:9100/observe/{job.job_id}/endpoint-1/v1/chat/completions",
+                )
+                for job in arm.jobs
+            }
+            record = run_native_multijob_cell(
+                config,
+                arm,
+                NativeRunIdentity("formal", 1, 0),
+                root / "observed-cell",
+                runner_script="runner.py",
+                popen_factory=_FakeProcess,
+                queue_waiter=self._queues,
+                counter_sampler=self._counters,
+                repository_commit="abc123",
+                cell_instrumenter=self._instrumentation,
+                endpoint_urls_by_job=routes,
+            )
+
+            self.assertEqual(record["status"], "passed")
+            for job in arm.jobs:
+                commands = json.loads(
+                    (
+                        root / "observed-cell" / "jobs" / job.job_id / "commands.json"
+                    ).read_text(encoding="utf-8")
+                )
+                self.assertEqual(
+                    [
+                        command[command.index("--endpoint-url") + 1]
+                        for command in commands
+                    ],
+                    list(routes[job.job_id]),
+                )
+                self.assertIn("first_batch_ready_epoch_s", record["jobs"][0])
+                self.assertIn("result_visible_epoch_s", record["jobs"][0])
 
     def test_sealed_native_cell_artifacts_survive_root_move(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

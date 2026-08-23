@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-14
+最后更新：2026-08-20
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -8,6 +8,12 @@
 > README、manifest 和 CSV 为准。
 
 ## 1. 当前重点
+
+- **下一轮系统对照已收敛为五臂**：Daft Native、Daft Native/Ray、Ray Data native graph、
+  project frozen-static、SAOR，共用 vLLM FCFS、PostgreSQL source/sink 和 typed Job release。
+  原生臂不接 project K/W/credit/bounded-ready；旧 FIFO/DRR/VTC-style/strict-priority 只作历史
+  内部消融。官方 VTC 单列 S-LoRA 同栈 FCFS/VTC capability，当前因 4090/model/runtime 未验证
+  而 blocked，未授权、未上服务器、不能进入 database-E2E 排名。
 
 - **开题 framing 已冻结**：题目保持“数据库 AI 负载的执行优化与调度研究”，统一对象是
   Database 与 Model Service 之间的 AI Data Execution Layer。
@@ -66,8 +72,17 @@
 
 ## 2. 课题定位
 
-研究数据库 AI 算子外部分布式数据处理链路中，上游如何组织请求、估计工作量、控制提交节奏，
-并根据模型服务状态协调 CPU 数据准备与 GPU 推理。项目不修改 vLLM、Ray scheduler 或模型 kernel。
+研究 PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行：数据库通过 extension 中
+planner-visible operator 拥有 SQL、child plan、snapshot 和 query lifecycle，并流式交接最小必要
+row batches；LOTUS v1.2.4 直接提供 `sem_map` 语义实现，Daft/Ray/SAOR/vLLM 承担可替换物理
+执行。主路径不使用 LOTUS DataConnector/`pd.read_sql` 外拉整表。项目不 fork PostgreSQL core，
+也不修改 vLLM、Ray scheduler 或模型 kernel。权威实施计划见
+`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`。
+
+当前最短期交付是“LOTUS 语义入口迁移”：使用冻结 v1.2.4 的真实 `SemMapNode`、
+messages 和 output parser，把项目自写 UDF/manifest-like `AI_COMPLETE` 变成
+`lotus.sem_map@v1.2.4`，而 Daft/Ray/static/SAOR 只做物理 backend。先用 emulated operator
+contract 研究数据执行，再以 PostgreSQL extension/CustomScan 小规模验证真实 SQL/query lifecycle。
 
 两项研究内容保持不变：
 

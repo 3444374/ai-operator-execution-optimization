@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "status": "ready",
+  "selection": {
+    "adapter": "daft_native",
+    "batch_size": 1,
+    "calibration_selection": "vendor-owned-default-prompt-api",
+    "concurrency_per_endpoint": 1,
+    "fingerprint": "82476d4e1753d8e8909409c748e936d887e0e485329adae5364ba4feb2b70ae9"
+  },
+  "evidence": {
+    "configuration_identity": {
+      "status": "verified",
+      "calibration_csv": "experiments/results/opening_text_native_gate_20260808/capability_and_raydata_calibration.csv",
+      "fingerprint_source": "deploy/autodl/opening_short_job_native_controls.example.json",
+      "formal_consumer": "experiments/results/opening_text_native_single_job_formal_20260808/"
+    },
+    "performance_selection": {
+      "status": "not_applicable",
+      "reason": "Daft prompt() Native owns execution and scheduling; C1/B1 preserves the published vendor-default control and is not claimed as a searched optimum."
+    }
+  }
+}

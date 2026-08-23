@@ -57,6 +57,19 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
 | `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但旧 SAOR 未越过 static；bounded-ready 只冻结 $0.125W_e$。同窗口 selector attribution 与 single-head→bounded-ready FIFO observation bridge 均已完成，SAOR 是观测非支配折中而非 selector winner，`formal_authorized=false`。下一步只补 Daft Native/Daft Ray/Ray Data/project static/proposed 系统级 matched comparison；原生系统 baseline 不接 bounded-ready，4-Job/reservation/dynamic K 仍后置 |
+| `postgresql_lotus_ai_semantic_operator_implementation_20260821.md` | **PostgreSQL 内置 AI 语义算子实施主计划** | 当前优先用真实 LOTUS v1.2.4 `sem_map` 替换项目 UDF/manifest-like `AI_COMPLETE`，Daft/Ray/static/SAOR 只做可替换 backend；性能轨使用 emulated operator contract，PG extension/CustomScan 作 SQL/query-lifecycle 资格门。含 Q1–Q23 决策记录、两类 LOTUS baseline、两 panel 矩阵和分阶段验收 |
+| `lotus_semantic_frontend_execution_integration_20260821.md` | **LOTUS `sem_map` 语义实现 + backend 子计划** | 细化 LOTUS AST/prompt/output parity、native LM、project backend 和版本锁定；服从 PostgreSQL 内置算子主计划。未修改 DataConnector 完整路径必须保留为外部 LOTUS 产品 baseline |
+
+2026-08-21 起，上表“系统级 matched comparison”专指五臂 PostgreSQL-source→validated-completion
+operator-E2E（统一 `writeback=none`）；不再生成 FIFO/DRR/
+VTC-style selector development cells。官方 VTC 使用独立 S-LoRA 同栈 FCFS/VTC capability 配置，
+只进入服务机制表，当前为兼容性未验证的 blocked 状态。历史 selector rehearsal 结果不删除，
+但不得重新标成 native baseline 或拼进五臂排名。
+
+同日新增的 `saor_cross_layer_scheduler_capability_20260820.md` 是另一组独立能力合同：四个 headline
+arms 为 Daft Ray + native FCFS/DRR-on-vLLM reproduction/VTC-on-vLLM reproduction 与
+SAOR + native FCFS。当前 installed-source、Job identity 和 custom-FCFS parity 均未过门，状态
+blocked、server validation 未运行、formal 未授权；不得据其发布性能排名。
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
