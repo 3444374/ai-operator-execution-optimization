@@ -1,35 +1,27 @@
-# research/reading_notes/ — 项目级精读笔记权威库
+# research/reading_notes/ — 泛读笔记库
 
-本目录是**所有论文精读笔记的权威来源**（project-level，单一来源）。其他位置（开题精读快照、Obsidian wiki）都是本目录的衍生。
+本目录用于论文筛选、快速回顾和背景事实摘录。目录内现有 49 篇笔记是历史积累，深度不完全一致；从 2026-08-21 起，它们统一按**泛读笔记**管理，不再作为项目精读笔记的权威来源。
 
-## 内容
+## 内容与格式
 
-- **49 篇精读笔记**（`<短名>_<会议年份>.md`，按 `tpl-文献精读-深度版.md` 四层结构：基本信息 → 论文结构分析 → 批判性评估 → 与课题连接）。
-- **2 个模板**：`tpl-文献精读-深度版.md`（深度精读）、`tpl-文献泛读.md`（泛读）。
-- **配图**：`figs/`（16 张论文原图，服务于笔记讲解；14 篇笔记引用）。
+- 单篇笔记平铺保存，命名为 `<短名>_<会议年份>.md`。
+- 新增泛读使用 `tpl-文献泛读.md`，重点回答“论文做什么、与项目是否相关、是否值得精读”。
+- `figs/` 保留现有笔记引用的历史配图；新精读配图放到对应论文自己的 `figures/` 中。
+- 个别历史文件的 front matter 仍可能包含 `deep-reading` 或旧状态字段；这些是迁移前的历史标签，无需统一清理或继续维护，也不改变本目录当前的泛读定位。
 
-## 来源与选取链路（provenance）
+## 与精读库的关系
 
-1. **候选池**：`research/ai_operator_literature_inventory.md`——按 Top 15、核心补充、工程资料和题录勘误分级。
-2. **精读**：本目录现有 **49 篇**权威笔记；2026-07-29 新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、FairServe、DLPM、Autellix、Chiron。
-3. **Top 15 排名**：`research/top15_ranked_papers.md` 当前 15/15 为严格 CCF-A 正式 research paper，均已有本目录笔记和本地 PDF。
+- 精读笔记的权威来源是 `../精读文献笔记/`。
+- 同一篇论文可以同时有一份泛读笔记和一份精读笔记：泛读版负责快速索引，精读版负责方法、实验、局限和项目连接的完整分析。
+- 一篇论文决定晋升为精读时，不在本目录继续扩成长文；应按精读库目录合同新建独立论文文件夹，并在两份笔记之间互相链接。
+- `opening/literature/top15_reading_notes/` 是既有开题 Top 15 笔记快照，不随新精读库自动更新。
 
-> 链路：题录核验 → 文献分级 → 全文精读 → Top 15 排名 → 开题精读快照（`opening/literature/top15_reading_notes/`）。
+## 来源与编辑规则
 
-## 与开题 top15 快照的关系
+1. 先在 `../ai_operator_literature_inventory.md` 核验正式题录与轨道。
+2. PDF 与权威题录由 `../reference/REFERENCE_INDEX.md` 管理。
+3. 结论必须区分论文事实、官方资料、本地实验事实、合理推断和待确认。
+4. 不把摘要、microbenchmark 或未核验材料扩展成系统性结论。
+5. 新增或删除笔记后，按根目录规则更新 `research/README.md`、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`；若 PDF 有变化，同时更新 `REFERENCE_INDEX.md`。
 
-- `opening/literature/top15_reading_notes/` 是本目录中 **Top 15 这 15 篇笔记的拷贝快照**（自包含交付，含同级 `figs/`）。
-- **权威版始终在本目录**；快照为开题答辩交付用，笔记更新后需重新 `cp` 到快照目录。
-- 精读清单与状态见 `opening/literature/reading_list.md`。
-
-## 配图说明（figs/）
-
-- 论文原图，从 `research/reference/<x>.pdf` 抽取：嵌入栅格图直抽（像素级精确）；矢量图按"图题锚定 + 彩色∪矢量范围 + 列/页宽 + getbbox 收紧 + 28px 留白"裁剪。
-- 命名 `<短名>_fig<N>.png`，与笔记相对路径 `figs/<x>.png` 一致。
-- 笔记内以 `![图 N · 描述](figs/<x>.png)` 嵌入，置于"## ▎配图（辅助讲解）"或"## ▎图复审补充"区块。
-
-## 编辑规则
-
-- 新增精读：先入 `ai_operator_literature_inventory.md` 候选池 → 按模板写笔记 → 登记 `reading_list.md` → 若进 Top 15 则 cp 到快照目录。
-- 笔记内容必须区分：论文事实 / 官方文档 / 本地实验事实 / 合理推断 / 待确认（遵循 `karpathy-guidelines`）。
-- 不把 microbenchmark 结论写成系统性结论；不把未核验资料写成事实。
+当前 Wiki 脚本仍会把本目录的 Markdown 同步到 `raw/papers/`。同步动作以 `../knowledge_sync_guide.md` 和项目当前冻结状态为准。

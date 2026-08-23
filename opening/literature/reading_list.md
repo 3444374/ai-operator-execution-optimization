@@ -1,6 +1,6 @@
 # 文献精读清单
 
-更新日期：2026-07-29
+更新日期：2026-08-23
 
 ## 选择原则
 
@@ -12,7 +12,8 @@
 
 ## 当前统计
 
-- `research/reading_notes/` 现有 **49 篇权威精读笔记**（不含 README 和两个模板）。
+- `research/reading_notes/` 现有 **49 篇历史文献笔记**，从 2026-08-21 起按泛读库管理（不含 README 和泛读模板）。
+- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 八篇主笔记，共 65 张论文原图裁剪件，本目录不维护阅读状态。
 - 旧文档“33 篇已完成”已经过时；原编号到 41 还混入了两篇未下载条目，也不能作为实体笔记数。
 - 当前 Top 15 为 15/15 严格 CCF-A 正式论文，快照在 `top15_reading_notes/`。
 - `research/reference/` 当前有 21 份可解析 PDF；Top 15 的 15 份全部齐全。
@@ -39,6 +40,21 @@
 
 ## 核心补充精读
 
+### 当前开题正文的八篇精读主线
+
+| 方向 | 论文 | 正文作用 |
+|---|---|---|
+| 数据库 AI 查询 | Cortex AISQL | AI 代价进入数据库计划选择，说明生产系统需求 |
+| 数据库 AI 查询 | LOTUS | 语义算子、质量要求与声明式优化 |
+| 数据组织 | Optimizing LLM Queries in Relational Data Analytics Workloads | 行与字段重排、关系统计和前缀缓存复用 |
+| 分布式执行 | Ray | 动态任务图与有状态执行单元 |
+| 异构流水线 | Ray Data Streaming Batch | 动态分区、内存控制与 CPU/GPU 流水执行 |
+| 应用编排 | AYO | 任务单元、阶段依赖和数据流图驱动的批处理 |
+| 多作业调度 | VTC | 在线服务量记账、空闲后重新加入和不依赖预测的基础方法 |
+| 数据组织与模型服务 | BlendServe | 资源需求均衡与前缀局部性之间的取舍 |
+
+这八篇是当前开题报告第二章的主要论证来源。其余 Top 15 和核心补充文献仍保留，用于补充数据库实现路线、模型服务机制、评价指标和代价估计方法，但不与已完成全文精读的工作平铺成同等篇幅。
+
 ### 数据库 AI 系统与 benchmark
 
 | 文献 | 状态 | 作用 |
@@ -61,7 +77,7 @@
 | Splitwise | ISCA 2024 | prefill/decode 分池边界 |
 | Ray Data Streaming Batch | arXiv 2025 | 官方数据引擎执行模型 |
 
-### 其他已有权威笔记
+### 其他已有泛读/历史笔记
 
 ```text
 bucketserve_2025.md
@@ -124,5 +140,4 @@ splitwise_isca2024.md
 
 ## 模板
 
-- 权威深度模板：`research/reading_notes/tpl-文献精读-深度版.md`
 - 泛读模板：`research/reading_notes/tpl-文献泛读.md`

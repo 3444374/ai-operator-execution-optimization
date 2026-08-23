@@ -255,6 +255,6 @@ batch/K/actor；禁止把两个维度同时上涨后归因。
 
 **触发条件**（满足任一即提醒）：
 - 用户在对话中说"记住""记下来""同步到知识库""加到 wiki"等——**立即执行同步**
-- 会话中**任何知识文件被创建或修改**（`research/`（含 `reading_notes/`、`reference/`）、`opening/literature/`（精读清单与 Top15 拷贝）、`experiments/plans/` 下的 `.md`，或用户指定的新知识路径）——**会话结束前提醒**
+- 会话中**任何知识文件被创建或修改**（`research/`（含泛读 `reading_notes/`、精读 `精读文献笔记/`、`reference/`）、`opening/literature/`（精读清单与 Top15 拷贝）、`experiments/plans/` 下的 `.md`，或用户指定的新知识路径）——**会话结束前提醒**
 
 **操作指南**——执行同步时读取 `research/knowledge_sync_guide.md`。

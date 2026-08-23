@@ -13,7 +13,7 @@
 - `report/`：开题报告正文、Word 转写材料、学校模板适配记录。
 - `slides/`：开题 PPT 源稿、讲稿备注、PPTX 输出和模板适配说明。
 - `feishu/`：飞书进度汇报稿、周/月度同步材料。
-- `literature/`：开题文献精读清单（`reading_list.md`）与开题精读 Top 15 拷贝（`top15_reading_notes/`）。单篇精读笔记与 PDF 全集在 `research/reading_notes/` 与 `research/reference/`。
+- `literature/`：开题文献精读清单（`reading_list.md`）与既有 Top 15 笔记快照（`top15_reading_notes/`）。泛读笔记在 `research/reading_notes/`，新的权威精读笔记在 `research/精读文献笔记/`，PDF 在 `research/reference/`。
 - `assets/`：PPT 可复用图、SVG、表格、流程图和模板素材说明。
 - `logs/`：非实验类 project log，记录开题材料、文献、PPT、飞书同步变更。
 

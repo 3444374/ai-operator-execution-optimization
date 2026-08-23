@@ -2,12 +2,15 @@
 
 Date: 2026-07-26
 
+Updated: 2026-08-21（文献笔记分层路径）
+
 ## 1. 用途与边界
 
 本文档是“如何继续从文献中提取可落地优化机制”的单一入口，同时登记当前
 Daft → Ray → vLLM → PostgreSQL 执行链中尚未闭环的机制缺口。它不替代：
 
-- `research/reading_notes/`：论文事实与逐篇精读；
+- `research/reading_notes/`：泛读、筛选与快速回顾；
+- `research/精读文献笔记/`：论文事实核验与逐篇全文精读；
 - `strategy_design_literature_basis.md`：论文写作口径与不能过度声称的边界；
 - `strategy_design_implementation_reference.md`：已有模块与工程接口；
 - `experiment_status_and_gaps.md`：实验完成度和证据强弱；

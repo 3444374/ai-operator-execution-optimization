@@ -1,12 +1,13 @@
 # 开题工作区
 
-## 2026-07-29 文献与研究问题基线
+## 2026-08-21 文献与研究问题基线
 
 - 开题 Top 15 已升级为 15/15 严格 CCF-A 正式 research paper；权威清单见
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
-- `../research/reading_notes/` 当前有 49 篇权威精读笔记，
-  `../research/reference/` 当前有 21 份可解析 PDF，Top 15 PDF 15/15 齐全。
+- `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
+  `../research/精读文献笔记/`，当前共 8 篇主笔记和 65 张论文原图裁剪件。`../research/reference/`
+  当前有 21 份可解析 PDF，Top 15 PDF 15/15 齐全。
 - Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
   CCF-A full research。
 - 开题保持两项研究内容：数据组织；调度与提交控制。代价估计升级为两项内容
@@ -49,8 +50,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | `report/` | 开题报告正文与 Word 版本材料 |
 | `slides/` | PPT 源稿、讲稿备注、PPTX 输出 |
 | `feishu/` | 飞书进度汇报稿 |
-| `literature/` | 开题文献精读清单（`reading_list.md`）+ 开题精读 Top 15 拷贝（`top15_reading_notes/`）；单篇精读笔记与 PDF 全集已迁至 `research/reading_notes/` 与 `research/reference/` |
-| `literature/top15_reading_notes/` | 开题要求精读的 Top 15 篇笔记拷贝（自包含快照，含 figs）；权威版在 `research/reading_notes/` |
+| `literature/` | 开题文献精读清单（`reading_list.md`）+ 既有 Top 15 笔记快照（`top15_reading_notes/`）；泛读、精读和 PDF 分别在 `research/reading_notes/`、`research/精读文献笔记/` 与 `research/reference/` |
+| `literature/top15_reading_notes/` | 2026-07-29 Top 15 笔记自包含历史快照（含 figs）；不随新精读库自动更新 |
 | `assets/` | 图、SVG、表格、流程图、模板素材说明 |
 | `logs/` | 非实验类 project log |
 
@@ -60,8 +61,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表** |
-| 开题报告 | `report/opening_report.md` | 2026-08-23 完成两项基础方法与代价信息增强关系修订：研究内容一、二不依赖代价估计也能独立运行，代价估计主要支持数据库计划与多 SQL 编排，并作为可选信息分别参与增强实验；已有系统依据集中在第 2.2、2.3 节，第 2.4 和第 3.2 节不重复展开；正文仍为学校模板七部分、11 张图片和 48 条参考文献 |
-| 开题报告 QA | `report/opening_report_20260820_qa.md` | 模板结构、证据边界、术语、图表、46 条引文与进度一致性审查；2026-08-12 版本保留为历史审查记录 |
+| 开题报告 | `report/opening_report.md` | 2026-08-23 完成精读文献主线与两项基础方法修订：八篇全文精读工作均在第二章承担主要论证，其他文献作为补充；研究内容一、二不依赖代价估计也能独立运行；正文仍为学校模板七部分、11 张图片和 51 条参考文献 |
+| 开题报告 QA | `report/opening_report_20260820_qa.md` | 模板结构、证据范围、术语、图表、51 条引文、八篇精读文献覆盖和进度一致性审查；2026-08-12 版本保留为历史审查记录 |
 | 开题报告专用图片 | `report/figures/` | 保存正文实际引用的 11 张图和 3 张配套候选图副本；权威图源仍在 `../figures/opening_figure_set/` |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
@@ -69,8 +70,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
-| 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读（笔记全集在 `research/reading_notes/`） |
-| 开题精读 Top 15 拷贝 | `literature/top15_reading_notes/` | 开题要求精读的 15 篇笔记自包含快照 |
+| 文献精读清单 | `literature/reading_list.md` | 候选清单已补；未来全文精读进入 `research/精读文献笔记/` |
+| 开题 Top 15 历史快照 | `literature/top15_reading_notes/` | 15 篇既有笔记的自包含快照，不代表新精读库完成状态 |
 | GPU 调度与数据放置补充调研 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | 已补，作为策略控制器设计依据与后续精读清单 |
 | 本地 PDF 子集索引 | `research/reference/README.md` | 已登记当前已下载的部分论文，非完整文献库 |
 | 答辩问答 | `qa_bank.md` | 2026-08-09 已完成四部件、baseline provenance、两/四 Job、K256/K512、sink 与跨模态攻击面审计 |

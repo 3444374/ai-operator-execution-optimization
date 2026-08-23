@@ -152,6 +152,14 @@
 | `figures/audit/top_venue_strategy_figure_design_notes.md` | 顶会系统论文方法图设计备忘 | 重绘策略设计图前阅读，采用 control-loop + running example + compact rule table |
 | `figures/audit/strategy_figure_micro_design_points.md` | 策略图小机制设计点与论文下载清单 | 重绘策略图前拆分 batch/partition、反压、路由、写回约束和规则表等小图 |
 | `figures/audit/local_reference_figure_reading_notes.md` | 本地 PDF 图形阅读笔记 | 记录已下载论文中的机制图经验，并合并到运行时控制闭环图方案 |
+| `figures/audit/lotus_deep_reading_figures_audit_20260821.md` | LOTUS 精读配图选择与裁剪审计 | 核对论文 Figure 1/4/6/7 的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/ayo_deep_reading_figures_audit_20260822.md` | AYO 精读配图选择与裁剪审计 | 核对 ASPLOS 正式版 Figure 1/3–12（不含 Figure 2）的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/cortex_aisql_deep_reading_figures_audit_20260822.md` | Cortex AISQL 精读配图选择与裁剪审计 | 核对论文 Figure 1/7/9/10/11/12 的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md` | Ray Data Streaming Batch 精读配图选择与裁剪审计 | 核对 arXiv v5 Figure 2/4/5/6/7/9 的选择理由、版本边界、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/ray_osdi2018_deep_reading_figures_audit_20260822.md` | Ray OSDI 2018 精读配图选择与裁剪审计 | 核对正式版 Figure 4/5/6/7/8/10/11/12/14 的选择理由、来源页码、输出 SHA256、裁剪方式和视觉 QA |
+| `figures/audit/blendserve_deep_reading_figures_audit_20260822.md` | BlendServe 精读配图选择与裁剪审计 | 核对 ASPLOS ’26 正式版 Figure 1–7/9/10/11 的选择理由、simulation 边界、来源页码、输出 SHA256、裁剪方式和视觉 QA |
+| `figures/audit/vtc_deep_reading_figures_audit_20260822.md` | VTC 精读配图选择与裁剪审计 | 核对 arXiv v2 Figure 1/2/3/4/6/8/9/10/12/15/16/19 的选择理由、OSDI ’24 对应关系、来源页码、输出 SHA256、裁剪方式和视觉 QA |
+| `figures/audit/relational_llm_queries_deep_reading_figures_audit_20260822.md` | Relational LLM Queries 精读配图选择与裁剪审计 | 核对 MLSys 2025 论文全部 Figure 1–6 的独立论证角色、来源页码、scope/correctness 边界、输出 SHA256、裁剪方式和视觉 QA |
 # PROJECT_INDEX.md
 
 本文件是项目索引，供 Codex 快速定位材料。先读 `AGENTS.md`，再按任务类型读本文件中的对应材料。
@@ -479,8 +487,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/report/figures/` | 开题报告正文专用图片副本与来源映射 | Markdown 转 Word 或核查图文一致性时读 |
 | `opening/report/opening_report_20260812_qa.md` | 中文开题报告模板、图表、引用、实现边界和 PPT 口径审计 | 冻结或复核开题发布材料时读 |
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
-| `opening/literature/top15_reading_notes/` | 开题精读 Top 15 拷贝 | 15/15 严格 CCF-A 正式 research paper 的自包含快照，权威版在 `research/reading_notes/` |
-| `research/reading_notes/` | 精读笔记权威库（49 篇 + 模板） | 所有精读笔记单一来源；新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、FairServe、DLPM、Autellix、Chiron |
+| `opening/literature/top15_reading_notes/` | 开题 Top 15 历史笔记快照 | 15/15 严格 CCF-A 正式 research paper 的自包含历史快照；不随新精读库自动更新 |
+| `research/reading_notes/` | 泛读笔记库（历史 49 篇 + 泛读模板） | 论文筛选、快速回顾和背景事实索引；历史笔记深度不一 |
+| `research/精读文献笔记/` | 精读笔记权威库（当前 8 篇、65 张论文原图） | 每篇论文独立目录；LOTUS、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
 | `research/reference/` | 当前可解析参考 PDF（21 份） | Top 15 PDF 15/15 齐全；题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
 | `research/top15_ranked_papers.md` | 开题 Top 15 | 15/15 CCF-A 正式论文；按 AI 算子、LLM 调度、Ray、代价估计组织 |

@@ -1,13 +1,13 @@
 ---
 type: paper-note
 tags:
-  - deep-reading
+  - broad-reading
   - semantic-operators
   - database-ai
   - optimization
   - pvldb2025
-status: 精读完成
 read_date: 2026-07-29
+deep_note: ../精读文献笔记/lotus_pvldb2025/lotus_pvldb2025.md
 ---
 
 # 精读笔记：LOTUS（PVLDB 2025）

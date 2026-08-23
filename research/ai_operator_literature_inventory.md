@@ -1,11 +1,13 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-07-29
+更新日期：2026-08-23
 
 权威 Top 15：`top15_ranked_papers.md`
 
 PDF 索引：`reference/REFERENCE_INDEX.md`
-精读笔记：`reading_notes/`
+泛读笔记：`reading_notes/`
+
+精读笔记：`精读文献笔记/`
 
 ## 一、开题 Top 15
 
@@ -28,6 +30,21 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | 代价估计 | GRACEFUL | ICDE 2025 | UDF 服务成本与放置 |
 | 代价估计 | COSTREAM | ICDE 2024 | operator placement、跨环境泛化 |
 | 代价优化 | Abacus | PVLDB 2026 | semantic operator 多目标 Pareto 优化 |
+
+### 当前重点精读主线
+
+以下八篇已经完成全文精读和论文原图核对，正式写作时优先用于建立研究问题、说明已有方法并收窄本课题要继续研究的部分。它们的轨道不同，重要性来自与课题的直接关系和精读深度，不因此改变正式题录等级。
+
+| 论文 | 正式状态 | 在开题报告中的主要作用 |
+|---|---|---|
+| LOTUS | PVLDB 2025 | 语义算子、质量要求和声明式优化 |
+| Cortex AISQL | SIGMOD Companion 2026 | 生产 AI SQL、AI 代价参与计划选择、谓词与语义连接改写 |
+| Optimizing LLM Queries in Relational Data Analytics Workloads | MLSys 2025 | 利用行、字段和关系统计重排请求，提高前缀缓存复用 |
+| Ray | OSDI 2018 | 动态任务图、任务与有状态执行单元的运行基础 |
+| Ray Data Streaming Batch | arXiv:2501.12407v5 | 异构流水线的动态分区、内存控制和资源调度 |
+| AYO | ASPLOS 2025 | 保留应用任务、阶段依赖和数据流图信息，进行跨模块流水执行与批处理 |
+| VTC | OSDI 2024 | 不依赖输出长度预测的在线服务量记账与公平调度 |
+| BlendServe | ASPLOS 2026 | 离线请求重排、资源需求均衡与前缀局部性的共同考虑 |
 
 ## 二、核心补充文献
 
@@ -131,7 +148,8 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 
 ## 六、当前本地状态
 
-- `research/reading_notes/`：49 篇权威精读笔记（不含 README 和模板）。
+- `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
+- `research/精读文献笔记/`：精读笔记权威库，当前包含 LOTUS、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 八篇主笔记，共 65 张论文原图裁剪件；不维护阅读状态字段。
 - `research/reference/`：本轮保留 21 份可解析 PDF，其中 Top 15 的 15 份全部齐全。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。

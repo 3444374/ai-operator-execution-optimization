@@ -1,13 +1,13 @@
-# 开题精读 Top 15：自包含快照
+# 开题 Top 15 笔记：自包含历史快照
 
 更新日期：2026-07-29
 
-本目录保存当前开题 Top 15 的精读笔记快照。权威版本在 `research/reading_notes/`，选择和排序依据在 `research/top15_ranked_papers.md`。
+本目录保存 2026-07-29 开题 Top 15 的既有笔记快照。选择和排序依据在 `research/top15_ranked_papers.md`。从 2026-08-21 起，`research/reading_notes/` 按泛读库管理，新的权威全文精读进入 `research/精读文献笔记/`；本目录不随新精读库自动更新。
 
 ## 核验状态
 
 - 15/15 为严格 CCF-A 正式 research paper。
-- 15/15 已有权威精读笔记。
+- 15/15 已有本目录历史笔记快照；这不代表新精读库已完成 15/15。
 - 15/15 已有本地可解析 PDF。
 - Tutorial、Companion、CIDR、MLSys、arXiv 不计入本 Top 15。
 
@@ -31,6 +31,6 @@
 
 ## 维护规则
 
-- 修改精读内容时先改 `research/reading_notes/<name>.md`，再覆盖本快照。
+- 本目录原则上保持冻结；若开题交付明确要求刷新，再从对应的当前权威笔记生成新快照并记录日期。
 - PDF 统一放在 `research/reference/`，正式引用以 DOI/官方题录为准。
-- 核心补充文献不复制到本目录；它们仍在 `research/reading_notes/`。
+- 核心补充文献不复制到本目录；泛读见 `research/reading_notes/`，精读见 `research/精读文献笔记/`。

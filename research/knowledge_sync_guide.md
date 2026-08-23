@@ -38,11 +38,13 @@ cd ../ai-operator-wiki && bash sync-wiki.sh --back raw/papers/文件名.md
 | 项目路径 | → | Wiki 路径 |
 |---|---|---|
 | `research/*.md` | → | `raw/references/` |
-| `research/reading_notes/*.md` | → | `raw/papers/` |
+| `research/reading_notes/*.md`（泛读） | → | `raw/papers/` |
 | `research/reference/*.pdf` | → | `raw/papers/` |
 | `experiments/plans/*.md` | → | `experiments/plans/` |
 
 特殊路由：`literature_and_evidence_review.md` 和 `existing_ai_operator_execution_chains.md` 在脚本中自动从 `raw/references/` 移到 `raw/analysis/`。
+
+`research/精读文献笔记/*/*.md` 采用两级目录，目前尚未进入自动同步范围。项目当前暂停 Wiki 同步；恢复前必须在 `sync-wiki.sh` 增加递归映射，并为同名泛读/精读笔记设计无覆盖冲突的 Wiki 目标名。
 
 ## 手动映射（research/ 评估/清单 + opening/reading_list）
 
@@ -84,7 +86,7 @@ cd ../ai-operator-wiki && bash sync-wiki.sh --back raw/papers/文件名.md
 
 **显式触发**：用户在对话中说"记住""记下来""同步到知识库""加到 wiki"等表达——**立即执行同步**，不要等到会话结束。
 
-**隐式触发**：会话中任何知识文件（`research/`（含 `reading_notes/`、`reference/`）、`opening/literature/`（精读清单与 Top15 拷贝）、`experiments/plans/` 下的 `.md`，或用户指定的新路径）被创建或修改——**会话结束前提醒一次**。
+**隐式触发**：会话中任何知识文件（`research/`（含泛读 `reading_notes/`、精读 `精读文献笔记/`、`reference/`）、`opening/literature/`（精读清单与 Top15 拷贝）、`experiments/plans/` 下的 `.md`，或用户指定的新路径）被创建或修改——**会话结束前提醒一次**。
 
 触发不依赖文件名或内容类型——只要知识目录下有变更，或者用户表达了记住意愿，就是触发条件。
 

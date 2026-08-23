@@ -333,12 +333,14 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 ### 4.2 空白口径复审
 
-2026-07-16 的检索没有发现直接研究“数据库/数据引擎上游组织与 vLLM continuous batching 协同”的正式论文；2026-07-29 补入 LOTUS、Palimpzest、SemBench、VTC、Llumnix、Abacus 等工作后，必须把空白收窄：
+2026-07-16 的早期检索没有发现直接研究“数据库/数据引擎上游组织与 vLLM continuous batching 协同”的正式论文。后续全文精读表明，已有工作已经覆盖了其中若干重要部分，研究空白必须进一步收窄：
 
-1. LOTUS、Palimpzest、Abacus 已覆盖 semantic operator 的质量/成本/调用数优化；
-2. VTC、Llumnix、FairServe、DLPM 已覆盖 serving 内部或服务层的公平和动态调度；
-3. Ray Data/Daft 已提供批数据执行和官方 LLM 接口；
-4. 仍缺少的是：在不修改 vLLM 的条件下，数据库 AI operator 的上游运行时如何用统一 work 估计协调数据组织、最小饱和压力、request-level replenishment 和多 job shared credit，并在同模型、同 work、同硬件的官方系统 baseline 上验证。
+1. LOTUS、Cortex AISQL、Palimpzest 和 Abacus 已覆盖 semantic operator 的质量、成本、调用数和执行计划优化；
+2. *Optimizing LLM Queries in Relational Data Analytics Workloads* 已证明数据库可以利用行、字段和关系统计信息重排请求，以提高 prefix cache reuse；
+3. BlendServe 已在 offline serving 内共同研究 resource balance 与 prefix locality，AYO 已利用 application primitive 和 graph topology 改善流水执行与 batching；
+4. VTC、Llumnix、FairServe、DLPM 已覆盖 serving 内部或服务层的服务量记账、公平和动态调度；
+5. Ray Data/Daft 已提供批数据执行、异构流水线和官方 AI 接口；
+6. 本项目继续研究的是：在不修改 vLLM 的条件下，数据库 AI operator 的上游运行时怎样保留数据库作业和分阶段工作信息，结合模型服务实际状态协调数据组织、提交速度、服务实例选择和多个作业，并在同模型、同工作量、同硬件的官方系统对照中验证。
 
 因此不能再使用“没有任何已有工作研究”之类绝对表述。
 
@@ -346,6 +348,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 | 论文 | 研究什么 | 不研究什么 |
 |---|---|---|
+| Optimizing LLM Queries in Relational Data Analytics Workloads (MLSys 2025) | 利用完整关系数据、函数依赖和列统计重排 row/field，提高 KV prefix reuse | 主要面向离线完整输入，不建模在线到达、复杂 cache eviction、多作业干扰和实际 endpoint state |
+| BlendServe (ASPLOS 2026) | offline serving 内的 resource-aware batching，同时考虑 compute/memory 需求和 prefix locality | 假定有足够大的可重排请求池，不覆盖数据库数据准备、Job 语义和上游多 endpoint 路由 |
+| AYO (ASPLOS 2025) | primitive-level application graph、跨模块 parallelism/pipelining 和 topology-aware batching | 入口是应用工作流并与 backend 配合，不覆盖数据库记录统计、外部黑盒服务和数据库多 Job 提交控制 |
 | Ray Data Streaming Batch (2025) | CPU/GPU 异构批处理管线 | 下游 continuous batching 反馈 |
 | NeuStream (EuroSys 2025) | DNN 流管线批处理 | LLM token/prefix 需求 |
 | HedraRAG (SOSP 2025) | RAG 中 CPU/GPU 协调 | 仅 RAG，非通用 AI SQL |
@@ -416,7 +421,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 以下 6 篇 2025-2026 年论文为项目文献搜索发现的新增来源，与 RC1（数据组织）和 RC2（提交控制）直接相关。详细内容见 `research/ray_actor_dynamic_batching_reference.md` §6.7-§6.12。
 
-**从 CONCUR (2025) 提取**（精读见 `research/reading_notes/concur_2025.md`）：
+**从 CONCUR (2025) 提取**（历史文献笔记见 `research/reading_notes/concur_2025.md`）：
 - **AIMD 可迁移到 request 级**：CONCUR 控制的是"活跃 agent 数"（粗粒度），我们可以把 AIMD 用到更细的 per-actor in-flight 请求数控制。**校正**：CONCUR **不使用 EWMA**——用瞬时 KV 使用率/命中率 + 宽死区（U_low=0.2 / U_high=0.5）+ 非对称 AIMD（α=2 增 / β=0.5 减）+ 双信号（proactive U_t + reactive H_t）
 - **KV cache 作为共享资源信号**：不只是队列深度，KV cache 使用率/命中率也应作为 K_max 调节的输入信号（**CONCUR 是 KV cache 信号的正确来源，CoLoRA 不是**）
 - **Middle-phase thrashing**：长期运行的推理 session 在内存耗尽前就会出现吞吐退化。**待确认**：CONCUR workload 是 agentic ReAct 多步 agent；本课题 DB operator 多为无状态单轮，middle-phase thrashing 前提可能不成立——KV cache 信号价值需在单轮场景重新验证
@@ -432,7 +437,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **前瞻性准入判断**：不只检查当前队列，还要预测"如果现在提交，会不会导致 in-execution 请求违反 SLA"——我们的 K_max 调节应具有预测性
 - **Universal Scalability Law 建模**：`生成速度 = f(并发请求数)`——可用 vLLM 的 profiling 数据拟合此函数。**校正（见 `saber_2025.md`）**：SABER 用 USL 做 per-request 准入预测，**不直接推导聚合 K_max**；K_max = √((1−α)/β) 上界是本课题扩展。USL 单瓶颈假设与 vLLM 双瓶颈（算力 + KV cache 非连续 preempt）存在张力，迁移前需做 out-of-sample 残差审计
 
-**从 CoLoRA (2026, ASP-DAC, CCF-C) 提取**（精读见 `research/reading_notes/colora_2026.md`）：
+**从 CoLoRA (2026, ASP-DAC, CCF-C) 提取**（历史文献笔记见 `research/reading_notes/colora_2026.md`）：
 - **校正**：CoLoRA 是**多租户 LoRA** 场景调度，APS 三信号 = 排队延迟 + adapter 驻留 + SLA 紧急度（**不含 KV cache**）；LBS 实为 load + queue 两信号。本课题 flush 的"三维信号"其**信号集**应归因于 CONCUR（KV cache）+ vLLM Prometheus（running/waiting）；CoLoRA 仅贡献多信号融合的闭环**架构模式**（CCF-C，非承重证据，数字为 "up to" best-case）
 - **Unified Scheduler 的全局反馈循环**：monitor → prioritize → place → batch → feedback 闭环——可作为 RC2 控制器架构骨架
 

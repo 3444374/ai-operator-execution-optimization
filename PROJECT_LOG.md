@@ -1,5 +1,57 @@
 # 项目日志
 
+## 2026-08-22 Relational LLM Queries 精读笔记配图补齐
+
+- 根据当前精读正文加入论文全部 Figure 1–6，共 6 个裁剪件；配图形成“fixed field ordering 反例—GGR 递归机制—Filter/Projection/RAG 主结果—Multi-LLM/Aggregation—70B 模型规模验证—accuracy correctness”的完整证据链。
+- 使用用户本地 `D:\开题\文献\Relational_LLM_Queries_mlsys2025.pdf` 的 15 页 MLSys 2025 论文，SHA256 `25E3F3B855A4ACBD12082990E2D76AE958D9776D7523203BDF68A5D91FDCE92B`。Algorithm 1 和 Table 1–7 已由正文逐行、逐表转写，不为增加图量重复截图；Appendix 没有额外 Figure。
+- Figure 1 只作 worst-case 构造，Figure 5 只验证 70B Filter，Figure 6 不外推到任意 open-ended task，并保留 Beer −6% 与正文“5% 内”的轻微冲突。裁剪件位于 `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/relational_llm_queries_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
+## 2026-08-22 VTC 精读笔记配图补齐
+
+- 根据 VTC 当前精读正文加入 Figure 1、2、3、4、6、8、9、10、12、15、16、19，共 12 个裁剪件；配图形成“调度位置—动态 cost/capacity—公平与 work-conservation—backlog 与异构 token cost—isolation/Counter Lift—真实 trace—理论量级消融—weighted fairness/length prediction”的证据链。
+- 使用用户本地 `D:\开题\文献\vtc_osdi2024.pdf`：24 页 arXiv v2（2024-06-05），对应 OSDI ’24 正式论文，SHA256 `2FA74F1E7FF787BDF4CE7702AC0C28BE0A4D627ECD08DAB19DF5B65F530060DA`。Figure 5/7/11/13/14/17/18/20 与 Table 1–6、Algorithm 1–4 已由入选图或正文转写覆盖，未为增加图量重复截图。
+- Figure 2 非精确示意、Figure 3 不是理论证明、Figure 9 题注到达率文字冲突、Figure 19 不改变 worst-case bound 等限制已随图写入正文；VTC 继续作为引擎内多 client 调度相关工作，本项目 external VTC-style 仍是 Project internal control。裁剪件位于 `research/精读文献笔记/vtc_osdi2024/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/vtc_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
+## 2026-08-22 BlendServe 精读笔记配图补齐
+
+- 根据 BlendServe 当前精读正文加入 Figure 1、2、3、4、5、6、7、9、10、11，共 10 个裁剪件；配图形成“batching 直觉—trace 异质性—顺序失衡—compute-density 模型—resource-aware prefix tree/dual scanner—主结果—locality 与 balance 机制证据—sensitivity”的完整链条。
+- 使用用户本地 `D:\开题\文献\blendserve_asplos26.pdf` 的 19 页 ASPLOS ’26 正式版，SHA256 `4BD27DE86137747BA0AC42C2D71AD369AD36BFB004EFC728895A8D0AA4A2CACC`。Figure 8/12–15、Table 1–4 与 Algorithm 1–3 已由正文数字、表格、公式和步骤覆盖，未为增加图量而重复截图；Figure 11 明确保留 simulated GPU backend 边界。
+- 发现论文目录原有空 `figure/` 占位目录后，按精读目录合同更名为 `figures/` 并写入裁剪件；选择、输出哈希与视觉 QA 见 `figures/audit/blendserve_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
+## 2026-08-22 开题报告第一章业务语境与章节分工精修
+
+- 基于用户关于“项目中的行”与真实数据库 AI 场景的进一步澄清，重写 `opening/report/opening_report.md` 第一章部分段落：加入电商评论业务表、普通筛选 SQL、概念性 AI SQL 和结果表，并用新闻摘要、工单分类补充说明数据库业务记录、AI 执行请求与数据库作业之间的关系。
+- 第一章仅保留业务背景、记录处理需求、容量与状态、请求与作业三类基本问题，以及课题目的和边界；将按工作量组批、算子兼容性和数据库批次与模型服务连续批处理的区别放入第 3.2 节，具体策略与验证继续留在第 4 部分。
+- 第 3.2 节补充 `3.2.1` 至 `3.2.3` 三级标题，明确两项正式研究内容以及共同支撑与跨模态验证的层次；代价估计仍只作为共同使能组件。
+- 本轮不改变项目方向、研究内容和实验结论，不生成 Word/PPTX，不同步飞书或 Wiki；相应分层检查已补入 `opening/report/opening_report_20260820_qa.md` 和 `opening/logs/project_log.md`。
+
+## 2026-08-22 Ray OSDI 2018 精读笔记配图补齐
+
+- 根据 Ray 当前精读正文加入 Figure 4、5、6、7、8、10、11、12、14，共 10 个裁剪件；Figure 10a/10b 分别放到 GCS reconfiguration 与 flushing 小节。配图覆盖 dynamic task graph、两层架构、bottom-up scheduler、完整 task/object 路径、locality/scalability、GCS 与 task/actor 容错、scheduler latency 消融和完整 RL 应用结果。
+- 使用用户本地 `D:\开题\文献\ray_osdi2018.pdf` 的 18 页 OSDI ’18 正式版，SHA256 `066FECEE9604CA232B5FBAEAA7DD260C88149A1BE6DD4357EF16705986B99290`。Figure 1–3 已由正文流程/代码覆盖，Figure 9/13 与 Table 1–4 的必要数据已转写，未为增加图量而重复截图。
+- 裁剪件放入 `research/精读文献笔记/ray_osdi2018/figures/`；选择、输出哈希与视觉 QA 见 `figures/audit/ray_osdi2018_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
+## 2026-08-22 Cortex AISQL 与 Ray Data 精读笔记配图补齐
+
+- 根据两篇当前精读正文筛选必要配图：Cortex AISQL 加入 Figure 1、7、9、10、11、12，覆盖系统架构、AI-aware 计划选择、predicate reordering、join placement、model cascade 与 semantic join rewrite；Ray Data 加入 Figure 2、4、5、6、7、9，覆盖执行模型、动态分区、内存感知调度、系统架构、端到端结果与机制消融。
+- 两篇均优先使用用户本地 `D:\开题\文献` 中的 PDF；Cortex 使用 13 页 SIGMOD Companion ’26 正式版（SHA256 `DE533CC29FD9B6B8F573E66B26878BD4943ECDFE67AF51A2DE2C6941D4EC6059`），Ray Data 使用 19 页 arXiv:2501.12407v5（SHA256 `2F720B1A040C89DC1E5469DF3A1C77D8ECC8A2C143E7E7B5876F13EA11AE4FD0`）。Ray Data PDF 首页没有正式 venue，未根据文件名外推 NSDI 2027。
+- 12 张裁剪件分别放入两篇论文目录的 `figures/`；未选图均由正文文字/表格充分覆盖或与入选图重复。选择、输出哈希与视觉 QA 见 `figures/audit/cortex_aisql_deep_reading_figures_audit_20260822.md` 和 `figures/audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
+## 2026-08-22 AYO 精读笔记配图补齐
+
+- 根据 AYO 当前精读正文筛选必要配图，最终加入 ASPLOS 正式版 Figure 1、3、4、5、6、7、8、9、10、11、12，覆盖 non-LLM latency 动机、表示转换、application-aware batching、系统架构、优化 e-graph、topology-aware batching、主实验、共置场景、两项消融和 overhead 分解。
+- 用户提供 `D:\开题\文献\ayo_asplos25.pdf` 后，以该 15 页正式版（SHA256 `98C93EC0804FCA7D549A1EF7430AC77BF71849884CD41BF764CF62FEA181AF7B`）替换同轮早期的 Teola 预印本裁剪与说明；最终笔记不再混用预印本图。源 PDF 未复制进项目参考子集，因此不改 `research/reference/` 计数。
+- Figure 2 已被正文 ASCII 流程完整转述；Algorithm 1/2 与 Table 2/3 已转写为可检索文字或 Markdown。11 张正式原图裁剪件放入 `research/精读文献笔记/ayo_asplos2025/figures/`，选择、SHA256 与视觉 QA 记录在 `figures/audit/ayo_deep_reading_figures_audit_20260822.md`。
+
+## 2026-08-21 文献笔记分层规则收口
+
+- 按用户确认将 `research/reading_notes/` 重新定位为泛读、筛选和快速回顾库；现有 49 篇历史笔记不搬迁、不改写，深度不一但不再作为精读权威来源。
+- 将用户新增的 `research/精读文献笔记/` 定为精读笔记唯一权威库，冻结“一篇论文一个独立目录 + 同名主笔记 + 可选 `figures/`”合同；用户随后确认精读库不使用统一模板。
+- 修正首篇目录名 `Lotus_plvd2025` 为 `lotus_pvldb2025`，为 LOTUS 主笔记补充来源和泛读互链；检测到用户同期更新正文后未覆盖其内容。用户明确不维护精读状态，已从目录合同和笔记元数据中移除状态字段。
+- 同步更新根/研究/开题入口、`PROJECT_INDEX.md` 和文献清单口径；既有开题 Top 15 目录保留为历史快照，不自动冒充新精读库内容。
+- 当前 Wiki 同步脚本只覆盖平铺的 `research/reading_notes/*.md`，尚未覆盖新精读库的两级路径；因项目当前暂停 Wiki 同步，本轮不修改 Wiki 仓库脚本，恢复同步前需补映射。
+- 根据 LOTUS 当前精读正文和正式 PVLDB PDF 选择 Figure 1、4、6、7：分别支撑算子组合程序、事实核验 trade-off、group-by trade-off 与统计保证验证。4 张原图以 4× PDF 裁剪件放入论文目录的 `figures/`，正文补充图号与双页码来源；Figure 2/3/5 因与现有文字重复未加入。选择与视觉 QA 记录在 `figures/audit/lotus_deep_reading_figures_audit_20260821.md`。
+
 ## 2026-08-20 开题报告正文精修与报告专用图集落位
 
 - 将用户确认的七部分开题报告底稿落实到 `opening/report/opening_report.md`，在不改变题目与两项研究内容的前提下完成针对性精修。
@@ -14104,3 +14156,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 已有系统依据集中放在第 2.2、2.3 节，第 2.4 节只归纳尚未覆盖的问题，第 3.2 节只简要承接；新增 Ray Data `map_batches` 和 vLLM 调度配置两条官方资料，参考文献增至 48 条。
 - 第 4.1 节说明基础方法与代价信息增强的后续对照，第 4.2.5 节继续把 429 条运行记录限定为当前文本环境中的离线估计实验，不将其解释为数据库优化、数据组织或多作业调度收益。
 - 同步更新报告审查记录、开题工作区状态和开题日志；报告图片、PPT、Word 文档和实验数据未修改。
+
+## 2026-08-23 精读文献主线与当前工作区统一提交
+
+- 将 `research/精读文献笔记/` 中八篇全文精读材料作为开题相关工作的主要文献来源：Cortex AISQL、LOTUS、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 分别支撑数据库 AI 查询、异构执行、数据组织和多作业调度论述。
+- `opening/report/opening_report.md` 第二章按上述八篇文献重组，新增 AYO、关系型 LLM 查询优化和 BlendServe 三条参考文献，当前共 51 条；同时依据正式论文页面修正 Cortex AISQL 和 Ray Data Streaming Batch 题录。
+- `research/ai_operator_literature_inventory.md`、`opening/literature/reading_list.md` 和 `research/knowledge_hub.md` 同步增加八篇精读主线，原有“缺少相关研究”的概括收窄为数据库跨模态工作描述、模型服务实际状态与上游多作业提交之间的衔接问题。
+- 五个精读主笔记文件名改为与论文目录同名，并同步五份配图审计中的引用路径；本次统一提交还包含用户此前新增的 65 张论文原图、八份配图审计以及工作区中其他待提交修改。

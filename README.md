@@ -76,7 +76,8 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 │   ├── existing_ai_operator_execution_chains.md
 │   ├── ai_operator_literature_inventory.md   # Top 15 + 核心补充 + 题录勘误
 │   ├── top15_ranked_papers.md                # 项目最相关 Top 15 排序
-│   ├── reading_notes/                        # 单篇精读笔记（49 篇）+ 模板
+│   ├── reading_notes/                        # 泛读、筛选与快速回顾笔记（历史 49 篇）
+│   ├── 精读文献笔记/                          # 每篇独立目录的精读笔记权威库
 │   └── reference/                            # 已下载参考文献 PDF（67 个）+ 索引
 ├── motivation/                       # 动机场景、端到端测试
 │   ├── AGENTS.md
@@ -154,7 +155,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 │   ├── report/opening_report.md
 │   ├── slides/
 │   ├── feishu/
-│   └── literature/                   # reading_list.md + top15_reading_notes/（精读全集在 research/）
+│   └── literature/                   # reading_list.md + 历史 Top 15 笔记快照
 ├── projects/                         # PPT 项目工程文件
 └── notes/                            # 沟通记录、待确认问题
     ├── AGENTS.md

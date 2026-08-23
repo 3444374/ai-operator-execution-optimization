@@ -1,6 +1,6 @@
 # Research Directory
 
-本目录维护数据库 AI 算子、LLM serving、Ray/数据引擎、算子代价估计与写回相关的一手论文、官方资料和精读笔记。
+本目录维护数据库 AI 算子、LLM serving、Ray/数据引擎、算子代价估计与写回相关的一手论文、官方资料、泛读笔记和精读笔记。
 
 ## 重点入口
 
@@ -10,7 +10,8 @@
 | `top15_ranked_papers.md` | 当前开题 Top 15；15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单 |
 | `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |
-| `reading_notes/` | 49 篇权威精读笔记及模板 |
+| `reading_notes/` | 49 篇历史文献笔记；从 2026-08-21 起按泛读、筛选和快速回顾管理 |
+| `精读文献笔记/` | 精读笔记权威库；当前 LOTUS、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 八篇主笔记共含 65 张论文原图裁剪件；各篇选图与版本边界见目录 README 和 `figures/audit/` |
 | `reference/REFERENCE_INDEX.md` | 当前工作区 21 份可解析 PDF 的权威题录和用途 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
@@ -22,7 +23,7 @@
 
 ## 文献分级
 
-1. **Top 15**：CCF-A 正式 research paper，必须有全文精读和本地 PDF。
+1. **Top 15**：CCF-A 正式 research paper，必须有本地 PDF；现有开题 Top 15 笔记是历史快照，承担关键论点的论文应在正式写作前补齐 `精读文献笔记/` 全文精读。
 2. **核心补充**：高度相关的 CIDR、MLSys、Tutorial、Companion、benchmark 或 arXiv；精确标注轨道，不冒充 CCF-A。
 3. **工程资料**：官方文档、源码和产品资料，只证明接口/工业需求，不证明学术新颖性。
 4. **项目证据**：真实实验 CSV/报告，用于验证本地因果，不由论文结论替代。
@@ -68,5 +69,6 @@
 
 - 新增文献先核验正式题录与轨道，再下载、精读和分类。
 - 不根据摘要直接重排 Top 15。
-- 新增/删除笔记或 PDF 时同步 `REFERENCE_INDEX.md`、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`。
+- 新增/删除泛读或精读笔记时同步本 README、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`；PDF 有变化时再同步 `REFERENCE_INDEX.md`。
+- 泛读可使用 `reading_notes/tpl-文献泛读.md`；精读不使用统一模板，按 `精读文献笔记/README.md` 的目录与内容要求组织。
 - 结论标明来源：论文、官方文档、源码、本地实验、合理推断或待确认。

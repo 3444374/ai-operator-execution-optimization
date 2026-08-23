@@ -1,8 +1,8 @@
 # Local Reference PDF Subset
 
-更新日期：2026-07-29
+更新日期：2026-08-21
 
-本目录保存当前工作区实际存在、已通过 PDF 解析检查的论文。权威题录和用途见 `REFERENCE_INDEX.md`，精读笔记见 `../reading_notes/`。
+本目录保存当前工作区实际存在、已通过 PDF 解析检查的论文。权威题录和用途见 `REFERENCE_INDEX.md`；泛读笔记见 `../reading_notes/`，精读笔记见 `../精读文献笔记/`。
 
 ## 当前状态
 
@@ -47,6 +47,5 @@ sembench_pvldb2026.pdf
 1. PDF 仅用于本地核验、精读和图表定位；正式引用以 DOI、会议/期刊官方题录为准。
 2. arXiv 版本若已有正式发表，笔记同时记录“本地文件版本”和“正式题录”。
 3. Companion、Demo、Tutorial、CIDR、MLSys、arXiv 不自动写成 CCF-A。
-4. 新增 PDF 后同步更新本 README、`REFERENCE_INDEX.md`、对应精读笔记和 `PROJECT_INDEX.md`。
+4. 新增 PDF 后同步更新本 README、`REFERENCE_INDEX.md`、对应泛读/精读笔记和 `PROJECT_INDEX.md`。
 5. 不根据摘要直接改 Top 15；必须完成题录核验和全文精读。
-
