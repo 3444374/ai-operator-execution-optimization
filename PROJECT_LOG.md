@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-08-24 Parrot 与 DLPM 精读纳入开题研究现状
+
+- 依据 `research/精读文献笔记/parrot_osdi2024/` 与 `research/精读文献笔记/dlpm_2025/`，在开题报告第 2.3 节补充两篇论文的研究问题、方法、实验条件、代表性结果和局限，并在第 2.4 节说明它们与本课题上游数据准备、请求释放和多作业调度问题的联系。
+- Parrot 段落说明语义变量如何保留多次模型调用的依赖、共享提示词和最终性能目标，并把 1.70～2.37 倍结果限定在论文的单 A100、LLaMA 13B 长文档摘要实验。DLPM 段落说明公平服务与前缀复用之间的冲突、D²LPM 的多副本扩展和长文档反例，并明确其公平性分析不能直接用于无法修改内部调度的模型服务。
+- 本轮只扩充第二章研究现状，不改第一章、两项研究内容、当前实验和 PPT。参考文献仍为 53 条；精读库现登记 15 篇主笔记和 115 张论文原图。
+
+## 2026-08-24 DLPM 精读笔记配图补齐
+
+- 根据当前精读正文加入论文全部 Figure 1–12，共 12 个裁剪件；配图形成“Qᵘ 权衡—LPM/VTC/DLPM 核心冲突—两层问题空间—centralized strawman 开销—D²LPM 两级架构—workload 结构—synthetic/real-trace 主结果—公平时间序列—Qʷ、client 数与 mixed workload 消融”的完整证据链。
+- 使用用户本地 `D:\开题\文献\dlpm_arxiv2025.pdf`：17 页 arXiv:2501.14312v1，SHA256 `440269188E4163E15FECCA730A2C91D4E8078F61118FC2DF3D60B5A191187A2B`。截至 2026-08-24，官方 arXiv 页面仍只有 2025-01-24 的 v1，未核验到正式会议/期刊 proceedings；继续按 arXiv preprint 记录，不由目录名推断 venue。
+- 原 Word 转换稿的 15 个 `assets/image*.png` 引用均无对应文件。本轮用 12 个真实 Figure 裁剪件替换；Table 1、Algorithm 1/2 已被逐项转写而不重复截图，Figure 1 的重复嵌入改为后文回指。Figure 7 的缺失点和 Long-Context worst-case、Figure 8 的 trace 重放、Figure 9 的不同横轴终点等边界已随图写入正文。选择、输出哈希与视觉 QA 见 `figures/audit/dlpm_deep_reading_figures_audit_20260824.md`；源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
+## 2026-08-24 新增精读文献纳入开题研究现状
+
+- 对照 13 篇全文精读笔记与开题报告第二章，确认原有 12 篇均已承担具体论证，新增 IMBridge 尚未进入正文。本轮只补充“国内外研究现状”，不改写第一章背景、研究内容和实验结论。
+- 新增 IMBridge 段落说明数据库数据交付批次与模型调用批次的区别、Prediction Function Rewriter 和 Decoupled Prediction Operator 的作用，并明确两组时间数字来自演示截图。由于论文未完整报告硬件、模型、数据规模和重复统计，报告没有将该数字外推为普遍收益，并交代了其未覆盖远程模型服务排队、多服务实例和多作业共享。
+- 报告参考文献由 52 条增至 53 条，并同步更新开题文献清单、QA、目录导航和精读统计。
+
+## 2026-08-24 IMBridge 精读笔记配图补齐
+
+- 根据当前精读正文加入论文全部 Figure 1–6，共 6 个裁剪件；配图形成“prediction query 用户接口—系统架构—两类 impedance mismatch—函数生命周期改写—Function Rewriter 演示—Decoupled Prediction Operator 演示”的完整机制与证据链。
+- 使用用户本地 `D:\开题\文献\IMBridge_2026.pdf`：4 页 SIGMOD-Companion ’24 demonstration paper，SHA256 `4E4E358BC0E842858C59F93BBA2329C1D6433FB59C36C07B56C7B90C48BA6B45`。发表年份按首页 ACM Reference Format、页眉和 DOI `10.1145/3626246.3654754` 记录为 2024，不由本地文件名中的 `2026` 推断。
+- Figure 3 右图只按 Q2 采样解读，Figure 5/6 只按 demo 截图解读；原文没有编号 Table 或 Algorithm，已转写的 automatic hoisting、buffer/slice 与 AIMD 描述不重复截图。裁剪件位于 `research/精读文献笔记/IMBridge_sigmod2024/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/imbridge_deep_reading_figures_audit_20260824.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+
 ## 2026-08-22 Relational LLM Queries 精读笔记配图补齐
 
 - 根据当前精读正文加入论文全部 Figure 1–6，共 6 个裁剪件；配图形成“fixed field ordering 反例—GGR 递归机制—Filter/Projection/RAG 主结果—Multi-LLM/Aggregation—70B 模型规模验证—accuracy correctness”的完整证据链。
@@ -14573,3 +14597,26 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - Sema 已由 VLDB 2026 官方程序确认为 Research Track 常规研究论文。报告、精读笔记、参考索引和图件审计把“录用状态”与“当前本地 arXiv v1 全文”分开记录；正式摘要的 26 个查询不再与 arXiv v1 的 20 个查询混用。PVLDB 卷期、页码和 DOI 尚未公开，未提前补造。
 - Autellix 的正式版本已更名为 Agentix，并发表于 NSDI 2026（2443—2459）；当前报告与文献地图改用正式名称和 venue，历史 arXiv 笔记保留旧名并增加版本提示。FairServe、DLPM、Ray Data Streaming Batch Model 和 CONCERTO 仍按预印本引用。
 - `opening/AGENTS.md`、`opening/work_rules.md` 与 `research/AGENTS.md` 增加正式版本优先和版本证据分离规则。参考文献总数、研究内容、实验数据、图片、PPTX、Word、飞书和 Wiki 均未改变。
+
+## 2026-08-24 开题报告模板、实验来源与图件可读性精修
+
+- 第三章恢复 Word 模板原题“研究目标与研究内容”；进度安排补齐文献深入调研、方法构建、实验验证、数据分析、论文初稿和初审，第六章补充判断研究目标是否达到的关键技术指标。
+- 正文区分计划中的 PostgreSQL AI 语义算子与当前实验物理入口，逐项说明 direct、DuckDB AI、Daft、Ray Data、项目文本路径和图像 CLIP 操作的实际来源；现有实验用于验证数据库读取之后的外部物理执行方式，后续再接入 PostgreSQL 查询计划与查询生命周期。
+- 研究内容二在首次需要的位置解释固定容量：所有作业合计可使用的请求位置和工作量空间保持不变，提交时占用、完成时释放，静态与共享方法只改变空出的提交机会怎样由不同作业使用。研究目标和后文删除重复定义。
+- 图 1 改用“AI 语义算子的外部物理执行”；图 6、图 9 和图像静态对照图改写难懂的内部词语；代价估计合成图拆为预测时间对照和配置排序/额外耗时两张大字号图。用户否决的目标路径/现状架构图保留为历史候选资产，当前报告不引用。
+- 52 条参考文献按模板统一作者、会议/期刊、页码、DOI 与在线资源格式；尚未公开的题录字段不补造。同步更新报告 QA、图片映射、图件审计和项目索引；未修改 PPTX、Word 模板或源实验数据。
+- 根据最终版面反馈，代价估计图删除散点旁的中位数、平均值和最差值文字及摘要框，改由 panel 外图例说明圆点、菱形、深色圆点和混合模型颜色；正文继续给出具体数值。
+- 重写 ShareGPT 三路径实验的比较说明：项目结果本身有效，但项目与直接静态路径使用的提交容量不同，当前时间差不能归因于项目方法；DuckDB 则因达到输出上限时返回空值，与另外两条路径保留截断文本的含义不同。删除重复的平均每次有效行数口径。
+
+## 2026-08-24 开题报告术语与计时口径复核
+
+- 开题报告保留既有七部分结构和两项研究内容，统一语义工作项、批次请求、模型服务请求、固定容量和作业分配的含义。
+- 报告同步 PostgreSQL 18.3 planner-visible AI 语义算子与 LOTUS v1.2.4 `sem_map` 的当前项目方向，明确现有外部路径只能先验证数据库读取之后的物理执行行为。
+- SQuAD 三条数据库读写路径的项目臂计时比另外两臂多包含指标采集、运行记录和作业结束处理，当前绝对时间与正确结果吞吐不再用于细微性能排名。图 10 同步更正文案，未修改实验数据。
+- 数据组织、两作业共享和图像路径的结论按现有对照条件收紧；后续研究计划补入 LOTUS 语义入口迁移、PostgreSQL 扩展、查询取消、错误返回和结果管理验证。PPT、Word、飞书和源实验数据未修改。
+
+## 2026-08-24 ShareGPT C128 database-E2E 双臂纠正补测计划
+
+- 在 `experiments/plans/opening_database_e2e_p0_20260807.md` 增加服务器恢复后执行的 ShareGPT C128 补测合同，并同步 `experiments/plans/README.md` 与 `PROJECT_INDEX.md` 入口说明：只比较 direct static C128 与 project frozen-static K128/W65,536，复用同一 2,048 行 manifest、Chat/cap=256、PostgreSQL source/sink 和 1 warm-up + 3 formal；不重跑 DuckDB、SQuAD 或 C64/C256 扫描。
+- 计划要求以最小向后兼容改动让现有 matrix runner 支持 arm 子集和 direct 独立并发，记录实际 client peak inflight 与连接池上限，并使用独立两臂汇总器区分正确性有效、direct C128 容量复现和 project/direct 路径观察。该实验只能消除 C32 对 K128 的请求容量混淆，不能把剩余跨路径差异归因于单个数据组织或调度方法。
+- 当前仅补充计划，尚未修改 runner/config/test，未连接或启动 GPU 服务器，也未产生新实验数字。服务器开机后先保存 `manage_environment.py check` 报告并核对原双 RTX 4090 服务签名，再按全新输出目录执行。

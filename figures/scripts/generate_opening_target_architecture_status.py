@@ -162,20 +162,20 @@ def svg_arrow(x1, y, x2, color=C["line"]):
 
 
 TOP = [
-    ((50, 152, 240, 326), "SQL AI 算子", "PostgreSQL 18.3\nplanner 可见", C["blue_fill"], C["orange"], "待实现"),
-    ((270, 152, 460, 326), "关系 child plan", "snapshot、权限\n过滤与投影", C["blue_fill"], C["orange"], "待实现"),
-    ((490, 152, 680, 326), "有界行流", "RowEnvelope\n取消与错误传播", C["blue_fill"], C["orange"], "待实现"),
-    ((710, 152, 915, 326), "LOTUS sem_map", "v1.2.4 语义\nprompt 与输出", C["purple_fill"], C["orange"], "迁移中"),
-    ((945, 152, 1240, 326), "可替换外部物理后端", "Daft / Ray / static / SAOR\n组织、提交与路由", C["orange_fill"], C["orange"], "候选组合"),
-    ((1270, 152, 1550, 326), "模型执行与结果返回", "文本 vLLM\n图像 typed GPU actor", C["green_fill"], C["orange"], "待接入"),
+    ((50, 152, 240, 326), "AI 语义算子入口", "PostgreSQL 18.3\n查询规划器可见", C["blue_fill"], C["orange"], "待实现"),
+    ((270, 152, 460, 326), "关系算子输出", "数据快照、权限\n过滤与投影", C["blue_fill"], C["orange"], "待实现"),
+    ((490, 152, 680, 326), "有界记录流", "查询取消\n错误传播", C["blue_fill"], C["orange"], "待实现"),
+    ((710, 152, 915, 326), "AI 语义执行", "提示词构造\n输出解析", C["purple_fill"], C["orange"], "待接入"),
+    ((945, 152, 1240, 326), "Daft、Ray 等可替换后端", "数据组织\n提交与路由", C["orange_fill"], C["orange"], "候选组合"),
+    ((1270, 152, 1550, 326), "模型执行与结果返回", "文本 vLLM\n图像 GPU 执行单元", C["green_fill"], C["orange"], "待接入"),
 ]
 
 BOTTOM = [
-    ((50, 472, 240, 646), "PostgreSQL 外部读取", "当前由 runner\n读取固定输入", C["gray_fill"], C["green"], "已运行"),
+    ((50, 472, 240, 646), "PostgreSQL 外部读取", "当前由实验程序\n读取固定输入", C["gray_fill"], C["green"], "已运行"),
     ((270, 472, 460, 646), "Daft / Arrow", "分区、批量\n列式交接", C["blue_fill"], C["green"], "已运行"),
-    ((490, 472, 680, 646), "WorkDescriptor", "阶段工作量\n兼容性与局部性", C["blue_fill"], C["green"], "已运行"),
-    ((710, 472, 915, 646), "提交与多 Job 控制", "static / shared credit\n状态仅部分驱动", C["orange_fill"], C["green"], "有证据"),
-    ((945, 472, 1240, 646), "模型服务", "vLLM 文本服务\n图像 Ray GPU actor", C["green_fill"], C["green"], "已运行"),
+    ((490, 472, 680, 646), "工作描述", "阶段工作量\n兼容性与局部性", C["blue_fill"], C["green"], "已运行"),
+    ((710, 472, 915, 646), "提交与多作业控制", "静态分配 / 共享容量\n状态仅部分驱动", C["orange_fill"], C["green"], "有证据"),
+    ((945, 472, 1240, 646), "模型服务", "vLLM 文本服务\n图像 Ray GPU 有状态执行单元", C["green_fill"], C["green"], "已运行"),
     ((1270, 472, 1550, 646), "结果收集与写回", "结果归并\nPostgreSQL + pgvector", C["purple_fill"], C["green"], "已运行"),
 ]
 
@@ -183,19 +183,19 @@ BOTTOM = [
 def draw_png():
     image = Image.new("RGB", (W, H), C["bg"])
     draw = ImageDraw.Draw(image)
-    draw.text((52, 35), "目标数据库内算子路径与当前证据链", font=F["title"], fill=C["ink"])
-    draw.text((54, 83), "上层表示计划实现， 下层表示已运行路径。两者共享外部物理执行思想，但不能据此声称数据库内算子已经完成。", font=F["subtitle"], fill=C["muted"])
+    draw.text((52, 35), "计划中的数据库内 AI 语义算子入口与当前外部实验路径", font=F["title"], fill=C["ink"])
+    draw.text((54, 83), "上层是计划实现的数据库内入口，下层是已经运行的外部实验路径；现有实验结果不能证明数据库内算子已经完成。", font=F["subtitle"], fill=C["muted"])
 
-    draw.text((52, 119), "目标路径", font=F["lane"], fill=C["orange"])
+    draw.text((52, 119), "计划中的数据库内入口", font=F["lane"], fill=C["orange"])
     for box, title, detail, fill, edge, status in TOP:
         stage(draw, box, title, detail, fill, edge, status, planned=True)
     for left, right in zip(TOP, TOP[1:]):
         arrow(draw, left[0][2] + 5, 239, right[0][0] - 5, C["orange"])
 
     draw.rounded_rectangle((330, 365, 1270, 431), radius=18, fill=C["white"], outline=C["orange"], width=2)
-    center_text(draw, (350, 372, 1250, 424), "进入正式 SQL 执行路径前需完成：child plan、snapshot、查询取消、错误传播与结果生命周期", F["body"], C["orange"])
+    center_text(draw, (350, 372, 1250, 424), "进入正式 SQL 执行路径前需完成：关系算子输出、数据快照、查询取消、错误传播与结果生命周期", F["body"], C["orange"])
 
-    draw.text((52, 439), "当前可运行证据链", font=F["lane"], fill=C["green"])
+    draw.text((52, 439), "当前已运行的外部实验执行路径", font=F["lane"], fill=C["green"])
     for box, title, detail, fill, edge, status in BOTTOM:
         stage(draw, box, title, detail, fill, edge, status, planned=False)
     for left, right in zip(BOTTOM, BOTTOM[1:]):
@@ -203,8 +203,8 @@ def draw_png():
 
     cards = [
         ((80, 712, 505, 810), "研究内容一：数据组织", "按工作量组织、局部性与兼容性"),
-        ((585, 712, 1010, 810), "研究内容二：提交与多 Job 调度", "请求释放、路由、额度与 Job 保护"),
-        ((1090, 712, 1520, 810), "共同使能：算子代价估计", "预测工作量、服务时间、剩余工作与余量"),
+        ((585, 712, 1010, 810), "研究内容二：提交与多作业调度", "请求释放、路由、额度与作业保护"),
+        ((1090, 712, 1520, 810), "共同支撑：算子代价估计", "预测工作量、服务时间、剩余工作与余量"),
     ]
     for box, title, detail in cards:
         draw.rounded_rectangle(box, radius=16, fill=C["white"], outline=C["blue"], width=2)
@@ -220,9 +220,9 @@ def draw_svg():
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="{C["bg"]}"/>',
-        svg_text(52, 68, "目标数据库内算子路径与当前证据链", 34, "700"),
-        svg_text(54, 104, "上层表示计划实现，下层表示已运行路径。两者共享外部物理执行思想，但不能据此声称数据库内算子已经完成。", 19, "400", C["muted"]),
-        svg_text(52, 141, "目标路径", 22, "700", C["orange"]),
+        svg_text(52, 68, "计划中的数据库内 AI 语义算子入口与当前外部实验路径", 34, "700"),
+        svg_text(54, 104, "上层是计划实现的数据库内入口，下层是已经运行的外部实验路径；现有实验结果不能证明数据库内算子已经完成。", 19, "400", C["muted"]),
+        svg_text(52, 141, "计划中的数据库内入口", 22, "700", C["orange"]),
     ]
     for box, title, detail, fill, edge, status in TOP:
         parts.append(svg_stage(box, title, detail, fill, edge, status, True))
@@ -230,8 +230,8 @@ def draw_svg():
         parts.append(svg_arrow(left[0][2] + 5, 239, right[0][0] - 5, C["orange"]))
     parts.extend([
         svg_rect((330, 365, 1270, 431), C["white"], C["orange"], False, 18, 2),
-        svg_text(800, 404, "进入正式 SQL 执行路径前需完成：child plan、snapshot、查询取消、错误传播与结果生命周期", 16, "400", C["orange"], "middle"),
-        svg_text(52, 461, "当前可运行证据链", 22, "700", C["green"]),
+        svg_text(800, 404, "进入正式 SQL 执行路径前需完成：关系算子输出、数据快照、查询取消、错误传播与结果生命周期", 16, "400", C["orange"], "middle"),
+        svg_text(52, 461, "当前已运行的外部实验执行路径", 22, "700", C["green"]),
     ])
     for box, title, detail, fill, edge, status in BOTTOM:
         parts.append(svg_stage(box, title, detail, fill, edge, status, False))
@@ -239,8 +239,8 @@ def draw_svg():
         parts.append(svg_arrow(left[0][2] + 5, 559, right[0][0] - 5, C["green"]))
     cards = [
         ((80, 712, 505, 810), "研究内容一：数据组织", "按工作量组织、局部性与兼容性"),
-        ((585, 712, 1010, 810), "研究内容二：提交与多 Job 调度", "请求释放、路由、额度与 Job 保护"),
-        ((1090, 712, 1520, 810), "共同使能：算子代价估计", "预测工作量、服务时间、剩余工作与余量"),
+        ((585, 712, 1010, 810), "研究内容二：提交与多作业调度", "请求释放、路由、额度与作业保护"),
+        ((1090, 712, 1520, 810), "共同支撑：算子代价估计", "预测工作量、服务时间、剩余工作与余量"),
     ]
     for box, title, detail in cards:
         parts.append(svg_rect(box, C["white"], C["blue"], False, 16, 2))

@@ -4,7 +4,7 @@
 
 | 报告图号 | 文件 | 正文作用 |
 |---:|---|---|
-| 图 1 | `fig01_external_ai_operator_assumptions.png` | 解释传统关系算子与外部 AI 算子的执行差异 |
+| 图 1 | `fig01_external_ai_operator_assumptions.png` | 解释传统关系算子与 AI 语义算子外部物理执行的差异 |
 | 图 2 | `fig02_ai_data_execution_gap.png` | 归纳数据库与模型服务之间需要衔接的信息 |
 | 图 3 | `fig07a_work_amount.png` | 动机问题一：固定行数不能表示文本 AI 处理工作量 |
 | 图 4 | `fig11_image_stage_evidence.png` | 动机问题一补充：图像准备、传递和模型执行需要分阶段描述 |
@@ -13,15 +13,17 @@
 | 图 7 | `fig09_text_native_multijob.png` | 动机问题三：原生路径中的四作业并发干扰 |
 | 图 8 | `fig03_work_unit_organization.png` | 解释研究内容一的工作描述、候选数据组织方法和评价 |
 | 图 9 | `fig04_state_aware_scheduling.png` | 解释研究内容二的提交、路由和多作业调度关系 |
-| 图 10 | `fig05_system_architecture.png` | 解释数据库记录经过组织、提交、模型执行和写回的总体方案 |
-| 图 11 | `fig06_text_baseline_boundaries.png` | 说明两组文本执行路径只能在各自条件内比较 |
-| 图 12 | `fig08_work_organization_regime.png` | 研究内容一的初步结果：数据组织效果随运行条件变化 |
-| 图 13 | `fig10_shared_credit_tradeoff.png` | 研究内容二的初步结果：总体效率改善不等于各作业收益均匀 |
-| 图 14 | `fig14_cost_decision_quality.png` | 共同支撑的初步结果：代价估计、候选排序和选择损失 |
-| 图 15 | `fig12_image_baseline_boundaries.png` | 跨模态可行性：图像静态执行路径的比较条件与结论范围 |
-| 图 16 | `fig13_image_multijob.png` | 跨模态可行性：图像原生路径中的四作业并发干扰 |
+| 当前不引用 | `fig05_system_architecture.png` | 历史 / 内部候选架构状态图；当前报告不引用，也不参与后续图号编排 |
+| 图 10 | `fig06_text_baseline_boundaries.png` | 说明两组文本执行路径只能在各自条件内比较 |
+| 图 11 | `fig08_work_organization_regime.png` | 研究内容一的初步结果：数据组织效果随运行条件变化 |
+| 图 12 | `fig10_shared_credit_tradeoff.png` | 研究内容二的初步结果：总体效率改善不等于各作业收益均匀 |
+| 当前不引用 | `fig14_cost_decision_quality.png` | 代价估计的原合成图，保留作整页概览或附录 |
+| 图 13a | `fig14a_cost_prediction_time.png` | 六种方法的预测时间与实测时间差异；报告正文先引用 |
+| 图 13b | `fig14b_cost_ranking_decision_loss.png` | 配置排序和错误选择后的额外耗时；紧接图 13a 引用 |
+| 图 14 | `fig12_image_baseline_boundaries.png` | 跨模态可行性：图像 baseline 的短规模诊断、同资源比较条件与结论范围 |
+| 图 15 | `fig13_image_multijob.png` | 跨模态可行性：图像原生路径中的四作业并发干扰 |
 
-`target_architecture_status.png` 不进入当前正文。图 1—图 2 为背景和研究缺口图，图 3—图 7 为三类动机问题的直接证据，图 8—图 10 为研究内容与总体方案图，图 11—图 16 为可行性和初步结果。共享额度图属于研究内容二的初步结果，不得再替代原生多作业干扰图充当第三类动机。
+`target_architecture_status.png` 与 `fig05_system_architecture.png` 是同一历史 / 内部候选架构状态图的两个副本，当前报告均不引用。共享容量图属于研究内容二的初步结果，不得替代原生多作业干扰图充当第三类动机。
 
 正式排版时优先使用这些 PNG 副本保证 Markdown 和 Word/WPS 兼容。若图中数据、术语或结论需要修改，应回到权威源及对应绘图脚本重新生成，再同步覆盖本目录，不能直接在 PNG 上改字或改数值。
 
@@ -34,3 +36,7 @@
 2026-08-24 报告恢复到 `4a2ba614` 叙事基线并作小幅修改，正文引用 11 张图。图 3 的研究内容一统一使用蓝色，图 4 的研究内容二统一使用橙色；图 5 的代价估计与数据库侧使用路径改为紫色公共部分，并修正方框居中、箭头尺寸和边界显示。仍不引用 `target_architecture_status.png`。
 
 2026-08-24 根据开题答辩 PPT 重新核对实验角色：第三章使用文本工作量、图像阶段、容量与状态指纹以及原生多作业干扰作为动机证据；数据组织、共享额度、代价估计、图像静态路径和图像多作业实验放在第四章作为初步结果或可行性依据。第一章图 1 同步为不含 `work/state/SLO` 方案字段的现有高层版本。
+
+2026-08-24 图件可读性专项修订：图 1 将“外部 AI 算子”准确改为“AI 语义算子的外部物理执行”；图 6 将运行、排队轴名和底部说明改为无需内部术语即可理解的中文；图 9 将容量、队列、执行、补位、释放与运行状态框统一中文化；代价估计原合成图保留为备用，并新增正文图 13a、13b 两张 A4 大字号拆分图，原合成图和图 13b 的散点区域均不再放置混合模型统计数字，统一由图外图例解释圆点、菱形、深色圆点和蓝色；图 14 保留 `baseline`，将 `setup-dominated`、`operator JCT`、`formal cell` 等图内简写改为自然中文。架构状态图资产只保留为历史 / 内部候选，当前报告不引用。完整审计见 `figures/audit/opening_report_figure_readability_audit_20260824.md`。
+
+2026-08-24 根据文本端到端计时复核结果同步图 10：左图改为“数据库读写端到端路径：SQuAD 质量可核对，性能暂不排名”，并注明项目路径计时多包含指标采集和记录处理。图中三条柱形、误差线和实验数值保持不变；权威源为 `figures/data/report_main/opening_text_baseline_evidence_map.{png,svg,pdf}`。

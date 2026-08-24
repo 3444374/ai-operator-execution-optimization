@@ -99,13 +99,15 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。标题只概括阶段失衡、传输形态与提交窗口，不提前导出项目机制。 |
 | `data/report_main/opening_image_stage_aware_evidence_part1_prepare.png` / `.svg` | 原图像动机图 panel a 的 16:9 拆分版；保留 batch 16/64/256 的中位数与 IQR。panel 标题为“图像也是分阶段工作量：张数描述不了阶段压力”，对齐动机“文本讲量、图像讲阶段”口径，不强调 CPU 主瓶颈。 |
 | `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window.png` / `.svg` | 原图像动机图 panels b–c 的 16:9 拆分版；保留 transfer ceiling 与 active-window screening 的原始口径。作为动机补充页“AI Work 需要分阶段描述”：panel b“输入表示改变阶段执行效率”（R0/R1/R2 表示对应不同阶段代价），panel c“阶段供给不匹配导致欠供给或等待堆积”；直接证据为 prepare/transfer/model 三阶段。 |
-| `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 纯数据图：左为 12K 同语义诊断，右为 120K matched-resource 正式对照；Direct CLIP/vLLM Pooling 等能力与角色边界改由报告独立表格呈现。 |
+| `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 纯数据图：左为 12K 小规模能力检查（初始化开销占主导，不作排名），右为 120K 同资源比较；Daft 内置路径的未完成原因用自然中文说明。 |
 | `data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | 图像四 Job 归一化干扰矩阵：列为 Short/Long 1--3，行为 Daft Built-in、Ray Data、Project static 与 Project shared；格内直标并发/独立 JCT 倍数和增幅，画法与文本原生四 Job 图统一。只作各路径内部比较；Project shared 的状态快照仅观测、不驱动动作。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 左图呈现 estimator 级 candidate pairwise；右图逐估计器完整展开 20 个 leave-one-context-out decision regret，以小菱形标中位数、同尺寸深色点标最坏 context，并同时显示平均 5%/最坏 15% 门槛；Hybrid平均2.90%、max 14.72%。Ridge逐行MAE更低但最坏选择regret更高，只称 marginal pass。 |
 | `data/report_main/opening_cost_model_decision_quality_v3.png` / `.svg` | 与 v2 相同的两 panel（配置排序 + 决策损失分布），唯一区别是 panel b 标题写全为“决策损失分布（模型预测最优与实际最优的偏离）（20 个场景）”：经校验该偏离（`argmin(predicted_mean_s)` 候选的实际偏离）在数值上等于 decision regret，二者是同一个量，故不单列第三 panel。v2 保留。 |
-| `data/report_main/opening_cost_model_decision_quality_v4.png` / `.svg` / `.pdf` | PPT 第 29 页专用三组图。图 a 用六个统一坐标的小图分别展示六种估计方法的 80 组候选均值：同一横坐标上的空心点为真实时间、实心点为预测时间，竖线长度为两者相差的秒数；每幅图直标中位相对偏差和平均绝对误差。图 b 保留四种在途工作量上限的两两排序准确率，图 c 保留 20 个留出场景的选择损失，并直接标出混合模型中位数 0、平均 2.90%、最差 14.72%。该图明确显示混合模型并非单点时间预测误差最小，只支持其在当前实验中的候选排序与选择结果较好。 |
+| `data/report_main/opening_cost_model_decision_quality_v4.png` / `.svg` / `.pdf` | 三组结果合成图。图 a 用六个统一坐标的小图分别展示六种估计方法的 80 组候选均值：同一横坐标上的空心点为真实时间、实心点为预测时间，竖线长度为两者相差的秒数；每幅图直标中位相对偏差和平均绝对误差。图 b 保留四种在途工作量上限的两两排序准确率，图 c 保留 20 个留出场景的选择损失；散点区域不放置统计数字，图外图例解释单个情境、中位数、最差情境和混合模型颜色。该图明确显示混合模型并非单点时间预测误差最小，只支持其在当前实验中的候选排序与选择结果较好。 |
+| `data/report_main/opening_cost_prediction_time_report.png` / `.svg` / `.pdf` | 报告图 13a：从 v4 原合成图拆出的六种方法真实—预测时间图，使用 11.0×7.4 英寸画布和不小于 14 pt 的图内文字，适合 A4 正文宽度插入。数据和 80 组候选均值口径不变。 |
+| `data/report_main/opening_cost_ranking_decision_loss_report.png` / `.svg` / `.pdf` | 报告图 13b：从 v4 原合成图拆出的配置排序与错误选择额外耗时图，使用 11.5×6.6 英寸画布和不小于 14 pt 的图内文字；排序准确率、20 个留出场景和 5%/15% 参考值均不变。散点区域不放统计摘要框，六项图外图例完整解释点型、混合模型颜色和参考线。 |
 | `data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 单 Job 主结果：Job JCT、vLLM waiting、单请求 queue time、TTFT 四项原单位对齐；说明相近 makespan 可掩盖请求级排队。Project 暂无同一 2,048-row graph→gather 正式点，故只在图注说明缺口，不用 database-E2E 或 512-row eager 诊断补位。 |
-| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | 单作业服务状态联合观察：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分过量排队与欠供给。Project 同样因计时与输入清单不匹配而不进入六项横向坐标。 |
+| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | 单作业服务状态联合观察：吞吐、正在运行请求数、排队请求数、KV、MFU、GPU 活跃率六项原单位对齐；区分过量排队与供给不足。图内底部说明不再使用 `formal` 或 `graph→gather` 等内部措辞。 |
 | `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | 同一总上限下的四 Job 对照图：每条线固定代表同一个 Job，从独立运行、1/4 份额、四 Job 静态竞争到共享方式，直接显示份额减少、并发竞争和共享未用份额的影响；右侧表格给出总体效率变化，进度折线说明四个 Job 都加快但改善幅度不同。静态与共享是同上限的两个互斥对照。 |
 
 统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
@@ -150,12 +152,12 @@ completion 路径；05 删除七个圆角修补 mask，并把窄卡文字改为�
 命名为 P12A/P13A。
 
 2026-08-12 又在 `architecture/editable/opening_background_20260812/` 增补第 2–4 页三张背景图：
-数据库 AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。
+数据库 AI 算子外部执行链路、传统数据库算子与 AI 语义算子外部物理执行的假设对照、相关工作分层。
 三图已按项目事实重写并通过 Draw.io 结构检查、1600×900 与 PPT 缩放目视审计；图集副本命名为
 `P02`、`P03`、`P04`。
 
 2026-08-16 按“背景现象 → 相关工作 → 研究空白 → 项目方案”的叙事顺序再次清理图资产：P02
-暂不修改；P03 改为通用外部 AI 算子六阶段链路，删除 Work Unit、credit、状态反馈和项目后端实现；
+暂不修改；P03 改为 AI 语义算子的通用外部物理执行六阶段链路，删除 Work Unit、credit、状态反馈和项目后端实现；
 P04 只保留相关工作分层与衔接不足；P05 只陈述三类研究空白，不提前展示方案。本轮没有重生成 PPT。
 
 02 后续按用户局部复核再次清理：Admission 标题改用卡片整行宽度，两个 Adapter 卡重排图标、
@@ -483,10 +485,14 @@ than larger background inflight. Tuned adaptive does downshift, but it is not
 yet better than static `K_max=8`.
 # Figure asset updates
 
+- 2026-08-24: 为 DLPM/D²LPM 精读笔记从用户本地 arXiv:2501.14312v1 PDF 选择并裁剪正文全部 Figure 1–12，输出到 `research/精读文献笔记/dlpm_2025/figures/`；配图覆盖 Qᵘ 吞吐—公平权衡、LPM/VTC/DLPM 冲突、两层问题空间、centralized overhead、D²LPM 架构、workload graph、synthetic 主结果、真实 trace、公平时间序列以及 Qʷ/client-scaling/mixed-workload 消融。Table 与 Algorithm 已由正文转写，不重复截图；原 Word 转换稿中重复的 Figure 1 只保留一份。版本、页码、SHA256、缺失点/Long-Context 反例与视觉 QA 见 `audit/dlpm_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 IMBridge 精读笔记从用户本地 4 页 SIGMOD-Companion ’24 PDF 选择并裁剪全部 Figure 1–6，输出到 `research/精读文献笔记/IMBridge_sigmod2024/figures/`；配图覆盖 prediction query 用户接口、系统架构、两类 impedance mismatch、函数生命周期改写及两项机制的演示结果。原文没有编号 Table 或 Algorithm，已转写内容不重复截图；本地文件名 `IMBridge_2026.pdf` 不作为发表年份，Figure 5/6 只按 demo 截图解读。版本、页码、SHA256 与视觉 QA 见 `audit/imbridge_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 根据开题报告计时口径复核，更新文本路径对照图 `opening_text_baseline_evidence_map`。左图不再写“SQuAD 结果可直接比较”，改为“质量可核对，性能暂不排名”，并说明项目路径的计时还包含指标采集和记录处理。三条柱形、误差线和原始实验数值均未改变；同步权威 PNG/SVG/PDF、开题图集与报告副本，审计见 `audit/opening_report_figure_readability_audit_20260824.md`。
 - 2026-08-24: 为 Sema 精读笔记从本地 arXiv v1 PDF 裁剪正文全部 Figure 1–8，输出到 `research/精读文献笔记/sema_vldb2026/figures/`，并替换笔记中失效的 `/mnt/data/sema_figures/` 临时路径。配图覆盖系统架构、SemaSQL 示例、端到端 workflow、总体 latency/quality、execution optimization、AQE breakdown 与 Q6 case study；Table 1、Algorithm 1 和附录 Figure 9–40 已有等价文字转写，不重复截图。版本边界、页码、SHA256 与视觉 QA 见 `audit/sema_deep_reading_figures_audit_20260824.md`。
 - 2026-08-24: 为 Abacus 精读笔记核对正式 PVLDB 版全部 Figure 1–8。新增目录中的 8 个 PNG 与论文一致，但正文错误引用不存在的 `assets/fig*.png`；现已统一修复为 `research/精读文献笔记/abacus_pvldb2026/figures/`，并在动机、系统流程、Cascades、三个 benchmark 查询计划、prior、约束响应和消融对应段落补充来源与证据边界。图号、页码、SHA256、视觉一致性和低分辨率边界见 `audit/abacus_deep_reading_figures_audit_20260824.md`。
 - 2026-08-24: 为 Palimpzest 精读笔记从本地 2024 arXiv v2 PDF 选择并裁剪全部 Figure 1–7，输出 7 个裁剪件到 `research/精读文献笔记/palimpzest_cidr2025/figures/`；配图覆盖系统流程、三个 SAPP 工作负载、声明式程序、关系代数、多模态依赖、实测 Pareto frontier 和 Policy 选择结果。附录 Figure 8–9 与已转写的 workload/程序信息重复，不加入正文；选图、CIDR 版本边界、页码、SHA256 与视觉 QA 见 `audit/palimpzest_deep_reading_figures_audit_20260824.md`。
-- 2026-08-24: 新增开题报告专用架构状态图 `architecture/opening_target_architecture_status.{png,svg}`，并同步报告副本 `opening/report/figures/target_architecture_status.png`。图中用上下两条路径区分目标 PostgreSQL planner-visible 算子链和当前外部可运行链，用实线与虚线同时编码实现状态，避免把现有性能证据写成数据库内算子已完成。生成脚本为 `scripts/generate_opening_target_architecture_status.py`，视觉与主张审计见 `audit/opening_target_architecture_status_audit_20260824.md`。
+- 2026-08-24: 新增实现状态候选图 `architecture/opening_target_architecture_status.{png,svg}` 及语义命名副本。该资产现只保留作历史 / 内部候选，当前报告不引用；生成脚本为 `scripts/generate_opening_target_architecture_status.py`，视觉与主张审计见 `audit/opening_target_architecture_status_audit_20260824.md`。
+- 2026-08-24: 完成开题报告图 1、图 6、图 9、图 13、图 14 的可读性专项。图 1 改为“AI 语义算子的外部物理执行”；图 6 将运行、排队轴名和底部说明自然中文化；图 9 将容量记录、队列选择、模型执行、补位、释放和运行状态框中文化；代价估计原合成图保留为备用并新增图 13a、13b 两张 A4 大字号拆分图，原合成图与图 13b 均删除散点区域内的统计数字 / 摘要框，以图外六项图例解释点型、颜色和参考线；图 14 保留 `baseline` 并自然化未解释简写。完整源映射、尺寸、哈希和视觉检查见 `audit/opening_report_figure_readability_audit_20260824.md`。
 - 2026-08-24: 为 Galois 精读笔记从本地 SIGMOD 2025 论文 PDF 选择并裁剪 Figure 1–4、7–11，输出 9 个裁剪件到 `research/精读文献笔记/galois_sigmod2025/figures/`；配图覆盖 DB-first 动机、predicate pushdown、Table-Scan/Key-Scan、logical-plan 枚举、logprob 过滤、query complexity 质量/成本、`τ` 校准和 oracle-optimal gap。Figure 5–6 的 prompt syntax 与 Table/Algorithm 已由正文转写，不重复截图；选择理由、页码、SHA256 与视觉 QA 见 `audit/galois_deep_reading_figures_audit_20260824.md`。
 - 2026-08-23: 修正开题报告图 2、图 3、图 5 和图 6，并同步权威源、开题专用图集与报告副本。图 2 用具体动作说明三项跨层能力；图 3 将 WorkDescriptor 基础字段与可选代价估计结果分开；图 5 将代价估计连接数据库优化器 / 多 SQL 调度，将实际运行状态返回提交与路由模块；图 6 只调整公开组名和说明文字，七个实验数值保持不变。完整路径、SHA256 和视觉检查见 `audit/opening_report_minimal_figure_corrections_audit_20260823.md`。
 - 2026-08-22: 为 Relational LLM Queries 精读笔记选择论文全部 Figure 1–6，并输出 6 个裁剪件到 `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/`；配图覆盖 fixed/per-row field ordering 动机、GGR 递归拆分、Filter/Projection/RAG 主结果、Multi-LLM/Aggregation、Llama-3-70B 趋势与 accuracy correctness。Algorithm 1 与 Table 1–7 已由正文转写，不重复截图；版本、选择理由、页码、SHA256 与视觉 QA 见 `audit/relational_llm_queries_deep_reading_figures_audit_20260822.md`。

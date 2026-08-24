@@ -7,7 +7,7 @@
 | 页码 | 权威源 | 图集副本 | 页面任务 |
 |---:|---|---|---|
 | 02 | `architecture/editable/opening_background_20260812/06_ai_native_execution_architecture` | `P02_背景_数据库AI算子外部执行链路` | 说明数据库 AI 算子已经形成数据库—外部执行—模型服务—写回链路 |
-| 03 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` | `P03_背景_传统算子与外部AI执行假设` | 对照传统成本字段与通用外部 AI 算子的多阶段执行链路 |
+| 03 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` | `P03_背景_传统算子与外部AI执行假设` | 对照传统成本字段与 AI 语义算子的通用外部物理执行链路 |
 | 04 | `architecture/editable/opening_background_20260812/08_related_work_landscape` | `P04_相关工作_跨层执行闭环` | 分层归纳代表工作，并指出数据库任务语义与服务运行信息衔接不足 |
 
 ## 内容边界
@@ -15,7 +15,7 @@
 - 06 按项目实际链路绘制 PostgreSQL、数据库 AI 算子、AI Data Execution Layer、文本 vLLM、
   图像 typed CLIP Ray GPU actor 与 PostgreSQL + pgvector 写回；不把 AI_FILTER 或模型服务内部
   batching 写成课题研究内容。
-- 07 只比较传统数据库算子与大众化外部 AI 算子的执行阶段，不声称性能高低；外部 AI 路径使用
+- 07 只比较传统数据库算子与 AI 语义算子的通用外部物理执行阶段，不声称性能高低；外部物理路径使用
   输入、预处理/传输、服务队列/动态 batching、模型推理、结果整理/写回的通用流程，不出现本项目的
   Work Unit、credit、state-aware admission/routing、typed Ray actor 或 SLO 设计。
 - 08 的系统归类和短标签以本地精读材料为证据；底部只指出四层工作各自演进以及任务语义—运行信息

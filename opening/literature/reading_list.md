@@ -13,7 +13,7 @@
 ## 当前统计
 
 - `research/reading_notes/` 现有 **49 篇历史文献笔记**，从 2026-08-21 起按泛读库管理（不含 README 和泛读模板）。
-- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 十二篇主笔记，共 97 张论文原图裁剪件，本目录不维护阅读状态。
+- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、Parrot、VTC、DLPM、BlendServe 和 IMBridge 十五篇主笔记，共 115 张论文原图裁剪件，本目录不维护阅读状态。
 - 旧文档“33 篇已完成”已经过时；原编号到 41 还混入了两篇未下载条目，也不能作为实体笔记数。
 - 当前 Top 15 为 15/15 严格 CCF-A 正式论文，快照在 `top15_reading_notes/`。
 - `research/reference/` 当前工作区有 4 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema）；其余 Top 15 的历史题录保留在索引中，使用前需恢复并核验文件。
@@ -40,20 +40,27 @@
 
 ## 核心补充精读
 
-### 当前开题正文的八篇精读主线
+### 当前开题正文的十五篇精读主线
 
 | 方向 | 论文 | 正文作用 |
 |---|---|---|
 | 数据库 AI 查询 | Cortex AISQL | AI 代价进入数据库计划选择，说明生产系统需求 |
 | 数据库 AI 查询 | LOTUS | 语义算子、质量要求与声明式优化 |
+| 数据库 AI 查询 | Palimpzest | 声明式语义计划、物理实现枚举和质量、时间与费用选择 |
+| 数据库 AI 代价优化 | Abacus | 逐算子采样、Pareto 计划搜索与决策质量评价 |
+| 数据库 AI 执行 | Sema | 数据库计划中的语义算子、组批、融合和自适应执行 |
+| 数据库 AI 优化 | Galois | 大语言模型调用与传统 SQL 算子的逻辑和物理优化 |
+| 数据库 AI 物理执行 | IMBridge | 分离数据库数据交付批次与模型调用批次，显式化预测算子的初始化和批处理 |
 | 数据组织 | Optimizing LLM Queries in Relational Data Analytics Workloads | 行与字段重排、关系统计和前缀缓存复用 |
 | 分布式执行 | Ray | 动态任务图与有状态执行单元 |
 | 异构流水线 | Ray Data Streaming Batch | 动态分区、内存控制与 CPU/GPU 流水执行 |
 | 应用编排 | AYO | 任务单元、阶段依赖和数据流图驱动的批处理 |
+| 应用感知模型服务 | Parrot | 保留多次模型调用的变量、依赖、最终目标和共享提示词信息 |
 | 多作业调度 | VTC | 在线服务量记账、空闲后重新加入和不依赖预测的基础方法 |
+| 公平性与前缀复用 | DLPM/D²LPM | 用服务余额限制最长前缀匹配的连续服务，并在多个模型服务副本间兼顾前缀复用与队列长度 |
 | 数据组织与模型服务 | BlendServe | 资源需求均衡与前缀局部性之间的取舍 |
 
-这八篇是当前开题报告第二章的主要论证来源。其余 Top 15 和核心补充文献仍保留，用于补充数据库实现路线、模型服务机制、评价指标和代价估计方法，但不与已完成全文精读的工作平铺成同等篇幅。
+这十五篇是当前开题报告第二章的主要论证来源。正文按各论文与课题问题的直接程度分配篇幅，不强求每篇等长。其余 Top 15 和核心补充文献继续用于补充数据库实现路线、模型服务机制、评价指标和代价估计方法。
 
 ### 数据库 AI 系统与 benchmark
 
@@ -127,7 +134,10 @@ splitwise_isca2024.md
 
 - vLLM/Orca/Sarathi-Serve 说明下游 continuous batching 和 token/KV 约束；上游优化应先达到 serving capacity ceiling，再比较压力效率、尾延迟和多 job 隔离。
 - VTC 说明 token-cost 公平可以 work-conserving 地实现；它不等于单请求 GPU 加速。
+- Parrot 说明多次模型调用之间的依赖、共享提示词和最终目标会影响服务端的分组与放置；它没有覆盖数据库中尚未形成请求的记录和上游数据准备过程。
+- DLPM/D²LPM 说明公平服务与前缀缓存复用需要共同考虑；其公平性分析依赖模型服务副本内部也采用相应调度，不能直接外推到无法修改内部调度的服务接口。
 - LOTUS、Galois、GaussML、Palimpzest、Abacus 说明 AI 算子需要声明式物理实现、质量/成本/延迟的联合选择。
+- IMBridge 说明数据库算子的数据交付批次不等于模型合适的调用批次；独立预测算子为每个函数单独组织输入提供了相关工作依据，但其演示结果不能直接证明远程模型服务和多作业调度收益。
 - Learned Cost Models、GRACEFUL、COSTREAM 说明代价模型的价值应由下游决策质量验证，而不是只比较误差。
 - SemBench 说明数据库 AI baseline 必须同时报告质量、调用数、token work、延迟、成本、内存与失败。
 

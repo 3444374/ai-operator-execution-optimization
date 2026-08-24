@@ -2,16 +2,17 @@
 
 本目录存放项目级图表的可复现生成脚本。脚本可用于 learning、开题报告、PPT、中期汇报和毕业论文图表复现。
 
-## 2026-08-24 开题目标架构与实现状态图
+## 2026-08-24 开题数据库内入口与外部实验路径状态图
 
 ```bash
 python3 figures/scripts/generate_opening_target_architecture_status.py
 ```
 
 脚本同时生成 `figures/architecture/opening_target_architecture_status.{png,svg}` 和
-`opening/report/figures/target_architecture_status.png`。图中上层是待实现的 PostgreSQL
-planner-visible AI 算子路径，下层是当前外部可运行证据链；实线、虚线和文字标签共同表示状态。
-该图不包含实验数据，也不能作为策略性能证据。完整审计见
+`opening/report/figures/target_architecture_status.png`。图中上层是计划实现的 PostgreSQL
+planner-visible AI 语义算子入口，下层是当前已运行的外部实验执行路径；实线、虚线和文字标签共同表示状态。
+图内不写具体语义运行时名称；`fig05_system_architecture.png` 是同一 PNG 的历史文件名。
+该资产当前只保留为历史 / 内部候选，报告不引用；它不包含实验数据，也不能作为策略性能证据。完整审计见
 `figures/audit/opening_target_architecture_status_audit_20260824.md`。
 
 ## 开题图集 SVG 便携化
@@ -49,6 +50,16 @@ python figures\scripts\generate_opening_story_figures_20260808.py --figures E
 真实时间—预测时间小图，并用竖线显示每组候选均值相差的秒数；图 b、c 分别展示四种在途工作量
 上限的两两排序和错误选择造成的额外耗时。每种方法使用 20 个留出情境 × 4 种上限 = 80 组
 候选均值；输入仍为 `ce_context_loo_rerun_20260807.json`，不会生成或修改实验数据。
+
+同一选择器还生成两张报告专用拆分图：
+
+- `opening_cost_prediction_time_report.{png,svg,pdf}`：六种方法的预测时间与实测时间差异；
+- `opening_cost_ranking_decision_loss_report.{png,svg,pdf}`：配置排序和错误选择后的额外耗时。
+
+两张拆分图与原合成图读取同一份数据并保持数值不变，按 A4 正文宽度重新设置画布和不小于
+14 pt 的图内文字。原合成图继续保留，不由拆分图覆盖。原合成图的图 c 与拆分排序图均不在
+散点区域放置中位数、平均值或最差值数字，也不绘制未解释的平均值三角；图外图例统一说明
+圆点、菱形、深色圆点、混合模型蓝色以及 5% / 15% 参考线。
 
 ## Python 图表脚本
 

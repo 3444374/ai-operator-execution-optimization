@@ -1,10 +1,10 @@
-# 07 传统数据库算子与外部 AI 算子：可编辑重构审计
+# 07 传统数据库算子与 AI 语义算子的外部物理执行：可编辑重构审计
 
 ## 角色与口径
 
 - 图类型：背景概念图 / 通用执行假设对比。
-- 核心结论：传统数据库算子的典型成本可由 rows、cardinality、CPU 与 I/O 概括；外部 AI 算子跨越输入、预处理与传输、服务排队与动态 batching、模型推理、结果整理与写回，成本不再由行数单独决定。
-- 叙事边界：本页只介绍大众化的外部 AI 算子执行链路，不出现本课题的 Work Unit、WorkDescriptor、credit、state-aware admission/routing、typed Ray actor 或 SLO 设计。
+- 核心结论：传统数据库算子的典型成本可由 rows、cardinality、CPU 与 I/O 概括；AI 语义算子的外部物理执行跨越输入、预处理与传输、服务排队与动态 batching、模型推理、结果整理与写回，成本不再由行数单独决定。
+- 叙事边界：本页只介绍 AI 语义算子通往外部模型服务的通用物理执行链路，不出现具体语义运行时名称，也不提前出现本课题的 Work Unit、WorkDescriptor、credit、state-aware admission/routing、typed Ray actor 或 SLO 设计。
 - 参考：`figures/audit/reference_opening_background_20260812/07_traditional_vs_external_ai_operator.png` 仅提供左右对照版式，不作为内容事实源。
 
 ## 可见元素 inventory
@@ -12,13 +12,13 @@
 | ID | 区域 | 内容与视觉描述 | 介质 | 状态 |
 |---|---|---|---|---|
 | C0 | 0,0,1600,900 | 16:9 白底画布 | native | accepted |
-| T1 | 顶部 | `传统数据库算子与外部 AI 算子的执行假设` | native text | accepted |
+| T1 | 顶部 | `传统数据库算子与 AI 语义算子的外部物理执行` | native text | accepted |
 | G1 | 标题下方 | 执行主流程、执行阶段、影响因素图例 | native | accepted |
 | P1 | 左侧 | rows/selectivity → CPU/I/O operator → result | native + SVG | accepted |
 | P2 | 右侧 | 输入记录 → tokenize/decode/resize → 请求构造与传输 → 服务队列与动态 batching → 模型推理 → 结果整理与写回 | native + SVG | accepted |
 | C1 | 左下 | rows、cardinality、CPU、I/O | native | accepted |
 | C2 | 右下 | 输入规模、预处理与传输、服务队列与 batch、模型计算、输出规模 | native | accepted |
-| K1 | 底部 | `AI 算子跨越多个执行阶段，成本不再由行数单独决定` | native | accepted |
+| K1 | 底部 | `AI 语义算子的外部物理执行跨越多个阶段，成本不再由行数单独决定` | native | accepted |
 | I1-I9 | 两侧流程卡 | 9 个不同的独立线性 SVG 图标 | independent SVG | accepted |
 
 ## 箭头 inventory
@@ -26,7 +26,7 @@
 | ID | 源 → 目标 | 路径 / 样式 | 语义 | 状态 |
 |---|---|---|---|---|
 | A1-A2 | 左侧三卡相邻连接 | 竖直蓝色实线，完整线身与小型向下箭头 | 传统流水线 | accepted |
-| A3-A7 | 右侧六卡相邻连接 | 竖直蓝色实线，完整线身与小型向下箭头 | 外部 AI 执行主流程 | accepted |
+| A3-A7 | 右侧六卡相邻连接 | 竖直蓝色实线，完整线身与小型向下箭头 | AI 语义算子的外部物理执行主流程 | accepted |
 | L1 | 图例 | 蓝色短线与箭头 | 解释主流程线型 | accepted |
 
 本版没有状态反馈回路、虚线总线、分支或汇合箭头；影响因素只用橙色虚线分组框表示，避免把本课题控制设计提前画入背景页。
@@ -46,5 +46,10 @@
 ## 2026-08-24 报告副本同步
 
 - 报告此前仍引用带 `work/state/SLO` 细节的旧导出图，本轮已改用本审计对应的现有高层版本。
-- 第一章现仅展示传统成本字段与外部 AI 算子的通用多阶段执行链，不提前出现本课题的工作描述、状态字段和调度机制。
+- 第一章现仅展示传统成本字段与 AI 语义算子的通用外部物理执行链，不提前出现具体语义运行时、本课题的工作描述、状态字段和调度机制。
+
+## 2026-08-24 术语修正
+
+- 可见标题和右侧分区名将“外部 AI 算子”改为“AI 语义算子的外部物理执行”，明确算子入口属于数据库语义层，而请求组织、模型服务与结果返回属于外部物理执行。
+- 本图保持背景图职责，不引入具体语义运行时名称；流程阶段、数据和布局均未改变。
 - 报告 PNG 与本目录 PNG 的 SHA-256 一致，并按 1600×900 原尺寸复核。

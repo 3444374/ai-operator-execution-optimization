@@ -6,7 +6,7 @@
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
 - `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
-  `../research/精读文献笔记/`，当前共 12 篇主笔记和 97 张论文原图裁剪件，最新新增配图的主笔记为 Sema。`../research/reference/`
+  `../research/精读文献笔记/`，当前共 15 篇主笔记和 115 张论文原图裁剪件，最新新增的主笔记为 IMBridge、DLPM 和 Parrot。`../research/reference/`
   当前工作区有 4 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema）；历史题录继续由索引保留。
 - Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
   CCF-A full research。
@@ -66,8 +66,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表** |
-| 开题报告 | `report/opening_report.md` | 以用户确认的第一、二章为基线微调：第三章按三个动机问题、研究目标和两项研究内容组织，第四章区分研究方案、初步结果与可行性；正文为学校模板七部分、16 张图片和 52 条参考文献 |
-| 开题报告 QA | `report/opening_report_20260824_qa.md` | 审查七部分结构、三个动机问题到两项研究内容的因果映射、代价估计角色、表格范围、16 张图和 52 条参考文献；52 条题录已逐条核对正式版本，2026-08-20、2026-08-12 版本保留为历史审查记录 |
+| 开题报告 | `report/opening_report.md` | 以用户确认的第一、二章为基线微调：第三章按三个动机问题、研究目标和两项研究内容组织，第四章区分研究方案、初步结果与可行性；正文为学校模板七部分、16 张图片和 53 条参考文献 |
+| 开题报告 QA | `report/opening_report_20260824_qa.md` | 审查七部分结构、三个动机问题到两项研究内容的因果映射、代价估计角色、表格范围、16 张图和 53 条参考文献；精读文献覆盖与题录连续性已复查，2026-08-20、2026-08-12 版本保留为历史审查记录 |
 | 开题报告专用图片 | `report/figures/` | 当前正文引用 5 张背景/方案图和 11 张数据图；权威可编辑源在 `../figures/architecture/editable/`，数据图源在 `../figures/opening_figure_set/` 与 `../figures/data/report_main/` |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
@@ -135,4 +135,4 @@ https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb
 以及 GPU-backed 动机实验图（粒度对比、阶段时延、endpoint 对比、pgvector 写回对比）。
 旧版 wiki (GCxowlVJbinzgRkoHDmc06cSn9J) 保留作为历史参考，不再更新。
 
-中文 Markdown 报告当前为七部分正文、16 张图和 52 条参考文献，并已完成本地结构、主张和图文审查。本轮只把用户提供的桌面 PPT 作为实验角色参照，未修改 PPTX；旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面。
+中文 Markdown 报告当前为七部分正文、16 张图和 53 条参考文献，并已完成本地结构、主张和图文审查。本轮只把用户提供的桌面 PPT 作为实验角色参照，未修改 PPTX；旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面。

@@ -22,11 +22,11 @@
 | B | 研究边界与共同使能 | `ready-existing` | 已有 solution overview |
 | C | 数据组织的 regime dependency | `rendered-qa-pass` | 吞吐与prefix-cache命中率双轨迹；每条线连接同一策略的低→高压力中位数，无误差线，不再把运行状态写成池大小 |
 | D | 图像 staged-work 动机 | `rendered-qa-pass` | prepare/model、R0/R1/R2 传输形态与 active-window 分开呈现；仍不声称动态胜出 |
-| I | 图像 baseline 数据对照 | `rendered-qa-pass` | 图内只保留 12K 诊断与 120K matched-resource 数据；路径能力/角色改用报告表格；仅 120K Ray Data/Project 可排名 |
+| I | 图像 baseline 数据对照 | `rendered-qa-pass` | 图内只保留 12K 小规模能力检查与 120K 同资源比较；仅完成 120K 规模的 Ray Data / 项目路径可比较 |
 | J | 图像四 Job 归一化干扰 | `rendered-qa-pass` | 4×4 路径/策略×Job slowdown 矩阵；与文本四 Job 图统一；Project shared 状态仅观测 |
 | E | 代价估计的决策质量 | `rendered-qa-pass` | ranking单列；20-context regret完整点云展示真实分布、均值与最坏值；Ridge MAE反例直标；结论仍为marginal pass |
 | F-main | 原生文本单 Job 任务—请求对照 | `rendered-qa-pass` | 12 formal；JCT/waiting/queue time/TTFT 四项原单位对齐，均值直标 |
-| F-state | JCT 的服务与资源状态补充 | `rendered-qa-pass` | tok/s/running/waiting/KV/MFU/GPU utilization 六项原单位对齐 |
+| F-state | JCT 的服务与资源状态补充 | `rendered-qa-pass` | 吞吐、正在运行请求数、排队请求数、KV、MFU、GPU 活跃率六项原单位对齐；对外图注不使用内部合同缩写 |
 | G | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 保留实验合同即可；开题不生成结果图或带虚构数值的示意图 |
 | H | 四 Job 干扰幅度与共享权衡 | `rendered-qa-pass` | 每条线固定为同一Job，连接独立→1/4配额→Static→Shared；效率表+Static→Shared进度折线；连线表示受控场景顺序 |
 | Appendix | database-E2E correctness/语义表 | `appendix-table-only` | 不生成正文性能排名图 |
@@ -196,9 +196,9 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 - panel a 以横条展示 12K 三臂均值，并在条末直接写均值±SD；三臂同语义且 exactly-once，但 fast arms
   setup-dominated，Daft 20K 已 OutOfDisk，因此不作稳态排名。删去重复散点、浮动说明和图例，
   避免把小样本诊断视觉包装成正式排名。
-- panel b 以每个 CPU 档两条直接标名的横条展示 120K matched-resource Ray Data 与 Project；
-  CPU8/16 各 3 formal，横条为均值，条末数字为均值±SD。横轴从 0 开始，不再叠加重复点、均值大点、
-  配对线与图例。panel 内显式写明 Daft Built-in 在 20K 已 OutOfDisk、未形成 120K formal cell，
+- panel b 以每个 CPU 档两条直接标名的横条展示 120K 同资源 Ray Data 与项目路径；
+  CPU8/16 各 3 次统计运行，横条为均值，条末数字为均值±SD。横轴从 0 开始，不再叠加重复点、均值大点、
+  配对线与图例。panel 内显式写明“20K 规模因磁盘空间不足（OutOfDisk）未完成三次统计运行”，
   避免单独截取 panel 时被误解为漏画。只有此 panel 可作性能排名。
 - 不支持：给 vLLM pooling 补虚构吞吐；把 Direct ceiling、12K diagnostic 与 120K operator JCT
   混成总排行榜；把 Project Static 称为第三个原生 baseline。
@@ -273,13 +273,13 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
   混合模型 30.1% / 4.06 s。由此只可称解析模型的典型相对偏差较小、岭回归的平均绝对误差较小；
   不可称混合模型是单点时间预测最准确的方法。
 - 图 b、c：继续比较六种方法的四候选两两排序与 20 个留出场景的实际选择结果。图 c 重复六种方法名，
-  并为混合模型直接标出中位数 0、平均 2.90% 和最差 14.72%，避免把 5% 参考线误读成平均值。
+  但不在散点区域放置混合模型的中位数、平均值或最差值数字，也不以三角重复编码平均值；图外图例
+  说明圆点为单个留出情境、菱形为 20 个情境中位数、深色圆点为最差情境、蓝色为混合模型。
 - 读图结论：时间预测误差、候选排序准确率和错误选择造成的额外耗时是三个不同问题。当前数据支持
   混合模型两两排序准确率 0.808，且所选上限的平均额外耗时为 2.90%；不支持把这一结果扩展为
   完整 SQL 优化器已经实现，或模型已在未见工作负载上验证。
-- 渲染 QA：六个小图的坐标范围相同；真实点、预测点和差值竖线可区分；图 c 的方法标签、平均值、
-  中位数和最差值没有遮挡；WPS 1920×1080 整页渲染无裁切。PPT 只替换第 29 页图片，正文、备注、
-  其他页面文字和形状数量保持不变。
+- 渲染 QA：六个小图的坐标范围相同；真实点、预测点和差值竖线可区分；图 c 的方法标签、点云和
+  图外六项图例没有遮挡。原合成 PNG/SVG 和报告拆分 PNG/SVG 已重新生成并检查；本轮未修改 PPT。
 
 当前叙事图中，本轮统一重建 A/T/N/C/H/D/I/J/E/F-main/F-state；B 与 WorkDescriptor 总览保持现有架构图。
 A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、裁切或文字重叠；灰度下仍可由
@@ -306,15 +306,17 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 
 文件：`data/report_main/opening_text_baseline_evidence_map.{png,svg}`。
 
-- panel a 使用统一 PostgreSQL source/sink 的 SQuAD database-E2E 产品轨，比较 Direct
-  static、DuckDB AI 与 Project frozen-static 的 correct rows/s；三臂在该合同下可排名。
+- panel a 使用统一 PostgreSQL 数据源和结果表的 SQuAD 数据库读写端到端实验，记录 Direct
+  static、DuckDB AI 与 Project static 的 correct rows/s。三臂的数据、模型、GPU 和输出要求一致，
+  但 Project 计时还包含指标采集、运行记录和作业结束处理，因此只核对完成性与答案质量，
+  当前 correct rows/s 不用于细微性能排名。
 - panel b 使用同一 ShareGPT Chat manifest，比较直接调用（容量参照）、Daft Native、Daft Ray、
   Ray Data 的 service tokens/s；Daft/Ray Data 保持 vendor scheduler ownership。
 - DuckDB 的 ShareGPT 4,921/6,144 cap 语义失败只作产品边界注释，不进入 Chat 图的性能排名。
 - 两个 panel 的均值±SD 口径只在整图页脚说明一次；删除原先压在最上方柱条上的重复说明，
   条末数字与柱条保持独立，不再发生文字—数据重叠。
-- 支持：现有路径在正确吞吐、语义和服务供给状态上各有边界，研究不能只看 raw rows/s；
-  这导出 neutral WorkDescriptor、correctness-aware evidence 和状态感知提交。
+- 支持：现有路径在结果完整性、输出含义和服务供给状态上存在差别，研究不能只看 raw rows/s；
+  这说明后续比较需要同时记录工作描述、正确结果和模型服务运行状态。
 - 不支持：两个 panel 跨轨排名、Project 普遍胜出或 DuckDB/Daft/Ray 的内部算法归因。
 
 ## 9. F：原生文本单 Job 主结果与状态补充
@@ -331,8 +333,8 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
   “相近 makespan 掩盖请求级排队”的主结论。Job JCT 明确采用
   `min(submitted_at_s) → max(completed_at_s)`：包含执行路径内部的上游准入、请求提交、vLLM
   排队与推理，直到全部结果 gather；不包含 manifest 准备和数据库 source/sink。
-- F-state 移除重复的 JCT，改为六个补充 panel：service tok/s、running、waiting、KV、MFU 与
-  GPU utilization。它解释相近 JCT 背后的 overqueue、minimum-saturation 与 underfeed，不承担
+- F-state 移除重复的 JCT，改为六个补充 panel：吞吐、正在运行请求数、排队请求数、KV、MFU 与
+  GPU 活跃率。它解释相近 JCT 背后的过量排队、最小饱和点与供给不足，不承担
   第二个独立性能结论。GPU utilization 采用 0–100% 轴，避免放大 86%–97% 的小差异。
 - 两图均使用无描边实心圆表示 3 次 formal 均值，数值直接标在点旁；颜色与 y 位置共同映射
   执行路径。Ray Data 行加浅灰底并写明欠供给，避免把零 waiting 误读为调度更优。重复间 SD
@@ -340,6 +342,9 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 - 所有多行 y 轴标签均将完整文本块锚定在轴边缘，同时在文本块内部居中各行；“直接调用”
   与“（容量参照）”因此共享同一视觉中心，不再出现短行被推向右侧的阶梯感。同一规则也用于
   图像四 Job 矩阵的 Project shared 多行标签。
+- 2026-08-24 对外文字复核：F-state 两个请求数横轴改为“正在运行请求数均值”和“排队请求数均值”；
+  底部说明改用“3 次统计运行”“ShareGPT 输入”和“供给不足”，删除 `formal`、`graph→gather` 及
+  不属于本图职责的项目路径缺口句。数据、点位、坐标范围和统计方法均未改变。
 - 主句：前三条已饱和路径的 Job JCT 只差 6.0s，但 Daft Native/Ray 的单请求平均 queue time
   约 37.5s、TTFT 约 40.5s；任务级 makespan 会掩盖请求级排队。Ray Data 的零 waiting 与
   478.7s JCT、3.6k tok/s、MFU 0.11 共同构成欠供给诊断。

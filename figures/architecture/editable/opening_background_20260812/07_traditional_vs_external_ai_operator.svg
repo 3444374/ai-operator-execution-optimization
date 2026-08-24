@@ -3,11 +3,11 @@
   <marker id="blueArrow" markerWidth="16" markerHeight="12" refX="14" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 6 0 12Z" fill="#165DCC"/></marker>
 </defs>
 <rect width="1600" height="900" fill="#FFFFFF"/>
-<text x="800" y="61" text-anchor="middle" font-family="STHeiti, PingFang SC, Microsoft YaHei, sans-serif" font-size="42" font-weight="700" fill="#111827">传统数据库算子与外部 AI 算子的执行假设</text>
+  <text x="800" y="61" text-anchor="middle" font-family="STHeiti, PingFang SC, Microsoft YaHei, sans-serif" font-size="42" font-weight="700" fill="#111827">传统数据库算子与 AI 语义算子的外部物理执行</text>
 <rect x="35" y="112" width="580" height="552" rx="14" fill="#F8FBFF" stroke="#D7E5F7" stroke-width="1.5"/>
 <rect x="655" y="112" width="910" height="552" rx="14" fill="#F8FBFF" stroke="#D7E5F7" stroke-width="1.5"/>
 <text x="325" y="151" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#165DCC">传统数据库算子</text>
-<text x="1110" y="151" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#165DCC">外部 AI 算子</text>
+  <text x="1110" y="151" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#165DCC">AI 语义算子的外部物理执行</text>
 <g font-family="STHeiti, PingFang SC, sans-serif" font-size="18" fill="#4B5563">
  <line x1="770" y1="91" x2="808" y2="91" stroke="#165DCC" stroke-width="3" marker-end="url(#blueArrow)"/><text x="818" y="97">执行主流程</text>
  <rect x="950" y="80" width="34" height="20" rx="5" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/><text x="994" y="97">执行阶段</text>
@@ -50,5 +50,5 @@
 <g fill="#FFFFFF" stroke="#F59E66" stroke-width="1.5"><rect x="675" y="738" width="164" height="62" rx="8"/><rect x="849" y="738" width="164" height="62" rx="8"/><rect x="1023" y="738" width="164" height="62" rx="8"/><rect x="1197" y="738" width="164" height="62" rx="8"/><rect x="1371" y="738" width="174" height="62" rx="8"/></g>
 <g text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="21" font-weight="700" fill="#111827"><text x="757" y="776">输入规模</text><text x="931" y="766">预处理</text><text x="931" y="790">与传输</text><text x="1105" y="766">服务队列</text><text x="1105" y="790">与 batch</text><text x="1279" y="776">模型计算</text><text x="1458" y="776">输出规模</text></g>
 <rect x="45" y="834" width="1520" height="44" rx="12" fill="#FFF7ED" stroke="#E85D04" stroke-width="2.5"/>
-<text x="805" y="865" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="28" font-weight="700" fill="#E85D04">AI 算子跨越多个执行阶段，成本不再由行数单独决定</text>
+<text x="805" y="865" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="28" font-weight="700" fill="#E85D04">AI 语义算子的外部物理执行跨越多个阶段，成本不再由行数单独决定</text>
 </svg>

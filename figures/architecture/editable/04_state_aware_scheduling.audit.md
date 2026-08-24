@@ -6,9 +6,9 @@ Role: opening-defense mechanism figure for pages 14–15, with page-19 validatio
 
 ## Content contract
 
-- Main chain: Job input → Admission / safe-capacity calibration → shared request/work credit → fair queue → state-aware endpoint routing → text/image execution backends.
-- Completion closes the loop through credit release and request-level refill.
-- `RuntimeStateSnapshot` feeds admission, credit and routing through gray dashed feedback paths.
+- Main chain: 作业入口 → 提交前容量检查 → 共享容量记录 → 多作业队列选择 → 状态感知的服务实例路由 → 文本 / 图像模型执行。
+- 完成反馈通过“完成与释放”和“请求位置补充”闭合容量循环。
+- “运行状态记录”通过灰色虚线向容量检查、容量记录和路由提供反馈。
 - Dynamic actions are explicitly labeled as a candidate and “待同上限 A/B 验证”; no visual or wording implies that dynamic control already beats frozen strong static.
 - Static capacity is calibrated first and tied to machine/model/protocol/workload signature.
 
@@ -20,16 +20,16 @@ Role: opening-defense mechanism figure for pages 14–15, with page-19 validatio
 | I02 | 30,18,78,54 | Blue page-number badge “04” | native | #165DCC, white 34 pt bold | accepted |
 | I03 | 130,15,1430,60 | Main title | native | black 36 pt bold, left aligned | accepted |
 | I04 | 360,82,880,84 | Candidate/validation callout | native | orange dashed border, two-line hierarchy | accepted |
-| I05 | 30,215,205,350 | Multi-Job input panel | native + native queue cells | blue outline; Job A/B/N rows | accepted |
+| I05 | 30,215,205,350 | 多作业输入框 | native + native queue cells | blue outline; 作业 A/B/N rows | accepted |
 | I06 | 265,215,205,350 | Admission panel | native + SVG icon | orange; safe capacity calibration and frozen-static fallback | accepted |
-| I07 | 490,215,245,350 | Shared request/work credit panel | native + two SVG icons | orange; request-slot ceiling and work-budget ceiling icons | accepted |
-| I08 | 755,215,220,350 | Fair Queue panel | native + native queue cells | orange; per-job floor/cap, work-fair deficit, idle borrowing | accepted |
-| I09 | 1005,215,235,350 | State-aware endpoint routing panel | native + SVG icon | orange; ready/active/queued, service/KV/queue signals | accepted |
-| I10 | 1290,175,280,170 | Text vLLM backend | native + SVG icon | purple; text completion path | accepted |
-| I11 | 1290,395,280,170 | Image typed GPU actor backend | native + SVG icon | purple; image embedding/classification path | accepted |
-| I12 | 430,625,300,120 | Request-level refill card | native + SVG icon | green; refill after completion | accepted |
-| I13 | 790,625,420,120 | Completion & release card | native + SVG icon | green; release request/work credit and update completed/remaining work | accepted |
-| I14 | 1235,610,335,145 | RuntimeStateSnapshot panel | native + SVG icon | gray; ready/active/queued, service rate, queue age, KV/GPU, freshness/signature | accepted |
+| I07 | 490,215,245,350 | 共享容量记录框 | native + two SVG icons | orange; 请求位置数量上限与工作量空间计算量上限 | accepted |
+| I08 | 755,215,220,350 | 多作业队列选择框 | native + native queue cells | orange; 作业保底量 / 上限、按工作量记录差额、空闲容量借用 | accepted |
+| I09 | 1005,215,235,350 | 状态感知的服务实例路由框 | native + SVG icon | orange; 就绪 / 排队、处理速率、KV / GPU / SLO | accepted |
+| I10 | 1290,175,280,170 | 文本模型执行框 | native + SVG icon | purple; vLLM AI_COMPLETE path | accepted |
+| I11 | 1290,395,280,170 | 图像模型执行框 | native + SVG icon | purple; Ray GPU 有状态执行单元，图像嵌入 / 分类 | accepted |
+| I12 | 430,625,300,120 | 请求位置补充卡片 | native + SVG icon | green; 请求完成后立即补位 | accepted |
+| I13 | 790,625,420,120 | 完成与释放卡片 | native + SVG icon | green; 释放请求位置与工作量空间并更新剩余量 | accepted |
+| I14 | 1235,610,335,145 | 运行状态记录框 | native + SVG icon | gray; 就绪 / 运行中 / 排队中、处理速率、等待时长、KV / GPU | accepted |
 | I15 | main row | Blue request/data connectors | native | solid 5 px, block arrowheads | accepted |
 | I16 | right execution branch | Purple execution connectors | native | solid 4 px, branched to text/image backends | accepted |
 | I17 | bottom loop | Green completion/release/refill connectors | native | solid 4 px, completion → release → refill → credit pool | accepted |
@@ -41,15 +41,15 @@ Role: opening-defense mechanism figure for pages 14–15, with page-19 validatio
 
 | ID | Source → target | Type / role | Planned geometry | Status |
 |---|---|---|---|---|
-| A01 | Job input → Admission | solid blue request flow | horizontal centerline | accepted |
-| A02 | Admission → Shared Credit | solid orange control flow | horizontal centerline | accepted |
-| A03 | Shared Credit → Fair Queue | solid orange control flow | horizontal centerline | accepted |
-| A04 | Fair Queue → Router | solid orange control flow | horizontal centerline | accepted |
-| A05 | Router → Text/Image backends | solid purple execution flow | short trunk + two branches | accepted |
-| A06 | Text/Image completion → Completion & Release | solid green completion flow | converge on release card without crossing backend text | accepted |
-| A07 | Release → Refill → Shared Credit | solid green loop | leftward then upward | accepted |
-| A08 | RuntimeStateSnapshot → Router | gray dashed feedback | upward into router bottom | accepted |
-| A09 | RuntimeStateSnapshot → Candidate controller | gray dashed feedback | right-edge return path, outside backend cards | accepted |
+| A01 | 作业入口 → 容量检查 | solid blue request flow | horizontal centerline | accepted |
+| A02 | 容量检查 → 共享容量记录 | solid orange control flow | horizontal centerline | accepted |
+| A03 | 共享容量记录 → 多作业队列选择 | solid orange control flow | horizontal centerline | accepted |
+| A04 | 多作业队列选择 → 服务实例路由 | solid orange control flow | horizontal centerline | accepted |
+| A05 | 路由 → 文本 / 图像模型执行 | solid purple execution flow | short trunk + two branches | accepted |
+| A06 | 模型执行完成 → 完成与释放 | solid green completion flow | converge on release card without crossing backend text | accepted |
+| A07 | 完成与释放 → 请求位置补充 → 共享容量记录 | solid green loop | leftward then upward | accepted |
+| A08 | 运行状态记录 → 路由 | gray dashed feedback | upward into router bottom | accepted |
+| A09 | 运行状态记录 → 候选控制方法 | gray dashed feedback | right-edge return path, outside backend cards | accepted |
 | A10 | Candidate controller → Admission/Credit | orange control | downward branch to credit-control region | accepted |
 
 ## Typography / layout tokens
@@ -77,18 +77,18 @@ Role: opening-defense mechanism figure for pages 14–15, with page-19 validatio
 
 ## Deliberate deviations from the old reference
 
-- Split the single GPU box into Text vLLM and Image typed Ray GPU actor cards so the cross-modal execution boundary is explicit.
+- Split the single GPU box into “文本模型执行”和“图像模型执行”两张卡片，使跨模态执行边界清晰；图像框明确写为“Ray GPU 有状态执行单元”。
 - Replaced the old generic state-aware credit banner with the current contract: calibrate/freeze the strong static cap first; dynamic admission/routing is a candidate awaiting matched-cap A/B.
-- Expanded the snapshot to the required signals (`ready/active/queued`, service rate, queue age, KV/GPU, freshness/signature) and routed feedback outside the backend cards.
-- Added `per-job floor/cap`, work-fair deficit and idle borrowing as isolation/work-conservation mechanisms without implying a final algorithm.
+- Expanded the snapshot to the required signals（就绪 / 运行中 / 排队中、处理速率、等待时长、KV / GPU），并将反馈路径布置在执行框外侧。
+- Added 作业保底量 / 上限、按工作量记录差额和空闲容量借用，不暗示已经确定最终算法。
 
 ## Large-type compression revision
 
 - Admission is compressed to three lines: capacity calibration, frozen strong-static ceiling and static fallback.
-- Shared Credit retains only Request Credit, Work Credit and same-cap/completion-release semantics.
-- Fair Queue retains only `per-job floor/cap`, `work-fair deficit` and `idle borrowing`.
+- “共享容量记录”只保留请求位置、工作量空间以及同上限 / 完成释放语义。
+- “多作业队列选择”只保留作业保底量 / 上限、按工作量记录差额和空闲容量借用。
 - Router retains three short state lines; Text and Image executors each retain two body lines.
-- Runtime Snapshot, Completion/Release and Request Refill each use two body lines.
+- 运行状态记录、完成与释放、请求位置补充均使用两至三行短说明。
 - Router and snapshot wording was shortened a second time to preserve at least 12 px right-side padding without reducing the 18 px body font.
 - Text and image completion branches now meet at one explicit merge point and enter `Completion & Release` through one green arrow. The former coincident green segments and duplicate arrowheads were deleted; the gray feedback path was moved to a separate lane.
 
@@ -119,3 +119,11 @@ Role: opening-defense mechanism figure for pages 14–15, with page-19 validatio
 - The two 20 px orange inter-panel connectors formerly used a 20×16 px arrowhead, leaving no readable shaft. They now use a dedicated 12×12 px compact head while retaining the 4 px control-flow stroke and exact horizontal centerline.
 - The green Refill → Shared Credit route now bends at the vertical midpoint of the 60 px gap (`y=595`) and uses the matching compact green head. Its final vertical segment is 30 px, leaving a clearly visible shaft before the head.
 - The long control, completion and legend arrows retain their original larger heads; compact heads are used only where the available connector run is short. This preserves the intended flow hierarchy without making the whole figure visually weak.
+
+## 对外文字中文化复核（2026-08-24）
+
+- 可见标题已改为“共享容量记录”“多作业队列选择”“文本模型执行”“图像模型执行”“请求位置补充”“完成与释放”和“运行状态记录”。
+- `Request Credit` / `Work Credit` 分别改为“请求位置 / 数量上限”和“工作量空间 / 计算量上限”；`typed Ray actor` 改为“Ray GPU 有状态执行单元”。
+- 作业名称统一为“作业 A / B / N”；路由与运行状态字段统一使用“就绪、运行中、排队中、处理速率、排队 / 等待时长”。
+- 公平队列说明改为“作业保底量 / 上限、按工作量记录差额、空闲容量可借用”，完成反馈说明改为“释放请求位置与工作量空间、按实际工作量更新剩余量”。
+- Draw.io 和 SVG 均通过 XML 解析；SVG 未命中上述旧英文可见标签。1600×900 PNG 已从同坐标 SVG 重新导出并按原尺寸检查，模块文字、连线和图例无裁切或遮挡。

@@ -32,6 +32,9 @@
 | `blendserve_asplos2026/` | BlendServe 精读主笔记；`figures/` 内含论文 Figure 1、2、3、4、5、6、7、9、10、11 的 10 个原图裁剪件；Figure 11 明确按 simulated backend 证据解读 |
 | `relational_llm_queries_mlsys2025/` | *Optimizing LLM Queries in Relational Data Analytics Workloads* 精读主笔记；`figures/` 内含论文全部 Figure 1–6 的 6 个原图裁剪件；Figure 1 按 worst-case 构造、Figure 6 按有限 correctness workload 解读 |
 | `vtc_osdi2024/` | VTC 精读主笔记；`figures/` 内含论文 Figure 1、2、3、4、6、8、9、10、12、15、16、19 的 12 个原图裁剪件；VTC 仍按引擎内多 client 调度相关工作解读 |
+| `IMBridge_sigmod2024/` | IMBridge 精读主笔记；`figures/` 内含 SIGMOD-Companion ’24 论文全部 Figure 1–6 的 6 个原图裁剪件；本地文件名中的 `2026` 不作为发表年份，Figure 5/6 只按 demo 截图证据解读 |
+| `dlpm_2025/` | DLPM/D²LPM 精读主笔记；当前正式状态仍为 arXiv:2501.14312v1；`figures/` 内含正文全部 Figure 1–12 的 12 个原图裁剪件，Figure 7 保留缺失点与 Long-Context worst-case，理论保证不外推到黑盒 endpoint 的端到端 Job 公平 |
+| `parrot_osdi2024/` | Parrot 精读主笔记；按用户提供的 arXiv:2405.19888v1 全文解读方法与实验，发表信息按 OSDI 2024 正式版记录；当前未收录论文配图 |
 
 ## 精读流程
 

@@ -1,4 +1,4 @@
-# 开题报告目标架构与实现状态图审计
+# 数据库内入口与外部实验路径候选图审计
 
 日期：2026-08-24
 
@@ -6,20 +6,20 @@
 
 - 权威矢量图：`figures/architecture/opening_target_architecture_status.svg`
 - 权威位图：`figures/architecture/opening_target_architecture_status.png`
-- 报告副本：`opening/report/figures/target_architecture_status.png`
+- 历史 / 内部候选副本：`opening/report/figures/target_architecture_status.png`、`opening/report/figures/fig05_system_architecture.png`
 - 生成脚本：`figures/scripts/generate_opening_target_architecture_status.py`
 - 画布：1600 × 900，PNG 为 RGB、300 DPI；SVG 已通过 XML 解析检查。
-- 权威 PNG 与报告副本 SHA256：`b86a1fe43d2db2e55ac58af5706c2495ee291fa7de0bd3ffee51f9d7f646ed7f`。
-- SVG SHA256：`132a9c3f06040c7589cc66d999360a8ab90c7697744e6b37d464f00b9c313265`。
+- 权威 PNG 与两个历史 / 内部候选副本保持同一内容，SHA256 为 `21155135d301c1bc1f8a17614354f1579f52c085894dbd2c9efe9c69aabbfc19`；当前报告不引用这两个副本。
+- SVG SHA256：`97686e7383f10b8472df30a8dd0c3b670141dc2a527d61e5dbac27b3218726f9`。
 
-该图为概念架构与实现状态图，不包含新增实验数据。内容来源是项目总纲、`opening/claim_matrix.md`、当前报告方法章节和现有实现记录。
+该图为概念架构与实现状态候选图，不包含新增实验数据。内容来源是项目总纲、`opening/claim_matrix.md` 和现有实现记录。2026-08-24 的候选修订不在图内写具体语义运行时名称，只区分计划中的数据库内 AI 语义算子入口与当前已经运行的外部实验执行路径。用户复核后决定当前报告不引用该图，资产仅作历史 / 内部候选保留。
 
 ## 2. 主张审计
 
 图中有意分为两条路径：
 
-1. 上层是目标数据库内算子路径，包括 PostgreSQL planner-visible AI 算子、关系 child plan、snapshot、`RowEnvelope`、LOTUS 1.2.4 `sem_map`、可替换外部物理后端和模型执行。
-2. 下层是当前可运行路径，包括 PostgreSQL 外部读取、Daft/Arrow、`WorkDescriptor`、静态或共享提交、vLLM 或图像 Ray GPU actor，以及结果收集和写回。
+1. 上层是计划中的数据库内算子路径，包括 PostgreSQL 查询规划器可见的 AI 语义算子入口、关系算子输出、数据快照、有界记录流、提示词构造与输出解析、Daft、Ray 等可替换后端和模型执行。图中不写具体语义运行时名称。
+2. 下层是当前可运行路径，包括 PostgreSQL 外部读取、Daft/Arrow、工作描述、静态分配或共享容量、vLLM 或图像 GPU 执行单元，以及结果收集和写回。
 
 上层使用橙色虚线并逐项标为“待实现”“迁移中”或“候选组合”；下层使用绿色实线并标为“已运行”或“有证据”。图中明确写出：两条路径共享外部物理执行思想，但现有外部链不能证明数据库内算子已经完成。
 
@@ -36,4 +36,4 @@
 
 ## 4. 使用限制
 
-该图只用于说明系统位置、目标路径和当前实现状态，不用于证明任何策略性能。实现状态变化后，必须同时更新脚本、SVG、PNG、报告副本、报告状态表和本审计文件。
+该图只可在内部讨论中用于说明系统位置、计划路径和当前实现状态，不用于证明任何策略性能，当前报告不引用。原 `02_system_architecture` 仍作为总体模块关系的补充可编辑图保留。若未来重新启用该候选图，必须先复核报告叙事，再同步更新脚本、SVG、PNG、副本、状态表和本审计文件。

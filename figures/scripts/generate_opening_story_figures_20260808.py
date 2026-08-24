@@ -34,9 +34,24 @@ from generate_opening_core_evidence_figures import (
     ROOT,
     TEAL,
     apply_style,
-    finish,
+    finish as _core_finish,
     soft_grid,
 )
+
+
+def _normalize_svg(path: Path) -> None:
+    """Remove exporter-only trailing spaces so generated SVGs pass repository checks."""
+
+    text = path.read_text(encoding="utf-8")
+    normalized = "\n".join(line.rstrip() for line in text.splitlines()) + "\n"
+    path.write_text(normalized, encoding="utf-8")
+
+
+def finish(fig: plt.Figure, stem: str) -> None:
+    """Use the shared exporter, then normalize its SVG output."""
+
+    _core_finish(fig, stem)
+    _normalize_svg(OUTPUT / f"{stem}.svg")
 
 
 def _formal(path: Path) -> pd.DataFrame:
@@ -51,6 +66,7 @@ def _finish_slide(fig: plt.Figure, stem: str) -> None:
     fig.savefig(OUTPUT / f"{stem}.pdf")
     fig.savefig(OUTPUT / f"{stem}.svg")
     fig.savefig(OUTPUT / f"{stem}.png", dpi=300)
+    _normalize_svg(OUTPUT / f"{stem}.svg")
     plt.close(fig)
 
 
@@ -810,7 +826,7 @@ def figure_native_single_job_state_fingerprint() -> None:
         (
             "running_mean",
             "vLLM 执行中请求",
-            "running 均值（请求数）",
+            "正在运行请求数均值",
             1.0,
             0,
             (0, 360),
@@ -818,7 +834,7 @@ def figure_native_single_job_state_fingerprint() -> None:
         (
             "waiting_mean",
             "vLLM 内部排队请求",
-            "waiting 均值（请求数）",
+            "排队请求数均值",
             1.0,
             1,
             (0, 850),
@@ -889,9 +905,8 @@ def figure_native_single_job_state_fingerprint() -> None:
     fig.text(
         0.5,
         0.045,
-        "同一 2,048-row ShareGPT manifest；实心圆=3 次 formal 均值，离散度见审计数据。灰底 Ray Data 为欠供给诊断。\n"
-        "GPU utilization 都较高仍不能区分供给状态，必须与吞吐、running/waiting、KV 和 MFU 联合解读；"
-        "Project 暂无同一 graph→gather 合同的正式点。",
+        "同一 2,048 行 ShareGPT 输入；实心圆表示 3 次统计运行的均值，离散度见审计数据。灰底 Ray Data 为供给不足诊断。\n"
+        "GPU 活跃率都较高仍不能区分供给状态，需与吞吐、正在运行请求数、排队请求数、KV 和 MFU 联合解读。",
         ha="center",
         va="bottom",
         fontsize=8.5,
@@ -952,13 +967,13 @@ def figure_text_baseline_evidence_map() -> None:
         3,
         -0.78,
         "统一 PostgreSQL 数据源与结果收集；3 次统计运行\n"
-        "ShareGPT 完整路径的请求提交速度和输出要求不同，不作排名",
+        "项目路径计时多含指标采集和记录处理，细微性能暂不排名",
         ha="left",
         va="bottom",
         fontsize=8.1,
         color=DARK,
     )
-    ax.set_title("完整数据库执行路径：SQuAD 结果可直接比较", loc="left")
+    ax.set_title("数据库读写端到端路径：SQuAD 质量可核对，性能暂不排名", loc="left")
     soft_grid(ax, axis="x")
 
     ax = axes[1]
@@ -1824,9 +1839,9 @@ def figure_image_baseline_evidence_map() -> None:
 
     ax = axes[0]
     diagnostic_defs = [
-        ("daft_builtin_embed", "Daft Built-in", TEAL),
+        ("daft_builtin_embed", "Daft 内置路径", TEAL),
         ("ray_data_staged", "Ray Data", GREY),
-        ("project_ray", "Project Static", BLUE),
+        ("project_ray", "项目静态路径", BLUE),
     ]
     y = np.arange(len(diagnostic_defs))[::-1]
     diagnostic_means = []
@@ -1868,8 +1883,8 @@ def figure_image_baseline_evidence_map() -> None:
     ax.set_yticklabels([item[1] for item in diagnostic_defs])
     ax.set_xlim(0, 78)
     ax.set_ylim(-0.55, 2.55)
-    ax.set_xlabel("12K operator JCT（秒）")
-    ax.set_title("12K 同语义诊断（setup-dominated，不排名）", loc="left")
+    ax.set_xlabel("12K 算子完成时间（秒）")
+    ax.set_title("12K 小规模能力检查（初始化开销占主导，不作排名）", loc="left")
     soft_grid(ax, axis="x")
 
     ax = axes[1]
@@ -1877,7 +1892,7 @@ def figure_image_baseline_evidence_map() -> None:
     y = np.arange(len(cpu_levels))[::-1]
     ranking_defs = [
         ("ray_data_staged", "Ray Data", GREY, 0.13),
-        ("project_ray", "Project", BLUE, -0.13),
+        ("project_ray", "项目路径", BLUE, -0.13),
     ]
     for arm, label, color, offset in ranking_defs:
         for cpu, yi in zip(cpu_levels, y, strict=True):
@@ -1920,17 +1935,17 @@ def figure_image_baseline_evidence_map() -> None:
     ax.set_yticklabels(["8 个 CPU worker", "16 个 CPU worker"])
     ax.set_xlim(0, 148)
     ax.set_ylim(-0.5, 1.68)
-    ax.set_xlabel("120K operator JCT（秒，越低越好）")
+    ax.set_xlabel("120K 算子完成时间（秒，越低越好）")
     ax.text(
         2.0,
         1.53,
-        "Daft Built-in：20K OutOfDisk，未形成 120K formal cell",
+        "20K 规模因磁盘空间不足（OutOfDisk）未完成三次统计运行",
         ha="left",
         va="center",
         color=RED,
         fontsize=7.4,
     )
-    ax.set_title("120K 同资源比较：仅两条路径通过规模门禁", loc="left")
+    ax.set_title("120K 同资源比较：仅两条路径完成该规模", loc="left")
     soft_grid(ax, axis="x")
 
     for panel_ax, label in zip(axes, ["a", "b"], strict=True):
@@ -1946,14 +1961,14 @@ def figure_image_baseline_evidence_map() -> None:
         )
 
     fig.suptitle(
-        "图像 baseline 数据结果：短规模诊断与同资源比较分开",
+        "图像 baseline 结果：短规模诊断与同资源比较分开",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.02,
-        "统一 PostgreSQL 图像输入、CLIP 与 L2-normalized 输出；条末数字=均值±SD（n=3 formal）；panel a 只作诊断，panel b 仅比较通过规模门禁的路径。路径角色与能力边界见报告独立表格。",
+        "统一 PostgreSQL 图像输入、CLIP 与 L2-normalized 输出；条末数字=均值±标准差（n=3 次统计运行）；左图只作诊断，右图仅比较完成 120K 规模的路径。路径角色与能力范围见报告独立表格。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -2647,47 +2662,6 @@ def figure_cost_decision_v4() -> None:
             s=22,
             zorder=6,
         )
-        if row["label"] == "混合模型":
-            ax_regret.scatter(
-                row["mean"],
-                yi,
-                marker="^",
-                color=BLUE,
-                edgecolors="white",
-                linewidths=0.4,
-                s=48,
-                zorder=7,
-            )
-            ax_regret.text(
-                row["median"] + 1.2,
-                yi + 0.18,
-                f"中位 {row['median']:.1f}%",
-                color=BLUE,
-                fontsize=7.8,
-                fontweight="bold",
-                ha="left",
-                va="bottom",
-            )
-            ax_regret.text(
-                row["mean"] + 1.2,
-                yi - 0.02,
-                f"平均 {row['mean']:.2f}%",
-                color=BLUE,
-                fontsize=7.8,
-                fontweight="bold",
-                ha="left",
-                va="center",
-            )
-            ax_regret.text(
-                row["max"] + 1.2,
-                yi - 0.20,
-                f"最差 {row['max']:.1f}%",
-                color=BLUE,
-                fontsize=7.8,
-                fontweight="bold",
-                ha="left",
-                va="top",
-            )
     ax_regret.set_xlim(-2.5, 85)
     ax_regret.set_ylim(-0.65, len(rows) - 0.35)
     ax_regret.set_xlabel("所选上限比实测最快上限多耗时 (%)")
@@ -2728,6 +2702,26 @@ def figure_cost_decision_v4() -> None:
             Line2D(
                 [0],
                 [0],
+                marker="o",
+                color="none",
+                markerfacecolor=worst_grey,
+                markeredgecolor="none",
+                markersize=5.8,
+                label="深色圆点：最差情境",
+            ),
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                color="none",
+                markerfacecolor=BLUE,
+                markeredgecolor="none",
+                markersize=5.8,
+                label="蓝色：混合模型",
+            ),
+            Line2D(
+                [0],
+                [0],
                 color=TEAL,
                 linestyle="--",
                 linewidth=1.1,
@@ -2744,7 +2738,7 @@ def figure_cost_decision_v4() -> None:
         ],
         loc="upper center",
         bbox_to_anchor=(0.74, 0.865),
-        ncol=4,
+        ncol=3,
         frameon=False,
         fontsize=7.4,
         handletextpad=0.35,
@@ -2767,6 +2761,218 @@ def figure_cost_decision_v4() -> None:
         color=GREY,
     )
     finish(fig, "opening_cost_model_decision_quality_v4")
+    _figure_cost_prediction_report(rows, method_colors)
+    _figure_cost_ranking_report(rows)
+
+
+def _figure_cost_prediction_report(rows: list[dict], method_colors: list[str]) -> None:
+    """A4-readable report figure for measured-versus-predicted time."""
+
+    fig, axes = plt.subplots(2, 3, figsize=(11.0, 7.4))
+    fig.subplots_adjust(left=0.075, right=0.985, bottom=0.18, top=0.86, wspace=0.22, hspace=0.34)
+    time_limit = 52
+    for panel_index, (ax, row, color) in enumerate(
+        zip(axes.flat, rows, method_colors, strict=True)
+    ):
+        under_mask = row["predicted"] < row["actual"]
+        over_mask = ~under_mask
+        ax.vlines(
+            row["actual"][under_mask],
+            row["predicted"][under_mask],
+            row["actual"][under_mask],
+            color="#3F88A8",
+            linewidth=1.0,
+            alpha=0.30,
+            zorder=1.5,
+        )
+        ax.vlines(
+            row["actual"][over_mask],
+            row["actual"][over_mask],
+            row["predicted"][over_mask],
+            color=ORANGE,
+            linewidth=1.0,
+            alpha=0.30,
+            zorder=1.5,
+        )
+        ax.scatter(
+            row["actual"],
+            row["actual"],
+            facecolors="white",
+            edgecolors=GREY,
+            s=28,
+            alpha=0.68,
+            linewidths=0.8,
+            zorder=2.5,
+        )
+        ax.scatter(
+            row["actual"],
+            row["predicted"],
+            color=color,
+            s=34,
+            alpha=0.56,
+            edgecolors="white",
+            linewidths=0.45,
+            zorder=3,
+        )
+        ax.plot([0, time_limit], [0, time_limit], color=DARK, linewidth=1.2, linestyle="--")
+        ax.set_xlim(0, time_limit)
+        ax.set_ylim(0, time_limit)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xticks([0, 25, 50])
+        ax.set_yticks([0, 25, 50])
+        ax.tick_params(labelsize=14.5, pad=3)
+        ax.set_title(row["label"], loc="left", pad=6, fontsize=19)
+        ax.text(
+            0.04,
+            0.94,
+            f"中位相对偏差 {row['median_abs_error_pct']:.1f}%\n平均误差 {row['mae_s']:.2f} 秒",
+            transform=ax.transAxes,
+            ha="left",
+            va="top",
+            fontsize=14,
+            color=DARK,
+            bbox={"facecolor": "white", "edgecolor": "none", "pad": 1.4, "alpha": 0.80},
+            zorder=4,
+        )
+        if panel_index // 3 == 1:
+            ax.set_xlabel("实测时间（秒）", fontsize=16)
+        else:
+            ax.tick_params(axis="x", labelbottom=False)
+        if panel_index % 3 == 0:
+            ax.set_ylabel("预测时间（秒）", fontsize=16)
+        else:
+            ax.tick_params(axis="y", labelleft=False)
+        soft_grid(ax, axis="both")
+
+    fig.suptitle("六种代价估计方法的预测时间与实测时间差异", fontsize=22, fontweight="bold", y=0.965)
+    fig.text(
+        0.5,
+        0.025,
+        "每种方法包含 80 组候选均值；空心点为实测时间，实心点为预测时间，竖线表示两者相差的秒数。",
+        ha="center",
+        va="bottom",
+        fontsize=14.5,
+        color=GREY,
+    )
+    finish(fig, "opening_cost_prediction_time_report")
+
+
+def _figure_cost_ranking_report(rows: list[dict]) -> None:
+    """A4-readable report figure for ranking quality and wrong-choice overhead."""
+
+    fig, (ax_rank, ax_regret) = plt.subplots(
+        1,
+        2,
+        figsize=(11.5, 6.6),
+        gridspec_kw={"width_ratios": [0.90, 1.55]},
+    )
+    fig.subplots_adjust(left=0.11, right=0.985, bottom=0.34, top=0.78, wspace=0.34)
+    y = np.arange(len(rows))[::-1]
+    separators = (y[:-1] + y[1:]) / 2
+
+    ax_rank.axvspan(0.75, 0.86, color="#EAF7F5", zorder=0)
+    ax_rank.axvline(0.75, color=TEAL, linestyle="--", linewidth=1.6, zorder=1)
+    for separator in separators:
+        ax_rank.axhline(separator, color="#E5EAED", linewidth=1.0, zorder=1.5)
+    for yi, row in zip(y, rows, strict=True):
+        color = BLUE if row["label"] == "混合模型" else GREY
+        ax_rank.scatter(row["pairwise"], yi, color=color, s=92, zorder=3)
+        ax_rank.text(
+            row["pairwise"] + 0.010,
+            yi,
+            f"{row['pairwise']:.3f}",
+            color=color,
+            ha="left",
+            va="center",
+            fontsize=14.5,
+            fontweight="bold" if row["label"] == "混合模型" else "normal",
+        )
+    ax_rank.set_xlim(0.45, 0.87)
+    ax_rank.set_ylim(-0.65, len(rows) - 0.35)
+    ax_rank.set_yticks(y)
+    ax_rank.set_yticklabels([row["label"] for row in rows], fontsize=14.5)
+    ax_rank.tick_params(axis="x", labelsize=14.5)
+    ax_rank.set_xlabel("两两排序准确率", fontsize=16)
+    ax_rank.set_title("a  四种工作量上限的快慢排序", loc="left", pad=12, fontsize=18)
+    ax_rank.text(
+        0.97,
+        0.96,
+        "参考值 0.75",
+        transform=ax_rank.transAxes,
+        color=TEAL,
+        ha="right",
+        va="top",
+        fontsize=14.5,
+    )
+    soft_grid(ax_rank, axis="x")
+
+    worst_grey = "#5F6B75"
+    ax_regret.axvspan(0, 5, color="#EAF7F5", zorder=0)
+    ax_regret.axvspan(5, 15, color="#F3F6F7", zorder=0)
+    ax_regret.axvline(5, color=TEAL, linestyle="--", linewidth=1.6, zorder=1)
+    ax_regret.axvline(15, color=GREY, linestyle=":", linewidth=1.8, zorder=1)
+    for separator in separators:
+        ax_regret.axhline(separator, color="#E5EAED", linewidth=1.0, zorder=1.5)
+    for row_index, (yi, row) in enumerate(zip(y, rows, strict=True)):
+        color = BLUE if row["label"] == "混合模型" else GREY
+        regrets = row["regrets"]
+        rng = np.random.default_rng(20260810 + row_index)
+        jitter = np.linspace(-0.24, 0.24, len(regrets))[rng.permutation(len(regrets))]
+        ax_regret.scatter(
+            regrets,
+            yi + jitter,
+            color=color,
+            s=38,
+            alpha=0.70 if row["label"] == "混合模型" else 0.48,
+            edgecolors="white",
+            linewidths=0.5,
+            zorder=3,
+        )
+        ax_regret.scatter(row["median"], yi, marker="D", color=color, s=70, zorder=5)
+        max_index = int(np.argmax(regrets))
+        ax_regret.scatter(
+            regrets[max_index],
+            yi + jitter[max_index],
+            color=BLUE if row["label"] == "混合模型" else worst_grey,
+            s=40,
+            zorder=6,
+        )
+    ax_regret.set_xlim(-2.5, 85)
+    ax_regret.set_ylim(-0.65, len(rows) - 0.35)
+    ax_regret.set_xlabel("错误选择后比实测最快上限多耗时（%）", fontsize=16)
+    ax_regret.set_title("b  错误选择造成的额外耗时", loc="left", pad=12, fontsize=18)
+    ax_regret.set_yticks(y)
+    ax_regret.set_yticklabels([row["label"] for row in rows], fontsize=14.5)
+    ax_regret.tick_params(axis="x", labelsize=14.5)
+    ax_regret.tick_params(axis="y", left=False, pad=4)
+    soft_grid(ax_regret, axis="x")
+
+    fig.legend(
+        handles=[
+            Line2D([0], [0], marker="o", color="none", markerfacecolor=GREY, markeredgecolor="white", markersize=8, label="单个留出场景"),
+            Line2D([0], [0], marker="D", color="none", markerfacecolor=GREY, markeredgecolor="none", markersize=8, label="菱形：中位数"),
+            Line2D([0], [0], marker="o", color="none", markerfacecolor=worst_grey, markeredgecolor="none", markersize=8, label="深色圆点：最差情境"),
+            Line2D([0], [0], marker="o", color="none", markerfacecolor=BLUE, markeredgecolor="none", markersize=8, label="蓝色：混合模型"),
+            Line2D([0], [0], color=TEAL, linestyle="--", linewidth=1.6, label="平均额外耗时参考值 5%"),
+            Line2D([0], [0], color=GREY, linestyle=":", linewidth=1.8, label="最差场景参考值 15%"),
+        ],
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.105),
+        ncol=3,
+        frameon=False,
+        fontsize=14.5,
+    )
+    fig.suptitle("六种方法的配置排序与错误选择后的额外耗时", fontsize=22, fontweight="bold", y=0.965)
+    fig.text(
+        0.5,
+        0.025,
+        "排序准确率与时间预测误差衡量不同能力；额外耗时按模型所选上限与实测最快上限的实际完成时间计算。",
+        ha="center",
+        va="bottom",
+        fontsize=14.5,
+        color=GREY,
+    )
+    finish(fig, "opening_cost_ranking_decision_loss_report")
 
 
 def _box(ax, x, y, w, h, title, detail, color) -> None:
