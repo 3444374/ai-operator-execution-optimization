@@ -1252,10 +1252,10 @@ L 929.568203 459.288
    </g>
   </g>
   <g id="text_93">
-   <text style="font-weight: 700; font-size: 15px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle" x="458.148203" y="20.1" transform="rotate(-0 458.148203 20.1)">相近 Job JCT 背后的服务供给与资源状态并不相同</text>
+   <text style="font-weight: 700; font-size: 15px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle" x="458.148203" y="20.1" transform="rotate(-0 458.148203 20.1)">吞吐、排队、缓存与利用率需要联合观察</text>
   </g>
   <g id="text_94">
-   <text style="font-size: 9.2px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle; fill: #263238" x="458.148203" y="49.492656" transform="rotate(-0 458.148203 49.492656)">Daft Native/Ray 形成高 waiting 与近满 KV；Ray Data 当前路径则是低 running、低 KV、低 MFU 的欠供给</text>
+   <text style="font-size: 9.2px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: middle; fill: #263238" x="458.148203" y="49.492656" transform="rotate(-0 458.148203 49.492656)">Daft Native/Ray 出现高排队与较高缓存占用；当前 Ray Data 路径为低运行请求、低缓存、低 MFU 的供给不足</text>
   </g>
   <g id="text_95">
    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #9aa4af" transform="translate(233.94875 507.977)">同一 2,048-row ShareGPT manifest；实心圆=3 次 formal 均值，离散度见审计数据。灰底 Ray Data 为欠供给诊断。</text>

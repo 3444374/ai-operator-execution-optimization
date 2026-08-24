@@ -26,7 +26,7 @@
 | 来源 | 簇/目标 | 数量 |
 |---|---|---|
 | 项目精读笔记 | A 推理服务（vLLM/Orca/Sarathi-Serve/SGLang/DistServe/Splitwise/Mooncake/FlexGen/Multi-Bin/ServerlessLLM/FlashAttention） | 11 |
-| 项目精读笔记 | B1 多 job 公平（VTC/Llumnix/FairServe/DLPM/Autellix/Chiron） | 6 |
+| 项目精读笔记 | B1 多 job 公平（VTC/Llumnix/FairServe/DLPM/Agentix/Chiron） | 6 |
 | 项目精读笔记 | B2 自适应 admission/路由（Clipper/CONCUR/SCORPIO/SABER/BucketServe/ProServe/CoLoRA/SFS） | 8 |
 | 项目精读笔记 | C 数据库 AI 系统（LOTUS/GaussML/Galois/Smart/SmartLite/InferDB/LEADS/NeurDB/Cortex AISQL/Palimpzest/Abacus） | 11 |
 | 项目精读笔记 | D 代价估计（Heinrich/CONCERTO/GRACEFUL/COSTREAM/Pathak/DB-Perspective/LLM4DM） | 7 |
@@ -75,7 +75,7 @@
 | Generation stall duration | prefill 抢占 decode 的秒级停顿 | Sarathi-Serve | — | 🔴 |
 | Checkpoint/cold-start latency | serverless 冷启动 | ServerlessLLM | — | ⚪ |
 | Task launch / object-store get-put（Ray） | Ray 组件级延迟 | Ray OSDI2018 | — | 🟡（feasibility 范畴） |
-| Program-level JCT / victim latency | 多步 agent program 端到端；被牺牲请求时延 | Autellix/DLPM/Llumnix | — | ⚪ |
+| Program-level JCT / victim latency | 多步 agent program 端到端；被牺牲请求时延 | Agentix（arXiv v1 名称 Autellix）/DLPM/Llumnix | — | ⚪ |
 
 ### 3.3 Tail / SLO
 

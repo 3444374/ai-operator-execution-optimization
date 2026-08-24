@@ -145,13 +145,13 @@
         <mxCell id="numtxt" value="&lt;b&gt;04&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=34;fontColor=#FFFFFF;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="30" y="18" width="78" height="54" as="geometry" />
         </mxCell>
-        <mxCell id="title" value="&lt;b&gt;研究内容二：容量感知的提交、Credit、Routing 与多作业调度&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=39;fontColor=#000000;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
+        <mxCell id="title" value="&lt;b&gt;研究内容二：固定容量下的提交、路由与多作业调度&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=39;fontColor=#000000;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="130" y="15" width="1430" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="candidate_title" value="&lt;b&gt;候选：State-aware Admission / Routing&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
+        <mxCell id="candidate_title" value="&lt;b&gt;候选方法：结合运行状态的提交与路由&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="400" y="98" width="810" height="35" as="geometry" />
         </mxCell>
-        <mxCell id="candidate_body" value="固定签名内先标定安全容量与强静态上限&lt;br&gt;动态动作待同上限 A/B 验证；异常 → frozen-static" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#111827;fontStyle=0;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
+        <mxCell id="candidate_body" value="与相同请求数和工作量上限的固定方法比较&lt;br&gt;运行环境或负载分布变化时重新测量可提交范围" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#111827;fontStyle=0;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="400" y="132" width="810" height="44" as="geometry" />
         </mxCell>
         <mxCell id="jobs_title" value="&lt;b&gt;作业 / 请求入口&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#165DCC;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
@@ -178,10 +178,10 @@
         <mxCell id="job_dots" value="&lt;b&gt;⋮&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#111827;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="92" y="439" width="70" height="46" as="geometry" />
         </mxCell>
-        <mxCell id="admission_title" value="&lt;b&gt;1) Admission&lt;br&gt;安全准入&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
+        <mxCell id="admission_title" value="&lt;b&gt;1) 提交前&lt;br&gt;容量检查&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="278" y="238" width="179" height="62" as="geometry" />
         </mxCell>
-        <mxCell id="admission_body" value="标定安全容量&lt;br&gt;冻结强静态上限&lt;br&gt;异常 → static 回退" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#111827;fontStyle=0;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
+        <mxCell id="admission_body" value="运行前测量可提交范围&lt;br&gt;记录请求数与工作量上限&lt;br&gt;条件变化时重新测量" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#111827;fontStyle=0;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="280" y="410" width="175" height="125" as="geometry" />
         </mxCell>
         <mxCell id="credits_title" value="&lt;b&gt;2) Shared Credit&lt;br&gt;共享双重额度&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
@@ -211,7 +211,7 @@
         <mxCell id="fair_body" value="per-job floor / cap&lt;br&gt;work-fair deficit&lt;br&gt;idle borrowing" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#111827;fontStyle=0;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="772" y="500" width="186" height="52" as="geometry" />
         </mxCell>
-        <mxCell id="router_title" value="&lt;b&gt;4) State-aware&lt;br&gt;Endpoint Routing&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
+        <mxCell id="router_title" value="&lt;b&gt;4) 状态感知的&lt;br&gt;服务实例路由&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#E85D04;fontStyle=1;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">
           <mxGeometry x="1015" y="238" width="215" height="62" as="geometry" />
         </mxCell>
         <mxCell id="router_body" value="ready / queued&lt;br&gt;rate / queue age&lt;br&gt;KV / GPU / SLO" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;rounded=0;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#111827;fontStyle=0;spacing=0;spacingLeft=2;spacingRight=2;" vertex="1" parent="1">

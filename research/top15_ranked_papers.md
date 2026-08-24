@@ -68,7 +68,7 @@
 | SemBench | PVLDB 19(8), 2026 | semantic query engine benchmark、workload 与指标 | benchmark 依据，方法 Top 15 席位优先给直接算法来源 |
 | FairServe | arXiv 2024 | 多应用 weighted service 与 interaction-aware throttling | 预印本 |
 | DLPM / D2LPM | arXiv 2025 | prefix-locality 与 deficit fairness | 预印本 |
-| Autellix | arXiv 2025 | program/job-level attained service | 预印本 |
+| Agentix（arXiv v1 名称 Autellix） | NSDI 2026 | program/job-level attained service | 正式系统论文；作为核心补充，不替换当前 Top 15 |
 | Chiron | arXiv 2025 | 分层 backpressure 与 autoscaling | 预印本；autoscaling 超出固定双 GPU边界 |
 | Clipper | NSDI 2017 | AIMD batching 历史来源 | 现有 fixed/adaptive 实验已显示控制器不优于同上限静态策略 |
 | Splitwise | ISCA 2024 | prefill/decode 分池 | 与当前不修改 vLLM 的边界较远 |

@@ -23,5 +23,6 @@
 - 不把 PG18.4 本地结果写成 PG18.3 内部平台结果。
 - 优先保留可引用的一手资料：论文、官方文档、源码、真实实验结果。
 - 外部资料、引用和研究定位变化时，及时清理过时判断，避免和 `overview/`、`motivation/` 冲突。
+- 题录核验优先使用会议/期刊官网、正式 proceedings 和 DOI。已录用但正式卷期、页码或 DOI 尚未发布时，记录官方 `accepted`/`to appear` 状态，并把本地 arXiv PDF 的版本边界单独写清；不得根据文件名推断 venue，也不得把旧预印本的实验数字直接当作录用版本数据。
 
 详细材料见 `literature_and_evidence_review.md`。

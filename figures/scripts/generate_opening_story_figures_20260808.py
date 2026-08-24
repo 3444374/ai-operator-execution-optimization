@@ -111,7 +111,7 @@ def figure_motivation_work_state() -> None:
         fontweight="bold",
     )
     soft_grid(ax, axis="x")
-    ax.set_title("记录数掩盖模型工作量", loc="left")
+    ax.set_title("动机一 | 相同行数可能对应不同模型工作量", loc="left")
 
     ax = fig.add_subplot(gs[0, 1])
     labels = ["输入供应充足", "请求到达较慢"]
@@ -130,15 +130,18 @@ def figure_motivation_work_state() -> None:
         float(state.loc["near", "mfu_pct_mean"]),
     ]
     for bar, ratio, mfu in zip(bars, active, mfus, strict=True):
+        inside_bar = ratio > 0.70
         ax.text(
-            min(ratio + 0.03, 1.02),
+            ratio - 0.03 if inside_bar else ratio + 0.03,
             bar.get_y() + bar.get_height() / 2,
             f"达到上限 {ratio:.0%}；模型计算利用率 {mfu:.0f}%",
             va="center",
+            ha="right" if inside_bar else "left",
+            color="white" if inside_bar else DARK,
             fontsize=8.7,
         )
     soft_grid(ax, axis="x")
-    ax.set_title("配置允许的上限不等于实际在途工作", loc="left")
+    ax.set_title("动机二 | 固定上限不等于实际在途工作", loc="left")
 
     ax = fig.add_subplot(gs[0, 2])
     x = frontier["active_work_per_endpoint"].to_numpy() / 1024
@@ -190,7 +193,7 @@ def figure_motivation_work_state() -> None:
         ylim=(4.4, 8.7),
     )
     soft_grid(ax)
-    ax.set_title("增加在途工作到约 65K 后，吞吐已接近最高值", loc="left")
+    ax.set_title("动机二 | 不能只看吞吐，还要看尾延迟", loc="left")
     ax.legend(
         [Line2D([0], [0], color=BLUE, marker="o", linewidth=1.6, markersize=5)],
         ["圆点=3 次统计运行均值；误差线=标准差"],
@@ -212,14 +215,14 @@ def figure_motivation_work_state() -> None:
         )
 
     fig.suptitle(
-        "行数、配置上限与实际在途工作量是三个不同概念",
+        "两条核心动机：行数不能代表模型工作量，单一指标不能代表当前状态",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.02,
-        "a：RTX 5070 / Qwen2.5-1.5B；b–c：2×RTX 4090 / Qwen2.5-7B。点与误差线表示 3 次统计运行的均值±标准差；上限从 65K 增至 98K 时，P99 请求延迟由 36.8 秒增至 40.0 秒。",
+        "a：相同行数的模型工作量不同；b：固定上限不等于实际在途工作；c：吞吐增加时还要检查尾延迟。每个 Job 的进度由多 Job 实验另行展示。实验配置：a 为 RTX 5070 / Qwen2.5-1.5B；b–c 为 2×RTX 4090 / Qwen2.5-7B。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -229,10 +232,10 @@ def figure_motivation_work_state() -> None:
 
 
 def figure_motivation_work_state_split() -> None:
-    """Render the existing P08 evidence as two slide-scale figures.
+    """Render the same evidence as two slide-scale motivation figures.
 
-    This is a layout-only split: values, labels, annotations and evidence
-    wording are identical to ``figure_motivation_work_state``.
+    The data and statistical annotations remain unchanged. Titles expose the
+    parent motivation and the child evidence level used by the report.
     """
 
     token_runs = _formal(
@@ -277,9 +280,9 @@ def figure_motivation_work_state_split() -> None:
         fontweight="bold",
     )
     soft_grid(ax, axis="x")
-    ax.set_title("记录数掩盖模型工作量", loc="left")
+    ax.set_title("固定行数掩盖了每批请求的工作量差异", loc="left")
     fig.suptitle(
-        "行数、配置上限与实际在途工作量是三个不同概念",
+        "动机一：相同行数可能对应不同模型工作量",
         fontsize=15,
         fontweight="bold",
         y=0.94,
@@ -328,15 +331,18 @@ def figure_motivation_work_state_split() -> None:
         float(state.loc["near", "mfu_pct_mean"]),
     ]
     for bar, ratio, mfu in zip(bars, active, mfus, strict=True):
+        inside_bar = ratio > 0.70
         ax.text(
-            min(ratio + 0.03, 1.02),
+            ratio - 0.03 if inside_bar else ratio + 0.03,
             bar.get_y() + bar.get_height() / 2,
             f"达到上限 {ratio:.0%}；模型计算利用率 {mfu:.0f}%",
             va="center",
+            ha="right" if inside_bar else "left",
+            color="white" if inside_bar else DARK,
             fontsize=8.7,
         )
     soft_grid(ax, axis="x")
-    ax.set_title("配置允许的上限不等于实际在途工作", loc="left")
+    ax.set_title("固定上限不等于实际在途工作", loc="left")
 
     ax = fig.add_subplot(gs[0, 1])
     x = frontier["active_work_per_endpoint"].to_numpy() / 1024
@@ -388,7 +394,7 @@ def figure_motivation_work_state_split() -> None:
         ylim=(4.4, 8.7),
     )
     soft_grid(ax)
-    ax.set_title("增加在途工作到约 65K 后，吞吐已接近最高值", loc="left")
+    ax.set_title("不能只看吞吐，还要看尾延迟", loc="left")
     ax.legend(
         [Line2D([0], [0], color=BLUE, marker="o", linewidth=1.6, markersize=5)],
         ["圆点=3 次统计运行均值；误差线=标准差"],
@@ -397,7 +403,7 @@ def figure_motivation_work_state_split() -> None:
         handlelength=2.0,
     )
     fig.suptitle(
-        "行数、配置上限与实际在途工作量是三个不同概念",
+        "动机二：判断是否继续提交，不能只看一个指标",
         fontsize=15,
         fontweight="bold",
         y=0.94,
@@ -405,6 +411,7 @@ def figure_motivation_work_state_split() -> None:
     fig.text(
         0.5,
         0.07,
+        "固定上限回答‘最多允许多少’，实际在途工作、吞吐、排队和尾延迟回答‘当前发生什么’；每个 Job 的进度由多 Job 实验另行展示。\n"
         "实验配置：2×RTX 4090，Qwen2.5-7B，2 个模型服务实例；每个工作量上限进行 3 次统计运行。",
         ha="center",
         va="top",
@@ -865,7 +872,7 @@ def figure_native_single_job_state_fingerprint() -> None:
         )
 
     fig.suptitle(
-        "相近 Job JCT 背后的服务供给与资源状态并不相同",
+        "吞吐、排队、缓存与利用率需要联合观察",
         fontsize=15,
         fontweight="bold",
         y=0.965,
@@ -873,7 +880,7 @@ def figure_native_single_job_state_fingerprint() -> None:
     fig.text(
         0.5,
         0.895,
-        "Daft Native/Ray 形成高 waiting 与近满 KV；Ray Data 当前路径则是低 running、低 KV、低 MFU 的欠供给",
+        "Daft Native/Ray 出现高排队与较高缓存占用；当前 Ray Data 路径为低运行请求、低缓存、低 MFU 的供给不足",
         ha="center",
         va="center",
         fontsize=9.2,
@@ -1216,7 +1223,7 @@ def figure_multijob_interference_tradeoff() -> None:
         ):
             ax_eff.text(x, y, value, transform=ax_eff.transAxes, ha=align, va="center", color=color)
         ax_eff.plot([0.02, 0.96], [y - 0.12, y - 0.12], transform=ax_eff.transAxes, color=LIGHT_GRID, lw=0.8)
-    ax_eff.set_title("共享未使用份额提高总体效率", loc="left", pad=10)
+    ax_eff.set_title("共享未用份额提高总体效率", loc="left", pad=10)
 
     progress_values = np.array(
         [[static_progress[job], shared_progress[job]] for job in jobs]
@@ -1249,7 +1256,7 @@ def figure_multijob_interference_tradeoff() -> None:
     ax_fair.text(
         0.97,
         0.04,
-        f"Jain 指数：{static_jain:.3f} → {shared_jain:.3f}    "
+        f"完成速率公平指数（Jain）：{static_jain:.3f} → {shared_jain:.3f}    "
         f"长作业完成时间极差：{static_spread:.1f}s → {shared_spread:.1f}s",
         transform=ax_fair.transAxes,
         ha="right",
@@ -1270,14 +1277,14 @@ def figure_multijob_interference_tradeoff() -> None:
             va="bottom",
         )
     fig.suptitle(
-        "相同总容量下：共享未使用份额的效率与作业差异",
+        "相同总上限下：共享未用份额提高总体效率，但各 Job 改善幅度不同",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.015,
-        "短作业在0秒启动，三个长作业在5秒启动；每条线始终代表同一个作业，点为3次统计运行均值。静态分区和共享未使用份额采用相同总上限；独立运行与1/4份额用于区分份额减少和并发竞争的影响；图c统一按各作业独占完整资源时的完成时间归一化。",
+        "短作业在 0 秒启动，三个长作业在 5 秒启动；每条线始终代表同一个 Job，点为 3 次统计运行均值。静态分区和共享未用份额采用相同总上限；独立运行与 1/4 份额用于区分份额减少和并发竞争的影响；图 c 统一按各 Job 独占完整资源时的完成时间归一化。",
         ha="center",
         va="top",
         fontsize=8.5,

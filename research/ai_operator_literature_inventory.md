@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-08-23
+更新日期：2026-08-24
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -53,6 +53,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | 文献 | 题录状态 | 项目角色 |
 |---|---|---|
 | Palimpzest | CIDR 2025，非 CCF-A | 声明式计划搜索与 time/cost/quality profile；可部署系统 baseline |
+| Sema | VLDB 2026 Research Track 已录用；本地全文为 arXiv:2603.11622v1 | DuckDB 原生 semantic operator、expression optimization 与运行时 AQE；正式卷期页码待发布 |
 | SemBench | PVLDB 2026 正式 benchmark paper | 55 queries、多模态、质量/时间/成本/内存统一评价 |
 | Database Perspective on LLM Inference Systems | PVLDB 2025 Tutorial | 推理系统地图与代价估计 open problem |
 | Cortex AISQL | 按实际 Companion/工业轨道引用 | AI SQL 工业需求证据；不写成 CCF-A full paper |
@@ -66,7 +67,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 |---|---|---|
 | FairServe | arXiv 2024 | weighted service、interaction-aware throttling |
 | DLPM/D2LPM | arXiv 2025 | deficit fairness + prefix locality |
-| Autellix | arXiv 2025 | program/job-level attained service |
+| Agentix（arXiv v1 名称 Autellix） | NSDI 2026，2443–2459 | program/job-level attained service |
 | Chiron | arXiv 2025 | 分层 backpressure 与 autoscaling |
 | Clipper | NSDI 2017 | AIMD batching 历史来源 |
 | Splitwise | ISCA 2024 | prefill/decode 分池 |
@@ -79,7 +80,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 
 | 文献 | 状态 | 项目角色 |
 |---|---|---|
-| CONCERTO | arXiv 2024 | execution-mechanism-aware cost features |
+| CONCERTO | arXiv:2412.00749v2，2025；暂无正式 venue | execution-mechanism-aware cost features |
 | Redefining Cost Estimation | arXiv 2025 | plan feature 与学习型模型综述 |
 | SFS | arXiv 2026 | 动态 workload 的 service/TTFT 估计与路由 |
 | TIE — Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions | ICML 2026 | 用重尾输出长度分布和 Tail Inflated Expectation 替代单一点估计；支撑 work 分位数与 tail-risk 特征 |
@@ -143,13 +144,13 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | 简单上游 | vLLM official benchmark、bounded HTTP | 去除 Daft/Ray 后的强客户端对照 |
 | 官方数据引擎/runtime | Ray、Ray Data Streaming Batch、Daft 官方 API | 引擎默认执行与受控并发 |
 | 数据库 AI 算子系统 | LOTUS、Palimpzest、SemBench、Galois | 算子/计划/质量-成本 baseline |
-| 多 job 调度 | VTC、Llumnix；补充 FairServe、DLPM、Autellix | shared credit、公平性、job-level JCT |
+| 多 job 调度 | VTC、Llumnix；补充 FairServe、DLPM、Agentix | shared credit、公平性、job-level JCT |
 | 代价估计 | Learned Cost Models、GRACEFUL、COSTREAM、Abacus | 配置和路由选择依据 |
 
 ## 六、当前本地状态
 
 - `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
-- `research/精读文献笔记/`：精读笔记权威库，当前包含 LOTUS、Galois、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 九篇主笔记，共 74 张论文原图裁剪件；不维护阅读状态字段。
-- `research/reference/`：本轮保留 21 份可解析 PDF，其中 Top 15 的 15 份全部齐全。
+- `research/精读文献笔记/`：精读笔记权威库，当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 十二篇主笔记，共 97 张论文原图裁剪件；不维护阅读状态字段。
+- `research/reference/`：当前工作区有 4 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。

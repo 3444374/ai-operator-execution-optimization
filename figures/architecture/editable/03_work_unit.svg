@@ -74,55 +74,55 @@
   <rect x="1045" y="304" width="515" height="30" rx="9" fill="#F8FBFF" stroke="#165DCC" stroke-width="1.2"/>
   <text x="1060" y="325" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="normal" fill="#374151" text-anchor="start">文本：词元数 / 前缀</text>
   <text x="1280" y="325" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="normal" fill="#374151" text-anchor="start">图像：字节数 / 缩放 / 张量</text>
-  <path d="M1168 342 L1168 346" fill="none" stroke="#E85D04" stroke-width="2" stroke-dasharray="4 4"/>
-  <polygon points="1168,350 1164,344 1172,344" fill="#E85D04"/>
-  <rect x="1045" y="350" width="245" height="54" rx="12" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5" stroke-dasharray="5 4"/>
-  <text x="1168" y="372" font-family="STHeiti,Arial,sans-serif" font-size="16" font-weight="bold" fill="#E85D04" text-anchor="middle">可选代价估计结果</text>
-  <text x="1168" y="394" font-family="STHeiti,Arial,sans-serif" font-size="15" font-weight="normal" fill="#E85D04" text-anchor="middle">预计时间 · 误差范围 · 校准状态</text>
+  <path d="M1168 342 L1168 346" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="4 4"/>
+  <polygon points="1168,350 1164,344 1172,344" fill="#6B7280"/>
+  <rect x="1045" y="350" width="245" height="54" rx="12" fill="#F8FAFC" stroke="#6B7280" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="1168" y="372" font-family="STHeiti,Arial,sans-serif" font-size="16" font-weight="bold" fill="#4B5563" text-anchor="middle">可选代价估计结果</text>
+  <text x="1168" y="394" font-family="STHeiti,Arial,sans-serif" font-size="15" font-weight="normal" fill="#4B5563" text-anchor="middle">预计时间 · 误差范围</text>
   <path d="M422 236 L452.00 236.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
   <polygon points="462,236 452.00,242.00 452.00,230.00" fill="#165DCC"/>
   <path d="M990 236 L1017.00 236.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
   <polygon points="1027,236 1017.00,242.00 1017.00,230.00" fill="#165DCC"/>
   <path d="M1302 342 L1302.00 402.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
   <polygon points="1302,412 1296.00,402.00 1308.00,402.00" fill="#165DCC"/>
-  <rect x="100" y="420" width="1400" height="170" rx="16" fill="#FFFFFF" stroke="#E85D04" stroke-width="2"/>
-  <rect x="118" y="430" width="202" height="36" rx="18" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
-  <text x="219" y="456" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="bold" fill="#E85D04" text-anchor="middle">候选方法（分别比较）</text>
-  <text x="790" y="459" font-family="STHeiti,Arial,sans-serif" font-size="27" font-weight="bold" fill="#E85D04" text-anchor="middle">2) 候选批次组织方式（工作量 + 均衡 + 局部性）</text>
+  <rect x="100" y="420" width="1400" height="170" rx="16" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/>
+  <rect x="118" y="430" width="202" height="36" rx="18" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
+  <text x="219" y="456" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="bold" fill="#165DCC" text-anchor="middle">候选方法（分别比较）</text>
+  <text x="790" y="459" font-family="STHeiti,Arial,sans-serif" font-size="27" font-weight="bold" fill="#165DCC" text-anchor="middle">2) 候选批次组织方式（工作量 + 均衡 + 局部性）</text>
   <rect x="1180" y="430" width="300" height="36" rx="18" fill="#F5F0FF" stroke="#5B2AA6" stroke-width="1.5"/>
   <text x="1330" y="456" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="bold" fill="#5B2AA6" text-anchor="middle">按运行条件分别比较</text>
-  <rect x="120" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <rect x="120" y="482" width="300" height="86" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
   <g transform="translate(136 494) scale(0.906250 0.906250)">
-    <path d="M22 16h32M22 32h24M22 48h17" stroke="#E85D04" stroke-width="5" stroke-linecap="round"/>
-    <text x="3" y="22" font-family="Arial" font-size="20" font-weight="bold" fill="#E85D04">1</text>
-    <text x="3" y="39" font-family="Arial" font-size="20" font-weight="bold" fill="#E85D04">2</text>
-    <text x="3" y="56" font-family="Arial" font-size="20" font-weight="bold" fill="#E85D04">3</text>
+    <path d="M22 16h32M22 32h24M22 48h17" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
+    <text x="3" y="22" font-family="Arial" font-size="20" font-weight="bold" fill="#165DCC">1</text>
+    <text x="3" y="39" font-family="Arial" font-size="20" font-weight="bold" fill="#165DCC">2</text>
+    <text x="3" y="56" font-family="Arial" font-size="20" font-weight="bold" fill="#165DCC">3</text>
   </g>
   <text x="308" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Sequential</text>
   <text x="308" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x4FDD;&#x5E8F;</text>
-  <rect x="460" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <rect x="460" y="482" width="300" height="86" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
   <g transform="translate(476 494) scale(0.906250 0.906250)">
-    <path d="M15 8v48M32 8v48M49 8v48" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="15" cy="23" r="6" fill="#FFFFFF" stroke="#E85D04" stroke-width="4"/>
-    <circle cx="32" cy="41" r="6" fill="#FFFFFF" stroke="#E85D04" stroke-width="4"/>
-    <circle cx="49" cy="29" r="6" fill="#FFFFFF" stroke="#E85D04" stroke-width="4"/>
+    <path d="M15 8v48M32 8v48M49 8v48" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="15" cy="23" r="6" fill="#FFFFFF" stroke="#165DCC" stroke-width="4"/>
+    <circle cx="32" cy="41" r="6" fill="#FFFFFF" stroke="#165DCC" stroke-width="4"/>
+    <circle cx="49" cy="29" r="6" fill="#FFFFFF" stroke="#165DCC" stroke-width="4"/>
   </g>
   <text x="648" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Length-aligned</text>
   <text x="648" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x957F;&#x5EA6;&#x5BF9;&#x9F50;</text>
-  <rect x="800" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <rect x="800" y="482" width="300" height="86" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
   <g transform="translate(816 494) scale(0.906250 0.906250)">
-    <path d="M8 56V8M8 56h48" fill="none" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
-    <rect x="16" y="31" width="8" height="25" fill="none" stroke="#E85D04" stroke-width="4"/>
-    <rect x="28" y="19" width="8" height="37" fill="none" stroke="#E85D04" stroke-width="4"/>
-    <rect x="40" y="40" width="8" height="16" fill="none" stroke="#E85D04" stroke-width="4"/>
+    <path d="M8 56V8M8 56h48" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+    <rect x="16" y="31" width="8" height="25" fill="none" stroke="#165DCC" stroke-width="4"/>
+    <rect x="28" y="19" width="8" height="37" fill="none" stroke="#165DCC" stroke-width="4"/>
+    <rect x="40" y="40" width="8" height="16" fill="none" stroke="#165DCC" stroke-width="4"/>
   </g>
   <text x="988" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Best-fit</text>
   <text x="988" y="548" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="normal" fill="#374151" text-anchor="middle">按批次工作量上限装箱</text>
-  <rect x="1140" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <rect x="1140" y="482" width="300" height="86" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
   <g transform="translate(1156 494) scale(0.906250 0.906250)">
-    <path d="M32 8c-11 0-19 8-19 19 0 14 19 30 19 30s19-16 19-30C51 16 43 8 32 8z" fill="none" stroke="#E85D04" stroke-width="4"/>
-    <circle cx="32" cy="27" r="7" fill="none" stroke="#E85D04" stroke-width="4"/>
-    <path d="M10 56h44" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
+    <path d="M32 8c-11 0-19 8-19 19 0 14 19 30 19 30s19-16 19-30C51 16 43 8 32 8z" fill="none" stroke="#165DCC" stroke-width="4"/>
+    <circle cx="32" cy="27" r="7" fill="none" stroke="#165DCC" stroke-width="4"/>
+    <path d="M10 56h44" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
   </g>
   <text x="1328" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Locality-aware</text>
   <text x="1328" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x5C40;&#x90E8;&#x6027;&#x4F18;&#x5148;</text>
@@ -160,12 +160,12 @@
   <text x="1287.5" y="775" font-family="STHeiti,Arial,sans-serif" font-size="18" font-weight="bold" fill="#5B2AA6" text-anchor="middle">只在相同运行条件下比较</text>
   <path d="M1440 785 L1440 800 Q1440 810 1430 810 L80 810 Q70 810 70 800 L70 410 Q70 400 80 400 L720 400 Q730 400 730 390" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 7"/>
   <polygon points="730,380 725,390 735,390" fill="#6B7280"/>
-  <text x="695" y="834" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#6B7280" text-anchor="middle">根据运行结果调整</text>
+  <text x="695" y="834" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#6B7280" text-anchor="middle">评价结果用于选择组织方法</text>
   <path d="M150 852 L205.00 852.00" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
   <polygon points="215,852 205.00,858.00 205.00,846.00" fill="#165DCC"/>
   <text x="230" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x6570;&#x636E; / Work &#x6D41;</text>
-  <path d="M460 852 L515.00 852.00" fill="none" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
-  <polygon points="525,852 515.00,858.00 515.00,846.00" fill="#E85D04"/>
+  <path d="M460 852 L515.00 852.00" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="525,852 515.00,858.00 515.00,846.00" fill="#165DCC"/>
   <text x="540" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x7EC4;&#x7EC7; / &#x51B3;&#x7B56;</text>
   <path d="M760 852 L815.00 852.00" fill="none" stroke="#15803D" stroke-width="4" stroke-linecap="round"/>
   <polygon points="825,852 815.00,858.00 815.00,846.00" fill="#15803D"/>

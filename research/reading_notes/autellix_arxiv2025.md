@@ -9,7 +9,9 @@ status: 精读完成
 read_date: 2026-07-29
 ---
 
-# 精读笔记：Autellix（arXiv 2025）
+# 精读笔记：Autellix（arXiv 2025；正式版更名为 Agentix）
+
+> **版本更新（2026-08-24）**：本文笔记基于 arXiv:2502.13965 的早期 Autellix 版本。该工作已以 *Agentix: An Efficient Serving Engine for LLM Agents as General Programs* 正式发表于 NSDI 2026（2443–2459）；正式写作优先引用 Agentix，本文保留旧名以对应本地 PDF、算法描述和历史笔记位置。
 
 ## 第一层：基本信息
 

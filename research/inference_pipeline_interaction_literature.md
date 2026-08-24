@@ -14,7 +14,7 @@
 3. **推理引擎内部的 prefill-decode 协同**（prefill-decode interaction）：推理引擎内部两个阶段的批处理冲突与调度。现有工作：DistServe、Splitwise、Mooncake 等。
 
 4. **数据库 semantic operator 优化**：LOTUS、Palimpzest、Abacus 已研究调用数、模型选择、质量、成本和物理计划，但不研究固定 vLLM endpoint 下的最小饱和 active work、request-level refill 和 shared credit。
-5. **多租户公平与动态 serving**：VTC、Llumnix、FairServe、DLPM、Autellix 已研究 token-cost fairness、多实例迁移、interaction/program scheduling，但主要位于 serving 内部或应用服务层。
+5. **多租户公平与动态 serving**：VTC、Llumnix、FairServe、DLPM、Agentix（arXiv v1 名称 Autellix）已研究 token-cost fairness、多实例迁移、interaction/program scheduling，但主要位于 serving 内部或应用服务层。
 
 因此本课题的可辩护空白是：**在不修改 vLLM 的条件下，数据库 AI operator 的上游 Daft/Ray runtime 如何用统一 work 估计协调数据组织、达到 serving ceiling 所需的最小压力、request-level replenishment 和多 job work-conserving fairness，并在同模型、同 work、同硬件的官方系统 baseline 上验证。**
 
@@ -373,7 +373,7 @@
 | **Prefix/Tag/Cache-Aware** | SGLang radix tree, Parrot semantic variable, KVFlow agent step graph, EPIC position-independent | 数据管线侧 prefix-aware 预组织对推理引擎 prefix caching 效率的影响 |
 | **Pipeline × Inference 桥接** | Ray Data vLLM integration（工程集成，非研究）, HedraRAG（检索×生成协调） | 系统性的上游 batch 策略 × 下游 continuous batching 协同优化（理论模型、实验验证、跨 workload 泛化） |
 | **数据库 semantic operator** | LOTUS、Palimpzest、Abacus；SemBench 负责 benchmark | 固定相同模型调用 work 时，上游 runtime 怎样更快达到 capacity ceiling 并控制排队 |
-| **多 job 公平** | VTC、Llumnix、FairServe、DLPM、Autellix | 不修改 vLLM 时的 endpoint-shared request/work credit、idle borrowing 和 job-level JCT |
+| **多 job 公平** | VTC、Llumnix、FairServe、DLPM、Agentix | 不修改 vLLM 时的 endpoint-shared request/work credit、idle borrowing 和 job-level JCT |
 | **代价估计** | Learned Cost Models、GRACEFUL、COSTREAM、Abacus | prompt/output work、service/JCT、remaining work 怎样初始化 active-work/K 并驱动组织/路由/提交 |
 
 ### 核心空白表述

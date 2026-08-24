@@ -88,9 +88,9 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 
 | 图 | 角色与边界 |
 |---|---|
-| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-17 在容量曲线内补入真实代价注释：65K→98K 吞吐仅 +2.3%，P99 36.8→40.0 s（+8.9%）；不使用双 Y 轴。 |
-| `data/report_main/opening_motivation_work_state_part1_work.png` / `.svg` | 原动机三联图 panel a 的 16:9 拆分版；数值、标签和结论不变，底注改为实验配置。 |
-| `data/report_main/opening_motivation_work_state_part2_state_capacity.png` / `.svg` | 原动机三联图 panels b–c 的 16:9 拆分版；容量曲线直接标注 65K→98K 的吞吐增量与 P99 代价，底注保留硬件、模型、endpoint 和 formal repeat 配置。 |
+| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机问题一和问题二的联合证据图。panel a 说明相同行数仍有 14.3× 模型工作量差异；panels b、c 说明固定上限不等于实际在途工作，并且吞吐增加时还要检查尾延迟。多 Job 干扰作为问题三由原生四作业图另行展示。 |
+| `data/report_main/opening_motivation_work_state_part1_work.png` / `.svg` | 动机一的 16:9 图：相同行数可能对应不同模型工作量。数值与统计口径不变。 |
+| `data/report_main/opening_motivation_work_state_part2_state_capacity.png` / `.svg` | 动机二的 16:9 图：判断是否继续提交，不能只看一个指标。左图说明固定上限与实际在途工作不同，右图说明吞吐和尾延迟需要一起检查；每个 Job 的进度另图展示。 |
 | `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。只在 panel 内排名；Project 没有同一 2,048-row graph→gather 正式点，图中明确标注而不混入右侧排名。2026-08-10 修正多行 y 轴标签：文本块贴近轴，块内两行居中。 |
 | `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 现有原生框架的多 Job 动机图：三条 vendor-owned 执行图的 four-job/isolated-single JCT 影响矩阵；格内同时给出 slowdown 倍率与 JCT 增幅，Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名，也不用于证明项目方法胜出。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
@@ -105,8 +105,8 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `data/report_main/opening_cost_model_decision_quality_v3.png` / `.svg` | 与 v2 相同的两 panel（配置排序 + 决策损失分布），唯一区别是 panel b 标题写全为“决策损失分布（模型预测最优与实际最优的偏离）（20 个场景）”：经校验该偏离（`argmin(predicted_mean_s)` 候选的实际偏离）在数值上等于 decision regret，二者是同一个量，故不单列第三 panel。v2 保留。 |
 | `data/report_main/opening_cost_model_decision_quality_v4.png` / `.svg` / `.pdf` | PPT 第 29 页专用三组图。图 a 用六个统一坐标的小图分别展示六种估计方法的 80 组候选均值：同一横坐标上的空心点为真实时间、实心点为预测时间，竖线长度为两者相差的秒数；每幅图直标中位相对偏差和平均绝对误差。图 b 保留四种在途工作量上限的两两排序准确率，图 c 保留 20 个留出场景的选择损失，并直接标出混合模型中位数 0、平均 2.90%、最差 14.72%。该图明确显示混合模型并非单点时间预测误差最小，只支持其在当前实验中的候选排序与选择结果较好。 |
 | `data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 单 Job 主结果：Job JCT、vLLM waiting、单请求 queue time、TTFT 四项原单位对齐；说明相近 makespan 可掩盖请求级排队。Project 暂无同一 2,048-row graph→gather 正式点，故只在图注说明缺口，不用 database-E2E 或 512-row eager 诊断补位。 |
-| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | JCT 补充诊断：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分最小饱和、过量排队与欠供给。Project 同样因计时/manifest 合同不匹配而不进入六项横向坐标。 |
-| `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | Project 机制 A/B 图：每条线固定代表同一个Job，从独立运行、1/4配额、四Job静态竞争到共享调度，直接显示配额、竞争与策略变化趋势；右侧效率表统一报告相对变化，Static/Shared原值使用中性色，仅变化列以红色上涨、绿色下跌和正负号编码；进度折线呈现效率—公平权衡。Static/Shared是同上限互斥A/B臂。 |
+| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | 单作业服务状态联合观察：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分过量排队与欠供给。Project 同样因计时与输入清单不匹配而不进入六项横向坐标。 |
+| `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | 同一总上限下的四 Job 对照图：每条线固定代表同一个 Job，从独立运行、1/4 份额、四 Job 静态竞争到共享方式，直接显示份额减少、并发竞争和共享未用份额的影响；右侧表格给出总体效率变化，进度折线说明四个 Job 都加快但改善幅度不同。静态与共享是同上限的两个互斥对照。 |
 
 统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
 禁止外推合同：`audit/opening_story_figures_contract_20260808.md`；第一性原理的选图依据见
@@ -483,6 +483,9 @@ than larger background inflight. Tuned adaptive does downshift, but it is not
 yet better than static `K_max=8`.
 # Figure asset updates
 
+- 2026-08-24: 为 Sema 精读笔记从本地 arXiv v1 PDF 裁剪正文全部 Figure 1–8，输出到 `research/精读文献笔记/sema_vldb2026/figures/`，并替换笔记中失效的 `/mnt/data/sema_figures/` 临时路径。配图覆盖系统架构、SemaSQL 示例、端到端 workflow、总体 latency/quality、execution optimization、AQE breakdown 与 Q6 case study；Table 1、Algorithm 1 和附录 Figure 9–40 已有等价文字转写，不重复截图。版本边界、页码、SHA256 与视觉 QA 见 `audit/sema_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 Abacus 精读笔记核对正式 PVLDB 版全部 Figure 1–8。新增目录中的 8 个 PNG 与论文一致，但正文错误引用不存在的 `assets/fig*.png`；现已统一修复为 `research/精读文献笔记/abacus_pvldb2026/figures/`，并在动机、系统流程、Cascades、三个 benchmark 查询计划、prior、约束响应和消融对应段落补充来源与证据边界。图号、页码、SHA256、视觉一致性和低分辨率边界见 `audit/abacus_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 Palimpzest 精读笔记从本地 2024 arXiv v2 PDF 选择并裁剪全部 Figure 1–7，输出 7 个裁剪件到 `research/精读文献笔记/palimpzest_cidr2025/figures/`；配图覆盖系统流程、三个 SAPP 工作负载、声明式程序、关系代数、多模态依赖、实测 Pareto frontier 和 Policy 选择结果。附录 Figure 8–9 与已转写的 workload/程序信息重复，不加入正文；选图、CIDR 版本边界、页码、SHA256 与视觉 QA 见 `audit/palimpzest_deep_reading_figures_audit_20260824.md`。
 - 2026-08-24: 新增开题报告专用架构状态图 `architecture/opening_target_architecture_status.{png,svg}`，并同步报告副本 `opening/report/figures/target_architecture_status.png`。图中用上下两条路径区分目标 PostgreSQL planner-visible 算子链和当前外部可运行链，用实线与虚线同时编码实现状态，避免把现有性能证据写成数据库内算子已完成。生成脚本为 `scripts/generate_opening_target_architecture_status.py`，视觉与主张审计见 `audit/opening_target_architecture_status_audit_20260824.md`。
 - 2026-08-24: 为 Galois 精读笔记从本地 SIGMOD 2025 论文 PDF 选择并裁剪 Figure 1–4、7–11，输出 9 个裁剪件到 `research/精读文献笔记/galois_sigmod2025/figures/`；配图覆盖 DB-first 动机、predicate pushdown、Table-Scan/Key-Scan、logical-plan 枚举、logprob 过滤、query complexity 质量/成本、`τ` 校准和 oracle-optimal gap。Figure 5–6 的 prompt syntax 与 Table/Algorithm 已由正文转写，不重复截图；选择理由、页码、SHA256 与视觉 QA 见 `audit/galois_deep_reading_figures_audit_20260824.md`。
 - 2026-08-23: 修正开题报告图 2、图 3、图 5 和图 6，并同步权威源、开题专用图集与报告副本。图 2 用具体动作说明三项跨层能力；图 3 将 WorkDescriptor 基础字段与可选代价估计结果分开；图 5 将代价估计连接数据库优化器 / 多 SQL 调度，将实际运行状态返回提交与路由模块；图 6 只调整公开组名和说明文字，七个实验数值保持不变。完整路径、SHA256 和视觉检查见 `audit/opening_report_minimal_figure_corrections_audit_20260823.md`。

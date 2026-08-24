@@ -155,6 +155,9 @@
 | `figures/audit/local_reference_figure_reading_notes.md` | 本地 PDF 图形阅读笔记 | 记录已下载论文中的机制图经验，并合并到运行时控制闭环图方案 |
 | `figures/audit/lotus_deep_reading_figures_audit_20260821.md` | LOTUS 精读配图选择与裁剪审计 | 核对论文 Figure 1/4/6/7 的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/galois_deep_reading_figures_audit_20260824.md` | Galois 精读配图选择与裁剪审计 | 核对 SIGMOD 2025 论文 Figure 1–4/7–11 的独立论证角色、motivation/oracle 边界、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/palimpzest_deep_reading_figures_audit_20260824.md` | Palimpzest 精读配图选择与裁剪审计 | 核对 arXiv v2 Figure 1–7 的独立论证角色、CIDR 版本边界、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/abacus_deep_reading_figures_audit_20260824.md` | Abacus 精读配图选择与引用审计 | 核对 PVLDB 正式版 Figure 1–8 的独立论证角色、错误路径修复、来源页码、SHA256、图像一致性和证据边界 |
+| `figures/audit/sema_deep_reading_figures_audit_20260824.md` | Sema 精读配图选择与裁剪审计 | 核对 arXiv v1 正文 Figure 1–8 的独立讲解价值、正式 venue 边界、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/ayo_deep_reading_figures_audit_20260822.md` | AYO 精读配图选择与裁剪审计 | 核对 ASPLOS 正式版 Figure 1/3–12（不含 Figure 2）的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/cortex_aisql_deep_reading_figures_audit_20260822.md` | Cortex AISQL 精读配图选择与裁剪审计 | 核对论文 Figure 1/7/9/10/11/12 的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md` | Ray Data Streaming Batch 精读配图选择与裁剪审计 | 核对 arXiv v5 Figure 2/4/5/6/7/9 的选择理由、版本边界、来源页码、SHA256、裁剪方式和视觉 QA |
@@ -296,6 +299,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
 | `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/I/J/E、单 Job 任务—请求主图、F 状态备份图及既有架构图；A/D 同时输出 P07/P08 的 16:9 拆分版 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
 | `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/I/J/E/F 已通过 QA，G 不画 |
+| `figures/audit/opening_motivation_hierarchy_revision_20260824.md` | 三个动机问题、两项研究内容、代价估计共同支撑及动机/初步结果图角色审计 | 修改开题动机图、报告证据顺序或答辩动机页前读取 |
 | `figures/data/report_main/opening_cost_model_decision_quality_v4.{png,svg,pdf}` | 第 29 页代价估计三组图：六种方法各自的真实—预测时间与逐候选差值、四种上限的两两排序、错误选择后的额外耗时 | 修改 PPT 或报告的代价估计证据页时使用；每种方法为 80 组候选均值，不得表述成 429 个独立预测 |
 | `figures/audit/opening_required_data_figures_20260810.md` | 从六项开题证明义务推导正文、备份、附录和明确不画的最小图集 | 决定一张实验图是否应进开题、PPT还是论文阶段前读 |
 | `figures/opening_figure_set/README.md` 与 `main_png/`、`main_svg/`、`editable_drawio/`、`backup_*` | 按 20 页答辩页码和中文用途重命名的开题专用图集：21 张 PPT 主讲候选图、10 张 Draw.io 概念源、2 张备份图；P07/P08 各拆为 A/B 两张，研究内容一新增 P12A（WorkDescriptor）/P13A（WorkOrganizer）两张概念图 | 制作开题 PPT/报告时从这里选图，不再浏览整个 `report_main/`；权威源仍在原目录 |
@@ -303,9 +307,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/audit/opening_background_figures_20260812.md` | 第 2–4 页三图的内容边界、结构检查与视觉审计汇总 | 引用或替换三张背景图前读取 |
 | `figures/audit/opening_figure_set_manifest_20260811.md` | 开题专用图集的选图依据、源文件映射、格式合同、排除项与复制 QA | 新增、替换或同步开题图集前读取 |
 | `figures/audit/opening_report_minimal_figure_corrections_audit_20260823.md` | 开题报告图 2、图 3、图 5、图 6 的语义修正、文件同步、数值保持与视觉审计 | 修改报告关键概念图或两组文本执行路径图前读取 |
-| `figures/architecture/opening_target_architecture_status.png` / `.svg` | 开题报告目标数据库内算子路径与当前可运行证据链状态图 | 说明目标架构、当前实现状态和两项研究内容时使用；不能作为策略性能证据 |
-| `figures/scripts/generate_opening_target_architecture_status.py` | 目标架构与实现状态图生成脚本 | 修改模块、状态、术语或版式后重新生成 PNG/SVG 和报告副本 |
-| `figures/audit/opening_target_architecture_status_audit_20260824.md` | 新架构状态图的主张、视觉与使用限制审计 | 在报告或 PPT 中引用新架构图前读取 |
+| `figures/architecture/opening_target_architecture_status.png` / `.svg` | 目标数据库内算子路径与当前外部实验路径的历史候选状态图，当前报告未引用 | 以后重新考虑架构状态图时参考；不能作为策略性能证据 |
+| `figures/scripts/generate_opening_target_architecture_status.py` | 历史候选架构状态图的生成脚本 | 只有恢复该图时才修改并重新生成 PNG/SVG |
+| `figures/audit/opening_target_architecture_status_audit_20260824.md` | 历史候选架构状态图的主张、视觉与使用限制审计 | 在报告或 PPT 中恢复引用该图前读取 |
 | `figures/scripts/embed_svg_assets.py` | 将 SVG 的本地相对 icon/Logo 引用机械内嵌为 data URI | 生成可单文件拖入 PowerPoint/Word 的开题图集 SVG 副本；不改权威源图 |
 | `figures/data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | Daft Native/Ray、Ray Data 的 Short 与三个 Long 的 four-job/isolated-single JCT 比值 | 证明共享服务多 Job 干扰是共同外部现象；禁止跨框架绝对 JCT 排名 |
 | `figures/data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | SQuAD database-E2E 产品轨与 ShareGPT 官方 Chat graph 轨的文本 baseline 分轨图 | 呈现 DuckDB、Daft Native/Ray、Ray Data 的可比合同与问题；禁止跨 panel 排名 |
@@ -495,16 +499,16 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
-| `opening/report/opening_report_20260824_qa.md` | 当前中文开题报告的七部分结构、两项研究内容、术语、主张范围、6 张图与 60 条参考文献审查 | 复核当前开题正文或转入 Word/WPS 排版前读 |
+| `opening/report/opening_report_20260824_qa.md` | 当前中文开题报告的七部分结构、三个动机问题到两项研究内容的映射、代价估计角色、16 张图与 52 条参考文献审查 | 复核当前开题正文或转入 Word/WPS 排版前读 |
 | `opening/report/opening_report_20260820_qa.md` | 2026-08-23 版中文报告的模板、证据范围、术语、11 张图与 51 条参考文献审查 | 只用于核对上一版报告历史 |
 | `opening/report/figures/` | 开题报告正文专用图片副本与来源映射 | Markdown 转 Word 或核查图文一致性时读 |
-| `opening/report/figures/target_architecture_status.png` | 当前报告图 2 的 1600 × 900 PNG 副本 | Markdown、Word 或 WPS 排版使用；内容修改回到权威 SVG 与生成脚本 |
+| `opening/report/figures/target_architecture_status.png` | 目标路径与当前外部实验路径的历史候选 PNG 副本，当前报告未引用 | 若以后恢复使用，先核对报告层级与图中文字；内容修改回到权威 SVG 与生成脚本 |
 | `opening/report/opening_report_20260812_qa.md` | 中文开题报告模板、图表、引用、实现边界和 PPT 口径审计 | 冻结或复核开题发布材料时读 |
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
 | `opening/literature/top15_reading_notes/` | 开题 Top 15 历史笔记快照 | 15/15 严格 CCF-A 正式 research paper 的自包含历史快照；不随新精读库自动更新 |
 | `research/reading_notes/` | 泛读笔记库（历史 49 篇 + 泛读模板） | 论文筛选、快速回顾和背景事实索引；历史笔记深度不一 |
-| `research/精读文献笔记/` | 精读笔记权威库（当前 9 篇、74 张论文原图） | 每篇论文独立目录；LOTUS、Galois、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
-| `research/reference/` | 当前可解析参考 PDF（21 份） | Top 15 PDF 15/15 齐全；题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
+| `research/精读文献笔记/` | 精读笔记权威库（当前 12 篇、97 张论文原图） | 每篇论文独立目录；LOTUS、Galois、Palimpzest、Abacus、Sema、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
+| `research/reference/` | 当前工作区可解析参考 PDF（4 份） | Galois、Abacus、Palimpzest、Sema；历史题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
 | `research/lotus_postgresql_execution_layer_fit_20260821.md` | PostgreSQL、LOTUS 与 SAOR 的执行分层审计 | 判断 LOTUS 应作为逻辑前端、系统 baseline 还是主执行依赖；含 first-principles 边界和最小 capability gate |
 | `experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md` | PostgreSQL 内置 LOTUS AI 语义算子实施主计划 | 当前优先把项目 UDF/manifest-like `AI_COMPLETE` 迁移到真实 LOTUS v1.2.4 `sem_map`；含 Q1–Q23 决策记录、typed semantic/runtime seam、现有代码迁移地图、emulated operator contract、PG CustomScan 资格门、两类 LOTUS baseline、两 panel 矩阵与分阶段验收 |

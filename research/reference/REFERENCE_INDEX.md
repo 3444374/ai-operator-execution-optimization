@@ -1,7 +1,7 @@
 # 项目参考资料索引
 
-更新日期：2026-08-04
-本索引列出当前 `research/reference/` 中实际存在的 PDF 文件，并与精读笔记交叉引用。
+更新日期：2026-08-24
+本索引保留项目历史题录登记，并与精读笔记交叉引用；当前工作区实际存在且已解析的 PDF 以同目录 `README.md` 为准。
 Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`。
 
 ## 一、Top 15 正式论文（15/15 CCF-A research paper）
@@ -24,17 +24,18 @@ Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`
 | 14 | `costream_icde2024.pdf` | COSTREAM: Learned Cost Models for Operator Placement | ICDE 2024 | `costream_icde2024.md` |
 | 15 | `abacus_pvldb2026.pdf` | Abacus: A Cost-Based Optimizer for Semantic Operator Systems | PVLDB 19(5), 2026 | `abacus_pvldb2026.md` |
 
-Top 15：15/15 已下载、15/15 有精读笔记。选择依据与排名逻辑见 `../top15_ranked_papers.md`。
+Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Abacus 两份实体 PDF，实际可用状态以同目录 `README.md` 为准。选择依据与排名逻辑见 `../top15_ranked_papers.md`。
 
-## 二、核心补充论文（13 篇，有精读笔记）
+## 二、核心补充论文（新增 Sema）
 
 | 文件 | 论文 | 正式出处 | 笔记 | 不进 Top 15 原因 |
 |---|---|---|---|---|
 | `palimpzest_cidr2025.pdf` | Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing | CIDR 2025 | `palimpzest_cidr2025.md` | CIDR 非 CCF-A |
+| `sema_vldb2026.pdf` | Sema: A High-performance System for LLM-based Semantic Query Processing | VLDB 2026 Research Track 已录用；卷期、页码、DOI 待发布 | `sema_vldb2026.md` | 本地 PDF 为 arXiv:2603.11622v1；录用状态由 VLDB 官方程序确认 |
 | `sembench_pvldb2026.pdf` | SemBench: A Benchmark for Semantic Query Processing Engines | PVLDB 19(8), 2026 | `sembench_pvldb2026.md` | benchmark paper |
 | `fairserve_arxiv2024.pdf` | FairServe: Ensuring Fair LLM Serving Amid Diverse Applications | arXiv 2024 | `fairserve_arxiv2024.md` | 预印本 |
 | `dlpm_arxiv2025.pdf` | DLPM: Locality-aware Fair Scheduling in LLM Serving | arXiv:2501.14312 | `dlpm_arxiv2025.md` | 预印本 |
-| `autellix_arxiv2025.pdf` | Autellix: An Efficient Serving Engine for LLM Agents as General Programs | arXiv:2502.13965 | `autellix_arxiv2025.md` | 预印本 |
+| `autellix_arxiv2025.pdf` | Agentix: An Efficient Serving Engine for LLM Agents as General Programs（arXiv v1 名称 Autellix） | NSDI 2026: 2443–2459 | `autellix_arxiv2025.md` | 本地旧文件和笔记基于前身预印本；正式引用使用 Agentix |
 | `chiron_arxiv2025.pdf` | Chiron: Hierarchical Autoscaling for LLM Serving | arXiv:2501.08090 | `chiron_arxiv2025.md` | 预印本 |
 | `clipper_nsdi2017.pdf` | Clipper: A Low-Latency Online Prediction Serving System | NSDI 2017 | `clipper_nsdi2017.md` | AIMD 历史来源 |
 | `splitwise_isca2024.pdf` | Splitwise: Efficient LLM Inference with Phase Splitting | ISCA 2024 | `splitwise_isca2024.md` | prefill/decode 分池 |
@@ -61,7 +62,7 @@ Top 15：15/15 已下载、15/15 有精读笔记。选择依据与排名逻辑�
 
 | 文件 | 论文 | 出处 | 笔记 |
 |---|---|---|---|
-| `concerto_cost_estimation_arxiv2024.pdf` | CONCERTO: DAG + GAT + TCN Cost Model | arXiv 2024.12 | `concerto_cost_estimation_arxiv2024.md` |
+| `concerto_cost_estimation_arxiv2024.pdf` | CONCERTO: Complex Query Execution Mechanism-Aware Learned Cost Estimation | arXiv:2412.00749v2, 2025 | `concerto_cost_estimation_arxiv2024.md` |
 | `redefining_cost_estimation_arxiv2025.pdf` | Redefining Cost Estimation with Tree Ensembles | arXiv 2025 | `redefining_cost_estimation_arxiv2025.md` |
 | `sfs_latency_routing_arxiv2026.pdf` | SFS: Beyond Accuracy and Cost — TTFT-Aware Routing | arXiv 2026 | `sfs_latency_routing_arxiv2026.md` |
 | `lance_2025.pdf` | Lance: A Modern Columnar Data Format for AI | arXiv 2025 | `lance_2025.md` |
@@ -183,6 +184,8 @@ Top 15：15/15 已下载、15/15 有精读笔记。选择依据与排名逻辑�
 
 ## 十、统计与一致性
 
+- **当前工作区可解析 PDF 实体**: 4（Galois、Abacus、Palimpzest、Sema；以同目录 README 为准）
+- **以下旧统计**记录历史题录/下载状态，不代表 2026-08-24 当前 checkout；待参考子集恢复后再整体重算。
 - **PDF 总数**: 88（`fastserve_2023.pdf` 与 `fastserve_nsdi2026.pdf` 内容相同，后者为 NSDI 2026 正式版命名；去重后 87 唯一内容）
 - **唯一内容 PDF**: 87
 - **Top 15 PDF**: 15/15

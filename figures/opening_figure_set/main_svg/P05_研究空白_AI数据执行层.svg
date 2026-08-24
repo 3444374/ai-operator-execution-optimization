@@ -31,14 +31,14 @@
   <g>
     <rect x="70" y="320" width="310" height="118" rx="14" fill="#fff" stroke="#165DCC" stroke-width="1.5"/>
     <image href="assets/01_research_gap/sink_semantics.svg" x="84" y="346" width="66" height="66"/>
-    <text class="cn cardtitle" x="160" y="365">输入输出与写回要求</text>
+    <text class="cn cardtitle" x="160" y="365">输入、输出与写回</text>
     <text class="cn" x="160" y="397" font-size="18" fill="#374151"><tspan x="160">数据输入 / 结果对应</tspan><tspan x="160" dy="27">写回要求</tspan></text>
   </g>
   <g>
     <rect x="70" y="455" width="310" height="185" rx="14" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
     <image href="assets/01_research_gap/query_job.svg" x="84" y="480" width="66" height="66"/>
     <text class="cn cardtitle" x="160" y="505" fill="#165DCC">数据库通常不可见</text>
-    <text class="cn body" x="160" y="548"><tspan x="160">排队与正在运行的请求</tspan><tspan x="160" dy="34">KV 缓存与模型完成速度</tspan></text>
+    <text class="cn body" x="160" y="548"><tspan x="160">排队与正在运行的请求</tspan><tspan x="160" dy="30">KV 缓存使用情况</tspan><tspan x="160" dy="30">模型请求完成速度</tspan></text>
   </g>
 
   <g>

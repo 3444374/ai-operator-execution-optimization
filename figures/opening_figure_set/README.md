@@ -26,8 +26,8 @@
 | 04 | `P04_相关工作_跨层执行闭环` | 按层归纳代表工作，指出数据库任务语义与服务运行信息衔接不足 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
 | 05 | `P05_研究空白_AI数据执行层` | 说明按 AI 处理需求描述工作量、联系运行状态与作业进度、共同安排多个作业三项能力 | `architecture/editable/01_research_gap` |
 | 06 | `P06_文本基线_执行路径与可比边界` | 分别说明完整数据库执行路径和框架原生执行路径的组内比较 | `data/report_main/opening_text_baseline_evidence_map` |
-| 07A | `P07A_动机证据_记录数与模型工作量` | 原 P07 panel a：说明相同行数仍可能对应 14.3× 工作量差异 | `data/report_main/opening_motivation_work_state_part1_work` |
-| 07B | `P07B_动机证据_运行状态与容量边界` | 说明静态上限、运行状态与近饱和边界不是同一概念；65K→98K 吞吐仅 +2.3%，P99 +8.9% | `data/report_main/opening_motivation_work_state_part2_state_capacity` |
+| 07A | `P07A_动机证据_记录数与模型工作量` | 动机一：说明相同行数仍可能对应 14.3× 模型工作量差异 | `data/report_main/opening_motivation_work_state_part1_work` |
+| 07B | `P07B_动机证据_运行状态与容量边界` | 动机二：说明判断是否继续提交不能只看固定上限或吞吐；每个 Job 的进度由多 Job 图补充 | `data/report_main/opening_motivation_work_state_part2_state_capacity` |
 | 08A | `P08A_图像阶段_准备阶段失衡` | 原 P08 panel a：说明图像也是分阶段工作量，张数描述不了阶段压力（prepare/GPU 13.9–31.0×） | `data/report_main/opening_image_stage_aware_evidence_part1_prepare` |
 | 08B | `P08B_图像阶段_传输形态与提交窗口` | 动机补充“AI Work 需要分阶段描述”：panel b 输入表示改变阶段执行效率，panel c 阶段供给不匹配导致欠供给或等待堆积 | `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window` |
 | 09 | `P09_文本多作业_原生路径并发干扰` | 证明共享模型服务下的多 Job 干扰是现实现象 | `data/report_main/opening_native_fourjob_normalized_impact` |
@@ -51,7 +51,7 @@
 | 文件名 | 用途 | 权威源 |
 |---|---|---|
 | `B01_文本单作业_请求延迟分解` | 解释相近 Job JCT 为什么可能掩盖 request queue 与 TTFT | `data/report_main/opening_native_single_job_request_latency` |
-| `B02_文本单作业_服务状态指纹` | 区分欠供给、最小饱和与过量排队 | `data/report_main/opening_native_single_job_state_fingerprint` |
+| `B02_文本单作业_服务状态指纹` | 联合观察吞吐、运行、排队、缓存和利用率，区分欠供给与过量排队 | `data/report_main/opening_native_single_job_state_fingerprint` |
 
 ## 维护规则
 

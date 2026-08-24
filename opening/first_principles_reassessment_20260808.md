@@ -137,7 +137,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 
 建议冻结为四张正文图：
 
-1. **动机图：记录数不等于 work，固定压力不等于稳定状态**。左侧用同样行数但不同 token/prepare work 的 running example；右侧用低供给—最小近饱和点—边际收益递减的容量曲线，并标 high/arrival-limited 的状态差异。每个标记直接写含义，不使用未解释散点；active work 必须注明是峰值还是时间平均。
+1. **动机图：两条总动机，多个子层证据**。动机一说明记录数不能代表分阶段 AI 工作量；动机二说明单一静态量或局部指标不能代表当前可调度状态。联合图左侧承担动机一，右侧分别承担动机二的配置层与模型服务层；Job 层由多 Job 图单独补充。每个标记直接写含义，不使用未解释散点；在途工作必须注明是峰值还是时间平均。
 2. **方法总览图：组织产生调度可消费的工作描述**。上方数据流，下方反馈流；只保留 Cost Adapter、Work Organizer、State Observer、Admission/Router/Fair Queue 与 Model/CPU-GPU stages。
 3. **初步机制图：组织策略依赖 serving regime**。用 small multiples 表达相同双卡硬件下 2-endpoint 低 KV 压力约 12% 的策略范围与 4-endpoint consolidation 高 KV 压力下约 27% 的分化；单独用一条简洁机制注释说明 locality hit collapse，不把运行压力误写成硬件池大小，也不画十个形状散点。
 4. **图像与代价可行性图**。若一页空间紧张，图像作为正文 hero，代价估计移备份；图像图只画 matched-resource JCT 或 throughput 其中一个，并用小 inset 标 CPU prepare/GPU service 比，不重复画相对改善。
@@ -152,10 +152,10 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 |---:|---|---|
 | 1 | 数据库 AI 负载的执行优化与调度研究 | 题目 |
 | 2 | 数据库已经成为批量 AI 任务的入口 | 场景 |
-| 3 | 同样的数据库行数并不代表同样的 AI work | 动机一 |
-| 4 | 固定提交压力无法同时避免欠供给与过载 | 动机二 |
-| 5 | 图像链路进一步暴露了分阶段工作失衡 | 跨模态动机 |
-| 6 | 三个现象导出三个挑战：表征、感知、控制 | 挑战汇总 |
+| 3 | 记录数不能代表分阶段 AI 工作量 | 动机一，文本与图像是两个证据层次 |
+| 4 | 单一指标不能代表当前可调度状态 | 动机二的配置层与模型服务层 |
+| 5 | 全局服务状态不能代表各 Job 的当前进度 | 动机二的 Job 层 |
+| 6 | 两条总动机分别导出两项研究内容 | 问题汇总与角色分层 |
 | 7 | 现有数据库与模型服务分别优化两端 | 研究空白 |
 | 8 | 本课题只研究两端之间的 AI 数据执行层 | 边界与问题 |
 | 9 | 数据组织先生成可被调度消费的 work descriptor | 总体方法 |

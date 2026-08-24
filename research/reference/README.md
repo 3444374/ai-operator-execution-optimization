@@ -1,45 +1,28 @@
 # Local Reference PDF Subset
 
-更新日期：2026-08-21
+更新日期：2026-08-24
 
 本目录保存当前工作区实际存在、已通过 PDF 解析检查的论文。权威题录和用途见 `REFERENCE_INDEX.md`；泛读笔记见 `../reading_notes/`，精读笔记见 `../精读文献笔记/`。
 
 ## 当前状态
 
-- 可解析 PDF：21 份。
-- 当前 Top 15：15/15 已有本地 PDF。
-- 新增核心补充：Palimpzest、SemBench、FairServe、DLPM、Autellix、Chiron。
-- 旧索引中“68 篇已下载”描述的是曾经登记的外部/历史子集，不符合当前工作区实体文件，已改为只登记可验证文件。
+- 当前工作区可解析 PDF 实体：4 份。
+- 当前 Top 15 实体：2/15（Galois、Abacus）；其余名称保留在历史题录索引中，使用前需要重新放回本目录并核验。
+- 当前核心补充实体：Palimpzest、Sema；Sema 只按 arXiv v1 记录，不由文件名确认正式 venue。
+- 旧索引中的较大下载数描述的是曾经登记的外部/历史子集，不符合当前工作区实体文件；当前状态只按可验证文件报告。
 
-## Top 15 PDF
+## 当前 Top 15 PDF
 
 ```text
 abacus_pvldb2026.pdf
-costream_icde2024.pdf
-distserve_osdi2024.pdf
 galois_sigmod2025.pdf
-gaussml_icde2024.pdf
-graceful_udf_cost_icde2025.pdf
-learned_cost_models_sigmod2025.pdf
-llumnix_osdi2024.pdf
-lotus_pvldb2025.pdf
-orca_osdi2022.pdf
-ray_osdi2018.pdf
-sarathi_serve_osdi2024.pdf
-sglang_neurips2024.pdf
-vllm_sosp2023.pdf
-vtc_osdi2024.pdf
 ```
 
-## 核心补充 PDF
+## 当前核心补充 PDF
 
 ```text
-autellix_arxiv2025.pdf
-chiron_arxiv2025.pdf
-dlpm_arxiv2025.pdf
-fairserve_arxiv2024.pdf
 palimpzest_cidr2025.pdf
-sembench_pvldb2026.pdf
+sema_vldb2026.pdf
 ```
 
 ## 使用规则

@@ -286,7 +286,7 @@ class AdaptiveSubmitActor:
 | 论文 | 出处 | 核心内容 | 与项目代价估计的关系 |
 |---|---|---|---|
 | **Heinrich et al. — How Good are Learned Cost Models, Really?** | SIGMOD 2025 | 7 个 SOTA LCM vs PostgreSQL 传统代价模型；精度高但计划选择未必更好；**排序>精度**；建议 hybrid 架构 | **直接方法论支撑**：排序指标（Spearman/pairwise/Top-K）的理论依据；hybrid = 传统公式 + learned correction |
-| **CONCERTO (Zhang et al.)** | arXiv 2024.12 | DAG + GAT + TCN 三阶段架构：每算子独立资源代价 → GAT 捕获并行资源竞争 → TCN 聚合代价向量 | 多 endpoint 场景的 DAG 建模方案备选 |
+| **CONCERTO (Zhang et al.)** | arXiv:2412.00749v2，2025；暂无正式 venue | DAG + GAT + TCN 三阶段架构：每算子独立资源代价 → GAT 捕获并行资源竞争 → TCN 聚合代价向量 | 多 endpoint 场景的 DAG 建模方案备选 |
 | **GRACEFUL (Wehrstein et al.)** | ICDE 2025 | UDF 感知 GNN 代价估计；CFG + 查询计划联合图 → GNN + MLP 预测 runtime；zero-shot 泛化到新 UDF | 项目文档标注为 closest analog to AI-operator-aware cost estimation |
 | **COSTREAM (Heinrich et al.)** | ICDE 2024 | GNN 算子放置代价模型；zero-shot 泛化到未见查询/硬件；median 21× speedup | 多 GPU/多 endpoint 场景下算子放置优化的方法参考 |
 | **Abacus (Russo et al.)** | PVLDB 2026 | 在 quality/cost/latency 多目标与约束下搜索 semantic operator 的 Pareto 计划 | 连接 AI 算子 work 估计、profile 复用和计划/配置选择 |

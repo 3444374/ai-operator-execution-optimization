@@ -13,10 +13,10 @@
 ## 当前统计
 
 - `research/reading_notes/` 现有 **49 篇历史文献笔记**，从 2026-08-21 起按泛读库管理（不含 README 和泛读模板）。
-- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 九篇主笔记，共 74 张论文原图裁剪件，本目录不维护阅读状态。
+- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 十二篇主笔记，共 97 张论文原图裁剪件，本目录不维护阅读状态。
 - 旧文档“33 篇已完成”已经过时；原编号到 41 还混入了两篇未下载条目，也不能作为实体笔记数。
 - 当前 Top 15 为 15/15 严格 CCF-A 正式论文，快照在 `top15_reading_notes/`。
-- `research/reference/` 当前有 21 份可解析 PDF；Top 15 的 15 份全部齐全。
+- `research/reference/` 当前工作区有 4 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema）；其余 Top 15 的历史题录保留在索引中，使用前需恢复并核验文件。
 
 ## Top 15 精读顺序
 
@@ -60,6 +60,7 @@
 | 文献 | 状态 | 作用 |
 |---|---|---|
 | Palimpzest | CIDR 2025 | 声明式 plan search、系统 baseline |
+| Sema | VLDB 2026 Research Track 已录用；当前精读全文为 arXiv:2603.11622v1 | DuckDB 原生 semantic operator、expression optimization 与运行时 AQE；正式卷期页码待发布 |
 | SemBench | PVLDB 2026 benchmark | 跨系统 workload、质量/延迟/成本/内存指标 |
 | Database Perspective on LLM Inference | PVLDB Tutorial | 技术版图与 open problem |
 | Cortex AISQL | 按实际轨道引用 | 工业需求证据 |
@@ -71,7 +72,7 @@
 |---|---|---|
 | FairServe | arXiv 2024 | weighted service、interaction throttling |
 | DLPM/D2LPM | arXiv 2025 | deficit fairness 与 prefix locality |
-| Autellix | arXiv 2025 | program-level attained service |
+| Agentix（arXiv v1 名称 Autellix） | NSDI 2026，2443–2459 | program-level attained service |
 | Chiron | arXiv 2025 | 分层 backpressure/autoscaling |
 | Clipper | NSDI 2017 | AIMD batching 历史来源 |
 | Splitwise | ISCA 2024 | prefill/decode 分池边界 |

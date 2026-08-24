@@ -22,6 +22,9 @@
 |---|---|
 | `lotus_pvldb2025/` | LOTUS 精读主笔记；`figures/` 内含论文 Figure 1、4、6、7 的原图裁剪件 |
 | `galois_sigmod2025/` | Galois 精读主笔记；`figures/` 内含论文 Figure 1–4、7–11 的 9 个原图裁剪件；Figure 1–2 按 motivation example、Figure 11 按 oracle 参考上界解读 |
+| `palimpzest_cidr2025/` | Palimpzest 精读主笔记；`figures/` 内含附件 arXiv 版本全部 Figure 1–7 的 7 个原图裁剪件；方法、图号与实验仍按 2024 arXiv v2 解读，CIDR 2025 只作为后续正式发表信息 |
+| `abacus_pvldb2026/` | Abacus 精读主笔记；`figures/` 内含正式 PVLDB 版全部 Figure 1–8 的 8 个原图裁剪件；Figure 1 按动机示例、Figure 6–8 按有限采样与经验约束满足证据解读 |
+| `sema_vldb2026/` | Sema 精读主笔记；VLDB 2026 官方程序已确认录用，当前本地全文仍为 arXiv v1；`figures/` 内含该版本正文 Figure 1–8 的 8 个原图裁剪件，Figure 4–7 的查询数与实验结论均按 arXiv v1 解读 |
 | `ayo_asplos2025/` | AYO 精读主笔记；`figures/` 内含 ASPLOS 正式版 Figure 1、3、4、5、6、7、8、9、10、11、12 的原图裁剪件 |
 | `cortex_aisql_sigmod2026/` | Cortex AISQL 精读主笔记；`figures/` 内含论文 Figure 1、7、9、10、11、12 的原图裁剪件 |
 | `ray_data_streaming_batch_nsdi2027/` | Ray Data Streaming Batch 精读主笔记；`figures/` 内含论文 Figure 2、4、5、6、7、9 的原图裁剪件；PDF 版本仍按 arXiv v5 记录，不由目录名推断正式 venue |
