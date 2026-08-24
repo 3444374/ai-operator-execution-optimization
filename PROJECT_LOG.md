@@ -14488,3 +14488,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   framework 尚无 victim completion，within-run P99 inflation/recovery 只可标 partial。后续若补隔离
   因果结论，需另跑固定 guaranteed-service-overlap panel 或 matched-solo controls，不动态修改主矩阵
   offset，不用本次 rehearsal 解锁 formal。
+
+## 2026-08-24 开题报告研究结构与目标架构修订
+
+- 按外部评审意见重构 `opening/report/opening_report.md`：研究内容固定为数据组织和提交/路由/多 Job 调度两项，代价估计作为共同使能组件，图像作为跨模态验证；未改变项目总纲已经确定的研究方向。
+- 报告补入 IMBridge/IMLane 直接对照，收窄对进程解耦、数据交换、异步分批和 Ray 集成的创新声称；统一请求、批次、Job、准入工作量、实际服务量和预测时间术语，并把 `CustomPath` 成本映射、当前模块状态、实验计时范围和风险替代方案写入正文。
+- 新增目标架构与当前证据链双层状态图及生成脚本，明确现有外部路径只提供有界算子接口的实验依据，不表示 PostgreSQL planner-visible 算子、child plan 生命周期或 LOTUS 语义迁移已经完成。正文图片由 11 张压缩为 6 张，参考文献由 51 条增至 60 条。
+- `PROJECT_INDEX.md`、`figures/README.md`、`opening/README.md`、报告图片映射、图件审计和新报告 QA 已同步。实验数据、Word、PPT、飞书和 Wiki 未修改。

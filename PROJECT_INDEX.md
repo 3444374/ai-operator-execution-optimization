@@ -302,6 +302,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `figures/audit/opening_background_figures_20260812.md` | 第 2–4 页三图的内容边界、结构检查与视觉审计汇总 | 引用或替换三张背景图前读取 |
 | `figures/audit/opening_figure_set_manifest_20260811.md` | 开题专用图集的选图依据、源文件映射、格式合同、排除项与复制 QA | 新增、替换或同步开题图集前读取 |
 | `figures/audit/opening_report_minimal_figure_corrections_audit_20260823.md` | 开题报告图 2、图 3、图 5、图 6 的语义修正、文件同步、数值保持与视觉审计 | 修改报告关键概念图或两组文本执行路径图前读取 |
+| `figures/architecture/opening_target_architecture_status.png` / `.svg` | 开题报告目标数据库内算子路径与当前可运行证据链状态图 | 说明目标架构、当前实现状态和两项研究内容时使用；不能作为策略性能证据 |
+| `figures/scripts/generate_opening_target_architecture_status.py` | 目标架构与实现状态图生成脚本 | 修改模块、状态、术语或版式后重新生成 PNG/SVG 和报告副本 |
+| `figures/audit/opening_target_architecture_status_audit_20260824.md` | 新架构状态图的主张、视觉与使用限制审计 | 在报告或 PPT 中引用新架构图前读取 |
 | `figures/scripts/embed_svg_assets.py` | 将 SVG 的本地相对 icon/Logo 引用机械内嵌为 data URI | 生成可单文件拖入 PowerPoint/Word 的开题图集 SVG 副本；不改权威源图 |
 | `figures/data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | Daft Native/Ray、Ray Data 的 Short 与三个 Long 的 four-job/isolated-single JCT 比值 | 证明共享服务多 Job 干扰是共同外部现象；禁止跨框架绝对 JCT 排名 |
 | `figures/data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | SQuAD database-E2E 产品轨与 ShareGPT 官方 Chat graph 轨的文本 baseline 分轨图 | 呈现 DuckDB、Daft Native/Ray、Ray Data 的可比合同与问题；禁止跨 panel 排名 |
@@ -491,8 +494,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
-| `opening/report/opening_report_20260820_qa.md` | 当前中文开题报告的模板、证据边界、术语、图表与 46 条引文审查 | 冻结或复核当前开题正文时读 |
+| `opening/report/opening_report_20260824_qa.md` | 当前中文开题报告的七部分结构、两项研究内容、术语、主张范围、6 张图与 60 条参考文献审查 | 复核当前开题正文或转入 Word/WPS 排版前读 |
+| `opening/report/opening_report_20260820_qa.md` | 2026-08-23 版中文报告的模板、证据范围、术语、11 张图与 51 条参考文献审查 | 只用于核对上一版报告历史 |
 | `opening/report/figures/` | 开题报告正文专用图片副本与来源映射 | Markdown 转 Word 或核查图文一致性时读 |
+| `opening/report/figures/target_architecture_status.png` | 当前报告图 2 的 1600 × 900 PNG 副本 | Markdown、Word 或 WPS 排版使用；内容修改回到权威 SVG 与生成脚本 |
 | `opening/report/opening_report_20260812_qa.md` | 中文开题报告模板、图表、引用、实现边界和 PPT 口径审计 | 冻结或复核开题发布材料时读 |
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
 | `opening/literature/top15_reading_notes/` | 开题 Top 15 历史笔记快照 | 15/15 严格 CCF-A 正式 research paper 的自包含历史快照；不随新精读库自动更新 |

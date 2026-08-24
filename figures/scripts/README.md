@@ -2,6 +2,18 @@
 
 本目录存放项目级图表的可复现生成脚本。脚本可用于 learning、开题报告、PPT、中期汇报和毕业论文图表复现。
 
+## 2026-08-24 开题目标架构与实现状态图
+
+```bash
+python3 figures/scripts/generate_opening_target_architecture_status.py
+```
+
+脚本同时生成 `figures/architecture/opening_target_architecture_status.{png,svg}` 和
+`opening/report/figures/target_architecture_status.png`。图中上层是待实现的 PostgreSQL
+planner-visible AI 算子路径，下层是当前外部可运行证据链；实线、虚线和文字标签共同表示状态。
+该图不包含实验数据，也不能作为策略性能证据。完整审计见
+`figures/audit/opening_target_architecture_status_audit_20260824.md`。
+
 ## 开题图集 SVG 便携化
 
 ```bash

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect width="1600" height="900" fill="#F8FAFC"/>
+<text x="52" y="68" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="34" font-weight="700" fill="#172033" text-anchor="start">目标数据库内算子路径与当前证据链</text>
+<text x="54" y="104" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="400" fill="#5F6B7A" text-anchor="start">上层表示计划实现，下层表示已运行路径。两者共享外部物理执行思想，但不能据此声称数据库内算子已经完成。</text>
+<text x="52" y="141" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="700" fill="#C46A10" text-anchor="start">目标路径</text>
+<rect x="50" y="152" width="190" height="174" rx="16" fill="#EAF2FF" stroke="#C46A10" stroke-width="3" stroke-dasharray="10 7"/>
+<rect x="62" y="162" width="69" height="28" rx="14" fill="#FFF3E5" stroke="#C46A10" stroke-width="1"/>
+<text x="96.5" y="182" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#C46A10" text-anchor="middle">待实现</text>
+<text x="145.0" y="216.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">SQL AI 算子</text>
+<text x="145.0" y="264.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">PostgreSQL 18.3</text>
+<text x="145.0" y="287.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">planner 可见</text>
+<rect x="270" y="152" width="190" height="174" rx="16" fill="#EAF2FF" stroke="#C46A10" stroke-width="3" stroke-dasharray="10 7"/>
+<rect x="282" y="162" width="69" height="28" rx="14" fill="#FFF3E5" stroke="#C46A10" stroke-width="1"/>
+<text x="316.5" y="182" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#C46A10" text-anchor="middle">待实现</text>
+<text x="365.0" y="216.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">关系 child plan</text>
+<text x="365.0" y="264.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">snapshot、权限</text>
+<text x="365.0" y="287.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">过滤与投影</text>
+<rect x="490" y="152" width="190" height="174" rx="16" fill="#EAF2FF" stroke="#C46A10" stroke-width="3" stroke-dasharray="10 7"/>
+<rect x="502" y="162" width="69" height="28" rx="14" fill="#FFF3E5" stroke="#C46A10" stroke-width="1"/>
+<text x="536.5" y="182" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#C46A10" text-anchor="middle">待实现</text>
+<text x="585.0" y="216.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">有界行流</text>
+<text x="585.0" y="264.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">RowEnvelope</text>
+<text x="585.0" y="287.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">取消与错误传播</text>
+<rect x="710" y="152" width="205" height="174" rx="16" fill="#F2EDFF" stroke="#C46A10" stroke-width="3" stroke-dasharray="10 7"/>
+<rect x="722" y="162" width="69" height="28" rx="14" fill="#FFF3E5" stroke="#C46A10" stroke-width="1"/>
+<text x="756.5" y="182" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#C46A10" text-anchor="middle">迁移中</text>
+<text x="812.5" y="216.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">LOTUS sem_map</text>
+<text x="812.5" y="264.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">v1.2.4 语义</text>
+<text x="812.5" y="287.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">prompt 与输出</text>
+<rect x="945" y="152" width="295" height="174" rx="16" fill="#FFF3E5" stroke="#C46A10" stroke-width="3" stroke-dasharray="10 7"/>
+<rect x="957" y="162" width="84" height="28" rx="14" fill="#FFF3E5" stroke="#C46A10" stroke-width="1"/>
+<text x="999.0" y="182" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#C46A10" text-anchor="middle">候选组合</text>
+<text x="1092.5" y="216.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">可替换外部物理后端</text>
+<text x="1092.5" y="264.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">Daft / Ray / static / SAOR</text>
+<text x="1092.5" y="287.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">组织、提交与路由</text>
+<rect x="1270" y="152" width="280" height="174" rx="16" fill="#E9F7F0" stroke="#C46A10" stroke-width="3" stroke-dasharray="10 7"/>
+<rect x="1282" y="162" width="69" height="28" rx="14" fill="#FFF3E5" stroke="#C46A10" stroke-width="1"/>
+<text x="1316.5" y="182" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#C46A10" text-anchor="middle">待接入</text>
+<text x="1410.0" y="216.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">模型执行与结果返回</text>
+<text x="1410.0" y="264.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">文本 vLLM</text>
+<text x="1410.0" y="287.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">图像 typed GPU actor</text>
+<line x1="245" y1="239" x2="265" y2="239" stroke="#C46A10" stroke-width="4"/><polygon points="265,239 252,232 252,246" fill="#C46A10"/>
+<line x1="465" y1="239" x2="485" y2="239" stroke="#C46A10" stroke-width="4"/><polygon points="485,239 472,232 472,246" fill="#C46A10"/>
+<line x1="685" y1="239" x2="705" y2="239" stroke="#C46A10" stroke-width="4"/><polygon points="705,239 692,232 692,246" fill="#C46A10"/>
+<line x1="920" y1="239" x2="940" y2="239" stroke="#C46A10" stroke-width="4"/><polygon points="940,239 927,232 927,246" fill="#C46A10"/>
+<line x1="1245" y1="239" x2="1265" y2="239" stroke="#C46A10" stroke-width="4"/><polygon points="1265,239 1252,232 1252,246" fill="#C46A10"/>
+<rect x="330" y="365" width="940" height="66" rx="18" fill="#FFFFFF" stroke="#C46A10" stroke-width="2"/>
+<text x="800" y="404" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#C46A10" text-anchor="middle">进入正式 SQL 执行路径前需完成：child plan、snapshot、查询取消、错误传播与结果生命周期</text>
+<text x="52" y="461" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="22" font-weight="700" fill="#16845B" text-anchor="start">当前可运行证据链</text>
+<rect x="50" y="472" width="190" height="174" rx="16" fill="#EEF2F6" stroke="#16845B" stroke-width="3"/>
+<rect x="62" y="482" width="69" height="28" rx="14" fill="#E9F7F0" stroke="#16845B" stroke-width="1"/>
+<text x="96.5" y="502" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#16845B" text-anchor="middle">已运行</text>
+<text x="145.0" y="536.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">PostgreSQL 外部读取</text>
+<text x="145.0" y="584.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">当前由 runner</text>
+<text x="145.0" y="607.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">读取固定输入</text>
+<rect x="270" y="472" width="190" height="174" rx="16" fill="#EAF2FF" stroke="#16845B" stroke-width="3"/>
+<rect x="282" y="482" width="69" height="28" rx="14" fill="#E9F7F0" stroke="#16845B" stroke-width="1"/>
+<text x="316.5" y="502" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#16845B" text-anchor="middle">已运行</text>
+<text x="365.0" y="536.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">Daft / Arrow</text>
+<text x="365.0" y="584.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">分区、批量</text>
+<text x="365.0" y="607.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">列式交接</text>
+<rect x="490" y="472" width="190" height="174" rx="16" fill="#EAF2FF" stroke="#16845B" stroke-width="3"/>
+<rect x="502" y="482" width="69" height="28" rx="14" fill="#E9F7F0" stroke="#16845B" stroke-width="1"/>
+<text x="536.5" y="502" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#16845B" text-anchor="middle">已运行</text>
+<text x="585.0" y="536.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">WorkDescriptor</text>
+<text x="585.0" y="584.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">阶段工作量</text>
+<text x="585.0" y="607.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">兼容性与局部性</text>
+<rect x="710" y="472" width="205" height="174" rx="16" fill="#FFF3E5" stroke="#16845B" stroke-width="3"/>
+<rect x="722" y="482" width="69" height="28" rx="14" fill="#E9F7F0" stroke="#16845B" stroke-width="1"/>
+<text x="756.5" y="502" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#16845B" text-anchor="middle">有证据</text>
+<text x="812.5" y="536.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">提交与多 Job 控制</text>
+<text x="812.5" y="584.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">static / shared credit</text>
+<text x="812.5" y="607.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">状态仅部分驱动</text>
+<rect x="945" y="472" width="295" height="174" rx="16" fill="#E9F7F0" stroke="#16845B" stroke-width="3"/>
+<rect x="957" y="482" width="69" height="28" rx="14" fill="#E9F7F0" stroke="#16845B" stroke-width="1"/>
+<text x="991.5" y="502" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#16845B" text-anchor="middle">已运行</text>
+<text x="1092.5" y="536.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">模型服务</text>
+<text x="1092.5" y="584.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">vLLM 文本服务</text>
+<text x="1092.5" y="607.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">图像 Ray GPU actor</text>
+<rect x="1270" y="472" width="280" height="174" rx="16" fill="#F2EDFF" stroke="#16845B" stroke-width="3"/>
+<rect x="1282" y="482" width="69" height="28" rx="14" fill="#E9F7F0" stroke="#16845B" stroke-width="1"/>
+<text x="1316.5" y="502" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="700" fill="#16845B" text-anchor="middle">已运行</text>
+<text x="1410.0" y="536.0" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="middle">结果收集与写回</text>
+<text x="1410.0" y="584.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">结果归并</text>
+<text x="1410.0" y="607.5" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">PostgreSQL + pgvector</text>
+<line x1="245" y1="559" x2="265" y2="559" stroke="#16845B" stroke-width="4"/><polygon points="265,559 252,552 252,566" fill="#16845B"/>
+<line x1="465" y1="559" x2="485" y2="559" stroke="#16845B" stroke-width="4"/><polygon points="485,559 472,552 472,566" fill="#16845B"/>
+<line x1="685" y1="559" x2="705" y2="559" stroke="#16845B" stroke-width="4"/><polygon points="705,559 692,552 692,566" fill="#16845B"/>
+<line x1="920" y1="559" x2="940" y2="559" stroke="#16845B" stroke-width="4"/><polygon points="940,559 927,552 927,566" fill="#16845B"/>
+<line x1="1245" y1="559" x2="1265" y2="559" stroke="#16845B" stroke-width="4"/><polygon points="1265,559 1252,552 1252,566" fill="#16845B"/>
+<rect x="80" y="712" width="425" height="98" rx="16" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
+<text x="292.5" y="749" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#2563EB" text-anchor="middle">研究内容一：数据组织</text>
+<text x="292.5" y="784" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">按工作量组织、局部性与兼容性</text>
+<rect x="585" y="712" width="425" height="98" rx="16" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
+<text x="797.5" y="749" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#2563EB" text-anchor="middle">研究内容二：提交与多 Job 调度</text>
+<text x="797.5" y="784" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">请求释放、路由、额度与 Job 保护</text>
+<rect x="1090" y="712" width="430" height="98" rx="16" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
+<text x="1305.0" y="749" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="19" font-weight="700" fill="#2563EB" text-anchor="middle">共同使能：算子代价估计</text>
+<text x="1305.0" y="784" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#5F6B7A" text-anchor="middle">预测工作量、服务时间、剩余工作与余量</text>
+<text x="54" y="868" font-family="PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="14" font-weight="400" fill="#5F6B7A" text-anchor="start">图例：绿色实线为已有运行证据；橙色虚线为迁移中或待实现；浅色模块表示候选物理机制。</text>
+</svg>

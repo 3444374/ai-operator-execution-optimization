@@ -61,9 +61,9 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表** |
-| 开题报告 | `report/opening_report.md` | 2026-08-23 完成精读文献主线与两项基础方法修订：八篇全文精读工作均在第二章承担主要论证，其他文献作为补充；研究内容一、二不依赖代价估计也能独立运行；正文仍为学校模板七部分、11 张图片和 51 条参考文献 |
-| 开题报告 QA | `report/opening_report_20260820_qa.md` | 模板结构、证据范围、术语、图表、51 条引文、八篇精读文献覆盖和进度一致性审查；2026-08-12 版本保留为历史审查记录 |
-| 开题报告专用图片 | `report/figures/` | 保存正文实际引用的 11 张图和 3 张配套候选图副本；权威图源仍在 `../figures/opening_figure_set/` |
+| 开题报告 | `report/opening_report.md` | 2026-08-24 按外部评审意见重构：固定为两项研究内容，代价估计作为共同使能组件，图像作为跨模态验证；补入 IMBridge/IMLane 比较、统一术语、目标与当前路径状态表、可检验问题和更新后的进度安排；正文为学校模板七部分、6 张图片和 60 条参考文献 |
+| 开题报告 QA | `report/opening_report_20260824_qa.md` | 审查七部分结构、两项研究内容、术语、主张范围、6 张图、60 条参考文献和新增架构状态图；2026-08-20、2026-08-12 版本保留为历史审查记录 |
+| 开题报告专用图片 | `report/figures/` | 当前正文引用 6 张图；数据图权威源在 `../figures/opening_figure_set/`，新增架构状态图权威源在 `../figures/architecture/` |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
 | 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 当前 26 页对外答辩版；删去重复文献页并合并验证与结尾内容，QA 见 `slides/opening_defense_20260812_v9_qa.md` |
@@ -89,10 +89,10 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 下一步
 
-1. `slides/opening_defense_20260812_v9.pptx` 已按 26 页逐页确认背景、动机、研究内容、证据和转场，并完成“英文专业名首次附中文解释”的对外术语清理；中文 Markdown 报告继续承担完整论证。
+1. 本地权威报告已按两项研究内容和目标/当前双路径架构完成重构；下一步先完成 LOTUS 1.2.4 `sem_map` 迁移和 PostgreSQL planner-visible 最小实现，再更新实现状态图。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
 3. v9 只保留学校页眉、配色和身份识别，不逐框仿制模板；页数和版面服从现场叙事。
-4. Claim Matrix、问答、实验状态与实现边界继续作为事实护栏；用户已明确豁免 Wiki。普通飞书云文档仅在获得对指定 URL 的最终覆盖授权后同步。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
+4. Claim Matrix、问答和实验状态继续用于核对正文主张。当前 PPT 与飞书发布面尚未同步本轮报告；只有在用户恢复相应工作后，才从本地权威稿重新生成并执行差异审查。
 ## 飞书发布面（等待指定 URL 覆盖授权）
 
 以下链接用于识别既有发布面；普通云文档只有在用户明确授权覆盖该 URL 后才写入：

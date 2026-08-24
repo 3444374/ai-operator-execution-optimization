@@ -1,22 +1,17 @@
 # 开题报告专用图片
 
-本目录保存 `opening/report/opening_report.md` 实际引用的图片及少量配套候选图片副本。图片均来自项目已经选定并通过审计的开题专用图集，权威源仍位于 `figures/opening_figure_set/`，本目录不作为实验数据或绘图脚本的事实来源。
+本目录保存 `opening/report/opening_report.md` 实际引用的图片及历史候选图片副本。数据图来自已经审计的开题专用图集；新架构图的权威源位于 `figures/architecture/`。本目录只服务 Markdown 与后续 Word/WPS 排版，不作为实验数据或绘图脚本的事实来源。
 
 | 报告图号 | 文件 | 权威源 | 正文作用 |
 |---:|---|---|---|
-| 图 1 | `fig01_external_ai_operator_assumptions.png` | `P03_背景_传统算子与外部AI执行假设.png` | 解释传统数据库算子与外部 AI 算子的执行假设差异 |
-| 图 2 | `fig02_ai_data_execution_gap.png` | `P05_研究空白_AI数据执行层.png` | 说明数据库与模型服务之间需要补充的三项跨层能力 |
-| 图 3 | `fig03_work_unit_organization.png` | `P12_研究内容一_WorkUnit与数据组织.png` | 区分工作描述字段、可选代价估计结果与候选批次组织方式 |
-| 图 4 | `fig04_state_aware_scheduling.png` | `P14_研究内容二_状态感知提交与多作业调度.png` | 说明固定容量下的提交、路由和多作业调度 |
-| 图 5 | `fig05_system_architecture.png` | `P11_系统架构_数据组织与状态调度闭环.png` | 展示主执行路径、数据库计划阶段的代价估计路径与运行状态返回 |
-| 图 6 | `fig06_text_baseline_boundaries.png` | `P06_文本基线_执行路径与可比边界.png` | 分别比较完整数据库执行路径和框架原生执行路径 |
-| 图 7 | `fig08_work_organization_regime.png` | `P13_数据组织_服务压力与局部性权衡.png` | 说明数据组织效果受缓存压力和运行条件影响 |
-| 图 8 | `fig07_work_state_capacity.png` | `P07_动机证据_工作量运行状态与容量边界.png` | 支撑工作量描述、运行状态观测和容量标定动机 |
-| 图 9 | `fig10_shared_credit_tradeoff.png` | `P15_共享调度_效率隔离与公平权衡.png` | 说明共享工作量额度的效率收益和公平代价 |
-| 图 10 | `fig14_cost_decision_quality.png` | `P16_代价估计_配置选择与决策质量.png` | 分别展示六种方法的真实—预测时间差、配置排序和错误选择造成的额外耗时 |
-| 图 11 | `fig11_image_stage_evidence.png` | `P08_图像阶段_准备传输与GPU执行失配.png` | 支撑图像工作量的分阶段描述与有界提交动机 |
+| 图 1 | `fig07_work_state_capacity.png` | `P07_动机证据_工作量运行状态与容量边界.png` | 区分记录数、配置上限与实际在途工作 |
+| 图 2 | `target_architecture_status.png` | `figures/architecture/opening_target_architecture_status.png` | 区分目标数据库内算子路径与当前可运行证据链 |
+| 图 3 | `fig06_text_baseline_boundaries.png` | `P06_文本基线_执行路径与可比边界.png` | 说明两类文本证据只能在各自计时范围内解释 |
+| 图 4 | `fig08_work_organization_regime.png` | `P13_数据组织_服务压力与局部性权衡.png` | 说明数据组织排名依赖完整服务配置 |
+| 图 5 | `fig10_shared_credit_tradeoff.png` | `P15_共享调度_效率隔离与公平权衡.png` | 说明共享未用份额的效率收益与 Job 保护取舍 |
+| 图 6 | `fig11_image_stage_evidence.png` | `P08_图像阶段_准备传输与GPU执行失配.png` | 支撑图像工作量的分阶段描述与提交范围选择 |
 
-未插入正文的配套候选图片为：`fig09_text_native_multijob.png`、`fig12_image_baseline_boundaries.png` 和 `fig13_image_multijob.png`。相关事实已经由正文与图 6、图 9、图 11 说明，暂不继续增加图量，以免可行性分析重新变成实验结果汇编。
+其余 `fig01` 至 `fig14` 文件是 2026-08-20 版本使用过的历史副本或配套候选图。当前正文只引用上表六张图，避免把可行性分析写成实验结果汇编。旧文件暂不删除，以便核对早期版本；恢复引用前必须重新检查图号、术语和正文主张。
 
 正式排版时优先使用这些 PNG 副本保证 Markdown 和 Word/WPS 兼容。若图中数据、术语或结论需要修改，应回到权威源及对应绘图脚本重新生成，再同步覆盖本目录，不能直接在 PNG 上改字或改数值。
 
@@ -24,4 +19,6 @@
 
 2026-08-23 再次同步图 10。新版本为六种估计方法分别绘制 80 组候选均值的真实时间和预测时间，空心点与实心点之间的竖线表示逐候选相差的秒数；同页保留四种上限的两两排序和错误选择后的额外耗时。正文同步说明解析模型的中位绝对相对偏差较小、岭回归的候选均值平均绝对误差较小，避免把混合模型的排序结果误写成单点时间预测最准确。
 
-2026-08-23 同步修正图 2、图 3、图 5 和图 6。图 2 改用当前三列研究问题权威图并将三项能力写成具体动作；图 3 把工作描述基础字段与可选代价估计结果分开；图 5 将 AI 算子代价估计只连接数据库优化器 / 多 SQL 调度，将运行状态返回提交和路由模块；图 6 只修改组名和读图说明，七个实验数值保持不变。完整审计见 `figures/audit/opening_report_minimal_figure_corrections_audit_20260823.md`。
+2026-08-23 同步修正当时报告使用的图 2、图 3、图 5 和图 6。完整审计见 `figures/audit/opening_report_minimal_figure_corrections_audit_20260823.md`。
+
+2026-08-24 报告重构后只保留六张正文图。新增图 2，明确 PostgreSQL child plan、快照和查询生命周期仍待实现，当前外部读取链只提供有界算子接口的性能证据。生成脚本为 `figures/scripts/generate_opening_target_architecture_status.py`，图件审计见 `figures/audit/opening_target_architecture_status_audit_20260824.md`。
