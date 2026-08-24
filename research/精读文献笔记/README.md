@@ -21,6 +21,7 @@
 | 论文目录 | 内容 |
 |---|---|
 | `lotus_pvldb2025/` | LOTUS 精读主笔记；`figures/` 内含论文 Figure 1、4、6、7 的原图裁剪件 |
+| `galois_sigmod2025/` | Galois 精读主笔记；`figures/` 内含论文 Figure 1–4、7–11 的 9 个原图裁剪件；Figure 1–2 按 motivation example、Figure 11 按 oracle 参考上界解读 |
 | `ayo_asplos2025/` | AYO 精读主笔记；`figures/` 内含 ASPLOS 正式版 Figure 1、3、4、5、6、7、8、9、10、11、12 的原图裁剪件 |
 | `cortex_aisql_sigmod2026/` | Cortex AISQL 精读主笔记；`figures/` 内含论文 Figure 1、7、9、10、11、12 的原图裁剪件 |
 | `ray_data_streaming_batch_nsdi2027/` | Ray Data Streaming Batch 精读主笔记；`figures/` 内含论文 Figure 2、4、5、6、7、9 的原图裁剪件；PDF 版本仍按 arXiv v5 记录，不由目录名推断正式 venue |

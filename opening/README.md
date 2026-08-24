@@ -6,7 +6,7 @@
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
 - `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
-  `../research/精读文献笔记/`，当前共 8 篇主笔记和 65 张论文原图裁剪件。`../research/reference/`
+  `../research/精读文献笔记/`，当前共 9 篇主笔记和 74 张论文原图裁剪件，新增配图的主笔记为 Galois。`../research/reference/`
   当前有 21 份可解析 PDF，Top 15 PDF 15/15 齐全。
 - Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
   CCF-A full research。

@@ -11,7 +11,7 @@
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单 |
 | `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |
 | `reading_notes/` | 49 篇历史文献笔记；从 2026-08-21 起按泛读、筛选和快速回顾管理 |
-| `精读文献笔记/` | 精读笔记权威库；当前 LOTUS、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 八篇主笔记共含 65 张论文原图裁剪件；各篇选图与版本边界见目录 README 和 `figures/audit/` |
+| `精读文献笔记/` | 精读笔记权威库；当前 LOTUS、Galois、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 九篇主笔记共含 74 张论文原图裁剪件；各篇选图与版本边界见目录 README 和 `figures/audit/` |
 | `reference/REFERENCE_INDEX.md` | 当前工作区 21 份可解析 PDF 的权威题录和用途 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
 | `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |

@@ -154,6 +154,7 @@
 | `figures/audit/strategy_figure_micro_design_points.md` | 策略图小机制设计点与论文下载清单 | 重绘策略图前拆分 batch/partition、反压、路由、写回约束和规则表等小图 |
 | `figures/audit/local_reference_figure_reading_notes.md` | 本地 PDF 图形阅读笔记 | 记录已下载论文中的机制图经验，并合并到运行时控制闭环图方案 |
 | `figures/audit/lotus_deep_reading_figures_audit_20260821.md` | LOTUS 精读配图选择与裁剪审计 | 核对论文 Figure 1/4/6/7 的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
+| `figures/audit/galois_deep_reading_figures_audit_20260824.md` | Galois 精读配图选择与裁剪审计 | 核对 SIGMOD 2025 论文 Figure 1–4/7–11 的独立论证角色、motivation/oracle 边界、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/ayo_deep_reading_figures_audit_20260822.md` | AYO 精读配图选择与裁剪审计 | 核对 ASPLOS 正式版 Figure 1/3–12（不含 Figure 2）的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/cortex_aisql_deep_reading_figures_audit_20260822.md` | Cortex AISQL 精读配图选择与裁剪审计 | 核对论文 Figure 1/7/9/10/11/12 的选择理由、来源页码、SHA256、裁剪方式和视觉 QA |
 | `figures/audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md` | Ray Data Streaming Batch 精读配图选择与裁剪审计 | 核对 arXiv v5 Figure 2/4/5/6/7/9 的选择理由、版本边界、来源页码、SHA256、裁剪方式和视觉 QA |
@@ -502,7 +503,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
 | `opening/literature/top15_reading_notes/` | 开题 Top 15 历史笔记快照 | 15/15 严格 CCF-A 正式 research paper 的自包含历史快照；不随新精读库自动更新 |
 | `research/reading_notes/` | 泛读笔记库（历史 49 篇 + 泛读模板） | 论文筛选、快速回顾和背景事实索引；历史笔记深度不一 |
-| `research/精读文献笔记/` | 精读笔记权威库（当前 8 篇、65 张论文原图） | 每篇论文独立目录；LOTUS、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
+| `research/精读文献笔记/` | 精读笔记权威库（当前 9 篇、74 张论文原图） | 每篇论文独立目录；LOTUS、Galois、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries 与 VTC 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
 | `research/reference/` | 当前可解析参考 PDF（21 份） | Top 15 PDF 15/15 齐全；题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
 | `research/lotus_postgresql_execution_layer_fit_20260821.md` | PostgreSQL、LOTUS 与 SAOR 的执行分层审计 | 判断 LOTUS 应作为逻辑前端、系统 baseline 还是主执行依赖；含 first-principles 边界和最小 capability gate |

@@ -149,7 +149,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 ## 六、当前本地状态
 
 - `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
-- `research/精读文献笔记/`：精读笔记权威库，当前包含 LOTUS、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 八篇主笔记，共 65 张论文原图裁剪件；不维护阅读状态字段。
+- `research/精读文献笔记/`：精读笔记权威库，当前包含 LOTUS、Galois、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 九篇主笔记，共 74 张论文原图裁剪件；不维护阅读状态字段。
 - `research/reference/`：本轮保留 21 份可解析 PDF，其中 Top 15 的 15 份全部齐全。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。

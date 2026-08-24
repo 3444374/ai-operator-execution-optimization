@@ -14489,6 +14489,13 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   因果结论，需另跑固定 guaranteed-service-overlap panel 或 matched-solo controls，不动态修改主矩阵
   offset，不用本次 rehearsal 解锁 formal。
 
+## 2026-08-24 Galois 精读笔记配图补全
+
+- 从 `research/reference/galois_sigmod2025.pdf` 核对 Galois SIGMOD 2025 正式版的 11 张 Figure，按精读正文的独立论证需求选择 Figure 1–4 和 Figure 7–11。
+- 新增 9 个原图裁剪件，分别放在 DB-first 动机、predicate pushdown、Table-Scan/Key-Scan、logical-plan 枚举、logprob 过滤、query-complexity 质量/成本、`τ` 校准与 oracle-optimal gap 对应的正文位置；每图补充来源页码和不能外推的边界。
+- Figure 5–6 是已在笔记中完整转写的 prompt syntax，Table 1–10 和 Algorithm 1–2 也已转录，因此不重复截图。版本、选图、页码、SHA256、裁剪方式和视觉 QA 记录在 `figures/audit/galois_deep_reading_figures_audit_20260824.md`。
+- 精读配图索引已同步为 9 篇主笔记、74 张论文原图裁剪件；本次未修改论文 PDF、实验数据、开题报告或 PPT。
+
 ## 2026-08-24 开题报告研究结构与目标架构修订
 
 - 按外部评审意见重构 `opening/report/opening_report.md`：研究内容固定为数据组织和提交/路由/多 Job 调度两项，代价估计作为共同使能组件，图像作为跨模态验证；未改变项目总纲已经确定的研究方向。
