@@ -48,7 +48,7 @@
 
 ## 6. LaTeX 与 PDF 设计
 
-- 产物：`opening/report/opening_defense_qa.tex` 与本地可再生成的 `opening/report/opening_defense_qa.pdf`。
+- 产物：`opening/report/opening_defense_qa/opening_defense_qa.tex` 与同目录本地可再生成的 `opening_defense_qa.pdf`。
 - 使用 A4 `ctexart` + XeLaTeX，保留可点击目录和 PDF 书签。
 - 一级章节区分攻击面，每题用不编号的短标题和页边防孤标题规则；“一句话结论”、“追问时补充”、“证据状态”使用稳定的视觉标记。
 - 版式以可读性为先，不通过过小字号强行压缩页数；由于方案题增加了步骤化回答和连续追问，预计 30--45 页。

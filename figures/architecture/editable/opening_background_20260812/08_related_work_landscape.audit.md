@@ -7,9 +7,9 @@
 - Local evidence checked before wording changes:
   - `research/ai_operator_literature_inventory.md`
   - `research/inference_pipeline_interaction_literature.md`
-  - `opening/literature/top15_reading_notes/` notes for LOTUS, Galois, GaussML, Orca, vLLM, Sarathi-Serve, VTC, GRACEFUL, COSTREAM and Abacus
+  - `opening/literature/top15_reading_notes/` and `research/精读文献笔记/` notes for LOTUS, Galois, IMBridge, Ray Data, Daft, AYO, Parrot, VTC, DLPM, BlendServe, GRACEFUL, COSTREAM and Abacus
   - `research/reading_notes/cortex_aisql_sigmod2026.md`
-- No web evidence and no commercial logos are used.
+- Ray Data 的发表状态另以作者 Yile Gu 与 Ziming Mao 的公开论文列表交叉核对，两处均列为 NSDI 2027；其余会议与年份按本地正式论文、精读笔记和参考索引核对。图中不使用商业 Logo。
 - Intentional content correction: VTC is described as service-counter fairness; GRACEFUL as UDF execution-time estimation; COSTREAM as streaming operator-placement cost estimation; Abacus as multi-objective Pareto plan search. These replace unsupported admission/routing-like labels in the reference.
 
 ## Visible-element inventory
@@ -23,10 +23,10 @@
 | service-panel | 810,100,370,655 | inference-service column | native | matches db-panel | accepted |
 | cost-panel | 1200,100,370,655 | cost-and-decision column | native | matches db-panel | accepted |
 | headers | y=112..158 | four column headings | native text | 29 px bold blue | accepted |
-| db-cards | x=48, four cards | LOTUS, Galois, GaussML, Cortex AISQL + two labels each | native card + text | names 27 px; labels 22 px; no small pills | accepted |
-| data-cards | x=438, three cards | Ray Data, Daft, NeuStream + two labels each | native card + text | names 27 px; labels 22 px; taller cards | accepted |
-| service-cards | x=828, four cards | Orca, vLLM, Sarathi-Serve, VTC + two labels each | native card + text | names 27 px; labels 22 px | accepted |
-| cost-cards | x=1218, four cards | Learned Cost Models, GRACEFUL, COSTREAM, Abacus + two labels each | native card + text | names 27 px; labels 22 px | accepted |
+| db-cards | x=48, four cards | LOTUS, Galois, IMBridge, Cortex AISQL + 来源与两行说明 | native card + text | names 27 px; labels 22 px; venue/year 14 px dark gray; Cortex AISQL 的来源另起一行 | accepted |
+| data-cards | x=438, three cards | Ray Data, Daft, AYO + 来源与两行说明 | native card + text | names 27 px; labels 22 px; venue/year 14 px dark gray; taller cards | accepted |
+| service-cards | x=828, four cards | Parrot, VTC, DLPM, BlendServe + 来源与两行说明 | native card + text | names 27 px; labels 22 px; venue/year 14 px dark gray | accepted |
+| cost-cards | x=1218, four cards | Learned Cost Models, GRACEFUL, COSTREAM, Abacus + 来源与两行说明 | native card + text | names 27 px; labels 22 px; venue/year 14 px dark gray; Learned Cost Models 的来源另起一行 | accepted |
 | focus-lines | y=702 | four dividers | native line | 1.5 px blue | accepted |
 | focus-text | y=710..744 | four layer-focus summaries | native text | 21 px bold blue; visible at 900 px-wide preview | accepted |
 | conclusion | 30,783,1540,82 | cautious two-line separation statement | native card + text | orange 2.5 px border, 29 px bold; 30 px left/right and 35 px bottom canvas clearance | accepted |
@@ -40,7 +40,7 @@ None. This is a categorical landscape, not a causal or process flow. No arrows, 
 
 - `check_drawio.py`: pass — 37 cells, 35 vertices, 0 edges, 0 image/SVG cells.
 - XML: parsed by `check_drawio.py`; native Draw.io text/cards/lines only.
-- Export: SVG rendered through local headless Chrome at exactly 1600 × 900 to `08_related_work_landscape.png`.
+- Export: the 1600 × 900 SVG was rendered through local headless Chrome at 2.5× scale to a 4000 × 2250 PNG for PPT use.
 - Full-size visual inspection: accepted. No text clips, no overlapping cards, no crossed or duplicate borders, no masked corrections, and no hidden stale layer.
 - PPT-scale inspection: resized to 900 × 506 and visually checked. System names and both label lines remain distinguishable; four columns remain separated; the conclusion is readable. No text touches a card edge.
 - Draw.io source and standalone SVG carry the same wording, geometry, colors, and font hierarchy.
@@ -50,7 +50,9 @@ None. This is a categorical landscape, not a causal or process flow. No arrows, 
 - Removed all side-by-side label capsules after full-size rendering showed long English and Chinese labels pressing into adjacent capsules.
 - Replaced them with two centered 22 px text lines per system card; no font was reduced below the requested floor.
 - Preserved at least 16 px horizontal text clearance inside every card; system cards remain within their parent columns.
-- Reworded the title and bottom statement to keep the page at the related-work layer: representative systems optimize database semantics, data pipelines, inference services or cost decisions separately; the connection between database task semantics and model-service runtime information remains insufficient. The figure does not introduce the project's solution vocabulary.
+- Updated the representative works to match the current report: IMBridge highlights the separation between database delivery batches and model-call batches; AYO preserves task and stage dependencies; Parrot, VTC, DLPM and BlendServe cover application dependencies, service accounting, prefix locality and work-aware batching.
+- Added venue and year in 14 px dark gray text after each system name without citation numbers or brackets. Cortex AISQL and Learned Cost Models use a separate venue line because the combined line would exceed the card width; Ray Data is marked NSDI 2027 after author-page verification.
+- Reworded the title and bottom statement to keep the page at the related-work layer: representative systems optimize AI operators and plans, data pipelines, model-service requests or cost prediction; the project studies how database job information and model-service state can jointly guide upstream data organization and request submission.
 
 ## Final status
 

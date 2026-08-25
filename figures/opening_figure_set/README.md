@@ -23,7 +23,7 @@
 |---:|---|---|---|
 | 02 | `P02_背景_数据库AI算子外部执行链路` | 展示数据库 AI 算子、外部执行层、模型服务状态和写回闭环 | `architecture/editable/opening_background_20260812/06_ai_native_execution_architecture` |
 | 03 | `P03_背景_传统算子与外部AI执行假设` | 对照传统成本字段与 AI 语义算子的通用外部物理执行链路 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` |
-| 04 | `P04_相关工作_跨层执行闭环` | 按层归纳代表工作，指出数据库任务语义与服务运行信息衔接不足 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
+| 04 | `P04_相关工作_跨层执行闭环` | 按层归纳数据库 AI、数据执行、模型服务与代价估计工作，说明本课题关注数据库作业信息和模型服务状态如何共同指导上游执行 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
 | 05 | `P05_研究空白_AI数据执行层` | 说明按 AI 处理需求描述工作量、联系运行状态与作业进度、共同安排多个作业三项能力 | `architecture/editable/01_research_gap` |
 | 06 | `P06_文本基线_执行路径与可比边界` | 左图核对数据库读写路径的完成性和答案质量，右图比较框架原生路径的模型服务吞吐；两图分别解释 | `data/report_main/opening_text_baseline_evidence_map` |
 | 07A | `P07A_动机证据_记录数与模型工作量` | 动机一：说明相同行数仍可能对应 14.3× 模型工作量差异 | `data/report_main/opening_motivation_work_state_part1_work` |

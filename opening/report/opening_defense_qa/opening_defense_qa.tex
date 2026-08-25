@@ -1,0 +1,959 @@
+% !TeX program = xelatex
+\documentclass[10pt,a4paper]{ctexart}
+
+\usepackage[a4paper,top=1.45cm,bottom=1.45cm,left=1.55cm,right=1.55cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{needspace}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+
+\definecolor{answerblue}{RGB}{32,92,151}
+\definecolor{followorange}{RGB}{184,91,20}
+\definecolor{evidencegreen}{RGB}{37,112,73}
+\definecolor{warningred}{RGB}{170,45,45}
+\definecolor{softgray}{RGB}{92,98,108}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.20em}
+\linespread{1.04}
+\setlist[enumerate]{leftmargin=1.65em,itemsep=0.08em,topsep=0.12em,parsep=0pt,partopsep=0pt}
+\setlist[itemize]{leftmargin=1.55em,itemsep=0.08em,topsep=0.12em,parsep=0pt,partopsep=0pt}
+\titleformat{\section}{\Large\bfseries}{\thesection.}{0.45em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.40em}{}
+\titlespacing*{\section}{0pt}{0.9em}{0.35em}
+\titlespacing*{\subsection}{0pt}{0.7em}{0.25em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small 数据库 AI 负载的执行优化与调度研究}
+\fancyhead[R]{\small 开题答辩 QA 预演}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+
+\newcounter{qa}
+\newcommand{\QAQuestion}[1]{%
+  \Needspace{8\baselineskip}%
+  \refstepcounter{qa}%
+  \phantomsection%
+  \addcontentsline{toc}{subsection}{Q\theqa. #1}%
+  \par\vspace{0.55em}%
+  {\large\bfseries Q\theqa. #1}\par\vspace{0.18em}%
+}
+\newcommand{\Field}[2]{\par\noindent{\color{#1}\bfseries #2：}\hspace{0.25em}}
+\newcommand{\OneLine}[1]{\Field{answerblue}{一句话结论}#1\par}
+\newcommand{\MainAnswer}[1]{\Field{black}{30--60 秒主答}#1\par}
+\newcommand{\LongAnswer}[1]{\Field{black}{60--90 秒主答}#1\par}
+\newcommand{\Steps}[1]{\Field{answerblue}{按步骤讲}\begin{enumerate}#1\end{enumerate}}
+\newcommand{\FollowUp}[1]{\Field{followorange}{追问时补充}#1\par}
+\newcommand{\RelatedQuestions}[1]{\Field{softgray}{可能继续追问}#1\par}
+\newcommand{\EvidenceStatus}[1]{\Field{evidencegreen}{证据状态}#1\par}
+\newcommand{\DoNotClaim}[1]{\Field{warningred}{不能这样回答}#1\par}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries 数据库 AI 负载的执行优化与调度研究}\par
+  \vspace{0.25em}
+  {\Large 开题答辩 QA 预演手册}\par
+  \vspace{0.35em}
+  {\small 83 个问题的现场主答、技术追问、证据状态与表述边界}\par
+\end{center}
+
+\vspace{0.5em}
+
+\section*{使用方法}
+\addcontentsline{toc}{section}{使用方法}
+
+每题先说“一句话结论”，再按“\textbf{研究边界—当前证据—后续验证}”展开。普通问题控制在 30--60 秒；研究方案和两项研究内容的技术题可讲 60--90 秒，并优先使用“按步骤讲”。老师未继续追问时，不主动堆叠全部实验数字。
+
+\begin{itemize}
+  \item \textbf{已完成事实：}已有实现或实验直接支持，可以使用完成时，但必须保留机器、模型、工作负载与计时范围。
+  \item \textbf{前期证据：}已经观察到问题或建立静态/机制参照，但不能说计划中的完整方法已经胜出。
+  \item \textbf{计划验证：}开题后的研究方案，使用“计划、将、拟”等表述，不能改写成已有贡献。
+\end{itemize}
+
+统一边界是：PostgreSQL 负责 SQL、关系子计划、snapshot、权限、取消、错误与结果生命周期；LOTUS v1.2.4 提供首版 \texttt{sem\_map} 语义；Daft、Ray 与模型服务是可替换的外部物理执行层。本课题不修改 PostgreSQL core、vLLM continuous batching、模型内部或 Ray scheduler。
+
+\tableofcontents
+\newpage
+
+\section{十四个必背核心问题}
+
+\QAQuestion{请用一句话概括你的课题。}
+\OneLine{研究数据库 AI 语义算子进入外部模型服务前，记录如何按实际 AI 工作量形成执行单元，以及固定服务容量下请求何时提交、来自哪个作业并发往哪个服务实例。}
+\MainAnswer{本课题位于关系子计划输出记录之后、模型服务真正执行请求之前。研究内容一解决记录怎样用 token、图像准备量等分阶段特征描述并组织；研究内容二在相同请求数和工作量上限下，结合服务状态与 Job 进度控制提交、路由和共享。PostgreSQL 管理 SQL 与查询生命周期，模型服务继续负责已经到达请求的内部组批和 GPU 推理。}
+\EvidenceStatus{课题边界与两项研究内容已在最终报告中确定；完整 PostgreSQL 计划内算子和最终动态方法仍属计划验证。}
+\DoNotClaim{不要说“研究 vLLM 调度器”或“把 Ray、Daft 和 PostgreSQL 接起来就是创新”。}
+
+\QAQuestion{这为什么是数据库研究，而不是普通模型服务调度？}
+\OneLine{数据库不仅提供数据，还提供模型服务看不到的关系子计划、查询身份、记录对应、取消、错误和剩余工作语义。}
+\MainAnswer{模型服务只能调度已经到达的请求，不知道数据库里还有多少记录尚未准备或尚未提交，也不知道这些请求属于哪个完整查询。计划中的 PostgreSQL AI 算子由数据库拥有 SQL 入口、snapshot、权限、query cancel/error 和结果生命周期，再把关系 child plan 筛选后的有限记录流交给外部后端。若换成 CSV，底层策略仍能运行，但会失去这些数据库语义，只能称为通用 AI 数据执行框架。}
+\FollowUp{后续将比较 request-only、Job-aware 与 database-progress-aware 三种信息层，检验数据库进度与剩余工作是否真正改变释放决策。}
+\EvidenceStatus{数据库属性是方案目标；当前外部物理实验只证明链路和问题，不替代 PostgreSQL 查询生命周期验证。}
+
+\QAQuestion{你所说的 AI 数据执行层到底是什么？}
+\OneLine{它是数据库关系子计划与外部模型服务之间，负责记录交接、工作组织、请求释放、路由和结果回收的物理执行区域。}
+\MainAnswer{前向链路是“关系记录—工作描述—数据组织—提交与路由—模型执行—结果返回”；反向链路采集准备进度、running/waiting、KV、完成速率和逐 Job 服务状态。它不定义模型结构，也不替代 SQL 优化器或服务内部 continuous batching，而是把数据库尚未形成请求的工作与外部服务状态连接起来。}
+\EvidenceStatus{外部物理链、状态观测和静态/共享参照已建立；数据库内受管交接仍需完成。}
+
+\QAQuestion{你的主要研究难点是什么？}
+\OneLine{难点是工作量表示、均衡与局部性的冲突、多 Job 多目标决策，以及数据库生命周期集成。}
+\MainAnswer{第一，行数不能表示文本 token 或图像准备、传递、模型执行等阶段工作；第二，按长度均衡可能打散共享 prefix，当前高 KV 压力实验已经出现排名反转；第三，借用空闲容量可提高吞吐，却可能恶化最差 Job、P99 或公平；第四，外部执行必须保持 row identity、取消、错误传播和可见结果唯一性。四个难点分别对应两项研究内容与系统资格验证。}
+\FollowUp{固定 16 行批次的预计 token work 相差约 14.3 倍；四 Job 共享使吞吐提高 8.68\%，但统一口径 Jain 指数从 0.988 降至 0.876。}
+\EvidenceStatus{问题现象已有前期证据；解决这些问题的完整方法仍需正式消融。}
+
+\QAQuestion{你的预期创新点是什么？}
+\OneLine{预期创新是面向数据库 AI 算子的分阶段工作描述与局部性约束数据组织，以及固定总容量下连接服务状态和 Job 进度的上游释放、路由与共享方法。}
+\MainAnswer{第一项不是简单把行数换成 token，而是保留记录身份、模态相关阶段工作与 locality，并研究均衡和缓存复用何时冲突。第二项不是增大并发，而是在总请求位置和总 work 上限不变时，决定下一份工作何时进入、来自哪个 Job、发往哪个 endpoint。PostgreSQL/LOTUS 集成提供真实查询语义，代价估计提供共同支撑，不扩张为额外研究内容。}
+\EvidenceStatus{这是预期创新，必须由后续同上限消融，以及真实 PostgreSQL 查询生命周期验证后，才能写成最终贡献。}
+
+\QAQuestion{你与已有工作的本质区别是什么？}
+\OneLine{已有工作分别优化 AI 算子计划、通用数据流或服务内部已到达请求；本课题控制数据库中尚未提交的工作。}
+\MainAnswer{Cortex、LOTUS、Sema、Palimpzest 和 Abacus主要决定算子语义、调用次数、模型或计划；Ray Data 与 Daft提供通用分区、背压和执行；VTC、DLPM、BlendServe 与 vLLM主要处理服务内部或离线已知请求。本课题的净增量是把关系 child plan、row/Job identity、尚未提交的剩余工作与 endpoint 实时状态放进同一上游决策，同时保持模型服务内部不变。}
+\FollowUp{回答时先按“数据库优化—数据执行框架—应用图调度—模型服务调度”分层，再举 2--3 篇最接近工作，不要罗列十几个系统名。}
+\EvidenceStatus{文献层次与差异已在报告第二章和精读材料中逐篇核对。}
+
+\QAQuestion{为什么不把所有请求直接交给 vLLM？}
+\OneLine{vLLM 能安排已到达请求，却看不到数据库中尚未形成请求的剩余工作和完整 Job 目标。}
+\MainAnswer{若上游一次性把长作业全部推入服务端，较早到达请求会占据队列和 KV 空间；请求开始执行后，上游通常不能安全抢占。vLLM 负责“已进入服务的请求怎样连续批处理”，本课题负责“哪些请求现在应该进入服务”。控制点前移后，可以在不修改 vLLM 的情况下做有界准入、Job 保护和跨 endpoint 路由。}
+\EvidenceStatus{不同原生执行图已表现出过量排队和供给不足两种状态；状态驱动释放的独立增量仍待验证。}
+
+\QAQuestion{为什么 Ray 和 Daft 自己不能解决？}
+\OneLine{它们提供执行机制，但不会自动定义 AI work、数据库 Job 目标或模型服务状态驱动的释放策略。}
+\MainAnswer{Daft 能扫描、分区和批处理，Ray task/actor 能保存状态并异步执行，但通用框架默认处理行、块或 partition，并不知道一条记录对应多少 token/frame work，也不会把 query progress、SLO、KV 和 endpoint queue 组合成 Job 选择与路由决策。本课题使用它们承载候选策略，并把官方原生执行图作为 baseline；它们是可替换后端而不是创新点。}
+\EvidenceStatus{Daft Native、Daft Ray 和 Ray Data 的原生路径已完成同环境状态观察；项目策略需单独标注 scheduler owner。}
+
+\QAQuestion{两项研究内容之间是什么关系？}
+\OneLine{研究内容一回答“一批放什么”，研究内容二回答“何时提交、从哪个 Job 取、发往哪里”。}
+\MainAnswer{研究内容一把关系记录转换成带分阶段 work 与 locality 的 WorkDescriptor，再形成 BatchRequest；研究内容二在固定总 capacity envelope 内选择 ready work、占用 endpoint credits 并在完成时补充。验证时先固定调度比较 organizer，再固定 organizer 比较 release/routing，最后把各自较优配置拼接并与小规模 joint grid 比较，避免一次改变两个因素无法归因。}
+\EvidenceStatus{接口和验证顺序已确定；联合方法是否必要由后续实验决定。}
+
+\QAQuestion{目前已经完成什么，哪些还没完成？}
+\OneLine{已完成外部物理链和关键现象/强参照，未完成数据库内 LOTUS 入口、完整状态驱动方法和 SQL 计划级代价选择。}
+\MainAnswer{已完成 PostgreSQL 数据源与结果链、Daft/Arrow 数据组织、Ray 执行、vLLM 文本服务、CLIP 图像后端、work/state 观测、静态与共享多 Job 对照及初步代价估计。尚未完成三项资格工作：LOTUS v1.2.4 \texttt{sem\_map} 迁移与 planner-visible PostgreSQL 节点；真正使用 SLO 和 endpoint 状态做动作的完整控制器；代价进入语义等价 SQL 候选计划选择。}
+\EvidenceStatus{前半部分为已完成事实，后三项必须使用计划时态。}
+\DoNotClaim{不要把实验中的 \texttt{AI\_COMPLETE}/\texttt{AI\_EMBED} 任务身份说成已经注册的 PostgreSQL SQL 算子。}
+
+\QAQuestion{复杂方法目前没有全面优于静态方法，这还算研究吗？}
+\OneLine{算；开题阶段的价值是识别真实冲突并建立强参照，复杂方法必须证明独立增量，否则保留简单方案。}
+\MainAnswer{当前共享容量提高总体效率，但静态分区对短作业保护更强；多种共享选择器吞吐差异又不到 3\%，说明共享机制的收益不能归给复杂选择器。后续按“静态—共享 FIFO—实际服务记账—SLO guard—状态路由”逐层消融。若复杂层没有超过直接父级，就删除该层并报告适用与失效条件，而不是更换 workload 追求正结果。}
+\EvidenceStatus{负结果和条件性结果均已保留；最终贡献不预设动态一定胜出。}
+
+\QAQuestion{为什么研究“固定容量”，状态感知不应该改变容量吗？}
+\OneLine{固定的是实验中 endpoint 的总接收范围，动态的是这些提交机会在 Job 和 endpoint 之间怎样使用。}
+\MainAnswer{每个 endpoint 的最大未完成请求数与预计 work 总量在 A/B 两臂保持相同，请求完成后空出的 credits 可以动态共享。这样能把“总容量变大”与“Job 选择、借用、SLO 保护和路由更好”分开。若策略同时放大总上限，吞吐提高就无法归因。动态调整总 envelope 只有在单独校准和同上限策略验证后才考虑。}
+\EvidenceStatus{固定容量是因果控制条件；65,536 只绑定当前机器、模型、协议和 workload 签名。}
+
+\QAQuestion{如果没有一种数据组织方法在所有场景都最好怎么办？}
+\OneLine{研究内容一不要求全局最优，而要给出局部性约束方法或条件选择规则及其决策损失。}
+\MainAnswer{低 KV 压力下多种 organizer 接近，高压力下强重排会破坏 prefix locality，保序方法反而更好。最终可形成两类成果：在 compatibility/locality group 内做 work-budget 均衡；或根据 work skew、prefix preservation 与 service regime 选择 organizer。评价不仅看单点吞吐，还比较选择规则与各条件实测较优方法之间的 regret。}
+\EvidenceStatus{regime-dependent 现象已有前期证据；选择规则和 held-out regret 仍待正式验证。}
+
+\QAQuestion{为什么同时做文本和图像，范围会不会过大？}
+\OneLine{文本完整验证方法，图像只验证分阶段 work、credit 和 Job 接口能否跨模态复用。}
+\MainAnswer{共用部分是 row/Job identity、分阶段描述接口、capacity credits、状态快照、完成事件和评价框架；不同部分是文本 token、输出长度与 prefix cache，以及图像读取、解码、张量准备和前向计算。图像不复制全部参数搜索，也不要求同一个数值和策略排名与文本一致，只检查抽象与代码接口能否复用。}
+\EvidenceStatus{图像静态链、阶段描述和 observe-only 状态快照已完成；图像动态调度收益尚未证明。}
+
+\section{总体研究方案}
+
+\QAQuestion{从一条 SQL 到 AI 结果返回，完整执行流程是什么？}
+\OneLine{数据库先完成关系处理并交付有身份的有界记录流，外部层再描述、组织、提交和执行，最后按身份把结果送回数据库生命周期。}
+\LongAnswer{方案不是“SELECT 后由 Python 导出再写回”，而是 PostgreSQL 查询执行拥有 AI 算子。关系 child plan 先按 snapshot 完成 filter/projection；AI 节点把必要列封装成 RowEnvelope，转换为 WorkDescriptor 和 BatchRequest；调度器在 endpoint credits 允许时选择 Job 与路由；LOTUS 语义运行时构造 prompt、解析结果；结果按 row identity 返回下游或统一 sink。取消、错误和背压沿同一通道反向传播。}
+\Steps{
+  \item PostgreSQL planner 识别受支持的 AI 表达式，并连接普通关系 child plan。
+  \item executor 有界拉取必要记录，附加 query、operator、Job 与 row identity。
+  \item 模态 adapter 生成分阶段 WorkDescriptor，organizer 形成完整工作项组成的 BatchRequest。
+  \item controller 检查 Request/Work Credit，选择 Job 与 endpoint 后提交。
+  \item 外部 backend 完成模型调用，LOTUS \texttt{sem\_map} 规定 prompt 生成、输出解析和错误行为。
+  \item 结果按稳定身份返回；取消时停止新提交，迟到结果不再进入数据库可见结果。
+}
+\FollowUp{首版主动收缩为单个 AI map/projection、单向扫描、无 rescan、无 parallel query；不支持的路径明确拒绝而非静默退化。}
+\RelatedQuestions{为什么不是 Python UDF？如何处理 backpressure？取消后的请求怎么办？见 Q53--Q57。}
+\EvidenceStatus{外部物理链已经运行；planner-visible 节点、bounded RowEnvelope 与完整生命周期为计划验证。}
+
+\QAQuestion{两项研究内容各自的输入、决策和输出是什么？}
+\OneLine{内容一把记录变成可比较工作并决定一批放什么；内容二接收这些批次，决定何时、从哪个 Job、向哪个 endpoint 释放。}
+\LongAnswer{研究内容一的输入是关系记录、AI 操作的语义与参数定义和模态特征，决策是 compatibility/locality 分组与 work-budget 组织，输出是含完整工作项和 staged work 的 BatchRequest。研究内容二的输入是 ready batches、endpoint credits、RuntimeStateSnapshot 和 Job ledger，决策依次是准入检查、Job 选择与 endpoint 路由，输出是提交动作及更新后的占用/服务账本。两项通过清晰接口连接，便于分别消融。}
+\Steps{
+  \item 内容一不决定 GPU 内部 batch，只产生物理组织结果。
+  \item 内容二不改变工作项语义，只决定尚未提交工作如何使用固定总容量。
+  \item completion event 把实际服务量、释放 credits 和结果身份同时反馈给 controller。
+  \item 代价估计只提供可选预测，基础 organizer/controller 不依赖准确时间预测也能运行。
+}
+\EvidenceStatus{对象、接口和评价指标已在报告中定义；最终策略组合由后续实验选择。}
+
+\QAQuestion{总体方案中哪些组件是研究对象，哪些只是实现载体？}
+\OneLine{WorkDescriptor/organizer 与 release-routing-Job policy 是研究对象；PostgreSQL、LOTUS、Daft、Ray 和 vLLM 分别承担语义、执行或服务角色。}
+\LongAnswer{研究对象必须对应可证伪的决策：怎样表示 staged work、怎样在 locality 约束下组织、怎样在固定 envelope 下选择 Job 和 endpoint。PostgreSQL extension 是数据库资格实现；LOTUS 固定首版语义；Daft/Arrow 提供数据表示和原生 baseline；Ray actor 提供状态与异步机制；vLLM/CLIP 完成模型推理。替换这些载体后策略接口仍应成立，因此“集成了若干系统”不是创新。}
+\Steps{
+  \item 为每条实验路径记录实现来源、upstream 版本和 scheduler owner。
+  \item 项目策略只与同资源、同语义、同计时范围的直接父级参照比较。
+  \item 后端可替换性通过 LOTUS native、Daft/Ray/static 等同语义路径验证，而不是声称平台等价。
+}
+\DoNotClaim{不要把 Daft Ray 说成项目调度器，也不要把 vLLM、Ray 或 PostgreSQL 的采用写成算法贡献。}
+\EvidenceStatus{组件角色与 baseline provenance 已明确；策略的跨后端非劣性仍需正式验证。}
+
+\QAQuestion{为什么先设计不依赖代价预测的基础方法？}
+\OneLine{为了避免两项核心方法被一个尚不稳定的预测器绑住，并能单独测量代价信息到底增加了多少价值。}
+\LongAnswer{WorkDescriptor 可直接使用输入 token、输出上限、图像字节/frame、prefix key 等运行前事实；controller 可直接使用容量扫描、完成通知和实时状态。因此基础方法已经能做有界组批与释放。只有代价估计在留出时间段或新 workload 上通过 ranking/regret 验证后，才加入预计 batch time、remaining work 或 SLO slack，并与不含预测的同上限方法 A/B。这样预测失败不会使两项研究内容同时失效。}
+\Steps{
+  \item 先运行 facts-only organizer/controller，建立强静态与简单共享点。
+  \item 独立验证 cost model 的区间、pairwise ranking 与 decision regret。
+  \item 只向通过验证的决策位置加入预测特征。
+  \item 若实际吞吐、JCT 或 P99 无额外改善，则删除预测增强，保留基础方法。
+}
+\EvidenceStatus{初步四候选代价选择已有证据；代价增强两项策略尚未接入。}
+
+\QAQuestion{两项研究内容为什么先独立优化，再检查联合调整？}
+\OneLine{先独立可保证因果归因，最后联合可检验 organizer 与 controller 是否存在必须协同的交互。}
+\LongAnswer{若同时改变组批、work 上限、Job policy 和路由，即使性能变化也不知道来源。方案先固定 controller 搜索内容一，再固定 organizer 搜索内容二；把各自较优配置直接拼接后，与小规模 joint grid 比较。联合显著更好说明两者存在交互，需要协同；结果接近则说明分层设计已经足够。无论哪种结果，两项决策变量仍清晰可分。}
+\Steps{
+  \item 内容一消融：固定 endpoint、capacity 与 Job policy，只换 organizer。
+  \item 内容二消融：固定 organizer 与 workload，只换 release/route/Job policy。
+  \item 拼接两个独立较优点，记录组合性能。
+  \item 在有限候选上做 joint grid，并与拼接点比较增量和开销。
+}
+\FollowUp{联合比较必须保持总 Request/Work Credit 不变，防止把扩大容量误算为协同收益。}
+\EvidenceStatus{文本预研中联合候选未显著优于独立拼接；最终结论仍需在正式配置重验。}
+
+\QAQuestion{前向数据流和反向状态流怎样形成反馈？}
+\OneLine{前向流提交带身份和 work 的请求，反向流用完成事件与状态快照释放 credits、修正账本并触发下一次决策。}
+\LongAnswer{前向路径只在 credits 足够时把 ready work 从 Job 队列送到 endpoint。模型执行期间，采集 running/waiting、queue age、KV、完成速率和时间戳；请求完成后返回实际 token 或阶段工作、结果身份和 finish reason。controller 先原子释放占用，再修正 Job 实际服务量，随后重新进行 Job 选择与路由。快照提供较慢的状态趋势，completion event 提供精确的占用变化，二者职责不同。}
+\Steps{
+  \item 提交时登记 request id、Job、endpoint 和预计 work。
+  \item 周期快照记录服务/准备/Job 三层状态及采样时间。
+  \item 完成事件核对身份，释放 request/work occupancy 并记实际服务。
+  \item 事件驱动 replenishment；快照只影响候选排序与保护条件。
+  \item 状态过期时退回固定 credits + completion-only，而非停止系统。
+}
+\EvidenceStatus{状态快照和完成事件采集已实现部分路径；完整反馈驱动动作属于计划验证。}
+
+\QAQuestion{为什么数据库到外部后端必须使用有界流？}
+\OneLine{有界流同时限制数据库侧内存、外部排队与取消后的无效工作，是查询生命周期能够控制外部执行的基础。}
+\LongAnswer{若先 materialize 全表或一次性提交全部请求，数据库 query cancel 已无法及时阻止外部工作，长 Job 也会占据队列和 KV。bounded RowEnvelope stream 只允许有限 ready/buffered/inflight work：下游 credits 用尽时产生 backpressure，上游暂停拉取 child plan；请求完成后再继续。它并不声称物理零拷贝，而是把数据传输纳入数据库管理的有限执行通道。}
+\Steps{
+  \item child plan 按需产出记录，不先把完整查询导出到 Python。
+  \item gateway 维护 ready buffer 上限与 endpoint credits。
+  \item 下游无空间时停止拉取，释放后恢复。
+  \item cancel/error 关闭生产端，阻止新组织和提交，并处理已在途结果。
+}
+\RelatedQuestions{是否会死锁？如何选择 buffer 大小？取消后迟到结果怎样处理？见 Q43、Q54--Q57。}
+\EvidenceStatus{有界提交机制已有外部实验基础；数据库 child-plan backpressure 仍需集成验证。}
+
+\QAQuestion{文本和图像怎样共享同一方案，而不是写两套系统？}
+\OneLine{公共控制层只消费 staged work、credits、locality capability、Job identity 和 completion，模态差异由 adapter 提供。}
+\LongAnswer{文本 adapter 产生 input/output token、prefix key 和生成参数；图像 adapter 产生编码字节、解码/缩放/frame、tensor 与模型前向特征。organizer/controller 只读取统一字段和 capability：支持 prefix 时可考虑 locality，不支持则明确关闭；准入维度可由当前受限阶段选择。两种模态共用批次、状态、Job ledger 和评价接口，但不共享固定阈值与最优参数。}
+\Steps{
+  \item 模态 adapter 把原始记录转换为统一 WorkDescriptor。
+  \item capability 显式声明 token、frame、prefix、batch API 等是否可用。
+  \item 公共 organizer/controller 不根据缺失列静默改变算法。
+  \item 评价时文本完整验证，图像验证接口复用与另一阶段结构。
+}
+\DoNotClaim{跨模态复用不等于同一 K、同一 batch 或同一策略排名在文本和图像上普遍最优。}
+\EvidenceStatus{图像 staged descriptor 与 observe-only snapshot 已接入；公共动态 policy 的图像收益待验证。}
+
+\section{研究内容一：分阶段工作量表征与数据组织}
+
+\QAQuestion{WorkDescriptor 具体保存什么？}
+\OneLine{它保存身份、运行前可观测的分阶段 work、执行兼容性和 locality，不把预测时间或动态 SLO 状态混成基础事实。}
+\LongAnswer{身份包括 query、operator、Job、row/request id；阶段事实包括输入 token/字节、输出上限、图像编码大小、frame/像素、prepare/tensor 等；compatibility 包括模型、prompt template、生成参数、输出 schema 和 backend capability；locality 包括 prefix hash 或适合共址的 key。预计执行时间和区间由 cost estimator 另行生成，priority/SLO 属于调度上下文。}
+\Steps{
+  \item 从数据库 tuple 和 AI 操作的语义/参数定义生成稳定身份与兼容性字段。
+  \item 在不调用昂贵模型的情况下提取 token、字节、尺寸和 locality 特征。
+  \item 记录字段来源、单位、模型/tokenizer 版本和缺失能力。
+  \item 把预测值放入独立 estimate 对象，运行后把实际服务写入 trace/ledger。
+}
+\EvidenceStatus{字段类别和接口已定义；各模态最终保留特征由阶段画像与消融决定。}
+
+\QAQuestion{为什么必须把可观测事实和预测值分开？}
+\OneLine{二者的可靠性、更新时间和失败处理不同，混在一起会让系统把模型误差当成真实 work。}
+\LongAnswer{输入 token、图像尺寸和模型配置是运行前可复现事实；预计输出长度、服务时间和剩余时间是带误差的推断。基础 credits 可依赖保守 work，不应因预测器失效而失去安全性。分开后可以对预测值记录模型版本、校准签名和不确定区间，也能做 facts-only 与 estimate-enhanced 消融，判断预测是否真正改善决策。}
+\Steps{
+  \item 基础 descriptor 使用确定单位和 provenance。
+  \item estimate 记录 point、interval、calibration signature 与生成时间。
+  \item 超出区间或签名变化时降级为基础方法。
+  \item 完成后用实际输出和服务时间单独更新残差，不改写原始事实。
+}
+\EvidenceStatus{概念边界已确定；估计失效检测和在线更新为计划实现。}
+
+\QAQuestion{为什么不能把所有阶段压成一个工作量标量？}
+\OneLine{同一总量可能对应不同的 CPU prepare、传输、prefill、decode 或 GPU 前向组合，当前瓶颈变化时排序会改变。}
+\LongAnswer{文本长输入短输出与短输入长输出的 prefill/decode 比例不同；图像相同行数也可能有不同编码大小、解码成本和 tensor 形状。一个标量可用于某次准入，例如预计 token work，但不能替代多维描述。系统保留 staged vector，再由当前受限阶段选择 organizer/admission 使用的维度；如果阶段不确定，则采用保守预算和简单保序参照。}
+\Steps{
+  \item 保存 source/input、prepare、model/result 等阶段特征。
+  \item 用 profile/状态判断当前是数据供应、模型计算还是缓存受限。
+  \item 选择相应维度计算 batch budget 或 endpoint work occupancy。
+  \item 对错误选择报告 regret，并在不稳定时回退多约束上限。
+}
+\EvidenceStatus{文本 14.3 倍批间差异与图像 prepare/model 阶段差异已观测；动态阶段选择仍需验证。}
+
+\QAQuestion{生成前不知道实际输出长度，怎样计算 work？}
+\OneLine{准入使用输入 token 加保守输出估计，公平记账在完成后改用实际服务，两类数值不混用。}
+\LongAnswer{运行前可以使用 max tokens、按任务/前缀/输入长度得到的历史分位数或带上界的预测，避免长请求过量进入。提交时占用预计 Work Credit；执行中或完成后依据实际 input/output token 修正 Job 服务账本，释放原占用。若实际超过估计，endpoint occupancy 允许短暂保守超差并暂停继续提交，而不是撤销已运行请求。}
+\Steps{
+  \item 以 tokenizer 计算准确输入 token。
+  \item 用固定输出上限或历史高分位形成 admission work。
+  \item 提交时占用预计 work，完成时记录实际 prefill/decode 服务。
+  \item 估计持续偏低时提高安全系数或重新校准；状态异常时退回 max-token 上界。
+}
+\RelatedQuestions{这与 VTC 的完成后记账有什么区别？见 Q45、Q61。}
+\EvidenceStatus{预计/实际双口径已有实验基础；输出预测增强为可选项。}
+
+\QAQuestion{文本 WorkDescriptor 的分阶段特征怎样设计？}
+\OneLine{至少区分输入 prefill work、可能的 decode work、请求级开销与 prefix locality，而不是只存总 token。}
+\LongAnswer{输入阶段记录 tokenizer 后 input tokens、prompt template/version 和 prefix hash；输出阶段记录 max tokens 或预测区间、stop/temperature 等生成参数；请求级记录模型、adapter、输出 schema 和网络/序列化规模；locality 记录共享前缀组。必要时根据模型 profile 把 input/output token 乘不同权重，但权重绑定硬件、模型和服务配置，不能跨签名复用。}
+\Steps{
+  \item 固定 tokenizer 与 prompt template 后计算输入 token 和 prefix key。
+  \item 从生成参数提取输出上限与兼容性。
+  \item 分别保留 prefill、decode 和 per-request 特征。
+  \item 用 profile 选择 admission 权重，并通过 held-out workload 检查排序。
+}
+\EvidenceStatus{token-budget、prefix 指标和服务 trace 已可采集；最终阶段权重需重新校准。}
+
+\QAQuestion{图像 WorkDescriptor 为什么不能简单用 frame 数？}
+\OneLine{单帧仍包含编码字节、解码缩放、张量准备和模型前向等不同阶段，frame 只是一种基础单位。}
+\LongAnswer{图像记录至少可描述文件字节、宽高/像素、frame 数、颜色/格式、目标 tensor 形状和模型类型。JPEG 解码与 resize 多在 CPU，tensor 搬移和 forward 在 GPU；当前 CLIP 画像中实用 batch 的 CPU prepare/GPU embed 比明显大于 1，说明只用 frame 会漏掉主导阶段。首版可用 frame-budget 保持接口一致，再用字节/像素/prepare profile 检验是否有额外价值。}
+\Steps{
+  \item 数据库保留 URI/blob identity 与基本图像元数据。
+  \item adapter 提取编码大小、尺寸、frame 与目标 tensor 信息。
+  \item profile 分别测 source、decode/resize/tensor、transfer/forward。
+  \item 在相同模型和 CPU/GPU 配置下比较 frame-only 与 staged descriptor。
+}
+\EvidenceStatus{CLIP 阶段画像和静态执行链已完成；图像动态工作量选择待验证。}
+
+\QAQuestion{怎样确定当前主要受限阶段，并选择准入维度？}
+\OneLine{用阶段时序与服务状态识别供应、缓存或模型计算压力，再只让对应信号影响相应动作。}
+\LongAnswer{数据准备侧看 ready queue、prepare throughput 与 actor idle；服务侧看 running/waiting、KV、TTFT/ITL、completion rate 与 MFU。若 ready work 不足且 GPU 低忙，优先扩大/改善 prepare；若 waiting/KV 高而吞吐平台，收紧 admission 或保留 locality；若模型计算饱和，则按 token/frame work 做均衡。方案采用规则和硬条件而非把所有指标线性加权。}
+\Steps{
+  \item 对齐阶段时间戳，计算 supply rate 与 completion rate。
+  \item 用多个信号交叉确认 regime，避免单看 GPU utilization 或 waiting。
+  \item 将 regime 映射到 organizer/admission 的一个具体选择。
+  \item 设最小保持时间和回退条件，防止噪声导致频繁切换。
+}
+\EvidenceStatus{状态指纹与 observe-only 快照已有证据；在线 regime classifier/action mapping 为计划验证。}
+
+\QAQuestion{BatchRequest、HTTP 请求和模型内部 batch 是什么关系？}
+\OneLine{它们是三个层次：上游组织结果、外部接口调用和服务内部 GPU 执行批次，不能混为一谈。}
+\LongAnswer{BatchRequest 是 organizer 交给 controller 的一组完整 work items，描述“哪些工作适合一起管理”；后端若只有单请求 API，可逐条转为多个 HTTP calls，若支持 batch API 可合并发送；vLLM 又会把不同到达请求做 continuous batching。因此上游 batch size 不等于 HTTP 并发，也不等于 GPU batch。实验必须记录三层数量和计时，避免把服务内部收益归给 organizer。}
+\Steps{
+  \item organizer 形成 BatchRequest 并保留每个 work item 身份。
+  \item backend adapter 按接口能力展开或合并调用。
+  \item controller 对实际提交的请求占用 credits。
+  \item 服务端独立决定 continuous batch，完成事件逐请求返回并记账。
+}
+\EvidenceStatus{层次定义已固定；不同 backend 的展开方式需在 manifest 中记录。}
+
+\QAQuestion{多个 Job 的工作能否放进同一个 BatchRequest？}
+\OneLine{首版不跨 Job 组织，跨 Job 混合交给服务内部 continuous batching，以保持取消、SLO 和记账清晰。}
+\LongAnswer{一个 BatchRequest 首版归属单个 Job，controller 决定不同 Job 的提交交错，vLLM 可在内部自然把并发请求混合。这样取消某个查询、计算 Job JCT、释放 credits 和更新实际服务都能保持明确。若后续证明跨 Job batch API 有显著收益，每个 work item 必须独立携带 job/request identity，完成和错误也逐项拆账，不能只保留批次级字段。}
+\Steps{
+  \item 先按 compatibility 和 Job 形成候选集合。
+  \item Job policy 选择下一 Job 后，只从其集合组织/取出 BatchRequest。
+  \item endpoint 内部可并发接收不同 Job 请求并由服务混合。
+  \item 跨 Job 组织只作为单独扩展，并验证取消与 accounting correctness。
+}
+\EvidenceStatus{首版执行规则已明确；跨 Job BatchRequest 不阻塞核心研究。}
+
+\QAQuestion{为什么组织前要先做 compatibility grouping？}
+\OneLine{模型、prompt、生成参数和输出要求不兼容的工作不能为了均衡而强行进入同一执行批次。}
+\LongAnswer{compatibility 是语义与后端硬约束，优先于长度和 locality。不同模型/adapter、prompt template、temperature/stop、输出 schema、图像 tensor shape 或 backend batch capability 都可能使工作不能共同执行。系统先形成 compatibility classes，再在每类内部按 work/locality 组织；类之间只由 controller 并发提交，不改变单项语义。}
+\Steps{
+  \item 从 AI 操作的语义与参数定义生成稳定 compatibility key。
+  \item 检查后端是否支持混合 shape、混合 generation parameters 或批量接口。
+  \item 在同 key 内做 token/frame budget 与 locality 组织。
+  \item 缺失能力时显式保序或逐项执行，不静默合并。
+}
+\EvidenceStatus{兼容性字段属于明确的接口定义；具体 backend capability 由版本锁定测试确认。}
+
+\QAQuestion{token-budget 或 frame-budget 具体怎样形成批次？}
+\OneLine{顺序扫描 ready work，只有加入后累计 work 不超过预算且兼容时才放入当前批次，完整请求不拆分。}
+\LongAnswer{基础 sequential budget 维护当前批次累计 work：若下一个完整工作项可放入则加入，否则 flush 当前批次并新建；可另设 row cap 防止大量极小请求造成调度开销。length-align/best-fit 等候选只改变选择顺序或装箱方式，预算、兼容性和完整请求约束相同。图像把 token work 替换为 frame/pixel/prepare work，控制逻辑不变。}
+\Steps{
+  \item 选定环境签名对应的 work budget $K$ 和可选 row cap。
+  \item 从 compatibility queue 取候选并计算加入后的 staged work。
+  \item 超过 $K$ 时 flush；单条超过 $K$ 时作为 oversized request 单独提交并标记。
+  \item 记录 batch work、行数、packing utilization、等待时间和 locality preservation。
+}
+\FollowUp{预算不是模型内部最大 token 数，而是上游组织参数；需通过 workload scale 和 K 扫描选择最小稳定点。}
+\EvidenceStatus{token-budget 与 frame/static batch 已有实现基础；跨环境必须重新校准。}
+
+\QAQuestion{length alignment 的作用和风险是什么？}
+\OneLine{它减少同批工作长度偏斜，但排序会增加等待并可能打散共享 prefix，因此只能作为条件性候选。}
+\LongAnswer{length-align 通常在有限 buffer 内按预计 work 排序，把相近长度请求放在一起，减少 padding、尾部拖延或 batch 内完成差异。但 buffer 越大，在线等待越长，原始 prefix group 越容易被拆散；在 KV 压力高时可能降低 cache hit 并反向伤害吞吐。评价必须同时报告 skew、buffer wait、prefix group ratio、cache hit、吞吐和 P99。}
+\Steps{
+  \item 固定有界 lookahead buffer，不能先看到完整数据集再离线排序。
+  \item 在 compatibility/locality 约束内按 work 分桶或排序。
+  \item 达到 work budget、row cap 或 max wait 即 flush。
+  \item 与 sequential budget 在低/高 KV pressure 下做同配置 A/B。
+}
+\EvidenceStatus{现有 cache-on 实验表明强重排在高压力下失效；受控 lookahead 的增量仍待验证。}
+
+\QAQuestion{怎样同时兼顾工作量均衡与前缀局部性？}
+\OneLine{先用 locality 约束候选范围，再在组内均衡；只有偏斜超过阈值且 locality 收益低时才受控跨组。}
+\LongAnswer{不把 balance 与 locality 简单做固定加权和。第一层按 compatibility 和 prefix/locality key 形成组；第二层在组内用 token budget 或 length alignment；第三层监测组内 skew、等待与缓存压力。当组内无法形成有效 batch、等待超限且 prefix 命中收益较低时，允许有限跨组借用。若状态不可靠或 KV pressure 高，回退 prefix-preserving sequential。}
+\Steps{
+  \item 计算 prefix group ratio 与可复用 token，形成 locality groups。
+  \item 组内按 work budget 组织，保留原有 prefix 邻接。
+  \item 检查 skew、max wait、KV pressure 和预计 locality gain。
+  \item 仅在预注册条件下跨组补齐，限制跨组比例和重排窗口。
+  \item 用吞吐、P99、cache hit 与 decision regret 选择或回退。
+}
+\RelatedQuestions{为什么当前 sequential 较好？选择规则如何验证？见 Q13、Q69。}
+\EvidenceStatus{balance--locality 冲突已观测；层次化组织器和选择规则为计划验证。}
+
+\QAQuestion{在线有界组织怎样避免等待过久和内存增长？}
+\OneLine{organizer 同时设置 work budget、row cap、buffer cap 和 max-wait，任一条件触发都可 flush。}
+\LongAnswer{数据库记录是流式到达的，不能假设全表已知。每个 compatibility/Job queue 只保留有限候选；达到 work budget 或 row cap 正常 flush，最老记录等待超过 max-wait 时即使未满也 flush，buffer 达上限时暂停拉取 child plan。对 workload phase change，旧批次完成后新特征自然进入，而不是在线重新排列已经提交请求。}
+\Steps{
+  \item 为每个 queue 记录累计 work、行数、最老到达时间和内存字节。
+  \item 以 budget/cap/wait 任一触发生成 BatchRequest。
+  \item 总 buffer 达上限时向 PostgreSQL 上游施加 backpressure。
+  \item Job cancel 时删除未提交工作并释放 buffer；已提交项走迟到结果规则。
+}
+\EvidenceStatus{有界 organizer 参数已有文本实现；数据库 child-plan backpressure 需集成验证。}
+
+\QAQuestion{记录重排会不会破坏 SQL 语义？}
+\OneLine{只重排相互独立、无顺序依赖的 AI map 工作，并用稳定 row identity 恢复对应；有顺序或副作用语义时保序或拒绝。}
+\LongAnswer{无 \texttt{ORDER BY} 的关系结果通常不保证物理输出顺序，但窗口函数、相关子查询、volatile 表达式、AI 输出参与后续依赖或多 AI 算子之间存在顺序时不能任意重排。首版仅支持固定模型、prompt 和生成参数下的独立 \texttt{sem\_map} projection，每条记录携带稳定 identity，结果返回后按 identity 与原 tuple 关联；用户要求顺序时在数据库端恢复顺序或直接采用保序执行。}
+\Steps{
+  \item planner/executor 检查 AI 表达式是否无副作用且记录间独立。
+  \item 检查 order/window/correlation/rescan 等不支持条件。
+  \item 允许时只改变物理提交顺序，保留 row identity 和结果 schema。
+  \item 不满足条件时选择 sequential path 或明确报 unsupported。
+}
+\DoNotClaim{不能把模型概率性输出下的任意重排说成天然语义等价；首个计划级实验必须固定模型、prompt、参数，并明确允许重排的条件。}
+\EvidenceStatus{语义约束已写入研究方案；CustomScan 中的实际检查与结果重排需实现验证。}
+
+\section{研究内容二：固定容量下的提交、路由与多 Job 调度}
+
+\QAQuestion{“固定容量”具体固定什么，为什么要同时限制 request 和 work？}
+\OneLine{固定每个 endpoint 的请求位置上限和工作量信用上限，避免用更多并发或更多 token 冒充策略收益。}
+\LongAnswer{只限制请求数会把一个 50-token 请求和一个 2000-token 请求视为相同占用；只限制 work 又可能放入大量小请求，造成客户端、网络和服务队列膨胀。因此采用双重信用：request credit 控制同时在途请求数，work credit 控制这些请求携带的预计工作量。比较静态分区与共享方法时，两类总信用以及 endpoint 数、模型和服务配置保持一致，变化的只是信用怎样分配和归还。}
+\Steps{
+  \item 离线校准每个 endpoint 的请求上限 $K_e$ 与工作量上限 $W_e$。
+  \item 一个请求只有同时取得 1 个 request credit 和对应 work credit 才能提交。
+  \item 请求完成、失败或被确认取消后归还实际占用的信用。
+  \item 静态与动态方法使用相同的 $\sum K_e$ 和 $\sum W_e$ 做 A/B 比较。
+}
+\FollowUp{文本生成以输入 token 加预计输出 token 作为 work 基础；图像任务则切换到图像准备量、张量字节或等价的阶段预算，但信用接口不变。}
+\EvidenceStatus{文本实验已使用 request/work 双信用并完成同上限比较；图像动态信用仍待接入。}
+
+\QAQuestion{为什么选择每个 endpoint 65,536 的 active work，上限是怎么校准的？}
+\OneLine{它来自固定协议下的容量扫描，选择接近饱和平台的最小工作量，而不是挑单次吞吐峰值。}
+\LongAnswer{校准时固定模型、endpoint 拓扑、请求协议、workload 分布和请求并发规则，逐档增加 active work。若再增加工作量带来的吞吐不足 5\%，同时 waiting、KV 占用或尾延迟已经明显增长，就选择较小档作为运行上限。当前 C128 为 17,834 tok/s，C256 为 18,158 tok/s，前者已达到后者的 98.22\%，而后者 waiting 为 116.8、KV 最大值接近 99.96\%，因此选择 65,536 而不是继续堆积。}
+\Steps{
+  \item 先以同协议 bounded client 确认服务可被喂饱。
+  \item 固定 batch 和 workload，仅扫描 active-work 档位。
+  \item 同时观察吞吐平台、running/waiting、KV 与 TTFT/P99。
+  \item 选择达到饱和吞吐的最小档，并把机器与服务配置写入校准签名。
+}
+\DoNotClaim{65,536 不是跨机器、跨模型的普适常数；签名变化后必须重新校准。}
+\EvidenceStatus{当前双 4090 文本配置已有扫描数据；其他硬件、模型与图像路径需重新校准。}
+
+\QAQuestion{为什么按请求完成补充工作，而不是每隔一段时间批量补充？}
+\OneLine{完成驱动补充能更快归还信用，并避免慢请求把整批请求的信用一起扣住。}
+\LongAnswer{若一个提交批次中包含快慢不同的请求，等整批完成才归还信用会产生人为的 head-of-line blocking。请求级 completion callback 能在单个请求完成时立即释放其 request/work credit，再从符合约束的 Job 中补入下一份工作。这不会抢占模型中正在执行的请求，只缩短上游信用空闲时间；周期性控制器仍可负责采样、配额调整和异常恢复。}
+\Steps{
+  \item 提交时为每个请求登记唯一 request id、Job id 与信用占用。
+  \item completion/failure 回调以幂等方式结算该请求。
+  \item 归还信用后触发一次 bounded replenish，而不是无限递归提交。
+  \item 周期任务处理丢失回调、超时和状态校正。
+}
+\EvidenceStatus{文本链路已实现 request-level credit release；完整 PostgreSQL cancel/error 联动仍需验证。}
+
+\QAQuestion{怎样保证检查额度和占用额度之间不会发生并发超卖？}
+\OneLine{“检查—选择—扣减”必须在一个 endpoint 调度器的原子临界区内完成，网络提交在锁外执行。}
+\LongAnswer{如果多个异步任务先各自看到剩余信用再同时扣减，就会超过固定上限。因此调度器在短临界区内读取 ledger、筛选候选、预留 request/work credit 并生成 lease；真正的序列化与 HTTP/Ray 提交在锁外执行，失败时按 lease 幂等回滚。多进程部署时可用单 owner actor 或带版本号的 compare-and-swap，首版优先选择单 owner、异步提交，降低一致性复杂度。}
+\Steps{
+  \item 单 owner 保存每个 endpoint 的 credit ledger。
+  \item 原子地验证 hard constraints 并创建带版本号的 lease。
+  \item 锁外发送；发送失败只允许该 lease 回滚一次。
+  \item 周期核对 ledger、在途表和实际完成记录，发现差异时保守收缩。
+}
+\EvidenceStatus{项目调度器已有集中式信用记账；崩溃恢复和 PostgreSQL executor 集成属于后续实现。}
+
+\QAQuestion{RuntimeStateSnapshot 包含哪些字段，状态从哪里来？}
+\OneLine{它把 endpoint 容量、模型服务队列、资源占用和 Job 进度统一成带时间戳的只读快照。}
+\LongAnswer{最小字段包括 endpoint id、采样时间、request/work 已用与上限、running/waiting、KV 占用、近期完成速率和错误率；Job 侧包括 queued、inflight、completed、剩余 work 估计、等待时间、priority/SLO slack、已获得服务量及 debt。来源分为三类：项目自身 ledger 的强一致字段、模型服务指标的观测字段、由历史 profile 或在线校正得到的估计字段。三类必须显式标记，不能把估计值伪装成事实。}
+\Steps{
+  \item 从本地 ledger 读取信用、在途和完成记录。
+  \item 从 vLLM/Ray/backend 指标读取 running、waiting、KV、错误与资源状态。
+  \item 从 PostgreSQL 算子读取 child-plan 进度、cancel 与未产生工作量。
+  \item 附加 source、timestamp、age 和 confidence，生成不可变 snapshot。
+}
+\EvidenceStatus{文本和图像 observe-only 路径已能低成本采样部分字段；数据库 child-plan 进度与统一 snapshot 接口待完成。}
+
+\QAQuestion{这么多指标怎样做决策，会不会最后只是拍脑袋加权？}
+\OneLine{先用硬约束排除不合法动作，再在合法集合中按明确目标逐层选择，不把所有指标塞进一个不可解释的加权和。}
+\LongAnswer{第一层硬约束包括 request/work credit、兼容性、Job cap、endpoint 健康和 buffer 上限；第二层保证饥饿保护与最低份额；第三层才在候选中比较队列压力、数据局部性、预计完成时间或 SLO slack；最后用稳定 tie-break。这样每次选择都能解释为“先满足什么约束，再优化什么目标”，也便于逐层消融。不同研究假设可替换第三层 selector，但不改变安全约束。}
+\Steps{
+  \item 过滤超过容量、类型不兼容或 endpoint 不健康的动作。
+  \item 检查是否存在达到等待阈值或低于最低份额的 Job。
+  \item 在剩余候选中按实验指定的单一主目标排序。
+  \item 用 Job id/arrival sequence 做确定性 tie-break，并记录选择理由。
+}
+\DoNotClaim{不能仅展示一个复杂综合分数却不说明量纲、权重来源和消融。}
+\EvidenceStatus{静态、共享信用及多个 selector 已有文本对照；完整分层控制器仍是计划实现。}
+
+\QAQuestion{状态过期、缺失或互相矛盾时怎么办？}
+\OneLine{不猜测最优动作，而是根据 freshness 降级到保守静态上限，并用本地 ledger 维持安全性。}
+\LongAnswer{容量安全不能依赖可能延迟的 Prometheus 指标，因此信用 ledger 是准入的权威来源；服务指标只影响软选择。每个 snapshot 带时间戳与最大可接受 age。状态缺失或过期时，停止扩大共享、关闭空闲借用、降低 endpoint credit 或回到预先校准的 static partition；连续异常则把 endpoint 标记为 unavailable。恢复时渐进放开，避免瞬时洪峰。}
+\Steps{
+  \item 先判断字段 freshness 与来源健康。
+  \item 过期的软指标不参与排序，硬信用仍按本地 ledger 执行。
+  \item 进入 static-safe fallback，并限制恢复斜率。
+  \item 记录降级原因、持续时间及其对吞吐/JCT 的影响。
+}
+\EvidenceStatus{状态字段与 fallback 原则已设计；故障注入和恢复实验尚待完成。}
+
+\QAQuestion{高频采集状态会不会本身拖慢系统？}
+\OneLine{采集走控制面、批量读取并受采样预算约束，开销必须通过关闭观测的 A/B 单独测量。}
+\LongAnswer{不对每条记录同步查询模型服务，而是将本地计数增量聚合，并以固定周期批量抓取 endpoint 指标。图像 observe-only 已有 24 次运行、3,114 个 snapshot，单次构建平均约 0.141 ms；shared 与 static 总时间差约 0.98\%，说明“可观测”在该设置下成本较低，但这不等于动态策略有效。正式实验还要扫描采样周期，报告控制线程 CPU、网络字节和吞吐扰动。}
+\Steps{
+  \item 本地事件只更新无阻塞/低锁计数。
+  \item 周期性批量读取外部指标，避免 request hot path RPC。
+  \item 对比 instrumentation-off、observe-only 和 controller-on。
+  \item 选满足开销上限的最慢采样频率，而不是盲目提高频率。
+}
+\EvidenceStatus{图像 observe-only 的低开销证据已完成；不同采样周期和大规模 endpoint 扩展仍待验证。}
+
+\QAQuestion{预计 work 不准确时，信用怎么正确归还？}
+\OneLine{准入按预计值预留，完成后按实际 prompt/output work 结算，并把误差用于后续校正。}
+\LongAnswer{提交前只能得到预测输出长度，因此先占用 $\hat w$；执行完成后读取实际输入/输出 token 或后端返回的实际工作计数，计算差额并更新 ledger。为避免低估造成超载，初期可使用高分位预测或安全系数，并设置单请求硬上限；若实际值已经超过预留，暂时形成负余量，暂停新提交直到信用恢复。结算事件同时进入 residual correction，但不能追溯改变已发生的调度。}
+\Steps{
+  \item 预留 $\hat w$ 并记录 estimator 版本。
+  \item 完成时取得 $w_{actual}$，原子执行 reconcile。
+  \item 低估导致负余量时停止补充，不能再借未来信用。
+  \item 按 workload class 更新残差模型并监测 calibration drift。
+}
+\EvidenceStatus{实际 token 结算和请求级释放已有基础；预测区间驱动的保守信用仍需完整实验。}
+
+\QAQuestion{每个 Job 的 floor 和 cap 分别解决什么问题？}
+\OneLine{floor 保证活跃 Job 不被长期饿死，cap 防止单个 Job 吞掉全部共享容量。}
+\LongAnswer{静态分区隔离强但资源会闲置，完全共享利用率高却可能让大 Job 压住短 Job。因而给每个活跃 Job 一个最低保证份额 floor，并设置可随优先级或 workload class 配置的 cap；空闲容量可在 floor 之上借用。floor 不是每个瞬间都精确相等，而是在调度窗口内保证服务量或等待时间；cap 也要区分请求数和 work，避免许多短请求或少数长请求钻空子。}
+\Steps{
+  \item 根据当前活跃 Job 集合分配基础 request/work floor。
+  \item Job 可在 cap 内竞争未使用容量。
+  \item 在滑动窗口内核对实际 service share 和等待时间。
+  \item Job 离开或新 Job 到达时重新计算 entitlement，平滑调整。
+}
+\EvidenceStatus{当前已有 static partition 和完全 shared 两端参照；floor/cap 中间方案与参数敏感性需验证。}
+
+\QAQuestion{空闲借用后，原 Job 回来时怎样回收容量？}
+\OneLine{不抢占已提交请求，而是停止借用方的新准入，让信用随完成事件自然回流给有权 Job。}
+\LongAnswer{模型请求通常不适合强制抢占，强杀还会浪费已完成的 prefill/decode。因此借用采用 lease 和 debt 记账：借用方获得临时信用，同时积累超出 entitlement 的服务债务；被借方重新有工作时，调度器先阻止借用方补充，在后续完成事件中将释放的信用优先给被借方。若恢复速度仍不足，可预留小的 headroom 或缩短单请求 work 上限。}
+\Steps{
+  \item 标记信用的 owner、borrower 与 lease generation。
+  \item 新 Job/沉睡 Job 恢复时计算其 entitlement deficit。
+  \item 不取消在途请求，只暂停 debt 较高 Job 的 replenish。
+  \item 释放的信用优先偿还 deficit，恢复后再进入普通竞争。
+}
+\EvidenceStatus{work-conserving sharing 的效率—公平权衡已有实验；显式借用/回收与 debt 消融仍属计划验证。}
+
+\QAQuestion{优先级、SLO、公平和吞吐冲突时，系统到底优化哪个？}
+\OneLine{先保证容量和明确的隔离底线，再根据实验场景选择一个主目标，其他指标作为约束和报告项。}
+\LongAnswer{课题不宣称存在同时最优的万能策略。离线批任务可把 makespan/吞吐作为主目标，同时约束最差 Job slowdown；交互或有 SLO 的 Job 可优先最小化违约率与 P99，再报告吞吐代价；权重场景则比较实际 service share 与目标 share 的偏差。论文会给出 Pareto 权衡，说明方法在哪类目标下有效，而不是把 Jain、公平、JCT 和吞吐混成一个分数。}
+\Steps{
+  \item 为实验声明 workload class、主目标和不可违反的阈值。
+  \item 相同容量下比较 static、shared 与带 guard 的方法。
+  \item 同时报总吞吐、每 Job JCT/P99/slowdown、SLO 和归一化 Jain。
+  \item 若主目标改善但阈值被破坏，就判定该配置不合格。
+}
+\EvidenceStatus{已有共享提高吞吐但 Jain 下降的反例，证明多目标冲突真实存在；guard 策略尚待完成。}
+
+\QAQuestion{endpoint 路由先看什么，具体怎样选目的地？}
+\OneLine{先排除不健康、不兼容和无信用的 endpoint，再在合法候选中比较排队压力、预计完成时间与局部性。}
+\LongAnswer{每个 BatchRequest 带模型、模态、预计 work、prefix/locality key 与 Job 信息。路由首先检查模型版本、输入类型、内存/KV 安全阈值及 request/work credit；然后估计在候选 endpoint 上的 queue delay 加 service time，并考虑 prefix 命中或数据驻留收益。若状态不可靠，退化到一致哈希或静态轮转。路由只决定请求去哪个实例，不干预实例内部 continuous batching。}
+\Steps{
+  \item compatibility/health filter 得到候选集合。
+  \item capacity filter 删除无法取得双信用的 endpoint。
+  \item 计算 queue/service/locality 的分层优先级。
+  \item 稳定 tie-break 后预留信用并发送，记录 route reason。
+}
+\EvidenceStatus{prefix-affinity routing 在 4-endpoint/高 KV 压力下曾提高约 5.9\%，在 2-endpoint/低压力下近似中性；完整联合路由器待验证。}
+
+\QAQuestion{队列最短和 prefix locality 冲突时怎么选？}
+\OneLine{先满足安全与延迟约束，再比较局部性节省是否大于额外排队代价，不能永远固定偏向一边。}
+\LongAnswer{把某个 prefix 都发到同一 endpoint 可提高缓存命中，但也可能造成热点；只选最短队列又会打散 prefix。可估计两条路径的完成时间：$\hat T=\hat T_{queue}+\hat T_{service}-\hat T_{reuse}$，并设置最大排队差阈值。当 KV 压力低、复用收益不明显时优先均衡；当 KV 饱和且 prefix 组稳定时允许有限 affinity。必须用 cache-on/off、低压/高压与 matched-capacity 消融说明触发条件。}
+\Steps{
+  \item 先计算候选 endpoint 的 queue/service 代价。
+  \item 用历史命中和 prompt 重用量估计 locality benefit。
+  \item 只有收益超过安全 margin 且不违反 SLO guard 才选择 affinity。
+  \item 按 regime 报告结果，不能只展示有利配置。
+}
+\EvidenceStatus{现有结果已证明 locality 的收益具有运行条件依赖性；在线选择阈值尚需验证。}
+
+\QAQuestion{动态控制器会不会振荡，频繁改变路由和份额？}
+\OneLine{通过时间窗口、滞回阈值、最小驻留时间和变化速率限制，把噪声与真实状态变化分开。}
+\LongAnswer{running、waiting 和完成速率会自然抖动，如果每个 snapshot 都立即换策略，会造成 endpoint 来回迁移和 Job 份额振荡。因此对观测做 EWMA 或窗口聚合，进入与退出使用不同阈值；已选择的 mode 至少保持一个 dwell time；每个控制周期只允许信用上限改变固定比例。评估除吞吐外还要报告动作切换次数、credit variance、队列 overshoot 和恢复时间。}
+\Steps{
+  \item 平滑观测并估计置信区间。
+  \item 连续多个窗口满足 enter threshold 才切换。
+  \item exit threshold 与 enter threshold 分离形成 hysteresis。
+  \item 限制每周期 credit/routing 变化量，并记录控制动作。
+}
+\EvidenceStatus{queue-adaptive 与 SLO-EWMA 候选已有文本对照且未显著胜过 fixed-50ms；稳定性指标与 phase-change 实验仍待补。}
+
+\QAQuestion{请求不可抢占时，怎样处理超时、失败、取消和迟到结果？}
+\OneLine{用状态机和幂等 request identity 管理生命周期：停止新工作、尽力取消在途、结算信用，并丢弃不再可见的迟到结果。}
+\LongAnswer{每个请求经历 reserved、submitted、completed/failed/cancelled、committed 等状态，转换带 generation 和 exactly-once ledger 更新。查询取消时先阻止 organizer 和 replenish，再对后端发 best-effort cancel；不能取消的请求继续占信用直到终态。结果返回时检查 query generation 和可见性，已取消或超时的结果只用于资源结算，不写入 PostgreSQL。重试只对明确可重试错误，并保持同一逻辑 row identity 与单一可见结果。}
+\Steps{
+  \item PostgreSQL cancel/error 触发 query generation 失效并关闭上游。
+  \item 原子标记未提交项取消，向已提交项发送 best-effort cancel。
+  \item completion/failure 无论是否可见都必须结算信用且只能一次。
+  \item 迟到结果通过 generation 检查后丢弃；成功结果按 row identity 返回。
+}
+\DoNotClaim{不要说外部模型调用可以获得数据库事务那样的物理 exactly-once；能保证的是数据库可见结果至多一次，并用幂等与审计处理外部重试。}
+\EvidenceStatus{请求级 identity/credit 基础已存在；真实 PostgreSQL cancel、网络故障和迟到结果资格实验尚未完成。}
+
+\section{PostgreSQL、LOTUS 与代价估计的系统资格}
+
+\QAQuestion{PostgreSQL extension 和 planner-visible CustomScan 在方案中分别做什么？}
+\OneLine{extension 提供可部署的 SQL 入口，planner-visible 执行节点让 AI 工作在计划、执行和查询生命周期中成为数据库可管理对象。}
+\LongAnswer{首版用 PostgreSQL 18.3 extension 注册 AI 语义算子，并让算子遵循 LOTUS \texttt{sem\_map} 的 prompt、输出与错误定义。若采用 CustomScan，planner 能看到 AI 节点及其 child plan，executor 可按 snapshot 拉取过滤投影后的记录、实施有界 backpressure、响应 cancel/error，并把结果与原 tuple 对应。重点不是修改 PostgreSQL core，而是在标准扩展接口内验证“SQL/planner/query lifecycle 属于数据库”。}
+\Steps{
+  \item parser/function/operator 入口生成逻辑 AI 表达式。
+  \item planner hook 或路径生成把它变为含 cost 的物理候选。
+  \item CustomScan state 管理 child plan、RowEnvelope 流和外部 backend client。
+  \item executor end/rescan/cancel/error 回调完成资源回收与结果生命周期。
+}
+\EvidenceStatus{PostgreSQL 18.3 extension/CustomScan 是计划中的资格验证；当前外部 runner 不能冒充已经实现。}
+
+\QAQuestion{RowEnvelope 为什么必要，它至少包含哪些内容？}
+\OneLine{它把数据库记录身份、AI 输入、语义配置和执行元数据一起受控地交给外部层，避免裸 payload 丢失数据库上下文。}
+\LongAnswer{最小 RowEnvelope 包含 query/generation id、稳定 row identity、必要的投影列或引用、AI 操作类型、prompt/template 版本、模型与生成参数、WorkDescriptor、错误与重试元数据。它按有界队列流动，完成后通过 row identity 把 AI 输出附回原 tuple。对于大图像可传受控引用或共享对象描述符，但引用解析仍受权限、snapshot 和生命周期约束。}
+\Steps{
+  \item child plan 只投影 AI 执行和后续结果所需列。
+  \item executor 为每条逻辑记录生成稳定 identity 与 generation。
+  \item organizer 只重排 envelope，不丢弃数据库身份和语义字段。
+  \item fan-in 校验 identity、schema 和 generation 后再向上游产出。
+}
+\EvidenceStatus{RowEnvelope 字段和生命周期已设计；真实 extension 中的编码、跨进程传输和 rescan 行为需实现。}
+
+\QAQuestion{怎样保证 snapshot、权限、取消、错误和结果生命周期仍由数据库掌握？}
+\OneLine{数据库先执行关系 child plan 并拥有唯一查询状态机，外部 backend 只接收数据库授权产生的有限工作并返回带身份结果。}
+\LongAnswer{snapshot 与行级权限在 child plan 读取阶段生效，外部层看不到未被计划产出的记录；query id 与 generation 贯穿所有请求。PostgreSQL cancel/error 会关闭 child scan、阻止新增提交并触发外部清理；外部错误按可重试、行级失败或查询失败映射回 executor。只有 executor 接受且仍属于当前 generation 的结果才对 SQL 上游可见，外部临时结果不直接写入最终关系。}
+\Steps{
+  \item 在 PostgreSQL 内完成 snapshot、权限、filter 和 projection。
+  \item 只把受管 RowEnvelope 送往外部物理层。
+  \item 用统一状态机传播 cancel/error，并回收 buffer、credit 和 actor 工作。
+  \item 返回阶段验证 generation 与 row identity，再形成数据库结果。
+}
+\EvidenceStatus{这是必须通过的数据库资格条件；当前 database-E2E 演练仅提供接口经验，不能替代计划内实现测试。}
+
+\QAQuestion{结果如何与原记录一一对应，能否保证 exactly-once？}
+\OneLine{稳定 row identity 加幂等提交表保证数据库可见结果至多一次，但不把外部模型调用本身声称为物理 exactly-once。}
+\LongAnswer{每个逻辑输入分配稳定 identity，重试沿用该 identity 和 attempt/generation 元数据。fan-in 维护 expected、completed 和 visible 集合：重复响应可用于审计但不能二次产出；缺失响应在超时策略下重试或报错；取消后的响应被丢弃。若需要写回，使用 identity 作为幂等键，在一个数据库事务中提交最终结果。模型可能被重复计算，这是外部副作用成本；数据库结果可见性仍可控制为一次。}
+\FollowUp{如果模型 API 本身有非幂等外部副作用，首版应明确不支持自动重试或要求服务端幂等键。}
+\EvidenceStatus{项目已有 row/request identity 概念和写回基线；extension 内的重复、rescan、崩溃恢复测试待完成。}
+
+\QAQuestion{生成模型具有随机性，失败重试后输出不同怎么办？}
+\OneLine{执行规则必须声明确定性参数与重试政策；无法保证确定性时，选择一个可见 attempt 并保留审计信息。}
+\LongAnswer{正确性实验固定模型版本、prompt、seed、temperature 等参数，在后端支持时追求可重放；但分布式推理仍可能存在非确定性。因此重试不是“重新计算一定相同”，而是“同一逻辑行只选择一个成功 attempt 对数据库可见”。若首个响应状态未知，保守策略可以失败整个查询，或要求后端幂等 request key 后才重试。论文会把语义正确性与输出质量稳定性分开评估。}
+\EvidenceStatus{确定性参数与重试规则已纳入方案；真实超时歧义和不同后端的幂等能力需通过故障注入验证。}
+
+\QAQuestion{为什么复用 LOTUS 的 sem\_map，LOTUS 在这里到底负责什么？}
+\OneLine{LOTUS 提供经过系统定义的 AI map 语义、prompt 生成和输出解析规则，本课题研究它通往外部服务的物理执行与调度。}
+\LongAnswer{如果自行发明一个 Python UDF，容易把“能调模型”误写成数据库 AI 算子。首版锁定 LOTUS v1.2.4 的 \texttt{SemMapNode}/\texttt{sem\_map} 语义，使 SQL 输入、prompt 模板、输出解析和错误行为有明确参考。本课题替换或管理的是其物理 backend：记录如何从 PostgreSQL child plan 流式交接、怎样形成请求、何时释放及发往哪里。LOTUS 不是本课题的调度贡献，也不要求采用其 DataConnector 外拉数据。}
+\EvidenceStatus{版本与迁移方向已确定；项目 UDF/manifest-like 入口迁移为真实 LOTUS 语义仍在近期实现顺序中。}
+
+\QAQuestion{这会不会只是 PostgreSQL、LOTUS、Daft、Ray 和 vLLM 的系统集成？}
+\OneLine{组件集成只是资格与载体，研究变量是可单独定义、消融和迁移的数据组织与固定容量调度策略。}
+\LongAnswer{若把 Daft 换成另一 DataFrame engine、把 Ray actor 换成等价异步执行池，WorkDescriptor、token/frame budget、双信用、Job floor/cap、借用回收和状态降级仍然成立。论文会用静态行批、静态分区、原生框架路径等强 baseline，逐项打开 descriptor、organizer、shared credit、Job guard 和 routing，证明收益来自策略而非“接线”。PostgreSQL/LOTUS 验证数据库语义，外部框架拥有的 baseline 则避免项目重写执行器。}
+\DoNotClaim{不能把“统一使用多个热门系统”本身列为创新点。}
+\EvidenceStatus{多种官方/原生 baseline 和项目静态路径已建立；最终策略消融和可迁移实现仍需完成。}
+
+\QAQuestion{AI 算子的 startup cost 和 total cost 怎样进入 PostgreSQL 计划比较？}
+\OneLine{startup cost 表示首批结果前的准备与建连开销，total cost 表示读取、准备、提交、排队、推理和回收的总预计时间。}
+\LongAnswer{解析 child-plan 统计和 AI 参数得到记录数、输入 token/图像特征与输出上界，再用按机器、模型、backend、协议和 workload 校准的 profile 估计阶段服务时间。startup cost 包括模型/连接是否已热、首批 organizer 等待与首批服务；run cost 汇总每阶段 work、并发饱和修正和队列项。模型首先用于有限候选的相对排序，并返回预测区间；没有可靠校准时使用保守默认值，不能假装精确。}
+\Steps{
+  \item 静态解析输入规模、AI 参数与可用数据库统计。
+  \item 查询匹配 calibration signature 的阶段 profile。
+  \item 计算 startup、per-row/per-work 与 queue/concurrency correction。
+  \item 把 total cost 和区间写入 Path/CustomPath，运行后记录残差。
+}
+\EvidenceStatus{混合代价模型已有初版决策质量实验；与 PostgreSQL planner cost 单位的真实映射尚待资格验证。}
+
+\QAQuestion{为什么代价模型不只报告 MAPE，而要看 ranking、regret 和预测区间？}
+\OneLine{优化器需要选对方案，而不是把每个时间点都预测得最精确，所以决策质量比单点误差更直接。}
+\LongAnswer{两个配置的绝对时间都偏差 10\%，但排序正确，仍可能做出正确选择；反之 MAPE 很小却把最优两点排反，会直接损失性能。因此报告候选 pairwise ranking accuracy、选中配置相对真实最优的 regret、top-$k$ 命中，以及区间覆盖率与宽度。当前混合模型 pairwise ranking 为 0.808，平均 regret 2.90\%，最差 14.72\%，说明可用于候选筛选但远未达到“精确预测”。}
+\EvidenceStatus{上述数据来自当前配置集合；需在独立时间段或新 workload 上校准/验证，防止同分布记忆。}
+
+\QAQuestion{为什么代价估计不是第三项研究内容？}
+\OneLine{它为两项研究提供初始化、候选排序和在线可选信息，是共同支撑，不单独扩张课题主问题。}
+\LongAnswer{两项研究内容即使没有复杂预测也应能运行：研究内容一可用实际 token/frame 特征组织，研究内容二可用静态信用与直接观测决策。代价估计在其上帮助选择初始 $K/W$、预计输出 work、endpoint 完成时间和 remaining work，并可与 observe-only 方法比较。论文先证明基础策略，再消融“加入预测是否改善决策”，避免因预测误差让主方法不可解释。}
+\EvidenceStatus{报告定位已明确为共同使能组件；最终是否保留在线预测由增量实验决定。}
+
+\section{实验设计、数据解读与证据边界}
+
+\QAQuestion{为什么选择 SQuAD、ShareGPT 和图像 workload，它们各自验证什么？}
+\OneLine{SQuAD 提供较均匀的可控文本组，ShareGPT 提供真实长度与前缀异质性，图像任务验证方法抽象不依赖文本 token。}
+\MainAnswer{SQuAD 用于数据库端到端和系统开销的稳定比较，减少数据分布干扰；ShareGPT 用于观察输入/输出长度差异、多 Job 干扰、KV 压力和 prefix locality；CLIP 等图像 AI\_EMBED/AI\_CLASSIFY 将 token-budget 替换为 frame/prepare budget，检验同一策略接口能否跨模态复用。三类 workload 回答不同问题，不能把它们混在同一排名表中。}
+\EvidenceStatus{SQuAD/ShareGPT 文本证据与 CLIP 静态/观测证据已有归档；图像动态策略效果尚待验证。}
+
+\QAQuestion{为什么采用一次 warm-up 和三次 formal repeat，三次够吗？}
+\OneLine{这是开题阶段昂贵 GPU 实验的最低重复规则，最终结论还要结合效应量、CV、置信区间和必要的追加重复。}
+\MainAnswer{warm-up 排除模型加载、连接建立和缓存初态；formal run 由 runner 交错执行，避免某个策略总在相同时间段运行。三次用于发现明显不稳定和估计基础方差，但不是统计学万能数。若效应接近 5\% 阈值、CV 较高或排序不一致，则预先规定追加重复，而不是选择有利三次。请求级分布指标还应基于完整请求样本，并按 run 做层次化汇总。}
+\EvidenceStatus{当前文本实验在相同设置下使用 1 次 warm-up + 3 次正式运行；论文阶段可对临界结果增加重复。}
+
+\QAQuestion{为什么预先要求主要指标至少改善 5\%？}
+\OneLine{它是防止把系统噪声和工程复杂度包装成收益的实用阈值，不是统计显著性的替代。}
+\MainAnswer{动态控制增加状态采集、参数和故障路径，如果仅比强静态点快 1--2\%，很可能难以抵消方差与维护成本。因此预先规定主要指标至少改善 5\%，同时正确性、资源上限和关键尾延迟不过线，才进入后续主方法。仍需报告均值、方差和置信区间；低于 5\% 的稳定结果可以作为“静态方法已足够”的负结果，而不能删掉。}
+\EvidenceStatus{5\% 已作为当前策略选择规则使用；最终论文会连同效应量和不确定性一起解释。}
+
+\QAQuestion{跨 Daft、Ray Data、直接 HTTP 和项目路径，怎样保证比较公平？}
+\OneLine{统一数据源、模型服务、资源上限、语义输出与计时边界，同时让每个框架拥有自己的执行和调度。}
+\LongAnswer{所有路径记录相同 workload manifest、模型/版本、endpoint 拓扑、GPU 配额、PostgreSQL source/sink、输出上界、正确行数与质量检查。正式 baseline 优先调用官方 benchmark、内置 AI Function 或官方推荐 API graph；项目只适配 source、sink 和指标，不在 baseline 里偷偷加入自写 actor pool。每次运行还记录 upstream URL/commit、实现来源、scheduler owner 和 adapter diff，避免比较“框架名”而没有比较同一任务。}
+\Steps{
+  \item 先验证语义：输入集合、prompt、输出长度、成功行和质量一致。
+  \item 再匹配资源与容量：GPU、endpoint、并发/输出上限、缓存配置一致。
+  \item 统一 operator-E2E/database-E2E 计时边界，并分别报告内部指标。
+  \item baseline 调度由上游系统拥有，项目路径明确标注自写组件。
+}
+\EvidenceStatus{已有 bounded HTTP、Daft Native/Ray、Ray Data native 与 project static 的实现来源记录；仍需按最终 SQL 算子语义和计时规则复核。}
+
+\QAQuestion{为什么报告目标是 PostgreSQL 18.3，但已有演练可能使用 18.4？}
+\OneLine{18.4 只作为当前环境的数据库端到端演练，正式扩展目标版本锁定 18.3，不能把版本资格混为一谈。}
+\MainAnswer{数据库产品级版本差异可能影响 extension ABI、planner hook 和运行行为。现有 18.4 演练可验证 source/sink、事务和计时方法，但不证明 18.3 extension 可编译或语义正确。后续资格验证必须在 PostgreSQL 18.3 上完成 build、installcheck、EXPLAIN、cancel/error、rescan 与结果对应测试；如同时报告 18.4，只能作为额外兼容性数据。}
+\EvidenceStatus{版本边界已经澄清；18.3 真实 extension 测试尚未完成。}
+
+\QAQuestion{目前主要是一套双 4090 硬件，结果如何泛化？}
+\OneLine{不把最佳参数跨机器泛化，而是检验机制、决策规则和按校准签名重新选择参数的能力。}
+\MainAnswer{具体 $K$、batch、actor 数和 active-work 与 GPU、模型、量化、KV 配置、协议及 workload 分布强相关。论文应把参数绑定到 calibration signature，并在签名变化时重新做最小饱和扫描。泛化重点有三层：机制是否在不同压力区间重复出现；同一策略代码能否经校准工作；至少一组异构或第二配置能否保持决策方向。单硬件结果只能支持该配置下的结论。}
+\EvidenceStatus{当前已观察 2-endpoint 低压与 4-endpoint 高 KV 压力下的机制差异；第二硬件完整验证不阻塞开题，但论文阶段应补。}
+
+\QAQuestion{为什么 sequential 数据组织有时反而最好，这不是否定你的方法吗？}
+\OneLine{它说明重排收益依赖瓶颈和 prefix 结构，恰好证明“只按长度均衡”不是普适答案。}
+\MainAnswer{2-endpoint、KV 压力低时五种组织方法约 50--56k，差异近似中性；4-endpoint、每 GPU 放两个服务实例且 KV 接近饱和时，重排类 organizer 将 prefix group ratio 打散，命中率从约 0.60--0.76 降到 0.06--0.07，sequential 反而优于 length-align 等方法。正确结论是需要同时建模 work balance 与 locality，并识别运行区间，而不是“动态 batching 一定快”。}
+\EvidenceStatus{cache-on 的 regime-dependent 机制证据已经完成；在线 regime 识别和联合 organizer 仍需验证。}
+
+\QAQuestion{共享信用提高吞吐却降低公平，你怎样评价方法是否成功？}
+\OneLine{共享信用展示效率上界和代价，不自动算成功；只有加入隔离保护后满足预设目标，动态方法才成立。}
+\MainAnswer{四 Job 等量实验中，共享相对静态总吞吐从 11,863 提高到 12,892 tok/s，makespan 从 143.33 降到 131.91 s，但归一化 Jain 从 0.988 降至 0.876。两 Job 某些设置还出现短 Job JCT/P99 恶化。因此论文不以总吞吐单指标宣判，而是把 static 与 fully-shared 作为两端，研究 floor/cap、debt、borrow/reclaim 和 SLO guard 能否取得可解释的 Pareto 改善。}
+\EvidenceStatus{效率—隔离—公平权衡已有直接证据；保护机制尚未获得胜出结论。}
+
+\QAQuestion{写回 PostgreSQL 会不会吞掉所有优化收益，为什么不把写回作为研究内容？}
+\OneLine{写回是统一端到端路径和工程 baseline，必须计时与保证正确，但课题的算法变量仍在上游数据组织和提交调度。}
+\MainAnswer{使用 PostgreSQL + pgvector、COPY 和 deferred index 作为统一 sink，分别报告 source fetch、organizer、submit、model、fan-in 和 writeback。若写回占主导，端到端收益会被稀释，这是必须如实报告的适用条件；可以通过 overlap 或批量写回优化工程路径，但不扩张为第三项研究内容。AI\_EMBED 还要以 recall@$k$/nDCG@10 检查批处理和写回没有引入质量偏差。}
+\EvidenceStatus{文本向量预研已有 COPY/pgvector 与 JSON 写回对照；图像从写入到检索指标检查的小规模质量验证仍待补。}
+
+\QAQuestion{当前证据到底能证明什么，哪些结论现在不能说？}
+\OneLine{能证明问题存在、静态强点和若干机制；不能证明完整 PostgreSQL 算子已实现，也不能证明动态方法全面优于静态方法。}
+\LongAnswer{可以说：固定行批不能表达 AI work；高 KV 压力下长度重排可能破坏 prefix locality；原生框架可能出现上游供给不足；共享容量存在吞吐与公平权衡；低开销状态观测可行。不能说：项目已经完成 planner-visible SQL AI 算子；图像动态控制已经胜出；某个 organizer 在所有场景最好；65,536 或某个 $K$ 可跨硬件复用；项目修改了 vLLM/Ray 内部调度。开题阶段的价值是从证据导出可证伪方案。}
+\EvidenceStatus{此题是全文证据口径，答辩时优先用“已完成事实—前期证据—计划验证”三类表达。}
+
+\section{风险、替代路线与新增攻击性问题}
+
+\QAQuestion{这个课题最大的三个风险是什么？}
+\OneLine{最大风险是数据库资格未完成、动态策略相对强静态点收益不足，以及跨负载状态估计不稳定。}
+\LongAnswer{第一，若 extension/CustomScan 不能正确拥有 snapshot、cancel/error 和 row lifecycle，就不能成立数据库研究定位；第二，服务内部 continuous batching 已很强，上游动态方法可能只增加复杂度；第三，文本 token、图像准备和异构 endpoint 的 work/state 估计可能漂移。对应措施是先做最小数据库资格验证、所有动态策略都与实验开始前选定并保持不变的最佳静态点做同上限比较、状态缺失时降级，并保留负结果和适用条件。}
+\EvidenceStatus{风险及收缩条件已经明确；后续按资格、非劣与增量三类检查逐步推进。}
+
+\QAQuestion{如果 PostgreSQL CustomScan 集成进度不理想，最低可接受成果是什么？}
+\OneLine{最低也必须完成一个真实 PostgreSQL 18.3 extension 资格原型，验证 SQL 入口、child plan、取消错误和结果对应，不能只交 Python runner。}
+\LongAnswer{收缩时先减少 planner 搜索空间和 backend 种类，而不是放弃数据库语义。最低路径可只支持单个 \texttt{sem\_map} projection、有限类型、单 backend 和保序输出，但必须能 EXPLAIN、从 ordinary child plan 拉取、实施有界 backpressure、响应 cancel/error，并验证重复/迟到结果不产生二次可见输出。复杂 cost path、异构路由和多模态 SQL 可后移。若连这一原型都没有，论文只能称外部 AI 数据执行研究，课题定位必须下调。}
+\EvidenceStatus{这是明确的成果底线与范围收缩顺序；当前尚需实现。}
+
+\QAQuestion{如果所有动态方法都没有超过最佳静态配置，论文还能成立吗？}
+\OneLine{可以形成有条件的负结果，但不能把未胜出的控制器包装成主要贡献。}
+\LongAnswer{首先确认 baseline 被喂饱、A/B 同上限、状态确实变化且控制动作生效；若这些条件满足，动态方法仍无显著收益，就回答一个重要问题：在哪些稳定负载和服务配置下，简单静态方法已经足够。论文可贡献分阶段 work 描述、机制边界、可复现实验协议和静态配置选择；调度贡献则缩减为开销/边界研究。只有在非平稳、多 Job 或异构条件下稳定跨过预设效应阈值，动态控制才进入主方法。}
+\EvidenceStatus{已有 SLO-EWMA、two-level adaptive 等未过 5\% 阈值的负结果，项目已保留而未删除。}
+
+\QAQuestion{把数据库记录发送到外部模型服务，隐私、权限和安全怎么处理？}
+\OneLine{权限先在数据库内生效，外发遵循最小投影、可审计目的地和显式部署策略；敏感场景可限定在本地或可信集群。}
+\LongAnswer{child plan 只产生当前用户和 snapshot 可见的行，再只投影模型调用必需字段；RowEnvelope 记录 query、目标 endpoint、模型和字段策略，但日志不得保存明文敏感 payload。endpoint 使用认证、传输加密、允许列表与最小权限凭据，密钥放在运行环境而不进入仓库。对禁止外发的数据，planner/executor 应拒绝远程 backend 或选择本地模型。这是部署与合规条件，不用调度收益抵消。}
+\EvidenceStatus{项目已有凭据与隐私数据不入 Git 的工程规则；行列级外发策略和审计接口需在 extension 中实现。}
+
+\QAQuestion{外部模型调用与数据库事务是什么关系，事务回滚能撤销模型计算吗？}
+\OneLine{事务能控制数据库结果是否可见，但通常不能撤销已经发生的外部推理成本或副作用。}
+\LongAnswer{AI map 应优先被视为无外部副作用的昂贵计算。事务 abort 时停止新增工作、尽力取消在途请求并丢弃返回结果，因此数据库状态可以回滚；已经消耗的 GPU 时间无法回收。若 API 具有计费之外的业务副作用，必须要求幂等键、补偿协议或声明不支持在可重试事务中自动调用。计划还要明确 isolation、rescan 和 prepared statement 下是否允许复用缓存结果。}
+\EvidenceStatus{事务语义边界已经定义；需要在真实 PostgreSQL abort、statement timeout 和客户端断连测试中验证。}
+
+\QAQuestion{单个集中式控制器会不会成为瓶颈或单点故障？}
+\OneLine{首版用单 owner 简化信用一致性，同时把数据面异步化；只有测到控制面瓶颈后才分片。}
+\LongAnswer{控制器不搬运大 payload，只处理描述符、credit ledger 和路由决定；网络/模型调用由 actor 或异步 client 执行。评估要报告每秒决策数、控制器 CPU、锁等待、snapshot 构建时间和 endpoint/Job 扩展曲线。若成为瓶颈，可按 endpoint shard credit owner，上层只维护 Job entitlement；跨 shard 借用使用有限协调，而不一开始设计复杂分布式共识。故障时停止新增准入，恢复后从在途请求表和 backend 状态校正。}
+\EvidenceStatus{已有状态构建开销较低的观察；大规模 Job/endpoint 扩展和 controller crash recovery 尚待实验。}
+
+\QAQuestion{模型、服务版本或 workload 分布变化后，历史校准会不会失效？}
+\OneLine{会，因此每个 profile 都绑定校准签名，并用在线残差与漂移检测决定何时退化或重校准。}
+\LongAnswer{签名至少包含机器/GPU、模型与量化、服务版本、KV 配置、协议、模态、workload 分布摘要和输出上限。完全匹配才复用 $K/W$ 与代价参数；轻微变化先保守运行并观察预测残差、饱和点和 error rate，连续超过阈值则标记 profile 失效。运行期间不一边正式测量一边搜索最优参数，漂移只触发降级或下一轮离线校准。}
+\EvidenceStatus{参数绑定签名的规则已经建立；自动 drift detector 与跨版本实验仍需实现。}
+
+\QAQuestion{为什么当前只研究单租户内多 Job，不直接做多租户公平？}
+\OneLine{单租户多 Job 已包含份额、SLO 和隔离的核心冲突，而多租户还引入安全、计费和组织级 entitlement，超出当前可验证范围。}
+\LongAnswer{当前 \texttt{job\_id} 表示同一租户下的查询或 workload class，所有 Job 共享一组受信任资源。多租户需要外层 tenant 身份、资源配额、buffer cap、计费与安全隔离，再在每个 tenant 内复用 Job 调度；不能把当前 Job 记账直接声称为租户公平。论文可把层次化 tenant entitlement/debt 作为扩展，但不阻塞当前 formal。}
+\EvidenceStatus{正式范围已收敛为单租户多 Job；多租户没有实现或效果声明。}
+
+\QAQuestion{每个组件都能在已有系统里找到，为什么组合起来仍可能有学术贡献？}
+\OneLine{贡献不在组件名称，而在数据库 AI 工作尚未提交阶段的新决策对象、约束组合、算法和可证伪证据。}
+\LongAnswer{token batching、fair queue、credit 和 affinity 各自并非新词；关键是定义保留 row identity 与分阶段 work/locality 的执行单元，在固定 request/work 容量下把数据库剩余进度、Job entitlement 与外部 endpoint 状态连接起来，并证明何时应均衡、何时应保留局部性、何时共享会破坏隔离。若最终方法只是把现成算法并列，没有新的冲突建模、决策规则或实验证据，就不能声称创新。}
+\EvidenceStatus{问题与机制证据已经形成；学术贡献仍取决于后续方法、消融和对比能否支持上述差异。}
+
+\QAQuestion{你如何定义论文成功，什么时候应该停止继续加功能？}
+\OneLine{两项研究内容各有可验证方法、强 baseline、独立消融和清晰适用条件，并完成真实数据库语义验证，就达到论文主目标。}
+\LongAnswer{研究内容一要证明分阶段 descriptor 与 locality-aware organizer 相对行批/单特征方法，在预先声明的压力区间改善主要指标或准确识别不应重排的条件；研究内容二要在同一总容量下，相对 static partition 和 fully shared，在目标吞吐/JCT 改善时满足隔离或 SLO 阈值。两项先独立最优再组合，并用真实 PostgreSQL 18.3 + LOTUS 语义验证查询生命周期。达到这些条件后停止扩展数据库产品、模型和参数海洋，把精力用于重复、故障、质量与写作。}
+\EvidenceStatus{这是后续工作的停止标准；开题阶段尚未宣称达到。}
+
+\newpage
+\section{连续追问链：老师从一句话追到实现细节时怎么答}
+
+\subsection{追问链一：为什么是数据库研究}
+\begin{enumerate}
+  \item \textbf{入口：}Q2，先说数据库拥有关系 child plan、查询身份和生命周期。
+  \item \textbf{追问“CSV 也能跑”：}Q3，承认策略可迁移，但 CSV 不具备 snapshot、权限、cancel/error 和结果对应。
+  \item \textbf{追问“现在做完了吗”：}Q54--Q57，明确 extension/CustomScan 是计划验证，当前 runner 只是前期物理证据。
+  \item \textbf{追问“最低成果”：}Q75，给出真实 PostgreSQL 18.3 资格原型的不可退让条件。
+\end{enumerate}
+
+\subsection{追问链二：数据组织到底怎么做}
+\begin{enumerate}
+  \item \textbf{入口：}Q23，用 WorkDescriptor 说明记录级事实、估计和 locality。
+  \item \textbf{追问“如何成批”：}Q32--Q33，先 compatibility grouping，再按预算在线装箱。
+  \item \textbf{追问“长度排序为什么不够”：}Q34--Q35，用均衡与 prefix locality 冲突回答。
+  \item \textbf{追问“会不会改 SQL 语义”：}Q37，限定独立 map、稳定 identity 和不支持条件。
+\end{enumerate}
+
+\subsection{追问链三：提交、路由与多 Job 调度怎样联动}
+\begin{enumerate}
+  \item \textbf{入口：}Q38，先固定 request/work 总信用，排除扩容因素。
+  \item \textbf{追问“何时提交”：}Q40，按 completion 归还并补充。
+  \item \textbf{追问“选哪个 Job”：}Q47--Q49，floor/cap、borrow/debt 与主目标约束。
+  \item \textbf{追问“发到哪里”：}Q50--Q51，先过滤，再比较排队、服务与 locality。
+  \item \textbf{追问“状态不准”：}Q44--Q45，降级到 static-safe，并限制观测开销。
+\end{enumerate}
+
+\subsection{追问链四：与 vLLM、VTC、DLPM 等工作的区别}
+\begin{enumerate}
+  \item \textbf{入口：}Q6，先按控制位置区分“已到达服务的请求”和“数据库中尚未提交的工作”。
+  \item \textbf{追问“是不是改 continuous batching”：}Q7、Q30，说明 BatchRequest 与服务内部 batch 不同。
+  \item \textbf{追问“公平调度已有很多”：}Q47--Q51，强调数据库 remaining work、row identity 与固定双信用。
+  \item \textbf{追问“只是组合”：}Q82，回到新决策对象、约束冲突和可证伪证据。
+\end{enumerate}
+
+\subsection{追问链五：实验结果并非全面胜出}
+\begin{enumerate}
+  \item \textbf{入口：}Q70，解释 sequential 在高 KV 压力下胜出是机制发现。
+  \item \textbf{追问“共享不公平”：}Q71，承认代价并说明 guard 的研究问题。
+  \item \textbf{追问“动态策略没用”：}Q76，先检查实验有效性，再接受有条件负结果。
+  \item \textbf{收束：}Q73，严格列出能说与不能说的结论。
+\end{enumerate}
+
+\subsection{追问链六：跨框架比较是否可信}
+\begin{enumerate}
+  \item \textbf{入口：}Q67，统一语义、资源、数据、计时和质量。
+  \item \textbf{追问“baseline 被你重写”：}说明 baseline 必须由上游系统拥有执行与调度，项目只做 source/sink/metrics adapter。
+  \item \textbf{追问“版本不同”：}Q68，18.4 只作演练，18.3 才是扩展资格目标。
+  \item \textbf{追问“单机器”：}Q69，参数不泛化，机制和重校准规则才是泛化对象。
+\end{enumerate}
+
+\subsection{追问链七：失败、取消和事务}
+\begin{enumerate}
+  \item \textbf{入口：}Q53，先说请求状态机、generation 和至多一次可见结果。
+  \item \textbf{追问“exactly-once”：}Q57，区分外部重复计算与数据库可见性。
+  \item \textbf{追问“随机输出”：}Q58，声明确定性参数、重试规则和 attempt 选择。
+  \item \textbf{追问“回滚”：}Q78，承认 GPU 成本不可撤销，带副作用 API 需要幂等键或补偿规则。
+\end{enumerate}
+
+\section{考前速查表}
+
+\subsection{两项研究内容的总分结构}
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.1cm}>{\raggedright\arraybackslash}p{3.15cm}>{\raggedright\arraybackslash}p{4.8cm}>{\raggedright\arraybackslash}p{5.0cm}}
+\toprule
+\textbf{研究内容} & \textbf{输入} & \textbf{核心决策} & \textbf{输出与评价} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{研究内容} & \textbf{输入} & \textbf{核心决策} & \textbf{输出与评价} \\
+\midrule
+\endhead
+分阶段工作量表征与数据组织 & RowEnvelope、记录级阶段特征、兼容性和 locality key & 先按模型/模态/语义兼容分组，再按 token/frame/prepare budget 有界装箱；在工作均衡与 prefix/data locality 间选择 & BatchRequest；吞吐、JCT/P99、packing utilization、padding、prefix hit、准备/GPU overlap 与质量 \\
+\addlinespace
+固定容量下的提交、路由与多 Job 调度 & BatchRequest、双信用、RuntimeStateSnapshot、Job 的排队/在途/完成/剩余工作与 debt & 先过容量/健康/兼容硬约束，再做 floor/cap、借用回收、完成驱动补充与 endpoint 选择 & 提交序列和 route；总吞吐/makespan、每 Job JCT/P99/slowdown、SLO、Jain、公平与隔离代价 \\
+\bottomrule
+\end{longtable}
+
+\subsection{已有工作与本课题的区别}
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{5.7cm}>{\raggedright\arraybackslash}p{6.35cm}}
+\toprule
+\textbf{工作层次与代表系统} & \textbf{已有工作的主要控制对象} & \textbf{本课题的区别与承接关系} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{工作层次与代表系统} & \textbf{已有工作的主要控制对象} & \textbf{本课题的区别与承接关系} \\
+\midrule
+\endhead
+数据库 AI 语义与计划（LOTUS、Cortex、Sema、Palimpzest、Relational LLM Queries） & 定义语义算子，减少模型调用，选择模型/算子次序，或用过滤、投影等方法缩小昂贵语义操作的候选集合 & 直接复用 LOTUS \texttt{sem\_map} 语义；主要研究关系 child plan 已产生记录后、模型服务尚未接收请求前的物理组织、提交与路由，并补充真实 PostgreSQL 查询生命周期 \\
+\addlinespace
+通用数据执行框架（Daft、Ray Data） & 分区、流水线、backpressure、task/actor、通用批处理以及框架拥有的资源调度 & 把它们作为可替换 backend 和原生 baseline；新增 AI 分阶段 work/locality、数据库 Job 进度、固定双信用及 endpoint 状态决策，不把自写执行器冒充框架原生能力 \\
+\addlinespace
+模型服务内部调度（vLLM continuous batching、VTC、DLPM） & 对已经到达服务端的请求做迭代级组批、KV/显存管理、请求选择、公平或优先级控制 & 不修改服务内部调度；控制数据库中尚未提交的工作，用有界准入避免上游一次性灌入，并把完整 Job 剩余工作和数据库取消语义纳入决策 \\
+\addlinespace
+离线工作负载/应用图调度（BlendServe 等） & 根据已知请求或应用阶段特征安排执行，减少不同类型工作之间的干扰，提高服务设备利用率 & 借鉴工作分类和搭配思想，但研究在线关系记录流、未知输出长度、多个数据库 Job 与外部多个 endpoint；容量必须在 A/B 中保持相同 \\
+\addlinespace
+本课题 & 尚未形成服务请求的 RowEnvelope/BatchRequest，以及 Job 和 endpoint 状态 & 回答“一批放什么、何时提交、从哪个 Job 取、发往哪里”；以 PostgreSQL 18.3 + LOTUS 语义验证数据库属性，以 Daft/Ray/vLLM/图像 actor 承载可替换物理执行 \\
+\bottomrule
+\end{longtable}
+
+\subsection{容易卡住的术语：先用白话讲}
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.25cm}>{\raggedright\arraybackslash}p{6.1cm}>{\raggedright\arraybackslash}p{5.7cm}}
+\toprule
+\textbf{术语} & \textbf{白话解释} & \textbf{在本课题中的作用} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{术语} & \textbf{白话解释} & \textbf{在本课题中的作用} \\
+\midrule
+\endhead
+child plan（子计划） & AI 算子下面的普通关系执行计划，先完成表扫描、权限检查、过滤和投影 & 只有 child plan 产出的可见记录才能进入外部 AI 执行 \\
+planner-visible & 优化器和执行器能把 AI 操作看作一个明确计划节点，而不是 SQL 之外的 Python 脚本 & 才能比较代价、解释计划，并由数据库处理取消、错误和结果生命周期 \\
+CustomScan & PostgreSQL extension 可实现的自定义扫描/执行节点接口，不需要修改 PostgreSQL core & 候选实现方式；负责拉取 child plan、建立有界流和回收结果 \\
+RowEnvelope & 给一条数据库记录套上的“执行信封”，同时携带 row identity、AI 输入、语义配置与工作描述 & 即使外部重排和重试，也能把结果对应回正确记录 \\
+WorkDescriptor & 一条记录在准备、传递、模型输入/输出等阶段的工作特征，不只是一个行数 & 研究内容一的基本描述单位，供组织、信用和代价估计使用 \\
+BatchRequest & 上游准备提交的一组完整 AI 工作项；它不等于 HTTP 请求，也不等于 vLLM 内部 batch & 研究内容一的输出，也是研究内容二准入和路由的对象 \\
+endpoint（服务实例） & 一个可接收请求的模型服务地址及其背后的独立运行实例 & 路由的目的地；每个实例分别维护健康状态、队列与双信用 \\
+request/work credit & 两本容量账：一本数同时在途请求，另一本数这些请求携带的预计工作量 & 保证动态方法不靠多发请求、多占 token 获得不公平收益 \\
+active work & 某 endpoint 当前已准入但尚未完成的总预计工作量 & 用容量扫描选择“达到饱和吞吐的最小在途工作量” \\
+backpressure（反压） & 下游满时让上游暂停继续产生工作，而不是无限堆队列 & 限制数据库内存、取消清理成本和服务端排队 \\
+KV cache & 大模型保存已计算注意力 key/value 的显存缓存；复用相同前缀可少做重复计算 & 容量高压时既影响可接收工作量，也使 prefix locality 变得重要 \\
+prefix locality & 共享相同 prompt 前缀的请求尽量保持在可复用同一 KV cache 的位置 & 防止只按长度重排把缓存复用打散 \\
+head-of-line blocking & 前面的慢工作不结束，后面的快工作即使能继续也被整批挡住 & 用请求级完成通知逐个归还信用，减少人为等待 \\
+floor / cap & floor 是每个 Job 的最低服务保证，cap 是单个 Job 可占用的最高份额 & 在静态隔离和完全共享之间建立可解释的保护 \\
+borrow / reclaim / debt & 空闲 Job 的份额可临时借出；它恢复后停止借用方补充，并按超额服务债务回收 & 不抢占已提交请求，也能让容量逐步回到有权 Job \\
+SLO slack & 距离完成时限还剩多少余量；负值表示按当前预计将违约 & 在 Job 选择和 endpoint 路由时保护临近时限的工作 \\
+JCT / makespan / P99 & JCT 是单个 Job 从到达到完成的时间；makespan 是全部 Job 完成时间；P99 是 99\% 请求不超过的尾延迟 & 分别观察作业完成、总体完成和少数慢请求，不能只看平均吞吐 \\
+Jain 指数 & 衡量各 Job 获得服务是否均衡的 $[0,1]$ 指标，越接近 1 越均衡 & 必须与吞吐、JCT、优先级目标一起读，不能单独代表“公平正确” \\
+TTFT / MFU & TTFT 是请求到首个输出 token 的时间；MFU 是模型实际计算相对硬件理论峰值的比例 & 前者反映排队和 prefill 延迟，后者帮助判断 GPU 是否真正被有效利用 \\
+warm-up / formal repeat & warm-up 是不计入正式结果的预热；formal repeat 是相同设置下纳入统计的独立重复运行 & 排除首次加载，并用重复运行判断结果是否稳定 \\
+calibration signature & 一组说明参数在什么环境下测得的标识，包括硬件、模型、服务版本、协议和 workload 分布 & 签名变化就不能直接沿用旧的 $K$、batch 或 active-work \\
+regret（决策损失） & 选择规则挑中的配置，比事后真实最优配置差多少 & 评价代价模型或条件选择器是否真的帮助决策 \\
+sim-filter / project-sim-filter & 在昂贵语义 join 前，先用便宜的相似度判断或低维/投影表示筛掉明显不相关的记录对 & 原本 $|R|\times|S|$ 的候选对不再全部做 LLM 两两比较，只有保留下来的候选进入昂贵 join；它主要减少调用数量，本课题则优化这些调用形成后怎样被组织和提交 \\
+\bottomrule
+\end{longtable}
+
+\subsection{关键数字：只在说明条件后使用}
+\begin{itemize}
+  \item 固定 16 行批次的预计 token work 跨批约相差 \textbf{14.3 倍}：说明行数不足以表达 AI 工作量。
+  \item 文本 active-work 扫描：C128 为 \textbf{17,834 tok/s}，C256 为 \textbf{18,158 tok/s}，前者为后者 \textbf{98.22\%}；更高并发伴随 waiting、KV 和 TTFT 上升，支持选择最小饱和点。
+  \item 四 Job 同上限比较：共享吞吐 \textbf{+8.68\%}、makespan \textbf{-7.97\%}，但归一化 Jain \textbf{0.988$\rightarrow$0.876}；说明效率与隔离冲突。
+  \item cache-on 条件下：2-endpoint 低压力组织方法近似中性；4-endpoint 高 KV 压力差异放大，重排类方法的 prefix group ratio 与命中下降；说明策略依赖运行条件。
+  \item 图像 observe-only：24 次运行、3,114 个 snapshot，平均构建约 \textbf{0.141 ms}，开关观测总时间差约 \textbf{0.98\%}；只能证明低成本观测，不证明动态收益。
+  \item 代价模型：pairwise ranking \textbf{0.808}、平均 regret \textbf{2.90\%}、最差 \textbf{14.72\%}；适合说明决策质量仍有改进空间，不能说预测准确。
+\end{itemize}
+
+\subsection{现场表述红线}
+\begin{itemize}
+  \item 不说“已经完成 PostgreSQL 内置算子”，应说“已确定 extension/CustomScan 路线，待通过 18.3 真实查询生命周期验证”。
+  \item 不说“动态方法全面优于静态”，应说明当前已有正、负与权衡结果，完整方法需与最佳静态点同上限比较。
+  \item 不说“优化 vLLM/Ray 调度器”，应说“控制请求到达它们之前的数据库 AI 工作”。
+  \item 不把 Job 公平外推成多租户公平；当前正式范围是单租户内多个 Job/workload class。
+  \item 不把 65,536、$K$、batch 或 actor 数说成通用参数；它们绑定机器、模型、服务、协议和 workload 校准签名。
+  \item 不把集成列为创新；必须回到 WorkDescriptor、局部性约束组织、固定双信用与 Job/endpoint 联合决策。
+  \item 不只报吞吐；同步报告每 Job JCT/P99、SLO、Jain、GPU/KV、质量和 database-E2E。
+  \item 不回避负结果；说明它排除了什么错误假设，以及方法在哪些条件下才值得使用。
+\end{itemize}
+
+\end{document}

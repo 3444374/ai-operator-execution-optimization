@@ -55,6 +55,14 @@ skills-lock.json
 # CSV and Markdown summaries are tracked; Arrow payload dumps are reproducible outputs.
 *.arrow
 *.pdf
+
+# LaTeX build intermediates (source .tex remains tracked).
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
 validation/results/fake_ai_embed_outputs/
 validation/results/fake_ai_embed_outputs_smoke/
 

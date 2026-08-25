@@ -393,9 +393,11 @@ GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分�
 - 当前答辩内容合同：`opening/opening_defense_outline_20260808.md`；历史PPT v6设计
   `opening/slides/opening_defense_v6_design.md`已被取代且禁止作为生成输入
 - 答辩问答：`opening/qa_bank.md`
+- 答辩 QA 预演手册：`opening/report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF）
 - 当前方向速览：`overview/current_direction_and_plan.md`
 - 实验状态：`experiments/plans/experiment_status_and_gaps.md`
 - 文献与知识：`research/knowledge_hub.md`
+- 十五篇精读方法速览：`research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`
 
 影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。修改知识文件后按 `research/knowledge_sync_guide.md` 同步平级 Obsidian Wiki。

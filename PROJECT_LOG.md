@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-25 两份 LaTeX 文档按同名目录归档
+
+- 将精读速览的 `.tex/.pdf` 收纳到 `research/精读文献笔记/paper_deep_reading_digest/`，将答辩 QA 的 `.tex/.pdf` 和设计说明收纳到 `opening/report/opening_defense_qa/`；两个上层目录不再散落同名生成文件。
+- 删除两次编译留下的 9 个可再生成中间文件（`.aux/.log/.out/.toc/.synctex.gz`），每份文档目录只保留可编辑源、最终 PDF，以及答辩 QA 已有的设计说明。
+- 同步根 README、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、opening/research 入口和两级日志；不修改两份 LaTeX 正文、PDF 内容、开题报告、PPT 或实验材料。
+
+## 2026-08-25 新增开题答辩 QA LaTeX/PDF
+
+- 新增 `opening/report/opening_defense_qa/opening_defense_qa.tex`，以 83 道双层问答覆盖课题定位、总体方案、两项研究内容、PostgreSQL/LOTUS 系统资格、实验设计和风险；方案与研究内容 Q15--Q53 共 39 题，并有 44 道回答提供逐步讲解。
+- 文末增加 7 条连续追问链、两项研究内容输入—决策—输出表、已有工作差异表和 23 项术语白话解释；特别说明 `sim-filter` / `project-sim-filter` 通过预先过滤候选记录对来减少语义 join 的昂贵两两 LLM 比较，而本课题研究剩余模型调用怎样被组织、提交和路由。
+- 使用 XeLaTeX 实际生成同目录本地 `opening_defense_qa.pdf`（25 页），三次编译后无 LaTeX warning、overfull/underfull 或未定义引用；已检查全页缩略图和关键正文/表格页。PDF 及 LaTeX 中间文件继续按仓库规则忽略，权威可编辑源为 `.tex`。
+- 只对 `opening/README.md`、`PROJECT_INDEX.md` 与两级日志做新增文件登记；未改开题报告正文、Word、PPTX、飞书材料或实验结果。
+
+## 2026-08-25 新增 15 篇论文精读方法速览 LaTeX 文档
+
+- 新增 `research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`，将当前 15 篇权威精读笔记统一压缩为“背景与问题—核心思路—关键词解释—具体做法—实验结果—与本课题的区别”的总—分结构；每篇以方法链路为主体，目标篇幅为半页至一页 A4。
+- 为每篇补充“关键词解释”和“与本课题的区别”：前者只解释理解方法必需的缩写、系统术语与指标，后者统一对照 PostgreSQL 内置 LOTUS 语义算子、外部物理执行链、数据组织、服务状态感知提交与单租户多 Job 调度，明确哪些方法是语义/计划层、serving 内部或通用运行时工作。
+- LOTUS 的 Semantic Join 补充 `sim-filter` 与 `project-sim-filter` 如何分别通过直接 embedding 候选过滤、先语义投影再过滤来减少笛卡尔积上的 Oracle 调用；其余论文同样明确写出计划枚举、调用消减、请求重排、batch 形成、资源调度或公平记账的实际步骤。
+- 文档采用紧凑 A4 `ctexart` 版式，首行声明 XeLaTeX 编译器，并用最小剩余空间规则防止论文标题孤立在页尾。已将 MiKTeX 主程序和宏包安装到 `D:\Programs\MiKTeX`，更新包数据库后实际编译为 6 页 PDF，并完成分页与页面检查；本地 PDF 可再生成且被 `*.pdf` 规则忽略，`.gitignore` 同步忽略 `aux/out/synctex` 等 LaTeX 中间产物。未修改各篇权威主笔记、论文配图、开题报告正文或实验结论。
+
 ## 2026-08-25 开题报告参考文献顺序编码修正
 
 - 将 `opening/report/opening_report.md` 的正文引文和文末 53 条参考文献统一改为按正文首次出现顺序编号；58 处引文组全部重新映射，题录内容不变。
@@ -14638,3 +14658,9 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 在 `experiments/plans/opening_database_e2e_p0_20260807.md` 增加服务器恢复后执行的 ShareGPT C128 补测合同，并同步 `experiments/plans/README.md` 与 `PROJECT_INDEX.md` 入口说明：只比较 direct static C128 与 project frozen-static K128/W65,536，复用同一 2,048 行 manifest、Chat/cap=256、PostgreSQL source/sink 和 1 warm-up + 3 formal；不重跑 DuckDB、SQuAD 或 C64/C256 扫描。
 - 计划要求以最小向后兼容改动让现有 matrix runner 支持 arm 子集和 direct 独立并发，记录实际 client peak inflight 与连接池上限，并使用独立两臂汇总器区分正确性有效、direct C128 容量复现和 project/direct 路径观察。该实验只能消除 C32 对 K128 的请求容量混淆，不能把剩余跨路径差异归因于单个数据组织或调度方法。
 - 当前仅补充计划，尚未修改 runner/config/test，未连接或启动 GPU 服务器，也未产生新实验数字。服务器开机后先保存 `manage_environment.py check` 报告并核对原双 RTX 4090 服务签名，再按全新输出目录执行。
+
+## 2026-08-25 开题相关工作图来源标注
+
+- 更新相关工作图中的代表系统和底部总结，并在系统名后以小号深灰字标注会议与年份；长标题 Cortex AISQL 和 Learned Cost Models 将出处另起一行，避免卡片内文字拥挤。
+- Ray Data 对应的 *The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution* 经两位作者公开论文列表交叉核对后标为 NSDI 2027；图中不使用文献编号或括号。
+- 同步 Draw.io、SVG 和 4000×2250 PNG 图资产，供开题 PPT 手工替换；未修改 PPT、开题报告正文或源实验数据。

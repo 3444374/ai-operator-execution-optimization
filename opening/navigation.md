@@ -52,7 +52,7 @@ AGENTS.md
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md`（已过期、禁止同步；当前正文见`report/opening_report.md`） |
 | 飞书进度汇报 | `feishu/progress_update.md` |
 | 文献清单和精读笔记 | `literature/reading_list.md` |
-| 答辩问答 | `qa_bank.md` |
+| 答辩问答 | 现场预演手册 `report/opening_defense_qa/opening_defense_qa.tex`（同目录 PDF）；历史攻击面清单 `qa_bank.md` |
 | 图表和素材规则 | `assets/README.md` |
 | 模板来源和外部文件记录 | `templates/README.md` |
 | 非实验类修改日志 | `logs/project_log.md` |

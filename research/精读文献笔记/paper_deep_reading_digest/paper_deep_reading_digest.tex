@@ -1,0 +1,348 @@
+% !TeX program = xelatex
+\documentclass[10pt,a4paper]{ctexart}
+
+\usepackage[a4paper,top=1.35cm,bottom=1.35cm,left=1.50cm,right=1.50cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{titlesec}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.18em}
+\linespread{1.03}
+\setlist[enumerate]{leftmargin=1.65em,itemsep=0.05em,topsep=0.10em,parsep=0pt,partopsep=0pt}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.45em}{}
+\titlespacing*{\section}{0pt}{0.70em}{0.22em}
+\let\digestoriginalsection\section
+\renewcommand{\section}{\Needspace{7\baselineskip}\digestoriginalsection}
+\newcommand{\paperinfo}[1]{\textit{#1}\par}
+\newcommand{\field}[1]{\par\noindent\textbf{#1。}\hspace{0.25em}}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries AI 数据处理与执行调度论文精读速览}\par
+  \vspace{0.25em}
+  {\small 15 篇论文的背景、方法主线、关键词与本课题对照（由各篇权威精读笔记压缩）}
+\end{center}
+
+\small
+
+\section{LOTUS：具有准确率保证的语义算子优化}
+\paperinfo{Semantic Operators and Their Optimization: Enabling LLM-Based Data Processing with Accuracy Guarantees in LOTUS，PVLDB 2025。}
+
+\field{背景与问题}逐行调用 LLM 的 AI UDF 难以直接表达 Join、Top-k、Group-by 等需要多轮模型调用的复杂数据操作；已有近似优化又往往只能经验性报告效果，无法说明优化结果是否仍保持原操作的行为。
+
+\field{核心思路}LOTUS 先把任务抽象为语义算子，再为每个算子规定一个可执行的高质量 Reference Algorithm。优化器可以选择更便宜的 AI 算法，但需满足
+\[
+P\!\left(\operatorname{Accuracy}(\text{optimized},\text{reference})\geq\gamma\right)\geq1-\delta .
+\]
+这里的保证相对于参考算法，而不是现实世界 Ground Truth。
+
+\field{关键词解释}\textbf{Reference Algorithm}：定义算子应如何执行的高质量参考程序；\textbf{Proxy/Oracle}：前者是便宜但可能不准的代理模型，后者是昂贵但更可靠的大模型；\textbf{embedding}：把文本映射为可计算相似度的向量；\textbf{precision/recall}：预测为正的结果中有多少真正、全部真正结果中有多少被找回。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{定义算子行为：}为 \texttt{sem\_filter}、\texttt{sem\_join}、\texttt{sem\_topk}、\texttt{sem\_group\_by}、\texttt{sem\_agg} 和 \texttt{sem\_map} 分别规定逐条判断、嵌套循环、两两比较加 Quickselect、聚类加逐点分类、分层归约和逐条投影等参考执行方式。
+  \item \textbf{Filter 级联：}先在样本上同时运行便宜 Proxy 与昂贵 Oracle，据此学习阈值 $\tau^-<\tau^+$；高、低置信样本直接由 Proxy 接受或拒绝，中间区域才调用 Oracle，并通过置信区间控制 precision、recall 与失败概率。
+  \item \textbf{Join 候选缩减：}\emph{sim-filter} 直接比较左右 join-key 的 embedding，只把相似候选对交给 Oracle，避免对完整笛卡尔积调用大模型；若原始字段与匹配关系的相似度较弱，\emph{project-sim-filter} 先用 LLM 将左侧 tuple 投影成更接近右表取值域的语义值，再做 embedding 过滤。系统抽样估计两种 Proxy 的阈值和剩余 Oracle 调用量，选择预计成本较低的计划。
+  \item \textbf{其他算子：}Top-k 采用适合批量并行的 pairwise Quickselect，并用 embedding 改善 pivot；Group-by 先生成候选标签、做 embedding 聚类，再把逐条分类转成 Proxy--Oracle 级联。本文未专项优化 \texttt{sem\_map} 与 \texttt{sem\_agg}。
+\end{enumerate}
+
+\field{实验结果}FEVER 中优化前后准确率为 91.2\% 和 91.0\%，批量执行时间由 329.1 秒降至 190.0 秒。BioDEX 中选出的 project-sim-filter 计划使用 5,290 次模型调用，而参考 Join 约需 609 万次，调用量降低约三个数量级。当前统计保证仅覆盖单个算子，不是多算子查询的端到端保证。
+
+\field{与本课题的区别}LOTUS 主要定义语义算子及其近似算法，用减少模型调用换取有统计界限的质量。本课题首版直接复用 LOTUS \texttt{sem\_map} 的语义，重点是 PostgreSQL 内的查询生命周期与可见算子，以及数据流进入外部模型服务前的组织、请求形成和多 Job 提交控制；不把设计新的 LOTUS 近似算子作为主贡献。
+
+\section{Cortex AISQL：生产数据库中的原生 AI SQL 优化}
+\paperinfo{Cortex AISQL: A Production SQL Engine for Unstructured Data，SIGMOD Companion 2026。}
+
+\field{背景与问题}当 AI inference 成为正式 SQL 算子后，单行成本远高于普通谓词，selectivity 与真实调用成本在编译期又通常未知；尤其 Semantic Join 可能产生 $O(|L||R|)$ 次模型调用。仅把 Python/HTTP 调用嵌入 SQL，数据库仍无法对完整查询做优化。
+
+\field{核心思路}Cortex AISQL 将 AI 算子接入 Snowflake 的 SQL、优化器和执行引擎，并按“先减少 AI work，再加速剩余调用”的顺序，在查询计划、单算子模型选择和查询改写三个层次降低推理量。
+
+\field{关键词解释}\textbf{selectivity}：谓词执行后保留的行数比例，比例越低通常越能早期缩小后续输入；\textbf{model cascade}：先用便宜模型筛选，只把不确定样本交给昂贵模型；\textbf{tuple}：关系表中的一行记录；\textbf{F1}：precision 与 recall 的调和平均，用于综合衡量分类质量。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{AI-aware plan optimization：}将模型、输入 token、模态和逐行推理成本纳入代价，重排多个 \texttt{AI\_FILTER}，并决定它们位于 Join 前还是 Join 后，使高选择率或便宜谓词先减少输入行。
+  \item \textbf{Adaptive Model Cascade：}先让便宜 Proxy 判断；高置信正负样本直接返回，只有不确定样本升级到 Oracle，从而用少量质量损失换取调用成本下降。
+  \item \textbf{Join-to-Classification rewrite：}当右表可解释为有限标签集合时，把逐对二分类的 \texttt{AI\_JOIN} 改写为对每个左 tuple 一次多标签分类，使调用复杂度由 $O(|L||R|)$ 降为 $O(|L|)$。
+\end{enumerate}
+
+\field{实验结果}谓词重排最高约 7 倍加速；模型级联平均 2.9 倍加速，平均 F1 从 0.812 降至 0.777；Join 改写平均 30.7 倍加速，CNN 示例由 25 万次二分类降为 1,000 次多标签分类，耗时由 4.4 小时降至 3.8 分钟。该文是生产系统论文，但发表轨道为 SIGMOD Companion。
+
+\field{与本课题的区别}Cortex AISQL 的重点是 Snowflake 内部的逻辑/物理计划优化，主要通过重排、模型级联和语义改写减少必须做的 AI work。本课题使用 PostgreSQL extension 暴露 LOTUS 语义算子，主要优化剩余 work 如何从 child plan 有界流出、组成 batch/请求、路由到 endpoint 并在多 Job 间提交；不依赖 Snowflake 内部实现。
+
+\section{Galois：把 LLM 当作概率性存储层执行 SQL}
+\paperinfo{Logical and Physical Optimizations for SQL Query Execution over Large Language Models，SIGMOD 2025。}
+
+\field{背景与问题}Galois 处理的不是 Text-to-SQL，而是用户已有 SQL 和 schema、数据却来自模型参数知识或运行时文档的场景。把整条复杂 SQL 直接放进 prompt 会遗漏 tuple、产生幻觉，也把关系运算交给不擅长精确执行的 LLM。
+
+\field{核心思路}只让 \texttt{LLMScan}/\texttt{Filter-LLMScan} 从模型中取回 tuple，其余 Selection、Join、Grouping 等关系运算由数据库在内存中执行；优化器再以模型 confidence 同时选择谓词下推程度和物理扫描方式。
+
+\field{关键词解释}\textbf{Text-to-SQL}：把自然语言问题翻译为 SQL，Galois 并不做这件事；\textbf{schema}：表的字段、类型及关系结构；\textbf{predicate pushdown}：尽早执行过滤条件以减少后续数据；\textbf{confidence}：模型对自己回答可靠程度的估计，不等同于真实准确率。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{Confidence-guided pushdown：}传统“尽量早下推”可能让 prompt 条件过多、降低回答质量。Galois 生成 no-push、single-push、all-push 等候选，只下推模型高置信能够正确处理的条件。
+  \item \textbf{Table-Scan：}一次提示模型返回完整 tuple；上下文较丰富、key recall 较稳，但 prompt 和输出较大。
+  \item \textbf{Key-Scan：}先取 key 集合，再按 key 并行补齐属性；提示更简单，但第一阶段漏 key 后无法恢复。系统以 key retrieval confidence 与阈值 $\tau$ 在两者间选择。
+  \item \textbf{Selective attributes：}prompt 保留完整 schema 帮助理解，但只要求返回查询真正需要的列，减少输出 token。
+\end{enumerate}
+
+\field{实验结果}总体 F AVG-Score 为 0.622，高于直接自然语言询问的 0.254 和整条 SQL prompt 的 0.481；真实最优计划为 0.666，而物理计划选择器准确率仅 75\%。因此论文证明了 DB-first 拆解有效，但没有解决 LLM confidence 与完整关系恢复的可靠性问题。
+
+\field{与本课题的区别}Galois 把 LLM 视为“数据本身”的概率性存储层，核心问题是如何从模型参数或文档恢复关系 tuple。本课题的输入来自 PostgreSQL 已有的关系 child plan，模型承担 \texttt{AI\_COMPLETE}/\texttt{AI\_EMBED} 等算子计算；研究重点是外部物理执行和调度，而不是用 LLM 补齐表数据。
+
+\section{PALIMPZEST：声明式 AI 分析与质量--成本--时间计划选择}
+\paperinfo{A Declarative System for Optimizing AI Workloads（本地精读依据 arXiv v2；后续正式发表于 CIDR 2025）。}
+
+\field{背景与问题}语义分析程序往往混合文档、图像、表格和传统 UDF，开发者必须手动决定模型、prompt、代码替代、过滤顺序和预算。模型与价格快速变化后，这些低层决策又需要反复重写。
+
+\field{核心思路}用户只声明 Schema、关系操作、自然语言字段/过滤条件和优化 Policy；PALIMPZEST 将程序编译成逻辑计划，枚举不同逻辑顺序和物理实现，通过小样本估计 runtime、美元成本与质量，最后从 Pareto frontier 中选择满足 Policy 的计划。
+
+\field{关键词解释}\textbf{Policy}：用户给出的质量、费用或时间目标与约束；\textbf{sentinel plan}：为估计候选计划特性而运行的小样本探测计划；\textbf{Pareto frontier}：一组互不完全胜过对方的折中方案，任一指标继续改善都需牺牲至少一个其他指标；\textbf{champion model}：用作质量对照的参考模型。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{Convert 抽象：}把“从 Schema A 生成 Schema B 中缺失字段”作为统一语义，可由 LLM、视觉模型、内置函数或合成代码实现，从而把逻辑意图与具体 AI 方法解耦。
+  \item \textbf{计划枚举：}重排可交换 Filter；若 Filter 不依赖 Convert 产生的字段，就先过滤再执行昂贵 Convert。物理层继续枚举模型选择、代码合成、prompt 组织和 token reduction。
+  \item \textbf{样本估计与选择：}运行少量 sentinel plans，收集选择率、token、时间、费用和相对 champion model 的质量；组合估计完整计划，删除被支配点，再按“质量至少为某值时成本最低”等 Policy 选取计划。
+\end{enumerate}
+
+\field{实验结果}Real Estate Search 的代表计划相对全 GPT-4 baseline，时间约降低 3.3 倍、成本降低 2.9 倍且 F1 略升；Policy 在 9 个约束实验中满足 7 个。32 worker 的 Legal Discovery 相对单线程 GPT-4 baseline 达到 90.3 倍加速，但 F1 只有 baseline 的 83.5\%。结果支持自动搜索有价值，不构成全局最优或严格约束保证。
+
+\field{与本课题的区别}PALIMPZEST 面向离线、声明式 AI 程序，在模型、prompt、逻辑顺序和代码实现之间搜索整体计划。本课题不以枚举大量模型/prompt 计划为主线，而是在已选语义算子和 backend 下，根据 token/frame work 与服务状态调整数据组织和在线提交；代价估计是两项策略的共同支撑。
+
+\section{Abacus：面向语义算子系统的多目标代价优化器}
+\paperinfo{Abacus: A Cost-Based Optimizer for Semantic Operator Systems，PVLDB 2026。}
+
+\field{背景与问题}一个 semantic map 在实现中可对应约 2,800 个物理候选；多个算子组合后计划空间呈指数增长。用户还会提出“成本低于 1 美元时质量最高”等约束，传统 Cascades 每组只保留一个局部最优实现，会过早丢掉全局可行的质量--成本--延迟折中。
+
+\field{核心思路}Abacus 不直接运行所有完整计划，而是用规则枚举物理算子、对单算子做有限采样，再以 Pareto-oriented MAB 找出值得保留的算子 frontier，最后用 Pareto-Cascades 组合出满足约束的完整计划。
+
+\field{关键词解释}\textbf{Cascades}：用等价规则枚举和组合查询计划的优化器框架；\textbf{physical expression}：一个逻辑算子的具体执行方法；\textbf{MAB}（多臂老虎机）：在有限采样预算下边尝试、边淘汰候选的决策方法；\textbf{UCB/LCB}：指标可能值的置信上界/下界。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{规则枚举：}Transformation rules 改写逻辑结构，如 filter pushdown；Implementation rules 为每个逻辑算子生成不同模型、Mixture-of-Agents、Reduced-Context、Critique-and-Refine 等实现。
+  \item \textbf{单算子代价模型：}在 validation examples 上测量 quality、cost、latency；以质量乘积、成本求和和关键路径延迟组合估计完整计划，避免直接采样 $O(N^M)$ 个计划。
+  \item \textbf{Pareto MAB：}用 UCB/LCB 判断候选是否仍可能进入多维 Pareto frontier，持续淘汰明显受支配的物理算子，把采样预算集中到边界附近。
+  \item \textbf{Pareto-Cascades：}每个 group 保留一组互不支配的 physical expressions，上层再组合这些折中点，并在最终 frontier 中按目标和约束选计划。
+\end{enumerate}
+
+\field{实验结果}BioDEX、CUAD、MMQA 上，Abacus 相对各任务次优系统平均约便宜 10.8 倍、快 3.4 倍，并取得更高质量；但 MMQA 的 MinCost 计划平均成本反而高于 MaxQuality 计划。核心限制是单算子独立性假设与有限样本误差，约束满足并非 100\%。
+
+\field{与本课题的区别}Abacus 优化的是语义程序的多目标物理计划，核心决策是“选哪种模型/提示/组合实现”。本课题的核心决策是“已确定的 AI work 如何分批、何时发送、发往哪个 endpoint、多个 Job 谁先获得下一份 work”；不以 Pareto-Cascades 计划空间搜索作为主方法。
+
+\section{Sema：DuckDB 内原生语义算子与自适应执行}
+\paperinfo{Sema: A Database System for Efficiently Executing Semantic Queries，当前精读依据 arXiv v1；VLDB 2026 已确认录用。}
+
+\field{背景与问题}把语义逻辑封装成 UDF，会让数据库看不到自然语言表达式、算子依赖和候选执行路径，因而难以完成谓词推导、算子融合、流水执行或针对本地/远程模型服务的差异化优化。
+
+\field{核心思路}Sema 将 SemFilter、SemProj、SemJoin、SemOrderBy、SemAgg 作为 DuckDB 原生算子，以 SemaSQL 暴露自然语言表达式，并将编译期表达式优化、执行期 batching/fusion 与小样本自适应路径选择放进同一数据库流水线。
+
+\field{关键词解释}\textbf{operator fusion}：把相邻多个算子合成一次模型调用，减少中间数据和请求次数；\textbf{prompt batching}：在一个 prompt 中结构化放入多条 tuple；\textbf{AQE}（自适应查询执行）：根据运行时样本观测再选后续执行路径；\textbf{predicate deduction}：从自然语言条件中推出可先由 SQL 执行的必要条件。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{表达式优化：}Expression Compression 用辅助 LLM 删除自然语言中的重复内容；Predicate Deduction 从语义谓词中提取可由 SQL 执行的必要条件，先用便宜关系谓词剪掉 tuple。
+  \item \textbf{执行优化：}对相邻语义算子做 fusion，使一次模型调用完成多步；Prompt Batching 把多条 tuple 放入一个结构化 prompt；Predicate Reordering 根据成本和选择率调整顺序。
+  \item \textbf{AQE：}对保持原顺序的 reference path 和若干 batching/fusion/reorder 候选分配小样本，在线测量 latency、token cost 与相对结果一致性，再按 latency-first 或 cost-first 目标执行剩余数据。
+\end{enumerate}
+
+\field{实验结果}20 个查询上，Sema 相对 LOTUS 约快 2--4 倍、相对 PALIMPZEST 约快 2--10 倍，整体质量具有竞争性但并非全面最高。远程 API 中减少调用通常同时改善时间和费用；本地 vLLM 中 fewer-but-longer requests 可能降低 continuous batching 并行度。Predicate Deduction 在 Q3/Q13 明显降低时间，但 Q14 的 F1 由 0.6147 降至 0.4741，说明推导与质量约束仍有风险。
+
+\field{与本课题的区别}Sema 直接在 DuckDB 引擎中实现语义算子、表达式改写、fusion 和小样本路径选择。本课题以 PostgreSQL extension 和 LOTUS 语义保持数据库可见性，不修改 PostgreSQL core；创新重点位于数据库外部物理链路的 token/frame 组织、服务状态感知提交和多 Job 调度。
+
+\section{Ayo：面向复合 LLM 应用的端到端图优化}
+\paperinfo{Towards End-to-End Optimization of LLM-based Applications with Ayo，ASPLOS 2025。}
+
+\field{背景与问题}真实 LLM 应用由检索、embedding、数据库、reranking 和多次 LLM 调用组成，非 LLM 模块可占显著延迟。现有框架以 module 为黑盒顺序编排，服务端又只看独立 request，因而看不到跨模块并行、流式流水和 request 对应用关键路径的作用。
+
+\field{核心思路}Ayo 把 module 展开成带真实数据依赖的 task primitives，构造 per-query primitive graph（p-graph），通过静态规则得到 execution graph（e-graph）；运行时再用 Graph Scheduler 推进 DAG、用 Engine Scheduler 依据拓扑信息形成 batch。
+
+\field{关键词解释}\textbf{primitive}：从高层应用模块拆出、可单独调度的最小任务；\textbf{DAG}：有向无环图，边表示数据或执行依赖；\textbf{prefill/decode}：LLM 先计算输入 prompt 的缓存，再逐 token 生成输出的两个阶段；\textbf{critical path}：决定整体完成时间的最长依赖链。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{Dependency pruning：}根据 primitive 的真实输入删除高层 workflow 继承下来的冗余顺序边，使独立分支并行。
+  \item \textbf{Stage decomposition：}把达到高效 batch 上限的大 primitive 拆成多个 micro-stages，让下游在首批输出完成后提前启动。
+  \item \textbf{Prefill split 与 decode pipeline：}先对已知 instruction/question 做 Partial Prefilling，与检索并行；当结构化 decoding 产生一个完整片段时立即送入 embedding/search，而不等待完整输出。
+  \item \textbf{Topology-aware batching：}Graph Scheduler dispatch ready primitive；Engine Scheduler 按 query 分桶、arrival 排桶，并优先选择 depth 较高、能更快解除下游依赖的 primitive，同时受高效 batch/token 上限约束。
+\end{enumerate}
+
+\field{实验结果}四类应用中最高端到端加速为 2.09 倍；Advanced RAG 在高负载下最高 2.03 倍。消融显示图并行/流水和拓扑 batching 均有独立贡献，后者单 query 平均加速 1.15 倍、多 query 最多降低 19.2\% 延迟。局限是依赖静态 workflow、需要 backend 支持拆分 primitive，且未系统评价答案质量和 tail latency。
+
+\field{与本课题的区别}Ayo 的调度单位是一个 LLM 应用内的跨模块 primitive DAG，并要求 backend 暴露可拆分的 prefill/decode 阶段。本课题的起点是 SQL AI 算子与关系 child plan，主要对行流、请求和 Job 进行组织与提交，不要求修改 vLLM continuous batching 或把应用 workflow 改造为 Ayo primitive graph。
+
+\section{IMBridge：修复数据库 UDF 与模型推理的两类阻抗失配}
+\paperinfo{IMBridge: Impedance Mismatch Mitigation between Database Engine and Prediction Query Execution，SIGMOD Companion 2024 Demo。}
+
+\field{背景与问题}数据库把 prediction function 当成普通 Python UDF 后，会在每轮迭代中重复加载模型和分配资源；同时 UDF 的实际 evaluation batch 受宿主 scan/filter 及全局传输批大小控制，常偏离模型最有效的推理批大小。
+
+\field{核心思路}IMBridge 分别改变函数生命周期和物理执行边界：Prediction Function Rewriter 把一次性 inference context 移出热循环；Decoupled Prediction Operator 将预测函数抽成独立一元算子，自行缓冲、切分和调节 batch。
+
+\field{关键词解释}\textbf{UDF}（用户自定义函数）：由用户代码实现、供数据库调用的函数；\textbf{inference context}：模型、运行时和资源等可在多批输入间复用的状态；\textbf{LICM/hoisting}：把循环中每次结果不变的语句提到循环外只执行一次；\textbf{AIMD}：“加性增加、乘性减少”的参数调节规则。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{自动 hoisting：}把 Query Executor 的迭代视为 loop，在单个 Python 函数 AST 上执行局部 LICM。由常量、loop 外变量或已标记 invariant 构成的语句移入 \texttt{\_\_init\_\_}，planning time 执行一次；预处理和推理保留在每批调用的 \texttt{\_\_call\_\_}。
+  \item \textbf{独立预测算子：}若输入量 $n<D$，先缓冲至 desirable batch $D$；若 $n>D$，切成多个 segment；等于 $D$ 时直接执行。这样数据库流水的 tuple transfer 粒度不再等同于模型 invocation 粒度。
+  \item \textbf{Profile tuner：}根据推理效率统计用 AIMD 搜索合适的 $D$，并把参数交给每个 prediction operator；论文未给出具体 AIMD 参数与稳定性分析。
+\end{enumerate}
+
+\field{实验结果}Figure 5 演示中，单独重写函数使总时间由 244.15 秒降至 116.26 秒；Figure 6 中独立预测算子降至 24.16 秒。论文还声明最高 18.2 倍加速，但这是 4 页 Demo，未披露完整硬件、重复次数和方差，因此这些数值只能作为机制演示，不能视为系统化性能证明。
+
+\field{与本课题的区别}IMBridge 从 Python UDF 主路径出发，修正重复初始化和“数据库传输批大小等于模型调用批大小”的耦合。本课题明确不以 PL/Python 或逐行 HTTP UDF 为主线，而是让 PostgreSQL 拥有算子和 query lifecycle，再对外部执行链的数据组织、服务状态和多 Job 提交做系统性优化。
+
+\section{Relational LLM Queries：用关系统计重排请求以复用 KV Cache}
+\paperinfo{Optimizing LLM Queries in Relational Data Analytics Workloads，MLSys 2025。}
+
+\field{背景与问题}关系查询可能为表中每一行生成一个 LLM request。即使 serving engine 开启 prefix cache，原始行序和固定字段序也会让相同值分散、公共前缀很短，从而重复执行 prefill。
+
+\field{核心思路}查询执行前已经掌握整张输入表，因此可以利用重复值、Functional Dependency、cardinality 和字段长度，同时重排“行之间的请求顺序”和“每行内部字段顺序”，使相邻 JSON prompts 形成更长公共前缀。
+
+\field{关键词解释}\textbf{KV Cache}：保存已计算 token 的 attention key/value，后续请求命中相同前缀时可避免重算；\textbf{prefill}：对整段输入 prompt 进行首次前向计算的阶段；\textbf{Functional Dependency}：字段 $A$ 的值能唯一决定字段 $B$ 的值；\textbf{cardinality}：数据集或某列不同取值的数量；\textbf{Prefix Hit Rate}：输入 token 中通过前缀缓存复用的比例。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{OPHR：}在小表上搜索可获得最大 Prefix Hit Rate 的最优排列，但组合空间呈指数增长，只作为最优参考。
+  \item \textbf{GGR：}每轮枚举字段--取值组 $(c,v)$，估计把该组放到一起产生的 \textsc{HitCount}，选择得分最大的组，先排列其行并把公共字段提前，再递归处理子表。
+  \item \textbf{利用关系元数据：}Functional Dependency 将相关字段的潜在命中合并到决定字段；当递归深度或预计收益不足时停止精确扫描，改用 cardinality 和平均字段长度形成固定顺序，以限制 solver 开销。
+\end{enumerate}
+
+\field{实验结果}GGR 将多个数据集的 Prefix Hit Rate 从约 10\%--50\% 提升到约 57\%--86\%；相对“开缓存但不重排”获得 1.5--3.4 倍端到端加速，商业 API 成本最高下降 32\%。solver 少于 15 秒，小规模样本距离 OPHR 最优 PHR 小于 2\%。方法依赖完整批量输入和可重排性，不适用于严格到达顺序的在线请求。
+
+\field{与本课题的区别}该工作在已知完整表时做一次性静态重排，目标单一地指向 prefix cache 复用。本课题要处理数据库管理的有界流和多 Job，prefix-aware 只是数据组织/路由候选之一，还需同时考虑 token budget、长度相似性、endpoint 状态、提交 credit 和作业级公平；不预设必须全表可重排。
+
+\section{Ray：统一细粒度 Task 与有状态 Actor 的分布式执行框架}
+\paperinfo{Ray: A Distributed Framework for Emerging AI Applications，OSDI 2018。}
+
+\field{背景与问题}强化学习等 AI 应用把 simulation、training 和 embedded serving 放在同一动态循环中，任务从毫秒到小时、资源涵盖 CPU/GPU，并会根据运行结果继续产生计算。批处理系统的静态阶段和单一 task/actor 模型难以同时覆盖这些需求。
+
+\field{核心思路}Ray 以 Task 表示可移动、易重放的无状态计算，以 Actor 表示持有模型或 mutable state 的有状态计算，并把两者统一为运行时增长的 Dynamic Task Graph；GCS、分布式调度器和共享内存对象存储分别承担控制状态、placement 和数据传递。
+
+\field{关键词解释}\textbf{Task/Actor}：Task 是无状态、可重试的函数调用，Actor 是保留内部状态的长寿命进程；\textbf{GCS}（全局控制存储）：记录对象位置、依赖和 actor 等控制信息；\textbf{lineage}：记录一个对象由哪些任务生成，丢失后可据此重算；\textbf{placement}：决定任务应放到哪台机器或哪个资源上运行。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{统一依赖图：}task 通过 data/control edges 连接；同一 actor 的连续 method calls 通过 stateful edge 串联，因此 task 与 actor method 可由同一执行引擎调度。
+  \item \textbf{GCS：}把 object location、lineage 和 actor 等 control state 放入分片、容错的全局控制存储，使 scheduler 等组件可以尽量无持久状态并独立扩展或恢复。
+  \item \textbf{Bottom-up scheduling：}task 先由 local scheduler 尝试本地 placement，只有本地资源或约束不满足时才上送 global scheduler，减少集中路径压力；resource declaration、\texttt{ray.wait} 和 nested tasks 支持异构、异步执行。
+  \item \textbf{对象与恢复：}大对象经分布式共享内存 object store 传递；task 输出丢失时依据 lineage 重放，actor 则通过检查点与重建恢复状态。
+\end{enumerate}
+
+\field{实验结果}空任务 microbenchmark 达到最高约 180 万 tasks/s，并展示低延迟调度、对象传输和故障恢复；ES、PPO 等 RL 应用中，统一模型达到与定制实现相当或更好的性能。该证据不表示所有实际负载都有相同 task rate，也不表示 Ray 替代专业模型服务或通用数据库执行引擎。
+
+\field{与本课题的区别}Ray 是通用分布式运行时，提供 task/actor、资源 placement、对象传递和容错，但不理解 SQL 语义算子、token/frame work 或多 Job SLO。本课题把 Ray actor 作为可替换的外部物理 backend，在其上实现 AI 算子特定的分批、请求信用额、状态观测和 Job 记账；不修改 Ray scheduler 本身。
+
+\section{Ray Data：兼具流水执行与动态资源分配的 Streaming Batch}
+\paperinfo{Streaming Batch Model for Distributed ML Data Processing with Ray Data，本地精读依据 arXiv v5。}
+
+\field{背景与问题}异构 ML 数据流通常包含 I/O、CPU decode/transform 和 GPU inference。传统 batch engine 能动态分配资源和 lineage 恢复，却受 stage barrier 与中间全量物化限制；streaming engine 能流水和 backpressure，却常将 executor 固定绑定到 operator，难以随阶段瓶颈变化重新分配资源。
+
+\field{核心思路}Ray Data 让运行时动态生成的 partition 既是执行、数据流动和内存记账单位，又保留 lineage；中央 application-aware scheduler 只管理 partition reference 和在线状态，真实数据在 Ray workers/object store 间直接流动，从而形成 centralized control plane 与 decentralized data plane。
+
+\field{关键词解释}\textbf{partition}：可被独立产生、传递和消费的一块数据；\textbf{stage barrier}：必须等整个上游阶段完成后才启动下游的同步点；\textbf{backpressure}：下游消费不及时主动减慢上游，避免队列和内存无界增长；\textbf{control/data plane}：前者传递调度与元数据决策，后者传递真实数据；\textbf{JCT}：作业从到达到完成的总时间。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{Dynamic partitioning：}executor 将输出积累到目标字节数后立即 flush 一个 partition，并继续产生后续输出；下游可在上游 task 完成前消费首个 partition。为此扩展 Ray generator task，使返回引用数在提交时未知仍可流式产生和恢复。
+  \item \textbf{Physical DAG：}lazy Dataset API 在消费时编译成带 resource requirement 的 physical DAG，并融合相邻 operators；无状态 UDF 用 task，有昂贵只读状态的 GPU UDF 用可动态负载均衡的 actor pool。
+  \item \textbf{Memory-aware scheduling：}调度器结合 task 时间、input/output expansion、执行 slot、队列和 shared-memory budget；内存紧张时以 pessimistic backpressure 阻止继续制造输出，若预计下游会及时释放内存则 optimistic 地提前启动 source task。
+  \item \textbf{恢复：}pure deterministic UDF 的 partition 丢失后按 lineage 重跑 generator task，并检查重新产生的 output count，避免全局 checkpoint rollback。
+\end{enumerate}
+
+\field{实验结果}RAG 单 GPU JCT 由 staged 的 159.1 分钟降至 120.4 分钟，8 GPU 为 18.7 分钟；视频分类中相对 Flink 快 2.5 倍、相对 static Ray Data 快 1.25 倍，并达到按最大 GPU 吞吐估计最优时间的 88.4\%。实验验证的是 CPU/GPU/I/O dataflow，不是 token-level serving、KV routing 或多租户公平。
+
+\field{与本课题的区别}Ray Data 解决通用异构 ML dataflow 的流水化、内存压力和阶段间资源分配。本课题关心的是 partition/行流进入模型服务时如何按 token 或 frame 形成请求，根据 endpoint 队列与 active work 控制提交，并在多 Job 间分配份额。Ray Data native graph 是基线/后端，本课题不改其 scheduler。
+
+\section{Parrot：把应用依赖和公共前缀带回 LLM 服务端}
+\paperinfo{Parrot: Efficient Serving of LLM-based Applications with Semantic Variable，OSDI 2024。}
+
+\field{背景与问题}传统 completion API 把客户端 workflow 压扁成互不相关的字符串请求，服务端看不到 producer--consumer 依赖、最终输出目标和 prompt 内部公共结构，因此链式调用反复跨网与排队，调度只优化单请求延迟，共享 prefix 的请求也可能被分散到不同 GPU。
+
+\field{核心思路}Parrot 用 Semantic Variable 表示 prompt 的输入/输出 placeholder。变量 ID 和生产消费关系形成 Request/Variable DAG，placeholder boundary 用于发现公共 prefix，最终变量的 \texttt{get} 则声明 latency 或 throughput 目标；Manager 据此联合执行依赖请求、传播目标、做 affinity placement 和 application-centric scheduling。
+
+\field{关键词解释}\textbf{Semantic Variable}：代表 prompt 中尚未产生的输入或输出，服务端可藉此看到请求依赖；\textbf{future}：一个将来才会得到结果的句柄，允许下游提前提交；\textbf{PrefixHash}：用 hash 标识可复用的公共 prompt 前缀；\textbf{affinity placement}：尽量把共享数据/缓存的请求放到同一 engine；\textbf{Map/Reduce}：先并行处理多份输入，再汇总结果的两阶段结构。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{依赖内化：}SemanticFunction 提交后立即返回 output-variable future；后续依赖请求可预先提交。上游完成后，输出在服务端直接流入下游，省去客户端往返和二次排队。
+  \item \textbf{目标推导：}从最终输出反向分析 DAG。并行 Map requests 被视为 throughput-oriented task group，以较大 batch 尽快完成整组；稀少的 Reduce 或链式关键节点按 latency 优先。
+  \item \textbf{前缀共享：}在语义变量边界计算 PrefixHash，发现静态和运行时动态公共 context；将相关请求 affinity-schedule 到同一 engine，通过 context fork 和共享前缀 attention kernel 复用 KV cache。
+  \item \textbf{混合调度：}按不同 application objective 与 engine capacity 放置请求，避免 latency-oriented chat 与 throughput-oriented analytics 在同一 engine 上相互破坏目标。
+\end{enumerate}
+
+\field{实验结果}Multi-agent programming 相对 latency-centric vLLM 最高快 11.7 倍、相对 throughput baseline 最高快 2.45 倍；4-GPU GPTs 场景的可承载 request rate 最高提高 12 倍。Mixed workload 中同时接近 chat latency baseline 与 Map-Reduce throughput baseline。结果依赖固定 workflow 和长公共 context，未覆盖动态 agent、公平性与大规模容错。
+
+\field{与本课题的区别}Parrot 通过新的应用/服务 API 把 workflow 依赖、前缀边界和最终目标送进 LLM serving system，并在服务端联合调度。本课题由 PostgreSQL SQL 算子管理 snapshot、cancel/error 和结果生命周期，外部 vLLM/Ray 只是受管物理层；重点是上游数据与提交控制，不修改模型服务内部的 continuous batching 或 attention kernel。
+
+\section{BlendServe：资源需求与前缀局部性联合驱动的离线 batching}
+\paperinfo{BlendServe: Optimizing Offline Inference with Resource-Aware Batching，ASPLOS 2026。}
+
+\field{背景与问题}Offline inference 可以重排请求。长输入短输出偏 compute-intensive，短输入长输出偏 memory-intensive；若请求池按原顺序形成 batch，即使 backend 有 chunked prefill 或 operator overlap，也无法创造缺失的互补工作。但完全随机混合又会破坏 prefix locality。
+
+\field{核心思路}BlendServe 用 compute density $\rho=\operatorname{Comp}/\operatorname{Mem}$ 描述请求资源倾向，并把 density 与 prefix tree 放进同一 resource-aware prefix tree；离线排序保留局部 prefix，运行时 dual scanner 从高、低 density 两端同时取请求，使 batch 接近整体目标资源比例。
+
+\field{关键词解释}\textbf{compute-/memory-intensive}：请求主要受计算能力/显存访存带宽限制；\textbf{compute density}：估计计算量与内存读取量的比值；\textbf{prefix tree}：按公共前缀分支组织请求的树；\textbf{chunked prefill}：将长 prompt 的 prefill 切成多个小块与 decode 穿插执行；\textbf{DFS}：深度优先遍历，在 prefix tree 中通常能连续处理同一前缀子树。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{估计资源画像：}用输入长度、抽样得到的输出长度、模型 FLOPs 和 KV 读取量估计 $\rho$；只抽样约 1\% 请求，并利用同 prefix 请求通常属于相似任务来传播输出长度统计。
+  \item \textbf{Sort/split prefix tree：}对 sibling subtrees 按 density 分层排序；若局部 outlier 严重破坏单调性且重算 prefix 的代价低于阈值，则拆出并迁移。阈值用于尽量保持约 99\% 的最大 prefix sharing。
+  \item \textbf{Dual scanning：}左侧为 compute-heavy、右侧为 memory-heavy。根据两端 density 和 root target density 将 KV memory 划成 $M_L,M_R$，再换算成两侧 chunked-prefill admission budget；两侧内部仍近似 DFS，因此兼顾资源平衡与 prefix reuse。
+\end{enumerate}
+
+\field{实验结果}真实 GPU 主实验中，相对最佳 NanoFlow-DFS，8B 单 A100 平均吞吐提高 20.84\%，70B 八 A100 提高 18.6\%，分别达到 profiling-based practical upper bound 的 86.55\% 和 90.8\%；prefix sharing 保留超过最大值的 97\%。主要 workload 为合成离线 trace，多模型泛化的一部分来自模拟，且高输出方差会降低抽样准确性。
+
+\field{与本课题的区别}BlendServe 假设离线请求池可全局重排，并在 serving scheduler 内形成同时兼顾资源互补和 prefix 的 batch。本课题面向数据库管理的有界在线流和多 Job，在服务端之前做 token/frame-budget 组织、endpoint 路由与提交控制，不改造 vLLM 的内部 batch scheduler；BlendServe 是数据组织策略的重要设计参照。
+
+\section{VTC：未知输出长度下的 work-conserving 公平调度}
+\paperinfo{Fairness in Serving Large Language Models，OSDI 2024。}
+
+\field{背景与问题}按 request 数公平会忽略输入/输出长度差异；RPM 限流在其他 client 空闲时仍阻止活跃 client 使用剩余 GPU，因而不 work-conserving。传统 fair queueing 又通常需要预先知道 job size，而 LLM 输出长度直到生成结束才确定，continuous batching 的有效容量也随请求组合变化。
+
+\field{核心思路}VTC 不预测完整请求成本，而是在线记账已经发生的服务：每个 client 维护 Virtual Token Counter $c_i$，调度时选择 counter 最小的 active client；prefill 和每轮 decode 后立即按不同权重增加 counter。
+
+\field{关键词解释}\textbf{work-conserving}：只要有可运行请求就不让 GPU 故意空闲；\textbf{backlogged client}：队列中持续有等待请求的客户；\textbf{Virtual Token Counter}：按输入/输出 token 折算的累计服务量账本；\textbf{non-preemptive}：请求开始执行后不会为更高优先级请求中途暂停；\textbf{reconciliation}：预测成本与实际成本不同时在完成后补记差额。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{选择与计费：}从等待队列中选择 $\arg\min_i c_i$ 的 client，再取其最早请求；加入 batch 时立即计入 $w_p n_{\text{input}}$，每轮 decode 再计入该 client 实际生成的 $w_q n_{\text{output}}$。
+  \item \textbf{Counter Lift：}闲置 client 重新到达时，不允许其凭长期未使用形成无限 credit，而将其 counter 提升到当前 active counters 附近；这样既保护持续 backlogged clients，又不把所有历史 deficit 粗暴清零。
+  \item \textbf{公平界：}若单请求最大输入为 $L_{\text{input}}$、batch 最大 token 为 $M$，持续积压客户的服务量差满足
+  \[
+    |W_f-W_g|\leq 2\max\!\left(w_pL_{\text{input}},w_qM\right),
+  \]
+  即界限与系统运行时长无关。
+  \item \textbf{扩展：}Weighted VTC 通过权重表达份额；Length Prediction 可先推测未来输出再在完成时 reconciliation，改善平均情况但不改变 non-preemptive worst-case bound。
+\end{enumerate}
+
+\field{实验结果}实验显示 VTC 相对 FCFS、RPM 和 adapted fair schedulers 能保持更稳定的 client service、isolation 与 work conservation，并在真实 LMSYS trace 上验证可用性。其主要贡献是公平定义、在线记账和理论界，而不是提高模型吞吐；VTC 也不利用 prefix locality，因此可能因 cache hit 降低而增加全体排队时间。
+
+\field{与本课题的区别}VTC 是 LLM serving scheduler 内部的 client 级公平算法，其公平对象和计费时点都位于 token 执行层。本课题当前正式范围是单租户内多 Job/workload class，在 endpoint 之前通过 request/work credit、idle borrowing 和 reclaim 管理份额与隔离；VTC 提供记账思路和强基线，但不能直接当作本课题的多 Job 解法。
+
+\section{DLPM/D\texorpdfstring{$^2$}{2}LPM：用 deficit 限定 locality 调度器的自由度}
+\paperinfo{Locality-aware Fair Scheduling in LLM Serving，arXiv:2501.14312v1，2025。}
+
+\field{背景与问题}Longest Prefix Match（LPM）优先复用最长缓存 prefix，吞吐高却可能让拥有长 prefix 或大量请求的 client 长期垄断 GPU；VTC 公平但会打散 prefix，降低整体效率。分布式场景还需同时处理 client 对某个 worker 的 stickiness 与 worker 负载不均。
+
+\field{核心思路}DLPM 不替换 LPM，而是给每个 client 一个 deficit quantum：只有 deficit 为正的 client 才进入 LPM 候选集，LPM 只能在“当前有资格”的请求中追求 locality；D$^2$LPM 再用 per-client-per-worker deficit 对全局路由施加同样约束。
+
+\field{关键词解释}\textbf{LPM}（最长前缀匹配）：优先选择与已缓存 prompt 共享前缀最长的请求；\textbf{deficit/quantum}：deficit 是客户尚可使用的服务额度，quantum 是每轮补充的额度；\textbf{stickiness}：为复用某个 worker 上的缓存而尽量继续路由到该 worker；\textbf{extend tokens}：未命中现有 KV Cache、需要新做 prefill 的 token；\textbf{overshoot}：单次不可抢占请求使费额暂时降到负数。
+
+\field{具体做法}
+\begin{enumerate}
+  \item \textbf{Local DLPM：}每个 active client 维护 $q_i$；若没有正 deficit，就统一补充 $Q^u$。从 $q_i>0$ 的 clients 中按最长 prefix 选择请求，执行后按 extend tokens（未命中缓存、真正需要 prefill 的部分）和输出 tokens 扣减 deficit。单次请求允许短暂 overshoot 为负，从而保持 work-conserving。
+  \item \textbf{全局 D$^2$LPM：}为 client $i$ 在 worker $w$ 上维护 $q_{i,w}$ 和量子 $Q^w$。路由优先在“拥有最长 prefix 且 deficit 为正”的 workers 中选最短队列；若交集为空，就在仍有正 deficit 的 workers 中选最短队列，避免无界粘滞。
+  \item \textbf{可调折中：}$Q^u,Q^w$ 越大，locality 自由度和吞吐越高，但短期公平更松；$Q^w=\infty$ 会退化为近似只追求 stickiness 的策略并失去公平性。
+\end{enumerate}
+
+\field{实验结果}相对唯一同样有公平保证的 VTC，D$^2$LPM 吞吐最高提高 2.87 倍；相对 RR+LPM 最高提高 2.22 倍。well-behaved client latency 相对 Preble、RR+LPM 和 VTC 均显著下降，但公平指数略低于 VTC。Long-Context QA 在 8 GPU 上出现 Preble 吞吐更高的明确反例，说明为公平迁移超长 prefix 会产生高额重算成本。
+
+\field{与本课题的区别}DLPM/D$^2$LPM 在 serving engine 内直接修改 client 选择和 worker 路由，依赖精确的 KV Cache/extend-token 信息并提供公平界。本课题不改 vLLM 内部调度器，而在上游为 Job 分配请求与 work credit，并将 prefix-aware routing 作为受负载和份额约束的候选。因此需单独验证吞吐、隔离和 Jain 公平指数，不直接声称 DLPM 的理论保证。
+
+\end{document}

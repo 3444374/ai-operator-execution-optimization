@@ -83,7 +83,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 │   ├── ai_operator_literature_inventory.md   # Top 15 + 核心补充 + 题录勘误
 │   ├── top15_ranked_papers.md                # 项目最相关 Top 15 排序
 │   ├── reading_notes/                        # 泛读、筛选与快速回顾笔记（历史 49 篇）
-│   ├── 精读文献笔记/                          # 每篇独立目录的精读笔记权威库
+│   ├── 精读文献笔记/                          # 每篇独立目录的精读笔记权威库；速览 LaTeX/PDF 在 paper_deep_reading_digest/
 │   └── reference/                            # 当前可解析参考文献 PDF（5 份）+ 历史题录索引
 ├── motivation/                       # 动机场景、端到端测试
 │   ├── AGENTS.md
@@ -159,6 +159,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 │   ├── AGENTS.md
 │   ├── README.md
 │   ├── report/opening_report.md
+│   ├── report/opening_defense_qa/             # 答辩 QA 的 LaTeX、PDF 与设计说明
 │   ├── slides/
 │   ├── feishu/
 │   └── literature/                   # reading_list.md + 历史 Top 15 笔记快照

@@ -160,6 +160,13 @@ completion 路径；05 删除七个圆角修补 mask，并把窄卡文字改为�
 暂不修改；P03 改为 AI 语义算子的通用外部物理执行六阶段链路，删除 Work Unit、credit、状态反馈和项目后端实现；
 P04 只保留相关工作分层与衔接不足；P05 只陈述三类研究空白，不提前展示方案。本轮没有重生成 PPT。
 
+2026-08-25 根据开题报告最新精读综述更新 P04：数据库侧加入 IMBridge，数据执行侧加入 AYO，
+模型服务侧更新为 Parrot、VTC、DLPM 和 BlendServe；Ray Data 与 Daft 继续作为数据执行框架代表。
+底部结论改为数据库作业信息与模型服务状态共同指导上游数据组织和请求提交，并同步 Draw.io、SVG
+和 4000×2250 PNG，供开题 PPT 第 5 页替换使用；未修改 PPT 文件。
+各系统的会议与年份以 14 px 深灰字标在名称之后，不使用文献编号或括号；Cortex AISQL 和 Learned
+Cost Models 因横向空间不足将出处另起一行。Ray Data 按作者公开论文列表标为 NSDI 2027。
+
 02 后续按用户局部复核再次清理：Admission 标题改用卡片整行宽度，两个 Adapter 卡重排图标、
 标题与正文安全边距；删除手绘 Daft 近似符号，改用 Daft 官方仓库的黑/洋红标识。官方 Logo 仅作
 产品识别，保留原比例与颜色，来源、哈希与商标边界记录在 `02_system_architecture.audit.md`。

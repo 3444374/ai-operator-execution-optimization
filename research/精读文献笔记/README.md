@@ -7,6 +7,9 @@
 ```text
 精读文献笔记/
 ├── README.md
+├── paper_deep_reading_digest/     # 15 篇论文的紧凑方法速览
+│   ├── paper_deep_reading_digest.tex
+│   └── paper_deep_reading_digest.pdf  # 本地可再生成，不纳入 Git
 └── <短名>_<会议年份>/
     ├── <短名>_<会议年份>.md
     └── figures/                    # 可选；有配图时才创建
@@ -15,6 +18,12 @@
 - `<短名>_<会议年份>` 使用小写 snake_case；会议名采用正式常用缩写，例如 `lotus_pvldb2025`。
 - 每个论文文件夹只保留一份同名主笔记，避免出现多个无法判断权威性的正文。
 - `figures/` 是可选目录；不要为没有配图的论文创建空目录。
+
+## 横向速览
+
+`paper_deep_reading_digest/paper_deep_reading_digest.tex` 将当前 15 篇权威精读笔记压缩为一份 A4 LaTeX 文档。每篇统一采用“背景与问题 → 核心思路 → 关键词解释 → 具体做法 → 实验结果 → 与本课题的区别”的总—分结构，方法部分为主体，目标篇幅为约半页至一页 A4；它只用于快速复习，不替代各论文目录中的主笔记。关键词只解释理解该篇方法所必需的缩写、系统术语和指标，不做无关的通用词典。
+
+进入 `paper_deep_reading_digest/` 后，使用 VS Code LaTeX Workshop 选择 **XeLaTeX** 或包含 XeLaTeX 的 recipe；文档首行已声明 `% !TeX program = xelatex`，以 `ctexart` 处理中文。本机已将 MiKTeX 安装到 `D:\Programs\MiKTeX` 并完成实际编译、分页和视觉检查；当前 PDF 为 6 页。目录只长期保留同名 `.tex` 和 `.pdf`，`.aux/.log/.out/.synctex.gz` 等中间文件在确认编译成功后删除；PDF 按根目录 `.gitignore` 中的 `*.pdf` 规则不纳入版本控制。
 
 ## 当前内容
 

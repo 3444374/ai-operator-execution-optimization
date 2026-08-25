@@ -507,6 +507,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
 | `opening/report/数据库_AI_负载的执行优化与调度研究_开题报告.docx` | 按学校模板生成的开题报告 Word 版，保留封面、页码和签字页，并统一正文、标题、图注和图片排版 | 提交学校材料或在 Windows Word 中继续补充个人信息与微调版式 |
 | `opening/report/opening_report_20260824_qa.md` | 当前中文开题报告的七部分结构、三个动机问题到两项研究内容的映射、代价估计角色、图 1至15 与 53 条参考文献审查 | 复核当前开题正文或转入 Word/WPS 排版前读 |
+| `opening/report/opening_defense_qa/` | 开题答辩 QA 文档目录；`opening_defense_qa.tex` 为 83 题可编辑源，`opening_defense_qa.pdf` 为本地 25 页成品，`opening_defense_qa_design.md` 保留内容设计说明 | 开题答辩前练习总体方案、两项研究内容、系统资格、实验口径和风险应答 |
 | `opening/report/opening_report_20260820_qa.md` | 2026-08-23 版中文报告的模板、证据范围、术语、11 张图与 51 条参考文献审查 | 只用于核对上一版报告历史 |
 | `opening/report/figures/` | 开题报告正文专用图片副本与来源映射 | Markdown 转 Word 或核查图文一致性时读 |
 | `opening/report/figures/target_architecture_status.png` | 历史 / 内部候选状态图的语义命名 PNG 副本，与 `fig05_system_architecture.png` 内容相同 | 当前报告不引用；如内部重用，内容修改回到权威 SVG 与生成脚本 |
@@ -515,6 +516,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/literature/top15_reading_notes/` | 开题 Top 15 历史笔记快照 | 15/15 严格 CCF-A 正式 research paper 的自包含历史快照；不随新精读库自动更新 |
 | `research/reading_notes/` | 泛读笔记库（历史 49 篇 + 泛读模板） | 论文筛选、快速回顾和背景事实索引；历史笔记深度不一 |
 | `research/精读文献笔记/` | 精读笔记权威库（当前 15 篇、134 张论文原图） | 每篇论文独立目录；LOTUS、Galois、Palimpzest、Abacus、Sema、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries、VTC、IMBridge、DLPM 与 Parrot 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
+| `research/精读文献笔记/paper_deep_reading_digest/` | 15 篇精读论文紧凑方法速览目录；包含同名 `.tex` 可编辑源与本地 `.pdf` 成品 | 每篇按背景、核心思路、关键词、具体做法、实验结果与本课题区别组织；已用 D 盘 MiKTeX/XeLaTeX 编译为 6 页，PDF 作为可再生成产物不入库 |
 | `research/reference/` | 当前工作区可解析参考 PDF（5 份） | Galois、Abacus、Palimpzest、Sema、Parrot；历史题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
 | `research/lotus_postgresql_execution_layer_fit_20260821.md` | PostgreSQL、LOTUS 与 SAOR 的执行分层审计 | 判断 LOTUS 应作为逻辑前端、系统 baseline 还是主执行依赖；含 first-principles 边界和最小 capability gate |
