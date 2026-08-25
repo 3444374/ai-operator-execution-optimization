@@ -4,7 +4,7 @@
 
 近年来，人工智能（Artificial Intelligence，AI）模型逐步进入数据分析与数据管理流程，数据库所承担的任务也从结构化数据存储、检索和统计分析，扩展到文本生成、语义理解、智能分类、向量化和多模态分析。向量化是把文本或图像转换成数值向量，以便进行相似度检索；多模态分析则同时涉及文本、图像、音频或视频等不同形式的数据。Snowflake Cortex AISQL、Google BigQuery ML/AI、Oracle AI Vector Search，以及开源关系数据库 PostgreSQL 生态中的 pgvector 和 pgai，已经允许用户通过结构化查询语言（Structured Query Language，SQL）或数据库工作流触发模型调用[1-5]。其中，pgvector 用于在 PostgreSQL 中保存和检索向量，pgai 用于连接数据库数据与外部 AI 模型。在这类工作流中，数据库不仅保存业务数据，还要筛选待处理数据、触发 AI 操作并管理处理结果。
 
-这里所说的数据库 AI 工作流，是由数据库查询产生、并且需要调用模型处理的一组任务。数据库中保存评论、客服工单、新闻、企业文档和图片等业务数据；查询执行时，系统再根据具体 AI 操作把业务记录组织成发送给模型的提示词和输入内容。例如，在电商评论分析中，数据库表的一行可能包含商品编号、评论编号和评论正文。用户先用普通 SQL 筛选某个商品近期的评论，再通过 AI 语义算子判断每条评论主要涉及续航、物流还是屏幕质量问题。本文所说的 AI 语义算子，是查询中调用模型完成分类、摘要、抽取、向量化或语义判断的操作[20,22,29]。数据库查询的对象仍然是业务记录，AI 语义算子规定模型要对这些记录完成什么处理。
+这里所说的数据库 AI 工作流，是由数据库查询产生、并且需要调用模型处理的一组任务。数据库中保存评论、客服工单、新闻、企业文档和图片等业务数据；查询执行时，系统再根据具体 AI 操作把业务记录组织成发送给模型的提示词和输入内容。例如，在电商评论分析中，数据库表的一行可能包含商品编号、评论编号和评论正文。用户先用普通 SQL 筛选某个商品近期的评论，再通过 AI 语义算子判断每条评论主要涉及续航、物流还是屏幕质量问题。本文所说的 AI 语义算子，是查询中调用模型完成分类、摘要、抽取、向量化或语义判断的操作[6-8]。数据库查询的对象仍然是业务记录，AI 语义算子规定模型要对这些记录完成什么处理。
 
 假设数据库中有如下评论表。`review_id` 是评论编号，`product_id` 是商品编号，`review_text` 是评论正文，`created_at` 是记录创建时间：
 
@@ -85,19 +85,19 @@ WHERE product_id = 'phone_01'
 
 ### 2.1 数据库 AI 算子与语义查询优化现状
 
-随着生成式人工智能和向量检索逐步融入数据分析过程，数据库系统开始直接支持 AI 算子和 AI SQL。Snowflake Cortex AISQL 是其中与本课题关系较直接的生产系统。它把 AI 调用的成本和选择率纳入查询优化，研究 AI 谓词重排、大小模型级联和语义连接重写[1]。谓词是查询中判断一条记录是否满足条件的表达式，谓词重排就是改变多个判断条件的执行先后；语义连接则借助模型判断两侧记录在语义上是否匹配。Cortex AISQL 的优化重点位于模型调用次数、模型选择和语义算子重写，数据库到外部模型服务之间的组批与提交由另一层执行机制承担。Google BigQuery ML/AI 提供生成文本与向量相关的数据仓库函数[2]，Oracle AI Vector Search 将向量生成与向量检索纳入 SQL 数据处理过程[3]。PostgreSQL 生态中的 pgvector 提供向量类型与向量索引，pgai 等组件则进一步连接数据库数据和外部模型服务[4-5]。
+随着生成式人工智能和向量检索逐步融入数据分析过程，数据库系统开始直接支持 AI 算子和 AI SQL。Snowflake Cortex AISQL 是其中与本课题关系较直接的生产系统。它把 AI 调用的成本和选择率纳入查询优化，研究 AI 谓词重排、大小模型级联和语义连接重写[1]。谓词是查询中判断一条记录是否满足条件的表达式，谓词重排就是改变多个判断条件的执行先后；语义连接则借助模型判断两侧记录在语义上是否匹配。Cortex AISQL 的优化重点位于模型调用次数、模型选择和语义算子重写，数据库到外部模型服务之间的组批与提交由另一层执行机制承担。Google BigQuery ML/AI 提供生成文本与向量相关的数据仓库函数[2]，Oracle AI Vector Search 将向量生成与向量检索纳入 SQL 数据处理过程[3]。PostgreSQL 生态中的 pgvector 提供向量类型与向量索引，pgai 等组件则进一步连接数据库数据和外部模型服务[4,5]。
 
-LOTUS 从声明式数据处理出发，将过滤、连接、排序和聚合等能力抽象为语义算子，并为这些算子给出参考算法与质量约束下的优化方法[20]。它把时间、费用和结果质量共同纳入语义查询处理，使后续系统能够在保持算子语义的前提下比较不同执行方式。*Optimizing LLM Queries in Relational Data Analytics Workloads* 把数据库统计信息进一步用于模型请求形成之前的记录组织：方法依据函数依赖、列基数和字段长度重新排列输入表中的行以及每行字段的顺序，使相邻提示词具有更长的共享前缀，从而提高键值缓存复用[50]。这项工作说明数据库掌握的行、列和统计信息能够直接改变模型服务效率；其方法适用于完整输入可以提前观察、共享前缀具有较高复用价值的关系数据分析任务。本课题据此进一步考察分阶段工作量、数据局部性和模型服务状态共同变化时的数据组织方式。
+LOTUS 从声明式数据处理出发，将过滤、连接、排序和聚合等能力抽象为语义算子，并为这些算子给出参考算法与质量约束下的优化方法[6]。它把时间、费用和结果质量共同纳入语义查询处理，使后续系统能够在保持算子语义的前提下比较不同执行方式。*Optimizing LLM Queries in Relational Data Analytics Workloads* 把数据库统计信息进一步用于模型请求形成之前的记录组织：方法依据函数依赖、列基数和字段长度重新排列输入表中的行以及每行字段的顺序，使相邻提示词具有更长的共享前缀，从而提高键值缓存复用[9]。这项工作说明数据库掌握的行、列和统计信息能够直接改变模型服务效率；其方法适用于完整输入可以提前观察、共享前缀具有较高复用价值的关系数据分析任务。本课题据此进一步考察分阶段工作量、数据局部性和模型服务状态共同变化时的数据组织方式。
 
-*Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing* 将包含传统数据处理与 AI 语义处理的应用表示为声明式关系计划[22]。用户描述输入输出模式、关系操作、自然语言条件和运行时间—费用—质量偏好，系统再枚举过滤与转换的逻辑顺序、模型与提示方式等物理实现，并通过样本执行估计选择率、运行时间、费用和结果质量。其 CIDR 2025 版本在多模态房产检索任务中给出了多组质量—时间—费用折中，代表计划相对于基线达到约 3.3 倍加速和 2.9 倍费用降低，同时取得更高的 F1 分数；F1 同时反映结果的查准率和查全率。该工作建立了“声明式语义计划—物理实现—多目标选择”的基本框架，也说明逻辑重排会改变下游请求数量和输入规模。
+*Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing* 将包含传统数据处理与 AI 语义处理的应用表示为声明式关系计划[7]。用户描述输入输出模式、关系操作、自然语言条件和运行时间—费用—质量偏好，系统再枚举过滤与转换的逻辑顺序、模型与提示方式等物理实现，并通过样本执行估计选择率、运行时间、费用和结果质量。其 CIDR 2025 版本在多模态房产检索任务中给出了多组质量—时间—费用折中，代表计划相对于基线达到约 3.3 倍加速和 2.9 倍费用降低，同时取得更高的 F1 分数；F1 同时反映结果的查准率和查全率。该工作建立了“声明式语义计划—物理实现—多目标选择”的基本框架，也说明逻辑重排会改变下游请求数量和输入规模。
 
-*Abacus: A Cost-Based Optimizer for Semantic Operator Systems* 在 Palimpzest 的语义算子框架上进一步建立可扩展的代价优化器[21]。Abacus 使用规则枚举物理实现，通过逐算子采样估计质量、费用和延迟，用面向 Pareto 前沿的多臂老虎机方法把采样集中到更有希望的候选，再由 Pareto-Cascades 在限定目标下组合全局计划。Pareto 前沿由一组无法在不牺牲其他目标的情况下继续改善某一目标的候选方案构成。论文在 BioDEX、CUAD 和 MMQA 三类任务上报告了质量、费用和延迟收益，也观察到 MMQA 中高方差语义连接使最低费用目标的选择稳定性下降。该结果提示 AI 算子代价信息的价值最终体现在候选计划排序和实际决策损失上，单点预测误差只是其中一层评价。
+*Abacus: A Cost-Based Optimizer for Semantic Operator Systems* 在 Palimpzest 的语义算子框架上进一步建立可扩展的代价优化器[10]。Abacus 使用规则枚举物理实现，通过逐算子采样估计质量、费用和延迟，用面向 Pareto 前沿的多臂老虎机方法把采样集中到更有希望的候选，再由 Pareto-Cascades 在限定目标下组合全局计划。Pareto 前沿由一组无法在不牺牲其他目标的情况下继续改善某一目标的候选方案构成。论文在 BioDEX、CUAD 和 MMQA 三类任务上报告了质量、费用和延迟收益，也观察到 MMQA 中高方差语义连接使最低费用目标的选择稳定性下降。该结果提示 AI 算子代价信息的价值最终体现在候选计划排序和实际决策损失上，单点预测误差只是其中一层评价。
 
-VLDB 2026 录用论文 *Sema: A High-performance System for LLM-based Semantic Query Processing* 选择了更紧密的数据库执行路径：它在 DuckDB 中把语义过滤、投影、连接、排序和聚合作为可见的计划算子，并通过 SemaSQL 把自然语言表达式嵌入标准 SQL 子句[52]。优化器压缩自然语言表达式并从语义条件中推导可下推的关系条件；执行阶段采用算子融合、提示词组批和自适应查询执行，通过少量真实执行比较延迟、词元费用和与参考路径的结果一致性。VLDB 2026 官方程序将录用版本的实验概括为 26 个语义查询，覆盖分类、摘要、文本抽取和排序，并报告相对于三类基线约 2～10 倍加速和具有竞争力的结果质量。当前可获取的 arXiv v1 仍是本报告分析具体方法和分项实验的全文依据，其中组批与融合在本地模型服务和远程接口下呈现了不同的延迟方向。Sema 因而把数据库计划、执行基础设施和模型服务环境联系起来；本课题在这一联系上继续研究跨服务实例提交、逐作业进度和共享模型服务时的运行决策。
+VLDB 2026 录用论文 *Sema: A High-performance System for LLM-based Semantic Query Processing* 选择了更紧密的数据库执行路径：它在 DuckDB 中把语义过滤、投影、连接、排序和聚合作为可见的计划算子，并通过 SemaSQL 把自然语言表达式嵌入标准 SQL 子句[11]。优化器压缩自然语言表达式并从语义条件中推导可下推的关系条件；执行阶段采用算子融合、提示词组批和自适应查询执行，通过少量真实执行比较延迟、词元费用和与参考路径的结果一致性。VLDB 2026 官方程序将录用版本的实验概括为 26 个语义查询，覆盖分类、摘要、文本抽取和排序，并报告相对于三类基线约 2～10 倍加速和具有竞争力的结果质量。当前可获取的 arXiv v1 仍是本报告分析具体方法和分项实验的全文依据，其中组批与融合在本地模型服务和远程接口下呈现了不同的延迟方向。Sema 因而把数据库计划、执行基础设施和模型服务环境联系起来；本课题在这一联系上继续研究跨服务实例提交、逐作业进度和共享模型服务时的运行决策。
 
-*IMBridge: Impedance Mismatch Mitigation between Database Engine and Prediction Query Execution* 进一步指出，数据库算子交付数据的批次与模型一次适合处理的推理批次属于两个不同的执行粒度[53]。当机器学习预测函数只是扫描或过滤算子中的普通 Python 用户自定义函数时，数据库可能在每次调用中重复建立推理上下文，也就是重新加载模型或分配计算资源等可在一次查询中复用的状态。函数实际收到的数据量还会受关系算子输出以及数据库算子之间统一设置的传输批大小影响。IMBridge 通过函数改写把不随批次变化的初始化提到查询规划时完成，并把预测函数变成独立的物理算子，由该算子缓存、拆分或合并输入，以接近特定模型和框架下合适的调用批大小。论文中两个演示截图分别给出了只启用函数改写时由 244.15 秒降至 116.26 秒、只启用独立预测算子时由 244.15 秒降至 24.16 秒的示例。但该文是 4 页的系统演示论文，没有完整报告硬件、模型、数据规模、重复次数和方差，因此这些数字只说明相应演示中的执行现象。其方法面向数据库中的本地预测函数和单个预测算子，尚未处理远程模型服务的排队、多个服务实例的选择和多作业共享问题。
+*IMBridge: Impedance Mismatch Mitigation between Database Engine and Prediction Query Execution* 进一步指出，数据库算子交付数据的批次与模型一次适合处理的推理批次属于两个不同的执行粒度[12]。当机器学习预测函数只是扫描或过滤算子中的普通 Python 用户自定义函数时，数据库可能在每次调用中重复建立推理上下文，也就是重新加载模型或分配计算资源等可在一次查询中复用的状态。函数实际收到的数据量还会受关系算子输出以及数据库算子之间统一设置的传输批大小影响。IMBridge 通过函数改写把不随批次变化的初始化提到查询规划时完成，并把预测函数变成独立的物理算子，由该算子缓存、拆分或合并输入，以接近特定模型和框架下合适的调用批大小。论文中两个演示截图分别给出了只启用函数改写时由 244.15 秒降至 116.26 秒、只启用独立预测算子时由 244.15 秒降至 24.16 秒的示例。但该文是 4 页的系统演示论文，没有完整报告硬件、模型、数据规模、重复次数和方差，因此这些数字只说明相应演示中的执行现象。其方法面向数据库中的本地预测函数和单个预测算子，尚未处理远程模型服务的排队、多个服务实例的选择和多作业共享问题。
 
-Galois 面向 SQL 调用大语言模型的场景研究逻辑与物理查询优化[29]。它把大语言模型调用表示为关系查询中的可优化操作，通过逻辑重写减少重复或昂贵调用，并比较不同物理执行方式，使模型调用能够与传统 SQL 算子共同进入计划选择。SemBench 则从基准测试角度统一评价语义查询处理系统的功能、效率、费用和结果质量[23]。GaussML、NeurDB 和 LEADS 等工作代表将机器学习能力进一步纳入数据库内部执行和自动优化的研究路线[6-9]。InferDB 通过数据库索引近似替代部分在线模型推理[38]，SmartLite 则面向资源受限环境将压缩后的神经网络执行转换为数据库内部操作[39]。这些方法表明，数据库 AI 执行可以沿原生语义算子、声明式数据处理、索引近似和外部模型调用等不同路线展开，各路线面对的优化对象和结果质量要求也有所不同。
+Galois 面向 SQL 调用大语言模型的场景研究逻辑与物理查询优化[8]。它把大语言模型调用表示为关系查询中的可优化操作，通过逻辑重写减少重复或昂贵调用，并比较不同物理执行方式，使模型调用能够与传统 SQL 算子共同进入计划选择。SemBench 则从基准测试角度统一评价语义查询处理系统的功能、效率、费用和结果质量[13]。GaussML、NeurDB 和 LEADS 等工作代表将机器学习能力进一步纳入数据库内部执行和自动优化的研究路线[14-17]。InferDB 通过数据库索引近似替代部分在线模型推理[18]，SmartLite 则面向资源受限环境将压缩后的神经网络执行转换为数据库内部操作[19]。这些方法表明，数据库 AI 执行可以沿原生语义算子、声明式数据处理、索引近似和外部模型调用等不同路线展开，各路线面对的优化对象和结果质量要求也有所不同。
 
 这类研究主要解决 AI 能力如何以数据库算子的形式被表达、组合和优化。例如，数据库优化器需要判断关系过滤与昂贵 AI 谓词的执行顺序，选择满足质量要求的模型和物理实现，并比较不同语义算子组合形成的执行计划。执行计划是数据库为一条 SQL 选择的算子顺序和具体实现方式。传统数据库可以根据基数、CPU 和 I/O 等信息估计扫描、过滤、连接和聚合的成本，其中基数表示某个算子预计输出多少条记录。AI 语义算子还会产生数据准备、外部模型调用、模型服务排队和 GPU 执行等成本。如果数据库无法估计这部分工作，就很难把 AI 算子与传统关系算子放在同一执行计划中进行比较，也缺少安排多条 AI SQL 执行顺序和并发方式的依据。
 
@@ -105,13 +105,13 @@ Galois 面向 SQL 调用大语言模型的场景研究逻辑与物理查询优�
 
 ### 2.2 分布式数据执行与异构流水线现状
 
-数据库触发的大规模 AI 操作往往需要在多个 CPU 工作线程、GPU 和模型服务实例之间执行，因此分布式数据执行框架为此类系统提供了重要基础。Ray 通过任务（task）和有状态执行单元（actor）两类抽象支持分布式 AI 应用[10]。任务执行一次计算后结束；有状态执行单元则可以在多次调用之间持续保存队列、计数器或模型实例。Ray 的作用是提供可以承载动态任务图和有状态服务的运行基础，本身不规定数据库 AI 作业应该采用哪一种数据组织或作业选择方法。
+数据库触发的大规模 AI 操作往往需要在多个 CPU 工作线程、GPU 和模型服务实例之间执行，因此分布式数据执行框架为此类系统提供了重要基础。Ray 通过任务（task）和有状态执行单元（actor）两类抽象支持分布式 AI 应用[20]。任务执行一次计算后结束；有状态执行单元则可以在多次调用之间持续保存队列、计数器或模型实例。Ray 的作用是提供可以承载动态任务图和有状态服务的运行基础，本身不规定数据库 AI 作业应该采用哪一种数据组织或作业选择方法。
 
-Ray Data 的 Streaming Batch Model 进一步面向 CPU、GPU 和输入输出混合的异构数据流水线，允许分区在运行中产生和切分，并结合中间数据内存占用与资源情况安排任务[18]。Ray Data 的 `map_batches` 接口可以指定每批期望包含的行数，也可以使用固定规模或自动伸缩的有状态执行单元池完成模型推理[47]。背压是指下游来不及处理时，上游主动降低数据产生或提交速度，防止待处理数据无限积累。这些机制能够控制分区流动、内存占用和异构阶段并行，但批大小首先表示数据行数，仍不直接等于模型处理这些行所需的计算量。
+Ray Data 的 Streaming Batch Model 进一步面向 CPU、GPU 和输入输出混合的异构数据流水线，允许分区在运行中产生和切分，并结合中间数据内存占用与资源情况安排任务[21]。Ray Data 的 `map_batches` 接口可以指定每批期望包含的行数，也可以使用固定规模或自动伸缩的有状态执行单元池完成模型推理[22]。背压是指下游来不及处理时，上游主动降低数据产生或提交速度，防止待处理数据无限积累。这些机制能够控制分区流动、内存占用和异构阶段并行，但批大小首先表示数据行数，仍不直接等于模型处理这些行所需的计算量。
 
-Daft 是面向复杂数据和 AI 工作负载的分布式数据帧（DataFrame）引擎。数据帧以带有列名的表格形式组织数据，并支持对分区数据进行并行转换。Daft 能够使用 Apache Arrow 的列式内存格式组织数据，也可以借助 Ray 执行分布式任务[19]。Arrow 让不同语言和系统按统一的列式布局共享数据，减少阶段之间的格式转换。DuckDB 是可以直接嵌入应用进程的分析型数据库[24]；DataFusion 等使用 Arrow 的数据处理引擎，则采用列式数据和模块化执行方式[25]。NeuStream 等研究进一步关注流式数据处理与深度学习服务之间的流水化协同[30]。
+Daft 是面向复杂数据和 AI 工作负载的分布式数据帧（DataFrame）引擎。数据帧以带有列名的表格形式组织数据，并支持对分区数据进行并行转换。Daft 能够使用 Apache Arrow 的列式内存格式组织数据，也可以借助 Ray 执行分布式任务[23]。Arrow 让不同语言和系统按统一的列式布局共享数据，减少阶段之间的格式转换。DuckDB 是可以直接嵌入应用进程的分析型数据库[24]；DataFusion 等使用 Arrow 的数据处理引擎，则采用列式数据和模块化执行方式[25]。NeuStream 等研究进一步关注流式数据处理与深度学习服务之间的流水化协同[26]。
 
-AYO 从完整大模型应用的角度说明，若运行时只看到彼此独立的模型请求，就会丢失请求所属任务、处理阶段和前后依赖。它把应用拆成细粒度任务单元，建立数据流图，并利用图中的依赖和层次进行跨模块并行、流水执行和批处理[49]。这项工作为本课题保留查询、作业和处理阶段信息提供了直接依据。不过，AYO 面向由应用框架给出的工作流，并会与模型服务后端配合修改；本课题关注数据库拥有的 AI 算子执行过程，还需要结合数据库记录、模型服务实际状态和多个服务实例进行上游提交控制。
+AYO 从完整大模型应用的角度说明，若运行时只看到彼此独立的模型请求，就会丢失请求所属任务、处理阶段和前后依赖。它把应用拆成细粒度任务单元，建立数据流图，并利用图中的依赖和层次进行跨模块并行、流水执行和批处理[27]。这项工作为本课题保留查询、作业和处理阶段信息提供了直接依据。不过，AYO 面向由应用框架给出的工作流，并会与模型服务后端配合修改；本课题关注数据库拥有的 AI 算子执行过程，还需要结合数据库记录、模型服务实际状态和多个服务实例进行上游提交控制。
 
 现有数据执行框架已经能够把大数据集拆开处理，在不同 CPU/GPU 资源上放置任务，限制局部缓冲区，并通过背压协调上下游速度。但是，这些框架通常围绕数据块（block）、分区（partition）或批次（batch）进行调度。数据块是连续存放的一组记录，分区是可以独立处理的一部分数据，批次是一次交给某个算子处理的一组记录。框架知道它们包含多少行、多少字节以及需要哪些系统资源，却不会天然知道这些记录经过 AI 算子后将产生多少输入和输出词元，也不知道当前模型服务处于供给不足还是大量排队状态，更不会天然掌握多个数据库作业还剩多少 AI 工作。
 
@@ -119,17 +119,17 @@ Daft 和 Ray 等框架为本课题提供数据划分、资源放置、异构执�
 
 ### 2.3 GPU 模型服务与请求调度现状
 
-GPU 模型服务是当前大模型系统研究的重要方向。已有综述从请求处理、执行优化和内存管理角度整理了大模型推理中的批处理、调度、负载均衡与代价估计问题[40]。Orca 提出的迭代级调度（iteration-level scheduling）能够在模型每生成一轮词元时重新组织请求[11]。vLLM 是面向大语言模型的推理服务引擎，它使用 PagedAttention 按页管理键值缓存（Key-Value Cache，KV Cache）[12]。键值缓存保存模型处理已有上下文时产生的中间结果，避免生成后续词元时重复计算。vLLM 还采用连续批处理（continuous batching）：请求可以在其他请求尚未结束时加入执行，完成后也可以及时移出，而不是等待整个固定批次一起结束。vLLM 的调度配置提供每轮最多处理的序列数和词元数，并支持先来先服务或优先级策略[48]。这些参数限制的是模型服务一次调度迭代中的工作，不表示数据库上游已经提交但尚未完成的全部工作。Sarathi-Serve 进一步缓解提示词预填充（prefill）和逐词生成（decode）之间的相互干扰[13]。预填充一次处理完整输入并建立缓存，逐词生成则在后续步骤中每次产生新的词元。DistServe 和 Splitwise 分别从服务质量和硬件资源匹配角度研究这两个阶段的分离执行[14,41]。Clockwork、Llumnix 和 SGLang 等系统则分别研究可预测执行、动态服务调度和结构化模型程序运行时[17,31,42]。
+GPU 模型服务是当前大模型系统研究的重要方向。已有综述从请求处理、执行优化和内存管理角度整理了大模型推理中的批处理、调度、负载均衡与代价估计问题[28]。Orca 提出的迭代级调度（iteration-level scheduling）能够在模型每生成一轮词元时重新组织请求[29]。vLLM 是面向大语言模型的推理服务引擎，它使用 PagedAttention 按页管理键值缓存（Key-Value Cache，KV Cache）[30]。键值缓存保存模型处理已有上下文时产生的中间结果，避免生成后续词元时重复计算。vLLM 还采用连续批处理（continuous batching）：请求可以在其他请求尚未结束时加入执行，完成后也可以及时移出，而不是等待整个固定批次一起结束。vLLM 的调度配置提供每轮最多处理的序列数和词元数，并支持先来先服务或优先级策略[31]。这些参数限制的是模型服务一次调度迭代中的工作，不表示数据库上游已经提交但尚未完成的全部工作。Sarathi-Serve 进一步缓解提示词预填充（prefill）和逐词生成（decode）之间的相互干扰[32]。预填充一次处理完整输入并建立缓存，逐词生成则在后续步骤中每次产生新的词元。DistServe 和 Splitwise 分别从服务质量和硬件资源匹配角度研究这两个阶段的分离执行[33,34]。Clockwork、Llumnix 和 SGLang 等系统则分别研究可预测执行、动态服务调度和结构化模型程序运行时[35-37]。
 
-*Parrot: Efficient Serving of LLM-based Applications with Semantic Variable* 研究的问题是，同一应用中多次模型调用原本具有前后依赖、共享提示词和最终性能目标，但普通文本生成接口会把它们变成彼此无关的请求[15]。Parrot 引入语义变量（Semantic Variable），用它表示提示词中的输入和输出位置，并保留哪个请求产生该变量、哪些后续请求使用它以及最终结果更重视延迟还是吞吐。服务端据此建立请求与变量之间的依赖图，把同一并行阶段的中间请求组成任务组，并通过提示词结构发现可共享前缀，再将相关请求放到已保存对应缓存的模型服务实例。在单张 A100、LLaMA 13B 的长文档 Map-Reduce 摘要实验中，系统先并行摘要多个文档片段，再汇总中间结果。Parrot 把这些并行的片段摘要请求视为一个任务组，优先缩短整组完成时间。作者报告，该方法相对于把所有请求都当作延迟敏感请求的 vLLM 路径获得约 1.70～2.37 倍加速。该方法需要应用在提交时保留模板和变量信息，并修改模型服务的管理器与执行引擎；论文未评价动态分支、公平性和大规模异构集群。该工作说明保留作业、阶段和共享提示词信息能够改变下游执行方式；本课题还需要把这些信息与数据库中尚未形成请求的记录、数据准备进度和多作业共享联系起来。
+*Parrot: Efficient Serving of LLM-based Applications with Semantic Variable* 研究的问题是，同一应用中多次模型调用原本具有前后依赖、共享提示词和最终性能目标，但普通文本生成接口会把它们变成彼此无关的请求[38]。Parrot 引入语义变量（Semantic Variable），用它表示提示词中的输入和输出位置，并保留哪个请求产生该变量、哪些后续请求使用它以及最终结果更重视延迟还是吞吐。服务端据此建立请求与变量之间的依赖图，把同一并行阶段的中间请求组成任务组，并通过提示词结构发现可共享前缀，再将相关请求放到已保存对应缓存的模型服务实例。在单张 A100、LLaMA 13B 的长文档 Map-Reduce 摘要实验中，系统先并行摘要多个文档片段，再汇总中间结果。Parrot 把这些并行的片段摘要请求视为一个任务组，优先缩短整组完成时间。作者报告，该方法相对于把所有请求都当作延迟敏感请求的 vLLM 路径获得约 1.70～2.37 倍加速。该方法需要应用在提交时保留模板和变量信息，并修改模型服务的管理器与执行引擎；论文未评价动态分支、公平性和大规模异构集群。该工作说明保留作业、阶段和共享提示词信息能够改变下游执行方式；本课题还需要把这些信息与数据库中尚未形成请求的记录、数据准备进度和多作业共享联系起来。
 
-BlendServe 重点研究离线推理中的请求组织。它根据输入和输出规模描述请求的计算与内存需求，并用共享前缀树同时保存缓存复用关系和资源特征，再从可重排的请求集合中组成资源需求互补的批次[51]。这项工作说明工作量均衡与前缀局部性不能分开考虑，也说明执行时间预测不一定只用于给出一个精确秒数，还可以帮助区分请求类别和形成批次。但 BlendServe 的方法运行在离线模型服务内部，假定系统能够提前看到足够大的请求集合，没有处理数据库数据准备、多个数据库作业的到达过程和服务实例之间的上游路由。
+BlendServe 重点研究离线推理中的请求组织。它根据输入和输出规模描述请求的计算与内存需求，并用共享前缀树同时保存缓存复用关系和资源特征，再从可重排的请求集合中组成资源需求互补的批次[39]。这项工作说明工作量均衡与前缀局部性不能分开考虑，也说明执行时间预测不一定只用于给出一个精确秒数，还可以帮助区分请求类别和形成批次。但 BlendServe 的方法运行在离线模型服务内部，假定系统能够提前看到足够大的请求集合，没有处理数据库数据准备、多个数据库作业的到达过程和服务实例之间的上游路由。
 
-随着模型服务从单用户环境进入共享平台，公平性和服务隔离也成为重要研究问题。VTC 根据输入和输出词元记录各客户端已经获得的服务量，并优先处理累计服务较少的客户端[16]。当某个客户端暂时没有请求时，计数调整机制避免它在重新到达后长期追补过去未使用的份额；基础机制依靠已经发生的服务量更新。这为本课题建立基于实际服务量的作业记账方法提供了直接参考。VTC 的调度对象位于模型服务内部，本课题进一步把数据库数据组织、服务实例路由和完整作业进度纳入上游决策。
+随着模型服务从单用户环境进入共享平台，公平性和服务隔离也成为重要研究问题。VTC 根据输入和输出词元记录各客户端已经获得的服务量，并优先处理累计服务较少的客户端[40]。当某个客户端暂时没有请求时，计数调整机制避免它在重新到达后长期追补过去未使用的份额；基础机制依靠已经发生的服务量更新。这为本课题建立基于实际服务量的作业记账方法提供了直接参考。VTC 的调度对象位于模型服务内部，本课题进一步把数据库数据组织、服务实例路由和完整作业进度纳入上游决策。
 
-*Locality-aware Fair Scheduling in LLM Serving* 进一步研究公平服务与前缀缓存复用之间的冲突[44]。只按已获得的词元服务量严格交替客户端，可能打散共享前缀；只按最长前缀匹配选择请求，又可能让持续提交长共享前缀的客户端长时间占用 GPU。论文提出基于服务余额的最长前缀匹配（Deficit Longest Prefix Match，DLPM）：每个客户端维护尚可获得的服务余额，只有余额为正的客户端才参与最长前缀匹配；所有有待处理请求的客户端都用完当前余额后，再获得相同的每轮补充量。实际执行后，系统按未被前缀缓存覆盖的输入词元和输出词元扣减余额，因此已经复用的前缀不会被重复计为 GPU 工作。分布式扩展 D²LPM 还为每个“客户端与 GPU 工作节点”组合维护余额，先尝试选择保存最长共享前缀的节点，再在可选节点中比较等待队列长度。论文在 Llama 3B/8B、A10G/A100 与最多 8 个模型服务副本上进行评价，每个副本运行相同模型并独立处理请求。作者报告，D²LPM 的最高吞吐达到 VTC 的 2.87 倍；与主要考虑前缀复用和负载均衡的 Preble 相比，在客户端没有异常提高请求率或延长共享前缀的实验中，最低延迟约为 Preble 的 1/7.18。但在超长前缀、较短输出的长文档问答情形中，8 个模型服务副本上 Preble 的吞吐更高；论文也没有研究处理完整应用依赖、异构 GPU 和自动选择每轮补充量。此外，D²LPM 的公平性分析依赖每个模型服务副本内部也运行公平调度，对于无法修改内部调度的模型服务，其上游不能直接沿用该理论保证。
+*Locality-aware Fair Scheduling in LLM Serving* 进一步研究公平服务与前缀缓存复用之间的冲突[41]。只按已获得的词元服务量严格交替客户端，可能打散共享前缀；只按最长前缀匹配选择请求，又可能让持续提交长共享前缀的客户端长时间占用 GPU。论文提出基于服务余额的最长前缀匹配（Deficit Longest Prefix Match，DLPM）：每个客户端维护尚可获得的服务余额，只有余额为正的客户端才参与最长前缀匹配；所有有待处理请求的客户端都用完当前余额后，再获得相同的每轮补充量。实际执行后，系统按未被前缀缓存覆盖的输入词元和输出词元扣减余额，因此已经复用的前缀不会被重复计为 GPU 工作。分布式扩展 D²LPM 还为每个“客户端与 GPU 工作节点”组合维护余额，先尝试选择保存最长共享前缀的节点，再在可选节点中比较等待队列长度。论文在 Llama 3B/8B、A10G/A100 与最多 8 个模型服务副本上进行评价，每个副本运行相同模型并独立处理请求。作者报告，D²LPM 的最高吞吐达到 VTC 的 2.87 倍；与主要考虑前缀复用和负载均衡的 Preble 相比，在客户端没有异常提高请求率或延长共享前缀的实验中，最低延迟约为 Preble 的 1/7.18。但在超长前缀、较短输出的长文档问答情形中，8 个模型服务副本上 Preble 的吞吐更高；论文也没有研究处理完整应用依赖、异构 GPU 和自动选择每轮补充量。此外，D²LPM 的公平性分析依赖每个模型服务副本内部也运行公平调度，对于无法修改内部调度的模型服务，其上游不能直接沿用该理论保证。
 
-其他调度研究用于补充不同服务目标。作业应当获得的服务量与实际已经获得的服务量之间的差额，本文称为服务差额。FairServe 进一步考虑不同应用和多次模型调用的加权服务与限流[43]。NSDI 2026 论文 *Agentix: An Efficient Serving Engine for LLM Agents as General Programs* 则把累计服务量用于多次模型调用组成的程序级调度[45]；该系统在早期预印本中使用 Autellix 名称。FairServe 与 DLPM 目前仍按预印本引用，Agentix 已引用正式会议版本；三者主要位于模型服务或应用运行时层。在更广泛的资源管理领域，主导资源公平（Dominant Resource Fairness）按照每项作业在 CPU、GPU 或内存等资源中占用比例最高的一项衡量其资源份额，用于处理多种资源的公平分配[32]。Pisces 研究多租户存储中的性能隔离与资源共享[33]，数据库领域也研究了多租户事务处理中的公平调度[34]。Themis、Tiresias 和 Pollux 则分别从作业完成体验、已获得服务量和满足资源效率目标的有效处理进度等角度研究 GPU 集群中的多作业调度[35-37]。
+其他调度研究用于补充不同服务目标。作业应当获得的服务量与实际已经获得的服务量之间的差额，本文称为服务差额。FairServe 进一步考虑不同应用和多次模型调用的加权服务与限流[42]。NSDI 2026 论文 *Agentix: An Efficient Serving Engine for LLM Agents as General Programs* 则把累计服务量用于多次模型调用组成的程序级调度[43]；该系统在早期预印本中使用 Autellix 名称。FairServe 与 DLPM 目前仍按预印本引用，Agentix 已引用正式会议版本；三者主要位于模型服务或应用运行时层。在更广泛的资源管理领域，主导资源公平（Dominant Resource Fairness）按照每项作业在 CPU、GPU 或内存等资源中占用比例最高的一项衡量其资源份额，用于处理多种资源的公平分配[44]。Pisces 研究多租户存储中的性能隔离与资源共享[45]，数据库领域也研究了多租户事务处理中的公平调度[46]。Themis、Tiresias 和 Pollux 则分别从作业完成体验、已获得服务量和满足资源效率目标的有效处理进度等角度研究 GPU 集群中的多作业调度[47-49]。
 
 然而，模型服务中的调度器通常只能够处理已经进入模型服务的请求。对于一个来自数据库的大规模 AI 作业，模型服务并不知道还有多少数据库记录尚未完成数据读取和请求构造，也无法直接判断不同请求属于哪些完整的数据库查询任务。模型服务内部调度解决的是“已经收到的请求怎样执行”，而数据库 AI 数据执行层还需要回答“哪些请求现在应该进入模型服务”。二者具有明显的上下游关系。
 
@@ -139,11 +139,11 @@ BlendServe 重点研究离线推理中的请求组织。它根据输入和输出
 
 综合上述研究，数据库 AI 算子、分布式数据执行和 GPU 模型服务已经分别形成了较丰富的方法，但它们之间仍有两类衔接问题没有得到充分处理。
 
-一类问题发生在数据组织阶段。Ray Data 研究异构流水线中的分区流动与内存控制[18]，IMBridge 证明数据库算子的数据交付批次需要与模型的调用批次分开控制[53]，关系型 LLM 查询重排证明行和字段顺序能够改善前缀缓存复用[50]，BlendServe 则在离线模型服务内部共同考虑请求资源需求与前缀局部性[51]。这些工作已经说明数据组织会影响模型执行，不能再把研究问题笼统写成“现有系统只按固定行数处理”。尚需继续研究的是：数据库记录在到达模型服务前，怎样用适合文本、图像及后续音频、视频任务的分阶段工作特征形成批次；在数据准备、模型执行和缓存压力不断变化时，怎样比较工作量均衡与数据局部性的实际作用。张量是模型用于表示输入和中间结果的多维数值数组。数据局部性表示相关记录在处理顺序或服务实例上保持接近，从而有机会复用缓存或减少数据搬移。
+一类问题发生在数据组织阶段。Ray Data 研究异构流水线中的分区流动与内存控制[21]，IMBridge 证明数据库算子的数据交付批次需要与模型的调用批次分开控制[12]，关系型 LLM 查询重排证明行和字段顺序能够改善前缀缓存复用[9]，BlendServe 则在离线模型服务内部共同考虑请求资源需求与前缀局部性[39]。这些工作已经说明数据组织会影响模型执行，不能再把研究问题笼统写成“现有系统只按固定行数处理”。尚需继续研究的是：数据库记录在到达模型服务前，怎样用适合文本、图像及后续音频、视频任务的分阶段工作特征形成批次；在数据准备、模型执行和缓存压力不断变化时，怎样比较工作量均衡与数据局部性的实际作用。张量是模型用于表示输入和中间结果的多维数值数组。数据局部性表示相关记录在处理顺序或服务实例上保持接近，从而有机会复用缓存或减少数据搬移。
 
-另一类问题发生在请求进入模型服务之前。AYO 和 Parrot 分别保留应用任务、处理阶段和多次模型调用之间的关系[15,49]，VTC 与 DLPM 处理模型服务内部多个客户端的服务量记账以及公平性与前缀复用之间的取舍[16,44]，其他模型服务和 GPU 集群研究分别处理已经到达的请求或集群资源分配[35-37,43,45,48]。数据库上游还要面对尚未形成请求的记录、数据准备进度、完整查询的剩余工作，以及多个模型服务实例此刻的排队和运行情况。固定并发上限不能反映这些变化；在多个作业共享模型服务时，预先分开可提交空间容易留下空闲，完全共享又可能使长作业持续影响短作业。现有研究尚未充分把这些数据库侧信息与上游请求释放联系起来，以同时考察总体效率、作业完成时间和服务均衡。
+另一类问题发生在请求进入模型服务之前。AYO 和 Parrot 分别保留应用任务、处理阶段和多次模型调用之间的关系[27,38]，VTC 与 DLPM 处理模型服务内部多个客户端的服务量记账以及公平性与前缀复用之间的取舍[40,41]，其他模型服务和 GPU 集群研究分别处理已经到达的请求或集群资源分配[31,42,43,47-49]。数据库上游还要面对尚未形成请求的记录、数据准备进度、完整查询的剩余工作，以及多个模型服务实例此刻的排队和运行情况。固定并发上限不能反映这些变化；在多个作业共享模型服务时，预先分开可提交空间容易留下空闲，完全共享又可能使长作业持续影响短作业。现有研究尚未充分把这些数据库侧信息与上游请求释放联系起来，以同时考察总体效率、作业完成时间和服务均衡。
 
-数据库优化器还需要获得 AI 语义算子的成本信息。已有学习型代价模型研究表明，平均预测误差与候选计划选择质量需要分别评价[26-28]；CONCERTO 也说明，并行执行中的阶段结构和资源竞争会影响代价估计[46]。因此，代价估计既要检查执行时间和资源需求的预测误差，也要检查它能否正确排列结果含义相同的候选计划，并最终改善数据库选择的执行方案。两项研究内容先依据可观测工作特征、容量和实际运行状态建立基础方法；经过独立验证的预计执行时间和预计剩余执行时间再作为补充信息，用于检验预测是否能够带来额外收益。
+数据库优化器还需要获得 AI 语义算子的成本信息。已有学习型代价模型研究表明，平均预测误差与候选计划选择质量需要分别评价[50-52]；CONCERTO 也说明，并行执行中的阶段结构和资源竞争会影响代价估计[53]。因此，代价估计既要检查执行时间和资源需求的预测误差，也要检查它能否正确排列结果含义相同的候选计划，并最终改善数据库选择的执行方案。两项研究内容先依据可观测工作特征、容量和实际运行状态建立基础方法；经过独立验证的预计执行时间和预计剩余执行时间再作为补充信息，用于检验预测是否能够带来额外收益。
 
 据此，本课题研究分阶段工作量组织，以及固定模型服务资源和提交上限时的上游调度，并研究 AI 算子代价信息如何支持数据库计划比较和上述两项研究内容。
 
@@ -243,7 +243,7 @@ BlendServe 重点研究离线推理中的请求组织。它根据输入和输出
 
 在获得工作量描述之后，需要研究数据库记录怎样形成执行批次。本课题把直接使用运行前已知特征、无需先预测执行时间的方法称为基础数据组织方法。它可以使用输入词元数、输出上限、图像或帧规模、共享前缀和批次工作量上限等信息。数据组织主要涉及三个相互关联的因素。其一是工作量预算，即一个待执行批次应该包含多少 AI 计算工作；其二是工作量均衡，即多个批次或多个模型服务实例之间是否存在明显的计算量偏差；其三是数据局部性，即为了改善工作量均衡而改变记录顺序时，是否破坏共享提示词前缀、缓存复用或其他有利的数据关系。
 
-因此，本项研究把工作量均衡与数据局部性的共同作用作为核心问题。关系型 LLM 查询重排表明，改变行和字段顺序能够显著增加共享前缀[50]；BlendServe 和 DLPM 则分别从离线批处理和公平调度角度说明，资源需求的均衡可能与前缀缓存复用发生冲突[44,51]。本课题进一步考察这一冲突在数据库记录形成模型请求之前怎样表现。当模型服务缓存压力较低时，改善批间工作量均衡可能更重要；当大量请求共享提示词前缀且模型服务缓存接近占满时，保留原有局部性可能获得更高收益。最终需要通过不同工作负载和服务压力下的实验，说明每种组织方法的有效条件和性能变化。
+因此，本项研究把工作量均衡与数据局部性的共同作用作为核心问题。关系型 LLM 查询重排表明，改变行和字段顺序能够显著增加共享前缀[9]；BlendServe 和 DLPM 则分别从离线批处理和公平调度角度说明，资源需求的均衡可能与前缀缓存复用发生冲突[39,41]。本课题进一步考察这一冲突在数据库记录形成模型请求之前怎样表现。当模型服务缓存压力较低时，改善批间工作量均衡可能更重要；当大量请求共享提示词前缀且模型服务缓存接近占满时，保留原有局部性可能获得更高收益。最终需要通过不同工作负载和服务压力下的实验，说明每种组织方法的有效条件和性能变化。
 
 第一项研究内容的对象与输出如图 8 所示。原始记录首先被转换为包含阶段工作特征、作业身份和局部性信息的工作描述，再由不同候选组织方法形成批次请求。基础数据组织方法可以独立完成这一过程。只有当代价估计在独立数据上达到可用水平后，才进一步把预计批次执行时间或资源需求作为可选输入，并与不使用预测的基础方法在相同工作量上限和后续调度条件下比较。研究不预先假定重排序、装箱或加入代价信息一定优于保序组织。
 
@@ -263,7 +263,7 @@ BlendServe 重点研究离线推理中的请求组织。它根据输入和输出
 
 本课题把只使用运行前容量测量、请求完成通知和实际运行状态的方法称为基础调度方法。工作释放关注多个作业之间的提交先后，服务实例路由则关注新请求应发往哪个模型服务实例。两类决策都只安排尚未提交的请求，不暂停已经开始执行的模型请求，也不改变模型服务内部的组批和 GPU 执行方式。预计服务时间或预计剩余执行时间只有在独立验证后才作为可选信息加入，并与基础调度方法分别比较。
 
-多作业调度需要同时考察多项指标。完全均匀的资源分配不一定具有最短作业完成时间，总吞吐最大也不代表每个作业都具有良好体验。已有模型服务和集群调度研究分别采用累计服务量、程序级完成时间和减速比等视角描述这种差异[16,35-36,43-45]。减速比是作业并发运行时间与该作业独立运行时间之比，数值越大表示共享资源带来的影响越明显。因此，本课题同时评价总体效率、最差作业完成体验、服务目标违约、作业实际获得的服务量落后于目标份额的程度，以及最长连续未获得服务的时间。当前研究对象是单一资源管理主体内部的多个作业或工作负载类别，相关结论表述为作业级共享与服务均衡。
+多作业调度需要同时考察多项指标。完全均匀的资源分配不一定具有最短作业完成时间，总吞吐最大也不代表每个作业都具有良好体验。已有模型服务和集群调度研究分别采用累计服务量、程序级完成时间和减速比等视角描述这种差异[40-43,47,48]。减速比是作业并发运行时间与该作业独立运行时间之比，数值越大表示共享资源带来的影响越明显。因此，本课题同时评价总体效率、最差作业完成体验、服务目标违约、作业实际获得的服务量落后于目标份额的程度，以及最长连续未获得服务的时间。当前研究对象是单一资源管理主体内部的多个作业或工作负载类别，相关结论表述为作业级共享与服务均衡。
 
 如图 9 所示，第二项研究内容把各作业尚未提交的请求、模型服务已经接收的工作以及多个服务实例的运行情况联系起来。研究将在预先测得的工作范围内，考察下一条请求什么时候提交、从哪个作业中选择以及发往哪个服务实例，并比较固定分配、共享空闲容量和使用运行状态等不同思路。具体采用哪种作业选择和路由方法，由后续对照实验决定。
 
@@ -283,7 +283,7 @@ AI 算子代价估计同时向数据库计划比较和两项研究内容提供�
 
 #### 4.1.1 总体执行方案
 
-本课题计划在现有数据库和分布式 AI 执行框架基础上构建实验系统。PostgreSQL 18.3 提供 SQL 入口和关系子计划；这里的关系子计划是 AI 算子之前完成过滤、投影等关系处理的查询计划部分。关系子计划输出需要进行 AI 处理的记录后，数据库按有限批量把这些记录交给 AI 语义算子。文本算子复用 LOTUS v1.2.4 `sem_map` 的提示构造和输出解析语义，Apache Arrow 负责列式数据块表示[25]，Daft 用于候选数据组织和数据帧执行[19]，Ray 提供分布式任务和有状态执行单元[10]。文本任务由 vLLM 模型服务完成生成[12]，图像任务由基于 Ray 的 GPU 有状态执行单元完成模型推理。结果由数据库执行过程统一接收，并在需要时写入 PostgreSQL 或 pgvector。本文所说的端到端，是从数据库开始读取输入，一直统计到模型结果完成收集或写回的过程；具体实验采用哪一个终点，会在实验设置中说明。
+本课题计划在现有数据库和分布式 AI 执行框架基础上构建实验系统。PostgreSQL 18.3 提供 SQL 入口和关系子计划；这里的关系子计划是 AI 算子之前完成过滤、投影等关系处理的查询计划部分。关系子计划输出需要进行 AI 处理的记录后，数据库按有限批量把这些记录交给 AI 语义算子。文本算子复用 LOTUS v1.2.4 `sem_map` 的提示构造和输出解析语义，Apache Arrow 负责列式数据块表示[25]，Daft 用于候选数据组织和数据帧执行[23]，Ray 提供分布式任务和有状态执行单元[20]。文本任务由 vLLM 模型服务完成生成[30]，图像任务由基于 Ray 的 GPU 有状态执行单元完成模型推理。结果由数据库执行过程统一接收，并在需要时写入 PostgreSQL 或 pgvector。本文所说的端到端，是从数据库开始读取输入，一直统计到模型结果完成收集或写回的过程；具体实验采用哪一个终点，会在实验设置中说明。
 
 在计划中的数据库入口中，PostgreSQL 18.3 将通过扩展注册能够被查询计划识别的 AI 语义算子。数据库继续负责 SQL 查询、关系算子执行、查询所见数据版本、权限检查、任务取消、错误处理和结果管理；经过关系过滤与投影后的必要记录，再由数据库按有限批量交给外部物理执行部分。文本场景计划直接复用 LOTUS v1.2.4 `sem_map` 的语义实现，其中 `SemMapNode` 是 LOTUS 表示逐行语义映射操作的执行节点；提示构造和输出解析也沿用同一版本，使 SQL 算子语义与外部物理后端分开。该数据库入口及其与查询生命周期的衔接仍属于研究方案。当前实验使用被测产品或框架提供的 AI 接口，以及项目为实验实现的文本生成和图像向量化入口；其中 `AI_COMPLETE` 和 `AI_EMBED` 表示任务及其输入输出要求，尚未完成 LOTUS 语义入口迁移和 PostgreSQL 查询计划接入。各组实验采用的 AI 操作来源在 4.2 节逐项说明。
 
@@ -477,98 +477,98 @@ Daft 和 Apache Arrow 用于承担数据执行层中的数据读取、列式表�
 
 [5] Timescale. pgai: AI Workflows for PostgreSQL[EB/OL]. [2026-08-20]. https://github.com/timescale/pgai
 
-[6] G. Li, J. Sun, L. Xu, S. Li, J. Wang, W. Nie. GaussML: An End-to-End In-Database Machine Learning System. In: 2024 IEEE 40th International Conference on Data Engineering (ICDE). Utrecht, The Netherlands, May 13-16, 2024, IEEE, 2024: 5198-5210. DOI: 10.1109/ICDE60146.2024.00391
+[6] L. Patel, S. Jha, M. Pan, H. Gupta, P. Asawa, C. Guestrin, et al. Semantic Operators and Their Optimization: Enabling LLM-Based Data Processing with Accuracy Guarantees in LOTUS. Proceedings of the VLDB Endowment, 2025, 18(11): 4171-4184. DOI: 10.14778/3749646.3749685
 
-[7] Y. Guo, G. Li, R. Hu, Y. Wang. In-database query optimization on SQL with ML predicates. The VLDB Journal, 2025, 34(1): Article 12. DOI: 10.1007/s00778-024-00888-3
+[7] C. Liu, M. Russo, M. Cafarella, L. Cao, P. B. Chen, Z. Chen, et al. Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing. In: 15th Annual Conference on Innovative Data Systems Research (CIDR 2025). Amsterdam, The Netherlands, January 19-22, 2025
 
-[8] Z. Zhao, S. Cai, H. Gao, H. Pan, S. Xiang, N. Xing, et al. NeurDB: On the Design and Implementation of an AI-powered Autonomous Database. In: 15th Annual Conference on Innovative Data Systems Research (CIDR 2025). Amsterdam, The Netherlands, January 19-22, 2025
+[8] D. Satriani, E. Veltri, D. Santoro, S. Rosato, S. Varriale, P. Papotti. Logical and Physical Optimizations for SQL Query Execution over Large Language Models. Proceedings of the ACM on Management of Data, 2025, 3(3): Article 181, 1-28. DOI: 10.1145/3725411
 
-[9] L. Zeng, N. Xing, S. Cai, G. Chen, B. C. Ooi, J. Pei, et al. Powering In-Database Dynamic Model Slicing for Structured Data Analytics. Proceedings of the VLDB Endowment, 2024, 17(13): 4813-4826. DOI: 10.14778/3704965.3704985
+[9] S. Liu, A. Biswal, A. Kamsetty, A. Cheng, L. G. Schroeder, L. Patel, et al. Optimizing LLM Queries in Relational Data Analytics Workloads. In: Proceedings of Machine Learning and Systems, Volume 7 (MLSys 2025). Santa Clara, CA, USA, May 12-15, 2025
 
-[10] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, et al. Ray: A Distributed Framework for Emerging AI Applications. In: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18). Carlsbad, CA, USA, October 8-10, 2018, USENIX Association, 2018: 561-577
+[10] M. Russo, C. Liu, S. Sudhir, G. Vitagliano, M. Cafarella, T. Kraska, et al. Abacus: A Cost-Based Optimizer for Semantic Operator Systems. Proceedings of the VLDB Endowment, 2026, 19(5): 1060-1073. DOI: 10.14778/3796195.3796215
 
-[11] G. I. Yu, J. S. Jeong, G. W. Kim, S. Kim, B. G. Chun. Orca: A Distributed Serving System for Transformer-Based Generative Models. In: 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI 22). Carlsbad, CA, USA, July 11-13, 2022, USENIX Association, 2022: 521-538
+[11] K. Qi, D. Xie, W. Li, H. Zhang, Y. Zhu, J. X. Yu, et al. Sema: A High-performance System for LLM-based Semantic Query Processing. In: 52nd International Conference on Very Large Data Bases (VLDB 2026), Research Track, accepted. Boston, MA, USA, August 31-September 4, 2026. Proceedings metadata forthcoming; official program: https://vldb.org/2026/program.html; public version: arXiv:2603.11622v1, https://arxiv.org/abs/2603.11622
 
-[12] W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, et al. Efficient Memory Management for Large Language Model Serving with PagedAttention. In: Proceedings of the 29th ACM Symposium on Operating Systems Principles (SOSP 2023). Koblenz, Germany, October 23-26, 2023, Association for Computing Machinery, 2023: 611-626. DOI: 10.1145/3600006.3613165
+[12] C. Zhang, J. Peng, C. Xu, Q. Xu, C. Yang. IMBridge: Impedance Mismatch Mitigation between Database Engine and Prediction Query Execution. In: Companion of the 2024 International Conference on Management of Data. Santiago, Chile, June 9-15, 2024, Association for Computing Machinery, 2024. DOI: 10.1145/3626246.3654754
 
-[13] A. Agrawal, N. Kedia, A. Panwar, J. Mohan, N. Kwatra, B. Gulavani, et al. Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 117-134
+[13] J. Lao, A. Zimmerer, O. Ovcharenko, T. Cong, M. Russo, G. Vitagliano, et al. SemBench: A Benchmark for Semantic Query Processing Engines. Proceedings of the VLDB Endowment, 2026, 19(8): 1754-1767. DOI: 10.14778/3811243.3811249
 
-[14] Y. Zhong, S. Liu, J. Chen, J. Hu, Y. Zhu, X. Liu, et al. DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 193-210
+[14] G. Li, J. Sun, L. Xu, S. Li, J. Wang, W. Nie. GaussML: An End-to-End In-Database Machine Learning System. In: 2024 IEEE 40th International Conference on Data Engineering (ICDE). Utrecht, The Netherlands, May 13-16, 2024, IEEE, 2024: 5198-5210. DOI: 10.1109/ICDE60146.2024.00391
 
-[15] C. Lin, Z. Han, C. Zhang, Y. Yang, F. Yang, C. Chen, et al. Parrot: Efficient Serving of LLM-based Applications with Semantic Variable. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 929-945
+[15] Y. Guo, G. Li, R. Hu, Y. Wang. In-database query optimization on SQL with ML predicates. The VLDB Journal, 2025, 34(1): Article 12. DOI: 10.1007/s00778-024-00888-3
 
-[16] Y. Sheng, S. Cao, D. Li, B. Zhu, Z. Li, D. Zhuo, et al. Fairness in Serving Large Language Models. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 965-988
+[16] Z. Zhao, S. Cai, H. Gao, H. Pan, S. Xiang, N. Xing, et al. NeurDB: On the Design and Implementation of an AI-powered Autonomous Database. In: 15th Annual Conference on Innovative Data Systems Research (CIDR 2025). Amsterdam, The Netherlands, January 19-22, 2025
 
-[17] B. Sun, Z. Huang, H. Zhao, W. Xiao, X. Zhang, Y. Li, et al. Llumnix: Dynamic Scheduling for Large Language Model Serving. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 173-191
+[17] L. Zeng, N. Xing, S. Cai, G. Chen, B. C. Ooi, J. Pei, et al. Powering In-Database Dynamic Model Slicing for Structured Data Analytics. Proceedings of the VLDB Endowment, 2024, 17(13): 4813-4826. DOI: 10.14778/3704965.3704985
 
-[18] F. S. Luan, R. Y. Wang, Y. Gu, Z. Mao, C. Lin, A. Kamsetty, et al. The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution. arXiv:2501.12407v5, 2025. DOI: 10.48550/arXiv.2501.12407
+[18] R. Salazar-Díaz, B. Glavic, T. Rabl. InferDB: In-Database Machine Learning Inference Using Indexes. Proceedings of the VLDB Endowment, 2024, 17(8): 1830-1842. DOI: 10.14778/3659437.3659441
 
-[19] Daft. Architecture, Partitioning and Distributed Execution Documentation[EB/OL]. [2026-08-20]. https://docs.daft.ai/en/stable/architecture/; https://docs.daft.ai/en/stable/optimization/partitioning/; https://docs.daft.ai/en/stable/distributed/
+[19] Q. Lin, S. Wu, J. Zhao, J. Dai, M. Shi, G. Chen, et al. SmartLite: A DBMS-Based Serving System for DNN Inference in Resource-Constrained Environments. Proceedings of the VLDB Endowment, 2023, 17(3): 278-291. DOI: 10.14778/3632093.3632095
 
-[20] L. Patel, S. Jha, M. Pan, H. Gupta, P. Asawa, C. Guestrin, et al. Semantic Operators and Their Optimization: Enabling LLM-Based Data Processing with Accuracy Guarantees in LOTUS. Proceedings of the VLDB Endowment, 2025, 18(11): 4171-4184. DOI: 10.14778/3749646.3749685
+[20] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, et al. Ray: A Distributed Framework for Emerging AI Applications. In: 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI 18). Carlsbad, CA, USA, October 8-10, 2018, USENIX Association, 2018: 561-577
 
-[21] M. Russo, C. Liu, S. Sudhir, G. Vitagliano, M. Cafarella, T. Kraska, et al. Abacus: A Cost-Based Optimizer for Semantic Operator Systems. Proceedings of the VLDB Endowment, 2026, 19(5): 1060-1073. DOI: 10.14778/3796195.3796215
+[21] F. S. Luan, R. Y. Wang, Y. Gu, Z. Mao, C. Lin, A. Kamsetty, et al. The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution. arXiv:2501.12407v5, 2025. DOI: 10.48550/arXiv.2501.12407
 
-[22] C. Liu, M. Russo, M. Cafarella, L. Cao, P. B. Chen, Z. Chen, et al. Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing. In: 15th Annual Conference on Innovative Data Systems Research (CIDR 2025). Amsterdam, The Netherlands, January 19-22, 2025
+[22] Ray. ray.data.Dataset.map_batches Documentation[EB/OL]. [2026-08-23]. https://docs.ray.io/en/latest/data/api/doc/ray.data.Dataset.map_batches.html
 
-[23] J. Lao, A. Zimmerer, O. Ovcharenko, T. Cong, M. Russo, G. Vitagliano, et al. SemBench: A Benchmark for Semantic Query Processing Engines. Proceedings of the VLDB Endowment, 2026, 19(8): 1754-1767. DOI: 10.14778/3811243.3811249
+[23] Daft. Architecture, Partitioning and Distributed Execution Documentation[EB/OL]. [2026-08-20]. https://docs.daft.ai/en/stable/architecture/; https://docs.daft.ai/en/stable/optimization/partitioning/; https://docs.daft.ai/en/stable/distributed/
 
 [24] M. Raasveldt, H. Mühleisen. DuckDB: An Embeddable Analytical Database. In: Proceedings of the 2019 International Conference on Management of Data (SIGMOD 2019). Amsterdam, The Netherlands, June 30-July 5, 2019, Association for Computing Machinery, 2019: 1981-1984. DOI: 10.1145/3299869.3320212
 
 [25] A. Lamb, Y. Shen, D. Heres, J. Chakraborty, M. O. Kabak, L. C. Hsieh, et al. Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine. In: Companion of the 2024 International Conference on Management of Data. Santiago, Chile, June 9-15, 2024, Association for Computing Machinery, 2024: 5-17. DOI: 10.1145/3626246.3653368
 
-[26] R. Heinrich, M. Luthra, J. Wehrstein, H. Kornmayer, C. Binnig. How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks. Proceedings of the ACM on Management of Data, 2025, 3(3): Article 172, 1-27. DOI: 10.1145/3725309
+[26] H. Yuan, Y. Wang, W. Xie, Y. Cheng, Z. Miao, L. Ma, et al. NeuStream: Bridging Deep Learning Serving and Stream Processing. In: Proceedings of the Twentieth European Conference on Computer Systems (EuroSys 2025). Rotterdam, The Netherlands, March 30-April 3, 2025, Association for Computing Machinery, 2025: 671-685. DOI: 10.1145/3689031.3717489
 
-[27] J. Wehrstein, T. Bang, R. Heinrich, C. Binnig. GRACEFUL: A Learned Cost Estimator for UDFs. In: 2025 IEEE 41st International Conference on Data Engineering (ICDE). Hong Kong, China, May 19-23, 2025, IEEE, 2025: 2450-2463. DOI: 10.1109/ICDE65448.2025.00185
+[27] X. Tan, Y. Jiang, Y. Yang, H. Xu. Towards End-to-End Optimization of LLM-based Applications with Ayo. In: Proceedings of the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (ASPLOS 2025). Rotterdam, The Netherlands, March 30-April 3, 2025, Association for Computing Machinery, 2025: 1302-1316. DOI: 10.1145/3676641.3716278
 
-[28] R. Heinrich, C. Binnig, H. Kornmayer, M. Luthra. COSTREAM: Learned Cost Models for Operator Placement in Edge-Cloud Environments. In: 2024 IEEE 40th International Conference on Data Engineering (ICDE). Utrecht, The Netherlands, May 13-16, 2024, IEEE, 2024: 96-109. DOI: 10.1109/ICDE60146.2024.00015
+[28] J. Pan, G. Li. Database Perspective on LLM Inference Systems. Proceedings of the VLDB Endowment, 2025, 18(12): 5504-5507. DOI: 10.14778/3750601.3750703
 
-[29] D. Satriani, E. Veltri, D. Santoro, S. Rosato, S. Varriale, P. Papotti. Logical and Physical Optimizations for SQL Query Execution over Large Language Models. Proceedings of the ACM on Management of Data, 2025, 3(3): Article 181, 1-28. DOI: 10.1145/3725411
+[29] G. I. Yu, J. S. Jeong, G. W. Kim, S. Kim, B. G. Chun. Orca: A Distributed Serving System for Transformer-Based Generative Models. In: 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI 22). Carlsbad, CA, USA, July 11-13, 2022, USENIX Association, 2022: 521-538
 
-[30] H. Yuan, Y. Wang, W. Xie, Y. Cheng, Z. Miao, L. Ma, et al. NeuStream: Bridging Deep Learning Serving and Stream Processing. In: Proceedings of the Twentieth European Conference on Computer Systems (EuroSys 2025). Rotterdam, The Netherlands, March 30-April 3, 2025, Association for Computing Machinery, 2025: 671-685. DOI: 10.1145/3689031.3717489
+[30] W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, et al. Efficient Memory Management for Large Language Model Serving with PagedAttention. In: Proceedings of the 29th ACM Symposium on Operating Systems Principles (SOSP 2023). Koblenz, Germany, October 23-26, 2023, Association for Computing Machinery, 2023: 611-626. DOI: 10.1145/3600006.3613165
 
-[31] L. Zheng, L. Yin, Z. Xie, C. Sun, J. Huang, C. Yu, et al. SGLang: Efficient Execution of Structured Language Model Programs. In: Advances in Neural Information Processing Systems 37: 38th Conference on Neural Information Processing Systems (NeurIPS 2024). Vancouver, BC, Canada, December 10-15, 2024, Curran Associates, Inc., 2024: 62557-62583. DOI: 10.52202/079017-2000
+[31] vLLM. scheduler[EB/OL]. [2026-08-23]. https://docs.vllm.ai/en/stable/api/vllm/config/scheduler/
 
-[32] A. Ghodsi, M. Zaharia, B. Hindman, A. Konwinski, S. Shenker, I. Stoica. Dominant Resource Fairness: Fair Allocation of Multiple Resource Types. In: 8th USENIX Symposium on Networked Systems Design and Implementation (NSDI 11). Boston, MA, USA, March 30-April 1, 2011, USENIX Association, 2011: 323-336
+[32] A. Agrawal, N. Kedia, A. Panwar, J. Mohan, N. Kwatra, B. Gulavani, et al. Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 117-134
 
-[33] D. Shue, M. J. Freedman, A. Shaikh. Performance Isolation and Fairness for Multi-Tenant Cloud Storage. In: 10th USENIX Symposium on Operating Systems Design and Implementation (OSDI 12). Hollywood, CA, USA, October 8-10, 2012, USENIX Association, 2012: 349-362
+[33] Y. Zhong, S. Liu, J. Chen, J. Hu, Y. Zhu, X. Liu, et al. DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 193-210
 
-[34] A. Cheng, A. Kabcenell, X. Shi, J. Huey, P. Bailis, N. Crooks, et al. Fair Transaction Processing for Multi-Tenant Databases. Proceedings of the VLDB Endowment, 2025, 18(8): 2602-2615. DOI: 10.14778/3742728.3742751
+[34] P. Patel, E. Choukse, C. Zhang, A. Shah, Í. Goiri, S. Maleki, et al. Splitwise: Efficient Generative LLM Inference Using Phase Splitting. In: 2024 ACM/IEEE 51st Annual International Symposium on Computer Architecture (ISCA). Buenos Aires, Argentina, June 29-July 3, 2024, IEEE, 2024: 118-132. DOI: 10.1109/ISCA59077.2024.00019
 
-[35] K. Mahajan, A. Balasubramanian, A. Singhvi, S. Venkataraman, A. Akella, A. Phanishayee, et al. Themis: Fair and Efficient GPU Cluster Scheduling. In: 17th USENIX Symposium on Networked Systems Design and Implementation (NSDI 20). Santa Clara, CA, USA, February 25-27, 2020, USENIX Association, 2020: 289-304
+[35] B. Sun, Z. Huang, H. Zhao, W. Xiao, X. Zhang, Y. Li, et al. Llumnix: Dynamic Scheduling for Large Language Model Serving. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 173-191
 
-[36] J. Gu, M. Chowdhury, K. G. Shin, Y. Zhu, M. Jeon, J. Qian, et al. Tiresias: A GPU Cluster Manager for Distributed Deep Learning. In: 16th USENIX Symposium on Networked Systems Design and Implementation (NSDI 19). Boston, MA, USA, February 26-28, 2019, USENIX Association, 2019: 485-500
+[36] L. Zheng, L. Yin, Z. Xie, C. Sun, J. Huang, C. Yu, et al. SGLang: Efficient Execution of Structured Language Model Programs. In: Advances in Neural Information Processing Systems 37: 38th Conference on Neural Information Processing Systems (NeurIPS 2024). Vancouver, BC, Canada, December 10-15, 2024, Curran Associates, Inc., 2024: 62557-62583. DOI: 10.52202/079017-2000
 
-[37] A. Qiao, S. K. Choe, S. J. Subramanya, W. Neiswanger, Q. Ho, H. Zhang, et al. Pollux: Co-adaptive Cluster Scheduling for Goodput-Optimized Deep Learning. In: 15th USENIX Symposium on Operating Systems Design and Implementation (OSDI 21). Virtual Event, July 14-16, 2021, USENIX Association, 2021: 1-18
+[37] A. Gujarati, R. Karimi, S. Alzayat, W. Hao, A. Kaufmann, Y. Vigfusson, et al. Serving DNNs like Clockwork: Performance Predictability from the Bottom Up. In: 14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20). Virtual Event, November 4-6, 2020, USENIX Association, 2020: 443-462
 
-[38] R. Salazar-Díaz, B. Glavic, T. Rabl. InferDB: In-Database Machine Learning Inference Using Indexes. Proceedings of the VLDB Endowment, 2024, 17(8): 1830-1842. DOI: 10.14778/3659437.3659441
+[38] C. Lin, Z. Han, C. Zhang, Y. Yang, F. Yang, C. Chen, et al. Parrot: Efficient Serving of LLM-based Applications with Semantic Variable. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 929-945
 
-[39] Q. Lin, S. Wu, J. Zhao, J. Dai, M. Shi, G. Chen, et al. SmartLite: A DBMS-Based Serving System for DNN Inference in Resource-Constrained Environments. Proceedings of the VLDB Endowment, 2023, 17(3): 278-291. DOI: 10.14778/3632093.3632095
+[39] Y. Zhao, S. Yang, K. Zhu, L. Zheng, B. Kasikci, Y. Qiao, et al. BlendServe: Optimizing Offline Inference with Resource-Aware Batching. In: Proceedings of the 31st ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (ASPLOS 2026). Pittsburgh, PA, USA, March 22-26, 2026, Association for Computing Machinery, 2026: 255-273. DOI: 10.1145/3779212.3790133
 
-[40] J. Pan, G. Li. Database Perspective on LLM Inference Systems. Proceedings of the VLDB Endowment, 2025, 18(12): 5504-5507. DOI: 10.14778/3750601.3750703
+[40] Y. Sheng, S. Cao, D. Li, B. Zhu, Z. Li, D. Zhuo, et al. Fairness in Serving Large Language Models. In: 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24). Santa Clara, CA, USA, July 10-12, 2024, USENIX Association, 2024: 965-988
 
-[41] P. Patel, E. Choukse, C. Zhang, A. Shah, Í. Goiri, S. Maleki, et al. Splitwise: Efficient Generative LLM Inference Using Phase Splitting. In: 2024 ACM/IEEE 51st Annual International Symposium on Computer Architecture (ISCA). Buenos Aires, Argentina, June 29-July 3, 2024, IEEE, 2024: 118-132. DOI: 10.1109/ISCA59077.2024.00019
+[41] S. Cao, Y. Wang, Z. Mao, P. L. Hsu, L. Yin, T. Xia, et al. Locality-aware Fair Scheduling in LLM Serving. arXiv:2501.14312v1, 2025. DOI: 10.48550/arXiv.2501.14312
 
-[42] A. Gujarati, R. Karimi, S. Alzayat, W. Hao, A. Kaufmann, Y. Vigfusson, et al. Serving DNNs like Clockwork: Performance Predictability from the Bottom Up. In: 14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20). Virtual Event, November 4-6, 2020, USENIX Association, 2020: 443-462
+[42] R. I. S. Khan, K. Jain, H. Shen, A. Mallick, A. Parayil, A. Kulkarni, et al. Ensuring Fair LLM Serving Amid Diverse Applications. arXiv:2411.15997v1, 2024. DOI: 10.48550/arXiv.2411.15997
 
-[43] R. I. S. Khan, K. Jain, H. Shen, A. Mallick, A. Parayil, A. Kulkarni, et al. Ensuring Fair LLM Serving Amid Diverse Applications. arXiv:2411.15997v1, 2024. DOI: 10.48550/arXiv.2411.15997
+[43] M. Luo, X. Shi, C. Cai, T. Zhang, J. Wong, Y. Wang, et al. Agentix: An Efficient Serving Engine for LLM Agents as General Programs. In: 23rd USENIX Symposium on Networked Systems Design and Implementation (NSDI 26). Renton, WA, USA, May 4-6, 2026, USENIX Association, 2026: 2443-2459
 
-[44] S. Cao, Y. Wang, Z. Mao, P. L. Hsu, L. Yin, T. Xia, et al. Locality-aware Fair Scheduling in LLM Serving. arXiv:2501.14312v1, 2025. DOI: 10.48550/arXiv.2501.14312
+[44] A. Ghodsi, M. Zaharia, B. Hindman, A. Konwinski, S. Shenker, I. Stoica. Dominant Resource Fairness: Fair Allocation of Multiple Resource Types. In: 8th USENIX Symposium on Networked Systems Design and Implementation (NSDI 11). Boston, MA, USA, March 30-April 1, 2011, USENIX Association, 2011: 323-336
 
-[45] M. Luo, X. Shi, C. Cai, T. Zhang, J. Wong, Y. Wang, et al. Agentix: An Efficient Serving Engine for LLM Agents as General Programs. In: 23rd USENIX Symposium on Networked Systems Design and Implementation (NSDI 26). Renton, WA, USA, May 4-6, 2026, USENIX Association, 2026: 2443-2459
+[45] D. Shue, M. J. Freedman, A. Shaikh. Performance Isolation and Fairness for Multi-Tenant Cloud Storage. In: 10th USENIX Symposium on Operating Systems Design and Implementation (OSDI 12). Hollywood, CA, USA, October 8-10, 2012, USENIX Association, 2012: 349-362
 
-[46] K. Zhang, H. Wang, K. Gu, Z. Li, C. Zhao, Y. Li, et al. CONCERTO: Complex Query Execution Mechanism-Aware Learned Cost Estimation. arXiv:2412.00749v2, 2025. DOI: 10.48550/arXiv.2412.00749
+[46] A. Cheng, A. Kabcenell, X. Shi, J. Huey, P. Bailis, N. Crooks, et al. Fair Transaction Processing for Multi-Tenant Databases. Proceedings of the VLDB Endowment, 2025, 18(8): 2602-2615. DOI: 10.14778/3742728.3742751
 
-[47] Ray. ray.data.Dataset.map_batches Documentation[EB/OL]. [2026-08-23]. https://docs.ray.io/en/latest/data/api/doc/ray.data.Dataset.map_batches.html
+[47] K. Mahajan, A. Balasubramanian, A. Singhvi, S. Venkataraman, A. Akella, A. Phanishayee, et al. Themis: Fair and Efficient GPU Cluster Scheduling. In: 17th USENIX Symposium on Networked Systems Design and Implementation (NSDI 20). Santa Clara, CA, USA, February 25-27, 2020, USENIX Association, 2020: 289-304
 
-[48] vLLM. scheduler[EB/OL]. [2026-08-23]. https://docs.vllm.ai/en/stable/api/vllm/config/scheduler/
+[48] J. Gu, M. Chowdhury, K. G. Shin, Y. Zhu, M. Jeon, J. Qian, et al. Tiresias: A GPU Cluster Manager for Distributed Deep Learning. In: 16th USENIX Symposium on Networked Systems Design and Implementation (NSDI 19). Boston, MA, USA, February 26-28, 2019, USENIX Association, 2019: 485-500
 
-[49] X. Tan, Y. Jiang, Y. Yang, H. Xu. Towards End-to-End Optimization of LLM-based Applications with Ayo. In: Proceedings of the 30th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (ASPLOS 2025). Rotterdam, The Netherlands, March 30-April 3, 2025, Association for Computing Machinery, 2025: 1302-1316. DOI: 10.1145/3676641.3716278
+[49] A. Qiao, S. K. Choe, S. J. Subramanya, W. Neiswanger, Q. Ho, H. Zhang, et al. Pollux: Co-adaptive Cluster Scheduling for Goodput-Optimized Deep Learning. In: 15th USENIX Symposium on Operating Systems Design and Implementation (OSDI 21). Virtual Event, July 14-16, 2021, USENIX Association, 2021: 1-18
 
-[50] S. Liu, A. Biswal, A. Kamsetty, A. Cheng, L. G. Schroeder, L. Patel, et al. Optimizing LLM Queries in Relational Data Analytics Workloads. In: Proceedings of Machine Learning and Systems, Volume 7 (MLSys 2025). Santa Clara, CA, USA, May 12-15, 2025
+[50] R. Heinrich, M. Luthra, J. Wehrstein, H. Kornmayer, C. Binnig. How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks. Proceedings of the ACM on Management of Data, 2025, 3(3): Article 172, 1-27. DOI: 10.1145/3725309
 
-[51] Y. Zhao, S. Yang, K. Zhu, L. Zheng, B. Kasikci, Y. Qiao, et al. BlendServe: Optimizing Offline Inference with Resource-Aware Batching. In: Proceedings of the 31st ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (ASPLOS 2026). Pittsburgh, PA, USA, March 22-26, 2026, Association for Computing Machinery, 2026: 255-273. DOI: 10.1145/3779212.3790133
+[51] J. Wehrstein, T. Bang, R. Heinrich, C. Binnig. GRACEFUL: A Learned Cost Estimator for UDFs. In: 2025 IEEE 41st International Conference on Data Engineering (ICDE). Hong Kong, China, May 19-23, 2025, IEEE, 2025: 2450-2463. DOI: 10.1109/ICDE65448.2025.00185
 
-[52] K. Qi, D. Xie, W. Li, H. Zhang, Y. Zhu, J. X. Yu, et al. Sema: A High-performance System for LLM-based Semantic Query Processing. In: 52nd International Conference on Very Large Data Bases (VLDB 2026), Research Track, accepted. Boston, MA, USA, August 31-September 4, 2026. Proceedings metadata forthcoming; official program: https://vldb.org/2026/program.html; public version: arXiv:2603.11622v1, https://arxiv.org/abs/2603.11622
+[52] R. Heinrich, C. Binnig, H. Kornmayer, M. Luthra. COSTREAM: Learned Cost Models for Operator Placement in Edge-Cloud Environments. In: 2024 IEEE 40th International Conference on Data Engineering (ICDE). Utrecht, The Netherlands, May 13-16, 2024, IEEE, 2024: 96-109. DOI: 10.1109/ICDE60146.2024.00015
 
-[53] C. Zhang, J. Peng, C. Xu, Q. Xu, C. Yang. IMBridge: Impedance Mismatch Mitigation between Database Engine and Prediction Query Execution. In: Companion of the 2024 International Conference on Management of Data. Santiago, Chile, June 9-15, 2024, Association for Computing Machinery, 2024. DOI: 10.1145/3626246.3654754
+[53] K. Zhang, H. Wang, K. Gu, Z. Li, C. Zhao, Y. Li, et al. CONCERTO: Complex Query Execution Mechanism-Aware Learned Cost Estimation. arXiv:2412.00749v2, 2025. DOI: 10.48550/arXiv.2412.00749
