@@ -1,6 +1,6 @@
 # 文献精读清单
 
-更新日期：2026-08-24
+更新日期：2026-08-25
 
 ## 选择原则
 
@@ -13,10 +13,10 @@
 ## 当前统计
 
 - `research/reading_notes/` 现有 **49 篇历史文献笔记**，从 2026-08-21 起按泛读库管理（不含 README 和泛读模板）。
-- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、Parrot、VTC、DLPM、BlendServe 和 IMBridge 十五篇主笔记，共 115 张论文原图裁剪件，本目录不维护阅读状态。
+- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、Parrot、VTC、DLPM、BlendServe 和 IMBridge 十五篇主笔记，共 134 张论文原图裁剪件，本目录不维护阅读状态。
 - 旧文档“33 篇已完成”已经过时；原编号到 41 还混入了两篇未下载条目，也不能作为实体笔记数。
 - 当前 Top 15 为 15/15 严格 CCF-A 正式论文，快照在 `top15_reading_notes/`。
-- `research/reference/` 当前工作区有 4 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema）；其余 Top 15 的历史题录保留在索引中，使用前需恢复并核验文件。
+- `research/reference/` 当前工作区有 5 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot）；其余 Top 15 的历史题录保留在索引中，使用前需恢复并核验文件。
 
 ## Top 15 精读顺序
 

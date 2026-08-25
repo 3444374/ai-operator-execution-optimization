@@ -6,8 +6,8 @@
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
 - `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
-  `../research/精读文献笔记/`，当前共 15 篇主笔记和 115 张论文原图裁剪件，最新新增的主笔记为 IMBridge、DLPM 和 Parrot。`../research/reference/`
-  当前工作区有 4 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema）；历史题录继续由索引保留。
+  `../research/精读文献笔记/`，当前共 15 篇主笔记和 134 张论文原图裁剪件，最新新增的主笔记为 IMBridge、DLPM 和 Parrot。`../research/reference/`
+  当前工作区有 5 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot）；历史题录继续由索引保留。
 - Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
   CCF-A full research。
 - 开题保持两项研究内容：数据组织；调度与提交控制。代价估计升级为两项内容

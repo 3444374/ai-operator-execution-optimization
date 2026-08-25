@@ -167,6 +167,7 @@
 | `figures/audit/relational_llm_queries_deep_reading_figures_audit_20260822.md` | Relational LLM Queries 精读配图选择与裁剪审计 | 核对 MLSys 2025 论文全部 Figure 1–6 的独立论证角色、来源页码、scope/correctness 边界、输出 SHA256、裁剪方式和视觉 QA |
 | `figures/audit/imbridge_deep_reading_figures_audit_20260824.md` | IMBridge 精读配图选择与裁剪审计 | 核对 SIGMOD-Companion ’24 论文全部 Figure 1–6 的独立论证角色、本地文件名年份边界、来源页码、输出 SHA256、裁剪方式和视觉 QA |
 | `figures/audit/dlpm_deep_reading_figures_audit_20260824.md` | DLPM 精读配图选择与裁剪审计 | 核对 arXiv v1 正文全部 Figure 1–12 的独立论证角色、正式发表状态、缺失点/Long-Context 反例、来源页码、输出 SHA256、裁剪方式和视觉 QA |
+| `figures/audit/parrot_deep_reading_figures_audit_20260825.md` | Parrot 精读配图选择与裁剪审计 | 核对 OSDI 2024 正文全部 Figure 1–19 的独立讲解角色、正式版页码、输出 SHA256、裁剪方式、读图方法和证据边界 |
 # PROJECT_INDEX.md
 
 本文件是项目索引，供 Codex 快速定位材料。先读 `AGENTS.md`，再按任务类型读本文件中的对应材料。
@@ -512,8 +513,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
 | `opening/literature/top15_reading_notes/` | 开题 Top 15 历史笔记快照 | 15/15 严格 CCF-A 正式 research paper 的自包含历史快照；不随新精读库自动更新 |
 | `research/reading_notes/` | 泛读笔记库（历史 49 篇 + 泛读模板） | 论文筛选、快速回顾和背景事实索引；历史笔记深度不一 |
-| `research/精读文献笔记/` | 精读笔记权威库（当前 15 篇、115 张论文原图） | 每篇论文独立目录；LOTUS、Galois、Palimpzest、Abacus、Sema、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries、VTC、IMBridge、DLPM 与 Parrot 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
-| `research/reference/` | 当前工作区可解析参考 PDF（4 份） | Galois、Abacus、Palimpzest、Sema；历史题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
+| `research/精读文献笔记/` | 精读笔记权威库（当前 15 篇、134 张论文原图） | 每篇论文独立目录；LOTUS、Galois、Palimpzest、Abacus、Sema、AYO、Cortex AISQL、Ray Data、Ray OSDI 2018、BlendServe、Relational LLM Queries、VTC、IMBridge、DLPM 与 Parrot 均已建立主笔记；有配图的论文按正文需要选择原图，不使用统一模板或阅读状态字段 |
+| `research/reference/` | 当前工作区可解析参考 PDF（5 份） | Galois、Abacus、Palimpzest、Sema、Parrot；历史题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
 | `research/lotus_postgresql_execution_layer_fit_20260821.md` | PostgreSQL、LOTUS 与 SAOR 的执行分层审计 | 判断 LOTUS 应作为逻辑前端、系统 baseline 还是主执行依赖；含 first-principles 边界和最小 capability gate |
 | `experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md` | PostgreSQL 内置 LOTUS AI 语义算子实施主计划 | 当前优先把项目 UDF/manifest-like `AI_COMPLETE` 迁移到真实 LOTUS v1.2.4 `sem_map`；含 Q1–Q23 决策记录、typed semantic/runtime seam、现有代码迁移地图、emulated operator contract、PG CustomScan 资格门、两类 LOTUS baseline、两 panel 矩阵与分阶段验收 |
@@ -524,7 +525,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点 + offline-batch 候选；已撤回传输瓶颈/结构性空白预设 | 方向/题目讨论、Daft 痛点、workload 选型时读；以 staged baseline 后的证据为准 |
 | `research/heterogeneous_ai_dataflow_execution_model_20260811.md` | HSE CPU–GPU 异构分阶段执行候选：已有架构迁移审计、typed block、byte-bounded broker、tandem-queue/DPP 模型、实验门与 prompt/复用/增量推理待办 | 设计图像 static HSE、GPU 友好数据通路或重启远期复用候选前读；当前无性能/新颖性结论 |
 | `research/saor_model_scenario_audit_20260811.md` | SAOR 数学审计：capacity-only 负结果、fixed-envelope release、release-only 上界；§12 定义 $H_B/W_e$ priority/debt、事件证据、bounded-ready 与同窗口归因边界 | 设计后继、解释 static/strict-priority 权衡或撰写定理前读；$0.125W_e$ 仅 development candidate，同窗口归因已形成非支配折中但未授权 formal，不称 selector 胜出或证明完成 |
-| `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
+| `research/reference/README.md` | 本地 PDF 状态 | 查看当前 5 份实体 PDF、Top 15 完整性和维护规则 |
 | `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |

@@ -1,7 +1,7 @@
 # Parrot：Efficient Serving of LLM-based Applications with Semantic Variable
 
 > **论文精读笔记**
-> 阅读范围：用户提供的 17 页 PDF，`arXiv:2405.19888v1`，2024-05-30。论文发表于 **OSDI 2024**。
+> 阅读范围：用户提供的正式 **OSDI 2024 proceedings PDF**，文件共 18 页（USENIX 封面 1 页 + 论文正文 17 页，印刷页 929–945）；对应预印本为 `arXiv:2405.19888v1`，2024-05-30。
 > 说明：本文的系统设计横跨 Section 4–7，实验位于 Section 8.1–8.5。以下严格按照论文实际章节、Figure、Table 与 Algorithm 展开；“笔记分析”“与课题关系”属于个人分析，不是论文原文贡献。
 
 ---
@@ -64,7 +64,8 @@ Parrot 认为，现有服务的问题不是缺少某个单点 kernel，而是 **
 | 单位 | Shanghai Jiao Tong University；Microsoft Research |
 | 会议 | USENIX Symposium on Operating Systems Design and Implementation，**OSDI 2024** |
 | 年份 | 2024 |
-| 上传版本 | arXiv:2405.19888v1，共 17 页 |
+| 本地阅读版本 | OSDI 2024 正式 proceedings PDF；正文 17 页，文件含 1 页 USENIX 封面 |
+| 对应预印本 | arXiv:2405.19888v1，2024-05-30 |
 | 系统定位 | 面向多租户 LLM applications 的 application-centric LLM service |
 | 核心抽象 | **Semantic Variable** |
 | 核心分析对象 | Request / Semantic Variable DAG；prompt structure |
@@ -96,7 +97,11 @@ Completion(prompt: str) -> generated_text: str
 
 ### 2.2 LLM-based Application 不是单次调用
 
-**Figure 1（PDF p.1）**给出四类典型 workflow：
+**Figure 1（PDF p.2）**给出四类典型 workflow：
+
+![Figure 1：四类 LLM 应用工作流](figures/fig1_application_workflows.png)
+
+*图源：正式 OSDI 2024 论文 Figure 1（PDF p.2，论文印刷页 929），按原图裁切。读图时沿蓝色消息与红色 LLM 调用观察四种拓扑：并行后归并、严格链式、多阶段搜索与多角色协作。该图只说明应用结构和依赖形态不同，不是四类工作负载的性能比较。*
 
 | Figure 1 子图 | Workflow | 请求关系 |
 |---|---|---|
@@ -105,7 +110,11 @@ Completion(prompt: str) -> generated_text: str
 | Figure 1c | LLM-Powered Search | Query Rewriter、Search、QA、Safety Checker 等多个步骤协作 |
 | Figure 1d | Multi-agent Coding | Product Manager、Architect、Engineer、QA Tester、Code Reviewer 等角色通过多次 LLM calls 协作 |
 
-**Figure 2（PDF p.2）**进一步用 multi-agent coding 展示 Semantic Variable 式的数据传递关系：
+**Figure 2（PDF p.3）**进一步用 multi-agent coding 展示 Semantic Variable 式的数据传递关系：
+
+![Figure 2：多智能体编程中的 Semantic Variable 依赖](figures/fig2_semantic_variable_dependencies.png)
+
+*图源：正式 OSDI 2024 论文 Figure 2（PDF p.3，论文印刷页 930），按原图裁切。沿 `api → code → test/review` 读取变量的生产者与消费者，可以看到同一个 `code` 同时进入 QA 和 Reviewer。它说明服务端可获得的数据依赖，不等同于实际运行时的完成顺序或调度策略。*
 
 - Architect 生成 `api`；
 - Developer 以 `api` 为输入生成 `code`；
@@ -135,7 +144,11 @@ Completion(prompt: str) -> generated_text: str
 
 ### Figure 3 的证据
 
-**Figure 3a（PDF p.3）**分析了一个生产中的 chain-style application：
+![Figure 3：连续请求的外部开销与服务端直连执行](figures/fig3_dependent_request_overhead.png)
+
+*图源：正式 OSDI 2024 论文 Figure 3（PDF p.4，论文印刷页 931），按原图裁切。先看左图中不同 prompt 长度下 LLM engine 外部开销占总延迟的比例，再对比中、右两图中 A→B 是否需要返回客户端并重新排队。左图是一个生产链式应用的观测，不能单独把全部开销归因于网络或队列。*
+
+**Figure 3a（PDF p.4）**分析了一个生产中的 chain-style application：
 
 - prompt length：约 150–4000 tokens；
 - output length：约 50 tokens；
@@ -172,7 +185,11 @@ Table 1 的 repeated 定义是：一个 paragraph 至少出现在两个 LLM requ
 
 ### Figure 4：为什么 Map 阶段反而应偏 throughput
 
-**Figure 4（PDF p.3）**使用 16 个 chunks 的 Map-Reduce summary 举例：
+**Figure 4（PDF p.4）**使用 16 个 chunks 的 Map-Reduce summary 举例：
+
+![Figure 4：请求级与应用级调度目标的差异](figures/fig4_application_centric_scheduling.png)
+
+*图源：正式 OSDI 2024 论文 Figure 4（PDF p.4，论文印刷页 931），按原图裁切。上下两条时间线使用同一 Map-Reduce DAG：上方小 batch 优先单请求延迟，下方大 batch 优先并行 Map 组的完成时间，再让 Reduce 尽早启动。2700 ms 与 1100 ms 是动机示例中的结果，不是完整评测的统计值。*
 
 - request-centric 策略使用较小 batch（图中 Batch=2），逐个请求延迟较低，但 Map 阶段吞吐不足，最终延迟约 **2700 ms**；
 - application-centric 策略在 Map 阶段使用较大 batch（图中 Batch=8）以提高吞吐，在稀缺的 Reduce 阶段再优化单请求延迟，最终延迟约 **1100 ms**；
@@ -190,7 +207,11 @@ Table 1 的 repeated 定义是：一个 paragraph 至少出现在两个 LLM requ
 
 ### Prompt 中存在大量公共部分
 
-**Figure 5（PDF p.4）**将 Bing Copilot prompt 分成：
+**Figure 5（PDF p.5）**将 Bing Copilot prompt 分成：
+
+![Figure 5：Bing Copilot prompt 的静态、准静态与动态部分](figures/fig5_prompt_structure.png)
+
+*图源：正式 OSDI 2024 论文 Figure 5（PDF p.5，论文印刷页 932），按原图裁切。按从左到右的三个 prompt 比较可见：Task Role 固定，Few-shot Examples 在部分请求间复用，User Input 每次变化。该图展示潜在共享边界，不代表所有应用都具有相同比例，也不保证缓存一定命中。*
 
 - Task Role：static；
 - Few-shot Examples：quasi-static；
@@ -246,7 +267,11 @@ vLLM 一类 engine 可以在已知公共前缀的情况下共享 KV cache，但�
 
 ## 5.1 Figure 6：系统总体架构
 
-**Figure 6（PDF p.4）**把 Parrot 分成三层：
+**Figure 6（PDF p.5）**把 Parrot 分成三层：
+
+![Figure 6：Parrot 的系统总体架构](figures/fig6_system_overview.png)
+
+*图源：正式 OSDI 2024 论文 Figure 6（PDF p.5，论文印刷页 932），按原图裁切。自上而下读为应用/适配器、Parrot API、带跨请求分析的集中式 Manager、多个 LLM Engine；横向模块分别承担通信、目标推导、前缀共享、调度与 engine 内执行。它描述的是 Parrot 可同时修改服务管理层和推理引擎的设计边界，不是性能结果。*
 
 1. **Applications / Front-end**
    - Parrot Front-end；
@@ -300,7 +325,11 @@ flowchart TB
 
 ### 5.2.1 Figure 7 的编程例子
 
-**Figure 7（PDF p.5）**定义两个 SemanticFunctions：
+**Figure 7（PDF p.6）**定义两个 SemanticFunctions：
+
+![Figure 7：SemanticFunction 与 Semantic Variable 编程接口](figures/fig7_semantic_function_example.png)
+
+*图源：正式 OSDI 2024 论文 Figure 7（PDF p.6，论文印刷页 933），按原图裁切。先识别模板中的 `input`/`output` 占位符，再看 `code` 如何同时成为第一个函数的输出和第二个函数的输入，最后看 `get(perf=LATENCY)` 如何标注最终目标。这是静态多智能体工作流的接口示例，不证明任意动态控制流都可被提前分析。*
 
 - `WritePythonCode(task)`：软件工程师根据 `task` 生成 `code`；
 - `WriteTestCode(task, code)`：QA 工程师根据 `task` 与 `code` 生成 `test`。
@@ -361,7 +390,11 @@ test.get(perf=LATENCY)
 
 ## 5.3 Section 4.2：Primitives of Inter-Request Analysis
 
-**Figure 8（PDF p.5）**列出 Parrot 用于 inter-request analysis 的代表性 primitives：
+**Figure 8（PDF p.6）**列出 Parrot 用于 inter-request analysis 的代表性 primitives：
+
+![Figure 8：跨请求分析使用的代表性 primitives](figures/fig8_analysis_primitives.png)
+
+*图源：正式 OSDI 2024 论文 Figure 8（PDF p.6，论文印刷页 933），按原图裁切。左侧是 request/variable DAG，右侧把前缀哈希、生产者、消费者和性能目标四类查询映射到具体节点。该图说明 Manager 能查询哪些结构信息，不给出分析复杂度或大规模 session 下的可扩展性。*
 
 - `GetProducer()`；
 - `GetConsumers()`；
@@ -483,7 +516,11 @@ flowchart LR
 
 低端到端 latency 的推导更复杂，因为某些中间并行阶段应优先提高 throughput。
 
-**Figure 9（PDF p.6）**展示两个 latency-sensitive outputs：
+**Figure 9（PDF p.7）**展示两个 latency-sensitive outputs：
+
+![Figure 9：从最终输出反向推导性能目标与 task group](figures/fig9_performance_objective_deduction.png)
+
+*图源：正式 OSDI 2024 论文 Figure 9（PDF p.7，论文印刷页 934），按原图裁切。应从右侧带 `LATENCY` 的 `x/y` 反向沿依赖边读取：接近最终输出的请求按低延迟处理，更上游的并行请求 4/5、6/7 分别合并为 task group。它是分类与分组规则示例，不是形式化的关键路径最优求解器。*
 
 - Request 1 生成 `x`；
 - Request 2 生成 `y`；
@@ -809,6 +846,10 @@ FreeContext(context_id)
 
 ### Figure 10：capacity 校准
 
+![Figure 10：不同 token capacity 与请求率下的 vLLM TPOT](figures/fig10_vllm_capacity_calibration.png)
+
+*图源：正式 OSDI 2024 论文 Figure 10（PDF p.10，论文印刷页 937），按原图裁切。左右分别比较 mean 与 P90 的每输出 token 延迟；在同一请求率内比较不同 capacity 曲线，并用红色 40 ms 虚线判断 latency-oriented baseline 的可接受范围。该图只用于选择 baseline capacity，不是 Parrot 的加速结果。*
+
 Figure 10 使用 ShareGPT requests 与 Poisson arrivals，比较 capacity 从 2048 到 12288 时的 mean/P90 TPOT。作者观察到 capacity 超过 **6144** 后 per-output-token latency 明显上升，因此在 latency-sensitive baseline 中要求 generation latency 维持约 **40 ms/token**。
 
 Figure 10 是 baseline capacity 选择的校准实验，不是 Parrot 相对 baseline 的最终性能结果。
@@ -825,6 +866,10 @@ Figure 10 是 baseline capacity 选择的校准实验，不是 Parrot 相对 bas
 - engine：1× A100，LLaMA 13B。
 
 ### 10.2.1 Chain-style Applications
+
+![Figure 11：Chain Summary 对输出长度与 chunk size 的敏感性](figures/fig11_chain_summary_sensitivity.png)
+
+*图源：正式 OSDI 2024 论文 Figure 11（PDF p.11，论文印刷页 938），按原图裁切。两幅图都以 10 篇长文档的平均端到端延迟为纵轴；应在同一个横坐标内比较 Parrot、vLLM 和 HuggingFace，并把标注倍率作为相对 baseline 的 speedup。结果来自单 A100 与固定数据集，不包含摘要质量评价。*
 
 #### Figure 11a：varying output length
 
@@ -848,6 +893,10 @@ Figure labels 显示：
 
 #### Figure 12a：加入 background requests
 
+![Figure 12：Chain Summary 在背景请求与多应用竞争下的延迟](figures/fig12_chain_summary_contention.png)
+
+*图源：正式 OSDI 2024 论文 Figure 12（PDF p.11，论文印刷页 938），按原图裁切。左图增加 background request rate，右图增加并发 chain-summary 应用数；标注倍率均是同一负载点的 baseline/Parrot 延迟比。图中竞争效应包含注入的网络延迟与固定 workload 设置，不能直接外推到任意生产到达过程。*
+
 随着 background request rate 增大，baseline 中每个下游 chain request 都要重新排队，Parrot 的优势扩大，最高达到 **2.38×**。
 
 Figure 12a 标注的 speedup 依次包括约：1.21×、1.19×、1.31×、1.79×、2.38×。
@@ -860,6 +909,10 @@ Figure 12a 标注的 speedup 依次包括约：1.21×、1.19×、1.31×、1.79×
 | 15 | 1.52× |
 | 20 | 1.63× |
 | 25 | 1.68× |
+
+![Figure 13：25 个 Chain Summary 应用逐个节省的完成时间](figures/fig13_per_application_latency_savings.png)
+
+*图源：正式 OSDI 2024 论文 Figure 13（PDF p.11，论文印刷页 938），按原图裁切。横轴是应用编号，纵轴是 `baseline latency − Parrot latency`；柱子为正表示该应用更早完成。25 根柱均为正只说明这一次并发实验没有通过牺牲某个应用换取平均收益，图中未给出重复实验分布或置信区间。*
 
 **Figure 13**显示 25 个 applications 在 Parrot 中都比 baseline 更早完成；图中每个 application 的“baseline latency − Parrot latency”均为正。
 
@@ -876,6 +929,10 @@ Figure 12a 标注的 speedup 依次包括约：1.21×、1.19×、1.31×、1.79×
 ### 10.2.2 Map-Reduce Applications
 
 Map tasks 彼此独立，Parrot 与 baseline 都可以并发发出。主要区别不再是消除严格依赖链的网络往返，而是 **performance-objective deduction 与 task-group scheduling**。
+
+![Figure 14：Map-Reduce Summary 对输出长度与 chunk size 的敏感性](figures/fig14_map_reduce_summary.png)
+
+*图源：正式 OSDI 2024 论文 Figure 14（PDF p.12，论文印刷页 939），按原图裁切。两幅图分别改变 Map 输出长度与 chunk size；同一横坐标下比较平均端到端延迟，标注倍率是 Parrot 相对 vLLM 的 speedup。它支持目标推导与 task-group 调度的组合效果，不能把全部差异单独归因给某一条 scheduler 规则。*
 
 #### Figure 14a：varying output length
 
@@ -917,6 +974,10 @@ LLM service 必须区分中间 requests 的作用。即使所有 individual requ
 
 #### Figure 15：batch size
 
+![Figure 15：Bing Copilot 风格负载随 batch size 的 TPOT](figures/fig15_bing_copilot_batch_size.png)
+
+*图源：正式 OSDI 2024 论文 Figure 15（PDF p.12，论文印刷页 939），按原图裁切。横轴增大 batch size，纵轴比较每输出 token 延迟；`X` 表示不共享 prompt 的 baseline 因 KV cache 重复而 OOM。比较仅适用于该约 6000-token 公共前缀、LLaMA 7B 与单 A100 设置，不能解释为 batch 可无限增大。*
+
 与 **不共享 prompt** 的 baseline 比：
 
 - batch size 8、16 时，Parrot 分别获得约 **1.8×–2.4×** speedup；
@@ -928,6 +989,10 @@ LLM service 必须区分中间 requests 的作用。即使所有 individual requ
 - 这部分差异主要来自 Parrot 的 shared-prefix attention kernel，而不是单纯节省 KV cache 容量。
 
 #### Figure 16：output length
+
+![Figure 16：不同输出长度下 Bing Copilot 风格负载的 TPOT](figures/fig16_bing_copilot_output_length.png)
+
+*图源：正式 OSDI 2024 论文 Figure 16（PDF p.13，论文印刷页 940），按原图裁切。左右分别固定 batch size 32 和 64，沿横轴增加输出长度并比较 Parrot 与已支持 sharing 的 PagedAttention baseline；倍率随输出变长而增大。这里比较的是共享前缀 kernel 与完整实现的组合，不代表 prefix caching 在所有 prompt 分布上都具有同样优势。*
 
 Batch size = 32：
 
@@ -962,6 +1027,10 @@ output 越长，decoding 中重复加载 shared prefix 的成本越显著，因�
 
 #### Figure 17 结果
 
+![Figure 17：多类 GPTs 应用的可持续请求率与消融](figures/fig17_multiple_gpts_request_rate.png)
+
+*图源：正式 OSDI 2024 论文 Figure 17（PDF p.13，论文印刷页 940），按原图裁切。横轴提高到达率，纵轴观察归一化平均端到端延迟何时陡增；比较完整 Parrot、关闭 scheduling、替换 kernel 和两个 baseline，可分辨 placement 与 kernel 的作用。容量拐点只对应 4×A6000、四类 GPTs 与该到达分布，不是跨硬件的固定上限。*
+
 - Parrot 可承载的 request rate 相对不共享 prompt 的 baseline 最高提高 **12×**；
 - 关闭 affinity scheduling 后，Parrot 只比 baseline 高约 **3×**，因为共享 prefix 的 requests 常被分散到不同 engines；
 - 使用 Parrot 自定义 attention kernel，相对使用 vLLM PagedAttention 的 Parrot 版本，request rate 最高提高 **2.4×**。
@@ -992,6 +1061,10 @@ Figure 17 通过关闭 scheduling 与替换 kernel，分别说明后二者的独
 5. review-and-revision 循环执行 3 次，生成 final code。
 
 设置：1× A100，LLaMA 13B；文件数量为 4、8、12、16。
+
+![Figure 18：多智能体编程的端到端延迟与 KV cache 内存](figures/fig18_multi_agent_latency_memory.png)
+
+*图源：正式 OSDI 2024 论文 Figure 18（PDF p.13，论文印刷页 940），按原图裁切。上图按文件数比较端到端延迟，下图比较 KV cache 占用；柱顶倍率以 Parrot 为参照，内存图虚线是该实验图标出的约 48 GB 可用阈值，并非 A100 的物理总显存。该图展示固定 MetaGPT 风格 workflow 下多项优化叠加的效果，未评价生成代码质量。*
 
 ### Figure 18a：End-to-end latency
 
@@ -1038,6 +1111,10 @@ Figure 17 通过关闭 scheduling 与替换 kernel，分别说明后二者的独
   - throughput baseline：使用完整 capacity，提高 GPU utilization。
 
 ### Figure 19 原始结果
+
+![Figure 19：混合 chat 与 Map-Reduce 负载的三项指标](figures/fig19_mixed_workloads.png)
+
+*图源：正式 OSDI 2024 论文 Figure 19（PDF p.14，论文印刷页 941），按原图裁切。三幅图的单位不同，只能在各自 panel 内比较：chat 端到端归一化延迟、chat decode time、Map-Reduce JCT。Parrot 同时接近两类专用 baseline 的较优指标，但该实验不提供多租户公平性或隔离结论。*
 
 | Metric | Parrot | Throughput baseline | Latency baseline |
 |---|---:|---:|---:|

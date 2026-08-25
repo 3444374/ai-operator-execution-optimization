@@ -1,6 +1,6 @@
 # 项目参考资料索引
 
-更新日期：2026-08-24
+更新日期：2026-08-25
 本索引保留项目历史题录登记，并与精读笔记交叉引用；当前工作区实际存在且已解析的 PDF 以同目录 `README.md` 为准。
 Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`。
 
@@ -81,7 +81,7 @@ Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Ab
 
 > **Note**: `fastserve_nsdi2026.pdf` 与 `fastserve_2023.pdf`（arXiv:2305.05920 v3, 2024-09）为同一篇论文的不同版本，内容相同（617,185 bytes）。NSDI 2026 为正式出版版本。
 
-## 六、已有精读笔记的其他论文（7 篇）
+## 六、已有精读笔记的其他论文（8 篇）
 
 | 文件 | 论文 | 出处 | 笔记 |
 |---|---|---|---|
@@ -92,15 +92,15 @@ Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Ab
 | `ray_data_streaming_batch_2025.pdf` | Ray Data: CPU/GPU Heterogeneous Batch Data Pipeline | arXiv 2025 | `ray_data_streaming_batch_2025.md` |
 | `flashattention_neurips2022.pdf` | FlashAttention: Fast and Memory-Efficient Exact Attention | NeurIPS 2022 | `flashattention_neurips2022.md` |
 | `flexgen_icml2023.pdf` | FlexGen: High-Throughput LLM Inference on a Single GPU | ICML 2023 | `flexgen_icml2023.md` |
+| `parrot_osdi2024.pdf` | Parrot: Efficient Serving of LLM-based Applications with Semantic Variable | OSDI 2024 | `精读文献笔记/parrot_osdi2024/parrot_osdi2024.md` |
 
-## 七、已下载但无精读笔记的论文（39 篇）
+## 七、已下载但无精读笔记的论文（38 篇）
 
-### 7.1 GPU 推理服务（7 篇）
+### 7.1 GPU 推理服务（6 篇）
 
 | 文件 | 论文 | 出处 |
 |---|---|---|
 | `clockwork_osdi2020.pdf` | Clockwork: Deterministic DNN Latency Scheduling | OSDI 2020 |
-| `parrot_osdi2024.pdf` | Parrot: Semantic Variable-Based Cross-Request Prompt Sharing | OSDI 2024 |
 | `hedrarag_sosp2025.pdf` | HedraRAG: CPU/GPU Coordinated RAG Serving | SOSP 2025 |
 | `hybridflow_eurosys2025.pdf` | HybridFlow: Heterogeneous DNN Pipeline Batching | EuroSys 2025 |
 | `load_aware_prefill_2026.pdf` | Load-Aware Prefill for LLM Serving | arXiv 2026 |

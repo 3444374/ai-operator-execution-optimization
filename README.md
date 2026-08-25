@@ -84,7 +84,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 │   ├── top15_ranked_papers.md                # 项目最相关 Top 15 排序
 │   ├── reading_notes/                        # 泛读、筛选与快速回顾笔记（历史 49 篇）
 │   ├── 精读文献笔记/                          # 每篇独立目录的精读笔记权威库
-│   └── reference/                            # 已下载参考文献 PDF（67 个）+ 索引
+│   └── reference/                            # 当前可解析参考文献 PDF（5 份）+ 历史题录索引
 ├── motivation/                       # 动机场景、端到端测试
 │   ├── AGENTS.md
 │   ├── README.md
