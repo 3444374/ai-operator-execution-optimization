@@ -70,3 +70,11 @@
 - Draw.io 与关键 SVG 均通过 XML 解析；图 6、图 9 未命中上述内部英文标签，图 15 SVG 未命中 `setup-dominated`、`operator JCT` 或 `formal cell`。
 
 最终状态：通过。报告正文已同步本轮术语和实验口径，PPT 未修改。
+
+## 6. 2026-08-25 图 2 报告版清理
+
+- 删除图 2 右上角“开题第 5 页｜研究问题”页码残留；三项跨层能力、左右两侧已有能力、箭头、底部研究问题和全部版式尺寸均保持不变。
+- 同步修改 `figures/architecture/editable/01_research_gap.drawio` 与 `01_research_gap.svg`，并重新导出 `opening/report/figures/fig02_ai_data_execution_gap.png`。报告 PNG 保持 1600×900。
+- Draw.io 与 SVG 均通过 XML 解析；使用原始分辨率视觉检查确认页码残留已删除，标题、框内文字、箭头和底部研究问题均无裁切或遮挡。
+- SHA-256：SVG `83ae609e05cc1587475be9666061723850b9ca7a91e41f6d21dd4d681b4b7bf7`；Draw.io `5c01be6e11b0366428cc873944bf144723b3cbd945263b786ff4a2cc9039eed6`；报告 PNG `2502122a880cf0fdf9b2cca7aa9d9b764487c448ebaf1dcd0fb878bd9a3770e2`。
+- 图 7 与图 15 按用户要求未修改。
