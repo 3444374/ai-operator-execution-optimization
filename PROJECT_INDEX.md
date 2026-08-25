@@ -505,6 +505,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
+| `opening/report/数据库_AI_负载的执行优化与调度研究_开题报告.docx` | 按学校模板生成的开题报告 Word 版，保留封面、页码和签字页，并统一正文、标题、图注和图片排版 | 提交学校材料或在 Windows Word 中继续补充个人信息与微调版式 |
 | `opening/report/opening_report_20260824_qa.md` | 当前中文开题报告的七部分结构、三个动机问题到两项研究内容的映射、代价估计角色、图 1至15 与 53 条参考文献审查 | 复核当前开题正文或转入 Word/WPS 排版前读 |
 | `opening/report/opening_report_20260820_qa.md` | 2026-08-23 版中文报告的模板、证据范围、术语、11 张图与 51 条参考文献审查 | 只用于核对上一版报告历史 |
 | `opening/report/figures/` | 开题报告正文专用图片副本与来源映射 | Markdown 转 Word 或核查图文一致性时读 |
