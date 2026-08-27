@@ -2,7 +2,7 @@
 
 ## Question
 
-image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答一个 fatal-flaw 门禁问题（`image_clip_workload_lock_20260731.md` §6）：
+image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答一个 fatal-flaw 门禁问题（`experiments/plans/completed/image_clip_workload_lock_20260731.md` §6）：
 
 > 在我们的设置下，CPU 侧数据准备相对 GPU CLIP forward 有多重？`ratio = cpu_total_per_img / gpu_embed_per_img` 是否 > 0.3——即异构调度（CPU 准备 vs GPU 推理）是否有真实舞台？
 
@@ -71,7 +71,7 @@ GPU 阶段用 `torch.cuda.synchronize()` 包住，wall clock 反映真实设备�
 - “数据搬运瓶颈”更精确是当前实现的 **CPU 预处理路径瓶颈**——仍是
   CPU-vs-GPU 异构性的体现，但当前证据不支持把全部 residual 归因到某个具体
   resize、转换或 tensor 操作。
-- 该比例支持继续验证 path-B 架构（`image_clip_workload_lock_20260731.md` §2）：
+- 该比例支持继续验证 path-B 架构（`experiments/plans/completed/image_clip_workload_lock_20260731.md` §2）：
   CPU decode+preprocess 放上游 Ray worker、CLIP 跑独立 actor，以尝试 overlap。
   但 profile 只证明“存在可重叠工作”，没有证明分离后一定提升 E2E；Ray 调度、
   object transfer、actor queue 和写回开销可能抵消收益，必须由端到端对照决定。

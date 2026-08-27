@@ -5,7 +5,11 @@ This directory is for local dataset payloads and derived workload tables.
 Raw downloaded files live under `data/raw/` and are ignored by git. Keep only
 metadata, download commands, and preprocessing scripts in the repository.
 
-## Current Raw Files
+## Expected local assets
+
+The paths below are the canonical local destinations, not a claim that every checkout currently
+contains the files. Verify them with `manage_environment.py check` before importing or running an
+experiment.
 
 | Dataset | Local file | Size | Use |
 |---|---:|---:|---|
@@ -56,7 +60,9 @@ wget -c --tries=10 --timeout=30 \
 
 ## Text workload (MS MARCO, 文本轻对照 — 降级)
 
-**降级为"文本轻对照"**（2026-07-31 校正）。学长判据：数据搬运瓶颈要在 DB 读 + CPU→GPU 搬运段显现，需每行 payload 重。MS MARCO 仍是文本，token ID 紧凑（~1KB/行），搬运轻，**瓶颈不显现**——仅作"文本下不显现"的边界对照，不作首选（首选改图像 CLIP，见下节）。设计见 `experiments/plans/msmarco_embedding_workload_20260731.md`。
+**降级为文本轻对照**（2026-07-31 校正，现已归档）。MS MARCO 仍是文本，token ID
+紧凑（约 1KB/行），不能代表图像 host-data-path 条件。历史设计见
+`experiments/plans/archive/msmarco_embedding_workload_20260731.md`。
 
 AutoDL 上 fetch（HF 需 turbo + 禁 Xet）：
 
@@ -72,13 +78,17 @@ huggingface-cli download BAAI/bge-base-en-v1.5 \
   --local-dir models/bge-base-en-v1.5
 ```
 
-AutoDL 现空闲 18G（清缓存后），MS MARCO + BGE ≈ 6 GB 放得下。
+MS MARCO + BGE 预计约占 6 GB；这是资产估算，不是当前机器剩余容量。下载前必须按 runtime
+preflight 和 `df -h` 的现场结果决定是否执行。
 
-## Image workload (CLIP, 首个 workload — 当务之急)
+## Image workload (CLIP, current multimodal workload)
 
-**首选 workload**（2026-07-31 校正回升）。学长判据要求每行 payload 重——图像每行 CPU→GPU 搬运 ~600KB（文本 ~600×）+ JPEG decode/resize 重，让 **DB 读 + CPU→GPU 数据搬运瓶颈显现**。设计 + go/no-go 门禁见 `experiments/plans/image_clip_workload_lock_20260731.md`；benchmark 三层（数据集 + ANN-benchmarks recall@10 + §7.5 自定吞吐协议）见 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
+**图像 workload**（2026-07-31 锁定，当前静态范围已完成）。图像包含较重的 JPEG
+decode/resize 与 pixel tensor，使 DB/CPU/Ray/H2D/GPU 阶段可以分别测量，但不预设哪一段一定是
+瓶颈。完成合同见 `experiments/plans/completed/image_clip_workload_lock_20260731.md`；当前动态工作见
+`experiments/plans/state_aware_work_unit_evaluation_20260808.md`。
 
-图像 AI_EMBED workload，用于异构资源调度（CPU decode vs GPU embed）+ 多模态泛化验证。锁定方案见 `experiments/plans/image_clip_workload_lock_20260731.md`。
+图像 AI_EMBED workload，用于异构资源调度（CPU decode vs GPU embed）与多模态泛化验证。
 
 AutoDL 上 fetch（COCO 不需要 turbo，HF 模型需要）：
 

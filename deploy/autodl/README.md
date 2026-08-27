@@ -1964,7 +1964,7 @@ DuckDB `ai` community extension 必须先用
 `dual_gpu_duckdb_ai_capability_gate.example.json` 跑 bounded-output 独立轨；不得写成
 DuckDB core 或官方 benchmark，也不得因 ShareGPT length error 放宽失败规则。正式 held-out
 合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
-`experiments/plans/text_native_baseline_rerun_20260802.md`。
+`experiments/plans/completed/text_native_baseline_rerun_20260802.md`。
 
 开机后仍先完整执行 §10.5。随后按本节顺序操作：
 

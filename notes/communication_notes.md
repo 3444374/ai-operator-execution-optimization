@@ -2,14 +2,17 @@
 
 生成日期：2026-07-09
 
-> **2026-07-17 口径更新**：本文档为早期沟通记录。当前对外表述仍为"数据库内置 AI 算子的外部分布式数据处理执行链路优化"，但技术栈和方向已更新（Daft + Ray + vLLM，AI_COMPLETE 主线 + 多模态泛化验证）。最新沟通口径以 `AGENTS.md` §1 和 §8 为准。
+> **2026-08-27 口径更新**：本文档为早期沟通记录。当前对外对象表述为“PostgreSQL 内置 LOTUS
+> AI 语义算子的外部分布式物理执行与调度优化”；“内置”指 SQL/planner/query lifecycle 属于数据库，
+> 模型 payload 仍由数据库管理的执行通道交给外部 backend。最新口径以根 `AGENTS.md`“项目范围/
+> 文档受众与对外表达”和 `PROJECT_OUTLINE.md` 为准。
 
 ## 1. 最近沟通信息
 
 来自截图和聊天记录的关键信息：
 
 1. 后续公司可能推广 AI 开发、多模型监督；
-2. 希望用软件工程思维让 AI 开发形成可控闭环，避免跑偏；
+2. 希望用软件工程思维明确目标、验证和纠偏步骤，避免跑偏；
 3. 之前讨论过把数据库算子下推到 GPU，也讨论过 Daft + Ray 路线；
 4. 同事确认：
    - 一些 AI 算子会用到 Ray；
@@ -137,9 +140,9 @@
 
 | 学长判断 | 项目证据 | 结论 |
 |---|---|---|
-| "GPU 不慢/数据未到" | feeding 门禁：Completions project/direct = 97.7%；Chat 修 httpx 后 smoke wall ≈ bounded；数据组织层 organizer 开销 <1% | **学长对**——当前纯文本单 job 场景里数据搬运不是 bottleneck，GPU 已喂饱 |
+| "GPU 不慢/数据未到" | feeding-saturation 条件：Completions project/direct = 97.7%；Chat 修 httpx 后 smoke wall ≈ bounded；数据组织层 organizer 开销 <1% | **学长对**——当前纯文本单 job 场景里数据搬运不是 bottleneck，GPU 已喂饱 |
 | 两种 bottleneck（大数据搬运 / 重 CPU 准备） | 项目两个都不沾：prompt 小（非大数据）；organizer <1%（非重 CPU 准备） | **学长对**——所以"空间有限"成立 |
-| "只是把 prompt 送到 vLLM 空间有限" | 半年动态策略全未过 5% 门禁（AIMD/EWMA/PID/flush/service quantum/actor pool） | **学长一句话预言了项目几十轮实验的结论** |
+| "只是把 prompt 送到 vLLM 空间有限" | 半年动态策略均未达到预先规定的 5% 改善幅度（AIMD/EWMA/PID/flush/service quantum/actor pool） | **学长一句话预言了项目几十轮实验的结论** |
 
 ### 5.3 学长 (b) 与项目后续方向的连接
 
@@ -173,7 +176,9 @@
 
 **诚实风险（双重）：**
 1. **scoop 风险**——prefix 子切片已失，剩余切片很窄，且 Daft 团队正在关闭它。
-2. **regime-failure 风险**——项目自身证据显示动态状态感知策略在 2-endpoint/2×4090 饱和 regime 下**未稳定跨过 5% 晋升门禁**（AIMD/flush/service quantum/actor pool 全负）。剩余切片的实证支撑本身偏弱。
+2. **regime-failure 风险**——项目自身证据显示动态状态感知策略在 2-endpoint/2×4090 饱和 regime 下，
+   相对同资源上限的静态配置**未稳定达到预先规定的 5% 改善幅度**（AIMD/flush/service quantum/
+   actor pool 均为负结果）。剩余切片的实证支撑本身偏弱。
 
 二者叠加——**不宜单靠"未被直接 scoop"声称可防御**。必须：① Related Work 显式点名并区分 SOLO / Liu / Kalypso / Daft v0.6.9 / llm-d / Preble / Abacus 七篇；② 找到一个剩余切片确有显著收益的 regime（多 job 高压 / 重 CPU 准备多模态可能是最后机会）。
 

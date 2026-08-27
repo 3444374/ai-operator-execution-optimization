@@ -1,6 +1,7 @@
 # deploy/AGENTS.md
 
-本目录存放部署配置与指南：本机 Docker Compose 部署（`pgai/`、`postgres18.4/`）和云服务器完整栈部署指南（`autodl/`）。进入本目录前先读根目录 `AGENTS.md`。
+本文件继承根 `AGENTS.md`，只增加部署配置、容器和平台 runbook 规则。当前组件、版本和命令见
+`README.md`、`runtime/README.md` 与目标平台 README，不写入本规则文件。
 
 ## 作用
 
@@ -21,4 +22,6 @@
 - 每次修改 compose 或 init SQL 后，必须跑通对应目录的 smoke test 验证。
 - 镜像版本、端口、挂载路径要明确写清楚，不依赖隐式默认值。
 - `postgres18.4/` 的结果只能标注为 PG18.4 本地预演，不能写成 PostgreSQL 18.3 内部平台结论。
-- `autodl/` 指南里的所有版本（vllm 0.25.1、torch、transformers、Pillow、ray、daft、PG、pgvector）须与项目本机环境声明一致或在指南中显式标注差异；改动依赖版本时同步更新该指南与本机 `service.json`/`requirements.txt` 口径。driver/Ray actor 与 vLLM 必须保持独立 Python 环境，不能为图像 baseline 覆盖 driver torch。
+- 平台指南中的 vLLM、torch、transformers、Pillow、Ray、Daft、PostgreSQL 和 pgvector 版本必须与
+  runtime profile/service manifest 一致或显式记录差异；改动版本时同步相关 runbook 与锁定配置。
+  driver/Ray actor 与 vLLM 保持独立 Python 环境，不能为图像 baseline 覆盖 driver torch。

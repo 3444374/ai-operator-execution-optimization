@@ -1,12 +1,12 @@
 # deploy/postgres18.4/AGENTS.md
 
-本目录维护本地 PostgreSQL 18.4 + pgvector 同构预演环境。进入本目录前先读根目录 `AGENTS.md`。
+本文件继承根 `AGENTS.md` 与 `deploy/AGENTS.md`，只增加 PostgreSQL 18.4 + pgvector 本地同构预演规则。
 
 ## 定位
 
-- 当前容器实际运行 PostgreSQL 18.4 + pgvector 0.8.2。
+- 本目录目标是 PostgreSQL 18.4 + pgvector；实际镜像/扩展版本从 compose、README 和运行时查询记录。
 - 它用于预演数据库触发、外部 worker、AI 算子和写回链路。
-- 公司内部 PostgreSQL 18.3 才是最终真实实验验证平台。
+- PostgreSQL 18.3 目标平台才承担最终平台资格验证。
 - 本目录产生的本地数据和性能结果不得写成 PostgreSQL 18.3 平台结果。
 
 ## 边界

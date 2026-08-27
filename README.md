@@ -1,246 +1,96 @@
 # 数据库 AI 负载执行优化与调度研究工作区
 
-本工作区用于组织硕士论文 / 达梦实习课题材料。当前开题正式题目是：
+本仓库研究 PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化。数据库拥有
+SQL、关系 child plan、snapshot、权限和 query lifecycle；数据库管理的有界数据流把记录交给
+LOTUS `sem_map` 语义运行时，再由可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-> 数据库 AI 负载的执行优化与调度研究方向。
+当前状态（2026-08-27）：研究方向和开题材料已经统一到“两项研究内容 + 共同代价估计 +
+多模态验证”。短期工程主线以 LOTUS v1.2.4 为固定兼容版本，并用真实 `SemMapNode`、prompt 与 output
+语义替换项目自写的 UDF/manifest-like `AI_COMPLETE` 入口；随后实现 PostgreSQL extension/
+planner-visible operator 的 SQL、取消、错误与结果生命周期资格门。既有 profiler、manifest 和
+GPU 实验仍是外部物理执行证据，不能改称已经实现数据库内算子。
 
-> **当前状态（2026-08-15）**：开题 framing、四级 Claim Matrix、K128 replacement
-> database-E2E、文本原生单/多 Job 与图像静态 baseline 证据已冻结；PPT/飞书/Wiki 暂停，
-> 本地 Markdown 与 CSV 是权威来源。图像原生 single→four-job 40/40 passed；Project
-> staged descriptor + observe-only snapshot 正式矩阵也已 24/24 passed、99K formal rows
-> exactly-once，snapshot 100% fresh 且构建均值 0.141 ms，但 static/proposed group JCT 只差
-> 0.98%，不能写成 state-aware 胜出。SAOR capacity-only 未超过 K160/简单 threshold，
-> dynamic K 已退出主线；fixed-envelope 2-Job formal 已 40/40，原始 failed gate 保留作审计。
-> resolution-aware v2 已在完整 artifact 上重汇总为 passed、credit mechanism effective 12/12；SAOR 在
-> credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 两轮短测达到 fg P99 14.27s、
-> SLO 0%，但仅是能力上界，尚非 formal/proposed。旧 single-head bounded-priority 双轮 GPU
-> development gate 因 ready-backlog 不可见而未晋级；独立 bounded-ready 修订随后完成 8/8 cell，
-> 仅 $0.125W_e$ 以约 12.36K tok/s、foreground P99 17.58–18.15s、foreground SLO 0% 通过开发门，
-> $0.25W_e$ 被 bulk guard 拒绝。同 ready-window 的 Project FIFO/DRR/VTC-style/strict-priority/
-> guarded-debt 双轮归因与 single-head→bounded-ready observation bridge 均已完成：guarded-debt
-> 是用约 4.8% 吞吐和约 5.2% bulk JCT 换取更低 foreground tail 的观测非支配折中点，不是
-> selector winner。最终六臂 rehearsal 的机制证据有效，但同签名 direct ceiling 只得到
-> 92.898% feeding ratio，合同已永久冻结为 `locked_failed_feeding/formal_authorized=false`，不跑
-> SAOR formal。下一步只先做 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W 的
-> 小型 1+3 差距归因；代码/合同已就绪但服务器关机、尚无新 GPU 结果。之后才补同一 2-Job 合同的
-> Daft Native、Daft Ray、Ray Data、project frozen-static 与 proposed 系统级 matched comparison；
-> 原生臂不注入 Project bounded-ready/K/W。4-Job、reservation 和 dynamic K 继续后置。
+## 先读什么
 
-> **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
-> pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
-> 但 B=2.5/3.5/4.5 均未稳定触发双 endpoint、双周期降档条件；未运行 action/formal，
-> 不能据此判断动态策略有效或无效。完整边界见
-> `experiments/results/phase_change_state_aware_corrected_early_stop_20260811/`。
+| 需求 | 权威入口 |
+|---|---|
+| 两分钟了解当前方向 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) |
+| 核对题目、研究内容、证据等级和执行顺序 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) |
+| 查找文件和阅读路径 | [`PROJECT_INDEX.md`](PROJECT_INDEX.md) |
+| 核对项目长期规则和边界 | [`AGENTS.md`](AGENTS.md) |
+| 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 继续 LOTUS/PostgreSQL 语义算子实现 | [`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md) |
+| 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
+| 准备开题报告或答辩 | [`opening/README.md`](opening/README.md) |
 
-当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。目标入口是 PostgreSQL
-extension 注册的 planner-visible LOTUS `sem_map` AI 语义算子：数据库拥有 SQL、snapshot、
-child plan 和 query lifecycle，并通过受管理的 row-batch stream 接到外部物理执行层；用户不再
-执行 `SELECT/fetchall → Python → HTTP → INSERT`。Daft 是数据引擎，Ray actor 是可控执行机制，
-vLLM/CLIP 等是模型执行后端，PostgreSQL + pgvector 继续承担关系 source/result。该计划当前仅
-design frozen，既有 profiler/manifest 结果仍是外部执行证据，不能重标为数据库内算子结果。
-实施边界、LOTUS native baseline 与分阶段门禁见
-[`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)。
-当前实现优先级是先用真实 LOTUS v1.2.4 `sem_map` 语义合同替换项目自写
-UDF/manifest-like 入口，不是先扩展 GPU 矩阵或调整 SAOR 参数。
+当文档冲突时，按“原始结果/代码 → 领域权威入口 → 项目总纲 → 快速说明 → 历史计划”的顺序
+核对，不从文件日期或文件名猜当前状态。
 
-后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3；当前 PG18.4 本地同构预演只能作为平台暂不可用时的替身。
+## 研究内容
 
-AutoDL 双 GPU 远端实验的新对话入口固定为：
-`PROJECT_INDEX.md`“要在 AutoDL 远端继续实验” →
-`deploy/autodl/README.md`“新对话 / 新 agent 的唯一操作入口”。全新实例环境
-准备、每次开机恢复、服务门禁、64 行 gate、正式后台运行和 `--resume`
-恢复均以该 runbook 为单一来源，不从历史聊天重新推断。
+1. 数据组织：依据 token、frame、prepare/model work 与局部性构造工作单元，比较固定行数、
+   work budget、长度对齐和 prefix-aware 等策略在不同服务状态下的效果。
+2. 提交、路由与多 Job 调度：在固定 request/work capacity 下研究持续补位、状态感知提交、
+   endpoint 路由、idle borrowing、回收和 Job 级服务区分。
 
-Baseline / benchmark 不再从多份旧计划拼接：统一从
-`experiments/plans/baseline_reference.md` 选择比较层级、原生 arm、证据等级和指标；
-再进入文本或图像专项执行合同。`experiments/plans/archive/` 与 `code_doc/` 只用于追溯
-历史设计，不能覆盖当前门禁和实验顺序。
+算子代价估计为两项内容提供共同信息，并支持数据库计划比较；它不是第三项研究内容。文本
+`AI_COMPLETE` 是主场景，图像 `AI_EMBED/AI_CLASSIFY` 用于验证策略抽象能否跨模态复用。
 
-## 目录结构
+项目不修改 PostgreSQL core、vLLM continuous batching、Ray scheduler、模型结构或 GPU kernel，
+也不以传统 GPU 查询算子、逐行 HTTP UDF 或 `SELECT/fetchall → Python → HTTP → INSERT` 作为主线。
+
+## 目录层级
 
 ```text
 .
-├── AGENTS.md                         # 项目级长期规则
-├── CLAUDE.md                         # Claude Code 环境入口
-├── PROJECT_INDEX.md                  # 文件索引和阅读顺序
-├── PROJECT_OUTLINE.md                # 项目总纲（题目、研究内容、关键证据、优先级）
-├── PROJECT_LOG.md                    # 项目级简要操作日志
-├── README.md                         # 本文件
-├── overview/                         # 项目总览、当前路线
-│   ├── AGENTS.md
-│   ├── README.md
-│   └── current_direction_and_plan.md
-├── research/                         # 背景调研、文献依据（第一入口：knowledge_hub.md）
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── knowledge_hub.md
-│   ├── vllm_continuous_batching_reference.md
-│   ├── ray_actor_dynamic_batching_reference.md
-│   ├── daft_ray_multimodal_reference.md
-│   ├── inference_pipeline_interaction_literature.md
-│   ├── literature_and_evidence_review.md
-│   ├── existing_ai_operator_execution_chains.md
-│   ├── ai_operator_literature_inventory.md   # Top 15 + 核心补充 + 题录勘误
-│   ├── top15_ranked_papers.md                # 项目最相关 Top 15 排序
-│   ├── reading_notes/                        # 泛读、筛选与快速回顾笔记（历史 49 篇）
-│   ├── 精读文献笔记/                          # 每篇独立目录的精读笔记权威库；速览 LaTeX/PDF 在 paper_deep_reading_digest/
-│   └── reference/                            # 当前可解析参考文献 PDF（5 份）+ 历史题录索引
-├── motivation/                       # 动机场景、端到端测试
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── benchmarks/                   # 动机测试脚本
-│   │   ├── fake_embed_pipeline.py
-│   │   ├── workload_matrix.py
-│   │   ├── granularity.py
-│   │   └── backpressure.py
-│   ├── plans/                        # 场景设计、集成计划
-│   │   ├── workloads.md
-│   │   ├── integration.md
-│   │   └── ai_sql_surface.md
-│   └── results/                      # 动机测试结果
-│       ├── README.md
-│       ├── fake_cpu/                 # CPU/fake 历史预研
-│       ├── cpu/                      # CPU baseline 对照
-│       ├── gpu/                      # GPU-backed E2E 主动机结果
-│       └── pg18_4_fake/             # PG18.4 同构预演
-├── feasibility/                      # 可行性验证（组件、环境、脚本）
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── benchmarks/                   # 组件级 microbenchmark 脚本
-│   └── results/                      # 连接验证、smoke、dry-run CSV
-│       ├── README.md
-│       ├── pg18_4_connection_validation.md
-│       ├── pgai_sql_smoke_20260714.md
-│       └── trigger_surface_validation_20260714.md
-├── experiments/                      # 正式研究实验（方法有效性验证）
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── plans/
-│   └── results/
-├── code/                             # 可复用工程代码
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── src/
-│   │   ├── data/                     # source、materializer、sink、workload
-│   │   ├── planning/                 # 纯代价估计与 work-unit packing
-│   │   ├── scheduling/               # 组织、准入、routing、Ray runtime
-│   │   ├── serving/                  # completion/embedding backend、vLLM probe
-│   │   ├── modalities/{text,image}/  # 文本/图像专属语义，不复制 scheduler
-│   │   ├── observability/            # metrics、profiler、trace
-│   │   ├── baselines/{common,text,image}/
-│   │   ├── experiments/              # calibration、scenario、shared-vLLM
-│   │   └── infrastructure/           # config/profile/assets、runtime env、runner lease
-│   ├── scripts/{data,services,baselines,profiling,experiments,analysis,environment}/
-│   ├── tests/                        # 按生产域镜像；含架构边界测试
-│   ├── configs/                      # vendor pin 与可复现配置
-│   └── requirements.txt
-├── code_doc/                         # 自动生成的代码文档（辅助）
-├── data/                             # 本地 workload 数据（raw 被 git ignore）
-├── deploy/                           # 本地 Docker 与 AutoDL 部署/runbook
-│   ├── runtime/                      # 跨机器 profile、依赖能力和模型/数据资产合同
-│   ├── autodl/
-│   ├── pgai/
-│   └── postgres18.4/
-├── figures/                          # 项目级图资产
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── opening_figure_set/           # 开题专用图集：按页码命名的主讲、SVG、Draw.io 与备份图
-│   ├── architecture/
-│   ├── data/report_main/
-│   ├── data/backup/
-│   ├── audit/
-│   ├── learning/
-│   └── scripts/
-├── learning/                         # 学习讲解材料
-│   ├── AGENTS.md
-│   ├── README.md
-│   └── experiment_walkthrough.md
-├── opening/                          # 开题材料
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── report/opening_report.md
-│   ├── report/opening_defense_qa/             # 答辩 QA 的 LaTeX、PDF 与设计说明
-│   ├── slides/
-│   ├── feishu/
-│   └── literature/                   # reading_list.md + 历史 Top 15 笔记快照
-├── projects/                         # PPT 项目工程文件
-└── notes/                            # 沟通记录、待确认问题
-    ├── AGENTS.md
-    └── communication_notes.md
+├── AGENTS.md / PROJECT_OUTLINE.md / PROJECT_INDEX.md  # 规则、总纲、导航
+├── overview/       # 当前方向速览
+├── research/       # 文献、知识与方法依据
+├── motivation/     # 动机画像与 GPU-backed 端到端证据
+├── feasibility/    # 环境、组件和 capability/smoke 验证
+├── experiments/    # 方法计划与正式实验结果
+├── code/           # 可复用实现、脚本和测试
+├── deploy/         # 跨机器环境合同与运行手册
+├── data/           # 数据来源和导入合同；raw 不进 Git
+├── figures/        # 图资产、生成脚本和审计记录
+├── opening/        # 开题报告、答辩材料和文献快照
+├── learning/       # 教学式讲解材料
+├── notes/          # 导师/企业沟通记录
+├── docs/           # 已完成的一次性跨目录设计记录
+├── code_doc/       # 已完成的代码设计与实施计划
+└── projects/       # 旧 PPT 生成工程归档
 ```
 
-## 当前证据
+进入目录前从根到目标逐级读取沿途的 `AGENTS.md`，再读目标目录 `README.md`。根规则负责全项目
+范围与安全，子目录规则只增加本地职责和验证要求。`docs/`、`code_doc/`、
+`projects/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
+部署 runbook。
 
-根 README 只保留结论边界；精确数字以结果目录的 CSV、manifest 和 README 为准，
-汇总入口见 `PROJECT_OUTLINE.md` §当前最重要证据与
-`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。
+## 当前证据边界
 
-- **统一文本三臂已闭合，但项目臂未过 feeding 门**：24/24 单元通过 source/sink 与
-  exactly-once；project 在 SQuAD/ShareGPT 仅为 direct service tokens/s 的
-  89.93%/91.38%。固定 active-work 65,536/endpoint 仍是历史校准签名下的最小近饱和点，
-  但不能覆盖本轮统一 database-E2E 的负结果。
-- **复杂动态策略尚未普遍胜出**：AIMD/PID/EWMA、动态 flush、service quantum 和
-  多 actor 多数未超过预注册的约 5% 晋级门槛；SAOR capacity-only 开发门相对 K128
-  +4.36%，但相对 K160 仅 +0.52%、相对简单 threshold −1.46%，同样未晋级。不能因“动态”
-  命名就声称更优；K160 是强效率 baseline，但已有 Job B tail/Jain 代价。
-- **SAOR fixed-envelope formal 给出有效但未晋级的权衡证据**：40/40、0 incident、exactly-once；SAOR
-  12,393 tok/s、fg P99 50.3s，在 credit 臂内最好，但 static 以 9,508 tok/s 换得 fg P99
-  29.2s 和 0% SLO violation。原始 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed；
-  250 ms resolution-aware v2 已在完整 artifact 上重汇总为 passed，仅修审计假阴性、不改变排序。当前
-  `slo_weight=0`；strict-priority 两轮短测虽显著改善 fg，但 hard priority 缺少 anti-starvation/lag guard，不能称 SLO-aware 或策略胜出。`saor-v0.5.1` 双轮 development gate 未晋级：0.25K 机制不稳定，两个 cap 的 fg P99/SLO 均未过门；根因收紧为 ready-set 只暴露单个 pull head。formal、4-Job 与 reservation 消融继续阻塞。
-- **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
-  4-endpoint KV 饱和时排名和 prefix-cache 行为明显分化。相关结论不能脱离 endpoint/
-  KV 条件外推。
-- **图像瓶颈是 CPU prepare 与提交链路的组合，不是 GPU 单指标问题**：60K×2 matched-resource
-  正式结果和 host-path 筛选共同表明，增加 CPU actor/读取线程只有有限边际收益，PCIe/H2D
-  也未被证明是主瓶颈。后续先显式拆出 ready-tensor 队列做两级 backpressure，再把
-  derived-image cache 与 DALI mixed/GPU preprocess 作为独立 work-reduction 消融。
-- **图像多 Job 与状态观测门已闭合**：Daft built-in/Ray Data 1+3 原生矩阵 40/40 passed，
-  两条执行图都出现非均匀 Job slowdown；Project observe-only 矩阵 24/24 passed，snapshot
-  构建成本约 0.141 ms，但总体 JCT 与 static 仅差 0.98%。它们证明跨模态 staged work/state
-  观测可行，不证明动态调度胜出，也不构成跨框架绝对排名。
-- **原生 baseline 身份已收紧**：图像 Daft built-in、Ray Data native graph 和固定
-  upstream vendor code 才进入正式 baseline；项目自写 Daft fused/staged UDF 只作诊断。
-  256 图资源/正确性 gate 与 Daft built-in/project 逐行 embedding parity 已通过，独立
-  matched-resource 正式重复已完成；动态两级 broker 与 sink 质量闭环尚未完成。
-- **可运行性验证**：最新代码在 AutoDL 完整依赖环境通过 679/679 单测；文本 512 行
-  双 endpoint、图像 256 行 Daft/Ray Data correctness gate、两条默认无 capture 路径均
-  跑通。它们是 smoke，不是论文性能排名。
+- 固定行数不能稳定表示 AI work；数据组织策略在低 KV 压力与高 KV 压力下会出现不同排序。
+- 当前双 RTX 4090/Qwen/vLLM 签名下存在最小近饱和 active-work 区间；该数值不能跨机器、模型、
+  endpoint 拓扑或 workload 直接复用。
+- 多种复杂动态控制没有稳定超过强静态点；现有结果支持“效率—尾延迟—公平性权衡”，不支持
+  动态方法普遍胜出。
+- 图像路径已经证明分阶段 work/state 可观测和原生多 Job 干扰存在，但尚未证明状态感知动态
+  调度胜出。
+- SAOR 的当前 formal 合同因 feeding ratio 未达到预注册阈值而保持
+  `locked_failed_feeding/formal_authorized=false`；相关五臂结果仍是 rehearsal/诊断证据。
+- 开题报告和图件已在本地完成多轮内容、引用和可读性审计；云文档/Wiki 不作为权威源。
 
-早期 CPU/fake 结果仅作历史参考；PG18.4 AutoDL rehearsal 不能冒充 PostgreSQL 18.3
-内部平台结论。
+精确数字、运行身份和“能/不能声称”的范围只从结果目录 README、CSV/JSON/manifest 和
+[`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
+引用。
 
-## 近期目标
+## 运行与维护
 
-当前执行顺序以 `opening/claim_matrix.md` 和
-`experiments/plans/experiment_status_and_gaps.md` 顶部的 2026-08-07 开题冻结优先级为准：
+- 新机器、容器、GPU、依赖、模型或数据任务必须先读 `deploy/runtime/AGENTS.md` 和
+  `deploy/runtime/README.md`，运行只读 preflight 后再安装、下载或实验。
+- 正式 baseline 必须由被测系统拥有执行和调度；项目适配只负责 source、sink、质量审计和指标。
+- 历史实验 raw 和失败证据不因“过时”删除。确认被替代的文档保留在历史层并写明替代入口。
+- Git 只保存可复现源、必要证据和轻量汇总；本地环境、模型、raw workload、缓存和临时产物不提交。
+- 结构、方向、实验结论或关键入口变化必须同步 `PROJECT_LOG.md` 和受影响目录 README。
 
-1. 保持题目、系统抽象、四级 Claim Matrix 与开题 baseline 停止规则冻结。
-2. 以 `opening/report/opening_report.md` 和 `opening/slides/opening_defense_20260807_v6.pptx`
-   作为本地答辩材料；不因统一三臂负结果补跑新产品或 workload。
-3. 在飞书用户授权恢复后覆盖同步线上报告并插入四张核心图；当前本地飞书源稿与报告完全一致。
-4. 开题材料确认后恢复 image state-aware A+B、system database-E2E 与论文阶段 held-out。
-
-开题前不做第二数据库、文本 Daft/Ray Data 全矩阵、multi-job 五 baseline、TPC-H cost
-planning 或完整 scale×concurrency grid。图像 state-aware A+B、统一 pgvector system-E2E
-和 held-out robustness 均进入开题后的论文实验 backlog。
-
-写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
-
-当前 CLI 入口已按职责放在
-`code/scripts/{data,services,baselines,profiling,experiments,analysis,environment}/`；
-不要继续使用重构前的扁平脚本路径。具体命令见 `code/scripts/README.md`、
-`deploy/autodl/README.md` 与对应实验计划。
-
-动机测试正式结果和分析优先看：
-
-```text
-motivation/results/README.md
-motivation/results/gpu/README.md
-```
-
-项目总纲和最新证据见：
-
-```text
-PROJECT_OUTLINE.md
-```
+提交前至少运行：相关单元测试、Markdown 本地链接检查、`git diff --check` 和
+`python code/scripts/environment/scan_git_secrets.py`。

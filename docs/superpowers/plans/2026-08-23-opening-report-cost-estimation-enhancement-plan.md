@@ -1,5 +1,8 @@
 # Opening Report Cost Estimation Enhancement Implementation Plan
 
+> 状态：已于 2026-08-24 完成。本文仅保留实施过程；当前正文以
+> `../../../opening/report/opening_report.md` 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 修改开题报告，使两项研究内容各自具有清楚、可引用且不依赖代价估计的研究动机和基础方法，同时准确说明 AI 算子代价估计对数据库优化以及两项研究内容的可选增强作用。

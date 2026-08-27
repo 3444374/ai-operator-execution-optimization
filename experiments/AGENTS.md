@@ -1,44 +1,57 @@
 # experiments/AGENTS.md
 
-本目录维护课题正式研究实验。进入本目录前先读根目录 `AGENTS.md`、`PROJECT_INDEX.md`，再读本文件和 `README.md`。
+本文件继承根 `AGENTS.md`，只增加正式研究实验规则。进入计划或结果子目录时继续读取其
+`AGENTS.md` 和 `README.md`。
 
-## 作用
+## 1. 职责与边界
 
-- 承接开题报告中的两项策略设计与多模态泛化验证：数据组织策略（研究内容一）、运行层调度与提交控制策略（研究内容二）、多模态泛化验证（正文实验）。写回瓶颈判定作为实验设置中的验证性内容，不作为独立研究内容。
-- 记录优化方案、消融实验、对照实验、正式结果和小范围调优测试。
-- 在动机测试已经说明“为什么值得做”之后，回答“具体方法是否有效、有效在哪里、边界是什么”。
+- `plans/` 保存当前计划、已完成合同、长期参考和历史方案；`results/` 保存方法实验原始证据与解释。
+- 本目录回答“方法是否有效、在什么条件下有效、代价和失效条件是什么”。
+- `motivation/` 回答为什么值得研究；`feasibility/` 回答组件/环境是否可用；`code/` 保存实现；
+  `figures/` 保存长期图资产。
+- 数据组织和提交/路由/多 Job 调度是两项研究内容；代价估计是共同支撑，多模态是验证角色，
+  写回是工程 baseline。不得因实验数量增加新的平级研究内容。
 
-## 与其他目录的边界
+## 2. 实验授权与设计
 
-- `motivation/`：只负责课题动机、为什么值得做、初步系统画像和瓶颈信号；不承担完整研究实验规划。
-- `feasibility/`：只负责环境、组件、脚本和连接可用性验证；不承担论文方法有效性结论。
-- `code/`：保存可复用实现、脚本和测试代码；`experiments/` 保存实验计划、运行记录和结果解释。
-- `figures/`：保存正式图资产；本目录结果需要画图时，图放到 `figures/data/` 的合适子目录，不能把图分散在实验结果目录里长期维护。
+- 每个新实验先有一个当前计划，明确研究问题、对应研究内容、系统边界、baseline、变量、消融、
+  correctness、资源上限、指标、重复、停止条件和不能声称的结论。
+- 先通过环境 preflight、数据/schema/exactly-once 和最小 correctness；只有计划明确授权后才运行
+  rehearsal/formal。旧计划中的 `formal` 指令不自动获得当前执行授权。
+- 优化臂必须与强静态点或同上限对照；动态策略只有显著优于同上限静态配置才可晋升。
+- baseline 由被测系统拥有执行与调度。Project 实现的 FIFO/DRR/VTC-style/actor pool/credit 等只能
+  作为 Project internal control 或 diagnostic，除非直接运行了相应官方系统。
+- 正式 run 的具体 machine/model/service/protocol/workload 签名和阈值来自当前计划及 runtime 报告，
+  不从历史结果或本规则文件继承。
 
-## 目录结构
+## 3. 运行与落盘
 
-- `plans/`：按研究内容组织的正式实验计划、变量、baseline、消融和评价指标。
-- `results/`：正式研究实验结果、优化测试记录、CSV 说明和结论边界。
+- 按目标计划执行 warm-up、交错重复、健康/饱和/稳定性检查；任一强制条件失败时停止策略结论，
+  将该 run 作为失败或诊断证据保留。
+- 每个 run 保存 resolved config、manifest、upstream/provenance、command、环境报告、request/submission/
+  resource trace、成功与失败记录；敏感内容按根规则脱敏。
+- 统一区分 database/source、organization、serialization/put、admission/queue、submit、model、fan-in、
+  sink 和完整 JCT；优先使用 time-series 聚合，不把单次 snapshot 当稳态指标。
+- 质量、成本、能耗和 fairness 只在适用且观测合同完整时报告；不可用字段写 `unavailable + reason`，
+  不填零、不事后猜测。
+- 结果落到 `experiments/results/<方向>/<实验>_<日期>/{README.md,raw/}`；绘图脚本和长期图放
+  `figures/`，结果目录只引用。
 
-后续如果某一研究内容开始有稳定代码，可在 `code/` 中建立实现；本目录只记录实验设计和结果。
+## 4. 报告与结论（结果边界）
 
-## 规则
+结果 README 依次覆盖：目的、设置、合规自检、设计、全组件数据、事实/推断/不能声称、对课题含义、
+下一步。所有主数字给出单位、公式/来源和全部重复值。
 
-- 每个实验必须写清楚研究问题、对应研究内容、运行命令、参数、CSV 路径、指标、结果解释和不能声称的结论。
-- 优化实验必须有 baseline 和消融，不只汇报优化后数字。
-- 小改动调优也要记录：改了什么、为什么改、对哪个指标有影响、是否可复现。
-- GPU-backed E2E 链路优先于 CPU/fake 简化实验；CPU/fake 只能作为调试或历史对照。
-- 不把动机测试结果写成方法贡献；动机测试只说明为什么值得继续做。
-- 修改本目录后，同步检查 `README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`opening/report/opening_report.md` 和 `figures/README.md` 是否需要更新。
-- 实验设计和结论遵循 `karpathy-guidelines`：不确定就标注不确定，先定义可验证目标，做最小实验，每个结论区分事实/推断/待确认。
-- 实验图统一放在 `figures/`；做图前先读 `figures/AGENTS.md`。设计论文级核心图时参考 `figure-designer`，投稿级质检参考 `nature-figure`。
+- 缺少对照臂时按实际路径数命名，不称完整排名；
+- `NULL`、未采集和“未观察到错误”不写成审计为零；
+- microbenchmark、单次 rehearsal 和不同 workload/签名的结果不合并成统一性能结论；
+- 负结果和策略未晋升同样进入证据台账。
 
-## 结果边界与归档（多路径 scale/calibration sweep）
+详细门禁、指标与措辞检查只从以下长期参考读取：
 
-下列是正式 run 在**报告措辞**与**落盘归档**上的硬性边界（复审第四轮确立；违反 = 过强结论 / 证据不可复现）。可勾选投影见 `experiments/plans/experiment_report_honesty_checklist.md` §8。
+- `plans/baseline_reference.md`；
+- `plans/reference/experiment_report_honesty_checklist.md`；
+- `plans/experiment_status_and_gaps.md` 顶部当前摘要；
+- 目标实验计划与结果 README。
 
-- **缺臂如实命名**：sweep 未含全部对照臂（如缺 `project_static`）时，称"N 条系统路径的 scale/calibration sweep"，**不**称"完整三臂正式排名"；只答所含路径的容量曲线/稳定性/规模拐点差异，**不**答"项目方法是否优于 baseline"（须补齐缺臂、同合同重跑后才能）。
-- **指标必附代码公式 + 行号**：报任何派生指标（skew/CV/ratio）写明代码精确公式与行号，不给裸数字。例：后端平衡 skew = `_backend_skew` = `abs(a-b)/max(a,b)` = (max-min)/max（`code/scripts/baselines/multicard_scale_ramp.py:366`），127:129 = 1.55%；**不**用 (max-min)/sum（=0.781%，代码不用）。gate 阈值 10% 也对 /max。
-- **finish_reason 措辞**：DuckDB-ai 扩展该字段为空 → 写"0 error/NULL、未观察到 max_tokens truncation error"，**不**写"已审计 0 length"（空 ≠ 审计非 length）。
-- **跑完归档清单**（每次正式 run 落盘到 results 目录）：两个 vLLM 进程的完整 cmdline + strict-preflight 输出（证 declared==effective）；vLLM/model revision、dtype、tensor-parallel、gpu-memory-utilization；nginx conf SHA（gateway 轨）；每 cell warmup/formal 身份 + service counters + request-skew + token-work-skew（均 (max-min)/max）；query JCT 与 request E2E **分列**；失败 cell 完整落盘；reps≥3 用 sample CV(n-1) + 报告**全部单次值**（不只 mean）。
-- **ramp 观测指标合同（§7.5D，2026-08-07 audit-followup 补齐）**：ramp aggregator + instrumentation 现已采集/surface 全 §7.5D 指标——MFU（`_compute_efficiency`，per-GPU `[0,1]` 分数，basis=service_wall，peak=165 TFLOPS bf16；`multicard_ramp_aggregate.py:GPU_PEAK_TFLOPS_BF16`）、ITL p50/p95/p99、request decode/prefill/inference/queue mean、prefix-hit、能耗 `energy_j` + `energy_j_per_1k_tokens`（Σ GPU power × wall）；§7.5C(1) 喂饱门证据 `vllm_running/waiting_total_mean/max` + `vllm_kv_cache_usage_mean/max`（**during-cell**，`VllmGaugeSampler` 每 0.5s 轮询，写到 per-cell `vllm_gauges.json`）。**recoverable vs rerun**：MFU/ITL/energy 从旧 raw 的 `ttft_metrics.json`（已含 `estimated_flops_per_gpu_delta`）+ `gpu_resource.csv` 直接 re-aggregate 即得（无需重跑）；running/waiting/KV during-cell mean/max 需新 run（旧 raw 无 `vllm_gauges.json`，before/after 快照均 idle=0 不可用）。MFU 单位是**分数非百分比**（`mfu_fraction`），报时附公式 + `GPU_PEAK_TFLOPS_BF16` 行号。
+实验结论变化后同步实验证据台账、`PROJECT_OUTLINE.md`、受影响的图/开题材料和 `PROJECT_LOG.md`。

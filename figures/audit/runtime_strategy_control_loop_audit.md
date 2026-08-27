@@ -38,7 +38,7 @@ figures/scripts/generate_runtime_strategy_control_loop.py
 
 - `figures/audit/local_reference_figure_reading_notes.md`
 - `figures/audit/strategy_figure_micro_design_points.md`
-- `experiments/plans/strategy_design_literature_basis.md`
+- `experiments/plans/reference/strategy_design_literature_basis.md`
 
 吸收的图形经验：
 

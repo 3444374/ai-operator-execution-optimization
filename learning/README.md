@@ -1,5 +1,9 @@
 # Learning Notes
 
+本目录按日期保存机制讲解和实验复盘，正文中的“当前”“下一步”只对对应日期有效。项目最新优先级
+以根 `PROJECT_OUTLINE.md` 和 `experiments/plans/experiment_status_and_gaps.md` 为准；本目录不承担
+运行授权或实验状态维护。
+
 ## 2026-08-21 为什么公平性可以从框架外观察，但不能从完成行数猜
 
 Daft/Ray Data 不公开内部 scheduler，不等于五臂无法比较 tail 和经验公平性。共同的

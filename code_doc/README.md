@@ -1,53 +1,23 @@
-# code_doc/
+# 代码设计与实施记录
 
-Code implementation process documents that are not research evidence,
-experiment results, or opening-report materials.
+本目录保存已经形成代码或实验基础设施的设计规格和实施计划。它是历史追溯面，不是当前执行
+入口，也不是研究证据。
 
-Current SAOR native-system matched comparison design:
-`superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`.
+## 阅读规则
 
-Current SAOR native-system matched comparison implementation plan:
-`superpowers/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md`.
+- 想了解当前代码结构：读 `../code/README.md`。
+- 想了解当前实现完成度：读 `../code/INFRA_STATUS.md`。
+- 想运行脚本：读 `../code/scripts/README.md`。
+- 想核对方法是否已被实验支持：读
+  `../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。
+- 只有在追溯某项实现为何这样设计时，才进入本目录的 `superpowers/`。
 
-## Files
+## 目录
 
-| Path | Purpose |
-|---|---|
-| `superpowers/` | Superpowers-generated specs and implementation plans for code work |
+| 路径 | 内容 | 状态 |
+|---|---|---|
+| `superpowers/specs/` | 设计规格、接口与约束 | 历史记录 |
+| `superpowers/plans/` | 分步实施计划 | 历史记录 |
 
-Current adaptive flush redesign:
-`superpowers/specs/2026-07-25-adaptive-flush-window-design.md`.
-
-Current output-cost and offline packing design:
-`superpowers/specs/2026-07-26-output-aware-bfd-design.md`.
-
-Current output-aware BFD implementation plan:
-`superpowers/plans/2026-07-26-output-aware-bfd-implementation.md`.
-
-Current row-cap-aware packing and non-blocking observation design:
-`superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md`.
-
-Current row-cap-aware packing and non-blocking observation implementation plan:
-`superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md`.
-
-Current single-GPU text evidence-closure implementation plan:
-`superpowers/plans/2026-07-26-single-gpu-text-closure-implementation.md`.
-
-Current multi-endpoint routing readiness design:
-`superpowers/specs/2026-07-26-multi-endpoint-routing-readiness-design.md`.
-
-Current Ray and vLLM execution-layer tuning design:
-`superpowers/specs/2026-07-26-ray-vllm-execution-tuning-design.md`.
-
-Current saturated active-work, service-quantum, and Ray actor-pool replenishment
-design:
-`superpowers/specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md`.
-
-Current saturated Ray execution-foundation implementation plan:
-`superpowers/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md`.
-
-Current Ray execution-foundation implementation plan:
-`superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md`.
-
-Current vLLM and Ray tuning experiment plan:
-`superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md`.
+文件名中的日期表示设计当时的上下文。文中出现的“当前”“下一步”或分支状态均按该日期读取，
+不得覆盖今天的 `PROJECT_OUTLINE.md`、实验合同或部署 runbook。

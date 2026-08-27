@@ -1,6 +1,6 @@
 # motivation/benchmarks/AGENTS.md
 
-本目录保存动机实验脚本。
+本文件继承根 `AGENTS.md` 与 `motivation/AGENTS.md`，只增加动机实验脚本规则。
 
 ## 可以放
 
@@ -18,4 +18,3 @@
 - 默认输出路径应指向 `motivation/results/` 下的具体结果层级。
 - 脚本移动或改名后要更新 README、计划文档和运行命令。
 - 新 GPU-backed 脚本应记录 DB fetch、Arrow build、submit/put、queue wait、model service、fan-in 和 writeback 阶段。
-

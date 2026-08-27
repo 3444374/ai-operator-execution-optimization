@@ -9,7 +9,7 @@
 
 在 DuckDB-ai 单臂上跑**全量** 10570 行 SQuAD dev（cap=64），确认 cap 是否对整集零截断、
 整集 EM/F1、以及 full-mode 下 fail-closed / 归因 / 三 hash 一致是否成立。
-属 baseline 建设阶段（`experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md`）。
+属 baseline 建设阶段（`experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md`）。
 
 ## 2. 实验设置
 

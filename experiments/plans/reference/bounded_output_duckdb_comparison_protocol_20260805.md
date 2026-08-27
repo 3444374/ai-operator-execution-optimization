@@ -1,5 +1,8 @@
 # Bounded-output DuckDB 对比协议（2026-08-05）
 
+> **文档身份（2026-08-27）**：持续有效的比较协议，不是待执行计划。DuckDB 只在语义兼容的
+> bounded-output 轨中使用；是否新增运行由顶层状态文件决定。
+
 > 权威方法论。DuckDB `ai` 与项目系统的 bounded-output 产品对比按本文件执行。原 ShareGPT
 > 多轮实验**保持不变**（仍讲项目内部策略/长输出/服务容量/动静态对比），只是不与 DuckDB 新结果
 > 直接并表。本协议源于"DuckDB 把 `finish_reason=length` 当行级 error、与 ShareGPT fixed-cap

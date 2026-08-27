@@ -1,37 +1,23 @@
-# projects/
+# 旧 PPT 生成工程归档
 
-本目录是 PPT 自动生成工程的工作目录。当前只有 2026-07-12 开题答辩 PPT 的生成项目。
+本目录保留 2026-07-12 开题答辩 PPT 的自动生成与验证工程。该版本的内容和形式已经被
+`opening/` 中的后续材料取代；这里不再接受新的开题内容修改。
 
-## 目录结构
+## 归档内容
 
-```
+```text
 projects/opening_defense_20260712/
-├── analysis/             ← 学校 PPT 模板结构解析、填充计划
-│   ├── build_fill_plan.py
-│   ├── check_report.json
-│   ├── fill_plan.json
-│   ├── summarize_template.py
-│   └── template.slide_library.json
-├── validation/           ← PPTX 版式检查、边界审计、内容读回
-│   ├── fix_bounds.py
-│   ├── inspect_bounds.py
-│   ├── pptx_audit.json / .md
-│   ├── pptx_audit_fixed.json / .md
-│   ├── readback.md
-│   ├── readback_files/
-│   └── validate_report.json
-└── exports/              ← 生成的 PPTX 导出
-    ├── opening_defense_20260712_200753.pptx
-    ├── opening_defense_20260712_201257.pptx
-    └── opening_defense_20260712_fixed.pptx
+├── analysis/       # 模板结构解析与填充计划
+├── validation/     # 版式检查、边界审计与内容读回
+└── exports/        # 当时生成的 PPTX
 ```
 
-## 与正式材料的关系
+当前开题入口：
 
-- 正式 PPTX 旧版曾放在 `opening/slides/opening_defense_20260712.pptx`（已被 `opening_defense_20260720_v5.pptx` 取代）。
-- 正式图资产放在 `figures/`。
-- 本目录的工具链用于生成和验证，不是最终交付目录。
+- 正文：`../opening/report/opening_report.md`
+- 答辩内容：`../opening/opening_defense_outline_20260808.md`
+- 当前幻灯片与设计说明：`../opening/slides/`
+- 图资产：`../figures/opening_figure_set/`
 
-## 注意
-
-本目录的 PPTX 和脚本是旧版（2026-07-12），当前内容和形式已作废。后续基于新报告重做 PPT 时，工具链经验可参考，但应重新生成。
+除非需要复现 2026-07-12 的生成过程，否则不要运行或修改本目录脚本。归档中的脚本、PPTX、
+校验报告和读回图片共同构成历史记录，普通清理不删除。

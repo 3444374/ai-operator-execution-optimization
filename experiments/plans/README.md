@@ -1,156 +1,94 @@
-# Research Experiment Plans
+# 实验计划与设计文档
 
-## Baseline / benchmark：单一入口与文档边界
+更新日期：2026-08-27
 
-[`baseline_reference.md`](baseline_reference.md) 是 AI_COMPLETE、AI_EMBED、
-AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入、证据等级、指标合同和
-当前门禁。不要再从旧矩阵、结果 README 或部署文档拼接一份新的 baseline 总表。
+本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
+`../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
 
-| 需要回答的问题 | 唯一入口 |
+## 1. 权威入口
+
+| 问题 | 入口 |
 |---|---|
-| 比谁、为什么比、能否进入数字排名、必须记录什么 | `baseline_reference.md` |
-| 文本 Chat/Completions 怎么运行 | `text_native_baseline_rerun_20260802.md` |
-| DuckDB bounded-output 怎么对比（任务/指标/两计时边界/请求等价门禁；单 endpoint 产品语义、双 endpoint project/control 方法轨、可选 gateway 系统轨分开） | `bounded_output_duckdb_comparison_protocol_20260805.md` |
-| 图像 workload、质量语义和执行矩阵怎么运行 | `image_clip_workload_lock_20260731.md` |
-| work-unit、状态感知与图像动态主实验怎么分层验证 | `state_aware_work_unit_evaluation_20260808.md` |
-| 当前做完什么、下一步是什么 | `experiment_status_and_gaps.md` §0 |
-| 厂商/论文为什么采用这些指标 | `../../research/evaluation_metrics_survey_20260731.md` |
-| 初学者如何理解四类 baseline | `../../learning/text_native_baseline_guide.md` |
-| 真实数字与结论 | 对应 `../results/` 或 `../../motivation/results/` |
-| 写多卡/吞吐/身份/统计报告前必读的诚实性检查清单（6 类反复错误 + §7 gate 4 项 + 8 步勾选） | `experiment_report_honesty_checklist.md` |
-| 4 臂（bounded/duckdb/lb_rr/project）× 规模 × 并发全网格怎么规划（含 project_static 2-endpoint hang 根因+修复+256 门、十字切片 vs 完整矩形、成本排序、能/不能回答） | `full_grid_sweep_plan.md` |
+| 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
+| 当前系统实现顺序 | [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](postgresql_lotus_ai_semantic_operator_implementation_20260821.md) |
+| LOTUS `sem_map` 语义迁移细节 | [`lotus_semantic_frontend_execution_integration_20260821.md`](lotus_semantic_frontend_execution_integration_20260821.md) |
+| baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
+| work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
+| 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
-2026-07-29 的数据库 AI 算子矩阵混有预注册和逐日执行日志，现完整保存在
-`archive/database_ai_operator_baseline_matrix_20260729.md`，仅用于历史追溯，不再指导
-新实验。每个正式 arm 仍需独立 calibration；相同 work 的 runtime 比较与改变调用数、
-模型或语义的 system-level 比较必须分开。
+当前短期顺序是：
 
-本目录保存正式研究实验计划、设计参考与状态审计，不保存原始结果。文档按性质分三类：
+1. 完成 LOTUS v1.2.4 `sem_map` 语义等价迁移；
+2. 通过 PostgreSQL extension / planner-visible operator 的 SQL 与 query-lifecycle 资格验证；
+3. 在前两项完成前，不扩展 GPU 矩阵、不调整 SAOR、不把 emulated contract 写成已实现数据库内算子；
+4. 资格验证通过后，再恢复图像 state-aware 系统级 matched comparison 和其他条件性补测。
 
-- **实验计划**（按研究内容）：跑实验时看——变量、假设、矩阵。
-- **设计参考**：设计/答辩时查——baseline 矩阵、文献边界、实现映射。
-- **状态审计**：看当前进展、缺口、路线图、审稿人风险。
+## 2. 状态分层
 
-> 技术基础知识（decode memory-bound、AIMD、continuous batching 等）的单一来源在 `research/` 和 `research/reading_notes/`，本目录只引用、不重复。
+### 当前计划（本目录顶层）
 
-## 〇、workload 选型与锁定（学长原则：先锁被认可场景）
-
-学长反馈（`notes/communication_notes.md` §5）明确：**先定 benchmark/workload，场景被认可后任何正指标都被接受**。以下为 workload 选型文档：
-
-| 文件 | 状态 | 内容 |
-|---|---|---|
-| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload**（当务之急） | 图像 AI_EMBED 执行门禁 + AI_CLASSIFY 正式候选。公开对齐轨道为 ImageNet/ResNet18，数据库泛化轨道为 COCO/CLIP multi-label；包含质量门禁、fused/staged baseline 与 host-data-path go/no-go。 |
-| `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级） | MS MARCO 8.8M 批 embedding。仍是文本，token ID 紧凑，搬运轻，**瓶颈不显现**——仅作"文本下不显现"的边界对照。 |
-
-方向 scope（DB↔GPU 经 Daft 桥接 + 三痛点 + 待验证的 offline-batch 候选界面）见
-`research/daft_db_gpu_bridge_direction_scope_20260731.md`；强 claim 以 staged baseline
-和 R0→R4 结果为准。
-
-## 一、实验计划（按研究内容）
-
-| 文件 | 对应研究内容 | 内容 |
-|---|---|---|
-| `data_organization_batching.md` | **研究内容一**：数据组织策略 | 静态 batch_size、token-budget、length-aligned、prefix-aware grouping 等候选方案 |
-| `service_scheduling_backpressure.md` | **研究内容二**：提交控制策略 | 固定 K_max、adaptive K_max、routing 策略、queue-adaptive flush、actor pool 分池路由等候选方案；§0.5 自回归物理前提 |
-| `cross_layer_killer_experiment.md` | **耦合验证** | 独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数）|
-| `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
-| `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
-| `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 已完成 SQuAD/ShareGPT 三臂统一 database-E2E；§9 预注册服务器恢复后的 ShareGPT direct C128 vs project K128/W65,536 双臂纠正补测，保持同一 source/manifest/sink 并禁止恢复 DuckDB 排名 |
-| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但旧 SAOR 未越过 static；bounded-ready 只冻结 $0.125W_e$。同窗口 selector attribution 与 single-head→bounded-ready FIFO observation bridge 均已完成，SAOR 是观测非支配折中而非 selector winner，`formal_authorized=false`。下一步只补 Daft Native/Daft Ray/Ray Data/project static/proposed 系统级 matched comparison；原生系统 baseline 不接 bounded-ready，4-Job/reservation/dynamic K 仍后置 |
-| `postgresql_lotus_ai_semantic_operator_implementation_20260821.md` | **PostgreSQL 内置 AI 语义算子实施主计划** | 当前优先用真实 LOTUS v1.2.4 `sem_map` 替换项目 UDF/manifest-like `AI_COMPLETE`，Daft/Ray/static/SAOR 只做可替换 backend；性能轨使用 emulated operator contract，PG extension/CustomScan 作 SQL/query-lifecycle 资格门。含 Q1–Q23 决策记录、两类 LOTUS baseline、两 panel 矩阵和分阶段验收 |
-| `lotus_semantic_frontend_execution_integration_20260821.md` | **LOTUS `sem_map` 语义实现 + backend 子计划** | 细化 LOTUS AST/prompt/output parity、native LM、project backend 和版本锁定；服从 PostgreSQL 内置算子主计划。未修改 DataConnector 完整路径必须保留为外部 LOTUS 产品 baseline |
-
-2026-08-21 起，上表“系统级 matched comparison”专指五臂 PostgreSQL-source→validated-completion
-operator-E2E（统一 `writeback=none`）；不再生成 FIFO/DRR/
-VTC-style selector development cells。官方 VTC 使用独立 S-LoRA 同栈 FCFS/VTC capability 配置，
-只进入服务机制表，当前为兼容性未验证的 blocked 状态。历史 selector rehearsal 结果不删除，
-但不得重新标成 native baseline 或拼进五臂排名。
-
-同日新增的 `saor_cross_layer_scheduler_capability_20260820.md` 是另一组独立能力合同：四个 headline
-arms 为 Daft Ray + native FCFS/DRR-on-vLLM reproduction/VTC-on-vLLM reproduction 与
-SAOR + native FCFS。当前 installed-source、Job identity 和 custom-FCFS parity 均未过门，状态
-blocked、server validation 未运行、formal 未授权；不得据其发布性能排名。
-
-双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
-相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
-arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-level
-持续补位。不能用同一个大矩阵同时搜索三层参数。
-
-**当前执行状态（2026-08-09）**：开题 database-E2E replacement、文本原生单 Job、
-`Short@0s → Long@5s` guaranteed-overlap 原生观察和项目 static/shared 因果 A/B 均已
-完成。2026-08-09 用户明确解除“4+ Job”冻结，仅补一个预注册的
-`short@0s → 3×matched-long@5s` 矩阵；仍停止新增 baseline、offset、weight 或参数扫描。
-当前除该补充外只维护报告、紧凑数据和待画图合同。开题后的最小工程顺序为 production descriptor builder →
-observe-only snapshot → no-op/fallback gate → 同上限单一控制动作消融；随后才进入
-phase-change、weighted/SLO、图像动态和 held-out cost。若先诊断当前项目 short 性能，
-必须先做 bounded/project 的 same-replay 两臂，再单列所有 rows 在 `t=0` 可见的离线
-容量轨；未发现 project 额外 completion lag 前不改调度器。旧 49K/65K 扫描顺序与
-2026-07-30 fail-closed 筛选只保留为历史设计记录，不再是执行指令。权威状态只看
-`experiment_status_and_gaps.md` 的开题冻结段与 §0。
-
-四作业文本补充现已完成。2026-08-09 新增的图像 Daft built-in/Ray Data/project 四作业
-与 DuckDB bounded-output 四作业目前只完成 immutable manifest、配置、runner、指标和
-流程准备，尚未跑 formal。图像 proposed 使用稳定 scenario ID 与独立 `policy_revision`；
-后续状态感知/动态调度代码变化保持 workload/native 合同不动，只重跑 project。
-
-## 二、设计参考
-
-| 文件 | 用途 | 回答什么 |
-|---|---|---|
-| `baseline_reference.md` | 选 baseline 时查 | 从 CCF-A 文献提取的各方向最优 baseline（G/W/D/X 系列），避免 strawman 对照 |
-| `strategy_design_literature_basis.md` | 写论文 / 答辩 / reviewer 防御时查 | **为什么这样设计 + 不能过度声称什么**：可借鉴思想 vs baseline/边界 vs 本文策略定义、fatal flaws、§3.1 借鉴论文适用边界 |
-| `strategy_design_implementation_reference.md` | 写代码 / 设计实验变量时查 | **怎么实现**：信号→变量→指标→baseline→§8 目标代码架构→实现优先级 |
-| `literature_driven_pipeline_optimization_guide.md` | 继续从文献寻找优化点时查 | **怎么发现下一项机制**：三层 batch 边界、Orca 式上游持续补位、完整 adaptive flush 缺口、机制卡模板、fatal-flaw audit、候选池与晋级/放弃条件 |
-| `text_native_baseline_rerun_20260802.md` | 重跑文本 baseline 前查 | **怎么严谨重测**：区分 service ceiling、direct control、framework/product native；定义 Chat/Completions 分轨、64-row validity gate、512-row calibration 与 2,048-row held-out 合同；当前仅 gate runner 可执行 |
-
-> **文档分工**：`literature_basis` 是论文边界论证，`implementation_reference`
-> 是已有工程映射，`literature_driven_pipeline_optimization_guide` 是今后重复使用的
-> 机制发现与筛选流程。具体完成度仍以 `experiment_status_and_gaps.md` 为准。
-> baseline 的当前口径只以 `baseline_reference.md` 和对应模态执行合同为准；
-> `code_doc/superpowers/` 与 `plans/archive/` 中的文档仅保留设计历史。正式数据只进入
-> `experiments/results/` 或 `motivation/results/` 的对应结果目录。
-
-## 三、状态审计
-
-| 文件 | 内容 |
+| 文件 | 当前状态与用途 |
 |---|---|
-| `experiment_status_and_gaps.md` | 开题冻结段与 §0 是当前状态；后续 P0/P1/P2、旧扫描顺序只作已标记的历史记录。**当前实验设计的第一参考。** |
-| `archive/research_design_catalog.md` | **课题研究方案候选目录（已归档）**：28 个候选方案的六维评估矩阵，作为设计历史参考 |
+| [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](postgresql_lotus_ai_semantic_operator_implementation_20260821.md) | 当前实施主计划；先语义迁移，再做 PostgreSQL 生命周期资格验证 |
+| [`lotus_semantic_frontend_execution_integration_20260821.md`](lotus_semantic_frontend_execution_integration_20260821.md) | LOTUS v1.2.4 AST、prompt、output 与 backend 适配子计划 |
+| [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含多轮完成证据；剩余图像动态与系统级 matched comparison，等待上游资格项 |
+| [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
+| [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
+| [`data_organization_batching.md`](data_organization_batching.md) | 文本主矩阵已完成；保留后续模态复用与条件性扩展合同 |
+| [`service_scheduling_backpressure.md`](service_scheduling_backpressure.md) | 静态/shared credit 主证据已完成；动态候选未证明普遍胜出 |
+| [`cross_layer_killer_experiment.md`](cross_layer_killer_experiment.md) | 独立最优拼接与联合搜索的条件性耦合验证 |
+| [`full_grid_sweep_plan.md`](full_grid_sweep_plan.md) | 暂停的可选扩展矩阵；无当前运行授权 |
 
-## 实验计划的共同评估标准（来自 CCF-A 论文）
+顶层另保留两份横向入口：
 
-所有四个实验计划遵循从 [vLLM (SOSP 2023)]、[Orca (OSDI 2022)]、[TurboVecDB (VLDB 2025)]、[GaussML (ICDE 2024)]、[FlexPushdownDB (VLDB 2021)] 五篇 CCF-A 论文提取的共同方法论：
+- [`baseline_reference.md`](baseline_reference.md)：baseline 唯一总入口；
+- [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md)：完成度、证据强度与缺口的唯一状态入口。
 
-1. **曲线 > 单点**：不报"快 X×"，而是画吞吐-延迟曲线展示全工作点
-2. **先暴露瓶颈再讲优化**：用阶段拆解展示瓶颈位置，再针对优化
-3. **同硬件公平 baseline**：所有对照跑在同一机器、同一数据、同一模型
-4. **消融拆开**：每个优化的独立贡献可量化
-5. **诚实报告边界**：每个实验有计划地验证"什么时候不 work"
-6. **统计严谨**：重复次数、集中趋势（中位数）、warm-up 策略、Ray 状态重置
+### 已完成计划
 
-## 实验前置依赖
+[`completed/`](completed/) 保存已执行完成、已被结果替代，或其当前范围已经闭合的合同。正文不删除，
+以便追溯预注册变量与执行边界；不得把正文中的“下一步”自动视为当前任务。
 
-```
-前置：vLLM + Qwen2.5-1.5B baseline 建立 + Daft 文本阶段接入
-  ↓
-第一阶段：研究内容一 数据组织策略消融（token-budget + 分组策略 + Daft 引擎参数）
-  ↓
-第二阶段：研究内容二 提交控制策略消融（queue-adaptive flush + routing + Daft engine 参数）
-  ↓
-第三阶段：耦合验证（独立最优拼接 vs 联合 grid search，判定是否需要联合调优）
-  ↓
-第四阶段：多模态泛化验证（图像 workload，同一套策略代码）
-```
+### 设计参考
 
-**在 vLLM baseline 建立之前，所有基于手动 HTTP endpoint 的实验结果都基于 suboptimal baseline，不能作为论文最终数据。**
+[`reference/`](reference/) 保存跨实验复用的协议、检查清单、文献边界和历史工程映射。它们不是待执行计划，
+也不单独产生实验结论。
 
-## 设计规则
+### 历史归档
 
-设计实验 baseline 前，先查阅 `baseline_reference.md`——优先从已有 CCF-A 文献中提取最优策略作为对照，不凭空设计 strawman baseline。设计“本文策略”或更新策略设计图前，先查阅 `strategy_design_literature_basis.md`，区分哪些是可借鉴思想、哪些只是 baseline/边界、哪些才是本文自己的策略。实验设计方法论参照 AGENTS.md §6.5（文献优先设计规则）和 `research/README.md` §文献优先设计方法论。
+[`archive/`](archive/) 保存被当前方向替代、暂停且没有运行授权的候选方案与旧矩阵。归档不等于删除，
+只表示它们不能覆盖当前总纲和状态文件。
 
-进入具体实现或实验矩阵设计时，再查阅 `strategy_design_implementation_reference.md`：该文件把两项策略拆成数据组织策略（研究内容一）、调度与提交控制策略（研究内容二），加上多模态泛化验证和贯穿两项策略的算子代价估计，并列出每部分的信号、变量、指标、baseline 和实现优先级。
+## 3. 当前研究内容与实验对应
 
-## 文档维护纪律（2026-07-24）
+| 研究内容 | 当前证据 | 剩余工作 |
+|---|---|---|
+| 数据组织策略 | 文本 cache-on 双/四 endpoint 重测已完成，效果随 KV 压力 regime 变化 | 在资格项完成后，用同一抽象验证图像 frame/work budget；不重复无目的文本扫描 |
+| 调度与提交控制 | static credit、shared credit、1/2/4 Job 与重叠作业证据已完成；呈现效率、隔离与公平权衡 | 系统级 matched comparison；动态策略必须同上限对比冻结静态点 |
+| 多模态泛化 | 图像画像、原生静态 baseline、多 Job 观察和 descriptor/observe-only 已归档 | HSE/static 非劣验证后再接受控动态动作与质量闭环 |
+| 算子代价估计 | 双 4090 v2 cache-on 320/320 有效，首次无效运行独立保留 | 新时间段或新 workload 校准；是否用于在线决策由 regret/区间结果决定 |
 
-1. **默认并入现有文档，不新建。** plans/ 里已存在的文档是某类内容的自然归属——实验完成度进 `experiment_status_and_gaps.md`，策略边界进 `strategy_design_literature_basis.md`，已有实现映射进 `strategy_design_implementation_reference.md`，可重复使用的跨论文机制发现流程统一进 `literature_driven_pipeline_optimization_guide.md`。深度内容进 `research/reading_notes/` 或对应 `*_reference.md`。**只有当某类内容在所有现有文档中都找不到自然归属时才新建文件，且必须在 `PROJECT_LOG.md` 说明为什么现有文档都不合适。** `state_aware_work_unit_evaluation_20260808.md` 是一次明确例外：它冻结跨研究内容一、研究内容二和图像泛化的同一因果矩阵，避免三个旧计划分别定义不兼容的 work/credit/state 合同。
-2. **计划文档只保留待做内容。** 实验一旦完成（结果已记入 `experiments/results/` + `experiment_status_and_gaps.md`），其设计/变量/矩阵从对应计划文档（`data_organization_batching.md`、`service_scheduling_backpressure.md` 等）删除——计划文档只回答"接下来做什么"，不积累已完成实验的存量。**前提**：完成实验的 results 报告必须自包含该实验的设计；否则删除前先把设计迁移到 results。
+写回固定使用 PostgreSQL + pgvector 的 COPY + deferred index 工程 baseline，不作为独立研究内容。
+
+## 4. 新实验的最低要求
+
+每个正式实验必须：
+
+1. 指向一个明确研究问题和当前计划；
+2. 记录平台、模型、协议、workload、资源上限、重复和随机化方式；
+3. 先通过 correctness、provenance、feeding-saturation 与稳定性检查；
+4. 区分服务上限、直接客户端、框架原生、数据库产品原生和项目方法；
+5. 把完整配置、命令、CSV/manifest、异常与结论边界写入对应结果目录；
+6. 更新本目录状态入口、证据注册表与 `PROJECT_LOG.md`。
+
+详细执行规则以本目录 [`AGENTS.md`](AGENTS.md) 和根 `AGENTS.md` 为准；报告前使用
+[`reference/experiment_report_honesty_checklist.md`](reference/experiment_report_honesty_checklist.md)。
+
+## 5. 维护纪律
+
+- 新信息优先并入已有权威文件，只有不存在自然归属时才新增文档。
+- 计划完成后移动到 `completed/`，并在文件首部写明完成范围、结果入口和仍未覆盖的事项。
+- 仅供方法复用的材料进入 `reference/`；被方向替代或暂停的方案进入 `archive/`。
+- 历史正文可保留当时术语，但文件首部必须说明其历史身份；当前术语以根总纲为准。
+- 不在计划首页复制易漂移的详细参数或实验数字；数字只从结果报告和证据注册表读取。
+- 不删除 raw、manifest、失败运行或事故证据；无效结果必须与有效结果分开并明确排除原因。

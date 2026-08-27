@@ -1,11 +1,15 @@
 # MS MARCO 批 embedding workload 设计 + 执行计划
 
+> **归档状态（2026-08-27）**：该文本 embedding workload 已被图像泛化和 LOTUS 语义主线取代，
+> 当前没有运行授权。正文只用于追溯选型过程；如未来恢复，必须重新建立数据许可、版本、环境与
+> baseline 合同，不得直接照搬旧参数。
+
 日期：2026-07-31
-状态：**⏸ 文本 serving-dominant 对照**。当前文本实验的主要墙钟在 vLLM serving，
+历史状态：**文本 serving-dominant 对照**。当前文本实验的主要墙钟在 vLLM serving，
 因此 MS MARCO 不作为 image-first 主 workload；它只能代表另一种 workload regime，
 不能用来“证明数据搬运问题不存在”。首选 workload 为图像 CLIP，后者也只负责让
 DB/CPU/Ray/H2D/GPU 各阶段可测，不预设传输瓶颈。见
-`image_clip_workload_lock_20260731.md` 与
+`../completed/image_clip_workload_lock_20260731.md` 与
 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10。
 关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`（方向 scope）；`notes/communication_notes.md` §5（学长反馈）；`code/INFRA_STATUS.md`（现有管线）。
 

@@ -1,15 +1,14 @@
 # deploy/pgai/AGENTS.md
 
-本目录维护 pgai SQL 算子预演环境，用于验证真实 SQL 触发的 PostgreSQL AI
-模型调用形态。
+本文件继承根 `AGENTS.md` 与 `deploy/AGENTS.md`，只增加 pgai SQL 算子预演环境规则。
 
 ## 定位
 
 - 这是 pgai / 等价 PostgreSQL AI SQL surface 的隔离预演环境。
 - 它用于验证 `CREATE EXTENSION ai`、`ai.ollama_embed(...)` 等 SQL 入口能否跑通。
 - 它不替代 `deploy/postgres18.4/` 的 PostgreSQL 18.4 + pgvector 同构预演环境。
-- 该环境当前基于 pgai 官方 Docker 示例所用的 Timescale PG17 镜像；不能写成
-  PostgreSQL 18.4 或 PostgreSQL 18.3 结果。
+- 实际镜像、PostgreSQL 与扩展版本从 compose、README 和运行时查询记录；每次结果写观测版本。
+  pgai 预演不得写成 PostgreSQL 18.4 或 PostgreSQL 18.3 结果。
 
 ## 边界
 

@@ -1,6 +1,11 @@
 # 双 4090 算子代价 profile 4-cell pilot（2026-08-04/05）
 
-> **当前入口：v3 cache-on gate。** 2026-08-04 的 v1/v2 是 cache-off 历史采样合同
+> **归档状态（2026-08-27）**：pilot 已完成，其作用是验证采样合同和正式运行预算，不能用于
+> 配置排名。结果与 raw trace 见
+> [`../../results/operator_cost_profile_pilot_20260804/`](../../results/operator_cost_profile_pilot_20260804/)。
+> 下文的“当前入口”是执行当时的历史表述。
+
+> **历史执行入口：v3 cache-on gate。** 2026-08-04 的 v1/v2 是 cache-off 历史采样合同
 > 门禁；其冻结配置保存在结果 raw manifest 中。按项目真实部署口径，当前
 > `dual_gpu_cost_profile_pilot.example.json` 已升级为 cache-on v3。cache-off 只保留为
 > 独立消融，不再承担正式性能 baseline。

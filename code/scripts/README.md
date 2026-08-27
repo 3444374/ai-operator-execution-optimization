@@ -7,16 +7,17 @@
 
 ## 文件定位
 
-脚本按职责分为六组：
+脚本按职责分为七组：
 
 | 子目录 | 只负责 |
 |---|---|
 | `data/` | workload 导入 |
-| `services/` | 本地调试服务 |
+| `services/` | 本地调试服务与受审计的模型服务启动器 |
 | `baselines/` | 原生 baseline/gate 薄入口 |
 | `profiling/` | 数据链路画像与机制诊断 |
 | `experiments/` | 场景、矩阵和多 job 正式编排 |
 | `analysis/` | 离线汇总、代价估计和 calibration 选择 |
+| `environment/` | 机器、依赖、资产与仓库安全检查 |
 
 入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
@@ -175,7 +176,7 @@ upstream/adapter provenance；CLI 必须同时传 `--config`、`--native-config`
 formal identity 显式包含三份 config SHA。该 validation/root/archive 是 formal authorization 的必填前置，
 不由仓库自行授权。
 
-`serving/launch_vllm_with_identity.py` 由 `deploy/autodl/start_endpoints.sh` 使用 `VLLM_PYTHON`
+`services/launch_vllm_with_identity.py` 由 `deploy/autodl/start_endpoints.sh` 使用 `VLLM_PYTHON`
 调用；它在 `exec` API server 前原子写入 PID/start-time/argv0/`sys.prefix`/package sidecar，使不同
 venv 即使共享同一底层解释器也不能被 readiness 混同。
 
@@ -1249,7 +1250,7 @@ job/group barrier JCT、服务计数、vLLM running/waiting/KV/TTFT delta 与
 - `deploy/autodl/dual_gpu_official_baseline_calibration.example.json`
 - `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json`
 - `experiments/plans/baseline_reference.md`
-- `experiments/plans/text_native_baseline_rerun_20260802.md`
+- `experiments/plans/completed/text_native_baseline_rerun_20260802.md`
 
 模板是预注册规格，不是允许远端临时拼接 formal 命令的替代品。64 行 gate
 通过前不得启动 calibration；calibration 通过前不得启动 2,048 held-out。

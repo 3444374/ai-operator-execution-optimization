@@ -133,7 +133,7 @@ GPU 型号检测不能可靠推导最优 batch/K/actor/active-work。项目采�
 
 现有文本选择器是 `code/scripts/analysis/select_strategy_calibration.py`；静态 workload
 曲面的 GO/NO-GO 由 `summarize_static_{k,credit}_workload_surface.py` 判定。图像轨道继续
-按 `experiments/plans/image_clip_workload_lock_20260731.md` 独立校准。这里不再发明第二套
+按 `experiments/plans/completed/image_clip_workload_lock_20260731.md` 的 workload 合同独立校准。这里不再发明第二套
 选择算法。
 
 “自适应”因此有明确边界：环境/profile 自动选择；现有选择器从可复现校准数据生成冻结

@@ -54,7 +54,7 @@ if [[ ${#GPU_ARRAY[@]} -ne ${#PORT_ARRAY[@]} ]]; then
 fi
 
 mkdir -p "$VLLM_LOG_DIR"
-LAUNCHER=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/code/scripts/serving/launch_vllm_with_identity.py
+LAUNCHER=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/code/scripts/services/launch_vllm_with_identity.py
 if [[ ! -f "$LAUNCHER" ]]; then
   echo "vLLM identity launcher not found: $LAUNCHER" >&2
   exit 2

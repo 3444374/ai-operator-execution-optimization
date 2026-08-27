@@ -12,7 +12,7 @@
 (b) 共享 SQuAD evaluator 能否从逐行证据复算 EM/F1；
 (c) vLLM counter delta 是否可归因到本轮（endpoint 独占、运行前后 idle）。
 关系到方向：**baseline 建设阶段**（DuckDB-ai 是数据库产品原生 baseline，见
-`experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md`）。
+`experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md`）。
 
 ## 2. 实验设置
 
@@ -95,7 +95,7 @@ reference_answers），EM/F1 可用共享 `squad_quality_metrics` 独立复算�
 
 - **含义**：DuckDB-ai 作为数据库产品原生 baseline 已具备进入 bounded-output 正式三臂对比
   （DuckDB-ai / 直连 client / 项目冻结最佳静态）的前提条件——能力跑通、质量可比、指标可归因。
-- **下一步**（按 `bounded_output_duckdb_comparison_protocol_20260805.md` §5 执行顺序）：
+- **历史下一步**（按 `experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md` §5 当时的执行顺序）：
   1. （可选）`--mode full` 全 10570 行语义门禁，确认整集无截断/无质量塌陷；
   2. **database-E2E 顶层 runner**（结构性缺口）：实现持久表扫描 → prompt 构造 → 模型调用 → 统一 sink
      的端到端计时，才能发布数据库系统级排名；

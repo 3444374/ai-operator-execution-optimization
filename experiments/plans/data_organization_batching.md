@@ -1,5 +1,10 @@
 # 研究内容一：动态数据组织与批处理构造策略实验计划
 
+> **当前状态（2026-08-27）**：文本主矩阵和 cache-on 双/四 endpoint 重测已完成，结论是
+> 策略效果依赖 KV 压力与 prefix 结构。本文仅保留后续模态复用和条件性扩展合同；当前先完成
+> LOTUS 语义迁移与 PostgreSQL query-lifecycle 资格验证，不重复文本参数扫描。已完成合同见
+> [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
+
 整理日期：2026-07-16
 对应研究内容：研究内容一
 方法候选编号：A1.1-A1.6（详见 `archive/research_design_catalog.md` §3，已归档）
@@ -166,7 +171,8 @@ prompt_tokens = len(tokenizer.encode(prompt, add_special_tokens=False))
 文档落点规则：
 
 - token 获取、字段定义、分组公式、超长行处理写在本文件。
-- 代码模块、抽象接口、CSV 字段和实现边界写在 `strategy_design_implementation_reference.md`。
+- 历史代码模块、抽象接口与 CSV 字段映射见
+  `reference/strategy_design_implementation_reference.md`；当前接口以 `../../code/README.md` 为准。
 - 具体实验命令、CSV 路径、结果解释写在对应 `experiments/results/.../README.md`。
 
 ---

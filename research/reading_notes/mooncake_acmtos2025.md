@@ -175,7 +175,7 @@ flowchart LR
 3. **§6.1（末段）+ §6.2**：明确指出 vLLM 开源版**只有本地 prefix cache**，Mooncake 做的是**全局** prefix cache 调度；并描述 cache-aware global scheduling（Algorithm 1）+ 启发式热点迁移。
    - **对本课题的价值**：研究内容一"**prefix-aware**"在有多个 vLLM 副本时的设计参考——课题代码不能依赖 vLLM 单实例的本地 prefix cache，需要在调度层维护跨副本的全局 prefix 索引。
 4. **§7.3 + §7.4**：朴素 early rejection 导致 prefill/decoding 反相波动（Fig.10a 的 4-stage 周期），预测式策略（系统级 `td` 假设）解决波动（Fig.10b 全 accept）。
-   - **对本课题的价值**：直接对应研究内容二的 **K_max 自适应 / admission control / queue-adaptive flush**。反相波动是 admission 设计的反面教材——简单阈值会引入振荡，需要预测式或平滑机制（与本课题 `code/AGENTS.md` §1 提到的 Ray ConcurrencyCapBackpressurePolicy EWMA + deadband 教训一致）。
+   - **对本课题的价值**：直接对应研究内容二的 **K_max 自适应 / admission control / queue-adaptive flush**。反相波动是 admission 设计的反面教材——简单阈值会引入振荡，需要预测式或平滑机制；是否增加这些机制仍遵循 `code/AGENTS.md`“代码质量”的证据要求。
 5. **§4.2 + §9 末段**：真实 trace 的 prefix 复用率上限 ~50%（远低于开源 benchmark 虚构的复用率），block 冷热极度不均（>50% block 从未被命中，少数命中数万次）。
    - **对本课题的价值**：诚实的数据点，可用于开题报告中论证 prefix-aware 策略的真实收益边界，避免过度声称。
 
@@ -184,7 +184,7 @@ flowchart LR
 - ❌ **不声称**："应采用 Mooncake 式的全球 KVCache 池"。课题规模（数据库 AI 算子链路、单租户/少副本）与 Kimi 超大规模（多租户、千卡级）相差多个数量级。Mooncake 的全球调度、热点复制、Conductor 调度算法是**超大规模专属问题**，不是本课题要解决的。
 - ❌ **不声称**："Mooncake 的 525% 吞吐提升可以迁移到数据库 AI 负载"。该数字来自 16k–128k 长上下文 + 50% prefix 模拟数据；数据库 AI 负载通常 input 短得多（embedding 几十 tokens、AI_COMPLETE 多在 1k–4k），收益量级不可直接照搬。
 - ❌ **不声称**："prefill/decoding 分池是 vLLM 的最佳部署方式"。Mooncake 自己也保留 chunked prefill inline 用于短请求（§5 首段 "A request's prefill is inlined into the decoding batch only when it can be forwarded without chunking"）；课题用 vLLM 单副本 baseline 时不必强行分池。
-- ❌ **不声称**："prediction-based early rejection 是 K_max 控制的唯一解"。Mooncake 的预测依赖 Transformer 计算规律性；本课题的上游调度面对的请求异质性更高（不同 AI 算子、不同模型），prediction 模型建立成本可能不划算，简单阈值或 EWMA 未必更差（呼应 `code/AGENTS.md` §1 简单性原则）。
+- ❌ **不声称**："prediction-based early rejection 是 K_max 控制的唯一解"。Mooncake 的预测依赖 Transformer 计算规律性；本课题的上游调度面对的请求异质性更高（不同 AI 算子、不同模型），prediction 模型建立成本可能不划算，简单阈值或 EWMA 未必更差（呼应 `code/AGENTS.md`“代码质量”的简单性原则）。
 - ❌ **不声称**：Kimi 的 trace 统计（input 7590 tokens、input/output=720）代表数据库 AI 负载特征。两者模态不同——AI_EMBED input 极短、AI_COMPLETE 以中等长度 prompt 为主，不可类比。
 
 ### 3. 对本课题的实际用途

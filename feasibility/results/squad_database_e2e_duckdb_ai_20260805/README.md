@@ -6,7 +6,7 @@
 
 ## 1. 实验目的
 
-补齐 `bounded_output_duckdb_comparison_protocol_20260805.md` §3 的 **database-E2E** 边界（持久表扫描 →
+补齐 `experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md` §3 的 **database-E2E** 边界（持久表扫描 →
 prompt 构造 → 模型调用 → 统一 sink），回答"用户提交整条数据库作业的总时间"在 DuckDB-ai 臂上到底花在哪。
 runner 只做静态分片/计时/审计/写回；DuckDB 扩展继续拥有 batching/concurrency；不注入项目 credit/actor/backpressure。
 

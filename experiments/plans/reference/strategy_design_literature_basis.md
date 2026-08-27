@@ -1,5 +1,9 @@
 # 策略设计思路的文献依据与边界
 
+> **文档身份（2026-08-27）**：持续使用的文献与反证边界参考。正文含早期术语和设计演进，
+> 不代表当前实现状态；当前研究定义与优先级以根 `AGENTS.md`、`PROJECT_OUTLINE.md` 和
+> `../experiment_status_and_gaps.md` 为准。
+
 整理日期：2026-07-15
 
 > **2026-07-29 口径更新**：本文中的"计划层/运行层/服务端层""三层策略""RC3/研究内容三"等旧术语已统一为当前口径。最新定义为两项策略 + 多模态泛化验证 + 贯穿两项策略的算子代价估计；优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。写回是实验设置。本文保留原始设计推演过程作为历史参考，术语不匹配处以上述主文档为准。
@@ -8,7 +12,9 @@
 
 > **与 `strategy_design_implementation_reference.md` 的分工（2026-07-24）**：本文是**边界论证**——为什么这样设计、不能过度声称什么、fatal flaws、可借鉴 vs baseline vs 本文策略；`implementation_reference` 是**工程映射**——信号→变量→指标→§8 目标代码架构→实现优先级。两者用途不同（答辩/写论文 vs 写代码），不合并不替换，见 `README.md` §二。
 
-本文件是策略口径源，不替代具体实验计划。具体变量、运行矩阵和结果记录仍以 `data_organization_batching.md`、`service_scheduling_backpressure.md`、`sink_writeback_coordination.md` 和 `baseline_reference.md` 为准。
+本文件不替代具体实验计划。具体变量、运行矩阵和结果记录仍以
+`../data_organization_batching.md`、`../service_scheduling_backpressure.md`、
+`sink_writeback_coordination.md` 和 `../baseline_reference.md` 为准。
 
 ---
 

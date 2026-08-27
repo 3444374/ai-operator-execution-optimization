@@ -1,6 +1,6 @@
 # 项目参考资料索引
 
-更新日期：2026-08-25
+更新日期：2026-08-27
 本索引保留项目历史题录登记，并与精读笔记交叉引用；当前工作区实际存在且已解析的 PDF 以同目录 `README.md` 为准。
 Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`。
 
@@ -26,12 +26,13 @@ Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`
 
 Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Abacus 两份实体 PDF，实际可用状态以同目录 `README.md` 为准。选择依据与排名逻辑见 `../top15_ranked_papers.md`。
 
-## 二、核心补充论文（新增 Sema）
+## 二、核心补充论文
 
 | 文件 | 论文 | 正式出处 | 笔记 | 不进 Top 15 原因 |
 |---|---|---|---|---|
 | `palimpzest_cidr2025.pdf` | Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing | CIDR 2025 | `palimpzest_cidr2025.md` | CIDR 非 CCF-A |
 | `sema_vldb2026.pdf` | Sema: A High-performance System for LLM-based Semantic Query Processing | VLDB 2026 Research Track 已录用；卷期、页码、DOI 待发布 | `sema_vldb2026.md` | 本地 PDF 为 arXiv:2603.11622v1；录用状态由 VLDB 官方程序确认 |
+| `kalypso_arxiv2026.pdf` | Kalypso: Relational LLM Serving | arXiv:2607.23815v2，2026-08-14；未登记正式 venue | `精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md` | query-plan-aware serving 核心补充；不进入 Top 15 |
 | `sembench_pvldb2026.pdf` | SemBench: A Benchmark for Semantic Query Processing Engines | PVLDB 19(8), 2026 | `sembench_pvldb2026.md` | benchmark paper |
 | `fairserve_arxiv2024.pdf` | FairServe: Ensuring Fair LLM Serving Amid Diverse Applications | arXiv 2024 | `fairserve_arxiv2024.md` | 预印本 |
 | `dlpm_arxiv2025.pdf` | DLPM: Locality-aware Fair Scheduling in LLM Serving | arXiv:2501.14312 | `dlpm_arxiv2025.md` | 预印本 |
@@ -184,7 +185,7 @@ Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Ab
 
 ## 十、统计与一致性
 
-- **当前工作区可解析 PDF 实体**: 4（Galois、Abacus、Palimpzest、Sema；以同目录 README 为准）
+- **当前工作区可解析 PDF 实体**: 6（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso；以同目录 README 为准）
 - **以下旧统计**记录历史题录/下载状态，不代表 2026-08-24 当前 checkout；待参考子集恢复后再整体重算。
 - **PDF 总数**: 88（`fastserve_2023.pdf` 与 `fastserve_nsdi2026.pdf` 内容相同，后者为 NSDI 2026 正式版命名；去重后 87 唯一内容）
 - **唯一内容 PDF**: 87

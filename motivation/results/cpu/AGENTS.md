@@ -1,6 +1,7 @@
 # motivation/results/cpu/AGENTS.md
 
-本目录保存真实模型 CPU-backed 端到端 baseline 和 CPU/GPU 对照报告。
+本文件继承根、`motivation/AGENTS.md` 与 `motivation/results/AGENTS.md`，只增加真实模型 CPU baseline
+和 CPU/GPU 对照规则。
 
 ## 规则
 

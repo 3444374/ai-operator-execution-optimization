@@ -21,4 +21,4 @@ router、flush、shared credit 或自定义 actor pool 的代码属于项目方�
 `src/scheduling/` / `src/observability/profiling/`，不能倒流进 native baseline。
 
 复测合同见
-`experiments/plans/text_native_baseline_rerun_20260802.md`。
+`experiments/plans/completed/text_native_baseline_rerun_20260802.md`。

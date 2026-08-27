@@ -286,7 +286,8 @@ def _dataset_coverage(rows: list[dict[str, str]], contexts: list[str], candidate
 
 
 def _promotion_contract(metrics: dict[str, list[float]]) -> dict[str, object]:
-    """Plan §6 frozen gates (operator_cost_profile_dual4090_formal_20260804.md §6 lines 87-88).
+    """Plan §6 frozen gates
+    (experiments/plans/completed/operator_cost_profile_dual4090_formal_20260804.md §6).
 
     candidate pairwise >= 0.75, median regret <= 5%, macro-MEAN regret <= 5%, MAX regret <= 15%.
     Any single failure blocks plan selection. Pure (no I/O) so the contract logic is unit-testable.

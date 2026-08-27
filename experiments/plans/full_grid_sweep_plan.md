@@ -1,12 +1,14 @@
 # 全网格扫掠计划：4 臂 × 规模 × 并发（full_grid_sweep_plan）
 
-> 本文件是 DESIGN/PLAN 文档。不包含实验结果，不修改代码，不提交 git。所有非平凡断言标 FACT / INFERENCE / UNCONFIRMED，并给 file:line。
+> **状态（2026-08-27）**：`paused / no-run-authorization`。十字切片和已有容量证据足以支撑
+> 当前材料，完整矩形只是可选扩展；LOTUS 语义迁移与 PostgreSQL 生命周期资格项完成前不得启动。
+> 本文件是历史 DESIGN/PLAN 文档，不包含实验结果。
 
 ---
 
 ## 0. 目标与非目标
 
-**目标（FACT，来自任务上下文 + experiments/AGENTS.md §作用）**
+**目标（FACT，来自任务上下文 + `experiments/AGENTS.md`“职责与边界”）**
 
 构造并排序一个覆盖 **4 臂 × 9 规模 × 多级并发 × reps=3** 的扫掠网格，使以下问题在统一校准合同下可被归因回答：
 
@@ -14,13 +16,13 @@
 - 各臂的饱和点（吞吐见顶）与塌陷点（过载）分别落在哪个 (scale, C_total)？
 - 在同 offered-load（per-backend ≈32）下，project 调度方法（actor pool + token-budget organizer + admission credit）相对 baseline 轨的稳态 ordering 是否稳定？
 
-**非目标（experiments/AGENTS.md §结果边界 / §6）**
+**非目标（`experiments/AGENTS.md`“报告与结论（结果边界）”）**
 
 - **在 project_static 2-endpoint 挂死修复并通过 256 行验证门之前，任何含 project_static 的 cell 不计入主排名**（INFERENCE：当前 ramp 已据此把 project_static 排除；FACT，见 §1）。在此之前**不能声称"项目方法优于/劣于 baseline"**——这是 §1 的硬前置。
-- **不能把两个维度同时上涨后的差异归因到任一策略**（FACT，根 AGENTS.md §7.5+§3「禁止把两个维度同时上涨后归因」）。网格的物理笛卡尔积允许存在，但归因必须沿正交单变量切片读取。
+- **不能把两个维度同时上涨后的差异归因到任一策略**（本计划的归因纪律）。网格的物理笛卡尔积允许存在，但归因必须沿正交单变量切片读取。
 - **不能把 lb_rr（gateway_system_diagnostic）与 bounded/duckdb 并入同一 "concurrency=64" 柱组排名**（INFERENCE，见 §3 可比性裁定）。lb_rr 是网关系统轨，formal_baseline_eligible=false，须分轨展示。
 - **不能把 phase2_2048_tb 的 1-rep diagnostic 当 formal 证据**（FACT，见 §2 + §3 reps 纪律）。它只能 seed 候选 operating point。
-- 正式材料不使用 RC1/RC2/BL1 等内部代号（FACT，根 AGENTS.md §6）。
+- 正式材料不使用 RC1/RC2/BL1 等内部代号（根 `AGENTS.md`“文档受众与对外表达”）。
 
 ---
 
@@ -171,7 +173,7 @@
 - phase2 的 1-rep diagnostic：CV 未定义（n=1），只 seed，**不构成 formal 证据**；本 grid 的 reps=3 才是首次让 attribution 成立。
 - 等价门禁（INFERENCE，项目 5% 门槛惯例 + deploy README §9.1）：跨 cell 比较要求两臂 repeat-mean 吞吐/JCT 在 5% 内且 ≥2/3 reps 同向方可称等价；CV>~5% 的 cell 标 unstable 不入主排名。每 cell 必报 mean + CV + n_passed/n + failed_rep_errors 四件套。
 
-### 3.4 扫描 vs 冻结（归因纪律，FACT 根 AGENTS.md §7.5+§3）
+### 3.4 扫描 vs 固定配置（本计划归因纪律）
 
 网格是 scale×concurrency 笛卡尔积，但**归因必须拆成两条正交单变量 sweep**：
 
@@ -270,12 +272,12 @@
 5. **交互项是否弱**（切片 C 抽查 scale 8192 的并发曲线 vs scale 2048 是否平移）——若平移则证明饱和点是服务端常量、完整矩形冗余（INFERENCE 预期）。
 6. **project_static 相对 baseline 在同 offered-load 下的 ordering 是否稳定**——**仅在 §1 修复 + 256 门 PASS 后**；在此之前 project cell 不计主排名（§0 非目标）。
 
-### 6.2 本网格**不能**回答（experiments/AGENTS.md §结果边界）
+### 6.2 本网格**不能**回答（`experiments/AGENTS.md`“报告与结论（结果边界）”）
 
 1. **"项目调度方法优于 baseline"的系统性主张**——project_static 是 project_scheduled_method（非 baseline，§3.5 #2），与 bounded/duckdb 机制不同；grid 给的是同 offered-load 下的 ordering，**不是 baseline-beats 声明**。须分轨展示。
 2. **lb_rr vs bounded/duckdb 的同柱排名**——lb_rr 是 gateway 系统轨（§3.5 #1），不可并入同一 concurrency 柱组；只能给系统级容量/稳定性结论。
 3. **per-row request-E2E / TTFT 的四臂横比**——timing_granularity 不兼容（§3.5 #3）；duckdb/lb_rr 只有 query_barrier JCT，跨类被 aggregator 禁止。**只有 tokens/s 与 rows/s 四臂同口径**。
-4. **对角 cell（scale 与 concurrency 都动）的独立策略归因**——根 AGENTS.md §7.5+§3 禁止；对角 cell 只当 consistency check。
+4. **对角 cell（scale 与 concurrency 都动）的独立策略归因**——本计划禁止；对角 cell 只当 consistency check。
 5. **>C_total=64 的 project 行为**——actor 拓扑硬上限 32/endpoint（§2.1），C_total=128 结构性不可达，不可外推。
 6. ** plateau scale < 2048 的 formal 归因**——小规模 operator wall <60s（§3.5 #7），只作 screening。
 7. **screening 跑（reps=1、无 warmup_per_cell、无 strict）与 formal 跑的合并结论**——合同不同不可合并；已 commit 的 lb_rr reps=1 config 与在跑 reps=3 ramp 须分别报告。
@@ -283,4 +285,4 @@
 
 ---
 
-*本计划是 DESIGN/PLAN 文档。执行前须确认：§1 修复落地、256 门 PASS、§3.1 冻结合同逐项生效、§5 前置清零。结论性声称须遵循 §6 边界与 experiments/AGENTS.md §结果边界。*
+*本计划是 DESIGN/PLAN 文档。执行前须确认：§1 修复落地、256 行验证满足预先条件、§3.1 的配置在运行期间保持不变、§5 前置条件满足。结论性声称须遵循 §6 与 `experiments/AGENTS.md`“报告与结论（结果边界）”。*

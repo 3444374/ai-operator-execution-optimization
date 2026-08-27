@@ -174,7 +174,7 @@ flowchart TB
 ### 2. ⚠️ 不能过度引用的地方
 
 - ❌ **不声称** "BucketServe 的分桶 = 本课题的上游 length-align"——BucketServe 是请求**到达 serving 系统后**在 middleware 层分组，本课题是数据**离开数据库后**在组织为请求时分组。两者作用层面不同（serving 内部 vs 数据组织上游），只是设计原则同源。
-- ❌ **不声称** "分桶隐含了行内拆分"——BucketServe 与本课题都**只在请求/行之间分组**（inter-request / inter-row grouping），不做任何把单条 prompt 拆成多条请求的行内拆分。本课题严格遵循 `code/AGENTS.md` §2 硬性规则：**每行是一个独立完整的 vLLM 请求**，禁止在 Ray actor / Daft UDF 中自动拆分单行 prompt 为多条请求；超长单行只能预处理截断、独占一个 batch 或从数据集排除。这与 vLLM 的 `--enable-chunked-prefill`（token 级数学等价拆分）是完全不同层面的操作。
+- ❌ **不声称** "分桶隐含了行内拆分"——BucketServe 与本课题都**只在请求/行之间分组**（inter-request / inter-row grouping），不做任何把单条 prompt 拆成多条请求的行内拆分。本课题遵循 `code/AGENTS.md`“请求与流式语义”：**每行是一个独立完整的 vLLM 请求**，不在 Ray actor / Daft UDF 中自动拆分单行 prompt；超长单行只能预处理截断、独占一个 batch 或从数据集排除。这与 vLLM 的 `--enable-chunked-prefill`（token 级数学等价拆分）是完全不同层面的操作。
 - ❌ **不声称** "BucketServe 验证了本课题的端到端方案"——BucketServe **修改了 vLLM 内部**（"Built upon vLLM, extends its capabilities"），本课题明确**不修改 vLLM**。BucketServe 还依赖 disaggregated 架构（prefill/decode 分到不同 instance），本课题以 vLLM 单体为部署平台，架构假设不同。
 - ❌ **不声称** "3.58× 吞吐提升适用于本课题 workload"——该数字是相对 UELLM（aggregated 架构，代差巨大）在 Mixed workload 下的结果；相对同代 disaggregated 的 DistServe 仅 1.31×。本课题的 baseline 是 vLLM（continuous batching + PagedAttention），与 BucketServe 的对比对象不同。
 - ❌ **不声称** "BucketServe 的 priority-aware scheduling 已被验证有效"——论文在贡献中列出该项，但实验中**未单独隔离** priority scheduling 的效果（待确认是否真正实现并评测），不能借它证明本课题 RC2 的调度策略。

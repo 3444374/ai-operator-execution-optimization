@@ -1,6 +1,6 @@
 # feasibility/benchmarks/AGENTS.md
 
-本目录只放组件级可行性脚本和公共工具。
+本文件继承根 `AGENTS.md` 与 `feasibility/AGENTS.md`，只增加组件级可行性脚本和公共工具规则。
 
 ## 可以放
 
@@ -19,4 +19,3 @@
 - 默认输出路径应指向 `feasibility/results/`。
 - 脚本名称要说明被验证的组件，不使用抽象阶段名。
 - 新脚本要同步更新 `README.md` 和 `feasibility/results/README.md`。
-

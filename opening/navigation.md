@@ -46,8 +46,8 @@ AGENTS.md
 | 开题报告正文 | `report/opening_report.md` |
 | 当前开题 PPT 与可复现构建 | `slides/opening_defense_20260812_v9.pptx`、`slides/build_opening_defense_v9_artifact_tool.mjs`、`slides/opening_defense_20260812_v9_qa.md` |
 | 当前叙事内容上游 | `opening_defense_outline_20260808.md`、`claim_matrix.md`、`report/opening_report.md`；v9 页数不固定，按对外叙事重新组织 |
-| PPT 制作规则 | `ppt_rules.md` |
-| 开题工作组织规则 | `work_rules.md` |
+| PPT 制作专项检查清单 | `ppt_rules.md` |
+| 跨材料变更路由清单 | `work_rules.md` |
 | 飞书同步规则 | `feishu/README.md` |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md`（已过期、禁止同步；当前正文见`report/opening_report.md`） |
 | 飞书进度汇报 | `feishu/progress_update.md` |

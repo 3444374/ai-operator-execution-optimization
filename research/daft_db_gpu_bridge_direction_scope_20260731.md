@@ -9,7 +9,7 @@
 > “执行优化是结构性空白”均未被证明。PolarDB/Daft 官方已提供按算子声明资源的
 > staged CPU→GPU 流水线；当前 1.296×/1.138× 只相对 fused UDF。本文的历史 scope
 > 讨论保留，但实验判决以 `motivation/plans/image_host_data_path_bottleneck.md` 和
-> `experiments/plans/image_clip_workload_lock_20260731.md` 的 fused/staged 矩阵为准。
+> `experiments/plans/completed/image_clip_workload_lock_20260731.md` 的历史 fused/staged 矩阵为准。
 
 ---
 

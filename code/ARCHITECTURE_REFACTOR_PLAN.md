@@ -1,10 +1,10 @@
-# Code Architecture Refactor Plan
+# Code Architecture Refactor Record
 
 日期：2026-08-02
 
-实施状态：`codex/code-architecture-refactor` 已完成第 0–3 阶段源码路径迁移，并完成
-metrics、backend、shared-vLLM 三个第 4 阶段拆分；第 5 阶段 scripts/tests 物理分组
-也已在审计分支完成，尚未合并到 main。
+状态：2026-08-03 已完成并合入 `main`。本文保留迁移目标、依赖规则和实施顺序，用于解释
+当前目录为何这样组织；它不再是待执行计划。当前代码结构和运行入口分别以 `README.md`、
+`scripts/README.md` 与源码为准。
 
 ## 1. 结论
 
@@ -251,8 +251,11 @@ experiments/baselines → 可以组合以上模块
 - 服务器关机期间只做本地静态迁移和单测，GPU gate 等开机后执行；
 - 任一阶段产生输出 schema、算法默认值或实验结果变化时立即停止，单独解释并复验。
 
-## 8. 推荐下一步
+## 8. 完成时的后续记录
 
-源码域、metrics/backend/shared-vLLM 拆分和 scripts/tests 物理分组已经收敛；文档中的
+源码域、metrics/backend/shared-vLLM 拆分和 scripts/tests 物理分组已经收敛并合入主分支；文档中的
 可复现命令同步指向新路径，历史 raw manifest 保持原样以保全证据。下一步只处理
 `data/materializers/text.py` 等剩余大文件和远端 gate，不再建立扁平兼容入口。
+
+上句“下一步”是 2026-08-03 的移交记录，不代表当前项目优先级。当前实施顺序以根
+`PROJECT_OUTLINE.md` 为准。

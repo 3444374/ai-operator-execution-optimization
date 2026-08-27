@@ -1,7 +1,12 @@
 # 图像 AI_EMBED / AI_CLASSIFY Workload 锁定方案
 
+> **归档状态（2026-08-27）**：本计划在当前范围内已完成。workload 合同、5K 阶段画像、
+> 原生静态 baseline、matched-resource 与多 Job observe-only 证据均已有结果；尚未完成的动态图像
+> state-aware 方法已统一迁入 [`../state_aware_work_unit_evaluation_20260808.md`](../state_aware_work_unit_evaluation_20260808.md)。
+> 下文保留当时的执行设计，不再作为当前优先级来源。
+
 日期：2026-07-31
-状态：**🔴 首个 workload（2026-08-02 分类轨道升级）**。现有 COCO/CLIP
+历史状态：**首个 workload（2026-08-02 分类轨道升级）**。现有 COCO/CLIP
 AI_EMBED 先作为执行链和 host-data-path 门禁；正式产品语义优先验证
 AI_CLASSIFY。图像每行包含 JPEG bytes、
 CPU decode/processor、约 600KB 的 FP32 pixel tensor 和 GPU forward，因此能把文本轨道

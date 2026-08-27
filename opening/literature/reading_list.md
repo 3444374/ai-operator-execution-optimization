@@ -1,6 +1,6 @@
 # 文献精读清单
 
-更新日期：2026-08-25
+更新日期：2026-08-27
 
 ## 选择原则
 
@@ -13,10 +13,10 @@
 ## 当前统计
 
 - `research/reading_notes/` 现有 **49 篇历史文献笔记**，从 2026-08-21 起按泛读库管理（不含 README 和泛读模板）。
-- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、Parrot、VTC、DLPM、BlendServe 和 IMBridge 十五篇主笔记，共 134 张论文原图裁剪件，本目录不维护阅读状态。
+- 新的全文精读以 `research/精读文献笔记/` 为唯一权威来源；当前包含原十五篇开题主线笔记与已从下载目录原件逐字节恢复的 Kalypso，共十六篇主笔记、134 张论文原图裁剪件。Kalypso 按 arXiv 核心补充管理，尚未并入下方十五篇开题主线或已定稿正文；本目录不维护阅读状态。
 - 旧文档“33 篇已完成”已经过时；原编号到 41 还混入了两篇未下载条目，也不能作为实体笔记数。
 - 当前 Top 15 为 15/15 严格 CCF-A 正式论文，快照在 `top15_reading_notes/`。
-- `research/reference/` 当前工作区有 5 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot）；其余 Top 15 的历史题录保留在索引中，使用前需恢复并核验文件。
+- `research/reference/` 当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso）；其余 Top 15 的历史题录保留在索引中，使用前需恢复并核验文件。
 
 ## Top 15 精读顺序
 
@@ -72,6 +72,7 @@
 | Database Perspective on LLM Inference | PVLDB Tutorial | 技术版图与 open problem |
 | Cortex AISQL | 按实际轨道引用 | 工业需求证据 |
 | NeurDB | CIDR 2025 | AI-native database vision |
+| Kalypso | arXiv:2607.23815v2，2026；未标注正式 venue | query-plan-aware relational LLM serving；直接覆盖跨语义算子流水与 KV-cache memory-aware admission，用于收窄本课题增量边界 |
 
 ### 公平与 program/job 调度
 

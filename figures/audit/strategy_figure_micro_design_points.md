@@ -2,7 +2,7 @@
 
 整理日期：2026-07-15
 
-用途：在继续重绘“优化策略设计图”之前，把策略拆成若干可画的小机制点。每个机制点先说明优化对象、参考论文图形范式、适合的画法、需要的实验证据和当前风险。这个文件不替代 `experiments/plans/strategy_design_literature_basis.md`，只服务后续画图设计。
+用途：在继续重绘“优化策略设计图”之前，把策略拆成若干可画的小机制点。每个机制点先说明优化对象、参考论文图形范式、适合的画法、需要的实验证据和当前风险。这个文件不替代 `experiments/plans/reference/strategy_design_literature_basis.md`，只服务后续画图设计。
 
 ---
 

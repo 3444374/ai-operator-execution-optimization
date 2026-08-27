@@ -1,6 +1,6 @@
 # research/AGENTS.md
 
-本目录维护背景调研、文献和官方资料依据。进入本目录前先读根目录 `AGENTS.md`。
+本文件继承根 `AGENTS.md`，只增加文献、官方资料、源码依据和知识文件规则。当前入口见 `README.md`。
 
 ## 作用
 
@@ -13,7 +13,7 @@
 - 放论文、官方文档、源码阅读、文献综述和外部证据对应关系。
 - `reading_notes/` 只作泛读、筛选和快速回顾；`精读文献笔记/` 是逐篇独立目录的精读笔记权威库。两者的具体目录合同见各自 `README.md`。
 - 不放原始实验 CSV、完整实验报告或学习教程。
-- 项目实验结果放到 `feasibility/results/` 或 `motivation/results/`。
+- 项目实验结果按性质放到 `feasibility/results/`、`motivation/results/` 或 `experiments/results/`。
 
 ## 写作规则
 

@@ -1,6 +1,6 @@
 # experiments/results/AGENTS.md
 
-本目录存放正式研究实验结果。规则继承 `experiments/AGENTS.md` 和根目录 `AGENTS.md`。
+本文件继承根 `AGENTS.md` 与 `experiments/AGENTS.md`，只增加正式研究实验结果规则。
 
 ## 内容
 

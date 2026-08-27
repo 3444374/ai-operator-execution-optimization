@@ -18,7 +18,7 @@ token-budget 冻结点；49K 是保留吞吐下的 SLO-goodput 候选。旧 8K �
 > `bounded_http`/`bounded_completions` 是项目自写 direct-client controls；只有 Daft
 > built-in `functions.prompt`、Ray Data 官方 Processor graph 和通过部署门禁的
 > OceanBase SQL AI Function 可以标记为 vendor-native baseline。新的复测合同与
-> 4,096 行 held-out 计划见 `../text_native_baseline_rerun_20260802.md`。下文历史表中的
+> 4,096 行 held-out 历史计划见 `../completed/text_native_baseline_rerun_20260802.md`。下文历史表中的
 > “官方/强 baseline”若包含 bounded client，按本条重新解释，不能按旧标题越界引用。
 
 ## 0. 一句话目标与成功条件

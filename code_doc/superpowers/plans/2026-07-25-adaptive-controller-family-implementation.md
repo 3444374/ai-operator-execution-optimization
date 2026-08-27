@@ -15,7 +15,7 @@ records every decision. Static admission remains the control baseline.
 **Experiment-plan sources:** This implementation is subordinate to
 `experiments/plans/experiment_status_and_gaps.md` P0-1,
 `service_scheduling_backpressure.md` §0.5/§5.3,
-`strategy_design_implementation_reference.md` §8.2, and
+`experiments/plans/reference/strategy_design_implementation_reference.md` §8.2, and
 `baseline_reference.md`. In particular, unsmoothed CONCUR-style AIMD is tried
 before EWMA/PID/UCB; EWMA remains optional because the related Ray policy was
 deprecated; fixed K=8, the legacy two-level policy, and Clipper-style AIMD are

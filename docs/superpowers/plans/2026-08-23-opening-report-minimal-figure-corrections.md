@@ -1,5 +1,8 @@
 # Opening Report Minimal Figure Corrections Implementation Plan
 
+> 状态：已于 2026-08-24 完成。本文仅保留实施过程；当前图资产入口以
+> `../../../figures/README.md` 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Correct the conceptual relationships and public-facing labels in report Figures 2, 3, 5, and 6 without redesigning the other figures or changing any experimental values.

@@ -2,7 +2,12 @@
 
 冻结日期：2026-08-07
 
-状态：**2026-08-08 的替换重跑已完成；2026-08-24 新增 ShareGPT C128 双臂纠正补测，等待双 RTX 4090 服务器恢复后执行**。替换重跑的 24/24 单元均通过 source/sink、identity、exactly-once 和稳定性检查；SQuAD 三条静态路径可作均匀短输出控制，ShareGPT 则因 direct/DuckDB 每个服务实例只使用 32 个并发请求、DuckDB fixed-cap 输出含义不一致，只保留运行现象、正确性和产品语义证据，不作方法性能排名。权威结果见 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`。本计划第 9 节只补 ShareGPT direct C128 与 project K128/W65,536 的同次 database-E2E 观察，不重跑 DuckDB、SQuAD 或已有容量扫描。
+状态：**主矩阵已完成；ShareGPT C128 双臂纠正补测为条件性待办，不是当前优先项。**
+2026-08-08 替换重跑的 24/24 单元均通过 source/sink、identity、exactly-once 和稳定性检查；
+SQuAD 三条静态路径可作均匀短输出控制，ShareGPT 只保留运行现象、正确性和产品语义证据，
+不作方法性能排名。权威结果见 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`。
+第 9 节仅在 LOTUS/PostgreSQL 资格项完成且双 RTX 4090 环境恢复后补 direct C128 与 project
+K128/W65,536；不重跑 DuckDB、SQuAD 或已有容量扫描。
 
 ## 1. 准入问题
 

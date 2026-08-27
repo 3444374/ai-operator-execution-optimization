@@ -8,7 +8,9 @@
 
 当前可行性验证优先服务外部执行链路：Ray/Arrow/object/fan-in、外部 worker、writeback 和 backpressure。本目录不承载最终 GPU-backed 链路性能结论；它只负责证明组件、环境和脚本可用。GPU 可用性、驱动、模型服务 smoke test 可以放这里；真正的 GPU-backed 端到端系统画像应放到 `motivation/results/`。
 
-当前实验主线、动机测试结论和开题论证优先看 `motivation/README.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md` 和 `motivation/results/README.md`。
+项目当前工程主线与执行顺序先看根 `PROJECT_OUTLINE.md` 和
+`experiments/plans/experiment_status_and_gaps.md`；动机测试结论再看 `motivation/README.md` 和
+`motivation/results/README.md`。本目录中的旧 capability/smoke 不会自动升级为当前待办。
 
 进入本目录前先读 `AGENTS.md`。如果要运行组件 benchmark，优先读 `benchmarks/README.md`；如果要看结果，优先读 `results/README.md`。
 

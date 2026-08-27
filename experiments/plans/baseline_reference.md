@@ -2,7 +2,7 @@
 
 整理日期：2026-07-16；文献、官方 benchmark、厂商 AI 算子可安装性与指标合同复审：2026-08-05
 
-> **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
+> **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以根 `AGENTS.md`“项目范围/当前资格顺序”、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
 来源：`research/ai_operator_literature_inventory.md` 与 `research/top15_ranked_papers.md`
 
@@ -39,8 +39,8 @@
 
 | 专项文件 | 唯一职责 |
 |---|---|
-| `text_native_baseline_rerun_20260802.md` | AI_COMPLETE 的 Chat/Completions 分轨、validity→calibration→formal 执行合同 |
-| `image_clip_workload_lock_20260731.md` | AI_EMBED/AI_CLASSIFY 的 workload、语义、质量和图像执行合同 |
+| `completed/text_native_baseline_rerun_20260802.md` | AI_COMPLETE 的历史 Chat/Completions 分轨与已完成开题范围合同 |
+| `completed/image_clip_workload_lock_20260731.md` | AI_EMBED/AI_CLASSIFY 已完成的 workload、语义、质量和图像静态合同 |
 | `experiment_status_and_gaps.md` | 当前完成度、阻断项和下一步，不复制 baseline 原理 |
 | `../../research/evaluation_metrics_survey_20260731.md` | 厂商/论文指标的来源证据，不承担运行职责 |
 | `../results/` 与 `../../motivation/results/` | 原始数据、七步分析和结论的权威来源 |
@@ -287,7 +287,7 @@ scheduler owner、custom scheduling、formal eligibility、upstream source 和�
 `vLLM Bench` 是 service ceiling，项目 `bounded_*` 是 direct controls，二者均不标记为
 native baseline；Daft built-in `functions.prompt`、Ray Data HTTP Processor 和通过
 capability gate 的 OceanBase `AI_COMPLETE` 才可进入原生系统排名。执行合同见
-`text_native_baseline_rerun_20260802.md`。
+`completed/text_native_baseline_rerun_20260802.md`。
 
 ### 5. 过期清理规则
 
@@ -299,7 +299,8 @@ capability gate 的 OceanBase `AI_COMPLETE` 才可进入原生系统排名。执
 
 `baseline_reference.md` 负责来源、分层、准入与指标合同；
 `archive/database_ai_operator_baseline_matrix_20260729.md` 是文本轨道预注册和历史记录；
-`image_clip_workload_lock_20260731.md` 是当前图像执行合同；各 `results/README.md` 和
+`completed/image_clip_workload_lock_20260731.md` 是图像 workload 与静态执行的完成合同；当前动态执行以
+`state_aware_work_unit_evaluation_20260808.md` 为准。各 `results/README.md` 和
 CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼接数字，必须回到结果目录。
 
 ---
@@ -337,7 +338,7 @@ CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼�
 
 两条轨道分别使用同一 request manifest、同一双 endpoint、同一输出上限和
 独立 calibration。不得用 Completions 数值直接声称超过 Chat baseline。
-当前文本复测合同见 `text_native_baseline_rerun_20260802.md`；旧预注册仅在
+已完成的文本复测合同见 `completed/text_native_baseline_rerun_20260802.md`；旧预注册仅在
 `archive/database_ai_operator_baseline_matrix_20260729.md` 保留。
 
 ### 图像 AI_EMBED / AI_CLASSIFY 的 baseline 层级
@@ -827,7 +828,7 @@ absolute JCT 排名。
 
 ### 当前状态
 
-项目写回 baseline 为 PostgreSQL + pgvector 的 COPY + 延迟建索引（先 COPY 到 unlogged table，再 `CREATE INDEX HNSW`），已在动机 GPU 实验中建立（pgvector writeback 0.897s vs JSON 1.567s，见 `motivation/results/gpu/`）。按 `AGENTS.md` §1/§3，写回作为工程 baseline 处理，不作为独立实验阶段；本节 W1 仅作 baseline 出处登记，不再设为待跑门禁实验。
+项目写回 baseline 为 PostgreSQL + pgvector 的 COPY + 延迟建索引（先 COPY 到 unlogged table，再 `CREATE INDEX HNSW`），已在动机 GPU 实验中建立（pgvector writeback 0.897s vs JSON 1.567s，见 `motivation/results/gpu/`）。按根 `AGENTS.md`“项目范围”和 `PROJECT_OUTLINE.md`，写回作为工程 baseline 处理，不作为独立实验阶段；本节 W1 仅作 baseline 出处登记，不再设为待跑门禁实验。
 
 ---
 
@@ -887,7 +888,7 @@ scoring、质量、性能价格和审计合同。计划级 baseline 包括关系
 常数、token/output-cap 解析模型、profile lookup、Ridge/LightGBM、解析 + residual，以及
 actual-runtime oracle 上界。主评价从点误差扩展到 whole-query Q-error、plan ranking/pick rate、
 selected/oracle JCT 与 plan regret。完整启动条件、语义等价门禁和停止条件见
-`operator_cost_profile_dual4090_formal_20260804.md` §8。
+`completed/operator_cost_profile_dual4090_formal_20260804.md` §8。
 
 ---
 

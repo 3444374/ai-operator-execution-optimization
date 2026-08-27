@@ -20,7 +20,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts.serving import launch_vllm_with_identity as identity_launcher
+from scripts.services import launch_vllm_with_identity as identity_launcher
 from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
     flag_value_present,

@@ -1,6 +1,7 @@
 # motivation/results/gpu/AGENTS.md
 
-本目录保存真实 GPU-backed 端到端主动机结果。
+本文件继承根、`motivation/AGENTS.md` 与 `motivation/results/AGENTS.md`，只增加真实 GPU-backed
+端到端主动机结果规则。
 
 ## 目录定位
 
@@ -15,11 +16,6 @@
 - GPU-backed model service、Ray Serve、vLLM 或等价真实模型端点。
 - 模型请求墙钟时间、queue wait / in-flight、fan-in、writeback。
 - 结论边界：哪些能说，哪些不能说。
-
-## 当前优先阅读
-
-1. `ai_embed_chain_breakdown_20260712.md`：真实 embedding 链路拆分结果，当前开题动机优先引用。
-2. `ai_embed_profile.md`：第一组真实 GPU-backed embedding 端到端画像。
 
 ## 不放这里
 

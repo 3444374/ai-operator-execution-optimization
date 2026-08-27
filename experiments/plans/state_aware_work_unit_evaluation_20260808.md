@@ -1,5 +1,10 @@
 # Work Unit、状态感知、动态调度与代价估计的实验计划
 
+> **当前状态（2026-08-27）**：fixed-envelope、bounded-priority development、matched-observation
+> attribution 与 observe-only bridge 已完成；SAOR 仍为 `formal_authorized=false`，动态图像方法和
+> 五臂系统级 matched comparison 尚未完成。短期先完成 LOTUS 语义迁移和 PostgreSQL 生命周期
+> 资格验证，本文剩余 formal 不自动获得运行授权。
+
 日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
 2026-08-11 更新：新增 SAOR 动态调度设计维护入口；2026-08-12 更新：fixed-envelope
 2-Job formal 已运行并经 resolution-aware v2 完整 validation；通用有界优先级 v0.5.1 已完成

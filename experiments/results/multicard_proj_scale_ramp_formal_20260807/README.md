@@ -75,7 +75,7 @@ scale ramp @ 冻结峰值并发 C_total=64；project_static × 9 scales × reps=
 ## 8. 下一步
 
 - **核心 unfinished 已完成**：4 路径峰值并发规模 ramp 闭环。
-- 并发扫掠（切片 A，`full_grid_sweep_plan.md` §2.4）为**可选扩展**（回答饱和/过载点），非"未完成"补全；当前优先推进用户指定的 320-run 算子代价实验（`operator_cost_profile_dual4090_formal_20260804.md`）。
+- 并发扫掠（切片 A，`experiments/plans/full_grid_sweep_plan.md` §2.4）为**可选扩展**（回答饱和/过载点），非"未完成"补全；当时后续的 320-run 算子代价合同现已归档于 `experiments/plans/completed/operator_cost_profile_dual4090_formal_20260804.md`。
 - duckdb_ai 8192/10570 崩溃根因（§3.5 + `full_grid_sweep_plan.md` §5.2）仍待单独诊断（DuckDB-ai 扩展限）。
 
 ## provenance

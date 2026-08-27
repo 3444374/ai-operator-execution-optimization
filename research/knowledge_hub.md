@@ -1,6 +1,6 @@
 # 知识库总汇：数据库 AI 负载的上游执行链路优化
 
-生成日期：2026-07-16（最近更新：2026-08-13，新增多 Job 多文献评价合同）
+生成日期：2026-07-16（最近更新：2026-08-27，校准 PostgreSQL+LOTUS 当前顺序、既有证据与知识缺口）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -339,8 +339,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 2. *Optimizing LLM Queries in Relational Data Analytics Workloads* 已证明数据库可以利用行、字段和关系统计信息重排请求，以提高 prefix cache reuse；
 3. BlendServe 已在 offline serving 内共同研究 resource balance 与 prefix locality，AYO 已利用 application primitive 和 graph topology 改善流水执行与 batching；
 4. VTC、Llumnix、FairServe、DLPM 已覆盖 serving 内部或服务层的服务量记账、公平和动态调度；
-5. Ray Data/Daft 已提供批数据执行、异构流水线和官方 AI 接口；
-6. 本项目继续研究的是：在不修改 vLLM 的条件下，数据库 AI operator 的上游运行时怎样保留数据库作业和分阶段工作信息，结合模型服务实际状态协调数据组织、提交速度、服务实例选择和多个作业，并在同模型、同工作量、同硬件的官方系统对照中验证。
+5. Kalypso 已直接提出 query-plan-aware relational LLM serving，通过跨语义算子流水、parent-child prefix 生命周期和 memory-aware admission，在不改变查询语义的前提下提高 KV-cache 复用；
+6. Ray Data/Daft 已提供批数据执行、异构流水线和官方 AI 接口；
+7. 本项目的增量必须进一步收窄为：由 PostgreSQL 拥有 SQL、关系 child plan、snapshot 与 query lifecycle，在不修改 vLLM 的条件下，把数据库 Job、分阶段 work、尚未提交的数据和 endpoint-local 状态用于多 Job、多 endpoint 的数据组织、提交与路由；不能再把“连接 semantic query plan 与 LLM serving”本身写成空白。
 
 因此不能再使用“没有任何已有工作研究”之类绝对表述。
 
@@ -348,6 +349,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 | 论文 | 研究什么 | 不研究什么 |
 |---|---|---|
+| Kalypso: Relational LLM Serving (arXiv 2026) | 让 serving 层接收 semantic query plan，以跨 operator pipelining、依赖感知 prefix 生命周期和动态 memory budget 提高 KV-cache reuse；官方摘要报告 query completion time 最高 4.57× | 当前论文聚焦单条 semantic query 的 query completion 与一个 serving cache domain；未覆盖 PostgreSQL planner/query lifecycle、多 query/多 Job 公平、多个独立 endpoint 路由和数据库管理的流式 child-plan 交接 |
 | Optimizing LLM Queries in Relational Data Analytics Workloads (MLSys 2025) | 利用完整关系数据、函数依赖和列统计重排 row/field，提高 KV prefix reuse | 主要面向离线完整输入，不建模在线到达、复杂 cache eviction、多作业干扰和实际 endpoint state |
 | BlendServe (ASPLOS 2026) | offline serving 内的 resource-aware batching，同时考虑 compute/memory 需求和 prefix locality | 假定有足够大的可重排请求池，不覆盖数据库数据准备、Job 语义和上游多 endpoint 路由 |
 | AYO (ASPLOS 2025) | primitive-level application graph、跨模块 parallelism/pipelining 和 topology-aware batching | 入口是应用工作流并与 backend 配合，不覆盖数据库记录统计、外部黑盒服务和数据库多 Job 提交控制 |
@@ -372,7 +374,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 1. 不能说"现有研究没有关注数据库 AI 算子"——Snowflake SIGMOD 和 Smart/GaussML/NeurDB 已充分证明
 2. 不能说"外部执行一定优于数据库内 ML"——取决于场景
 3. 不能说"Ray/Daft/Lance 是数据库 AI 算子的标准方案"——Snowflake 和 GaussML 用不同技术栈
-4. 合理表述："在数据库触发 AI workload 后经由外部系统执行并写回的场景中，上游数据组织、调度提交与下游 continuous batching 之间的交互优化尚缺乏系统研究"
+4. 合理表述："Kalypso 已证明 semantic query plan 可以进入 LLM serving 控制；本课题进一步研究 PostgreSQL query lifecycle 所有权、多 Job、多独立 endpoint，以及数据组织、提交和路由在不修改 vLLM 条件下如何共同工作"
 5. 不能说“上游调度会加速 GPU 单次推理”；它能改善的是达到容量上限所需的压力、瞬态 ramp、可控排队、多 job 公平和端到端 JCT
 
 ---
@@ -863,8 +865,8 @@ frozen-static 因不经过 shared credit，其 registered-ready lag 是 N/A，�
 
 | 技术 | 当前结论 | 保留位置 | 重新激活条件 |
 |------|---------|---------|------------|
-| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量（07-26 shared-vLLM 实验：vLLM waiting=0，AIMD 盯 vLLM waiting 做决策（请求在 Ray 侧排队、waiting 始终为 0） | `code/src/adaptive_admission.py` | 改用反映 Ray 侧积压的信号后（如逐请求 completion time 观测） |
-| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/queue_adaptive_flush.py` | 多 workload shape / 变长输出 / 多租户到达下重新评估 |
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量（07-26 shared-vLLM 实验：vLLM waiting=0，AIMD 盯 vLLM waiting 做决策（请求在 Ray 侧排队、waiting 始终为 0） | `code/src/scheduling/submission_control/adaptive.py`、`pid.py` | 改用反映 Ray 侧积压的信号后（如逐请求 completion time 观测） |
+| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/scheduling/submission_control/flush.py` | 多 workload shape / 变长输出 / 多租户到达下重新评估 |
 | GNN/Transformer 升级 | 283 行数据远未达到需要 GNN 的规模（Heinrich R1 + Pathak & Mankodi 一致结论） | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
 
 以上技术的代码路径和实验 CSV 均保持可用状态，后续重新激活时改动量预计较小（主要是接入新观测信号或切换 workload 配置）。
@@ -926,40 +928,47 @@ normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，�
 
 ## 7. 策略设计与实验路线
 
-**主文件**：`experiments/plans/strategy_design_literature_basis.md`（策略口径）、`experiments/plans/strategy_design_implementation_reference.md`（实现拆解）
+**主文件**：`experiments/plans/reference/strategy_design_literature_basis.md`（策略口径）、`experiments/plans/reference/strategy_design_implementation_reference.md`（历史实现拆解）
 
 ### 7.1 当前策略版本
 
 ```text
-上游动态 Batching Policy（Ray actor 异构化实现）
-  ├── Token-budget batching：max_tokens_per_submission
-  │    借鉴 vLLM max_num_batched_tokens
-  ├── Length-aligned grouping：相似 token 长度行合并
-  └── Prefix-aware grouping：共享 system prompt 行合并
-       利用 vLLM APC
+PostgreSQL planner-visible AI operator（尚未实现）
+  → ordinary child plan / snapshot / query lifecycle
+  → LOTUS v1.2.4 SemMapNode + prompt/output/error semantics（当前首要迁移）
+  → 可替换外部物理 backend
+       ├── LOTUS native product path（系统 baseline）
+       ├── Daft / Ray Data native graph（框架 baseline）
+       ├── project frozen-static（强静态参照）
+       └── project state-aware / SAOR（条件性候选）
 
-Ray Actor 去中心化自适应提交
-  ├── 每个 actor 独立观测模型服务队列深度
-  ├── Queue-adaptive flush：queue 空立刻发，queue 满暂停
-  └── K_max 自然形成，不设全局固定上限
+当前外部物理执行默认点
+  → sequential token/work-budget organization
+  → fixed request/work capacity + request-level replenishment
+  → fixed 50 ms flush（文本已测签名）
+  → endpoint/job routing 与 shared credit 只在匹配实验合同中启用
 
-耦合验证
-  ├── 独立最优 batching + 独立最优 submission → 拼接
-  └── 联合 grid search → 比较差异
-
-写回瓶颈判定
-  └── COPY + deferred index 工程最优 baseline
+共同支撑与验证
+  → 轻量算子代价估计：当前离线，不声称已驱动 SQL plan 或在线 scheduler
+  → 图像 AI_EMBED/AI_CLASSIFY：静态与观测证据已完成，动态动作待验证
+  → PostgreSQL + pgvector COPY/deferred index：工程 baseline
 ```
+
+复杂动态策略没有稳定超过同资源上限的强静态点。当前方法研究因此保留候选池，但不把
+queue-adaptive、dynamic K、多 actor 或 SAOR 写成已经胜出的默认策略。真实 LOTUS 语义和
+PostgreSQL query lifecycle 未完成前，既有 manifest/profiler 结果统一标为外部物理执行证据。
 
 ### 7.2 实验阶段
 
-| 阶段 | 内容 | 核心消融 |
+| 阶段 | 当前状态 | 内容与下一步 |
 |---|---|---|
-| 前置 | vLLM + Qwen2.5-1.5B baseline | 替代手动 HTTP endpoint |
-| 第一阶段 | 动态 batching 策略消融 | 静态 batch_size vs token-budget vs length-align vs prefix-aware |
-| 第二阶段 | 自适应提交策略消融 | 固定 K_max vs queue-adaptive vs actor pool 分池 |
-| 第三阶段 | 耦合验证 | 独立最优拼接 vs 联合 grid search |
-| 第四阶段 | 写回瓶颈判定 | COPY + deferred index vs 其他 sink |
+| 语义入口 | **当前首要，未开始实现** | 冻结 LOTUS v1.2.4，复用真实 `SemMapNode`、messages、output parser 与错误语义，完成 native/project parity |
+| 数据库资格验证 | **语义 parity 后执行** | PostgreSQL extension/planner-visible operator 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
+| 文本数据组织 | **已完成主要机制实验** | fixed/token-budget/length/prefix/BFD/row-cap；结论随 KV 压力与 endpoint consolidation 变化 |
+| 文本提交与多 Job | **已完成静态/共享核心证据，动态未普遍胜出** | active-work、request replenish、flush、actor pool、shared credit、1/2/4 Job 与 5s staggered；weighted/held-out/failure migration 条件性保留 |
+| 图像多模态 | **静态/观测完成，动态待接** | HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 质量闭环与跨 workload/硬件验证 |
+| 算子代价估计 | **离线可行性完成** | 429-run context-LOO 已有 marginal pass；仍需独立时间段/新 workload、预测区间和在线决策增量 |
+| 联合关系与写回 | **局部联合实验完成；写回为工程 baseline** | 当前联合候选未显著优于独立拼接；COPY + deferred index 不单列研究内容 |
 
 ### 7.3 Baseline 分级
 
@@ -978,28 +987,28 @@ Ray Actor 去中心化自适应提交
 
 | 缺口 | 优先级 |
 |---|---|
-| vLLM + Qwen2.5-1.5B 在 RTX 5070 上的实际 TTFT/TPOT/吞吐曲线 | **P0** |
-| AI_COMPLETE workload 具体构造参数（token 分布、prefix ratio） | **P0** |
-| token-budget 的最优范围（2048/4096/8192） | P1 |
-| Ray actor queue-adaptive flush 的实际效果（本地 vLLM 实验中发现 adaptive < static，需进一步分析——见 `PROJECT_LOG.md` 2026-07-20） | P1 |
-| Ray 上游 whole-submission barrier 是否限制 vLLM continuous batching 的持续供给；request-level replenishment 是否改善 HOL/SLO goodput | **P1** |
-| SLO-aware EWMA flush（oldest slack + token backlog + arrival/service rate）能否优于最佳静态窗口 | **P1** |
-| prefix-aware grouping 在真实 APC 下的命中率 | P1 |
-| 单 GPU 下异构 actor pool 是否有意义 | P1 |
-| batch_size × K_max 之外的交互通道 | P2 |
-| 多模态 workload 的"token 等效量"定义（frame-budget / duration-budget） | P2 |
-| VLM 推理在 RTX 5070 12GB 上的实际显存和吞吐（Qwen2.5-VL 系列） | P2 |
-| **2026-07-21 新增/更新**： | |
-| CONCUR (2025) AIMD-based admission control 的算法细节与迁移可行性 | **P1** |
-| SABER Universal Scalability Law 建模在本课题 vLLM 场景下的拟合效果 | P2 |
-| Ray ConcurrencyCapBackpressurePolicy 废弃的教训如何转化为我们的设计约束 | P1 |
+| LOTUS v1.2.4 的 source-layout/version gate、`SemMapNode` lowering、逐字节 messages、output/error parity | **当前阻断** |
+| PostgreSQL 18.3 extension/planner-visible operator 是否能稳定拥有 child plan、snapshot、取消、错误与结果生命周期 | **当前阻断** |
+| LOTUS native product path 与数据库管理 row stream 上的 LOTUS/project backend 如何做语义等价、身份清楚的两面板比较 | 高 |
+| 图像 HSE static 是否在真实 GPU 上不劣于 direct-dependency static，以及 stage/CE5 状态能否产生受控动作增量 | 高 |
+| 小规模 pgvector 写回后 embedding 检索质量是否保持（Recall@K/nDCG 等） | 高 |
+| 算子代价估计在独立时间段、新 workload 和新硬件上的误差、配置排序与预测区间 | 高 |
+| 代价信息进入 organizer/scheduler 或 SQL 候选计划后，相对无代价信号基线的 decision regret/JCT/SLO 增量 | 高 |
+| 多 Job weighted/SLO、held-out 4+ Job、异构 workload、故障迁移和显存异构容量 | 论文阶段 |
+| prefix routing 的 4-endpoint 增量如何隔离 endpoint consolidation、模型与饱和深度混淆 | 条件性 |
+| Qwen2.5-VL 等多模态生成是否值得进入正文 | 可选；不阻塞主线 |
 
 候选机制的统一发现流程、来源标签、机制卡、fatal-flaw audit、最小实验和放弃
-条件见 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
+条件见 `experiments/plans/reference/literature_driven_pipeline_optimization_guide.md`。
 
 ---
 
 ## 9. 文件清单
+
+**2026-08-27 新增**：
+- `research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md` — Kalypso 全文精读；
+  作为 arXiv 核心补充登记，直接收窄 semantic query plan 与 LLM serving 接口处的研究空白；
+  不进入当前 Top 15、十五篇速览或已定稿开题正文。
 
 **2026-08-01 更新**：
 - `research/existing_ai_operator_execution_chains.md` — 将数据库 AI 执行链归纳为
@@ -1036,13 +1045,13 @@ Ray Actor 去中心化自适应提交
 - `opening/literature/reading_list.md` — 精读/泛读文献清单
 
 **实验计划文件**：
-- `experiments/plans/strategy_design_literature_basis.md` — 策略口径与文献依据
-- `experiments/plans/strategy_design_implementation_reference.md` — 实现细节与模块拆解
+- `experiments/plans/reference/strategy_design_literature_basis.md` — 策略口径与文献依据
+- `experiments/plans/reference/strategy_design_implementation_reference.md` — 历史实现细节与模块拆解
 - `experiments/plans/archive/research_design_catalog.md` — 方案目录与评分（已归档，设计历史参考）
 - `experiments/plans/baseline_reference.md` — Baseline 矩阵
 - `experiments/plans/data_organization_batching.md` — 研究内容一实验计划
 - `experiments/plans/service_scheduling_backpressure.md` — 研究内容二实验计划
-- `experiments/plans/sink_writeback_coordination.md` — 写回验证
+- `experiments/plans/reference/sink_writeback_coordination.md` — 写回工程参考
 - `experiments/plans/cross_layer_killer_experiment.md` — 耦合验证
 
 ---
@@ -1189,7 +1198,7 @@ K_max 动态控制               shuffle_algorithm
 actor pool 分池路由          morsel size（间接）
 ```
 
-**论文中完整的优化实验清单**（详见 `experiments/plans/strategy_design_implementation_reference.md` §4.7）：
+**论文中完整的历史优化实验清单**（详见 `experiments/plans/reference/strategy_design_implementation_reference.md` §4.7）：
 
 | 优先级 | 实验 | 变量 | 回答的问题 |
 |---|---|---|---|

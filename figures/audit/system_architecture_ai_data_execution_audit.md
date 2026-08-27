@@ -1,5 +1,9 @@
 # 系统架构图质检记录
 
+> **历史图审计（2026-08-27 标注）**：本文件记录 2026-07 的三层策略/写回判定旧图，不是当前
+> 研究内容口径。当前开题研究边界以 `figures/architecture/opening_ai_data_execution_boundary.*`
+> 及 `figures/audit/opening_story_figures_contract_20260808.md` 为准；旧图和审计保留用于追溯。
+
 图文件：
 
 - `figures/architecture/system_architecture_ai_data_execution.svg`

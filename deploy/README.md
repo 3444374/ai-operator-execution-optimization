@@ -40,8 +40,8 @@ AutoDL 新对话的唯一入口是 `autodl/README.md` 顶部“新对话 / 新 a
 
 SAOR 有界优先级开发模板为 `autodl/saor_bounded_priority.example.json`：它冻结 static、
 原 SAOR 与两档 bulk fairness-debt cap，并要求用 lossless release-event ledger 审计机制。
-服务器恢复前不得跳过 `runtime/README.md` 的只读 preflight；当前服务器关闭时不执行远端
-rehearsal，也不把静态 readiness 当作实验结果。
+任何服务器恢复后都不得跳过 `runtime/README.md` 的只读 preflight；endpoint、数据库或 Ray/GPU
+未通过现场检查时不执行远端 rehearsal，也不把静态 readiness 当作实验结果。
 
 ready-set observation 修订使用独立模板
 `autodl/saor_bounded_ready.example.json` 和新 policy `saor_bounded_ready`。它复用同一 static、

@@ -6,8 +6,10 @@
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
 - `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
-  `../research/精读文献笔记/`，当前共 15 篇主笔记和 134 张论文原图裁剪件，最新新增的主笔记为 IMBridge、DLPM 和 Parrot。`../research/reference/`
-  当前工作区有 5 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot）；历史题录继续由索引保留。
+  `../research/精读文献笔记/`。当前共有 16 篇主笔记和 134 张论文原图裁剪件；其中新增 Kalypso
+  原稿已从下载目录原件逐字节恢复，作为 arXiv 核心补充，不进入现有 Top 15、十五篇速览或已定稿正文。
+  `../research/reference/` 当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、
+  Parrot、Kalypso）；历史题录继续由索引保留。
 - Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
   CCF-A full research。
 - 开题保持两项研究内容：数据组织；调度与提交控制。代价估计升级为两项内容
@@ -50,8 +52,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 路径 | 作用 |
 |---|---|
 | `AGENTS.md` | 本目录长期规则 |
-| `work_rules.md` | 开题工作的任务组织和目标管理规则 |
-| `ppt_rules.md` | 开题 PPT 制作规则 |
+| `work_rules.md` | 跨报告、PPT、飞书、文献和答辩材料的变更路由清单；联动任务时读取 |
+| `ppt_rules.md` | PPT 创建、增量编辑、导出和实际打开检查清单；PPT 任务时读取 |
 | `report/` | 开题报告正文与 Word 版本材料 |
 | `slides/` | PPT 源稿、讲稿备注、PPTX 输出 |
 | `feishu/` | 飞书进度汇报稿 |
@@ -128,7 +130,9 @@ opening/navigation.md
 ```
 
 它说明需要项目内容、实验结果、文献、PPT 素材、飞书同步信息时分别去哪里找，也说明报告、PPT、飞书版之间如何保持同步。
-# 2026-07-15 Status Note
+## 2026-07-15 飞书同步历史记录
+
+> 本节仅记录当时的飞书同步面，已被本 README 上方当前入口取代，不是当前发布状态。
 
 开题报告已同步到飞书新文档：
 https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb

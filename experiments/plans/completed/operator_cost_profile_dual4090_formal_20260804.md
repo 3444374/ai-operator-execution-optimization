@@ -1,14 +1,20 @@
 # 双 4090 算子代价估计 formal profile（2026-08-04）
 
-> **状态：首次运行无效；修复后的 cache-on 最小门禁已通过，长实验尚未启动。**
+> **归档状态（2026-08-27）**：本合同已完成。首次 320-run 因共享 GPU 竞争和 local Ray
+> 被排除；修复后的 v2 cache-on 正式运行 320/320 有效、0 incident，并已完成 CE0–CE5
+> context-LOO 评估。有效结果见
+> [`../../results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/`](../../results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/)；
+> 首次无效证据继续单独保留。下文的“重跑”指事故后的原始执行合同，不是当前待办。
+>
+> **历史状态：首次运行无效；修复后的 cache-on 最小门禁已通过。**
 > 2026-08-04 的两套 320-run 输出几乎全程
 > 并发使用同一组 vLLM/GPU，且空 `--ray-address` 使每个子运行启动 local Ray；两套数据
 > 均排除出 CE0–CE6 分析。事故证据见
-> [`../results/operator_cost_profile_dual4090_formal_20260804/README.md`](../results/operator_cost_profile_dual4090_formal_20260804/README.md)。
+> [`../../results/operator_cost_profile_dual4090_formal_20260804/README.md`](../../results/operator_cost_profile_dual4090_formal_20260804/README.md)。
 > host-scope lease、非空共享 Ray 门禁和 cache-on 最小复跑已在提交 `2b7da6c` 上通过；
 > 远端 agent 可在完成本页全部 preflight 后，于单一新目录重跑。不得从无效目录 resume
 > 或挑选部分结果。门禁证据见
-> [`../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md`](../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md)。
+> [`../../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md`](../../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md)。
 > 2026-08-05 按真实部署口径把 v2 主合同冻结为 **prefix cache on**；cache-off 只作
 > 单独机制消融，不进入主性能排名，也不与 cache-on 行混合训练。
 

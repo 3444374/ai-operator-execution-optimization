@@ -174,7 +174,7 @@ flowchart TB
 > → 印证本课题 RC1 与 RC2 也需做联合 vs 拆分对比实验（PROJECT_OUTLINE.md 已规划）。Sarathi-Serve §5.4.2 消融得出同样结论——两篇独立工作共同支撑"联合调优必要性"的论证。
 
 > §4.2 + §A.6：Scorpio 在低 QPS 反向退化 8%，因复杂控制在轻载下徒增开销。
-> → 这是对本课题**保持简单原则（code/AGENTS.md §1）**的有力警示：自适应控制器必须设计"轻载回退到简单策略"的开关，否则会在低负载场景伤害性能。Ray ConcurrencyCapBackpressurePolicy 被废弃的教训在此再次得到印证。
+> → 这是对本课题**保持简单原则（`code/AGENTS.md`“代码质量”）**的有力警示：自适应控制器必须设计"轻载回退到简单策略"的开关，否则会在低负载场景伤害性能。Ray ConcurrencyCapBackpressurePolicy 被废弃的教训在此再次得到印证。
 
 > §A.4 Table 5：bucketing 策略消融——10 桶在长尾分布下掩盖 minority class（93% 落第一桶），100 桶最优。
 > → 这是本课题**长度预测器设计**的直接参考：若 RC1 的 length-align 分组需要一个"请求计算量预测器"，应避免粗粒度分桶。同时也佐证：评估预测器不能只看 accuracy，必须看 Kendall's tau / RMSE / off-by-n。

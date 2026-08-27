@@ -173,9 +173,9 @@ flowchart LR
 ### 2. ⚠️ 不能过度引用的地方
 
 - ❌ **不声称** "Multi-Bin 的 throughput-optimal 保证适用于本课题的 vLLM 部署"——Multi-Bin 明确**不考虑 continuous batching**（§2 末），其单服务器 batch-at-a-time 模型与 vLLM 的 iteration-level scheduling **根本不同**。本课题部署在 vLLM 上，Multi-Bin 的 Theorem 4.2/4.3 的**定量结论不能直接迁移**。正确表述是"Multi-Bin 的**分组降低 E[max] 的直觉**在 continuous batching 下仍成立（体现为 prefill 计算量同质化 + KV cache 内存利用率提升），但定量保证不直接迁移"。
-- ❌ **不声称** "本课题用 Multi-Bin 的排队论模型"——本课题的请求是**数据库行**（每行一个独立完整 vLLM 请求，遵循 `code/AGENTS.md` §2 硬性规则），数据来自 PostgreSQL 表，到达模式由 Daft pipeline 决定（非 Poisson），服务端是 vLLM continuous batching（非单服务器 batch-at-a-time）。Multi-Bin 的 Assumption 3.1/3.2 在本课题中**均不成立**。本课题借的是**分组理论直觉**（E[max] 对异构度敏感），不是排队论模型本身。
+- ❌ **不声称** "本课题用 Multi-Bin 的排队论模型"——本课题的请求是**数据库行**（每行一个独立完整 vLLM 请求，遵循 `code/AGENTS.md`“请求与流式语义”），数据来自 PostgreSQL 表，到达模式由 Daft pipeline 决定（非 Poisson），服务端是 vLLM continuous batching（非单服务器 batch-at-a-time）。Multi-Bin 的 Assumption 3.1/3.2 在本课题中**均不成立**。本课题借的是**分组理论直觉**（E[max] 对异构度敏感），不是排队论模型本身。
 - ❌ **不声称** "70% 吞吐提升适用于本课题"——该数字是 oracle 长度信息下的上界（§6.1），BERT 预测器端到端仅 8%（§C.1）。本课题的真实收益取决于上游 token 量预测的准确性，应在实验中独立测量，不借 Multi-Bin 的数字。
-- ❌ **不声称** "Multi-Bin 验证了行间合并的语义安全性"——Multi-Bin 的"分组"是在请求层（inter-request），与 vLLM 的 `--enable-chunked-prefill`（token 级行内拆分）是不同层面。本课题严格禁止行内拆分单条 prompt（`code/AGENTS.md` §2），Multi-Bin 的理论不涉及这一约束。
+- ❌ **不声称** "Multi-Bin 验证了行间合并的语义安全性"——Multi-Bin 的"分组"是在请求层（inter-request），与 vLLM 的 `--enable-chunked-prefill`（token 级行内拆分）是不同层面。本课题严格禁止行内拆分单条 prompt（`code/AGENTS.md`“请求与流式语义”），Multi-Bin 的理论不涉及这一约束。
 - ❌ **不声称** "Multi-Bin 解决了 prefix-aware / 写回 / 多模态 / 数据库侧组织问题"——它是纯文本 LLM serving 的排队论分析，不涉及 KV cache prefix 共享、PostgreSQL 写回、图像模态或数据库 schema。本课题的 prefix-aware（RC1 候选策略）和 queue-adaptive flush（RC2）无法从 Multi-Bin 获得支撑。
 - ❌ **不声称** "Multi-Bin 是经过同行评审的结论"——它是 2024 年 12 月的 arXiv 预印本，未经评审。引用时必须标注"预印本，待验证"。
 

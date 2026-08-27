@@ -74,7 +74,7 @@ candidate 聚合指标比把 repeats 当独立计划更符合优化器语义；�
 ## 7. 下一步
 
 双 4090 四候选 pilot 已通过，见 `../operator_cost_profile_pilot_20260804/`。独立 20-context
-formal 已在 `../../plans/operator_cost_profile_dual4090_formal_20260804.md` 预注册；按用户
+formal 已在 `../../plans/completed/operator_cost_profile_dual4090_formal_20260804.md` 预注册；按用户
 要求当前暂缓，由远端 agent 后续从 `main` 执行。新结果必须 formal-only、按机器隔离，
 先通过完整性门禁，再评价 CE0–CE5 和是否进入 state-aware correction。
 

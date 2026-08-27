@@ -21,6 +21,8 @@ env/
 
 # Local logs and temporary files
 tmp/
+validation/
+.test-tmp/
 *.log
 *.tmp
 *.swp

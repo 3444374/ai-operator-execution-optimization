@@ -1,8 +1,20 @@
 # 项目大纲
 
-更新时间：2026-08-21
+更新时间：2026-08-27
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
+
+## 0. 当前优先级与历史记录边界
+
+当前最短路径是：先完成 LOTUS v1.2.4 `sem_map` 语义等价迁移，再完成 PostgreSQL
+extension / planner-visible operator 的 SQL、child plan 与 query-lifecycle 资格验证。两项完成前，
+不扩展 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 emulated operator contract 重标为数据库内
+算子结果。之后才恢复图像 state-aware 系统级 matched comparison 与条件性补测。
+
+下方 2026-08-19 至 2026-08-21 的 SAOR/readiness/rehearsal 细节是已完成准备工作的历史记录，
+用于解释证据来源和 formal 为何仍未授权；它们不能覆盖上述当前顺序。
+
+### 0.1 PostgreSQL + LOTUS 实施入口
 
 数据库内 AI 语义算子的权威实施入口现冻结为
 [`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)：
@@ -14,6 +26,8 @@ LOTUS DataConnector/`pd.read_sql` 外拉整表。该计划当前为
 语义将项目 UDF/manifest-like `AI_COMPLETE` 替换为 `lotus.sem_map@v1.2.4`，保持
 Daft/Ray/static/SAOR 为可替换物理 backend。性能轨先用有界 server-side-cursor 仿真
 operator contract；PostgreSQL extension/CustomScan 另作数据库内 SQL/query-lifecycle 资格门。
+
+### 0.2 SAOR 系统对照准备记录（历史）
 
 迁移前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
@@ -360,23 +374,21 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成。图像 production descriptor builder 与 fresh snapshot 已以 observe-only 方式接入 project runner，legacy model-pixel credit 和调度决策保持不变；原生图像 single→four-job 40/40 passed，Project observe-only 24/24 passed、99K formal rows exactly-once、snapshot 100% fresh/构建均值 0.141 ms。static/proposed group JCT 只差 0.98%，因此只验收观测接入；stage controller 决策接线和 CE5 在线驱动仍待验证，不能将原生观察或 observe-only 写成动态方法胜出。
-2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
-3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
-4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成；图像 Daft built-in/Ray Data 原生四作业
-   40/40 和 Project observe-only 24/24 也已归档。DuckDB 四作业仍停在 capability gate，不为开题
-   扩展 formal。
-5. SAOR bounded-ready、matched-ready selector 归因和 observation bridge 已完成 development
-   rehearsal；旧全矩阵公平门等待按“bounded 必须 ok、static N/A”最终 applicability 重签。下一步先完成
-   fail-closed 门禁服务器回归，再准备同一 2-Job 合同的 native-system matched comparison；不直接
-   启动 selector 1+3 formal，也不扩 cap、4-Job、reservation 或 dynamic K。
-6. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
+1. **LOTUS 语义迁移**：冻结 v1.2.4，以真实 `SemMapNode`、prompt construction、output parser
+   和 error semantics 替换项目 UDF/manifest-like `AI_COMPLETE`；同时保留 LOTUS native product
+   baseline 与 project backend 的身份差异。
+2. **PostgreSQL 资格验证**：用 extension / planner-visible operator 的最小实现证明 SQL、ordinary
+   child plan、snapshot、cancel/error/result lifecycle 与有界 row-batch 交接；性能轨与资格轨分开。
+3. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+   报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
+4. **条件性恢复**：前两项通过后，再按
+   `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
+   system-level matched comparison 与小规模 pgvector 质量闭环。
+5. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+   full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
-2026-08-11 修正后的文本 phase-change 门禁显示：A-only K160 相对 K128 的每 endpoint
-service rate 提升 7.77%，低压升档动机成立；但 B=2.5/3.5/4.5 均未在两个 ON 周期、
-两个 endpoint 上稳定产生 waiting 或 KV>=0.85，最高档仅第二轮 endpoint-0 瞬时达到
-KV=0.874。按预注册规则停止，未运行 adaptive action/formal；当前不能判断动态策略有效或
-无效。后续只能以独立合同验证显式 drain/recovery 后的可重复 phase change。
+历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，
+用于解释候选机制与停止原因，不作为上述执行顺序中的隐含待办。
 
 ## 9. 结果解释与写作规则
 
@@ -400,4 +412,4 @@ GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分�
 - 十五篇精读方法速览：`research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`
 
-影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。修改知识文件后按 `research/knowledge_sync_guide.md` 同步平级 Obsidian Wiki。
+影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。修改知识文件后应在会话结束前提醒知识库同步；实际同步按 `research/knowledge_sync_guide.md` 执行。

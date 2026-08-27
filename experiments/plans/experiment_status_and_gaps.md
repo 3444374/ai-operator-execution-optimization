@@ -1,5 +1,12 @@
 # 实验状态与缺口分析
 
+更新日期：2026-08-27
+
+> **当前执行摘要**：先完成 LOTUS v1.2.4 `sem_map` 语义迁移，再完成 PostgreSQL
+> planner-visible operator / query-lifecycle 资格验证。此前文本、图像静态、observe-only 与代价估计
+> 证据继续有效，但当前不扩 GPU 矩阵、不调 SAOR。下文按日期保留状态演进；日期较早的“下一步”
+> 只有被本摘要或对应当前计划再次确认时才有执行效力。
+
 ## 2026-08-20 SAOR 对照重构状态（覆盖旧八臂执行说明）
 
 2026-08-21 进一步按系统比较第一性原理补齐共同观测：五臂的 T0 都是父 runner 实际释放 Job、且在
@@ -337,7 +344,7 @@ Daft Native 约 11 s 不得解释为框架性能排名。同 manifest 的 Projec
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
-**方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
+**方向决定（2026-08-01；本节为该决定的历史记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `completed/image_clip_workload_lock_20260731.md` §0 当时的「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
 
 **✅ §6 go/no-go 与实现边界复测均已通过（GO）**（2026-08-01）：历史 slow-pt
 路径 CPU 准备/GPU embed=**13.8–18.3**；随后在 `f3d17af` 上用 5000 图、四变体、
@@ -509,7 +516,7 @@ PostgreSQL + pgvector工程baseline。
   `planned-conditional`。只有修复后的双 4090 320-run 完全有效，且可部署估计器通过既有
   ranking/regret 门槛，才做 filter/join/materialize 位置与冻结运行配置的最小 held-out；
   不修改当前 320-run，不称官方 TPC-H/TPCx-AI 结果。完整合同见
-  `operator_cost_profile_dual4090_formal_20260804.md` §8。
+  `completed/operator_cost_profile_dual4090_formal_20260804.md` §8。
 
 详见 `experiments/results/operator_cost_estimation_20260726/README.md`。
 
@@ -614,7 +621,7 @@ AI_COMPLETE 的直接证据更明显：固定 16 行 batch 的 token min/max 为
 
 ### 候选机制优先级（跨论文，2026-07-24）
 
-设计各阶段实验时，"先试哪个机制"见下表。深度（控制律/旋钮/反馈信号）见对应精读笔记与 `research/knowledge_hub.md` §5；fatal flaw 见 `strategy_design_literature_basis.md` §3.1，不在此重复。
+设计各阶段实验时，"先试哪个机制"见下表。深度（控制律/旋钮/反馈信号）见对应精读笔记与 `research/knowledge_hub.md` §5；fatal flaw 见 `reference/strategy_design_literature_basis.md` §3.1，不在此重复。
 
 | 阶段 | 候选机制 | 来源指针 | 先试? | 隔离实验 |
 |---|---|---|---|---|
@@ -739,7 +746,9 @@ static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
 
 #### P0-2：两项策略联合消融完全没有数据
 
-**事实**：AGENTS.md §1 写死的核心验证——"分别独立搜索最优配置后拼接，再与联合 grid search 对比"。当前状态：batch_policy × K_max matrix 实验（07-19）已证明两者耦合（如 fixed128 只有 4 个 submission，K_max>4 无调度空间），但独立最优拼接 vs 联合 grid search 未跑。
+**事实**：`PROJECT_OUTLINE.md`“研究问题与因果设计”规定的核心验证是“分别独立搜索配置后拼接，
+再与联合 grid search 对比”。本段记录的是该日期下的历史状态：batch_policy × K_max matrix 实验
+（07-19）已显示两者存在耦合，但当时独立拼接与联合搜索尚未运行；后续完成状态以上方当前汇总为准。
 
 **需要回答**：token-budget 最优值（当前 6144）+ K_max 最优值（当前 8）独立拼接，是否与 joint space 中搜索的 (token_budget*, K_max*) 一致？
 - 一致 → 分层独立优化即可，论文可分开写两项策略
@@ -1065,7 +1074,7 @@ project profiler + arrival replay + 旧请求语义下的平台。现有 256 行
 P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
 
 完整机制卡、文献映射、fatal-flaw audit 和候选池见
-`literature_driven_pipeline_optimization_guide.md`。
+`reference/literature_driven_pipeline_optimization_guide.md`。
 
 ### 10.4 RC2 核心瓶颈：AIMD 选错了观测信号（2026-07-27 集中梳理）— ⏸ parked-conditional（见 §0），文本轨道恢复且需做动态控制信号选择时再启用
 
@@ -1331,8 +1340,8 @@ Credit-based admission 退化为 FIFO，与当前方案等价——不值得额�
 
 | 技术 | 当前结论 | 保留位置 | 重新激活条件 |
 |------|---------|---------|------------|
-| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量；shared-vLLM 下 vLLM waiting=0，AIMD 看的信号不反映 Ray 侧积压 | `code/src/adaptive_admission.py` | 改用反映 Ray 侧积压的信号后（逐请求 completion time 观测→可能解锁动态控制价值，见 §10.3 诊断） |
-| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/queue_adaptive_flush.py` | 多 workload shape、变长输出、多租户到达模式下重新评估 |
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量；shared-vLLM 下 vLLM waiting=0，AIMD 看的信号不反映 Ray 侧积压 | `code/src/scheduling/submission_control/adaptive.py`、`pid.py` | 改用反映 Ray 侧积压的信号后（逐请求 completion time 观测→可能解锁动态控制价值，见 §10.3 诊断） |
+| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/scheduling/submission_control/flush.py` | 多 workload shape、变长输出、多租户到达模式下重新评估 |
 | GNN/Transformer 代价模型 | 283 行数据远未达到需要 GNN 的规模（Heinrich R1 + Pathak & Mankodi 一致结论） | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
 
 **重要**：上述技术不是"被否定"，而是"在已测试条件下未优于更简单的
@@ -1366,4 +1375,4 @@ full-concurrency 的 HTTP/vLLM request wall，而不是 active-work credit 或 a
 所有主 arm 使用同一双 endpoint。不得通过挑选 Daft Native 单次高值、弱连接
 池、不同 request body 或不同输出 work 寻找优势。晋级门槛以
 baseline 身份与晋级门槛以 `baseline_reference.md` 为准，文本运行合同以
-`text_native_baseline_rerun_20260802.md` 为准。
+`completed/text_native_baseline_rerun_20260802.md` 为准。

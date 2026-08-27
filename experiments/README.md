@@ -1,77 +1,54 @@
-# Research Experiments
+# 正式研究实验
 
-本目录是正式研究实验入口，用于规划、运行和记录研究内容的优化实验与消融实验。它不同于 `motivation/`：动机测试回答”为什么这个课题值得做”，本目录回答”提出的方法或调优是否真的有效”。
+更新日期：2026-08-27
 
-## benchmark / workload 选型（当前主线，2026-08-02）
-
-学长反馈（`../notes/communication_notes.md` §5）把场景 reframe 成“数据库↔GPU 经
-Daft 桥接、算子多样、大数据量、流式 pipeline”，并强调先锁 workload。2026-08-01
-审计后，图像 CLIP 的选择理由收紧为“让 DB/CPU/Ray/H2D/GPU 木桶效应可测”，不再
-预设数据搬运是瓶颈或执行层为空白。方向 scope 见
-[`../research/daft_db_gpu_bridge_direction_scope_20260731.md`](../research/daft_db_gpu_bridge_direction_scope_20260731.md)。
-
-**首个 workload**：**图像 AI_EMBED (CLIP)**——JPEG decode/processor + 约 600KB
-pixel tensor 让 DB/CPU/Ray/H2D/GPU 的木桶效应成为可测变量，但不预设哪一段是主瓶颈。
-设计 + go/no-go 门禁见 [`plans/image_clip_workload_lock_20260731.md`](plans/image_clip_workload_lock_20260731.md)。
-
-**benchmark 四层**：① 产品/算子语义用 SemBench 和 OceanBase/PolarDB/Snowflake/
-BigQuery 官方文档对齐；② 公开多模态执行协议参考 Ray Data 与 PolarDB 的 ImageNet、
-PDF、audio、video benchmark；③ 任务质量按 ImageNet top-1/top-5、COCO mAP/F1 或
-embedding Recall@K/MRR/nDCG；④ 本项目同机 database-operator track 统一 PostgreSQL
-BYTEA、模型、预处理、资源、计时边界和 sink，采集阶段/硬件诊断。公开 benchmark
-不是全闭源，但没有一套与本项目 PostgreSQL→CPU preprocess→GPU→pgvector 完全一致
-的现成协议，因此必须同时保留公开 file/object track 和本项目 database track。
-
-baseline 如何检索、证据如何分级、哪些指标必须记录，以
-[`plans/baseline_reference.md`](plans/baseline_reference.md) 的检索流程和指标合同为准。
-文本 AI_COMPLETE 的原生性审计、Chat/Completions 分轨和 64-row gate→512-row
-calibration→2,048-row held-out 合同见
-[`plans/text_native_baseline_rerun_20260802.md`](plans/text_native_baseline_rerun_20260802.md)。
-MS MARCO 仅作为文本 embedding 轻对照，不能把图像、文本、音频强行统称为
-BigVectorBench。
+本目录回答“提出的方法或系统改动是否有效”。动机测试回答“问题是否存在”，放在
+`../motivation/`；组件和环境验证放在 `../feasibility/`。
 
 ## 当前状态
 
-文本实验已经形成不同等级的历史证据，当前统一 parked-conditional；具体数字只从
-[`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)
-和对应结果目录读取，不再在本入口复制容易过期的参数与“下一步”。
+当前不扩展 GPU 实验矩阵。短期先完成真实 LOTUS v1.2.4 `sem_map` 语义迁移，再通过
+PostgreSQL extension / planner-visible operator 的 SQL 与 query-lifecycle 资格验证。现阶段性能轨可使用
+明确标注的 emulated operator contract，但不能称为已实现数据库内算子。
 
-图像 runner 已新增 Daft 内置 `embed_image` native arm；Ray Data arm 只使用官方
-`read_sql/map_batches/ActorPoolStrategy` graph，由 Ray Data 自己调度。原有 Daft
-Native/Ray/staged 是项目自写 UDF reference，旧 5K×3 数据只保留为机制诊断，不能称
-官方 baseline；旧 256 行 staged gate 也需在移除项目式 inflight 后重做 native gate。
-后续还需直接复用 Daft 官方 803,580-row ResNet18 脚本做 vendor-code parity，并完成
-60 秒以上稳态、统一 pgvector sink、任务 ground truth 和失败 run 落盘。当前执行状态
-以 [`plans/experiment_status_and_gaps.md`](plans/experiment_status_and_gaps.md) §0 为准。
+已有文本与图像证据继续保留：
 
-## 目录分工
+- 文本数据组织、静态/shared credit、多 Job 与算子代价估计已有正式结果；
+- 图像 workload 画像、原生静态 baseline、多 Job 观察和 observe-only 证据已完成；
+- 动态 state-aware 图像方法、SAOR 跨层 capability 和部分纠正补测仍未完成或未获 formal 授权。
+
+完成度和下一步只看 [`plans/experiment_status_and_gaps.md`](plans/experiment_status_and_gaps.md)；
+真实数字和可引用结论只看
+[`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md) 与对应结果报告。
+
+## 目录结构
 
 | 路径 | 作用 |
 |---|---|
-| `plans/` | 正式研究实验计划，按研究内容组织 baseline、变量、消融和指标 |
-| `results/` | 正式研究实验结果、小改动调优记录和结论边界 |
+| [`plans/`](plans/) | 当前计划、状态入口与 baseline 总入口 |
+| [`plans/completed/`](plans/completed/) | 已完成且由结果报告接管的预注册合同 |
+| [`plans/reference/`](plans/reference/) | 跨实验协议、检查清单和设计依据 |
+| [`plans/archive/`](plans/archive/) | 被替代、暂停或仅供历史追溯的方案 |
+| [`results/`](results/) | 正式结果、raw/manifest、事故证据与结论边界 |
 
-## 研究内容对应实验
+## 研究内容
 
-| 研究内容 | 主要实验问题 | 初始候选实验 |
-|---|---|---|
-| 研究内容一：数据组织策略 | batch 构造方式（按计算量 vs 按行数）、分组策略如何影响端到端性能 | token-budget vs 固定 batch_size、length-aligned vs prefix-aware vs random、Daft into_batches/repartition/batch_size 参数 sweep |
-| 研究内容二：调度与提交控制策略 | Ray actor 自适应提交、routing、K_max 动态控制如何影响 queue wait 和 GPU utilization | queue-adaptive flush vs 固定 K_max、actor pool 分池 routing、Daft max_concurrency/gpus 参数 sweep |
-| 多模态泛化验证 | 文本上的策略在图像 workload 上是否一致有效 | 同一套策略代码，文本 df[“prompt”] → 图像 df[“image”]，token-budget → frame-budget |
-| 算子代价估计（共同使能组件） | work/service/JCT 预测能否改进 active-work、组织、路由与提交决策 | 简单解析模型 + profile + residual；报告误差、配置 ranking、决策 regret 与预测区间 |
+| 研究内容 | 评价重点 |
+|---|---|
+| 数据组织策略 | 固定行数与 work-aware 组织、长度/prefix 分组在不同压力条件下的吞吐和尾延迟 |
+| 调度与提交控制 | 同资源上限下的 active work、补位、共享 credit、路由、公平与隔离 |
+| 多模态泛化 | 同一策略抽象从 token/work budget 映射到 frame/image work 后是否仍成立 |
+| 算子代价估计 | 预测误差、配置排序、决策 regret 和预测区间；作为两项策略的共同支撑 |
 
-写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
+写回采用 PostgreSQL + pgvector 的 COPY + deferred index 作为统一工程 baseline，不单列为研究内容。
 
-## 结果记录要求
+## 证据边界
 
-每个结果至少包含：
+- 正式 baseline 必须由被测系统拥有执行与调度；项目自写 actor/credit/router 只能按其真实身份标注。
+- CPU/fake、microbenchmark、旧 UDF 和项目自写 Daft UDF 只作诊断或历史参考。
+- 原生系统 comparison 与项目方法 comparison 必须使用同 workload、模型、资源和计时边界。
+- 无效、失败与被排除的运行不得删除；必须保留原因和原始证据，且不得混入有效聚合。
+- 任何“动态优于静态”的结论都必须与同上限冻结静态点比较，并满足预注册重复与阈值。
 
-1. 对应研究内容和研究问题。
-2. 实验链路与运行命令。
-3. 参数、指标和 CSV / 日志路径。
-4. baseline、优化方案和消融设置。
-5. 真实结果和主要数字。
-6. 能说明什么、不能说明什么。
-7. 下一步需要补的验证。
-
-图表统一放在 `figures/`。本目录只引用图，不长期保存图副本。
+具体运行、落盘和报告要求见 [`AGENTS.md`](AGENTS.md)；实验计划导航见
+[`plans/README.md`](plans/README.md)。

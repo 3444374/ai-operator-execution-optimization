@@ -121,7 +121,8 @@ motivation/results/pg18_4_fake/
 motivation/results/fake_cpu/
 ```
 
-当后续开始验证三项研究内容中的方法或调优策略时，再在本目录登记结果。
+新增结果必须对应两项研究内容、共同代价估计或多模态泛化中的明确问题，并同步
+`EXPERIMENT_EVIDENCE_REGISTRY.md`；不要从本目录列表推断当前执行优先级。
 
 ## 结果命名建议
 

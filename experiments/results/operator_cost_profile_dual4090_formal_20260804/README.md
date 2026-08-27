@@ -8,7 +8,7 @@ CE0–CE6 训练、排序或决策比较。这里保存的是实验事故证据�
 预注册设置为 PostgreSQL → Daft → Ray actor → 两个 Qwen2.5-7B/vLLM Completions
 endpoint，80 个 candidate cells，每 cell 1 次 warmup + 3 次 formal，共 320 runs。完整的
 workload、固定项、候选和指标见
-[`../../plans/operator_cost_profile_dual4090_formal_20260804.md`](../../plans/operator_cost_profile_dual4090_formal_20260804.md)。
+[`../../plans/completed/operator_cost_profile_dual4090_formal_20260804.md`](../../plans/completed/operator_cost_profile_dual4090_formal_20260804.md)。
 
 服务器产生了两个彼此独立的输出目录：
 

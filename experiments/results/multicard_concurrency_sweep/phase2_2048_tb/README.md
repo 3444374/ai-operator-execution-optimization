@@ -2,7 +2,7 @@
 
 > **定位**：bounded_http / duckdb_ai / project_static 三臂在固定规模 2048 下，从 **C_total=2（c/K=1）到 C_total=128（c=64）的完整并发曲线**，回答"上游并发如何喂饱 GPU、各臂形态如何"。**这是 1 rep/cell 的 diagnostic screening，不是 formal ranking**（无 TOST/equivalence margin/CV，"未检出差异"≠"证明等价"）。
 >
-> **身份（订正）**：`duckdb_ai` 是测试 harness 预切 manifest + 2 个独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），按 [协议 §2.6](../../../plans/bounded_output_duckdb_comparison_protocol_20260805.md) 标 **`harness_pre_split_diagnostic`**，scheduler owner = 实验 harness，**不进 DuckDB 产品原生主排名**。lb_rr 臂（单进程经 nginx）未纳入本跑，见 §7。
+> **身份（订正）**：`duckdb_ai` 是测试 harness 预切 manifest + 2 个独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），按 [协议 §2.6](../../../plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md) 标 **`harness_pre_split_diagnostic`**，scheduler owner = 实验 harness，**不进 DuckDB 产品原生主排名**。lb_rr 臂（单进程经 nginx）未纳入本跑，见 §7。
 >
 > **duckdb 修复验证**：首跑（base conda，DuckDB 1.5.5）duckdb 全 7 格失败（ai extension 在 v1.5.4 路径不匹配）；本跑切 **text-baselines venv（DuckDB 1.5.4 + ai extension 0.4.14）** 后 duckdb 全 passed。deploy README:1175 规定 duckdb 必须用固定 1.5.4 的独立解释器。
 

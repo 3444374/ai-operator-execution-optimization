@@ -276,7 +276,8 @@ def _write_identity(arm: str, cell_output: Path) -> None:
     reading the standard field still misjudged gateway/harness as product-native.
     Now comparison_role IS the system role; the single-shard component role moves
     to ``component_comparison_role``. scheduler_owner lists ALL scheduling parties;
-    formal_baseline_eligible=false. See experiment_report_honesty_checklist.md §2.
+    formal_baseline_eligible=false. See
+    experiments/plans/reference/experiment_report_honesty_checklist.md §2.
     """
     if arm == "bounded_http":
         ident = {"comparison_role": "direct_client_control",

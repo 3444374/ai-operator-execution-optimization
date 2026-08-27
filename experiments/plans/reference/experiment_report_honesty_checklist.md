@@ -1,8 +1,12 @@
 # 实验报告与数据诚实性检查清单（写报告/数据/身份前必读必对照）
 
+> **文档身份（2026-08-27）**：持续有效的报告检查清单，不代表任何实验已获运行授权。
+
 > **来源**：codex 第一轮审计 + 复审两轮反复指出的**共性**错误。每条都配"我犯过的反例"。写任何多卡/吞吐/身份/统计/证据结论前，**逐条对照**；违反就是反复犯的"口径不一致 / 身份凭印象 / 过强结论 / 统计错 / 证据状态声称错 / 不读文档"。
 >
-> 这不是新规则，是把 `AGENTS.md §7.5/§6/§5` + `bounded_output_duckdb_comparison_protocol_20260805.md` + `provenance.py::ComparisonRole` 已经写明、但我反复没做到的点，落成可勾选清单。
+> 这不是另一套规则，而是根 `AGENTS.md`“工作方式与证据纪律/环境与正式实验”、
+> `experiments/AGENTS.md`、`bounded_output_duckdb_comparison_protocol_20260805.md` 和
+> `provenance.py::ComparisonRole` 的可勾选投影。
 
 ## 1. 吞吐口径（service tokens/s）—— 反复错的最多次
 
@@ -48,8 +52,8 @@
 
 ## 6. 文档（写报告前必读，不凭记忆）
 
-- `AGENTS.md §7.5`（实验执行与结果记录流程 7 步）/ `§6`（严谨性）/ `§5`（实验规则）/ `§6.5`（文献优先）。
-- `experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md`（身份三轨 + gateway + ComparisonRole 语义 + 计时边界）。
+- 根 `AGENTS.md`“工作方式与证据纪律/环境与正式实验/对外文档”和 `research/AGENTS.md`。
+- `experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md`（身份三轨 + gateway + ComparisonRole 语义 + 计时边界）。
 - `code/src/baselines/common/provenance.py`（ComparisonRole Literal——写身份前 grep 这个文件）。
 - `deploy/autodl/README.md`（runtime/profile/资产 + §9.1 calibration 模板 + §10.5 Ray + §2.3 paramiko）。
 - `experiments/plans/baseline_reference.md`（数据库 AI 算子评价指标合同）。
@@ -66,7 +70,7 @@
 
 ## 8. 结果边界与归档清单（复审第四轮：多路径 sweep 命名 + 跑完归档）
 
-下列是正式 run 在**报告措辞**与**落盘归档**上的硬性边界，违反 = 过强结论 / 证据不可复现。与 `experiments/AGENTS.md §结果边界与归档` 同源。
+下列是正式 run 在**报告措辞**与**落盘归档**上的硬性边界，违反 = 过强结论 / 证据不可复现。与 `experiments/AGENTS.md`“报告与结论（结果边界）”同源。
 
 - **8.1 缺臂命名**：sweep 未含全部对照臂 → 称"N 条系统路径的 scale/calibration sweep"，**非**"完整 N 臂正式排名"。只答所含路径的容量曲线/稳定性/规模拐点；"项目方法是否优于 baseline"须补齐缺臂（如 project_static）同合同重跑后才能答。
 - **8.2 指标附公式+行号**（复审第四轮）：派生指标必写代码精确公式与行号，不给裸数字——否则分母/口径模糊，自己与读者都无法核对。后端平衡 skew = `_backend_skew` = `abs(a-b)/max(a,b)` = (max-min)/max（`code/scripts/baselines/multicard_scale_ramp.py:366`），127:129 = 1.55%；gate 阈值 10% 也对 /max。**不**用 (max-min)/sum（=0.781%，代码不用）。
@@ -91,5 +95,7 @@
 8. ☐ 文档：读了 §7.5/§6/协议/provenance/deploy + 本 checklist 才下笔？
 9. ☐ 边界与归档（§8）：缺臂命名"N 条路径 sweep"非"完整排名"？指标附公式+行号（skew (max-min)/max）？归档清单（两 vLLM cmdline+strict 输出/revision·dtype·TP·gpu-mem/nginx SHA/per-cell warmup-formal 身份+counters+skew/query JCT 与 request E2E 分列/失败 cell/全单次值）落盘并被报告引用？
 
-> **登记**：本 checklist 是 `AGENTS.md §7.5`/`§6` + `bounded_output_duckdb_comparison_protocol_20260805.md` + `provenance.py::ComparisonRole` 的可勾选投影，登记于 `PROJECT_INDEX.md` 与 `experiments/plans/README.md`；写多卡/吞吐/身份/统计报告前强制对照（人工），代码层 fail-closed 由 aggregator/driver 强制（§7.2）。
-
+> **登记**：本 checklist 是根实验/证据规则、`bounded_output_duckdb_comparison_protocol_20260805.md`
+> 和 `provenance.py::ComparisonRole` 的可勾选投影，登记于 `PROJECT_INDEX.md` 与
+> `experiments/plans/README.md`；写多卡/吞吐/身份/统计报告前强制对照（人工），代码层 fail-closed
+> 由 aggregator/driver 强制（§7.2）。

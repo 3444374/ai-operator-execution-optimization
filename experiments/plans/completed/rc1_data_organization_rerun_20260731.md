@@ -1,5 +1,10 @@
 # RC1 数据组织策略系统重测 plan（2026-07-31）
 
+> **归档状态（2026-08-27）**：双 endpoint 低压力对照、四 endpoint KV 压力重测和 routing
+> 补充均已完成。结论是数据组织收益依赖运行条件，而不是统一排名；结果见
+> [`../../results/rc1_data_organization/`](../../results/rc1_data_organization/)。下文保留预注册合同，
+> 不再代表待运行任务。
+
 > 关联：执行流程遵循根 `AGENTS.md` §7.5（pre-flight / 干净合同 / 合规自检 / 全数据 README / 存储）。本 doc 只定 RC1 特定的合同、策略清单、拓扑、取代范围。
 
 ## 1. 为什么重测

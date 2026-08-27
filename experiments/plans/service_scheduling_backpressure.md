@@ -1,8 +1,13 @@
 # 研究内容二：调度与提交控制策略实验计划
 
+> **当前状态（2026-08-27）**：固定 credit、shared request/work credit、1/2/4 Job 与重叠作业
+> 证据已完成，显示效率、隔离和公平之间的权衡；动态策略尚未证明普遍优于同上限静态点。
+> 本文保留条件性扩展合同。当前先完成 LOTUS 语义迁移与 PostgreSQL query-lifecycle 资格验证，
+> 不新增 SAOR 调参或大矩阵。
+
 整理日期：2026-07-16
 
-> **2026-07-17 口径更新**：本文中的"运行层"等旧术语已统一为当前口径。最新研究内容定义、优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。写回已降为实验设置，不作为独立研究内容。
+> **2026-07-17 口径更新**：本文中的"运行层"等旧术语已统一为当前口径。最新研究内容定义、优先级和边界以根 `AGENTS.md`“项目范围/当前资格顺序”、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。写回已降为实验设置，不作为独立研究内容。
 对应研究内容：研究内容二
 方法候选编号：A2.1-A2.7（详见 `archive/research_design_catalog.md` §4，已归档）
 

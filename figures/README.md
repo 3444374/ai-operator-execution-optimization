@@ -1,4 +1,12 @@
-# 2026-07-14 Current Figure Set
+# 项目图资产
+
+更新日期：2026-08-27
+
+当前开题选图统一从 `opening_figure_set/README.md` 进入；权威源位于 `architecture/editable/` 和
+`data/report_main/`，审计记录位于 `audit/`。下方按日期保留历史图集和生成记录，日期较早的
+“current/prefer”只对当时版本有效，不能覆盖 2026-08-08 之后的开题叙事图入口。
+
+## 2026-07-14 历史图集
 
 For the current opening-report version, prefer these PG18.4
 pgai-integrated GPU-backed rerun figures over older 2026-07-12 GPU charts:
@@ -15,7 +23,7 @@ and `05_actor_endpoint_scaling_writeback` figures are retained as historical
 motivation assets, but should not be the first citation for the latest local
 pgai-integrated GPU-backed rerun.
 
-# 2026-07-20 Data Organization Mechanism Figures
+## 2026-07-20 Data Organization Mechanism Figures
 
 Use these formal mechanism figures when explaining research content one
 (data-organization strategy design):
@@ -37,7 +45,7 @@ charts: token-budget, length-aligned, and prefix-aware grouping are presented
 as candidate request-shaping policies whose throughput, tail-latency, queue,
 and prefix-cache effects still require ablation evidence.
 
-# 2026-07-21 Submission Control Mechanism Figures
+## 2026-07-21 Submission Control Mechanism Figures
 
 Use these formal mechanism figures when explaining research content two
 (scheduling and submission-control strategy design):
@@ -59,7 +67,7 @@ figures are mechanism diagrams, not experimental-result charts. They should be
 cited with validation metrics such as queue wait, P95/P99 latency, tokens/s,
 foreground/background interference, queue balance, and prefix locality.
 
-# Project Figures
+## 图资产目录与当前入口
 
 做图、改图、迁移图或审查图表前，先读 `figures/AGENTS.md`。本文件只维护当前图资产入口、正式图清单和保留规则。
 
@@ -224,18 +232,19 @@ figures/
   scripts/            可复现绘图脚本
 ```
 
-## 正文主线图
+## 2026-07 历史正文图清单
 
 ```text
 figures/architecture/
 figures/data/report_main/
 ```
 
-建议进入开题报告正文、PPT 正文，后续中期汇报和毕业论文也优先从这里选图：
+下表保留早期选图映射用于追溯；当前开题材料不得直接按此表选图，应使用本文件上方
+`opening_figure_set/` 入口：
 
 | 文件 | 用途 |
 |---|---|
-| `architecture/system_architecture_ai_data_execution.png` / `.svg` | 课题总体研究框架，定义数据库 -> Daft/Arrow -> Ray -> GPU model service -> sink 的研究对象，并标出计划层、运行层、服务端动态批处理和写回判定位置 |
+| `architecture/system_architecture_ai_data_execution.png` / `.svg` | 早期总体研究框架（三层/写回判定旧口径）；当前边界图见 `architecture/opening_ai_data_execution_boundary.*` |
 | `architecture/research_gap_three_islands.png` / `.svg` | 研究缺口图，说明三个成熟方向（DB4AI、推理服务、数据存储）之间的空白和本课题定位 |
 | `architecture/cross_layer_method_framework.png` / `.svg` | 研究方案图，说明三类 AI workload、分阶段性能剖析、三层上游执行策略、结果写回瓶颈判定和端到端效果评估 |
 | `architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时策略闭环图，当前首选策略机制图；用一个 AI_EMBED SQL 例子说明计划层 batch/partition、运行层 K_max/routing/backpressure、服务端 micro-batch 和写回 guardrail 如何协同 |
@@ -490,7 +499,7 @@ sweep over background `K_max={8,16,unbounded}` plus a tuned queue-adaptive
 implementation test. In this run, `K_max=8` protects the foreground job better
 than larger background inflight. Tuned adaptive does downshift, but it is not
 yet better than static `K_max=8`.
-# Figure asset updates
+## Figure asset updates
 
 - 2026-08-25: 开题报告图 2 删除右上角“开题第 5 页｜研究问题”幻灯片页码残留，保留三项跨层能力、左右两侧已有能力和底部研究问题的原有内容与布局；同步 `architecture/editable/01_research_gap.{drawio,svg}` 和报告 1600×900 PNG。图 7、图 15 按用户要求保持不变；视觉与源文件检查补记于 `audit/opening_report_figure_readability_audit_20260824.md`。
 - 2026-08-25: 为 Parrot 精读笔记从正式 OSDI 2024 proceedings PDF 裁剪正文全部 Figure 1–19，输出到 `research/精读文献笔记/parrot_osdi2024/figures/`；配图覆盖四类应用工作流、Semantic Variable 依赖、连续请求开销、应用级调度动机、prompt 结构、系统架构、API 与跨请求分析、目标推导、baseline capacity 校准，以及 Chain/Map-Reduce/Bing/GPTs/Multi-agent/Mixed workloads 六类结果。Table、Algorithm 与公式已在正文转写，不重复截图；正式版页码、SHA256、读图方法和视觉 QA 见 `audit/parrot_deep_reading_figures_audit_20260825.md`。

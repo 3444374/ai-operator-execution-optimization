@@ -1,10 +1,11 @@
 # 文本数据库 AI 算子原生 Baseline 复测合同
 
 日期：2026-08-02
-状态：64-row validity gate runner 与合同已准备；重构后的远端 smoke 已通过。calibration
-和 held-out formal 目前只有机器可读的**预注册合同**，尚无统一 matrix runner，不得把
-JSON 文件当成可执行命令。新 provenance 合同下的 calibration/formal 尚未执行。
-服务器开关属于运行态，不写入长期计划状态。
+归档状态（2026-08-27）：当前开题范围内的 capability、原生单 Job 与多 Job 观察已经完成，
+对应结果见 [`../../results/opening_text_native_gate_20260808/`](../../results/opening_text_native_gate_20260808/)
+和 [`../../results/opening_text_native_single_job_formal_20260808/`](../../results/opening_text_native_single_job_formal_20260808/)。
+下文保留 2026-08-02 的复测合同和当时准备状态，不再作为当前执行指令；新增文本 formal 必须重新
+建立当前版本、provenance 和资源合同。
 
 baseline 的身份、证据等级和公共指标只以 `baseline_reference.md` 为准；本文只保留
 AI_COMPLETE 的 Chat/Completions 执行合同，不另建总表。

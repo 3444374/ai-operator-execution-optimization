@@ -6,7 +6,7 @@
 
 ## 1. 实验目的
 
-补上 `bounded_output_duckdb_comparison_protocol_20260805.md` 三臂对比的第二臂：direct_client。
+补上 `experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md` 三臂对比的第二臂：direct_client。
 与 DuckDB-ai 的唯一差异 = 执行模型（per-request HTTP vs set-oriented barrier）；相同 endpoint/model/cap/concurrency/sink。
 direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（DuckDB-ai 不暴露），
 用于揭示两条路径对同一种截断事件的不同产品语义。

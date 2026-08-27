@@ -1,6 +1,6 @@
 # overview/AGENTS.md
 
-本目录维护项目总纲的快速参考入口。进入本目录前先读根目录 `AGENTS.md`。
+本文件继承根 `AGENTS.md`，只增加项目快速参考卡片规则。当前内容见 `README.md`。
 
 ## 作用
 

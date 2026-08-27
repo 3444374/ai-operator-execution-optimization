@@ -1,8 +1,9 @@
 # SAOR 与 DRR/VTC-on-vLLM 跨层比较能力合同
 
 日期：2026-08-20
-状态：`blocked`（已完成设计、tag 审计、服务器 installed-source 只读取样、骨架、纯逻辑测试与
-schema；尚未在合入 `main` 后用新 CLI 生成 exact-SHA evidence，未运行 capability/GPU）
+状态：`blocked / no-formal-authorization`（已完成设计、tag 审计、服务器 installed-source
+只读取样、骨架、纯逻辑测试与 schema；尚未用新 CLI 生成 exact-SHA evidence，未运行
+capability/GPU）。2026-08-27 仍不是当前执行项；先完成 LOTUS 语义迁移与 PostgreSQL 生命周期资格验证。
 
 ## 1. 研究问题与证据边界
 

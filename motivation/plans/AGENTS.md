@@ -1,6 +1,7 @@
 # motivation/plans/AGENTS.md
 
-本目录保存动机测试相关的路线、场景定义、workload 设计和实验计划。它服务于“为什么这个课题值得做”，不承担完整论文实验规划。
+本文件继承根 `AGENTS.md` 与 `motivation/AGENTS.md`，只增加动机路线、场景、workload 和画像计划
+规则；它不承担完整论文实验规划。
 
 ## 可以放
 

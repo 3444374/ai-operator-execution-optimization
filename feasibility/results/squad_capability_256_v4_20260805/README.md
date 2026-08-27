@@ -10,7 +10,7 @@
 (a) DuckDB `ai` 0.4.14 经 OpenAI-compatible vLLM 逐行产出可解析答案；
 (b) 共享 SQuAD evaluator 从逐行证据复算 EM/F1；
 (c) vLLM counter delta 可归因到本轮（endpoint 独占、运行前后 idle）。
-属于 **baseline 建设阶段**（见 `experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md`）。
+属于 **baseline 建设阶段**（见 `experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md`）。
 
 ## 2. 实验设置
 

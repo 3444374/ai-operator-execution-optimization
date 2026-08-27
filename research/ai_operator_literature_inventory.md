@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-08-24
+更新日期：2026-08-27
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -60,6 +60,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | NeurDB | CIDR 2025，非 CCF-A | AI-native database vision 与边界对照 |
 | LLM for Data Management | PVLDB 2024 | DB/LLM 研究版图 |
 | Smart、SmartLite、LEADS、InferDB | 正式数据库论文 | 近数据库推理、模型选择和动态执行对照 |
+| Kalypso: Relational LLM Serving | arXiv:2607.23815，2026；未标注正式 venue | 直接连接 semantic query plan 与 request-centric LLM serving，研究跨算子流水、KV prefix 生命周期和 memory-aware admission；最接近本课题接口，迫使增量收窄到 PostgreSQL query lifecycle、多 Job、多 endpoint 与不修改 vLLM 的外部控制 |
 
 ### 2.2 LLM 公平调度与程序级执行
 
@@ -150,7 +151,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 ## 六、当前本地状态
 
 - `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
-- `research/精读文献笔记/`：精读笔记权威库，当前包含 LOTUS、Galois、Palimpzest、Abacus、Sema、Cortex AISQL、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、Parrot、VTC、DLPM、BlendServe 和 IMBridge 十五篇主笔记，共 134 张论文原图裁剪件；不维护阅读状态字段。
-- `research/reference/`：当前工作区有 5 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
+- `research/精读文献笔记/`：精读笔记权威库，当前包含原十五篇主笔记与 Kalypso 共十六篇，论文原图裁剪件仍为 134 张；Kalypso 原稿已从下载目录原件逐字节恢复，按 arXiv 核心补充管理，不进入 Top 15、十五篇速览或开题正文。
+- `research/reference/`：当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。

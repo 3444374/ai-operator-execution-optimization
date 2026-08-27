@@ -1,7 +1,25 @@
 # 知识库同步操作指南
 
-> **读者**：Claude Code / Codex agent。当 AGENTS.md §11 触发提醒且用户确认后，读取本文件执行同步。
+> **读者**：Claude Code / Codex agent。当根 `AGENTS.md`“知识库同步”规则触发提醒且用户确认后，
+> 读取本文件执行同步。
 > **人读版**：`../ai-operator-wiki/my-notes/知识库同步规则.md`
+
+---
+
+## 执行前检查
+
+先在项目根运行只读检查：
+
+```bash
+test -d ../ai-operator-wiki
+test -f ../ai-operator-wiki/sync-wiki.sh
+```
+
+两项都通过后，再读取 Wiki 项目自身的规则/README，并确认本次目标路径已在下方映射中。任一检查
+失败就停止并报告 `pending`；不得擅自创建 sibling Wiki、猜测脚本位置或用手工 `cp` 绕过映射。
+
+当前工作区（2026-08-27）未发现 `../ai-operator-wiki/`，且精读两级目录尚未进入自动映射，因此
+本轮只能提醒，不能执行同步。该状态变化后，以实时检查结果为准。
 
 ---
 

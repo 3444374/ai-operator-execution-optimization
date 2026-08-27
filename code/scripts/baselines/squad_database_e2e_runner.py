@@ -4,7 +4,7 @@
 The capability gate (`squad_capability_gate.py`) measures only the OPERATOR-ONLY
 boundary (prompts ready → DuckDB `ai` op → materialize). This runner adds the
 missing **database-E2E** boundary defined in
-`experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md` §3:
+`experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md` §3:
 one timed wall around persistent-table scan → prompt construction → model call
 → **unified sink**. It is the prerequisite for any formal database-system
 ranking (protocol §5 step 4).

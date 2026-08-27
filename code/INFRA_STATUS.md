@@ -1,10 +1,18 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-13
+日期：2026-08-27
 
-本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
-边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
-链路，不修改 vLLM 内部。
+本文说明现有 Daft + Ray 外部物理执行基础设施已经完成什么、实际执行流程、研究证据
+边界，以及下一步还需要实现和验证的内容。这里记录的是 PostgreSQL/LOTUS 集成前已经
+可运行的 backend 基座，不表示数据库内 LOTUS AI 语义算子已经实现；项目不修改 vLLM 内部。
+
+**当前工程顺序**：先按
+`experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md` 完成 LOTUS v1.2.4
+`SemMapNode`、prompt、output 与错误语义迁移，再按
+`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md` 完成
+PostgreSQL extension/planner/query-lifecycle 资格验证。当前源码没有 LOTUS adapter、
+`sem_map` 语义入口或 PostgreSQL CustomScan 实现；下文图像和 SAOR 待办均为这两步之后恢复的
+条件性工作。
 
 全部机制、代码测试和正式结果目录的逐项对应见
 `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。该台账明确区分代码完成、
@@ -27,11 +35,12 @@ PostgreSQL
   -> optional PostgreSQL JSON/pgvector sink
 ```
 
-上图是已完成的**文本/vLLM 路径**。2026-08-01 内部执行方向转为 image-first A+B；
-CLIP 5K profile 与不含写回的 operator-E2E 已通过门禁。下图中 PostgreSQL→Daft→
-Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同、真实 ready broker 与
-static HSE adapter 已接入 image runner，但尚未运行 GPU 对照门，动态 SAOR 也未接入该路径；
-小规模 pgvector sink/质量闭环与动态性能验证仍是**待实现目标**：
+上图是已完成的**外部文本/vLLM 路径**；数据库读取与写回由外部 runner 管理，不能重标为
+planner-visible 数据库内算子。2026-08-01 至 2026-08-13 的 image-first A+B 轨道已完成 CLIP 5K
+画像、静态 operator-E2E、原生多 Job 观察和 observe-only 接线。下图中的
+PostgreSQL→Daft→Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同、真实 ready
+broker 与 static HSE adapter 已接入 image runner，但尚未运行 HSE GPU 对照，动态 SAOR 也未接入
+该路径；小规模 pgvector sink/质量闭环与动态性能验证在 PostgreSQL+LOTUS 当前短路径完成后恢复：
 
 ```text
 PostgreSQL image source
@@ -249,7 +258,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 - 本轮增加失败场景剪枝：不伪造 CSV，manifest 显式记录 skipped run。
 - 本轮增加 `service_metadata`：vLLM 版本、prefix cache 和 MFU 开关进入
   manifest，并参与 resume 一致性校验。（2026-07-31 起 runner 在 `main()` 额外
-  校验 `prefix_caching` 与 live vLLM 进程标志一致，见 `code/src/vllm_probe.py`：
+  校验 `prefix_caching` 与 live vLLM 进程标志一致，见 `code/src/serving/probes/vllm.py`：
   不符 fail-closed、探不到则 warn。）
 
 ### 本轮发现并修正的实验问题
@@ -339,7 +348,16 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 
 ## 7. 后续设计与实施顺序
 
-### 当前优先：image path-B + A+B
+### 当前优先：LOTUS 语义迁移与 PostgreSQL 资格验证
+
+1. 冻结 `lotus-ai==1.2.4`、源码 commit 与文件布局，建立 fail-closed 版本证据；
+2. 复用真实 `SemMapNode`、prompt formatter、output parser 和错误语义，建立 LOTUS native 与
+   project backend 的逐行 messages/output parity；
+3. parity 通过后，再实现最小 PostgreSQL extension/planner-visible operator，验证 SQL、child
+   plan、snapshot、取消、错误和结果生命周期；
+4. 两项完成前不扩 GPU 矩阵、不调 SAOR，也不把下述外部 runner 结果写成数据库内算子证据。
+
+### 条件性恢复：image path-B + A+B
 
 1. ✅ `BatchRequest`/scheduler/Ray adapter 已支持中性 work-unit；lazy image source、
    typed batch/result、CPU CLIP preprocessor 和常驻 tensor actor 已实现并有单测；
@@ -520,11 +538,11 @@ start、response headers、body complete、headers wait 和 body read。校准�
   不返回 output usage 时不同 arm 的吞吐口径不一致；Daft barrier 仍不能冒充 request P99。
 - 新复测按 64 行 validity → 512 行独立 calibration → 4,096 held-out、至少 60 秒、
   1 warmup + 3 interleaved repeats 执行。完整合同见
-  `experiments/plans/text_native_baseline_rerun_20260802.md`。后续 capability、单 Job 1+3 和多 Job
+  `experiments/plans/completed/text_native_baseline_rerun_20260802.md`。后续 capability、单 Job 1+3 和多 Job
   观察矩阵均已完成；真实状态以 `experiments/results/README.md` 和 evidence registry 为准。
 
 完整顺序与放弃条件见
-`experiments/plans/literature_driven_pipeline_optimization_guide.md`。
+`experiments/plans/reference/literature_driven_pipeline_optimization_guide.md`。
 
 ### Image-first pivot 后的多 GPU、多模态与代价估计
 

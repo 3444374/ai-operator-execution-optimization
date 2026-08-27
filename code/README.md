@@ -3,6 +3,20 @@
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
+Status as of 2026-08-27: this directory contains the existing external physical-execution runtime
+(PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
+static/shared scheduling controls, and offline cost estimation). It does **not** yet contain the
+version-locked LOTUS v1.2.4 semantic adapter or a PostgreSQL planner-visible AI operator. The active
+implementation sequence is LOTUS `sem_map` semantic parity first, then the PostgreSQL
+extension/query-lifecycle capability; see
+`../experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`.
+
+The SAOR section below records a stopped, fail-closed implementation state. It remains useful code and
+evidence context, but it is not authorization to resume GPU/formal runs or the current engineering
+priority.
+
+## Stopped SAOR native-system implementation record
+
 SAOR native-system matched infrastructure is locally implemented but remains stopped for GPU/formal
 execution. A non-rehearsal run now requires a separate authorization artifact that exactly binds the
 repository commit, raw config SHA, resolved-config fingerprint, and frozen manifest SHA before the
@@ -67,7 +81,7 @@ stores a structured PostgreSQL/Ray/endpoint clean gate plus lossless K/W occupan
 offline summary cannot alter the sealed negative formal decision. This infrastructure is locally
 tested but has not been run on the powered-off GPU server.
 
-全项目代码分层、文本/图像模态边界与分阶段迁移计划见
+全项目代码分层、文本/图像模态边界与已完成的迁移记录见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
 shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已合入 `main`。
@@ -103,7 +117,7 @@ code/
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
 │   └── profiling|experiments|analysis|environment/ ← 画像、编排、分析、跨机器检查
-├── tests/                        ← 按生产域镜像；远端完整依赖环境当前 622 个 unittest
+├── tests/                        ← 按生产域镜像；测试数量随代码变化，以 unittest discovery 为准
 ├── configs/                      ← vendor baseline pin 与可复现实验配置
 └── requirements.txt
 ```
