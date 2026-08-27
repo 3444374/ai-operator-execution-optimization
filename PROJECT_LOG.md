@@ -7873,6 +7873,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `SynchronousExecutionEngine` 使用分组合同，调度核心仍不依赖 Arrow、Daft、Ray 或 PostgreSQL。
 - PostgreSQL sink 分为纯结果规范化、批量 SQL 执行和上层事务提交。项目 profiler 及两个数据库
   E2E runner 显式拥有 commit；原 `write_embeddings`/`write_completions` 保留原有自动提交语义。
-- 本地相关调度、sink、profiler 和数据库 E2E 回归通过；完整环境仍缺 Daft、psycopg，macOS
-  sandbox 仍禁止 Ray 的 sysctl/socket 路径。计划在用户指定服务器补充集成验证，但当前 SSH
-  服务拒绝所给密码，尚未产生新的 GPU 或数据库实验事实。
+- 本地相关调度、sink、profiler 和数据库 E2E 回归通过；macOS 环境缺少 Daft、psycopg，且
+  sandbox 禁止 Ray 的 sysctl/socket 路径。随后在用户指定的双 RTX 4090 AutoDL 服务器建立
+  独立 Git worktree，`core,text,image,analysis` capability preflight 通过，最新提交的完整测试为
+  1,339 项全部通过。服务器复验同时修复了 Ray head recovery 测试泄漏 `RAY_ADDRESS`、native
+  multi-job 启动等待可能向 `sleep` 传入负值，以及 profiler 将批级结果数量误当源行数的既有
+  correctness 问题。真实 PostgreSQL 18.4 + pgvector 0.8.5、Daft source/organizer、Python fake
+  executor 的 8 行 no-writeback smoke 状态为 `ok`；本轮未调用 GPU 模型或恢复正式实验。
