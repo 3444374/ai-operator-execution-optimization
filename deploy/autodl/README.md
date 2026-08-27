@@ -298,10 +298,11 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 新对话不要先搜索历史聊天或重新猜测安装路径，按以下顺序读取：
 
 1. 根 `AGENTS.md`：项目边界与实验规则；
-2. 根 `PROJECT_OUTLINE.md` 和
+2. `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 和本目录 `AGENTS.md`：部署、运行时、网络与存储规则；
+3. 根 `PROJECT_OUTLINE.md` 和
    `experiments/plans/experiment_status_and_gaps.md`：当前唯一实验顺序；
-3. 本节：判断是“全新实例准备”还是“已配置实例开机恢复”；
-4. 本文件对应的详细章节；实验参数只从 `deploy/autodl/*.example.json`
+4. 本节：判断是“全新实例准备”还是“已配置实例开机恢复”；
+5. 本文件对应的详细章节；实验参数只从 `deploy/autodl/*.example.json`
    模板读取。
 
 | 当前状态 | 直接执行 |
@@ -319,11 +320,19 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 | runtime env | `/root/autodl-tmp/ai-operator-runtime.env` | 仓库外保存模型、端口、CUDA、容量和 workload 参数 |
 | driver Python | `/root/miniconda3/bin/python` | 运行 Ray/Daft/profiler/scenario runner |
 | vLLM Python | `/root/autodl-tmp/venvs/vllm-4090/bin/python` | 只运行 vLLM endpoint |
+| PostgreSQL 数据 | `/root/autodl-tmp/postgresql/<major>/main` | PGDATA，默认包含 WAL；软件与配置仍在系统盘 |
 | 模型 | `/root/autodl-tmp/models/<model>` | 由 runtime env 的 `MODEL_PATH` 指向 |
 | vLLM 日志 | `/root/autodl-tmp/vllm_logs/` | 每个端口有 log/PID 文件 |
 | 编排日志 | `/root/autodl-tmp/logs/` | endpoint 启动、gate、formal runner 日志 |
 | 临时 gate 配置 | `/root/autodl-tmp/gates/` | 仓库外机械缩小正式模板，不作为正式结果 |
 | 运行时结果 | `/root/autodl-tmp/experiment-artifacts/<unique_run_id>/` | 仓库外保存；审计后只把摘要和报告纳入 Git |
+| 可恢复备份 | 独立备份位置 | 数据盘不随系统镜像保存，不得把同盘副本当作唯一备份 |
+
+系统盘只保留操作系统、PostgreSQL/Conda 等软件与服务配置，以及有界且轮转的小日志。
+PGDATA/WAL、模型、raw 数据集、虚拟环境、缓存、vLLM/编排日志、实验产物与迁移暂存副本放数据盘；
+可恢复备份保存到独立存储。首次使用实例时用 `findmnt -T /root/autodl-tmp` 和
+`df -hT / /root/autodl-tmp` 核对实际挂载与空间，不只根据目录名判断所在磁盘。
+只更改 PostgreSQL 存储路径不改变 host、port、database 或用户，因此连接串保持不变。
 
 开题统一 database-E2E 文本三臂使用
 `opening_database_e2e_p0.example.json`。它只负责 SQuAD 均匀控制组和 ShareGPT
@@ -392,7 +401,8 @@ base 环境的 DuckDB 1.5.5 执行 preflight/arm，会在正式 cell 前因扩�
 4. 复制 `autodl.env.example` 到仓库外 runtime env，逐项填写模型、CUDA、
    GPU/端口、vLLM capacity、数据库、workload、SLO 与 MFU 峰值口径。
 5. 按 §5 通过 `download_model.sh` 下载模型，并检查关键文件非空。
-6. 按 §6 安装/初始化 PostgreSQL 18 + pgvector，创建 `ai_operator` 数据库。
+6. 按 §6 安装 PostgreSQL 18 + pgvector，先把 `data_directory` 切到数据盘并验证，再创建
+   `ai_operator` 数据库或导入 workload。
 7. 按 §7 导入 ShareGPT/BurstGPT workload，核对目标
    `workload_name` 的行数、prompt token 上限和模型 context 契约。
 8. 执行下方“开机后完整恢复流程”，再做 64 行真实 GPU gate。
@@ -646,7 +656,9 @@ cd ai-operator
 ```
 
 - **私有库**:用带 token 的 HTTPS(`https://<token>@github.com/3444374/ai-operator-execution-optimization.git`)或上传 SSH key 到 AutoDL 实例后再走 SSH。
-- **后续同步**:`cd /root/autodl-tmp/ai-operator && git pull`。
+- **后续同步**：在同一远程 shell 中执行
+  `source /etc/network_turbo >/dev/null 2>&1 && cd /root/autodl-tmp/ai-operator && git pull --ff-only`；
+  先用 `git remote get-url origin` 确认需要 turbo 的 remote 是 HTTPS。
 - 实验脚本入口在 `code/scripts/`,策略实现在 `code/src/`,依赖清单 `code/requirements.txt`。运行时 cwd 用项目根 `/root/autodl-tmp/ai-operator`(脚本里相对路径 `data/raw/...`、输出 `experiments/results/...` 都基于根)。
 
 ---
@@ -780,6 +792,50 @@ echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
 apt-get update
 apt-get install -y postgresql-18 postgresql-18-pgvector
 ```
+
+apt 会在系统盘初始化默认 cluster。在创建数据库或导入 workload 前，先把它迁移到数据盘：
+
+```bash
+pg_ctlcluster 18 main stop 2>/dev/null || true
+apt-get install -y acl rsync
+setfacl -m u:postgres:--x /root
+install -d -o postgres -g postgres -m 0700 /root/autodl-tmp/postgresql/18/main
+rsync -aHAX --numeric-ids /var/lib/postgresql/18/main/ \
+  /root/autodl-tmp/postgresql/18/main/
+
+# dry-run 必须无文件差异；切换前不删除旧目录
+rsync -aHAXn --delete --checksum --itemize-changes --numeric-ids \
+  /var/lib/postgresql/18/main/ /root/autodl-tmp/postgresql/18/main/
+
+cat >/etc/postgresql/18/main/conf.d/10-data-directory.conf <<'EOF'
+data_directory = '/root/autodl-tmp/postgresql/18/main'
+EOF
+chown postgres:postgres /etc/postgresql/18/main/conf.d/10-data-directory.conf
+chmod 0644 /etc/postgresql/18/main/conf.d/10-data-directory.conf
+pg_ctlcluster 18 main start
+sudo -u postgres psql -Atqc 'SHOW data_directory'
+```
+
+`postgres` 对 `/root` 只需要 execute-only ACL，不应将 `/root` 改为 `0755`。PGDATA 始终由
+`postgres:postgres` 拥有并保持 `0700`。服务启动后必须确认 `SHOW data_directory`
+返回数据盘路径，再创库和导入数据。
+
+### 6.1 已有 PostgreSQL 集群迁移
+
+已有数据的 cluster 不直接照搬新实例步骤删旧目录。按以下顺序执行并把机器特定记录保存到
+`$ARTIFACT_ROOT/<postgres-migration-id>/`：
+
+1. 另行保存可恢复备份，记录 PostgreSQL/pgvector 版本、库名、workload 行数和磁盘使用量。
+2. 干净停库，用 `pg_controldata` 确认 cluster state 为 `shut down`。
+3. 使用保留 owner/mode/xattr 的 `rsync` 复制，再以 `--checksum --dry-run` 和文件数/总字节交叉校验。
+4. 以独立 `conf.d` 文件切换 `data_directory`，启动后检查 `SHOW data_directory`、`pg_isready`、
+   关键 workload 行数/标识范围和一次回滚写探针；对大库再运行 `pg_amcheck`。
+5. 停库后暂时重命名旧目录，验证新集群不再依赖它并完成一次冷启停。全部通过后才删除旧副本。
+
+只迁移存储路径时，PostgreSQL 监听地址、端口、数据库和用户均不改，现有连接串应保持不变。
+AutoDL 数据盘在普通关机/开机后保留，但不随系统镜像保存；同数据盘上的迁移副本不是独立备份。
+服务器地址、凭据和 runtime env 继续保存在仓库外，不写入本 runbook 或 Git。
+
 起服务 + 建库:
 ```bash
 pg_ctlcluster 18 main start 2>/dev/null || service postgresql start

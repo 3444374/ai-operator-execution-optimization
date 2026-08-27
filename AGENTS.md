@@ -24,7 +24,7 @@ Claude Code 通过根 `CLAUDE.md` 导入本文件，并遵循相同的逐级读�
 | 工作范围 | 追加规则入口 |
 |---|---|
 | 可复用代码、脚本、测试 | `code/AGENTS.md` |
-| 环境、容器、跨机器运行 | `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 与平台 runbook |
+| 环境、容器、跨机器运行 | `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 与目标平台的 `AGENTS.md`/runbook |
 | 数据资产与导入 | `data/AGENTS.md` |
 | 正式方法实验 | `experiments/AGENTS.md`，再读 `plans/` 或 `results/` 的局部规则 |
 | 动机画像 | `motivation/AGENTS.md` 及目标子目录规则 |
@@ -97,7 +97,8 @@ emulated operator contract；不扩 GPU 参数矩阵，不继续调 SAOR，也�
 
 1. `deploy/runtime/AGENTS.md`；
 2. `deploy/runtime/README.md`；
-3. 目标平台 runbook，例如 `deploy/autodl/README.md`。
+3. 目标平台的局部规则和 runbook，例如 `deploy/autodl/AGENTS.md` 与
+   `deploy/autodl/README.md`。
 
 先按 runtime README 确认仓库外 `AI_OPERATOR_ENV_FILE`；文件不存在时先从模板创建并填写目标路径，
 不得跳过到安装或实验。再按任务选择 capability groups，运行只读

@@ -9,7 +9,7 @@
 | `pgai/` | PostgreSQL + pgai AI 算子集成环境 | PostgreSQL、pgai 扩展、pgvector |
 | `postgres18.4/` | PostgreSQL 18.4 本地同构预演 | PostgreSQL 18.4、pgvector |
 | `runtime/` | 跨机器 profile、软件能力组、模型/数据资产清单与只读 preflight | AutoDL、单 5070、其他 Linux/NVIDIA 环境 |
-| `autodl/` | AutoDL 云服务器部署指南与配置化脚本 | 2× GPU、vLLM、Ray CLIP actor、PostgreSQL18.4+pgvector、Ray/Daft |
+| `autodl/` | AutoDL 云服务器局部规则、部署指南与配置化脚本 | 2× GPU、vLLM、Ray CLIP actor、PostgreSQL18.4+pgvector、Ray/Daft |
 
 ## 使用
 
@@ -31,7 +31,7 @@ AutoDL 使用 `autodl.env.example`、`download_model.sh` 和
 默认自动选择，再进入对应平台 runbook。
 `runtime/` 只检查和补齐明确选择的能力/资产，不会自动修改驱动、CUDA 或正式实验参数。
 
-AutoDL 新对话的唯一入口是 `autodl/README.md` 顶部“新对话 / 新 agent 的
+AutoDL 新对话先读 `autodl/AGENTS.md`，再读 `autodl/README.md` 顶部“新对话 / 新 agent 的
 唯一操作入口”。其中分别给出全新实例环境准备、每次开机恢复、64 行 gate、
 正式后台启动与 `--resume` 恢复流程。具体实验顺序以
 `../PROJECT_OUTLINE.md` 和
