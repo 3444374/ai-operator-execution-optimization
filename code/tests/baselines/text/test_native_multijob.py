@@ -30,6 +30,7 @@ from src.baselines.text.orchestration.native_multijob import (
     run_native_multijob_cell,
     run_native_multijob,
     seal_native_cell_artifact_paths,
+    _sleep_until,
 )
 
 
@@ -116,6 +117,19 @@ class _HangingProcess(_FakeProcess):
 
 
 class NativeMultiJobTests(unittest.TestCase):
+    def test_sleep_until_never_uses_stale_negative_delay(self) -> None:
+        observations = iter((0.99, 1.01))
+        sleeps: list[float] = []
+
+        _sleep_until(
+            1.0,
+            now=lambda: next(observations),
+            sleeper=sleeps.append,
+        )
+
+        self.assertEqual(len(sleeps), 1)
+        self.assertGreater(sleeps[0], 0.0)
+
     @staticmethod
     def _ray_nofile(_address: str) -> tuple[int, int]:
         return 65_536, 1_048_576

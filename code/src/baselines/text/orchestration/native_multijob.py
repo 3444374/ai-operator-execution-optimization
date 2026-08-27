@@ -766,6 +766,24 @@ def _repository_commit() -> str:
     ).stdout.strip()
 
 
+JOB_LAUNCH_POLL_INTERVAL_S = 0.02
+
+
+def _sleep_until(
+    target_epoch_s: float,
+    *,
+    now: Callable[[], float] = time.time,
+    sleeper: Callable[[float], None] = time.sleep,
+) -> None:
+    """Wait for an absolute launch time without passing a stale negative delay."""
+
+    while True:
+        remaining_s = target_epoch_s - now()
+        if remaining_s <= 0:
+            return
+        sleeper(min(JOB_LAUNCH_POLL_INTERVAL_S, remaining_s))
+
+
 def _counter_delta(before: Mapping[int, Mapping[str, int]], after: Mapping[int, Mapping[str, int]]) -> dict[str, object]:
     if set(before) != set(after):
         raise ValueError("service counter endpoint set changed")
@@ -831,8 +849,7 @@ def _run_job(
     _assert_immutable(job)
     job_root = arm_root / "jobs" / job.job_id
     job_root.mkdir(parents=True)
-    while now() < target_epoch_s:
-        time.sleep(min(0.02, target_epoch_s - now()))
+    _sleep_until(target_epoch_s, now=now)
     scheduled = target_epoch_s
     launched = now()
     commands = [
