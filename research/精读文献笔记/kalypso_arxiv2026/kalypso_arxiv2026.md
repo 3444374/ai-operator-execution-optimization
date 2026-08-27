@@ -143,6 +143,10 @@ Kalypso 不替代上述两层，而是在中间增加 **query-aware serving laye
 
 ### Figure 1：filter → map 的 prompt 结构（p.3）
 
+![Figure 1：filter 与 map 的 prompt 共享 tuple prefix](figures/fig1_filter_map_prompt_structure.png)
+
+*图源：Kalypso arXiv v2 Figure 1（PDF p.3），按原图裁切。读图时横向比较两条 prompt：System Prompt 与 Tuple 的 token 顺序相同，只有末尾的 Filter/Map instruction 不同，因此下游 map 有机会复用红框所示 prefix。该图只展示可复用的 prompt 结构；实际命中还要求 operator UDF 产生完全相同的 token prefix，并在缓存被淘汰前启动下游请求。*
+
 论文给出的 prompt 是：
 
 - Filter：`[System Prompt | C(t) | I_filter]`
@@ -164,6 +168,10 @@ Kalypso 不替代上述两层，而是在中间增加 **query-aware serving laye
 4. 如果两个 operators 的 prompt 格式、token 顺序或模板不同，Kalypso不能自动创造 prefix sharing。
 
 ## 2.4 Figure 2 的动机实验
+
+![Figure 2：输入规模超过 KV-cache 容量后的 prefix 重算](figures/fig2_kv_cache_capacity_motivation.png)
+
+*图源：Kalypso arXiv v2 Figure 2（PDF p.3），按原图裁切。横轴增加 tuple 数量，蓝柱是第一个 semantic operator，红色斜线柱是第二个 operator，绿线是整体吞吐；约 70 tuples 后第二个 operator 的运行时间突然接近第一遍 prefill，说明早期 prefix 已被淘汰。该现象来自单张 A16、Llama-3.2-3B 和统一填充到 750 tokens 的受控实验，不等同于完整 Kalypso 的性能结果。*
 
 ### 实验设置（Section 2.2，p.3）
 
@@ -307,6 +315,10 @@ Kalypso不替代这个 block allocator，而是在上层控制请求何时进入
 
 ### 4.2.1 Figure 3 架构（p.3）
 
+![Figure 3：Kalypso 位于 query client 与 LLM engine 之间](figures/fig3_kalypso_architecture.png)
+
+*图源：Kalypso arXiv v2 Figure 3（PDF p.3），按原图裁切。实线表示 data flow，虚线表示调度控制：Query Parser 把查询拆成 stages/operators，Scheduler 根据 KV Memory Monitor 和 Memory Estimator 决定何时交给 Executor，而底层 LLM Scheduler 与 KV Cache Manager 仍由 serving engine 管理。该架构图不包含多 endpoint 路由或多 query 公平调度。*
+
 Figure 3 中 Kalypso 位于 Query API 与 LLM Engine 之间。
 
 ```mermaid
@@ -445,6 +457,10 @@ ICP 减少 pair 数量，但该优化属于 operator implementation；Kalypso的
 
 ### Figure 4：从 query plan 到 task execution（p.5）
 
+![Figure 4：query plan 被拆成 pipeline、stage 与 task](figures/fig4_query_plan_pipelining.png)
+
+*图源：Kalypso arXiv v2 Figure 4（PDF p.5），按原图裁切。应从左向右读取：左深 query plan 先按 Cartesian Product 拆出 Stage 1–3，stage 内以 tuple 为单位形成 task，blocking operator 再切断当前 pipeline 并启动 Stage 4。图中的 queue 文字与 Algorithm 1 的 `stage.waiting` 表述并不完全一致，具体执行语义以随后算法中的 waiting tasks 为准。*
+
 Figure 4 的左深 plan 被拆为四个 stages：
 
 - Stage 1：`op1 → op2`，扫描表 A；
@@ -509,6 +525,10 @@ Kalypso因此同时跟踪：
 
 ### B. Parallel depth-first
 
+![Figure 5：parallel depth-first 造成下游 stage 缺少新任务](figures/fig5_depth_first_starvation.png)
+
+*图源：Kalypso arXiv v2 Figure 5（PDF p.6），按原图裁切。Stage 1 只保留一个上游 task，已生成的 Stage 2 tasks 被迅速消费后 queue 为空；当这批 tasks 完成时，下游没有新工作，出现论文所称的 starving。它是固定预算策略的状态示意图，不是按时间采样的 GPU 或队列测量。*
+
 将大部分 memory 固定给最后 stage，children 一产生便大量并行执行。
 
 - 优点：迅速消费 parent prefix，尽早释放；
@@ -516,6 +536,10 @@ Kalypso因此同时跟踪：
 - Figure 5：Stage 2 queue 清空后 starving，而 Stage 1 只能孤立地产生下一个 tuple。
 
 ### C. Parallel breadth-first
+
+![Figure 6：parallel breadth-first 造成 pending tasks 堆积](figures/fig6_breadth_first_saturation.png)
+
+*图源：Kalypso arXiv v2 Figure 6（PDF p.7），按原图裁切。较大的 Stage 1 budget 同时接纳许多上游 tasks，它们生成的 children 在中间 queue 堆积，而 Stage 2 budget 不足以及时消费；论文把这种状态称为 saturated。该图说明预算分配失衡的方向，不给出实际 KV 占用量或持续时间。*
 
 给第一 stage 较大固定 budget，先并行产生大量 upstream outputs。
 
@@ -939,6 +963,10 @@ sem_filter：是否为有效且内容充分的 contract
 
 ### Figure 7 主要结果（p.10）
 
+![Figure 7：四个 workload 的端到端 query latency](figures/fig7_end_to_end_latency.png)
+
+*图源：Kalypso arXiv v2 Figure 7（PDF p.10），按原图裁切。四个 panel 的纵轴范围不同，应在每个 workload 内比较 Lotus、Kalypso 与可运行的 Palimpzest；柱顶倍率以相应 baseline 为参照，缺失的绿色柱表示 Palimpzest 不支持该 workload。图中为三次运行的平均值但没有误差条，而且 MEDEC/ContractNLI 的 model path 在系统间不完全相同。*
+
 | Workload | Baseline latency | Kalypso latency | Speedup | 作者解释 |
 |---|---:|---:|---:|---|
 | FEVER | Lotus 258.1 s | 172.6 s | 1.49× | map、retrieval、filter 流水；保留 claim/evidence 的 reusable prefix |
@@ -967,6 +995,10 @@ sem_filter：是否为有效且内容充分的 contract
 
 ## 6.4.1 Figure 9：Blocking vs. pipelined execution（p.11）
 
+![Figure 9：Kalypso blocking 与 pipelined execution 对比](figures/fig9_blocking_vs_pipelined.png)
+
+*图源：Kalypso arXiv v2 Figure 9（PDF p.11），按原图裁切。每组蓝柱是 operator-at-a-time blocking variant，红柱是默认 pipelined Kalypso，柱顶同时给出秒数和 speedup。这个对照一起移除了 operator overlap、跨 operator KV reuse 与 pinning，因此只能说明完整流水执行组合更快，不能把差异拆成三个独立机制的贡献。*
+
 | Workload | Blocking | Pipelined | Speedup |
 |---|---:|---:|---:|
 | FEVER | 506 s | 421 s | 1.20× |
@@ -979,6 +1011,10 @@ Blocking variant 让每个 operator 跑完整个输入后才启动下一个，�
 **证据边界**：该 ablation 同时移除了 operator overlap 与 cross-operator prefix reuse，因此不能从 Figure 9 单独量化两者各自贡献。
 
 ## 6.4.2 Figure 10：Static ratio vs. adaptive budgeting（p.11）
+
+![Figure 10：固定 stage memory ratio 与 adaptive budgeting](figures/fig10_stage_budget_allocation.png)
+
+*图源：Kalypso arXiv v2 Figure 10（PDF p.11），按原图裁切。上、下两行分别把 vLLM memory utilization 设为 0.9 和 0.6，左右比较 BioDEX 与 ContractNLI；柱子扫描固定 Stage 1:2 ratio，虚线是 adaptive 结果。图值还暴露一处正文不一致：0.6 memory 的 ContractNLI 中，静态 1:9 为 1,165 s，略快于 adaptive 的 1,185 s，不能据正文概括为 adaptive 在每个设置都最佳。*
 
 ### vLLM memory utilization = 0.9
 
@@ -1013,6 +1049,10 @@ Blocking variant 让每个 operator 跑完整个输入后才启动下一个，�
 
 ## 6.4.3 Figure 11：Virtual vs. explicit pinning（p.12）
 
+![Figure 11：virtual pinning 与 explicit pinning 的 latency](figures/fig11_virtual_vs_explicit_pinning.png)
+
+*图源：Kalypso arXiv v2 Figure 11（PDF p.12），按原图裁切。每个 workload 内比较默认 virtual pinning 与修改 vLLM 后的 explicit pinning：三项是 explicit 略快，MEDEC 则是 virtual 更快，差异相对总时长较小。由于论文没有误差条、显著性检验或 deadlock frequency，这张图支持“virtual 可接近 explicit”，不支持两者统计等价。*
+
 | Workload | Virtual | Explicit | 更快者 |
 |---|---:|---:|---|
 | FEVER | 421 s | 401 s | Explicit |
@@ -1025,6 +1065,10 @@ Blocking variant 让每个 operator 跑完整个输入后才启动下一个，�
 该实验没有解释 MEDEC 中 explicit pinning 反而更慢的具体原因，也没有报告 deadlock frequency。
 
 ## 6.4.4 Figure 12：Token-bound sensitivity（p.12）
+
+![Figure 12：固定 output-token budget 与在线估计的 latency](figures/fig12_token_budget_sensitivity.png)
+
+*图源：Kalypso arXiv v2 Figure 12（PDF p.12），按原图裁切。横轴扫描固定 output-token budget，红/蓝折线分别对应 0.6/0.9 vLLM memory，虚线是 Kalypso 的在线 token bound；预算过大降低可并发请求数，1-token 预算又会触发大量 retry。该实验只使用 MEDEC，不能据此确定其他 output-length 分布的最佳估计策略。*
 
 测试 workload：MEDEC。
 
@@ -1045,6 +1089,10 @@ Blocking variant 让每个 operator 跑完整个输入后才启动下一个，�
 - 99th-percentile online estimation 在不要求用户预知分布的情况下取得最好或并列最好结果。
 
 ## 6.4.5 Figure 8：Resource sensitivity（p.11）
+
+![Figure 8：降低 vLLM memory utilization 时的端到端 latency](figures/fig8_memory_utilization_sensitivity.png)
+
+*图源：Kalypso arXiv v2 Figure 8（PDF p.11），按原图裁切。横轴从 0.9 降到 0.5 表示留给 vLLM/KV cache 的显存比例逐步减少；四个 panel 的纵轴刻度不同，只能在同一 workload 内比较三套系统随 memory reduction 的变化。它说明当前单节点、Llama-3.3-70B 设置下 Kalypso 的 slowdown 较小，不证明跨模型或跨 serving backend 的同样趋势。*
 
 作者把 vLLM memory utilization 从 0.9 降到 0.5，对应约：
 

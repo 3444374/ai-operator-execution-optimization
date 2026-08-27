@@ -44,7 +44,7 @@
 | `IMBridge_sigmod2024/` | IMBridge 精读主笔记；`figures/` 内含 SIGMOD-Companion ’24 论文全部 Figure 1–6 的 6 个原图裁剪件；本地文件名中的 `2026` 不作为发表年份，Figure 5/6 只按 demo 截图证据解读 |
 | `dlpm_2025/` | DLPM/D²LPM 精读主笔记；当前正式状态仍为 arXiv:2501.14312v1；`figures/` 内含正文全部 Figure 1–12 的 12 个原图裁剪件，Figure 7 保留缺失点与 Long-Context worst-case，理论保证不外推到黑盒 endpoint 的端到端 Job 公平 |
 | `parrot_osdi2024/` | Parrot 精读主笔记；按正式 OSDI 2024 proceedings PDF（正文 17 页，文件另含 1 页 USENIX 封面）核对；`figures/` 内含正文全部 Figure 1–19 的原图裁剪件，机制图与实验图均在相邻图注中说明读法和证据边界 |
-| `kalypso_arxiv2026/` | Kalypso 精读主笔记；arXiv:2607.23815v2，关系查询计划感知的 LLM serving、跨算子流水执行与 KV-cache 生命周期管理；原稿已从下载目录原件逐字节恢复；按核心补充管理，不冒充正式 venue，不进入现有 Top 15、十五篇速览或开题正文 |
+| `kalypso_arxiv2026/` | Kalypso 精读主笔记；arXiv:2607.23815v2，关系查询计划感知的 LLM serving、跨算子流水执行与 KV-cache 生命周期管理；`figures/` 内含正文全部 Figure 1–12 的原图裁剪件，Figure 9 的组合消融、Figure 10 的图文不一致和 Figure 11 的无误差条限制均在相邻图注中说明；按核心补充管理，不冒充正式 venue，不进入现有 Top 15、十五篇速览或开题正文 |
 
 ## 精读流程
 

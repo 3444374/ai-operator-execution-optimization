@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-08-27 Kalypso 精读笔记配图补齐
+
+- 根据本地 arXiv:2607.23815v2 PDF 将正文全部 Figure 1–12 插入 Kalypso 精读笔记，分别放在 prompt reuse、容量动机、系统架构、pipeline/stage/task、两类固定预算失败状态以及六项实验/消融的对应段落；每张图均补充坐标或流程读法和不能外推的结论。
+- Figure 9 明确按“流水重叠 + 跨 operator KV reuse + pinning”的组合消融解读；Figure 10 保留 0.6-memory ContractNLI 中 static 1:9（1,165 s）略快于 adaptive（1,185 s）的图文不一致；Figure 11 不写成统计等价。
+- 精读库仍为 16 篇主笔记，论文原图裁剪件由 134 张增至 146 张。图像页码、SHA256 与视觉检查见 `figures/audit/kalypso_deep_reading_figures_audit_20260827.md`；未修改 Top 15、十五篇横向速览、开题正文、PPT 或实验结论。
+
 ## 2026-08-27 停用 Wiki 同步规则
 
 - 按用户要求删除根 `AGENTS.md` 的 Wiki 同步规则，后续修改知识文件时不再自动同步、检查平级

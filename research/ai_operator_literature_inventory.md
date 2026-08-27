@@ -151,7 +151,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 ## 六、当前本地状态
 
 - `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
-- `research/精读文献笔记/`：精读笔记权威库，当前包含原十五篇主笔记与 Kalypso 共十六篇，论文原图裁剪件仍为 134 张；Kalypso 原稿已从下载目录原件逐字节恢复，按 arXiv 核心补充管理，不进入 Top 15、十五篇速览或开题正文。
+- `research/精读文献笔记/`：精读笔记权威库，当前包含原十五篇主笔记与 Kalypso 共十六篇，论文原图裁剪件共 146 张；Kalypso 正文 Figure 1–12 已加入精读笔记，按 arXiv 核心补充管理，不进入 Top 15、十五篇速览或开题正文。
 - `research/reference/`：当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。
