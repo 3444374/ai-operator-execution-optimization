@@ -31,7 +31,17 @@ from src.scheduling.endpoint_routing.policies import (  # noqa: E402
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
-from src.scheduling.core.scheduler import SynchronousScheduler  # noqa: E402
+from src.scheduling.core.scheduler import (  # noqa: E402
+    EndpointCapacityConfig,
+    JobSchedulingContract,
+    ReadyWindowConfig,
+    SchedulerConfig,
+    SharedCreditConfig,
+    SynchronousScheduler,
+)
+from src.scheduling.runtime.execution import (  # noqa: E402
+    SynchronousExecutionEngine,
+)
 from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
 )
@@ -119,6 +129,31 @@ class SequenceClock:
 
 
 class SchedulerTests(unittest.TestCase):
+    def test_execution_engine_accepts_grouped_scheduler_config(self) -> None:
+        adapter = FakeSubmissionAdapter()
+        config = SchedulerConfig(
+            endpoint_capacity=EndpointCapacityConfig(request_limit=1),
+            shared_credit=SharedCreditConfig(
+                ready_window=ReadyWindowConfig(),
+                job=JobSchedulingContract(weight=2, priority=1),
+            ),
+        )
+        engine = SynchronousExecutionEngine(
+            admission=StaticAdmissionController(limit=3),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            config=config,
+        )
+
+        result = engine.execute(
+            [envelope(index) for index in range(3)],
+            topology(),
+        )
+
+        self.assertEqual(result.max_inflight_seen, 2)
+        self.assertEqual(len(result.completions), 3)
+
     def test_collects_ready_completion_while_source_waits_for_next_arrival(
         self,
     ) -> None:

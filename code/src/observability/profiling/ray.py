@@ -20,12 +20,20 @@ from src.scheduling.core.models import (
     SubmissionLifecycleEvent,
     TopologySnapshot,
 )
+from src.scheduling.core.scheduler import (
+    EndpointCapacityConfig,
+    JobSchedulingContract,
+    ReadyWindowConfig,
+    SchedulerConfig,
+    SchedulerResult,
+    SharedCreditConfig,
+)
+from src.scheduling.runtime.execution import SynchronousExecutionEngine
 from src.scheduling.runtime.ray_adapter import (
     ActorSubmissionState,
     RaySubmissionAdapter,
 )
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
-from src.scheduling.core.scheduler import SchedulerResult, SynchronousScheduler
 from src.scheduling.submission_control.admission import StaticAdmissionController
 from src.scheduling.submission_control.saor import SaorReleaseConfig
 from src.scheduling.runtime.shared_credit_ray import (
@@ -372,31 +380,43 @@ def _run_scheduler_with_options(
     options: _SchedulerOptions,
 ) -> tuple[list[dict], dict]:
     routing_config = options.routing_config or {}
-    scheduler = SynchronousScheduler(
+    execution = SynchronousExecutionEngine(
         admission=admission,
         router=routing_config.get("endpoint_router", RoundRobinEndpointRouter()),
         adapter=RaySubmissionAdapter(ray_module, submitters),
         pool_id=DEFAULT_POOL_ID,
         pool_router=routing_config.get("pool_router"),
         epoch_clock=options.epoch_clock or time.time,
-        per_endpoint_limit=options.per_endpoint_limit,
-        per_endpoint_work_limit=options.per_endpoint_work_limit,
-        per_endpoint_admission=options.per_endpoint_admission,
-        shared_credit=options.shared_credit,
-        job_weight=options.job_weight,
-        job_priority=options.job_priority,
-        job_slo_target_s=options.job_slo_target_s,
-        job_priority_window_s=options.job_priority_window_s,
-        job_fairness_debt_cap=options.job_fairness_debt_cap,
-        shared_credit_acquire_timeout_s=options.shared_credit_acquire_timeout_s,
-        shared_ready_request_limit=options.shared_ready_request_limit,
-        shared_ready_work_limit=options.shared_ready_work_limit,
-        shared_ready_payload_bytes_limit=(
-            options.shared_ready_payload_bytes_limit
+        config=SchedulerConfig(
+            endpoint_capacity=EndpointCapacityConfig(
+                request_limit=options.per_endpoint_limit,
+                work_limit=options.per_endpoint_work_limit,
+                admission_by_endpoint=options.per_endpoint_admission or {},
+            ),
+            shared_credit=SharedCreditConfig(
+                policy=options.shared_credit,
+                acquire_timeout_s=(
+                    options.shared_credit_acquire_timeout_s
+                ),
+                ready_window=ReadyWindowConfig(
+                    request_limit=options.shared_ready_request_limit,
+                    work_limit=options.shared_ready_work_limit,
+                    payload_bytes_limit=(
+                        options.shared_ready_payload_bytes_limit
+                    ),
+                ),
+                job=JobSchedulingContract(
+                    weight=options.job_weight,
+                    priority=options.job_priority,
+                    slo_target_s=options.job_slo_target_s,
+                    priority_window_s=options.job_priority_window_s,
+                    fairness_debt_cap=options.job_fairness_debt_cap,
+                ),
+            ),
+            actual_work_extractor=extract_completed_token_work,
         ),
-        actual_work_extractor=extract_completed_token_work,
     )
-    result = scheduler.run(envelopes, topology)
+    result = execution.execute(envelopes, topology)
     if options.submission_lifecycle_sink is not None:
         options.submission_lifecycle_sink.extend(result.submission_events)
     return [completion.result for completion in result.completions], _scheduler_metrics(result)

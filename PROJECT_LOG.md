@@ -7862,3 +7862,17 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 更新相关工作图中的代表系统和底部总结，并在系统名后以小号深灰字标注会议与年份；长标题 Cortex AISQL 和 Learned Cost Models 将出处另起一行，避免卡片内文字拥挤。
 - Ray Data 对应的 *The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution* 经两位作者公开论文列表交叉核对后标为 NSDI 2027；图中不使用文献编号或括号。
 - 同步 Draw.io、SVG 和 4000×2250 PNG 图资产，供开题 PPT 手工替换；未修改 PPT、开题报告正文或源实验数据。
+
+## 2026-08-27 高风险编排路径与非语义执行边界重构
+
+- 在不实现或假设 LOTUS/PostgreSQL 语义算子的前提下，拆分 PostgreSQL profiler、图像 E2E
+  runner、SAOR readiness audit 和 cell evidence validator 的长控制流；四个原入口分别缩短为
+  81、53、87、87 行，原结果字段、校验顺序和运行生命周期由相关回归测试覆盖。
+- `PayloadEnvelope` 改为 engine-owned payload 泛型；同步调度器新增 endpoint capacity、shared
+  credit、ready window 和 Job policy 自校验配置对象。旧构造函数保持兼容，画像路径通过
+  `SynchronousExecutionEngine` 使用分组合同，调度核心仍不依赖 Arrow、Daft、Ray 或 PostgreSQL。
+- PostgreSQL sink 分为纯结果规范化、批量 SQL 执行和上层事务提交。项目 profiler 及两个数据库
+  E2E runner 显式拥有 commit；原 `write_embeddings`/`write_completions` 保留原有自动提交语义。
+- 本地相关调度、sink、profiler 和数据库 E2E 回归通过；完整环境仍缺 Daft、psycopg，macOS
+  sandbox 仍禁止 Ray 的 sysctl/socket 路径。计划在用户指定服务器补充集成验证，但当前 SSH
+  服务拒绝所给密码，尚未产生新的 GPU 或数据库实验事实。

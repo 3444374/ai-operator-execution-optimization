@@ -99,12 +99,18 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
     ),
     ".core.scheduler": (
         "AdmissionPolicy",
+        "EndpointCapacityConfig",
         "EndpointRouter",
+        "JobSchedulingContract",
         "PoolRouter",
+        "ReadyWindowConfig",
+        "SchedulerConfig",
         "SchedulerResult",
+        "SharedCreditConfig",
         "SubmissionAdapter",
         "SynchronousScheduler",
     ),
+    ".runtime.execution": ("SynchronousExecutionEngine",),
     ".submission_control.shared_credit": (
         "CreditLease",
         "EndpointCreditSnapshot",

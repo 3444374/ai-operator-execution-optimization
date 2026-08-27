@@ -53,7 +53,10 @@ from src.baselines.text.products.project_static import (  # noqa: E402
     ProjectStaticConfig,
     run_project_static,
 )
-from src.data.sinks.postgres import write_completions  # noqa: E402
+from src.data.sinks.postgres import (  # noqa: E402
+    execute_write_plan,
+    prepare_completion_write,
+)
 from src.infrastructure.config_env import expand_structure  # noqa: E402
 from src.infrastructure.runner_lease import acquire_host_runner_lease  # noqa: E402
 from src.infrastructure.vllm_preflight import verify_live_vllm_config  # noqa: E402
@@ -768,12 +771,16 @@ def _run_in_process_cell(
         with psycopg.connect(config.database_url) as conn:
             requests, sidecar, scoring = _scan_source(conn, workload, manifest)
             results = _run_shards(arm, requests, config, workload)
-            written = write_completions(
-                conn,
+            write_plan = prepare_completion_write(
                 _sink_payload(results, sidecar),
                 "json_text",
+            )
+            written = execute_write_plan(
+                conn,
+                write_plan,
                 config.write_batch_rows,
             )
+            conn.commit()
         e2e_s = time.perf_counter() - started
     with psycopg.connect(config.database_url) as conn:
         readback = _sink_readback(conn, results)

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 
 from ...planning.work import WorkDescriptor
 
 
 OperatorName = Literal["ai_complete", "ai_embed", "ai_classify"]
+PayloadT = TypeVar("PayloadT")
 
 
 @dataclass(frozen=True)
@@ -97,9 +98,11 @@ class BatchRequest:
 
 
 @dataclass(frozen=True)
-class PayloadEnvelope:
+class PayloadEnvelope(Generic[PayloadT]):
+    """Bind scheduler metadata to an engine-owned, statically typed payload."""
+
     request: BatchRequest
-    payload: object
+    payload: PayloadT
 
 
 @dataclass(frozen=True)

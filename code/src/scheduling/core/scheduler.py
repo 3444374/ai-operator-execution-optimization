@@ -7,7 +7,7 @@ import statistics
 import threading
 import time
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from queue import Empty, Full, Queue
 from typing import Callable, Iterable, Iterator, Protocol
 
@@ -29,6 +29,11 @@ from .models import (
     TopologySnapshot,
 )
 from .ready_window import BoundedReadyWindow, ReadySubmission
+
+
+DEFAULT_SHARED_CREDIT_POLL_S = 0.001
+SOURCE_QUEUE_PUT_TIMEOUT_S = 0.01
+SOURCE_THREAD_CLOSE_TIMEOUT_S = 0.1
 
 
 class SubmissionAdapter(Protocol):
@@ -109,6 +114,130 @@ class SharedCreditPolicy(Protocol):
 
 
 @dataclass(frozen=True)
+class EndpointCapacityConfig:
+    """Endpoint-local request, work, and policy capacity."""
+
+    request_limit: int | None = None
+    work_limit: int | None = None
+    admission_by_endpoint: Mapping[str, AdmissionPolicy] = field(
+        default_factory=dict
+    )
+
+    def __post_init__(self) -> None:
+        if self.request_limit is not None and self.request_limit <= 0:
+            raise ValueError("per_endpoint_limit must be positive")
+        if self.work_limit is not None and self.work_limit <= 0:
+            raise ValueError("per_endpoint_work_limit must be positive")
+        object.__setattr__(
+            self,
+            "admission_by_endpoint",
+            dict(self.admission_by_endpoint),
+        )
+
+
+@dataclass(frozen=True)
+class ReadyWindowConfig:
+    """Bounds pre-registered work waiting for shared credit."""
+
+    request_limit: int = 1
+    work_limit: int | None = None
+    payload_bytes_limit: int | None = None
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.request_limit, int)
+            or isinstance(self.request_limit, bool)
+            or self.request_limit <= 0
+        ):
+            raise ValueError("shared_ready_request_limit must be positive")
+        if self.work_limit is not None and (
+            not isinstance(self.work_limit, int)
+            or isinstance(self.work_limit, bool)
+            or self.work_limit <= 0
+        ):
+            raise ValueError("shared_ready_work_limit must be positive")
+        if self.request_limit > 1 and self.work_limit is None:
+            raise ValueError(
+                "a multi-candidate ready window requires a work limit"
+            )
+        if self.payload_bytes_limit is not None and (
+            not isinstance(self.payload_bytes_limit, int)
+            or isinstance(self.payload_bytes_limit, bool)
+            or self.payload_bytes_limit <= 0
+        ):
+            raise ValueError(
+                "shared_ready_payload_bytes_limit must be positive"
+            )
+
+
+@dataclass(frozen=True)
+class JobSchedulingContract:
+    """Job metadata used by shared-credit fairness and SLO policies."""
+
+    weight: int = 1
+    priority: int = 0
+    slo_target_s: float | None = None
+    priority_window_s: float | None = None
+    fairness_debt_cap: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.weight <= 0:
+            raise ValueError("job_weight must be positive")
+        if (
+            not isinstance(self.priority, int)
+            or isinstance(self.priority, bool)
+            or self.priority < 0
+        ):
+            raise ValueError("job_priority must be a non-negative integer")
+        for value, name in (
+            (self.slo_target_s, "job_slo_target_s"),
+            (self.priority_window_s, "job_priority_window_s"),
+            (self.fairness_debt_cap, "job_fairness_debt_cap"),
+        ):
+            if value is not None and (
+                not math.isfinite(value) or value <= 0
+            ):
+                raise ValueError(f"{name} must be finite and positive")
+        if self.priority_window_s is not None and self.slo_target_s is None:
+            raise ValueError("a priority window requires a Job SLO target")
+
+
+@dataclass(frozen=True)
+class SharedCreditConfig:
+    """Shared capacity coordinator and its bounded-wait behavior."""
+
+    policy: SharedCreditPolicy | None = None
+    poll_interval_s: float = DEFAULT_SHARED_CREDIT_POLL_S
+    acquire_timeout_s: float | None = None
+    ready_window: ReadyWindowConfig = field(default_factory=ReadyWindowConfig)
+    job: JobSchedulingContract = field(default_factory=JobSchedulingContract)
+
+    def __post_init__(self) -> None:
+        if self.poll_interval_s <= 0:
+            raise ValueError("shared_credit_poll_s must be positive")
+        if self.acquire_timeout_s is not None and (
+            not isinstance(self.acquire_timeout_s, (int, float))
+            or isinstance(self.acquire_timeout_s, bool)
+            or not math.isfinite(self.acquire_timeout_s)
+            or self.acquire_timeout_s <= 0
+        ):
+            raise ValueError("shared credit acquire timeout must be positive")
+
+
+@dataclass(frozen=True)
+class SchedulerConfig:
+    """Self-validating scheduler settings, independent of engine adapters."""
+
+    endpoint_capacity: EndpointCapacityConfig = field(
+        default_factory=EndpointCapacityConfig
+    )
+    shared_credit: SharedCreditConfig = field(default_factory=SharedCreditConfig)
+    actual_work_extractor: Callable[
+        [SubmissionCompletion], int | None
+    ] | None = None
+
+
+@dataclass(frozen=True)
 class SchedulerResult:
     completions: tuple[SubmissionCompletion, ...]
     operator_invocations: int
@@ -174,7 +303,7 @@ class _ConcurrentEnvelopeSource:
 
     def close(self) -> None:
         self._cancelled.set()
-        self._thread.join(timeout=0.1)
+        self._thread.join(timeout=SOURCE_THREAD_CLOSE_TIMEOUT_S)
 
     def _produce(self, envelopes: Iterable[PayloadEnvelope]) -> None:
         try:
@@ -189,7 +318,7 @@ class _ConcurrentEnvelopeSource:
     def _put(self, item: object) -> bool:
         while not self._cancelled.is_set():
             try:
-                self._queue.put(item, timeout=0.01)
+                self._queue.put(item, timeout=SOURCE_QUEUE_PUT_TIMEOUT_S)
                 return True
             except Full:
                 continue
@@ -210,7 +339,7 @@ class SynchronousScheduler:
         per_endpoint_work_limit: int | None = None,
         per_endpoint_admission: Mapping[str, AdmissionPolicy] | None = None,
         shared_credit: SharedCreditPolicy | None = None,
-        shared_credit_poll_s: float = 0.001,
+        shared_credit_poll_s: float = DEFAULT_SHARED_CREDIT_POLL_S,
         shared_credit_acquire_timeout_s: float | None = None,
         shared_ready_request_limit: int = 1,
         shared_ready_work_limit: int | None = None,
@@ -224,90 +353,107 @@ class SynchronousScheduler:
             [SubmissionCompletion], int | None
         ] | None = None,
     ):
-        if per_endpoint_limit is not None and per_endpoint_limit <= 0:
-            raise ValueError("per_endpoint_limit must be positive")
-        if per_endpoint_work_limit is not None and per_endpoint_work_limit <= 0:
-            raise ValueError("per_endpoint_work_limit must be positive")
-        if shared_credit_poll_s <= 0:
-            raise ValueError("shared_credit_poll_s must be positive")
-        if (
-            not isinstance(shared_ready_request_limit, int)
-            or isinstance(shared_ready_request_limit, bool)
-            or shared_ready_request_limit <= 0
-        ):
-            raise ValueError("shared_ready_request_limit must be positive")
-        if shared_ready_work_limit is not None and (
-            not isinstance(shared_ready_work_limit, int)
-            or isinstance(shared_ready_work_limit, bool)
-            or shared_ready_work_limit <= 0
-        ):
-            raise ValueError("shared_ready_work_limit must be positive")
-        if shared_ready_request_limit > 1 and shared_ready_work_limit is None:
-            raise ValueError(
-                "a multi-candidate ready window requires a work limit"
-            )
-        if shared_ready_payload_bytes_limit is not None and (
-            not isinstance(shared_ready_payload_bytes_limit, int)
-            or isinstance(shared_ready_payload_bytes_limit, bool)
-            or shared_ready_payload_bytes_limit <= 0
-        ):
-            raise ValueError(
-                "shared_ready_payload_bytes_limit must be positive"
-            )
-        if shared_credit_acquire_timeout_s is not None and (
-            not isinstance(shared_credit_acquire_timeout_s, (int, float))
-            or isinstance(shared_credit_acquire_timeout_s, bool)
-            or not math.isfinite(shared_credit_acquire_timeout_s)
-            or shared_credit_acquire_timeout_s <= 0
-        ):
-            raise ValueError("shared credit acquire timeout must be positive")
-        if job_weight <= 0:
-            raise ValueError("job_weight must be positive")
-        if (
-            not isinstance(job_priority, int)
-            or isinstance(job_priority, bool)
-            or job_priority < 0
-        ):
-            raise ValueError("job_priority must be a non-negative integer")
-        if job_slo_target_s is not None and (
-            not math.isfinite(job_slo_target_s) or job_slo_target_s <= 0
-        ):
-            raise ValueError("job_slo_target_s must be finite and positive")
-        if job_priority_window_s is not None and (
-            not math.isfinite(job_priority_window_s)
-            or job_priority_window_s <= 0
-        ):
-            raise ValueError("job_priority_window_s must be finite and positive")
-        if job_fairness_debt_cap is not None and (
-            not math.isfinite(job_fairness_debt_cap)
-            or job_fairness_debt_cap <= 0
-        ):
-            raise ValueError("job_fairness_debt_cap must be finite and positive")
-        if job_priority_window_s is not None and job_slo_target_s is None:
-            raise ValueError("a priority window requires a Job SLO target")
+        config = SchedulerConfig(
+            endpoint_capacity=EndpointCapacityConfig(
+                request_limit=per_endpoint_limit,
+                work_limit=per_endpoint_work_limit,
+                admission_by_endpoint=per_endpoint_admission or {},
+            ),
+            shared_credit=SharedCreditConfig(
+                policy=shared_credit,
+                poll_interval_s=shared_credit_poll_s,
+                acquire_timeout_s=shared_credit_acquire_timeout_s,
+                ready_window=ReadyWindowConfig(
+                    request_limit=shared_ready_request_limit,
+                    work_limit=shared_ready_work_limit,
+                    payload_bytes_limit=shared_ready_payload_bytes_limit,
+                ),
+                job=JobSchedulingContract(
+                    weight=job_weight,
+                    priority=job_priority,
+                    slo_target_s=job_slo_target_s,
+                    priority_window_s=job_priority_window_s,
+                    fairness_debt_cap=job_fairness_debt_cap,
+                ),
+            ),
+            actual_work_extractor=actual_work_extractor,
+        )
+        self._initialize(
+            admission=admission,
+            router=router,
+            adapter=adapter,
+            pool_id=pool_id,
+            pool_router=pool_router,
+            epoch_clock=epoch_clock,
+            config=config,
+        )
+
+    @classmethod
+    def from_config(
+        cls,
+        admission: AdmissionPolicy,
+        router: EndpointRouter,
+        adapter: SubmissionAdapter,
+        pool_id: str,
+        *,
+        config: SchedulerConfig,
+        pool_router: PoolRouter | None = None,
+        epoch_clock: Callable[[], float] = time.time,
+    ) -> SynchronousScheduler:
+        """Construct from grouped policy/capacity contracts."""
+
+        scheduler = cls.__new__(cls)
+        scheduler._initialize(
+            admission=admission,
+            router=router,
+            adapter=adapter,
+            pool_id=pool_id,
+            pool_router=pool_router,
+            epoch_clock=epoch_clock,
+            config=config,
+        )
+        return scheduler
+
+    def _initialize(
+        self,
+        *,
+        admission: AdmissionPolicy,
+        router: EndpointRouter,
+        adapter: SubmissionAdapter,
+        pool_id: str,
+        pool_router: PoolRouter | None,
+        epoch_clock: Callable[[], float],
+        config: SchedulerConfig,
+    ) -> None:
+        endpoint_capacity = config.endpoint_capacity
+        shared_credit = config.shared_credit
+        ready_window = shared_credit.ready_window
+        job = shared_credit.job
         self.admission = admission
         self.router = router
         self.adapter = adapter
         self.pool_id = pool_id
         self.pool_router = pool_router
         self.epoch_clock = epoch_clock
-        self.per_endpoint_limit = per_endpoint_limit
-        self.per_endpoint_work_limit = per_endpoint_work_limit
-        self.per_endpoint_admission = dict(per_endpoint_admission or {})
-        self.shared_credit = shared_credit
-        self.shared_credit_poll_s = shared_credit_poll_s
-        self.shared_credit_acquire_timeout_s = shared_credit_acquire_timeout_s
-        self.shared_ready_request_limit = shared_ready_request_limit
-        self.shared_ready_work_limit = shared_ready_work_limit
-        self.shared_ready_payload_bytes_limit = (
-            shared_ready_payload_bytes_limit
+        self.per_endpoint_limit = endpoint_capacity.request_limit
+        self.per_endpoint_work_limit = endpoint_capacity.work_limit
+        self.per_endpoint_admission = dict(
+            endpoint_capacity.admission_by_endpoint
         )
-        self.job_weight = job_weight
-        self.job_priority = job_priority
-        self.job_slo_target_s = job_slo_target_s
-        self.job_priority_window_s = job_priority_window_s
-        self.job_fairness_debt_cap = job_fairness_debt_cap
-        self.actual_work_extractor = actual_work_extractor
+        self.shared_credit = shared_credit.policy
+        self.shared_credit_poll_s = shared_credit.poll_interval_s
+        self.shared_credit_acquire_timeout_s = shared_credit.acquire_timeout_s
+        self.shared_ready_request_limit = ready_window.request_limit
+        self.shared_ready_work_limit = ready_window.work_limit
+        self.shared_ready_payload_bytes_limit = (
+            ready_window.payload_bytes_limit
+        )
+        self.job_weight = job.weight
+        self.job_priority = job.priority
+        self.job_slo_target_s = job.slo_target_s
+        self.job_priority_window_s = job.priority_window_s
+        self.job_fairness_debt_cap = job.fairness_debt_cap
+        self.actual_work_extractor = config.actual_work_extractor
 
     def run(
         self,

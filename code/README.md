@@ -240,7 +240,10 @@ now lives under `code/src/`:
   framework-native adapters、OceanBase product-native adapter、immutable manifest 和
   fail-closed 双 endpoint gate。`text/frameworks/` 只封装 vendor API graph，不注入项目
   credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
-- `data/sinks/postgres.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
+- `data/sinks/postgres.py`: PostgreSQL embedding/completion result normalization and
+  batched SQL execution are separate from transaction ownership. Project runners build a
+  `PostgresWritePlan`, execute it, and commit explicitly; historical `write_*` functions
+  remain compatibility wrappers with their original implicit-commit behavior.
 - `observability/metrics/`: `timing.py`、`csv.py`、`statistics.py`、`resources.py`、
   `vllm.py`、`retrieval.py`、`squad.py` 分别负责计时、schema-safe CSV、重复统计、
   GPU/能耗/MFU、vLLM TTFT/ITL/cache 指标、显式真值检索质量和 SQuAD v1.1
@@ -269,12 +272,16 @@ now lives under `code/src/`:
   token-budget row grouping, batch/request submission expansion, and request
   lifecycle seed assembly. It does not submit Ray work or call model services.
 - `observability/profiling/ray.py`: Ray task/actor submitters, endpoint topology, typed
-  scheduler wiring, credit release/fan-in, and the explicitly retained legacy
+  profiling wiring, credit release/fan-in, and the explicitly retained legacy
   adaptive baselines. It does not parse CLI arguments or write trace CSVs.
 - `data/workloads/text.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent typed core split by decision boundary:
   `core/`, `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
   `core/control.py` owns the neutral capacity-arm contract;
+  `core/scheduler.py` groups endpoint capacity, shared credit, ready-window limits, and
+  Job policy values into self-validating configuration objects while keeping the legacy
+  constructor compatible. `runtime/execution.py` is the reusable physical-execution
+  facade consumed by profiling and future operator adapters;
   `core/execution.py` owns exactly-once pending/completion/lifecycle state and accepts a
   modality-specific actual-work extractor. `submission_control/saor.py` contains only the
   finite-action DPP policy and typed inputs; `ordered_release.py` is the single owner of
@@ -312,6 +319,12 @@ data-organization policies, request/work admission, shared multi-job credit,
 endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
 adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
+
+`PayloadEnvelope` is generic in its engine-owned payload type; the scheduling core never
+uses `object` as a payload escape hatch. `SynchronousExecutionEngine` composes admission,
+routing, submission and grouped capacity contracts. Profiling remains an observation and
+experiment caller of that execution capability; it no longer constructs the scheduler
+directly.
 
 The first SAOR core revision selects among caller-enumerated safe actions using queue and
 weighted-fairness debt. The executable `saor_release` path now runs inside the existing named

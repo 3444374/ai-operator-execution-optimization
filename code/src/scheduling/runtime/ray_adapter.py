@@ -17,6 +17,7 @@ from ..core.models import CollectedSubmission, PayloadEnvelope, SubmissionComple
 # ``project_static`` hang a 2-endpoint ramp indefinitely (F1 unbounded ``ray.get``
 # vs F3 bounded lb_rr subprocess).
 ACTOR_READY_BARRIER_TIMEOUT_S = 90.0
+UNBOUNDED_WORKER_CONCURRENCY = 2**31 - 1
 
 
 def _describe_ray_resources(ray_module) -> dict[str, object]:
@@ -84,7 +85,7 @@ class ActorWorkerPoolSubmitter:
         method_name: str,
         *,
         endpoint_id: str = "endpoint",
-        max_concurrency_per_worker: int = 2**31 - 1,
+        max_concurrency_per_worker: int = UNBOUNDED_WORKER_CONCURRENCY,
         routing_policy: Literal[
             "round_robin",
             "least_active_work",
@@ -260,7 +261,7 @@ class ActorSubmissionState:
         actor_pools: Mapping[str, Sequence[object]],
         method_name: str,
         *,
-        max_concurrency_per_worker: int = 2**31 - 1,
+        max_concurrency_per_worker: int = UNBOUNDED_WORKER_CONCURRENCY,
         routing_policy: Literal[
             "round_robin",
             "least_active_work",

@@ -148,7 +148,14 @@ from src.scheduling.endpoint_routing.policies import (
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
-from src.data.sinks import write_completions, write_embeddings
+from src.data.sinks import (
+    execute_write_plan,
+    prepare_completion_write,
+    prepare_embedding_write,
+    # Preserve the script module's historical patch/import surface.
+    write_completions,
+    write_embeddings,
+)  # noqa: F401
 from src.data.sources import SourceConfig, make_source
 from src.data.workloads import generate_document_rows
 
@@ -3596,19 +3603,22 @@ class _ProfileOperatorRun:
     def _write_results(self) -> tuple[int, float]:
         timer = StageTimer.start("writeback")
         if self.args.operator == "ai_complete":
-            written_rows = write_completions(
-                self.conn,
+            plan = prepare_completion_write(
                 self.operator_results,
                 self.args.writeback_mode,
-                self.args.write_batch_rows,
             )
         else:
-            written_rows = write_embeddings(
-                self.conn,
+            plan = prepare_embedding_write(
                 self.operator_results,
                 self.args.writeback_mode,
-                self.args.write_batch_rows,
             )
+        written_rows = execute_write_plan(
+            self.conn,
+            plan,
+            self.args.write_batch_rows,
+        )
+        if plan is not None:
+            self.conn.commit()
         return written_rows, timer.stop()
 
     def _validate_result_visibility(self) -> None:

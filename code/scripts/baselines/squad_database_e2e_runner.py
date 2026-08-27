@@ -105,7 +105,10 @@ from src.baselines.text.products.duckdb_ai import (  # noqa: E402
     inspect_duckdb_ai_runtime,
     run_duckdb_ai_complete,
 )
-from src.data.sinks.postgres import write_completions  # noqa: E402
+from src.data.sinks.postgres import (  # noqa: E402
+    execute_write_plan,
+    prepare_completion_write,
+)
 from src.observability.metrics import (  # noqa: E402
     scrape_prometheus_metrics,
     squad_quality_metrics,
@@ -258,7 +261,10 @@ def _sink_write(
 ) -> tuple[int, float]:
     payload = _results_to_sink_payload(results, sidecar, default_tenant, default_category)
     t0 = time.time()
-    written = write_completions(conn, payload, writeback_mode, write_batch_rows)
+    write_plan = prepare_completion_write(payload, writeback_mode)
+    written = execute_write_plan(conn, write_plan, write_batch_rows)
+    if write_plan is not None:
+        conn.commit()
     return written, time.time() - t0
 
 

@@ -14,7 +14,15 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.data.sinks import batched_rows, vector_to_pg_literal, write_completions, write_embeddings
+from src.data.sinks import (
+    batched_rows,
+    execute_write_plan,
+    prepare_completion_write,
+    prepare_embedding_write,
+    vector_to_pg_literal,
+    write_completions,
+    write_embeddings,
+)
 
 
 class FakeCursor:
@@ -67,6 +75,26 @@ class SinkTests(unittest.TestCase):
         self.assertEqual(conn.commits, 1)
         self.assertEqual([len(rows) for _, rows in conn.cursor_obj.executed], [2, 1])
 
+    def test_prepared_embedding_write_does_not_own_transaction(self) -> None:
+        conn = FakeConnection()
+        plan = prepare_embedding_write(
+            [
+                {
+                    "doc_id": [1],
+                    "tenant_id": [10],
+                    "category": ["a"],
+                    "embedding": np.ones((1, 2), dtype=np.float32),
+                }
+            ],
+            "pgvector",
+        )
+
+        written = execute_write_plan(conn, plan, write_batch_rows=1)
+
+        self.assertEqual(written, 1)
+        self.assertEqual(conn.commits, 0)
+        self.assertIn("embedding_vector", conn.cursor_obj.executed[0][0])
+
     def test_write_embeddings_none_skips_connection(self) -> None:
         conn = FakeConnection()
 
@@ -87,6 +115,23 @@ class SinkTests(unittest.TestCase):
         self.assertEqual(written, 2)
         self.assertEqual(conn.commits, 1)
         self.assertEqual([len(rows) for _, rows in conn.cursor_obj.executed], [1, 1])
+
+    def test_prepare_completion_write_normalizes_text_and_json(self) -> None:
+        plan = prepare_completion_write(
+            [
+                {
+                    "doc_id": [1],
+                    "tenant_id": [10],
+                    "category": ["a"],
+                    "output_text": [42],
+                }
+            ],
+            "json_text",
+        )
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan.rows[0][3], "42")
+        self.assertEqual(plan.rows[0][4], '{"text":"42"}')
 
     def test_write_completions_rejects_pgvector(self) -> None:
         conn = FakeConnection()
