@@ -3,16 +3,15 @@
 日期：2026-08-27
 
 本文说明现有 Daft + Ray 外部物理执行基础设施已经完成什么、实际执行流程、研究证据
-边界，以及下一步还需要实现和验证的内容。这里记录的是 PostgreSQL/LOTUS 集成前已经
-可运行的 backend 基座，不表示数据库内 LOTUS AI 语义算子已经实现；项目不修改 vLLM 内部。
+边界，以及下一步还需要实现和验证的内容。这里记录的是 PostgreSQL 中立语义算子集成前已经
+可运行的 backend 基座，不表示数据库内 AI 语义算子已经实现；项目不修改 vLLM 内部。
 
-**当前工程顺序**：先按
-`experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md` 完成 LOTUS v1.2.4
-`SemMapNode`、prompt、output 与错误语义迁移，再按
-`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md` 完成
-PostgreSQL extension/planner/query-lifecycle 资格验证。当前源码没有 LOTUS adapter、
-`sem_map` 语义入口或 PostgreSQL CustomScan 实现；下文图像和 SAOR 待办均为这两步之后恢复的
-条件性工作。
+**当前工程顺序**：按
+`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 PostgreSQL
+planner-visible `SemMap` capability，再实现中立 plan/task/result 合同和 recording、remote HTTP、
+project providers，随后以 `SemFilter` 验证关系 cardinality 语义。当前源码没有 PostgreSQL
+CustomScan、统一 provider gateway 或 LOTUS compatibility adapter；LOTUS v1.2.4 不再是核心前置依赖。
+下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
 全部机制、代码测试和正式结果目录的逐项对应见
 `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。该台账明确区分代码完成、
@@ -40,7 +39,7 @@ planner-visible 数据库内算子。2026-08-01 至 2026-08-13 的 image-first A
 画像、静态 operator-E2E、原生多 Job 观察和 observe-only 接线。下图中的
 PostgreSQL→Daft→Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同、真实 ready
 broker 与 static HSE adapter 已接入 image runner，但尚未运行 HSE GPU 对照，动态 SAOR 也未接入
-该路径；小规模 pgvector sink/质量闭环与动态性能验证在 PostgreSQL+LOTUS 当前短路径完成后恢复：
+该路径；小规模 pgvector sink/质量验证与动态性能验证在 PostgreSQL 中立语义算子资格步骤完成后恢复：
 
 ```text
 PostgreSQL image source
@@ -348,14 +347,15 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 
 ## 7. 后续设计与实施顺序
 
-### 当前优先：LOTUS 语义迁移与 PostgreSQL 资格验证
+### 当前优先：PostgreSQL 中立语义算子与 provider 资格验证
 
-1. 冻结 `lotus-ai==1.2.4`、源码 commit 与文件布局，建立 fail-closed 版本证据；
-2. 复用真实 `SemMapNode`、prompt formatter、output parser 和错误语义，建立 LOTUS native 与
-   project backend 的逐行 messages/output parity；
-3. parity 通过后，再实现最小 PostgreSQL extension/planner-visible operator，验证 SQL、child
-   plan、snapshot、取消、错误和结果生命周期；
-4. 两项完成前不扩 GPU 矩阵、不调 SAOR，也不把下述外部 runner 结果写成数据库内算子证据。
+1. 实现最小 PostgreSQL extension/planner-visible `SemMap` prototype，以 deterministic transformation
+   验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期；
+2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同，以及有界、
+   可取消的 recording provider；
+3. 增加 remote HTTP 与 project provider adapter，确保现有 scheduler 不理解 SQL、plan 或 parser；
+4. 用 `SemFilter` 验证关系 cardinality 语义；LOTUS v1.2.4 compatibility/native baseline 后置；
+5. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述外部 runner 结果写成数据库内算子证据。
 
 ### 条件性恢复：image path-B + A+B
 

@@ -6,7 +6,8 @@
 > `opening/report/opening_report.md`；当前答辩内容合同是
 > `opening/opening_defense_outline_20260808.md`与`opening/claim_matrix.md`。
 > 用户已明确不需要Wiki同步且暂停普通飞书云文档覆盖，因此本文件只作历史审计证据，
-> 不得上传、覆盖或作为当前开题数值来源。
+> 不得上传、覆盖或作为当前开题数值来源。本文件也早于 2026-08-27 的 Sema-like PostgreSQL
+> 中立语义算子架构调整，正文中的 LOTUS-first 方案不是当前实施入口。
 
 题目：数据库 AI 负载的执行优化与调度研究
 

@@ -4,28 +4,31 @@
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
+读者说明：本文 §0.2 和 §5 保留实验审计原词。“冻结”表示配置或判定标准在实验开始前选定、运行
+期间不改变；“门禁/晋级”表示候选纳入比较或采用前必须满足的预设正确性、资源和性能条件；`P0`
+等只表示历史实验臂或诊断名称。这些词不构成研究贡献，也不覆盖本文顶部的当前执行顺序。
+
 ## 0. 当前优先级与历史记录边界
 
-当前最短路径是：先完成 LOTUS v1.2.4 `sem_map` 语义等价迁移，再完成 PostgreSQL
-extension / planner-visible operator 的 SQL、child plan 与 query-lifecycle 资格验证。两项完成前，
-不扩展 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 emulated operator contract 重标为数据库内
-算子结果。之后才恢复图像 state-aware 系统级 matched comparison 与条件性补测。
+当前最短路径是：先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证 SQL、ordinary
+child plan、snapshot 与 query lifecycle，再实现中立 plan/task/result 合同和 recording、remote HTTP、
+project execution providers，随后以 `SemFilter` 验证关系 cardinality 语义。上述步骤完成前不扩展
+GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
+算子结果。LOTUS v1.2.4 compatibility/native baseline 后置且不阻塞数据库核心。
 
 下方 2026-08-19 至 2026-08-21 的 SAOR/readiness/rehearsal 细节是已完成准备工作的历史记录，
 用于解释证据来源和 formal 为何仍未授权；它们不能覆盖上述当前顺序。
 
-### 0.1 PostgreSQL + LOTUS 实施入口
+### 0.1 PostgreSQL AI 语义算子实施入口
 
-数据库内 AI 语义算子的权威实施入口现冻结为
-[`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)：
-PostgreSQL extension/planner-visible operator 拥有 SQL、child plan、snapshot 和 query lifecycle，
-直接复用 LOTUS v1.2.4 `sem_map` 语义代码；主路径由数据库执行器推送有界 row batches，禁止
-LOTUS DataConnector/`pd.read_sql` 外拉整表。该计划当前为
-`design-frozen/lotus-semantic-migration-not-started`，不能把既有 profiler/manifest 实验重标为
-数据库内算子结果。最短期任务是冻结 LOTUS v1.2.4，用真实 `SemMapNode`/prompt/output
-语义将项目 UDF/manifest-like `AI_COMPLETE` 替换为 `lotus.sem_map@v1.2.4`，保持
-Daft/Ray/static/SAOR 为可替换物理 backend。性能轨先用有界 server-side-cursor 仿真
-operator contract；PostgreSQL extension/CustomScan 另作数据库内 SQL/query-lifecycle 资格门。
+数据库内 AI 语义算子的权威实施入口为
+[`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)：
+参考 Sema-like 数据库原生语义算子设计，由 PostgreSQL extension/planner-visible operator 拥有 SQL、
+child plan、snapshot、semantic plan/result parsing 和 query lifecycle；中立 execution-provider
+interface 只接收数据库编译完成的任务。现有 Daft/Ray/static/SAOR 通过 project provider 接入，不能
+理解 SQL、PostgreSQL Plan 或修改 prompt/parser。LOTUS 仅作可选兼容 profile、相关系统和完整路径
+baseline。当前状态是 `implementation-not-started`，不能把既有 profiler/manifest 实验重标为数据库内
+算子结果。
 
 ### 0.2 SAOR 系统对照准备记录（历史）
 
@@ -93,11 +96,12 @@ PostgreSQL SQL AI operator
   -> Database / Vector Sink
 ```
 
-对外口径：PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化。
+对外口径：PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
-PostgreSQL extension 提供 SQL/planner/query-lifecycle seam，但不 fork PostgreSQL core；LOTUS
-v1.2.4 直接提供 `sem_map` 语义实现。Daft、Ray、vLLM、pgvector 和 CLIP 是物理执行与验证平台，
-不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel，也不回到传统 GPU 查询算子。
+PostgreSQL extension 提供 SQL/planner/query-lifecycle seam，但不 fork PostgreSQL core；默认语义由
+中立 plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
+是物理执行与验证平台，不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构
+或 GPU kernel，也不回到传统 GPU 查询算子。
 
 ## 2. 研究内容
 
@@ -185,22 +189,21 @@ SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE
 ## 3. 系统与实验边界
 
 ```text
-PostgreSQL SQL `ai.complete(...)`
-  -> planner-visible AI operator / ordinary child plan
-  -> database-managed bounded RowEnvelope stream
-  -> LOTUS `sem_map` semantic runtime
-  -> Daft DataFrame / Arrow / native backend
-  -> Shared Cost Estimator + WorkDescriptor + Organizer
-  -> Ray actor admission / shared credit / routing
+PostgreSQL SQL `ai_semantic.map(...)`
+  -> planner-visible SemanticOperatorPlan / ordinary child plan
+  -> PreparedSemanticTask + bounded execution-provider session
+  -> recording | remote HTTP | project provider
+  -> project: Shared Cost Estimator + WorkDescriptor + Organizer
+  -> project: Ray actor admission / shared credit / routing
   -> text: vLLM generation
      image: typed CLIP GPU actor
   -> unified PostgreSQL / pgvector sink
 ```
 
 - 写回采用 PostgreSQL + pgvector、COPY + deferred index，属于统一 correctness/E2E guardrail，不是独立研究内容。
-- 数据库内算子主矩阵共享 PostgreSQL child-plan source 与 LOTUS 语义合同；正式 baseline 必须由
+- 数据库内算子主矩阵共享 PostgreSQL child-plan source 与中立 semantic plan/task/result 合同；正式 baseline 必须由
   被测 backend 拥有执行与调度，项目只做数据库交接、sink、质量审计和指标适配。
-- 未修改 LOTUS DataConnector/`pd.read_sql` 路径保留为外部 LOTUS 产品 baseline，不进入数据库内算子主矩阵。
+- 未修改 LOTUS DataConnector/`pd.read_sql` 路径保留为外部 LOTUS 完整系统 baseline，不进入数据库内算子主矩阵。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
 - `BoundedReadyWindow` 属于项目方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在项目内部 selector 归因消融中保持一致。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。
@@ -374,17 +377,18 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. **LOTUS 语义迁移**：冻结 v1.2.4，以真实 `SemMapNode`、prompt construction、output parser
-   和 error semantics 替换项目 UDF/manifest-like `AI_COMPLETE`；同时保留 LOTUS native product
-   baseline 与 project backend 的身份差异。
-2. **PostgreSQL 资格验证**：用 extension / planner-visible operator 的最小实现证明 SQL、ordinary
-   child plan、snapshot、cancel/error/result lifecycle 与有界 row-batch 交接；性能轨与资格轨分开。
-3. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+1. **PostgreSQL capability**：用 extension / planner-visible `SemMap` 的 deterministic prototype 证明
+   SQL、ordinary child plan、snapshot、cancel/error/result lifecycle；不连接 Python、HTTP 或 GPU。
+2. **中立 provider interface**：实现 plan/task/result digest、bounded submit/poll/cancel 和 recording、
+   remote HTTP、project providers，再用 `SemFilter` 验证关系 cardinality 语义。
+3. **兼容与 baseline**：LOTUS v1.2.4 compatibility 和未修改 native path 后置；它们不得覆盖默认语义
+   或阻塞前两项。Sema/LOTUS 原生完整路径与 matched provider comparison 分表解释。
+4. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
    报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-4. **条件性恢复**：前两项通过后，再按
+5. **条件性恢复**：前两项通过后，再按
    `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
    system-level matched comparison 与小规模 pgvector 质量闭环。
-5. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+6. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
    full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
 历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，

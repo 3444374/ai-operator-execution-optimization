@@ -1,5 +1,10 @@
 # PostgreSQL 内置 LOTUS AI 语义算子实现计划
 
+> **历史状态（2026-08-27）**：本文已被
+> [`../postgresql_ai_semantic_operator_architecture_20260827.md`](../postgresql_ai_semantic_operator_architecture_20260827.md)
+> 取代。新架构以 Sema-like 数据库原生语义算子为主要参照，LOTUS 只保留为兼容 profile、相关系统
+> 与完整路径 baseline。本文保留 2026-08-21 的设计、Q1–Q23 决策和证据要求，不再提供当前实施顺序。
+
 更新日期：2026-08-21
 状态：`design-frozen / lotus-semantic-migration-not-started / gpu-formal-forbidden`
 首版范围：PostgreSQL 18.3、文本 `AI_COMPLETE`、LOTUS `sem_map`、单租户多 Job
@@ -69,7 +74,7 @@ HTTP/Python UDF 臂；LOTUS 确实实测名为 `AI UDF` 的 baseline，其中部
 并非 PostgreSQL 逐行同步 HTTP。因此本项目使用名称
 `PostgreSQL row-wise HTTP AI UDF (literature-motivated lower-bound control)`，不称 Cortex/LOTUS
 原样 baseline。细节与一手链接见
-[`research/lotus_postgresql_execution_layer_fit_20260821.md`](../../research/lotus_postgresql_execution_layer_fit_20260821.md)
+[`research/lotus_postgresql_execution_layer_fit_20260821.md`](../../../research/lotus_postgresql_execution_layer_fit_20260821.md)
 §10。
 
 首版不修改 PostgreSQL core source，不 fork PostgreSQL；优先使用 PostgreSQL extension、

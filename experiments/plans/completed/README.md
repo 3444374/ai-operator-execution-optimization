@@ -11,7 +11,7 @@
 | [`rc1_data_organization_rerun_20260731.md`](rc1_data_organization_rerun_20260731.md) | 双/四 endpoint cache-on 系统重测完成 | [`rc1_data_organization/`](../../results/rc1_data_organization/) |
 | [`text_native_baseline_rerun_20260802.md`](text_native_baseline_rerun_20260802.md) | 当前开题范围的 capability、单 Job 和多 Job 原生观察完成 | [`opening_text_native_gate_20260808/`](../../results/opening_text_native_gate_20260808/)、[`opening_text_native_single_job_formal_20260808/`](../../results/opening_text_native_single_job_formal_20260808/) |
 
-这些文件不再提供当前“下一步”。未完成的系统级比较、LOTUS 入口和动态调度工作分别由顶层
+这些文件不再提供当前“下一步”。未完成的系统级比较、数据库语义算子和动态调度工作分别由顶层
 [`../state_aware_work_unit_evaluation_20260808.md`](../state_aware_work_unit_evaluation_20260808.md)、
-[`../postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](../postgresql_lotus_ai_semantic_operator_implementation_20260821.md)
+[`../postgresql_ai_semantic_operator_architecture_20260827.md`](../postgresql_ai_semantic_operator_architecture_20260827.md)
 等当前计划维护。

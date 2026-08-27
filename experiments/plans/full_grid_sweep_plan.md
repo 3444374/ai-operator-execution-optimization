@@ -1,7 +1,7 @@
 # 全网格扫掠计划：4 臂 × 规模 × 并发（full_grid_sweep_plan）
 
 > **状态（2026-08-27）**：`paused / no-run-authorization`。十字切片和已有容量证据足以支撑
-> 当前材料，完整矩形只是可选扩展；LOTUS 语义迁移与 PostgreSQL 生命周期资格项完成前不得启动。
+> 当前材料，完整矩形只是可选扩展；PostgreSQL 中立语义算子、provider 与 query lifecycle 资格项完成前不得启动。
 > 本文件是历史 DESIGN/PLAN 文档，不包含实验结果。
 
 ---

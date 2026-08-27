@@ -1,14 +1,14 @@
 # 数据库 AI 负载执行优化与调度研究工作区
 
-本仓库研究 PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化。数据库拥有
-SQL、关系 child plan、snapshot、权限和 query lifecycle；数据库管理的有界数据流把记录交给
-LOTUS `sem_map` 语义运行时，再由可替换的 Daft/Ray/vLLM/CLIP backend 执行。
+本仓库研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。参考 Sema 一类数据库
+原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
+lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-08-27）：研究方向和开题材料已经统一到“两项研究内容 + 共同代价估计 +
-多模态验证”。短期工程主线以 LOTUS v1.2.4 为固定兼容版本，并用真实 `SemMapNode`、prompt 与 output
-语义替换项目自写的 UDF/manifest-like `AI_COMPLETE` 入口；随后实现 PostgreSQL extension/
-planner-visible operator 的 SQL、取消、错误与结果生命周期资格门。既有 profiler、manifest 和
-GPU 实验仍是外部物理执行证据，不能改称已经实现数据库内算子。
+当前状态（2026-08-27）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
+架构改为 Sema-like 中立语义算子核心。短期工程先用 PostgreSQL extension 验证 planner-visible
+`SemMap` 与 query lifecycle，再实现中立 task/result 合同和 recording、HTTP、project providers；
+LOTUS v1.2.4 只作可选兼容 profile 与完整路径 baseline。既有 profiler、manifest 和 GPU 实验仍是
+外部物理执行证据，不能改称已经实现数据库内算子。
 
 ## 先读什么
 
@@ -19,7 +19,7 @@ GPU 实验仍是外部物理执行证据，不能改称已经实现数据库内�
 | 查找文件和阅读路径 | [`PROJECT_INDEX.md`](PROJECT_INDEX.md) |
 | 核对项目长期规则和边界 | [`AGENTS.md`](AGENTS.md) |
 | 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 继续 LOTUS/PostgreSQL 语义算子实现 | [`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md) |
+| 继续 PostgreSQL AI 语义算子实现 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
 | 准备开题报告或答辩 | [`opening/README.md`](opening/README.md) |
 

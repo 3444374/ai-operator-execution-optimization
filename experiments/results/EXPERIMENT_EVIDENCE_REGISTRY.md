@@ -2,7 +2,7 @@
 
 更新日期：2026-08-27
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是 LOTUS v1.2.4 `sem_map` 语义迁移，再完成 PostgreSQL planner/query-lifecycle 资格验证；既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
+本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是 PostgreSQL planner-visible `SemMap` capability、中立 plan/task/result 合同与 execution providers，再以 `SemFilter` 验证关系语义；LOTUS compatibility/native baseline 后置。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
 
 ## 1. 证据等级
 
@@ -20,8 +20,10 @@
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| LOTUS v1.2.4 `sem_map` 语义入口 | 目标路径 `code/src/operators/`；当前不存在 | 无 | 仅有版本锁定和实施计划；`SemMapNode`、messages、output/error parity 尚未实现。 |
-| PostgreSQL planner-visible AI operator | PostgreSQL extension/CustomScan 目标；当前不存在 | 无 | 仅有 capability 计划；SQL、child plan、snapshot、cancel/error/result lifecycle 尚未验证。 |
+| PostgreSQL planner-visible `SemMap` | `code/postgres/ai_semantic_operator/` 目标；当前不存在 | 无 | 仅有 capability 计划；SQL、child plan、snapshot、cancel/error/result lifecycle 尚未验证。 |
+| 中立 semantic plan/task/result + provider interface | `code/src/operators/` 目标；当前不存在 | 无 | recording、remote HTTP、project provider 以及 digest/backpressure/cancel 合同均尚未实现。 |
+| `SemFilter` 关系语义 | PostgreSQL semantic operator 第二算子；当前不存在 | 无 | 三值/NULL/error policy 与乱序 completion 下的 cardinality 行为尚未验证。 |
+| LOTUS v1.2.4 compatibility/native baseline | 可选 `code/src/operators/compatibility/lotus_v124.py` 与独立 native runner；当前不存在 | 无 | 只保留为后置兼容和完整系统 baseline，`SemMapNode`/messages/output/error parity 尚未实现且不阻塞核心。 |
 | 固定行 batching | `code/src/scheduling/organization/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
 | Sequential token-budget | `code/src/scheduling/organization/{batching,token_budget}.py`、对应 tests | baseline、joint、BFD 与 row-cap 系列；`rc1_data_organization/`（07-31 系统重测） | 已重复验证；当前数据组织默认，必须同时满足 token budget 和 row cap。**07-31 干净平台**：2-ep/4-ep 均属第一梯队（保 prefix 局部性，ratio 0.13），4-ep KV 饱和 regime 下**最稳**（50k，命中 0.47–0.48，SLO 17%）。 |
 | Length-align | batching 实现与测试 | local baseline 早期消融；`rc1_data_organization/`（07-31 系统重测，2-ep+4-ep） | 早期仅初筛。**07-31 干净平台**：2-ep（无 KV 压力）length_align 已是最慢（50.3k vs fixed 56.3k，命中最低 0.60——按长度排序破坏 prefix 局部性）；4-ep（KV 饱和）进一步崩到 39.4k、命中 0.06。**cache-ON 下 length-align 的 HOL 收益被丢掉的 cache 复用抵消**，regime-dependent 不稳定收益。 |
@@ -171,9 +173,10 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 
 以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
 
-1. 冻结 LOTUS v1.2.4 并完成真实 `SemMapNode`、messages、output/error 语义的 native/project parity。
-2. parity 通过后，实现最小 PostgreSQL planner-visible operator，验证 SQL、child plan、snapshot、取消、错误和结果生命周期。
-3. 前两项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
-4. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
-5. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持 marginal feasibility。
-6. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix 隔离统一为 `parked-conditional`，不阻塞当前主线。
+1. 实现 PostgreSQL planner-visible `SemMap` capability，验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期。
+2. 实现中立 plan/task/result digest 和 bounded execution-provider session，接 recording、remote HTTP 与 project providers。
+3. 以 `SemFilter` 验证三值/NULL/error 语义和乱序 completion 下的 relation cardinality；LOTUS compatibility/native baseline 后置。
+4. 前三项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
+5. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
+6. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持 marginal feasibility。
+7. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix 隔离统一为 `parked-conditional`，不阻塞当前主线。

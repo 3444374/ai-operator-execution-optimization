@@ -16,9 +16,10 @@
 
 对外优先表述为：
 
-> PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化。
+> PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
-Daft、Ray、vLLM 和其他系统只按其实际角色说明，不写成课题本身。
+Sema 是数据库集成架构参照；LOTUS 是可选兼容 profile、相关系统和完整路径 baseline；Daft、Ray、
+vLLM 和其他系统只按其实际角色说明，不写成课题本身。
 
 - 企业侧或导师反馈改变课题边界时，同步检查根规则、README、PROJECT_INDEX 和 `overview/current_direction_and_plan.md`。
 - 已解决、过期或被新结论替代的问题要移出当前待办，避免误导后续规划。

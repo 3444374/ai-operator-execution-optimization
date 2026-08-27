@@ -51,10 +51,11 @@ Claude Code 通过根 `CLAUDE.md` 导入本文件，并遵循相同的逐级读�
 
 ## 2. 项目范围
 
-研究对象是：**PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化**。
+研究对象是：**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 
 - 数据库拥有 SQL、ordinary child plan、snapshot、权限、query cancel/error/result lifecycle；
-- 首版复用 LOTUS v1.2.4 `sem_map` 的 operator、prompt、output 和错误语义；
+- 主要架构参照 Sema 一类数据库原生语义算子系统：语义算子进入 SQL、计划和执行生命周期；
+- 首版实现中立 `SemMap` 合同；LOTUS v1.2.4 只作可选兼容 profile、相关系统和完整路径 baseline；
 - Daft、Ray、vLLM、typed CLIP actor 等位于数据库进程外，作为受数据库管理的可替换 backend；
 - 研究内容一是按 token/frame/阶段 work 与局部性组织数据；
 - 研究内容二是在固定 request/work capacity 下控制提交、服务实例路由和单租户多 Job 调度；
@@ -70,13 +71,15 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 
 当前实现按以下顺序推进：
 
-1. 用真实、版本锁定的 LOTUS v1.2.4 `SemMapNode`/prompt/output/error 语义替换现有
-   UDF/manifest-like `AI_COMPLETE` 入口；
-2. 实现 PostgreSQL extension/planner-visible operator，验证 child plan、snapshot、cancel、
-   error 和 result lifecycle；
-3. 资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
+1. 用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
+   snapshot、cancel、error 和 result lifecycle；
+2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同和有界、可取消的
+   execution-provider interface，再接 recording、remote HTTP 与 project provider；
+3. 完成 `SemMap` 后以 `SemFilter` 验证关系 cardinality 语义；LOTUS 兼容和 native baseline 不阻塞
+   这三个数据库核心步骤；
+4. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
 
-在前两步完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
+在前三个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
 emulated operator contract；不扩 GPU 参数矩阵，不继续调 SAOR，也不把它们写成已实现数据库内算子。
 当前状态只从 `PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和实验证据台账引用。
 
@@ -149,7 +152,7 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 
 开题报告、论文、PPT、图表、答辩讲稿和外部同步稿还必须：
 
-- 使用“PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化”这一对象表述；
+- 使用“PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化”这一对象表述；
 - 区分总动机、子问题、证据实验、研究内容和实现任务；兄弟项保持同一层级与粒度；
 - 写出具体对象、条件和动作，不把“冻结、门禁、闭环、产品轨、框架轨、晋级”等内部管理词当成
   读者已知概念；

@@ -1,6 +1,6 @@
 # 开题答辩 QA 预演手册设计
 
-日期：2026-08-25
+日期：2026-08-25（2026-08-27 角色表述更新；正文 TeX/PDF 尚未同步）
 
 ## 1. 目标
 
@@ -11,7 +11,9 @@
 - 读者是开题答辩现场的报告人，不假设熟悉项目内部代号。
 - 以 `opening/report/opening_report.md` 为事实与叙事基线，以 `opening/claim_matrix.md` 和真实结果报告限制证据等级。
 - 已完成的工作用完成时；尚未完成的 PostgreSQL planner-visible AI 算子、完整状态感知方法和 SQL 计划级代价选择用将来时。
-- 统一表述为“PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化”；不修改 PostgreSQL core、vLLM continuous batching、模型内部或 Ray scheduler。
+- 统一表述为“PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化”；Sema 是数据库集成
+  架构参照，LOTUS 是可选兼容与 baseline；不修改 PostgreSQL core、vLLM continuous batching、
+  模型内部或 Ray scheduler。
 
 ## 3. 文档结构
 
@@ -20,7 +22,9 @@
 3. **研究方案总体追问**：从 SQL 入口到模型结果返回的整体链路、两项研究内容的接口、基础方法与代价信息增强的区别、独立优化与联合调整的验证顺序。
 4. **研究内容一：分阶段工作量表征与数据组织**：作为最详细的两个主体之一，覆盖 WorkDescriptor 字段来源、可观测事实与预测值分离、未知输出长度、分阶段向量与准入标量、兼容性分组、token/frame budget、length alignment、prefix/locality 保留、受控跨组平衡、有界流下的在线组织、SQL 顺序语义、能力降级和分阶段消融。
 5. **研究内容二：固定容量下的提交、路由与多 Job 调度**：作为另一个详细主体，覆盖 Request/Work Credit、completion-driven replenishment、RuntimeStateSnapshot、硬约束与软决策分层、Job floor/cap、实际服务量记账、SLO guard、idle borrowing/reclaim、endpoint 路由、locality 与队列折中、非抢占性、状态过期回退、振荡抑制、并发一致性、取消与故障。
-6. **PostgreSQL、LOTUS 与代价估计**：详细解释 planner hook/CustomScan 候选、bounded RowEnvelope stream、row identity、cancel/error/result lifecycle、\texttt{sem\_map} 语义复用、物理 backend 替换、代价特征、不确定区间、候选排序与 decision regret。
+6. **PostgreSQL 语义算子、provider 与代价估计**：详细解释 planner hook/CustomScan 候选、
+   normalized task stream、row identity、cancel/error/result lifecycle、中立 prompt/result 合同、
+   execution provider 替换、LOTUS 可选兼容、代价特征、不确定区间、候选排序与 decision regret。
 7. **实验设计、baseline 与证据边界**：因果消融、固定总容量、最小饱和点标定、交错重复、跨框架比较合同、质量与 correct throughput、sink 边界、跨模态复用和外部有效性。
 8. **可行性、风险与新增攻击面**：隐私与外部模型服务、状态采集开销、控制层扩展性、模型非确定性、事务可见性、多租户边界、组合已有组件是否构成创新、方法不胜出时的论文成立条件。
 9. **连续追问链**：数据库属性、研究内容一技术链、研究内容二技术链、与 serving 调度的区别、当前结果不全面胜出、实验可比性、系统故障七条链。

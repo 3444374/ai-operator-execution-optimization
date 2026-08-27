@@ -1,11 +1,16 @@
 # 知识库总汇：数据库 AI 负载的上游执行链路优化
 
-生成日期：2026-07-16（最近更新：2026-08-27，校准 PostgreSQL+LOTUS 当前顺序、既有证据与知识缺口）
+生成日期：2026-07-16（最近更新：2026-08-27，以 Sema-like 数据库原生语义算子重设架构参照）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
 本文件是项目内部的设计、证据与历史状态索引，不是可直接复制到报告或答辩中的对外综述。
 抽取内容到对外材料时，必须按根文档语言规则把内部阶段代号和管理状态改写为具体条件、动作与结果。
+
+历史术语说明：`RC1/RC2/RC4` 与 `P0/P1/P2` 只表示旧研究项或实验优先级；“冻结”表示运行前
+选定、运行期间不改变的配置或判定标准；“门禁/晋级”表示候选被采用前必须满足的预设正确性、
+资源和性能条件；“闭环”在旧段落中指读取、执行、结果核对和证据记录均已完成。当前架构与读者
+表述以 §7 和 Sema-like 架构审计为准。
 
 ---
 
@@ -160,6 +165,7 @@ class AdaptiveSubmitActor:
 | 论文 | 出处 | 核心贡献 | 与我们的关系 |
 |---|---|---|---|
 | **Cortex AISQL** | SIGMOD 2026 | 六大 AI SQL 算子生产系统；AI-aware 查询优化、模型级联、语义 Join 重写 | 场景定义来源；闭源不可拆分，不能作为实验 baseline |
+| **Sema** | VLDB 2026 accepted；当前精读 arXiv v1 | 在 DuckDB 中把 SemFilter/SemProj/SemJoin/SemOrderBy/SemAgg 作为一等 plan operator，并实现 expression optimization、fusion、prompt batching 与 AQE | 主要数据库集成架构参照；其 DuckDB 实现和结果不能替代 PostgreSQL extension capability |
 | **Smart** (Guo, Li et al.) | VLDB Journal 2025 | SQL+ML 谓词推理重写和成本最优执行，PostgreSQL 实现，最高 1000× | DB4AI 路线代表；优化止于数据库内核 |
 | **GaussML** (Li et al.) | ICDE 2024 | 20+ ML 算子进 openGauss 查询引擎，SIMD 加速，2-6× vs MADlib | DB4AI 最强工程实现；华为+清华 |
 | **NeurDB** (Zhao, Ooi et al.) | CIDR 2025 | AI 原生数据库系统蓝图 | AI×DB 融合远景 |
@@ -338,7 +344,8 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 2026-07-16 的早期检索没有发现直接研究“数据库/数据引擎上游组织与 vLLM continuous batching 协同”的正式论文。后续全文精读表明，已有工作已经覆盖了其中若干重要部分，研究空白必须进一步收窄：
 
-1. LOTUS、Cortex AISQL、Palimpzest 和 Abacus 已覆盖 semantic operator 的质量、成本、调用数和执行计划优化；
+1. Sema 已把 semantic operator 放入 DuckDB 的 query interface、plan、optimizer 和 executor；LOTUS、
+   Cortex AISQL、Palimpzest 和 Abacus 也已覆盖 semantic operator 的质量、成本、调用数和执行计划优化；
 2. *Optimizing LLM Queries in Relational Data Analytics Workloads* 已证明数据库可以利用行、字段和关系统计信息重排请求，以提高 prefix cache reuse；
 3. BlendServe 已在 offline serving 内共同研究 resource balance 与 prefix locality，AYO 已利用 application primitive 和 graph topology 改善流水执行与 batching；
 4. VTC、Llumnix、FairServe、DLPM 已覆盖 serving 内部或服务层的服务量记账、公平和动态调度；
@@ -353,6 +360,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | 论文 | 研究什么 | 不研究什么 |
 |---|---|---|
 | Kalypso: Relational LLM Serving (arXiv 2026) | 让 serving 层接收 semantic query plan，以跨 operator pipelining、依赖感知 prefix 生命周期和动态 memory budget 提高 KV-cache reuse；官方摘要报告 query completion time 最高 4.57× | 当前论文聚焦单条 semantic query 的 query completion 与一个 serving cache domain；未覆盖 PostgreSQL planner/query lifecycle、多 query/多 Job 公平、多个独立 endpoint 路由和数据库管理的流式 child-plan 交接 |
+| Sema: A High-performance System for LLM-based Semantic Query Processing (VLDB 2026 accepted) | 把 semantic expression/operator 纳入 DuckDB query plan，在数据库内做 expression rewrite、fusion、prompt batching、reordering 和 AQE | 当前论文不研究 PostgreSQL extension/query lifecycle、分布式 Daft/Ray provider、多 Job 公平与多个独立 endpoint 路由；论文也把 routing、privacy、governance 和外部推理 fault tolerance 留作后续 |
 | Optimizing LLM Queries in Relational Data Analytics Workloads (MLSys 2025) | 利用完整关系数据、函数依赖和列统计重排 row/field，提高 KV prefix reuse | 主要面向离线完整输入，不建模在线到达、复杂 cache eviction、多作业干扰和实际 endpoint state |
 | BlendServe (ASPLOS 2026) | offline serving 内的 resource-aware batching，同时考虑 compute/memory 需求和 prefix locality | 假定有足够大的可重排请求池，不覆盖数据库数据准备、Job 语义和上游多 endpoint 路由 |
 | AYO (ASPLOS 2025) | primitive-level application graph、跨模块 parallelism/pipelining 和 topology-aware batching | 入口是应用工作流并与 backend 配合，不覆盖数据库记录统计、外部黑盒服务和数据库多 Job 提交控制 |
@@ -939,14 +947,18 @@ normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，�
 ### 7.1 当前策略版本
 
 ```text
-PostgreSQL planner-visible AI operator（尚未实现）
-  → ordinary child plan / snapshot / query lifecycle
-  → LOTUS v1.2.4 SemMapNode + prompt/output/error semantics（当前首要迁移）
-  → 可替换外部物理 backend
-       ├── LOTUS native product path（系统 baseline）
-       ├── Daft / Ray Data native graph（框架 baseline）
-       ├── project frozen-static（强静态参照）
-       └── project state-aware / SAOR（条件性候选）
+PostgreSQL Sema-like planner-visible AI semantic operator（尚未实现）
+  → SemanticOperatorPlan / ordinary child plan / snapshot / query lifecycle
+  → PreparedSemanticTask + bounded execution-provider interface
+       ├── recording / remote HTTP（资格与简单 control）
+       └── project provider
+            ├── Daft / Ray / vLLM external runtime
+            ├── project frozen-static（强静态参照）
+            └── project state-aware / SAOR（条件性候选）
+
+可选 compatibility 与 full-system baseline
+  → LOTUS v1.2.4 compatibility profile（不定义默认语义）
+  → Sema / LOTUS / Daft / Ray Data native paths（各自拥有 execution）
 
 当前外部物理执行默认点
   → sequential token/work-budget organization
@@ -961,15 +973,16 @@ PostgreSQL planner-visible AI operator（尚未实现）
 ```
 
 复杂动态策略没有稳定超过同资源上限的强静态点。当前方法研究因此保留候选池，但不把
-queue-adaptive、dynamic K、多 actor 或 SAOR 写成已经胜出的默认策略。真实 LOTUS 语义和
-PostgreSQL query lifecycle 未完成前，既有 manifest/profiler 结果统一标为外部物理执行证据。
+queue-adaptive、dynamic K、多 actor 或 SAOR 写成已经胜出的默认策略。PostgreSQL semantic plan、
+provider interface 和 query lifecycle 未完成前，既有 manifest/profiler 结果统一标为外部物理执行证据。
 
 ### 7.2 实验阶段
 
 | 阶段 | 当前状态 | 内容与下一步 |
 |---|---|---|
-| 语义入口 | **当前首要，未开始实现** | 冻结 LOTUS v1.2.4，复用真实 `SemMapNode`、messages、output parser 与错误语义，完成 native/project parity |
-| 数据库资格验证 | **语义 parity 后执行** | PostgreSQL extension/planner-visible operator 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
+| 数据库算子 capability | **当前首要，未开始实现** | PostgreSQL extension/planner-visible `SemMap` 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
+| 中立 provider interface | **capability 后执行** | plan/task/result digest、bounded submit/poll/cancel，以及 recording、remote HTTP、project providers |
+| 关系语义与兼容 | **后续** | 以 `SemFilter` 验证 cardinality；LOTUS v1.2.4 compatibility/native baseline 不阻塞核心实现 |
 | 文本数据组织 | **已完成主要机制实验** | fixed/token-budget/length/prefix/BFD/row-cap；结论随 KV 压力与 endpoint consolidation 变化 |
 | 文本提交与多 Job | **已完成静态/共享核心证据，动态未普遍胜出** | active-work、request replenish、flush、actor pool、shared credit、1/2/4 Job 与 5s staggered；weighted/held-out/failure migration 条件性保留 |
 | 图像多模态 | **静态/观测完成，动态待接** | HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 质量闭环与跨 workload/硬件验证 |
@@ -983,7 +996,7 @@ PostgreSQL query lifecycle 未完成前，既有 manifest/profiler 结果统一�
 | 服务上界 | 同模型、同请求、同 endpoint 的直接 serving capacity | vLLM Bench |
 | 无 Daft/Ray 强上游 | 受控并发且独立 calibration 的最小客户端/数据库路径 | bounded HTTP、现有数据库 AI_COMPLETE |
 | 官方 runtime | 现有框架的官方 AI/HTTP 执行路径 | Daft Native/Ray `prompt()`、Ray Data HTTP Processor |
-| 数据库 AI 系统 | 具有 semantic operator/plan optimization 的官方实现 | LOTUS、Palimpzest；SemBench 提供 workload/指标 |
+| 数据库 AI 系统 | 具有 semantic operator/plan optimization 的官方实现 | Sema、LOTUS、Palimpzest；SemBench 提供 workload/指标 |
 | 本项目策略 | 同 work 下的数据组织、refill、shared credit 与 cost-guided 决策 | static、token-work、fair queue |
 | 诊断工具 | 只用于暴露瓶颈，不能作为论文主 baseline | 逐行串行、无界 in-flight |
 
@@ -993,9 +1006,10 @@ PostgreSQL query lifecycle 未完成前，既有 manifest/profiler 结果统一�
 
 | 缺口 | 优先级 |
 |---|---|
-| LOTUS v1.2.4 的 source-layout/version gate、`SemMapNode` lowering、逐字节 messages、output/error parity | **当前阻断** |
 | PostgreSQL 18.3 extension/planner-visible operator 是否能稳定拥有 child plan、snapshot、取消、错误与结果生命周期 | **当前阻断** |
-| LOTUS native product path 与数据库管理 row stream 上的 LOTUS/project backend 如何做语义等价、身份清楚的两面板比较 | 高 |
+| `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 与有界 provider session 能否保持 digest、cancel、backpressure 和 exactly-once terminal state | **当前阻断** |
+| `SemFilter` 的三值/NULL/error 语义能否在乱序 completion 下正确改变 relation cardinality | 高 |
+| LOTUS v1.2.4 compatibility profile 与 LOTUS/Sema native full-system baselines 的身份和行为如何核对 | 高；不阻塞数据库核心 |
 | 图像 HSE static 是否在真实 GPU 上不劣于 direct-dependency static，以及 stage/CE5 状态能否产生受控动作增量 | 高 |
 | 小规模 pgvector 写回后 embedding 检索质量是否保持（Recall@K/nDCG 等） | 高 |
 | 算子代价估计在独立时间段、新 workload 和新硬件上的误差、配置排序与预测区间 | 高 |

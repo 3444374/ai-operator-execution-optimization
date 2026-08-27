@@ -31,8 +31,8 @@ data source/materializer
   token、图像 frame/pixel/prepare cost 在模态 adapter 中换算；模态不支持的 locality/length 能力
   必须显式声明，不静默退化。
 - 新 backend 保留同合同旧 backend 作为对照或回退。生产 runner 不反向 import profiling 脚本。
-- PostgreSQL/LOTUS 语义层与外部物理 backend 分开：LOTUS prompt/output/error parity 由 operator
-  adapter 验证，scheduler 不重定义语义。
+- PostgreSQL 语义层与外部物理 backend 分开：数据库 plan/task/result 合同定义默认语义，scheduler
+  不重定义 prompt、output parser 或关系行为；LOTUS parity 只由可选 compatibility adapter 验证。
 
 ## 3. 请求与流式语义
 

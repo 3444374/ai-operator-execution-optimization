@@ -40,12 +40,11 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 1. [`code/AGENTS.md`](code/AGENTS.md)
 2. [`code/README.md`](code/README.md)
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
-4. [`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)
-5. [`experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md`](experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md)
+4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-当前最短期任务是 LOTUS v1.2.4 `sem_map` 语义入口迁移，然后才是 PostgreSQL extension/
-CustomScan 的真实 SQL/query-lifecycle 资格门。既有 Daft/Ray/static/SAOR 代码作为可替换 backend，
-不先扩大 GPU 参数矩阵。
+当前最短期任务是 PostgreSQL extension/planner-visible `SemMap` capability，然后实现中立
+plan/task/result 合同和 recording、remote HTTP、project providers，再以 `SemFilter` 验证关系语义。
+既有 Daft/Ray/static/SAOR 代码作为 project provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
 
 ### 运行实验或迁移机器
 
@@ -118,8 +117,7 @@ CustomScan 的真实 SQL/query-lifecycle 资格门。既有 Daft/Ray/static/SAOR
 
 | 主题 | 当前入口 | 状态 |
 |---|---|---|
-| PostgreSQL + LOTUS 语义算子 | [`experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md) | 当前工程主线 |
-| LOTUS 语义前端接入外部 backend | [`experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md`](experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md) | 当前工程主线 |
+| PostgreSQL AI 语义算子整体架构 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 当前工程主线 |
 | baseline 身份与选择 | [`experiments/plans/baseline_reference.md`](experiments/plans/baseline_reference.md) | 当前规则入口 |
 | 全部实验状态与缺口 | [`experiments/plans/experiment_status_and_gaps.md`](experiments/plans/experiment_status_and_gaps.md) | 状态审计；历史“下一步”按日期读取 |
 | 数据组织 | [`experiments/plans/data_organization_batching.md`](experiments/plans/data_organization_batching.md) | 方法计划 |
@@ -146,6 +144,7 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 
 - 总入口：[`research/README.md`](research/README.md)
 - 知识汇总：[`research/knowledge_hub.md`](research/knowledge_hub.md)
+- Sema-like 架构审计：[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md)
 - 文献库存：[`research/ai_operator_literature_inventory.md`](research/ai_operator_literature_inventory.md)
 - Top 15：[`research/top15_ranked_papers.md`](research/top15_ranked_papers.md)
 - 泛读笔记：[`research/reading_notes/README.md`](research/reading_notes/README.md)

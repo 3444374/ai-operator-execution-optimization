@@ -2,9 +2,10 @@
 
 生成日期：2026-07-09
 
-> **2026-08-27 口径更新**：本文档为早期沟通记录。当前对外对象表述为“PostgreSQL 内置 LOTUS
-> AI 语义算子的外部分布式物理执行与调度优化”；“内置”指 SQL/planner/query lifecycle 属于数据库，
-> 模型 payload 仍由数据库管理的执行通道交给外部 backend。最新口径以根 `AGENTS.md`“项目范围/
+> **2026-08-27 口径更新**：本文档为早期沟通记录。当前对外对象表述为“PostgreSQL 内置 AI
+> 语义算子的外部分布式物理执行与调度优化”；参考 Sema-like 数据库原生语义算子架构，“内置”指
+> SQL/planner/query lifecycle 属于数据库，模型 payload 仍由数据库管理的执行通道交给外部 backend。
+> LOTUS 只作可选兼容和 baseline。最新口径以根 `AGENTS.md`“项目范围/
 > 文档受众与对外表达”和 `PROJECT_OUTLINE.md` 为准。
 
 ## 1. 最近沟通信息

@@ -1,5 +1,15 @@
 # 开题材料 project log
 
+## 2026-08-27 开题方案改为 Sema-like 中立语义算子架构
+
+- Markdown 权威报告把数据库集成主参照改为 Sema：PostgreSQL 负责 semantic plan、规范化任务、
+  结果解析和 query lifecycle，外部 execution provider 负责不改变语义的组织、提交、路由与多 Job
+  调度；LOTUS v1.2.4 改为可选兼容和独立系统对比。
+- 报告的研究目标、总体执行方案、数据库入口、后续工作、进度安排和预期系统已同步；现有实验数字、
+  参考文献编号和 16 张图未改。现有图件不包含旧 LOTUS-centered 目标架构图，因此本轮不替换图片。
+- Word、PPTX 和答辩 QA TeX/PDF 未重新生成，opening README 已明确它们是上一版架构快照；用户重新
+  对外使用前，需要从 Markdown 权威稿增量更新并分别检查版式、26 页 PPT 视觉和 QA PDF。
+
 ## 2026-08-27 开题进度与 SQuAD 计时口径校准
 
 - 当前材料状态统一为 16 篇精读主笔记、146 张论文原图裁剪、16 图/53 条参考文献的中文报告，

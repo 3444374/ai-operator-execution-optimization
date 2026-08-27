@@ -2,7 +2,7 @@
 
 > **当前状态（2026-08-27）**：固定 credit、shared request/work credit、1/2/4 Job 与重叠作业
 > 证据已完成，显示效率、隔离和公平之间的权衡；动态策略尚未证明普遍优于同上限静态点。
-> 本文保留条件性扩展合同。当前先完成 LOTUS 语义迁移与 PostgreSQL query-lifecycle 资格验证，
+> 本文保留条件性扩展合同。当前先完成 PostgreSQL 中立语义算子与 provider/query-lifecycle 资格验证，
 > 不新增 SAOR 调参或大矩阵。
 
 整理日期：2026-07-16

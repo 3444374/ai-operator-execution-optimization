@@ -508,7 +508,7 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 | 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；只调整总并发上限的控制器没有优于同上限静态配置 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；同候选集的 Project FIFO/DRR/VTC-style/guarded-debt 双轮对照已完成，得到效率—tail 折中而非单一胜者 | 原生 baseline 保持自身调度；五臂共同观测 5/5 rehearsal 已完成，但只有一次运行，正式重复和 matched-solo isolation 尚未完成 |
 | 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
 
-当前先完成 LOTUS 语义迁移和 PostgreSQL query-lifecycle 资格验证；恢复图像实验后，按 HSE static
+当前先完成 PostgreSQL planner-visible `SemMap`、中立 provider 和 query-lifecycle 资格验证；恢复图像实验后，按 HSE static
 GPU 对照 → 单一 stage-aware 动作 → 小规模 pgvector 质量检查推进。每一步记录完整的
 “状态→决策→动作→效果 trace”，不把多个部件同时接入后再做无法归因的总对比。
 

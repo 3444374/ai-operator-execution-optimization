@@ -10,18 +10,19 @@
 | 问题 | 入口 |
 |---|---|
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
-| 当前系统实现顺序 | [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](postgresql_lotus_ai_semantic_operator_implementation_20260821.md) |
-| LOTUS `sem_map` 语义迁移细节 | [`lotus_semantic_frontend_execution_integration_20260821.md`](lotus_semantic_frontend_execution_integration_20260821.md) |
+| 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
+| LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
 当前短期顺序是：
 
-1. 完成 LOTUS v1.2.4 `sem_map` 语义等价迁移；
-2. 通过 PostgreSQL extension / planner-visible operator 的 SQL 与 query-lifecycle 资格验证；
-3. 在前两项完成前，不扩展 GPU 矩阵、不调整 SAOR、不把 emulated contract 写成已实现数据库内算子；
-4. 资格验证通过后，再恢复图像 state-aware 系统级 matched comparison 和其他条件性补测。
+1. 用 PostgreSQL extension / planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
+   snapshot 与 query lifecycle；
+2. 实现中立 plan/task/result 合同和 recording、remote HTTP、project execution providers；
+3. 以 `SemFilter` 验证会改变关系 cardinality 的数据库语义；LOTUS compatibility/native baseline 后置；
+4. 上述步骤完成前不扩展 GPU 矩阵、不调整 SAOR，也不把既有 external runner 写成数据库内算子。
 
 ## 2. 状态分层
 
@@ -29,8 +30,7 @@
 
 | 文件 | 当前状态与用途 |
 |---|---|
-| [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](postgresql_lotus_ai_semantic_operator_implementation_20260821.md) | 当前实施主计划；先语义迁移，再做 PostgreSQL 生命周期资格验证 |
-| [`lotus_semantic_frontend_execution_integration_20260821.md`](lotus_semantic_frontend_execution_integration_20260821.md) | LOTUS v1.2.4 AST、prompt、output 与 backend 适配子计划 |
+| [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | 当前实施主计划；Sema-like 数据库语义算子核心、provider interface 与分阶段验证 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
@@ -58,6 +58,9 @@
 
 [`archive/`](archive/) 保存被当前方向替代、暂停且没有运行授权的候选方案与旧矩阵。归档不等于删除，
 只表示它们不能覆盖当前总纲和状态文件。
+
+2026-08-21 的 PostgreSQL+LOTUS 主计划与 LOTUS frontend 子计划已进入归档；其中的 v1.2.4 源码
+审计、Q1–Q23 决策和反例测试仍可追溯，但当前架构不再以 LOTUS 为语义所有者或前置依赖。
 
 ## 3. 当前研究内容与实验对应
 

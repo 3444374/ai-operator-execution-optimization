@@ -7,9 +7,10 @@
 
 ## 当前状态
 
-当前不扩展 GPU 实验矩阵。短期先完成真实 LOTUS v1.2.4 `sem_map` 语义迁移，再通过
-PostgreSQL extension / planner-visible operator 的 SQL 与 query-lifecycle 资格验证。现阶段性能轨可使用
-明确标注的 emulated operator contract，但不能称为已实现数据库内算子。
+当前不扩展 GPU 实验矩阵。短期先完成 PostgreSQL extension / planner-visible `SemMap` capability，
+再实现中立 plan/task/result 合同和 recording、remote HTTP、project providers，随后以 `SemFilter`
+验证关系语义。LOTUS compatibility/native baseline 不再是前置依赖。现阶段性能实验可使用明确标注的
+emulated operator contract，但不能称为已实现数据库内算子。
 
 已有文本与图像证据继续保留：
 

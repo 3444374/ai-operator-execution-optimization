@@ -14,12 +14,13 @@
 | `精读文献笔记/` | 精读笔记权威库；当前含原十五篇主笔记与新增 Kalypso 共十六篇，论文原图裁剪件共 146 张。Kalypso 原稿已从下载目录原件逐字节恢复，是 arXiv 核心补充；其正文 Figure 1–12 已加入精读笔记，但不进入开题 Top 15、十五篇横向速览或已定稿开题正文。各篇选图与版本说明见目录 README 和 `figures/audit/` |
 | `reference/REFERENCE_INDEX.md` | 历史题录与用途索引；当前工作区可解析实体为 Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso 六份 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
+| `sema_native_semantic_operator_architecture_reference_20260827.md` | Sema-like 数据库原生语义算子架构审计：Sema 作 SQL/plan/optimizer/executor 主参照，LOTUS 作兼容语义、算法来源与独立 baseline |
 | `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |
 | `heterogeneous_ai_dataflow_execution_model_20260811.md` | CPU–GPU 异构分阶段执行模型候选：typed block、byte-bounded ready queue、SAOR 控制面、数学模型、数据通路消融与 prompt/复用/增量推理待办 |
-| `saor_model_scenario_audit_20260811.md` | SAOR capacity-only/fixed-envelope 数学审计；§12 冻结 $H_B/W_e$ 有界 priority/debt 与 release-opportunity 边界，并记录 bounded-ready、同窗口 selector 归因、observation bridge 及 native-system matched comparison 边界 |
-| `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务论文与数据库厂商的 workload、执行边界和指标合同；§9.3 冻结当前单租户多 Job 的 equal-share/differentiated-service、公平/隔离、三个 JCT 反事实、未来 tenant 层次、原生 baseline、同 ready-window 的项目内部消融与隐藏缓冲成本；当前运行状态不在此维护 |
+| `saor_model_scenario_audit_20260811.md` | SAOR capacity-only/fixed-envelope 数学审计；§12 规定实验开始前选定并在运行期间保持不变的 $H_B/W_e$、有界 priority/debt 与 release-opportunity 条件，并记录 bounded-ready、同窗口 selector 归因、observation bridge 及 native-system matched comparison 适用条件 |
+| `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务论文与数据库厂商的 workload、执行条件和指标定义；§9.3 规定当前单租户多 Job 的 equal-share/differentiated-service、公平/隔离、三个 JCT 反事实、未来 tenant 层次、原生 baseline、同 ready-window 的项目内部消融与隐藏缓冲成本；当前运行状态不在此维护 |
 | `daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：保留 Daft 三痛点与 offline-batch 候选，已按 08-01 审计撤回“传输瓶颈/结构性空白”预设，并要求 staged baseline |
 
 ## 文献分级
@@ -41,8 +42,8 @@
 1. 明确当前问题属于数据组织、serving capacity、公平调度、代价估计还是写回。
 2. 从 Top 15 和核心补充中提取机制、假设和实验 baseline。
 3. 做迁移审计：本项目不修改 vLLM，固定双 GPU，不把 autoscaling、KV migration 或 kernel 优化当可直接实现机制。
-4. 先定义强 baseline、同条件契约和晋级门槛，再实现候选。
-5. 用真实实验决定晋级；负结果停止参数挖掘并收窄设计空间。
+4. 先定义强 baseline、相同实验条件和候选被采用前必须满足的正确性/性能标准，再实现候选。
+5. 用真实实验决定是否采用候选；负结果停止参数挖掘并收窄设计空间。
 
 ## 算子代价估计定位
 

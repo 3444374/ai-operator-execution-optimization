@@ -1,5 +1,28 @@
 # 项目日志
 
+## 2026-08-27 Sema-like PostgreSQL AI 语义算子架构重设
+
+- 将数据库集成的主要参照从 LOTUS v1.2.4 调整为 Sema 所代表的数据库原生语义算子路线：
+  PostgreSQL extension 拥有 SQL、ordinary child plan、semantic plan、task compilation、result parser
+  和 query lifecycle；外部 execution provider 只负责不改变语义的 work organization、admission、
+  multi-Job scheduling、endpoint routing 与 Ray/vLLM execution。
+- 新增 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 作为唯一当前实施
+  入口，明确 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord`、query-scoped provider
+  interface、semantic prompt batching 与独立 task grouping 的区别、模块 seam、八个工作包、反例测试、
+  实验分层和不能声称的能力。
+- 将 2026-08-21 的 PostgreSQL+LOTUS 主计划和 LOTUS frontend 子计划移入
+  `experiments/plans/archive/`；旧 Q1–Q23 决策、v1.2.4 源码审计与错误测试仍保留，但 LOTUS 改为
+  可选 compatibility profile、算子算法/reference behavior 来源和 native full-system baseline。
+- 新增 `research/sema_native_semantic_operator_architecture_reference_20260827.md`，使用 Sema 论文与
+  官方 artifact、VLDB 2026 官方程序、PostgreSQL 官方扩展文档、LOTUS 固定版本源码，以及
+  Palimpzest、DocETL、Abacus 一手论文/仓库核对架构角色与当前未实现能力；同步研究知识库入口。
+- 同步根规则、总纲、根/代码/实验/overview 入口、实现状态、证据台账和条件性实验计划。现有
+  Daft/Ray/vLLM/static/SAOR 代码与实验身份不变，仍是外部物理执行基座；本轮没有实现 C extension、
+  provider gateway、LOTUS adapter，也没有运行 GPU 或正式性能实验。
+- 开题 Markdown 报告已把总体方案、实施顺序和预期系统改为 Sema-like 中立语义算子架构；现有 Word、
+  PPTX 与答辩 QA PDF 明确标为上一版架构快照，未自动覆盖或重新导出，后续对外使用前需单独更新和
+  做版式/视觉检查。
+
 ## 2026-08-27 全项目进度缓存与证据口径校准
 
 - 按“源码/原始结果 → 领域权威入口 → 总纲 → README/速览 → 历史计划”的顺序复核当前状态文档，

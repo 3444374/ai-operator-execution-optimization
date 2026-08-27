@@ -9,26 +9,27 @@
 
 ## 1. 一句话定位
 
-研究 PostgreSQL 内置 LOTUS AI 语义算子的外部分布式物理执行与调度优化：数据库拥有 SQL、
-关系 child plan、snapshot、权限、取消、错误和结果生命周期；LOTUS v1.2.4 提供 `sem_map` 语义；
-Daft、Ray、vLLM、CLIP 与 pgvector 是可替换的物理执行和验证平台。
+研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化：参考 Sema-like 数据库原生
+语义算子架构，由数据库拥有 SQL、关系 child plan、snapshot、权限、语义计划、结果解析以及取消、
+错误和结果生命周期；Daft、Ray、vLLM、CLIP 与 pgvector 是可替换的物理执行和验证平台。
 
 项目不 fork PostgreSQL core，不修改 vLLM continuous batching、Ray scheduler、模型结构或 GPU kernel，
 也不使用 `SELECT/fetchall → Python → HTTP → INSERT` 作为主路径。
 
 ## 2. 当前最短路径
 
-1. 用版本锁定的 LOTUS v1.2.4 `SemMapNode`、prompt 与 output parser，替换项目自写
-   UDF/manifest-like `AI_COMPLETE` 语义入口；
-2. 保持 Daft/Ray/static/SAOR 只是可替换 backend，完成 LOTUS native 与 project backend parity；
-3. 用 PostgreSQL extension / planner-visible operator 验证真实 SQL、child plan 和 query lifecycle；
-4. 以上两项通过前，不扩 GPU 矩阵、不调 SAOR、不把 emulated operator contract 写成数据库内实现；
-5. 之后再恢复图像 state-aware 系统级 matched comparison 和条件性补测。
+1. 用 PostgreSQL extension / planner-visible `SemMap` prototype 验证真实 SQL、ordinary child plan、
+   snapshot 和 query lifecycle；
+2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同，以及有界、可取消的
+   recording、remote HTTP 与 project providers；
+3. 保持 Daft/Ray/static/SAOR 在 project provider 后方，不让 scheduler 理解 SQL、prompt parser 或
+   PostgreSQL Plan；
+4. 用 `SemFilter` 验证会改变关系 cardinality 的算子语义；LOTUS 兼容和 native baseline 后置且不阻塞；
+5. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
 
 实施入口：
 
-- [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](../experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md)
-- [`lotus_semantic_frontend_execution_integration_20260821.md`](../experiments/plans/lotus_semantic_frontend_execution_integration_20260821.md)
+- [`postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
 ## 3. 研究内容
 
@@ -54,7 +55,8 @@ Daft、Ray、vLLM、CLIP 与 pgvector 是可替换的物理执行和验证平台
 
 仍待验证：
 
-- 真实 LOTUS `sem_map` 语义等价和 PostgreSQL planner/query-lifecycle；
+- PostgreSQL planner-visible `SemMap`、中立 provider interface 和 query lifecycle；
+- `SemFilter` 关系语义，以及 LOTUS compatibility/native baseline；
 - 图像 HSE/static 非劣与受控 state-aware 动作；
 - 五臂系统级 matched formal、SAOR 跨层 capability 和部分条件性纠正补测；
 - 代价估计在新时间段或新 workload 上的校准与在线决策价值。

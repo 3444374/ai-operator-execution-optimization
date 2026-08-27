@@ -2,7 +2,7 @@
 
 > **当前状态（2026-08-27）**：文本主矩阵和 cache-on 双/四 endpoint 重测已完成，结论是
 > 策略效果依赖 KV 压力与 prefix 结构。本文仅保留后续模态复用和条件性扩展合同；当前先完成
-> LOTUS 语义迁移与 PostgreSQL query-lifecycle 资格验证，不重复文本参数扫描。已完成合同见
+> PostgreSQL 中立语义算子、execution provider 与 query-lifecycle 资格验证，不重复文本参数扫描。已完成合同见
 > [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
 
 整理日期：2026-07-16

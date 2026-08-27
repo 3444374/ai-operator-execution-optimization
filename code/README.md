@@ -5,11 +5,12 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 
 Status as of 2026-08-27: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
-static/shared scheduling controls, and offline cost estimation). It does **not** yet contain the
-version-locked LOTUS v1.2.4 semantic adapter or a PostgreSQL planner-visible AI operator. The active
-implementation sequence is LOTUS `sem_map` semantic parity first, then the PostgreSQL
-extension/query-lifecycle capability; see
-`../experiments/plans/postgresql_lotus_ai_semantic_operator_implementation_20260821.md`.
+static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
+PostgreSQL planner-visible AI semantic operator, the neutral plan/task/result contracts, or an execution-provider
+gateway. The active sequence is the PostgreSQL `SemMap` capability prototype, neutral provider interface,
+recording/HTTP/project providers, and then `SemFilter`; see
+`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
+compatibility profile and native full-path baseline, not a prerequisite for the core operator.
 
 The SAOR section below records a stopped, fail-closed implementation state. It remains useful code and
 evidence context, but it is not authorization to resume GPU/formal runs or the current engineering

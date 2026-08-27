@@ -1,5 +1,10 @@
 # LOTUS `sem_map` 语义实现与物理 backend 集成计划
 
+> **历史状态（2026-08-27）**：本文已被
+> [`../postgresql_ai_semantic_operator_architecture_20260827.md`](../postgresql_ai_semantic_operator_architecture_20260827.md)
+> 取代。LOTUS v1.2.4 兼容和 native baseline 仍可复用本文的源码审计，但不再先于 PostgreSQL 中立
+> 语义算子核心实现，也不再定义默认语义或总体架构。
+
 更新日期：2026-08-21
 状态：`subplan-of-postgresql-native-operator / conditional-go-pending-capability-prototype`
 适用范围：文本 `AI_COMPLETE` / LOTUS `sem_map`；后续算子和多模态不在首轮实现范围
