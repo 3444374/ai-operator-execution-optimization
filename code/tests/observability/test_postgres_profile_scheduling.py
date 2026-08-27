@@ -1756,6 +1756,25 @@ class ProfilerAdaptiveControlTests(unittest.TestCase):
         connection.close.assert_called_once_with()
 
 class ProfilerFailureHandlingTests(unittest.TestCase):
+    def test_result_visibility_counts_rows_inside_batch_results(self) -> None:
+        profile._validate_operator_result_visibility(
+            [
+                {"doc_id": [1, 2], "rows": 2},
+                {"doc_id": [3], "rows": 1},
+            ],
+            processed_rows=3,
+        )
+
+    def test_result_visibility_rejects_duplicate_doc_ids(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "duplicate doc_id"):
+            profile._validate_operator_result_visibility(
+                [
+                    {"doc_id": [1, 2], "rows": 2},
+                    {"doc_id": [2], "rows": 1},
+                ],
+                processed_rows=3,
+            )
+
     def test_fail_job_rolls_back_before_marking_failed(self) -> None:
         connection = MagicMock()
         cursor = connection.cursor.return_value.__enter__.return_value

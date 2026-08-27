@@ -952,6 +952,44 @@ def _build_profiler_request_rows(
     )
 
 
+def _validate_operator_result_visibility(
+    results: Sequence[object],
+    processed_rows: int,
+) -> None:
+    """Require complete, non-duplicate row visibility across batched results."""
+
+    visible_rows = 0
+    visible_doc_ids: list[str] = []
+    for result in results:
+        if not isinstance(result, dict):
+            raise RuntimeError(
+                "complete correct result visibility requires one result per source row"
+            )
+        raw_doc_ids = result.get("doc_id")
+        declared_rows = result.get("rows")
+        if raw_doc_ids is None:
+            result_rows = int(declared_rows) if declared_rows is not None else 1
+        else:
+            if isinstance(raw_doc_ids, (str, bytes)):
+                raise RuntimeError("operator result doc_id must be a row collection")
+            doc_ids = [str(value) for value in raw_doc_ids]
+            result_rows = len(doc_ids)
+            if declared_rows is not None and int(declared_rows) != result_rows:
+                raise RuntimeError(
+                    "operator result rows must match its doc_id count"
+                )
+            visible_doc_ids.extend(doc_ids)
+        if result_rows < 0:
+            raise RuntimeError("operator result rows must be non-negative")
+        visible_rows += result_rows
+    if len(visible_doc_ids) != len(set(visible_doc_ids)):
+        raise RuntimeError("operator results contain duplicate doc_id values")
+    if visible_rows != processed_rows:
+        raise RuntimeError(
+            "complete correct result visibility requires one result per source row"
+        )
+
+
 def _request_trace_metrics(
     rows: tuple[RequestTraceRow, ...] | list[RequestTraceRow],
     *,
@@ -3633,12 +3671,10 @@ class _ProfileOperatorRun:
             self.request_manifest_validation_status = "ok"
         if self.first_batch_ready_epoch_s is None:
             raise RuntimeError("source produced no first batch")
-        if len(self.operator_results) != self.processed_rows or any(
-            not isinstance(result, dict) for result in self.operator_results
-        ):
-            raise RuntimeError(
-                "complete correct result visibility requires one result per source row"
-            )
+        _validate_operator_result_visibility(
+            self.operator_results,
+            self.processed_rows,
+        )
         self.result_visible_epoch_s = time.time()
         self.database_e2e_boundary_complete = False
         if self.args.database_e2e_timing_boundary:
