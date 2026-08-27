@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-08-27 停用 Wiki 同步规则
+
+- 按用户要求删除根 `AGENTS.md` 的 Wiki 同步规则，后续修改知识文件时不再自动同步、检查平级
+  Wiki 仓库或在会话结束时提醒同步。
+- 删除 `experiments/plans/AGENTS.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`和两个文献笔记入口中的
+  同步指针，并删除不再使用的 `research/knowledge_sync_guide.md`。历史日志和历史发布面中的 Wiki 记录保留为当时事实。
+- 本次只停用与 `../ai-operator-wiki/` 之间的同步；`research/`、实验计划/结果、总纲、索引和 README 的项目内知识源及权威关系不变。
+
 ## 2026-08-27 全项目规则层级梳理
 
 - 审计 30 份 `AGENTS.md` 与根 `CLAUDE.md`，统一为“根规则始终生效、从根到目标目录逐级追加局部

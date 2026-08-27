@@ -412,4 +412,4 @@ GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分�
 - 十五篇精读方法速览：`research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`
 
-影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。修改知识文件后应在会话结束前提醒知识库同步；实际同步按 `research/knowledge_sync_guide.md` 执行。
+影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。

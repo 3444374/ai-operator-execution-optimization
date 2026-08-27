@@ -161,6 +161,8 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 
 ## 7. 目录与变更同步
 
+项目内的 `research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
+
 | 变更 | 必须同步 |
 |---|---|
 | 方向、题目、研究内容 | `PROJECT_OUTLINE.md`、根入口、开题正文/材料、`PROJECT_LOG.md` |
@@ -183,17 +185,6 @@ README 或已有索引；一次性过程材料放 `tmp/`，不建立新的权威
   `code/scripts/environment/secret_scan_baseline.txt`，真实泄漏立即轮换。
 - `.gitignore` 已放行历史 `postgres:postgres@localhost` 公共本地默认；新增内容仍优先使用环境变量。
 
-## 9. 知识库同步
-
-项目是知识唯一来源；配置存在时，平级 `../ai-operator-wiki/` 只是编译查询界面。
-
-- 用户明确说“记住、同步知识库、加到 Wiki”时，按 `research/knowledge_sync_guide.md` 先检查 sibling
-  目录、脚本和映射；检查通过后立即同步。目录缺失、同步暂停或映射不覆盖目标时，报告 `pending`，
-  不擅自创建平级项目或做有覆盖风险的复制；
-- 本轮若修改 `research/**/*.md`、`opening/literature/**/*.md`、`experiments/plans/**/*.md` 或用户指定的
-  知识路径，会话结束前必须提醒 Wiki 尚需同步；
-- 不把 Wiki 反向当作项目事实源，也不在未获授权时扩写平级项目。
-
 ## 附：历史章节引用兼容
 
 旧计划、结果 README 和项目日志保留了重构前的章节号。读取这些历史引用时按下表跳转；新文档
@@ -205,4 +196,4 @@ README 或已有索引；一次性过程材料放 `tmp/`，不建立新的权威
 | 根 §5、§7.5（实验与运行） | 本文件 §5、`experiments/AGENTS.md`、baseline reference 与目标计划 |
 | 根 §6、§6.5（严谨性、文献） | 本文件 §4、§6 与 `research/AGENTS.md` |
 | 根 §8（沟通） | 本文件 §2、§6 与 `notes/AGENTS.md` |
-| 根 §9–11（同步、Git、Wiki） | 本文件 §7–9 |
+| 根 §9–10（变更同步、Git） | 本文件 §7–8 |

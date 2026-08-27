@@ -153,9 +153,6 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 - Kalypso 核心补充精读：[`research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`](research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)（已从下载目录原件逐字节恢复；不进入当前 Top 15、十五篇速览或开题正文）
 - 本地参考资料索引：[`research/reference/REFERENCE_INDEX.md`](research/reference/REFERENCE_INDEX.md)
 
-修改 `research/`、`opening/literature/` 或 `experiments/plans/*.md` 后，按
-[`research/knowledge_sync_guide.md`](research/knowledge_sync_guide.md) 检查 Wiki 同步触发条件。
-
 ## 8. 历史与归档规则
 
 - 历史结果和失败证据保留原目录，不因结论被替代而删除。

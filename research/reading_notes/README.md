@@ -23,5 +23,3 @@
 3. 结论必须区分论文事实、官方资料、本地实验事实、合理推断和待确认。
 4. 不把摘要、microbenchmark 或未核验材料扩展成系统性结论。
 5. 新增或删除笔记后，按根目录规则更新 `research/README.md`、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`；若 PDF 有变化，同时更新 `REFERENCE_INDEX.md`。
-
-当前 Wiki 脚本仍会把本目录的 Markdown 同步到 `raw/papers/`。同步动作以 `../knowledge_sync_guide.md` 和项目当前冻结状态为准。
