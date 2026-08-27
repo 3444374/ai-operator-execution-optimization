@@ -20,6 +20,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.baselines.common.contracts import ChatRequest  # noqa: E402
 from src.baselines.common.manifests import read_manifest  # noqa: E402
 from src.experiments.shared_vllm.config import (  # noqa: E402
+    SharedVllmConfig,
     _argument_value,
     load_config,
 )
@@ -87,6 +88,15 @@ READY_OBSERVATION_BRIDGE_EXPECTED = {
     "active_set_project_bounded_ready_fifo": ("shared_fifo", 2),
 }
 
+PROFILE_EXPECTATIONS = {
+    "formal": EXPECTED,
+    "priority_reachability": PRIORITY_REACHABILITY_EXPECTED,
+    "bounded_priority_development": BOUNDED_PRIORITY_EXPECTED,
+    "bounded_ready_development": BOUNDED_READY_EXPECTED,
+    "matched_ready_selector_ablation": MATCHED_READY_ABLATION_EXPECTED,
+    "ready_observation_bridge": READY_OBSERVATION_BRIDGE_EXPECTED,
+}
+
 
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -107,31 +117,12 @@ def _args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def audit(
-    config_path: Path,
-    *,
-    profile: str = "formal",
-) -> dict[str, object]:
-    expected = (
-        EXPECTED
-        if profile == "formal"
-        else PRIORITY_REACHABILITY_EXPECTED
-        if profile == "priority_reachability"
-        else BOUNDED_PRIORITY_EXPECTED
-        if profile == "bounded_priority_development"
-        else BOUNDED_READY_EXPECTED
-        if profile == "bounded_ready_development"
-        else MATCHED_READY_ABLATION_EXPECTED
-        if profile == "matched_ready_selector_ablation"
-        else READY_OBSERVATION_BRIDGE_EXPECTED
-        if profile == "ready_observation_bridge"
-        else None
-    )
-    if expected is None:
-        raise ValueError(f"unknown readiness profile: {profile}")
-    raw_config = json.loads(config_path.resolve().read_text(encoding="utf-8"))
-    config = load_config(config_path.resolve())
-    errors: list[str] = []
+def _audit_matrix_contract(
+    config: SharedVllmConfig,
+    profile: str,
+    expected: dict[str, tuple[str, int]],
+    errors: list[str],
+) -> dict[str, dict[str, object]]:
     if config.warmup_runs_per_scenario != 1 or config.formal_repeats != 3:
         errors.append("formal matrix requires exactly 1 warmup + 3 formal")
     if not config.fail_closed_rehearsal:
@@ -153,7 +144,7 @@ def audit(
         errors.append(
             "ready observation contract does not match the selected profile"
         )
-    scenario_resource_contracts = {
+    contracts = {
         scenario.scenario_id: {
             "request_limit_per_endpoint": scenario.endpoint_limits(
                 config.request_limit_per_endpoint,
@@ -176,10 +167,7 @@ def audit(
             config.work_limit_per_endpoint,
         )
         for scenario in config.scenarios:
-            if scenario.endpoint_limits(
-                config.request_limit_per_endpoint,
-                config.work_limit_per_endpoint,
-            ) != expected_limits:
+            if scenario.endpoint_limits(*expected_limits) != expected_limits:
                 errors.append(
                     f"{scenario.scenario_id} effective request/work limits "
                     "drift from the frozen root contract"
@@ -188,6 +176,14 @@ def audit(
                 errors.append(
                     f"{scenario.scenario_id} weights drift from frozen (1, 1)"
                 )
+    return contracts
+
+
+def _audit_profile_policy_contract(
+    config: SharedVllmConfig,
+    profile: str,
+    errors: list[str],
+) -> None:
     if profile in {
         "bounded_priority_development",
         "bounded_ready_development",
@@ -198,8 +194,7 @@ def audit(
             else "saor_bounded_ready"
         )
         bounded = [
-            scenario
-            for scenario in config.scenarios
+            scenario for scenario in config.scenarios
             if scenario.policy == bounded_policy
         ]
         if [scenario.priorities for scenario in bounded] != [(0, 1), (0, 1)]:
@@ -223,8 +218,7 @@ def audit(
             )
     if profile == "matched_ready_selector_ablation":
         project_controls = [
-            scenario
-            for scenario in config.scenarios
+            scenario for scenario in config.scenarios
             if scenario.policy != "static_partition"
         ]
         if not project_controls or any(
@@ -236,8 +230,7 @@ def audit(
                 "every project selector ablation must use matched bounded-ready"
             )
         static = [
-            scenario
-            for scenario in config.scenarios
+            scenario for scenario in config.scenarios
             if scenario.policy == "static_partition"
         ]
         if len(static) != 1 or static[0].ready_observation_contract != "single_head":
@@ -245,8 +238,7 @@ def audit(
                 "project frozen-static reference must not use bounded-ready"
             )
         proposed = [
-            scenario
-            for scenario in config.scenarios
+            scenario for scenario in config.scenarios
             if scenario.policy == "saor_bounded_ready"
         ]
         if (
@@ -283,15 +275,12 @@ def audit(
             != "bounded_concrete_pre_registration"
         ):
             errors.append("bridge observation control must use bounded-ready FIFO")
-    if profile == "formal":
-        try:
-            direct = direct_control_contract(config)
-        except (TypeError, ValueError) as exc:
-            errors.append(f"direct request contract is invalid: {exc}")
-            direct = None
-    else:
-        direct = None
-    manifests: dict[str, dict[str, object]] = {}
+
+
+def _common_request_contract(
+    config: SharedVllmConfig,
+    errors: list[str],
+) -> tuple[int, int, float]:
     configured_cap = int(
         _argument_value(config.common_args, "--completion-max-tokens", "-1")
     )
@@ -317,49 +306,71 @@ def audit(
         arrival_time_scale = math.nan
     if not math.isfinite(arrival_time_scale) or arrival_time_scale <= 0:
         errors.append("arrival-time-scale must be finite and positive")
+    return configured_cap, prompt_token_overhead, arrival_time_scale
+
+
+def _readiness_limits(
+    raw_config: dict[str, object],
+    errors: list[str],
+) -> tuple[float, float]:
     readiness = raw_config.get("readiness_contract")
     if not isinstance(readiness, dict):
         errors.append("formal matrix requires a readiness_contract")
+        return math.nan, math.nan
+    try:
+        max_effective_span_s = float(
+            expand_scalar(
+                readiness.get("max_effective_manifest_span_s"),
+                "readiness_contract.max_effective_manifest_span_s",
+                environment=os.environ,
+            )
+        )
+    except (TypeError, ValueError):
         max_effective_span_s = math.nan
+    if not math.isfinite(max_effective_span_s) or max_effective_span_s <= 0:
+        errors.append(
+            "readiness max_effective_manifest_span_s must be finite and positive"
+        )
+    try:
+        min_pre_foreground_envelopes = float(
+            expand_scalar(
+                readiness.get(
+                    "min_pre_foreground_work_envelopes_per_endpoint"
+                ),
+                (
+                    "readiness_contract."
+                    "min_pre_foreground_work_envelopes_per_endpoint"
+                ),
+                environment=os.environ,
+            )
+        )
+    except (TypeError, ValueError):
         min_pre_foreground_envelopes = math.nan
-    else:
-        try:
-            max_effective_span_s = float(
-                expand_scalar(
-                    readiness.get("max_effective_manifest_span_s"),
-                    "readiness_contract.max_effective_manifest_span_s",
-                    environment=os.environ,
-                )
-            )
-        except (TypeError, ValueError):
-            max_effective_span_s = math.nan
-        if not math.isfinite(max_effective_span_s) or max_effective_span_s <= 0:
-            errors.append(
-                "readiness max_effective_manifest_span_s must be finite and positive"
-            )
-        try:
-            min_pre_foreground_envelopes = float(
-                expand_scalar(
-                    readiness.get(
-                        "min_pre_foreground_work_envelopes_per_endpoint"
-                    ),
-                    (
-                        "readiness_contract."
-                        "min_pre_foreground_work_envelopes_per_endpoint"
-                    ),
-                    environment=os.environ,
-                )
-            )
-        except (TypeError, ValueError):
-            min_pre_foreground_envelopes = math.nan
-        if (
-            not math.isfinite(min_pre_foreground_envelopes)
-            or min_pre_foreground_envelopes <= 0
-        ):
-            errors.append(
-                "readiness pre-foreground work-envelope factor must be "
-                "finite and positive"
-            )
+    if (
+        not math.isfinite(min_pre_foreground_envelopes)
+        or min_pre_foreground_envelopes <= 0
+    ):
+        errors.append(
+            "readiness pre-foreground work-envelope factor must be "
+            "finite and positive"
+        )
+    return max_effective_span_s, min_pre_foreground_envelopes
+
+
+def _audit_manifests(
+    config: SharedVllmConfig,
+    *,
+    configured_cap: int,
+    arrival_time_scale: float,
+    max_effective_span_s: float,
+    errors: list[str],
+) -> tuple[
+    dict[str, dict[str, object]],
+    tuple[str, ...] | None,
+    tuple[float, ...] | None,
+    dict[str, tuple[ChatRequest, ...]],
+]:
+    manifests: dict[str, dict[str, object]] = {}
     active_reference: tuple[str, ...] | None = None
     active_offsets: tuple[float, ...] | None = None
     doc_owners: dict[int, str] = {}
@@ -383,20 +394,22 @@ def audit(
                 and math.isclose(scenario.arrival_offsets_s[0], 0.0, abs_tol=1e-9)
                 and scenario.arrival_offsets_s[1] > 0
             ):
-                errors.append("active-set contract requires bulk@0 and foreground@positive")
+                errors.append(
+                    "active-set contract requires bulk@0 and foreground@positive"
+                )
         for index, raw_path in enumerate(paths):
             path = Path(raw_path)
             if not path.is_file():
                 errors.append(f"manifest is missing: {path}")
                 continue
             requests = read_manifest(path)
-            manifest_requests[str(path.resolve())] = requests
+            resolved_path = str(path.resolve())
+            manifest_requests[resolved_path] = requests
             if len(requests) != scenario.row_count(index):
                 errors.append(f"{scenario.scenario_id} job {index} row count mismatch")
-            ids = {request.doc_id for request in requests}
-            for doc_id in ids:
-                owner = doc_owners.setdefault(doc_id, str(path.resolve()))
-                if owner != str(path.resolve()):
+            for doc_id in {request.doc_id for request in requests}:
+                owner = doc_owners.setdefault(doc_id, resolved_path)
+                if owner != resolved_path:
                     errors.append(
                         "bulk/foreground manifests reuse a doc_id across files"
                     )
@@ -411,7 +424,6 @@ def audit(
                 errors.append(
                     f"{scenario.scenario_id} job {index} output cap mismatch"
                 )
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
             arrivals = [request.arrival_time_s for request in requests]
             raw_span_s = max(arrivals) - min(arrivals) if arrivals else 0.0
             effective_span_s = raw_span_s * arrival_time_scale
@@ -422,44 +434,62 @@ def audit(
                 errors.append(
                     f"manifest effective replay span exceeds readiness bound: {path}"
                 )
-            manifests[str(path.resolve())] = {
+            manifests[resolved_path] = {
                 "rows": len(requests),
-                "sha256": digest,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "endpoint_indices": sorted(endpoint_indices),
                 "raw_arrival_span_s": raw_span_s,
                 "effective_arrival_span_s": effective_span_s,
             }
+    return manifests, active_reference, active_offsets, manifest_requests
+
+
+def _audit_pre_foreground_work(
+    config: SharedVllmConfig,
+    *,
+    active_reference: tuple[str, ...] | None,
+    active_offsets: tuple[float, ...] | None,
+    manifest_requests: dict[str, tuple[ChatRequest, ...]],
+    prompt_token_overhead: int,
+    arrival_time_scale: float,
+    min_pre_foreground_envelopes: float,
+    errors: list[str],
+) -> dict[str, int]:
     pre_foreground_work: dict[str, int] = {}
-    if active_reference and active_offsets and len(active_reference) == 2:
-        bulk_path = str(Path(active_reference[0]).resolve())
-        bulk_requests = manifest_requests.get(bulk_path, ())
-        foreground_offset_s = active_offsets[1]
-        first_bulk_arrival_s = min(
-            (request.arrival_time_s for request in bulk_requests),
-            default=0.0,
+    if not active_reference or not active_offsets or len(active_reference) != 2:
+        return pre_foreground_work
+    bulk_path = str(Path(active_reference[0]).resolve())
+    bulk_requests = manifest_requests.get(bulk_path, ())
+    foreground_offset_s = active_offsets[1]
+    first_bulk_arrival_s = min(
+        (request.arrival_time_s for request in bulk_requests),
+        default=0.0,
+    )
+    for endpoint_index, endpoint_id in enumerate(config.endpoint_ids):
+        work = sum(
+            request.estimated_work + prompt_token_overhead
+            for request in bulk_requests
+            if request.endpoint_index == endpoint_index
+            and (
+                request.arrival_time_s - first_bulk_arrival_s
+            )
+            * arrival_time_scale
+            < foreground_offset_s
         )
-        for endpoint_index in range(len(config.endpoint_ids)):
-            work = sum(
-                request.estimated_work + prompt_token_overhead
-                for request in bulk_requests
-                if request.endpoint_index == endpoint_index
-                and (
-                    request.arrival_time_s - first_bulk_arrival_s
-                )
-                * arrival_time_scale
-                < foreground_offset_s
+        pre_foreground_work[endpoint_id] = work
+        required = config.work_limit_per_endpoint * min_pre_foreground_envelopes
+        if math.isfinite(required) and work < required:
+            errors.append(
+                "bulk pre-foreground predicted work does not cover the "
+                f"required envelope on {endpoint_id}: {work} < {required}"
             )
-            endpoint_id = config.endpoint_ids[endpoint_index]
-            pre_foreground_work[endpoint_id] = work
-            required = (
-                config.work_limit_per_endpoint
-                * min_pre_foreground_envelopes
-            )
-            if math.isfinite(required) and work < required:
-                errors.append(
-                    "bulk pre-foreground predicted work does not cover the "
-                    f"required envelope on {endpoint_id}: {work} < {required}"
-                )
+    return pre_foreground_work
+
+
+def _audit_calibration_and_release(
+    config: SharedVllmConfig,
+    errors: list[str],
+) -> None:
     if config.calibration_contract is None:
         errors.append("formal matrix requires a validated calibration contract")
     else:
@@ -499,10 +529,82 @@ def audit(
         errors.append(
             "current formal matrix freezes unwired queue/SLO SAOR weights at zero"
         )
-    status = "passed" if not errors else "failed"
+
+
+def _direct_contract_record(direct: object | None) -> dict[str, object] | None:
+    if direct is None:
+        return None
+    return {
+        "endpoint_urls": direct.endpoint_urls,
+        "model": direct.model,
+        "concurrency_per_endpoint": direct.concurrency_per_endpoint,
+        "protocol": direct.protocol,
+        "prompt_format": direct.prompt_format,
+        "return_token_ids": direct.return_token_ids,
+        "keepalive_expiry_s": direct.keepalive_expiry_s,
+    }
+
+
+def audit(
+    config_path: Path,
+    *,
+    profile: str = "formal",
+) -> dict[str, object]:
+    expected = PROFILE_EXPECTATIONS.get(profile)
+    if expected is None:
+        raise ValueError(f"unknown readiness profile: {profile}")
+    resolved_config_path = config_path.resolve()
+    raw_config = json.loads(resolved_config_path.read_text(encoding="utf-8"))
+    config = load_config(resolved_config_path)
+    errors: list[str] = []
+    scenario_resource_contracts = _audit_matrix_contract(
+        config,
+        profile,
+        expected,
+        errors,
+    )
+    _audit_profile_policy_contract(config, profile, errors)
+    if profile == "formal":
+        try:
+            direct = direct_control_contract(config)
+        except (TypeError, ValueError) as exc:
+            errors.append(f"direct request contract is invalid: {exc}")
+            direct = None
+    else:
+        direct = None
+    configured_cap, prompt_token_overhead, arrival_time_scale = (
+        _common_request_contract(config, errors)
+    )
+    max_effective_span_s, min_pre_foreground_envelopes = _readiness_limits(
+        raw_config,
+        errors,
+    )
+    (
+        manifests,
+        active_reference,
+        active_offsets,
+        manifest_requests,
+    ) = _audit_manifests(
+        config,
+        configured_cap=configured_cap,
+        arrival_time_scale=arrival_time_scale,
+        max_effective_span_s=max_effective_span_s,
+        errors=errors,
+    )
+    pre_foreground_work = _audit_pre_foreground_work(
+        config,
+        active_reference=active_reference,
+        active_offsets=active_offsets,
+        manifest_requests=manifest_requests,
+        prompt_token_overhead=prompt_token_overhead,
+        arrival_time_scale=arrival_time_scale,
+        min_pre_foreground_envelopes=min_pre_foreground_envelopes,
+        errors=errors,
+    )
+    _audit_calibration_and_release(config, errors)
     return {
         "schema_version": 1,
-        "status": status,
+        "status": "passed" if not errors else "failed",
         "errors": errors,
         "experiment_id": config.experiment_id,
         "profile": profile,
@@ -527,19 +629,7 @@ def audit(
             if config.calibration_contract is not None
             else None
         ),
-        "direct_contract": (
-            {
-                "endpoint_urls": direct.endpoint_urls,
-                "model": direct.model,
-                "concurrency_per_endpoint": direct.concurrency_per_endpoint,
-                "protocol": direct.protocol,
-                "prompt_format": direct.prompt_format,
-                "return_token_ids": direct.return_token_ids,
-                "keepalive_expiry_s": direct.keepalive_expiry_s,
-            }
-            if direct is not None
-            else None
-        ),
+        "direct_contract": _direct_contract_record(direct),
         "manifests": manifests,
     }
 

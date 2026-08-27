@@ -60,7 +60,88 @@ from src.scheduling.submission_control.shared_credit import (  # noqa: E402
 )
 
 
-class SharedVllmExperimentTests(unittest.TestCase):
+class _SharedVllmTestSupport:
+    @staticmethod
+    def _flag_value(command: list[str], flag: str) -> str:
+        return command[command.index(flag) + 1]
+
+    @staticmethod
+    def _config_payload(
+        *,
+        common_args: list[str] | None = None,
+        scenarios: list[dict] | None = None,
+    ) -> dict:
+        return {
+            "schema_version": 1,
+            "experiment_id": "shared-test",
+            "seed": 17,
+            "warmup_runs_per_scenario": 0,
+            "formal_repeats": 1,
+            "endpoint_ids": ["task-0", "task-1"],
+            "service_signature": {"model": "qwen", "service": "vllm-test"},
+            "request_limit_per_endpoint": 256,
+            "work_limit_per_endpoint": 65536,
+            "credit_quantum": 2048,
+            "common_args": (
+                common_args if common_args is not None else ["--arrival-replay"]
+            ),
+            "scenarios": scenarios
+            or [
+                {
+                    "scenario_id": "fair_j2",
+                    "policy": "shared_drr",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                }
+            ],
+        }
+
+    @staticmethod
+    def _group_fixture(
+        output_dir: Path,
+    ) -> tuple[RunnerOptions, SharedVllmConfig, SharedVllmScenario]:
+        for child in ("jobs", "logs", "traces", "records"):
+            (output_dir / child).mkdir(parents=True, exist_ok=True)
+        options = RunnerOptions(
+            config_path=output_dir / "config.json",
+            profiler_path=output_dir / "profile.py",
+            python_executable=Path(sys.executable),
+            output_dir=output_dir,
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6379",
+            idle_timeout_s=1.0,
+            start_delay_s=5.0,
+        )
+        scenario = SharedVllmScenario(
+            scenario_id="test",
+            policy="independent_full",
+            job_count=1,
+            rows_per_job=64,
+            weights=(1,),
+            arrival_offsets_s=(0.0,),
+        )
+        config = SharedVllmConfig(
+            experiment_id="experiment",
+            seed=1,
+            warmup_runs_per_scenario=0,
+            formal_repeats=1,
+            endpoint_ids=("task-0", "task-1"),
+            service_signature=(("model", "qwen"), ("service", "vllm-test")),
+            request_limit_per_endpoint=256,
+            work_limit_per_endpoint=65536,
+            credit_quantum=2048,
+            shared_credit_namespace="namespace",
+            gpu_peak_tflops=165.0,
+            mfu_precision="bf16",
+            common_args=("--arrival-replay",),
+            scenarios=(scenario,),
+            service_metadata=(),
+        )
+        return options, config, scenario
+
+
+class SharedVllmConfigurationTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_generic_config_keeps_service_signature_optional(self) -> None:
         with TemporaryDirectory() as temporary:
             path = Path(temporary) / "config.json"
@@ -310,6 +391,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         with patch.object(Path, "read_text", return_value=json.dumps(payload)):
             with self.assertRaisesRegex(ValueError, "service_signature.model"):
                 load_config(Path("config.json"))
+class SharedVllmRehearsalTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_rehearsal_record_gate_is_fail_closed(self) -> None:
         scenario = SharedVllmScenario(
             scenario_id="active_set_saor_release",
@@ -577,6 +659,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(len(schedule), 1)
         self.assertEqual(schedule[0].phase, "warmup")
 
+class SharedVllmMechanismMetricTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_active_set_phase_summary_uses_observed_lifecycle(self) -> None:
         evidence = [
             {
@@ -1444,6 +1527,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "invalid:offline_projection_mismatch",
         )
 
+class SharedVllmTemplateTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_vtc_templates_expand_unequal_job_counts(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -1688,6 +1772,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         half_scale = half_pool.common_args.index("--arrival-time-scale")
         self.assertEqual(half_pool.common_args[half_scale + 1], "0.000000001")
 
+class SharedVllmRuntimeObserverTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_credit_observer_exports_code_root_to_ray_workers(self) -> None:
         ray_module = MagicMock()
         ray_module.is_initialized.return_value = False
@@ -1911,6 +1996,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertFalse(summary["bounded_ready_lifecycle_complete"])
         self.assertEqual(summary["bounded_ready_jobs_with_intervals"], 1)
 
+class SharedVllmConfigAndCommandTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
             shared_vllm._request_trace_succeeded(
@@ -2714,6 +2800,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "100.0",
         )
 
+class SharedVllmAggregateMetricTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_group_metrics_use_one_service_delta_not_per_job_summaries(
         self,
     ) -> None:
@@ -3095,6 +3182,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertIn("unavailable", metrics["completion_service_lag_status"])
 
+class SharedVllmRunnerFailureTests(_SharedVllmTestSupport, unittest.TestCase):
     def test_replay_start_validation_rejects_late_or_skewed_jobs(self) -> None:
         skewed_barrier = [
             {
@@ -3483,87 +3571,6 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "shared request limit was exceeded",
         ):
             _validate_final_credit(config, config.scenarios[0], snapshots)
-
-    @staticmethod
-    def _flag_value(command: list[str], flag: str) -> str:
-        return command[command.index(flag) + 1]
-
-    @staticmethod
-    def _config_payload(
-        *,
-        common_args: list[str] | None = None,
-        scenarios: list[dict] | None = None,
-    ) -> dict:
-        return {
-            "schema_version": 1,
-            "experiment_id": "shared-test",
-            "seed": 17,
-            "warmup_runs_per_scenario": 0,
-            "formal_repeats": 1,
-            "endpoint_ids": ["task-0", "task-1"],
-            "service_signature": {"model": "qwen", "service": "vllm-test"},
-            "request_limit_per_endpoint": 256,
-            "work_limit_per_endpoint": 65536,
-            "credit_quantum": 2048,
-            "common_args": (
-                common_args
-                if common_args is not None
-                else ["--arrival-replay"]
-            ),
-            "scenarios": scenarios
-            or [
-                {
-                    "scenario_id": "fair_j2",
-                    "policy": "shared_drr",
-                    "job_count": 2,
-                    "rows_per_job": 64,
-                }
-            ],
-        }
-
-    @staticmethod
-    def _group_fixture(
-        output_dir: Path,
-    ) -> tuple[RunnerOptions, SharedVllmConfig, SharedVllmScenario]:
-        for child in ("jobs", "logs", "traces", "records"):
-            (output_dir / child).mkdir(parents=True, exist_ok=True)
-        options = RunnerOptions(
-            config_path=output_dir / "config.json",
-            profiler_path=output_dir / "profile.py",
-            python_executable=Path(sys.executable),
-            output_dir=output_dir,
-            health_url="http://health",
-            metrics_urls=("http://metrics0", "http://metrics1"),
-            ray_address="127.0.0.1:6379",
-            idle_timeout_s=1.0,
-            start_delay_s=5.0,
-        )
-        scenario = SharedVllmScenario(
-            scenario_id="test",
-            policy="independent_full",
-            job_count=1,
-            rows_per_job=64,
-            weights=(1,),
-            arrival_offsets_s=(0.0,),
-        )
-        config = SharedVllmConfig(
-            experiment_id="experiment",
-            seed=1,
-            warmup_runs_per_scenario=0,
-            formal_repeats=1,
-            endpoint_ids=("task-0", "task-1"),
-            service_signature=(("model", "qwen"), ("service", "vllm-test")),
-            request_limit_per_endpoint=256,
-            work_limit_per_endpoint=65536,
-            credit_quantum=2048,
-            shared_credit_namespace="namespace",
-            gpu_peak_tflops=165.0,
-            mfu_precision="bf16",
-            common_args=("--arrival-replay",),
-            scenarios=(scenario,),
-            service_metadata=(),
-        )
-        return options, config, scenario
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from __future__ import annotations
 import statistics
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass, field
 
 import pyarrow as pa
 
@@ -31,6 +32,109 @@ from src.scheduling.runtime.shared_credit_ray import (
     get_or_create_shared_credit_client,
 )
 from .replay import _batch_envelopes
+
+
+DEFAULT_POOL_ID = "default"
+DEFAULT_METRICS_TIMEOUT_S = 1.0
+FAKE_TASK_ENDPOINT_ID = "task-0"
+RAW_PROMPT_FORMAT = "raw"
+COMPLETIONS_PROTOCOL = "completions"
+
+
+@dataclass(frozen=True)
+class _SchedulerOptions:
+    """Optional scheduler wiring kept behind one internal interface."""
+
+    routing_config: Mapping[str, object] | None = None
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None
+    epoch_clock: Callable[[], float] | None = None
+    per_endpoint_limit: int | None = None
+    per_endpoint_work_limit: int | None = None
+    shared_credit: object | None = None
+    job_weight: int = 1
+    job_priority: int = 0
+    per_endpoint_admission: Mapping[str, object] | None = None
+    job_slo_target_s: float | None = None
+    job_priority_window_s: float | None = None
+    job_fairness_debt_cap: float | None = None
+    shared_credit_acquire_timeout_s: float | None = None
+    shared_ready_request_limit: int = 1
+    shared_ready_work_limit: int | None = None
+    shared_ready_payload_bytes_limit: int | None = None
+
+
+@dataclass
+class _LegacyAdaptiveStats:
+    """Mutable counters shared by the two retained legacy submission paths."""
+
+    max_inflight_seen: int = 0
+    submit_count: int = 0
+    fanin_s: float = 0.0
+    submit_s: float = 0.0
+    adaptive_downshifts: int = 0
+    adaptive_upshifts: int = 0
+    adaptive_limit_sum: int = 0
+    adaptive_limit_samples: int = 0
+    queue_wait_samples: list[float] = field(default_factory=list)
+
+    def observe_limit(self, static_limit: int, adaptive_config: dict | None) -> int:
+        current_limit, decision = adaptive_inflight_limit(static_limit, adaptive_config)
+        self.adaptive_downshifts += int(decision == "down")
+        self.adaptive_upshifts += int(decision == "up")
+        self.adaptive_limit_sum += current_limit
+        self.adaptive_limit_samples += 1
+        return current_limit
+
+    def as_metrics(self, static_limit: int) -> dict[str, float | int]:
+        queue_wait_samples = self.queue_wait_samples
+        adaptive_limit_mean = (
+            self.adaptive_limit_sum / self.adaptive_limit_samples
+            if self.adaptive_limit_samples
+            else static_limit
+        )
+        return {
+            "operator_invocations": self.submit_count,
+            "max_inflight": self.max_inflight_seen,
+            "bounded_wait_s": sum(queue_wait_samples),
+            "avg_bounded_wait_s": (
+                statistics.mean(queue_wait_samples) if queue_wait_samples else 0.0
+            ),
+            "fanin_s": self.fanin_s,
+            "submit_s": self.submit_s,
+            "adaptive_downshifts": self.adaptive_downshifts,
+            "adaptive_upshifts": self.adaptive_upshifts,
+            "adaptive_limit_mean": adaptive_limit_mean,
+        }
+
+
+@dataclass(frozen=True)
+class _RemoteTaskConfig:
+    """Model invocation values that otherwise travel as a large parameter clump."""
+
+    operator: str
+    embedding_dim: int
+    model_backend: str
+    endpoint_urls: tuple[str, ...]
+    model_name: str
+    api_key: str | None
+    timeout_s: float
+    completion_max_tokens: int
+    completion_return_token_ids: bool = False
+    completion_prompt_format: str = RAW_PROMPT_FORMAT
+    completion_temperature: float | None = None
+    completion_protocol: str = COMPLETIONS_PROTOCOL
+    completion_ignore_eos: bool = False
+
+    @property
+    def uses_extended_completion_call(self) -> bool:
+        return self.model_backend != "ollama" and (
+            self.completion_return_token_ids
+            or self.completion_prompt_format != RAW_PROMPT_FORMAT
+            or self.completion_temperature is not None
+            or self.completion_protocol != COMPLETIONS_PROTOCOL
+            or self.completion_ignore_eos
+        )
+
 
 def _endpoint_topology(
     endpoint_ids: list[str],
@@ -150,50 +254,60 @@ def _shared_ready_window_limits(
     )
 
 
+def _static_scheduler_options(
+    ray_module,
+    endpoint_ids: Sequence[str],
+    max_inflight: int,
+    base_options: _SchedulerOptions,
+    shared_credit_config: Mapping[str, object] | None,
+) -> _SchedulerOptions:
+    shared_credit = _shared_credit_client(
+        ray_module,
+        list(endpoint_ids),
+        dict(shared_credit_config) if shared_credit_config is not None else None,
+    )
+    ready_request_limit, ready_work_limit, ready_payload_bytes_limit = (
+        _shared_ready_window_limits(
+            max_inflight,
+            endpoint_ids,
+            shared_credit_config,
+        )
+    )
+    config = shared_credit_config or {}
+    return _SchedulerOptions(
+        routing_config=base_options.routing_config,
+        submission_lifecycle_sink=base_options.submission_lifecycle_sink,
+        epoch_clock=base_options.epoch_clock,
+        per_endpoint_limit=base_options.per_endpoint_limit,
+        per_endpoint_work_limit=base_options.per_endpoint_work_limit,
+        shared_credit=shared_credit,
+        job_weight=config.get("job_weight", 1),
+        job_priority=config.get("job_priority", 0),
+        job_slo_target_s=config.get("job_slo_target_s"),
+        job_priority_window_s=config.get("job_priority_window_s"),
+        job_fairness_debt_cap=config.get("job_fairness_debt_cap"),
+        shared_credit_acquire_timeout_s=config.get("acquire_timeout_s"),
+        shared_ready_request_limit=ready_request_limit,
+        shared_ready_work_limit=ready_work_limit,
+        shared_ready_payload_bytes_limit=ready_payload_bytes_limit,
+    )
+
+
 def _run_static_scheduler(
     ray_module,
     envelopes: Iterable[PayloadEnvelope],
     topology: TopologySnapshot,
     submitters: dict,
     max_inflight: int,
-    routing_config: dict | None = None,
-    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
-    epoch_clock=None,
-    per_endpoint_limit: int | None = None,
-    per_endpoint_work_limit: int | None = None,
-    shared_credit=None,
-    job_weight: int = 1,
-    job_priority: int = 0,
-    job_slo_target_s: float | None = None,
-    job_priority_window_s: float | None = None,
-    job_fairness_debt_cap: float | None = None,
-    shared_credit_acquire_timeout_s: float | None = None,
-    shared_ready_request_limit: int = 1,
-    shared_ready_work_limit: int | None = None,
-    shared_ready_payload_bytes_limit: int | None = None,
+    options: _SchedulerOptions,
 ) -> tuple[list[dict], dict]:
-    return _run_scheduler(
+    return _run_scheduler_with_options(
         ray_module,
         envelopes,
         topology,
         submitters,
         StaticAdmissionController(max_inflight),
-        routing_config,
-        submission_lifecycle_sink,
-        epoch_clock,
-        per_endpoint_limit,
-        per_endpoint_work_limit,
-        shared_credit,
-        job_weight,
-        job_priority,
-        None,
-        job_slo_target_s,
-        job_priority_window_s,
-        job_fairness_debt_cap,
-        shared_credit_acquire_timeout_s,
-        shared_ready_request_limit,
-        shared_ready_work_limit,
-        shared_ready_payload_bytes_limit,
+        options,
     )
 
 
@@ -220,34 +334,71 @@ def _run_scheduler(
     shared_ready_work_limit: int | None = None,
     shared_ready_payload_bytes_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
-    routing_config = routing_config or {}
+    """Compatibility wrapper for callers using the former parameter list."""
+
+    return _run_scheduler_with_options(
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        admission,
+        _SchedulerOptions(
+            routing_config=routing_config,
+            submission_lifecycle_sink=submission_lifecycle_sink,
+            epoch_clock=epoch_clock,
+            per_endpoint_limit=per_endpoint_limit,
+            per_endpoint_work_limit=per_endpoint_work_limit,
+            shared_credit=shared_credit,
+            job_weight=job_weight,
+            job_priority=job_priority,
+            per_endpoint_admission=per_endpoint_admission,
+            job_slo_target_s=job_slo_target_s,
+            job_priority_window_s=job_priority_window_s,
+            job_fairness_debt_cap=job_fairness_debt_cap,
+            shared_credit_acquire_timeout_s=shared_credit_acquire_timeout_s,
+            shared_ready_request_limit=shared_ready_request_limit,
+            shared_ready_work_limit=shared_ready_work_limit,
+            shared_ready_payload_bytes_limit=shared_ready_payload_bytes_limit,
+        ),
+    )
+
+
+def _run_scheduler_with_options(
+    ray_module,
+    envelopes: Iterable[PayloadEnvelope],
+    topology: TopologySnapshot,
+    submitters: dict,
+    admission,
+    options: _SchedulerOptions,
+) -> tuple[list[dict], dict]:
+    routing_config = options.routing_config or {}
     scheduler = SynchronousScheduler(
         admission=admission,
         router=routing_config.get("endpoint_router", RoundRobinEndpointRouter()),
         adapter=RaySubmissionAdapter(ray_module, submitters),
-        pool_id="default",
+        pool_id=DEFAULT_POOL_ID,
         pool_router=routing_config.get("pool_router"),
-        epoch_clock=epoch_clock or time.time,
-        per_endpoint_limit=per_endpoint_limit,
-        per_endpoint_work_limit=per_endpoint_work_limit,
-        per_endpoint_admission=per_endpoint_admission,
-        shared_credit=shared_credit,
-        job_weight=job_weight,
-        job_priority=job_priority,
-        job_slo_target_s=job_slo_target_s,
-        job_priority_window_s=job_priority_window_s,
-        job_fairness_debt_cap=job_fairness_debt_cap,
-        shared_credit_acquire_timeout_s=shared_credit_acquire_timeout_s,
-        shared_ready_request_limit=shared_ready_request_limit,
-        shared_ready_work_limit=shared_ready_work_limit,
+        epoch_clock=options.epoch_clock or time.time,
+        per_endpoint_limit=options.per_endpoint_limit,
+        per_endpoint_work_limit=options.per_endpoint_work_limit,
+        per_endpoint_admission=options.per_endpoint_admission,
+        shared_credit=options.shared_credit,
+        job_weight=options.job_weight,
+        job_priority=options.job_priority,
+        job_slo_target_s=options.job_slo_target_s,
+        job_priority_window_s=options.job_priority_window_s,
+        job_fairness_debt_cap=options.job_fairness_debt_cap,
+        shared_credit_acquire_timeout_s=options.shared_credit_acquire_timeout_s,
+        shared_ready_request_limit=options.shared_ready_request_limit,
+        shared_ready_work_limit=options.shared_ready_work_limit,
         shared_ready_payload_bytes_limit=(
-            shared_ready_payload_bytes_limit
+            options.shared_ready_payload_bytes_limit
         ),
         actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
-    if submission_lifecycle_sink is not None:
-        submission_lifecycle_sink.extend(result.submission_events)
+    if options.submission_lifecycle_sink is not None:
+        options.submission_lifecycle_sink.extend(result.submission_events)
     return [completion.result for completion in result.completions], _scheduler_metrics(result)
 
 
@@ -257,21 +408,17 @@ def _run_dynamic_scheduler(
     topology: TopologySnapshot,
     submitters: dict,
     adaptive_config: dict,
-    routing_config: dict | None = None,
-    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
-    epoch_clock=None,
+    options: _SchedulerOptions,
 ) -> tuple[list[dict], dict]:
     trace_events = adaptive_config["trace_events"]
     trace_start = len(trace_events)
-    results, metrics = _run_scheduler(
+    results, metrics = _run_scheduler_with_options(
         ray_module,
         envelopes,
         topology,
         submitters,
         adaptive_config["admission_gate"],
-        routing_config,
-        submission_lifecycle_sink,
-        epoch_clock,
+        options,
     )
     new_events = trace_events[trace_start:]
     metrics["adaptive_downshifts"] = sum(
@@ -294,31 +441,27 @@ def _run_per_endpoint_dynamic_scheduler(
     topology: TopologySnapshot,
     submitters: dict,
     adaptive_config: dict,
-    routing_config: dict | None = None,
-    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
-    epoch_clock=None,
-    per_endpoint_limit: int | None = None,
+    options: _SchedulerOptions,
 ) -> tuple[list[dict], dict]:
     endpoint_gates = adaptive_config["per_endpoint_gates"]
     trace_events = adaptive_config["trace_events"]
     trace_start = len(trace_events)
     max_window = int(adaptive_config["max_window"])
     global_safety_limit = max_window * len(endpoint_gates)
-    results, metrics = _run_scheduler(
+    per_endpoint_options = _SchedulerOptions(
+        routing_config=options.routing_config,
+        submission_lifecycle_sink=options.submission_lifecycle_sink,
+        epoch_clock=options.epoch_clock,
+        per_endpoint_limit=options.per_endpoint_limit,
+        per_endpoint_admission=endpoint_gates,
+    )
+    results, metrics = _run_scheduler_with_options(
         ray_module,
         envelopes,
         topology,
         submitters,
         StaticAdmissionController(global_safety_limit),
-        routing_config,
-        submission_lifecycle_sink,
-        epoch_clock,
-        per_endpoint_limit,
-        None,
-        None,
-        1,
-        0,
-        endpoint_gates,
+        per_endpoint_options,
     )
     new_events = trace_events[trace_start:]
     metrics["adaptive_downshifts"] = sum(
@@ -333,6 +476,34 @@ def _run_per_endpoint_dynamic_scheduler(
         else statistics.mean(gate.limit for gate in endpoint_gates.values())
     )
     return results, metrics
+
+
+def _resolve_actor_pool_inputs(
+    actor_pools: Mapping[str, Sequence[object]] | None,
+    endpoint_urls: Mapping[str, str] | None,
+    actors: Sequence[object] | None,
+) -> tuple[Mapping[str, Sequence[object]], Mapping[str, str]]:
+    if actor_pools is None:
+        if actors is None:
+            raise ValueError("actor_pools must not be empty")
+        actor_pools = {
+            f"actor-{index}": [actor]
+            for index, actor in enumerate(actors)
+        }
+        endpoint_urls = {
+            endpoint_id: f"ray://actor/{index}"
+            for index, endpoint_id in enumerate(actor_pools)
+        }
+    if not actor_pools:
+        raise ValueError("actor_pools must not be empty")
+    if not endpoint_urls:
+        raise ValueError("endpoint_urls must not be empty")
+    if set(actor_pools) != set(endpoint_urls):
+        raise ValueError(
+            "actor_pools and endpoint_urls must have identical "
+            "service endpoint IDs"
+        )
+    return actor_pools, endpoint_urls
 
 
 def submit_with_backpressure(
@@ -356,26 +527,11 @@ def submit_with_backpressure(
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    if actor_pools is None:
-        if actors is None:
-            raise ValueError("actor_pools must not be empty")
-        actor_pools = {
-            f"actor-{index}": [actor]
-            for index, actor in enumerate(actors)
-        }
-        endpoint_urls = {
-            endpoint_id: f"ray://actor/{index}"
-            for index, endpoint_id in enumerate(actor_pools)
-        }
-    if not actor_pools:
-        raise ValueError("actor_pools must not be empty")
-    if not endpoint_urls:
-        raise ValueError("endpoint_urls must not be empty")
-    if set(actor_pools) != set(endpoint_urls):
-        raise ValueError(
-            "actor_pools and endpoint_urls must have identical "
-            "service endpoint IDs"
-        )
+    actor_pools, endpoint_urls = _resolve_actor_pool_inputs(
+        actor_pools,
+        endpoint_urls,
+        actors,
+    )
 
     endpoint_ids = list(actor_pools)
     state = submission_state or ActorSubmissionState(actor_pools, method_name)
@@ -442,6 +598,13 @@ def submit_with_backpressure(
             endpoint_id: submitter
             for endpoint_id, submitter in pool_submitters.items()
         }
+        scheduler_options = _SchedulerOptions(
+            routing_config=routing_config,
+            submission_lifecycle_sink=submission_lifecycle_sink,
+            epoch_clock=epoch_clock,
+            per_endpoint_limit=per_endpoint_limit,
+            per_endpoint_work_limit=per_endpoint_work_limit,
+        )
         if typed_adaptive:
             if per_endpoint_work_limit is not None:
                 raise ValueError(
@@ -456,10 +619,7 @@ def submit_with_backpressure(
                     topology,
                     submitters,
                     adaptive_config,
-                    routing_config,
-                    submission_lifecycle_sink,
-                    epoch_clock,
-                    per_endpoint_limit,
+                    scheduler_options,
                 )
             else:
                 if per_endpoint_limit is not None:
@@ -473,26 +633,15 @@ def submit_with_backpressure(
                     topology,
                     submitters,
                     adaptive_config,
-                    routing_config,
-                    submission_lifecycle_sink,
-                    epoch_clock,
+                    scheduler_options,
                 )
         else:
-            shared_credit = _shared_credit_client(
+            static_options = _static_scheduler_options(
                 ray_module,
                 endpoint_ids,
+                max_inflight,
+                scheduler_options,
                 shared_credit_config,
-            )
-            (
-                ready_request_limit,
-                ready_work_limit,
-                ready_payload_bytes_limit,
-            ) = (
-                _shared_ready_window_limits(
-                    max_inflight,
-                    endpoint_ids,
-                    shared_credit_config,
-                )
             )
             results, metrics = _run_static_scheduler(
                 ray_module,
@@ -500,45 +649,7 @@ def submit_with_backpressure(
                 topology,
                 submitters,
                 max_inflight,
-                routing_config,
-                submission_lifecycle_sink,
-                epoch_clock,
-                per_endpoint_limit,
-                per_endpoint_work_limit,
-                shared_credit,
-                (
-                    shared_credit_config.get("job_weight", 1)
-                    if shared_credit_config
-                    else 1
-                ),
-                (
-                    shared_credit_config.get("job_priority", 0)
-                    if shared_credit_config
-                    else 0
-                ),
-                (
-                    shared_credit_config.get("job_slo_target_s")
-                    if shared_credit_config
-                    else None
-                ),
-                (
-                    shared_credit_config.get("job_priority_window_s")
-                    if shared_credit_config
-                    else None
-                ),
-                (
-                    shared_credit_config.get("job_fairness_debt_cap")
-                    if shared_credit_config
-                    else None
-                ),
-                (
-                    shared_credit_config.get("acquire_timeout_s")
-                    if shared_credit_config
-                    else None
-                ),
-                ready_request_limit,
-                ready_work_limit,
-                ready_payload_bytes_limit,
+                static_options,
             )
     metrics.update(
         {
@@ -567,80 +678,166 @@ def _submit_with_backpressure_legacy_adaptive(
     max_inflight: int,
     adaptive_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    pending = []
-    results = []
-    submit_count = 0
-    max_seen_inflight = 0
-    queue_wait_samples = []
-    fanin_s = 0.0
-    submit_s = 0.0
-    adaptive_downshifts = 0
-    adaptive_upshifts = 0
-    adaptive_limit_sum = 0
-    adaptive_limit_samples = 0
+    def record_completion(handles: Sequence[object], *, failed: bool) -> None:
+        if not hasattr(endpoint_submitter, "complete"):
+            return
+        for handle in handles:
+            endpoint_submitter.complete(handle, failed=failed)
+
+    return _run_legacy_adaptive_batches(
+        ray_module,
+        batches,
+        max_inflight,
+        adaptive_config,
+        submit_batch=lambda batch, _index: endpoint_submitter(batch),
+        completion_recorder=record_completion,
+    )
+
+
+def _collect_legacy_results(
+    ray_module,
+    ready: Sequence[object],
+    results: list[dict],
+    stats: _LegacyAdaptiveStats,
+    completion_recorder: Callable[..., None] | None,
+) -> None:
+    fanin_timer = StageTimer.start("ray_get")
+    try:
+        results.extend(ray_module.get(ready))
+    except Exception:
+        if completion_recorder is not None:
+            completion_recorder(ready, failed=True)
+        raise
+    else:
+        if completion_recorder is not None:
+            completion_recorder(ready, failed=False)
+    stats.fanin_s += fanin_timer.stop()
+
+
+def _run_legacy_adaptive_batches(
+    ray_module,
+    batches: Iterable[pa.RecordBatch | pa.Table],
+    max_inflight: int,
+    adaptive_config: dict | None,
+    *,
+    submit_batch: Callable[[object, int], object],
+    completion_recorder: Callable[..., None] | None = None,
+) -> tuple[list[dict], dict]:
+    """Run the retained polling controller without duplicating fan-in logic."""
+
+    pending: list[object] = []
+    results: list[dict] = []
+    stats = _LegacyAdaptiveStats()
 
     for batch in batches:
-        current_limit, decision = adaptive_inflight_limit(max_inflight, adaptive_config)
-        adaptive_downshifts += 1 if decision == "down" else 0
-        adaptive_upshifts += 1 if decision == "up" else 0
-        adaptive_limit_sum += current_limit
-        adaptive_limit_samples += 1
+        current_limit = stats.observe_limit(max_inflight, adaptive_config)
         while len(pending) >= current_limit:
             wait_timer = StageTimer.start("bounded_wait")
             ready, pending = ray_module.wait(pending, num_returns=1)
-            queue_wait_samples.append(wait_timer.stop())
-            fanin_timer = StageTimer.start("ray_get")
-            try:
-                results.extend(ray_module.get(ready))
-            except Exception:
-                for handle in ready:
-                    if hasattr(endpoint_submitter, "complete"):
-                        endpoint_submitter.complete(handle, failed=True)
-                raise
-            else:
-                for handle in ready:
-                    if hasattr(endpoint_submitter, "complete"):
-                        endpoint_submitter.complete(handle, failed=False)
-            fanin_s += fanin_timer.stop()
-            current_limit, decision = adaptive_inflight_limit(max_inflight, adaptive_config)
-            adaptive_downshifts += 1 if decision == "down" else 0
-            adaptive_upshifts += 1 if decision == "up" else 0
-            adaptive_limit_sum += current_limit
-            adaptive_limit_samples += 1
+            stats.queue_wait_samples.append(wait_timer.stop())
+            _collect_legacy_results(
+                ray_module,
+                ready,
+                results,
+                stats,
+                completion_recorder,
+            )
+            current_limit = stats.observe_limit(max_inflight, adaptive_config)
+
         submit_timer = StageTimer.start("submit")
-        ref = endpoint_submitter(batch)
-        submit_s += submit_timer.stop()
-        pending.append(ref)
-        submit_count += 1
-        max_seen_inflight = max(max_seen_inflight, len(pending))
+        pending.append(submit_batch(batch, stats.submit_count))
+        stats.submit_s += submit_timer.stop()
+        stats.submit_count += 1
+        stats.max_inflight_seen = max(stats.max_inflight_seen, len(pending))
 
     while pending:
         ready, pending = ray_module.wait(pending, num_returns=1)
-        fanin_timer = StageTimer.start("ray_get")
-        try:
-            results.extend(ray_module.get(ready))
-        except Exception:
-            for handle in ready:
-                if hasattr(endpoint_submitter, "complete"):
-                    endpoint_submitter.complete(handle, failed=True)
-            raise
-        else:
-            for handle in ready:
-                if hasattr(endpoint_submitter, "complete"):
-                    endpoint_submitter.complete(handle, failed=False)
-        fanin_s += fanin_timer.stop()
+        _collect_legacy_results(
+            ray_module,
+            ready,
+            results,
+            stats,
+            completion_recorder,
+        )
 
-    return results, {
-        "operator_invocations": submit_count,
-        "max_inflight": max_seen_inflight,
-        "bounded_wait_s": sum(queue_wait_samples),
-        "avg_bounded_wait_s": statistics.mean(queue_wait_samples) if queue_wait_samples else 0.0,
-        "fanin_s": fanin_s,
-        "submit_s": submit_s,
-        "adaptive_downshifts": adaptive_downshifts,
-        "adaptive_upshifts": adaptive_upshifts,
-        "adaptive_limit_mean": adaptive_limit_sum / adaptive_limit_samples if adaptive_limit_samples else max_inflight,
+    return results, stats.as_metrics(max_inflight)
+
+
+def _submit_remote_task(
+    remote_embed,
+    payload: object,
+    config: _RemoteTaskConfig,
+    endpoint_url: str | None = None,
+):
+    if config.model_backend == "fake":
+        if config.operator == "ai_embed":
+            return remote_embed.remote(payload, config.embedding_dim)
+        return remote_embed.remote(payload, config.completion_max_tokens)
+
+    if config.operator == "ai_embed":
+        return remote_embed.remote(
+            payload,
+            endpoint_url,
+            config.model_name,
+            config.api_key,
+            config.timeout_s,
+        )
+    if config.uses_extended_completion_call:
+        return remote_embed.remote(
+            payload,
+            endpoint_url,
+            config.model_name,
+            config.api_key,
+            config.timeout_s,
+            config.completion_max_tokens,
+            config.completion_return_token_ids,
+            config.completion_prompt_format,
+            config.completion_temperature,
+            config.completion_protocol,
+            config.completion_ignore_eos,
+        )
+    return remote_embed.remote(
+        payload,
+        endpoint_url,
+        config.model_name,
+        config.api_key,
+        config.timeout_s,
+        config.completion_max_tokens,
+    )
+
+
+def _task_submitters(
+    remote_embed,
+    config: _RemoteTaskConfig,
+) -> tuple[list[str], list[str], dict[str, Callable[[object], object]]]:
+    if config.model_backend == "fake":
+        return (
+            [FAKE_TASK_ENDPOINT_ID],
+            ["ray://task/fake"],
+            {
+                FAKE_TASK_ENDPOINT_ID: lambda payload: _submit_remote_task(
+                    remote_embed,
+                    payload,
+                    config,
+                )
+            },
+        )
+    if not config.endpoint_urls:
+        raise ValueError("endpoint_urls must not be empty for an HTTP model backend")
+
+    endpoint_ids = [f"task-{index}" for index in range(len(config.endpoint_urls))]
+    submitters = {
+        endpoint_id: (
+            lambda payload, url=endpoint_url: _submit_remote_task(
+                remote_embed,
+                payload,
+                config,
+                url,
+            )
+        )
+        for endpoint_id, endpoint_url in zip(endpoint_ids, config.endpoint_urls)
     }
+    return endpoint_ids, list(config.endpoint_urls), submitters
 
 
 def submit_ray_tasks(
@@ -663,15 +860,30 @@ def submit_ray_tasks(
     epoch_clock=None,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
     completion_return_token_ids: bool = False,
-    completion_prompt_format: str = "raw",
+    completion_prompt_format: str = RAW_PROMPT_FORMAT,
     completion_temperature: float | None = None,
-    completion_protocol: str = "completions",
+    completion_protocol: str = COMPLETIONS_PROTOCOL,
     completion_ignore_eos: bool = False,
     completion_prompt_token_overhead: int = 0,
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
+    task_config = _RemoteTaskConfig(
+        operator=operator,
+        embedding_dim=embedding_dim,
+        model_backend=model_backend,
+        endpoint_urls=tuple(endpoint_urls),
+        model_name=model_name,
+        api_key=api_key,
+        timeout_s=timeout_s,
+        completion_max_tokens=completion_max_tokens,
+        completion_return_token_ids=completion_return_token_ids,
+        completion_prompt_format=completion_prompt_format,
+        completion_temperature=completion_temperature,
+        completion_protocol=completion_protocol,
+        completion_ignore_eos=completion_ignore_eos,
+    )
     typed_adaptive = adaptive_config is not None and (
         "admission_gate" in adaptive_config
         or "per_endpoint_gates" in adaptive_config
@@ -689,20 +901,8 @@ def submit_ray_tasks(
             remote_embed,
             replay_batches,
             max_inflight,
-            operator,
-            embedding_dim,
-            model_backend,
-            endpoint_urls,
-            model_name,
-            api_key,
-            timeout_s,
-            completion_max_tokens,
+            task_config,
             adaptive_config,
-            completion_return_token_ids,
-            completion_prompt_format,
-            completion_temperature,
-            completion_protocol,
-            completion_ignore_eos,
         )
 
     envelopes = (
@@ -721,66 +921,10 @@ def submit_ray_tasks(
             ),
         )
     )
-    if model_backend == "fake":
-        endpoint_ids = ["task-0"]
-        endpoint_urls_for_topology = ["ray://task/fake"]
-        if operator == "ai_embed":
-            submitters = {
-                "task-0": lambda payload: remote_embed.remote(payload, embedding_dim)
-            }
-        else:
-            submitters = {
-                "task-0": lambda payload: remote_embed.remote(payload, completion_max_tokens)
-            }
-    else:
-        if not endpoint_urls:
-            raise ValueError("endpoint_urls must not be empty for an HTTP model backend")
-        endpoint_ids = [f"task-{index}" for index in range(len(endpoint_urls))]
-        endpoint_urls_for_topology = endpoint_urls
-        submitters = {}
-        for endpoint_id, endpoint_url in zip(endpoint_ids, endpoint_urls):
-            if operator == "ai_embed":
-                submitters[endpoint_id] = (
-                    lambda payload, url=endpoint_url: remote_embed.remote(
-                        payload, url, model_name, api_key, timeout_s
-                    )
-                )
-            elif (
-                model_backend != "ollama"
-                and (
-                    completion_return_token_ids
-                    or completion_prompt_format != "raw"
-                    or completion_temperature is not None
-                    or completion_protocol != "completions"
-                    or completion_ignore_eos
-                )
-            ):
-                submitters[endpoint_id] = (
-                    lambda payload, url=endpoint_url: remote_embed.remote(
-                        payload,
-                        url,
-                        model_name,
-                        api_key,
-                        timeout_s,
-                        completion_max_tokens,
-                        completion_return_token_ids,
-                        completion_prompt_format,
-                        completion_temperature,
-                        completion_protocol,
-                        completion_ignore_eos,
-                    )
-                )
-            else:
-                submitters[endpoint_id] = (
-                    lambda payload, url=endpoint_url: remote_embed.remote(
-                        payload,
-                        url,
-                        model_name,
-                        api_key,
-                        timeout_s,
-                        completion_max_tokens,
-                    )
-                )
+    endpoint_ids, endpoint_urls_for_topology, submitters = _task_submitters(
+        remote_embed,
+        task_config,
+    )
     topology = _endpoint_topology(
         endpoint_ids,
         endpoint_urls_for_topology,
@@ -790,6 +934,13 @@ def submit_ray_tasks(
         gpu_ids=(
             routing_config.get("gpu_ids") if routing_config is not None else None
         ),
+    )
+    scheduler_options = _SchedulerOptions(
+        routing_config=routing_config,
+        submission_lifecycle_sink=submission_lifecycle_sink,
+        epoch_clock=epoch_clock,
+        per_endpoint_limit=per_endpoint_limit,
+        per_endpoint_work_limit=per_endpoint_work_limit,
     )
     if typed_adaptive:
         if per_endpoint_work_limit is not None:
@@ -804,10 +955,7 @@ def submit_ray_tasks(
                 topology,
                 submitters,
                 adaptive_config,
-                routing_config,
-                submission_lifecycle_sink,
-                epoch_clock,
-                per_endpoint_limit,
+                scheduler_options,
             )
         if per_endpoint_limit is not None:
             raise ValueError(
@@ -820,22 +968,13 @@ def submit_ray_tasks(
             topology,
             submitters,
             adaptive_config,
-            routing_config,
-            submission_lifecycle_sink,
-            epoch_clock,
+            scheduler_options,
         )
-    shared_credit = _shared_credit_client(
+    static_options = _static_scheduler_options(
         ray_module,
         endpoint_ids,
-        shared_credit_config,
-    )
-    (
-        ready_request_limit,
-        ready_work_limit,
-        ready_payload_bytes_limit,
-    ) = _shared_ready_window_limits(
         max_inflight,
-        endpoint_ids,
+        scheduler_options,
         shared_credit_config,
     )
     return _run_static_scheduler(
@@ -844,45 +983,7 @@ def submit_ray_tasks(
         topology,
         submitters,
         max_inflight,
-        routing_config,
-        submission_lifecycle_sink,
-        epoch_clock,
-        per_endpoint_limit,
-        per_endpoint_work_limit,
-        shared_credit,
-        (
-            shared_credit_config.get("job_weight", 1)
-            if shared_credit_config
-            else 1
-        ),
-        (
-            shared_credit_config.get("job_priority", 0)
-            if shared_credit_config
-            else 0
-        ),
-        (
-            shared_credit_config.get("job_slo_target_s")
-            if shared_credit_config
-            else None
-        ),
-        (
-            shared_credit_config.get("job_priority_window_s")
-            if shared_credit_config
-            else None
-        ),
-        (
-            shared_credit_config.get("job_fairness_debt_cap")
-            if shared_credit_config
-            else None
-        ),
-        (
-            shared_credit_config.get("acquire_timeout_s")
-            if shared_credit_config
-            else None
-        ),
-        ready_request_limit,
-        ready_work_limit,
-        ready_payload_bytes_limit,
+        static_options,
     )
 
 
@@ -891,113 +992,29 @@ def _submit_ray_tasks_legacy_adaptive(
     remote_embed,
     batches: Iterable[pa.RecordBatch | pa.Table],
     max_inflight: int,
-    operator: str,
-    embedding_dim: int,
-    model_backend: str,
-    endpoint_urls: list[str],
-    model_name: str,
-    api_key: str | None,
-    timeout_s: float,
-    completion_max_tokens: int,
+    task_config: _RemoteTaskConfig,
     adaptive_config: dict | None = None,
-    completion_return_token_ids: bool = False,
-    completion_prompt_format: str = "raw",
-    completion_temperature: float | None = None,
-    completion_protocol: str = "completions",
-    completion_ignore_eos: bool = False,
 ) -> tuple[list[dict], dict]:
-    pending = []
-    results = []
-    submit_count = 0
-    max_seen_inflight = 0
-    queue_wait_samples = []
-    fanin_s = 0.0
-    submit_s = 0.0
-    adaptive_downshifts = 0
-    adaptive_upshifts = 0
-    adaptive_limit_sum = 0
-    adaptive_limit_samples = 0
+    def submit_batch(batch: object, submit_index: int):
+        endpoint_url = None
+        if task_config.model_backend != "fake":
+            endpoint_url = task_config.endpoint_urls[
+                submit_index % len(task_config.endpoint_urls)
+            ]
+        return _submit_remote_task(
+            remote_embed,
+            batch,
+            task_config,
+            endpoint_url,
+        )
 
-    for batch in batches:
-        current_limit, decision = adaptive_inflight_limit(max_inflight, adaptive_config)
-        adaptive_downshifts += 1 if decision == "down" else 0
-        adaptive_upshifts += 1 if decision == "up" else 0
-        adaptive_limit_sum += current_limit
-        adaptive_limit_samples += 1
-        while len(pending) >= current_limit:
-            wait_timer = StageTimer.start("bounded_wait")
-            ready, pending = ray_module.wait(pending, num_returns=1)
-            queue_wait_samples.append(wait_timer.stop())
-            fanin_timer = StageTimer.start("ray_get")
-            results.extend(ray_module.get(ready))
-            fanin_s += fanin_timer.stop()
-            current_limit, decision = adaptive_inflight_limit(max_inflight, adaptive_config)
-            adaptive_downshifts += 1 if decision == "down" else 0
-            adaptive_upshifts += 1 if decision == "up" else 0
-            adaptive_limit_sum += current_limit
-            adaptive_limit_samples += 1
-        if model_backend == "fake":
-            submit_timer = StageTimer.start("submit")
-            if operator == "ai_embed":
-                pending.append(remote_embed.remote(batch, embedding_dim))
-            else:
-                pending.append(remote_embed.remote(batch, completion_max_tokens))
-            submit_s += submit_timer.stop()
-        else:
-            endpoint_url = endpoint_urls[submit_count % len(endpoint_urls)]
-            submit_timer = StageTimer.start("submit")
-            if operator == "ai_embed":
-                pending.append(remote_embed.remote(batch, endpoint_url, model_name, api_key, timeout_s))
-            elif (
-                model_backend != "ollama"
-                and (
-                    completion_return_token_ids
-                    or completion_prompt_format != "raw"
-                    or completion_temperature is not None
-                    or completion_protocol != "completions"
-                    or completion_ignore_eos
-                )
-            ):
-                pending.append(
-                    remote_embed.remote(
-                        batch,
-                        endpoint_url,
-                        model_name,
-                        api_key,
-                        timeout_s,
-                        completion_max_tokens,
-                        completion_return_token_ids,
-                        completion_prompt_format,
-                        completion_temperature,
-                        completion_protocol,
-                        completion_ignore_eos,
-                    )
-                )
-            else:
-                pending.append(
-                    remote_embed.remote(batch, endpoint_url, model_name, api_key, timeout_s, completion_max_tokens)
-                )
-            submit_s += submit_timer.stop()
-        submit_count += 1
-        max_seen_inflight = max(max_seen_inflight, len(pending))
-
-    while pending:
-        ready, pending = ray_module.wait(pending, num_returns=1)
-        fanin_timer = StageTimer.start("ray_get")
-        results.extend(ray_module.get(ready))
-        fanin_s += fanin_timer.stop()
-
-    return results, {
-        "operator_invocations": submit_count,
-        "max_inflight": max_seen_inflight,
-        "bounded_wait_s": sum(queue_wait_samples),
-        "avg_bounded_wait_s": statistics.mean(queue_wait_samples) if queue_wait_samples else 0.0,
-        "fanin_s": fanin_s,
-        "submit_s": submit_s,
-        "adaptive_downshifts": adaptive_downshifts,
-        "adaptive_upshifts": adaptive_upshifts,
-        "adaptive_limit_mean": adaptive_limit_sum / adaptive_limit_samples if adaptive_limit_samples else max_inflight,
-    }
+    return _run_legacy_adaptive_batches(
+        ray_module,
+        batches,
+        max_inflight,
+        adaptive_config,
+        submit_batch=submit_batch,
+    )
 
 
 def adaptive_inflight_limit(static_limit: int, adaptive_config: dict | None) -> tuple[int, str]:
@@ -1006,7 +1023,10 @@ def adaptive_inflight_limit(static_limit: int, adaptive_config: dict | None) -> 
     metrics_url = adaptive_config.get("metrics_url")
     if not metrics_url:
         return static_limit, "static"
-    metrics = scrape_prometheus_metrics(metrics_url, timeout_s=1.0)
+    metrics = scrape_prometheus_metrics(
+        metrics_url,
+        timeout_s=DEFAULT_METRICS_TIMEOUT_S,
+    )
     if not metrics:
         return static_limit, "static"
     min_limit = max(1, int(adaptive_config["min_inflight"]))

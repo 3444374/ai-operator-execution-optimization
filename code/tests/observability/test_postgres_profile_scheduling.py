@@ -74,7 +74,7 @@ class _RecordingRay:
         return _RecordingRemoteDefinition()
 
 
-class SchedulingProfileHelperTests(unittest.TestCase):
+class ProfilerConfigurationTests(unittest.TestCase):
     def test_committed_dual_gpu_scenarios_pass_profiler_dry_validation(
         self,
     ) -> None:
@@ -1164,6 +1164,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 connect.assert_not_called()
                 require_ray.assert_not_called()
 
+class ProfilerEnvelopeTests(unittest.TestCase):
     def test_batch_envelopes_preserve_arrow_payload_and_compute_cost(self) -> None:
         batch = pa.table(
             {
@@ -1501,6 +1502,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             50.0,
         )
 
+class ProfilerAdaptiveControlTests(unittest.TestCase):
     def test_build_adaptive_config_preserves_controller_across_submissions(self) -> None:
         traces = []
         config = profile._build_adaptive_config(
@@ -1753,6 +1755,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         provider.close.assert_called_once_with()
         connection.close.assert_called_once_with()
 
+class ProfilerFailureHandlingTests(unittest.TestCase):
     def test_fail_job_rolls_back_before_marking_failed(self) -> None:
         connection = MagicMock()
         cursor = connection.cursor.return_value.__enter__.return_value
@@ -2055,6 +2058,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 long_request_tokens=1024,
             )
 
+class ProfilerReplayTests(unittest.TestCase):
     def test_row_arrivals_preserve_complete_arrow_rows_and_metadata(self) -> None:
         table = pa.table(
             {
@@ -2792,6 +2796,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
                 self.assertEqual(len(envelopes), 1)
 
+class ProfilerDryRunContractTests(unittest.TestCase):
     def test_dry_run_records_default_and_explicit_replay_configuration(self) -> None:
         default_args = profile.parse_args(["--dry-run"])
         default_row = profile.run_once(default_args, "formal", 1)
@@ -3840,6 +3845,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             ["job:batch:0"],
         )
 
+class ProfilerTraceWriterTests(unittest.TestCase):
     def test_flush_trace_writer_emits_all_fields_and_propagates_errors(self) -> None:
         events = [
             FlushTraceEvent(

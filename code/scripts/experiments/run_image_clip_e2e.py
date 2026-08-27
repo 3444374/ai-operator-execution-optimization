@@ -28,6 +28,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import NamedTuple
 
 
 CODE_ROOT = next(
@@ -558,10 +559,30 @@ def git_commit() -> str:
     return completed.stdout.strip() if completed.returncode == 0 else "unknown"
 
 
-def main() -> None:
-    args = parse_args()
-    embedding_target: Path | None = None
-    embedding_sidecar: Path | None = None
+class _ImageRunSetup(NamedTuple):
+    processor: str
+    provenance: object
+    embedding_target: Path | None
+    embedding_sidecar: Path | None
+    formal_ids: frozenset[str]
+    database_metadata: dict[str, object]
+    source_doc_ids_sha256: str
+    source_manifest_match: bool
+    hse_limits: StageBrokerLimits
+    warmup_count: int
+    warmup_ids: frozenset[str]
+    model_workers: int
+    gpus_per_model_worker: float
+    source_shards: int
+    source_cpu_threads: int
+    cpu_budget: object
+    ray_cluster_num_cpus: int
+    worker_runtime_env: dict[str, object]
+
+
+def _validate_image_run_args(
+    args: argparse.Namespace,
+) -> tuple[str, Path | None, Path | None, object]:
     provenance = image_arm_provenance(args.arm)
     try:
         require_formal_arm_allowed(
@@ -571,7 +592,6 @@ def main() -> None:
         )
     except ValueError as error:
         raise SystemExit(str(error)) from error
-    processor = args.processor or args.model
     positive = (
         args.limit,
         args.dataset_passes,
@@ -618,6 +638,8 @@ def main() -> None:
         raise SystemExit(
             "--formal-ready-file and --formal-start-barrier-file must be set together"
         )
+    embedding_target = None
+    embedding_sidecar = None
     if args.save_embeddings:
         if args.arm not in ("daft_builtin_embed", "project_ray"):
             raise SystemExit(
@@ -640,12 +662,17 @@ def main() -> None:
                 "ERROR: --save-embeddings target or sidecar already exists; "
                 f"refuse overwrite: {embedding_target}, {embedding_sidecar}"
             )
+    return args.processor or args.model, embedding_target, embedding_sidecar, provenance
 
-    import daft
-    import ray
-    import torch
-    import transformers
 
+def _load_image_run_setup(
+    args: argparse.Namespace,
+    *,
+    processor: str,
+    embedding_target: Path | None,
+    embedding_sidecar: Path | None,
+    provenance: object,
+) -> _ImageRunSetup:
     formal_ids, database_metadata = read_database_metadata(
         args.pg_dsn,
         workload_name=args.workload_name,
@@ -664,38 +691,35 @@ def main() -> None:
             == args.expected_input_encoded_bytes
         )
         if not source_manifest_match:
-            raise ValueError("PostgreSQL image source no longer matches the immutable manifest")
-    hse_encoded_bytes_limit = args.hse_encoded_bytes_limit or max(
-        1,
-        int(database_metadata["max_encoded_bytes"])
-        * args.batch_size
-        * args.max_active_batches
-        * 2,
-    )
-    hse_ready_bytes_limit = args.hse_ready_bytes_limit or (
-        args.batch_size
-        * args.max_active_batches
-        * 3
-        * args.input_size
-        * args.input_size
-        * 4
-    )
-    hse_ready_work_limit = args.hse_ready_work_limit or (
-        args.batch_size
-        * args.max_active_batches
-        * args.input_size
-        * args.input_size
-    )
-    hse_prepare_inflight_limit = (
-        args.hse_prepare_inflight_limit or args.cpu_workers
-    )
-    hse_model_inflight_limit = args.hse_model_inflight_limit or args.gpu_workers
+            raise ValueError(
+                "PostgreSQL image source no longer matches the immutable manifest"
+            )
     hse_limits = StageBrokerLimits(
-        encoded_bytes=hse_encoded_bytes_limit,
-        ready_bytes=hse_ready_bytes_limit,
-        ready_work=hse_ready_work_limit,
-        prepare_inflight=hse_prepare_inflight_limit,
-        model_inflight=hse_model_inflight_limit,
+        encoded_bytes=args.hse_encoded_bytes_limit or max(
+            1,
+            int(database_metadata["max_encoded_bytes"])
+            * args.batch_size
+            * args.max_active_batches
+            * 2,
+        ),
+        ready_bytes=args.hse_ready_bytes_limit or (
+            args.batch_size
+            * args.max_active_batches
+            * 3
+            * args.input_size
+            * args.input_size
+            * 4
+        ),
+        ready_work=args.hse_ready_work_limit or (
+            args.batch_size
+            * args.max_active_batches
+            * args.input_size
+            * args.input_size
+        ),
+        prepare_inflight=(
+            args.hse_prepare_inflight_limit or args.cpu_workers
+        ),
+        model_inflight=args.hse_model_inflight_limit or args.gpu_workers,
     )
     warmup_count = min(args.warmup_rows, args.limit)
     warmup_ids, _ = read_database_metadata(
@@ -704,15 +728,13 @@ def main() -> None:
         limit=warmup_count,
         offset=args.offset,
     )
-
-    worker_pool = None
-    embedder = None
-    preprocessor = None
     if args.arm in ("daft_native", "daft_ray", "daft_staged"):
         model_workers = args.daft_model_workers or args.gpu_workers
         gpus_per_model_worker = args.gpu_workers / model_workers
         if gpus_per_model_worker > 1:
-            raise SystemExit("Daft model workers must be at least the physical GPU count")
+            raise SystemExit(
+                "Daft model workers must be at least the physical GPU count"
+            )
     else:
         model_workers = args.gpu_workers
         gpus_per_model_worker = 1.0
@@ -729,94 +751,144 @@ def main() -> None:
         )
     except ValueError as error:
         raise SystemExit(str(error)) from error
-    ray_cluster_num_cpus = cpu_budget.cluster_slots
-    worker_runtime_env = ray_runtime_env(CODE_ROOT)
-    def init_ray() -> None:
-        if args.ray_address:
-            ray.init(
-                address=args.ray_address,
+    return _ImageRunSetup(
+        processor=processor,
+        provenance=provenance,
+        embedding_target=embedding_target,
+        embedding_sidecar=embedding_sidecar,
+        formal_ids=formal_ids,
+        database_metadata=database_metadata,
+        source_doc_ids_sha256=source_doc_ids_sha256,
+        source_manifest_match=source_manifest_match,
+        hse_limits=hse_limits,
+        warmup_count=warmup_count,
+        warmup_ids=warmup_ids,
+        model_workers=model_workers,
+        gpus_per_model_worker=gpus_per_model_worker,
+        source_shards=source_shards,
+        source_cpu_threads=source_cpu_threads,
+        cpu_budget=cpu_budget,
+        ray_cluster_num_cpus=cpu_budget.cluster_slots,
+        worker_runtime_env=ray_runtime_env(CODE_ROOT),
+    )
+
+
+class _ImageExecution:
+    """Own one arm's framework setup and warmup/formal worker lifecycle."""
+
+    def __init__(self, args, setup: _ImageRunSetup, *, daft_module, ray_module):
+        self.args = args
+        self.setup = setup
+        self.daft = daft_module
+        self.ray = ray_module
+        self.worker_pool = None
+        self.embedder = None
+        self.preprocessor = None
+        self._initialize_arm()
+
+    def _init_ray(self) -> None:
+        if self.args.ray_address:
+            self.ray.init(
+                address=self.args.ray_address,
                 include_dashboard=False,
-                runtime_env=worker_runtime_env,
+                runtime_env=self.setup.worker_runtime_env,
             )
         else:
-            ray.init(
-                num_cpus=ray_cluster_num_cpus,
-                num_gpus=args.gpu_workers,
+            self.ray.init(
+                num_cpus=self.setup.ray_cluster_num_cpus,
+                num_gpus=self.args.gpu_workers,
                 include_dashboard=False,
-                runtime_env=worker_runtime_env,
+                runtime_env=self.setup.worker_runtime_env,
             )
 
-    if args.arm == "daft_builtin_embed":
-        init_ray()
-        daft.set_runner_ray(noop_if_initialized=True)
-    elif args.arm == "daft_native":
-        daft.set_runner_native(num_threads=source_cpu_threads)
-        embedder = build_daft_clip_embedder(
-            model_revision=args.model,
-            processor_revision=processor,
-            batch_size=args.batch_size,
-            model_workers=model_workers,
-            gpus_per_worker=gpus_per_model_worker,
-            dtype=args.dtype,
-            embedding_dimension=args.embedding_dimension,
-            torch_intraop_threads=args.torch_intraop_threads,
-            torch_interop_threads=args.torch_interop_threads,
-        )
-    elif args.arm == "daft_ray":
-        init_ray()
-        daft.set_runner_ray(noop_if_initialized=True)
-        embedder = build_daft_clip_embedder(
-            model_revision=args.model,
-            processor_revision=processor,
-            batch_size=args.batch_size,
-            model_workers=model_workers,
-            gpus_per_worker=gpus_per_model_worker,
-            dtype=args.dtype,
-            embedding_dimension=args.embedding_dimension,
-            torch_intraop_threads=args.torch_intraop_threads,
-            torch_interop_threads=args.torch_interop_threads,
-        )
-    elif args.arm == "daft_staged":
-        init_ray()
-        daft.set_runner_ray(noop_if_initialized=True)
-        preprocessor, embedder = build_daft_staged_clip_pipeline(
-            model_revision=args.model,
-            processor_revision=processor,
-            batch_size=args.batch_size,
-            cpu_workers=args.cpu_workers,
-            model_workers=model_workers,
-            gpus_per_worker=gpus_per_model_worker,
-            dtype=args.dtype,
-            embedding_dimension=args.embedding_dimension,
-            torch_intraop_threads=args.torch_intraop_threads,
-            torch_interop_threads=args.torch_interop_threads,
-        )
-    elif args.arm == "ray_data_staged":
-        # Ray Data keeps SQL readers and both callable actor pools live in one
-        # streaming graph.  In multi-job mode the external cluster, rather than
-        # this adapter, owns the common resource capacity.
-        init_ray()
-    else:
-        init_ray()
-        daft.set_runner_native(num_threads=source_cpu_threads)
-        worker_pool = build_project_ray_worker_pool(
-            model_revision=args.model,
-            processor_revision=processor,
-            cpu_workers=args.cpu_workers,
-            gpu_workers=args.gpu_workers,
-            dtype=args.dtype,
-            detailed_stage_timing=args.detailed_stage_timing,
-            torch_intraop_threads=args.torch_intraop_threads,
-            torch_interop_threads=args.torch_interop_threads,
+    def _build_project_workers(self):
+        return build_project_ray_worker_pool(
+            model_revision=self.args.model,
+            processor_revision=self.setup.processor,
+            cpu_workers=self.args.cpu_workers,
+            gpu_workers=self.args.gpu_workers,
+            dtype=self.args.dtype,
+            detailed_stage_timing=self.args.detailed_stage_timing,
+            torch_intraop_threads=self.args.torch_intraop_threads,
+            torch_interop_threads=self.args.torch_interop_threads,
         )
 
+    def _initialize_arm(self) -> None:
+        args = self.args
+        setup = self.setup
+        if args.arm == "daft_builtin_embed":
+            self._init_ray()
+            self.daft.set_runner_ray(noop_if_initialized=True)
+        elif args.arm == "daft_native":
+            self.daft.set_runner_native(num_threads=setup.source_cpu_threads)
+            self.embedder = build_daft_clip_embedder(
+                model_revision=args.model,
+                processor_revision=setup.processor,
+                batch_size=args.batch_size,
+                model_workers=setup.model_workers,
+                gpus_per_worker=setup.gpus_per_model_worker,
+                dtype=args.dtype,
+                embedding_dimension=args.embedding_dimension,
+                torch_intraop_threads=args.torch_intraop_threads,
+                torch_interop_threads=args.torch_interop_threads,
+            )
+        elif args.arm == "daft_ray":
+            self._init_ray()
+            self.daft.set_runner_ray(noop_if_initialized=True)
+            self.embedder = build_daft_clip_embedder(
+                model_revision=args.model,
+                processor_revision=setup.processor,
+                batch_size=args.batch_size,
+                model_workers=setup.model_workers,
+                gpus_per_worker=setup.gpus_per_model_worker,
+                dtype=args.dtype,
+                embedding_dimension=args.embedding_dimension,
+                torch_intraop_threads=args.torch_intraop_threads,
+                torch_interop_threads=args.torch_interop_threads,
+            )
+        elif args.arm == "daft_staged":
+            self._init_ray()
+            self.daft.set_runner_ray(noop_if_initialized=True)
+            self.preprocessor, self.embedder = build_daft_staged_clip_pipeline(
+                model_revision=args.model,
+                processor_revision=setup.processor,
+                batch_size=args.batch_size,
+                cpu_workers=args.cpu_workers,
+                model_workers=setup.model_workers,
+                gpus_per_worker=setup.gpus_per_model_worker,
+                dtype=args.dtype,
+                embedding_dimension=args.embedding_dimension,
+                torch_intraop_threads=args.torch_intraop_threads,
+                torch_interop_threads=args.torch_interop_threads,
+            )
+        elif args.arm == "ray_data_staged":
+            self._init_ray()
+        else:
+            self._init_ray()
+            self.daft.set_runner_native(num_threads=setup.source_cpu_threads)
+            self.worker_pool = self._build_project_workers()
+
+    def stop_project_workers(self) -> None:
+        if self.worker_pool is not None:
+            stop_project_ray_worker_pool(self.worker_pool)
+
+    def start_formal_workers(self) -> float:
+        if self.worker_pool is None:
+            return 0.0
+        started = time.perf_counter()
+        self.worker_pool = self._build_project_workers()
+        return time.perf_counter() - started
+
     def execute(
+        self,
         limit: int,
         expected_ids: frozenset[str],
         *,
         dataset_passes: int = 1,
         embedding_capture: EmbeddingCapture | None = None,
     ) -> ExecutionResult:
+        args = self.args
+        setup = self.setup
         if args.arm == "ray_data_staged":
             dataset = build_ray_data_clip_pipeline(
                 database_url=args.pg_dsn,
@@ -826,8 +898,8 @@ def main() -> None:
                     offset=args.offset,
                     dataset_passes=dataset_passes,
                 ),
-                source_shards=source_shards,
-                processor_revision=processor,
+                source_shards=setup.source_shards,
+                processor_revision=setup.processor,
                 model_revision=args.model,
                 dtype=args.dtype,
                 batch_size=args.batch_size,
@@ -847,7 +919,7 @@ def main() -> None:
             args.workload_name,
             limit,
             args.offset,
-            source_shards=source_shards,
+            source_shards=setup.source_shards,
             dataset_passes=dataset_passes,
         )
         if args.arm == "daft_builtin_embed":
@@ -863,20 +935,20 @@ def main() -> None:
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
                 source,
-                embedder=embedder,
+                embedder=self.embedder,
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
             )
         if args.arm == "daft_staged":
             return run_daft_staged_clip_baseline(
                 source,
-                preprocessor=preprocessor,
-                embedder=embedder,
+                preprocessor=self.preprocessor,
+                embedder=self.embedder,
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
             )
         project_common = {
-            "worker_pool": worker_pool,
+            "worker_pool": self.worker_pool,
             "expected_doc_ids": expected_ids,
             "batch_size": args.batch_size,
             "max_active_batches": args.max_active_batches,
@@ -888,20 +960,20 @@ def main() -> None:
                 source,
                 **project_common,
                 encoded_block_bytes_upper_bound=(
-                    int(database_metadata["max_encoded_bytes"]) * args.batch_size
+                    int(setup.database_metadata["max_encoded_bytes"])
+                    * args.batch_size
                 ),
-                limits=hse_limits,
+                limits=setup.hse_limits,
                 model_revision=args.model,
-                processor_revision=processor,
+                processor_revision=setup.processor,
                 model_dtype=args.dtype,
                 input_size=args.input_size,
             )
         return run_project_ray_pipeline(source, **project_common)
 
-    execute(warmup_count, warmup_ids)
-    if worker_pool is not None:
-        stop_project_ray_worker_pool(worker_pool)
-    formal_start_epoch_s_planned = 0.0
+
+def _wait_for_formal_start(args: argparse.Namespace) -> tuple[float, float]:
+    planned_epoch_s = 0.0
     if args.formal_ready_file:
         ready_path = Path(args.formal_ready_file)
         ready_path.parent.mkdir(parents=True, exist_ok=True)
@@ -926,13 +998,98 @@ def main() -> None:
                 raise TimeoutError(f"formal start barrier timed out: {barrier_path}")
             time.sleep(0.05)
         barrier = json.loads(barrier_path.read_text(encoding="utf-8"))
-        formal_start_epoch_s_planned = (
-            float(barrier["start_epoch_s"]) + args.formal_start_offset_s
-        )
-        remaining = formal_start_epoch_s_planned - time.time()
+        planned_epoch_s = float(barrier["start_epoch_s"]) + args.formal_start_offset_s
+        remaining = planned_epoch_s - time.time()
         if remaining > 0:
             time.sleep(remaining)
-    formal_start_epoch_s_actual = time.time()
+    return planned_epoch_s, time.time()
+
+
+def _write_embedding_capture(
+    args: argparse.Namespace,
+    setup: _ImageRunSetup,
+    capture: EmbeddingCapture,
+    output_contract_metadata: dict[str, object],
+    *,
+    daft_module,
+    ray_module,
+    torch_module,
+    transformers_module,
+) -> None:
+    target = setup.embedding_target
+    sidecar = setup.embedding_sidecar
+    if target is None or sidecar is None:
+        raise RuntimeError("embedding capture paths are not configured")
+    doc_ids, embeddings = capture.finish()
+    if target.exists() or sidecar.exists():
+        raise SystemExit(
+            "ERROR: --save-embeddings target or sidecar already exists; "
+            f"refuse overwrite: {target}, {sidecar}"
+        )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    import numpy as np
+
+    np.savez_compressed(
+        target,
+        embeddings=embeddings,
+        doc_ids=np.asarray(doc_ids, dtype=str),
+    )
+    manifest = {
+        "arm": args.arm,
+        "phase": args.phase,
+        "repeat_index": args.repeat_index,
+        "model_revision": args.model,
+        "processor_revision": (
+            "provider_resolved_from_model"
+            if args.arm == "daft_builtin_embed"
+            else setup.processor
+        ),
+        "dtype": "provider_default" if args.arm == "daft_builtin_embed" else args.dtype,
+        "embedding_dimension": args.embedding_dimension,
+        "rows": int(embeddings.shape[0]),
+        "dimension": int(embeddings.shape[1]) if embeddings.ndim == 2 else None,
+        "diagnostic_capture_enabled": True,
+        "timing_valid_for_performance": False,
+        **output_contract_metadata,
+        "note": (
+            "captured embeddings are the post-arm output under the recorded effective "
+            "output contract; the parity probe L2-normalizes defensively before "
+            "comparison; capture timing is invalid for performance claims"
+        ),
+        "daft_version": daft_module.__version__,
+        "ray_version": ray_module.__version__,
+        "torch_version": torch_module.__version__,
+        "transformers_version": transformers_module.__version__,
+    }
+    sidecar.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+class _ObservedImageRun(NamedTuple):
+    result: ExecutionResult
+    worker_setup_s: float
+    planned_start_epoch_s: float
+    actual_start_epoch_s: float
+    cpu_metrics: dict[str, object]
+    gpu_metrics: dict[str, object]
+    output_contract_metadata: dict[str, object]
+
+
+def _run_observed_image_execution(
+    args: argparse.Namespace,
+    setup: _ImageRunSetup,
+    execution: _ImageExecution,
+    *,
+    daft_module,
+    ray_module,
+    torch_module,
+    transformers_module,
+) -> _ObservedImageRun:
+    execution.execute(setup.warmup_count, setup.warmup_ids)
+    execution.stop_project_workers()
+    planned_start_epoch_s, actual_start_epoch_s = _wait_for_formal_start(args)
     gpu_sampler = NvidiaSmiSampler(
         args.gpu_sample_interval_s,
         active_device_count=args.gpu_workers,
@@ -940,109 +1097,58 @@ def main() -> None:
     cpu_sampler = SystemCpuSampler(args.cpu_sample_interval_s)
     gpu_sampler.start()
     cpu_sampler.start()
-    if worker_pool is not None:
-        setup_started = time.perf_counter()
-        worker_pool = build_project_ray_worker_pool(
-            model_revision=args.model,
-            processor_revision=processor,
-            cpu_workers=args.cpu_workers,
-            gpu_workers=args.gpu_workers,
-            dtype=args.dtype,
-            detailed_stage_timing=args.detailed_stage_timing,
-            torch_intraop_threads=args.torch_intraop_threads,
-            torch_interop_threads=args.torch_interop_threads,
-        )
-        worker_setup_s = time.perf_counter() - setup_started
-    else:
-        # Daft creates the model-owning UDF actor lazily inside each query, so
-        # its worker/model startup is already included in result.total_s and
-        # first_output_s rather than this explicit setup field.
-        worker_setup_s = 0.0
-    embedding_capture = EmbeddingCapture() if args.save_embeddings else None
-    result = execute(
+    worker_setup_s = execution.start_formal_workers()
+    capture = EmbeddingCapture() if args.save_embeddings else None
+    result = execution.execute(
         args.limit,
-        formal_ids,
+        setup.formal_ids,
         dataset_passes=args.dataset_passes,
-        embedding_capture=embedding_capture,
+        embedding_capture=capture,
     )
     output_contract_metadata = embedding_output_contract_metadata(
         args.arm,
         args.embedding_output_contract,
     )
-    if args.save_embeddings:
-        # Diagnostic only: capture happens while validated batches are consumed.
-        # The default path has no capture; this run's timing is not performance-valid.
-        assert embedding_capture is not None
-        assert embedding_target is not None
-        assert embedding_sidecar is not None
-        _doc_ids, _emb_arr = embedding_capture.finish()
-        if embedding_target.exists() or embedding_sidecar.exists():
-            raise SystemExit(
-                "ERROR: --save-embeddings target or sidecar already exists; "
-                f"refuse overwrite: {embedding_target}, {embedding_sidecar}"
-            )
-        embedding_target.parent.mkdir(parents=True, exist_ok=True)
-        import numpy as _np
-        _np.savez_compressed(
-            embedding_target,
-            embeddings=_emb_arr,
-            doc_ids=_np.asarray(_doc_ids, dtype=str),
-        )
-        _manifest = {
-            "arm": args.arm,
-            "phase": args.phase,
-            "repeat_index": args.repeat_index,
-            "model_revision": args.model,
-            "processor_revision": (
-                "provider_resolved_from_model"
-                if args.arm == "daft_builtin_embed"
-                else processor
-            ),
-            "dtype": (
-                "provider_default"
-                if args.arm == "daft_builtin_embed"
-                else args.dtype
-            ),
-            "embedding_dimension": args.embedding_dimension,
-            "rows": int(_emb_arr.shape[0]),
-            "dimension": int(_emb_arr.shape[1]) if _emb_arr.ndim == 2 else None,
-            "diagnostic_capture_enabled": True,
-            "timing_valid_for_performance": False,
-            **output_contract_metadata,
-            "note": (
-                "captured embeddings are the post-arm output under the recorded effective "
-                "output contract; the parity probe L2-normalizes defensively before "
-                "comparison; capture timing is invalid for performance claims"
-            ),
-        }
-        try:
-            import daft as _daft
-            import ray as _ray
-            import torch as _torch
-            import transformers as _transformers
-            _manifest.update(
-                {
-                    "daft_version": _daft.__version__,
-                    "ray_version": _ray.__version__,
-                    "torch_version": _torch.__version__,
-                    "transformers_version": _transformers.__version__,
-                }
-            )
-        except Exception:  # noqa: BLE001
-            pass
-        embedding_sidecar.write_text(
-            json.dumps(_manifest, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
+    if capture is not None:
+        _write_embedding_capture(
+            args,
+            setup,
+            capture,
+            output_contract_metadata,
+            daft_module=daft_module,
+            ray_module=ray_module,
+            torch_module=torch_module,
+            transformers_module=transformers_module,
         )
     gpu_metrics = gpu_sampler.stop()
     cpu_metrics = cpu_sampler.stop()
-    if worker_pool is not None:
-        stop_project_ray_worker_pool(worker_pool)
+    execution.stop_project_workers()
+    return _ObservedImageRun(
+        result=result,
+        worker_setup_s=worker_setup_s,
+        planned_start_epoch_s=planned_start_epoch_s,
+        actual_start_epoch_s=actual_start_epoch_s,
+        cpu_metrics=cpu_metrics,
+        gpu_metrics=gpu_metrics,
+        output_contract_metadata=output_contract_metadata,
+    )
 
-    operator_e2e_s = result.total_s + worker_setup_s
-    first_output_s = result.first_output_s + worker_setup_s
+
+def _build_image_result_row(
+    args: argparse.Namespace,
+    setup: _ImageRunSetup,
+    observed: _ObservedImageRun,
+    *,
+    daft_module,
+    ray_module,
+    torch_module,
+    transformers_module,
+) -> dict[str, object]:
+    result = observed.result
+    operator_e2e_s = result.total_s + observed.worker_setup_s
+    first_output_s = result.first_output_s + observed.worker_setup_s
     total_rows = args.limit * args.dataset_passes
-    estimated_e2e_mfu = ""
+    estimated_e2e_mfu: float | str = ""
     if args.model_flops_per_image and args.gpu_peak_flops_per_s:
         estimated_e2e_mfu = (
             total_rows
@@ -1053,9 +1159,11 @@ def main() -> None:
     batch_completion_p50 = percentile(result.batch_completion_wall_s, 0.50)
     batch_completion_p95 = percentile(result.batch_completion_wall_s, 0.95)
     batch_completion_p99 = percentile(result.batch_completion_wall_s, 0.99)
-    cpu_core_seconds = float(cpu_metrics["cpu_busy_cores_mean"]) * operator_e2e_s
+    cpu_core_seconds = (
+        float(observed.cpu_metrics["cpu_busy_cores_mean"]) * operator_e2e_s
+    )
     gpu_seconds = args.gpu_workers * operator_e2e_s
-    gpu_energy_j = float(gpu_metrics["gpu_energy_estimate_j"])
+    gpu_energy_j = float(observed.gpu_metrics["gpu_energy_estimate_j"])
     derived_metrics = image_run_derived_metrics(
         rows=total_rows,
         operator_e2e_s=operator_e2e_s,
@@ -1063,29 +1171,26 @@ def main() -> None:
         cpu_core_seconds=cpu_core_seconds,
         gpu_seconds=gpu_seconds,
         gpu_energy_j=gpu_energy_j,
-        host_disk_read_bytes=int(cpu_metrics["host_disk_read_bytes"]),
-        host_disk_write_bytes=int(cpu_metrics["host_disk_write_bytes"]),
-        host_net_recv_bytes=int(cpu_metrics["host_net_recv_bytes"]),
-        host_net_sent_bytes=int(cpu_metrics["host_net_sent_bytes"]),
+        host_disk_read_bytes=int(observed.cpu_metrics["host_disk_read_bytes"]),
+        host_disk_write_bytes=int(observed.cpu_metrics["host_disk_write_bytes"]),
+        host_net_recv_bytes=int(observed.cpu_metrics["host_net_recv_bytes"]),
+        host_net_sent_bytes=int(observed.cpu_metrics["host_net_sent_bytes"]),
     )
-    declared_source_cpus = cpu_budget.source_slots
-    declared_preprocess_cpus = cpu_budget.preprocess_slots
-    declared_model_cpus = cpu_budget.model_slots
-
-    row: dict[str, object] = {
+    cpu_budget = setup.cpu_budget
+    return {
         "arm": args.arm,
-        "baseline_role": provenance.role,
-        "implementation_provenance": provenance.implementation_provenance,
-        "scheduler_owner": provenance.scheduler_owner,
-        "custom_scheduling_code": provenance.custom_scheduling_code,
-        "formal_baseline_eligible": provenance.formal_baseline_eligible,
-        "upstream_source": provenance.upstream_source,
+        "baseline_role": setup.provenance.role,
+        "implementation_provenance": setup.provenance.implementation_provenance,
+        "scheduler_owner": setup.provenance.scheduler_owner,
+        "custom_scheduling_code": setup.provenance.custom_scheduling_code,
+        "formal_baseline_eligible": setup.provenance.formal_baseline_eligible,
+        "upstream_source": setup.provenance.upstream_source,
         "phase": args.phase,
         "repeat_index": args.repeat_index,
         "workload_name": args.workload_name,
-        "source_doc_ids_sha256": source_doc_ids_sha256,
+        "source_doc_ids_sha256": setup.source_doc_ids_sha256,
         "expected_source_doc_ids_sha256": args.expected_source_doc_ids_sha256,
-        "source_manifest_match": source_manifest_match,
+        "source_manifest_match": setup.source_manifest_match,
         "expected_input_encoded_bytes": args.expected_input_encoded_bytes or "",
         "rows": total_rows,
         "unique_images": args.limit,
@@ -1094,39 +1199,53 @@ def main() -> None:
         "input_size": args.input_size,
         "cpu_workers": "" if args.arm == "daft_builtin_embed" else args.cpu_workers,
         "gpu_workers": args.gpu_workers,
-        "model_workers": model_workers,
-        "gpus_per_model_worker": gpus_per_model_worker,
-        "source_shards": source_shards,
-        "source_cpu_threads": source_cpu_threads,
+        "model_workers": setup.model_workers,
+        "gpus_per_model_worker": setup.gpus_per_model_worker,
+        "source_shards": setup.source_shards,
+        "source_cpu_threads": setup.source_cpu_threads,
         "max_active_batches": args.max_active_batches if project_metrics else "",
-        "ray_cluster_num_cpus": ray_cluster_num_cpus or "",
+        "ray_cluster_num_cpus": setup.ray_cluster_num_cpus or "",
         "host_cpu_slots_detected": cpu_budget.host_slots,
         "declared_external_cpus": cpu_budget.external_slots,
-        "declared_source_cpus": declared_source_cpus if declared_source_cpus is not None else "",
-        "declared_preprocess_cpus": (
-            declared_preprocess_cpus if declared_preprocess_cpus is not None else ""
+        "declared_source_cpus": (
+            cpu_budget.source_slots if cpu_budget.source_slots is not None else ""
         ),
-        "declared_model_cpus": declared_model_cpus if declared_model_cpus is not None else "",
+        "declared_preprocess_cpus": (
+            cpu_budget.preprocess_slots
+            if cpu_budget.preprocess_slots is not None
+            else ""
+        ),
+        "declared_model_cpus": (
+            cpu_budget.model_slots if cpu_budget.model_slots is not None else ""
+        ),
         "declared_total_cpus": cpu_budget.declared_total_slots,
         "resource_budget_semantics": cpu_budget.semantics,
-        "ray_address_mode": "external_shared" if args.ray_address else "isolated_local",
+        "ray_address_mode": (
+            "external_shared" if args.ray_address else "isolated_local"
+        ),
         "ray_data_actor_pool_mode": (
             "native_autoscaling_min1_to_configured_max"
-            if args.arm == "ray_data_staged" and args.ray_data_autoscaling_actor_pools
-            else ("fixed_size" if args.arm == "ray_data_staged" else "not_applicable")
+            if args.arm == "ray_data_staged"
+            and args.ray_data_autoscaling_actor_pools
+            else "fixed_size"
+            if args.arm == "ray_data_staged"
+            else "not_applicable"
         ),
         "formal_start_epoch_s_planned": (
-            formal_start_epoch_s_planned if args.formal_ready_file else ""
+            observed.planned_start_epoch_s if args.formal_ready_file else ""
         ),
-        "formal_start_epoch_s_actual": formal_start_epoch_s_actual,
+        "formal_start_epoch_s_actual": observed.actual_start_epoch_s,
         "formal_start_lateness_s": (
-            max(0.0, formal_start_epoch_s_actual - formal_start_epoch_s_planned)
+            max(
+                0.0,
+                observed.actual_start_epoch_s - observed.planned_start_epoch_s,
+            )
             if args.formal_ready_file
             else ""
         ),
         "torch_intraop_threads_per_worker": args.torch_intraop_threads,
         "torch_interop_threads_per_worker": args.torch_interop_threads,
-        "worker_setup_s": worker_setup_s if project_metrics else "",
+        "worker_setup_s": observed.worker_setup_s if project_metrics else "",
         "worker_setup_accounting": (
             "explicit_pre_query_plus_query_wall"
             if project_metrics
@@ -1137,8 +1256,6 @@ def main() -> None:
         "first_output_semantics": "cold_setup_to_first_complete_arrow_record_batch",
         **derived_metrics,
         "images_per_s": total_rows / operator_e2e_s,
-        # Legacy aliases retained for old summarizers. These are not pure GPU
-        # service times; the explicit semantics and replacement fields follow.
         "batch_service_p50_s": batch_completion_p50,
         "batch_service_p95_s": batch_completion_p95,
         "batch_service_p99_s": batch_completion_p99,
@@ -1212,35 +1329,39 @@ def main() -> None:
         "pending_batches_peak": result.pending_batches_peak if project_metrics else "",
         "project_execution_mode": result.execution_mode if project_metrics else "",
         "hse_encoded_bytes_limit": (
-            hse_limits.encoded_bytes
+            setup.hse_limits.encoded_bytes
             if project_metrics and args.project_execution_mode == "hse_static"
             else ""
         ),
         "hse_ready_bytes_limit": (
-            hse_limits.ready_bytes
+            setup.hse_limits.ready_bytes
             if project_metrics and args.project_execution_mode == "hse_static"
             else ""
         ),
         "hse_ready_work_limit": (
-            hse_limits.ready_work
+            setup.hse_limits.ready_work
             if project_metrics and args.project_execution_mode == "hse_static"
             else ""
         ),
         "hse_prepare_inflight_limit": (
-            hse_limits.prepare_inflight
+            setup.hse_limits.prepare_inflight
             if project_metrics and args.project_execution_mode == "hse_static"
             else ""
         ),
         "hse_model_inflight_limit": (
-            hse_limits.model_inflight
+            setup.hse_limits.model_inflight
             if project_metrics and args.project_execution_mode == "hse_static"
             else ""
         ),
         "hse_encoded_bytes_peak": (
-            result.encoded_bytes_peak if args.project_execution_mode == "hse_static" else ""
+            result.encoded_bytes_peak
+            if args.project_execution_mode == "hse_static"
+            else ""
         ),
         "hse_ready_bytes_peak": (
-            result.ready_bytes_peak if args.project_execution_mode == "hse_static" else ""
+            result.ready_bytes_peak
+            if args.project_execution_mode == "hse_static"
+            else ""
         ),
         "hse_prepare_inflight_peak": (
             result.prepare_inflight_peak
@@ -1252,10 +1373,22 @@ def main() -> None:
             if args.project_execution_mode == "hse_static"
             else ""
         ),
-        "batch_prepare_queue_p50_s": percentile(result.batch_prepare_queue_s, 0.50),
-        "batch_prepare_queue_p95_s": percentile(result.batch_prepare_queue_s, 0.95),
-        "batch_ready_residence_p50_s": percentile(result.batch_ready_residence_s, 0.50),
-        "batch_ready_residence_p95_s": percentile(result.batch_ready_residence_s, 0.95),
+        "batch_prepare_queue_p50_s": percentile(
+            result.batch_prepare_queue_s,
+            0.50,
+        ),
+        "batch_prepare_queue_p95_s": percentile(
+            result.batch_prepare_queue_s,
+            0.95,
+        ),
+        "batch_ready_residence_p50_s": percentile(
+            result.batch_ready_residence_s,
+            0.50,
+        ),
+        "batch_ready_residence_p95_s": percentile(
+            result.batch_ready_residence_s,
+            0.95,
+        ),
         "cpu_core_seconds_estimate": cpu_core_seconds,
         "cpu_core_seconds_per_image": cpu_core_seconds / total_rows,
         "gpu_seconds": gpu_seconds,
@@ -1270,30 +1403,37 @@ def main() -> None:
             else "unavailable"
         ),
         **result.audit,
-        **cpu_metrics,
-        **gpu_metrics,
+        **observed.cpu_metrics,
+        **observed.gpu_metrics,
         "model_revision": args.model,
         "processor_revision": (
             "provider_resolved_from_model"
             if args.arm == "daft_builtin_embed"
-            else processor
+            else setup.processor
         ),
         "dtype": "provider_default" if args.arm == "daft_builtin_embed" else args.dtype,
         "embedding_dimension": args.embedding_dimension,
-        **output_contract_metadata,
-        "daft_version": daft.__version__,
-        "ray_version": ray.__version__,
-        "torch_version": torch.__version__,
-        "transformers_version": transformers.__version__,
-        "gpu_name": torch.cuda.get_device_name(0),
+        **observed.output_contract_metadata,
+        "daft_version": daft_module.__version__,
+        "ray_version": ray_module.__version__,
+        "torch_version": torch_module.__version__,
+        "transformers_version": transformers_module.__version__,
+        "gpu_name": torch_module.cuda.get_device_name(0),
         "model_flops_per_image": args.model_flops_per_image or "",
         "gpu_peak_flops_per_s": args.gpu_peak_flops_per_s or "",
         "estimated_e2e_mfu": estimated_e2e_mfu,
-        **database_metadata,
+        **setup.database_metadata,
         "git_commit": git_commit(),
     }
-    append_csv(Path(args.out_csv), row)
-    manifest = {
+
+
+def _build_image_manifest(
+    args: argparse.Namespace,
+    setup: _ImageRunSetup,
+    row: dict[str, object],
+) -> dict[str, object]:
+    provenance = setup.provenance
+    return {
         "schema_version": 13,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
@@ -1315,16 +1455,22 @@ def main() -> None:
         },
         "detailed_stage_timing_intrusive": args.detailed_stage_timing,
         "project_execution_mode": (
-            args.project_execution_mode if args.arm == "project_ray" else "not_applicable"
+            args.project_execution_mode
+            if args.arm == "project_ray"
+            else "not_applicable"
         ),
         "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
-        "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
+        "mfu_semantics": (
+            "estimated_only_when_verified_flops_and_dtype_peak_are_supplied"
+        ),
         "cross_scale_comparison_semantics": {
             "rate_and_unit_resource_metrics": (
                 "descriptive comparison allowed after each arm independently reaches "
                 "a steady throughput plateau"
             ),
-            "absolute_jct_and_first_output": "matched workload scale required for ranking",
+            "absolute_jct_and_first_output": (
+                "matched workload scale required for ranking"
+            ),
             "first_output_fraction_of_e2e": (
                 "streaming/materialization diagnostic only; not normalized latency"
             ),
@@ -1336,6 +1482,52 @@ def main() -> None:
         ),
         "row": row,
     }
+
+
+def main() -> None:
+    args = parse_args()
+    processor, embedding_target, embedding_sidecar, provenance = (
+        _validate_image_run_args(args)
+    )
+
+    import daft
+    import ray
+    import torch
+    import transformers
+
+    setup = _load_image_run_setup(
+        args,
+        processor=processor,
+        embedding_target=embedding_target,
+        embedding_sidecar=embedding_sidecar,
+        provenance=provenance,
+    )
+    execution = _ImageExecution(
+        args,
+        setup,
+        daft_module=daft,
+        ray_module=ray,
+    )
+    observed = _run_observed_image_execution(
+        args,
+        setup,
+        execution,
+        daft_module=daft,
+        ray_module=ray,
+        torch_module=torch,
+        transformers_module=transformers,
+    )
+    row = _build_image_result_row(
+        args,
+        setup,
+        observed,
+        daft_module=daft,
+        ray_module=ray,
+        torch_module=torch,
+        transformers_module=transformers,
+    )
+    append_csv(Path(args.out_csv), row)
+    manifest = _build_image_manifest(args, setup, row)
     manifest_path = Path(args.out_manifest)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(

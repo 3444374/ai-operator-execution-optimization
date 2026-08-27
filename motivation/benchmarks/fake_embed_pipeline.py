@@ -4,9 +4,9 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-BENCHMARK_DIR = ROOT_DIR / "validation" / "benchmarks"
-if str(BENCHMARK_DIR) not in sys.path:
-    sys.path.insert(0, str(BENCHMARK_DIR))
+FEASIBILITY_BENCHMARK_DIR = ROOT_DIR / "feasibility" / "benchmarks"
+if str(FEASIBILITY_BENCHMARK_DIR) not in sys.path:
+    sys.path.insert(0, str(FEASIBILITY_BENCHMARK_DIR))
 
 from common import now_seconds, print_table, require_module, write_csv
 

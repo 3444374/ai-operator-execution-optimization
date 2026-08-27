@@ -7,7 +7,7 @@ import math
 import subprocess
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
 
@@ -90,6 +90,8 @@ from .runtime import (
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 _TRACE_SAMPLE_INTERVAL_S = 0.25
+_DEFAULT_STATE_MAX_AGE_S = 1.0
+_DEFAULT_SERVICE_RATE_ALPHA = 0.3
 
 _REHEARSAL_CREDIT_POLICIES = {
     "shared_fifo",
@@ -97,6 +99,18 @@ _REHEARSAL_CREDIT_POLICIES = {
     "external_vtc",
     "saor_release",
     "foreground_strict_priority",
+}
+
+_OBSERVED_CREDIT_POLICIES = {
+    "shared_drr",
+    "shared_fifo",
+    "external_vtc",
+    "saor_release",
+    "saor_bounded_priority",
+    "saor_bounded_ready",
+    "foreground_strict_priority",
+    "state_aware_adaptive",
+    "saor_capacity",
 }
 
 
@@ -703,6 +717,717 @@ def _wait_for_eager_job_launch(
         sleep(min(remaining, 0.05))
 
 
+def _state_aware_controllers(
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+) -> dict[str, BoundedCapacityController]:
+    control = config.state_aware_control
+    if scenario.policy != "state_aware_adaptive" or control is None:
+        return {}
+    arms = tuple(
+        CapacityArm(limit, work_limit)
+        for limit, work_limit in zip(
+            control.request_candidates,
+            control.work_candidates,
+        )
+    )
+    initial_work_limit = control.work_candidates[
+        control.request_candidates.index(control.initial_request_limit)
+    ]
+    return {
+        endpoint_id: BoundedCapacityController(
+            arms,
+            fallback=CapacityArm(
+                control.fallback_request_limit,
+                control.fallback_work_limit,
+            ),
+            initial=CapacityArm(
+                control.initial_request_limit,
+                initial_work_limit,
+            ),
+            target_service_rate_tokens_s=(
+                control.target_service_rate_tokens_s_per_endpoint
+            ),
+            consecutive_samples=control.consecutive_samples,
+            increase_consecutive_samples=control.increase_consecutive_samples,
+            cooldown_samples=control.cooldown_samples,
+            congestion_kv_usage=control.congestion_kv_usage,
+        )
+        for endpoint_id in config.endpoint_ids
+    }
+
+
+def _saor_capacity_controllers(
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+) -> dict[str, SaorCapacityController]:
+    control = config.saor_capacity_control
+    if scenario.policy != "saor_capacity" or control is None:
+        return {}
+    return {
+        endpoint_id: SaorCapacityController(
+            arms=control.arms,
+            initial_arm=control.initial_arm,
+            fallback_arm=control.fallback_arm,
+            ewma_alpha=control.ewma_alpha,
+            queue_work_scale=control.queue_work_scale,
+            min_dwell_samples=control.min_dwell_samples,
+            v=control.v,
+            tail_weight=control.tail_weight,
+            energy_weight=control.energy_weight,
+            switch_weight=control.switch_weight,
+        )
+        for endpoint_id in config.endpoint_ids
+    }
+
+
+def _service_rate_alpha(config: SharedVllmConfig) -> float:
+    if config.state_aware_control is not None:
+        return config.state_aware_control.rate_ewma_alpha
+    if config.saor_capacity_control is not None:
+        return config.saor_capacity_control.ewma_alpha
+    return _DEFAULT_SERVICE_RATE_ALPHA
+
+
+def _records_release_events(scenario: SharedVllmScenario) -> bool:
+    return (
+        scenario.ready_observation_contract
+        == "bounded_concrete_pre_registration"
+        or scenario.policy == "saor_bounded_priority"
+    )
+
+
+def _observer_policy(policy: str) -> str:
+    return {
+        "shared_fifo": "fifo",
+        "external_vtc": "vtc",
+        "saor_release": "saor",
+        "saor_bounded_priority": "saor_bounded_priority",
+        "saor_bounded_ready": "saor_bounded_ready",
+        "foreground_strict_priority": "strict_priority",
+    }.get(policy, "drr")
+
+
+def _prewarm_observer(
+    observer: _RayCreditObserver,
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+    *,
+    endpoint_request_limit: int,
+    endpoint_work_limit: int,
+) -> None:
+    observer.prewarm(
+        request_limit=endpoint_request_limit,
+        work_limit=endpoint_work_limit,
+        quantum=config.credit_quantum,
+        policy=_observer_policy(scenario.policy),
+        saor_release_config=(
+            SaorReleaseConfig(**asdict(config.saor_release_control))
+            if scenario.policy
+            in {"saor_release", "saor_bounded_priority", "saor_bounded_ready"}
+            and config.saor_release_control is not None
+            else None
+        ),
+        record_ready_lifecycle_events=(
+            scenario.ready_observation_contract
+            == "bounded_concrete_pre_registration"
+        ),
+    )
+
+
+@dataclass
+class _GroupSampler:
+    options: RunnerOptions
+    config: SharedVllmConfig
+    scenario: SharedVllmScenario
+    observer: _RayCreditObserver | None
+    group_launch_epoch_s: float
+    state_signature: str
+    service_rate_tracker: EndpointServiceRateTracker
+    controllers: dict[str, BoundedCapacityController]
+    saor_controllers: dict[str, SaorCapacityController]
+    resource_samples: list[dict[str, object]]
+    credit_samples: list[dict[str, object]]
+    release_events: list[dict[str, object]]
+    state_samples: list[dict[str, object]]
+
+    def sample(self) -> None:
+        resource_batch = _resource_sample(
+            self.options.metrics_urls,
+            self.group_launch_epoch_s,
+        )
+        self.resource_samples.extend(resource_batch)
+        service_rates = self.service_rate_tracker.update(
+            resource_batch,
+            endpoint_ids=self.config.endpoint_ids,
+        )
+        if self.observer is None:
+            return
+        credit_batch = self.observer.sample(self.group_launch_epoch_s)
+        self.credit_samples.extend(credit_batch)
+        if _records_release_events(self.scenario):
+            self.release_events.extend(
+                self.observer.drain_release_events(self.group_launch_epoch_s)
+            )
+        state_rows = build_observe_only_text_state_rows(
+            credit_batch,
+            resource_batch,
+            endpoint_ids=self.config.endpoint_ids,
+            calibration_signature=self.state_signature,
+            service_rates=service_rates,
+        )
+        control = self.config.state_aware_control
+        saor_control = self.config.saor_capacity_control
+        if self.saor_controllers and saor_control is not None:
+            state_rows = _apply_saor_capacity_control(
+                state_rows,
+                controllers=self.saor_controllers,
+                observation_model=saor_control.observation_model,
+                observer=self.observer,
+                calibration_signature=self.state_signature,
+                max_state_age_s=saor_control.max_state_age_s,
+            )
+        else:
+            state_rows = _apply_state_control(
+                state_rows,
+                controllers=self.controllers,
+                observer=self.observer,
+                calibration_signature=self.state_signature,
+                max_state_age_s=(
+                    control.max_state_age_s
+                    if control is not None
+                    else _DEFAULT_STATE_MAX_AGE_S
+                ),
+            )
+        self.state_samples.extend(state_rows)
+
+
+def _launch_job_processes(
+    commands: list[list[str]],
+    *,
+    options: RunnerOptions,
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+    run_stem: str,
+    start_epoch_s: float,
+    on_wait: Callable[[], None],
+    processes: list[subprocess.Popen],
+    log_handles: list[object],
+    eager_job_launches: list[float],
+) -> None:
+    for job_index, command in enumerate(commands):
+        if config.job_internal_arrival_contract == "eager":
+            eager_job_launches.append(
+                _wait_for_eager_job_launch(
+                    start_epoch_s + scenario.arrival_offsets_s[job_index],
+                    on_wait=on_wait,
+                )
+            )
+        stdout_path = (
+            options.output_dir / "logs" / f"{run_stem}_job{job_index}.stdout.log"
+        )
+        stderr_path = (
+            options.output_dir / "logs" / f"{run_stem}_job{job_index}.stderr.log"
+        )
+        stdout_handle = stdout_path.open("w", encoding="utf-8")
+        stderr_handle = stderr_path.open("w", encoding="utf-8")
+        log_handles.extend([stdout_handle, stderr_handle])
+        processes.append(
+            subprocess.Popen(
+                command,
+                cwd=_CODE_ROOT,
+                stdout=stdout_handle,
+                stderr=stderr_handle,
+                text=True,
+                env=subprocess_env(),
+            )
+        )
+def _wait_for_group_completion(
+    processes: list[subprocess.Popen],
+    direct_future: Future[list[dict[str, object]]] | None,
+    sample: Callable[[], None],
+) -> None:
+    while any(process.poll() is None for process in processes) or (
+        direct_future is not None and not direct_future.done()
+    ):
+        failed = [
+            process.returncode
+            for process in processes
+            if process.poll() not in (None, 0)
+        ]
+        if failed:
+            _terminate_processes(processes)
+            raise RuntimeError(f"profiler child failed with exit code {failed[0]}")
+        sample()
+        time.sleep(_TRACE_SAMPLE_INTERVAL_S)
+    return_codes = [process.wait() for process in processes]
+    if any(code != 0 for code in return_codes):
+        raise RuntimeError(f"profiler children failed: {return_codes}")
+
+
+def _write_group_trace_files(
+    options: RunnerOptions,
+    run_stem: str,
+    *,
+    resource_samples: list[dict[str, object]],
+    credit_samples: list[dict[str, object]],
+    state_samples: list[dict[str, object]],
+    release_events: list[dict[str, object]],
+) -> None:
+    trace_root = options.output_dir / "traces"
+    _write_trace_rows_atomic(
+        trace_root / f"{run_stem}.resources.csv",
+        resource_samples,
+    )
+    _write_trace_rows_atomic(
+        trace_root / f"{run_stem}.credits.csv",
+        credit_samples,
+    )
+    _write_trace_rows_atomic(
+        trace_root / f"{run_stem}.states.csv",
+        state_samples,
+    )
+    _write_trace_rows_atomic(
+        trace_root / f"{run_stem}.release_events.csv",
+        release_events,
+        fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+    )
+
+
+def _direct_admission_summary(
+    scenario: SharedVllmScenario,
+    job_evidence: list[dict[str, object]],
+) -> dict[str, object]:
+    if scenario.policy in DIRECT_CONTROL_POLICIES:
+        summary = {
+            key: value
+            for key, value in job_evidence[0].items()
+            if key.startswith("direct_")
+        }
+        if any(
+            {
+                key: value
+                for key, value in evidence.items()
+                if key.startswith("direct_")
+            }
+            != summary
+            for evidence in job_evidence[1:]
+        ):
+            raise RuntimeError("direct admission summaries disagree across Jobs")
+        return summary
+    return {
+        "direct_admission_trace_status": "not_applicable",
+        "direct_admission_trace_path": "",
+        "direct_admission_events": 0,
+        "direct_work_limit_applied": False,
+        "direct_request_occupancy_max": 0,
+        "direct_estimated_work_occupancy_max": 0,
+        "direct_request_occupancy_fraction_mean": 0.0,
+        "direct_estimated_work_to_reference_w_fraction_mean": 0.0,
+        "direct_request_occupancy_max_by_endpoint": "{}",
+        "direct_estimated_work_occupancy_max_by_endpoint": "{}",
+        "direct_admission_wait_p50_s": 0.0,
+        "direct_admission_wait_p95_s": 0.0,
+        "direct_admission_wait_p99_s": 0.0,
+        "direct_admission_wait_max_s": 0.0,
+    }
+
+
+@dataclass(frozen=True)
+class _GroupRecordContext:
+    options: RunnerOptions
+    config: SharedVllmConfig
+    scenario: SharedVllmScenario
+    identity: GroupRunIdentity
+    run_instance_id: str
+    run_stem: str
+    coordinator_name: str
+    start_epoch_s: float
+    group_end_epoch_s: float
+    endpoint_request_limit: int
+    endpoint_work_limit: int
+    controllers: dict[str, BoundedCapacityController]
+    saor_controllers: dict[str, SaorCapacityController]
+    observer: _RayCreditObserver | None
+    state_signature: str
+    state_samples: list[dict[str, object]]
+    job_evidence: list[dict[str, object]]
+    service_metrics: dict[str, object]
+    resource_metrics: dict[str, object]
+    mfu_metrics: dict[str, object]
+    normalized_service: list[float]
+    completion_fairness: dict[str, object]
+    lag_work_limit: int
+    direct_admission: dict[str, object]
+    credit_samples: list[dict[str, object]]
+    release_events: list[dict[str, object]]
+    actor_worker_failures: int
+    final_credit: list[dict[str, object]]
+
+
+def _build_group_record(context: _GroupRecordContext) -> dict[str, object]:
+    options = context.options
+    config = context.config
+    scenario = context.scenario
+    identity = context.identity
+    run_instance_id = context.run_instance_id
+    run_stem = context.run_stem
+    coordinator_name = context.coordinator_name
+    start_epoch_s = context.start_epoch_s
+    group_end_epoch_s = context.group_end_epoch_s
+    endpoint_request_limit = context.endpoint_request_limit
+    endpoint_work_limit = context.endpoint_work_limit
+    controllers = context.controllers
+    saor_controllers = context.saor_controllers
+    observer = context.observer
+    state_signature = context.state_signature
+    state_samples = context.state_samples
+    job_evidence = context.job_evidence
+    service_metrics = context.service_metrics
+    resource_metrics = context.resource_metrics
+    mfu_metrics = context.mfu_metrics
+    normalized_service = context.normalized_service
+    completion_fairness = context.completion_fairness
+    lag_work_limit = context.lag_work_limit
+    direct_admission = context.direct_admission
+    credit_samples = context.credit_samples
+    release_events = context.release_events
+    actor_worker_failures = context.actor_worker_failures
+    final_credit = context.final_credit
+
+    record = {
+        "schema_version": 2,
+        "experiment_id": config.experiment_id,
+        "scenario_id": scenario.scenario_id,
+        "phase": identity.phase,
+        "repeat_index": identity.repeat_index,
+        "order_index": identity.order_index,
+        "policy": scenario.policy,
+        "experiment_identity": (
+            "project_internal_selector_ablation"
+            if scenario.ready_observation_contract
+            == "bounded_concrete_pre_registration"
+            else "project_frozen_static_reference"
+            if scenario.policy == "static_partition"
+            else "project_policy"
+        ),
+        "ready_observation_contract": (
+            scenario.ready_observation_contract
+        ),
+        "job_count": scenario.job_count,
+        "static_partition_count": (
+            scenario.static_partition_count
+            if scenario.static_partition_count is not None
+            else scenario.job_count
+        ),
+        "rows_per_job": scenario.rows_per_job,
+        **(
+            {
+                "rows_per_jobs": json.dumps(
+                    [
+                        scenario.row_count(index)
+                        for index in range(scenario.job_count)
+                    ]
+                )
+            }
+            if scenario.rows_per_jobs
+            else {}
+        ),
+        "request_limit_per_endpoint": (
+            endpoint_request_limit
+        ),
+        "work_limit_per_endpoint": endpoint_work_limit,
+        "request_envelope_owner": (
+            "direct_endpoint_request_work_gate"
+            if scenario.policy == "direct_work_limited"
+            else "direct_endpoint_http_semaphore"
+            if scenario.policy == "direct_no_job"
+            else "project_admission"
+        ),
+        "work_envelope_applied": scenario.policy != "direct_no_job",
+        **direct_admission,
+        "http_keepalive_expiry_s": _common_arg_value(
+            config.common_args,
+            "--completion-http-keepalive-expiry-s",
+            "4.0",
+        ),
+        "credit_quantum": config.credit_quantum,
+        "runtime_state_mode": (
+            "actuated_saor_capacity" if saor_controllers
+            else "actuated" if controllers
+            else "actuated_saor_release"
+            if scenario.policy in {
+                "saor_release",
+                "saor_bounded_priority",
+                "saor_bounded_ready",
+            }
+            else "observe_only" if observer is not None
+            else "direct_no_job_control"
+            if scenario.policy == "direct_no_job"
+            else "direct_k_work_diagnostic_control"
+            if scenario.policy == "direct_work_limited"
+            else "unavailable"
+        ),
+        "runtime_state_calibration_signature": (
+            state_signature if observer is not None else ""
+        ),
+        "adaptive_capacity_increases": sum(
+            row.get("control_action") == "increase"
+            for row in state_samples
+        ),
+        "adaptive_capacity_decreases": sum(
+            row.get("control_action") == "decrease"
+            for row in state_samples
+        ),
+        "adaptive_capacity_fallbacks": sum(
+            row.get("control_action") == "fallback"
+            for row in state_samples
+        ),
+        "weights": json.dumps(scenario.weights),
+        "arrival_offsets_s": json.dumps(
+            scenario.arrival_offsets_s
+        ),
+        "source_row_offsets": json.dumps(
+            scenario.source_row_offsets
+        ),
+        "request_manifests": json.dumps(
+            scenario.request_manifests
+        ),
+        "request_manifest_sha256": json.dumps(
+            [
+                evidence["request_manifest_sha256"]
+                for evidence in job_evidence
+            ]
+        ),
+        "ray_address": options.ray_address,
+        "scheduler_owner": (
+            "endpoint_http_k_work_gate_then_vllm_fcfs"
+            if scenario.policy == "direct_work_limited"
+            else "endpoint_http_bound_then_vllm_fcfs"
+            if scenario.policy == "direct_no_job"
+            else "project_daft_ray_submission_then_vllm_fcfs"
+        ),
+        "coordinator_name": (
+            coordinator_name
+            if scenario.policy in _OBSERVED_CREDIT_POLICIES
+            else ""
+        ),
+        "run_instance_id": run_instance_id,
+        "execution_mode": (
+            "rehearsal" if options.rehearsal else "configured_matrix"
+        ),
+        "start_epoch_s": start_epoch_s,
+        "end_epoch_s": group_end_epoch_s,
+        **service_metrics,
+        **resource_metrics,
+        **mfu_metrics,
+        "jain_fairness": jain_fairness(normalized_service),
+        **cumulative_service_disparity(
+            job_evidence,
+            scenario.weights,
+        ),
+        **completion_fairness,
+        "completion_service_lag_p95_work_envelopes": (
+            float(completion_fairness["completion_service_lag_p95_work"])
+            / lag_work_limit
+        ),
+        "completion_service_lag_max_work_envelopes": (
+            float(completion_fairness["completion_service_lag_max_work"])
+            / lag_work_limit
+        ),
+        **shared_credit_trace_summary(
+            credit_samples,
+            work_limit_per_endpoint=endpoint_work_limit,
+            job_count=scenario.job_count,
+        ),
+        **active_set_phase_summary(
+            job_evidence,
+            credit_samples,
+            observation_interval_s=_TRACE_SAMPLE_INTERVAL_S,
+        ),
+        **bounded_saor_event_summary(release_events),
+        **(
+            bounded_ready_event_summary(
+                release_events,
+                job_evidence,
+                foreground_job_index=max(
+                    range(scenario.job_count),
+                    key=scenario.job_priority,
+                ),
+            )
+            if scenario.ready_observation_contract
+            == "bounded_concrete_pre_registration"
+            else {
+                "bounded_ready_event_status": "not_applicable",
+                "bounded_ready_lifecycle_complete": False,
+                "bounded_ready_intervals": 0,
+                "bounded_ready_jobs_with_intervals": 0,
+                "bounded_ready_max_ready_requests_seen": 0,
+                "bounded_ready_max_ready_work_seen": 0,
+                "bounded_ready_max_ready_payload_bytes_seen": 0,
+                "bounded_ready_requests_transition_mean_max": 0.0,
+                "bounded_ready_requests_transition_p95_max": 0.0,
+                "bounded_ready_work_transition_mean_max": 0.0,
+                "bounded_ready_work_transition_p95_max": 0.0,
+                "bounded_ready_payload_bytes_transition_mean_max": 0.0,
+                "bounded_ready_payload_bytes_transition_p95_max": 0.0,
+                "bounded_ready_foreground_intervals": 0,
+                "bounded_ready_foreign_fallback_events": 0,
+                "bounded_ready_foreground_max_ready_requests_seen": 0,
+                "bounded_ready_foreground_max_ready_work_seen": 0,
+            }
+        ),
+        "job_jct_s": json.dumps(
+            [evidence["jct_s"] for evidence in job_evidence]
+        ),
+        "job_arrival_start_epoch_s": json.dumps(
+            [
+                evidence["arrival_start_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_completion_end_epoch_s": json.dumps(
+            [
+                evidence["completion_end_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_first_batch_ready_epoch_s": json.dumps(
+            [
+                evidence["first_batch_ready_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_result_visible_epoch_s": json.dumps(
+            [
+                evidence["result_visible_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_priorities": json.dumps(
+            [
+                scenario.job_priority(index)
+                for index in range(scenario.job_count)
+            ]
+        ),
+        "job_p99_s": json.dumps(
+            [evidence["p99_s"] for evidence in job_evidence]
+        ),
+        "job_completion_lag_s": json.dumps(
+            [
+                evidence["completion_lag_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_slo_violation_ratio": json.dumps(
+            [
+                evidence["slo_violation_ratio"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_slo_goodput_per_s": json.dumps(
+            [
+                evidence["slo_goodput_per_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_slo_token_goodput_per_s": json.dumps(
+            [
+                evidence["slo_token_goodput_per_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_predicted_work": json.dumps(
+            [
+                evidence["predicted_work"]
+                for evidence in job_evidence
+            ]
+        ),
+        "job_actual_work": json.dumps(
+            [evidence["actual_work"] for evidence in job_evidence]
+        ),
+        "job_expected_count": json.dumps(
+            [evidence["expected_count"] for evidence in job_evidence]
+        ),
+        "job_completed_count": json.dumps(
+            [evidence["completed_count"] for evidence in job_evidence]
+        ),
+        "job_exactly_once": json.dumps(
+            [evidence["exactly_once"] for evidence in job_evidence]
+        ),
+        **(
+            {
+                "job_actual_prompt_work": json.dumps(
+                    [
+                        evidence["actual_prompt_work"]
+                        for evidence in job_evidence
+                    ]
+                ),
+                "job_actual_output_work": json.dumps(
+                    [
+                        evidence["actual_output_work"]
+                        for evidence in job_evidence
+                    ]
+                ),
+                "job_arrived_rows": json.dumps(
+                    [
+                        scenario.row_count(index)
+                        for index in range(scenario.job_count)
+                    ]
+                ),
+                "job_completed_rows": json.dumps(
+                    [
+                        scenario.row_count(index)
+                        for index in range(scenario.job_count)
+                    ]
+                ),
+                "job_failed_rows": json.dumps([0] * scenario.job_count),
+            }
+            if scenario.rows_per_jobs
+            else {}
+        ),
+        "job_normalized_service_rate": json.dumps(
+            normalized_service
+        ),
+        "replay_configured_start_epoch_s": json.dumps(
+            [
+                evidence["replay_configured_start_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "replay_observed_start_epoch_s": json.dumps(
+            [
+                evidence["replay_observed_start_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "replay_actual_submit_start_epoch_s": json.dumps(
+            [
+                evidence["replay_actual_submit_start_epoch_s"]
+                for evidence in job_evidence
+            ]
+        ),
+        "endpoint_counts": json.dumps(
+            [
+                evidence["endpoint_counts"]
+                for evidence in job_evidence
+            ],
+            sort_keys=True,
+        ),
+        "actor_worker_failures": actor_worker_failures,
+        "shared_credit_final": json.dumps(
+            final_credit,
+            sort_keys=True,
+        ),
+        "release_event_trace_schema_version": 5,
+        "release_event_trace_path": str(
+            Path("traces") / f"{run_stem}.release_events.csv"
+        ),
+        "release_event_trace_count": len(release_events),
+        "incidents": 0,
+    }
+    return record
+
 def _run_group(
     options: RunnerOptions,
     config: SharedVllmConfig,
@@ -734,73 +1459,11 @@ def _run_group(
     state_samples: list[dict[str, object]] = []
     eager_job_launches: list[float] = []
     state_signature = _text_state_calibration_signature(config)
-    control = config.state_aware_control
-    saor_control = config.saor_capacity_control
     service_rate_tracker = EndpointServiceRateTracker(
-        alpha=(
-            control.rate_ewma_alpha
-            if control is not None
-            else saor_control.ewma_alpha
-            if saor_control is not None
-            else 0.3
-        )
+        alpha=_service_rate_alpha(config)
     )
-    controllers = (
-        {
-            endpoint_id: BoundedCapacityController(
-                tuple(
-                    CapacityArm(limit, work_limit)
-                    for limit, work_limit in zip(
-                        control.request_candidates,
-                        control.work_candidates,
-                    )
-                ),
-                fallback=CapacityArm(
-                    control.fallback_request_limit,
-                    control.fallback_work_limit,
-                ),
-                initial=CapacityArm(
-                    control.initial_request_limit,
-                    control.work_candidates[
-                        control.request_candidates.index(
-                            control.initial_request_limit
-                        )
-                    ],
-                ),
-                target_service_rate_tokens_s=(
-                    control.target_service_rate_tokens_s_per_endpoint
-                ),
-                consecutive_samples=control.consecutive_samples,
-                increase_consecutive_samples=(
-                    control.increase_consecutive_samples
-                ),
-                cooldown_samples=control.cooldown_samples,
-                congestion_kv_usage=control.congestion_kv_usage,
-            )
-            for endpoint_id in config.endpoint_ids
-        }
-        if scenario.policy == "state_aware_adaptive" and control is not None
-        else {}
-    )
-    saor_controllers = (
-        {
-            endpoint_id: SaorCapacityController(
-                arms=saor_control.arms,
-                initial_arm=saor_control.initial_arm,
-                fallback_arm=saor_control.fallback_arm,
-                ewma_alpha=saor_control.ewma_alpha,
-                queue_work_scale=saor_control.queue_work_scale,
-                min_dwell_samples=saor_control.min_dwell_samples,
-                v=saor_control.v,
-                tail_weight=saor_control.tail_weight,
-                energy_weight=saor_control.energy_weight,
-                switch_weight=saor_control.switch_weight,
-            )
-            for endpoint_id in config.endpoint_ids
-        }
-        if scenario.policy == "saor_capacity" and saor_control is not None
-        else {}
-    )
+    controllers = _state_aware_controllers(config, scenario)
+    saor_controllers = _saor_capacity_controllers(config, scenario)
     group_launch_epoch_s = 0.0
     endpoint_request_limit, endpoint_work_limit = scenario.endpoint_limits(
         config.request_limit_per_endpoint,
@@ -814,53 +1477,16 @@ def _run_group(
                 coordinator_name,
                 config.endpoint_ids,
             )
-            if scenario.policy in {
-                "shared_drr",
-                "shared_fifo",
-                "external_vtc",
-                "saor_release",
-                "saor_bounded_priority",
-                "saor_bounded_ready",
-                "foreground_strict_priority",
-                "state_aware_adaptive",
-                "saor_capacity",
-            }
+            if scenario.policy in _OBSERVED_CREDIT_POLICIES
             else None
         )
         if observer is not None:
-            observer.prewarm(
-                request_limit=endpoint_request_limit,
-                work_limit=endpoint_work_limit,
-                quantum=config.credit_quantum,
-                policy=(
-                    "fifo" if scenario.policy == "shared_fifo"
-                    else "vtc" if scenario.policy == "external_vtc"
-                    else "saor" if scenario.policy == "saor_release"
-                    else scenario.policy
-                    if scenario.policy in {
-                        "saor_bounded_priority",
-                        "saor_bounded_ready",
-                    }
-                    else "strict_priority"
-                    if scenario.policy == "foreground_strict_priority"
-                    else "drr"
-                ),
-                saor_release_config=(
-                    SaorReleaseConfig(
-                        **asdict(config.saor_release_control)
-                    )
-                    if scenario.policy in {
-                        "saor_release",
-                        "saor_bounded_priority",
-                        "saor_bounded_ready",
-                    }
-                    and config.saor_release_control is not None
-                    else None
-                ),
-                record_ready_lifecycle_events=(
-                    scenario.ready_observation_contract
-                    == "bounded_concrete_pre_registration"
-                ),
+            _prewarm_observer(
+                observer,
+                config,
+                scenario,
+                endpoint_request_limit=endpoint_request_limit,
+                endpoint_work_limit=endpoint_work_limit,
             )
         start_epoch_s = time.time() + options.start_delay_s
         commands = (
@@ -901,56 +1527,21 @@ def _run_group(
             for url in options.metrics_urls
         ]
 
-        def sample_executor_state() -> None:
-            resource_batch = _resource_sample(
-                options.metrics_urls,
-                group_launch_epoch_s,
-            )
-            resource_samples.extend(resource_batch)
-            service_rates = service_rate_tracker.update(
-                resource_batch,
-                endpoint_ids=config.endpoint_ids,
-            )
-            if observer is None:
-                return
-            credit_batch = observer.sample(group_launch_epoch_s)
-            credit_samples.extend(credit_batch)
-            if scenario.ready_observation_contract == (
-                "bounded_concrete_pre_registration"
-            ) or scenario.policy == "saor_bounded_priority":
-                release_events.extend(
-                    observer.drain_release_events(group_launch_epoch_s)
-                )
-            state_rows = build_observe_only_text_state_rows(
-                credit_batch,
-                resource_batch,
-                endpoint_ids=config.endpoint_ids,
-                calibration_signature=state_signature,
-                service_rates=service_rates,
-            )
-            if saor_controllers and saor_control is not None:
-                state_rows = _apply_saor_capacity_control(
-                    state_rows,
-                    controllers=saor_controllers,
-                    observation_model=saor_control.observation_model,
-                    observer=observer,
-                    calibration_signature=state_signature,
-                    max_state_age_s=saor_control.max_state_age_s,
-                )
-            else:
-                state_rows = _apply_state_control(
-                    state_rows,
-                    controllers=controllers,
-                    observer=observer,
-                    calibration_signature=state_signature,
-                    max_state_age_s=(
-                        control.max_state_age_s
-                        if control is not None
-                        else 1.0
-                    ),
-                )
-            state_samples.extend(state_rows)
-
+        sampler = _GroupSampler(
+            options=options,
+            config=config,
+            scenario=scenario,
+            observer=observer,
+            group_launch_epoch_s=group_launch_epoch_s,
+            state_signature=state_signature,
+            service_rate_tracker=service_rate_tracker,
+            controllers=controllers,
+            saor_controllers=saor_controllers,
+            resource_samples=resource_samples,
+            credit_samples=credit_samples,
+            release_events=release_events,
+            state_samples=state_samples,
+        )
         if scenario.policy in DIRECT_CONTROL_POLICIES:
             direct_executor = ThreadPoolExecutor(
                 max_workers=1,
@@ -964,55 +1555,23 @@ def _run_group(
                 output_dir=options.output_dir,
                 run_stem=run_stem,
             )
-        for job_index, command in enumerate(commands):
-            if config.job_internal_arrival_contract == "eager":
-                eager_job_launches.append(_wait_for_eager_job_launch(
-                    start_epoch_s + scenario.arrival_offsets_s[job_index],
-                    on_wait=sample_executor_state,
-                ))
-            stdout_path = (
-                options.output_dir
-                / "logs"
-                / f"{run_stem}_job{job_index}.stdout.log"
-            )
-            stderr_path = (
-                options.output_dir
-                / "logs"
-                / f"{run_stem}_job{job_index}.stderr.log"
-            )
-            stdout_handle = stdout_path.open("w", encoding="utf-8")
-            stderr_handle = stderr_path.open("w", encoding="utf-8")
-            log_handles.extend([stdout_handle, stderr_handle])
-            processes.append(
-                subprocess.Popen(
-                    command,
-                    cwd=_CODE_ROOT,
-                    stdout=stdout_handle,
-                    stderr=stderr_handle,
-                    text=True,
-                    env=subprocess_env(),
-                )
-            )
-        while any(process.poll() is None for process in processes) or (
-            direct_future is not None and not direct_future.done()
-        ):
-            failed = [
-                process.returncode
-                for process in processes
-                if process.poll() not in (None, 0)
-            ]
-            if failed:
-                _terminate_processes(processes)
-                raise RuntimeError(
-                    f"profiler child failed with exit code {failed[0]}"
-                )
-            sample_executor_state()
-            time.sleep(_TRACE_SAMPLE_INTERVAL_S)
-        return_codes = [process.wait() for process in processes]
-        if any(code != 0 for code in return_codes):
-            raise RuntimeError(
-                f"profiler children failed: {return_codes}"
-            )
+        _launch_job_processes(
+            commands,
+            options=options,
+            config=config,
+            scenario=scenario,
+            run_stem=run_stem,
+            start_epoch_s=start_epoch_s,
+            on_wait=sampler.sample,
+            processes=processes,
+            log_handles=log_handles,
+            eager_job_launches=eager_job_launches,
+        )
+        _wait_for_group_completion(
+            processes,
+            direct_future,
+            sampler.sample,
+        )
         direct_job_evidence = (
             direct_future.result() if direct_future is not None else None
         )
@@ -1039,9 +1598,7 @@ def _run_group(
         final_credit = []
         if observer is not None:
             credit_samples.extend(observer.sample(group_launch_epoch_s))
-            if scenario.ready_observation_contract == (
-                "bounded_concrete_pre_registration"
-            ) or scenario.policy == "saor_bounded_priority":
+            if _records_release_events(scenario):
                 release_events.extend(
                     observer.drain_release_events(group_launch_epoch_s)
                 )
@@ -1145,405 +1702,49 @@ def _run_group(
             scenario.weights,
         )
         lag_work_limit = max(1, endpoint_work_limit)
-        direct_admission = (
-            {
-                key: value
-                for key, value in job_evidence[0].items()
-                if key.startswith("direct_")
-            }
-            if scenario.policy in DIRECT_CONTROL_POLICIES
-            else {
-                "direct_admission_trace_status": "not_applicable",
-                "direct_admission_trace_path": "",
-                "direct_admission_events": 0,
-                "direct_work_limit_applied": False,
-                "direct_request_occupancy_max": 0,
-                "direct_estimated_work_occupancy_max": 0,
-                "direct_request_occupancy_fraction_mean": 0.0,
-                "direct_estimated_work_to_reference_w_fraction_mean": 0.0,
-                "direct_request_occupancy_max_by_endpoint": "{}",
-                "direct_estimated_work_occupancy_max_by_endpoint": "{}",
-                "direct_admission_wait_p50_s": 0.0,
-                "direct_admission_wait_p95_s": 0.0,
-                "direct_admission_wait_p99_s": 0.0,
-                "direct_admission_wait_max_s": 0.0,
-            }
+        direct_admission = _direct_admission_summary(
+            scenario,
+            job_evidence,
         )
-        if scenario.policy in DIRECT_CONTROL_POLICIES and any(
-            {
-                key: value
-                for key, value in evidence.items()
-                if key.startswith("direct_")
-            }
-            != direct_admission
-            for evidence in job_evidence[1:]
-        ):
-            raise RuntimeError("direct admission summaries disagree across Jobs")
-        record = {
-            "schema_version": 2,
-            "experiment_id": config.experiment_id,
-            "scenario_id": scenario.scenario_id,
-            "phase": identity.phase,
-            "repeat_index": identity.repeat_index,
-            "order_index": identity.order_index,
-            "policy": scenario.policy,
-            "experiment_identity": (
-                "project_internal_selector_ablation"
-                if scenario.ready_observation_contract
-                == "bounded_concrete_pre_registration"
-                else "project_frozen_static_reference"
-                if scenario.policy == "static_partition"
-                else "project_policy"
-            ),
-            "ready_observation_contract": (
-                scenario.ready_observation_contract
-            ),
-            "job_count": scenario.job_count,
-            "static_partition_count": (
-                scenario.static_partition_count
-                if scenario.static_partition_count is not None
-                else scenario.job_count
-            ),
-            "rows_per_job": scenario.rows_per_job,
-            **(
-                {
-                    "rows_per_jobs": json.dumps(
-                        [
-                            scenario.row_count(index)
-                            for index in range(scenario.job_count)
-                        ]
-                    )
-                }
-                if scenario.rows_per_jobs
-                else {}
-            ),
-            "request_limit_per_endpoint": (
-                endpoint_request_limit
-            ),
-            "work_limit_per_endpoint": endpoint_work_limit,
-            "request_envelope_owner": (
-                "direct_endpoint_request_work_gate"
-                if scenario.policy == "direct_work_limited"
-                else "direct_endpoint_http_semaphore"
-                if scenario.policy == "direct_no_job"
-                else "project_admission"
-            ),
-            "work_envelope_applied": scenario.policy != "direct_no_job",
-            **direct_admission,
-            "http_keepalive_expiry_s": _common_arg_value(
-                config.common_args,
-                "--completion-http-keepalive-expiry-s",
-                "4.0",
-            ),
-            "credit_quantum": config.credit_quantum,
-            "runtime_state_mode": (
-                "actuated_saor_capacity" if saor_controllers
-                else "actuated" if controllers
-                else "actuated_saor_release"
-                if scenario.policy in {
-                    "saor_release",
-                    "saor_bounded_priority",
-                    "saor_bounded_ready",
-                }
-                else "observe_only" if observer is not None
-                else "direct_no_job_control"
-                if scenario.policy == "direct_no_job"
-                else "direct_k_work_diagnostic_control"
-                if scenario.policy == "direct_work_limited"
-                else "unavailable"
-            ),
-            "runtime_state_calibration_signature": (
-                state_signature if observer is not None else ""
-            ),
-            "adaptive_capacity_increases": sum(
-                row.get("control_action") == "increase"
-                for row in state_samples
-            ),
-            "adaptive_capacity_decreases": sum(
-                row.get("control_action") == "decrease"
-                for row in state_samples
-            ),
-            "adaptive_capacity_fallbacks": sum(
-                row.get("control_action") == "fallback"
-                for row in state_samples
-            ),
-            "weights": json.dumps(scenario.weights),
-            "arrival_offsets_s": json.dumps(
-                scenario.arrival_offsets_s
-            ),
-            "source_row_offsets": json.dumps(
-                scenario.source_row_offsets
-            ),
-            "request_manifests": json.dumps(
-                scenario.request_manifests
-            ),
-            "request_manifest_sha256": json.dumps(
-                [
-                    evidence["request_manifest_sha256"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "ray_address": options.ray_address,
-            "scheduler_owner": (
-                "endpoint_http_k_work_gate_then_vllm_fcfs"
-                if scenario.policy == "direct_work_limited"
-                else "endpoint_http_bound_then_vllm_fcfs"
-                if scenario.policy == "direct_no_job"
-                else "project_daft_ray_submission_then_vllm_fcfs"
-            ),
-            "coordinator_name": (
-                coordinator_name
-                if scenario.policy in {
-                    "shared_drr",
-                    "shared_fifo",
-                    "external_vtc",
-                    "saor_release",
-                    "saor_bounded_priority",
-                    "saor_bounded_ready",
-                    "foreground_strict_priority",
-                    "state_aware_adaptive",
-                    "saor_capacity",
-                }
-                else ""
-            ),
-            "run_instance_id": run_instance_id,
-            "execution_mode": (
-                "rehearsal" if options.rehearsal else "configured_matrix"
-            ),
-            "start_epoch_s": start_epoch_s,
-            "end_epoch_s": group_end_epoch_s,
-            **service_metrics,
-            **resource_metrics,
-            **mfu_metrics,
-            "jain_fairness": jain_fairness(normalized_service),
-            **cumulative_service_disparity(
-                job_evidence,
-                scenario.weights,
-            ),
-            **completion_fairness,
-            "completion_service_lag_p95_work_envelopes": (
-                float(completion_fairness["completion_service_lag_p95_work"])
-                / lag_work_limit
-            ),
-            "completion_service_lag_max_work_envelopes": (
-                float(completion_fairness["completion_service_lag_max_work"])
-                / lag_work_limit
-            ),
-            **shared_credit_trace_summary(
-                credit_samples,
-                work_limit_per_endpoint=endpoint_work_limit,
-                job_count=scenario.job_count,
-            ),
-            **active_set_phase_summary(
-                job_evidence,
-                credit_samples,
-                observation_interval_s=_TRACE_SAMPLE_INTERVAL_S,
-            ),
-            **bounded_saor_event_summary(release_events),
-            **(
-                bounded_ready_event_summary(
-                    release_events,
-                    job_evidence,
-                    foreground_job_index=max(
-                        range(scenario.job_count),
-                        key=scenario.job_priority,
-                    ),
-                )
-                if scenario.ready_observation_contract
-                == "bounded_concrete_pre_registration"
-                else {
-                    "bounded_ready_event_status": "not_applicable",
-                    "bounded_ready_lifecycle_complete": False,
-                    "bounded_ready_intervals": 0,
-                    "bounded_ready_jobs_with_intervals": 0,
-                    "bounded_ready_max_ready_requests_seen": 0,
-                    "bounded_ready_max_ready_work_seen": 0,
-                    "bounded_ready_max_ready_payload_bytes_seen": 0,
-                    "bounded_ready_requests_transition_mean_max": 0.0,
-                    "bounded_ready_requests_transition_p95_max": 0.0,
-                    "bounded_ready_work_transition_mean_max": 0.0,
-                    "bounded_ready_work_transition_p95_max": 0.0,
-                    "bounded_ready_payload_bytes_transition_mean_max": 0.0,
-                    "bounded_ready_payload_bytes_transition_p95_max": 0.0,
-                    "bounded_ready_foreground_intervals": 0,
-                    "bounded_ready_foreign_fallback_events": 0,
-                    "bounded_ready_foreground_max_ready_requests_seen": 0,
-                    "bounded_ready_foreground_max_ready_work_seen": 0,
-                }
-            ),
-            "job_jct_s": json.dumps(
-                [evidence["jct_s"] for evidence in job_evidence]
-            ),
-            "job_arrival_start_epoch_s": json.dumps(
-                [
-                    evidence["arrival_start_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_completion_end_epoch_s": json.dumps(
-                [
-                    evidence["completion_end_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_first_batch_ready_epoch_s": json.dumps(
-                [
-                    evidence["first_batch_ready_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_result_visible_epoch_s": json.dumps(
-                [
-                    evidence["result_visible_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_priorities": json.dumps(
-                [
-                    scenario.job_priority(index)
-                    for index in range(scenario.job_count)
-                ]
-            ),
-            "job_p99_s": json.dumps(
-                [evidence["p99_s"] for evidence in job_evidence]
-            ),
-            "job_completion_lag_s": json.dumps(
-                [
-                    evidence["completion_lag_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_slo_violation_ratio": json.dumps(
-                [
-                    evidence["slo_violation_ratio"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_slo_goodput_per_s": json.dumps(
-                [
-                    evidence["slo_goodput_per_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_slo_token_goodput_per_s": json.dumps(
-                [
-                    evidence["slo_token_goodput_per_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_predicted_work": json.dumps(
-                [
-                    evidence["predicted_work"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "job_actual_work": json.dumps(
-                [evidence["actual_work"] for evidence in job_evidence]
-            ),
-            "job_expected_count": json.dumps(
-                [evidence["expected_count"] for evidence in job_evidence]
-            ),
-            "job_completed_count": json.dumps(
-                [evidence["completed_count"] for evidence in job_evidence]
-            ),
-            "job_exactly_once": json.dumps(
-                [evidence["exactly_once"] for evidence in job_evidence]
-            ),
-            **(
-                {
-                    "job_actual_prompt_work": json.dumps(
-                        [
-                            evidence["actual_prompt_work"]
-                            for evidence in job_evidence
-                        ]
-                    ),
-                    "job_actual_output_work": json.dumps(
-                        [
-                            evidence["actual_output_work"]
-                            for evidence in job_evidence
-                        ]
-                    ),
-                    "job_arrived_rows": json.dumps(
-                        [
-                            scenario.row_count(index)
-                            for index in range(scenario.job_count)
-                        ]
-                    ),
-                    "job_completed_rows": json.dumps(
-                        [
-                            scenario.row_count(index)
-                            for index in range(scenario.job_count)
-                        ]
-                    ),
-                    "job_failed_rows": json.dumps([0] * scenario.job_count),
-                }
-                if scenario.rows_per_jobs
-                else {}
-            ),
-            "job_normalized_service_rate": json.dumps(
-                normalized_service
-            ),
-            "replay_configured_start_epoch_s": json.dumps(
-                [
-                    evidence["replay_configured_start_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "replay_observed_start_epoch_s": json.dumps(
-                [
-                    evidence["replay_observed_start_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "replay_actual_submit_start_epoch_s": json.dumps(
-                [
-                    evidence["replay_actual_submit_start_epoch_s"]
-                    for evidence in job_evidence
-                ]
-            ),
-            "endpoint_counts": json.dumps(
-                [
-                    evidence["endpoint_counts"]
-                    for evidence in job_evidence
-                ],
-                sort_keys=True,
-            ),
-            "actor_worker_failures": actor_worker_failures,
-            "shared_credit_final": json.dumps(
-                final_credit,
-                sort_keys=True,
-            ),
-            "release_event_trace_schema_version": 5,
-            "release_event_trace_path": str(
-                Path("traces") / f"{run_stem}.release_events.csv"
-            ),
-            "release_event_trace_count": len(release_events),
-            "incidents": 0,
-        }
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.resources.csv",
-            resource_samples,
+        record = _build_group_record(
+            _GroupRecordContext(
+                options=options,
+                config=config,
+                scenario=scenario,
+                identity=identity,
+                run_instance_id=run_instance_id,
+                run_stem=run_stem,
+                coordinator_name=coordinator_name,
+                start_epoch_s=start_epoch_s,
+                group_end_epoch_s=group_end_epoch_s,
+                endpoint_request_limit=endpoint_request_limit,
+                endpoint_work_limit=endpoint_work_limit,
+                controllers=controllers,
+                saor_controllers=saor_controllers,
+                observer=observer,
+                state_signature=state_signature,
+                state_samples=state_samples,
+                job_evidence=job_evidence,
+                service_metrics=service_metrics,
+                resource_metrics=resource_metrics,
+                mfu_metrics=mfu_metrics,
+                normalized_service=normalized_service,
+                completion_fairness=completion_fairness,
+                lag_work_limit=lag_work_limit,
+                direct_admission=direct_admission,
+                credit_samples=credit_samples,
+                release_events=release_events,
+                actor_worker_failures=actor_worker_failures,
+                final_credit=final_credit,
+            )
         )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.credits.csv",
-            credit_samples,
-        )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.states.csv",
-            state_samples,
-        )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.release_events.csv",
-            release_events,
-            fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+        _write_group_trace_files(
+            options,
+            run_stem,
+            resource_samples=resource_samples,
+            credit_samples=credit_samples,
+            state_samples=state_samples,
+            release_events=release_events,
         )
         _write_json_atomic(record_path, record)
         return record
@@ -1556,9 +1757,7 @@ def _run_group(
                 credit_samples.extend(
                     observer.sample(group_launch_epoch_s)
                 )
-                if scenario.ready_observation_contract == (
-                    "bounded_concrete_pre_registration"
-                ) or scenario.policy == "saor_bounded_priority":
+                if _records_release_events(scenario):
                     release_events.extend(
                         observer.drain_release_events(group_launch_epoch_s)
                     )
@@ -1567,30 +1766,13 @@ def _run_group(
                 capture_error = redact_text(
                     f"{type(evidence_exc).__name__}:{evidence_exc}"
                 )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.resources.csv",
-            resource_samples,
-        )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.credits.csv",
-            credit_samples,
-        )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.states.csv",
-            state_samples,
-        )
-        _write_trace_rows_atomic(
-            options.output_dir
-            / "traces"
-            / f"{run_stem}.release_events.csv",
-            release_events,
-            fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+        _write_group_trace_files(
+            options,
+            run_stem,
+            resource_samples=resource_samples,
+            credit_samples=credit_samples,
+            state_samples=state_samples,
+            release_events=release_events,
         )
         _write_json_atomic(
             options.output_dir

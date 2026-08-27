@@ -63,6 +63,37 @@ _COMMON_FIELDS = (
     "performance_writeback_mode", "unsupported_request_tails", "source", "organizer",
 )
 
+_CELL_EVIDENCE_FIELDS = {
+    "implementation_source", "start_epoch_s", "end_epoch_s",
+    "database_operator_e2e_s", "jobs", "service_metrics",
+    "resource_metrics", "exactly_once", "request_tail_status",
+    "service_fairness_metrics", "output_paths", "status",
+    "server_version", "pgvector_version", "mfu_contract",
+    "completion_evidence",
+}
+_NATIVE_PROVENANCE_FIELDS = {
+    "upstream_url", "upstream_version", "upstream_commit",
+    "adapter_path", "adapter_sha256", "upstream_source_modified",
+    "adapter_diff_status",
+}
+_PERSISTED_JOB_FIELDS = (
+    "job_id", "scheduled_launch_epoch_s", "actual_launch_epoch_s",
+    "source_arrival_epoch_s", "ended_epoch_s", "completed_count",
+    "expected_count", "actual_work", "manifest_sha256", "exactly_once",
+    "shard_provenance", "concrete_ready_epoch_s",
+    "credit_registered_epoch_s", "first_submit_epoch_s",
+    "first_batch_ready_epoch_s", "result_visible_epoch_s",
+    "t0_job_release_epoch_s", "t1_first_batch_epoch_s",
+    "t2_first_request_epoch_s", "t3_last_request_completion_epoch_s",
+    "t4_result_visible_epoch_s", "jct_s", "source_s", "execution_s",
+    "service_span_s", "role", "weight", "request_count",
+    "actual_prompt_tokens", "actual_output_tokens", "actual_total_tokens",
+    "request_slo_s", "job_jct_slo_s", "job_jct_slo_status",
+    "job_jct_slo_violation", "request_p50_s", "request_p95_s",
+    "request_p99_status", "request_p99_s", "slo_status",
+    "slo_violation_ratio", "tail_reason",
+)
+
 
 def endpoint_auxiliary_url(endpoint_url: str, path: str) -> str:
     """Map a completion URL to the same service origin at ``path``."""
@@ -716,40 +747,20 @@ def _all_cells(
     )
 
 
-def _validate_cell_evidence(
+def _validate_cell_header(
     arm: MatchedArm,
-    cell: ScheduledMatchedCell,
     evidence: dict[str, object],
-    repository_commit: str,
-    runtime_identity: dict[str, object],
-    matrix_output_root: Path,
-    cell_output_dir: Path,
-) -> dict[str, object]:
-    """Normalize one executor result and reject incomplete comparison evidence."""
-
-    required = {
-        "implementation_source", "start_epoch_s", "end_epoch_s",
-        "database_operator_e2e_s", "jobs", "service_metrics",
-        "resource_metrics", "exactly_once", "request_tail_status",
-        "service_fairness_metrics",
-        "output_paths", "status", "server_version", "pgvector_version",
-        "mfu_contract", "completion_evidence",
-    }
-    missing = sorted(required - evidence.keys())
+) -> tuple[float, float, float]:
+    missing = sorted(_CELL_EVIDENCE_FIELDS - evidence.keys())
     if missing:
         raise RuntimeError(f"cell evidence missing required fields: {missing}")
     if evidence["status"] != "passed":
         raise RuntimeError("executor returned non-passing cell evidence")
     if arm.kind == "native":
         provenance = evidence.get("native_implementation_provenance")
-        required_provenance = {
-            "upstream_url", "upstream_version", "upstream_commit",
-            "adapter_path", "adapter_sha256", "upstream_source_modified",
-            "adapter_diff_status",
-        }
         if (
             not isinstance(provenance, dict)
-            or set(provenance) != required_provenance
+            or set(provenance) != _NATIVE_PROVENANCE_FIELDS
             or provenance.get("upstream_source_modified") is not False
             or provenance.get("adapter_diff_status")
             != "thin_adapter_only_no_upstream_patch"
@@ -768,6 +779,37 @@ def _validate_cell_evidence(
         raise RuntimeError("cell common timing boundary is invalid")
     if float(end) < float(start) or float(boundary) < 0:
         raise RuntimeError("cell common timing boundary is inconsistent")
+    return float(start), float(end), float(boundary)
+
+
+def _validate_job_tail(job: dict[str, object]) -> None:
+    p50 = job.get("request_p50_s")
+    p95 = job.get("request_p95_s")
+    p99 = job.get("request_p99_s")
+    slo = job.get("slo_violation_ratio")
+    if (
+        job.get("request_p99_status") != "available"
+        or job.get("slo_status") != "available"
+        or not isinstance(p50, (int, float))
+        or isinstance(p50, bool)
+        or float(p50) < 0
+        or not isinstance(p95, (int, float))
+        or isinstance(p95, bool)
+        or float(p95) < float(p50)
+        or not isinstance(p99, (int, float))
+        or isinstance(p99, bool)
+        or float(p99) < float(p95)
+        or not isinstance(slo, (int, float))
+        or isinstance(slo, bool)
+        or not 0 <= float(slo) <= 1
+    ):
+        raise RuntimeError("gateway per-Job tail/SLO evidence is invalid")
+
+
+def _validate_jobs(
+    arm: MatchedArm,
+    evidence: dict[str, object],
+) -> tuple[list[dict[str, object]], float, float]:
     jobs = evidence["jobs"]
     if not isinstance(jobs, list) or len(jobs) != 2:
         raise RuntimeError("cell must retain both Job evidence blocks")
@@ -795,29 +837,7 @@ def _validate_cell_evidence(
                 }.items()
             ):
                 raise RuntimeError("timed PostgreSQL source evidence is invalid")
-        p99_status = job.get("request_p99_status")
-        slo_status = job.get("slo_status")
-        p50 = job.get("request_p50_s")
-        p95 = job.get("request_p95_s")
-        p99 = job.get("request_p99_s")
-        slo = job.get("slo_violation_ratio")
-        if (
-            p99_status != "available"
-            or slo_status != "available"
-            or not isinstance(p50, (int, float))
-            or isinstance(p50, bool)
-            or float(p50) < 0
-            or not isinstance(p95, (int, float))
-            or isinstance(p95, bool)
-            or float(p95) < float(p50)
-            or not isinstance(p99, (int, float))
-            or isinstance(p99, bool)
-            or float(p99) < float(p95)
-            or not isinstance(slo, (int, float))
-            or isinstance(slo, bool)
-            or not 0 <= float(slo) <= 1
-        ):
-            raise RuntimeError("gateway per-Job tail/SLO evidence is invalid")
+        _validate_job_tail(job)
     for job, expected_job in zip(jobs, arm.job_manifests, strict=True):
         if (
             job.get("job_id") != expected_job.job_id
@@ -834,6 +854,12 @@ def _validate_cell_evidence(
     offset_deviation_s = _validate_actual_job_offset(actual_offset_s)
     if float(jobs[0]["ended_epoch_s"]) <= starts[1]:
         raise RuntimeError("Job overlap evidence is missing")
+    return jobs, actual_offset_s, offset_deviation_s
+
+
+def _validate_service_metrics(
+    evidence: dict[str, object],
+) -> tuple[dict[str, object], dict[str, object]]:
     service = evidence["service_metrics"]
     resource = evidence["resource_metrics"]
     if not isinstance(service, dict) or service.get("metrics_status") != "ok":
@@ -850,7 +876,18 @@ def _validate_cell_evidence(
         raise RuntimeError("service token counter evidence is invalid")
     if not isinstance(resource, dict) or resource.get("resource_metrics_status") != "ok":
         raise RuntimeError("resource evidence is incomplete")
-    resource_path, resource_relative_path = relativize_matrix_evidence_path(
+    return service, resource
+
+
+def _validate_resource_trace(
+    matrix_output_root: Path,
+    resource: dict[str, object],
+    *,
+    start: float,
+    end: float,
+    boundary: float,
+) -> str:
+    resource_path, relative_path = relativize_matrix_evidence_path(
         matrix_output_root,
         str(resource.get("path", "")),
         "resource trace artifact",
@@ -858,30 +895,36 @@ def _validate_cell_evidence(
     if not resource_path.is_file():
         raise RuntimeError("resource trace artifact must be a file")
     with resource_path.open(encoding="utf-8", newline="") as stream:
-        resource_rows = list(csv.DictReader(stream))
-    if not resource_rows:
+        rows = list(csv.DictReader(stream))
+    if not rows:
         raise RuntimeError("resource trace has no samples")
     observed = [
         float(row["observed_epoch_s"])
-        for row in resource_rows
+        for row in rows
         if row.get("observed_epoch_s") not in (None, "")
     ]
     relative = [
         float(row["sample_epoch_s"])
-        for row in resource_rows
+        for row in rows
         if row.get("sample_epoch_s") not in (None, "")
     ]
-    if observed and not any(float(start) <= item <= float(end) for item in observed):
+    if observed and not any(start <= item <= end for item in observed):
         raise RuntimeError("resource trace has no in-boundary sample")
-    if relative and not any(0.0 <= item <= float(boundary) for item in relative):
+    if relative and not any(0.0 <= item <= boundary for item in relative):
         raise RuntimeError("resource trace has no in-boundary relative sample")
     if not observed and not relative:
         raise RuntimeError("resource trace has no timestamped samples")
-    output_paths = evidence["output_paths"]
+    return relative_path
+
+
+def _validate_output_artifacts(
+    matrix_output_root: Path,
+    output_paths: object,
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     if not isinstance(output_paths, dict) or not output_paths:
         raise RuntimeError("output artifact evidence is incomplete")
-    relative_output_paths: dict[str, str] = {}
-    artifact_identities: dict[str, dict[str, str]] = {}
+    relative_paths: dict[str, str] = {}
+    identities: dict[str, dict[str, str]] = {}
     for name, value in output_paths.items():
         artifact, relative_path = relativize_matrix_evidence_path(
             matrix_output_root,
@@ -890,11 +933,20 @@ def _validate_cell_evidence(
         )
         if not artifact.is_file():
             raise RuntimeError(f"output artifact {name} must be a file")
-        relative_output_paths[str(name)] = relative_path
-        artifact_identities[str(name)] = {
+        relative_paths[str(name)] = relative_path
+        identities[str(name)] = {
             "path": relative_path,
             "sha256": sha256_file(artifact),
         }
+    return relative_paths, identities
+
+
+def _validate_observation_evidence(
+    arm: MatchedArm,
+    evidence: dict[str, object],
+    runtime_identity: dict[str, object],
+    artifact_identities: dict[str, dict[str, str]],
+) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
     gateway = evidence.get("observation_gateway")
     system_observation = evidence.get("system_observation")
     if not isinstance(gateway, dict) or not isinstance(system_observation, dict):
@@ -908,11 +960,12 @@ def _validate_cell_evidence(
     ):
         raise RuntimeError("gateway-observed request-tail evidence is invalid")
     fairness = evidence["service_fairness_metrics"]
-    if not isinstance(fairness, dict) or set(fairness) != {
+    expected_fairness_fields = {
         "starvation_status", "longest_no_service_s",
         "completion_service_lag_status", "completion_service_lag_p95_work",
         "completion_service_lag_max_work", "reason",
-    }:
+    }
+    if not isinstance(fairness, dict) or set(fairness) != expected_fairness_fields:
         raise RuntimeError("service fairness evidence schema is invalid")
     if (
         str(fairness["starvation_status"]).startswith("unavailable")
@@ -961,15 +1014,24 @@ def _validate_cell_evidence(
         or float(system_observation.get("group_jct_s", -1.0))
         != float(evidence["database_operator_e2e_s"])
         or not isinstance(system_observation.get("jobs"), dict)
-        or set(system_observation["jobs"]) != {job.job_id for job in arm.job_manifests}
+        or set(system_observation["jobs"])
+        != {job.job_id for job in arm.job_manifests}
     ):
         raise RuntimeError("T0-T4 system observation evidence failed")
+    return gateway, system_observation, fairness
+
+
+def _validate_completion_evidence(
+    arm: MatchedArm,
+    evidence: dict[str, object],
+) -> dict[str, object]:
     completion = evidence["completion_evidence"]
-    if not isinstance(completion, dict) or set(completion) != {
+    expected_fields = {
         "status", "mode", "producer", "expected_rows", "observed_rows",
         "expected_doc_id_digest", "observed_doc_id_digest", "output_digest",
         "exactly_once", "verified_epoch_s",
-    }:
+    }
+    if not isinstance(completion, dict) or set(completion) != expected_fields:
         raise RuntimeError("completion evidence schema is invalid")
     expected_producer = (
         "native_official_adapter" if arm.kind == "native" else "project_profiler"
@@ -988,6 +1050,14 @@ def _validate_cell_evidence(
         or not isinstance(completion["verified_epoch_s"], (int, float))
     ):
         raise RuntimeError("completion trace correctness evidence failed")
+    return completion
+
+
+def _validate_executor_final_state(
+    arm: MatchedArm,
+    cell: ScheduledMatchedCell,
+    evidence: dict[str, object],
+) -> list[object]:
     try:
         if arm.kind == "native":
             evidence["queue_final"] = validate_native_final_queue(
@@ -1005,45 +1075,51 @@ def _validate_cell_evidence(
     command = evidence.get("command", [])
     if arm.kind == "native" and any(
         token in " ".join(str(item) for item in command).lower()
-        for token in ("credit", "coordinator", "router", "bounded-ready", "max-active-work")
+        for token in (
+            "credit", "coordinator", "router", "bounded-ready",
+            "max-active-work",
+        )
     ):
         raise RuntimeError("native dispatch contains Project flags")
-    # Engineering decision: persist a curated cell schema instead of copying
-    # executor records wholesale. Native/Project executors retain their full
-    # raw files under the cell directory; the matrix index contains only the
-    # fields the offline contract consumes, preventing stale absolute locators
-    # and unknown exception fields from leaking into the portable root.
-    job_fields = (
-        "job_id", "scheduled_launch_epoch_s", "actual_launch_epoch_s",
-        "source_arrival_epoch_s", "ended_epoch_s", "completed_count",
-        "expected_count", "actual_work",
-        "manifest_sha256", "exactly_once", "shard_provenance",
-        "concrete_ready_epoch_s", "credit_registered_epoch_s",
-        "first_submit_epoch_s",
-        "first_batch_ready_epoch_s", "result_visible_epoch_s",
-        "t0_job_release_epoch_s", "t1_first_batch_epoch_s",
-        "t2_first_request_epoch_s", "t3_last_request_completion_epoch_s",
-        "t4_result_visible_epoch_s", "jct_s", "source_s", "execution_s",
-        "service_span_s", "role", "weight", "request_count",
-        "actual_prompt_tokens", "actual_output_tokens", "actual_total_tokens",
-        "request_slo_s", "job_jct_slo_s", "job_jct_slo_status",
-        "job_jct_slo_violation",
-        "request_p50_s", "request_p95_s", "request_p99_status",
-        "request_p99_s", "slo_status",
-        "slo_violation_ratio", "tail_reason",
-    )
-    persisted_jobs = [
-        {field: job[field] for field in job_fields if field in job}
-        for job in jobs
-    ]
-    persisted_service = {
-        field: service[field]
-        for field in (
-            "metrics_status", "prompt_tokens_delta", "generation_tokens_delta",
-            "request_success_delta",
-        )
-        if field in service
+    return list(command)
+
+
+def _raw_cell_artifact_manifest(
+    matrix_output_root: Path,
+    cell_output_dir: Path,
+) -> tuple[str, dict[str, str]]:
+    cell_relative_root = cell_output_dir.resolve().relative_to(
+        matrix_output_root.resolve()
+    ).as_posix()
+    raw_paths = sorted(cell_output_dir.rglob("*"))
+    if any(path.is_symlink() for path in raw_paths):
+        raise RuntimeError("cell raw artifact tree must not contain symlinks")
+    manifest = {
+        path.relative_to(matrix_output_root).as_posix(): sha256_file(path)
+        for path in raw_paths if path.is_file()
     }
+    if not manifest:
+        raise RuntimeError("cell raw artifact manifest is empty")
+    return cell_relative_root, manifest
+
+
+def _curated_cell_evidence(
+    evidence: dict[str, object],
+    *,
+    jobs: list[dict[str, object]],
+    service: dict[str, object],
+    resource: dict[str, object],
+    resource_relative_path: str,
+    relative_output_paths: dict[str, str],
+    artifact_identities: dict[str, dict[str, str]],
+    gateway: dict[str, object],
+    system_observation: dict[str, object],
+    fairness: dict[str, object],
+    completion: dict[str, object],
+    cell_relative_root: str,
+    raw_artifact_manifest: dict[str, str],
+    command: list[object],
+) -> dict[str, object]:
     persisted_resource = {
         field: resource[field]
         for field in (
@@ -1052,18 +1128,6 @@ def _validate_cell_evidence(
         if field in resource
     }
     persisted_resource["path"] = resource_relative_path
-    cell_relative_root = cell_output_dir.resolve().relative_to(
-        matrix_output_root.resolve()
-    ).as_posix()
-    raw_paths = sorted(cell_output_dir.rglob("*"))
-    if any(path.is_symlink() for path in raw_paths):
-        raise RuntimeError("cell raw artifact tree must not contain symlinks")
-    raw_artifact_manifest = {
-        path.relative_to(matrix_output_root).as_posix(): sha256_file(path)
-        for path in raw_paths if path.is_file()
-    }
-    if not raw_artifact_manifest:
-        raise RuntimeError("cell raw artifact manifest is empty")
     persisted: dict[str, object] = {
         "implementation_source": evidence["implementation_source"],
         "start_epoch_s": evidence["start_epoch_s"],
@@ -1072,8 +1136,18 @@ def _validate_cell_evidence(
         "correct_throughput_tokens_per_s": evidence[
             "correct_throughput_tokens_per_s"
         ],
-        "jobs": persisted_jobs,
-        "service_metrics": persisted_service,
+        "jobs": [
+            {field: job[field] for field in _PERSISTED_JOB_FIELDS if field in job}
+            for job in jobs
+        ],
+        "service_metrics": {
+            field: service[field]
+            for field in (
+                "metrics_status", "prompt_tokens_delta",
+                "generation_tokens_delta", "request_success_delta",
+            )
+            if field in service
+        },
         "resource_metrics": persisted_resource,
         "exactly_once": evidence["exactly_once"],
         "request_tail_status": evidence["request_tail_status"],
@@ -1092,7 +1166,7 @@ def _validate_cell_evidence(
         "server_version": evidence["server_version"],
         "pgvector_version": evidence["pgvector_version"],
         "mfu_contract": evidence["mfu_contract"],
-        "command": persisted_command(list(command)),
+        "command": persisted_command(command),
     }
     for field in (
         "run_id", "queue_final", "shared_credit_final",
@@ -1101,6 +1175,62 @@ def _validate_cell_evidence(
     ):
         if field in evidence:
             persisted[field] = evidence[field]
+    return persisted
+
+
+def _validate_cell_evidence(
+    arm: MatchedArm,
+    cell: ScheduledMatchedCell,
+    evidence: dict[str, object],
+    repository_commit: str,
+    runtime_identity: dict[str, object],
+    matrix_output_root: Path,
+    cell_output_dir: Path,
+) -> dict[str, object]:
+    """Normalize one executor result and reject incomplete comparison evidence."""
+
+    start, end, boundary = _validate_cell_header(arm, evidence)
+    jobs, actual_offset_s, offset_deviation_s = _validate_jobs(arm, evidence)
+    service, resource = _validate_service_metrics(evidence)
+    resource_relative_path = _validate_resource_trace(
+        matrix_output_root,
+        resource,
+        start=start,
+        end=end,
+        boundary=boundary,
+    )
+    relative_output_paths, artifact_identities = _validate_output_artifacts(
+        matrix_output_root,
+        evidence["output_paths"],
+    )
+    gateway, system_observation, fairness = _validate_observation_evidence(
+        arm,
+        evidence,
+        runtime_identity,
+        artifact_identities,
+    )
+    completion = _validate_completion_evidence(arm, evidence)
+    command = _validate_executor_final_state(arm, cell, evidence)
+    cell_relative_root, raw_artifact_manifest = _raw_cell_artifact_manifest(
+        matrix_output_root,
+        cell_output_dir,
+    )
+    persisted = _curated_cell_evidence(
+        evidence,
+        jobs=jobs,
+        service=service,
+        resource=resource,
+        resource_relative_path=resource_relative_path,
+        relative_output_paths=relative_output_paths,
+        artifact_identities=artifact_identities,
+        gateway=gateway,
+        system_observation=system_observation,
+        fairness=fairness,
+        completion=completion,
+        cell_relative_root=cell_relative_root,
+        raw_artifact_manifest=raw_artifact_manifest,
+        command=command,
+    )
     return {
         **persisted,
         "actual_job_offset_s": actual_offset_s,

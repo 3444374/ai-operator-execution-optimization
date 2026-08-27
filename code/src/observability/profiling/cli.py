@@ -8,13 +8,7 @@ import os
 from src.data.workloads import WORKLOAD_NAMES
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Profile PostgreSQL-triggered AI operator execution through "
-            "Daft, Ray, and an external model service."
-        )
-    )
+def _add_source_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
     parser.add_argument("--setup", action="store_true")
     parser.add_argument("--seed-rows", type=int, default=0)
@@ -40,6 +34,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="doc_id",
     )
     parser.add_argument("--source-row-offset", type=int, default=0)
+
+
+def _add_operator_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--operator",
         choices=["ai_embed", "ai_complete"],
@@ -84,6 +81,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=0.3,
     )
     parser.add_argument("--embedding-dim", type=int, default=128)
+
+
+def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--model-backend",
         choices=["fake", "compatible_http", "http_openai", "ollama"],
@@ -193,6 +193,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Formal scenario runners must match this to live service flags."
         ),
     )
+
+
+def _add_ray_and_credit_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument(
         "--actor-workers-per-endpoint",
@@ -313,6 +316,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--saor-queue-weight", type=float, default=0.0)
     parser.add_argument("--saor-fairness-weight", type=float, default=1.0)
     parser.add_argument("--saor-slo-weight", type=float, default=0.0)
+
+
+def _add_scheduling_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--pool-routing",
         choices=["none", "request_cost"],
@@ -395,6 +401,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--hol-age-congestion-s", type=float, default=2.0)
     parser.add_argument("--hol-age-low-load-s", type=float, default=0.5)
     parser.add_argument("--control-trace-output")
+
+
+def _add_replay_and_observability_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--arrival-replay", action="store_true")
     parser.add_argument("--arrival-time-scale", type=float, default=1.0)
     parser.add_argument(
@@ -494,6 +503,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Optional explicit output-token price; omitted prices stay unavailable.",
     )
+
+
+def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--scenario-id", default="manual")
     parser.add_argument("--random-seed", type=int, default=0)
     parser.add_argument(
@@ -550,4 +562,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="feasibility/results/postgres_ai_operator_profile.csv",
     )
     parser.add_argument("--dry-run", action="store_true")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Profile PostgreSQL-triggered AI operator execution through "
+            "Daft, Ray, and an external model service."
+        )
+    )
+    _add_source_arguments(parser)
+    _add_operator_arguments(parser)
+    _add_model_arguments(parser)
+    _add_ray_and_credit_arguments(parser)
+    _add_scheduling_arguments(parser)
+    _add_replay_and_observability_arguments(parser)
+    _add_execution_arguments(parser)
     return parser.parse_args(argv)
