@@ -328,8 +328,10 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 | 运行时结果 | `/root/autodl-tmp/experiment-artifacts/<unique_run_id>/` | 仓库外保存；审计后只把摘要和报告纳入 Git |
 | 可恢复备份 | 独立备份位置 | 数据盘不随系统镜像保存，不得把同盘副本当作唯一备份 |
 
-系统盘只保留操作系统、PostgreSQL/Conda 等软件与服务配置，以及有界且轮转的小日志。
-PGDATA/WAL、模型、raw 数据集、虚拟环境、缓存、vLLM/编排日志、实验产物与迁移暂存副本放数据盘；
+以上磁盘分工适用于安装、下载、导入、构建、服务运行、实验输出和数据迁移；§6 的 PostgreSQL
+数据目录只是其中一个具体应用。系统盘只保留操作系统、PostgreSQL/基础 Conda 等软件与服务配置，
+以及有界且轮转的小型系统日志。项目仓库与 runtime env、PGDATA/WAL、模型、raw 数据集、项目虚拟环境、
+下载/包/模型/JIT/构建缓存、服务与 runner 日志、实验产物、下载中的临时文件和迁移暂存副本放数据盘；
 可恢复备份保存到独立存储。首次使用实例时用 `findmnt -T /root/autodl-tmp` 和
 `df -hT / /root/autodl-tmp` 核对实际挂载与空间，不只根据目录名判断所在磁盘。
 只更改 PostgreSQL 存储路径不改变 host、port、database 或用户，因此连接串保持不变。

@@ -6,8 +6,10 @@
   `/etc/network_turbo` 升为目录级规则；依赖该 HTTP(S) 代理时使用 HTTPS Git remote，`pip`
   和其他站点继续按 runbook 使用镜像或直连。根规则路由同步改为读取目标平台的
   `AGENTS.md` 和 runbook，确保操作远程平台时也能加载局部规则。
-- 将大体量可变状态落数据盘升为 AutoDL 强制规则：PGDATA/WAL、模型、raw 数据集、虚拟环境、
-  缓存、服务/实验日志、artifact 与迁移暂存副本使用 `/root/autodl-tmp`；可恢复备份另存独立存储，系统盘只保留软件、配置和有界日志。
+- 将 AutoDL 存储规则改为覆盖所有安装、下载、导入、构建、服务运行、实验输出和迁移操作的三级分工：
+  系统盘只放操作系统、系统级软件、基础环境、服务配置和有界小日志；项目仓库/runtime env、数据库数据、
+  模型、数据集、项目虚拟环境、各类缓存、运行日志、实验产物和暂存文件统一使用 `/root/autodl-tmp`；
+  可恢复备份另存独立存储。PostgreSQL 数据目录和迁移被明确为该通用磁盘规则的具体应用，而不是规则本身。
 - `deploy/autodl/README.md` 补充 PostgreSQL 数据目录约定、execute-only ACL、新实例初始化顺序和
   已有 cluster 的干净停库—复制—checksum—切换—一致性—冷启停校验流程。只改存储路径时数据库连接串不变；
   数据盘不随系统镜像保存，需另行可恢复备份。机器特定容量和迁移结果仍留在仓库外 artifact，未修改 `code/INFRA_STATUS.md`。
