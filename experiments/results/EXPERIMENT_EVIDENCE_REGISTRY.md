@@ -44,12 +44,13 @@
 | SAOR bounded-ready development | `saor_bounded_ready` 有界 concrete-request 预注册、跨 submission/request trace lifecycle join、actor-side register/grant event ledger | `state_aware_work_unit/saor_bounded_ready_gate_20260813/` | 两个独立 rehearsal root、8/8 cell、0 incident；0.125K 两轮全过 correctness/mechanism/foreground/bulk/efficiency 门，均值 12,361 tok/s、fg P99 17.87s、fg SLO 0%、bulk SLO 0.662，注册 formal candidate。0.25K 两轮 bulk SLO 0.752/0.744 越界，拒绝。尚无 formal repeats、4-Job、reservation 或理论公平结论。 |
 | SAOR matched-ready selector attribution | completion-accounted registered-ready lag、bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt 同 observation 双轮汇总 | `state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/` | 12/12 cell、0 incident、12,288 requests exactly-once。DRR/VTC-style 约 12.90K tok/s、fg P99 27.23/26.16s、fg SLO 0；SAOR 12.28K tok/s、fg P99 17.85s、lag P95 57.7K work。相对 VTC-style，SAOR 用约 4.8% 吞吐、5.2% bulk JCT 和 22.7% longest-no-service 代价换取 31.8% fg P99 与 11.7% lag 改善。它是 development 中的非支配折中点，不是已授权 formal 的 selector winner；native baseline count=0。 |
 | SAOR ready-observation bridge | frozen-static/single-head shared FIFO/bounded-ready FIFO 三臂配置、readiness 与双轮 raw-effect 汇总 | `state_aware_work_unit/saor_ready_observation_bridge_rehearsal_20260813/` | 6/6 cell、0 incident、6,144 requests exactly-once。共享容量双轮均值 tok/s +25.96%、fg P99 +99.17%；bounded-ready 在同 FIFO 下 tok/s +7.30%、fg P99 −33.62%，但 fg SLO violation 仍约 39.7%。证明 static isolation、shared efficiency 与 ready exposure 是不同效应；不授权 formal，native baseline count=0。 |
+| SAOR 五臂共同观测系统对照 | 五臂 runner、T0--T4、严格透传 observation-only gateway、archive/identity/trace validator | `state_aware_work_unit/saor_native_system_matched_gateway_rehearsal_20260821/` | `93271012` 的 5/5 rehearsal cell、exactly-once 与独立 archive validation 通过；五臂 request P99/SLO/Jain/lag/no-service 已可比较。单次 SAOR 相对同 executor static 提高吞吐、降低 group JCT，但 P99、Jain、lag 和最长无服务变差，只支持效率—尾延迟—公平权衡。formal 未运行，0s/5s isolation 只有 partial。 |
 | Actor pool 分池与 endpoint routing | `code/src/scheduling/runtime/ray_adapter.py`、profiler/trace 与契约测试 | `dual_gpu_actor_pool_shape_20260729/` | 固定 65K work、256 slots 和 0.5 CPU/endpoint 的三次重复已完成；2×128/4×64 相对 1×256 仅 +2.00%/+0.75%，未达 5% 晋升门槛。当前同构单 job 保留 1×256；多 job 分池仍待验证。 |
 | Shared-vLLM endpoint credit 与 DRR | `code/src/experiments/shared_vllm/`、named shared-credit runtime 与测试 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 双 4090 36/36 group run、0 incident；全局 256 request/65,536 work 安全与归零通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选。 |
 | Batching × submission 联合搜索 | scenario runner 与汇总工具 | `joint_batching_submission_512_20260726/` | 18 单元筛选和候选重复完成；当前单 GPU 下联合候选未显著优于独立拼接。 |
 | vLLM CUDA Graph | 服务配置与相同 profiler 路径 | `vllm_cuda_graph_512_20260726/` | 重复真实对照显著优于 eager；作为本地部署 baseline，不作为上游调度研究贡献。 |
 | 算子代价估计 | `code/src/planning/costs/`、`code/scripts/analysis/estimate_operator_cost.py`、context-LOO driver 及测试 | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/` 等 | cache-on 有效集含 429 formal、20 context × 4 candidate；Hybrid pooled/macro/max regret 1.67%/2.90%/14.72%，candidate pairwise 0.808。max regret 仅以 0.28 pp 通过 15% 门，属于 marginal pass，仍需跨时间/workload/硬件校准。 |
-| 多模态 cost adapter / image path | 中性 `work_units` + lazy Daft image source + typed CLIP tensor actor、staged descriptor 与 observe-only snapshot 已实现；两个 CLIP profiler；`code/scripts/data/import_coco_images.py` | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`、`image_clip_preprocess_variants_20260801/`、`experiments/results/image_ai_embed_operator_formal_20260803/`、`opening_image_native_fourjob_formal_20260810/`、`opening_image_project_fourjob_observe_only_formal_20260810/` | 静态 operator-E2E、matched-resource、原生多 Job 干扰和 Project observe-only 证据已完成；尚未完成 HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 检索质量闭环和跨 workload/硬件验证。vLLM pooling 0.25.1 能力门仍 blocked，不生成性能排名。 |
+| 多模态 cost adapter / image path | 中性 `work_units` + lazy Daft image source + typed CLIP tensor actor、staged descriptor、真实 static HSE broker 与 observe-only snapshot 已实现；两个 CLIP profiler；`code/scripts/data/import_coco_images.py` | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`、`image_clip_preprocess_variants_20260801/`、`experiments/results/image_ai_embed_operator_formal_20260803/`、`opening_image_native_fourjob_formal_20260810/`、`opening_image_project_fourjob_observe_only_formal_20260810/` | 静态 operator-E2E、matched-resource、原生多 Job 干扰和 Project observe-only 证据已完成；尚未完成 HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 检索质量闭环和跨 workload/硬件验证。vLLM pooling 0.25.1 能力门仍 blocked，不生成性能排名。 |
 | 图像原生四 Job 干扰 | Daft built-in/Ray Data vendor-owned single→four-job runner、immutable 1+3 manifest 与 fail-closed 汇总 | `opening_image_native_fourjob_formal_20260810/` | 40/40 runs、30 formal group 通过；两条路径均出现非均匀 Job slowdown。只作各路径内部 normalized 干扰和状态证据，不作跨框架绝对排名。 |
 | 图像 staged descriptor / observe-only snapshot | production staged descriptor、freshness/signature 检查与 Project control trace | `opening_image_project_fourjob_observe_only_formal_20260810/` | 24/24 group、99K formal rows exactly-once；3,114 个 snapshot 全 fresh、构建均值 0.141 ms。static/proposed group JCT 差 0.98%，只证明观测接入，不证明 state-aware 动作收益。 |
 | 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | request replay、active-work saturation、Actor Pool、Shared-vLLM formal 与 5s 两 Job 干扰实验 | 真实双 4090 容量、admission、worker identity、equal-weight 1/2/4-job 和 5s staggered 两 Job 证据已建立；尚不能声称 weighted/held-out、多 Job 路由增量或故障迁移有效。 |
@@ -61,7 +62,11 @@
 | ShareGPT bounded 饱和校准 | bounded HTTP C32/C64/C128/C256 + vLLM/GPU time series | `opening_bounded_saturation_calibration_20260808/` | 8/8 cells 通过；formal C128 达 C256 已测峰值 98.22%，冻结为正式对照。C32 仅 52.07%，高 GPU util 不等于喂饱；C256 明显过量排队。 |
 | Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay、active-work、Actor Pool 与 service quantum | 已固定 vLLM 8192 batched-token/256 seq capacity，并标定上游 65K work 饱和点；增加 actor 或固定 quantum 均未过 5% 门槛。 |
 
-## 3. 全部正式结果目录
+## 3. 主要结果目录（非穷举）
+
+本节和同目录 `README.md` 都是高频结果的非穷举导航；未列出的结果直接查看目录及其 README。
+机制是否实现、运行和可声明以本文件 §2 和对应原始结果为准，避免两个目录清单因新增结果产生
+无声分叉。
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
@@ -76,8 +81,8 @@
 | `opening_image_native_fourjob_formal_20260810/` | Daft built-in/Ray Data 图像 single→four-job 正式观察 | 40/40 runs、30 formal group；exactly-once/overlap 通过。只报告各系统内部 Job slowdown，不作跨框架绝对排名。 |
 | `opening_image_project_fourjob_observe_only_formal_20260810/` | Project staged descriptor + observe-only snapshot 正式门禁 | 24/24 group、99K formal rows exactly-once；snapshot 100% fresh、构建均值 0.141 ms，总体 JCT 近似中性。 |
 | `opening_project_short_all_at_t0_diagnostic_20260809/` | Project eager single 的三次 formal、统一timer合同、Daft raw T3/T4对齐 | T0=14.957s但Daft T0缺失；可比短诊断T3为11.354s vs11.059s，服务吞吐/MFU差约2.5%，不扩成60s容量排名。 |
-| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP 容量扫描与 C128 冻结 | C32/C64/C128/C256 formal tok/s=9,455/14,058/17,834/18,158；C128 为 97% 最小饱和点，C256 过量排队。单次 formal 只用于校准，不支持统计排名。 |
-| `opening_database_e2e_text_20260807/` | 开题统一 database-E2E 文本三臂：SQuAD 均匀 + ShareGPT 异质 | 24/24 单元与 18 formal 完整性通过；project service feeding 89.93%/91.38% 均未过门，不支持性能 claim。DuckDB ShareGPT 的 service tok/s≈direct，但 4,936/6,144 行 cap 语义失败主导 correct throughput。开题前停止加 baseline。 |
+| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP 容量扫描与 C128 选择 | C32/C64/C128/C256 formal tok/s=9,455/14,058/17,834/18,158；C128 实测达到 C256 的 98.22%，是第一个满足预先规定 97% 选择条件的并发点，C256 已出现过量排队。单次 formal 只用于校准，不支持统计排名。 |
+| `opening_database_e2e_text_refeed_20260808/` | 开题统一 database-E2E 文本三臂 replacement：SQuAD 均匀 + ShareGPT 异质 | 24/24 单元与 18 formal 的完成性、质量、source/sink、identity 和稳定性检查通过。SQuAD 因外层计时实现不同不作不到 1% 的性能排名；ShareGPT C32 对照欠供给，DuckDB 4,921/6,144 行 cap 语义失败，均不支持方法性能排名。旧 `_20260807/` 仅保留为 failed-feeding 诊断。 |
 | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/` | cache-on 双 4090 代价估计正式结果 | 429 formal、20 context × 4 candidate；Hybrid pooled/macro/max regret 1.67%/2.90%/14.72%，pairwise 0.808；最坏 regret 为边界通过。 |
 | `hol_age_diagnostic_512_20260728/` | HOL-age 诊断实验实际运行（6 臂 × 3 formal，24/24 ok） | **负向**：aimd_hol/replenish/aimd_hol_replenish SLO-goodput（6.78/4.62/2.91）远低于 static_k16（15.27），P99 恶化 4–13×。「诊断优先」假设被否定——补 HOL-age 信号 + request-level replenish 后动态稳态仍不优于最佳静态。 |
 | `hol_age_diagnostic_512_20260727/` | HOL-age 诊断预注册设计 + 配置（设置 A） | 07-27 本机无 GPU 未运行；实际执行在 `_20260728/`。含预注册判据与 6 臂设计。 |
@@ -95,7 +100,7 @@
 | `dual_gpu_service_quantum_20260729/` | 固定 work/pool 的 batch、四档 complete-row quantum 与 request 对照 | 24/24 成功；HOL/credit barrier 确实缩短，但没有转化为超过 5% 的稳态吞吐或 SLO 收益。 |
 | `dual_gpu_actor_pool_shape_20260729/` | 固定 work/slots/CPU 的 1×256/2×128/4×64 Ray actor 拓扑对照 | 12/12 成功；多 actor 未达到预注册晋升门槛，当前保留 1×256，不能外推到多 job 隔离与故障迁移。 |
 | `dual_gpu_active_work_saturation_20260729/` | 八档 request-level per-endpoint active-work 扩展饱和曲线 | 32/32 成功；65K 是预注册最小饱和点，98K/131K 不再增加吞吐且尾延迟更差。 |
-| `dual_gpu_active_work_curve_20260728/` | request-level per-endpoint predicted-token work 容量曲线 | 真实双 4090、五档各三次 formal。吞吐 CV 均低于 1%；49K 为当前 knee candidate，65K 为最高已测吞吐边界，尚未找到吞吐下降点。 |
+| `dual_gpu_active_work_curve_20260728/` | request-level per-endpoint predicted-token work 的早期五档容量曲线 | 真实双 4090、五档各三次 formal；当时 49K 只是 knee candidate、65K 是最高已测边界。该选择已被 `dual_gpu_active_work_saturation_20260729/` 的八档扩展取代，当前同签名采用预注册最小饱和点 65,536。 |
 | `dual_gpu_request_replay_20260728/` | 双 endpoint whole-submission barrier 与 request-level continuous replenishment 对照 | 真实双 4090、每臂三次 formal。global K32≈per-endpoint K16；work-matched request K48≈batch K16。K64 是最高已测吞吐点，但没有隔离 offered-work 增量，不能称为最优或机制胜出。 |
 | `shared_vllm_adaptive_admission_20260726/` | Shared-vLLM 前台/后台 static K8、static K16、AIMD 及 adaptive-flush 对照 | 真实单 GPU 三次重复；K8 保护前台，K16 提升后台吞吐。AIMD 饱和至 K16 且无 decrease；adaptive flush 大部分选择 50ms，均无稳定增量。 |
 | `adaptive_admission_controller_20260726/` | Static K=8、AIMD、EWMA-AIMD、PID 矩阵及 AIMD vs static K=16 机制对照 | 真实单 GPU 重复；动态策略相对 K=8 的收益来自升至 K≈16，未优于同上限静态策略。 |
@@ -162,19 +167,13 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 - `summary_long.csv` 或 `comparison_summary.csv` 等绘图友好汇总。
 - 事实、推断、待确认和不能声称的内容分开写。
 
-## 6. 当前缺口（2026-08-01 pivot 后）
+## 6. 当前缺口（2026-08-27）
 
-以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` §0；文本项不是当前 image build 的前置条件。
+以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
 
-1. **Image path-B**：在已实现的中性 work-unit、lazy image source 和 typed Ray CLIP actor 上补 PG→Daft→Ray CPU preprocess→GPU actor→pgvector runner。
-2. **Image 强 baseline**：bounded direct CLIP、Daft built-in、固定 commit 的官方
-   ResNet18 Daft/Ray Data 入口、Ray Data native API graph、naive 与 ours 的独立
-   calibration 和正式对照；项目自写 `@daft.cls` 只作 diagnostic，画像 GO 不等于方法胜出。
-3. **Image A+B**：endpoint-state-aware 请求成形/提交 + 小型代价模型，并完成吞吐、JCT、tail、SLO、overlap、能耗和 Recall@10 闭环。
-4. 文本 Shared-vLLM held-out、UCB reward 归因、多 endpoint 公平性/故障迁移和 runtime baseline 统一为 `parked-conditional`。
-5. ~~Prefix cache 开启后的 prefix-aware 独立消融~~（2-ep/7B 已完成 07-30/07-31：cache-on batching + routing
-   跨分散/agent/concentrated 三数据集吞吐均中性，prefix 方向在低淘汰 regime 收口；见 `prefix_cache_data_org_20260730/`、
-   `prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`）。
-   ⚠️ 4-ep/1.5B routing **+5.9% 跨门禁**，但 KV sweep 的 matched-KV 对照显示 2-ep 全 KV 范围中性；当前更支持
-   **endpoint consolidation** 是驱动，单纯“cache 淘汰压力开关”已被否定。饱和深度尚未完全隔离；该文本残留实验 parked。
-6. 代价估计的独立时间段、新 workload、跨模型校准、配置 ranking、regret 和预测区间。
+1. 冻结 LOTUS v1.2.4 并完成真实 `SemMapNode`、messages、output/error 语义的 native/project parity。
+2. parity 通过后，实现最小 PostgreSQL planner-visible operator，验证 SQL、child plan、snapshot、取消、错误和结果生命周期。
+3. 前两项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
+4. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
+5. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持 marginal feasibility。
+6. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix 隔离统一为 `parked-conditional`，不阻塞当前主线。

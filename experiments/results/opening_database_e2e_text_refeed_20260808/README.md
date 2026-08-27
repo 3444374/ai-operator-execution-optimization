@@ -87,7 +87,9 @@ project 的 request P99 来自项目 profiler，而 direct/DuckDB 的 request la
 ### 事实
 
 1. K128 replacement 提高了项目臂供给，但“达到 C32 direct 的 95%”不是可靠的饱和门。后续扫描证明 ShareGPT C32 仍明显欠供给。
-2. SQuAD 下三臂 correct throughput 和 DB-E2E 接近，项目相对 direct 的 service throughput 仅 +0.87%。
+2. SQuAD 下三臂记录的 correct throughput、DB-E2E 与任务质量接近，项目相对 direct 的
+   service throughput 记录值为 +0.87%；但 Project 外层计时额外包含指标采集、记录写入和结束
+   处理，这个不到 1% 的差异不能用于性能排名。
 3. ShareGPT 下 project frozen-static 相对 **C32、欠供给的** direct service throughput 为 1.546×，DB-E2E 从 180.33 s 降到 116.70 s；该差异由并发/执行结构混淆，不能作为方法收益。
 4. DuckDB AI 在 ShareGPT 的 raw rows/s、service tok/s、GPU util 与 direct 几乎相同，但 4,921/6,144 行触发 fixed-cap 产品语义失败，correct throughput 因此降到 2.26 rows/s。
 
@@ -99,7 +101,10 @@ project 的 request P99 来自项目 profiler，而 direct/DuckDB 的 request la
 ### 不能声称
 
 - 不能把 `project_frozen_static` 的 ShareGPT 优势写成 state-aware、动态调度或 WorkDescriptor 的独立因果收益；该臂与 direct 的执行结构整体不同。
-- 不能声称项目路径普遍优于 DuckDB、Daft 或 Ray Data；SQuAD 结果近似中性，Daft/Ray Data 正式同环境矩阵尚未完成。
+- 不能声称项目路径普遍优于 DuckDB、Daft 或 Ray Data；SQuAD 只支持完成性与答案质量核对，
+  当前计时实现不支持按不到 1% 的记录差异判断性能高低。Daft/Ray Data 正式同环境矩阵随后已
+  由 `opening_text_native_single_job_formal_20260808/` 完成，但它使用 ShareGPT Chat graph，不能
+  反向补成 SQuAD database-E2E 排名。
 - 不能把 PG 18.4 AutoDL rehearsal 外推为目标 PG 18.3 平台的绝对结论。
 
 ## 6. 对课题的含义

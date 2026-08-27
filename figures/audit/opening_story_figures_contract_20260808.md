@@ -1,9 +1,13 @@
 # 2026-08-08 开题叙事图：证据与视觉审计
 
+> 这是 2026-08-08/10 的历史图集审查。SQuAD 计时口径已在 2026-08-24 复核：三条路径可核对
+> 完成性与答案质量，但 Project 计时额外包含指标采集、记录写入和结束处理，不能按不到 1% 的
+> 差异排名。当前图文结论以 `opening_report_figure_readability_audit_20260824.md` 为准。
+
 ## 共同边界
 
 - 目标：让动机中的现象、挑战和后续设计逐项对应，而不是用最终算法结果倒推动机。
-- 输出：`generate_opening_story_figures_20260808.py` 同时生成 PNG 与 SVG；PNG 用于报告与答辩内容大纲，SVG 保留可编辑文字。当前不制作 PPT 成品。
+- 输出：`generate_opening_story_figures_20260808.py` 同时生成 PNG 与 SVG；PNG 用于报告与答辩内容大纲，SVG 保留可编辑文字。该批图在 2026-08-10 完成时尚无 PPT 成品；后续 26 页 v9 已生成。
 - 统计：只读取项目内正式 CSV/JSON 或冻结画像数据，不手填结果，不混入 warm-up。
 - 证据层级：动机图证明问题与研究必要性；组织、图像和代价图证明已有机制/可行性信号；均不证明待研究的状态感知动态策略已经优于同上限静态基线。
 - 视觉规则：一张图一个主句；无未解释散点或连线；标签不压数据、标题或图例；颜色之外同时保留位置、形状或文字标签。2026-08-10 的出版风格复核进一步冻结：红色只表示真实失败、静态退化或预注册门槛；形状表示方法/场景时必须有图例，表示统计量时必须写明统计口径；线段必须明确是 SD、范围、门槛还是同一对象的成对变化。
@@ -17,7 +21,7 @@
 | 编号 | 内容 | 当前状态 | 备注 |
 |---|---|---|---|
 | A | work 与运行状态动机 | `rendered-qa-pass` | active work 已明确标为运行内峰值；已移除未经定义的“安全区/过载区”色带 |
-| T | 文本 baseline 分轨 | `rendered-qa-pass` | SQuAD 产品轨与 ShareGPT Chat graph 轨分开；DuckDB、Daft Native/Ray、Ray Data 均被呈现但不跨轨排名 |
+| T | 文本 baseline 分轨 | `rendered-qa-pass` | SQuAD 只核对完成性、质量和记录值，ShareGPT Chat graph 另行比较；DuckDB、Daft Native/Ray、Ray Data 不跨轨排名 |
 | N | 原生四 Job 归一化干扰 | `rendered-qa-pass` | 三条原生轨组成 3×4 slowdown 矩阵；格内直标 four-job/isolated-single 倍率与 JCT 增幅，不再使用误差线 |
 | B | 研究边界与共同使能 | `ready-existing` | 已有 solution overview |
 | C | 数据组织的 regime dependency | `rendered-qa-pass` | 吞吐与prefix-cache命中率双轨迹；每条线连接同一策略的低→高压力中位数，无误差线，不再把运行状态写成池大小 |
@@ -293,8 +297,9 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 
 - 门禁已通过：24/24 cells、18 formal，source/sink、identity、exactly-once、manifest
   和稳定性合同一致，0 infrastructure failure。
-- SQuAD 可作静态地基：direct/DuckDB/project correct rows/s 为
-  136.63/136.68/137.77，在该 workload 下近似中性。
+- SQuAD 可作完成性与质量地基：direct/DuckDB/project correct rows/s 记录值为
+  136.63/136.68/137.77；因 Project 外层计时多包含指标采集、记录写入和结束处理，不据此判断
+  不到 1% 的性能差异。
 - DuckDB ShareGPT 有 4,921/6,144 行 cap 语义失败，correct rows/s 为 2.26；
   它只用于产品语义边界，不与 Chat 轨混排。
 - ShareGPT C32 direct 后续被独立扫描证实只达已测峰值的 52.07%，因此

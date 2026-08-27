@@ -2,6 +2,10 @@
 
 日期：2026-08-08
 
+> 本文件保留 2026-08-08 的第一性原理复审和当时的材料状态。当前 PPT 为 26 页 v9，报告为
+> 16 图/53 条参考文献，二者的最新差异仍待审查；当前状态与可直接使用的对外措辞以
+> `README.md`、`claim_matrix.md` 和 `opening_defense_outline_20260808.md` 为准。
+
 ## 1. 结论先行
 
 开题不需要在答辩前完成整套动态方法实验，但必须形成一条闭合、诚实的论证链：
@@ -101,7 +105,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 1. 完成 SQuAD 与 ShareGPT 两套统一三臂 replacement；项目静态臂必须通过 feeding-saturation、correctness 与稳定性门。该矩阵保留为一次 database-E2E 护栏，不要求后续方法实验重复 sink。
 2. short/long 两作业最小实验已完成 online/eager 两套到达合同及 full/half matched control；1-short+3-long四Job也完成full/quarter/static/shared与三条原生轨内single→four-job。两Job证明arrival-regime dependence，四Job进一步分离quota/竞争并暴露shared的Jain/long稳定性缺口；3:1 weighted与held-out留论文阶段。
 3. 把现有 token-work 差异、high/arrival-limited 状态差异、active-work frontier、数据组织 regime、图像阶段失衡与 matched-resource 结果、cost decision quality 重组为动机和可行性证据。
-4. 报告、答辩内容大纲、Claim Matrix 和图使用同一数值与边界；state-aware、图像动态和 cost held-out 只作为可证伪研究计划，不用完成时表述；当前不制作 PPT 成品。
+4. 报告、答辩内容大纲、Claim Matrix 和图使用同一数值与边界；state-aware、图像动态和 cost held-out 只作为可证伪研究计划，不用完成时表述。此条在 2026-08-08 表示当时不制作 PPT；后续 26 页 v9 已生成并完成独立 QA。
 
 ### 6.2 开题后的论文主实验
 
@@ -146,7 +150,9 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 
 ## 9. 答辩内容大纲
 
-当前 28 页中“问题边界、证据章节、研究问题、两项方法和验证计划”多次重复。内容主线应压到 19 个 take-away，附录保留完整表和诊断图。这里只冻结内容，不制作 PPT 成品；权威页级证据合同见 `opening/opening_defense_outline_20260808.md`。
+当时 28 页版本中“问题范围、证据章节、研究问题、两项方法和验证计划”多次重复，内容主线因此
+收敛为 19 个 take-away，附录保留完整表和诊断图。这里记录的是 2026-08-08 的内容收敛动作；
+后续 26 页 v9 已生成，当前内容基线见 `opening/opening_defense_outline_20260808.md`。
 
 | 页 | take-away 标题 | 作用 |
 |---:|---|---|

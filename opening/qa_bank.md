@@ -120,9 +120,14 @@
 
 > SQuAD short-answer 是均匀控制组，用于检验服务层能否吸收上游差异；ShareGPT controlled-skew 是异质实验组，用于增加 prompt/output work 方差。它们只承担 database-E2E/correctness 护栏。随后冻结的 ShareGPT Chat 原生单 job 与两 job 错峰矩阵承担框架执行和多作业动机，不再增加第三种 workload、第二数据库或更多产品追求更好看的结果。
 
-### SQuAD 上为什么三条静态路径几乎没有差异？
+### SQuAD 上三条路径的记录值为什么接近，但仍不排名？
 
-> K128 replacement 中，project、direct、DuckDB AI 的 correct rows/s 为 137.77、136.63、136.68，service tokens/s 为 41,277.95、40,920.72、40,955.99；project/direct service ratio 为 100.87%。SQuAD 是均匀短输出控制组，服务层可以吸收上游静态结构差异，因此近似中性是有效结论。它说明后续动态方法不能靠弱 baseline 获胜，必须在同上限和明确状态变化或资源竞争中证明增量。
+> K128 replacement 中，project、direct、DuckDB AI 的 correct rows/s 记录值为 137.77、136.63、
+> 136.68，service tokens/s 为 41,277.95、40,920.72、40,955.99；三条路径的答案质量也接近。
+> 但 Project 的外层时间还包括指标采集、运行记录写入和作业结束处理，计时实现并不完全相同，
+> 因此这些数据只说明完成性和质量可核对，不能根据不到 1% 的差异判断哪条路径更快。若以后需要
+> 细微性能排名，必须先统一外层计时；后续动态方法仍须在同一资源上限和明确状态变化或资源竞争中
+> 证明增量。
 
 ### DuckDB AI 的 cap semantic failure 是否意味着实验失败？
 
@@ -152,7 +157,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 
 ### feeding-saturation 门怎么判断？
 
-> 优先使用同 workload 的 bounded concurrency frontier，并联合 service tokens/s、running/waiting、KV、MFU、TTFT 与 time-series GPU utilization。ShareGPT C32 的 GPU mean 约 98% 但吞吐只有峰值 52.07%，直接证明高 GPU utilization 或 waiting=0 都不能单独说明已经喂饱。当前冻结 C128，因为它是达到 C256 已测峰值 97% 的最小点。
+> 优先使用同 workload 的 bounded concurrency frontier，并联合 service tokens/s、running/waiting、KV、MFU、TTFT 与 time-series GPU utilization。ShareGPT C32 的 GPU mean 约 98% 但吞吐只有峰值 52.07%，直接证明高 GPU utilization 或 waiting=0 都不能单独说明已经喂饱。当前采用 C128，因为它实测达到 C256 的 98.22%，并且是第一个满足预先规定 97% 选择条件的并发点。
 
 ### Daft Native、Daft Ray 和 Ray Data 的正式同环境结果说明了什么？
 

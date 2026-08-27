@@ -40,7 +40,7 @@ custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修�
 本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
 五臂 eager SAOR 的旧 profiler 冲突已在本地修复：只有旧 single-head bounded-priority 继续强制
 request replay；bounded-ready 在完整 concrete pre-registration 门下直接消费 eager request envelopes。
-当前尚无成功、可比较的完整五臂 rehearsal；formal 从未运行且继续禁止。2026-08-19
+截至 2026-08-19，当时尚无成功、可比较的完整五臂 rehearsal；formal 从未运行且继续禁止。
 服务器曾有两次 fail-closed rehearsal：`ea4cbb3b` 对应保留 root
 `saor_native_system_matched_matrix_20260819_r2/`，在 warmup 第 1 个 Project
 selector-sanity cell 因 `unavailable:missing_gpu_peak_tflops` 被 MFU guard 拒绝；
@@ -350,9 +350,9 @@ PostgreSQL SQL `ai.complete(...)`
 
 统一合同：PostgreSQL source、immutable equal-row manifest、双 Qwen2.5-7B vLLM endpoint、prefix cache ON、统一 PostgreSQL sink、外部 database-E2E、质量与资源指标、1 warmup + 3 formal。
 
-SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 136.63、136.68、137.77，service tokens/s 为 40,920.72、40,955.99、41,277.95；三臂 EM/F1 接近，project/direct service ratio 为 1.0087，均匀短输出下近似中性。
+SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 136.63、136.68、137.77，service tokens/s 为 40,920.72、40,955.99、41,277.95；三臂 EM/F1 接近。Project 路径的外层计时还包含更多指标采集、记录写入和结束处理，因此这些记录值只用于核对完成性与质量，不能根据不到 1% 的差异判断性能高低。
 
-ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91。后续 bounded C32/C64/C128/C256 扫描为 9,454.88/14,057.93/17,834.14/18,158.19 tok/s，C128 是达到已测峰值 97% 的最小点；C256 仅增 1.82%，却使 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s。旧 project/C32-direct=1.5457 因对照欠供给而不作方法排名。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
+ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91。后续 bounded C32/C64/C128/C256 扫描为 9,454.88/14,057.93/17,834.14/18,158.19 tok/s；C128 实测达到 C256 的 98.22%，是第一个满足预先规定 97% 选择条件的并发点。C256 仅增 1.82%，却使 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s。旧 project/C32-direct=1.5457 因对照欠供给而不作方法排名。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
 
 同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph/冻结点的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
 
@@ -370,7 +370,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 6. `opening_image_baseline_evidence_map`：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的能力门禁、12K 结构诊断与 120K matched-resource 正式排名边界。
 7. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。九张正文数据图与两张单 Job 备份图已经完成可读性与证据边界审计；无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `figures/opening_figure_set/` 进入：图集现有 19 张主讲候选图，其中 P07/P08 各按 panel a 与 panels b–c 拆成 A/B 两张，P02–P04 是背景/相关工作概念图；本轮未重新生成 PPT。图集另列 8 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。
+权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `figures/opening_figure_set/` 进入：图集当前有 21 张主讲候选图、10 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。当前 PPT 成品为已独立完成 26/26 页渲染和视觉检查的 v9；2026-08-22 至 08-25 的报告图文更新没有自动回灌该 PPT，跨材料差异审查仍待执行。
 
 ## 8. 当前执行顺序
 

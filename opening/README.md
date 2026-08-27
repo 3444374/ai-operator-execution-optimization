@@ -6,7 +6,7 @@
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
 - `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
-  `../research/精读文献笔记/`。当前共有 16 篇主笔记和 134 张论文原图裁剪件；其中新增 Kalypso
+  `../research/精读文献笔记/`。当前共有 16 篇主笔记和 146 张论文原图裁剪件；其中新增 Kalypso
   原稿已从下载目录原件逐字节恢复，作为 arXiv 核心补充，不进入现有 Top 15、十五篇速览或已定稿正文。
   `../research/reference/` 当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、
   Parrot、Kalypso）；历史题录继续由索引保留。
@@ -67,13 +67,13 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 材料 | 主文件 | 状态 |
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
-| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表** |
+| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **20 页内容基线；当前 v9 将同一叙事重组为 26 页，不能用大纲页码判断 PPT 实际页序** |
 | 开题报告 | `report/opening_report.md` | 以用户确认的第一、二章为基线微调：第三章按三个动机问题、研究目标和两项研究内容组织，第四章区分研究方案、初步结果与可行性；正文为学校模板七部分、16 张图片和 53 条按首次出现顺序编号的参考文献 |
 | 开题报告 Word 版 | `report/数据库_AI_负载的执行优化与调度研究_开题报告.docx` | 严格沿用学校 Word 模板的 A4 版心、封面、页脚页码和签字页；正文按宋体/Times New Roman、小四、1.5 倍行距排版，一级标题四号黑体、其余标题小四黑体、图注五号黑体，含 16 张正文图片和 53 条按首次出现顺序编号的参考文献；学号、专业和指导教师留待填写 |
 | 开题报告 QA | `report/opening_report_20260824_qa.md` | 审查七部分结构、三个动机问题到两项研究内容的因果映射、代价估计角色、表格范围、16 张图和 53 条参考文献；精读文献覆盖与题录连续性已复查，2026-08-20、2026-08-12 版本保留为历史审查记录 |
 | 开题答辩 QA 手册 | `report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF） | 83 题双层回答；其中 39 题详细展开总体方案、数据组织以及固定容量下的提交、路由与多 Job 调度，另含 7 条连续追问链、已有工作差异表、术语白话表、关键数字和现场表述红线；设计说明也收纳在同名目录 |
 | 开题报告专用图片 | `report/figures/` | 当前正文引用 5 张背景/方案图和 11 张数据图；权威可编辑源在 `../figures/architecture/editable/`，数据图源在 `../figures/opening_figure_set/` 与 `../figures/data/report_main/` |
-| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
+| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-27 已复核状态缓存；实验准入、主张等级、禁止外推和材料完成度的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
 | 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 当前 26 页对外答辩版；删去重复文献页并合并验证与结尾内容，QA 见 `slides/opening_defense_20260812_v9_qa.md` |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
@@ -116,7 +116,10 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 同步规则见 `feishu/README.md`。
 ## 可参考 skill
 
-开题工作中，文献调研优先参考 `nature-academic-search`；需要系统综述或研究问题收敛时参考 `deep-research` 和 `academic-research-suite`；PPT 制作参考 `ppt-master` 和 `nature-paper2ppt`；写作润色参考 `humanizer`；流程与学术边界参考 `vibe-research-workflow` 和 `karpathy-guidelines`；飞书同步使用 `lark-doc`，遇到 Base 或飞书幻灯片再分别使用 `lark-base`、`lark-slides`。
+开题工作中，文献调研优先参考 `nature-academic-search`；需要系统综述或完整研究流程时参考
+`deep-research` 和 `academic-pipeline`；PPT 制作参考 `ppt-master` 和 `nature-paper2ppt`；写作润色参考
+`humanizer`；流程与学术边界参考 `vibe-research-workflow` 和 `karpathy-guidelines`；飞书同步使用
+`lark-doc`，遇到 Base 或飞书幻灯片再分别使用 `lark-base`、`lark-slides`。
 
 这些 skill 只是方法工具。后续执行时先看本项目的真实材料和当前目标，再决定是否调用对应 skill，不能为了调用 skill 而调用。
 
@@ -137,7 +140,7 @@ opening/navigation.md
 开题报告已同步到飞书新文档：
 https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb
 
-同步内容包括：完整七章正文、三层上游执行策略图、运行时策略闭环图，
+同步内容包括：完整七章正文、三层上游执行策略图、运行时观测—决策—执行流程图，
 以及 GPU-backed 动机实验图（粒度对比、阶段时延、endpoint 对比、pgvector 写回对比）。
 旧版 wiki (GCxowlVJbinzgRkoHDmc06cSn9J) 保留作为历史参考，不再更新。
 

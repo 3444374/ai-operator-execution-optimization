@@ -141,15 +141,13 @@ GPU development 已完成：旧 single-head bounded-priority 两 cap 均未过 f
 ready-backlog observation gap；bounded-ready $0.125W_e$ 随后通过双轮开发门，$0.25W_e$ 被 bulk
 guard 拒绝。同 ready-window 双轮归因中 guarded-debt 用约 4.8% 吞吐和约 5.2% bulk JCT 换取
 更低 foreground tail，只形成观测非支配折中；固定顺序 n=2 且未预注册 selector non-inferiority
-margin，故 `formal_authorized=false`。下一工程缺口是同一 2-Job 合同的 Daft Native/Daft Ray/
-Ray Data/project static/proposed 系统级 matched comparison，不是继续扫 cap 或直接跑 selector formal。
-截至 2026-08-14，本地合同、八臂薄编排和两层离线 fail-closed 汇总均已实现并通过本地测试：
-系统层为 3 个原生系统 + Project frozen-static + bounded-ready SAOR，内部 sanity 层为
-**Project bounded-ready + global FIFO matched-control**/DRR/VTC-style/SAOR，同一 SAOR 物理
-run 复用到两表。共同到达为 Job `[0,5]` release、Job 内 eager；计时从 PostgreSQL source
-进入 Job lifecycle 到 validated gather。原生臂没有共同 request clock 时 P99/SLO 只能记
-`unavailable`+原因。服务器已有两次五臂 runner 的 rehearsal guard failure，但尚无成功、完整、
-可比较的五臂 rehearsal；formal 从未运行，故这不是新增性能证据。
+margin，故 `formal_authorized=false`。
+
+截至 2026-08-14，本地五臂合同和离线汇总已经实现；2026-08-19 的两次服务器执行分别被 MFU
+与 summary 检查拒绝。之后 `93271012` 已通过四阶段 readiness、五臂 correctness smoke、5/5
+rehearsal cell、exactly-once 和独立 archive validation。统一 gateway 现可为五臂提供 T0--T4、
+request P99/SLO、Jain、service lag 与最长无服务；单次结果只说明效率、尾延迟和公平性权衡。
+五臂 formal 仍未运行，0s/5s 数据也不能替代 matched-solo isolation control。
 
 ### 当前流程
 
@@ -163,7 +161,8 @@ run 复用到两表。共同到达为 Job `[0,5]` release、Job 内 eager；计�
 默认 `submission_granularity=batch` 仍按整个 submission 返回回收 credit；
 显式 request 模式已经闭合逐请求 credit release。Daft packing group、Ray
 submission 和 vLLM iteration batch 仍是三个不同层次。该实现有单元与真实本地
-Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
+Daft→Ray task 合约证据；各策略的 GPU 证据和适用范围分别列在下方“证据边界”和实验台账中，
+不能从通用 scheduler 流程本身推导统一性能收益。
 
 ### 证据边界
 
@@ -182,8 +181,9 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
   未过 5% 晋升门槛。25–50ms 动作相对秒级 request P99 缺少一阶杠杆。
 - 逐请求完成释放 credit 和持续补位已实现；此前 7B 云端 warm-up 误用
   `ray_batch_rows=1` 且仍为 batch granularity，不能作为该机制性能证据。
-  下一步必须保留 packing row cap/token budget，并按等价请求负载比较 batch K
-  与 request K。
+  后续固定 active-work 的 service-quantum 正式对照已经完成：request diagnostic 相对 whole batch
+  吞吐仅 +1.75%，但能缩短 credit-held，并提供真实逐请求完成语义。该路径保留为多 Job
+  credit/fairness 基础，不声称独立稳态性能增量。
 - complete-row service quantum 已接入 offline/arrival replay：planning batch
   只定义组织边界，quantum 独立定义 HTTP/Ray completion 与 credit 释放边界，
   单行 prompt 永不拆分。active-work、pool shape 与 service quantum GPU
@@ -334,7 +334,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching **regime-dependent**（2-ep 近似中性、4-ep KV 饱和分化+排名反转，见 `rc1_data_organization/`）；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
-| VTC-compatible multi-job | 高（代码/配置） | 2-client on/off + 8-client overload | 异速 Job、shared FIFO/static/shared-work 与 fail-closed 汇总已接入；远端 formal 待新提交部署后运行 |
+| VTC-compatible multi-job | 高（代码/配置） | 8-client 四臂 1+3 formal 已完成；phase-change A-only 与三档 pressure 已提前停止 | 8-client 16/16 group、12 formal 通过；动态臂相对同上限 K160 静态点没有独立增量。phase-change 未形成预注册的双端点降档压力，未运行 action/formal；不再写成整体“待部署” |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
 | SLO-aware EWMA flush | 高 | 双 4090 high/arrival-limited 各三次 formal | 相对 fixed-50 未过 5% 门槛；不默认启用 |
 | Request-level continuous replenishment | 高（代码） | 双 GPU K 对照 + 固定 active-work quantum/formal | 逐请求释放与 completion 已验证；保留为 shared-credit/fairness 基础 |
@@ -418,21 +418,27 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 3. 已完成 whole-batch、service quantum 与 request diagnostic，固定 quantum
    未过 5% 门槛；
 4. 已完成 SLO-aware EWMA flush 正式对照，25–50ms 动作未过 5% 门槛；
-5. 已完成 Shared-vLLM 1/2/4-job 核心矩阵；正式推进前先补两层 baseline：
-   OceanBase `AI_COMPLETE`/同 PostgreSQL bounded AsyncIO 的无 Daft/Ray 核心
-   对照，以及 Daft `prompt()` Native/Ray/Ray Data 的官方 runtime 对照；
-6. 两层统一使用 Chat Completions、同一双 endpoint 与请求 manifest；每个
-   baseline 独立 calibration，不能以弱默认值对比已调优 ours；
-7. baseline 同时承担 transient saturation/ramp 实验：固定总工作量与下游
-   容量，报告 direct ceiling、time-to-ceiling、ramp regret 和最小饱和 work；
-8. 开题静态 baseline 锁定后先做两作业 staggered + weighted 最小证据；4-job
-   held-out、完整异构 offset 和故障迁移仍留论文阶段；
+5. 已完成 bounded direct、Daft `prompt()` Native/Ray、Ray Data 官方 runtime 的
+   capability、单 Job 1+3 与多 Job 观察；OceanBase 因容器部署阻塞，只保留 capability 证据，
+   不再作为当前 GPU 实验前置条件；
+6. 各 baseline 使用 Chat Completions、同一双 endpoint 与请求 manifest，并分别校准；现有结果
+   不能用弱默认值与已调优 Project 路径比较；
+7. bounded direct 容量扫描已给出 C128 最小近饱和参照；旧 transient ramp 结果只按各自 timing
+   粒度说明 capacity/overload，不与 request-level E2E 混排；
+8. 两作业 5s staggered 和四 Job 扩展均已完成；weighted/SLO、完整异构 offset、故障迁移与新的
+   held-out 组合仍留论文阶段；
 9. Prefix-aware 已在 cache-on 下评估：batching regime-dependent（2-ep 近似中性、4-ep 饱和分化，见 `rc1_data_organization/`）；routing 在 2-ep/7B 中性
    （−0.1%），4-ep/1.5B prefix_affinity +5.9% 跨过 5% 门禁但受 model×endpoint×KV
    与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重开，待隔离消融；
    per-arm 命中率待 runner 增采；
 10. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
+
+### 2026-07-29 至 2026-08-02 文本 baseline 校准历史
+
+以下段落按当时发生顺序保留失败、修复与复测依据；其中“当前”“下一步”和“不得继续”只表示
+当时的执行状态，不覆盖本文件前述当前状态。后续 capability、单 Job 1+3、多 Job 观察和 bounded
+容量扫描已经完成，现状以 `experiments/results/README.md` 与证据台账为准。
 
 截至 2026-07-29，统一 Chat Completions、不可变 manifest、固定双 endpoint
 分片、bounded HTTP、vLLM Bench、Daft Native/Ray、Ray Data HTTP、
@@ -557,7 +563,8 @@ start、response headers、body complete、headers wait 和 body read。校准�
 ## 8. 当前可安全采用的默认值
 
 以下是**文本/vLLM 轨道**的历史验证默认值，不可直接复制为 image/CLIP 的最优点。
-Image 路径在 baseline calibration 完成前没有可声称的默认 K/frame budget/actor shape。
+Image 静态 baseline 已完成，但动态 HSE/阶段控制尚未校准，因此仍没有可跨 workload 声称的默认
+K/frame budget/actor shape。
 
 - 数据引擎：Daft；
 - 执行：Ray task/actor 按实验目的选择，不把其差异包装成贡献；

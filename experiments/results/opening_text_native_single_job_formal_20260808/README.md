@@ -14,7 +14,7 @@
 | GPU / 服务 | 2× RTX 4090；2 个 Qwen2.5-7B vLLM endpoint；prefix cache ON |
 | vLLM | `max_num_seqs=256`、`max_num_batched_tokens=8192`、`max_model_len=8192`、`gpu_memory_utilization=0.90` |
 | workload | ShareGPT controlled-skew 2,048 行、output cap 256；manifest SHA256 `54c97a2f…3169b` |
-| bounded control | 每 endpoint C128、batch=1；由 C32/C64/C128/C256 扫描冻结的 97% 最小饱和点 |
+| bounded control | 每 endpoint C128、batch=1；扫描中实测达到 C256 的 98.22%，为第一个满足预先规定 97% 选择条件的并发点 |
 | Daft | `functions.prompt` Native 与 Ray runner；vendor default，不虚构未公开并发旋钮 |
 | Ray Data | `HttpRequestProcessorConfig`，batch=16、concurrency=8；C4/C8/C16 单次筛选的 measured peak |
 | 重复 | 每臂 1 warm-up + 3 formal，formal 交错；每个 formal ≥60 s |

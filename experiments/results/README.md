@@ -25,7 +25,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
-| `opening_database_e2e_text_refeed_20260808/` | SQuAD + ShareGPT 三静态臂 replacement；24/24 单元、18 formal、统一 PG source/sink、MFU/能耗/服务状态 | correctness/稳定性通过；SQuAD 近似中性。ShareGPT C32 后续证实欠供给，旧 1.546 比值不排名；DuckDB 有 4,921/6,144 cap 语义失败。 |
+| `opening_database_e2e_text_refeed_20260808/` | SQuAD + ShareGPT 三静态臂 replacement；24/24 单元、18 formal、统一 PG source/sink、MFU/能耗/服务状态 | correctness/稳定性通过；SQuAD 可核对完成性与答案质量，但 Project 计时额外包含指标采集、记录写入和结束处理，不按不到 1% 的差异排名。ShareGPT C32 后续证实欠供给，旧 1.546 比值不排名；DuckDB 有 4,921/6,144 cap 语义失败。 |
 | `opening_database_e2e_text_20260807/` | 首轮相同三臂合同 | project feeding 89.93%/91.38% 未过门，只保留为 failed-feeding 历史诊断，性能数字已被 replacement 取代。 |
 
 ## 开题文本原生框架入口（2026-08-08）
@@ -90,9 +90,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
-| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP C32/C64/C128/C256 容量校准，含 MFU、服务状态与服务器原始归档 SHA。 | C128 是达到 C256 已测峰值 97% 的最小点；只用于冻结正式对照并纠正旧 C32 欠供给口径，不作框架性能排名。 |
-| `dual_gpu_active_work_curve_20260728/` | Dual-4090 request-level per-endpoint active-work curve over 16,384–65,536 predicted tokens. | Throughput still rises at 65K but marginal gain has fallen to 5.5%; 49K is the current knee candidate and 65K is only the best tested boundary. |
-| `dual_gpu_request_replay_20260728/` | Dual-4090 batch-barrier/request-level replenishment comparison with three formal repeats per arm and admission-work audit. | K48 is the work-matched request control and matches batch K16 throughput; K64 is the best tested request K but carries about 33% more offered work and has worse P99, so it is not an isolated replenishment win or a capacity optimum. |
+| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP C32/C64/C128/C256 容量校准，含 MFU、服务状态与服务器原始归档 SHA。 | C128 实测达到 C256 的 98.22%，是第一个满足预先规定 97% 选择条件的并发点；只用于确定 bounded 对照并纠正旧 C32 欠供给口径，不作框架性能排名。 |
 | `shared_vllm_adaptive_admission_20260726/` | Real shared-endpoint foreground/background K8/K16/AIMD repeats plus adaptive-flush follow-up, with exact request-token accounting. | Static K8 protects foreground tails; AIMD saturates near K16 with zero decreases and provides no feedback gain. Adaptive flush behaves mostly like fixed-50 and has no stable increment. |
 | `adaptive_admission_controller_20260726/` | Real 64-request gate, randomized 512-request static/AIMD/EWMA/PID matrix, and AIMD-vs-static-K16 mechanism control. | Dynamic controllers beat K=8 by converging near K=16, but AIMD is indistinguishable from static K=16; shared-service protection remains unverified. |
 | `vllm_cuda_graph_512_20260726/` | Matched eager/CUDA-Graph 64-request gates plus one warm-up and three formal 512-request repeats per arm, with full prompt/output/request/resource/MFU tracing. | CUDA Graph is the current local steady-state baseline: E2E -71.76% and observed tokens/s +254.05% versus eager; this is deployment tuning, not an upstream scheduling contribution. |

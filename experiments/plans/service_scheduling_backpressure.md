@@ -676,8 +676,9 @@ work conservation，不修改、也不声称改进 vLLM 内部 continuous batchi
 - 4-job 三次吞吐收益为 +8.43%、-0.28%、+22.60%，策略不是逐 repeat
   稳定胜出。决策为“高竞争条件性候选”：保留 shared credit/DRR 作为容量
   安全与公平基础设施，但在 held-out 复验前不晋升为通用默认。
-- staggered 和 weighted 场景仍未运行；必须先补共同 overlap window 的
-  service-rate 指标，再分别验证 idle borrowing 与 3:1 weighted fairness。
+- 该 2026-07-29 矩阵结束时 staggered 和 weighted 场景均未运行。后续 5s short/long
+  guaranteed-overlap 已完成并证明 idle borrowing 的效率—隔离—公平权衡；3:1 weighted、
+  held-out 4+ Job 与异构 workload 仍未运行。
 
 完整七步报告见
 `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/README.md`。

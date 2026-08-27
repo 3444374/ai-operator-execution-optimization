@@ -311,7 +311,8 @@ comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project �
 
 当前 correctness 护栏目录为 `experiments/results/opening_database_e2e_text_refeed_20260808/`：
 24/24 单元、18 formal 的 GPU、exactly-once、sink、identity 与稳定性门通过；SQuAD 三静态
-路径近似中性，DuckDB AI ShareGPT 的 4,921/6,144 cap 语义失败结论有效。后续同 manifest
+路径可核对完成性与答案质量，但 Project 计时额外包含指标采集、记录写入和结束处理，不按不到
+1% 的时间/吞吐差异排名。DuckDB AI ShareGPT 的 4,921/6,144 cap 语义失败结论有效。后续同 manifest
 bounded C32/C64/C128/C256 扫描证明 C32 只有已测峰值 52.07%，因此旧 ShareGPT
 project/C32-direct=1.5457 不作性能排名。正式原生矩阵使用达到峰值 98.22% 的最小点 C128；
 校准见 `experiments/results/opening_bounded_saturation_calibration_20260808/`。
@@ -448,7 +449,7 @@ frozen-static。
 | AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵 | ✅ 07-26 | 三者相对 static K=8 快约 30–32% E2E，但都把窗口升到 K≈16 | AIMD 与 static K=16 不可分辨；未证明反馈控制增量，也未复验 shared-vLLM 前台保护 |
 | Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | **static K8 保护前台**（E2E -27.9%、P99 -40.0% vs K16）；AIMD 0 decrease、窗口均值 15.953，与 K16 不可分辨。**根因诊断**：vLLM waiting=0 但前台已慢 38.9%——AIMD 盯着 vLLM waiting 做决策，但请求在 Ray actor 侧排队、waiting 始终为 0 | 只有 128/512 双作业；flush 分支不是完整 2×2 随机化；多 foreground size/arrival offset/>2 job 均未测试 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
-| **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
+| **Request-level continuous replenishment** | ✅ 双卡重复与固定 active-work 对照已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；固定 W65K 的 request diagnostic 相对 whole batch 吞吐 +1.75%，credit-held 约降 16% | 未达到 5% 性能条件；保留逐请求完成语义作为多 Job credit/fairness 基础，不作为独立稳态吞吐贡献 |
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
 | **Short/long static credit existence screen** | ⚠️ 07-30 screening 完成，正式判决阻塞 | 48/48 run 成功；long 的 W65K 信号稳定，K256 在短/长两侧均造成明显 SLO 退化 | 实际为 urllib、无 output token IDs、非 K×work factorial；short 未绑定等价臂分裂 48.5%，均值/中位数选点相反。审计=`inconclusive`，必须先重跑 async 等价臂 gate |
 | **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
@@ -483,7 +484,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 | 实验 | 状态 |
 |---|---|
-| CLIP embedding (COCO/ImageNet subset) AI_EMBED | ✅ **§6 go/no-go 门禁已过（GO，5K 规范跑 ratio 13.8–18.3，见 §0）**。过门禁 → 建 path-B runner + image §7 对照臂（bounded direct / Daft Native / Ray Data / ours） |
+| CLIP embedding (COCO/ImageNet subset) AI_EMBED | ✅ 5K 画像、Daft built-in/Ray Data/Project 静态对照、120K 同资源重复、原生四 Job 40/40 与 Project observe-only 24/24 已完成；static HSE 已接入 runner 并有单测。尚未运行 HSE static GPU 对照、在线 stage/CE5 动作和小规模 pgvector 检索质量验证 |
 
 ### 1.5 算子代价估计 & 写回
 
@@ -504,8 +505,8 @@ PostgreSQL + pgvector工程baseline。
    持续供给和 vLLM 反馈驱动的提交机制。
 
 **当前缺口**：
-- 排序能力已有正信号但 context 少且不均衡；需要双 4090 独立 20-context formal
-  验证 candidate-aggregated Spearman、pairwise、Top-K 与 regret；
+- 双 4090 429-formal/20-context 的候选排序与 regret 已完成，但 max regret 14.72% 距 15% 条件
+  仅 0.28 个百分点；仍需独立时间段或新 workload 校准，不能把贴线结果写成稳健泛化；
 - 提交策略集成未经验证：代价估计能否将配置可靠地分为"轻/中/重"三档？
   分档后同档内 E2E 方差是否显著小于全局？决定了能否用于提交侧 workload
   分类；

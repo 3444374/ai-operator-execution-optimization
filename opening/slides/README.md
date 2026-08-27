@@ -27,7 +27,7 @@
 
 ## 2026-08-12 v8（历史 20 页中文主讲版）
 
-当前 PPTX：`opening_defense_20260812_v8.pptx`。v8 在 v7 学校模板与冻结叙事上增量替换第
+历史 PPTX：`opening_defense_20260812_v8.pptx`。v8 在 v7 学校模板与冻结叙事上增量替换第
 2–4 页：数据库 AI 外部执行链路、传统/外部 AI 执行假设对照、相关工作分层三张图已经进入
 正式内容区；其余 17 页和 20/20 speaker notes 保持不变。构建脚本为
 `update_opening_defense_v8_artifact_tool.mjs`。
@@ -56,7 +56,7 @@ SQuAD/ShareGPT replacement matrix 通过 feeding、correctness 与 stability 门
 
 ## 2026-08-07 v6（已降级为待替换底稿）
 
-当前 PPTX：`opening_defense_20260807_v6.pptx`（28 页）。它从 v5 学校模板映射复制，
+历史 PPTX：`opening_defense_20260807_v6.pptx`（28 页）。它从 v5 学校模板映射复制，
 使用 `build_opening_defense_v6_artifact_tool.mjs` 定点改写继承文本和图片帧；没有重跑旧
 `build_ppt.py`。一页统一文本三臂边界、四张核心证据图、两项研究内容和计划/风险已经与
 `opening/report/opening_report.md`、`opening/claim_matrix.md` 对齐。

@@ -1,7 +1,8 @@
 # 开题答辩内容大纲（20 页主线）
 
 日期：2026-08-08（2026-08-10 按文献—证据—方法链重构）
-状态：20 页主讲内容大纲；当前只审内容，不制作 PPT 成品
+状态：20 页主讲内容基线；26 页 PPT v9 已生成并完成独立 QA，实际页序以
+`slides/opening_defense_20260812_v9.pptx` 为准。本文件不再表示“尚无 PPT 成品”。
 
 ## 1. 一句话主线
 
@@ -37,7 +38,7 @@ PPT 中需要直接出现论文名称，但每条路线只突出 2–4 篇代表
 - 数据执行：Ray、Ray Data Streaming Batch、Daft、NeuStream；
 - 代价与决策：How Good are Learned Cost Models, Really?、GRACEFUL、COSTREAM、Abacus。
 
-这一页的结论是：**已有工作覆盖了相邻层，但数据库任务语义、外部数据执行和模型服务运行状态之间仍缺少统一的上游控制闭环。**
+这一页的结论是：**已有工作覆盖了相邻层，但仍缺少一种上游协调机制，能够同时利用数据库任务语义、外部数据执行进度和模型服务运行状态。**
 
 ### 2.3 本课题在 AI-Native Data Infra 中的位置
 
@@ -80,7 +81,7 @@ PPT 与报告应把 baseline、动机和研究内容组织成连续论证。每�
 同一条四步句法：`baseline/动机现象 → 暴露的缺口 → 对应研究内容与设计 → 验证实验`。
 文本 baseline 分产品 database-E2E 与官方 Chat graph 两轨，导出 work 表达、正确性和状态
 感知问题；图像动机先用 prepare/model、transfer 形态和 active-window 现象导出 staged work、
-CPU/GPU 队列感知和跨阶段提交，再由独立 baseline 图分开能力门禁、12K 结构诊断与
+CPU/GPU 队列感知和跨阶段提交，再由独立 baseline 图分开入口与输出检查、12K 结构诊断与
 120K matched-resource 排名。不可排名的合同边界必须显式保留，不能为了版面完整
 合并成总排行榜。
 
@@ -94,22 +95,22 @@ CPU/GPU 队列感知和跨阶段提交，再由独立 baseline 图分开能力�
 | 2 | AI 算子已经进入数据库工作流 | 展示 SQL 平台接入文本生成、向量计算和多模态处理，并定位外部执行链路的上游控制点 | AI 算子外部执行链路图 | 结合 Snowflake Cortex AI、BigQuery ML/AI、Oracle AI Vector Search、pgai/pgvector |
 | 3 | AI 算子形成新的外部执行链路 | 对比进程内 UDF 与外部 AI 算子的请求组织、队列、异构阶段和结果回收 | 进程内 UDF 与外部执行链路对照 | 引出 token/frame、CPU prepare、GPU model、transfer 与服务状态 |
 | 4 | 代表性工作分别推进数据库 AI、推理服务和数据流水线 | 论文名称、核心机制和优化边界同时出现 | 三条横向研究线 | LOTUS/Galois/GaussML；Orca/vLLM/Sarathi/VTC；Ray/Ray Data/Daft/NeuStream |
-| 5 | AI Data Infra 仍缺少面向数据库任务的上游执行闭环 | 明确本课题在 AI-Native Data Infra 中的位置，以及 work、state、control、cost 四个接口 | `opening_ai_data_execution_boundary` | 聚焦数据库 AI 算子的外部异构执行与上游调度 |
+| 5 | AI Data Infra 仍缺少同时利用数据库任务与模型状态的上游协调 | 明确本课题在 AI-Native Data Infra 中的位置，以及 work、state、control、cost 四个接口 | `opening_ai_data_execution_boundary` | 聚焦数据库 AI 算子的外部异构执行与上游调度 |
 | 6 | 同一任务经过不同执行图会落入不同供给与排队状态 | 左侧产品 database-E2E，右侧官方 Chat graph | `opening_text_baseline_evidence_map` | 两轨分别解释产品语义与服务供给，不合并为绝对排行榜 |
 | 7 | 动机一：记录数不能代表分阶段 AI 工作量 | 同行数 token work 14.3×；图像 prepare、transfer 与 model 阶段差异 | `opening_motivation_work_state_part1_work` 与图像阶段证据 | 文本和图像是同一总动机的两个证据层次 |
 | 8 | 动机二：单一指标不能代表当前可调度状态 | 同一上限下实际在途工作不同；吞吐、排队与尾延迟需要联合判断 | `opening_motivation_work_state_part2_state_capacity` | 配置层与模型服务层共同说明为什么需要多维状态 |
 | 9 | 动机二还必须进入 Job 层 | 各原生路径内部比较 isolated→four-job 的 JCT 变化 | `opening_native_fourjob_normalized_impact` | 全局服务状态不能代替各 Job 的进度与服务结果 |
 | 10 | 两条总动机对应两项研究内容 | 动机一→工作描述与数据组织；动机二→提交、路由与多 Job 调度 | 两层论证树 | 代价估计和图像分别标为共同使能与跨模态验证 |
-| 11 | AI 数据执行层把数据组织、状态感知和调度连接成闭环 | source→organizer→scheduler→executor→sink 与反馈流 | `opening_work_to_schedule_overview` | 研究发生在数据库与模型服务之间，不修改模型内部调度 |
+| 11 | AI 数据执行层连接数据组织、状态感知、调度、执行与结果返回 | source→organizer→scheduler→executor→sink 与反馈流 | `opening_work_to_schedule_overview` | 研究发生在数据库与模型服务之间，不修改模型内部调度 |
 | 12 | WorkDescriptor 把一行数据变成可估计、可组织、可调度的工作单元 | 文本与图像字段、估计来源和运行时更新关系 | WorkDescriptor 字段与消费者关系图 | 字段设计对应后续组织、路由、准入和公平决策 |
 | 13 | 数据组织没有全局最优，服务压力会改变 balance 与 locality 的权衡 | 低/高压力下吞吐与 prefix cache hit 的共同趋势 | `opening_work_organization_regime_v2` | 区分互斥实验臂与可联合的设计维度 |
-| 14 | 冻结总容量，再随 Job 活跃集调整释放顺序 | per-Job ready/active/completed work、entitlement、idle borrowing/reclaim、SLO debt | 方法流程图或总体图局部放大 | 不把在线调整总并发写成当前能力；状态无效时回退 global FIFO/DRR，先用强静态基线检验复杂控制是否必要 |
+| 14 | 实验前确定总容量上限，再随 Job 活跃集调整释放顺序 | per-Job ready/active/completed work、entitlement、idle borrowing/reclaim、SLO debt | 方法流程图或总体图局部放大 | 不把在线调整总并发写成当前能力；状态无效时回退 global FIFO/DRR，先用强静态基线检验复杂控制是否必要 |
 | 15 | 共享调度提高总效率时，也会改变隔离与公平 | Project full/quarter/static/shared 对照，解释 idle borrowing 与 fair queue | `opening_multijob_interference_tradeoff` | 当前结果用于呈现效率—隔离—公平权衡 |
 | 16 | 代价估计需要同时评价预测质量和决策质量 | 解析结构＋profile＋residual；pairwise、平均/中位/最坏 regret | `opening_cost_model_decision_quality_v2` | 重点回答估计结果能否正确选择配置 |
 | 17 | 图像 baseline 展示不同原生路径的能力与扩展边界 | Direct CLIP、Daft Built-in、Ray Data、Project 的数据与角色 | `opening_image_baseline_evidence_map` | 12K 结构诊断与 120K matched-resource 正式比较分开解释 |
 | 18 | 图像四 Job 重现跨模态任务干扰 | Daft Built-in、Ray Data、Project static/shared 的 Short/Long slowdown | `opening_image_fourjob_normalized_impact` | 说明统一 work/state 接口具有跨模态研究价值 |
 | 19 | 主实验用同上限强静态 A/B 逐层验证 | descriptor 等价性→observe-only→fallback→admission-only→routing→fairness | 因果实验路线与时间表 | 每一步保存状态、动作和效果 trace；correctness、feeding、stability 是前置条件 |
-| 20 | 预期贡献是可估计、可感知、可调度的 AI 数据执行方法 | 两项研究内容、共同使能、跨模态验证和进度风险 | 一条闭环总结 | 回扣第 2 页 AI-Native Data Infra 背景，以本课题的具体切片收束 |
+| 20 | 预期贡献是可估计、可感知、可调度的 AI 数据执行方法 | 两项研究内容、共同使能、跨模态验证和进度风险 | 从工作描述、执行控制到结果评价的总结 | 回扣第 2 页 AI-Native Data Infra 背景，以本课题的具体切片收束 |
 
 ### 3.1 前九页的现场转场
 
@@ -183,7 +184,7 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
   状态三类信息。
 - **转场**：本课题聚焦的正是三者交界处。
 
-#### 第 5 页：AI Data Infra 仍缺少面向数据库任务的上游执行闭环
+#### 第 5 页：AI Data Infra 仍缺少同时利用数据库任务与模型状态的上游协调
 
 - **本页回答**：研究空白具体位于哪里。
 - **左边界**：数据库知道行、查询、Job、SLO 和结果语义，但通常不知道模型服务实时压力。
@@ -198,9 +199,10 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 #### 第 6 页：同一任务经过不同执行图会落入不同供给与排队状态
 
 - **本页回答**：现有产品/框架路径表现出的主要问题是什么。
-- **产品轨**：SQuAD database-E2E 中 direct、DuckDB AI、Project frozen-static 在统一 source、
-  sink、输出质量和 K128 下近似中性，说明后续方法必须面对强静态基线。
-- **官方 Chat graph 轨**：bounded control、Daft Native、Daft Ray、Ray Data 使用同一
+- **数据库产品端到端对照**：SQuAD database-E2E 中 direct、DuckDB AI、Project fixed-config
+  共享 source、sink、输出要求和 K128；三条路径的完成性与答案质量可核对，但外层计时实现不同，
+  不按不到 1% 的记录差异排名。
+- **官方 Chat graph 对照**：bounded control、Daft Native、Daft Ray、Ray Data 使用同一
   ShareGPT manifest；Daft 两臂呈高 waiting/KV，Ray Data 当前 graph 呈低 running/MFU。
 - **Project 位置**：右侧 Chat graph 暂不填入不可比的 Project 点；已有 Project 数据使用
   不同 source/sink 或计时边界，只在对应 Project A/B 页面出现。
@@ -250,7 +252,7 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **页面结论**：两条总动机、两项研究内容、一个共同使能组件和一项跨模态验证构成完整层次。
 - **转场**：下一页给出它们在系统中的连接方式。
 
-#### 第 11 页：AI 数据执行层把数据组织、状态感知和调度连接成闭环
+#### 第 11 页：AI 数据执行层连接数据组织、状态感知、调度、执行与结果返回
 
 - **本页回答**：总体技术路线如何工作。
 - **前向数据流**：Database/DataFrame→cost/descriptor builder→Organizer→Scheduler→GPU
@@ -289,20 +291,20 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **页面结论**：组织策略要同时考虑工作量均衡和 locality，且其价值依赖服务压力状态。
 - **转场**：研究内容二利用运行状态决定这些 work unit 何时进入服务。
 
-#### 第 14 页：冻结总容量，再随 Job 活跃集调整释放顺序
+#### 第 14 页：实验前确定总容量上限，再随 Job 活跃集调整释放顺序
 
 - **本页回答**：状态感知如何真正变成控制动作。
-- **离线标定**：在固定机器、模型、协议和 workload 下冻结最小饱和、安全的总 K/work
-  envelope；K160 只是当前签名的强静态点，不是通用常数。
+- **离线标定**：在固定机器、模型、协议和 workload 下选出满足饱和与尾延迟条件的总 K/work
+  envelope，并在一次实验运行期间保持不变；K160 只是当前签名的强静态点，不是通用常数。
 - **在线观测**：per-Job model-ready/active/remaining/completed work、arrival/drain、queue age、
   SLO debt，以及 running/waiting/KV、TTFT/ITL；GPU/MFU 只作交叉验证。
 - **动态动作**：空闲 Job 的未用份额可借；前台/新 Job 到达后，不抢占已进入 vLLM 的请求，
   只在 completion 释放 credit 时按 entitlement、service lag 和 SLO debt 回收未来份额。
-- **回退**：状态过期、签名不符或 ledger 异常时保持冻结总 K，并退回简单 DRR/FIFO；不在线猜
+- **回退**：状态过期、签名不符或 ledger 异常时保持实验前选定的总 K，并退回简单 DRR/FIFO；不在线猜
   新容量档位。
-- **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit；固定
-  总上限内的阶段感知有序释放已接入具名 Ray 协调器和 active-set trace，但尚无正式 GPU
-  对照。仅调整总并发上限的控制器未超过强静态点，因此不作为主线。
+- **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit；同候选集的
+  Project FIFO/DRR/VTC-style/guarded-debt 双轮对照和五臂共同观测 rehearsal 已完成。现有结果只
+  显示效率、尾延迟与公平的折中；五臂只有一次运行，正式重复和 matched-solo isolation 尚未完成。
 - **页面结论**：动态调度不是持续改变总并发上限；本项目要验证的是固定总容量下“下一份 credit 给谁”。
 - **转场**：接下来用多 Job 数据观察借用带来的效率与公平代价。
 
@@ -345,8 +347,8 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **本页回答**：图像场景有哪些可比较 baseline，项目静态路径处于什么位置。
 - **12K 诊断**：Daft Built-in、Ray Data、Project 均 exactly-once；Daft Built-in 约 65.2s、
   Ray Data 约 17.8s、Project 约 15.9s，但快臂时间较短，因此只作结构诊断。
-- **120K 正式比较**：matched CPU8/16 下只比较 Ray Data 与 Project frozen-static；Project
-  JCT 约低 10%/17%，跨两轮冻结 headline 为约 13%–15% 静态结构信号。
+- **120K 正式比较**：matched CPU8/16 下只比较 Ray Data 与运行期间配置保持不变的 Project
+  static；Project JCT 约低 10%/17%，综合两轮后保守报告为约 13%–15% 的静态结构信号。
 - **Daft Built-in 边界**：12K 可运行，20K 出现 object-store OutOfDisk，故不能被补进
   120K matched-resource 排名；这属于扩展边界，不是漏画。
 - **其他路径**：Direct CLIP 是容量参照；vLLM pooling capability gate 阻塞，不生成虚构值。
@@ -379,8 +381,8 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
   correctness、feeding、stability 先通过。
 - **评价**：correct throughput/SLO goodput、JCT/P99、MFU/energy、Jain/isolation、状态—动作—
   效果 trace；代价模型另报 ranking/regret。
-- **停止规则**：相对 strong static 未达到预注册增量，或关键指标退化，则记录失效边界并停止
-  扩扫，不更换 workload 追求正结果。
+- **停止规则**：相对 strong static 未达到预先规定的增量，或关键指标退化，则记录该方法不再
+  有效的 workload、资源和服务条件并停止扩扫，不更换 workload 追求正结果。
 - **页面结论**：每个设计都有独立对照、同上限约束和可接受的阴性结论。
 - **转场**：由此形成预期创新、工程产出和阶段计划。
 
@@ -394,7 +396,8 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **共同使能**：面向配置选择的轻量代价估计，以 ranking 与 decision regret 验收。
 - **验证与产出**：文本 AI_COMPLETE＋图像 AI_EMBED/CLASSIFY，同资源强 baseline、可复现实验
   系统、原始 trace、实验报告和论文。
-- **风险口径**：若动态方法未超过静态点，收敛为容量标定、regime 诊断和失效边界；若图像
+- **风险口径**：若动态方法未超过静态点，收敛为容量标定、运行条件诊断，以及方法有效和无效的
+  具体 workload、资源与服务条件；若图像
   持续由 CPU prepare 主导，则限定为异构流水线组织，不外推为模型服务优化。
 - **页面结论**：预期形成两项研究内容、一个共同使能组件和一套跨模态验证方法。
 - **结束句**：本课题希望回答的不是“如何让一次模型调用更快”，而是“数据库 AI 任务如何
@@ -420,7 +423,7 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 |---|---:|---:|---|
 | 背景与研究空白 | 1–5 | 4 分钟 | AI-Native Data Infra 背景、AI 算子执行变化、研究层次与边界 |
 | Baseline 与动机证据 | 6–10 | 5 分钟 | 原生系统行为差异、两条总动机及其子层证据如何收敛为两项研究内容 |
-| 研究内容与共同使能 | 11–16 | 6 分钟 | 总体闭环、数据组织、状态感知提交、多 Job 权衡、代价估计 |
+| 研究内容与共同使能 | 11–16 | 6 分钟 | 完整执行流程、数据组织、状态感知提交、多 Job 权衡、代价估计 |
 | 多模态、验证与贡献 | 17–20 | 4 分钟 | 图像可行性与干扰、后续实验合同、预期贡献和风险 |
 
 按 18–20 分钟准备主讲。若现场只给 15 分钟，不删除任何研究问题，而是：第 4 页只保留每条
@@ -435,12 +438,12 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 | 章节 | 核心任务 | 主要内容 | 章节落点 |
 |---|---|---|---|
 | 1 背景、目的与意义 | 从 AI-Native Data Infra 演进收敛到本课题 | 数据平台能力扩展、AI 算子成本变化、CPU＋GPU 异构执行、数据库触发外部 AI 的现实链路 | 数据库 AI 算子的外部执行链路具有独立研究价值 |
-| 2 国内外研究现状 | 用代表论文组织研究边界 | 数据库 AI、GPU serving、分布式数据执行、代价估计四条文献线 | 相邻层已有强工作，交界处仍需要 work/state/control 闭环 |
+| 2 国内外研究现状 | 用代表论文说明研究对象与适用条件 | 数据库 AI、GPU serving、分布式数据执行、代价估计四条文献线 | 相邻层已有强工作，但仍缺少同时利用 work、state 与 Job 进度的上游协调 |
 | 3 研究目标、问题与边界 | 把文献空白和本地现象转成研究问题 | Work Unit、感知、动态调度、代价估计与多模态验证 | 两项研究内容和共同使能关系清楚 |
 | 4 研究内容与技术路线 | 定义数据结构、算法接口和消融顺序 | WorkDescriptor、runtime snapshot、controller、cost estimator、multimodal contract | 形成从数据组织到调度决策的完整方法链 |
 | 5 前期工作与可行性 | 按研究问题组织已有实验 | baseline、work/state 动机、组织、多 Job、图像、cost | 说明问题真实、技术可实现，并给出初步设计信号 |
 | 6 后续实验与进度 | 给出同上限、可停止的验证路线 | strong static、observe-only、单动作消融、跨模态矩阵 | 每个实验都对应一个可回答的研究问题 |
-| 7 预期成果、创新与风险 | 说明方法产出、系统产出和降级路径 | 表征、控制、估计、代码、数据、报告和风险门禁 | 创新落到具体方法与严格验证合同 |
+| 7 预期成果、创新与风险 | 说明方法产出、系统产出和降级路径 | 表征、控制、估计、代码、数据、报告和风险检查 | 创新落到具体方法与严格验证条件 |
 | 8 参考文献 | 提供论文和工程资料的可追溯来源 | 顶会论文、正式期刊、官方文档、产业系统资料 | 文献类型与其在论证中的作用相匹配 |
 
 第 5 章内部重组为：`5.1 baseline 合同与比较边界 → 5.2 work/state 动机 → 5.3 研究内容一
@@ -452,10 +455,10 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 
 ### 5.1 两组 replacement database-E2E
 
-| workload | 作用 | 三臂 | 当前动作 | 必过门禁 |
+| workload | 作用 | 三臂 | 当前动作 | 纳入比较前必须满足的条件 |
 |---|---|---|---|---|
-| SQuAD 均匀控制组 | 验证统一 source/sink 和质量口径 | bounded direct static-sharded、DuckDB AI static-sharded、project frozen-static | correctness/稳定性通过；project/direct service=1.0087，近似中性 | 只作该 workload 静态地基，不外推到 ShareGPT |
-| ShareGPT 受控异质组 | 验证长短 work 异质下的容量与语义边界 | 同上 | correctness 护栏通过；后续 C32–C256 扫描冻结 bounded C128；旧 project/C32-direct=1.5457 不排名 | C128 达 C256 已测峰值 98.22%；正式原生矩阵用 C128 |
+| SQuAD 均匀控制组 | 验证统一 source/sink 和质量口径 | bounded direct static-sharded、DuckDB AI static-sharded、project fixed-config | correctness/稳定性通过；完成性和答案质量可核对，因外层计时实现不同不作不到 1% 的性能排名 | 只作该 workload 的完成性与质量地基，不外推到 ShareGPT |
+| ShareGPT 受控异质组 | 验证长短 work 异质下的容量与输出语义差异 | 同上 | correctness 检查通过；后续 C32–C256 扫描选择 bounded C128；旧 project/C32-direct=1.5457 不排名 | C128 达 C256 已测峰值 98.22%；原生重复实验使用 C128 |
 
 每臂至少汇总：correct rows/s、database-E2E wall time、service/operator tokens/s、request P50/P95/P99、GPU util time-series、MFU、显存、功耗/能耗、J/1k token、running/waiting、KV usage、prefix hit、各 pipeline 阶段时间、质量、failure 和成本假设。图中只放支持主结论的 3–5 个指标，其余进入结果报告表。
 
@@ -463,15 +466,17 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 
 | 轨道 | arms | 作用 | 最小合同 |
 |---|---|---|---|
-| Chat原生框架轨（已完成） | bounded Chat control、Daft `prompt()` Native/Ray、Ray Data HTTP Processor | 测量现有框架在异质work下的JCT、service throughput、feeding、资源与可观测性边界 | 同一ShareGPT controlled-skew manifest；各臂独立冻结运行点；1+3交错formal；不与Project不同T0/arrival合同作绝对排名 |
-| Project eager诊断（已完成） | project frozen-static all-at-t0及full/half/static/shared多Job匹配控制 | 排除71.24s来源并分离quota与competition | 只作Project内因果和与Daft Native对齐T3诊断；不升级为完整框架容量排名 |
-| DuckDB有界输出产品轨（已完成） | DuckDB AI vs同manifest direct/project | 检验数据库AI产品入口的database-E2E、质量、错误和可观测性 | SQuAD/cap=64可作静态地基；ShareGPT fixed-cap语义不兼容，只作产品护栏 |
+| Chat 原生框架对照（已完成） | bounded Chat control、Daft `prompt()` Native/Ray、Ray Data HTTP Processor | 测量现有框架在异质 work 下的 JCT、service throughput、feeding、资源与可观测条件 | 同一 ShareGPT controlled-skew manifest；各臂分别选择运行配置并在实验期间保持不变；1+3 交错重复；不与 Project 不同 T0/arrival 条件作绝对排名 |
+| Project eager 诊断（已完成） | project fixed-config all-at-t0 及 full/half/static/shared 多 Job 匹配控制 | 排除 71.24s 来源并分离 quota 与 competition | 只作 Project 内因果和与 Daft Native 对齐 T3 诊断；不升级为完整框架容量排名 |
+| DuckDB 有界输出端到端对照（已完成） | DuckDB AI vs 同 manifest direct/project | 检验数据库 AI 产品入口的 database-E2E、质量、错误和可观测性 | SQuAD/cap=64 可作完成性与质量地基；ShareGPT fixed-cap 语义不兼容，只作产品语义检查 |
 
-两轨分开是语义门禁，不是为了选择性报告。同环境原生框架对照用来发现问题，不预设项目一定赢；只有计时、语义和 scheduler-owner 边界一致的指标才同表排名。
+两组分开是因为输出语义和计时条件不同，不是为了选择性报告。同环境原生框架对照用来发现问题，
+不预设项目一定赢；只有计时、语义和 scheduler owner 均一致的指标才同表排名。
 
 官方 Chat graph 单 Job 图中不加入 Project 数值。现有 Project database-E2E 点包含 PostgreSQL
 source/sink，eager 诊断又只有 512 行且计时起点不同；当前没有同一 2,048-row
-graph→gather 正式点。答辩时直接说明“合同不匹配，保留空缺”，不能用不可比点补齐版面。
+graph→gather 可比较结果。答辩时直接说明“输入可见性和计时条件不匹配，保留空缺”，不能用
+不可比结果补齐版面。
 
 ### 5.3 多 Job 原生观察与项目机制对照
 
@@ -498,14 +503,14 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 
 | 等权部件 | 动机证据 | 当前实现 | 开题落点 | 后续验证 |
 |---|---|---|---|---|
-| Work Unit | 同行数 token work 14.3×；图像 prepare/model 阶段失衡 | staged descriptor 类型、neutral work consumer 和图像携带接口已存在；正式 runner 尚未构造 production descriptor | 字段设计由现象导出，接口可执行 | staged organization 已端到端胜出 |
+| Work Unit | 同行数 token work 14.3×；图像 prepare/model 阶段失衡 | production staged descriptor、neutral work consumer、图像携带接口和 observe-only runner 已接通；24/24 group 的 snapshot 均保持 fresh | 字段设计由现象导出，接口可执行且观测开销很小 | 完成 HSE static GPU 对照，再检验 stage-aware 单一动作是否优于静态配置 |
 | 状态感知 | 同 W 下 high/arrival-limited 状态不同；原生路径出现 underfeed/overqueue | endpoint、vLLM 和 GPU/MFU trace 已正式采集；图像 fresh stage snapshot 已 observe-only 接入 | 必须联合 ready/active work、完成速率、queue、KV/MFU/tail，并校验 freshness/signature；GPU/MFU 不单独触发动作 | snapshot 正式驱动 fixed-K Job release 后产生可归因增量 |
-| 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；仅调整总并发上限的控制器未晋级 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；缺 direct global FIFO control 与同 observation 的 Project internal controls | 原生 baseline 保持自身调度；同一总上限下 project frozen-static/FIFO/DRR/VTC-style/状态感知有序释放的内部决定性 A/B 尚未完成 |
+| 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；只调整总并发上限的控制器没有优于同上限静态配置 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；同候选集的 Project FIFO/DRR/VTC-style/guarded-debt 双轮对照已完成，得到效率—tail 折中而非单一胜者 | 原生 baseline 保持自身调度；五臂共同观测 5/5 rehearsal 已完成，但只有一次运行，正式重复和 matched-solo isolation 尚未完成 |
 | 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
 
-工程下一步按 production descriptor builder → 统一状态快照 → global FIFO/no-op gate → fixed-K
-ordered-release 执行器 → 单动作消融推进。先闭合“状态→决策→动作→效果 trace”，不把四个部件
-同时接入后再做无法归因的总对比。
+当前先完成 LOTUS 语义迁移和 PostgreSQL query-lifecycle 资格验证；恢复图像实验后，按 HSE static
+GPU 对照 → 单一 stage-aware 动作 → 小规模 pgvector 质量检查推进。每一步记录完整的
+“状态→决策→动作→效果 trace”，不把多个部件同时接入后再做无法归因的总对比。
 
 ### 5.5 可直接复用的正式/初步证据
 
@@ -550,9 +555,10 @@ pool是同上限互斥A/B臂；runtime sensing为总准入/路由提供信号，
 
 ### 6.3 同上限 static–dynamic 因果实验
 
-按顺序运行 steady underload、steady near-saturation、overload guardrail、low→high/high→low、burst arrival、short/long 或 easy/hard mix，并保留“上游无 ready work”的阴性控制。每个场景在相同最大 K、active-work、buffer bytes、CPU/GPU 和 actor 数下比较 frozen-static、observe-only、admission-only、routing-only 和最小联合候选。正式结果同时保存 ready/active work、状态 freshness、控制动作、work-credit 变化和后续完成速率，证明负载变化确由系统而非实验人员手动完成。
+按顺序运行 steady underload、steady near-saturation、overload guardrail、low→high/high→low、burst arrival、short/long 或 easy/hard mix，并保留“上游无 ready work”的阴性控制。每个场景在相同最大 K、active-work、buffer bytes、CPU/GPU 和 actor 数下比较运行期间保持配置不变的 static、observe-only、admission-only、routing-only 和最小联合候选。重复实验同时保存 ready/active work、状态 freshness、控制动作、work-credit 变化和后续完成速率，证明负载变化确由系统而非实验人员手动完成。
 
-动态策略只有在吞吐、SLO goodput、P99/JCT 或资源效率至少一项改善约 5%，且 correctness、failure、其他关键指标无不可接受退化时才晋级。steady 场景的目标是 no-regression，不要求制造正收益。
+动态策略只有在吞吐、SLO goodput、P99/JCT 或资源效率至少一项改善约 5%，且 correctness、failure、
+其他关键指标无不可接受退化时才采用为默认方案。steady 场景的目标是 no-regression，不要求制造正收益。
 
 ### 6.4 多 job
 
@@ -560,9 +566,14 @@ pool是同上限互斥A/B臂；runtime sensing为总准入/路由提供信号，
 
 ### 6.5 图像完整验证
 
-统一 CLIP 模型/processor/dtype/normalization、PostgreSQL BYTEA source、到 gather 完成的 operator-E2E 边界、CPU/GPU reservation 和冻结 ground truth，比较 bounded direct、Daft built-in、Ray Data native、project frozen-static，最后才加入 project dynamic。workload 至少包含 uniform、decode-cost skew、phase shift、burst 和 two-job mix；报告阶段队列、tensor bytes、correct embeddings/s、JCT、energy、embedding finite/norm/digest。Recall@K/nDCG 与 pgvector exactly-once sink 作为小规模质量/工程闭环单列，不进入调度性能主排名。
+统一 CLIP 模型/processor/dtype/normalization、PostgreSQL BYTEA source、到 gather 完成的 operator-E2E
+计时范围、CPU/GPU reservation 和预先确定的 ground truth，比较 bounded direct、Daft built-in、
+Ray Data native、运行期间保持配置不变的 project static，最后才加入 project dynamic。workload 至少
+包含 uniform、decode-cost skew、phase shift、burst 和 two-job mix；报告阶段队列、tensor bytes、
+correct embeddings/s、JCT、energy、embedding finite/norm/digest。Recall@K/nDCG 与 pgvector
+exactly-once sink 作为小规模读取—执行—写回—检索质量检查单列，不进入调度性能主排名。
 
-### 6.6 算子代价估计作为共同使能的独立门禁
+### 6.6 算子代价估计作为共同使能的独立验证
 
 代价估计需要分别回答“预测准不准”和“决策是否因此更好”：
 
@@ -581,7 +592,7 @@ pool是同上限互斥A/B臂；runtime sensing为总准入/路由提供信号，
 | B 研究边界与主线 | 两项研究和共同使能如何连接 | 数据流 + 反馈流；cost estimator 同时连 organizer 与 scheduler | 方法合同 | 不把 cost 画成第三项研究内容 |
 | C organization regime | 组织收益为何依赖 serving regime | 低压力/高压力 small multiples 或 dumbbell；附 locality 机制注释 | cache-on 正式结果 | 一张图只讲 regime dependence |
 | D 图像 stage-aware | 为什么跨模态需要 staged work 和阶段状态 | CPU prepare/GPU service 比 + transfer 形态 + active-window screening | image exact-path profile 与 screening | 不把 microprofile/screening 当系统排名 |
-| I 图像 baseline | 图像路径的能力边界与可比数据分别是什么 | 报告独立表格讲角色/门禁；数据图仅画 12K 诊断与 120K matched-resource 对照 | image operator formal + vLLM capability gate | 结构图与数据图不混用；只有 120K Ray Data/Project panel 可排名 |
+| I 图像 baseline | 图像路径分别支持什么能力、哪些数据可以比较 | 报告独立表格说明角色和纳入比较前的条件；数据图仅画 12K 诊断与 120K matched-resource 对照 | image operator 重复实验 + vLLM capability 检查 | 结构图与数据图不混用；只有 120K Ray Data/Project panel 可排名 |
 | J 图像 multi-job | 图像 Short/Long 并发影响是否依赖执行路径，现有共享额度改变什么 | 三栏无连线归一化点图；Project static/shared-credit 并列 | image native + project four-job formal compact summary | 只作各路径内部比较；Project 状态仅观测；原生路径无统一阶段计时 |
 | E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
 | F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 原单位 small multiples；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
@@ -598,10 +609,13 @@ database-E2E 只保留附录表。N 使用三条原生轨各自的 four-job/isol
 ## 8. 停止规则
 
 - replacement 三臂、文本 Chat 原生单 job、两 job 因果点和四 job 扩展均已完成；开题前不再换模型、数据库、workload、offset、weight、Job 数或扩大并发扫描追正结果；
-- DuckDB 仅保留在语义成立的有界输出产品轨；Daft/Ray Data 多 job 只做原生系统观察，不给它们注入项目调度器；
+- DuckDB 仅保留在输出语义成立的有界输出端到端对照中；Daft/Ray Data 多 job 只做原生系统观察，
+  不给它们注入项目调度器；
 - K256 已覆盖当前每 endpoint 校准上界；K512/endpoint 只用于独立过载退化研究；
-- 动态未超过同上限强静态点时记录失效边界，不换弱 baseline 或挑 workload；
+- 动态方法未超过同上限强静态配置时，记录它在哪些 workload、资源和服务条件下没有增量，不换弱
+  baseline 或挑 workload；
 - 代价估计现有 429-run 仅声称文本配置选择初步可行；图像 held-out 仅在无法用已有 profile 数据构造决策对照时才新跑，不扩为 TPC-H 或复杂模型搜索；
 - 图像 official baseline 未满足同语义和 scheduler-owner 合同时不进入主排名；
-- 未通过 feeding、correctness、quality 或稳定性门禁的数据不能进入结论图；
-- 当前只冻结本大纲、实验数据和图，不制作或同步新的 PPT 成品，也不同步 Wiki。
+- feeding、correctness、quality 或稳定性未满足预先规定条件的数据不能进入结论图；
+- 本文件保留为 20 页内容基线；当前 26 页 v9 已存在，但最新报告图文尚未回灌，不能用全量 builder
+  覆盖。Wiki 不同步。

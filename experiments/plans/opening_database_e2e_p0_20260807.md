@@ -4,8 +4,9 @@
 
 状态：**主矩阵已完成；ShareGPT C128 双臂纠正补测为条件性待办，不是当前优先项。**
 2026-08-08 替换重跑的 24/24 单元均通过 source/sink、identity、exactly-once 和稳定性检查；
-SQuAD 三条静态路径可作均匀短输出控制，ShareGPT 只保留运行现象、正确性和产品语义证据，
-不作方法性能排名。权威结果见 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`。
+SQuAD 三条静态路径可作均匀短输出的完成性与质量控制；项目路径计时还多含指标采集、记录写入
+和结束处理，因此不到 1% 的时间/吞吐差异不排名。ShareGPT 只保留运行现象、正确性和产品语义
+证据，不作方法性能排名。权威结果见 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`。
 第 9 节仅在 LOTUS/PostgreSQL 资格项完成且双 RTX 4090 环境恢复后补 direct C128 与 project
 K128/W65,536；不重跑 DuckDB、SQuAD 或已有容量扫描。
 

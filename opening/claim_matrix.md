@@ -2,8 +2,9 @@
 
 初版冻结日期：2026-08-07
 第一性原理复审：2026-08-13（补充多 Job 三反事实、service-lag 与理论性质边界）
+状态复核：2026-08-27
 
-用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。中文报告与 20 页 PPT 已按冻结叙事完成本地视觉、数据、引用和模板审计；普通飞书云文档仍是待授权的外部发布面。
+用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。当前中文报告（16 个图片文件、53 条参考文献）与 26 页 PPT v9 均已分别通过本地审查，但 2026-08-22 至 08-25 的报告图文更新尚未回灌 PPT，跨材料差异审查仍待执行；普通飞书云文档仍是待授权的外部发布面。
 
 ## 1. 冻结题目与系统抽象
 
@@ -67,7 +68,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 图像 work 是分阶段的，固定图片数不足以描述当前瓶颈 | 已证明（画像） | `motivation/results/gpu/image_clip_preprocess_variants_20260801/README.md`：实用 batch 下 CPU prepare 为 GPU actor 的 13.8–31.2 倍 | 跨模态公共 work-unit 需表达 prepare/model 等阶段需求，不能只把 token 字段改名为 frame | 仍需按 prepare/model work 组织与动态控制的正式消融 |
 | 算子代价估计已表现出配置选择价值 | 条件性 | `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`：429 formal，CE5 pooled regret 1.67%、macro 2.90%、max 14.72%、candidate pairwise 0.808 | 可写为第一份选择质量可行性证据；CE5 只是 marginal pass | 更多 context、时间段、workload 和硬件 held-out |
 | 简单代价 proxy 不足以支持配置选择 | 已证明（文本） | 同上 20 contexts；各 context 四候选 E2E spread 12.0%–86.5%。CE0 mean macro regret 37.2%/pairwise 0.50，CE1 analytical 17.8%/0.53；逐行 MAE 更低的 Ridge 选择反而更差 | 代价估计必须按 ranking/regret 验收，首版保留物理解析结构并只学习 residual | 图像阶段代价的 held-out 选择证据仍缺 |
-| 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 对照 | 已证明（静态地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`：K128 replacement 24/24 单元、18 formal 全门禁通过；direct/DuckDB/project service tok/s=40,920.72/40,955.99/41,277.95，correct rows/s=136.63/136.68/137.77 | 喂饱后均匀短输出下三条静态路径近似中性；强静态点必须保留为后续动态对照 | 无 database-E2E blocker；不能从近似中性外推异质负载 |
+| 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 完成性与质量对照 | 已证明（完成性/质量地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`：K128 replacement 24/24 单元、18 formal 的 source/sink、identity、exactly-once 与稳定性检查通过；EM/F1 接近 | 三条路径的任务完成性和答案质量可以核对；项目路径还多计指标采集、记录写入和结束处理，当前不到 1% 的时间/吞吐差异不排名 | 若论文需要细微性能排名，先统一外层计时实现；该项不是当前开题 blocker |
 | 两类 workload 的完整三臂统一 database-E2E 护栏 | 已证明（correctness 地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/`：24/24 cells 的 source/sink、identity、exactly-once 和 CV 门通过；后续饱和扫描证明 ShareGPT C32 direct 只有已测峰值的 52.07% | 可用于 database-E2E 与产品语义边界；ShareGPT 三臂不作 matched-saturation 性能排名 | 原生单 job 正式矩阵改用 bounded C128 |
 | ShareGPT C32→C256 呈现欠供给、平台与过量排队区间 | 已证明（容量动机） | `experiments/results/opening_bounded_saturation_calibration_20260808/README.md`：formal tok/s=9,455/14,058/17,834/18,158；C128 达峰值 98.22%，C256 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s | GPU utilization 高不等于喂饱；状态感知需联合完成速率、running/waiting、KV、MFU 与 tail，控制目标是最小饱和区 | 数值只绑定当前机器、模型、协议、workload；动态收益仍待 A/B |
 | 异质文本 workload 会拉开冻结静态路径差距 | 条件性（降级） | ShareGPT project/C32-direct service tok/s=14,568.91/9,425.25、DB-E2E=116.70/180.33 s；C32 后续证实欠供给，且两臂并发/执行结构不同。DuckDB 4,921/6,144 行 cap 语义失败 | 只说旧静态配置在异质 workload 下暴露容量校准和产品语义问题；不能称项目方法收益 | 同 manifest、独立冻结点的原生单 job 矩阵；项目方法增量需同上限 A/B |
@@ -78,8 +79,8 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 文本原生路径在同环境下呈现稳定但不同的服务压力形态 | 已证明（外部现象） | `experiments/results/opening_text_native_single_job_formal_20260808/README.md`：16/16 cells、12 formal；bounded/Daft Native/Daft Ray/Ray Data tok/s=17,800/17,286/16,747/3,551，CV<0.6%。Daft waiting mean=783/742、KV max≈1；Ray Data running=17.3、MFU=0.112 | 同一任务可落入最小饱和、过量排队或欠供给；状态感知需联合 work rate/MFU、running/waiting、KV 与 tail | 只证明当前官方 graph/冻结点的外部现象；不能归因内部算法或称项目方法胜出 |
 | 现有原生路径在多 job 共享服务时呈现前台干扰与不同压力形态 | 已证明（外部现象） | 两 Job见 `opening_multijob_interference_20260809/`；四 Job见 `opening_fourjob_interference_20260809/`。四Job下 Daft Native/Ray/Ray Data short JCT 相对各自single +66.62%/+25.48%/+67.57%，三个long分别退化约178%–200%/132%–158%/118%–123%；Daft两臂high waiting/KV，Ray Data low running/no waiting/low MFU | 同一 Job 数可落入不同服务状态且short/long均受影响，因此需要全局 work/state 观测；不归因框架内部算法，也不把 normalized delta 当跨框架性能排名 | 原生 adapter 无 request P99；Project 与原生完整T0边界不同，短single不作≥60s容量或绝对排名，不称项目优于框架 |
 | 图像 staged descriptor 与 fresh runtime snapshot 可低成本接入正式 Project 链路 | 已证明（观测门） | `experiments/results/opening_image_project_fourjob_observe_only_formal_20260810/`：24/24 group、99K formal rows exactly-once；3,114 个 snapshot 全部 observe-only/fresh，构建均值 0.141 ms；static/proposed group JCT 差 0.98% | 可写成跨模态 staged work/状态观测组件已接入且成本近乎中性；snapshot 不驱动决策，不能写成 state-aware 策略收益 | missing/stale fallback 与单一 stage-aware 控制动作同上限 A/B；当前 GPU util 低，不外推饱和图像 workload |
-| 项目、Daft、Ray Data 或DuckDB存在跨workload普遍性能优胜关系 | 不能声称 | SQuAD三臂近似中性；ShareGPT三臂并发/语义合同不匹配；原生框架仅有当前冻结点的外部状态观察 | 只能在各自成立的source/语义/timing/feeding合同内报告条件性结果 | 需同任务语义、同完整T0、各系统独立饱和点和正式重复；不作为开题blocker |
-| state-aware/shared/dynamic 已经普遍优于强静态点 | 不能声称 | 多项动态候选未过强静态门；仅调整总并发上限的控制器未胜 K160；fixed-envelope active-set 中有序释放未越过 static；online/eager 多 Job 方向相反 | 写成已实现的局部机制、方向性结果和可证伪的 reservation 后继；持续调整总并发上限不作为主贡献 | release-only 可达性与一维 reserve 曲线未完成，且当前 SLO debt 未驱动动作 |
+| 项目、Daft、Ray Data 或 DuckDB 存在跨 workload 普遍性能优胜关系 | 不能声称 | SQuAD 三臂记录值接近但计时实现不完全相同；ShareGPT 三臂并发/语义合同不匹配；原生框架只在各自冻结点观察 | 只能在各自成立的 source、语义、timing 和 feeding 合同内报告条件性结果 | 需同任务语义、同完整 T0、各系统独立饱和点和正式重复；不作为开题 blocker |
+| state-aware/shared/dynamic 已经普遍优于强静态点 | 不能声称 | 多项动态候选未过强静态门；fixed-envelope active-set 中有序释放未越过 static；matched-ready 与 `93271012` 五臂 rehearsal 均显示效率、尾延迟和公平之间存在取舍；online/eager 多 Job 方向相反 | 写成已实现的局部机制、方向性结果和可证伪后继；持续调整总并发上限不作为主贡献 | 五臂只有单次 rehearsal、formal 未运行；0s/5s isolation 只有 partial，文本 1+3 formal 仍因 feeding 92.898%<95% 停止 |
 | sequential、prefix-aware或65K是全局最优策略/通用容量 | 不能声称 | 组织策略排名随endpoint/KV regime反转；65K只绑定当前机器/模型/协议/workload签名 | 只报告当前签名下的最小近饱和点与机制边界 | 新签名必须重新gate与校准 |
 | Project 71.24s与Daft Native 11.06s构成6.4倍系统性能差距 | 不能声称 | Project online含66.875s arrival span；对齐T3后为11.354/11.059s，service throughput/MFU仅差约2.5%–2.7%；两轨完整T0仍不同 | 只用于解释arrival合同与模型请求路径，不作跨轨绝对排名 | 如论文需要绝对容量排名，另做统一完整T0、同语义、≥60s矩阵 |
 
@@ -90,7 +91,9 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - workload：SQuAD short-answer，output cap=64。
 - arms：`direct_static_sharded`、`duckdb_ai_static_sharded`、`project_frozen_static`。
 - 合同：同 PostgreSQL source、同 immutable manifest、2 endpoints、同 Qwen、同 prefix-cache 状态、temperature=0、同数据库 sink、外部统一 database-E2E，1 warmup + 3 formal。
-- headline：correct rows/s，同时报告 database-E2E、EM、F1、failure、truncation、service tokens/s、GPU/MFU 和 energy/correct row。
+- 完成性/质量 headline：exactly-once、EM、F1、failure 与 truncation；同时保留各路径记录的
+  database-E2E、correct rows/s、service tokens/s、GPU/MFU 和 energy/correct row 作描述性观察，
+  计时实现统一前不作不到 1% 的性能排序。
 
 ### 异质实验组
 
@@ -98,7 +101,11 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - arms、source/sink、模型和重复合同与均匀控制组相同。
 - 追加报告 work CV、token P50/P95/P99、estimated service work、endpoint work imbalance、TTFT/JCT/tail、cache/locality、active work 和 serving pressure。
 
-两组replacement均已完成。SQuAD通过correctness、feeding与稳定性门，可作三条静态路径的均匀控制地基；ShareGPT通过correctness、sink、identity与稳定性门，但C32 direct后续证实只达已测峰值52.07%，且DuckDB fixed-cap语义失败，因此只作容量校准/产品语义护栏，不作三臂性能排名。原生单job已用bounded C128完成1+3，稳定观察到Daft两臂过量排队与Ray Data当前路径欠供给。5s两Job与1-short+3-long四Job均已于2026-08-09闭环；开题前停止增加offset、weight、Job数量或框架臂，转入数据整理和待画图合同。
+两组 replacement 均已完成。SQuAD 通过 correctness、feeding 与稳定性检查，可作三条静态路径的
+完成性/质量地基；因项目路径多计指标采集、记录写入和结束处理，不作细微性能排名。ShareGPT
+通过 correctness、sink、identity 与稳定性检查，但 C32 direct 后续证实只达已测峰值 52.07%，
+且 DuckDB fixed-cap 语义失败，因此只作容量校准/产品语义护栏。原生单 Job 已用 bounded C128
+完成 1+3；5s 两 Job 与 1-short+3-long 四 Job 也已完成。开题前停止增加 offset、weight、Job 数量或框架臂。
 
 ## 4. 新实验准入问题
 
@@ -119,7 +126,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 
 算子代价估计必须在主方案图中作为两项研究内容的共同使能部件出现：它向 WorkDescriptor/Organizer 提供 stage work 与不确定区间，也向 admission/routing/multi-job 提供 service/remaining work 和 SLO slack。单独结果页只展示 decision-regret 可行性，不把 cost 写成第三项研究内容。
 
-图和答辩内容合同以 `first_principles_reassessment_20260808.md`、`opening_defense_outline_20260808.md` 与 `figures/opening_figure_set/` 为准；旧四图与 28 页 v6 仅作历史底稿，当前成品为 20 页 v8。
+图和答辩内容合同以 `first_principles_reassessment_20260808.md`、`opening_defense_outline_20260808.md` 与 `figures/opening_figure_set/` 为上游；旧四图、28 页 v6 和 20 页 v8 仅作历史版本，当前 PPT 成品为 26 页 v9。20 页大纲仍是内容基线，不是当前 PPT 页序。
 
 ## 6. 答辩约束
 
@@ -146,12 +153,12 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 八张正文数据图 A/T/N/C/H/D/I/E | `rendered-qa-pass` | `figures/audit/opening_required_data_figures_20260810.md` 与叙事图合同；九张 PNG/SVG（含备份 F）完成 300-DPI、矢量、灰度和视觉审计 | T/I 分轨呈现文本与图像 baseline，D 只承担图像 staged-work 动机；只允许版式级微调，不因追求更漂亮结论更换数据源 |
 | 图 F 原生单 Job 状态备份 | `rendered-qa-pass` | 12 formal 的 JCT/tok/s/running/waiting/KV/MFU 原单位 small multiples | 报告正文或答辩追问使用；不作框架通用排名 |
 | 图 G | `plan-only-no-result` | phase-change 尚无同上限正式结果 | 开题不画；论文阶段实验通过后再决定 |
-| database-E2E 展示 | `appendix-table-only` | SQuAD 可排名、ShareGPT 不可作性能排名 | 不生成正文性能图 |
-| 本地开题报告、答辩大纲、QA | `complete-local-qa` | `opening/report/opening_report.md`、`opening/report/opening_report_20260812_qa.md`、`opening/opening_defense_outline_20260808.md`、`opening/qa_bank.md` | 七部分中文正文、14/14 主讲图、2 张补充图、31/31 引用与 PPT 对照已审计；导师反馈后再定向修改 |
-| PPTX | `current-v8-rendered-qa-pass` | `opening/slides/opening_defense_20260812_v8.pptx`、`opening/slides/opening_defense_20260812_v8_qa.md` | 20 页、17/17 PPT 主讲图、20/20 notes、模板保真与逐页视觉检查已通过；报告正文仍使用 14 张研究/证据主图；正式答辩前在目标 PowerPoint/WPS 再打开一次 |
+| database-E2E 展示 | `appendix-table-only` | SQuAD 只核对完成性、质量和记录值，当前计时实现不支持细微性能排名；ShareGPT 也不可作性能排名 | 不生成正文性能图 |
+| 本地开题报告、答辩大纲、QA | `complete-local-qa` | `opening/report/opening_report.md`、`opening/report/opening_report_20260824_qa.md`、`opening/opening_defense_outline_20260808.md`、`opening/qa_bank.md` | 七部分中文正文、16 个图片文件、53 条连续且均被引用的参考文献已审查；导师反馈后再定向修改 |
+| PPTX | `current-v9-rendered-qa-pass/report-sync-pending` | `opening/slides/opening_defense_20260812_v9.pptx`、`opening/slides/opening_defense_20260812_v9_qa.md` | 26 页、17 张主讲图、26/26 notes/渲染与逐页视觉检查通过；最新报告图文尚未回灌，正式答辩前需差异审查并在目标 PowerPoint/WPS 再打开一次 |
 | 飞书云文档 | `historical-not-current-paused` | revision 289 落后于本地报告 | 用户恢复后从本地权威报告重新生成同步源并差异审计 |
 | Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 不执行 |
-| 开题材料整体 | `local-artifacts-frozen-external-publication-pending` | 数据图、本地中文报告与 PPT v8 均已验收；飞书发布面尚未获得对指定 URL 的最终覆盖授权 | 获得明确授权后只覆盖并回读飞书普通云文档；不得据此新增 baseline |
+| 开题材料整体 | `local-artifacts-present-cross-material-sync-pending` | 报告与 PPT v9 分别通过本地审查；最新报告图文尚未同步至 PPT，飞书发布面也未获得指定 URL 覆盖授权 | 先做报告—PPT 差异审查；用户恢复发布后再覆盖并回读飞书普通云文档，不据此新增 baseline |
 
 停止规则：当前不存在需要通过新增开题实验才能解除的 readiness 阻塞。外部云文档发布
 只消费已经完成本地审计的报告与冻结数据；不得为了填满页面、改善叙事或得到更好看的方向而重跑
@@ -164,7 +171,7 @@ Claim Matrix；数字直接回到冻结 CSV/JSON，不以文档之间相互一�
 
 | 审计项 | 权威数据复核 | 结论 |
 |---|---|---|
-| database-E2E | `summary/formal_summary.csv` 共 6 组，每组 3 formal；SQuAD correct rows/s=136.63/136.68/137.77，ShareGPT DuckDB cap failures=4,921/6,144 | 报告数字一致；ShareGPT 不作性能排名 |
+| database-E2E | `summary/formal_summary.csv` 共 6 组，每组 3 formal；SQuAD correct rows/s=136.63/136.68/137.77，ShareGPT DuckDB cap failures=4,921/6,144 | 报告数字一致；SQuAD 只核对完成性/质量并描述记录值，ShareGPT 不作性能排名 |
 | bounded capacity | `runs_summary.csv` 的 formal C32/C64/C128/C256=9,454.88/14,057.93/17,834.14/18,158.19 tok/s | C128=98.22% 已测峰值，最小饱和口径一致 |
 | 原生单 Job | `opening_text_native_single_job_formal_20260808/formal_summary.csv` 四臂与报告的 17,800/17,286/16,747/3,551 tok/s 一致 | 只作外部状态指纹，不归因内部算法 |
 | 多 Job | 两Job `opening_multijob_interference_20260809/data/eager_project/cross_system_short_impact.csv`；四Job `opening_fourjob_interference_20260809/data/combined/{job_slowdown_comparisons,group_summary}.csv` | 两Job复核arrival-regime dependence；四Job复核quota/competition/shared、公平性和三条原生轨内退化；跨轨绝对JCT不排名 |
@@ -184,7 +191,7 @@ JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变�
 | 目标要求 | 当前判定 | 可验证证据 | 剩余动作 |
 |---|---|---|---|
 | 冻结论文叙事与 Claim Matrix | `complete` | 本文件 §1–§4；四级 Claim、实验准入与停止规则已冻结 | 仅导师改变题目时重开 |
-| SQuAD 统一 database-E2E 三臂 1+3 | `complete` | replacement 12 cells/9 formal；source/sink、correctness、feeding、stability 通过 | 无 |
+| SQuAD 统一 database-E2E 三臂 1+3 | `complete-with-timing-boundary` | replacement 12 cells/9 formal；source/sink、correctness、feeding、stability 通过；项目路径计时多含指标与记录处理 | 完成性/质量可用；如需细微性能排名，另统一外层计时 |
 | ShareGPT 统一 database-E2E 三臂 1+3 | `complete-with-ranking-boundary` | replacement 12 cells/9 formal；correctness/sink/stability 通过；C32 欠供给与 DuckDB cap 语义失败已单列 | 不作三臂性能排名 |
 | 完成 P0 后停止新增开题 baseline | `complete` | §4、§7 停止规则；后续只补支持新用户问题的最小诊断，不扩第二数据库或全矩阵 | 保持停止 |
 | serving capacity 核心证据 | `complete-figure` | active-work、bounded C32–C256 与图 A 数据合同完整，图已通过 QA | 后续只在统一版式时无损复用 |
@@ -192,14 +199,15 @@ JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变�
 | 图像 staged-work 动机 | `complete-figure` | 图 D：CPU prepare/GPU actor 比、R0/R1/R2 transfer ceiling 与 active-window screening | 只证明阶段表征、状态观测与有界准入必要性；microprofile/screening 不作系统排名 |
 | 图像 baseline 核心证据 | `complete-figure` | 图 I：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 五条路径角色；12K 结构诊断与 120K matched-resource 正式重复分开 | 只在 120K matched panel 排名；vLLM blocked 不生成吞吐；12K 三臂不外推 |
 | cost-model decision quality 核心证据 | `complete-existing-figure` | 图 E；429 formal/20 context，CE5 marginal pass；UTF-8 JSON 与新 SHA 已验证 | 最终版式检查 |
-| PROJECT_OUTLINE 与本地开题报告重构 | `complete-local-qa` | 总纲、七部分中文报告、答辩大纲、QA 与 §8 数据复算一致；14/14 主讲图、2 张补充图、31/31 引用已审计 | 仅根据导师反馈定向修改 |
-| 四级 Claim 与答辩攻击面审计 | `complete` | 本文件 §2、`opening/qa_bank.md` 的攻击面、不能声称与回答模板 | PPT 完成后再做逐页口径检查 |
+| PROJECT_OUTLINE 与本地开题报告重构 | `complete-local-qa` | 总纲、七部分中文报告、答辩大纲和 2026-08-24 QA；16 个图片文件、53 条连续引用已审计 | 仅根据导师反馈定向修改 |
+| 四级 Claim 与答辩攻击面审计 | `complete` | 本文件 §2、`opening/qa_bank.md` 的攻击面、不能声称与回答模板 | 报告最新改动回灌 PPT 后再做逐页口径检查 |
 | 原生状态与多 Job 新增动机证据 | `data-and-main-figures-complete` | 两/四 Job 输入与门禁完整；文本、图像四 Job 主讲图已进入专用图集，单 Job 状态备份图也已渲染 | 只在对应合同内复用，不新增实验 |
-| PPT 重构与逐页渲染验收 | `complete-local-qa` | 当前 v8 共 20 页，使用专用图集 17/17 张 PPT 主讲图；20/20 渲染、0 overflow、20/20 notes、模板保真 0 issue；第 2–4 页原尺寸和全套 contact sheet 已目视复核 | 正式答辩前在目标 PowerPoint/WPS 环境再打开一次 |
+| PPT 重构与逐页渲染验收 | `complete-local-qa/report-sync-pending` | 当前 v9 共 26 页、17 张主讲图；26/26 渲染、0 空占位符、26/26 notes、overflow 与逐页目视检查通过，并已用 Microsoft PowerPoint 打开 | 将最新报告图文差异回灌后复查，并在最终投影环境再打开一次 |
 | 飞书云文档发布面 | `incomplete-paused` | revision 289 已标历史，未用当前报告覆盖 | 用户恢复后从本地权威报告生成并差异审计 |
 | Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 无 |
 | 本地/GitHub/实验服务器同步与 raw 保留 | `complete-current-commit` | Git 三端一致；服务器 archive SHA 与空间已复核，未跟踪 raw 未清理 | 每次后续提交继续同步 |
-| 开题材料整体冻结 | `local-complete-external-publication-pending` | 数据图、中文 Markdown 报告、PPT 与本地跨材料一致性审计均已完成；飞书普通云文档尚未获得指定 URL 的最终覆盖授权 | 获得授权后覆盖、回读并完成外部发布面差异审计 |
+| 开题材料整体冻结 | `local-cross-material-sync-pending` | 数据图、中文 Markdown 报告和 PPT v9 均存在并分别完成 QA，但最新报告改动尚未完成 PPT 差异审查；飞书普通云文档也未获得指定 URL 的最终覆盖授权 | 先完成本地报告—PPT 对齐；获得授权后再覆盖、回读飞书发布面 |
 
-当前没有实验层或本地产物 blocker；剩余项仅是飞书外部发布和回读审计。后续不得借“最终材料尚未
-冻结”重新打开已经关闭的 baseline、offset、weight、更多 Job 数、K512 或第二数据库实验。
+当前没有实验层 blocker，也不需要新增开题实验；本地产物仍有报告—PPT 差异审查，外部仍有飞书
+发布和回读审计。不得借这些发布工作重新打开已经关闭的 baseline、offset、weight、更多 Job 数、
+K512 或第二数据库实验。

@@ -59,19 +59,19 @@
 
 | 轨道 | 当前状态 | 下一门禁 |
 |---|---|---|
-| AI_COMPLETE service/direct | 历史 gate 与 feeding 证据存在；新 provenance formal 待重跑 | 64-row validity 后独立 calibration |
-| AI_COMPLETE Daft/Ray Data native | 功能/计数 gate 已有；旧短规模不进正式排名 | 512 calibration → 与 project 同一 2,048-row held-out formal（单 run 至少 60s；不足则双方共同扩容） |
+| AI_COMPLETE service/direct | bounded C32/C64/C128/C256 饱和校准已完成；C128 达 C256 已测峰值 98.22% | 当前不扩矩阵；新签名重新独立校准 |
+| AI_COMPLETE Daft/Ray Data native | 2,048-row 单 Job 16/16 cell、12 formal 已完成；五臂共同 gateway rehearsal 5/5 通过 | 五臂 formal 未运行；0s/5s isolation 仍需独立 control |
 | OceanBase `AI_COMPLETE` | 普通 AutoDL 容器 observer init `-9100`，`blocked` | privileged/seccomp-unconfined 容器或 VM |
 | Doris / ClickHouse AI SQL | 官方文档已确认可自托管和 OpenAI-compatible endpoint；尚未在本机安装 | 固定版本后一行协议 gate → 计数/缓存 gate → 独立 calibration |
 | StarRocks `ai_query` | 4.1.1 已修复函数注册；独立函数文档和稳定性仍不足 | 固定 4.1.1+，关闭响应缓存后做一行 vLLM gate |
 | Oracle / Db2 AI SQL | 官方确认本地版本与文本生成/embedding；尚未在本机安装 | 核对 Free/Community 镜像是否含功能、TLS/endpoint 协议和资源限制 |
 | SQL Server AI embedding | 2025 可本地 Docker；仅 embedding，远端 endpoint 要求 HTTPS | TLS reverse proxy + 一行 embedding gate |
 | DuckDB `ai`（已安装 + 接入框架）/ PostgreSQL pgai | DuckDB `ai` 已装 **duckdb 1.5.4**（1.5.5 无 ai 扩展二进制）+ `INSTALL ai FROM community`，adapter `duckdb_ai` 已接入 baseline 框架原生执行（`code/src/baselines/text/products/duckdb_ai.py`）；pgai 仍是已归档历史扩展 | DuckDB：固定 duckdb 版本 + ai 扩展版本/commit，记 `duckdb_ai_max_concurrent_requests` 等扩展自有旋钮，用 `openai_compatible` provider 指向 vLLM；单列 extension baseline，不冒充数据库 core |
-| Daft built-in image embedding | 256-row gate 与逐行语义 parity 已通过；主要差异为 L2 归一化 | 按统一 normalized contract 独立 calibration → formal |
-| Ray Data native image graph | 256-row resource/deadlock gate 已通过 | 独立 batch/actor calibration → formal |
+| Daft built-in image embedding | 12K 能力/容量证据与原生图像四 Job 正式观察已完成；20K 起触发 object-store 容量失败，不能与 120K streaming 路径同规模排名 | 保留容量边界；不注入 Project 调度或扩容追排名 |
+| Ray Data native image graph | 120K matched-resource 正式对照与原生图像四 Job 观察已完成 | 只按冻结官方 graph 报告；不注入 Project broker |
 | vLLM CLIP pooling | 当前 0.25.1 环境两次 1-image offline gate 均 600s timeout，无 embedding 输出 | `blocked`；不运行在线/5K/60K，只在新隔离环境重新做 capability gate |
-| 官方 ImageNet/ResNet18 parity | upstream commit、文件哈希和适配白名单已冻结 | 双 4090 原生脚本 gate |
-| project image static | 60K unique 数据和 2-pass formal 配置已准备 | 先过语义/原生 baseline 门禁，再运行交错 formal |
+| 官方 ImageNet/ResNet18 parity | upstream commit、文件哈希和适配白名单已冻结；128-row native gate 已完成 | single controls/formal 尚未运行，且不阻塞当前主线 |
+| project image static | 120K matched-resource 正式对照已完成；staged descriptor/observe-only 24/24 group 已归档 | HSE static GPU 非劣门后再接单一动态动作与质量检查 |
 | Snowflake/BigQuery/PolarDB/学术系统 | external/capability evidence | 仅在语义、质量、模型和计时边界可对齐时升级为数字比较 |
 
 ### 0.1 多 Job fixed-envelope：原生 baseline、项目实验臂与内部消融（2026-08-13 纠偏）

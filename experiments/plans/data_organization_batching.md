@@ -22,8 +22,9 @@
 前置：COPY + deferred index 写回 baseline 建立
 前置：模型 batch scaling 曲线（§4 前置实验）
 
-当前状态：vLLM baseline、Daft 文本链路和 COPY/pgvector 工程 baseline 已建立；
-双 GPU 7B 的隔离式数据组织复验待执行。
+当前状态：vLLM baseline、Daft 文本链路和 COPY/pgvector 工程 baseline 已建立；双 GPU
+cache-on 数据组织已在 2-endpoint/4-endpoint 条件下完成复验。下方前置条件与候选矩阵是
+2026-07-16 的设计快照，当前结论以文件顶部状态和 `rc1_data_organization/` 结果为准。
 ```
 
 **为什么**：在 suboptimal GPU/写回 baseline 上搜出来的"最优 batch_size"会因为 GPU 端或写回端的瓶颈位置不同而偏移。论文必须用 S 级 GPU + A 级写回上的 参数组合穷举 结果。

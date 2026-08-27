@@ -109,8 +109,9 @@ DuckDB AI 的 `request_latency` 是 query-barrier 级别；direct 是 client com
 ## 7. 对课题含义
 
 本轮是有价值的失败诊断，而不是最终三臂性能结论：它促使项目重新校准最小饱和 K，且
-K128 replacement 已把 SQuAD 三臂收敛到近似中性。strong static direct 仍必须作为默认
-性能参照；项目后续 state-aware 方法只有在同 source/sink、同上限并通过 feeding 门后，
+K128 replacement 已让 SQuAD 三臂的完成性、答案质量和记录值接近；后续计时复核确认 Project
+外层还包含更多指标采集、记录写入和结束处理，不能按不到 1% 的差异判断性能高低。strong static
+direct 仍必须作为默认性能参照；项目后续 state-aware 方法只有在同 source/sink、同上限并通过 feeding 门后，
 才能用吞吐、tail、SLO 或 fairness 申请晋级。产品 baseline 还必须把固定输出上限的语义
 兼容性纳入正确吞吐，而不能只看 GPU 已完成的 token work。
 

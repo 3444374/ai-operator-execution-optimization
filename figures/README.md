@@ -99,7 +99,7 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机问题一和问题二的联合证据图。panel a 说明相同行数仍有 14.3× 模型工作量差异；panels b、c 说明固定上限不等于实际在途工作，并且吞吐增加时还要检查尾延迟。多 Job 干扰作为问题三由原生四作业图另行展示。 |
 | `data/report_main/opening_motivation_work_state_part1_work.png` / `.svg` | 动机一的 16:9 图：相同行数可能对应不同模型工作量。数值与统计口径不变。 |
 | `data/report_main/opening_motivation_work_state_part2_state_capacity.png` / `.svg` | 动机二的 16:9 图：判断是否继续提交，不能只看一个指标。左图说明固定上限与实际在途工作不同，右图说明吞吐和尾延迟需要一起检查；每个 Job 的进度另图展示。 |
-| `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。只在 panel 内排名；Project 没有同一 2,048-row graph→gather 正式点，图中明确标注而不混入右侧排名。2026-08-10 修正多行 y 轴标签：文本块贴近轴，块内两行居中。 |
+| `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分组图：左侧 SQuAD database-E2E 只核对 Direct/DuckDB/Project 的完成性、质量和记录值，因计时实现不同不作细微性能排名；右侧 ShareGPT 官方 Chat graph 在统一口径内比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。Project 没有同一 2,048-row graph→gather 可比较结果，不混入右侧。2026-08-10 修正多行 y 轴标签；2026-08-24 又按计时复核改写左图结论。 |
 | `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 现有原生框架的多 Job 动机图：三条 vendor-owned 执行图的 four-job/isolated-single JCT 影响矩阵；格内同时给出 slowdown 倍率与 JCT 增幅，Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名，也不用于证明项目方法胜出。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
@@ -122,8 +122,8 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 禁止外推合同：`audit/opening_story_figures_contract_20260808.md`；第一性原理的选图依据见
 `audit/opening_required_data_figures_20260810.md`。2026-08-10 已统一重建九张正文数据图
 A/T/N/C/H/D/I/J/E，新增单 Job 任务—请求主图，并保留 F 状态备份图；十一张 PNG/SVG 均已打开复核，无裁切、
-缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。当前仍未制作新的
-PPT 成品；旧 PPT 只是历史底稿。
+缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。该批图完成时尚未制作新 PPT；
+后续 26 页 v9 已生成并通过独立 QA。2026-08-22 至 08-25 的报告图文更新仍未回灌 v9。
 
 2026-08-22 为与开题报告的证据说明一致，重新生成 A/C/H/D/E 五张图并同步报告副本：A 把图内的
 `active work`、`endpoint`、`formal` 等简写改为中文含义，并明确 29% 是运行期间峰值相对于配置上限的比例；C 明确比较的是
@@ -133,7 +133,7 @@ PPT 成品；旧 PPT 只是历史底稿。
 
 ### 2026-08-11 可编辑概念图候选稿
 
-`architecture/editable/` 新增五张按当前 20 页答辩主线重构的 Draw.io 候选图：研究空白与
+`architecture/editable/` 新增五张按 20 页内容基线重构的 Draw.io 候选图：研究空白与
 方案概览、总体闭环、Work-unit 与数据组织、状态感知提交/路由/多作业、因果验证路线。每张同时
 保留 `.drawio`、SVG、1600×900 PNG、逐元素审计和独立 SVG icon 资产；参考图只用于版式与
 图形语言，不作为整图截图嵌入。多模态复用并入总体闭环，不再单独重复一张大架构图。

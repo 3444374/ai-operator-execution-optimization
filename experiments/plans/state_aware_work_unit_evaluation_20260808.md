@@ -1,8 +1,8 @@
 # Work Unit、状态感知、动态调度与代价估计的实验计划
 
 > **当前状态（2026-08-27）**：fixed-envelope、bounded-priority development、matched-observation
-> attribution 与 observe-only bridge 已完成；SAOR 仍为 `formal_authorized=false`，动态图像方法和
-> 五臂系统级 matched comparison 尚未完成。短期先完成 LOTUS 语义迁移和 PostgreSQL 生命周期
+> attribution、observe-only bridge、Project mechanism rehearsal 与五臂共同观测 rehearsal 均已完成；
+> SAOR 仍为 `formal_authorized=false`，动态图像方法、五臂 formal 和隔离补测尚未完成。短期先完成 LOTUS 语义迁移和 PostgreSQL 生命周期
 > 资格验证，本文剩余 formal 不自动获得运行授权。
 
 日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
@@ -135,8 +135,8 @@ selector 双轮与 single-head→bounded-ready FIFO observation bridge 均已完
 
 | 部件 | 当前代码事实 | 正式数据支持到哪 | 下一项可验证接入 |
 |---|---|---|---|
-| Work Unit | `planning/work.py` 已定义 staged `WorkDescriptor`；`BatchRequest`、图像 batch 和调度器可消费中性 primary work | fixed-row token tail 与图像阶段画像支持字段设计；正式 runner 目前仍主要构造 legacy scalar work，尚无生产 descriptor builder | 先为文本/图像 adapter 构造带 calibration signature 的 descriptor，并做 legacy/descriptor 等价性门禁 |
-| 状态感知 | `RuntimeStateSnapshot`、freshness/signature 检查和 `BoundedStageWorkController` 已有单元测试；现有 runner 已采 endpoint/service/resource trace | high/arrival-limited、容量曲线和原生状态指纹证明信号会变化；stage snapshot 尚未接入正式 runner | 先接 observe-only snapshot 与 trace，测 no-op 开销、缺失/过期回退，再允许控制 |
+| Work Unit | `planning/work.py` 已定义 staged `WorkDescriptor`；图像生产路径已构造 descriptor 并交给 staged broker，文本路径仍主要使用兼容 scalar work | fixed-row token tail 与图像阶段画像支持字段设计；图像 observe-only 正式运行已验证 descriptor/signature，尚无动态收益 | LOTUS 语义迁移后补文本 descriptor parity；图像先做 HSE static GPU 非劣，再允许动态动作 |
+| 状态感知 | `RuntimeStateSnapshot`、freshness/signature 检查和 `BoundedStageWorkController` 已有单元测试；图像正式 runner 已落 observe-only snapshot/trace | 图像 24/24 group、3,114 个 snapshot 全 fresh、构建均值 0.141 ms；只证明观测接入，不证明控制收益 | 保留 missing/stale fallback，在同上限下只启用一个控制动作做 A/B |
 | 动态调度 | 调度器已实际消费 active work、least-work routing、completion release 和共享 DRR work credit；5s 两 job A/B 已正式运行 | 已证明 shared credit 的效率—隔离—公平权衡；尚未证明 stage-aware dynamic 或 SLO guard 优于 frozen-static | 保持同最大 K/work，按 admission-only、routing-only、fair-sharing-only 顺序做 phase-change/SLO 消融 |
 | 代价估计 | CE1–CE5 已实现为离线分析器；CE5 尚未在线驱动 organizer/scheduler | 文本 context-LOO 只支持配置选择的 marginal feasibility | 先把 estimate 作为 descriptor/tracing 字段回放；只有 held-out ranking/regret 过门后才影响在线动作 |
 
@@ -152,7 +152,7 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
 | policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；resolution-aware audit `saor-v0.4.10-resolution-aware-full`；priority diagnostic `saor-v0.4.9-release-upper-bound`；failed development candidate `saor-v0.5.1-reclaim-barrier`；local observation revision `saor-v0.5.2-bounded-ready-local`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。旧 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。v0.5.1 单-head gate 未晋级，定位 ready observation gap；v0.5.2 bounded-ready 两轮中只有 $H_B=0.125W_e$ 同时通过 foreground/bulk/efficiency 门，$0.25W_e$ 被 bulk guard 拒绝。该结果只注册候选参数；因 ready-window 与 selector 同时变化，formal 前必须完成项目内部 matched-observation 归因 gate；该机制不注入原生 baseline，定理证明也未完成 |
+| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 validation passed，但 SAOR 未越过 static。bounded-ready 只保留 $H_B=0.125W_e$；同 observation 的 FIFO/DRR/VTC-style/strict-priority/guarded-debt 双轮归因已完成，SAOR 只形成效率—tail 非支配折中。`63d17300` Project mechanism rehearsal 与 `93271012` 五臂共同观测 rehearsal 均通过独立 validation；后者 5/5 cell 可比较 T0--T4、P99/SLO/Jain/lag/no-service，但只有单次 rehearsal。旧 runtime 的 `slo_weight=0`，dynamic K 为 `parked-conditional`；五臂 formal 未运行，该机制不注入原生 baseline，定理证明也未完成 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -314,8 +314,7 @@ mean service、即时 action effect、stationary slot 与完整 virtual queue �
 单位的能耗或切换 penalty。
 
 容量 benchmark 与公平 benchmark 分轨：多 Job fixed-envelope 是 SAOR 主验证；capacity 动态
-暂停。现有 static/shared 只证明固定分区存在浪费和无约束共享存在 fairness/tail 代价，**尚未
-排除同一 request K 下 no-project Job scheduler 已足够好**。因此第一项决定性 formal 使用统一
+暂停。2026-08-11 时尚未排除同一 request K 下 no-project Job scheduler 已足够好，因此第一项决定性 formal 使用统一
 交错 runner 比较：direct no-Job、static partition、project shared FIFO、shared DRR、external
 VTC-style 与 SAOR-Release，并加入 project/direct 各自的 bulk/foreground matched solo。
 project 五臂共享 request/work envelope；direct 只共享相同 request window、manifest、协议和
@@ -518,10 +517,9 @@ utilization 未达阈值就增档”更符合现有反例。
   （602 kB）/图，
   不能把 batch 数当成跨 dtype/shape 可比较的内存量。
 
-纯策略已新增 `scheduling/runtime/saor_pipeline.py` 的有限安全臂与 differential-backpressure
-控制器；它不 import Ray/Daft/CLIP。当前尚未接 image formal runner，因此只算核心代码和单元
-测试，不产生图像性能 claim。接线前先把现有 observe-only snapshot 中“同一 submitted batch
-同时计入 prepare/model active”的近似替换为真实两级队列。
+纯策略控制器不 import Ray/Daft/CLIP；static HSE 已通过 `run_image_clip_e2e.py` 接入真实
+pending-prepare → ready-block → pending-model broker，并有单元测试。`BoundedStageWorkController`
+仍未驱动正式在线动作，HSE static GPU 非劣比较也未运行，因此不产生图像动态性能 claim。
 
 Ray/Daft 的正确利用方式是让框架负责资源放置和流式执行，让 SAOR 负责项目拥有的应用层
 admission：Ray task/actor 显式声明 CPU/GPU/custom resource，必要时 placement group 只做

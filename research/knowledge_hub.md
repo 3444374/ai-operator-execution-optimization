@@ -4,6 +4,9 @@
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
+本文件是项目内部的设计、证据与历史状态索引，不是可直接复制到报告或答辩中的对外综述。
+抽取内容到对外材料时，必须按根文档语言规则把内部阶段代号和管理状态改写为具体条件、动作与结果。
+
 ---
 
 ## 阅读指南
@@ -645,7 +648,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   不作为阈值触发器。
 - **工程边界**：actor pool 大小和线程数离线冻结；已有 16→32 CPU actor 结果显示热查询只
   增约 7.3%，但 setup/first-output 恶化，因而动态建/杀 actor 不是快控制动作。
-- **状态**：engine-neutral core 和单元测试已实现，尚未接 image formal runner；无性能 claim。
+- **状态**：engine-neutral controller 与单元测试已实现；static HSE 已接入图像 runner 的真实
+  `pending-prepare → ready-block → pending-model` broker。HSE static GPU 非劣比较和由 controller
+  驱动的在线动作均未运行，因此仍无动态图像性能 claim。
 
 **模式 21：带 transform signature 的 derived-image cache / GPU preprocess 对照**
 
@@ -679,9 +684,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **`saor-v0.4` 修正**：主方法收紧为固定安全 envelope 内的 SAOR-Release，用 per-Job
   unfinished work、active-set entitlement、idle borrowing/reclaim、fairness/SLO debt 和
   completion-driven Job-head release 验证多 Job；动态 K 标记为 `parked-conditional`。现有
-  static/shared 对照尚未排除同 K global FIFO/no project Job scheduler 已经足够好，因此下一项
-  formal 前必须把 global FIFO 与 DRR 作为**项目内部简单消融**；任一简单策略达到同一 Pareto
-  前沿即淘汰 SAOR。Daft/Ray Data/产品原生 baseline 保持各自调度，不注入项目机制。详细模型与 benchmark 见
+  static/shared 对照在 2026-08-11 时尚未排除同 K global FIFO/no-project scheduler 已经足够好；
+  后续 fixed-envelope formal、同 observation 的 FIFO/DRR/VTC-style 双轮归因与五臂共同观测
+  rehearsal 已完成。结果仍只支持效率—tail—公平权衡，不支持 SAOR winner。Daft/Ray Data/
+  产品原生 baseline 保持各自调度，不注入项目机制。详细模型与 benchmark 见
   `saor_model_scenario_audit_20260811.md`。
 - **2026-08-12 工程边界**：`saor_release` 已接入共享 Ray credit runtime；它只在离线校准并
   按签名冻结的 $K^*$ 内选择 fitting Job head，不在线调 K。当前 completion 更新 fairness debt，
@@ -1165,9 +1171,11 @@ download/decode/resize 与 GPU 类 UDF 分开声明资源并流式重叠，因�
 
 本项目剩余可比较的增量是：数据库 job/workload 语义下的 token/frame work 计量、模型
 服务/actor 状态感知的请求成形与准入、跨 job shared credit/idle borrowing，以及它们
-相对冻结最佳静态点的 JCT/SLO/fairness 收益。实验必须先补 Daft-on-Ray 与 Ray Data
-staged baseline；若两者在 matched-resource 下与项目静态路径差异小于 5%，则阶段拆分
-只是实现选择，后续只能以策略增量立论。
+相对实验开始前选定并在运行期间保持不变的最佳静态配置的 JCT/SLO/fairness 收益。Daft built-in、Ray Data native graph 与
+Project static 的能力、容量和 matched-resource 证据已经完成：Daft 在 12K 后受 object-store
+容量限制而单列，Ray Data 与 Project 的 120K 同资源比较显示 Project 静态结构约 13%–15%
+改善。该结果只证明当前静态执行结构在该比较条件下的表现，当前缺口是 HSE static GPU 非劣、
+单一在线动作和质量检查。
 
 **与具身智能的关联**：
 - Snowflake Cortex AISQL 已支持多模态 AI 算子（AI_COMPLETE/AI_EMBED/AI_CLASSIFY 处理图片/视频/音频），数据库 AI 算子已是多模态的
@@ -1210,10 +1218,11 @@ actor pool 分池路由          morsel size（间接）
 | P2 | 多模态泛化 | 文本 token-budget vs 图像 frame-budget | 策略抽象的模态无关性是否成立？ |
 | P1 | 算子代价估计 | 解析模型 + profile + residual；误差、ranking、regret、预测区间 | 预测是否能正确初始化容量并选择组织/路由/提交策略？ |
 
-**Scope 缩减触发条件**：
-- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion
-- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
-- VLM 生成实验（Qwen2.5-VL-3B）始终标记为 optional
+**Scope 缩减触发条件（历史合同与当前判定）**：
+- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（未触发，vLLM baseline 已建立）；
+- 文本数据组织与提交控制基础消融未完成前，不启动 Daft 多模态 pipeline（条件已满足，图像静态/
+  观测证据已完成）；
+- VLM 生成实验（Qwen2.5-VL-3B）始终标记为 optional（仍有效）。
 
 ### 10.6 Snowflake Cortex 多模态 AI 算子（工业需求证据）
 

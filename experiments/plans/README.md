@@ -31,7 +31,7 @@
 |---|---|
 | [`postgresql_lotus_ai_semantic_operator_implementation_20260821.md`](postgresql_lotus_ai_semantic_operator_implementation_20260821.md) | 当前实施主计划；先语义迁移，再做 PostgreSQL 生命周期资格验证 |
 | [`lotus_semantic_frontend_execution_integration_20260821.md`](lotus_semantic_frontend_execution_integration_20260821.md) | LOTUS v1.2.4 AST、prompt、output 与 backend 适配子计划 |
-| [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含多轮完成证据；剩余图像动态与系统级 matched comparison，等待上游资格项 |
+| [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
 | [`data_organization_batching.md`](data_organization_batching.md) | 文本主矩阵已完成；保留后续模态复用与条件性扩展合同 |
@@ -64,7 +64,7 @@
 | 研究内容 | 当前证据 | 剩余工作 |
 |---|---|---|
 | 数据组织策略 | 文本 cache-on 双/四 endpoint 重测已完成，效果随 KV 压力 regime 变化 | 在资格项完成后，用同一抽象验证图像 frame/work budget；不重复无目的文本扫描 |
-| 调度与提交控制 | static credit、shared credit、1/2/4 Job 与重叠作业证据已完成；呈现效率、隔离与公平权衡 | 系统级 matched comparison；动态策略必须同上限对比冻结静态点 |
+| 调度与提交控制 | static/shared credit、1/2/4 Job、重叠作业与五臂共同观测 rehearsal 已完成；呈现效率、隔离与公平权衡 | 五臂 formal 尚未运行；动态策略必须同上限对比冻结静态点，并补所需 isolation control |
 | 多模态泛化 | 图像画像、原生静态 baseline、多 Job 观察和 descriptor/observe-only 已归档 | HSE/static 非劣验证后再接受控动态动作与质量闭环 |
 | 算子代价估计 | 双 4090 v2 cache-on 320/320 有效，首次无效运行独立保留 | 新时间段或新 workload 校准；是否用于在线决策由 regret/区间结果决定 |
 
