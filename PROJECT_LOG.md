@@ -7879,4 +7879,13 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   1,339 项全部通过。服务器复验同时修复了 Ray head recovery 测试泄漏 `RAY_ADDRESS`、native
   multi-job 启动等待可能向 `sleep` 传入负值，以及 profiler 将批级结果数量误当源行数的既有
   correctness 问题。真实 PostgreSQL 18.4 + pgvector 0.8.5、Daft source/organizer、Python fake
-  executor 的 8 行 no-writeback smoke 状态为 `ok`；本轮未调用 GPU 模型或恢复正式实验。
+  executor 的 8 行 no-writeback smoke 状态为 `ok`。
+- 经用户明确授权，在同一提交上追加最小 GPU 功能性 smoke：图像 capability preflight 通过，真实
+  CLIP GPU actor 返回 512 维 L2 归一化 embedding，8 行 `project_ray` gate 的输入、输出均为 8 行，
+  `exactly_once` 与 source manifest 核对均通过，最大范数误差为 `5.96e-08`；文本路径启动隔离端口的
+  Qwen2.5-1.5B vLLM 服务，以 4 行 workload 验证 PostgreSQL → Daft → compatible HTTP → GPU vLLM
+  → 结果可见链路，4 个请求成功并生成 16 个 token。首次 vLLM 启动因 PATH 未包含环境内 `ninja`
+  失败，首次文本请求因临时服务 512-token 上下文限制返回 HTTP 400；补齐环境 PATH 并将源 prompt
+  限制为 128 token 后通过。过程和成功产物保存在服务器
+  `/root/autodl-tmp/experiment-artifacts/gpu_function_smoke_b8947d01/`；服务已停止，GPU 无残留计算
+  进程。本次只证明这些小规模路径在该机器上功能正常，不恢复正式实验，也不形成吞吐或稳定性结论。
