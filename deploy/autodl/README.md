@@ -592,7 +592,7 @@ BurstGPT，不能把“运行时可切 workload”误写成“任意 raw schema 
 | 镜像版本 | **PyTorch 2.12.1 / Python 3.12 / Ubuntu 22.04 / CUDA 13.0** | vllm 0.24/0.25 需 cu130→驱动 ≥580→**必须选 CUDA 13 镜像**(见 §1.1);只跑老 cu12 vllm(<0.23)才选 12.8 |
 | 数据盘 | 默认(`/root/autodl-tmp`,50GB+) | 模型+数据落这里,跨开关机保留 |
 | 文件存储 `autodl-fs` | **不开** | 付费跨实例持久化;模型重下比买存储划算 |
-| 学术资源加速 | **非自动**,每个 shell 会话需 `source /etc/network_turbo` | 加速 github/huggingface(代理 `172.20.0.113:12798`);不 source 则三源全慢(见 §5) |
+| 学术资源加速 | **非自动**，访问官方支持域名前在当前 shell 执行 `source /etc/network_turbo` | 当前支持 `github.com`、`githubusercontent.com`、`githubassets.com`、`huggingface.co`；其他域名不用时取消代理（见 §4.4、§5） |
 
 **开机顺序(省钱)**:先「无卡模式开机」(仅 CPU,约 ¥0.1/h)→ 下模型、装依赖、配环境 → 关机 → 「正常开机」(GPU 模式)→ 跑实验 → 跑完立刻关机。多卡按量计费烧钱快,纯 CPU 的 setup 阶段不要用 GPU 模式。
 
@@ -708,9 +708,17 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
 - **缓存必须放数据盘**:`export UV_CACHE_DIR=/root/autodl-tmp/uv-cache HF_HOME=/root/autodl-tmp/huggingface`,否则 30G 系统盘易满。
 - **Python 环境**:`python -m venv /root/autodl-tmp/venvs/vllm-4090`(用 venv,不要 `conda create`,conda solver 在这套频道下会卡 repodata)。
 
-### 4.4 pip 必须用国内镜像,但**不要**走 network_turbo
-- AutoDL 官方说明:`/etc/network_turbo` 只加速 github/huggingface,**pip 源保持默认/用常规镜像**——不要给 pip 设 `https_proxy=172.20.0.113:12798`。
-- 直连 PyPI 极慢(~200 kB/s),所以用**清华镜像** `-i https://pypi.tuna.tsinghua.edu.cn/simple`(实测稳定 ~1 MB/s)。
+### 4.4 按目标域名选择 turbo 或软件源
+
+- [AutoDL 学术资源加速文档](https://www.autodl.com/docs/network_turbo/)当前明确支持
+  `github.com`、`githubusercontent.com`、`githubassets.com` 和 `huggingface.co`，并建议在不再需要时
+  `unset http_proxy https_proxy`，避免影响普通网络。判断依据是最终访问域名，不是客户端名称：
+  `pip` 直接下载 GitHub/Hugging Face URL 时可以使用 turbo；从 PyPI/Conda 索引解析和下载依赖时则不在该支持清单内。
+- PyPI/Conda 依赖按 [AutoDL 软件源文档](https://www.autodl.com/docs/source/) 使用可用镜像。
+  本机直连 PyPI 曾只有约 200 kB/s，清华镜像
+  `-i https://pypi.tuna.tsinghua.edu.cn/simple` 实测约 1 MB/s；速度是历史观测，不作为固定保证。
+- 不硬编码 `/etc/network_turbo` 内部的代理地址。一个安装命令若混合访问官方支持域名和 PyPI，
+  优先拆成两步，并在进入 PyPI 阶段前取消代理。
 - **必须 pin `vllm==0.25.1`**:不 pin 会装最新版(如 0.26.0),与本机 0.25.1 不可比。
 
 ### 4.5 验证
@@ -733,10 +741,11 @@ python -c "import vllm,ray,daft,torch; print(vllm.__version__, ray.__version__, 
 
 ### 5.1 必开加速 + 禁 Xet
 ```bash
-source /etc/network_turbo >/dev/null 2>&1   # 代理 172.20.0.113:12798,仅 github/hf
+source /etc/network_turbo >/dev/null 2>&1   # 访问 AutoDL 官方支持的 Hugging Face 域名
 export HF_HUB_DISABLE_XET=1                  # 否则走 cas-server.xethub.hf.co 报 401
 ```
-不开 `network_turbo` 时 HF 直连/`hf-mirror.com`/modelscope 全部极慢(8 kB/s ~ 700 kB/s 且会 stall)——这是本次最大的坑。
+本机曾观察到 HF 直连只有 8 kB/s～700 kB/s 且会 stall，因此访问 `huggingface.co` 时启用 turbo。
+`hf-mirror.com` 和 ModelScope 不在 AutoDL 当前公布的内置 turbo 支持域名中，应按各自文档单独选择。
 
 推荐直接运行：
 
@@ -1782,7 +1791,7 @@ K32/K48/K64 是围绕当前约 3 行/batch 的 gate 展开；若正式 batch mea
 
 | 坑 | 现象 | 解法 |
 |---|---|---|
-| 没开 network_turbo | HF/modelscope/hf-mirror 全部 8~700 kB/s 或 stall | `source /etc/network_turbo` |
+| 访问 AutoDL 支持的 GitHub/Hugging Face 域名时没开 turbo | 下载很慢或 stall | 在同一 shell 先 `source /etc/network_turbo` |
 | HF Xet 后端 | `401 Unauthorized cas-server.xethub.hf.co` | `HF_HUB_DISABLE_XET=1` |
 | 非交互 SSH 无 python | `python: command not found` | `bash -lc` 或 source conda |
 | paramiko 长连下载/安装 | 超时砍断、`stdout.read()` 卡死 | nohup 后台 + 短连接轮询(bgexec 模式) |
@@ -1791,7 +1800,7 @@ K32/K48/K64 是围绕当前约 3 行/batch 的 gate 展开；若正式 batch mea
 | 把 `nohup ... &` 接在一长串 `&&` 后 | `&` 可能后台化整个 AND-list，只返回包装 shell PID；前置失败也可能被表面成功掩盖 | 前置检查用 `set -euo pipefail` 独立执行；`nohup` 单独一条命令，下一行立即保存 `runner_pid=$!` |
 | Windows Git Bash MSYS | 远端路径变 `C:\Program Files\Git\...` | `export MSYS_NO_PATHCONV=1` |
 | pip 直连 PyPI | ~200 kB/s | 清华镜像 `-i ...tsinghua...` |
-| pip 走 turbo | 违反 AutoDL 说明 | pip 不设 turbo 代理,只改 `-i` 镜像 |
+| 按 `pip` 命令名一律开或关 turbo | 同一客户端可能访问 GitHub/Hugging Face，也可能访问 PyPI | 按最终域名选择；PyPI/Conda 用软件源，GitHub/Hugging Face 支持域名用 turbo |
 | tar 上传代码 | 不可复现、缺文件、缺同步 | **git clone from GitHub** |
 | vllm 不 pin 版本 | 装到 0.26.x 与本机不可比 | `vllm==0.25.1` |
 | torch 2.11 拖 CUDA13 libs(~2GB) | `pip install vllm` 极慢、像卡死 | 非坑,是版本链必然;留 30+ min,清华源串行下 |

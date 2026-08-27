@@ -2,9 +2,10 @@
 
 ## 2026-08-27 AutoDL 网络与数据盘规则
 
-- 新增 `deploy/autodl/AGENTS.md`，将 AutoDL GitHub/Hugging Face 下载前在同一 shell 加载
-  `/etc/network_turbo` 升为目录级规则；依赖该 HTTP(S) 代理时使用 HTTPS Git remote，`pip`
-  和其他站点继续按 runbook 使用镜像或直连。根规则路由同步改为读取目标平台的
+- 新增 `deploy/autodl/AGENTS.md`，将 AutoDL 官方支持域名下载前在同一 shell 加载
+  `/etc/network_turbo` 升为目录级规则；依赖该 HTTP(S) 代理时使用 HTTPS Git remote。后续按
+  官方文档将判断条件细化为最终访问域名而非客户端名称：`pip` 直接下载受支持的 GitHub/Hugging Face
+  URL 时也使用 turbo，访问 PyPI/Conda 或其他未列入清单的站点时取消代理并使用镜像或直连。根规则路由同步改为读取目标平台的
   `AGENTS.md` 和 runbook，确保操作远程平台时也能加载局部规则。
 - 将 AutoDL 存储规则改为覆盖所有安装、下载、导入、构建、服务运行、实验输出和迁移操作的三级分工：
   系统盘只放操作系统、系统级软件、基础环境、服务配置和有界小日志；项目仓库/runtime env、数据库数据、

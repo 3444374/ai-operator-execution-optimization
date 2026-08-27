@@ -5,11 +5,13 @@
 
 ## 网络
 
-- AutoDL 上通过 HTTP(S) 访问 GitHub 或 Hugging Face 前，若 `/etc/network_turbo` 存在，
-  必须在执行下载命令的**同一 shell 会话**中加载它。依赖 turbo 的 Git 操作使用 HTTPS
-  remote；不假定 SSH remote 会经过 HTTP(S) 代理。
-- turbo 只用于平台明确支持的 GitHub/Hugging Face 下载。`pip` 和其他站点使用
-  runbook 指定的镜像或直连路径。
+- 是否使用 turbo 按**最终访问域名**判断，不按 `git`、`pip`、`wget` 或 Python API 等命令名判断。
+  AutoDL 官方当前列出的内置加速域名是 `github.com`、`githubusercontent.com`、
+  `githubassets.com` 和 `huggingface.co`；访问这些域名前，若 `/etc/network_turbo` 存在，
+  必须在执行命令的**同一 shell 会话**中加载它。
+- 依赖 turbo 的 Git 操作使用 HTTPS remote；不假定 SSH remote 会经过 HTTP(S) 代理。
+  `pip` 若直接下载上述域名上的资源，同样使用 turbo；访问 PyPI、Conda 或其他未列入官方
+  支持清单的站点前取消代理，改用 runbook 指定的镜像或直连路径。不要硬编码 turbo 代理地址。
 
 ## 磁盘分工
 
