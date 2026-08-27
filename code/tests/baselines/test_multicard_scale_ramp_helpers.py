@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -240,6 +241,7 @@ class RayHeadRecoveryTests(unittest.TestCase):
     def test_reuse_timeout_falls_back_to_fresh_head(self) -> None:
         import subprocess
 
+        ray_address_before = os.environ.get("RAY_ADDRESS")
         completed = subprocess.CompletedProcess
         responses = [
             subprocess.TimeoutExpired(cmd=["probe"], timeout=10),
@@ -247,14 +249,15 @@ class RayHeadRecoveryTests(unittest.TestCase):
             completed(["ray", "start"], 0, stdout="started", stderr=""),
             completed(["python", "check"], 0, stdout="resources", stderr=""),
         ]
-        with mock.patch("subprocess.run", side_effect=responses) as run, mock.patch(
-            "shutil.which", return_value="/mock/ray"
-        ):
+        with mock.patch.dict(os.environ), mock.patch(
+            "subprocess.run", side_effect=responses
+        ) as run, mock.patch("shutil.which", return_value="/mock/ray"):
             drv._ensure_ray_head()
 
         self.assertEqual(run.call_count, 4)
         self.assertEqual(run.call_args_list[0].kwargs["timeout"], 10)
         self.assertEqual(run.call_args_list[2].args[0][:3], ["/mock/ray", "start", "--head"])
+        self.assertEqual(os.environ.get("RAY_ADDRESS"), ray_address_before)
 
 
 class StrictPreflightTests(unittest.TestCase):
