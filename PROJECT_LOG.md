@@ -7889,3 +7889,11 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   限制为 128 token 后通过。过程和成功产物保存在服务器
   `/root/autodl-tmp/experiment-artifacts/gpu_function_smoke_b8947d01/`；服务已停止，GPU 无残留计算
   进程。本次只证明这些小规模路径在该机器上功能正常，不恢复正式实验，也不形成吞吐或稳定性结论。
+
+## 2026-08-27 代码重构长期规则固化
+
+- 将本轮使用的行为保持、提炼函数、卫语句、命名常量、内聚参数对象和设计模式适用条件写入
+  `code/AGENTS.md`，覆盖生产代码、脚本与测试代码；模式必须对应已识别的变化轴或依赖反转点，不能
+  解决具体耦合时保持直接实现。
+- 重构完成条件增加重构前 characterization/contract evidence 与逐步回归要求；公共接口、CLI、输出、
+  错误、事务、cancel/retry/exactly-once 和指标口径默认保持不变，行为变更需与结构调整分开审阅。
