@@ -1,6 +1,5 @@
 \set VERBOSITY terse
 \pset null '<NULL>'
-Null display is "<NULL>".
 CREATE EXTENSION semloom_pg;
 CREATE TEMP TABLE semloom_documents (
     doc_id integer PRIMARY KEY,
