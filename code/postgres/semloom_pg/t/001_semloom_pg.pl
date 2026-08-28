@@ -41,6 +41,31 @@ sub finish_recording_gateway
 	  or diag($$stderr);
 }
 
+sub provider_error_signature
+{
+	my ($node, $socket_path, $fixture) = @_;
+	my ($gateway, $gateway_stdout, $gateway_stderr) =
+	  start_recording_gateway(
+		$socket_path,
+		'--test-completion-fixture',
+		$fixture);
+	my ($ret, $stdout, $stderr) = $node->psql(
+		'postgres',
+		qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$socket_path';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';});
+	isnt($ret, 0, "$fixture completion fails closed");
+	my ($sqlstate, $message) =
+	  $stderr =~ /^ERROR:\s+([0-9A-Z]{5}):\s+(.+)$/m;
+	ok(defined($sqlstate) && defined($message), "$fixture exposes an error signature")
+	  or diag($stderr);
+	unlike($stderr, qr/alpha/, "$fixture error does not expose the task payload");
+	finish_recording_gateway($gateway, $socket_path, $gateway_stderr);
+	return ($sqlstate // '', $message // '');
+}
+
 my $node = PostgreSQL::Test::Cluster->new('semloom_pg');
 $node->init;
 $node->start;
@@ -156,6 +181,27 @@ $node->safe_psql(
 my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
+
+my @provider_error_cases = (
+	['malformed-json', '08P01', 'SemLoom provider returned invalid JSON'],
+	['invalid-utf8', '08P01', 'SemLoom provider returned invalid JSON'],
+	['non-object', '08P01', 'SemLoom provider response must be a JSON object'],
+	['missing-field', '08P01', 'SemLoom provider returned an unexpected message'],
+	['extra-field', '08P01', 'SemLoom provider returned an unexpected message'],
+	['wrong-integer-type', '08P01', 'SemLoom provider response has an invalid integer field'],
+	['integer-overflow', '22003', 'integer out of range'],
+	['identity-mismatch', '08P01', 'SemLoom provider completion identity does not match the task'],
+	['error-message', '08P01', 'SemLoom provider rejected the protocol message'],
+);
+
+for my $error_case (@provider_error_cases)
+{
+	my ($fixture, $expected_sqlstate, $expected_message) = @$error_case;
+	my ($sqlstate, $message) =
+	  provider_error_signature($node, $gateway_socket, $fixture);
+	is($sqlstate, $expected_sqlstate, "$fixture preserves its SQLSTATE");
+	is($message, $expected_message, "$fixture preserves its redacted message");
+}
 
 like(
 	$node->safe_psql(

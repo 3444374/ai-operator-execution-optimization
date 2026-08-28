@@ -21,6 +21,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test-tamper-evidence-digest", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--test-disconnect-on-task", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--test-fill-connect-queue-ms", type=int, default=0, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--test-completion-fixture",
+        choices=(
+            "error-message",
+            "extra-field",
+            "identity-mismatch",
+            "integer-overflow",
+            "invalid-utf8",
+            "malformed-json",
+            "missing-field",
+            "non-object",
+            "wrong-integer-type",
+        ),
+        help=argparse.SUPPRESS,
+    )
     return parser.parse_args()
 
 
@@ -73,6 +88,7 @@ def main() -> int:
                 response_delay_ms=args.test_response_delay_ms,
                 tamper_evidence_digest=args.test_tamper_evidence_digest,
                 disconnect_on_task=args.test_disconnect_on_task,
+                completion_fixture=args.test_completion_fixture,
             )
             if args.once:
                 break
