@@ -19,11 +19,8 @@ typedef struct MarkerCountContext
 static bool semloom_count_marker(Node *node, void *context);
 static int semloom_marker_count(Node *node, Oid marker_oid);
 static FuncExpr *semloom_supported_marker(Query *parse, Oid marker_oid);
+static bool semloom_is_insert_source(PlannerInfo *root);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
-static Path *semloom_wrap_final_path(PlannerInfo *root,
-									 RelOptInfo *input_rel,
-									 RelOptInfo *output_rel,
-									 Path *final_path);
 static CustomPath *semloom_make_path(RelOptInfo *parent_rel, Path *child_path);
 static Plan *semloom_plan_path(PlannerInfo *root,
 								RelOptInfo *rel,
@@ -93,18 +90,40 @@ semloom_supported_marker(Query *parse, Oid marker_oid)
 	return supported;
 }
 
+static bool
+semloom_is_insert_source(PlannerInfo *root)
+{
+	PlannerInfo *parent_root = root->parent_root;
+	Query *parent_parse;
+	RangeTblRef *source_reference;
+	RangeTblEntry *source_entry;
+
+	if (root->query_level != 2 || parent_root == NULL)
+		return false;
+	parent_parse = parent_root->parse;
+	if (parent_parse->commandType != CMD_INSERT ||
+		parent_parse->jointree == NULL ||
+		list_length(parent_parse->jointree->fromlist) != 1 ||
+		!IsA(linitial(parent_parse->jointree->fromlist), RangeTblRef))
+		return false;
+
+	source_reference = linitial_node(RangeTblRef, parent_parse->jointree->fromlist);
+	source_entry = rt_fetch(source_reference->rtindex, parent_parse->rtable);
+	return source_entry->rtekind == RTE_SUBQUERY && source_entry->subquery == root->parse;
+}
+
 static void
 semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 {
 	Query *parse = root->parse;
 	FuncExpr *marker = semloom_supported_marker(parse, marker_oid);
+	bool insert_source = semloom_is_insert_source(root);
 	RangeTblRef *range_reference;
 	RangeTblEntry *range_entry;
 
 	if (marker == NULL)
 		return;
-	if (root->query_level != 1 ||
-		(parse->commandType != CMD_SELECT && parse->commandType != CMD_INSERT) ||
+	if ((root->query_level != 1 && !insert_source) || parse->commandType != CMD_SELECT ||
 		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
 		parse->groupClause != NIL || parse->groupingSets != NIL || parse->havingQual != NULL ||
 		parse->hasWindowFuncs || parse->windowClause != NIL || parse->distinctClause != NIL ||
@@ -113,9 +132,11 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("query shape is outside the current SemMap capability"),
 				 errdetail("Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, and LIMIT is supported.")));
-	if (parse->commandType == CMD_INSERT &&
-		(parse->resultRelation == 0 || parse->onConflict != NULL ||
-		 parse->returningList != NIL || parse->override != OVERRIDING_NOT_SET))
+	if (insert_source &&
+		(root->parent_root->parse->resultRelation == 0 ||
+		 root->parent_root->parse->onConflict != NULL ||
+		 root->parent_root->parse->returningList != NIL ||
+		 root->parent_root->parse->override != OVERRIDING_NOT_SET))
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("INSERT shape is outside the current SemMap capability"),
@@ -165,13 +186,9 @@ semloom_add_sem_map_paths(PlannerInfo *root,
 	semloom_validate_query_shape(root, marker_oid);
 	foreach(cell, output_rel->pathlist)
 	{
-		Path *final_path = lfirst_node(Path, cell);
+		Path *child_path = lfirst_node(Path, cell);
 
-		semantic_paths = lappend(semantic_paths,
-								 semloom_wrap_final_path(root,
-													 input_rel,
-													 output_rel,
-													 final_path));
+		semantic_paths = lappend(semantic_paths, semloom_make_path(output_rel, child_path));
 	}
 	if (semantic_paths == NIL)
 		ereport(ERROR,
@@ -180,49 +197,6 @@ semloom_add_sem_map_paths(PlannerInfo *root,
 
 	output_rel->pathlist = semantic_paths;
 	output_rel->partial_pathlist = NIL;
-}
-
-static Path *
-semloom_wrap_final_path(PlannerInfo *root,
-						RelOptInfo *input_rel,
-						RelOptInfo *output_rel,
-						Path *final_path)
-{
-	if (root->parse->commandType == CMD_SELECT)
-		return (Path *) semloom_make_path(output_rel, final_path);
-
-	if (root->parse->commandType == CMD_INSERT)
-	{
-		ModifyTablePath *modify_path;
-		Path *source_path;
-		CustomPath *semantic_path;
-
-		if (!IsA(final_path, ModifyTablePath))
-			ereport(ERROR,
-					(errcode(ERRCODE_INTERNAL_ERROR),
-					 errmsg("SemMap INSERT path is not a ModifyTable path")));
-		modify_path = castNode(ModifyTablePath, final_path);
-		if (modify_path->operation != CMD_INSERT || modify_path->subpath == NULL)
-			ereport(ERROR,
-					(errcode(ERRCODE_INTERNAL_ERROR),
-					 errmsg("invalid SemMap INSERT path state")));
-
-		source_path = modify_path->subpath;
-		if (source_path->parent != input_rel)
-			ereport(ERROR,
-					(errcode(ERRCODE_INTERNAL_ERROR),
-					 errmsg("SemMap INSERT source path has an unexpected parent")));
-		semantic_path = semloom_make_path(input_rel, source_path);
-		modify_path->subpath = (Path *) semantic_path;
-		modify_path->path.total_cost +=
-			semantic_path->path.total_cost - source_path->total_cost;
-		return &modify_path->path;
-	}
-
-	ereport(ERROR,
-			(errcode(ERRCODE_INTERNAL_ERROR),
-			 errmsg("unexpected SemMap command type")));
-	return NULL;
 }
 
 static CustomPath *
