@@ -43,10 +43,11 @@ def main() -> int:
     signal.signal(signal.SIGTERM, request_stop)
 
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    owns_socket_path = False
+    socket_identity: tuple[int, int] | None = None
     try:
         listener.bind(str(socket_path))
-        owns_socket_path = True
+        socket_metadata = socket_path.lstat()
+        socket_identity = (socket_metadata.st_dev, socket_metadata.st_ino)
         os.chmod(socket_path, 0o600)
         listener.listen()
         listener.settimeout(0.25)
@@ -65,11 +66,18 @@ def main() -> int:
                 break
     finally:
         listener.close()
-        if owns_socket_path:
+        if socket_identity is not None:
             try:
-                socket_path.unlink()
+                current_metadata = socket_path.lstat()
             except FileNotFoundError:
                 pass
+            else:
+                current_identity = (current_metadata.st_dev, current_metadata.st_ino)
+                if (
+                    stat.S_ISSOCK(current_metadata.st_mode)
+                    and current_identity == socket_identity
+                ):
+                    socket_path.unlink()
     return 0
 
 
