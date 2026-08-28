@@ -235,10 +235,13 @@ finish_recording_gateway(
 my @provider_error_cases = (
 	['malformed-json', '08P01', 'SemLoom provider returned invalid JSON'],
 	['invalid-utf8', '08P01', 'SemLoom provider returned invalid JSON'],
+	['escaped-nul', '08P01', 'SemLoom provider returned invalid JSON'],
+	['raw-nul', '08P01', 'SemLoom provider returned invalid JSON'],
 	['non-object', '08P01', 'SemLoom provider response must be a JSON object'],
 	['missing-field', '08P01', 'SemLoom provider returned an unexpected message'],
 	['extra-field', '08P01', 'SemLoom provider returned an unexpected message'],
 	['wrong-integer-type', '08P01', 'SemLoom provider response has an invalid integer field'],
+	['fractional-integer', '08P01', 'SemLoom provider response has an invalid integer field'],
 	['integer-overflow', '22003', 'integer out of range'],
 	['identity-mismatch', '08P01', 'SemLoom provider completion identity does not match the task'],
 	['error-message', '08P01', 'SemLoom provider rejected the protocol message'],

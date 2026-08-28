@@ -19,6 +19,7 @@
 #include "utils/fmgrprotos.h"
 #include "utils/json.h"
 #include "utils/jsonb.h"
+#include "utils/memutils.h"
 #include "utils/wait_classes.h"
 
 #include "provider_private.h"
@@ -565,6 +566,15 @@ semloom_receive_frame(pgsocket socket_fd, char **payload, AiProviderError *error
 	status = semloom_socket_read_all(socket_fd, *payload, payload_length, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
+	if (memchr(*payload, '\0', payload_length) != NULL)
+	{
+		semloom_provider_error_set(error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   AI_PROVIDER_OPERATION_PARSE_JSON,
+								   0,
+								   NULL);
+		return AI_PROVIDER_STATUS_ERROR;
+	}
 	(*payload)[payload_length] = '\0';
 	return AI_PROVIDER_STATUS_OK;
 }
@@ -679,6 +689,7 @@ semloom_wait_for_socket(pgsocket socket_fd, int socket_event)
 static AiProviderStatus
 semloom_parse_json(const char *payload, Jsonb **message, AiProviderError *error)
 {
+	MemoryContext parse_context = CurrentMemoryContext;
 	bool expected_input_error = false;
 
 	*message = NULL;
@@ -689,10 +700,14 @@ semloom_parse_json(const char *payload, Jsonb **message, AiProviderError *error)
 	}
 	PG_CATCH();
 	{
-		ErrorData *error_data = CopyErrorData();
+		ErrorData *error_data;
+
+		MemoryContextSwitchTo(parse_context);
+		error_data = CopyErrorData();
 
 		if (error_data->sqlerrcode == ERRCODE_INVALID_TEXT_REPRESENTATION ||
-			error_data->sqlerrcode == ERRCODE_CHARACTER_NOT_IN_REPERTOIRE)
+			error_data->sqlerrcode == ERRCODE_CHARACTER_NOT_IN_REPERTOIRE ||
+			error_data->sqlerrcode == ERRCODE_UNTRANSLATABLE_CHARACTER)
 		{
 			FlushErrorState();
 			expected_input_error = true;
@@ -771,11 +786,22 @@ semloom_json_int32(Jsonb *message,
 				   AiProviderError *error)
 {
 	JsonbValue *value;
+	MemoryContext numeric_context = CurrentMemoryContext;
 	bool expected_range_error = false;
 
 	if (!semloom_json_value(message, key, &value, error))
 		return false;
 	if (value->type != jbvNumeric)
+	{
+		semloom_provider_error_set(error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   AI_PROVIDER_OPERATION_RESPONSE_INTEGER,
+								   0,
+								   NULL);
+		return false;
+	}
+	if (DatumGetInt32(DirectFunctionCall1(numeric_min_scale,
+											 NumericGetDatum(value->val.numeric))) != 0)
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
@@ -791,7 +817,10 @@ semloom_json_int32(Jsonb *message,
 	}
 	PG_CATCH();
 	{
-		ErrorData *error_data = CopyErrorData();
+		ErrorData *error_data;
+
+		MemoryContextSwitchTo(numeric_context);
+		error_data = CopyErrorData();
 
 		if (error_data->sqlerrcode == ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE)
 		{

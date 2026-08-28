@@ -390,12 +390,20 @@ def _send_completion_fixture(
     if fixture == "error-message":
         connection.sendall(encode_frame({"type": "error", "code": "fixture_rejected"}))
         return
+    if fixture == "raw-nul":
+        valid_payload = encode_frame(completion)[4:]
+        _send_raw_frame(connection, valid_payload + b"\x00trailing-garbage")
+        return
 
     message = dict(completion)
-    if fixture == "missing-field":
+    if fixture == "escaped-nul":
+        message["output"] += "\x00provider-derived"
+    elif fixture == "missing-field":
         del message["evidence_digest"]
     elif fixture == "extra-field":
         message["future_field"] = True
+    elif fixture == "fractional-integer":
+        message["protocol_version"] = 2.4
     elif fixture == "wrong-integer-type":
         message["protocol_version"] = "2"
     elif fixture == "integer-overflow":

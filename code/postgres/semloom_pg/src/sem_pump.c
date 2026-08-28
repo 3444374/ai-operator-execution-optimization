@@ -21,8 +21,6 @@
 #include "provider_private.h"
 #include "sem_pump.h"
 
-#define SEMLOOM_VISIBLE_UDS_INPUT_LIMIT_BYTES 174080
-
 typedef enum SemloomPumpState
 {
 	SEMLOOM_PUMP_SELECTED_NOT_OPEN = 1,
@@ -338,8 +336,8 @@ semloom_raise_provider_error(const AiProviderError *error)
 		case AI_PROVIDER_ERROR_INPUT_TOO_LARGE:
 			ereport(ERROR,
 					(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-					 errmsg("SemLoom provider input exceeds the %d byte limit",
-							SEMLOOM_VISIBLE_UDS_INPUT_LIMIT_BYTES)));
+					 errmsg("SemLoom provider input exceeds the %u byte limit",
+							(unsigned int) error->limit_bytes)));
 			pg_unreachable();
 		case AI_PROVIDER_ERROR_UNSUPPORTED_ENCODING:
 			sqlstate = ERRCODE_FEATURE_NOT_SUPPORTED;

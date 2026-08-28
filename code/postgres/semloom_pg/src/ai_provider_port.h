@@ -124,6 +124,7 @@ typedef struct AiProviderError
 	uint32_t code;
 	uint32_t operation;
 	int32_t system_errno;
+	uint32_t limit_bytes;
 	uint16_t detail_length;
 	char detail[AI_PROVIDER_ERROR_DETAIL_CAPACITY];
 } AiProviderError;
@@ -154,7 +155,8 @@ typedef struct AiProvider
  * represented only by is_null; an empty non-NULL value has length zero.  Any
  * non-OK open or drive result is terminal: open may publish a partial session,
  * the caller closes it, and no later drive may continue that session.  Close
- * accepts NULL and repeated calls.
+ * accepts NULL and repeated calls.  limit_bytes is a code-specific fixed-width
+ * parameter and is zero when the error does not report a byte limit.
  */
 
 #endif

@@ -229,6 +229,7 @@ semloom_uds_drive_internal(AiProviderSession *session,
 								   AI_PROVIDER_OPERATION_NONE,
 								   0,
 								   NULL);
+		error->limit_bytes = SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (GetDatabaseEncoding() != PG_UTF8)

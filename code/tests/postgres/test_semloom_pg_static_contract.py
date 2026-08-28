@@ -10,6 +10,20 @@ CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (paren
 EXTENSION_ROOT = CODE_ROOT / "postgres" / "semloom_pg"
 
 
+def _c_function_body(source: str, name: str) -> str:
+    definition_start = source.index(f"\n{name}(")
+    body_start = source.index("{", definition_start)
+    depth = 0
+    for index in range(body_start, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[body_start : index + 1]
+    raise AssertionError(f"unterminated C function: {name}")
+
+
 class SemloomPgStaticContractTests(unittest.TestCase):
     def test_pgxs_layout_is_versioned_and_has_regression_entry(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
@@ -98,6 +112,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("uint32_t code", header)
         self.assertIn("uint32_t operation", header)
         self.assertIn("int32_t system_errno", header)
+        self.assertIn("uint32_t limit_bytes", header)
         self.assertIn("uint16_t detail_length", header)
         self.assertIn("AiProviderStatus (*open)", header)
         self.assertIn("AiProviderStatus (*drive)", header)
@@ -120,6 +135,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         recording_source = (EXTENSION_ROOT / "src" / "recording_provider.c").read_text(
             encoding="utf-8"
         )
+        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
         uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(encoding="utf-8")
         wire_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(encoding="utf-8")
         wire_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(encoding="utf-8")
@@ -133,15 +149,45 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("SEMLOOM_RECORDING_PREFIX", recording_source)
         self.assertIn("semloom_recording_fail", recording_source)
         self.assertIn("semloom_recording_close(session);", recording_source)
-        self.assertNotIn("MemoryContextReset(completion_context)", recording_source)
         self.assertNotIn("socket", recording_source.lower())
         self.assertNotIn("connect", recording_source.lower())
         self.assertIn("GetDatabaseEncoding()", uds_source)
         self.assertIn("PG_UTF8", uds_source)
         self.assertIn("O_NONBLOCK", uds_source)
         self.assertIn("semloom_uds_close(session);", uds_source)
-        self.assertNotIn("MemoryContextReset(scratch_context)", uds_source)
-        self.assertNotIn("MemoryContextReset(completion_context)", uds_source)
+        self.assertIn(
+            "error->limit_bytes = SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", uds_source
+        )
+        self.assertNotIn("174080", pump_source)
+        self.assertNotIn("SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", pump_source)
+        close_functions = (
+            (
+                "recording close",
+                _c_function_body(recording_source, "semloom_recording_close"),
+            ),
+            ("UDS close", _c_function_body(uds_source, "semloom_uds_close")),
+            (
+                "UDS local release",
+                _c_function_body(uds_source, "semloom_uds_release_local"),
+            ),
+        )
+        for close_name, close_body in close_functions:
+            self.assertNotIn("MemoryContextReset", close_body, close_name)
+            self.assertNotIn("MemoryContextDelete", close_body, close_name)
+        error_catches = (
+            (
+                _c_function_body(wire_source, "semloom_parse_json"),
+                "MemoryContextSwitchTo(parse_context);",
+            ),
+            (
+                _c_function_body(wire_source, "semloom_json_int32"),
+                "MemoryContextSwitchTo(numeric_context);",
+            ),
+        )
+        for catch_body, context_switch in error_catches:
+            self.assertLess(
+                catch_body.index(context_switch), catch_body.index("CopyErrorData()")
+            )
         self.assertIn("WaitLatchOrSocket", wire_source)
         self.assertIn("CHECK_FOR_INTERRUPTS", wire_source)
         self.assertIn("SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2", wire_header)
