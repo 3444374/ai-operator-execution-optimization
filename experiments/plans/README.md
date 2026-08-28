@@ -20,13 +20,14 @@
 
 1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
    ordinary child plan、snapshot、query lifecycle、初始 typed seam，以及同步单在途 UDS recording provider；
-2. 在已验证的初始 digest/UDS slice 上补 accepted-prefix backpressure、多在途、乱序 completion、
-   有界 reorder 与显式 early-stop close disposition；
-3. 审查 extension 能否承载目标 LOTUS/Cortex semantic alternatives；能表达则保留 extension，只有已复现
-   阻断才增加最小 core patch；
-4. 抽取增量 SemLoom session，再接 HTTP/SemLoom provider，并以 `SemFilter` 验证 cardinality 与首条
-   database semantic optimization；
-5. 上述步骤完成前不扩展 GPU 矩阵、不调整 SAOR，也不把既有 external runner 写成数据库内算子。
+2. 收紧 executor/provider seam：`SemanticExecPump` 不包含 transport，PG backend 只保留可取消的 UDS
+   client adapter；listener、连接池、TCP/HTTP、session registry 和模型连接全部留在 gateway；
+3. 先用当前 recording slice 实现 exact `SemFilter`，再以静态 calibration evidence 实现一条可辨认的
+   LOTUS/Cortex-like proxy/oracle physical path；不等待完整异步协议或真实模型；
+4. 用这两个实际 semantic paths 审查 extension carrier；能表达则保留 extension，只有 marker/placement/
+   prepared-plan/hook lifecycle 的已复现阻断才增加最小 core patch；
+5. 资格成立后再扩 accepted-prefix、多在途、乱序 completion 和增量 SemLoom session，并接真实
+   HTTP/SemLoom provider；此前不扩 GPU 矩阵、不调整 SAOR，也不把 external runner 写成数据库内算子。
 
 ## 2. 状态分层
 

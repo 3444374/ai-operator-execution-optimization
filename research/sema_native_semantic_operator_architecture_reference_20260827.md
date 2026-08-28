@@ -426,11 +426,11 @@ Abacus 的 operator independence、计划代价组合和 sample estimates 都有
 ## 11. 2026-08-28 审计增补：原生语义算子、最小 PG core patch 与 provider interface
 
 本节针对后续实现再回答四个问题：数据库内部 AI 语义算子作为数据执行链起点时，数据库必须拥有
-哪些状态；Sema、Cortex AISQL、IMLane、Kalypso 和 LOTUS 分别证明了哪一层；PostgreSQL 18.3/18.4 extension
+哪些状态；Sema、Cortex AISQL、IMLane、Kalypso 和 LOTUS 分别证明了哪一层；锁定的 PostgreSQL 18.3 extension
 能验证什么、最小 core patch 应承担什么；数据库 semantic module 与 SemLoom execution provider 之间
 最小而足够深的 interface 应是什么。
 
-本次审查采用一个新增前提：**允许但不要求维护受控的 PostgreSQL 18.4 core patch。** 因而不能预先把
+本次审查采用一个新增前提：**允许但不要求维护受控的 PostgreSQL 18.3 core patch。** 因而不能预先把
 extension-only 或 core fork 任何一方写成终点。先用 extension capability spike 验证执行 seam，并以
 LOTUS/Cortex 类计划优化能否安全表达、prepared-plan/node identity、hook composability 和维护成本为
 证据选择载体；无论载体如何，外部都只通过同一个 SemLoom execution-provider seam 接收 sealed work。
@@ -452,9 +452,9 @@ IMLane 的会议轨道表述存在一处需要保留的资料差异：OceanBase 
 “OceanBase 官方技术介绍称 Industry Track”，不由卷期字段反向推断。
 
 PostgreSQL 官方 release notes 分别把 18.3 和 18.4 标为 2026-02-26、2026-05-14 发布；两者的选择不
-改变本节的 module/seam 设计。若限定二选一，首个 prototype 应锁定 18.4，因为它是较新的修复版本；
-所有 source-level 依赖仍须锁定 `REL_18_4` 并用 18.4 headers 构建，不能把“同属 18.x”理解成任意
-二进制可混用。
+改变本节的 module/seam 设计。目标平台已明确为 18.3，因此 capability、core patch、headers 和测试集群
+全部锁定 `REL_18_3`。18.4 只作包含后续安全修复的交叉验证环境，不替代 18.3 资格证据，也不能把
+“同属 18.x”理解成二进制可混用。
 
 ### 11.2 第一性原理：数据库作为执行链起点意味着什么
 
@@ -577,18 +577,18 @@ dependency 且另行立项后，才评估协议扩展；否则 Kalypso 元数据
 目前截至 2026-08-28 没有定位到作者公开 artifact，因此实现只能以论文合同和独立测试为依据，不能声称
 复用了 Kalypso 源码。
 
-### 11.4 PostgreSQL 18.4：extension-only 与最小 core patch 的重新取舍
+### 11.4 PostgreSQL 18.3：extension-only 与最小 core patch 的重新取舍
 
-**来源类型：PostgreSQL 18 官方文档 + `REL_18_4` source + 工程推断。** 关键源码入口为
-[`paths.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/optimizer/paths.h)、
-[`planner.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/optimizer/planner.h)、
-[`extensible.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/nodes/extensible.h)、
-[`plannodes.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/nodes/plannodes.h) 和
-[`analyze.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/parser/analyze.h)。对原生节点形态的
-判断还核对了 [`primnodes.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/nodes/primnodes.h)、
-[`pathnodes.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/nodes/pathnodes.h)、
-[`execnodes.h`](https://github.com/postgres/postgres/blob/REL_18_4/src/include/nodes/execnodes.h) 和
-[`execProcnode.c`](https://github.com/postgres/postgres/blob/REL_18_4/src/backend/executor/execProcnode.c)。
+**来源类型：PostgreSQL 18 官方文档 + `REL_18_3` source + 工程推断。** 关键源码入口为
+[`paths.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/optimizer/paths.h)、
+[`planner.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/optimizer/planner.h)、
+[`extensible.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/nodes/extensible.h)、
+[`plannodes.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/nodes/plannodes.h) 和
+[`analyze.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/parser/analyze.h)。对原生节点形态的
+判断还核对了 [`primnodes.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/nodes/primnodes.h)、
+[`pathnodes.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/nodes/pathnodes.h)、
+[`execnodes.h`](https://github.com/postgres/postgres/blob/REL_18_3/src/include/nodes/execnodes.h) 和
+[`execProcnode.c`](https://github.com/postgres/postgres/blob/REL_18_3/src/backend/executor/execProcnode.c)。
 
 | 目标 | 纯 extension 判断 | 依据与限制 |
 |---|---|---|
@@ -689,7 +689,7 @@ identity/path generation，executor 继续使用 `CustomScan`。若载体审查�
 明确不进入 patch 的内容包括：新 raw grammar、MVCC/storage/access method 修改、PostgreSQL generic join
 algorithm 重写、HTTP/Ray client 复制进 core、vLLM continuous batching 修改，以及 provider 根据 prompt
 自行选择 semantic algorithm。新代码应尽量放在 semantic module 的新文件中，对现有 planner/executor
-只保留 narrow calls；基线锁定 `REL_18_4`，用持续 rebase/patch-size audit 控制维护成本。
+只保留 narrow calls；基线锁定 `REL_18_3`，用持续 rebase/patch-size audit 控制维护成本。
 
 #### 11.4.4 extension capability spike 仍需保留
 
@@ -746,14 +746,14 @@ adapter 身份。
 | Dependency | 分类 | 处理方式 |
 |---|---|---|
 | plan validation、task compilation、digest、result parser、row fan-in | in-process | 全部藏在 PostgreSQL semantic module implementation 内，不为测试拆成外部 port |
-| PostgreSQL 18.4 backend + selected semantic carrier + companion extension | local-substitutable | 用临时 18.4 cluster + regression/isolation tests 验证；不在 external interface 暴露 PostgreSQL internals |
+| PostgreSQL 18.3 backend + selected semantic carrier + companion extension | local-substitutable | 用临时 18.3 cluster + regression/isolation tests 验证；不在 external interface 暴露 PostgreSQL internals |
 | SemLoom gateway/runtime | remote but owned | 在唯一 external seam 定义 port；production 使用 Unix-domain-socket adapter，测试使用 recording/in-memory adapter |
 | Ray cluster、SemLoom scheduler | remote but owned，但属于 provider implementation 内部 | 使用 provider 私有 adapters；不把 Ray types 泄漏到 PostgreSQL interface |
 | OpenAI-compatible endpoint 或合作方模型 endpoint | true external | 由 gateway 后方的 endpoint adapter 处理；PostgreSQL module 不直接拥有第三方 protocol |
 | vLLM | owned deployment 或 true external，取决于实验 arm | 无论身份如何都藏在 provider 后方；数据库只观察 completion/usage/terminal state |
 
-计划中的 recording adapter 与 SemLoom UDS adapter 将分别提供测试和生产实现；两者尚未实现，当前
-只能把该 seam 视为待资格验证的设计，而不能写成已经成立。
+recording adapter 与同步单在途 UDS adapter 已完成资格纵切面；生产 SemLoom adapter、accepted-prefix、
+多在途与乱序 completion 仍未实现，不能把当前 seam 写成完整异步执行协议。
 
 #### 11.6.2 Interface：三个 entry points
 
@@ -813,14 +813,14 @@ struct AiProviderPort {
 };
 ```
 
-协议 v1 的 `open` 固定 query identity、唯一 opaque operator-instance identity、plan digest、capability 和
-admission limits；
+未来批量 port 首版的 `open` 固定 query identity、唯一 opaque operator-instance identity、三类分域
+identity digest、capability 和 admission limits；
 `drive` 是唯一数据面 operation，在一个调用中同时推进 submit、completion drain、backpressure 和
 end-of-input state；`close`
 统一 drained/early-stop/cancel/error cleanup。六个 `submit/poll/finish/cancel/close` methods 被收敛成一个显式状态机，
 使高杠杆行为集中在一个 interface entry point。
 
-当前 v1 只处理一个 query-scoped operator。仅当 SemLoom 实测需要感知单算子 stage 或跨算子
+该未来 batch contract 初版只处理一个 query-scoped operator。仅当 SemLoom 实测需要感知单算子 stage 或跨算子
 dependency，且另行立项后，才把 lineage wire 作为协议候选；届时可评估 operator/stage descriptors、
 per-operator seal 与 lineage events。当前排期不包含这些字段，也不暴露原始 PostgreSQL Plan。
 
@@ -1001,25 +1001,29 @@ function-like SQL surface
 
 近期实施顺序应调整为：
 
-1. 锁定 `REL_18_4` source/header/build identity；保留 extension-only `SemMap CustomScan` 作为短期 capability
+1. 锁定 `REL_18_3` source/header/build identity；保留 extension-only `SemMap CustomScan` 作为短期 capability
    spike，用 recording adapter 验证 child/snapshot/cancel/error/result/provider lifecycle；
-2. 用明确反例审查 carrier：marker identity、prepared-plan invalidation、hook coexistence、受限
+2. 收紧 executor/provider seam，把 PG-owned scan/pump、neutral provider port 与 recording/UDS adapters
+   分开；同步单在途 UDS slice 保留为 test adapter，不先扩完整网络/runtime；
+3. 在 extension unary carrier 上完成 `SemMap` reference execution 与 `SemFilter` reference path，明确 row identity、
+   order、NULL、parse failure、rescan、parallel、LIMIT 和 prepared-plan behavior；
+4. 使用 deterministic fixture 或规划前匹配的静态 evidence 建立最小 `SemFilter` 第二 path，证明
+   algorithm identity、quality policy、cost、prepared-plan 与 provider role 都由 PostgreSQL 管理；
+5. 再用明确反例审查 carrier：marker identity、prepared-plan invalidation、hook coexistence、受限
    filter–join placement 与 semantic alternative costing；全部可安全实现则继续 extension。若只在
    identity/path generation 受阻，先补 `SemanticExpr`/path-generation seam 并继续 lower 为 `CustomScan`；
    只有 executor lifecycle 也受阻时才增加 native Plan/State；
-3. 在选定的 unary carrier 上完成 `SemMap` reference execution 与 `SemFilter` reference path，明确 row identity、
-   order、NULL、parse failure、rescan、parallel、LIMIT 和 prepared-plan behavior；
-4. 使用 deterministic fixture 或规划前匹配的静态 evidence 建立最小 `SemFilter` 第二 path，证明
-   algorithm identity、quality policy、cost、prepared-plan 与 provider role 都由 PostgreSQL 管理。
+6. 数据库语义资格成立后才扩 accepted-prefix、多在途、增量 SemLoom session 和真实模型 adapter。
 
 完整 LOTUS-style query-time sampling/proxy-oracle cascade、Cortex predicate ordering/filter–join 扩展、
 binary `SemanticJoin`、blocking operators、join-to-classification、fusion 与 AQE 都是远期参考方向；只有
 unary 路径稳定、独立研究问题与证据成立并另行排期后，才决定是否实现。
 
-这个顺序把三类风险分开：extension spike 验证 PostgreSQL executor seam；carrier audit 决定是否值得
-支付 core 维护成本；LOTUS/Cortex path alternatives 验证 semantic optimization。若第一步失败，应先修
-executor seam；若 carrier 尚未通过 lifecycle 与 planner tests，不应把外部 HTTP/Ray 调用称为数据库原生
-语义算子；若优化没有 reference/quality evidence，不应只凭更少调用数宣称语义等价。
+这个顺序把三类风险分开：extension spike 验证 PostgreSQL executor seam；LOTUS/Cortex path alternatives
+验证 semantic optimization；只有真实 semantic paths 暴露阻断后，carrier audit 才决定是否值得支付
+core 维护成本。若 executor seam 失败，应先修适配；若 semantic path 尚未通过 lifecycle 与 planner tests，
+不应把外部 HTTP/Ray 调用称为数据库原生语义算子；若优化没有 reference/quality evidence，不应只凭
+更少调用数宣称语义等价。
 
 IMLane 应同时作为 DBEnd/data conversion bridge 与 batch-wise asynchronous/resource-aware physical
 scheduling 的直接参照，而不是 semantic SQL/rewrite 的主要参照；Sema 提供 query/plan/executor
@@ -1130,7 +1134,7 @@ PostgreSQL 18 的 [Custom Scan path](https://www.postgresql.org/docs/18/custom-s
 - extension 无法阻止未授权的近似 path 进入 exact path competition，或 prepared plan 无法保存/展示
   `quality_policy`、reference identity 与 opt-in 状态。
 
-只有同一阻断能在锁定的 `REL_18_4` 源码、最小复现和 lifecycle 测试中重复出现，才把对应缺口补成最小
+只有同一阻断能在锁定的 `REL_18_3` 源码、最小复现和 lifecycle 测试中重复出现，才把对应缺口补成最小
 core surface，而且可以分层升级：若阻断只发生在 semantic identity、quality-aware path generation 或普通
 pathlist 的等价性假设，先增加 `SemanticExpr`/path-generation seam，并继续让选出的 path lower 为
 `CustomScan`；只有 CustomScan 的 child ownership、copy/serialization/rescan 或 executor lifecycle 也有独立

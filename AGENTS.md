@@ -77,15 +77,16 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 
 1. 锁定 `REL_18_3`，用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary
    child plan、snapshot、cancel、error 和 result lifecycle；
-2. 实现中立 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 合同与 `open/drive/close`
-   execution-provider interface，先接 UDS recording gateway；
-3. 审查 extension 对 plan identity、prepared-plan、hook coexistence 与目标 LOTUS/Cortex alternatives 的
+2. 保留已验证的同步单在途 UDS recording slice，拆分 PostgreSQL scan/pump、neutral provider port 与
+   recording/UDS adapters；`Datum`、`Oid`、`MemoryContext` 和物理列号不得进入 neutral port 或 wire；
+3. 实现 exact `SemFilter` reference path，再增加一条 deterministic、显式可识别的第二 physical path；
+4. 审查 extension 对 plan identity、prepared-plan、hook coexistence 与目标 LOTUS/Cortex alternatives 的
    支持；能表达则保留 extension，出现已复现阻断才增加最小 core semantic patch；
-4. 抽取增量 SemLoom scheduling session，再接 direct HTTP/SemLoom provider；以 `SemFilter` 验证关系
-   cardinality，并从第二条 physical path 开始验证数据库 semantic optimization；
-5. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
+5. 数据库语义资格完成后再扩 accepted-prefix、多在途、增量 SemLoom scheduling session 与 direct
+   HTTP/SemLoom provider；
+6. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
 
-在前四个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
+在前五个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
 emulated operator contract；不扩 GPU 参数矩阵，不继续调 SAOR，也不把它们写成已实现数据库内算子。
 当前状态只从 `PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和实验证据台账引用。
 

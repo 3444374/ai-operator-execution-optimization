@@ -3,12 +3,14 @@
 更新日期：2026-08-28
 
 > **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 的受限 `SELECT`、direct
-> `INSERT ... SELECT`、初始 typed `open/drive/close` seam、C/Python canonical digest 与同步单在途 UDS
-> recording provider 已通过 PostgreSQL 18.3 功能测试；下一步补 accepted-prefix backpressure、多在途、
-> 乱序 completion、有界 reorder 与显式 early-stop close disposition。载体审查确认 extension 足够时继续使用，
-> 只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加最小 core patch。随后抽取
-> 增量 SemLoom session，以 `SemFilter` 验证 cardinality 和首条 semantic alternative，再研究
-> IMLane-like batch placement。Kalypso-like lineage 只作后续参考，不纳入当前排期。LOTUS v1.2.4
+> `INSERT ... SELECT`、typed `open/drive/close` seam、协议 v2 C/Python canonical digest 与同步单在途 UDS
+> recording provider 已通过 PostgreSQL 18.3 功能测试；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
+> per-drive scratch、编码前输入上限、UTF8 校验和可取消 nonblocking connect 已验证。下一步先拆分
+> PostgreSQL scan/pump 与 neutral provider port、recording/UDS adapters，再实现 exact `SemFilter` 和
+> 最小第二 physical path。载体审查确认 extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives
+> 或 node lifecycle 出现已复现阻断才增加最小 core patch。数据库语义资格完成后才扩 accepted-prefix、
+> 多在途、增量 SemLoom session 与 IMLane-like batch placement。Kalypso-like lineage 只作后续参考，
+> 不纳入当前排期。LOTUS v1.2.4
 > 不是前置依赖。此前文本、
 > 图像静态、observe-only 与代价估计证据继续有效，但当前不扩 GPU 矩阵、不调 SAOR。下文按日期保留
 > 状态演进；日期较早的“下一步”只有被本摘要或当前架构计划再次确认时才有执行效力。

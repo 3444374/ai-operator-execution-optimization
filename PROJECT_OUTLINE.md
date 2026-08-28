@@ -16,9 +16,12 @@
 当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible `SemMap` 已验证
 `SELECT`、direct `INSERT ... SELECT`、ordinary child plan、snapshot 与 query lifecycle，并通过初始
 typed plan/task/completion 调用 in-process 与同步单在途 Unix-domain socket（UDS）recording provider。
-C/Python canonical digest、长度帧、Unicode/NULL、断连、取消和资源清理已在 PostgreSQL 18.3
-通过；下一步扩展 accepted-prefix/backpressure、多在途和乱序 completion，再审查 extension 是否足以承载
-目标 LOTUS/Cortex paths，只有已复现阻断才增加最小 core patch，再接增量 SemLoom 与 `SemFilter`。
+C/Python 协议 v2 分域 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
+per-drive scratch、编码前输入上限、UTF8 校验、断连、可取消 connect/response wait 和资源清理已在
+PostgreSQL 18.3 通过；下一步先把 PG-owned scan/pump 与 neutral provider port、recording/UDS adapters 分开，再用现有
+同步 recording slice 实现 exact `SemFilter` 和最小 LOTUS/Cortex-like 第二 path。随后用这些实际路径
+审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom 与真实
+模型 provider 在数据库语义资格之后实现。
 上述步骤完成前不扩展
 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
 算子结果。LOTUS v1.2.4 compatibility/native baseline 后置且不阻塞数据库核心。
@@ -37,7 +40,7 @@ extension 验证，是否升级最小 core patch 由反例审查决定。executi
 编译完成的 sealed tasks。
 当前状态是 `uds-recording-slice-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT` 和初始 typed `open/drive/close` in-process
-provider seam 已实现；同步单在途 UDS provider 与初始 plan/payload/completion digest 已验证。
+provider seam 已实现；同步单在途 UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。
 accepted-prefix、多在途/乱序 completion、`SemFilter`、载体反例审查和外部模型路径尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
@@ -392,21 +395,23 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 1. **PostgreSQL capability**：锁定 `REL_18_3`，用 extension / planner-visible `SemMap` deterministic
    prototype 证明 SQL、ordinary child plan、snapshot、cancel/error/result lifecycle。
-2. **中立 provider interface**：同步单在途 UDS recording slice 与初始 digest 已通过；继续实现
-   accepted-prefix、多在途/乱序 completion、显式 early-stop close disposition 和有界 reorder，仍不依赖模型。
-3. **载体审查**：验证 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives；能表达
+2. **最小 provider seam**：同步单在途 UDS recording slice 与初始 digest 已通过；先拆分 PG-private
+   scan/pump、neutral port 与 recording/UDS adapters。PG backend 不增加 listener、TCP/HTTP、连接池或
+   模型 adapter，也不重新实现 transaction/MVCC/WAL/ACL/snapshot。
+3. **数据库语义优化资格**：用现有 recording slice 实现 exact `SemFilter`，再以静态 calibration evidence
+   建立一条可辨认的 LOTUS/Cortex-like proxy/oracle path；数据库拥有 keep/drop、cost/quality 和 fallback。
+4. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
    则保留 extension，只有已复现阻断才增加最小 core patch。
-4. **两条优化轴**：抽取增量 SemLoom session，用 `SemFilter` 建立首条 database semantic alternative；
-   数据库资格完成后优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作
-   条件满足后的参考方向，不计入当前完成范围。
-5. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
+5. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
+   并优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作条件满足后的参考方向。
+6. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
    当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞前三项。
-6. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+7. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
    报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-7. **条件性恢复**：前四项通过后，再按
+8. **条件性恢复**：前五项通过后，再按
    `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
    system-level matched comparison 与小规模 pgvector 质量闭环。
-8. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+9. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
    full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
 历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，

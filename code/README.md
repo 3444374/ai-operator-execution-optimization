@@ -8,12 +8,14 @@ Status as of 2026-08-28: this directory contains the existing external physical-
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete PostgreSQL AI semantic operator or an asynchronous scheduling provider. It now includes a narrow
 `REL_18_3` planner-visible `SemMap` recording capability under `postgres/semloom_pg/`, including typed
-plan/task/completion values, initial cross-language canonical digests, and both in-process and synchronous
-single-inflight UDS `open/drive/close` providers. PGXS regression and TAP lifecycle tests cover its current
-query shape, protocol drift, disconnect, cancellation, Unicode, and `NULL`. The active sequence continues
-by extending `drive` with accepted-prefix backpressure, multiple in-flight tasks, and out-of-order
-completions, followed by an extension-versus-minimal-core carrier audit and an incremental SemLoom session, then
-HTTP/SemLoom providers plus `SemFilter`; see
+plan/task/completion values, cross-language canonical digests, and both in-process and synchronous
+single-inflight UDS `open/drive/close` providers. Provider connection is deferred until the first non-NULL task;
+PostgreSQL owns `PROPAGATE_NULL`, and per-drive scratch memory, pre-encoding input bounds, UTF8 validation,
+and nonblocking cancellable connect are enforced. PGXS regression and TAP lifecycle tests cover its current
+query shape, protocol drift, disconnect, cancellation, Unicode, and `NULL`. The active sequence first separates
+PostgreSQL scan/pump types from the neutral provider port and recording/UDS adapters, then implements exact
+`SemFilter` and its minimal second physical path. Accepted-prefix, multiple in-flight tasks, incremental SemLoom
+sessions, and HTTP/SemLoom providers follow database semantic qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.
 

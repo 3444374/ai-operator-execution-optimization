@@ -1,5 +1,48 @@
 # 项目日志
 
+## 2026-08-28 SemMap provider lifecycle、NULL 所有权与 plan identity 收紧
+
+- 按完整代码审查先补失败测试，再修复四项 executor/provider 风险：provider 从 `BeginCustomScan`
+  移到首个非 NULL task；plain `EXPLAIN`、`LIMIT 0`、zero-row child 与 NULL-only 执行均不连接；
+  `PROPAGATE_NULL` 由 PostgreSQL 本地完成，gateway 拒绝 NULL task。
+- UDS drive 增加 query-owned、逐次 reset 的 scratch memory context；174,080-byte 原始输入上限在 JSON
+  编码和连接前检查，UDS 只接受 UTF8 database。2,000 行 × 100,000-byte 的单查询功能 smoke 共采样
+  123 次，backend RSS 为 15,684–18,568 KiB（差 2,884 KiB），client/gateway 均正常退出；这只证明
+  当前路径未观察到随 200 MB 累计输入线性增长，不是性能结论。
+- socket 在 `connect()` 前设为 nonblocking；Linux AF_UNIX backlog 满返回 `EAGAIN` 时使用 10 ms latch
+  retry 并检查 interrupt，`EINPROGRESS/EALREADY` 使用 writable + `SO_ERROR`。首轮 TAP 曾复现
+  `Transport endpoint is not connected`，修复后 connect-stage `statement_timeout` 正确取消。
+- 不再把 physical `mapped_column` 放入跨进程 identity。协议升级为 v2，SQL-visible semantic spec、
+  database-selected `RECORDING` algorithm 与具体 provider execution profile 使用三个独立 digest；
+  open/task/completion evidence 分别绑定三者，且 semantic spec version 拒绝 JSON boolean；
+  完整模型 prompt/options/result schema 和 neutral provider port 仍为 pending。
+- 最终代码提交 `e4fa9f0a` 在官方 `REL_18_3`（upstream `62d6c7d3…`）上以 `-Werror` 无警告构建，
+  PGXS regression 1/1、TAP 52/52、Python/static 15/15 通过；最终仓库外产物位于
+  `/root/autodl-tmp/semloom-pg18.3-artifacts/tap-run-e4fa9f0a/`，`semloom_pg.so` SHA-256 为
+  `0fcbd575dcc57319a8ab542873120e1743f13b4478ea611a561bbe4e3c1d0d65`。测试后 PostgreSQL、gateway、
+  socket 和 GPU 进程均无残留。
+- 研究参考中仍将 18.4 写作研发/core 基线的现役段落已改为精确 `REL_18_3`；既有 18.4 结果继续只作
+  compatibility/rehearsal。下一步按当前计划拆分 PostgreSQL scan/pump 与 neutral provider port/adapter，
+  再实现 exact `SemFilter`，不先扩 accepted-prefix 或完整网络 runtime。
+
+## 2026-08-28 PostgreSQL 最小职责与语义优先实施顺序收敛
+
+- 根据当前 `semloom_pg` 源码复核，明确 PostgreSQL C 端没有 TCP listener：extension 只作为 Unix-domain
+  socket client，`bind/listen/accept` 位于独立 Python gateway。后续不在 backend 增加 listener、通用
+  TCP/HTTP client、连接池、自动重连、服务发现或模型 adapter；socket/frame/latch 只保留在单一
+  `uds_provider.c/wire_v2.c` carrier adapter。
+- 明确项目不实现 PostgreSQL transaction manager、MVCC、锁、WAL、ACL/RLS 或 snapshot。ordinary child
+  plan、executor 和 `ModifyTable` 继续拥有这些语义；extension 只负责 semantic plan、tuple/task binding、
+  keep/drop 或 typed result、query cancel/error/early-stop 映射及外部资源清理。外部模型调用不可回滚，
+  transaction abort 只阻止数据库结果可见并 best-effort 取消尚未完成的 work。
+- 调整当前实施顺序：已验证的同步单在途 UDS recording slice 足以继续开发，不先扩完整网络/runtime；
+  先拆分 PG-private binding、`SemanticExecPump`、neutral `AiProviderPort` 和 recording/UDS adapters，再实现
+  exact `SemFilter` 与静态 evidence 驱动的 LOTUS/Cortex-like proxy/oracle path。随后以真实 semantic paths
+  审查 extension/core carrier，最后才扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session
+  和真实模型 provider。
+- 本轮只更新当前权威实施计划、计划索引与项目日志，没有修改 PostgreSQL C/Python 运行代码，也没有
+  运行模型、GPU 或正式性能实验。
+
 ## 2026-08-28 PostgreSQL 18.3 UDS recording provider 纵切面
 
 - 在既有 typed `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` seam 上加入版本 1

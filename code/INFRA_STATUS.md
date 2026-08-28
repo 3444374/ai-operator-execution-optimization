@@ -8,15 +8,22 @@
 
 **当前工程顺序**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
-`SemMap` 的当前受限 capability、初始 typed `open/drive/close` seam 和同步单在途 UDS recording slice；
-C/Python plan/payload/completion digest、1 MiB 长度帧、Unicode/NULL、断连、取消与清理已验证。
-下一步扩展 accepted-prefix/backpressure、多在途与乱序 completion。随后审查 extension 是否足以承载目标 LOTUS/Cortex
-semantic paths，只有已复现阻断才增加最小 core
-patch，再抽取增量 SemLoom session 并接 HTTP/SemLoom provider，以 `SemFilter` 验证 cardinality。
+`SemMap` 的当前受限 capability、typed `open/drive/close` seam 和同步单在途 UDS recording slice；
+协议 v2 的 C/Python semantic-spec/physical-algorithm/provider-execution/payload/completion digest、
+1 MiB 长度帧、174,080-byte 编码前输入上限、
+Unicode、断连、取消与清理已验证。provider 只在首个非 NULL task 到达时打开，`PROPAGATE_NULL`
+由 PostgreSQL 本地完成；每次 drive 使用可重置 scratch context，UDS 从 `connect()` 前即为 nonblocking，
+并在 UTF8 之外 fail closed。
+下一步先把 PostgreSQL scan/pump 类型与 neutral provider port、recording/UDS adapters 分开，再实现 exact
+`SemFilter` 和最小第二 physical path。随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，
+只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom session 与 HTTP/SemLoom
+provider 在数据库语义资格之后实现。
 当前源码已有受限的 `SemMap CustomPath/CustomScan` recording capability，并在 `REL_18_3` 上通过
 PGXS regression 与 preload/prepared-plan/snapshot/cancel/insert 生命周期 TAP；executor 已通过
 typed plan/task/completion 值调用 `open/drive/close` in-process recording provider；同步单在途 UDS
-provider 与初始 canonical digest 也已实现。accepted-prefix、多在途/乱序 completion、
+provider 与分离的 semantic-spec、physical-algorithm、provider-execution digest 也已实现，物理
+mapped-column 不再进入 wire identity。
+accepted-prefix、多在途/乱序 completion、
 `SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
@@ -364,14 +371,16 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child plan、prepared plan、snapshot、取消、
    rollback/commit、错误恢复和结果生命周期；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽
    query shapes 仍保持 fail-closed；
-2. 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、canonical digest 与
-   in-process/同步单在途 UDS `open/drive/close` 已实现；下一步扩 accepted-prefix、多在途、乱序 completion
-   和显式 early-stop close disposition；
-3. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
+2. `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、协议 v2 canonical digest 与
+   in-process/同步单在途 UDS `open/drive/close` 已实现；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
+   per-drive scratch、编码前输入上限、UTF8 校验及可取消 nonblocking connect 已通过精确 18.3 测试；
+   下一步拆分 PG-owned scan/pump、neutral provider port 与 recording/UDS adapter；
+3. 用 exact `SemFilter` 验证三值/NULL/error policy、cardinality、tuple identity 与 relation-level placement；
+4. 增加一条 deterministic、显式可识别的 `SemFilter` 第二 physical path；
+5. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
    能表达则保留 extension，只有已复现阻断才增加最小 core patch；
-4. 抽取增量 SemLoom scheduling session，接 direct HTTP/SemLoom adapters；
-5. 用 `SemFilter` 验证 cardinality，并从第二条 physical path 开始验证数据库 semantic optimization；
-6. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述 external runner 结果写成数据库内算子证据。
+6. 数据库语义资格完成后再扩 accepted-prefix、多在途、增量 SemLoom session 和 direct HTTP/SemLoom adapters；
+7. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述 external runner 结果写成数据库内算子证据。
 
 ### 条件性恢复：image path-B + A+B
 

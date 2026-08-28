@@ -2,7 +2,7 @@
 
 更新日期：2026-08-28
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是在已通过的 `REL_18_3` extension planner-visible `SemMap`、初始 canonical digest 和同步单在途 UDS recording slice 上，继续实现 accepted-prefix backpressure、多在途/乱序 completion 与有界 reorder；之后再做 extension/core 载体审查、增量 SemLoom session，并以 `SemFilter` 验证关系语义和最小第二 semantic path。IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
+本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是在已通过的 `REL_18_3` extension planner-visible `SemMap`、协议 v2 canonical digest 和同步单在途 UDS recording slice 上，先拆分 PostgreSQL scan/pump 与 neutral provider port/adapter，再实现 exact `SemFilter` 和最小第二 semantic path；accepted-prefix、多在途、增量 SemLoom session 与 IMLane-like batch placement 在数据库语义资格后推进，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
 
 ## 1. 证据等级
 
@@ -20,8 +20,8 @@
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；8 项静态 contract、5 项 Python protocol、PGXS SQL regression 与 TAP lifecycle tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `74c811e9` 无警告 build、regression 1/1、TAP 41/41 通过；18.4 `pg_config` 被版本锁拒绝 | 功能测试：deterministic carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/NULL/error recovery、preload、prepared statement、snapshot、cancel/recovery、direct `INSERT ... SELECT` rollback/commit，以及外部 UDS 的 Unicode/NULL、断连、坏 digest、取消和清理。尚无模型/GPU 性能证据，rescan/EPQ/parallel 和更宽 query shape 未支持。 |
-| 中立 semantic plan/task/result + provider interface | `code/postgres/semloom_pg/src/{provider,provider_protocol,sem_scan}.c`、`gateway/` 与上述合同/TAP | 提交 `74c811e9` 在精确 18.3 上通过 C/Python digest、4-byte length frame、1 MiB 上限、外部进程 lifecycle 测试 | 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、in-process provider 和同步单在途 UDS `open/drive/close` 已实现。accepted-prefix backpressure、多在途/乱序或缺失 completion、显式 close disposition、direct HTTP 与 SemLoom adapter 尚未实现。 |
+| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；8 项静态 contract、7 项 Python protocol、PGXS SQL regression 与 TAP lifecycle tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `e4fa9f0a` 无警告 build、regression 1/1、TAP 52/52、Python/static 15/15 通过 | 功能测试：deterministic carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/error recovery、preload、prepared statement、snapshot、cancel/recovery、direct `INSERT ... SELECT` rollback/commit；plain EXPLAIN、LIMIT 0、zero-row child 与 NULL-only 执行不连接 provider，`PROPAGATE_NULL` 由 PostgreSQL 完成。外部 UDS 已验证 Unicode、断连、坏 digest、response/connect wait 取消、非 UTF8 拒绝和清理。尚无模型/GPU 性能证据，rescan/EPQ/parallel 和更宽 query shape 未支持。 |
+| PG-typed plan/task/result + provider seam | `code/postgres/semloom_pg/src/{provider,provider_protocol,sem_scan}.c`、`gateway/` 与上述合同/TAP | 提交 `e4fa9f0a` 在精确 18.3 上通过协议 v2 C/Python 分域 identity/payload/completion digest、4-byte length frame、1 MiB frame、174,080-byte 编码前输入上限与外部进程 lifecycle 测试；仓库外 `tap-run-e4fa9f0a/memory-smoke.txt` 对 2,000×100,000-byte task 采样 123 次，backend RSS 15,684–18,568 KiB，客户端/gateway 均为 0 退出 | SQL-visible semantic spec、数据库选择的 physical algorithm、具体 provider execution profile 分别使用独立 digest，物理 mapped-column 不进入 wire identity；per-drive scratch 未观察到随 200 MB 累计输入线性增长。`Datum/Oid/MemoryContext` 等 PostgreSQL 类型仍需从 neutral port 移出；accepted-prefix、多在途/乱序或缺失 completion、显式 close disposition、direct HTTP 与 SemLoom adapter 尚未实现。RSS 为一次功能 smoke，不是性能结论。 |
 | extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | 尚未完成 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives 反例审查；不能声称 core 必须或无需修改。 |
 | IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |
 | `SemFilter` 关系语义 | PostgreSQL semantic operator 第二算子；当前不存在 | 无 | 三值/NULL/error policy 与乱序 completion 下的 cardinality 行为尚未验证。 |
@@ -175,11 +175,10 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 
 以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
 
-1. 在已验证的同步单在途 UDS slice 上实现 accepted-prefix backpressure、多在途/乱序 completion、
-   有界 reorder 与显式 early-stop close disposition。
-2. 完成 extension/core carrier audit；能表达目标 LOTUS/Cortex alternatives 时保留 extension，只有已复现阻断才增加最小 core patch。
-3. 抽取增量 SemLoom session，接 direct HTTP/SemLoom adapters；以 `SemFilter` 验证 cardinality 和首条 semantic alternative。
-4. 数据库资格完成后比较 IMLane-like database batch 与 SemLoom rebatching；Kalypso-like lineage/prefix
+1. 拆分 PostgreSQL-owned scan/pump、neutral provider port、recording adapter 与 UDS/wire adapter，保持现有同步纵切面测试不变。
+2. 实现 exact `SemFilter` reference path，验证三值/NULL/error policy、cardinality、tuple identity、LIMIT 与 transaction lifecycle。
+3. 增加 deterministic、显式可识别的 `SemFilter` 第二 physical path，再完成 extension/core carrier audit；只有已复现阻断才增加最小 core patch。
+4. 数据库资格完成后扩 accepted-prefix、多在途、增量 SemLoom session 与 direct HTTP/SemLoom adapters，并比较 IMLane-like database batch 与 SemLoom rebatching；Kalypso-like lineage/prefix
    lease 仅作后续参考，满足前置证据后再决定是否立项。
 5. 前四项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
 6. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
