@@ -1,0 +1,37 @@
+#ifndef SEMLOOM_WIRE_V2_H
+#define SEMLOOM_WIRE_V2_H
+
+#include "postgres.h"
+
+#include "ai_provider_port.h"
+
+#define SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2
+#define SEMLOOM_WIRE_V2_MAX_FRAME_BYTES (1024 * 1024)
+#define SEMLOOM_WIRE_V2_MAX_INPUT_BYTES ((SEMLOOM_WIRE_V2_MAX_FRAME_BYTES - 4096) / 6)
+#define SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH 64
+
+typedef struct SemloomWireV2Identity
+{
+	const char *provider_execution_id;
+	char semantic_spec_digest[SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH + 1];
+	char physical_algorithm_digest[SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH + 1];
+	char provider_execution_digest[SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH + 1];
+} SemloomWireV2Identity;
+
+extern void semloom_wire_v2_identity_init(const AiOpenSpec *spec,
+										  const char *provider_execution_id,
+										  SemloomWireV2Identity *identity);
+extern AiProviderStatus semloom_wire_v2_open(pgsocket socket_fd,
+										 const AiOpenSpec *spec,
+										 const SemloomWireV2Identity *identity,
+										 AiProviderError *error);
+extern AiProviderStatus semloom_wire_v2_drive(pgsocket socket_fd,
+										  const AiPreparedTask *task,
+										  const SemloomWireV2Identity *identity,
+										  AiCompletion *completion,
+										  AiProviderError *error);
+extern AiProviderStatus semloom_wire_v2_wait_connected(pgsocket socket_fd,
+												   AiProviderError *error);
+extern void semloom_wire_v2_wait_connect_retry(void);
+
+#endif

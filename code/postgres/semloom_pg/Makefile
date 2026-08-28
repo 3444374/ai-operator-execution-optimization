@@ -4,9 +4,12 @@ OBJS = \
 	src/extension.o \
 	src/marker.o \
 	src/provider.o \
-	src/provider_protocol.o \
+	src/recording_provider.o \
 	src/sem_path.o \
-	src/sem_scan.o
+	src/sem_pump.o \
+	src/sem_scan.o \
+	src/uds_provider.o \
+	src/wire_v2.o
 
 DATA = sql/semloom_pg--0.1.0.sql
 REGRESS = semloom_pg
