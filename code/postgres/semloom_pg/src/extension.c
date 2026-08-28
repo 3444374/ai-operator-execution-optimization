@@ -3,12 +3,14 @@
 #include "fmgr.h"
 #include "optimizer/planner.h"
 #include "parser/parse_func.h"
+#include "utils/guc.h"
 
 #include "semloom_pg.h"
 
 PG_MODULE_MAGIC;
 
 static create_upper_paths_hook_type previous_create_upper_paths_hook = NULL;
+static char *semloom_gateway_socket = NULL;
 
 static void semloom_create_upper_paths(PlannerInfo *root,
 									   UpperRelationKind stage,
@@ -28,6 +30,12 @@ semloom_map_function_oid(void)
 	return LookupFuncName(qualified_name, lengthof(argument_types), argument_types, true);
 }
 
+const char *
+semloom_gateway_socket_path(void)
+{
+	return semloom_gateway_socket == NULL ? "" : semloom_gateway_socket;
+}
+
 bool
 semloom_is_map_function(Oid function_oid)
 {
@@ -39,6 +47,16 @@ semloom_is_map_function(Oid function_oid)
 void
 _PG_init(void)
 {
+	DefineCustomStringVariable("semloom_pg.gateway_socket",
+							   "Unix-domain socket for the external recording provider.",
+							   NULL,
+							   &semloom_gateway_socket,
+							   "",
+							   PGC_USERSET,
+							   0,
+							   NULL,
+							   NULL,
+							   NULL);
 	RegisterCustomScanMethods(&semloom_scan_methods);
 	previous_create_upper_paths_hook = create_upper_paths_hook;
 	create_upper_paths_hook = semloom_create_upper_paths;

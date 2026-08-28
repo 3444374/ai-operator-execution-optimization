@@ -79,6 +79,21 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("semloom_provider_close", scan_source)
         self.assertNotIn("SEMLOOM_RECORDING_PREFIX", scan_source)
 
+    def test_recording_provider_has_a_bounded_uds_adapter(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        header = (EXTENSION_ROOT / "src" / "semloom_pg.h").read_text(encoding="utf-8")
+        provider_source = (EXTENSION_ROOT / "src" / "provider.c").read_text(encoding="utf-8")
+        gateway_source = (EXTENSION_ROOT / "gateway" / "protocol.py").read_text(encoding="utf-8")
+
+        self.assertIn("src/provider_protocol.o", makefile)
+        self.assertIn("SEMLOOM_PROTOCOL_VERSION", header)
+        self.assertIn("SEMLOOM_MAX_FRAME_BYTES", header)
+        self.assertIn("semloom_gateway_socket_path", provider_source)
+        self.assertIn("semloom_protocol_send_frame", provider_source)
+        self.assertIn("MemoryContextRegisterResetCallback", provider_source)
+        self.assertIn("MAX_INFLIGHT_TASKS = 1", gateway_source)
+        self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_source)
+
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")
         regression_expected = (EXTENSION_ROOT / "expected" / "semloom_pg.out").read_text(

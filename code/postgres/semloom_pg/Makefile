@@ -4,6 +4,7 @@ OBJS = \
 	src/extension.o \
 	src/marker.o \
 	src/provider.o \
+	src/provider_protocol.o \
 	src/sem_path.o \
 	src/sem_scan.o
 
