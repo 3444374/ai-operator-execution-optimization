@@ -8,6 +8,7 @@
 #include "catalog/pg_type_d.h"
 #include "lib/stringinfo.h"
 #include "mb/pg_wchar.h"
+#include "miscadmin.h"
 #include "storage/fd.h"
 #include "utils/builtins.h"
 #include "utils/fmgrprotos.h"
