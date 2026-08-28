@@ -41,6 +41,14 @@ sub finish_recording_gateway
 	  or diag($$stderr);
 }
 
+sub error_signature
+{
+	my ($stderr) = @_;
+	my ($sqlstate, $message) =
+	  $stderr =~ /^.*?ERROR:\s+([0-9A-Z]{5}):\s+(.+)$/m;
+	return ($sqlstate // '', $message // '');
+}
+
 sub provider_error_signature
 {
 	my ($node, $socket_path, $fixture) = @_;
@@ -55,15 +63,14 @@ sub provider_error_signature
 SET semloom_pg.gateway_socket = '$socket_path';
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
-WHERE payload = 'alpha';});
+	WHERE payload = 'alpha';});
 	isnt($ret, 0, "$fixture completion fails closed");
-	my ($sqlstate, $message) =
-	  $stderr =~ /^.*?ERROR:\s+([0-9A-Z]{5}):\s+(.+)$/m;
-	ok(defined($sqlstate) && defined($message), "$fixture exposes an error signature")
+	my ($sqlstate, $message) = error_signature($stderr);
+	ok($sqlstate ne '' && $message ne '', "$fixture exposes an error signature")
 	  or diag($stderr);
 	unlike($stderr, qr/alpha/, "$fixture error does not expose the task payload");
 	finish_recording_gateway($gateway, $socket_path, $gateway_stderr);
-	return ($sqlstate // '', $message // '');
+	return ($sqlstate, $message);
 }
 
 my $node = PostgreSQL::Test::Cluster->new('semloom_pg');
@@ -242,13 +249,35 @@ SELECT count(*) FROM semloom_sink WHERE completion IS NULL;}),
 
 ($ret, $stdout, $stderr) = $node->psql(
 	'postgres',
-	qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$missing_gateway_socket';
 SELECT ai_semantic.map(repeat(payload, 200000))
 FROM semloom_documents
 WHERE payload = 'alpha';});
 isnt($ret, 0, 'oversized input fails before provider connection');
-like($stderr, qr/input exceeds .* byte limit/, 'oversized input reports its pre-encoding limit');
+my ($sqlstate, $message) = error_signature($stderr);
+is($sqlstate, '54000', 'oversized input preserves its SQLSTATE');
+is(
+	$message,
+	'SemLoom provider input exceeds the 174080 byte limit',
+	'oversized input preserves its pre-encoding limit message');
 unlike($stderr, qr/could not connect/, 'oversized input does not attempt a provider connection');
+
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';});
+isnt($ret, 0, 'missing UDS provider fails the first non-NULL task');
+($sqlstate, $message) = error_signature($stderr);
+is($sqlstate, 'XX000', 'missing UDS provider preserves socket-access SQLSTATE');
+like(
+	$message,
+	qr/^could not connect to SemLoom provider socket:/,
+	'missing UDS provider preserves its operation prefix');
+unlike($stderr, qr/\Q$missing_gateway_socket\E/, 'socket failure does not expose its path');
 
 my ($gateway, $gateway_stdout, $gateway_stderr) =
   start_recording_gateway($gateway_socket);
@@ -294,12 +323,18 @@ finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
   start_recording_gateway($gateway_socket, '--test-tamper-evidence-digest');
 ($ret, $stdout, $stderr) = $node->psql(
 	'postgres',
-	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
 WHERE payload = 'alpha';});
 isnt($ret, 0, 'tampered completion evidence fails closed');
-like($stderr, qr/evidence digest does not match/, 'digest failure is reported without payload text');
+($sqlstate, $message) = error_signature($stderr);
+is($sqlstate, '08P01', 'tampered completion evidence preserves its SQLSTATE');
+is(
+	$message,
+	'SemLoom provider completion evidence digest does not match',
+	'tampered completion evidence preserves its redacted message');
 unlike($stderr, qr/alpha/, 'digest failure does not echo the task payload');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
@@ -307,12 +342,18 @@ finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
   start_recording_gateway($gateway_socket, '--test-disconnect-on-task');
 ($ret, $stdout, $stderr) = $node->psql(
 	'postgres',
-	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
 WHERE payload = 'alpha';});
 isnt($ret, 0, 'gateway disconnect fails the query');
-like($stderr, qr/disconnected before completing a frame/, 'disconnect does not guess task acceptance');
+($sqlstate, $message) = error_signature($stderr);
+is($sqlstate, '08006', 'gateway disconnect preserves its SQLSTATE');
+is(
+	$message,
+	'SemLoom provider disconnected before completing a frame',
+	'disconnect preserves its redacted message');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 ($gateway, $gateway_stdout, $gateway_stderr) =
@@ -352,10 +393,16 @@ CREATE TABLE semloom_documents (payload text);
 INSERT INTO semloom_documents VALUES ('alpha');});
 ($ret, $stdout, $stderr) = $node->psql(
 	'semloom_latin1',
-	qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$missing_gateway_socket';
 SELECT ai_semantic.map(payload) FROM semloom_documents;});
 isnt($ret, 0, 'UDS provider rejects a non-UTF8 database before connection');
-like($stderr, qr/requires UTF8 database encoding/, 'encoding failure states the wire requirement');
+($sqlstate, $message) = error_signature($stderr);
+is($sqlstate, '0A000', 'non-UTF8 database rejection preserves its SQLSTATE');
+is(
+	$message,
+	'SemLoom UDS recording provider requires UTF8 database encoding',
+	'encoding failure preserves the wire requirement message');
 unlike($stderr, qr/could not connect/, 'encoding validation does not attempt a provider connection');
 
 $node->stop;
