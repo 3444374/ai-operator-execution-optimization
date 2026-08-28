@@ -3,8 +3,9 @@
 更新日期：2026-08-28
 状态：`current / architecture-defined / implementation-in-progress`
 当前实现事实：`code/postgres/semloom_pg/` 已有 PostgreSQL planner-visible `SemMap`
-`CustomPath/CustomScan` capability spike 和静态 fail-closed tests；`REL_18_3` PGXS/regression、统一
-execution-provider 协议与 Sema/LOTUS 兼容适配器仍待完成。既有 PostgreSQL source/sink、
+`CustomPath/CustomScan` capability spike；`REL_18_3` PGXS regression 与 preload/prepared-plan/
+snapshot/cancel TAP 已通过。统一 execution-provider 协议、`INSERT ... SELECT` 和 Sema/LOTUS
+兼容适配器仍待完成。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，完成 exact `SemMap`/`SemFilter`、一个普通关系 child
 plan、query-scoped provider session，以及一条最小、显式可识别的 `SemFilter` 第二 physical path。

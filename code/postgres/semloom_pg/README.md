@@ -17,9 +17,14 @@ The current supported query shape is deliberately narrow:
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
 sorting, set operations, row locks, set-returning targets, nested marker use, and marker use outside
 the target list. The executor rejects backward scan, mark/restore, rescan, and EPQ. Parallel execution
-is disabled. `INSERT ... SELECT`, query-cancel TAP coverage, provider sessions, wire framing, retries,
-and external model calls remain pending; this slice must not be described as a complete database AI
+is disabled. `INSERT ... SELECT`, provider sessions, wire framing, retries, and external model calls remain
+pending; this slice must not be described as a complete database AI
 operator.
+
+The PGXS regression covers EXPLAIN identity, ordinary filters/projections, duplicate payloads, expression
+inputs, `NULL`, `LIMIT 0/1`, early-stop counters, error recovery, and fail-closed unsupported shapes. TAP
+starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared statement, repeatable-read
+snapshot visibility, child-plan cancellation, and successful execution after cancellation.
 
 The planner hook must be loaded before a statement containing the marker is planned. The regression
 script loads the library in its session. A persistent deployment must put `semloom_pg` in
@@ -37,4 +42,6 @@ make PG_CONFIG=/path/to/postgresql-18.3/bin/pg_config installcheck
 
 `installcheck` uses the standard PGXS regression harness and expects an already running PostgreSQL
 18.3 server. Set `PGHOST`, `PGPORT`, and `PGUSER` for that server as needed. Existing PostgreSQL 18.4
-deployments are compatibility/rehearsal environments and do not substitute for this qualification.
+deployments are compatibility/rehearsal environments and do not substitute for this qualification. The
+PostgreSQL build must include `--enable-tap-tests`; run the test target as a non-root user because TAP creates
+an additional temporary cluster.

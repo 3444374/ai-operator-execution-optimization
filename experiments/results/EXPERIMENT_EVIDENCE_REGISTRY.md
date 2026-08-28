@@ -20,7 +20,7 @@
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/` capability spike；正在验证 | 本地静态测试通过；服务器 `REL_18_3` PGXS/regression 待完成 | 仅为 deterministic recording carrier；SQL、child plan、snapshot、cancel/error/result lifecycle 尚未形成完整证据。 |
+| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；6 项静态 contract tests、PGXS SQL regression、TAP lifecycle | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `6555dd7f` 无警告 PGXS build，regression 1/1、TAP 9/9 通过；18.4 `pg_config` 被版本锁拒绝 | 功能测试：deterministic recording carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/NULL/error recovery、preload fail-closed、prepared statement、repeatable-read snapshot、cancel/recovery。尚无外部 provider/GPU 性能证据，`INSERT ... SELECT`、rescan/EPQ/parallel 和更宽 query shape 未支持。 |
 | 中立 semantic plan/task/result + provider interface | `code/src/execution_provider/` 目标；当前不存在 | 无 | `open/drive/close`、UDS recording、direct HTTP、SemLoom adapters 以及 digest/backpressure/cancel 合同均尚未实现。 |
 | extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | 尚未完成 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives 反例审查；不能声称 core 必须或无需修改。 |
 | IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |

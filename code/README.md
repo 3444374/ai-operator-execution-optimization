@@ -6,8 +6,10 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 Status as of 2026-08-28: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
-PostgreSQL planner-visible AI semantic operator, the neutral plan/task/result contracts, or an execution-provider
-gateway. The active sequence is the `REL_18_3` extension `SemMap` capability, `open/drive/close` plus a UDS
+complete PostgreSQL AI semantic operator, the neutral plan/task/result contracts, or an execution-provider
+gateway. It now includes a narrow `REL_18_3` planner-visible `SemMap` recording capability under
+`postgres/semloom_pg/`; PGXS regression and TAP lifecycle tests cover its current query shape. The active
+sequence continues with `open/drive/close` plus a UDS
 recording gateway, an extension-versus-minimal-core carrier audit, an incremental SemLoom session, and then
 HTTP/SemLoom providers plus `SemFilter`; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional

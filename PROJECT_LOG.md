@@ -7978,3 +7978,19 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `core,text,image,analysis` capability preflight 状态为 `ok`，完整 1,341 项测试全部通过；测试后无
   Ray 残留进程，GPU 均为 0%/1 MiB 且无计算进程。服务器日志保存在仓库外
   `/root/autodl-tmp/experiment-artifacts/semloom_validation_c551abca/`；本次未启动模型服务或 GPU 实验。
+
+## 2026-08-28 PostgreSQL 18.3 SemMap capability spike
+
+- 将当前 semantic carrier 资格目标从 `REL_18_4` 修正为 `REL_18_3`，保留既有 PG18.4
+  external-execution/rehearsal 证据的历史版本，不做全局替换。`semloom_pg` Makefile 读取
+  `pg_config --version` 并拒绝非 18.3 构建。
+- 新增 fail-closed `ai_semantic.map(text)` marker、final upper-rel `CustomPath/CustomScan`、ordinary
+  child plan 和逐 tuple recording executor。首个 server run 暴露手工 `INDEX_VAR` 与 PostgreSQL
+  `set_customscan_references()` 冲突；改由 core 完成引用改写后，filter/projection、表达式输入、
+  `NULL`、重复 payload、LIMIT 0/1 和错误恢复均通过。
+- 在服务器数据盘从 PostgreSQL 官方 `REL_18_3` tag（commit `62d6c7d3…`）构建独立 prefix 和
+  socket-only 临时集群，未降级或覆盖既有 18.4 PGDATA。提交 `6555dd7f` 的无警告 PGXS build、
+  SQL regression 1/1 与 TAP 9/9 通过；TAP 覆盖 missing-preload fail-closed、prepared statement、
+  repeatable-read snapshot、child cancel 和 cancel 后恢复。18.4 `pg_config` 被版本锁按预期拒绝。
+- 当前证据只支持受限 recording carrier 的功能正确性；`INSERT ... SELECT`、rescan/EPQ/parallel、
+  中立 plan/task/result、UDS gateway、外部 provider、`SemFilter` 与 GPU 性能仍为 pending。

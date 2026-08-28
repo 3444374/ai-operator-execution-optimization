@@ -858,6 +858,39 @@ sudo -u postgres psql -d ai_operator -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 **版本边界**:云上 **PG 18.4(apt)≈ 本机 PG 18.4(Docker)**(对齐,仅安装方式不同);公司平台为 18.3,二者不等同。CSV 记 `server_version`,报告标注。(2026-07-27 由 PG16 改为 PG18.4,与本地 baseline 对齐;原 PG16 是保守默认,已废弃。)
 
+### 6.2 PostgreSQL 18.3 semantic carrier 隔离验证
+
+`semloom_pg` 的当前资格目标是官方 `REL_18_3`，不是上述 PG18.4 external-execution baseline。
+不得降级、覆盖或复用现有 18.4 PGDATA；在数据盘使用独立 source/build/prefix/PGDATA/socket，测试端口
+也不得与 5432 重合。当前核对的官方 tag commit 是
+`62d6c7d3df6287f1bd83199c1a746e50d31571a0`；后续 tag 指向不一致时停止构建并重新审计。
+
+```bash
+PG18_3_SOURCE=/root/autodl-tmp/toolchains/postgresql-18.3-src
+PG18_3_BUILD=/root/autodl-tmp/toolchains/postgresql-18.3-build
+PG18_3_PREFIX=/root/autodl-tmp/toolchains/postgresql-18.3
+
+source /etc/network_turbo >/dev/null 2>&1
+git clone --branch REL_18_3 --depth 1 https://github.com/postgres/postgres.git "$PG18_3_SOURCE"
+unset http_proxy https_proxy
+git -C "$PG18_3_SOURCE" describe --tags --exact-match
+git -C "$PG18_3_SOURCE" rev-parse HEAD
+
+mkdir -p "$PG18_3_BUILD" "$PG18_3_PREFIX"
+cd "$PG18_3_BUILD"
+"$PG18_3_SOURCE/configure" --prefix="$PG18_3_PREFIX" --without-icu --enable-tap-tests
+make -j16
+make install
+"$PG18_3_PREFIX/bin/pg_config" --version
+```
+
+`--enable-tap-tests` 需要系统 Perl 的 `IPC::Run`；Ubuntu 对应 `libipc-run-perl`。扩展必须显式使用
+18.3 `pg_config`，其 Makefile 会拒绝 18.4。`initdb` 与 TAP 不能由 root 运行；创建仓库外、由
+`postgres` 拥有的测试/产物目录后，以 `postgres` 用户启动 socket-only 临时集群和执行
+`make installcheck`。验证至少包含 PGXS regression、TAP、错误后恢复和版本拒绝；测试完成后停止
+临时集群。pgvector 不参与这个 carrier slice，到 writeback/quality 阶段再用同一 18.3
+`pg_config` 编译锁定版本。
+
 ---
 
 ## 7. workload 数据

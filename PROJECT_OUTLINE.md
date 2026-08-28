@@ -33,7 +33,9 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `implementation-not-started`，不能把既有 profiler/manifest 实验重标为数据库内算子结果。
+当前状态是 `capability-slice-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
+通过 PGXS 与生命周期 TAP，但中立 provider、`SemFilter`、载体反例审查和外部模型路径尚未实现；
+不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 SAOR 系统对照准备记录（历史）
 
