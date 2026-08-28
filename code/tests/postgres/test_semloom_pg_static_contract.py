@@ -76,12 +76,16 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("SEMLOOM_RECORDING_SPEC_ID", header)
         self.assertIn("physical_algorithm", header)
         self.assertNotIn("mapped_column", header)
+        self.assertIn("semantic_spec_digest", header)
+        self.assertIn("physical_algorithm_digest", header)
+        self.assertIn("provider_execution_digest", header)
         self.assertIn("semloom_provider_open", provider_source)
         self.assertIn("semloom_provider_drive", provider_source)
         self.assertIn("semloom_provider_close", provider_source)
         self.assertIn("semloom_provider_open", scan_source)
         self.assertIn("semloom_provider_drive", scan_source)
         self.assertIn("semloom_provider_close", scan_source)
+        self.assertIn("es_query_cxt", scan_source)
         self.assertNotIn("SEMLOOM_RECORDING_PREFIX", scan_source)
 
     def test_recording_provider_has_a_bounded_uds_adapter(self) -> None:

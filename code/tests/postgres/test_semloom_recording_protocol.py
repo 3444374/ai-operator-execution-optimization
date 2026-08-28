@@ -22,20 +22,32 @@ from protocol import (  # noqa: E402
     RECORDING_ALGORITHM,
     RECORDING_SPEC_ID,
     RECORDING_SPEC_VERSION,
+    UDS_EXECUTION_ID,
     completion_evidence_digest,
     encode_frame,
-    plan_digest,
+    physical_algorithm_digest,
+    provider_execution_digest,
     read_frame,
     run_recording_session,
     semantic_payload_digest,
+    semantic_spec_digest,
 )
+
+
+def _identity_fields() -> dict[str, str]:
+    return {
+        "semantic_spec_digest": semantic_spec_digest(),
+        "physical_algorithm_digest": physical_algorithm_digest(),
+        "provider_execution_digest": provider_execution_digest(),
+    }
 
 
 def _open_message() -> dict[str, object]:
     return {
         "type": "open",
         "protocol_version": PROTOCOL_VERSION,
-        "plan_digest": plan_digest(),
+        **_identity_fields(),
+        "provider_execution_id": UDS_EXECUTION_ID,
         "operator_kind": "SEM_MAP",
         "semantic_spec_id": RECORDING_SPEC_ID,
         "semantic_spec_version": RECORDING_SPEC_VERSION,
@@ -50,8 +62,16 @@ def _open_message() -> dict[str, object]:
 class SemloomRecordingProtocolTests(unittest.TestCase):
     def test_digest_golden_vectors_cover_unicode_and_null(self) -> None:
         self.assertEqual(
-            plan_digest(),
-            "8792923dc3f4906b1493a5e0c9f97521cea1a647ca9529187e6f1ad1bf72e673",
+            semantic_spec_digest(),
+            "83f62acc5bc7fcc92644d949d05c359f53ea610cda240fcff0f3a3938c7f0df1",
+        )
+        self.assertEqual(
+            physical_algorithm_digest(),
+            "3bfda6657ed427401fe64f723680caa18e9daf112bbb8694bf3efdd3c9344936",
+        )
+        self.assertEqual(
+            provider_execution_digest(),
+            "7154a5805b8ca4d5b56c4aa5401a592e636ae98a70aea448b8961fb0bbab528c",
         )
         self.assertEqual(
             semantic_payload_digest("héllo世界"),
@@ -63,12 +83,14 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         )
         self.assertEqual(
             completion_evidence_digest(
-                plan_sha256=plan_digest(),
+                semantic_spec_sha256=semantic_spec_digest(),
+                physical_algorithm_sha256=physical_algorithm_digest(),
+                provider_execution_sha256=provider_execution_digest(),
                 payload_sha256=semantic_payload_digest("héllo世界"),
                 sequence=7,
                 output="recorded:héllo世界",
             ),
-            "5bdb2fac32372ec5bfb79de4b4a468c24779f0636a00e4bd7f8269177445ce89",
+            "2e24050b5a1bd18d3475d47d0e1f0cffaa50e17f088134c51a6a33f118bd32a0",
         )
 
     def test_fragmented_and_coalesced_frames_complete_a_unicode_task(self) -> None:
@@ -77,14 +99,13 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        plan_sha256 = plan_digest()
         payload_sha256 = semantic_payload_digest("héllo世界")
         opened = _open_message()
         task = {
             "type": "task",
             "protocol_version": PROTOCOL_VERSION,
             "sequence": "0",
-            "plan_digest": plan_sha256,
+            **_identity_fields(),
             "payload_digest": payload_sha256,
             "is_null": False,
             "input": "héllo世界",
@@ -99,6 +120,13 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         self.assertEqual(open_response["max_inflight_tasks"], 1)
         self.assertEqual(open_response["max_frame_bytes"], MAX_FRAME_BYTES)
         self.assertEqual(open_response["max_input_bytes"], MAX_INPUT_BYTES)
+        self.assertEqual(open_response["semantic_spec_digest"], semantic_spec_digest())
+        self.assertEqual(
+            open_response["physical_algorithm_digest"], physical_algorithm_digest()
+        )
+        self.assertEqual(
+            open_response["provider_execution_digest"], provider_execution_digest()
+        )
         self.assertEqual(completion["type"], "completion")
         self.assertEqual(completion["output"], "recorded:héllo世界")
         self.assertEqual(completion["payload_digest"], payload_sha256)
@@ -113,10 +141,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        plan_sha256 = plan_digest()
-        client.sendall(
-            encode_frame(_open_message())
-        )
+        client.sendall(encode_frame(_open_message()))
         self.assertEqual(read_frame(client)["type"], "opened")
         client.sendall(
             encode_frame(
@@ -124,7 +149,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                     "type": "task",
                     "protocol_version": PROTOCOL_VERSION,
                     "sequence": "0",
-                    "plan_digest": plan_sha256,
+                    **_identity_fields(),
                     "payload_digest": "0" * 64,
                     "is_null": False,
                     "input": "do-not-log-this",
@@ -166,6 +191,22 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread2.join(timeout=1)
         self.assertFalse(thread2.is_alive())
 
+    def test_boolean_semantic_spec_version_fails_closed(self) -> None:
+        client, server = socket.socketpair()
+        thread = threading.Thread(target=run_recording_session, args=(server,))
+        thread.start()
+        self.addCleanup(client.close)
+
+        message = _open_message()
+        message["semantic_spec_version"] = True
+        client.sendall(encode_frame(message))
+        self.assertEqual(
+            read_frame(client),
+            {"type": "error", "code": "unsupported_semantic_spec_version"},
+        )
+        thread.join(timeout=1)
+        self.assertFalse(thread.is_alive())
+
     def test_disconnect_on_task_yields_no_completion(self) -> None:
         client, server = socket.socketpair()
         thread = threading.Thread(
@@ -176,10 +217,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        plan_sha256 = plan_digest()
-        client.sendall(
-            encode_frame(_open_message())
-        )
+        client.sendall(encode_frame(_open_message()))
         self.assertEqual(read_frame(client)["type"], "opened")
         client.sendall(
             encode_frame(
@@ -187,7 +225,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                     "type": "task",
                     "protocol_version": PROTOCOL_VERSION,
                     "sequence": "0",
-                    "plan_digest": plan_sha256,
+                    **_identity_fields(),
                     "payload_digest": semantic_payload_digest("alpha"),
                     "is_null": False,
                     "input": "alpha",
@@ -209,10 +247,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                 thread = threading.Thread(target=run_recording_session, args=(server,))
                 thread.start()
 
-                plan_sha256 = plan_digest()
-                client.sendall(
-                    encode_frame(_open_message())
-                )
+                client.sendall(encode_frame(_open_message()))
                 self.assertEqual(read_frame(client)["type"], "opened")
                 client.sendall(
                     encode_frame(
@@ -220,7 +255,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                             "type": "task",
                             "protocol_version": PROTOCOL_VERSION,
                             "sequence": "0",
-                            "plan_digest": plan_sha256,
+                            **_identity_fields(),
                             "payload_digest": semantic_payload_digest(input_value),
                             "is_null": is_null,
                             "input": input_value,

@@ -29,7 +29,10 @@ struct SemloomProviderSession
 	bool external_fd_acquired;
 	pgsocket socket_fd;
 	char *socket_path;
-	char plan_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+	const char *provider_execution_id;
+	char semantic_spec_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+	char physical_algorithm_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+	char provider_execution_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	uint64 accepted_rows;
 	uint64 emitted_rows;
 	MemoryContext scratch_context;
@@ -81,10 +84,16 @@ semloom_provider_open(const SemloomSemanticPlanSpec *plan_spec)
 	socket_path = semloom_gateway_socket_path();
 	session->socket_path = pstrdup(socket_path);
 	session->uses_uds = socket_path[0] != '\0';
+	session->provider_execution_id = session->uses_uds ?
+		SEMLOOM_UDS_EXECUTION_ID : SEMLOOM_IN_PROCESS_EXECUTION_ID;
 	session->scratch_context = AllocSetContextCreate(CurrentMemoryContext,
 												 "SemLoom provider drive scratch",
 												 ALLOCSET_DEFAULT_SIZES);
-	semloom_protocol_plan_digest(plan_spec, session->plan_digest);
+	semloom_protocol_semantic_spec_digest(plan_spec, session->semantic_spec_digest);
+	semloom_protocol_physical_algorithm_digest(plan_spec,
+											 session->physical_algorithm_digest);
+	semloom_protocol_provider_execution_digest(session->provider_execution_id,
+											 session->provider_execution_digest);
 	session->cleanup_callback.func = semloom_provider_cleanup;
 	session->cleanup_callback.arg = session;
 	MemoryContextRegisterResetCallback(CurrentMemoryContext,
@@ -245,14 +254,20 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 	initStringInfo(&request);
 	appendStringInfo(&request,
 					 "{\"type\":\"open\",\"protocol_version\":%d,"
-					 "\"plan_digest\":\"%s\",\"operator_kind\":\"SEM_MAP\","
+					 "\"semantic_spec_digest\":\"%s\","
+					 "\"physical_algorithm_digest\":\"%s\","
+					 "\"provider_execution_digest\":\"%s\","
+					 "\"provider_execution_id\":\"%s\",\"operator_kind\":\"SEM_MAP\","
 					 "\"semantic_spec_id\":\"%s\",\"semantic_spec_version\":%u,"
 					 "\"physical_algorithm\":\"%s\","
 					 "\"null_policy\":\"PROPAGATE_NULL\","
 					 "\"error_policy\":\"FAIL_QUERY\","
 					 "\"input_type\":\"text\",\"output_type\":\"text\"}",
 					 SEMLOOM_PROTOCOL_VERSION,
-					 session->plan_digest,
+					 session->semantic_spec_digest,
+					 session->physical_algorithm_digest,
+					 session->provider_execution_digest,
+					 session->provider_execution_id,
 					 session->plan_spec.semantic_spec_id,
 					 session->plan_spec.semantic_spec_version,
 					 session->plan_spec.physical_algorithm);
@@ -260,9 +275,17 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 	pfree(request.data);
 	response = semloom_protocol_receive_frame(session->socket_fd);
 	message = semloom_parse_provider_json(response);
-	semloom_validate_response_type(message, "opened", 6);
+	semloom_validate_response_type(message, "opened", 8);
 	if (semloom_json_int32(message, "protocol_version") != SEMLOOM_PROTOCOL_VERSION ||
-		!semloom_json_string_equals(message, "plan_digest", session->plan_digest) ||
+		!semloom_json_string_equals(message,
+								"semantic_spec_digest",
+								session->semantic_spec_digest) ||
+		!semloom_json_string_equals(message,
+								"physical_algorithm_digest",
+								session->physical_algorithm_digest) ||
+		!semloom_json_string_equals(message,
+								"provider_execution_digest",
+								session->provider_execution_digest) ||
 		semloom_json_int32(message, "max_inflight_tasks") != 1 ||
 		semloom_json_int32(message, "max_frame_bytes") != SEMLOOM_MAX_FRAME_BYTES ||
 		semloom_json_int32(message, "max_input_bytes") != SEMLOOM_MAX_INPUT_BYTES)
@@ -314,11 +337,15 @@ semloom_provider_drive_uds(SemloomProviderSession *session,
 	initStringInfo(&request);
 	appendStringInfo(&request,
 					 "{\"type\":\"task\",\"protocol_version\":%d,"
-					 "\"sequence\":\"%s\",\"plan_digest\":\"%s\","
+					 "\"sequence\":\"%s\",\"semantic_spec_digest\":\"%s\","
+					 "\"physical_algorithm_digest\":\"%s\","
+					 "\"provider_execution_digest\":\"%s\","
 					 "\"payload_digest\":\"%s\",\"is_null\":%s,\"input\":",
 					 SEMLOOM_PROTOCOL_VERSION,
 					 sequence,
-					 session->plan_digest,
+					 session->semantic_spec_digest,
+					 session->physical_algorithm_digest,
+					 session->provider_execution_digest,
 					 payload_digest,
 					 "false");
 	escape_json_with_len(&request, input_data, input_length);
@@ -328,10 +355,18 @@ semloom_provider_drive_uds(SemloomProviderSession *session,
 
 	response = semloom_protocol_receive_frame(session->socket_fd);
 	message = semloom_parse_provider_json(response);
-	semloom_validate_response_type(message, "completion", 8);
+	semloom_validate_response_type(message, "completion", 10);
 	if (semloom_json_int32(message, "protocol_version") != SEMLOOM_PROTOCOL_VERSION ||
 		!semloom_json_string_equals(message, "sequence", sequence) ||
-		!semloom_json_string_equals(message, "plan_digest", session->plan_digest) ||
+		!semloom_json_string_equals(message,
+								"semantic_spec_digest",
+								session->semantic_spec_digest) ||
+		!semloom_json_string_equals(message,
+								"physical_algorithm_digest",
+								session->physical_algorithm_digest) ||
+		!semloom_json_string_equals(message,
+								"provider_execution_digest",
+								session->provider_execution_digest) ||
 		!semloom_json_string_equals(message, "payload_digest", payload_digest))
 		ereport(ERROR,
 				(errcode(ERRCODE_PROTOCOL_VIOLATION),
@@ -344,7 +379,9 @@ semloom_provider_drive_uds(SemloomProviderSession *session,
 		ereport(ERROR,
 				(errcode(ERRCODE_PROTOCOL_VIOLATION),
 				 errmsg("SemLoom provider completion has an invalid output")));
-	semloom_protocol_completion_digest(session->plan_digest,
+	semloom_protocol_completion_digest(session->semantic_spec_digest,
+									session->physical_algorithm_digest,
+									session->provider_execution_digest,
 									payload_digest,
 									task->sequence,
 									output_is_null,

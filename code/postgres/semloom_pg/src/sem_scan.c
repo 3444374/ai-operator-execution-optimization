@@ -21,6 +21,7 @@ static Node *semloom_create_scan_state(CustomScan *scan);
 static void semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags);
 static TupleTableSlot *semloom_execute_scan(CustomScanState *node);
 static TupleTableSlot *semloom_next_tuple(ScanState *scan_state);
+static void semloom_open_provider(SemloomScanState *state);
 static bool semloom_recheck_tuple(ScanState *scan_state, TupleTableSlot *slot);
 static void semloom_end_scan(CustomScanState *node);
 static void semloom_rescan(CustomScanState *node);
@@ -130,7 +131,7 @@ semloom_next_tuple(ScanState *scan_state)
 				continue;
 			}
 			if (state->provider_session == NULL)
-				state->provider_session = semloom_provider_open(&state->plan_spec);
+				semloom_open_provider(state);
 			task.sequence = semloom_provider_accepted_rows(state->provider_session);
 			task.input_type = TEXTOID;
 			task.input = child_slot->tts_values[attribute_index];
@@ -150,6 +151,25 @@ semloom_next_tuple(ScanState *scan_state)
 	}
 
 	return ExecStoreVirtualTuple(scan_slot);
+}
+
+static void
+semloom_open_provider(SemloomScanState *state)
+{
+	MemoryContext owner_context = state->custom_state.ss.ps.state->es_query_cxt;
+	MemoryContext previous_context = MemoryContextSwitchTo(owner_context);
+
+	PG_TRY();
+	{
+		state->provider_session = semloom_provider_open(&state->plan_spec);
+		MemoryContextSwitchTo(previous_context);
+	}
+	PG_CATCH();
+	{
+		MemoryContextSwitchTo(previous_context);
+		PG_RE_THROW();
+	}
+	PG_END_TRY();
 }
 
 static bool

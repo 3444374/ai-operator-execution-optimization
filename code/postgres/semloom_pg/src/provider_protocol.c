@@ -11,9 +11,11 @@
 
 #include "semloom_pg.h"
 
-#define SEMLOOM_PLAN_DIGEST_DOMAIN "semloom-plan-v2\0"
+#define SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN "semloom-semantic-spec-v1\0"
+#define SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN "semloom-physical-algorithm-v1\0"
+#define SEMLOOM_PROVIDER_EXECUTION_DIGEST_DOMAIN "semloom-provider-execution-v1\0"
 #define SEMLOOM_PAYLOAD_DIGEST_DOMAIN "semloom-payload-v1\0"
-#define SEMLOOM_COMPLETION_DIGEST_DOMAIN "semloom-completion-v1\0"
+#define SEMLOOM_COMPLETION_DIGEST_DOMAIN "semloom-completion-v2\0"
 
 static void semloom_hash_begin(pg_cryptohash_ctx **context);
 static void semloom_hash_bytes(pg_cryptohash_ctx *context,
@@ -29,23 +31,53 @@ static void semloom_socket_read_all(pgsocket socket_fd, char *data, Size length)
 static void semloom_wait_for_socket(pgsocket socket_fd, int socket_event);
 
 void
-semloom_protocol_plan_digest(const SemloomSemanticPlanSpec *plan_spec,
-							 char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
+semloom_protocol_semantic_spec_digest(
+	const SemloomSemanticPlanSpec *plan_spec,
+	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
 {
 	pg_cryptohash_ctx *context;
 
 	semloom_hash_begin(&context);
 	semloom_hash_bytes(context,
-					   SEMLOOM_PLAN_DIGEST_DOMAIN,
-					   sizeof(SEMLOOM_PLAN_DIGEST_DOMAIN) - 1);
+					   SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN,
+					   sizeof(SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN) - 1);
 	semloom_hash_text(context, "SEM_MAP");
 	semloom_hash_text(context, plan_spec->semantic_spec_id);
 	semloom_hash_uint32(context, plan_spec->semantic_spec_version);
-	semloom_hash_text(context, plan_spec->physical_algorithm);
 	semloom_hash_text(context, "PROPAGATE_NULL");
 	semloom_hash_text(context, "FAIL_QUERY");
 	semloom_hash_text(context, "text");
 	semloom_hash_text(context, "text");
+	semloom_hash_finish(context, output);
+}
+
+void
+semloom_protocol_physical_algorithm_digest(
+	const SemloomSemanticPlanSpec *plan_spec,
+	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
+{
+	pg_cryptohash_ctx *context;
+
+	semloom_hash_begin(&context);
+	semloom_hash_bytes(context,
+					   SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN,
+					   sizeof(SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN) - 1);
+	semloom_hash_text(context, plan_spec->physical_algorithm);
+	semloom_hash_finish(context, output);
+}
+
+void
+semloom_protocol_provider_execution_digest(
+	const char *provider_execution_id,
+	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
+{
+	pg_cryptohash_ctx *context;
+
+	semloom_hash_begin(&context);
+	semloom_hash_bytes(context,
+					   SEMLOOM_PROVIDER_EXECUTION_DIGEST_DOMAIN,
+					   sizeof(SEMLOOM_PROVIDER_EXECUTION_DIGEST_DOMAIN) - 1);
+	semloom_hash_text(context, provider_execution_id);
 	semloom_hash_finish(context, output);
 }
 
@@ -71,7 +103,9 @@ semloom_protocol_payload_digest(bool is_null,
 
 void
 semloom_protocol_completion_digest(
-	const char plan_digest[SEMLOOM_SHA256_HEX_LENGTH + 1],
+	const char semantic_spec_digest[SEMLOOM_SHA256_HEX_LENGTH + 1],
+	const char physical_algorithm_digest[SEMLOOM_SHA256_HEX_LENGTH + 1],
+	const char provider_execution_digest[SEMLOOM_SHA256_HEX_LENGTH + 1],
 	const char payload_digest[SEMLOOM_SHA256_HEX_LENGTH + 1],
 	uint64 sequence,
 	bool is_null,
@@ -86,7 +120,9 @@ semloom_protocol_completion_digest(
 	semloom_hash_bytes(context,
 					   SEMLOOM_COMPLETION_DIGEST_DOMAIN,
 					   sizeof(SEMLOOM_COMPLETION_DIGEST_DOMAIN) - 1);
-	semloom_hash_bytes(context, plan_digest, SEMLOOM_SHA256_HEX_LENGTH);
+	semloom_hash_bytes(context, semantic_spec_digest, SEMLOOM_SHA256_HEX_LENGTH);
+	semloom_hash_bytes(context, physical_algorithm_digest, SEMLOOM_SHA256_HEX_LENGTH);
+	semloom_hash_bytes(context, provider_execution_digest, SEMLOOM_SHA256_HEX_LENGTH);
 	semloom_hash_bytes(context, payload_digest, SEMLOOM_SHA256_HEX_LENGTH);
 	semloom_hash_uint64(context, sequence);
 	semloom_hash_bytes(context, &null_flag, sizeof(null_flag));
