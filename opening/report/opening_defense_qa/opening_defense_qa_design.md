@@ -12,8 +12,9 @@
 - 以 `opening/report/opening_report.md` 为事实与叙事基线，以 `opening/claim_matrix.md` 和真实结果报告限制证据等级。
 - 已完成的工作用完成时；尚未完成的 PostgreSQL planner-visible AI 算子、完整状态感知方法和 SQL 计划级代价选择用将来时。
 - 统一表述为“PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化”；Sema 是数据库集成
-  架构参照，LOTUS 是可选兼容与 baseline；不修改 PostgreSQL core、vLLM continuous batching、
-  模型内部或 Ray scheduler。
+  架构参照，LOTUS 是可选兼容与 baseline；PostgreSQL 先采用 extension，只有目标 LOTUS/Cortex
+  plan optimization 出现已复现阻断时才维护最小 core semantic patch；不修改 vLLM continuous
+  batching、模型内部或 Ray scheduler。
 
 ## 3. 文档结构
 

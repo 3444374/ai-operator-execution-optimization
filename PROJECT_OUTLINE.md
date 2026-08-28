@@ -13,9 +13,11 @@
 
 ## 0. 当前优先级与历史记录范围
 
-当前最短路径是：先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证 SQL、ordinary
-child plan、snapshot 与 query lifecycle，再实现中立 plan/task/result 合同和 recording、remote HTTP、
-SemLoom execution provider，随后以 `SemFilter` 验证关系 cardinality 语义。上述步骤完成前不扩展
+当前最短路径是：锁定 `REL_18_4`，先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证
+SQL、ordinary child plan、snapshot 与 query lifecycle，再实现中立 plan/task/result 合同、
+`open/drive/close` 和 Unix-domain socket（UDS）recording gateway；随后审查 extension 是否足以承载
+目标 LOTUS/Cortex paths，只有已复现阻断才增加最小 core patch，再接增量 SemLoom 与 `SemFilter`。
+上述步骤完成前不扩展
 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
 算子结果。LOTUS v1.2.4 compatibility/native baseline 后置且不阻塞数据库核心。
 
@@ -26,12 +28,12 @@ GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated 
 
 数据库内 AI 语义算子的权威实施入口为
 [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)：
-参考 Sema-like 数据库原生语义算子设计，由 PostgreSQL extension/planner-visible operator 拥有 SQL、
-child plan、snapshot、semantic plan/result parsing 和 query lifecycle；中立 execution-provider
-interface 只接收数据库编译完成的任务。现有 Daft/Ray/static/SAOR 通过 SemLoom provider 接入，不能
-理解 SQL、PostgreSQL Plan 或修改 prompt/parser。LOTUS 仅作可选兼容 profile、相关系统和完整路径
-baseline。当前状态是 `implementation-not-started`，不能把既有 profiler/manifest 实验重标为数据库内
-算子结果。
+参考 Sema/Cortex 的数据库语义所有权、LOTUS 的 reference/optimized algorithms、IMLane 的 DB-runtime
+batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构参考。PostgreSQL 进程内 semantic
+module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
+extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
+编译完成的 sealed tasks。
+当前状态是 `implementation-not-started`，不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 SAOR 系统对照准备记录（历史）
 
@@ -101,8 +103,9 @@ PostgreSQL SQL AI operator
 
 对外口径：PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
-PostgreSQL extension 提供 SQL/planner/query-lifecycle seam，但不 fork PostgreSQL core；默认语义由
-中立 plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
+PostgreSQL extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
+或 lifecycle 出现可复现阻断，允许维护 `REL_18_4` 最小 core semantic patch。默认语义由中立
+plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
 是物理执行与验证平台，不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构
 或 GPU kernel，也不回到传统 GPU 查询算子。
 
@@ -193,9 +196,10 @@ SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE
 
 ```text
 PostgreSQL SQL `ai_semantic.map(...)`
-  -> planner-visible SemanticOperatorPlan / ordinary child plan
-  -> PreparedSemanticTask + bounded execution-provider session
-  -> recording | remote HTTP | SemLoom execution provider
+  -> extension CustomPath/CustomScan or conditional native semantic node
+  -> explicit reference/LOTUS-like/Cortex-like path + ordinary child plan
+  -> PreparedSemanticTask + bounded open/drive/close session
+  -> recording | direct HTTP | SemLoom execution provider
   -> SemLoom: Shared Cost Estimator + WorkDescriptor + Organizer
   -> SemLoom: Ray actor admission / shared credit / routing
   -> text: vLLM generation
@@ -380,18 +384,23 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. **PostgreSQL capability**：用 extension / planner-visible `SemMap` 的 deterministic prototype 证明
-   SQL、ordinary child plan、snapshot、cancel/error/result lifecycle；不连接 Python、HTTP 或 GPU。
-2. **中立 provider interface**：实现 plan/task/result digest、bounded submit/poll/cancel 和 recording、
-   remote HTTP、SemLoom provider，再用 `SemFilter` 验证关系 cardinality 语义。
-3. **兼容与 baseline**：LOTUS v1.2.4 compatibility 和未修改 native path 后置；它们不得覆盖默认语义
-   或阻塞前两项。Sema/LOTUS 原生完整路径与 matched provider comparison 分表解释。
-4. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+1. **PostgreSQL capability**：锁定 `REL_18_4`，用 extension / planner-visible `SemMap` deterministic
+   prototype 证明 SQL、ordinary child plan、snapshot、cancel/error/result lifecycle。
+2. **中立 provider interface**：实现 plan/task/result digest、bounded `open/drive/close` 与 UDS recording
+   gateway；不依赖模型验证 backpressure、early stop 和故障路径。
+3. **载体审查**：验证 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives；能表达
+   则保留 extension，只有已复现阻断才增加最小 core patch。
+4. **两条优化轴**：抽取增量 SemLoom session，用 `SemFilter` 建立首条 database semantic alternative；
+   数据库资格完成后优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作
+   条件满足后的参考方向，不计入当前完成范围。
+5. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
+   当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞前三项。
+6. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
    报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-5. **条件性恢复**：前两项通过后，再按
+7. **条件性恢复**：前四项通过后，再按
    `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
    system-level matched comparison 与小规模 pgvector 质量闭环。
-6. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+8. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
    full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
 历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，
@@ -403,7 +412,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分数读取。feeding-saturation 以同协议 bounded direct 为参照；未过门的臂不抽策略性能结论。raw rows/s、correct rows/s 和 service tokens/s 不得互相替代，语义失败必须保留在总行数分母。
 
-正式报告、论文、PPT 和图表不使用内部实验缩写。PG18.4 AutoDL 结果必须标为 rehearsal，不能冒充目标 PostgreSQL 18.3 平台结论。
+正式报告、论文、PPT 和图表不使用内部实验缩写。PG18.4 AutoDL 结果必须按实际链路标为 rehearsal，
+不能冒充已经验证 `REL_18_4` planner-visible semantic operator。
 
 ## 10. 同步入口
 

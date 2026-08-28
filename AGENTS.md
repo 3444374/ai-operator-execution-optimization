@@ -65,23 +65,27 @@ Claude Code 通过根 `CLAUDE.md` 导入本文件，并遵循相同的逐级读�
 - 图像 `AI_EMBED/AI_CLASSIFY` 用于跨模态验证，文本 `AI_COMPLETE` 是首版主场景；
 - PostgreSQL + pgvector 的 COPY + deferred index 是写回工程 baseline。
 
-项目不以 PostgreSQL core fork、PL/Python 逐行 HTTP UDF、LOTUS DataConnector 外拉、修改 vLLM
+项目不以广泛 PostgreSQL fork、PL/Python 逐行 HTTP UDF、LOTUS DataConnector 外拉、修改 vLLM
 continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU 查询算子或单纯产品集成为主线。
+允许在 `REL_18_4` extension capability 与 carrier audit 证明目标 LOTUS/Cortex 类优化或稳定 node lifecycle
+无法可靠表达后，维护受控的最小 core semantic patch；不得仅为“更原生”改 grammar、storage 或扩大 fork。
 “数据库内置”只表示 SQL/planner/query lifecycle 属于数据库，不表示 payload 不会传到外部服务。
 
 ## 3. 当前资格顺序
 
 当前实现按以下顺序推进：
 
-1. 用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
-   snapshot、cancel、error 和 result lifecycle；
-2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同和有界、可取消的
-   execution-provider interface，再接 recording、remote HTTP 与 SemLoom provider；
-3. 完成 `SemMap` 后以 `SemFilter` 验证关系 cardinality 语义；LOTUS 兼容和 native baseline 不阻塞
-   这三个数据库核心步骤；
-4. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
+1. 锁定 `REL_18_4`，用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary
+   child plan、snapshot、cancel、error 和 result lifecycle；
+2. 实现中立 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 合同与 `open/drive/close`
+   execution-provider interface，先接 UDS recording gateway；
+3. 审查 extension 对 plan identity、prepared-plan、hook coexistence 与目标 LOTUS/Cortex alternatives 的
+   支持；能表达则保留 extension，出现已复现阻断才增加最小 core semantic patch；
+4. 抽取增量 SemLoom scheduling session，再接 direct HTTP/SemLoom provider；以 `SemFilter` 验证关系
+   cardinality，并从第二条 physical path 开始验证数据库 semantic optimization；
+5. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
 
-在前三个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
+在前四个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
 emulated operator contract；不扩 GPU 参数矩阵，不继续调 SAOR，也不把它们写成已实现数据库内算子。
 当前状态只从 `PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和实验证据台账引用。
 

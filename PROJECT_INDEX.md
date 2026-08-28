@@ -22,7 +22,7 @@
 冲突处理顺序：原始结果/源码 > 领域权威入口 > `PROJECT_OUTLINE.md` > 快速说明 > 历史设计和
 实施计划。历史文件中的“当前”“下一步”只对其文件日期有效。
 
-规则按路径继承：根 `AGENTS.md` 始终生效，目标目录沿途的 `AGENTS.md` 只追加局部职责与门禁，
+规则按路径继承：根 `AGENTS.md` 始终生效，目标目录沿途的 `AGENTS.md` 只追加局部职责与验证要求，
 README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根入口，不再复制或无条件导入
 所有子目录规则。根“文档受众与对外表达”规则适用于任意目录中的读者型文档；子目录不能允许
 对外稿重新使用“冻结、门禁、闭环”等未解释的项目管理词。
@@ -44,8 +44,9 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-当前最短期任务是 PostgreSQL extension/planner-visible `SemMap` capability，然后实现中立
-plan/task/result 合同和 recording、remote HTTP、SemLoom provider，再以 `SemFilter` 验证关系语义。
+当前最短期任务是 `REL_18_4` extension/planner-visible `SemMap` capability，然后实现中立
+plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；载体审查决定是否需要最小 core
+patch，之后才接增量 SemLoom、HTTP 与 `SemFilter` semantic alternative。
 既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
 
 ### 运行实验或迁移机器
@@ -58,7 +59,7 @@ plan/task/result 合同和 recording、remote HTTP、SemLoom provider，再以 `
 6. 对应实验计划和结果目录 README
 
 任何新机器、依赖、模型或数据任务先运行 `manage_environment.py check`。正式运行使用机器、模型、
-服务、协议和 workload 共同签名下的冻结配置，不继承另一签名的 K/batch/actor 参数。
+服务、协议和 workload 共同签名下在运行期间保持不变的配置，不继承另一签名的 K/batch/actor 参数。
 
 ### 判断一个结论能否使用
 

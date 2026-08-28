@@ -494,8 +494,8 @@ result.
   --output tmp\daft_text_organizer_smoke.csv
 ```
 
-当前结果只证明 PostgreSQL 18.4 同构链路连通，不是公司 PostgreSQL 18.3
-平台结果，也不是性能优化结论。
+当前结果只证明 PostgreSQL 18.4 同构外部链路连通，不是已经验证 `REL_18_4` planner-visible
+semantic operator，也不是性能优化结论。
 
 ## 正式对照实验
 

@@ -151,9 +151,9 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 
 > 不必须。两/四 Job 实验要隔离的是 shared-vLLM serving 竞争，因此以完整结果 gather、manifest 完成和 exactly-once request 证据为边界，使用 `writeback-mode=none`。若强制 sink，数据库写回会把 serving 干扰与 I/O 竞争混在一起。SQuAD/ShareGPT 三臂已单独用统一 PostgreSQL source/sink 闭合 database-E2E 和 correctness 护栏。因此文本侧的方法主实验可以不做 sink，但不能把它说成 database-E2E 结果。
 
-### PostgreSQL 18.4 与项目要求的 18.3 冲突吗？
+### 为什么历史材料写 PostgreSQL 18.3，而当前实现锁定 18.4？
 
-> 当前双 4090 AutoDL 运行环境实测是 PostgreSQL 18.4 + pgvector 0.8.5，因此只能标为 AutoDL rehearsal，不能写成内部 PostgreSQL 18.3 平台结论。版本写进每个 cell 的 identity 字段。它不影响三臂在同一环境内的因果比较，但限制外部平台外推；后续正式迁移必须按 runtime preflight 重跑。
+> PostgreSQL 18.3 是上一版目标平台表述，当前权威计划已经锁定 `REL_18_4`。双 4090 AutoDL 的 PostgreSQL 18.4 + pgvector 0.8.5 结果仍只能标为 external-path rehearsal，因为它没有实现 planner-visible semantic operator、provider interface 和 query lifecycle。版本继续写进每个 cell 的 identity；正式资格验证必须在锁定的 `REL_18_4` source/header/build identity 上完成 extension build、EXPLAIN、cancel/error、prepared-plan 和结果对应测试。
 
 ### feeding-saturation 门怎么判断？
 
@@ -215,5 +215,5 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 - 不说“sequential 是普遍最优 organizer”。
 - 不说“图像路径提升 45.7%”。
 - 不说“Hybrid 稳健通过”。
-- 不把 PostgreSQL 18.4 AutoDL rehearsal 写成 PostgreSQL 18.3 内部平台结论。
+- 不把 PostgreSQL 18.4 AutoDL external-path rehearsal 写成已经验证 `REL_18_4` semantic operator。
 - 不把 Ray、Daft、vLLM、CLIP 或 pgvector 的使用本身列为创新点。

@@ -14,7 +14,7 @@
 | `精读文献笔记/` | 精读笔记权威库；当前有十七篇主笔记、160 张论文原图裁剪件。新增 IMLane 使用正式 PVLDB 2026 版本，正文 Figure 1–15 已加入对应讲解位置；Kalypso 继续按 arXiv 核心补充管理。两篇均未并入原十五篇横向速览或已定稿开题正文。各篇选图与版本说明见目录 README 和 `figures/audit/` |
 | `reference/REFERENCE_INDEX.md` | 历史题录与用途索引；当前工作区可解析实体为 Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane 七份 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
-| `sema_native_semantic_operator_architecture_reference_20260827.md` | Sema-like 数据库原生语义算子架构审计：Sema 作 SQL/plan/optimizer/executor 主参照，LOTUS 作兼容语义、算法来源与独立 baseline |
+| `sema_native_semantic_operator_architecture_reference_20260827.md` | PostgreSQL 语义算子架构审计：Sema/Cortex 说明数据库语义所有权，LOTUS 提供 reference/optimized algorithms，IMLane/Kalypso 分别提供 DB-runtime batch 与 dependency/KV execution 参照，并审查 extension/core 条件性载体 |
 | `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |

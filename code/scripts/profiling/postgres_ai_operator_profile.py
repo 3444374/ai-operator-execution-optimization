@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Profile a PostgreSQL 18-compatible AI operator external execution path.
 
-The local rehearsal environment currently runs PostgreSQL 18.4. The target
-production validation platform is PostgreSQL 18.3. The script records the
-actual server and pgvector versions in every non-dry-run CSV row so results do
-not conflate the two environments.
+The local rehearsal environment currently runs PostgreSQL 18.4, and the
+semantic-operator implementation is now locked to REL_18_4. The script records
+the actual server and pgvector versions in every non-dry-run CSV row so external
+path rehearsals are not confused with planner-visible operator qualification.
 """
 
 from __future__ import annotations

@@ -391,19 +391,27 @@ OceanBase 公开材料对实验合同的可用部分与禁用部分如下：
 operator/database-E2E JCT、TTFT、request p50/p95/p99、row success/error/truncation、EM/F1、
 实际调用/token、成本与数据库 CPU；endpoint 侧同步采集 running/waiting/KV/prefix-cache、
 GPU/MFU/能耗。OceanBase Lakebase 不设未经证实的性能臂，Daft/Ray 性能由两方官方代码
-同机复现。OceanBase 官方 publications 中的 PVLDB 2026 Industry Track accepted
-**IMLane** 已由 OceanBase 官方账号论文介绍披露实验摘要：OceanBase Paetica 4.3、DuckDB
-0.10.1；Q1–Q7 覆盖 classical ML/local GPU/remote CPU/remote Qwen3-1.7B GPU；内部消融为
-process-level execution 与 decoupled async scheduling；外部 baseline 为 IMBridge、pandas、
-SparkSQL、Ray.data。该文章把 IMLane 升为强相关论文 baseline，但本次仍未找到 paper/code/
-per-query raw results/repeats，故只登记 vendor-summary 数字，不进入当前同机排名；代码或正文
-公开后优先复核其合同，再决定是否新增可运行 arm。
+同机复现。**IMLane** 的正式 PVLDB 19(12): 4223–4236 论文与作者 artifact 已公开。论文在
+OceanBase Paetica 4.3 和 DuckDB 0.10.1 上拆分 process-level execution 与 batch-wise asynchronous
+scheduling，并比较 IMBridge、pandas、SparkSQL 与 Ray Data；artifact commit `072f8257` 包含 DBEnd、
+Coordinator、独立 backend executors 和 Ray adapter。它因此是 DB bridge、execution-batch formation、
+异步提交与 Lane/resource scheduling 的直接可运行候选 baseline，不再只按 vendor summary 登记。
+当前仍缺本项目同机 build/correctness/raw-repeat 证据，不能把论文汇总倍率直接写入项目排名；artifact
+的简单 queue/core hint 也不能冒充项目 token/work-aware multi-Job policy。
+
+**Kalypso** 当前只有 arXiv:2607.23815v2，未定位作者 artifact。它是 stage/dependency、prefix lease、
+KV-aware admission 与 virtual pinning 的直接方法参考，但不是数据库 bridge 或 row batching system，
+也不进入当前 baseline 矩阵。若未来另行实现等价 Algorithm 1，只能标为 paper reproduction/diagnostic，
+不得标成 Kalypso native；任何后续 matched comparison 还必须区分其单 query、单 cache domain 设置与
+本项目多 Job、多 endpoint 目标。
 
 补充来源：[OceanBase Cloud AI Services release notes](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000003353421)、
 [OceanBase performance testing](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000002694815)、
 [VectorDBBench guide](https://en.oceanbase.com/docs/common-oceanbase-database-10000000002164117)、
 [OceanBase publications](https://github.com/oceanbase/publications)、
-[OceanBase IMLane/ScalePQO 论文介绍（墨天轮转载）](https://www.modb.pro/db/2082304455178522624)。
+[IMLane 正式论文](https://www.vldb.org/pvldb/vol19/p4223-xu.pdf)、
+[IMLane 作者 artifact](https://github.com/IM-DM4AI/IMLane0/tree/072f8257db80569e42c9f5727d839587df529652)、
+[Kalypso arXiv v2](https://arxiv.org/abs/2607.23815)。
 
 ### 外部多模态公开 benchmark：事实、冲突与复现合同
 

@@ -7,10 +7,11 @@
 可运行的 backend 基座，不表示数据库内 AI 语义算子已经实现；项目不修改 vLLM 内部。
 
 **当前工程顺序**：按
-`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 PostgreSQL
-planner-visible `SemMap` capability，再实现中立 plan/task/result 合同和 recording、remote HTTP、
-SemLoom providers，随后以 `SemFilter` 验证关系 cardinality 语义。当前源码没有 PostgreSQL
-CustomScan、统一 provider gateway 或 LOTUS compatibility adapter；LOTUS v1.2.4 不再是核心前置依赖。
+`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 `REL_18_4` extension
+`SemMap` capability，再实现中立 plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；
+随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，只有已复现阻断才增加最小 core
+patch，再抽取增量 SemLoom session 并接 HTTP/SemLoom provider，以 `SemFilter` 验证 cardinality。
+当前源码没有 PostgreSQL CustomScan、统一 provider gateway 或 LOTUS compatibility adapter；LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
 系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
@@ -353,13 +354,15 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 
 ### 当前优先：PostgreSQL 中立语义算子与 provider 资格验证
 
-1. 实现最小 PostgreSQL extension/planner-visible `SemMap` prototype，以 deterministic transformation
-   验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期；
-2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同，以及有界、
-   可取消的 recording provider；
-3. 增加 remote HTTP 与 SemLoom provider adapter，确保现有 scheduler 不理解 SQL、plan 或 parser；
-4. 用 `SemFilter` 验证关系 cardinality 语义；LOTUS v1.2.4 compatibility/native baseline 后置；
-5. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述外部 runner 结果写成数据库内算子证据。
+1. 锁定 `REL_18_4`，实现最小 extension/planner-visible `SemMap` prototype，以 deterministic
+   transformation 验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期；
+2. 实现 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、`open/drive/close` 与 UDS
+   recording gateway；
+3. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
+   能表达则保留 extension，只有已复现阻断才增加最小 core patch；
+4. 抽取增量 SemLoom scheduling session，接 direct HTTP/SemLoom adapters；
+5. 用 `SemFilter` 验证 cardinality，并从第二条 physical path 开始验证数据库 semantic optimization；
+6. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述 external runner 结果写成数据库内算子证据。
 
 ### 条件性恢复：image path-B + A+B
 

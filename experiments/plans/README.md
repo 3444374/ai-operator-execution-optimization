@@ -18,11 +18,14 @@
 
 当前短期顺序是：
 
-1. 用 PostgreSQL extension / planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
+1. 锁定 `REL_18_4`，用 extension / planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
    snapshot 与 query lifecycle；
-2. 实现中立 plan/task/result 合同和 recording、remote HTTP、SemLoom execution provider；
-3. 以 `SemFilter` 验证会改变关系 cardinality 的数据库语义；LOTUS compatibility/native baseline 后置；
-4. 上述步骤完成前不扩展 GPU 矩阵、不调整 SAOR，也不把既有 external runner 写成数据库内算子。
+2. 实现最小 plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；
+3. 审查 extension 能否承载目标 LOTUS/Cortex semantic alternatives；能表达则保留 extension，只有已复现
+   阻断才增加最小 core patch；
+4. 抽取增量 SemLoom session，再接 HTTP/SemLoom provider，并以 `SemFilter` 验证 cardinality 与首条
+   database semantic optimization；
+5. 上述步骤完成前不扩展 GPU 矩阵、不调整 SAOR，也不把既有 external runner 写成数据库内算子。
 
 ## 2. 状态分层
 
@@ -30,7 +33,7 @@
 
 | 文件 | 当前状态与用途 |
 |---|---|
-| [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | 当前实施主计划；Sema-like 数据库语义算子核心、provider interface 与分阶段验证 |
+| [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | 当前实施主计划；extension/core 条件性载体、最小 LOTUS/Cortex semantic path、provider interface；IMLane 为资格后验证，Kalypso 为后续参考 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |

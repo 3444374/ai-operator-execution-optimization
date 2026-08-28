@@ -1,5 +1,14 @@
 # 开题材料 project log
 
+## 2026-08-28 PostgreSQL 内核边界改为条件性选择
+
+- 开题入口和答辩 QA 设计不再写“绝不修改 PostgreSQL core”：当前计划先用 extension 验证，只有
+  LOTUS/Cortex 类目标计划优化或稳定 node lifecycle 出现已复现阻断时，才维护最小 core semantic
+  patch；广泛 fork、vLLM/Ray/模型内部修改仍不属于课题主线。
+- 本轮只把 Markdown 权威报告的目标版本从 PostgreSQL 18.3 对齐到锁定的 `REL_18_4`，未改实验数字
+  或论证结构，并同步 Markdown 问答库的版本解释；QA TeX/PDF、Word、PPTX 和图件未重写，这些发布
+  面后续对外使用前仍需根据当前权威计划做内容与版式检查。
+
 ## 2026-08-27 开题方案改为 Sema-like 中立语义算子架构
 
 - Markdown 权威报告把数据库集成主参照改为 Sema：PostgreSQL 负责 semantic plan、规范化任务、

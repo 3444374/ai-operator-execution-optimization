@@ -334,10 +334,11 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
         │                            │                            │
         └────────────────────────────┼────────────────────────────┘
                                      │
-                    本课题：数据库触发 → Ray 动态 Batching →
-                    异构 Actor Pool + 去中心化自适应提交 →
-                    vLLM Continuous Batching → 写回瓶颈判定
-                    （三个岛连接处的上游执行链路优化）
+                    本课题：PostgreSQL semantic operator + ordinary child plan
+                    → sealed tasks → SemLoom work organization / bounded admission
+                    → multi-Job + multi-endpoint routing → Ray/vLLM backend
+                    → PostgreSQL typed result lifecycle
+                    （数据库拥有语义，外部层优化物理执行与调度）
 ```
 
 ### 4.2 空白口径复审
@@ -349,9 +350,11 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 2. *Optimizing LLM Queries in Relational Data Analytics Workloads* 已证明数据库可以利用行、字段和关系统计信息重排请求，以提高 prefix cache reuse；
 3. BlendServe 已在 offline serving 内共同研究 resource balance 与 prefix locality，AYO 已利用 application primitive 和 graph topology 改善流水执行与 batching；
 4. VTC、Llumnix、FairServe、DLPM 已覆盖 serving 内部或服务层的服务量记账、公平和动态调度；
-5. Kalypso 已直接提出 query-plan-aware relational LLM serving，通过跨语义算子流水、parent-child prefix 生命周期和 memory-aware admission，在不改变查询语义的前提下提高 KV-cache 复用；
-6. Ray Data/Daft 已提供批数据执行、异构流水线和官方 AI 接口；
-7. 本项目的增量必须进一步收窄为：由 PostgreSQL 拥有 SQL、关系 child plan、snapshot 与 query lifecycle，在不修改 vLLM 的条件下，把数据库 Job、分阶段 work、尚未提交的数据和 endpoint-local 状态用于多 Job、多 endpoint 的数据组织、提交与路由；不能再把“连接 semantic query plan 与 LLM serving”本身写成空白。
+5. IMLane 已在 OceanBase/DuckDB 内实现 process-level AI Function execution、DBEnd/ArrowLane bridge、
+   database execution batches、batch-wise asynchronous submission、Lane/resource scheduler 与 Ray adapter；
+6. Kalypso 已直接提出 query-plan-aware relational LLM serving，通过跨语义算子流水、parent-child prefix 生命周期和 memory-aware admission，在不改变查询语义的前提下提高 KV-cache 复用；
+7. Ray Data/Daft 已提供批数据执行、异构流水线和官方 AI 接口；
+8. 本项目的增量必须进一步收窄为：由 PostgreSQL 拥有 SQL、关系 child plan、snapshot 与 query lifecycle，在不修改 vLLM 的条件下，把数据库 Job、分阶段 work、尚未提交的数据和 endpoint-local 状态用于多 Job、多 endpoint 的数据组织、提交与路由；不能再把 DB bridge、异步分批或“连接 semantic query plan 与 LLM serving”本身写成空白。
 
 因此不能再使用“没有任何已有工作研究”之类绝对表述。
 
@@ -359,6 +362,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 | 论文 | 研究什么 | 不研究什么 |
 |---|---|---|
+| IMLane: Composable Framework for Efficient AI Function Execution in Database Engine (PVLDB 2026) | DBEnd/data conversion、shared-memory Lane、进程级 Python executor、数据库 physical batch 的异步提交、per-function resource scheduler 与 Ray adapter | 不定义 semantic algebra/rewrite，也未实现 token/work-aware multi-Job fairness、SLO 或完整 PostgreSQL cancel protocol |
 | Kalypso: Relational LLM Serving (arXiv 2026) | 让 serving 层接收 semantic query plan，以跨 operator pipelining、依赖感知 prefix 生命周期和动态 memory budget 提高 KV-cache reuse；官方摘要报告 query completion time 最高 4.57× | 当前论文聚焦单条 semantic query 的 query completion 与一个 serving cache domain；未覆盖 PostgreSQL planner/query lifecycle、多 query/多 Job 公平、多个独立 endpoint 路由和数据库管理的流式 child-plan 交接 |
 | Sema: A High-performance System for LLM-based Semantic Query Processing (VLDB 2026 accepted) | 把 semantic expression/operator 纳入 DuckDB query plan，在数据库内做 expression rewrite、fusion、prompt batching、reordering 和 AQE | 当前论文不研究 PostgreSQL extension/query lifecycle、分布式 Daft/Ray provider、多 Job 公平与多个独立 endpoint 路由；论文也把 routing、privacy、governance 和外部推理 fault tolerance 留作后续 |
 | Optimizing LLM Queries in Relational Data Analytics Workloads (MLSys 2025) | 利用完整关系数据、函数依赖和列统计重排 row/field，提高 KV prefix reuse | 主要面向离线完整输入，不建模在线到达、复杂 cache eviction、多作业干扰和实际 endpoint state |
@@ -385,7 +389,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 1. 不能说"现有研究没有关注数据库 AI 算子"——Snowflake SIGMOD 和 Smart/GaussML/NeurDB 已充分证明
 2. 不能说"外部执行一定优于数据库内 ML"——取决于场景
 3. 不能说"Ray/Daft/Lance 是数据库 AI 算子的标准方案"——Snowflake 和 GaussML 用不同技术栈
-4. 合理表述："Kalypso 已证明 semantic query plan 可以进入 LLM serving 控制；本课题进一步研究 PostgreSQL query lifecycle 所有权、多 Job、多独立 endpoint，以及数据组织、提交和路由在不修改 vLLM 条件下如何共同工作"
+4. 合理表述："IMLane 已覆盖数据库到外部 executor 的 batch-wise execution，Kalypso 已证明 semantic
+   plan dependency 可以进入 LLM serving 控制；本课题进一步研究 PostgreSQL query lifecycle 所有权、
+   LOTUS/Cortex 类数据库 plan alternatives、多 Job、多独立 endpoint，以及数据组织、提交和路由如何共同工作"
 5. 不能说“上游调度会加速 GPU 单次推理”；它能改善的是达到容量上限所需的压力、瞬态 ramp、可控排队、多 job 公平和端到端 JCT
 
 ---
@@ -948,10 +954,11 @@ normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，�
 
 ```text
 PostgreSQL Sema-like planner-visible AI semantic operator（尚未实现）
-  → SemanticOperatorPlan / ordinary child plan / snapshot / query lifecycle
-  → PreparedSemanticTask + bounded execution-provider interface
-       ├── recording / remote HTTP（资格与简单 control）
-       └── SemLoom provider
+  → SemanticPlanSpec / ordinary child plan / snapshot / query lifecycle
+  → PreparedSemanticTask + open/drive/close execution-provider interface
+       ├── Unix-domain socket (UDS) recording gateway（首个协议与生命周期资格实现）
+       ├── remote HTTP（后续真实 endpoint capability）
+       └── SemLoom provider（增量 scheduling session 后接入）
             ├── Daft / Ray / vLLM external runtime
             ├── project frozen-static（强静态参照）
             └── project state-aware / SAOR（条件性候选）
@@ -980,9 +987,10 @@ provider interface 和 query lifecycle 未完成前，既有 manifest/profiler �
 
 | 阶段 | 当前状态 | 内容与下一步 |
 |---|---|---|
-| 数据库算子 capability | **当前首要，未开始实现** | PostgreSQL extension/planner-visible `SemMap` 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
-| 中立 provider interface | **capability 后执行** | plan/task/result digest、bounded submit/poll/cancel，以及 recording、remote HTTP、SemLoom provider |
-| 关系语义与兼容 | **后续** | 以 `SemFilter` 验证 cardinality；LOTUS v1.2.4 compatibility/native baseline 不阻塞核心实现 |
+| 数据库算子 capability | **当前首要，未开始实现** | 锁定 `REL_18_4`，验证 extension/planner-visible `SemMap` 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
+| 中立 provider interface | **capability 后执行** | plan/task/result digest、bounded `open/drive/close` 与 UDS recording gateway |
+| 数据库载体审查 | **protocol 后执行** | extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives；只有已复现阻断才增加最小 core patch |
+| 关系语义与执行优化 | **后续** | 当前依次做增量 SemLoom session、`SemFilter` cardinality/最小第二 semantic path；数据库资格后验证 IMLane-like batch placement。Kalypso-like lineage 仅作参考，无当前排期 |
 | 文本数据组织 | **已完成主要机制实验** | fixed/token-budget/length/prefix/BFD/row-cap；结论随 KV 压力与 endpoint consolidation 变化 |
 | 文本提交与多 Job | **已完成静态/共享核心证据，动态未普遍胜出** | active-work、request replenish、flush、actor pool、shared credit、1/2/4 Job 与 5s staggered；weighted/held-out/failure migration 条件性保留 |
 | 图像多模态 | **静态/观测完成，动态待接** | HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 质量闭环与跨 workload/硬件验证 |
@@ -996,7 +1004,7 @@ provider interface 和 query lifecycle 未完成前，既有 manifest/profiler �
 | 服务上界 | 同模型、同请求、同 endpoint 的直接 serving capacity | vLLM Bench |
 | 无 Daft/Ray 强上游 | 受控并发且独立 calibration 的最小客户端/数据库路径 | bounded HTTP、现有数据库 AI_COMPLETE |
 | 官方 runtime | 现有框架的官方 AI/HTTP 执行路径 | Daft Native/Ray `prompt()`、Ray Data HTTP Processor |
-| 数据库 AI 系统 | 具有 semantic operator/plan optimization 的官方实现 | Sema、LOTUS、Palimpzest；SemBench 提供 workload/指标 |
+| 数据库 AI 系统 | 具有 semantic operator、plan optimization 或内置 AI execution 的官方实现 | Sema、LOTUS、Palimpzest、IMLane；SemBench 提供 workload/指标 |
 | 本项目策略 | 同 work 下的数据组织、refill、shared credit 与 cost-guided 决策 | static、token-work、fair queue |
 | 诊断工具 | 只用于暴露瓶颈，不能作为论文主 baseline | 逐行串行、无界 in-flight |
 
@@ -1006,9 +1014,12 @@ provider interface 和 query lifecycle 未完成前，既有 manifest/profiler �
 
 | 缺口 | 优先级 |
 |---|---|
-| PostgreSQL 18.3 extension/planner-visible operator 是否能稳定拥有 child plan、snapshot、取消、错误与结果生命周期 | **当前阻断** |
-| `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 与有界 provider session 能否保持 digest、cancel、backpressure 和 exactly-once terminal state | **当前阻断** |
+| `REL_18_4` extension/planner-visible operator 是否能稳定拥有 child plan、snapshot、取消、错误与结果生命周期 | **当前阻断** |
+| `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 与 `open/drive/close` session 能否保持 digest、cancel、backpressure 和 exactly-once terminal state | **当前阻断** |
+| extension 是否能安全承载目标 LOTUS/Cortex plan alternatives；若不能，最小 core patch 能否只解除已复现阻断 | 高 |
 | `SemFilter` 的三值/NULL/error 语义能否在乱序 completion 下正确改变 relation cardinality | 高 |
+| IMLane-like database batch 与 SemLoom provider rebatching 在同 task/capacity 下应如何放置 | 高；数据库资格完成后验证 |
+| Kalypso-like lineage 在多 Job/多 endpoint 下是否有增量 | 参考问题；满足前置证据后再决定是否立项 |
 | LOTUS v1.2.4 compatibility profile 与 LOTUS/Sema native full-system baselines 的身份和行为如何核对 | 高；不阻塞数据库核心 |
 | 图像 HSE static 是否在真实 GPU 上不劣于 direct-dependency static，以及 stage/CE5 状态能否产生受控动作增量 | 高 |
 | 小规模 pgvector 写回后 embedding 检索质量是否保持（Recall@K/nDCG 等） | 高 |

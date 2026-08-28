@@ -6,10 +6,10 @@
   `../research/top15_ranked_papers.md`，自包含快照见
   `literature/top15_reading_notes/`。
 - `../research/reading_notes/` 当前有 49 篇历史文献笔记，现按泛读库管理；新的权威精读笔记进入
-  `../research/精读文献笔记/`。当前共有 16 篇主笔记和 146 张论文原图裁剪件；其中新增 Kalypso
-  原稿已从下载目录原件逐字节恢复，作为 arXiv 核心补充，不进入现有 Top 15、十五篇速览或已定稿正文。
-  `../research/reference/` 当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、
-  Parrot、Kalypso）；历史题录继续由索引保留。
+  `../research/精读文献笔记/`。当前共有 17 篇主笔记和 160 张论文原图裁剪件；Kalypso 作为 arXiv
+  核心补充，新增 IMLane 使用正式 PVLDB 2026 版本；两篇都不进入现有 Top 15、十五篇速览或已定稿正文。
+  `../research/reference/` 当前工作区有 7 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、
+  Parrot、Kalypso、IMLane）；历史题录继续由索引保留。
 - Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
   CCF-A full research。
 - 开题保持两项研究内容：数据组织；调度与提交控制。代价估计升级为两项内容
@@ -45,7 +45,7 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 一句话口径：
 
-> 本课题研究数据库触发 AI 算子后、数据进入模型服务前的 AI 数据执行层：按 token 或图像帧描述工作量，并依据可用容量和运行状态控制提交、路由与多作业共享；不修改数据库内核、vLLM 调度器或模型内部实现。
+> 本课题研究数据库触发 AI 算子后、数据进入模型服务前的 AI 数据执行层：按 token 或图像帧描述工作量，并依据可用容量和运行状态控制提交、路由与多作业共享；数据库语义算子先用 PostgreSQL extension 实现，只有目标计划优化被明确阻挡时才采用最小内核 patch，不修改 vLLM 调度器或模型内部实现。
 
 ## 目录结构
 

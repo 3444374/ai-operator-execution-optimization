@@ -14,18 +14,21 @@ SemLoom 是面向数据库 AI 语义算子的工作量感知执行与多作业�
 语义算子架构，由数据库拥有 SQL、关系 child plan、snapshot、权限、语义计划、结果解析以及取消、
 错误和结果生命周期；Daft、Ray、vLLM、CLIP 与 pgvector 是可替换的物理执行和验证平台。
 
-项目不 fork PostgreSQL core，不修改 vLLM continuous batching、Ray scheduler、模型结构或 GPU kernel，
-也不使用 `SELECT/fetchall → Python → HTTP → INSERT` 作为主路径。
+项目不做广泛 PostgreSQL fork；只有 extension 对目标 LOTUS/Cortex plan optimization 或稳定 node
+lifecycle 出现已复现阻断时，才使用最小 PG18.4 core semantic patch。项目不修改 vLLM continuous
+batching、Ray scheduler、模型结构或 GPU kernel，也不使用
+`SELECT/fetchall → Python → HTTP → INSERT` 作为主路径。
 
 ## 2. 当前最短路径
 
-1. 用 PostgreSQL extension / planner-visible `SemMap` prototype 验证真实 SQL、ordinary child plan、
-   snapshot 和 query lifecycle；
-2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同，以及有界、可取消的
-   recording、remote HTTP 与 SemLoom provider；
-3. 保持 Daft/Ray/static/SAOR 在 SemLoom provider 后方，不让 scheduler 理解 SQL、prompt parser 或
-   PostgreSQL Plan；
-4. 用 `SemFilter` 验证会改变关系 cardinality 的算子语义；LOTUS 兼容和 native baseline 后置且不阻塞；
+1. 锁定 `REL_18_4`，用 extension / planner-visible `SemMap` 验证 SQL、ordinary child plan、snapshot、
+   cancel/error 和 result lifecycle；
+2. 实现最小 plan/task/result、`open/drive/close` 与 Unix-domain socket（UDS）recording gateway；
+3. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与 LOTUS/Cortex alternatives；能表达
+   则继续 extension，只有已复现阻断才增加最小 core patch；
+4. 抽取增量 SemLoom session，再接 HTTP/SemLoom provider，并用 `SemFilter` 建立首条数据库 semantic
+   alternative；数据库资格完成后优先比较 IMLane-like batch placement。Kalypso-like lineage 只作后续
+   参考，需另立计划；
 5. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
 
 实施入口：
@@ -57,7 +60,8 @@ SemLoom 是面向数据库 AI 语义算子的工作量感知执行与多作业�
 仍待验证：
 
 - PostgreSQL planner-visible `SemMap`、中立 provider interface 和 query lifecycle；
-- `SemFilter` 关系语义，以及 LOTUS compatibility/native baseline；
+- extension/core 载体审查、`SemFilter` 关系语义与 LOTUS/Cortex semantic alternatives；
+- IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；
 - 图像 HSE/static 非劣与受控 state-aware 动作；
 - 五臂系统级 matched formal、SAOR 跨层 capability 和部分条件性纠正补测；
 - 代价估计在新时间段或新 workload 上的校准与在线决策价值。

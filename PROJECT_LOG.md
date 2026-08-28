@@ -6,6 +6,33 @@
 - 每张图均补充来源页码、读图顺序、指标口径和不能外推的结论；Figure 5 的故障隔离未作定量验证，Figure 12/14 的双轴或不同量级比较、Figure 13 的平均利用率范围、Figure 15 的外部数据搬运口径均在正文说明。版本、输出 SHA256 和逐图视觉检查见 `figures/audit/imlane_deep_reading_figures_audit_20260828.md`。
 - 精读目录按小写 snake_case 约定登记为 `research/精读文献笔记/imlane_pvldb2026/`。当前精读库为 17 篇主笔记、160 张论文原图裁剪件，本地参考目录为 7 份可解析 PDF；同步更新研究入口、文献清单、参考索引、图资产说明和项目索引，未修改开题正文、PPT 或实验结论。
 
+## 2026-08-28 PostgreSQL semantic carrier 与外部执行代码架构复审
+
+- 依据 Sema、Cortex AISQL、LOTUS、IMLane 正式 PVLDB 论文/artifact、Kalypso arXiv v2 和 PostgreSQL
+  `REL_18_4` source，重新区分数据库 semantic algorithm、DB-runtime bridge、外部组批/提交、
+  dependency/KV admission 与 vLLM continuous batching 的所有权。
+- 修正此前把 IMLane 只当 bridge 的表述：它同时是 database execution-batch formation、batch-wise
+  asynchronous submission、Lane/resource scheduling 与 Ray adapter 的直接 baseline。Kalypso 则作为
+  stage lineage、prefix lease、KV-aware admission 和 virtual pinning 的直接参照，不承担 PostgreSQL
+  bridge 或 SQL cardinality。
+- PostgreSQL 内核修改改为“允许但不预设”：先锁定 `REL_18_4` 完成 extension `CustomPath/CustomScan`
+  capability 与 UDS recording gateway，再用 plan identity、prepared-plan、hook coexistence 和目标
+  LOTUS/Cortex alternatives 做 carrier audit；extension 能安全表达时继续使用，只有已复现阻断才增加
+  最小 core semantic patch。
+- 当前实施 interface 收敛为 PostgreSQL 内部 `sem_exec_begin/next/stop/explain` 与外部
+  `open/drive/close`。代码蓝图区分 `code/postgres/semloom_pg`、条件性 patch series 与
+  `code/src/execution_provider`，并明确现有同步 scheduler 不能直接充当增量 query session。
+- 计划同时保留两条优化轴：数据库内实现 LOTUS/Cortex/Sema 类 reference/quality-aware paths、
+  predicate placement/cascade/fusion；外部实现 IMLane/SemLoom 类 work organization、bounded admission、
+  多 Job/多 endpoint 调度。进一步审查 PostgreSQL path-equivalence 后，精确模式只允许 reference；近似
+  candidate 必须由显式 quality policy 和匹配证据获得资格，只能在运行期判断时封装为带 reference
+  fallback 的单一 adaptive path。单算子内部阶段先留在数据库 state；只有 SemLoom 需要感知该阶段，
+  或出现两个可流水节点后，才可能增加 Kalypso-like lineage protocol v2；该方向仅作后续参考，不纳入
+  当前排期。当前完成范围收敛为 exact `SemMap/SemFilter`、provider session 与最小第二 semantic path，
+  IMLane-like batch placement 是数据库资格完成后的优先验证。
+- 本轮修改规则、总纲、计划、研究审计、状态/入口、开题 Markdown 版本表述与 profiler docstring；没有
+  改变运行行为，没有实现 PostgreSQL C 代码、gateway 或 scheduler refactor，也没有运行 GPU/正式性能实验。
+
 ## 2026-08-27 Sema-like PostgreSQL AI 语义算子架构重设
 
 - 将数据库集成的主要参照从 LOTUS v1.2.4 调整为 Sema 所代表的数据库原生语义算子路线：

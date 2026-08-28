@@ -7,10 +7,12 @@
 
 ## 当前状态
 
-当前不扩展 GPU 实验矩阵。短期先完成 PostgreSQL extension / planner-visible `SemMap` capability，
-再实现中立 plan/task/result 合同和 recording、remote HTTP、SemLoom provider，随后以 `SemFilter`
-验证关系语义。LOTUS compatibility/native baseline 不再是前置依赖。现阶段性能实验可使用明确标注的
-emulated operator contract，但不能称为已实现数据库内算子。
+当前不扩展 GPU 实验矩阵。短期先完成 PostgreSQL extension / planner-visible `SemMap` capability、
+中立 plan/task/result 与 Unix-domain socket（UDS）recording gateway，再做载体审查、增量 SemLoom
+session、remote provider、exact `SemFilter` 和最小第二 semantic path。数据库资格完成后再比较
+IMLane-like batch placement；
+Kalypso lineage、`SemJoin`、fusion/AQE 仅作后续参考。LOTUS compatibility/native baseline 不再是前置
+依赖。现阶段性能实验可使用明确标注的 emulated operator contract，但不能称为已实现数据库内算子。
 
 已有文本与图像证据继续保留：
 
