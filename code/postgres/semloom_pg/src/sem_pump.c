@@ -44,10 +44,10 @@ struct SemloomExecPump
 static void semloom_pump_cleanup(void *argument);
 static void semloom_pump_close_session(SemloomExecPump *pump);
 static void semloom_pump_open_provider(SemloomExecPump *pump);
-static void semloom_pump_fail(SemloomExecPump *pump,
-							  const AiProviderError *error) pg_attribute_noreturn();
-static void semloom_raise_provider_error(
-	const AiProviderError *error) pg_attribute_noreturn();
+pg_noreturn static void semloom_pump_fail(SemloomExecPump *pump,
+									  const AiProviderError *error);
+pg_noreturn static void semloom_raise_provider_error(
+	const AiProviderError *error);
 static Datum semloom_copy_completion_text(const AiCompletion *completion,
 										  MemoryContext result_context);
 
