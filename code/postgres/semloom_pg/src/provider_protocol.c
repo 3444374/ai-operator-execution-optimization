@@ -5,6 +5,7 @@
 
 #include "common/cryptohash.h"
 #include "common/sha2.h"
+#include "miscadmin.h"
 #include "storage/latch.h"
 #include "utils/wait_classes.h"
 
