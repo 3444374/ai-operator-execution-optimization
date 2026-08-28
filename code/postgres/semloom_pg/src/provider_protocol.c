@@ -263,20 +263,21 @@ semloom_socket_read_all(pgsocket socket_fd, char *data, Size length)
 static void
 semloom_wait_for_socket(pgsocket socket_fd, int socket_event)
 {
-	int events;
-
-	events = WaitLatchOrSocket(MyLatch,
-							   WL_EXIT_ON_PM_DEATH | WL_LATCH_SET | socket_event,
-							   socket_fd,
-							   0,
-							   PG_WAIT_EXTENSION);
-	if (events & WL_LATCH_SET)
+	for (;;)
 	{
-		ResetLatch(MyLatch);
-		CHECK_FOR_INTERRUPTS();
+		int events;
+
+		events = WaitLatchOrSocket(MyLatch,
+								   WL_EXIT_ON_PM_DEATH | WL_LATCH_SET | socket_event,
+								   socket_fd,
+								   0,
+								   PG_WAIT_EXTENSION);
+		if (events & WL_LATCH_SET)
+		{
+			ResetLatch(MyLatch);
+			CHECK_FOR_INTERRUPTS();
+		}
+		if (events & socket_event)
+			return;
 	}
-	if ((events & socket_event) == 0)
-		ereport(ERROR,
-				(errcode(ERRCODE_CONNECTION_FAILURE),
-				 errmsg("could not wait for SemLoom provider socket")));
 }
