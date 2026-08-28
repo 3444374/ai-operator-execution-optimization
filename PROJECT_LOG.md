@@ -7941,4 +7941,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   引入 SemLoom/DB-AIEL 前缀；尚未实现的 `project provider` 在当前架构入口统一改称 SemLoom provider。
 - 本地 131 项受影响测试通过；全仓发现 1,133 项，其中 1,123 项通过，剩余 8 项因本机缺少
   pyarrow/psycopg 导入失败、2 项因 sandbox 禁止监听 socket，未在本机混装依赖。全仓 Markdown
-  511 份、443 个本地链接无断链；完整依赖环境复验待 Git 同步到服务器后执行。
+  511 份、443 个本地链接无断链。提交 `c551abca` 经 Git 同步到双 RTX 4090 AutoDL 独立 worktree，
+  `core,text,image,analysis` capability preflight 状态为 `ok`，完整 1,341 项测试全部通过；测试后无
+  Ray 残留进程，GPU 均为 0%/1 MiB 且无计算进程。服务器日志保存在仓库外
+  `/root/autodl-tmp/experiment-artifacts/semloom_validation_c551abca/`；本次未启动模型服务或 GPU 实验。
