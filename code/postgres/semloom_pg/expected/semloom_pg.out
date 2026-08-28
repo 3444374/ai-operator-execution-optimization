@@ -97,4 +97,35 @@ FROM semloom_nullable;
  <NULL>
 (1 row)
 
+CREATE TEMP TABLE semloom_sink (completion text);
+BEGIN;
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3;
+INSERT 0 1
+TABLE semloom_sink;
+   completion   
+----------------
+ recorded:third
+(1 row)
+
+ROLLBACK;
+SELECT count(*) AS sink_rows FROM semloom_sink;
+ sink_rows 
+-----------
+         0
+(1 row)
+
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3;
+INSERT 0 1
+TABLE semloom_sink;
+   completion   
+----------------
+ recorded:third
+(1 row)
+
 DROP EXTENSION semloom_pg CASCADE;

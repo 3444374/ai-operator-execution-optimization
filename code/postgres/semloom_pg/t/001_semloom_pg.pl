@@ -35,6 +35,27 @@ DEALLOCATE semloom_map;}),
 	'recorded:alpha',
 	'prepared SemMap executes through the recording CustomScan');
 
+$node->safe_psql('postgres', q{CREATE TABLE semloom_sink (completion text);});
+is(
+	$node->safe_psql(
+		'postgres',
+		q{BEGIN;
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload) FROM semloom_documents;
+SELECT completion FROM semloom_sink;
+ROLLBACK;
+SELECT count(*) FROM semloom_sink;}),
+	"recorded:alpha\n0",
+	'INSERT SELECT emits mapped rows and rollback leaves the sink empty');
+is(
+	$node->safe_psql(
+		'postgres',
+		q{INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload) FROM semloom_documents;
+SELECT completion FROM semloom_sink;}),
+	'recorded:alpha',
+	'committed INSERT SELECT persists the mapped row');
+
 ($ret, $stdout, $stderr) = $node->psql(
 	'postgres',
 	q{SET statement_timeout = '100ms';

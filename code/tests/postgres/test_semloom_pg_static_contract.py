@@ -71,6 +71,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("Accepted Rows", regression_expected)
         self.assertIn("\\pset null '<NULL>'", regression_sql)
         self.assertIn("upper(ai_semantic.map(payload))", regression_sql)
+        self.assertIn("INSERT INTO semloom_sink", regression_sql)
+        self.assertIn("ROLLBACK", regression_sql)
         self.assertIn("Custom Scan (SemLoom SemMap)", regression_expected)
         self.assertIn("recorded:THIRD", regression_expected)
         self.assertIn("query shape is outside", regression_expected)
@@ -83,6 +85,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("PREPARE semloom_map", tap_test)
         self.assertIn("REPEATABLE READ", tap_test)
         self.assertIn("statement_timeout", tap_test)
+        self.assertIn("rollback leaves the sink empty", tap_test)
+        self.assertIn("committed INSERT SELECT", tap_test)
         self.assertIn("normal execution succeeds after cancellation", tap_test)
 
 
