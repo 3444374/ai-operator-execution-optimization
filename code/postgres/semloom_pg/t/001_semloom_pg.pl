@@ -1,9 +1,45 @@
 use strict;
 use warnings FATAL => 'all';
 
+use Cwd qw(abs_path);
+use FindBin;
+use IPC::Run;
 use PostgreSQL::Test::Cluster;
 use PostgreSQL::Test::Utils;
 use Test::More;
+use Time::HiRes qw(sleep);
+
+my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
+
+sub start_recording_gateway
+{
+	my ($socket_path, @arguments) = @_;
+	my $stdout = '';
+	my $stderr = '';
+	my $gateway = IPC::Run::start(
+		['python3', $gateway_script, '--socket', $socket_path, '--once', @arguments],
+		'>', \$stdout,
+		'2>', \$stderr);
+
+	for (1 .. 200)
+	{
+		$gateway->pump_nb;
+		last if -S $socket_path;
+		sleep(0.01);
+	}
+	ok(-S $socket_path, 'recording gateway creates its Unix socket')
+	  or diag($stderr);
+	return ($gateway, \$stdout, \$stderr);
+}
+
+sub finish_recording_gateway
+{
+	my ($gateway, $socket_path, $stderr) = @_;
+
+	$gateway->finish;
+	ok(!-e $socket_path, 'recording gateway removes its Unix socket')
+	  or diag($$stderr);
+}
 
 my $node = PostgreSQL::Test::Cluster->new('semloom_pg');
 $node->init;
@@ -113,6 +149,84 @@ like(
 		q{SELECT ai_semantic.map(payload) FROM semloom_documents;}),
 	qr/^recorded:alpha\nrecorded:beta$/,
 	'a new snapshot observes the committed row');
+
+my $gateway_socket = $node->basedir . '/recording.sock';
+my ($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';}),
+	'recorded:alpha',
+	'UDS recording provider preserves the SQL-visible SemMap result');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+like(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';}),
+	qr/Provider: uds-recording/,
+	'EXPLAIN identifies the external UDS recording provider');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket, '--test-tamper-evidence-digest');
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';});
+isnt($ret, 0, 'tampered completion evidence fails closed');
+like($stderr, qr/evidence digest does not match/, 'digest failure is reported without payload text');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket, '--test-disconnect-on-task');
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';});
+isnt($ret, 0, 'gateway disconnect fails the query');
+like($stderr, qr/disconnected before completing a frame/, 'disconnect does not guess task acceptance');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket, '--test-response-delay-ms', '500');
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET statement_timeout = '100ms';
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';});
+isnt($ret, 0, 'statement timeout interrupts a provider socket wait');
+like($stderr, qr/canceling statement due to statement timeout/, 'UDS wait preserves PostgreSQL cancellation');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';}),
+	'recorded:alpha',
+	'fresh UDS execution succeeds after cancellation and cleanup');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 $node->stop;
 done_testing();

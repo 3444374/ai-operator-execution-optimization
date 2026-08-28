@@ -168,6 +168,48 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread2.join(timeout=1)
         self.assertFalse(thread2.is_alive())
 
+    def test_disconnect_on_task_yields_no_completion(self) -> None:
+        client, server = socket.socketpair()
+        thread = threading.Thread(
+            target=run_recording_session,
+            args=(server,),
+            kwargs={"disconnect_on_task": True},
+        )
+        thread.start()
+        self.addCleanup(client.close)
+
+        plan_sha256 = plan_digest(mapped_column=1)
+        client.sendall(
+            encode_frame(
+                {
+                    "type": "open",
+                    "protocol_version": PROTOCOL_VERSION,
+                    "plan_digest": plan_sha256,
+                    "mapped_column": 1,
+                    "input_type": "text",
+                    "output_type": "text",
+                }
+            )
+        )
+        self.assertEqual(read_frame(client)["type"], "opened")
+        client.sendall(
+            encode_frame(
+                {
+                    "type": "task",
+                    "protocol_version": PROTOCOL_VERSION,
+                    "sequence": "0",
+                    "plan_digest": plan_sha256,
+                    "payload_digest": semantic_payload_digest("alpha"),
+                    "is_null": False,
+                    "input": "alpha",
+                }
+            )
+        )
+
+        self.assertIsNone(read_frame(client))
+        thread.join(timeout=1)
+        self.assertFalse(thread.is_alive())
+
 
 if __name__ == "__main__":
     unittest.main()

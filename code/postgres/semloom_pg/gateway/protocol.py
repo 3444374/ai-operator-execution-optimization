@@ -132,6 +132,7 @@ def run_recording_session(
     *,
     response_delay_ms: int = 0,
     tamper_evidence_digest: bool = False,
+    disconnect_on_task: bool = False,
 ) -> None:
     """Serve one query-scoped, single-inflight recording session."""
     try:
@@ -161,6 +162,8 @@ def run_recording_session(
                 expected_sequence=expected_sequence,
                 plan_sha256=plan_sha256,
             )
+            if disconnect_on_task:
+                return
             if response_delay_ms > 0:
                 time.sleep(response_delay_ms / 1000)
             output = None if input_value is None else RECORDING_PREFIX + input_value
