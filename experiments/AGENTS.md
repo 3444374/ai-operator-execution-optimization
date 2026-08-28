@@ -19,8 +19,9 @@
 - 先通过环境 preflight、数据/schema/exactly-once 和最小 correctness；只有计划明确授权后才运行
   rehearsal/formal。旧计划中的 `formal` 指令不自动获得当前执行授权。
 - 优化臂必须与强静态点或同上限对照；动态策略只有显著优于同上限静态配置才可晋升。
-- baseline 由被测系统拥有执行与调度。Project 实现的 FIFO/DRR/VTC-style/actor pool/credit 等只能
-  作为 Project internal control 或 diagnostic，除非直接运行了相应官方系统。
+- baseline 由被测系统拥有执行与调度。SemLoom 实现的 FIFO/DRR/VTC-style/actor pool/credit 等只能
+  作为 SemLoom internal control 或 diagnostic；历史 `Project`/`project_*` 身份继续按原 schema 解释，
+  除非直接运行了相应官方系统。
 - 正式 run 的具体 machine/model/service/protocol/workload 签名和阈值来自当前计划及 runtime 报告，
   不从历史结果或本规则文件继承。
 

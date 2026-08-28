@@ -18,7 +18,7 @@ ARMS
   so each gate cell gets a TTFT histogram delta (vllm_metric_delta_stats, before
   the cell idle -> after idle) + a per-cell gpu_resource.csv recording gpu0 AND
   gpu1. The shared gate_runner itself is left untouched.
-- project_static (2-endpoint, via endpoint_urls): run via run_project_static; the
+- project_static (2-endpoint, via endpoint_urls): run via run_semloom_static; the
   profiler already emits TTFT + a resource CSV natively, so no wrapper needed.
 
 OUTPUT LAYOUT (per scale, per arm, per repeat)
@@ -365,8 +365,8 @@ def _run_gate_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -
 
 def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -> dict:
     from src.baselines.text.products.project_static import (
-        ProjectStaticConfig,
-        run_project_static,
+        SemLoomStaticConfig,
+        run_semloom_static,
     )
     cell_output = (
         ramp.output_root
@@ -377,7 +377,7 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
     _write_identity("project_static", cell_output)
-    cfg = ProjectStaticConfig(
+    cfg = SemLoomStaticConfig(
         database_url=ramp.database_url,
         workload_name=ramp.workload_name,
         endpoint_url=ramp.endpoint_urls[0],
@@ -397,7 +397,7 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
     record = {"arm": "project_static", "scale": scale.rows, "concurrency": arm.concurrency,
               "rep": rep, "cell": str(cell_output), "kind": "project"}
     try:
-        run_result = run_project_static(cfg, cell_output)
+        run_result = run_semloom_static(cfg, cell_output)
         # Gate the cell on BOTH exit_code==0 AND a formal status==ok row (audit F16): exit 0 alone
         # does not strictly guarantee the profiler produced a formal-ok row, so a future code path
         # that exits 0 without one would otherwise be a silent false-pass.

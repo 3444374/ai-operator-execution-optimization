@@ -15,7 +15,7 @@ from .execution import (
     EmbeddingAudit,
     EmbeddingCapture,
     ExecutionResult,
-    ProjectRayWorkerPool,
+    SemLoomRayWorkerPool,
 )
 from .staged import build_encoded_image_block_descriptor
 
@@ -37,7 +37,7 @@ class _ModelCall:
 def run_project_ray_hse_pipeline(
     source_df,
     *,
-    worker_pool: ProjectRayWorkerPool,
+    worker_pool: SemLoomRayWorkerPool,
     expected_doc_ids: frozenset[str],
     batch_size: int,
     max_active_batches: int,
@@ -53,7 +53,7 @@ def run_project_ray_hse_pipeline(
 ) -> ExecutionResult:
     """Run static HSE without materializing prepared tensors on the driver.
 
-    This path changes only flow ownership relative to ``run_project_ray_pipeline``:
+    This path changes only flow ownership relative to ``run_semloom_ray_pipeline``:
     worker pools, image semantics, source, and model backend stay identical.
     """
     if min(
@@ -358,3 +358,8 @@ def run_project_ray_hse_pipeline(
         execution_mode="hse_static",
         engine_stats=engine_stats,
     )
+
+
+# Canonical SemLoom name; retain the historical function as an exact alias so
+# existing project_ray callers and evidence remain reproducible.
+run_semloom_ray_hse_pipeline = run_project_ray_hse_pipeline

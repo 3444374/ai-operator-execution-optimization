@@ -1,6 +1,6 @@
-# PostgreSQL 内置 AI 语义算子整体架构与实施计划
+# SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 状态：`current / architecture-defined / implementation-not-started`
 当前实现事实：现有代码是 PostgreSQL source/sink、Daft/Arrow、Ray、vLLM/CLIP、调度与观测组成的
 外部物理执行基座；尚无 PostgreSQL planner-visible AI 语义算子、统一 execution-provider 协议或
@@ -15,7 +15,7 @@ session；`SemFilter` 是第二个算子，join/aggregate/fusion/AQE 均为后�
 项目后续采用以下主路径：
 
 > **在 PostgreSQL 扩展中实现一等 AI 语义算子，参考 Sema 将语义操作放入 SQL、查询计划和执行
-> 生命周期的做法；数据库把已经绑定并规范化的语义任务交给可替换 execution provider。项目现有
+> 生命周期的做法；数据库把已经绑定并规范化的语义任务交给可替换 execution provider。SemLoom 现有
 > Daft/Ray/vLLM 执行与调度代码作为其中一个 provider implementation。LOTUS 保留为相关系统、
 > 行为兼容 profile 和完整系统 baseline，不再是核心运行依赖或语义所有者。**
 
@@ -34,7 +34,7 @@ executor；本项目坚持 PostgreSQL extension/PGXS 路径，首版不修改 Po
 | Sema | 主要架构参照：semantic operator 是显式 plan node，数据库拥有优化和执行状态 | 不作为 PostgreSQL 代码依赖；论文中的 DuckDB 实现不能证明 PG extension 已可行 |
 | PostgreSQL Custom Scan / planner hooks | 首版 planner-visible 物理算子的候选承载机制 | capability prototype 通过前不写成已实现事实 |
 | LOTUS | 语义算子相关工作、可选 `lotus_compat` 行为 profile、未修改完整系统 baseline | 不定义核心 IR，不要求 `lotus-ai==1.2.4` 才能运行数据库算子 |
-| 现有项目代码 | 外部 execution provider 的物理执行和调度 implementation | 不解析 SQL，不决定 `SemFilter` 真值，不修改 prompt 或 output parser |
+| SemLoom 现有物理执行代码 | 外部 execution provider 的物理执行和调度 implementation | 不解析 SQL，不决定 `SemFilter` 真值，不修改 prompt 或 output parser |
 | Daft / Ray / vLLM / typed CLIP actor | provider 后方的数据执行、分布式运行和模型服务设施 | 不拥有 PostgreSQL snapshot、ACL 或 query lifecycle |
 
 这个调整保留课题原来的研究目标：研究语义算子产生的外部 AI work 如何组织、提交、路由和在多 Job
@@ -59,7 +59,7 @@ PostgreSQL AI Semantic Extension
 AiExecutionProvider interface
   |-- recording provider            # deterministic capability/test
   |-- remote HTTP provider          # simple transport/control
-  `-- project provider              # proposed physical execution
+  `-- SemLoom provider              # proposed physical execution
         |-- WorkDescriptor / cost estimator
         |-- work-unit organization
         |-- admission / continuous replenishment
@@ -78,7 +78,7 @@ PostgreSQL semantic physical operator
   `-- emit tuple to downstream SQL operator or INSERT sink
 ```
 
-一句话：**PostgreSQL 内部实现 Sema-like AI 语义算子，项目方法通过统一 provider interface 成为其
+一句话：**PostgreSQL 内部实现 Sema-like AI 语义算子，SemLoom 方法通过统一 provider interface 成为其
 外部物理执行与调度 implementation。**
 
 ## 4. 数据库、provider 与模型服务的所有权
@@ -226,7 +226,7 @@ interface 的非类型部分同样是合同：
 - transport disconnect、protocol drift、digest mismatch 和未知 terminal state 均使 query fail closed；
 - `close` 返回脱敏 evidence，不返回或持久化原始 prompt/output。
 
-这是一个真实 seam，因为至少有 recording、remote HTTP 和 project 三个 adapter。首个 qualification
+这是一个真实 seam，因为至少有 recording、remote HTTP 和 SemLoom 三个 adapter。首个 qualification
 实现可用 Unix domain socket + versioned length-prefixed message；在 profile 证明序列化是主要成本前，
 不先增加共享内存、Arrow Flight 或自定义零拷贝协议。
 
@@ -246,7 +246,7 @@ semantic execution path，甚至改变结果质量。它属于 PostgreSQL semant
 ### 7.2 physical work organization
 
 项目现有 token/work/prefix organization 只把多个**已经独立编译完成**的 tasks 组成 `WorkUnit`，
-不修改 canonical messages、调用数、parser 或一行一结果关系。它属于 project provider。
+不修改 canonical messages、调用数、parser 或一行一结果关系。它属于 SemLoom provider。
 
 因此：
 
@@ -254,7 +254,7 @@ semantic execution path，甚至改变结果质量。它属于 PostgreSQL semant
 数据库 semantic batching/fusion
   = 允许改变语义调用结构，必须显式进入计划和质量验证
 
-project work-aware organization
+SemLoom work-aware organization
   = 只改变独立任务的物理提交结构，不改变语义
 ```
 
@@ -282,7 +282,7 @@ code/src/operators/
   providers/
     recording.py              # deterministic test adapter
     remote_http.py            # simple request transport control
-    project.py                # adapter to existing physical runtime
+    semloom.py                # adapter to existing physical runtime
   compatibility/
     lotus_v124.py             # optional prompt/output compatibility profile
 
@@ -300,16 +300,16 @@ planner、task 编译、provider transport 或 parser implementation。`code/src
 
 | 现有模块 | 新架构中的位置 |
 |---|---|
-| `code/src/planning/work.py::WorkDescriptor` | project provider 内部，由 task work metadata/estimator 构造；不进入 SQL plan interface |
-| `BatchRequest` / `PayloadEnvelope` | project adapter 的内部类型；不出现在 provider wire contract |
+| `code/src/planning/work.py::WorkDescriptor` | SemLoom provider 内部，由 task work metadata/estimator 构造；不进入 SQL plan interface |
+| `BatchRequest` / `PayloadEnvelope` | SemLoom adapter 的内部类型；不出现在 provider wire contract |
 | `code/src/scheduling/` | 保持不感知 PostgreSQL Plan、Sema 或 LOTUS |
 | `code/src/data/sources/postgres_text.py` | 外部/native baseline 与历史 profiler 使用；数据库内主路径由 child plan 供数 |
 | `code/src/observability/request_gateway.py` | 可复用为 provider 后方的被动 model-request observer，不承担 provider session 语义 |
 | `code/src/data/sinks/postgres.py` | 外部完整路径 baseline 使用；数据库内 `INSERT ... SELECT` 由 PostgreSQL transaction 拥有 |
-| 现有 static/shared/SAOR runtime | 通过 `providers/project.py` 接入，不复制或迁入 extension |
+| 现有 static/shared/SAOR runtime | 通过 `providers/semloom.py` 接入，不复制或迁入 extension |
 
-删除 `lotus_v124.py` 后，默认 PostgreSQL `SemMap`、recording/HTTP/project providers 和 scheduler
-都应继续工作；删除 project provider 后，PostgreSQL operator qualification 与其他 providers 仍应工作。
+删除 `lotus_v124.py` 后，默认 PostgreSQL `SemMap`、recording/HTTP/SemLoom providers 和 scheduler
+都应继续工作；删除 SemLoom provider 后，PostgreSQL operator qualification 与其他 providers 仍应工作。
 这两个删除测试用于防止 LOTUS 或项目调度重新成为核心耦合点。
 
 ## 9. 实施工作包与完成标准
@@ -358,12 +358,12 @@ LIMIT early stop、用户 cancel、provider crash、timeout、duplicate/missing 
 finish reason、query/operator/task lifecycle 和脱敏 evidence。该工作只证明完整链路可运行，不产生调度
 性能结论。
 
-### 工作包五：project provider adapter
+### 工作包五：SemLoom provider adapter
 
 动作：`PreparedSemanticTask` 映射为现有 `WorkDescriptor → BatchRequest/PayloadEnvelope`，首先只接
-project frozen-static；复用现有 completion fan-in、trace 和 provider 后方 observer。
+legacy `project_static` frozen-static；复用现有 completion fan-in、trace 和 provider 后方 observer。
 
-完成标准：不修改 scheduling core 即可运行；recording/HTTP/project 三个 provider 使用相同 plan、
+完成标准：不修改 scheduling core 即可运行；recording/HTTP/SemLoom 三个 provider 使用相同 plan、
 task digest set、output parser 和 row set。若必须让 scheduler 理解 SQL/plan/parser，返回工作包二重设合同。
 
 ### 工作包六：`SemFilter` 与关系语义验证
@@ -391,7 +391,7 @@ micro-execution/AQE。每项都建立 reference path、quality/cost/latency 指�
 1. `lotus_compat` 仅对受支持 `SemMap` profile 复现版本锁定的 prompt/output 行为；
 2. recording LM 比较 canonical messages、generation options、output mapping 和错误行为；
 3. 未修改 LOTUS 完整路径保留自己的 DataConnector/Pandas/LM/LiteLLM execution owner；
-4. LOTUS native、Sema native 和其他 semantic system 作为 full-system baseline 单独报告，不注入 project
+4. LOTUS native、Sema native 和其他 semantic system 作为 full-system baseline 单独报告，不注入 SemLoom
    provider、credit 或 scheduler。
 
 完成标准：兼容 profile 的差异有逐字段证据；LOTUS 缺失或版本变化不会阻止默认算子运行。兼容测试
@@ -433,11 +433,11 @@ micro-execution/AQE。每项都建立 reference path、quality/cost/latency 指�
 1. **database operator qualification**：recording/remote provider 的小规模 SQL、child plan、snapshot、
    cancel/error/result lifecycle；不做系统排名。
 2. **provider matched comparison**：相同 PostgreSQL operator plan、task set、模型、服务、资源和输出
-   条件下比较 simple HTTP、project frozen-static 与 proposed provider；只在语义、正确性和观测合同
+   条件下比较 simple HTTP、SemLoom frozen-static（历史 arm 为 `project_static`）与 proposed provider；只在语义、正确性和观测合同
    一致后做机制归因。
 3. **native full-system comparison**：Sema、LOTUS、Daft、Ray Data 等使用自己的正式入口和 execution
    owner，比较完成同一用户任务的端到端经验表现；不把差异全部归因于调度，也不把它们强行塞入
-   project provider seam。
+   SemLoom provider seam。
 
 系统级计时至少区分 query release、child first tuple、provider first submit、model first/last completion、
 数据库最后结果可见或 transaction commit。阶段可能重叠，不能要求分阶段 wall time 相加等于 E2E。
@@ -453,9 +453,9 @@ micro-execution/AQE。每项都建立 reference path、quality/cost/latency 指�
 - 不能说 Sema 的 DuckDB 实现可直接移植为 PostgreSQL extension。
 - 不能说 `ai_semantic.map` marker function 本身就是一等算子；只有 planner/executor qualification
   通过后才能使用该表述。
-- 不能说 project work-unit batching 等于 Sema prompt batching；两者是否改变语义调用结构不同。
+- 不能说 SemLoom work-unit batching 等于 Sema prompt batching；两者是否改变语义调用结构不同。
 - 不能说 LOTUS 是核心依赖、语义所有者或项目 backend registry。
-- 不能把 `lotus_compat + project provider` 称为 LOTUS native。
+- 不能把 `lotus_compat + SemLoom provider` 称为 LOTUS native。
 - 不能把一次 capability/smoke 或 CPU/fake 结果外推为调度性能贡献。
 
 ## 13. 文档替换与后续同步

@@ -1,6 +1,6 @@
 # 知识库总汇：数据库 AI 负载的上游执行链路优化
 
-生成日期：2026-07-16（最近更新：2026-08-27，以 Sema-like 数据库原生语义算子重设架构参照）
+生成日期：2026-07-16（最近更新：2026-08-28，确定 SemLoom 系统身份与 provider 术语）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -951,7 +951,7 @@ PostgreSQL Sema-like planner-visible AI semantic operator（尚未实现）
   → SemanticOperatorPlan / ordinary child plan / snapshot / query lifecycle
   → PreparedSemanticTask + bounded execution-provider interface
        ├── recording / remote HTTP（资格与简单 control）
-       └── project provider
+       └── SemLoom provider
             ├── Daft / Ray / vLLM external runtime
             ├── project frozen-static（强静态参照）
             └── project state-aware / SAOR（条件性候选）
@@ -981,7 +981,7 @@ provider interface 和 query lifecycle 未完成前，既有 manifest/profiler �
 | 阶段 | 当前状态 | 内容与下一步 |
 |---|---|---|
 | 数据库算子 capability | **当前首要，未开始实现** | PostgreSQL extension/planner-visible `SemMap` 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
-| 中立 provider interface | **capability 后执行** | plan/task/result digest、bounded submit/poll/cancel，以及 recording、remote HTTP、project providers |
+| 中立 provider interface | **capability 后执行** | plan/task/result digest、bounded submit/poll/cancel，以及 recording、remote HTTP、SemLoom provider |
 | 关系语义与兼容 | **后续** | 以 `SemFilter` 验证 cardinality；LOTUS v1.2.4 compatibility/native baseline 不阻塞核心实现 |
 | 文本数据组织 | **已完成主要机制实验** | fixed/token-budget/length/prefix/BFD/row-cap；结论随 KV 压力与 endpoint consolidation 变化 |
 | 文本提交与多 Job | **已完成静态/共享核心证据，动态未普遍胜出** | active-work、request replenish、flush、actor pool、shared credit、1/2/4 Job 与 5s staggered；weighted/held-out/failure migration 条件性保留 |

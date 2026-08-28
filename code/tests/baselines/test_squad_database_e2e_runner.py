@@ -421,7 +421,7 @@ class ProjectStaticArmTests(unittest.TestCase):
 
             with patch("squad_database_e2e_runner._scan_workload", side_effect=scan_mock), \
                  patch("squad_database_e2e_runner._sink_write", side_effect=MagicMock()), \
-                 patch("squad_database_e2e_runner.run_project_static", return_value=fake_run), \
+                 patch("squad_database_e2e_runner.run_semloom_static", return_value=fake_run), \
                  patch("squad_database_e2e_runner._fetch_workload_integrity_and_scoring",
                        return_value=(doc_to_source, references, prompt_fingerprints,
                                      "actualhash",

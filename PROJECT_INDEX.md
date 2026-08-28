@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-08-27
+更新时间：2026-08-28
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -10,6 +10,7 @@
 | 内容 | 单一入口 | 说明 |
 |---|---|---|
 | 项目长期规则 | [`AGENTS.md`](AGENTS.md) | 全项目规则、继承顺序与目录规则路由；进入子目录后再读沿途 `AGENTS.md` |
+| 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 题目、研究内容、证据等级和当前执行顺序 |
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；不保存详细历史 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 代码模块、已接线能力和未完成项 |
@@ -31,9 +32,10 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 ### 了解课题
 
 1. [`README.md`](README.md)
-2. [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md)
-3. [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md)
-4. [`opening/claim_matrix.md`](opening/claim_matrix.md)
+2. [`CONTEXT.md`](CONTEXT.md)
+3. [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md)
+4. [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md)
+5. [`opening/claim_matrix.md`](opening/claim_matrix.md)
 
 ### 继续当前实现
 
@@ -43,8 +45,8 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
 当前最短期任务是 PostgreSQL extension/planner-visible `SemMap` capability，然后实现中立
-plan/task/result 合同和 recording、remote HTTP、project providers，再以 `SemFilter` 验证关系语义。
-既有 Daft/Ray/static/SAOR 代码作为 project provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
+plan/task/result 合同和 recording、remote HTTP、SemLoom provider，再以 `SemFilter` 验证关系语义。
+既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
 
 ### 运行实验或迁移机器
 

@@ -19,6 +19,8 @@ from src.modalities.image.execution import (
     EmbeddingCapture,
     ExecutionResult,
 )
+from src.modalities.image import execution as image_execution
+from src.modalities.image import staged_execution as staged_image_execution
 from src.modalities.image.clip import l2_normalize_numpy_embeddings
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
 
@@ -28,6 +30,32 @@ RUNNER_SPEC = importlib.util.spec_from_file_location("image_clip_e2e_runner", RU
 assert RUNNER_SPEC is not None and RUNNER_SPEC.loader is not None
 RUNNER_MODULE = importlib.util.module_from_spec(RUNNER_SPEC)
 RUNNER_SPEC.loader.exec_module(RUNNER_MODULE)
+
+
+class SemLoomImageNamingContractTest(unittest.TestCase):
+    def test_semloom_names_are_behavior_preserving_aliases(self):
+        self.assertIs(
+            image_execution.SemLoomRayWorkerPool,
+            image_execution.ProjectRayWorkerPool,
+        )
+        self.assertIs(
+            image_execution.build_semloom_ray_worker_pool,
+            image_execution.build_project_ray_worker_pool,
+        )
+        self.assertIs(
+            image_execution.run_semloom_ray_pipeline,
+            image_execution.run_project_ray_pipeline,
+        )
+        self.assertIs(
+            image_execution.stop_semloom_ray_worker_pool,
+            image_execution.stop_project_ray_worker_pool,
+        )
+        self.assertIs(
+            staged_image_execution.run_semloom_ray_hse_pipeline,
+            staged_image_execution.run_project_ray_hse_pipeline,
+        )
+        self.assertIn("project_ray", RUNNER_MODULE.ARMS)
+        self.assertNotIn("semloom_ray", RUNNER_MODULE.ARMS)
 
 
 class EmbeddingAuditTest(unittest.TestCase):

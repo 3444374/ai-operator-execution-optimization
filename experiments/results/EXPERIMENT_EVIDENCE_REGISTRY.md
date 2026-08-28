@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 
 本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是 PostgreSQL planner-visible `SemMap` capability、中立 plan/task/result 合同与 execution providers，再以 `SemFilter` 验证关系语义；LOTUS compatibility/native baseline 后置。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
 
@@ -21,7 +21,7 @@
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
 | PostgreSQL planner-visible `SemMap` | `code/postgres/ai_semantic_operator/` 目标；当前不存在 | 无 | 仅有 capability 计划；SQL、child plan、snapshot、cancel/error/result lifecycle 尚未验证。 |
-| 中立 semantic plan/task/result + provider interface | `code/src/operators/` 目标；当前不存在 | 无 | recording、remote HTTP、project provider 以及 digest/backpressure/cancel 合同均尚未实现。 |
+| 中立 semantic plan/task/result + provider interface | `code/src/operators/` 目标；当前不存在 | 无 | recording、remote HTTP、SemLoom provider 以及 digest/backpressure/cancel 合同均尚未实现。 |
 | `SemFilter` 关系语义 | PostgreSQL semantic operator 第二算子；当前不存在 | 无 | 三值/NULL/error policy 与乱序 completion 下的 cardinality 行为尚未验证。 |
 | LOTUS v1.2.4 compatibility/native baseline | 可选 `code/src/operators/compatibility/lotus_v124.py` 与独立 native runner；当前不存在 | 无 | 只保留为后置兼容和完整系统 baseline，`SemMapNode`/messages/output/error parity 尚未实现且不阻塞核心。 |
 | 固定行 batching | `code/src/scheduling/organization/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
@@ -169,12 +169,12 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 - `summary_long.csv` 或 `comparison_summary.csv` 等绘图友好汇总。
 - 事实、推断、待确认和不能声称的内容分开写。
 
-## 6. 当前缺口（2026-08-27）
+## 6. 当前缺口（2026-08-28）
 
 以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
 
 1. 实现 PostgreSQL planner-visible `SemMap` capability，验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期。
-2. 实现中立 plan/task/result digest 和 bounded execution-provider session，接 recording、remote HTTP 与 project providers。
+2. 实现中立 plan/task/result digest 和 bounded execution-provider session，接 recording、remote HTTP 与 SemLoom provider。
 3. 以 `SemFilter` 验证三值/NULL/error 语义和乱序 completion 下的 relation cardinality；LOTUS compatibility/native baseline 后置。
 4. 前三项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
 5. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。

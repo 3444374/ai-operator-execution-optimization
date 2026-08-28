@@ -1,16 +1,23 @@
-# Project Code
+# SemLoom Code
 
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
-Status as of 2026-08-27: this directory contains the existing external physical-execution runtime
+Status as of 2026-08-28: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 PostgreSQL planner-visible AI semantic operator, the neutral plan/task/result contracts, or an execution-provider
 gateway. The active sequence is the PostgreSQL `SemMap` capability prototype, neutral provider interface,
-recording/HTTP/project providers, and then `SemFilter`; see
+recording/HTTP/SemLoom providers, and then `SemFilter`; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.
+
+New system-owned Python interfaces use `SemLoom`; generic PostgreSQL, planning, scheduling, and serving
+interfaces keep domain names. Existing `Project*` imports and `project_*` arm/schema values are compatibility
+identities for historical evidence and remain behavior-preserving aliases.
+The current canonical migration names are `SemLoomStaticConfig`, `SemLoomStaticRun`,
+`run_semloom_static`, `SemLoomRayWorkerPool`, `build_semloom_ray_worker_pool`,
+`run_semloom_ray_pipeline`, `run_semloom_ray_hse_pipeline`, and `stop_semloom_ray_worker_pool`.
 
 The SAOR section below records a stopped, fail-closed implementation state. It remains useful code and
 evidence context, but it is not authorization to resume GPU/formal runs or the current engineering
@@ -223,26 +230,26 @@ now lives under `code/src/`:
   actions.
 - Image workers apply the same rule inside long-lived Ray/Daft processes:
   `experiments/run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
-  records them in schema v8, and the project Ray pool verifies the observed
+  records them in schema v8, and the SemLoom Ray pool verifies the observed
   values before admitting work. Ray `num_cpus` remains an admission token, not
   an OS thread quota; actor count and per-actor thread count are separate
   experiment variables.
   The image runner passes the shared `ray_runtime_env()` contract at every
-  `ray.init`, so workers receive project imports and numeric thread limits
+  `ray.init`, so workers receive repository imports and numeric thread limits
   without relying on an interactive shell's `PYTHONPATH`.
   Schema v8 also separates Ray cluster slots from external Daft source threads
   and includes both in the host physical-resource budget.
   `--source-cpu-threads` is independent from preprocess `--cpu-workers`, so
   capacity sweeps change one stage at a time.
-  Project execution additionally times source iterator waits, driver batch
+  SemLoom execution additionally times source iterator waits, driver batch
   materialization, and Ray submission so the residual framework gap is not
   mislabeled as GPU or PCIe time.
 - `baselines/`: vLLM Bench service ceiling、项目自写 bounded controls、Daft/Ray Data
   framework-native adapters、OceanBase product-native adapter、immutable manifest 和
-  fail-closed 双 endpoint gate。`text/frameworks/` 只封装 vendor API graph，不注入项目
+  fail-closed 双 endpoint gate。`text/frameworks/` 只封装 vendor API graph，不注入 SemLoom
   credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
 - `data/sinks/postgres.py`: PostgreSQL embedding/completion result normalization and
-  batched SQL execution are separate from transaction ownership. Project runners build a
+  batched SQL execution are separate from transaction ownership. SemLoom runners build a
   `PostgresWritePlan`, execute it, and commit explicitly; historical `write_*` functions
   remain compatibility wrappers with their original implicit-commit behavior.
 - `observability/metrics/`: `timing.py`、`csv.py`、`statistics.py`、`resources.py`、

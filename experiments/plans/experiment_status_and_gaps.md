@@ -1,9 +1,9 @@
 # 实验状态与缺口分析
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 
 > **当前执行摘要**：先完成 PostgreSQL planner-visible `SemMap` capability，再实现中立
-> plan/task/result 合同和 recording、remote HTTP、project providers，随后以 `SemFilter` 验证关系
+> plan/task/result 合同和 recording、remote HTTP、SemLoom provider，随后以 `SemFilter` 验证关系
 > cardinality 语义。LOTUS v1.2.4 只作可选 compatibility/native baseline，不是前置依赖。此前文本、
 > 图像静态、observe-only 与代价估计证据继续有效，但当前不扩 GPU 矩阵、不调 SAOR。下文按日期保留
 > 状态演进；日期较早的“下一步”只有被本摘要或当前架构计划再次确认时才有执行效力。

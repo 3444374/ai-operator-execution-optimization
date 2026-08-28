@@ -50,8 +50,8 @@ from src.baselines.text.products.duckdb_ai import (  # noqa: E402
     run_duckdb_ai_complete,
 )
 from src.baselines.text.products.project_static import (  # noqa: E402
-    ProjectStaticConfig,
-    run_project_static,
+    SemLoomStaticConfig,
+    run_semloom_static,
 )
 from src.data.sinks.postgres import (  # noqa: E402
     execute_write_plan,
@@ -857,7 +857,7 @@ def _run_project_cell(
         _clean_sink(conn, (row.doc_id for row in manifest))
     _service_condition(manifest, config, workload)
     frozen = _project_runtime_contract(config, workload)
-    project = ProjectStaticConfig(
+    project = SemLoomStaticConfig(
         database_url=config.database_url,
         workload_name=workload.name,
         endpoint_url=config.endpoint_urls[0],
@@ -877,7 +877,7 @@ def _run_project_cell(
         request_manifest=str(workload.manifest),
         database_e2e_timing_boundary=True,
     )
-    run = run_project_static(project, cell_dir / "profiler")
+    run = run_semloom_static(project, cell_dir / "profiler")
     if run.exit_code != 0 or not run.formal_row_found:
         raise RuntimeError(
             f"project profiler failed: exit={run.exit_code}, formal={run.formal_row_found}, "

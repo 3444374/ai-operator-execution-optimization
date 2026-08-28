@@ -136,7 +136,7 @@ selector 双轮与 single-head→bounded-ready FIFO observation bridge 均已完
 
 | 部件 | 当前代码事实 | 正式数据支持到哪 | 下一项可验证接入 |
 |---|---|---|---|
-| Work Unit | `planning/work.py` 已定义 staged `WorkDescriptor`；图像生产路径已构造 descriptor 并交给 staged broker，文本路径仍主要使用兼容 scalar work | fixed-row token tail 与图像阶段画像支持字段设计；图像 observe-only 正式运行已验证 descriptor/signature，尚无动态收益 | project provider 接入后补文本 descriptor parity；图像先做 HSE static GPU 非劣，再允许动态动作 |
+| Work Unit | `planning/work.py` 已定义 staged `WorkDescriptor`；图像生产路径已构造 descriptor 并交给 staged broker，文本路径仍主要使用兼容 scalar work | fixed-row token tail 与图像阶段画像支持字段设计；图像 observe-only 正式运行已验证 descriptor/signature，尚无动态收益 | SemLoom provider 接入后补文本 descriptor parity；图像先做 HSE static GPU 非劣，再允许动态动作 |
 | 状态感知 | `RuntimeStateSnapshot`、freshness/signature 检查和 `BoundedStageWorkController` 已有单元测试；图像正式 runner 已落 observe-only snapshot/trace | 图像 24/24 group、3,114 个 snapshot 全 fresh、构建均值 0.141 ms；只证明观测接入，不证明控制收益 | 保留 missing/stale fallback，在同上限下只启用一个控制动作做 A/B |
 | 动态调度 | 调度器已实际消费 active work、least-work routing、completion release 和共享 DRR work credit；5s 两 job A/B 已正式运行 | 已证明 shared credit 的效率—隔离—公平权衡；尚未证明 stage-aware dynamic 或 SLO guard 优于 frozen-static | 保持同最大 K/work，按 admission-only、routing-only、fair-sharing-only 顺序做 phase-change/SLO 消融 |
 | 代价估计 | CE1–CE5 已实现为离线分析器；CE5 尚未在线驱动 organizer/scheduler | 文本 context-LOO 只支持配置选择的 marginal feasibility | 先把 estimate 作为 descriptor/tracing 字段回放；只有 held-out ranking/regret 过门后才影响在线动作 |

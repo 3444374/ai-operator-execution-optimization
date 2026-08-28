@@ -7929,3 +7929,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   解决具体耦合时保持直接实现。
 - 重构完成条件增加重构前 characterization/contract evidence 与逐步回归要求；公共接口、CLI、输出、
   错误、事务、cancel/retry/exactly-once 和指标口径默认保持不变，行为变更需与结构调整分开审阅。
+
+## 2026-08-28 SemLoom 系统身份与兼容接口迁移
+
+- 确定 SemLoom 为系统名称，DB-AIEL 只表示 Database-Aware AI Execution Layer 架构层；新增根
+  `CONTEXT.md` 统一 AI semantic operator、SemLoom execution provider 与 legacy Project identity。
+- 文本 frozen-static 和图像 Ray/HSE 执行新增 `SemLoom*`、`run_semloom_*` 规范 Python 名称，当前
+  runner 改用新名称；旧 `Project*` imports、`project_static`/`project_ray` arm、schema、provenance
+  和历史 evidence 保持不变，并由对象同一性测试证明兼容。
+- PostgreSQL source/sink、provider protocol、planning、scheduling 和 serving 继续使用领域名称，不
+  引入 SemLoom/DB-AIEL 前缀；尚未实现的 `project provider` 在当前架构入口统一改称 SemLoom provider。
+- 本地 131 项受影响测试通过；全仓发现 1,133 项，其中 1,123 项通过，剩余 8 项因本机缺少
+  pyarrow/psycopg 导入失败、2 项因 sandbox 禁止监听 socket，未在本机混装依赖。全仓 Markdown
+  511 份、443 个本地链接无断链；完整依赖环境复验待 Git 同步到服务器后执行。

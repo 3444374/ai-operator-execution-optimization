@@ -461,3 +461,11 @@ def run_project_ray_pipeline(
         submitted_batches=submitted_batches,
         pending_batches_peak=pending_batches_peak,
     )
+
+
+# Canonical names for the SemLoom-owned execution method. The Project* names
+# remain exact aliases for historical imports and project_ray evidence schemas.
+SemLoomRayWorkerPool = ProjectRayWorkerPool
+build_semloom_ray_worker_pool = build_project_ray_worker_pool
+run_semloom_ray_pipeline = run_project_ray_pipeline
+stop_semloom_ray_worker_pool = stop_project_ray_worker_pool

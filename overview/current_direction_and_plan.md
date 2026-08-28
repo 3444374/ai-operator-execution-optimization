@@ -1,6 +1,6 @@
-# 当前方向与计划
+# SemLoom 当前方向与计划
 
-最后更新：2026-08-27
+最后更新：2026-08-28
 
 这是两分钟快速参考卡片。完整定义以根 [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) 为准；
 实验完成度以
@@ -9,7 +9,8 @@
 
 ## 1. 一句话定位
 
-研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化：参考 Sema-like 数据库原生
+SemLoom 是面向数据库 AI 语义算子的工作量感知执行与多作业调度系统。本项目研究 PostgreSQL
+内置 AI 语义算子的外部分布式物理执行与调度优化：参考 Sema-like 数据库原生
 语义算子架构，由数据库拥有 SQL、关系 child plan、snapshot、权限、语义计划、结果解析以及取消、
 错误和结果生命周期；Daft、Ray、vLLM、CLIP 与 pgvector 是可替换的物理执行和验证平台。
 
@@ -21,8 +22,8 @@
 1. 用 PostgreSQL extension / planner-visible `SemMap` prototype 验证真实 SQL、ordinary child plan、
    snapshot 和 query lifecycle；
 2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同，以及有界、可取消的
-   recording、remote HTTP 与 project providers；
-3. 保持 Daft/Ray/static/SAOR 在 project provider 后方，不让 scheduler 理解 SQL、prompt parser 或
+   recording、remote HTTP 与 SemLoom provider；
+3. 保持 Daft/Ray/static/SAOR 在 SemLoom provider 后方，不让 scheduler 理解 SQL、prompt parser 或
    PostgreSQL Plan；
 4. 用 `SemFilter` 验证会改变关系 cardinality 的算子语义；LOTUS 兼容和 native baseline 后置且不阻塞；
 5. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
@@ -61,9 +62,9 @@
 - 五臂系统级 matched formal、SAOR 跨层 capability 和部分条件性纠正补测；
 - 代价估计在新时间段或新 workload 上的校准与在线决策价值。
 
-## 5. 证据边界
+## 5. 证据能支持什么
 
-- 原生 baseline 必须由被测系统拥有执行与调度；项目自写 UDF/actor/credit/router 按真实身份标注。
+- 原生 baseline 必须由被测系统拥有执行与调度；SemLoom 自写 UDF/actor/credit/router 按真实身份标注。
 - rehearsal、CPU/fake、microbenchmark 和 observe-only 不能写成完整方法或正式性能结论。
 - 动态方法必须与同资源上限、在实验开始前选定且运行期间不变的最佳静态配置比较，并满足预先规定的重复、正确性和稳定性条件。
 - 文本与图像协议不同，不直接比较吞吐；CLIP 没有自回归 KV cache、TTFT 或 TPOT。

@@ -1,12 +1,17 @@
-# 数据库 AI 负载执行优化与调度研究工作区
+# SemLoom
 
-本仓库研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。参考 Sema 一类数据库
+**A Database-Aware Execution and Scheduling Layer for AI Semantic Operators**
+
+**面向数据库 AI 语义算子的工作量感知执行与多作业调度系统**
+
+本仓库正在实现 SemLoom，并研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
+DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代码接口前缀。参考 Sema 一类数据库
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-08-27）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
+当前状态（2026-08-28）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
 架构改为 Sema-like 中立语义算子核心。短期工程先用 PostgreSQL extension 验证 planner-visible
-`SemMap` 与 query lifecycle，再实现中立 task/result 合同和 recording、HTTP、project providers；
+`SemMap` 与 query lifecycle，再实现中立 task/result 合同和 recording、HTTP、SemLoom providers；
 LOTUS v1.2.4 只作可选兼容 profile 与完整路径 baseline。既有 profiler、manifest 和 GPU 实验仍是
 外部物理执行证据，不能改称已经实现数据库内算子。
 
@@ -18,6 +23,7 @@ LOTUS v1.2.4 只作可选兼容 profile 与完整路径 baseline。既有 profil
 | 核对题目、研究内容、证据等级和执行顺序 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) |
 | 查找文件和阅读路径 | [`PROJECT_INDEX.md`](PROJECT_INDEX.md) |
 | 核对项目长期规则和边界 | [`AGENTS.md`](AGENTS.md) |
+| 核对系统名和领域术语 | [`CONTEXT.md`](CONTEXT.md) |
 | 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 继续 PostgreSQL AI 语义算子实现 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
@@ -43,7 +49,7 @@ LOTUS v1.2.4 只作可选兼容 profile 与完整路径 baseline。既有 profil
 
 ```text
 .
-├── AGENTS.md / PROJECT_OUTLINE.md / PROJECT_INDEX.md  # 规则、总纲、导航
+├── AGENTS.md / CONTEXT.md / PROJECT_OUTLINE.md / PROJECT_INDEX.md  # 规则、术语、总纲、导航
 ├── overview/       # 当前方向速览
 ├── research/       # 文献、知识与方法依据
 ├── motivation/     # 动机画像与 GPU-backed 端到端证据
@@ -66,7 +72,7 @@ LOTUS v1.2.4 只作可选兼容 profile 与完整路径 baseline。既有 profil
 `projects/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
 部署 runbook。
 
-## 当前证据边界
+## 当前证据能支持什么
 
 - 固定行数不能稳定表示 AI work；数据组织策略在低 KV 压力与高 KV 压力下会出现不同排序。
 - 当前双 RTX 4090/Qwen/vLLM 签名下存在最小近饱和 active-work 区间；该数值不能跨机器、模型、

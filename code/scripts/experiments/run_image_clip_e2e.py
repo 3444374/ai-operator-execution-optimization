@@ -10,8 +10,9 @@ boundary fixed:
   Ray Data owns backpressure and actor scheduling.
 * ``daft_native`` / ``daft_ray`` / ``daft_staged``: project-authored UDF
   references retained for mechanism diagnosis, not formal native baselines.
-* ``project_ray``: bounded Ray CPU preprocessing actors feeding tensor-only GPU
-  actors, with the source kept lazy and streamed from Daft.
+* ``project_ray``: the legacy arm identifier for SemLoom's bounded Ray CPU
+  preprocessing actors feeding tensor-only GPU actors, with the source kept
+  lazy and streamed from Daft.
 
 This gate excludes pgvector writeback so that it measures the operator execution
 path. A later system-E2E layer must add the same sink to every arm.
@@ -55,11 +56,11 @@ from src.baselines.image.frameworks.daft import (  # noqa: E402
 from src.modalities.image.execution import (  # noqa: E402
     EmbeddingCapture,
     ExecutionResult,
-    build_project_ray_worker_pool,
-    run_project_ray_pipeline,
-    stop_project_ray_worker_pool,
+    build_semloom_ray_worker_pool,
+    run_semloom_ray_pipeline,
+    stop_semloom_ray_worker_pool,
 )
-from src.modalities.image.staged_execution import run_project_ray_hse_pipeline  # noqa: E402
+from src.modalities.image.staged_execution import run_semloom_ray_hse_pipeline  # noqa: E402
 from src.scheduling.runtime.stage_broker import StageBrokerLimits  # noqa: E402
 from src.modalities.image.metrics import (  # noqa: E402
     IMAGE_METRIC_DEFINITIONS,
@@ -802,7 +803,7 @@ class _ImageExecution:
             )
 
     def _build_project_workers(self):
-        return build_project_ray_worker_pool(
+        return build_semloom_ray_worker_pool(
             model_revision=self.args.model,
             processor_revision=self.setup.processor,
             cpu_workers=self.args.cpu_workers,
@@ -870,7 +871,7 @@ class _ImageExecution:
 
     def stop_project_workers(self) -> None:
         if self.worker_pool is not None:
-            stop_project_ray_worker_pool(self.worker_pool)
+            stop_semloom_ray_worker_pool(self.worker_pool)
 
     def start_formal_workers(self) -> float:
         if self.worker_pool is None:
@@ -956,7 +957,7 @@ class _ImageExecution:
             "embedding_capture": embedding_capture,
         }
         if args.project_execution_mode == "hse_static":
-            return run_project_ray_hse_pipeline(
+            return run_semloom_ray_hse_pipeline(
                 source,
                 **project_common,
                 encoded_block_bytes_upper_bound=(
@@ -969,7 +970,7 @@ class _ImageExecution:
                 model_dtype=args.dtype,
                 input_size=args.input_size,
             )
-        return run_project_ray_pipeline(source, **project_common)
+        return run_semloom_ray_pipeline(source, **project_common)
 
 
 def _wait_for_formal_start(args: argparse.Namespace) -> tuple[float, float]:

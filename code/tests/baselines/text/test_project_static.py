@@ -37,6 +37,13 @@ def _cfg(**overrides) -> "ps.ProjectStaticConfig":
 
 
 class ProjectStaticConfigTests(unittest.TestCase):
+    def test_semloom_names_are_behavior_preserving_aliases(self) -> None:
+        self.assertIs(ps.SemLoomStaticConfig, ps.ProjectStaticConfig)
+        self.assertIs(ps.SemLoomStaticRun, ps.ProjectStaticRun)
+        self.assertIs(ps.run_semloom_static, ps.run_project_static)
+        canonical = ps.SemLoomStaticConfig(**_cfg().__dict__)
+        self.assertEqual(canonical.scenario_id, "project_static")
+
     def test_valid(self) -> None:
         c = _cfg()
         self.assertEqual(c.writeback_mode, "json_text")

@@ -97,8 +97,8 @@ from src.baselines.text.products.direct_client import (  # noqa: E402
     run_direct_client,
 )
 from src.baselines.text.products.project_static import (  # noqa: E402
-    ProjectStaticConfig,
-    run_project_static,
+    SemLoomStaticConfig,
+    run_semloom_static,
 )
 from src.baselines.text.products.duckdb_ai import (  # noqa: E402
     DuckDBAiConfig,
@@ -576,7 +576,7 @@ def _parse(argv: list[str]) -> argparse.Namespace:
 def _run(args: argparse.Namespace, output_dir: Path) -> int:
     if args.arm == "project_static":
         # project_static delegates scan + operator + sink to the profiler
-        # (run_project_static); it must branch BEFORE this runner's common scan
+        # (run_semloom_static); it must branch BEFORE this runner's common scan
         # path to avoid double-scan / double-writeback.
         return _run_project_static(args, output_dir)
     if args.arm not in ("duckdb_ai", "direct_client"):
@@ -932,7 +932,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
 
     The profiler owns PG scan -> Daft token-budget organizer -> Ray actor ->
     static per-endpoint K + token-work admission -> vLLM -> unified sink
-    (``document_completions``). This function invokes ``run_project_static`` (which
+    (``document_completions``). This function invokes ``run_semloom_static`` (which
     subprocess-calls ``postgres_ai_operator_profile.py``), then reads its independent
     completion and exact-source-scan evidence. A post-run DB read supplies references
     and verifies that the scanned prompt fingerprints still match the imported
@@ -963,7 +963,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
     expected_count = int(importer.get("sample_count", EXPECTED_DEV_COUNT))
     endpoint_base = _endpoint_base_url(args.endpoint_url)
 
-    config = ProjectStaticConfig(
+    config = SemLoomStaticConfig(
         database_url=args.database_url,
         workload_name=args.workload_name,
         endpoint_url=args.endpoint_url,
@@ -999,7 +999,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "admission_scope_effective": "global_equivalent_single_endpoint",
         "profiler_script": config.profiler_script,
     }
-    # ProjectStaticConfig validates actor_workers x concurrency >= max_inflight,
+    # SemLoomStaticConfig validates actor_workers x concurrency >= max_inflight,
     # so effective_k == declared K (no silent clamp). Surface any config error as
     # a fail-closed SystemExit (main() writes failure_report.json).
     if config.effective_k != args.project_max_inflight:
@@ -1018,7 +1018,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
     # Connection-free: the wrapper reads all per-doc evidence from profiler output
     # files (completion-evidence CSV + summary CSV). The conn is opened only AFTER
     # the subprocess, for the integrity read + sink readback.
-    run = run_project_static(config, output_dir / "_profiler_work")
+    run = run_semloom_static(config, output_dir / "_profiler_work")
     wrapper_wall_s = time.time() - wrapper_t0
     time.sleep(max(0.0, args.metrics_settle_s))
     metrics_after = scrape_prometheus_metrics(args.metrics_url)

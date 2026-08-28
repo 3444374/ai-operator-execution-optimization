@@ -195,7 +195,7 @@ semantic fusion / multi-tuple prompt
   由 PostgreSQL semantic executor 选择并做质量比较
 
 independent-task grouping / admission / routing
-  由 project provider 选择并保持 task 语义不变
+  由 SemLoom provider 选择并保持 task 语义不变
 ```
 
 如果项目后端未来需要执行数据库已经选定的 batched semantic task，它接收的也应是一个已经具有确定 parser 和输出 cardinality 的 `PreparedSemanticTask`，而不是在后端自行拼接 prompt。
@@ -269,7 +269,7 @@ independent-task grouping / admission / routing
 
 **来源类型：PVLDB 正式论文。** Abacus 将一个 logical semantic operator 的实现空间表示为可扩展 rules；对 physical operators 做 sample-based quality、dollar cost 和 latency 估计，用 Pareto-oriented multi-armed bandit 把采样集中到可能进入 frontier 的实现，再由 Pareto-Cascades 在带约束的多目标空间中组合完整计划。
 
-它支持本项目在通用 semantic plan 中保留 `logical operator → multiple physical implementations`，而不是把 `lotus_compat`、direct HTTP 和 project provider 写成互斥的顶层架构。它也说明 cost interface 需要同时携带 quality、cost、latency 与 uncertainty，而不是只返回一个 PostgreSQL 风格标量。
+它支持本项目在通用 semantic plan 中保留 `logical operator → multiple physical implementations`，而不是把 `lotus_compat`、direct HTTP 和 SemLoom provider 写成互斥的顶层架构。它也说明 cost interface 需要同时携带 quality、cost、latency 与 uncertainty，而不是只返回一个 PostgreSQL 风格标量。
 
 Abacus 的 operator independence、计划代价组合和 sample estimates 都有适用条件；它不观察项目 provider 的在线 endpoint queue、multi-Job service debt 或 cancel lifecycle。因此可迁移的是 rule space、sampling 和 Pareto search，不是把其当前 optimizer 直接当作项目的运行期 scheduler。
 
@@ -303,7 +303,7 @@ Abacus 的 operator independence、计划代价组合和 sample estimates 都有
 - 通过 planner/executor hook 或 `CustomScan` 形成显式 physical node；
 - 让 node 消费 ordinary child plan 的 tuple batches；
 - 验证 snapshot、cancel、error、row identity、order、result parser 和 query completion；
-- 接一个最小 direct HTTP provider 与现有 project provider。
+- 接一个最小 direct HTTP provider 与现有 SemLoom provider。
 
 首版只要求通用、稳定的 operator/provider seam，不要求 LOTUS 运行时依赖。`lotus_compat` 可用同一 operator IR 做单独 parity test。
 

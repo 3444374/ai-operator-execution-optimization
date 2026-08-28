@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-27
+日期：2026-08-28
 
 本文说明现有 Daft + Ray 外部物理执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。这里记录的是 PostgreSQL 中立语义算子集成前已经
@@ -9,9 +9,13 @@
 **当前工程顺序**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 PostgreSQL
 planner-visible `SemMap` capability，再实现中立 plan/task/result 合同和 recording、remote HTTP、
-project providers，随后以 `SemFilter` 验证关系 cardinality 语义。当前源码没有 PostgreSQL
+SemLoom providers，随后以 `SemFilter` 验证关系 cardinality 语义。当前源码没有 PostgreSQL
 CustomScan、统一 provider gateway 或 LOTUS compatibility adapter；LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
+
+系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
+`SemLoom*`/`run_semloom_*` 名称；既有 `Project*` import 与 `project_static`、`project_ray` 身份保持
+完全兼容。PostgreSQL source/sink、planning、scheduling 和 serving 接口继续使用领域名称。
 
 全部机制、代码测试和正式结果目录的逐项对应见
 `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。该台账明确区分代码完成、
@@ -353,7 +357,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期；
 2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同，以及有界、
    可取消的 recording provider；
-3. 增加 remote HTTP 与 project provider adapter，确保现有 scheduler 不理解 SQL、plan 或 parser；
+3. 增加 remote HTTP 与 SemLoom provider adapter，确保现有 scheduler 不理解 SQL、plan 或 parser；
 4. 用 `SemFilter` 验证关系 cardinality 语义；LOTUS v1.2.4 compatibility/native baseline 后置；
 5. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述外部 runner 结果写成数据库内算子证据。
 

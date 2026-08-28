@@ -61,8 +61,9 @@
 - 无 Daft/Ray 强客户端用于隔离上游框架成本。
 - Daft Native/Ray 和 Ray Data 是官方 runtime baseline。
 - LOTUS/Palimpzest 是数据库 AI 系统 baseline；SemBench 提供 workload 和多维指标。
-- VTC 是引擎内多 job service-counter 相关工作；本项目的 external VTC-style 复现只能标为
-  Project internal control，不能冒充原生 VTC baseline；Llumnix 是动态负载表征参考。
+- VTC 是引擎内多 job service-counter 相关工作；SemLoom 的 external VTC-style 复现只能标为
+  SemLoom internal control，历史 `Project` 身份按原 schema 保留，不能冒充原生 VTC baseline；
+  Llumnix 是动态负载表征参考。
 - 每个 arm 独立 calibration；不要求无限调优，但必须合理强并进入平台期。
 
 完整 baseline 矩阵见 `../experiments/plans/baseline_reference.md`。

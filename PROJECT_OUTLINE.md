@@ -1,6 +1,9 @@
 # 项目大纲
 
-更新时间：2026-08-27
+更新时间：2026-08-28
+
+系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
+代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -8,11 +11,11 @@
 期间不改变；“门禁/晋级”表示候选纳入比较或采用前必须满足的预设正确性、资源和性能条件；`P0`
 等只表示历史实验臂或诊断名称。这些词不构成研究贡献，也不覆盖本文顶部的当前执行顺序。
 
-## 0. 当前优先级与历史记录边界
+## 0. 当前优先级与历史记录范围
 
 当前最短路径是：先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证 SQL、ordinary
 child plan、snapshot 与 query lifecycle，再实现中立 plan/task/result 合同和 recording、remote HTTP、
-project execution providers，随后以 `SemFilter` 验证关系 cardinality 语义。上述步骤完成前不扩展
+SemLoom execution provider，随后以 `SemFilter` 验证关系 cardinality 语义。上述步骤完成前不扩展
 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
 算子结果。LOTUS v1.2.4 compatibility/native baseline 后置且不阻塞数据库核心。
 
@@ -25,7 +28,7 @@ GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated 
 [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)：
 参考 Sema-like 数据库原生语义算子设计，由 PostgreSQL extension/planner-visible operator 拥有 SQL、
 child plan、snapshot、semantic plan/result parsing 和 query lifecycle；中立 execution-provider
-interface 只接收数据库编译完成的任务。现有 Daft/Ray/static/SAOR 通过 project provider 接入，不能
+interface 只接收数据库编译完成的任务。现有 Daft/Ray/static/SAOR 通过 SemLoom provider 接入，不能
 理解 SQL、PostgreSQL Plan 或修改 prompt/parser。LOTUS 仅作可选兼容 profile、相关系统和完整路径
 baseline。当前状态是 `implementation-not-started`，不能把既有 profiler/manifest 实验重标为数据库内
 算子结果。
@@ -192,9 +195,9 @@ SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE
 PostgreSQL SQL `ai_semantic.map(...)`
   -> planner-visible SemanticOperatorPlan / ordinary child plan
   -> PreparedSemanticTask + bounded execution-provider session
-  -> recording | remote HTTP | project provider
-  -> project: Shared Cost Estimator + WorkDescriptor + Organizer
-  -> project: Ray actor admission / shared credit / routing
+  -> recording | remote HTTP | SemLoom execution provider
+  -> SemLoom: Shared Cost Estimator + WorkDescriptor + Organizer
+  -> SemLoom: Ray actor admission / shared credit / routing
   -> text: vLLM generation
      image: typed CLIP GPU actor
   -> unified PostgreSQL / pgvector sink
@@ -202,10 +205,10 @@ PostgreSQL SQL `ai_semantic.map(...)`
 
 - 写回采用 PostgreSQL + pgvector、COPY + deferred index，属于统一 correctness/E2E guardrail，不是独立研究内容。
 - 数据库内算子主矩阵共享 PostgreSQL child-plan source 与中立 semantic plan/task/result 合同；正式 baseline 必须由
-  被测 backend 拥有执行与调度，项目只做数据库交接、sink、质量审计和指标适配。
+  被测 backend 拥有执行与调度，SemLoom 只做数据库交接、sink、质量审计和指标适配。
 - 未修改 LOTUS DataConnector/`pd.read_sql` 路径保留为外部 LOTUS 完整系统 baseline，不进入数据库内算子主矩阵。
-- 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
-- `BoundedReadyWindow` 属于项目方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在项目内部 selector 归因消融中保持一致。
+- 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为 SemLoom 方法或 diagnostic reference。
+- `BoundedReadyWindow` 属于 SemLoom 方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在 SemLoom 内部 selector 归因消融中保持一致。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。
 - 性能参数绑定“机器 + 模型/服务配置 + 协议 + workload 分布/规模”签名，签名变化重新校准；
   同一签名只校准一次并复用冻结合同。K 不是逐实验手调，也不在 SAOR formal 中在线变化。
@@ -380,7 +383,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 1. **PostgreSQL capability**：用 extension / planner-visible `SemMap` 的 deterministic prototype 证明
    SQL、ordinary child plan、snapshot、cancel/error/result lifecycle；不连接 Python、HTTP 或 GPU。
 2. **中立 provider interface**：实现 plan/task/result digest、bounded submit/poll/cancel 和 recording、
-   remote HTTP、project providers，再用 `SemFilter` 验证关系 cardinality 语义。
+   remote HTTP、SemLoom provider，再用 `SemFilter` 验证关系 cardinality 语义。
 3. **兼容与 baseline**：LOTUS v1.2.4 compatibility 和未修改 native path 后置；它们不得覆盖默认语义
    或阻塞前两项。Sema/LOTUS 原生完整路径与 matched provider comparison 分表解释。
 4. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、

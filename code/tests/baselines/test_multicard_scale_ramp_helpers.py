@@ -171,7 +171,7 @@ class ProjectManifestParityTests(unittest.TestCase):
             )
 
             with mock.patch.object(drv, "_write_identity"), mock.patch(
-                "src.baselines.text.products.project_static.run_project_static",
+                "src.baselines.text.products.project_static.run_semloom_static",
                 return_value=result,
             ) as run_project:
                 record = drv._run_project_cell(ramp, scale, arm, rep=1)

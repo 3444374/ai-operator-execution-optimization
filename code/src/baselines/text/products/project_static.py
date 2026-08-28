@@ -1,10 +1,10 @@
-"""Project frozen-static AI_COMPLETE arm (the paper method, run via profiler).
+"""SemLoom frozen-static AI_COMPLETE method under the legacy project_static arm.
 
 This is the ``project_static`` arm of the SQuAD database-E2E runner. Unlike the
 ``duckdb_ai`` and ``direct_client`` arms (in-process adapters that take a
 ``tuple[ChatRequest, ...]`` and return ``BaselineRequestResult``), this arm is a
 THIN WRAPPER that subprocess-calls ``postgres_ai_operator_profile.py`` with the
-project's explicit frozen static contract. The profiler owns the full chain
+SemLoom frozen-static contract. The profiler owns the full chain
 end-to-end -- PG scan of the workload -> Daft token-budget organizer -> Ray actor
 executor -> static per-endpoint K + token-work admission -> vLLM -> unified sink
 (``document_completions``). The wrapper does NOT scan or sink; it only invokes,
@@ -13,10 +13,11 @@ profiler output files.
 
 Why shell out (codex ruling + codebase precedent): the gate runner deliberately
 BLOCKS an inline ``project_profiler`` ("requires_existing_project_profiler") rather
-than approximate the project's execution inline. The project's frozen static
+than approximate SemLoom execution inline. The frozen-static
 method IS the profiler path; re-implementing its Ray init + actor pool + organizer
 + scheduler inline would risk diverging from the real method under test. So
-``run_project_static`` runs the real profiler.
+``run_semloom_static`` runs the real profiler; ``run_project_static`` remains an
+exact compatibility alias.
 
 Effective K (contract): the profiler's per-endpoint in-flight ceiling is
 ``min(max_inflight, actor_workers_per_endpoint * ray_actor_max_concurrency)``. The
@@ -490,3 +491,11 @@ def run_project_static(
         ray_actor_max_concurrency=config.ray_actor_max_concurrency,
         exit_code=completed.returncode, stderr_tail=stderr_tail,
     )
+
+
+# SemLoom is the canonical system identity. The historical Project* names and
+# project_static arm value remain exact aliases because they are part of existing
+# imports, manifests, and experiment evidence.
+SemLoomStaticConfig = ProjectStaticConfig
+SemLoomStaticRun = ProjectStaticRun
+run_semloom_static = run_project_static

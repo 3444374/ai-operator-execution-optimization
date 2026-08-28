@@ -1,6 +1,6 @@
 # 正式研究实验
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 
 本目录回答“提出的方法或系统改动是否有效”。动机测试回答“问题是否存在”，放在
 `../motivation/`；组件和环境验证放在 `../feasibility/`。
@@ -8,7 +8,7 @@
 ## 当前状态
 
 当前不扩展 GPU 实验矩阵。短期先完成 PostgreSQL extension / planner-visible `SemMap` capability，
-再实现中立 plan/task/result 合同和 recording、remote HTTP、project providers，随后以 `SemFilter`
+再实现中立 plan/task/result 合同和 recording、remote HTTP、SemLoom provider，随后以 `SemFilter`
 验证关系语义。LOTUS compatibility/native baseline 不再是前置依赖。现阶段性能实验可使用明确标注的
 emulated operator contract，但不能称为已实现数据库内算子。
 
@@ -49,7 +49,8 @@ emulated operator contract，但不能称为已实现数据库内算子。
 - CPU/fake、microbenchmark、旧 UDF 和项目自写 Daft UDF 只作诊断或历史参考。
 - 原生系统 comparison 与项目方法 comparison 必须使用同 workload、模型、资源和计时边界。
 - 无效、失败与被排除的运行不得删除；必须保留原因和原始证据，且不得混入有效聚合。
-- 任何“动态优于静态”的结论都必须与同上限冻结静态点比较，并满足预注册重复与阈值。
+- 任何“动态优于静态”的结论都必须与同上限、实验开始前选定且运行期间不变的静态点比较，并满足
+  预先规定的重复次数与阈值。
 
 具体运行、落盘和报告要求见 [`AGENTS.md`](AGENTS.md)；实验计划导航见
 [`plans/README.md`](plans/README.md)。

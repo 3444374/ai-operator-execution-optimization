@@ -25,8 +25,8 @@ from src.infrastructure.runner_lease import acquire_host_runner_lease
 from src.infrastructure.runtime_env import ray_runtime_env
 from src.modalities.image.execution import (
     EmbeddingAudit,
-    build_project_ray_worker_pool,
-    stop_project_ray_worker_pool,
+    build_semloom_ray_worker_pool,
+    stop_semloom_ray_worker_pool,
 )
 from src.modalities.image.contracts import (
     build_image_runtime_snapshot,
@@ -436,7 +436,7 @@ def run_project_scenario(
         metadata[job.job_id] = job_metadata
 
     setup_started = time.perf_counter()
-    pool = build_project_ray_worker_pool(
+    pool = build_semloom_ray_worker_pool(
         model_revision=config.model,
         processor_revision=config.processor,
         cpu_workers=config.cpu_workers,
@@ -613,7 +613,7 @@ def run_project_scenario(
         ray_resources = ray_sampler.stop()
         if resource_trace_path is not None:
             ray_sampler.write_csv(resource_trace_path)
-        stop_project_ray_worker_pool(pool)
+        stop_semloom_ray_worker_pool(pool)
         for thread in threads:
             thread.join(timeout=5)
 

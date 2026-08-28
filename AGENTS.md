@@ -53,6 +53,8 @@ Claude Code 通过根 `CLAUDE.md` 导入本文件，并遵循相同的逐级读�
 
 研究对象是：**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 
+- 系统名称为 **SemLoom**；DB-AIEL（Database-Aware AI Execution Layer）只表示架构层，不作为
+  Python 类型、函数、包或实验身份的前缀；领域术语以根 `CONTEXT.md` 为准。
 - 数据库拥有 SQL、ordinary child plan、snapshot、权限、query cancel/error/result lifecycle；
 - 主要架构参照 Sema 一类数据库原生语义算子系统：语义算子进入 SQL、计划和执行生命周期；
 - 首版实现中立 `SemMap` 合同；LOTUS v1.2.4 只作可选兼容 profile、相关系统和完整路径 baseline；
@@ -74,7 +76,7 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 1. 用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
    snapshot、cancel、error 和 result lifecycle；
 2. 实现中立 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord` 合同和有界、可取消的
-   execution-provider interface，再接 recording、remote HTTP 与 project provider；
+   execution-provider interface，再接 recording、remote HTTP 与 SemLoom provider；
 3. 完成 `SemMap` 后以 `SemFilter` 验证关系 cardinality 语义；LOTUS 兼容和 native baseline 不阻塞
    这三个数据库核心步骤；
 4. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
@@ -114,7 +116,7 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 
 正式实验同时遵守 `experiments/AGENTS.md`、对应计划和以下全局要求：
 
-- baseline 由被测系统拥有执行与调度；项目 adapter 只处理 source、sink、质量审计和统一指标；
+- baseline 由被测系统拥有执行与调度；SemLoom adapter 只处理 source、sink、质量审计和统一指标；
 - GPU-backed database-E2E 优先，CPU/fake 仅作调试、机制隔离或历史对照；
 - 记录 upstream URL/commit、实现来源、scheduler owner、适配 diff、server/pgvector 版本、配置签名、
   warm-up、全部重复值、失败/重试和 exactly-once；

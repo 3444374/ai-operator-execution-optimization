@@ -1,6 +1,6 @@
 # 实验计划与设计文档
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -20,7 +20,7 @@
 
 1. 用 PostgreSQL extension / planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
    snapshot 与 query lifecycle；
-2. 实现中立 plan/task/result 合同和 recording、remote HTTP、project execution providers；
+2. 实现中立 plan/task/result 合同和 recording、remote HTTP、SemLoom execution provider；
 3. 以 `SemFilter` 验证会改变关系 cardinality 的数据库语义；LOTUS compatibility/native baseline 后置；
 4. 上述步骤完成前不扩展 GPU 矩阵、不调整 SAOR，也不把既有 external runner 写成数据库内算子。
 

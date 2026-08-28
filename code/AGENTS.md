@@ -33,6 +33,9 @@ data source/materializer
 - 新 backend 保留同合同旧 backend 作为对照或回退。生产 runner 不反向 import profiling 脚本。
 - PostgreSQL 语义层与外部物理 backend 分开：数据库 plan/task/result 合同定义默认语义，scheduler
   不重定义 prompt、output parser 或关系行为；LOTUS parity 只由可选 compatibility adapter 验证。
+- 新的系统所有权接口使用 `SemLoom`；DB-AIEL 只作架构层名称。PostgreSQL、provider protocol、
+  planning、scheduling、serving 等可替换 module 使用领域角色命名。既有 `project_*` schema/arm 和
+  `Project*` import 只作兼容入口，不复制到新接口，也不重写历史 evidence。
 
 ## 3. 请求与流式语义
 
@@ -48,9 +51,10 @@ data source/materializer
 
 - 正式 baseline 直接使用官方 benchmark、内置 AI Function 或官方 native API graph，并让被测系统
   拥有 batching、backpressure 和 task/actor scheduling。
-- 项目 adapter 只统一 source、sink、质量与观测；不得注入项目 credit、inflight、router 或重写执行器。
+- SemLoom adapter 只统一 source、sink、质量与观测；不得向 baseline 注入 SemLoom credit、inflight、
+  router 或重写执行器。
 - 自写 UDF 可以提供 workload kernel；自写执行图只能命名为 `diagnostic_reference`。
-- Python、Ray、Daft 和服务 baseline 共享输入、输出、计时、失败和写回合同，不共享项目策略实现。
+- Python、Ray、Daft 和服务 baseline 共享输入、输出、计时、失败和写回合同，不共享 SemLoom 策略实现。
 
 ## 5. 代码质量
 
