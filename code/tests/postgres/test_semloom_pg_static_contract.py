@@ -61,6 +61,24 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND", scan_source)
         self.assertNotIn("to_arrow", scan_source)
 
+    def test_recording_provider_uses_typed_open_drive_close_contract(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        header = (EXTENSION_ROOT / "src" / "semloom_pg.h").read_text(encoding="utf-8")
+        provider_source = (EXTENSION_ROOT / "src" / "provider.c").read_text(encoding="utf-8")
+        scan_source = (EXTENSION_ROOT / "src" / "sem_scan.c").read_text(encoding="utf-8")
+
+        self.assertIn("src/provider.o", makefile)
+        self.assertIn("SemloomSemanticPlanSpec", header)
+        self.assertIn("SemloomPreparedSemanticTask", header)
+        self.assertIn("SemloomCompletionRecord", header)
+        self.assertIn("semloom_provider_open", provider_source)
+        self.assertIn("semloom_provider_drive", provider_source)
+        self.assertIn("semloom_provider_close", provider_source)
+        self.assertIn("semloom_provider_open", scan_source)
+        self.assertIn("semloom_provider_drive", scan_source)
+        self.assertIn("semloom_provider_close", scan_source)
+        self.assertNotIn("SEMLOOM_RECORDING_PREFIX", scan_source)
+
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")
         regression_expected = (EXTENSION_ROOT / "expected" / "semloom_pg.out").read_text(

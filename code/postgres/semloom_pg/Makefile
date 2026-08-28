@@ -3,6 +3,7 @@ MODULE_big = semloom_pg
 OBJS = \
 	src/extension.o \
 	src/marker.o \
+	src/provider.o \
 	src/sem_path.o \
 	src/sem_scan.o
 

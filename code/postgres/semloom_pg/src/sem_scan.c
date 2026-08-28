@@ -1,10 +1,10 @@
 #include "postgres.h"
 
+#include "catalog/pg_type_d.h"
 #include "commands/explain.h"
 #include "commands/explain_format.h"
 #include "executor/executor.h"
 #include "executor/execScan.h"
-#include "utils/memutils.h"
 
 #include "semloom_pg.h"
 
@@ -12,9 +12,8 @@ typedef struct SemloomScanState
 {
 	CustomScanState custom_state;
 	PlanState *child_state;
+	SemloomProviderSession *provider_session;
 	AttrNumber mapped_column;
-	uint64 accepted_rows;
-	uint64 emitted_rows;
 } SemloomScanState;
 
 static Node *semloom_create_scan_state(CustomScan *scan);
@@ -27,7 +26,6 @@ static void semloom_rescan(CustomScanState *node);
 static void semloom_explain_scan(CustomScanState *node,
 								 List *ancestors,
 								 ExplainState *explain_state);
-static Datum semloom_record_text(Datum input, ExprContext *expression_context);
 
 static const CustomExecMethods semloom_exec_methods = {
 	.CustomName = SEMLOOM_CUSTOM_SCAN_NAME,
@@ -58,6 +56,7 @@ semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags)
 {
 	SemloomScanState *state = (SemloomScanState *) node;
 	CustomScan *scan = castNode(CustomScan, node->ss.ps.plan);
+	SemloomSemanticPlanSpec plan_spec;
 	int unsupported_flags = EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND;
 
 	if ((executor_flags & unsupported_flags) != 0)
@@ -75,6 +74,10 @@ semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("SemMap mapped output is outside the scan tuple")));
+	plan_spec.mapped_column = state->mapped_column;
+	plan_spec.input_type = TEXTOID;
+	plan_spec.output_type = TEXTOID;
+	state->provider_session = semloom_provider_open(&plan_spec);
 
 	state->child_state = ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
 	node->custom_ps = list_make1(state->child_state);
@@ -92,6 +95,8 @@ semloom_next_tuple(ScanState *scan_state)
 	SemloomScanState *state = (SemloomScanState *) scan_state;
 	TupleTableSlot *child_slot = ExecProcNode(state->child_state);
 	TupleTableSlot *scan_slot = scan_state->ss_ScanTupleSlot;
+	SemloomPreparedSemanticTask task;
+	SemloomCompletionRecord completion;
 	int attribute_index;
 
 	if (TupIsNull(child_slot))
@@ -108,19 +113,26 @@ semloom_next_tuple(ScanState *scan_state)
 	{
 		bool is_null = child_slot->tts_isnull[attribute_index];
 
-		scan_slot->tts_isnull[attribute_index] = is_null;
-		if (is_null)
-			scan_slot->tts_values[attribute_index] = (Datum) 0;
-		else if (attribute_index + 1 == state->mapped_column)
-			scan_slot->tts_values[attribute_index] =
-				semloom_record_text(child_slot->tts_values[attribute_index],
-									 state->custom_state.ss.ps.ps_ExprContext);
+		if (attribute_index + 1 == state->mapped_column)
+		{
+			task.sequence = semloom_provider_accepted_rows(state->provider_session);
+			task.input_type = TEXTOID;
+			task.input = child_slot->tts_values[attribute_index];
+			task.is_null = is_null;
+			semloom_provider_drive(state->provider_session,
+								   &task,
+								   state->custom_state.ss.ps.ps_ExprContext->ecxt_per_tuple_memory,
+								   &completion);
+			scan_slot->tts_isnull[attribute_index] = completion.is_null;
+			scan_slot->tts_values[attribute_index] = completion.output;
+		}
 		else
+		{
+			scan_slot->tts_isnull[attribute_index] = is_null;
 			scan_slot->tts_values[attribute_index] = child_slot->tts_values[attribute_index];
+		}
 	}
 
-	state->accepted_rows++;
-	state->emitted_rows++;
 	return ExecStoreVirtualTuple(scan_slot);
 }
 
@@ -138,6 +150,11 @@ semloom_end_scan(CustomScanState *node)
 {
 	SemloomScanState *state = (SemloomScanState *) node;
 
+	if (state->provider_session != NULL)
+	{
+		semloom_provider_close(state->provider_session);
+		state->provider_session = NULL;
+	}
 	if (state->child_state != NULL)
 	{
 		ExecEndNode(state->child_state);
@@ -161,31 +178,14 @@ semloom_explain_scan(CustomScanState *node,
 {
 	SemloomScanState *state = (SemloomScanState *) node;
 
-	ExplainPropertyText("Provider", "in-process-recording", explain_state);
+	ExplainPropertyText("Provider", semloom_provider_name(state->provider_session), explain_state);
 	ExplainPropertyText("Physical Role", "reference", explain_state);
 	ExplainPropertyInteger("Mapped Column", NULL, state->mapped_column, explain_state);
 	if (explain_state->analyze)
 	{
-		ExplainPropertyInteger("Accepted Rows", NULL, state->accepted_rows, explain_state);
-		ExplainPropertyInteger("Emitted Rows", NULL, state->emitted_rows, explain_state);
+		ExplainPropertyInteger("Accepted Rows", NULL,
+							   semloom_provider_accepted_rows(state->provider_session), explain_state);
+		ExplainPropertyInteger("Emitted Rows", NULL,
+							   semloom_provider_emitted_rows(state->provider_session), explain_state);
 	}
-}
-
-static Datum
-semloom_record_text(Datum input, ExprContext *expression_context)
-{
-	text *input_text = DatumGetTextPP(input);
-	Size prefix_length = strlen(SEMLOOM_RECORDING_PREFIX);
-	Size input_length = VARSIZE_ANY_EXHDR(input_text);
-	MemoryContext previous_context;
-	text *output_text;
-
-	previous_context = MemoryContextSwitchTo(expression_context->ecxt_per_tuple_memory);
-	output_text = (text *) palloc(VARHDRSZ + prefix_length + input_length);
-	SET_VARSIZE(output_text, VARHDRSZ + prefix_length + input_length);
-	memcpy(VARDATA(output_text), SEMLOOM_RECORDING_PREFIX, prefix_length);
-	memcpy(VARDATA(output_text) + prefix_length, VARDATA_ANY(input_text), input_length);
-	MemoryContextSwitchTo(previous_context);
-
-	return PointerGetDatum(output_text);
 }
