@@ -382,7 +382,7 @@ def _send_completion_fixture(
         _send_raw_frame(connection, b"{")
         return
     if fixture == "invalid-utf8":
-        _send_raw_frame(connection, b'{"type":"completion","output":"\xff"}')
+        _send_raw_frame(connection, b"\xff")
         return
     if fixture == "non-object":
         _send_raw_frame(connection, b"[]")
