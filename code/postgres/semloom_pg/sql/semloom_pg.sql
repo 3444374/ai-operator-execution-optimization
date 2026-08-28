@@ -71,4 +71,18 @@ FROM semloom_documents
 WHERE doc_id = 3;
 TABLE semloom_sink;
 
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3
+RETURNING completion;
+
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3
+ON CONFLICT DO NOTHING;
+
+SELECT count(*) AS sink_rows_after_errors FROM semloom_sink;
+
 DROP EXTENSION semloom_pg CASCADE;

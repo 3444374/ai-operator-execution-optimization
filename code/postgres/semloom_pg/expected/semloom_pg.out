@@ -126,4 +126,22 @@ TABLE semloom_sink;
  recorded:third
 (1 row)
 
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3
+RETURNING completion;
+ERROR:  INSERT shape is outside the current SemMap capability
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3
+ON CONFLICT DO NOTHING;
+ERROR:  INSERT shape is outside the current SemMap capability
+SELECT count(*) AS sink_rows_after_errors FROM semloom_sink;
+ sink_rows_after_errors 
+------------------------
+                      1
+(1 row)
+
 DROP EXTENSION semloom_pg CASCADE;

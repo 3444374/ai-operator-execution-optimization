@@ -58,6 +58,26 @@ SELECT completion FROM semloom_sink;}),
 
 ($ret, $stdout, $stderr) = $node->psql(
 	'postgres',
+	q{INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload) FROM semloom_documents
+RETURNING completion;});
+isnt($ret, 0, 'INSERT SELECT RETURNING remains fail-closed');
+like($stderr, qr/INSERT shape is outside/, 'RETURNING failure identifies the INSERT boundary');
+
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	q{INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload) FROM semloom_documents
+ON CONFLICT DO NOTHING;});
+isnt($ret, 0, 'INSERT SELECT ON CONFLICT remains fail-closed');
+like($stderr, qr/INSERT shape is outside/, 'ON CONFLICT failure identifies the INSERT boundary');
+is(
+	$node->safe_psql('postgres', q{SELECT count(*) FROM semloom_sink;}),
+	'1',
+	'failed INSERT variants leave the committed sink unchanged');
+
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
 	q{SET statement_timeout = '100ms';
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
