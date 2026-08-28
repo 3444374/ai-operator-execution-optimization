@@ -23,7 +23,6 @@ sub start_recording_gateway
 
 	for (1 .. 200)
 	{
-		$gateway->pump_nb;
 		last if -S $socket_path;
 		sleep(0.01);
 	}
@@ -150,7 +149,8 @@ like(
 	qr/^recorded:alpha\nrecorded:beta$/,
 	'a new snapshot observes the committed row');
 
-my $gateway_socket = $node->basedir . '/recording.sock';
+my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
+my $gateway_socket = $gateway_directory . '/recording.sock';
 my ($gateway, $gateway_stdout, $gateway_stderr) =
   start_recording_gateway($gateway_socket);
 is(
