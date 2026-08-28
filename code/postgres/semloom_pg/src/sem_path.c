@@ -29,7 +29,6 @@ static Plan *semloom_plan_path(PlannerInfo *root,
 								List *custom_plans);
 static Node *semloom_replace_marker(Node *node, void *context);
 static void semloom_replace_marker_in_plan(Plan *plan, Oid marker_oid);
-static List *semloom_build_output_target_list(List *scan_target_list);
 
 static const CustomPathMethods semloom_path_methods = {
 	.CustomName = SEMLOOM_CUSTOM_SCAN_NAME,
@@ -231,7 +230,12 @@ semloom_plan_path(PlannerInfo *root,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("SemMap plan lost its mapped output identity")));
 
-	scan->scan.plan.targetlist = semloom_build_output_target_list(scan_target_list);
+	/*
+	 * Leave these expressions in planner form.  set_customscan_references()
+	 * matches them against custom_scan_tlist and creates INDEX_VAR references
+	 * after the complete plan tree is available.
+	 */
+	scan->scan.plan.targetlist = copyObject(scan_target_list);
 	scan->scan.plan.qual = NIL;
 	scan->scan.scanrelid = 0;
 	scan->flags = CUSTOMPATH_SUPPORT_PROJECTION;
@@ -274,27 +278,4 @@ semloom_replace_marker_in_plan(Plan *plan, Oid marker_oid)
 	plan->qual = (List *) semloom_replace_marker((Node *) plan->qual, &marker_oid);
 	semloom_replace_marker_in_plan(plan->lefttree, marker_oid);
 	semloom_replace_marker_in_plan(plan->righttree, marker_oid);
-}
-
-static List *
-semloom_build_output_target_list(List *scan_target_list)
-{
-	List *output_target_list = NIL;
-	ListCell *cell;
-
-	foreach(cell, scan_target_list)
-	{
-		TargetEntry *scan_entry = lfirst_node(TargetEntry, cell);
-		TargetEntry *output_entry = copyObject(scan_entry);
-
-		output_entry->expr = (Expr *) makeVar(INDEX_VAR,
-											 scan_entry->resno,
-											 exprType((Node *) scan_entry->expr),
-											 exprTypmod((Node *) scan_entry->expr),
-											 exprCollation((Node *) scan_entry->expr),
-											 0);
-		output_target_list = lappend(output_target_list, output_entry);
-	}
-
-	return output_target_list;
 }

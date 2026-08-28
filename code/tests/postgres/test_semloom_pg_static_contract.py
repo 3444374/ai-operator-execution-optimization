@@ -44,6 +44,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("path->custom_paths = list_make1(child_path)", path_source)
         self.assertIn("output_rel->pathlist = semantic_paths", path_source)
         self.assertIn("CUSTOMPATH_SUPPORT_PROJECTION", path_source)
+        self.assertIn("set_customscan_references()", path_source)
+        self.assertNotIn("makeVar(INDEX_VAR", path_source)
 
     def test_executor_is_incremental_and_rejects_rescan(self) -> None:
         scan_source = (EXTENSION_ROOT / "src" / "sem_scan.c").read_text(encoding="utf-8")
