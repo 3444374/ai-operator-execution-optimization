@@ -5,3 +5,5 @@
 /regression.out
 /results/
 /tmp_check/
+!/expected/
+!/expected/*.out

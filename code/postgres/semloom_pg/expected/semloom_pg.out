@@ -1,0 +1,66 @@
+\set VERBOSITY terse
+CREATE EXTENSION semloom_pg;
+CREATE TEMP TABLE semloom_documents (
+    doc_id integer PRIMARY KEY,
+    payload text NOT NULL
+);
+INSERT INTO semloom_documents VALUES
+    (1, 'repeat'),
+    (2, 'repeat'),
+    (3, 'third');
+EXPLAIN (COSTS OFF)
+SELECT doc_id, ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id >= 2;
+                       QUERY PLAN                        
+---------------------------------------------------------
+ Custom Scan (SemLoom SemMap)
+   Provider: in-process-recording
+   Physical Role: reference
+   Mapped Column: 2
+   ->  Bitmap Heap Scan on semloom_documents
+         Recheck Cond: (doc_id >= 2)
+         ->  Bitmap Index Scan on semloom_documents_pkey
+               Index Cond: (doc_id >= 2)
+(8 rows)
+
+SELECT doc_id, ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id >= 2;
+ doc_id |   completion    
+--------+-----------------
+      2 | recorded:repeat
+      3 | recorded:third
+(2 rows)
+
+SELECT doc_id, ai_semantic.map(upper(payload)) AS completion
+FROM semloom_documents
+WHERE doc_id = 3;
+ doc_id |   completion   
+--------+----------------
+      3 | recorded:THIRD
+(1 row)
+
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 1;
+   completion    
+-----------------
+ recorded:repeat
+(1 row)
+
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 0;
+ completion 
+------------
+(0 rows)
+
+SELECT upper(ai_semantic.map(payload))
+FROM semloom_documents;
+ERROR:  nested ai_semantic.map expressions are not supported
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+ORDER BY doc_id;
+ERROR:  query shape is outside the current SemMap capability
+DROP EXTENSION semloom_pg CASCADE;

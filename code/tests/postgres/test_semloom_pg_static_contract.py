@@ -58,6 +58,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")
+        regression_expected = (EXTENSION_ROOT / "expected" / "semloom_pg.out").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("EXPLAIN (COSTS OFF)", regression_sql)
         self.assertEqual(regression_sql.count("'repeat'"), 2)
@@ -65,6 +68,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("LIMIT 1", regression_sql)
         self.assertIn("LIMIT 0", regression_sql)
         self.assertIn("upper(ai_semantic.map(payload))", regression_sql)
+        self.assertIn("Custom Scan (SemLoom SemMap)", regression_expected)
+        self.assertIn("recorded:THIRD", regression_expected)
+        self.assertIn("query shape is outside", regression_expected)
 
 
 if __name__ == "__main__":
