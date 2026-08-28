@@ -1,5 +1,4 @@
 use strict;
-use utf8;
 use warnings FATAL => 'all';
 
 use Cwd qw(abs_path);
