@@ -290,147 +290,139 @@ semloom_pump_fail(SemloomExecPump *pump, const AiProviderError *error)
 static void
 semloom_raise_provider_error(const AiProviderError *error)
 {
+	int sqlstate = ERRCODE_INTERNAL_ERROR;
+	const char *message = "SemLoom provider returned an unknown error";
+
 	switch (error->code)
 	{
 		case AI_PROVIDER_ERROR_INVALID_SPEC:
+			sqlstate = ERRCODE_INVALID_PARAMETER_VALUE;
 			switch (error->operation)
 			{
 				case AI_PROVIDER_OPERATION_SOCKET_PATH_LENGTH:
-					ereport(ERROR,
-							(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-							 errmsg("SemLoom provider socket path is too long")));
+					message = "SemLoom provider socket path is too long";
+					break;
 				case AI_PROVIDER_OPERATION_SOCKET_PATH_ABSOLUTE:
-					ereport(ERROR,
-							(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-							 errmsg("SemLoom provider socket path must be absolute")));
+					message = "SemLoom provider socket path must be absolute";
+					break;
 				default:
-					ereport(ERROR,
-							(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-							 errmsg("invalid recording provider plan specification")));
+					message = "invalid recording provider plan specification";
+					break;
 			}
+			break;
 		case AI_PROVIDER_ERROR_SESSION_CLOSED:
-			ereport(ERROR,
-					(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
-					 errmsg("recording provider session is not open")));
+			sqlstate = ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE;
+			message = "recording provider session is not open";
+			break;
 		case AI_PROVIDER_ERROR_TASK_MISMATCH:
-			ereport(ERROR,
-					(errcode(ERRCODE_DATA_EXCEPTION),
-					 errmsg("recording provider task does not match the open plan")));
+			sqlstate = ERRCODE_DATA_EXCEPTION;
+			message = "recording provider task does not match the open plan";
+			break;
 		case AI_PROVIDER_ERROR_NULL_TASK:
-			ereport(ERROR,
-					(errcode(ERRCODE_DATA_EXCEPTION),
-					 errmsg("PROPAGATE_NULL tasks must be completed by the PostgreSQL executor")));
+			sqlstate = ERRCODE_DATA_EXCEPTION;
+			message = "PROPAGATE_NULL tasks must be completed by the PostgreSQL executor";
+			break;
 		case AI_PROVIDER_ERROR_INPUT_TOO_LARGE:
 			ereport(ERROR,
 					(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 					 errmsg("SemLoom provider input exceeds the %d byte limit",
 							SEMLOOM_VISIBLE_UDS_INPUT_LIMIT_BYTES)));
+			pg_unreachable();
 		case AI_PROVIDER_ERROR_UNSUPPORTED_ENCODING:
-			ereport(ERROR,
-					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					 errmsg("SemLoom UDS recording provider requires UTF8 database encoding")));
+			sqlstate = ERRCODE_FEATURE_NOT_SUPPORTED;
+			message = "SemLoom UDS recording provider requires UTF8 database encoding";
+			break;
 		case AI_PROVIDER_ERROR_RESOURCE_EXHAUSTED:
-			ereport(ERROR,
-					(errcode(ERRCODE_INSUFFICIENT_RESOURCES),
-					 errmsg("could not reserve a file descriptor for the SemLoom provider")));
+			sqlstate = ERRCODE_INSUFFICIENT_RESOURCES;
+			message = "could not reserve a file descriptor for the SemLoom provider";
+			break;
 		case AI_PROVIDER_ERROR_CONNECTION_LOST:
-			ereport(ERROR,
-					(errcode(ERRCODE_CONNECTION_FAILURE),
-					 errmsg("SemLoom provider disconnected before completing a frame")));
+			sqlstate = ERRCODE_CONNECTION_FAILURE;
+			message = "SemLoom provider disconnected before completing a frame";
+			break;
 		case AI_PROVIDER_ERROR_FRAME_LIMIT:
-			ereport(ERROR,
-					(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-					 errmsg("SemLoom provider frame length is outside the protocol limit")));
+			sqlstate = ERRCODE_PROGRAM_LIMIT_EXCEEDED;
+			message = "SemLoom provider frame length is outside the protocol limit";
+			break;
 		case AI_PROVIDER_ERROR_NUMERIC_RANGE:
-			ereport(ERROR,
-					(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-					 errmsg("integer out of range")));
+			sqlstate = ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE;
+			message = "integer out of range";
+			break;
 		case AI_PROVIDER_ERROR_SYSTEM:
-			errno = error->system_errno;
 			switch (error->operation)
 			{
 				case AI_PROVIDER_OPERATION_CREATE_SOCKET:
-					ereport(ERROR,
-							(errcode_for_socket_access(),
-							 errmsg("could not create SemLoom provider socket: %m")));
+					message = "could not create SemLoom provider socket";
+					break;
 				case AI_PROVIDER_OPERATION_CONFIGURE_SOCKET:
-					ereport(ERROR,
-							(errcode_for_socket_access(),
-							 errmsg("could not make SemLoom provider socket nonblocking: %m")));
+					message = "could not make SemLoom provider socket nonblocking";
+					break;
 				case AI_PROVIDER_OPERATION_INSPECT_SOCKET:
-					ereport(ERROR,
-							(errcode_for_socket_access(),
-							 errmsg("could not inspect SemLoom provider socket connection: %m")));
+					message = "could not inspect SemLoom provider socket connection";
+					break;
 				case AI_PROVIDER_OPERATION_WRITE_SOCKET:
-					ereport(ERROR,
-							(errcode_for_socket_access(),
-							 errmsg("could not write to SemLoom provider socket: %m")));
+					message = "could not write to SemLoom provider socket";
+					break;
 				case AI_PROVIDER_OPERATION_READ_SOCKET:
-					ereport(ERROR,
-							(errcode_for_socket_access(),
-							 errmsg("could not read from SemLoom provider socket: %m")));
+					message = "could not read from SemLoom provider socket";
+					break;
 				default:
-					ereport(ERROR,
-							(errcode_for_socket_access(),
-							 errmsg("could not connect to SemLoom provider socket: %m")));
+					message = "could not connect to SemLoom provider socket";
+					break;
 			}
+			errno = error->system_errno;
+			ereport(ERROR,
+					(errcode_for_socket_access(),
+					 errmsg("%s: %m", message)));
+			pg_unreachable();
 		case AI_PROVIDER_ERROR_PROTOCOL:
+			sqlstate = ERRCODE_PROTOCOL_VIOLATION;
 			switch (error->operation)
 			{
 				case AI_PROVIDER_OPERATION_RECEIVE_FRAME:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider returned an invalid frame length")));
+					message = "SemLoom provider returned an invalid frame length";
+					break;
 				case AI_PROVIDER_OPERATION_PARSE_JSON:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider returned invalid JSON")));
+					message = "SemLoom provider returned invalid JSON";
+					break;
 				case AI_PROVIDER_OPERATION_RESPONSE_OBJECT:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider response must be a JSON object")));
+					message = "SemLoom provider response must be a JSON object";
+					break;
 				case AI_PROVIDER_OPERATION_RESPONSE_FIELD:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider response is missing a required field")));
+					message = "SemLoom provider response is missing a required field";
+					break;
 				case AI_PROVIDER_OPERATION_RESPONSE_INTEGER:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider response has an invalid integer field")));
+					message = "SemLoom provider response has an invalid integer field";
+					break;
 				case AI_PROVIDER_OPERATION_RESPONSE_BOOLEAN:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider response has an invalid boolean field")));
+					message = "SemLoom provider response has an invalid boolean field";
+					break;
 				case AI_PROVIDER_OPERATION_PROVIDER_REJECTED:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider rejected the protocol message")));
+					message = "SemLoom provider rejected the protocol message";
+					break;
 				case AI_PROVIDER_OPERATION_OPEN_RESPONSE:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider open response does not match the requested protocol")));
+					message = "SemLoom provider open response does not match the requested protocol";
+					break;
 				case AI_PROVIDER_OPERATION_COMPLETION_IDENTITY:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider completion identity does not match the task")));
+					message = "SemLoom provider completion identity does not match the task";
+					break;
 				case AI_PROVIDER_OPERATION_COMPLETION_OUTPUT:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider completion has an invalid output")));
+					message = "SemLoom provider completion has an invalid output";
+					break;
 				case AI_PROVIDER_OPERATION_COMPLETION_EVIDENCE:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider completion evidence digest does not match")));
+					message = "SemLoom provider completion evidence digest does not match";
+					break;
 				default:
-					ereport(ERROR,
-							(errcode(ERRCODE_PROTOCOL_VIOLATION),
-							 errmsg("SemLoom provider returned an unexpected message")));
+					message = "SemLoom provider returned an unexpected message";
+					break;
 			}
+			break;
 		default:
-			ereport(ERROR,
-					(errcode(ERRCODE_INTERNAL_ERROR),
-					 errmsg("SemLoom provider returned an unknown error")));
+			break;
 	}
+	ereport(ERROR,
+			(errcode(sqlstate),
+			 errmsg("%s", message)));
 	pg_unreachable();
 }
 
