@@ -1,15 +1,15 @@
 # Local Reference PDF Subset
 
-更新日期：2026-08-27
+更新日期：2026-08-28
 
 本目录保存当前工作区实际存在、已通过 PDF 解析检查的论文。权威题录和用途见 `REFERENCE_INDEX.md`；泛读笔记见 `../reading_notes/`，精读笔记见 `../精读文献笔记/`。
 
 ## 当前状态
 
-- 当前工作区可解析 PDF 实体：6 份。
+- 当前工作区可解析 PDF 实体：7 份。
 - 当前 Top 15 实体：2/15（Galois、Abacus）；其余名称保留在历史题录索引中，使用前需要重新放回本目录并核验。
 - 当前核心补充实体：Palimpzest、Sema、Kalypso；Sema 只按 arXiv v1 记录，不由文件名确认正式 venue，Kalypso 只按 arXiv v2 记录。
-- 当前其他已精读正式论文实体：Parrot（OSDI 2024 proceedings PDF）。
+- 当前其他已精读正式论文实体：Parrot（OSDI 2024 proceedings PDF）、IMLane（PVLDB 2026 正式论文）。
 - 旧索引中的较大下载数描述的是曾经登记的外部/历史子集，不符合当前工作区实体文件；当前状态只按可验证文件报告。
 
 ## 当前 Top 15 PDF
@@ -31,6 +31,7 @@ kalypso_arxiv2026.pdf
 
 ```text
 parrot_osdi2024.pdf
+IMLane_PVLDB2026.pdf
 ```
 
 ## 使用规则

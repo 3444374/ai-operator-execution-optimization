@@ -11,8 +11,8 @@
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单 |
 | `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |
 | `reading_notes/` | 49 篇历史文献笔记；从 2026-08-21 起按泛读、筛选和快速回顾管理 |
-| `精读文献笔记/` | 精读笔记权威库；当前含原十五篇主笔记与新增 Kalypso 共十六篇，论文原图裁剪件共 146 张。Kalypso 原稿已从下载目录原件逐字节恢复，是 arXiv 核心补充；其正文 Figure 1–12 已加入精读笔记，但不进入开题 Top 15、十五篇横向速览或已定稿开题正文。各篇选图与版本说明见目录 README 和 `figures/audit/` |
-| `reference/REFERENCE_INDEX.md` | 历史题录与用途索引；当前工作区可解析实体为 Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso 六份 |
+| `精读文献笔记/` | 精读笔记权威库；当前有十七篇主笔记、160 张论文原图裁剪件。新增 IMLane 使用正式 PVLDB 2026 版本，正文 Figure 1–15 已加入对应讲解位置；Kalypso 继续按 arXiv 核心补充管理。两篇均未并入原十五篇横向速览或已定稿开题正文。各篇选图与版本说明见目录 README 和 `figures/audit/` |
+| `reference/REFERENCE_INDEX.md` | 历史题录与用途索引；当前工作区可解析实体为 Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane 七份 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
 | `sema_native_semantic_operator_architecture_reference_20260827.md` | Sema-like 数据库原生语义算子架构审计：Sema 作 SQL/plan/optimizer/executor 主参照，LOTUS 作兼容语义、算法来源与独立 baseline |
 | `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |

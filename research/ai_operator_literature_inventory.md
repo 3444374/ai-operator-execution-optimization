@@ -57,6 +57,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | SemBench | PVLDB 2026 正式 benchmark paper | 55 queries、多模态、质量/时间/成本/内存统一评价 |
 | Database Perspective on LLM Inference Systems | PVLDB 2025 Tutorial | 推理系统地图与代价估计 open problem |
 | Cortex AISQL | 按实际 Companion/工业轨道引用 | AI SQL 工业需求证据；不写成 CCF-A full paper |
+| IMLane: Composable Framework for Efficient AI Function Execution in Database Engine | PVLDB 19(12): 4223–4236, 2026；DOI 10.14778/3827998.3828028 | DBEnd/ArrowLane bridge、process-level executor、database execution batch、异步提交和 Lane/resource scheduler 的直接 baseline；作者 artifact 已公开 |
 | NeurDB | CIDR 2025，非 CCF-A | AI-native database vision 与边界对照 |
 | LLM for Data Management | PVLDB 2024 | DB/LLM 研究版图 |
 | Smart、SmartLite、LEADS、InferDB | 正式数据库论文 | 近数据库推理、模型选择和动态执行对照 |
@@ -144,14 +145,14 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | direct model service | vLLM、Orca、Sarathi-Serve | 下游 serving ceiling |
 | 简单上游 | vLLM official benchmark、bounded HTTP | 去除 Daft/Ray 后的强客户端对照 |
 | 官方数据引擎/runtime | Ray、Ray Data Streaming Batch、Daft 官方 API | 引擎默认执行与受控并发 |
-| 数据库 AI 算子系统 | LOTUS、Palimpzest、SemBench、Galois | 算子/计划/质量-成本 baseline |
+| 数据库 AI 算子系统 | LOTUS、Palimpzest、SemBench、Galois、IMLane | 算子/计划/质量-成本与内置外部执行 baseline |
 | 多 job 调度 | VTC、Llumnix；补充 FairServe、DLPM、Agentix | shared credit、公平性、job-level JCT |
 | 代价估计 | Learned Cost Models、GRACEFUL、COSTREAM、Abacus | 配置和路由选择依据 |
 
 ## 六、当前本地状态
 
 - `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
-- `research/精读文献笔记/`：精读笔记权威库，当前包含原十五篇主笔记与 Kalypso 共十六篇，论文原图裁剪件共 146 张；Kalypso 正文 Figure 1–12 已加入精读笔记，按 arXiv 核心补充管理，不进入 Top 15、十五篇速览或开题正文。
-- `research/reference/`：当前工作区有 6 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
+- `research/精读文献笔记/`：精读笔记权威库，当前有十七篇主笔记、160 张论文原图裁剪件；Kalypso Figure 1–12 与 IMLane Figure 1–15 已加入对应笔记。Kalypso 继续按 arXiv 核心补充管理，IMLane 按正式 PVLDB 2026 论文记录；两篇均未进入原十五篇速览或开题正文。
+- `research/reference/`：当前工作区有 7 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。

@@ -152,6 +152,7 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 - 泛读笔记：[`research/reading_notes/README.md`](research/reading_notes/README.md)
 - 精读笔记：[`research/精读文献笔记/README.md`](research/精读文献笔记/README.md)
 - Kalypso 核心补充精读：[`research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`](research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)（正文 Figure 1–12 已配图；选图与视觉检查见 [`figures/audit/kalypso_deep_reading_figures_audit_20260827.md`](figures/audit/kalypso_deep_reading_figures_audit_20260827.md)；不进入当前 Top 15、十五篇速览或开题正文）
+- IMLane 正式论文精读：[`research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md`](research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md)（正文 Figure 1–15 已配图；Figures 9–10 共用同页联合裁剪件；选图与视觉检查见 [`figures/audit/imlane_deep_reading_figures_audit_20260828.md`](figures/audit/imlane_deep_reading_figures_audit_20260828.md)）
 - 本地参考资料索引：[`research/reference/REFERENCE_INDEX.md`](research/reference/REFERENCE_INDEX.md)
 
 ## 8. 历史与归档规则

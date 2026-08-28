@@ -21,7 +21,7 @@
 
 ## 横向速览
 
-`paper_deep_reading_digest/paper_deep_reading_digest.tex` 将最初 15 篇权威精读笔记压缩为一份 A4 LaTeX 文档。2026-08-27 新登记的 Kalypso 尚未并入该速览，因此不能把速览篇数当作本目录主笔记总数。每篇统一采用“背景与问题 → 核心思路 → 关键词解释 → 具体做法 → 实验结果 → 与本课题的区别”的总—分结构，方法部分为主体，目标篇幅为约半页至一页 A4；它只用于快速复习，不替代各论文目录中的主笔记。关键词只解释理解该篇方法所必需的缩写、系统术语和指标，不做无关的通用词典。
+`paper_deep_reading_digest/paper_deep_reading_digest.tex` 将最初 15 篇权威精读笔记压缩为一份 A4 LaTeX 文档。2026-08-27 登记的 Kalypso 和 2026-08-28 登记的 IMLane 尚未并入该速览，因此不能把速览篇数当作本目录主笔记总数。每篇统一采用“背景与问题 → 核心思路 → 关键词解释 → 具体做法 → 实验结果 → 与本课题的区别”的总—分结构，方法部分为主体，目标篇幅为约半页至一页 A4；它只用于快速复习，不替代各论文目录中的主笔记。关键词只解释理解该篇方法所必需的缩写、系统术语和指标，不做无关的通用词典。
 
 进入 `paper_deep_reading_digest/` 后，使用 VS Code LaTeX Workshop 选择 **XeLaTeX** 或包含 XeLaTeX 的 recipe；文档首行已声明 `% !TeX program = xelatex`，以 `ctexart` 处理中文。本机已将 MiKTeX 安装到 `D:\Programs\MiKTeX` 并完成实际编译、分页和视觉检查；当前 PDF 为 6 页。目录只长期保留同名 `.tex` 和 `.pdf`，`.aux/.log/.out/.synctex.gz` 等中间文件在确认编译成功后删除；PDF 按根目录 `.gitignore` 中的 `*.pdf` 规则不纳入版本控制。
 
@@ -45,6 +45,7 @@
 | `dlpm_2025/` | DLPM/D²LPM 精读主笔记；当前正式状态仍为 arXiv:2501.14312v1；`figures/` 内含正文全部 Figure 1–12 的 12 个原图裁剪件，Figure 7 保留缺失点与 Long-Context worst-case，理论保证不外推到黑盒 endpoint 的端到端 Job 公平 |
 | `parrot_osdi2024/` | Parrot 精读主笔记；按正式 OSDI 2024 proceedings PDF（正文 17 页，文件另含 1 页 USENIX 封面）核对；`figures/` 内含正文全部 Figure 1–19 的原图裁剪件，机制图与实验图均在相邻图注中说明读法和证据边界 |
 | `kalypso_arxiv2026/` | Kalypso 精读主笔记；arXiv:2607.23815v2，关系查询计划感知的 LLM serving、跨算子流水执行与 KV-cache 生命周期管理；`figures/` 内含正文全部 Figure 1–12 的原图裁剪件，Figure 9 的组合消融、Figure 10 的图文不一致和 Figure 11 的无误差条限制均在相邻图注中说明；按核心补充管理，不冒充正式 venue，不进入现有 Top 15、十五篇速览或开题正文 |
+| `imlane_pvldb2026/` | IMLane 精读主笔记；正式 PVLDB 19(12): 4223–4236，DOI `10.14778/3827998.3828028`；`figures/` 以 14 个裁剪件覆盖正文全部 Figure 1–15，其中 Figures 9–10 按原论文同排布局联合裁切；机制示意、实测结果、坐标口径和不能外推的结论均在相邻图注中说明；尚未并入原十五篇速览或开题正文 |
 
 ## 精读流程
 
