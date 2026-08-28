@@ -4,13 +4,15 @@
 状态：`current / architecture-defined / implementation-in-progress`
 当前实现事实：`code/postgres/semloom_pg/` 已有 PostgreSQL planner-visible `SemMap`
 `CustomPath/CustomScan` capability spike；`REL_18_3` PGXS regression 与 preload/prepared-plan/
-snapshot/cancel/insert TAP 已通过，direct `INSERT ... SELECT` 支持 rollback/commit，typed
-plan/task/completion、协议 v2 C/Python 分域 identity digest 与同步单在途 UDS `open/drive/close` recording
-provider 已接入。provider 仅在首个非 NULL task 到达时连接；`PROPAGATE_NULL` 由 PostgreSQL 完成，
-per-drive scratch、174,080-byte 编码前输入上限、UTF8 校验和可取消 nonblocking connect 已验证。
+snapshot/cancel/insert TAP 已通过，direct `INSERT ... SELECT` 支持 rollback/commit，原 PG-typed
+plan/task/completion 已收回 PostgreSQL-private pump；provider-neutral
+`AiOpenSpec → AiPreparedTask → AiCompletion`、协议 v2 C/Python 分域 identity digest 与同步单在途 UDS
+`open/drive/close` recording provider 已接入。provider 仅在首个非 NULL task 到达时连接；
+`PROPAGATE_NULL` 由 PostgreSQL 完成，per-drive scratch、per-tuple completion copy、query-context cleanup、
+174,080-byte 编码前输入上限、UTF8 校验和可取消 nonblocking connect 已验证。
 该同步 UDS 纵切面已经足够支撑下一步 exact `SemFilter`，不再先扩成完整网络/runtime；
 accepted-prefix backpressure、多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器
-在语义算子边界收紧后实施。既有 PostgreSQL source/sink、
+在 exact `SemFilter` 与载体资格验证后实施。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，完成 exact `SemMap`/`SemFilter`、一个普通关系 child
 plan、query-scoped provider session，以及一条最小、显式可识别的 `SemFilter` 第二 physical path。
@@ -532,8 +534,8 @@ class SchedulingSession(Protocol):
 ## 9. 当前实施工作包、资格后验证与参考方向
 
 工作包一至七构成当前有序实施范围。当前不再把完整异步协议和网络健壮性扩展放在 `SemFilter` 前面：
-已经通过的同步 UDS recording slice 保留为 carrier test adapter，先收紧 seam，再完成 exact `SemFilter`
-和最小第二 path。只有语义算子资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
+同步 UDS recording slice 与 neutral provider seam 已通过，下一步完成 exact `SemFilter` 和最小第二 path。
+只有语义算子资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
 
@@ -547,7 +549,7 @@ class SchedulingSession(Protocol):
 `INSERT ... SELECT` rollback、重复 payload 与资源清理都有 regression/TAP tests；EXPLAIN 显示 semantic
 operator 与 ordinary child。未降低 marker 必须报错，不能回退逐行 HTTP UDF。
 
-### 工作包二：收紧 executor/provider seam，并停止扩张 PG-side transport
+### 工作包二：收紧 executor/provider seam，并停止扩张 PG-side transport（已完成）
 
 当前进度：协议 v2 semantic-spec/physical-algorithm/provider-execution/payload/completion digest、
 4-byte big-endian UTF-8 JSON frame、1 MiB frame
@@ -558,13 +560,14 @@ profile 使用独立 digest；物理 mapped-column 不进入 wire identity。pla
 拒绝、取消后恢复、scratch memory 与 socket 清理均通过。该纵切面保持不变，当前不继续增加 PG-side
 listener、TCP/HTTP、连接池、自动重连或模型 adapter。
 
-把当前 PG-typed plan/task/result 改名并收回 PostgreSQL adapter；拆分 `sem_scan.c`、`SemanticExecPump`、
-neutral `AiProviderPort`、`recording_provider.c` 与 `uds_provider.c/wire_v2.c`。`mapped_column`、`Datum`、
-`Oid`、`AttrNumber`、`MemoryContext` 和 slot identity 不得进入 neutral port 或 wire。gateway 继续拥有
+当前 PG-typed plan/task/result 已收回 PostgreSQL-private `SemloomExecPump`；`sem_scan.c`、neutral
+provider port、`recording_provider.c` 与 `uds_provider.c/wire_v2.c` 已拆分。`mapped_column`、`Datum`、
+`Oid`、`AttrNumber`、`MemoryContext` 和 slot identity 未进入 neutral port 或 wire。gateway 继续拥有
 `bind/listen/accept` 和所有模型侧连接。
 
-完成标准：更换 recording/UDS adapter 不修改 `sem_scan.c` 或 operator machine；neutral header 不包含
-PostgreSQL 类型；普通 `EXPLAIN`/`LIMIT 0` 不打开 provider；既有同步 UDS regression/TAP 全部保持通过。
+完成证据：更换 recording/UDS adapter 不修改 `sem_scan.c` 或 operator machine；neutral header 不包含
+PostgreSQL 类型；普通 `EXPLAIN`/`LIMIT 0` 不打开 provider；adapter parity、同步 UDS regression/TAP、
+错误生命周期与资源不增长 smoke 均已通过。精确数字从实验证据台账读取。
 
 ### 工作包三：exact `SemFilter` reference path
 

@@ -28,17 +28,31 @@ backpressure, multiple in-flight tasks, out-of-order/missing completion handling
 calls, and the full model/prompt/result schema remain pending; this slice must not
 be described as a complete database AI operator.
 
+`sem_scan.c` is a thin CustomScan adapter. The PostgreSQL-private `SemloomExecPump` owns child tuple pulls,
+NULL propagation, task sequence, completion copying into per-tuple memory, EXPLAIN counters, and provider
+lifecycle/error mapping. It calls the provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion`
+`open/drive/close` contract in `ai_provider_port.h`; that header contains only fixed-width values, byte slices,
+caller-owned errors, and opaque provider/session handles, with no PostgreSQL headers or types. The in-process
+recording adapter and UDS adapter implement the same contract, while socket, JSON, digest, and framing details
+remain in the UDS/wire-private modules.
+
+Provider selection and its opaque configuration snapshot are query-fixed, but no session or FD is acquired
+until the first non-NULL task. A cleanup callback is registered in `estate->es_query_cxt` before lazy open can
+obtain a resource. Returned provider errors make the session terminal and close it before PostgreSQL raises the
+preserved SQL error; PostgreSQL interrupts, out-of-memory errors, and other direct longjmps remain cleanup-safe.
+Normal close and the callback share an idempotent local close path that invalidates the FD before releasing it
+and performs no protocol I/O, wait, allocation, or error reporting.
+
 The PGXS regression covers EXPLAIN identity, ordinary filters/projections, duplicate payloads, expression
 inputs, `NULL`, `LIMIT 0/1`, early-stop counters, direct insert rollback/commit, error recovery, and fail-closed
 unsupported shapes. TAP starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared
 statement, repeatable-read snapshot visibility, child-plan cancellation, insert variants, and successful
 execution after cancellation. It also verifies that plain `EXPLAIN`, `LIMIT 0`, zero-row children, and
-NULL-only input do not connect; the standalone gateway tests cover C/Python digest agreement, Unicode,
-EXPLAIN provider identity, tampered evidence, disconnect, cancellation during response and saturated-connect
-waits, non-UTF8 rejection, input bounds, and socket cleanup. Every provider drive uses a resettable scratch
-memory context. The executor reaches the recording transform only through typed
-`SemloomSemanticPlanSpec`, `SemloomPreparedSemanticTask`, `SemloomCompletionRecord` and the
-`open/drive/close` provider seam.
+NULL-only input do not connect; runs the same SQL rows, sequence, NULL, EXPLAIN, and error-lifecycle checks
+against both recording adapters; and covers malformed JSON, invalid encoding, integer overflow, evidence
+mismatch, disconnect, cancellation during response and saturated-connect waits, input bounds, and socket
+cleanup. The final exact-18.3 qualification passed 129/129 TAP checks; the local neutral-boundary and protocol
+suite passed 16/16 checks.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the gateway
 with an absolute socket path and set the superuser-only GUC for the SQL session:

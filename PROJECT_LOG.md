@@ -1,5 +1,37 @@
 # 项目日志
 
+## 2026-08-28 SemMap scan/pump 与 neutral provider port 职责拆分完成
+
+- 在不改变 SQL、wire v2、SQLSTATE/脱敏消息、NULL、EXPLAIN、事务、取消或同步单在途行为的前提下，
+  将 `sem_scan.c` 收窄为 CustomScan 生命周期回调；新增 PostgreSQL-private `SemloomExecPump`，统一拥有
+  child pull、tuple/task 绑定、从 0 开始且跳过 NULL 的 sequence、completion 复制、计数和 provider
+  error/lifecycle 映射。
+- 新增不包含 PostgreSQL header/type 的 `ai_provider_port.h`：`AiOpenSpec → AiPreparedTask → AiCompletion`
+  只使用固定宽度字段、显式 NULL、长度受限 byte slice、opaque provider/session 和 caller-owned
+  `AiProviderError`。task bytes 只借用到本次 `drive` 返回；completion 由 session 持有到下一次
+  `drive/close`，pump 在此前复制到 per-tuple context。
+- provider factory 在 `BeginCustomScan` 时把 adapter 与 opaque 配置快照固定到
+  `estate->es_query_cxt`，但首个非 NULL task 前不校验路径、不创建 session/FD/socket、不连接或计算
+  execution digest。in-process recording、UDS 和 wire v2 分到独立模块；socket/JSON/frame 实现不再进入
+  scan 或 pump。
+- query-context cleanup callback 在任何 lazy-open 资源取得前注册。返回型 open/drive 错误把 session
+  标记为 terminal、保存中立错误并调用幂等 close 后再映射原有 SQLSTATE；PostgreSQL interrupt、OOM
+  和内部 longjmp 保持原控制流，由同一个不等待、不分配、不抛错的本地 FD/ExternalFD 清理路径兜底。
+  双轴代码审查发现并修复 recording 返回错误后 session 未闭合、模块说明缺失和状态文档过期；所有
+  adapter 的返回型错误现在都满足 terminal 合同。
+- 资源测试首次暴露 `DatumGetTextPP` 在 query context 中累积 detoast 副本；增加 characterization 后，
+  把 detoast 明确放入 node per-tuple context。最终提交 `d08eda38` 在官方 `REL_18_3`（upstream
+  `62d6c7d3…`）以 `-Werror` 无警告构建，PGXS regression 1/1、TAP 129/129、Python/static 16/16 和
+  neutral C11 header 编译检查均通过。最终产物位于仓库外
+  `/root/autodl-tmp/semloom-pg18.3-artifacts/tap-run-d08eda38/`，`semloom_pg.so` SHA-256 为
+  `5907afd9a749cfcb63332325ad357a9b0a311f3cb6d89a539a5aa12b3a1c7ae8`。
+- 仓库外 `resource-run-d08eda38/resource-smoke.txt` 记录 2,000×100,000-byte UDS tasks：warm relation VFD
+  后 backend RSS 起始/峰值/结束 17,120/19,532/18,852 KiB，FD 10/12/10；峰值/结束增量分别为
+  2,412/1,732 KiB 与 2/0，均低于预先写入的 16,384/8,192 KiB 和 4/2 上限。2,000 行结果、客户端、
+  行数统计和 gateway 均正常完成，stderr 为空；这是资源生命周期功能证据，不是性能结论。测试后本轮
+  PostgreSQL、gateway 和 socket 均无残留。下一步实现 exact `SemFilter`，本轮未加入 async、多在途、
+  HTTP/Ray/vLLM、SemLoom scheduling session 或 core patch。
+
 ## 2026-08-28 SemMap provider lifecycle、NULL 所有权与 plan identity 收紧
 
 - 按完整代码审查先补失败测试，再修复四项 executor/provider 风险：provider 从 `BeginCustomScan`

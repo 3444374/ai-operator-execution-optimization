@@ -8,21 +8,28 @@
 
 **当前工程顺序**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
-`SemMap` 的当前受限 capability、typed `open/drive/close` seam 和同步单在途 UDS recording slice；
+`SemMap` 的当前受限 capability、PostgreSQL-private execution pump、provider-neutral
+`AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口和同步单在途 UDS recording slice；
 协议 v2 的 C/Python semantic-spec/physical-algorithm/provider-execution/payload/completion digest、
 1 MiB 长度帧、174,080-byte 编码前输入上限、
 Unicode、断连、取消与清理已验证。provider 只在首个非 NULL task 到达时打开，`PROPAGATE_NULL`
-由 PostgreSQL 本地完成；每次 drive 使用可重置 scratch context，UDS 从 `connect()` 前即为 nonblocking，
-并在 UTF8 之外 fail closed。
-下一步先把 PostgreSQL scan/pump 类型与 neutral provider port、recording/UDS adapters 分开，再实现 exact
-`SemFilter` 和最小第二 physical path。随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，
+由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 负责 child pull、tuple/task
+绑定、sequence、completion 复制和 provider 生命周期。中立 header 不包含 PostgreSQL 类型，recording、
+UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，结果复制到 per-tuple context，UDS 从
+`connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
+资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
+下一步实现 exact `SemFilter` 和最小第二 physical path。随后审查 extension 是否足以承载目标
+LOTUS/Cortex semantic paths，
 只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom session 与 HTTP/SemLoom
 provider 在数据库语义资格之后实现。
 当前源码已有受限的 `SemMap CustomPath/CustomScan` recording capability，并在 `REL_18_3` 上通过
-PGXS regression 与 preload/prepared-plan/snapshot/cancel/insert 生命周期 TAP；executor 已通过
-typed plan/task/completion 值调用 `open/drive/close` in-process recording provider；同步单在途 UDS
-provider 与分离的 semantic-spec、physical-algorithm、provider-execution digest 也已实现，物理
-mapped-column 不再进入 wire identity。
+PGXS regression 与 preload/prepared-plan/snapshot/cancel/insert 生命周期 TAP；executor pump 已通过
+中立 `AiOpenSpec/AiPreparedTask/AiCompletion` 值调用 `open/drive/close` in-process recording provider；
+同步单在途 UDS provider 与分离的 semantic-spec、physical-algorithm、provider-execution digest 也已
+实现，物理 mapped-column 不再进入 wire identity。提交 `d08eda38` 的精确 18.3 验收为 regression
+1/1、TAP 129/129、Python/static 16/16；2,000×100,000-byte UDS 功能 smoke 在 warm relation VFD 后的
+backend RSS 峰值/结束增量为 2,412/1,732 KiB，FD 峰值/结束增量为 2/0，均低于运行前记录的上限，
+未观察到随累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。
 accepted-prefix、多在途/乱序 completion、
 `SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
@@ -371,10 +378,11 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child plan、prepared plan、snapshot、取消、
    rollback/commit、错误恢复和结果生命周期；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽
    query shapes 仍保持 fail-closed；
-2. `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、协议 v2 canonical digest 与
-   in-process/同步单在途 UDS `open/drive/close` 已实现；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
-   per-drive scratch、编码前输入上限、UTF8 校验及可取消 nonblocking connect 已通过精确 18.3 测试；
-   下一步拆分 PG-owned scan/pump、neutral provider port 与 recording/UDS adapter；
+2. PostgreSQL-private `SemloomExecPump`、provider-neutral
+   `AiOpenSpec → AiPreparedTask → AiCompletion`、独立 recording/UDS adapters、协议 v2 canonical digest
+   与同步单在途 `open/drive/close` 已实现；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、query-context
+   cleanup、per-drive scratch、per-tuple completion copy、编码前输入上限、UTF8 校验及可取消
+   nonblocking connect 已通过精确 18.3 测试；
 3. 用 exact `SemFilter` 验证三值/NULL/error policy、cardinality、tuple identity 与 relation-level placement；
 4. 增加一条 deterministic、显式可识别的 `SemFilter` 第二 physical path；
 5. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；

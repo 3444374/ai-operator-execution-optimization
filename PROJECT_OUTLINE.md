@@ -15,11 +15,13 @@
 
 当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible `SemMap` 已验证
 `SELECT`、direct `INSERT ... SELECT`、ordinary child plan、snapshot 与 query lifecycle，并通过初始
-typed plan/task/completion 调用 in-process 与同步单在途 Unix-domain socket（UDS）recording provider。
+PostgreSQL-private pump 和 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口调用
+in-process 与同步单在途 Unix-domain socket（UDS）recording provider。scan/pump、neutral port、
+recording/UDS adapter 与 wire v2 的职责拆分已完成。
 C/Python 协议 v2 分域 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
 per-drive scratch、编码前输入上限、UTF8 校验、断连、可取消 connect/response wait 和资源清理已在
-PostgreSQL 18.3 通过；下一步先把 PG-owned scan/pump 与 neutral provider port、recording/UDS adapters 分开，再用现有
-同步 recording slice 实现 exact `SemFilter` 和最小 LOTUS/Cortex-like 第二 path。随后用这些实际路径
+PostgreSQL 18.3 通过；下一步用现有同步 recording slice 实现 exact `SemFilter` 和最小
+LOTUS/Cortex-like 第二 path。随后用这些实际路径
 审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom 与真实
 模型 provider 在数据库语义资格之后实现。
 上述步骤完成前不扩展
@@ -38,9 +40,10 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `uds-recording-slice-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
-通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT` 和初始 typed `open/drive/close` in-process
-provider seam 已实现；同步单在途 UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。
+当前状态是 `neutral-provider-seam-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
+通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private `SemloomExecPump` 和
+provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
+UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。
 accepted-prefix、多在途/乱序 completion、`SemFilter`、载体反例审查和外部模型路径尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
@@ -395,9 +398,9 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 1. **PostgreSQL capability**：锁定 `REL_18_3`，用 extension / planner-visible `SemMap` deterministic
    prototype 证明 SQL、ordinary child plan、snapshot、cancel/error/result lifecycle。
-2. **最小 provider seam**：同步单在途 UDS recording slice 与初始 digest 已通过；先拆分 PG-private
-   scan/pump、neutral port 与 recording/UDS adapters。PG backend 不增加 listener、TCP/HTTP、连接池或
-   模型 adapter，也不重新实现 transaction/MVCC/WAL/ACL/snapshot。
+2. **最小 provider seam**：同步单在途 UDS recording slice、PG-private pump、neutral port、
+   recording/UDS adapters 与初始 digest 已通过。PG backend 不增加 listener、TCP/HTTP、连接池或模型
+   adapter，也不重新实现 transaction/MVCC/WAL/ACL/snapshot。
 3. **数据库语义优化资格**：用现有 recording slice 实现 exact `SemFilter`，再以静态 calibration evidence
    建立一条可辨认的 LOTUS/Cortex-like proxy/oracle path；数据库拥有 keep/drop、cost/quality 和 fallback。
 4. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达

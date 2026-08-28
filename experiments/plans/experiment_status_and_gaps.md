@@ -3,11 +3,13 @@
 更新日期：2026-08-28
 
 > **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 的受限 `SELECT`、direct
-> `INSERT ... SELECT`、typed `open/drive/close` seam、协议 v2 C/Python canonical digest 与同步单在途 UDS
+> `INSERT ... SELECT`、PostgreSQL-private pump、provider-neutral `open/drive/close` seam、协议 v2
+> C/Python canonical digest 与同步单在途 UDS
 > recording provider 已通过 PostgreSQL 18.3 功能测试；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
-> per-drive scratch、编码前输入上限、UTF8 校验和可取消 nonblocking connect 已验证。下一步先拆分
-> PostgreSQL scan/pump 与 neutral provider port、recording/UDS adapters，再实现 exact `SemFilter` 和
-> 最小第二 physical path。载体审查确认 extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives
+> per-drive scratch、per-tuple completion copy、编码前输入上限、UTF8 校验、可取消 nonblocking connect
+> 和 query-context cleanup 已验证；scan/pump、neutral port 与 recording/UDS adapters 的职责拆分已完成。
+> 下一步实现 exact `SemFilter` 和最小第二 physical path。载体审查确认 extension 足够时继续使用，
+> 只有 LOTUS/Cortex plan alternatives
 > 或 node lifecycle 出现已复现阻断才增加最小 core patch。数据库语义资格完成后才扩 accepted-prefix、
 > 多在途、增量 SemLoom session 与 IMLane-like batch placement。Kalypso-like lineage 只作后续参考，
 > 不纳入当前排期。LOTUS v1.2.4

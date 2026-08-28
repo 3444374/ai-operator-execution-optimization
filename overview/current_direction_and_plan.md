@@ -22,14 +22,17 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 ## 2. 当前最短路径
 
 1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
-   ordinary child plan、snapshot、cancel/error/result lifecycle、初始 digest 和同步单在途 UDS provider；
-2. 扩展 accepted-prefix backpressure、多在途、乱序 completion、有界 reorder 与显式 early-stop close；
-3. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与 LOTUS/Cortex alternatives；能表达
+   ordinary child plan、snapshot、cancel/error/result lifecycle、PostgreSQL-private pump、neutral
+   provider port、独立 recording/UDS adapters、初始 digest 和同步单在途 UDS provider；
+2. 用当前 recording slice 实现 exact `SemFilter`，固定三值/NULL/error policy、cardinality 和 tuple
+   identity；
+3. 以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
+4. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与上述 alternatives；能表达
    则继续 extension，只有已复现阻断才增加最小 core patch；
-4. 抽取增量 SemLoom session，再接 HTTP/SemLoom provider，并用 `SemFilter` 建立首条数据库 semantic
-   alternative；数据库资格完成后优先比较 IMLane-like batch placement。Kalypso-like lineage 只作后续
-   参考，需另立计划；
-5. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
+5. 数据库资格完成后再扩 accepted-prefix backpressure、多在途/乱序 completion、有界 reorder，抽取
+   增量 SemLoom session 并接 HTTP/SemLoom provider；之后优先比较 IMLane-like batch placement。
+   Kalypso-like lineage 只作后续参考，需另立计划；
+6. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
 
 实施入口：
 

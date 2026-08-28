@@ -11,12 +11,15 @@ lifecycle；数据库管理的有界数据流把规范化任务交给可替换�
 
 当前状态（2026-08-28）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
 架构改为 Sema-like 中立语义算子核心。短期工程锁定 `REL_18_3`，先用 extension 验证 planner-visible
-`SemMap` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT`、typed
-`open/drive/close` seam，以及单在途、同步的 Unix-domain socket（UDS）recording provider 已通过
-PostgreSQL 18.3 功能测试。协议 v2 C/Python 分域 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned
-`PROPAGATE_NULL`、per-drive scratch、编码前输入上限、UTF8 校验与可取消 nonblocking connect 已验证。
-下一步先拆分 PG scan/pump 与 neutral provider port、recording/UDS adapters，再实现 exact `SemFilter`
-和最小第二 semantic path。extension 能承载目标 LOTUS/Cortex semantic paths 时继续使用，只有已复现
+`SemMap` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT`、PostgreSQL-private
+execution pump、provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口，以及单在途、同步的
+Unix-domain socket（UDS）recording provider 已通过 PostgreSQL 18.3 功能测试。`sem_scan.c` 只保留
+CustomScan 回调，tuple/task 绑定、sequence、结果复制和 provider 生命周期由 `sem_pump.c` 管理，
+socket、JSON 和协议实现分别留在 UDS/wire adapter。协议 v2 C/Python 分域
+identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
+逐次调用 scratch、编码前输入上限、UTF8 校验、可取消 nonblocking connect 和 query-context FD 清理
+均已验证。下一步实现 exact `SemFilter` 和最小第二 semantic path。extension 能承载目标
+LOTUS/Cortex semantic paths 时继续使用，只有已复现
 阻断才增加最小 core patch；accepted-prefix、多在途和增量 SemLoom 在数据库语义资格之后实现。
 数据库资格完成后优先做 IMLane-like batch 对照。Kalypso-like
 dependency execution、`SemJoin`、fusion/AQE 等只作后续参考，不纳入当前排期。既有 profiler、manifest

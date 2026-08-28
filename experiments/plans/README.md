@@ -19,9 +19,10 @@
 当前短期顺序是：
 
 1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
-   ordinary child plan、snapshot、query lifecycle、初始 typed seam，以及同步单在途 UDS recording provider；
-2. 收紧 executor/provider seam：`SemanticExecPump` 不包含 transport，PG backend 只保留可取消的 UDS
-   client adapter；listener、连接池、TCP/HTTP、session registry 和模型连接全部留在 gateway；
+   ordinary child plan、snapshot、query lifecycle，以及同步单在途 UDS recording provider；
+2. executor/provider seam 已收紧：PostgreSQL-private `SemloomExecPump` 不包含 transport，neutral port
+   不包含 PostgreSQL 类型，PG backend 只保留可取消的 UDS client adapter；listener、连接池、TCP/HTTP、
+   session registry 和模型连接全部留在 gateway；
 3. 先用当前 recording slice 实现 exact `SemFilter`，再以静态 calibration evidence 实现一条可辨认的
    LOTUS/Cortex-like proxy/oracle physical path；不等待完整异步协议或真实模型；
 4. 用这两个实际 semantic paths 审查 extension carrier；能表达则保留 extension，只有 marker/placement/
