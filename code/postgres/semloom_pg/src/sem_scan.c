@@ -13,6 +13,7 @@ typedef struct SemloomScanState
 	CustomScanState custom_state;
 	PlanState *child_state;
 	SemloomProviderSession *provider_session;
+	SemloomSemanticPlanSpec plan_spec;
 	AttrNumber mapped_column;
 } SemloomScanState;
 
@@ -56,7 +57,6 @@ semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags)
 {
 	SemloomScanState *state = (SemloomScanState *) node;
 	CustomScan *scan = castNode(CustomScan, node->ss.ps.plan);
-	SemloomSemanticPlanSpec plan_spec;
 	int unsupported_flags = EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND;
 
 	if ((executor_flags & unsupported_flags) != 0)
@@ -74,10 +74,10 @@ semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("SemMap mapped output is outside the scan tuple")));
-	plan_spec.mapped_column = state->mapped_column;
-	plan_spec.input_type = TEXTOID;
-	plan_spec.output_type = TEXTOID;
-	state->provider_session = semloom_provider_open(&plan_spec);
+	state->plan_spec.mapped_column = state->mapped_column;
+	state->plan_spec.input_type = TEXTOID;
+	state->plan_spec.output_type = TEXTOID;
+	state->plan_spec.null_policy = SEMLOOM_NULL_PROPAGATE;
 
 	state->child_state = ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
 	node->custom_ps = list_make1(state->child_state);
@@ -115,6 +115,18 @@ semloom_next_tuple(ScanState *scan_state)
 
 		if (attribute_index + 1 == state->mapped_column)
 		{
+			if (is_null)
+			{
+				if (state->plan_spec.null_policy != SEMLOOM_NULL_PROPAGATE)
+					ereport(ERROR,
+							(errcode(ERRCODE_INTERNAL_ERROR),
+							 errmsg("SemMap has an unsupported NULL policy")));
+				scan_slot->tts_isnull[attribute_index] = true;
+				scan_slot->tts_values[attribute_index] = (Datum) 0;
+				continue;
+			}
+			if (state->provider_session == NULL)
+				state->provider_session = semloom_provider_open(&state->plan_spec);
 			task.sequence = semloom_provider_accepted_rows(state->provider_session);
 			task.input_type = TEXTOID;
 			task.input = child_slot->tts_values[attribute_index];

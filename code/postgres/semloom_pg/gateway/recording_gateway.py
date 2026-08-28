@@ -7,6 +7,7 @@ import os
 import signal
 import socket
 import stat
+import time
 from pathlib import Path
 
 from protocol import run_recording_session
@@ -19,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test-response-delay-ms", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--test-tamper-evidence-digest", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--test-disconnect-on-task", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--test-fill-connect-queue-ms", type=int, default=0, help=argparse.SUPPRESS)
     return parser.parse_args()
 
 
@@ -26,6 +28,8 @@ def main() -> int:
     args = parse_args()
     if args.test_response_delay_ms < 0:
         raise SystemExit("--test-response-delay-ms must be non-negative")
+    if args.test_fill_connect_queue_ms < 0:
+        raise SystemExit("--test-fill-connect-queue-ms must be non-negative")
     socket_path = args.socket.resolve()
     if socket_path.exists():
         mode = socket_path.stat().st_mode
@@ -49,7 +53,15 @@ def main() -> int:
         socket_metadata = socket_path.lstat()
         socket_identity = (socket_metadata.st_dev, socket_metadata.st_ino)
         os.chmod(socket_path, 0o600)
-        listener.listen()
+        listener.listen(0 if args.test_fill_connect_queue_ms else socket.SOMAXCONN)
+        if args.test_fill_connect_queue_ms:
+            blocker = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                blocker.connect(str(socket_path))
+                time.sleep(args.test_fill_connect_queue_ms / 1000)
+            finally:
+                blocker.close()
+            return 0
         listener.settimeout(0.25)
         while not stopping:
             try:

@@ -28,6 +28,7 @@ sub start_recording_gateway
 	}
 	ok(-S $socket_path, 'recording gateway creates its Unix socket')
 	  or diag($stderr);
+	sleep(0.05);
 	return ($gateway, \$stdout, \$stderr);
 }
 
@@ -154,6 +155,55 @@ $node->safe_psql(
 
 my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
+my $missing_gateway_socket = $gateway_directory . '/missing.sock';
+
+like(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+EXPLAIN (COSTS OFF)
+SELECT ai_semantic.map(payload) FROM semloom_documents;}),
+	qr/Custom Scan \(SemLoom SemMap\)/,
+	'plain EXPLAIN does not open the configured provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT ai_semantic.map(payload) FROM semloom_documents LIMIT 0;}),
+	'',
+	'LIMIT 0 does not open the configured provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE false;}),
+	'',
+	'a zero-row child plan does not open the configured provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+TRUNCATE semloom_sink;
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload IS NULL;
+SELECT count(*) FROM semloom_sink WHERE completion IS NULL;}),
+	'1',
+	'PROPAGATE_NULL is owned by PostgreSQL without opening the provider');
+
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT ai_semantic.map(repeat(payload, 200000))
+FROM semloom_documents
+WHERE payload = 'alpha';});
+isnt($ret, 0, 'oversized input fails before provider connection');
+like($stderr, qr/input exceeds .* byte limit/, 'oversized input reports its pre-encoding limit');
+unlike($stderr, qr/could not connect/, 'oversized input does not attempt a provider connection');
+
 my ($gateway, $gateway_stdout, $gateway_stderr) =
   start_recording_gateway($gateway_socket);
 is(
@@ -169,22 +219,6 @@ finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 ($gateway, $gateway_stdout, $gateway_stderr) =
   start_recording_gateway($gateway_socket);
-is(
-	$node->safe_psql(
-		'postgres',
-		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
-TRUNCATE semloom_sink;
-INSERT INTO semloom_sink
-SELECT ai_semantic.map(payload)
-FROM semloom_documents
-WHERE payload IS NULL;
-SELECT count(*) FROM semloom_sink WHERE completion IS NULL;}),
-	'1',
-	'UDS recording provider preserves SQL NULL through INSERT SELECT');
-finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
-
-($gateway, $gateway_stdout, $gateway_stderr) =
-  start_recording_gateway($gateway_socket);
 like(
 	$node->safe_psql(
 		'postgres',
@@ -195,6 +229,19 @@ FROM semloom_documents
 WHERE payload = 'alpha';}),
 	qr/Provider: uds-recording/,
 	'EXPLAIN identifies the external UDS recording provider');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket, '--test-fill-connect-queue-ms', '500');
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET statement_timeout = '100ms';
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';});
+isnt($ret, 0, 'statement timeout interrupts provider connect wait');
+like($stderr, qr/canceling statement due to statement timeout/, 'connect wait preserves PostgreSQL cancellation');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 ($gateway, $gateway_stdout, $gateway_stderr) =
@@ -247,6 +294,23 @@ WHERE payload = 'alpha';}),
 	'recorded:alpha',
 	'fresh UDS execution succeeds after cancellation and cleanup');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+$node->safe_psql(
+	'postgres',
+	q{CREATE DATABASE semloom_latin1
+ENCODING 'LATIN1' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;});
+$node->safe_psql(
+	'semloom_latin1',
+	q{CREATE EXTENSION semloom_pg;
+CREATE TABLE semloom_documents (payload text);
+INSERT INTO semloom_documents VALUES ('alpha');});
+($ret, $stdout, $stderr) = $node->psql(
+	'semloom_latin1',
+	qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT ai_semantic.map(payload) FROM semloom_documents;});
+isnt($ret, 0, 'UDS provider rejects a non-UTF8 database before connection');
+like($stderr, qr/requires UTF8 database encoding/, 'encoding failure states the wire requirement');
+unlike($stderr, qr/could not connect/, 'encoding validation does not attempt a provider connection');
 
 $node->stop;
 done_testing();

@@ -71,6 +71,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("SemloomSemanticPlanSpec", header)
         self.assertIn("SemloomPreparedSemanticTask", header)
         self.assertIn("SemloomCompletionRecord", header)
+        self.assertIn("SEMLOOM_NULL_PROPAGATE", header)
+        self.assertIn("null_policy", header)
         self.assertIn("semloom_provider_open", provider_source)
         self.assertIn("semloom_provider_drive", provider_source)
         self.assertIn("semloom_provider_close", provider_source)
@@ -87,14 +89,22 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
         self.assertIn("src/provider_protocol.o", makefile)
         self.assertIn("SEMLOOM_PROTOCOL_VERSION", header)
+        self.assertIn("SEMLOOM_PROTOCOL_VERSION 2", header)
         self.assertIn("SEMLOOM_MAX_FRAME_BYTES", header)
+        self.assertIn("SEMLOOM_MAX_INPUT_BYTES", header)
         self.assertIn("semloom_gateway_socket_path", provider_source)
         self.assertIn("semloom_protocol_send_frame", provider_source)
         self.assertIn("MemoryContextRegisterResetCallback", provider_source)
+        self.assertIn("AllocSetContextCreate", provider_source)
+        self.assertIn("MemoryContextReset", provider_source)
+        self.assertIn("GetDatabaseEncoding()", provider_source)
+        self.assertIn("PG_UTF8", provider_source)
+        self.assertIn("O_NONBLOCK", provider_source)
         self.assertIn("PGC_SUSET", (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8"))
         self.assertIn('socket_path[0] != \'/\'', provider_source)
         self.assertIn("MAX_INFLIGHT_TASKS = 1", gateway_source)
         self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_source)
+        self.assertIn("MAX_INPUT_BYTES", gateway_source)
 
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")
@@ -130,6 +140,10 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("committed INSERT SELECT", tap_test)
         self.assertIn("failed INSERT variants leave the committed sink unchanged", tap_test)
         self.assertIn("normal execution succeeds after cancellation", tap_test)
+        self.assertIn("plain EXPLAIN does not open", tap_test)
+        self.assertIn("PROPAGATE_NULL is owned by PostgreSQL", tap_test)
+        self.assertIn("provider connect wait", tap_test)
+        self.assertIn("requires UTF8 database encoding", tap_test)
 
 
 if __name__ == "__main__":

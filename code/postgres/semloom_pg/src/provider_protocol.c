@@ -11,8 +11,8 @@
 
 #include "semloom_pg.h"
 
-#define SEMLOOM_PLAN_DIGEST_DOMAIN "semloom-plan-v1\0"
-#define SEMLOOM_PLAN_DIGEST_SUFFIX "SEM_MAP\0text\0text"
+#define SEMLOOM_PLAN_DIGEST_DOMAIN "semloom-plan-v2\0"
+#define SEMLOOM_PLAN_DIGEST_SUFFIX "SEM_MAP\0PROPAGATE_NULL\0text\0text"
 #define SEMLOOM_PAYLOAD_DIGEST_DOMAIN "semloom-payload-v1\0"
 #define SEMLOOM_COMPLETION_DIGEST_DOMAIN "semloom-completion-v1\0"
 
@@ -129,6 +129,30 @@ semloom_protocol_receive_frame(pgsocket socket_fd)
 	semloom_socket_read_all(socket_fd, payload, payload_length);
 	payload[payload_length] = '\0';
 	return payload;
+}
+
+void
+semloom_protocol_wait_connected(pgsocket socket_fd)
+{
+	int socket_error = 0;
+	socklen_t option_length = sizeof(socket_error);
+
+	semloom_wait_for_socket(socket_fd, WL_SOCKET_WRITEABLE);
+	if (getsockopt(socket_fd,
+				   SOL_SOCKET,
+				   SO_ERROR,
+				   &socket_error,
+				   &option_length) != 0)
+		ereport(ERROR,
+				(errcode_for_socket_access(),
+				 errmsg("could not inspect SemLoom provider socket connection: %m")));
+	if (socket_error != 0)
+	{
+		errno = socket_error;
+		ereport(ERROR,
+				(errcode_for_socket_access(),
+				 errmsg("could not connect to SemLoom provider socket: %m")));
+	}
 }
 
 static void

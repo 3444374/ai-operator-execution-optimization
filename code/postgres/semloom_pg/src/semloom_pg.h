@@ -8,17 +8,24 @@
 
 #define SEMLOOM_CUSTOM_SCAN_NAME "SemLoom SemMap"
 #define SEMLOOM_RECORDING_PREFIX "recorded:"
-#define SEMLOOM_PROTOCOL_VERSION 1
+#define SEMLOOM_PROTOCOL_VERSION 2
 #define SEMLOOM_MAX_FRAME_BYTES (1024 * 1024)
+#define SEMLOOM_MAX_INPUT_BYTES ((SEMLOOM_MAX_FRAME_BYTES - 4096) / 6)
 #define SEMLOOM_SHA256_HEX_LENGTH 64
 
 typedef struct SemloomProviderSession SemloomProviderSession;
+
+typedef enum SemloomNullPolicy
+{
+	SEMLOOM_NULL_PROPAGATE = 1,
+} SemloomNullPolicy;
 
 typedef struct SemloomSemanticPlanSpec
 {
 	AttrNumber mapped_column;
 	Oid input_type;
 	Oid output_type;
+	SemloomNullPolicy null_policy;
 } SemloomSemanticPlanSpec;
 
 typedef struct SemloomPreparedSemanticTask
@@ -60,6 +67,7 @@ extern void semloom_protocol_send_frame(pgsocket socket_fd,
 										const char *payload,
 										Size payload_length);
 extern char *semloom_protocol_receive_frame(pgsocket socket_fd);
+extern void semloom_protocol_wait_connected(pgsocket socket_fd);
 extern SemloomProviderSession *semloom_provider_open(const SemloomSemanticPlanSpec *plan_spec);
 extern void semloom_provider_drive(SemloomProviderSession *session,
 								   const SemloomPreparedSemanticTask *task,

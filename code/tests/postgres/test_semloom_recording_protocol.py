@@ -17,6 +17,7 @@ sys.path.insert(0, str(GATEWAY_ROOT))
 
 from protocol import (  # noqa: E402
     MAX_FRAME_BYTES,
+    MAX_INPUT_BYTES,
     PROTOCOL_VERSION,
     completion_evidence_digest,
     encode_frame,
@@ -31,7 +32,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
     def test_digest_golden_vectors_cover_unicode_and_null(self) -> None:
         self.assertEqual(
             plan_digest(mapped_column=2),
-            "382d1ba8d64fddea35c0c66cd09998c01c37ea81a1cf8997f60b540edfb9f1dc",
+            "83a8d707d851fb4fe2a1cef163b008d2f69a69bab4c4d1532d496094e4619de4",
         )
         self.assertEqual(
             semantic_payload_digest("héllo世界"),
@@ -48,7 +49,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                 sequence=7,
                 output="recorded:héllo世界",
             ),
-            "ec8e29fb856a50700660e277ffd715211d6f594e97518c9f8965fc45e1962b01",
+            "edf53b887924e6c1a5b3bf46f303a94bde5bf290f0d9692d7f4ab3527c4f2f1c",
         )
 
     def test_fragmented_and_coalesced_frames_complete_a_unicode_task(self) -> None:
@@ -64,6 +65,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
             "protocol_version": PROTOCOL_VERSION,
             "plan_digest": plan_sha256,
             "mapped_column": 1,
+            "null_policy": "PROPAGATE_NULL",
             "input_type": "text",
             "output_type": "text",
         }
@@ -85,6 +87,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         self.assertEqual(open_response["type"], "opened")
         self.assertEqual(open_response["max_inflight_tasks"], 1)
         self.assertEqual(open_response["max_frame_bytes"], MAX_FRAME_BYTES)
+        self.assertEqual(open_response["max_input_bytes"], MAX_INPUT_BYTES)
         self.assertEqual(completion["type"], "completion")
         self.assertEqual(completion["output"], "recorded:héllo世界")
         self.assertEqual(completion["payload_digest"], payload_sha256)
@@ -107,6 +110,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                     "protocol_version": PROTOCOL_VERSION,
                     "plan_digest": plan_sha256,
                     "mapped_column": 1,
+                    "null_policy": "PROPAGATE_NULL",
                     "input_type": "text",
                     "output_type": "text",
                 }
@@ -144,6 +148,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
             "protocol_version": PROTOCOL_VERSION,
             "plan_digest": plan_digest(mapped_column=1),
             "mapped_column": 1,
+            "null_policy": "PROPAGATE_NULL",
             "input_type": "text",
             "output_type": "text",
             "future_field": True,
@@ -186,6 +191,7 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                     "protocol_version": PROTOCOL_VERSION,
                     "plan_digest": plan_sha256,
                     "mapped_column": 1,
+                    "null_policy": "PROPAGATE_NULL",
                     "input_type": "text",
                     "output_type": "text",
                 }
@@ -209,6 +215,52 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         self.assertIsNone(read_frame(client))
         thread.join(timeout=1)
         self.assertFalse(thread.is_alive())
+
+    def test_null_and_oversized_tasks_are_rejected_before_execution(self) -> None:
+        for input_value, is_null, expected_code in (
+            (None, True, "null_task_not_allowed"),
+            ("x" * (MAX_INPUT_BYTES + 1), False, "input_too_large"),
+        ):
+            with self.subTest(expected_code=expected_code):
+                client, server = socket.socketpair()
+                thread = threading.Thread(target=run_recording_session, args=(server,))
+                thread.start()
+
+                plan_sha256 = plan_digest(mapped_column=1)
+                client.sendall(
+                    encode_frame(
+                        {
+                            "type": "open",
+                            "protocol_version": PROTOCOL_VERSION,
+                            "plan_digest": plan_sha256,
+                            "mapped_column": 1,
+                            "null_policy": "PROPAGATE_NULL",
+                            "input_type": "text",
+                            "output_type": "text",
+                        }
+                    )
+                )
+                self.assertEqual(read_frame(client)["type"], "opened")
+                client.sendall(
+                    encode_frame(
+                        {
+                            "type": "task",
+                            "protocol_version": PROTOCOL_VERSION,
+                            "sequence": "0",
+                            "plan_digest": plan_sha256,
+                            "payload_digest": semantic_payload_digest(input_value),
+                            "is_null": is_null,
+                            "input": input_value,
+                        }
+                    )
+                )
+                self.assertEqual(
+                    read_frame(client),
+                    {"type": "error", "code": expected_code},
+                )
+                client.close()
+                thread.join(timeout=1)
+                self.assertFalse(thread.is_alive())
 
 
 if __name__ == "__main__":

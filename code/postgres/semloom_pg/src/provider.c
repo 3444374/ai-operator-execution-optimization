@@ -7,6 +7,7 @@
 
 #include "catalog/pg_type_d.h"
 #include "lib/stringinfo.h"
+#include "mb/pg_wchar.h"
 #include "storage/fd.h"
 #include "utils/builtins.h"
 #include "utils/fmgrprotos.h"
@@ -26,9 +27,11 @@ struct SemloomProviderSession
 	bool uses_uds;
 	bool external_fd_acquired;
 	pgsocket socket_fd;
+	char *socket_path;
 	char plan_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	uint64 accepted_rows;
 	uint64 emitted_rows;
+	MemoryContext scratch_context;
 	MemoryContextCallback cleanup_callback;
 };
 
@@ -59,7 +62,8 @@ semloom_provider_open(const SemloomSemanticPlanSpec *plan_spec)
 	const char *socket_path;
 
 	if (plan_spec == NULL || plan_spec->mapped_column <= 0 ||
-		plan_spec->input_type != TEXTOID || plan_spec->output_type != TEXTOID)
+		plan_spec->input_type != TEXTOID || plan_spec->output_type != TEXTOID ||
+		plan_spec->null_policy != SEMLOOM_NULL_PROPAGATE)
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("invalid recording provider plan specification")));
@@ -67,26 +71,18 @@ semloom_provider_open(const SemloomSemanticPlanSpec *plan_spec)
 	session = palloc0(sizeof(SemloomProviderSession));
 	session->plan_spec = *plan_spec;
 	session->socket_fd = PGINVALID_SOCKET;
+	socket_path = semloom_gateway_socket_path();
+	session->socket_path = pstrdup(socket_path);
+	session->uses_uds = socket_path[0] != '\0';
+	session->scratch_context = AllocSetContextCreate(CurrentMemoryContext,
+												 "SemLoom provider drive scratch",
+												 ALLOCSET_DEFAULT_SIZES);
 	semloom_protocol_plan_digest(plan_spec, session->plan_digest);
 	session->cleanup_callback.func = semloom_provider_cleanup;
 	session->cleanup_callback.arg = session;
 	MemoryContextRegisterResetCallback(CurrentMemoryContext,
 									   &session->cleanup_callback);
 
-	socket_path = semloom_gateway_socket_path();
-	if (socket_path[0] != '\0')
-	{
-		PG_TRY();
-		{
-			semloom_provider_open_uds(session, socket_path);
-		}
-		PG_CATCH();
-		{
-			semloom_provider_release_socket(session);
-			PG_RE_THROW();
-		}
-		PG_END_TRY();
-	}
 	return session;
 }
 
@@ -96,6 +92,8 @@ semloom_provider_drive(SemloomProviderSession *session,
 					   MemoryContext result_context,
 					   SemloomCompletionRecord *completion)
 {
+	MemoryContext previous_context;
+
 	if (session == NULL || session->closed || task == NULL || completion == NULL ||
 		result_context == NULL)
 		ereport(ERROR,
@@ -106,29 +104,38 @@ semloom_provider_drive(SemloomProviderSession *session,
 		ereport(ERROR,
 				(errcode(ERRCODE_DATA_EXCEPTION),
 				 errmsg("recording provider task does not match the open plan")));
+	if (task->is_null)
+		ereport(ERROR,
+				(errcode(ERRCODE_DATA_EXCEPTION),
+				 errmsg("PROPAGATE_NULL tasks must be completed by the PostgreSQL executor")));
 
-	if (session->uses_uds)
+	previous_context = MemoryContextSwitchTo(session->scratch_context);
+	PG_TRY();
 	{
-		PG_TRY();
-		{
+		if (session->uses_uds)
 			semloom_provider_drive_uds(session, task, result_context, completion);
+		else
+		{
+			completion->sequence = task->sequence;
+			completion->output_type = session->plan_spec.output_type;
+			completion->is_null = false;
+			completion->output = semloom_record_text(task->input, result_context);
 		}
-		PG_CATCH();
+		MemoryContextSwitchTo(previous_context);
+	}
+	PG_CATCH();
+	{
+		MemoryContextSwitchTo(previous_context);
+		MemoryContextReset(session->scratch_context);
+		if (session->uses_uds)
 		{
 			semloom_provider_release_socket(session);
 			session->closed = true;
-			PG_RE_THROW();
 		}
-		PG_END_TRY();
+		PG_RE_THROW();
 	}
-	else
-	{
-		completion->sequence = task->sequence;
-		completion->output_type = session->plan_spec.output_type;
-		completion->is_null = task->is_null;
-		completion->output = task->is_null ? (Datum) 0 :
-			semloom_record_text(task->input, result_context);
-	}
+	PG_END_TRY();
+	MemoryContextReset(session->scratch_context);
 	session->accepted_rows++;
 	session->emitted_rows++;
 }
@@ -139,6 +146,7 @@ semloom_provider_close(SemloomProviderSession *session)
 	if (session != NULL && !session->closed)
 	{
 		semloom_provider_release_socket(session);
+		MemoryContextReset(session->scratch_context);
 		session->closed = true;
 	}
 }
@@ -146,7 +154,8 @@ semloom_provider_close(SemloomProviderSession *session)
 const char *
 semloom_provider_name(const SemloomProviderSession *session)
 {
-	return session != NULL && session->uses_uds ?
+	return (session != NULL && session->uses_uds) ||
+		(session == NULL && semloom_gateway_socket_path()[0] != '\0') ?
 		SEMLOOM_UDS_PROVIDER_NAME : SEMLOOM_IN_PROCESS_PROVIDER_NAME;
 }
 
@@ -170,6 +179,7 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 	char *response;
 	Jsonb *message;
 	int socket_flags;
+	int connect_result;
 
 	if (strlen(socket_path) >= sizeof(address.sun_path))
 		ereport(ERROR,
@@ -190,15 +200,6 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 				(errcode_for_socket_access(),
 				 errmsg("could not create SemLoom provider socket: %m")));
 
-	MemSet(&address, 0, sizeof(address));
-	address.sun_family = AF_UNIX;
-	strlcpy(address.sun_path, socket_path, sizeof(address.sun_path));
-	if (connect(session->socket_fd,
-				(struct sockaddr *) &address,
-				sizeof(address)) != 0)
-		ereport(ERROR,
-				(errcode_for_socket_access(),
-				 errmsg("could not connect to SemLoom provider socket: %m")));
 	socket_flags = fcntl(session->socket_fd, F_GETFL, 0);
 	if (socket_flags < 0 ||
 		fcntl(session->socket_fd, F_SETFL, socket_flags | O_NONBLOCK) < 0)
@@ -206,10 +207,28 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 				(errcode_for_socket_access(),
 				 errmsg("could not make SemLoom provider socket nonblocking: %m")));
 
+	MemSet(&address, 0, sizeof(address));
+	address.sun_family = AF_UNIX;
+	strlcpy(address.sun_path, socket_path, sizeof(address.sun_path));
+	CHECK_FOR_INTERRUPTS();
+	connect_result = connect(session->socket_fd,
+							 (struct sockaddr *) &address,
+							 sizeof(address));
+	if (connect_result != 0)
+	{
+		if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK)
+			semloom_protocol_wait_connected(session->socket_fd);
+		else
+			ereport(ERROR,
+					(errcode_for_socket_access(),
+					 errmsg("could not connect to SemLoom provider socket: %m")));
+	}
+
 	initStringInfo(&request);
 	appendStringInfo(&request,
 					 "{\"type\":\"open\",\"protocol_version\":%d,"
 					 "\"plan_digest\":\"%s\",\"mapped_column\":%d,"
+					 "\"null_policy\":\"PROPAGATE_NULL\","
 					 "\"input_type\":\"text\",\"output_type\":\"text\"}",
 					 SEMLOOM_PROTOCOL_VERSION,
 					 session->plan_digest,
@@ -218,15 +237,15 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 	pfree(request.data);
 	response = semloom_protocol_receive_frame(session->socket_fd);
 	message = semloom_parse_provider_json(response);
-	semloom_validate_response_type(message, "opened", 5);
+	semloom_validate_response_type(message, "opened", 6);
 	if (semloom_json_int32(message, "protocol_version") != SEMLOOM_PROTOCOL_VERSION ||
 		!semloom_json_string_equals(message, "plan_digest", session->plan_digest) ||
 		semloom_json_int32(message, "max_inflight_tasks") != 1 ||
-		semloom_json_int32(message, "max_frame_bytes") != SEMLOOM_MAX_FRAME_BYTES)
+		semloom_json_int32(message, "max_frame_bytes") != SEMLOOM_MAX_FRAME_BYTES ||
+		semloom_json_int32(message, "max_input_bytes") != SEMLOOM_MAX_INPUT_BYTES)
 		ereport(ERROR,
 				(errcode(ERRCODE_PROTOCOL_VIOLATION),
 				 errmsg("SemLoom provider open response does not match the requested protocol")));
-	session->uses_uds = true;
 }
 
 static void
@@ -248,13 +267,23 @@ semloom_provider_drive_uds(SemloomProviderSession *session,
 	bool output_is_null;
 	MemoryContext previous_context;
 
-	if (!task->is_null)
+	input_text = DatumGetTextPP(task->input);
+	input_data = VARDATA_ANY(input_text);
+	input_length = VARSIZE_ANY_EXHDR(input_text);
+	if (input_length > SEMLOOM_MAX_INPUT_BYTES)
+		ereport(ERROR,
+				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+				 errmsg("SemLoom provider input exceeds the %d byte limit",
+						SEMLOOM_MAX_INPUT_BYTES)));
+	if (session->socket_fd == PGINVALID_SOCKET)
 	{
-		input_text = DatumGetTextPP(task->input);
-		input_data = VARDATA_ANY(input_text);
-		input_length = VARSIZE_ANY_EXHDR(input_text);
+		if (GetDatabaseEncoding() != PG_UTF8)
+			ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					 errmsg("SemLoom UDS recording provider requires UTF8 database encoding")));
+		semloom_provider_open_uds(session, session->socket_path);
 	}
-	semloom_protocol_payload_digest(task->is_null,
+	semloom_protocol_payload_digest(false,
 								input_data,
 								input_length,
 								payload_digest);
@@ -268,11 +297,8 @@ semloom_provider_drive_uds(SemloomProviderSession *session,
 					 sequence,
 					 session->plan_digest,
 					 payload_digest,
-					 task->is_null ? "true" : "false");
-	if (task->is_null)
-		appendStringInfoString(&request, "null");
-	else
-		escape_json_with_len(&request, input_data, input_length);
+					 "false");
+	escape_json_with_len(&request, input_data, input_length);
 	appendStringInfoChar(&request, '}');
 	semloom_protocol_send_frame(session->socket_fd, request.data, request.len);
 	pfree(request.data);

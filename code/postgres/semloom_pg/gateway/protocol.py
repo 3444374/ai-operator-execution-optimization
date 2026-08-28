@@ -10,8 +10,9 @@ import time
 from typing import Any
 
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 MAX_FRAME_BYTES = 1024 * 1024
+MAX_INPUT_BYTES = (MAX_FRAME_BYTES - 4096) // 6
 MAX_INFLIGHT_TASKS = 1
 RECORDING_PREFIX = "recorded:"
 
@@ -20,6 +21,7 @@ _OPEN_FIELDS = {
     "protocol_version",
     "plan_digest",
     "mapped_column",
+    "null_policy",
     "input_type",
     "output_type",
 }
@@ -43,13 +45,13 @@ class ProtocolError(Exception):
 
 
 def plan_digest(*, mapped_column: int) -> str:
-    """Return the v1 canonical digest for the supported text SemMap plan."""
+    """Return the v2 canonical digest for the supported text SemMap plan."""
     if type(mapped_column) is not int or mapped_column <= 0:
         raise ValueError("mapped_column must be a positive integer")
     canonical = (
-        b"semloom-plan-v1\0"
+        b"semloom-plan-v2\0"
         + struct.pack("!I", mapped_column)
-        + b"SEM_MAP\0text\0text"
+        + b"SEM_MAP\0PROPAGATE_NULL\0text\0text"
     )
     return hashlib.sha256(canonical).hexdigest()
 
@@ -148,6 +150,7 @@ def run_recording_session(
                     "plan_digest": plan_sha256,
                     "max_inflight_tasks": MAX_INFLIGHT_TASKS,
                     "max_frame_bytes": MAX_FRAME_BYTES,
+                    "max_input_bytes": MAX_INPUT_BYTES,
                 }
             )
         )
@@ -166,7 +169,7 @@ def run_recording_session(
                 return
             if response_delay_ms > 0:
                 time.sleep(response_delay_ms / 1000)
-            output = None if input_value is None else RECORDING_PREFIX + input_value
+            output = RECORDING_PREFIX + input_value
             evidence_sha256 = completion_evidence_digest(
                 plan_sha256=plan_sha256,
                 payload_sha256=payload_sha256,
@@ -208,6 +211,8 @@ def _validate_open(message: dict[str, Any]) -> tuple[int, str]:
     mapped_column = message["mapped_column"]
     if type(mapped_column) is not int or mapped_column <= 0:
         raise ProtocolError("invalid_mapped_column")
+    if message["null_policy"] != "PROPAGATE_NULL":
+        raise ProtocolError("unsupported_null_policy")
     if message["input_type"] != "text" or message["output_type"] != "text":
         raise ProtocolError("unsupported_plan_type")
     plan_sha256 = message["plan_digest"]
@@ -222,7 +227,7 @@ def _validate_task(
     *,
     expected_sequence: int,
     plan_sha256: str,
-) -> tuple[int, str | None, str]:
+) -> tuple[int, str, str]:
     if set(message) != _TASK_FIELDS:
         raise ProtocolError("invalid_task_fields")
     if message["type"] != "task":
@@ -243,10 +248,12 @@ def _validate_task(
     input_value = message["input"]
     if type(is_null) is not bool:
         raise ProtocolError("invalid_null_flag")
-    if (is_null and input_value is not None) or (
-        not is_null and not isinstance(input_value, str)
-    ):
+    if is_null:
+        raise ProtocolError("null_task_not_allowed")
+    if not isinstance(input_value, str):
         raise ProtocolError("invalid_input")
+    if len(input_value.encode("utf-8")) > MAX_INPUT_BYTES:
+        raise ProtocolError("input_too_large")
     payload_sha256 = message["payload_digest"]
     _require_sha256(payload_sha256, "invalid_payload_digest")
     if payload_sha256 != semantic_payload_digest(input_value):
