@@ -2,7 +2,7 @@
 
 更新日期：2026-08-28
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是 `REL_18_4` extension planner-visible `SemMap` capability、plan/task/result 与 `open/drive/close` UDS recording gateway、extension/core 载体审查、增量 SemLoom session，再以 `SemFilter` 验证关系语义和最小第二 semantic path；IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
+本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是 `REL_18_3` extension planner-visible `SemMap` capability、plan/task/result 与 `open/drive/close` UDS recording gateway、extension/core 载体审查、增量 SemLoom session，再以 `SemFilter` 验证关系语义和最小第二 semantic path；IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
 
 ## 1. 证据等级
 
@@ -20,7 +20,7 @@
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/` 目标；当前不存在 | 无 | 仅有 `REL_18_4` extension capability 计划；SQL、child plan、snapshot、cancel/error/result lifecycle 尚未验证。 |
+| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/` capability spike；正在验证 | 本地静态测试通过；服务器 `REL_18_3` PGXS/regression 待完成 | 仅为 deterministic recording carrier；SQL、child plan、snapshot、cancel/error/result lifecycle 尚未形成完整证据。 |
 | 中立 semantic plan/task/result + provider interface | `code/src/execution_provider/` 目标；当前不存在 | 无 | `open/drive/close`、UDS recording、direct HTTP、SemLoom adapters 以及 digest/backpressure/cancel 合同均尚未实现。 |
 | extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | 尚未完成 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives 反例审查；不能声称 core 必须或无需修改。 |
 | IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |
@@ -175,7 +175,7 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 
 以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
 
-1. 锁定 `REL_18_4`，实现 extension planner-visible `SemMap` capability，验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期。
+1. 锁定 `REL_18_3`，实现 extension planner-visible `SemMap` capability，验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期。
 2. 实现 plan/task/result digest、bounded `open/drive/close` 与 UDS recording gateway。
 3. 完成 extension/core carrier audit；能表达目标 LOTUS/Cortex alternatives 时保留 extension，只有已复现阻断才增加最小 core patch。
 4. 抽取增量 SemLoom session，接 direct HTTP/SemLoom adapters；以 `SemFilter` 验证 cardinality 和首条 semantic alternative。

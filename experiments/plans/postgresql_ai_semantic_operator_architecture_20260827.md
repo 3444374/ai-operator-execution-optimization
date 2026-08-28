@@ -1,12 +1,14 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
 更新日期：2026-08-28
-状态：`current / architecture-defined / implementation-not-started`
-当前实现事实：现有代码是 PostgreSQL source/sink、Daft/Arrow、Ray、vLLM/CLIP、调度与观测组成的
-外部物理执行基座；尚无 PostgreSQL planner-visible AI 语义算子、统一 execution-provider 协议或
-Sema/LOTUS 兼容适配器。
-当前排期边界：锁定 PostgreSQL `REL_18_4`，完成 exact `SemMap`/`SemFilter`、一个普通关系 child
+状态：`current / architecture-defined / implementation-in-progress`
+当前实现事实：`code/postgres/semloom_pg/` 已有 PostgreSQL planner-visible `SemMap`
+`CustomPath/CustomScan` capability spike 和静态 fail-closed tests；`REL_18_3` PGXS/regression、统一
+execution-provider 协议与 Sema/LOTUS 兼容适配器仍待完成。既有 PostgreSQL source/sink、
+Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
+当前排期边界：锁定 PostgreSQL `REL_18_3`，完成 exact `SemMap`/`SemFilter`、一个普通关系 child
 plan、query-scoped provider session，以及一条最小、显式可识别的 `SemFilter` 第二 physical path。
+既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
 数据库资格完成后优先比较 IMLane-like batch placement。`SemJoin`、aggregate/top-k/group-by、
 fusion/AQE、Kalypso-like lineage 与跨算子 prefix lease 仅作后续参考，不构成当前实现承诺。
 替代关系：本文取代 2026-08-21 的 PostgreSQL+LOTUS 主计划与 LOTUS 语义前端子计划；旧文档进入
@@ -18,7 +20,7 @@ fusion/AQE、Kalypso-like lineage 与跨算子 prefix lease 仅作后续参考�
 
 > **先用 PostgreSQL extension `CustomPath/CustomScan` 证明语义算子的 child-plan、query lifecycle 与受限
 > semantic alternatives；只有 LOTUS/Cortex 类目标优化或稳定 plan identity 被 extension 的可复现限制
-> 阻挡时，才升级为受控的 PostgreSQL 18.4 core patch。无论载体如何，数据库都把已绑定、已选择
+> 阻挡时，才升级为受控的 PostgreSQL 18.3 core patch。无论载体如何，数据库都把已绑定、已选择
 > semantic algorithm 且不可由外部改写的任务交给 SemLoom execution provider。**
 
 这里的“内置”表示 PostgreSQL 拥有 SQL 表达、普通关系 child plan、snapshot、权限、语义算子计划、
@@ -38,7 +40,7 @@ function-like SQL marker，不同时修改 `gram.y`，不把 storage、Ray 或 v
 | Sema | 主要架构参照：semantic operator 是显式 plan node，数据库拥有优化和执行状态 | 不作为 PostgreSQL 代码依赖；论文中的 DuckDB 实现不能证明 PG extension 已可行 |
 | Cortex AISQL | function-like SQL、数据库内 AI-aware plan/cost/rewrite 与外部 Cortex Platform 分工的工程参照 | 不公开 Snowflake core 源码，不能直接迁移为 PostgreSQL patch |
 | PostgreSQL Custom Scan / planner hooks | 首个 capability spike；验证 ordinary child、tuple pump、projection、取消和错误 | 不是最终原生 node identity，也不证明任意 semantic rewrite 可由 extension 完成 |
-| PostgreSQL 18.4 core semantic module | 条件性载体；当 extension 无法可靠支持原生 identity 或目标 optimizer rewrite 时使用 | 不修改 raw grammar、storage、Ray 或 vLLM；没有复现阻断前不扩 patch surface |
+| PostgreSQL 18.3 core semantic module | 条件性载体；当 extension 无法可靠支持原生 identity 或目标 optimizer rewrite 时使用 | 不修改 raw grammar、storage、Ray 或 vLLM；没有复现阻断前不扩 patch surface |
 | LOTUS | 语义算子相关工作、可选 `lotus_compat` 行为 profile、未修改完整系统 baseline | 不定义核心 IR，不要求 `lotus-ai==1.2.4` 才能运行数据库算子 |
 | IMLane | DBEnd/数据转换、数据库物理 batch pump、异步提交和 Lane/resource scheduler 的直接 baseline | 不拥有 semantic SQL/rewrite；其已有组批与提交机制不能重新包装成项目新颖性 |
 | Kalypso | stage/dependency/prefix 生命周期、KV-aware admission 和 virtual pinning 的直接参照 | 不是 DB bridge；不能把 CP child 生成、物化和整条 query output 所有权照搬到外部层 |
@@ -54,7 +56,7 @@ function-like SQL marker，不同时修改 `gram.y`，不把 storage、Ray 或 v
 用户 SQL
   |
   v
-PostgreSQL 18.4 semantic module
+PostgreSQL 18.3 semantic module
   |-- carrier E: marker + CustomPath/CustomScan
   |   or conditional carrier K: SemanticExpr/path-generation
   |       `-- native Unary/State only if executor lifecycle is also blocked
@@ -367,7 +369,7 @@ Cortex join-to-classification 与 Sema fusion 可能只满足统计质量目标�
 ```text
 code/postgres/
 ├── pg18_core_patch/                  # conditional；carrier audit 选择 core 前不创建
-│   ├── upstream.lock                 # URL + REL_18_4 exact commit
+│   ├── upstream.lock                 # URL + REL_18_3 exact commit
 │   ├── series
 │   ├── patches/                      # git format-patch；唯一 core patch 源
 │   ├── scripts/                      # apply/build/test，不保存第二份手写 core overlay
@@ -498,7 +500,7 @@ class SchedulingSession(Protocol):
 工作包一至七构成当前有序实施范围。数据库资格完成后优先运行 IMLane-like batch placement 对照；
 其余远期机制只有在前置条件成立、另有当前计划和实验合同时才进入实现。
 
-### 工作包一：`REL_18_4` extension capability spike
+### 工作包一：`REL_18_3` extension capability spike
 
 注册 fail-closed `ai_semantic.map` marker；planner 按函数 OID 识别受限形状，用 ordinary path 包一层
 `CustomPath/CustomScan`；`SemExecPump` 先连接进程内 recording adapter。首版只支持一个 unary SemMap、
@@ -678,13 +680,13 @@ full-system baseline；Kalypso 当前只有论文参照，不预注册 native ba
 
 - 本轮一手来源与迁移审计：
   [`../../research/sema_native_semantic_operator_architecture_reference_20260827.md`](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)，
-  覆盖 Sema、Cortex AISQL、IMLane、Kalypso、LOTUS 与 PostgreSQL 18.4 实现机制。
+  覆盖 Sema、Cortex AISQL、IMLane、Kalypso、LOTUS 与 PostgreSQL 18 实现机制。
 - Sema：Kangkang Qi et al., *Sema: A High-performance System for LLM-based Semantic Query
   Processing*，当前精读版本为 [arXiv:2603.11622v1](https://arxiv.org/abs/2603.11622)；本地精读见
   [`../../research/精读文献笔记/sema_vldb2026/sema_vldb2026.md`](../../research/精读文献笔记/sema_vldb2026/sema_vldb2026.md)。
 - PostgreSQL 18 Custom Scan：<https://www.postgresql.org/docs/18/custom-scan.html>。
 - PostgreSQL 18 PGXS：<https://www.postgresql.org/docs/18/extend-pgxs.html>。
-- PostgreSQL 18.4 source tag：<https://github.com/postgres/postgres/tree/REL_18_4>。
+- PostgreSQL 18.3 source tag：<https://github.com/postgres/postgres/tree/REL_18_3>。
 - Cortex AISQL：<https://arxiv.org/abs/2511.07663>。
 - IMLane：*IMLane: Composable Framework for Efficient AI Function Execution in Database Engine*，
   [PVLDB 19(12), 2026](https://www.vldb.org/pvldb/vol19/p4223-xu.pdf)；作者 artifact：

@@ -44,7 +44,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-当前最短期任务是 `REL_18_4` extension/planner-visible `SemMap` capability，然后实现中立
+当前最短期任务是 `REL_18_3` extension/planner-visible `SemMap` capability，然后实现中立
 plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；载体审查决定是否需要最小 core
 patch，之后才接增量 SemLoom、HTTP 与 `SemFilter` semantic alternative。
 既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。

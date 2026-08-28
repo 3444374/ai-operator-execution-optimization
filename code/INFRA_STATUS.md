@@ -7,7 +7,7 @@
 可运行的 backend 基座，不表示数据库内 AI 语义算子已经实现；项目不修改 vLLM 内部。
 
 **当前工程顺序**：按
-`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 `REL_18_4` extension
+`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 `REL_18_3` extension
 `SemMap` capability，再实现中立 plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；
 随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，只有已复现阻断才增加最小 core
 patch，再抽取增量 SemLoom session 并接 HTTP/SemLoom provider，以 `SemFilter` 验证 cardinality。
@@ -354,7 +354,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 
 ### 当前优先：PostgreSQL 中立语义算子与 provider 资格验证
 
-1. 锁定 `REL_18_4`，实现最小 extension/planner-visible `SemMap` prototype，以 deterministic
+1. 锁定 `REL_18_3`，实现最小 extension/planner-visible `SemMap` prototype，以 deterministic
    transformation 验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期；
 2. 实现 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、`open/drive/close` 与 UDS
    recording gateway；

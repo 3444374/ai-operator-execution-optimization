@@ -17,6 +17,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
         self.assertIn("MODULE_big = semloom_pg", makefile)
         self.assertIn("REGRESS = semloom_pg", makefile)
+        self.assertIn("SEMLOOM_PG_TARGET_VERSION ?= 18.3", makefile)
+        self.assertIn("PG_CONFIG reports", makefile)
         self.assertIn("default_version = '0.1.0'", control)
         self.assertIn("module_pathname = '$libdir/semloom_pg'", control)
 

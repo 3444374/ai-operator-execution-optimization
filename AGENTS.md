@@ -67,7 +67,7 @@ Claude Code 通过根 `CLAUDE.md` 导入本文件，并遵循相同的逐级读�
 
 项目不以广泛 PostgreSQL fork、PL/Python 逐行 HTTP UDF、LOTUS DataConnector 外拉、修改 vLLM
 continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU 查询算子或单纯产品集成为主线。
-允许在 `REL_18_4` extension capability 与 carrier audit 证明目标 LOTUS/Cortex 类优化或稳定 node lifecycle
+允许在 `REL_18_3` extension capability 与 carrier audit 证明目标 LOTUS/Cortex 类优化或稳定 node lifecycle
 无法可靠表达后，维护受控的最小 core semantic patch；不得仅为“更原生”改 grammar、storage 或扩大 fork。
 “数据库内置”只表示 SQL/planner/query lifecycle 属于数据库，不表示 payload 不会传到外部服务。
 
@@ -75,7 +75,7 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 
 当前实现按以下顺序推进：
 
-1. 锁定 `REL_18_4`，用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary
+1. 锁定 `REL_18_3`，用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary
    child plan、snapshot、cancel、error 和 result lifecycle；
 2. 实现中立 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 合同与 `open/drive/close`
    execution-provider interface，先接 UDS recording gateway；

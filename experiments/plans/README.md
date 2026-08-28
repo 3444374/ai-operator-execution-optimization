@@ -18,7 +18,7 @@
 
 当前短期顺序是：
 
-1. 锁定 `REL_18_4`，用 extension / planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
+1. 锁定 `REL_18_3`，用 extension / planner-visible `SemMap` prototype 验证 SQL、ordinary child plan、
    snapshot 与 query lifecycle；
 2. 实现最小 plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；
 3. 审查 extension 能否承载目标 LOTUS/Cortex semantic alternatives；能表达则保留 extension，只有已复现

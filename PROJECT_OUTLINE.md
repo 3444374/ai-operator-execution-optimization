@@ -13,7 +13,7 @@
 
 ## 0. 当前优先级与历史记录范围
 
-当前最短路径是：锁定 `REL_18_4`，先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证
+当前最短路径是：锁定 `REL_18_3`，先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证
 SQL、ordinary child plan、snapshot 与 query lifecycle，再实现中立 plan/task/result 合同、
 `open/drive/close` 和 Unix-domain socket（UDS）recording gateway；随后审查 extension 是否足以承载
 目标 LOTUS/Cortex paths，只有已复现阻断才增加最小 core patch，再接增量 SemLoom 与 `SemFilter`。
@@ -104,7 +104,7 @@ PostgreSQL SQL AI operator
 对外口径：PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
 PostgreSQL extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
-或 lifecycle 出现可复现阻断，允许维护 `REL_18_4` 最小 core semantic patch。默认语义由中立
+或 lifecycle 出现可复现阻断，允许维护 `REL_18_3` 最小 core semantic patch。默认语义由中立
 plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
 是物理执行与验证平台，不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构
 或 GPU kernel，也不回到传统 GPU 查询算子。
@@ -384,7 +384,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. **PostgreSQL capability**：锁定 `REL_18_4`，用 extension / planner-visible `SemMap` deterministic
+1. **PostgreSQL capability**：锁定 `REL_18_3`，用 extension / planner-visible `SemMap` deterministic
    prototype 证明 SQL、ordinary child plan、snapshot、cancel/error/result lifecycle。
 2. **中立 provider interface**：实现 plan/task/result digest、bounded `open/drive/close` 与 UDS recording
    gateway；不依赖模型验证 backpressure、early stop 和故障路径。
@@ -412,8 +412,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分数读取。feeding-saturation 以同协议 bounded direct 为参照；未过门的臂不抽策略性能结论。raw rows/s、correct rows/s 和 service tokens/s 不得互相替代，语义失败必须保留在总行数分母。
 
-正式报告、论文、PPT 和图表不使用内部实验缩写。PG18.4 AutoDL 结果必须按实际链路标为 rehearsal，
-不能冒充已经验证 `REL_18_4` planner-visible semantic operator。
+正式报告、论文、PPT 和图表不使用内部实验缩写。既有 PG18.4 AutoDL 结果必须按实际链路标为
+rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-visible semantic operator。
 
 ## 10. 同步入口
 

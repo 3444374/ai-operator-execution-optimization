@@ -10,7 +10,7 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
 当前状态（2026-08-28）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
-架构改为 Sema-like 中立语义算子核心。短期工程锁定 `REL_18_4`，先用 extension 验证 planner-visible
+架构改为 Sema-like 中立语义算子核心。短期工程锁定 `REL_18_3`，先用 extension 验证 planner-visible
 `SemMap` 与 query lifecycle，再实现 `open/drive/close` 和 Unix-domain socket（UDS）recording
 gateway；extension 能承载目标 LOTUS/Cortex semantic paths 时继续使用，只有已复现阻断才增加最小
 core patch。随后才接增量 SemLoom、
@@ -46,7 +46,7 @@ dependency execution、`SemJoin`、fusion/AQE 等只作后续参考，不纳入�
 `AI_COMPLETE` 是主场景，图像 `AI_EMBED/AI_CLASSIFY` 用于验证策略抽象能否跨模态复用。
 
 项目不做广泛 PostgreSQL fork，也不修改 vLLM continuous batching、Ray scheduler、模型结构或 GPU
-kernel；只有 extension carrier 出现已复现 optimizer/node-lifecycle 阻断时，才采用最小 PG18.4 core
+kernel；只有 extension carrier 出现已复现 optimizer/node-lifecycle 阻断时，才采用最小 PG18.3 core
 semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 `SELECT/fetchall → Python → HTTP → INSERT` 作为主线。
 

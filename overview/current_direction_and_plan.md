@@ -15,13 +15,13 @@ SemLoom 是面向数据库 AI 语义算子的工作量感知执行与多作业�
 错误和结果生命周期；Daft、Ray、vLLM、CLIP 与 pgvector 是可替换的物理执行和验证平台。
 
 项目不做广泛 PostgreSQL fork；只有 extension 对目标 LOTUS/Cortex plan optimization 或稳定 node
-lifecycle 出现已复现阻断时，才使用最小 PG18.4 core semantic patch。项目不修改 vLLM continuous
+lifecycle 出现已复现阻断时，才使用最小 PG18.3 core semantic patch。项目不修改 vLLM continuous
 batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 `SELECT/fetchall → Python → HTTP → INSERT` 作为主路径。
 
 ## 2. 当前最短路径
 
-1. 锁定 `REL_18_4`，用 extension / planner-visible `SemMap` 验证 SQL、ordinary child plan、snapshot、
+1. 锁定 `REL_18_3`，用 extension / planner-visible `SemMap` 验证 SQL、ordinary child plan、snapshot、
    cancel/error 和 result lifecycle；
 2. 实现最小 plan/task/result、`open/drive/close` 与 Unix-domain socket（UDS）recording gateway；
 3. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与 LOTUS/Cortex alternatives；能表达

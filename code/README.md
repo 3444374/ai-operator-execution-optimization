@@ -7,7 +7,7 @@ Status as of 2026-08-28: this directory contains the existing external physical-
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 PostgreSQL planner-visible AI semantic operator, the neutral plan/task/result contracts, or an execution-provider
-gateway. The active sequence is the `REL_18_4` extension `SemMap` capability, `open/drive/close` plus a UDS
+gateway. The active sequence is the `REL_18_3` extension `SemMap` capability, `open/drive/close` plus a UDS
 recording gateway, an extension-versus-minimal-core carrier audit, an incremental SemLoom session, and then
 HTTP/SemLoom providers plus `SemFilter`; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
@@ -656,8 +656,8 @@ Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload re
 code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
-目标是采集 PostgreSQL 18 触发 AI 算子后的外部执行链路画像；当前 rehearsal 与 semantic-operator
-实现基线都使用 18.4，但前者不能代替锁定 `REL_18_4` 的 planner/query-lifecycle 资格验证：
+目标是采集 PostgreSQL 18 触发 AI 算子后的外部执行链路画像；既有 rehearsal 使用 18.4，当前
+semantic-operator qualification 锁定 18.3，前者不能代替 `REL_18_3` planner/query-lifecycle 验证：
 
 ```text
 PostgreSQL documents/job table
@@ -713,7 +713,7 @@ Daft organizer dry-run:
 
 真实报告必须说明数据库平台类型：
 
-- 锁定 `REL_18_4` 的 semantic-operator qualification；
+- 锁定 `REL_18_3` 的 semantic-operator qualification；
 - 普通 PostgreSQL + pgvector 同构预演替身；
 - 其他开源数据库 AI 算子平台。
 

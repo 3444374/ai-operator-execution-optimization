@@ -13,5 +13,12 @@ PGFILEDESC = "semloom_pg - planner-visible SemMap capability spike"
 PG_CPPFLAGS = -Isrc
 
 PG_CONFIG ?= pg_config
+SEMLOOM_PG_TARGET_VERSION ?= 18.3
+SEMLOOM_PG_ACTUAL_VERSION := $(word 2,$(shell $(PG_CONFIG) --version 2>/dev/null))
+
+ifneq ($(SEMLOOM_PG_ACTUAL_VERSION),$(SEMLOOM_PG_TARGET_VERSION))
+$(error semloom_pg targets PostgreSQL $(SEMLOOM_PG_TARGET_VERSION); PG_CONFIG reports $(SEMLOOM_PG_ACTUAL_VERSION))
+endif
+
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)

@@ -2,7 +2,7 @@
 
 更新日期：2026-08-28
 
-> **当前执行摘要**：锁定 `REL_18_4`，先完成 extension planner-visible `SemMap` capability，再实现
+> **当前执行摘要**：锁定 `REL_18_3`，先完成 extension planner-visible `SemMap` capability，再实现
 > plan/task/result、`open/drive/close` 与 UDS recording gateway；载体审查确认 extension 足够时继续使用，
 > 只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加最小 core patch。随后抽取
 > 增量 SemLoom session，以 `SemFilter` 验证 cardinality 和首条 semantic alternative，再研究
