@@ -9,6 +9,7 @@ HTTP, Ray, vLLM, or SemLoom scheduling backend.
 The current supported query shape is deliberately narrow:
 
 - one top-level `ai_semantic.map(text)` in a single-table `SELECT` target list;
+- direct single-table `INSERT ... SELECT` without `RETURNING`, `ON CONFLICT`, or `OVERRIDING`;
 - ordinary child filters and projections;
 - forward execution with child order preserved;
 - `LIMIT`, including `LIMIT 0` and early stop after one row;
@@ -17,14 +18,17 @@ The current supported query shape is deliberately narrow:
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
 sorting, set operations, row locks, set-returning targets, nested marker use, and marker use outside
 the target list. The executor rejects backward scan, mark/restore, rescan, and EPQ. Parallel execution
-is disabled. `INSERT ... SELECT`, provider sessions, wire framing, retries, and external model calls remain
+is disabled. UDS provider sessions, wire framing, canonical digests, retries, and external model calls remain
 pending; this slice must not be described as a complete database AI
 operator.
 
 The PGXS regression covers EXPLAIN identity, ordinary filters/projections, duplicate payloads, expression
-inputs, `NULL`, `LIMIT 0/1`, early-stop counters, error recovery, and fail-closed unsupported shapes. TAP
-starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared statement, repeatable-read
-snapshot visibility, child-plan cancellation, and successful execution after cancellation.
+inputs, `NULL`, `LIMIT 0/1`, early-stop counters, direct insert rollback/commit, error recovery, and fail-closed
+unsupported shapes. TAP starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared
+statement, repeatable-read snapshot visibility, child-plan cancellation, insert variants, and successful
+execution after cancellation. The executor reaches the recording transform only through typed
+`SemloomSemanticPlanSpec`, `SemloomPreparedSemanticTask`, `SemloomCompletionRecord` and the
+`open/drive/close` provider seam; the current implementation remains in-process.
 
 The planner hook must be loaded before a statement containing the marker is planned. The regression
 script loads the library in its session. A persistent deployment must put `semloom_pg` in

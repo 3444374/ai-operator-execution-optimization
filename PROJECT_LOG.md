@@ -7994,3 +7994,18 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   repeatable-read snapshot、child cancel 和 cancel 后恢复。18.4 `pg_config` 被版本锁按预期拒绝。
 - 当前证据只支持受限 recording carrier 的功能正确性；`INSERT ... SELECT`、rescan/EPQ/parallel、
   中立 plan/task/result、UDS gateway、外部 provider、`SemFilter` 与 GPU 性能仍为 pending。
+
+## 2026-08-28 PostgreSQL 18.3 INSERT lifecycle 与 provider seam
+
+- 在既有 `SemMap` regression/TAP 之上先加入 direct `INSERT ... SELECT` 失败测试。PostgreSQL rewrite
+  tree 证明 marker 位于 query-level 2 的 source `SELECT`，外层 `INSERT` 只保留 `Var`；planner 会复制
+  RTE subquery，因此最终实现只识别“父节点是受限 INSERT 的直接 source”，不修改 `ModifyTablePath`。
+- `INSERT ... SELECT` 已验证事务内结果可见、rollback 后 sink 为空和 commit 后持久化；`RETURNING`
+  与 `ON CONFLICT` 保持 fail-closed，失败语句不改变已提交 sink。rescan/EPQ/parallel 和其他 query
+  shapes 未放宽。
+- executor 的 recording 变换迁入 typed `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`
+  与 `open/drive/close` provider seam；当前 provider 仍在 PostgreSQL 进程内，不包含 canonical digest、
+  UDS framing、backpressure、disconnect、HTTP 或 SemLoom adapter。
+- 提交 `74506654` 在隔离 `REL_18_3` 上无警告构建，PGXS regression 1/1、TAP 16/16 通过；服务器
+  通过 Git/bundle 同步，原始测试输出继续保存在仓库外 artifact 目录。本轮没有启动模型服务或 GPU
+  实验。

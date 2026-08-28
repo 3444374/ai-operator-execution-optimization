@@ -7,13 +7,15 @@
 可运行的 backend 基座，不表示数据库内 AI 语义算子已经实现；项目不修改 vLLM 内部。
 
 **当前工程顺序**：按
-`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 先完成 `REL_18_3` extension
-`SemMap` capability，再实现中立 plan/task/result 合同、`open/drive/close` 与 UDS recording gateway；
-随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，只有已复现阻断才增加最小 core
+`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
+`SemMap` 的当前受限 capability 和初始 in-process `open/drive/close` seam；下一步补 canonical
+plan/task/result digest 与 UDS recording gateway。随后审查 extension 是否足以承载目标 LOTUS/Cortex
+semantic paths，只有已复现阻断才增加最小 core
 patch，再抽取增量 SemLoom session 并接 HTTP/SemLoom provider，以 `SemFilter` 验证 cardinality。
 当前源码已有受限的 `SemMap CustomPath/CustomScan` recording capability，并在 `REL_18_3` 上通过
-PGXS regression 与 preload/prepared-plan/snapshot/cancel 生命周期 TAP；统一 provider gateway、
-`SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
+PGXS regression 与 preload/prepared-plan/snapshot/cancel/insert 生命周期 TAP；executor 已通过
+typed plan/task/completion 值调用 `open/drive/close` in-process recording provider。canonical digest、
+UDS gateway、`SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
 系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
@@ -357,10 +359,11 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 ### 当前优先：PostgreSQL 中立语义算子与 provider 资格验证
 
 1. `REL_18_3` extension/planner-visible `SemMap` deterministic recording prototype 已验证当前受限
-   `SELECT` 形状的 SQL、ordinary child plan、prepared plan、snapshot、取消、错误恢复和结果生命周期；
-   `INSERT ... SELECT`、rescan/EPQ/parallel 与更宽 query shapes 仍保持 fail-closed 或 pending；
-2. 实现 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、`open/drive/close` 与 UDS
-   recording gateway；
+   `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child plan、prepared plan、snapshot、取消、
+   rollback/commit、错误恢复和结果生命周期；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽
+   query shapes 仍保持 fail-closed；
+2. 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 与 `open/drive/close`
+   in-process recording seam 已实现；下一步补 canonical digest 与 UDS recording gateway；
 3. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
    能表达则保留 extension，只有已复现阻断才增加最小 core patch；
 4. 抽取增量 SemLoom scheduling session，接 direct HTTP/SemLoom adapters；

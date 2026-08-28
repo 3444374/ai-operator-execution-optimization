@@ -2,7 +2,7 @@
 
 更新日期：2026-08-28
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是 `REL_18_3` extension planner-visible `SemMap` capability、plan/task/result 与 `open/drive/close` UDS recording gateway、extension/core 载体审查、增量 SemLoom session，再以 `SemFilter` 验证关系语义和最小第二 semantic path；IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
+本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是补齐 `REL_18_3` extension planner-visible `SemMap` 的 canonical plan/task/result digest 与 `open/drive/close` UDS recording gateway，再做 extension/core 载体审查、增量 SemLoom session，并以 `SemFilter` 验证关系语义和最小第二 semantic path；当前受限 SQL 与 in-process provider seam 的已验证状态见下表。IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
 
 ## 1. 证据等级
 
@@ -20,8 +20,8 @@
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；6 项静态 contract tests、PGXS SQL regression、TAP lifecycle | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `6555dd7f` 无警告 PGXS build，regression 1/1、TAP 9/9 通过；18.4 `pg_config` 被版本锁拒绝 | 功能测试：deterministic recording carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/NULL/error recovery、preload fail-closed、prepared statement、repeatable-read snapshot、cancel/recovery。尚无外部 provider/GPU 性能证据，`INSERT ... SELECT`、rescan/EPQ/parallel 和更宽 query shape 未支持。 |
-| 中立 semantic plan/task/result + provider interface | `code/src/execution_provider/` 目标；当前不存在 | 无 | `open/drive/close`、UDS recording、direct HTTP、SemLoom adapters 以及 digest/backpressure/cancel 合同均尚未实现。 |
+| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；7 项静态 contract tests、PGXS SQL regression、TAP lifecycle | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `74506654` 无警告 PGXS build，regression 1/1、TAP 16/16 通过；18.4 `pg_config` 被版本锁拒绝 | 功能测试：deterministic recording carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/NULL/error recovery、preload fail-closed、prepared statement、repeatable-read snapshot、cancel/recovery，以及 direct `INSERT ... SELECT` rollback/commit；`RETURNING`/`ON CONFLICT` fail-closed 且不改变 sink。尚无外部 provider/GPU 性能证据，rescan/EPQ/parallel 和更宽 query shape 未支持。 |
+| 中立 semantic plan/task/result + provider interface | `code/postgres/semloom_pg/src/{provider,sem_scan}.c`；typed C values 与 7 项静态 contract tests | 提交 `74506654` 的全部 PGXS/TAP 行为保持通过 | 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 和 `open/drive/close` in-process recording seam 已实现；canonical digest、UDS framing/backpressure/disconnect、direct HTTP 与 SemLoom adapter 尚未实现。 |
 | extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | 尚未完成 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives 反例审查；不能声称 core 必须或无需修改。 |
 | IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |
 | `SemFilter` 关系语义 | PostgreSQL semantic operator 第二算子；当前不存在 | 无 | 三值/NULL/error policy 与乱序 completion 下的 cardinality 行为尚未验证。 |

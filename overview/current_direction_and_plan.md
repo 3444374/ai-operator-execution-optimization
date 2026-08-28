@@ -21,9 +21,9 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 ## 2. 当前最短路径
 
-1. 锁定 `REL_18_3`，用 extension / planner-visible `SemMap` 验证 SQL、ordinary child plan、snapshot、
-   cancel/error 和 result lifecycle；
-2. 实现最小 plan/task/result、`open/drive/close` 与 Unix-domain socket（UDS）recording gateway；
+1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
+   ordinary child plan、snapshot、cancel/error/result lifecycle 和初始 in-process `open/drive/close` seam；
+2. 补齐 canonical plan/task/result digest 与 Unix-domain socket（UDS）recording gateway；
 3. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与 LOTUS/Cortex alternatives；能表达
    则继续 extension，只有已复现阻断才增加最小 core patch；
 4. 抽取增量 SemLoom session，再接 HTTP/SemLoom provider，并用 `SemFilter` 建立首条数据库 semantic

@@ -2,8 +2,9 @@
 
 更新日期：2026-08-28
 
-> **当前执行摘要**：锁定 `REL_18_3`，先完成 extension planner-visible `SemMap` capability，再实现
-> plan/task/result、`open/drive/close` 与 UDS recording gateway；载体审查确认 extension 足够时继续使用，
+> **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 的受限 `SELECT`、direct
+> `INSERT ... SELECT` 与初始 in-process `open/drive/close` seam 已通过功能测试；下一步补 canonical
+> plan/task/result digest 与 UDS recording gateway。载体审查确认 extension 足够时继续使用，
 > 只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加最小 core patch。随后抽取
 > 增量 SemLoom session，以 `SemFilter` 验证 cardinality 和首条 semantic alternative，再研究
 > IMLane-like batch placement。Kalypso-like lineage 只作后续参考，不纳入当前排期。LOTUS v1.2.4

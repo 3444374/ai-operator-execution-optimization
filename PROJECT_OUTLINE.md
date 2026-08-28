@@ -13,9 +13,10 @@
 
 ## 0. 当前优先级与历史记录范围
 
-当前最短路径是：锁定 `REL_18_3`，先用 PostgreSQL extension / planner-visible `SemMap` prototype 验证
-SQL、ordinary child plan、snapshot 与 query lifecycle，再实现中立 plan/task/result 合同、
-`open/drive/close` 和 Unix-domain socket（UDS）recording gateway；随后审查 extension 是否足以承载
+当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible `SemMap` 已验证
+`SELECT`、direct `INSERT ... SELECT`、ordinary child plan、snapshot 与 query lifecycle，并通过初始
+typed plan/task/completion 调用 in-process `open/drive/close` recording seam。下一步补 canonical digest
+和 Unix-domain socket（UDS）recording gateway，随后审查 extension 是否足以承载
 目标 LOTUS/Cortex paths，只有已复现阻断才增加最小 core patch，再接增量 SemLoom 与 `SemFilter`。
 上述步骤完成前不扩展
 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
@@ -34,7 +35,8 @@ module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 que
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
 当前状态是 `capability-slice-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
-通过 PGXS 与生命周期 TAP，但中立 provider、`SemFilter`、载体反例审查和外部模型路径尚未实现；
+通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT` 和初始 typed `open/drive/close` in-process
+provider seam 已实现；canonical digest、UDS provider、`SemFilter`、载体反例审查和外部模型路径尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 SAOR 系统对照准备记录（历史）
