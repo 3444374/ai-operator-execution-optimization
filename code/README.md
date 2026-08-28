@@ -6,12 +6,13 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 Status as of 2026-08-28: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
-complete PostgreSQL AI semantic operator, canonical plan/task/result digests, or an external
-execution-provider gateway. It now includes a narrow `REL_18_3` planner-visible `SemMap` recording
-capability under `postgres/semloom_pg/`, including initial typed plan/task/completion values and an
-`open/drive/close` in-process provider seam; PGXS regression and TAP lifecycle tests cover its current query
-shape. The active sequence continues with a UDS
-recording gateway, an extension-versus-minimal-core carrier audit, an incremental SemLoom session, and then
+complete PostgreSQL AI semantic operator or an asynchronous scheduling provider. It now includes a narrow
+`REL_18_3` planner-visible `SemMap` recording capability under `postgres/semloom_pg/`, including typed
+plan/task/completion values, initial cross-language canonical digests, and both in-process and synchronous
+single-inflight UDS `open/drive/close` providers. PGXS regression and TAP lifecycle tests cover its current
+query shape, protocol drift, disconnect, cancellation, Unicode, and `NULL`. The active sequence continues
+by extending `drive` with accepted-prefix backpressure, multiple in-flight tasks, and out-of-order
+completions, followed by an extension-versus-minimal-core carrier audit and an incremental SemLoom session, then
 HTTP/SemLoom providers plus `SemFilter`; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.

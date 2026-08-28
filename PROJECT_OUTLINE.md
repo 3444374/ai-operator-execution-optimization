@@ -15,8 +15,9 @@
 
 当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible `SemMap` 已验证
 `SELECT`、direct `INSERT ... SELECT`、ordinary child plan、snapshot 与 query lifecycle，并通过初始
-typed plan/task/completion 调用 in-process `open/drive/close` recording seam。下一步补 canonical digest
-和 Unix-domain socket（UDS）recording gateway，随后审查 extension 是否足以承载
+typed plan/task/completion 调用 in-process 与同步单在途 Unix-domain socket（UDS）recording provider。
+C/Python canonical digest、长度帧、Unicode/NULL、断连、取消和资源清理已在 PostgreSQL 18.3
+通过；下一步扩展 accepted-prefix/backpressure、多在途和乱序 completion，再审查 extension 是否足以承载
 目标 LOTUS/Cortex paths，只有已复现阻断才增加最小 core patch，再接增量 SemLoom 与 `SemFilter`。
 上述步骤完成前不扩展
 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
@@ -34,9 +35,10 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `capability-slice-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
+当前状态是 `uds-recording-slice-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT` 和初始 typed `open/drive/close` in-process
-provider seam 已实现；canonical digest、UDS provider、`SemFilter`、载体反例审查和外部模型路径尚未实现；
+provider seam 已实现；同步单在途 UDS provider 与初始 plan/payload/completion digest 已验证。
+accepted-prefix、多在途/乱序 completion、`SemFilter`、载体反例审查和外部模型路径尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 SAOR 系统对照准备记录（历史）
@@ -390,8 +392,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 1. **PostgreSQL capability**：锁定 `REL_18_3`，用 extension / planner-visible `SemMap` deterministic
    prototype 证明 SQL、ordinary child plan、snapshot、cancel/error/result lifecycle。
-2. **中立 provider interface**：实现 plan/task/result digest、bounded `open/drive/close` 与 UDS recording
-   gateway；不依赖模型验证 backpressure、early stop 和故障路径。
+2. **中立 provider interface**：同步单在途 UDS recording slice 与初始 digest 已通过；继续实现
+   accepted-prefix、多在途/乱序 completion、显式 early-stop close disposition 和有界 reorder，仍不依赖模型。
 3. **载体审查**：验证 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives；能表达
    则保留 extension，只有已复现阻断才增加最小 core patch。
 4. **两条优化轴**：抽取增量 SemLoom session，用 `SemFilter` 建立首条 database semantic alternative；

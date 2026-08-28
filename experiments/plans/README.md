@@ -19,8 +19,9 @@
 当前短期顺序是：
 
 1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
-   ordinary child plan、snapshot、query lifecycle 与初始 in-process `open/drive/close` seam；
-2. 补齐 canonical plan/task/result digest 与 UDS recording gateway；
+   ordinary child plan、snapshot、query lifecycle、初始 typed seam，以及同步单在途 UDS recording provider；
+2. 在已验证的初始 digest/UDS slice 上补 accepted-prefix backpressure、多在途、乱序 completion、
+   有界 reorder 与显式 early-stop close disposition；
 3. 审查 extension 能否承载目标 LOTUS/Cortex semantic alternatives；能表达则保留 extension，只有已复现
    阻断才增加最小 core patch；
 4. 抽取增量 SemLoom session，再接 HTTP/SemLoom provider，并以 `SemFilter` 验证 cardinality 与首条

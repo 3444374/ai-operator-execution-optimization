@@ -13,22 +13,41 @@ The current supported query shape is deliberately narrow:
 - ordinary child filters and projections;
 - forward execution with child order preserved;
 - `LIMIT`, including `LIMIT 0` and early stop after one row;
-- an in-process recording transform that returns `recorded:<input>` and preserves SQL `NULL`.
+- an in-process recording transform that returns `recorded:<input>` and preserves SQL `NULL`;
+- an optional external UDS recording provider with the same SQL-visible output.
 
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
 sorting, set operations, row locks, set-returning targets, nested marker use, and marker use outside
 the target list. The executor rejects backward scan, mark/restore, rescan, and EPQ. Parallel execution
-is disabled. UDS provider sessions, wire framing, canonical digests, retries, and external model calls remain
-pending; this slice must not be described as a complete database AI
-operator.
+is disabled. The current UDS protocol is deliberately synchronous with one in-flight task and a 1 MiB
+frame limit. Accepted-prefix backpressure, multiple in-flight tasks, out-of-order/missing completion handling,
+automatic retries, real model calls, and the full plan/task/result schema remain pending; this slice must not
+be described as a complete database AI operator.
 
 The PGXS regression covers EXPLAIN identity, ordinary filters/projections, duplicate payloads, expression
 inputs, `NULL`, `LIMIT 0/1`, early-stop counters, direct insert rollback/commit, error recovery, and fail-closed
 unsupported shapes. TAP starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared
 statement, repeatable-read snapshot visibility, child-plan cancellation, insert variants, and successful
-execution after cancellation. The executor reaches the recording transform only through typed
+execution after cancellation. It also starts the standalone gateway and covers C/Python digest agreement,
+Unicode, SQL `NULL`, EXPLAIN provider identity, tampered evidence, disconnect, cancellation during a socket
+wait, and socket cleanup. The executor reaches the recording transform only through typed
 `SemloomSemanticPlanSpec`, `SemloomPreparedSemanticTask`, `SemloomCompletionRecord` and the
-`open/drive/close` provider seam; the current implementation remains in-process.
+`open/drive/close` provider seam.
+
+The in-process provider remains the default. To exercise the external recording boundary, start the gateway
+with an absolute socket path and set the superuser-only GUC for the SQL session:
+
+```bash
+python3 gateway/recording_gateway.py --socket /absolute/path/semloom-recording.sock
+```
+
+```sql
+SET semloom_pg.gateway_socket = '/absolute/path/semloom-recording.sock';
+SELECT ai_semantic.map(payload) FROM semloom_documents;
+```
+
+The gateway refuses to replace an existing filesystem entry and removes only the socket it created. Protocol
+errors are fail-closed and do not persist or report task payload text.
 
 The planner hook must be loaded before a statement containing the marker is planned. The regression
 script loads the library in its session. A persistent deployment must put `semloom_pg` in

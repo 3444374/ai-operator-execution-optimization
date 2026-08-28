@@ -11,9 +11,11 @@ lifecycle；数据库管理的有界数据流把规范化任务交给可替换�
 
 当前状态（2026-08-28）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
 架构改为 Sema-like 中立语义算子核心。短期工程锁定 `REL_18_3`，先用 extension 验证 planner-visible
-`SemMap` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT` 和 in-process
-`open/drive/close` recording seam 已通过功能测试，下一步补 canonical digest 与 Unix-domain socket
-（UDS）gateway。extension 能承载目标 LOTUS/Cortex semantic paths 时继续使用，只有已复现阻断才增加最小
+`SemMap` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT`、typed
+`open/drive/close` seam，以及单在途、同步的 Unix-domain socket（UDS）recording provider 已通过
+PostgreSQL 18.3 功能测试。C/Python 已共同验证 plan/payload/completion digest、长度帧、Unicode、NULL、
+断连和取消；下一步把 `drive` 扩为 accepted-prefix、多在途和乱序 completion 的有界增量接口。
+extension 能承载目标 LOTUS/Cortex semantic paths 时继续使用，只有已复现阻断才增加最小
 core patch。随后才接增量 SemLoom、
 `SemFilter` 和最小第二 semantic path；数据库资格完成后优先做 IMLane-like batch 对照。Kalypso-like
 dependency execution、`SemJoin`、fusion/AQE 等只作后续参考，不纳入当前排期。既有 profiler、manifest

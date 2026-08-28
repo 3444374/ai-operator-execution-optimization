@@ -8,14 +8,16 @@
 
 **当前工程顺序**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
-`SemMap` 的当前受限 capability 和初始 in-process `open/drive/close` seam；下一步补 canonical
-plan/task/result digest 与 UDS recording gateway。随后审查 extension 是否足以承载目标 LOTUS/Cortex
+`SemMap` 的当前受限 capability、初始 typed `open/drive/close` seam 和同步单在途 UDS recording slice；
+C/Python plan/payload/completion digest、1 MiB 长度帧、Unicode/NULL、断连、取消与清理已验证。
+下一步扩展 accepted-prefix/backpressure、多在途与乱序 completion。随后审查 extension 是否足以承载目标 LOTUS/Cortex
 semantic paths，只有已复现阻断才增加最小 core
 patch，再抽取增量 SemLoom session 并接 HTTP/SemLoom provider，以 `SemFilter` 验证 cardinality。
 当前源码已有受限的 `SemMap CustomPath/CustomScan` recording capability，并在 `REL_18_3` 上通过
 PGXS regression 与 preload/prepared-plan/snapshot/cancel/insert 生命周期 TAP；executor 已通过
-typed plan/task/completion 值调用 `open/drive/close` in-process recording provider。canonical digest、
-UDS gateway、`SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
+typed plan/task/completion 值调用 `open/drive/close` in-process recording provider；同步单在途 UDS
+provider 与初始 canonical digest 也已实现。accepted-prefix、多在途/乱序 completion、
+`SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
 系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
@@ -362,8 +364,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child plan、prepared plan、snapshot、取消、
    rollback/commit、错误恢复和结果生命周期；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽
    query shapes 仍保持 fail-closed；
-2. 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 与 `open/drive/close`
-   in-process recording seam 已实现；下一步补 canonical digest 与 UDS recording gateway；
+2. 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、canonical digest 与
+   in-process/同步单在途 UDS `open/drive/close` 已实现；下一步扩 accepted-prefix、多在途、乱序 completion
+   和显式 early-stop close disposition；
 3. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
    能表达则保留 extension，只有已复现阻断才增加最小 core patch；
 4. 抽取增量 SemLoom scheduling session，接 direct HTTP/SemLoom adapters；

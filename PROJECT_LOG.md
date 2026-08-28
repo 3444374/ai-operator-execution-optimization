@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-28 PostgreSQL 18.3 UDS recording provider 纵切面
+
+- 在既有 typed `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` seam 上加入版本 1
+  provider protocol：4-byte big-endian UTF-8 JSON frame、1 MiB frame 上限、plan/payload/completion
+  SHA-256 canonical digest，以及独立 Python recording gateway。当前会话同步且最多一个在途任务；
+  未实现 accepted-prefix、多在途、乱序 completion、retry 或真实模型调用。
+- `semloom_pg.gateway_socket` 为空时保持 in-process recording 行为；设置绝对 UDS 路径时连接外部 gateway。
+  该参数只允许数据库超级用户设置。provider socket 使用 PostgreSQL external-FD accounting、非阻塞
+  读写、latch/interrupt wait 和 memory-context reset callback；close 只关闭自身 FD，gateway 只移除自身
+  创建的 socket。
+- Python 合同测试覆盖 C/Python 黄金 digest、Unicode/NULL、拆包/粘包、未知字段、frame 上限、坏 payload
+  digest 和断连。`REL_18_3` TAP 进一步覆盖外部 UDS SQL 结果、EXPLAIN provider identity、tampered
+  completion evidence、disconnect、statement timeout、取消后恢复和 socket 清理。测试过程保留两项失败
+  证据：长 UDS path 暴露 `sun_path` 上限；latch-only wakeup 暴露取消后误报连接错误，均由最小修正关闭。
+- 最终代码提交 `74c811e9` 在官方 `REL_18_3`（upstream `62d6c7d3…`）上无警告构建，PGXS regression
+  1/1、TAP 41/41、Python PostgreSQL 合同 13/13 通过；18.4 `pg_config` 继续被版本锁拒绝。最终服务器
+  产物保存在仓库外 `/root/autodl-tmp/semloom-pg18.3-artifacts/tap-run-74c811e9/`；隔离 18.3 与既有
+  18.4 集群均已停止，无 gateway/socket 或 GPU 进程残留。
+- 下一小步是在同一 wire identity 上扩展 accepted-prefix backpressure、多在途/乱序 completion、有界
+  reorder 与显式 early-stop close disposition；当前结果是功能资格证据，不是外部模型或 GPU 性能结论。
+
 ## 2026-08-28 IMLane 精读笔记配图与正式来源登记
 
 - 对照正式 PVLDB 19(12): 4223–4236 论文，确认 IMLane 正文 Figure 1–15 均能独立支撑笔记中的应用工作流、执行瓶颈、调度机制、系统架构或实验讲解；以 14 个原图裁剪件插入对应段落，Figures 9–10 按论文同排布局联合裁切。

@@ -2,7 +2,7 @@
 
 更新日期：2026-08-28
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是补齐 `REL_18_3` extension planner-visible `SemMap` 的 canonical plan/task/result digest 与 `open/drive/close` UDS recording gateway，再做 extension/core 载体审查、增量 SemLoom session，并以 `SemFilter` 验证关系语义和最小第二 semantic path；当前受限 SQL 与 in-process provider seam 的已验证状态见下表。IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
+本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线是在已通过的 `REL_18_3` extension planner-visible `SemMap`、初始 canonical digest 和同步单在途 UDS recording slice 上，继续实现 accepted-prefix backpressure、多在途/乱序 completion 与有界 reorder；之后再做 extension/core 载体审查、增量 SemLoom session，并以 `SemFilter` 验证关系语义和最小第二 semantic path。IMLane-like batch placement 在数据库资格完成后验证，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
 
 ## 1. 证据等级
 
@@ -20,8 +20,8 @@
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；7 项静态 contract tests、PGXS SQL regression、TAP lifecycle | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `74506654` 无警告 PGXS build，regression 1/1、TAP 16/16 通过；18.4 `pg_config` 被版本锁拒绝 | 功能测试：deterministic recording carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/NULL/error recovery、preload fail-closed、prepared statement、repeatable-read snapshot、cancel/recovery，以及 direct `INSERT ... SELECT` rollback/commit；`RETURNING`/`ON CONFLICT` fail-closed 且不改变 sink。尚无外部 provider/GPU 性能证据，rescan/EPQ/parallel 和更宽 query shape 未支持。 |
-| 中立 semantic plan/task/result + provider interface | `code/postgres/semloom_pg/src/{provider,sem_scan}.c`；typed C values 与 7 项静态 contract tests | 提交 `74506654` 的全部 PGXS/TAP 行为保持通过 | 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 和 `open/drive/close` in-process recording seam 已实现；canonical digest、UDS framing/backpressure/disconnect、direct HTTP 与 SemLoom adapter 尚未实现。 |
+| PostgreSQL planner-visible `SemMap` | `code/postgres/semloom_pg/`；8 项静态 contract、5 项 Python protocol、PGXS SQL regression 与 TAP lifecycle tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `74c811e9` 无警告 build、regression 1/1、TAP 41/41 通过；18.4 `pg_config` 被版本锁拒绝 | 功能测试：deterministic carrier 已验证 EXPLAIN/ordinary child、filter/projection、LIMIT/NULL/error recovery、preload、prepared statement、snapshot、cancel/recovery、direct `INSERT ... SELECT` rollback/commit，以及外部 UDS 的 Unicode/NULL、断连、坏 digest、取消和清理。尚无模型/GPU 性能证据，rescan/EPQ/parallel 和更宽 query shape 未支持。 |
+| 中立 semantic plan/task/result + provider interface | `code/postgres/semloom_pg/src/{provider,provider_protocol,sem_scan}.c`、`gateway/` 与上述合同/TAP | 提交 `74c811e9` 在精确 18.3 上通过 C/Python digest、4-byte length frame、1 MiB 上限、外部进程 lifecycle 测试 | 初始 `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord`、in-process provider 和同步单在途 UDS `open/drive/close` 已实现。accepted-prefix backpressure、多在途/乱序或缺失 completion、显式 close disposition、direct HTTP 与 SemLoom adapter 尚未实现。 |
 | extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | 尚未完成 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives 反例审查；不能声称 core 必须或无需修改。 |
 | IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |
 | `SemFilter` 关系语义 | PostgreSQL semantic operator 第二算子；当前不存在 | 无 | 三值/NULL/error policy 与乱序 completion 下的 cardinality 行为尚未验证。 |
@@ -175,13 +175,13 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 
 以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
 
-1. 锁定 `REL_18_3`，实现 extension planner-visible `SemMap` capability，验证 SQL、ordinary child plan、snapshot、取消、错误和结果生命周期。
-2. 实现 plan/task/result digest、bounded `open/drive/close` 与 UDS recording gateway。
-3. 完成 extension/core carrier audit；能表达目标 LOTUS/Cortex alternatives 时保留 extension，只有已复现阻断才增加最小 core patch。
-4. 抽取增量 SemLoom session，接 direct HTTP/SemLoom adapters；以 `SemFilter` 验证 cardinality 和首条 semantic alternative。
-5. 数据库资格完成后比较 IMLane-like database batch 与 SemLoom rebatching；Kalypso-like lineage/prefix
+1. 在已验证的同步单在途 UDS slice 上实现 accepted-prefix backpressure、多在途/乱序 completion、
+   有界 reorder 与显式 early-stop close disposition。
+2. 完成 extension/core carrier audit；能表达目标 LOTUS/Cortex alternatives 时保留 extension，只有已复现阻断才增加最小 core patch。
+3. 抽取增量 SemLoom session，接 direct HTTP/SemLoom adapters；以 `SemFilter` 验证 cardinality 和首条 semantic alternative。
+4. 数据库资格完成后比较 IMLane-like database batch 与 SemLoom rebatching；Kalypso-like lineage/prefix
    lease 仅作后续参考，满足前置证据后再决定是否立项。
-6. 前五项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
-7. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
-8. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持 marginal feasibility。
-9. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix 隔离统一为 `parked-conditional`，不阻塞当前主线。
+5. 前四项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
+6. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
+7. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持 marginal feasibility。
+8. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix 隔离统一为 `parked-conditional`，不阻塞当前主线。
