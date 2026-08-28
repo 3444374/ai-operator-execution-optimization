@@ -68,6 +68,7 @@ extern void semloom_protocol_send_frame(pgsocket socket_fd,
 										Size payload_length);
 extern char *semloom_protocol_receive_frame(pgsocket socket_fd);
 extern void semloom_protocol_wait_connected(pgsocket socket_fd);
+extern void semloom_protocol_wait_connect_retry(void);
 extern SemloomProviderSession *semloom_provider_open(const SemloomSemanticPlanSpec *plan_spec);
 extern void semloom_provider_drive(SemloomProviderSession *session,
 								   const SemloomPreparedSemanticTask *task,

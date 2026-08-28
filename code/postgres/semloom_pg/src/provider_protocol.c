@@ -155,6 +155,20 @@ semloom_protocol_wait_connected(pgsocket socket_fd)
 	}
 }
 
+void
+semloom_protocol_wait_connect_retry(void)
+{
+	int events;
+
+	events = WaitLatch(MyLatch,
+					   WL_EXIT_ON_PM_DEATH | WL_LATCH_SET | WL_TIMEOUT,
+					   10L,
+					   PG_WAIT_EXTENSION);
+	if (events & WL_LATCH_SET)
+		ResetLatch(MyLatch);
+	CHECK_FOR_INTERRUPTS();
+}
+
 static void
 semloom_hash_begin(pg_cryptohash_ctx **context)
 {

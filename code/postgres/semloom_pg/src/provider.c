@@ -211,18 +211,29 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 	MemSet(&address, 0, sizeof(address));
 	address.sun_family = AF_UNIX;
 	strlcpy(address.sun_path, socket_path, sizeof(address.sun_path));
-	CHECK_FOR_INTERRUPTS();
-	connect_result = connect(session->socket_fd,
-							 (struct sockaddr *) &address,
-							 sizeof(address));
-	if (connect_result != 0)
+	for (;;)
 	{
-		if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK)
+		CHECK_FOR_INTERRUPTS();
+		connect_result = connect(session->socket_fd,
+								 (struct sockaddr *) &address,
+								 sizeof(address));
+		if (connect_result == 0 || errno == EISCONN)
+			break;
+		if (errno == EINTR)
+			continue;
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		{
+			semloom_protocol_wait_connect_retry();
+			continue;
+		}
+		if (errno == EINPROGRESS || errno == EALREADY)
+		{
 			semloom_protocol_wait_connected(session->socket_fd);
-		else
-			ereport(ERROR,
-					(errcode_for_socket_access(),
-					 errmsg("could not connect to SemLoom provider socket: %m")));
+			break;
+		}
+		ereport(ERROR,
+				(errcode_for_socket_access(),
+				 errmsg("could not connect to SemLoom provider socket: %m")));
 	}
 
 	initStringInfo(&request);
