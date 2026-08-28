@@ -183,11 +183,56 @@ like(
 	'a new snapshot observes the committed row');
 $node->safe_psql(
 	'postgres',
-	q{INSERT INTO semloom_documents VALUES ('héllo世界'), (NULL);});
+	q{INSERT INTO semloom_documents VALUES ('héllo世界'), (NULL), ('');});
 
 my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
+my $parity_query = q{
+SELECT coalesce(payload, '<NULL>') || '=>' ||
+       coalesce(ai_semantic.map(payload), '<NULL>')
+FROM semloom_documents
+ORDER BY payload NULLS LAST;};
+my $in_process_rows = $node->safe_psql(
+	'postgres',
+	"SET semloom_pg.gateway_socket = '';\n$parity_query");
+my $in_process_explain = $node->safe_psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+$parity_query});
+$in_process_explain =~
+  s/Provider: in-process-recording/Provider: <recording-adapter>/;
+
+my ($parity_gateway, $parity_gateway_stdout, $parity_gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		"SET semloom_pg.gateway_socket = '$gateway_socket';\n$parity_query"),
+	$in_process_rows,
+	'UDS and in-process adapters emit identical rows for text, empty text, and NULL');
+finish_recording_gateway(
+	$parity_gateway,
+	$gateway_socket,
+	$parity_gateway_stderr);
+
+($parity_gateway, $parity_gateway_stdout, $parity_gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+my $uds_explain = $node->safe_psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+$parity_query});
+$uds_explain =~ s/Provider: uds-recording/Provider: <recording-adapter>/;
+is(
+	$uds_explain,
+	$in_process_explain,
+	'UDS and in-process adapters preserve the same EXPLAIN shape and counters');
+finish_recording_gateway(
+	$parity_gateway,
+	$gateway_socket,
+	$parity_gateway_stderr);
 
 my @provider_error_cases = (
 	['malformed-json', '08P01', 'SemLoom provider returned invalid JSON'],
