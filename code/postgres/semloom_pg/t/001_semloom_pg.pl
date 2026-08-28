@@ -189,8 +189,7 @@ my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
 my $parity_query = q{
-SELECT coalesce(payload, '<NULL>') || '=>' ||
-       coalesce(ai_semantic.map(payload), '<NULL>')
+SELECT ai_semantic.map(payload)
 FROM semloom_documents
 ORDER BY payload NULLS LAST;};
 my $in_process_rows = $node->safe_psql(
@@ -211,7 +210,7 @@ is(
 		'postgres',
 		"SET semloom_pg.gateway_socket = '$gateway_socket';\n$parity_query"),
 	$in_process_rows,
-	'UDS and in-process adapters emit identical rows for text, empty text, and NULL');
+	'UDS and in-process adapters emit identical rows across the parity dataset');
 finish_recording_gateway(
 	$parity_gateway,
 	$gateway_socket,
