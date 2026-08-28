@@ -1,3 +1,10 @@
+/*
+ * In-memory reference adapter for the synchronous AiProvider contract.
+ *
+ * It accepts one borrowed text task and returns a session-owned recorded:
+ * completion.  Passing requires deterministic output and no external I/O.
+ * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ */
 #include "postgres.h"
 
 #include "utils/memutils.h"
@@ -20,6 +27,9 @@ static AiProviderStatus semloom_recording_drive(AiProviderSession *session,
 											 const AiPreparedTask *task,
 											 AiCompletion *completion,
 											 AiProviderError *error);
+static AiProviderStatus semloom_recording_fail(AiProviderSession *session,
+											uint32 code,
+											AiProviderError *error);
 static void semloom_recording_close(AiProviderSession *session);
 
 static const AiProviderOps semloom_recording_ops = {
@@ -46,6 +56,8 @@ semloom_recording_open(const void *config,
 	AiProviderSession *session;
 
 	(void) config;
+	if (session_out != NULL)
+		*session_out = NULL;
 	if (session_out == NULL || error == NULL ||
 		!semloom_provider_spec_is_recording(spec))
 	{
@@ -79,33 +91,17 @@ semloom_recording_drive(AiProviderSession *session,
 
 	if (session == NULL || session->closed || task == NULL || completion == NULL ||
 		error == NULL)
-	{
-		if (error != NULL)
-			semloom_provider_error_set(error,
-									   AI_PROVIDER_ERROR_SESSION_CLOSED,
-									   AI_PROVIDER_OPERATION_NONE,
-									   0,
-									   NULL);
-		return AI_PROVIDER_STATUS_ERROR;
-	}
+		return semloom_recording_fail(session,
+									 AI_PROVIDER_ERROR_SESSION_CLOSED,
+									 error);
 	if (task->is_null)
-	{
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_NULL_TASK,
-								   AI_PROVIDER_OPERATION_NONE,
-								   0,
-								   NULL);
-		return AI_PROVIDER_STATUS_ERROR;
-	}
+		return semloom_recording_fail(session,
+									 AI_PROVIDER_ERROR_NULL_TASK,
+									 error);
 	if (task->input.length > 0 && task->input.data == NULL)
-	{
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_TASK_MISMATCH,
-								   AI_PROVIDER_OPERATION_NONE,
-								   0,
-								   NULL);
-		return AI_PROVIDER_STATUS_ERROR;
-	}
+		return semloom_recording_fail(session,
+									 AI_PROVIDER_ERROR_TASK_MISMATCH,
+									 error);
 
 	MemoryContextReset(session->completion_context);
 	previous_context = MemoryContextSwitchTo(session->completion_context);
@@ -123,16 +119,25 @@ semloom_recording_drive(AiProviderSession *session,
 	return AI_PROVIDER_STATUS_OK;
 }
 
+static AiProviderStatus
+semloom_recording_fail(AiProviderSession *session,
+					   uint32 code,
+					   AiProviderError *error)
+{
+	if (error != NULL)
+		semloom_provider_error_set(error,
+								   code,
+								   AI_PROVIDER_OPERATION_NONE,
+								   0,
+								   NULL);
+	semloom_recording_close(session);
+	return AI_PROVIDER_STATUS_ERROR;
+}
+
 static void
 semloom_recording_close(AiProviderSession *session)
 {
-	MemoryContext completion_context;
-
 	if (session == NULL || session->closed)
 		return;
 	session->closed = true;
-	completion_context = session->completion_context;
-	session->completion_context = NULL;
-	if (completion_context != NULL)
-		MemoryContextReset(completion_context);
 }

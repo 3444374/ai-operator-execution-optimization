@@ -1,3 +1,10 @@
+/*
+ * PostgreSQL-private provider factory and shared adapter helpers.
+ *
+ * It snapshots PG configuration into an AiProvider and validates the current
+ * recording spec; transport work remains in adapter-private modules.
+ * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ */
 #ifndef SEMLOOM_PROVIDER_PRIVATE_H
 #define SEMLOOM_PROVIDER_PRIVATE_H
 

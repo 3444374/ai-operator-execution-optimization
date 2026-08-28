@@ -102,6 +102,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("AiProviderStatus (*open)", header)
         self.assertIn("AiProviderStatus (*drive)", header)
         self.assertIn("void (*close)", header)
+        self.assertIn("non-OK open or drive result is terminal", header)
         for forbidden in (
             "postgres.h",
             "Oid",
@@ -130,11 +131,17 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn("src/provider_protocol.o", makefile)
         self.assertIn("semloom_gateway_socket_path", factory_source)
         self.assertIn("SEMLOOM_RECORDING_PREFIX", recording_source)
+        self.assertIn("semloom_recording_fail", recording_source)
+        self.assertIn("semloom_recording_close(session);", recording_source)
+        self.assertNotIn("MemoryContextReset(completion_context)", recording_source)
         self.assertNotIn("socket", recording_source.lower())
         self.assertNotIn("connect", recording_source.lower())
         self.assertIn("GetDatabaseEncoding()", uds_source)
         self.assertIn("PG_UTF8", uds_source)
         self.assertIn("O_NONBLOCK", uds_source)
+        self.assertIn("semloom_uds_close(session);", uds_source)
+        self.assertNotIn("MemoryContextReset(scratch_context)", uds_source)
+        self.assertNotIn("MemoryContextReset(completion_context)", uds_source)
         self.assertIn("WaitLatchOrSocket", wire_source)
         self.assertIn("CHECK_FOR_INTERRUPTS", wire_source)
         self.assertIn("SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2", wire_header)

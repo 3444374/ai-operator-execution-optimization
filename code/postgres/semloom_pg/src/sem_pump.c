@@ -1,3 +1,11 @@
+/*
+ * PostgreSQL-private SemMap execution pump.
+ *
+ * It pulls child tuples, binds per-tuple task bytes, drives one query-fixed
+ * provider, copies completions, maps errors, and owns lifecycle/counters.
+ * Passing requires no socket, frame, or JSON implementation in this module.
+ * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ */
 #include "postgres.h"
 
 #include <errno.h>
@@ -229,6 +237,7 @@ semloom_pump_cleanup(void *argument)
 	SemloomExecPump *pump = argument;
 
 	semloom_pump_close_session(pump);
+	pump->state = SEMLOOM_PUMP_CLOSED;
 }
 
 static void

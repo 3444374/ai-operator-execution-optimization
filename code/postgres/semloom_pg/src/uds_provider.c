@@ -1,3 +1,10 @@
+/*
+ * Query-scoped Unix-domain-socket AiProvider adapter.
+ *
+ * It snapshots an opaque path, lazily connects on the first drive, copies wire
+ * output into session storage, and owns idempotent local FD accounting/cleanup.
+ * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ */
 #include "postgres.h"
 
 #include <errno.h>
@@ -138,6 +145,7 @@ semloom_uds_drive(AiProviderSession *session,
 									   AI_PROVIDER_OPERATION_NONE,
 									   0,
 									   NULL);
+		semloom_uds_close(session);
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
@@ -352,21 +360,12 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 static void
 semloom_uds_close(AiProviderSession *session)
 {
-	MemoryContext scratch_context;
-	MemoryContext completion_context;
-
 	if (session == NULL || session->closed)
 		return;
 	session->closed = true;
-	scratch_context = session->scratch_context;
-	completion_context = session->completion_context;
 	session->scratch_context = NULL;
 	session->completion_context = NULL;
 	semloom_uds_release_local(session);
-	if (scratch_context != NULL)
-		MemoryContextReset(scratch_context);
-	if (completion_context != NULL)
-		MemoryContextReset(completion_context);
 }
 
 static void

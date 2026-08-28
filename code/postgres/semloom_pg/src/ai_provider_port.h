@@ -1,3 +1,11 @@
+/*
+ * Provider-neutral synchronous execution contract.
+ *
+ * Inputs are fixed-width open specs and borrowed task bytes; outputs are
+ * session-owned completions or caller-owned errors.  This header passes its
+ * boundary check only while it has no PostgreSQL types or headers.
+ * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ */
 #ifndef AI_PROVIDER_PORT_H
 #define AI_PROVIDER_PORT_H
 
@@ -143,7 +151,10 @@ typedef struct AiProvider
 /*
  * Task input is borrowed until drive returns.  Completion output is owned by
  * the session and remains valid until the next drive or close.  SQL NULL is
- * represented only by is_null; an empty non-NULL value has length zero.
+ * represented only by is_null; an empty non-NULL value has length zero.  Any
+ * non-OK open or drive result is terminal: open may publish a partial session,
+ * the caller closes it, and no later drive may continue that session.  Close
+ * accepts NULL and repeated calls.
  */
 
 #endif

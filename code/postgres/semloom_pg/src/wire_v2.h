@@ -1,3 +1,10 @@
+/*
+ * UDS-private interface for recording wire version 2.
+ *
+ * The adapter supplies a connected PostgreSQL socket and neutral values; this
+ * layer returns validated completions/errors under the fixed frame limits.
+ * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ */
 #ifndef SEMLOOM_WIRE_V2_H
 #define SEMLOOM_WIRE_V2_H
 
