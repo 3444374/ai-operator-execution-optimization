@@ -52,7 +52,7 @@ _PG_init(void)
 							   NULL,
 							   &semloom_gateway_socket,
 							   "",
-							   PGC_USERSET,
+							   PGC_SUSET,
 							   0,
 							   NULL,
 							   NULL,

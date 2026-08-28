@@ -175,6 +175,10 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("SemLoom provider socket path is too long")));
+	if (socket_path[0] != '/')
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("SemLoom provider socket path must be absolute")));
 	if (!AcquireExternalFD())
 		ereport(ERROR,
 				(errcode(ERRCODE_INSUFFICIENT_RESOURCES),

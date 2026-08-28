@@ -135,19 +135,29 @@ static void
 semloom_hash_begin(pg_cryptohash_ctx **context)
 {
 	*context = pg_cryptohash_create(PG_SHA256);
-	if (*context == NULL || pg_cryptohash_init(*context) < 0)
+	if (*context == NULL)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("could not initialize SemLoom SHA-256 digest")));
+	if (pg_cryptohash_init(*context) < 0)
+	{
+		pg_cryptohash_free(*context);
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("could not initialize SemLoom SHA-256 digest")));
+	}
 }
 
 static void
 semloom_hash_bytes(pg_cryptohash_ctx *context, const void *data, Size length)
 {
 	if (length > 0 && pg_cryptohash_update(context, data, length) < 0)
+	{
+		pg_cryptohash_free(context);
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("could not update SemLoom SHA-256 digest")));
+	}
 }
 
 static void
@@ -182,9 +192,12 @@ semloom_hash_finish(pg_cryptohash_ctx *context,
 	int index;
 
 	if (pg_cryptohash_final(context, digest, sizeof(digest)) < 0)
+	{
+		pg_cryptohash_free(context);
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("could not finish SemLoom SHA-256 digest")));
+	}
 	pg_cryptohash_free(context);
 	for (index = 0; index < lengthof(digest); index++)
 	{

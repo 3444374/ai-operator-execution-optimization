@@ -91,6 +91,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("semloom_gateway_socket_path", provider_source)
         self.assertIn("semloom_protocol_send_frame", provider_source)
         self.assertIn("MemoryContextRegisterResetCallback", provider_source)
+        self.assertIn("PGC_SUSET", (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8"))
+        self.assertIn('socket_path[0] != \'/\'', provider_source)
         self.assertIn("MAX_INFLIGHT_TASKS = 1", gateway_source)
         self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_source)
 

@@ -1,4 +1,5 @@
 use strict;
+use utf8;
 use warnings FATAL => 'all';
 
 use Cwd qw(abs_path);
@@ -148,6 +149,9 @@ like(
 		q{SELECT ai_semantic.map(payload) FROM semloom_documents;}),
 	qr/^recorded:alpha\nrecorded:beta$/,
 	'a new snapshot observes the committed row');
+$node->safe_psql(
+	'postgres',
+	q{INSERT INTO semloom_documents VALUES ('héllo世界'), (NULL);});
 
 my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
@@ -159,9 +163,25 @@ is(
 		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
-WHERE payload = 'alpha';}),
-	'recorded:alpha',
-	'UDS recording provider preserves the SQL-visible SemMap result');
+WHERE payload = 'héllo世界';}),
+	'recorded:héllo世界',
+	'UDS recording provider preserves Unicode and cross-language digests');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+TRUNCATE semloom_sink;
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload IS NULL;
+SELECT count(*) FROM semloom_sink WHERE completion IS NULL;}),
+	'1',
+	'UDS recording provider preserves SQL NULL through INSERT SELECT');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 ($gateway, $gateway_stdout, $gateway_stderr) =
@@ -188,6 +208,7 @@ FROM semloom_documents
 WHERE payload = 'alpha';});
 isnt($ret, 0, 'tampered completion evidence fails closed');
 like($stderr, qr/evidence digest does not match/, 'digest failure is reported without payload text');
+unlike($stderr, qr/alpha/, 'digest failure does not echo the task payload');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 ($gateway, $gateway_stdout, $gateway_stderr) =
