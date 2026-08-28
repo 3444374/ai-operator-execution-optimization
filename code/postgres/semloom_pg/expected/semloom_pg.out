@@ -103,7 +103,6 @@ INSERT INTO semloom_sink
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
 WHERE doc_id = 3;
-INSERT 0 1
 TABLE semloom_sink;
    completion   
 ----------------
@@ -121,7 +120,6 @@ INSERT INTO semloom_sink
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
 WHERE doc_id = 3;
-INSERT 0 1
 TABLE semloom_sink;
    completion   
 ----------------
