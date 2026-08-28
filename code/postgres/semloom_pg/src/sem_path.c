@@ -4,6 +4,7 @@
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "optimizer/cost.h"
+#include "optimizer/optimizer.h"
 #include "parser/parsetree.h"
 #include "utils/lsyscache.h"
 
