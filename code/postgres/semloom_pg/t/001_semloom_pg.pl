@@ -58,7 +58,7 @@ FROM semloom_documents
 WHERE payload = 'alpha';});
 	isnt($ret, 0, "$fixture completion fails closed");
 	my ($sqlstate, $message) =
-	  $stderr =~ /^ERROR:\s+([0-9A-Z]{5}):\s+(.+)$/m;
+	  $stderr =~ /^.*?ERROR:\s+([0-9A-Z]{5}):\s+(.+)$/m;
 	ok(defined($sqlstate) && defined($message), "$fixture exposes an error signature")
 	  or diag($stderr);
 	unlike($stderr, qr/alpha/, "$fixture error does not expose the task payload");
