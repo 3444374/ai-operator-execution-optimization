@@ -1,4 +1,6 @@
 \set VERBOSITY terse
+\pset null '<NULL>'
+Null display is "<NULL>".
 CREATE EXTENSION semloom_pg;
 CREATE TEMP TABLE semloom_documents (
     doc_id integer PRIMARY KEY,
@@ -56,6 +58,22 @@ LIMIT 0;
 ------------
 (0 rows)
 
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF, BUFFERS OFF)
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 1;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Custom Scan (SemLoom SemMap) (actual rows=1.00 loops=1)
+   Provider: in-process-recording
+   Physical Role: reference
+   Mapped Column: 1
+   Accepted Rows: 1
+   Emitted Rows: 1
+   ->  Limit (actual rows=1.00 loops=1)
+         ->  Seq Scan on semloom_documents (actual rows=1.00 loops=1)
+(8 rows)
+
 SELECT upper(ai_semantic.map(payload))
 FROM semloom_documents;
 ERROR:  nested ai_semantic.map expressions are not supported
@@ -63,4 +81,21 @@ SELECT ai_semantic.map(payload)
 FROM semloom_documents
 ORDER BY doc_id;
 ERROR:  query shape is outside the current SemMap capability
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id = 3;
+   completion   
+----------------
+ recorded:third
+(1 row)
+
+CREATE TEMP TABLE semloom_nullable (payload text);
+INSERT INTO semloom_nullable VALUES (NULL);
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_nullable;
+ completion 
+------------
+ <NULL>
+(1 row)
+
 DROP EXTENSION semloom_pg CASCADE;

@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+\pset null '<NULL>'
 
 CREATE EXTENSION semloom_pg;
 
@@ -33,11 +34,25 @@ SELECT ai_semantic.map(payload) AS completion
 FROM semloom_documents
 LIMIT 0;
 
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF, BUFFERS OFF)
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 1;
+
 SELECT upper(ai_semantic.map(payload))
 FROM semloom_documents;
 
 SELECT ai_semantic.map(payload)
 FROM semloom_documents
 ORDER BY doc_id;
+
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id = 3;
+
+CREATE TEMP TABLE semloom_nullable (payload text);
+INSERT INTO semloom_nullable VALUES (NULL);
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_nullable;
 
 DROP EXTENSION semloom_pg CASCADE;

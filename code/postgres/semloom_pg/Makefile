@@ -8,6 +8,7 @@ OBJS = \
 
 DATA = sql/semloom_pg--0.1.0.sql
 REGRESS = semloom_pg
+TAP_TESTS = 1
 PGFILEDESC = "semloom_pg - planner-visible SemMap capability spike"
 
 PG_CPPFLAGS = -Isrc
