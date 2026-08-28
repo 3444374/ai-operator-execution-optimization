@@ -74,10 +74,14 @@ semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("SemMap mapped output is outside the scan tuple")));
-	state->plan_spec.mapped_column = state->mapped_column;
+	state->plan_spec.operator_kind = SEMLOOM_OPERATOR_MAP;
 	state->plan_spec.input_type = TEXTOID;
 	state->plan_spec.output_type = TEXTOID;
 	state->plan_spec.null_policy = SEMLOOM_NULL_PROPAGATE;
+	state->plan_spec.error_policy = SEMLOOM_ERROR_FAIL_QUERY;
+	state->plan_spec.semantic_spec_version = SEMLOOM_RECORDING_SPEC_VERSION;
+	state->plan_spec.semantic_spec_id = SEMLOOM_RECORDING_SPEC_ID;
+	state->plan_spec.physical_algorithm = SEMLOOM_RECORDING_ALGORITHM;
 
 	state->child_state = ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
 	node->custom_ps = list_make1(state->child_state);

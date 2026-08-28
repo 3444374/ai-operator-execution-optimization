@@ -12,7 +12,6 @@
 #include "semloom_pg.h"
 
 #define SEMLOOM_PLAN_DIGEST_DOMAIN "semloom-plan-v2\0"
-#define SEMLOOM_PLAN_DIGEST_SUFFIX "SEM_MAP\0PROPAGATE_NULL\0text\0text"
 #define SEMLOOM_PAYLOAD_DIGEST_DOMAIN "semloom-payload-v1\0"
 #define SEMLOOM_COMPLETION_DIGEST_DOMAIN "semloom-completion-v1\0"
 
@@ -20,6 +19,7 @@ static void semloom_hash_begin(pg_cryptohash_ctx **context);
 static void semloom_hash_bytes(pg_cryptohash_ctx *context,
 							   const void *data,
 							   Size length);
+static void semloom_hash_text(pg_cryptohash_ctx *context, const char *value);
 static void semloom_hash_uint32(pg_cryptohash_ctx *context, uint32 value);
 static void semloom_hash_uint64(pg_cryptohash_ctx *context, uint64 value);
 static void semloom_hash_finish(pg_cryptohash_ctx *context,
@@ -38,10 +38,14 @@ semloom_protocol_plan_digest(const SemloomSemanticPlanSpec *plan_spec,
 	semloom_hash_bytes(context,
 					   SEMLOOM_PLAN_DIGEST_DOMAIN,
 					   sizeof(SEMLOOM_PLAN_DIGEST_DOMAIN) - 1);
-	semloom_hash_uint32(context, (uint32) plan_spec->mapped_column);
-	semloom_hash_bytes(context,
-					   SEMLOOM_PLAN_DIGEST_SUFFIX,
-					   sizeof(SEMLOOM_PLAN_DIGEST_SUFFIX) - 1);
+	semloom_hash_text(context, "SEM_MAP");
+	semloom_hash_text(context, plan_spec->semantic_spec_id);
+	semloom_hash_uint32(context, plan_spec->semantic_spec_version);
+	semloom_hash_text(context, plan_spec->physical_algorithm);
+	semloom_hash_text(context, "PROPAGATE_NULL");
+	semloom_hash_text(context, "FAIL_QUERY");
+	semloom_hash_text(context, "text");
+	semloom_hash_text(context, "text");
 	semloom_hash_finish(context, output);
 }
 
@@ -208,6 +212,19 @@ semloom_hash_uint32(pg_cryptohash_ctx *context, uint32 value)
 	encoded[2] = (uint8) (value >> 8);
 	encoded[3] = (uint8) value;
 	semloom_hash_bytes(context, encoded, sizeof(encoded));
+}
+
+static void
+semloom_hash_text(pg_cryptohash_ctx *context, const char *value)
+{
+	Size length = strlen(value);
+
+	if (length > PG_UINT32_MAX)
+		ereport(ERROR,
+				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+				 errmsg("SemLoom digest field is too long")));
+	semloom_hash_uint32(context, (uint32) length);
+	semloom_hash_bytes(context, value, length);
 }
 
 static void

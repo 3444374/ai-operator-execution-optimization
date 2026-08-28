@@ -73,6 +73,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("SemloomCompletionRecord", header)
         self.assertIn("SEMLOOM_NULL_PROPAGATE", header)
         self.assertIn("null_policy", header)
+        self.assertIn("SEMLOOM_RECORDING_SPEC_ID", header)
+        self.assertIn("physical_algorithm", header)
+        self.assertNotIn("mapped_column", header)
         self.assertIn("semloom_provider_open", provider_source)
         self.assertIn("semloom_provider_drive", provider_source)
         self.assertIn("semloom_provider_close", provider_source)
@@ -105,6 +108,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("MAX_INFLIGHT_TASKS = 1", gateway_source)
         self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_source)
         self.assertIn("MAX_INPUT_BYTES", gateway_source)
+        self.assertNotIn('"mapped_column"', gateway_source)
 
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")

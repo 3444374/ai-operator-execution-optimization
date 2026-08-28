@@ -15,13 +15,20 @@ MAX_FRAME_BYTES = 1024 * 1024
 MAX_INPUT_BYTES = (MAX_FRAME_BYTES - 4096) // 6
 MAX_INFLIGHT_TASKS = 1
 RECORDING_PREFIX = "recorded:"
+RECORDING_SPEC_ID = "semloom.recording.sem_map.text"
+RECORDING_SPEC_VERSION = 1
+RECORDING_ALGORITHM = "RECORDING"
 
 _OPEN_FIELDS = {
     "type",
     "protocol_version",
     "plan_digest",
-    "mapped_column",
+    "operator_kind",
+    "semantic_spec_id",
+    "semantic_spec_version",
+    "physical_algorithm",
     "null_policy",
+    "error_policy",
     "input_type",
     "output_type",
 }
@@ -44,14 +51,18 @@ class ProtocolError(Exception):
         self.code = code
 
 
-def plan_digest(*, mapped_column: int) -> str:
+def plan_digest() -> str:
     """Return the v2 canonical digest for the supported text SemMap plan."""
-    if type(mapped_column) is not int or mapped_column <= 0:
-        raise ValueError("mapped_column must be a positive integer")
     canonical = (
         b"semloom-plan-v2\0"
-        + struct.pack("!I", mapped_column)
-        + b"SEM_MAP\0PROPAGATE_NULL\0text\0text"
+        + _canonical_text("SEM_MAP")
+        + _canonical_text(RECORDING_SPEC_ID)
+        + struct.pack("!I", RECORDING_SPEC_VERSION)
+        + _canonical_text(RECORDING_ALGORITHM)
+        + _canonical_text("PROPAGATE_NULL")
+        + _canonical_text("FAIL_QUERY")
+        + _canonical_text("text")
+        + _canonical_text("text")
     )
     return hashlib.sha256(canonical).hexdigest()
 
@@ -141,7 +152,7 @@ def run_recording_session(
         opened = read_frame(connection)
         if opened is None:
             return
-        mapped_column, plan_sha256 = _validate_open(opened)
+        plan_sha256 = _validate_open(opened)
         connection.sendall(
             encode_frame(
                 {
@@ -201,25 +212,37 @@ def run_recording_session(
         connection.close()
 
 
-def _validate_open(message: dict[str, Any]) -> tuple[int, str]:
+def _validate_open(message: dict[str, Any]) -> str:
     if set(message) != _OPEN_FIELDS:
         raise ProtocolError("invalid_open_fields")
     if message["type"] != "open":
         raise ProtocolError("expected_open")
     if message["protocol_version"] != PROTOCOL_VERSION:
         raise ProtocolError("protocol_version_mismatch")
-    mapped_column = message["mapped_column"]
-    if type(mapped_column) is not int or mapped_column <= 0:
-        raise ProtocolError("invalid_mapped_column")
+    if message["operator_kind"] != "SEM_MAP":
+        raise ProtocolError("unsupported_operator_kind")
+    if message["semantic_spec_id"] != RECORDING_SPEC_ID:
+        raise ProtocolError("unsupported_semantic_spec")
+    if message["semantic_spec_version"] != RECORDING_SPEC_VERSION:
+        raise ProtocolError("unsupported_semantic_spec_version")
+    if message["physical_algorithm"] != RECORDING_ALGORITHM:
+        raise ProtocolError("unsupported_physical_algorithm")
     if message["null_policy"] != "PROPAGATE_NULL":
         raise ProtocolError("unsupported_null_policy")
+    if message["error_policy"] != "FAIL_QUERY":
+        raise ProtocolError("unsupported_error_policy")
     if message["input_type"] != "text" or message["output_type"] != "text":
         raise ProtocolError("unsupported_plan_type")
     plan_sha256 = message["plan_digest"]
     _require_sha256(plan_sha256, "invalid_plan_digest")
-    if plan_sha256 != plan_digest(mapped_column=mapped_column):
+    if plan_sha256 != plan_digest():
         raise ProtocolError("plan_digest_mismatch")
-    return mapped_column, plan_sha256
+    return plan_sha256
+
+
+def _canonical_text(value: str) -> bytes:
+    encoded = value.encode("utf-8")
+    return struct.pack("!I", len(encoded)) + encoded
 
 
 def _validate_task(

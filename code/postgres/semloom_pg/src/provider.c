@@ -62,9 +62,15 @@ semloom_provider_open(const SemloomSemanticPlanSpec *plan_spec)
 	SemloomProviderSession *session;
 	const char *socket_path;
 
-	if (plan_spec == NULL || plan_spec->mapped_column <= 0 ||
+	if (plan_spec == NULL || plan_spec->operator_kind != SEMLOOM_OPERATOR_MAP ||
 		plan_spec->input_type != TEXTOID || plan_spec->output_type != TEXTOID ||
-		plan_spec->null_policy != SEMLOOM_NULL_PROPAGATE)
+		plan_spec->null_policy != SEMLOOM_NULL_PROPAGATE ||
+		plan_spec->error_policy != SEMLOOM_ERROR_FAIL_QUERY ||
+		plan_spec->semantic_spec_version != SEMLOOM_RECORDING_SPEC_VERSION ||
+		plan_spec->semantic_spec_id == NULL ||
+		strcmp(plan_spec->semantic_spec_id, SEMLOOM_RECORDING_SPEC_ID) != 0 ||
+		plan_spec->physical_algorithm == NULL ||
+		strcmp(plan_spec->physical_algorithm, SEMLOOM_RECORDING_ALGORITHM) != 0)
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("invalid recording provider plan specification")));
@@ -239,12 +245,17 @@ semloom_provider_open_uds(SemloomProviderSession *session, const char *socket_pa
 	initStringInfo(&request);
 	appendStringInfo(&request,
 					 "{\"type\":\"open\",\"protocol_version\":%d,"
-					 "\"plan_digest\":\"%s\",\"mapped_column\":%d,"
+					 "\"plan_digest\":\"%s\",\"operator_kind\":\"SEM_MAP\","
+					 "\"semantic_spec_id\":\"%s\",\"semantic_spec_version\":%u,"
+					 "\"physical_algorithm\":\"%s\","
 					 "\"null_policy\":\"PROPAGATE_NULL\","
+					 "\"error_policy\":\"FAIL_QUERY\","
 					 "\"input_type\":\"text\",\"output_type\":\"text\"}",
 					 SEMLOOM_PROTOCOL_VERSION,
 					 session->plan_digest,
-					 session->plan_spec.mapped_column);
+					 session->plan_spec.semantic_spec_id,
+					 session->plan_spec.semantic_spec_version,
+					 session->plan_spec.physical_algorithm);
 	semloom_protocol_send_frame(session->socket_fd, request.data, request.len);
 	pfree(request.data);
 	response = semloom_protocol_receive_frame(session->socket_fd);

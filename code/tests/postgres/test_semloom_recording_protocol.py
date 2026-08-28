@@ -19,6 +19,9 @@ from protocol import (  # noqa: E402
     MAX_FRAME_BYTES,
     MAX_INPUT_BYTES,
     PROTOCOL_VERSION,
+    RECORDING_ALGORITHM,
+    RECORDING_SPEC_ID,
+    RECORDING_SPEC_VERSION,
     completion_evidence_digest,
     encode_frame,
     plan_digest,
@@ -28,11 +31,27 @@ from protocol import (  # noqa: E402
 )
 
 
+def _open_message() -> dict[str, object]:
+    return {
+        "type": "open",
+        "protocol_version": PROTOCOL_VERSION,
+        "plan_digest": plan_digest(),
+        "operator_kind": "SEM_MAP",
+        "semantic_spec_id": RECORDING_SPEC_ID,
+        "semantic_spec_version": RECORDING_SPEC_VERSION,
+        "physical_algorithm": RECORDING_ALGORITHM,
+        "null_policy": "PROPAGATE_NULL",
+        "error_policy": "FAIL_QUERY",
+        "input_type": "text",
+        "output_type": "text",
+    }
+
+
 class SemloomRecordingProtocolTests(unittest.TestCase):
     def test_digest_golden_vectors_cover_unicode_and_null(self) -> None:
         self.assertEqual(
-            plan_digest(mapped_column=2),
-            "83a8d707d851fb4fe2a1cef163b008d2f69a69bab4c4d1532d496094e4619de4",
+            plan_digest(),
+            "8792923dc3f4906b1493a5e0c9f97521cea1a647ca9529187e6f1ad1bf72e673",
         )
         self.assertEqual(
             semantic_payload_digest("héllo世界"),
@@ -44,12 +63,12 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         )
         self.assertEqual(
             completion_evidence_digest(
-                plan_sha256=plan_digest(mapped_column=2),
+                plan_sha256=plan_digest(),
                 payload_sha256=semantic_payload_digest("héllo世界"),
                 sequence=7,
                 output="recorded:héllo世界",
             ),
-            "edf53b887924e6c1a5b3bf46f303a94bde5bf290f0d9692d7f4ab3527c4f2f1c",
+            "5bdb2fac32372ec5bfb79de4b4a468c24779f0636a00e4bd7f8269177445ce89",
         )
 
     def test_fragmented_and_coalesced_frames_complete_a_unicode_task(self) -> None:
@@ -58,17 +77,9 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        plan_sha256 = plan_digest(mapped_column=1)
+        plan_sha256 = plan_digest()
         payload_sha256 = semantic_payload_digest("héllo世界")
-        opened = {
-            "type": "open",
-            "protocol_version": PROTOCOL_VERSION,
-            "plan_digest": plan_sha256,
-            "mapped_column": 1,
-            "null_policy": "PROPAGATE_NULL",
-            "input_type": "text",
-            "output_type": "text",
-        }
+        opened = _open_message()
         task = {
             "type": "task",
             "protocol_version": PROTOCOL_VERSION,
@@ -102,19 +113,9 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        plan_sha256 = plan_digest(mapped_column=1)
+        plan_sha256 = plan_digest()
         client.sendall(
-            encode_frame(
-                {
-                    "type": "open",
-                    "protocol_version": PROTOCOL_VERSION,
-                    "plan_digest": plan_sha256,
-                    "mapped_column": 1,
-                    "null_policy": "PROPAGATE_NULL",
-                    "input_type": "text",
-                    "output_type": "text",
-                }
-            )
+            encode_frame(_open_message())
         )
         self.assertEqual(read_frame(client)["type"], "opened")
         client.sendall(
@@ -143,16 +144,8 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        message = {
-            "type": "open",
-            "protocol_version": PROTOCOL_VERSION,
-            "plan_digest": plan_digest(mapped_column=1),
-            "mapped_column": 1,
-            "null_policy": "PROPAGATE_NULL",
-            "input_type": "text",
-            "output_type": "text",
-            "future_field": True,
-        }
+        message = _open_message()
+        message["future_field"] = True
         client.sendall(encode_frame(message))
         self.assertEqual(
             read_frame(client),
@@ -183,19 +176,9 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         thread.start()
         self.addCleanup(client.close)
 
-        plan_sha256 = plan_digest(mapped_column=1)
+        plan_sha256 = plan_digest()
         client.sendall(
-            encode_frame(
-                {
-                    "type": "open",
-                    "protocol_version": PROTOCOL_VERSION,
-                    "plan_digest": plan_sha256,
-                    "mapped_column": 1,
-                    "null_policy": "PROPAGATE_NULL",
-                    "input_type": "text",
-                    "output_type": "text",
-                }
-            )
+            encode_frame(_open_message())
         )
         self.assertEqual(read_frame(client)["type"], "opened")
         client.sendall(
@@ -226,19 +209,9 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
                 thread = threading.Thread(target=run_recording_session, args=(server,))
                 thread.start()
 
-                plan_sha256 = plan_digest(mapped_column=1)
+                plan_sha256 = plan_digest()
                 client.sendall(
-                    encode_frame(
-                        {
-                            "type": "open",
-                            "protocol_version": PROTOCOL_VERSION,
-                            "plan_digest": plan_sha256,
-                            "mapped_column": 1,
-                            "null_policy": "PROPAGATE_NULL",
-                            "input_type": "text",
-                            "output_type": "text",
-                        }
-                    )
+                    encode_frame(_open_message())
                 )
                 self.assertEqual(read_frame(client)["type"], "opened")
                 client.sendall(

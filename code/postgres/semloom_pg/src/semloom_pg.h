@@ -12,20 +12,37 @@
 #define SEMLOOM_MAX_FRAME_BYTES (1024 * 1024)
 #define SEMLOOM_MAX_INPUT_BYTES ((SEMLOOM_MAX_FRAME_BYTES - 4096) / 6)
 #define SEMLOOM_SHA256_HEX_LENGTH 64
+#define SEMLOOM_RECORDING_SPEC_ID "semloom.recording.sem_map.text"
+#define SEMLOOM_RECORDING_ALGORITHM "RECORDING"
+#define SEMLOOM_RECORDING_SPEC_VERSION 1
 
 typedef struct SemloomProviderSession SemloomProviderSession;
+
+typedef enum SemloomOperatorKind
+{
+	SEMLOOM_OPERATOR_MAP = 1,
+} SemloomOperatorKind;
 
 typedef enum SemloomNullPolicy
 {
 	SEMLOOM_NULL_PROPAGATE = 1,
 } SemloomNullPolicy;
 
+typedef enum SemloomErrorPolicy
+{
+	SEMLOOM_ERROR_FAIL_QUERY = 1,
+} SemloomErrorPolicy;
+
 typedef struct SemloomSemanticPlanSpec
 {
-	AttrNumber mapped_column;
+	SemloomOperatorKind operator_kind;
 	Oid input_type;
 	Oid output_type;
 	SemloomNullPolicy null_policy;
+	SemloomErrorPolicy error_policy;
+	uint32 semantic_spec_version;
+	const char *semantic_spec_id;
+	const char *physical_algorithm;
 } SemloomSemanticPlanSpec;
 
 typedef struct SemloomPreparedSemanticTask
