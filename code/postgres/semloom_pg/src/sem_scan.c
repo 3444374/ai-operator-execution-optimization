@@ -1,6 +1,7 @@
 #include "postgres.h"
 
 #include "commands/explain.h"
+#include "commands/explain_format.h"
 #include "executor/executor.h"
 #include "executor/execScan.h"
 #include "utils/memutils.h"
