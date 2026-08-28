@@ -190,8 +190,7 @@ my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
 my $parity_query = q{
 SELECT ai_semantic.map(payload)
-FROM semloom_documents
-ORDER BY payload NULLS LAST;};
+FROM semloom_documents;};
 my $in_process_rows = $node->safe_psql(
 	'postgres',
 	"SET semloom_pg.gateway_socket = '';\n$parity_query");
