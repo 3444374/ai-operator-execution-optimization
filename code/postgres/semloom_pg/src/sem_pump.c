@@ -48,6 +48,8 @@ pg_noreturn static void semloom_pump_fail(SemloomExecPump *pump,
 									  const AiProviderError *error);
 pg_noreturn static void semloom_raise_provider_error(
 	const AiProviderError *error);
+static text *semloom_detoast_task_text(Datum input,
+									   MemoryContext task_context);
 static Datum semloom_copy_completion_text(const AiCompletion *completion,
 										  MemoryContext result_context);
 
@@ -130,6 +132,8 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			AiCompletion completion = {0};
 			AiProviderError error;
 			AiProviderStatus status;
+			MemoryContext tuple_context =
+				scan_state->ps.ps_ExprContext->ecxt_per_tuple_memory;
 			text *input_text;
 			Size input_length;
 
@@ -146,7 +150,9 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			if (pump->provider_session == NULL)
 				semloom_pump_open_provider(pump);
 
-			input_text = DatumGetTextPP(child_slot->tts_values[attribute_index]);
+			input_text = semloom_detoast_task_text(
+				child_slot->tts_values[attribute_index],
+				tuple_context);
 			input_length = VARSIZE_ANY_EXHDR(input_text);
 			Assert(input_length <= PG_UINT32_MAX);
 			task.sequence = pump->next_sequence;
@@ -172,9 +178,7 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			scan_slot->tts_isnull[attribute_index] = completion.is_null;
 			scan_slot->tts_values[attribute_index] = completion.is_null ?
 				(Datum) 0 :
-				semloom_copy_completion_text(
-					&completion,
-					scan_state->ps.ps_ExprContext->ecxt_per_tuple_memory);
+				semloom_copy_completion_text(&completion, tuple_context);
 			pump->next_sequence++;
 			pump->accepted_rows++;
 			pump->emitted_rows++;
@@ -424,6 +428,27 @@ semloom_raise_provider_error(const AiProviderError *error)
 			(errcode(sqlstate),
 			 errmsg("%s", message)));
 	pg_unreachable();
+}
+
+static text *
+semloom_detoast_task_text(Datum input, MemoryContext task_context)
+{
+	MemoryContext previous_context;
+	text *input_text = NULL;
+
+	previous_context = MemoryContextSwitchTo(task_context);
+	PG_TRY();
+	{
+		input_text = DatumGetTextPP(input);
+		MemoryContextSwitchTo(previous_context);
+	}
+	PG_CATCH();
+	{
+		MemoryContextSwitchTo(previous_context);
+		PG_RE_THROW();
+	}
+	PG_END_TRY();
+	return input_text;
 }
 
 static Datum

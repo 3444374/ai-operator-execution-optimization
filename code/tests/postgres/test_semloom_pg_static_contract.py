@@ -79,6 +79,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("AiPreparedTask", pump_source)
         self.assertIn("next_sequence", pump_source)
         self.assertIn("ecxt_per_tuple_memory", pump_source)
+        self.assertIn("semloom_detoast_task_text", pump_source)
+        self.assertIn("MemoryContextSwitchTo(task_context)", pump_source)
         self.assertIn("MemoryContextRegisterResetCallback", pump_source)
         self.assertIn("es_query_cxt", pump_source)
 
