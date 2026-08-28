@@ -109,7 +109,7 @@ semloom_is_insert_source(PlannerInfo *root)
 
 	source_reference = linitial_node(RangeTblRef, parent_parse->jointree->fromlist);
 	source_entry = rt_fetch(source_reference->rtindex, parent_parse->rtable);
-	return source_entry->rtekind == RTE_SUBQUERY && source_entry->subquery == root->parse;
+	return source_entry->rtekind == RTE_SUBQUERY;
 }
 
 static void

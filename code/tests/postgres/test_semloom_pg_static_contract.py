@@ -49,6 +49,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn("makeVar(INDEX_VAR", path_source)
         self.assertIn("semloom_is_insert_source", path_source)
         self.assertIn("source_entry->rtekind == RTE_SUBQUERY", path_source)
+        self.assertNotIn("source_entry->subquery == root->parse", path_source)
         self.assertIn("parent_root->parse->onConflict != NULL", path_source)
 
     def test_executor_is_incremental_and_rejects_rescan(self) -> None:
