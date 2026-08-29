@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-08-28 provider 响应边界加固与语义执行公共层实施顺序
+
+- 先以真实 UDS/TAP fixture 固定三个回归：JSON 中的 escaped `\u0000` 原先抛出 `22P05`，错误上下文
+  可能携带 provider 响应派生内容；长度帧中的原始 NUL 原先会让 C-string JSON 入口忽略后续字节；
+  `protocol_version: 2.4` 原先会经 `numeric_int4` 四舍五入后被接受。三项测试均先失败，再完成修复。
+- `wire_v2.c` 现在于追加 C-string 终止符前拒绝 frame 内原始 NUL；JSON 解析只窄捕获已确认的输入型
+  `22P02/22021/22P05`，并在两处 `CopyErrorData()` 前切回稳定 scratch context；整数读取先验证 numeric
+  本身无小数位。上述输入统一保持 `08P01` 与脱敏消息，取消、OOM 和 PostgreSQL 内部错误继续原样传播。
+- UDS 编码前输入上限不再硬编码于 pump；adapter 通过 caller-owned `AiProviderError.limit_bytes` 返回
+  实际上限，pump 只负责稳定 SQLSTATE/消息映射。静态合同改为检查实际 close/release 函数体，避免把
+  不匹配源码表达式的断言误当成资源证明；双 adapter 证据收窄为 SQL rows（含 NULL）和归一化 EXPLAIN，
+  协议 fault lifecycle 明确只由 UDS tests 证明。
+- 最终代码提交 `0b9948ee` 在官方 `REL_18_3`（upstream `62d6c7d3…`）以 `-Werror` 无警告构建，
+  PGXS regression 1/1、TAP 150/150、Python/static 16/16 和 neutral C11 header 编译检查均通过。
+  仓库外最终产物 ID 为 `tap-run-0b9948ee`，`semloom_pg.so` SHA-256 为
+  `db6b7b7ba3bf4b9216251212957919490b62300434f34b99f88ec5576d141125`；测试后 PostgreSQL、gateway
+  和 socket 均无残留。`resource-run-d08eda38` 仍是前序提交的资源生命周期证据，本轮没有把它冒充为
+  新提交的重跑结果。
+- 后续不为 `SemFilter` 复制 `SemloomExecPump`。先固定 extension 级 PostgreSQL 非干扰/兼容套件；再把
+  `SemFilter` 作为第二个真实消费者验证哪些 provider lifecycle、query-context cleanup、sequence、
+  completion copy 和错误映射确实共用；两个 reference path 通过后才把这部分抽成
+  `PgSemanticRuntime`，同时保留独立的 `SemMapMachine`/`FilterMachine` 负责关系语义。`SemJoin`、
+  blocking operator、async 和 core node 不在
+  本轮预先抽象；这项分层是下一阶段实施约束，不表示相应重构或 `SemFilter` 已经完成。
+
 ## 2026-08-28 SemMap scan/pump 与 neutral provider port 职责拆分完成
 
 - 在不改变 SQL、wire v2、SQLSTATE/脱敏消息、NULL、EXPLAIN、事务、取消或同步单在途行为的前提下，
@@ -22,8 +47,8 @@
 - 资源测试首次暴露 `DatumGetTextPP` 在 query context 中累积 detoast 副本；增加 characterization 后，
   把 detoast 明确放入 node per-tuple context。最终提交 `d08eda38` 在官方 `REL_18_3`（upstream
   `62d6c7d3…`）以 `-Werror` 无警告构建，PGXS regression 1/1、TAP 129/129、Python/static 16/16 和
-  neutral C11 header 编译检查均通过。最终产物位于仓库外
-  `/root/autodl-tmp/semloom-pg18.3-artifacts/tap-run-d08eda38/`，`semloom_pg.so` SHA-256 为
+  neutral C11 header 编译检查均通过。仓库外最终产物 ID 为 `tap-run-d08eda38`，`semloom_pg.so`
+  SHA-256 为
   `5907afd9a749cfcb63332325ad357a9b0a311f3cb6d89a539a5aa12b3a1c7ae8`。
 - 仓库外 `resource-run-d08eda38/resource-smoke.txt` 记录 2,000×100,000-byte UDS tasks：warm relation VFD
   后 backend RSS 起始/峰值/结束 17,120/19,532/18,852 KiB，FD 10/12/10；峰值/结束增量分别为
@@ -49,8 +74,8 @@
   open/task/completion evidence 分别绑定三者，且 semantic spec version 拒绝 JSON boolean；
   完整模型 prompt/options/result schema 和 neutral provider port 仍为 pending。
 - 最终代码提交 `e4fa9f0a` 在官方 `REL_18_3`（upstream `62d6c7d3…`）上以 `-Werror` 无警告构建，
-  PGXS regression 1/1、TAP 52/52、Python/static 15/15 通过；最终仓库外产物位于
-  `/root/autodl-tmp/semloom-pg18.3-artifacts/tap-run-e4fa9f0a/`，`semloom_pg.so` SHA-256 为
+  PGXS regression 1/1、TAP 52/52、Python/static 15/15 通过；最终仓库外产物 ID 为
+  `tap-run-e4fa9f0a`，`semloom_pg.so` SHA-256 为
   `0fcbd575dcc57319a8ab542873120e1743f13b4478ea611a561bbe4e3c1d0d65`。测试后 PostgreSQL、gateway、
   socket 和 GPU 进程均无残留。
 - 研究参考中仍将 18.4 写作研发/core 基线的现役段落已改为精确 `REL_18_3`；既有 18.4 结果继续只作
@@ -91,7 +116,7 @@
   证据：长 UDS path 暴露 `sun_path` 上限；latch-only wakeup 暴露取消后误报连接错误，均由最小修正关闭。
 - 最终代码提交 `74c811e9` 在官方 `REL_18_3`（upstream `62d6c7d3…`）上无警告构建，PGXS regression
   1/1、TAP 41/41、Python PostgreSQL 合同 13/13 通过；18.4 `pg_config` 继续被版本锁拒绝。最终服务器
-  产物保存在仓库外 `/root/autodl-tmp/semloom-pg18.3-artifacts/tap-run-74c811e9/`；隔离 18.3 与既有
+  仓库外产物 ID 为 `tap-run-74c811e9`；隔离 18.3 与既有
   18.4 集群均已停止，无 gateway/socket 或 GPU 进程残留。
 - 下一小步是在同一 wire identity 上扩展 accepted-prefix backpressure、多在途/乱序 completion、有界
   reorder 与显式 early-stop close disposition；当前结果是功能资格证据，不是外部模型或 GPU 性能结论。
@@ -193,7 +218,7 @@
   `AGENTS.md` 和 runbook，确保操作远程平台时也能加载局部规则。
 - 将 AutoDL 存储规则改为覆盖所有安装、下载、导入、构建、服务运行、实验输出和迁移操作的三级分工：
   系统盘只放操作系统、系统级软件、基础环境、服务配置和有界小日志；项目仓库/runtime env、数据库数据、
-  模型、数据集、项目虚拟环境、各类缓存、运行日志、实验产物和暂存文件统一使用 `/root/autodl-tmp`；
+  模型、数据集、项目虚拟环境、各类缓存、运行日志、实验产物和暂存文件统一使用仓库外数据盘；
   可恢复备份另存独立存储。PostgreSQL 数据目录和迁移被明确为该通用磁盘规则的具体应用，而不是规则本身。
 - `deploy/autodl/README.md` 补充 PostgreSQL 数据目录约定、execute-only ACL、新实例初始化顺序和
   已有 cluster 的干净停库—复制—checksum—切换—一致性—冷启停校验流程。只改存储路径时数据库连接串不变；
@@ -1084,11 +1109,11 @@
   `sharegpt_multiturn`、output cap 256 和 `arrival_time_scale=0.0001`；`0.001` 是首次
   pre-foreground supply 门失败的旧配置，不得恢复。
 - 发现旧 rehearsal 依赖同一 SSH 进程中的临时 `export`；主
-  `/root/autodl-tmp/ai-operator-runtime.env` 只持久化了 34 个模板变量中的 14 个，且普通
+  仓库外 `ai-operator-runtime.env` 只持久化了 34 个模板变量中的 14 个，且普通
   `source` 不会自动把非 export assignment 传给 Python 子进程。新增无凭据
   `saor_active_set_formal.env.example`，明确 machine runtime 与 evidence-bound formal contract
   分层，并要求在 `set -a` 区间依次 source。
-- 服务器仓库外已建立 mode 600 的 `/root/autodl-tmp/runtime/saor-active-set-formal.env`；使用
+- 服务器仓库外已建立 mode 600 的 `saor-active-set-formal.env`；使用
   `env -i` 的全新 shell 仅加载两份 env 后，静态 readiness 返回 passed，校准 SHA 保持
   `bc2042d7...aa41`，5 s 前两 endpoint predicted work 为 140,417/137,617。未发送模型请求，
   未启动 formal。
@@ -1714,7 +1739,7 @@
 - 新增 `experiments/results/opening_multijob_interference_20260809/`，Git 保存 13 个紧凑
   CSV/audit 与七步报告/待画图清单。服务器保留全量 raw；project/native/unified 归档
   SHA256 分别为 `f766faf7...14cfa`、`515b33a5...095a7`、`b7aa4c8b...17e6d`；
-  2026-08-09 已从 `/root/autodl-tmp/experiment-artifacts/archives/` 重新回读核对。
+  2026-08-09 已从仓库外只增不删归档重新回读核对。
 
 ## 2026-08-09 guaranteed-overlap 项目重跑的瞬时传输失败与状态清理
 
@@ -1945,7 +1970,7 @@
   ramp_run.json（c250e19 已 track）、各实验 runs.csv / manifest / formal_summary / README。
 - **下载方法**（可复用）：AutoDL 服务器 SSH 仅 exec 通道可用（SFTP 被 container 禁用），用 `rd.py recv`
   （`dd|base64 -w0` 分块 + Python 二进制解码 + 单连接多 chunk）下载，配 `MSYS_NO_PATHCONV=1`
-  防 Git Bash 把 `/root/...` 转译成 Windows 路径；exec 通道有 \n→\r\n 换行转译，故必须 `base64 -w0`（无换行）。
+  防 Git Bash 把 `<external-root>/...` 转译成 Windows 路径；exec 通道有 \n→\r\n 换行转译，故必须 `base64 -w0`（无换行）。
 - **仍残留在 git 的 raw tarball（待用户定夺）**：`operator_cost_profile_pilot_20260804/v1_diagnostic_raw.tar.gz` +
   `v2_raw.tar.gz` 是更早 commit 的 pilot/diagnostic raw，被该实验 README 引用；按新政策属应迁出项，但非本次新增，
   未单方面删除，待确认。
@@ -2171,7 +2196,7 @@
 
 - 用户要求：api key、服务器 IP/host、口令、私钥等隐私数据禁止提交进 Git，并写入项目规则。
 - **审计**（全仓 + `git log --all -S` pickaxe）：真实密钥确认**从未进仓库**——SSH 密码、HF token、
-  真实主机 `connect.bjb1.seetacloud.com` 均无命中；`.gitignore` 已覆盖 `*.env`/`*.env.local`。
+  外部主机均无命中；`.gitignore` 已覆盖 `*.env`/`*.env.local`。
   api-key 在 SQuAD gate 一直是本地默认 `EMPTY`（非真 key），且新 `redact` 模块把任何 `--api-key`→`***`。
 - **规则**：写入根 `AGENTS.md` §10（CLAUDE.md `@AGENTS.md` 自动同步，并在自身 Git 规则加了一行指针）。
   禁止提交 key/token/外部 IP-host/非 localhost 口令/私钥/`sshpass -p <pw>`；新代码连接串用环境变量引用；
@@ -2767,7 +2792,7 @@
   `e2els`；按 0.25.1 timeline 源码确认 E2E 应由 `ttft + sum(itls)` 重建。
   新归一化器同时使用相对 `start_times` 还原 JCT，并以顶层 duration 做
   100ms/2% 一致性门禁。官方 extra 安装日志保存在
-  `/root/autodl-tmp/logs/vllm_bench_extra_20260729_1700.log`。
+  仓库外日志 `vllm_bench_extra_20260729_1700.log`。
 - 第五轮 `vllm_bench` 首次通过 64/64 exactly-once core gate；随后
   `bounded_http` endpoint 1 因“单本地 URL + 全局 endpoint_index=1”被误判
   越界。bounded client 现用显式 `endpoint_index_offset` 只映射本地
@@ -5045,7 +5070,7 @@
 - 在 2× RTX 4090（sm89，Driver 595.58.03 / CUDA 13.2）实例上实测后，纠正 `deploy/autodl/README.md` 几处：
   1. **PG 版本 16 → 18.4**（§6/§11）：与本机 baseline 18.4 Docker 对齐；原 PG16 是保守默认。
   2. **`$(lsb_release -cs)` → 硬编码 `jammy`**（§6/§10）：最小镜像 lsb_release 未装/不在 PATH 时该变量为空，repo 行变成 `apt -pgdg` 报 "does not have a Release file"（实测踩到）。
-  3. **新增 §4.3.1 uv + 独立 venv**：4090 实测 `uv pip install vllm==0.25.1` 约 5 分钟（plain pip 30+ 分钟）；vllm 装独立 venv（`/root/autodl-tmp/venvs/vllm-4090`）与 driver 的 base 隔离，避免 vllm 的 torch 2.11.0 覆盖镜像 base 的 torch 2.12.1+cu130；缓存放数据盘。
+  3. **新增 §4.3.1 uv + 独立 venv**：4090 实测 `uv pip install vllm==0.25.1` 约 5 分钟（plain pip 30+ 分钟）；vLLM 使用仓库外独立 venv 与 driver 的 base 隔离，避免 vLLM 的 torch 2.11.0 覆盖镜像 base 的 torch 2.12.1+cu130；缓存放数据盘。
 - 验证：4090 上 `vllm 0.25.1 / torch 2.11.0+cu130 / flashinfer 0.6.13 / capability (8,9) / 2 GPU` 全部正常（sm89 不触发 §12 的 Blackwell sm120 flashinfer bug）。
 - 本轮仅修订部署文档，未改代码、未生成性能数据。
 
@@ -5126,9 +5151,9 @@
   与 `git diff --check` 通过。本地环境未安装 Ruff，留给远端独立 worktree
   补跑；尚未启动任何正式 GPU 矩阵。
 - 分支提交 `5961457774c0419019695ed5a89eb63550eb9823` 已推送，并在远端
-  `/root/autodl-tmp/worktrees/dual-gpu-correctness-5961457` detached worktree
+  仓库外 detached worktree `dual-gpu-correctness-5961457`
   复验：完整 374 tests 通过，主 checkout 的未跟踪实验结果未修改。
-- 远端显式地址 smoke 使用独立 Ray head `172.17.0.4:6399` 和三个独立 Python
+- 远端显式地址 smoke 使用独立 Ray head `<remote-ray-address>` 和三个独立 Python
   进程：job-a/job-b 成功获取两份 named credit，job-c 在共享容量已满时被拒绝，
   证明跨进程复用同一 actor。测试集群已停止，两套 vLLM 服务 PID 350094/350096
   保持运行。
@@ -5175,7 +5200,7 @@
   worktree 干净后，快进到 `c39f569782b86713ac01a5b079ff8900e11ed674`。
   与 incoming commit 冲突的两份未跟踪 SLO-EWMA compact 结果经哈希核对：
   `manifest.json` 完全相同，`runs.csv` 仅 CRLF/LF 不同；原始字节副本保存在
-  `/root/autodl-tmp/result-backups/premerge_c39f569_dual_gpu_slo_ewma_flush_formal_20260729/`，
+  仓库外备份 `premerge_c39f569_dual_gpu_slo_ewma_flush_formal_20260729`，
   其余 929 个未跟踪产物未修改。
 - 远端依赖完整环境执行 `code/tests`：433 项全部通过；`compileall` 和 gate/formal
   JSON 解析通过。随后按固定地址 `127.0.0.1:6380` 启动唯一 Ray head，资源为
@@ -5513,7 +5538,7 @@
   才能作为 SLO-oriented static 对照。
 - data-organization 与 submission-policy 不再硬编码 8K/K64/actor shape，
   改用冻结的 32K、K、active work 和 actor 参数。AutoDL 新运行时结果统一写到
-  `/root/autodl-tmp/experiment-artifacts/`，仓库只接收审计后的摘要与报告。
+  仓库外实验产物目录，仓库只接收审计后的摘要与报告。
 - 调度实验重新明确“动态”的比较目标：direct-vLLM 是容量上界、一次校准后
   冻结的 static 是主要可部署 baseline、per-phase static oracle 只作诊断
   上界。动态策略不以改变单请求 kernel 速度为目标，而在运行中 workload
@@ -5600,7 +5625,7 @@
 - 按 matrix §2：OceanBase 暂降为"工业参考/待部署"，不伪造 B1。复跑需特权容器
   （`seccomp=unconfined`/`--privileged`）或带 systemd 的 VM；复跑时复用 `code/src/baselines/products/oceanbase.py`
   （其对 DBMS_AI_SERVICE/AI_COMPLETE 的调用已确证 CE 支持）。
-- 远端保留证据：oceanbase-ce 安装 + `/root/obdata/strace{2..7}.log` + `/etc/oceanbase.cnf`。
+- 远端保留证据：OceanBase CE 安装、strace 日志与服务配置；具体服务器路径不写入仓库。
 
 ## 2026-07-31 代码修复：runner 校验 service_metadata.prefix_caching 与 live vLLM 一致
 
@@ -5660,7 +5685,7 @@
   4. **环境（主机重启后）**：清理 stale `/tmp/ray/ray_current_cluster`（见下条）。
 - **stale Ray pointer 事故**：主机重启后首次 launch 在 warmup 的 `ray.init()` 卡死 ~14 分钟
   后 `ConnectionError`，0 请求发出。根因：`/tmp/ray/ray_current_cluster` 残留重启前死地址
-  `172.17.0.8:6380`（重启后容器 IP 变为 172.17.0.3），ray.init 读取 stale 指针反复连死 GCS。
+  重启前容器地址（重启后容器地址已变化），ray.init 读取 stale 指针反复连死 GCS。
   修复：删除该指针（无活跃 Ray 进程需 stop）。失败首跑目录保留为
   `..._4ep_1.5b_20260731_failed_raystale/` 作事故证据。回归防范写入
   `deploy/autodl/README.md` 开机恢复流程。
@@ -6732,7 +6757,7 @@ codex 第四轮只读复审确认 a22cdf6 六项核心修复大体正确、27/27
 - **#19 完成（commit `5026c76`）**：project_static K32×9×3 全 **27/27 passed**（含 8192/10570 全 3/3，对照 duckdb 10570 全 fail）。与前序 bounded/duckdb/lb_rr 拼成同冻结合同 4 路径峰值并发规模 ramp。**事实**：4 路径均 2048→4096 tok/s 腰斩后平台（bounded 88k→42k、duckdb 77k→42k、lb_rr 74k→39k、project 76k→42k）→ 瓶颈在 vLLM 服务端（大规模 prefix-hit 0.95→0.64 + TTFT 53→155ms 佐证 KV 饱和）；project ≈ bounded（同 offered-load ordering，method 非 baseline 分轨）；project 大规模稳健。60s 稳态门仅 10570（operator_wall 59s）满足；4096 拐点靠 4 臂一致 + 饱和规模交叉印证。归档 `experiments/results/multicard_proj_scale_ramp_formal_20260807/`（README 全指标 + 边界；raw per-request evidence 留服务器端）。
 - **#20 复审降级为文档项**：经查 `async_http.py:167` `connection_capacity=c×endpoints` 显式设 httpx Limits（随 c 缩放，"默认 100" 顾虑失效；c=64 塌陷是 vLLM overload 非连接数）；`duckdb_ai.py:138` SQL 设 `max_concurrent_requests=c`（1..64 校验，c≤32 无 clamp）。故并发扫掠（C_total≤64）无需代码修复，#20 仅剩 manifest SHA 记录 + scope 文档。
 - **决策：优先 320-run，#21 并发扫掠列为 next-step**。依据：用户明确强调"那个未完成的算子代价测试实验"为最终目标；#19 已闭环"未完成"的 project 臂 + 规模 ramp（scale 轴已答 4096 拐点）；并发扫掠（饱和/过载点）是可选扩展，非"未完成"补全，且会推迟 ~1.5h 的显式目标。
-- **320-run 启动（screen `cost-formal-v2`，`dual_gpu_cost_profile_formal_v2_cache_on_20260807`）**：preflight 全过（RAY_ADDRESS 非空共享 / 无并发 runner lease / 两 endpoint 200 / config 80 scenarios / 5 workload 各 ≥256 行：short_prompt_lt50=512·long_prompt_ge150=325·concentrated/multiturn=2048·lmcache_agent=851 / prefix_caching 一致）。用 text-baselines python（#19 证实可跑 profiler）。**gate 10 关键验证**：已跑 12 run，0 个 stdout 含 "Started a local Ray instance"（每 run 连 172.17.0.3:6380 共享 Ray）——正是 v2 对 2026-08-04 首次无效 run（空 --ray-address → local Ray）的修复闭环。~2–3h（短 prompt 快，长 prompt/lmcache 慢）。完成后按 §4 门禁（320/320 + exactly-once + 两 endpoint + cache 一致 + hit∈[0,1]）验证 + 归档到 `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/`。
+- **320-run 启动（screen `cost-formal-v2`，`dual_gpu_cost_profile_formal_v2_cache_on_20260807`）**：preflight 全过（RAY_ADDRESS 非空共享 / 无并发 runner lease / 两 endpoint 200 / config 80 scenarios / 5 workload 各 ≥256 行：short_prompt_lt50=512·long_prompt_ge150=325·concentrated/multiturn=2048·lmcache_agent=851 / prefix_caching 一致）。用 text-baselines python（#19 证实可跑 profiler）。**gate 10 关键验证**：已跑 12 run，0 个 stdout 含 "Started a local Ray instance"（每 run 连接同一显式共享 Ray 地址）——正是 v2 对 2026-08-04 首次无效 run（空 --ray-address → local Ray）的修复闭环。~2–3h（短 prompt 快，长 prompt/lmcache 慢）。完成后按 §4 门禁（320/320 + exactly-once + 两 endpoint + cache 一致 + hit∈[0,1]）验证 + 归档到 `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/`。
 - **320-run 完成 + 归档 + CE LOO 评估（commits `b3edd01` 数据 / `2473196` LOO）**：**320/320 有效、0 incident、§4 11 门禁 9 全过 + gate 6 由构造保证 + gate 8（CV>5% 补跑）未做**（见下 erratum）。CE 信号：20/20 context 0 退化（e2e spread 12–86%），最优 active-work context-dependent（98304 胜 11/20）。**CE0–CE6 context-LOO（plan §5）已跑**（harness `compare_cost_estimators_contextloo.py`，wrapper 把 `load_rows` 指向本 runs.csv；240 行/20 context/4 candidate）。**经 6-dim 对抗式复审修正后的口径**（见结果 README §9 erratum）：CE3_ridge/CE5_hybrid pooled regret 3.70%、**candidate pairwise 0.758（过 §6）**、median fold regret 0%，**但 macro-mean regret 6.42%（>5%）+ max 39.77%（>15%）FAIL → 无估计器过完整 promotion contract**；CE0/CE2 退化（49.7%）、CE1 12.1%、CE4 LightGBM skipped。CE3≈CE5。**⚠️ 复审发现先前 2 处 HIGH 口径误**（已修）：(a) 曾把 pooled 3.70% 当"过 5% 门槛"（实 §6 用 median/macro/max，macro/max 不过）；(b) 曾把行级 pairwise 当 contract blocker（实 §6 指 candidate pairwise 0.758 过；真 blocker 是 macro/max regret）。**另**：gate 8 的"全 short-fast 3-4s"归因不实（实测 median 8.70s、13 cell >15s，高 CV 集中 o64），补跑未做是已记录限制；max regret 39.77% 与高 CV fold 同源 → 补跑高 CV cell 是降 max regret 的首选。下一步：gate 8 补跑 + CE4（装 lightgbm）+ harness 改 `--data-csv` + contract 口径用 candidate pairwise。raw 66MB 留服务器，SHA256 `a4f9cd52...4e8f`。
 
 ## 2026-08-07 高 CV 6-rep 补跑闭环 + CE5 过 §6 contract（gate 8 转 ✅）
@@ -6953,7 +6978,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 新增 `experiments/results/opening_fourjob_interference_20260809/` 七步报告、紧凑 CSV 和
   六项待画图合同；本轮未画图、未改 PPT、未同步 Wiki。
 - 服务器完整 archive 为
-  `/root/autodl-tmp/experiment-artifacts/opening_fourjob_full_archive_20260809_v1.tar.gz`
+  仓库外归档 `opening_fourjob_full_archive_20260809_v1.tar.gz`
   （34 MiB，SHA256
   `db705caac77c438f272a9ac1e4687b69dfef3be96500f768b9e7ca5d1ca416fb`），包含成功 raw、
   gate、停止的 Ray Data concurrency 诊断、Project/native v1 失败、不可变 manifest 和
@@ -7001,7 +7026,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   2.948 s，组 barrier 5.745 s，终态 running/waiting=0。该 run 标记 not-rankable，未运行
   single controls、warmup 或 formal。
 - 图像、DuckDB contract/gate/rehearsal 原始证据均留服务器，并另存只增不删的准备归档
-  `/root/autodl-tmp/experiment-artifacts/opening_image_duckdb_multijob_preparation_20260809_v1.tar.gz`
+  仓库外归档 `opening_image_duckdb_multijob_preparation_20260809_v1.tar.gz`
   （1.2 MiB，SHA256 `a7e1c2c58a0c55c6f69832cd623c0d3c08336211e876be02cdf51188cabd4825`）。
 - 复审现成 multi-job benchmark 后冻结“组合合同”：vLLM bench serve 只复用标准到达/容量，
   VTC 复用 actual-work/normalized-service/fairness，Daft/Ray 官方 benchmark 复用多模态
@@ -8048,7 +8073,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   → 结果可见链路，4 个请求成功并生成 16 个 token。首次 vLLM 启动因 PATH 未包含环境内 `ninja`
   失败，首次文本请求因临时服务 512-token 上下文限制返回 HTTP 400；补齐环境 PATH 并将源 prompt
   限制为 128 token 后通过。过程和成功产物保存在服务器
-  `/root/autodl-tmp/experiment-artifacts/gpu_function_smoke_b8947d01/`；服务已停止，GPU 无残留计算
+  仓库外产物 ID `gpu_function_smoke_b8947d01`；服务已停止，GPU 无残留计算
   进程。本次只证明这些小规模路径在该机器上功能正常，不恢复正式实验，也不形成吞吐或稳定性结论。
 
 ## 2026-08-27 代码重构长期规则固化
@@ -8073,7 +8098,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   511 份、443 个本地链接无断链。提交 `c551abca` 经 Git 同步到双 RTX 4090 AutoDL 独立 worktree，
   `core,text,image,analysis` capability preflight 状态为 `ok`，完整 1,341 项测试全部通过；测试后无
   Ray 残留进程，GPU 均为 0%/1 MiB 且无计算进程。服务器日志保存在仓库外
-  `/root/autodl-tmp/experiment-artifacts/semloom_validation_c551abca/`；本次未启动模型服务或 GPU 实验。
+  仓库外产物 ID `semloom_validation_c551abca`；本次未启动模型服务或 GPU 实验。
 
 ## 2026-08-28 PostgreSQL 18.3 SemMap capability spike
 

@@ -48,11 +48,13 @@ inputs, `NULL`, `LIMIT 0/1`, early-stop counters, direct insert rollback/commit,
 unsupported shapes. TAP starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared
 statement, repeatable-read snapshot visibility, child-plan cancellation, insert variants, and successful
 execution after cancellation. It also verifies that plain `EXPLAIN`, `LIMIT 0`, zero-row children, and
-NULL-only input do not connect; runs the same SQL rows, sequence, NULL, EXPLAIN, and error-lifecycle checks
-against both recording adapters; and covers malformed JSON, invalid encoding, integer overflow, evidence
-mismatch, disconnect, cancellation during response and saturated-connect waits, input bounds, and socket
-cleanup. The final exact-18.3 qualification passed 129/129 TAP checks; the local neutral-boundary and protocol
-suite passed 16/16 checks.
+NULL-only input do not connect. The two recording adapters are compared for SQL rows (including `NULL`) and
+normalized EXPLAIN output. UDS-only fault tests cover malformed JSON, invalid encoding, integer validation,
+evidence mismatch, disconnect, cancellation during response and saturated-connect waits, recovery, input
+bounds, and socket cleanup. They explicitly reject escaped JSON NUL, raw NUL inside a length-delimited frame,
+and fractional values in integer protocol fields while preserving the redacted `08P01` error boundary. The
+final exact-18.3 qualification for commit `0b9948ee` passed 150/150 TAP checks and PGXS regression 1/1 with a
+warning-free `-Werror` build; the local neutral-boundary and protocol suite passed 16/16 checks.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the gateway
 with an absolute socket path and set the superuser-only GUC for the SQL session:

@@ -23,16 +23,20 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
    ordinary child plan、snapshot、cancel/error/result lifecycle、PostgreSQL-private pump、neutral
-   provider port、独立 recording/UDS adapters、初始 digest 和同步单在途 UDS provider；
-2. 用当前 recording slice 实现 exact `SemFilter`，固定三值/NULL/error policy、cardinality 和 tuple
-   identity；
-3. 以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
-4. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与上述 alternatives；能表达
+   provider port、独立 recording/UDS adapters、初始 digest 和同步单在途 UDS provider；escaped/raw
+   NUL、严格整数与脱敏 error context 的响应边界也已验证；
+2. 固定所有算子共用的 extension 级 PostgreSQL compatibility suite，覆盖普通 SQL 非干扰、权限/RLS、
+   snapshot/事务、prepared/generic plan、hook coexistence、多 backend、取消和资源清理；
+3. 以 exact `SemFilter` 作为第二个真实消费者验证哪些生命周期代码真正共用，再将通过两个 reference
+   path 测试的部分抽成 PostgreSQL-private runtime；未来的 `SemMapMachine` 与 `FilterMachine` 分别保留
+   输出和 keep/drop/unknown 关系语义；
+4. 以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
+5. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与上述 alternatives；能表达
    则继续 extension，只有已复现阻断才增加最小 core patch；
-5. 数据库资格完成后再扩 accepted-prefix backpressure、多在途/乱序 completion、有界 reorder，抽取
+6. 数据库资格完成后再扩 accepted-prefix backpressure、多在途/乱序 completion、有界 reorder，抽取
    增量 SemLoom session 并接 HTTP/SemLoom provider；之后优先比较 IMLane-like batch placement。
    Kalypso-like lineage 只作后续参考，需另立计划；
-6. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
+7. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
 
 实施入口：
 
@@ -62,8 +66,8 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 仍待验证：
 
-- PostgreSQL planner-visible `SemMap`、中立 provider interface 和 query lifecycle；
-- extension/core 载体审查、`SemFilter` 关系语义与 LOTUS/Cortex semantic alternatives；
+- extension 级公共 PostgreSQL compatibility suite、shared runtime 抽取、`SemFilter` 关系语义；
+- extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；
 - 图像 HSE/static 非劣与受控 state-aware 动作；
 - 五臂系统级 matched formal、SAOR 跨层 capability 和部分条件性纠正补测；

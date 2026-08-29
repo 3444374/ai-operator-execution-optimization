@@ -7,8 +7,13 @@
 > C/Python canonical digest 与同步单在途 UDS
 > recording provider 已通过 PostgreSQL 18.3 功能测试；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
 > per-drive scratch、per-tuple completion copy、编码前输入上限、UTF8 校验、可取消 nonblocking connect
-> 和 query-context cleanup 已验证；scan/pump、neutral port 与 recording/UDS adapters 的职责拆分已完成。
-> 下一步实现 exact `SemFilter` 和最小第二 physical path。载体审查确认 extension 足够时继续使用，
+> 和 query-context cleanup 已验证；escaped/raw NUL、fractional integer 与稳定 error context 的响应边界
+> hardening 已在提交 `0b9948ee` 通过 warning-free `-Werror` build、regression 1/1、TAP 150/150 和
+> local 16/16；scan/pump、neutral port 与 recording/UDS adapters 的职责拆分已完成。下一步先固定
+> extension 级 PostgreSQL compatibility suite，再以 exact `SemFilter` 作为第二个真实消费者验证共同
+> lifecycle 代码，并在两个 reference path 通过后抽成 PostgreSQL-private runtime，随后实现最小第二
+> physical path。载体审查确认
+> extension 足够时继续使用，
 > 只有 LOTUS/Cortex plan alternatives
 > 或 node lifecycle 出现已复现阻断才增加最小 core patch。数据库语义资格完成后才扩 accepted-prefix、
 > 多在途、增量 SemLoom session 与 IMLane-like batch placement。Kalypso-like lineage 只作后续参考，

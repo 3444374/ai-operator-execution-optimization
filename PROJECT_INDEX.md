@@ -45,8 +45,10 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
 当前 `REL_18_3` extension/planner-visible `SemMap`、PostgreSQL-private pump、neutral provider port 与
-独立 recording/UDS adapters 已通过功能测试；最短期任务是实现 exact `SemFilter` 和最小第二 physical
-path。载体审查决定是否需要最小 core patch；accepted-prefix、多在途、
+独立 recording/UDS adapters 已通过功能测试；最短期任务是固定 extension 级 PostgreSQL compatibility
+suite，再以 exact `SemFilter` 作为第二个真实消费者验证共同代码并抽成 PostgreSQL-private runtime，
+随后实现最小第二
+physical path。载体审查决定是否需要最小 core patch；accepted-prefix、多在途、
 增量 SemLoom 与 HTTP provider 在数据库语义资格之后实现。
 既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
 

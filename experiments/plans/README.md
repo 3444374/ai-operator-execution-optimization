@@ -23,11 +23,14 @@
 2. executor/provider seam 已收紧：PostgreSQL-private `SemloomExecPump` 不包含 transport，neutral port
    不包含 PostgreSQL 类型，PG backend 只保留可取消的 UDS client adapter；listener、连接池、TCP/HTTP、
    session registry 和模型连接全部留在 gateway；
-3. 先用当前 recording slice 实现 exact `SemFilter`，再以静态 calibration evidence 实现一条可辨认的
-   LOTUS/Cortex-like proxy/oracle physical path；不等待完整异步协议或真实模型；
-4. 用这两个实际 semantic paths 审查 extension carrier；能表达则保留 extension，只有 marker/placement/
+3. 先固定 extension 级 PostgreSQL compatibility suite，再以 exact `SemFilter` 作为第二个真实消费者，
+   验证共同 lifecycle 代码并在两个 reference path 通过后抽成 PostgreSQL-private runtime；不复制当前 pump，也不为 future
+   `SemJoin` 预造执行器；
+4. 再以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
+   不等待完整异步协议或真实模型；
+5. 用这两个实际 semantic paths 审查 extension carrier；能表达则保留 extension，只有 marker/placement/
    prepared-plan/hook lifecycle 的已复现阻断才增加最小 core patch；
-5. 资格成立后再扩 accepted-prefix、多在途、乱序 completion 和增量 SemLoom session，并接真实
+6. 资格成立后再扩 accepted-prefix、多在途、乱序 completion 和增量 SemLoom session，并接真实
    HTTP/SemLoom provider；此前不扩 GPU 矩阵、不调整 SAOR，也不把 external runner 写成数据库内算子。
 
 ## 2. 状态分层

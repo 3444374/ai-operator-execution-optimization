@@ -17,8 +17,11 @@ Unix-domain socket（UDS）recording provider 已通过 PostgreSQL 18.3 功能�
 CustomScan 回调，tuple/task 绑定、sequence、结果复制和 provider 生命周期由 `sem_pump.c` 管理，
 socket、JSON 和协议实现分别留在 UDS/wire adapter。协议 v2 C/Python 分域
 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
-逐次调用 scratch、编码前输入上限、UTF8 校验、可取消 nonblocking connect 和 query-context FD 清理
-均已验证。下一步实现 exact `SemFilter` 和最小第二 semantic path。extension 能承载目标
+逐次调用 scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数、可取消 nonblocking connect
+和 query-context FD 清理均已验证。下一步先固定所有语义算子共用的 PostgreSQL compatibility suite，
+再以 exact `SemFilter` 作为第二个真实消费者验证哪些代码真正共用，并将通过两个算子测试的部分抽成
+PostgreSQL-private shared runtime；不复制当前 pump。
+完成 reference filter 后再实现最小第二 semantic path。extension 能承载目标
 LOTUS/Cortex semantic paths 时继续使用，只有已复现
 阻断才增加最小 core patch；accepted-prefix、多在途和增量 SemLoom 在数据库语义资格之后实现。
 数据库资格完成后优先做 IMLane-like batch 对照。Kalypso-like

@@ -19,9 +19,11 @@ PostgreSQL-private pump 和 provider-neutral `AiOpenSpec → AiPreparedTask → 
 in-process 与同步单在途 Unix-domain socket（UDS）recording provider。scan/pump、neutral port、
 recording/UDS adapter 与 wire v2 的职责拆分已完成。
 C/Python 协议 v2 分域 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
-per-drive scratch、编码前输入上限、UTF8 校验、断连、可取消 connect/response wait 和资源清理已在
-PostgreSQL 18.3 通过；下一步用现有同步 recording slice 实现 exact `SemFilter` 和最小
-LOTUS/Cortex-like 第二 path。随后用这些实际路径
+per-drive scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数、断连、可取消
+connect/response wait 和资源清理已在 PostgreSQL 18.3 通过；下一步先固定所有语义算子共用的
+extension 级 PostgreSQL compatibility suite，再以 exact `SemFilter` 作为第二个真实消费者验证共同代码，
+并在两个 reference path 通过后抽成 PostgreSQL-private runtime；不复制当前 pump。完成 reference filter 后再实现最小 LOTUS/Cortex-like
+第二 path，随后用这些实际路径
 审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom 与真实
 模型 provider 在数据库语义资格之后实现。
 上述步骤完成前不扩展
@@ -401,20 +403,25 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 2. **最小 provider seam**：同步单在途 UDS recording slice、PG-private pump、neutral port、
    recording/UDS adapters 与初始 digest 已通过。PG backend 不增加 listener、TCP/HTTP、连接池或模型
    adapter，也不重新实现 transaction/MVCC/WAL/ACL/snapshot。
-3. **数据库语义优化资格**：用现有 recording slice 实现 exact `SemFilter`，再以静态 calibration evidence
-   建立一条可辨认的 LOTUS/Cortex-like proxy/oracle path；数据库拥有 keep/drop、cost/quality 和 fallback。
-4. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
+3. **公共 PostgreSQL 兼容性**：固定 extension 级 suite，一次验证普通 SQL 非干扰、RLS/权限、snapshot、
+   事务/savepoint、prepared/generic plan 与 invalidation、planner-hook coexistence、多 backend 隔离、
+   cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
+4. **数据库语义优化资格**：以 exact `SemFilter` 作为第二个真实消费者验证共同 lifecycle 代码，两个
+   reference path 通过后才抽成 PostgreSQL-private runtime；未来的独立 machine 保留 map emit 与 filter
+   keep/drop/unknown 语义；
+   再以静态 calibration evidence 建立一条可辨认的 LOTUS/Cortex-like proxy/oracle path。
+5. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
    则保留 extension，只有已复现阻断才增加最小 core patch。
-5. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
+6. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
    并优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作条件满足后的参考方向。
-6. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
-   当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞前三项。
-7. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+7. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
+   当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞前四项。
+8. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
    报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-8. **条件性恢复**：前五项通过后，再按
+9. **条件性恢复**：前六项通过后，再按
    `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
    system-level matched comparison 与小规模 pgvector 质量闭环。
-9. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+10. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
    full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
 历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，
