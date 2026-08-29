@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-08-29 exact SemFilter 与 PostgreSQL 语义执行公共层完成
+
+- 新增 fail-closed `ai_semantic.filter(text)` 与 relation-level `CustomPath/CustomScan` reference path。
+  ordinary predicates 留在 PostgreSQL child；semantic filter 位于 `LIMIT` 之前，provider 只返回
+  `true/false/unknown` completion，PostgreSQL 决定 emit/drop，SQL NULL 不创建 task。nested/multiple
+  filter、Map+Filter 组合、join/aggregate 和未支持形状继续 fail closed。
+- 第二个真实消费者通过后，将 query-fixed provider、lazy `open/drive/close`、sequence、completion copy、
+  query-context cleanup、中立错误映射与公共 EXPLAIN 计数抽入 `PgSemanticRuntime`。`sem_pump.c` 只处理
+  child slot 流；`SemMapMachine` 与 `FilterMachine` 分别拥有 map emit 与三值 keep/drop，不包含 provider
+  session、socket、JSON 或 cleanup。neutral port 仍不含 PostgreSQL 类型，UDS/wire 模块边界未扩张。
+- extension 级 compatibility TAP 增加 prepared/generic plan invalidation、RLS/权限、savepoint、
+  `LIMIT` placement、双 backend、Map/Filter 双 adapter parity、no-task lazy open、invalid completion、
+  cancel 与恢复。提交 `d3a22dcf` 在干净 detached worktree、官方 `REL_18_3` 上以 `-Werror` 无警告构建，
+  PGXS regression 1/1、TAP 193/193、Python/static 18/18；仓库外产物 ID 为 `tap-run-d3a22dcf`，
+  `semloom_pg.so` SHA-256 为
+  `e4048b9709228c18b335e3a90ca98c766a6d6c581b57eb53ac1e8affecae5f26`。
+- 仓库外 `resource-run-d3a22dcf/resource-smoke.txt` 记录同一 backend 的资源生命周期：2,000 个
+  100,000-byte SemMap 输入产生 200,018,000 字节，RSS 起始/峰值/结束为
+  21,048/21,688/21,688 KiB、FD 为 25/25/24；随后 20,000 行 SemFilter（15,000 个非 NULL task、
+  5,000 行输出）的 RSS 为 21,688/21,688/21,688 KiB、FD 为 26/26/24。未观察到随累计 payload
+  近似线性增长或 FD 泄漏；该 smoke 不是性能结论。历史 `d08eda38` 与 `0b9948ee` 证据原样保留。
+- 下一步是 deterministic、显式可识别的 SemFilter 第二 physical path 与 extension carrier audit；
+  accepted-prefix、多在途、真实模型、SemLoom scheduling session、`SemJoin` 和 core patch 均未提前实现。
+
 ## 2026-08-28 provider 响应边界加固与语义执行公共层实施顺序
 
 - 先以真实 UDS/TAP fixture 固定三个回归：JSON 中的 escaped `\u0000` 原先抛出 `22P05`，错误上下文

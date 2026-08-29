@@ -1,18 +1,19 @@
 # 实验状态与缺口分析
 
-更新日期：2026-08-28
+更新日期：2026-08-29
 
-> **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 的受限 `SELECT`、direct
-> `INSERT ... SELECT`、PostgreSQL-private pump、provider-neutral `open/drive/close` seam、协议 v2
+> **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference
+> paths、direct `INSERT ... SELECT`、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator
+> machines、provider-neutral `open/drive/close` seam、协议 v2
 > C/Python canonical digest 与同步单在途 UDS
 > recording provider 已通过 PostgreSQL 18.3 功能测试；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
 > per-drive scratch、per-tuple completion copy、编码前输入上限、UTF8 校验、可取消 nonblocking connect
 > 和 query-context cleanup 已验证；escaped/raw NUL、fractional integer 与稳定 error context 的响应边界
-> hardening 已在提交 `0b9948ee` 通过 warning-free `-Werror` build、regression 1/1、TAP 150/150 和
-> local 16/16；scan/pump、neutral port 与 recording/UDS adapters 的职责拆分已完成。下一步先固定
-> extension 级 PostgreSQL compatibility suite，再以 exact `SemFilter` 作为第二个真实消费者验证共同
-> lifecycle 代码，并在两个 reference path 通过后抽成 PostgreSQL-private runtime，随后实现最小第二
-> physical path。载体审查确认
+> hardening 已在提交 `0b9948ee` 固定；提交 `d3a22dcf` 进一步通过 warning-free `-Werror` build、
+> regression 1/1、TAP 193/193、Python/static 18/18 和 Map/Filter RSS/FD 不增长 smoke。公共
+> compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、双 backend、cancel/cleanup
+> 与 no-task lazy open；shared runtime 不包含算子真值，operator machines 不包含 provider lifecycle。
+> 下一步实现最小第二 physical path。载体审查确认
 > extension 足够时继续使用，
 > 只有 LOTUS/Cortex plan alternatives
 > 或 node lifecycle 出现已复现阻断才增加最小 core patch。数据库语义资格完成后才扩 accepted-prefix、

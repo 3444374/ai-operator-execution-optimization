@@ -1,6 +1,6 @@
 # SemLoom 当前方向与计划
 
-最后更新：2026-08-28
+最后更新：2026-08-29
 
 这是两分钟快速参考卡片。完整定义以根 [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) 为准；
 实验完成度以
@@ -21,17 +21,15 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 ## 2. 当前最短路径
 
-1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
-   ordinary child plan、snapshot、cancel/error/result lifecycle、PostgreSQL-private pump、neutral
-   provider port、独立 recording/UDS adapters、初始 digest 和同步单在途 UDS provider；escaped/raw
-   NUL、严格整数与脱敏 error context 的响应边界也已验证；
-2. 固定所有算子共用的 extension 级 PostgreSQL compatibility suite，覆盖普通 SQL 非干扰、权限/RLS、
-   snapshot/事务、prepared/generic plan、hook coexistence、多 backend、取消和资源清理；
-3. 以 exact `SemFilter` 作为第二个真实消费者验证哪些生命周期代码真正共用，再将通过两个 reference
-   path 测试的部分抽成 PostgreSQL-private runtime；未来的 `SemMapMachine` 与 `FilterMachine` 分别保留
-   输出和 keep/drop/unknown 关系语义；
-4. 以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
-5. 通过反例审查 extension 能否承载 plan identity、prepared-plan 与上述 alternatives；能表达
+1. `REL_18_3` extension / planner-visible `SemMap` 与 exact `SemFilter` reference paths 已验证受限
+   `SELECT`、direct `INSERT ... SELECT`、ordinary child plan、三值/NULL/cardinality、snapshot、
+   cancel/error/result lifecycle、neutral provider port、独立 recording/UDS adapters 和同步单在途 UDS；
+2. 公共 `PgSemanticRuntime` 已收敛 provider lifecycle、sequence、completion memory、query cleanup 和
+   错误映射；thin pump 处理 slot 流，Map/Filter machines 分别处理输出与 keep/drop/unknown；
+3. extension 级 PostgreSQL compatibility suite 已覆盖普通 SQL、权限/RLS、snapshot/savepoint、
+   prepared/generic plan invalidation、hook chaining、多 backend、取消、资源清理和无任务不连接；
+4. 下一步以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
+5. 再通过反例审查 extension 能否承载 plan identity、prepared-plan 与上述 alternatives；能表达
    则继续 extension，只有已复现阻断才增加最小 core patch；
 6. 数据库资格完成后再扩 accepted-prefix backpressure、多在途/乱序 completion、有界 reorder，抽取
    增量 SemLoom session 并接 HTTP/SemLoom provider；之后优先比较 IMLane-like batch placement。
@@ -58,6 +56,8 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 已建立：
 
+- exact `SemMap`/`SemFilter`、公共 runtime 与 PostgreSQL 18.3 compatibility suite 已通过功能、取消和
+  RSS/FD 生命周期验证；尚无真实模型或性能结论；
 - 文本 cache-on 数据组织效果随 endpoint consolidation、KV 压力与 prefix 结构变化；
 - 固定/shared credit 和 1/2/4 Job 实验显示效率、隔离与公平存在权衡，动态策略尚未普遍超过强静态点；
 - 图像 5K 画像、原生静态 baseline、多 Job 观察、matched-resource 与 observe-only 接线已经完成；
@@ -66,7 +66,7 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 仍待验证：
 
-- extension 级公共 PostgreSQL compatibility suite、shared runtime 抽取、`SemFilter` 关系语义；
+- SemFilter 第二 physical path、近似质量 policy 与真实模型 provider；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；
 - 图像 HSE/static 非劣与受控 state-aware 动作；

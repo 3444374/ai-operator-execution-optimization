@@ -1,21 +1,22 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-08-28
+更新日期：2026-08-29
 状态：`current / architecture-defined / implementation-in-progress`
-当前实现事实：`code/postgres/semloom_pg/` 已有 PostgreSQL planner-visible `SemMap`
-`CustomPath/CustomScan` capability spike；`REL_18_3` PGXS regression 与 preload/prepared-plan/
-snapshot/cancel/insert TAP 已通过，direct `INSERT ... SELECT` 支持 rollback/commit，原 PG-typed
-plan/task/completion 已收回 PostgreSQL-private pump；provider-neutral
+当前实现事实：`code/postgres/semloom_pg/` 已有 PostgreSQL planner-visible `SemMap` 与 exact
+relation-level `SemFilter` `CustomPath/CustomScan` reference paths；`REL_18_3` PGXS regression 与
+preload/prepared/generic-plan invalidation、RLS/权限、snapshot/savepoint/cancel/insert TAP 已通过，
+direct `INSERT ... SELECT` 支持 rollback/commit。PostgreSQL-private `PgSemanticRuntime` 统一拥有
+query-fixed provider、lazy lifecycle、sequence、completion copy、query cleanup、中立错误映射和公共
+EXPLAIN 计数；thin pump 只处理 child slot 流，Map/Filter machines 分别处理 emit 与
+TRUE/FALSE/UNKNOWN keep/drop。provider-neutral
 `AiOpenSpec → AiPreparedTask → AiCompletion`、协议 v2 C/Python 分域 identity digest 与同步单在途 UDS
 `open/drive/close` recording provider 已接入。provider 仅在首个非 NULL task 到达时连接；
 `PROPAGATE_NULL` 由 PostgreSQL 完成，per-drive scratch、per-tuple completion copy、query-context cleanup、
 174,080-byte 编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数和可取消 nonblocking connect 已验证。
-该同步 UDS 纵切面已经足够支撑下一步公共 compatibility suite 与 exact `SemFilter`，不再先扩成完整
-网络/runtime；`SemFilter` 作为第二个真实消费者时先验证哪些 lifecycle 代码真正共用，两个 reference
-path 通过后再抽成 PostgreSQL-private runtime，
-不复制当前 `SemloomExecPump`，也不为尚未实施的 `SemJoin`/blocking operator 预造抽象；
+公共 compatibility suite 与第二个 reference operator 已证明该同步 UDS/runtime 分层，未复制
+`SemloomExecPump`，也未为尚未实施的 `SemJoin`/blocking operator 预造抽象；
 accepted-prefix backpressure、多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器
-在 exact `SemFilter` 与载体资格验证后实施。既有 PostgreSQL source/sink、
+在第二 physical path 与载体资格验证后实施。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，完成 exact `SemMap`/`SemFilter`、一个普通关系 child
 plan、query-scoped provider session，以及一条最小、显式可识别的 `SemFilter` 第二 physical path。
@@ -417,10 +418,10 @@ code/postgres/
     │   ├── marker.c                  # marker residual 时 fail closed
     │   ├── planner.c / sem_path.c / sem_plan.c
     │   ├── sem_scan.c                # CustomScan spike adapter
-    │   ├── pg_semantic_runtime.c     # 第二个算子证明复用后再抽取 provider/query lifecycle
-    │   ├── sem_pump.c                # 当前 SemMap 过渡聚合；不得复制给下一算子
-    │   ├── sem_map_machine.c         # 抽取后只保留 map bind/interpret/emit
-    │   ├── sem_filter_machine.c      # SemFilter 实施时新增 keep/drop/unknown 语义
+    │   ├── pg_semantic_runtime.c     # 已抽取的 provider/query lifecycle、sequence、memory/error
+    │   ├── sem_pump.c                # child slot 流；不持有 provider lifecycle 或算子真值
+    │   ├── sem_map_machine.c         # map completion interpret/emit
+    │   ├── sem_filter_machine.c      # filter keep/drop/unknown 语义
     │   ├── ai_provider_port.h         # provider-neutral primitive/bytes/status interface
     │   ├── recording_provider.c       # 无 I/O 的测试 adapter
     │   └── uds_provider.c / wire_v2.c # 唯一 PG-specific IPC adapter
@@ -451,10 +452,10 @@ deploy 规则登记。
 
 ### 8.2 第二个算子出现时收敛为三层，而不是复制 pump
 
-当前 `SemloomExecPump` 是只有 `SemMap` 一个消费者时形成的过渡聚合：其中 provider lifecycle、
-query cleanup、sequence 和 completion copy 可跨算子复用，但 child tuple 绑定、text→text、mapped column
-和一行一结果属于 `SemMap`。实现 `SemFilter` 时不得复制整个 pump，也不在第二个消费者出现前一次性
-发明 `SemJoin`、blocking、async 或 core-node 通用接口。目标分层是：
+`SemMap` 与 `SemFilter` 已按两个真实消费者收敛为下列三层：provider lifecycle、query cleanup、
+sequence 和 completion copy 进入 `PgSemanticRuntime`；child slot 流保留在 thin pump；text→text emit 与
+TRUE/FALSE/UNKNOWN keep/drop 分别进入 operator machines。当前实现没有发明 `SemJoin`、blocking、async
+或 core-node 通用接口：
 
 | 层 | 拥有或验证的职责 | 明确不拥有 |
 |---|---|---|
@@ -468,7 +469,7 @@ wire evidence digest 仍由 UDS/wire adapter 根据 open spec 与 adapter identi
 carrier 负责把 semantic filter 放在 `LIMIT` 之前的正确位置。future `SemJoin` 的左右 tuple/pair identity、join type、候选生成、内存上限与 spill
 只有另行立项后才设计，不能塞进 unary machine。
 
-抽取按以下顺序进行：
+本轮已按以下顺序完成抽取，后续 operator 继续遵守同一验证纪律：
 
 1. 先固定 extension 级 PostgreSQL compatibility suite；这些非干扰/生命周期检查只维护一份。
 2. 在现有 reference path 中加入最小 `FilterMachine`，用 characterization tests 标出它与 `SemMap` 真正
@@ -551,10 +552,9 @@ class SchedulingSession(Protocol):
 
 ## 9. 当前实施工作包、资格后验证与参考方向
 
-工作包一至七构成当前有序实施范围。当前不再把完整异步协议和网络健壮性扩展放在 `SemFilter` 前面：
-同步 UDS recording slice、neutral provider seam 与响应边界 hardening 已通过。下一步先固定公共 PostgreSQL
-compatibility suite，再用 exact `SemFilter` 验证共同 lifecycle 代码；两个 reference path 通过后才抽成
-PostgreSQL-private runtime，随后实现最小第二 path。
+工作包一至七构成当前有序实施范围。同步 UDS recording slice、neutral provider seam、响应边界
+hardening、公共 PostgreSQL compatibility suite、exact `SemFilter` 与 shared runtime 已通过；当前下一步
+是最小第二 semantic path。
 只有语义算子资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
@@ -580,8 +580,9 @@ profile 使用独立 digest；物理 mapped-column 不进入 wire identity。pla
 拒绝、取消后恢复、scratch memory 与 socket 清理均通过。该纵切面保持不变，当前不继续增加 PG-side
 listener、TCP/HTTP、连接池、自动重连或模型 adapter。
 
-当前 PG-typed plan/task/result 已收回 PostgreSQL-private `SemloomExecPump`；`sem_scan.c`、neutral
-provider port、`recording_provider.c` 与 `uds_provider.c/wire_v2.c` 已拆分。`mapped_column`、`Datum`、
+当前 PG-typed tuple binding 留在 thin pump/operator machines，共用 lifecycle 已收敛到
+`PgSemanticRuntime`；`sem_scan.c`、neutral provider port、`recording_provider.c` 与
+`uds_provider.c/wire_v2.c` 已拆分。`mapped_column`、`Datum`、
 `Oid`、`AttrNumber`、`MemoryContext` 和 slot identity 未进入 neutral port 或 wire。gateway 继续拥有
 `bind/listen/accept` 和所有模型侧连接。
 
@@ -590,24 +591,26 @@ PostgreSQL 类型；普通 `EXPLAIN`/`LIMIT 0` 不打开 provider；双 adapter 
 EXPLAIN 一致，协议错误、断连、取消与恢复由 UDS-only fault tests 验证；前序提交 `d08eda38` 的资源
 不增长 smoke 已通过，本轮 hardening 未重跑该 smoke。精确数字从实验证据台账读取。
 
-### 工作包三：公共 compatibility suite 与 exact `SemFilter` reference path
+### 工作包三：公共 compatibility suite 与 exact `SemFilter` reference path（已完成）
 
 先把所有算子共同依赖的 PostgreSQL 行为固定为 extension 级 suite：普通 SQL 不受影响；RLS/权限、
-snapshot、事务/savepoint 仍由 PostgreSQL 管理；prepared/generic plan、plan invalidation、planner-hook
-coexistence 和多 backend 隔离正常；cancel/ERROR/FD/内存清理成立；plain EXPLAIN、LIMIT 0、zero-row 与
-全 NULL 输入不打开 provider。该 suite 不在 `SemMap`、`SemFilter`、future `SemJoin` 中分别复制。
+snapshot、事务/savepoint 仍由 PostgreSQL 管理；prepared/generic plan、plan invalidation、多 backend
+隔离和 planner-hook chaining static contract 正常；cancel/ERROR/FD/内存清理成立；plain EXPLAIN、
+LIMIT 0、zero-row 与全 NULL 输入不打开 provider。live multi-extension hook coexistence 仍属于后续
+carrier audit，不能由静态 chaining 检查替代。该 suite 不在 `SemMap`、`SemFilter`、future `SemJoin`
+中分别复制。
 
-随后在 relation-level carrier 上增加严格 boolean/unknown parser、PostgreSQL 三值/NULL/error policy 与
-semantic selectivity；ordinary predicates 留在 child。数据库决定 keep/drop，provider 只返回带 task
-identity 的 completion，不能返回最终 relation rows。首版继续使用 recording/fixture provider，不等待
-真实模型、完整异步协议或 SemLoom scheduler。实现过程中按 §8.2 先让两个 reference path 验证共同
-lifecycle，再把通过测试的部分抽入 `PgSemanticRuntime`；`FilterMachine` 只处理 filter 关系语义，
-现有 pump 不被复制。
+relation-level carrier 已增加严格 boolean/unknown parser 与 PostgreSQL 三值/NULL/error policy；ordinary
+predicates 留在 child。数据库决定 keep/drop，provider 只返回带 task identity 的 completion，不能返回
+最终 relation rows。首版继续使用 recording/fixture provider，不等待真实模型、完整异步协议或
+SemLoom scheduler。两个 reference paths 已验证并共用 `PgSemanticRuntime`；`FilterMachine` 只处理
+filter 关系语义，provider lifecycle 没有复制。
 
-完成标准：公共 compatibility suite 独立通过；`SemMapMachine`/`FilterMachine` 不含 socket、JSON 或
+完成证据：公共 compatibility suite 独立通过；`SemMapMachine`/`FilterMachine` 不含 socket、JSON 或
 query cleanup 的重复实现；EXPLAIN 区分 ordinary 与 semantic predicate；`SemFilter` 位于 `LIMIT` 和相关
-join consumer 之前；重复/乱序输入、unknown、provider error、LIMIT、cancel 和 transaction abort 不破坏
-cardinality、tuple identity 或资源清理。
+consumer 之前；unknown、provider error、LIMIT、cancel、savepoint/transaction abort 不破坏 cardinality、
+tuple identity 或资源清理。提交 `d3a22dcf` 的精确 `REL_18_3` 结果为 regression 1/1、TAP 193/193、
+Python/static 18/18 和 warning-free `-Werror`；资源 smoke 数字从证据台账读取。
 
 ### 工作包四：最小 LOTUS/Cortex-like `SemFilter` 第二 path
 

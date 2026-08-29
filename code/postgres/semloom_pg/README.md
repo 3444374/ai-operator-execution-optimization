@@ -1,6 +1,6 @@
 # `semloom_pg` capability spike
 
-`semloom_pg` is the first `REL_18_3` capability slice from
+`semloom_pg` is the current `REL_18_3` reference capability slice from
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
 fail-closed SQL marker can be lowered to a planner-visible `CustomPath`/`CustomScan` with an ordinary
 PostgreSQL child plan. It is not the final semantic plan/task/result protocol and does not call an
@@ -9,32 +9,41 @@ HTTP, Ray, vLLM, or SemLoom scheduling backend.
 The current supported query shape is deliberately narrow:
 
 - one top-level `ai_semantic.map(text)` in a single-table `SELECT` target list;
-- direct single-table `INSERT ... SELECT` without `RETURNING`, `ON CONFLICT`, or `OVERRIDING`;
+- one top-level `ai_semantic.filter(text)` base-relation predicate in `WHERE`; exact `true` emits the
+  tuple, while `false`, `unknown`, and SQL `NULL` drop it without letting the provider create rows;
+- direct single-table `INSERT ... SELECT` for either reference operator, without `RETURNING`,
+  `ON CONFLICT`, or `OVERRIDING`;
 - ordinary child filters and projections;
 - forward execution with child order preserved;
-- `LIMIT`, including `LIMIT 0` and early stop after one row;
+- `LIMIT`, including `LIMIT 0` and early stop; SemFilter is placed below `LIMIT`, so keep/drop is
+  evaluated before the limit consumes a row;
 - an in-process recording transform that returns `recorded:<input>`; PostgreSQL applies
-  `PROPAGATE_NULL` locally without opening a provider session;
+  `PROPAGATE_NULL` locally without opening a provider session; the recording SemFilter echoes the
+  deterministic `true`/`false`/`unknown` decision fixture;
 - an optional external UDS recording provider with the same SQL-visible output.
 
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
-sorting, set operations, row locks, set-returning targets, nested marker use, and marker use outside
-the target list. The executor rejects backward scan, mark/restore, rescan, and EPQ. Parallel execution
-is disabled. The version-2 UDS protocol is deliberately synchronous with one in-flight task, a 1 MiB
-frame limit, and a conservative 174,080-byte input limit applied before JSON encoding. Three separate digests
+set operations, row locks, set-returning targets, nested/multiple marker use, and combined SemMap/SemFilter.
+SemMap remains target-list-only and rejects sorting; SemFilter remains one top-level `AND` predicate and
+allows ordinary predicates, `ORDER BY`, and `LIMIT`. The executor rejects backward scan, mark/restore,
+rescan, and EPQ. Parallel execution is disabled. The version-2 UDS protocol is deliberately synchronous
+with one in-flight task, a 1 MiB frame limit, and a conservative 174,080-byte input limit applied before
+JSON encoding. Three separate digests
 bind SQL-visible semantic spec, database-selected physical algorithm, and concrete provider execution profile;
 PostgreSQL's physical mapped-column number is not part of any wire identity. Accepted-prefix
 backpressure, multiple in-flight tasks, out-of-order/missing completion handling, automatic retries, real model
 calls, and the full model/prompt/result schema remain pending; this slice must not
 be described as a complete database AI operator.
 
-`sem_scan.c` is a thin CustomScan adapter. The PostgreSQL-private `SemloomExecPump` owns child tuple pulls,
-NULL propagation, task sequence, completion copying into per-tuple memory, EXPLAIN counters, and provider
-lifecycle/error mapping. It calls the provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion`
-`open/drive/close` contract in `ai_provider_port.h`; that header contains only fixed-width values, byte slices,
-caller-owned errors, and opaque provider/session handles, with no PostgreSQL headers or types. The in-process
-recording adapter and UDS adapter implement the same contract, while socket, JSON, digest, and framing details
-remain in the UDS/wire-private modules.
+`sem_scan.c` is a thin CustomScan adapter, and `sem_pump.c` owns only child-slot flow. The shared
+PostgreSQL-private `PgSemanticRuntime` fixes and lazily opens the provider, owns task sequence, copies
+session-owned completions into per-tuple memory, registers query cleanup, maps neutral errors, and reports
+common EXPLAIN counters. `SemMapMachine` and `FilterMachine` separately interpret NULL/completions and return
+emit/drop/error without knowing provider sessions or cleanup. The runtime calls the provider-neutral
+`AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` contract in `ai_provider_port.h`; that header
+contains only fixed-width values, byte slices, caller-owned errors, and opaque provider/session handles, with
+no PostgreSQL headers or types. The in-process recording adapter and UDS adapter implement the same contract,
+while socket, JSON, digest, and framing details remain in the UDS/wire-private modules.
 
 Provider selection and its opaque configuration snapshot are query-fixed, but no session or FD is acquired
 until the first non-NULL task. A cleanup callback is registered in `estate->es_query_cxt` before lazy open can
@@ -43,18 +52,25 @@ preserved SQL error; PostgreSQL interrupts, out-of-memory errors, and other dire
 Normal close and the callback share an idempotent local close path that invalidates the FD before releasing it
 and performs no protocol I/O, wait, allocation, or error reporting.
 
-The PGXS regression covers EXPLAIN identity, ordinary filters/projections, duplicate payloads, expression
-inputs, `NULL`, `LIMIT 0/1`, early-stop counters, direct insert rollback/commit, error recovery, and fail-closed
-unsupported shapes. TAP starts isolated PostgreSQL nodes and covers missing-preload failure, a prepared
-statement, repeatable-read snapshot visibility, child-plan cancellation, insert variants, and successful
-execution after cancellation. It also verifies that plain `EXPLAIN`, `LIMIT 0`, zero-row children, and
-NULL-only input do not connect. The two recording adapters are compared for SQL rows (including `NULL`) and
-normalized EXPLAIN output. UDS-only fault tests cover malformed JSON, invalid encoding, integer validation,
-evidence mismatch, disconnect, cancellation during response and saturated-connect waits, recovery, input
-bounds, and socket cleanup. They explicitly reject escaped JSON NUL, raw NUL inside a length-delimited frame,
-and fractional values in integer protocol fields while preserving the redacted `08P01` error boundary. The
-final exact-18.3 qualification for commit `0b9948ee` passed 150/150 TAP checks and PGXS regression 1/1 with a
-warning-free `-Werror` build; the local neutral-boundary and protocol suite passed 16/16 checks.
+The PGXS regression covers both operators' exact rows, EXPLAIN identity, ordinary predicates/projections,
+duplicate payloads, expression inputs, three-valued Filter decisions, `NULL`, `LIMIT`, direct insert
+rollback/commit, error recovery, and fail-closed unsupported combinations. TAP starts isolated PostgreSQL
+nodes and covers missing preload, prepared/generic plans and invalidation, repeatable-read snapshots,
+transactions/savepoints, RLS/permissions, two backend sessions, child/provider cancellation, insert variants,
+and recovery. It also verifies that plain `EXPLAIN`, `LIMIT 0`, zero-row children, and NULL-only input do not
+connect. Both recording adapters are compared for Map and Filter SQL rows and normalized EXPLAIN output.
+UDS fault tests cover malformed JSON, invalid encoding, integer validation, evidence mismatch, disconnect,
+cancellation during response and saturated-connect waits, recovery, input bounds, and socket cleanup. They
+explicitly reject escaped JSON NUL, raw NUL inside a length-delimited frame, and fractional integer fields
+while preserving the redacted `08P01` boundary.
+
+The exact-18.3 qualification for commit `d3a22dcf` passed 193/193 TAP checks, PGXS regression 1/1, an
+`-Werror` build, and 18/18 Python/static checks. Its clean-build `semloom_pg.so` SHA-256 is
+`e4048b9709228c18b335e3a90ca98c766a6d6c581b57eb53ac1e8affecae5f26`. A repository-external resource smoke
+consumed 2,000 100,000-byte Map inputs (200,018,000 output bytes) with backend RSS
+21,048/21,688/21,688 KiB and FD 25/25/24, then evaluated 20,000 Filter rows (15,000 non-NULL tasks, 5,000
+emitted rows) with RSS 21,688/21,688/21,688 KiB and FD 26/26/24. These are start/peak/end observations that
+support absence of cumulative-payload memory growth and FD leakage; they are not performance results.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the gateway
 with an absolute socket path and set the superuser-only GUC for the SQL session:
@@ -66,6 +82,7 @@ python3 gateway/recording_gateway.py --socket /absolute/path/semloom-recording.s
 ```sql
 SET semloom_pg.gateway_socket = '/absolute/path/semloom-recording.sock';
 SELECT ai_semantic.map(payload) FROM semloom_documents;
+SELECT doc_id FROM semantic_decisions WHERE ai_semantic.filter(decision);
 ```
 
 The gateway refuses to replace an existing filesystem entry and removes only the socket it created. The UDS

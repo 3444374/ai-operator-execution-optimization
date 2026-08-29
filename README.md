@@ -9,19 +9,21 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-08-28）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
+当前状态（2026-08-29）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
 架构改为 Sema-like 中立语义算子核心。短期工程锁定 `REL_18_3`，先用 extension 验证 planner-visible
-`SemMap` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT`、PostgreSQL-private
-execution pump、provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口，以及单在途、同步的
-Unix-domain socket（UDS）recording provider 已通过 PostgreSQL 18.3 功能测试。`sem_scan.c` 只保留
-CustomScan 回调，tuple/task 绑定、sequence、结果复制和 provider 生命周期由 `sem_pump.c` 管理，
+`SemMap`、exact `SemFilter` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT`、
+PostgreSQL-private `PgSemanticRuntime`、独立 Map/Filter machines、provider-neutral
+`AiOpenSpec → AiPreparedTask → AiCompletion` 接口，以及单在途、同步的 Unix-domain socket（UDS）
+recording provider 已通过 PostgreSQL 18.3 功能测试。`sem_scan.c` 只保留 CustomScan 回调，
+`sem_pump.c` 只处理 child slot 流；provider 选择/lazy lifecycle、sequence、结果复制、query cleanup 和
+中立错误映射集中在公共 runtime，Map 的 emit 与 Filter 的 TRUE/FALSE/UNKNOWN keep/drop 分开实现。
 socket、JSON 和协议实现分别留在 UDS/wire adapter。协议 v2 C/Python 分域
 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
 逐次调用 scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数、可取消 nonblocking connect
-和 query-context FD 清理均已验证。下一步先固定所有语义算子共用的 PostgreSQL compatibility suite，
-再以 exact `SemFilter` 作为第二个真实消费者验证哪些代码真正共用，并将通过两个算子测试的部分抽成
-PostgreSQL-private shared runtime；不复制当前 pump。
-完成 reference filter 后再实现最小第二 semantic path。extension 能承载目标
+和 query-context FD 清理均已验证。公共 PostgreSQL compatibility suite 已覆盖 RLS/权限、
+prepared/generic plan invalidation、savepoint、双 backend、取消、lazy no-task 和双 adapter parity；
+`d3a22dcf` 在 exact 18.3 上通过 regression 1/1、TAP 193/193 与 Python/static 18/18，并完成
+Map/Filter RSS/FD 不增长 smoke。下一步实现最小第二 semantic path。extension 能承载目标
 LOTUS/Cortex semantic paths 时继续使用，只有已复现
 阻断才增加最小 core patch；accepted-prefix、多在途和增量 SemLoom 在数据库语义资格之后实现。
 数据库资格完成后优先做 IMLane-like batch 对照。Kalypso-like

@@ -1,42 +1,44 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-28
+日期：2026-08-29
 
-本文说明现有 Daft + Ray 外部物理执行基础设施已经完成什么、实际执行流程、研究证据
-边界，以及下一步还需要实现和验证的内容。这里记录的是 PostgreSQL 中立语义算子集成前已经
-可运行的 backend 基座，不表示数据库内 AI 语义算子已经实现；项目不修改 vLLM 内部。
+本文说明 PostgreSQL 中立语义算子 reference capability 与现有 Daft + Ray 外部物理执行基础设施
+已经完成什么、实际执行流程、研究证据边界，以及下一步还需要实现和验证的内容。当前 exact
+SemMap/SemFilter recording paths 不等于第二 physical path、真实模型或完整优化系统已经实现；项目不修改
+vLLM 内部。
 
 **当前工程顺序**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
-`SemMap` 的当前受限 capability、PostgreSQL-private execution pump、provider-neutral
+`SemMap` 与 exact `SemFilter` 的当前受限 reference capability、PostgreSQL-private shared runtime、provider-neutral
 `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口和同步单在途 UDS recording slice；
 协议 v2 的 C/Python semantic-spec/physical-algorithm/provider-execution/payload/completion digest、
 1 MiB 长度帧、adapter-owned 174,080-byte 编码前输入上限、
 Unicode、escaped/raw NUL、严格整数、断连、取消与清理已验证。provider 只在首个非 NULL task 到达时打开，`PROPAGATE_NULL`
-由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 负责 child pull、tuple/task
-绑定、sequence、completion 复制和 provider 生命周期。中立 header 不包含 PostgreSQL 类型，recording、
+由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 只负责 child slot 流，
+`PgSemanticRuntime` 统一负责 query-fixed provider、lazy open/drive/close、sequence、completion copy、
+query-context cleanup、中立错误映射和公共 EXPLAIN 计数；Map/Filter machines 分别处理 emit 与
+TRUE/FALSE/UNKNOWN keep/drop。中立 header 不包含 PostgreSQL 类型，recording、
 UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，结果复制到 per-tuple context，UDS 从
 `connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
 资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
-下一步先固定所有算子共用的 extension 级 PostgreSQL 非干扰/兼容套件，再以 exact `SemFilter` 作为
-第二个真实消费者，验证哪些 provider lifecycle 代码确实共用，再把通过两个 reference path 测试的部分
-抽成 PostgreSQL-private runtime；不复制
-现有 `SemloomExecPump`，也不预先为 `SemJoin` 或 blocking operator 设计通用执行器。完成 reference
-filter 后再增加最小第二 physical path，随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，
+公共 extension 级 PostgreSQL compatibility suite 和第二个真实消费者已经通过，未为 `SemFilter`
+复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。下一步增加最小第二
+physical path，随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，
 只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom session 与 HTTP/SemLoom
 provider 在数据库语义资格之后实现。
-当前源码已有受限的 `SemMap CustomPath/CustomScan` recording capability，并在 `REL_18_3` 上通过
-PGXS regression 与 preload/prepared-plan/snapshot/cancel/insert 生命周期 TAP；executor pump 已通过
+当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
+并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
+snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
 中立 `AiOpenSpec/AiPreparedTask/AiCompletion` 值调用 `open/drive/close` in-process recording provider；
 同步单在途 UDS provider 与分离的 semantic-spec、physical-algorithm、provider-execution digest 也已
-实现，物理 mapped-column 不再进入 wire identity。提交 `0b9948ee` 的精确 18.3 验收为 warning-free
-`-Werror` build、regression 1/1、TAP 150/150、Python/static 16/16；escaped JSON NUL、frame 内原始 NUL
-与 fractional integer 均在 UDS fault tests 中保持脱敏 `08P01` 边界。前序提交 `d08eda38` 的
-2,000×100,000-byte UDS 功能 smoke 在 warm relation VFD 后的
-backend RSS 峰值/结束增量为 2,412/1,732 KiB，FD 峰值/结束增量为 2/0，均低于运行前记录的上限，
-未观察到随累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。
-accepted-prefix、多在途/乱序 completion、
-`SemFilter` 和 LOTUS compatibility adapter 仍未实现。LOTUS v1.2.4 不再是核心前置依赖。
+实现，物理列号不进入 wire identity。提交 `d3a22dcf` 的精确 18.3 验收为 warning-free `-Werror`
+build、regression 1/1、TAP 193/193、Python/static 18/18。仓库外资源 smoke 中，2,000×100,000-byte
+SemMap 的 RSS 起始/峰值/结束为 21,048/21,688/21,688 KiB、FD 为 25/25/24；20,000 行
+SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 21,688/21,688/21,688 KiB、FD 为
+26/26/24，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
+`0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
+accepted-prefix、多在途/乱序 completion、第二 physical path 和 LOTUS compatibility adapter 仍未实现。
+LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
 系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
@@ -379,23 +381,23 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 
 ### 当前优先：PostgreSQL 中立语义算子与 provider 资格验证
 
-1. `REL_18_3` extension/planner-visible `SemMap` deterministic recording prototype 已验证当前受限
-   `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child plan、prepared plan、snapshot、取消、
-   rollback/commit、错误恢复和结果生命周期；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽
-   query shapes 仍保持 fail-closed；
-2. PostgreSQL-private `SemloomExecPump`、provider-neutral
+1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
+   recording reference paths 已验证当前受限 `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child
+   plan、三值/NULL、cardinality、snapshot、取消、rollback/commit、错误恢复和结果生命周期；
+   rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽 query shapes 仍保持 fail-closed；
+2. PostgreSQL-private `PgSemanticRuntime`、thin `SemloomExecPump`、独立 Map/Filter machines、provider-neutral
    `AiOpenSpec → AiPreparedTask → AiCompletion`、独立 recording/UDS adapters、协议 v2 canonical digest
    与同步单在途 `open/drive/close` 已实现；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、query-context
    cleanup、per-drive scratch、per-tuple completion copy、编码前输入上限、UTF8 校验及可取消
    nonblocking connect 已通过精确 18.3 测试；escaped/raw NUL、fractional integer 与稳定 error context
    的 hardening 也已通过；
-3. 固定 extension 级 PostgreSQL compatibility suite：普通 SQL、RLS/权限、snapshot/事务/savepoint、
-   prepared/generic plan 与 invalidation、planner-hook coexistence、多 backend 隔离、cancel/ERROR/资源清理
+3. extension 级 PostgreSQL compatibility suite 已固定并通过：普通 SQL、RLS/权限、snapshot/事务/savepoint、
+   prepared/generic plan 与 invalidation、planner-hook chaining static contract、多 backend 隔离、
+   cancel/ERROR/资源清理
    和无任务不连接；该套件只在 extension 层维护，不在每个算子目录复制；
-4. 以 exact `SemFilter` 作为第二个真实消费者：PostgreSQL carrier 继续负责 slot/plan 接线；两个
-   reference path 都通过后，才把共用的 provider selection/open/drive/close、query cleanup、sequence、
-   completion copy、neutral error mapping 与公共 EXPLAIN 资源字段移入 `PgSemanticRuntime`；未来的
-   `SemMapMachine` 与 `FilterMachine` 分别负责 operand/task/completion 的 emit 与 keep/drop/unknown 语义；
+4. exact `SemFilter` 已作为第二个真实消费者证明公共层边界：PostgreSQL carrier 负责 slot/plan 与
+   `LIMIT` 前 placement；`PgSemanticRuntime` 拥有 provider lifecycle/sequence/memory/error；
+   `SemMapMachine` 与 `FilterMachine` 分别负责 emit 与 keep/drop/unknown 语义；
 5. 增加一条 deterministic、显式可识别的 `SemFilter` 第二 physical path；
 6. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
    能表达则保留 extension，只有已复现阻断才增加最小 core patch；

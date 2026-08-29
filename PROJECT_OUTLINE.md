@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-28
+更新时间：2026-08-29
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -13,17 +13,18 @@
 
 ## 0. 当前优先级与历史记录范围
 
-当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible `SemMap` 已验证
+当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible `SemMap` 与 exact
+relation-level `SemFilter` reference paths 已验证
 `SELECT`、direct `INSERT ... SELECT`、ordinary child plan、snapshot 与 query lifecycle，并通过初始
 PostgreSQL-private pump 和 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口调用
 in-process 与同步单在途 Unix-domain socket（UDS）recording provider。scan/pump、neutral port、
 recording/UDS adapter 与 wire v2 的职责拆分已完成。
 C/Python 协议 v2 分域 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
 per-drive scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数、断连、可取消
-connect/response wait 和资源清理已在 PostgreSQL 18.3 通过；下一步先固定所有语义算子共用的
-extension 级 PostgreSQL compatibility suite，再以 exact `SemFilter` 作为第二个真实消费者验证共同代码，
-并在两个 reference path 通过后抽成 PostgreSQL-private runtime；不复制当前 pump。完成 reference filter 后再实现最小 LOTUS/Cortex-like
-第二 path，随后用这些实际路径
+connect/response wait 和资源清理已在 PostgreSQL 18.3 通过。公共 compatibility suite 已覆盖
+RLS/权限、prepared/generic-plan invalidation、savepoint、双 backend、cancel 和 no-task lazy open；
+两个 reference operators 共用 `PgSemanticRuntime`，Map/Filter machines 分别拥有 emit 与
+TRUE/FALSE/UNKNOWN keep/drop。下一步实现最小 LOTUS/Cortex-like 第二 path，随后用这些实际路径
 审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom 与真实
 模型 provider 在数据库语义资格之后实现。
 上述步骤完成前不扩展
@@ -42,11 +43,12 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `neutral-provider-seam-validated`：受限 `SemMap CustomScan` recording path 已在 `REL_18_3`
-通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private `SemloomExecPump` 和
+当前状态是 `shared-runtime-exact-filter-validated`：受限 `SemMap` 与 `SemFilter CustomScan` recording
+paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private
+`PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
 UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。
-accepted-prefix、多在途/乱序 completion、`SemFilter`、载体反例审查和外部模型路径尚未实现；
+accepted-prefix、多在途/乱序 completion、第二 physical path、载体反例审查和外部模型路径尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 SAOR 系统对照准备记录（历史）
@@ -398,18 +400,17 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. **PostgreSQL capability**：锁定 `REL_18_3`，用 extension / planner-visible `SemMap` deterministic
-   prototype 证明 SQL、ordinary child plan、snapshot、cancel/error/result lifecycle。
-2. **最小 provider seam**：同步单在途 UDS recording slice、PG-private pump、neutral port、
+1. **PostgreSQL reference capability**：锁定 `REL_18_3`；extension / planner-visible `SemMap` 与 exact
+   `SemFilter` deterministic reference paths 已证明当前受限 SQL、ordinary child plan、snapshot、
+   cancel/error/result lifecycle 和 Filter cardinality。
+2. **公共 provider runtime**：同步单在途 UDS recording slice、`PgSemanticRuntime`、thin pump、neutral port、
    recording/UDS adapters 与初始 digest 已通过。PG backend 不增加 listener、TCP/HTTP、连接池或模型
    adapter，也不重新实现 transaction/MVCC/WAL/ACL/snapshot。
-3. **公共 PostgreSQL 兼容性**：固定 extension 级 suite，一次验证普通 SQL 非干扰、RLS/权限、snapshot、
-   事务/savepoint、prepared/generic plan 与 invalidation、planner-hook coexistence、多 backend 隔离、
+3. **公共 PostgreSQL 兼容性**：extension 级 suite 已验证普通 SQL 非干扰、RLS/权限、snapshot、
+   事务/savepoint、prepared/generic plan 与 invalidation、planner-hook chaining、多 backend 隔离、
    cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
-4. **数据库语义优化资格**：以 exact `SemFilter` 作为第二个真实消费者验证共同 lifecycle 代码，两个
-   reference path 通过后才抽成 PostgreSQL-private runtime；未来的独立 machine 保留 map emit 与 filter
-   keep/drop/unknown 语义；
-   再以静态 calibration evidence 建立一条可辨认的 LOTUS/Cortex-like proxy/oracle path。
+4. **下一条 semantic path**：以静态 calibration evidence 建立一条可辨认的
+   LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative 的显式身份与语义边界。
 5. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
    则保留 extension，只有已复现阻断才增加最小 core patch。
 6. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，

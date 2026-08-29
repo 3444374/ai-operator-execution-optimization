@@ -3,14 +3,15 @@
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
-Status as of 2026-08-28: this directory contains the existing external physical-execution runtime
+Status as of 2026-08-29: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
-complete PostgreSQL AI semantic operator or an asynchronous scheduling provider. It now includes a narrow
-`REL_18_3` planner-visible `SemMap` recording capability under `postgres/semloom_pg/`. Its
-PostgreSQL-private execution pump consumes the provider-neutral
+complete optimized/model-backed PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
+includes narrow `REL_18_3` planner-visible `SemMap` and exact `SemFilter` recording reference capabilities
+under `postgres/semloom_pg/`. Their PostgreSQL-private `PgSemanticRuntime` consumes the provider-neutral
 `AiOpenSpec → AiPreparedTask → AiCompletion` contract; the thin CustomScan callbacks, in-process recording
-adapter, UDS adapter, and wire-v2 implementation have separate responsibilities. The neutral header contains
+adapter, UDS adapter, wire-v2 implementation, thin tuple pump, and Map/Filter machines have separate
+responsibilities. The neutral header contains
 only fixed-width values, byte slices, and opaque provider/session handles. Provider selection is fixed for the
 query, while connection and FD acquisition remain deferred until the first non-NULL task; PostgreSQL owns
 `PROPAGATE_NULL`. Per-drive scratch memory, per-tuple result copies, pre-encoding input bounds, UTF8 validation,
@@ -19,11 +20,10 @@ regression and TAP tests cover the current query shape, Unicode, and `NULL`; cro
 SQL rows and normalized EXPLAIN, while UDS-only fault tests cover protocol drift, disconnect, cancellation, and
 recovery. Response parsing also rejects escaped/raw NUL and fractional integer fields with the exact redacted
 `08P01` boundary; the static contract verifies that each catch path restores a stable context before copying
-PostgreSQL error data. The next step is to fix an extension-wide PostgreSQL compatibility
-suite, then use exact `SemFilter` as the second real consumer to prove which lifecycle code is shared and move
-only that code into a PostgreSQL-private runtime; the current `SemloomExecPump` will not be copied into another
-operator. A minimal second
-physical path follows the reference filter. Accepted-prefix, multiple in-flight tasks, incremental SemLoom
+PostgreSQL error data. The extension-wide PostgreSQL compatibility suite, exact Filter cardinality, shared
+runtime extraction, adapter parity, cancellation/recovery, and RSS/FD lifecycle smoke passed on exact 18.3 at
+commit `d3a22dcf`. The next step is a minimal second physical path for the reference filter. Accepted-prefix,
+multiple in-flight tasks, incremental SemLoom
 sessions, and HTTP/SemLoom providers follow database semantic qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.

@@ -1,6 +1,6 @@
 # 实验计划与设计文档
 
-更新日期：2026-08-28
+更新日期：2026-08-29
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -18,15 +18,15 @@
 
 当前短期顺序是：
 
-1. `REL_18_3` extension / planner-visible `SemMap` 已验证受限 `SELECT`、direct `INSERT ... SELECT`、
-   ordinary child plan、snapshot、query lifecycle，以及同步单在途 UDS recording provider；
-2. executor/provider seam 已收紧：PostgreSQL-private `SemloomExecPump` 不包含 transport，neutral port
-   不包含 PostgreSQL 类型，PG backend 只保留可取消的 UDS client adapter；listener、连接池、TCP/HTTP、
-   session registry 和模型连接全部留在 gateway；
-3. 先固定 extension 级 PostgreSQL compatibility suite，再以 exact `SemFilter` 作为第二个真实消费者，
-   验证共同 lifecycle 代码并在两个 reference path 通过后抽成 PostgreSQL-private runtime；不复制当前 pump，也不为 future
-   `SemJoin` 预造执行器；
-4. 再以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
+1. `REL_18_3` extension / planner-visible `SemMap` 与 exact `SemFilter` reference paths 已验证受限
+   `SELECT`、direct `INSERT ... SELECT`、ordinary child、三值/NULL/cardinality、snapshot、query lifecycle
+   与同步单在途 UDS recording provider；
+2. executor/provider seam 已收紧并形成公共层：`PgSemanticRuntime` 拥有 provider lifecycle、sequence、
+   completion memory、query cleanup 与错误映射；thin pump 和 Map/Filter machines 不包含 transport，
+   neutral port 不包含 PostgreSQL 类型；
+3. extension 级 PostgreSQL compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、
+   hook chaining、多 backend、取消/清理与 no-task lazy open；future `SemJoin` 仍不预造执行器；
+4. 当前以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
    不等待完整异步协议或真实模型；
 5. 用这两个实际 semantic paths 审查 extension carrier；能表达则保留 extension，只有 marker/placement/
    prepared-plan/hook lifecycle 的已复现阻断才增加最小 core patch；
