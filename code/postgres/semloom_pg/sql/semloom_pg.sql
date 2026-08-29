@@ -55,6 +55,50 @@ INSERT INTO semloom_nullable VALUES (NULL);
 SELECT ai_semantic.map(payload) AS completion
 FROM semloom_nullable;
 
+CREATE TEMP TABLE semloom_filter_decisions (
+    doc_id integer PRIMARY KEY,
+    decision text
+);
+INSERT INTO semloom_filter_decisions VALUES
+    (1, 'true'),
+    (2, 'false'),
+    (3, 'unknown'),
+    (4, NULL),
+    (5, 'true');
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+ORDER BY doc_id;
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id >= 2 AND ai_semantic.filter(decision)
+ORDER BY doc_id
+LIMIT 1;
+
+INSERT INTO semloom_filter_decisions VALUES (6, 'invalid');
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 6 AND ai_semantic.filter(decision);
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 1 AND ai_semantic.filter(decision);
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE NOT ai_semantic.filter(decision);
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+  AND ai_semantic.filter(decision || '');
+
+SELECT ai_semantic.map(decision)
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision);
+
 CREATE TEMP TABLE semloom_sink (completion text);
 BEGIN;
 INSERT INTO semloom_sink

@@ -70,11 +70,13 @@ typedef enum AiProviderOperation
 typedef enum AiProviderOperatorKind
 {
 	AI_PROVIDER_OPERATOR_MAP = 1,
+	AI_PROVIDER_OPERATOR_FILTER = 2,
 } AiProviderOperatorKind;
 
 typedef enum AiProviderValueKind
 {
 	AI_PROVIDER_VALUE_TEXT = 1,
+	AI_PROVIDER_VALUE_TRISTATE = 2,
 } AiProviderValueKind;
 
 typedef enum AiProviderNullPolicy

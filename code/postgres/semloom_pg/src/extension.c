@@ -1,6 +1,7 @@
 #include "postgres.h"
 
 #include "fmgr.h"
+#include "optimizer/paths.h"
 #include "optimizer/planner.h"
 #include "parser/parse_func.h"
 #include "utils/guc.h"
@@ -10,6 +11,7 @@
 PG_MODULE_MAGIC;
 
 static create_upper_paths_hook_type previous_create_upper_paths_hook = NULL;
+static set_rel_pathlist_hook_type previous_set_rel_pathlist_hook = NULL;
 static char *semloom_gateway_socket = NULL;
 
 static void semloom_create_upper_paths(PlannerInfo *root,
@@ -17,6 +19,10 @@ static void semloom_create_upper_paths(PlannerInfo *root,
 									   RelOptInfo *input_rel,
 									   RelOptInfo *output_rel,
 									   void *extra);
+static void semloom_set_rel_pathlist(PlannerInfo *root,
+									RelOptInfo *rel,
+									Index rti,
+									RangeTblEntry *rte);
 
 void _PG_init(void);
 void _PG_fini(void);
@@ -25,6 +31,15 @@ Oid
 semloom_map_function_oid(void)
 {
 	List *qualified_name = list_make2(makeString("ai_semantic"), makeString("map"));
+	Oid argument_types[1] = {TEXTOID};
+
+	return LookupFuncName(qualified_name, lengthof(argument_types), argument_types, true);
+}
+
+Oid
+semloom_filter_function_oid(void)
+{
+	List *qualified_name = list_make2(makeString("ai_semantic"), makeString("filter"));
 	Oid argument_types[1] = {TEXTOID};
 
 	return LookupFuncName(qualified_name, lengthof(argument_types), argument_types, true);
@@ -57,9 +72,12 @@ _PG_init(void)
 							   NULL,
 							   NULL,
 							   NULL);
-	RegisterCustomScanMethods(&semloom_scan_methods);
+	RegisterCustomScanMethods(&semloom_map_scan_methods);
+	RegisterCustomScanMethods(&semloom_filter_scan_methods);
 	previous_create_upper_paths_hook = create_upper_paths_hook;
 	create_upper_paths_hook = semloom_create_upper_paths;
+	previous_set_rel_pathlist_hook = set_rel_pathlist_hook;
+	set_rel_pathlist_hook = semloom_set_rel_pathlist;
 }
 
 void
@@ -67,6 +85,8 @@ _PG_fini(void)
 {
 	if (create_upper_paths_hook == semloom_create_upper_paths)
 		create_upper_paths_hook = previous_create_upper_paths_hook;
+	if (set_rel_pathlist_hook == semloom_set_rel_pathlist)
+		set_rel_pathlist_hook = previous_set_rel_pathlist_hook;
 }
 
 static void
@@ -80,4 +100,16 @@ semloom_create_upper_paths(PlannerInfo *root,
 		previous_create_upper_paths_hook(root, stage, input_rel, output_rel, extra);
 
 	semloom_add_sem_map_paths(root, stage, input_rel, output_rel);
+}
+
+static void
+semloom_set_rel_pathlist(PlannerInfo *root,
+						 RelOptInfo *rel,
+						 Index rti,
+						 RangeTblEntry *rte)
+{
+	if (previous_set_rel_pathlist_hook != NULL)
+		previous_set_rel_pathlist_hook(root, rel, rti, rte);
+
+	semloom_add_sem_filter_paths(root, rel, rti, rte);
 }

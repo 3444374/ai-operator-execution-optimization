@@ -1,4 +1,4 @@
-"""Static fail-closed checks for the PostgreSQL SemMap capability source."""
+"""Static fail-closed checks for PostgreSQL semantic operator sources."""
 
 from __future__ import annotations
 
@@ -53,6 +53,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
     def test_planner_wraps_an_ordinary_child_path_and_chains_hooks(self) -> None:
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8")
         path_source = (EXTENSION_ROOT / "src" / "sem_path.c").read_text(encoding="utf-8")
+        common_path_source = (EXTENSION_ROOT / "src" / "sem_path_common.c").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("previous_create_upper_paths_hook", extension_source)
         self.assertIn("previous_create_upper_paths_hook(root", extension_source)
@@ -62,8 +65,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("set_customscan_references()", path_source)
         self.assertNotIn("makeVar(INDEX_VAR", path_source)
         self.assertIn("semloom_is_insert_source", path_source)
-        self.assertIn("source_entry->rtekind == RTE_SUBQUERY", path_source)
-        self.assertNotIn("source_entry->subquery == root->parse", path_source)
+        self.assertIn("source_entry->rtekind == RTE_SUBQUERY", common_path_source)
+        self.assertNotIn("source_entry->subquery == root->parse", common_path_source)
         self.assertIn("parent_root->parse->onConflict != NULL", path_source)
 
     def test_executor_is_incremental_and_rejects_rescan(self) -> None:
@@ -77,12 +80,19 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND", pump_source)
         self.assertNotIn("to_arrow", scan_source)
 
-    def test_scan_delegates_tuple_task_binding_to_the_pump(self) -> None:
+    def test_scan_delegates_tuple_flow_to_the_pump_and_runtime(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
         scan_source = (EXTENSION_ROOT / "src" / "sem_scan.c").read_text(encoding="utf-8")
         pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
+        machine_source = (EXTENSION_ROOT / "src" / "sem_operator_machine.c").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("src/sem_pump.o", makefile)
+        self.assertIn("src/pg_semantic_runtime.o", makefile)
         self.assertIn("semloom_pump_begin", scan_source)
         self.assertIn("semloom_pump_next", scan_source)
         self.assertIn("semloom_pump_stop", scan_source)
@@ -90,13 +100,74 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn("AiPreparedTask", scan_source)
         self.assertNotIn("provider_session", scan_source)
         self.assertNotIn("SEMLOOM_RECORDING_PREFIX", scan_source)
-        self.assertIn("AiPreparedTask", pump_source)
-        self.assertIn("next_sequence", pump_source)
+        self.assertNotIn("AiPreparedTask", pump_source)
+        self.assertNotIn("next_sequence", pump_source)
+        self.assertIn("PgSemanticRuntime", pump_source)
+        self.assertIn("SemloomOperatorMachine", pump_source)
         self.assertIn("ecxt_per_tuple_memory", pump_source)
-        self.assertIn("semloom_detoast_task_text", pump_source)
-        self.assertIn("MemoryContextSwitchTo(task_context)", pump_source)
-        self.assertIn("MemoryContextRegisterResetCallback", pump_source)
-        self.assertIn("es_query_cxt", pump_source)
+        self.assertIn("semloom_operator_machine_bind_text", pump_source)
+        self.assertIn("MemoryContextSwitchTo(task_context)", machine_source)
+        self.assertIn("MemoryContextRegisterResetCallback", runtime_source)
+        self.assertIn("owner_context", runtime_source)
+
+    def test_two_operators_share_one_postgres_semantic_runtime(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
+        runtime_header = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.h").read_text(
+            encoding="utf-8"
+        )
+        map_machine = (EXTENSION_ROOT / "src" / "sem_map_machine.c").read_text(
+            encoding="utf-8"
+        )
+        filter_machine = (EXTENSION_ROOT / "src" / "sem_filter_machine.c").read_text(
+            encoding="utf-8"
+        )
+
+        for object_name in (
+            "src/pg_semantic_runtime.o",
+            "src/sem_map_machine.o",
+            "src/sem_filter_machine.o",
+        ):
+            self.assertIn(object_name, makefile)
+        self.assertIn("typedef struct PgSemanticRuntime", runtime_header)
+        self.assertIn("PgSemanticCompletion", runtime_header)
+        self.assertIn("pg_semantic_runtime_begin", runtime_source)
+        self.assertIn("pg_semantic_runtime_drive", runtime_source)
+        self.assertIn("pg_semantic_runtime_record_emitted", runtime_source)
+        self.assertIn("MemoryContextRegisterResetCallback", runtime_source)
+        self.assertIn("semloom_provider_select", runtime_source)
+        self.assertIn("next_sequence", runtime_source)
+        self.assertIn("AiPreparedTask", runtime_source)
+        self.assertIn("MemoryContextSwitchTo(result_context)", runtime_source)
+        self.assertIn("PgSemanticRuntime", pump_source)
+        self.assertIn("SemloomOperatorMachine", pump_source)
+
+        for leaked_lifecycle_detail in (
+            "AiProviderSession",
+            "AiPreparedTask",
+            "provider_session",
+            "next_sequence",
+            "MemoryContextRegisterResetCallback",
+            "semloom_raise_provider_error",
+        ):
+            self.assertNotIn(leaked_lifecycle_detail, pump_source)
+        self.assertNotIn("AI_PROVIDER_OPERATOR_MAP", pump_source)
+        self.assertNotIn("AI_PROVIDER_OPERATOR_FILTER", pump_source)
+        for machine_source in (map_machine, filter_machine):
+            self.assertNotIn("AiProviderSession", machine_source)
+            self.assertNotIn("semloom_provider_select", machine_source)
+            self.assertNotIn("MemoryContextRegisterResetCallback", machine_source)
+        self.assertNotIn('"true"', runtime_source)
+        self.assertNotIn('"false"', runtime_source)
+        self.assertNotIn('"unknown"', runtime_source)
+        self.assertIn("SEMLOOM_TUPLE_EMIT", map_machine)
+        self.assertNotIn('"true"', map_machine)
+        self.assertIn('"true"', filter_machine)
+        self.assertIn('"false"', filter_machine)
+        self.assertIn('"unknown"', filter_machine)
 
     def test_neutral_provider_contract_has_no_postgres_dependencies(self) -> None:
         header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(encoding="utf-8")
@@ -136,6 +207,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             encoding="utf-8"
         )
         pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
         uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(encoding="utf-8")
         wire_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(encoding="utf-8")
         wire_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(encoding="utf-8")
@@ -160,6 +234,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         )
         self.assertNotIn("174080", pump_source)
         self.assertNotIn("SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", pump_source)
+        self.assertNotIn("174080", runtime_source)
+        self.assertNotIn("SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", runtime_source)
         close_functions = (
             (
                 "recording close",
@@ -232,6 +308,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("RETURNING completion", regression_sql)
         self.assertIn("ON CONFLICT DO NOTHING", regression_sql)
         self.assertIn("Custom Scan (SemLoom SemMap)", regression_expected)
+        self.assertIn("SemFilter provider completion must be true, false, or unknown", regression_expected)
+        self.assertIn("SemMap and SemFilter cannot be combined", regression_expected)
         self.assertIn("recorded:THIRD", regression_expected)
         self.assertIn("query shape is outside", regression_expected)
 
@@ -241,6 +319,10 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("marker was not lowered", tap_test)
         self.assertIn("shared_preload_libraries = 'semloom_pg'", tap_test)
         self.assertIn("PREPARE semloom_map", tap_test)
+        self.assertIn("PREPARE semloom_filter", tap_test)
+        self.assertIn("force_generic_plan", tap_test)
+        self.assertIn("ENABLE ROW LEVEL SECURITY", tap_test)
+        self.assertIn("SAVEPOINT semloom_filter_failure", tap_test)
         self.assertIn("REPEATABLE READ", tap_test)
         self.assertIn("statement_timeout", tap_test)
         self.assertIn("rollback leaves the sink empty", tap_test)
@@ -248,6 +330,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("failed INSERT variants leave the committed sink unchanged", tap_test)
         self.assertIn("normal execution succeeds after cancellation", tap_test)
         self.assertIn("plain EXPLAIN does not open", tap_test)
+        self.assertIn("plain SemFilter EXPLAIN does not open", tap_test)
+        self.assertIn("SemFilter executes below LIMIT", tap_test)
+        self.assertIn("independent SemFilter provider session", tap_test)
         self.assertIn("PROPAGATE_NULL is owned by PostgreSQL", tap_test)
         self.assertIn("provider connect wait", tap_test)
         self.assertIn("requires UTF8 database encoding", tap_test)

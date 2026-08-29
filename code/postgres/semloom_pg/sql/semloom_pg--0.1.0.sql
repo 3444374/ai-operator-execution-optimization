@@ -10,5 +10,15 @@ PARALLEL UNSAFE;
 COMMENT ON FUNCTION ai_semantic.map(text) IS
 'Fail-closed SemMap marker; supported statements are lowered to a SemLoom CustomScan';
 
+CREATE FUNCTION ai_semantic.filter(input text)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'semloom_marker_filter'
+LANGUAGE C
+VOLATILE
+PARALLEL UNSAFE;
+
+COMMENT ON FUNCTION ai_semantic.filter(text) IS
+'Fail-closed SemFilter marker; supported predicates are lowered to a SemLoom CustomScan';
+
 -- A planner hook must be present before the first marker statement is planned.
 LOAD 'MODULE_PATHNAME';

@@ -16,9 +16,13 @@ typedef struct SemloomScanState
 {
 	CustomScanState custom_state;
 	SemloomExecPump *pump;
+	const char *capability_name;
 } SemloomScanState;
 
-static Node *semloom_create_scan_state(CustomScan *scan);
+static Node *semloom_create_map_scan_state(CustomScan *scan);
+static Node *semloom_create_filter_scan_state(CustomScan *scan);
+static Node *semloom_create_scan_state(const CustomExecMethods *methods,
+									  const char *capability_name);
 static void semloom_begin_scan(CustomScanState *node, EState *estate, int executor_flags);
 static TupleTableSlot *semloom_execute_scan(CustomScanState *node);
 static TupleTableSlot *semloom_next_tuple(ScanState *scan_state);
@@ -29,8 +33,8 @@ static void semloom_explain_scan(CustomScanState *node,
 								 List *ancestors,
 								 ExplainState *explain_state);
 
-static const CustomExecMethods semloom_exec_methods = {
-	.CustomName = SEMLOOM_CUSTOM_SCAN_NAME,
+static const CustomExecMethods semloom_map_exec_methods = {
+	.CustomName = SEMLOOM_MAP_CUSTOM_SCAN_NAME,
 	.BeginCustomScan = semloom_begin_scan,
 	.ExecCustomScan = semloom_execute_scan,
 	.EndCustomScan = semloom_end_scan,
@@ -38,18 +42,48 @@ static const CustomExecMethods semloom_exec_methods = {
 	.ExplainCustomScan = semloom_explain_scan,
 };
 
-const CustomScanMethods semloom_scan_methods = {
-	.CustomName = SEMLOOM_CUSTOM_SCAN_NAME,
-	.CreateCustomScanState = semloom_create_scan_state,
+static const CustomExecMethods semloom_filter_exec_methods = {
+	.CustomName = SEMLOOM_FILTER_CUSTOM_SCAN_NAME,
+	.BeginCustomScan = semloom_begin_scan,
+	.ExecCustomScan = semloom_execute_scan,
+	.EndCustomScan = semloom_end_scan,
+	.ReScanCustomScan = semloom_rescan,
+	.ExplainCustomScan = semloom_explain_scan,
+};
+
+const CustomScanMethods semloom_map_scan_methods = {
+	.CustomName = SEMLOOM_MAP_CUSTOM_SCAN_NAME,
+	.CreateCustomScanState = semloom_create_map_scan_state,
+};
+
+const CustomScanMethods semloom_filter_scan_methods = {
+	.CustomName = SEMLOOM_FILTER_CUSTOM_SCAN_NAME,
+	.CreateCustomScanState = semloom_create_filter_scan_state,
 };
 
 static Node *
-semloom_create_scan_state(CustomScan *scan)
+semloom_create_map_scan_state(CustomScan *scan)
+{
+	(void) scan;
+	return semloom_create_scan_state(&semloom_map_exec_methods, "SemMap");
+}
+
+static Node *
+semloom_create_filter_scan_state(CustomScan *scan)
+{
+	(void) scan;
+	return semloom_create_scan_state(&semloom_filter_exec_methods, "SemFilter");
+}
+
+static Node *
+semloom_create_scan_state(const CustomExecMethods *methods,
+						  const char *capability_name)
 {
 	SemloomScanState *state = palloc0(sizeof(*state));
 
 	NodeSetTag(&state->custom_state, T_CustomScanState);
-	state->custom_state.methods = &semloom_exec_methods;
+	state->custom_state.methods = methods;
+	state->capability_name = capability_name;
 	return (Node *) state;
 }
 
@@ -78,9 +112,12 @@ semloom_next_tuple(ScanState *scan_state)
 static bool
 semloom_recheck_tuple(ScanState *scan_state, TupleTableSlot *slot)
 {
+	SemloomScanState *state = (SemloomScanState *) scan_state;
+
 	ereport(ERROR,
 			(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-			 errmsg("EvalPlanQual is not supported by the SemMap capability")));
+			 errmsg("EvalPlanQual is not supported by the %s capability",
+					state->capability_name)));
 	return false;
 }
 
@@ -96,9 +133,12 @@ semloom_end_scan(CustomScanState *node)
 static void
 semloom_rescan(CustomScanState *node)
 {
+	SemloomScanState *state = (SemloomScanState *) node;
+
 	ereport(ERROR,
 			(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-			 errmsg("rescan is not supported by the SemMap capability")));
+			 errmsg("rescan is not supported by the %s capability",
+					state->capability_name)));
 }
 
 static void

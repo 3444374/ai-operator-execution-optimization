@@ -103,6 +103,73 @@ DEALLOCATE semloom_map;}),
 	'recorded:alpha',
 	'prepared SemMap executes through the recording CustomScan');
 
+$node->safe_psql(
+	'postgres',
+	q{CREATE TABLE semloom_filter_decisions (
+		doc_id integer PRIMARY KEY,
+		decision text
+	);
+INSERT INTO semloom_filter_decisions VALUES
+	(1, 'true'),
+	(2, 'false'),
+	(3, 'unknown'),
+	(4, NULL),
+	(5, 'true');});
+is(
+	$node->safe_psql(
+		'postgres',
+		q{PREPARE semloom_filter AS
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+ORDER BY doc_id;
+EXECUTE semloom_filter;
+DEALLOCATE semloom_filter;}),
+	"1\n5",
+	'prepared SemFilter preserves exact TRUE/FALSE/UNKNOWN semantics');
+is(
+	$node->safe_psql(
+		'postgres',
+		q{SET plan_cache_mode = force_generic_plan;
+PREPARE semloom_filter_from(integer) AS
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id >= $1 AND ai_semantic.filter(decision)
+ORDER BY doc_id;
+EXECUTE semloom_filter_from(2);
+ALTER TABLE semloom_filter_decisions ADD COLUMN note text;
+EXECUTE semloom_filter_from(2);
+DEALLOCATE semloom_filter_from;
+RESET plan_cache_mode;}),
+	"5\n5",
+	'generic SemFilter plan is invalidated and rebuilt after a relation change');
+my $filter_limit_explain = $node->safe_psql(
+	'postgres',
+	q{EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id >= 2 AND ai_semantic.filter(decision)
+ORDER BY doc_id
+LIMIT 1;});
+ok(
+	index($filter_limit_explain, 'Limit') <
+	  index($filter_limit_explain, 'Custom Scan (SemLoom SemFilter)'),
+	'SemFilter executes below LIMIT');
+like(
+	$filter_limit_explain,
+	qr/Accepted Rows: 3.*Emitted Rows: 1/s,
+	'SemFilter counters distinguish completed decisions from emitted rows');
+is(
+	$node->safe_psql(
+		'postgres',
+		q{SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id >= 2 AND ai_semantic.filter(decision)
+ORDER BY doc_id
+LIMIT 1;}),
+	'5',
+	'LIMIT is applied after SemFilter keep/drop semantics');
+
 $node->safe_psql('postgres', q{CREATE TABLE semloom_sink (completion text);});
 is(
 	$node->safe_psql(
@@ -185,6 +252,35 @@ $node->safe_psql(
 	'postgres',
 	q{INSERT INTO semloom_documents VALUES ('héllo世界'), (NULL), ('');});
 
+$node->safe_psql(
+	'postgres',
+	q{CREATE ROLE semloom_reader;
+CREATE TABLE semloom_secure (owner_name text, decision text);
+ALTER TABLE semloom_secure ENABLE ROW LEVEL SECURITY;
+CREATE POLICY semloom_secure_owner ON semloom_secure
+	USING (owner_name = current_user::text);
+GRANT USAGE ON SCHEMA ai_semantic TO semloom_reader;
+GRANT EXECUTE ON FUNCTION ai_semantic.filter(text) TO semloom_reader;
+GRANT SELECT ON semloom_secure TO semloom_reader;
+INSERT INTO semloom_secure VALUES
+	('semloom_reader', 'true'),
+	('semloom_reader', 'false'),
+	('someone_else', 'true');});
+is(
+	$node->safe_psql(
+		'postgres',
+		q{SET ROLE semloom_reader;
+SELECT owner_name
+FROM semloom_secure
+WHERE ai_semantic.filter(decision);
+RESET ROLE;}),
+	'semloom_reader',
+	'ordinary child plan applies RLS before SemFilter emits rows');
+is(
+	$node->safe_psql('postgres', q{SELECT count(*) FROM semloom_secure;}),
+	'3',
+	'ordinary SQL remains unaffected by semantic planner hooks');
+
 my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
@@ -232,6 +328,88 @@ finish_recording_gateway(
 	$gateway_socket,
 	$parity_gateway_stderr);
 
+my $filter_parity_query = q{
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+ORDER BY doc_id;};
+my $in_process_filter_rows = $node->safe_psql(
+	'postgres',
+	"SET semloom_pg.gateway_socket = '';\n$filter_parity_query");
+my $in_process_filter_explain = $node->safe_psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+$filter_parity_query});
+$in_process_filter_explain =~
+  s/Provider: in-process-recording/Provider: <recording-adapter>/;
+
+($parity_gateway, $parity_gateway_stdout, $parity_gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		"SET semloom_pg.gateway_socket = '$gateway_socket';\n$filter_parity_query"),
+	$in_process_filter_rows,
+	'SemFilter emits identical rows through UDS and in-process adapters');
+finish_recording_gateway(
+	$parity_gateway,
+	$gateway_socket,
+	$parity_gateway_stderr);
+
+($parity_gateway, $parity_gateway_stdout, $parity_gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+my $uds_filter_explain = $node->safe_psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+$filter_parity_query});
+$uds_filter_explain =~ s/Provider: uds-recording/Provider: <recording-adapter>/;
+is(
+	$uds_filter_explain,
+	$in_process_filter_explain,
+	'SemFilter adapters preserve the same EXPLAIN shape and lifecycle counters');
+like(
+	$uds_filter_explain,
+	qr/Accepted Rows: 4.*Emitted Rows: 2/s,
+	'SemFilter EXPLAIN reports non-NULL decisions and emitted TRUE rows');
+finish_recording_gateway(
+	$parity_gateway,
+	$gateway_socket,
+	$parity_gateway_stderr);
+
+my $backend_a_socket = $gateway_directory . '/backend-a.sock';
+my $backend_b_socket = $gateway_directory . '/backend-b.sock';
+my ($backend_a_gateway, $backend_a_stdout, $backend_a_stderr) =
+  start_recording_gateway($backend_a_socket);
+my ($backend_b_gateway, $backend_b_stdout, $backend_b_stderr) =
+  start_recording_gateway($backend_b_socket);
+my $backend_a = $node->background_psql('postgres');
+my $backend_b = $node->background_psql('postgres');
+$backend_a->query_safe("SET semloom_pg.gateway_socket = '$backend_a_socket';");
+$backend_b->query_safe("SET semloom_pg.gateway_socket = '$backend_b_socket';");
+is(
+	$backend_a->query_safe($filter_parity_query),
+	"1\n5",
+	'first backend owns an independent SemFilter provider session');
+is(
+	$backend_b->query_safe(
+		q{SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE payload = 'alpha';}),
+	'recorded:alpha',
+	'second backend owns an independent SemMap provider session');
+$backend_a->quit;
+$backend_b->quit;
+finish_recording_gateway(
+	$backend_a_gateway,
+	$backend_a_socket,
+	$backend_a_stderr);
+finish_recording_gateway(
+	$backend_b_gateway,
+	$backend_b_socket,
+	$backend_b_stderr);
+
 my @provider_error_cases = (
 	['malformed-json', '08P01', 'SemLoom provider returned invalid JSON'],
 	['invalid-utf8', '08P01', 'SemLoom provider returned invalid JSON'],
@@ -255,6 +433,69 @@ for my $error_case (@provider_error_cases)
 	is($sqlstate, $expected_sqlstate, "$fixture preserves its SQLSTATE");
 	is($message, $expected_message, "$fixture preserves its redacted message");
 }
+
+$node->safe_psql(
+	'postgres',
+	q{INSERT INTO semloom_filter_decisions (doc_id, decision)
+VALUES (6, 'invalid');});
+my $savepoint_session = $node->background_psql(
+	'postgres',
+	on_error_stop => 0);
+my ($savepoint_output, $savepoint_had_error) = $savepoint_session->query(
+	q{SET semloom_pg.gateway_socket = '';
+BEGIN;
+SAVEPOINT semloom_filter_failure;
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 6 AND ai_semantic.filter(decision);
+ROLLBACK TO SAVEPOINT semloom_filter_failure;
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 1 AND ai_semantic.filter(decision);
+COMMIT;});
+ok($savepoint_had_error, 'invalid SemFilter completion aborts its statement');
+is(
+	$savepoint_output,
+	'1',
+	'ROLLBACK TO SAVEPOINT restores semantic execution in the same backend');
+$savepoint_session->quit;
+
+my ($filter_error_gateway, $filter_error_stdout, $filter_error_stderr) =
+  start_recording_gateway($gateway_socket);
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 6 AND ai_semantic.filter(decision);});
+isnt($ret, 0, 'invalid UDS SemFilter completion fails closed');
+my ($filter_sqlstate, $filter_message) = error_signature($stderr);
+is($filter_sqlstate, '22000', 'invalid SemFilter completion preserves SQLSTATE');
+is(
+	$filter_message,
+	'SemFilter provider completion must be true, false, or unknown',
+	'invalid SemFilter completion preserves its canonical message');
+finish_recording_gateway(
+	$filter_error_gateway,
+	$gateway_socket,
+	$filter_error_stderr);
+
+($filter_error_gateway, $filter_error_stdout, $filter_error_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 1 AND ai_semantic.filter(decision);}),
+	'1',
+	'a fresh SemFilter session succeeds after invalid completion cleanup');
+finish_recording_gateway(
+	$filter_error_gateway,
+	$gateway_socket,
+	$filter_error_stderr);
 
 like(
 	$node->safe_psql(
@@ -292,6 +533,50 @@ WHERE payload IS NULL;
 SELECT count(*) FROM semloom_sink WHERE completion IS NULL;}),
 	'1',
 	'PROPAGATE_NULL is owned by PostgreSQL without opening the provider');
+like(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+EXPLAIN (COSTS OFF)
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision);}),
+	qr/Custom Scan \(SemLoom SemFilter\)/,
+	'plain SemFilter EXPLAIN does not open the configured provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+LIMIT 0;}),
+	'',
+	'SemFilter LIMIT 0 does not open the configured provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE decision IS NULL AND ai_semantic.filter(decision);}),
+	'',
+	'SemFilter NULL input is dropped without opening the provider');
+
+$node->safe_psql(
+	'postgres',
+	q{CREATE TABLE semloom_private (decision text);
+INSERT INTO semloom_private VALUES ('true');});
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SET ROLE semloom_reader;
+SELECT * FROM semloom_private WHERE ai_semantic.filter(decision);});
+isnt($ret, 0, 'table permissions are checked before SemFilter execution');
+my ($permission_sqlstate, $permission_message) = error_signature($stderr);
+is($permission_sqlstate, '42501', 'permission denial preserves PostgreSQL SQLSTATE');
+unlike($stderr, qr/could not connect/, 'permission denial does not open the provider');
 
 ($ret, $stdout, $stderr) = $node->psql(
 	'postgres',
@@ -426,6 +711,35 @@ FROM semloom_documents
 WHERE payload = 'alpha';}),
 	'recorded:alpha',
 	'fresh UDS execution succeeds after cancellation and cleanup');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket, '--test-response-delay-ms', '500');
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET statement_timeout = '100ms';
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 1 AND ai_semantic.filter(decision);});
+isnt($ret, 0, 'statement timeout interrupts a SemFilter provider wait');
+like(
+	$stderr,
+	qr/canceling statement due to statement timeout/,
+	'SemFilter wait preserves PostgreSQL cancellation');
+finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
+
+($gateway, $gateway_stdout, $gateway_stderr) =
+  start_recording_gateway($gateway_socket);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 1 AND ai_semantic.filter(decision);}),
+	'1',
+	'fresh SemFilter execution succeeds after cancellation and cleanup');
 finish_recording_gateway($gateway, $gateway_socket, $gateway_stderr);
 
 $node->safe_psql(

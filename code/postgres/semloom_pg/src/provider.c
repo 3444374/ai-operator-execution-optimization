@@ -30,14 +30,25 @@ semloom_provider_select(MemoryContext owner_context, AiProvider *provider)
 bool
 semloom_provider_spec_is_recording(const AiOpenSpec *spec)
 {
-	return spec != NULL &&
-		spec->operator_kind == AI_PROVIDER_OPERATOR_MAP &&
-		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
+	bool map_spec;
+	bool filter_spec;
+
+	if (spec == NULL)
+		return false;
+	map_spec = spec->operator_kind == AI_PROVIDER_OPERATOR_MAP &&
 		spec->output_value_kind == AI_PROVIDER_VALUE_TEXT &&
+		semloom_slice_equals(&spec->semantic_spec_id,
+						 SEMLOOM_MAP_RECORDING_SPEC_ID);
+	filter_spec = spec->operator_kind == AI_PROVIDER_OPERATOR_FILTER &&
+		spec->output_value_kind == AI_PROVIDER_VALUE_TRISTATE &&
+		semloom_slice_equals(&spec->semantic_spec_id,
+						 SEMLOOM_FILTER_RECORDING_SPEC_ID);
+
+	return (map_spec || filter_spec) &&
+		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
 		spec->null_policy == AI_PROVIDER_NULL_PROPAGATE &&
 		spec->error_policy == AI_PROVIDER_ERROR_FAIL_QUERY &&
 		spec->semantic_spec_version == SEMLOOM_RECORDING_SPEC_VERSION &&
-		semloom_slice_equals(&spec->semantic_spec_id, SEMLOOM_RECORDING_SPEC_ID) &&
 		semloom_slice_equals(&spec->physical_algorithm, SEMLOOM_RECORDING_ALGORITHM);
 }
 

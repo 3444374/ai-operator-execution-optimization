@@ -41,6 +41,8 @@ static void semloom_hash_uint32(pg_cryptohash_ctx *context, uint32 value);
 static void semloom_hash_uint64(pg_cryptohash_ctx *context, uint64 value);
 static void semloom_hash_finish(pg_cryptohash_ctx *context,
 								char output[SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH + 1]);
+static const char *semloom_operator_kind_name(uint32 operator_kind);
+static const char *semloom_value_kind_name(uint32 value_kind);
 static void semloom_semantic_spec_digest(
 	const AiOpenSpec *spec,
 	char output[SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH + 1]);
@@ -142,7 +144,9 @@ semloom_wire_v2_open(pgsocket socket_fd,
 					 identity->provider_execution_digest);
 	escape_json(&request, identity->provider_execution_id);
 	appendStringInfoString(&request,
-						 ",\"operator_kind\":\"SEM_MAP\",\"semantic_spec_id\":");
+						 ",\"operator_kind\":");
+	escape_json(&request, semloom_operator_kind_name(spec->operator_kind));
+	appendStringInfoString(&request, ",\"semantic_spec_id\":");
 	escape_json_with_len(&request,
 						 (const char *) spec->semantic_spec_id.data,
 						 spec->semantic_spec_id.length);
@@ -154,8 +158,11 @@ semloom_wire_v2_open(pgsocket socket_fd,
 						 spec->physical_algorithm.length);
 	appendStringInfoString(&request,
 						 ",\"null_policy\":\"PROPAGATE_NULL\","
-						 "\"error_policy\":\"FAIL_QUERY\","
-						 "\"input_type\":\"text\",\"output_type\":\"text\"}");
+						 "\"error_policy\":\"FAIL_QUERY\",\"input_type\":");
+	escape_json(&request, semloom_value_kind_name(spec->input_value_kind));
+	appendStringInfoString(&request, ",\"output_type\":");
+	escape_json(&request, semloom_value_kind_name(spec->output_value_kind));
+	appendStringInfoChar(&request, '}');
 	status = semloom_send_frame(socket_fd, request.data, request.len, error);
 	pfree(request.data);
 	if (status != AI_PROVIDER_STATUS_OK)
@@ -415,14 +422,49 @@ semloom_semantic_spec_digest(
 	semloom_hash_bytes(context,
 					   SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN,
 					   sizeof(SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN) - 1);
-	semloom_hash_cstring(context, "SEM_MAP");
+	semloom_hash_cstring(context,
+						semloom_operator_kind_name(spec->operator_kind));
 	semloom_hash_slice(context, spec->semantic_spec_id);
 	semloom_hash_uint32(context, spec->semantic_spec_version);
 	semloom_hash_cstring(context, "PROPAGATE_NULL");
 	semloom_hash_cstring(context, "FAIL_QUERY");
-	semloom_hash_cstring(context, "text");
-	semloom_hash_cstring(context, "text");
+	semloom_hash_cstring(context,
+						semloom_value_kind_name(spec->input_value_kind));
+	semloom_hash_cstring(context,
+						semloom_value_kind_name(spec->output_value_kind));
 	semloom_hash_finish(context, output);
+}
+
+static const char *
+semloom_operator_kind_name(uint32 operator_kind)
+{
+	switch (operator_kind)
+	{
+		case AI_PROVIDER_OPERATOR_MAP:
+			return "SEM_MAP";
+		case AI_PROVIDER_OPERATOR_FILTER:
+			return "SEM_FILTER";
+		default:
+			elog(ERROR, "unsupported SemLoom provider operator kind: %u",
+				 (unsigned int) operator_kind);
+	}
+	pg_unreachable();
+}
+
+static const char *
+semloom_value_kind_name(uint32 value_kind)
+{
+	switch (value_kind)
+	{
+		case AI_PROVIDER_VALUE_TEXT:
+			return "text";
+		case AI_PROVIDER_VALUE_TRISTATE:
+			return "tristate";
+		default:
+			elog(ERROR, "unsupported SemLoom provider value kind: %u",
+				 (unsigned int) value_kind);
+	}
+	pg_unreachable();
 }
 
 static void

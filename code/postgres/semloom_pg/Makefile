@@ -4,7 +4,13 @@ OBJS = \
 	src/extension.o \
 	src/marker.o \
 	src/provider.o \
+	src/pg_semantic_runtime.o \
 	src/recording_provider.o \
+	src/sem_filter_machine.o \
+	src/sem_filter_path.o \
+	src/sem_map_machine.o \
+	src/sem_operator_machine.o \
+	src/sem_path_common.o \
 	src/sem_path.o \
 	src/sem_pump.o \
 	src/sem_scan.o \
@@ -14,7 +20,7 @@ OBJS = \
 DATA = sql/semloom_pg--0.1.0.sql
 REGRESS = semloom_pg
 TAP_TESTS = 1
-PGFILEDESC = "semloom_pg - planner-visible SemMap capability spike"
+PGFILEDESC = "semloom_pg - planner-visible semantic operator capability spike"
 
 PG_CPPFLAGS = -Isrc
 

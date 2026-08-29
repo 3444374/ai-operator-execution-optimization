@@ -1,8 +1,8 @@
 /*
- * CustomScan-facing lifecycle for the PostgreSQL-private SemMap pump.
+ * CustomScan-facing tuple flow for PostgreSQL-private semantic operators.
  *
- * The scan supplies executor state; the pump returns mapped tuples and EXPLAIN
- * properties while hiding provider and tuple/task binding details.
+ * The scan supplies executor state; the pump returns emitted tuples and
+ * EXPLAIN properties while hiding the shared runtime and operator machines.
  * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #ifndef SEMLOOM_SEM_PUMP_H
@@ -10,7 +10,7 @@
 
 #include "postgres.h"
 
-#include "commands/explain.h"
+#include "commands/explain_state.h"
 #include "nodes/extensible.h"
 
 typedef struct SemloomExecPump SemloomExecPump;

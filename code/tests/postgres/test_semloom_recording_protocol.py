@@ -59,6 +59,27 @@ def _open_message() -> dict[str, object]:
     }
 
 
+def _filter_open_message() -> dict[str, object]:
+    return {
+        "type": "open",
+        "protocol_version": PROTOCOL_VERSION,
+        "semantic_spec_digest": (
+            "8991bd426463415d86ea513ae5a58dd7f380bdbdf2b6d1fb1df7937513f93b0b"
+        ),
+        "physical_algorithm_digest": physical_algorithm_digest(),
+        "provider_execution_digest": provider_execution_digest(),
+        "provider_execution_id": UDS_EXECUTION_ID,
+        "operator_kind": "SEM_FILTER",
+        "semantic_spec_id": "semloom.recording.sem_filter.tristate",
+        "semantic_spec_version": RECORDING_SPEC_VERSION,
+        "physical_algorithm": RECORDING_ALGORITHM,
+        "null_policy": "PROPAGATE_NULL",
+        "error_policy": "FAIL_QUERY",
+        "input_type": "text",
+        "output_type": "tristate",
+    }
+
+
 class SemloomRecordingProtocolTests(unittest.TestCase):
     def test_digest_golden_vectors_cover_unicode_and_null(self) -> None:
         self.assertEqual(
@@ -130,6 +151,45 @@ class SemloomRecordingProtocolTests(unittest.TestCase):
         self.assertEqual(completion["type"], "completion")
         self.assertEqual(completion["output"], "recorded:héllo世界")
         self.assertEqual(completion["payload_digest"], payload_sha256)
+
+        client.close()
+        thread.join(timeout=1)
+        self.assertFalse(thread.is_alive())
+
+    def test_filter_spec_returns_deterministic_tristate_completions(self) -> None:
+        client, server = socket.socketpair()
+        thread = threading.Thread(target=run_recording_session, args=(server,))
+        thread.start()
+        self.addCleanup(client.close)
+
+        opened = _filter_open_message()
+        client.sendall(encode_frame(opened))
+        open_response = read_frame(client)
+        self.assertEqual(open_response["type"], "opened")
+
+        identity = {
+            "semantic_spec_digest": opened["semantic_spec_digest"],
+            "physical_algorithm_digest": opened["physical_algorithm_digest"],
+            "provider_execution_digest": opened["provider_execution_digest"],
+        }
+        for sequence, decision in enumerate(("true", "false", "unknown")):
+            client.sendall(
+                encode_frame(
+                    {
+                        "type": "task",
+                        "protocol_version": PROTOCOL_VERSION,
+                        "sequence": str(sequence),
+                        **identity,
+                        "payload_digest": semantic_payload_digest(decision),
+                        "is_null": False,
+                        "input": decision,
+                    }
+                )
+            )
+            completion = read_frame(client)
+            self.assertEqual(completion["type"], "completion")
+            self.assertEqual(completion["sequence"], str(sequence))
+            self.assertEqual(completion["output"], decision)
 
         client.close()
         thread.join(timeout=1)

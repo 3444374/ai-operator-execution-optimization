@@ -8,18 +8,11 @@
 #include "parser/parsetree.h"
 #include "utils/lsyscache.h"
 
+#include "ai_provider_port.h"
+#include "sem_path_common.h"
 #include "semloom_pg.h"
 
-typedef struct MarkerCountContext
-{
-	Oid marker_oid;
-	int count;
-} MarkerCountContext;
-
-static bool semloom_count_marker(Node *node, void *context);
-static int semloom_marker_count(Node *node, Oid marker_oid);
 static FuncExpr *semloom_supported_marker(Query *parse, Oid marker_oid);
-static bool semloom_is_insert_source(PlannerInfo *root);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
 static CustomPath *semloom_make_path(RelOptInfo *parent_rel, Path *child_path);
 static Plan *semloom_plan_path(PlannerInfo *root,
@@ -32,34 +25,9 @@ static Node *semloom_replace_marker(Node *node, void *context);
 static void semloom_replace_marker_in_plan(Plan *plan, Oid marker_oid);
 
 static const CustomPathMethods semloom_path_methods = {
-	.CustomName = SEMLOOM_CUSTOM_SCAN_NAME,
+	.CustomName = SEMLOOM_MAP_CUSTOM_SCAN_NAME,
 	.PlanCustomPath = semloom_plan_path,
 };
-
-static bool
-semloom_count_marker(Node *node, void *context)
-{
-	MarkerCountContext *marker_context = (MarkerCountContext *) context;
-
-	if (node == NULL)
-		return false;
-	if (IsA(node, FuncExpr) && ((FuncExpr *) node)->funcid == marker_context->marker_oid)
-		marker_context->count++;
-
-	return expression_tree_walker(node, semloom_count_marker, context);
-}
-
-static int
-semloom_marker_count(Node *node, Oid marker_oid)
-{
-	MarkerCountContext context = {
-		.marker_oid = marker_oid,
-		.count = 0,
-	};
-
-	semloom_count_marker(node, &context);
-	return context.count;
-}
 
 static FuncExpr *
 semloom_supported_marker(Query *parse, Oid marker_oid)
@@ -88,28 +56,6 @@ semloom_supported_marker(Query *parse, Oid marker_oid)
 	}
 
 	return supported;
-}
-
-static bool
-semloom_is_insert_source(PlannerInfo *root)
-{
-	PlannerInfo *parent_root = root->parent_root;
-	Query *parent_parse;
-	RangeTblRef *source_reference;
-	RangeTblEntry *source_entry;
-
-	if (root->query_level != 2 || parent_root == NULL)
-		return false;
-	parent_parse = parent_root->parse;
-	if (parent_parse->commandType != CMD_INSERT ||
-		parent_parse->jointree == NULL ||
-		list_length(parent_parse->jointree->fromlist) != 1 ||
-		!IsA(linitial(parent_parse->jointree->fromlist), RangeTblRef))
-		return false;
-
-	source_reference = linitial_node(RangeTblRef, parent_parse->jointree->fromlist);
-	source_entry = rt_fetch(source_reference->rtindex, parent_parse->rtable);
-	return source_entry->rtekind == RTE_SUBQUERY;
 }
 
 static void
@@ -275,9 +221,10 @@ semloom_plan_path(PlannerInfo *root,
 	scan->flags = CUSTOMPATH_SUPPORT_PROJECTION;
 	scan->custom_plans = custom_plans;
 	scan->custom_exprs = NIL;
-	scan->custom_private = mapped_columns;
+	scan->custom_private = list_make2(makeInteger(AI_PROVIDER_OPERATOR_MAP),
+									   makeInteger(linitial_int(mapped_columns)));
 	scan->custom_scan_tlist = scan_target_list;
-	scan->methods = &semloom_scan_methods;
+	scan->methods = &semloom_map_scan_methods;
 
 	return &scan->scan.plan;
 }

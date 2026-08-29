@@ -16,6 +16,7 @@ MAX_INPUT_BYTES = (MAX_FRAME_BYTES - 4096) // 6
 MAX_INFLIGHT_TASKS = 1
 RECORDING_PREFIX = "recorded:"
 RECORDING_SPEC_ID = "semloom.recording.sem_map.text"
+FILTER_RECORDING_SPEC_ID = "semloom.recording.sem_filter.tristate"
 RECORDING_SPEC_VERSION = 1
 RECORDING_ALGORITHM = "RECORDING"
 UDS_EXECUTION_ID = "semloom.provider.recording.uds.v2"
@@ -59,15 +60,34 @@ class ProtocolError(Exception):
 
 def semantic_spec_digest() -> str:
     """Digest the SQL-visible semantics of the recording SemMap spec."""
+    return _semantic_spec_digest(
+        operator_kind="SEM_MAP",
+        semantic_spec_id=RECORDING_SPEC_ID,
+        output_type="text",
+    )
+
+
+def filter_semantic_spec_digest() -> str:
+    """Digest the SQL-visible semantics of the recording SemFilter spec."""
+    return _semantic_spec_digest(
+        operator_kind="SEM_FILTER",
+        semantic_spec_id=FILTER_RECORDING_SPEC_ID,
+        output_type="tristate",
+    )
+
+
+def _semantic_spec_digest(
+    *, operator_kind: str, semantic_spec_id: str, output_type: str
+) -> str:
     canonical = (
         b"semloom-semantic-spec-v1\0"
-        + _canonical_text("SEM_MAP")
-        + _canonical_text(RECORDING_SPEC_ID)
+        + _canonical_text(operator_kind)
+        + _canonical_text(semantic_spec_id)
         + struct.pack("!I", RECORDING_SPEC_VERSION)
         + _canonical_text("PROPAGATE_NULL")
         + _canonical_text("FAIL_QUERY")
         + _canonical_text("text")
-        + _canonical_text("text")
+        + _canonical_text(output_type)
     )
     return hashlib.sha256(canonical).hexdigest()
 
@@ -180,7 +200,9 @@ def run_recording_session(
         opened = read_frame(connection)
         if opened is None:
             return
-        semantic_sha256, physical_sha256, execution_sha256 = _validate_open(opened)
+        operator_kind, semantic_sha256, physical_sha256, execution_sha256 = (
+            _validate_open(opened)
+        )
         connection.sendall(
             encode_frame(
                 {
@@ -212,7 +234,11 @@ def run_recording_session(
                 return
             if response_delay_ms > 0:
                 time.sleep(response_delay_ms / 1000)
-            output = RECORDING_PREFIX + input_value
+            output = (
+                RECORDING_PREFIX + input_value
+                if operator_kind == "SEM_MAP"
+                else input_value
+            )
             evidence_sha256 = completion_evidence_digest(
                 semantic_spec_sha256=semantic_sha256,
                 physical_algorithm_sha256=physical_sha256,
@@ -248,16 +274,27 @@ def run_recording_session(
         connection.close()
 
 
-def _validate_open(message: dict[str, Any]) -> tuple[str, str, str]:
+def _validate_open(message: dict[str, Any]) -> tuple[str, str, str, str]:
     if set(message) != _OPEN_FIELDS:
         raise ProtocolError("invalid_open_fields")
     if message["type"] != "open":
         raise ProtocolError("expected_open")
     if type(message["protocol_version"]) is not int or message["protocol_version"] != PROTOCOL_VERSION:
         raise ProtocolError("protocol_version_mismatch")
-    if message["operator_kind"] != "SEM_MAP":
+    operator_kind = message["operator_kind"]
+    semantic_spec_id = message["semantic_spec_id"]
+    output_type = message["output_type"]
+    if operator_kind == "SEM_MAP":
+        expected_spec_id = RECORDING_SPEC_ID
+        expected_output_type = "text"
+        expected_semantic_digest = semantic_spec_digest()
+    elif operator_kind == "SEM_FILTER":
+        expected_spec_id = FILTER_RECORDING_SPEC_ID
+        expected_output_type = "tristate"
+        expected_semantic_digest = filter_semantic_spec_digest()
+    else:
         raise ProtocolError("unsupported_operator_kind")
-    if message["semantic_spec_id"] != RECORDING_SPEC_ID:
+    if semantic_spec_id != expected_spec_id:
         raise ProtocolError("unsupported_semantic_spec")
     if (
         type(message["semantic_spec_version"]) is not int
@@ -272,7 +309,7 @@ def _validate_open(message: dict[str, Any]) -> tuple[str, str, str]:
         raise ProtocolError("unsupported_null_policy")
     if message["error_policy"] != "FAIL_QUERY":
         raise ProtocolError("unsupported_error_policy")
-    if message["input_type"] != "text" or message["output_type"] != "text":
+    if message["input_type"] != "text" or output_type != expected_output_type:
         raise ProtocolError("unsupported_plan_type")
     semantic_sha256 = message["semantic_spec_digest"]
     physical_sha256 = message["physical_algorithm_digest"]
@@ -280,13 +317,13 @@ def _validate_open(message: dict[str, Any]) -> tuple[str, str, str]:
     _require_sha256(semantic_sha256, "invalid_semantic_spec_digest")
     _require_sha256(physical_sha256, "invalid_physical_algorithm_digest")
     _require_sha256(execution_sha256, "invalid_provider_execution_digest")
-    if semantic_sha256 != semantic_spec_digest():
+    if semantic_sha256 != expected_semantic_digest:
         raise ProtocolError("semantic_spec_digest_mismatch")
     if physical_sha256 != physical_algorithm_digest():
         raise ProtocolError("physical_algorithm_digest_mismatch")
     if execution_sha256 != provider_execution_digest():
         raise ProtocolError("provider_execution_digest_mismatch")
-    return semantic_sha256, physical_sha256, execution_sha256
+    return operator_kind, semantic_sha256, physical_sha256, execution_sha256
 
 
 def _canonical_text(value: str) -> bytes:

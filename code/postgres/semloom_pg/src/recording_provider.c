@@ -1,8 +1,8 @@
 /*
  * In-memory reference adapter for the synchronous AiProvider contract.
  *
- * It accepts one borrowed text task and returns a session-owned recorded:
- * completion.  Passing requires deterministic output and no external I/O.
+ * It accepts one borrowed text task and returns a session-owned deterministic
+ * SemMap or SemFilter completion.  Passing requires no external I/O.
  * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #include "postgres.h"
@@ -16,6 +16,7 @@
 struct AiProviderSession
 {
 	bool closed;
+	uint32 operator_kind;
 	MemoryContext completion_context;
 };
 
@@ -72,6 +73,7 @@ semloom_recording_open(const void *config,
 
 	session = palloc0(sizeof(*session));
 	*session_out = session;
+	session->operator_kind = spec->operator_kind;
 	session->completion_context = AllocSetContextCreate(CurrentMemoryContext,
 													  "SemLoom recording completion",
 													  ALLOCSET_DEFAULT_SIZES);
@@ -105,11 +107,26 @@ semloom_recording_drive(AiProviderSession *session,
 
 	MemoryContextReset(session->completion_context);
 	previous_context = MemoryContextSwitchTo(session->completion_context);
-	output_length = sizeof(prefix) - 1 + task->input.length;
-	output = palloc(output_length);
-	memcpy(output, prefix, sizeof(prefix) - 1);
-	if (task->input.length > 0)
-		memcpy(output + sizeof(prefix) - 1, task->input.data, task->input.length);
+	if (session->operator_kind == AI_PROVIDER_OPERATOR_MAP)
+	{
+		output_length = sizeof(prefix) - 1 + task->input.length;
+		output = palloc(output_length);
+		memcpy(output, prefix, sizeof(prefix) - 1);
+		if (task->input.length > 0)
+			memcpy(output + sizeof(prefix) - 1,
+				   task->input.data,
+				   task->input.length);
+	}
+	else
+	{
+		Size allocation_length = task->input.length > 0 ? task->input.length : 1;
+
+		Assert(session->operator_kind == AI_PROVIDER_OPERATOR_FILTER);
+		output_length = task->input.length;
+		output = palloc(allocation_length);
+		if (task->input.length > 0)
+			memcpy(output, task->input.data, task->input.length);
+	}
 	MemoryContextSwitchTo(previous_context);
 
 	completion->sequence = task->sequence;
