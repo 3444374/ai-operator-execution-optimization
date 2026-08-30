@@ -26,10 +26,12 @@ PostgreSQL error data. The extension-wide PostgreSQL compatibility suite, exact 
 runtime extraction, adapter parity, cancellation/recovery, and RSS/FD lifecycle smoke passed on exact 18.3 at
 commit `d3a22dcf`. Commits `812fc35f` and `e89060a7` then made the current recording identity planner-owned
 through a strict, copyable, versioned minimum plan spec and removed transport operations from the neutral
-error interface without changing rows, EXPLAIN, wire digests, SQLSTATE, or redacted messages. The current Python
-recording gateway still lives under `postgres/semloom_pg/gateway/`; its target
-`src/execution_provider/` directory is pending. The next implementation slices first migrate that gateway without
-changing wire v2, then let one consumer-driven minimum SemFilter plan/task/result contract pass a deterministic
+error interface without changing rows, EXPLAIN, wire digests, SQLSTATE, or redacted messages. Commit `868430f9`
+moved the Python gateway authority to `src/execution_provider/`: shared bounded framing, frozen wire v2,
+the recording adapter, and the UDS server now live there, while `postgres/semloom_pg/gateway/` contains only
+self-locating compatibility imports/CLI. The canonical CLI is
+`scripts/services/run_execution_provider_gateway.py`. The next implementation slices let one consumer-driven
+minimum SemFilter plan/task/result contract pass a deterministic
 golden adapter and a synchronous fixed-model endpoint. An explicit reference/optimized second path, AI-work cost,
 quality evidence, and carrier audit follow that slice. Accepted-prefix, multiple in-flight tasks, and
 incremental SemLoom sessions follow database semantic and path-selection qualification; see
@@ -145,6 +147,7 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
+│   ├── execution_provider/       ← PostgreSQL semantic gateway、frozen wire v2 与 recording adapter
 │   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner

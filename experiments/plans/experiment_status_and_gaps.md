@@ -15,10 +15,13 @@
 > 和 query-context cleanup 已验证；escaped/raw NUL、fractional integer 与稳定 error context 的响应边界
 > hardening 已在提交 `0b9948ee` 固定；提交 `d3a22dcf` 完成 shared runtime，提交 `e89060a7` 进一步
 > 完成 planner-owned 最小 recording plan spec 与 transport-neutral error interface，并通过 warning-free
-> `-Werror` build、regression 1/1、TAP 193/193、Python/static 20/20 和 Map/Filter RSS/FD 不增长 smoke。公共
+> `-Werror` build、regression 1/1、TAP 193/193、Python/static 20/20 和 Map/Filter RSS/FD 不增长 smoke。
+> 提交 `868430f9` 又在不改变 wire v2 或 PostgreSQL 语义的前提下，把 framing、wire v2、recording adapter
+> 与 server 迁入公共 execution-provider 目录；旧 CLI/import 只保留自定位 wrapper。该提交在精确 18.3
+> 上通过 regression 1/1、TAP 193/193、Python/static 25/25、`-Werror` 与 Map/Filter RSS/FD smoke。公共
 > compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、双 backend、cancel/cleanup
 > 与 no-task lazy open；shared runtime 不包含算子真值，operator machines 不包含 provider lifecycle。
-> 当前先行为不变地迁移 Python recording gateway，再让 exact-reference 实际消费的最小
+> 当前下一步是让 exact-reference 实际消费的最小
 > plan/task/result contract 依次通过 deterministic golden 与同步 fixed-model `SemFilter`；真实 reference
 > 完成后先修正 rows/selectivity/AI-work cost，再实现显式 reference/optimized 第二 physical path、
 > quality evidence 与 fallback。载体审查确认

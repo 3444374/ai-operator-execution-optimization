@@ -28,7 +28,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
    `SemFilter`、shared runtime、同步单在途 UDS 和公共 compatibility suite 已通过；它们证明数据库
    生命周期与外部 seam。planner-owned 最小 recording plan spec 和 transport-neutral error interface
    也已通过，但不代表已经执行真实 AI 语义或获得性能收益。
-2. **当前先完成真实语义合同**：先迁移现有 Python gateway，再只把 exact-reference 实际消费的
+2. **当前先完成真实语义合同**：Python gateway 的行为不变迁移已经完成；下一步只把 exact-reference 实际消费的
    instruction、prompt、parser、model/generation fields 加入最小 plan/task/result contract；同一合同先过
    deterministic golden adapter，再过同步 fixed-model endpoint。此时不扩异步、多在途或调度器。
 3. **再完成数据库优化资格**：先用真实 reference 修正 SemFilter rows/selectivity/AI-work cost，再为同一逻辑 SemFilter 建立 reference 与 proxy/oracle physical paths，
@@ -64,6 +64,8 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
   RSS/FD 生命周期验证；尚无真实模型或性能结论；
 - 当前 recording operator/value/policy、semantic/physical identity 和 physical role 已由 planner 保存；
   neutral provider error interface 不暴露 transport operation；
+- recording gateway 的 framing、wire v2、recording adapter 与 server 已迁到公共 execution-provider 目录；
+  旧 CLI/import 继续可用，v2 digest 与 PostgreSQL 行为未改变；
 - 文本 cache-on 数据组织效果随 endpoint consolidation、KV 压力与 prefix 结构变化；
 - 固定/shared credit 和 1/2/4 Job 实验显示效率、隔离与公平存在权衡，动态策略尚未普遍超过强静态点；
 - 图像 5K 画像、原生静态 baseline、多 Job 观察、matched-resource 与 observe-only 接线已经完成；
@@ -72,7 +74,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 仍待验证：
 
-- gateway 公共目录迁移、exact-reference 最小真实 plan fields、deterministic golden 与同步 fixed-model path；
+- exact-reference 最小真实 plan fields、deterministic golden 与同步 fixed-model path；
 - SemFilter 第二 physical path、AI-work cost、近似质量 policy 与 reference fallback；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；

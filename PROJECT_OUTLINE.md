@@ -28,8 +28,9 @@ TRUE/FALSE/UNKNOWN keep/drop。当前 planner 已将 recording reference 真正�
 semantic spec identity、physical algorithm 与 `Physical Role=reference` 写入版本化、可 copyObject 的
 最小 plan spec；input column 作为 executor binding 独立保存，runtime 统一严格解码并映射为 `AiOpenSpec`。
 neutral error interface 不再暴露 socket/JSON/frame operation，adapter 只返回中立类别和本地生成的定长
-脱敏详情。当前 Python gateway 仍位于 PostgreSQL extension 子树，目标 execution-provider 目录尚未创建。
-当前实现仍是 deterministic recording 语义；下一步先行为不变地迁移 gateway，再只把 exact-reference
+脱敏详情。Python gateway 的 framing、wire v2、recording adapter 与 server 已迁入
+`code/src/execution_provider/`；extension 子树中的旧 import/CLI 只负责自定位并转交，不保存协议或 server 逻辑。
+当前实现仍是 deterministic recording 语义；下一步只把 exact-reference
 纵切面实际消费的 instruction、prompt program、result parser、model/generation constraints 和 policy
 加入最小 plan/task/result contract。该 contract 先通过 deterministic golden adapter，再通过同步固定模型
 endpoint，之后实现 LOTUS/Cortex-like 第二 path。随后用
@@ -51,12 +52,13 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `planner-owned-recording-spec-neutral-error-validated`：受限 `SemMap` 与 `SemFilter CustomScan` recording
+当前状态是 `gateway-migrated-recording-reference-validated`：受限 `SemMap` 与 `SemFilter CustomScan` recording
 paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
 UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。planner-owned 最小 recording plan
-spec 与 transport-neutral error seam 已实现，但尚未包含真实 instruction/parser/model policy。
+spec、transport-neutral error seam 与行为不变的 gateway 公共目录迁移已实现，但尚未包含真实
+instruction/parser/model policy。
 exact-reference 最小真实 plan fields、deterministic golden、真实模型 reference path、第二 physical path、
 载体反例审查、accepted-prefix 和多在途/乱序 completion 尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
@@ -441,7 +443,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 3. **公共 PostgreSQL 兼容性**：extension 级 suite 已验证普通 SQL 非干扰、RLS/权限、snapshot、
    事务/savepoint、prepared/generic plan 与 invalidation、planner-hook chaining、多 backend 隔离、
    cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
-4. **真实语义 reference slice**：先行为不变地迁移 Python gateway；再让 exact-reference 实际消费的
+4. **真实语义 reference slice**：Python gateway 的行为不变迁移已完成；下一步让 exact-reference 实际消费的
    最小 SemFilter plan/task/result contract 通过 deterministic golden adapter 和同步 fixed-model endpoint，
    验证 canonical prompt、parser、model/usage identity 和 relation result；不先扩异步。
 5. **下一条 semantic path**：真实 reference 完成后先修正 SemFilter input rows、selectivity 和 AI-work

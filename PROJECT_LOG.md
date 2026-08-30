@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-08-30 recording gateway 已迁入公共 execution-provider 目录
+
+- 提交 `868430f9` 将 Python gateway 的权威实现从 PostgreSQL extension 子树迁到
+  `code/src/execution_provider/`：`wire/framing.py` 负责有界 UTF-8 JSON framing，`wire/v2.py` 保存冻结的
+  recording schema/digest，`adapters/recording.py` 负责同步 session，`server.py` 负责 UDS listener。
+  canonical CLI 为 `code/scripts/services/run_execution_provider_gateway.py`。
+- 旧 `code/postgres/semloom_pg/gateway/{protocol.py,recording_gateway.py}` 仅保留从自身位置定位 `code/`
+  并反向导入 canonical implementation 的兼容入口；没有额外 `PYTHONPATH` 时仍可启动。wrapper 不包含
+  socket、JSON、digest、argument parser 或 listener logic，现有 TAP 调用路径和 Python imports 不变。
+- TDD 先增加 canonical import/CLI、旧 import/CLI 与 bootstrap-only 静态合同；迁移前按预期因目标 package/
+  CLI 不存在及旧文件仍含实现而失败。迁移后本地与服务器均通过 5 项 migration、8 项 wire v2 和
+  12 项 PostgreSQL static contract，共 25/25。v2 Unicode/NULL golden digest、frame、错误和 recording
+  behavior 保持不变。
+- 服务器 detached worktree 使用精确 PostgreSQL 18.3，通过只读 core preflight、neutral C11 header、
+  warning-free `-Werror`、PGXS regression 1/1、TAP 193/193，以及 ordinary aggregate、SemMap 非 NULL/NULL、
+  SemFilter TRUE/FALSE/UNKNOWN/NULL 和 EXPLAIN 计数的定向 SQL。TAP 仍直接执行旧 CLI wrapper。
+- 仓库外 qualification 保留完整输出；`semloom_pg.so` SHA-256 仍为
+  `a2fc37c372ff0bd892e1e75e3a404d7688d85291e6ad13151e786ad7cdeb4ec0`。资源 smoke 的 Map 结果为
+  200,018,000 bytes，RSS 起始/峰值/结束 21,368/22,248/22,248 KiB、FD 42/42/41；Filter 输出 5,000 行，
+  RSS 22,248/22,248/22,248 KiB、FD 43/43/41。该结果只支持迁移后未观察到累计 payload 近似线性内存增长
+  或 FD 泄漏，不是性能证据。临时 PostgreSQL 与 gateway 已停止，无残留 socket/process。
+- 本切片没有加入 wire v3、HTTP、真实模型、新 plan field、异步、多在途、core patch 或 cost/cardinality
+  变化。下一步进入工作包 4A：exact-reference 最小 plan/task/result contract 与 deterministic golden。
+
 ## 2026-08-30 工作包四收敛为 gateway 迁移、golden 与 fixed-model 三个切片
 
 - PostgreSQL 工程计划把工作包四改为三个独立验收提交：先行为不变地把当前 Python recording gateway

@@ -25,11 +25,13 @@ TRUE/FALSE/UNKNOWN keep/drop。provider-neutral
 `SemloomExecPump`，也未为尚未实施的 `SemJoin`/blocking operator 预造抽象。planner 已将当前 recording
 identity/algorithm/role 编码为版本化、可复制的最小 plan spec，executor 严格解码；neutral error
 interface 已移除 transport-specific operation，adapter 本地产生定长脱敏详情；
+行为不变的 Python gateway 迁移已完成：公共 execution-provider 目录拥有 framing、冻结 wire v2、
+recording adapter 与 server，旧 extension 路径只保留自定位兼容入口；
 被 exact-reference 纵切面实际消费的 instruction/parser/model policy plan fields、真实模型 reference path、第二 physical path、accepted-prefix backpressure、
 多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器尚未实现。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，保留已完成的 recording `SemMap`/`SemFilter`、ordinary
-child plan、query-scoped provider session 和最小 plan carrier；下一步先迁移现有 gateway，再以 4A/4B
+child plan、query-scoped provider session、最小 plan carrier 与已迁移 gateway；下一步以 4A/4B
 分别完成同一最小真实语义合同的 deterministic golden 与同步 exact model reference，之后才实现一条
 最小、显式可识别的第二 physical path。
 既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
@@ -571,23 +573,26 @@ code/postgres/
     │   ├── provider.c                # query-fixed adapter factory/config snapshot
     │   ├── recording_provider.c       # 无 I/O 的测试 adapter
     │   └── uds_provider.c / wire_v2.c # 唯一 PG-specific IPC adapter
-    ├── gateway/                      # 当前 v2 Python 实现；4-迁移后只留兼容入口
+    ├── gateway/                      # 自定位 v2 import/CLI 兼容入口；不保存协议/server 逻辑
     │   ├── protocol.py
     │   └── recording_gateway.py
     ├── expected/ / sql/
     └── t/                            # TAP cancel/crash/transaction tests
 
-# pending；当前尚不存在，必须由独立 gateway 迁移切片创建
 code/src/execution_provider/
-├── wire/                             # shared framing primitives + 独立 v2/v3 schema
-├── server.py / session.py / evidence.py
-├── adapters/
-│   ├── golden.py
-│   └── openai_compatible_fixed.py
-└── semloom/                          # 工作包七才创建增量 scheduling implementation
+├── wire/framing.py                   # 当前 bounded UTF-8 JSON framing
+├── wire/v2.py                        # 当前冻结 recording v2 schema/digest
+├── adapters/recording.py             # 当前同步 recording session
+└── server.py                         # 当前 UDS listener/CLI implementation
 
-code/tests/execution_provider/        # pending；迁移后成为 Python gateway contract tests
-code/scripts/services/run_execution_provider_gateway.py  # pending canonical CLI
+code/tests/execution_provider/        # 当前 canonical/compatibility gateway contract tests
+code/scripts/services/run_execution_provider_gateway.py  # 当前 canonical CLI
+
+# pending；只在对应工作包创建，不提前放空 module
+code/src/execution_provider/wire/v3.py                    # 4A
+code/src/execution_provider/adapters/golden.py            # 4A
+code/src/execution_provider/adapters/openai_compatible_fixed.py  # 4B
+code/src/execution_provider/semloom/                      # 工作包七
 ```
 
 不把完整 PostgreSQL source vendor 进主仓库。仅当 carrier audit 选择 core 时，core 修改才在固定 upstream fork/worktree 中开发，经
@@ -781,12 +786,13 @@ carrier 必须对相同 semantic plan 产生一致 task digest、typed rows、�
 
 工作包四不应从继续拆 runtime 开始。按三个可独立 commit、独立回滚和独立验收的切片落地：
 
-1. **4-迁移（行为不变）**：把 `gateway/protocol.py`、server loop 与 recording adapter 的权威实现移到
+1. **4-迁移（行为不变，已完成）**：把 `gateway/protocol.py`、server loop 与 recording adapter 的权威实现移到
    `code/src/execution_provider/`，建立 `wire/framing.py` 与独立 `wire/v2.py`；
    `code/postgres/semloom_pg/gateway/{protocol.py,recording_gateway.py}` 保留薄兼容入口，现有 TAP 命令和
    imports 不变。新 `code/scripts/services/run_execution_provider_gateway.py` 是后续 canonical CLI。
-   此提交不增加 v3、HTTP 或新 plan fields；v2 bytes/digests、193 个 TAP assertions、resource smoke
-   口径和旧路径全部保持。
+   提交 `868430f9` 没有增加 v3、HTTP 或新 plan fields；v2 bytes/digests、193 个 TAP assertions、resource
+   smoke 口径和旧路径全部保持。精确 18.3 验收为 regression 1/1、TAP 193/193、Python/static 25/25、
+   warning-free `-Werror`、中立 C11 header 与 Map/Filter RSS/FD smoke 通过。
 2. **4A（真实语义合同 + golden）**：
    - `sql/semloom_pg--*.sql` 与 `marker.c` 新增 §5.1.1 三参 overload；一参 Map/Filter 继续可用。
    - `sem_filter_path.c` 只接受 constant instruction/options，扩展 `sem_plan_spec.[ch]` 为 §5.2 的最小
@@ -827,8 +833,8 @@ runtime/provider lifecycle。binary join 和 blocking aggregate 的 child owners
 
 工作包一至七构成当前有序实施范围。同步 UDS recording slice、neutral provider seam、响应边界
 hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter`、shared runtime、
-planner-owned 最小 recording plan spec 与 transport-neutral error interface 已通过；当前下一步是独立迁移
-gateway，再按 4A/4B 让同一最小真实 semantic contract 先通过 golden、再通过同步 exact model reference，
+planner-owned 最小 recording plan spec、transport-neutral error interface 与行为不变的 gateway 迁移已通过；
+当前下一步按 4A/4B 让同一最小真实 semantic contract 先通过 golden、再通过同步 exact model reference，
 最后实现最小第二 semantic path。
 只有真实语义和路径选择资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
@@ -893,7 +899,7 @@ TAP 193/193、Python/static 20/20 和 warning-free `-Werror`；资源 smoke 数�
 
 ### 工作包四：迁移 gateway，并完成 exact-reference 最小真实语义纵切面
 
-#### 工作包四-迁移：gateway 权威目录迁移（行为不变）
+#### 工作包四-迁移：gateway 权威目录迁移（行为不变，已完成）
 
 把当前 `code/postgres/semloom_pg/gateway/` 的 Python implementation 移到
 `code/src/execution_provider/`；旧文件只保留导入/CLI compatibility wrapper，保证现有 TAP 无需同时
@@ -902,6 +908,11 @@ TAP 193/193、Python/static 20/20 和 warning-free `-Werror`；资源 smoke 数�
 完成标准：迁移提交不含 v3/HTTP/plan 行为；旧 gateway CLI、Python protocol tests、PGXS regression、
 TAP 193/193、SemMap/SemFilter adapter parity 与 v2 golden 全部保持；新模块测试直接从目标目录导入，
 旧 wrapper 的反向 import 有静态检查。
+
+完成证据：提交 `868430f9` 将上述实现迁到公共目录，旧两个文件只剩自定位转交；精确
+`PostgreSQL 18.3` 上通过 regression 1/1、TAP 193/193、Python/static 25/25、`-Werror` 与中立 C11
+header。大 payload Map 与 20,000 行 Filter 资源 smoke 通过且未观察到 RSS 随累计 payload 近似线性增长
+或 FD 泄漏；数字从证据台账读取。该结果不证明 4A、wire v3 或真实模型已实现。
 
 #### 工作包四 A：真实语义合同 + deterministic golden adapter
 

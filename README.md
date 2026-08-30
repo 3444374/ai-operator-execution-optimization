@@ -18,8 +18,10 @@ compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child 
 中立类别、`errno`、长度和定长脱敏详情，socket/JSON/frame 细分由 adapter 本地产生。它们尚未实现真实
 instruction/prompt、result parser、model role、quality policy、第二 physical path 或性能优化。
 
-项目接下来先行为不变地把 recording gateway 迁到公共 execution-provider 目录，再扩展这个最小 plan
-carrier，只加入 exact-reference 纵切面实际消费的 instruction、prompt、parser、model/generation fields；
+recording gateway 的权威实现已经迁到公共 `code/src/execution_provider/`，旧 extension 路径只保留
+无需额外 `PYTHONPATH` 的 import/CLI 兼容入口；wire v2 bytes、digest 和 SQL 行为保持不变。
+项目接下来扩展现有最小 plan carrier，只加入 exact-reference 纵切面实际消费的
+instruction、prompt、parser、model/generation fields；
 同一 plan/task/result contract 先通过 deterministic golden adapter，再通过同步 fixed-model endpoint。
 随后生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
 AI work cost、quality evidence 和 reference fallback 选择。只有这些路径暴露 extension 无法封闭的

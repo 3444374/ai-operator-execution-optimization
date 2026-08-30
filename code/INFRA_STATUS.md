@@ -47,9 +47,14 @@ snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
 20,000 行 SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 22,172/22,204/22,204 KiB、
 FD 为 43/43/41，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
 `d3a22dcf` shared-runtime、`0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
-当前 Python recording gateway 的权威实现仍位于 `code/postgres/semloom_pg/gateway/`；目标
-`code/src/execution_provider/` 尚不存在。下一步先做行为不变的 gateway 迁移并保留旧 TAP 兼容入口，
-再按工程计划 4A/4B 让同一最小 plan/task/result contract 分别通过 deterministic golden 与固定模型
+提交 `868430f9` 已把 Python recording gateway 的权威实现迁到 `code/src/execution_provider/`：
+`wire/framing.py` 保存有界 JSON framing，`wire/v2.py` 保存冻结 recording v2 schema/digest，
+`adapters/recording.py` 保存 recording session，`server.py` 保存 UDS listener；
+`code/postgres/semloom_pg/gateway/` 只保留无需额外 `PYTHONPATH` 的 import/CLI compatibility wrapper，
+canonical CLI 为 `code/scripts/services/run_execution_provider_gateway.py`。该迁移没有加入 v3、HTTP 或
+新 plan fields，并在精确 18.3 上通过 regression 1/1、TAP 193/193、Python/static 25/25、`-Werror`
+与 Map/Filter RSS/FD smoke。下一步按工程计划 4A/4B 让同一最小 plan/task/result contract
+分别通过 deterministic golden 与固定模型
 endpoint。真实 instruction/prompt/parser/model policy、真实模型 reference、accepted-prefix、多在途/乱序 completion、
 第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。

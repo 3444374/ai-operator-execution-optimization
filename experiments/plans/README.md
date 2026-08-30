@@ -17,8 +17,9 @@
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
 当前 recording carrier、shared runtime、同步 provider seam、planner-owned 最小 recording plan spec、
-transport-neutral error interface 与 compatibility suite 已完成。唯一详细工程顺序由架构实施计划 §9
-维护：先行为不变地迁移 gateway，再让 exact-reference 纵切面实际消费的最小 plan/task/result contract
+transport-neutral error interface、compatibility suite 与行为不变的 gateway 公共目录迁移已完成。
+唯一详细工程顺序由架构实施计划 §9
+维护：下一步让 exact-reference 纵切面实际消费的最小 plan/task/result contract
 依次通过 deterministic golden 和固定模型 endpoint；随后修正 cost/cardinality 并实现第二 physical path
 与 quality policy，再做 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
 只导航，不复制每个工作包的完成标准。

@@ -22,6 +22,21 @@
 入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
 
+## PostgreSQL semantic execution-provider gateway
+
+`services/run_execution_provider_gateway.py` 是外部 semantic execution-provider 的 canonical CLI。
+当前只提供同步 recording wire v2：framing、协议、recording adapter 和 UDS server 的实现位于
+`src/execution_provider/`。从仓库根运行：
+
+```bash
+python3 code/scripts/services/run_execution_provider_gateway.py \
+  --socket /absolute/path/semloom-recording.sock
+```
+
+`postgres/semloom_pg/gateway/recording_gateway.py` 与同目录 `protocol.py` 只为既有 TAP 和 import
+保留自定位兼容入口；它们不要求调用方额外设置 `PYTHONPATH`，也不保存协议或 server 逻辑。
+wire v3、deterministic golden 和 fixed-model endpoint 仍未实现。
+
 `analysis/audit_saor_formal_readiness.py` 在不发送请求的前提下 fail-closed 校验固定包络 SAOR
 十 scenario formal，或用 `--profile priority_reachability` 校验 static/SAOR/foreground
 strict-priority 三臂诊断；共同检查 1+3、FCFS 声明、calibration selection、manifest

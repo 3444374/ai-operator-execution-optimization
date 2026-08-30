@@ -46,8 +46,8 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
 当前 `REL_18_3` recording `SemMap/SemFilter`、PostgreSQL-private shared runtime、neutral provider port、
-独立 recording/UDS adapters 与 compatibility suite 已通过。最短期任务是先迁移现有 Python gateway，
-再让 exact-reference 实际消费的最小 plan/task/result contract 依次通过 deterministic golden 与同步 fixed-model
+独立 recording/UDS adapters、compatibility suite 与行为不变的 Python gateway 公共目录迁移已通过。
+最短期任务是让 exact-reference 实际消费的最小 plan/task/result contract 依次通过 deterministic golden 与同步 fixed-model
 SemFilter；随后修正 semantic AI-work cost，并实现显式 reference/optimized second path，再做 carrier audit。
 accepted-prefix、多在途和增量 SemLoom 在路径选择资格之后实现。
 既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
@@ -114,6 +114,7 @@ accepted-prefix、多在途和增量 SemLoom 在路径选择资格之后实现�
 | 文本/图像模态适配 | `code/src/modalities/` |
 | 指标与 profiler | `code/src/observability/` |
 | baseline 适配 | `code/src/baselines/` |
+| PostgreSQL semantic execution-provider gateway | `code/src/execution_provider/`；旧 extension 路径只作兼容入口 |
 | 测试 | `code/tests/` |
 
 [`code/ARCHITECTURE_REFACTOR_PLAN.md`](code/ARCHITECTURE_REFACTOR_PLAN.md) 是 2026-08-03 已完成

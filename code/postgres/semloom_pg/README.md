@@ -84,12 +84,24 @@ consumed 2,000 100,000-byte Map inputs (200,018,000 output bytes) with backend R
 emitted rows) with RSS 22,172/22,204/22,204 KiB and FD 43/43/41. These are start/peak/end observations that
 support absence of cumulative-payload memory growth and FD leakage; they are not performance results.
 
-The in-process provider remains the default. To exercise the external recording boundary, start the gateway
-with an absolute socket path and set the superuser-only GUC for the SQL session:
+The behavior-preserving gateway migration at commit `868430f9` passed the same exact-18.3 PGXS regression
+1/1 and TAP 193/193 checks, plus 25/25 Python migration/protocol/static checks, an `-Werror` build, and the
+C11-neutral-header compile. Its unchanged `semloom_pg.so` SHA-256 is
+`a2fc37c372ff0bd892e1e75e3a404d7688d85291e6ad13151e786ad7cdeb4ec0`. The repository-external resource smoke
+produced 200,018,000 Map output bytes with RSS 21,368/22,248/22,248 KiB and FD 42/42/41, then 5,000 Filter
+rows with RSS 22,248/22,248/22,248 KiB and FD 43/43/41. The migration changes module ownership only; it does
+not add wire v3, model execution, or performance evidence.
+
+The in-process provider remains the default. To exercise the external recording boundary, start the canonical
+gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 
 ```bash
-python3 gateway/recording_gateway.py --socket /absolute/path/semloom-recording.sock
+python3 code/scripts/services/run_execution_provider_gateway.py \
+  --socket /absolute/path/semloom-recording.sock
 ```
+
+The historical `code/postgres/semloom_pg/gateway/recording_gateway.py` path remains a bootstrap-only
+compatibility CLI for TAP and existing callers; it contains no protocol or server logic.
 
 ```sql
 SET semloom_pg.gateway_socket = '/absolute/path/semloom-recording.sock';
