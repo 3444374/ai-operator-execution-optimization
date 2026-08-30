@@ -9,6 +9,7 @@
 
 #include "ai_provider_port.h"
 #include "pg_semantic_runtime.h"
+#include "sem_plan_spec.h"
 
 typedef enum SemloomTupleDisposition
 {
@@ -19,10 +20,6 @@ typedef enum SemloomTupleDisposition
 
 typedef struct SemloomOperatorMachineMethods
 {
-	uint32 operator_kind;
-	uint32 output_value_kind;
-	const char *semantic_spec_id;
-	Size semantic_spec_id_length;
 	const char *input_explain_property;
 	const char *invalid_completion_message;
 	SemloomTupleDisposition (*handle_null)(TupleTableSlot *slot,
@@ -38,17 +35,14 @@ typedef struct SemloomOperatorMachine
 {
 	const SemloomOperatorMachineMethods *methods;
 	AttrNumber input_column;
-	AiOpenSpec open_spec;
 } SemloomOperatorMachine;
 
 extern const SemloomOperatorMachineMethods semloom_map_machine_methods;
 extern const SemloomOperatorMachineMethods semloom_filter_machine_methods;
 
 extern void semloom_operator_machine_init(SemloomOperatorMachine *machine,
-										  uint32 operator_kind,
+										  const SemloomPlanSpec *plan_spec,
 										  AttrNumber input_column);
-extern const AiOpenSpec *semloom_operator_machine_open_spec(
-	const SemloomOperatorMachine *machine);
 extern AiByteSlice semloom_operator_machine_bind_text(
 	const SemloomOperatorMachine *machine,
 	Datum input,

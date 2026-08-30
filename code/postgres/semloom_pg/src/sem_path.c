@@ -8,8 +8,8 @@
 #include "parser/parsetree.h"
 #include "utils/lsyscache.h"
 
-#include "ai_provider_port.h"
 #include "sem_path_common.h"
+#include "sem_plan_spec.h"
 #include "semloom_pg.h"
 
 static FuncExpr *semloom_supported_marker(Query *parse, Oid marker_oid);
@@ -221,8 +221,9 @@ semloom_plan_path(PlannerInfo *root,
 	scan->flags = CUSTOMPATH_SUPPORT_PROJECTION;
 	scan->custom_plans = custom_plans;
 	scan->custom_exprs = NIL;
-	scan->custom_private = list_make2(makeInteger(AI_PROVIDER_OPERATOR_MAP),
-									   makeInteger(linitial_int(mapped_columns)));
+	scan->custom_private = semloom_plan_spec_make_recording_private(
+		SEMLOOM_PLAN_OPERATOR_MAP,
+		(AttrNumber) linitial_int(mapped_columns));
 	scan->custom_scan_tlist = scan_target_list;
 	scan->methods = &semloom_map_scan_methods;
 

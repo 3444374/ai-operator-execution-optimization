@@ -10,6 +10,7 @@ OBJS = \
 	src/sem_filter_path.o \
 	src/sem_map_machine.o \
 	src/sem_operator_machine.o \
+	src/sem_plan_spec.o \
 	src/sem_path_common.o \
 	src/sem_path.o \
 	src/sem_pump.o \

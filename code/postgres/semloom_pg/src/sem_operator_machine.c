@@ -4,19 +4,19 @@
 #include "commands/explain_format.h"
 #include "utils/builtins.h"
 
-#include "provider_private.h"
 #include "sem_operator_machine.h"
 
 void
 semloom_operator_machine_init(SemloomOperatorMachine *machine,
-							  uint32 operator_kind,
-							  AttrNumber input_column)
+								  const SemloomPlanSpec *plan_spec,
+								  AttrNumber input_column)
 {
 	Assert(machine != NULL);
+	Assert(plan_spec != NULL);
 	MemSet(machine, 0, sizeof(*machine));
-	if (operator_kind == AI_PROVIDER_OPERATOR_MAP)
+	if (plan_spec->operator_kind == SEMLOOM_PLAN_OPERATOR_MAP)
 		machine->methods = &semloom_map_machine_methods;
-	else if (operator_kind == AI_PROVIDER_OPERATOR_FILTER)
+	else if (plan_spec->operator_kind == SEMLOOM_PLAN_OPERATOR_FILTER)
 		machine->methods = &semloom_filter_machine_methods;
 	else
 		ereport(ERROR,
@@ -24,28 +24,6 @@ semloom_operator_machine_init(SemloomOperatorMachine *machine,
 				 errmsg("unknown semantic operator machine")));
 
 	machine->input_column = input_column;
-	machine->open_spec.operator_kind = machine->methods->operator_kind;
-	machine->open_spec.input_value_kind = AI_PROVIDER_VALUE_TEXT;
-	machine->open_spec.output_value_kind = machine->methods->output_value_kind;
-	machine->open_spec.null_policy = AI_PROVIDER_NULL_PROPAGATE;
-	machine->open_spec.error_policy = AI_PROVIDER_ERROR_FAIL_QUERY;
-	machine->open_spec.semantic_spec_version = SEMLOOM_RECORDING_SPEC_VERSION;
-	machine->open_spec.semantic_spec_id.data =
-		(const uint8 *) machine->methods->semantic_spec_id;
-	machine->open_spec.semantic_spec_id.length =
-		machine->methods->semantic_spec_id_length;
-	machine->open_spec.physical_algorithm.data =
-		(const uint8 *) SEMLOOM_RECORDING_ALGORITHM;
-	machine->open_spec.physical_algorithm.length =
-		sizeof(SEMLOOM_RECORDING_ALGORITHM) - 1;
-}
-
-const AiOpenSpec *
-semloom_operator_machine_open_spec(const SemloomOperatorMachine *machine)
-{
-	Assert(machine != NULL);
-	Assert(machine->methods != NULL);
-	return &machine->open_spec;
 }
 
 AiByteSlice

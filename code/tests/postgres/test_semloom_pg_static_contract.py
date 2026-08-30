@@ -169,6 +169,57 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn('"false"', filter_machine)
         self.assertIn('"unknown"', filter_machine)
 
+    def test_planner_owns_the_versioned_semantic_plan_spec(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        plan_header = (EXTENSION_ROOT / "src" / "sem_plan_spec.h").read_text(
+            encoding="utf-8"
+        )
+        plan_source = (EXTENSION_ROOT / "src" / "sem_plan_spec.c").read_text(
+            encoding="utf-8"
+        )
+        map_path = (EXTENSION_ROOT / "src" / "sem_path.c").read_text(encoding="utf-8")
+        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+            encoding="utf-8"
+        )
+        machine_source = (EXTENSION_ROOT / "src" / "sem_operator_machine.c").read_text(
+            encoding="utf-8"
+        )
+        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("src/sem_plan_spec.o", makefile)
+        self.assertIn("SEMLOOM_PLAN_SPEC_SCHEMA_VERSION", plan_header)
+        for field_name in (
+            "schema_version",
+            "operator_kind",
+            "input_value_kind",
+            "output_value_kind",
+            "null_policy",
+            "error_policy",
+            "semantic_spec_version",
+            "semantic_spec_id",
+            "physical_algorithm",
+            "physical_role",
+        ):
+            self.assertIn(f'"{field_name}"', plan_source)
+        self.assertIn("unknown semantic plan specification field", plan_source)
+        self.assertIn("incomplete semantic plan specification", plan_source)
+
+        for planner_source in (map_path, filter_path):
+            self.assertNotIn('#include "ai_provider_port.h"', planner_source)
+            self.assertNotIn("AI_PROVIDER_", planner_source)
+            self.assertIn("semloom_plan_spec", planner_source)
+        self.assertNotIn("SEMLOOM_RECORDING_SPEC", machine_source)
+        self.assertNotIn("SEMLOOM_RECORDING_ALGORITHM", machine_source)
+        self.assertNotIn("AiOpenSpec", machine_source)
+        self.assertIn("semloom_plan_spec_decode", pump_source)
+        self.assertIn("runtime->plan_spec.physical_role", runtime_source)
+        self.assertNotIn('ExplainPropertyText("Physical Role", "reference"', runtime_source)
+
     def test_neutral_provider_contract_has_no_postgres_dependencies(self) -> None:
         header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(encoding="utf-8")
 

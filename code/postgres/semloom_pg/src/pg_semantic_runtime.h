@@ -14,6 +14,7 @@
 #include "utils/memutils.h"
 
 #include "ai_provider_port.h"
+#include "sem_plan_spec.h"
 
 typedef struct PgSemanticRuntime PgSemanticRuntime;
 
@@ -26,7 +27,7 @@ typedef struct PgSemanticCompletion
 
 extern PgSemanticRuntime *pg_semantic_runtime_begin(
 	MemoryContext owner_context,
-	const AiOpenSpec *open_spec);
+	const SemloomPlanSpec *plan_spec);
 extern void pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 										  AiByteSlice input,
 										  MemoryContext result_context,

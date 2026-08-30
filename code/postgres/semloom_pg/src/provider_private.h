@@ -13,11 +13,8 @@
 #include "utils/memutils.h"
 
 #include "ai_provider_port.h"
+#include "recording_contract.h"
 
-#define SEMLOOM_MAP_RECORDING_SPEC_ID "semloom.recording.sem_map.text"
-#define SEMLOOM_FILTER_RECORDING_SPEC_ID "semloom.recording.sem_filter.tristate"
-#define SEMLOOM_RECORDING_ALGORITHM "RECORDING"
-#define SEMLOOM_RECORDING_SPEC_VERSION 1
 #define SEMLOOM_IN_PROCESS_PROVIDER_NAME "in-process-recording"
 #define SEMLOOM_UDS_PROVIDER_NAME "uds-recording"
 

@@ -1,7 +1,6 @@
 /* SemFilter's exact TRUE/FALSE/UNKNOWN row-cardinality semantics. */
 #include "postgres.h"
 
-#include "provider_private.h"
 #include "sem_operator_machine.h"
 
 static SemloomTupleDisposition semloom_filter_handle_null(
@@ -14,10 +13,6 @@ static SemloomTupleDisposition semloom_filter_apply_completion(
 	MemoryContext result_context);
 
 const SemloomOperatorMachineMethods semloom_filter_machine_methods = {
-	.operator_kind = AI_PROVIDER_OPERATOR_FILTER,
-	.output_value_kind = AI_PROVIDER_VALUE_TRISTATE,
-	.semantic_spec_id = SEMLOOM_FILTER_RECORDING_SPEC_ID,
-	.semantic_spec_id_length = sizeof(SEMLOOM_FILTER_RECORDING_SPEC_ID) - 1,
 	.input_explain_property = "Filter Input Column",
 	.invalid_completion_message =
 		"SemFilter provider completion must be true, false, or unknown",

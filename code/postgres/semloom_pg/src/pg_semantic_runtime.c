@@ -21,6 +21,7 @@ typedef enum PgSemanticRuntimeState
 
 struct PgSemanticRuntime
 {
+	SemloomPlanSpec plan_spec;
 	AiOpenSpec open_spec;
 	AiProvider provider;
 	AiProviderSession *provider_session;
@@ -33,7 +34,10 @@ struct PgSemanticRuntime
 };
 
 static AiByteSlice pg_semantic_runtime_copy_slice(MemoryContext owner_context,
-													  AiByteSlice source);
+											  AiByteSlice source);
+static void pg_semantic_runtime_build_open_spec(
+	const SemloomPlanSpec *plan_spec,
+	AiOpenSpec *open_spec);
 static void pg_semantic_runtime_cleanup(void *argument);
 static void pg_semantic_runtime_release_session(PgSemanticRuntime *runtime);
 static void pg_semantic_runtime_open_provider(PgSemanticRuntime *runtime);
@@ -49,21 +53,24 @@ pg_noreturn static void semloom_raise_provider_error(
 
 PgSemanticRuntime *
 pg_semantic_runtime_begin(MemoryContext owner_context,
-						  const AiOpenSpec *open_spec)
+						  const SemloomPlanSpec *plan_spec)
 {
 	PgSemanticRuntime *runtime;
+	AiOpenSpec open_spec;
 
 	Assert(owner_context != NULL);
-	Assert(open_spec != NULL);
+	Assert(plan_spec != NULL);
+	pg_semantic_runtime_build_open_spec(plan_spec, &open_spec);
 	runtime = MemoryContextAllocZero(owner_context, sizeof(*runtime));
 	runtime->owner_context = owner_context;
-	runtime->open_spec = *open_spec;
+	runtime->plan_spec = *plan_spec;
+	runtime->open_spec = open_spec;
 	runtime->open_spec.semantic_spec_id = pg_semantic_runtime_copy_slice(
 		owner_context,
-		open_spec->semantic_spec_id);
+		open_spec.semantic_spec_id);
 	runtime->open_spec.physical_algorithm = pg_semantic_runtime_copy_slice(
 		owner_context,
-		open_spec->physical_algorithm);
+		open_spec.physical_algorithm);
 	runtime->state = PG_SEMANTIC_RUNTIME_SELECTED_NOT_OPEN;
 	runtime->cleanup_callback.func = pg_semantic_runtime_cleanup;
 	runtime->cleanup_callback.arg = runtime;
@@ -151,7 +158,9 @@ pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
 	ExplainPropertyText("Provider",
 						runtime->provider.ops->adapter_name,
 						explain_state);
-	ExplainPropertyText("Physical Role", "reference", explain_state);
+	ExplainPropertyText("Physical Role",
+						runtime->plan_spec.physical_role,
+						explain_state);
 }
 
 void
@@ -185,6 +194,54 @@ pg_semantic_runtime_copy_slice(MemoryContext owner_context, AiByteSlice source)
 	memcpy(data, source.data, source.length);
 	copied.data = data;
 	return copied;
+}
+
+static void
+pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
+									AiOpenSpec *open_spec)
+{
+	MemSet(open_spec, 0, sizeof(*open_spec));
+	switch (plan_spec->operator_kind)
+	{
+		case SEMLOOM_PLAN_OPERATOR_MAP:
+			open_spec->operator_kind = AI_PROVIDER_OPERATOR_MAP;
+			break;
+		case SEMLOOM_PLAN_OPERATOR_FILTER:
+			open_spec->operator_kind = AI_PROVIDER_OPERATOR_FILTER;
+			break;
+		default:
+			elog(ERROR, "unsupported semantic plan operator kind");
+	}
+	switch (plan_spec->input_value_kind)
+	{
+		case SEMLOOM_PLAN_VALUE_TEXT:
+			open_spec->input_value_kind = AI_PROVIDER_VALUE_TEXT;
+			break;
+		default:
+			elog(ERROR, "unsupported semantic plan input value kind");
+	}
+	switch (plan_spec->output_value_kind)
+	{
+		case SEMLOOM_PLAN_VALUE_TEXT:
+			open_spec->output_value_kind = AI_PROVIDER_VALUE_TEXT;
+			break;
+		case SEMLOOM_PLAN_VALUE_TRISTATE:
+			open_spec->output_value_kind = AI_PROVIDER_VALUE_TRISTATE;
+			break;
+		default:
+			elog(ERROR, "unsupported semantic plan output value kind");
+	}
+	if (plan_spec->null_policy != SEMLOOM_PLAN_NULL_PROPAGATE ||
+		plan_spec->error_policy != SEMLOOM_PLAN_ERROR_FAIL_QUERY)
+		elog(ERROR, "unsupported semantic plan execution policy");
+	open_spec->null_policy = AI_PROVIDER_NULL_PROPAGATE;
+	open_spec->error_policy = AI_PROVIDER_ERROR_FAIL_QUERY;
+	open_spec->semantic_spec_version = plan_spec->semantic_spec_version;
+	open_spec->semantic_spec_id.data = (const uint8 *) plan_spec->semantic_spec_id;
+	open_spec->semantic_spec_id.length = plan_spec->semantic_spec_id_length;
+	open_spec->physical_algorithm.data =
+		(const uint8 *) plan_spec->physical_algorithm;
+	open_spec->physical_algorithm.length = plan_spec->physical_algorithm_length;
 }
 
 static void

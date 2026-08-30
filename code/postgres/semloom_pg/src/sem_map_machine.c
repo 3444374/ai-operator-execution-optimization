@@ -3,7 +3,6 @@
 
 #include "utils/builtins.h"
 
-#include "provider_private.h"
 #include "sem_operator_machine.h"
 
 static SemloomTupleDisposition semloom_map_handle_null(
@@ -16,10 +15,6 @@ static SemloomTupleDisposition semloom_map_apply_completion(
 	MemoryContext result_context);
 
 const SemloomOperatorMachineMethods semloom_map_machine_methods = {
-	.operator_kind = AI_PROVIDER_OPERATOR_MAP,
-	.output_value_kind = AI_PROVIDER_VALUE_TEXT,
-	.semantic_spec_id = SEMLOOM_MAP_RECORDING_SPEC_ID,
-	.semantic_spec_id_length = sizeof(SEMLOOM_MAP_RECORDING_SPEC_ID) - 1,
 	.input_explain_property = "Mapped Column",
 	.invalid_completion_message = "SemMap provider returned an invalid completion",
 	.handle_null = semloom_map_handle_null,

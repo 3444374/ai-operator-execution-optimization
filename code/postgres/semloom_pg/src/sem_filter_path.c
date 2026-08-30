@@ -11,8 +11,8 @@
 #include "parser/parsetree.h"
 #include "utils/lsyscache.h"
 
-#include "ai_provider_port.h"
 #include "sem_path_common.h"
+#include "sem_plan_spec.h"
 #include "semloom_pg.h"
 
 static FuncExpr *semloom_supported_filter_marker(RelOptInfo *rel,
@@ -264,8 +264,9 @@ semloom_plan_filter_path(PlannerInfo *root,
 	scan->flags = CUSTOMPATH_SUPPORT_PROJECTION;
 	scan->custom_plans = custom_plans;
 	scan->custom_exprs = NIL;
-	scan->custom_private = list_make2(makeInteger(AI_PROVIDER_OPERATOR_FILTER),
-									   makeInteger(input_column));
+	scan->custom_private = semloom_plan_spec_make_recording_private(
+		SEMLOOM_PLAN_OPERATOR_FILTER,
+		(AttrNumber) input_column);
 	scan->custom_scan_tlist = copyObject(child_plan->targetlist);
 	scan->methods = &semloom_filter_scan_methods;
 	return &scan->scan.plan;

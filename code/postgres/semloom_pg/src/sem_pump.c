@@ -12,6 +12,7 @@
 
 #include "pg_semantic_runtime.h"
 #include "sem_operator_machine.h"
+#include "sem_plan_spec.h"
 #include "sem_pump.h"
 
 struct SemloomExecPump
@@ -27,7 +28,7 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	CustomScan *scan = castNode(CustomScan, node->ss.ps.plan);
 	MemoryContext owner_context = estate->es_query_cxt;
 	SemloomExecPump *pump;
-	uint32 operator_kind;
+	SemloomPlanSpec plan_spec;
 	AttrNumber input_column;
 	int unsupported_flags = EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND;
 
@@ -35,14 +36,15 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("semantic operator capability supports forward execution only")));
-	if (list_length(scan->custom_plans) != 1 ||
-		list_length(scan->custom_private) != 2)
+	if (list_length(scan->custom_plans) != 1)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("invalid semantic operator executor state")));
 
-	operator_kind = intVal(linitial(scan->custom_private));
-	input_column = intVal(lsecond(scan->custom_private));
+	semloom_plan_spec_decode(scan->custom_private,
+		owner_context,
+		&plan_spec,
+		&input_column);
 	if (input_column <= 0 ||
 		input_column > node->ss.ss_ScanTupleSlot->tts_tupleDescriptor->natts)
 		ereport(ERROR,
@@ -51,11 +53,9 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 
 	pump = MemoryContextAllocZero(owner_context, sizeof(*pump));
 	semloom_operator_machine_init(&pump->machine,
-								  operator_kind,
-								  input_column);
-	pump->runtime = pg_semantic_runtime_begin(
-		owner_context,
-		semloom_operator_machine_open_spec(&pump->machine));
+									  &plan_spec,
+									  input_column);
+	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
 	pump->child_state =
 		ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
 	node->custom_ps = list_make1(pump->child_state);
