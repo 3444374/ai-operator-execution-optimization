@@ -1,6 +1,10 @@
 # 实验状态与缺口分析
 
-更新日期：2026-08-29
+更新日期：2026-08-30
+
+文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
+模块边界或工程实现细节。后者只看
+[`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md)。
 
 > **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference
 > paths、direct `INSERT ... SELECT`、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator
@@ -13,15 +17,15 @@
 > regression 1/1、TAP 193/193、Python/static 18/18 和 Map/Filter RSS/FD 不增长 smoke。公共
 > compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、双 backend、cancel/cleanup
 > 与 no-task lazy open；shared runtime 不包含算子真值，operator machines 不包含 provider lifecycle。
-> 下一步实现最小第二 physical path。载体审查确认
-> extension 足够时继续使用，
-> 只有 LOTUS/Cortex plan alternatives
-> 或 node lifecycle 出现已复现阻断才增加最小 core patch。数据库语义资格完成后才扩 accepted-prefix、
+> 当前先实现真实 `SemanticPlanSpec` 与同步 exact `SemFilter` 真实模型 reference slice，再实现显式
+> reference/optimized 第二 physical path、AI-work cost、quality evidence 与 fallback。载体审查确认
+> extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加
+> 最小 core patch。数据库语义与路径选择资格完成后才扩 accepted-prefix、
 > 多在途、增量 SemLoom session 与 IMLane-like batch placement。Kalypso-like lineage 只作后续参考，
 > 不纳入当前排期。LOTUS v1.2.4
 > 不是前置依赖。此前文本、
 > 图像静态、observe-only 与代价估计证据继续有效，但当前不扩 GPU 矩阵、不调 SAOR。下文按日期保留
-> 状态演进；日期较早的“下一步”只有被本摘要或当前架构计划再次确认时才有执行效力。
+> 状态演进；日期较早的“下一步”只有被本摘要或当前工程计划再次确认时才有执行效力。
 
 ## 2026-08-20 SAOR 对照重构状态（覆盖旧八臂执行说明）
 

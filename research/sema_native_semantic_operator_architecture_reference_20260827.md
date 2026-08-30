@@ -1,10 +1,14 @@
 # Sema-like 数据库原生语义算子架构参照审计
 
-更新日期：2026-08-28
+更新日期：2026-08-30
 
 当前研究判断以 §11 的 2026-08-28 增补为准；实施范围与顺序只由
 [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 定义。§1–10 保留最初从 LOTUS 转向 Sema 时的文献迁移审计；与 §11 冲突时由 §11 取代。
+
+文档角色：本文是**理论、文献和架构迁移依据**，回答 Sema/Cortex/LOTUS/IMLane/Kalypso 已解决什么、
+哪些机制可迁移以及适用条件；它不维护当前代码完成度、工作包顺序或测试数字。工程实施只看上述计划，
+源码事实看 `code/INFRA_STATUS.md`，证据看实验证据台账。
 
 ## 0. 研究问题与结论
 
@@ -28,7 +32,9 @@
 
 - **论文与官方材料**：Sema、Cortex AISQL、LOTUS、IMLane、Kalypso、Palimpzest、DocETL 的论文、
   官方代码仓库或实验 artifact；
-- **本地实现事实**：`code/INFRA_STATUS.md` 明确记录，现有代码是 PostgreSQL 读取之后的 Daft/Ray/vLLM 外部执行基座，尚无 LOTUS adapter、`sem_map` 语义入口或 PostgreSQL `CustomScan` 实现。
+- **本地实现事实**：`code/INFRA_STATUS.md` 已记录 PostgreSQL 18.3 recording `SemMap/SemFilter
+  CustomScan`、shared runtime 与同步 provider seam；真实 `SemanticPlanSpec`、真实模型 reference、第二
+  physical path 和增量 SemLoom provider 尚未实现。本文只使用这一事实划定迁移前提，不复制测试数字。
 
 ## 1. 证据身份与版本
 
@@ -286,7 +292,8 @@ Abacus 的 operator independence、计划代价组合和 sample estimates 都有
 
 ## 6. 当前项目事实与目标架构的差距
 
-**来源类型：本地实现事实。** 依据 `code/INFRA_STATUS.md` 和 `PROJECT_OUTLINE.md` 的 2026-08-27 版本：
+**来源类型：本地实现事实。** 下表只保留文献机制与工程现状的差距；具体完成度由
+`code/INFRA_STATUS.md` 维护：
 
 | 能力 | 当前事实 | 本文建议的解释 |
 |---|---|---|
@@ -295,13 +302,14 @@ Abacus 的 operator independence、计划代价组合和 sample estimates 都有
 | 多 Job shared credit / routing / selector | 已有实现与条件性结果；复杂动态策略未稳定超过强静态参照 | 继续作为研究候选，不写成 Sema 已有能力或项目默认胜出机制 |
 | `WorkDescriptor` | 已有兼容合同与单测，正式运行仍主要使用已有标量 credit | 可演化为 `ExecutionEnvelope`，但尚未接到 database plan |
 | 代价估计 | 已完成离线 feasibility；尚未在线驱动 organizer/scheduler | 可作为未来 semantic plan/provider cost interface，当前不能称 cost-based query optimizer |
-| LOTUS adapter / `sem_map` parity | 未实现 | 改为可选 compatibility work，不再阻塞通用 semantic operator IR 的设计 |
-| PostgreSQL planner-visible semantic operator / `CustomScan` | 未实现 | 首个数据库资格任务 |
+| LOTUS adapter / `sem_map` parity | 未实现 | 可选 compatibility work，不阻塞通用 semantic operator IR |
+| PostgreSQL planner-visible semantic carrier | recording `SemMap/SemFilter CustomScan` 已完成受限资格 | 证明 carrier/lifecycle，不等于真实语义或完整 optimizer |
+| 数据库内真实 `SemanticPlanSpec` 与模型 reference | 未实现 | 先封闭 instruction/prompt/parser/model/policy，再比较优化路径 |
 | Sema-like expression compression / predicate deduction | 未实现 | 后续 semantic optimizer work |
 | semantic operator fusion / multi-tuple prompt batching / AQE | 未实现 | 远期参考；只有另行立项并具备 reference/quality evaluation 后再决定是否实现 |
-| `SemFilter` / `SemExtract` / `SemJoin` / `SemAgg` | 未实现 | 当前只排期 `SemFilter`；其余算子是参考方向，不能从 manifest/profiler 自动重标 |
+| `SemFilter` / `SemExtract` / `SemJoin` / `SemAgg` | recording exact `SemFilter` 已有；其他关系形状未实现 | 近期只深化真实 SemFilter reference/optimized paths；其余算子仍是参考方向 |
 
-因此，已有外部实验可以说明 provider 设计中哪些 organization/admission 机制可运行、哪些策略只在特定 workload 下有效；它们不能证明 PostgreSQL 已拥有 native semantic plan、snapshot/cancel/error/result lifecycle。
+因此，已有外部实验可以说明 provider 设计中哪些 organization/admission 机制可运行、哪些策略只在特定 workload 下有效；它们本身不能证明 PostgreSQL 拥有语义计划和查询生命周期。这一点另由当前 recording `SemMap/SemFilter CustomScan` 的受限资格测试支持，但后者仍不等于真实 `SemanticPlanSpec`、模型语义或完整优化器。
 
 ## 7. 推荐的实施顺序
 
@@ -999,21 +1007,12 @@ function-like SQL surface
   -> typed SQL tuple
 ```
 
-近期实施顺序应调整为：
+当前工程顺序不在本文复制，统一由实施计划 §9 维护。文献迁移只规定四个不可颠倒的因果条件：
 
-1. 锁定 `REL_18_3` source/header/build identity；保留 extension-only `SemMap CustomScan` 作为短期 capability
-   spike，用 recording adapter 验证 child/snapshot/cancel/error/result/provider lifecycle；
-2. 收紧 executor/provider seam，把 PG-owned scan/pump、neutral provider port 与 recording/UDS adapters
-   分开；同步单在途 UDS slice 保留为 test adapter，不先扩完整网络/runtime；
-3. 在 extension unary carrier 上完成 `SemMap` reference execution 与 `SemFilter` reference path，明确 row identity、
-   order、NULL、parse failure、rescan、parallel、LIMIT 和 prepared-plan behavior；
-4. 使用 deterministic fixture 或规划前匹配的静态 evidence 建立最小 `SemFilter` 第二 path，证明
-   algorithm identity、quality policy、cost、prepared-plan 与 provider role 都由 PostgreSQL 管理；
-5. 再用明确反例审查 carrier：marker identity、prepared-plan invalidation、hook coexistence、受限
-   filter–join placement 与 semantic alternative costing；全部可安全实现则继续 extension。若只在
-   identity/path generation 受阻，先补 `SemanticExpr`/path-generation seam 并继续 lower 为 `CustomScan`；
-   只有 executor lifecycle 也受阻时才增加 native Plan/State；
-6. 数据库语义资格成立后才扩 accepted-prefix、多在途、增量 SemLoom session 和真实模型 adapter。
+1. recording carrier/lifecycle 证据不能代替真实 instruction、prompt、parser、model 与 policy；
+2. 同一逻辑语义必须先有可执行 reference，才能用 quality evidence 资格化 optimized path；
+3. 只有显式 reference/optimized paths 和有限 placement 真正暴露阻断后，才能判断 extension/core；
+4. bounded async、rebatching 和多 Job scheduling 必须在固定 semantic task set 上比较，不能改变算法语义。
 
 完整 LOTUS-style query-time sampling/proxy-oracle cascade、Cortex predicate ordering/filter–join 扩展、
 binary `SemanticJoin`、blocking operators、join-to-classification、fusion 与 AQE 都是远期参考方向；只有
@@ -1146,8 +1145,9 @@ organization、admission、routing 与 Ray/vLLM adapter 仍在进程外。
 
 #### 11.9.5 当前可承诺范围
 
-据此，近期承诺止于 `SemMap` reference、`SemFilter` reference、由 deterministic fixture 或规划前匹配
-evidence 支持的最小第二 filter path，以及受限 filter–join carrier audit。完整 proxy/oracle sampling、
+据此，近期研究范围止于真实 `SemanticPlanSpec`、同步 exact `SemFilter` reference、由 deterministic
+fixture 或规划前匹配 evidence 起步并由真实 reference 约束的最小第二 filter path，以及受限
+filter–join carrier audit。完整 query-time proxy/oracle sampling、
 `SemJoin` reference/LOTUS alternatives、Cortex join-to-classification、blocking operators、fusion 与 AQE
 均为条件性研究候选，不构成当前排期。
 

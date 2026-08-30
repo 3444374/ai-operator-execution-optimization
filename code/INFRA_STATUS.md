@@ -1,9 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-29
+日期：2026-08-30
+
+文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
+验收标准由
+[`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
+负责，测试/实验支持的结论由证据台账负责。
 
 本文说明 PostgreSQL 中立语义算子 reference capability 与现有 Daft + Ray 外部物理执行基础设施
-已经完成什么、实际执行流程、研究证据边界，以及下一步还需要实现和验证的内容。当前 exact
+已经完成什么和实际执行流程。当前 exact
 SemMap/SemFilter recording paths 不等于第二 physical path、真实模型或完整优化系统已经实现；项目不修改
 vLLM 内部。
 
@@ -22,10 +27,9 @@ UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，�
 `connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
 资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
 公共 extension 级 PostgreSQL compatibility suite 和第二个真实消费者已经通过，未为 `SemFilter`
-复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。下一步增加最小第二
-physical path，随后审查 extension 是否足以承载目标 LOTUS/Cortex semantic paths，
-只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom session 与 HTTP/SemLoom
-provider 在数据库语义资格之后实现。
+复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。当前尚缺真实
+`SemanticPlanSpec`、同步 exact 真实模型 reference、第二 physical path、carrier audit、accepted-prefix、
+多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
@@ -37,7 +41,8 @@ SemMap 的 RSS 起始/峰值/结束为 21,048/21,688/21,688 KiB、FD 为 25/25/2
 SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 21,688/21,688/21,688 KiB、FD 为
 26/26/24，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
 `0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
-accepted-prefix、多在途/乱序 completion、第二 physical path 和 LOTUS compatibility adapter 仍未实现。
+真实 instruction/prompt/parser/model policy、真实模型 reference、accepted-prefix、多在途/乱序 completion、
+第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
 
@@ -377,9 +382,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | 多模态复用 | 中高（native + project staged observation） | Daft built-in/Ray Data/project matched-resource formal + 原生 40/40 four-job + Project observe-only 24/24 | 静态/观测证据已闭合；待 HSE static GPU 门、stage-aware/CE5 在线决策、小规模 pgvector 质量闭环与 held-out |
 | 算子代价估计 | 中（离线） | 429 formal、20 context × 4 candidate context-LOO | CE5 配置选择 marginal pass；尚未在线驱动或验证跨模态 remaining work/SLO |
 
-## 7. 后续设计与实施顺序
+## 7. 当前实现差距与工程计划入口
 
-### 当前优先：PostgreSQL 中立语义算子与 provider 资格验证
+### PostgreSQL 中立语义算子与 provider 状态
 
 1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
    recording reference paths 已验证当前受限 `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child
@@ -398,11 +403,15 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 4. exact `SemFilter` 已作为第二个真实消费者证明公共层边界：PostgreSQL carrier 负责 slot/plan 与
    `LIMIT` 前 placement；`PgSemanticRuntime` 拥有 provider lifecycle/sequence/memory/error；
    `SemMapMachine` 与 `FilterMachine` 分别负责 emit 与 keep/drop/unknown 语义；
-5. 增加一条 deterministic、显式可识别的 `SemFilter` 第二 physical path；
-6. 用反例测试审查 extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex paths；
-   能表达则保留 extension，只有已复现阻断才增加最小 core patch；
-7. 数据库语义资格完成后再扩 accepted-prefix、多在途、增量 SemLoom session 和 direct HTTP/SemLoom adapters；
-8. 上述步骤完成前不扩 GPU 矩阵、不调 SAOR，也不把下述 external runner 结果写成数据库内算子证据。
+5. 当前 `AiOpenSpec` 仍是 recording semantic contract 的子集；instruction、prompt program、result parser、
+   model/generation constraints 和真实 completion usage 尚未进入 plan/task/result；
+6. 当前 planner 只生成一个 reference role，cost 仍是普通占位；reference/optimized identity、AI-work
+   cost、quality evidence 与 fallback 尚未实现；
+7. 当前 provider interface 是同步单任务；accepted-prefix、多在途、乱序 completion、增量 SemLoom
+   session 和 direct HTTP/SemLoom adapters 尚未实现；
+8. 以上缺口的实施顺序和完成标准见
+   [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
+   本文不复制未来设计。
 
 ### 条件性恢复：image path-B + A+B
 

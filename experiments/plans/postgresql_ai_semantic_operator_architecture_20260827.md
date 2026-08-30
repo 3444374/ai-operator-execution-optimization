@@ -1,7 +1,15 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-08-29
+更新日期：2026-08-30
 状态：`current / architecture-defined / implementation-in-progress`
+
+文档角色：本文是 PostgreSQL 语义算子模块的**工程架构与实施计划**，回答接口如何落地、按什么顺序
+实现以及如何验收。论文机制、可迁移策略和研究空白由
+[`../../research/sema_native_semantic_operator_architecture_reference_20260827.md`](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)
+与精读笔记负责；源码事实只从 [`../../code/INFRA_STATUS.md`](../../code/INFRA_STATUS.md)
+读取，测试和实验结论只从证据台账读取。本文
+引用文献只为说明工程决策来源，不承担第二份理论综述或实现状态台账。
+
 当前实现事实：`code/postgres/semloom_pg/` 已有 PostgreSQL planner-visible `SemMap` 与 exact
 relation-level `SemFilter` `CustomPath/CustomScan` reference paths；`REL_18_3` PGXS regression 与
 preload/prepared/generic-plan invalidation、RLS/权限、snapshot/savepoint/cancel/insert TAP 已通过，
@@ -15,11 +23,12 @@ TRUE/FALSE/UNKNOWN keep/drop。provider-neutral
 174,080-byte 编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数和可取消 nonblocking connect 已验证。
 公共 compatibility suite 与第二个 reference operator 已证明该同步 UDS/runtime 分层，未复制
 `SemloomExecPump`，也未为尚未实施的 `SemJoin`/blocking operator 预造抽象；
-accepted-prefix backpressure、多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器
-在第二 physical path 与载体资格验证后实施。既有 PostgreSQL source/sink、
+真实 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、accepted-prefix backpressure、
+多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器尚未实现。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
-当前排期边界：锁定 PostgreSQL `REL_18_3`，完成 exact `SemMap`/`SemFilter`、一个普通关系 child
-plan、query-scoped provider session，以及一条最小、显式可识别的 `SemFilter` 第二 physical path。
+当前排期边界：锁定 PostgreSQL `REL_18_3`，保留已完成的 recording `SemMap`/`SemFilter`、ordinary
+child plan 和 query-scoped provider session；下一步先完成真实 `SemanticPlanSpec` 与同步 exact
+`SemFilter` 真实模型 reference slice，再实现一条最小、显式可识别的第二 physical path。
 既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
 数据库资格完成后优先比较 IMLane-like batch placement。`SemJoin`、aggregate/top-k/group-by、
 fusion/AQE、Kalypso-like lineage 与跨算子 prefix lease 仅作后续参考，不构成当前实现承诺。
@@ -166,8 +175,8 @@ statement timeout/query cancel，并把断连转换为 PostgreSQL ERROR。该实
 
 | Operator kind | 输入与输出 | 首版状态 |
 |---|---|---|
-| `SEM_MAP` | 每个输入 tuple 生成一个 typed value，并附加为新列 | 当前唯一必做算子 |
-| `SEM_FILTER` | 每个输入 tuple 生成 boolean/unknown，数据库决定是否保留 | 第二个算子，用来证明算子会改变关系 cardinality |
+| `SEM_MAP` | 每个输入 tuple 生成一个 typed value，并附加为新列 | recording reference carrier 已完成；真实 instruction/prompt/parser 尚未接入 |
+| `SEM_FILTER` | 每个输入 tuple 生成 boolean/unknown，数据库决定是否保留 | recording exact reference 已完成；当前用于真实 reference 与第二 physical path |
 | `SEM_EXTRACT` | 从 tuple 生成声明式结构化字段 | 参考方向；不纳入当前排期 |
 | `SEM_JOIN` | 对候选 tuple pair 执行语义谓词 | 参考方向；需要独立 binary module、候选生成和 cardinality 设计 |
 | `SEM_ORDER_BY` | 根据语义比较关系确定顺序 | 参考方向；不纳入当前排期 |
@@ -213,6 +222,11 @@ SemanticPlanSpec
   semantic_spec_digest
   physical_algorithm_digest
 ```
+
+当前 `AiOpenSpec` 只实现 operator/value kind、NULL/error policy、recording spec identity 与
+`physical_algorithm=RECORDING`，是上述 plan 的协议/生命周期子集，不等于 `SemanticPlanSpec` 已经实现。
+下一个纵切面先让 instruction、prompt program、parser、model/generation constraints 和对应 digest 真正被
+planner、executor 与同步 provider 消费；不为尚未使用的字段做空壳预留。
 
 plan 不包含 Pandas、LOTUS AST、Daft、Ray 或 vLLM 对象。首版 `SemMap` 不预留 quality、cascade、
 fusion 或任意 optimization flags；出现第二条真实 physical path 时再增加被 planner 消费的字段。每个
@@ -267,26 +281,37 @@ CompletionRecord
 exactly-once 只描述数据库结果行和 task terminal state；
 外部模型调用不可回滚，不能写成 exactly-once inference。
 
-## 6. 唯一外部 seam：`AiProviderPort`
+## 6. 唯一外部 seam：当前同步 `AiProviderPort` 与后续有界扩展
 
-PostgreSQL 内部的 `SemanticExecPump` 对 executor caller 只暴露 `begin/next/stop/explain`；它隐藏 child
-slot lifetime、task binding、bounded prefetch、reorder、provider drive 和 result/error mapping，但不包含
-socket、frame 或 JSON 实现。一个
-`SemQueryRuntime` 在同一 query 的 semantic nodes 间共享 query-scoped provider session；首版只有一个
-operator，因而 pump 与 session 是一对一。其 implementation 通过异步、有界的外部 port 连接 owned gateway：
+### 6.1 当前已实现的同步 interface
+
+PostgreSQL 内部的 thin CustomScan adapter 对 executor 只暴露 `begin/next/stop/explain`。当前
+`SemloomExecPump` 负责 child slot 流，`PgSemanticRuntime` 隐藏 query-fixed provider selection、lazy
+session、sequence、completion copy、query cleanup 和 error mapping；socket、frame 与 JSON 只存在于
+UDS/wire adapter。当前 neutral interface 是一个 task 对应一次同步 completion：
 
 ```c
-AiProviderSession *open(AiProvider *, const AiSessionSpec *, AiProviderError *);
-AiDriveStatus drive(AiProviderSession *,
-                    const AiDriveRequest *,
-                    AiDriveResult *,
-                    AiProviderError *);
-void close(AiProviderSession **,
-           AiCloseDisposition,
-           AiCloseReport *);  /* NULL-safe, bounded, non-throwing */
+AiProviderStatus open(const void *config,
+                      const AiOpenSpec *spec,
+                      AiProviderSession **session,
+                      AiProviderError *error);
+AiProviderStatus drive(AiProviderSession *session,
+                       const AiPreparedTask *task,
+                       AiCompletion *completion,
+                       AiProviderError *error);
+void close(AiProviderSession *session);
 ```
 
-`drive` 在一个 entry point 中同时推进 submit、completion drain、end-of-input 和 backpressure：
+该 interface 已由 in-process recording 与 UDS recording 两个 adapters 验证，是当前真实 seam。它保持
+task input 只借用到 `drive` 返回、completion 由 session 持有到下一次 `drive/close`、非 OK 状态终止
+session、lazy open 和幂等本地 cleanup；当前没有 accepted-prefix、多在途、乱序 completion、query-level
+多节点 registry 或协议级 cancel frame。
+
+### 6.2 数据库路径选择资格后的有界 batch interface
+
+真实 `SemanticPlanSpec`、同步 exact reference 和第二 physical path 通过后，才把同一 seam 扩为
+accepted-prefix、多在途和有界 reorder。目标 `drive` 在一个 entry point 中推进 submit、completion drain、
+end-of-input 和 backpressure：
 
 ```text
 AiDriveRequest
@@ -303,9 +328,9 @@ AiDriveResult
   available_tasks / bytes / work
 ```
 
-interface 的完整合同包括：
+未来 batch interface 的完整合同包括：
 
-- session 只对应一个 query 和 immutable operator/spec digest set；未来批量 port 首版的 set 恰有一个 operator；
+- session 只对应一个 query 和 immutable operator/spec digest set；batch port 首版的 set 恰有一个 operator；
 - provider 只能接受 task slice 的连续前缀；`accepted_prefix=0` 是正常 backpressure，不是错误；
 - tasks、serialized bytes、estimated work 与 PostgreSQL reorder buffer 都有界；任一达到上限便停止拉 child；
 - provider 可乱序完成，但每个 accepted task 最多交付一个 terminal completion；数据库按本地 binding
@@ -317,9 +342,9 @@ interface 的完整合同包括：
 - disconnect、protocol drift、digest mismatch、unknown task 和缺失终态均 fail closed；首版不自动重连或 retry；
 - `close` 只返回脱敏计数与 digest，不返回或持久化原始 prompt/output。
 
-该 module 具有真实 seam：进程内 recording 和 UDS client 是 PostgreSQL 侧两个 adapters；direct HTTP 与
-SemLoom scheduling 是 gateway 后方的两种 execution implementation，不进入 PostgreSQL backend。
-production 先用 Unix-domain socket、4-byte big-endian length 加 UTF-8 JSON frame；C/Python golden vectors
+当前与未来 interface 都保持同一 seam placement：direct HTTP 与 SemLoom scheduling 是 gateway 后方的
+execution implementations，不进入 PostgreSQL backend。production 先用 Unix-domain socket、4-byte
+big-endian length 加 UTF-8 JSON frame；C/Python golden vectors
 固定整数时间、SHA-256、
 Unicode、拆包/粘包和未知字段行为。在 profile 证明 serialization/data copy 是主要成本前，不增加共享
 内存、Arrow Flight 或自定义零拷贝；IMLane 的 ArrowLane 路径保留为后续可测替代 adapter。
@@ -384,6 +409,12 @@ semantic plan 与 external physical execution 是当前两条优化轴，不能�
 | external physical execution | execution-batch placement、sealed-task work/locality grouping、bounded async drive、continuous refill、multi-Job share、endpoint routing | IMLane、现有 SemLoom | PostgreSQL pump 与 SemLoom provider 按 §7.2 的 matched profiles 划分 |
 | dependency/KV execution（参考） | stage lineage、prefix lease、cache-domain stickiness、KV-aware admission | Kalypso | 不构成当前排期；若另行立项，PostgreSQL 产生 lineage，SemLoom 管物理 lease/admission，vLLM 管真实 KV blocks |
 | model serving | continuous batching、iteration scheduling、KV allocator、decode | vLLM | vLLM；首版不修改 |
+
+两条优化轴使用不同的 cost：PostgreSQL semantic path cost 估计进入语义算子的行数、输出选择率、
+model calls、prompt/output tokens、model role、sample/oracle work 和 quality evidence；SemLoom execution
+cost 估计 prepare/model/result work、queue、capacity、locality、service time 与 remaining work。前者决定
+**生成什么 work**，后者决定**相同 sealed work 如何执行**。`PreparedSemanticTask.work_hint` 与 completion
+telemetry 连接两层，但不得把 quality 与 endpoint queue 压成一个供双方随意解释的标量。
 
 首个 `SemMap` 只能验证 reference execution 与外部 seam；真正的数据库优化资格从 `SemFilter` 第二条
 physical path 开始。LOTUS 没有与 filter/join/top-k 同类的专用 `SemMap` approximation，因此不能虚构
@@ -550,12 +581,128 @@ class SchedulingSession(Protocol):
 若未来另行设计 Kalypso-like query-stage lineage，不复用 `planning.work.StageWork`：当前类型描述模型
 执行资源阶段，两者变化原因不同；未来候选应使用独立类型。
 
+### 8.6 PostgreSQL 工程实现地图与未完成切片
+
+本节回答“一个语义算子具体怎样进入现有代码、公共层在哪里、下一次修改应落在哪一层”。它是工程
+实现说明，不增加新的研究方向；实际完成状态仍由 `code/INFRA_STATUS.md` 记录。
+
+#### 8.6.1 当前调用链与目标依赖方向
+
+```text
+extension.c hooks
+  ├─ sem_path.c                 # SemMap upper path
+  └─ sem_filter_path.c          # SemFilter base-relation path
+          ↓ CustomPath / CustomScan plan data
+sem_scan.c                      # thin PostgreSQL callback adapter
+          ↓
+sem_pump.c                      # child pull, slot binding, per-tuple loop
+  ├─ sem_operator_machine.c     # operator semantics / task-step decision
+  └─ pg_semantic_runtime.c      # provider lifecycle, sequence, memory, cleanup, errors
+          ↓
+ai_provider_port.h              # PostgreSQL-neutral interface
+  ├─ recording_provider.c       # in-process test adapter
+  └─ uds_provider.c / wire_v2.c # PostgreSQL UDS client adapter
+          ↓
+external gateway               # bind/listen/accept, model adapter, future SemLoom session
+```
+
+依赖只允许向下。planner 不包含 socket/provider selection；operator machine 不选择 endpoint；runtime 不解析
+SQL 或 Filter truth；neutral port 不出现 `Datum/Oid/MemoryContext/TupleTableSlot/Plan`；gateway 不重新连接
+PostgreSQL 拉表，也不决定 relation cardinality。
+
+#### 8.6.2 各层应拥有的代码
+
+| module | interface 与职责 | 明确不拥有 |
+|---|---|---|
+| planner carrier | marker OID、受支持 query shape、logical/physical plan spec、placement、input/output rows、cost/quality identity、`EXPLAIN` plan fields | provider session、wire、模型连接 |
+| `sem_scan.c` adapter | 把 CustomScan callbacks 映射到 pump；拒绝未支持 rescan/EPQ | child loop、operator truth、provider lifecycle |
+| pump | `ExecProcNode(child)`、slot/Datum binding、per-tuple memory、同步 task-step 循环、emit/drop 后的 tuple flow | algorithm 选择、socket/JSON、query-level scheduler |
+| operator machine | 把已绑定 operand 编译为 task step，解释 typed completion，返回 `NEED_TASK(role)`、`EMIT`、`DROP` 或 `ERROR` | plan placement、provider selection、FD 和 query cleanup |
+| `PgSemanticRuntime` | query-fixed adapter、lazy open/drive/close、sequence、completion copy、公共 counters、错误到 SQLSTATE、幂等 cleanup | prompt/parser、Filter truth、transport frame |
+| neutral provider port | fixed-width identity、byte slices、task/completion/status 与所有权规则 | PostgreSQL ABI、SQL、Plan、transport-specific config |
+| provider adapters | recording 或 UDS 的资源和 transport implementation | semantic algorithm 或 relation result |
+| gateway | UDS server、canonical model request transport、future work organization/admission/routing | SQL rewrite、tuple binding、result parser 与 keep/drop |
+
+当前 `OperatorMachine` 仍直接接收 `TupleTableSlot/AttrNumber/MemoryContext`，是 PG-private 的可运行实现，
+但与上表目标 seam 尚未完全一致。工作包四加入真实 typed parser/result 时，把 Datum/slot conversion 收回
+pump，machine 接收已绑定 byte/value view 并返回 typed result/disposition；这项调整必须由真实 consumer
+驱动，不单独做一次只改文件形状的重构。
+
+#### 8.6.3 当前必须在新算子/新路径前解决的工程缺口
+
+| 缺口 | 当前实现 | 最小修正 |
+|---|---|---|
+| plan-owned semantic identity | `custom_private` 主要只有 operator kind/input column，recording spec 在 machine 构造 | 增加 PG-private、可 copy/serialize 的 `SemanticPlanSpec/PhysicalPlanSpec`；planner 产生，executor 只消费，不保存裸指针 |
+| SQL semantic surface | marker 只有单个 text input | 增加最小受支持的 input + instruction + options 形式；未知 option 在 planning 时拒绝；不改 `gram.y` |
+| physical path identity | algorithm 与 `Physical Role=reference` 硬编码 | CustomPath/CustomScan 携带 algorithm/model role、quality/evidence/fallback；`EXPLAIN` 从 plan 读取 |
+| Filter cardinality/cost | 复用已含 marker selectivity 的 child rows，并只加 `cpu_operator_cost * rows` | 分开 semantic-input rows、output selectivity 和 calls/tokens/model-role cost；若公开 hook 无法正确重建 ordinary child estimate，记录为 carrier audit 反例 |
+| proxy/oracle control flow | 每个非 NULL tuple 固定一次 `drive` | 保持同步 port，先让 machine 返回 `NEED_TASK(PROXY/ORACLE)`，pump 循环 drive；不把 cascade 隐藏进 gateway，也不借机实现多在途 |
+| real result parsing | recording completion 直接解释为 text/tristate | parser identity 在 plan，raw completion 回 PostgreSQL 后严格解析；provider 不返回最终 tuple/keep-drop |
+| coexistence evidence | static hook chaining 已测，live multi-extension 尚未测 | 在 carrier audit 中用真实 alternative path 运行 live hook、prepared/generic plan 和 invalidation 反例 |
+
+#### 8.6.4 只在已有变化轴上使用的设计模式
+
+| 模式 | 当前或成立后的用途 | 不采用的情况 |
+|---|---|---|
+| Adapter | recording 与 UDS 已是两个 `AiProviderPort` adapters；未来 fixed endpoint/SemLoom 位于 gateway 后方 | 不为只有一个 implementation 的内部 helper 制造 port |
+| Factory | `pump.begin` 按 query-fixed GUC 选择 adapter 与 immutable config，首个非 NULL task 才 lazy open | 不在每行或每次 drive 重新选择 provider |
+| Strategy | Map/Filter machines 已对应两个关系语义；reference/proxy-oracle 只有成为两个 planner-visible paths 后才形成 physical strategy | 不用字符串/GUC 在 provider 内暗换 semantic algorithm |
+| State machine | `PgSemanticRuntime` 管 session lifecycle；proxy/oracle path 出现后，独立 operator state 管 task role 与三路分流 | 不把 async、Join、blocking 状态提前塞入 unary runtime |
+
+公共层继续遵守“两个真实消费者后再抽取”：现有 `PgSemanticRuntime` 因 Map/Filter 共用 lifecycle 而成立；
+future Join、aggregate、fusion、AQE 没有第二个真实 consumer 前，不建立通用 semantic DAG interpreter。
+相似 planner validation 只有语义与变化原因一致时才进入 `sem_path_common`，operator-specific placement 和
+marker lowering 保持本地，以换取修改的 locality。
+
+#### 8.6.5 PostgreSQL core 修改注意事项
+
+extension 是当前 carrier，不是临时必弃方案。所有新语义先在 companion extension 中实现；只有 §8.3
+列出的同一反例在锁定 `REL_18_3` 上可重复，才把对应 identity/path-generation 或 executor lifecycle
+补成最小 core seam。core patch 不接管 SQL grammar、storage、provider、Ray 或 vLLM；extension 与 core
+carrier 必须对相同 semantic plan 产生一致 task digest、typed rows、错误和 lifecycle 证据。
+
+#### 8.6.6 下一轮按文件落地的切片
+
+工作包四不应从继续拆 runtime 开始，而应以“一个真实 SemFilter 语义从 plan 到 model
+completion 完整消费”为单位修改：
+
+1. `sql/semloom_pg--*.sql` 和 `marker.c`：增加一个最小、显式的 function-like SQL 表面，
+   除 input 外携带 instruction 和已实现的 options。未被消费的 option 不允许进入 plan；
+   不修改 `gram.y`。
+2. 新增 PG-private `semantic_plan_spec.[ch]`：定义可 deep-copy、可验证和可 canonicalize 的
+   logical/physical specs。它可以使用 PostgreSQL OID 表示 SQL 类型，但不包含 provider session、FD
+   或 gateway config。
+3. `sem_filter_path.c`：在 planning 时校验 argument 类型、constant/options 与 query shape，
+   生成 plan-owned spec 并写入可 copy/serialize 的 `custom_private`；同时记录 semantic-input
+   rows、预计 selectivity 与明确的 reference role。planner 不连接模型、不打开 UDS。
+4. `sem_scan.c` 仍只转发 callback；`sem_pump.c` 解码 plan spec、绑定 `Datum` 并管理
+   per-tuple memory。当真实 parser/result 进入后，把现有 machine 中的 slot/`AttrNumber`/
+   `MemoryContext` conversion 收回 pump，machine 只接受已绑定 value view。
+5. `sem_filter_machine.c` 依据 plan 产生 typed task，并严格解析 raw completion 为
+   TRUE/FALSE/UNKNOWN 或稳定错误；只有 PostgreSQL 可以最终 keep/drop tuple。
+6. `ai_provider_port.h`、`wire_v2.c` 和 gateway 只增加该纵切面真正消费的 fixed-width/
+   byte-slice identity 与 raw completion/usage。HTTP/TLS/auth、endpoint config 和 model-specific request
+   属于 gateway-side model-reference adapter，不进入 PostgreSQL backend 或 neutral header；资格路径不自动重试。
+7. regression/TAP/protocol golden tests 固定 SQL rows、`EXPLAIN` identity、NULL/unknown、parser
+   failure、model mismatch、cancel、savepoint/abort、prepared-plan invalidation、no-task lazy open、
+   脱敏错误和 RSS/FD 生命周期。小规模真实模型只验证语义纵切面，不报告性能改善。
+
+工作包五在此基础上只增加“第二条可见路径”：`sem_filter_path.c` 同时生成 reference
+和 proxy/oracle `CustomPath`，两者携带不同 `PhysicalPlanSpec`、cost 与 evidence identity；
+operator state 可按需返回 `NEED_TASK(PROXY)` 或 `NEED_TASK(ORACLE)`，pump 在当前同步 port 上循环，
+`PgSemanticRuntime` 不因算法分支而改变。阈值和 evidence 在 planning 前已加载、校验并解析为
+immutable plan values；planner 不在线采样、不调模型，provider 也不暗中切换算法。
+
+以后增加 unary operator 时，只新增本地 planner path 与 operator machine，并复用已证明的
+runtime/provider lifecycle。binary join 和 blocking aggregate 的 child ownership、cardinality 与状态不同，
+不塞进现有 unary pump；它们只在各自有第二个真实 consumer 后才抽取新的公共层。
+
 ## 9. 当前实施工作包、资格后验证与参考方向
 
 工作包一至七构成当前有序实施范围。同步 UDS recording slice、neutral provider seam、响应边界
-hardening、公共 PostgreSQL compatibility suite、exact `SemFilter` 与 shared runtime 已通过；当前下一步
-是最小第二 semantic path。
-只有语义算子资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
+hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter` 与 shared runtime 已通过；
+当前下一步是真实 semantic contract 与同步 exact model reference slice，再实现最小第二 semantic path。
+只有真实语义和路径选择资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
 
@@ -612,7 +759,21 @@ consumer 之前；unknown、provider error、LIMIT、cancel、savepoint/transact
 tuple identity 或资源清理。提交 `d3a22dcf` 的精确 `REL_18_3` 结果为 regression 1/1、TAP 193/193、
 Python/static 18/18 和 warning-free `-Werror`；资源 smoke 数字从证据台账读取。
 
-### 工作包四：最小 LOTUS/Cortex-like `SemFilter` 第二 path
+### 工作包四：真实 `SemanticPlanSpec` 与同步 exact reference slice
+
+把 function-like SQL 中的 input、instruction 和受限 options 绑定为数据库内 `SemanticPlanSpec`；实现
+canonical prompt program、严格 result parser、model/generation constraints、semantic digest 与 raw
+completion/usage identity。gateway 先通过当前同步单在途 interface 调用固定 OpenAI-compatible endpoint；
+这只是用于语义资格的最小同步 model-reference adapter，不等于后续的 production direct-HTTP
+或 SemLoom scheduling provider。
+数据库验证 completion 并执行 SemFilter keep/drop，provider 不接收 SQL/Plan，也不决定 relation
+cardinality。本工作包只运行小规模 capability，不产生调度性能结论。
+
+完成标准：真实模型与 recording/golden reference 在 tuple identity、parser、NULL/error、cancel、事务和
+result lifecycle 上使用同一 observable contract；plain EXPLAIN/no-task 仍不连接；未被实现消费的 plan
+字段在 planning 时拒绝，不静默丢弃。
+
+### 工作包五：最小 LOTUS/Cortex-like `SemFilter` 第二 path
 
 先使用 deterministic fixture 或规划前已经匹配的静态 calibration artifact，实现 LOTUS-like
 proxy/oracle 双阈值 path。PostgreSQL plan 保存 algorithm/model role、quality policy、evidence epoch、
@@ -620,10 +781,12 @@ threshold 与 reference fallback；executor 按 tuple/task identity 执行 accep
 LOTUS v1.2.4 的 importance sampling 与 threshold solver 先作为 Python golden oracle 或离线 calibration，
 不在 PostgreSQL planner 中扫描训练数据或调用模型。
 
-完成标准：reference/alternative 的 semantic-spec/physical-algorithm/provider-execution digests、cost、typed rows、provider task roles 与阈值来源可验证；
-`EXACT` 只生成 reference；显式 `APPROX` 在 evidence/policy 失配时只保留或退回 reference。
+完成标准：reference/alternative 的 semantic-spec/physical-algorithm/provider-execution digests、进入
+语义算子的行数与输出选择率、calls/tokens/model-role cost、typed rows、provider task roles 与阈值来源可验证；
+`EXACT` 只生成 reference；显式 `APPROX` 在 evidence/policy 失配时只保留或退回 reference。deterministic
+fixture 只证明 path/control flow，真实质量结论必须与工作包四的同步 reference 比较。
 
-### 工作包五：载体审查与条件性最小 core patch
+### 工作包六：载体审查与条件性最小 core patch
 
 用已实现的 exact `SemFilter` 和第二 path 测试 marker identity、prepared-plan invalidation、hook coexistence、
 relation/filter placement 与 alternative costing。如果目标可在受限、可维护的 CustomPaths 中实现，继续
@@ -635,7 +798,7 @@ placement 时，才增加解除该阻断的 planner-only `SemanticExpr/path-gene
 workload 产生相同 task digest set、typed rows、错误和 lifecycle evidence，并能说明每处 core 修改对应
 哪个已复现阻断。
 
-### 工作包六：批量 `AiProviderPort` 与增量 SemLoom scheduling session
+### 工作包七：批量 `AiProviderPort` 与增量 SemLoom scheduling session
 
 在 neutral port 上增加 accepted-prefix backpressure、多在途、乱序 completion、有界 reorder 与显式 close
 disposition；PG-specific UDS adapter 只实现 transport，所有队列、session registry、TCP/HTTP 和模型连接仍在
@@ -645,16 +808,6 @@ gateway。先用现有测试固定 `SynchronousScheduler` 行为，再抽出 `of
 完成标准：tasks/bytes/work/reorder 四类内存都有上限；新 session 在输入尚未 EOS 时可返回 completion；
 cancel 后 late result 不发布，shared credits/ledger/actor lease 最终归零。若 scheduler 需要 SQL expression、
 result parser 或 PostgreSQL Plan，说明 seam 错位并停止接入。
-
-### 工作包七：真实模型 `SemMap/SemFilter` vertical slice
-
-gateway 将数据库已经封闭的 canonical messages 发送到固定 OpenAI-compatible endpoint，或映射到
-SemLoom execution session；数据库验证 raw completion、按 plan parser 生成 SQL value/keep-drop。只运行
-小规模 capability，记录 model/protocol/endpoint identity、usage、finish reason 与 task lifecycle，不产生
-调度性能结论。
-
-完成标准：真实模型结果与 recording/golden fixture 的 parser、tuple identity、cancel/error 和 transaction
-行为一致；provider 不接收 SQL/Plan，也不决定 relation cardinality。
 
 ### 数据库资格完成后优先验证：IMLane-like batch placement
 
@@ -734,13 +887,15 @@ full-system baseline；Kalypso 当前只有论文参照，不预注册 native ba
 
 ## 12. 当前不能声称
 
-- 不能说 PostgreSQL planner-visible AI 语义算子已经实现；当前只有设计计划。
+- 可以说受限、deterministic recording `SemMap/SemFilter CustomScan` 已在 PostgreSQL 18.3 完成
+  planner/executor/lifecycle 资格；不能说真实 `SemanticPlanSpec`、真实模型语义、第二 physical path 或
+  完整 semantic optimizer 已经实现。
 - 不能在载体审查前声称 extension 必然不够或 core patch 必然需要；两者都必须以目标优化和 lifecycle
   的可复现实验为依据。
 - 不能说现有 profiler/manifest、Daft/Ray/static/SAOR 结果来自数据库内算子。
 - 不能说 Sema 的 DuckDB 实现可直接移植为 PostgreSQL extension。
-- 不能说 `ai_semantic.map` marker function 本身就是一等算子；只有 planner/executor qualification
-  通过后才能使用该表述。
+- 不能把 marker function 本身称为一等算子；当前可声称的是它在受限形状下被 fail-closed lowering 为
+  planner-visible recording CustomScan，一等逻辑语义和完整 physical alternatives 仍待实现。
 - 不能说 SemLoom work-unit batching 等于 Sema prompt batching；两者是否改变语义调用结构不同。
 - 不能把进程解耦、vector batch async submission、资源 Lane 或 Ray adapter 写成新颖性；IMLane 已直接覆盖。
 - 不能把单 query、单 cache domain 的 stage-aware KV admission 或 virtual pinning写成新颖性；Kalypso 已直接覆盖。

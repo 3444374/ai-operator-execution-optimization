@@ -1,6 +1,6 @@
 # 实验计划与设计文档
 
-更新日期：2026-08-29
+更新日期：2026-08-30
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -16,22 +16,10 @@
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
-当前短期顺序是：
-
-1. `REL_18_3` extension / planner-visible `SemMap` 与 exact `SemFilter` reference paths 已验证受限
-   `SELECT`、direct `INSERT ... SELECT`、ordinary child、三值/NULL/cardinality、snapshot、query lifecycle
-   与同步单在途 UDS recording provider；
-2. executor/provider seam 已收紧并形成公共层：`PgSemanticRuntime` 拥有 provider lifecycle、sequence、
-   completion memory、query cleanup 与错误映射；thin pump 和 Map/Filter machines 不包含 transport，
-   neutral port 不包含 PostgreSQL 类型；
-3. extension 级 PostgreSQL compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、
-   hook chaining、多 backend、取消/清理与 no-task lazy open；future `SemJoin` 仍不预造执行器；
-4. 当前以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
-   不等待完整异步协议或真实模型；
-5. 用这两个实际 semantic paths 审查 extension carrier；能表达则保留 extension，只有 marker/placement/
-   prepared-plan/hook lifecycle 的已复现阻断才增加最小 core patch；
-6. 资格成立后再扩 accepted-prefix、多在途、乱序 completion 和增量 SemLoom session，并接真实
-   HTTP/SemLoom provider；此前不扩 GPU 矩阵、不调整 SAOR，也不把 external runner 写成数据库内算子。
+当前 recording carrier、shared runtime、同步 provider seam 与 compatibility suite 已完成。唯一详细工程
+顺序由架构实施计划 §9 维护：先真实 `SemanticPlanSpec` 与同步 exact model reference，再实现第二
+physical path 和 cost/quality，随后 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
+只导航，不复制每个工作包的完成标准。
 
 ## 2. 状态分层
 
@@ -39,7 +27,7 @@
 
 | 文件 | 当前状态与用途 |
 |---|---|
-| [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | 当前实施主计划；extension/core 条件性载体、最小 LOTUS/Cortex semantic path、provider interface；IMLane 为资格后验证，Kalypso 为后续参考 |
+| [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |

@@ -6,7 +6,7 @@
 
 ### 你的课题究竟研究什么？
 
-> 我研究数据库触发 AI 算子后、数据进入模型服务之前的 AI 数据执行层：如何把表中记录组织成计算量可控的 work unit，并依据服务容量与运行状态控制提交、路由和多作业共享。数据库是任务入口和结果 sink，vLLM 是模型服务，Ray/Daft 是实现与实验平台；我不修改数据库内核、vLLM continuous batching、模型结构或 GPU kernel。
+> 我研究数据库触发 AI 算子后、数据进入模型服务之前的 AI 数据执行层：如何把表中记录组织成计算量可控的 work unit，并依据服务容量与运行状态控制提交、路由和多作业共享。数据库是任务入口和结果 sink，vLLM 是模型服务，Ray/Daft 是实现与实验平台；首选 PostgreSQL extension，只有目标计划优化或稳定 node lifecycle 出现已复现阻断时才使用最小 core semantic patch，不修改 vLLM continuous batching、Ray scheduler、模型结构或 GPU kernel。
 
 ### 两项研究内容是什么？
 
@@ -151,9 +151,13 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 
 > 不必须。两/四 Job 实验要隔离的是 shared-vLLM serving 竞争，因此以完整结果 gather、manifest 完成和 exactly-once request 证据为边界，使用 `writeback-mode=none`。若强制 sink，数据库写回会把 serving 干扰与 I/O 竞争混在一起。SQuAD/ShareGPT 三臂已单独用统一 PostgreSQL source/sink 闭合 database-E2E 和 correctness 护栏。因此文本侧的方法主实验可以不做 sink，但不能把它说成 database-E2E 结果。
 
-### 为什么历史材料写 PostgreSQL 18.3，而当前实现锁定 18.4？
+### PostgreSQL 18.3 与历史 18.4 实验分别承担什么角色？
 
-> PostgreSQL 18.3 是上一版目标平台表述，当前权威计划已经锁定 `REL_18_4`。双 4090 AutoDL 的 PostgreSQL 18.4 + pgvector 0.8.5 结果仍只能标为 external-path rehearsal，因为它没有实现 planner-visible semantic operator、provider interface 和 query lifecycle。版本继续写进每个 cell 的 identity；正式资格验证必须在锁定的 `REL_18_4` source/header/build identity 上完成 extension build、EXPLAIN、cancel/error、prepared-plan 和结果对应测试。
+> 当前数据库语义算子实现锁定 PostgreSQL `REL_18_3`。受限 recording `SemMap/SemFilter CustomScan`、
+> shared runtime、同步 provider seam 和查询生命周期测试已经在精确 18.3 上通过；真实提示、模型
+> reference、第二 physical path 和 cost/quality optimizer 尚未实现。双 RTX 4090 环境中的 PostgreSQL
+> 18.4 + pgvector 0.8.5 结果属于更早的 external-path rehearsal，只证明外部读取、执行或写回链路，不能
+> 替代 18.3 语义算子验证，也不应被全局改写为 18.3 结果。
 
 ### feeding-saturation 门怎么判断？
 
@@ -215,5 +219,6 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 - 不说“sequential 是普遍最优 organizer”。
 - 不说“图像路径提升 45.7%”。
 - 不说“Hybrid 稳健通过”。
-- 不把 PostgreSQL 18.4 AutoDL external-path rehearsal 写成已经验证 `REL_18_4` semantic operator。
+- 不把 PostgreSQL 18.4 AutoDL external-path rehearsal 写成 PostgreSQL 18.3 semantic operator 证据，也不把
+  recording CustomScan 写成真实模型或完整 optimizer 已完成。
 - 不把 Ray、Daft、vLLM、CLIP 或 pgvector 的使用本身列为创新点。

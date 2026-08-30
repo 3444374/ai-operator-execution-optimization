@@ -6,7 +6,7 @@
 
 ## 1. 一句话主线
 
-数据库把数据行交给外部 AI 服务时会出现两类根本失配。第一，记录数不能代表分阶段 AI 工作量。第二，单一静态量或局部指标不能代表当前可调度状态，必须进一步区分配置边界、模型服务状态和 Job 状态。因此，本课题研究两项对应问题：一是形成携带分阶段工作量与局部性信息的工作项并组织请求；二是在固定准入范围内，联合服务状态与 Job 进度控制提交、路由和多 Job 共享。轻量算子代价估计是共同使能部件，不单列为第三项研究内容。
+本课题的研究对象是 **PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。数据库把数据行交给外部 AI 服务时会出现两类根本失配。第一，记录数不能代表分阶段 AI 工作量。第二，单一静态量或局部指标不能代表当前可调度状态，必须进一步区分配置边界、模型服务状态和 Job 状态。因此，本课题研究两项对应问题：一是形成携带分阶段工作量与局部性信息的工作项并组织请求；二是在固定准入范围内，联合服务状态与 Job 进度控制提交、路由和多 Job 共享。轻量算子代价估计是共同使能部件，不单列为第三项研究内容。
 
 **答辩沟通任务**：汇报结束时，评委应当相信本课题研究的是一个真实、独立且可证伪的系统问题，而不是 Daft/Ray/vLLM 的工程拼接；现有证据已经证明问题、设计动机与技术可行性，但最终动态策略是否超过同上限强静态点仍需论文阶段实验回答。
 
@@ -192,7 +192,7 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
   Job remaining work、跨行 locality 和写回语义。
 - **中间层职责**：把数据库记录变成可比较的 work，感知数据阶段与服务状态，控制 admission、
   routing 和 multi-job credit，并使用代价估计支撑选择。
-- **研究边界**：不修改数据库内核、vLLM continuous batching、模型结构或 GPU kernel。
+- **研究边界**：PostgreSQL 首选 extension，只在已复现的计划身份、算子位置或执行生命周期阻断下增加最小 core semantic patch；不修改 vLLM continuous batching、Ray scheduler、模型结构或 GPU kernel。
 - **页面结论**：研究对象是 Database 与 Model Service 之间的 AI Data Execution Layer。
 - **转场**：下面先用同环境 baseline 说明这段链路确实会把服务推入不同状态。
 
@@ -508,7 +508,9 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 | 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；只调整总并发上限的控制器没有优于同上限静态配置 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；同候选集的 Project FIFO/DRR/VTC-style/guarded-debt 双轮对照已完成，得到效率—tail 折中而非单一胜者 | 原生 baseline 保持自身调度；五臂共同观测 5/5 rehearsal 已完成，但只有一次运行，正式重复和 matched-solo isolation 尚未完成 |
 | 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
 
-当前先完成 PostgreSQL planner-visible `SemMap`、中立 provider 和 query-lifecycle 资格验证；恢复图像实验后，按 HSE static
+当前 PostgreSQL 18.3 的确定性记录 `SemMap/SemFilter`、中立外部执行接口和查询生命周期已完成受限功能验证；
+下一步先实现真实数据库语义计划（`SemanticPlanSpec`）与同步、精确的真实模型参考路径，
+再完成第二条物理路径、代价/质量判定和 extension 载体审查；恢复图像实验后，按 HSE static
 GPU 对照 → 单一 stage-aware 动作 → 小规模 pgvector 质量检查推进。每一步记录完整的
 “状态→决策→动作→效果 trace”，不把多个部件同时接入后再做无法归因的总对比。
 

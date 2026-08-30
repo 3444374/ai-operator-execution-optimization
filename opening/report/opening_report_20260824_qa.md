@@ -1,6 +1,6 @@
 # 开题报告修订审查记录
 
-日期：2026-08-24（2026-08-27 补充架构复核）
+日期：2026-08-24（2026-08-30 补充实现状态复核）
 
 审查对象：`opening/report/opening_report.md`
 
@@ -20,15 +20,13 @@
 
 ## 2. 研究方案与当前完成内容
 
-报告已区分计划中的数据库入口和当前实验使用的物理执行入口。2026-08-27 的架构修订改为参考
-Sema：PostgreSQL AI 语义算子负责查询计划、提示程序、结果解析、权限、取消、错误和结果生命周期；
-外部 execution provider 只执行数据库规范化后的任务。LOTUS v1.2.4 只作可选兼容和独立系统对比，
-不再是核心前置依赖。当前实验中的 `AI_COMPLETE` 与 `AI_EMBED` 仍只表示任务的输入输出含义，尚未
-完成 PostgreSQL planner-visible `SemMap`、统一 provider interface 或 `SemFilter` 关系语义。
+报告已区分数据库内语义算子路径与既有外部物理执行实验。架构以 Sema-like 数据库原生语义算子为主参照：PostgreSQL 拥有 SQL、ordinary child plan、snapshot、权限、语义计划、结果解析以及取消、错误和结果生命周期；外部 execution provider 只执行数据库已封闭的任务。LOTUS v1.2.4 只作可选兼容和独立系统对比，不再是核心前置依赖。
+
+2026-08-30 的源码事实是：精确 PostgreSQL 18.3 extension 已经有 planner-visible、deterministic recording `SemMap` 和 exact relation-level `SemFilter CustomPath/CustomScan`，两者复用 PostgreSQL-private shared runtime、中立 `open/drive/close` provider seam 和公共 compatibility tests。这证明受限 carrier 和 query lifecycle 可行，但还没有实现真实 instruction/prompt/parser/model policy、真实模型 reference、第二 physical path 或 cost/quality-based optimizer。
 
 现有实验采用的 AI 操作来源已逐项交代：直接路径使用项目异步 HTTP 客户端；DuckDB 路径使用社区 `ai` 扩展的 `ai_try_complete`；Daft Native 和 Daft Ray 使用 Daft 内置 `functions.prompt`；Ray Data 使用其 HTTP Processor 或 `map_batches` 执行图；项目文本路径使用 Daft/Arrow、Ray 有状态执行单元和 vLLM；图像向量由 Hugging Face Transformers 的 CLIP 模型产生。现有结果用于验证数据库读取之后的数据组织、请求提交、模型执行和结果收集，不被写成数据库内 AI 算子已经实现的证据。
 
-这种分层方式能够先观察数据库读取之后的组批、提交、路由和多作业选择，但不能替代数据库侧记录流交接、查询取消、错误传播和优化器集成验证。报告已相应把现有结果限定为外部物理方法的可行性依据，并把 PostgreSQL `SemMap` capability、中立 plan/task/result 合同、execution providers 与后续 `SemFilter` 列为实现顺序。
+这种分层方式把两类证据分开：既有 GPU 实验回答外部 provider 中的组批、提交、路由和多作业选择；recording extension 回答 PostgreSQL 侧的 child plan、snapshot、取消、错误和结果生命周期。两者都不能代替尚未完成的真实模型语义与优化路径对比。
 
 ## 3. 核心概念与重复检查
 
@@ -59,10 +57,7 @@ Sema：PostgreSQL AI 语义算子负责查询计划、提示程序、结果解�
 
 ## 6. 进度、预期成果与技术指标
 
-进度安排覆盖文献深入调研、PostgreSQL planner-visible `SemMap`、中立 plan/task/result 与 provider
-interface、查询生命周期基础功能、两项方法构建、实验验证、数据分析、组合与多模态验证、论文初稿
-和初审，已经满足模板列出的阶段要求。LOTUS compatibility/native baseline 后置；已经完成的基础实验
-没有再次写成未来要重复完成的任务。
+进度安排已根据实现事实分段：recording `SemMap/SemFilter`、shared runtime 和同步 provider seam 作为已完成的 carrier/lifecycle 资格；接下来实现真实 `SemanticPlanSpec` 与同步 exact model reference，再生成显式 reference/optimized 候选路径并加入 AI-work cost、quality evidence 和 reference fallback。只有 extension 无法稳定表达 plan identity、placement 或 node lifecycle 时，才编写最小 PostgreSQL core patch；路径选择资格成立后再扩展 bounded async、SemLoom scheduling 与 IMLane-like batch placement。
 
 预期成果不再列“硕士毕业论文”作为单独成果，而是说明数据组织方法、提交与多作业调度组件、轻量 AI 算子代价估计、可复现实验系统和文本、图像、多模态扩展接口。第六章集中列出正确完整性、效率、作业体验、代价估计和可复现性指标，并明确 100% 结果对应、5% 方法改善参考值、三次统计运行方向一致、代价排序准确率 0.8 以上和平均选择损失不超过 5% 等判断方式。
 
@@ -74,4 +69,4 @@ interface、查询生命周期基础功能、两项方法构建、实验验证�
 
 ## 8. 审查结论
 
-本轮属于定向精修，不是结构性重写。报告目前能够说明课题为什么要研究数据库 AI 负载的数据组织与上游调度、两项研究内容分别解决什么问题、代价估计在何处发挥作用、现有实验实际测了什么，以及后续还需要完成哪些验证。Markdown 正文和报告专用图片已同步；PPTX、Word 模板和源实验数据均未修改。
+本轮属于实现状态和后续路线校准，不改学校模板的七部分结构。Markdown 权威正文已同步到 PostgreSQL 18.3 当前事实；报告图片、PPTX、Word、答辩 QA PDF 和源实验数据本轮均未修改，对外使用前仍需从 Markdown 权威稿增量同步并检查版式。

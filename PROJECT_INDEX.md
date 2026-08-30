@@ -1,26 +1,27 @@
 # 项目导航
 
-更新时间：2026-08-28
+更新时间：2026-08-30
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
 
-## 1. 权威来源
+## 1. 权威来源与职责
 
 | 内容 | 单一入口 | 说明 |
 |---|---|---|
 | 项目长期规则 | [`AGENTS.md`](AGENTS.md) | 全项目规则、继承顺序与目录规则路由；进入子目录后再读沿途 `AGENTS.md` |
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
-| 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 题目、研究内容、证据等级和当前执行顺序 |
-| 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；不保存详细历史 |
-| 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 代码模块、已接线能力和未完成项 |
-| 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 机制、代码、测试、结果和证据等级映射 |
-| 开题判断表 | [`opening/claim_matrix.md`](opening/claim_matrix.md) | 对外 claim、依据和不能声称的范围 |
-| 文献知识入口 | [`research/knowledge_hub.md`](research/knowledge_hub.md) | 文献、设计候选和研究问题 |
+| 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
+| 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
+| 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
+| PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 回答 semantic plan/provider interface 如何实现、工作包顺序和验收条件；不承担第二份文献综述或实现证据 |
+| 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
+| 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
+| 对外叙事与主张 | [`opening/claim_matrix.md`](opening/claim_matrix.md)、[`opening/report/opening_report.md`](opening/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
 | 变更历史 | [`PROJECT_LOG.md`](PROJECT_LOG.md) | 结构、方向、结论和关键入口变更记录 |
 
-冲突处理顺序：原始结果/源码 > 领域权威入口 > `PROJECT_OUTLINE.md` > 快速说明 > 历史设计和
-实施计划。历史文件中的“当前”“下一步”只对其文件日期有效。
+冲突处理顺序：原始结果/源码 > 领域权威入口 > `PROJECT_OUTLINE.md` > 当前工程计划（仅处理
+实现细节）> 快速说明 > 历史设计和已归档计划。历史文件中的“当前”“下一步”只对其文件日期有效。
 
 规则按路径继承：根 `AGENTS.md` 始终生效，目标目录沿途的 `AGENTS.md` 只追加局部职责与验证要求，
 README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根入口，不再复制或无条件导入
@@ -44,12 +45,10 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-当前 `REL_18_3` extension/planner-visible `SemMap`、PostgreSQL-private pump、neutral provider port 与
-独立 recording/UDS adapters 已通过功能测试；最短期任务是固定 extension 级 PostgreSQL compatibility
-suite，再以 exact `SemFilter` 作为第二个真实消费者验证共同代码并抽成 PostgreSQL-private runtime，
-随后实现最小第二
-physical path。载体审查决定是否需要最小 core patch；accepted-prefix、多在途、
-增量 SemLoom 与 HTTP provider 在数据库语义资格之后实现。
+当前 `REL_18_3` recording `SemMap/SemFilter`、PostgreSQL-private shared runtime、neutral provider port、
+独立 recording/UDS adapters 与 compatibility suite 已通过。最短期任务是真实 `SemanticPlanSpec` 和同步
+exact `SemFilter` model reference slice；随后实现显式 reference/optimized second path 和 semantic
+AI-work cost，再做 carrier audit。accepted-prefix、多在途和增量 SemLoom 在路径选择资格之后实现。
 既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
 
 ### 运行实验或迁移机器

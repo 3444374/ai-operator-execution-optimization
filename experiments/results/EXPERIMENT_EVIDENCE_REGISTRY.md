@@ -1,8 +1,13 @@
 # 实验与机制证据台账
 
-更新日期：2026-08-29
+更新日期：2026-08-30
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。当前工程主线已在 `REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference paths 上完成协议 v2 canonical digest、同步单在途 UDS recording slice、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator machines、neutral provider port 与 recording/UDS adapter 的职责拆分；公共 compatibility suite 已验证 RLS/权限、generic-plan invalidation、savepoint、多 backend、cancel/cleanup 和 no-task lazy open。下一步增加最小第二 semantic path。accepted-prefix、多在途、增量 SemLoom session 与 IMLane-like batch placement 在数据库语义资格后推进，Kalypso-like lineage 只作后续参考。既有文本、图像和 SAOR 条目记录外部物理执行基座与历史证据，不得重标为已实现数据库内算子。执行顺序以 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要为准。
+文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
+接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
+当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、同步单在途 UDS、shared runtime、neutral
+provider port 和公共 compatibility suite 的功能与资源生命周期；不支持真实 `SemanticPlanSpec`、真实模型
+语义、第二 physical path、bounded async 或性能优化已经完成。当前顺序看工程计划和
+`experiments/plans/experiment_status_and_gaps.md`，既有文本、图像和 SAOR 条目继续保持外部物理执行身份。
 
 ## 1. 证据等级
 
@@ -171,14 +176,18 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 - `summary_long.csv` 或 `comparison_summary.csv` 等绘图友好汇总。
 - 事实、推断、待确认和不能声称的内容分开写。
 
-## 6. 当前缺口（2026-08-28）
+## 6. 尚无证据覆盖的能力（2026-08-30）
 
-以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` 顶部摘要：
+以下条目只说明证据缺口，不构成实施顺序：
 
-1. 增加 deterministic、显式可识别的 `SemFilter` 第二 physical path，再完成 extension/core carrier audit；只有已复现阻断才增加最小 core patch。
-2. 数据库资格完成后扩 accepted-prefix、多在途、增量 SemLoom session 与 direct HTTP/SemLoom adapters，并比较 IMLane-like database batch 与 SemLoom rebatching；Kalypso-like lineage/prefix
-   lease 仅作后续参考，满足前置证据后再决定是否立项。
-3. 前两项完成后，先做图像 HSE static GPU 非劣；通过后才接一个 stage/CE5 在线动作和小规模 pgvector 检索质量检查。
-4. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability 仍未完成或未获授权。
-5. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持 marginal feasibility。
-6. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix 隔离统一为 `parked-conditional`，不阻塞当前主线。
+1. 真实 `SemanticPlanSpec`、同步 exact 真实模型 reference、reference/optimized path identity、AI-work
+   cost、quality policy/evidence 与 fallback 尚无实现资格证据。
+2. extension/core carrier audit、accepted-prefix、多在途、增量 SemLoom adapters 与 IMLane-like batch
+   placement 尚无相应验证；Kalypso-like lineage/prefix lease 仍只是参考方向。
+3. 图像 HSE static GPU 非劣、stage/CE5 在线动作和小规模 pgvector 检索质量尚未完成。
+4. 五臂共同观测 rehearsal 已完成，但 formal、matched-solo/full-solo isolation 与跨层 scheduler capability
+   仍未完成或未获授权。
+5. 代价估计仍需独立时间段或新 workload 校准、预测区间和在线决策增量；现有 429-run 结果只支持
+   marginal feasibility。
+6. 文本 Shared-vLLM held-out、weighted/SLO、UCB reward 归因、多 endpoint 故障迁移和剩余 prefix
+   隔离统一为 `parked-conditional`，不阻塞当前主线。

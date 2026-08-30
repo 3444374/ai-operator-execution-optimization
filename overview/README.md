@@ -7,13 +7,16 @@
 | 文件 | 内容 | 状态 |
 |---|---|---|
 | `AGENTS.md` | 本目录规则 | 活跃 |
-| `current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR：课题定位、技术栈、研究内容、优先级、关键证据、文档入口） | **活跃**（2026-08-28 更新） |
+| `current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR：课题定位、技术栈、研究内容、优先级、关键证据、文档入口） | **活跃**（2026-08-30 更新） |
 
 ## 阅读路径
 
 - 想 2 分钟了解当前方向 → `current_direction_and_plan.md`
 - 想完整了解研究内容和实验路线 → 根 `PROJECT_OUTLINE.md`
 - 想查文献、机制、策略设计 → `research/knowledge_hub.md`
+- 想继续 CustomScan、公共执行层、真实算子或 core patch 工程实现 →
+  `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`
+- 想核对源码已经实现什么 → `code/INFRA_STATUS.md`
 - 想知道项目规则和边界 → 根 `AGENTS.md`
 
 ## 与其他目录的关系

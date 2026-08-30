@@ -1,6 +1,12 @@
 # 知识库总汇：数据库 AI 负载的上游执行链路优化
 
-生成日期：2026-07-16（最近更新：2026-08-28，确定 SemLoom 系统身份与 provider 术语）
+文档角色：本文汇总论文机制、已有系统、可迁移策略和仍需研究的问题，不维护源码完成度、当前工作包
+或实验执行顺序。PostgreSQL 工程计划见
+[`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
+实现事实见 [`../code/INFRA_STATUS.md`](../code/INFRA_STATUS.md)，证据强度见
+[`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
+
+生成日期：2026-07-16（最近更新：2026-08-30，收敛文献、工程计划、实现状态与证据的文档职责）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -950,15 +956,17 @@ normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，�
 
 **主文件**：`experiments/plans/reference/strategy_design_literature_basis.md`（策略口径）、`experiments/plans/reference/strategy_design_implementation_reference.md`（历史实现拆解）
 
-### 7.1 当前策略版本
+### 7.1 理论到系统职责的映射
 
 ```text
-PostgreSQL Sema-like planner-visible AI semantic operator（尚未实现）
-  → SemanticPlanSpec / ordinary child plan / snapshot / query lifecycle
-  → PreparedSemanticTask + open/drive/close execution-provider interface
-       ├── Unix-domain socket (UDS) recording gateway（首个协议与生命周期资格实现）
-       ├── remote HTTP（后续真实 endpoint capability）
-       └── SemLoom provider（增量 scheduling session 后接入）
+PostgreSQL Sema-like semantic optimizer/executor
+  → logical operator / reference and quality policy
+  → explicit physical alternatives / semantic AI-work cost
+  → SemanticPlanSpec / PreparedSemanticTask / CompletionRecord
+  → execution-provider seam
+       ├── recording adapter（协议与生命周期验证）
+       ├── fixed-endpoint adapter（真实语义 reference）
+       └── SemLoom adapter（same-work organization and scheduling）
             ├── Daft / Ray / vLLM external runtime
             ├── project frozen-static（强静态参照）
             └── project state-aware / SAOR（条件性候选）
@@ -974,28 +982,24 @@ PostgreSQL Sema-like planner-visible AI semantic operator（尚未实现）
   → endpoint/job routing 与 shared credit 只在匹配实验合同中启用
 
 共同支撑与验证
-  → 轻量算子代价估计：当前离线，不声称已驱动 SQL plan 或在线 scheduler
+  → PostgreSQL path cost：calls/tokens/model role/selectivity/quality evidence
+  → provider execution cost：stage/service/remaining work、queue/capacity/locality
   → 图像 AI_EMBED/AI_CLASSIFY：静态与观测证据已完成，动态动作待验证
   → PostgreSQL + pgvector COPY/deferred index：工程 baseline
 ```
 
-复杂动态策略没有稳定超过同资源上限的强静态点。当前方法研究因此保留候选池，但不把
-queue-adaptive、dynamic K、多 actor 或 SAOR 写成已经胜出的默认策略。PostgreSQL semantic plan、
-provider interface 和 query lifecycle 未完成前，既有 manifest/profiler 结果统一标为外部物理执行证据。
+这张图只表达论文机制与项目职责的对应关系。具体哪些 interface 已实现、真实模型是否接入、当前先做
+哪一个工作包，统一由工程计划和实现状态文件回答。已有外部实验仍按其原始 execution owner 和证据
+等级解释，不能由本图重标为数据库内算子结果。
 
-### 7.2 实验阶段
+### 7.2 当前工程与实验状态入口
 
-| 阶段 | 当前状态 | 内容与下一步 |
-|---|---|---|
-| 数据库算子 capability | **当前首要，未开始实现** | 锁定 `REL_18_4`，验证 extension/planner-visible `SemMap` 的 SQL、child plan、snapshot、取消、错误与结果生命周期 |
-| 中立 provider interface | **capability 后执行** | plan/task/result digest、bounded `open/drive/close` 与 UDS recording gateway |
-| 数据库载体审查 | **protocol 后执行** | extension 的 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives；只有已复现阻断才增加最小 core patch |
-| 关系语义与执行优化 | **后续** | 当前依次做增量 SemLoom session、`SemFilter` cardinality/最小第二 semantic path；数据库资格后验证 IMLane-like batch placement。Kalypso-like lineage 仅作参考，无当前排期 |
-| 文本数据组织 | **已完成主要机制实验** | fixed/token-budget/length/prefix/BFD/row-cap；结论随 KV 压力与 endpoint consolidation 变化 |
-| 文本提交与多 Job | **已完成静态/共享核心证据，动态未普遍胜出** | active-work、request replenish、flush、actor pool、shared credit、1/2/4 Job 与 5s staggered；weighted/held-out/failure migration 条件性保留 |
-| 图像多模态 | **静态/观测完成，动态待接** | HSE static GPU 非劣、stage/CE5 在线动作、小规模 pgvector 质量闭环与跨 workload/硬件验证 |
-| 算子代价估计 | **离线可行性完成** | 429-run context-LOO 已有 marginal pass；仍需独立时间段/新 workload、预测区间和在线决策增量 |
-| 联合关系与写回 | **局部联合实验完成；写回为工程 baseline** | 当前联合候选未显著优于独立拼接；COPY + deferred index 不单列研究内容 |
+| 要回答的问题 | 唯一入口 |
+|---|---|
+| PostgreSQL 语义算子当前实现到哪里 | [`../code/INFRA_STATUS.md`](../code/INFRA_STATUS.md) |
+| 当前工程工作包和先后顺序 | [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 文本、图像、调度和代价估计已有何种证据 | [`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 当前实验缺口和是否允许继续运行 | [`../experiments/plans/experiment_status_and_gaps.md`](../experiments/plans/experiment_status_and_gaps.md) |
 
 ### 7.3 Baseline 分级
 
@@ -1010,14 +1014,15 @@ provider interface 和 query lifecycle 未完成前，既有 manifest/profiler �
 
 ---
 
-## 8. 知识缺口
+## 8. 研究问题与知识缺口
 
 | 缺口 | 优先级 |
 |---|---|
-| `REL_18_4` extension/planner-visible operator 是否能稳定拥有 child plan、snapshot、取消、错误与结果生命周期 | **当前阻断** |
-| `SemanticPlanSpec → PreparedSemanticTask → CompletionRecord` 与 `open/drive/close` session 能否保持 digest、cancel、backpressure 和 exactly-once terminal state | **当前阻断** |
-| extension 是否能安全承载目标 LOTUS/Cortex plan alternatives；若不能，最小 core patch 能否只解除已复现阻断 | 高 |
-| `SemFilter` 的三值/NULL/error 语义能否在乱序 completion 下正确改变 relation cardinality | 高 |
+| 真实 instruction/prompt/parser/model policy 如何形成 PostgreSQL 拥有、可版本化的 `SemanticPlanSpec` | 当前核心问题 |
+| 同一逻辑 SemFilter 的 reference/optimized paths 如何分别保存 AI-work cost、quality evidence 与 fallback | 当前核心问题 |
+| extension 是否能安全承载目标 LOTUS/Cortex plan alternatives 和有限 predicate placement；若不能，最小 core patch 如何只解除已复现阻断 | 当前核心问题 |
+| 数据库 semantic path cost 与 provider execution cost 如何分层校准并交换 work hint/telemetry | 高 |
+| `SemFilter` 的三值/NULL/error 语义如何在 bounded async、乱序 completion 下保持 relation cardinality | 路径选择资格后的问题 |
 | IMLane-like database batch 与 SemLoom provider rebatching 在同 task/capacity 下应如何放置 | 高；数据库资格完成后验证 |
 | Kalypso-like lineage 在多 Job/多 endpoint 下是否有增量 | 参考问题；满足前置证据后再决定是否立项 |
 | LOTUS v1.2.4 compatibility profile 与 LOTUS/Sema native full-system baselines 的身份和行为如何核对 | 高；不阻塞数据库核心 |

@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-30 文档职责与 PostgreSQL 工程实施路线收敛
+
+- 按实际问题而非目录名称重新确定当前入口职责：`PROJECT_OUTLINE.md` 只回答为什么做、
+  研究什么和当前优先级；`research/` 保存文献机制、可迁移策略与研究缺口；
+  `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 是唯一 PostgreSQL
+  工程架构与实施计划；`code/INFRA_STATUS.md` 只记录源码事实；证据台账只记录验证强度。
+- 工程计划补全实际调用链、模块所有权、当前未完成切片和 Adapter/Factory/Strategy/State
+  Machine 的使用条件，明确 CustomPath/CustomScan、thin scan/pump、operator machine、
+  `PgSemanticRuntime`、neutral provider port、UDS/gateway 之间的单向依赖；新算子不得复制 provider
+  lifecycle，也不在第二个真实 consumer 出现前预造通用 DAG 执行器。
+- 当前实施顺序收敛为：先实现数据库拥有的真实 `SemanticPlanSpec` 和同步 exact
+  `SemFilter` model reference，再加入显式 reference/optimized second path、AI-work cost、
+  quality evidence 与 fallback；只有锁定 PG18.3 extension 出现已复现阻断才修改最小 core seam，
+  路径选择资格完成后才扩 bounded async、SemLoom scheduling 和 IMLane-like batch placement。
+- 同步更新根入口、overview、开题 Markdown、实现状态与证据台账；本轮未修改源码、
+  实验原始数据、Word、PPTX、PDF 或飞书发布面。
+
 ## 2026-08-29 exact SemFilter 与 PostgreSQL 语义执行公共层完成
 
 - 新增 fail-closed `ai_semantic.filter(text)` 与 relation-level `CustomPath/CustomScan` reference path。

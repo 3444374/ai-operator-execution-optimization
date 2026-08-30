@@ -1,13 +1,13 @@
 # 项目大纲
 
-更新时间：2026-08-29
+更新时间：2026-08-30
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
-读者说明：本文 §0.2 和 §5 保留实验审计原词。“冻结”表示配置或判定标准在实验开始前选定、运行
+读者说明：本文 §0.3 和 §5 保留实验审计原词。“冻结”表示配置或判定标准在实验开始前选定、运行
 期间不改变；“门禁/晋级”表示候选纳入比较或采用前必须满足的预设正确性、资源和性能条件；`P0`
 等只表示历史实验臂或诊断名称。这些词不构成研究贡献，也不覆盖本文顶部的当前执行顺序。
 
@@ -24,9 +24,11 @@ per-drive scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严�
 connect/response wait 和资源清理已在 PostgreSQL 18.3 通过。公共 compatibility suite 已覆盖
 RLS/权限、prepared/generic-plan invalidation、savepoint、双 backend、cancel 和 no-task lazy open；
 两个 reference operators 共用 `PgSemanticRuntime`，Map/Filter machines 分别拥有 emit 与
-TRUE/FALSE/UNKNOWN keep/drop。下一步实现最小 LOTUS/Cortex-like 第二 path，随后用这些实际路径
-审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、多在途、增量 SemLoom 与真实
-模型 provider 在数据库语义资格之后实现。
+TRUE/FALSE/UNKNOWN keep/drop。当前实现仍是 deterministic recording 语义；下一步先把 instruction、
+prompt program、result parser、model/generation constraints 和 policy 编译成真实 `SemanticPlanSpec`，
+通过同步 provider 完成 exact `SemFilter` 真实模型纵切面，再实现 LOTUS/Cortex-like 第二 path。随后用
+reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
+多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展
 GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
 算子结果。LOTUS v1.2.4 compatibility/native baseline 后置且不阻塞数据库核心。
@@ -48,10 +50,33 @@ paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SEL
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
 UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。
-accepted-prefix、多在途/乱序 completion、第二 physical path、载体反例审查和外部模型路径尚未实现；
+真实 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、载体反例审查、accepted-prefix
+和多在途/乱序 completion 尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
-### 0.2 SAOR 系统对照准备记录（历史）
+### 0.2 核心研究链路
+
+```text
+SQL semantic intent
+  -> PostgreSQL logical operator + reference/quality policy
+  -> reference / optimized physical paths + semantic AI-work cost
+  -> sealed tasks through the execution-provider seam
+  -> SemLoom work organization + admission/routing/multi-Job execution
+  -> PostgreSQL completion validation + relational result
+```
+
+数据库 semantic optimizer 决定**产生什么 AI work**：operator identity、reference behavior、近似授权、
+模型角色、调用结构、选择率和下游关系基数。SemLoom 决定**这些已封闭 work 如何执行**：物理分组、
+提交时机、在途上限、endpoint route 和多 Job 份额。前者使用 calls/tokens/model role/selectivity/quality
+比较 semantic paths；后者使用 stage/service work、queue/capacity/locality 比较 execution policies。
+两类 cost 通过 task work hint 与 completion telemetry 衔接，但不合并成一个模糊标量。
+
+当前 recording paths 只证明 carrier、生命周期和 seam；项目达到数据库优化资格至少还需要真实
+`SemanticPlanSpec`、同步 exact 真实模型 reference path，以及同一逻辑语义下可由 PostgreSQL 区分和
+选择的第二 physical path。数据执行研究随后在固定 semantic task set 上比较，避免把“少做 work”和
+“相同 work 执行更快”混为一个结论。
+
+### 0.3 SAOR 系统对照准备记录（历史）
 
 迁移前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
@@ -409,20 +434,23 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 3. **公共 PostgreSQL 兼容性**：extension 级 suite 已验证普通 SQL 非干扰、RLS/权限、snapshot、
    事务/savepoint、prepared/generic plan 与 invalidation、planner-hook chaining、多 backend 隔离、
    cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
-4. **下一条 semantic path**：以静态 calibration evidence 建立一条可辨认的
-   LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative 的显式身份与语义边界。
-5. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
+4. **真实语义 reference slice**：实现数据库拥有的 `SemanticPlanSpec` 与同步 exact `SemFilter`
+   真实模型路径，验证 canonical prompt、parser、model/usage identity 和 relation result；不先扩异步。
+5. **下一条 semantic path**：以确定性 golden/calibration evidence 起步，建立一条可辨认的
+   LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative、AI-work cost、quality policy
+   和 reference fallback 的显式身份；真实质量结论必须再与同步 reference 路径比较。
+6. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
    则保留 extension，只有已复现阻断才增加最小 core patch。
-6. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
+7. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
    并优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作条件满足后的参考方向。
-7. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
+8. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
    当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞前四项。
-8. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+9. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
    报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-9. **条件性恢复**：前六项通过后，再按
+10. **条件性恢复**：前七项通过后，再按
    `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
    system-level matched comparison 与小规模 pgvector 质量闭环。
-10. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+11. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
    full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
 历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，

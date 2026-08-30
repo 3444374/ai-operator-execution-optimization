@@ -1,5 +1,15 @@
 # 开题材料 project log
 
+## 2026-08-30 PostgreSQL 18.3 实现事实与后续路线校准
+
+- Markdown 权威报告、审查记录、Claim Matrix、答辩大纲与问答已区分三件事：既有外部
+  GPU 实验，已完成的 PG18.3 recording `SemMap/SemFilter` carrier/lifecycle 资格，以及尚未完成的
+  真实 `SemanticPlanSpec`、模型 reference 和第二 physical path。
+- 对外路线改为 extension-first、evidence-triggered minimal core patch；不再说“绝不修改数据库内核”，
+  也不把 core patch 当成必然前置。
+- 本轮只修改 Markdown。Word、PPTX、答辩 QA TeX/PDF、图件、飞书文档和实验原始数据均未修改，
+  重新对外使用前仍需从 Markdown 权威稿增量同步并检查版式。
+
 ## 2026-08-28 PostgreSQL 内核边界改为条件性选择
 
 - 开题入口和答辩 QA 设计不再写“绝不修改 PostgreSQL core”：当前计划先用 extension 验证，只有

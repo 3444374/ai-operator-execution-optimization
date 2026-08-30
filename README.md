@@ -9,26 +9,29 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-08-29）：研究方向保持“两项研究内容 + 共同代价估计 + 多模态验证”，数据库集成
-架构改为 Sema-like 中立语义算子核心。短期工程锁定 `REL_18_3`，先用 extension 验证 planner-visible
-`SemMap`、exact `SemFilter` 与 query lifecycle；当前受限 `SELECT`、direct `INSERT ... SELECT`、
-PostgreSQL-private `PgSemanticRuntime`、独立 Map/Filter machines、provider-neutral
-`AiOpenSpec → AiPreparedTask → AiCompletion` 接口，以及单在途、同步的 Unix-domain socket（UDS）
-recording provider 已通过 PostgreSQL 18.3 功能测试。`sem_scan.c` 只保留 CustomScan 回调，
-`sem_pump.c` 只处理 child slot 流；provider 选择/lazy lifecycle、sequence、结果复制、query cleanup 和
-中立错误映射集中在公共 runtime，Map 的 emit 与 Filter 的 TRUE/FALSE/UNKNOWN keep/drop 分开实现。
-socket、JSON 和协议实现分别留在 UDS/wire adapter。协议 v2 C/Python 分域
-identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
-逐次调用 scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数、可取消 nonblocking connect
-和 query-context FD 清理均已验证。公共 PostgreSQL compatibility suite 已覆盖 RLS/权限、
-prepared/generic plan invalidation、savepoint、双 backend、取消、lazy no-task 和双 adapter parity；
-`d3a22dcf` 在 exact 18.3 上通过 regression 1/1、TAP 193/193 与 Python/static 18/18，并完成
-Map/Filter RSS/FD 不增长 smoke。下一步实现最小第二 semantic path。extension 能承载目标
-LOTUS/Cortex semantic paths 时继续使用，只有已复现
-阻断才增加最小 core patch；accepted-prefix、多在途和增量 SemLoom 在数据库语义资格之后实现。
-数据库资格完成后优先做 IMLane-like batch 对照。Kalypso-like
-dependency execution、`SemJoin`、fusion/AQE 等只作后续参考，不纳入当前排期。既有 profiler、manifest
-和 GPU 实验仍是外部物理执行证据，不能改称已经实现数据库内算子。
+当前状态（2026-08-30）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+`SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
+compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
+错误和结果生命周期，并通过可替换 adapter 调用外部执行器；它们尚未实现真实 instruction/prompt、
+result parser、model role、quality policy、第二 physical path 或性能优化。
+
+项目接下来先把真实语义编译成数据库拥有的 `SemanticPlanSpec`，通过同步 provider 完成一个 exact
+`SemFilter` 真实模型纵切面；随后生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
+AI work cost、quality evidence 和 reference fallback 选择。只有这些路径暴露 extension 无法封闭的
+plan identity、placement 或 lifecycle 问题时，才增加最小 PostgreSQL core patch。路径选择资格完成后
+再扩 bounded async、SemLoom scheduling 与 IMLane-like batch placement；Kalypso-like dependency/KV
+机制等真实多阶段依赖出现后再评估。
+
+核心执行链路是：
+
+```text
+SQL semantic intent
+  -> PostgreSQL logical semantics and reference policy
+  -> reference / optimized physical paths and AI-work costing
+  -> sealed tasks through the execution-provider seam
+  -> SemLoom organization, admission, routing and multi-Job execution
+  -> PostgreSQL validates completions and restores relational results
+```
 
 ## 先读什么
 
@@ -39,8 +42,10 @@ dependency execution、`SemJoin`、fusion/AQE 等只作后续参考，不纳入�
 | 查找文件和阅读路径 | [`PROJECT_INDEX.md`](PROJECT_INDEX.md) |
 | 核对项目长期规则和边界 | [`AGENTS.md`](AGENTS.md) |
 | 核对系统名和领域术语 | [`CONTEXT.md`](CONTEXT.md) |
+| 理解 Sema/Cortex/LOTUS/IMLane/Kalypso 等机制与可迁移范围 | [`research/knowledge_hub.md`](research/knowledge_hub.md) |
+| 核对当前源码真实完成度 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) |
 | 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 继续 PostgreSQL AI 语义算子实现 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 继续 PostgreSQL AI 语义算子实现（CustomScan、公共层、解耦、core patch 条件与工作包） | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
 | 准备开题报告或答辩 | [`opening/README.md`](opening/README.md) |
 
@@ -56,6 +61,10 @@ dependency execution、`SemJoin`、fusion/AQE 等只作后续参考，不纳入�
 
 算子代价估计为两项内容提供共同信息，并支持数据库计划比较；它不是第三项研究内容。文本
 `AI_COMPLETE` 是主场景，图像 `AI_EMBED/AI_CLASSIFY` 用于验证策略抽象能否跨模态复用。
+
+数据库 semantic optimizer 是两项研究内容的语义前提和实验入口：它决定产生什么 AI work，并以
+reference/quality policy 约束优化；两项研究内容比较这些 sealed work 如何组织和执行。数据库路径
+代价与 provider 执行代价分开建模，不能用减少模型调用掩盖低效执行，也不能用更快调度绕过质量要求。
 
 项目不做广泛 PostgreSQL fork，也不修改 vLLM continuous batching、Ray scheduler、模型结构或 GPU
 kernel；只有 extension carrier 出现已复现 optimizer/node-lifecycle 阻断时，才采用最小 PG18.3 core

@@ -1,9 +1,11 @@
 # SemLoom Code
 
-Current implementation flow, completed mechanisms, evidence boundaries, and
-remaining work are summarized in `code/INFRA_STATUS.md`.
+Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
+Module targets, implementation order, and acceptance criteria belong to
+`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
+the code tree and must not become a competing engineering plan.
 
-Status as of 2026-08-29: this directory contains the existing external physical-execution runtime
+Status as of 2026-08-30: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized/model-backed PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
@@ -22,9 +24,10 @@ recovery. Response parsing also rejects escaped/raw NUL and fractional integer f
 `08P01` boundary; the static contract verifies that each catch path restores a stable context before copying
 PostgreSQL error data. The extension-wide PostgreSQL compatibility suite, exact Filter cardinality, shared
 runtime extraction, adapter parity, cancellation/recovery, and RSS/FD lifecycle smoke passed on exact 18.3 at
-commit `d3a22dcf`. The next step is a minimal second physical path for the reference filter. Accepted-prefix,
-multiple in-flight tasks, incremental SemLoom
-sessions, and HTTP/SemLoom providers follow database semantic qualification; see
+commit `d3a22dcf`. The next implementation slice is a database-owned `SemanticPlanSpec` plus a synchronous,
+exact, model-backed `SemFilter` reference. An explicit reference/optimized second path, AI-work cost,
+quality evidence, and carrier audit follow that slice. Accepted-prefix, multiple in-flight tasks, and
+incremental SemLoom sessions follow database semantic and path-selection qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.
 

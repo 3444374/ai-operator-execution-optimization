@@ -1,15 +1,15 @@
 # 正式研究实验
 
-更新日期：2026-08-28
+更新日期：2026-08-30
 
 本目录回答“提出的方法或系统改动是否有效”。动机测试回答“问题是否存在”，放在
 `../motivation/`；组件和环境验证放在 `../feasibility/`。
 
 ## 当前状态
 
-当前不扩展 GPU 实验矩阵。短期先完成 PostgreSQL extension / planner-visible `SemMap` capability、
-中立 plan/task/result 与 Unix-domain socket（UDS）recording gateway，再做载体审查、增量 SemLoom
-session、remote provider、exact `SemFilter` 和最小第二 semantic path。数据库资格完成后再比较
+当前不扩展 GPU 实验矩阵。PostgreSQL 18.3 recording `SemMap/SemFilter`、shared runtime、同步 UDS 和
+compatibility suite 已完成；短期先实现真实 `SemanticPlanSpec` 与同步 exact model reference，再实现
+第二 physical path 和 cost/quality，随后做载体审查。路径选择资格完成后才扩增量 SemLoom 并比较
 IMLane-like batch placement；
 Kalypso lineage、`SemJoin`、fusion/AQE 仅作后续参考。LOTUS compatibility/native baseline 不再是前置
 依赖。现阶段性能实验可使用明确标注的 emulated operator contract，但不能称为已实现数据库内算子。

@@ -1,6 +1,6 @@
 # SemLoom 当前方向与计划
 
-最后更新：2026-08-29
+最后更新：2026-08-30
 
 这是两分钟快速参考卡片。完整定义以根 [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) 为准；
 实验完成度以
@@ -21,20 +21,23 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 ## 2. 当前最短路径
 
-1. `REL_18_3` extension / planner-visible `SemMap` 与 exact `SemFilter` reference paths 已验证受限
-   `SELECT`、direct `INSERT ... SELECT`、ordinary child plan、三值/NULL/cardinality、snapshot、
-   cancel/error/result lifecycle、neutral provider port、独立 recording/UDS adapters 和同步单在途 UDS；
-2. 公共 `PgSemanticRuntime` 已收敛 provider lifecycle、sequence、completion memory、query cleanup 和
-   错误映射；thin pump 处理 slot 流，Map/Filter machines 分别处理输出与 keep/drop/unknown；
-3. extension 级 PostgreSQL compatibility suite 已覆盖普通 SQL、权限/RLS、snapshot/savepoint、
-   prepared/generic plan invalidation、hook chaining、多 backend、取消、资源清理和无任务不连接；
-4. 下一步以静态 calibration evidence 实现一条可辨认的 LOTUS/Cortex-like proxy/oracle physical path；
-5. 再通过反例审查 extension 能否承载 plan identity、prepared-plan 与上述 alternatives；能表达
-   则继续 extension，只有已复现阻断才增加最小 core patch；
-6. 数据库资格完成后再扩 accepted-prefix backpressure、多在途/乱序 completion、有界 reorder，抽取
-   增量 SemLoom session 并接 HTTP/SemLoom provider；之后优先比较 IMLane-like batch placement。
-   Kalypso-like lineage 只作后续参考，需另立计划；
-7. 上述数据库资格验证完成前不扩 GPU 矩阵、不调 SAOR，之后再恢复条件性实验。
+核心研究链路是：PostgreSQL 定义 semantic intent/reference policy，生成并比较 physical paths；
+SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 PostgreSQL 后恢复关系结果。
+
+1. **已完成 carrier 资格**：`REL_18_3` extension / planner-visible recording `SemMap` 与 exact
+   `SemFilter`、shared runtime、同步单在途 UDS 和公共 compatibility suite 已通过；它们证明数据库
+   生命周期与外部 seam，不代表已经执行真实 AI 语义或获得性能收益。
+2. **当前先完成真实语义合同**：把 instruction、prompt program、result parser、model/generation
+   constraints 与 NULL/error/order policy 编译为数据库拥有的 `SemanticPlanSpec`，用同步 provider 跑通
+   exact `SemFilter` 真实模型纵切面；此时不扩异步、多在途或调度器。
+3. **再完成数据库优化资格**：为同一逻辑 SemFilter 建立 reference 与 proxy/oracle physical paths，
+   显式保存 algorithm/model role、quality policy、calibration evidence、AI-work cost 和 reference fallback。
+4. **随后审查载体**：用真实 paths 验证 prepared-plan identity、hook coexistence 和有限 predicate
+   placement；extension 能表达就继续使用，只有已复现阻断才增加最小 core patch。
+5. **最后进入数据执行研究**：扩 accepted-prefix、多在途/乱序 completion 和增量 SemLoom session，
+   比较 IMLane-like database batch 与 provider rebatching。Kalypso-like lineage/KV 机制只有出现真实
+   多阶段依赖后才另行立项。
+6. 上述数据库资格完成前不扩 GPU 矩阵、不调 SAOR；既有外部物理执行证据继续保留原身份。
 
 实施入口：
 
@@ -66,7 +69,8 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 
 仍待验证：
 
-- SemFilter 第二 physical path、近似质量 policy 与真实模型 provider；
+- 真实 `SemanticPlanSpec`、同步 exact 真实模型 reference path；
+- SemFilter 第二 physical path、AI-work cost、近似质量 policy 与 reference fallback；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；
 - 图像 HSE/static 非劣与受控 state-aware 动作；

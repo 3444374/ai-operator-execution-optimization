@@ -69,13 +69,13 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | 20 页历史内容基线；当前实现顺序已更新为 PostgreSQL 中立语义算子，但未按新架构重做逐页大纲 |
 | 开题报告 | `report/opening_report.md` | 以用户确认的第一、二章为基线微调：第三章按三个动机问题、研究目标和两项研究内容组织，第四章区分研究方案、初步结果与可行性；正文为学校模板七部分、16 张图片和 53 条按首次出现顺序编号的参考文献 |
-| 开题报告 Word 版 | `report/数据库_AI_负载的执行优化与调度研究_开题报告.docx` | 2026-08-25 导出；尚未包含 2026-08-27 Sema-like 中立语义算子架构修订，重新对外使用前需从 Markdown 权威稿生成并检查版式 |
-| 开题报告 QA | `report/opening_report_20260824_qa.md` | 2026-08-27 已补充 Sema-like 架构复核；七部分结构、16 张图和 53 条参考文献沿用原审查，Word/PPT 发布面仍需重新生成或增量修改后单独检查 |
+| 开题报告 Word 版 | `report/数据库_AI_负载的执行优化与调度研究_开题报告.docx` | 2026-08-25 导出；尚未包含截至 2026-08-30 的 Sema-like 架构、PostgreSQL 18.3 实现状态与后续路线，重新对外使用前需从 Markdown 权威稿生成并检查版式 |
+| 开题报告 QA | `report/opening_report_20260824_qa.md` | 2026-08-30 已校准 PostgreSQL 18.3 recording carrier、真实语义缺口与工程顺序；七部分结构、16 张图和 53 条参考文献沿用原审查，Word/PPT 发布面仍需重新生成或增量修改后单独检查 |
 | 开题答辩 QA 手册 | `report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF） | 2026-08-25 的 83 题版本；数据库架构部分仍是 LOTUS-first 快照，重新对外使用前需改为 Sema-like 中立语义算子并重新编译、检查 PDF |
 | 开题报告专用图片 | `report/figures/` | 当前正文引用 5 张背景/方案图和 11 张数据图；权威可编辑源在 `../figures/architecture/editable/`，数据图源在 `../figures/opening_figure_set/` 与 `../figures/data/report_main/` |
-| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-27 已复核状态缓存；实验准入、主张等级、禁止外推和材料完成度的当前依据 |
+| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-30 已登记 PostgreSQL 18.3 recording carrier 功能资格及其不能外推的边界；实验准入、主张等级和材料完成度的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
-| 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 26 页上一版架构快照；尚未同步 Sema-like 中立语义算子与 LOTUS 新角色，重新对外使用前需做 shape 级增量修改和 26 页视觉检查 |
+| 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 26 页上一版架构快照；尚未同步 Sema-like 架构、LOTUS 新角色、PostgreSQL 18.3 实现状态与后续路线，重新对外使用前需做 shape 级增量修改和 26 页视觉检查 |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
@@ -98,8 +98,9 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 下一步
 
-1. 本地 Markdown 权威报告已改为 Sema-like PostgreSQL 中立语义算子架构；下一步先完成
-   planner-visible `SemMap` capability、plan/task/result 合同和 execution providers，再更新实现状态图。
+1. 本地 Markdown 权威报告已同步 PostgreSQL 18.3 recording `SemMap/SemFilter`、shared runtime 与同步
+   provider seam 的当前事实；下一步先完成真实 `SemanticPlanSpec` 和同步 exact model reference，再实现
+   第二 physical path、cost/quality 与 carrier audit。现有 Word、PPTX 和飞书发布面仍是旧快照，未同步。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
 3. v9 只保留学校页眉、配色和身份识别，不逐框仿制模板；页数和版面服从现场叙事。
 4. Claim Matrix、问答和实验状态继续用于核对正文主张。当前 PPT 与飞书发布面尚未同步本轮报告；只有在用户恢复相应工作后，才从本地权威稿重新生成并执行差异审查。

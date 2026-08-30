@@ -2,9 +2,9 @@
 
 初版冻结日期：2026-08-07
 第一性原理复审：2026-08-13（补充多 Job 三反事实、service-lag 与理论性质边界）
-状态复核：2026-08-27
+状态复核：2026-08-30
 
-用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。当前中文报告（16 个图片文件、53 条参考文献）与 26 页 PPT v9 均已分别通过本地审查，但 2026-08-22 至 08-25 的报告图文更新尚未回灌 PPT，跨材料差异审查仍待执行；普通飞书云文档仍是待授权的外部发布面。
+用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。当前 Markdown 报告已校准 PostgreSQL 18.3 recording carrier 与后续真实语义路线；26 页 PPT v9、Word、答辩 QA PDF 和普通飞书云文档仍是旧快照，重新对外使用前需从 Markdown 权威稿增量同步并做跨材料差异审查。
 
 ## 1. 冻结题目与系统抽象
 
@@ -58,6 +58,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 
 | Claim | 等级 | 当前证据 | 开题口径 | 仍缺什么 |
 |---|---|---|---|---|
+| PostgreSQL 18.3 可以以 extension 承载受限的 planner-visible AI 语义算子和查询生命周期 | 已证明（功能资格） | `code/postgres/semloom_pg/` 的 recording `SemMap/SemFilter CustomPath/CustomScan`、shared runtime 与同步 provider seam；提交 `d3a22dcf` 的 18.3 `-Werror`、regression 1/1、TAP 193/193 和资源 smoke，详见证据台账 | 可说已验证 ordinary child plan、snapshot、权限、取消、错误和结果生命周期的受限 carrier；不称真实 AI 语义或完整优化器已完成 | 真实 `SemanticPlanSpec`、同步 exact model reference、第二 physical path、AI-work cost、quality/reference fallback 与 carrier audit |
 | 固定行数不是可靠的 AI work 代理 | 已证明 | `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_token_budget_vs_fixed_timeout300_20260719.csv`：固定 16 行时 batch token min/max=474/6,793（14.3×），固定 128 行时 token P95≈26,677 | 行数相同不代表模型计算量相同，work-unit 需要 token/frame 等工作量表征 | 无开题 blocker；跨模态精度属于论文阶段 |
 | 同一静态上限下的运行状态会随 offered load 改变 | 已证明 | `experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/README.md`：同为 W65K，high 约 169–172 running、MFU≈35%，arrival-limited 约 19 running、MFU≈7% | 运行状态并非常量，因此需要可观测状态与安全回退；该现象不等于动态策略已经胜出 | 仍缺同上限 static vs dynamic 的 phase-change/burst 正式对照 |
 | 固定配置下存在最小饱和 active work | 已证明 | `experiments/results/dual_gpu_active_work_saturation_20260729/README.md`：65,536 work/endpoint 达最大已测吞吐的 97.80%，下一档仅增 0.92% | 上游提交应先标定最小饱和点，再比较策略 | 该数值仅绑定当前机器、模型、协议和 workload |

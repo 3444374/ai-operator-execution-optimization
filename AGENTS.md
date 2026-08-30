@@ -57,7 +57,8 @@ Claude Code 通过根 `CLAUDE.md` 导入本文件，并遵循相同的逐级读�
   Python 类型、函数、包或实验身份的前缀；领域术语以根 `CONTEXT.md` 为准。
 - 数据库拥有 SQL、ordinary child plan、snapshot、权限、query cancel/error/result lifecycle；
 - 主要架构参照 Sema 一类数据库原生语义算子系统：语义算子进入 SQL、计划和执行生命周期；
-- 首版实现中立 `SemMap` 合同；LOTUS v1.2.4 只作可选兼容 profile、相关系统和完整路径 baseline；
+- recording `SemMap/SemFilter` 只验证 PostgreSQL carrier 与生命周期；真实语义由数据库内版本化
+  `SemanticPlanSpec` 定义，LOTUS v1.2.4 只作可选兼容 profile、算法参照和完整路径 baseline；
 - Daft、Ray、vLLM、typed CLIP actor 等位于数据库进程外，作为受数据库管理的可替换 backend；
 - 研究内容一是按 token/frame/阶段 work 与局部性组织数据；
 - 研究内容二是在固定 request/work capacity 下控制提交、服务实例路由和单租户多 Job 调度；
@@ -75,16 +76,20 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 
 当前实现按以下顺序推进：
 
-1. 锁定 `REL_18_3`，用最小 PostgreSQL extension/planner-visible `SemMap` prototype 验证 SQL、ordinary
-   child plan、snapshot、cancel、error 和 result lifecycle；
-2. 保留已验证的同步单在途 UDS recording slice，拆分 PostgreSQL scan/pump、neutral provider port 与
-   recording/UDS adapters；`Datum`、`Oid`、`MemoryContext` 和物理列号不得进入 neutral port 或 wire；
-3. 实现 exact `SemFilter` reference path，再增加一条 deterministic、显式可识别的第二 physical path；
-4. 审查 extension 对 plan identity、prepared-plan、hook coexistence 与目标 LOTUS/Cortex alternatives 的
-   支持；能表达则保留 extension，出现已复现阻断才增加最小 core semantic patch；
-5. 数据库语义资格完成后再扩 accepted-prefix、多在途、增量 SemLoom scheduling session 与 direct
-   HTTP/SemLoom provider；
-6. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展。
+1. 锁定 `REL_18_3`，先以 extension/planner-visible recording reference paths 验证 ordinary child plan、
+   snapshot、cancel、error、result lifecycle 和中立 execution-provider seam；
+2. 在扩展异步协议前，实现数据库拥有的最小真实 `SemanticPlanSpec`：instruction、prompt program、
+   result parser、model/generation constraints 与 NULL/error/order policy 都进入 plan identity；用同步单在途
+   provider 完成 exact `SemFilter` 真实语义纵切面；
+3. 在同一逻辑语义下增加显式 reference/optimized `SemFilter` physical paths；PostgreSQL 保存
+   algorithm/model role、quality policy、calibration evidence、reference fallback 和可比较的 AI work cost；
+4. 用上述真实路径审查 extension 对 plan identity、prepared-plan、hook coexistence、有限 predicate
+   placement 与 LOTUS/Cortex alternatives 的支持；能表达则保留 extension，出现已复现阻断才增加最小
+   core semantic patch；
+5. 数据库语义和路径选择资格完成后，再扩 accepted-prefix、多在途、增量 SemLoom scheduling session，
+   并比较 IMLane-like database batch 与 provider rebatching；
+6. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展；Kalypso-like lineage/KV
+   机制只有出现真实多阶段依赖后才另行立项。
 
 在前五个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
 emulated operator contract；不扩 GPU 参数矩阵，不继续调 SAOR，也不把它们写成已实现数据库内算子。
