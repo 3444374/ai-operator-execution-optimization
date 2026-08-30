@@ -22,12 +22,14 @@ TRUE/FALSE/UNKNOWN keep/drop。provider-neutral
 `PROPAGATE_NULL` 由 PostgreSQL 完成，per-drive scratch、per-tuple completion copy、query-context cleanup、
 174,080-byte 编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数和可取消 nonblocking connect 已验证。
 公共 compatibility suite 与第二个 reference operator 已证明该同步 UDS/runtime 分层，未复制
-`SemloomExecPump`，也未为尚未实施的 `SemJoin`/blocking operator 预造抽象；
-真实 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、accepted-prefix backpressure、
+`SemloomExecPump`，也未为尚未实施的 `SemJoin`/blocking operator 预造抽象。planner 已将当前 recording
+identity/algorithm/role 编码为版本化、可复制的最小 plan spec，executor 严格解码；neutral error
+interface 已移除 transport-specific operation，adapter 本地产生定长脱敏详情；
+包含 instruction/parser/model policy 的完整 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、accepted-prefix backpressure、
 多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器尚未实现。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，保留已完成的 recording `SemMap`/`SemFilter`、ordinary
-child plan 和 query-scoped provider session；下一步先完成真实 `SemanticPlanSpec` 与同步 exact
+child plan、query-scoped provider session 和最小 plan carrier；下一步扩展为真实 `SemanticPlanSpec` 与同步 exact
 `SemFilter` 真实模型 reference slice，再实现一条最小、显式可识别的第二 physical path。
 既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
 数据库资格完成后优先比较 IMLane-like batch placement。`SemJoin`、aggregate/top-k/group-by、
@@ -223,8 +225,11 @@ SemanticPlanSpec
   physical_algorithm_digest
 ```
 
-当前 `AiOpenSpec` 只实现 operator/value kind、NULL/error policy、recording spec identity 与
-`physical_algorithm=RECORDING`，是上述 plan 的协议/生命周期子集，不等于 `SemanticPlanSpec` 已经实现。
+当前 planner-owned 最小 plan spec 已用 named Node/List values 保存 schema version、operator/value kind、
+NULL/error policy、recording spec identity/version、`physical_algorithm=RECORDING` 与
+`physical_role=reference`；input column 作为 executor binding 独立保存。executor 严格校验后在唯一的
+PG-private 转换点生成 `AiOpenSpec`，因此当前 recording identity 已属于数据库计划，但仍只是上述完整
+语义计划的协议/生命周期子集。
 下一个纵切面先让 instruction、prompt program、parser、model/generation constraints 和对应 digest 真正被
 planner、executor 与同步 provider 消费；不为尚未使用的字段做空壳预留。
 
@@ -592,6 +597,8 @@ class SchedulingSession(Protocol):
 extension.c hooks
   ├─ sem_path.c                 # SemMap upper path
   └─ sem_filter_path.c          # SemFilter base-relation path
+          ↓
+sem_plan_spec.c                 # versioned copyObject-safe plan identity + strict decode
           ↓ CustomPath / CustomScan plan data
 sem_scan.c                      # thin PostgreSQL callback adapter
           ↓
@@ -632,9 +639,9 @@ pump，machine 接收已绑定 byte/value view 并返回 typed result/dispositio
 
 | 缺口 | 当前实现 | 最小修正 |
 |---|---|---|
-| plan-owned semantic identity | `custom_private` 主要只有 operator kind/input column，recording spec 在 machine 构造 | 增加 PG-private、可 copy/serialize 的 `SemanticPlanSpec/PhysicalPlanSpec`；planner 产生，executor 只消费，不保存裸指针 |
+| plan-owned semantic identity | 已完成当前 recording 子集：versioned named fields 在 `custom_private`，input column 独立；machine 不再构造 spec | 在现有最小 carrier 上增加真实 instruction/prompt/parser/model constraints；每个新增字段必须被消费或 planning 时拒绝 |
 | SQL semantic surface | marker 只有单个 text input | 增加最小受支持的 input + instruction + options 形式；未知 option 在 planning 时拒绝；不改 `gram.y` |
-| physical path identity | algorithm 与 `Physical Role=reference` 硬编码 | CustomPath/CustomScan 携带 algorithm/model role、quality/evidence/fallback；`EXPLAIN` 从 plan 读取 |
+| physical path identity | recording algorithm 与 `Physical Role=reference` 已由 plan 携带，`EXPLAIN` 从 plan 读取；model role、quality/evidence/fallback 尚无真实 consumer | 真实 reference/第二路径出现时扩展现有 plan，不提前加入空字段 |
 | Filter cardinality/cost | 复用已含 marker selectivity 的 child rows，并只加 `cpu_operator_cost * rows` | 分开 semantic-input rows、output selectivity 和 calls/tokens/model-role cost；若公开 hook 无法正确重建 ordinary child estimate，记录为 carrier audit 反例 |
 | proxy/oracle control flow | 每个非 NULL tuple 固定一次 `drive` | 保持同步 port，先让 machine 返回 `NEED_TASK(PROXY/ORACLE)`，pump 循环 drive；不把 cascade 隐藏进 gateway，也不借机实现多在途 |
 | real result parsing | recording completion 直接解释为 text/tristate | parser identity 在 plan，raw completion 回 PostgreSQL 后严格解析；provider 不返回最终 tuple/keep-drop |
@@ -669,9 +676,9 @@ completion 完整消费”为单位修改：
 1. `sql/semloom_pg--*.sql` 和 `marker.c`：增加一个最小、显式的 function-like SQL 表面，
    除 input 外携带 instruction 和已实现的 options。未被消费的 option 不允许进入 plan；
    不修改 `gram.y`。
-2. 新增 PG-private `semantic_plan_spec.[ch]`：定义可 deep-copy、可验证和可 canonicalize 的
-   logical/physical specs。它可以使用 PostgreSQL OID 表示 SQL 类型，但不包含 provider session、FD
-   或 gateway config。
+2. 扩展现有 PG-private `sem_plan_spec.[ch]`：保留已验证的 copyObject-safe encoding 和严格 schema
+   校验，增加真正被 instruction/prompt/parser/model reference 消费的 logical/physical fields。它可以
+   使用 PostgreSQL OID 表示 SQL 类型，但不包含 provider session、FD 或 gateway config。
 3. `sem_filter_path.c`：在 planning 时校验 argument 类型、constant/options 与 query shape，
    生成 plan-owned spec 并写入可 copy/serialize 的 `custom_private`；同时记录 semantic-input
    rows、预计 selectivity 与明确的 reference role。planner 不连接模型、不打开 UDS。
@@ -700,8 +707,9 @@ runtime/provider lifecycle。binary join 和 blocking aggregate 的 child owners
 ## 9. 当前实施工作包、资格后验证与参考方向
 
 工作包一至七构成当前有序实施范围。同步 UDS recording slice、neutral provider seam、响应边界
-hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter` 与 shared runtime 已通过；
-当前下一步是真实 semantic contract 与同步 exact model reference slice，再实现最小第二 semantic path。
+hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter`、shared runtime、
+planner-owned 最小 recording plan spec 与 transport-neutral error interface 已通过；当前下一步是扩展
+真实 semantic contract 与同步 exact model reference slice，再实现最小第二 semantic path。
 只有真实语义和路径选择资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
@@ -733,6 +741,10 @@ listener、TCP/HTTP、连接池、自动重连或模型 adapter。
 `Oid`、`AttrNumber`、`MemoryContext` 和 slot identity 未进入 neutral port 或 wire。gateway 继续拥有
 `bind/listen/accept` 和所有模型侧连接。
 
+`AiProviderError` 已只保留 neutral code、`system_errno`、`limit_bytes` 和定长 detail；socket、JSON、
+frame 与 response-field distinctions 留在 UDS/wire adapter 的本地静态消息中。runtime 只按 neutral code
+映射 SQLSTATE，detail 仅作为已校验数据传给固定 `"%s"` 格式，不参与格式串或 payload 回显。
+
 完成证据：更换 recording/UDS adapter 不修改 `sem_scan.c` 或当前 SemMap 执行路径；neutral header 不包含
 PostgreSQL 类型；普通 `EXPLAIN`/`LIMIT 0` 不打开 provider；双 adapter 的 SQL rows（含 NULL）和归一化
 EXPLAIN 一致，协议错误、断连、取消与恢复由 UDS-only fault tests 验证；前序提交 `d08eda38` 的资源
@@ -756,12 +768,13 @@ filter 关系语义，provider lifecycle 没有复制。
 完成证据：公共 compatibility suite 独立通过；`SemMapMachine`/`FilterMachine` 不含 socket、JSON 或
 query cleanup 的重复实现；EXPLAIN 区分 ordinary 与 semantic predicate；`SemFilter` 位于 `LIMIT` 和相关
 consumer 之前；unknown、provider error、LIMIT、cancel、savepoint/transaction abort 不破坏 cardinality、
-tuple identity 或资源清理。提交 `d3a22dcf` 的精确 `REL_18_3` 结果为 regression 1/1、TAP 193/193、
-Python/static 18/18 和 warning-free `-Werror`；资源 smoke 数字从证据台账读取。
+tuple identity 或资源清理。最终结构债务提交 `e89060a7` 的精确 `REL_18_3` 结果为 regression 1/1、
+TAP 193/193、Python/static 20/20 和 warning-free `-Werror`；资源 smoke 数字从证据台账读取。
 
 ### 工作包四：真实 `SemanticPlanSpec` 与同步 exact reference slice
 
-把 function-like SQL 中的 input、instruction 和受限 options 绑定为数据库内 `SemanticPlanSpec`；实现
+在现有 planner-owned 最小 plan carrier 上，把 function-like SQL 中的 input、instruction 和受限 options
+绑定为完整数据库内 `SemanticPlanSpec`；实现
 canonical prompt program、严格 result parser、model/generation constraints、semantic digest 与 raw
 completion/usage identity。gateway 先通过当前同步单在途 interface 调用固定 OpenAI-compatible endpoint；
 这只是用于语义资格的最小同步 model-reference adapter，不等于后续的 production direct-HTTP
@@ -888,7 +901,8 @@ full-system baseline；Kalypso 当前只有论文参照，不预注册 native ba
 ## 12. 当前不能声称
 
 - 可以说受限、deterministic recording `SemMap/SemFilter CustomScan` 已在 PostgreSQL 18.3 完成
-  planner/executor/lifecycle 资格；不能说真实 `SemanticPlanSpec`、真实模型语义、第二 physical path 或
+  planner/executor/lifecycle 资格，并拥有版本化的最小 recording plan spec；不能说包含真实
+  instruction/parser/model policy 的完整 `SemanticPlanSpec`、真实模型语义、第二 physical path 或
   完整 semantic optimizer 已经实现。
 - 不能在载体审查前声称 extension 必然不够或 core patch 必然需要；两者都必须以目标优化和 lifecycle
   的可复现实验为依据。

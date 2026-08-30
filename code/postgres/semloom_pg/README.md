@@ -35,6 +35,15 @@ backpressure, multiple in-flight tasks, out-of-order/missing completion handling
 calls, and the full model/prompt/result schema remain pending; this slice must not
 be described as a complete database AI operator.
 
+The planner now serializes the recording reference's schema version, PostgreSQL-owned operator/value kinds,
+NULL/error policies, semantic spec identity, physical algorithm, and physical role into a named-field,
+copyObject-safe minimum plan spec. The executor rejects missing, duplicate, unknown, mistyped, oversized, or
+unsupported fields before selecting a provider; the input column remains a separate physical binding and is
+not hashed. `PgSemanticRuntime` is the only module that converts this PG-private spec to `AiOpenSpec`, and
+EXPLAIN reads `Physical Role` from the plan. This minimum records only behavior that the recording reference
+actually consumes; instruction, prompt, parser, model/generation, quality, cost, and fallback fields remain
+pending.
+
 `sem_scan.c` is a thin CustomScan adapter, and `sem_pump.c` owns only child-slot flow. The shared
 PostgreSQL-private `PgSemanticRuntime` fixes and lazily opens the provider, owns task sequence, copies
 session-owned completions into per-tuple memory, registers query cleanup, maps neutral errors, and reports
@@ -44,6 +53,9 @@ emit/drop/error without knowing provider sessions or cleanup. The runtime calls 
 contains only fixed-width values, byte slices, caller-owned errors, and opaque provider/session handles, with
 no PostgreSQL headers or types. The in-process recording adapter and UDS adapter implement the same contract,
 while socket, JSON, digest, and framing details remain in the UDS/wire-private modules.
+`AiProviderError` exposes stable neutral categories, `errno`, a byte-limit parameter, and bounded local redacted
+detail. It no longer exposes socket/JSON/frame/response-field operations; adapters generate safe detail and the
+runtime maps only neutral categories to PostgreSQL SQLSTATEs, never treating detail as a format string.
 
 Provider selection and its opaque configuration snapshot are query-fixed, but no session or FD is acquired
 until the first non-NULL task. A cleanup callback is registered in `estate->es_query_cxt` before lazy open can
@@ -64,12 +76,12 @@ cancellation during response and saturated-connect waits, recovery, input bounds
 explicitly reject escaped JSON NUL, raw NUL inside a length-delimited frame, and fractional integer fields
 while preserving the redacted `08P01` boundary.
 
-The exact-18.3 qualification for commit `d3a22dcf` passed 193/193 TAP checks, PGXS regression 1/1, an
-`-Werror` build, and 18/18 Python/static checks. Its clean-build `semloom_pg.so` SHA-256 is
-`e4048b9709228c18b335e3a90ca98c766a6d6c581b57eb53ac1e8affecae5f26`. A repository-external resource smoke
+The exact-18.3 qualification for commit `e89060a7` passed 193/193 TAP checks, PGXS regression 1/1, an
+`-Werror` build, and 20/20 Python/static checks. Its clean-build `semloom_pg.so` SHA-256 is
+`a2fc37c372ff0bd892e1e75e3a404d7688d85291e6ad13151e786ad7cdeb4ec0`. A repository-external resource smoke
 consumed 2,000 100,000-byte Map inputs (200,018,000 output bytes) with backend RSS
-21,048/21,688/21,688 KiB and FD 25/25/24, then evaluated 20,000 Filter rows (15,000 non-NULL tasks, 5,000
-emitted rows) with RSS 21,688/21,688/21,688 KiB and FD 26/26/24. These are start/peak/end observations that
+21,340/22,172/22,172 KiB and FD 43/43/41, then evaluated 20,000 Filter rows (15,000 non-NULL tasks, 5,000
+emitted rows) with RSS 22,172/22,204/22,204 KiB and FD 43/43/41. These are start/peak/end observations that
 support absence of cumulative-payload memory growth and FD leakage; they are not performance results.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the gateway

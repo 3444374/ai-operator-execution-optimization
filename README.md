@@ -12,10 +12,13 @@ lifecycle；数据库管理的有界数据流把规范化任务交给可替换�
 当前状态（2026-08-30）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
-错误和结果生命周期，并通过可替换 adapter 调用外部执行器；它们尚未实现真实 instruction/prompt、
-result parser、model role、quality policy、第二 physical path 或性能优化。
+错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
+实际消费的 operator/value/policy、semantic spec identity、physical algorithm 和 physical role 写入版本化、
+可复制的最小 plan spec；executor 严格解码后再映射为 `AiOpenSpec`。provider error interface 只保留
+中立类别、`errno`、长度和定长脱敏详情，socket/JSON/frame 细分由 adapter 本地产生。它们尚未实现真实
+instruction/prompt、result parser、model role、quality policy、第二 physical path 或性能优化。
 
-项目接下来先把真实语义编译成数据库拥有的 `SemanticPlanSpec`，通过同步 provider 完成一个 exact
+项目接下来先扩展这个最小 plan carrier，把真实语义编译成数据库拥有的完整 `SemanticPlanSpec`，通过同步 provider 完成一个 exact
 `SemFilter` 真实模型纵切面；随后生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
 AI work cost、quality evidence 和 reference fallback 选择。只有这些路径暴露 extension 无法封闭的
 plan identity、placement 或 lifecycle 问题时，才增加最小 PostgreSQL core patch。路径选择资格完成后

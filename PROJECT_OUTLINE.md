@@ -24,7 +24,11 @@ per-drive scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严�
 connect/response wait 和资源清理已在 PostgreSQL 18.3 通过。公共 compatibility suite 已覆盖
 RLS/权限、prepared/generic-plan invalidation、savepoint、双 backend、cancel 和 no-task lazy open；
 两个 reference operators 共用 `PgSemanticRuntime`，Map/Filter machines 分别拥有 emit 与
-TRUE/FALSE/UNKNOWN keep/drop。当前实现仍是 deterministic recording 语义；下一步先把 instruction、
+TRUE/FALSE/UNKNOWN keep/drop。当前 planner 已将 recording reference 真正消费的 operator/value/policy、
+semantic spec identity、physical algorithm 与 `Physical Role=reference` 写入版本化、可 copyObject 的
+最小 plan spec；input column 作为 executor binding 独立保存，runtime 统一严格解码并映射为 `AiOpenSpec`。
+neutral error interface 不再暴露 socket/JSON/frame operation，adapter 只返回中立类别和本地生成的定长
+脱敏详情。当前实现仍是 deterministic recording 语义；下一步扩展这个最小 plan carrier，把 instruction、
 prompt program、result parser、model/generation constraints 和 policy 编译成真实 `SemanticPlanSpec`，
 通过同步 provider 完成 exact `SemFilter` 真实模型纵切面，再实现 LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
@@ -45,12 +49,13 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `shared-runtime-exact-filter-validated`：受限 `SemMap` 与 `SemFilter CustomScan` recording
+当前状态是 `planner-owned-recording-spec-neutral-error-validated`：受限 `SemMap` 与 `SemFilter CustomScan` recording
 paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
-UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。
-真实 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、载体反例审查、accepted-prefix
+UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。planner-owned 最小 recording plan
+spec 与 transport-neutral error seam 已实现，但尚未包含真实 instruction/parser/model policy。
+完整真实 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、载体反例审查、accepted-prefix
 和多在途/乱序 completion 尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
@@ -434,7 +439,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 3. **公共 PostgreSQL 兼容性**：extension 级 suite 已验证普通 SQL 非干扰、RLS/权限、snapshot、
    事务/savepoint、prepared/generic plan 与 invalidation、planner-hook chaining、多 backend 隔离、
    cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
-4. **真实语义 reference slice**：实现数据库拥有的 `SemanticPlanSpec` 与同步 exact `SemFilter`
+4. **真实语义 reference slice**：扩展现有 planner-owned 最小 recording plan spec，实现数据库拥有的完整
+   `SemanticPlanSpec` 与同步 exact `SemFilter`
    真实模型路径，验证 canonical prompt、parser、model/usage identity 和 relation result；不先扩异步。
 5. **下一条 semantic path**：以确定性 golden/calibration evidence 起步，建立一条可辨认的
    LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative、AI-work cost、quality policy

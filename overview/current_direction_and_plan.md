@@ -26,8 +26,9 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 1. **已完成 carrier 资格**：`REL_18_3` extension / planner-visible recording `SemMap` 与 exact
    `SemFilter`、shared runtime、同步单在途 UDS 和公共 compatibility suite 已通过；它们证明数据库
-   生命周期与外部 seam，不代表已经执行真实 AI 语义或获得性能收益。
-2. **当前先完成真实语义合同**：把 instruction、prompt program、result parser、model/generation
+   生命周期与外部 seam。planner-owned 最小 recording plan spec 和 transport-neutral error interface
+   也已通过，但不代表已经执行真实 AI 语义或获得性能收益。
+2. **当前先完成真实语义合同**：扩展现有最小 plan carrier，把 instruction、prompt program、result parser、model/generation
    constraints 与 NULL/error/order policy 编译为数据库拥有的 `SemanticPlanSpec`，用同步 provider 跑通
    exact `SemFilter` 真实模型纵切面；此时不扩异步、多在途或调度器。
 3. **再完成数据库优化资格**：为同一逻辑 SemFilter 建立 reference 与 proxy/oracle physical paths，
@@ -61,6 +62,8 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 - exact `SemMap`/`SemFilter`、公共 runtime 与 PostgreSQL 18.3 compatibility suite 已通过功能、取消和
   RSS/FD 生命周期验证；尚无真实模型或性能结论；
+- 当前 recording operator/value/policy、semantic/physical identity 和 physical role 已由 planner 保存；
+  neutral provider error interface 不暴露 transport operation；
 - 文本 cache-on 数据组织效果随 endpoint consolidation、KV 压力与 prefix 结构变化；
 - 固定/shared credit 和 1/2/4 Job 实验显示效率、隔离与公平存在权衡，动态策略尚未普遍超过强静态点；
 - 图像 5K 画像、原生静态 baseline、多 Job 观察、matched-resource 与 observe-only 接线已经完成；
@@ -69,7 +72,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 仍待验证：
 
-- 真实 `SemanticPlanSpec`、同步 exact 真实模型 reference path；
+- 包含 instruction/prompt/parser/model constraints 的完整 `SemanticPlanSpec`、同步 exact 真实模型 reference path；
 - SemFilter 第二 physical path、AI-work cost、近似质量 policy 与 reference fallback；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；

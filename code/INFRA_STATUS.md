@@ -22,25 +22,30 @@ Unicode、escaped/raw NUL、严格整数、断连、取消与清理已验证。p
 由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 只负责 child slot 流，
 `PgSemanticRuntime` 统一负责 query-fixed provider、lazy open/drive/close、sequence、completion copy、
 query-context cleanup、中立错误映射和公共 EXPLAIN 计数；Map/Filter machines 分别处理 emit 与
-TRUE/FALSE/UNKNOWN keep/drop。中立 header 不包含 PostgreSQL 类型，recording、
+TRUE/FALSE/UNKNOWN keep/drop。`sem_plan_spec.c` 由 planner 把当前 recording operator/value/policy、
+semantic spec identity、physical algorithm 与 physical role 编码为版本化、可 copyObject 的 plan 值；
+executor 严格校验字段集合、类型、长度与 schema version，input column 仍是独立 executor binding。
+runtime 是唯一把 PG-private plan spec 转成 `AiOpenSpec` 的位置，machine 不再构造 recording identity。
+中立 header 不包含 PostgreSQL 类型，也不包含 socket/JSON/frame/response-field operation；adapter 通过
+稳定错误类别、`errno`、长度和本地生成的定长脱敏详情保持原 SQLSTATE/消息。recording、
 UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，结果复制到 per-tuple context，UDS 从
 `connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
 资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
 公共 extension 级 PostgreSQL compatibility suite 和第二个真实消费者已经通过，未为 `SemFilter`
-复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。当前尚缺真实
-`SemanticPlanSpec`、同步 exact 真实模型 reference、第二 physical path、carrier audit、accepted-prefix、
+复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。当前尚缺包含真实
+instruction/prompt/parser/model policy 的完整 `SemanticPlanSpec`、同步 exact 真实模型 reference、第二 physical path、carrier audit、accepted-prefix、
 多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
 中立 `AiOpenSpec/AiPreparedTask/AiCompletion` 值调用 `open/drive/close` in-process recording provider；
 同步单在途 UDS provider 与分离的 semantic-spec、physical-algorithm、provider-execution digest 也已
-实现，物理列号不进入 wire identity。提交 `d3a22dcf` 的精确 18.3 验收为 warning-free `-Werror`
-build、regression 1/1、TAP 193/193、Python/static 18/18。仓库外资源 smoke 中，2,000×100,000-byte
-SemMap 的 RSS 起始/峰值/结束为 21,048/21,688/21,688 KiB、FD 为 25/25/24；20,000 行
-SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 21,688/21,688/21,688 KiB、FD 为
-26/26/24，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
-`0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
+实现，物理列号不进入 wire identity。最终结构债务提交 `e89060a7` 的精确 18.3 验收为 warning-free
+`-Werror` build、regression 1/1、TAP 193/193、Python/static 20/20。仓库外资源 smoke 中，
+2,000×100,000-byte SemMap 的 RSS 起始/峰值/结束为 21,340/22,172/22,172 KiB、FD 为 43/43/41；
+20,000 行 SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 22,172/22,204/22,204 KiB、
+FD 为 43/43/41，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
+`d3a22dcf` shared-runtime、`0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
 真实 instruction/prompt/parser/model policy、真实模型 reference、accepted-prefix、多在途/乱序 completion、
 第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。

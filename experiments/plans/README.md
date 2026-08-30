@@ -16,8 +16,9 @@
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
-当前 recording carrier、shared runtime、同步 provider seam 与 compatibility suite 已完成。唯一详细工程
-顺序由架构实施计划 §9 维护：先真实 `SemanticPlanSpec` 与同步 exact model reference，再实现第二
+当前 recording carrier、shared runtime、同步 provider seam、planner-owned 最小 recording plan spec、
+transport-neutral error interface 与 compatibility suite 已完成。唯一详细工程顺序由架构实施计划 §9
+维护：先在现有 carrier 上扩展真实 `SemanticPlanSpec` 与同步 exact model reference，再实现第二
 physical path 和 cost/quality，随后 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
 只导航，不复制每个工作包的完成标准。
 

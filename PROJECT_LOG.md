@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-08-30 planner-owned 最小 plan spec 与 neutral error seam 完成
+
+- 提交 `812fc35f` 新增 PG-private `sem_plan_spec.[ch]`：planner 将当前 recording reference 真正消费的
+  schema version、operator/value kind、NULL/error policy、semantic spec identity/version、physical
+  algorithm 和 physical role 编码为 named Node/List values 写入 `custom_private`；input column 作为
+  executor binding 独立保存，不进入 digest。executor 统一拒绝缺失、重复、未知、错误类型、超长或
+  不支持的字段，再由 `PgSemanticRuntime` 唯一映射为 `AiOpenSpec`。Map/Filter planner 不再依赖
+  provider enum，machine 不再构造 recording spec，EXPLAIN 的 `Physical Role` 从 plan 读取。
+- 提交 `e89060a7` 删除 neutral `AiProviderOperation` 与 `error.operation`。`AiProviderError` 只保留稳定
+  code、`system_errno`、`limit_bytes` 和 160-byte caller-owned detail；UDS/wire adapter 使用本地静态、
+  脱敏消息区分 socket/JSON/frame/field failures，runtime 只按 neutral code 映射 SQLSTATE，并用固定
+  `"%s"` 输出经过长度/NUL 校验的 detail。现有 SQLSTATE、完整消息、wire v2 和 digest golden vectors
+  保持不变。
+- 两个提交均在各自干净 detached worktree、精确 PostgreSQL 18.3 上通过 `-Werror` build、regression
+  1/1 与 TAP 193/193；最终提交另通过 Python/static 20/20 和 neutral C11 header 编译。最终仓库外
+  产物 ID 为 `tap-run-e89060a7`，`semloom_pg.so` SHA-256 为
+  `a2fc37c372ff0bd892e1e75e3a404d7688d85291e6ad13151e786ad7cdeb4ec0`。
+- `resource-run-e89060a7/resource-smoke.txt` 记录 Map 200,018,000 输出字节，RSS
+  21,340/22,172/22,172 KiB、FD 43/43/41；Filter 输出 5,000 行，RSS
+  22,172/22,204/22,204 KiB、FD 43/43/41。未观察到累计 payload 近似线性增长或 FD 泄漏；该 smoke
+  不是性能结果。测试后 PostgreSQL 18.3 与 gateway 均无残留进程。
+- 本轮没有增加 instruction/options SQL、真实 parser/model、cost/selectivity、第二 path、异步、多在途、
+  `SemJoin` 或 core patch。下一步是在现有最小 plan carrier 上实现被真实 reference 消费的完整 semantic
+  contract；OperatorMachine 的 PG value binding 与 cost/cardinality 按该真实 consumer/第二路径时机收紧。
+
 ## 2026-08-30 文档职责与 PostgreSQL 工程实施路线收敛
 
 - 按实际问题而非目录名称重新确定当前入口职责：`PROJECT_OUTLINE.md` 只回答为什么做、

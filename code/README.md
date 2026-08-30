@@ -24,7 +24,10 @@ recovery. Response parsing also rejects escaped/raw NUL and fractional integer f
 `08P01` boundary; the static contract verifies that each catch path restores a stable context before copying
 PostgreSQL error data. The extension-wide PostgreSQL compatibility suite, exact Filter cardinality, shared
 runtime extraction, adapter parity, cancellation/recovery, and RSS/FD lifecycle smoke passed on exact 18.3 at
-commit `d3a22dcf`. The next implementation slice is a database-owned `SemanticPlanSpec` plus a synchronous,
+commit `d3a22dcf`. Commits `812fc35f` and `e89060a7` then made the current recording identity planner-owned
+through a strict, copyable, versioned minimum plan spec and removed transport operations from the neutral
+error interface without changing rows, EXPLAIN, wire digests, SQLSTATE, or redacted messages. The next
+implementation slice extends that minimum into a database-owned complete `SemanticPlanSpec` plus a synchronous,
 exact, model-backed `SemFilter` reference. An explicit reference/optimized second path, AI-work cost,
 quality evidence, and carrier audit follow that slice. Accepted-prefix, multiple in-flight tasks, and
 incremental SemLoom sessions follow database semantic and path-selection qualification; see

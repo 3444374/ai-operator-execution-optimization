@@ -13,11 +13,12 @@
 > recording provider 已通过 PostgreSQL 18.3 功能测试；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
 > per-drive scratch、per-tuple completion copy、编码前输入上限、UTF8 校验、可取消 nonblocking connect
 > 和 query-context cleanup 已验证；escaped/raw NUL、fractional integer 与稳定 error context 的响应边界
-> hardening 已在提交 `0b9948ee` 固定；提交 `d3a22dcf` 进一步通过 warning-free `-Werror` build、
-> regression 1/1、TAP 193/193、Python/static 18/18 和 Map/Filter RSS/FD 不增长 smoke。公共
+> hardening 已在提交 `0b9948ee` 固定；提交 `d3a22dcf` 完成 shared runtime，提交 `e89060a7` 进一步
+> 完成 planner-owned 最小 recording plan spec 与 transport-neutral error interface，并通过 warning-free
+> `-Werror` build、regression 1/1、TAP 193/193、Python/static 20/20 和 Map/Filter RSS/FD 不增长 smoke。公共
 > compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、双 backend、cancel/cleanup
 > 与 no-task lazy open；shared runtime 不包含算子真值，operator machines 不包含 provider lifecycle。
-> 当前先实现真实 `SemanticPlanSpec` 与同步 exact `SemFilter` 真实模型 reference slice，再实现显式
+> 当前先扩展现有最小 plan carrier，实现完整真实 `SemanticPlanSpec` 与同步 exact `SemFilter` 真实模型 reference slice，再实现显式
 > reference/optimized 第二 physical path、AI-work cost、quality evidence 与 fallback。载体审查确认
 > extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加
 > 最小 core patch。数据库语义与路径选择资格完成后才扩 accepted-prefix、
