@@ -285,7 +285,18 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(encoding="utf-8")
         wire_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(encoding="utf-8")
         wire_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(encoding="utf-8")
-        gateway_source = (EXTENSION_ROOT / "gateway" / "protocol.py").read_text(encoding="utf-8")
+        gateway_wire_source = (
+            CODE_ROOT / "src" / "execution_provider" / "wire" / "v2.py"
+        ).read_text(encoding="utf-8")
+        gateway_framing_source = (
+            CODE_ROOT / "src" / "execution_provider" / "wire" / "framing.py"
+        ).read_text(encoding="utf-8")
+        legacy_protocol_source = (EXTENSION_ROOT / "gateway" / "protocol.py").read_text(
+            encoding="utf-8"
+        )
+        legacy_cli_source = (
+            EXTENSION_ROOT / "gateway" / "recording_gateway.py"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("src/recording_provider.o", makefile)
         self.assertIn("src/uds_provider.o", makefile)
@@ -340,10 +351,13 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2", wire_header)
         self.assertIn("PGC_SUSET", (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8"))
         self.assertIn('socket_path[0] != \'/\'', uds_source)
-        self.assertIn("MAX_INFLIGHT_TASKS = 1", gateway_source)
-        self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_source)
-        self.assertIn("MAX_INPUT_BYTES", gateway_source)
-        self.assertNotIn('"mapped_column"', gateway_source)
+        self.assertIn("MAX_INFLIGHT_TASKS = 1", gateway_wire_source)
+        self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_framing_source)
+        self.assertIn("MAX_INPUT_BYTES", gateway_wire_source)
+        self.assertNotIn('"mapped_column"', gateway_wire_source)
+        self.assertIn("from src.execution_provider.wire.v2 import", legacy_protocol_source)
+        self.assertIn("from src.execution_provider.server import main", legacy_cli_source)
+        self.assertNotIn("postgres.semloom_pg.gateway", gateway_wire_source)
 
         allowed_transport_sources = {"uds_provider.c", "wire_v2.c"}
         transport_identifiers = (
