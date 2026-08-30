@@ -62,8 +62,8 @@ semloom_provider_error_clear(AiProviderError *error)
 void
 semloom_provider_error_set(AiProviderError *error,
 						   uint32 code,
-						   uint32 operation,
 						   int system_errno,
+						   uint32 limit_bytes,
 						   const char *detail)
 {
 	Size detail_length = 0;
@@ -71,8 +71,8 @@ semloom_provider_error_set(AiProviderError *error,
 	Assert(error != NULL);
 	semloom_provider_error_clear(error);
 	error->code = code;
-	error->operation = operation;
 	error->system_errno = system_errno;
+	error->limit_bytes = limit_bytes;
 	if (detail != NULL)
 	{
 		detail_length = strlen(detail);

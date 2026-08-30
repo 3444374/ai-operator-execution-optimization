@@ -63,9 +63,9 @@ semloom_recording_open(const void *config,
 		!semloom_provider_spec_is_recording(spec))
 	{
 		if (error != NULL)
-			semloom_provider_error_set(error,
+				semloom_provider_error_set(error,
 									   AI_PROVIDER_ERROR_INVALID_SPEC,
-									   AI_PROVIDER_OPERATION_OPEN_SPEC,
+									   0,
 									   0,
 									   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
@@ -144,7 +144,7 @@ semloom_recording_fail(AiProviderSession *session,
 	if (error != NULL)
 		semloom_provider_error_set(error,
 								   code,
-								   AI_PROVIDER_OPERATION_NONE,
+								   0,
 								   0,
 								   NULL);
 	semloom_recording_close(session);

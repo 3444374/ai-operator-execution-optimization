@@ -24,8 +24,8 @@ extern bool semloom_provider_spec_is_recording(const AiOpenSpec *spec);
 extern void semloom_provider_error_clear(AiProviderError *error);
 extern void semloom_provider_error_set(AiProviderError *error,
 									uint32 code,
-									uint32 operation,
 									int system_errno,
+									uint32 limit_bytes,
 									const char *detail);
 extern void semloom_recording_provider_select(AiProvider *provider);
 extern void semloom_uds_provider_select(MemoryContext owner_context,

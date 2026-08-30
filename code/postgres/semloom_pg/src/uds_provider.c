@@ -98,9 +98,9 @@ semloom_uds_open(const void *config_value,
 		!semloom_provider_spec_is_recording(spec))
 	{
 		if (error != NULL)
-			semloom_provider_error_set(error,
+				semloom_provider_error_set(error,
 									   AI_PROVIDER_ERROR_INVALID_SPEC,
-									   AI_PROVIDER_OPERATION_OPEN_SPEC,
+									   0,
 									   0,
 									   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
@@ -140,9 +140,9 @@ semloom_uds_drive(AiProviderSession *session,
 		error == NULL)
 	{
 		if (error != NULL)
-			semloom_provider_error_set(error,
+				semloom_provider_error_set(error,
 									   AI_PROVIDER_ERROR_SESSION_CLOSED,
-									   AI_PROVIDER_OPERATION_NONE,
+									   0,
 									   0,
 									   NULL);
 		semloom_uds_close(session);
@@ -208,7 +208,7 @@ semloom_uds_drive_internal(AiProviderSession *session,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_NULL_TASK,
-								   AI_PROVIDER_OPERATION_NONE,
+								   0,
 								   0,
 								   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
@@ -217,7 +217,7 @@ semloom_uds_drive_internal(AiProviderSession *session,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_TASK_MISMATCH,
-								   AI_PROVIDER_OPERATION_NONE,
+								   0,
 								   0,
 								   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
@@ -226,19 +226,18 @@ semloom_uds_drive_internal(AiProviderSession *session,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_INPUT_TOO_LARGE,
-								   AI_PROVIDER_OPERATION_NONE,
 								   0,
+								   SEMLOOM_WIRE_V2_MAX_INPUT_BYTES,
 								   NULL);
-		error->limit_bytes = SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (GetDatabaseEncoding() != PG_UTF8)
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_UNSUPPORTED_ENCODING,
-								   AI_PROVIDER_OPERATION_NONE,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom UDS recording provider requires UTF8 database encoding");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (session->socket_fd == PGINVALID_SOCKET)
@@ -266,27 +265,27 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_INVALID_SPEC,
-								   AI_PROVIDER_OPERATION_SOCKET_PATH_LENGTH,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider socket path is too long");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (socket_path[0] != '/')
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_INVALID_SPEC,
-								   AI_PROVIDER_OPERATION_SOCKET_PATH_ABSOLUTE,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider socket path must be absolute");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (!AcquireExternalFD())
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_RESOURCE_EXHAUSTED,
-								   AI_PROVIDER_OPERATION_RESERVE_EXTERNAL_FD,
 								   0,
-								   NULL);
+								   0,
+								   "could not reserve a file descriptor for the SemLoom provider");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	session->external_fd_acquired = true;
@@ -297,9 +296,9 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_CREATE_SOCKET,
 								   saved_errno,
-								   NULL);
+								   0,
+								   "could not create SemLoom provider socket");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
@@ -311,9 +310,9 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_CONFIGURE_SOCKET,
 								   saved_errno,
-								   NULL);
+								   0,
+								   "could not make SemLoom provider socket nonblocking");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
@@ -346,9 +345,9 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 		}
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_CONNECT_SOCKET,
 								   errno,
-								   NULL);
+								   0,
+								   "could not connect to SemLoom provider socket");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 

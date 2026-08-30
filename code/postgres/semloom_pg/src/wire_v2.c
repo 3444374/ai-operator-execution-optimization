@@ -217,9 +217,9 @@ mismatch_or_error:
 mismatch:
 	semloom_provider_error_set(error,
 							   AI_PROVIDER_ERROR_PROTOCOL,
-							   AI_PROVIDER_OPERATION_OPEN_RESPONSE,
 							   0,
-							   NULL);
+							   0,
+							   "SemLoom provider open response does not match the requested protocol");
 	return AI_PROVIDER_STATUS_ERROR;
 }
 
@@ -314,9 +314,9 @@ semloom_wire_v2_drive(pgsocket socket_fd,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_COMPLETION_OUTPUT,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider completion has an invalid output");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (!output_is_null)
@@ -340,9 +340,9 @@ semloom_wire_v2_drive(pgsocket socket_fd,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_COMPLETION_EVIDENCE,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider completion evidence digest does not match");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
@@ -357,9 +357,9 @@ identity_mismatch_or_error:
 identity_mismatch:
 	semloom_provider_error_set(error,
 							   AI_PROVIDER_ERROR_PROTOCOL,
-							   AI_PROVIDER_OPERATION_COMPLETION_IDENTITY,
 							   0,
-							   NULL);
+							   0,
+							   "SemLoom provider completion identity does not match the task");
 	return AI_PROVIDER_STATUS_ERROR;
 }
 
@@ -380,18 +380,18 @@ semloom_wire_v2_wait_connected(pgsocket socket_fd, AiProviderError *error)
 
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_INSPECT_SOCKET,
 								   saved_errno,
-								   NULL);
+								   0,
+								   "could not inspect SemLoom provider socket connection");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (socket_error != 0)
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_CONNECT_SOCKET,
 								   socket_error,
-								   NULL);
+								   0,
+								   "could not connect to SemLoom provider socket");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	return AI_PROVIDER_STATUS_OK;
@@ -562,10 +562,10 @@ semloom_send_frame(pgsocket socket_fd,
 	if (payload_length == 0 || payload_length > SEMLOOM_WIRE_V2_MAX_FRAME_BYTES)
 	{
 		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_FRAME_LIMIT,
-								   AI_PROVIDER_OPERATION_SEND_FRAME,
+								   AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider frame length is outside the protocol limit");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	header[0] = (uint8) (payload_length >> 24);
@@ -599,9 +599,9 @@ semloom_receive_frame(pgsocket socket_fd, char **payload, AiProviderError *error
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_RECEIVE_FRAME,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider returned an invalid frame length");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	*payload = palloc(payload_length + 1);
@@ -612,9 +612,9 @@ semloom_receive_frame(pgsocket socket_fd, char **payload, AiProviderError *error
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_PARSE_JSON,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider returned invalid JSON");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	(*payload)[payload_length] = '\0';
@@ -653,9 +653,9 @@ semloom_socket_write_all(pgsocket socket_fd,
 		}
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_WRITE_SOCKET,
 								   errno,
-								   NULL);
+								   0,
+								   "could not write to SemLoom provider socket");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	return AI_PROVIDER_STATUS_OK;
@@ -684,9 +684,9 @@ semloom_socket_read_all(pgsocket socket_fd,
 		{
 			semloom_provider_error_set(error,
 									   AI_PROVIDER_ERROR_CONNECTION_LOST,
-									   AI_PROVIDER_OPERATION_READ_SOCKET,
 									   0,
-									   NULL);
+									   0,
+									   "SemLoom provider disconnected before completing a frame");
 			return AI_PROVIDER_STATUS_ERROR;
 		}
 		if (errno == EINTR)
@@ -698,9 +698,9 @@ semloom_socket_read_all(pgsocket socket_fd,
 		}
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_SYSTEM,
-								   AI_PROVIDER_OPERATION_READ_SOCKET,
 								   errno,
-								   NULL);
+								   0,
+								   "could not read from SemLoom provider socket");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	return AI_PROVIDER_STATUS_OK;
@@ -766,18 +766,18 @@ semloom_parse_json(const char *payload, Jsonb **message, AiProviderError *error)
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_PARSE_JSON,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider returned invalid JSON");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (!JB_ROOT_IS_OBJECT(*message))
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_RESPONSE_OBJECT,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider response must be a JSON object");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	return AI_PROVIDER_STATUS_OK;
@@ -797,9 +797,9 @@ semloom_json_value(Jsonb *message,
 		return true;
 	semloom_provider_error_set(error,
 							   AI_PROVIDER_ERROR_PROTOCOL,
-							   AI_PROVIDER_OPERATION_RESPONSE_FIELD,
 							   0,
-							   NULL);
+							   0,
+							   "SemLoom provider response is missing a required field");
 	return false;
 }
 
@@ -837,9 +837,9 @@ semloom_json_int32(Jsonb *message,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_RESPONSE_INTEGER,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider response has an invalid integer field");
 		return false;
 	}
 	if (DatumGetInt32(DirectFunctionCall1(numeric_min_scale,
@@ -847,9 +847,9 @@ semloom_json_int32(Jsonb *message,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_RESPONSE_INTEGER,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider response has an invalid integer field");
 		return false;
 	}
 	PG_TRY();
@@ -881,9 +881,9 @@ semloom_json_int32(Jsonb *message,
 		return true;
 	semloom_provider_error_set(error,
 							   AI_PROVIDER_ERROR_NUMERIC_RANGE,
-							   AI_PROVIDER_OPERATION_RESPONSE_INTEGER,
 							   0,
-							   NULL);
+							   0,
+							   "integer out of range");
 	return false;
 }
 
@@ -901,9 +901,9 @@ semloom_json_bool(Jsonb *message,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_RESPONSE_BOOLEAN,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider response has an invalid boolean field");
 		return false;
 	}
 	*result = value->val.boolean;
@@ -924,9 +924,9 @@ semloom_validate_response_type(Jsonb *message,
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_PROTOCOL,
-								   AI_PROVIDER_OPERATION_PROVIDER_REJECTED,
 								   0,
-								   NULL);
+								   0,
+								   "SemLoom provider rejected the protocol message");
 		return false;
 	}
 	if (JsonContainerSize(&message->root) != expected_fields)
@@ -939,9 +939,9 @@ semloom_validate_response_type(Jsonb *message,
 unexpected:
 	semloom_provider_error_set(error,
 							   AI_PROVIDER_ERROR_PROTOCOL,
-							   AI_PROVIDER_OPERATION_UNEXPECTED_MESSAGE,
 							   0,
-							   NULL);
+							   0,
+							   "SemLoom provider returned an unexpected message");
 	return false;
 }
 

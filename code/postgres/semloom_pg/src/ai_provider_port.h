@@ -34,38 +34,10 @@ typedef enum AiProviderErrorCode
 	AI_PROVIDER_ERROR_RESOURCE_EXHAUSTED = 7,
 	AI_PROVIDER_ERROR_SYSTEM = 8,
 	AI_PROVIDER_ERROR_CONNECTION_LOST = 9,
-	AI_PROVIDER_ERROR_FRAME_LIMIT = 10,
+	AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE = 10,
 	AI_PROVIDER_ERROR_PROTOCOL = 11,
 	AI_PROVIDER_ERROR_NUMERIC_RANGE = 12,
 } AiProviderErrorCode;
-
-typedef enum AiProviderOperation
-{
-	AI_PROVIDER_OPERATION_NONE = 0,
-	AI_PROVIDER_OPERATION_OPEN_SPEC = 1,
-	AI_PROVIDER_OPERATION_SOCKET_PATH_LENGTH = 2,
-	AI_PROVIDER_OPERATION_SOCKET_PATH_ABSOLUTE = 3,
-	AI_PROVIDER_OPERATION_RESERVE_EXTERNAL_FD = 4,
-	AI_PROVIDER_OPERATION_CREATE_SOCKET = 5,
-	AI_PROVIDER_OPERATION_CONFIGURE_SOCKET = 6,
-	AI_PROVIDER_OPERATION_CONNECT_SOCKET = 7,
-	AI_PROVIDER_OPERATION_INSPECT_SOCKET = 8,
-	AI_PROVIDER_OPERATION_WRITE_SOCKET = 9,
-	AI_PROVIDER_OPERATION_READ_SOCKET = 10,
-	AI_PROVIDER_OPERATION_SEND_FRAME = 11,
-	AI_PROVIDER_OPERATION_RECEIVE_FRAME = 12,
-	AI_PROVIDER_OPERATION_PARSE_JSON = 13,
-	AI_PROVIDER_OPERATION_RESPONSE_OBJECT = 14,
-	AI_PROVIDER_OPERATION_RESPONSE_FIELD = 15,
-	AI_PROVIDER_OPERATION_RESPONSE_INTEGER = 16,
-	AI_PROVIDER_OPERATION_RESPONSE_BOOLEAN = 17,
-	AI_PROVIDER_OPERATION_PROVIDER_REJECTED = 18,
-	AI_PROVIDER_OPERATION_UNEXPECTED_MESSAGE = 19,
-	AI_PROVIDER_OPERATION_OPEN_RESPONSE = 20,
-	AI_PROVIDER_OPERATION_COMPLETION_IDENTITY = 21,
-	AI_PROVIDER_OPERATION_COMPLETION_OUTPUT = 22,
-	AI_PROVIDER_OPERATION_COMPLETION_EVIDENCE = 23,
-} AiProviderOperation;
 
 typedef enum AiProviderOperatorKind
 {
@@ -124,7 +96,6 @@ typedef struct AiCompletion
 typedef struct AiProviderError
 {
 	uint32_t code;
-	uint32_t operation;
 	int32_t system_errno;
 	uint32_t limit_bytes;
 	uint16_t detail_length;
@@ -158,7 +129,9 @@ typedef struct AiProvider
  * non-OK open or drive result is terminal: open may publish a partial session,
  * the caller closes it, and no later drive may continue that session.  Close
  * accepts NULL and repeated calls.  limit_bytes is a code-specific fixed-width
- * parameter and is zero when the error does not report a byte limit.
+ * parameter and is zero when the error does not report a byte limit.  detail
+ * is a locally generated, bounded, redacted description; it is data, never a
+ * format string, and must not contain task/provider payload or configuration.
  */
 
 #endif

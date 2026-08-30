@@ -50,6 +50,7 @@ pg_noreturn static void pg_semantic_runtime_fail(
 	const AiProviderError *error);
 pg_noreturn static void semloom_raise_provider_error(
 	const AiProviderError *error);
+static const char *semloom_provider_error_detail(const AiProviderError *error);
 
 PgSemanticRuntime *
 pg_semantic_runtime_begin(MemoryContext owner_context,
@@ -118,7 +119,7 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 	{
 		semloom_provider_error_set(&error,
 								   AI_PROVIDER_ERROR_TASK_MISMATCH,
-								   AI_PROVIDER_OPERATION_COMPLETION_IDENTITY,
+								   0,
 								   0,
 								   NULL);
 		pg_semantic_runtime_fail(runtime, &error);
@@ -292,7 +293,7 @@ pg_semantic_runtime_open_provider(PgSemanticRuntime *runtime)
 		if (status == AI_PROVIDER_STATUS_OK)
 			semloom_provider_error_set(&error,
 									   AI_PROVIDER_ERROR_SESSION_CLOSED,
-									   AI_PROVIDER_OPERATION_NONE,
+									   0,
 									   0,
 									   NULL);
 		pg_semantic_runtime_fail(runtime, &error);
@@ -349,23 +350,13 @@ semloom_raise_provider_error(const AiProviderError *error)
 {
 	int sqlstate = ERRCODE_INTERNAL_ERROR;
 	const char *message = "SemLoom provider returned an unknown error";
+	const char *detail = semloom_provider_error_detail(error);
 
 	switch (error->code)
 	{
 		case AI_PROVIDER_ERROR_INVALID_SPEC:
 			sqlstate = ERRCODE_INVALID_PARAMETER_VALUE;
-			switch (error->operation)
-			{
-				case AI_PROVIDER_OPERATION_SOCKET_PATH_LENGTH:
-					message = "SemLoom provider socket path is too long";
-					break;
-				case AI_PROVIDER_OPERATION_SOCKET_PATH_ABSOLUTE:
-					message = "SemLoom provider socket path must be absolute";
-					break;
-				default:
-					message = "invalid recording provider plan specification";
-					break;
-			}
+			message = "invalid recording provider plan specification";
 			break;
 		case AI_PROVIDER_ERROR_SESSION_CLOSED:
 			sqlstate = ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE;
@@ -387,46 +378,26 @@ semloom_raise_provider_error(const AiProviderError *error)
 			pg_unreachable();
 		case AI_PROVIDER_ERROR_UNSUPPORTED_ENCODING:
 			sqlstate = ERRCODE_FEATURE_NOT_SUPPORTED;
-			message = "SemLoom UDS recording provider requires UTF8 database encoding";
+			message = "SemLoom provider does not support the database encoding";
 			break;
 		case AI_PROVIDER_ERROR_RESOURCE_EXHAUSTED:
 			sqlstate = ERRCODE_INSUFFICIENT_RESOURCES;
-			message = "could not reserve a file descriptor for the SemLoom provider";
+			message = "SemLoom provider could not reserve a required resource";
 			break;
 		case AI_PROVIDER_ERROR_CONNECTION_LOST:
 			sqlstate = ERRCODE_CONNECTION_FAILURE;
-			message = "SemLoom provider disconnected before completing a frame";
+			message = "SemLoom provider connection was lost";
 			break;
-		case AI_PROVIDER_ERROR_FRAME_LIMIT:
+		case AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE:
 			sqlstate = ERRCODE_PROGRAM_LIMIT_EXCEEDED;
-			message = "SemLoom provider frame length is outside the protocol limit";
+			message = "SemLoom provider message exceeds its configured limit";
 			break;
 		case AI_PROVIDER_ERROR_NUMERIC_RANGE:
 			sqlstate = ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE;
 			message = "integer out of range";
 			break;
 		case AI_PROVIDER_ERROR_SYSTEM:
-			switch (error->operation)
-			{
-				case AI_PROVIDER_OPERATION_CREATE_SOCKET:
-					message = "could not create SemLoom provider socket";
-					break;
-				case AI_PROVIDER_OPERATION_CONFIGURE_SOCKET:
-					message = "could not make SemLoom provider socket nonblocking";
-					break;
-				case AI_PROVIDER_OPERATION_INSPECT_SOCKET:
-					message = "could not inspect SemLoom provider socket connection";
-					break;
-				case AI_PROVIDER_OPERATION_WRITE_SOCKET:
-					message = "could not write to SemLoom provider socket";
-					break;
-				case AI_PROVIDER_OPERATION_READ_SOCKET:
-					message = "could not read from SemLoom provider socket";
-					break;
-				default:
-					message = "could not connect to SemLoom provider socket";
-					break;
-			}
+			message = detail != NULL ? detail : "SemLoom provider system operation failed";
 			errno = error->system_errno;
 			ereport(ERROR,
 					(errcode_for_socket_access(),
@@ -434,51 +405,26 @@ semloom_raise_provider_error(const AiProviderError *error)
 			pg_unreachable();
 		case AI_PROVIDER_ERROR_PROTOCOL:
 			sqlstate = ERRCODE_PROTOCOL_VIOLATION;
-			switch (error->operation)
-			{
-				case AI_PROVIDER_OPERATION_RECEIVE_FRAME:
-					message = "SemLoom provider returned an invalid frame length";
-					break;
-				case AI_PROVIDER_OPERATION_PARSE_JSON:
-					message = "SemLoom provider returned invalid JSON";
-					break;
-				case AI_PROVIDER_OPERATION_RESPONSE_OBJECT:
-					message = "SemLoom provider response must be a JSON object";
-					break;
-				case AI_PROVIDER_OPERATION_RESPONSE_FIELD:
-					message = "SemLoom provider response is missing a required field";
-					break;
-				case AI_PROVIDER_OPERATION_RESPONSE_INTEGER:
-					message = "SemLoom provider response has an invalid integer field";
-					break;
-				case AI_PROVIDER_OPERATION_RESPONSE_BOOLEAN:
-					message = "SemLoom provider response has an invalid boolean field";
-					break;
-				case AI_PROVIDER_OPERATION_PROVIDER_REJECTED:
-					message = "SemLoom provider rejected the protocol message";
-					break;
-				case AI_PROVIDER_OPERATION_OPEN_RESPONSE:
-					message = "SemLoom provider open response does not match the requested protocol";
-					break;
-				case AI_PROVIDER_OPERATION_COMPLETION_IDENTITY:
-					message = "SemLoom provider completion identity does not match the task";
-					break;
-				case AI_PROVIDER_OPERATION_COMPLETION_OUTPUT:
-					message = "SemLoom provider completion has an invalid output";
-					break;
-				case AI_PROVIDER_OPERATION_COMPLETION_EVIDENCE:
-					message = "SemLoom provider completion evidence digest does not match";
-					break;
-				default:
-					message = "SemLoom provider returned an unexpected message";
-					break;
-			}
+			message = "SemLoom provider returned an unexpected message";
 			break;
 		default:
 			break;
 	}
+	if (detail != NULL)
+		message = detail;
 	ereport(ERROR,
 			(errcode(sqlstate),
 			 errmsg("%s", message)));
 	pg_unreachable();
+}
+
+static const char *
+semloom_provider_error_detail(const AiProviderError *error)
+{
+	if (error->detail_length == 0 ||
+		error->detail_length >= AI_PROVIDER_ERROR_DETAIL_CAPACITY ||
+		error->detail[error->detail_length] != '\0' ||
+		memchr(error->detail, '\0', error->detail_length) != NULL)
+		return NULL;
+	return error->detail;
 }

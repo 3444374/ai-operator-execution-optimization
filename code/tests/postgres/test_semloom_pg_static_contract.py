@@ -232,7 +232,6 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("typedef struct AiProviderError", header)
         self.assertIn("AI_PROVIDER_ERROR_DETAIL_CAPACITY 160", header)
         self.assertIn("uint32_t code", header)
-        self.assertIn("uint32_t operation", header)
         self.assertIn("int32_t system_errno", header)
         self.assertIn("uint32_t limit_bytes", header)
         self.assertIn("uint16_t detail_length", header)
@@ -250,6 +249,28 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "AttrNumber",
         ):
             self.assertNotIn(forbidden, header)
+
+    def test_neutral_provider_error_interface_hides_adapter_operations(self) -> None:
+        header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn("AiProviderOperation", header)
+        self.assertNotIn("operation;", header)
+        for transport_term in ("SOCKET", "JSON", "FRAME", "RESPONSE_FIELD"):
+            self.assertNotIn(transport_term, header)
+        self.assertIn("int32_t system_errno", header)
+        self.assertIn("uint32_t limit_bytes", header)
+        self.assertIn("uint16_t detail_length", header)
+        self.assertIn("char detail[AI_PROVIDER_ERROR_DETAIL_CAPACITY]", header)
+
+        self.assertNotIn("AI_PROVIDER_OPERATION_", runtime_source)
+        self.assertNotIn("error->operation", runtime_source)
+        self.assertIn("error->detail", runtime_source)
+        self.assertIn('errmsg("%s", message)', runtime_source)
 
     def test_recording_and_uds_are_separate_provider_adapters(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
@@ -280,9 +301,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("PG_UTF8", uds_source)
         self.assertIn("O_NONBLOCK", uds_source)
         self.assertIn("semloom_uds_close(session);", uds_source)
-        self.assertIn(
-            "error->limit_bytes = SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", uds_source
-        )
+        self.assertIn("AI_PROVIDER_ERROR_INPUT_TOO_LARGE", uds_source)
+        self.assertIn("SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", uds_source)
         self.assertNotIn("174080", pump_source)
         self.assertNotIn("SEMLOOM_WIRE_V2_MAX_INPUT_BYTES", pump_source)
         self.assertNotIn("174080", runtime_source)
