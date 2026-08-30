@@ -28,10 +28,10 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
    `SemFilter`、shared runtime、同步单在途 UDS 和公共 compatibility suite 已通过；它们证明数据库
    生命周期与外部 seam。planner-owned 最小 recording plan spec 和 transport-neutral error interface
    也已通过，但不代表已经执行真实 AI 语义或获得性能收益。
-2. **当前先完成真实语义合同**：扩展现有最小 plan carrier，把 instruction、prompt program、result parser、model/generation
-   constraints 与 NULL/error/order policy 编译为数据库拥有的 `SemanticPlanSpec`，用同步 provider 跑通
-   exact `SemFilter` 真实模型纵切面；此时不扩异步、多在途或调度器。
-3. **再完成数据库优化资格**：为同一逻辑 SemFilter 建立 reference 与 proxy/oracle physical paths，
+2. **当前先完成真实语义合同**：先迁移现有 Python gateway，再只把 exact-reference 实际消费的
+   instruction、prompt、parser、model/generation fields 加入最小 plan/task/result contract；同一合同先过
+   deterministic golden adapter，再过同步 fixed-model endpoint。此时不扩异步、多在途或调度器。
+3. **再完成数据库优化资格**：先用真实 reference 修正 SemFilter rows/selectivity/AI-work cost，再为同一逻辑 SemFilter 建立 reference 与 proxy/oracle physical paths，
    显式保存 algorithm/model role、quality policy、calibration evidence、AI-work cost 和 reference fallback。
 4. **随后审查载体**：用真实 paths 验证 prepared-plan identity、hook coexistence 和有限 predicate
    placement；extension 能表达就继续使用，只有已复现阻断才增加最小 core patch。
@@ -72,7 +72,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 仍待验证：
 
-- 包含 instruction/prompt/parser/model constraints 的完整 `SemanticPlanSpec`、同步 exact 真实模型 reference path；
+- gateway 公共目录迁移、exact-reference 最小真实 plan fields、deterministic golden 与同步 fixed-model path；
 - SemFilter 第二 physical path、AI-work cost、近似质量 policy 与 reference fallback；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；

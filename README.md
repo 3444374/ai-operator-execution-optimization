@@ -18,8 +18,10 @@ compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child 
 中立类别、`errno`、长度和定长脱敏详情，socket/JSON/frame 细分由 adapter 本地产生。它们尚未实现真实
 instruction/prompt、result parser、model role、quality policy、第二 physical path 或性能优化。
 
-项目接下来先扩展这个最小 plan carrier，把真实语义编译成数据库拥有的完整 `SemanticPlanSpec`，通过同步 provider 完成一个 exact
-`SemFilter` 真实模型纵切面；随后生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
+项目接下来先行为不变地把 recording gateway 迁到公共 execution-provider 目录，再扩展这个最小 plan
+carrier，只加入 exact-reference 纵切面实际消费的 instruction、prompt、parser、model/generation fields；
+同一 plan/task/result contract 先通过 deterministic golden adapter，再通过同步 fixed-model endpoint。
+随后生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
 AI work cost、quality evidence 和 reference fallback 选择。只有这些路径暴露 extension 无法封闭的
 plan identity、placement 或 lifecycle 问题时，才增加最小 PostgreSQL core patch。路径选择资格完成后
 再扩 bounded async、SemLoom scheduling 与 IMLane-like batch placement；Kalypso-like dependency/KV

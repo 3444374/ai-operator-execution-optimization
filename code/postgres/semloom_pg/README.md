@@ -32,7 +32,7 @@ JSON encoding. Three separate digests
 bind SQL-visible semantic spec, database-selected physical algorithm, and concrete provider execution profile;
 PostgreSQL's physical mapped-column number is not part of any wire identity. Accepted-prefix
 backpressure, multiple in-flight tasks, out-of-order/missing completion handling, automatic retries, real model
-calls, and the full model/prompt/result schema remain pending; this slice must not
+calls, and the exact-reference minimum model/prompt/result schema remain pending; this slice must not
 be described as a complete database AI operator.
 
 The planner now serializes the recording reference's schema version, PostgreSQL-owned operator/value kinds,

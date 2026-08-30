@@ -26,9 +26,11 @@ PostgreSQL error data. The extension-wide PostgreSQL compatibility suite, exact 
 runtime extraction, adapter parity, cancellation/recovery, and RSS/FD lifecycle smoke passed on exact 18.3 at
 commit `d3a22dcf`. Commits `812fc35f` and `e89060a7` then made the current recording identity planner-owned
 through a strict, copyable, versioned minimum plan spec and removed transport operations from the neutral
-error interface without changing rows, EXPLAIN, wire digests, SQLSTATE, or redacted messages. The next
-implementation slice extends that minimum into a database-owned complete `SemanticPlanSpec` plus a synchronous,
-exact, model-backed `SemFilter` reference. An explicit reference/optimized second path, AI-work cost,
+error interface without changing rows, EXPLAIN, wire digests, SQLSTATE, or redacted messages. The current Python
+recording gateway still lives under `postgres/semloom_pg/gateway/`; its target
+`src/execution_provider/` directory is pending. The next implementation slices first migrate that gateway without
+changing wire v2, then let one consumer-driven minimum SemFilter plan/task/result contract pass a deterministic
+golden adapter and a synchronous fixed-model endpoint. An explicit reference/optimized second path, AI-work cost,
 quality evidence, and carrier audit follow that slice. Accepted-prefix, multiple in-flight tasks, and
 incremental SemLoom sessions follow database semantic and path-selection qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional

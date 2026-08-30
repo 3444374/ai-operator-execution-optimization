@@ -18,8 +18,9 @@
 
 当前 recording carrier、shared runtime、同步 provider seam、planner-owned 最小 recording plan spec、
 transport-neutral error interface 与 compatibility suite 已完成。唯一详细工程顺序由架构实施计划 §9
-维护：先在现有 carrier 上扩展真实 `SemanticPlanSpec` 与同步 exact model reference，再实现第二
-physical path 和 cost/quality，随后 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
+维护：先行为不变地迁移 gateway，再让 exact-reference 纵切面实际消费的最小 plan/task/result contract
+依次通过 deterministic golden 和固定模型 endpoint；随后修正 cost/cardinality 并实现第二 physical path
+与 quality policy，再做 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
 只导航，不复制每个工作包的完成标准。
 
 ## 2. 状态分层

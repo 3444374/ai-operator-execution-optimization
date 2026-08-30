@@ -32,8 +32,9 @@ UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，�
 `connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
 资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
 公共 extension 级 PostgreSQL compatibility suite 和第二个真实消费者已经通过，未为 `SemFilter`
-复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。当前尚缺包含真实
-instruction/prompt/parser/model policy 的完整 `SemanticPlanSpec`、同步 exact 真实模型 reference、第二 physical path、carrier audit、accepted-prefix、
+复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。当前尚缺 exact-reference
+纵切面实际消费的 instruction/prompt/parser/model policy plan fields、deterministic golden adapter、同步
+exact 真实模型 reference、第二 physical path、carrier audit、accepted-prefix、
 多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
@@ -46,7 +47,10 @@ snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
 20,000 行 SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 22,172/22,204/22,204 KiB、
 FD 为 43/43/41，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
 `d3a22dcf` shared-runtime、`0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
-真实 instruction/prompt/parser/model policy、真实模型 reference、accepted-prefix、多在途/乱序 completion、
+当前 Python recording gateway 的权威实现仍位于 `code/postgres/semloom_pg/gateway/`；目标
+`code/src/execution_provider/` 尚不存在。下一步先做行为不变的 gateway 迁移并保留旧 TAP 兼容入口，
+再按工程计划 4A/4B 让同一最小 plan/task/result contract 分别通过 deterministic golden 与固定模型
+endpoint。真实 instruction/prompt/parser/model policy、真实模型 reference、accepted-prefix、多在途/乱序 completion、
 第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
@@ -408,11 +412,12 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 4. exact `SemFilter` 已作为第二个真实消费者证明公共层边界：PostgreSQL carrier 负责 slot/plan 与
    `LIMIT` 前 placement；`PgSemanticRuntime` 拥有 provider lifecycle/sequence/memory/error；
    `SemMapMachine` 与 `FilterMachine` 分别负责 emit 与 keep/drop/unknown 语义；
-5. 当前 `AiOpenSpec` 仍是 recording semantic contract 的子集；instruction、prompt program、result parser、
-   model/generation constraints 和真实 completion usage 尚未进入 plan/task/result；
+5. 当前 `AiOpenSpec` 仍是 recording semantic contract 的子集；4A 定义的 instruction、prompt program、
+   result parser、model/generation constraints 和真实 completion usage 尚未进入 plan/task/result；
 6. 当前 planner 只生成一个 reference role，cost 仍是普通占位；reference/optimized identity、AI-work
    cost、quality evidence 与 fallback 尚未实现；
-7. 当前 provider interface 是同步单任务；accepted-prefix、多在途、乱序 completion、增量 SemLoom
+7. 当前 provider interface 是同步单任务，recording wire v2 仍是唯一 wire schema；真实语义 wire v3、
+   deterministic golden、fixed-endpoint adapter、accepted-prefix、多在途、乱序 completion、增量 SemLoom
    session 和 direct HTTP/SemLoom adapters 尚未实现；
 8. 以上缺口的实施顺序和完成标准见
    [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，

@@ -28,9 +28,11 @@ TRUE/FALSE/UNKNOWN keep/drop。当前 planner 已将 recording reference 真正�
 semantic spec identity、physical algorithm 与 `Physical Role=reference` 写入版本化、可 copyObject 的
 最小 plan spec；input column 作为 executor binding 独立保存，runtime 统一严格解码并映射为 `AiOpenSpec`。
 neutral error interface 不再暴露 socket/JSON/frame operation，adapter 只返回中立类别和本地生成的定长
-脱敏详情。当前实现仍是 deterministic recording 语义；下一步扩展这个最小 plan carrier，把 instruction、
-prompt program、result parser、model/generation constraints 和 policy 编译成真实 `SemanticPlanSpec`，
-通过同步 provider 完成 exact `SemFilter` 真实模型纵切面，再实现 LOTUS/Cortex-like 第二 path。随后用
+脱敏详情。当前 Python gateway 仍位于 PostgreSQL extension 子树，目标 execution-provider 目录尚未创建。
+当前实现仍是 deterministic recording 语义；下一步先行为不变地迁移 gateway，再只把 exact-reference
+纵切面实际消费的 instruction、prompt program、result parser、model/generation constraints 和 policy
+加入最小 plan/task/result contract。该 contract 先通过 deterministic golden adapter，再通过同步固定模型
+endpoint，之后实现 LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
 多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展
@@ -55,8 +57,8 @@ paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SEL
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
 UDS provider 与协议 v2 分域 identity/payload/completion digest 已验证。planner-owned 最小 recording plan
 spec 与 transport-neutral error seam 已实现，但尚未包含真实 instruction/parser/model policy。
-完整真实 `SemanticPlanSpec`、真实模型 reference path、第二 physical path、载体反例审查、accepted-prefix
-和多在途/乱序 completion 尚未实现；
+exact-reference 最小真实 plan fields、deterministic golden、真实模型 reference path、第二 physical path、
+载体反例审查、accepted-prefix 和多在途/乱序 completion 尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 核心研究链路
@@ -439,10 +441,11 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 3. **公共 PostgreSQL 兼容性**：extension 级 suite 已验证普通 SQL 非干扰、RLS/权限、snapshot、
    事务/savepoint、prepared/generic plan 与 invalidation、planner-hook chaining、多 backend 隔离、
    cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
-4. **真实语义 reference slice**：扩展现有 planner-owned 最小 recording plan spec，实现数据库拥有的完整
-   `SemanticPlanSpec` 与同步 exact `SemFilter`
-   真实模型路径，验证 canonical prompt、parser、model/usage identity 和 relation result；不先扩异步。
-5. **下一条 semantic path**：以确定性 golden/calibration evidence 起步，建立一条可辨认的
+4. **真实语义 reference slice**：先行为不变地迁移 Python gateway；再让 exact-reference 实际消费的
+   最小 SemFilter plan/task/result contract 通过 deterministic golden adapter 和同步 fixed-model endpoint，
+   验证 canonical prompt、parser、model/usage identity 和 relation result；不先扩异步。
+5. **下一条 semantic path**：真实 reference 完成后先修正 SemFilter input rows、selectivity 和 AI-work
+   cost，再以确定性 golden/calibration evidence 建立一条可辨认的
    LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative、AI-work cost、quality policy
    和 reference fallback 的显式身份；真实质量结论必须再与同步 reference 路径比较。
 6. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达

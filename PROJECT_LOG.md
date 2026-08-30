@@ -1,5 +1,32 @@
 # 项目日志
 
+## 2026-08-30 工作包四收敛为 gateway 迁移、golden 与 fixed-model 三个切片
+
+- PostgreSQL 工程计划把工作包四改为三个独立验收提交：先行为不变地把当前 Python recording gateway
+  迁到 `code/src/execution_provider/` 并保留旧 TAP 兼容入口；4A 实现真实 SemFilter 合同、wire v3 和
+  deterministic golden adapter；4B 在相同 plan/task/result contract 后接 gateway-side fixed model endpoint。
+- 首个真实 SQL interface 固定为三参 `ai_semantic.filter(text,text,jsonb)`。input 可逐 tuple 变化，
+  instruction/options 必须是 planning 后非 NULL 常量；首版 options 只接受 model、temperature=0 和
+  max_tokens=8。计划同时固定 canonical messages、严格 uppercase TRUE/FALSE/UNKNOWN parser、model/
+  generation constraints、字段到 semantic/physical/provider/payload/completion digest 的归属和脱敏错误。
+- recording wire v2 的字段集合、digest 和 framing 保持冻结；真实语义新增 strict wire v3，只共享 bounded
+  framing/primitive helpers，不把 v2/v3 合并成可选字段大集合。当前 gateway 真实位置和 pending 目标目录
+  已在文件树中分开标注；工作包一标为已完成，工作包二改为记录 `e89060a7` 已重跑 Map/Filter RSS/FD
+  smoke。
+- 4A 加入 parser 时才把 `TupleTableSlot/Datum/AttrNumber/MemoryContext` binding 从 OperatorMachine 收回
+  pump；4B 完成后、第二 physical path 前才修正 SemFilter input rows、selectivity 和 AI-work cost。本轮
+  不修改 extension 源码，不开始 core patch、异步、多在途、Join 或通用 DAG。
+- 本地现有回归基线重新通过 Python protocol 8/8 与 static contract 12/12。提交 `9447e11b` 又在仓库外
+  detached worktree 和精确 PostgreSQL 18.3 上通过只读 core preflight、warning-free `-Werror` build、
+  neutral C11 header、PGXS regression 1/1 与 TAP 193/193；定向 SQL 确认普通聚合结果不受影响、SemMap
+  非 NULL/NULL 行为不变，SemFilter 在 TRUE/FALSE/UNKNOWN/NULL/TRUE 五行中只输出两个 TRUE，EXPLAIN
+  记录 4 个 accepted task 和 2 个 emitted rows。
+- 仓库外 artifact `semloom-validation-9447e11b-20260830-r1` 保留完整输出；最终 UTF8 resource smoke 的
+  Map 结果为 200,018,000 bytes，RSS 起始/峰值/结束 20,904/21,660/21,660 KiB、FD 45/45/43；Filter
+  输出 5,000 行，RSS 21,660/21,660/21,660 KiB、FD 45/45/43。前三次 harness 尝试分别因 socket 目录
+  ownership、AF_UNIX 路径长度和 SQL_ASCII fail-closed，均未进入有效测量且保留 stderr；纠正后 run
+  通过。测试后两个临时 PostgreSQL 集群与 recording gateway 均已停止。
+
 ## 2026-08-30 planner-owned 最小 plan spec 与 neutral error seam 完成
 
 - 提交 `812fc35f` 新增 PG-private `sem_plan_spec.[ch]`：planner 将当前 recording reference 真正消费的

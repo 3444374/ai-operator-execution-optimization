@@ -18,8 +18,10 @@
 > `-Werror` build、regression 1/1、TAP 193/193、Python/static 20/20 和 Map/Filter RSS/FD 不增长 smoke。公共
 > compatibility suite 已覆盖 RLS/权限、generic-plan invalidation、savepoint、双 backend、cancel/cleanup
 > 与 no-task lazy open；shared runtime 不包含算子真值，operator machines 不包含 provider lifecycle。
-> 当前先扩展现有最小 plan carrier，实现完整真实 `SemanticPlanSpec` 与同步 exact `SemFilter` 真实模型 reference slice，再实现显式
-> reference/optimized 第二 physical path、AI-work cost、quality evidence 与 fallback。载体审查确认
+> 当前先行为不变地迁移 Python recording gateway，再让 exact-reference 实际消费的最小
+> plan/task/result contract 依次通过 deterministic golden 与同步 fixed-model `SemFilter`；真实 reference
+> 完成后先修正 rows/selectivity/AI-work cost，再实现显式 reference/optimized 第二 physical path、
+> quality evidence 与 fallback。载体审查确认
 > extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加
 > 最小 core patch。数据库语义与路径选择资格完成后才扩 accepted-prefix、
 > 多在途、增量 SemLoom session 与 IMLane-like batch placement。Kalypso-like lineage 只作后续参考，
