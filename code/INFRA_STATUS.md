@@ -71,6 +71,13 @@ UDS drive 仍保留防御检查。精确 18.3 复验为 warning-free `-Werror`�
 320/320、protocol/static 33/33、gateway migration 5/5 与 neutral/machine C11 compile，并新增 exact
 Unicode instruction/input、空字符串、savepoint/recovery 和严格 error-frame 覆盖。该复验不替换
 `3b2077e1` 的原资源 smoke。
+复核后已将最终 TAP 320/320、PostgreSQL server log、字节级一致的 regression
+actual/expected、commit identity 和 SHA-256 manifest 持久化为仓库外证据包
+`postgresql_semfilter_4a1_hardening_359ffdf3_20260831`。该证据包另包含干净
+`359ffdf3` checkout 使用显式 PostgreSQL 18.3 `pg_config` 生成的 `-O2 -Werror`
+build log、exit code 0 和 `semloom_pg.so`；临时 worktree 删除后 manifest 仍全部通过。
+旧 resource-test gateway 及 socket 也已按精确进程/路径清理；这只说明本切片相关
+测试资源已收回，不扩展为服务器其他工作负载的清理结论。
 下一步是工作包 4B 的固定模型 endpoint；真实模型 reference、accepted-prefix、多在途/乱序 completion、
 第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。

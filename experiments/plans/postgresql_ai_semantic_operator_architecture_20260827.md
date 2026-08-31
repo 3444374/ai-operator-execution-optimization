@@ -834,6 +834,11 @@ PostgreSQL 18.3 通过 warning-free `-Werror`、regression 1/1、TAP 320/320、p
 33/33、gateway migration 5/5 和 neutral/machine C11 compile。新覆盖包含 Unicode
 instruction/input、空串、exact savepoint/recovery 和合法/非法 v3 error frame；原 RSS/FD 数字仍
 绑定 `3b2077e1`。
+复核后已将最终 TAP/server log、regression actual/expected、commit identity 和 SHA-256
+manifest 保存到仓库外证据包 `postgresql_semfilter_4a1_hardening_359ffdf3_20260831`；
+其中还有干净 `359ffdf3` checkout 通过显式 PostgreSQL 18.3 `pg_config` 生成的
+`-O2 -Werror` build log、exit code 0 和扩展二进制。归档校验通过后才删除临时
+worktree 并停止本切片确认的旧测试 gateway/socket。
 
 工作包五先用 4B 的真实调用/usage 修正 semantic-input rows、selectivity 与 AI-work cost，再增加“第二条
 可见路径”：`sem_filter_path.c` 同时生成 reference

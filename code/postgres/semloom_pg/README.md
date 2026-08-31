@@ -120,6 +120,12 @@ protocol/static checks, 5/5 gateway migration checks, and neutral/machine C11 co
 cover C-to-Python Unicode instruction/input, empty non-NULL input, exact savepoint recovery, valid open/task
 errors, and malformed/missing/extra/mismatched v3 error frames. The earlier resource observations remain bound
 to `3b2077e1`; this hardening run does not add model-quality, performance, or new RSS/FD claims.
+The repository-external artifact bundle `postgresql_semfilter_4a1_hardening_359ffdf3_20260831` preserves the
+final TAP and PostgreSQL logs, byte-identical regression actual/expected files, commit identities, and SHA-256
+manifest. It also contains a clean detached-`359ffdf3` build log, exit status 0, and resulting extension binary
+from `COPT='-O2 -Werror'` with an explicitly selected PostgreSQL 18.3 `pg_config`. The bundle still verifies
+after removal of the temporary worktrees. The slice-specific stale resource-test gateway and socket were also
+stopped and removed; this statement does not cover unrelated server workloads.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:

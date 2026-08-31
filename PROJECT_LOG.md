@@ -18,6 +18,14 @@
   TAP 实际覆盖 C→UDS→Python Unicode instruction/input、空字符串、exact savepoint/recovery、合法
   open/task error 与非法 v3 error frames。原 4A 资源 smoke 仍绑定 `3b2077e1`，本轮没有
   用功能性验证重写性能或 RSS/FD 结论。
+- 独立复核后补齐仓库外证据包
+  `postgresql_semfilter_4a1_hardening_359ffdf3_20260831`：保留最终 TAP/server log、regression
+  actual/expected、完整 commit identity 和 SHA-256 manifest；actual/expected 字节级 hash 一致。
+  另从干净 detached `359ffdf3` 使用显式 PostgreSQL 18.3 `pg_config` 生成持久化
+  `-O2 -Werror` build log、exit code 0 和 `semloom_pg.so`，删除临时目录后 manifest 复验仍全部通过。
+- 清理只限于本切片已确认的测试资源：停止旧 resource-test gateway 父/子进程，确认
+  其 Unix socket 不再存在或监听，再注销已归档的 4A.1 临时 worktree。系统默认
+  `pg_config` 不作资格证据，后续 PostgreSQL 验收仍必须显式指定 18.3 工具链。
 - 本轮不抽取只有 golden 一个消费者的 gateway adapter seam，也不改 provider execution ID、
   machine profile 或 EXPLAIN adapter identity。它们与 fixed endpoint 一起形成两个真实消费者时，
   再在 4B 抽取 `V3SessionRunner + CompletionAdapter` 并改为 query-fixed execution profile。

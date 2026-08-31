@@ -24,6 +24,10 @@ provider publishes a neutral input limit so the runtime rejects oversized values
 construction, while the UDS adapter retains a defensive check. Exact PostgreSQL 18.3 passes warning-free
 `-Werror`, regression 1/1, TAP 320/320, 38/38 Python/static contracts, and neutral/machine C11 compilation.
 This is functional and lifecycle evidence, not real-model quality or performance evidence.
+The repository-external artifact bundle `postgresql_semfilter_4a1_hardening_359ffdf3_20260831` now preserves
+the final TAP/server logs, byte-identical regression actual/expected outputs, commit identities, integrity
+manifest, and a clean-checkout `-O2 -Werror` build log produced with an explicit PostgreSQL 18.3 `pg_config`.
+After the bundle was verified, the slice-specific stale test gateway/socket and temporary worktrees were removed.
 
 The next implementation slice is 4B: add a fixed model endpoint as the second v3 consumer, then extract the
 gateway session-runner/completion-adapter seam and make provider execution identity query-fixed. A distinct
