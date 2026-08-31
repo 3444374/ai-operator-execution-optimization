@@ -41,7 +41,9 @@ slot/Datum/MemoryContext binding，operator-machine header 已不含 PostgreSQL 
 `TRUE/FALSE/UNKNOWN`。提交 `53cf3da8` 又增加共享 `V3SessionRunner + CompletionAdapter` 与固定
 OpenAI-compatible endpoint adapter；endpoint/model/timeout/auth 从仓库外严格配置读取，每 task 一次非流式
 请求且不 retry，PostgreSQL 通过 query-fixed execution profile 选择 distinct provider identity，并继续
-负责 digest/model validation、parser 与 keep/drop。当前尚缺第二 physical path、carrier audit、
+负责 digest/model validation、parser 与 keep/drop。后续 `a4319655` 拒绝 301/302/303/307/308 而不访问
+重定向目标，并以 monotonic deadline 约束慢响应；`ef314618` 进一步把 DNS 解析纳入同一调用截止时间，
+因此 timeout 现在覆盖解析、连接/TLS、发送、响应头和响应体，且仍不 retry。当前尚缺第二 physical path、carrier audit、
 accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
@@ -89,6 +91,13 @@ fresh-session recovery 与 no-task lazy open 已进入 TAP；精确 18.3 通过 
 `postgresql_semfilter_4b_fixed_model_53cf3da8_20260831` 还保留 core/text preflight、build/installcheck、
 失败尝试和小规模真实模型输出。Qwen2.5-1.5B-Instruct/vLLM 0.25.1 capability 对 `yes/no/NULL` 只返回
 `yes` 对应行，并保存 raw `TRUE`、model identity、finish reason 与 usage；这不构成质量、性能或泛化结论。
+工作包 4B.1 的最终提交 `ef314618`（含 `a4319655`）收紧 fixed HTTP boundary：全部常见 3xx 都返回
+`MODEL_RESPONSE_INVALID`，不会访问 Location 或转发 bearer token；DNS 解析和持续小块响应均受单一
+monotonic deadline 约束，超时返回 `MODEL_TIMEOUT`。服务器等价源码树通过 Python/static 48/48、
+warning-free `-O2 -Werror`、regression 1/1、TAP 404/404 与 neutral/machine C11 compile。仓库外证据包
+`postgresql_semfilter_4b1_http_hardening_ef314618_20260831` 保存 source/diff identity、preflight、测试、
+build/installcheck、字节一致的 regression actual/expected、扩展二进制和已校验 SHA-256 manifest；
+测试临时集群已停止。该加固不替换 `53cf3da8` 的真实模型 capability，也不增加质量、性能或资源结论。
 下一步先修正 SemFilter rows/selectivity/AI-work cost，再实现第二 physical path；accepted-prefix、多在途/
 乱序 completion、增量 SemLoom session 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
@@ -455,7 +464,8 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    messages、payload/completion evidence 与 usage 字段已进入 schema v2 plan/task/result；golden 只返回
    fixture raw output，不是模型或质量 oracle；
 6. 工作包 4B 已以固定 OpenAI-compatible endpoint 复用同一 schema/wire/parser，并用 query-fixed profile
-   区分 provider execution identity；真实模型只通过小规模 capability，不提供质量或性能结论；
+   区分 provider execution identity；4B.1 又拒绝重定向并以单一 monotonic deadline 覆盖 DNS 到响应体；
+   真实模型只通过小规模 capability，不提供质量或性能结论；
 7. 当前 planner 只生成一个 reference role，cost 仍是普通占位；reference/optimized identity、AI-work
    cost、quality evidence 与 fallback 尚未实现；
 8. 当前 provider interface 仍是同步单任务；recording wire v2 保持冻结，exact semantic wire v3、

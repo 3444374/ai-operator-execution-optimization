@@ -1,5 +1,28 @@
 # 项目日志
 
+## 2026-08-31 exact SemFilter 4B.1 固定 endpoint HTTP 边界加固
+
+- 4B 复核发现 fixed adapter 的两个合同缺口：默认高层 HTTP client 会跟随重定向并可能把 bearer token
+  带到 Location 目标；单次 socket timeout 也不能约束持续小块响应。提交 `a4319655` 改为单连接
+  `http.client` 路径，拒绝 301/302/303/307/308，验证目标请求数和认证头均为零，并用 monotonic
+  deadline 主动终止 slow-drip response。
+- 随后的逐阶段审计发现 DNS 解析发生在 socket 建立前，`a4319655` 的 timer 无法中断阻塞 resolver。
+  按同一 `OpenAICompatibleFixedAdapter.complete()` 公共 seam 先加入慢 resolver 红测，100 ms 配置原先
+  约 0.5 s 才返回；最终提交 `ef314618` 以有界 daemon resolver 等待和预解析地址连接使该用例约
+  0.1 s 返回 `MODEL_TIMEOUT`。同一 monotonic deadline 继续覆盖 connect/TLS、请求发送、响应头和响应体，
+  没有加入 retry 或改变 wire v3/PostgreSQL parser。
+- `ef314618` 在服务器等价源码树上通过 Python/static 48/48，其中 fixed adapter 8/8；显式 PostgreSQL
+  18.3 `pg_config` 通过 warning-free `-O2 -Werror`、regression 1/1、TAP 404/404 与 neutral/machine
+  C11 compile。远端基线为 `635f9ad1`，只有两份预期 tracked 文件发生变化；远端 binary diff SHA-256
+  与本地 `635f9ad1..ef314618` 完全一致，因此验证源码树与目标提交等价。
+- 最终仓库外证据包 `postgresql_semfilter_4b1_http_hardening_ef314618_20260831` 保存 source/diff identity、
+  core preflight、所有测试和 status、build/installcheck、PostgreSQL server log、字节一致的 regression
+  actual/expected、扩展二进制和 SHA-256 manifest；manifest 已逐项校验。临时 PostgreSQL 已停止，相关
+  TCP/Unix listener 与本切片进程检查为空；PGDATA 和旧证据未删除。
+- 该加固只增加 transport boundary 与请求生命周期证据；`53cf3da8` 的小规模真实模型 capability、
+  `3b2077e1` 的 RSS/FD 观察及其结论边界保持不变。下一步仍是先独立修正 SemFilter
+  semantic-input rows、selectivity 与 AI-work cost，再实现第二 physical path。
+
 ## 2026-08-31 exact SemFilter 4B 固定模型 reference 完成
 
 - 提交 `53cf3da8` 完成工作包 4B：gateway 的 golden 与 fixed-model 两个真实 v3 consumer 共享

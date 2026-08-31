@@ -994,6 +994,16 @@ statement cancel、fresh-session recovery 和 `LIMIT 0`。仓库外证据包
 Qwen2.5-1.5B-Instruct/vLLM 0.25.1 小规模 capability 对 `yes/no/NULL` 只返回 `yes` 对应行，并保存 raw
 `TRUE`、model identity、finish reason 和 usage；不产生质量、性能或泛化结论。
 
+4B.1 boundary hardening 证据：`a4319655` 拒绝 301/302/303/307/308，不访问重定向目标或转发
+bearer token，并以 monotonic deadline 约束持续小块响应；最终提交 `ef314618` 又把 DNS 解析纳入
+同一调用截止时间。解析、连接/TLS、请求发送、响应头和响应体超时均返回 terminal
+`MODEL_TIMEOUT`，仍不 retry。服务器等价源码树通过 Python/static 48/48、精确 PostgreSQL 18.3
+warning-free `-O2 -Werror`、regression 1/1、TAP 404/404 和 neutral/machine C11 compile。仓库外证据包
+`postgresql_semfilter_4b1_http_hardening_ef314618_20260831` 保存 source/tracked-diff identity、preflight、
+原始测试、build/installcheck、字节一致的 regression actual/expected、扩展二进制和已校验 SHA-256
+manifest。该证据只收紧 4B transport boundary，不替换 `53cf3da8` 的真实模型 capability，也不增加
+质量、性能或资源结论。
+
 ### 工作包五：SemFilter cost/cardinality 与最小 LOTUS/Cortex-like 第二 path
 
 4B 完成后先用真实 reference 的 input rows、NULL rate、output selectivity、model calls、prompt/output

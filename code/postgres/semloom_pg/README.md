@@ -147,6 +147,15 @@ A small Qwen2.5-1.5B-Instruct/vLLM 0.25.1 run returned only the `yes` row from `
 saved raw `TRUE` completion and usage. This is capability evidence only, not a model-quality or performance
 claim; earlier 4A RSS/FD observations remain bound to `3b2077e1`.
 
+The final 4B.1 boundary hardening is commit `ef314618`, including `a4319655`. Fixed-model requests reject
+301/302/303/307/308 without following Location or forwarding bearer credentials. A single monotonic deadline
+bounds DNS resolution, connect/TLS, request send, response headers, and response body; timeout remains a terminal
+`MODEL_TIMEOUT` and does not retry. The equivalent server source tree passes 48/48 Python/static contracts,
+PostgreSQL 18.3 warning-free `-O2 -Werror`, regression 1/1, TAP 404/404, and neutral/machine C11 compilation.
+The repository-external bundle `postgresql_semfilter_4b1_http_hardening_ef314618_20260831` preserves source and
+tracked-diff identities, raw logs, byte-identical regression outputs, the extension binary, and a verified
+SHA-256 manifest. This run does not add model-quality, performance, or RSS/FD evidence.
+
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 

@@ -37,6 +37,16 @@ Exact PostgreSQL 18.3 passes warning-free `-Werror`, regression 1/1, TAP 404/404
 and neutral/machine C11 compilation. A small Qwen2.5-1.5B-Instruct/vLLM 0.25.1 run returned the expected row for
 `yes/no/NULL`; it proves the vertical slice runs, not model quality or performance.
 
+Commit `ef314618`, including the initial HTTP hardening at `a4319655`, completes 4B.1. The fixed adapter rejects
+301/302/303/307/308 without contacting the redirect target or forwarding bearer credentials. One monotonic
+deadline now bounds DNS resolution, connect/TLS, request send, response headers, and response body; DNS delay and
+slow-drip response tests both return `MODEL_TIMEOUT`. The equivalent server source tree passes 48/48
+Python/static contracts, the same PostgreSQL 18.3 `-O2 -Werror` build, regression 1/1, TAP 404/404, and
+neutral/machine C11 compilation. The repository-external bundle
+`postgresql_semfilter_4b1_http_hardening_ef314618_20260831` preserves source identity, raw logs, byte-identical
+regression outputs, the extension binary, and a verified SHA-256 manifest. This adds boundary and lifecycle
+evidence only; the real-model capability remains bound to `53cf3da8`.
+
 The next implementation slice is SemFilter cost/cardinality using real reference calls and usage, followed by a
 distinct reference/optimized path, quality evidence, and carrier audit. Accepted-prefix,
 multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and path-selection
