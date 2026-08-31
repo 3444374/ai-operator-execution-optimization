@@ -1,5 +1,33 @@
 # 项目日志
 
+## 2026-08-31 exact SemFilter 4B 固定模型 reference 完成
+
+- 提交 `53cf3da8` 完成工作包 4B：gateway 的 golden 与 fixed-model 两个真实 v3 consumer 共享
+  `V3SessionRunner + CompletionAdapter`；新增严格仓库外 JSON 配置的 OpenAI-compatible adapter，固定
+  endpoint/model/timeout 与可选 bearer-token 环境变量，每个 task 只发一次非流式请求且不 retry。
+- PostgreSQL 新增 query-fixed `semloom_pg.provider_execution_profile=golden|openai-compatible-fixed`；两个
+  profile 使用不同 provider execution digest 和安全 EXPLAIN adapter name，但不改变 semantic plan、wire
+  v3 task/result schema 或 PostgreSQL-owned strict tristate parser。模型 unavailable/timeout/request rejected/
+  invalid response/internal failure 通过 neutral error seam 映射为固定脱敏 SQLSTATE 和消息。
+- 本地与服务器均通过 Python/static 45/45；显式 PostgreSQL 18.3 `pg_config` 通过 warning-free
+  `-O2 -Werror`、PGXS regression 1/1、TAP 404/404 与 neutral/machine C11 compile。新增 fixed-profile
+  覆盖 keep/drop、returned-model identity、invalid raw output、HTTP 4xx/5xx、invalid JSON、timeout、
+  savepoint、statement cancel、fresh-session recovery、EXPLAIN 和 `LIMIT 0`；既有 Map、recording Filter、
+  golden exact Filter 与 PostgreSQL compatibility suite 同次复跑。
+- 小规模真实模型 capability 使用 Qwen2.5-1.5B-Instruct 与 vLLM 0.25.1；PostgreSQL 查询对
+  `yes/no/NULL` 只输出 `yes` 对应行，另保存 raw `TRUE`、model identity、`finish_reason=stop` 和 usage。
+  该结果只证明 PostgreSQL→UDS gateway→fixed endpoint→PostgreSQL parser/keep-drop 纵切面可运行，不是
+  自然语言质量、吞吐、延迟或泛化证据。
+- 两次 setup 失败均原样保留：首次 vLLM 启动因 venv 的 `ninja` 未进入 PATH 而在监听前退出；修正为
+  runbook 规定的 venv PATH 后启动成功。首次 SQL 又因 root-owned UDS 被 postgres backend 正确拒绝；
+  按同一权限策略改由 postgres 启动 gateway 后成功，没有放宽 socket mode。
+- 仓库外证据包 `postgresql_semfilter_4b_fixed_model_53cf3da8_20260831` 保存 core/text preflight、build、
+  regression/TAP、C11、失败/成功服务日志、SQL 输出、真实模型响应和 SHA-256 manifest。测试后已停止本
+  切片 PostgreSQL、gateway 与 vLLM 进程，相关端口/socket 无残留；该清理结论不覆盖无关工作负载。
+- 历史 4A RSS/FD 结果继续绑定 `3b2077e1`，本轮不填写新的资源或性能数字。下一步先修正 SemFilter
+  semantic-input rows、selectivity 与 AI-work cost，再实现最小 LOTUS/Cortex-like 第二 physical path；
+  不提前扩 accepted-prefix、多在途、Join、core patch 或 SemLoom scheduling。
+
 ## 2026-08-31 exact SemFilter 4A.1 协议与资源边界加固
 
 - 提交 `359ffdf3` 在不改 SQL rows、wire v2 bytes/digest、wire v3 成功响应或现有 SQLSTATE 的

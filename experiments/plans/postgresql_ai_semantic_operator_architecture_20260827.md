@@ -27,13 +27,14 @@ schema v1 和 exact schema v2 编码为版本化、可复制的最小 plan spec�
 interface 已移除 transport-specific operation，adapter 本地产生定长脱敏详情；
 行为不变的 Python gateway 迁移已完成：公共 execution-provider 目录拥有 framing、冻结 wire v2、
 recording adapter 与 server，旧 extension 路径只保留自定位兼容入口。三参 exact `SemFilter`、
-instruction/parser/model policy、wire v3 和 deterministic golden adapter 已完成；真实模型 reference path、第二 physical path、accepted-prefix backpressure、
+instruction/parser/model policy、wire v3、deterministic golden 与 fixed-model adapters 已完成；固定
+OpenAI-compatible endpoint 的小规模真实模型 capability 已跑通。第二 physical path、accepted-prefix backpressure、
 多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器尚未实现。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，保留已完成的 recording `SemMap`/`SemFilter`、ordinary
-child plan、query-scoped provider session、最小 plan carrier、已迁移 gateway 与已完成 4A golden；下一步以 4B
-在同一最小真实语义合同后接同步 exact model reference，之后才实现一条
-最小、显式可识别的第二 physical path。
+child plan、query-scoped provider session、最小 plan carrier、已迁移 gateway、4A golden 与 4B fixed-model
+reference；下一步先修正 SemFilter rows/selectivity/AI-work cost，再实现一条最小、显式可识别的第二
+physical path。
 既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
 数据库资格完成后优先比较 IMLane-like batch placement。`SemJoin`、aggregate/top-k/group-by、
 fusion/AQE、Kalypso-like lineage 与跨算子 prefix lease 仅作后续参考，不构成当前实现承诺。
@@ -579,7 +580,7 @@ code/postgres/
     │   ├── protocol.py
     │   └── recording_gateway.py
     ├── expected/ / sql/
-    └── t/                            # TAP cancel/crash/transaction tests
+    └── t/                            # TAP cancel/crash/transaction + local HTTP fixture tests
 
 code/src/execution_provider/
 ├── wire/framing.py                   # 当前 bounded UTF-8 JSON framing
@@ -587,13 +588,14 @@ code/src/execution_provider/
 ├── wire/v3.py                        # 当前 exact semantic v3 schema/digest
 ├── adapters/recording.py             # 当前同步 recording session
 ├── adapters/golden.py                # 当前 deterministic payload-digest fixture
+├── adapters/v3_session.py             # 当前共享 strict v3 session runner/completion port
+├── adapters/openai_compatible_fixed.py # 当前固定同步 model endpoint adapter
 └── server.py                         # 当前 v2/v3 UDS listener/CLI implementation
 
 code/tests/execution_provider/        # 当前 canonical/compatibility gateway contract tests
 code/scripts/services/run_execution_provider_gateway.py  # 当前 canonical CLI
 
 # pending；只在对应工作包创建，不提前放空 module
-code/src/execution_provider/adapters/openai_compatible_fixed.py  # 4B
 code/src/execution_provider/semloom/                      # 工作包七
 ```
 
@@ -754,19 +756,19 @@ pump，machine 只接收已绑定 byte/value view 并返回 typed result/disposi
 
 | 缺口 | 当前实现 | 最小修正 |
 |---|---|---|
-| plan-owned semantic identity | recording schema v1 与 exact schema v2 已进入 `custom_private`，input column 独立；machine 不构造 spec | 只在 4B/第二 path 出现新 consumer 时增加字段；每个新字段必须被消费或 planning 时拒绝 |
+| plan-owned semantic identity | recording schema v1 与 exact schema v2 已进入 `custom_private`，input column 独立；machine 不构造 spec | 只在第二 path 出现新 consumer 时增加字段；每个新字段必须被消费或 planning 时拒绝 |
 | SQL semantic surface | 一参 recording marker 与三参 exact Filter 已实现 | 保持受支持 shape 最小；未知 option 在 planning 时拒绝；不改 `gram.y` |
 | physical path identity | recording algorithm 与 `Physical Role=reference` 已由 plan 携带，`EXPLAIN` 从 plan 读取；model role、quality/evidence/fallback 尚无真实 consumer | 真实 reference/第二路径出现时扩展现有 plan，不提前加入空字段 |
 | Filter cardinality/cost | 复用已含 marker selectivity 的 child rows，并只加 `cpu_operator_cost * rows` | 4B 真实 reference 完成后、第二 path 创建前，分开 semantic-input rows、output selectivity 和 calls/tokens/model-role cost；若公开 hook 无法正确重建 ordinary child estimate，记录为 carrier audit 反例 |
 | proxy/oracle control flow | 每个非 NULL tuple 固定一次 `drive` | 保持同步 port，先让 machine 返回 `NEED_TASK(PROXY/ORACLE)`，pump 循环 drive；不把 cascade 隐藏进 gateway，也不借机实现多在途 |
-| real result parsing | exact parser identity 已在 plan，golden raw completion 由 PostgreSQL 严格解析 | 4B 必须复用相同 parser/keep-drop；provider 不返回最终 tuple/keep-drop |
+| real result parsing | exact parser identity 已在 plan，golden/fixed-model raw completion 均由 PostgreSQL 严格解析 | 第二 path 继续复用相同 parser/keep-drop；provider 不返回最终 tuple/keep-drop |
 | coexistence evidence | static hook chaining 已测，live multi-extension 尚未测 | 在 carrier audit 中用真实 alternative path 运行 live hook、prepared/generic plan 和 invalidation 反例 |
 
 #### 8.6.4 只在已有变化轴上使用的设计模式
 
 | 模式 | 当前或成立后的用途 | 不采用的情况 |
 |---|---|---|
-| Adapter | recording 与 UDS 已是两个 `AiProviderPort` adapters；未来 fixed endpoint/SemLoom 位于 gateway 后方 | 不为只有一个 implementation 的内部 helper 制造 port |
+| Adapter | recording 与 UDS 已是两个 `AiProviderPort` adapters；gateway 的 golden/fixed-model 已是两个共享 v3 runner 的 completion adapters，future SemLoom 位于其后 | 不为只有一个 implementation 的内部 helper 制造 port |
 | Factory | `pump.begin` 按 query-fixed GUC 选择 adapter 与 immutable config，首个非 NULL task 才 lazy open | 不在每行或每次 drive 重新选择 provider |
 | Strategy | Map/Filter machines 已对应两个关系语义；reference/proxy-oracle 只有成为两个 planner-visible paths 后才形成 physical strategy | 不用字符串/GUC 在 provider 内暗换 semantic algorithm |
 | State machine | `PgSemanticRuntime` 管 session lifecycle；proxy/oracle path 出现后，独立 operator state 管 task role 与三路分流 | 不把 async、Join、blocking 状态提前塞入 unary runtime |
@@ -807,7 +809,8 @@ carrier 必须对相同 semantic plan 产生一致 task digest、typed rows、�
      `ai_provider_port.h` 只增加真正消费的 fixed-width/byte-slice values，不加入 HTTP/endpoint 类型。
    - `adapters/golden.py` 从测试提供的 payload-digest→raw-completion fixture 读取结果；未知 digest
      fail closed。它验证 plan/task/result/digest/parser，不伪装为模型或质量 oracle。
-3. **4B（固定模型 endpoint）**：只在 gateway 增加 `adapters/openai_compatible_fixed.py`。它从进程外
+3. **4B（固定模型 endpoint，已完成）**：gateway 增加 `adapters/openai_compatible_fixed.py`，并让
+   PostgreSQL 以 query-fixed execution profile 选择 distinct provider identity。adapter 从进程外
    配置读取一个 endpoint、公开 model identity、timeout 与认证，要求 plan model ID 精确匹配；每个 task
    发送一次非流式 Chat Completions 请求，不 retry、不改 messages/generation、不解析 TRUE/FALSE/UNKNOWN。
    adapter 只返回 raw output、model identity、usage 与 finish reason，经完全相同的 wire v3、neutral port、
@@ -856,8 +859,8 @@ runtime/provider lifecycle。binary join 和 blocking aggregate 的 child owners
 工作包一至七构成当前有序实施范围。同步 UDS recording slice、neutral provider seam、响应边界
 hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter`、shared runtime、
 planner-owned 最小 recording plan spec、transport-neutral error interface 与行为不变的 gateway 迁移已通过；
-4A 已让最小真实 semantic contract 通过 deterministic golden；当前下一步只做 4B 的同步固定模型
-reference，之后才实现最小第二 semantic path。
+4A/4B 已让最小真实 semantic contract 依次通过 deterministic golden 与同步固定模型 reference；当前
+下一步先修正 cost/cardinality，之后才实现最小第二 semantic path。
 只有真实语义和路径选择资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
@@ -968,7 +971,7 @@ profile、EXPLAIN adapter identity、cost/cardinality、异步或 core carrier�
 完成证据：`359ffdf3` 在精确 PostgreSQL 18.3 上通过 warning-free `-Werror`、regression
 1/1、TAP 320/320、Python/static 38/38 与 neutral/machine C11 compile。
 
-#### 工作包四 B：gateway-side fixed model endpoint
+#### 工作包四 B：gateway-side fixed model endpoint（已完成）
 
 在 4A gateway interface 后增加一个固定 OpenAI-compatible endpoint adapter；endpoint/model/auth/timeout
 来自仓库外配置。它严格透传 canonical messages 和 generation constraints，每 task 一次请求，无 retry；
@@ -980,6 +983,16 @@ parser 和 keep/drop，因此 4A/4B 的 plan/task/result contract 完全相同�
 raw output、HTTP failure、timeout/cancel、transaction abort、fresh-session recovery 与无任务不连接；保存
 脱敏的 endpoint/model/build identity 和原始测试输出。小规模真实模型 run 只证明纵切面可运行，不与
 golden 强求相同自然语言判断，不产生性能或质量优势结论。
+
+完成证据：`53cf3da8` 抽出共享 `V3SessionRunner + CompletionAdapter`，新增仓库外严格配置的 fixed
+OpenAI-compatible adapter、query-fixed PostgreSQL execution profile、distinct provider execution digest/
+安全 EXPLAIN 名称与 neutral model error mapping。精确 PostgreSQL 18.3 通过 warning-free `-Werror`、
+regression 1/1、TAP 404/404、Python/static 45/45 与 neutral/machine C11 compile；fixed profile 覆盖
+returned-model identity、valid/invalid raw output、HTTP 4xx/5xx、invalid JSON、timeout、savepoint、
+statement cancel、fresh-session recovery 和 `LIMIT 0`。仓库外证据包
+`postgresql_semfilter_4b_fixed_model_53cf3da8_20260831` 保存 preflight、原始测试、失败尝试和 manifest。
+Qwen2.5-1.5B-Instruct/vLLM 0.25.1 小规模 capability 对 `yes/no/NULL` 只返回 `yes` 对应行，并保存 raw
+`TRUE`、model identity、finish reason 和 usage；不产生质量、性能或泛化结论。
 
 ### 工作包五：SemFilter cost/cardinality 与最小 LOTUS/Cortex-like 第二 path
 
@@ -1097,9 +1110,9 @@ full-system baseline；Kalypso 当前只有论文参照，不预注册 native ba
 
 ## 12. 当前不能声称
 
-- 可以说受限 recording `SemMap/SemFilter CustomScan` 和三参 deterministic-golden exact `SemFilter`
+- 可以说受限 recording `SemMap/SemFilter CustomScan` 和三参 golden/fixed-model exact `SemFilter`
   已在 PostgreSQL 18.3 完成 planner/executor/lifecycle 资格，并拥有版本化的 schema v1/v2、wire
-  v2/v3 与 PostgreSQL-side strict parser；不能说真实模型语义、语义质量、第二 physical path 或
+  v2/v3 与 PostgreSQL-side strict parser；小规模真实模型只证明纵切面可运行，不能说语义质量、第二 physical path 或
   semantic optimizer 已经实现。
 - 不能在载体审查前声称 extension 必然不够或 core patch 必然需要；两者都必须以目标优化和 lifecycle
   的可复现实验为依据。

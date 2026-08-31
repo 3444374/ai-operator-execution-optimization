@@ -8,13 +8,13 @@ the code tree and must not become a competing engineering plan.
 Status as of 2026-08-31: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
-complete optimized/model-backed PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
+complete optimized PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
 includes narrow `REL_18_3` planner-visible recording `SemMap/SemFilter` compatibility paths and a three-argument
-exact `SemFilter` deterministic-golden reference under `postgres/semloom_pg/`. PostgreSQL owns the versioned
+exact `SemFilter` golden/fixed-model reference under `postgres/semloom_pg/`. PostgreSQL owns the versioned
 schema-v1/v2 plan, canonical messages, strict result parser, tuple/cardinality behavior, and query lifecycle;
 the provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
 The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3, recording
-and golden implementations, and self-locating compatibility entry points under the extension tree.
+and golden/fixed-model implementations, and self-locating compatibility entry points under the extension tree.
 
 Commit `359ffdf3` completes the behavior-preserving 4A.1 hardening after the 4A implementation at `3b2077e1`.
 `wire_common.c` now owns shared bounded framing, cancellable socket/connect waits, and PostgreSQL JSON
@@ -29,9 +29,16 @@ the final TAP/server logs, byte-identical regression actual/expected outputs, co
 manifest, and a clean-checkout `-O2 -Werror` build log produced with an explicit PostgreSQL 18.3 `pg_config`.
 After the bundle was verified, the slice-specific stale test gateway/socket and temporary worktrees were removed.
 
-The next implementation slice is 4B: add a fixed model endpoint as the second v3 consumer, then extract the
-gateway session-runner/completion-adapter seam and make provider execution identity query-fixed. A distinct
-reference/optimized path, AI-work cost, quality evidence, and carrier audit follow 4B. Accepted-prefix,
+Commit `53cf3da8` completes 4B. Golden and fixed OpenAI-compatible adapters now consume one shared strict v3
+session runner; a query-fixed PostgreSQL execution profile selects a distinct provider identity and safe
+EXPLAIN adapter name. Endpoint/model/timeout/auth configuration remains outside the repository, one non-streaming
+request is sent per task without retry, and neutral model errors map to stable redacted SQLSTATE/messages.
+Exact PostgreSQL 18.3 passes warning-free `-Werror`, regression 1/1, TAP 404/404, 45/45 Python/static contracts,
+and neutral/machine C11 compilation. A small Qwen2.5-1.5B-Instruct/vLLM 0.25.1 run returned the expected row for
+`yes/no/NULL`; it proves the vertical slice runs, not model quality or performance.
+
+The next implementation slice is SemFilter cost/cardinality using real reference calls and usage, followed by a
+distinct reference/optimized path, quality evidence, and carrier audit. Accepted-prefix,
 multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and path-selection
 qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
@@ -146,7 +153,7 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   ├── execution_provider/       ← PostgreSQL semantic gateway、frozen wire v2 与 recording adapter
+│   ├── execution_provider/       ← PostgreSQL semantic gateway、wire v2/v3 与 recording/golden/fixed-model adapters
 │   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner

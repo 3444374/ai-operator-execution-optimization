@@ -9,20 +9,22 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-08-30）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+当前状态（2026-08-31）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
 错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
-实际消费的 operator/value/policy、semantic spec identity、physical algorithm 和 physical role 写入版本化、
+与 exact reference 实际消费的 operator/value/policy、instruction、prompt/parser、model/generation、
+semantic spec identity、physical algorithm 和 physical role 写入版本化、
 可复制的最小 plan spec；executor 严格解码后再映射为 `AiOpenSpec`。provider error interface 只保留
-中立类别、`errno`、长度和定长脱敏详情，socket/JSON/frame 细分由 adapter 本地产生。它们尚未实现真实
-instruction/prompt、result parser、model role、quality policy、第二 physical path 或性能优化。
+中立类别、`errno`、长度和定长脱敏详情，socket/JSON/frame 细分由 adapter 本地产生。同步 fixed-model
+adapter 已在相同 wire v3、PostgreSQL parser 与 keep/drop 路径上接通 OpenAI-compatible endpoint；它尚未
+实现 quality policy、第二 physical path、异步调度或性能优化。
 
-recording gateway 的权威实现已经迁到公共 `code/src/execution_provider/`，旧 extension 路径只保留
+execution-provider gateway 的权威实现已经迁到公共 `code/src/execution_provider/`，旧 extension 路径只保留
 无需额外 `PYTHONPATH` 的 import/CLI 兼容入口；wire v2 bytes、digest 和 SQL 行为保持不变。
-项目接下来扩展现有最小 plan carrier，只加入 exact-reference 纵切面实际消费的
-instruction、prompt、parser、model/generation fields；
-同一 plan/task/result contract 先通过 deterministic golden adapter，再通过同步 fixed-model endpoint。
+同一 plan/task/result contract 已先通过 deterministic golden adapter，再通过同步 fixed-model endpoint；
+固定 endpoint、model identity、timeout 与认证只来自 gateway 进程外配置。下一步先使用真实 reference
+记录的 input rows、NULL rate、output selectivity、model calls 和 usage 修正 SemFilter cost/cardinality，
 随后生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
 AI work cost、quality evidence 和 reference fallback 选择。只有这些路径暴露 extension 无法封闭的
 plan identity、placement 或 lifecycle 问题时，才增加最小 PostgreSQL core patch。路径选择资格完成后

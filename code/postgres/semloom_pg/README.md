@@ -3,8 +3,9 @@
 `semloom_pg` is the current `REL_18_3` reference capability slice from
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
 fail-closed SQL marker can be lowered to a planner-visible `CustomPath`/`CustomScan` with an ordinary
-PostgreSQL child plan. It now includes a deterministic exact-SemFilter semantic contract, but it does not
-call a real model, HTTP, Ray, vLLM, or a SemLoom scheduling backend.
+PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic contract and a gateway-side fixed
+OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
+scheduling, asynchronous execution, or a second physical path.
 
 The current supported query shape is deliberately narrow:
 
@@ -27,6 +28,9 @@ The current supported query shape is deliberately narrow:
 - an optional external UDS recording provider with the same SQL-visible output.
 - an external UDS golden provider for the three-argument path; unknown payload digests fail closed and the
   adapter never interprets the instruction or decides tuple cardinality.
+- an external UDS fixed-model provider for the same three-argument path; the gateway sends one non-streaming
+  OpenAI-compatible request per task without retry, while PostgreSQL still validates evidence and parses the
+  raw result.
 
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
 set operations, row locks, set-returning targets, nested/multiple marker use, and combined SemMap/SemFilter.
@@ -38,7 +42,7 @@ JSON encoding. Three separate digests
 bind SQL-visible semantic spec, database-selected physical algorithm, and concrete provider execution profile;
 PostgreSQL's physical column number is not part of any wire identity. The strict version-3 contract has its
 own schema and 163,840-byte input limit while version 2 remains frozen. Accepted-prefix backpressure,
-multiple in-flight tasks, out-of-order completion handling, automatic retries, real model calls, and a second
+multiple in-flight tasks, out-of-order completion handling, automatic retries, and a second
 physical path remain pending; this slice must not be described as a complete optimized database AI operator.
 
 The planner serializes two strict named-field schemas. Schema 1 preserves the recording compatibility paths.
@@ -127,6 +131,22 @@ from `COPT='-O2 -Werror'` with an explicitly selected PostgreSQL 18.3 `pg_config
 after removal of the temporary worktrees. The slice-specific stale resource-test gateway and socket were also
 stopped and removed; this statement does not cover unrelated server workloads.
 
+Work package 4B is implemented by commit `53cf3da8`. Golden and fixed-model completions share one strict
+wire-v3 session runner, and PostgreSQL snapshots `semloom_pg.provider_execution_profile` at query start to
+select `golden` or `openai-compatible-fixed`. The profiles use distinct provider execution digests and safe
+EXPLAIN names; endpoint URL, model, timeout and optional bearer-token environment name stay in a strict
+repository-external JSON file. Model-unavailable/timeout/request-rejected/invalid-response/internal failures
+map to stable redacted `08006`/`38000`/`08P01`/`XX000` errors.
+
+Exact PostgreSQL 18.3 passed a warning-free `-O2 -Werror` build, regression 1/1, TAP 404/404, 45/45
+Python/static contracts, and neutral/machine C11 compilation. Fixed-profile TAP covers valid keep/drop,
+returned-model identity, invalid raw output, HTTP 4xx/5xx, invalid JSON, timeout, savepoint recovery,
+PostgreSQL statement cancellation, fresh sessions, EXPLAIN and `LIMIT 0`. The repository-external bundle
+`postgresql_semfilter_4b_fixed_model_53cf3da8_20260831` preserves these outputs and the failed setup attempts.
+A small Qwen2.5-1.5B-Instruct/vLLM 0.25.1 run returned only the `yes` row from `yes/no/NULL`, with a separately
+saved raw `TRUE` completion and usage. This is capability evidence only, not a model-quality or performance
+claim; earlier 4A RSS/FD observations remain bound to `3b2077e1`.
+
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 
@@ -165,6 +185,28 @@ WHERE ai_semantic.filter(
 ```
 
 The fixture is a deterministic contract test input. It is not a model endpoint or a quality oracle.
+
+For a fixed OpenAI-compatible endpoint, create a repository-external configuration such as:
+
+```json
+{
+  "endpoint_url": "http://127.0.0.1:8000/v1/chat/completions",
+  "model_id": "<fixed-model-id>",
+  "timeout_ms": 60000,
+  "bearer_token_env": "SEMLOOM_MODEL_TOKEN"
+}
+```
+
+Start the same canonical gateway with `--fixed-model-config /absolute/path/fixed-model.json`, then set both
+query-scoped values before planning the exact Filter:
+
+```sql
+SET semloom_pg.gateway_socket = '/absolute/path/semloom-model.sock';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+```
+
+If authentication is not required, omit `bearer_token_env`; credentials never belong in SQL, argv, wire
+messages, EXPLAIN, or the repository.
 
 The gateway refuses to replace an existing filesystem entry and removes only the socket it created. The UDS
 adapter requires a UTF8 database and makes the socket nonblocking before `connect()`. Protocol errors are
