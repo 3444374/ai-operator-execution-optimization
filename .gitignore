@@ -54,6 +54,10 @@ data/raw/**
 .agents/
 .superpowers/
 skills-lock.json
+
+# Machine-local editor configuration may contain absolute paths.
+.vscode/
+
 # CSV and Markdown summaries are tracked; Arrow payload dumps are reproducible outputs.
 *.arrow
 *.pdf
