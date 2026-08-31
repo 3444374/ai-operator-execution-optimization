@@ -284,6 +284,353 @@ is(
 my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
+my $golden_fixture = $gateway_directory . '/golden-fixture.json';
+open(my $golden_fixture_handle, '>', $golden_fixture)
+  or die "could not create golden fixture";
+print $golden_fixture_handle <<'GOLDEN_FIXTURE';
+{
+  "9f8acc0437722c4c5c13c1c60604eada801eaa915a08baac4bd78c08a578907e": "TRUE",
+  "77aa32c3ebbef2d54d590f9b9fc12325f3a9abab37d325d9907fafc1db41d95a": "FALSE",
+  "e6ec3d09b71e5fd87683a7f26670067c6f1741d29fa60de6e6d9c2b9a7007b95": "UNKNOWN",
+  "8c9b589e71bae83f778e0a9f1b3e185f408f251571ff27459c681045bf084392": "true"
+}
+GOLDEN_FIXTURE
+close($golden_fixture_handle);
+
+my @exact_filter_argument_cases = (
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, NULL,
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);},
+		'instruction NULL'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, '',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);},
+		'instruction empty'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, decision,
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);},
+		'instruction non-constant'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0}'::jsonb);},
+		'options missing field'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"future":true}'::jsonb);},
+		'options extra field'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":true,"max_tokens":8}'::jsonb);},
+		'temperature boolean'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0.1,"max_tokens":8}'::jsonb);},
+		'temperature nonzero'
+	],
+	[
+		q{SELECT * FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8.0}'::jsonb);},
+		'max_tokens fractional form'
+	],
+);
+
+for my $argument_case (@exact_filter_argument_cases)
+{
+	my ($statement, $label) = @$argument_case;
+	($ret, $stdout, $stderr) = $node->psql(
+		'postgres',
+		"\\set VERBOSITY verbose\n$statement");
+	isnt($ret, 0, "$label fails during exact SemFilter planning");
+	my ($argument_sqlstate, $argument_message) = error_signature($stderr);
+	is($argument_sqlstate, '22023', "$label preserves SQLSTATE 22023")
+	  or diag($argument_message);
+}
+
+$node->safe_psql(
+	'postgres',
+	q{CREATE TABLE semloom_exact_filter_inputs (
+		doc_id integer PRIMARY KEY,
+		payload text
+	);
+INSERT INTO semloom_exact_filter_inputs VALUES
+	(1, 'PostgreSQL is a database.'),
+	(2, 'A cat sleeps.'),
+	(3, 'Insufficient context'),
+	(4, NULL),
+	(5, 'PostgreSQL is a database.'),
+	(6, 'invalid raw');});
+
+my $exact_filter_query = q{
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id <= 5 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+ORDER BY doc_id;};
+my ($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+is(
+	$node->safe_psql(
+		'postgres',
+		"SET semloom_pg.gateway_socket = '$gateway_socket';\n$exact_filter_query"),
+	"1\n5",
+	'exact SemFilter emits only TRUE and preserves duplicate tuple identity');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+my $exact_filter_explain = $node->safe_psql(
+	'postgres',
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+$exact_filter_query});
+like(
+	$exact_filter_explain,
+	qr/Physical Role: reference.*Physical Algorithm: MODEL_REFERENCE_SYNC_V1.*Model: golden-model-v1.*Accepted Rows: 4.*Emitted Rows: 2/s,
+	'exact SemFilter exposes reference identity and keep/drop counters');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+like(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+EXPLAIN (COSTS OFF)
+$exact_filter_query}),
+	qr/Custom Scan \(SemLoom SemFilter\)/,
+	'plain exact SemFilter EXPLAIN does not open the provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+LIMIT 0;}),
+	'',
+	'exact SemFilter LIMIT 0 does not open the provider');
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE payload IS NULL AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
+	'',
+	'exact SemFilter NULL input creates no provider task');
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET plan_cache_mode = force_generic_plan;
+SET semloom_pg.gateway_socket = '$gateway_socket';
+PREPARE semloom_exact_filter(integer) AS
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id BETWEEN \$1 AND 5 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+ORDER BY doc_id;
+EXECUTE semloom_exact_filter(5);
+DEALLOCATE semloom_exact_filter;
+RESET plan_cache_mode;}),
+	'5',
+	'exact SemFilter supports a generic plan with constant semantic identity');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 6 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+isnt($ret, 0, 'invalid exact SemFilter raw output fails closed');
+my ($exact_sqlstate, $exact_message) = error_signature($stderr);
+is($exact_sqlstate, '22000', 'invalid exact raw output preserves SQLSTATE 22000');
+is(
+	$exact_message,
+	'SemFilter model completion must be TRUE, FALSE, or UNKNOWN',
+	'invalid exact raw output preserves its redacted canonical message');
+unlike($stderr, qr/invalid raw|true/, 'exact parser error exposes no input or raw output');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+my @exact_wire_error_cases = (
+	[
+		['--test-tamper-evidence-digest'],
+		'SemLoom provider completion does not match wire v3 task identity',
+		'tampered evidence'
+	],
+	[
+		['--test-completion-fixture', 'v3-model-mismatch'],
+		'SemLoom provider completion does not match wire v3 task identity',
+		'model mismatch'
+	],
+	[
+		['--test-completion-fixture', 'v3-invalid-usage'],
+		'SemLoom provider response has an invalid text field',
+		'invalid usage'
+	],
+	[
+		['--test-completion-fixture', 'v3-finish-reason'],
+		'SemLoom provider completion does not match wire v3 task identity',
+		'finish reason mismatch'
+	],
+	[
+		['--test-completion-fixture', 'v3-extra-field'],
+		'SemLoom provider returned an unexpected message',
+		'extra completion field'
+	],
+);
+for my $wire_error_case (@exact_wire_error_cases)
+{
+	my ($arguments, $expected_message, $label) = @$wire_error_case;
+	($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+	  start_recording_gateway(
+		$gateway_socket,
+		'--golden-fixture',
+		$golden_fixture,
+		@$arguments);
+	($ret, $stdout, $stderr) = $node->psql(
+		'postgres',
+		qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+	isnt($ret, 0, "exact SemFilter $label fails closed");
+	my ($wire_sqlstate, $wire_message) = error_signature($stderr);
+	is($wire_sqlstate, '08P01', "exact SemFilter $label preserves SQLSTATE 08P01");
+	is($wire_message, $expected_message, "exact SemFilter $label is redacted");
+	unlike($stderr, qr/PostgreSQL is a database\./, "$label exposes no task input");
+	finish_recording_gateway(
+		$exact_gateway,
+		$gateway_socket,
+		$exact_gateway_stderr);
+}
+
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	repeat(payload, 7000),
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+isnt($ret, 0, 'oversized exact SemFilter input fails before provider connection');
+my ($exact_limit_sqlstate, $exact_limit_message) = error_signature($stderr);
+is($exact_limit_sqlstate, '54000', 'exact input limit preserves SQLSTATE 54000');
+is(
+	$exact_limit_message,
+	'SemLoom provider input exceeds the 163840 byte limit',
+	'exact input limit reports the adapter-provided v3 limit');
+unlike($stderr, qr/could not connect/, 'exact input limit does not connect');
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture,
+	'--test-response-delay-ms',
+	'500');
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET statement_timeout = '100ms';
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+isnt($ret, 0, 'statement timeout interrupts exact SemFilter provider wait');
+like(
+	$stderr,
+	qr/canceling statement due to statement timeout/,
+	'exact SemFilter wait preserves PostgreSQL cancellation');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
+	'1',
+	'exact SemFilter succeeds after cancellation cleanup');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
 my $parity_query = q{
 SELECT ai_semantic.map(payload)
 FROM semloom_documents;};

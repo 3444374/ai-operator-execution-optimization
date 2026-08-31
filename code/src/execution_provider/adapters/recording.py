@@ -25,6 +25,7 @@ from ..wire.v2 import (
 def run_recording_session(
     connection: socket.socket,
     *,
+    open_message: dict[str, Any] | None = None,
     response_delay_ms: int = 0,
     tamper_evidence_digest: bool = False,
     disconnect_on_task: bool = False,
@@ -32,7 +33,7 @@ def run_recording_session(
 ) -> None:
     """Serve one query-scoped, single-inflight recording session."""
     try:
-        opened = read_frame(connection)
+        opened = open_message if open_message is not None else read_frame(connection)
         if opened is None:
             return
         operator_kind, semantic_sha256, physical_sha256, execution_sha256 = (

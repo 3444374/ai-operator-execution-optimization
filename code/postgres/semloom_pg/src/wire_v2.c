@@ -23,6 +23,7 @@
 #include "utils/wait_classes.h"
 
 #include "provider_private.h"
+#include "wire_common.h"
 #include "wire_v2.h"
 
 #define SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN "semloom-semantic-spec-v1\0"
@@ -102,6 +103,71 @@ static bool semloom_validate_response_type(Jsonb *message,
 										   const char *expected_type,
 										   uint32 expected_fields,
 										   AiProviderError *error);
+
+AiProviderStatus
+semloom_wire_common_send_frame(pgsocket socket_fd,
+							   const char *payload,
+							   Size payload_length,
+							   AiProviderError *error)
+{
+	return semloom_send_frame(socket_fd, payload, payload_length, error);
+}
+
+AiProviderStatus
+semloom_wire_common_receive_frame(pgsocket socket_fd,
+								 char **payload,
+								 AiProviderError *error)
+{
+	return semloom_receive_frame(socket_fd, payload, error);
+}
+
+AiProviderStatus
+semloom_wire_common_parse_json(const char *payload,
+							 Jsonb **message,
+							 AiProviderError *error)
+{
+	return semloom_parse_json(payload, message, error);
+}
+
+bool
+semloom_wire_common_json_value(Jsonb *message,
+							   const char *key,
+							   JsonbValue **value,
+							   AiProviderError *error)
+{
+	return semloom_json_value(message, key, value, error);
+}
+
+bool
+semloom_wire_common_json_string_equals(Jsonb *message,
+									   const char *key,
+									   const char *expected,
+									   bool *matches,
+									   AiProviderError *error)
+{
+	return semloom_json_string_equals(message, key, expected, matches, error);
+}
+
+bool
+semloom_wire_common_json_int32(Jsonb *message,
+							   const char *key,
+							   int32 *result,
+							   AiProviderError *error)
+{
+	return semloom_json_int32(message, key, result, error);
+}
+
+bool
+semloom_wire_common_validate_response_type(Jsonb *message,
+										   const char *expected_type,
+										   uint32 expected_fields,
+										   AiProviderError *error)
+{
+	return semloom_validate_response_type(message,
+									 expected_type,
+									 expected_fields,
+									 error);
+}
 
 void
 semloom_wire_v2_identity_init(const AiOpenSpec *spec,

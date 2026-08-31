@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 #define AI_PROVIDER_ERROR_DETAIL_CAPACITY 160
+#define AI_PROVIDER_SHA256_HEX_LENGTH 64
 
 typedef struct AiProviderSession AiProviderSession;
 
@@ -61,6 +62,17 @@ typedef enum AiProviderErrorPolicy
 	AI_PROVIDER_ERROR_FAIL_QUERY = 1,
 } AiProviderErrorPolicy;
 
+typedef enum AiProviderOrderPolicy
+{
+	AI_PROVIDER_ORDER_INPUT = 1,
+} AiProviderOrderPolicy;
+
+typedef enum AiProviderRawOutputKind
+{
+	AI_PROVIDER_RAW_OUTPUT_RECORDING = 1,
+	AI_PROVIDER_RAW_OUTPUT_TRISTATE_ASCII = 2,
+} AiProviderRawOutputKind;
+
 typedef struct AiByteSlice
 {
 	const uint8_t *data;
@@ -74,15 +86,31 @@ typedef struct AiOpenSpec
 	uint32_t output_value_kind;
 	uint32_t null_policy;
 	uint32_t error_policy;
+	uint32_t order_policy;
+	uint32_t plan_schema_version;
 	uint32_t semantic_spec_version;
 	AiByteSlice semantic_spec_id;
 	AiByteSlice physical_algorithm;
+	AiByteSlice physical_role;
+	AiByteSlice prompt_program_digest;
+	AiByteSlice result_parser_digest;
+	AiByteSlice model_id;
+	AiByteSlice semantic_spec_digest;
+	AiByteSlice physical_algorithm_digest;
+	uint32_t temperature;
+	uint32_t top_p;
+	uint32_t max_tokens;
+	uint32_t n;
+	bool stream;
+	AiByteSlice stop;
 } AiOpenSpec;
 
 typedef struct AiPreparedTask
 {
 	uint64_t sequence;
 	AiByteSlice input;
+	AiByteSlice canonical_messages;
+	AiByteSlice semantic_payload_digest;
 	bool is_null;
 } AiPreparedTask;
 
@@ -90,6 +118,10 @@ typedef struct AiCompletion
 {
 	uint64_t sequence;
 	AiByteSlice output;
+	AiByteSlice response_model_id;
+	AiByteSlice finish_reason;
+	uint64_t prompt_tokens;
+	uint64_t output_tokens;
 	bool is_null;
 } AiCompletion;
 

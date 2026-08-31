@@ -30,6 +30,7 @@ extern PgSemanticRuntime *pg_semantic_runtime_begin(
 	const SemloomPlanSpec *plan_spec);
 extern void pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 										  AiByteSlice input,
+										  AiByteSlice canonical_messages,
 										  MemoryContext result_context,
 										  PgSemanticCompletion *completion);
 extern void pg_semantic_runtime_record_emitted(PgSemanticRuntime *runtime);

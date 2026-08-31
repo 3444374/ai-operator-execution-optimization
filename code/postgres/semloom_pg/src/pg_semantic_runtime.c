@@ -3,6 +3,8 @@
 
 #include <errno.h>
 
+#include "common/cryptohash.h"
+#include "common/sha2.h"
 #include "commands/explain.h"
 #include "commands/explain_format.h"
 #include "utils/memutils.h"
@@ -51,6 +53,18 @@ pg_noreturn static void pg_semantic_runtime_fail(
 pg_noreturn static void semloom_raise_provider_error(
 	const AiProviderError *error);
 static const char *semloom_provider_error_detail(const AiProviderError *error);
+static void pg_semantic_runtime_payload_digest(
+	const AiOpenSpec *open_spec,
+	AiByteSlice input,
+	AiByteSlice canonical_messages,
+	char output[AI_PROVIDER_SHA256_HEX_LENGTH + 1]);
+static void pg_semantic_runtime_hash_bytes(pg_cryptohash_ctx *context,
+											 const void *data,
+											 Size length);
+static void pg_semantic_runtime_hash_uint64(pg_cryptohash_ctx *context,
+											  uint64 value);
+static bool pg_semantic_runtime_slice_equals(AiByteSlice actual,
+											AiByteSlice expected);
 
 PgSemanticRuntime *
 pg_semantic_runtime_begin(MemoryContext owner_context,
@@ -72,17 +86,32 @@ pg_semantic_runtime_begin(MemoryContext owner_context,
 	runtime->open_spec.physical_algorithm = pg_semantic_runtime_copy_slice(
 		owner_context,
 		open_spec.physical_algorithm);
+	runtime->open_spec.physical_role = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.physical_role);
+	runtime->open_spec.prompt_program_digest = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.prompt_program_digest);
+	runtime->open_spec.result_parser_digest = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.result_parser_digest);
+	runtime->open_spec.model_id = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.model_id);
+	runtime->open_spec.semantic_spec_digest = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.semantic_spec_digest);
+	runtime->open_spec.physical_algorithm_digest = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.physical_algorithm_digest);
+	runtime->open_spec.stop = pg_semantic_runtime_copy_slice(
+		owner_context, open_spec.stop);
 	runtime->state = PG_SEMANTIC_RUNTIME_SELECTED_NOT_OPEN;
 	runtime->cleanup_callback.func = pg_semantic_runtime_cleanup;
 	runtime->cleanup_callback.arg = runtime;
 	MemoryContextRegisterResetCallback(owner_context, &runtime->cleanup_callback);
-	semloom_provider_select(owner_context, &runtime->provider);
+	semloom_provider_select(owner_context, &runtime->open_spec, &runtime->provider);
 	return runtime;
 }
 
 void
 pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 						  AiByteSlice input,
+						  AiByteSlice canonical_messages,
 						  MemoryContext result_context,
 						  PgSemanticCompletion *completion)
 {
@@ -90,6 +119,7 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 	AiCompletion provider_completion = {0};
 	AiProviderError error;
 	AiProviderStatus status;
+	char semantic_payload_digest[AI_PROVIDER_SHA256_HEX_LENGTH + 1];
 
 	Assert(runtime != NULL);
 	Assert(result_context != NULL);
@@ -104,7 +134,19 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 
 	task.sequence = runtime->next_sequence;
 	task.input = input;
+	task.canonical_messages = canonical_messages;
 	task.is_null = false;
+	if (runtime->open_spec.semantic_spec_digest.length ==
+		AI_PROVIDER_SHA256_HEX_LENGTH)
+	{
+		pg_semantic_runtime_payload_digest(&runtime->open_spec,
+										   input,
+										   canonical_messages,
+										   semantic_payload_digest);
+		task.semantic_payload_digest.data =
+			(const uint8 *) semantic_payload_digest;
+		task.semantic_payload_digest.length = AI_PROVIDER_SHA256_HEX_LENGTH;
+	}
 	semloom_provider_error_clear(&error);
 	status = runtime->provider.ops->drive(runtime->provider_session,
 										  &task,
@@ -122,6 +164,21 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 								   0,
 								   0,
 								   NULL);
+		pg_semantic_runtime_fail(runtime, &error);
+	}
+	if (runtime->open_spec.model_id.length > 0 &&
+		(provider_completion.is_null ||
+		 !pg_semantic_runtime_slice_equals(provider_completion.response_model_id,
+										 runtime->open_spec.model_id) ||
+		 provider_completion.finish_reason.length != 4 ||
+		 provider_completion.finish_reason.data == NULL ||
+		 memcmp(provider_completion.finish_reason.data, "stop", 4) != 0))
+	{
+		semloom_provider_error_set(&error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   0,
+								   0,
+								   "SemLoom provider completion metadata does not match the exact plan");
 		pg_semantic_runtime_fail(runtime, &error);
 	}
 
@@ -162,6 +219,24 @@ pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
 	ExplainPropertyText("Physical Role",
 						runtime->plan_spec.physical_role,
 						explain_state);
+	if (runtime->plan_spec.model_id != NULL)
+	{
+		ExplainPropertyText("Semantic Spec",
+							runtime->plan_spec.semantic_spec_id,
+							explain_state);
+		ExplainPropertyText("Physical Algorithm",
+							runtime->plan_spec.physical_algorithm,
+							explain_state);
+		ExplainPropertyText("Prompt Program",
+							runtime->plan_spec.prompt_program_id,
+							explain_state);
+		ExplainPropertyText("Result Parser",
+							runtime->plan_spec.result_parser_id,
+							explain_state);
+		ExplainPropertyText("Model",
+							runtime->plan_spec.model_id,
+							explain_state);
+	}
 }
 
 void
@@ -237,12 +312,63 @@ pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
 		elog(ERROR, "unsupported semantic plan execution policy");
 	open_spec->null_policy = AI_PROVIDER_NULL_PROPAGATE;
 	open_spec->error_policy = AI_PROVIDER_ERROR_FAIL_QUERY;
+	open_spec->order_policy = plan_spec->order_policy == SEMLOOM_PLAN_ORDER_INPUT ?
+		AI_PROVIDER_ORDER_INPUT : 0;
+	open_spec->plan_schema_version = plan_spec->schema_version;
 	open_spec->semantic_spec_version = plan_spec->semantic_spec_version;
 	open_spec->semantic_spec_id.data = (const uint8 *) plan_spec->semantic_spec_id;
 	open_spec->semantic_spec_id.length = plan_spec->semantic_spec_id_length;
 	open_spec->physical_algorithm.data =
 		(const uint8 *) plan_spec->physical_algorithm;
 	open_spec->physical_algorithm.length = plan_spec->physical_algorithm_length;
+	if (plan_spec->physical_role != NULL)
+	{
+		open_spec->physical_role.data = (const uint8 *) plan_spec->physical_role;
+		open_spec->physical_role.length = strlen(plan_spec->physical_role);
+	}
+	if (plan_spec->prompt_program_digest != NULL)
+	{
+		open_spec->prompt_program_digest.data =
+			(const uint8 *) plan_spec->prompt_program_digest;
+		open_spec->prompt_program_digest.length =
+			strlen(plan_spec->prompt_program_digest);
+	}
+	if (plan_spec->result_parser_digest != NULL)
+	{
+		open_spec->result_parser_digest.data =
+			(const uint8 *) plan_spec->result_parser_digest;
+		open_spec->result_parser_digest.length =
+			strlen(plan_spec->result_parser_digest);
+	}
+	if (plan_spec->model_id != NULL)
+	{
+		open_spec->model_id.data = (const uint8 *) plan_spec->model_id;
+		open_spec->model_id.length = plan_spec->model_id_length;
+	}
+	if (plan_spec->semantic_spec_digest != NULL)
+	{
+		open_spec->semantic_spec_digest.data =
+			(const uint8 *) plan_spec->semantic_spec_digest;
+		open_spec->semantic_spec_digest.length =
+			strlen(plan_spec->semantic_spec_digest);
+	}
+	if (plan_spec->physical_algorithm_digest != NULL)
+	{
+		open_spec->physical_algorithm_digest.data =
+			(const uint8 *) plan_spec->physical_algorithm_digest;
+		open_spec->physical_algorithm_digest.length =
+			strlen(plan_spec->physical_algorithm_digest);
+	}
+	open_spec->temperature = plan_spec->temperature;
+	open_spec->top_p = plan_spec->top_p;
+	open_spec->max_tokens = plan_spec->max_tokens;
+	open_spec->n = plan_spec->n;
+	open_spec->stream = plan_spec->stream;
+	if (plan_spec->stop != NULL)
+	{
+		open_spec->stop.data = (const uint8 *) plan_spec->stop;
+		open_spec->stop.length = strlen(plan_spec->stop);
+	}
 }
 
 static void
@@ -427,4 +553,83 @@ semloom_provider_error_detail(const AiProviderError *error)
 		memchr(error->detail, '\0', error->detail_length) != NULL)
 		return NULL;
 	return error->detail;
+}
+
+static void
+pg_semantic_runtime_payload_digest(
+	const AiOpenSpec *open_spec,
+	AiByteSlice input,
+	AiByteSlice canonical_messages,
+	char output[AI_PROVIDER_SHA256_HEX_LENGTH + 1])
+{
+	static const char domain[] = "semloom-payload-v3\0";
+	static const char hex[] = "0123456789abcdef";
+	pg_cryptohash_ctx *context;
+	uint8 digest[PG_SHA256_DIGEST_LENGTH];
+	uint8 null_flag = 0;
+	int index;
+
+	Assert(open_spec->semantic_spec_digest.length == AI_PROVIDER_SHA256_HEX_LENGTH);
+	context = pg_cryptohash_create(PG_SHA256);
+	if (context == NULL || pg_cryptohash_init(context) < 0)
+	{
+		if (context != NULL)
+			pg_cryptohash_free(context);
+		elog(ERROR, "could not initialize SemLoom payload digest");
+	}
+	pg_semantic_runtime_hash_bytes(context, domain, sizeof(domain) - 1);
+	pg_semantic_runtime_hash_bytes(context,
+								   open_spec->semantic_spec_digest.data,
+								   open_spec->semantic_spec_digest.length);
+	pg_semantic_runtime_hash_bytes(context, &null_flag, sizeof(null_flag));
+	pg_semantic_runtime_hash_uint64(context, input.length);
+	pg_semantic_runtime_hash_bytes(context, input.data, input.length);
+	pg_semantic_runtime_hash_uint64(context, canonical_messages.length);
+	pg_semantic_runtime_hash_bytes(context,
+								   canonical_messages.data,
+								   canonical_messages.length);
+	if (pg_cryptohash_final(context, digest, sizeof(digest)) < 0)
+	{
+		pg_cryptohash_free(context);
+		elog(ERROR, "could not finish SemLoom payload digest");
+	}
+	pg_cryptohash_free(context);
+	for (index = 0; index < PG_SHA256_DIGEST_LENGTH; index++)
+	{
+		output[index * 2] = hex[digest[index] >> 4];
+		output[index * 2 + 1] = hex[digest[index] & 0x0f];
+	}
+	output[AI_PROVIDER_SHA256_HEX_LENGTH] = '\0';
+}
+
+static void
+pg_semantic_runtime_hash_bytes(pg_cryptohash_ctx *context,
+								 const void *data,
+								 Size length)
+{
+	if (length > 0 && pg_cryptohash_update(context, data, length) < 0)
+	{
+		pg_cryptohash_free(context);
+		elog(ERROR, "could not update SemLoom payload digest");
+	}
+}
+
+static void
+pg_semantic_runtime_hash_uint64(pg_cryptohash_ctx *context, uint64 value)
+{
+	uint8 bytes[8];
+	int shift;
+
+	for (shift = 7; shift >= 0; shift--)
+		bytes[7 - shift] = (uint8) (value >> (shift * 8));
+	pg_semantic_runtime_hash_bytes(context, bytes, sizeof(bytes));
+}
+
+static bool
+pg_semantic_runtime_slice_equals(AiByteSlice actual, AiByteSlice expected)
+{
+	return actual.length == expected.length &&
+		(actual.length == 0 ||
+		 (actual.data != NULL && expected.data != NULL &&
+		  memcmp(actual.data, expected.data, actual.length) == 0));
 }

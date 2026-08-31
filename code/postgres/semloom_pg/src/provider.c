@@ -10,18 +10,24 @@
 #include "utils/memutils.h"
 
 #include "provider_private.h"
+#include "semantic_filter_contract.h"
+#include "sem_plan_spec.h"
 #include "semloom_pg.h"
 
 static bool semloom_slice_equals(const AiByteSlice *slice, const char *expected);
+static bool semloom_slice_is_sha256(const AiByteSlice *slice);
 
 void
-semloom_provider_select(MemoryContext owner_context, AiProvider *provider)
+semloom_provider_select(MemoryContext owner_context,
+						const AiOpenSpec *spec,
+						AiProvider *provider)
 {
 	const char *socket_path = semloom_gateway_socket_path();
 
 	Assert(owner_context != NULL);
+	Assert(spec != NULL);
 	Assert(provider != NULL);
-	if (socket_path[0] == '\0')
+	if (socket_path[0] == '\0' && !semloom_provider_spec_is_exact_filter(spec))
 		semloom_recording_provider_select(provider);
 	else
 		semloom_uds_provider_select(owner_context, socket_path, provider);
@@ -44,12 +50,47 @@ semloom_provider_spec_is_recording(const AiOpenSpec *spec)
 		semloom_slice_equals(&spec->semantic_spec_id,
 						 SEMLOOM_FILTER_RECORDING_SPEC_ID);
 
-	return (map_spec || filter_spec) &&
+	return spec->plan_schema_version == SEMLOOM_PLAN_SPEC_SCHEMA_VERSION &&
+		(map_spec || filter_spec) &&
 		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
 		spec->null_policy == AI_PROVIDER_NULL_PROPAGATE &&
 		spec->error_policy == AI_PROVIDER_ERROR_FAIL_QUERY &&
 		spec->semantic_spec_version == SEMLOOM_RECORDING_SPEC_VERSION &&
 		semloom_slice_equals(&spec->physical_algorithm, SEMLOOM_RECORDING_ALGORITHM);
+}
+
+bool
+semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec)
+{
+	if (spec == NULL)
+		return false;
+	return spec->plan_schema_version == SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION &&
+		spec->operator_kind == AI_PROVIDER_OPERATOR_FILTER &&
+		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
+		spec->output_value_kind == AI_PROVIDER_VALUE_TRISTATE &&
+		spec->null_policy == AI_PROVIDER_NULL_PROPAGATE &&
+		spec->error_policy == AI_PROVIDER_ERROR_FAIL_QUERY &&
+		spec->order_policy == AI_PROVIDER_ORDER_INPUT &&
+		spec->semantic_spec_version == SEMLOOM_EXACT_FILTER_SPEC_VERSION &&
+		semloom_slice_equals(&spec->semantic_spec_id, SEMLOOM_EXACT_FILTER_SPEC_ID) &&
+		semloom_slice_equals(&spec->physical_algorithm,
+						 SEMLOOM_EXACT_FILTER_ALGORITHM) &&
+		semloom_slice_equals(&spec->physical_role, SEMLOOM_EXACT_FILTER_ROLE) &&
+		semloom_slice_equals(&spec->prompt_program_digest,
+						 SEMLOOM_PROMPT_PROGRAM_DIGEST) &&
+		semloom_slice_equals(&spec->result_parser_digest,
+						 SEMLOOM_RESULT_PARSER_DIGEST) &&
+		spec->model_id.length > 0 &&
+		spec->model_id.length <= SEMLOOM_FILTER_MODEL_MAX_BYTES &&
+		spec->model_id.data != NULL &&
+		semloom_slice_is_sha256(&spec->semantic_spec_digest) &&
+		semloom_slice_is_sha256(&spec->physical_algorithm_digest) &&
+		spec->temperature == SEMLOOM_FILTER_TEMPERATURE &&
+		spec->top_p == SEMLOOM_FILTER_TOP_P &&
+		spec->max_tokens == SEMLOOM_FILTER_MAX_TOKENS &&
+		spec->n == SEMLOOM_FILTER_N &&
+		spec->stream == (bool) SEMLOOM_FILTER_STREAM &&
+		semloom_slice_equals(&spec->stop, SEMLOOM_FILTER_STOP);
 }
 
 void
@@ -93,4 +134,23 @@ semloom_slice_equals(const AiByteSlice *slice, const char *expected)
 		(slice->length == 0 ||
 		 (slice->data != NULL &&
 		  memcmp(slice->data, expected, slice->length) == 0));
+}
+
+static bool
+semloom_slice_is_sha256(const AiByteSlice *slice)
+{
+	uint32 index;
+
+	if (slice == NULL || slice->data == NULL ||
+		slice->length != SEMLOOM_SHA256_HEX_LENGTH)
+		return false;
+	for (index = 0; index < slice->length; index++)
+	{
+		uint8 value = slice->data[index];
+
+		if (!((value >= '0' && value <= '9') ||
+			  (value >= 'a' && value <= 'f')))
+			return false;
+	}
+	return true;
 }

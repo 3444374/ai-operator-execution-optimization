@@ -1,5 +1,6 @@
 #include "postgres.h"
 
+#include "catalog/pg_type_d.h"
 #include "fmgr.h"
 #include "optimizer/paths.h"
 #include "optimizer/planner.h"
@@ -41,6 +42,15 @@ semloom_filter_function_oid(void)
 {
 	List *qualified_name = list_make2(makeString("ai_semantic"), makeString("filter"));
 	Oid argument_types[1] = {TEXTOID};
+
+	return LookupFuncName(qualified_name, lengthof(argument_types), argument_types, true);
+}
+
+Oid
+semloom_exact_filter_function_oid(void)
+{
+	List *qualified_name = list_make2(makeString("ai_semantic"), makeString("filter"));
+	Oid argument_types[3] = {TEXTOID, TEXTOID, JSONBOID};
 
 	return LookupFuncName(qualified_name, lengthof(argument_types), argument_types, true);
 }

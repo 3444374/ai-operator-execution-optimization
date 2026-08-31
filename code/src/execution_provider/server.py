@@ -1,8 +1,9 @@
-"""Run the standalone SemLoom Unix-domain-socket recording gateway."""
+"""Run the standalone SemLoom versioned Unix-domain-socket provider gateway."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import signal
 import socket
@@ -10,14 +11,21 @@ import stat
 import time
 from pathlib import Path
 
+from .adapters.golden import run_golden_session
 from .adapters.recording import run_recording_session
+from .wire.framing import ProtocolError, read_frame
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse the behavior-compatible recording gateway command line."""
+    """Parse the versioned provider gateway command line."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", type=Path, required=True)
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
+    parser.add_argument(
+        "--golden-fixture",
+        type=Path,
+        help="payload-digest to raw-output JSON object for wire-v3 tests",
+    )
     parser.add_argument("--test-response-delay-ms", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument(
         "--test-tamper-evidence-digest", action="store_true", help=argparse.SUPPRESS
@@ -39,6 +47,10 @@ def parse_args() -> argparse.Namespace:
             "non-object",
             "raw-nul",
             "wrong-integer-type",
+            "v3-extra-field",
+            "v3-finish-reason",
+            "v3-invalid-usage",
+            "v3-model-mismatch",
         ),
         help=argparse.SUPPRESS,
     )
@@ -46,13 +58,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Bind one UDS listener and serve recording sessions until stopped."""
+    """Bind one UDS listener and serve versioned provider sessions until stopped."""
     args = parse_args()
     if args.test_response_delay_ms < 0:
         raise SystemExit("--test-response-delay-ms must be non-negative")
     if args.test_fill_connect_queue_ms < 0:
         raise SystemExit("--test-fill-connect-queue-ms must be non-negative")
     socket_path = args.socket.resolve()
+    golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     if socket_path.exists():
         mode = socket_path.stat().st_mode
         kind = "socket" if stat.S_ISSOCK(mode) else "non-socket file"
@@ -90,8 +103,9 @@ def main() -> int:
                 connection, _ = listener.accept()
             except TimeoutError:
                 continue
-            run_recording_session(
+            _run_session(
                 connection,
+                golden_fixtures=golden_fixtures,
                 response_delay_ms=args.test_response_delay_ms,
                 tamper_evidence_digest=args.test_tamper_evidence_digest,
                 disconnect_on_task=args.test_disconnect_on_task,
@@ -114,3 +128,60 @@ def main() -> int:
                 ):
                     socket_path.unlink()
     return 0
+
+
+def _load_golden_fixtures(path: Path | None) -> dict[str, str]:
+    if path is None:
+        return {}
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SystemExit("invalid golden fixture file") from error
+    if not isinstance(value, dict) or any(
+        not isinstance(key, str)
+        or len(key) != 64
+        or any(character not in "0123456789abcdef" for character in key)
+        or not isinstance(output, str)
+        for key, output in value.items()
+    ):
+        raise SystemExit("golden fixture must map SHA-256 strings to raw text outputs")
+    return value
+
+
+def _run_session(
+    connection: socket.socket,
+    *,
+    golden_fixtures: dict[str, str],
+    response_delay_ms: int,
+    tamper_evidence_digest: bool,
+    disconnect_on_task: bool,
+    completion_fixture: str | None,
+) -> None:
+    try:
+        opened = read_frame(connection)
+    except ProtocolError:
+        connection.close()
+        return
+    if opened is None:
+        connection.close()
+        return
+    protocol_version = opened.get("protocol_version")
+    if type(protocol_version) is int and protocol_version == 3:
+        run_golden_session(
+            connection,
+            golden_fixtures,
+            open_message=opened,
+            response_delay_ms=response_delay_ms,
+            tamper_evidence_digest=tamper_evidence_digest,
+            disconnect_on_task=disconnect_on_task,
+            completion_fixture=completion_fixture,
+        )
+        return
+    run_recording_session(
+        connection,
+        open_message=opened,
+        response_delay_ms=response_delay_ms,
+        tamper_evidence_digest=tamper_evidence_digest,
+        disconnect_on_task=disconnect_on_task,
+        completion_fixture=completion_fixture,
+    )

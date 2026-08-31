@@ -19,6 +19,7 @@
 
 #include "provider_private.h"
 #include "wire_v2.h"
+#include "wire_v3.h"
 
 #define SEMLOOM_UDS_EXECUTION_ID "semloom.provider.recording.uds.v2"
 
@@ -34,7 +35,9 @@ struct AiProviderSession
 	pgsocket socket_fd;
 	const SemloomUdsProviderConfig *config;
 	AiOpenSpec open_spec;
+	bool exact_filter;
 	SemloomWireV2Identity identity;
+	SemloomWireV3Identity semantic_identity;
 	MemoryContext scratch_context;
 	MemoryContext completion_context;
 };
@@ -95,7 +98,8 @@ semloom_uds_open(const void *config_value,
 	if (session_out != NULL)
 		*session_out = NULL;
 	if (config == NULL || session_out == NULL || error == NULL ||
-		!semloom_provider_spec_is_recording(spec))
+		(!semloom_provider_spec_is_recording(spec) &&
+		 !semloom_provider_spec_is_exact_filter(spec)))
 	{
 		if (error != NULL)
 				semloom_provider_error_set(error,
@@ -109,20 +113,36 @@ semloom_uds_open(const void *config_value,
 	session = palloc0(sizeof(*session));
 	session->socket_fd = PGINVALID_SOCKET;
 	session->config = config;
+	session->exact_filter = semloom_provider_spec_is_exact_filter(spec);
 	*session_out = session;
 	session->open_spec = *spec;
 	session->open_spec.semantic_spec_id = semloom_uds_copy_slice(spec->semantic_spec_id);
 	session->open_spec.physical_algorithm =
 		semloom_uds_copy_slice(spec->physical_algorithm);
+	session->open_spec.physical_role = semloom_uds_copy_slice(spec->physical_role);
+	session->open_spec.prompt_program_digest =
+		semloom_uds_copy_slice(spec->prompt_program_digest);
+	session->open_spec.result_parser_digest =
+		semloom_uds_copy_slice(spec->result_parser_digest);
+	session->open_spec.model_id = semloom_uds_copy_slice(spec->model_id);
+	session->open_spec.semantic_spec_digest =
+		semloom_uds_copy_slice(spec->semantic_spec_digest);
+	session->open_spec.physical_algorithm_digest =
+		semloom_uds_copy_slice(spec->physical_algorithm_digest);
+	session->open_spec.stop = semloom_uds_copy_slice(spec->stop);
 	session->scratch_context = AllocSetContextCreate(CurrentMemoryContext,
 												 "SemLoom UDS drive scratch",
 												 ALLOCSET_DEFAULT_SIZES);
 	session->completion_context = AllocSetContextCreate(CurrentMemoryContext,
 													  "SemLoom UDS completion",
 													  ALLOCSET_DEFAULT_SIZES);
-	semloom_wire_v2_identity_init(&session->open_spec,
-									 SEMLOOM_UDS_EXECUTION_ID,
-									 &session->identity);
+	if (session->exact_filter)
+		semloom_wire_v3_identity_init(&session->open_spec,
+										  &session->semantic_identity);
+	else
+		semloom_wire_v2_identity_init(&session->open_spec,
+										 SEMLOOM_UDS_EXECUTION_ID,
+										 &session->identity);
 	return AI_PROVIDER_STATUS_OK;
 }
 
@@ -161,6 +181,8 @@ semloom_uds_drive(AiProviderSession *session,
 		if (status == AI_PROVIDER_STATUS_OK)
 		{
 			uint8 *output = NULL;
+			uint8 *response_model = NULL;
+			uint8 *finish_reason = NULL;
 
 			MemoryContextSwitchTo(session->completion_context);
 			if (!scratch_completion.is_null)
@@ -174,11 +196,32 @@ semloom_uds_drive(AiProviderSession *session,
 						   scratch_completion.output.data,
 						   scratch_completion.output.length);
 			}
+			if (scratch_completion.response_model_id.length > 0)
+			{
+				response_model = palloc(scratch_completion.response_model_id.length);
+				memcpy(response_model,
+					   scratch_completion.response_model_id.data,
+					   scratch_completion.response_model_id.length);
+			}
+			if (scratch_completion.finish_reason.length > 0)
+			{
+				finish_reason = palloc(scratch_completion.finish_reason.length);
+				memcpy(finish_reason,
+					   scratch_completion.finish_reason.data,
+					   scratch_completion.finish_reason.length);
+			}
 			MemoryContextSwitchTo(session->scratch_context);
 			completion->sequence = scratch_completion.sequence;
 			completion->is_null = scratch_completion.is_null;
 			completion->output.data = output;
 			completion->output.length = scratch_completion.output.length;
+			completion->response_model_id.data = response_model;
+			completion->response_model_id.length =
+				scratch_completion.response_model_id.length;
+			completion->finish_reason.data = finish_reason;
+			completion->finish_reason.length = scratch_completion.finish_reason.length;
+			completion->prompt_tokens = scratch_completion.prompt_tokens;
+			completion->output_tokens = scratch_completion.output_tokens;
 		}
 		MemoryContextSwitchTo(previous_context);
 	}
@@ -222,12 +265,17 @@ semloom_uds_drive_internal(AiProviderSession *session,
 								   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
 	}
-	if (task->input.length > SEMLOOM_WIRE_V2_MAX_INPUT_BYTES)
+	if ((!session->exact_filter &&
+		 task->input.length > SEMLOOM_WIRE_V2_MAX_INPUT_BYTES) ||
+		(session->exact_filter &&
+		 task->input.length > SEMLOOM_WIRE_V3_MAX_INPUT_BYTES))
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_INPUT_TOO_LARGE,
 								   0,
-								   SEMLOOM_WIRE_V2_MAX_INPUT_BYTES,
+								   session->exact_filter ?
+									   SEMLOOM_WIRE_V3_MAX_INPUT_BYTES :
+									   SEMLOOM_WIRE_V2_MAX_INPUT_BYTES,
 								   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
 	}
@@ -237,7 +285,9 @@ semloom_uds_drive_internal(AiProviderSession *session,
 								   AI_PROVIDER_ERROR_UNSUPPORTED_ENCODING,
 								   0,
 								   0,
-								   "SemLoom UDS recording provider requires UTF8 database encoding");
+								   session->exact_filter ?
+									   "SemLoom exact semantic provider requires UTF8 database encoding" :
+									   "SemLoom UDS recording provider requires UTF8 database encoding");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 	if (session->socket_fd == PGINVALID_SOCKET)
@@ -246,6 +296,13 @@ semloom_uds_drive_internal(AiProviderSession *session,
 		if (status != AI_PROVIDER_STATUS_OK)
 			return status;
 	}
+	if (session->exact_filter)
+		return semloom_wire_v3_drive(session->socket_fd,
+									 &session->open_spec,
+									 task,
+									 &session->semantic_identity,
+									 completion,
+									 error);
 	return semloom_wire_v2_drive(session->socket_fd,
 								 task,
 								 &session->identity,
@@ -351,6 +408,11 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
+	if (session->exact_filter)
+		return semloom_wire_v3_open(session->socket_fd,
+								   &session->open_spec,
+								   &session->semantic_identity,
+								   error);
 	return semloom_wire_v2_open(session->socket_fd,
 								&session->open_spec,
 								&session->identity,

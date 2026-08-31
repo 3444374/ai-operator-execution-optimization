@@ -16,6 +16,7 @@ extern const CustomScanMethods semloom_filter_scan_methods;
 extern const char *semloom_gateway_socket_path(void);
 extern Oid semloom_map_function_oid(void);
 extern Oid semloom_filter_function_oid(void);
+extern Oid semloom_exact_filter_function_oid(void);
 extern bool semloom_is_map_function(Oid function_oid);
 extern void semloom_add_sem_map_paths(PlannerInfo *root,
 									 UpperRelationKind stage,

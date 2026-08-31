@@ -50,6 +50,39 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("marker was not lowered", marker_source)
         self.assertNotIn("http", marker_source.lower())
 
+    def test_exact_semfilter_has_a_constant_plan_owned_sql_contract(self) -> None:
+        install_sql = (EXTENSION_ROOT / "sql" / "semloom_pg--0.1.0.sql").read_text(
+            encoding="utf-8"
+        )
+        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+            encoding="utf-8"
+        )
+        plan_header = (EXTENSION_ROOT / "src" / "sem_plan_spec.h").read_text(
+            encoding="utf-8"
+        )
+        contract_header = (
+            EXTENSION_ROOT / "src" / "semantic_filter_contract.h"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "ai_semantic.filter(input text, instruction text, options jsonb)",
+            install_sql,
+        )
+        self.assertIn("semloom_exact_filter_function_oid", filter_path)
+        self.assertIn("SEMLOOM_FILTER_INSTRUCTION_MAX_BYTES 4096", contract_header)
+        self.assertIn("SEMLOOM_FILTER_MODEL_MAX_BYTES 128", contract_header)
+        self.assertIn("JB_ROOT_IS_OBJECT", filter_path)
+        self.assertIn("ERRCODE_INVALID_PARAMETER_VALUE", filter_path)
+        for field_name in (
+            "instruction",
+            "prompt_program_digest",
+            "result_parser_digest",
+            "model_id",
+            "semantic_spec_digest",
+            "physical_algorithm_digest",
+        ):
+            self.assertIn(field_name, plan_header)
+
     def test_planner_wraps_an_ordinary_child_path_and_chains_hooks(self) -> None:
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8")
         path_source = (EXTENSION_ROOT / "src" / "sem_path.c").read_text(encoding="utf-8")
@@ -105,8 +138,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("PgSemanticRuntime", pump_source)
         self.assertIn("SemloomOperatorMachine", pump_source)
         self.assertIn("ecxt_per_tuple_memory", pump_source)
-        self.assertIn("semloom_operator_machine_bind_text", pump_source)
-        self.assertIn("MemoryContextSwitchTo(task_context)", machine_source)
+        self.assertIn("semloom_pump_bind_text", pump_source)
+        self.assertIn("MemoryContextSwitchTo(task_context)", pump_source)
+        self.assertNotIn("MemoryContext", machine_source)
         self.assertIn("MemoryContextRegisterResetCallback", runtime_source)
         self.assertIn("owner_context", runtime_source)
 
@@ -168,6 +202,21 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn('"true"', filter_machine)
         self.assertIn('"false"', filter_machine)
         self.assertIn('"unknown"', filter_machine)
+        self.assertIn('"TRUE"', filter_machine)
+        self.assertIn('"FALSE"', filter_machine)
+        self.assertIn('"UNKNOWN"', filter_machine)
+
+        machine_header = (EXTENSION_ROOT / "src" / "sem_operator_machine.h").read_text(
+            encoding="utf-8"
+        )
+        for postgres_type in (
+            "TupleTableSlot",
+            "Datum",
+            "AttrNumber",
+            "MemoryContext",
+            "ExplainState",
+        ):
+            self.assertNotIn(postgres_type, machine_header)
 
     def test_planner_owns_the_versioned_semantic_plan_spec(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
@@ -359,7 +408,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("from src.execution_provider.server import main", legacy_cli_source)
         self.assertNotIn("postgres.semloom_pg.gateway", gateway_wire_source)
 
-        allowed_transport_sources = {"uds_provider.c", "wire_v2.c"}
+        allowed_transport_sources = {"uds_provider.c", "wire_v2.c", "wire_v3.c"}
         transport_identifiers = (
             "pgsocket",
             "connect(",
@@ -373,6 +422,45 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             source = source_path.read_text(encoding="utf-8")
             for identifier in transport_identifiers:
                 self.assertNotIn(identifier, source, f"{identifier} leaked into {source_path.name}")
+
+    def test_wire_v3_is_strict_and_does_not_mutate_recording_v2(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        wire_v2_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(
+            encoding="utf-8"
+        )
+        wire_v3_header = (EXTENSION_ROOT / "src" / "wire_v3.h").read_text(
+            encoding="utf-8"
+        )
+        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_v3.c").read_text(
+            encoding="utf-8"
+        )
+        python_v2 = (
+            CODE_ROOT / "src" / "execution_provider" / "wire" / "v2.py"
+        ).read_text(encoding="utf-8")
+        python_v3 = (
+            CODE_ROOT / "src" / "execution_provider" / "wire" / "v3.py"
+        ).read_text(encoding="utf-8")
+        golden_adapter = (
+            CODE_ROOT / "src" / "execution_provider" / "adapters" / "golden.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("src/wire_v2.o", makefile)
+        self.assertIn("src/wire_v3.o", makefile)
+        self.assertIn("SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2", wire_v2_header)
+        self.assertIn("SEMLOOM_WIRE_V3_PROTOCOL_VERSION 3", wire_v3_header)
+        self.assertIn("SEMLOOM_WIRE_V3_MAX_INPUT_BYTES 163840", wire_v3_header)
+        self.assertIn("semloom_wire_common_send_frame", wire_v3_source)
+        self.assertIn("semloom_wire_common_receive_frame", wire_v3_source)
+        self.assertNotIn("send(", wire_v3_source)
+        self.assertNotIn("recv(", wire_v3_source)
+        self.assertIn("PROTOCOL_VERSION = 2", python_v2)
+        self.assertIn("PROTOCOL_VERSION = 3", python_v3)
+        self.assertIn("MAX_INPUT_BYTES = 163_840", python_v3)
+        self.assertIn("set(message) != _OPEN_FIELDS", python_v3)
+        self.assertIn("set(message) != _TASK_FIELDS", python_v3)
+        self.assertIn("fixtures.get(payload_digest)", golden_adapter)
+        for forbidden in ("httpx", "requests", "openai", "vllm", "ray"):
+            self.assertNotIn(forbidden, golden_adapter.lower())
 
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")
