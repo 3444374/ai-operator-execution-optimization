@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-30
+日期：2026-08-31
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -8,9 +8,9 @@
 负责，测试/实验支持的结论由证据台账负责。
 
 本文说明 PostgreSQL 中立语义算子 reference capability 与现有 Daft + Ray 外部物理执行基础设施
-已经完成什么和实际执行流程。当前 exact
-SemMap/SemFilter recording paths 不等于第二 physical path、真实模型或完整优化系统已经实现；项目不修改
-vLLM 内部。
+已经完成什么和实际执行流程。当前 recording `SemMap/SemFilter` compatibility paths 与三参数 exact
+`SemFilter` deterministic-golden path 不等于真实模型、第二 physical path 或完整优化系统已经实现；项目
+不修改 vLLM 内部。
 
 **当前工程顺序**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
@@ -32,10 +32,14 @@ UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，�
 `connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
 资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
 公共 extension 级 PostgreSQL compatibility suite 和第二个真实消费者已经通过，未为 `SemFilter`
-复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。当前尚缺 exact-reference
-纵切面实际消费的 instruction/prompt/parser/model policy plan fields、deterministic golden adapter、同步
-exact 真实模型 reference、第二 physical path、carrier audit、accepted-prefix、
-多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
+复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。提交 `3b2077e1`
+新增三参数 `ai_semantic.filter(text,text,jsonb)`：planner 只接受常量 instruction 与严格三字段 options，
+schema v2 plan 保存 prompt/parser/model/generation 与 semantic/physical digest；pump 持有 PostgreSQL
+slot/Datum/MemoryContext binding，operator-machine header 已不含 PostgreSQL 类型。独立 wire v3 使用
+163,840-byte 输入上限、严格 open/task/completion 字段与 C/Python digest vectors；gateway golden adapter
+只按测试提供的 payload-digest fixture 返回 raw output，PostgreSQL 本地严格解析 uppercase
+`TRUE/FALSE/UNKNOWN`。当前尚缺同步 exact 真实模型 reference、第二 physical path、carrier audit、
+accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
@@ -53,9 +57,13 @@ FD 为 43/43/41，未观察到累计 payload 近似线性增长或 FD 泄漏。�
 `code/postgres/semloom_pg/gateway/` 只保留无需额外 `PYTHONPATH` 的 import/CLI compatibility wrapper，
 canonical CLI 为 `code/scripts/services/run_execution_provider_gateway.py`。该迁移没有加入 v3、HTTP 或
 新 plan fields，并在精确 18.3 上通过 regression 1/1、TAP 193/193、Python/static 25/25、`-Werror`
-与 Map/Filter RSS/FD smoke。下一步按工程计划 4A/4B 让同一最小 plan/task/result contract
-分别通过 deterministic golden 与固定模型
-endpoint。真实 instruction/prompt/parser/model policy、真实模型 reference、accepted-prefix、多在途/乱序 completion、
+与 Map/Filter RSS/FD smoke。其后的 `3b2077e1` 已完成工作包 4A：三参数 exact `SemFilter`、schema v2、
+wire v3、deterministic golden、严格 parser 和 completion evidence 均已接线；精确 18.3 通过
+warning-free `-Werror`、regression 1/1、TAP 268/268、gateway/v2/v3/static 32/32 与 neutral C11 header。
+同一 backend 的原有 Map/recording Filter smoke 分别为 RSS 20,932/21,792/21,792 与
+21,792/21,792/21,792 KiB，FD 27/27/25 与 27/27/25；20,000 行 exact Filter 输出 8,000 行，RSS
+17,636/17,636/17,636 KiB、FD 25/25/25。数字只证明当前 workload 未观察到累计内存或 FD 增长。
+下一步是工作包 4B 的固定模型 endpoint；真实模型 reference、accepted-prefix、多在途/乱序 completion、
 第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
@@ -417,13 +425,14 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 4. exact `SemFilter` 已作为第二个真实消费者证明公共层边界：PostgreSQL carrier 负责 slot/plan 与
    `LIMIT` 前 placement；`PgSemanticRuntime` 拥有 provider lifecycle/sequence/memory/error；
    `SemMapMachine` 与 `FilterMachine` 分别负责 emit 与 keep/drop/unknown 语义；
-5. 当前 `AiOpenSpec` 仍是 recording semantic contract 的子集；4A 定义的 instruction、prompt program、
-   result parser、model/generation constraints 和真实 completion usage 尚未进入 plan/task/result；
+5. 工作包 4A 的 instruction、prompt program、result parser、model/generation constraints、canonical
+   messages、payload/completion evidence 与 usage 字段已进入 schema v2 plan/task/result；golden 只返回
+   fixture raw output，不是模型或质量 oracle；
 6. 当前 planner 只生成一个 reference role，cost 仍是普通占位；reference/optimized identity、AI-work
    cost、quality evidence 与 fallback 尚未实现；
-7. 当前 provider interface 是同步单任务，recording wire v2 仍是唯一 wire schema；真实语义 wire v3、
-   deterministic golden、fixed-endpoint adapter、accepted-prefix、多在途、乱序 completion、增量 SemLoom
-   session 和 direct HTTP/SemLoom adapters 尚未实现；
+7. 当前 provider interface 仍是同步单任务；recording wire v2 保持冻结，exact semantic wire v3 与
+   deterministic golden 已实现。fixed-endpoint adapter、accepted-prefix、多在途、乱序 completion、
+   增量 SemLoom session 和 direct HTTP/SemLoom adapters 尚未实现；
 8. 以上缺口的实施顺序和完成标准见
    [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
    本文不复制未来设计。

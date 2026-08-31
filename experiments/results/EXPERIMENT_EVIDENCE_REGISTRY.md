@@ -1,13 +1,13 @@
 # 实验与机制证据台账
 
-更新日期：2026-08-30
+更新日期：2026-08-31
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
-当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、同步单在途 UDS、shared runtime、neutral
-provider port、planner-owned 最小 recording plan spec 和公共 compatibility suite 的功能与资源生命周期；
-不支持 exact-reference 纵切面实际消费的 instruction/parser/model policy plan fields、真实模型
-语义、第二 physical path、bounded async 或性能优化已经完成。当前顺序看工程计划和
+当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、三参数 exact `SemFilter` deterministic
+golden、同步单在途 UDS、shared runtime、neutral provider port、schema v1/v2 planner-owned plan spec、
+wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；不支持真实模型语义、第二 physical path、
+bounded async 或性能优化已经完成。当前顺序看工程计划和
 `experiments/plans/experiment_status_and_gaps.md`，既有文本、图像和 SAOR 条目继续保持外部物理执行身份。
 
 ## 1. 证据等级
@@ -26,11 +26,11 @@ provider port、planner-owned 最小 recording plan spec 和公共 compatibility
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
-| PostgreSQL planner-visible `SemMap` / exact `SemFilter` | `code/postgres/semloom_pg/`、`code/src/execution_provider/`；12 项 PostgreSQL 静态 contract、8 项冻结 v2 protocol、5 项 gateway 迁移 contract、PGXS SQL regression 与 TAP lifecycle/fault tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；提交 `e89060a7` 以 `-Werror` 无警告 build、regression 1/1、TAP 193/193、Python/static 20/20 通过；提交 `9447e11b` 复验相同 suite；gateway 迁移提交 `868430f9` 再通过 regression 1/1、TAP 193/193、Python/static 25/25、`-Werror` 和 ordinary/Map/Filter 定向 SQL | 功能测试：两个 deterministic reference carriers 已验证 ordinary child、Filter 三值/NULL/cardinality、`LIMIT` 前 placement、preload、prepared/generic plan invalidation、RLS/权限、snapshot/savepoint、cancel/recovery、多 backend 与 direct `INSERT ... SELECT`。plain EXPLAIN、LIMIT 0、zero-row child 与 NULL-only 执行不连接 provider。in-process/UDS adapters 对 Map/Filter rows 和归一化 EXPLAIN 一致；UDS fault tests 保持既有 Unicode、断连、digest、取消、编码、整数、NUL、SQLSTATE 和脱敏消息。旧 TAP CLI 在 gateway 迁移后仍直接工作且不需要额外 `PYTHONPATH`。尚无模型/GPU 性能证据，rescan/EPQ/parallel、join/aggregate 和更宽 query shape 未支持。 |
-| PostgreSQL-private plan/runtime + neutral provider seam | `code/postgres/semloom_pg/src/{sem_plan_spec,recording_contract,pg_semantic_runtime,sem_pump,sem_operator_machine,sem_map_machine,sem_filter_machine,ai_provider_port,provider,recording_provider,uds_provider,wire_v2}.{h,c}`；`code/src/execution_provider/{wire,adapters,server.py}`；旧 `gateway/` compatibility wrappers 与上述 contract/TAP | 精确 18.3 产物 ID `tap-run-e89060a7` 中 `semloom_pg.so` SHA-256 为 `a2fc37c372ff0bd892e1e75e3a404d7688d85291e6ad13151e786ad7cdeb4ec0`。仓库外 `semloom-validation-9447e11b-20260830-r1` 复验得到相同 `.so` SHA。仓库外 gateway-migration qualification 又将该 SHA 绑定到 `868430f9`：Map 2,000×100,000-byte 输入产生 200,018,000 字节，RSS 起始/峰值/结束 21,368/22,248/22,248 KiB、FD 42/42/41；Filter 20,000 行含 15,000 个非 NULL task、输出 5,000 行，RSS 22,248/22,248/22,248 KiB、FD 43/43/41。历史 `resource-run-e89060a7`、`d3a22dcf`、`0b9948ee` 与 `d08eda38` 结果继续绑定各自提交 | planner 把当前 recording identity/algorithm/role 编码为版本化 named plan fields，executor 严格校验并在唯一位置映射为 `AiOpenSpec`；input column 不进入 semantic digest。`AiProviderError` 不含 transport operation，runtime 只按 neutral code 映射 SQLSTATE，adapter detail 为本地定长脱敏数据。Python gateway 的 framing、冻结 wire v2、recording adapter 和 server 已进入公共 execution-provider 目录；旧路径只负责自定位兼容转交。当前 smoke 未观察到累计 payload 近似线性增长或 FD 泄漏，但不是性能结论。4A/4B 的 instruction/parser/model plan fields、wire v3、fixed endpoint、accepted-prefix、多在途/乱序 completion 与 SemLoom adapter 尚未实现。 |
-| extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | 尚未完成 plan identity、prepared-plan、hook coexistence 与 LOTUS/Cortex alternatives 反例审查；不能声称 core 必须或无需修改。 |
+| PostgreSQL planner-visible `SemMap` / exact `SemFilter` | `code/postgres/semloom_pg/`、`code/src/execution_provider/`；14 项 PostgreSQL static contract、8 项冻结 v2 protocol、5 项 v3 semantic protocol、5 项 gateway migration contract、PGXS SQL regression 与 TAP lifecycle/fault tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；历史 `e89060a7`、`9447e11b`、`868430f9` 结果继续绑定各自提交。4A 提交 `3b2077e1` 以 warning-free `-Werror`、regression 1/1、TAP 268/268、gateway/v2/v3/static 32/32 和 neutral C11 header 通过 | 功能测试：recording Map/Filter compatibility 与三参数 exact Filter 先后通过 ordinary child、三值/NULL/cardinality、`LIMIT` 前 placement、preload、prepared/generic plan、RLS/权限、snapshot/savepoint、cancel/recovery、多 backend 与 direct `INSERT ... SELECT`。4A 额外覆盖常量/options、prompt/digest golden、duplicate input、strict uppercase parser、model/usage/evidence mismatch 与脱敏错误。plain EXPLAIN、LIMIT 0、zero-row child 与 NULL-only 执行不连接 provider；v2 字段与 golden vectors 保持不变。尚无真实模型/GPU 性能证据，rescan/EPQ/parallel、join/aggregate 和更宽 query shape 未支持。 |
+| PostgreSQL-private plan/runtime + neutral provider seam | `code/postgres/semloom_pg/src/{sem_plan_spec,semantic_filter_contract,recording_contract,pg_semantic_runtime,sem_pump,sem_operator_machine,sem_map_machine,sem_filter_machine,ai_provider_port,provider,recording_provider,uds_provider,wire_common,wire_v2,wire_v3}.{h,c}`；`code/src/execution_provider/{wire,adapters,server.py}`；旧 `gateway/` compatibility wrappers 与上述 contract/TAP | `3b2077e1` 仓库外 resource qualification：Map 2,000×100,000-byte 输入产生 200,018,000 字节，RSS 起始/峰值/结束 20,932/21,792/21,792 KiB、FD 27/27/25；recording Filter 20,000 行输出 5,000 行，RSS 21,792/21,792/21,792、FD 27/27/25；exact Filter 20,000 行输出 8,000 行，RSS 17,636/17,636/17,636、FD 25/25/25。历史 `868430f9`、`e89060a7`、`d3a22dcf`、`0b9948ee` 与 `d08eda38` 结果继续绑定各自提交 | schema v1 保持 recording identity；schema v2 严格携带 exact instruction、prompt/parser/model/generation 与 semantic/physical digest，input column 仍是独立 executor binding。pump 收回 PG value binding，machine header 不含 PG 类型；runtime 只处理 provider lifecycle、sequence、memory/error 和通用 identity。wire v3 与 golden adapter 已实现且 v2 冻结；smoke 未观察到累计 payload 近似线性增长或 FD 泄漏，但不是性能结论。fixed endpoint、accepted-prefix、多在途/乱序 completion 与 SemLoom adapter 尚未实现。 |
+| extension/core semantic carrier | 条件性 `code/postgres/pg18_core_patch/`；当前不存在 | 无 | extension 已证明当前 exact plan identity、prepared/generic plan 与 lifecycle；LOTUS/Cortex alternatives 和第二路径的 carrier 反例审查尚未完成，不能据此声称 core 永远不需要修改。 |
 | IMLane batch-placement profile / Kalypso reference direction | gateway/SemLoom 后续实现；当前不存在 | 无 | database-batch placement 在数据库资格后验证；lineage/prefix lease 与 KV-aware execution 仅作参考，未进入当前排期。 |
-| `SemFilter` 关系语义 | `sem_filter_path.c`、`sem_filter_machine.c`、公共 runtime 与 PGXS/TAP | `d3a22dcf` exact-18.3 qualification；`9447e11b` 定向 smoke 再确认 5 行输入只输出两个 TRUE、4 accepted/2 emitted；无模型/GPU 结果 | exact reference path 已验证 TRUE/FALSE/UNKNOWN、SQL NULL、ordinary predicate、tuple identity、`LIMIT` 前 keep/drop、invalid completion、savepoint/cancel/UDS recovery 和 adapter parity。第二 proxy/oracle path、近似质量 policy、真实模型与异步乱序 completion 尚未实现。 |
+| `SemFilter` 关系语义 | `sem_filter_path.c`、`sem_filter_machine.c`、公共 runtime、wire v2/v3 与 PGXS/TAP | 历史 recording qualification继续保留；`3b2077e1` 以 golden raw output 验证三参数 exact path，20,000 行资源 smoke 输出 8,000 TRUE rows；无模型/GPU 结果 | 一参 recording path 保持 lowercase fixture 兼容；三参 path 严格解析 uppercase TRUE/FALSE/UNKNOWN，SQL NULL 不建 task，duplicate tuple identity、`LIMIT` 前 keep/drop、invalid raw output、cancel/UDS recovery 和 EXPLAIN plan identity 已验证。golden 不证明自然语言判断质量；第二 proxy/oracle path、近似质量 policy、真实模型与异步乱序 completion 尚未实现。 |
 | LOTUS v1.2.4 compatibility/native baseline | companion extension profile、`code/tests/compatibility/lotus_v124/` fixtures 与独立 native runner；当前不存在 | 无 | 只保留为后置兼容和完整系统 baseline，messages/output/error parity 尚未实现且不阻塞核心。 |
 | 固定行 batching | `code/src/scheduling/organization/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
 | Sequential token-budget | `code/src/scheduling/organization/{batching,token_budget}.py`、对应 tests | baseline、joint、BFD 与 row-cap 系列；`rc1_data_organization/`（07-31 系统重测） | 已重复验证；当前数据组织默认，必须同时满足 token budget 和 row cap。**07-31 干净平台**：2-ep/4-ep 均属第一梯队（保 prefix 局部性，ratio 0.13），4-ep KV 饱和 regime 下**最稳**（50k，命中 0.47–0.48，SLO 17%）。 |
@@ -177,12 +177,12 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 - `summary_long.csv` 或 `comparison_summary.csv` 等绘图友好汇总。
 - 事实、推断、待确认和不能声称的内容分开写。
 
-## 6. 尚无证据覆盖的能力（2026-08-30）
+## 6. 尚无证据覆盖的能力（2026-08-31）
 
 以下条目只说明证据缺口，不构成实施顺序：
 
-1. 真实 `SemanticPlanSpec`、同步 exact 真实模型 reference、reference/optimized path identity、AI-work
-   cost、quality policy/evidence 与 fallback 尚无实现资格证据。
+1. 同步 exact 真实模型 reference、reference/optimized path identity、AI-work cost、quality
+   policy/evidence 与 fallback 尚无实现资格证据；当前 schema v2 只通过 deterministic golden 验证。
 2. extension/core carrier audit、accepted-prefix、多在途、增量 SemLoom adapters 与 IMLane-like batch
    placement 尚无相应验证；Kalypso-like lineage/prefix lease 仍只是参考方向。
 3. 图像 HSE static GPU 非劣、stage/CE5 在线动作和小规模 pgvector 检索质量尚未完成。

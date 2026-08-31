@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-08-31 exact SemFilter deterministic-golden reference 完成
+
+- 提交 `3b2077e1` 完成工作包 4A：新增三参
+  `ai_semantic.filter(text,text,jsonb)`，planner 只接受非 NULL 常量 instruction 和严格的
+  `model/temperature/max_tokens` options。schema v2 把 canonical prompt/parser、model/generation、
+  NULL/error/order policy 与 semantic/physical digest 写入 PostgreSQL 拥有的 plan identity；recording
+  schema v1 保持不变。
+- PostgreSQL value binding 已从 `OperatorMachine` 收回 pump；machine header 不再暴露
+  `TupleTableSlot`/`Datum`/`MemoryContext`。`PgSemanticRuntime` 继续只共享 provider lifecycle、
+  sequence、completion copy、query cleanup、identity validation 和中立错误映射；Map 的一进一出和
+  Filter 的 TRUE/FALSE/UNKNOWN keep/drop 仍属于各自 machine。
+- 新增独立 strict wire v3 与 deterministic golden adapter，共用既有有界 framing，不改 wire
+  v2 字段或 digest。golden adapter 只根据测试 fixture 中的 payload digest 返回 raw output；未知
+  digest fail closed，不连接模型，不解释 instruction，不决定 relation cardinality。
+- 精确 PostgreSQL 18.3 资格验证通过 warning-free `-Werror` build、PGXS regression 1/1、
+  TAP 268/268、gateway/v2/v3/static 32/32 和 neutral C11 header。同一 backend 的仓库外资源
+  smoke 记录：Map RSS 起始/峰值/结束 20,932/21,792/21,792 KiB、FD 27/27/25；recording
+  Filter RSS 21,792/21,792/21,792、FD 27/27/25；20,000 行 exact Filter 输出 8,000 行，RSS
+  17,636/17,636/17,636、FD 25/25/25。这些数字只支持当前 workload 的资源生命周期，
+  不是模型正确性或性能结论。
+- 当前不声称已有真实模型、第二 physical path、cost/selectivity 校准、异步、多在途、
+  `SemJoin` 或 core patch。下一步只是工作包 4B：在完全相同的 plan/task/result contract
+  后接 gateway-side 同步固定模型 endpoint。
+
 ## 2026-08-30 recording gateway 已迁入公共 execution-provider 目录
 
 - 提交 `868430f9` 将 Python gateway 的权威实现从 PostgreSQL extension 子树迁到
