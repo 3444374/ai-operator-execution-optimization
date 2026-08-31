@@ -33,8 +33,10 @@ neutral error interface 不再暴露 socket/JSON/frame operation，adapter 只�
 `code/src/execution_provider/`；extension 子树中的旧 import/CLI 只负责自定位并转交，不保存协议或 server 逻辑。
 exact-reference 纵切面已实际消费 instruction、prompt program、result parser、model/generation
 constraints 和 policy；wire v3 与 deterministic golden adapter 已端到端验证该最小 plan/task/result
-contract，但 golden fixture 不是模型也不证明自然语言判断质量。下一步只在完全相同的 contract 后接同步
-固定模型 endpoint，之后实现 LOTUS/Cortex-like 第二 path。随后用
+contract，但 golden fixture 不是模型也不证明自然语言判断质量。之后的 4A.1 已收紧 v3 error frame、
+共享 C transport/JSON 归属和 canonical-message 构造前的
+input-limit preflight，并补齐 Unicode、空串与 savepoint/recovery 证据。
+下一步只在完全相同的 contract 后接同步固定模型 endpoint，之后实现 LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
 多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展

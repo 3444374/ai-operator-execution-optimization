@@ -63,6 +63,14 @@ warning-free `-Werror`、regression 1/1、TAP 268/268、gateway/v2/v3/static 32/
 同一 backend 的原有 Map/recording Filter smoke 分别为 RSS 20,932/21,792/21,792 与
 21,792/21,792/21,792 KiB，FD 27/27/25 与 27/27/25；20,000 行 exact Filter 输出 8,000 行，RSS
 17,636/17,636/17,636 KiB、FD 25/25/25。数字只证明当前 workload 未观察到累计内存或 FD 增长。
+后续 `359ffdf3` 完成行为不变的 4A.1 hardening：`wire_common.c` 真正拥有 framing、
+socket wait/connect 与 PostgreSQL JSON primitives，v2/v3 各自保留 schema/error 解释；v3 error
+frame 严格校验四字段、version、nullable/decimal sequence 和 code allowlist。query-fixed provider 在
+open 前公布中立 input limit，pump 通过 runtime 在 canonical-message 扫描/分配前 fail closed，
+UDS drive 仍保留防御检查。精确 18.3 复验为 warning-free `-Werror`、regression 1/1、TAP
+320/320、protocol/static 33/33、gateway migration 5/5 与 neutral/machine C11 compile，并新增 exact
+Unicode instruction/input、空字符串、savepoint/recovery 和严格 error-frame 覆盖。该复验不替换
+`3b2077e1` 的原资源 smoke。
 下一步是工作包 4B 的固定模型 endpoint；真实模型 reference、accepted-prefix、多在途/乱序 completion、
 第二 physical path 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。

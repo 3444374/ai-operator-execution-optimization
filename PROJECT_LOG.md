@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-08-31 exact SemFilter 4A.1 协议与资源边界加固
+
+- 提交 `359ffdf3` 在不改 SQL rows、wire v2 bytes/digest、wire v3 成功响应或现有 SQLSTATE 的
+  前提下完成 4A.1。C 客户端现在严格校验 v3 error object 的四字段集合、protocol
+  version、open 时 JSON null/task 时 decimal uint64 sequence 和版本化 code allowlist；缺失、多余、
+  sequence mismatch 或未知 code 均以固定脱敏 `08P01` fail closed。
+- 新建真实 `wire_common.c`，统一拥有 1 MiB framing、interruptible socket read/write/wait、
+  nonblocking connect wait 和 PostgreSQL JSON primitive。`wire_v2.c`/`wire_v3.c` 只保留各自 schema、
+  identity/digest 和错误解释；UDS adapter 不再调用带 v2 名称的共享等待函数。
+- query-fixed provider 在 open 前公布中立 `max_input_bytes`，`PgSemanticRuntime` 在 pump 扫描/
+  分配 canonical messages 前执行 preflight 并复用原有 `54000` 映射；UDS drive 保留第二道
+  defense-in-depth 检查。同时删除无 consumer 的 `AiProviderRawOutputKind`，machine 复用唯一
+  prompt contract 常量。
+- exact PostgreSQL 18.3 验收通过 warning-free `-Werror` build、PGXS regression 1/1、TAP
+  320/320、PostgreSQL protocol/static 33/33、gateway migration 5/5 和 neutral/machine C11 compile。新
+  TAP 实际覆盖 C→UDS→Python Unicode instruction/input、空字符串、exact savepoint/recovery、合法
+  open/task error 与非法 v3 error frames。原 4A 资源 smoke 仍绑定 `3b2077e1`，本轮没有
+  用功能性验证重写性能或 RSS/FD 结论。
+- 本轮不抽取只有 golden 一个消费者的 gateway adapter seam，也不改 provider execution ID、
+  machine profile 或 EXPLAIN adapter identity。它们与 fixed endpoint 一起形成两个真实消费者时，
+  再在 4B 抽取 `V3SessionRunner + CompletionAdapter` 并改为 query-fixed execution profile。
+
 ## 2026-08-31 exact SemFilter deterministic-golden reference 完成
 
 - 提交 `3b2077e1` 完成工作包 4A：新增三参

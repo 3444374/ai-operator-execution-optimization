@@ -109,6 +109,18 @@ external resource smokes observed Map RSS 20,932/21,792/21,792 KiB and FD 27/27/
 21,792/21,792/21,792 and FD 27/27/25; and 20,000-row exact Filter RSS 17,636/17,636/17,636 and FD 25/25/25.
 These start/peak/end observations are resource-lifecycle evidence, not model correctness or performance data.
 
+The behavior-preserving 4A.1 hardening is commit `359ffdf3`. A real `wire_common.c` now owns bounded
+framing, interruptible socket/connect waits, and PostgreSQL JSON primitives; v2 and v3 retain only their
+versioned schemas, identities, digests, and error interpretation. Wire v3 validates the exact four-field error
+object, protocol version, nullable/open or decimal/task sequence, and a versioned redacted code allowlist.
+The selected provider publishes a query-fixed neutral input limit, so the runtime rejects oversized input
+before the machine scans or allocates canonical-message JSON while the UDS adapter keeps its defensive check.
+Exact PostgreSQL 18.3 passed the warning-free `-Werror` build, regression 1/1, TAP 320/320, 33/33 PostgreSQL
+protocol/static checks, 5/5 gateway migration checks, and neutral/machine C11 compilation. The added TAP paths
+cover C-to-Python Unicode instruction/input, empty non-NULL input, exact savepoint recovery, valid open/task
+errors, and malformed/missing/extra/mismatched v3 error frames. The earlier resource observations remain bound
+to `3b2077e1`; this hardening run does not add model-quality, performance, or new RSS/FD claims.
+
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 

@@ -572,7 +572,9 @@ code/postgres/
     │   ├── ai_provider_port.h         # provider-neutral primitive/bytes/status interface
     │   ├── provider.c                # query-fixed adapter factory/config snapshot
     │   ├── recording_provider.c       # 无 I/O 的测试 adapter
-    │   └── uds_provider.c / wire_v2.c / wire_v3.c # 唯一 PG-specific IPC adapter
+    │   ├── uds_provider.c             # PG-specific UDS resource adapter
+    │   ├── wire_common.c              # 共享 framing/socket wait/JSON primitives
+    │   └── wire_v2.c / wire_v3.c      # 各版本 schema/digest/error 解释
     ├── gateway/                      # 自定位 v2 import/CLI 兼容入口；不保存协议/server 逻辑
     │   ├── protocol.py
     │   └── recording_gateway.py
@@ -824,6 +826,15 @@ PostgreSQL 18.3 上通过 warning-free `-Werror`、regression 1/1、TAP 268/268�
 20,000 行 exact Filter，FD 均回到起始值或更低，RSS 未随累计 task 近似线性增长。该证据不包含真实
 模型调用、质量或性能改进。
 
+4A.1 hardening 证据：提交 `359ffdf3` 在不改上述成功路径的前提下，将共享 C framing、
+socket wait/connect 和 PostgreSQL JSON primitive 机械归入 `wire_common.c`，并严格验证 v3 error
+frame 的字段集合、version、sequence 与 code allowlist。provider 在 open 前公布 query-fixed 中立
+input limit，runtime 在 canonical-message 构造前 fail closed，UDS drive 保留防御检查。精确
+PostgreSQL 18.3 通过 warning-free `-Werror`、regression 1/1、TAP 320/320、protocol/static
+33/33、gateway migration 5/5 和 neutral/machine C11 compile。新覆盖包含 Unicode
+instruction/input、空串、exact savepoint/recovery 和合法/非法 v3 error frame；原 RSS/FD 数字仍
+绑定 `3b2077e1`。
+
 工作包五先用 4B 的真实调用/usage 修正 semantic-input rows、selectivity 与 AI-work cost，再增加“第二条
 可见路径”：`sem_filter_path.c` 同时生成 reference
 和 proxy/oracle `CustomPath`，两者携带不同 `PhysicalPlanSpec`、cost 与 evidence identity；
@@ -941,6 +952,16 @@ cardinality。4A 同时把 PG slot/Datum/MemoryContext binding 从 `OperatorMach
 完成证据：`3b2077e1` 已按上述范围实现并通过 PostgreSQL 18.3 regression 1/1、TAP 268/268、
 gateway/v2/v3/static 32/32、neutral C11 header 与 warning-free `-Werror`；Map、recording Filter 和 exact
 Filter 的仓库外 RSS/FD smoke 均通过。golden adapter 只消费测试 fixture，不连接模型。
+
+#### 工作包四 A.1：协议与资源边界加固（已完成）
+
+在 4B 前收紧已经有实际故障注入的公共部分：严格 v3 error frame、独立 `wire_common.c`、
+canonical-message 构造前 input preflight，以及 exact Unicode/空串/savepoint 表征测试。该切片
+不抽取仍只有 golden 一个消费者的 gateway adapter seam，不改 provider execution ID、machine
+profile、EXPLAIN adapter identity、cost/cardinality、异步或 core carrier。
+
+完成证据：`359ffdf3` 在精确 PostgreSQL 18.3 上通过 warning-free `-Werror`、regression
+1/1、TAP 320/320、Python/static 38/38 与 neutral/machine C11 compile。
 
 #### 工作包四 B：gateway-side fixed model endpoint
 

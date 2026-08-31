@@ -5,36 +5,31 @@ Module targets, implementation order, and acceptance criteria belong to
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
 the code tree and must not become a competing engineering plan.
 
-Status as of 2026-08-30: this directory contains the existing external physical-execution runtime
+Status as of 2026-08-31: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized/model-backed PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
-includes narrow `REL_18_3` planner-visible `SemMap` and exact `SemFilter` recording reference capabilities
-under `postgres/semloom_pg/`. Their PostgreSQL-private `PgSemanticRuntime` consumes the provider-neutral
-`AiOpenSpec → AiPreparedTask → AiCompletion` contract; the thin CustomScan callbacks, in-process recording
-adapter, UDS adapter, wire-v2 implementation, thin tuple pump, and Map/Filter machines have separate
-responsibilities. The neutral header contains
-only fixed-width values, byte slices, and opaque provider/session handles. Provider selection is fixed for the
-query, while connection and FD acquisition remain deferred until the first non-NULL task; PostgreSQL owns
-`PROPAGATE_NULL`. Per-drive scratch memory, per-tuple result copies, pre-encoding input bounds, UTF8 validation,
-nonblocking cancellable connect, terminal provider errors, and query-context cleanup are enforced. PGXS
-regression and TAP tests cover the current query shape, Unicode, and `NULL`; cross-adapter comparisons cover
-SQL rows and normalized EXPLAIN, while UDS-only fault tests cover protocol drift, disconnect, cancellation, and
-recovery. Response parsing also rejects escaped/raw NUL and fractional integer fields with the exact redacted
-`08P01` boundary; the static contract verifies that each catch path restores a stable context before copying
-PostgreSQL error data. The extension-wide PostgreSQL compatibility suite, exact Filter cardinality, shared
-runtime extraction, adapter parity, cancellation/recovery, and RSS/FD lifecycle smoke passed on exact 18.3 at
-commit `d3a22dcf`. Commits `812fc35f` and `e89060a7` then made the current recording identity planner-owned
-through a strict, copyable, versioned minimum plan spec and removed transport operations from the neutral
-error interface without changing rows, EXPLAIN, wire digests, SQLSTATE, or redacted messages. Commit `868430f9`
-moved the Python gateway authority to `src/execution_provider/`: shared bounded framing, frozen wire v2,
-the recording adapter, and the UDS server now live there, while `postgres/semloom_pg/gateway/` contains only
-self-locating compatibility imports/CLI. The canonical CLI is
-`scripts/services/run_execution_provider_gateway.py`. The next implementation slices let one consumer-driven
-minimum SemFilter plan/task/result contract pass a deterministic
-golden adapter and a synchronous fixed-model endpoint. An explicit reference/optimized second path, AI-work cost,
-quality evidence, and carrier audit follow that slice. Accepted-prefix, multiple in-flight tasks, and
-incremental SemLoom sessions follow database semantic and path-selection qualification; see
+includes narrow `REL_18_3` planner-visible recording `SemMap/SemFilter` compatibility paths and a three-argument
+exact `SemFilter` deterministic-golden reference under `postgres/semloom_pg/`. PostgreSQL owns the versioned
+schema-v1/v2 plan, canonical messages, strict result parser, tuple/cardinality behavior, and query lifecycle;
+the provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
+The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3, recording
+and golden implementations, and self-locating compatibility entry points under the extension tree.
+
+Commit `359ffdf3` completes the behavior-preserving 4A.1 hardening after the 4A implementation at `3b2077e1`.
+`wire_common.c` now owns shared bounded framing, cancellable socket/connect waits, and PostgreSQL JSON
+primitives; v2/v3 own only their schemas, digests, and error interpretation. Wire v3 strictly validates its
+four-field error object, nullable/decimal sequence, version, and redacted code allowlist. The query-selected
+provider publishes a neutral input limit so the runtime rejects oversized values before canonical-message
+construction, while the UDS adapter retains a defensive check. Exact PostgreSQL 18.3 passes warning-free
+`-Werror`, regression 1/1, TAP 320/320, 38/38 Python/static contracts, and neutral/machine C11 compilation.
+This is functional and lifecycle evidence, not real-model quality or performance evidence.
+
+The next implementation slice is 4B: add a fixed model endpoint as the second v3 consumer, then extract the
+gateway session-runner/completion-adapter seam and make provider execution identity query-fixed. A distinct
+reference/optimized path, AI-work cost, quality evidence, and carrier audit follow 4B. Accepted-prefix,
+multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and path-selection
+qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.
 
@@ -94,11 +89,11 @@ than inferred from a directory name. The shared typed `DatabaseIdentity` require
 the whole matrix, not merely a non-empty pair per cell. A passed summary keeps
 `formal_authorized=false` and records the narrower fact `formal_authorization_verified=true`.
 Every ranked cell ends at validated model completion with `writeback=none`. It must pass an
-independent frozen-manifest doc-id, row-count, content-digest, and exactly-once trace gate; PostgreSQL
+independent manifest doc-id, row-count, content-digest, and exactly-once trace validation selected before the run; PostgreSQL
 remains the common timed source and no output-sink time enters the ranking.
 
 The five-arm comparison now places one common observation-only HTTP gateway between every Job and
-the frozen vLLM FCFS endpoints. It has no admission limit, retry, cache, route choice, or payload
+the fixed vLLM FCFS endpoints. It has no admission limit, retry, cache, route choice, or payload
 rewrite: each Job/endpoint path forwards the exact request body once and records endpoint-reported
 prompt/output tokens plus receive/completion clocks. Daft Native, Daft Ray, and Ray Data still own
 their execution order and backpressure. The common trace supplies real request P50/P95/P99, request
@@ -108,10 +103,10 @@ arrival, T3 last vLLM completion, and T4 validated in-memory result visibility; 
 correct throughput use T0--T4, while source/execution/service spans remain separate.
 
 The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
-execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:
-direct K-only, direct K+W, and Project bounded-ready FIFO K+W. Its direct K+W gate is endpoint-local
+execution target. The only active text diagnostic compares D0 direct K-only, D1 direct K+W, and
+Project bounded-ready FIFO K+W for the feeding gap. Its direct K+W check is endpoint-local
 and Job-unaware, while the Project arm reuses the existing Daft/Ray/shared-credit path. The runner
-stores a structured PostgreSQL/Ray/endpoint clean gate plus lossless K/W occupancy evidence, and the
+stores structured PostgreSQL/Ray/endpoint clean-state checks plus lossless K/W occupancy evidence, and the
 offline summary cannot alter the sealed negative formal decision. This infrastructure is locally
 tested but has not been run on the powered-off GPU server.
 
@@ -757,7 +752,7 @@ Daft organizer dry-run:
 - `postgres_manifest.py` 从正式 PostgreSQL workload 只读导出完整行与 source
   hash，随后交给共同 endpoint 分片器；
 - `products/oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
-- `results.py` / `gate.py` 统一 exactly-once、延迟、吞吐和 fail-closed 门禁；
+- `results.py` / `gate.py` 统一验证 exactly-once、延迟、吞吐和 fail-closed 条件；
 - `cli.py` 只做 shard dispatch、原始证据保存和格式归一化；
 - `gate_runner.py` 串行 core cell、并行双 endpoint shard，并在空队列校验后
   fail closed，不复制项目 profiler。
@@ -768,13 +763,13 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
 
 开题前的两个文本证据缺口使用 `scripts/baselines/opening_database_e2e_matrix.py`。
-它只运行 direct static sharded、DuckDB AI static sharded 和 project frozen static
+它只运行 direct static sharded、DuckDB AI static sharded 和 project fixed static
 三臂，统一 PostgreSQL source、immutable manifest、双 endpoint、数据库 sink、质量与
-资源口径，并按确定性随机顺序执行 1 warmup + 3 formal。冻结合同以
+资源口径，并按确定性随机顺序执行 1 warmup + 3 formal。运行前选定且期间不改变的实验条件以
 `../experiments/plans/opening_database_e2e_p0_20260807.md` 为准；该 runner 不作为新增
 通用 baseline 框架，也不允许加入 adaptive arm 或参数扫描。
 
-`src/baselines/text/orchestration/native_matrix.py` 在明确冻结每臂校准指纹后，
+`src/baselines/text/orchestration/native_matrix.py` 在运行前记录并固定每臂校准指纹后，
 复用 core gate 执行原生文本框架的 1 warmup + N 交错 formal；它不复制
 adapter 或请求计数逻辑，并为每个 run 保存逐 GPU 资源时序、vLLM gauge 与
 latency/estimated-FLOPs delta，供 GPU 利用率、能耗和 MFU 审计。
@@ -790,12 +785,12 @@ event 的 debt、active set、weights、own/foreign/candidate work 重算 projec
 overshoot bound，不调用在线 SAOR selector，避免实现与验证共享同一个公式错误。
 
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
-token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验
+token-budget 和同协议 actor-shape 校准结果记录为后续策略实验的机器可校验
 合同，避免示例环境中的历史默认值静默进入正式 data-organization、
 submission 或多 job 矩阵。
 合同分别记录 throughput-oriented token budget 与在 95% throughput floor
 内最大化 SLO goodput 的候选预算，避免把一个预算误写成所有目标的通用最优。
 actor shape 保持每 endpoint 总 slots 不变，并选择达到峰值 97% 的最小
-actor 数；Chat 结果不能冻结 Completions 主线。
+actor 数；Chat 结果不能用来确定 Completions 主线配置。
 Shared-vLLM 的 4-job 数据面必须使用有界 persistent async actor pool；显式
 4-job `ray_task` 配置会在外部请求前失败，防止数百 worker 再次耗尽容器 VMA。
