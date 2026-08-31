@@ -7,6 +7,12 @@ import threading
 import unittest
 
 from src.execution_provider.adapters.golden import run_golden_session
+from src.execution_provider.adapters.openai_compatible_fixed import FIXED_EXECUTION_ID
+from src.execution_provider.adapters.v3_session import (
+    V3Completion,
+    V3CompletionRequest,
+    run_v3_session,
+)
 from src.execution_provider.wire.framing import encode_frame, read_frame
 from src.execution_provider.wire.v3 import (
     ERROR_CODES,
@@ -171,6 +177,60 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
         self.assertEqual(completion["finish_reason"], "stop")
         self.assertEqual(completion["prompt_tokens"], "0")
         self.assertEqual(completion["output_tokens"], "1")
+
+        client.close()
+        thread.join(timeout=1)
+        self.assertFalse(thread.is_alive())
+
+    def test_shared_session_runner_uses_the_selected_execution_profile(self) -> None:
+        class FixedCompletionAdapter:
+            execution_id = FIXED_EXECUTION_ID
+            model_id = "golden-model-v1"
+
+            def complete(self, request: V3CompletionRequest) -> V3Completion:
+                self.request = request
+                return V3Completion(
+                    raw_output="TRUE",
+                    response_model_id=request.model_id,
+                    prompt_tokens=19,
+                    output_tokens=1,
+                    finish_reason="stop",
+                )
+
+        adapter = FixedCompletionAdapter()
+        client, server = socket.socketpair()
+        thread = threading.Thread(target=run_v3_session, args=(server, adapter))
+        thread.start()
+        self.addCleanup(client.close)
+        client.sendall(
+            encode_frame(
+                build_open_message(
+                    self.plan,
+                    provider_execution_id=FIXED_EXECUTION_ID,
+                )
+            )
+        )
+        opened = read_frame(client)
+        self.assertEqual(opened["type"], "opened")
+        self.assertEqual(
+            opened["provider_execution_digest"],
+            "3b020b703e755cbfa4cd9bd3fd0f1230b67193a4de66ad124dbf5b7837fd4506",
+        )
+        client.sendall(
+            encode_frame(
+                build_task_message(
+                    self.plan,
+                    sequence=0,
+                    input_value="PostgreSQL is a database.",
+                    provider_execution_id=FIXED_EXECUTION_ID,
+                )
+            )
+        )
+        completion = read_frame(client)
+        self.assertEqual(completion["raw_output"], "TRUE")
+        self.assertEqual(completion["prompt_tokens"], "19")
+        self.assertEqual(completion["output_tokens"], "1")
+        self.assertEqual(adapter.request.model_id, self.plan.model_id)
 
         client.close()
         thread.join(timeout=1)

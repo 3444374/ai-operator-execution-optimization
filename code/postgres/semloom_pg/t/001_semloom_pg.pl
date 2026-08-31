@@ -4,12 +4,15 @@ use warnings FATAL => 'all';
 use Cwd qw(abs_path);
 use FindBin;
 use IPC::Run;
+use JSON::PP qw(encode_json);
 use PostgreSQL::Test::Cluster;
 use PostgreSQL::Test::Utils;
 use Test::More;
 use Time::HiRes qw(sleep);
 
 my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
+my $fixed_model_server_script =
+  abs_path("$FindBin::RealBin/fixtures/openai_compatible_server.py");
 
 sub start_recording_gateway
 {
@@ -43,6 +46,64 @@ sub finish_recording_gateway
 	$gateway->finish;
 	ok(!-e $socket_path, 'recording gateway removes its Unix socket')
 	  or diag($$stderr);
+}
+
+sub start_fixed_model_server
+{
+	my ($port_file, @arguments) = @_;
+	my $stdout = '';
+	my $stderr = '';
+	my @command = (
+		'python3',
+		$fixed_model_server_script,
+		'--port-file',
+		$port_file,
+		@arguments);
+	my $server = IPC::Run::start(
+		\@command,
+		'>', \$stdout,
+		'2>', \$stderr);
+
+	for (1 .. 200)
+	{
+		last if -f $port_file;
+		sleep(0.01);
+	}
+	ok(-f $port_file, 'fixed model fixture publishes its port')
+	  or diag($stderr);
+	open(my $port_handle, '<', $port_file)
+	  or die "could not read fixed model fixture port";
+	my $port = <$port_handle>;
+	close($port_handle);
+	chomp($port);
+	like($port, qr/^\d+$/, 'fixed model fixture publishes a numeric port');
+	return (
+		$server,
+		"http://127.0.0.1:$port/v1/chat/completions",
+		\$stdout,
+		\$stderr);
+}
+
+sub finish_fixed_model_server
+{
+	my ($server, $port_file, $stderr) = @_;
+
+	$server->finish;
+	ok(!-e $port_file, 'fixed model fixture removes its port file')
+	  or diag($$stderr);
+}
+
+sub write_fixed_model_config
+{
+	my ($path, $endpoint_url, $model_id, $timeout_ms) = @_;
+	open(my $config_handle, '>', $path)
+	  or die "could not create fixed model configuration";
+	print $config_handle encode_json({
+		endpoint_url => $endpoint_url,
+		model_id => $model_id,
+		timeout_ms => $timeout_ms,
+	});
+	close($config_handle);
 }
 
 sub error_signature
@@ -289,6 +350,8 @@ my $gateway_directory = PostgreSQL::Test::Utils::tempdir_short();
 my $gateway_socket = $gateway_directory . '/recording.sock';
 my $missing_gateway_socket = $gateway_directory . '/missing.sock';
 my $golden_fixture = $gateway_directory . '/golden-fixture.json';
+my $fixed_model_config = $gateway_directory . '/fixed-model.json';
+my $fixed_model_port_file = $gateway_directory . '/fixed-model.port';
 open(my $golden_fixture_handle, '>', $golden_fixture)
   or die "could not create golden fixture";
 print $golden_fixture_handle <<'GOLDEN_FIXTURE';
@@ -782,6 +845,361 @@ finish_recording_gateway(
 	$exact_gateway,
 	$gateway_socket,
 	$exact_gateway_stderr);
+
+my (
+	$fixed_model_server,
+	$fixed_model_endpoint,
+	$fixed_model_stdout,
+	$fixed_model_stderr) = start_fixed_model_server(
+	$fixed_model_port_file,
+	'--raw-outputs',
+	'TRUE,FALSE,UNKNOWN,TRUE',
+	'--max-requests',
+	'4');
+write_fixed_model_config(
+	$fixed_model_config,
+	$fixed_model_endpoint,
+	'fixed-model-v1',
+	1000);
+my ($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--fixed-model-config',
+	$fixed_model_config);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id <= 5 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+ORDER BY doc_id;}),
+	"1\n5",
+	'fixed model SemFilter preserves exact keep/drop and duplicate identity');
+finish_recording_gateway(
+	$fixed_gateway,
+	$gateway_socket,
+	$fixed_gateway_stderr);
+finish_fixed_model_server(
+	$fixed_model_server,
+	$fixed_model_port_file,
+	$fixed_model_stderr);
+
+(
+	$fixed_model_server,
+	$fixed_model_endpoint,
+	$fixed_model_stdout,
+	$fixed_model_stderr) = start_fixed_model_server($fixed_model_port_file);
+write_fixed_model_config(
+	$fixed_model_config,
+	$fixed_model_endpoint,
+	'fixed-model-v1',
+	1000);
+($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--fixed-model-config',
+	$fixed_model_config);
+like(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
+	qr/Provider: uds-openai-compatible-fixed.*Physical Role: reference.*Accepted Rows: 1.*Emitted Rows: 1/s,
+	'fixed model EXPLAIN exposes its query-fixed adapter and reference counters');
+finish_recording_gateway(
+	$fixed_gateway,
+	$gateway_socket,
+	$fixed_gateway_stderr);
+finish_fixed_model_server(
+	$fixed_model_server,
+	$fixed_model_port_file,
+	$fixed_model_stderr);
+
+write_fixed_model_config(
+	$fixed_model_config,
+	'http://127.0.0.1:1/v1/chat/completions',
+	'fixed-model-v1',
+	1000);
+($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--fixed-model-config',
+	$fixed_model_config);
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"different-model","temperature":0,"max_tokens":8}'::jsonb);});
+isnt($ret, 0, 'fixed model identity mismatch fails before HTTP');
+my ($fixed_identity_sqlstate, $fixed_identity_message) = error_signature($stderr);
+is($fixed_identity_sqlstate, '38000', 'fixed model identity mismatch preserves SQLSTATE 38000');
+is(
+	$fixed_identity_message,
+	'SemLoom model request was rejected',
+	'fixed model identity mismatch uses a redacted canonical message');
+unlike($stderr, qr/127\.0\.0\.1/, 'fixed model identity error exposes no endpoint');
+finish_recording_gateway(
+	$fixed_gateway,
+	$gateway_socket,
+	$fixed_gateway_stderr);
+
+my @fixed_model_error_cases = (
+	[
+		['--response-status', '503'],
+		1000,
+		'08006',
+		'SemLoom model endpoint is unavailable',
+		'HTTP unavailable'
+	],
+	[
+		['--response-status', '400'],
+		1000,
+		'38000',
+		'SemLoom model request was rejected',
+		'HTTP request rejection'
+	],
+	[
+		['--invalid-json'],
+		1000,
+		'08P01',
+		'SemLoom model endpoint returned an invalid response',
+		'invalid HTTP response'
+	],
+	[
+		['--response-model-id', 'different-model'],
+		1000,
+		'08P01',
+		'SemLoom provider completion does not match wire v3 task identity',
+		'response model mismatch'
+	],
+	[
+		['--delay-ms', '100'],
+		10,
+		'08006',
+		'SemLoom model endpoint timed out',
+		'HTTP timeout'
+	],
+);
+for my $fixed_error_case (@fixed_model_error_cases)
+{
+	my ($server_arguments, $timeout_ms, $expected_sqlstate, $expected_message, $label) =
+	  @$fixed_error_case;
+	(
+		$fixed_model_server,
+		$fixed_model_endpoint,
+		$fixed_model_stdout,
+		$fixed_model_stderr) = start_fixed_model_server(
+		$fixed_model_port_file,
+		@$server_arguments);
+	write_fixed_model_config(
+		$fixed_model_config,
+		$fixed_model_endpoint,
+		'fixed-model-v1',
+		$timeout_ms);
+	($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+	  start_recording_gateway(
+		$gateway_socket,
+		'--fixed-model-config',
+		$fixed_model_config);
+	($ret, $stdout, $stderr) = $node->psql(
+		'postgres',
+		qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+	isnt($ret, 0, "fixed model $label fails closed");
+	my ($actual_sqlstate, $actual_message) = error_signature($stderr);
+	is($actual_sqlstate, $expected_sqlstate, "$label preserves its SQLSTATE");
+	is($actual_message, $expected_message, "$label uses its canonical message");
+	unlike($stderr, qr/PostgreSQL is a database/, "$label exposes no task input");
+	finish_recording_gateway(
+		$fixed_gateway,
+		$gateway_socket,
+		$fixed_gateway_stderr);
+	finish_fixed_model_server(
+		$fixed_model_server,
+		$fixed_model_port_file,
+		$fixed_model_stderr);
+}
+
+(
+	$fixed_model_server,
+	$fixed_model_endpoint,
+	$fixed_model_stdout,
+	$fixed_model_stderr) = start_fixed_model_server(
+	$fixed_model_port_file,
+	'--raw-outputs',
+	'MAYBE,TRUE',
+	'--max-requests',
+	'2');
+write_fixed_model_config(
+	$fixed_model_config,
+	$fixed_model_endpoint,
+	'fixed-model-v1',
+	1000);
+($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--test-max-sessions',
+	'2',
+	'--fixed-model-config',
+	$fixed_model_config);
+my $fixed_savepoint_session = $node->background_psql(
+	'postgres',
+	on_error_stop => 0);
+my ($fixed_savepoint_output, $fixed_savepoint_had_error) =
+  $fixed_savepoint_session->query(
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+BEGIN;
+SAVEPOINT semloom_fixed_model_failure;
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+ROLLBACK TO SAVEPOINT semloom_fixed_model_failure;
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+COMMIT;});
+ok($fixed_savepoint_had_error, 'invalid fixed model raw output aborts only its statement');
+is(
+	$fixed_savepoint_output,
+	'1',
+	'fixed model SemFilter recovers after savepoint rollback in the same backend');
+$fixed_savepoint_session->quit;
+finish_recording_gateway(
+	$fixed_gateway,
+	$gateway_socket,
+	$fixed_gateway_stderr);
+finish_fixed_model_server(
+	$fixed_model_server,
+	$fixed_model_port_file,
+	$fixed_model_stderr);
+
+(
+	$fixed_model_server,
+	$fixed_model_endpoint,
+	$fixed_model_stdout,
+	$fixed_model_stderr) = start_fixed_model_server(
+	$fixed_model_port_file,
+	'--delay-ms',
+	'500');
+write_fixed_model_config(
+	$fixed_model_config,
+	$fixed_model_endpoint,
+	'fixed-model-v1',
+	1000);
+($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--fixed-model-config',
+	$fixed_model_config);
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{SET statement_timeout = '100ms';
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+isnt($ret, 0, 'statement timeout interrupts fixed model provider wait');
+like(
+	$stderr,
+	qr/canceling statement due to statement timeout/,
+	'fixed model wait preserves PostgreSQL cancellation');
+finish_recording_gateway(
+	$fixed_gateway,
+	$gateway_socket,
+	$fixed_gateway_stderr);
+finish_fixed_model_server(
+	$fixed_model_server,
+	$fixed_model_port_file,
+	$fixed_model_stderr);
+
+(
+	$fixed_model_server,
+	$fixed_model_endpoint,
+	$fixed_model_stdout,
+	$fixed_model_stderr) = start_fixed_model_server($fixed_model_port_file);
+write_fixed_model_config(
+	$fixed_model_config,
+	$fixed_model_endpoint,
+	'fixed-model-v1',
+	1000);
+($fixed_gateway, $fixed_gateway_stdout, $fixed_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--fixed-model-config',
+	$fixed_model_config);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
+	'1',
+	'fresh fixed model session succeeds after cancellation cleanup');
+finish_recording_gateway(
+	$fixed_gateway,
+	$gateway_socket,
+	$fixed_gateway_stderr);
+finish_fixed_model_server(
+	$fixed_model_server,
+	$fixed_model_port_file,
+	$fixed_model_stderr);
+
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$missing_gateway_socket';
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+LIMIT 0;}),
+	'',
+	'fixed model LIMIT 0 does not open the provider or HTTP endpoint');
+
 my $parity_query = q{
 SELECT ai_semantic.map(payload)
 FROM semloom_documents;};

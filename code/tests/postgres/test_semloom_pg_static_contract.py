@@ -472,7 +472,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("MAX_INPUT_BYTES = 163_840", python_v3)
         self.assertIn("set(message) != _OPEN_FIELDS", python_v3)
         self.assertIn("set(message) != _TASK_FIELDS", python_v3)
-        self.assertIn("fixtures.get(payload_digest)", golden_adapter)
+        self.assertIn("_fixtures.get(request.semantic_payload_digest)", golden_adapter)
         for forbidden in ("httpx", "requests", "openai", "vllm", "ray"):
             self.assertNotIn(forbidden, golden_adapter.lower())
 
@@ -497,6 +497,45 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "MODEL_UNAVAILABLE",
         ):
             self.assertIn(f'"{allowed_code}"', wire_v3_source)
+
+    def test_fixed_model_profile_is_query_fixed_and_transport_neutral(self) -> None:
+        extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(
+            encoding="utf-8"
+        )
+        port_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+            encoding="utf-8"
+        )
+        provider_header = (EXTENSION_ROOT / "src" / "provider_private.h").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
+        uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(
+            encoding="utf-8"
+        )
+        wire_v3_header = (EXTENSION_ROOT / "src" / "wire_v3.h").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("semloom_pg.provider_execution_profile", extension_source)
+        self.assertIn("DefineCustomEnumVariable", extension_source)
+        self.assertIn('"golden"', extension_source)
+        self.assertIn('"openai-compatible-fixed"', extension_source)
+        self.assertIn('"uds-golden"', provider_header)
+        self.assertIn('"uds-openai-compatible-fixed"', provider_header)
+        self.assertIn("semloom_uds_golden_ops", uds_source)
+        self.assertIn("semloom_uds_fixed_ops", uds_source)
+        self.assertNotIn("SEMLOOM_WIRE_V3_EXECUTION_ID", wire_v3_header)
+        for neutral_error in (
+            "AI_PROVIDER_ERROR_REMOTE_UNAVAILABLE",
+            "AI_PROVIDER_ERROR_REMOTE_TIMEOUT",
+            "AI_PROVIDER_ERROR_REQUEST_REJECTED",
+            "AI_PROVIDER_ERROR_INVALID_RESPONSE",
+            "AI_PROVIDER_ERROR_ADAPTER_INTERNAL",
+        ):
+            self.assertIn(neutral_error, port_header)
+            self.assertIn(neutral_error, runtime_source)
 
     def test_input_limit_preflight_runs_before_canonical_task_construction(self) -> None:
         port_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
@@ -608,6 +647,12 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("v3-error-missing-field", tap_test)
         self.assertIn("v3-error-extra-field", tap_test)
         self.assertIn("v3-open-error-sequence", tap_test)
+        self.assertIn("provider_execution_profile = 'openai-compatible-fixed'", tap_test)
+        self.assertIn("fixed model SemFilter preserves exact keep/drop", tap_test)
+        self.assertIn("SemLoom model endpoint is unavailable", tap_test)
+        self.assertIn("SemLoom model endpoint timed out", tap_test)
+        self.assertIn("SAVEPOINT semloom_fixed_model_failure", tap_test)
+        self.assertIn("fixed model LIMIT 0 does not open", tap_test)
 
 
 if __name__ == "__main__":

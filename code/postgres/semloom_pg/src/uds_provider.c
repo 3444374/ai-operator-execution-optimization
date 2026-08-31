@@ -22,11 +22,10 @@
 #include "wire_v2.h"
 #include "wire_v3.h"
 
-#define SEMLOOM_UDS_EXECUTION_ID "semloom.provider.recording.uds.v2"
-
 typedef struct SemloomUdsProviderConfig
 {
 	char *socket_path;
+	const char *semantic_execution_id;
 } SemloomUdsProviderConfig;
 
 struct AiProviderSession
@@ -61,8 +60,22 @@ static void semloom_uds_close(AiProviderSession *session);
 static void semloom_uds_release_local(AiProviderSession *session);
 static AiByteSlice semloom_uds_copy_slice(AiByteSlice source);
 
-static const AiProviderOps semloom_uds_ops = {
-	.adapter_name = SEMLOOM_UDS_PROVIDER_NAME,
+static const AiProviderOps semloom_uds_recording_ops = {
+	.adapter_name = SEMLOOM_UDS_RECORDING_PROVIDER_NAME,
+	.open = semloom_uds_open,
+	.drive = semloom_uds_drive,
+	.close = semloom_uds_close,
+};
+
+static const AiProviderOps semloom_uds_golden_ops = {
+	.adapter_name = SEMLOOM_UDS_GOLDEN_PROVIDER_NAME,
+	.open = semloom_uds_open,
+	.drive = semloom_uds_drive,
+	.close = semloom_uds_close,
+};
+
+static const AiProviderOps semloom_uds_fixed_ops = {
+	.adapter_name = SEMLOOM_UDS_FIXED_PROVIDER_NAME,
 	.open = semloom_uds_open,
 	.drive = semloom_uds_drive,
 	.close = semloom_uds_close,
@@ -70,9 +83,10 @@ static const AiProviderOps semloom_uds_ops = {
 
 void
 semloom_uds_provider_select(MemoryContext owner_context,
-								const char *socket_path,
-								const AiOpenSpec *spec,
-								AiProvider *provider)
+									const char *socket_path,
+									const AiOpenSpec *spec,
+									SemloomProviderExecutionProfile profile,
+									AiProvider *provider)
 {
 	SemloomUdsProviderConfig *config;
 	Size path_length;
@@ -85,7 +99,23 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	config = MemoryContextAllocZero(owner_context, sizeof(*config));
 	config->socket_path = MemoryContextAlloc(owner_context, path_length + 1);
 	memcpy(config->socket_path, socket_path, path_length + 1);
-	provider->ops = &semloom_uds_ops;
+	if (!semloom_provider_spec_is_exact_filter(spec))
+	{
+		provider->ops = &semloom_uds_recording_ops;
+		config->semantic_execution_id = NULL;
+	}
+	else if (profile == SEMLOOM_PROVIDER_PROFILE_GOLDEN)
+	{
+		provider->ops = &semloom_uds_golden_ops;
+		config->semantic_execution_id = SEMLOOM_UDS_GOLDEN_EXECUTION_ID;
+	}
+	else if (profile == SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED)
+	{
+		provider->ops = &semloom_uds_fixed_ops;
+		config->semantic_execution_id = SEMLOOM_UDS_FIXED_EXECUTION_ID;
+	}
+	else
+		elog(ERROR, "unrecognized SemLoom provider execution profile: %d", profile);
 	provider->config = config;
 	provider->max_input_bytes = semloom_provider_spec_is_exact_filter(spec) ?
 		SEMLOOM_WIRE_V3_MAX_INPUT_BYTES : SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
@@ -143,10 +173,11 @@ semloom_uds_open(const void *config_value,
 													  ALLOCSET_DEFAULT_SIZES);
 	if (session->exact_filter)
 		semloom_wire_v3_identity_init(&session->open_spec,
+										  config->semantic_execution_id,
 										  &session->semantic_identity);
 	else
 		semloom_wire_v2_identity_init(&session->open_spec,
-										 SEMLOOM_UDS_EXECUTION_ID,
+										 SEMLOOM_UDS_RECORDING_EXECUTION_ID,
 										 &session->identity);
 	return AI_PROVIDER_STATUS_OK;
 }

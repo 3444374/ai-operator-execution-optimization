@@ -550,6 +550,26 @@ semloom_raise_provider_error(const AiProviderError *error)
 			sqlstate = ERRCODE_PROTOCOL_VIOLATION;
 			message = "SemLoom provider returned an unexpected message";
 			break;
+		case AI_PROVIDER_ERROR_REMOTE_UNAVAILABLE:
+			sqlstate = ERRCODE_CONNECTION_FAILURE;
+			message = "SemLoom model endpoint is unavailable";
+			break;
+		case AI_PROVIDER_ERROR_REMOTE_TIMEOUT:
+			sqlstate = ERRCODE_CONNECTION_FAILURE;
+			message = "SemLoom model endpoint timed out";
+			break;
+		case AI_PROVIDER_ERROR_REQUEST_REJECTED:
+			sqlstate = ERRCODE_EXTERNAL_ROUTINE_EXCEPTION;
+			message = "SemLoom model request was rejected";
+			break;
+		case AI_PROVIDER_ERROR_INVALID_RESPONSE:
+			sqlstate = ERRCODE_PROTOCOL_VIOLATION;
+			message = "SemLoom model endpoint returned an invalid response";
+			break;
+		case AI_PROVIDER_ERROR_ADAPTER_INTERNAL:
+			sqlstate = ERRCODE_INTERNAL_ERROR;
+			message = "SemLoom provider failed internally";
+			break;
 		default:
 			break;
 	}

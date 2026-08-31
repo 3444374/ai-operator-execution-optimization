@@ -212,12 +212,18 @@ def physical_algorithm_digest() -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
-def provider_execution_digest(model_id: str) -> str:
+def provider_execution_digest(
+    model_id: str,
+    *,
+    provider_execution_id: str = GOLDEN_EXECUTION_ID,
+) -> str:
     SemanticFilterPlan(instruction="validation", model_id=model_id)
+    if not isinstance(provider_execution_id, str) or not provider_execution_id:
+        raise ValueError("provider_execution_id must be non-empty text")
     canonical = (
         b"semloom-provider-execution-v3\0"
         + _uint32(PROTOCOL_VERSION)
-        + _canonical_text(GOLDEN_EXECUTION_ID)
+        + _canonical_text(provider_execution_id)
         + _canonical_text(model_id)
     )
     return hashlib.sha256(canonical).hexdigest()
@@ -292,14 +298,21 @@ def completion_evidence_digest(
     return hashlib.sha256(canonical).hexdigest()
 
 
-def build_open_message(plan: SemanticFilterPlan) -> dict[str, Any]:
+def build_open_message(
+    plan: SemanticFilterPlan,
+    *,
+    provider_execution_id: str = GOLDEN_EXECUTION_ID,
+) -> dict[str, Any]:
     return {
         "type": "open",
         "protocol_version": PROTOCOL_VERSION,
         "semantic_spec_digest": semantic_spec_digest(plan),
         "physical_algorithm_digest": physical_algorithm_digest(),
-        "provider_execution_digest": provider_execution_digest(plan.model_id),
-        "provider_execution_id": GOLDEN_EXECUTION_ID,
+        "provider_execution_digest": provider_execution_digest(
+            plan.model_id,
+            provider_execution_id=provider_execution_id,
+        ),
+        "provider_execution_id": provider_execution_id,
         "operator_kind": "SEM_FILTER",
         "semantic_spec_id": SEMANTIC_SPEC_ID,
         "semantic_spec_version": SEMANTIC_SPEC_VERSION,
@@ -322,6 +335,7 @@ def build_task_message(
     *,
     sequence: int,
     input_value: str,
+    provider_execution_id: str = GOLDEN_EXECUTION_ID,
 ) -> dict[str, Any]:
     if type(sequence) is not int or sequence < 0 or sequence >= 2**64:
         raise ValueError("sequence must be uint64")
@@ -333,7 +347,10 @@ def build_task_message(
         "sequence": str(sequence),
         "semantic_spec_digest": semantic_digest,
         "physical_algorithm_digest": physical_algorithm_digest(),
-        "provider_execution_digest": provider_execution_digest(plan.model_id),
+        "provider_execution_digest": provider_execution_digest(
+            plan.model_id,
+            provider_execution_id=provider_execution_id,
+        ),
         "semantic_payload_digest": semantic_payload_digest(
             semantic_spec_sha256=semantic_digest,
             input_value=input_value,
@@ -359,7 +376,11 @@ def build_error_message(code: str, *, sequence: int | None) -> dict[str, Any]:
     }
 
 
-def validate_open(message: dict[str, Any]) -> OpenContext:
+def validate_open(
+    message: dict[str, Any],
+    *,
+    provider_execution_id: str = GOLDEN_EXECUTION_ID,
+) -> OpenContext:
     if set(message) != _OPEN_FIELDS or message.get("type") != "open":
         raise ProtocolError("INVALID_OPEN")
     if type(message["protocol_version"]) is not int or message["protocol_version"] != 3:
@@ -370,7 +391,7 @@ def validate_open(message: dict[str, Any]) -> OpenContext:
     except (TypeError, ValueError) as error:
         raise ProtocolError("INVALID_OPEN") from error
     expected_values = {
-        "provider_execution_id": GOLDEN_EXECUTION_ID,
+        "provider_execution_id": provider_execution_id,
         "operator_kind": "SEM_FILTER",
         "semantic_spec_id": SEMANTIC_SPEC_ID,
         "semantic_spec_version": SEMANTIC_SPEC_VERSION,
@@ -405,7 +426,10 @@ def validate_open(message: dict[str, Any]) -> OpenContext:
         _require_sha256(value, "INVALID_OPEN")
     if physical_digest != physical_algorithm_digest():
         raise ProtocolError("INVALID_OPEN")
-    if execution_digest != provider_execution_digest(model_id):
+    if execution_digest != provider_execution_digest(
+        model_id,
+        provider_execution_id=provider_execution_id,
+    ):
         raise ProtocolError("INVALID_OPEN")
     return OpenContext(semantic_digest, physical_digest, execution_digest, model_id)
 

@@ -14,6 +14,14 @@ PG_MODULE_MAGIC;
 static create_upper_paths_hook_type previous_create_upper_paths_hook = NULL;
 static set_rel_pathlist_hook_type previous_set_rel_pathlist_hook = NULL;
 static char *semloom_gateway_socket = NULL;
+static int semloom_execution_profile = SEMLOOM_PROVIDER_PROFILE_GOLDEN;
+static const struct config_enum_entry semloom_execution_profile_options[] = {
+	{"golden", SEMLOOM_PROVIDER_PROFILE_GOLDEN, false},
+	{"openai-compatible-fixed",
+	 SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED,
+	 false},
+	{NULL, 0, false},
+};
 
 static void semloom_create_upper_paths(PlannerInfo *root,
 									   UpperRelationKind stage,
@@ -61,6 +69,12 @@ semloom_gateway_socket_path(void)
 	return semloom_gateway_socket == NULL ? "" : semloom_gateway_socket;
 }
 
+SemloomProviderExecutionProfile
+semloom_provider_execution_profile(void)
+{
+	return (SemloomProviderExecutionProfile) semloom_execution_profile;
+}
+
 bool
 semloom_is_map_function(Oid function_oid)
 {
@@ -73,7 +87,7 @@ void
 _PG_init(void)
 {
 	DefineCustomStringVariable("semloom_pg.gateway_socket",
-							   "Unix-domain socket for the external recording provider.",
+							   "Unix-domain socket for the external semantic provider.",
 							   NULL,
 							   &semloom_gateway_socket,
 							   "",
@@ -82,6 +96,17 @@ _PG_init(void)
 							   NULL,
 							   NULL,
 							   NULL);
+	DefineCustomEnumVariable("semloom_pg.provider_execution_profile",
+							 "Execution profile for exact semantic provider queries.",
+							 NULL,
+							 &semloom_execution_profile,
+							 SEMLOOM_PROVIDER_PROFILE_GOLDEN,
+							 semloom_execution_profile_options,
+							 PGC_SUSET,
+							 0,
+							 NULL,
+							 NULL,
+							 NULL);
 	RegisterCustomScanMethods(&semloom_map_scan_methods);
 	RegisterCustomScanMethods(&semloom_filter_scan_methods);
 	previous_create_upper_paths_hook = create_upper_paths_hook;

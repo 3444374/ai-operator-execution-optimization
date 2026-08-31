@@ -10,10 +10,17 @@
 #define SEMLOOM_MAP_CUSTOM_SCAN_NAME "SemLoom SemMap"
 #define SEMLOOM_FILTER_CUSTOM_SCAN_NAME "SemLoom SemFilter"
 
+typedef enum SemloomProviderExecutionProfile
+{
+	SEMLOOM_PROVIDER_PROFILE_GOLDEN = 0,
+	SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED = 1,
+} SemloomProviderExecutionProfile;
+
 extern const CustomScanMethods semloom_map_scan_methods;
 extern const CustomScanMethods semloom_filter_scan_methods;
 
 extern const char *semloom_gateway_socket_path(void);
+extern SemloomProviderExecutionProfile semloom_provider_execution_profile(void);
 extern Oid semloom_map_function_oid(void);
 extern Oid semloom_filter_function_oid(void);
 extern Oid semloom_exact_filter_function_oid(void);

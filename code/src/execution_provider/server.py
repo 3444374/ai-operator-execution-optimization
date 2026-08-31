@@ -11,8 +11,13 @@ import stat
 import time
 from pathlib import Path
 
-from .adapters.golden import run_golden_session
+from .adapters.golden import GoldenCompletionAdapter
+from .adapters.openai_compatible_fixed import (
+    OpenAICompatibleFixedAdapter,
+    load_fixed_model_config,
+)
 from .adapters.recording import run_recording_session
+from .adapters.v3_session import CompletionAdapter, run_v3_session
 from .wire.framing import ProtocolError, read_frame
 
 
@@ -21,10 +26,16 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", type=Path, required=True)
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
-    parser.add_argument(
+    adapter_group = parser.add_mutually_exclusive_group()
+    adapter_group.add_argument(
         "--golden-fixture",
         type=Path,
         help="payload-digest to raw-output JSON object for wire-v3 tests",
+    )
+    adapter_group.add_argument(
+        "--fixed-model-config",
+        type=Path,
+        help="repository-external fixed OpenAI-compatible endpoint configuration",
     )
     parser.add_argument("--test-response-delay-ms", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument(
@@ -75,6 +86,15 @@ def main() -> int:
         raise SystemExit("--test-max-sessions must be non-negative")
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
+    v3_adapter: CompletionAdapter
+    if args.fixed_model_config is None:
+        v3_adapter = GoldenCompletionAdapter(golden_fixtures)
+    else:
+        try:
+            fixed_config = load_fixed_model_config(args.fixed_model_config)
+        except ValueError:
+            raise SystemExit("invalid fixed model configuration") from None
+        v3_adapter = OpenAICompatibleFixedAdapter(fixed_config)
     if socket_path.exists():
         mode = socket_path.stat().st_mode
         kind = "socket" if stat.S_ISSOCK(mode) else "non-socket file"
@@ -115,7 +135,7 @@ def main() -> int:
                 continue
             _run_session(
                 connection,
-                golden_fixtures=golden_fixtures,
+                v3_adapter=v3_adapter,
                 response_delay_ms=args.test_response_delay_ms,
                 tamper_evidence_digest=args.test_tamper_evidence_digest,
                 disconnect_on_task=args.test_disconnect_on_task,
@@ -165,7 +185,7 @@ def _load_golden_fixtures(path: Path | None) -> dict[str, str]:
 def _run_session(
     connection: socket.socket,
     *,
-    golden_fixtures: dict[str, str],
+    v3_adapter: CompletionAdapter,
     response_delay_ms: int,
     tamper_evidence_digest: bool,
     disconnect_on_task: bool,
@@ -181,9 +201,9 @@ def _run_session(
         return
     protocol_version = opened.get("protocol_version")
     if type(protocol_version) is int and protocol_version == 3:
-        run_golden_session(
+        run_v3_session(
             connection,
-            golden_fixtures,
+            v3_adapter,
             open_message=opened,
             response_delay_ms=response_delay_ms,
             tamper_evidence_digest=tamper_evidence_digest,

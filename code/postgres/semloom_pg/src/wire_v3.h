@@ -11,7 +11,6 @@
 #define SEMLOOM_WIRE_V3_PROTOCOL_VERSION 3
 #define SEMLOOM_WIRE_V3_MAX_FRAME_BYTES SEMLOOM_WIRE_COMMON_MAX_FRAME_BYTES
 #define SEMLOOM_WIRE_V3_MAX_INPUT_BYTES 163840
-#define SEMLOOM_WIRE_V3_EXECUTION_ID "semloom.provider.golden.uds.v3"
 
 typedef struct SemloomWireV3Identity
 {
@@ -22,6 +21,7 @@ typedef struct SemloomWireV3Identity
 } SemloomWireV3Identity;
 
 extern void semloom_wire_v3_identity_init(const AiOpenSpec *spec,
+										  const char *provider_execution_id,
 										  SemloomWireV3Identity *identity);
 extern AiProviderStatus semloom_wire_v3_open(
 	pgsocket socket_fd,

@@ -27,6 +27,7 @@ static void semloom_v3_hash_finish(
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
 static void semloom_v3_provider_execution_digest(
 	const AiOpenSpec *spec,
+	const char *provider_execution_id,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
 static void semloom_v3_completion_digest(
 	const SemloomWireV3Identity *identity,
@@ -56,18 +57,23 @@ static bool semloom_v3_validate_response(Jsonb *message,
 										 AiProviderError *error);
 static bool semloom_v3_validate_error(Jsonb *message,
 									  const char *expected_sequence,
+									  AiByteSlice *code,
 									  AiProviderError *error);
 static bool semloom_v3_error_code_allowed(AiByteSlice code);
+static void semloom_v3_set_error_code(AiByteSlice code,
+									 AiProviderError *error);
 
 void
 semloom_wire_v3_identity_init(const AiOpenSpec *spec,
+								  const char *provider_execution_id,
 								  SemloomWireV3Identity *identity)
 {
 	Assert(spec != NULL);
+	Assert(provider_execution_id != NULL);
 	Assert(identity != NULL);
 	Assert(spec->semantic_spec_digest.length == SEMLOOM_SHA256_HEX_LENGTH);
 	Assert(spec->physical_algorithm_digest.length == SEMLOOM_SHA256_HEX_LENGTH);
-	identity->provider_execution_id = SEMLOOM_WIRE_V3_EXECUTION_ID;
+	identity->provider_execution_id = provider_execution_id;
 	memcpy(identity->semantic_spec_digest,
 		   spec->semantic_spec_digest.data,
 		   SEMLOOM_SHA256_HEX_LENGTH);
@@ -77,7 +83,8 @@ semloom_wire_v3_identity_init(const AiOpenSpec *spec,
 		   SEMLOOM_SHA256_HEX_LENGTH);
 	identity->physical_algorithm_digest[SEMLOOM_SHA256_HEX_LENGTH] = '\0';
 	semloom_v3_provider_execution_digest(spec,
-										 identity->provider_execution_digest);
+									 provider_execution_id,
+									 identity->provider_execution_digest);
 }
 
 AiProviderStatus
@@ -436,13 +443,14 @@ semloom_v3_validate_response(Jsonb *message,
 		return false;
 	if (matches)
 	{
-		if (!semloom_v3_validate_error(message, expected_error_sequence, error))
+		AiByteSlice code;
+
+		if (!semloom_v3_validate_error(message,
+									   expected_error_sequence,
+									   &code,
+									   error))
 			return false;
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_PROTOCOL,
-								   0,
-								   0,
-								   "SemLoom provider rejected the protocol message");
+		semloom_v3_set_error_code(code, error);
 		return false;
 	}
 	if (JsonContainerSize(&message->root) != expected_fields)
@@ -468,10 +476,10 @@ unexpected:
 static bool
 semloom_v3_validate_error(Jsonb *message,
 							  const char *expected_sequence,
+							  AiByteSlice *code,
 							  AiProviderError *error)
 {
 	JsonbValue *sequence_value;
-	AiByteSlice code;
 	int32 protocol_version;
 
 	if (JsonContainerSize(&message->root) != SEMLOOM_V3_ERROR_FIELD_COUNT ||
@@ -481,8 +489,8 @@ semloom_v3_validate_error(Jsonb *message,
 										  error) ||
 		protocol_version != SEMLOOM_WIRE_V3_PROTOCOL_VERSION ||
 		!semloom_wire_common_json_value(message, "sequence", &sequence_value, error) ||
-		!semloom_v3_json_slice(message, "code", &code, error) ||
-		!semloom_v3_error_code_allowed(code))
+		!semloom_v3_json_slice(message, "code", code, error) ||
+		!semloom_v3_error_code_allowed(*code))
 		goto invalid;
 	if (expected_sequence == NULL)
 	{
@@ -504,6 +512,40 @@ invalid:
 								   0,
 								   "SemLoom provider returned an invalid wire v3 error frame");
 	return false;
+}
+
+static void
+semloom_v3_set_error_code(AiByteSlice code, AiProviderError *error)
+{
+	uint32 neutral_code = AI_PROVIDER_ERROR_PROTOCOL;
+	const char *detail = "SemLoom provider rejected the protocol message";
+
+	if (semloom_v3_slice_equals_cstring(code, "MODEL_UNAVAILABLE"))
+	{
+		neutral_code = AI_PROVIDER_ERROR_REMOTE_UNAVAILABLE;
+		detail = NULL;
+	}
+	else if (semloom_v3_slice_equals_cstring(code, "MODEL_TIMEOUT"))
+	{
+		neutral_code = AI_PROVIDER_ERROR_REMOTE_TIMEOUT;
+		detail = NULL;
+	}
+	else if (semloom_v3_slice_equals_cstring(code, "MODEL_REQUEST_REJECTED"))
+	{
+		neutral_code = AI_PROVIDER_ERROR_REQUEST_REJECTED;
+		detail = NULL;
+	}
+	else if (semloom_v3_slice_equals_cstring(code, "MODEL_RESPONSE_INVALID"))
+	{
+		neutral_code = AI_PROVIDER_ERROR_INVALID_RESPONSE;
+		detail = NULL;
+	}
+	else if (semloom_v3_slice_equals_cstring(code, "GATEWAY_INTERNAL"))
+	{
+		neutral_code = AI_PROVIDER_ERROR_ADAPTER_INTERNAL;
+		detail = NULL;
+	}
+	semloom_provider_error_set(error, neutral_code, 0, 0, detail);
 }
 
 static bool
@@ -533,12 +575,13 @@ semloom_v3_error_code_allowed(AiByteSlice code)
 static void
 semloom_v3_provider_execution_digest(
 	const AiOpenSpec *spec,
+	const char *provider_execution_id,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
 {
 	pg_cryptohash_ctx *context;
 	AiByteSlice execution_id = {
-		.data = (const uint8 *) SEMLOOM_WIRE_V3_EXECUTION_ID,
-		.length = sizeof(SEMLOOM_WIRE_V3_EXECUTION_ID) - 1,
+		.data = (const uint8 *) provider_execution_id,
+		.length = (uint32) strlen(provider_execution_id),
 	};
 
 	semloom_v3_hash_begin(&context);
