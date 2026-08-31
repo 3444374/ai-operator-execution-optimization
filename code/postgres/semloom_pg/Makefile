@@ -6,6 +6,7 @@ OBJS = \
 	src/provider.o \
 	src/pg_semantic_runtime.o \
 	src/recording_provider.o \
+	src/sem_filter_cost.o \
 	src/sem_filter_machine.o \
 	src/sem_filter_path.o \
 	src/sem_map_machine.o \

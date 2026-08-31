@@ -14,6 +14,7 @@
 #include "utils/builtins.h"
 
 #include "pg_semantic_runtime.h"
+#include "sem_filter_cost.h"
 #include "sem_operator_machine.h"
 #include "sem_plan_spec.h"
 #include "sem_pump.h"
@@ -23,6 +24,8 @@ struct SemloomExecPump
 	PlanState *child_state;
 	SemloomOperatorMachine machine;
 	PgSemanticRuntime *runtime;
+	SemloomFilterCostEstimate filter_cost;
+	bool has_filter_cost;
 	AttrNumber input_column;
 };
 
@@ -40,6 +43,7 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	MemoryContext owner_context = estate->es_query_cxt;
 	SemloomExecPump *pump;
 	SemloomPlanSpec plan_spec;
+	List *semantic_private = scan->custom_private;
 	AttrNumber input_column;
 	int unsupported_flags = EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND;
 
@@ -52,17 +56,31 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("invalid semantic operator executor state")));
 
-	semloom_plan_spec_decode(scan->custom_private,
+	pump = MemoryContextAllocZero(owner_context, sizeof(*pump));
+	pump->has_filter_cost = semloom_filter_cost_decode(
+		scan->custom_private,
+		&pump->filter_cost);
+	if (pump->has_filter_cost)
+		semantic_private = list_make2(
+			linitial(scan->custom_private),
+			lsecond(scan->custom_private));
+	semloom_plan_spec_decode(semantic_private,
 		owner_context,
 		&plan_spec,
 		&input_column);
+	if (pump->has_filter_cost &&
+		(plan_spec.operator_kind != SEMLOOM_PLAN_OPERATOR_FILTER ||
+		 plan_spec.model_id == NULL ||
+		 strcmp(pump->filter_cost.model_role, plan_spec.physical_role) != 0))
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("SemFilter cost does not match its semantic plan")));
 	if (input_column <= 0 ||
 		input_column > node->ss.ss_ScanTupleSlot->tts_tupleDescriptor->natts)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("semantic operator input is outside the scan tuple")));
 
-	pump = MemoryContextAllocZero(owner_context, sizeof(*pump));
 	if (!semloom_operator_machine_init(&pump->machine,
 									   (uint32) plan_spec.operator_kind,
 									   plan_spec.schema_version,
@@ -217,6 +235,8 @@ void
 semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 {
 	pg_semantic_runtime_explain(pump->runtime, explain_state);
+	if (pump->has_filter_cost)
+		semloom_filter_cost_explain(&pump->filter_cost, explain_state);
 	ExplainPropertyInteger(
 		semloom_operator_machine_explain_property(&pump->machine),
 		NULL,

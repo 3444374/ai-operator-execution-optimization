@@ -1,6 +1,8 @@
 /* Planner carrier for an exact unary SemFilter reference path. */
 #include "postgres.h"
 
+#include <math.h>
+
 #include "catalog/pg_type_d.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
@@ -15,6 +17,7 @@
 #include "utils/lsyscache.h"
 
 #include "semantic_filter_contract.h"
+#include "sem_filter_cost.h"
 #include "sem_path_common.h"
 #include "sem_plan_spec.h"
 #include "semloom_pg.h"
@@ -27,6 +30,8 @@ static void semloom_validate_filter_query_shape(PlannerInfo *root,
 									 Oid exact_oid);
 static CustomPath *semloom_make_filter_path(PlannerInfo *root,
 										 RelOptInfo *rel,
+										 Index rti,
+										 RangeTblEntry *rte,
 										 Path *child_path,
 										 FuncExpr *marker);
 static Plan *semloom_plan_filter_path(PlannerInfo *root,
@@ -50,7 +55,23 @@ static void semloom_exact_filter_arguments(FuncExpr *marker,
 										 char **model_id);
 static bool semloom_json_key_equals(const JsonbValue *key, const char *expected);
 static bool semloom_numeric_text_is_zero(const char *value);
+static void semloom_estimate_exact_filter_cost(
+	PlannerInfo *root,
+	RelOptInfo *rel,
+	Index rti,
+	RangeTblEntry *rte,
+	FuncExpr *marker,
+	Node *input,
+	const char *instruction,
+	SemloomFilterCostEstimate *estimate);
+static int32 semloom_filter_input_width(
+	Index rti,
+	RangeTblEntry *rte,
+	Node *input);
 pg_noreturn static void semloom_invalid_exact_filter_argument(const char *message);
+
+#define SEMLOOM_FILTER_ESTIMATED_BYTES_PER_TOKEN 4.0
+#define SEMLOOM_FILTER_CHAT_TEMPLATE_TOKENS 8.0
 
 typedef struct SemloomFilterMarkerContext
 {
@@ -75,7 +96,6 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 	List *semantic_paths = NIL;
 	ListCell *cell;
 
-	(void) rte;
 	if ((!OidIsValid(recording_oid) && !OidIsValid(exact_oid)) ||
 		root->parse->jointree == NULL ||
 		semloom_filter_marker_count(root->parse->jointree->quals,
@@ -97,6 +117,8 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 		semantic_paths = lappend(semantic_paths,
 								 semloom_make_filter_path(root,
 												  rel,
+												  rti,
+												  rte,
 												  child_path,
 												  marker));
 	}
@@ -220,6 +242,8 @@ semloom_validate_filter_query_shape(PlannerInfo *root,
 static CustomPath *
 semloom_make_filter_path(PlannerInfo *root,
 						 RelOptInfo *rel,
+						 Index rti,
+						 RangeTblEntry *rte,
 						 Path *child_path,
 						 FuncExpr *marker)
 {
@@ -228,6 +252,8 @@ semloom_make_filter_path(PlannerInfo *root,
 	Path *projected_child = child_path;
 	Node *input = linitial(marker->args);
 	List *plan_private;
+	double path_rows = child_path->rows;
+	double ai_work_cost = cpu_operator_cost * child_path->rows;
 	int input_column = 0;
 	int column = 1;
 	ListCell *cell;
@@ -268,6 +294,24 @@ semloom_make_filter_path(PlannerInfo *root,
 			instruction,
 			model_id,
 			(AttrNumber) input_column);
+		{
+			SemloomFilterCostEstimate estimate;
+
+			semloom_estimate_exact_filter_cost(root,
+										   rel,
+										   rti,
+										   rte,
+										   marker,
+										   input,
+										   instruction,
+										   &estimate);
+			plan_private = lappend(
+				plan_private,
+				semloom_filter_cost_make_private(&estimate));
+			path_rows = clamp_row_est(
+				estimate.semantic_input_rows * estimate.output_selectivity);
+			ai_work_cost = estimate.ai_work_cost;
+		}
 	}
 	else
 		plan_private = semloom_plan_spec_make_recording_private(
@@ -281,11 +325,10 @@ semloom_make_filter_path(PlannerInfo *root,
 	path->path.parallel_aware = false;
 	path->path.parallel_safe = false;
 	path->path.parallel_workers = 0;
-	path->path.rows = child_path->rows;
+	path->path.rows = path_rows;
 	path->path.disabled_nodes = child_path->disabled_nodes;
 	path->path.startup_cost = child_path->startup_cost;
-	path->path.total_cost = child_path->total_cost +
-		cpu_operator_cost * child_path->rows;
+	path->path.total_cost = child_path->total_cost + ai_work_cost;
 	path->path.pathkeys = child_path->pathkeys;
 	path->flags = CUSTOMPATH_SUPPORT_PROJECTION;
 	path->custom_paths = list_make1(projected_child);
@@ -307,6 +350,8 @@ semloom_plan_filter_path(PlannerInfo *root,
 	Oid exact_oid = semloom_exact_filter_function_oid();
 	CustomScan *scan = makeNode(CustomScan);
 	Plan *child_plan;
+	SemloomFilterCostEstimate cost_estimate;
+	bool has_cost_estimate;
 	int input_column;
 
 	(void) root;
@@ -314,7 +359,8 @@ semloom_plan_filter_path(PlannerInfo *root,
 	(void) clauses;
 	if ((!OidIsValid(recording_oid) && !OidIsValid(exact_oid)) ||
 		list_length(custom_plans) != 1 ||
-		list_length(best_path->custom_private) != 2 ||
+		(list_length(best_path->custom_private) != 2 &&
+		 list_length(best_path->custom_private) != 3) ||
 		!IsA(lsecond(best_path->custom_private), Integer))
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
@@ -327,6 +373,11 @@ semloom_plan_filter_path(PlannerInfo *root,
 				 errmsg("SemFilter plan lost its input identity")));
 
 	semloom_replace_filter_marker_in_plan(child_plan, recording_oid, exact_oid);
+	has_cost_estimate = semloom_filter_cost_decode(
+		best_path->custom_private,
+		&cost_estimate);
+	if (has_cost_estimate)
+		child_plan->plan_rows = cost_estimate.semantic_input_rows;
 	scan->scan.plan.targetlist = copyObject(target_list);
 	scan->scan.plan.qual = NIL;
 	scan->scan.scanrelid = 0;
@@ -337,6 +388,100 @@ semloom_plan_filter_path(PlannerInfo *root,
 	scan->custom_scan_tlist = copyObject(child_plan->targetlist);
 	scan->methods = &semloom_filter_scan_methods;
 	return &scan->scan.plan;
+}
+
+static void
+semloom_estimate_exact_filter_cost(
+	PlannerInfo *root,
+	RelOptInfo *rel,
+	Index rti,
+	RangeTblEntry *rte,
+	FuncExpr *marker,
+	Node *input,
+	const char *instruction,
+	SemloomFilterCostEstimate *estimate)
+{
+	List *ordinary_restrictions = NIL;
+	ListCell *cell;
+	NullTest *null_test = makeNode(NullTest);
+	Selectivity ordinary_selectivity;
+	Selectivity null_selectivity;
+	Selectivity semantic_selectivity;
+	double nonnull_selectivity;
+	double prompt_tokens_per_call;
+	double prompt_content_bytes;
+	int32 input_width;
+
+	foreach(cell, rel->baserestrictinfo)
+	{
+		RestrictInfo *restriction = lfirst_node(RestrictInfo, cell);
+
+		if (!equal(restriction->clause, marker))
+			ordinary_restrictions = lappend(ordinary_restrictions, restriction);
+	}
+	ordinary_selectivity = clauselist_selectivity(root,
+												ordinary_restrictions,
+												rel->relid,
+												JOIN_INNER,
+												NULL);
+	null_test->arg = (Expr *) copyObject(input);
+	null_test->nulltesttype = IS_NULL;
+	null_test->argisrow = false;
+	null_test->location = -1;
+	null_selectivity = clause_selectivity(root,
+									(Node *) null_test,
+									rel->relid,
+									JOIN_INNER,
+									NULL);
+	semantic_selectivity = clause_selectivity(root,
+											 (Node *) marker,
+											 rel->relid,
+											 JOIN_INNER,
+											 NULL);
+	nonnull_selectivity = 1.0 - null_selectivity;
+	input_width = semloom_filter_input_width(rti, rte, input);
+	prompt_content_bytes = strlen(SEMLOOM_FILTER_SYSTEM_DIRECTIVE) +
+		strlen(SEMLOOM_FILTER_INSTRUCTION_SEPARATOR) +
+		strlen(instruction) + input_width;
+	prompt_tokens_per_call =
+		ceil(prompt_content_bytes / SEMLOOM_FILTER_ESTIMATED_BYTES_PER_TOKEN) +
+		SEMLOOM_FILTER_CHAT_TEMPLATE_TOKENS;
+
+	MemSet(estimate, 0, sizeof(*estimate));
+	estimate->cost_model_id = SEMLOOM_FILTER_COST_MODEL_ID;
+	estimate->model_role = SEMLOOM_EXACT_FILTER_ROLE;
+	estimate->semantic_input_rows = clamp_row_est(
+		rel->tuples * ordinary_selectivity);
+	estimate->output_selectivity =
+		Max(0.0, Min(1.0, nonnull_selectivity * semantic_selectivity));
+	estimate->estimated_model_calls =
+		estimate->semantic_input_rows * nonnull_selectivity;
+	estimate->estimated_prompt_tokens =
+		estimate->estimated_model_calls * prompt_tokens_per_call;
+	estimate->estimated_output_tokens =
+		estimate->estimated_model_calls * SEMLOOM_FILTER_MAX_TOKENS;
+	estimate->ai_work_cost = cpu_operator_cost *
+		(estimate->estimated_model_calls +
+		 estimate->estimated_prompt_tokens +
+		 estimate->estimated_output_tokens);
+}
+
+static int32
+semloom_filter_input_width(Index rti, RangeTblEntry *rte, Node *input)
+{
+	Node *stripped_input = strip_implicit_coercions(input);
+	int32 width = 0;
+
+	if (IsA(stripped_input, Var))
+	{
+		Var *variable = (Var *) stripped_input;
+
+		if (variable->varno == rti && variable->varattno > 0)
+			width = get_attavgwidth(rte->relid, variable->varattno);
+	}
+	if (width <= 0)
+		width = get_typavgwidth(exprType(input), exprTypmod(input));
+	return Max(width, 1);
 }
 
 static Node *

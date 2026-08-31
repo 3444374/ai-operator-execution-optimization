@@ -83,6 +83,44 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         ):
             self.assertIn(field_name, plan_header)
 
+    def test_exact_semfilter_cost_is_planner_visible_but_not_semantic_identity(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        cost_header = (EXTENSION_ROOT / "src" / "sem_filter_cost.h").read_text(
+            encoding="utf-8"
+        )
+        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+            encoding="utf-8"
+        )
+        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (
+            EXTENSION_ROOT / "src" / "pg_semantic_runtime.c"
+        ).read_text(encoding="utf-8")
+        plan_header = (EXTENSION_ROOT / "src" / "sem_plan_spec.h").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("src/sem_filter_cost.o", makefile)
+        self.assertIn("semloom.exact_filter.analytical.v1", cost_header)
+        for field_name in (
+            "semantic_input_rows",
+            "output_selectivity",
+            "estimated_model_calls",
+            "estimated_prompt_tokens",
+            "estimated_output_tokens",
+            "ai_work_cost",
+        ):
+            self.assertIn(field_name, cost_header)
+        self.assertIn("clauselist_selectivity", filter_path)
+        self.assertIn("clause_selectivity", filter_path)
+        self.assertIn("get_attavgwidth", filter_path)
+        self.assertIn("semloom_filter_cost_explain", pump_source)
+        for counter_name in ("model_calls", "prompt_tokens", "output_tokens"):
+            self.assertIn(counter_name, runtime_source)
+        self.assertNotIn("SEMLOOM_FILTER_COST_MODEL_ID", plan_header)
+        self.assertNotIn("ai_work_cost", plan_header)
+
     def test_planner_wraps_an_ordinary_child_path_and_chains_hooks(self) -> None:
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8")
         path_source = (EXTENSION_ROOT / "src" / "sem_path.c").read_text(encoding="utf-8")

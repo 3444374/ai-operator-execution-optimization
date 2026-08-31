@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use Cwd qw(abs_path);
 use FindBin;
 use IPC::Run;
-use JSON::PP qw(encode_json);
+use JSON::PP qw(decode_json encode_json);
 use PostgreSQL::Test::Cluster;
 use PostgreSQL::Test::Utils;
 use Test::More;
@@ -446,6 +446,82 @@ INSERT INTO semloom_exact_filter_inputs VALUES
 		(8, ''),
 		(9, 'missing golden fixture');});
 
+$node->safe_psql(
+	'postgres',
+	q{CREATE TABLE semloom_exact_filter_cost_inputs (
+		doc_id integer PRIMARY KEY,
+		payload text
+	);
+INSERT INTO semloom_exact_filter_cost_inputs
+SELECT value,
+	CASE WHEN value % 4 = 0 THEN NULL ELSE repeat('x', 32) END
+FROM generate_series(1, 100) AS value;
+ANALYZE semloom_exact_filter_cost_inputs;});
+
+my $exact_cost_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		q{EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $exact_cost_plan = $exact_cost_explain->[0]->{'Plan'};
+is(
+	$exact_cost_plan->{'Node Type'},
+	'Custom Scan',
+	'exact SemFilter cost contract belongs to the planner-visible CustomScan');
+is(
+	$exact_cost_plan->{'AI Cost Model'},
+	'semloom.exact_filter.analytical.v1',
+	'exact SemFilter identifies its analytical AI cost model');
+is(
+	$exact_cost_plan->{'Model Role'},
+	'reference',
+	'exact SemFilter cost is bound to the reference model role');
+cmp_ok(
+	$exact_cost_plan->{'Semantic Input Rows'},
+	'>',
+	$exact_cost_plan->{'Plan Rows'},
+	'exact SemFilter separates pre-semantic input rows from output rows');
+cmp_ok(
+	abs(
+		$exact_cost_plan->{'Plan Rows'} -
+		$exact_cost_plan->{'Semantic Input Rows'} *
+		$exact_cost_plan->{'Output Selectivity'}),
+	'<',
+	1.0,
+	'exact SemFilter output rows equal semantic input rows times selectivity');
+cmp_ok(
+	$exact_cost_plan->{'Estimated Model Calls'},
+	'<',
+	$exact_cost_plan->{'Semantic Input Rows'},
+	'exact SemFilter excludes estimated NULL inputs from model calls');
+cmp_ok(
+	$exact_cost_plan->{'Estimated Prompt Tokens'},
+	'>',
+	$exact_cost_plan->{'Estimated Model Calls'},
+	'exact SemFilter estimates prompt work as more than one token per call');
+cmp_ok(
+	abs(
+		$exact_cost_plan->{'Estimated Output Tokens'} -
+		$exact_cost_plan->{'Estimated Model Calls'} * 8),
+	'<',
+	0.02,
+	'exact SemFilter uses the plan output-token cap for estimated output work');
+cmp_ok(
+	$exact_cost_plan->{'AI Work Cost'},
+	'>',
+	0,
+	'exact SemFilter adds positive AI work cost');
+cmp_ok(
+	$exact_cost_plan->{'Total Cost'},
+	'>',
+	$exact_cost_plan->{'Plans'}->[0]->{'Total Cost'},
+	'exact SemFilter total cost exceeds its ordinary child cost');
+
 my $exact_filter_query = q{
 SELECT doc_id
 FROM semloom_exact_filter_inputs
@@ -594,7 +670,7 @@ EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
 $exact_filter_query});
 like(
 	$exact_filter_explain,
-	qr/Physical Role: reference.*Physical Algorithm: MODEL_REFERENCE_SYNC_V1.*Model: golden-model-v1.*Accepted Rows: 4.*Emitted Rows: 2/s,
+	qr/Physical Role: reference.*Physical Algorithm: MODEL_REFERENCE_SYNC_V1.*Model: golden-model-v1.*Model Calls: 4.*Prompt Tokens: 0.*Output Tokens: 4.*Accepted Rows: 4.*Emitted Rows: 2/s,
 	'exact SemFilter exposes reference identity and keep/drop counters');
 finish_recording_gateway(
 	$exact_gateway,
@@ -916,7 +992,7 @@ WHERE doc_id = 1 AND ai_semantic.filter(
 	payload,
 	'Input describes a database system.',
 	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
-	qr/Provider: uds-openai-compatible-fixed.*Physical Role: reference.*Accepted Rows: 1.*Emitted Rows: 1/s,
+	qr/Provider: uds-openai-compatible-fixed.*Physical Role: reference.*Model Calls: 1.*Prompt Tokens: 17.*Output Tokens: 1.*Accepted Rows: 1.*Emitted Rows: 1/s,
 	'fixed model EXPLAIN exposes its query-fixed adapter and reference counters');
 finish_recording_gateway(
 	$fixed_gateway,

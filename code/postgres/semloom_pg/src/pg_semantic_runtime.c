@@ -31,6 +31,9 @@ struct PgSemanticRuntime
 	MemoryContextCallback cleanup_callback;
 	PgSemanticRuntimeState state;
 	uint64 next_sequence;
+	uint64 model_calls;
+	uint64 prompt_tokens;
+	uint64 output_tokens;
 	uint64 accepted_rows;
 	uint64 emitted_rows;
 };
@@ -198,11 +201,29 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 								   "SemLoom provider completion metadata does not match the exact plan");
 		pg_semantic_runtime_fail(runtime, &error);
 	}
+	if (runtime->open_spec.model_id.length > 0 &&
+		(runtime->model_calls == PG_UINT64_MAX ||
+		 runtime->prompt_tokens > PG_UINT64_MAX - provider_completion.prompt_tokens ||
+		 runtime->output_tokens > PG_UINT64_MAX - provider_completion.output_tokens))
+	{
+		semloom_provider_error_set(&error,
+								   AI_PROVIDER_ERROR_NUMERIC_RANGE,
+								   0,
+								   0,
+								   "SemLoom provider usage counters exceed uint64 range");
+		pg_semantic_runtime_fail(runtime, &error);
+	}
 
 	pg_semantic_runtime_copy_completion(&provider_completion,
 										result_context,
 										completion);
 	runtime->next_sequence++;
+	if (runtime->open_spec.model_id.length > 0)
+	{
+		runtime->model_calls++;
+		runtime->prompt_tokens += provider_completion.prompt_tokens;
+		runtime->output_tokens += provider_completion.output_tokens;
+	}
 	runtime->accepted_rows++;
 	runtime->state = PG_SEMANTIC_RUNTIME_READY;
 }
@@ -263,6 +284,18 @@ pg_semantic_runtime_explain_counters(const PgSemanticRuntime *runtime,
 	Assert(runtime != NULL);
 	if (explain_state->analyze)
 	{
+		if (runtime->plan_spec.model_id != NULL)
+		{
+			ExplainPropertyUInteger("Model Calls", NULL,
+									 runtime->model_calls,
+									 explain_state);
+			ExplainPropertyUInteger("Prompt Tokens", NULL,
+									 runtime->prompt_tokens,
+									 explain_state);
+			ExplainPropertyUInteger("Output Tokens", NULL,
+									 runtime->output_tokens,
+									 explain_state);
+		}
 		ExplainPropertyInteger("Accepted Rows", NULL,
 							   runtime->accepted_rows,
 							   explain_state);
