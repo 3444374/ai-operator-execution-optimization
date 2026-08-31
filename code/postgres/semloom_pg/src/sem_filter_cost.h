@@ -7,7 +7,8 @@
 #include "commands/explain_state.h"
 #include "nodes/pg_list.h"
 
-#define SEMLOOM_FILTER_COST_MODEL_ID "semloom.exact_filter.analytical.v1"
+#define SEMLOOM_FILTER_COST_MODEL_ID "semloom.exact_filter.uncalibrated.v1"
+#define SEMLOOM_FILTER_COST_CALIBRATION_STATUS "unavailable"
 
 typedef struct SemloomFilterCostEstimate
 {

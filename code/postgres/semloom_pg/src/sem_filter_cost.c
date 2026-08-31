@@ -8,6 +8,7 @@
 #include "nodes/value.h"
 #include "utils/float.h"
 
+#include "semantic_filter_contract.h"
 #include "sem_filter_cost.h"
 
 #define SEMLOOM_FILTER_COST_SCHEMA_VERSION 1
@@ -52,7 +53,7 @@ semloom_filter_cost_make_private(const SemloomFilterCostEstimate *estimate)
 	if (estimate == NULL || estimate->cost_model_id == NULL ||
 		estimate->model_role == NULL ||
 		strcmp(estimate->cost_model_id, SEMLOOM_FILTER_COST_MODEL_ID) != 0 ||
-		strcmp(estimate->model_role, "reference") != 0 ||
+		strcmp(estimate->model_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
 		!isfinite(estimate->semantic_input_rows) ||
 		estimate->semantic_input_rows < 0 ||
 		!isfinite(estimate->output_selectivity) ||
@@ -176,7 +177,7 @@ semloom_filter_cost_decode(List *custom_private,
 		seen_fields != SEMLOOM_FILTER_COST_FIELDS ||
 		list_length(fields) != SEMLOOM_FILTER_COST_FIELD_COUNT ||
 		strcmp(estimate->cost_model_id, SEMLOOM_FILTER_COST_MODEL_ID) != 0 ||
-		strcmp(estimate->model_role, "reference") != 0 ||
+		strcmp(estimate->model_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
 		estimate->output_selectivity > 1)
 		semloom_filter_cost_invalid();
 	return true;
@@ -187,6 +188,9 @@ semloom_filter_cost_explain(const SemloomFilterCostEstimate *estimate,
 							ExplainState *explain_state)
 {
 	ExplainPropertyText("AI Cost Model", estimate->cost_model_id, explain_state);
+	ExplainPropertyText("AI Cost Calibration",
+						SEMLOOM_FILTER_COST_CALIBRATION_STATUS,
+						explain_state);
 	ExplainPropertyText("Model Role", estimate->model_role, explain_state);
 	ExplainPropertyFloat("Semantic Input Rows", NULL,
 						 estimate->semantic_input_rows, 2, explain_state);

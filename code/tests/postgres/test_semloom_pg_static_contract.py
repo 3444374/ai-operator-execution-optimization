@@ -102,7 +102,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         )
 
         self.assertIn("src/sem_filter_cost.o", makefile)
-        self.assertIn("semloom.exact_filter.analytical.v1", cost_header)
+        self.assertIn("semloom.exact_filter.uncalibrated.v1", cost_header)
+        self.assertIn("SEMLOOM_FILTER_COST_CALIBRATION_STATUS", cost_header)
         for field_name in (
             "semantic_input_rows",
             "output_selectivity",

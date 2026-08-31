@@ -70,6 +70,10 @@ static int32 semloom_filter_input_width(
 	Node *input);
 pg_noreturn static void semloom_invalid_exact_filter_argument(const char *message);
 
+/*
+ * Engineering estimates only: no matched reference calibration artifact is
+ * consumed yet, so this cost must not be treated as second-path-comparable.
+ */
 #define SEMLOOM_FILTER_ESTIMATED_BYTES_PER_TOKEN 4.0
 #define SEMLOOM_FILTER_CHAT_TEMPLATE_TOKENS 8.0
 

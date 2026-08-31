@@ -475,8 +475,12 @@ is(
 	'exact SemFilter cost contract belongs to the planner-visible CustomScan');
 is(
 	$exact_cost_plan->{'AI Cost Model'},
-	'semloom.exact_filter.analytical.v1',
-	'exact SemFilter identifies its analytical AI cost model');
+	'semloom.exact_filter.uncalibrated.v1',
+	'exact SemFilter identifies its uncalibrated AI cost estimate');
+is(
+	$exact_cost_plan->{'AI Cost Calibration'},
+	'unavailable',
+	'exact SemFilter does not present its engineering heuristic as calibrated');
 is(
 	$exact_cost_plan->{'Model Role'},
 	'reference',

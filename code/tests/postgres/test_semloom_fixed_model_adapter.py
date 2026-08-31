@@ -103,10 +103,20 @@ class _CompletionHandler(BaseHTTPRequestHandler):
 
 
 class FixedModelAdapterDeadlineTests(unittest.TestCase):
-    def test_timeout_is_a_total_deadline_for_dns_resolution(self) -> None:
+    def test_repeated_timeouts_share_one_bounded_dns_resolution(self) -> None:
+        release_resolver = threading.Event()
+
         def slow_getaddrinfo(*_args: object, **_kwargs: object) -> object:
-            time.sleep(0.5)
-            raise socket.gaierror("test resolver failure")
+            release_resolver.wait(timeout=1)
+            return [
+                (
+                    socket.AF_INET,
+                    socket.SOCK_STREAM,
+                    socket.IPPROTO_TCP,
+                    "",
+                    ("127.0.0.1", 9),
+                )
+            ]
 
         adapter = OpenAICompatibleFixedAdapter(
             FixedModelConfig(
@@ -125,13 +135,21 @@ class FixedModelAdapterDeadlineTests(unittest.TestCase):
             generation_constraints=dict(GENERATION_CONSTRAINTS),
         )
 
-        started = time.monotonic()
-        with mock.patch("socket.getaddrinfo", side_effect=slow_getaddrinfo):
-            with self.assertRaises(CompletionAdapterError) as raised:
-                adapter.complete(request)
-        elapsed = time.monotonic() - started
+        with mock.patch(
+            "socket.getaddrinfo",
+            side_effect=slow_getaddrinfo,
+        ) as getaddrinfo:
+            try:
+                started = time.monotonic()
+                for _ in range(2):
+                    with self.assertRaises(CompletionAdapterError) as raised:
+                        adapter.complete(request)
+                    self.assertEqual(raised.exception.code, "MODEL_TIMEOUT")
+                elapsed = time.monotonic() - started
+            finally:
+                release_resolver.set()
 
-        self.assertEqual(raised.exception.code, "MODEL_TIMEOUT")
+        self.assertEqual(getaddrinfo.call_count, 1)
         self.assertLess(elapsed, 0.35)
 
 
@@ -319,6 +337,11 @@ class FixedModelAdapterTests(unittest.TestCase):
             },
             {
                 "endpoint_url": "http://127.0.0.1:99999/v1/chat/completions",
+                "model_id": "fixed-model-v1",
+                "timeout_ms": 2_000,
+            },
+            {
+                "endpoint_url": "http://127.0.0.1:0/v1/chat/completions",
                 "model_id": "fixed-model-v1",
                 "timeout_ms": 2_000,
             },

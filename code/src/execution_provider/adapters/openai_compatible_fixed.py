@@ -5,7 +5,6 @@ from __future__ import annotations
 import http.client
 import json
 import os
-import queue
 import re
 import socket
 import threading
@@ -113,6 +112,69 @@ class _RequestDeadline:
             connection.close()
 
 
+class _ResolutionAttempt:
+    """One shared, bounded DNS lookup for the fixed endpoint."""
+
+    def __init__(self) -> None:
+        self.completed = threading.Event()
+        self.addresses: list[
+            tuple[int, int, int, str, tuple[object, ...]]
+        ] | None = None
+        self.error: Exception | None = None
+
+
+class _FixedEndpointResolver:
+    """Resolve once per successful endpoint identity with at most one worker."""
+
+    def __init__(self, hostname: str, port: int) -> None:
+        self._hostname = hostname
+        self._port = port
+        self._attempt: _ResolutionAttempt | None = None
+        self._lock = threading.Lock()
+
+    def resolve(
+        self,
+        deadline: _RequestDeadline,
+    ) -> list[tuple[int, int, int, str, tuple[object, ...]]]:
+        with self._lock:
+            attempt = self._attempt
+            if attempt is None or (
+                attempt.completed.is_set() and attempt.error is not None
+            ):
+                attempt = _ResolutionAttempt()
+                self._attempt = attempt
+                worker = threading.Thread(
+                    target=self._resolve,
+                    args=(attempt,),
+                    daemon=True,
+                )
+                worker.start()
+
+        if not attempt.completed.wait(timeout=deadline.remaining_seconds()):
+            raise TimeoutError
+        deadline.remaining_seconds()
+        if attempt.error is not None:
+            raise attempt.error
+        if not attempt.addresses:
+            raise OSError("fixed endpoint resolver returned no addresses")
+        return attempt.addresses
+
+    def _resolve(self, attempt: _ResolutionAttempt) -> None:
+        try:
+            addresses = socket.getaddrinfo(
+                self._hostname,
+                self._port,
+                type=socket.SOCK_STREAM,
+            )
+            if not addresses:
+                raise OSError("fixed endpoint resolver returned no addresses")
+            attempt.addresses = addresses
+        except Exception as error:
+            attempt.error = error
+        finally:
+            attempt.completed.set()
+
+
 @dataclass(frozen=True)
 class FixedModelConfig:
     """Process-owned endpoint identity and bounded request configuration."""
@@ -127,7 +189,7 @@ class FixedModelConfig:
             raise ValueError("endpoint_url must be an absolute HTTP(S) URL")
         parsed = parse.urlsplit(self.endpoint_url)
         try:
-            parsed.port
+            endpoint_port = parsed.port
         except ValueError:
             raise ValueError("endpoint_url must be an absolute HTTP(S) URL") from None
         if (
@@ -137,6 +199,7 @@ class FixedModelConfig:
             or parsed.username is not None
             or parsed.password is not None
             or parsed.fragment
+            or endpoint_port == 0
         ):
             raise ValueError("endpoint_url must be an absolute HTTP(S) URL")
         if not isinstance(self.model_id, str) or not (
@@ -194,6 +257,13 @@ class OpenAICompatibleFixedAdapter:
     def __init__(self, config: FixedModelConfig) -> None:
         self._config = config
         self.model_id = config.model_id
+        parsed = parse.urlsplit(config.endpoint_url)
+        hostname = parsed.hostname
+        assert hostname is not None
+        endpoint_port = parsed.port
+        if endpoint_port is None:
+            endpoint_port = 443 if parsed.scheme == "https" else 80
+        self._resolver = _FixedEndpointResolver(hostname, endpoint_port)
 
     def complete(self, completion_request: V3CompletionRequest) -> V3Completion:
         if completion_request.model_id != self._config.model_id:
@@ -219,16 +289,11 @@ class OpenAICompatibleFixedAdapter:
             if parsed.scheme == "https"
             else http.client.HTTPConnection
         )
-        endpoint_port = parsed.port or (443 if parsed.scheme == "https" else 80)
         deadline = _RequestDeadline(self._config.timeout_ms)
         connection: http.client.HTTPConnection | None = None
         response: http.client.HTTPResponse | None = None
         try:
-            resolved_addresses = _resolve_endpoint(
-                parsed.hostname,
-                endpoint_port,
-                deadline,
-            )
+            resolved_addresses = self._resolver.resolve(deadline)
             connection = connection_type(
                 parsed.hostname,
                 parsed.port,
@@ -284,38 +349,6 @@ class OpenAICompatibleFixedAdapter:
             return _parse_completion(response_value)
         except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
             raise CompletionAdapterError("MODEL_RESPONSE_INVALID") from None
-
-
-def _resolve_endpoint(
-    hostname: str,
-    port: int,
-    deadline: _RequestDeadline,
-) -> list[tuple[int, int, int, str, tuple[object, ...]]]:
-    results: queue.Queue[object] = queue.Queue(maxsize=1)
-
-    def resolve() -> None:
-        try:
-            value: object = socket.getaddrinfo(
-                hostname,
-                port,
-                type=socket.SOCK_STREAM,
-            )
-        except Exception as error:
-            value = error
-        results.put(value)
-
-    resolver = threading.Thread(target=resolve, daemon=True)
-    resolver.start()
-    try:
-        value = results.get(timeout=deadline.remaining_seconds())
-    except queue.Empty:
-        raise TimeoutError from None
-    deadline.remaining_seconds()
-    if isinstance(value, Exception):
-        raise value
-    if not isinstance(value, list) or not value:
-        raise OSError("fixed endpoint resolver returned no addresses")
-    return value
 
 
 def _connect_resolved(
