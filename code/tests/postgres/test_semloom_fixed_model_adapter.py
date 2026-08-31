@@ -46,7 +46,10 @@ class _CompletionHandler(BaseHTTPRequestHandler):
     authorization: str | None = None
     request_count = 0
     response_status = 200
+    response_headers: dict[str, str] = {}
     response_delay_seconds = 0.0
+    response_chunk_size = 0
+    response_chunk_delay_seconds = 0.0
     response_value: object = {
         "model": "fixed-model-v1",
         "choices": [
@@ -61,6 +64,13 @@ class _CompletionHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler interface
         length = int(self.headers["Content-Length"])
         type(self).request_body = self.rfile.read(length)
+        self._send_configured_response()
+
+    def do_GET(self) -> None:  # noqa: N802 - redirect characterization
+        type(self).request_body = b""
+        self._send_configured_response()
+
+    def _send_configured_response(self) -> None:
         type(self).authorization = self.headers.get("Authorization")
         type(self).request_count += 1
         if type(self).response_delay_seconds > 0:
@@ -71,10 +81,20 @@ class _CompletionHandler(BaseHTTPRequestHandler):
         self.send_response(type(self).response_status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(response)))
+        for key, value in type(self).response_headers.items():
+            self.send_header(key, value)
         self.end_headers()
         try:
-            self.wfile.write(response)
-        except BrokenPipeError:
+            if type(self).response_chunk_size > 0:
+                for offset in range(0, len(response), type(self).response_chunk_size):
+                    self.wfile.write(
+                        response[offset : offset + type(self).response_chunk_size]
+                    )
+                    self.wfile.flush()
+                    time.sleep(type(self).response_chunk_delay_seconds)
+            else:
+                self.wfile.write(response)
+        except OSError:
             pass
 
     def log_message(self, _format: str, *_args: object) -> None:
@@ -87,7 +107,10 @@ class FixedModelAdapterTests(unittest.TestCase):
         _CompletionHandler.authorization = None
         _CompletionHandler.request_count = 0
         _CompletionHandler.response_status = 200
+        _CompletionHandler.response_headers = {}
         _CompletionHandler.response_delay_seconds = 0.0
+        _CompletionHandler.response_chunk_size = 0
+        _CompletionHandler.response_chunk_delay_seconds = 0.0
         _CompletionHandler.response_value = {
             "model": "fixed-model-v1",
             "choices": [
@@ -148,6 +171,80 @@ class FixedModelAdapterTests(unittest.TestCase):
         self.assertEqual(completion.finish_reason, "stop")
         self.assertEqual(_CompletionHandler.request_count, 1)
 
+    def test_adapter_rejects_redirect_without_contacting_target(self) -> None:
+        class RedirectTargetHandler(_CompletionHandler):
+            pass
+
+        RedirectTargetHandler.request_body = None
+        RedirectTargetHandler.authorization = None
+        RedirectTargetHandler.request_count = 0
+        RedirectTargetHandler.response_status = 200
+        RedirectTargetHandler.response_headers = {}
+        target_server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            RedirectTargetHandler,
+        )
+        target_thread = threading.Thread(target=target_server.serve_forever)
+        target_thread.start()
+
+        def stop_target() -> None:
+            target_server.shutdown()
+            target_server.server_close()
+            target_thread.join(timeout=1)
+
+        self.addCleanup(stop_target)
+        _CompletionHandler.response_headers = {
+            "Location": (
+                f"http://127.0.0.1:{target_server.server_port}"
+                "/v1/chat/completions"
+            )
+        }
+        adapter = OpenAICompatibleFixedAdapter(
+            FixedModelConfig(
+                endpoint_url=(
+                    f"http://127.0.0.1:{self.httpd.server_port}"
+                    "/v1/chat/completions"
+                ),
+                model_id="fixed-model-v1",
+                timeout_ms=1_000,
+                bearer_token="redirect-secret",
+            )
+        )
+
+        for status in (301, 302, 303, 307, 308):
+            with self.subTest(status=status):
+                _CompletionHandler.response_status = status
+                with self.assertRaises(CompletionAdapterError) as raised:
+                    adapter.complete(self._completion_request())
+                self.assertEqual(raised.exception.code, "MODEL_RESPONSE_INVALID")
+
+        self.assertEqual(_CompletionHandler.request_count, 5)
+        self.assertEqual(RedirectTargetHandler.request_count, 0)
+        self.assertIsNone(RedirectTargetHandler.authorization)
+
+    def test_adapter_timeout_is_a_total_deadline_for_slow_response(self) -> None:
+        _CompletionHandler.response_chunk_size = 4
+        _CompletionHandler.response_chunk_delay_seconds = 0.03
+        adapter = OpenAICompatibleFixedAdapter(
+            FixedModelConfig(
+                endpoint_url=(
+                    f"http://127.0.0.1:{self.httpd.server_port}"
+                    "/v1/chat/completions"
+                ),
+                model_id="fixed-model-v1",
+                timeout_ms=100,
+            )
+        )
+
+        started = time.monotonic()
+        with self.assertRaises(CompletionAdapterError) as raised:
+            adapter.complete(self._completion_request())
+        elapsed = time.monotonic() - started
+
+        self.assertEqual(raised.exception.code, "MODEL_TIMEOUT")
+        self.assertLess(elapsed, 0.75)
+        self.assertEqual(_CompletionHandler.request_count, 1)
+
     def test_config_loader_reads_auth_from_a_named_environment_variable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             config_path = Path(temporary_directory, "fixed-model.json")
@@ -185,6 +282,11 @@ class FixedModelAdapterTests(unittest.TestCase):
                 "model_id": "fixed-model-v1",
                 "timeout_ms": 2_000,
                 "bearer_token_env": "MISSING_MODEL_TOKEN",
+            },
+            {
+                "endpoint_url": "http://127.0.0.1:99999/v1/chat/completions",
+                "model_id": "fixed-model-v1",
+                "timeout_ms": 2_000,
             },
         )
         for value in cases:
@@ -232,6 +334,18 @@ class FixedModelAdapterTests(unittest.TestCase):
                 self.assertEqual(raised.exception.code, expected_code)
                 self.assertEqual(_CompletionHandler.request_count, 1)
                 self.assertNotIn(endpoint_url, str(raised.exception))
+
+    @staticmethod
+    def _completion_request() -> V3CompletionRequest:
+        return V3CompletionRequest(
+            semantic_payload_digest="a" * 64,
+            model_id="fixed-model-v1",
+            canonical_messages=(
+                {"role": "system", "content": "instruction"},
+                {"role": "user", "content": "input"},
+            ),
+            generation_constraints=dict(GENERATION_CONSTRAINTS),
+        )
 
     def test_canonical_gateway_routes_wire_v3_through_the_fixed_adapter(self) -> None:
         plan = SemanticFilterPlan(

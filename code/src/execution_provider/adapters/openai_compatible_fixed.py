@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import re
 import socket
+import threading
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
-from urllib import error, parse, request
+from urllib import parse
 
 from .v3_session import CompletionAdapterError, V3Completion, V3CompletionRequest
 
@@ -19,6 +22,94 @@ MAX_MODEL_RESPONSE_BYTES = 1_048_576
 _CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms", "bearer_token_env"}
 _REQUIRED_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms"}
 _ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+_RESPONSE_READ_BYTES = 65_536
+
+
+class _RequestDeadline:
+    """Abort one fixed-endpoint connection when its total deadline expires."""
+
+    def __init__(self, timeout_ms: int) -> None:
+        timeout_seconds = timeout_ms / 1000
+        self._expires_at = time.monotonic() + timeout_seconds
+        self._connection: http.client.HTTPConnection | None = None
+        self._connection_socket: socket.socket | None = None
+        self._expired = False
+        self._lock = threading.Lock()
+        self._timer = threading.Timer(timeout_seconds, self._expire)
+        self._timer.daemon = True
+        self._timer.start()
+
+    @property
+    def expired(self) -> bool:
+        with self._lock:
+            return self._expired
+
+    def remaining_seconds(self) -> float:
+        remaining = self._expires_at - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError
+        return remaining
+
+    def bind(self, connection: http.client.HTTPConnection) -> None:
+        with self._lock:
+            if self._expired:
+                expired = True
+            else:
+                self._connection = connection
+                expired = False
+        if expired:
+            connection.close()
+            raise TimeoutError
+
+    def bind_socket(self, connection_socket: socket.socket | None) -> None:
+        if connection_socket is None:
+            raise OSError("fixed endpoint connection has no socket")
+        with self._lock:
+            if self._expired:
+                expired = True
+            else:
+                self._connection_socket = connection_socket
+                expired = False
+        if expired:
+            try:
+                connection_socket.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            raise TimeoutError
+
+    def set_socket_timeout(self) -> None:
+        timeout_seconds = self.remaining_seconds()
+        with self._lock:
+            connection_socket = self._connection_socket
+        if connection_socket is None:
+            raise OSError("fixed endpoint connection has no socket")
+        connection_socket.settimeout(timeout_seconds)
+
+    def bind_response(self, response: http.client.HTTPResponse) -> None:
+        with self._lock:
+            expired = self._expired
+        if expired:
+            response.close()
+            raise TimeoutError
+
+    def close(self) -> None:
+        self._timer.cancel()
+        self._timer.join()
+
+    def _expire(self) -> None:
+        with self._lock:
+            self._expired = True
+            connection = self._connection
+            connection_socket = self._connection_socket
+            if connection_socket is None and connection is not None:
+                connection_socket = connection.sock
+        if connection_socket is not None:
+            try:
+                connection_socket.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+        if connection is not None:
+            connection.close()
 
 
 @dataclass(frozen=True)
@@ -34,9 +125,14 @@ class FixedModelConfig:
         if not isinstance(self.endpoint_url, str):
             raise ValueError("endpoint_url must be an absolute HTTP(S) URL")
         parsed = parse.urlsplit(self.endpoint_url)
+        try:
+            parsed.port
+        except ValueError:
+            raise ValueError("endpoint_url must be an absolute HTTP(S) URL") from None
         if (
             parsed.scheme not in ("http", "https")
             or not parsed.netloc
+            or parsed.hostname is None
             or parsed.username is not None
             or parsed.password is not None
             or parsed.fragment
@@ -113,29 +209,55 @@ class OpenAICompatibleFixedAdapter:
         headers = {"Content-Type": "application/json"}
         if self._config.bearer_token is not None:
             headers["Authorization"] = f"Bearer {self._config.bearer_token}"
-        http_request = request.Request(
-            self._config.endpoint_url,
-            data=payload,
-            headers=headers,
-            method="POST",
+        parsed = parse.urlsplit(self._config.endpoint_url)
+        endpoint_path = parse.urlunsplit(
+            ("", "", parsed.path or "/", parsed.query, "")
         )
+        connection_type = (
+            http.client.HTTPSConnection
+            if parsed.scheme == "https"
+            else http.client.HTTPConnection
+        )
+        deadline = _RequestDeadline(self._config.timeout_ms)
+        connection: http.client.HTTPConnection | None = None
+        response: http.client.HTTPResponse | None = None
         try:
-            with request.urlopen(  # noqa: S310 - URL is validated process configuration
-                http_request,
-                timeout=self._config.timeout_ms / 1000,
-            ) as response:
-                response_bytes = response.read(MAX_MODEL_RESPONSE_BYTES + 1)
-        except error.HTTPError as failure:
-            code = (
-                "MODEL_REQUEST_REJECTED"
-                if 400 <= failure.code < 500
-                else "MODEL_UNAVAILABLE"
+            connection = connection_type(
+                parsed.hostname,
+                parsed.port,
+                timeout=deadline.remaining_seconds(),
             )
-            raise CompletionAdapterError(code) from None
+            deadline.bind(connection)
+            connection.request("POST", endpoint_path, body=payload, headers=headers)
+            deadline.bind_socket(connection.sock)
+            deadline.set_socket_timeout()
+            response = connection.getresponse()
+            deadline.bind_response(response)
+            if 300 <= response.status < 400 or not (200 <= response.status < 300):
+                if 400 <= response.status < 500:
+                    code = "MODEL_REQUEST_REJECTED"
+                elif 500 <= response.status < 600:
+                    code = "MODEL_UNAVAILABLE"
+                else:
+                    code = "MODEL_RESPONSE_INVALID"
+                raise CompletionAdapterError(code)
+            response_bytes = _read_response(response, deadline)
         except (TimeoutError, socket.timeout):
             raise CompletionAdapterError("MODEL_TIMEOUT") from None
-        except (error.URLError, OSError):
-            raise CompletionAdapterError("MODEL_UNAVAILABLE") from None
+        except http.client.HTTPException:
+            code = "MODEL_TIMEOUT" if deadline.expired else "MODEL_RESPONSE_INVALID"
+            raise CompletionAdapterError(code) from None
+        except OSError:
+            code = "MODEL_TIMEOUT" if deadline.expired else "MODEL_UNAVAILABLE"
+            raise CompletionAdapterError(code) from None
+        finally:
+            if response is not None:
+                response.close()
+            if connection is not None:
+                connection.close()
+            deadline.close()
+        if deadline.expired:
+            raise CompletionAdapterError("MODEL_TIMEOUT")
         if len(response_bytes) > MAX_MODEL_RESPONSE_BYTES:
             raise CompletionAdapterError("MODEL_RESPONSE_INVALID")
         try:
@@ -143,6 +265,30 @@ class OpenAICompatibleFixedAdapter:
             return _parse_completion(response_value)
         except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
             raise CompletionAdapterError("MODEL_RESPONSE_INVALID") from None
+
+
+def _read_response(
+    response: http.client.HTTPResponse,
+    deadline: _RequestDeadline,
+) -> bytes:
+    chunks: list[bytes] = []
+    total_bytes = 0
+    while total_bytes <= MAX_MODEL_RESPONSE_BYTES:
+        deadline.remaining_seconds()
+        chunk = response.read1(
+            min(
+                _RESPONSE_READ_BYTES,
+                MAX_MODEL_RESPONSE_BYTES + 1 - total_bytes,
+            )
+        )
+        if not chunk:
+            break
+        chunks.append(chunk)
+        total_bytes += len(chunk)
+        deadline.remaining_seconds()
+    if deadline.expired:
+        raise TimeoutError
+    return b"".join(chunks)
 
 
 def _parse_completion(value: object) -> V3Completion:
