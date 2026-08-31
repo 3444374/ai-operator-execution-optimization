@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-09-01 SemFilter fixed endpoint 与 cost 资格声明修正
+
+- 提交 `71a8ef7d` 修复 `b4ed184b` 复核出的三个边界：fixed endpoint 配置现在拒绝显式端口 0；同一
+  adapter 的连续 DNS timeout 共享至多一个 in-flight resolver attempt，不再为每次失败累积线程；成功
+  解析结果在进程内固定复用，保持 endpoint identity。
+- exact-reference planner estimate 改名为 `semloom.exact_filter.uncalibrated.v1`，plain `EXPLAIN` 明确
+  显示 `AI Cost Calibration: unavailable`。reference role 校验复用统一合同常量；固定 4 bytes/token、
+  chat-template token 和 `cpu_operator_cost` 继续只作为工程可观察性启发式，不能用于第二 path 比较。
+- 因此撤回上一条日志中“cost/cardinality 独立资格完成、下一步直接实现第二 path”的现役判断。
+  `47407751` 已实现 semantic-input rows、NULL-adjusted calls、estimated work 与 actual usage telemetry，
+  但真实 reference selectivity/usage 的 matched calibration 仍是第二 path 之前的必需步骤。
+- 本地与服务器通过 Python/static+migration 49/49；服务器显式 PostgreSQL 18.3 通过 warning-free
+  `-O2 -Werror`、regression 1/1、TAP 415/415 与 neutral/machine C11 compile。仓库外证据包
+  `postgresql_semfilter_gap_hardening_71a8ef7d_20260901` 的源码哈希、日志、字节一致 regression 输出、
+  二进制与 SHA-256 manifest 已核验。临时 PostgreSQL 已停止，相关 listener/process 检查为空。
+
 ## 2026-08-31 exact SemFilter cost/cardinality 独立资格完成
 
 - 提交 `47407751` 在第二 physical path 之前独立完成 exact-reference `SemFilter` 的 planner cost/cardinality

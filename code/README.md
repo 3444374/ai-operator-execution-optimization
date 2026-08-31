@@ -40,7 +40,7 @@ and neutral/machine C11 compilation. A small Qwen2.5-1.5B-Instruct/vLLM 0.25.1 r
 
 Commit `ef314618`, including the initial HTTP hardening at `a4319655`, completes 4B.1. The fixed adapter rejects
 301/302/303/307/308 without contacting the redirect target or forwarding bearer credentials. One monotonic
-deadline now bounds DNS resolution, connect/TLS, request send, response headers, and response body; DNS delay and
+deadline now bounds the caller's DNS wait, connect/TLS, request send, response headers, and response body; DNS delay and
 slow-drip response tests both return `MODEL_TIMEOUT`. The equivalent server source tree passes 48/48
 Python/static contracts, the same PostgreSQL 18.3 `-O2 -Werror` build, regression 1/1, TAP 404/404, and
 neutral/machine C11 compilation. The repository-external bundle
@@ -48,18 +48,24 @@ neutral/machine C11 compilation. The repository-external bundle
 regression outputs, the extension binary, and a verified SHA-256 manifest. This adds boundary and lifecycle
 evidence only; the real-model capability remains bound to `53cf3da8`.
 
-Commit `47407751` independently qualifies exact-reference cost/cardinality before a second path exists. Planner
+Commit `47407751` adds exact-reference cost/cardinality observability before a second path exists. Planner
 metadata now separates semantic input rows, output selectivity, NULL-adjusted model calls, estimated prompt/output
 tokens, model role, and AI work cost from semantic plan identity. Plain `EXPLAIN` exposes the estimate;
-`EXPLAIN ANALYZE` additionally reports actual model calls and provider prompt/output usage. The analytical model is
-an explicit engineering heuristic, not calibrated quality, latency, or performance evidence. Exact PostgreSQL 18.3
+`EXPLAIN ANALYZE` additionally reports actual model calls and provider prompt/output usage. The estimate is an
+engineering heuristic, not calibrated quality, latency, performance, or second-path comparison evidence. Exact PostgreSQL 18.3
 passes warning-free `-O2 -Werror`, regression 1/1, TAP 414/414, 49/49 Python/static+migration contracts, and
 neutral/machine C11 compilation. The repository-external bundle
 `postgresql_semfilter_cost_cardinality_47407751_20260831` preserves source hashes, raw logs, byte-identical
 regression outputs, the extension binary, statuses, and a verified SHA-256 manifest.
 
-The next implementation slice is a distinct reference/optimized path with quality evidence and fallback, followed
-by carrier audit. Accepted-prefix,
+Commit `71a8ef7d` closes the follow-up qualification gaps: explicit endpoint port zero is rejected; repeated DNS
+timeouts share at most one in-flight resolver attempt per adapter; and the planner estimate identifies itself as
+`semloom.exact_filter.uncalibrated.v1` with calibration `unavailable`. Exact PostgreSQL 18.3 passes warning-free
+`-O2 -Werror`, regression 1/1, TAP 415/415, 49/49 Python/static+migration contracts, and neutral/machine C11
+compilation. Evidence is preserved in `postgresql_semfilter_gap_hardening_71a8ef7d_20260901`.
+
+The next implementation slice is matched reference calibration. Only after it yields comparable cost may a distinct
+reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit. Accepted-prefix,
 multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and path-selection
 qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional

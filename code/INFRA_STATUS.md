@@ -19,7 +19,8 @@
 协议 v2 的 C/Python semantic-spec/physical-algorithm/provider-execution/payload/completion digest、
 1 MiB 长度帧、adapter-owned 174,080-byte 编码前输入上限、
 Unicode、escaped/raw NUL、严格整数、断连、取消与清理已验证。provider 只在首个非 NULL task 到达时打开，`PROPAGATE_NULL`
-由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 只负责 child slot 流，
+由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 负责 child slot 流，并只转交
+planner 预计算的 cost metadata，不在执行期重新计算 cost，
 `PgSemanticRuntime` 统一负责 query-fixed provider、lazy open/drive/close、sequence、completion copy、
 query-context cleanup、中立错误映射和公共 EXPLAIN 计数；Map/Filter machines 分别处理 emit 与
 TRUE/FALSE/UNKNOWN keep/drop。`sem_plan_spec.c` 由 planner 把当前 recording operator/value/policy、
@@ -43,11 +44,15 @@ OpenAI-compatible endpoint adapter；endpoint/model/timeout/auth 从仓库外严
 请求且不 retry，PostgreSQL 通过 query-fixed execution profile 选择 distinct provider identity，并继续
 负责 digest/model validation、parser 与 keep/drop。后续 `a4319655` 拒绝 301/302/303/307/308 而不访问
 重定向目标，并以 monotonic deadline 约束慢响应；`ef314618` 进一步把 DNS 解析纳入同一调用截止时间，
-因此 timeout 现在覆盖解析、连接/TLS、发送、响应头和响应体，且仍不 retry。提交 `47407751`
+因此调用会在 timeout 内返回，连接/TLS、发送、响应头和响应体仍受同一 deadline 约束。`71a8ef7d`
+又拒绝显式端口 0，并让同一 adapter 的连续 DNS timeout 共享至多一个 in-flight resolver attempt；
+底层系统 resolver 不能被 Python 取消，但不会再按失败调用数累积线程。提交 `47407751`
 又为 exact reference path 增加独立的 `sem_filter_cost` planner metadata：ordinary predicates 重建
 semantic-input rows，NULL 率调整 model calls，并显式报告 output selectivity、estimated prompt/output
-tokens、model role 与 AI work cost；actual provider calls/usage 另由 `EXPLAIN ANALYZE` 计数。
-这些估计不进入 semantic digest，目前只是未校准的工程启发式。当前尚缺第二 physical path、carrier audit、
+tokens、model role 与 AI work estimate；actual provider calls/usage 另由 `EXPLAIN ANALYZE` 计数。
+`71a8ef7d` 将模型身份改为 `semloom.exact_filter.uncalibrated.v1` 并公开 calibration unavailable。
+这些估计不进入 semantic digest，也不能用于第二路径比较。当前尚缺 matched reference calibration、
+第二 physical path、carrier audit、
 accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
@@ -107,7 +112,11 @@ cost model ID、reference model role、semantic-input rows、output selectivity�
 AI work cost，不改 schema v2 `SemanticPlanSpec` 或摘要。精确 18.3 资格为 warning-free
 `-O2 -Werror`、regression 1/1、TAP 414/414、Python/static+migration 49/49 和 neutral/machine C11
 compile；仓库外证据包 `postgresql_semfilter_cost_cardinality_47407751_20260831` 已校验 manifest。
-下一步实现第二 physical path；accepted-prefix、多在途/
+复核提交 `71a8ef7d` 拒绝端口 0、把 resolver 工作限制为每 adapter 至多一个 in-flight attempt，并将
+planner estimate 明确标为 uncalibrated/calibration unavailable；精确 18.3 通过 regression 1/1、TAP
+415/415、Python/static+migration 49/49 与 warning-free build。证据包为
+`postgresql_semfilter_gap_hardening_71a8ef7d_20260901`。下一步先完成 matched reference calibration，
+之后才实现第二 physical path；accepted-prefix、多在途/
 乱序 completion、增量 SemLoom session 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
@@ -473,11 +482,12 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    messages、payload/completion evidence 与 usage 字段已进入 schema v2 plan/task/result；golden 只返回
    fixture raw output，不是模型或质量 oracle；
 6. 工作包 4B 已以固定 OpenAI-compatible endpoint 复用同一 schema/wire/parser，并用 query-fixed profile
-   区分 provider execution identity；4B.1 又拒绝重定向并以单一 monotonic deadline 覆盖 DNS 到响应体；
+   区分 provider execution identity；4B.1 又拒绝重定向、限制 DNS 等待时间，并让 resolver 工作量有界；
    真实模型只通过小规模 capability，不提供质量或性能结论；
-7. 当前 planner 只生成一个 reference role；该 path 已分开 semantic-input rows、output selectivity、
-   NULL-adjusted calls、prompt/output-token work 和 model role，并在执行时报告实际 usage。该
-   analytical cost 尚未校准；reference/optimized 第二 path identity、quality evidence 与 fallback 尚未实现；
+7. 当前 planner 只生成一个 reference role；该 path 已分开 semantic-input rows、通用 output-selectivity
+   estimate、NULL-adjusted calls、prompt/output-token work 和 model role，并在执行时报告实际 usage。
+   calibration 明确为 unavailable；matched reference cost、第二 path identity、quality evidence 与 fallback
+   尚未实现；
 8. 当前 provider interface 仍是同步单任务；recording wire v2 保持冻结，exact semantic wire v3、
    deterministic golden 与 fixed-endpoint adapter 已实现。accepted-prefix、多在途、乱序 completion、
    增量 SemLoom session 和 SemLoom scheduling adapter 尚未实现；

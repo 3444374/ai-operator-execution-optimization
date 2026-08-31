@@ -56,7 +56,8 @@ strict third `custom_private` element for cost model ID, model role, semantic in
 estimated model calls, prompt/output tokens, and AI work cost; these fields do not enter either semantic digest.
 Quality evidence, fallback, and second-path fields remain pending because no current consumer uses them.
 
-`sem_scan.c` is a thin CustomScan adapter, and `sem_pump.c` owns child-slot/value binding and flow. The shared
+`sem_scan.c` is a thin CustomScan adapter, and `sem_pump.c` owns child-slot/value binding and flow while forwarding
+planner-computed cost metadata to EXPLAIN; it does not calculate cost during execution. The shared
 PostgreSQL-private `PgSemanticRuntime` fixes and lazily opens the provider, owns task sequence, copies
 session-owned completions into per-tuple memory, registers query cleanup, maps neutral errors, and reports
 common EXPLAIN counters. `SemMapMachine` and `FilterMachine` use a PostgreSQL-independent header and return
@@ -158,18 +159,27 @@ The repository-external bundle `postgresql_semfilter_4b1_http_hardening_ef314618
 tracked-diff identities, raw logs, byte-identical regression outputs, the extension binary, and a verified
 SHA-256 manifest. This run does not add model-quality, performance, or RSS/FD evidence.
 
-Commit `47407751` independently qualifies exact-reference cost/cardinality. The planner rebuilds semantic input
+Commit `47407751` adds exact-reference cost/cardinality observability. The planner rebuilds semantic input
 rows from table cardinality and ordinary restrictions after excluding the semantic marker, estimates NULL-adjusted
 model calls, and uses PostgreSQL average input width plus the fixed prompt contract for an explicit prompt-token
 heuristic. Output work uses the plan's eight-token cap, and `cpu_operator_cost` converts calls plus prompt/output
-tokens to a comparable PostgreSQL path cost. Plain `EXPLAIN` reports `AI Cost Model`, `Model Role`, `Semantic Input
+tokens to a provisional PostgreSQL path-cost term. Plain `EXPLAIN` reports `AI Cost Model`, `Model Role`, `Semantic Input
 Rows`, `Output Selectivity`, estimated calls/tokens, and `AI Work Cost`; `EXPLAIN ANALYZE` additionally reports actual
-`Model Calls`, `Prompt Tokens`, and `Output Tokens` from validated provider completions. This analytical model is
-not calibrated quality, latency, or performance evidence, and the planner still creates only the reference path.
+`Model Calls`, `Prompt Tokens`, and `Output Tokens` from validated provider completions. This engineering estimate is
+not matched reference calibration and must not be used to compare a second path; the planner still creates only the
+reference path.
 Exact PostgreSQL 18.3 passes warning-free `-O2 -Werror`, regression 1/1, TAP 414/414, 49/49
 Python/static+migration contracts, and neutral/machine C11 compilation. The repository-external bundle
 `postgresql_semfilter_cost_cardinality_47407751_20260831` preserves source hashes, raw qualification logs,
 byte-identical regression outputs, the extension binary, statuses, and a verified SHA-256 manifest.
+
+Commit `71a8ef7d` makes that limit machine-visible: `AI Cost Model` is
+`semloom.exact_filter.uncalibrated.v1` and `AI Cost Calibration` is `unavailable`. It also rejects an explicit
+endpoint port zero and shares at most one in-flight DNS resolver attempt per fixed adapter, so repeated timeout
+failures cannot accumulate one worker each. A blocked system resolver is not cancellable by Python; the caller still
+returns on its deadline and resolver work remains bounded. Exact PostgreSQL 18.3 passes warning-free `-O2 -Werror`,
+regression 1/1, TAP 415/415, 49/49 Python/static+migration contracts, and neutral/machine C11 compilation. The
+repository-external bundle is `postgresql_semfilter_gap_hardening_71a8ef7d_20260901`.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
