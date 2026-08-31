@@ -18,6 +18,7 @@
 #include "utils/memutils.h"
 
 #include "provider_private.h"
+#include "wire_common.h"
 #include "wire_v2.h"
 #include "wire_v3.h"
 
@@ -69,14 +70,16 @@ static const AiProviderOps semloom_uds_ops = {
 
 void
 semloom_uds_provider_select(MemoryContext owner_context,
-							const char *socket_path,
-							AiProvider *provider)
+								const char *socket_path,
+								const AiOpenSpec *spec,
+								AiProvider *provider)
 {
 	SemloomUdsProviderConfig *config;
 	Size path_length;
 
 	Assert(owner_context != NULL);
 	Assert(socket_path != NULL);
+	Assert(spec != NULL);
 	Assert(provider != NULL);
 	path_length = strlen(socket_path);
 	config = MemoryContextAllocZero(owner_context, sizeof(*config));
@@ -84,6 +87,8 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	memcpy(config->socket_path, socket_path, path_length + 1);
 	provider->ops = &semloom_uds_ops;
 	provider->config = config;
+	provider->max_input_bytes = semloom_provider_spec_is_exact_filter(spec) ?
+		SEMLOOM_WIRE_V3_MAX_INPUT_BYTES : SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
 }
 
 static AiProviderStatus
@@ -388,13 +393,13 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 			continue;
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 		{
-			semloom_wire_v2_wait_connect_retry();
+			semloom_wire_common_wait_connect_retry();
 			continue;
 		}
 		if (errno == EINPROGRESS || errno == EALREADY)
 		{
 			AiProviderStatus status =
-				semloom_wire_v2_wait_connected(session->socket_fd, error);
+				semloom_wire_common_wait_connected(session->socket_fd, error);
 
 			if (status != AI_PROVIDER_STATUS_OK)
 				return status;

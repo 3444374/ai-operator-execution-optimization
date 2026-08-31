@@ -134,13 +134,15 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 				.length = input.length,
 				.is_null = false,
 			};
-			size_t task_length = semloom_operator_machine_task_size(
-				&pump->machine,
-				&bound_input);
+			size_t task_length;
 			uint8 *task_data = NULL;
 			PgSemanticCompletion completion = {0};
 			SemloomMachineCompletion machine_completion;
 
+			pg_semantic_runtime_preflight_input(pump->runtime, input);
+			task_length = semloom_operator_machine_task_size(
+				&pump->machine,
+				&bound_input);
 			if (task_length > 0)
 			{
 				task_data = MemoryContextAlloc(tuple_context, task_length);

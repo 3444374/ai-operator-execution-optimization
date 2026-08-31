@@ -288,6 +288,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("AiProviderStatus (*drive)", header)
         self.assertIn("void (*close)", header)
         self.assertIn("non-OK open or drive result is terminal", header)
+        self.assertNotIn("AiProviderRawOutputKind", header)
         for forbidden in (
             "postgres.h",
             "Oid",
@@ -333,6 +334,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         )
         uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(encoding="utf-8")
         wire_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(encoding="utf-8")
+        wire_common_source = (EXTENSION_ROOT / "src" / "wire_common.c").read_text(
+            encoding="utf-8"
+        )
         wire_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(encoding="utf-8")
         gateway_wire_source = (
             CODE_ROOT / "src" / "execution_provider" / "wire" / "v2.py"
@@ -349,6 +353,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
         self.assertIn("src/recording_provider.o", makefile)
         self.assertIn("src/uds_provider.o", makefile)
+        self.assertIn("src/wire_common.o", makefile)
         self.assertIn("src/wire_v2.o", makefile)
         self.assertNotIn("src/provider_protocol.o", makefile)
         self.assertIn("semloom_gateway_socket_path", factory_source)
@@ -383,11 +388,15 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertNotIn("MemoryContextDelete", close_body, close_name)
         error_catches = (
             (
-                _c_function_body(wire_source, "semloom_parse_json"),
+                _c_function_body(
+                    wire_common_source, "semloom_wire_common_parse_json"
+                ),
                 "MemoryContextSwitchTo(parse_context);",
             ),
             (
-                _c_function_body(wire_source, "semloom_json_int32"),
+                _c_function_body(
+                    wire_common_source, "semloom_wire_common_json_int32"
+                ),
                 "MemoryContextSwitchTo(numeric_context);",
             ),
         )
@@ -395,8 +404,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertLess(
                 catch_body.index(context_switch), catch_body.index("CopyErrorData()")
             )
-        self.assertIn("WaitLatchOrSocket", wire_source)
-        self.assertIn("CHECK_FOR_INTERRUPTS", wire_source)
+        self.assertIn("WaitLatchOrSocket", wire_common_source)
+        self.assertIn("CHECK_FOR_INTERRUPTS", wire_common_source)
         self.assertIn("SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2", wire_header)
         self.assertIn("PGC_SUSET", (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8"))
         self.assertIn('socket_path[0] != \'/\'', uds_source)
@@ -408,7 +417,12 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("from src.execution_provider.server import main", legacy_cli_source)
         self.assertNotIn("postgres.semloom_pg.gateway", gateway_wire_source)
 
-        allowed_transport_sources = {"uds_provider.c", "wire_v2.c", "wire_v3.c"}
+        allowed_transport_sources = {
+            "uds_provider.c",
+            "wire_common.c",
+            "wire_v2.c",
+            "wire_v3.c",
+        }
         transport_identifiers = (
             "pgsocket",
             "connect(",
@@ -462,6 +476,85 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         for forbidden in ("httpx", "requests", "openai", "vllm", "ray"):
             self.assertNotIn(forbidden, golden_adapter.lower())
 
+    def test_wire_v3_owns_and_strictly_validates_error_frames(self) -> None:
+        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_v3.c").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("SEMLOOM_V3_ERROR_FIELD_COUNT 4", wire_v3_source)
+        self.assertIn("semloom_v3_validate_response", wire_v3_source)
+        self.assertIn("semloom_v3_validate_error", wire_v3_source)
+        self.assertNotIn("semloom_wire_common_validate_response_type", wire_v3_source)
+        for allowed_code in (
+            "GATEWAY_INTERNAL",
+            "GOLDEN_FIXTURE_INVALID",
+            "GOLDEN_FIXTURE_MISSING",
+            "INVALID_OPEN",
+            "INVALID_TASK",
+            "MODEL_REQUEST_REJECTED",
+            "MODEL_RESPONSE_INVALID",
+            "MODEL_TIMEOUT",
+            "MODEL_UNAVAILABLE",
+        ):
+            self.assertIn(f'"{allowed_code}"', wire_v3_source)
+
+    def test_input_limit_preflight_runs_before_canonical_task_construction(self) -> None:
+        port_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+            encoding="utf-8"
+        )
+        runtime_header = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.h").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+            encoding="utf-8"
+        )
+        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(
+            encoding="utf-8"
+        )
+        pump_next = _c_function_body(pump_source, "semloom_pump_next")
+
+        self.assertIn("uint32_t max_input_bytes;", port_header)
+        self.assertIn("pg_semantic_runtime_preflight_input", runtime_header)
+        self.assertIn("AI_PROVIDER_ERROR_INPUT_TOO_LARGE", runtime_source)
+        self.assertLess(
+            pump_next.index("pg_semantic_runtime_preflight_input"),
+            pump_next.index("semloom_operator_machine_task_size"),
+        )
+        self.assertNotIn("SEMLOOM_WIRE_V3_MAX_INPUT_BYTES", pump_source)
+        self.assertNotIn("163840", pump_source)
+
+    def test_wire_common_c_owns_shared_transport_and_json_primitives(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        common_source = (EXTENSION_ROOT / "src" / "wire_common.c").read_text(
+            encoding="utf-8"
+        )
+        common_header = (EXTENSION_ROOT / "src" / "wire_common.h").read_text(
+            encoding="utf-8"
+        )
+        wire_v2_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(
+            encoding="utf-8"
+        )
+        uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("src/wire_common.o", makefile)
+        for shared_implementation in (
+            "send(",
+            "recv(",
+            "WaitLatchOrSocket",
+            "jsonb_in",
+            "CopyErrorData()",
+        ):
+            self.assertIn(shared_implementation, common_source)
+            self.assertNotIn(shared_implementation, wire_v2_source)
+        self.assertIn("semloom_wire_common_wait_connected", common_header)
+        self.assertIn("semloom_wire_common_wait_connect_retry", common_header)
+        self.assertIn("semloom_wire_common_wait_connected", uds_source)
+        self.assertIn("semloom_wire_common_wait_connect_retry", uds_source)
+        self.assertNotIn("semloom_wire_v2_wait_connected", uds_source)
+        self.assertNotIn("semloom_wire_v2_wait_connect_retry", uds_source)
+
     def test_regression_contract_covers_explain_filter_duplicates_and_limit(self) -> None:
         regression_sql = (EXTENSION_ROOT / "sql" / "semloom_pg.sql").read_text(encoding="utf-8")
         regression_expected = (EXTENSION_ROOT / "expected" / "semloom_pg.out").read_text(
@@ -509,6 +602,12 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("PROPAGATE_NULL is owned by PostgreSQL", tap_test)
         self.assertIn("provider connect wait", tap_test)
         self.assertIn("requires UTF8 database encoding", tap_test)
+        self.assertIn("exact SemFilter preserves Unicode instruction/input", tap_test)
+        self.assertIn("empty text as a non-NULL provider task", tap_test)
+        self.assertIn("SAVEPOINT semloom_exact_filter_failure", tap_test)
+        self.assertIn("v3-error-missing-field", tap_test)
+        self.assertIn("v3-error-extra-field", tap_test)
+        self.assertIn("v3-open-error-sequence", tap_test)
 
 
 if __name__ == "__main__":

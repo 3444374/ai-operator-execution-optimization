@@ -28,6 +28,8 @@ typedef struct PgSemanticCompletion
 extern PgSemanticRuntime *pg_semantic_runtime_begin(
 	MemoryContext owner_context,
 	const SemloomPlanSpec *plan_spec);
+extern void pg_semantic_runtime_preflight_input(PgSemanticRuntime *runtime,
+												 AiByteSlice input);
 extern void pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 										  AiByteSlice input,
 										  AiByteSlice canonical_messages,

@@ -75,6 +75,20 @@ GENERATION_CONSTRAINTS = {
     "stop": ["\n"],
 }
 
+ERROR_CODES = frozenset(
+    {
+        "GATEWAY_INTERNAL",
+        "GOLDEN_FIXTURE_INVALID",
+        "GOLDEN_FIXTURE_MISSING",
+        "INVALID_OPEN",
+        "INVALID_TASK",
+        "MODEL_REQUEST_REJECTED",
+        "MODEL_RESPONSE_INVALID",
+        "MODEL_TIMEOUT",
+        "MODEL_UNAVAILABLE",
+    }
+)
+
 _OPEN_FIELDS = {
     "type",
     "protocol_version",
@@ -329,6 +343,22 @@ def build_task_message(
     }
 
 
+def build_error_message(code: str, *, sequence: int | None) -> dict[str, Any]:
+    """Build the strict redacted wire-v3 error object."""
+    if code not in ERROR_CODES:
+        raise ValueError("code is outside the wire-v3 error contract")
+    if sequence is not None and (
+        type(sequence) is not int or sequence < 0 or sequence >= 2**64
+    ):
+        raise ValueError("sequence must be null or uint64")
+    return {
+        "type": "error",
+        "protocol_version": PROTOCOL_VERSION,
+        "sequence": None if sequence is None else str(sequence),
+        "code": code,
+    }
+
+
 def validate_open(message: dict[str, Any]) -> OpenContext:
     if set(message) != _OPEN_FIELDS or message.get("type") != "open":
         raise ProtocolError("INVALID_OPEN")
@@ -465,6 +495,7 @@ def _require_sha256(value: object, code: str) -> None:
 
 
 __all__ = [
+    "ERROR_CODES",
     "GOLDEN_EXECUTION_ID",
     "GENERATION_CONSTRAINTS",
     "MAX_FRAME_BYTES",
@@ -476,6 +507,7 @@ __all__ = [
     "RESULT_PARSER_DIGEST",
     "SemanticFilterPlan",
     "build_open_message",
+    "build_error_message",
     "build_task_message",
     "canonical_messages",
     "completion_evidence_digest",

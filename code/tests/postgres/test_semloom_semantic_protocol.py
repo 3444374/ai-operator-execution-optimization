@@ -9,12 +9,14 @@ import unittest
 from src.execution_provider.adapters.golden import run_golden_session
 from src.execution_provider.wire.framing import encode_frame, read_frame
 from src.execution_provider.wire.v3 import (
+    ERROR_CODES,
     MAX_INPUT_BYTES,
     PHYSICAL_ALGORITHM,
     PROMPT_PROGRAM_DIGEST,
     PROTOCOL_VERSION,
     RESULT_PARSER_DIGEST,
     SemanticFilterPlan,
+    build_error_message,
     build_open_message,
     build_task_message,
     canonical_messages,
@@ -96,6 +98,51 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
             'when the input lacks enough information.\\nInstruction:\\n输入描述数据库系统。"},'
             '{"role":"user","content":"PostgreSQL is a database."}]',
         )
+
+    def test_v3_error_message_has_a_strict_versioned_schema(self) -> None:
+        self.assertEqual(
+            ERROR_CODES,
+            frozenset(
+                {
+                    "GATEWAY_INTERNAL",
+                    "GOLDEN_FIXTURE_INVALID",
+                    "GOLDEN_FIXTURE_MISSING",
+                    "INVALID_OPEN",
+                    "INVALID_TASK",
+                    "MODEL_REQUEST_REJECTED",
+                    "MODEL_RESPONSE_INVALID",
+                    "MODEL_TIMEOUT",
+                    "MODEL_UNAVAILABLE",
+                }
+            ),
+        )
+        self.assertEqual(
+            build_error_message("INVALID_OPEN", sequence=None),
+            {
+                "type": "error",
+                "protocol_version": PROTOCOL_VERSION,
+                "sequence": None,
+                "code": "INVALID_OPEN",
+            },
+        )
+        self.assertEqual(
+            build_error_message("GOLDEN_FIXTURE_MISSING", sequence=7),
+            {
+                "type": "error",
+                "protocol_version": PROTOCOL_VERSION,
+                "sequence": "7",
+                "code": "GOLDEN_FIXTURE_MISSING",
+            },
+        )
+        for code, sequence in (
+            ("UNKNOWN_CODE", None),
+            ("INVALID_TASK", True),
+            ("INVALID_TASK", -1),
+            ("INVALID_TASK", 2**64),
+        ):
+            with self.subTest(code=code, sequence=sequence):
+                with self.assertRaises(ValueError):
+                    build_error_message(code, sequence=sequence)
 
     def test_golden_adapter_returns_fixture_bound_completion(self) -> None:
         input_value = "PostgreSQL is a database."
@@ -209,11 +256,64 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
                     kwargs={"completion_fixture": fixture},
                 )
                 thread.start()
+                self.addCleanup(client.close)
                 client.sendall(encode_frame(build_open_message(self.plan)))
                 self.assertEqual(read_frame(client)["type"], "opened")
                 client.sendall(encode_frame(task))
                 completion = read_frame(client)
                 self.assertEqual(completion[field], expected)
+                client.close()
+                thread.join(timeout=1)
+                self.assertFalse(thread.is_alive())
+
+    def test_error_fault_fixtures_characterize_invalid_v3_frames(self) -> None:
+        task = build_task_message(self.plan, sequence=0, input_value="fixture")
+        fixtures = {task["semantic_payload_digest"]: "TRUE"}
+        cases = {
+            "v3-error-missing-field": lambda message: "code" not in message,
+            "v3-error-extra-field": lambda message: message.get("future_field") is True,
+            "v3-error-sequence": lambda message: message.get("sequence") is None,
+            "v3-error-code": lambda message: message.get("code") == "UNKNOWN_CODE",
+        }
+        for fixture, assertion in cases.items():
+            with self.subTest(fixture=fixture):
+                client, server = socket.socketpair()
+                thread = threading.Thread(
+                    target=run_golden_session,
+                    args=(server, fixtures),
+                    kwargs={"completion_fixture": fixture},
+                )
+                thread.start()
+                client.sendall(encode_frame(build_open_message(self.plan)))
+                self.assertEqual(read_frame(client)["type"], "opened")
+                client.sendall(encode_frame(task))
+                error = read_frame(client)
+                self.assertEqual(error["type"], "error")
+                self.assertTrue(assertion(error), error)
+                client.close()
+                thread.join(timeout=1)
+                self.assertFalse(thread.is_alive())
+
+    def test_open_error_fixtures_characterize_nullable_sequence(self) -> None:
+        cases = {
+            "v3-open-error": None,
+            "v3-open-error-sequence": "0",
+        }
+        for fixture, expected_sequence in cases.items():
+            with self.subTest(fixture=fixture):
+                client, server = socket.socketpair()
+                thread = threading.Thread(
+                    target=run_golden_session,
+                    args=(server, {}),
+                    kwargs={"completion_fixture": fixture},
+                )
+                thread.start()
+                self.addCleanup(client.close)
+                client.sendall(encode_frame(build_open_message(self.plan)))
+                error = read_frame(client)
+                self.assertEqual(error["type"], "error")
+                self.assertEqual(error["code"], "INVALID_OPEN")
+                self.assertEqual(error["sequence"], expected_sequence)
                 client.close()
                 thread.join(timeout=1)
                 self.assertFalse(thread.is_alive())

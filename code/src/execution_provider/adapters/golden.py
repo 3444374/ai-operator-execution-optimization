@@ -12,6 +12,7 @@ from ..wire.v3 import (
     MAX_INFLIGHT_TASKS,
     MAX_INPUT_BYTES,
     PROTOCOL_VERSION,
+    build_error_message,
     completion_evidence_digest,
     validate_open,
     validate_task,
@@ -35,6 +36,14 @@ def run_golden_session(
         if opened is None:
             return
         open_context = validate_open(opened)
+        if completion_fixture in ("v3-open-error", "v3-open-error-sequence"):
+            _send_error(
+                connection,
+                "INVALID_OPEN",
+                None,
+                fault_fixture=completion_fixture,
+            )
+            return
         connection.sendall(
             encode_frame(
                 {
@@ -66,6 +75,16 @@ def run_golden_session(
                 return
             if response_delay_ms > 0:
                 time.sleep(response_delay_ms / 1000)
+            if completion_fixture is not None and completion_fixture.startswith(
+                "v3-error-"
+            ):
+                _send_error(
+                    connection,
+                    "GOLDEN_FIXTURE_MISSING",
+                    error_sequence,
+                    fault_fixture=completion_fixture,
+                )
+                return
             raw_output = fixtures.get(payload_digest)
             if raw_output is None:
                 _send_error(connection, "GOLDEN_FIXTURE_MISSING", error_sequence)
@@ -139,17 +158,26 @@ def _valid_sequence_or_none(value: object) -> str | None:
     return value
 
 
-def _send_error(connection: socket.socket, code: str, sequence: str | None) -> None:
+def _send_error(
+    connection: socket.socket,
+    code: str,
+    sequence: str | None,
+    *,
+    fault_fixture: str | None = None,
+) -> None:
     try:
-        connection.sendall(
-            encode_frame(
-                {
-                    "type": "error",
-                    "protocol_version": PROTOCOL_VERSION,
-                    "sequence": sequence,
-                    "code": code,
-                }
-            )
-        )
+        sequence_value = None if sequence is None else int(sequence)
+        message = build_error_message(code, sequence=sequence_value)
+        if fault_fixture == "v3-error-missing-field":
+            del message["code"]
+        elif fault_fixture == "v3-error-extra-field":
+            message["future_field"] = True
+        elif fault_fixture == "v3-error-sequence":
+            message["sequence"] = None
+        elif fault_fixture == "v3-error-code":
+            message["code"] = "UNKNOWN_CODE"
+        elif fault_fixture == "v3-open-error-sequence":
+            message["sequence"] = "0"
+        connection.sendall(encode_frame(message))
     except (BrokenPipeError, ConnectionResetError, OSError):
         pass

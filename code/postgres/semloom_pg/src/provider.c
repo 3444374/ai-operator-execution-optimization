@@ -30,7 +30,7 @@ semloom_provider_select(MemoryContext owner_context,
 	if (socket_path[0] == '\0' && !semloom_provider_spec_is_exact_filter(spec))
 		semloom_recording_provider_select(provider);
 	else
-		semloom_uds_provider_select(owner_context, socket_path, provider);
+		semloom_uds_provider_select(owner_context, socket_path, spec, provider);
 }
 
 bool

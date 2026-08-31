@@ -3,16 +3,12 @@
 #include <string.h>
 
 #include "sem_operator_machine.h"
+#include "semantic_filter_contract.h"
 
 #define SEMLOOM_MACHINE_OPERATOR_MAP 1
 #define SEMLOOM_MACHINE_OPERATOR_FILTER 2
 #define SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION 1
 #define SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION 2
-
-#define SEMLOOM_FILTER_SYSTEM_DIRECTIVE \
-	"Evaluate whether the input satisfies the instruction. Reply with exactly " \
-	"TRUE, FALSE, or UNKNOWN. Use UNKNOWN only when the input lacks enough information."
-#define SEMLOOM_FILTER_INSTRUCTION_SEPARATOR "\nInstruction:\n"
 
 typedef struct SemloomTaskWriter
 {

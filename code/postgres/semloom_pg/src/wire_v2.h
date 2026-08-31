@@ -11,9 +11,10 @@
 #include "postgres.h"
 
 #include "ai_provider_port.h"
+#include "wire_common.h"
 
 #define SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2
-#define SEMLOOM_WIRE_V2_MAX_FRAME_BYTES (1024 * 1024)
+#define SEMLOOM_WIRE_V2_MAX_FRAME_BYTES SEMLOOM_WIRE_COMMON_MAX_FRAME_BYTES
 #define SEMLOOM_WIRE_V2_MAX_INPUT_BYTES ((SEMLOOM_WIRE_V2_MAX_FRAME_BYTES - 4096) / 6)
 #define SEMLOOM_WIRE_V2_SHA256_HEX_LENGTH 64
 
@@ -37,8 +38,4 @@ extern AiProviderStatus semloom_wire_v2_drive(pgsocket socket_fd,
 										  const SemloomWireV2Identity *identity,
 										  AiCompletion *completion,
 										  AiProviderError *error);
-extern AiProviderStatus semloom_wire_v2_wait_connected(pgsocket socket_fd,
-												   AiProviderError *error);
-extern void semloom_wire_v2_wait_connect_retry(void);
-
 #endif

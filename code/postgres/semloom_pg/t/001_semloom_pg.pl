@@ -16,8 +16,12 @@ sub start_recording_gateway
 	my ($socket_path, @arguments) = @_;
 	my $stdout = '';
 	my $stderr = '';
+	my $serve_once = !grep { $_ eq '--test-max-sessions' } @arguments;
+	my @command = ('python3', $gateway_script, '--socket', $socket_path);
+	push @command, '--once' if $serve_once;
+	push @command, @arguments;
 	my $gateway = IPC::Run::start(
-		['python3', $gateway_script, '--socket', $socket_path, '--once', @arguments],
+		\@command,
 		'>', \$stdout,
 		'2>', \$stderr);
 
@@ -292,7 +296,9 @@ print $golden_fixture_handle <<'GOLDEN_FIXTURE';
   "9f8acc0437722c4c5c13c1c60604eada801eaa915a08baac4bd78c08a578907e": "TRUE",
   "77aa32c3ebbef2d54d590f9b9fc12325f3a9abab37d325d9907fafc1db41d95a": "FALSE",
   "e6ec3d09b71e5fd87683a7f26670067c6f1741d29fa60de6e6d9c2b9a7007b95": "UNKNOWN",
-  "8c9b589e71bae83f778e0a9f1b3e185f408f251571ff27459c681045bf084392": "true"
+  "8c9b589e71bae83f778e0a9f1b3e185f408f251571ff27459c681045bf084392": "true",
+  "2e8b2f2ca69fd7aab5f799d222c7b79703fd8d0398805c8f64e40ed1dfb71f8b": "TRUE",
+  "d88c3247d12134898397645ab65a83d839be2bb63fb46af62f97b37fb8b512c1": "TRUE"
 }
 GOLDEN_FIXTURE
 close($golden_fixture_handle);
@@ -370,9 +376,12 @@ INSERT INTO semloom_exact_filter_inputs VALUES
 	(1, 'PostgreSQL is a database.'),
 	(2, 'A cat sleeps.'),
 	(3, 'Insufficient context'),
-	(4, NULL),
-	(5, 'PostgreSQL is a database.'),
-	(6, 'invalid raw');});
+		(4, NULL),
+		(5, 'PostgreSQL is a database.'),
+		(6, 'invalid raw'),
+		(7, '数据库系统 PostgreSQL。'),
+		(8, ''),
+		(9, 'missing golden fixture');});
 
 my $exact_filter_query = q{
 SELECT doc_id
@@ -393,6 +402,118 @@ is(
 		"SET semloom_pg.gateway_socket = '$gateway_socket';\n$exact_filter_query"),
 	"1\n5",
 	'exact SemFilter emits only TRUE and preserves duplicate tuple identity');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+($ret, $stdout, $stderr) = $node->psql(
+	'postgres',
+	qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 9 AND ai_semantic.filter(
+  payload,
+  'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);});
+isnt($ret, 0, 'valid v3 task error frame fails the exact query');
+my ($valid_v3_error_state, $valid_v3_error_message) = error_signature($stderr);
+is($valid_v3_error_state, '08P01', 'valid v3 task error preserves SQLSTATE 08P01');
+is(
+	$valid_v3_error_message,
+	'SemLoom provider rejected the protocol message',
+	'valid v3 task error uses the existing redacted message');
+unlike($stderr, qr/missing golden fixture/, 'valid v3 task error exposes no input');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--test-max-sessions',
+	'2',
+	'--golden-fixture',
+	$golden_fixture);
+my $exact_savepoint_session = $node->background_psql(
+	'postgres',
+	on_error_stop => 0);
+my ($exact_savepoint_output, $exact_savepoint_had_error) =
+  $exact_savepoint_session->query(
+	qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+BEGIN;
+SAVEPOINT semloom_exact_filter_failure;
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 6 AND ai_semantic.filter(
+  payload,
+  'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+ROLLBACK TO SAVEPOINT semloom_exact_filter_failure;
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 1 AND ai_semantic.filter(
+  payload,
+  'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+COMMIT;});
+ok($exact_savepoint_had_error, 'invalid exact result aborts only its statement');
+is(
+	$exact_savepoint_output,
+	'1',
+	'exact SemFilter succeeds after savepoint rollback in the same backend');
+$exact_savepoint_session->quit;
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 7 AND ai_semantic.filter(
+  payload,
+  '输入描述数据库系统。',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
+	'7',
+	'exact SemFilter preserves Unicode instruction/input across C and Python');
+finish_recording_gateway(
+	$exact_gateway,
+	$gateway_socket,
+	$exact_gateway_stderr);
+
+($exact_gateway, $exact_gateway_stdout, $exact_gateway_stderr) =
+  start_recording_gateway(
+	$gateway_socket,
+	'--golden-fixture',
+	$golden_fixture);
+is(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.gateway_socket = '$gateway_socket';
+SELECT doc_id
+FROM semloom_exact_filter_inputs
+WHERE doc_id = 8 AND ai_semantic.filter(
+  payload,
+  'Input describes a database system.',
+  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}),
+	'8',
+	'exact SemFilter treats empty text as a non-NULL provider task');
 finish_recording_gateway(
 	$exact_gateway,
 	$gateway_socket,
@@ -509,6 +630,16 @@ finish_recording_gateway(
 
 my @exact_wire_error_cases = (
 	[
+		['--test-completion-fixture', 'v3-open-error'],
+		'SemLoom provider rejected the protocol message',
+		'valid open error'
+	],
+	[
+		['--test-completion-fixture', 'v3-open-error-sequence'],
+		'SemLoom provider returned an invalid wire v3 error frame',
+		'open error sequence mismatch'
+	],
+	[
 		['--test-tamper-evidence-digest'],
 		'SemLoom provider completion does not match wire v3 task identity',
 		'tampered evidence'
@@ -532,6 +663,26 @@ my @exact_wire_error_cases = (
 		['--test-completion-fixture', 'v3-extra-field'],
 		'SemLoom provider returned an unexpected message',
 		'extra completion field'
+	],
+	[
+		['--test-completion-fixture', 'v3-error-missing-field'],
+		'SemLoom provider returned an invalid wire v3 error frame',
+		'missing error field'
+	],
+	[
+		['--test-completion-fixture', 'v3-error-extra-field'],
+		'SemLoom provider returned an invalid wire v3 error frame',
+		'extra error field'
+	],
+	[
+		['--test-completion-fixture', 'v3-error-sequence'],
+		'SemLoom provider returned an invalid wire v3 error frame',
+		'error sequence mismatch'
+	],
+	[
+		['--test-completion-fixture', 'v3-error-code'],
+		'SemLoom provider returned an invalid wire v3 error frame',
+		'unknown error code'
 	],
 );
 for my $wire_error_case (@exact_wire_error_cases)

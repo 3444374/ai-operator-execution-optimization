@@ -46,6 +46,7 @@ semloom_recording_provider_select(AiProvider *provider)
 	Assert(provider != NULL);
 	provider->ops = &semloom_recording_ops;
 	provider->config = NULL;
+	provider->max_input_bytes = 0;
 }
 
 static AiProviderStatus

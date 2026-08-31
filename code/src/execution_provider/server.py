@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--test-disconnect-on-task", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--test-fill-connect-queue-ms", type=int, default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--test-max-sessions", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument(
         "--test-completion-fixture",
         choices=(
@@ -48,9 +49,15 @@ def parse_args() -> argparse.Namespace:
             "raw-nul",
             "wrong-integer-type",
             "v3-extra-field",
+            "v3-error-code",
+            "v3-error-extra-field",
+            "v3-error-missing-field",
+            "v3-error-sequence",
             "v3-finish-reason",
             "v3-invalid-usage",
             "v3-model-mismatch",
+            "v3-open-error",
+            "v3-open-error-sequence",
         ),
         help=argparse.SUPPRESS,
     )
@@ -64,6 +71,8 @@ def main() -> int:
         raise SystemExit("--test-response-delay-ms must be non-negative")
     if args.test_fill_connect_queue_ms < 0:
         raise SystemExit("--test-fill-connect-queue-ms must be non-negative")
+    if args.test_max_sessions < 0:
+        raise SystemExit("--test-max-sessions must be non-negative")
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     if socket_path.exists():
@@ -98,6 +107,7 @@ def main() -> int:
                 blocker.close()
             return 0
         listener.settimeout(0.25)
+        served_sessions = 0
         while not stopping:
             try:
                 connection, _ = listener.accept()
@@ -111,7 +121,11 @@ def main() -> int:
                 disconnect_on_task=args.test_disconnect_on_task,
                 completion_fixture=args.test_completion_fixture,
             )
-            if args.once:
+            served_sessions += 1
+            if args.once or (
+                args.test_max_sessions > 0
+                and served_sessions >= args.test_max_sessions
+            ):
                 break
     finally:
         listener.close()

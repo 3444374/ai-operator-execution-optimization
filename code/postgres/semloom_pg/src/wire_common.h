@@ -8,6 +8,8 @@
 
 #include "ai_provider_port.h"
 
+#define SEMLOOM_WIRE_COMMON_MAX_FRAME_BYTES (1024 * 1024)
+
 extern AiProviderStatus semloom_wire_common_send_frame(
 	pgsocket socket_fd,
 	const char *payload,
@@ -17,6 +19,10 @@ extern AiProviderStatus semloom_wire_common_receive_frame(
 	pgsocket socket_fd,
 	char **payload,
 	AiProviderError *error);
+extern AiProviderStatus semloom_wire_common_wait_connected(
+	pgsocket socket_fd,
+	AiProviderError *error);
+extern void semloom_wire_common_wait_connect_retry(void);
 extern AiProviderStatus semloom_wire_common_parse_json(
 	const char *payload,
 	Jsonb **message,
@@ -34,10 +40,9 @@ extern bool semloom_wire_common_json_int32(Jsonb *message,
 										   const char *key,
 										   int32 *result,
 										   AiProviderError *error);
-extern bool semloom_wire_common_validate_response_type(
-	Jsonb *message,
-	const char *expected_type,
-	uint32 expected_fields,
-	AiProviderError *error);
+extern bool semloom_wire_common_json_bool(Jsonb *message,
+										  const char *key,
+										  bool *result,
+										  AiProviderError *error);
 
 #endif

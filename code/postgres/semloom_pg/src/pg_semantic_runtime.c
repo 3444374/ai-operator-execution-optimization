@@ -109,6 +109,23 @@ pg_semantic_runtime_begin(MemoryContext owner_context,
 }
 
 void
+pg_semantic_runtime_preflight_input(PgSemanticRuntime *runtime, AiByteSlice input)
+{
+	AiProviderError error;
+
+	Assert(runtime != NULL);
+	if (runtime->provider.max_input_bytes == 0 ||
+		input.length <= runtime->provider.max_input_bytes)
+		return;
+	semloom_provider_error_set(&error,
+								   AI_PROVIDER_ERROR_INPUT_TOO_LARGE,
+								   0,
+								   runtime->provider.max_input_bytes,
+								   NULL);
+	pg_semantic_runtime_fail(runtime, &error);
+}
+
+void
 pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 						  AiByteSlice input,
 						  AiByteSlice canonical_messages,

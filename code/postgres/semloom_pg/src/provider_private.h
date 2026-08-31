@@ -31,7 +31,8 @@ extern void semloom_provider_error_set(AiProviderError *error,
 									const char *detail);
 extern void semloom_recording_provider_select(AiProvider *provider);
 extern void semloom_uds_provider_select(MemoryContext owner_context,
-									const char *socket_path,
-									AiProvider *provider);
+										const char *socket_path,
+										const AiOpenSpec *spec,
+										AiProvider *provider);
 
 #endif

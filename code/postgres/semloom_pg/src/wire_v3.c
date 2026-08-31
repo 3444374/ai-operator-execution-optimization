@@ -13,6 +13,7 @@
 #define SEMLOOM_PROVIDER_EXECUTION_DIGEST_DOMAIN \
 	"semloom-provider-execution-v3\0"
 #define SEMLOOM_COMPLETION_DIGEST_DOMAIN "semloom-completion-v3\0"
+#define SEMLOOM_V3_ERROR_FIELD_COUNT 4
 
 static void semloom_v3_hash_begin(pg_cryptohash_ctx **context);
 static void semloom_v3_hash_bytes(pg_cryptohash_ctx *context,
@@ -48,6 +49,15 @@ static bool semloom_v3_json_uint64(Jsonb *message,
 static bool semloom_v3_slice_equals(AiByteSlice actual, AiByteSlice expected);
 static bool semloom_v3_slice_equals_cstring(AiByteSlice actual,
 											 const char *expected);
+static bool semloom_v3_validate_response(Jsonb *message,
+										 const char *expected_type,
+										 uint32 expected_fields,
+										 const char *expected_error_sequence,
+										 AiProviderError *error);
+static bool semloom_v3_validate_error(Jsonb *message,
+									  const char *expected_sequence,
+									  AiProviderError *error);
+static bool semloom_v3_error_code_allowed(AiByteSlice code);
 
 void
 semloom_wire_v3_identity_init(const AiOpenSpec *spec,
@@ -147,7 +157,7 @@ semloom_wire_v3_open(pgsocket socket_fd,
 	status = semloom_wire_common_parse_json(response, &message, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
-	if (!semloom_wire_common_validate_response_type(message, "opened", 8, error))
+	if (!semloom_v3_validate_response(message, "opened", 8, NULL, error))
 		return AI_PROVIDER_STATUS_ERROR;
 	if (!semloom_wire_common_json_int32(message,
 										"protocol_version",
@@ -257,7 +267,7 @@ semloom_wire_v3_drive(pgsocket socket_fd,
 	status = semloom_wire_common_parse_json(response, &message, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
-	if (!semloom_wire_common_validate_response_type(message, "completion", 13, error))
+	if (!semloom_v3_validate_response(message, "completion", 13, sequence, error))
 		return AI_PROVIDER_STATUS_ERROR;
 	{
 		int32 protocol_version;
@@ -407,6 +417,117 @@ semloom_v3_slice_equals_cstring(AiByteSlice actual, const char *expected)
 	};
 
 	return semloom_v3_slice_equals(actual, expected_slice);
+}
+
+static bool
+semloom_v3_validate_response(Jsonb *message,
+								 const char *expected_type,
+								 uint32 expected_fields,
+								 const char *expected_error_sequence,
+								 AiProviderError *error)
+{
+	bool matches;
+
+	if (!semloom_wire_common_json_string_equals(message,
+											 "type",
+											 "error",
+											 &matches,
+											 error))
+		return false;
+	if (matches)
+	{
+		if (!semloom_v3_validate_error(message, expected_error_sequence, error))
+			return false;
+		semloom_provider_error_set(error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   0,
+								   0,
+								   "SemLoom provider rejected the protocol message");
+		return false;
+	}
+	if (JsonContainerSize(&message->root) != expected_fields)
+		goto unexpected;
+	if (!semloom_wire_common_json_string_equals(message,
+											 "type",
+											 expected_type,
+											 &matches,
+											 error))
+		return false;
+	if (matches)
+		return true;
+
+unexpected:
+	semloom_provider_error_set(error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   0,
+								   0,
+								   "SemLoom provider returned an unexpected message");
+	return false;
+}
+
+static bool
+semloom_v3_validate_error(Jsonb *message,
+							  const char *expected_sequence,
+							  AiProviderError *error)
+{
+	JsonbValue *sequence_value;
+	AiByteSlice code;
+	int32 protocol_version;
+
+	if (JsonContainerSize(&message->root) != SEMLOOM_V3_ERROR_FIELD_COUNT ||
+		!semloom_wire_common_json_int32(message,
+										  "protocol_version",
+										  &protocol_version,
+										  error) ||
+		protocol_version != SEMLOOM_WIRE_V3_PROTOCOL_VERSION ||
+		!semloom_wire_common_json_value(message, "sequence", &sequence_value, error) ||
+		!semloom_v3_json_slice(message, "code", &code, error) ||
+		!semloom_v3_error_code_allowed(code))
+		goto invalid;
+	if (expected_sequence == NULL)
+	{
+		if (sequence_value->type != jbvNull)
+			goto invalid;
+	}
+	else if (sequence_value->type != jbvString ||
+			 sequence_value->val.string.len != strlen(expected_sequence) ||
+			 memcmp(sequence_value->val.string.val,
+					expected_sequence,
+					sequence_value->val.string.len) != 0)
+		goto invalid;
+	return true;
+
+invalid:
+	semloom_provider_error_set(error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   0,
+								   0,
+								   "SemLoom provider returned an invalid wire v3 error frame");
+	return false;
+}
+
+static bool
+semloom_v3_error_code_allowed(AiByteSlice code)
+{
+	static const char *allowed_codes[] = {
+		"GATEWAY_INTERNAL",
+		"GOLDEN_FIXTURE_INVALID",
+		"GOLDEN_FIXTURE_MISSING",
+		"INVALID_OPEN",
+		"INVALID_TASK",
+		"MODEL_REQUEST_REJECTED",
+		"MODEL_RESPONSE_INVALID",
+		"MODEL_TIMEOUT",
+		"MODEL_UNAVAILABLE",
+	};
+	int index;
+
+	for (index = 0; index < lengthof(allowed_codes); index++)
+	{
+		if (semloom_v3_slice_equals_cstring(code, allowed_codes[index]))
+			return true;
+	}
+	return false;
 }
 
 static void

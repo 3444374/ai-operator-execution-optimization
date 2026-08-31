@@ -6,9 +6,10 @@
 
 #include "ai_provider_port.h"
 #include "semantic_filter_contract.h"
+#include "wire_common.h"
 
 #define SEMLOOM_WIRE_V3_PROTOCOL_VERSION 3
-#define SEMLOOM_WIRE_V3_MAX_FRAME_BYTES (1024 * 1024)
+#define SEMLOOM_WIRE_V3_MAX_FRAME_BYTES SEMLOOM_WIRE_COMMON_MAX_FRAME_BYTES
 #define SEMLOOM_WIRE_V3_MAX_INPUT_BYTES 163840
 #define SEMLOOM_WIRE_V3_EXECUTION_ID "semloom.provider.golden.uds.v3"
 

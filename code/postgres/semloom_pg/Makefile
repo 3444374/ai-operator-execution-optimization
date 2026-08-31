@@ -16,6 +16,7 @@ OBJS = \
 	src/sem_pump.o \
 	src/sem_scan.o \
 	src/uds_provider.o \
+	src/wire_common.o \
 	src/wire_v2.o \
 	src/wire_v3.o
 

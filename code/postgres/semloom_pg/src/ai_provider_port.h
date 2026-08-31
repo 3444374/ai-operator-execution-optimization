@@ -67,12 +67,6 @@ typedef enum AiProviderOrderPolicy
 	AI_PROVIDER_ORDER_INPUT = 1,
 } AiProviderOrderPolicy;
 
-typedef enum AiProviderRawOutputKind
-{
-	AI_PROVIDER_RAW_OUTPUT_RECORDING = 1,
-	AI_PROVIDER_RAW_OUTPUT_TRISTATE_ASCII = 2,
-} AiProviderRawOutputKind;
-
 typedef struct AiByteSlice
 {
 	const uint8_t *data;
@@ -152,6 +146,7 @@ typedef struct AiProvider
 {
 	const AiProviderOps *ops;
 	const void *config;
+	uint32_t max_input_bytes;
 } AiProvider;
 
 /*
@@ -160,7 +155,9 @@ typedef struct AiProvider
  * represented only by is_null; an empty non-NULL value has length zero.  Any
  * non-OK open or drive result is terminal: open may publish a partial session,
  * the caller closes it, and no later drive may continue that session.  Close
- * accepts NULL and repeated calls.  limit_bytes is a code-specific fixed-width
+ * accepts NULL and repeated calls.  A selected provider publishes a query-fixed
+ * max_input_bytes before open; zero means no adapter-specific input limit.
+ * limit_bytes is a code-specific fixed-width
  * parameter and is zero when the error does not report a byte limit.  detail
  * is a locally generated, bounded, redacted description; it is data, never a
  * format string, and must not contain task/provider payload or configuration.
