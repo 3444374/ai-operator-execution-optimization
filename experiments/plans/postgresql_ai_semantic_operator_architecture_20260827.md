@@ -1,6 +1,6 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-08-31
+更新日期：2026-09-01
 状态：`current / architecture-defined / implementation-in-progress`
 
 文档角色：本文是 PostgreSQL 语义算子模块的**工程架构与实施计划**，回答接口如何落地、按什么顺序
@@ -28,12 +28,14 @@ interface 已移除 transport-specific operation，adapter 本地产生定长脱
 行为不变的 Python gateway 迁移已完成：公共 execution-provider 目录拥有 framing、冻结 wire v2、
 recording adapter 与 server，旧 extension 路径只保留自定位兼容入口。三参 exact `SemFilter`、
 instruction/parser/model policy、wire v3、deterministic golden 与 fixed-model adapters 已完成；固定
-OpenAI-compatible endpoint 的小规模真实模型 capability 已跑通。第二 physical path、accepted-prefix backpressure、
+OpenAI-compatible endpoint 的小规模真实模型 capability 已跑通。reference path 的 semantic-input rows、
+output selectivity、NULL-adjusted calls、prompt/output work、model role 与 AI-work cost 也已作为独立
+planner metadata 完成功能资格，不改 semantic identity。第二 physical path、accepted-prefix backpressure、
 多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器尚未实现。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，保留已完成的 recording `SemMap`/`SemFilter`、ordinary
-child plan、query-scoped provider session、最小 plan carrier、已迁移 gateway、4A golden 与 4B fixed-model
-reference；下一步先修正 SemFilter rows/selectivity/AI-work cost，再实现一条最小、显式可识别的第二
+child plan、query-scoped provider session、最小 plan carrier、已迁移 gateway、4A golden、4B fixed-model
+reference 和已独立验收的 reference cost/cardinality；下一步实现一条最小、显式可识别的第二
 physical path。
 既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
 数据库资格完成后优先比较 IMLane-like batch placement。`SemJoin`、aggregate/top-k/group-by、
@@ -758,8 +760,8 @@ pump，machine 只接收已绑定 byte/value view 并返回 typed result/disposi
 |---|---|---|
 | plan-owned semantic identity | recording schema v1 与 exact schema v2 已进入 `custom_private`，input column 独立；machine 不构造 spec | 只在第二 path 出现新 consumer 时增加字段；每个新字段必须被消费或 planning 时拒绝 |
 | SQL semantic surface | 一参 recording marker 与三参 exact Filter 已实现 | 保持受支持 shape 最小；未知 option 在 planning 时拒绝；不改 `gram.y` |
-| physical path identity | recording algorithm 与 `Physical Role=reference` 已由 plan 携带，`EXPLAIN` 从 plan 读取；model role、quality/evidence/fallback 尚无真实 consumer | 真实 reference/第二路径出现时扩展现有 plan，不提前加入空字段 |
-| Filter cardinality/cost | 复用已含 marker selectivity 的 child rows，并只加 `cpu_operator_cost * rows` | 4B 真实 reference 完成后、第二 path 创建前，分开 semantic-input rows、output selectivity 和 calls/tokens/model-role cost；若公开 hook 无法正确重建 ordinary child estimate，记录为 carrier audit 反例 |
+| physical path identity | recording algorithm 与 `Physical Role=reference` 已由 plan 携带，`EXPLAIN` 从 plan 读取；reference cost metadata 另携带 model role；quality/evidence/fallback 尚无真实 consumer | 第二路径出现时只增加真正被规划/执行消费的 identity 与 evidence 字段 |
+| Filter cardinality/cost | `47407751` 已从 ordinary restrictions 重建 semantic-input rows，分开 output selectivity、NULL-adjusted calls、prompt/output tokens、model role 与 AI work cost；执行另报告实际 usage | 保持该 metadata 与 `SemanticPlanSpec`/digest 分离；将来以 matched calibration 取代或校正当前工程启发式，不把功能测试写成代价预测精度 |
 | proxy/oracle control flow | 每个非 NULL tuple 固定一次 `drive` | 保持同步 port，先让 machine 返回 `NEED_TASK(PROXY/ORACLE)`，pump 循环 drive；不把 cascade 隐藏进 gateway，也不借机实现多在途 |
 | real result parsing | exact parser identity 已在 plan，golden/fixed-model raw completion 均由 PostgreSQL 严格解析 | 第二 path 继续复用相同 parser/keep-drop；provider 不返回最终 tuple/keep-drop |
 | coexistence evidence | static hook chaining 已测，live multi-extension 尚未测 | 在 carrier audit 中用真实 alternative path 运行 live hook、prepared/generic plan 和 invalidation 反例 |
@@ -843,8 +845,8 @@ manifest 保存到仓库外证据包 `postgresql_semfilter_4a1_hardening_359ffdf
 `-O2 -Werror` build log、exit code 0 和扩展二进制。归档校验通过后才删除临时
 worktree 并停止本切片确认的旧测试 gateway/socket。
 
-工作包五先用 4B 的真实调用/usage 修正 semantic-input rows、selectivity 与 AI-work cost，再增加“第二条
-可见路径”：`sem_filter_path.c` 同时生成 reference
+工作包五的第一切片已用 4B 的真实调用/usage 合同修正 semantic-input rows、selectivity 与
+AI-work cost，并在第二 path 之前独立验收。下一切片增加“第二条可见路径”：`sem_filter_path.c` 同时生成 reference
 和 proxy/oracle `CustomPath`，两者携带不同 `PhysicalPlanSpec`、cost 与 evidence identity；
 operator state 可按需返回 `NEED_TASK(PROXY)` 或 `NEED_TASK(ORACLE)`，pump 在当前同步 port 上循环，
 `PgSemanticRuntime` 不因算法分支而改变。阈值和 evidence 在 planning 前已加载、校验并解析为
@@ -859,8 +861,8 @@ runtime/provider lifecycle。binary join 和 blocking aggregate 的 child owners
 工作包一至七构成当前有序实施范围。同步 UDS recording slice、neutral provider seam、响应边界
 hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter`、shared runtime、
 planner-owned 最小 recording plan spec、transport-neutral error interface 与行为不变的 gateway 迁移已通过；
-4A/4B 已让最小真实 semantic contract 依次通过 deterministic golden 与同步固定模型 reference；当前
-下一步先修正 cost/cardinality，之后才实现最小第二 semantic path。
+4A/4B 已让最小真实 semantic contract 依次通过 deterministic golden 与同步固定模型 reference；
+`47407751` 又完成 reference cost/cardinality 的独立资格。当前下一步是最小第二 semantic path。
 只有真实语义和路径选择资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
@@ -1004,15 +1006,23 @@ warning-free `-O2 -Werror`、regression 1/1、TAP 404/404 和 neutral/machine C1
 manifest。该证据只收紧 4B transport boundary，不替换 `53cf3da8` 的真实模型 capability，也不增加
 质量、性能或资源结论。
 
-### 工作包五：SemFilter cost/cardinality 与最小 LOTUS/Cortex-like 第二 path
+### 工作包五：SemFilter cost/cardinality 与最小 LOTUS/Cortex-like 第二 path（第一切片已完成）
 
-4B 完成后先用真实 reference 的 input rows、NULL rate、output selectivity、model calls、prompt/output
-usage 与 model role 修正当前 placeholder rows/cost；该修正必须在第二 path 产生前独立验收。随后使用
+4B 完成后，`47407751` 已用真实 reference 的 input rows、NULL rate、output selectivity、model calls、
+prompt/output usage 与 model role 取代 placeholder rows/cost，并在第二 path 产生前独立验收。
+planner 当前以可检查的 bytes-per-token 与 output-cap 启发式构成
+`semloom.exact_filter.analytical.v1`；实际 calls/usage 由 `EXPLAIN ANALYZE` 分列报告。这是 path-cost
+功能资格，不是已校准的质量、延迟或性能证据。随后使用
 deterministic fixture 或规划前已经匹配的静态 calibration artifact，实现 LOTUS-like
 proxy/oracle 双阈值 path。PostgreSQL plan 保存 algorithm/model role、quality policy、evidence epoch、
 threshold 与 reference fallback；executor 按 tuple/task identity 执行 accept/reject/oracle 三路分流。
 LOTUS v1.2.4 的 importance sampling 与 threshold solver 先作为 Python golden oracle 或离线 calibration，
 不在 PostgreSQL planner 中扫描训练数据或调用模型。
+
+第一切片完成证据：精确 PostgreSQL 18.3 通过 warning-free `-O2 -Werror`、regression 1/1、
+TAP 414/414、Python/static+migration 49/49 和 neutral/machine C11 compile。仓库外证据包
+`postgresql_semfilter_cost_cardinality_47407751_20260831` 保存变更文件哈希、原始日志、字节一致的
+regression actual/expected、扩展二进制、status 和已校验 SHA-256 manifest。
 
 完成标准：reference/alternative 的 semantic-spec/physical-algorithm/provider-execution digests、进入
 语义算子的行数与输出选择率、calls/tokens/model-role cost、typed rows、provider task roles 与阈值来源可验证；

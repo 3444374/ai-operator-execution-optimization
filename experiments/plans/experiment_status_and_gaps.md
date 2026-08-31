@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-更新日期：2026-08-31
+更新日期：2026-09-01
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
@@ -23,7 +23,9 @@
 > 与 no-task lazy open；shared runtime 不包含算子真值，operator machines 不包含 provider lifecycle。
 > 提交 `3b2077e1`、`359ffdf3` 与 `53cf3da8` 已让 exact-reference 实际消费的最小
 > plan/task/result contract 依次通过 deterministic golden、公共 wire/error hardening 与同步 fixed-model
-> `SemFilter`；小规模真实模型只证明纵切面可运行。当前先修正 rows/selectivity/AI-work cost，再实现
+> `SemFilter`；小规模真实模型只证明纵切面可运行。提交 `47407751` 已独立完成
+> reference semantic-input rows、output selectivity、NULL-adjusted calls、prompt/output usage、model role
+> 与 AI-work cost 的可检查合同；该 analytical estimate 还没有校准为性能模型。当前实现
 > 显式 reference/optimized 第二 physical path、
 > quality evidence 与 fallback。载体审查确认
 > extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加

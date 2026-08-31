@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-08-31 exact SemFilter cost/cardinality 独立资格完成
+
+- 提交 `47407751` 在第二 physical path 之前独立完成 exact-reference `SemFilter` 的 planner cost/cardinality
+  合同。`sem_filter_cost.[ch]` 把 `semantic input rows`、output selectivity、estimated model calls、
+  prompt/output tokens、model role 与 AI work cost 编码为第三个 copyObject-safe `custom_private` 元素；
+  schema v2 `SemanticPlanSpec` 与 semantic/physical digest 未改变。
+- planner 从移除 semantic marker 后的 ordinary restrictions 重建进入语义算子的行数，另用 NULL 率估计
+  实际模型调用数；prompt work 使用 instruction、固定 prompt 模板和 PostgreSQL 列平均宽度的显式
+  bytes-per-token 工程启发式，output work 使用计划中的 8-token 上限。该模型标识为
+  `semloom.exact_filter.analytical.v1`，只提供可检查的 path cost，不是已校准的质量、延迟或性能模型。
+- plain `EXPLAIN` 现在公开 cost model、model role、semantic input rows、output selectivity、estimated
+  calls/tokens 与 AI work cost；`EXPLAIN ANALYZE` 另从 provider completion usage 累计实际 Model Calls、
+  Prompt Tokens 和 Output Tokens。公开 EXPLAIN/TAP 红测先确认旧实现缺少这些字段，再由同一 seam 转绿。
+- 服务器等价源码通过 core preflight、Python/static 与 gateway migration 49/49、显式 PostgreSQL 18.3
+  warning-free `-O2 -Werror`、regression 1/1、TAP 414/414 和 neutral/machine C11 compile。仓库外证据包
+  `postgresql_semfilter_cost_cardinality_47407751_20260831` 保存八个变更文件的 SHA-256、原始 build/
+  installcheck/TAP/server log、字节一致的 regression actual/expected、扩展二进制、全部 status 与已校验
+  manifest；临时 PostgreSQL 已停止，相关 listener/process 检查为空。
+- 本切片仍只生成 reference role，没有实现 proxy/oracle、quality policy/evidence 或 fallback，也没有以
+  功能测试替换既有真实模型 capability、RSS/FD 或离线 cost-profile 结论。下一步是在该显式 reference
+  估计合同上实现并独立验收最小第二 physical path。
+
 ## 2026-08-31 exact SemFilter 4B.1 固定 endpoint HTTP 边界加固
 
 - 4B 复核发现 fixed adapter 的两个合同缺口：默认高层 HTTP client 会跟随重定向并可能把 bearer token

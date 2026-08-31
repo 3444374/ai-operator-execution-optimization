@@ -5,14 +5,15 @@ Module targets, implementation order, and acceptance criteria belong to
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
 the code tree and must not become a competing engineering plan.
 
-Status as of 2026-08-31: this directory contains the existing external physical-execution runtime
+Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
 includes narrow `REL_18_3` planner-visible recording `SemMap/SemFilter` compatibility paths and a three-argument
 exact `SemFilter` golden/fixed-model reference under `postgres/semloom_pg/`. PostgreSQL owns the versioned
 schema-v1/v2 plan, canonical messages, strict result parser, tuple/cardinality behavior, and query lifecycle;
-the provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
+the exact reference path also carries separate planner cost/cardinality metadata and reports actual provider usage.
+The provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
 The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3, recording
 and golden/fixed-model implementations, and self-locating compatibility entry points under the extension tree.
 
@@ -47,8 +48,18 @@ neutral/machine C11 compilation. The repository-external bundle
 regression outputs, the extension binary, and a verified SHA-256 manifest. This adds boundary and lifecycle
 evidence only; the real-model capability remains bound to `53cf3da8`.
 
-The next implementation slice is SemFilter cost/cardinality using real reference calls and usage, followed by a
-distinct reference/optimized path, quality evidence, and carrier audit. Accepted-prefix,
+Commit `47407751` independently qualifies exact-reference cost/cardinality before a second path exists. Planner
+metadata now separates semantic input rows, output selectivity, NULL-adjusted model calls, estimated prompt/output
+tokens, model role, and AI work cost from semantic plan identity. Plain `EXPLAIN` exposes the estimate;
+`EXPLAIN ANALYZE` additionally reports actual model calls and provider prompt/output usage. The analytical model is
+an explicit engineering heuristic, not calibrated quality, latency, or performance evidence. Exact PostgreSQL 18.3
+passes warning-free `-O2 -Werror`, regression 1/1, TAP 414/414, 49/49 Python/static+migration contracts, and
+neutral/machine C11 compilation. The repository-external bundle
+`postgresql_semfilter_cost_cardinality_47407751_20260831` preserves source hashes, raw logs, byte-identical
+regression outputs, the extension binary, statuses, and a verified SHA-256 manifest.
+
+The next implementation slice is a distinct reference/optimized path with quality evidence and fallback, followed
+by carrier audit. Accepted-prefix,
 multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and path-selection
 qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional

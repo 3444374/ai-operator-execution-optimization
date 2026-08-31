@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-31
+日期：2026-09-01
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -43,7 +43,11 @@ OpenAI-compatible endpoint adapter；endpoint/model/timeout/auth 从仓库外严
 请求且不 retry，PostgreSQL 通过 query-fixed execution profile 选择 distinct provider identity，并继续
 负责 digest/model validation、parser 与 keep/drop。后续 `a4319655` 拒绝 301/302/303/307/308 而不访问
 重定向目标，并以 monotonic deadline 约束慢响应；`ef314618` 进一步把 DNS 解析纳入同一调用截止时间，
-因此 timeout 现在覆盖解析、连接/TLS、发送、响应头和响应体，且仍不 retry。当前尚缺第二 physical path、carrier audit、
+因此 timeout 现在覆盖解析、连接/TLS、发送、响应头和响应体，且仍不 retry。提交 `47407751`
+又为 exact reference path 增加独立的 `sem_filter_cost` planner metadata：ordinary predicates 重建
+semantic-input rows，NULL 率调整 model calls，并显式报告 output selectivity、estimated prompt/output
+tokens、model role 与 AI work cost；actual provider calls/usage 另由 `EXPLAIN ANALYZE` 计数。
+这些估计不进入 semantic digest，目前只是未校准的工程启发式。当前尚缺第二 physical path、carrier audit、
 accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
@@ -98,7 +102,12 @@ warning-free `-O2 -Werror`、regression 1/1、TAP 404/404 与 neutral/machine C1
 `postgresql_semfilter_4b1_http_hardening_ef314618_20260831` 保存 source/diff identity、preflight、测试、
 build/installcheck、字节一致的 regression actual/expected、扩展二进制和已校验 SHA-256 manifest；
 测试临时集群已停止。该加固不替换 `53cf3da8` 的真实模型 capability，也不增加质量、性能或资源结论。
-下一步先修正 SemFilter rows/selectivity/AI-work cost，再实现第二 physical path；accepted-prefix、多在途/
+exact-reference cost/cardinality 提交 `47407751` 以第三个 copyObject-safe `custom_private` 元素保存
+cost model ID、reference model role、semantic-input rows、output selectivity、estimated calls/tokens 与
+AI work cost，不改 schema v2 `SemanticPlanSpec` 或摘要。精确 18.3 资格为 warning-free
+`-O2 -Werror`、regression 1/1、TAP 414/414、Python/static+migration 49/49 和 neutral/machine C11
+compile；仓库外证据包 `postgresql_semfilter_cost_cardinality_47407751_20260831` 已校验 manifest。
+下一步实现第二 physical path；accepted-prefix、多在途/
 乱序 completion、增量 SemLoom session 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
@@ -466,8 +475,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 6. 工作包 4B 已以固定 OpenAI-compatible endpoint 复用同一 schema/wire/parser，并用 query-fixed profile
    区分 provider execution identity；4B.1 又拒绝重定向并以单一 monotonic deadline 覆盖 DNS 到响应体；
    真实模型只通过小规模 capability，不提供质量或性能结论；
-7. 当前 planner 只生成一个 reference role，cost 仍是普通占位；reference/optimized identity、AI-work
-   cost、quality evidence 与 fallback 尚未实现；
+7. 当前 planner 只生成一个 reference role；该 path 已分开 semantic-input rows、output selectivity、
+   NULL-adjusted calls、prompt/output-token work 和 model role，并在执行时报告实际 usage。该
+   analytical cost 尚未校准；reference/optimized 第二 path identity、quality evidence 与 fallback 尚未实现；
 8. 当前 provider interface 仍是同步单任务；recording wire v2 保持冻结，exact semantic wire v3、
    deterministic golden 与 fixed-endpoint adapter 已实现。accepted-prefix、多在途、乱序 completion、
    增量 SemLoom session 和 SemLoom scheduling adapter 尚未实现；
