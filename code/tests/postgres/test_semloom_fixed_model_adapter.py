@@ -13,6 +13,7 @@ import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
 from src.execution_provider.adapters.openai_compatible_fixed import (
     FIXED_EXECUTION_ID,
@@ -99,6 +100,39 @@ class _CompletionHandler(BaseHTTPRequestHandler):
 
     def log_message(self, _format: str, *_args: object) -> None:
         return
+
+
+class FixedModelAdapterDeadlineTests(unittest.TestCase):
+    def test_timeout_is_a_total_deadline_for_dns_resolution(self) -> None:
+        def slow_getaddrinfo(*_args: object, **_kwargs: object) -> object:
+            time.sleep(0.5)
+            raise socket.gaierror("test resolver failure")
+
+        adapter = OpenAICompatibleFixedAdapter(
+            FixedModelConfig(
+                endpoint_url="http://model.test/v1/chat/completions",
+                model_id="fixed-model-v1",
+                timeout_ms=100,
+            )
+        )
+        request = V3CompletionRequest(
+            semantic_payload_digest="a" * 64,
+            model_id="fixed-model-v1",
+            canonical_messages=(
+                {"role": "system", "content": "instruction"},
+                {"role": "user", "content": "input"},
+            ),
+            generation_constraints=dict(GENERATION_CONSTRAINTS),
+        )
+
+        started = time.monotonic()
+        with mock.patch("socket.getaddrinfo", side_effect=slow_getaddrinfo):
+            with self.assertRaises(CompletionAdapterError) as raised:
+                adapter.complete(request)
+        elapsed = time.monotonic() - started
+
+        self.assertEqual(raised.exception.code, "MODEL_TIMEOUT")
+        self.assertLess(elapsed, 0.35)
 
 
 class FixedModelAdapterTests(unittest.TestCase):

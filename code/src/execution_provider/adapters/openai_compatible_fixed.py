@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.client
 import json
 import os
+import queue
 import re
 import socket
 import threading
@@ -218,15 +219,33 @@ class OpenAICompatibleFixedAdapter:
             if parsed.scheme == "https"
             else http.client.HTTPConnection
         )
+        endpoint_port = parsed.port or (443 if parsed.scheme == "https" else 80)
         deadline = _RequestDeadline(self._config.timeout_ms)
         connection: http.client.HTTPConnection | None = None
         response: http.client.HTTPResponse | None = None
         try:
+            resolved_addresses = _resolve_endpoint(
+                parsed.hostname,
+                endpoint_port,
+                deadline,
+            )
             connection = connection_type(
                 parsed.hostname,
                 parsed.port,
                 timeout=deadline.remaining_seconds(),
             )
+            def connect_resolved(
+                _address: tuple[str, int],
+                _timeout: object,
+                source_address: tuple[str, int] | None,
+            ) -> socket.socket:
+                return _connect_resolved(
+                    resolved_addresses,
+                    deadline,
+                    source_address=source_address,
+                )
+
+            connection._create_connection = connect_resolved  # type: ignore[attr-defined]
             deadline.bind(connection)
             connection.request("POST", endpoint_path, body=payload, headers=headers)
             deadline.bind_socket(connection.sock)
@@ -265,6 +284,67 @@ class OpenAICompatibleFixedAdapter:
             return _parse_completion(response_value)
         except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
             raise CompletionAdapterError("MODEL_RESPONSE_INVALID") from None
+
+
+def _resolve_endpoint(
+    hostname: str,
+    port: int,
+    deadline: _RequestDeadline,
+) -> list[tuple[int, int, int, str, tuple[object, ...]]]:
+    results: queue.Queue[object] = queue.Queue(maxsize=1)
+
+    def resolve() -> None:
+        try:
+            value: object = socket.getaddrinfo(
+                hostname,
+                port,
+                type=socket.SOCK_STREAM,
+            )
+        except Exception as error:
+            value = error
+        results.put(value)
+
+    resolver = threading.Thread(target=resolve, daemon=True)
+    resolver.start()
+    try:
+        value = results.get(timeout=deadline.remaining_seconds())
+    except queue.Empty:
+        raise TimeoutError from None
+    deadline.remaining_seconds()
+    if isinstance(value, Exception):
+        raise value
+    if not isinstance(value, list) or not value:
+        raise OSError("fixed endpoint resolver returned no addresses")
+    return value
+
+
+def _connect_resolved(
+    addresses: list[tuple[int, int, int, str, tuple[object, ...]]],
+    deadline: _RequestDeadline,
+    *,
+    source_address: tuple[str, int] | None,
+) -> socket.socket:
+    last_error: OSError | None = None
+    for family, socket_type, protocol, _canonical_name, socket_address in addresses:
+        connection_socket: socket.socket | None = None
+        try:
+            connection_socket = socket.socket(family, socket_type, protocol)
+            if source_address is not None:
+                connection_socket.bind(source_address)
+            connection_socket.settimeout(deadline.remaining_seconds())
+            connection_socket.connect(socket_address)
+            return connection_socket
+        except TimeoutError:
+            if connection_socket is not None:
+                connection_socket.close()
+            raise
+        except OSError as error:
+            last_error = error
+            if connection_socket is not None:
+                connection_socket.close()
+    if last_error is not None:
+        raise last_error
+    raise OSError("fixed endpoint resolver returned no usable addresses")
 
 
 def _read_response(
