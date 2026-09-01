@@ -207,7 +207,12 @@ The [first real collection on 2026-09-01](../../../experiments/results/postgresq
 completed 64 warm-up inputs, then stopped on the 23rd response of the first training query: the fixed model returned
 an invalid tristate value and PostgreSQL 18.3 raised `22000`. No complete training observation, held-out measurement,
 fit, or artifact resulted. Production code and the predeclared 20% error limit were unchanged. The next collection
-must establish a reference model/profile that obeys the strict output format before cost accuracy can be assessed.
+is paused for three independent checks: reference output qualification (including a separately versioned constrained
+decoding candidate), ordinary PostgreSQL multicolumn statistics, and builder identifiability. The builder now checks
+the four-column design with exact rational elimination before fitting, scales each column by its maximum magnitude,
+and rejects zero or normalized pivots at most `1e-8`. This engineering floor is not a held-out error limit or an SVD
+condition number. Nine local calibration tests cover exact/near dependence and valid unit/row-order changes.
+Production SQL, the strict C parser, and wire v3 do not yet support the constrained-decoding candidate.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:

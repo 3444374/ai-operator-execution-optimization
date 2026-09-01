@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-09-01 暂停整轮采集，修复 calibration 设计矩阵检查
+
+- 公开 builder 红测复现：四条完全满足 `output_tokens=2*calls` 的观测被旧实现接受，甚至得到 0 held-out
+  误差。50 位 Decimal 消元仍会残留约 `1e-45` 的伪非零主元；提高精度不能构成结构秩检查。
+- 拟合前新增精确有理数消元，各列按最大绝对值归一化，再拒绝零或 ≤`1e-8` 的小主元。原有有效
+  fixture、系数/identity 与 held-out 阈值不变；新增完全/近似共线、零/常量 work 维度和量纲/行序测试，
+  本地 9/9 通过。这个归一化阈值是工程可辨识性要求，不冒称 SVD condition number。
+- 工作包五登记独立小切片：只用公开分组元数据核对普通 SQL 多列统计；只重放失败输入和九条预先
+  构造的 reference 样例，对比原生成配置与 vLLM 原生 choice 约束。候选使用独立版本化 manifest/SHA，
+  尚未接入生产 SQL/plan/wire。held-out、完整校准、第二路径和 core patch 均暂停；服务器结果未预填。
+
 ## 2026-09-01 首轮真实 reference calibration 因模型输出格式失败停止
 
 - 按 `2feab7d4` / `7042132e` 预注册条件，在独立 PostgreSQL 18.3 + 单 RTX 4090 + 固定

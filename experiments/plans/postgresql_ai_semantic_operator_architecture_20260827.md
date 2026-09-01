@@ -1030,8 +1030,8 @@ bytes-per-token/output-cap 工程启发式标为 `semloom.exact_filter.uncalibra
 `unavailable`。`dcde2be5` 已实现严格 29-field artifact、离线 training/held-out builder、独立
 cardinality/work/service coefficients、跨语言 identity 和 planner loader；deterministic fixture 覆盖
 matched、semantic/provider mismatch、duplicate、escaped NUL 与 missing artifact，并证明失配只回退
-uncalibrated exact reference。真实 model/workload/service 观测尚未采集，因此仍不能驱动第二 path 比较。
-下一步先产生规划前已经匹配并通过 held-out 误差要求的真实静态 calibration artifact，再实现 LOTUS-like
+uncalibrated exact reference。首轮真实采集因非法模型输出停止，尚无可用 artifact，不能驱动第二 path 比较。
+整轮采集目前暂停，先完成下述小切片。之后才产生通过 held-out 误差要求的真实静态 calibration artifact，再实现 LOTUS-like
 proxy/oracle 双阈值 path。PostgreSQL plan 保存 algorithm/model role、quality policy、evidence epoch、
 threshold 与 reference fallback；executor 按 tuple/task identity 执行 accept/reject/oracle 三路分流。
 LOTUS v1.2.4 的 importance sampling 与 threshold solver 先作为 Python golden oracle 或离线 calibration，
@@ -1045,6 +1045,53 @@ neutral/machine C11 compile。仓库外证据包 `postgresql_semfilter_gap_harde
 regression 1/1、TAP 437/437、Python/static/gateway 55/55 和 neutral/machine C11 compile；仓库外证据包
 `postgresql_semfilter_reference_calibration_dcde2be5_20260901` 的 manifest 全部校验。该证据证明
 calibration mechanism 与 deterministic artifact parity，不证明真实模型服务成本精度。
+
+#### 校准前小切片：reference 输出资格、普通统计与可辨识性（2026-09-01）
+
+本切片不恢复整轮采集，不访问 held-out payload，不训练/调参、不更换模型、不改严格 PG parser。
+生产修复只针对公开 calibration builder 的秩检查；不修改 core、runtime 或 provider seam。
+
+1. **Builder**：先以四条 `output_tokens=2*calls` 观测复现旧实现误接受，再测试近似共线。
+   在拟合前对实际设计矩阵做精确有理数消元，避免有限 Decimal 精度把零主元变成非零；各列先按最大
+   绝对值归一化，归一化主元 ≤`1e-8` 也拒绝。该数值阈值是预先选定的工程可辨识性要求，不是 held-out
+   精度阈值或 SVD condition number。保留有效 fixture 与不同量纲、行序的兼容性。
+2. **普通统计**：新建独立 PG18.3 测试集群，仅从公开 manifest 导入 1216 条 `doc_id/split/cell`
+   元数据。先运行无 AI 条件的 `EXPLAIN ANALYZE ... WHERE split='warmup' AND cell=0`，再创建
+   `CREATE STATISTICS calibration_split_cell (mcv, dependencies) ON split,cell FROM calibration_inputs`
+   并 `ANALYZE`，比较 estimate/actual；目标是普通 SQL 估计从约 8 改善到实际 64，不能硬填行数。
+3. **独立 reference 资格**：沿用原模型文件 SHA、vLLM 0.25.1、单 RTX4090、BF16/TP1/eager、
+   prefix-cache off、context/token budget 4096、max sequences 1、memory utilization 0.25。
+   baseline 完全保留原 generation；candidate 只增加 vLLM 原生
+   `structured_outputs.choice=["TRUE","FALSE","UNKNOWN"]`，不后处理模型文本。
+   两者保存不同的版本化 generation profile 和完整候选 plan manifest/SHA；candidate 不是现有生产
+   schema-v2/wire-v3 plan，不能声称已接入 SQL。只有资格通过后才另行将 profile 正式编码进生产
+   `SemanticPlanSpec` 和版本化 wire，绝不复用旧 semantic digest 来执行新解码约束。
+
+资格样例在请求前固定为以下 9 条工程构造用例，以及只用于重放的已知失败输入（按原 payload SHA
+取出，不为其事后猜标签）：
+
+| 预期 | 输入 |
+|---|---|
+| TRUE | `Write a Python function that adds two integers.` |
+| TRUE | `Explain what the SQL statement SELECT COUNT(*) FROM orders does.` |
+| TRUE | `Debug this JavaScript function: function add(a,b) { return a - b; } It should add the numbers.` |
+| FALSE | `Give me a recipe for tomato soup.` |
+| FALSE | `Write a short poem about a mountain.` |
+| FALSE | `What is the capital of France?` |
+| UNKNOWN | `Please help me fix it.` |
+| UNKNOWN | `Can you explain this?` |
+| UNKNOWN | `I need help writing something, but I have not said what.` |
+
+固定 instruction 与原实验相同。每 profile 每例三重复，交错顺序 seed=20260901；各 profile 先用第一条
+正例预热一次并保留结果。candidate 通过要求为 30/30 输出通过**生产 C parser**，且预先标注的 27 次
+判断全部符合表中预期；失败重放只验格式，不计入语义符合率。baseline 仅作同条件诊断对照，完整保存
+invalid output 分类/长度/SHA、usage 和 finish reason，原始失败内容留在仓库外，不转义或 trim 后再解析。
+这些是工程资格样例，不是人工标注语料或泛化准确率评价；即使通过也不解除整轮校准暂停。
+
+如果此小样本显示输出 usage 固定，报告 calls/output 不可分离，不凑四项系数。下一次成本模型变更须显式
+采用较少自由系数、记录模型身份并独立验证；本轮不自动用降维模型发布旧四系数 artifact。
+依据：[vLLM 0.25.1 structured outputs](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)、
+[PostgreSQL 18 CREATE STATISTICS](https://www.postgresql.org/docs/18/sql-createstatistics.html)。
 
 #### 真实 reference calibration：首轮固定采集合同（2026-09-01）
 

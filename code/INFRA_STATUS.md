@@ -62,8 +62,10 @@ accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程
 2026-09-01 的[首轮真实校准采集](../experiments/results/postgresql/semfilter_reference_calibration_20260901/README.md)
 已运行，但没有产生 artifact：固定 Qwen2.5-1.5B-Instruct 完成 64 条预热，首个 training 查询的第 23
 个响应不符合严格 tristate，PG18.3 按现有合同报 `22000`。完整 training/held-out observation 均为 0，
-未拟合、未加载 artifact，没有修改生产代码、阈值或失败样本。下一轮需先确定能遵守该输出合同的
-reference model/profile，再按独立样本检查可辨识性与误差；本次 55/55 合同和 6/6 采集检查不代替成本精度。
+未拟合、未加载 artifact，没有修改生产代码、阈值或失败样本。本次 55/55 合同和 6/6 采集检查不代替成本精度。
+后续复核发现旧 builder 的有限精度消元会把完全共线的残差误当非零主元；现已增加拟合前的精确有理数
+设计矩阵检查和归一化小主元拒绝（≤`1e-8`），本地 calibration 测试扩为 9/9。整轮校准暂停，先独立
+完成 reference 输出资格、PG18.3 多列统计验证和秩检查修复；约束解码候选不得冒用旧 plan/generation identity。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过

@@ -84,6 +84,68 @@ def _source() -> dict:
 
 
 class SemFilterReferenceCalibrationTests(unittest.TestCase):
+    def test_builder_rejects_fixed_output_usage_even_with_zero_held_out_error(self) -> None:
+        source = _source()
+        source["training_observations"] = [
+            dict(semantic_input_rows=calls, output_rows=rows, model_calls=calls,
+                 prompt_tokens=prompt, output_tokens=output, service_milliseconds=service)
+            for calls, rows, prompt, output, service in (
+                (90, 36, 360, 180, 316),
+                (60, 24, 1260, 120, 316),
+                (100, 40, 1100, 200, 420),
+                (15, 6, 270, 30, 82),
+            )
+        ]
+        source["held_out_observations"] = [
+            dict(semantic_input_rows=265, output_rows=106, model_calls=265,
+                 prompt_tokens=2990, output_tokens=530, service_milliseconds=1104)
+        ]
+
+        with self.assertRaisesRegex(ValueError, "do not identify all cost coefficients"):
+            build_reference_calibration(source)
+
+    def test_builder_rejects_nearly_dependent_usage_before_held_out_validation(self) -> None:
+        source = _source()
+        training = source["training_observations"]
+        for index, row in enumerate(training):
+            for field in ("semantic_input_rows", "output_rows", "model_calls", "prompt_tokens"):
+                row[field] *= 1_000_000_000
+            row["output_tokens"] = 2 * row["model_calls"] + (index == 0)
+            row["service_milliseconds"] = (10 + 2 * row["model_calls"]
+                + row["prompt_tokens"] / 100 + row["output_tokens"] / 2)
+        # One extra token makes the matrix exactly full-rank, but carries
+        # negligible information compared with billions of fixed-length calls.
+        held_out = {field: sum(row[field] for row in training) for field in training[0]}
+        held_out["service_milliseconds"] -= 30
+        source["held_out_observations"] = [held_out]
+
+        with self.assertRaisesRegex(ValueError, "nearly collinear"):
+            build_reference_calibration(source)
+
+    def test_builder_accepts_identifiable_usage_across_units_and_row_order(self) -> None:
+        source = _source()
+        source["training_observations"].reverse()
+        for row in source["training_observations"] + source["held_out_observations"]:
+            row["prompt_tokens"] *= 1_000_000
+            row["output_tokens"] *= 1_000_000
+
+        artifact = build_reference_calibration(source)
+
+        self.assertEqual(artifact["service_fixed_milliseconds"], "10")
+        self.assertEqual(artifact["service_ms_per_model_call"], "1")
+        self.assertEqual(artifact["service_ms_per_prompt_token"], "1e-08")
+        self.assertEqual(artifact["service_ms_per_output_token"], "5e-07")
+        self.assertEqual(artifact["held_out_max_relative_error"], "0")
+
+    def test_builder_rejects_unobserved_or_constant_work_dimensions(self) -> None:
+        for field, value in (("output_tokens", 0), ("model_calls", 40)):
+            with self.subTest(field=field):
+                source = _source()
+                for row in source["training_observations"]:
+                    row[field] = value
+                with self.assertRaisesRegex(ValueError, "do not identify all cost coefficients"):
+                    build_reference_calibration(source)
+
     def test_builder_separates_cardinality_work_service_and_held_out_evidence(
         self,
     ) -> None:

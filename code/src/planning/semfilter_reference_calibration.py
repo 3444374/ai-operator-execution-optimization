@@ -15,6 +15,7 @@ import struct
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal, localcontext
+from fractions import Fraction
 from typing import Any, Mapping, Sequence
 
 
@@ -25,6 +26,9 @@ MODEL_ROLE = "reference"
 _ARTIFACT_ID_DOMAIN = b"semloom-semfilter-reference-calibration-v1\0"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+# Engineering identifiability floor, applied after each design column is scaled
+# to max magnitude one. It is independent of held-out error and measurement units.
+_MIN_SERVICE_DESIGN_PIVOT = Fraction(1, 100_000_000)
 
 _SOURCE_FIELDS = frozenset(
     {
@@ -464,6 +468,7 @@ def _fit_service_coefficients(
 
     if len(observations) < 4:
         raise ValueError("training requires at least four service observations")
+    _require_identifiable_service_design(observations)
     with localcontext() as context:
         context.prec = 50
         design = [
@@ -503,6 +508,35 @@ def _fit_service_coefficients(
     if any(value < 0 for value in coefficients):
         raise ValueError("service calibration produced a negative cost coefficient")
     return tuple(float(value) for value in coefficients)
+
+
+def _require_identifiable_service_design(observations: Sequence[_Observation]) -> None:
+    """Reject exact/near dependence before fitting the normal equations.
+
+    Four-column partial-pivot elimination uses exact rational input values, so
+    rounding cannot resurrect a zero pivot. Column scaling makes the additional
+    small-pivot policy dimensionless; this is not a claimed SVD condition number.
+    """
+    rows = [[Fraction(1), Fraction(str(row.model_calls)),
+             Fraction(str(row.prompt_tokens)), Fraction(str(row.output_tokens))]
+            for row in observations]
+    scales = [max(abs(row[column]) for row in rows) for column in range(4)]
+    if any(scale == 0 for scale in scales):
+        raise ValueError("service observations do not identify all cost coefficients")
+    rows = [[value / scale for value, scale in zip(row, scales)] for row in rows]
+    for column in range(4):
+        pivot = max(range(column, len(rows)), key=lambda index: abs(rows[index][column]))
+        if rows[pivot][column] == 0:
+            raise ValueError("service observations do not identify all cost coefficients")
+        if abs(rows[pivot][column]) <= _MIN_SERVICE_DESIGN_PIVOT:
+            raise ValueError("service observations are nearly collinear")
+        rows[column], rows[pivot] = rows[pivot], rows[column]
+        divisor = rows[column][column]
+        rows[column] = [value / divisor for value in rows[column]]
+        for index in range(column + 1, len(rows)):
+            factor = rows[index][column]
+            rows[index] = [value - factor * pivot_value
+                           for value, pivot_value in zip(rows[index], rows[column])]
 
 
 def _artifact_id(artifact: Mapping[str, Any]) -> str:
