@@ -73,6 +73,12 @@ estimate 从 8 改为 64，与 actual=64 一致。原 generation 与独立 choic
 没有进入生产 SQL/spec/wire；未发布真实 calibration artifact，整轮采集继续暂停。
 最终数值补充 `44f6632c` 独立通过 PG18.3 warning-free `-Werror`、regression 1/1、TAP 437/437、Python
 60/60（calibration 10/10）；仅加强整体病态检查，没有重跑模型或改变上述语义资格结论。
+随后完成[单一 prompt/model 对照](../experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)：
+实际 HTTP messages、服务 tokenize 与模型 chat template 一致；1.5B 新 prompt 旧/新各 5/9，
+matched 7B 新 prompt 为 7/9、6/9，原 prompt 为 8/9、8/9，仍无合格配置。每例重复三次，不能把
+重复响应当独立样本。中止的 7B 默认 repetition-penalty 失配尝试单列保留；修正值来自原基线。
+本轮仅有实验 manifest，生产代码/SQL/plan/wire 未改，held-out 和校准继续暂停；本地/服务器
+Python 60/60 复跑通过，未重跑 PostgreSQL regression/TAP。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过

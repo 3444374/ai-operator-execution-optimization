@@ -1,0 +1,135 @@
+[
+  {
+    "case_id": "positive-python",
+    "cohort": "replay",
+    "expected": "TRUE",
+    "input": "Write a Python function that adds two integers.",
+    "input_sha256": "fb621de3ef53a5599e2c1cf19eb486c1f965fdb001a26f8fc987da5bed9ad03e"
+  },
+  {
+    "case_id": "positive-sql",
+    "cohort": "replay",
+    "expected": "TRUE",
+    "input": "Explain what the SQL statement SELECT COUNT(*) FROM orders does.",
+    "input_sha256": "2543133869e2d462cfd72f5bd504f241409e17f065eb720787e36e4eeeb2e3c7"
+  },
+  {
+    "case_id": "positive-debug",
+    "cohort": "replay",
+    "expected": "TRUE",
+    "input": "Debug this JavaScript function: function add(a,b) { return a - b; } It should add the numbers.",
+    "input_sha256": "b4547e5c99ab74d0305085f0efe5b3bf27d43e3e2cebab9d07cdb9ac6403171c"
+  },
+  {
+    "case_id": "negative-recipe",
+    "cohort": "replay",
+    "expected": "FALSE",
+    "input": "Give me a recipe for tomato soup.",
+    "input_sha256": "4d75feaa03dd329f4fd20f5dbe153130e536fd0f5c0a1648bd44407191aa0a2d"
+  },
+  {
+    "case_id": "negative-poem",
+    "cohort": "replay",
+    "expected": "FALSE",
+    "input": "Write a short poem about a mountain.",
+    "input_sha256": "388e99131bde37757fa333370139f43e0e9faa03d3f0975ccb80c4bad8585eb6"
+  },
+  {
+    "case_id": "negative-geography",
+    "cohort": "replay",
+    "expected": "FALSE",
+    "input": "What is the capital of France?",
+    "input_sha256": "115049a298532be2f181edb03f766770c0db84c22aff39003fec340deaec7545"
+  },
+  {
+    "case_id": "unknown-fix",
+    "cohort": "replay",
+    "expected": "UNKNOWN",
+    "input": "Please help me fix it.",
+    "input_sha256": "5204e5f2c1b1571f157f95a8483dbd828e610ba038e1e161320eaf4caeaf2c0e"
+  },
+  {
+    "case_id": "unknown-explain",
+    "cohort": "replay",
+    "expected": "UNKNOWN",
+    "input": "Can you explain this?",
+    "input_sha256": "4acf9d2f4a109683e9ee3605314336c5fab06b365be07e0435e04aa3b32c89c5"
+  },
+  {
+    "case_id": "unknown-write",
+    "cohort": "replay",
+    "expected": "UNKNOWN",
+    "input": "I need help writing something, but I have not said what.",
+    "input_sha256": "6965c54c735e41a8cdf64bb5184efac01239453c8132c06f04ec7a0172b3a5c5"
+  },
+  {
+    "case_id": "failed-training-input",
+    "cohort": "replay",
+    "expected": null,
+    "input": null,
+    "input_sha256": "84153b846c2b6e6d78b47efbe40670d005b3a8d0f7382f306d509603867011d2"
+  },
+  {
+    "case_id": "new-rust",
+    "cohort": "new",
+    "expected": "TRUE",
+    "input": "Write a Rust function that returns the larger of two integers.",
+    "input_sha256": "8ef3209ede300c5605923cb112ecb2667a6a000a8780b88792a24298cbdbde79"
+  },
+  {
+    "case_id": "new-loop",
+    "cohort": "new",
+    "expected": "TRUE",
+    "input": "Explain why this Python loop prints 0, 1, and 2: for i in range(3): print(i)",
+    "input_sha256": "388283999afe401ff6bec7d8183fec4777a87f03fd54425160a1949e417ec150"
+  },
+  {
+    "case_id": "new-sql",
+    "cohort": "new",
+    "expected": "TRUE",
+    "input": "Fix this SQL query: SELECT name FORM customers;",
+    "input_sha256": "60d310cb077b8beb04ac327ac9c7e05db0b5c5f07c9a438faba4f530774717f0"
+  },
+  {
+    "case_id": "new-email",
+    "cohort": "new",
+    "expected": "FALSE",
+    "input": "Write a polite email declining a dinner invitation.",
+    "input_sha256": "9a14186a120fbf4b2fbe2b6caa7cfe26f85c5a3c7d9825bda7c3cc5c33acc6da"
+  },
+  {
+    "case_id": "new-leaves",
+    "cohort": "new",
+    "expected": "FALSE",
+    "input": "Explain why leaves change color in autumn.",
+    "input_sha256": "30a077b30bebaef87f03fdc19adb4ba97fa662ae64a34ef9015e2504afb591d0"
+  },
+  {
+    "case_id": "new-bicycle",
+    "cohort": "new",
+    "expected": "FALSE",
+    "input": "How can I repair a bicycle tire with a puncture?",
+    "input_sha256": "5db29f490fd5bdf9ae8099a5e6992acfeff91188aa3397d61db8ef5300e26637"
+  },
+  {
+    "case_id": "new-write",
+    "cohort": "new",
+    "expected": "UNKNOWN",
+    "input": "Can you write it for me?",
+    "input_sha256": "9026f62cb9d7adb96438d3f80c7311f422ddedcae1e2949fc06bc49b7777e5fc"
+  },
+  {
+    "case_id": "new-work",
+    "cohort": "new",
+    "expected": "UNKNOWN",
+    "input": "Why does this not work?",
+    "input_sha256": "a803598e783cf3e24344788653a040f089b4d6e408390bed57d9250fc857d4b5"
+  },
+  {
+    "case_id": "new-example",
+    "cohort": "new",
+    "expected": "UNKNOWN",
+    "input": "Please explain the example I mentioned earlier.",
+    "input_sha256": "f948f5e8904c2dda89f373b34c889281a1365c4811826705efbae52051643a02"
+  }
+]

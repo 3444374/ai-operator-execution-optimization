@@ -79,7 +79,10 @@ Python/static/gateway contracts, and neutral/machine C11 compilation. Evidence i
 The deterministic artifact in that qualification proves the builder/loader and planner behavior, not real-model
 cost accuracy. Full collection is currently paused: the first real run failed the model-output contract, and the
 subsequent qualification slice fixes builder identifiability and verifies PostgreSQL multicolumn statistics, but
-native choice decoding still fails the predeclared semantic cases. See `INFRA_STATUS.md` for the current evidence.
+native choice decoding still fails the predeclared semantic cases. A subsequent single-prompt comparison found
+matching actual HTTP messages and chat-template token IDs, but neither the new prompt on 1.5B nor its matched
+7B comparison met the predeclared tristate expectations. Production configuration remains unchanged.
+See `INFRA_STATUS.md` for the current evidence.
 A qualified reference must precede real collection and held-out validation under one fixed semantic plan, model,
 workload distribution, service, and hardware signature. Only then may a distinct
 reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit.

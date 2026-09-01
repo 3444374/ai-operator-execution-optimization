@@ -225,6 +225,12 @@ Final numerical hardening `44f6632c` additionally rejects chained near dependenc
 It independently passes PostgreSQL 18.3 `-Werror`, regression 1/1, TAP 437/437 and 60/60 Python contracts
 (10 calibration tests). It does not rerun the model or change the failed semantic qualification.
 
+The subsequent [single-prompt comparison](../../../experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
+verifies actual HTTP messages against the service and model chat-template token IDs. The new prompt passes only
+5/9 old and 5/9 new independent cases on 1.5B, and 7/9 old and 6/9 new cases on matched 7B, each repeated three
+times. No configuration qualifies; production SQL/plan/wire and the strict parser remain unchanged. Full collection
+stays paused. Python contracts pass 60/60 again; PostgreSQL regression/TAP were not rerun in that diagnostic.
+
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 

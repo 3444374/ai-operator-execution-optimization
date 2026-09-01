@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-09-01 单一 prompt 与 matched 7B 对照仍未取得 reference 资格
+
+- `b861d697` 先登记唯一候选分类 prompt、9 个新样例、固定 choice 与全对要求。保持旧 9 例标签，
+  三重复不冒充独立样本；直接观察生产 fixed adapter 发出的 JSON bytes，并对照服务 tokenize、
+  模型 chat-template IDs 和 completion prompt usage，两个完整尝试均一致。
+- 1.5B 原 prompt 的旧/新符合数为 4/9、2/9，候选为 5/9、5/9；候选未过才运行预登记的 7B。
+  首次 7B 因发现模型默认 repetition penalty=1.05 与基线 1.1 不同而中止，83 条响应全部保留。
+  `2527f2d2` 在重跑前登记显式对齐为基线 1.1，不改 prompt、样例、标签或要求。
+- matched 7B 原 prompt 为旧/新各 8/9，候选为 7/9、6/9；每例三次一致、所有格式合法，但均未过
+  全部正确要求。321 次 completion 包括两个完整 119 次与中止的 83 次，不隐去部分失败运行。
+- 结果与三组独立 SHA 清单见 `experiments/results/postgresql/semfilter_prompt_qualification_20260901/`。
+  本轮模型 endpoint 已停止，未启动数据库、gateway 或 worktree，旧原始证据保留。本地/服务器
+  Python 60/60 通过；没有重跑 PG18.3 regression/TAP 或 RSS/FD。生产代码/配置/SQL/plan/wire、
+  严格 parser 与校准 held-out 未变，整轮校准继续暂停；不在本轮追加 prompt 或模型搜索。
+
 ## 2026-09-01 最终数值复核补齐组合病态拒绝
 
 - 小切片最终复核发现 `6c111b24` 的单归一化主元阈值仍会漏掉多列共同退化；新增公开 builder 红测

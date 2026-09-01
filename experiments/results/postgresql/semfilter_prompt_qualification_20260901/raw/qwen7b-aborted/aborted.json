@@ -1,0 +1,12 @@
+{
+  "held_out_model_calls": 0,
+  "matched_comparison": false,
+  "owned_endpoint_stopped": true,
+  "production_changes": false,
+  "qualification_verdict": null,
+  "raw_service_identity_sha256": "3f5958f3c7dc0d8ef3ce2e5e16fdcb857899a1cf8ea861e2b14834f50de346d1",
+  "reason": "model-default repetition_penalty mismatch: 1.05 vs baseline 1.1",
+  "responses_preserved": 83,
+  "server_chat_post_statuses": 83,
+  "stopped_before_completion": true
+}

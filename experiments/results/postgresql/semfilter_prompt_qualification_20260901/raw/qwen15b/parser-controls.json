@@ -1,0 +1,13 @@
+{
+  "results": {
+    "": 4,
+    "FALSE": 2,
+    "FALSE ": 4,
+    "TRUE": 1,
+    "TRUE\n": 4,
+    "UNKNOWN": 2,
+    "yes": 4
+  },
+  "shared_sha256": "cdbf1a2579d22d0e2aba308a4825858a3e7f66e15d208cf5d925b03fcd7fde2b",
+  "source_sha256": "fe5ce17fead280660920cb4fba63b866bf8bf0a0bb9e855f92c8e65fe7a4054b"
+}

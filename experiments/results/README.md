@@ -8,6 +8,11 @@
 
 ## PostgreSQL exact SemFilter reference calibration（2026-09-01）
 
+[单一分类 prompt 对照](postgresql/semfilter_prompt_qualification_20260901/README.md)：实际消息与
+chat template 核对一致。1.5B 唯一新 prompt 的旧/新样例各 5/9，matched 7B 为 7/9、6/9；每例
+三次重复，全部格式合法但没有配置满足全部正确要求。生产配置不变，校准继续暂停。保留中止的
+默认参数失配尝试；两个完整尝试和部分尝试合计 321 次 completion 请求。
+
 [校准前独立小切片](postgresql/semfilter_qualification_20260901/README.md)：builder 拒绝共线观测，
 PG18.3 多列统计将普通谓词估计从 8 修正为 64；choice 格式 30/30，但两种配置的语义预期均只符合
 12/27。reference 资格未通过，整轮采集继续暂停；PG18.3 回归 1/1、TAP 437/437、Python 59/59 通过。

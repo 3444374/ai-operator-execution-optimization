@@ -21,6 +21,10 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 未通过 reference 资格。不能把该修复或候选格式通过写成真实校准完成。
 最终数值补充 `44f6632c` 又以精确 Gram 无穷范数条件检查拒绝组合病态，独立通过 PG18.3 regression
 1/1、TAP 437/437、Python 60/60（calibration 10/10）；原 6c 模型/统计结果与最终数值测试分别保存。
+后续[单一 prompt 对照](postgresql/semfilter_prompt_qualification_20260901/README.md)实查 HTTP messages
+和 chat template 一致，但 1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，仍无配置通过。
+这些分母是独立工程样例，每例重复三次；中止的默认参数失配 7B 尝试单列保留。生产配置未改，
+整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
 
 ## 1. 证据等级
 
@@ -94,6 +98,7 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `postgresql/semfilter_prompt_qualification_20260901/` | 实际 messages/template 核对、唯一 prompt 与条件性 7B 对照 | 两个完整尝试的消息与 token IDs 一致，全部格式合法，但旧/新样例未全对；321 次 completion 包含 83 次中止记录。无生产变更，校准仍暂停。 |
 | `postgresql/semfilter_qualification_20260901/` | 三项独立前置验证 | 秩检查修复、PG18.3 普通多列统计通过；choice 仅通过格式，语义预期仍不符，reference 资格未通过。 |
 | `postgresql/semfilter_reference_calibration_20260901/` | exact SemFilter 首轮真实 reference calibration，失败采集 | 64 条预热完成；首个 training 查询第 23 个响应违反严格 tristate，PG18.3 报 `22000`。held-out、拟合、artifact 均未运行；保留失败，不改变阈值或静默排除样本。 |
 | `saor_capacity_development_20260811/` | 两档 capacity-only SAOR 与 frozen lower/upper、legacy threshold 的开发门 | 4/4 arm、5,266 requests/arm、0 incident；真实动作安全，但一次顺序运行、server dirty-worktree provenance 和旧 manifest 漏字段使其只作 development。当前分支 `not-promoted`。 |

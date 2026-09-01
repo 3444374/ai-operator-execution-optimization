@@ -1,0 +1,6 @@
+{
+  "database_started": false,
+  "owned_endpoint_stopped": true,
+  "owned_port_not_listening": true,
+  "scope": "this experiment only; historical resources not modified"
+}

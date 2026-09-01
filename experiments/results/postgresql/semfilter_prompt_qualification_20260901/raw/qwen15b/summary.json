@@ -1,0 +1,89 @@
+{
+  "completion_requests": 119,
+  "harness_sha256": "bba205ad3119e3b435c9ea91437da5a5768c8fb4ef3f10f53ba1f796ee604544",
+  "held_out_payload_read": false,
+  "native_c_parser": true,
+  "production_changes": false,
+  "profiles": {
+    "baseline": {
+      "format_valid": 57,
+      "new": {
+        "matches": 6,
+        "per_case": {
+          "new-bicycle": false,
+          "new-email": false,
+          "new-example": false,
+          "new-leaves": false,
+          "new-loop": false,
+          "new-rust": false,
+          "new-sql": false,
+          "new-work": true,
+          "new-write": true
+        },
+        "responses": 27,
+        "unique_cases": 9,
+        "unique_passed": 2
+      },
+      "qualified": false,
+      "replay": {
+        "matches": 12,
+        "per_case": {
+          "negative-geography": false,
+          "negative-poem": false,
+          "negative-recipe": false,
+          "positive-debug": false,
+          "positive-python": true,
+          "positive-sql": true,
+          "unknown-explain": false,
+          "unknown-fix": true,
+          "unknown-write": true
+        },
+        "responses": 27,
+        "unique_cases": 9,
+        "unique_passed": 4
+      },
+      "responses": 57
+    },
+    "explicit": {
+      "format_valid": 57,
+      "new": {
+        "matches": 15,
+        "per_case": {
+          "new-bicycle": true,
+          "new-email": true,
+          "new-example": false,
+          "new-leaves": true,
+          "new-loop": true,
+          "new-rust": true,
+          "new-sql": false,
+          "new-work": false,
+          "new-write": false
+        },
+        "responses": 27,
+        "unique_cases": 9,
+        "unique_passed": 5
+      },
+      "qualified": false,
+      "replay": {
+        "matches": 15,
+        "per_case": {
+          "negative-geography": true,
+          "negative-poem": false,
+          "negative-recipe": true,
+          "positive-debug": true,
+          "positive-python": true,
+          "positive-sql": true,
+          "unknown-explain": false,
+          "unknown-fix": false,
+          "unknown-write": false
+        },
+        "responses": 27,
+        "unique_cases": 9,
+        "unique_passed": 5
+      },
+      "responses": 57
+    }
+  },
+  "service_and_model_unchanged": true,
+  "source_commit": "b861d697349d22ed9ae75230594eb5f386aae09b"
+}

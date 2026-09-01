@@ -1,0 +1,16 @@
+{
+  "calibration_held_out_model_calls": 0,
+  "completion_requests": 119,
+  "distinct_http_message_audits": 38,
+  "expected_repeats_per_case": 3,
+  "full_calibration_resumed": false,
+  "independent_engineering_cases": 18,
+  "postgresql_test_rerun": false,
+  "preflight_status": "ok",
+  "production_c_parser_controls": 7,
+  "production_changes": false,
+  "python_tests": {},
+  "source_commit": "2527f2d2126a7df6f07b828deb70e4abd2d1b9b5",
+  "tokenize_requests": 39,
+  "unlabelled_replay_cases": 1
+}

@@ -23,7 +23,9 @@ transport-neutral error interface、compatibility suite 与行为不变的 gatew
 固定模型 endpoint 和 HTTP/DNS boundary hardening；reference rows/work/actual usage 已显式可观察，
 calibration artifact mechanism 已通过 deterministic qualification。工作包五首轮真实采集因模型输出格式失败停止，
 held-out 和拟合未运行。独立小切片已修复 builder 可辨识性并验证 PG18.3 普通多列统计，但 choice
-仅解决格式，预期语义仍只符合 12/27；整轮采集继续暂停。先取得 reference 语义资格，再取得独立验证
+仅解决格式，预期语义仍只符合 4/9 个独立样例（三次重复共 12/27）。后续单一 prompt 与 matched
+7B 对照亦未满足三值判断要求，实际 messages/template 无不一致；整轮采集继续暂停。
+先取得 reference 语义资格，再取得独立验证
 通过的真实 matched artifact，之后才实现第二 physical path
 与 quality policy，再做 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
 只导航，不复制每个工作包的完成标准。

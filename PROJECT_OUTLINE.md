@@ -48,8 +48,11 @@ deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments
 完成 64 条预热后，因首个 training 查询第 23 个模型输出格式错误而停止；held-out 和拟合均未运行。
 [后续小切片](experiments/results/postgresql/semfilter_qualification_20260901/README.md)已修复 builder 的
 可辨识性检查，并在 PG18.3 验证普通多列统计；choice 候选虽有 30/30 合法格式，预期语义仍只符合
-12/27。下一步先诊断 reference 的语义判断，不恢复整轮采集；语义资格通过后再取得真实 matched
-artifact，之后才实现 LOTUS/Cortex-like 第二 path。随后用
+12/27，即 9 个独立样例中 4 个符合预期、各重复三次。
+[单一 prompt 后续对照](experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
+未发现实际 messages/template 不一致；新 prompt 在 1.5B 的旧/新样例各 5/9，matched 7B 上为
+7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停；先确定能满足三值判断要求的 reference，
+再取得真实 matched artifact，之后才实现 LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
 多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展

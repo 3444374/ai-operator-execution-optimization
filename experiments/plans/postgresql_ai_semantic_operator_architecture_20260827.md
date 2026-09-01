@@ -1102,6 +1102,12 @@ invalid output 分类/长度/SHA、usage 和 finish reason，原始失败内容�
 采用较少自由系数、记录模型身份并独立验证；本轮不自动用降维模型发布旧四系数 artifact。
 #### 单一分类 prompt 对照（2026-09-01，请求前登记）
 
+**结果：已完成，未采用任何新配置。** [逐例与原始证据](../results/postgresql/semfilter_prompt_qualification_20260901/README.md)
+证明两个完整尝试的实际 HTTP messages、服务 tokenize 与模型模板一致。1.5B 唯一新 prompt 旧/新
+各 5/9；matched 7B 原 prompt 为 8/9、8/9，新 prompt 为 7/9、6/9。每例三重复、所有格式合法，
+但均未通过全部正确要求。中止的默认参数失配尝试另存，不混入结果。下述登记作为历史实验合同
+保留；本轮不再调 prompt 或追加模型，不修改生产身份、不恢复校准，后续验证需另行确定。
+
 本轮只核对 messages/chat template，并测试一个更明确的实验 prompt；不修改生产 plan、wire、parser、
 公共 runtime 或旧标签，不读取校准 held-out，不恢复完整采集。原来的 12/27 是 **9 个独立样例中
 4 个符合预期，各重复三次**，不是 27 个独立样本的准确率。
