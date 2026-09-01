@@ -51,8 +51,13 @@ OpenAI-compatible endpoint adapter；endpoint/model/timeout/auth 从仓库外严
 semantic-input rows，NULL 率调整 model calls，并显式报告 output selectivity、estimated prompt/output
 tokens、model role 与 AI work estimate；actual provider calls/usage 另由 `EXPLAIN ANALYZE` 计数。
 `71a8ef7d` 将模型身份改为 `semloom.exact_filter.uncalibrated.v1` 并公开 calibration unavailable。
-这些估计不进入 semantic digest，也不能用于第二路径比较。当前尚缺 matched reference calibration、
-第二 physical path、carrier audit、
+`dcde2be5` 又新增 planner-only matched-reference calibration：离线 builder 将严格 training/held-out
+观测分解为 selectivity、calls/input、tokens/call 与 fixed/call/prompt/output service-time 系数，绑定
+semantic/physical/model/provider/workload/service identity；PostgreSQL 独立校验 artifact 后把匹配值复制
+进 cost metadata schema v2，缺失、损坏或失配则继续执行 uncalibrated reference。runtime、provider、
+wire 和 semantic digest 未改变。当前 deterministic fixture 只证明合同和 planner consumption；真实
+model/workload/service artifact 及其 held-out 误差资格仍未完成，因此还不能实现第二 physical path。
+当前尚缺真实 matched artifact、第二 physical path、carrier audit、
 accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
@@ -115,8 +120,14 @@ compile；仓库外证据包 `postgresql_semfilter_cost_cardinality_47407751_202
 复核提交 `71a8ef7d` 拒绝端口 0、把 resolver 工作限制为每 adapter 至多一个 in-flight attempt，并将
 planner estimate 明确标为 uncalibrated/calibration unavailable；精确 18.3 通过 regression 1/1、TAP
 415/415、Python/static+migration 49/49 与 warning-free build。证据包为
-`postgresql_semfilter_gap_hardening_71a8ef7d_20260901`。下一步先完成 matched reference calibration，
-之后才实现第二 physical path；accepted-prefix、多在途/
+`postgresql_semfilter_gap_hardening_71a8ef7d_20260901`。planner calibration 提交 `dcde2be5` 新增严格
+29-field artifact、跨 Python/PostgreSQL identity、held-out qualification、query-planning loader、稳定拒绝
+原因和 cost metadata schema v2；精确 PostgreSQL 18.3 通过 clean `-O2 -Werror`、regression 1/1、TAP
+437/437、Python/static/gateway 55/55 与 neutral/machine C11 compile。证据包
+`postgresql_semfilter_reference_calibration_dcde2be5_20260901` 的 SHA-256 manifest 已全部校验。该结果只
+证明 deterministic artifact 的生成、验证和 planner 消费；真实 model/workload/service artifact 尚未
+采集，第二 physical path 仍不得实现。归档后本切片测试集群、两个临时 worktree、PGDATA 和 socket
+目录已清理；该结论不覆盖服务器其他工作负载。accepted-prefix、多在途/
 乱序 completion、增量 SemLoom session 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
 下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
@@ -486,8 +497,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    真实模型只通过小规模 capability，不提供质量或性能结论；
 7. 当前 planner 只生成一个 reference role；该 path 已分开 semantic-input rows、通用 output-selectivity
    estimate、NULL-adjusted calls、prompt/output-token work 和 model role，并在执行时报告实际 usage。
-   calibration 明确为 unavailable；matched reference cost、第二 path identity、quality evidence 与 fallback
-   尚未实现；
+   planner-only calibration builder/validator/loader 已实现，匹配 artifact 时保存 calibration/workload/
+   service identity 与 held-out error，失配时保留 uncalibrated reference；当前只有 deterministic fixture
+   资格，真实 matched artifact、第二 path identity、quality evidence 与 fallback 尚未实现；
 8. 当前 provider interface 仍是同步单任务；recording wire v2 保持冻结，exact semantic wire v3、
    deterministic golden 与 fixed-endpoint adapter 已实现。accepted-prefix、多在途、乱序 completion、
    增量 SemLoom session 和 SemLoom scheduling adapter 尚未实现；

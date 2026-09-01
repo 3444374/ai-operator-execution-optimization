@@ -53,8 +53,10 @@ a separate binding and is not hashed. `PgSemanticRuntime` is the only PG-private
 point. Exact EXPLAIN exposes the semantic spec, prompt/parser IDs, model, physical algorithm and role without
 printing the instruction, input, raw output, socket path, or credentials. Exact reference plans carry a separate,
 strict third `custom_private` element for cost model ID, model role, semantic input rows, output selectivity,
-estimated model calls, prompt/output tokens, and AI work cost; these fields do not enter either semantic digest.
-Quality evidence, fallback, and second-path fields remain pending because no current consumer uses them.
+estimated model calls, prompt/output tokens, calibration identity/applicability, predicted service milliseconds,
+held-out error, and AI work cost; these fields do not enter either semantic digest. A planner-only loader can replace
+the visible uncalibrated heuristic with a strictly matched static reference artifact. Quality policy, fallback, and
+second-path fields remain pending because no current consumer uses them.
 
 `sem_scan.c` is a thin CustomScan adapter, and `sem_pump.c` owns child-slot/value binding and flow while forwarding
 planner-computed cost metadata to EXPLAIN; it does not calculate cost during execution. The shared
@@ -181,6 +183,26 @@ returns on its deadline and resolver work remains bounded. Exact PostgreSQL 18.3
 regression 1/1, TAP 415/415, 49/49 Python/static+migration contracts, and neutral/machine C11 compilation. The
 repository-external bundle is `postgresql_semfilter_gap_hardening_71a8ef7d_20260901`.
 
+Commit `dcde2be5` implements the planner-side matched-reference calibration mechanism without changing runtime,
+provider, wire, semantic digest, or SQL behavior. A pure-Python offline builder accepts strict training/held-out
+reference observations and separately derives output selectivity, calls per input, prompt/output tokens per call,
+and nonnegative fixed/call/prompt/output service-time coefficients. It rejects duplicate/unknown fields,
+non-canonical values, underidentified service data, negative coefficients, identity tampering, or held-out error above
+the registered limit. PostgreSQL reads only an explicitly selected absolute artifact path during planning, caps it at
+64 KiB, independently verifies the 29-field schema and cross-language artifact identity, and matches semantic/
+physical digest, model, reference role, and query-fixed provider profile. Missing, malformed, escaped-NUL, duplicate,
+or mismatched artifacts retain the executable uncalibrated exact reference path with a stable redacted reason.
+Matched plans save artifact, workload, and service identities and use predicted service milliseconds as the explicit
+AI path-cost unit; prepared plans retain the copied values and execution never reopens the artifact.
+
+The exact PostgreSQL 18.3 qualification for `dcde2be5` passed a clean warning-free `-O2 -Werror` build, regression
+1/1, TAP 437/437, 55/55 Python/static/gateway contracts, Python compilation, and neutral/machine C11 compilation.
+The repository-external bundle `postgresql_semfilter_reference_calibration_dcde2be5_20260901` preserves raw logs,
+byte-identical regression actual/expected output, source and commit identities, the extension binary, status files,
+and a verified SHA-256 manifest. Its deterministic calibration fixture proves builder/loader/control-flow parity,
+not empirical accuracy for a real model, workload distribution, service, or hardware. A real matched artifact must
+still be collected and held-out qualified before implementing a second physical path.
+
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 
@@ -238,6 +260,20 @@ query-scoped values before planning the exact Filter:
 SET semloom_pg.gateway_socket = '/absolute/path/semloom-model.sock';
 SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
 ```
+
+After building a repository-external reference artifact for the same semantic plan, model, provider profile,
+workload distribution, and service signature, select it before planning:
+
+```sql
+SET semloom_pg.reference_calibration_file =
+  '/absolute/path/reference-calibration.json';
+```
+
+Plain `EXPLAIN` then reports `AI Cost Calibration=matched`, the artifact/workload/service identities, predicted
+service milliseconds, and held-out error. An unreadable, invalid, or mismatched artifact reports `rejected` plus a
+stable reason and continues with `semloom.exact_filter.uncalibrated.v1`; it never silently calibrates a different
+plan or provider profile. PostgreSQL does not infer live workload/hardware applicability from the opaque signatures:
+the external deployment must select an artifact produced for the active conditions.
 
 If authentication is not required, omit `bearer_token_env`; credentials never belong in SQL, argv, wire
 messages, EXPLAIN, or the repository.

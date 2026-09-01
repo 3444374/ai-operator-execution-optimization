@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-09-01 exact SemFilter reference calibration mechanism
+
+- 提交 `dcde2be5` 在不修改 `PgSemanticRuntime`、provider、wire、semantic digest 或 SQL 行为的前提下，
+  新增 planner-only reference calibration variation point：离线 Python builder 对严格 training/held-out
+  观测分开计算 output selectivity、calls/input、prompt/output tokens/call 和 fixed/call/prompt/output
+  service-time 系数，生成带跨语言 SHA-256 identity 的 29-field artifact。
+- PostgreSQL 规划阶段只读取显式选择的绝对 artifact 路径并限制为 64 KiB，独立校验 schema、canonical
+  decimal、artifact identity、semantic/physical digest、model/reference role 和 query-fixed provider profile。
+  匹配值进入 cost metadata schema v2；missing、malformed、duplicate、escaped NUL 或 identity/profile
+  mismatch 只产生稳定脱敏原因并继续使用 uncalibrated exact reference。
+- 本地 calibration 5/5 与 static 20/20 通过；本地完整 PostgreSQL Python suite 中 7 项因应用 sandbox
+  禁止 localhost bind 无法运行，随后在服务器精确提交上全部通过。服务器显式使用 PostgreSQL 18.3，
+  clean `-O2 -Werror`、regression 1/1、TAP 437/437、Python/static/gateway 55/55、Python compileall 和
+  neutral/machine C11 均通过。首次 root TAP 被 PostgreSQL 按预期拒绝 `initdb`，最终以非特权
+  `postgres` 用户复跑成功，失败设置和成功结果均保存在仓库外证据包
+  `postgresql_semfilter_reference_calibration_dcde2be5_20260901`，其 SHA-256 manifest 全部校验。
+- 同步更新 `code/scripts/README.md` 的现役 gateway/calibration CLI 说明，并将同文件旧 baseline 示例中
+  三处真实服务器 runtime 路径改为明显的绝对路径占位符；历史 evidence 本身未修改。
+- 本轮 deterministic artifact 只证明生成、严格验证、planner 消费和 fallback control flow，不证明真实
+  模型、workload、服务或硬件条件下的成本精度。下一步先采集并 held-out 验证真实 matched artifact；
+  第二 physical path、quality policy/fallback、carrier audit、异步和多在途仍未实现。证据归档后已停止
+  本切片 PostgreSQL 18.3 测试集群并删除两个 calibration 临时 worktree、PGDATA 和 socket 目录；该
+  清理结论不覆盖服务器上的其他工作负载。
+
 ## 2026-09-01 SemFilter fixed endpoint 与 cost 资格声明修正
 
 - 提交 `71a8ef7d` 修复 `b4ed184b` 复核出的三个边界：fixed endpoint 配置现在拒绝显式端口 0；同一

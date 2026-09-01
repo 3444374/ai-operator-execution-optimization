@@ -25,8 +25,8 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 ## PostgreSQL semantic execution-provider gateway
 
 `services/run_execution_provider_gateway.py` 是外部 semantic execution-provider 的 canonical CLI。
-当前只提供同步 recording wire v2：framing、协议、recording adapter 和 UDS server 的实现位于
-`src/execution_provider/`。从仓库根运行：
+同步 recording wire v2、exact wire v3、deterministic golden adapter、fixed OpenAI-compatible
+adapter 和 UDS server 的实现位于 `src/execution_provider/`。从仓库根运行 recording profile：
 
 ```bash
 python3 code/scripts/services/run_execution_provider_gateway.py \
@@ -35,7 +35,30 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
 
 `postgres/semloom_pg/gateway/recording_gateway.py` 与同目录 `protocol.py` 只为既有 TAP 和 import
 保留自定位兼容入口；它们不要求调用方额外设置 `PYTHONPATH`，也不保存协议或 server 逻辑。
-wire v3、deterministic golden 和 fixed-model endpoint 仍未实现。
+golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
+model、timeout 和 bearer-token 环境变量名不进入仓库。
+
+## Exact SemFilter reference calibration
+
+`analysis/build_semfilter_reference_calibration.py` 将离线收集的 exact-reference training/held-out
+观测转换为 planner 可消费的严格 JSON artifact。输入固定 semantic/physical digest、provider profile、
+model/role、workload/service SHA-256 签名、允许的 held-out 最大相对误差，以及两组观测；每条观测分别
+记录 semantic input rows、output rows、model calls、prompt/output tokens 和 service milliseconds。
+它不连接 PostgreSQL 或模型服务，也不在线采样：
+
+```bash
+python3 code/scripts/analysis/build_semfilter_reference_calibration.py \
+  --source /absolute/path/reference-observations.json \
+  --output /absolute/path/reference-calibration.json
+```
+
+builder 分开拟合 output selectivity、calls/input、prompt/output tokens/call 和 fixed/call/prompt/output
+四项 service-time 系数，并用 held-out 数据检查误差后才以独占创建方式写出 artifact。PostgreSQL planner
+再通过 superuser-only `semloom_pg.reference_calibration_file` 显式选择该文件，严格校验 schema、identity、
+semantic/physical/model/role/provider 匹配并把 workload/service 签名复制进 plan。签名是外部运行编排选择
+正确 artifact 的审计身份，不是 PostgreSQL 对 gateway endpoint 或硬件的在线探测；更换模型、服务或
+workload 分布时必须离线生成并重新选择 artifact。缺失、损坏或失配只保留 uncalibrated exact reference，
+不会生成 optimized path。
 
 `analysis/audit_saor_formal_readiness.py` 在不发送请求的前提下 fail-closed 校验固定包络 SAOR
 十 scenario formal，或用 `--profile priority_reachability` 校验 static/SAOR/foreground
@@ -1199,12 +1222,12 @@ python code/scripts/baselines/run_official_baseline.py export-postgres-manifest 
   --max-output-tokens 256 \
   --estimated-output-mode trace_target \
   --endpoint-count 2 \
-  --output /root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl
+  --output /absolute/path/to/official_baseline_gate_manifest.jsonl
 
 python code/scripts/baselines/run_official_baseline_gate.py \
   --config deploy/autodl/dual_gpu_official_baseline_gate.example.json \
-  --driver-python /root/miniconda3/bin/python \
-  --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  --driver-python /absolute/path/to/driver-python \
+  --vllm-python /absolute/path/to/vllm-python \
   --manifest /path/to/manifest.jsonl \
   --output-root /path/to/fresh-gate-output
 ```
@@ -1216,8 +1239,8 @@ vLLM Bench 与 bounded HTTP 的 C64：
 ```bash
 python code/scripts/baselines/run_official_baseline_gate.py \
   --config deploy/autodl/dual_gpu_official_baseline_gate.example.json \
-  --driver-python /root/miniconda3/bin/python \
-  --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  --driver-python /absolute/path/to/driver-python \
+  --vllm-python /absolute/path/to/vllm-python \
   --manifest /path/to/immutable-256-row-manifest.jsonl \
   --rows-total 256 \
   --output-root /path/to/fresh-c64-output \

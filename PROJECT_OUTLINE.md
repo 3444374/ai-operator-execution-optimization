@@ -41,8 +41,11 @@ input-limit preflight，并补齐 Unicode、空串与 savepoint/recovery 证据�
 tristate parser 与 keep/drop。小规模 Qwen2.5-1.5B-Instruct/vLLM capability 已跑通，但不证明质量或性能。
 提交 `47407751` 已分开 reference 的 semantic-input rows、NULL rate、通用 output-selectivity estimate、
 estimated calls/work 与 provider 返回的实际 usage；`71a8ef7d` 又明确将其标为 uncalibrated。
-当前仍缺真实 reference selectivity/usage 的 matched calibration，因此下一步先完成可比较 cost，
-再实现 LOTUS/Cortex-like 第二 path。随后用
+`dcde2be5` 已增加离线 reference calibration artifact builder、held-out validator、跨 Python/PostgreSQL
+identity 和 planner-only loader；匹配 artifact 时 EXPLAIN 保存 calibration/workload/service identity、
+预测 service milliseconds 与误差，失配时继续使用 uncalibrated exact reference。该提交只用
+deterministic fixture 验证合同，还没有真实 model/workload/service 数据，因此下一步先采集并验证真实
+matched artifact，再实现 LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
 多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展
@@ -61,7 +64,7 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
-当前状态是 `exact-semfilter-reference-cost-observability-validated`：受限 recording `SemMap`/`SemFilter` 与三参
+当前状态是 `exact-semfilter-reference-calibration-mechanism-validated`：受限 recording `SemMap`/`SemFilter` 与三参
 exact `SemFilter CustomScan` paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
@@ -69,9 +72,10 @@ UDS provider 与协议 v2/v3 分域 identity/payload/completion digest 已验证
 transport-neutral error seam、gateway 公共目录迁移、exact instruction/parser/model policy 和 deterministic
 golden 已实现；同步 fixed-model adapter、query-fixed execution profile 与真实模型小规模 capability 也已通过。
 reference `CustomPath` 另有不进入 semantic digest 的 planner estimate metadata，可说明输入行数、
-通用 output selectivity、NULL-adjusted calls、estimated prompt/output work 和实际 usage；其 calibration
-状态仍为 unavailable。matched calibration、第二 physical path、载体反例审查、accepted-prefix 和
-多在途/乱序 completion 尚未实现；
+通用 output selectivity、NULL-adjusted calls、estimated prompt/output work 和实际 usage。planner-only
+calibration mechanism 能加载并验证匹配的静态 artifact，或在缺失/失配时保留 uncalibrated reference；
+当前只有 deterministic artifact 资格，真实 matched artifact、第二 physical path、载体反例审查、
+accepted-prefix 和多在途/乱序 completion 尚未实现；
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 核心研究链路
@@ -92,8 +96,9 @@ SQL semantic intent
 两类 cost 通过 task work hint 与 completion telemetry 衔接，但不合并成一个模糊标量。
 
 当前 recording、deterministic-golden 与 fixed-model paths 证明 carrier、生命周期、seam 和最小真实语义合同；
-项目达到数据库优化资格还需要 matched reference calibration，以及同一逻辑语义下可由 PostgreSQL
-区分和选择的第二 physical path。当前只完成 rows/work/usage 的显式可观察合同，尚未形成可比较成本。
+项目已具备 reference calibration 的生成、验证和 planner 消费机制，但达到数据库优化资格仍需要真实
+model/workload/service 的 held-out artifact，以及同一逻辑语义下可由 PostgreSQL 区分和选择的第二
+physical path。当前 deterministic fixture 不提供真实可比较成本。
 数据执行研究随后在固定 semantic task set 上比较，避免把“少做 work”和
 “相同 work 执行更快”混为一个结论。
 
@@ -459,7 +464,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
    与同步 fixed-model adapters，canonical prompt、parser、model/usage identity 和 relation result 已验证；
    小规模真实模型结果只作 capability，不先扩异步。
 5. **下一条 semantic path**：SemFilter input rows、通用 selectivity estimate、calls/tokens/model-role 与
-   actual usage 已显式可观察；下一步先用 matched reference evidence 校准成本，再建立一条可辨认的
+   actual usage 已显式可观察，离线 artifact 和 planner loader 已通过 deterministic qualification；下一步
+   先用真实 matched reference evidence 生成并验证 artifact，再建立一条可辨认的
    LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative、AI-work cost、quality policy
    和 reference fallback 的显式身份；真实质量结论必须再与同步 reference 路径比较。
 6. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达

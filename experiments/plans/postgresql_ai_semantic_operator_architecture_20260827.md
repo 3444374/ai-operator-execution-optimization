@@ -31,14 +31,17 @@ recording adapter 与 server，旧 extension 路径只保留自定位兼容入�
 instruction/parser/model policy、wire v3、deterministic golden 与 fixed-model adapters 已完成；固定
 OpenAI-compatible endpoint 的小规模真实模型 capability 已跑通。reference path 的 semantic-input rows、
 output selectivity、NULL-adjusted calls、prompt/output work、model role 与 AI-work cost 也已作为独立
-planner metadata 显式可观察，不改 semantic identity；其 calibration 仍为 unavailable。matched reference
-calibration、第二 physical path、accepted-prefix backpressure、
+planner metadata 显式可观察，不改 semantic identity。`dcde2be5` 已增加离线 calibration artifact
+builder、held-out validation、跨 Python/PostgreSQL identity 与 planner-only loader；匹配时保存 artifact/
+workload/service identity 和 predicted service cost，缺失或失配时保留 uncalibrated exact reference。
+当前只有 deterministic artifact 资格；真实 matched artifact、第二 physical path、accepted-prefix backpressure、
 多在途/乱序 completion、完整 close disposition 和 Sema/LOTUS 兼容适配器尚未实现。既有 PostgreSQL source/sink、
 Daft/Arrow、Ray、vLLM/CLIP、调度与观测继续作为外部物理执行基座。
 当前排期边界：锁定 PostgreSQL `REL_18_3`，保留已完成的 recording `SemMap`/`SemFilter`、ordinary
 child plan、query-scoped provider session、最小 plan carrier、已迁移 gateway、4A golden、4B fixed-model
-reference 和 uncalibrated reference estimate；下一步先完成 matched calibration，再实现一条最小、显式可识别的第二
-physical path。
+reference、uncalibrated reference estimate 和 calibration artifact mechanism；下一步先采集同一 semantic
+plan/model/workload/service 条件的真实观测并通过 held-out validation，再实现一条最小、显式可识别的第二
+physical path。deterministic fixture 不能代替真实 matched artifact。
 既有 PostgreSQL 18.4 部署与结果只作 compatibility/rehearsal 证据，不替代 `REL_18_3` 资格验证。
 数据库资格完成后优先比较 IMLane-like batch placement。`SemJoin`、aggregate/top-k/group-by、
 fusion/AQE、Kalypso-like lineage 与跨算子 prefix lease 仅作后续参考，不构成当前实现承诺。
@@ -848,9 +851,10 @@ manifest 保存到仓库外证据包 `postgresql_semfilter_4a1_hardening_359ffdf
 `-O2 -Werror` build log、exit code 0 和扩展二进制。归档校验通过后才删除临时
 worktree 并停止本切片确认的旧测试 gateway/socket。
 
-工作包五当前只完成 rows/work/actual-usage 的显式可观察结构；`71a8ef7d` 已明确其 calibration
-unavailable，不能把该工程启发式称为真实 reference cost。下一切片先加载并验证 matched reference
-calibration；通过后才增加“第二条可见路径”：`sem_filter_path.c` 同时生成 reference
+工作包五当前已在 rows/work/actual-usage 的显式可观察结构后增加 planner-only calibration variation
+point：`dcde2be5` 的离线 builder/validator 和 PostgreSQL loader 使用 deterministic artifact 验证匹配、
+拒绝与 fallback 行为，但不能把 fixture 称为真实 reference cost。下一切片先采集并 held-out 验证同一
+model/profile/workload/service 条件的真实 artifact；通过后才增加“第二条可见路径”：`sem_filter_path.c` 同时生成 reference
 和 proxy/oracle `CustomPath`，两者携带不同 `PhysicalPlanSpec`、cost 与 evidence identity；
 operator state 可按需返回 `NEED_TASK(PROXY)` 或 `NEED_TASK(ORACLE)`，pump 在当前同步 port 上循环，
 `PgSemanticRuntime` 不因算法分支而改变。阈值和 evidence 在 planning 前已加载、校验并解析为
@@ -866,8 +870,9 @@ runtime/provider lifecycle。binary join 和 blocking aggregate 的 child owners
 hardening、公共 PostgreSQL compatibility suite、recording exact `SemFilter`、shared runtime、
 planner-owned 最小 recording plan spec、transport-neutral error interface 与行为不变的 gateway 迁移已通过；
 4A/4B 已让最小真实 semantic contract 依次通过 deterministic golden 与同步固定模型 reference；
-`47407751/71a8ef7d` 只完成 uncalibrated estimate 与 actual usage 的显式边界。当前下一步是 matched
-reference calibration，之后才是最小第二 semantic path。
+`47407751/71a8ef7d` 完成 uncalibrated estimate 与 actual usage 的显式边界，`dcde2be5` 完成静态
+calibration artifact 的生成、严格验证和 planner 消费机制。当前下一步是采集并 held-out 验证真实 matched
+reference artifact，之后才是最小第二 semantic path。
 只有真实语义和路径选择资格成立后，才扩 accepted-prefix、多在途和 SemLoom scheduling session，
 并运行 IMLane-like batch placement 对照。其余远期机制只有在前置条件成立、另有当前计划和实验合同时
 才进入实现。
@@ -1017,14 +1022,16 @@ resolver 线程不会随失败次数无界增长。该提交的精确 PostgreSQL
 415/415、Python/static+migration 49/49 与 warning-free build；证据包为
 `postgresql_semfilter_gap_hardening_71a8ef7d_20260901`。
 
-### 工作包五：SemFilter cost/cardinality 与最小 LOTUS/Cortex-like 第二 path（calibration 待完成）
+### 工作包五：SemFilter cost/cardinality 与最小 LOTUS/Cortex-like 第二 path（calibration 机制已完成，真实 artifact 待采集）
 
 4B 完成后，`47407751` 已分开 input rows、NULL rate、通用 output-selectivity estimate、model calls、
 prompt/output work 与 model role；实际 calls/usage 由 `EXPLAIN ANALYZE` 分列报告。`71a8ef7d` 将该
 bytes-per-token/output-cap 工程启发式标为 `semloom.exact_filter.uncalibrated.v1`，calibration 为
-`unavailable`。它只完成可观察结构，尚未用 matched reference evidence 校准，也不能驱动第二 path
-比较。下一步先定义、加载并验证与 model/profile/workload 签名绑定的 calibration，再使用
-deterministic fixture 或规划前已经匹配的静态 calibration artifact，实现 LOTUS-like
+`unavailable`。`dcde2be5` 已实现严格 29-field artifact、离线 training/held-out builder、独立
+cardinality/work/service coefficients、跨语言 identity 和 planner loader；deterministic fixture 覆盖
+matched、semantic/provider mismatch、duplicate、escaped NUL 与 missing artifact，并证明失配只回退
+uncalibrated exact reference。真实 model/workload/service 观测尚未采集，因此仍不能驱动第二 path 比较。
+下一步先产生规划前已经匹配并通过 held-out 误差要求的真实静态 calibration artifact，再实现 LOTUS-like
 proxy/oracle 双阈值 path。PostgreSQL plan 保存 algorithm/model role、quality policy、evidence epoch、
 threshold 与 reference fallback；executor 按 tuple/task identity 执行 accept/reject/oracle 三路分流。
 LOTUS v1.2.4 的 importance sampling 与 threshold solver 先作为 Python golden oracle 或离线 calibration，
@@ -1034,7 +1041,10 @@ LOTUS v1.2.4 的 importance sampling 与 threshold solver 先作为 Python golde
 warning-free `-O2 -Werror`、regression 1/1、TAP 415/415、Python/static+migration 49/49 和
 neutral/machine C11 compile。仓库外证据包 `postgresql_semfilter_gap_hardening_71a8ef7d_20260901`
 保存源码哈希、原始日志、字节一致 regression 输出、扩展二进制与已校验 SHA-256 manifest。该证据
-不证明 cost calibration 已完成。
+不证明 cost calibration 已完成。后续 `dcde2be5` 在精确 PostgreSQL 18.3 上通过 clean `-O2 -Werror`、
+regression 1/1、TAP 437/437、Python/static/gateway 55/55 和 neutral/machine C11 compile；仓库外证据包
+`postgresql_semfilter_reference_calibration_dcde2be5_20260901` 的 manifest 全部校验。该证据证明
+calibration mechanism 与 deterministic artifact parity，不证明真实模型服务成本精度。
 
 完成标准：reference/alternative 的 semantic-spec/physical-algorithm/provider-execution digests、进入
 语义算子的行数与输出选择率、calls/tokens/model-role cost、typed rows、provider task roles 与阈值来源可验证；

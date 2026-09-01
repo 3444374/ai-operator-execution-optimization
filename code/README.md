@@ -12,7 +12,9 @@ complete optimized PostgreSQL AI semantic system or an asynchronous scheduling p
 includes narrow `REL_18_3` planner-visible recording `SemMap/SemFilter` compatibility paths and a three-argument
 exact `SemFilter` golden/fixed-model reference under `postgres/semloom_pg/`. PostgreSQL owns the versioned
 schema-v1/v2 plan, canonical messages, strict result parser, tuple/cardinality behavior, and query lifecycle;
-the exact reference path also carries separate planner cost/cardinality metadata and reports actual provider usage.
+the exact reference path also carries separate planner cost/cardinality metadata, can consume a planner-only static
+reference calibration artifact, and reports actual provider usage. The checked-in qualification artifact is
+deterministic contract evidence; a real model/workload/service calibration and any second path remain pending.
 The provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
 The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3, recording
 and golden/fixed-model implementations, and self-locating compatibility entry points under the extension tree.
@@ -64,10 +66,22 @@ timeouts share at most one in-flight resolver attempt per adapter; and the plann
 `-O2 -Werror`, regression 1/1, TAP 415/415, 49/49 Python/static+migration contracts, and neutral/machine C11
 compilation. Evidence is preserved in `postgresql_semfilter_gap_hardening_71a8ef7d_20260901`.
 
-The next implementation slice is matched reference calibration. Only after it yields comparable cost may a distinct
-reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit. Accepted-prefix,
-multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and path-selection
-qualification; see
+Commit `dcde2be5` adds the planner-only exact-reference calibration variation point. The offline builder consumes
+strict training/held-out observations, keeps cardinality, calls/tokens, and fixed/call/prompt/output service-time
+coefficients separate, binds them to semantic/physical/model/provider/workload/service identities, and rejects
+failed held-out qualification. PostgreSQL independently validates the strict artifact and its cross-language digest,
+copies matched values into cost metadata schema v2, and falls back to the executable uncalibrated reference on any
+missing/invalid/mismatched artifact. Runtime, provider, wire, semantic digest, and SQL behavior are unchanged.
+Exact PostgreSQL 18.3 passes warning-free `-O2 -Werror`, regression 1/1, TAP 437/437, 55/55
+Python/static/gateway contracts, and neutral/machine C11 compilation. Evidence is preserved in
+`postgresql_semfilter_reference_calibration_dcde2be5_20260901` with a verified SHA-256 manifest.
+
+The deterministic artifact in that qualification proves the builder/loader and planner behavior, not real-model
+cost accuracy. The next implementation slice must collect a real artifact under one fixed semantic plan, model,
+workload distribution, service, and hardware signature and pass held-out validation. Only then may a distinct
+reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit.
+Accepted-prefix, multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and
+path-selection qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.
 
