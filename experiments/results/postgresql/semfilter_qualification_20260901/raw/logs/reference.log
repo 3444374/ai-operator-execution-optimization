@@ -1,0 +1,23 @@
+{
+  "baseline": {
+    "responses": 30,
+    "format_valid": 27,
+    "expected_matches": 12,
+    "labelled_responses": 27,
+    "qualified": false,
+    "output_tokens_histogram": {
+      "2": 30
+    }
+  },
+  "choice": {
+    "responses": 30,
+    "format_valid": 30,
+    "expected_matches": 12,
+    "labelled_responses": 27,
+    "qualified": false,
+    "output_tokens_histogram": {
+      "2": 27,
+      "4": 3
+    }
+  }
+}

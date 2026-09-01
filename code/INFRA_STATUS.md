@@ -64,8 +64,15 @@ accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程
 个响应不符合严格 tristate，PG18.3 按现有合同报 `22000`。完整 training/held-out observation 均为 0，
 未拟合、未加载 artifact，没有修改生产代码、阈值或失败样本。本次 55/55 合同和 6/6 采集检查不代替成本精度。
 后续复核发现旧 builder 的有限精度消元会把完全共线的残差误当非零主元；现已增加拟合前的精确有理数
-设计矩阵检查和归一化小主元拒绝（≤`1e-8`），本地 calibration 测试扩为 9/9。整轮校准暂停，先独立
-完成 reference 输出资格、PG18.3 多列统计验证和秩检查修复；约束解码候选不得冒用旧 plan/generation identity。
+设计矩阵检查。最终合成反例复核又将单主元阈值升级为整体检查：列归一化后以精确有理数形成 Gram
+矩阵并求逆，奇异或无穷范数条件数 ≥`1e16` 则拒绝，本地 calibration 测试扩为 10/10。`6c111b24` 的
+[独立小切片](../experiments/results/postgresql/semfilter_qualification_20260901/README.md)通过 PG18.3
+`-Werror`、regression 1/1、TAP 437/437 和 Python 合同 59/59。普通 SQL 加入 MCV/dependencies 后
+estimate 从 8 改为 64，与 actual=64 一致。原 generation 与独立 choice 候选的格式结果为 27/30、30/30，
+但预期语义均只符合 12/27，reference 资格未通过。choice 仅有版本化实验 plan/generation manifest，
+没有进入生产 SQL/spec/wire；未发布真实 calibration artifact，整轮采集继续暂停。
+最终数值补充 `44f6632c` 独立通过 PG18.3 warning-free `-Werror`、regression 1/1、TAP 437/437、Python
+60/60（calibration 10/10）；仅加强整体病态检查，没有重跑模型或改变上述语义资格结论。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过

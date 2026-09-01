@@ -1,0 +1,49 @@
+{
+  "baseline": {
+    "base_semantic_spec_digest": "fc239b2355075c2e11c7b34bdb4f916c4edc1a44aa1004dba5f136f8ff447a5a",
+    "generation_constraints": {
+      "max_tokens": 8,
+      "n": 1,
+      "stop": [
+        "\n"
+      ],
+      "stream": false,
+      "temperature": 0,
+      "top_p": 1
+    },
+    "generation_profile": "semloom.qualification.baseline.v1",
+    "instruction": "The input asks for writing, explaining, or debugging computer code.",
+    "model": "Qwen2.5-1.5B-Instruct",
+    "plan_digest": "8edf77298f870f675dfe9626b106919f815dbf92c4900455e2fdf9d0205d9b7b",
+    "production_pg_plan": false,
+    "result_parser": "semloom.sem_filter.tristate_ascii.v1",
+    "schema": "semloom.reference_qualification.plan.v1"
+  },
+  "choice": {
+    "base_semantic_spec_digest": "fc239b2355075c2e11c7b34bdb4f916c4edc1a44aa1004dba5f136f8ff447a5a",
+    "generation_constraints": {
+      "max_tokens": 8,
+      "n": 1,
+      "stop": [
+        "\n"
+      ],
+      "stream": false,
+      "structured_outputs": {
+        "choice": [
+          "TRUE",
+          "FALSE",
+          "UNKNOWN"
+        ]
+      },
+      "temperature": 0,
+      "top_p": 1
+    },
+    "generation_profile": "semloom.qualification.choice.v1",
+    "instruction": "The input asks for writing, explaining, or debugging computer code.",
+    "model": "Qwen2.5-1.5B-Instruct",
+    "plan_digest": "ea514fb65a9540e7e45392dc66d2752a2f1ca82861b7b5013dc4f6d9b2b274e9",
+    "production_pg_plan": false,
+    "result_parser": "semloom.sem_filter.tristate_ascii.v1",
+    "schema": "semloom.reference_qualification.plan.v1"
+  }
+}

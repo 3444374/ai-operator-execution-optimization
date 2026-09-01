@@ -1,0 +1,113 @@
+{
+  "after": [
+    {
+      "Execution Time": 0.13,
+      "Plan": {
+        "Actual Loops": 1,
+        "Actual Rows": 64.0,
+        "Actual Startup Time": 0.007,
+        "Actual Total Time": 0.119,
+        "Alias": "calibration_inputs",
+        "Async Capable": false,
+        "Disabled": false,
+        "Filter": "((split = 'warmup'::text) AND (cell = 0))",
+        "Local Dirtied Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Written Blocks": 0,
+        "Node Type": "Seq Scan",
+        "Parallel Aware": false,
+        "Plan Rows": 64,
+        "Plan Width": 8,
+        "Relation Name": "calibration_inputs",
+        "Rows Removed by Filter": 1152,
+        "Shared Dirtied Blocks": 0,
+        "Shared Hit Blocks": 14,
+        "Shared Read Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Startup Cost": 0.0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Total Cost": 32.24
+      },
+      "Planning": {
+        "Local Dirtied Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Written Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Hit Blocks": 18,
+        "Shared Read Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.068,
+      "Triggers": []
+    }
+  ],
+  "before": [
+    {
+      "Execution Time": 0.126,
+      "Plan": {
+        "Actual Loops": 1,
+        "Actual Rows": 64.0,
+        "Actual Startup Time": 0.005,
+        "Actual Total Time": 0.117,
+        "Alias": "calibration_inputs",
+        "Async Capable": false,
+        "Disabled": false,
+        "Filter": "((split = 'warmup'::text) AND (cell = 0))",
+        "Local Dirtied Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Written Blocks": 0,
+        "Node Type": "Seq Scan",
+        "Parallel Aware": false,
+        "Plan Rows": 8,
+        "Plan Width": 8,
+        "Relation Name": "calibration_inputs",
+        "Rows Removed by Filter": 1152,
+        "Shared Dirtied Blocks": 0,
+        "Shared Hit Blocks": 14,
+        "Shared Read Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Startup Cost": 0.0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Total Cost": 32.24
+      },
+      "Planning": {
+        "Local Dirtied Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Written Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Hit Blocks": 14,
+        "Shared Read Blocks": 2,
+        "Shared Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.074,
+      "Triggers": []
+    }
+  ],
+  "contains_ai_condition": false,
+  "counts": {
+    "cell_zero": 160,
+    "joint": 64,
+    "total": 1216,
+    "warmup": 64
+  },
+  "held_out_payload_read": false,
+  "loaded_fields": [
+    "doc_id",
+    "split",
+    "cell"
+  ],
+  "manifest_sha256": "b57036edd79f703ae59d81bba3799d2924b16638d7b05c0ff1281c16288fb90f",
+  "postgresql_version": "18.3",
+  "query": "SELECT doc_id FROM calibration_inputs WHERE split='warmup' AND cell=0",
+  "statistics_sql": "CREATE STATISTICS calibration_split_cell (mcv, dependencies) ON split, cell FROM calibration_inputs; ANALYZE calibration_inputs;"
+}

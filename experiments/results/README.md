@@ -8,6 +8,10 @@
 
 ## PostgreSQL exact SemFilter reference calibration（2026-09-01）
 
+[校准前独立小切片](postgresql/semfilter_qualification_20260901/README.md)：builder 拒绝共线观测，
+PG18.3 多列统计将普通谓词估计从 8 修正为 64；choice 格式 30/30，但两种配置的语义预期均只符合
+12/27。reference 资格未通过，整轮采集继续暂停；PG18.3 回归 1/1、TAP 437/437、Python 59/59 通过。
+
 [首轮真实采集](postgresql/semfilter_reference_calibration_20260901/README.md)：64 条预热完成，但首个
 training 查询第 23 个模型响应违反严格输出格式，PG18.3 以 `22000` 终止语句。held-out 未运行，
 没有拟合或 artifact；脱敏逐请求数据、错误、构建/测试日志和 SHA 清单已归档。机制资格不变，

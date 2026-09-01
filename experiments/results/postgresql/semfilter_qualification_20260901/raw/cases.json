@@ -1,0 +1,52 @@
+[
+  {
+    "case_id": "positive-python",
+    "expected": "TRUE",
+    "input_sha256": "fb621de3ef53a5599e2c1cf19eb486c1f965fdb001a26f8fc987da5bed9ad03e"
+  },
+  {
+    "case_id": "positive-sql",
+    "expected": "TRUE",
+    "input_sha256": "2543133869e2d462cfd72f5bd504f241409e17f065eb720787e36e4eeeb2e3c7"
+  },
+  {
+    "case_id": "positive-debug",
+    "expected": "TRUE",
+    "input_sha256": "b4547e5c99ab74d0305085f0efe5b3bf27d43e3e2cebab9d07cdb9ac6403171c"
+  },
+  {
+    "case_id": "negative-recipe",
+    "expected": "FALSE",
+    "input_sha256": "4d75feaa03dd329f4fd20f5dbe153130e536fd0f5c0a1648bd44407191aa0a2d"
+  },
+  {
+    "case_id": "negative-poem",
+    "expected": "FALSE",
+    "input_sha256": "388e99131bde37757fa333370139f43e0e9faa03d3f0975ccb80c4bad8585eb6"
+  },
+  {
+    "case_id": "negative-geography",
+    "expected": "FALSE",
+    "input_sha256": "115049a298532be2f181edb03f766770c0db84c22aff39003fec340deaec7545"
+  },
+  {
+    "case_id": "unknown-fix",
+    "expected": "UNKNOWN",
+    "input_sha256": "5204e5f2c1b1571f157f95a8483dbd828e610ba038e1e161320eaf4caeaf2c0e"
+  },
+  {
+    "case_id": "unknown-explain",
+    "expected": "UNKNOWN",
+    "input_sha256": "4acf9d2f4a109683e9ee3605314336c5fab06b365be07e0435e04aa3b32c89c5"
+  },
+  {
+    "case_id": "unknown-write",
+    "expected": "UNKNOWN",
+    "input_sha256": "6965c54c735e41a8cdf64bb5184efac01239453c8132c06f04ec7a0172b3a5c5"
+  },
+  {
+    "case_id": "failed-training-input",
+    "expected": null,
+    "input_sha256": "84153b846c2b6e6d78b47efbe40670d005b3a8d0f7382f306d509603867011d2"
+  }
+]

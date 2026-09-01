@@ -28,7 +28,8 @@
 > model role 与 actual usage；`71a8ef7d` 将未校准估计明确标为 unavailable，`dcde2be5` 随后完成离线
 > artifact 生成/验证和 planner 消费机制。2026-09-01 [首轮真实采集](../results/postgresql/semfilter_reference_calibration_20260901/README.md)
 > 在 64 条预热后，因首个 training 查询的第 23 个响应违反输出格式而停止；held-out/拟合未运行，
-> artifact 尚无真实资格。当前先确认 reference model/profile 能遵守严格输出格式，再独立验证 matched
+> artifact 尚无真实资格。`6c111b24` 随后修复 builder 的共线检查并验证 PG18.3 多列统计；choice 候选
+> 格式 30/30，但语义预期仅符合 12/27，独立资格未通过。当前先解决 reference 语义判断，再独立验证 matched
 > reference calibration，之后才实现显式 reference/optimized 第二 physical path、
 > quality evidence 与 fallback。载体审查确认
 > extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加

@@ -1,0 +1,70 @@
+{
+  "artifact_file_written": false,
+  "baseline_accepted_coefficients": {
+    "service_fixed_milliseconds": "10",
+    "service_ms_per_model_call": "1",
+    "service_ms_per_output_token": "1",
+    "service_ms_per_prompt_token": "0.1"
+  },
+  "baseline_commit": "c77c1441",
+  "baseline_held_out_max_relative_error": "0",
+  "baseline_source_sha256": "de46fdf7e8ecb2e76b42509c15fdfba83fd8716e6e5ec518346b191de26c8b1e",
+  "fixed_commit": "6c111b24f027ecd13006c66e7f9007d2b7be7590",
+  "fixed_rejection": "service observations do not identify all cost coefficients",
+  "source": {
+    "accepted_max_relative_error": 0.05,
+    "generated_at": "2026-09-01T01:02:03Z",
+    "held_out_observations": [
+      {
+        "model_calls": 265,
+        "output_rows": 106,
+        "output_tokens": 530,
+        "prompt_tokens": 2990,
+        "semantic_input_rows": 265,
+        "service_milliseconds": 1104
+      }
+    ],
+    "model_id": "reference-model-v1",
+    "model_role": "reference",
+    "physical_algorithm_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "provider_execution_profile": "openai-compatible-fixed",
+    "schema_version": 1,
+    "semantic_spec_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "service_signature": "4444444444444444444444444444444444444444444444444444444444444444",
+    "training_observations": [
+      {
+        "model_calls": 90,
+        "output_rows": 36,
+        "output_tokens": 180,
+        "prompt_tokens": 360,
+        "semantic_input_rows": 90,
+        "service_milliseconds": 316
+      },
+      {
+        "model_calls": 60,
+        "output_rows": 24,
+        "output_tokens": 120,
+        "prompt_tokens": 1260,
+        "semantic_input_rows": 60,
+        "service_milliseconds": 316
+      },
+      {
+        "model_calls": 100,
+        "output_rows": 40,
+        "output_tokens": 200,
+        "prompt_tokens": 1100,
+        "semantic_input_rows": 100,
+        "service_milliseconds": 420
+      },
+      {
+        "model_calls": 15,
+        "output_rows": 6,
+        "output_tokens": 30,
+        "prompt_tokens": 270,
+        "semantic_input_rows": 15,
+        "service_milliseconds": 82
+      }
+    ],
+    "workload_signature": "3333333333333333333333333333333333333333333333333333333333333333"
+  }
+}

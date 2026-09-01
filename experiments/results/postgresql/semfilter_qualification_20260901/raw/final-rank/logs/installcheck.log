@@ -1,0 +1,14 @@
+make: Entering directory '<test-worktree>/code/postgres/semloom_pg'
+echo "# +++ regress install-check in  +++" && <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg18.3-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on /tmp/semrank-pg-20260901, port 55439
+ok 1         - semloom_pg                                 23 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl .. ok
+All tests successful.
+Files=1, Tests=437, 17 wallclock secs ( 0.09 usr  0.00 sys +  8.53 cusr  1.92 csys = 10.54 CPU)
+Result: PASS
+make: Leaving directory '<test-worktree>/code/postgres/semloom_pg'

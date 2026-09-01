@@ -1,0 +1,31 @@
+{
+  "held_out_model_calls": 0,
+  "held_out_payload_read": false,
+  "plan_schema_is_experimental": true,
+  "production_wire_unchanged": true,
+  "profiles": {
+    "baseline": {
+      "expected_matches": 12,
+      "format_valid": 27,
+      "labelled_responses": 27,
+      "output_tokens_histogram": {
+        "2": 30
+      },
+      "qualified": false,
+      "responses": 30
+    },
+    "choice": {
+      "expected_matches": 12,
+      "format_valid": 30,
+      "labelled_responses": 27,
+      "output_tokens_histogram": {
+        "2": 27,
+        "4": 3
+      },
+      "qualified": false,
+      "responses": 30
+    }
+  },
+  "service_and_model_unchanged": true,
+  "source_commit": "6c111b24f027ecd13006c66e7f9007d2b7be7590"
+}

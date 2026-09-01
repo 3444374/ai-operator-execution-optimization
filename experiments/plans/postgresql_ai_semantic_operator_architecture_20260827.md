@@ -1048,13 +1048,23 @@ calibration mechanism 与 deterministic artifact parity，不证明真实模型�
 
 #### 校准前小切片：reference 输出资格、普通统计与可辨识性（2026-09-01）
 
+**结果：两项完成，reference 语义资格未通过，整轮采集继续暂停。**
+[`6c111b24` 验证报告](../results/postgresql/semfilter_qualification_20260901/README.md)记录：公开 builder
+拒绝完全/近似共线，PG18.3 普通多列统计将 estimate 从 8 修正为 64；choice 候选格式 30/30，但两种
+profile 的预期语义都只符合 12/27。现有 PG18.3 回归 1/1、TAP 437/437、Python 59/59 均通过。
+最终数值补充 `44f6632c` 使用整体 Gram 条件检查并独立通过 PG18.3 回归 1/1、TAP 437/437、Python
+60/60；模型对照没有重跑，预注册标签与 held-out 要求未变。
+下述预注册设置保留；下一项只诊断 reference 的 prompt/instruction/model 判断，不修改 parser 或恢复采集。
+
 本切片不恢复整轮采集，不访问 held-out payload，不训练/调参、不更换模型、不改严格 PG parser。
 生产修复只针对公开 calibration builder 的秩检查；不修改 core、runtime 或 provider seam。
 
 1. **Builder**：先以四条 `output_tokens=2*calls` 观测复现旧实现误接受，再测试近似共线。
-   在拟合前对实际设计矩阵做精确有理数消元，避免有限 Decimal 精度把零主元变成非零；各列先按最大
-   绝对值归一化，归一化主元 ≤`1e-8` 也拒绝。该数值阈值是预先选定的工程可辨识性要求，不是 held-out
-   精度阈值或 SVD condition number。保留有效 fixture 与不同量纲、行序的兼容性。
+   在拟合前做精确有理数检查，避免有限 Decimal 精度把零主元变成非零。初版按归一化主元 ≤`1e-8`
+   拒绝，最终合成反例复核发现它仍会遗漏多列共同退化；当前改为各列按最大绝对值归一化后，精确
+   形成 `G=XᵀX` 并求逆。奇异或 `||G||∞ × ||G⁻¹||∞ ≥ 1e16` 拒绝。该整体条件数上限是工程可辨识性
+   要求，不是 held-out 精度阈值或 SVD condition number；调整只依据合成反例，未用真实/held-out 数据调参。
+   保留有效 fixture 与不同量纲、行序的兼容性。
 2. **普通统计**：新建独立 PG18.3 测试集群，仅从公开 manifest 导入 1216 条 `doc_id/split/cell`
    元数据。先运行无 AI 条件的 `EXPLAIN ANALYZE ... WHERE split='warmup' AND cell=0`，再创建
    `CREATE STATISTICS calibration_split_cell (mcv, dependencies) ON split,cell FROM calibration_inputs`

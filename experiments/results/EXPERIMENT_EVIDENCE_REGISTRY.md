@@ -16,8 +16,11 @@ bounded async 或性能优化已经完成。当前顺序看工程计划和
 PG18.3 正确终止语句；held-out 未运行、未拟合、没有 artifact。该失败证据不改变机制功能资格，
 也不提供成本精度或语义质量通过结论。
 后续诊断又复现了旧 builder 对完全共线观测误发 artifact：有限精度消元留下伪非零主元。拟合前的精确
-有理数/归一化主元检查已通过本地 9/9 calibration 测试，服务器输出资格和普通统计验证仍待执行；
-不能把该修复或约束解码候选写成新的真实校准结果。
+有理数/归一化主元检查已通过 9/9 calibration 测试。`6c111b24` 的 PG18.3 服务器回归 1/1、TAP 437/437、
+Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选格式 30/30，但语义预期仅符合 12/27，
+未通过 reference 资格。不能把该修复或候选格式通过写成真实校准完成。
+最终数值补充 `44f6632c` 又以精确 Gram 无穷范数条件检查拒绝组合病态，独立通过 PG18.3 regression
+1/1、TAP 437/437、Python 60/60（calibration 10/10）；原 6c 模型/统计结果与最终数值测试分别保存。
 
 ## 1. 证据等级
 
@@ -35,6 +38,7 @@ PG18.3 正确终止语句；held-out 未运行、未拟合、没有 artifact。�
 
 | 机制 | 代码与测试入口 | 真实结果 | 当前证据与结论 |
 |---|---|---|---|
+| 校准前独立资格小切片 | `6c111b24`；[逐响应数据、普通 SQL EXPLAIN 与旧/新 builder 对照](postgresql/semfilter_qualification_20260901/README.md) | PG18.3 `-Werror`、regression 1/1、TAP 437/437、Python 59/59（其中 calibration 9/9）；同模型同 prompt 的 baseline/choice 各 30 次测量和各 1 次预热 | 两项完成、一项未通过：builder 拒绝完全/近似共线；MCV/dependencies 将普通谓词 estimate 8 修正为 64、actual=64；choice 格式由 27/30 提高至 30/30，但两配置都仅符合 12/27 预设语义判断。没有访问 held-out payload，未拟合真实数据，choice 未接入生产 SQL/spec/wire，整轮校准继续暂停。 |
 | exact SemFilter 真实 reference calibration 首轮采集 | 生产源码 `dcde2be5`，采集合同 `2feab7d4` / `7042132e`；[观测、脚本与 SHA 清单](postgresql/semfilter_reference_calibration_20260901/README.md) | PostgreSQL 18.3 + Qwen2.5-1.5B-Instruct + vLLM 0.25.1 + 单 RTX 4090；64 条预热完成，首个 training 查询第 23 个响应为非法 3-byte 内容，SQLSTATE `22000`。完整 training/held-out observation 均为 0，55/55 既有合同与 6/6 采集检查通过 | 失败采集：保留全部 87 条响应的脱敏观测、错误和事后身份/readback 核验；未拟合、未运行 held-out、未发布或加载 artifact。20% 阈值和原有语义未修改；当前固定模型在该 workload 下尚不能稳定遵守输出格式。不能将其作为真实成本、质量或四项系数可辨识性验证。 |
 | PostgreSQL planner-visible `SemMap` / exact `SemFilter` | `code/postgres/semloom_pg/`、`code/src/execution_provider/`、`code/src/planning/semfilter_reference_calibration.py`；20 项 PostgreSQL static contract、8 项冻结 v2 protocol、9 项 v3 semantic protocol、8 项 fixed-model adapter、5 项 gateway migration 和 5 项 calibration contract，另有 PGXS SQL regression 与 TAP lifecycle/fault tests | 双 RTX 4090 服务器隔离源码构建 `REL_18_3`（upstream `62d6c7d3…`）；历史 4A/4A.1、4B、4B.1、cost-observability 与 gap-hardening 结果继续绑定各自提交。`dcde2be5` 通过 clean warning-free `-Werror`、regression 1/1、TAP 437/437、Python/static/gateway 55/55 和 neutral/machine C11 compile；`postgresql_semfilter_reference_calibration_dcde2be5_20260901` 保存源码/提交身份、原始日志、actual/expected、二进制、状态和已校验 manifest | 功能测试：recording Map/Filter compatibility 与三参数 exact Filter 保持 ordinary child、三值/NULL/cardinality、`LIMIT` 前 placement、prepared/generic plan、RLS/权限、snapshot/savepoint、cancel/recovery、多 backend 与 direct `INSERT ... SELECT`。fixed adapter 的既有 HTTP/DNS 边界保持。planner 能严格加载与 semantic/physical/model/role/provider 匹配的静态 calibration artifact，并在损坏、escaped NUL、duplicate、缺失或失配时保留 uncalibrated reference；EXPLAIN 分列 artifact/workload/service identity、predicted service milliseconds 和 held-out error。当前 artifact 是 deterministic fixture，真实 matched cost、第二 path、rescan/EPQ/parallel、join/aggregate 和更宽 query shape 仍未支持。 |
 | PostgreSQL-private plan/runtime + neutral provider seam | `code/postgres/semloom_pg/src/{sem_plan_spec,sem_filter_calibration,sem_filter_cost,semantic_filter_contract,recording_contract,pg_semantic_runtime,sem_pump,sem_operator_machine,sem_map_machine,sem_filter_machine,ai_provider_port,provider,recording_provider,uds_provider,wire_common,wire_v2,wire_v3}.{h,c}`；`code/src/execution_provider/{wire,adapters,server.py}`；旧 `gateway/` compatibility wrappers 与上述 contract/TAP | 历史 resource、4A/4B、4B.1 与 cost-observability 证据继续绑定原提交；`dcde2be5` 只追加 planner calibration qualification，不替换 runtime/resource 或真实模型 evidence | schema v1/v2、pump binding、shared runtime 与 provider seam 保持；cost metadata schema v2 和 calibration loader 只位于 planner，runtime 仍只计数实际 model calls 和 prompt/output usage。`wire_common.c`、v2/v3 和 gateway golden/fixed-model 职责不变。endpoint/model/timeout/auth 只来自仓库外配置；artifact workload/service signature 是离线适用性身份，不是 backend 对 endpoint/hardware 的在线探测。真实 matched artifact、accepted-prefix、多在途/乱序 completion 与增量 SemLoom adapter 尚未实现。 |
@@ -90,6 +94,7 @@ PG18.3 正确终止语句；held-out 未运行、未拟合、没有 artifact。�
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `postgresql/semfilter_qualification_20260901/` | 三项独立前置验证 | 秩检查修复、PG18.3 普通多列统计通过；choice 仅通过格式，语义预期仍不符，reference 资格未通过。 |
 | `postgresql/semfilter_reference_calibration_20260901/` | exact SemFilter 首轮真实 reference calibration，失败采集 | 64 条预热完成；首个 training 查询第 23 个响应违反严格 tristate，PG18.3 报 `22000`。held-out、拟合、artifact 均未运行；保留失败，不改变阈值或静默排除样本。 |
 | `saor_capacity_development_20260811/` | 两档 capacity-only SAOR 与 frozen lower/upper、legacy threshold 的开发门 | 4/4 arm、5,266 requests/arm、0 incident；真实动作安全，但一次顺序运行、server dirty-worktree provenance 和旧 manifest 漏字段使其只作 development。当前分支 `not-promoted`。 |
 | `saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job active-set killer matrix | 40/40、0 incident、exactly-once；原始 failed validation 保留，resolution-aware v2 完整 validation passed、effective 12/12。SAOR 未越过 static，状态为 `formal-valid/not-promoted`。 |

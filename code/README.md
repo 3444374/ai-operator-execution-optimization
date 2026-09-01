@@ -77,8 +77,11 @@ Python/static/gateway contracts, and neutral/machine C11 compilation. Evidence i
 `postgresql_semfilter_reference_calibration_dcde2be5_20260901` with a verified SHA-256 manifest.
 
 The deterministic artifact in that qualification proves the builder/loader and planner behavior, not real-model
-cost accuracy. The next implementation slice must collect a real artifact under one fixed semantic plan, model,
-workload distribution, service, and hardware signature and pass held-out validation. Only then may a distinct
+cost accuracy. Full collection is currently paused: the first real run failed the model-output contract, and the
+subsequent qualification slice fixes builder identifiability and verifies PostgreSQL multicolumn statistics, but
+native choice decoding still fails the predeclared semantic cases. See `INFRA_STATUS.md` for the current evidence.
+A qualified reference must precede real collection and held-out validation under one fixed semantic plan, model,
+workload distribution, service, and hardware signature. Only then may a distinct
 reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit.
 Accepted-prefix, multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and
 path-selection qualification; see

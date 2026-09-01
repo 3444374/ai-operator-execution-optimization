@@ -1,0 +1,17 @@
+{
+  "held_out_used": false,
+  "installed_binary_matches": true,
+  "model_calls": 0,
+  "pg_stopped": true,
+  "postgresql_version": "18.3",
+  "python_tests": {
+    "calibration": 10,
+    "gateway": 5,
+    "postgres-python": 45
+  },
+  "regression": 1,
+  "regression_original_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+  "source_commit": "44f6632c",
+  "tap": 437,
+  "warning_free_werror": true
+}

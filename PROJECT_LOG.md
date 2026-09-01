@@ -1,5 +1,32 @@
 # 项目日志
 
+## 2026-09-01 最终数值复核补齐组合病态拒绝
+
+- 小切片最终复核发现 `6c111b24` 的单归一化主元阈值仍会漏掉多列共同退化；新增公开 builder 红测
+  复现旧检查误接受、held-out 表面误差仍很小。`44f6632c` 改为精确构造和求逆列归一化后的 Gram
+  矩阵，奇异或 `||G||∞ × ||G⁻¹||∞ ≥ 1e16` 均拒绝；阈值仅据合成数值反例设定，不动真实/held-out 数据。
+- 最终 calibration 10/10、本地和服务器均通过；服务器另在精确 PG18.3 上独立通过 warning-free
+  `-Werror`、regression 1/1、TAP 437/437、Python 60/60。组合反例、原始日志和二进制保存在独立包
+  `semfilter_rank_condition_44f6632c_20260901`，主/公开清单均验证；补充证据位于同一小切片结果的
+  `raw/final-rank/`，不覆盖 `6c111b24` 的模型/统计数据。
+- 没有重跑模型、修改标签或恢复校准；reference 语义资格未通过的结论不变。补充测试 PG 已停止，
+  临时 worktree 已注销，原始证据继续保留。
+
+## 2026-09-01 校准前独立资格小切片结果
+
+- 修复提交 `6c111b24` 在服务器精确 PG18.3 上通过 warning-free `-Werror`、regression 1/1、TAP
+  437/437 和 Python 59/59（calibration 9/9）；干净构建与实际使用的 `.so` 哈希一致，regression 原始
+  actual/expected 字节一致。新旧公开 builder 的同输入对照记录了旧实现误接受、新实现拒绝。
+- 只导入公开的 1216 行分组元数据，在无 AI 的普通 SQL 上加入 `(split,cell)` 的 MCV/dependencies
+  统计，estimate 从 8 变为 64、actual 始终 64；未修改 core、semantic cost 或硬填行数。
+- 保持原模型和 prompt，基线与独立 choice 候选各运行 30 次测量及 1 次预热；格式通过分别为
+  27/30、30/30，但两者的预设语义判断均只符合 12/27。原失败输入只重放、不猜标签；9 条工程样例
+  不冒充人工标注语料。choice 使用不同的版本化实验 plan/generation 摘要，未接入生产 SQL/spec/wire。
+- 结果登记在 `experiments/results/postgresql/semfilter_qualification_20260901/`。仓库外证据包
+  `semfilter_reference_qualification_c77c1441_20260901_r1` 的私有主清单与公开子清单均校验通过；
+  原失败校准包仍通过原清单。本轮 endpoint、普通 PG 和 TAP 节点已停止，测试 worktree 已注销，
+  日志/响应/停止后的 PGDATA 保留。reference 语义资格未过，held-out 和整轮校准继续暂停。
+
 ## 2026-09-01 暂停整轮采集，修复 calibration 设计矩阵检查
 
 - 公开 builder 红测复现：四条完全满足 `output_tokens=2*calls` 的观测被旧实现接受，甚至得到 0 held-out

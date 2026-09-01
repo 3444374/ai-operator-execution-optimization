@@ -1,0 +1,8 @@
+{
+  "model_endpoint_stopped": true,
+  "observed_gpu_compute_processes": 0,
+  "old_calibration_bundle_unchanged": true,
+  "scope": "this qualification attempt only",
+  "statistics_pg18_3_stopped": true,
+  "tap_nodes_stopped": true
+}

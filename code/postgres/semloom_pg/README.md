@@ -208,11 +208,22 @@ completed 64 warm-up inputs, then stopped on the 23rd response of the first trai
 an invalid tristate value and PostgreSQL 18.3 raised `22000`. No complete training observation, held-out measurement,
 fit, or artifact resulted. Production code and the predeclared 20% error limit were unchanged. The next collection
 is paused for three independent checks: reference output qualification (including a separately versioned constrained
-decoding candidate), ordinary PostgreSQL multicolumn statistics, and builder identifiability. The builder now checks
-the four-column design with exact rational elimination before fitting, scales each column by its maximum magnitude,
-and rejects zero or normalized pivots at most `1e-8`. This engineering floor is not a held-out error limit or an SVD
-condition number. Nine local calibration tests cover exact/near dependence and valid unit/row-order changes.
+decoding candidate), ordinary PostgreSQL multicolumn statistics, and builder identifiability. The builder now scales
+each design column by its maximum magnitude, forms and inverts the Gram matrix with exact rational arithmetic,
+and rejects singularity or an infinity-norm Gram condition of at least `1e16`. Checking only individual pivots
+missed a chained near-dependence fixture. This engineering limit is not a held-out error limit or an SVD condition
+number. Ten local calibration tests cover exact/near/joint dependence and valid unit/row-order changes.
 Production SQL, the strict C parser, and wire v3 do not yet support the constrained-decoding candidate.
+
+The [independent qualification slice](../../../experiments/results/postgresql/semfilter_qualification_20260901/README.md)
+at `6c111b24` passes PostgreSQL 18.3 `-Werror`, regression 1/1, TAP 437/437 and 59/59 Python contracts.
+Ordinary multicolumn statistics correct the fixture's input estimate from 8 to 64 (actual 64). Native choice decoding
+improves format acceptance from 27/30 to 30/30, but both profiles match only 12/27 predeclared semantic expectations.
+The reference is therefore not qualified; full calibration remains paused, and the experimental choice manifest
+must not be confused with a production PostgreSQL plan or a validated calibration artifact.
+Final numerical hardening `44f6632c` additionally rejects chained near dependence using the full Gram condition.
+It independently passes PostgreSQL 18.3 `-Werror`, regression 1/1, TAP 437/437 and 60/60 Python contracts
+(10 calibration tests). It does not rerun the model or change the failed semantic qualification.
 
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
