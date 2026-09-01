@@ -1,0 +1,11 @@
+test_deterministic_selection (test_collect.CollectorTest.test_deterministic_selection) ... ok
+test_excludes_invalid_and_duplicates (test_collect.CollectorTest.test_excludes_invalid_and_duplicates) ... ok
+test_finds_actual_custom_scan_name (test_collect.CollectorTest.test_finds_actual_custom_scan_name) ... ok
+test_identity_is_order_independent (test_collect.CollectorTest.test_identity_is_order_independent) ... ok
+test_no_payload_rewriting (test_collect.CollectorTest.test_no_payload_rewriting) ... ok
+test_split_sizes_and_disjointness (test_collect.CollectorTest.test_split_sizes_and_disjointness) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.046s
+
+OK

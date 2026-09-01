@@ -1,0 +1,12 @@
+{
+  "model_files_unchanged": true,
+  "recovery": {
+    "exact_readback": true,
+    "fresh_connection_select_1": true,
+    "gateway_socket_absent": true,
+    "imported_rows": 1216,
+    "version": "PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit"
+  },
+  "service_identity_unchanged": true,
+  "source_unchanged": true
+}

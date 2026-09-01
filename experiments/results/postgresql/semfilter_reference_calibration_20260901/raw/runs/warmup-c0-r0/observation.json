@@ -1,0 +1,8 @@
+{
+  "model_calls": 64,
+  "output_rows": 1,
+  "output_tokens": 128,
+  "prompt_tokens": 9671,
+  "semantic_input_rows": 64,
+  "service_milliseconds": 3168.918231
+}

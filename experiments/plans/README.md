@@ -20,9 +20,10 @@
 transport-neutral error interface、compatibility suite 与行为不变的 gateway 公共目录迁移已完成。
 唯一详细工程顺序由架构实施计划 §9
 维护：exact-reference 纵切面实际消费的最小 plan/task/result contract 已依次通过 deterministic golden、
-固定模型 endpoint 和 HTTP/DNS boundary hardening；reference rows/work/actual usage 已显式可观察，但
-calibration artifact mechanism 已通过 deterministic qualification。下一步按工作包五的固定采集合同取得
-真实 matched reference 数据并通过 held-out 验证，再实现第二 physical path
+固定模型 endpoint 和 HTTP/DNS boundary hardening；reference rows/work/actual usage 已显式可观察，
+calibration artifact mechanism 已通过 deterministic qualification。工作包五首轮真实采集因模型输出格式失败停止，
+held-out 和拟合未运行；下一轮先确认 reference model/profile 能遵守严格输出合同，再取得独立验证通过的
+真实 matched artifact，之后才实现第二 physical path
 与 quality policy，再做 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
 只导航，不复制每个工作包的完成标准。
 

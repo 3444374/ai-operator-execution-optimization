@@ -1,0 +1,54 @@
+{
+  "accepted_max_relative_error": 0.2,
+  "artifact_published": false,
+  "complete_held_out_observations": 0,
+  "complete_training_observations": 0,
+  "fitted": false,
+  "held_out_errors": null,
+  "held_out_status": "not_run_due_to_training_query_failure",
+  "planner_artifact_load_status": "not_run_no_qualified_artifact",
+  "reason": "strict_model_output_contract_failed",
+  "runs": [
+    {
+      "complete_query": false,
+      "observation": null,
+      "observed_model_responses": 23,
+      "partial_output_tokens": 46,
+      "partial_prompt_tokens": 3212,
+      "partial_request_wall_ms": 1171.859143,
+      "planned_input_rows": 64,
+      "raw_output_counts": {
+        "INVALID": 1,
+        "UNKNOWN": 22
+      },
+      "run_id": "training-c2-r0"
+    },
+    {
+      "complete_query": true,
+      "observation": {
+        "model_calls": 64,
+        "output_rows": 1,
+        "output_tokens": 128,
+        "prompt_tokens": 9671,
+        "semantic_input_rows": 64,
+        "service_milliseconds": 3168.918231
+      },
+      "observed_model_responses": 64,
+      "partial_output_tokens": 128,
+      "partial_prompt_tokens": 9671,
+      "partial_request_wall_ms": 3168.918231,
+      "planned_input_rows": 64,
+      "raw_output_counts": {
+        "TRUE": 1,
+        "UNKNOWN": 63
+      },
+      "run_id": "warmup-c0-r0"
+    }
+  ],
+  "service_coefficients": null,
+  "sql_message": "SemFilter model completion must be TRUE, FALSE, or UNKNOWN",
+  "sqlstate": "22000",
+  "status": "rejected_before_fit",
+  "training_rank": null,
+  "tuned_after_observation": false
+}

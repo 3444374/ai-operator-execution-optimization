@@ -44,8 +44,10 @@ estimated calls/work 与 provider 返回的实际 usage；`71a8ef7d` 又明确�
 `dcde2be5` 已增加离线 reference calibration artifact builder、held-out validator、跨 Python/PostgreSQL
 identity 和 planner-only loader；匹配 artifact 时 EXPLAIN 保存 calibration/workload/service identity、
 预测 service milliseconds 与误差，失配时继续使用 uncalibrated exact reference。该提交只用
-deterministic fixture 验证合同，还没有真实 model/workload/service 数据，因此下一步先采集并验证真实
-matched artifact，再实现 LOTUS/Cortex-like 第二 path。随后用
+deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments/results/postgresql/semfilter_reference_calibration_20260901/README.md)
+完成 64 条预热后，因首个 training 查询第 23 个模型输出格式错误而停止；held-out 和拟合均未运行。
+下一步仍是确定可靠遵守严格输出格式的 reference model/profile，采集并验证真实 matched artifact，
+再实现 LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
 多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展

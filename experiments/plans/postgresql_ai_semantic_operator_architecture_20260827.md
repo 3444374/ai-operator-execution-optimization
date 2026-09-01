@@ -1048,6 +1048,12 @@ calibration mechanism 与 deterministic artifact parity，不证明真实模型�
 
 #### 真实 reference calibration：首轮固定采集合同（2026-09-01）
 
+**本轮结果：已执行，未通过。** [原始观测与报告](../results/postgresql/semfilter_reference_calibration_20260901/README.md)
+记录 64 条 warm-up 完成，但首个 training cell 第 23 个模型输出违反严格 tristate，PG18.3 报 `22000`。
+按下述停止条件结束采集；held-out、拟合、artifact 与 planner 加载未运行。下述合同保留原样供审计，
+不是一个待补跑的成功实验。下一轮先选定能满足输出合同的 reference model/profile 并重新登记条件，
+保持 held-out 独立，再检查 training 可辨识性与误差；不删除失败样本后接着拟合，也不进入第二路径。
+
 本轮只验证 `777f0382` 的 reference artifact 能否由真实观测产生，不做第二路径、质量比较或吞吐排名。
 以下配置和误差要求在首次模型请求前确定；失败记录、未通过的 artifact attempt 与原始观测全部保留。
 

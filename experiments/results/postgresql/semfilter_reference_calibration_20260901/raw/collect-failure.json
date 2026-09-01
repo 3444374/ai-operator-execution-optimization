@@ -1,0 +1,6 @@
+{
+  "exception_type": "DataException",
+  "sqlstate": "22000",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"<artifact-root>/tmp/semfilter_real_calibration/collect.py\", line 356, in main\n    return globals()[args.mode](args) or 0\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<artifact-root>/tmp/semfilter_real_calibration/collect.py\", line 270, in collect\n    observations[split].append(execute_cell(args, connection, rows, split, cell, repeat, service))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<artifact-root>/tmp/semfilter_real_calibration/collect.py\", line 201, in execute_cell\n    result = connection.execute(query).fetchone()[0]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<driver-env>/lib/python3.12/site-packages/psycopg/connection.py\", line 300, in execute\n    raise ex.with_traceback(None)\npsycopg.errors.DataException: SemFilter model completion must be TRUE, FALSE, or UNKNOWN\n"
+}

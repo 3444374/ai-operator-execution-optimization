@@ -59,6 +59,11 @@ wire 和 semantic digest 未改变。当前 deterministic fixture 只证明合�
 model/workload/service artifact 及其 held-out 误差资格仍未完成，因此还不能实现第二 physical path。
 当前尚缺真实 matched artifact、第二 physical path、carrier audit、
 accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
+2026-09-01 的[首轮真实校准采集](../experiments/results/postgresql/semfilter_reference_calibration_20260901/README.md)
+已运行，但没有产生 artifact：固定 Qwen2.5-1.5B-Instruct 完成 64 条预热，首个 training 查询的第 23
+个响应不符合严格 tristate，PG18.3 按现有合同报 `22000`。完整 training/held-out observation 均为 0，
+未拟合、未加载 artifact，没有修改生产代码、阈值或失败样本。下一轮需先确定能遵守该输出合同的
+reference model/profile，再按独立样本检查可辨识性与误差；本次 55/55 合同和 6/6 采集检查不代替成本精度。
 当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
 并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
 snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过

@@ -25,8 +25,11 @@
 > plan/task/result contract 依次通过 deterministic golden、公共 wire/error hardening 与同步 fixed-model
 > `SemFilter`；小规模真实模型只证明纵切面可运行。提交 `47407751` 已显式分开
 > reference semantic-input rows、通用 output-selectivity estimate、NULL-adjusted calls、prompt/output work、
-> model role 与 actual usage；`71a8ef7d` 将 calibration 固定为 unavailable。当前先完成 matched reference
-> calibration，再实现显式 reference/optimized 第二 physical path、
+> model role 与 actual usage；`71a8ef7d` 将未校准估计明确标为 unavailable，`dcde2be5` 随后完成离线
+> artifact 生成/验证和 planner 消费机制。2026-09-01 [首轮真实采集](../results/postgresql/semfilter_reference_calibration_20260901/README.md)
+> 在 64 条预热后，因首个 training 查询的第 23 个响应违反输出格式而停止；held-out/拟合未运行，
+> artifact 尚无真实资格。当前先确认 reference model/profile 能遵守严格输出格式，再独立验证 matched
+> reference calibration，之后才实现显式 reference/optimized 第二 physical path、
 > quality evidence 与 fallback。载体审查确认
 > extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加
 > 最小 core patch。数据库语义与路径选择资格完成后才扩 accepted-prefix、

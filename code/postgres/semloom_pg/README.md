@@ -203,6 +203,12 @@ and a verified SHA-256 manifest. Its deterministic calibration fixture proves bu
 not empirical accuracy for a real model, workload distribution, service, or hardware. A real matched artifact must
 still be collected and held-out qualified before implementing a second physical path.
 
+The [first real collection on 2026-09-01](../../../experiments/results/postgresql/semfilter_reference_calibration_20260901/README.md)
+completed 64 warm-up inputs, then stopped on the 23rd response of the first training query: the fixed model returned
+an invalid tristate value and PostgreSQL 18.3 raised `22000`. No complete training observation, held-out measurement,
+fit, or artifact resulted. Production code and the predeclared 20% error limit were unchanged. The next collection
+must establish a reference model/profile that obeys the strict output format before cost accuracy can be assessed.
+
 The in-process provider remains the default. To exercise the external recording boundary, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 

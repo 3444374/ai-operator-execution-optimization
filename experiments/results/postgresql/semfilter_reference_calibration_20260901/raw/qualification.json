@@ -1,0 +1,16 @@
+{
+  "build_werror": true,
+  "full_tap_rerun": false,
+  "pg_version": "18.3",
+  "preflight_status": "ok",
+  "prior_tap_commit": "dcde2be5",
+  "prior_tap_count": 437,
+  "production_implementation_commit": "dcde2be5",
+  "source_commit": "7042132e",
+  "tests": {
+    "calibration_contract": 5,
+    "collector": 6,
+    "gateway_migration": 5,
+    "postgres_python": 45
+  }
+}

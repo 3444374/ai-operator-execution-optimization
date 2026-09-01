@@ -1,0 +1,3 @@
+# Preserve captured log bytes and their SHA-256 identity, including tool-emitted whitespace.
+raw/logs/build.log whitespace=-blank-at-eol
+raw/logs/initdb.log whitespace=-blank-at-eof

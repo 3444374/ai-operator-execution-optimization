@@ -1,0 +1,15 @@
+2026-09-01 13:53:10.242 CST [13856] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-01 13:53:10.242 CST [13856] LOG:  listening on Unix socket "/tmp/semcal-pg-20260901/.s.PGSQL.55439"
+2026-09-01 13:53:10.244 CST [13862] LOG:  database system was shut down at 2026-09-01 13:53:10 CST
+2026-09-01 13:53:10.246 CST [13856] LOG:  database system is ready to accept connections
+2026-09-01 13:55:50.931 CST [14227] ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-01 13:55:50.931 CST [14227] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON, TIMING ON) SELECT doc_id FROM calibration_inputs WHERE split='training' AND cell=2 AND ai_semantic.filter(payload,'The input asks for writing, explaining, or debugging computer code.','{"model": "Qwen2.5-1.5B-Instruct", "temperature": 0, "max_tokens": 8}'::jsonb)
+2026-09-01 13:58:10.249 CST [13860] LOG:  checkpoint starting: time
+2026-09-01 13:58:28.189 CST [13860] LOG:  checkpoint complete: wrote 179 buffers (1.1%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=17.937 s, sync=0.002 s, total=17.941 s; sync files=69, longest=0.001 s, average=0.001 s; distance=1125 kB, estimate=1125 kB; lsn=0/18068D0, redo lsn=0/1806840
+2026-09-01 14:00:35.257 CST [13856] LOG:  received fast shutdown request
+2026-09-01 14:00:35.257 CST [13856] LOG:  aborting any active transactions
+2026-09-01 14:00:35.258 CST [13856] LOG:  background worker "logical replication launcher" (PID 13865) exited with exit code 1
+2026-09-01 14:00:35.259 CST [13860] LOG:  shutting down
+2026-09-01 14:00:35.259 CST [13860] LOG:  checkpoint starting: shutdown immediate
+2026-09-01 14:00:35.261 CST [13860] LOG:  checkpoint complete: wrote 1 buffers (0.0%), wrote 0 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.002 s; sync files=1, longest=0.001 s, average=0.001 s; distance=4 kB, estimate=1013 kB; lsn=0/1807BE8, redo lsn=0/1807BE8
+2026-09-01 14:00:35.270 CST [13856] LOG:  database system is shut down

@@ -1,0 +1,9 @@
+{
+  "experiment_endpoint_stopped": true,
+  "experiment_gateway_socket_absent": true,
+  "experiment_pg18_3_stopped": true,
+  "experiment_pg_socket_absent": true,
+  "gpu_compute_processes_observed": 0,
+  "scope": "this experiment only",
+  "stopped_pgdata_preserved_for_audit": true
+}

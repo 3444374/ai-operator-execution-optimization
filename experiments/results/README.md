@@ -6,6 +6,13 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## PostgreSQL exact SemFilter reference calibration（2026-09-01）
+
+[首轮真实采集](postgresql/semfilter_reference_calibration_20260901/README.md)：64 条预热完成，但首个
+training 查询第 23 个模型响应违反严格输出格式，PG18.3 以 `22000` 终止语句。held-out 未运行，
+没有拟合或 artifact；脱敏逐请求数据、错误、构建/测试日志和 SHA 清单已归档。机制资格不变，
+真实成本校准仍未通过。
+
 ## 状态感知 phase-change（2026-08-11）
 
 | Directory | Content | Boundary |

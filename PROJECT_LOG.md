@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-09-01 首轮真实 reference calibration 因模型输出格式失败停止
+
+- 按 `2feab7d4` / `7042132e` 预注册条件，在独立 PostgreSQL 18.3 + 单 RTX 4090 + 固定
+  Qwen2.5-1.5B-Instruct/vLLM 0.25.1 上采集。64 条预热完成；首个 training cell 第 23 个响应是
+  3-byte 非法 tristate，数据库按既有合同报 `22000`，没有自动 trim、retry、换 prompt 或排除样本。
+- 保存 87 条逐请求观测、完整 warm-up EXPLAIN、失败 SQLSTATE/精确消息、源/模型/服务身份与事后
+  readback 核验。完整 training/held-out observation 均为 0，未拟合、未生成或加载 artifact，20% 阈值未改。
+  结果为真实采集失败，不是成本精度通过；四系数可辨识性也未进入验证。
+- 本次重新 `-Werror` 构建并运行 55/55 既有 Python 合同与 6/6 采集检查；未重跑完整 regression/TAP，
+  历史 1/1、437/437 仍绑定 `dcde2be5`。生产 runtime/provider/wire/planner 源码未修改。
+- 证据登记于 `experiments/results/postgresql/semfilter_reference_calibration_20260901/`，仓库外完整包
+  `postgresql_semfilter_real_calibration_777f0382_20260901_r1` 的 1053 个文件及公开子集 29 个文件均通过
+  SHA-256 校验。模型进程、gateway 与本轮 PG18.3 集群已停止，临时 worktree 已注销；PGDATA 和私有
+  原始输入继续保留，系统默认 18.4 与其他历史 worktree 未动。现役入口继续要求真实 artifact，通过前
+  不进入第二 physical path。
+
 ## 2026-09-01 真实 reference calibration 首轮采集预注册
 
 - 在工作包五追加固定采集合同：Qwen2.5-1.5B-Instruct、单 GPU/endpoint、原有 exact SemFilter 语义、
