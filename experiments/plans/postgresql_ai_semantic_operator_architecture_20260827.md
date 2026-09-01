@@ -1046,6 +1046,43 @@ regression 1/1、TAP 437/437、Python/static/gateway 55/55 和 neutral/machine C
 `postgresql_semfilter_reference_calibration_dcde2be5_20260901` 的 manifest 全部校验。该证据证明
 calibration mechanism 与 deterministic artifact parity，不证明真实模型服务成本精度。
 
+#### 真实 reference calibration：首轮固定采集合同（2026-09-01）
+
+本轮只验证 `777f0382` 的 reference artifact 能否由真实观测产生，不做第二路径、质量比较或吞吐排名。
+以下配置和误差要求在首次模型请求前确定；失败记录、未通过的 artifact attempt 与原始观测全部保留。
+
+- 模型：现有 Qwen2.5-1.5B-Instruct，固定本地模型/配置/tokenizer/chat-template 文件 SHA-256；
+  vLLM 0.25.1、BF16、TP=1、单 RTX 4090、单 localhost endpoint、FCFS、eager、prefix cache 关闭，
+  `max_model_len=4096`、`max_num_seqs=1`、`max_num_batched_tokens=4096`、GPU memory utilization 0.25。
+  该模型沿用 reference capability，不假设它的自然语言质量已通过评价。
+- 固定 instruction：`The input asks for writing, explaining, or debugging computer code.`；保持现有
+  exact prompt program、严格 `TRUE/FALSE/UNKNOWN` parser、temperature=0、top_p=1、max_tokens=8、
+  n=1、stream=false、stop=[newline]。不加入 constrained decoding，不修改输出 token 数以改善可识别性。
+- workload：来自现有 ShareGPT Vicuna unfiltered 原始文件的每个 conversation 首个人类 turn；只接受
+  非空、无 NUL、UTF-8 不超过 4096 bytes 的完整文本，不截断、不改写。按 payload SHA-256 去重，再以
+  `SHA256("semfilter-calibration-20260901:" + conversation_id + ":" + payload_sha256)` 排序。
+  前 64 条只作 warm-up；随后 768 条为 training（8×96），再后 384 条为 held-out（4×96）。
+  conversation ID 和 payload digest 在三组间均不重叠；不足样本就停止，不补合成数据。
+- 独立 PostgreSQL 18.3 集群持有数据；所有 measured cell 通过真实三参 `ai_semantic.filter` 执行。
+  每 cell 三次完整重复，顺序按 seed=20260901 固定打乱；保存全部单次值，held-out 不参与拟合或调参。
+- 计时：在实验 observer 中用 monotonic clock 包围未修改的 fixed adapter `complete()`，包含该次
+  请求的 HTTP 编码、DNS/连接、发送、服务等待、响应读取与解析，不含 UDS、PG child/prompt/parser 或
+  observer 落盘；`service_milliseconds` 为该 cell 所有成功调用时长之和。另存 SQL EXPLAIN ANALYZE
+  总耗时，不能把上述 request-wall 解释为 GPU kernel time、纯模型 compute 或 SQL E2E。
+- 观测：每 task 保存 payload identity、实际 prompt/output usage、finish reason、严格 tristate/raw-output
+  分类和请求时长；以 PG 实际输入/输出行数、调用与 usage 计数交叉核验 exactly-once。
+  runtime/provider/wire 不增加字段，observer 只包围既有 completion adapter，原请求和结果原样透传。
+- 签名：采集工具在请求前后核对原始文件/选中 payload、实际模型文件、服务 cmdline/PID/start-time、
+  软件版本、GPU/driver 和固定配置；workload/service manifests 及 SHA 同时保存，不依赖 PG 自动探测。
+- 首轮误差上限预注册为 **0.20**：使用现有 builder 对 output rows、calls、prompt/output tokens、
+  request-wall 逐 held-out observation 的 `abs(predicted-actual)/max(abs(actual),1)` 最大值。
+  它是本轮工程验收要求，不是质量指标；运行后不得放宽。固定使用现有四项非负 OLS service 模型；
+  rank 不足、负系数、非法 raw output、数据/服务身份漂移、超时或 held-out 超限都停止 artifact 发布。
+  特征 rank 与条件数只用 training 计算；识别失败时报告，不能用 held-out 选新模型或强行生成 artifact。
+- 仅当上述条件均通过才把 artifact 交给 PG planner，验证 matched identity、估计值及保持 reference；
+  否则交付原始数据和失败报告，保持真实成本校准未完成。短 cell 只用于同一 serial-reference 请求时长
+  预测检查，不作为容量/饱和或跨服务性能结论。
+
 完成标准：reference/alternative 的 semantic-spec/physical-algorithm/provider-execution digests、进入
 语义算子的行数与输出选择率、calls/tokens/model-role cost、typed rows、provider task roles 与阈值来源可验证；
 `EXACT` 只生成 reference；显式 `APPROX` 在 evidence/policy 失配时只保留或退回 reference。deterministic

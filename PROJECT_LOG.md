@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-01 真实 reference calibration 首轮采集预注册
+
+- 在工作包五追加固定采集合同：Qwen2.5-1.5B-Instruct、单 GPU/endpoint、原有 exact SemFilter 语义、
+  ShareGPT 完整首轮人类输入、64 warm-up/768 training/384 held-out、每 cell 三重复与固定随机顺序。
+  首次模型调用前确定 20% 最大 held-out 相对误差要求，保留当前四项 OLS，识别或语义失败则不发布 artifact。
+- 计时包围未修改 fixed adapter 的一次 `complete()`，与 SQL 总耗时分开；外部采集工具核对真实模型、
+  数据和服务身份，不把 PG 保存的 signature 当成现场自动验证。本提交只登记采集合同，尚无模型观测结果。
+
 ## 2026-09-01 exact SemFilter reference calibration mechanism
 
 - 提交 `dcde2be5` 在不修改 `PgSemanticRuntime`、provider、wire、semantic digest 或 SQL 行为的前提下，
