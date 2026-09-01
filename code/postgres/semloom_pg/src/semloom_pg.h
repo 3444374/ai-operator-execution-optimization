@@ -20,7 +20,9 @@ extern const CustomScanMethods semloom_map_scan_methods;
 extern const CustomScanMethods semloom_filter_scan_methods;
 
 extern const char *semloom_gateway_socket_path(void);
+extern const char *semloom_reference_calibration_path(void);
 extern SemloomProviderExecutionProfile semloom_provider_execution_profile(void);
+extern const char *semloom_provider_execution_profile_name(void);
 extern Oid semloom_map_function_oid(void);
 extern Oid semloom_filter_function_oid(void);
 extern Oid semloom_exact_filter_function_oid(void);

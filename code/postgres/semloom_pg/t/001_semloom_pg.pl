@@ -13,6 +13,8 @@ use Time::HiRes qw(sleep);
 my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
 my $fixed_model_server_script =
   abs_path("$FindBin::RealBin/fixtures/openai_compatible_server.py");
+my $calibration_builder = abs_path(
+	"$FindBin::RealBin/../../../scripts/analysis/build_semfilter_reference_calibration.py");
 
 sub start_recording_gateway
 {
@@ -104,6 +106,86 @@ sub write_fixed_model_config
 		timeout_ms => $timeout_ms,
 	});
 	close($config_handle);
+}
+
+sub write_reference_calibration
+{
+	my ($source_path, $artifact_path, $semantic_digest) = @_;
+	open(my $source_handle, '>', $source_path)
+	  or die "could not create reference calibration source";
+	print $source_handle encode_json({
+		schema_version => 1,
+		generated_at => '2026-09-01T01:02:03Z',
+		semantic_spec_digest => $semantic_digest,
+		physical_algorithm_digest =>
+		  '558e50ae5e2716d2e699e09ddb8ffb953f772ba9a1be9dbb15379d9bfcf08d66',
+		provider_execution_profile => 'openai-compatible-fixed',
+		model_id => 'golden-model-v1',
+		model_role => 'reference',
+		workload_signature => ('3' x 64),
+		service_signature => ('4' x 64),
+		accepted_max_relative_error => 0.05,
+		training_observations => [
+			{
+				semantic_input_rows => 100,
+				output_rows => 40,
+				model_calls => 80,
+				prompt_tokens => 1600,
+				output_tokens => 80,
+				service_milliseconds => 146,
+			},
+			{
+				semantic_input_rows => 50,
+				output_rows => 20,
+				model_calls => 40,
+				prompt_tokens => 600,
+				output_tokens => 80,
+				service_milliseconds => 96,
+			},
+			{
+				semantic_input_rows => 75,
+				output_rows => 30,
+				model_calls => 60,
+				prompt_tokens => 900,
+				output_tokens => 30,
+				service_milliseconds => 94,
+			},
+			{
+				semantic_input_rows => 120,
+				output_rows => 48,
+				model_calls => 96,
+				prompt_tokens => 2880,
+				output_tokens => 192,
+				service_milliseconds => 230.8,
+			},
+		],
+		held_out_observations => [
+			{
+				semantic_input_rows => 345,
+				output_rows => 138,
+				model_calls => 276,
+				prompt_tokens => 5980,
+				output_tokens => 382,
+				service_milliseconds => 536.8,
+			},
+		],
+	});
+	close($source_handle);
+	my $stdout = '';
+	my $stderr = '';
+	IPC::Run::run(
+		['python3', $calibration_builder,
+		 '--source', $source_path,
+		 '--output', $artifact_path],
+		'>', \$stdout,
+		'2>', \$stderr)
+	  or die "could not build reference calibration: $stderr";
+	open(my $artifact_handle, '<', $artifact_path)
+	  or die "could not read reference calibration artifact";
+	local $/;
+	my $artifact = decode_json(<$artifact_handle>);
+	close($artifact_handle);
+	return $artifact;
 }
 
 sub error_signature
@@ -525,6 +607,222 @@ cmp_ok(
 	'>',
 	$exact_cost_plan->{'Plans'}->[0]->{'Total Cost'},
 	'exact SemFilter total cost exceeds its ordinary child cost');
+
+my $calibration_source_path = $node->basedir . '/reference-calibration-source.json';
+my $calibration_artifact_path = $node->basedir . '/reference-calibration.json';
+my $calibration_artifact = write_reference_calibration(
+	$calibration_source_path,
+	$calibration_artifact_path,
+	'dda6b533cddd0e72bfc67b603b6fb1969d150caf049231ea5250579d0b8f6433');
+my $calibrated_cost_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SET semloom_pg.reference_calibration_file = '$calibration_artifact_path';
+EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $calibrated_cost_plan = $calibrated_cost_explain->[0]->{'Plan'};
+is(
+	$calibrated_cost_plan->{'AI Cost Model'},
+	'semloom.exact_filter.reference-calibrated.v1',
+	'matched artifact selects the calibrated reference cost model');
+is(
+	$calibrated_cost_plan->{'AI Cost Calibration'},
+	'matched',
+	'matched artifact is visible in the PostgreSQL plan');
+is(
+	$calibrated_cost_plan->{'AI Cost Calibration Reason'},
+	'matched',
+	'matched artifact has a stable plan reason');
+is(
+	$calibrated_cost_plan->{'AI Cost Calibration ID'},
+	$calibration_artifact->{'artifact_id'},
+	'plan saves the validated calibration identity');
+is(
+	$calibrated_cost_plan->{'AI Cost Workload Signature'},
+	('3' x 64),
+	'plan saves the workload applicability signature');
+is(
+	$calibrated_cost_plan->{'AI Cost Service Signature'},
+	('4' x 64),
+	'plan saves the service applicability signature');
+cmp_ok(
+	abs($calibrated_cost_plan->{'Output Selectivity'} - 0.4),
+	'<',
+	0.000001,
+	'calibrated cardinality uses the matched training selectivity');
+cmp_ok(
+	abs(
+		$calibrated_cost_plan->{'Estimated Model Calls'} -
+		$calibrated_cost_plan->{'Semantic Input Rows'} * 0.8),
+	'<',
+	0.02,
+	'calibrated model calls use the matched call rate');
+cmp_ok(
+	abs(
+		$calibrated_cost_plan->{'Estimated Prompt Tokens'} -
+		$calibrated_cost_plan->{'Estimated Model Calls'} *
+			$calibration_artifact->{'prompt_tokens_per_call'}),
+	'<',
+	0.05,
+	'calibrated prompt work remains a separate estimate');
+cmp_ok(
+	abs(
+		$calibrated_cost_plan->{'Estimated Service Milliseconds'} -
+		$calibrated_cost_plan->{'AI Work Cost'}),
+	'<',
+	0.01,
+	'calibrated service estimate supplies the comparable AI path cost');
+is(
+	$calibrated_cost_plan->{'Held-out Max Relative Error'},
+	0,
+	'plan exposes held-out error evidence separately from cost');
+
+my $mismatched_cost_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SET semloom_pg.reference_calibration_file = '$calibration_artifact_path';
+EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'A different semantic instruction.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $mismatched_cost_plan = $mismatched_cost_explain->[0]->{'Plan'};
+is(
+	$mismatched_cost_plan->{'AI Cost Calibration'},
+	'rejected',
+	'semantic mismatch keeps the reference path but rejects calibration');
+is(
+	$mismatched_cost_plan->{'AI Cost Calibration Reason'},
+	'semantic-spec-mismatch',
+	'semantic mismatch has a stable redacted reason');
+is(
+	$mismatched_cost_plan->{'AI Cost Model'},
+	'semloom.exact_filter.uncalibrated.v1',
+	'rejected calibration falls back to the uncalibrated reference estimate');
+
+# A fixed-model artifact must not calibrate a different query-fixed provider profile.
+my $profile_mismatch_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.provider_execution_profile = 'golden';
+SET semloom_pg.reference_calibration_file = '$calibration_artifact_path';
+EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $profile_mismatch_plan = $profile_mismatch_explain->[0]->{'Plan'};
+is(
+	$profile_mismatch_plan->{'AI Cost Calibration'},
+	'rejected',
+	'provider-profile mismatch keeps calibration out of reference costing');
+is(
+	$profile_mismatch_plan->{'AI Cost Calibration Reason'},
+	'provider-profile-mismatch',
+	'provider-profile mismatch has a stable redacted reason');
+
+open(my $calibration_handle, '<', $calibration_artifact_path)
+  or die "could not reopen reference calibration artifact";
+my $calibration_json;
+{
+	local $/;
+	$calibration_json = <$calibration_handle>;
+}
+close($calibration_handle);
+my $duplicate_calibration_path = $node->basedir . '/duplicate-calibration.json';
+my $duplicate_calibration_json = $calibration_json;
+$duplicate_calibration_json =~ s/^\{/\{"schema_version":1,/;
+open(my $duplicate_handle, '>', $duplicate_calibration_path)
+  or die "could not create duplicate-field calibration artifact";
+print $duplicate_handle $duplicate_calibration_json;
+close($duplicate_handle);
+my $duplicate_cost_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SET semloom_pg.reference_calibration_file = '$duplicate_calibration_path';
+EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $duplicate_cost_plan = $duplicate_cost_explain->[0]->{'Plan'};
+is(
+	$duplicate_cost_plan->{'AI Cost Calibration'},
+	'rejected',
+	'duplicate artifact field cannot calibrate the reference path');
+is(
+	$duplicate_cost_plan->{'AI Cost Calibration Reason'},
+	'invalid-artifact',
+	'duplicate artifact field reports a stable redacted reason');
+
+my $nul_calibration_path = $node->basedir . '/nul-calibration.json';
+my $nul_calibration_json = $calibration_json;
+$nul_calibration_json =~ s/golden-model-v1/golden-model-v1\\u0000/;
+open(my $nul_handle, '>', $nul_calibration_path)
+  or die "could not create escaped-NUL calibration artifact";
+print $nul_handle $nul_calibration_json;
+close($nul_handle);
+my $nul_cost_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		qq{SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SET semloom_pg.reference_calibration_file = '$nul_calibration_path';
+EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $nul_cost_plan = $nul_cost_explain->[0]->{'Plan'};
+is(
+	$nul_cost_plan->{'AI Cost Calibration'},
+	'rejected',
+	'escaped NUL artifact cannot bypass the planner calibration boundary');
+is(
+	$nul_cost_plan->{'AI Cost Calibration Reason'},
+	'invalid-artifact',
+	'escaped NUL artifact reports a stable redacted reason');
+
+my $missing_cost_explain = decode_json(
+	$node->safe_psql(
+		'postgres',
+		q{SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SET semloom_pg.reference_calibration_file = '/does/not/exist/semloom-calibration.json';
+EXPLAIN (FORMAT JSON)
+SELECT doc_id
+FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(
+	payload,
+	'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);}));
+my $missing_cost_plan = $missing_cost_explain->[0]->{'Plan'};
+is(
+	$missing_cost_plan->{'AI Cost Calibration'},
+	'rejected',
+	'missing artifact keeps the exact reference path executable');
+is(
+	$missing_cost_plan->{'AI Cost Calibration Reason'},
+	'unreadable-artifact',
+	'missing artifact reports a stable non-path-bearing reason');
+$node->safe_psql(
+	'postgres',
+	q{RESET semloom_pg.reference_calibration_file;
+RESET semloom_pg.provider_execution_profile;});
 
 my $exact_filter_query = q{
 SELECT doc_id

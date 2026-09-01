@@ -17,6 +17,7 @@
 #include "utils/lsyscache.h"
 
 #include "semantic_filter_contract.h"
+#include "sem_filter_calibration.h"
 #include "sem_filter_cost.h"
 #include "sem_path_common.h"
 #include "sem_plan_spec.h"
@@ -70,10 +71,7 @@ static int32 semloom_filter_input_width(
 	Node *input);
 pg_noreturn static void semloom_invalid_exact_filter_argument(const char *message);
 
-/*
- * Engineering estimates only: no matched reference calibration artifact is
- * consumed yet, so this cost must not be treated as second-path-comparable.
- */
+/* Fallback heuristic used only when no matched reference artifact is accepted. */
 #define SEMLOOM_FILTER_ESTIMATED_BYTES_PER_TOKEN 4.0
 #define SEMLOOM_FILTER_CHAT_TEMPLATE_TOKENS 8.0
 
@@ -299,7 +297,10 @@ semloom_make_filter_path(PlannerInfo *root,
 			model_id,
 			(AttrNumber) input_column);
 		{
+			AttrNumber calibration_input_column;
+			SemloomFilterCalibration calibration;
 			SemloomFilterCostEstimate estimate;
+			SemloomPlanSpec plan_spec;
 
 			semloom_estimate_exact_filter_cost(root,
 										   rel,
@@ -309,6 +310,16 @@ semloom_make_filter_path(PlannerInfo *root,
 										   input,
 										   instruction,
 										   &estimate);
+			semloom_plan_spec_decode(plan_private,
+								 CurrentMemoryContext,
+								 &plan_spec,
+								 &calibration_input_column);
+			Assert(calibration_input_column == (AttrNumber) input_column);
+			semloom_filter_calibration_load(
+				&plan_spec,
+				semloom_provider_execution_profile_name(),
+				&calibration);
+			semloom_filter_calibration_apply(&calibration, &estimate);
 			plan_private = lappend(
 				plan_private,
 				semloom_filter_cost_make_private(&estimate));
@@ -453,6 +464,11 @@ semloom_estimate_exact_filter_cost(
 
 	MemSet(estimate, 0, sizeof(*estimate));
 	estimate->cost_model_id = SEMLOOM_FILTER_COST_MODEL_ID;
+	estimate->calibration_status = SEMLOOM_FILTER_COST_CALIBRATION_STATUS;
+	estimate->calibration_reason = "not-configured";
+	estimate->calibration_id = "";
+	estimate->workload_signature = "";
+	estimate->service_signature = "";
 	estimate->model_role = SEMLOOM_EXACT_FILTER_ROLE;
 	estimate->semantic_input_rows = clamp_row_est(
 		rel->tuples * ordinary_selectivity);

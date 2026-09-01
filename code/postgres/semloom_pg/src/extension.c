@@ -14,6 +14,7 @@ PG_MODULE_MAGIC;
 static create_upper_paths_hook_type previous_create_upper_paths_hook = NULL;
 static set_rel_pathlist_hook_type previous_set_rel_pathlist_hook = NULL;
 static char *semloom_gateway_socket = NULL;
+static char *semloom_reference_calibration_file = NULL;
 static int semloom_execution_profile = SEMLOOM_PROVIDER_PROFILE_GOLDEN;
 static const struct config_enum_entry semloom_execution_profile_options[] = {
 	{"golden", SEMLOOM_PROVIDER_PROFILE_GOLDEN, false},
@@ -69,10 +70,25 @@ semloom_gateway_socket_path(void)
 	return semloom_gateway_socket == NULL ? "" : semloom_gateway_socket;
 }
 
+const char *
+semloom_reference_calibration_path(void)
+{
+	return semloom_reference_calibration_file == NULL ? "" :
+		semloom_reference_calibration_file;
+}
+
 SemloomProviderExecutionProfile
 semloom_provider_execution_profile(void)
 {
 	return (SemloomProviderExecutionProfile) semloom_execution_profile;
+}
+
+const char *
+semloom_provider_execution_profile_name(void)
+{
+	return semloom_execution_profile ==
+		SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED ?
+		"openai-compatible-fixed" : "golden";
 }
 
 bool
@@ -107,6 +123,16 @@ _PG_init(void)
 							 NULL,
 							 NULL,
 							 NULL);
+	DefineCustomStringVariable("semloom_pg.reference_calibration_file",
+							   "Planner-side exact SemFilter reference calibration artifact.",
+							   NULL,
+							   &semloom_reference_calibration_file,
+							   "",
+							   PGC_SUSET,
+							   0,
+							   NULL,
+							   NULL,
+							   NULL);
 	RegisterCustomScanMethods(&semloom_map_scan_methods);
 	RegisterCustomScanMethods(&semloom_filter_scan_methods);
 	previous_create_upper_paths_hook = create_upper_paths_hook;

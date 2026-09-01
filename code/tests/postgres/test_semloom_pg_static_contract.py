@@ -88,6 +88,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         cost_header = (EXTENSION_ROOT / "src" / "sem_filter_cost.h").read_text(
             encoding="utf-8"
         )
+        cost_source = (EXTENSION_ROOT / "src" / "sem_filter_cost.c").read_text(
+            encoding="utf-8"
+        )
         filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
             encoding="utf-8"
         )
@@ -110,9 +113,14 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "estimated_model_calls",
             "estimated_prompt_tokens",
             "estimated_output_tokens",
+            "estimated_service_milliseconds",
+            "held_out_max_relative_error",
+            "accepted_max_relative_error",
             "ai_work_cost",
         ):
             self.assertIn(field_name, cost_header)
+        self.assertIn("SEMLOOM_FILTER_COST_SCHEMA_VERSION 2", cost_source)
+        self.assertIn('"AI Cost Calibration ID"', cost_source)
         self.assertIn("clauselist_selectivity", filter_path)
         self.assertIn("clause_selectivity", filter_path)
         self.assertIn("get_attavgwidth", filter_path)
@@ -121,6 +129,28 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertIn(counter_name, runtime_source)
         self.assertNotIn("SEMLOOM_FILTER_COST_MODEL_ID", plan_header)
         self.assertNotIn("ai_work_cost", plan_header)
+
+    def test_reference_calibration_is_planner_owned_and_does_not_enter_runtime(self) -> None:
+        makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
+        extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(
+            encoding="utf-8"
+        )
+        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+            encoding="utf-8"
+        )
+        runtime_source = (
+            EXTENSION_ROOT / "src" / "pg_semantic_runtime.c"
+        ).read_text(encoding="utf-8")
+        provider_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("src/sem_filter_calibration.o", makefile)
+        self.assertIn("semloom_pg.reference_calibration_file", extension_source)
+        self.assertIn("semloom_filter_calibration_load", filter_path)
+        self.assertIn("semloom_filter_calibration_apply", filter_path)
+        self.assertNotIn("reference_calibration", runtime_source)
+        self.assertNotIn("calibration", provider_header.lower())
 
     def test_planner_wraps_an_ordinary_child_path_and_chains_hooks(self) -> None:
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8")

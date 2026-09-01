@@ -13,12 +13,20 @@
 typedef struct SemloomFilterCostEstimate
 {
 	const char *cost_model_id;
+	const char *calibration_status;
+	const char *calibration_reason;
+	const char *calibration_id;
+	const char *workload_signature;
+	const char *service_signature;
 	const char *model_role;
 	double semantic_input_rows;
 	double output_selectivity;
 	double estimated_model_calls;
 	double estimated_prompt_tokens;
 	double estimated_output_tokens;
+	double estimated_service_milliseconds;
+	double held_out_max_relative_error;
+	double accepted_max_relative_error;
 	double ai_work_cost;
 } SemloomFilterCostEstimate;
 
