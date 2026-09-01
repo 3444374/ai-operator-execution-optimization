@@ -1154,6 +1154,13 @@ parser；不 trim、不重试、不修补输出。usage 和 request-wall 仅诊�
 eager/cache-off，只把显存比例设为 0.80 以容纳模型。该差异明示，不作延迟公平排名；不迭代 prompt。
 无论通过与否，保留全部原始证据与失败，先交付本轮小样本报告，生产身份接入和恢复校准另行实施。
 
+**7B 同条件重跑的配置补充（请求前登记）**：服务源码核对发现未显式指定的 repetition penalty
+会从模型 `generation_config.json` 继承；1.5B 为 1.1，7B 为 1.05。首个 7B 尝试已中止，保留全部
+部分响应，不当作同条件对照。新尝试在服务启动时以 `--override-generation-config`
+显式设置 `{"repetition_penalty":1.1}`，与已完成的 1.5B 实际值一致；其余两模型默认 generation
+值相同，HTTP 已显式提供的 temperature/top_p/max_tokens 等继续按原设置。该值来自原基线配置，
+不是根据 7B 输出调参；prompt、样例、预期、顺序、choice 和通过条件不变。
+
 依据：[vLLM 0.25.1 structured outputs](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)、
 [PostgreSQL 18 CREATE STATISTICS](https://www.postgresql.org/docs/18/sql-createstatistics.html)。
 
