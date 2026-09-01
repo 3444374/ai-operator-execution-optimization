@@ -11,6 +11,7 @@
 |---|---|
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 自有语义算子、SemLoom 与公司 fork 如何分工和接入 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
@@ -25,10 +26,12 @@ calibration artifact mechanism 已通过 deterministic qualification。工作包
 held-out 和拟合未运行。独立小切片已修复 builder 可辨识性并验证 PG18.3 普通多列统计，但 choice
 仅解决格式，预期语义仍只符合 4/9 个独立样例（三次重复共 12/27）。后续单一 prompt 与 matched
 7B 对照亦未满足三值判断要求，实际 messages/template 无不一致；整轮采集继续暂停。
-先取得 reference 语义资格，再取得独立验证
-通过的真实 matched artifact，之后才实现第二 physical path
-与 quality policy，再做 carrier audit，最后扩 bounded async 与增量 SemLoom。本 README
-只导航，不复制每个工作包的完成标准。
+下一工程切片为[工作包四 C：choice profile 工程接入](postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+设计已定、实现待完成：它只提供显式 opt-in、未通过质量验证的能力，不恢复真实校准，也不是第二
+physical path。自有 `semloom_pg` 与 SemLoom 执行/调度两部分都继续完成，公司 demo 作为工程参考；
+接口映射尽早核对，后续在公司 fork 内通过 adapter 接入同一执行核心，不要求整仓迁移。
+后续仍须先取得 reference 语义资格与独立验证通过的 matched artifact，再实现第二 path、quality
+policy、carrier audit 和增量 SemLoom。本 README 只导航，不复制工作包的字段或验收标准。
 
 ## 2. 状态分层
 
@@ -73,8 +76,8 @@ held-out 和拟合未运行。独立小切片已修复 builder 可辨识性并�
 | 研究内容 | 当前证据 | 剩余工作 |
 |---|---|---|
 | 数据组织策略 | 文本 cache-on 双/四 endpoint 重测已完成，效果随 KV 压力 regime 变化 | 在资格项完成后，用同一抽象验证图像 frame/work budget；不重复无目的文本扫描 |
-| 调度与提交控制 | static/shared credit、1/2/4 Job、重叠作业与五臂共同观测 rehearsal 已完成；呈现效率、隔离与公平权衡 | 五臂 formal 尚未运行；动态策略必须同上限对比冻结静态点，并补所需 isolation control |
-| 多模态泛化 | 图像画像、原生静态 baseline、多 Job 观察和 descriptor/observe-only 已归档 | HSE/static 非劣验证后再接受控动态动作与质量闭环 |
+| 调度与提交控制 | static/shared credit、1/2/4 Job、重叠作业与五臂共同观测 rehearsal 已完成；呈现效率、隔离与公平权衡 | 五臂 formal 尚未运行；动态策略必须与同上限、预先选定的静态配置对比，并补所需 isolation control |
+| 多模态泛化 | 图像画像、原生静态 baseline、多 Job 观察和 descriptor/observe-only 已归档 | HSE/static 非劣验证后再接受控动态动作，并核对写回、读回和结果质量 |
 | 算子代价估计 | 双 4090 v2 cache-on 320/320 有效，首次无效运行独立保留 | 新时间段或新 workload 校准；是否用于在线决策由 regret/区间结果决定 |
 
 写回固定使用 PostgreSQL + pgvector 的 COPY + deferred index 工程 baseline，不作为独立研究内容。

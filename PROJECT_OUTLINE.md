@@ -51,8 +51,12 @@ deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments
 12/27，即 9 个独立样例中 4 个符合预期、各重复三次。
 [单一 prompt 后续对照](experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
 未发现实际 messages/template 不一致；新 prompt 在 1.5B 的旧/新样例各 5/9，matched 7B 上为
-7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停；先确定能满足三值判断要求的 reference，
-再取得真实 matched artifact，之后才实现 LOTUS/Cortex-like 第二 path。随后用
+7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停。下一工程切片独立接入
+[显式选择的 choice 生成配置](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+让数据库保存并传递三值输出要求；新 SQL option、schema 3 与 wire v4 均尚未实现。
+这只验证新能力能否正确接入，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
+后续仍须确定任务、标签与质量判定，取得合格 reference 及真实 matched artifact，之后才实现
+LOTUS/Cortex-like 第二 path。随后用
 reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
 多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
 上述步骤完成前不扩展
@@ -71,6 +75,10 @@ batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
+自有 `semloom_pg` 语义算子与 SemLoom 数据执行/调度都继续完成，主实现以不依赖公司私有仓库、
+可公开复现为目标。公司 demo 作为算子工程参考，正式接入后置到公司 fork 的薄适配层，复用同一
+SemLoom execution provider；不是替代自有前端或复制第二套调度器。接口映射提前核对，合适代码仍可
+在来源与目标仓库存放权限明确后复用。详细分工与待核对项见[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
 当前状态是 `exact-semfilter-reference-calibration-mechanism-validated`：受限 recording `SemMap`/`SemFilter` 与三参
 exact `SemFilter CustomScan` paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
@@ -156,7 +164,7 @@ formal 从未运行且继续禁止。
 
 ## 1. 题目与研究对象
 
-题目冻结为：
+题目为：
 
 > 数据库 AI 负载的执行优化与调度研究
 
@@ -215,8 +223,8 @@ selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`
 2026-08-14 fail-closed 复核进一步确认：旧汇总没有显式区分 completion fairness applicability，且
 avoidable-idle 事件名检查错误。最终规则要求五个 bounded-ready 臂 evidence=`ok`；frozen-static
 缺 registered-ready ledger，故该指标为 N/A、不能作同口径 service-lag 比较，但不误杀共同性能
-矩阵。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，冻结内部消融各臂的 effective
-K/W、weights 与 fixed output cap。最终六臂 rehearsal 已完成，但在独立审核前仍不得解锁 formal。
+矩阵。修复后的 formal 合同同时强制 runtime Job ID 非空/唯一，并要求内部消融各臂的 effective
+K/W、weights 与 output cap 在运行前选定、期间不变。最终六臂 rehearsal 已完成，但独立审核前仍不得运行 formal。
 修复提交 `15201946` 的同机四臂 development regression 已完成：所有请求 exactly-once、Job ID
 合同通过，$0.125W_e$ 触发一次 recovery；$0.25W_e$ 再次因 recovery=0 被 runner 正确 fail closed。
 该回归只验证证据链，不计入性能重复，也不改变 formal 锁定状态。
@@ -226,7 +234,7 @@ bounded-ready 副本只是在 Project harness 中配平候选集的 matched cont
 包含本项目机制。报告中必须显式区分实现来源、scheduler owner 和 observation contract。
 论文的完整系统价值另用同一 2-Job/PG/vLLM/资源合同下的 Daft Native、Daft Ray、Ray Data
 native、project frozen-static 与 proposed 作 system-level matched comparison：原生臂保留自身
-调度且不注入 Project K/W，Project 两臂冻结同 K/W。该比较只能说明完整系统经验表现；要单独
+调度且不注入 Project K/W，Project 两臂使用相同且运行期间不变的 K/W。该比较只能说明完整系统经验表现。
 ready-observation bridge 已用双轮 GPU rehearsal 完成：static→single-head shared FIFO 使 tok/s
 +25.96% 但 foreground P99 +99.17%；同 FIFO 下 single-head→bounded-ready 再使 tok/s +7.30%、
 foreground P99 −33.62%，但前台 SLO violation 仍约 39.7%。这分离了共享效率、隔离损失和
@@ -264,7 +272,7 @@ principal identity、tenant entitlement/debt 与 per-tenant buffer cap。只有�
 图像路径新增 HSE（Heterogeneous Staged Execution）作为执行底座候选：Daft/Ray 继续拥有
 数据引擎、资源放置和任务执行，typed data plane 管理 encoded/prepared/device/result block，
 SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE 连接研究内容一和二，
-不单列为第三项贡献；static HSE 未超过冻结 project static 前，不评价动态 HSE。
+不单列为第三项贡献；static HSE 未超过预先选定的 project static 配置前，不评价动态 HSE。
 
 ## 3. 系统与实验边界
 
@@ -287,9 +295,9 @@ PostgreSQL SQL `ai_semantic.map(...)`
 - 未修改 LOTUS DataConnector/`pd.read_sql` 路径保留为外部 LOTUS 完整系统 baseline，不进入数据库内算子主矩阵。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为 SemLoom 方法或 diagnostic reference。
 - `BoundedReadyWindow` 属于 SemLoom 方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在 SemLoom 内部 selector 归因消融中保持一致。
-- 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。
+- 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer，并核对 schema、行数及每条记录恰好处理一次。
 - 性能参数绑定“机器 + 模型/服务配置 + 协议 + workload 分布/规模”签名，签名变化重新校准；
-  同一签名只校准一次并复用冻结合同。K 不是逐实验手调，也不在 SAOR formal 中在线变化。
+  同一签名只校准一次并复用预先选定的配置。K 不是逐实验手调，也不在 SAOR formal 中在线变化。
 
 ## 4. 研究问题与因果设计
 
@@ -302,9 +310,9 @@ PostgreSQL SQL `ai_semantic.map(...)`
 4. 多 job 共享 endpoint pool 时，怎样在 work conservation 与 weighted service lag/fairness
    之间形成可验证的 Pareto 改善？
 
-两项策略先独立搜索冻结静态点并分别消融，再把独立最优拼接，与小规模联合 grid 对比。联合显著优于拼接说明需要联合调优；两者接近说明可分层优化。任何结果都不改变研究对象，但会改变方法适用边界。
+两项策略先独立搜索静态配置，选定后分别消融，再把独立最优拼接，与小规模联合 grid 对比。联合显著优于拼接说明需要联合调优；两者接近说明可分层优化。任何结果都不改变研究对象，但会改变方法适用边界。
 
-正式实验统一要求：immutable manifest、相同 source、相同完整结果语义、相同服务 flags、固定随机种子、warmup 与交错 formal repeats；结果保存请求、submission、资源时序和版本。调度主实验以完整结果 gather 的 correct throughput/JCT 为 headline；仅 database-E2E 护栏要求相同 sink 与 sink readback，另报告 service throughput、质量、failure 类型和资源门禁。
+正式实验统一要求：immutable manifest、相同 source、相同完整结果语义、相同服务 flags、固定随机种子、warmup 与交错 formal repeats；结果保存请求、submission、资源时序和版本。调度主实验以完整结果 gather 的 correct throughput/JCT 为 headline；仅 database-E2E 护栏要求相同 sink 与 sink readback，另报告 service throughput、质量、failure 类型，以及资源使用是否满足预设要求。
 
 ## 5. 当前证据等级
 
@@ -403,7 +411,7 @@ PostgreSQL SQL `ai_semantic.map(...)`
   9.6% GPU busy 同量级，说明调度/buffer 不能消灭 CPU prepare 木桶。derived-image cache、
   packed uint8/GPU normalize 与 DALI GPU/mixed preprocess 作为正交
   work-reduction 消融。仍待 static HSE GPU 对照门、packed/pinned/DALI、动态 SAOR runner、
-  跨 workload 外推与小规模 sink 质量闭环，sink 不是性能排名 blocker。
+  跨 workload 外推与小规模 sink 写回、读回和质量核对，sink 不是性能排名 blocker。
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已进入
   `parked-conditional` 清单；当前不实现，主路径完成后仅在真实 reuse opportunity≥10% 且扣除
   lookup/build/refresh 后 oracle 潜力≥5% 时重新激活。
@@ -424,7 +432,7 @@ PostgreSQL SQL `ai_semantic.map(...)`
 
 ## 6. 开题前统一文本 database-E2E
 
-2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 K128 replacement 的 24/24 单元、18 formal 通过 correctness、sink、identity 与稳定性门禁；但随后 ShareGPT bounded C32–C256 扫描证明 C32 只有已测峰值的 52.07%，故 ShareGPT 三臂性能排名降级，正式原生矩阵改用达到峰值 98.22% 的最小点 C128。
+2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 K128 replacement 的 24/24 单元、18 formal 满足预先规定的正确性、写回、身份和稳定性要求；但随后 ShareGPT bounded C32–C256 扫描证明 C32 只有已测峰值的 52.07%，故 ShareGPT 三臂性能排名降级，正式原生矩阵改用达到峰值 98.22% 的最小点 C128。
 
 开题静态地基先完成 SQuAD short-answer 均匀控制组与 ShareGPT controlled-skew 异质组。两组均比较：
 
@@ -438,9 +446,9 @@ SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correc
 
 ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91。后续 bounded C32/C64/C128/C256 扫描为 9,454.88/14,057.93/17,834.14/18,158.19 tok/s；C128 实测达到 C256 的 98.22%，是第一个满足预先规定 97% 选择条件的并发点。C256 仅增 1.82%，却使 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s。旧 project/C32-direct=1.5457 因对照欠供给而不作方法排名。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
 
-同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph/冻结点的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
+同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph 在预先选定配置下的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
 
-5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加82.42%/104.84%/32.76%，只作外部观察。项目在线 replay 下 quota-only≈0，static/shared 加入 long 后 short JCT增加3.79%/8.95%；shared 提高总吞吐但 short/Jain回退。统一 eager Project 12 formal 又显示 full→half quota-only 已使short JCT+59.00%，matched half→static+long再+58.77%，matched full→shared+long+28.90%；eager shared 相对static使short JCT−48.94%、总吞吐+31.85%、long JCT−25.75%、Jain 0.894→0.972。两种到达regime方向相反，冻结为“多Job管理必须感知arrival/active/drain状态、支持idle borrowing并保留SLO/fairness guard”的证据，不称动态普遍胜出；开题前不再扫offset/weight/更多Job追正。
+5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加82.42%/104.84%/32.76%，只作外部观察。项目在线 replay 下 quota-only≈0，static/shared 加入 long 后 short JCT增加3.79%/8.95%；shared 提高总吞吐但 short/Jain回退。统一 eager Project 12 formal 又显示 full→half quota-only 已使short JCT+59.00%，matched half→static+long再+58.77%，matched full→shared+long+28.90%；eager shared 相对static使short JCT−48.94%、总吞吐+31.85%、long JCT−25.75%、Jain 0.894→0.972。两种到达regime方向相反，只作为“多Job管理必须感知arrival/active/drain状态、支持idle borrowing并保留SLO/fairness guard”的证据，不称动态普遍胜出；开题前不再扫offset/weight/更多Job追正。
 
 Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profiler E2E14.957s，T3 earliest model submit→latest completion11.354s，service14,361tok/s、MFU42.93%；Daft Native同一short T3为11.059s、14,727tok/s、MFU44.04%，差异仅约2.5%–2.7%。Daft缺准备前T0，因此完整E2E仍不排名；该结果排除了“Project模型请求路径慢6.4×”。随后Project eager多Job只补full single、half single、static+long、shared+long，不重跑原生三臂；arrival span均为66.76µs、12/12 formal通过。逐阶段显示matched static竞争使short service mean/P99 +50.34%/+78.62%，shared为+14.63%/+28.70%；submit→service仍约2ms。在线replay与eager结论分轨保留。
 
@@ -451,7 +459,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 3. `opening_work_to_schedule_overview`：组织输出 work/locality/deadline，调度结合 fresh state 消费。
 4. `opening_work_organization_regime_v2`：work-aware 组织的必要性与 regime 局限。
 5. `opening_image_stage_aware_evidence`：图像 prepare/model、transfer 形态和 active-window 动机，只承担 staged work 与状态感知必要性。
-6. `opening_image_baseline_evidence_map`：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的能力门禁、12K 结构诊断与 120K matched-resource 正式排名边界。
+6. `opening_image_baseline_evidence_map`：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的功能验证、12K 结构诊断与 120K matched-resource 正式排名范围。
 7. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
 权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `figures/opening_figure_set/` 进入：图集当前有 21 张主讲候选图、10 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。当前 PPT 成品为已独立完成 26/26 页渲染和视觉检查的 v9；2026-08-22 至 08-25 的报告图文更新没有自动回灌该 PPT，跨材料差异审查仍待执行。
@@ -470,26 +478,32 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 4. **真实语义 reference slice**：最小 SemFilter plan/task/result contract 已通过 deterministic golden
    与同步 fixed-model adapters，canonical prompt、parser、model/usage identity 和 relation result 已验证；
    小规模真实模型结果只作 capability，不先扩异步。
-5. **下一条 semantic path**：SemFilter input rows、通用 selectivity estimate、calls/tokens/model-role 与
-   actual usage 已显式可观察，离线 artifact 和 planner loader 已通过 deterministic qualification；下一步
-   先用真实 matched reference evidence 生成并验证 artifact，再建立一条可辨认的
+5. **下一工程切片**：实现[显式 choice profile](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+   保持原 SQL 行为，新配置另用 plan schema 3 / wire v4；只验证接入、版本隔离与资源管理。
+   目前只有设计，不成为默认配置，不把格式合法当作语义正确，不恢复真实成本校准。
+6. **质量、成本与第二路径**：SemFilter rows/selectivity、calls/work 与 actual usage 已可观察，离线
+   artifact 和 planner loader 已通过 deterministic 验证。另行确定质量任务与标签，先取得合格 reference，
+   再用真实 matched evidence 生成并独立验证成本 artifact，之后建立一条可辨认的
    LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative、AI-work cost、quality policy
    和 reference fallback 的显式身份；真实质量结论必须再与同步 reference 路径比较。
-6. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
+7. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
    则保留 extension，只有已复现阻断才增加最小 core patch。
-7. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
+8. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
    并优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作条件满足后的参考方向。
-8. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
-   当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞前四项。
-9. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
+9. **公司前端适配（后置）**：主实现继续独立推进两部分；近期只核对公司接口映射，待自有 Interface
+   可执行后再单独验证最小接入，稳定后在公司 fork 实现正式 adapter。它不是自有主实验的前置条件，
+   当前也没有公司兼容通过的证据；SemLoom 数据执行与调度核心只维护一套。
+10. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
+   当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞当前数据库工程。
+11. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
    报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-10. **条件性恢复**：前七项通过后，再按
+12. **条件性恢复**：数据库语义、路径选择、载体审查和数据执行接口完成验证后，再按
    `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
-   system-level matched comparison 与小规模 pgvector 质量闭环。
-11. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
+   system-level matched comparison 与小规模 pgvector 写回、读回和质量核对。
+13. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
    full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
 
-历史文本 phase-change 门禁、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，
+历史文本 phase-change 判定、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，
 用于解释候选机制与停止原因，不作为上述执行顺序中的隐含待办。
 
 ## 9. 结果解释与写作规则

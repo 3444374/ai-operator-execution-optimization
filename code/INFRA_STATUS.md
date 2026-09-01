@@ -12,7 +12,15 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**当前工程顺序**：按
+**已定设计、尚未实现**：下一工程切片为[choice profile 接入](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)。
+拟新增 SQL opt-in、plan schema 3 与 wire v4；当前源码仍只有原有 options、schema v1/v2 与 wire v2/v3。
+新 profile 即使完成工程接入也保持非默认、未通过语义质量验证，不恢复校准或成为第二优化路径。
+自有 `semloom_pg` 与 SemLoom execution provider 都继续实现；公司 demo 是工程参考，后续通过公司
+fork 的 adapter 接入同一执行核心。该[适配设计与映射清单](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+不是已经接通的证据；当前没有公司 adapter。本次只修改文档，没有复制或修改两边源码。
+字段、实施顺序和完成标准只由上述计划维护；本页及既有证据不宣称新配置已经可用。
+
+**当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
 `SemMap` 与 exact `SemFilter` 的当前受限 reference capability、PostgreSQL-private shared runtime、provider-neutral
 `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口和同步单在途 UDS recording slice；

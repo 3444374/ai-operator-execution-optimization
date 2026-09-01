@@ -86,6 +86,15 @@ See `INFRA_STATUS.md` for the current evidence.
 A qualified reference must precede real collection and held-out validation under one fixed semantic plan, model,
 workload distribution, service, and hardware signature. Only then may a distinct
 reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit.
+Separately, the next engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering).
+Its SQL selector, plan schema 3 and wire v4 are not implemented. Adding that capability will not qualify a model,
+change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
+own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
+demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.
+Check interface mapping early, without making that private repository a prerequisite for the main implementation.
+Direct code reuse still requires clear provenance and destination permissions; no source is moved in this update.
+See the [frontend-adapter design](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy),
+which is planned integration, not evidence of a second frontend already working.
 Accepted-prefix, multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and
 path-selection qualification; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional

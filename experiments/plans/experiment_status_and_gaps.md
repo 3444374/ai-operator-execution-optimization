@@ -32,8 +32,12 @@
 > 格式 30/30，但语义预期仅符合 4/9 独立样例（三次重复共 12/27），独立资格未通过。
 > [后续单一 prompt 对照](../results/postgresql/semfilter_prompt_qualification_20260901/README.md)确认实际
 > messages/template 一致，1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，均未通过；未改
-> 生产配置或访问校准 held-out。当前仍先解决 reference 语义判断，再独立验证 matched
-> reference calibration，之后才实现显式 reference/optimized 第二 physical path、
+> 生产配置或访问校准 held-out。当前工程计划新增了[独立 choice 接入切片](postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+> 但 schema 3 / wire v4 与 SQL opt-in 均尚未实现；本次只修订设计，没有新增测试或实验结果。
+> 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来 fork adapter 接入方案
+> 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。
+> 工程接入不等于 reference 质量通过，真实采集继续暂停。质量任务、标签与统计判定另行确定后，
+> 才能验证 reference 与 matched calibration，之后才实现显式 reference/optimized 第二 physical path、
 > quality evidence 与 fallback。载体审查确认
 > extension 足够时继续使用，只有 LOTUS/Cortex plan alternatives 或 node lifecycle 出现已复现阻断才增加
 > 最小 core patch。数据库语义与路径选择资格完成后才扩 accepted-prefix、

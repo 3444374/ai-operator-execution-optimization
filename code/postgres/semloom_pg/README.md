@@ -7,6 +7,16 @@ PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic cont
 OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
 scheduling, asynchronous execution, or a second physical path.
 
+Next engineering work is the [opt-in choice generation profile](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering).
+Its fourth SQL option, plan schema 3 and wire v4 are designed but not implemented; the interfaces below remain
+the current executable behavior. The new profile will be non-default and not quality-qualified. Engineering
+support will not resume calibration or allow old calibration artifacts to match the new semantic identity.
+
+This extension remains the project's own frontend; the company demo is an engineering reference, not its
+replacement. A later adapter in the company fork should connect to the same SemLoom execution provider.
+That integration is not implemented. Ownership and early mapping checks belong to the
+[frontend-adapter design](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+
 The current supported query shape is deliberately narrow:
 
 - one top-level `ai_semantic.map(text)` in a single-table `SELECT` target list;
@@ -91,7 +101,7 @@ connect. Both recording adapters are compared for Map and Filter SQL rows and no
 UDS fault tests cover malformed JSON, invalid encoding, integer validation, evidence mismatch, disconnect,
 cancellation during response and saturated-connect waits, recovery, input bounds, and socket cleanup. They
 explicitly reject escaped JSON NUL, raw NUL inside a length-delimited frame, and fractional integer fields
-while preserving the redacted `08P01` boundary.
+while preserving the redacted protocol-violation SQLSTATE `08P01`.
 
 The exact-18.3 qualification for commit `e89060a7` passed 193/193 TAP checks, PGXS regression 1/1, an
 `-Werror` build, and 20/20 Python/static checks. Its clean-build `semloom_pg.so` SHA-256 is

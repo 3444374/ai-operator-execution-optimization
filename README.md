@@ -26,13 +26,21 @@ execution-provider gateway 的权威实现已经迁到公共 `code/src/execution
 固定 endpoint、model identity、timeout 与认证只来自 gateway 进程外配置。reference path 已独立
 区分 semantic-input rows、NULL rate、output selectivity、model calls、prompt/output usage、
 model role 和 AI-work cost，并在执行时分列实际 usage；该工程启发式还没有校准为性能模型。
-下一步生成 reference 与 LOTUS/Cortex-like optimized paths，并依据
-AI work cost、quality evidence 和 reference fallback 选择。只有这些路径暴露 extension 无法封闭的
+下一步先接入[显式选择的 choice 生成配置](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+让数据库能够要求模型从 `TRUE/FALSE/UNKNOWN` 中生成答案；新 SQL option、plan schema 3 和 wire v4
+目前只是设计，尚未实现。它不更换默认配置，也不代表判断正确。现有模型未通过预设语义测试，
+真实成本校准仍暂停；后续须先取得合格 reference，再用独立保留数据验证成本估计，之后才比较
+reference 与 LOTUS/Cortex-like optimized paths。只有这些路径暴露 extension 无法封闭的
 plan identity、placement 或 lifecycle 问题时，才增加最小 PostgreSQL core patch。路径选择资格完成后
 再扩 bounded async、SemLoom scheduling 与 IMLane-like batch placement；Kalypso-like dependency/KV
 机制等真实多阶段依赖出现后再评估。
 
-核心执行链路是：
+主实现继续完成两部分：自有 `semloom_pg` 语义算子，以及 SemLoom 数据执行与调度；目标是不依赖
+公司私有仓库也能复现。公司 demo 用作算子工程参考，后续在公司 fork 中加入适配层，接入同一个
+SemLoom 执行核心。接口差异提前核对，正式适配后做；经来源和存放权限确认仍可复用合适代码，
+不要求整仓迁移。具体分工见[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+
+目标执行链路是（第二优化路径与调度部分尚未接入数据库）：
 
 ```text
 SQL semantic intent

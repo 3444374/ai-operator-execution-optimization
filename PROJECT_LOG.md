@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-09-01 明确自有主实现与后续公司适配，分开 choice 接入和质量验证
+
+- 只更新设计相关文档。详细设计统一进入
+  [架构实施计划的工作包四 C](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+  总纲、源码状态、计划导航、代码 README 与方向速览只同步实际状态和下一步，不另建平行设计入口。
+- 根据用户补充，主实现继续完成 PostgreSQL 18.3 自有语义算子和 SemLoom 执行/调度两部分；公司 demo
+  用作工程参考，后续在公司 fork 中用 adapter 接入同一核心。主实验不依赖公司私有仓库；有明确来源和
+  存放权限时仍可复用代码。本轮没有复制源码或修改公司仓库。
+- 同一计划[§8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+  增加 Module 分工、待核对映射、传输块与 work unit 区别，以及先接口对照、后最小 spike、再正式适配的
+  条件。按 `codebase-design` 将变化留在 Adapter，不照搬附件中的候选类型/ID，不重复组织或调度策略；
+  新增映射清单不是公司兼容已通过的证据，数据库主线仍按既定顺序推进。
+- 新设计通过可选 `generation_profile` 显式选择三值 choice，独立使用 plan schema 3 / wire v4；
+  PG 保存自包含 profile 及其摘要，gateway 负责服务字段映射。旧 SQL/schema/wire 与严格 parser 保持原行为，
+  不静默移除约束、重试或降级；新配置不得匹配旧 calibration artifact。以上能力均尚未实现。
+- 验收只针对工程接入和兼容性。新 profile 保持非默认、未通过语义质量验证；历史失败、标签、阈值和
+  原始证据不变，真实校准继续暂停。候选任务与质量目标另行确认，不把标签暂定解释成质量通过。
+- 真实 smoke 设计限制为沿用现有环境且整个切片最多 100 次请求尝试，预热、失败、超时均计入；额度
+  由验证 runner 预留并持久化，不增加生产预算账本。PG 取消、HTTP deadline、DNS worker、listener
+  和空闲 UDS session 的回收分别验证，不承诺远端立即停算或任意状态下的有限时 graceful shutdown。
+- 文档验收：检查本次修改的 Markdown 本地目标与章节链接、读者措辞、`git diff --check`，并显式对
+  工作树文件运行秘密扫描。保留项限于已解释的历史实验词和 SQLSTATE；无源码、PG/TAP、模型或服务器
+  验证，因此不新增实验结果记录，也不把历史运行结果重新绑定到本次修改。本轮未提交、推送或合并。
+
 ## 2026-09-01 单一 prompt 与 matched 7B 对照仍未取得 reference 资格
 
 - `b861d697` 先登记唯一候选分类 prompt、9 个新样例、固定 choice 与全对要求。保持旧 9 例标签，
