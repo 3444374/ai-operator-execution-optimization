@@ -1061,7 +1061,9 @@ calibration mechanism 与 deterministic artifact parity，不证明真实模型�
 - workload：来自现有 ShareGPT Vicuna unfiltered 原始文件的每个 conversation 首个人类 turn；只接受
   非空、无 NUL、UTF-8 不超过 4096 bytes 的完整文本，不截断、不改写。按 payload SHA-256 去重，再以
   `SHA256("semfilter-calibration-20260901:" + conversation_id + ":" + payload_sha256)` 排序。
-  前 64 条只作 warm-up；随后 768 条为 training（8×96），再后 384 条为 held-out（4×96）。
+  前 64 条只作 warm-up；随后 768 条为 training（cell rows 为 32/48/64/80/96/112/144/192），
+  再后 384 条为 held-out（64/80/112/128）。首次请求前的设计检查把等长 cell 改为上述不同基数，
+  避免固定开销列和 model-calls 列在设计上已必然共线；不改变文本分布或模型输出语义。
   conversation ID 和 payload digest 在三组间均不重叠；不足样本就停止，不补合成数据。
 - 独立 PostgreSQL 18.3 集群持有数据；所有 measured cell 通过真实三参 `ai_semantic.filter` 执行。
   每 cell 三次完整重复，顺序按 seed=20260901 固定打乱；保存全部单次值，held-out 不参与拟合或调参。

@@ -4,6 +4,8 @@
 
 - 在工作包五追加固定采集合同：Qwen2.5-1.5B-Instruct、单 GPU/endpoint、原有 exact SemFilter 语义、
   ShareGPT 完整首轮人类输入、64 warm-up/768 training/384 held-out、每 cell 三重复与固定随机顺序。
+  首次请求前设计检查将 training cell rows 固定为 32/48/64/80/96/112/144/192、held-out 为
+  64/80/112/128，避免等长 cell 导致固定项与 calls 项必然共线；没有根据模型输出选配置。
   首次模型调用前确定 20% 最大 held-out 相对误差要求，保留当前四项 OLS，识别或语义失败则不发布 artifact。
 - 计时包围未修改 fixed adapter 的一次 `complete()`，与 SQL 总耗时分开；外部采集工具核对真实模型、
   数据和服务身份，不把 PG 保存的 signature 当成现场自动验证。本提交只登记采集合同，尚无模型观测结果。
