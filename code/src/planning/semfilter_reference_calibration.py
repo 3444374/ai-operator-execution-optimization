@@ -26,9 +26,9 @@ MODEL_ROLE = "reference"
 _ARTIFACT_ID_DOMAIN = b"semloom-semfilter-reference-calibration-v1\0"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
-# Engineering identifiability floor, applied after each design column is scaled
-# to max magnitude one. It is independent of held-out error and measurement units.
-_MIN_SERVICE_DESIGN_PIVOT = Fraction(1, 100_000_000)
+# Engineering ceiling for the infinity-norm condition of the exact Gram matrix
+# after column scaling. Independent of held-out error and measurement units.
+_MAX_SERVICE_GRAM_CONDITION = 10**16
 
 _SOURCE_FIELDS = frozenset(
     {
@@ -513,9 +513,9 @@ def _fit_service_coefficients(
 def _require_identifiable_service_design(observations: Sequence[_Observation]) -> None:
     """Reject exact/near dependence before fitting the normal equations.
 
-    Four-column partial-pivot elimination uses exact rational input values, so
-    rounding cannot resurrect a zero pivot. Column scaling makes the additional
-    small-pivot policy dimensionless; this is not a claimed SVD condition number.
+    Exact rational arithmetic cannot resurrect a zero pivot. Unlike individual
+    pivot thresholds, the full inverse also detects chained near dependencies.
+    This is an infinity-norm Gram condition policy, not an SVD rank estimate.
     """
     rows = [[Fraction(1), Fraction(str(row.model_calls)),
              Fraction(str(row.prompt_tokens)), Fraction(str(row.output_tokens))]
@@ -524,19 +524,26 @@ def _require_identifiable_service_design(observations: Sequence[_Observation]) -
     if any(scale == 0 for scale in scales):
         raise ValueError("service observations do not identify all cost coefficients")
     rows = [[value / scale for value, scale in zip(row, scales)] for row in rows]
+    gram = [[sum(row[left] * row[right] for row in rows) for right in range(4)]
+            for left in range(4)]
+    gram_norm = max(sum(abs(value) for value in row) for row in gram)
+    augmented = [row + [Fraction(int(left == right)) for right in range(4)]
+                 for left, row in enumerate(gram)]
     for column in range(4):
-        pivot = max(range(column, len(rows)), key=lambda index: abs(rows[index][column]))
-        if rows[pivot][column] == 0:
+        pivot = max(range(column, 4), key=lambda index: abs(augmented[index][column]))
+        if augmented[pivot][column] == 0:
             raise ValueError("service observations do not identify all cost coefficients")
-        if abs(rows[pivot][column]) <= _MIN_SERVICE_DESIGN_PIVOT:
-            raise ValueError("service observations are nearly collinear")
-        rows[column], rows[pivot] = rows[pivot], rows[column]
-        divisor = rows[column][column]
-        rows[column] = [value / divisor for value in rows[column]]
-        for index in range(column + 1, len(rows)):
-            factor = rows[index][column]
-            rows[index] = [value - factor * pivot_value
-                           for value, pivot_value in zip(rows[index], rows[column])]
+        augmented[column], augmented[pivot] = augmented[pivot], augmented[column]
+        divisor = augmented[column][column]
+        augmented[column] = [value / divisor for value in augmented[column]]
+        for index in range(4):
+            if index != column:
+                factor = augmented[index][column]
+                augmented[index] = [value - factor * pivot_value
+                                   for value, pivot_value in zip(augmented[index], augmented[column])]
+    inverse_norm = max(sum(abs(value) for value in row[4:]) for row in augmented)
+    if gram_norm * inverse_norm >= _MAX_SERVICE_GRAM_CONDITION:
+        raise ValueError("service observations are nearly collinear")
 
 
 def _artifact_id(artifact: Mapping[str, Any]) -> str:

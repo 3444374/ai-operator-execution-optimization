@@ -137,6 +137,27 @@ class SemFilterReferenceCalibrationTests(unittest.TestCase):
         self.assertEqual(artifact["service_ms_per_output_token"], "5e-07")
         self.assertEqual(artifact["held_out_max_relative_error"], "0")
 
+    def test_builder_rejects_chained_near_dependence_despite_non_small_pivots(self) -> None:
+        source = _source()
+        source["training_observations"] = [
+            dict(semantic_input_rows=2_000_000_000, output_rows=800_000_000,
+                 model_calls=calls, prompt_tokens=prompt, output_tokens=output,
+                 service_milliseconds=1000 + calls + prompt / 100 + output / 2)
+            for calls, prompt, output in (
+                (1_000_000_000, 1_000_000_000, 1_000_000_000),
+                (1_000_000_100, 2_000_000_000, 1_000_000_000),
+                (1_000_000_000, 1_000_000_100, 2_000_000_000),
+                (1_000_000_000, 1_000_000_000, 1_000_000_100),
+            )
+        ]
+        held_out = {field: sum(row[field] for row in source["training_observations"])
+                    for field in source["training_observations"][0]}
+        held_out["service_milliseconds"] -= 3000
+        source["held_out_observations"] = [held_out]
+
+        with self.assertRaisesRegex(ValueError, "nearly collinear"):
+            build_reference_calibration(source)
+
     def test_builder_rejects_unobserved_or_constant_work_dimensions(self) -> None:
         for field, value in (("output_tokens", 0), ("model_calls", 40)):
             with self.subTest(field=field):
