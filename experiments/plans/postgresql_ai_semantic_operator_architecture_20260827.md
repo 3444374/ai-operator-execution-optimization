@@ -575,6 +575,16 @@ calls、usage、AI-work estimate 与真实成本分开；工程启发式不能�
 结果绑定与 lifecycle 检查；需要 core 时先有可重复阻断与最小 patch diff。
 多个路径都要覆盖，不能把分阶段审查缩减成只验证一次同步 Map，也不把完整审查作为纯核心单测的前置项。
 
+**函数对象身份小切片（2026-09-02，待验证）。** 基于 `c494e1b2`，先用 SQL/EXPLAIN 反例检查
+扩展缺失、同签名非成员、其他 schema/重载、删除重建和 prepared/generic plan 失效；未复现前不称为漏洞。
+本次只读复核的公司对象为 `src/operators/sem_distance_planner.c:lookup_extension_function`，工作副本基于
+`4601bf7272766d18d370ab95c588cb708d3d1d87` 且有未提交修改：该函数在名称和参数解析后检查扩展成员关系。
+采用其对象身份检查原则，由自有 `extension.c` 使用 PG18.3 catalog API 实现最小校验；不复制源代码，
+不增加动态 schema、对象缓存或通用 registry。只有反例失败后才改实现。测试放独立 TAP 文件，核对
+普通函数结果、不生成语义 CustomScan、真正成员仍被接管，以及同一 backend 的准备计划重建；测试不调用
+真实模型。公共 runtime、SQL 属性、plan/wire 版本与 Filter 标签保持不变。四 D 的语义合同及其任务构造
+整理仍是后续独立切片，不能以此次身份验证宣称已完成。
+
 **可组合一元算子子切片（待实现）。** 先用两个 Filter 的 AND 组合检查独立计划、输入绑定、顺序与
 计数，再在四 D 可执行后验证 Filter → 真实 Map。共同分析只管理调用位置、查询层级和依赖，算子
 builder 管理自身 placement/关系语义；执行状态与 provider 关联按节点隔离。同一 gateway 的多会话
