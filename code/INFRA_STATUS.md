@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（choice gateway v4 接入，PG 执行仍待接通）
+日期：2026-09-02（PG choice SELECT 接通；资源/真实模型验证待完成）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -12,16 +12,14 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**尚未实现项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的中立 open
-spec 映射与 C wire v4；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/
-多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
+**尚未完成项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的新资源 smoke
+与受限真实模型验证；Filter `INSERT ... SELECT` carrier 修复；四 D 真实生成型 SemMap；增量
+SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
 bytes 纳入新的 semantic digest。旧三字段 options/schema 2/digest/wire v3 不变，旧 calibration
 artifact 对新身份返回 `semantic-spec-mismatch`，不使用旧系数。
-新配置目前仅支持规划与普通 EXPLAIN，显示完整 profile 与 `unqualified`；执行（含无任务查询）
-在初始化 child 或选择 provider 前以 `0A000` 拒绝，不能回落到 v3。`AiOpenSpec`、task/completion、
-machines、provider 与 wire 未扩展；runtime 的 lifecycle 未改，只把 plan EXPLAIN 显示复用到 plan helper。
+该 PG plan 切片当时只支持规划与普通 EXPLAIN，执行以 `0A000` 拒绝；此临时限制现已由下方 C 接线替代。
 测试修订 `134447dd` 已核对真实 provider socket 配置；完整 PG18.3 TAP 537/537、本地/服务器 Python
 68/68、C11 与 warning-free `-O2 -Werror` 构建通过。详细 regression 和日志见
 [PG plan 接入验证](../experiments/results/postgresql/choice_pg_plan_20260902/README.md)。
@@ -31,8 +29,18 @@ golden/fixed-model 映射；共享 `wire/semantic.py` 与 `adapters/semantic_ses
 不降级、不重试、不改写 raw output；现有模型、prompt、生成参数与 HTTP deadline 策略不变。
 本地/服务器各 83/83，PG18.3 warning-free 构建、regression 1/1、TAP 537/537 通过，见
 [gateway v4 验证](../experiments/results/postgresql/choice_gateway_v4_20260902/README.md)。这只增加 fixture
-协议与兼容证据：C/SQL/TAP 源码未改，PG schema 3 的 `0A000` 仍保留，没有真实模型或新资源 smoke。
-当前 PG 可执行路径仍是 schema v1/v2、wire v2/v3 与同步单在途 port；schema 3 仅可检查计划，recording Map 不是生成算子。
+协议与兼容证据：该历史切片没有修改 C/SQL/TAP，也没有真实模型或新资源 smoke。
+`8e7cd92d` / `8674269d` 随后把完整 profile 复制到 query-owned `AiOpenSpec` 和 session-owned UDS spec，
+以 `has_generation_profile` 显式选择 v4；v3 入口拒绝带 profile 的请求。`wire_semantic.c` 共享固定 exact
+编解码，v4 单独校验字段/版本/profile/evidence，并拒绝重复 JSON key。pump 的 `pending_plan` 分支已删除，
+schema 3 SELECT 回到公共 runtime 与原严格 parser；无任务仍不连接 provider。
+最终测试源码 `80bb7fc5` 通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 748/748、本地/服务器各
+83/83 Python 与中立 C11。见 [PG choice 接线验证](../experiments/results/postgresql/choice_pg_wire_20260902/README.md)。
+新增 218 项 choice 执行检查含真实 PG→golden/fake HTTP、三值/NULL、Unicode/空串、prepared/invalidation、
+savepoint、错误/取消恢复、旧端拒绝和实际 HTTP 参数对照；不代表真实模型或 RSS/FD 资格。
+另用旧 `7d72d9ad` 与当前二进制确认所有 Filter profile 的 `INSERT ... SELECT` 均未 lowering，执行报
+`55000`。此前关于两种算子都支持该形状的表述过强；当前只有 recording Map 的直接 INSERT 有通过证据。
+当前 PG 可执行 SELECT 使用 schema v1/v2/v3、wire v2/v3/v4 与同步单在途 port；recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
 query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
@@ -40,7 +48,7 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-本次新增 gateway 协议能力并重跑隔离 PG18.3 测试，但没有模型调用；Filter 校准暂停与原始失败结论不变。
+本次新增 PG choice 接线并重跑隔离 PG18.3 测试，但没有真实模型调用；Filter 校准暂停与原始失败结论不变。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
@@ -523,7 +531,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 ### PostgreSQL 中立语义算子与 provider 状态
 
 1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
-   recording reference paths 已验证当前受限 `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child
+   recording reference paths 已验证当前受限 `SELECT`，其中 Map 另验证 direct `INSERT ... SELECT` 的 ordinary child
    plan、三值/NULL、cardinality、snapshot、取消、rollback/commit、错误恢复和结果生命周期；
    rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽 query shapes 仍保持 fail-closed；
 2. PostgreSQL-private `PgSemanticRuntime`、thin `SemloomExecPump`、独立 Map/Filter machines、provider-neutral

@@ -28,6 +28,13 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 
 ## 1. 证据等级
 
+2026-09-02 的 [PG choice 接线](postgresql/choice_pg_wire_20260902/README.md)绑定最终 `80bb7fc5`：
+中立 open spec 与 C v4 已进入公共 runtime；PG18.3 warning-free `-O2 -Werror`、regression 1/1、
+TAP 748/748、本地/服务器各 83/83 通过。218 项新 SELECT 检查覆盖三值/NULL、Unicode/空串、
+prepared/invalidation、savepoint、错误/取消、旧端拒绝和实际 HTTP 参数对照。仅有 fixtures，
+未做新资源或真实模型验证。旧/新二进制均复现 Filter INSERT 未 lowering（`55000`），不能再将
+Map 的 INSERT 验证外推到 Filter。早期 150 项因人工结束等待及断言漏检，不计入有效验收。
+
 2026-09-02 的 [gateway v4 接入](postgresql/choice_gateway_v4_20260902/README.md)绑定 `7d72d9ad`：
 本地/服务器各 83/83，PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 537/537 通过。
 新增 15 项验证严格 profile/字段/版本/摘要、显式 choice HTTP 映射、拒绝后不降级、原始结果保留。

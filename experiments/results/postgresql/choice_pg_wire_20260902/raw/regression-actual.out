@@ -1,0 +1,203 @@
+\set VERBOSITY terse
+\pset null '<NULL>'
+CREATE EXTENSION semloom_pg;
+CREATE TEMP TABLE semloom_documents (
+    doc_id integer PRIMARY KEY,
+    payload text NOT NULL
+);
+INSERT INTO semloom_documents VALUES
+    (1, 'repeat'),
+    (2, 'repeat'),
+    (3, 'third');
+EXPLAIN (COSTS OFF)
+SELECT doc_id, ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id >= 2;
+                       QUERY PLAN
+---------------------------------------------------------
+ Custom Scan (SemLoom SemMap)
+   Provider: in-process-recording
+   Physical Role: reference
+   Mapped Column: 2
+   ->  Bitmap Heap Scan on semloom_documents
+         Recheck Cond: (doc_id >= 2)
+         ->  Bitmap Index Scan on semloom_documents_pkey
+               Index Cond: (doc_id >= 2)
+(8 rows)
+
+SELECT doc_id, ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id >= 2;
+ doc_id |   completion
+--------+-----------------
+      2 | recorded:repeat
+      3 | recorded:third
+(2 rows)
+
+SELECT doc_id, ai_semantic.map(upper(payload)) AS completion
+FROM semloom_documents
+WHERE doc_id = 3;
+ doc_id |   completion
+--------+----------------
+      3 | recorded:THIRD
+(1 row)
+
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 1;
+   completion
+-----------------
+ recorded:repeat
+(1 row)
+
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 0;
+ completion
+------------
+(0 rows)
+
+EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF, BUFFERS OFF)
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+LIMIT 1;
+                              QUERY PLAN
+----------------------------------------------------------------------
+ Custom Scan (SemLoom SemMap) (actual rows=1.00 loops=1)
+   Provider: in-process-recording
+   Physical Role: reference
+   Mapped Column: 1
+   Accepted Rows: 1
+   Emitted Rows: 1
+   ->  Limit (actual rows=1.00 loops=1)
+         ->  Seq Scan on semloom_documents (actual rows=1.00 loops=1)
+(8 rows)
+
+SELECT upper(ai_semantic.map(payload))
+FROM semloom_documents;
+ERROR:  nested ai_semantic.map expressions are not supported
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+ORDER BY doc_id;
+ERROR:  query shape is outside the current SemMap capability
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_documents
+WHERE doc_id = 3;
+   completion
+----------------
+ recorded:third
+(1 row)
+
+CREATE TEMP TABLE semloom_nullable (payload text);
+INSERT INTO semloom_nullable VALUES (NULL);
+SELECT ai_semantic.map(payload) AS completion
+FROM semloom_nullable;
+ completion
+------------
+ <NULL>
+(1 row)
+
+CREATE TEMP TABLE semloom_filter_decisions (
+    doc_id integer PRIMARY KEY,
+    decision text
+);
+INSERT INTO semloom_filter_decisions VALUES
+    (1, 'true'),
+    (2, 'false'),
+    (3, 'unknown'),
+    (4, NULL),
+    (5, 'true');
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+ORDER BY doc_id;
+ doc_id
+--------
+      1
+      5
+(2 rows)
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id >= 2 AND ai_semantic.filter(decision)
+ORDER BY doc_id
+LIMIT 1;
+ doc_id
+--------
+      5
+(1 row)
+
+INSERT INTO semloom_filter_decisions VALUES (6, 'invalid');
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 6 AND ai_semantic.filter(decision);
+ERROR:  SemFilter provider completion must be true, false, or unknown
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE doc_id = 1 AND ai_semantic.filter(decision);
+ doc_id
+--------
+      1
+(1 row)
+
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE NOT ai_semantic.filter(decision);
+ERROR:  ai_semantic.filter must be one top-level AND predicate
+SELECT doc_id
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision)
+  AND ai_semantic.filter(decision || '');
+ERROR:  ai_semantic.filter must be one top-level AND predicate
+SELECT ai_semantic.map(decision)
+FROM semloom_filter_decisions
+WHERE ai_semantic.filter(decision);
+ERROR:  SemMap and SemFilter cannot be combined in the current capability
+CREATE TEMP TABLE semloom_sink (completion text);
+BEGIN;
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3;
+TABLE semloom_sink;
+   completion
+----------------
+ recorded:third
+(1 row)
+
+ROLLBACK;
+SELECT count(*) AS sink_rows FROM semloom_sink;
+ sink_rows
+-----------
+         0
+(1 row)
+
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3;
+TABLE semloom_sink;
+   completion
+----------------
+ recorded:third
+(1 row)
+
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3
+RETURNING completion;
+ERROR:  INSERT shape is outside the current SemMap capability
+INSERT INTO semloom_sink
+SELECT ai_semantic.map(payload)
+FROM semloom_documents
+WHERE doc_id = 3
+ON CONFLICT DO NOTHING;
+ERROR:  INSERT shape is outside the current SemMap capability
+SELECT count(*) AS sink_rows_after_errors FROM semloom_sink;
+ sink_rows_after_errors
+------------------------
+                      1
+(1 row)
+
+DROP EXTENSION semloom_pg CASCADE;

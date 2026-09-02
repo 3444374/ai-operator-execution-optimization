@@ -126,26 +126,26 @@ planned choice profile 必须自包含并进入新 semantic digest；provider id
 
 | 对象 | 当前字段职责 |
 |---|---|
-| `AiOpenSpec`（query-fixed） | operator/value kinds、policy、schema/spec identity、algorithm/role、prompt/parser/model identity、semantic/physical digests，以及 `temperature/top_p/max_tokens/n/stream/stop` |
+| `AiOpenSpec`（query-fixed） | operator/value kinds、policy、schema/spec identity、algorithm/role、prompt/parser/model identity、semantic/physical digests、`temperature/top_p/max_tokens/n/stream/stop`，以及显式 presence flag 和完整 generation profile |
 | `AiPreparedTask`（per-item） | `sequence`、`input`、`canonical_messages`、`semantic_payload_digest`、`is_null` |
 | `AiCompletion`（per-item） | `sequence`、`output`、`response_model_id`、`finish_reason`、`prompt_tokens/output_tokens`、`is_null` |
 | `AiProviderError` | caller-owned 中立分类、errno、限长脱敏详情及必要固定宽度参数 |
 
-model 与 generation constraints 不逐行复制成 task 字段；四 C 的 generation profile 已存在于
-PG schema 3 与 gateway v4，但尚未加入本表的 C `AiOpenSpec`。
+model、generation constraints 与 profile 不逐行复制成 task 字段；四 C 的完整 profile 已从
+PG schema 3 接入 C `AiOpenSpec`、session-owned UDS spec 与 gateway v4。
 `PreparedSemanticTask/CompletionRecord` 只在旧设计中作为概念名使用，不是当前两个 C struct 的别名。
 wire task/completion 可携带身份摘要用于核验，不意味着这些字段全部暴露在中立 C task/completion 中。
 
 ### 5.4 生命周期身份与证据
 
-当前 wire v2/v3 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
+当前 wire v2/v3/v4 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
 关联任务。v3 校验 semantic-spec、physical-algorithm、provider-execution、payload 和 completion evidence；
 这些摘要证明内容/执行身份一致，不代替单项序号。tuple binding 留在 PG，sequence 会传到 provider。
 
 当前没有跨进程 `query_id/operator_instance_id/task_id/job_id` 组合，也没有 query-level registry。
 未来多节点、多 Job 或重连场景确需时再引入 opaque identity；只有引入 retry 才讨论 attempt identity。
-四 C 的 gateway wire v4 已实现，C codec 与 PG 执行映射仍待接通；不能把它写成已部署的
-PG choice 路径或顺带加入上述 ID。
+四 C 的 C/gateway wire v4 与 PG SELECT 已通过 fixture 接线验证；真实服务和新资源 smoke 仍待验证，
+不能写成已完成生产部署，也不能顺带加入上述 ID。
 
 ## 6. 同步 port 与未来增量执行
 
@@ -377,9 +377,10 @@ fork/修改权限不等于外部发布或部署权限；改名、翻写、打包
 
 目标是显式选择三值受约束生成，保留旧 SQL/schema/wire，不成为默认或质量合格的 reference。
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
-当前已完成值合同、PG plan 保存/严格解码/EXPLAIN，以及 gateway v4 与固定 HTTP choice 映射；
-PG 实际执行仍拒绝，C port/wire 接入尚未实现。gateway fixture 与旧 PG 路径兼容性已验证，
-真实模型、PG choice lifecycle 和新资源验证仍待完成。
+当前已完成值合同、PG plan 保存/严格解码/EXPLAIN、C port/wire v4 和固定 HTTP choice 映射；
+PG choice SELECT 已进入公共 runtime，并通过 fixture/lifecycle 与旧路径兼容验证。
+新资源 smoke 与真实模型验证仍待完成。另已复现旧/新 Filter INSERT 未 lowering，需独立 carrier
+修复；当前不声明 Filter INSERT 支持，不把普通写入回滚当作该形状已验证。
 [四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
 

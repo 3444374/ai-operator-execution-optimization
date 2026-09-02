@@ -1,0 +1,164 @@
+[
+  {
+    "install": "baseline",
+    "profile": "recording",
+    "operation": "select-plan",
+    "exit_code": 0,
+    "stdout": "Custom Scan (SemLoom SemFilter)\n  Provider: in-process-recording\n  Physical Role: reference\n  Filter Input Column: 2\n  ->  Seq Scan on inputs\n        Filter: true\n",
+    "stderr": "",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "recording",
+    "operation": "insert-plan",
+    "exit_code": 0,
+    "stdout": "Insert on sink\n  ->  Seq Scan on inputs\n        Filter: ai_semantic.filter(content)\n",
+    "stderr": "",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "recording",
+    "operation": "insert-execution",
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "ERROR:  55000: ai_semantic.filter marker was not lowered to a semantic plan\nHINT:  Load semloom_pg before planning and use a supported SemFilter query shape.\nLOCATION:  semloom_marker_filter, marker.c:22\n",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "exact-v3",
+    "operation": "select-plan",
+    "exit_code": 0,
+    "stdout": "Custom Scan (SemLoom SemFilter)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1270.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1263.65\n  Estimated Prompt Tokens: 78346.30\n  Estimated Output Tokens: 10109.20\n  AI Work Cost: 224.2979\n  Filter Input Column: 2\n  ->  Seq Scan on inputs\n        Filter: true\n",
+    "stderr": "",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "exact-v3",
+    "operation": "insert-plan",
+    "exit_code": 0,
+    "stdout": "Insert on sink\n  ->  Seq Scan on inputs\n        Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0}'::jsonb)\n",
+    "stderr": "",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "exact-v3",
+    "operation": "insert-execution",
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "ERROR:  55000: ai_semantic.filter marker was not lowered to a semantic plan\nHINT:  Load semloom_pg before planning and use a supported SemFilter query shape.\nLOCATION:  semloom_marker_filter, marker.c:22\n",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "choice-v4",
+    "operation": "select-plan",
+    "exit_code": 0,
+    "stdout": "Custom Scan (SemLoom SemFilter)\n  Provider: unavailable (wire v4 required)\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  Semantic Plan Schema: 3\n  Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5\n  Generation Profile: semloom.generation.choice.tristate\n  Generation Profile Version: 1\n  Generation Constraint: CHOICE\n  Generation Choices: TRUE, FALSE, UNKNOWN\n  Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7\n  Generation Quality: unqualified\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1270.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1263.65\n  Estimated Prompt Tokens: 78346.30\n  Estimated Output Tokens: 10109.20\n  AI Work Cost: 224.2979\n  Input Column: 2\n  ->  Seq Scan on inputs\n        Filter: true\n",
+    "stderr": "",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "choice-v4",
+    "operation": "insert-plan",
+    "exit_code": 0,
+    "stdout": "Insert on sink\n  ->  Seq Scan on inputs\n        Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0, \"generation_profile\": \"semloom.generation.choice.tristate.v1\"}'::jsonb)\n",
+    "stderr": "",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "baseline",
+    "profile": "choice-v4",
+    "operation": "insert-execution",
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "ERROR:  55000: ai_semantic.filter marker was not lowered to a semantic plan\nHINT:  Load semloom_pg before planning and use a supported SemFilter query shape.\nLOCATION:  semloom_marker_filter, marker.c:22\n",
+    "extension_sha256": "0a9143fcc34dd8fc2777b49f2fe21cf8783c3bca268b3cd83aa078aa3e2b7405"
+  },
+  {
+    "install": "current",
+    "profile": "recording",
+    "operation": "select-plan",
+    "exit_code": 0,
+    "stdout": "Custom Scan (SemLoom SemFilter)\n  Provider: in-process-recording\n  Physical Role: reference\n  Filter Input Column: 2\n  ->  Seq Scan on inputs\n        Filter: true\n",
+    "stderr": "",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "recording",
+    "operation": "insert-plan",
+    "exit_code": 0,
+    "stdout": "Insert on sink\n  ->  Seq Scan on inputs\n        Filter: ai_semantic.filter(content)\n",
+    "stderr": "",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "recording",
+    "operation": "insert-execution",
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "ERROR:  55000: ai_semantic.filter marker was not lowered to a semantic plan\nHINT:  Load semloom_pg before planning and use a supported SemFilter query shape.\nLOCATION:  semloom_marker_filter, marker.c:22\n",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "exact-v3",
+    "operation": "select-plan",
+    "exit_code": 0,
+    "stdout": "Custom Scan (SemLoom SemFilter)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1270.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1263.65\n  Estimated Prompt Tokens: 78346.30\n  Estimated Output Tokens: 10109.20\n  AI Work Cost: 224.2979\n  Filter Input Column: 2\n  ->  Seq Scan on inputs\n        Filter: true\n",
+    "stderr": "",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "exact-v3",
+    "operation": "insert-plan",
+    "exit_code": 0,
+    "stdout": "Insert on sink\n  ->  Seq Scan on inputs\n        Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0}'::jsonb)\n",
+    "stderr": "",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "exact-v3",
+    "operation": "insert-execution",
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "ERROR:  55000: ai_semantic.filter marker was not lowered to a semantic plan\nHINT:  Load semloom_pg before planning and use a supported SemFilter query shape.\nLOCATION:  semloom_marker_filter, marker.c:22\n",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "choice-v4",
+    "operation": "select-plan",
+    "exit_code": 0,
+    "stdout": "Custom Scan (SemLoom SemFilter)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  Semantic Plan Schema: 3\n  Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5\n  Generation Profile: semloom.generation.choice.tristate\n  Generation Profile Version: 1\n  Generation Constraint: CHOICE\n  Generation Choices: TRUE, FALSE, UNKNOWN\n  Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7\n  Generation Quality: unqualified\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1270.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1263.65\n  Estimated Prompt Tokens: 78346.30\n  Estimated Output Tokens: 10109.20\n  AI Work Cost: 224.2979\n  Filter Input Column: 2\n  ->  Seq Scan on inputs\n        Filter: true\n",
+    "stderr": "",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "choice-v4",
+    "operation": "insert-plan",
+    "exit_code": 0,
+    "stdout": "Insert on sink\n  ->  Seq Scan on inputs\n        Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0, \"generation_profile\": \"semloom.generation.choice.tristate.v1\"}'::jsonb)\n",
+    "stderr": "",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  },
+  {
+    "install": "current",
+    "profile": "choice-v4",
+    "operation": "insert-execution",
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "ERROR:  55000: ai_semantic.filter marker was not lowered to a semantic plan\nHINT:  Load semloom_pg before planning and use a supported SemFilter query shape.\nLOCATION:  semloom_marker_filter, marker.c:22\n",
+    "extension_sha256": "381fd426a2927987597294b54a15ab00d414b126be75db9b2df7fe9eaddbf6c4"
+  }
+]

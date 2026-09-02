@@ -8,9 +8,13 @@
 
 ## PostgreSQL choice profile（2026-09-02）
 
+[PG C/wire v4 接线](postgresql/choice_pg_wire_20260902/README.md)：`80bb7fc5` 的 choice SELECT 共用
+现有 runtime 与严格 parser。本地/服务器各 83/83、PG18.3 regression 1/1、TAP 748/748；实际新旧
+HTTP 请求仅差 choice 字段。另用旧/新二进制复现 Filter INSERT 未 lowering。资源与真实模型验证待完成。
+
 [gateway v4 与请求映射](postgresql/choice_gateway_v4_20260902/README.md)：`7d72d9ad` 实现严格 v4、
 共享 session 和显式 fixed-model choice 映射。本地/服务器各 83/83，PG18.3 regression 1/1、TAP
-537/537 通过；C codec/open spec 尚未接通，PG schema 3 仍拒绝执行。未调用真实模型。
+537/537 通过；该历史切片当时未接 C codec/open spec，PG 拒绝执行。未调用真实模型。
 
 [PG plan 接入](postgresql/choice_pg_plan_20260902/README.md)：第四个 option 与 schema 3 已实现，
 保存完整 profile，支持计划复制、prepared plan 和 EXPLAIN；该切片实际执行明确拒绝，未接 wire v4。

@@ -34,8 +34,9 @@
 > messages/template 一致，1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，均未通过；未改
 > 生产配置或访问校准 held-out。当前工程计划新增了[独立 choice 接入切片](postgresql_choice_profile_engineering.md)，
 > 值合同之后又完成 [SQL opt-in/schema 3 的 PG plan 验证](../results/postgresql/choice_pg_plan_20260902/README.md)：
-> 支持保存与 EXPLAIN，实际执行仍明确拒绝；后续 [gateway v4](../results/postgresql/choice_gateway_v4_20260902/README.md)
-> 已通过 83/83 合同与旧 PG18.3 TAP 537/537。C 中立 open spec/codec 尚未接通，PG choice 不能调用模型。
+> 先支持保存与 EXPLAIN；后续 [C/wire v4 接线](../results/postgresql/choice_pg_wire_20260902/README.md)已通过
+> PG18.3 TAP 748/748、regression 1/1、83/83 合同，choice SELECT 可通过公共 runtime 调用 golden/fake HTTP。
+> 未运行真实模型或新资源 smoke；旧/新扩展都复现 Filter INSERT 未 lowering，该既有缺口单独处理。
 > 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来 fork adapter 接入方案
 > 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。
 > 工程接入不等于 Filter reference 质量通过，其真实采集继续暂停。生成型 SemMap 与独立增量核心

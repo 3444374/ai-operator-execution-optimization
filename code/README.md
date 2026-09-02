@@ -7,11 +7,13 @@ the code tree and must not become a competing engineering plan.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile
-and share canonical bytes/identity tests. SQL opt-in and plan-only schema 3 are implemented. The gateway now
-supports strict v4 and fixed-model choice mapping, sharing exact semantics and the session loop with v3.
-The C wire-v4 codec and `AiOpenSpec` mapping remain pending; schema-3 execution still raises `0A000`.
-See the [gateway qualification](../experiments/results/postgresql/choice_gateway_v4_20260902/README.md):
-83/83 Python tests locally and on the server, PG18.3 regression 1/1 and TAP 537/537. No real model was called.
+and share canonical bytes/identity tests. SQL opt-in, schema 3, the C `AiOpenSpec` mapping and wire v4 now
+execute through the existing runtime. Fixed-model choice mapping remains in the gateway, with no fallback
+to v3 or unconstrained requests. See the [PG connection qualification](../experiments/results/postgresql/choice_pg_wire_20260902/README.md):
+83/83 Python tests locally and on the server, PG18.3 regression 1/1 and TAP 748/748. No real model was called.
+The new path is qualified for the supported SELECT shape only. Separate old/current binary checks found
+that Filter INSERT ... SELECT is not lowered; this pre-existing carrier issue remains open. New resource
+smoke and real-model choice verification remain pending.
 
 Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
@@ -96,8 +98,8 @@ workload distribution, service, and hardware signature. Only then may a distinct
 Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
 The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
 followed by [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
-Choice SQL/plan support and gateway v4 are implemented; the C provider mapping and codec remain pending.
-Completing that connection will not qualify a model,
+Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT; resource and real-model
+validation remain pending. The fixture connection does not qualify a model,
 change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
 own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
 demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.

@@ -12,17 +12,18 @@ now has PostgreSQL plan support (`00cc6bbf`). Adding the fourth option
 `"generation_profile":"semloom.generation.choice.tristate.v1"` saves a complete ordered profile in schema 3.
 Ordinary EXPLAIN displays its ID, version, choices, digest and unqualified status; prepared/generic plans retain
 the identity. Old three-field options still use schema 2, unchanged digests and wire v3.
-Gateway wire v4 and fixed-model choice mapping are implemented, but the C codec and `AiOpenSpec` mapping
-are not: all schema-3 execution, including no-task queries,
-raises `0A000` before child initialization or provider selection. It never silently uses v3.
+The C codec, `AiOpenSpec` mapping and gateway wire v4 now execute choice SELECT through the same runtime.
+The temporary plan-only branch has been removed; no-task queries still avoid provider connections.
+It never silently uses v3, and the original result parser remains strict.
 The bounded C encoder in `src/generation_profile.{h,c}` is now linked into PGXS. Its canonical bytes match
 the Python value and an independently hashed vector; the complete bytes enter the new semantic digest.
 Old calibration artifacts cannot match it. This planning support does not qualify model quality or resume calibration.
-The [gateway-only qualification](../../../experiments/results/postgresql/choice_gateway_v4_20260902/README.md)
-at `7d72d9ad` passes 83/83 Python contracts, PG18.3 warning-free build, regression 1/1 and TAP 537/537.
+The [PG connection qualification](../../../experiments/results/postgresql/choice_pg_wire_20260902/README.md)
+at `80bb7fc5` passes 83/83 Python contracts, PG18.3 warning-free build, regression 1/1 and TAP 748/748.
 The external config must explicitly opt in with `"choice_format":"vllm_structured_outputs"` before v4 can
 send a constrained HTTP request. Missing support or HTTP rejection never triggers an unconstrained retry.
-These fixture results do not prove PostgreSQL choice execution or a real endpoint's constrained decoding.
+These fixture results prove the supported PostgreSQL choice SELECT execution, not a real endpoint's constrained
+decoding or new RSS/FD growth limits. The remaining resource and real-model checks are separate work.
 Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
@@ -40,7 +41,7 @@ The current supported query shape is deliberately narrow:
   non-NULL constant instruction and exactly `model`, numeric-zero `temperature`, and integer `max_tokens=8`;
   the external golden adapter returns fixture-bound raw output and PostgreSQL alone parses exact uppercase
   `TRUE`, `FALSE`, or `UNKNOWN`;
-- direct single-table `INSERT ... SELECT` for either reference operator, without `RETURNING`,
+- direct single-table `INSERT ... SELECT` for recording SemMap only, without `RETURNING`,
   `ON CONFLICT`, or `OVERRIDING`;
 - ordinary child filters and projections;
 - forward execution with child order preserved;
@@ -72,7 +73,7 @@ physical path remain pending; this slice must not be described as a complete opt
 The planner serializes three strict named-field semantic schemas. Schema 1 preserves the recording compatibility paths.
 Schema 2 owns the exact Filter instruction, prompt/parser identities, model and fixed generation constraints,
 NULL/error/order policy, physical algorithm/role, and semantic/physical digests. Schema 3 adds the self-contained
-choice profile but remains plan-only until the C wire-v4 path is implemented. The executor rejects missing,
+choice profile and uses wire v4. The executor rejects missing,
 duplicate, unknown, mistyped, oversized, or unsupported fields before provider I/O; the input column remains
 a separate binding and is not hashed. `PgSemanticRuntime` is the only PG-private plan-to-provider conversion
 point. Exact EXPLAIN exposes the semantic spec, prompt/parser IDs, model, physical algorithm and role without

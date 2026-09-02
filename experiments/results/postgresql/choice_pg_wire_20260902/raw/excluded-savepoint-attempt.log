@@ -1,0 +1,41 @@
+2026-09-02 12:32:59.558 CST [11092] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 12:32:59.558 CST [11092] LOG:  listening on Unix socket "/tmp/WCkox20MhY/.s.PGSQL.26449"
+2026-09-02 12:32:59.562 CST [11098] LOG:  database system was shut down at 2026-09-02 12:32:59 CST
+2026-09-02 12:32:59.565 CST [11092] LOG:  database system is ready to accept connections
+2026-09-02 12:32:59.661 CST [11103] 003_choice_execution.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-02 12:32:59.663 CST [11103] 003_choice_execution.pl LOG:  statement: CREATE TABLE choice_rows(id integer, content text);
+2026-09-02 12:32:59.664 CST [11103] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_rows VALUES (1, U&'\6570\636E\5E93\+01F642'), (2, NULL);
+2026-09-02 12:32:59.780 CST [11106] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:32:59.780 CST [11106] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 12:32:59.804 CST [11108] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_rows VALUES (3, ''), (4, 'negative'), (5, 'uncertain'), (6, 'database'), (7, 'database');
+2026-09-02 12:32:59.908 CST [11111] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:32:59.908 CST [11111] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) ORDER BY id;
+2026-09-02 12:33:00.033 CST [11116] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:33:00.033 CST [11116] 003_choice_execution.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 12:33:00.162 CST [11119] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:33:00.162 CST [11119] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 1;
+2026-09-02 12:33:00.282 CST [11122] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:33:00.282 CST [11122] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE id=1 AND ai_semantic.filter(content, U&'\5224\65AD\662F\5426\662F\6570\636E\5E93\3002', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 12:33:00.404 CST [11125] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:33:00.404 CST [11125] 003_choice_execution.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 12:33:00.404 CST [11125] 003_choice_execution.pl LOG:  statement: PREPARE chosen(integer) AS SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=$1;
+2026-09-02 12:33:00.404 CST [11125] 003_choice_execution.pl LOG:  statement: EXECUTE chosen(1);
+2026-09-02 12:33:00.404 CST [11125] 003_choice_execution.pl DETAIL:  prepare: PREPARE chosen(integer) AS SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=$1;
+2026-09-02 12:33:00.406 CST [11125] 003_choice_execution.pl LOG:  statement: ALTER TABLE choice_rows ADD COLUMN extra integer;
+2026-09-02 12:33:00.406 CST [11125] 003_choice_execution.pl LOG:  statement: EXECUTE chosen(1);
+2026-09-02 12:33:00.406 CST [11125] 003_choice_execution.pl DETAIL:  prepare: PREPARE chosen(integer) AS SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=$1;
+2026-09-02 12:33:00.428 CST [11127] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_rows(id,content) VALUES(8,'invalid-label');
+2026-09-02 12:33:00.429 CST [11127] 003_choice_execution.pl LOG:  statement: CREATE TABLE choice_sink(id integer);
+2026-09-02 12:33:00.533 CST [11130] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/WCkox20MhY/choice.sock';
+2026-09-02 12:33:00.533 CST [11130] 003_choice_execution.pl LOG:  statement: BEGIN;
+2026-09-02 12:33:00.533 CST [11130] 003_choice_execution.pl LOG:  statement: SAVEPOINT before_bad_label;
+2026-09-02 12:33:00.533 CST [11130] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=8;
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=8;
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_bad_label;
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_sink SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl ERROR:  ai_semantic.filter marker was not lowered to a semantic plan
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl HINT:  Load semloom_pg before planning and use a supported SemFilter query shape.
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl STATEMENT:  INSERT INTO choice_sink SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl LOG:  statement: ROLLBACK;
+2026-09-02 12:33:00.536 CST [11130] 003_choice_execution.pl LOG:  statement: SELECT count(*) FROM choice_sink;

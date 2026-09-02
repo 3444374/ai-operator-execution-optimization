@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-09-02 PG choice 的中立 open spec、C wire v4 与执行验证
+
+- `d99cd168` 先在真实 PG18.3 得到执行拒绝红测试；`8e7cd92d` 接入 query/session-owned 完整 profile
+  与共用 exact C codec，仍保留保护并通过旧 TAP 537/537；`8674269d` 再移除 pump 的 plan-only 分支。
+  v3 入口拒绝带 profile 的请求，v4 严格校验字段/版本/profile/evidence，原 parser 与 lifecycle 复用。
+- 最终 `80bb7fc5` 已通过干净 PG18.3 `-O2 -Werror`、regression 1/1、TAP 748/748、Python 83/83 与
+  中立 C11；实际旧/新 HTTP 请求除 choice 字段外相同。未运行真实模型、held-out 或新 RSS/FD smoke。
+- 新测试暴露 Filter INSERT 未 lowering；旧 `7d72d9ad` 二进制和当前二进制三种 Filter profile 都
+  返回 `55000`。这是既有 carrier 缺口，单独登记；当前描述收窄为 SELECT，Map INSERT 原证据保留。
+  首次测试等待第二会话且 savepoint 断言漏掉额外错误，150 项输出作废保留；已加错误次数及时间上限。
+- 首轮完整 748 项通过后，PG 默认清理导致 HTTP 请求产物无法导出；保留该次输出，再用
+  `PG_TEST_NOCLEAN=1` 完整重跑并补齐证据。来源与取舍仍只写工程计划，未修改公司仓库或复制材料。
+- 结果、失败尝试及 SHA 清单见 [PG choice 验证](experiments/results/postgresql/choice_pg_wire_20260902/README.md)。
+  仅在独立分支实现与归档，主工作区用户文档未覆盖，未合并或推送；四 C 仍有后续验证。
+
 ## 2026-09-02 四 C 的 gateway v4 与显式 choice 映射
 
 - 独立研发分支 `7d72d9ad` 实现共享固定 exact codec/session、严格 v4 profile/identity/字段校验和
