@@ -51,6 +51,19 @@ gateway 的外部 fixed config 新增可选 `choice_format="vllm_structured_outp
 
 ## C.1 SQL 选择与版本分流
 
+### 本次 C 接线切片的实施记录
+
+2026-09-02 再次只读核对 `x_semantic` 的 `4601bf7` 工作副本中
+`src/llm/llm_protocol.{h,c}:llm_effective_request / llm_resolve_request`，相关文件仍有未提交修改。
+实际参数先消解、编码消费同一份值的观察不变。本次保留自有 plan ownership：runtime 将已验证的
+完整 profile 复制到 query-owned `AiOpenSpec`，UDS 再复制到 session；不移植公司 struct、GUC 继承
+或供应商方言。验证位置为 SQL/EXPLAIN、公开 provider port 与 PG→gateway wire，来源不进入代码注释。
+
+本次只接通 C 路径与 fixture 验证，不启动真实模型或使用 held-out。移除 pump 的 plan-only 临时分支，
+schema 3 回到既有 runtime/machine；无任务仍 lazy/no-connect。C v3/v4 共享固定 exact 编解码及现有
+framing/JSON primitive，不新增 registry 或异步接口。profile 在 open 中完整传输，task/completion 只核验
+其摘要；未知/不匹配配置失败，无隐式 v3 回退。功能测试通过后分别记录尚未完成的资源和真实 smoke。
+
 保持三参 `ai_semantic.filter(input, instruction, options)`。新 options 只比旧配置多一个字段：
 
 ```json
