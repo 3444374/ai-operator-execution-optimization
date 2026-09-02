@@ -7,18 +7,13 @@
 #include "ai_provider_port.h"
 #include "semantic_filter_contract.h"
 #include "wire_common.h"
+#include "wire_semantic.h"
 
 #define SEMLOOM_WIRE_V3_PROTOCOL_VERSION 3
 #define SEMLOOM_WIRE_V3_MAX_FRAME_BYTES SEMLOOM_WIRE_COMMON_MAX_FRAME_BYTES
 #define SEMLOOM_WIRE_V3_MAX_INPUT_BYTES 163840
 
-typedef struct SemloomWireV3Identity
-{
-	const char *provider_execution_id;
-	char semantic_spec_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
-	char physical_algorithm_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
-	char provider_execution_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
-} SemloomWireV3Identity;
+typedef SemloomWireSemanticIdentity SemloomWireV3Identity;
 
 extern void semloom_wire_v3_identity_init(const AiOpenSpec *spec,
 										  const char *provider_execution_id,

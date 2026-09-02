@@ -24,6 +24,9 @@
 #define SEMLOOM_UDS_GOLDEN_EXECUTION_ID "semloom.provider.golden.uds.v3"
 #define SEMLOOM_UDS_FIXED_EXECUTION_ID \
 	"semloom.provider.openai-compatible-fixed.uds.v3"
+#define SEMLOOM_UDS_CHOICE_GOLDEN_EXECUTION_ID "semloom.provider.golden.uds.v4"
+#define SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID \
+	"semloom.provider.openai-compatible-fixed.uds.v4"
 
 extern void semloom_provider_select(MemoryContext owner_context,
 									const AiOpenSpec *spec,

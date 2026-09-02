@@ -78,9 +78,7 @@ typedef struct AiByteSlice
 	uint32_t length;
 } AiByteSlice;
 
-/* Choice values are query-fixed borrowed bytes, not provider/vendor settings.
- * This additive value type is not yet a field of the synchronous AiOpenSpec.
- */
+/* Choice values are query-fixed borrowed bytes, not provider/vendor settings. */
 #define AI_GENERATION_PROFILE_MAX_CHOICES 3
 #define AI_GENERATION_CONSTRAINT_CHOICE 1
 
@@ -117,6 +115,8 @@ typedef struct AiOpenSpec
 	uint32_t n;
 	bool stream;
 	AiByteSlice stop;
+	bool has_generation_profile;
+	AiGenerationProfile generation_profile;
 } AiOpenSpec;
 
 typedef struct AiPreparedTask

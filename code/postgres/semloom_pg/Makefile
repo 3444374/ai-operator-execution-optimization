@@ -20,8 +20,10 @@ OBJS = \
 	src/sem_scan.o \
 	src/uds_provider.o \
 	src/wire_common.o \
+	src/wire_semantic.o \
 	src/wire_v2.o \
-	src/wire_v3.o
+	src/wire_v3.o \
+	src/wire_v4.o
 
 DATA = sql/semloom_pg--0.1.0.sql
 REGRESS = semloom_pg

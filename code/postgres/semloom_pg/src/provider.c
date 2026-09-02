@@ -9,6 +9,7 @@
 
 #include "utils/memutils.h"
 
+#include "generation_profile.h"
 #include "provider_private.h"
 #include "semantic_filter_contract.h"
 #include "sem_plan_spec.h"
@@ -55,6 +56,7 @@ semloom_provider_spec_is_recording(const AiOpenSpec *spec)
 						 SEMLOOM_FILTER_RECORDING_SPEC_ID);
 
 	return spec->plan_schema_version == SEMLOOM_PLAN_SPEC_SCHEMA_VERSION &&
+		!spec->has_generation_profile &&
 		(map_spec || filter_spec) &&
 		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
 		spec->null_policy == AI_PROVIDER_NULL_PROPAGATE &&
@@ -66,9 +68,19 @@ semloom_provider_spec_is_recording(const AiOpenSpec *spec)
 bool
 semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec)
 {
+	uint8 bytes[SEMLOOM_GENERATION_PROFILE_CANONICAL_BYTES];
+	uint32 length;
+	bool version_matches;
+
 	if (spec == NULL)
 		return false;
-	return spec->plan_schema_version == SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION &&
+	version_matches = spec->plan_schema_version == SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION &&
+		!spec->has_generation_profile;
+	if (spec->plan_schema_version == SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION)
+		version_matches = spec->has_generation_profile &&
+			semloom_generation_profile_encode(&spec->generation_profile,
+				bytes, sizeof(bytes), &length);
+	return version_matches &&
 		spec->operator_kind == AI_PROVIDER_OPERATOR_FILTER &&
 		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
 		spec->output_value_kind == AI_PROVIDER_VALUE_TRISTATE &&

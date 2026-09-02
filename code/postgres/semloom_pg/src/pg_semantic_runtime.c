@@ -103,6 +103,17 @@ pg_semantic_runtime_begin(MemoryContext owner_context,
 		owner_context, open_spec.physical_algorithm_digest);
 	runtime->open_spec.stop = pg_semantic_runtime_copy_slice(
 		owner_context, open_spec.stop);
+	if (open_spec.has_generation_profile)
+	{
+		uint32 index;
+		AiGenerationProfile *profile = &runtime->open_spec.generation_profile;
+
+		profile->profile_id = pg_semantic_runtime_copy_slice(owner_context,
+			open_spec.generation_profile.profile_id);
+		for (index = 0; index < profile->choice_count; index++)
+			profile->choices[index] = pg_semantic_runtime_copy_slice(owner_context,
+				open_spec.generation_profile.choices[index]);
+	}
 	runtime->state = PG_SEMANTIC_RUNTIME_SELECTED_NOT_OPEN;
 	runtime->cleanup_callback.func = pg_semantic_runtime_cleanup;
 	runtime->cleanup_callback.arg = runtime;
@@ -394,6 +405,9 @@ pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
 	open_spec->max_tokens = plan_spec->max_tokens;
 	open_spec->n = plan_spec->n;
 	open_spec->stream = plan_spec->stream;
+	open_spec->has_generation_profile = plan_spec->generation_profile_digest != NULL;
+	if (open_spec->has_generation_profile)
+		open_spec->generation_profile = plan_spec->generation_profile;
 	if (plan_spec->stop != NULL)
 	{
 		open_spec->stop.data = (const uint8 *) plan_spec->stop;
@@ -612,7 +626,8 @@ pg_semantic_runtime_payload_digest(
 	AiByteSlice canonical_messages,
 	char output[AI_PROVIDER_SHA256_HEX_LENGTH + 1])
 {
-	static const char domain[] = "semloom-payload-v3\0";
+	const char *domain = open_spec->has_generation_profile ?
+		"semloom-payload-v4" : "semloom-payload-v3";
 	static const char hex[] = "0123456789abcdef";
 	pg_cryptohash_ctx *context;
 	uint8 digest[PG_SHA256_DIGEST_LENGTH];
@@ -627,7 +642,7 @@ pg_semantic_runtime_payload_digest(
 			pg_cryptohash_free(context);
 		elog(ERROR, "could not initialize SemLoom payload digest");
 	}
-	pg_semantic_runtime_hash_bytes(context, domain, sizeof(domain) - 1);
+	pg_semantic_runtime_hash_bytes(context, domain, strlen(domain) + 1);
 	pg_semantic_runtime_hash_bytes(context,
 								   open_spec->semantic_spec_digest.data,
 								   open_spec->semantic_spec_digest.length);

@@ -21,6 +21,7 @@
 #include "wire_common.h"
 #include "wire_v2.h"
 #include "wire_v3.h"
+#include "wire_v4.h"
 
 typedef struct SemloomUdsProviderConfig
 {
@@ -107,12 +108,14 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_GOLDEN)
 	{
 		provider->ops = &semloom_uds_golden_ops;
-		config->semantic_execution_id = SEMLOOM_UDS_GOLDEN_EXECUTION_ID;
+		config->semantic_execution_id = spec->has_generation_profile ?
+			SEMLOOM_UDS_CHOICE_GOLDEN_EXECUTION_ID : SEMLOOM_UDS_GOLDEN_EXECUTION_ID;
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED)
 	{
 		provider->ops = &semloom_uds_fixed_ops;
-		config->semantic_execution_id = SEMLOOM_UDS_FIXED_EXECUTION_ID;
+		config->semantic_execution_id = spec->has_generation_profile ?
+			SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID : SEMLOOM_UDS_FIXED_EXECUTION_ID;
 	}
 	else
 		elog(ERROR, "unrecognized SemLoom provider execution profile: %d", profile);
@@ -165,13 +168,25 @@ semloom_uds_open(const void *config_value,
 	session->open_spec.physical_algorithm_digest =
 		semloom_uds_copy_slice(spec->physical_algorithm_digest);
 	session->open_spec.stop = semloom_uds_copy_slice(spec->stop);
+	if (spec->has_generation_profile)
+	{
+		uint32 index;
+		AiGenerationProfile *profile = &session->open_spec.generation_profile;
+
+		profile->profile_id = semloom_uds_copy_slice(spec->generation_profile.profile_id);
+		for (index = 0; index < profile->choice_count; index++)
+			profile->choices[index] = semloom_uds_copy_slice(spec->generation_profile.choices[index]);
+	}
 	session->scratch_context = AllocSetContextCreate(CurrentMemoryContext,
 												 "SemLoom UDS drive scratch",
 												 ALLOCSET_DEFAULT_SIZES);
 	session->completion_context = AllocSetContextCreate(CurrentMemoryContext,
 													  "SemLoom UDS completion",
 													  ALLOCSET_DEFAULT_SIZES);
-	if (session->exact_filter)
+	if (spec->has_generation_profile)
+		semloom_wire_v4_identity_init(&session->open_spec,
+			config->semantic_execution_id, &session->semantic_identity);
+	else if (session->exact_filter)
 		semloom_wire_v3_identity_init(&session->open_spec,
 										  config->semantic_execution_id,
 										  &session->semantic_identity);
@@ -332,6 +347,9 @@ semloom_uds_drive_internal(AiProviderSession *session,
 		if (status != AI_PROVIDER_STATUS_OK)
 			return status;
 	}
+	if (session->open_spec.has_generation_profile)
+		return semloom_wire_v4_drive(session->socket_fd, &session->open_spec,
+			task, &session->semantic_identity, completion, error);
 	if (session->exact_filter)
 		return semloom_wire_v3_drive(session->socket_fd,
 									 &session->open_spec,
@@ -444,6 +462,9 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
+	if (session->open_spec.has_generation_profile)
+		return semloom_wire_v4_open(session->socket_fd, &session->open_spec,
+			&session->semantic_identity, error);
 	if (session->exact_filter)
 		return semloom_wire_v3_open(session->socket_fd,
 								   &session->open_spec,

@@ -7,11 +7,16 @@
 #include "miscadmin.h"
 #include "storage/latch.h"
 #include "utils/fmgrprotos.h"
+#include "utils/builtins.h"
+#include "utils/json.h"
 #include "utils/memutils.h"
 #include "utils/wait_classes.h"
 
 #include "provider_private.h"
 #include "wire_common.h"
+
+static AiProviderStatus semloom_wire_common_parse_json_internal(
+	const char *payload, Jsonb **message, bool unique_keys, AiProviderError *error);
 
 static AiProviderStatus semloom_wire_common_socket_write_all(
 	pgsocket socket_fd,
@@ -161,14 +166,31 @@ semloom_wire_common_parse_json(const char *payload,
 							   Jsonb **message,
 							   AiProviderError *error)
 {
+	return semloom_wire_common_parse_json_internal(payload, message, false, error);
+}
+
+AiProviderStatus
+semloom_wire_common_parse_json_unique(const char *payload, Jsonb **message,
+	AiProviderError *error)
+{
+	return semloom_wire_common_parse_json_internal(payload, message, true, error);
+}
+
+static AiProviderStatus
+semloom_wire_common_parse_json_internal(const char *payload, Jsonb **message,
+	bool unique_keys, AiProviderError *error)
+{
 	MemoryContext parse_context = CurrentMemoryContext;
 	bool expected_input_error = false;
 
 	*message = NULL;
 	PG_TRY();
 	{
-		*message = DatumGetJsonbP(DirectFunctionCall1(jsonb_in,
-												 CStringGetDatum(payload)));
+		if (unique_keys && !json_validate(cstring_to_text(payload), true, false))
+			expected_input_error = true;
+		else
+			*message = DatumGetJsonbP(DirectFunctionCall1(jsonb_in,
+													 CStringGetDatum(payload)));
 	}
 	PG_CATCH();
 	{

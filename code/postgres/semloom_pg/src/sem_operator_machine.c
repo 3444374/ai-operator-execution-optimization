@@ -9,6 +9,7 @@
 #define SEMLOOM_MACHINE_OPERATOR_FILTER 2
 #define SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION 1
 #define SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION 2
+#define SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION 3
 
 typedef struct SemloomTaskWriter
 {
@@ -60,7 +61,8 @@ semloom_operator_machine_init(SemloomOperatorMachine *machine,
 			"SemFilter provider completion must be true, false, or unknown";
 	}
 	else if (operator_kind == SEMLOOM_MACHINE_OPERATOR_FILTER &&
-			 plan_schema_version == SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION)
+			 (plan_schema_version == SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION ||
+			  plan_schema_version == SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION))
 	{
 		if (instruction == NULL || instruction_length == 0)
 			return false;
@@ -155,7 +157,8 @@ semloom_operator_machine_build_task(const SemloomOperatorMachine *machine,
 		*written_length = 0;
 		return true;
 	}
-	if (machine->plan_schema_version != SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION ||
+	if ((machine->plan_schema_version != SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION &&
+		 machine->plan_schema_version != SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION) ||
 		machine->instruction == NULL || machine->instruction_length == 0)
 		return false;
 

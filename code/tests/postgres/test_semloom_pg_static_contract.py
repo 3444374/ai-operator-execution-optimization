@@ -459,7 +459,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         error_catches = (
             (
                 _c_function_body(
-                    wire_common_source, "semloom_wire_common_parse_json"
+                    wire_common_source, "semloom_wire_common_parse_json_internal"
                 ),
                 "MemoryContextSwitchTo(parse_context);",
             ),
@@ -492,6 +492,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "wire_common.c",
             "wire_v2.c",
             "wire_v3.c",
+            "wire_v4.c",
+            "wire_semantic.c",
         }
         transport_identifiers = (
             "pgsocket",
@@ -515,7 +517,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         wire_v3_header = (EXTENSION_ROOT / "src" / "wire_v3.h").read_text(
             encoding="utf-8"
         )
-        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_v3.c").read_text(
+        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_semantic.c").read_text(
             encoding="utf-8"
         )
         python_v2 = (
@@ -551,13 +553,13 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertNotIn(forbidden, golden_adapter.lower())
 
     def test_wire_v3_owns_and_strictly_validates_error_frames(self) -> None:
-        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_v3.c").read_text(
+        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_semantic.c").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("SEMLOOM_V3_ERROR_FIELD_COUNT 4", wire_v3_source)
-        self.assertIn("semloom_v3_validate_response", wire_v3_source)
-        self.assertIn("semloom_v3_validate_error", wire_v3_source)
+        self.assertIn("SEMLOOM_SEMANTIC_ERROR_FIELD_COUNT 4", wire_v3_source)
+        self.assertIn("semloom_semantic_validate_response", wire_v3_source)
+        self.assertIn("semloom_semantic_validate_error", wire_v3_source)
         self.assertNotIn("semloom_wire_common_validate_response_type", wire_v3_source)
         for allowed_code in (
             "GATEWAY_INTERNAL",

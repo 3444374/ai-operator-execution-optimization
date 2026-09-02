@@ -27,6 +27,10 @@ extern AiProviderStatus semloom_wire_common_parse_json(
 	const char *payload,
 	Jsonb **message,
 	AiProviderError *error);
+extern AiProviderStatus semloom_wire_common_parse_json_unique(
+	const char *payload,
+	Jsonb **message,
+	AiProviderError *error);
 extern bool semloom_wire_common_json_value(Jsonb *message,
 										   const char *key,
 										   JsonbValue **value,
