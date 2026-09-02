@@ -6,6 +6,12 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## PostgreSQL choice profile 值与编码（2026-09-02）
+
+[首个实现切片](postgresql/choice_profile_contract_20260902/README.md)：新增严格 profile 值与 C/Python
+规范字节编码，本地/服务器合同 68/68 通过，另有 C11 和 PG18.3 `-Werror` 编译记录。
+SQL opt-in、schema 3、wire v4 尚未接入；未安装扩展或调用模型，不能据此声称分类质量或端到端支持。
+
 ## PostgreSQL exact SemFilter reference calibration（2026-09-01）
 
 [单一分类 prompt 对照](postgresql/semfilter_prompt_qualification_20260901/README.md)：实际消息与

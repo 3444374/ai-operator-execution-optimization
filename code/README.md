@@ -5,6 +5,11 @@ Module targets, implementation order, and acceptance criteria belong to
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
 the code tree and must not become a competing engineering plan.
 
+The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
+encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile
+and share canonical bytes/identity tests. SQL opt-in, schema 3, wire v4 and provider mapping remain pending;
+the existing synchronous `AiOpenSpec` and running paths are unchanged.
+
 Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a

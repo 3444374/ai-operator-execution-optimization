@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-09-01
+更新日期：2026-09-02
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
@@ -27,6 +27,11 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
 
 ## 1. 证据等级
+
+2026-09-02 的[choice profile 值合同切片](postgresql/choice_profile_contract_20260902/README.md)绑定
+`d26e210d`：本地/服务器 Python 68/68、standalone C11 与 PG18.3 warning-free `-O2 -Werror`
+仅构建通过。它只证明新值类型、严格校验和 canonical bytes 一致；SQL opt-in/schema 3/wire v4
+未接入，AiOpenSpec 未扩展。没有新 PG regression/TAP、真实模型或性能/质量证据。
 
 | 等级 | 含义 | 可以声称 | 不可以声称 |
 |---|---|---|---|
@@ -98,6 +103,7 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `postgresql/choice_profile_contract_20260902/` | 四 C 的第一个值合同实现 | C/Python 114-byte encoding 和拒绝测试通过；68/68 本地/服务器合同与 PG18.3 仅构建，未安装/启动 PG、未调用模型。SQL/plan/wire 接入 pending。 |
 | `postgresql/semfilter_prompt_qualification_20260901/` | 实际 messages/template 核对、唯一 prompt 与条件性 7B 对照 | 两个完整尝试的消息与 token IDs 一致，全部格式合法，但旧/新样例未全对；321 次 completion 包含 83 次中止记录。无生产变更，校准仍暂停。 |
 | `postgresql/semfilter_qualification_20260901/` | 三项独立前置验证 | 秩检查修复、PG18.3 普通多列统计通过；choice 仅通过格式，语义预期仍不符，reference 资格未通过。 |
 | `postgresql/semfilter_reference_calibration_20260901/` | exact SemFilter 首轮真实 reference calibration，失败采集 | 64 条预热完成；首个 training 查询第 23 个响应违反严格 tristate，PG18.3 报 `22000`。held-out、拟合、artifact 均未运行；保留失败，不改变阈值或静默排除样本。 |

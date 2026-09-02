@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-09-02 四 C 首个值合同实现与隔离编译验证
+
+- 从 `3636e6f8` 建独立 `codex/choice-profile-contract` worktree，按当前四 C 计划与 TDD 先固定
+  profile ID/version/kind/有序 choices 的 canonical vector，再新增不可变 Python 值及严格 record
+  校验；`AiGenerationProfile` 与 standalone C 编码器使用固定宽度类型、借用 bytes 和 caller buffer。
+  本轮没有把新值放入 AiOpenSpec，没有修改 SQL/plan/wire/runtime，也没有复制 SHA-256 实现。
+- `d26e210d` 的 8 项新增合同覆盖规范 bytes、独立摘要、错误类型/顺序/内容、伪造摘要、无 NUL
+  终止符借用、短输出 buffer 与失败不发布部分数据。本地/服务器分别通过 68/68 总合同；服务器
+  补充 C11 `-O2 -Werror -pedantic` 与精确 PG18.3 warning-free 仅构建，未安装或运行数据库。
+- 使用 Git bundle 同步到服务器隔离 worktree，不推送分支、不覆盖服务器 main；日志、源码 SHA、
+  bundle 和编译产物留在仓库外，公开脱敏子集登记在
+  `experiments/results/postgresql/choice_profile_contract_20260902/`。没有真实模型请求或 held-out 访问。
+- 这只完成值与编码基础，不把 SQL opt-in、schema 3、wire v4、PG lifecycle 或四 C 整体验收写成已完成。
+  下一步是 PG plan 与新旧版本分流。保留本地 worktree 供审核，不自动合并或推送。
+
 ## 2026-09-02 按证据修订研发依赖，分离主架构与 choice 详细计划
 
 - 将外部评审作为参考而非逐项照搬。源码确认三处文档偏差：model/generation 属于 query-fixed

@@ -1,0 +1,114 @@
+{
+  "source_commit": "d26e210db2391fc4d69032e317488bbef2008028",
+  "tests": {
+    "postgres": 53,
+    "gateway": 5,
+    "calibration": 10
+  },
+  "steps": [
+    {
+      "name": "pg-version",
+      "argv": [
+        "<pg18.3-prefix>/bin/pg_config",
+        "--version"
+      ],
+      "exit_code": 0,
+      "raw_log_sha256": "9d89f06f6e13339435be7be729c1e33397dcc1f1e71d8f67121e2ed242e21887"
+    },
+    {
+      "name": "tests-postgres",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/postgres",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "raw_log_sha256": "23a933d11bb0a6074e4591d7f739f6ca8bfc84c43f1b43433f3e6454bc6fb3d7"
+    },
+    {
+      "name": "tests-gateway",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/execution_provider",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "raw_log_sha256": "0caa35057de6a6f2f58f9756ccf8f150564209bfa9110bf1f78186bf7f42ef0d"
+    },
+    {
+      "name": "tests-calibration",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/planning",
+        "-p",
+        "test_semfilter_reference_calibration.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "raw_log_sha256": "da5b3ca7696a10944dc1ee90eebc36e6d0808b43fa7715de9d9cda00219fd4db"
+    },
+    {
+      "name": "c11-werror",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/generation_profile.c",
+        "-o",
+        "<artifact-root>/generation_profile.o"
+      ],
+      "exit_code": 0,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "pg18.3-build",
+      "argv": [
+        "make",
+        "-j4",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "COPT=-O2 -Werror"
+      ],
+      "exit_code": 0,
+      "raw_log_sha256": "4adcb45d50d944c88c91861014e76018974b49f267021375f36bd473dd249570"
+    }
+  ],
+  "source_sha256": {
+    "code/postgres/semloom_pg/src/ai_provider_port.h": "ddefd87dedc571826ed593c7a07a90a635a4b08ce20f17291cab74578077816f",
+    "code/postgres/semloom_pg/src/generation_profile.h": "41cd2c230a0f087cc6f8b7ebb335462c9927a431821a9000e86d5751c9ad3d91",
+    "code/postgres/semloom_pg/src/generation_profile.c": "c1b284f89b955b8c687a6e8c4812fb9c2a99a765c81f59914bb4a7233d162080",
+    "code/src/execution_provider/generation_profile.py": "89444215dc41f8e3f835e03af06501d4cdc84d69f6c0a5a9834e77f0b52b1ea1",
+    "code/tests/postgres/test_semloom_generation_profile.py": "040b464e610cde7bed45045bddf5673bf8bb6087a368b3c89265e548b208b15b"
+  },
+  "standalone_c11_werror": true,
+  "pg_build_version": "PostgreSQL 18.3",
+  "pg_build_warning_free": true,
+  "pg_build_only": true,
+  "postgres_regression_tap_run": false,
+  "installed_extension_modified": false,
+  "profile_linked_into_extension": false,
+  "model_requests_attempted": 0,
+  "calibration_held_out_used": false,
+  "preflight_status": "ok",
+  "extension_build_sha256": "9b59b0e14f4beec47b9bc0597ad272a1c5307e1a3a933a3b884b46e3235b5e0a"
+}

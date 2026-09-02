@@ -8,7 +8,7 @@
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录；理论与文献依据看
 [架构研究](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)。
 
-本次仅修订设计：四 C、真实生成型 SemMap、增量 SchedulingSession 与公司 adapter 均不因文档存在而视为完成。
+四 C、真实生成型 SemMap、增量 SchedulingSession 与公司 adapter 均不因文档存在而视为完成。
 四 C 的字段、预算和逐项测试只由[专项计划](postgresql_choice_profile_engineering.md)维护。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
@@ -30,7 +30,7 @@ plan identity、placement 或 executor lifecycle 出现可复现阻断后，才�
 ## 2. 并行研发与接入依赖
 
 以下是可以分别推进的工程工作，不是新增三个研究内容，也不要求立即同时启动三个代码任务。
-当前用户授权仅覆盖文档调整；代码、模型运行、正式实验与公司环境操作按具体任务另行授权。
+代码、模型运行、正式实验与公司环境操作按具体任务分别授权，独立研发允许不自动授权外部实验。
 
 | 工作 | 近期次序 | 不再等待什么 | 仍需满足什么 |
 |---|---|---|---|

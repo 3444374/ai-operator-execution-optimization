@@ -1,19 +1,20 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`planned / implementation-pending`
+状态：`in-progress / profile-value-contract-implemented / PG-wire-integration-pending`
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
 跨工作包依赖、模块分工和公司接入由[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md)维护；
 源码是否已实现看[INFRA_STATUS](../../code/INFRA_STATUS.md)，运行结果看
-[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。本次分离文档不增加实现或运行证据。
+[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。文档拆分本身不构成实现或运行证据。
 
 本工作包只增加 Filter 的受约束生成能力。真实生成型 SemMap 由主计划四 D 单独定义，不能照搬
 Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立核心研发不以本工作包的模型质量
 通过为前提；真实数据库接入与语义优化仍分别满足主计划的验收条件。
 
 本节是本轮工程设计与验收的唯一详细入口。来源是现有源码接口、此前 choice 格式诊断及本次设计
-审查；它是工程决策，不是新的算法或质量实验结论。当前授权仅为文档更新，代码实现与验证尚未执行。
+审查；它是工程决策，不是新的算法或质量实验结论。首个代码切片已实现不可变 profile 值、严格
+校验与独立 C/Python canonical bytes；尚未接入 SQL、PG plan 或 wire v4。后续工程和运行按具体切片验证。
 
 **目标与非目标。** 证明数据库能显式选择、保存、传输并验证受约束生成配置，保持现有生命周期和
 旧行为；不证明 reference 语义质量、性能收益或成本精度。新配置是 opt-in、unqualified 的工程能力，
@@ -63,6 +64,17 @@ PG 在 planning 时展开一个小型、不可变、自包含的 profile，而�
 使用独立 digest domain、现有固定宽度整数及长度前缀 UTF-8 编码规范；具体 canonical bytes 和跨语言
 golden vectors 在实现前的合同测试中固定，不预填未经计算的哈希。完整 profile 内容纳入新 semantic
 plan digest；只改 profile ID 或只依靠 schema version 变化不足以绑定实际约束。
+
+首个值合同切片固定的编码如下：domain 为 ASCII `semloom-generation-profile-v1` 加一个 NUL；
+之后依次是长度前缀 UTF-8 profile ID、uint32 version、长度前缀 `CHOICE`、uint32 choice count、
+三个长度前缀 choice bytes。所有整数及字节长度均为 uint32 big-endian，字符串不带终止符。
+本 profile 共 114 bytes；在写实现前用独立 OpenSSL 对已展开的字节向量计算 SHA-256，结果为
+`941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7`。
+完整字节常量和拒绝测试见
+[`test_semloom_generation_profile.py`](../../code/tests/postgres/test_semloom_generation_profile.py)。
+C 只输出供现有 PG SHA-256 消费的规范 bytes，不另写密码算法；当前测试独立验证这些 bytes 的摘要。
+Python record 恰有 `profile_id/profile_version/constraint_kind/choices/profile_digest` 五字段；这是
+已解码值的合同，不宣称已实现 JSON 重复字段检查或 wire v4 open/task/completion。
 
 prompt program、parser、operator 逻辑含义及 `MODEL_REFERENCE_SYNC_V1` family 不因新增表示而改名；
 其内容未变的身份继续保留，完整 semantic plan digest 必须不同。`Physical Role=reference` 表示逐个
@@ -139,7 +151,8 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 
 | 步骤 | 完成条件 |
 |---|---|
-| 计划与设计（本次） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；状态仍为 pending |
+| 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；工作包整体未完成 |
+| 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。只新增值类型，AiOpenSpec 未扩展，C helper 尚未链接到 PG extension；不能代替下列 SQL/plan/wire 表征与接入 |
 | 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
 | PG plan 接入 | 新 options、schema 3、copyObject-safe profile、摘要、prepared/generic-plan 保存及中立 port 映射通过；旧常量、字段和值行为不变 |
 | wire/gateway 接入 | v4 严格校验、两侧 golden parity、已知 profile 映射与不降级证明通过；复用公共传输/生命周期，不复制执行栈 |
@@ -148,7 +161,8 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |
 
 新 profile 的工程完成标准不包含“九例全部分类正确”、召回/精确率达标、性能改善或 reference 晋升。
-代码任务另行启动；本次文档修改不产生上述构建、协议或模型验证通过的证据。
+代码逐项实现；当前值合同的[验证记录](../results/postgresql/choice_profile_contract_20260902/README.md)
+不代替上述 SQL/plan/wire、PG lifecycle 或真实模型接入证据。
 
 ## C.7 暂存的质量决策（不阻塞本工程切片）
 

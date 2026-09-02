@@ -11,6 +11,10 @@ Next PG engineering work is the [opt-in choice generation profile](../../../expe
 Its fourth SQL option, plan schema 3 and wire v4 are designed but not implemented; the interfaces below remain
 the current executable behavior. The new profile will be non-default and not quality-qualified. Engineering
 support will not resume calibration or allow old calibration artifacts to match the new semantic identity.
+The first implementation slice adds only a neutral `AiGenerationProfile` value and a bounded, standalone C
+encoder in `src/generation_profile.{h,c}`. Its canonical bytes match the Python value contract and a fixed
+independently hashed vector. The helper is not yet linked into PGXS; `AiOpenSpec` and the SQL/wire paths are
+unchanged. These unit tests are not PostgreSQL choice-path or model-support qualification.
 Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
