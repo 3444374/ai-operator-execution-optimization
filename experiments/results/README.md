@@ -8,9 +8,9 @@
 
 ## PostgreSQL 函数对象身份（2026-09-02）
 
-[身份加固与准备计划验证](postgresql/function_identity_20260902/README.md)：独立分支 `934f4f61`
+[身份加固与准备计划验证](postgresql/function_identity_20260902/README.md)：测试源码 `934f4f61`
 修复同签名非成员误接管，生产仅修改函数查找。最终 PG18.3 `-Werror`、regression 1/1、TAP 1022/1022
-通过，新增身份 103 项包含两个物理连接的仅成员 ADD/DROP 手动刷新。尚未合入 main；仅成员变更的
+通过，新增身份 103 项包含两个物理连接的仅成员 ADD/DROP 手动刷新。实现与证据已合入 main；仅成员变更的
 跨会话自动失效仍 pending，须按记录刷新所有相关连接。不涉及新模型、Map 生成或多会话执行。
 
 ## PostgreSQL choice profile（2026-09-02）

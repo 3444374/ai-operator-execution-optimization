@@ -34,7 +34,7 @@ choice 各切片原在独立分支完成，当前集成版本已包含源码和�
 
 ## 1. 证据等级
 
-2026-09-02 的[函数身份加固](postgresql/function_identity_20260902/README.md)位于独立分支，未合入 main。
+2026-09-02 的[函数身份加固](postgresql/function_identity_20260902/README.md)及其证据已合入 main。
 `792a0408` 在已复现非成员误接管后最小修改 `extension.c`；最终测试提交 `934f4f61` 通过 PG18.3
 `-O2 -Werror`、regression 1/1、TAP 1022/1022、本地/服务器各 Python 94/94 与中立 C11。
 103 项身份测试覆盖函数替换/删除重建自动失效，以及仅成员 ADD/DROP 后读会话 `DISCARD PLANS` 的

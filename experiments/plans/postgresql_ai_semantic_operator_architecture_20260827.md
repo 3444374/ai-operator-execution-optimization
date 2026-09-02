@@ -329,7 +329,7 @@ planner-visible 算子和外部执行请求当成同一件事。
 |---|---|---|
 | `Makefile`、`sql/x_semantic--0.1.0.sql` | 同时注册实际执行的标量/集合函数和不能直接执行的 marker；部分函数标为 parallel safe。自有 Map/Filter 是 fail-closed marker，当前禁并行 | 保留自有语义路径的 planner 接管；辅助计算按目的选普通函数。核对 `VOLATILE/STRICT/PARALLEL/SECURITY/LEAKPROOF/COST` 的实际含义，不为解锁计划改属性。测 NULL/default、未加载 hook、权限与普通 SQL；只有独立验证后才开放并行 |
 | `src/operators/sem_distance_planner.c:lower_sem_distance_marker`、`sem_distance_scan.c` | 距离 marker 改写为 pgvector 距离表达式，查询 embedding 经子查询求值，并包装已有路径；并非所有计算重写成专用执行循环 | 在后续向量/候选检索路径复用已有表达式、索引和 child plan；当前不增加新算子。若采用，测实际 path、类型/维度、空输入和 plain EXPLAIN 零模型调用；向量距离不能自动替代自然语言 Filter 真值 |
-| `src/operators/sem_distance_planner.c:lookup_extension_function` | 除 schema/参数 OID 外还核验扩展成员关系；自有 main `c494e1b2` 只查固定 schema/签名，独立身份切片已复现误接管并补校验 | 采用成员身份原则，不复制源码；验证扩展缺失、非成员/重载、删除重建与函数替换失效。仅成员 DDL 要按下方要求刷新所有相关连接，自动刷新仍 pending；不扩可迁移 schema 或改语法。状态见下方切片及 INFRA_STATUS |
+| `src/operators/sem_distance_planner.c:lookup_extension_function` | 除 schema/参数 OID 外还核验扩展成员关系；自有复核基线 `c494e1b2` 只查固定 schema/签名，身份切片已复现误接管、补校验并合入 main | 采用成员身份原则，不复制源码；验证扩展缺失、非成员/重载、删除重建与函数替换失效。仅成员 DDL 要按下方要求刷新所有相关连接，自动刷新仍 pending；不扩可迁移 schema 或改语法。状态见下方切片及 INFRA_STATUS |
 | `src/operators/sem_map_op.c`、`sem_generate_op.c` 与 `src/hooks/x_semantic_hooks.c` | 普通函数可按 SQL 规则组合，但专用 Map/Generate 同层仍只允许一次，并有 shape 限制；自有也有单 marker 和 Map/Filter 互斥检查 | 从 `sem_path_common.*`、`sem_path.c`、`sem_filter_path.c` 提炼真正共用的调用识别、查询层级和绑定；各算子保留独立 placement。工作包六用实际组合验证，不仅删除 guard，也不声称公司已实现任意 SQL 组合 |
 | `src/operators/sem_map_op.c:sem_map_exec` | 已有真实文本生成、输入/输出列映射和结果存储；先收集全部 child 行，再取 GUC 配置调用模型。自有 Map 仍为 recording，已有增量 pump | 四 D 复用 Map lowering、plan spec、pump/runtime，增加真实生成合同。保留计划内语义和增量取数；测行数保持、列顺序/别名、重复输入、多字节/大输出、LIMIT、INSERT 与取消。不把全量 collect 当成所有算子的公共行为 |
 | `src/operators/sem_map_op.c:sem_map_rescan`、`sem_topk_op.c` | Map rescan 清空结果状态并重扫 child；自有当前明确拒绝 rescan/EPQ | 需要新 SQL 形状时先定义同参重扫复用还是重新求值、参数变化怎样重建、模型调用如何计数；再决定 tuple store 或新状态。测参数变化、重复扫、早停、错误和取消，不把 callback 存在当作语义正确；有全局状态的算子另定内存/落盘上限 |
@@ -577,7 +577,7 @@ calls、usage、AI-work estimate 与真实成本分开；工程启发式不能�
 
 <a id="function-identity-slice"></a>
 
-**函数对象身份小切片（2026-09-02，独立分支；成员 DDL 临时操作要求已确认）。** 基于 `c494e1b2`，
+**函数对象身份小切片（2026-09-02，已完成并合入 main；成员 DDL 临时操作要求已确认）。** 基于 `c494e1b2`，
 SQL/EXPLAIN 已复现同名非成员误接管；已检查扩展缺失、其他 schema/重载、删除重建和函数定义替换的
 prepared/generic plan 失效。结果见[身份验证记录](../results/postgresql/function_identity_20260902/README.md)。
 本次只读复核的公司对象为 `src/operators/sem_distance_planner.c:lookup_extension_function`，工作副本基于

@@ -51,10 +51,10 @@ The current thin scan, PG-private runtime and neutral provider interface remain 
 
 ### Function identity and administrative membership changes
 
-The `codex/pg-function-identity` slice requires each resolved marker to belong to `semloom_pg`;
+The integrated function-identity slice requires each resolved marker to belong to `semloom_pg`;
 matching the schema, name and argument types alone is insufficient. Other-schema functions, overloads,
-non-members and members of another extension remain ordinary PostgreSQL functions. The slice is not yet
-merged into main. See the [identity verification](../../../experiments/results/postgresql/function_identity_20260902/README.md).
+non-members and members of another extension remain ordinary PostgreSQL functions. Its implementation and
+evidence are included in main. See the [identity verification](../../../experiments/results/postgresql/function_identity_20260902/README.md).
 
 Only for `ALTER EXTENSION … ADD/DROP FUNCTION` that leaves the function definition unchanged, use this
 temporary procedure: pause related queries and finish old transactions and cursors; commit the membership

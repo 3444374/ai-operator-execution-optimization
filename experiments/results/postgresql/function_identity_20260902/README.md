@@ -2,7 +2,8 @@
 
 内部工程验证；对应[主计划工作包六](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#carrier-audit-work-package)。
 这是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化的 carrier 正确性检查，不是模型、
-调度或性能实验。独立分支 `codex/pg-function-identity`，起点 `c494e1b2`；尚未合并 main。
+调度或性能实验。原独立分支 `codex/pg-function-identity`，起点 `c494e1b2`；实现与证据已随
+`390f666a` 合入 main，服务器验收仍绑定下方测试源码，不重新归属于文档提交。
 
 ## 结果与范围
 
@@ -48,12 +49,19 @@ ADD、DROP 的刷新前行为，并验证读会话 `DISCARD PLANS` 后计划正�
 | 检查 | 本次结果 | 原始记录 |
 |---|---|---|
 | 独立 PG18.3 `-O2 -Werror` 构建、安装 | 通过，无 warning | [build.log](raw/refresh/server/build.log)、[qualification.json](raw/refresh/server/qualification.json) |
-| PGXS regression | 1/1；actual/expected 字节一致 | [regression.log](raw/refresh/server/regression.log)、[actual](raw/refresh/server/regression-actual.out) |
+| PGXS regression | 1/1；服务器原始 actual/expected 字节一致，公开副本另做空白规范化 | [regression.log](raw/refresh/server/regression.log)、[公开 actual](raw/refresh/server/regression-actual.out) |
 | 完整 TAP | 5 文件，1022/1022，含新增身份 103 项 | [tap.log](raw/refresh/server/tap.log)、[身份 SQL 日志](raw/refresh/server/tap-005_function_identity_function_identity.log) |
 | 本地与服务器 Python | 各 94/94：PG/protocol 68、gateway 5、calibration 10、choice 工具 11 | [本地](raw/refresh/local/)、[服务器](raw/refresh/server/tests-postgres.log)、[分类数量](raw/refresh/server/qualification.json) |
 | 中立 C11 | profile、operator/filter/map machine、provider header 均通过 | [构建步骤与退出码](raw/refresh/server/qualification.json) |
 | 初始额外缓存诊断 | 3 个检查通过；观察到自动成员变更失效缺口，不纳入完整 TAP 分母 | [observations.json](raw/membership-cache/observations.json)、[完整日志](raw/membership-cache/regress_log_membership-cache) |
 | 哈希 | 两轮各 48 个服务器公开文件及各自 82 个源码文件匹配；总清单覆盖本地和诊断记录 | [最终 verification](raw/refresh/verification.json)、[SHA256SUMS](raw/SHA256SUMS) |
+
+**原始文件与公开副本的哈希分开解释。** `qualification.json` 的 `regression_actual_sha256` 和
+`regression_expected_sha256` 指服务器脱敏前文件；运行器先断言字节一致，再由 `scrub` 生成公开副本。
+`scrub` 同时去除行尾空白，因此仓库的 `regression-actual.out` 不与未处理的 expected 直接按字节比较。
+两轮原始文件记录的 SHA-256 均为 `8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c`；
+公开副本为 `98dc30b50a45970f3c7d1c819b3fdd325e58dd97e7cc7858e902bbd2b519a2b3`，由各公开 SHA 清单核验。
+主线合并前另对相应提交的 expected 做相同空白规范化，确认与公开 actual 完全一致；未改写任何 raw 文件。
 
 最终扩展 SHA-256：`f641c23ee67c33b7c2fcaae2088b9a251a95566deac2d3b30a1b777b733c50ef`。
 中间构建为 `6e49fb281922b2053ebac0e50bf25a1594d16a49b031225e7823685bea2f6c23`，两轮使用不同独立前缀，
