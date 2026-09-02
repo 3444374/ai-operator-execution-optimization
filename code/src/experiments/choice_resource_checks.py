@@ -44,9 +44,13 @@ def settled(processes):
     result = {key: {field: int(statistics.median(item[key][field] for item in snapshots))
                     for field in ('rss_bytes', 'fd', 'threads')} for key in processes}
     for key, process in processes.items():
-        result[key]['fd_targets'] = {
-            path.name: os.readlink(path) for path in Path(f'/proc/{process.pid}/fd').iterdir()
-        }
+        # Container root may lack ptrace rights over another UID's proc links.
+        result[key]['fd_targets'] = json.loads(subprocess.check_output(
+            [sys.executable, '-c',
+             'import json,os,pathlib,sys; '
+             'print(json.dumps({p.name:os.readlink(p) for p in pathlib.Path(sys.argv[1]).iterdir()}))',
+             f'/proc/{process.pid}/fd'], text=True, user=process.uids().real,
+            group=process.gids().real, extra_groups=[]))
     return result
 
 
