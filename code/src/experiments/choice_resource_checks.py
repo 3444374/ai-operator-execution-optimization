@@ -283,8 +283,10 @@ def main():
     user = pwd.getpwnam('postgres')
     os.chown(args.root, user.pw_uid, user.pw_gid)
     with cluster(args.prefix, args.root, user) as connection:
-        connection.execute('CREATE TABLE resource_rows(id int, payload text)')
+        connection.execute('CREATE TABLE resource_rows(id int, payload text) '
+                           'WITH (autovacuum_enabled=false, toast.autovacuum_enabled=false)')
         connection.execute("INSERT INTO resource_rows SELECT n, repeat('x',65536) FROM generate_series(1,4000) n")
+        connection.execute('VACUUM ANALYZE resource_rows')
         connection.execute("SET semloom_pg.provider_execution_profile='openai-compatible-fixed'")
         connection.execute("SET statement_timeout='120s'")
         for choice in (False, True):
