@@ -54,7 +54,7 @@ sub start_peer
     my ($script, @arguments) = @_;
     my ($out, $err) = ('', '');
     my $process = IPC::Run::start(['python3', $script, '--socket', $socket, @arguments],
-        '>', \$out, '2>', \$err);
+        '>', \$out, '2>', \$err, IPC::Run::timeout(10));
     for (1 .. 200) { last if -S $socket; sleep(0.01); }
     ok(-S $socket, 'test peer is listening') or diag($err);
     return ($process, \$err);
@@ -63,7 +63,9 @@ sub start_peer
 sub finish_peer
 {
     my ($process, $err) = @_;
-    $process->finish;
+    my $exited = eval { $process->finish };
+    if ($@) { $process->kill_kill; diag('test peer exceeded its time limit'); }
+    ok($exited, 'test peer exits successfully') or diag($$err);
     ok(!-e $socket, 'test peer closed its listener') or diag($$err);
 }
 
@@ -73,7 +75,7 @@ sub golden_query
     my @sessions = grep { $_ eq '--test-max-sessions' } @arguments;
     my ($process, $err) = start_peer($gateway_script,
         (@sessions ? () : ('--once')), '--golden-fixture', $fixture, @arguments);
-    my @result = $node->psql('postgres', "\\set VERBOSITY verbose\nSET semloom_pg.gateway_socket='$socket';\n$sql");
+    my @result = $node->psql('postgres', "\\set VERBOSITY verbose\nSET statement_timeout='5s'; SET semloom_pg.gateway_socket='$socket';\n$sql");
     finish_peer($process, $err);
     return @result;
 }
@@ -118,14 +120,17 @@ BEGIN;
 SAVEPOINT before_bad_label;
 $query AND id=8;
 ROLLBACK TO SAVEPOINT before_bad_label;
-INSERT INTO choice_sink $query AND id=1;
+INSERT INTO choice_sink VALUES (9);
+$query AND id=1;
 ROLLBACK;
 SELECT count(*) FROM choice_sink;
 }, '--test-max-sessions', '2');
 like($stderr, qr/ERROR:  22000: SemFilter model completion must be TRUE, FALSE, or UNKNOWN\n/,
     'invalid raw output is rejected by the unchanged PG parser');
 unlike($stderr, qr/invalid-label/, 'parser error exposes no input');
-is($stdout, '0', 'same-backend savepoint recovery and INSERT rollback preserve PG ownership');
+my @savepoint_errors = $stderr =~ /ERROR:/g;
+is(scalar(@savepoint_errors), 1, 'savepoint recovery has no secondary statement error');
+is($stdout, "1\n0", 'same-backend choice recovery and ordinary write rollback preserve PG ownership');
 
 my $peer_script = abs_path("$FindBin::RealBin/fixtures/choice_wire_peer.py");
 my @faults = (
@@ -170,5 +175,77 @@ like($stderr, qr/ERROR:  57014: canceling statement due to statement timeout\n/,
 ($status, $stdout, $stderr) = golden_query("$query AND id=1;");
 is($status, 0, 'fresh choice session works after cancel and protocol errors') or diag($stderr);
 is($stdout, '1', 'recovery preserves SQL results');
+
+my $http_script = abs_path("$FindBin::RealBin/fixtures/openai_compatible_server.py");
+my %requests;
+for my $mode (qw(legacy choice rejected))
+{
+    my $port_file = $node->basedir . "/$mode.port";
+    my $request_log = $node->basedir . "/$mode.requests";
+    my $config_file = $node->basedir . "/$mode.config";
+    my ($out, $err) = ('', '');
+    my @choice_argument = $mode eq 'legacy' ? () : ('--require-choice');
+    my @status_argument = $mode eq 'rejected' ? ('--response-status', '400') : ();
+    my $http = IPC::Run::start(['python3', $http_script, '--port-file', $port_file,
+        '--model-id', 'golden-model-v1', '--raw-outputs', 'UNKNOWN',
+        '--request-log', $request_log, @choice_argument, @status_argument],
+        '>', \$out, '2>', \$err);
+    for (1 .. 200) { last if -f $port_file; sleep(0.01); }
+    ok(-f $port_file, "$mode HTTP fixture is ready") or diag($err);
+    open(my $port_handle, '<', $port_file) or die 'cannot read fixture port';
+    my $port = <$port_handle>;
+    close($port_handle);
+    my %config = (endpoint_url => "http://127.0.0.1:$port/v1/chat/completions",
+        model_id => 'golden-model-v1', timeout_ms => 1000);
+    $config{choice_format} = 'vllm_structured_outputs' if $mode ne 'legacy';
+    open(my $config_handle, '>', $config_file) or die 'cannot write fixture config';
+    print $config_handle encode_json(\%config);
+    close($config_handle);
+    my ($process, $peer_err) = start_peer($gateway_script, '--once', '--fixed-model-config', $config_file);
+    my $fixed_query = $query . ' AND id <= 2';
+    $fixed_query =~ s/,"generation_profile":"[^"]+"// if $mode eq 'legacy';
+    ($status, $stdout, $stderr) = $node->psql('postgres', qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket='$socket';
+SET semloom_pg.provider_execution_profile='openai-compatible-fixed';
+EXPLAIN (ANALYZE, FORMAT JSON) $fixed_query;
+});
+    if ($mode eq 'rejected')
+    {
+        isnt($status, 0, 'service rejection does not become FALSE');
+        like($stderr, qr/ERROR:  38000: SemLoom model request was rejected\n/,
+            'choice service rejection retains the neutral SQLSTATE mapping');
+    }
+    else
+    {
+        is($status, 0, "$mode fixed-model path executes") or diag($stderr);
+        my $plan = decode_json($stdout)->[0]->{'Plan'};
+        is($plan->{'Provider'}, 'uds-openai-compatible-fixed', 'fixed adapter is observable');
+        is($plan->{'Model Calls'}, 1, 'HTTP task count excludes SQL NULL');
+        is($plan->{'Prompt Tokens'}, 17, 'provider prompt usage is preserved');
+        is($plan->{'Output Tokens'}, 1, 'provider output usage is preserved');
+        is($plan->{'Emitted Rows'}, 0, 'raw UNKNOWN is parsed and dropped by PostgreSQL');
+    }
+    finish_peer($process, $peer_err);
+    $http->finish;
+    ok(!-e $port_file, "$mode HTTP fixture stopped");
+    open(my $requests_handle, '<', $request_log) or die 'cannot read request evidence';
+    my @lines = <$requests_handle>;
+    close($requests_handle);
+    is(scalar(@lines), 1, "$mode issued exactly one HTTP request, without fallback retry");
+    $requests{$mode} = decode_json($lines[0]);
+}
+is_deeply(delete $requests{choice}->{structured_outputs}, {choice => ['TRUE', 'FALSE', 'UNKNOWN']},
+    'the actual choice request carries the ordered constraint');
+is_deeply($requests{choice}, $requests{legacy}, 'actual old/new HTTP requests differ only by the explicit constraint');
+is_deeply($requests{rejected}->{structured_outputs}, {choice => ['TRUE', 'FALSE', 'UNKNOWN']},
+    'the rejected request was constrained, not silently downgraded');
+
+($status, $stdout, $stderr) = $node->psql('postgres', qq{\\set VERBOSITY verbose
+SET semloom_pg.gateway_socket='/nonexistent/choice-provider.sock';
+SELECT id FROM choice_rows WHERE id=1 AND ai_semantic.filter(repeat('x', 163841), 'Classify input.', $options);
+});
+isnt($status, 0, 'oversized choice input is refused before provider connection');
+like($stderr, qr/ERROR:  54000: SemLoom provider input exceeds the 163840 byte limit\n/,
+    'choice preserves the encoding preflight and neutral limit error');
 $node->stop;
 done_testing();

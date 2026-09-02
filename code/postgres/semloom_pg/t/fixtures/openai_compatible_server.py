@@ -29,6 +29,8 @@ class FixtureServer(HTTPServer):
     delay_ms: int
     invalid_json: bool
     request_index: int
+    require_choice: bool
+    request_log: Path | None
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
@@ -43,12 +45,15 @@ class FixtureHandler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
             self._send(400, {"error": "invalid request"})
             return
+        if self.server.request_log is not None:
+            with self.server.request_log.open('a', encoding='utf-8') as handle:
+                handle.write(json.dumps(request_value) + '\n')
         if self.server.delay_ms > 0:
             time.sleep(self.server.delay_ms / 1000)
         if self.server.response_status != 200:
             self._send(self.server.response_status, {"error": "fixture failure"})
             return
-        if not _valid_request(request_value, self.server.model_id):
+        if not _valid_request(request_value, self.server.model_id, self.server.require_choice):
             self._send(400, {"error": "invalid request"})
             return
         if self.server.invalid_json:
@@ -96,10 +101,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
         return
 
 
-def _valid_request(value: object, model_id: str) -> bool:
+def _valid_request(value: object, model_id: str, require_choice: bool = False) -> bool:
     return (
         isinstance(value, dict)
-        and set(value) == EXPECTED_FIELDS
+        and set(value) == EXPECTED_FIELDS | ({"structured_outputs"} if require_choice else set())
+        and (not require_choice or value.get("structured_outputs") == {"choice": ["TRUE", "FALSE", "UNKNOWN"]})
         and value.get("model") == model_id
         and isinstance(value.get("messages"), list)
         and len(value["messages"]) == 2
@@ -126,6 +132,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--delay-ms", type=int, default=0)
     parser.add_argument("--invalid-json", action="store_true")
     parser.add_argument("--max-requests", type=int, default=1)
+    parser.add_argument("--require-choice", action="store_true")
+    parser.add_argument("--request-log", type=Path)
     return parser.parse_args()
 
 
@@ -142,6 +150,8 @@ def main() -> int:
         raise SystemExit("invalid fixture configuration")
     if args.port_file.exists():
         raise SystemExit("refusing to replace existing port file")
+    if args.request_log is not None and args.request_log.exists():
+        raise SystemExit("refusing to replace existing request log")
     server = FixtureServer(("127.0.0.1", 0), FixtureHandler)
     server.model_id = args.model_id
     server.response_model_id = args.response_model_id or args.model_id
@@ -150,6 +160,8 @@ def main() -> int:
     server.delay_ms = args.delay_ms
     server.invalid_json = args.invalid_json
     server.request_index = 0
+    server.require_choice = args.require_choice
+    server.request_log = args.request_log
     args.port_file.write_text(str(server.server_port), encoding="ascii")
     try:
         for _ in range(args.max_requests):
