@@ -1,0 +1,28 @@
+2026-09-02 17:37:10.242 CST [60455] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 17:37:10.242 CST [60455] LOG:  listening on Unix socket "/tmp/y6C309HUJd/.s.PGSQL.30420"
+2026-09-02 17:37:10.244 CST [60461] LOG:  database system was shut down at 2026-09-02 17:37:10 CST
+2026-09-02 17:37:10.246 CST [60455] LOG:  database system is ready to accept connections
+2026-09-02 17:37:10.343 CST [60466] membership-cache.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-02 17:37:10.345 CST [60466] membership-cache.pl LOG:  statement: CREATE TABLE inputs(content text);
+2026-09-02 17:37:10.347 CST [60466] membership-cache.pl LOG:  statement: INSERT INTO inputs VALUES ('false');
+2026-09-02 17:37:10.363 CST [60468] membership-cache.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 17:37:10.363 CST [60468] membership-cache.pl LOG:  statement: PREPARE p AS SELECT ai_semantic.map(content) FROM inputs
+	;
+2026-09-02 17:37:10.364 CST [60468] membership-cache.pl LOG:  statement: EXPLAIN EXECUTE p
+	;
+2026-09-02 17:37:10.373 CST [60470] membership-cache.pl LOG:  statement: ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.map(text)
+2026-09-02 17:37:10.374 CST [60468] membership-cache.pl LOG:  statement: EXPLAIN EXECUTE p
+	;
+2026-09-02 17:37:10.381 CST [60472] membership-cache.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM inputs
+2026-09-02 17:37:10.383 CST [60468] membership-cache.pl LOG:  statement: DISCARD PLANS
+	;
+2026-09-02 17:37:10.383 CST [60468] membership-cache.pl LOG:  statement: EXPLAIN EXECUTE p
+	;
+2026-09-02 17:37:10.392 CST [60474] membership-cache.pl LOG:  statement: SHOW server_version
+2026-09-02 17:37:10.399 CST [60455] LOG:  received fast shutdown request
+2026-09-02 17:37:10.399 CST [60455] LOG:  aborting any active transactions
+2026-09-02 17:37:10.400 CST [60455] LOG:  background worker "logical replication launcher" (PID 60464) exited with exit code 1
+2026-09-02 17:37:10.400 CST [60459] LOG:  shutting down
+2026-09-02 17:37:10.400 CST [60459] LOG:  checkpoint starting: shutdown immediate
+2026-09-02 17:37:10.403 CST [60459] LOG:  checkpoint complete: wrote 48 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=184 kB, estimate=184 kB; lsn=0/171B730, redo lsn=0/171B730
+2026-09-02 17:37:10.410 CST [60455] LOG:  database system is shut down

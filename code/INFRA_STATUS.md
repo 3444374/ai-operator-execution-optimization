@@ -12,7 +12,17 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**尚未完成项**：PG 注册身份等反例检查、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
+**独立身份加固切片**：`codex/pg-function-identity` 已复现并修复同签名非成员误接管，只改 `extension.c`
+中的 PG 对象解析。测试覆盖其他 schema/重载、其他扩展成员、函数定义替换、删除重建与 prepared plan；
+`934f4f61` 增加双物理连接的仅成员 ADD/DROP 手动刷新验证，函数 OID/定义不变，保留刷新前后计划。
+该分支尚未合入 main `c494e1b2`。详见[身份验证](../experiments/results/postgresql/function_identity_20260902/README.md)。
+最终 PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 1022/1022（身份 103 项）、本地/服务器
+各 94/94 与中立 C11 通过。中间 990/990、生产反例与夹具失败保留；没有重跑模型或资源 smoke。
+仅成员变更的跨会话自动计划失效仍 pending；受控使用须暂停查询、结束旧事务/游标，DDL 提交后刷新
+所有相关物理连接（包括连接池）再恢复，不能只刷新 DDL 会话，也不能用成员移除即时撤销权限。
+无法保证所有连接刷新时不使用此临时方案；函数替换/删除重建的既有自动失效测试不延期。
+
+**尚未完成项**：主线接收上述身份修复、仅成员变更自动刷新、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
@@ -78,8 +88,8 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 SemLoom 执行两部分，目前都没有公司路径验收证据。
 
 **本轮核对的工程限制**：Map 的真实生成合同尚未实现，公共 task 编译仍主要服务 Filter；planner
-限制单 marker，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway 按整个会话串行服务；函数查找尚未
-额外核验扩展成员身份。这些是源码事实或待验证加固点，不是已经重构或已证实的安全漏洞。后续改动
+限制单 marker，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway 按整个会话串行服务。main `c494e1b2`
+的函数查找未核验扩展成员，已由上方独立切片复现并修复误接管；不据此声称发现权限绕过。后续改动
 与验收要求只在主计划维护；现有 PG-private runtime、neutral port 和严格错误/结果处理继续保留。
 
 **当前实现事实**：按

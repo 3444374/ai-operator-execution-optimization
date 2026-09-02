@@ -1,0 +1,73 @@
+# Checking port 13216
+# Found port 13216
+Name: function_identity
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/archives
+Connection string: port=13216 host=/tmp/yBDmJeFA4c
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log
+[17:23:45.033](0.019s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata -l logfile start
+
+# Running: <private-runtime-path> --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+### Starting node "function_identity"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log --options --cluster-name=function_identity start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "function_identity" is 57921
+[17:23:45.693](0.661s) not ok 1 - same-signature function without the extension keeps its own implementation
+[17:23:45.694](0.000s)
+[17:23:45.694](0.000s) #   Failed test 'same-signature function without the extension keeps its own implementation'
+#   at t/005_function_identity.pl line 19.
+[17:23:45.694](0.000s) #          got: 'recorded:false'
+#     expected: 'ordinary:false'
+[17:23:45.704](0.010s) not ok 2 - non-member function is not lowered to a semantic scan
+[17:23:45.704](0.000s)
+[17:23:45.704](0.000s) #   Failed test 'non-member function is not lowered to a semantic scan'
+#   at t/005_function_identity.pl line 21.
+[17:23:45.704](0.000s) #                   'Custom Scan (SemLoom SemMap)  (cost=0.00..367.00 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..363.60 rows=1360 width=32)'
+#           matches '(?^:Custom Scan)'
+### Stopping node "function_identity" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "function_identity"
+[17:23:45.809](0.105s) 1..2
+[17:23:45.810](0.001s) # Looks like you failed 2 tests of 2.

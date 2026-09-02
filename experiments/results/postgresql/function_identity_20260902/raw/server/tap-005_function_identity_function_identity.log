@@ -1,0 +1,210 @@
+2026-09-02 17:34:38.636 CST [59969] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 17:34:38.636 CST [59969] LOG:  listening on Unix socket "/tmp/IInehD7TSG/.s.PGSQL.18307"
+2026-09-02 17:34:38.638 CST [59975] LOG:  database system was shut down at 2026-09-02 17:34:38 CST
+2026-09-02 17:34:38.640 CST [59969] LOG:  database system is ready to accept connections
+2026-09-02 17:34:38.739 CST [59980] 005_function_identity.pl LOG:  statement: CREATE SCHEMA ai_semantic
+2026-09-02 17:34:38.748 CST [59982] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.map(input text) RETURNS text LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || $1; END $$;
+2026-09-02 17:34:38.759 CST [59984] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:38.771 CST [59986] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:38.781 CST [59988] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:38.792 CST [59990] 005_function_identity.pl LOG:  statement: CREATE TABLE identity_inputs(content text);
+2026-09-02 17:34:38.794 CST [59990] 005_function_identity.pl LOG:  statement: INSERT INTO identity_inputs VALUES ('false');
+2026-09-02 17:34:38.802 CST [59992] 005_function_identity.pl LOG:  statement: SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:38.811 CST [59994] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:38.818 CST [59996] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:38.828 CST [59998] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:38.842 CST [60000] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:38.855 CST [60002] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:38.867 CST [60004] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:38.878 CST [60006] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:38.886 CST [60008] 005_function_identity.pl LOG:  statement: DROP SCHEMA ai_semantic CASCADE;
+2026-09-02 17:34:38.887 CST [60008] 005_function_identity.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-02 17:34:38.896 CST [60010] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:38.907 CST [60012] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:38.915 CST [60014] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:38.922 CST [60016] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:38.932 CST [60018] 005_function_identity.pl LOG:  statement: SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:38.941 CST [60020] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:38.951 CST [60022] 005_function_identity.pl LOG:  statement: CREATE SCHEMA ordinary;
+2026-09-02 17:34:38.952 CST [60022] 005_function_identity.pl LOG:  statement: CREATE FUNCTION ordinary.map(text) RETURNS text LANGUAGE plpgsql VOLATILE
+	AS $$ BEGIN RETURN 'other:' || $1; END $$;
+2026-09-02 17:34:38.953 CST [60022] 005_function_identity.pl LOG:  statement: CREATE FUNCTION ordinary.filter(text) RETURNS boolean LANGUAGE plpgsql VOLATILE
+	AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:38.953 CST [60022] 005_function_identity.pl LOG:  statement: CREATE FUNCTION ai_semantic.map(integer) RETURNS text LANGUAGE plpgsql VOLATILE
+	AS $$ BEGIN RETURN 'integer:' || $1; END $$;
+2026-09-02 17:34:38.953 CST [60022] 005_function_identity.pl LOG:  statement: CREATE FUNCTION ai_semantic.filter(integer) RETURNS boolean LANGUAGE plpgsql VOLATILE
+	AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:38.961 CST [60024] 005_function_identity.pl LOG:  statement: SELECT ordinary.map(content) FROM identity_inputs
+2026-09-02 17:34:38.972 CST [60026] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ordinary.map(content) FROM identity_inputs
+2026-09-02 17:34:38.981 CST [60028] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ordinary.filter(content)
+2026-09-02 17:34:38.990 CST [60030] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ordinary.filter(content)
+2026-09-02 17:34:38.997 CST [60032] 005_function_identity.pl LOG:  statement: SELECT ai_semantic.map(length(content)) FROM identity_inputs
+2026-09-02 17:34:39.007 CST [60034] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(length(content)) FROM identity_inputs
+2026-09-02 17:34:39.020 CST [60036] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(length(content))
+2026-09-02 17:34:39.034 CST [60038] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(length(content))
+2026-09-02 17:34:39.043 CST [60040] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.map(text)'::regprocedure::oid
+2026-09-02 17:34:39.050 CST [60042] 005_function_identity.pl LOG:  statement: SELECT pg_get_functiondef('ai_semantic.map(text)'::regprocedure)
+2026-09-02 17:34:39.064 CST [60044] 005_function_identity.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 17:34:39.065 CST [60044] 005_function_identity.pl LOG:  statement: PREPARE identity_plan AS SELECT ai_semantic.map(content) FROM identity_inputs;
+2026-09-02 17:34:39.065 CST [60044] 005_function_identity.pl LOG:  statement: ;
+2026-09-02 17:34:39.065 CST [60044] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.074 CST [60046] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.map(text);
+2026-09-02 17:34:39.084 CST [60048] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:39.095 CST [60050] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.map(input text) RETURNS text LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || $1; END $$;
+2026-09-02 17:34:39.103 CST [60052] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.map(text)'::regprocedure::oid
+2026-09-02 17:34:39.106 CST [60044] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.106 CST [60044] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT ai_semantic.map(content) FROM identity_inputs;
+2026-09-02 17:34:39.108 CST [60044] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.116 CST [60054] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql ADD FUNCTION ai_semantic.map(text);
+2026-09-02 17:34:39.124 CST [60056] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:39.132 CST [60058] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql DROP FUNCTION ai_semantic.map(text);
+2026-09-02 17:34:39.132 CST [60058] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.map(text);
+2026-09-02 17:34:39.132 CST [60058] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.map(input text) RETURNS text LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || $1; END $$;
+2026-09-02 17:34:39.140 CST [60060] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.map(text)'::regprocedure::oid
+2026-09-02 17:34:39.142 CST [60044] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.142 CST [60044] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT ai_semantic.map(content) FROM identity_inputs;
+2026-09-02 17:34:39.144 CST [60044] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.151 CST [60062] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.map(text);
+2026-09-02 17:34:39.151 CST [60062] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.map(input text)
+	 RETURNS text
+	 LANGUAGE c
+	AS '$libdir/semloom_pg', $function$semloom_marker_map$function$
+	;
+2026-09-02 17:34:39.151 CST [60062] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.map(text);
+2026-09-02 17:34:39.153 CST [60044] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.161 CST [60064] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text)'::regprocedure::oid
+2026-09-02 17:34:39.170 CST [60066] 005_function_identity.pl LOG:  statement: SELECT pg_get_functiondef('ai_semantic.filter(text)'::regprocedure)
+2026-09-02 17:34:39.178 CST [60068] 005_function_identity.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 17:34:39.178 CST [60068] 005_function_identity.pl LOG:  statement: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content);
+2026-09-02 17:34:39.178 CST [60068] 005_function_identity.pl LOG:  statement: ;
+2026-09-02 17:34:39.179 CST [60068] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.188 CST [60070] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.filter(text);
+2026-09-02 17:34:39.198 CST [60072] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:39.208 CST [60074] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.216 CST [60076] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text)'::regprocedure::oid
+2026-09-02 17:34:39.218 CST [60068] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.218 CST [60068] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content);
+2026-09-02 17:34:39.220 CST [60068] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.229 CST [60078] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql ADD FUNCTION ai_semantic.filter(text);
+2026-09-02 17:34:39.239 CST [60080] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:39.249 CST [60082] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql DROP FUNCTION ai_semantic.filter(text);
+2026-09-02 17:34:39.250 CST [60082] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.filter(text);
+2026-09-02 17:34:39.251 CST [60082] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.260 CST [60084] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text)'::regprocedure::oid
+2026-09-02 17:34:39.263 CST [60068] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.263 CST [60068] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content);
+2026-09-02 17:34:39.264 CST [60068] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.273 CST [60086] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.filter(text);
+2026-09-02 17:34:39.273 CST [60086] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text)
+	 RETURNS boolean
+	 LANGUAGE c
+	AS '$libdir/semloom_pg', $function$semloom_marker_filter$function$
+	;
+2026-09-02 17:34:39.274 CST [60086] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.filter(text);
+2026-09-02 17:34:39.275 CST [60068] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.283 CST [60088] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid
+2026-09-02 17:34:39.290 CST [60090] 005_function_identity.pl LOG:  statement: SELECT pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+2026-09-02 17:34:39.299 CST [60092] 005_function_identity.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 17:34:39.299 CST [60092] 005_function_identity.pl LOG:  statement: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-02 17:34:39.299 CST [60092] 005_function_identity.pl LOG:  statement: ;
+2026-09-02 17:34:39.300 CST [60092] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.310 CST [60094] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.319 CST [60096] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:39.330 CST [60098] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.340 CST [60100] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid
+2026-09-02 17:34:39.342 CST [60092] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.342 CST [60092] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-02 17:34:39.348 CST [60092] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.355 CST [60102] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql ADD FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.363 CST [60104] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:39.372 CST [60106] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.372 CST [60106] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.373 CST [60106] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.382 CST [60108] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid
+2026-09-02 17:34:39.384 CST [60092] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.384 CST [60092] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-02 17:34:39.386 CST [60092] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.393 CST [60110] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.393 CST [60110] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+	 RETURNS boolean
+	 LANGUAGE c
+	AS '$libdir/semloom_pg', $function$semloom_marker_filter$function$
+	;
+2026-09-02 17:34:39.394 CST [60110] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.395 CST [60092] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.405 CST [60112] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid
+2026-09-02 17:34:39.412 CST [60114] 005_function_identity.pl LOG:  statement: SELECT pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+2026-09-02 17:34:39.421 CST [60116] 005_function_identity.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 17:34:39.421 CST [60116] 005_function_identity.pl LOG:  statement: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 17:34:39.421 CST [60116] 005_function_identity.pl LOG:  statement: ;
+2026-09-02 17:34:39.421 CST [60116] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.430 CST [60118] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.439 CST [60120] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:39.447 CST [60122] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.456 CST [60124] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid
+2026-09-02 17:34:39.458 CST [60116] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.458 CST [60116] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 17:34:39.460 CST [60116] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.470 CST [60126] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql ADD FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.481 CST [60128] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:39.493 CST [60130] 005_function_identity.pl LOG:  statement: ALTER EXTENSION plpgsql DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.494 CST [60130] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.494 CST [60130] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.503 CST [60132] 005_function_identity.pl LOG:  statement: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid
+2026-09-02 17:34:39.505 CST [60116] 005_function_identity.pl LOG:  statement: EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.505 CST [60116] 005_function_identity.pl DETAIL:  prepare: PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 17:34:39.506 CST [60116] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.512 CST [60134] 005_function_identity.pl LOG:  statement: DROP FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.513 CST [60134] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+	 RETURNS boolean
+	 LANGUAGE c
+	AS '$libdir/semloom_pg', $function$semloom_marker_filter$function$
+	;
+2026-09-02 17:34:39.513 CST [60134] 005_function_identity.pl LOG:  statement: ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.filter(text,text,jsonb);
+2026-09-02 17:34:39.514 CST [60116] 005_function_identity.pl LOG:  statement: EXPLAIN EXECUTE identity_plan
+	;
+2026-09-02 17:34:39.522 CST [60136] 005_function_identity.pl LOG:  statement: DROP EXTENSION semloom_pg CASCADE;
+2026-09-02 17:34:39.523 CST [60136] 005_function_identity.pl LOG:  statement: CREATE SCHEMA ai_semantic;
+2026-09-02 17:34:39.530 CST [60138] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.map(input text) RETURNS text LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || $1; END $$;
+2026-09-02 17:34:39.536 CST [60140] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.543 CST [60142] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.551 CST [60144] 005_function_identity.pl LOG:  statement: CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb) RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN true; END $$;
+2026-09-02 17:34:39.558 CST [60146] 005_function_identity.pl LOG:  statement: SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:39.566 CST [60148] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:34:39.575 CST [60150] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:39.583 CST [60152] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content)
+2026-09-02 17:34:39.591 CST [60154] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:39.600 CST [60156] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:34:39.609 CST [60158] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:39.619 CST [60160] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:34:39.631 CST [60162] 005_function_identity.pl LOG:  statement: SELECT content FROM identity_inputs
+2026-09-02 17:34:39.636 CST [59969] LOG:  received fast shutdown request
+2026-09-02 17:34:39.636 CST [59969] LOG:  aborting any active transactions
+2026-09-02 17:34:39.637 CST [59969] LOG:  background worker "logical replication launcher" (PID 59978) exited with exit code 1
+2026-09-02 17:34:39.637 CST [59973] LOG:  shutting down
+2026-09-02 17:34:39.637 CST [59973] LOG:  checkpoint starting: shutdown immediate
+2026-09-02 17:34:39.639 CST [59973] LOG:  checkpoint complete: wrote 71 buffers (0.4%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.002 s; sync files=0, longest=0.000 s, average=0.000 s; distance=387 kB, estimate=387 kB; lsn=0/174E1C8, redo lsn=0/174E1C8
+2026-09-02 17:34:39.646 CST [59969] LOG:  database system is shut down

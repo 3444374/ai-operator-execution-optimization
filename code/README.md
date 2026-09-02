@@ -19,6 +19,11 @@ SELECT and INSERT ... SELECT are verified with fixtures. Later controlled resour
 The latter executes 14 old/choice requests and two NULL controls; the cumulative budget is 15/100 including
 one failed collector run. This is execution evidence, not model-quality qualification.
 
+The independent [function-identity slice](../experiments/results/postgresql/function_identity_20260902/README.md)
+checks extension membership before lowering markers and tests function replacement/drop-recreate plan revalidation.
+It is not yet merged into main. Membership-only ADD/DROP requires refreshing every relevant physical connection
+after the committed DDL; automatic cross-session refresh remains pending. See the extension README for the procedure.
+
 Status as of 2026-09-02: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a

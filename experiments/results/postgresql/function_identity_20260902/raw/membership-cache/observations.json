@@ -1,0 +1,7 @@
+{
+  "fresh_after_detach": "Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)",
+  "initial_plan": "Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)\n  Provider: in-process-recording\n  Physical Role: reference\n  Mapped Column: 1\n  ->  Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)",
+  "pg_version": "18.3",
+  "cached_after_detach": "Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)\n  Provider: in-process-recording\n  Physical Role: reference\n  Mapped Column: 1\n  ->  Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)",
+  "cached_after_discard": "Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)"
+}

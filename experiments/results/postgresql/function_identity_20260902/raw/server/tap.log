@@ -1,0 +1,10 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ... ok
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+All tests successful.
+Files=5, Tests=990, 29 wallclock secs ( 0.20 usr  0.01 sys + 14.94 cusr  4.64 csys = 19.79 CPU)
+Result: PASS

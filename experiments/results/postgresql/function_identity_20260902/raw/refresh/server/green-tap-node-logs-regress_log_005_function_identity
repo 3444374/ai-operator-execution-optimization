@@ -1,0 +1,58 @@
+# Checking port 18858
+# Found port 18858
+Name: function_identity
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/archives
+Connection string: port=18858 host=/tmp/wbPKR_aLXH
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log
+[17:26:13.169](0.019s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata -l logfile start
+
+# Running: <private-runtime-path> --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+### Starting node "function_identity"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log --options --cluster-name=function_identity start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "function_identity" is 58195
+[17:26:13.871](0.702s) ok 1 - same-signature function without the extension keeps its own implementation
+[17:26:13.881](0.010s) ok 2 - non-member function is not lowered to a semantic scan
+### Stopping node "function_identity" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "function_identity"
+[17:26:13.986](0.105s) 1..2

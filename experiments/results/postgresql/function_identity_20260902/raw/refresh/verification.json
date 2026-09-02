@@ -1,0 +1,10 @@
+{
+  "server_manifest_files": 48,
+  "source_files_verified": 82,
+  "source_commit": "934f4f614c7fcef980c0a6af81dfd62d3979cc5c",
+  "pg_build_version": "PostgreSQL 18.3",
+  "tap_tests": 1022,
+  "regression_tests": 1,
+  "extension_sha256": "f641c23ee67c33b7c2fcaae2088b9a251a95566deac2d3b30a1b777b733c50ef",
+  "automatic_membership_only_plan_invalidation": false
+}

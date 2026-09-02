@@ -1,0 +1,16 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/005_function_identity.pl
+# +++ tap install-check in  +++
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 24.
+t/005_function_identity.pl ..
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+All 24 subtests passed
+
+Test Summary Report
+-------------------
+t/005_function_identity.pl (Wstat: 7424 Tests: 24 Failed: 0)
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+Files=1, Tests=24,  1 wallclock secs ( 0.03 usr  0.00 sys +  0.59 cusr  0.33 csys =  0.95 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

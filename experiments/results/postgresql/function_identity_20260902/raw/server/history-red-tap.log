@@ -1,0 +1,29 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<private-runtime-path>" PGPORT='65432' PG_REGRESS='<private-runtime-path>' /usr/bin/prove -I <private-runtime-path> -I ./  t/005_function_identity.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'same-signature function without the extension keeps its own implementation'
+#   at t/005_function_identity.pl line 19.
+#          got: 'recorded:false'
+#     expected: 'ordinary:false'
+
+#   Failed test 'non-member function is not lowered to a semantic scan'
+#   at t/005_function_identity.pl line 21.
+#                   'Custom Scan (SemLoom SemMap)  (cost=0.00..367.00 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..363.60 rows=1360 width=32)'
+#           matches '(?^:Custom Scan)'
+# Looks like you failed 2 tests of 2.
+t/005_function_identity.pl ..
+Dubious, test returned 2 (wstat 512, 0x200)
+Failed 2/2 subtests
+
+Test Summary Report
+-------------------
+t/005_function_identity.pl (Wstat: 512 Tests: 2 Failed: 2)
+  Failed tests:  1-2
+  Non-zero exit status: 2
+Files=1, Tests=2,  1 wallclock secs ( 0.01 usr  0.01 sys +  0.51 cusr  0.18 csys =  0.71 CPU)
+Result: FAIL
+make: *** [<private-runtime-path> installcheck] Error 1

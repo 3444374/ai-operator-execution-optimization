@@ -1,0 +1,534 @@
+# Checking port 18307
+# Found port 18307
+Name: function_identity
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/archives
+Connection string: port=18307 host=/tmp/IInehD7TSG
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log
+[17:34:38.064](0.021s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+### Starting node "function_identity"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log --options --cluster-name=function_identity start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "function_identity" is 59969
+[17:34:38.805](0.741s) ok 1 - extension absent: map keeps the ordinary implementation
+[17:34:38.812](0.008s) ok 2 - extension absent: map is not lowered
+[17:34:38.820](0.007s) ok 3 - extension absent: recording filter keeps the ordinary implementation
+[17:34:38.831](0.011s) ok 4 - extension absent: recording filter is not lowered
+[17:34:38.847](0.016s) ok 5 - extension absent: exact filter keeps the ordinary implementation
+[17:34:38.859](0.012s) ok 6 - extension absent: exact filter is not lowered
+[17:34:38.869](0.011s) ok 7 - extension absent: choice filter keeps the ordinary implementation
+[17:34:38.880](0.011s) ok 8 - extension absent: choice filter is not lowered
+#### Begin standard error
+psql:<stdin>:1: NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to function ai_semantic.map(text)
+drop cascades to function ai_semantic.filter(text)
+drop cascades to function ai_semantic.filter(text,text,jsonb)
+#### End standard error
+[17:34:38.898](0.018s) ok 9 - extension member: map is lowered
+[17:34:38.909](0.011s) ok 10 - extension member: recording filter is lowered
+[17:34:38.916](0.007s) ok 11 - extension member: exact filter is lowered
+[17:34:38.923](0.007s) ok 12 - extension member: choice filter is lowered
+[17:34:38.934](0.011s) ok 13 - member Map keeps recording behavior
+[17:34:38.943](0.009s) ok 14 - member Filter keeps FALSE/drop behavior
+[17:34:38.964](0.020s) ok 15 - other schema Map keeps its result
+[17:34:38.974](0.011s) ok 16 - other schema Map is not lowered
+[17:34:38.983](0.009s) ok 17 - other schema Filter keeps its result
+[17:34:38.991](0.008s) ok 18 - other schema Filter is not lowered
+[17:34:38.999](0.008s) ok 19 - overloaded Map keeps its result
+[17:34:39.010](0.010s) ok 20 - overloaded Map is not lowered
+[17:34:39.024](0.014s) ok 21 - overloaded Filter keeps its result
+[17:34:39.036](0.013s) ok 22 - overloaded Filter is not lowered
+[17:34:39.064](0.027s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:34:39.064](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT ai_semantic.map(content) FROM identity_inputs;
+[17:34:39.065](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:34:39.065](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.067](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:34:39.067](0.000s) ok 23 - map: generic plan initially uses the extension member
+[17:34:39.086](0.019s) ok 24 - map: fresh planning rejects a detached marker
+[17:34:39.105](0.019s) ok 25 - map: replacing the detached function keeps its OID
+[17:34:39.105](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[17:34:39.107](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'ordinary:false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:34:39.108](0.000s) ok 26 - map: same-OID replacement invalidates the prepared semantic plan
+[17:34:39.108](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.108](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:34:39.108](0.000s) ok 27 - map: prepared plan now uses the ordinary function
+[17:34:39.125](0.017s) ok 28 - map: membership in another extension does not qualify
+[17:34:39.142](0.016s) ok 29 - map: drop and recreate gives the function a new OID
+[17:34:39.142](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[17:34:39.143](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'ordinary:false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[17:34:39.143](0.000s) ok 30 - map: prepared plan resolves the recreated ordinary function
+[17:34:39.143](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.144](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[17:34:39.144](0.000s) ok 31 - map: recreated non-member is not lowered
+[17:34:39.152](0.008s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.153](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[17:34:39.154](0.000s) ok 32 - map: recreated extension member is lowered after revalidation
+[17:34:39.177](0.024s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:34:39.178](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content);
+[17:34:39.178](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:34:39.178](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.179](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:34:39.179](0.000s) ok 33 - recording filter: generic plan initially uses the extension member
+[17:34:39.200](0.021s) ok 34 - recording filter: fresh planning rejects a detached marker
+[17:34:39.218](0.018s) ok 35 - recording filter: replacing the detached function keeps its OID
+[17:34:39.218](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[17:34:39.220](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:34:39.220](0.000s) ok 36 - recording filter: same-OID replacement invalidates the prepared semantic plan
+[17:34:39.220](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.221](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:34:39.221](0.000s) ok 37 - recording filter: prepared plan now uses the ordinary function
+[17:34:39.241](0.020s) ok 38 - recording filter: membership in another extension does not qualify
+[17:34:39.262](0.020s) ok 39 - recording filter: drop and recreate gives the function a new OID
+[17:34:39.262](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[17:34:39.263](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[17:34:39.264](0.000s) ok 40 - recording filter: prepared plan resolves the recreated ordinary function
+[17:34:39.264](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.265](0.001s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[17:34:39.265](0.000s) ok 41 - recording filter: recreated non-member is not lowered
+[17:34:39.275](0.010s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.276](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[17:34:39.276](0.000s) ok 42 - recording filter: recreated extension member is lowered after revalidation
+[17:34:39.298](0.022s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:34:39.299](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+[17:34:39.299](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:34:39.300](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.300](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:34:39.301](0.000s) ok 43 - exact filter: generic plan initially uses the extension member
+[17:34:39.321](0.021s) ok 44 - exact filter: fresh planning rejects a detached marker
+[17:34:39.341](0.020s) ok 45 - exact filter: replacing the detached function keeps its OID
+[17:34:39.342](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[17:34:39.346](0.004s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:34:39.347](0.001s) ok 46 - exact filter: same-OID replacement invalidates the prepared semantic plan
+[17:34:39.348](0.001s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.349](0.002s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:34:39.349](0.000s) ok 47 - exact filter: prepared plan now uses the ordinary function
+[17:34:39.365](0.016s) ok 48 - exact filter: membership in another extension does not qualify
+[17:34:39.383](0.018s) ok 49 - exact filter: drop and recreate gives the function a new OID
+[17:34:39.384](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[17:34:39.385](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[17:34:39.385](0.000s) ok 50 - exact filter: prepared plan resolves the recreated ordinary function
+[17:34:39.385](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.386](0.001s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[17:34:39.386](0.000s) ok 51 - exact filter: recreated non-member is not lowered
+[17:34:39.395](0.009s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.396](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[17:34:39.396](0.000s) ok 52 - exact filter: recreated extension member is lowered after revalidation
+[17:34:39.420](0.024s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:34:39.420](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+[17:34:39.421](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:34:39.421](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.422](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:34:39.423](0.000s) ok 53 - choice filter: generic plan initially uses the extension member
+[17:34:39.441](0.019s) ok 54 - choice filter: fresh planning rejects a detached marker
+[17:34:39.457](0.016s) ok 55 - choice filter: replacing the detached function keeps its OID
+[17:34:39.458](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[17:34:39.460](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:34:39.460](0.000s) ok 56 - choice filter: same-OID replacement invalidates the prepared semantic plan
+[17:34:39.460](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.461](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0, "generation_profile": "semloom.generation.choice.tristate.v1"}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:34:39.461](0.000s) ok 57 - choice filter: prepared plan now uses the ordinary function
+[17:34:39.483](0.022s) ok 58 - choice filter: membership in another extension does not qualify
+[17:34:39.504](0.021s) ok 59 - choice filter: drop and recreate gives the function a new OID
+[17:34:39.505](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[17:34:39.506](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[17:34:39.506](0.000s) ok 60 - choice filter: prepared plan resolves the recreated ordinary function
+[17:34:39.506](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.506](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0, "generation_profile": "semloom.generation.choice.tristate.v1"}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[17:34:39.506](0.000s) ok 61 - choice filter: recreated non-member is not lowered
+[17:34:39.514](0.007s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[17:34:39.515](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[17:34:39.515](0.000s) ok 62 - choice filter: recreated extension member is lowered after revalidation
+#### Begin standard error
+psql:<stdin>:1: NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to function ai_semantic.map(integer)
+drop cascades to function ai_semantic.filter(integer)
+#### End standard error
+[17:34:39.560](0.045s) ok 63 - extension dropped: map keeps the ordinary implementation
+[17:34:39.568](0.008s) ok 64 - extension dropped: map is not lowered
+[17:34:39.576](0.008s) ok 65 - extension dropped: recording filter keeps the ordinary implementation
+[17:34:39.584](0.008s) ok 66 - extension dropped: recording filter is not lowered
+[17:34:39.593](0.008s) ok 67 - extension dropped: exact filter keeps the ordinary implementation
+[17:34:39.602](0.009s) ok 68 - extension dropped: exact filter is not lowered
+[17:34:39.612](0.010s) ok 69 - extension dropped: choice filter keeps the ordinary implementation
+[17:34:39.620](0.009s) ok 70 - extension dropped: choice filter is not lowered
+[17:34:39.634](0.013s) ok 71 - ordinary SQL remains usable
+### Stopping node "function_identity" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "function_identity"
+[17:34:39.738](0.105s) 1..71

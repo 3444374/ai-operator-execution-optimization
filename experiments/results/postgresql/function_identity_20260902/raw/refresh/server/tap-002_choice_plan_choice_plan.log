@@ -1,0 +1,135 @@
+2026-09-02 17:47:46.055 CST [61653] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 17:47:46.055 CST [61653] LOG:  listening on Unix socket "/tmp/PcqsPUBcN6/.s.PGSQL.20763"
+2026-09-02 17:47:46.057 CST [61659] LOG:  database system was shut down at 2026-09-02 17:47:46 CST
+2026-09-02 17:47:46.059 CST [61653] LOG:  database system is ready to accept connections
+2026-09-02 17:47:46.158 CST [61664] 002_choice_plan.pl LOG:  statement: SHOW semloom_pg.gateway_socket
+2026-09-02 17:47:46.168 CST [61666] 002_choice_plan.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-02 17:47:46.170 CST [61666] 002_choice_plan.pl LOG:  statement: CREATE TABLE choice_inputs(id integer, content text);
+2026-09-02 17:47:46.172 CST [61666] 002_choice_plan.pl LOG:  statement: INSERT INTO choice_inputs VALUES (1, 'database'), (2, NULL);
+2026-09-02 17:47:46.179 CST [61668] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:47:46.188 CST [61670] 002_choice_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 17:47:46.769 CST [61696] 002_choice_plan.pl LOG:  statement: CREATE FUNCTION test_choice_plan(text) RETURNS text
+	AS '<test-worktree>/code/postgres/semloom_pg/t/plan_contract/semloom_plan_contract_test', 'semloom_test_plan' LANGUAGE C STRICT;
+2026-09-02 17:47:46.782 CST [61698] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('old')
+2026-09-02 17:47:46.792 CST [61700] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('copy')
+2026-09-02 17:47:46.802 CST [61702] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('binding')
+2026-09-02 17:47:46.810 CST [61704] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('binding-overflow');
+2026-09-02 17:47:46.811 CST [61704] 002_choice_plan.pl ERROR:  invalid semantic executor binding
+2026-09-02 17:47:46.811 CST [61704] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('binding-overflow');
+2026-09-02 17:47:46.819 CST [61706] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-content');
+2026-09-02 17:47:46.819 CST [61706] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 17:47:46.819 CST [61706] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-content');
+2026-09-02 17:47:46.826 CST [61708] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-count');
+2026-09-02 17:47:46.827 CST [61708] 002_choice_plan.pl ERROR:  invalid generation profile choices
+2026-09-02 17:47:46.827 CST [61708] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-count');
+2026-09-02 17:47:46.834 CST [61710] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-order');
+2026-09-02 17:47:46.835 CST [61710] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 17:47:46.835 CST [61710] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-order');
+2026-09-02 17:47:46.843 CST [61712] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-type');
+2026-09-02 17:47:46.844 CST [61712] 002_choice_plan.pl ERROR:  invalid semantic plan specification field
+2026-09-02 17:47:46.844 CST [61712] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-type');
+2026-09-02 17:47:46.853 CST [61714] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choices-type');
+2026-09-02 17:47:46.854 CST [61714] 002_choice_plan.pl ERROR:  invalid generation profile choices
+2026-09-02 17:47:46.854 CST [61714] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choices-type');
+2026-09-02 17:47:46.862 CST [61716] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('constraint');
+2026-09-02 17:47:46.863 CST [61716] 002_choice_plan.pl ERROR:  unsupported generation profile constraint
+2026-09-02 17:47:46.863 CST [61716] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('constraint');
+2026-09-02 17:47:46.871 CST [61718] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('digest');
+2026-09-02 17:47:46.872 CST [61718] 002_choice_plan.pl ERROR:  generation profile digest mismatch
+2026-09-02 17:47:46.872 CST [61718] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('digest');
+2026-09-02 17:47:46.880 CST [61720] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('duplicate');
+2026-09-02 17:47:46.880 CST [61720] 002_choice_plan.pl ERROR:  duplicate semantic plan specification field
+2026-09-02 17:47:46.880 CST [61720] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('duplicate');
+2026-09-02 17:47:46.888 CST [61722] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('extra');
+2026-09-02 17:47:46.889 CST [61722] 002_choice_plan.pl ERROR:  invalid generation profile fields
+2026-09-02 17:47:46.889 CST [61722] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('extra');
+2026-09-02 17:47:46.896 CST [61724] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('future-schema');
+2026-09-02 17:47:46.896 CST [61724] 002_choice_plan.pl ERROR:  unsupported semantic plan specification
+2026-09-02 17:47:46.896 CST [61724] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('future-schema');
+2026-09-02 17:47:46.903 CST [61726] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('missing');
+2026-09-02 17:47:46.903 CST [61726] 002_choice_plan.pl ERROR:  invalid generation profile fields
+2026-09-02 17:47:46.903 CST [61726] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('missing');
+2026-09-02 17:47:46.913 CST [61728] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('missing-profile');
+2026-09-02 17:47:46.913 CST [61728] 002_choice_plan.pl ERROR:  incomplete semantic plan specification
+2026-09-02 17:47:46.913 CST [61728] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('missing-profile');
+2026-09-02 17:47:46.922 CST [61730] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('null-profile');
+2026-09-02 17:47:46.922 CST [61730] 002_choice_plan.pl ERROR:  invalid generation profile fields
+2026-09-02 17:47:46.922 CST [61730] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('null-profile');
+2026-09-02 17:47:46.934 CST [61732] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('old-with-profile');
+2026-09-02 17:47:46.936 CST [61732] 002_choice_plan.pl ERROR:  incomplete semantic plan specification
+2026-09-02 17:47:46.936 CST [61732] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('old-with-profile');
+2026-09-02 17:47:46.945 CST [61734] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('outer-digest');
+2026-09-02 17:47:46.946 CST [61734] 002_choice_plan.pl ERROR:  unsupported exact SemFilter plan specification
+2026-09-02 17:47:46.946 CST [61734] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('outer-digest');
+2026-09-02 17:47:46.956 CST [61736] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('oversized-id');
+2026-09-02 17:47:46.957 CST [61736] 002_choice_plan.pl ERROR:  invalid semantic plan specification field
+2026-09-02 17:47:46.957 CST [61736] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('oversized-id');
+2026-09-02 17:47:46.964 CST [61738] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('unknown-field');
+2026-09-02 17:47:46.965 CST [61738] 002_choice_plan.pl ERROR:  unknown generation profile field
+2026-09-02 17:47:46.965 CST [61738] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('unknown-field');
+2026-09-02 17:47:46.972 CST [61740] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('unknown-id');
+2026-09-02 17:47:46.973 CST [61740] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 17:47:46.973 CST [61740] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('unknown-id');
+2026-09-02 17:47:46.980 CST [61742] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('unknown-version');
+2026-09-02 17:47:46.980 CST [61742] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 17:47:46.980 CST [61742] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('unknown-version');
+2026-09-02 17:47:46.987 CST [61744] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('version-type');
+2026-09-02 17:47:46.987 CST [61744] 002_choice_plan.pl ERROR:  invalid semantic plan specification field
+2026-09-02 17:47:46.987 CST [61744] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('version-type');
+2026-09-02 17:47:46.996 CST [61746] 002_choice_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-02 17:47:47.007 CST [61748] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":null}'::jsonb);
+2026-09-02 17:47:47.008 CST [61748] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.008 CST [61748] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":null}'::jsonb);
+2026-09-02 17:47:47.015 CST [61750] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":1}'::jsonb);
+2026-09-02 17:47:47.016 CST [61750] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.016 CST [61750] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":1}'::jsonb);
+2026-09-02 17:47:47.023 CST [61752] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":true}'::jsonb);
+2026-09-02 17:47:47.023 CST [61752] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.023 CST [61752] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":true}'::jsonb);
+2026-09-02 17:47:47.032 CST [61754] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":[]}'::jsonb);
+2026-09-02 17:47:47.033 CST [61754] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.033 CST [61754] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":[]}'::jsonb);
+2026-09-02 17:47:47.042 CST [61756] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":{}}'::jsonb);
+2026-09-02 17:47:47.043 CST [61756] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.043 CST [61756] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":{}}'::jsonb);
+2026-09-02 17:47:47.050 CST [61758] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"unknown"}'::jsonb);
+2026-09-02 17:47:47.050 CST [61758] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.050 CST [61758] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"unknown"}'::jsonb);
+2026-09-02 17:47:47.059 CST [61760] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v2"}'::jsonb);
+2026-09-02 17:47:47.060 CST [61760] 002_choice_plan.pl ERROR:  unsupported SemFilter generation_profile
+2026-09-02 17:47:47.060 CST [61760] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v2"}'::jsonb);
+2026-09-02 17:47:47.069 CST [61762] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 17:47:47.070 CST [61762] 002_choice_plan.pl ERROR:  SemFilter options must contain exactly model, temperature, and max_tokens
+2026-09-02 17:47:47.070 CST [61762] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-02 17:47:47.080 CST [61764] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1","extra":1}'::jsonb);
+2026-09-02 17:47:47.081 CST [61764] 002_choice_plan.pl ERROR:  SemFilter options must contain exactly model, temperature, and max_tokens
+2026-09-02 17:47:47.081 CST [61764] 002_choice_plan.pl STATEMENT:  EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1","extra":1}'::jsonb);
+2026-09-02 17:47:47.091 CST [61766] 002_choice_plan.pl LOG:  statement: SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 0;
+2026-09-02 17:47:47.103 CST [61768] 002_choice_plan.pl LOG:  statement: SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id < 0;
+2026-09-02 17:47:47.112 CST [61770] 002_choice_plan.pl LOG:  statement: SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND content IS NULL;
+2026-09-02 17:47:47.120 CST [61772] 002_choice_plan.pl LOG:  statement: EXPLAIN ANALYZE SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id < 0;
+2026-09-02 17:47:47.134 CST [61774] 002_choice_plan.pl LOG:  statement: SET plan_cache_mode = force_generic_plan;
+2026-09-02 17:47:47.134 CST [61774] 002_choice_plan.pl LOG:  statement: PREPARE choice_p(integer) AS SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id >= $1;
+2026-09-02 17:47:47.135 CST [61774] 002_choice_plan.pl LOG:  statement: ;
+2026-09-02 17:47:47.135 CST [61774] 002_choice_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE choice_p(1)
+	;
+2026-09-02 17:47:47.139 CST [61774] 002_choice_plan.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-02 17:47:47.139 CST [61774] 002_choice_plan.pl LOG:  statement: ;
+2026-09-02 17:47:47.139 CST [61774] 002_choice_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE choice_p(1)
+	;
+2026-09-02 17:47:47.142 CST [61774] 002_choice_plan.pl LOG:  statement: ALTER TABLE choice_inputs ADD COLUMN extra integer;
+2026-09-02 17:47:47.142 CST [61774] 002_choice_plan.pl LOG:  statement: ;
+2026-09-02 17:47:47.143 CST [61774] 002_choice_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE choice_p(1)
+	;
+2026-09-02 17:47:47.153 CST [61776] 002_choice_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-02 17:47:47.153 CST [61776] 002_choice_plan.pl LOG:  statement: PREPARE empty_choice AS SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id < 0;
+2026-09-02 17:47:47.154 CST [61776] 002_choice_plan.pl LOG:  statement: EXECUTE empty_choice;
+2026-09-02 17:47:47.154 CST [61776] 002_choice_plan.pl DETAIL:  prepare: PREPARE empty_choice AS SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id < 0;
+2026-09-02 17:47:47.163 CST [61778] 002_choice_plan.pl LOG:  statement: SELECT count(*) FROM choice_inputs
+2026-09-02 17:47:47.167 CST [61653] LOG:  received fast shutdown request
+2026-09-02 17:47:47.167 CST [61653] LOG:  aborting any active transactions
+2026-09-02 17:47:47.168 CST [61653] LOG:  background worker "logical replication launcher" (PID 61662) exited with exit code 1
+2026-09-02 17:47:47.169 CST [61657] LOG:  shutting down
+2026-09-02 17:47:47.169 CST [61657] LOG:  checkpoint starting: shutdown immediate
+2026-09-02 17:47:47.171 CST [61657] LOG:  checkpoint complete: wrote 51 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=208 kB, estimate=208 kB; lsn=0/1721578, redo lsn=0/1721578
+2026-09-02 17:47:47.179 CST [61653] LOG:  database system is shut down

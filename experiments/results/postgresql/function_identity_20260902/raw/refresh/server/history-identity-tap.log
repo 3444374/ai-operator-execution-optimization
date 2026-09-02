@@ -1,0 +1,6 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<private-runtime-path>" PGPORT='65432' PG_REGRESS='<private-runtime-path>' /usr/bin/prove -I <private-runtime-path> -I ./  t/005_function_identity.pl
+# +++ tap install-check in  +++
+t/005_function_identity.pl .. ok
+All tests successful.
+Files=1, Tests=71,  2 wallclock secs ( 0.04 usr  0.01 sys +  0.80 cusr  0.48 csys =  1.33 CPU)
+Result: PASS

@@ -1,0 +1,63 @@
+# initializing database system by running initdb
+# connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+# issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE p AS SELECT ai_semantic.map(content) FROM inputs
+# results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+# issuing query 2 via background psql: EXPLAIN EXECUTE p
+# results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+# issuing query 3 via background psql: EXPLAIN EXECUTE p
+# results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+# issuing query 4 via background psql: DISCARD PLANS
+# results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+# issuing query 5 via background psql: EXPLAIN EXECUTE p
+# results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'Seq Scan on inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+ok 1 - initial plan uses the member
+ok 2 - fresh plan does not lower the detached marker
+ok 3 - discarding plans applies the current membership
+1..3

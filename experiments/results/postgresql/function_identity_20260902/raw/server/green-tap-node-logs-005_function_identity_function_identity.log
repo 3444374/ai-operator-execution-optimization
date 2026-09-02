@@ -1,0 +1,18 @@
+2026-09-02 17:26:13.747 CST [58195] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 17:26:13.748 CST [58195] LOG:  listening on Unix socket "/tmp/wbPKR_aLXH/.s.PGSQL.18858"
+2026-09-02 17:26:13.749 CST [58201] LOG:  database system was shut down at 2026-09-02 17:26:13 CST
+2026-09-02 17:26:13.751 CST [58195] LOG:  database system is ready to accept connections
+2026-09-02 17:26:13.848 CST [58206] 005_function_identity.pl LOG:  statement: CREATE SCHEMA ai_semantic;
+2026-09-02 17:26:13.849 CST [58206] 005_function_identity.pl LOG:  statement: CREATE FUNCTION ai_semantic.map(text) RETURNS text LANGUAGE plpgsql VOLATILE
+	AS $$ BEGIN RETURN 'ordinary:' || $1; END $$;
+2026-09-02 17:26:13.850 CST [58206] 005_function_identity.pl LOG:  statement: CREATE TABLE identity_inputs(content text);
+2026-09-02 17:26:13.851 CST [58206] 005_function_identity.pl LOG:  statement: INSERT INTO identity_inputs VALUES ('false');
+2026-09-02 17:26:13.867 CST [58208] 005_function_identity.pl LOG:  statement: SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:26:13.879 CST [58210] 005_function_identity.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(content) FROM identity_inputs
+2026-09-02 17:26:13.883 CST [58195] LOG:  received fast shutdown request
+2026-09-02 17:26:13.883 CST [58195] LOG:  aborting any active transactions
+2026-09-02 17:26:13.884 CST [58195] LOG:  background worker "logical replication launcher" (PID 58204) exited with exit code 1
+2026-09-02 17:26:13.884 CST [58199] LOG:  shutting down
+2026-09-02 17:26:13.885 CST [58199] LOG:  checkpoint starting: shutdown immediate
+2026-09-02 17:26:13.886 CST [58199] LOG:  checkpoint complete: wrote 39 buffers (0.2%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.002 s; sync files=0, longest=0.000 s, average=0.000 s; distance=161 kB, estimate=161 kB; lsn=0/1715AE0, redo lsn=0/1715AE0
+2026-09-02 17:26:13.893 CST [58195] LOG:  database system is shut down

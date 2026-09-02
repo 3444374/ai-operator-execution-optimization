@@ -1,0 +1,227 @@
+# Checking port 16478
+# Found port 16478
+Name: filter_insert
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/archives
+Connection string: port=16478 host=/tmp/mcXVBTpKSW
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/004_filter_insert_filter_insert.log
+[17:34:34.009](0.021s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata
+### Starting node "filter_insert"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/004_filter_insert_filter_insert.log --options --cluster-name=filter_insert start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "filter_insert" is 59758
+[17:34:34.724](0.716s) ok 1 - INSERT plans Filter below the PostgreSQL write node
+[17:34:34.734](0.010s) ok 2 - direct Filter INSERT executes
+[17:34:34.742](0.008s) ok 3 - ordinary predicate, projection and tristate Filter select the inserted row
+[17:34:34.781](0.040s) ok 4 - recording keeps PostgreSQL write ownership
+[17:34:34.782](0.000s) ok 5 - recording INSERT has exactly one Filter
+[17:34:34.782](0.000s) ok 6 - recording keeps the reference role
+[17:34:34.793](0.012s) ok 7 - recording commits the selected rows
+[17:34:34.794](0.000s) ok 8 - recording retains duplicates and drops FALSE/UNKNOWN/NULL
+[17:34:34.811](0.017s) ok 9 - recording INSERT reports actual execution counters
+[17:34:34.814](0.003s) ok 10 - recording excludes NULL from accepted tasks
+[17:34:34.814](0.000s) ok 11 - recording emits only the three TRUE tuples
+[17:34:34.827](0.012s) ok 12 - recording preserves the non-pulled-up ORDER BY/LIMIT source
+[17:34:34.827](0.000s) ok 13 - recording applies LIMIT after filtering and rolls back writes
+[17:34:34.838](0.011s) ok 14 - recording prepared INSERT survives plan invalidation
+[17:34:34.838](0.000s) ok 15 - recording prepared INSERT retains bindings and identity
+[17:34:34.855](0.017s) ok 16 - recording savepoint has only the expected parser error
+[17:34:34.856](0.000s) ok 17 - recording preserves parser SQLSTATE
+[17:34:34.856](0.000s) ok 18 - recording rolls back partial INSERT and recovers in the same backend
+[17:34:34.877](0.021s) ok 19 - recording target CHECK failure aborts INSERT
+[17:34:34.878](0.000s) ok 20 - recording keeps PostgreSQL target constraint errors
+[17:34:34.888](0.010s) ok 21 - recording target constraint failure leaves no partial rows
+[17:34:34.899](0.011s) ok 22 - recording no-task INSERT (id<0) does not connect
+[17:34:34.909](0.010s) ok 23 - recording no-task INSERT (decision IS NULL) does not connect
+[17:34:34.918](0.008s) ok 24 - recording no-task INSERT (id<7 LIMIT 0) does not connect
+[17:34:34.928](0.010s) ok 25 - recording no-task writes nothing
+[17:34:34.938](0.010s) ok 26 - recording  RETURNING id remains unsupported
+[17:34:34.939](0.000s) ok 27 - recording rejects INSERT variant before provider I/O
+[17:34:34.950](0.011s) ok 28 - recording LIMIT 1 RETURNING id remains unsupported
+[17:34:34.950](0.000s) ok 29 - recording rejects INSERT variant before provider I/O
+[17:34:34.961](0.011s) ok 30 - recording  ON CONFLICT DO NOTHING remains unsupported
+[17:34:34.962](0.000s) ok 31 - recording rejects INSERT variant before provider I/O
+[17:34:34.972](0.010s) ok 32 - recording LIMIT 1 ON CONFLICT DO NOTHING remains unsupported
+[17:34:34.972](0.000s) ok 33 - recording rejects INSERT variant before provider I/O
+[17:34:34.982](0.010s) ok 34 - recording rejects unsupported INSERT shape at planning
+[17:34:34.983](0.000s) ok 35 - recording unsupported shape retains feature-not-supported error
+[17:34:34.995](0.012s) ok 36 - recording rejects unsupported INSERT shape at planning
+[17:34:34.995](0.000s) ok 37 - recording unsupported shape retains feature-not-supported error
+[17:34:35.004](0.009s) ok 38 - recording rejects unsupported INSERT shape at planning
+[17:34:35.005](0.000s) ok 39 - recording unsupported shape retains feature-not-supported error
+[17:34:35.030](0.025s) ok 40 - exact v3 keeps PostgreSQL write ownership
+[17:34:35.030](0.000s) ok 41 - exact v3 INSERT has exactly one Filter
+[17:34:35.030](0.000s) ok 42 - exact v3 keeps the reference role
+[17:34:35.030](0.000s) ok 43 - exact v3 exposes its semantic spec
+[17:34:35.030](0.000s) ok 44 - exact v3 INSERT preserves the SELECT spec
+[17:34:35.124](0.094s) ok 45 - INSERT gateway is ready
+[17:34:35.151](0.027s) ok 46 - INSERT gateway exits normally
+[17:34:35.152](0.000s) ok 47 - INSERT gateway removes its listener
+[17:34:35.152](0.001s) ok 48 - exact v3 commits the selected rows
+[17:34:35.153](0.000s) ok 49 - exact v3 retains duplicates and drops FALSE/UNKNOWN/NULL
+[17:34:35.259](0.106s) ok 50 - INSERT gateway is ready
+[17:34:35.287](0.027s) ok 51 - INSERT gateway exits normally
+[17:34:35.287](0.000s) ok 52 - INSERT gateway removes its listener
+[17:34:35.288](0.001s) ok 53 - exact v3 INSERT reports actual execution counters
+[17:34:35.292](0.004s) ok 54 - exact v3 excludes NULL from accepted tasks
+[17:34:35.292](0.000s) ok 55 - exact v3 emits only the three TRUE tuples
+[17:34:35.292](0.000s) ok 56 - exact v3 model calls match non-NULL input
+[17:34:35.387](0.095s) ok 57 - INSERT gateway is ready
+[17:34:35.415](0.028s) ok 58 - INSERT gateway exits normally
+[17:34:35.415](0.000s) ok 59 - INSERT gateway removes its listener
+[17:34:35.416](0.001s) ok 60 - exact v3 preserves the non-pulled-up ORDER BY/LIMIT source
+[17:34:35.417](0.000s) ok 61 - exact v3 applies LIMIT after filtering and rolls back writes
+[17:34:35.512](0.095s) ok 62 - INSERT gateway is ready
+[17:34:35.542](0.030s) ok 63 - INSERT gateway exits normally
+[17:34:35.542](0.000s) ok 64 - INSERT gateway removes its listener
+[17:34:35.543](0.001s) ok 65 - exact v3 prepared INSERT survives plan invalidation
+[17:34:35.543](0.000s) ok 66 - exact v3 prepared INSERT retains bindings and identity
+[17:34:35.650](0.107s) ok 67 - INSERT gateway is ready
+[17:34:35.679](0.029s) ok 68 - INSERT gateway exits normally
+[17:34:35.679](0.000s) ok 69 - INSERT gateway removes its listener
+[17:34:35.680](0.001s) ok 70 - exact v3 savepoint has only the expected parser error
+[17:34:35.681](0.000s) ok 71 - exact v3 preserves parser SQLSTATE
+[17:34:35.681](0.000s) ok 72 - exact v3 rolls back partial INSERT and recovers in the same backend
+[17:34:35.787](0.106s) ok 73 - INSERT gateway is ready
+[17:34:35.813](0.025s) ok 74 - INSERT gateway exits normally
+[17:34:35.813](0.000s) ok 75 - INSERT gateway removes its listener
+[17:34:35.814](0.001s) ok 76 - exact v3 target CHECK failure aborts INSERT
+[17:34:35.814](0.000s) ok 77 - exact v3 keeps PostgreSQL target constraint errors
+[17:34:35.825](0.011s) ok 78 - exact v3 target constraint failure leaves no partial rows
+[17:34:35.835](0.010s) ok 79 - exact v3 no-task INSERT (id<0) does not connect
+[17:34:35.845](0.010s) ok 80 - exact v3 no-task INSERT (decision IS NULL) does not connect
+[17:34:35.857](0.012s) ok 81 - exact v3 no-task INSERT (id<7 LIMIT 0) does not connect
+[17:34:35.865](0.008s) ok 82 - exact v3 no-task writes nothing
+[17:34:35.874](0.009s) ok 83 - exact v3  RETURNING id remains unsupported
+[17:34:35.874](0.000s) ok 84 - exact v3 rejects INSERT variant before provider I/O
+[17:34:35.885](0.011s) ok 85 - exact v3 LIMIT 1 RETURNING id remains unsupported
+[17:34:35.886](0.000s) ok 86 - exact v3 rejects INSERT variant before provider I/O
+[17:34:35.895](0.010s) ok 87 - exact v3  ON CONFLICT DO NOTHING remains unsupported
+[17:34:35.896](0.000s) ok 88 - exact v3 rejects INSERT variant before provider I/O
+[17:34:35.905](0.009s) ok 89 - exact v3 LIMIT 1 ON CONFLICT DO NOTHING remains unsupported
+[17:34:35.905](0.000s) ok 90 - exact v3 rejects INSERT variant before provider I/O
+[17:34:35.915](0.009s) ok 91 - exact v3 rejects unsupported INSERT shape at planning
+[17:34:35.915](0.000s) ok 92 - exact v3 unsupported shape retains feature-not-supported error
+[17:34:35.924](0.009s) ok 93 - exact v3 rejects unsupported INSERT shape at planning
+[17:34:35.924](0.000s) ok 94 - exact v3 unsupported shape retains feature-not-supported error
+[17:34:35.934](0.010s) ok 95 - exact v3 rejects unsupported INSERT shape at planning
+[17:34:35.934](0.000s) ok 96 - exact v3 unsupported shape retains feature-not-supported error
+[17:34:35.959](0.024s) ok 97 - choice v4 keeps PostgreSQL write ownership
+[17:34:35.959](0.000s) ok 98 - choice v4 INSERT has exactly one Filter
+[17:34:35.959](0.000s) ok 99 - choice v4 keeps the reference role
+[17:34:35.959](0.000s) ok 100 - choice v4 exposes its semantic spec
+[17:34:35.959](0.000s) ok 101 - choice v4 INSERT preserves the SELECT spec
+[17:34:35.959](0.000s) ok 102 - choice INSERT keeps the independent semantic digest vector
+[17:34:36.054](0.095s) ok 103 - INSERT gateway is ready
+[17:34:36.080](0.026s) ok 104 - INSERT gateway exits normally
+[17:34:36.080](0.000s) ok 105 - INSERT gateway removes its listener
+[17:34:36.081](0.001s) ok 106 - choice v4 commits the selected rows
+[17:34:36.081](0.000s) ok 107 - choice v4 retains duplicates and drops FALSE/UNKNOWN/NULL
+[17:34:36.187](0.106s) ok 108 - INSERT gateway is ready
+[17:34:36.214](0.027s) ok 109 - INSERT gateway exits normally
+[17:34:36.214](0.000s) ok 110 - INSERT gateway removes its listener
+[17:34:36.215](0.001s) ok 111 - choice v4 INSERT reports actual execution counters
+[17:34:36.220](0.005s) ok 112 - choice v4 excludes NULL from accepted tasks
+[17:34:36.221](0.000s) ok 113 - choice v4 emits only the three TRUE tuples
+[17:34:36.221](0.000s) ok 114 - choice v4 model calls match non-NULL input
+[17:34:36.326](0.105s) ok 115 - INSERT gateway is ready
+[17:34:36.356](0.031s) ok 116 - INSERT gateway exits normally
+[17:34:36.357](0.000s) ok 117 - INSERT gateway removes its listener
+[17:34:36.358](0.001s) ok 118 - choice v4 preserves the non-pulled-up ORDER BY/LIMIT source
+[17:34:36.358](0.000s) ok 119 - choice v4 applies LIMIT after filtering and rolls back writes
+[17:34:36.453](0.095s) ok 120 - INSERT gateway is ready
+[17:34:36.482](0.029s) ok 121 - INSERT gateway exits normally
+[17:34:36.483](0.000s) ok 122 - INSERT gateway removes its listener
+[17:34:36.483](0.000s) ok 123 - choice v4 prepared INSERT survives plan invalidation
+[17:34:36.483](0.000s) ok 124 - choice v4 prepared INSERT retains bindings and identity
+[17:34:36.620](0.137s) ok 125 - INSERT gateway is ready
+[17:34:36.648](0.028s) ok 126 - INSERT gateway exits normally
+[17:34:36.648](0.000s) ok 127 - INSERT gateway removes its listener
+[17:34:36.649](0.001s) ok 128 - choice v4 savepoint has only the expected parser error
+[17:34:36.650](0.000s) ok 129 - choice v4 preserves parser SQLSTATE
+[17:34:36.650](0.000s) ok 130 - choice v4 rolls back partial INSERT and recovers in the same backend
+[17:34:36.744](0.094s) ok 131 - INSERT gateway is ready
+[17:34:36.770](0.025s) ok 132 - INSERT gateway exits normally
+[17:34:36.770](0.000s) ok 133 - INSERT gateway removes its listener
+[17:34:36.771](0.001s) ok 134 - choice v4 target CHECK failure aborts INSERT
+[17:34:36.771](0.000s) ok 135 - choice v4 keeps PostgreSQL target constraint errors
+[17:34:36.784](0.013s) ok 136 - choice v4 target constraint failure leaves no partial rows
+[17:34:36.797](0.013s) ok 137 - choice v4 no-task INSERT (id<0) does not connect
+[17:34:36.808](0.011s) ok 138 - choice v4 no-task INSERT (decision IS NULL) does not connect
+[17:34:36.820](0.011s) ok 139 - choice v4 no-task INSERT (id<7 LIMIT 0) does not connect
+[17:34:36.831](0.011s) ok 140 - choice v4 no-task writes nothing
+[17:34:36.840](0.009s) ok 141 - choice v4  RETURNING id remains unsupported
+[17:34:36.841](0.000s) ok 142 - choice v4 rejects INSERT variant before provider I/O
+[17:34:36.847](0.007s) ok 143 - choice v4 LIMIT 1 RETURNING id remains unsupported
+[17:34:36.848](0.000s) ok 144 - choice v4 rejects INSERT variant before provider I/O
+[17:34:36.858](0.010s) ok 145 - choice v4  ON CONFLICT DO NOTHING remains unsupported
+[17:34:36.858](0.000s) ok 146 - choice v4 rejects INSERT variant before provider I/O
+[17:34:36.868](0.010s) ok 147 - choice v4 LIMIT 1 ON CONFLICT DO NOTHING remains unsupported
+[17:34:36.868](0.000s) ok 148 - choice v4 rejects INSERT variant before provider I/O
+[17:34:36.876](0.008s) ok 149 - choice v4 rejects unsupported INSERT shape at planning
+[17:34:36.876](0.000s) ok 150 - choice v4 unsupported shape retains feature-not-supported error
+[17:34:36.886](0.010s) ok 151 - choice v4 rejects unsupported INSERT shape at planning
+[17:34:36.886](0.000s) ok 152 - choice v4 unsupported shape retains feature-not-supported error
+[17:34:36.893](0.007s) ok 153 - choice v4 rejects unsupported INSERT shape at planning
+[17:34:36.894](0.000s) ok 154 - choice v4 unsupported shape retains feature-not-supported error
+[17:34:36.998](0.104s) ok 155 - INSERT gateway is ready
+[17:34:37.025](0.027s) ok 156 - INSERT gateway exits normally
+[17:34:37.025](0.000s) ok 157 - INSERT gateway removes its listener
+[17:34:37.026](0.001s) ok 158 - choice INSERT preserves source RLS and target grants
+[17:34:37.026](0.000s) ok 159 - RLS-hidden invalid input never reaches the provider
+[17:34:37.048](0.021s) ok 160 - missing INSERT privilege is a PostgreSQL permission error
+[17:34:37.057](0.009s) ok 161 - permission failure writes nothing
+[17:34:37.151](0.094s) ok 162 - INSERT gateway is ready
+[17:34:37.680](0.529s) ok 163 - INSERT gateway exits normally
+[17:34:37.681](0.000s) ok 164 - INSERT gateway removes its listener
+[17:34:37.681](0.001s) ok 165 - choice INSERT cancellation preserves PostgreSQL SQLSTATE
+[17:34:37.692](0.011s) ok 166 - cancelled INSERT leaves no rows
+[17:34:37.786](0.094s) ok 167 - INSERT gateway is ready
+[17:34:37.815](0.028s) ok 168 - INSERT gateway exits normally
+[17:34:37.815](0.000s) ok 169 - INSERT gateway removes its listener
+[17:34:37.816](0.001s) ok 170 - choice INSERT recovers after cancellation
+[17:34:37.816](0.000s) ok 171 - recovery commits exactly one row
+### Stopping node "filter_insert" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_004_filter_insert_filter_insert_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "filter_insert"
+[17:34:37.923](0.107s) 1..171

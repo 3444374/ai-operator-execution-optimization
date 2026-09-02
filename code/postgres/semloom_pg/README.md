@@ -49,6 +49,26 @@ That comparison covers SQL registration, choice of PG integration, operator sema
 tuple/result binding, lifecycle and external execution, not just multiple operators or gateway concurrency.
 The current thin scan, PG-private runtime and neutral provider interface remain the implementation base.
 
+### Function identity and administrative membership changes
+
+The `codex/pg-function-identity` slice requires each resolved marker to belong to `semloom_pg`;
+matching the schema, name and argument types alone is insufficient. Other-schema functions, overloads,
+non-members and members of another extension remain ordinary PostgreSQL functions. The slice is not yet
+merged into main. See the [identity verification](../../../experiments/results/postgresql/function_identity_20260902/README.md).
+
+Only for `ALTER EXTENSION … ADD/DROP FUNCTION` that leaves the function definition unchanged, use this
+temporary procedure: pause related queries and finish old transactions and cursors; commit the membership
+change; then execute `DISCARD PLANS` or reconnect on **every relevant physical database connection** before
+resuming queries. This includes connections behind a pool; refreshing only the DDL session is insufficient.
+Do not use this procedure if all relevant connections cannot be refreshed. PostgreSQL retains prepared
+statements but replans them on their next use after [DISCARD PLANS](https://www.postgresql.org/docs/18/sql-discard.html).
+
+Automatic cross-session invalidation for membership-only changes is pending. This is not online transparent
+DDL support or immediate permission revocation. Function replacement and drop/recreate retain their separate
+automatic plan-revalidation tests; they are not deferred by this temporary requirement.
+
+### Supported query shapes
+
 The current supported query shape is deliberately narrow:
 
 - one top-level `ai_semantic.map(text)` in a single-table `SELECT` target list;
