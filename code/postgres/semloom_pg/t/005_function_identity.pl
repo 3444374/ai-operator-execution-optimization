@@ -26,7 +26,10 @@ my @calls = (
 sub ordinary_definition
 {
     my ($call) = @_;
-    return "CREATE OR REPLACE FUNCTION ai_semantic.$call->[1] RETURNS $call->[2] " .
+    my $declaration = $call->[1];
+    $declaration =~ s/\(text\)/(input text)/;
+    $declaration =~ s/\(text,text,jsonb\)/(input text, instruction text, options jsonb)/;
+    return "CREATE OR REPLACE FUNCTION ai_semantic.$declaration RETURNS $call->[2] " .
            'LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN ' . $call->[3] . '; END $$;';
 }
 
