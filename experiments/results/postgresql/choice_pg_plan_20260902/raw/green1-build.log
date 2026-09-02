@@ -1,0 +1,15 @@
+gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wshadow=compatible-local -Wformat-security -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-format-truncation -Wno-stringop-truncation -O2 -O2 -Werror -fPIC -fvisibility=hidden -Isrc -I. -I./ -I<pg18.3-prefix>/include/server -I<pg18.3-prefix>/include/internal -D_GNU_SOURCE      -c -o src/pg_semantic_runtime.o src/pg_semantic_runtime.c
+gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wshadow=compatible-local -Wformat-security -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-format-truncation -Wno-stringop-truncation -O2 -O2 -Werror -fPIC -fvisibility=hidden -Isrc -I. -I./ -I<pg18.3-prefix>/include/server -I<pg18.3-prefix>/include/internal -D_GNU_SOURCE      -c -o src/sem_filter_path.o src/sem_filter_path.c
+gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wshadow=compatible-local -Wformat-security -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-format-truncation -Wno-stringop-truncation -O2 -O2 -Werror -fPIC -fvisibility=hidden -Isrc -I. -I./ -I<pg18.3-prefix>/include/server -I<pg18.3-prefix>/include/internal -D_GNU_SOURCE      -c -o src/sem_plan_spec.o src/sem_plan_spec.c
+gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wshadow=compatible-local -Wformat-security -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-format-truncation -Wno-stringop-truncation -O2 -O2 -Werror -fPIC -fvisibility=hidden -Isrc -I. -I./ -I<pg18.3-prefix>/include/server -I<pg18.3-prefix>/include/internal -D_GNU_SOURCE      -c -o src/sem_pump.o src/sem_pump.c
+In file included from src/sem_plan_spec.c:13:
+src/sem_plan_spec.h:92:74: error: unknown type name ‘ExplainState’; did you mean ‘ExplainStmt’?
+   92 |                                                                          ExplainState *explain_state);
+      |                                                                          ^~~~~~~~~~~~
+      |                                                                          ExplainStmt
+src/sem_plan_spec.c:563:61: error: unknown type name ‘ExplainState’; did you mean ‘ExplainStmt’?
+  563 | semloom_plan_spec_explain(const SemloomPlanSpec *plan_spec, ExplainState *explain_state)
+      |                                                             ^~~~~~~~~~~~
+      |                                                             ExplainStmt
+make: *** [<builtin>: src/sem_plan_spec.o] Error 1
+make: *** Waiting for unfinished jobs....

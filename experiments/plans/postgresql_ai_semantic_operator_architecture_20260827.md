@@ -275,7 +275,7 @@ adapter 一侧；供应商请求字段留在模型 adapter 一侧。两边不要
 |---|---|---|
 | 数据库载体 | 自有目标为 `REL_18_3`，使用受限 CustomPath/CustomScan | 实际 PG 版本、调用入口与 planner 可见性；接通 provider 不等于取得同等优化能力 |
 | 算子与计划身份 | plan 保存 operator/spec/algorithm/role；中立 open spec 传递身份 | 能否从实际调用形成稳定语义身份；不得仅凭算子同名认定等价 |
-| prompt、parser、model、生成配置 | exact Filter 已有对应 identity；choice profile 仍待四 C | 能否保留原始语义与有效生成参数；不同定义必须有不同 identity |
+| prompt、parser、model、生成配置 | exact Filter 已有对应 identity；choice 已有 schema 3 plan，port/wire 执行仍待四 C | 能否保留原始语义与有效生成参数；不同定义必须有不同 identity |
 | 值表示与大小 | 当前为 text 输入及 text/tristate 结果，有 UTF-8 与长度检查 | 类型、编码与上限是否兼容；多列/图像等未支持表示不能隐式当作 text 接受 |
 | 单项关联与顺序 | session 内 `uint64 sequence`，同步单在途，NULL 不占序号 | 可用什么本地关联方式恢复每项结果、处理重复 payload；不要求相同字段名 |
 | NULL、错误、结果 | PG 解释 SQL NULL、严格三值 parser 与 keep/drop；错误终止查询 | 两值/三值、空串/NULL、错误/UNKNOWN 是否同义；差异显式记录或拒绝 |
@@ -335,6 +335,7 @@ backpressure、生命周期管理仍保留。IMLane-like database batch placemen
 
 目标是显式选择三值受约束生成，保留旧 SQL/schema/wire，不成为默认或质量合格的 reference。
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
+当前已完成值合同与 PG plan 保存/严格解码/EXPLAIN，实际执行仍拒绝；port/wire/gateway 接入尚未实现。
 [四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
 

@@ -7,14 +7,16 @@ PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic cont
 OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
 scheduling, asynchronous execution, or a second physical path.
 
-Next PG engineering work is the [opt-in choice generation profile](../../../experiments/plans/postgresql_choice_profile_engineering.md).
-Its fourth SQL option, plan schema 3 and wire v4 are designed but not implemented; the interfaces below remain
-the current executable behavior. The new profile will be non-default and not quality-qualified. Engineering
-support will not resume calibration or allow old calibration artifacts to match the new semantic identity.
-The first implementation slice adds only a neutral `AiGenerationProfile` value and a bounded, standalone C
-encoder in `src/generation_profile.{h,c}`. Its canonical bytes match the Python value contract and a fixed
-independently hashed vector. The helper is not yet linked into PGXS; `AiOpenSpec` and the SQL/wire paths are
-unchanged. These unit tests are not PostgreSQL choice-path or model-support qualification.
+The [opt-in choice generation profile](../../../experiments/plans/postgresql_choice_profile_engineering.md)
+now has PostgreSQL plan support (`00cc6bbf`). Adding the fourth option
+`"generation_profile":"semloom.generation.choice.tristate.v1"` saves a complete ordered profile in schema 3.
+Ordinary EXPLAIN displays its ID, version, choices, digest and unqualified status; prepared/generic plans retain
+the identity. Old three-field options still use schema 2, unchanged digests and wire v3.
+Wire v4 and the `AiOpenSpec` mapping are not implemented: all schema-3 execution, including no-task queries,
+raises `0A000` before child initialization or provider selection. It never silently uses v3.
+The bounded C encoder in `src/generation_profile.{h,c}` is now linked into PGXS. Its canonical bytes match
+the Python value and an independently hashed vector; the complete bytes enter the new semantic digest.
+Old calibration artifacts cannot match it. This planning support does not qualify model quality or resume calibration.
 Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
@@ -61,9 +63,10 @@ own schema and 163,840-byte input limit while version 2 remains frozen. Accepted
 multiple in-flight tasks, out-of-order completion handling, automatic retries, and a second
 physical path remain pending; this slice must not be described as a complete optimized database AI operator.
 
-The planner serializes two strict named-field semantic schemas. Schema 1 preserves the recording compatibility paths.
+The planner serializes three strict named-field semantic schemas. Schema 1 preserves the recording compatibility paths.
 Schema 2 owns the exact Filter instruction, prompt/parser identities, model and fixed generation constraints,
-NULL/error/order policy, physical algorithm/role, and semantic/physical digests. The executor rejects missing,
+NULL/error/order policy, physical algorithm/role, and semantic/physical digests. Schema 3 adds the self-contained
+choice profile but remains plan-only until wire v4 is implemented. The executor rejects missing,
 duplicate, unknown, mistyped, oversized, or unsupported fields before provider I/O; the input column remains
 a separate binding and is not hashed. `PgSemanticRuntime` is the only PG-private plan-to-provider conversion
 point. Exact EXPLAIN exposes the semantic spec, prompt/parser IDs, model, physical algorithm and role without

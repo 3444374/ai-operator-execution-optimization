@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（choice profile 值合同首个实现切片）
+日期：2026-09-02（choice profile PG plan 接入）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -12,17 +12,20 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**尚未实现项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的 SQL opt-in、
-schema 3 / wire v4；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。
-四 C 的值合同已新增 `execution_provider/generation_profile.py` 和独立 C `generation_profile.{h,c}`：
-不可变、严格校验的完整 profile record 与 114-byte canonical encoding 使用同一固定向量。
-`AiGenerationProfile` 为新增的中立值类型；现有 `AiOpenSpec`、task/completion 和函数签名没有改变，
-C helper 尚未加入 PGXS 构建或执行路径。该实现不是 choice SQL、schema 3 或 wire v4 已可运行的证据。
-该值合同在本地和 Linux 服务器均通过 Python 68/68（PostgreSQL 合同 53、gateway 5、calibration 10），
-其中新增 8 项包含 standalone C11 `-Werror` 编译和编码对照。服务器另通过 PG18.3 `-O2 -Werror`
-现有 extension 的仅构建检查，未安装扩展、未启动数据库、未重跑 regression/TAP；真实模型请求为 0。
-源码提交与日志见[首个值合同验证](../experiments/results/postgresql/choice_profile_contract_20260902/README.md)。
-当前仍是 schema v1/v2、wire v2/v3 与同步单在途 port；recording Map 不是生成算子。
+**尚未实现项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的中立 open
+spec 映射、wire v4 与 gateway 执行；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/
+多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
+`00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
+context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
+bytes 纳入新的 semantic digest。旧三字段 options/schema 2/digest/wire v3 不变，旧 calibration
+artifact 对新身份返回 `semantic-spec-mismatch`，不使用旧系数。
+新配置目前仅支持规划与普通 EXPLAIN，显示完整 profile 与 `unqualified`；执行（含无任务查询）
+在初始化 child 或选择 provider 前以 `0A000` 拒绝，不能回落到 v3。`AiOpenSpec`、task/completion、
+machines、provider 与 wire 未扩展；runtime 的 lifecycle 未改，只把 plan EXPLAIN 显示复用到 plan helper。
+测试修订 `134447dd` 已核对真实 provider socket 配置；完整 PG18.3 TAP 537/537、本地/服务器 Python
+68/68、C11 与 warning-free `-O2 -Werror` 构建通过。详细 regression 和日志见
+[PG plan 接入验证](../experiments/results/postgresql/choice_pg_plan_20260902/README.md)。
+当前可执行路径仍是 schema v1/v2、wire v2/v3 与同步单在途 port；schema 3 仅可检查计划，recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
 query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
@@ -30,7 +33,7 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-本次新增值合同源码与本地测试，但没有模型调用；Filter 校准暂停与原始失败结论不变。
+本次新增 PG plan 能力与隔离 PG18.3 测试，但没有模型调用；Filter 校准暂停与原始失败结论不变。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension

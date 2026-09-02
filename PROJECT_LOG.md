@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-09-02 四 C 的 PG plan 接入与执行拒绝验证
+
+- 继续独立 `codex/choice-profile-contract` 分支；`349476b3` 保存 SQL 红测试，`00cc6bbf` 实现
+  第四个 option/schema 3、完整 profile 节点与摘要、copyObject-safe 严格解码和 EXPLAIN。
+  原三字段配置、schema 2 摘要、wire v3 不变；新配置在 child/provider 初始化前拒绝执行。
+- 生产解码测试复现并修复空节点崩溃、列号窄化前未检查范围的问题。`134447dd` 修正测试监听器
+  GUC 并加入 SHOW 核对；以修订后的 537 项结果作为最终依据，早期 536 项不证明零连接。
+- 最终 PG18.3 干净 `-O2 -Werror`、regression 1/1、TAP 537/537、本地/服务器各 68/68 Python、
+  中立 header/encoder/machines 的 C11 检查通过。实际版本、源码 SHA、完整日志和失败记录登记于
+  [PG plan 接入验证](experiments/results/postgresql/choice_pg_plan_20260902/README.md)。
+- 使用独立安装副本，未覆盖既有数据库和服务器 main。模型请求为 0，未访问校准 held-out，未做
+  新 RSS/FD smoke；port/wire v4/gateway 映射留给下个切片。历史证据保留，不自动合并或推送。
+
 ## 2026-09-02 四 C 首个值合同实现与隔离编译验证
 
 - 从 `3636e6f8` 建独立 `codex/choice-profile-contract` worktree，按当前四 C 计划与 TDD 先固定

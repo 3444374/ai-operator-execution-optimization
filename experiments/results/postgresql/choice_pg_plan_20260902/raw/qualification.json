@@ -1,0 +1,261 @@
+{
+  "source_commit": "134447dd324fe1fbb47c15bc7dbf97fe0b948be0",
+  "tests": {
+    "postgres": 53,
+    "gateway": 5,
+    "calibration": 10
+  },
+  "steps": [
+    {
+      "name": "pg-version",
+      "argv": [
+        "<pg18.3-prefix>/bin/pg_config",
+        "--version"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "tests-postgres",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/postgres",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "tests-gateway",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/execution_provider",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "tests-calibration",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/planning",
+        "-p",
+        "test_semfilter_reference_calibration.py",
+        "-v"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "c11-generation_profile",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/generation_profile.c",
+        "-o",
+        "<artifact-root>/generation_profile.o"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "c11-sem_operator_machine",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_operator_machine.c",
+        "-o",
+        "<artifact-root>/sem_operator_machine.o"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "c11-sem_filter_machine",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_filter_machine.c",
+        "-o",
+        "<artifact-root>/sem_filter_machine.o"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "c11-sem_map_machine",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_map_machine.c",
+        "-o",
+        "<artifact-root>/sem_map_machine.o"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "c11-neutral-header",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-x",
+        "c",
+        "-fsyntax-only",
+        "-"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "reg-initdb",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/initdb",
+        "-D",
+        "<artifact-root>/regression/data",
+        "--no-locale",
+        "-E",
+        "UTF8"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "reg-start",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/pg_ctl",
+        "-D",
+        "<artifact-root>/regression/data",
+        "-l",
+        "<artifact-root>/regression/server.log",
+        "-o",
+        "-c listen_addresses='' -c shared_preload_libraries=semloom_pg -k <artifact-root>/regression/socket -p 55439",
+        "-w",
+        "start"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "reg-server-version",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/psql",
+        "-h",
+        "<artifact-root>/regression/socket",
+        "-p",
+        "55439",
+        "-d",
+        "postgres",
+        "-Atc",
+        "SHOW server_version;"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "regression",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "TAP_TESTS=",
+        "installcheck"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "reg-stop",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/pg_ctl",
+        "-D",
+        "<artifact-root>/regression/data",
+        "-m",
+        "fast",
+        "-w",
+        "stop"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "source_sha256": {
+    "code/postgres/semloom_pg/Makefile": "76dfedf26efbf5beaa60f144cdf602ebf833a241b30f12c47ce6b55712ed0367",
+    "code/postgres/semloom_pg/src/pg_semantic_runtime.c": "811ce89f763726fdc89deefcf742bd1d0e3686950195b138050b08cd881edec8",
+    "code/postgres/semloom_pg/src/sem_filter_path.c": "5501eab7d22b4d078c628e9f493dc0fb533f648a87f4139ccf3b2aa9155a0867",
+    "code/postgres/semloom_pg/src/sem_plan_spec.c": "0729cefe521b0519dbd6611d2147c8ea082ba938233ec7f55e0b22876f588225",
+    "code/postgres/semloom_pg/src/sem_plan_spec.h": "117a8ed6199929d524e87daa262fd1e9b6e297cd0742d96aab5db0c2a294db4e",
+    "code/postgres/semloom_pg/src/sem_pump.c": "3c2a2f3f6a863872921febdb8837de4613ad9d767dc7e3eef057933aaf2565c3",
+    "code/postgres/semloom_pg/src/semantic_filter_contract.h": "9106ed49f1e052b45162ea9a029873d5140abd35facf3f1941a92c0eac1874c6",
+    "code/postgres/semloom_pg/t/001_semloom_pg.pl": "fbc0fde9e627d65a787b781c92643372f558645fd6ba0fb9fffeccaf4c600445",
+    "code/postgres/semloom_pg/t/002_choice_plan.pl": "c3d8c12e6e6d881bd4572f2f91e716cff75137ec9c3da3fd6e70a147e9146435",
+    "code/postgres/semloom_pg/t/plan_contract/Makefile": "c6baecc889db4d9f8f5e544f61b0e5611c60d5f0a31049a935e761b8b543a3b4",
+    "code/postgres/semloom_pg/t/plan_contract/plan_contract.c": "c1161f6fe1eb3cb4a5bcb1429103008a00933f9ff8d86e7db7694cfd575f2ab1",
+    "code/tests/postgres/test_semloom_pg_static_contract.py": "b897ef53650b235d776eff7a5a06b96beb3c94ea11105584367af78f85ed557b"
+  },
+  "preflight_status": "ok",
+  "pg_build_version": "PostgreSQL 18.3",
+  "pg_build_warning_free": true,
+  "pg_runtime_version": "18.3",
+  "tap_tests": 537,
+  "regression_tests": 1,
+  "regression_actual_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+  "regression_expected_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+  "extension_sha256": "e415982df3dfdb79ed4b6698f3fb6f4ca820eb9ca3648a28d97f3e0a6cfd00b0",
+  "model_requests_attempted": 0,
+  "calibration_held_out_used": false,
+  "wire_v4_implemented": false,
+  "isolated_prefix_only": true,
+  "archived_build_and_tap": "commands completed before this collector; full output retained"
+}

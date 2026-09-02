@@ -1,0 +1,23 @@
+pg-version: passed
+tests-postgres: passed
+tests-gateway: passed
+tests-calibration: passed
+c11-generation_profile: passed
+c11-sem_operator_machine: passed
+c11-sem_filter_machine: passed
+c11-sem_map_machine: passed
+c11-neutral-header: passed
+Traceback (most recent call last):
+  File "<artifact-root>/qualify.py", line 104, in <module>
+    run("reg-initdb", as_pg + [str(a.prefix / "bin/initdb"), "-D", str(pgdata), "--no-locale", "-E", "UTF8"])
+  File "<artifact-root>/qualify.py", line 44, in run
+    result = subprocess.run(command, cwd=cwd or a.repo, env=env, input=input,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<driver-env>/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<driver-env>/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "<driver-env>/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'runuser'

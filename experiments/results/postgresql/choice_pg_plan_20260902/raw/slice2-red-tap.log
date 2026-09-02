@@ -1,0 +1,23 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/002_choice_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'strict plan decode rejects binding-overflow'
+#   at t/002_choice_plan.pl line 60.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'binding-overflow produces a PG error rather than accepting or crashing'
+#   at t/002_choice_plan.pl line 61.
+#                   ''
+#     doesn't match '(?^:ERROR:  XX000:)'
+
+#   Failed test 'null-profile produces a PG error rather than accepting or crashing'
+#   at t/002_choice_plan.pl line 61.
+#                   'psql:<stdin>:2: server closed the connection unexpectedly
+# 	This probably means the server terminated abnormally
+# 	before or while processing the request.
+# psql:<stdin>:2: error: connection to server was lost'
+#     doesn't match '(?^:ERROR:  XX000:)'
+Bailout called.  Further testing stopped:  pg_ctl stop failed
+FAILED--Further testing stopped: pg_ctl stop failed
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 255

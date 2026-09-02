@@ -1,0 +1,78 @@
+2026-09-02 10:33:07.982 CST [3336] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 10:33:07.982 CST [3336] LOG:  listening on Unix socket "/tmp/M1LaCZJ1pU/.s.PGSQL.25506"
+2026-09-02 10:33:07.985 CST [3342] LOG:  database system was shut down at 2026-09-02 10:33:07 CST
+2026-09-02 10:33:07.987 CST [3336] LOG:  database system is ready to accept connections
+2026-09-02 10:33:08.083 CST [3347] 002_choice_plan.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-02 10:33:08.086 CST [3347] 002_choice_plan.pl LOG:  statement: CREATE TABLE choice_inputs(id integer, content text);
+2026-09-02 10:33:08.088 CST [3347] 002_choice_plan.pl LOG:  statement: INSERT INTO choice_inputs VALUES (1, 'database'), (2, NULL);
+2026-09-02 10:33:08.099 CST [3349] 002_choice_plan.pl LOG:  statement: EXPLAIN SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 10:33:08.109 CST [3351] 002_choice_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id FROM choice_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 10:33:08.758 CST [3377] 002_choice_plan.pl LOG:  statement: CREATE FUNCTION test_choice_plan(text) RETURNS text
+	AS '<test-worktree>/code/postgres/semloom_pg/t/plan_contract/semloom_plan_contract_test', 'semloom_test_plan' LANGUAGE C STRICT;
+2026-09-02 10:33:08.768 CST [3379] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('old')
+2026-09-02 10:33:08.779 CST [3381] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('copy')
+2026-09-02 10:33:08.788 CST [3383] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('binding')
+2026-09-02 10:33:08.797 CST [3385] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('missing-profile');
+2026-09-02 10:33:08.798 CST [3385] 002_choice_plan.pl ERROR:  incomplete semantic plan specification
+2026-09-02 10:33:08.798 CST [3385] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('missing-profile');
+2026-09-02 10:33:08.808 CST [3387] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('old-with-profile');
+2026-09-02 10:33:08.808 CST [3387] 002_choice_plan.pl ERROR:  incomplete semantic plan specification
+2026-09-02 10:33:08.808 CST [3387] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('old-with-profile');
+2026-09-02 10:33:08.817 CST [3389] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('future-schema');
+2026-09-02 10:33:08.818 CST [3389] 002_choice_plan.pl ERROR:  unsupported semantic plan specification
+2026-09-02 10:33:08.818 CST [3389] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('future-schema');
+2026-09-02 10:33:08.830 CST [3391] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('outer-digest');
+2026-09-02 10:33:08.830 CST [3391] 002_choice_plan.pl ERROR:  unsupported exact SemFilter plan specification
+2026-09-02 10:33:08.830 CST [3391] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('outer-digest');
+2026-09-02 10:33:08.841 CST [3393] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('extra');
+2026-09-02 10:33:08.841 CST [3393] 002_choice_plan.pl ERROR:  invalid generation profile fields
+2026-09-02 10:33:08.841 CST [3393] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('extra');
+2026-09-02 10:33:08.852 CST [3395] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('missing');
+2026-09-02 10:33:08.852 CST [3395] 002_choice_plan.pl ERROR:  invalid generation profile fields
+2026-09-02 10:33:08.852 CST [3395] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('missing');
+2026-09-02 10:33:08.861 CST [3397] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('duplicate');
+2026-09-02 10:33:08.862 CST [3397] 002_choice_plan.pl ERROR:  duplicate semantic plan specification field
+2026-09-02 10:33:08.862 CST [3397] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('duplicate');
+2026-09-02 10:33:08.873 CST [3399] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('unknown-field');
+2026-09-02 10:33:08.874 CST [3399] 002_choice_plan.pl ERROR:  unknown generation profile field
+2026-09-02 10:33:08.874 CST [3399] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('unknown-field');
+2026-09-02 10:33:08.885 CST [3401] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('unknown-id');
+2026-09-02 10:33:08.885 CST [3401] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 10:33:08.885 CST [3401] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('unknown-id');
+2026-09-02 10:33:08.896 CST [3403] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('oversized-id');
+2026-09-02 10:33:08.896 CST [3403] 002_choice_plan.pl ERROR:  invalid semantic plan specification field
+2026-09-02 10:33:08.896 CST [3403] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('oversized-id');
+2026-09-02 10:33:08.907 CST [3405] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('unknown-version');
+2026-09-02 10:33:08.907 CST [3405] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 10:33:08.907 CST [3405] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('unknown-version');
+2026-09-02 10:33:08.918 CST [3407] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('version-type');
+2026-09-02 10:33:08.918 CST [3407] 002_choice_plan.pl ERROR:  invalid semantic plan specification field
+2026-09-02 10:33:08.918 CST [3407] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('version-type');
+2026-09-02 10:33:08.929 CST [3409] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('constraint');
+2026-09-02 10:33:08.929 CST [3409] 002_choice_plan.pl ERROR:  unsupported generation profile constraint
+2026-09-02 10:33:08.929 CST [3409] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('constraint');
+2026-09-02 10:33:08.939 CST [3411] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('digest');
+2026-09-02 10:33:08.940 CST [3411] 002_choice_plan.pl ERROR:  generation profile digest mismatch
+2026-09-02 10:33:08.940 CST [3411] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('digest');
+2026-09-02 10:33:08.950 CST [3413] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choices-type');
+2026-09-02 10:33:08.951 CST [3413] 002_choice_plan.pl ERROR:  invalid generation profile choices
+2026-09-02 10:33:08.951 CST [3413] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choices-type');
+2026-09-02 10:33:08.961 CST [3415] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-type');
+2026-09-02 10:33:08.962 CST [3415] 002_choice_plan.pl ERROR:  invalid semantic plan specification field
+2026-09-02 10:33:08.962 CST [3415] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-type');
+2026-09-02 10:33:08.973 CST [3417] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-content');
+2026-09-02 10:33:08.973 CST [3417] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 10:33:08.973 CST [3417] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-content');
+2026-09-02 10:33:08.984 CST [3419] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-order');
+2026-09-02 10:33:08.984 CST [3419] 002_choice_plan.pl ERROR:  unsupported generation profile
+2026-09-02 10:33:08.984 CST [3419] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-order');
+2026-09-02 10:33:08.996 CST [3421] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('choice-count');
+2026-09-02 10:33:08.996 CST [3421] 002_choice_plan.pl ERROR:  invalid generation profile choices
+2026-09-02 10:33:08.996 CST [3421] 002_choice_plan.pl STATEMENT:  SELECT test_choice_plan('choice-count');
+2026-09-02 10:33:09.006 CST [3423] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('binding-overflow');
+2026-09-02 10:33:09.017 CST [3425] 002_choice_plan.pl LOG:  statement: SELECT test_choice_plan('null-profile');
+2026-09-02 10:33:09.142 CST [3336] LOG:  client backend (PID 3425) was terminated by signal 11: Segmentation fault
+2026-09-02 10:33:09.142 CST [3336] DETAIL:  Failed process was running: SELECT test_choice_plan('null-profile');
+2026-09-02 10:33:09.142 CST [3336] LOG:  terminating any other active server processes
+2026-09-02 10:33:09.143 CST [3336] LOG:  shutting down because "restart_after_crash" is off
+2026-09-02 10:33:09.148 CST [3336] LOG:  database system is shut down

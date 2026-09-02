@@ -6,11 +6,15 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
-## PostgreSQL choice profile 值与编码（2026-09-02）
+## PostgreSQL choice profile 值与 PG plan（2026-09-02）
+
+[PG plan 接入](postgresql/choice_pg_plan_20260902/README.md)：第四个 option 与 schema 3 已实现，
+保存完整 profile，支持计划复制、prepared plan 和 EXPLAIN；实际执行明确拒绝，wire v4 待接入。
+最终 PG18.3 regression 1/1、TAP 537/537、本地/服务器各 68/68 测试通过；没有真实模型调用。
 
 [首个实现切片](postgresql/choice_profile_contract_20260902/README.md)：新增严格 profile 值与 C/Python
 规范字节编码，本地/服务器合同 68/68 通过，另有 C11 和 PG18.3 `-Werror` 编译记录。
-SQL opt-in、schema 3、wire v4 尚未接入；未安装扩展或调用模型，不能据此声称分类质量或端到端支持。
+该历史切片尚未接入 SQL/plan/wire、未安装扩展或调用模型；后续 PG 接入以上方记录为准。
 
 ## PostgreSQL exact SemFilter reference calibration（2026-09-01）
 

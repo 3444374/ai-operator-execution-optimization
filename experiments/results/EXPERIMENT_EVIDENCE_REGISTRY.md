@@ -7,7 +7,7 @@
 当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、三参数 exact `SemFilter` golden/fixed-model
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
-schema v1/v2 planner-owned plan spec、
+schema v1/v2 planner-owned plan spec（schema 3 另有 plan-only 验证）、
 wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；小规模真实模型只证明纵切面可运行，
 deterministic calibration artifact 只证明生成/验证/planner 消费，不支持真实 cost accuracy、语义质量、第二 physical path、
 bounded async 或性能优化已经完成。当前顺序看工程计划和
@@ -27,6 +27,12 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
 
 ## 1. 证据等级
+
+2026-09-02 的 [PG plan 接入](postgresql/choice_pg_plan_20260902/README.md)绑定最终 `134447dd`
+（生产实现 `00cc6bbf`）：PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 537/537，
+本地/服务器 Python 各 68/68。新 SQL option/schema 3 保存完整 profile，验证复制、严格解码、
+prepared/invalidation、旧校准拒绝与零 provider 连接；实际执行明确拒绝，port/wire v4 尚未接入。
+前一版 socket 测试配置不正确，536 项结果不作为最终零连接证据；修订前后日志均保留。
 
 2026-09-02 的[choice profile 值合同切片](postgresql/choice_profile_contract_20260902/README.md)绑定
 `d26e210d`：本地/服务器 Python 68/68、standalone C11 与 PG18.3 warning-free `-O2 -Werror`
@@ -103,6 +109,7 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `postgresql/choice_pg_plan_20260902/` | 四 C 的 PG plan 接入 | 最终 `134447dd`：PG18.3 regression 1/1、TAP 537/537、Python 68/68；新配置仅可规划/EXPLAIN，不执行、不回落 v3，不恢复质量或成本校准。 |
 | `postgresql/choice_profile_contract_20260902/` | 四 C 的第一个值合同实现 | C/Python 114-byte encoding 和拒绝测试通过；68/68 本地/服务器合同与 PG18.3 仅构建，未安装/启动 PG、未调用模型。SQL/plan/wire 接入 pending。 |
 | `postgresql/semfilter_prompt_qualification_20260901/` | 实际 messages/template 核对、唯一 prompt 与条件性 7B 对照 | 两个完整尝试的消息与 token IDs 一致，全部格式合法，但旧/新样例未全对；321 次 completion 包含 83 次中止记录。无生产变更，校准仍暂停。 |
 | `postgresql/semfilter_qualification_20260901/` | 三项独立前置验证 | 秩检查修复、PG18.3 普通多列统计通过；choice 仅通过格式，语义预期仍不符，reference 资格未通过。 |

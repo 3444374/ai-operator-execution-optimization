@@ -1,0 +1,26 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/002_choice_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'explicit choice profile can be planned without a provider'
+#   at t/002_choice_plan.pl line 20.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:1: ERROR:  SemFilter options must contain exactly model, temperature, and max_tokens
+
+#   Failed test 'EXPLAIN identifies the saved profile'
+#   at t/002_choice_plan.pl line 21.
+#                   ''
+#     doesn't match '(?^:Generation Profile: semloom\.generation\.choice\.tristate)'
+# Looks like you failed 2 tests of 2.
+t/002_choice_plan.pl ..
+Dubious, test returned 2 (wstat 512, 0x200)
+Failed 2/2 subtests
+
+Test Summary Report
+-------------------
+t/002_choice_plan.pl (Wstat: 512 Tests: 2 Failed: 2)
+  Failed tests:  1-2
+  Non-zero exit status: 2
+Files=1, Tests=2,  1 wallclock secs ( 0.01 usr  0.01 sys +  0.51 cusr  0.17 csys =  0.70 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

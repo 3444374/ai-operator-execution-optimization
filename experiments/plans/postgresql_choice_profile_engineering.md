@@ -1,7 +1,7 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`in-progress / profile-value-contract-implemented / PG-wire-integration-pending`
+状态：`in-progress / PG-plan-implemented / port-wire-integration-pending`
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
 跨工作包依赖、模块分工和公司接入由[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md)维护；
@@ -14,7 +14,8 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 
 本节是本轮工程设计与验收的唯一详细入口。来源是现有源码接口、此前 choice 格式诊断及本次设计
 审查；它是工程决策，不是新的算法或质量实验结论。首个代码切片已实现不可变 profile 值、严格
-校验与独立 C/Python canonical bytes；尚未接入 SQL、PG plan 或 wire v4。后续工程和运行按具体切片验证。
+校验与独立 C/Python canonical bytes；后续 `00cc6bbf` 已接入 SQL options 和 PG plan，尚未接入
+中立 open spec 或 wire v4。当前新配置可规划和 EXPLAIN，执行明确拒绝；后续运行按具体切片验证。
 
 **目标与非目标。** 证明数据库能显式选择、保存、传输并验证受约束生成配置，保持现有生命周期和
 旧行为；不证明 reference 语义质量、性能收益或成本精度。新配置是 opt-in、unqualified 的工程能力，
@@ -35,13 +36,14 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 }
 ```
 
-这是待实现接口，不能作为当前可运行示例。上述 profile selector 是本节唯一拟定名称，不增加
+上述 options 已可用于规划和普通 EXPLAIN；实际执行仍以 `0A000` 拒绝，不是可运行的模型示例。
+上述 profile selector 是本节唯一名称，不增加
 讨论草案中的其他别名；它由下述 profile ID 和 version 组合得到。
 
 | SQL options | 计划与 wire | 行为 |
 |---|---|---|
 | 恰好原有三个字段 | 原 schema 2 / wire v3 | 原计划内容、digest、wire bytes、错误与稳定 EXPLAIN 字段不变 |
-| 恰好四个字段且 profile 为上述值 | 新 schema 3 / wire v4 | 显式 choice；非默认、未通过质量验证 |
+| 恰好四个字段且 profile 为上述值 | 新 schema 3 已实现；wire v4 待实现 | 显式 choice；非默认、未通过质量验证；目前不执行 |
 | 未知 profile、null、非字符串、缺字段或多余字段 | planning 阶段拒绝 | 不打开 provider，不发送模型请求 |
 
 原有 instruction/options 的计划期常量、类型、长度和数值要求继续成立；schema 1 / recording wire v2
@@ -76,6 +78,15 @@ C 只输出供现有 PG SHA-256 消费的规范 bytes，不另写密码算法；
 Python record 恰有 `profile_id/profile_version/constraint_kind/choices/profile_digest` 五字段；这是
 已解码值的合同，不宣称已实现 JSON 重复字段检查或 wire v4 open/task/completion。
 
+PG 的 schema 3 在原 27 个命名字段外保存一个嵌套 `generation_profile`，内含上述完整五字段，
+choices 使用有序 String 节点列表。解码结果逐项复制到指定 context，不借用计划树或注册表。
+新 semantic 编码的 domain 为 `semloom-semantic-spec-v3` 加一个 NUL，接 uint32 schema `3`；
+其余字段按 schema 2 的原顺序直到 stop，然后追加 uint32 `114` 和完整 profile canonical bytes。
+不是只哈希 selector 或 profile digest。对 instruction `Classify input.`、model `golden-model-v1`，
+独立 OpenSSL 向量与 PG 实际结果均为
+`3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5`；对应旧 schema 2 为
+`9ec789eab10d6367b60895288fde154b384edeba1ac0fb603ade0b2424ff2fb9`，physical digest 保持不变。
+
 prompt program、parser、operator 逻辑含义及 `MODEL_REFERENCE_SYNC_V1` family 不因新增表示而改名；
 其内容未变的身份继续保留，完整 semantic plan digest 必须不同。`Physical Role=reference` 表示逐个
 非 NULL 输入采用 reference 求值，不表示质量资格通过，也不是第二 optimized path。新 EXPLAIN 显示 profile
@@ -90,6 +101,8 @@ open/task/completion 必须相互核验，不用切换 provider 来隐式切换�
 - `sem_filter_path.c` / plan spec：解析 opt-in、展开并保存 profile、计算身份，供现有 EXPLAIN 回调读取。
 - `PgSemanticRuntime`：仍是 PG plan 到中立 `AiOpenSpec` 的唯一转换点；新增值保持固定宽度类型、
   bytes 与明确所有权，不把 `Datum/Jsonb/MemoryContext` 或供应商参数名带入 port。
+  此映射与 wire v4 在下个切片接入；当前 schema 3 不创建 runtime/provider，普通 EXPLAIN 直接读取
+  已验证 plan。任何实际执行（含 LIMIT 0、zero-row、NULL-only、prepared）在初始化 child 前拒绝。
 - UDS/wire：保留同步单在途、lazy open、借用输入、session-owned completion 与幂等关闭。schema 3
   使用独立 wire v4 的字段集合、版本检查与摘要；v3 不增加可选字段或扩大为未知参数容器。
 - gateway：校验抽象 `CHOICE` profile，才转换为已核验服务支持的 `structured_outputs.choice`。
@@ -152,10 +165,10 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 | 步骤 | 完成条件 |
 |---|---|
 | 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；工作包整体未完成 |
-| 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。只新增值类型，AiOpenSpec 未扩展，C helper 尚未链接到 PG extension；不能代替下列 SQL/plan/wire 表征与接入 |
+| 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。后续 PG 切片已链接 helper，AiOpenSpec 仍未扩展 |
 | 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
-| PG plan 接入 | 新 options、schema 3、copyObject-safe profile、摘要、prepared/generic-plan 保存及中立 port 映射通过；旧常量、字段和值行为不变 |
-| wire/gateway 接入 | v4 严格校验、两侧 golden parity、已知 profile 映射与不降级证明通过；复用公共传输/生命周期，不复制执行栈 |
+| PG plan 接入（已实现） | 新 options、schema 3、copyObject-safe 完整 profile、摘要、prepared/generic-plan 与 invalidation；旧校准拒绝、新执行不回落 v3；旧字段和值行为不变 |
+| port/wire/gateway 接入（待实现） | runtime 中立 open spec 映射、v4 严格校验、两侧 golden parity、已知 profile 映射与不降级证明；复用公共传输/生命周期，不复制执行栈 |
 | 功能与资源验证 | Python/protocol/static、中立 C11、精确 PG18.3 warning-free `-O2 -Werror`、regression、完整相关 TAP、新旧配置、普通 SQL、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、错误/取消/资源检查通过 |
 | 受限真实 smoke | preflight 与服务支持证据齐备；请求在总预算内，实际参数差异仅为 choice；新配置返回值通过原 parser，model/usage/finish reason/PG 计数一致；旧配置与全部失败如实记录 |
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |

@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-更新日期：2026-09-01
+更新日期：2026-09-02
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
@@ -33,7 +33,8 @@
 > [后续单一 prompt 对照](../results/postgresql/semfilter_prompt_qualification_20260901/README.md)确认实际
 > messages/template 一致，1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，均未通过；未改
 > 生产配置或访问校准 held-out。当前工程计划新增了[独立 choice 接入切片](postgresql_choice_profile_engineering.md)，
-> 但 schema 3 / wire v4 与 SQL opt-in 均尚未实现；本次只修订设计，没有新增测试或实验结果。
+> 值合同之后又完成 [SQL opt-in/schema 3 的 PG plan 验证](../results/postgresql/choice_pg_plan_20260902/README.md)：
+> 支持保存与 EXPLAIN，实际执行仍明确拒绝；中立 open spec、wire v4 和 gateway 尚未接入，不能调用模型。
 > 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来 fork adapter 接入方案
 > 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。
 > 工程接入不等于 Filter reference 质量通过，其真实采集继续暂停。生成型 SemMap 与独立增量核心

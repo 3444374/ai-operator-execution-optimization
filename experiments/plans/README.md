@@ -20,7 +20,8 @@
 
 主架构只维护分工、依赖与完成条件，详细的 choice 字段和验收由专项计划维护；源码与实验事实分别看
 INFRA_STATUS 和证据台账。PG 近期先做四 C，再做四 D 真实生成型 SemMap；SemLoom 可独立开展
-增量核心表征与 fixture 测试，公司接口可只读核对。它们都仍是待实施工作，真实 PG 接入另行验收。
+增量核心表征与 fixture 测试，公司接口可只读核对。四 C 的值与 PG plan 已实现，wire/gateway
+执行仍待接入；独立核心与公司接口工作仍待实施，真实 PG 接入另行验收。
 Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
 
 ## 2. 状态分层
@@ -30,7 +31,7 @@ Filter 的 reference 质量、matched cost 与第二路径继续保留，但不�
 | 文件 | 当前状态与用途 |
 |---|---|
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
-| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 待实施专项；SQL opt-in、版本化 profile、严格错误、兼容性、预算和资源验收的唯一详细入口 |
+| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 进行中：值与 PG plan 已实现，port/wire/gateway 待接入；字段、错误、兼容性、预算和资源验收的唯一详细入口 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
