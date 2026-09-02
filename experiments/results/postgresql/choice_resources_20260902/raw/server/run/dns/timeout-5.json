@@ -1,0 +1,107 @@
+{
+  "sqlstate": "08006",
+  "ending": {
+    "backend": {
+      "rss_bytes": 23445504,
+      "fd": 37,
+      "threads": 1
+    },
+    "gateway": {
+      "rss_bytes": 23130112,
+      "fd": 4,
+      "threads": 2
+    }
+  },
+  "samples": [
+    {
+      "monotonic": 4397181.106662323,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 36,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23130112,
+          "fd": 4,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397181.127430039,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23445504,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23130112,
+          "fd": 5,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "monotonic": 4397181.147822432,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23445504,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23130112,
+          "fd": 5,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "monotonic": 4397181.168217489,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23445504,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23130112,
+          "fd": 5,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "monotonic": 4397181.188606448,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23445504,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23130112,
+          "fd": 5,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "monotonic": 4397181.208992671,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23445504,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23130112,
+          "fd": 5,
+          "threads": 3
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "sqlstate": "57014",
+  "elapsed_seconds": 0.05105589143931866,
+  "ending": {
+    "backend": {
+      "rss_bytes": 23347200,
+      "fd": 38,
+      "threads": 1
+    },
+    "gateway": {
+      "rss_bytes": 23617536,
+      "fd": 4,
+      "threads": 1
+    }
+  },
+  "samples": [
+    {
+      "monotonic": 4397174.295342143,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 38,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23613440,
+          "fd": 4,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397174.316223029,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23810048,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397174.336574083,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23810048,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    }
+  ]
+}

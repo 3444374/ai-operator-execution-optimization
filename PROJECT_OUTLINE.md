@@ -61,12 +61,14 @@ option、schema 3、完整 profile 的计划复制与 EXPLAIN；该阶段的新�
 [gateway v4 切片](experiments/results/postgresql/choice_gateway_v4_20260902/README.md)现已实现严格
 profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 regression 1/1、TAP 537/537
 通过。后续 [C 接线](experiments/results/postgresql/choice_pg_wire_20260902/README.md)已让 choice SELECT
-进入公共 runtime，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83。新资源与真实模型
-smoke 仍待完成。该轮发现的 Filter INSERT 缺口已由[独立修复](experiments/results/postgresql/semfilter_insert_20260902/README.md)
+进入公共 runtime，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83。该轮发现的 Filter INSERT 缺口已由[独立修复](experiments/results/postgresql/semfilter_insert_20260902/README.md)
 解决：`39007150` 的 PG18.3 regression 1/1、TAP 919/919、各 83/83 通过，新增 171 项实际写入与
 事务验证。旧三字段配置继续执行，不把 fixture 接线写成模型质量或整个四 C 已通过。
-这只验证新能力能否正确接入，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
-PG 随后优先完成[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)。
+后续[受控资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)通过 v3/v4 各 5,164 次
+fixture 调用、取消/阻塞 DNS 各 10 次与恢复；真实 choice 服务检查仍待完成，main 未合并研发分支。
+这些只验证接入与本规模资源使用，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
+按最新安排，在完整工程对照和四 C 收尾后，PG 先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共整理，
+再扩展[两个 Filter AND / Filter → Map 及有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
 不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
 其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较
@@ -482,7 +484,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 工作对象 | 近期工作 | 与其他工作的依赖 |
 |---|---|---|
-| 自有 PG 算子 | [四 C 可选 choice](experiments/plans/postgresql_choice_profile_engineering.md)，随后[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package) | 新算子拥有独立语义、版本与同步验证，不等待 Filter 分类质量通过 |
+| 自有 PG 算子 | 完整工程对照 / [四 C 剩余检查](experiments/plans/postgresql_choice_profile_engineering.md) → [四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package) → [可组合执行 / 有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) | Map 驱动必要公共整理，不以多算子为其前置；每调用独立计划/状态，不等待 Filter 分类质量通过 |
 | SemLoom 核心 | 现有行为表征、公开任务驱动增量 session、work organization、有界提交、多 Job 与路由 | 可以先用 fixture/外部 workload；不是已接入数据库的证据 |
 | Filter 语义优化 | 确定质量任务与标签，取得 reference、matched cost，再实现 proxy/oracle 第二路径与 fallback | 仍是 Filter 计划比较的重要完成项，不再阻塞独立核心或生成型 Map |
 | carrier 审查 | 随生成型 Map、PG batch/reorder、Filter 第二路径分别核对 identity、placement 和生命周期 | 只在目标路径出现已复现阻断时增加最小 core patch |

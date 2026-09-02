@@ -1,0 +1,6 @@
+{
+  "endpoint_url": "http://127.0.0.1:43469/v1/chat/completions",
+  "model_id": "choice-resource-fixture-v1",
+  "timeout_ms": 1000,
+  "choice_format": "vllm_structured_outputs"
+}

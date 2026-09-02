@@ -1,0 +1,307 @@
+{
+  "rows": 100,
+  "input_bytes": 6553600,
+  "start": {
+    "backend": {
+      "rss_bytes": 23261184,
+      "fd": 38,
+      "threads": 1
+    },
+    "gateway": {
+      "rss_bytes": 23826432,
+      "fd": 4,
+      "threads": 1
+    }
+  },
+  "ending": {
+    "backend": {
+      "rss_bytes": 23343104,
+      "fd": 38,
+      "threads": 1
+    },
+    "gateway": {
+      "rss_bytes": 23855104,
+      "fd": 4,
+      "threads": 1
+    }
+  },
+  "result": {
+    "Model Calls": 100,
+    "Emitted Rows": 100,
+    "Actual Rows": 100.0,
+    "Prompt Tokens": 1700,
+    "Output Tokens": 100
+  },
+  "samples": [
+    {
+      "monotonic": 4397125.395041087,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23261184,
+          "fd": 38,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 4,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.416195382,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.436647568,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.457056846,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.477460185,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.497860842,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.51827456,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.53868025,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.559102009,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23826432,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.579506872,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23830528,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.599889203,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23838720,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.620277577,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23838720,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.640675739,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23838720,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.661061398,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23846912,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.681444192,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23846912,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.701840566,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23846912,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.722228576,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23846912,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397125.742609878,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23855104,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    }
+  ]
+}

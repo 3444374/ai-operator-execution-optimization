@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（Filter INSERT carrier 已修复；choice 资源/真实模型验证待完成）
+日期：2026-09-02（研发分支受控 choice 资源检查通过；真实模型检查待完成，main 未合并）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -12,8 +12,8 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**尚未完成项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的新资源 smoke
-与受限真实模型验证；四 D 真实生成型 SemMap；增量
+**尚未完成项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的受限真实模型验证；
+PG 注册身份等反例检查、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
@@ -44,7 +44,15 @@ savepoint、错误/取消恢复、旧端拒绝和实际 HTTP 参数对照；不�
 最终 `39007150` 通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 919/919（新增 INSERT 171）、
 本地/服务器各 83/83 和 C11；见[INSERT 验证](../experiments/results/postgresql/semfilter_insert_20260902/README.md)。
 受限单表 recording/exact v3/choice v4 INSERT 已验证实际写入、三值、NULL、LIMIT、prepared、
-savepoint 部分写入回滚、目标约束及 choice RLS/权限/取消恢复。新资源与真实服务验证仍待完成。
+savepoint 部分写入回滚、目标约束及 choice RLS/权限/取消恢复。该次未运行资源或真实服务检查。
+
+`4464fe9b` 随后新增实验专用 `choice_resource_checks`、`choice_gateway_observer` 与持久化预算 ledger，
+未改生产 PG/gateway。PG18.3 复用上述已验证二进制，SHA 一致；新受控资源运行的 v3/v4 各 5,164 次
+fixture 调用、10 次取消与 10 次阻塞 DNS/恢复均通过预定阈值。首轮 FD 减少不符合“相等”断言、
+容器 proc 权限诊断失败均保留；受控重跑只在自有表维护完成后关闭该表自动 vacuum，没有放宽阈值。
+预算/HTTP seam 新增 8/8；本地既有 83/83 同时通过。真实模型请求为 0，未重跑构建/TAP，旧 919/919
+仍只绑定 `39007150`。详见[资源验证](../experiments/results/postgresql/choice_resources_20260902/README.md)。
+当前 gateway 仍串行服务整个会话；零任务双连接检查复现第二握手等待，不能声称已支持多算子。
 当前 PG 可执行 SELECT 使用 schema v1/v2/v3、wire v2/v3/v4 与同步单在途 port；recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
@@ -53,7 +61,7 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-本次修复 Filter INSERT 并重跑隔离 PG18.3 测试，没有真实模型调用；Filter 校准暂停与原始失败结论不变。
+本轮只追加实验工具与受控资源检查，没有真实模型调用；Filter 校准暂停与原始失败结论不变。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension

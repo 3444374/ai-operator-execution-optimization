@@ -1,0 +1,322 @@
+{
+  "rows": 100,
+  "input_bytes": 6553600,
+  "start": {
+    "backend": {
+      "rss_bytes": 23347200,
+      "fd": 38,
+      "threads": 1
+    },
+    "gateway": {
+      "rss_bytes": 23764992,
+      "fd": 4,
+      "threads": 1
+    }
+  },
+  "ending": {
+    "backend": {
+      "rss_bytes": 23347200,
+      "fd": 38,
+      "threads": 1
+    },
+    "gateway": {
+      "rss_bytes": 23793664,
+      "fd": 4,
+      "threads": 1
+    }
+  },
+  "result": {
+    "Model Calls": 100,
+    "Emitted Rows": 100,
+    "Actual Rows": 100.0,
+    "Prompt Tokens": 1700,
+    "Output Tokens": 100
+  },
+  "samples": [
+    {
+      "monotonic": 4397147.205513586,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 38,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 4,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.226608991,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.246969902,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.267305704,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.287639919,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.307978117,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.328337104,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.348686765,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.368940417,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.389179533,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23764992,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.409380963,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23777280,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.429581139,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23777280,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.449815902,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23777280,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.470001328,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23781376,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.49027114,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23785472,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.511348166,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23785472,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.531738259,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23785472,
+          "fd": 5,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.552104068,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23789568,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397147.572484713,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23347200,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23793664,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    }
+  ]
+}

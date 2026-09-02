@@ -1,0 +1,384 @@
+{
+  "rows": 100,
+  "input_bytes": 6553600,
+  "start": {
+    "backend": {
+      "rss_bytes": 23343104,
+      "fd": 38,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/null",
+        "1": "<artifact-root>/run-diagnostics-r2/postgres.log",
+        "2": "<artifact-root>/run-diagnostics-r2/postgres.log",
+        "3": "anon_inode:[signalfd]",
+        "4": "pipe:[657680465]",
+        "5": "anon_inode:[eventpoll]",
+        "6": "anon_inode:[eventpoll]",
+        "7": "<artifact-root>/run-diagnostics-r2/data/pg_wal/000000010000000000000001",
+        "8": "socket:[657680467]",
+        "9": "<artifact-root>/run-diagnostics-r2/data/base/5/2663",
+        "10": "<artifact-root>/run-diagnostics-r2/data/base/5/2601",
+        "11": "<artifact-root>/run-diagnostics-r2/data/base/5/2662",
+        "12": "<artifact-root>/run-diagnostics-r2/data/base/5/2703",
+        "13": "<artifact-root>/run-diagnostics-r2/data/base/5/1247_fsm",
+        "14": "<artifact-root>/run-diagnostics-r2/data/base/5/1247",
+        "15": "<artifact-root>/run-diagnostics-r2/data/base/5/1247_vm",
+        "16": "<artifact-root>/run-diagnostics-r2/data/base/5/2674",
+        "17": "<artifact-root>/run-diagnostics-r2/data/base/5/1259_fsm",
+        "18": "<artifact-root>/run-diagnostics-r2/data/base/5/1259_vm",
+        "19": "<artifact-root>/run-diagnostics-r2/data/base/5/3455",
+        "20": "<artifact-root>/run-diagnostics-r2/data/base/5/1249_fsm",
+        "21": "<artifact-root>/run-diagnostics-r2/data/base/5/1249_vm",
+        "22": "<artifact-root>/run-diagnostics-r2/data/base/5/2658",
+        "23": "<artifact-root>/run-diagnostics-r2/data/base/5/2659",
+        "24": "<artifact-root>/run-diagnostics-r2/data/base/5/2691",
+        "25": "<artifact-root>/run-diagnostics-r2/data/base/5/2610_fsm",
+        "26": "<artifact-root>/run-diagnostics-r2/data/base/5/2610_vm",
+        "27": "<artifact-root>/run-diagnostics-r2/data/base/5/3379",
+        "28": "<artifact-root>/run-diagnostics-r2/data/base/5/1255",
+        "29": "<artifact-root>/run-diagnostics-r2/data/base/5/2696",
+        "30": "<artifact-root>/run-diagnostics-r2/data/global/2697",
+        "31": "<artifact-root>/run-diagnostics-r2/data/global/1213",
+        "32": "<artifact-root>/run-diagnostics-r2/data/base/5/2690",
+        "33": "<artifact-root>/run-diagnostics-r2/data/base/5/16389",
+        "34": "<artifact-root>/run-diagnostics-r2/data/base/5/16389_fsm",
+        "35": "<artifact-root>/run-diagnostics-r2/data/base/5/2689",
+        "36": "<artifact-root>/run-diagnostics-r2/data/base/5/2617",
+        "37": "<artifact-root>/run-diagnostics-r2/data/base/5/2688"
+      }
+    },
+    "gateway": {
+      "rss_bytes": 23928832,
+      "fd": 4,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/pts/0",
+        "1": "<artifact-root>/run-diagnostics-r2/v3/gateway.log",
+        "2": "<artifact-root>/run-diagnostics-r2/v3/gateway.log",
+        "3": "socket:[657503016]"
+      }
+    }
+  },
+  "ending": {
+    "backend": {
+      "rss_bytes": 23425024,
+      "fd": 38,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/null",
+        "1": "<artifact-root>/run-diagnostics-r2/postgres.log",
+        "2": "<artifact-root>/run-diagnostics-r2/postgres.log",
+        "3": "anon_inode:[signalfd]",
+        "4": "pipe:[657680465]",
+        "5": "anon_inode:[eventpoll]",
+        "6": "anon_inode:[eventpoll]",
+        "7": "<artifact-root>/run-diagnostics-r2/data/pg_wal/000000010000000000000001",
+        "8": "socket:[657680467]",
+        "9": "<artifact-root>/run-diagnostics-r2/data/base/5/2663",
+        "10": "<artifact-root>/run-diagnostics-r2/data/base/5/2601",
+        "11": "<artifact-root>/run-diagnostics-r2/data/base/5/2662",
+        "12": "<artifact-root>/run-diagnostics-r2/data/base/5/2703",
+        "13": "<artifact-root>/run-diagnostics-r2/data/base/5/1247_fsm",
+        "14": "<artifact-root>/run-diagnostics-r2/data/base/5/1247",
+        "15": "<artifact-root>/run-diagnostics-r2/data/base/5/1247_vm",
+        "16": "<artifact-root>/run-diagnostics-r2/data/base/5/2674",
+        "17": "<artifact-root>/run-diagnostics-r2/data/base/5/1259_fsm",
+        "18": "<artifact-root>/run-diagnostics-r2/data/base/5/1259_vm",
+        "19": "<artifact-root>/run-diagnostics-r2/data/base/5/3455",
+        "20": "<artifact-root>/run-diagnostics-r2/data/base/5/1249_fsm",
+        "21": "<artifact-root>/run-diagnostics-r2/data/base/5/1249_vm",
+        "22": "<artifact-root>/run-diagnostics-r2/data/base/5/2658",
+        "23": "<artifact-root>/run-diagnostics-r2/data/base/5/2659",
+        "24": "<artifact-root>/run-diagnostics-r2/data/base/5/2691",
+        "25": "<artifact-root>/run-diagnostics-r2/data/base/5/2610_fsm",
+        "26": "<artifact-root>/run-diagnostics-r2/data/base/5/2610_vm",
+        "27": "<artifact-root>/run-diagnostics-r2/data/base/5/3379",
+        "28": "<artifact-root>/run-diagnostics-r2/data/base/5/1255",
+        "29": "<artifact-root>/run-diagnostics-r2/data/base/5/2696",
+        "30": "<artifact-root>/run-diagnostics-r2/data/global/2697",
+        "31": "<artifact-root>/run-diagnostics-r2/data/global/1213",
+        "32": "<artifact-root>/run-diagnostics-r2/data/base/5/2690",
+        "33": "<artifact-root>/run-diagnostics-r2/data/base/5/16389",
+        "34": "<artifact-root>/run-diagnostics-r2/data/base/5/16389_fsm",
+        "35": "<artifact-root>/run-diagnostics-r2/data/base/5/2689",
+        "36": "<artifact-root>/run-diagnostics-r2/data/base/5/2617",
+        "37": "<artifact-root>/run-diagnostics-r2/data/base/5/2688"
+      }
+    },
+    "gateway": {
+      "rss_bytes": 23961600,
+      "fd": 4,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/pts/0",
+        "1": "<artifact-root>/run-diagnostics-r2/v3/gateway.log",
+        "2": "<artifact-root>/run-diagnostics-r2/v3/gateway.log",
+        "3": "socket:[657503016]"
+      }
+    }
+  },
+  "result": {
+    "Model Calls": 100,
+    "Emitted Rows": 100,
+    "Actual Rows": 100.0,
+    "Prompt Tokens": 1700,
+    "Output Tokens": 100
+  },
+  "samples": [
+    {
+      "monotonic": 4397397.747574645,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23343104,
+          "fd": 38,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23928832,
+          "fd": 4,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.768988548,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24059904,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.789827157,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24059904,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.810147026,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24059904,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.830545448,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24125440,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.850946144,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24125440,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.871343861,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24129536,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.891735171,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24064000,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.912152721,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24064000,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.932546418,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24076288,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.95295557,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24141824,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.973343812,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24141824,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397397.993741443,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24084480,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397398.014145937,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24084480,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397398.034549472,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24150016,
+          "fd": 5,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397398.054946393,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 39,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24154112,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397398.075355765,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23425024,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 24158208,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    }
+  ]
+}

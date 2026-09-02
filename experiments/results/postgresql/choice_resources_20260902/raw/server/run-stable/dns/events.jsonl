@@ -1,0 +1,13 @@
+{"event":"dns-enter"}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10060019418597221}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10071509145200253}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10100939311087132}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10073433630168438}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10078789666295052}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10133242979645729}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10083234403282404}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10056123416870832}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10063155833631754}
+{"event":"error","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","code":"MODEL_TIMEOUT","elapsed_seconds":0.10055440198630095}
+{"event":"dns-exit"}
+{"event":"completion","payload_digest":"074d8ac18f26a3c1bba60620abdc2c09fdc17829c297cbdcb495e454bf6de95e","elapsed_seconds":0.014514807611703873,"raw_output":"TRUE","response_model_id":"choice-resource-fixture-v1","prompt_tokens":17,"output_tokens":1,"finish_reason":"stop"}

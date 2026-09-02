@@ -23,12 +23,15 @@ at `80bb7fc5` passes 83/83 Python contracts, PG18.3 warning-free build, regressi
 The external config must explicitly opt in with `"choice_format":"vllm_structured_outputs"` before v4 can
 send a constrained HTTP request. Missing support or HTTP rejection never triggers an unconstrained retry.
 These fixture results prove the supported PostgreSQL choice SELECT execution, not a real endpoint's constrained
-decoding or new RSS/FD growth limits. The remaining resource and real-model checks are separate work.
+decoding or RSS/FD growth limits. The later [controlled resource run](../../../experiments/results/postgresql/choice_resources_20260902/README.md)
+passes at the declared fixture scales, including cancellation and blocked DNS recovery; real choice-model checks remain pending.
 The later [Filter INSERT qualification](../../../experiments/results/postgresql/semfilter_insert_20260902/README.md)
 at `39007150` passes PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks. The planner now handles a
 pulled-up INSERT source while keeping the ordinary PostgreSQL write node. New tests cover recording/exact/choice
 write results, rollback, savepoint recovery, target constraints, permissions and cancellation using fixtures.
-Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
+After the full engineering comparison and remaining choice checks, real generative SemMap drives the necessary shared
+task/result changes. Composable execution and bounded sessions follow, including two Filter conjuncts and Filter → Map;
+recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
 This extension remains the project's own frontend; the company demo is an engineering reference, not its

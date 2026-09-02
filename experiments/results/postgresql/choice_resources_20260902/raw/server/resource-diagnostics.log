@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<test-worktree>/code/scripts/experiments/run_choice_resource_checks.py", line 10, in <module>
+    main()
+  File "<test-worktree>/code/src/experiments/choice_resource_checks.py", line 287, in main
+    normal_checks(args, connection, user, choice)
+  File "<test-worktree>/code/src/experiments/choice_resource_checks.py", line 201, in normal_checks
+    baseline = settled(processes)
+               ^^^^^^^^^^^^^^^^^^
+  File "<test-worktree>/code/src/experiments/choice_resource_checks.py", line 48, in settled
+    path.name: os.readlink(path) for path in Path(f'/proc/{process.pid}/fd').iterdir()
+               ^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/proc/30393/fd/0'

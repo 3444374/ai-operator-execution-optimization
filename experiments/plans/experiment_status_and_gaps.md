@@ -37,8 +37,10 @@
 > 先支持保存与 EXPLAIN；后续 [C/wire v4 接线](../results/postgresql/choice_pg_wire_20260902/README.md)已通过
 > PG18.3 TAP 748/748、regression 1/1、83/83 合同，choice SELECT 可通过公共 runtime 调用 golden/fake HTTP。
 > 后续 [Filter INSERT 修复](../results/postgresql/semfilter_insert_20260902/README.md)通过 PG18.3 regression 1/1、
-> TAP 919/919、各 83/83；171 项新增用例实际验证写入与事务。未运行真实模型或新资源 smoke。
-> 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来 fork adapter 接入方案
+> TAP 919/919、各 83/83；171 项新增用例实际验证写入与事务。随后[受控资源检查](../results/postgresql/choice_resources_20260902/README.md)
+> 通过 v3/v4 各 5,164 次 fixture 调用、取消/DNS 各 10 次与恢复，本地 91/91；未重跑 TAP 或真实模型。
+> 按最新安排，完整工程对照与四 C 收尾后，先做真实生成型 Map 与必要公共整理，再做可组合执行/有界多会话。
+> 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来算子方法和执行能力的移植方案
 > 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。
 > 工程接入不等于 Filter reference 质量通过，其真实采集继续暂停。生成型 SemMap 与独立增量核心
 > 不再等待 Filter 质量或第二路径；它们仍待实现，也没有新增运行证据。Filter 的质量、标签、matched

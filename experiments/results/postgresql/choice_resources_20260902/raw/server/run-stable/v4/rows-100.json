@@ -1,0 +1,391 @@
+{
+  "rows": 100,
+  "input_bytes": 6553600,
+  "start": {
+    "backend": {
+      "rss_bytes": 23957504,
+      "fd": 49,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/null",
+        "1": "<artifact-root>/run-stable/postgres.log",
+        "2": "<artifact-root>/run-stable/postgres.log",
+        "3": "anon_inode:[signalfd]",
+        "4": "pipe:[657650340]",
+        "5": "anon_inode:[eventpoll]",
+        "6": "anon_inode:[eventpoll]",
+        "7": "<artifact-root>/run-stable/data/pg_wal/000000010000000000000001",
+        "8": "socket:[657650342]",
+        "9": "<artifact-root>/run-stable/data/base/5/2663",
+        "10": "<artifact-root>/run-stable/data/base/5/2601",
+        "11": "<artifact-root>/run-stable/data/base/5/2662",
+        "12": "<artifact-root>/run-stable/data/base/5/2703",
+        "13": "<artifact-root>/run-stable/data/base/5/1247_fsm",
+        "14": "<artifact-root>/run-stable/data/base/5/1247",
+        "15": "<artifact-root>/run-stable/data/base/5/1247_vm",
+        "16": "<artifact-root>/run-stable/data/base/5/2674",
+        "17": "<artifact-root>/run-stable/data/base/5/1259_fsm",
+        "18": "<artifact-root>/run-stable/data/base/5/1259_vm",
+        "19": "<artifact-root>/run-stable/data/base/5/3455",
+        "20": "<artifact-root>/run-stable/data/base/5/1249_fsm",
+        "21": "<artifact-root>/run-stable/data/base/5/1249_vm",
+        "22": "<artifact-root>/run-stable/data/base/5/2658",
+        "23": "<artifact-root>/run-stable/data/base/5/2659",
+        "24": "<artifact-root>/run-stable/data/base/5/2691",
+        "25": "<artifact-root>/run-stable/data/base/5/2610_fsm",
+        "26": "<artifact-root>/run-stable/data/base/5/2610_vm",
+        "27": "<artifact-root>/run-stable/data/base/5/3379",
+        "28": "<artifact-root>/run-stable/data/base/5/1255",
+        "29": "<artifact-root>/run-stable/data/global/2697",
+        "30": "<artifact-root>/run-stable/data/global/1213",
+        "31": "<artifact-root>/run-stable/data/base/5/2690",
+        "32": "<artifact-root>/run-stable/data/base/5/16389",
+        "33": "<artifact-root>/run-stable/data/base/5/16393",
+        "34": "<artifact-root>/run-stable/data/base/5/2686",
+        "35": "<artifact-root>/run-stable/data/base/5/2661",
+        "36": "<artifact-root>/run-stable/data/base/5/2605",
+        "37": "<artifact-root>/run-stable/data/base/5/2653",
+        "38": "<artifact-root>/run-stable/data/base/5/2602",
+        "39": "<artifact-root>/run-stable/data/base/5/2688",
+        "40": "<artifact-root>/run-stable/data/base/5/2617",
+        "41": "<artifact-root>/run-stable/data/base/5/2654",
+        "42": "<artifact-root>/run-stable/data/base/5/2696",
+        "43": "<artifact-root>/run-stable/data/base/5/2619_fsm",
+        "44": "<artifact-root>/run-stable/data/base/5/2619",
+        "45": "<artifact-root>/run-stable/data/base/5/2619_vm",
+        "46": "<artifact-root>/run-stable/data/base/5/16389_vm",
+        "47": "<artifact-root>/run-stable/data/base/5/1259",
+        "48": "<artifact-root>/run-stable/data/base/5/2689"
+      }
+    },
+    "gateway": {
+      "rss_bytes": 23683072,
+      "fd": 4,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/pts/0",
+        "1": "<artifact-root>/run-stable/v4/gateway.log",
+        "2": "<artifact-root>/run-stable/v4/gateway.log",
+        "3": "socket:[657759146]"
+      }
+    }
+  },
+  "ending": {
+    "backend": {
+      "rss_bytes": 23957504,
+      "fd": 49,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/null",
+        "1": "<artifact-root>/run-stable/postgres.log",
+        "2": "<artifact-root>/run-stable/postgres.log",
+        "3": "anon_inode:[signalfd]",
+        "4": "pipe:[657650340]",
+        "5": "anon_inode:[eventpoll]",
+        "6": "anon_inode:[eventpoll]",
+        "7": "<artifact-root>/run-stable/data/pg_wal/000000010000000000000001",
+        "8": "socket:[657650342]",
+        "9": "<artifact-root>/run-stable/data/base/5/2663",
+        "10": "<artifact-root>/run-stable/data/base/5/2601",
+        "11": "<artifact-root>/run-stable/data/base/5/2662",
+        "12": "<artifact-root>/run-stable/data/base/5/2703",
+        "13": "<artifact-root>/run-stable/data/base/5/1247_fsm",
+        "14": "<artifact-root>/run-stable/data/base/5/1247",
+        "15": "<artifact-root>/run-stable/data/base/5/1247_vm",
+        "16": "<artifact-root>/run-stable/data/base/5/2674",
+        "17": "<artifact-root>/run-stable/data/base/5/1259_fsm",
+        "18": "<artifact-root>/run-stable/data/base/5/1259_vm",
+        "19": "<artifact-root>/run-stable/data/base/5/3455",
+        "20": "<artifact-root>/run-stable/data/base/5/1249_fsm",
+        "21": "<artifact-root>/run-stable/data/base/5/1249_vm",
+        "22": "<artifact-root>/run-stable/data/base/5/2658",
+        "23": "<artifact-root>/run-stable/data/base/5/2659",
+        "24": "<artifact-root>/run-stable/data/base/5/2691",
+        "25": "<artifact-root>/run-stable/data/base/5/2610_fsm",
+        "26": "<artifact-root>/run-stable/data/base/5/2610_vm",
+        "27": "<artifact-root>/run-stable/data/base/5/3379",
+        "28": "<artifact-root>/run-stable/data/base/5/1255",
+        "29": "<artifact-root>/run-stable/data/global/2697",
+        "30": "<artifact-root>/run-stable/data/global/1213",
+        "31": "<artifact-root>/run-stable/data/base/5/2690",
+        "32": "<artifact-root>/run-stable/data/base/5/16389",
+        "33": "<artifact-root>/run-stable/data/base/5/16393",
+        "34": "<artifact-root>/run-stable/data/base/5/2686",
+        "35": "<artifact-root>/run-stable/data/base/5/2661",
+        "36": "<artifact-root>/run-stable/data/base/5/2605",
+        "37": "<artifact-root>/run-stable/data/base/5/2653",
+        "38": "<artifact-root>/run-stable/data/base/5/2602",
+        "39": "<artifact-root>/run-stable/data/base/5/2688",
+        "40": "<artifact-root>/run-stable/data/base/5/2617",
+        "41": "<artifact-root>/run-stable/data/base/5/2654",
+        "42": "<artifact-root>/run-stable/data/base/5/2696",
+        "43": "<artifact-root>/run-stable/data/base/5/2619_fsm",
+        "44": "<artifact-root>/run-stable/data/base/5/2619",
+        "45": "<artifact-root>/run-stable/data/base/5/2619_vm",
+        "46": "<artifact-root>/run-stable/data/base/5/16389_vm",
+        "47": "<artifact-root>/run-stable/data/base/5/1259",
+        "48": "<artifact-root>/run-stable/data/base/5/2689"
+      }
+    },
+    "gateway": {
+      "rss_bytes": 23715840,
+      "fd": 4,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/pts/0",
+        "1": "<artifact-root>/run-stable/v4/gateway.log",
+        "2": "<artifact-root>/run-stable/v4/gateway.log",
+        "3": "socket:[657759146]"
+      }
+    }
+  },
+  "result": {
+    "Model Calls": 100,
+    "Emitted Rows": 100,
+    "Actual Rows": 100.0,
+    "Prompt Tokens": 1700,
+    "Output Tokens": 100
+  },
+  "samples": [
+    {
+      "monotonic": 4397598.830590214,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 49,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23683072,
+          "fd": 4,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.852143561,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.872411259,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.892695685,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 50,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.912943478,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.93321077,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 50,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.953472051,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.973742741,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 50,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397598.99400313,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.01424498,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.034513585,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.054764652,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.075041714,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 50,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.095291978,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.115603268,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 50,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397599.135864118,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23957504,
+          "fd": 51,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23814144,
+          "fd": 5,
+          "threads": 1
+        }
+      }
+    }
+  ]
+}

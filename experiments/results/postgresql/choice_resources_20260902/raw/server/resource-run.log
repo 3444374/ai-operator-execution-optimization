@@ -1,0 +1,14 @@
+v3 normal resources passed
+v4 normal resources passed
+cancel/recovery passed
+Traceback (most recent call last):
+  File "<test-worktree>/code/scripts/experiments/run_choice_resource_checks.py", line 10, in <module>
+    main()
+  File "<test-worktree>/code/src/experiments/choice_resource_checks.py", line 286, in main
+    dns_checks(args, connection, user)
+  File "<test-worktree>/code/src/experiments/choice_resource_checks.py", line 254, in dns_checks
+    check_resources(baseline, ending, samples, blocked_dns=True)
+  File "<test-worktree>/code/src/experiments/choice_resource_checks.py", line 78, in check_resources
+    assert ending[key]['fd'] == baseline[key]['fd'], (key, 'settled FD')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('backend', 'settled FD')

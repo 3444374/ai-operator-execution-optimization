@@ -1,0 +1,109 @@
+{
+  "sqlstate": "57014",
+  "elapsed_seconds": 0.051259759813547134,
+  "ending": {
+    "backend": {
+      "rss_bytes": 23449600,
+      "fd": 38,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/null",
+        "1": "<artifact-root>/run-diagnostics-r2/postgres.log",
+        "2": "<artifact-root>/run-diagnostics-r2/postgres.log",
+        "3": "anon_inode:[signalfd]",
+        "4": "pipe:[657680465]",
+        "5": "anon_inode:[eventpoll]",
+        "6": "anon_inode:[eventpoll]",
+        "7": "<artifact-root>/run-diagnostics-r2/data/pg_wal/000000010000000000000001",
+        "8": "socket:[657680467]",
+        "9": "<artifact-root>/run-diagnostics-r2/data/base/5/2663",
+        "10": "<artifact-root>/run-diagnostics-r2/data/base/5/2601",
+        "11": "<artifact-root>/run-diagnostics-r2/data/base/5/2662",
+        "12": "<artifact-root>/run-diagnostics-r2/data/base/5/2703",
+        "13": "<artifact-root>/run-diagnostics-r2/data/base/5/1247_fsm",
+        "14": "<artifact-root>/run-diagnostics-r2/data/base/5/1247",
+        "15": "<artifact-root>/run-diagnostics-r2/data/base/5/1247_vm",
+        "16": "<artifact-root>/run-diagnostics-r2/data/base/5/2674",
+        "17": "<artifact-root>/run-diagnostics-r2/data/base/5/1259_fsm",
+        "18": "<artifact-root>/run-diagnostics-r2/data/base/5/1259_vm",
+        "19": "<artifact-root>/run-diagnostics-r2/data/base/5/3455",
+        "20": "<artifact-root>/run-diagnostics-r2/data/base/5/1249_fsm",
+        "21": "<artifact-root>/run-diagnostics-r2/data/base/5/1249_vm",
+        "22": "<artifact-root>/run-diagnostics-r2/data/base/5/2658",
+        "23": "<artifact-root>/run-diagnostics-r2/data/base/5/2659",
+        "24": "<artifact-root>/run-diagnostics-r2/data/base/5/2691",
+        "25": "<artifact-root>/run-diagnostics-r2/data/base/5/2610_fsm",
+        "26": "<artifact-root>/run-diagnostics-r2/data/base/5/2610_vm",
+        "27": "<artifact-root>/run-diagnostics-r2/data/base/5/3379",
+        "28": "<artifact-root>/run-diagnostics-r2/data/base/5/1255",
+        "29": "<artifact-root>/run-diagnostics-r2/data/base/5/2696",
+        "30": "<artifact-root>/run-diagnostics-r2/data/global/2697",
+        "31": "<artifact-root>/run-diagnostics-r2/data/global/1213",
+        "32": "<artifact-root>/run-diagnostics-r2/data/base/5/2690",
+        "33": "<artifact-root>/run-diagnostics-r2/data/base/5/16389",
+        "34": "<artifact-root>/run-diagnostics-r2/data/base/5/16389_fsm",
+        "35": "<artifact-root>/run-diagnostics-r2/data/base/5/2689",
+        "36": "<artifact-root>/run-diagnostics-r2/data/base/5/2617",
+        "37": "<artifact-root>/run-diagnostics-r2/data/base/5/2688"
+      }
+    },
+    "gateway": {
+      "rss_bytes": 23601152,
+      "fd": 4,
+      "threads": 1,
+      "fd_targets": {
+        "0": "/dev/pts/0",
+        "1": "<artifact-root>/run-diagnostics-r2/cancel/gateway.log",
+        "2": "<artifact-root>/run-diagnostics-r2/cancel/gateway.log",
+        "3": "socket:[657707203]"
+      }
+    }
+  },
+  "samples": [
+    {
+      "monotonic": 4397445.017948677,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23449600,
+          "fd": 38,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23601152,
+          "fd": 4,
+          "threads": 1
+        }
+      }
+    },
+    {
+      "monotonic": 4397445.038903162,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23449600,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23601152,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    },
+    {
+      "monotonic": 4397445.059256216,
+      "processes": {
+        "backend": {
+          "rss_bytes": 23449600,
+          "fd": 40,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23601152,
+          "fd": 6,
+          "threads": 2
+        }
+      }
+    }
+  ]
+}

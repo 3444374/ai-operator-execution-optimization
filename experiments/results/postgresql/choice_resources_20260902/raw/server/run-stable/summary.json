@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "real_model_requests": 0,
+  "normal_rows_per_profile": 5164,
+  "input_bytes_per_row": 65536,
+  "cancellation_cycles": 10,
+  "blocked_dns_cycles": 10,
+  "sample_interval_seconds": 0.02
+}

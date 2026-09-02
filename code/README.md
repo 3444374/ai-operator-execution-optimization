@@ -98,9 +98,11 @@ A qualified Filter reference must precede real collection and held-out validatio
 workload distribution, service, and hardware signature. Only then may a distinct
 Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
 The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
-followed by [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
-Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT; resource and real-model
-validation remain pending. The fixture connection does not qualify a model,
+with a full engineering comparison, then [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
+driving the necessary shared task/result changes. [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
+Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT on the development branch.
+[Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) pass; real-model
+validation remains pending and main is not merged. The fixture connection does not qualify a model,
 change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
 own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
 demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.

@@ -8,6 +8,10 @@
 
 ## PostgreSQL choice profile（2026-09-02）
 
+[资源与预算工具验证](postgresql/choice_resources_20260902/README.md)：`4464fe9b` 的受控 PG18.3
+fixture 检查通过，含 v3/v4 各 5,164 次、取消/阻塞 DNS 各 10 次与恢复；本地 91/91。
+复用旧已验证二进制，未重跑 TAP，真实模型请求为 0；多会话仍是待实现能力。失败和完整时间序列保留。
+
 [Filter INSERT 修复](postgresql/semfilter_insert_20260902/README.md)：`39007150` 的 PG18.3 regression 1/1、
 TAP 919/919、本地/服务器各 83/83 通过。生产只修改 Filter planner，新增 171 项验证真正的写入、
 事务和限制；资源/真实模型验证仍待完成。此前 SELECT 接线与 INSERT 失败证据保持原提交身份。

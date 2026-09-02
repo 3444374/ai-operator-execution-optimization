@@ -1,0 +1,13 @@
+{
+  "scope": "choice_resources_20260902 owned resources only",
+  "four_test_clusters_pg_ctl_status": [3, 3, 3, 3],
+  "matching_unix_listeners": 0,
+  "matching_python_or_postgres_processes": 0,
+  "server_test_worktree_removed": true,
+  "source_archive_retained": true,
+  "git_bundles_retained": true,
+  "failed_and_successful_run_artifacts_retained": true,
+  "original_manifest_entries_verified": 156,
+  "server_public_manifest_entries_verified": 158,
+  "other_workloads_inspected_or_stopped": false
+}

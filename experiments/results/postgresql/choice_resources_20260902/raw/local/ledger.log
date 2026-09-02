@@ -1,0 +1,11 @@
+test_concurrent_runners_cannot_overspend (test_choice_attempt_ledger.AttemptLedgerTests.test_concurrent_runners_cannot_overspend) ... ok
+test_corrupt_or_missing_history_fails_closed (test_choice_attempt_ledger.AttemptLedgerTests.test_corrupt_or_missing_history_fails_closed) ... ok
+test_existing_history_is_never_reinitialized (test_choice_attempt_ledger.AttemptLedgerTests.test_existing_history_is_never_reinitialized) ... ok
+test_failed_persistence_or_http_does_not_refund_attempt (test_choice_attempt_ledger.AttemptLedgerTests.test_failed_persistence_or_http_does_not_refund_attempt) ... ok
+test_invalid_digest_consumes_nothing (test_choice_attempt_ledger.AttemptLedgerTests.test_invalid_digest_consumes_nothing) ... ok
+test_reopen_does_not_restore_spent_attempts (test_choice_attempt_ledger.AttemptLedgerTests.test_reopen_does_not_restore_spent_attempts) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.052s
+
+OK

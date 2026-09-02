@@ -1,0 +1,346 @@
+{
+  "runs": [
+    {
+      "profile": "v3",
+      "rows": 100,
+      "result": {
+        "Model Calls": 100,
+        "Emitted Rows": 100,
+        "Actual Rows": 100.0,
+        "Prompt Tokens": 1700,
+        "Output Tokens": 100
+      },
+      "resources": {
+        "backend": {
+          "baseline": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23900160,
+            "fd": 51,
+            "threads": 1
+          },
+          "end": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          }
+        },
+        "gateway": {
+          "baseline": {
+            "rss_bytes": 23818240,
+            "fd": 4,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23818240,
+            "fd": 4,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23953408,
+            "fd": 6,
+            "threads": 2
+          },
+          "end": {
+            "rss_bytes": 23851008,
+            "fd": 4,
+            "threads": 1
+          }
+        }
+      }
+    },
+    {
+      "profile": "v3",
+      "rows": 1000,
+      "result": {
+        "Model Calls": 1000,
+        "Emitted Rows": 1000,
+        "Actual Rows": 1000.0,
+        "Prompt Tokens": 17000,
+        "Output Tokens": 1000
+      },
+      "resources": {
+        "backend": {
+          "baseline": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23900160,
+            "fd": 51,
+            "threads": 1
+          },
+          "end": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          }
+        },
+        "gateway": {
+          "baseline": {
+            "rss_bytes": 23818240,
+            "fd": 4,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23851008,
+            "fd": 4,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 24252416,
+            "fd": 6,
+            "threads": 2
+          },
+          "end": {
+            "rss_bytes": 24055808,
+            "fd": 4,
+            "threads": 1
+          }
+        }
+      }
+    },
+    {
+      "profile": "v3",
+      "rows": 4000,
+      "result": {
+        "Model Calls": 4000,
+        "Emitted Rows": 4000,
+        "Actual Rows": 4000.0,
+        "Prompt Tokens": 68000,
+        "Output Tokens": 4000
+      },
+      "resources": {
+        "backend": {
+          "baseline": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23900160,
+            "fd": 49,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23957504,
+            "fd": 51,
+            "threads": 1
+          },
+          "end": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          }
+        },
+        "gateway": {
+          "baseline": {
+            "rss_bytes": 23818240,
+            "fd": 4,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 24055808,
+            "fd": 4,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 24469504,
+            "fd": 6,
+            "threads": 2
+          },
+          "end": {
+            "rss_bytes": 24244224,
+            "fd": 4,
+            "threads": 1
+          }
+        }
+      }
+    },
+    {
+      "profile": "v4",
+      "rows": 100,
+      "result": {
+        "Model Calls": 100,
+        "Emitted Rows": 100,
+        "Actual Rows": 100.0,
+        "Prompt Tokens": 1700,
+        "Output Tokens": 100
+      },
+      "resources": {
+        "backend": {
+          "baseline": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23957504,
+            "fd": 51,
+            "threads": 1
+          },
+          "end": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          }
+        },
+        "gateway": {
+          "baseline": {
+            "rss_bytes": 23683072,
+            "fd": 4,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23683072,
+            "fd": 4,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23814144,
+            "fd": 6,
+            "threads": 2
+          },
+          "end": {
+            "rss_bytes": 23715840,
+            "fd": 4,
+            "threads": 1
+          }
+        }
+      }
+    },
+    {
+      "profile": "v4",
+      "rows": 1000,
+      "result": {
+        "Model Calls": 1000,
+        "Emitted Rows": 1000,
+        "Actual Rows": 1000.0,
+        "Prompt Tokens": 17000,
+        "Output Tokens": 1000
+      },
+      "resources": {
+        "backend": {
+          "baseline": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23957504,
+            "fd": 51,
+            "threads": 1
+          },
+          "end": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          }
+        },
+        "gateway": {
+          "baseline": {
+            "rss_bytes": 23683072,
+            "fd": 4,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23715840,
+            "fd": 4,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 24121344,
+            "fd": 6,
+            "threads": 2
+          },
+          "end": {
+            "rss_bytes": 23916544,
+            "fd": 4,
+            "threads": 1
+          }
+        }
+      }
+    },
+    {
+      "profile": "v4",
+      "rows": 4000,
+      "result": {
+        "Model Calls": 4000,
+        "Emitted Rows": 4000,
+        "Actual Rows": 4000.0,
+        "Prompt Tokens": 68000,
+        "Output Tokens": 4000
+      },
+      "resources": {
+        "backend": {
+          "baseline": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 23957504,
+            "fd": 51,
+            "threads": 1
+          },
+          "end": {
+            "rss_bytes": 23957504,
+            "fd": 49,
+            "threads": 1
+          }
+        },
+        "gateway": {
+          "baseline": {
+            "rss_bytes": 23683072,
+            "fd": 4,
+            "threads": 1
+          },
+          "start": {
+            "rss_bytes": 23916544,
+            "fd": 4,
+            "threads": 1
+          },
+          "peak": {
+            "rss_bytes": 24317952,
+            "fd": 6,
+            "threads": 2
+          },
+          "end": {
+            "rss_bytes": 24104960,
+            "fd": 4,
+            "threads": 1
+          }
+        }
+      }
+    }
+  ]
+}

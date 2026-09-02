@@ -1,0 +1,21 @@
+test_choice_http_observer (unittest.loader._FailedTest.test_choice_http_observer) ... ERROR
+
+======================================================================
+ERROR: test_choice_http_observer (unittest.loader._FailedTest.test_choice_http_observer)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_choice_http_observer
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "<test-worktree>/code/tests/experiments/test_choice_http_observer.py", line 10, in <module>
+    from src.experiments.choice_attempt_ledger import (
+ImportError: cannot import name 'observe_http_posts' from 'src.experiments.choice_attempt_ledger' (<test-worktree>/code/src/experiments/choice_attempt_ledger.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

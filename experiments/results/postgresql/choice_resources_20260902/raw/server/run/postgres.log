@@ -1,0 +1,43 @@
+2026-09-02 14:57:27.509 CST [19854] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-02 14:57:27.509 CST [19854] LOG:  listening on Unix socket "<artifact-root>/run/socket/.s.PGSQL.55446"
+2026-09-02 14:57:27.511 CST [19860] LOG:  database system was shut down at 2026-09-02 14:57:27 CST
+2026-09-02 14:57:27.514 CST [19854] LOG:  database system is ready to accept connections
+2026-09-02 14:58:15.775 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:15.775 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:16.430 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:16.430 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:17.084 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:17.084 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:17.739 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:17.739 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:18.393 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:18.393 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:19.047 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:19.047 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:19.702 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:19.702 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:20.357 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:20.357 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:21.011 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:21.011 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:21.665 CST [19864] ERROR:  canceling statement due to statement timeout
+2026-09-02 14:58:21.665 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:24.323 CST [19864] ERROR:  SemLoom model endpoint timed out
+2026-09-02 14:58:24.323 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:25.035 CST [19864] ERROR:  SemLoom model endpoint timed out
+2026-09-02 14:58:25.035 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:25.747 CST [19864] ERROR:  SemLoom model endpoint timed out
+2026-09-02 14:58:25.747 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:26.458 CST [19864] ERROR:  SemLoom model endpoint timed out
+2026-09-02 14:58:26.458 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:27.169 CST [19864] ERROR:  SemLoom model endpoint timed out
+2026-09-02 14:58:27.169 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:27.879 CST [19864] ERROR:  SemLoom model endpoint timed out
+2026-09-02 14:58:27.879 CST [19864] STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM resource_rows WHERE id<=$1 AND ai_semantic.filter(payload,'Classify input.','{"model": "choice-resource-fixture-v1", "temperature": 0, "max_tokens": 8, "generation_profile": "semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-02 14:58:28.660 CST [19854] LOG:  received fast shutdown request
+2026-09-02 14:58:28.660 CST [19854] LOG:  aborting any active transactions
+2026-09-02 14:58:28.662 CST [19854] LOG:  background worker "logical replication launcher" (PID 19863) exited with exit code 1
+2026-09-02 14:58:28.662 CST [19858] LOG:  shutting down
+2026-09-02 14:58:28.663 CST [19858] LOG:  checkpoint starting: shutdown immediate
+2026-09-02 14:58:28.669 CST [19858] LOG:  checkpoint complete: wrote 453 buffers (2.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.005 s, sync=0.001 s, total=0.007 s; sync files=48, longest=0.001 s, average=0.001 s; distance=3469 kB, estimate=3469 kB; lsn=0/1A507E8, redo lsn=0/1A507E8
+2026-09-02 14:58:28.677 CST [19854] LOG:  database system is shut down

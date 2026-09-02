@@ -27,18 +27,20 @@ execution-provider gateway 的权威实现已经迁到公共 `code/src/execution
 区分 semantic-input rows、NULL rate、output selectivity、model calls、prompt/output usage、
 model role 和 AI-work cost，并在执行时分列实际 usage；该工程启发式还没有校准为性能模型。
 接下来分别推进自有 PG 算子、SemLoom 核心和公司接口对照。PG 先做
-[可选 choice 生成配置](experiments/plans/postgresql_choice_profile_engineering.md)，再做
-[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)；
+[可选 choice 生成配置](experiments/plans/postgresql_choice_profile_engineering.md)的资源与真实服务检查，
+在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
+再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
-新资源和真实模型验证、生成型 SemMap 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
+独立分支已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)，尚未合并 main；
+choice 的真实服务验证、多算子组合、生成型 SemMap 与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
 分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
 Filter 的真实校准仍暂停，其质量、成本与 LOTUS/Cortex-like 第二路径继续单独推进，不降低既有要求。
 carrier 检查随实际路径进行，只有可复现的限制才触发最小 core patch。IMLane-like 组批位置对照
 需要真实 PG 增量接入；Kalypso-like 多阶段机制仍按实际需求另行决定。
 
 主实现继续完成两部分：自有 `semloom_pg` 语义算子，以及 SemLoom 数据执行与调度；目标是不依赖
-公司私有仓库也能复现。公司 demo 用作算子工程参考，后续在公司 fork 中加入适配层，接入同一个
-SemLoom 执行核心，承担工业前端接入与获批环境验证。接口差异提前核对，正式适配后做；内网复用与
+公司私有仓库也能复现。公司 demo 用作算子工程参考，不限定自有系统能实现哪些能力；未来移植覆盖
+算子处理、优化与 SemLoom 执行调度，Adapter 只是其中一部分。接口差异提前核对，正式适配后做；内网复用与
 外部发布/部署分别确认权限，fork 不自动获得 AutoDL 部署许可。具体分工见
 [前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
 

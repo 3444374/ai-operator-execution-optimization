@@ -248,7 +248,7 @@ fixture；同一 backend/gateway 内连续执行各规模，以免通过重启�
 | gateway wire v4（已实现） | `7d72d9ad` 共享固定 exact codec/session，严格 profile/字段/版本/摘要与 terminal error；fixture 验证已知 profile 映射、未声明支持时零 HTTP、拒绝后不降级。83/83 合同与旧 PG18.3 TAP 537/537 通过，未调用真实模型 |
 | C port/wire 接入（已实现） | 完整 profile 复制、独立 v4 字段/版本/identity/evidence 校验，回归公共 runtime；源码 `80bb7fc5`，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83，通过记录见下方 |
 | 功能验证（当前 SELECT / 受限 INSERT 已通过） | 中立 C11、PG18.3 warning-free `-O2 -Werror`、完整 TAP；新旧配置、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、savepoint/错误/取消、HTTP 参数对照。INSERT 另有真实写入/回滚、源 RLS 与目标权限/约束。只用 fixtures，不外推为真实模型或所有 SQL 形状 |
-| 资源验证（待完成） | 按 C.5 预先登记 RSS/FD/线程与任务量采样，验证 query/gateway 取消后和后续恢复，无累计增长；不拿历史资源数字替代新 profile |
+| 资源验证（受控 fixture 已通过） | `4464fe9b` 通过 C.5 受控重跑：v3/v4 各 5,164 次、10 次取消和 10 次阻塞 DNS/恢复；保存 RSS/FD/线程时间序列与失败运行。只证明本规模、单会话及无后台表维护条件 |
 | 受限真实 smoke | preflight 与服务支持证据齐备；请求在总预算内，实际参数差异仅为 choice；新配置返回值通过原 parser，model/usage/finish reason/PG 计数一致；旧配置与全部失败如实记录 |
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |
 
@@ -283,7 +283,11 @@ carrier 的合法源关系识别，不改 runtime、parser、profile、wire 或 
 warning-free 构建、regression 1/1、TAP 919/919（含 INSERT 171）、本地/服务器各 83/83 与 C11。
 详见[INSERT 验证](../results/postgresql/semfilter_insert_20260902/README.md)。没有修改 runtime、provider、
 wire、parser 或 cost。参考公司经验不限制自有能力；未来移植仍覆盖算子处理/优化与 SemLoom，
-不以单个 Adapter 接通替代整体移植。资源与真实服务检查尚未完成，校准继续暂停。
+不以单个 Adapter 接通替代整体移植。该历史 INSERT 切片未做资源与真实服务检查，校准继续暂停。
+
+后续[资源与预算工具验证](../results/postgresql/choice_resources_20260902/README.md)已完成本节受控
+fixture 检查，生产 PG/gateway 未修改；真实模型请求为 0，受限真实服务验证仍是四 C 的剩余项。
+完整工程参照已跟随主计划 §8.7 更新，不只核对多算子；本轮实际修改仅在实验观测与检查工具。
 
 ## C.7 暂存的质量决策（不阻塞本工程切片）
 

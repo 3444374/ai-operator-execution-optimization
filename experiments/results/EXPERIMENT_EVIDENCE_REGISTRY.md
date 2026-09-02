@@ -8,7 +8,7 @@
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
 schema v1/v2 planner-owned plan spec、wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；
-schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证，新资源测试仍待完成。
+schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证，独立分支新增受控资源检查；真实 choice 服务验证仍待完成。
 小规模真实模型只证明纵切面可运行，
 deterministic calibration artifact 只证明生成/验证/planner 消费，不支持真实 cost accuracy、语义质量、第二 physical path、
 bounded async 或性能优化已经完成。当前顺序看工程计划和
@@ -28,6 +28,12 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
 
 ## 1. 证据等级
+
+2026-09-02 的 [choice 资源检查](postgresql/choice_resources_20260902/README.md)绑定工具 `4464fe9b`，
+复用并核对 `39007150` 的 PG18.3 二进制：v3/v4 各 5,164 次 65,536-byte fixture 调用、10 次取消、
+10 次阻塞 DNS 超时与恢复通过。保留最初 FD 减少导致等值断言失败及诊断权限失败；独立受控重跑
+在测试表维护完成后关闭该表自动 vacuum，阈值不变。仅证明本规模单会话，无新 TAP/构建或真实模型请求。
+8 项预算/HTTP seam 测试与既有本地 83 项均通过；零任务双会话探测复现当前串行服务限制，多会话未实现。
 
 2026-09-02 的 [Filter INSERT 修复](postgresql/semfilter_insert_20260902/README.md)绑定最终 `39007150`：
 生产改动只在 `sem_filter_path.c`，支持上拉后的单表 INSERT 源查询，公共层与语义身份不变。

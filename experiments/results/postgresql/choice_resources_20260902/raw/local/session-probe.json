@@ -1,0 +1,15 @@
+{
+  "first_opened": true,
+  "second_waited_while_first_open": true,
+  "second_opened_after_first_close": true,
+  "wait_observation_seconds": 0.2,
+  "tasks_sent": 0,
+  "model_requests": 0,
+  "gateway_exit": 0,
+  "socket_removed": true,
+  "source_commit": "7da954f9ee89995e376996597feb5bf100b3ee1e",
+  "source_sha256": {
+    "code/src/execution_provider/server.py": "c2eef766f950681ac89028693d50d148e6aac6046ee3ef6c8c61b6ec6a05df44",
+    "code/src/execution_provider/adapters/semantic_session.py": "493641bd757ed2ab9b1c82d1fb557374a92ee364ff277409ab1eb45ae311d92a"
+  }
+}
