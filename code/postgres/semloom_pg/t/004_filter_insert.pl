@@ -102,12 +102,31 @@ for my $profile (@profiles)
     is($write_plan->{'Node Type'}, 'ModifyTable', "$label keeps PostgreSQL write ownership");
     is(scalar(@filters), 1, "$label INSERT has exactly one Filter");
     my @selected_filters = filter_plans($select_plan);
-    is($filters[0]->{'Semantic Spec Digest'}, $selected_filters[0]->{'Semantic Spec Digest'},
-        "$label INSERT preserves SELECT semantic identity");
+    is($filters[0]->{'Physical Role'}, 'reference', "$label keeps the reference role");
+    if ($external)
+    {
+        ok(defined $filters[0]->{'Semantic Spec'}, "$label exposes its semantic spec");
+        is($filters[0]->{'Semantic Spec'}, $selected_filters[0]->{'Semantic Spec'},
+            "$label INSERT preserves the SELECT spec");
+    }
+    if ($label eq 'choice v4')
+    {
+        is($filters[0]->{'Semantic Spec Digest'},
+            '3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5',
+            'choice INSERT keeps the independent semantic digest vector');
+    }
     ($status, $stdout, $stderr) = execute_insert($external, "$write; SELECT id FROM filter_sink ORDER BY id;", 1);
     is($status, 0, "$label commits the selected rows") or diag($stderr);
     is($stdout, "1\n5\n6", "$label retains duplicates and drops FALSE/UNKNOWN/NULL");
     $node->safe_psql('postgres', 'TRUNCATE filter_sink');
+
+    ($status, $stdout, $stderr) = execute_insert($external,
+        "BEGIN; EXPLAIN (ANALYZE, FORMAT JSON) $write; ROLLBACK;", 1);
+    is($status, 0, "$label INSERT reports actual execution counters") or diag($stderr);
+    my @executed = filter_plans(decode_json($stdout)->[0]->{'Plan'});
+    is($executed[0]->{'Accepted Rows'}, 5, "$label excludes NULL from accepted tasks");
+    is($executed[0]->{'Emitted Rows'}, 3, "$label emits only the three TRUE tuples");
+    if ($external) { is($executed[0]->{'Model Calls'}, 5, "$label model calls match non-NULL input"); }
 
     ($status, $stdout, $stderr) = execute_insert($external, qq{
 BEGIN;
@@ -174,6 +193,16 @@ SELECT id FROM filter_sink;
             isnt($status, 0, "$label $source_limit $suffix remains unsupported");
             like($stderr, qr/ERROR:  0A000: INSERT shape is outside/, "$label rejects INSERT variant before provider I/O");
         }
+    }
+    for my $unsupported (
+        "INSERT INTO filter_sink OVERRIDING SYSTEM VALUE $select",
+        "INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE $predicate",
+        "INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE $predicate")
+    {
+        ($status, $stdout, $stderr) = $node->psql('postgres',
+            "\\set VERBOSITY verbose\nSET semloom_pg.gateway_socket='$socket'; EXPLAIN $unsupported;");
+        isnt($status, 0, "$label rejects unsupported INSERT shape at planning");
+        like($stderr, qr/ERROR:  0A000:/, "$label unsupported shape retains feature-not-supported error");
     }
 }
 
