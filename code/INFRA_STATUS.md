@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（choice profile PG plan 接入）
+日期：2026-09-02（choice gateway v4 接入，PG 执行仍待接通）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -13,7 +13,7 @@
 不修改 vLLM 内部。
 
 **尚未实现项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的中立 open
-spec 映射、wire v4 与 gateway 执行；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/
+spec 映射与 C wire v4；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/
 多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
@@ -25,7 +25,14 @@ machines、provider 与 wire 未扩展；runtime 的 lifecycle 未改，只把 p
 测试修订 `134447dd` 已核对真实 provider socket 配置；完整 PG18.3 TAP 537/537、本地/服务器 Python
 68/68、C11 与 warning-free `-O2 -Werror` 构建通过。详细 regression 和日志见
 [PG plan 接入验证](../experiments/results/postgresql/choice_pg_plan_20260902/README.md)。
-当前可执行路径仍是 schema v1/v2、wire v2/v3 与同步单在途 port；schema 3 仅可检查计划，recording Map 不是生成算子。
+后续 `7d72d9ad` 已实现 gateway wire v4 的严格 open/task 校验、profile/semantic identity 和
+golden/fixed-model 映射；共享 `wire/semantic.py` 与 `adapters/semantic_session.py`，保留 v3 import/runner。
+外部 fixed config 须显式声明 `choice_format=vllm_structured_outputs`；否则 choice 在 HTTP 前拒绝。
+不降级、不重试、不改写 raw output；现有模型、prompt、生成参数与 HTTP deadline 策略不变。
+本地/服务器各 83/83，PG18.3 warning-free 构建、regression 1/1、TAP 537/537 通过，见
+[gateway v4 验证](../experiments/results/postgresql/choice_gateway_v4_20260902/README.md)。这只增加 fixture
+协议与兼容证据：C/SQL/TAP 源码未改，PG schema 3 的 `0A000` 仍保留，没有真实模型或新资源 smoke。
+当前 PG 可执行路径仍是 schema v1/v2、wire v2/v3 与同步单在途 port；schema 3 仅可检查计划，recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
 query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
@@ -33,7 +40,7 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-本次新增 PG plan 能力与隔离 PG18.3 测试，但没有模型调用；Filter 校准暂停与原始失败结论不变。
+本次新增 gateway 协议能力并重跑隔离 PG18.3 测试，但没有模型调用；Filter 校准暂停与原始失败结论不变。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension

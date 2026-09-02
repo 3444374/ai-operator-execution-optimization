@@ -1,7 +1,7 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`in-progress / PG-plan-implemented / port-wire-integration-pending`
+状态：`in-progress / PG-plan-and-gateway-implemented / C-port-wire-integration-pending`
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
 跨工作包依赖、模块分工和公司接入由[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md)维护；
@@ -14,8 +14,9 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 
 本节是本轮工程设计与验收的唯一详细入口。来源是现有源码接口、此前 choice 格式诊断及本次设计
 审查；它是工程决策，不是新的算法或质量实验结论。首个代码切片已实现不可变 profile 值、严格
-校验与独立 C/Python canonical bytes；后续 `00cc6bbf` 已接入 SQL options 和 PG plan，尚未接入
-中立 open spec 或 wire v4。当前新配置可规划和 EXPLAIN，执行明确拒绝；后续运行按具体切片验证。
+校验与独立 C/Python canonical bytes；后续 `00cc6bbf` 已接入 SQL options 和 PG plan，`7d72d9ad`
+已接入 gateway wire v4 与 fixed-model 映射，尚未接入 C 中立 open spec 或 codec。当前新配置可规划
+和 EXPLAIN，PG 执行明确拒绝；后续运行按具体切片验证。
 
 **目标与非目标。** 证明数据库能显式选择、保存、传输并验证受约束生成配置，保持现有生命周期和
 旧行为；不证明 reference 语义质量、性能收益或成本精度。新配置是 opt-in、unqualified 的工程能力，
@@ -68,7 +69,7 @@ gateway 的外部 fixed config 新增可选 `choice_format="vllm_structured_outp
 | SQL options | 计划与 wire | 行为 |
 |---|---|---|
 | 恰好原有三个字段 | 原 schema 2 / wire v3 | 原计划内容、digest、wire bytes、错误与稳定 EXPLAIN 字段不变 |
-| 恰好四个字段且 profile 为上述值 | 新 schema 3 已实现；wire v4 待实现 | 显式 choice；非默认、未通过质量验证；目前不执行 |
+| 恰好四个字段且 profile 为上述值 | 新 schema 3 与 gateway v4 已实现；C codec 待实现 | 显式 choice；非默认、未通过质量验证；目前 PG 不执行 |
 | 未知 profile、null、非字符串、缺字段或多余字段 | planning 阶段拒绝 | 不打开 provider，不发送模型请求 |
 
 原有 instruction/options 的计划期常量、类型、长度和数值要求继续成立；schema 1 / recording wire v2
@@ -101,7 +102,8 @@ plan digest；只改 profile ID 或只依靠 schema version 变化不足以绑�
 [`test_semloom_generation_profile.py`](../../code/tests/postgres/test_semloom_generation_profile.py)。
 C 只输出供现有 PG SHA-256 消费的规范 bytes，不另写密码算法；当前测试独立验证这些 bytes 的摘要。
 Python record 恰有 `profile_id/profile_version/constraint_kind/choices/profile_digest` 五字段；这是
-已解码值的合同，不宣称已实现 JSON 重复字段检查或 wire v4 open/task/completion。
+已解码值的合同。gateway v4 另在 framing 标记 JSON 重复字段，并在 schema 校验时拒绝；
+v2/v3 的既有解码行为不变。C wire v4 尚未实现。
 
 PG 的 schema 3 在原 27 个命名字段外保存一个嵌套 `generation_profile`，内含上述完整五字段，
 choices 使用有序 String 节点列表。解码结果逐项复制到指定 context，不借用计划树或注册表。
@@ -126,7 +128,7 @@ open/task/completion 必须相互核验，不用切换 provider 来隐式切换�
 - `sem_filter_path.c` / plan spec：解析 opt-in、展开并保存 profile、计算身份，供现有 EXPLAIN 回调读取。
 - `PgSemanticRuntime`：仍是 PG plan 到中立 `AiOpenSpec` 的唯一转换点；新增值保持固定宽度类型、
   bytes 与明确所有权，不把 `Datum/Jsonb/MemoryContext` 或供应商参数名带入 port。
-  此映射与 wire v4 在下个切片接入；当前 schema 3 不创建 runtime/provider，普通 EXPLAIN 直接读取
+  此映射与 C wire v4 在下个切片接入；当前 schema 3 不创建 runtime/provider，普通 EXPLAIN 直接读取
   已验证 plan。任何实际执行（含 LIMIT 0、zero-row、NULL-only、prepared）在初始化 child 前拒绝。
 - UDS/wire：保留同步单在途、lazy open、借用输入、session-owned completion 与幂等关闭。schema 3
   使用独立 wire v4 的字段集合、版本检查与摘要；v3 不增加可选字段或扩大为未知参数容器。
@@ -200,7 +202,8 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 | 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。后续 PG 切片已链接 helper，AiOpenSpec 仍未扩展 |
 | 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
 | PG plan 接入（已实现） | 新 options、schema 3、copyObject-safe 完整 profile、摘要、prepared/generic-plan 与 invalidation；旧校准拒绝、新执行不回落 v3；旧字段和值行为不变 |
-| port/wire/gateway 接入（待实现） | runtime 中立 open spec 映射、v4 严格校验、两侧 golden parity、已知 profile 映射与不降级证明；复用公共传输/生命周期，不复制执行栈 |
+| gateway wire v4（已实现） | `7d72d9ad` 共享固定 exact codec/session，严格 profile/字段/版本/摘要与 terminal error；fixture 验证已知 profile 映射、未声明支持时零 HTTP、拒绝后不降级。83/83 合同与旧 PG18.3 TAP 537/537 通过，未调用真实模型 |
+| C port/wire 接入（待实现） | runtime 中立 open spec 映射、C v4 严格校验与 golden parity，移除执行拒绝前补 PG 新路径的完整测试；复用公共传输/生命周期，不复制执行栈 |
 | 功能与资源验证 | Python/protocol/static、中立 C11、精确 PG18.3 warning-free `-O2 -Werror`、regression、完整相关 TAP、新旧配置、普通 SQL、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、错误/取消/资源检查通过 |
 | 受限真实 smoke | preflight 与服务支持证据齐备；请求在总预算内，实际参数差异仅为 choice；新配置返回值通过原 parser，model/usage/finish reason/PG 计数一致；旧配置与全部失败如实记录 |
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |

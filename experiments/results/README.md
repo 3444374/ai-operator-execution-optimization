@@ -6,10 +6,14 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
-## PostgreSQL choice profile 值与 PG plan（2026-09-02）
+## PostgreSQL choice profile（2026-09-02）
+
+[gateway v4 与请求映射](postgresql/choice_gateway_v4_20260902/README.md)：`7d72d9ad` 实现严格 v4、
+共享 session 和显式 fixed-model choice 映射。本地/服务器各 83/83，PG18.3 regression 1/1、TAP
+537/537 通过；C codec/open spec 尚未接通，PG schema 3 仍拒绝执行。未调用真实模型。
 
 [PG plan 接入](postgresql/choice_pg_plan_20260902/README.md)：第四个 option 与 schema 3 已实现，
-保存完整 profile，支持计划复制、prepared plan 和 EXPLAIN；实际执行明确拒绝，wire v4 待接入。
+保存完整 profile，支持计划复制、prepared plan 和 EXPLAIN；该切片实际执行明确拒绝，未接 wire v4。
 最终 PG18.3 regression 1/1、TAP 537/537、本地/服务器各 68/68 测试通过；没有真实模型调用。
 
 [首个实现切片](postgresql/choice_profile_contract_20260902/README.md)：新增严格 profile 值与 C/Python

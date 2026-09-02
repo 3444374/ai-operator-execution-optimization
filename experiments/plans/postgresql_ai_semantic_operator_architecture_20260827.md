@@ -131,7 +131,8 @@ planned choice profile 必须自包含并进入新 semantic digest；provider id
 | `AiCompletion`（per-item） | `sequence`、`output`、`response_model_id`、`finish_reason`、`prompt_tokens/output_tokens`、`is_null` |
 | `AiProviderError` | caller-owned 中立分类、errno、限长脱敏详情及必要固定宽度参数 |
 
-model 与 generation constraints 不逐行复制成 task 字段；四 C 拟加的 generation profile 当前尚不存在。
+model 与 generation constraints 不逐行复制成 task 字段；四 C 的 generation profile 已存在于
+PG schema 3 与 gateway v4，但尚未加入本表的 C `AiOpenSpec`。
 `PreparedSemanticTask/CompletionRecord` 只在旧设计中作为概念名使用，不是当前两个 C struct 的别名。
 wire task/completion 可携带身份摘要用于核验，不意味着这些字段全部暴露在中立 C task/completion 中。
 
@@ -143,7 +144,8 @@ wire task/completion 可携带身份摘要用于核验，不意味着这些字�
 
 当前没有跨进程 `query_id/operator_instance_id/task_id/job_id` 组合，也没有 query-level registry。
 未来多节点、多 Job 或重连场景确需时再引入 opaque identity；只有引入 retry 才讨论 attempt identity。
-四 C 的 wire v4 仍是待实现的同步扩展，不能把它写成已部署协议或顺带加入上述 ID。
+四 C 的 gateway wire v4 已实现，C codec 与 PG 执行映射仍待接通；不能把它写成已部署的
+PG choice 路径或顺带加入上述 ID。
 
 ## 6. 同步 port 与未来增量执行
 
@@ -375,7 +377,9 @@ fork/修改权限不等于外部发布或部署权限；改名、翻写、打包
 
 目标是显式选择三值受约束生成，保留旧 SQL/schema/wire，不成为默认或质量合格的 reference。
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
-当前已完成值合同与 PG plan 保存/严格解码/EXPLAIN，实际执行仍拒绝；port/wire/gateway 接入尚未实现。
+当前已完成值合同、PG plan 保存/严格解码/EXPLAIN，以及 gateway v4 与固定 HTTP choice 映射；
+PG 实际执行仍拒绝，C port/wire 接入尚未实现。gateway fixture 与旧 PG 路径兼容性已验证，
+真实模型、PG choice lifecycle 和新资源验证仍待完成。
 [四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
 

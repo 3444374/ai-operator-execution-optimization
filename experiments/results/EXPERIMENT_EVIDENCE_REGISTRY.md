@@ -28,6 +28,12 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 
 ## 1. 证据等级
 
+2026-09-02 的 [gateway v4 接入](postgresql/choice_gateway_v4_20260902/README.md)绑定 `7d72d9ad`：
+本地/服务器各 83/83，PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 537/537 通过。
+新增 15 项验证严格 profile/字段/版本/摘要、显式 choice HTTP 映射、拒绝后不降级、原始结果保留。
+仅使用 fixtures；C/SQL/TAP 未修改，PG schema 3 仍以 `0A000` 拒绝执行。没有真实模型、新资源
+smoke 或成本/质量结论；不能把 gateway 支持写成 PG choice 已接通。
+
 2026-09-02 的 [PG plan 接入](postgresql/choice_pg_plan_20260902/README.md)绑定最终 `134447dd`
 （生产实现 `00cc6bbf`）：PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 537/537，
 本地/服务器 Python 各 68/68。新 SQL option/schema 3 保存完整 profile，验证复制、严格解码、

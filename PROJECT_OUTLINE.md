@@ -57,8 +57,11 @@ deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments
 首个[值与编码切片](experiments/results/postgresql/choice_profile_contract_20260902/README.md)已通过
 C/Python 对照及本地/服务器 68/68 测试，另有 PG18.3 仅构建记录。
 后续 [PG plan 接入](experiments/results/postgresql/choice_pg_plan_20260902/README.md)已支持显式 SQL
-option、schema 3、完整 profile 的计划复制与 EXPLAIN；新执行仍明确拒绝，wire v4 和中立 open
-spec 映射尚未接通。旧三字段配置继续执行，不把规划支持写成真实模型支持。
+option、schema 3、完整 profile 的计划复制与 EXPLAIN；新执行仍明确拒绝。
+[gateway v4 切片](experiments/results/postgresql/choice_gateway_v4_20260902/README.md)现已实现严格
+profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 regression 1/1、TAP 537/537
+通过。C wire v4 和中立 open spec 映射尚未接通。旧三字段配置继续执行，不把 gateway fixture
+支持写成 PG choice 已执行或真实模型质量通过。
 这只验证新能力能否正确接入，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
 PG 随后优先完成[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，

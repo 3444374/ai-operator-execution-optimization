@@ -7,8 +7,11 @@ the code tree and must not become a competing engineering plan.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile
-and share canonical bytes/identity tests. SQL opt-in, schema 3, wire v4 and provider mapping remain pending;
-the existing synchronous `AiOpenSpec` and running paths are unchanged.
+and share canonical bytes/identity tests. SQL opt-in and plan-only schema 3 are implemented. The gateway now
+supports strict v4 and fixed-model choice mapping, sharing exact semantics and the session loop with v3.
+The C wire-v4 codec and `AiOpenSpec` mapping remain pending; schema-3 execution still raises `0A000`.
+See the [gateway qualification](../experiments/results/postgresql/choice_gateway_v4_20260902/README.md):
+83/83 Python tests locally and on the server, PG18.3 regression 1/1 and TAP 537/537. No real model was called.
 
 Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
@@ -21,7 +24,7 @@ the exact reference path also carries separate planner cost/cardinality metadata
 reference calibration artifact, and reports actual provider usage. The checked-in qualification artifact is
 deterministic contract evidence; a real model/workload/service calibration and any second path remain pending.
 The provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
-The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3, recording
+The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3/v4, recording
 and golden/fixed-model implementations, and self-locating compatibility entry points under the extension tree.
 
 Commit `359ffdf3` completes the behavior-preserving 4A.1 hardening after the 4A implementation at `3b2077e1`.
@@ -93,7 +96,8 @@ workload distribution, service, and hardware signature. Only then may a distinct
 Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
 The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
 followed by [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
-The choice SQL selector, plan schema 3 and wire v4 are not implemented. Adding that capability will not qualify a model,
+Choice SQL/plan support and gateway v4 are implemented; the C provider mapping and codec remain pending.
+Completing that connection will not qualify a model,
 change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
 own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
 demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.
@@ -216,7 +220,7 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   ├── execution_provider/       ← PostgreSQL semantic gateway、wire v2/v3 与 recording/golden/fixed-model adapters
+│   ├── execution_provider/       ← semantic gateway、wire v2/v3/v4 与 recording/golden/fixed-model adapters
 │   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner

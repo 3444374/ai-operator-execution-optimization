@@ -29,7 +29,7 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 接下来分别推进自有 PG 算子、SemLoom 核心和公司接口对照。PG 先做
 [可选 choice 生成配置](experiments/plans/postgresql_choice_profile_engineering.md)，再做
 [真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)；
-两者仍待实现。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
+choice 已有 PG plan 与 gateway v4，C 执行接线和生成型 SemMap 仍待实现。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
 分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
 Filter 的真实校准仍暂停，其质量、成本与 LOTUS/Cortex-like 第二路径继续单独推进，不降低既有要求。
 carrier 检查随实际路径进行，只有可复现的限制才触发最小 core patch。IMLane-like 组批位置对照

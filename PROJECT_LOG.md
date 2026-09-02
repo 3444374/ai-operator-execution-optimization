@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-09-02 四 C 的 gateway v4 与显式 choice 映射
+
+- 独立研发分支 `7d72d9ad` 实现共享固定 exact codec/session、严格 v4 profile/identity/字段校验和
+  fixed HTTP 显式 choice 映射；旧 v3 入口和执行行为保留。没有约束降级、retry 或 raw output 修补。
+- 参考 main 上新的工程说明，定点只读核对参数消解、响应错误和 Filter 差异；来源、采用与保留理由
+  只写入工程计划，不放进源码/测试/注释。未复制公司代码或材料，未改公司仓库及 main 用户文档。
+- 本地/服务器各 83/83，隔离 PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 537/537、
+  中立 header/encoder/machines C11 通过。原始产物和校验清单保留仓库外，公开记录见
+  [gateway v4 验证](experiments/results/postgresql/choice_gateway_v4_20260902/README.md)。
+- C/SQL/TAP 未修改，schema 3 的 `0A000` 保留；下一步是 C open spec/codec 与 PG 新路径验证。
+  没有真实模型、held-out、校准或新 RSS/FD smoke。归档后仅清理本轮服务器 worktree/临时集群，
+  本地分支保留，未合并或推送；旧失败记录和历史证据不重绑定。
+
 ## 2026-09-02 四 C 的 PG plan 接入与执行拒绝验证
 
 - 继续独立 `codex/choice-profile-contract` 分支；`349476b3` 保存 SQL 红测试，`00cc6bbf` 实现
