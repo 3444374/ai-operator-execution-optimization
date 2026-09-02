@@ -214,7 +214,7 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 | 步骤 | 完成条件 |
 |---|---|
 | 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；工作包整体未完成 |
-| 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。后续 PG 切片已链接 helper，AiOpenSpec 仍未扩展 |
+| 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。该历史切片未扩展 AiOpenSpec；后续 C 接线已加入完整 query-owned profile |
 | 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
 | PG plan 接入（已实现） | 新 options、schema 3、copyObject-safe 完整 profile、摘要、prepared/generic-plan 与 invalidation；旧校准拒绝、新执行不回落 v3；旧字段和值行为不变 |
 | gateway wire v4（已实现） | `7d72d9ad` 共享固定 exact codec/session，严格 profile/字段/版本/摘要与 terminal error；fixture 验证已知 profile 映射、未声明支持时零 HTTP、拒绝后不降级。83/83 合同与旧 PG18.3 TAP 537/537 通过，未调用真实模型 |
@@ -232,6 +232,24 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 二进制复现了 Filter `INSERT ... SELECT` 未 lowering（均为 `55000`）；它是既有 carrier 缺口，不是
 新 profile 回归。当前仅声明 SELECT，后续须单独修复并验证 INSERT；不把普通写入事务回滚测试当作
 Filter INSERT 已通过，也不因此开启 core patch 或改写公共 runtime。
+
+### Filter INSERT 的独立修复切片（实施中）
+
+2026-09-02，以 `21f41364` 为起点处理已复现的 `INSERT ... SELECT` 未 lowering。只修改 PG
+carrier 的合法源关系识别，不改 runtime、parser、profile、wire 或 cost 公式，不做 core patch。
+先在 SQL/EXPLAIN 和事务可见结果处建立红测试，再验证 recording、exact v3、choice v4 的写入。
+旧 SELECT、Map INSERT、无任务、prepared/invalidation、RLS/权限、savepoint/abort、provider 错误与
+取消恢复保持；RETURNING、ON CONFLICT、OVERRIDING、join/aggregate 等未支持形状继续拒绝。
+目标是 Filter 位于 ModifyTable 之前，数据库独立负责目标表约束、权限和原子提交/回滚。
+
+参考核对：`x_semantic` 的 `4601bf7` 工作副本中 `src/operators/sem_filter.c:sem_filter` 仍有
+未提交修改；函数直接返回标量 boolean，未提供本项目需要的 planner INSERT lowering。
+本次保留自有 Filter carrier 和严格失败语义，不复制其实现或数据。具体修复依据为官方
+[PG18.3 planner](https://github.com/postgres/postgres/blob/REL_18_3/src/backend/optimizer/plan/planner.c)
+及 `prepjointree.c` 的 query preprocessing，并以真实 PG 测试核对源查询上拉前后的形状。
+参考说明只保存在本计划，不进入生产代码、测试或注释。测试使用自有合成行和本地 fixture；
+不运行真实模型，不消耗 100 次 smoke 预算或访问 held-out。通过后保存新源码身份、完整 PG18.3
+回归及失败原始记录；本切片不替代 C.5 的资源与真实服务验证，也不自动合并或推送。
 
 ## C.7 暂存的质量决策（不阻塞本工程切片）
 
