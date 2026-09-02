@@ -28,8 +28,6 @@ struct SemloomExecPump
 	SemloomFilterCostEstimate filter_cost;
 	bool has_filter_cost;
 	AttrNumber input_column;
-	/* A schema-3 plan is inspectable, but has no executable provider yet. */
-	SemloomPlanSpec *pending_plan;
 };
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
@@ -84,27 +82,15 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("semantic operator input is outside the scan tuple")));
 
-	if (plan_spec.schema_version == SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION)
-	{
-		if ((executor_flags & EXEC_FLAG_EXPLAIN_ONLY) == 0)
-			ereport(ERROR,
-					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					 errmsg("SemFilter choice execution requires wire v4, which is not implemented")));
-		pump->pending_plan = MemoryContextAlloc(owner_context, sizeof(plan_spec));
-		*pump->pending_plan = plan_spec;
-	}
-	else
-	{
-		if (!semloom_operator_machine_init(&pump->machine,
-										   (uint32) plan_spec.operator_kind,
-										   plan_spec.schema_version,
-										   (const uint8 *) plan_spec.instruction,
-										   plan_spec.instruction_length))
-			ereport(ERROR,
-					(errcode(ERRCODE_INTERNAL_ERROR),
-					 errmsg("unknown semantic operator machine")));
-		pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
-	}
+	if (!semloom_operator_machine_init(&pump->machine,
+									   (uint32) plan_spec.operator_kind,
+									   plan_spec.schema_version,
+									   (const uint8 *) plan_spec.instruction,
+									   plan_spec.instruction_length))
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("unknown semantic operator machine")));
+	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
 	pump->input_column = input_column;
 	pump->child_state =
 		ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
@@ -116,11 +102,6 @@ TupleTableSlot *
 semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 {
 	TupleTableSlot *scan_slot = scan_state->ss_ScanTupleSlot;
-
-	if (pump->pending_plan != NULL)
-		ereport(ERROR,
-				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-				 errmsg("SemFilter choice execution requires wire v4, which is not implemented")));
 
 	for (;;)
 	{
@@ -254,15 +235,6 @@ semloom_pump_stop(SemloomExecPump *pump, CustomScanState *node)
 void
 semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 {
-	if (pump->pending_plan != NULL)
-	{
-		ExplainPropertyText("Provider", "unavailable (wire v4 required)", explain_state);
-		semloom_plan_spec_explain(pump->pending_plan, explain_state);
-		if (pump->has_filter_cost)
-			semloom_filter_cost_explain(&pump->filter_cost, explain_state);
-		ExplainPropertyInteger("Input Column", NULL, pump->input_column, explain_state);
-		return;
-	}
 	pg_semantic_runtime_explain(pump->runtime, explain_state);
 	if (pump->has_filter_cost)
 		semloom_filter_cost_explain(&pump->filter_cost, explain_state);

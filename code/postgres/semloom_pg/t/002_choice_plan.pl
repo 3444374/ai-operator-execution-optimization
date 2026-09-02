@@ -45,7 +45,7 @@ is($plan->{'Generation Profile Version'}, 1, 'plan preserves profile version');
 is_deeply($plan->{'Generation Choices'}, ['TRUE', 'FALSE', 'UNKNOWN'], 'plan preserves choice bytes and order');
 is($plan->{'Generation Quality'}, 'unqualified', 'choice support does not claim semantic qualification');
 is($plan->{'AI Cost Calibration'}, 'unavailable', 'choice does not claim calibration');
-is($plan->{'Provider'}, 'unavailable (wire v4 required)', 'plan does not impersonate a v3 provider');
+is($plan->{'Provider'}, 'uds-golden', 'choice uses the selected provider without opening it');
 
 my $test_dir = abs_path("$FindBin::RealBin/plan_contract");
 command_ok(['make', '-s', '-C', $test_dir, 'COPT=-O2 -Werror'], 'build test-only PG plan codec caller');
@@ -117,12 +117,10 @@ for my $invalid (
          'invalid field set retains the established error');
 }
 
-for my $statement ($query, "$query LIMIT 0", "$query AND id < 0", "$query AND content IS NULL", "EXPLAIN ANALYZE $query")
+for my $statement ("$query LIMIT 0", "$query AND id < 0", "$query AND content IS NULL", "EXPLAIN ANALYZE $query AND id < 0")
 {
     my ($code, $out, $err) = $node->psql('postgres', "\\set VERBOSITY verbose\n$statement;");
-    isnt($code, 0, 'choice execution cannot fall back, including no-task queries');
-    like($err, qr/ERROR:  0A000: SemFilter choice execution requires wire v4, which is not implemented\n/,
-         'choice execution has an explicit stable unsupported error');
+    is($code, 0, 'choice no-task query needs no provider') or diag($err);
 }
 
 my $prepared = $node->background_psql('postgres');
@@ -137,12 +135,10 @@ for my $change ('', "SET semloom_pg.provider_execution_profile = 'openai-compati
 }
 $prepared->quit;
 my ($prepared_code, $prepared_out, $prepared_err) = $node->psql('postgres',
-    "\\set VERBOSITY verbose\nSET plan_cache_mode=force_generic_plan; PREPARE blocked AS $query; EXECUTE blocked;");
-isnt($prepared_code, 0, 'prepared choice execution is also blocked');
-like($prepared_err, qr/ERROR:  0A000: SemFilter choice execution requires wire v4, which is not implemented\n/,
-     'prepared execution never uses v3');
-is($node->safe_psql('postgres', 'SELECT count(*) FROM choice_inputs'), 2, 'ordinary SQL remains usable after rejected execution');
-ok(!IO::Select->new($listener)->can_read(0), 'all planning and rejected execution made zero provider connections');
+    "\\set VERBOSITY verbose\nSET plan_cache_mode=force_generic_plan; PREPARE empty_choice AS $query AND id < 0; EXECUTE empty_choice;");
+is($prepared_code, 0, 'prepared no-task choice needs no provider') or diag($prepared_err);
+is($node->safe_psql('postgres', 'SELECT count(*) FROM choice_inputs'), 2, 'ordinary SQL remains usable');
+ok(!IO::Select->new($listener)->can_read(0), 'all planning and no-task execution made zero provider connections');
 close($listener);
 unlink($socket_path) or die "could not remove test listener";
 $node->stop;
