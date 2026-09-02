@@ -9,7 +9,8 @@
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
 schema v1/v2 planner-owned plan spec、wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；
-schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证，独立分支的受控资源与受限真实 choice 服务检查均通过。
+schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证、受控资源与受限真实 choice 服务检查，
+实现和记录已合入本地 main；各次运行仍绑定原始源码身份。
 小规模真实模型只证明纵切面可运行，
 deterministic calibration artifact 只证明生成/验证/planner 消费，不支持真实 cost accuracy、语义质量、第二 physical path、
 bounded async 或性能优化已经完成。当前顺序看工程计划和

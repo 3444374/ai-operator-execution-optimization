@@ -11,7 +11,7 @@
 |---|---|
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
-| choice 的字段、协议、请求预算与逐项实施验收 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
+| 回查 choice 已完成的字段、协议、请求预算与实施验收要求 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
 | 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
 | 从 pgml 借鉴哪些模型接入做法 | [主计划 §8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)：SQL 入口、公共模型调用、资源复用与单项/批量接口的采用时机和验证；保持 PG 外执行，不增加四 C 任务 |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
@@ -20,7 +20,7 @@
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
 主架构只维护分工、依赖与完成条件，详细的 choice 字段和验收由专项计划维护；源码与实验事实分别看
-INFRA_STATUS 和证据台账。按最新安排，完整工程对照与四 C 收尾之后，先做四 D 真实生成型 SemMap，
+INFRA_STATUS 和证据台账。四 C 已收尾，后续按完整工程对照的决定先做四 D 真实生成型 SemMap，
 再做[可组合执行 / 有界多会话](postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；SemLoom 可独立开展
 增量核心表征与 fixture 测试，公司接口可只读核对。四 C 的 PG choice SELECT 已接通 C 与 gateway v4，
 Filter INSERT 的既有接管问题已独立修复并验证；受控 fixture 资源与受限真实 choice 服务检查均已通过，

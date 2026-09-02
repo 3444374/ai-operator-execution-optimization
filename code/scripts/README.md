@@ -25,7 +25,7 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 ## PostgreSQL semantic execution-provider gateway
 
 `services/run_execution_provider_gateway.py` 是外部 semantic execution-provider 的 canonical CLI。
-同步 recording wire v2、exact wire v3、deterministic golden adapter、fixed OpenAI-compatible
+同步 recording wire v2、exact wire v3、choice wire v4、deterministic golden adapter、fixed OpenAI-compatible
 adapter 和 UDS server 的实现位于 `src/execution_provider/`。从仓库根运行 recording profile：
 
 ```bash

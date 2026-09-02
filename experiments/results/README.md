@@ -19,11 +19,12 @@ fixture 检查通过，含 v3/v4 各 5,164 次、取消/阻塞 DNS 各 10 次与
 
 [Filter INSERT 修复](postgresql/semfilter_insert_20260902/README.md)：`39007150` 的 PG18.3 regression 1/1、
 TAP 919/919、本地/服务器各 83/83 通过。生产只修改 Filter planner，新增 171 项验证真正的写入、
-事务和限制；资源/真实模型验证仍待完成。此前 SELECT 接线与 INSERT 失败证据保持原提交身份。
+事务和限制；该次未做资源/真实模型验证，后续结果见上方记录。此前 SELECT 接线与 INSERT 失败证据保持原提交身份。
 
 [PG C/wire v4 接线](postgresql/choice_pg_wire_20260902/README.md)：`80bb7fc5` 的 choice SELECT 共用
 现有 runtime 与严格 parser。本地/服务器各 83/83、PG18.3 regression 1/1、TAP 748/748；实际新旧
-HTTP 请求仅差 choice 字段。另用旧/新二进制复现 Filter INSERT 未 lowering。资源与真实模型验证待完成。
+HTTP 请求仅差 choice 字段。该次另用旧/新二进制复现 Filter INSERT 未 lowering，未做资源与真实模型验证；
+后续修复及验收见上方记录。
 
 [gateway v4 与请求映射](postgresql/choice_gateway_v4_20260902/README.md)：`7d72d9ad` 实现严格 v4、
 共享 session 和显式 fixed-model choice 映射。本地/服务器各 83/83，PG18.3 regression 1/1、TAP

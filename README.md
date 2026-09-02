@@ -72,7 +72,7 @@ SQL semantic intent
 | 核对当前源码真实完成度 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) |
 | 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 继续 PostgreSQL AI 语义算子实现（CustomScan、公共层、解耦、core patch 条件与工作包） | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
-| 实施可选 choice 配置（字段、版本、预算与验收） | [`completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) |
+| 回查已完成的 choice 配置（字段、版本、预算与验收） | [`completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
 | 准备开题报告或答辩 | [`opening/README.md`](opening/README.md) |
 

@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（choice 工程验证与集成完成；质量/校准仍未通过）
+日期：2026-09-02（choice 工程验证完成，已合入本地 main；质量/校准仍未通过）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -139,8 +139,9 @@ accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程
 [独立小切片](../experiments/results/postgresql/semfilter_qualification_20260901/README.md)通过 PG18.3
 `-Werror`、regression 1/1、TAP 437/437 和 Python 合同 59/59。普通 SQL 加入 MCV/dependencies 后
 estimate 从 8 改为 64，与 actual=64 一致。原 generation 与独立 choice 候选的格式结果为 27/30、30/30，
-但预期语义均只符合 12/27，reference 资格未通过。choice 仅有版本化实验 plan/generation manifest，
-没有进入生产 SQL/spec/wire；未发布真实 calibration artifact，整轮采集继续暂停。
+但预期语义均只符合 12/27，reference 资格未通过。该历史诊断时 choice 仅有版本化实验 plan/generation
+manifest，未进入生产 SQL/spec/wire；后续工程接入见本文顶部。真实 calibration artifact 仍未发布，
+整轮采集继续暂停。
 最终数值补充 `44f6632c` 独立通过 PG18.3 warning-free `-Werror`、regression 1/1、TAP 437/437、Python
 60/60（calibration 10/10）；仅加强整体病态检查，没有重跑模型或改变上述语义资格结论。
 随后完成[单一 prompt/model 对照](../experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)：

@@ -1,6 +1,4 @@
-/* Choice-profile values/canonical bytes; independent of PostgreSQL and wire I/O.
- * Contract: experiments/plans/postgresql_choice_profile_engineering.md C.2.
- */
+/* Choice-profile values/canonical bytes; independent of PostgreSQL and wire I/O. */
 #ifndef SEMLOOM_GENERATION_PROFILE_H
 #define SEMLOOM_GENERATION_PROFILE_H
 

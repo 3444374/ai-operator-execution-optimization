@@ -62,7 +62,7 @@ Filter 的共同目的是按条件筛行；自有三值配置可保留，可移�
   RSS/FD 生命周期验证；fixed-model endpoint 已完成小规模真实模型 capability，但尚无质量或性能结论；
 - 当前 recording operator/value/policy、semantic/physical identity 和 physical role 已由 planner 保存；
   neutral provider error interface 不暴露 transport operation；
-- execution-provider gateway 的 framing、wire v2/v3、recording/golden/fixed-model adapters 与 server 已归入
+- execution-provider gateway 的 framing、wire v2/v3/v4、recording/golden/fixed-model adapters 与 server 已归入
   公共目录；旧 CLI/import 继续可用，v2 digest 与 recording PostgreSQL 行为未改变；
 - reference rows/work/usage 已可观察，成本 artifact 的生成和匹配机制已验证，但真实成本校准未通过；
 - 文本 cache-on 数据组织效果随 endpoint consolidation、KV 压力与 prefix 结构变化；

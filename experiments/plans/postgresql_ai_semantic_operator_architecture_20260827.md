@@ -8,10 +8,10 @@
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录；理论与文献依据看
 [架构研究](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)。
 
-本次仅修订文档。四 C 的值合同、PG plan、中立 open spec、wire v4/gateway 接线及受限 Filter
-INSERT 已在独立分支完成；受控资源与[受限真实服务检查](../results/postgresql/choice_service_20260902/README.md)
-均已通过，四 C 工程验证完成，当前集成代码已包含实现与归档。实际状态由
-INFRA_STATUS 区分，文档更新不代替合并或验收。
+四 C 的值合同、PG plan、中立 open spec、wire v4/gateway 接线及受限 Filter INSERT 已完成；
+受控资源与[受限真实服务检查](../results/postgresql/choice_service_20260902/README.md)均已通过。
+实现与归档已合入本地 main。具体提交与验证范围由 INFRA_STATUS 和结果记录维护，
+工程完成不表示模型质量、真实成本校准或优化路径已通过。
 真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
@@ -42,7 +42,7 @@ plan identity、placement 或 executor lifecycle 出现可复现阻断后，才�
 ## 2. 并行研发与接入依赖
 
 以下是可以分别推进的工程工作，不是新增三个研究内容，也不要求立即同时启动三个代码任务。
-当前用户授权仅覆盖文档调整；代码、模型运行、正式实验与公司环境操作按具体任务另行授权。
+计划中的后续代码、模型运行、正式实验与公司环境操作仍按具体任务授权，计划存在本身不构成授权。
 
 | 工作 | 近期次序 | 不再等待什么 | 仍需满足什么 |
 |---|---|---|---|
@@ -153,20 +153,21 @@ wire task/completion 可携带身份摘要用于核验，不意味着这些字�
 
 ### 5.4 生命周期身份与证据
 
-当前 wire v2/v3 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
-关联任务。v3 校验 semantic-spec、physical-algorithm、provider-execution、payload 和 completion evidence；
+当前 wire v2/v3/v4 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
+关联任务。v3/v4 校验 semantic-spec、physical-algorithm、provider-execution、payload 和 completion evidence；
+v4 另核对完整 generation profile 及其摘要。
 这些摘要证明内容/执行身份一致，不代替单项序号。tuple binding 留在 PG，sequence 会传到 provider。
 
 当前没有跨进程 `query_id/operator_instance_id/task_id/job_id` 组合，也没有 query-level registry。
 未来多节点、多 Job 或重连场景确需时再引入 opaque identity；只有引入 retry 才讨论 attempt identity。
-四 C 分支的 wire v4 仍采用同步连接/sequence 关联；当前集成代码没有顺带加入上述 ID。
+已集成的 choice 路径仍采用同步连接/sequence 关联，没有顺带加入上述 ID。
 
 ## 6. 同步 port 与未来增量执行
 
 ### 6.1 当前同步行为
 
-本节描述 main 已实现路径；四 C 分支接通 wire v4 后也复用该同步生命周期。接通前的临时执行拒绝
-只属于历史切片，不再作为该分支的当前行为；具体范围见专项计划和 INFRA_STATUS。
+本节描述 main 已实现的 recording、exact 和 choice 路径，它们共用同步生命周期。
+接通 wire v4 前的临时执行拒绝只属于历史切片；当前支持范围见专项完成记录和 INFRA_STATUS。
 
 当前 `AiProviderPort` 只有 `open/drive/close`，一次 `drive` 接收一项任务、返回一项 completion 或错误。
 query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真正 open，plain EXPLAIN、LIMIT 0、
@@ -376,7 +377,7 @@ policy 和测试预期，再增加显式版本/profile；不暗改已有 tristat
 | 已有部分 | 本轮决定 / 后续允许调整的条件 |
 |---|---|
 | thin scan、pump、PgSemanticRuntime、neutral port、UDS/wire、query cleanup | 继续作为自有底座；不因公司目录不同重写或合并层次。新消费者暴露真正遗漏时，先用失败用例定位再改相应 Module |
-| plan-owned 语义、严格 Filter、独立分支中的四 C 切片 | 保留现有接口及原证据；二值 profile 或公司兼容策略可另行明确，但不静默修改已有三值身份和错误表现。分支是否完成/合并以源码和各自证据为准，不把已完成状态当作语义永远不能调整的理由 |
+| plan-owned 语义、严格 Filter、已集成的 choice 配置 | 保留现有接口及原证据；二值 profile 或公司兼容策略可另行明确，但不静默修改已有三值身份和错误表现。不把已完成状态当作语义永远不能调整的理由 |
 | prompt、有效生成参数与结果解析 | 四 D 引入真实 Map 消费者时，把当前 Filter 专用 task 编译与公共消息编码分开；原始值解析与 WHERE keep/drop 在其他 SQL 位置出现时再分别表达。行为变化独立版本化，结构重构保持旧输出与错误 |
 | marker 识别、query shape 与列绑定 | 围绕实际 SQL 形状和两个算子消费者整理共同分析；新增算子不应复制整套 rewrite-tree 特判。对象身份、placement、列绑定与具体语义策略分别验证，不只删除单 marker guard |
 | operator strategy 与 PG binding | 可独立表达的计算和关系 disposition 留在语义 Module；SQL/Plan/slot 操作留在 PG adapter。实际公司移植需要的局部适配可做，但不为假想数据库改造全部现有代码 |
@@ -492,7 +493,7 @@ SemFilter/SemJoin 计划优化器；也不能据此说普通 PG 优化器完全�
 ## 9. 工作包与完成条件
 
 工作包一至四 B 的已完成工程不在此重复提交与测试数字；实际状态见 INFRA_STATUS，原过程见历史快照。
-本节只保留待完成工作及与其他工作包的依赖。
+本节保留已完成四 C 的记录入口，以及后续工作和依赖。
 
 <a id="choice-profile-engineering"></a>
 
@@ -502,8 +503,8 @@ SemFilter/SemJoin 计划优化器；也不能据此说普通 PG 优化器完全�
 它不规定所有 Filter 必须三值。值合同、PG plan、open spec/wire v4/gateway 和受限 Filter INSERT
 已在独立分支验收并进入当前集成代码；受控 fixture 资源与 14 次受限真实请求检查均已通过。
 原始结果见[收尾记录](../results/postgresql/choice_service_20260902/README.md)，字段/预算计划已归入 completed。
-当前分支已移除接通前的临时拒绝，
-未知或不受支持的版本仍不回落 v3。二值候选及完整算子工程重构不混入该版本收尾。
+已移除接通前的临时拒绝；未知或不受支持的版本仍不回落 v3。
+二值候选及完整算子工程重构不混入该版本收尾。
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
 [四 C 专项计划](completed/postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
@@ -658,7 +659,8 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 
 ## 12. 当前不能声称
 
-- 四 C 已合并或已完成全部资源/模型验证，或四 D、算子组合、增量 SchedulingSession、PG batch/reorder、公司 Adapter 已因计划存在而实现；
+- 四 C 的同步工程验证可外推为任意规模、多会话、任意模型或完整优化系统的验证；
+- 四 D、算子组合、增量 SchedulingSession、PG batch/reorder、公司 Adapter 已因计划存在而实现；
 - fixture、emulated producer 或历史外部执行结果来自新增的 PG 内置算子路径；
 - choice 格式合法代表自然语言判断正确，或 raw text 可返回代表任务质量达标；
 - 独立核心测试替代 PG lifecycle、资源、语义/质量或真实匹配 E2E 验证；
@@ -670,7 +672,7 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 | 入口 | 唯一职责 |
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
-| [四 C 专项计划](completed/postgresql_choice_profile_engineering.md) | choice 字段/版本/预算/资源与详细实施验收；主文只保留摘要和指向 |
+| [四 C 专项完成记录](completed/postgresql_choice_profile_engineering.md) | 保存 choice 字段/版本/预算/资源与当时的详细实施要求；结果看证据台账，后续工作看本主计划 |
 | [INFRA_STATUS](../../code/INFRA_STATUS.md) | 实际源码结构、接线、协议版本、测试状态及未实现能力 |
 | [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录 | 提交/构建身份、测试数字、运行配置、失败、原始记录与证据包；结果目录保留请求前条件 |
 | [历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md) | 旧顺序、原接口表述与完整历史合同，供溯源，不授予执行权限 |

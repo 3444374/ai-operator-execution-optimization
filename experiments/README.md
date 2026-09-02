@@ -10,8 +10,8 @@
 当前工程依赖以[架构计划](plans/postgresql_ai_semantic_operator_architecture_20260827.md)为准：PG 的 choice 与
 真实生成型 SemMap、SemLoom 独立增量核心、公司工程参照可分别推进。未来是把自有算子方法与执行
 能力移植到公司系统，算子策略与 provider 接入分别验证。工程对照覆盖 SQL/PG 接入、语义与请求、
-取数/结果和资源/外部执行。四 C 接线及受限 Filter INSERT 已在独立分支验收、尚未合并，资源与真实
-模型验证仍待完成；实际状态见 [INFRA_STATUS](../code/INFRA_STATUS.md)。Filter 质量与真实成本校准仍待
+取数/结果和资源/外部执行。四 C 接线、受限 Filter INSERT、受控资源及受限真实服务检查已完成，并已合入本地
+main；实际状态见 [INFRA_STATUS](../code/INFRA_STATUS.md)。Filter 质量与真实成本校准仍待
 通过，但不再阻塞独立核心研发；真实 PG 接入和匹配端到端实验仍需对应路径的语义、生命周期、资源与
 质量验证。fixture/emulated producer 保留实际身份；已有同步 reference 证据不能替代新增接入检查。
 这次排期调整没有授权模型运行，也不恢复旧 GPU 矩阵或 SAOR formal。IMLane-like batch placement

@@ -18,7 +18,8 @@
 Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立核心研发不以本工作包的模型质量
 通过为前提；真实数据库接入与语义优化仍分别满足主计划的验收条件。
 
-本节是本轮工程设计与验收的唯一详细入口。来源是现有源码接口、此前 choice 格式诊断及本次设计
+正文保存各实施切片当时的要求与进度；其中“本轮/下一步”不覆盖顶部完成状态或主计划的后续安排。
+本节是该专项工程设计与验收的唯一详细记录。来源是现有源码接口、此前 choice 格式诊断及本次设计
 审查；它是工程决策，不是新的算法或质量实验结论。首个代码切片已实现不可变 profile 值、严格
 校验与独立 C/Python canonical bytes；后续 `00cc6bbf` 已接入 SQL options 和 PG plan，`7d72d9ad`
 已接入 gateway wire v4 与 fixed-model 映射；`8674269d` 接通 C open spec/codec，`80bb7fc5` 完成
@@ -262,7 +263,7 @@ chat template 与生成配置 SHA，核对启动参数及前后进程身份。�
 
 | 步骤 | 完成条件 |
 |---|---|
-| 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；工作包整体未完成 |
+| 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；该设计切片本身不代表整个工作包完成 |
 | 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。该历史切片未扩展 AiOpenSpec；后续 C 接线已加入完整 query-owned profile |
 | 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
 | PG plan 接入（已实现） | 新 options、schema 3、copyObject-safe 完整 profile、摘要、prepared/generic-plan 与 invalidation；旧校准拒绝、新执行不回落 v3；旧字段和值行为不变 |

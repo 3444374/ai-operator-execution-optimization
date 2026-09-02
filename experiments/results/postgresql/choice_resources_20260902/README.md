@@ -8,7 +8,8 @@
 
 结论：受控 v3/v4 fixture 资源、取消和阻塞 DNS 恢复检查通过；预算/HTTP 观测工具通过 8 项测试。
 零任务双会话检查复现串行 gateway 限制，**多会话与两个 Filter AND 尚未实现**。
-本轮真实模型请求为 **0**，未启动模型、访问 held-out 或恢复校准；四 C 尚有受限真实服务检查。
+本轮真实模型请求为 **0**，未启动模型、访问 held-out 或恢复校准。该次剩余的受限真实服务检查
+随后已完成，见[真实服务及收尾记录](../choice_service_20260902/README.md)；以下资源证据保持本轮身份。
 
 ## 身份、环境与合规
 
@@ -20,7 +21,7 @@
   runtime preflight 的 core/text-qwen15b 通过，只证明环境可用，不构成模型运行证据。
 - 本轮没有修改 PG C、SQL、wire、生产 gateway/HTTP Adapter。新增工具只在 `code/src/experiments/`
   和脚本/测试中，production 不反向导入它们；SQL parser、取消和 provider 生命周期保持。
-- 研发分支未合并/推送；main 的用户未提交文档未覆盖。参考 main 新 §8.7 完整工程对照，来源/取舍只在
+- 本次资源检查时研发分支未合并/推送；main 的用户未提交文档未覆盖。参考 main 新 §8.7 完整工程对照，来源/取舍只在
   计划及本记录：SQL 注册、载体、算子语义、请求/结果、生命周期、外部执行均分别采用、保留或延期。
   本轮落实的是自有观测与资源检查，不移植公司结构，也不把 Adapter 当作全部成果移植。
 
@@ -102,6 +103,7 @@ PYTHONPATH=code <driver-python> code/scripts/experiments/run_choice_resource_che
 新预算检查 **8/8**，外加上述真实 PG resource queries，不把它们合并成新 TAP 数量。
 只清理本切片自有运行进程/临时入口；持久结果保留，其他历史工作负载不在本轮结论范围。
 
-四 C 仍需最多 100 次累计预算下的真实 choice 服务检查。按用户最后更新的安排，完整工程对照后先做
+本次资源检查后剩余的真实 choice 服务验证已由[后续记录](../choice_service_20260902/README.md)完成。
+后续工作以主计划为准：完整工程对照后先做
 真实 Map 与必要公共整理，再扩展可组合执行/有界多会话（含 Filter → Map）。没有实现这些能力，也没有通过
 Filter 质量、真实成本校准或第二 physical path；现有分层不需要因此重做。

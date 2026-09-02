@@ -19,7 +19,7 @@ SELECT and INSERT ... SELECT are verified with fixtures. Later controlled resour
 The latter executes 14 old/choice requests and two NULL controls; the cumulative budget is 15/100 including
 one failed collector run. This is execution evidence, not model-quality qualification.
 
-Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
+Status as of 2026-09-02: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized PostgreSQL AI semantic system or an asynchronous scheduling provider. It now

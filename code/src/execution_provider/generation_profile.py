@@ -1,8 +1,4 @@
-"""Immutable choice-profile values and canonical identity, not vendor settings.
-
-Contract: experiments/plans/postgresql_choice_profile_engineering.md C.2.
-SQL/schema-3/wire-v4 integration is a separate slice; no legacy codec uses this yet.
-"""
+"""Immutable choice-profile values and canonical identity, not vendor settings."""
 
 from __future__ import annotations
 
@@ -37,7 +33,7 @@ class GenerationProfile:
             raise ValueError("invalid generation profile")
 
     def canonical_bytes(self) -> bytes:
-        """Encode every profile field in the C.2 domain, preserving choice order."""
+        """Encode every profile field in its identity domain, preserving choice order."""
         def text(value: str) -> bytes:
             encoded = value.encode("utf-8")
             return struct.pack("!I", len(encoded)) + encoded

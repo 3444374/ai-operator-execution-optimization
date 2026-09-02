@@ -55,10 +55,12 @@ The current supported query shape is deliberately narrow:
 - one top-level `ai_semantic.filter(text)` base-relation predicate in `WHERE`; exact `true` emits the
   tuple, while `false`, `unknown`, and SQL `NULL` drop it without letting the provider create rows;
 - one top-level `ai_semantic.filter(text,text,jsonb)` exact-reference predicate. The planner requires a
-  non-NULL constant instruction and exactly `model`, numeric-zero `temperature`, and integer `max_tokens=8`;
+  non-NULL constant instruction and `model`, numeric-zero `temperature`, and integer `max_tokens=8`.
+  Exactly those three option fields select schema 2/wire v3; adding the known `generation_profile` option
+  shown above selects schema 3/wire v4. Other option fields are rejected;
   the external golden adapter returns fixture-bound raw output and PostgreSQL alone parses exact uppercase
   `TRUE`, `FALSE`, or `UNKNOWN`;
-- direct single-table `INSERT ... SELECT` for recording SemMap and recording/exact SemFilter, without `RETURNING`,
+- direct single-table `INSERT ... SELECT` for recording SemMap and recording/exact/choice SemFilter, without `RETURNING`,
   `ON CONFLICT`, or `OVERRIDING`;
 - ordinary child filters and projections;
 - forward execution with child order preserved;
