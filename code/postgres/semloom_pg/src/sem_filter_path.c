@@ -27,6 +27,7 @@ static FuncExpr *semloom_supported_filter_marker(RelOptInfo *rel,
 										  Oid recording_oid,
 										  Oid exact_oid);
 static void semloom_validate_filter_query_shape(PlannerInfo *root,
+									 FromExpr *source,
 									 Oid recording_oid,
 									 Oid exact_oid);
 static CustomPath *semloom_make_filter_path(PlannerInfo *root,
@@ -95,21 +96,24 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 {
 	Oid recording_oid = semloom_filter_function_oid();
 	Oid exact_oid = semloom_exact_filter_function_oid();
+	FromExpr *source = root->parse->jointree;
 	FuncExpr *marker;
 	List *semantic_paths = NIL;
 	ListCell *cell;
 
+	/* A pulled-up INSERT source retains its own qualification FromExpr. */
+	if (root->parse->commandType == CMD_INSERT && source != NULL &&
+		source->quals == NULL && list_length(source->fromlist) == 1 &&
+		IsA(linitial(source->fromlist), FromExpr))
+		source = linitial_node(FromExpr, source->fromlist);
 	if ((!OidIsValid(recording_oid) && !OidIsValid(exact_oid)) ||
-		root->parse->jointree == NULL ||
-		semloom_filter_marker_count(root->parse->jointree->quals,
+		source == NULL ||
+		semloom_filter_marker_count(source->quals,
 									  recording_oid,
 									  exact_oid) == 0)
 		return;
-	semloom_validate_filter_query_shape(root, recording_oid, exact_oid);
-	if (root->parse->jointree == NULL ||
-		list_length(root->parse->jointree->fromlist) != 1 ||
-		!IsA(linitial(root->parse->jointree->fromlist), RangeTblRef) ||
-		linitial_node(RangeTblRef, root->parse->jointree->fromlist)->rtindex != rti)
+	semloom_validate_filter_query_shape(root, source, recording_oid, exact_oid);
+	if (linitial_node(RangeTblRef, source->fromlist)->rtindex != rti)
 		return;
 
 	marker = semloom_supported_filter_marker(rel, recording_oid, exact_oid);
@@ -186,16 +190,20 @@ semloom_supported_filter_marker(RelOptInfo *rel,
 
 static void
 semloom_validate_filter_query_shape(PlannerInfo *root,
+									FromExpr *source,
 									Oid recording_oid,
 									Oid exact_oid)
 {
 	Query *parse = root->parse;
 	bool insert_source = semloom_is_insert_source(root);
+	Query *insert = parse->commandType == CMD_INSERT ? parse :
+		(insert_source ? root->parent_root->parse : NULL);
 	Oid map_oid = semloom_map_function_oid();
 	RangeTblRef *range_reference;
 	RangeTblEntry *range_entry;
 
-	if ((root->query_level != 1 && !insert_source) || parse->commandType != CMD_SELECT ||
+	if ((root->query_level != 1 && !insert_source) ||
+		(parse->commandType != CMD_SELECT && parse->commandType != CMD_INSERT) ||
 		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
 		parse->groupClause != NIL || parse->groupingSets != NIL ||
 		parse->havingQual != NULL || parse->hasWindowFuncs ||
@@ -205,21 +213,19 @@ semloom_validate_filter_query_shape(PlannerInfo *root,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("query shape is outside the current SemFilter capability"),
 				 errdetail("Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, ORDER BY, and LIMIT is supported.")));
-	if (insert_source &&
-		(root->parent_root->parse->resultRelation == 0 ||
-		 root->parent_root->parse->onConflict != NULL ||
-		 root->parent_root->parse->returningList != NIL ||
-		 root->parent_root->parse->override != OVERRIDING_NOT_SET))
+	if (insert != NULL &&
+		(insert->resultRelation == 0 || insert->onConflict != NULL ||
+		 insert->returningList != NIL || insert->override != OVERRIDING_NOT_SET))
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("INSERT shape is outside the current SemFilter capability"),
 				 errdetail("ON CONFLICT, RETURNING, and OVERRIDING are not supported.")));
-	if (parse->jointree == NULL || list_length(parse->jointree->fromlist) != 1 ||
-		!IsA(linitial(parse->jointree->fromlist), RangeTblRef))
+	if (list_length(source->fromlist) != 1 ||
+		!IsA(linitial(source->fromlist), RangeTblRef))
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("the SemFilter capability requires one non-inherited table")));
-	range_reference = linitial_node(RangeTblRef, parse->jointree->fromlist);
+	range_reference = linitial_node(RangeTblRef, source->fromlist);
 	range_entry = rt_fetch(range_reference->rtindex, parse->rtable);
 	if (range_entry->rtekind != RTE_RELATION || range_entry->inh ||
 		range_entry->tablesample != NULL)
