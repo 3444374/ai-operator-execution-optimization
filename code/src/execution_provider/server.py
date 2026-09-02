@@ -17,7 +17,7 @@ from .adapters.openai_compatible_fixed import (
     load_fixed_model_config,
 )
 from .adapters.recording import run_recording_session
-from .adapters.v3_session import CompletionAdapter, run_v3_session
+from .adapters.semantic_session import CompletionAdapter, run_v3_session, run_v4_session
 from .wire.framing import ProtocolError, read_frame
 
 
@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     adapter_group.add_argument(
         "--golden-fixture",
         type=Path,
-        help="payload-digest to raw-output JSON object for wire-v3 tests",
+        help="payload-digest to raw-output JSON object for exact Filter tests",
     )
     adapter_group.add_argument(
         "--fixed-model-config",
@@ -200,8 +200,9 @@ def _run_session(
         connection.close()
         return
     protocol_version = opened.get("protocol_version")
-    if type(protocol_version) is int and protocol_version == 3:
-        run_v3_session(
+    if type(protocol_version) is int and protocol_version in (3, 4):
+        run_session = run_v3_session if protocol_version == 3 else run_v4_session
+        run_session(
             connection,
             v3_adapter,
             open_message=opened,

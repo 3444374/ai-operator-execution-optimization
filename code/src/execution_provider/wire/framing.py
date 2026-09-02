@@ -19,6 +19,15 @@ class ProtocolError(Exception):
         self.code = code
 
 
+class _DuplicateFields(dict):
+    """Marks duplicate JSON keys without changing legacy last-value decoding."""
+
+
+def has_duplicate_fields(message: dict[str, Any]) -> bool:
+    """Let strict schemas reject duplicate keys, including nested objects."""
+    return isinstance(message, _DuplicateFields)
+
+
 def encode_frame(message: dict[str, Any]) -> bytes:
     """Encode one canonical UTF-8 JSON frame with a four-byte big-endian length."""
     payload = json.dumps(
@@ -42,13 +51,24 @@ def read_frame(connection: socket.socket) -> dict[str, Any] | None:
         raise ProtocolError("invalid_frame_length")
     raw = _read_exact(connection, length, allow_initial_eof=False)
     assert raw is not None
+    duplicate_fields = False
+
+    def decode_object(pairs):
+        nonlocal duplicate_fields
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                duplicate_fields = True
+            result[key] = value
+        return result
+
     try:
-        message = json.loads(raw.decode("utf-8"))
+        message = json.loads(raw.decode("utf-8"), object_pairs_hook=decode_object)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ProtocolError("invalid_json") from error
     if not isinstance(message, dict):
         raise ProtocolError("invalid_message")
-    return message
+    return _DuplicateFields(message) if duplicate_fields else message
 
 
 def _read_exact(

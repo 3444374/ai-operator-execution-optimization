@@ -524,6 +524,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         python_v3 = (
             CODE_ROOT / "src" / "execution_provider" / "wire" / "v3.py"
         ).read_text(encoding="utf-8")
+        python_semantic = (
+            CODE_ROOT / "src" / "execution_provider" / "wire" / "semantic.py"
+        ).read_text(encoding="utf-8")
         golden_adapter = (
             CODE_ROOT / "src" / "execution_provider" / "adapters" / "golden.py"
         ).read_text(encoding="utf-8")
@@ -539,9 +542,10 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn("recv(", wire_v3_source)
         self.assertIn("PROTOCOL_VERSION = 2", python_v2)
         self.assertIn("PROTOCOL_VERSION = 3", python_v3)
-        self.assertIn("MAX_INPUT_BYTES = 163_840", python_v3)
-        self.assertIn("set(message) != _OPEN_FIELDS", python_v3)
-        self.assertIn("set(message) != _TASK_FIELDS", python_v3)
+        self.assertIn("MAX_INPUT_BYTES = 163_840", python_semantic)
+        self.assertIn("_OPEN_FIELDS |", python_semantic)
+        self.assertIn("_TASK_FIELDS |", python_semantic)
+        self.assertIn("set(message) != expected_fields", python_semantic)
         self.assertIn("_fixtures.get(request.semantic_payload_digest)", golden_adapter)
         for forbidden in ("httpx", "requests", "openai", "vllm", "ray"):
             self.assertNotIn(forbidden, golden_adapter.lower())

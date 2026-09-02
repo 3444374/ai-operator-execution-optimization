@@ -1,4 +1,4 @@
-"""Deterministic completion adapter for the version-3 exact SemFilter contract."""
+"""Deterministic raw completions for the exact SemFilter wire contracts."""
 
 from __future__ import annotations
 
@@ -6,10 +6,11 @@ import socket
 from collections.abc import Mapping
 
 from ..wire.v3 import GOLDEN_EXECUTION_ID
-from .v3_session import (
+from ..wire.v4 import GOLDEN_EXECUTION_ID as CHOICE_EXECUTION_ID
+from .semantic_session import (
     CompletionAdapterError,
-    V3Completion,
-    V3CompletionRequest,
+    Completion,
+    CompletionRequest,
     run_v3_session,
 )
 
@@ -18,18 +19,19 @@ class GoldenCompletionAdapter:
     """Return test-owned raw outputs keyed by semantic payload digest."""
 
     execution_id = GOLDEN_EXECUTION_ID
+    choice_execution_id = CHOICE_EXECUTION_ID
     model_id = None
 
     def __init__(self, fixtures: Mapping[str, str]) -> None:
         self._fixtures = fixtures
 
-    def complete(self, request: V3CompletionRequest) -> V3Completion:
+    def complete(self, request: CompletionRequest) -> Completion:
         raw_output = self._fixtures.get(request.semantic_payload_digest)
         if raw_output is None:
             raise CompletionAdapterError("GOLDEN_FIXTURE_MISSING")
         if not isinstance(raw_output, str):
             raise CompletionAdapterError("GOLDEN_FIXTURE_INVALID")
-        return V3Completion(
+        return Completion(
             raw_output=raw_output,
             response_model_id=request.model_id,
             prompt_tokens=0,

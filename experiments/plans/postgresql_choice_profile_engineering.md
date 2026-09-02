@@ -23,6 +23,31 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 标签、阈值和 held-out 数据不因本节而改变。“先有语义资格才能编码 choice”的旧实验执行前提，
 只对本节的独立工程接入不再适用；质量采用和成本校准仍须另行验证。
 
+## C.0 算子目的与本次工程参照
+
+公司与自有 Filter 的目的都是按自然语言条件筛行。本轮保持已选定的三值 profile，UNKNOWN 与 FALSE
+在当前 WHERE 范围均不保留行，但原始输出保持区分；执行错误仍终止语句。二值方案需要独立语义
+与身份，不混入本版本。公司 embedding cascade 尚未启用，不作为已可复用的优化。
+
+2026-09-02 只读核对 `x_semantic` 基于 `4601bf7` 的工作副本；所涉文件均有未提交修改，不当作固定
+release。参考来源只在本计划记录，不写进生产/测试代码或注释；不复制源码、prompt、测试数据或日志。
+
+| 参考文件/符号与观察 | 决定及自有落点 | 验证 |
+|---|---|---|
+| `src/llm/llm_protocol.{h,c}`：`llm_effective_request / llm_resolve_request` 先消解请求默认值，再供编码使用；视图借用 PG/GUC 字符串 | 吸收实际参数单一来源的原则，不移植私有 struct。已有 PG plan 继续拥有语义；本次 gateway 从已严格验证的 open context 生成逐项 completion request，profile 不按任务或环境变量重新选择 | 完整 profile/semantic identity 校验；出站请求去掉唯一 choice 字段后与旧请求逐字段相同；无约束降级或重试 |
+| `src/llm/llm_chat.c` 的响应检查及 `llm_error.h`：截断/协议/内容失败有独立分类 | 保留自有 fixed adapter 的 model/usage/finish_reason、单次调用、deadline 和脱敏错误，不引入公司 HTTP/重试代码 | fixture 的错误模型、缺失 usage、截断、无效 JSON、HTTP 拒绝仍失败，raw output 不改写 |
+| `src/operators/sem_filter.c`：`parse_bool_from_llm` 宽松搜词；无结果/解析失败返回 false；`filter_cascade_check` 固定 disabled | 保留自有严格三值 parser 与 fail-query；本轮不改算子 machine，不实现 cascade 或二值 profile | 旧 PG 测试继续通过；gateway 原样返回 UNKNOWN/非法标签，由当前或后续 PG parser 作关系判断 |
+
+本次只先完成 gateway 侧严格 wire v4 与 golden/fixed-model 的请求映射。C 中立 open spec/codec 未接通
+前，PG schema 3 继续明确拒绝执行。已有 `wire/framing.py`、session loop、HTTP deadline/resolver 和错误
+路径复用；只在 v3/v4 两个实际协议消费者之间共享固定语义编解码，不建立 registry 或通用框架。
+供应商 choice 字段依据 [vLLM 0.25.1 官方说明](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)
+独立实现，只验证 fixture 出站映射；不把本轮结果写成任意 endpoint 或真实模型已执行约束。
+gateway 的外部 fixed config 新增可选 `choice_format="vllm_structured_outputs"`，缺省为未声明支持；
+未显式设置时拒绝 choice 请求且不发 HTTP，原 v3 不受影响。这是运维对已核验服务的明确选择，
+不是 gateway 自动探测能力。HTTP 只新增 `structured_outputs: {choice: [TRUE,FALSE,UNKNOWN]}`；
+模型文件、prompt、原有生成字段、超时和重定向策略不变。
+
 ## C.1 SQL 选择与版本分流
 
 保持三参 `ai_semantic.filter(input, instruction, options)`。新 options 只比旧配置多一个字段：
@@ -117,6 +142,13 @@ open/task/completion 必须相互核验，不用切换 provider 来隐式切换�
 payload 和 completion evidence 使用同一组 golden vectors。新执行身份不得冒用旧 wire-v3 身份。
 
 ## C.4 错误、资格与校准隔离
+
+本次 v4 合同在 v3 严格字段集合之外：open 增加完整 `generation_profile` 五字段；opened、task、
+completion 增加 `generation_profile_digest`。其他字段类型和同步 sequence 规则保持；v3 不接受这些字段。
+provider execution、payload、completion 的 domain 分别升级到 `v4`，其编码字段顺序保持；semantic
+digest 使用已验证的 schema 3 编码，physical algorithm digest 不变。gateway 在 task 时从 canonical
+messages 提取 instruction，重算含完整 profile 的 semantic digest；不能只信任客户端提供的摘要。
+error 仍严格为 type/protocol_version/sequence/code 四字段，版本必须为 4，code 使用现有 allowlist。
 
 未知 profile 在 planning/open 的相应位置明确拒绝；已知 profile 被服务拒绝时沿用现有中立错误类别
 和脱敏 SQLSTATE 映射。fixture 必须证明：服务拒绝该请求时只发出一次请求，其中含 choice；没有

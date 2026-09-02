@@ -14,12 +14,15 @@ from pathlib import Path
 from typing import Mapping
 from urllib import parse
 
-from .v3_session import CompletionAdapterError, V3Completion, V3CompletionRequest
+from ..generation_profile import GenerationProfile
+from .semantic_session import CompletionAdapterError, Completion, CompletionRequest
 
 
 FIXED_EXECUTION_ID = "semloom.provider.openai-compatible-fixed.uds.v3"
+CHOICE_EXECUTION_ID = "semloom.provider.openai-compatible-fixed.uds.v4"
+VLLM_CHOICE_FORMAT = "vllm_structured_outputs"
 MAX_MODEL_RESPONSE_BYTES = 1_048_576
-_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms", "bearer_token_env"}
+_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms", "bearer_token_env", "choice_format"}
 _REQUIRED_CONFIG_FIELDS = {"endpoint_url", "model_id", "timeout_ms"}
 _ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 _RESPONSE_READ_BYTES = 65_536
@@ -183,8 +186,11 @@ class FixedModelConfig:
     model_id: str
     timeout_ms: int
     bearer_token: str | None = field(default=None, repr=False)
+    choice_format: str | None = None
 
     def __post_init__(self) -> None:
+        if self.choice_format is not None and self.choice_format != VLLM_CHOICE_FORMAT:
+            raise ValueError("invalid fixed model choice format")
         if not isinstance(self.endpoint_url, str):
             raise ValueError("endpoint_url must be an absolute HTTP(S) URL")
         parsed = parse.urlsplit(self.endpoint_url)
@@ -246,6 +252,7 @@ def load_fixed_model_config(
         model_id=value["model_id"],
         timeout_ms=value["timeout_ms"],
         bearer_token=bearer_token,
+        choice_format=value.get("choice_format"),
     )
 
 
@@ -253,6 +260,7 @@ class OpenAICompatibleFixedAdapter:
     """Send each validated task to one fixed non-streaming model endpoint."""
 
     execution_id = FIXED_EXECUTION_ID
+    choice_execution_id = CHOICE_EXECUTION_ID
 
     def __init__(self, config: FixedModelConfig) -> None:
         self._config = config
@@ -265,15 +273,21 @@ class OpenAICompatibleFixedAdapter:
             endpoint_port = 443 if parsed.scheme == "https" else 80
         self._resolver = _FixedEndpointResolver(hostname, endpoint_port)
 
-    def complete(self, completion_request: V3CompletionRequest) -> V3Completion:
+    def complete(self, completion_request: CompletionRequest) -> Completion:
         if completion_request.model_id != self._config.model_id:
             raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
+        body = {
+            "model": completion_request.model_id,
+            "messages": list(completion_request.canonical_messages),
+            **completion_request.generation_constraints,
+        }
+        profile = completion_request.generation_profile
+        if profile is not None:
+            if type(profile) is not GenerationProfile or self._config.choice_format != VLLM_CHOICE_FORMAT:
+                raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
+            body["structured_outputs"] = {"choice": list(profile.choices)}
         payload = json.dumps(
-            {
-                "model": completion_request.model_id,
-                "messages": list(completion_request.canonical_messages),
-                **completion_request.generation_constraints,
-            },
+            body,
             ensure_ascii=False,
             separators=(",", ":"),
         ).encode("utf-8")
@@ -404,7 +418,7 @@ def _read_response(
     return b"".join(chunks)
 
 
-def _parse_completion(value: object) -> V3Completion:
+def _parse_completion(value: object) -> Completion:
     if not isinstance(value, dict):
         raise ValueError("response must be an object")
     model_id = value.get("model")
@@ -435,7 +449,7 @@ def _parse_completion(value: object) -> V3Completion:
         or output_tokens >= 2**64
     ):
         raise ValueError("response completion fields have invalid types")
-    return V3Completion(
+    return Completion(
         raw_output=message["content"],
         response_model_id=model_id,
         prompt_tokens=prompt_tokens,
