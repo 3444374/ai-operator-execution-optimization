@@ -12,7 +12,8 @@
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
 | choice 的字段、协议、请求预算与逐项实施验收 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
-| 自有语义算子、SemLoom 与公司 fork 如何分工和接入 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) |
+| 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
+| 从 pgml 借鉴哪些模型接入做法 | [主计划 §8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)：SQL 入口、公共模型调用、资源复用与单项/批量接口的采用时机和验证；保持 PG 外执行，不增加四 C 任务 |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
@@ -23,7 +24,8 @@ INFRA_STATUS 和证据台账。按最新安排，完整工程对照与四 C 收�
 再做[可组合执行 / 有界多会话](postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；SemLoom 可独立开展
 增量核心表征与 fixture 测试，公司接口可只读核对。四 C 的 PG choice SELECT 已接通 C 与 gateway v4，
 Filter INSERT 的既有接管问题已独立修复并验证；受控 fixture 资源与受限真实 choice 服务检查均已通过，
-四 C 工程验证完成，专项已归入 completed。多会话/组合、独立核心与公司接口仍待实施，main 尚未合并研发分支。
+四 C 工程验证完成，专项已归入 completed。多会话/组合、独立核心与公司接口仍待实施，当前集成版本已包含实现与证据。
+完整工程参考按 §8.7 覆盖两个链路表；后续切片只重查受影响项，未来移植同时覆盖算子方法和执行能力。
 Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
 
 ## 2. 状态分层
@@ -49,7 +51,7 @@ Filter 的 reference 质量、matched cost 与第二路径继续保留，但不�
 ### 已完成计划
 
 [四 C choice 专项](completed/postgresql_choice_profile_engineering.md)已完成工程验证，保存字段/预算/验收条件，
-结果见[真实服务记录](../results/postgresql/choice_service_20260902/README.md)。不表示质量合格或已合并 main。
+结果见[真实服务记录](../results/postgresql/choice_service_20260902/README.md)。不表示质量合格或完成整个优化系统。
 
 [`completed/`](completed/) 保存已执行完成、已被结果替代，或其当前范围已经闭合的合同。正文不删除，
 以便追溯预注册变量与执行边界；不得把正文中的“下一步”自动视为当前任务。

@@ -31,7 +31,7 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
 再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
-独立分支已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)，尚未合并 main；
+当前代码已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)；
 后续[真实服务检查](experiments/results/postgresql/choice_service_20260902/README.md)也已通过，但不表示模型判断质量合格。
 多算子组合、生成型 SemMap 与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
 分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
@@ -40,10 +40,13 @@ carrier 检查随实际路径进行，只有可复现的限制才触发最小 co
 需要真实 PG 增量接入；Kalypso-like 多阶段机制仍按实际需求另行决定。
 
 主实现继续完成两部分：自有 `semloom_pg` 语义算子，以及 SemLoom 数据执行与调度；目标是不依赖
-公司私有仓库也能复现。公司 demo 用作算子工程参考，不限定自有系统能实现哪些能力；未来移植覆盖
-算子处理、优化与 SemLoom 执行调度，Adapter 只是其中一部分。接口差异提前核对，正式适配后做；内网复用与
-外部发布/部署分别确认权限，fork 不自动获得 AutoDL 部署许可。具体分工见
-[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+公司私有仓库也能复现。现在对照公司 demo 的 SQL 注册、PG 接入、算子实现、请求/结果、生命周期与
+外部执行，选择能服务本项目的工程经验；保持计划内语义、公共执行层和 PG 外的 SemLoom 分工。
+未来可把自有算子语义、处理/优化方法和 SemLoom 执行能力移植到公司系统。算子方法由目标
+planner/executor 承接，执行能力接入同一个 SemLoom 核心，两者分别验证。具体参考对象与取舍见
+[工程参照与成果移植计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+Filter 的共同目的为按自然语言条件筛行；二值或三值输出由具体任务定义，当前三值配置不限制未来
+所有 Filter。内网代码复用与外部发布/部署分别确认权限，公司移植不作为公开主实现的私有前置依赖。
 
 目标执行链路是（第二优化路径与调度部分尚未接入数据库）：
 

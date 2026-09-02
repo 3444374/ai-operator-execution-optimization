@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-09-02 choice 收尾清理与主线集成
+
+- 用户要求验证结束后清理并合并到本地 main。集成最新 `dd8cbf89`，保留主线规则、完整公司工程对照、
+  pgml §8.8 及双方历史记录；现役状态改为实际已完成的 choice/INSERT/资源/受限真实验证，已完成专项
+  移至 completed。后续顺序依用户最后确认保持“真实 Map → 可组合执行”，不退回旧串行安排。
+- `907eeb5f` 删除采集工具未使用的 import，把同时服务 v3/v4 的内部 `v3_adapter` 改为
+  `completion_adapter`。旧三字段 options/v3、显式 choice/v4 及兼容 import 保留；公共 codec、session、
+  runtime 已共用，不因清理删除仍有实际消费者的版本接口，没有扩大重构或修改 PG C。
+- 清理后本地 94/94；服务器同一已验证 PG18.3 二进制到 HTTP fixture 的 14 次请求与两个 NULL 对照
+  再次通过，未启动模型或增加真实预算，累计仍为 15/100。证据附于本轮结果的 `raw/cleanup/`。
+  真实模型通过只绑定 `0a1c12d3`，历史完整 TAP 919/919 只绑定 `39007150`。
+- 223 个本轮公开文件、原服务公开 manifest、66 个历史源码 SHA 和清理源码 SHA 已验证；文档链接、
+  隐私与差异检查通过。模型原始日志尾随空格以结果目录内窄范围 Git 属性保留，不改证据字节。
+  原始失败/成功、source worktree 和累计 ledger 保留，服务已停止；没有复制公司代码或推送远端。
+
 ## 2026-09-02 四 C 真实服务验证与收尾
 
 - `87b7963b` 增加独立 SQL/HTTP 采集工具，先经 fixture 验证；`0a1c12d3` 修复真实运行暴露的
@@ -116,6 +131,80 @@
   `experiments/results/postgresql/choice_profile_contract_20260902/`。没有真实模型请求或 held-out 访问。
 - 这只完成值与编码基础，不把 SQL opt-in、schema 3、wire v4、PG lifecycle 或四 C 整体验收写成已完成。
   下一步是 PG plan 与新旧版本分流。保留本地 worktree 供审核，不自动合并或推送。
+
+## 2026-09-02 将 pgml 接入经验落实到现有工程计划
+
+- 按用户确认，在[主计划 §8.8](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
+  保存公开源码参照、采用理由、自有落点和验证要求；只读核对固定 PostgresML 提交的四份文件，
+  没有将源码复制进项目，也没有安装、构建或运行 pgml。
+- 保留自有 PG18.3 语义算子与 PG 外 SemLoom 执行路线。SQL 入口/属性检查进入已有 PG 基础检查，
+  真实 Map/Filter 的任务编译与结果复用进入四 D；客户端资源复用是独立按需切片，批接口属于工作包七。
+  四 C 不增加任务，不以 pgml 的函数属性或版本声明代替自有语义、兼容性和资源验证。
+- 按 `codebase-design` 继续使用现有 runtime/provider，不增加通用模型框架；按 `writing-for-agents`
+  只在计划 README 和 `code/AGENTS.md` 加阅读指向，具体源码事实与采用映射保留在主计划。
+- 本轮只改方案、目录指向、局部规则和日志；源码/实验状态未变，因此不重写 INFRA_STATUS、证据台账、
+  总纲或历史结果。未改公司仓库/研发分支，未操作服务器或运行模型，未提交、推送或合并。
+- 验证：4 份修改文档的 59 个本地链接、16 个章节引用通过；读者型计划 README 的措辞检查、
+  文档隐私扫描与 `git diff --check` 通过。以上是文档和公开源码核对，不是 PG 或模型运行验收。
+
+## 2026-09-02 将公司参照扩为完整算子工程对照，保持自有研究目标
+
+- 按用户要求，将[主计划 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+  从若干生成/request 参考扩为完整 SQL 注册、PG 接入方式、算子语义、请求编译、取数/结果、生命周期
+  和外部执行对照；多算子/gateway 只是其中一项。每项给出源码定位、自有差异、采用/保留/延期条件、
+  改动位置与可观察用例，不复制公司源码、prompt 或私有测试数据。
+- 保留自有 PG18.3 语义算子、LOTUS/Cortex-like 策略和 SemLoom 数据执行/调度两部分。补充按目的
+  选择普通函数、CustomScan 或已有 PG/pgvector 表达式；公司 demo 不构成能力上限或研究贡献证据，
+  也不要求增加 core patch。对象成员身份作为待验证加固点，rescan 先定义重求值/复用语义。
+- 按 `codebase-design` 保留现有 scan/pump/runtime/port；四 D 以真实 Map 消费者整理 Filter 专用
+  task 编译与公共编码，按接口行为验收，不按拆文件数量验收。会话数、活跃模型请求与排队容量分开，
+  空闲会话不能阻塞依赖节点；prompt 合并、独立请求组织和 serving batching 保持各自所有者。
+- 按 `writing-for-agents` 将完整对照与动作留在主计划，choice 专项只维护自身字段/资源/预算，
+  `code/AGENTS.md` 只补任务触发要求。顺序为四 C 收尾、PG 基础检查/最小组合、四 D，并按路径增量
+  审查；SemLoom 独立核心和 Filter 质量研究不等待所有 SQL 能力。来源/理由/验证映射仍只进入计划
+  或切片记录，未来移植方向仍为自有算子方法和同一 SemLoom 核心进入公司系统。
+- 同步已核对的独立分支接线和 Filter INSERT 归档，纠正现役文档中“wire v4 待接通”和 main 已有
+  Filter direct INSERT 的旧描述。919 项证据只绑定 `39007150`，main 尚未合并；另只读看到
+  `d36bc969` / `7da954f9` 的计划与实验检查工具，不把工具存在写成新资源或真实模型验证通过。
+- 本轮只修改主工作区说明文件，保留原有未提交修改；未改生产/测试代码、公司仓库或研发分支，
+  未运行 PG、资源或模型实验，未合并、提交或推送。
+- 验证：当前 16 份修改中的 Markdown 共 205 个本地链接、28 个章节引用通过；本轮修改的 15 份
+  文档隐私扫描、`git diff --check` 通过。8 份读者入口的措辞命中只保留已解释的历史实验词和 SQLSTATE。
+  分支 SELECT/INSERT 归档的 89 个文件 SHA 校验通过；这是归档完整性检查，不是重新运行测试。
+
+## 2026-09-02 限定工程参考说明的存放位置
+
+- 按用户要求收紧 `code/AGENTS.md`：参考来源、采用理由和验证对应关系只进入工程计划或切片记录，
+  不放进生产代码、测试代码或代码注释。非平凡机制的论文/官方依据也遵循同一存放规则。
+- 使用 `writing-for-agents` 在已有任务触发规则旁说明存放位置，没有新增规则文件或平行对照台账。
+  本次只改规则和日志，保留此前文档修改；没有修改生产/测试代码、公司仓库或 choice 研发分支，
+  未提交、推送或合并。
+- 本地文档目标链接、`git diff --check` 和本次两份文件的隐私扫描通过。
+
+## 2026-09-02 具体化公司工程参照，明确自有算子方法与执行能力向公司移植
+
+- 按用户澄清，当前参考公司 demo 是为了减少自有算子工程的重复探索；未来可能移植的是自有
+  语义算子定义、处理/优化方法和 SemLoom 执行/调度，而不只是让公司算子调用一个外部 provider。
+  [主计划 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+  分别说明算子方法进入目标 planner/executor、执行能力通过 Adapter 接入的要求。
+- 对用户提供的公司工作副本只读核对，新增具体参考文件/函数、自有落点、采用/保留条件和测试清单。
+  只保存定位与行为摘要，没有复制公司源码、prompt 原文、内部测试数据或日志。该工作副本有未提交
+  改动，不能用仓库 HEAD 代替实际材料版本，也没有验证公司代码在 PG18.3 的运行资格。
+- 明确公司当前 Filter 未命中缓存时调用大模型、解析 True/False；embedding cascade 尚未启用。
+  自有三值可保留为明确 profile，不要求所有 Filter 都三值；WHERE 下的 keep/drop 适配与原始模型
+  状态分开，不能把错误伪装成 false，不能由 WHERE 行结果推出其他 SQL 位置等价。旧质量失败不改判。
+- 按 `codebase-design` 保留已验证的 scan/pump/runtime/port，四 D 再按真实消费者调整 prompt、参数
+  与结果处理；公司全量 materialization、PG 内 HTTP、隐式缓存/重试不直接移入自有路径。
+  按 `writing-for-agents` 只在根和 `code/AGENTS.md` 增加长期方向与任务触发要求，具体对照留在
+  唯一主计划，不新增平行规则或复用台账。
+- 同步用户报告的四 C 分支进度：`00cc6bbf` / `134447dd` 的 PG plan 已验收，文档为 `94e927d5`；
+  main 尚未合并。分支记录 PG18.3 regression 1/1、TAP 537/537、本地/服务器各 68/68；下一步只剩
+  该工作包的中立 open spec、wire/gateway 接线及后续功能/资源/模型验证，不再写成 PG plan 未实现。
+  本轮只读归档并验证 SHA manifest，未重跑、重新绑定或搬移分支证据，未修改研发分支。
+- 本轮只改相关规则、工程计划、状态和读者入口；没有改源码、公司仓库或服务器，没有运行模型，
+  没有合并、提交或推送。16 份 Markdown 的 196 个本地链接、19 个章节锚点通过检查；8 份读者型
+  文件的措辞命中均为已解释的历史术语或 SQLSTATE。文档一致性、diff 与隐私检查通过；分支证据包
+  的 30 个文件哈希全部通过。以上为本轮文档/归档检查，不是重新运行 PG 或模型测试。
 
 ## 2026-09-02 按证据修订研发依赖，分离主架构与 choice 详细计划
 

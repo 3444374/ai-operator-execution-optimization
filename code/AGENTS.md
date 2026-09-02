@@ -33,6 +33,9 @@ data source/materializer
 - 新 backend 保留同合同旧 backend 作为对照或回退。生产 runner 不反向 import profiling 脚本。
 - PostgreSQL 语义层与外部物理 backend 分开：数据库 plan/task/result 合同定义默认语义，scheduler
   不重定义 prompt、output parser 或关系行为；LOTUS parity 只由可选 compatibility adapter 验证。
+- 为自有方法向公司系统移植保持职责可分：可独立表达的算子策略、prompt/parser 与 work 计算留在
+  相应语义 Module，PG 的 SQL/Plan/Datum/slot 与生命周期适配留在 carrier；provider 接通不等于
+  planner 已支持算子优化。实际移植差异由对应 Adapter 处理，不提前建立跨数据库万能框架。
 - 新的系统所有权接口使用 `SemLoom`；DB-AIEL 只作架构层名称。PostgreSQL、provider protocol、
   planning、scheduling、serving 等可替换 module 使用领域角色命名。既有 `project_*` schema/arm 和
   `Project*` import 只作兼容入口，不复制到新接口，也不重写历史 evidence。
@@ -58,7 +61,17 @@ data source/materializer
 
 ## 5. 代码质量
 
-- 每个模块/CLI 用简短 docstring 写清目标、输入、输出和通过条件；计划来源指向对应实验或实现计划。
+- 每个模块/CLI 用简短 docstring 写清目标、输入、输出和通过条件。
+- 新增/改造语义算子、PG 注册/载体、生成请求/结果处理、共享执行或公司移植时，先读
+  `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 的“公司工程参照与自有成果
+  向公司移植”；涉及 SQL 函数属性、模型能力封装、客户端复用或批量入口时，再读同文的
+  “pgml 公开工程参照：模型能力封装与复用”。完整对照覆盖 SQL/PG 接入、算子语义、请求与结果、资源
+  和外部执行，不能仅核对多算子或 gateway；后续切片只重查受影响项。编码前在工程计划或切片记录中
+  写明参考文件/符号与版本、已核对行为、
+  采用/适配/保留自有实现的决定、自有落点和验证用例；不能只写“参考 demo”。目录或权限缺失时标明
+  未核对项，按公开依据继续不受影响的自有工作。来源与发布条件遵守根规则。
+  上述参考来源、采用理由和验证对应关系只保存在工程计划或切片记录中，不放入生产代码、测试代码
+  或代码注释；代码中的接口、行为和测试断言保持各自职责。
 - 重构默认保持外部可观察行为：公共 import/API、CLI 参数、默认值、退出码、输出 schema/字段语义、
   已承诺的错误合同、事务与 cancel/retry/exactly-once 语义及指标口径。任务明确要求改变行为时，将
   行为变更与结构重构拆成可独立审阅和验证的变更。
@@ -69,7 +82,7 @@ data source/materializer
   领域流程确需嵌套时保留并命名该流程。
 - 名称表达领域角色、数据单位和生命周期，避免在跨阶段代码中使用无法说明职责的通用名称。重复或
   具有领域含义的数字、字符串和超时值进入命名常量、枚举或配置对象；单位写入名称，协议规定值留在
-  对应 adapter 边界并注明来源。
+  对应 adapter 边界，来源在上述工程记录中注明。
 - 重复逻辑只有在语义和变化原因一致时才提炼复用；相似但合同不同的流程保持分开。过长参数列表按
   policy、capacity、request、sink 等内聚概念组成 typed、自校验的配置或值对象，不创建无语义的
   options bag；迁移公共接口时保留兼容入口。
@@ -78,7 +91,7 @@ data source/materializer
 - 设计模式只用于已经识别的变化轴或依赖反转点。引入 Strategy、Adapter、Factory 等模式前先写清
   具体耦合、需要替换的实现和最简单 seam；模式不能减少依赖或不能被合同测试验证时，使用直接实现。
 - 自适应策略先实现最小、可解释的静态/单步规则；只有实验显示必要性后才增加状态和参数。
-- 非平凡机制注明论文/官方来源；没有外部依据时明确写“工程决策”，不虚构文献支持。
+- 非平凡机制在上述工程记录中注明论文/官方来源；没有外部依据时明确写“工程决策”，不虚构文献支持。
 - 不顺手重构无关模块；改动若产生新的孤儿 import、配置或路径，在同一变更中清理。
 
 ## 6. 观测、测试与完成条件

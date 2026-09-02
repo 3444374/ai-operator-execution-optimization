@@ -7,7 +7,7 @@
 [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md)。
 
 > **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference
-> paths、direct `INSERT ... SELECT`、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator
+> paths、SemMap direct `INSERT ... SELECT`、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator
 > machines、provider-neutral `open/drive/close` seam、协议 v2
 > C/Python canonical digest 与同步单在途 UDS
 > recording provider 已通过 PostgreSQL 18.3 功能测试；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
@@ -41,7 +41,7 @@
 > 通过 v3/v4 各 5,164 次 fixture 调用、取消/DNS 各 10 次与恢复，本地 91/91；未重跑 TAP 或真实模型。
 > 随后[真实 choice 服务检查](../results/postgresql/choice_service_20260902/README.md)以 `0a1c12d3` 完成 14 次
 > 及两个 NULL 对照，累计预算 15/100 含首轮计数工具失败；各 94/94 测试通过。四 C 工程验证完成，
-> 无新 TAP/构建，不改变模型质量未合格和校准暂停的结论，main 仍未合并。
+> 无新 TAP/构建，不改变模型质量未合格和校准暂停的结论，当前集成代码已包含实现与归档。
 > 按最新安排，完整工程对照与四 C 收尾后，先做真实生成型 Map 与必要公共整理，再做可组合执行/有界多会话。
 > 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来算子方法和执行能力的移植方案
 > 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。

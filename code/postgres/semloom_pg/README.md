@@ -28,7 +28,7 @@ passes at the declared fixture scales, including cancellation and blocked DNS re
 [real-service check](../../../experiments/results/postgresql/choice_service_20260902/README.md) completes
 14 old/choice requests and two NULL controls on PG18.3 with Qwen2.5-1.5B/vLLM 0.25.1. All reported usage and
 SQL dispositions match; 15/100 cumulative attempts include one failed token-count audit before its correction.
-This completes choice engineering qualification on the development branch, not model quality or calibration.
+This completes choice engineering qualification in the current integrated code, not model quality or calibration.
 The later [Filter INSERT qualification](../../../experiments/results/postgresql/semfilter_insert_20260902/README.md)
 at `39007150` passes PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks. The planner now handles a
 pulled-up INSERT source while keeping the ordinary PostgreSQL write node. New tests cover recording/exact/choice
@@ -38,11 +38,16 @@ task/result changes. Composable execution and bounded sessions follow, including
 recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
-This extension remains the project's own frontend; the company demo is an engineering reference, not its
-replacement or a limit on this system's capabilities. Future transfer includes operator semantics, processing
-and optimization as well as SemLoom execution/scheduling; a company adapter is only one part of that work.
-That transfer is not implemented. Ownership and early mapping checks belong to the
-[frontend-adapter design](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+This extension remains the project's own frontend. The company demo provides scoped engineering references;
+later the project's own operator semantics, processing/optimization methods and SemLoom execution capabilities
+may be transferred into the company system. Planner/executor adaptation and provider integration are separate
+tasks, neither completed. The current tristate profile does not require all future filters to expose UNKNOWN;
+binary semantics and legacy error handling need explicit identities and tests. Concrete reference lookups,
+adoption decisions and preservation of this extension's shared layers belong to the
+[engineering-reference and transfer plan](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+That comparison covers SQL registration, choice of PG integration, operator semantics, task construction,
+tuple/result binding, lifecycle and external execution, not just multiple operators or gateway concurrency.
+The current thin scan, PG-private runtime and neutral provider interface remain the implementation base.
 
 The current supported query shape is deliberately narrow:
 

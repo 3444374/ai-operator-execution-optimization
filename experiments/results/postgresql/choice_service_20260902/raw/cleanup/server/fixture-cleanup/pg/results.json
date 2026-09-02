@@ -1,0 +1,114 @@
+[
+  {
+    "choice": false,
+    "input_index": 0,
+    "repeat": -1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "TRUE"
+  },
+  {
+    "choice": true,
+    "input_index": 0,
+    "repeat": -1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "FALSE"
+  },
+  {
+    "choice": false,
+    "input_index": 0,
+    "repeat": 0,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": true,
+    "input_index": 0,
+    "repeat": 0,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": false,
+    "input_index": 1,
+    "repeat": 0,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": true,
+    "input_index": 1,
+    "repeat": 0,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": false,
+    "input_index": 2,
+    "repeat": 0,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": true,
+    "input_index": 2,
+    "repeat": 0,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": false,
+    "input_index": 0,
+    "repeat": 1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": true,
+    "input_index": 0,
+    "repeat": 1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": false,
+    "input_index": 1,
+    "repeat": 1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": true,
+    "input_index": 1,
+    "repeat": 1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": false,
+    "input_index": 2,
+    "repeat": 1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  },
+  {
+    "choice": true,
+    "input_index": 2,
+    "repeat": 1,
+    "format_valid": true,
+    "sqlstate": null,
+    "raw_output": "UNKNOWN"
+  }
+]

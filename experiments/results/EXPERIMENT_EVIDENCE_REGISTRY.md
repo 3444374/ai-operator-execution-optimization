@@ -4,6 +4,7 @@
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
+主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
 当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、三参数 exact `SemFilter` golden/fixed-model
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
@@ -26,6 +27,9 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 和 chat template 一致，但 1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，仍无配置通过。
 这些分母是独立工程样例，每例重复三次；中止的默认参数失配 7B 尝试单列保留。生产配置未改，
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
+
+choice 各切片原在独立分支完成，当前集成版本已包含源码和结果目录。下节逐项保存原始提交身份，
+不把集成提交或后续清理重新绑定为旧实验的运行版本。
 
 ## 1. 证据等级
 

@@ -42,6 +42,13 @@
 职责，不增加任务或框架；验证位置仍是既有合同和 PG→HTTP fixture，不另消耗真实模型预算。
 模型原始日志的尾随空格通过本目录窄范围 Git 属性保留，内容及哈希不修改；代码/文档仍检查空白差异。
 
+清理提交 `907eeb5f` 再次通过本地 94/94 与服务器 PG18.3 → HTTP fixture 的 14 次请求、两个 NULL
+对照，真实 ledger 仍为 15。见 [清理复验](raw/cleanup/server/cleanup.json) 与 `raw/cleanup/local/`。
+吸收主线文档与规则后的最终集成版本也通过本地 94/94，日志为 `raw/cleanup/local/merged-*.log`。
+本次真实模型证据仍绑定 `0a1c12d3`，不改写为清理或合并提交；历史源码 SHA 按该提交读取验证。
+v3/v4 继续共用 C `wire_semantic/wire_common`、Python semantic codec/session 和 PG runtime，
+只保留各版本必要的入口、字段及身份检查。
+
 ## 全部尝试与修正
 
 | 尝试 | 实际观测 | 处理与结论 |

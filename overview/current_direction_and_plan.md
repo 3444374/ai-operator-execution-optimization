@@ -29,16 +29,18 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 | 对象 | 下一步 |
 |---|---|
-| 自有 PG 算子 | [choice](../experiments/plans/completed/postgresql_choice_profile_engineering.md)研发分支已通过 SELECT/受限 INSERT、受控资源和受限真实服务检查；完整工程对照后先做真实 Map/公共整理，再做可组合执行；main 未合并 |
+| 自有 PG 算子 | [choice](../experiments/plans/completed/postgresql_choice_profile_engineering.md)当前代码已通过 SELECT/受限 INSERT、受控资源和受限真实服务检查；完整工程对照后先做真实 Map/公共整理，再做可组合执行 |
 | SemLoom 核心 | 旧行为表征、公开任务/fixture 驱动增量 session、work organization、有界提交与多 Job；不等待 Filter 质量 |
 | Filter 语义优化 | 保留 reference 质量、真实校准、proxy/oracle 第二路径与对应载体审查；校准仍暂停 |
-| 公司接入 | 只读映射、必要的最小 spike，稳定后在获批 fork/环境中适配同一核心；不是公开实现的私有依赖 |
+| 公司工程参照与成果移植 | 完整对照 SQL 注册、PG 载体、算子语义、请求/结果、生命周期与外部执行；保留项目初衷，未来分别移植自有算子方法与 SemLoom |
 
 实际 PG 接入仍须通过本路径的语义、关联、取消和资源检查，之后才做匹配端到端与组批位置实验。
 carrier 审查随路径增量进行；fixture 不能替代数据库验证。旧 GPU 矩阵、SAOR 和远期 lineage/KV
 不会自动恢复。公司内网复用、外部发布和 AutoDL 部署分别需要授权。
 
-详细依赖、真实生成型 SemMap 与公司接入见[主架构计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)。
+Filter 的共同目的是按条件筛行；自有三值配置可保留，可移植性由明确的结果/NULL/error 映射和测试
+保证，不要求逐项照搬公司行为。详细参考与移植见[主架构计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，
+分支与主线状态见 [INFRA_STATUS](../code/INFRA_STATUS.md)。
 
 ## 3. 研究内容
 
@@ -56,7 +58,7 @@ carrier 审查随路径增量进行；fixture 不能替代数据库验证。旧 
 
 已建立：
 
-- recording `SemMap`/`SemFilter`、exact Filter、公共 runtime 与 PostgreSQL 18.3 compatibility suite 已通过功能、取消和
+- recording `SemMap/SemFilter`、真实 Filter 同步 reference、公共 runtime 与 PG18.3 compatibility suite 已通过功能、取消和
   RSS/FD 生命周期验证；fixed-model endpoint 已完成小规模真实模型 capability，但尚无质量或性能结论；
 - 当前 recording operator/value/policy、semantic/physical identity 和 physical role 已由 planner 保存；
   neutral provider error interface 不暴露 transport operation；

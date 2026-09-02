@@ -11,7 +11,7 @@
 [真实 choice 服务验证](postgresql/choice_service_20260902/README.md)：`0a1c12d3` 的 PG18.3 → gateway
 → Qwen2.5-1.5B/vLLM 完成 14 次 old/choice 请求及两个 NULL 对照；累计 15/100，含首轮工具失败的 1 次。
 本地/服务器各 94/94。四 C 工程验证完成，质量与校准未通过；启动及计数工具失败、原始输出全部保留，
-无新 TAP/构建，分支未合并。
+无新 TAP/构建；源码与证据已进入当前集成版本。
 
 [资源与预算工具验证](postgresql/choice_resources_20260902/README.md)：`4464fe9b` 的受控 PG18.3
 fixture 检查通过，含 v3/v4 各 5,164 次、取消/阻塞 DNS 各 10 次与恢复；本地 91/91。

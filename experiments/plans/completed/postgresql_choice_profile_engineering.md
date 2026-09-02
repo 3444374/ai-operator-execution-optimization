@@ -1,13 +1,13 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`engineering-qualified / independent-review-and-merge-pending`
+状态：`engineering-qualified / completed`
 
 四 C 工程验证已完成：[真实服务结果](../../results/postgresql/choice_service_20260902/README.md)。
 `0a1c12d3` 的 14 次真实请求与 NULL 对照、各 94/94 工具/合同测试通过，累计预算 15/100；
 此前受控资源结果保持原身份。以下保存实施合同与历史切片，不再作为待开发工作包。
 后续真实 Map、可组合执行及 Filter 质量/校准由[主计划](../postgresql_ai_semantic_operator_architecture_20260827.md)维护。
-研发分支未合并，工程完成不表示 reference 质量通过。
+当前集成代码包含本专项；工程完成不表示 reference 质量通过。
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
 跨工作包依赖、模块分工和公司接入由[主架构计划](../postgresql_ai_semantic_operator_architecture_20260827.md)维护；
@@ -32,9 +32,14 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 
 ## C.0 算子目的与本次工程参照
 
-公司与自有 Filter 的目的都是按自然语言条件筛行。本轮保持已选定的三值 profile，UNKNOWN 与 FALSE
-在当前 WHERE 范围均不保留行，但原始输出保持区分；执行错误仍终止语句。二值方案需要独立语义
-与身份，不混入本版本。公司 embedding cascade 尚未启用，不作为已可复用的优化。
+Filter 的业务目的为按自然语言条件筛选行，不要求所有模型都输出 UNKNOWN。公司当前实现未命中
+缓存时直接调用大模型，解析 True/False；embedding cascade 只是预留，尚未参与执行。
+本工作包实现此前选定的 `choice.tristate.v1`，不是全项目唯一允许的 Filter 输出模式。已有三值
+接口保持兼容；二值可作为后续明确合同的候选，但不在同一个 profile ID 下删除 UNKNOWN、
+放宽 parser 或把调用失败变成 false，也不因此重新解释旧质量失败。
+在声明的 WHERE 范围内，UNKNOWN 与 FALSE 均不保留行，原始模型输出仍区分；SQL 表面二值不要求
+内部丢失 UNKNOWN。其他 SQL 位置与公司原有 NULL/error 语义另行核对，不能仅凭行集相同宣称全部等价。
+完整工程对照、公共 task 重构、重扫与多会话由主计划维护，不追加到本已完成切片。
 
 2026-09-02 只读核对 `x_semantic` 基于 `4601bf7` 的工作副本；所涉文件均有未提交修改，不当作固定
 release。参考来源只在本计划记录，不写进生产/测试代码或注释；不复制源码、prompt、测试数据或日志。

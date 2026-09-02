@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（研发分支 choice 资源与受限真实模型检查通过，main 未合并）
+日期：2026-09-02（choice 工程验证与集成完成；质量/校准仍未通过）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -59,7 +59,7 @@ fixture 调用、10 次取消与 10 次阻塞 DNS/恢复均通过预定阈值。
 本地/服务器各 94/94；实际 JSON 仅差 choice，PG rows/calls/usage 与原始输出一致。累计预算 15/100，
 包含首轮 1 次；启动失败、主动停止和工具失败均保留。未改 PG/runtime/provider 生产代码，未重跑
 TAP/构建；工程接入完成不表示三值判断质量合格、恢复校准或实现第二路径。已完成的专项计划移入
-`experiments/plans/completed/`，主计划继续定义真实 Map 与可组合执行，分支待审查/合并。
+`experiments/plans/completed/`，主计划继续定义真实 Map 与可组合执行，当前集成版本已包含实现与归档。
 
 当前 PG 可执行 SELECT 使用 schema v1/v2/v3、wire v2/v3/v4 与同步单在途 port；recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
@@ -69,7 +69,18 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-本轮只追加实验工具与受控资源检查，没有真实模型调用；Filter 校准暂停与原始失败结论不变。
+受限 choice 真实执行检查不改变 Filter 校准暂停与原始质量失败结论。
+
+**公司工程参考不是已复用代码的声明**：已只读核对 SQL 函数注册、marker/CustomScan、pgvector
+表达式复用、对象身份、列映射/rescan、prompt/有效请求、批执行与资源回收；完整取舍见主计划 §8.7。
+公司 Filter 为大模型二值判断，embedding cascade 未启用；自有当前
+三值 profile 与其 NULL/error 行为不同，不能据名称认定等价。未来移植包含算子语义/处理/优化与
+SemLoom 执行两部分，目前都没有公司路径验收证据。
+
+**本轮核对的工程限制**：Map 的真实生成合同尚未实现，公共 task 编译仍主要服务 Filter；planner
+限制单 marker，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway 按整个会话串行服务；函数查找尚未
+额外核验扩展成员身份。这些是源码事实或待验证加固点，不是已经重构或已证实的安全漏洞。后续改动
+与验收要求只在主计划维护；现有 PG-private runtime、neutral port 和严格错误/结果处理继续保留。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
@@ -554,7 +565,8 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
    recording reference paths 已验证当前受限 `SELECT` 和 direct `INSERT ... SELECT` 的 ordinary child
    plan、三值/NULL、cardinality、snapshot、取消、rollback/commit、错误恢复和结果生命周期；
-   rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽 query shapes 仍保持 fail-closed；
+   Filter direct INSERT 的修复已验证，见上方归档；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT`
+   与更宽 query shapes 仍保持 fail-closed；
 2. PostgreSQL-private `PgSemanticRuntime`、thin `SemloomExecPump`、独立 Map/Filter machines、provider-neutral
    `AiOpenSpec → AiPreparedTask → AiCompletion`、独立 recording/UDS adapters、协议 v2 canonical digest
    与同步单在途 `open/drive/close` 已实现；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、query-context
