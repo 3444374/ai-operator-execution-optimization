@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-09-02 将 pgml 接入经验落实到现有工程计划
+
+- 按用户确认，在[主计划 §8.8](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
+  保存公开源码参照、采用理由、自有落点和验证要求；只读核对固定 PostgresML 提交的四份文件，
+  没有将源码复制进项目，也没有安装、构建或运行 pgml。
+- 保留自有 PG18.3 语义算子与 PG 外 SemLoom 执行路线。SQL 入口/属性检查进入已有 PG 基础检查，
+  真实 Map/Filter 的任务编译与结果复用进入四 D；客户端资源复用是独立按需切片，批接口属于工作包七。
+  四 C 不增加任务，不以 pgml 的函数属性或版本声明代替自有语义、兼容性和资源验证。
+- 按 `codebase-design` 继续使用现有 runtime/provider，不增加通用模型框架；按 `writing-for-agents`
+  只在计划 README 和 `code/AGENTS.md` 加阅读指向，具体源码事实与采用映射保留在主计划。
+- 本轮只改方案、目录指向、局部规则和日志；源码/实验状态未变，因此不重写 INFRA_STATUS、证据台账、
+  总纲或历史结果。未改公司仓库/研发分支，未操作服务器或运行模型，未提交、推送或合并。
+- 验证：4 份修改文档的 59 个本地链接、16 个章节引用通过；读者型计划 README 的措辞检查、
+  文档隐私扫描与 `git diff --check` 通过。以上是文档和公开源码核对，不是 PG 或模型运行验收。
+
 ## 2026-09-02 将公司参照扩为完整算子工程对照，保持自有研究目标
 
 - 按用户要求，将[主计划 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)

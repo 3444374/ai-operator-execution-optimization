@@ -27,6 +27,8 @@ INFRA_STATUS 区分，文档更新不代替合并或验收。
 外部执行，不限于多个算子能否同时出现。采用公司经验的判断标准是能否服务上述目标、减少重复实现
 并保持可验证的职责；不以函数数量、目录相似或复用率作为完成标准。LOTUS/Cortex-like 算子优化与
 SemLoom 数据执行研究都保留，公司 demo 的现有能力不是自有系统的上限。
+公开扩展 pgml 补充提供 SQL 接口与模型能力封装的工程参照，采用范围与验收见
+[§8.8](#pgml-engineering-reference)；不成为项目依赖，也不改变上述研究目标与工作包次序。
 
 数据库拥有 SQL、ordinary child plan、语义计划、结果解释及查询生命周期。模型、Python、Ray、
 vLLM 位于进程外；“内置”不表示 payload 不会离开数据库。直接复用 PostgreSQL 的 MVCC、事务、锁、
@@ -257,7 +259,8 @@ Ports & Adapters 只用于已存在的外部变化；Factory 只负责 query-fix
 先按算子目的选择 PG 接入方式：普通本地辅助计算可用 SQL/C 函数；需要独立语义策略、AI-work cost
 与执行生命周期的路径保留 planner-visible 表达；已经能由 PG/pgvector 完成的表达式、索引或 ordinary
 plan 优先复用。CustomScan 是当前载体，不是所有功能都必须新增节点的理由；也不能把现有 marker
-静默改成逐行 HTTP fallback 来冒充路径优化。公司三类接入方式的源码对照见 §8.7.2。
+静默改成逐行 HTTP fallback 来冒充路径优化。公司三类接入方式的源码对照见 §8.7.2；
+公开 SQL 函数封装与属性选择的补充参照见 [§8.8](#pgml-engineering-reference)。
 
 审查随对应目标增量进行：同步 Map/Filter、真实生成型 Map、算子组合、batch/reorder、第二 Filter path
 分别验证对象身份、SQL 函数属性、prepared invalidation、hook coexistence、placement 与 executor 生命周期。
@@ -276,7 +279,7 @@ plan 优先复用。CustomScan 是当前载体，不是所有功能都必须新�
 数据组织、提交、路由和调度。公司算子调用 SemLoom 只是执行接入，不代表前述算子方法已经移植。
 自有 PG18.3 主实现继续独立构建和复现；公司移植是可选应用方向，不成为主实验的私有前置依赖。
 
-本节是完整算子工程对照的唯一入口：从“算子做什么、怎样进入 PG”到“如何产生请求、恢复关系结果、
+本节是公司算子工程对照与移植的唯一入口：从“算子做什么、怎样进入 PG”到“如何产生请求、恢复关系结果、
 管理新增资源”，多算子组合只是其中一项。每项采用决定都回到 §1 的研究目标；公司实现更宽的 SQL
 表面、已有连接池或更多函数，不自动成为自有系统必须照搬的实现方式。
 
@@ -445,6 +448,46 @@ opaque task/job/attempt ID、异步 registry 与批协议按实际关联需求�
 fork/修改权限不等于外部发布或部署权限；改名、翻写、打包均不改变来源要求。当前具体参考与未来
 移植服务于自有完整实现和可复现研究，不增加新的研究内容，也不授予模型运行或公司代码修改权限。
 
+<a id="pgml-engineering-reference"></a>
+
+### 8.8 pgml 公开工程参照：模型能力封装与复用（工程设计）
+
+本节补充 §8.7 的公司工程经验，不建立第二套架构或要求安装 pgml。目标是让新增语义算子主要增加
+自身的语义、计划接入和结果解释，并复用现有模型调用、通信与清理；不是将 Python/模型加载迁入 PG。
+
+**来源与范围。** 2026-09-02 只读核对 [PostgresML 固定提交](https://github.com/postgresml/postgresml/tree/caf2b6ccdf0d6efc2c1910cbc06725a34320181a)
+`caf2b6ccdf0d6efc2c1910cbc06725a34320181a` 下的 `pgml-extension/`；
+其中 [Cargo.toml](https://github.com/postgresml/postgresml/blob/caf2b6ccdf0d6efc2c1910cbc06725a34320181a/pgml-extension/Cargo.toml)
+声明包版本 2.10.0、Rust/pgrx、PG12–17 features，默认 PG17 + Python。所查本地模型 binding 经 PyO3
+调用 Python 模型库，与自有 PG 外执行路线不同。这里的“SQL AI 函数”不等于已经证明存在专用
+SemFilter/SemJoin 计划优化器；也不能据此说普通 PG 优化器完全不能优化函数表达式。
+本次未安装、构建或运行 pgml，未验证 PG18.3 兼容性、性能或所有 backend 共享模型权重。
+
+下表左列是固定版本源码事实，右两列是自有工程决定；参考不等于直接复制代码。实际采用时在对应
+切片记录确认源码版本、保留行为和用例结果，来源与取舍仍只进入工程计划或切片记录。
+
+| 已核对的公开实现 | 自有采用方式与落点 | 时机与完成条件 |
+|---|---|---|
+| [api.rs：embed、transform_json/transform_string](https://github.com/postgresml/postgresml/blob/caf2b6ccdf0d6efc2c1910cbc06725a34320181a/pgml-extension/src/api.rs#L589-L708) 用扩展注册带类型的 SQL 入口，再交给模型 binding | 保留 `sql/semloom_pg--0.1.0.sql` 的函数入口、PG 类型检查和普通表达式；需要语义身份、位置或执行控制时仍由 planner/CustomScan 接管。不把未 lower 的 marker 变成普通函数模型调用 | PG 基础检查及相应算子切片：输入类型、NULL/空串、函数对象身份、合法位置与未支持形状均有明确行为；plain EXPLAIN 与无任务查询不调用模型 |
+| 同一 api.rs 的多个 transform 重载归一为 task/args/inputs 后调用同一个 transformers binding | 四 D 由真实 Map/Filter 消费者整理 `sem_operator_machine.c`：共享消息编码与调用能力，各算子保留自己的 prompt/parser/关系 disposition；生成参数仍由 plan → `AiOpenSpec` 单向传递，复用 `PgSemanticRuntime` 与外部 completion Adapter | 四 D：Map 的文本输出与 Filter 的真值解析分别验证；完整规范消息、生成参数及摘要可核对，旧 Filter bytes/digest/SQLSTATE 不变。新增 Map 不复制 provider、wire、deadline 或 cleanup |
+| [transformers.py 的模型/管线字典](https://github.com/postgresml/postgresml/blob/caf2b6ccdf0d6efc2c1910cbc06725a34320181a/pgml-extension/src/bindings/transformers/transformers.py#L62-L64)与 [generate 缓存未命中加载](https://github.com/postgresml/postgresml/blob/caf2b6ccdf0d6efc2c1910cbc06725a34320181a/pgml-extension/src/bindings/transformers/mod.rs#L253-L289)复用昂贵准备 | 借鉴初始化不逐项重复的原则，而非复制 PG 内模型缓存。模型实例由外部 serving 管理；如需客户端/连接复用，在 gateway 的模型 Adapter 内实现。PG 查询仍拥有独立 plan、sequence、结果缓冲与关闭动作 | 资源复用是有实际需求后的独立切片，不是四 C/四 D 的新增前置项。先写配置/认证隔离与资源上限，验证复用次数、超时/断连恢复、取消不干扰其他会话，以及 no-task 不提前连接 |
+| [api.rs：embed 与 embed_batch](https://github.com/postgresml/postgresml/blob/caf2b6ccdf0d6efc2c1910cbc06725a34320181a/pgml-extension/src/api.rs#L589-L610)共用一个底层 embedding 调用；这不是自动把标量 SQL 调用合批的证据 | 保留当前同步单项 port；后续批接口复用同一单项任务语义与结果校验，由 §6.3/工作包七管理接受、关联、缓冲和完成。批量传输不改变每行 prompt，不用全表 array_agg/collect 代替有界取数 | PG 增量桥接阶段：batch size 1 与同步对照一致，重复输入/NULL/尾批/早停/取消/乱序结果按新合同验证；输入与结果缓冲都有上限。prompt 合并仍按 §7 作为另一个语义算法处理 |
+
+**复用时保留的三项区别。**
+
+- SQL 可组合性不等于语义优化能力：Filter placement、reference/optimized、quality/fallback 仍由自有
+  planner 与算子策略实现，不能仅靠增加函数重载或改函数属性得到；也不要求所有本地辅助计算变成 CustomScan。
+- 模型实例/连接复用不等于推理结果缓存。后者会改变实际调用数与复用范围，须另定语义/模型/权限身份、
+  资源上限和统计口径；当前不顺带增加结果缓存、自动重试或新 registry。复用客户端也不代表空闲 session
+  可以占住模型执行名额，多会话的进展与隔离继续按 §6.4 验证。
+- pgml 上述入口的 `IMMUTABLE/PARALLEL SAFE` 声明不直接移植。模型生成、外部状态和查询私有资源须
+  按 [PG volatility](https://www.postgresql.org/docs/18/xfunc-volatility.html)与
+  [parallel safety](https://www.postgresql.org/docs/18/parallel-safety.html)分别审查；保留当前已验证的
+  `VOLATILE/PARALLEL UNSAFE`，有明确语义依据及 PG18.3 用例后才另行调整，防止意外规划期求值或不安全并行。
+
+四 C 收尾范围不变。近期只把入口/属性检查纳入既定 PG 基础检查，把任务编译与结果复用落实在四 D；
+客户端复用与批量执行按上表分别推进。无需迁移到 Rust/pgrx、引入库内 Python，或预建通用模型框架。
+
 ## 9. 工作包与完成条件
 
 工作包一至四 B 的已完成工程不在此重复提交与测试数字；实际状态见 INFRA_STATUS，原过程见历史快照。
@@ -466,8 +509,9 @@ PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配
 
 ### 四 C 之后：PG 基础检查与最小组合（待实现）
 
-先按 §8.7 的完整对照核对注册身份、函数属性、已有 PG 能力复用及计划/结果绑定，只有实际问题才
-改已完成代码；再以两个 Filter AND 为首个组合消费者，整理公共调用分析与外部多会话服务。
+先按 §8.7 的完整对照及 [§8.8 的 SQL 入口/属性要求](#pgml-engineering-reference)核对注册身份、
+函数属性、已有 PG 能力复用及计划/结果绑定，只有实际问题才改已完成代码；再以两个 Filter AND
+为首个组合消费者，整理公共调用分析与外部多会话服务。
 详细动作与验收分别在[改造顺序](#operator-engineering-actions)、[多会话要求](#multi-session-execution)
 和[工作包六](#carrier-audit-work-package)，不在此复制第二套合同。多算子不是完整工程对照的替代品。
 不等待未来所有 Join、aggregate、CASE 等形状实现，也不阻塞独立 SemLoom 核心或 Filter 质量研究。
@@ -484,7 +528,8 @@ AI_COMPLETE 在这里是工作负载含义，不预先承诺新增同名 SQL ali
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。
 
 开始该工作包前按[公司工程参考表](#company-engineering-reference)核对 SQL 注册、PG 载体、Map/Generate、
-prompt、取数和结果处理，写下采用/适配/保留自有实现的决定。优先复用现有 `sem_plan_spec.c`、SemMap lowering、machine、
+prompt、取数和结果处理；按 [pgml 公开工程参照](#pgml-engineering-reference)核对模型能力封装与共享实现，
+写下采用/适配/保留自有实现的决定。优先复用现有 `sem_plan_spec.c`、SemMap lowering、machine、
 pump/runtime 与外部 completion Adapter；参考公司逐行文本生成、列映射和参数构造，不复制全量
 materialization、执行时语义漂移或 PG 内 HTTP。已有层次仅在新消费者证明必要时定点调整。
 
@@ -558,6 +603,8 @@ fixture 或公开外部 workload 的结果继续按真实身份报告，不写�
 **PG 桥接（另行验证）。** 依赖四 D 或另一条已具备真实语义与生命周期资格的算子，以及独立核心
 对应功能通过。先让中立任务进入同一个执行核心，再在有界执行确需时版本化扩 PG port/wire；
 PG 保留 tuple binding、snapshot、order/result 与 cancel，gateway 负责适配而不读取 SQL。
+单项与批量入口复用的参照见 [§8.8](#pgml-engineering-reference)；批量形态不重定义单项语义，
+也不以全量收集输入作为接口前提。
 
 完成条件：实际 PG18.3 plan→task→core→completion→SQL 关联通过，普通 SQL/旧算子不受影响；
 新 batch 接口补充接受前缀、输入结束、乱序、早停、异常、取消隔离和全部缓冲的资源检查。
