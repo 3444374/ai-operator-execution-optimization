@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-09-02 四 C 真实服务验证与收尾
+
+- `87b7963b` 增加独立 SQL/HTTP 采集工具，先经 fixture 验证；`0a1c12d3` 修复真实运行暴露的
+  token 计数问题：Transformers 5.14.1 返回 BatchEncoding，旧 `len` 读到 2 个字段而非 65 个 token。
+  保留红测试和实际捕获消息离线复现，显式 `return_dict=False` 后重验；PG 与模型原先都记录正确值。
+- 最终 PG18.3 → gateway → Qwen2.5-1.5B/vLLM 0.25.1 完成 14 次 old/choice 请求和两个 NULL 对照；
+  完整实际请求仅差 choice，原 parser、SQL rows/calls/usage 及前后身份核对通过。累计 15/100，首轮
+  1 次失败不退款；三个独立输入的重复不是质量样本扩增。汤食谱 UNKNOWN、含糊请求 TRUE 原样保留。
+- 本地/服务器各 94/94，复用 `39007150` PG18.3 二进制且 SHA 一致；未重建、未重跑 TAP/regression，
+  历史 919/919 不重新绑定。未改 PG/runtime/provider、模型/prompt/生成参数，没有 held-out 或校准。
+- 启动 1 因 IPC 路径过长、启动 2 因 ninja 不在 PATH 失败；启动 3 实际已就绪，因缓存落系统盘被主动
+  停止。启动 4 修正路径/PATH/各库缓存后通过健康和真实请求；所有日志保留，未下载安装新模型/包。
+- 自有服务按 PID/启动 ticks 校验后停止；PG/gateway 退出，无本切片 listener。持久原始产物、源码
+  worktree 与 ledger 保留；系统盘约 6.16 MiB 的 sampling 缓存未做宽泛删除，不声称服务器全清。
+- [结果记录](experiments/results/postgresql/choice_service_20260902/README.md)登记至台账/状态/导航。
+  152 项原始、156 项公开 SHA 与 66 个源码 SHA 核对通过。四 C 工程验证完成，专项移入
+  `experiments/plans/completed/` 并更新链接；后续由主计划维护真实 Map → 可组合执行。
+  Filter 质量、校准和第二路径仍未通过。公司源码未改、未复制或上传；本地 main 保持 `939d1b54`，
+  独立研发分支待审查，未合并或推送。
+
 ## 2026-09-02 四 C 受控资源检查及完整算子工程对照
 
 - `7da954f9` 新增实验专用预算 ledger、实际 POST 观测与 PG18.3 资源 runner；没有改生产 PG、wire、
@@ -110,7 +130,7 @@
 - 公司 fork 定位为工业前端接入与获批环境验证，保留早期只读映射；内网代码复用、公开发布与 AutoDL
   部署分别确认授权。附件中的方法名/ID 仍为候选，不因讨论直接进入 ABI 或代码。
 - 按 `writing-for-agents` 分离阅读路径：主计划只保留架构、Interface、依赖和完成条件；
-  [四 C 专项](experiments/plans/postgresql_choice_profile_engineering.md)维护详细字段、预算和验收；
+  [四 C 专项](experiments/plans/completed/postgresql_choice_profile_engineering.md)维护详细字段、预算和验收；
   [历史快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)保留
   `31e2432b` 的旧正文与完整资格尝试条件，仅机械调整相对链接并标明不可作为当前执行指令。
   原始结果、失败和证据台账未删除、未重新绑定；当前状态仍由 INFRA_STATUS 维护。

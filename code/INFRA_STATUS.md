@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（研发分支受控 choice 资源检查通过；真实模型检查待完成，main 未合并）
+日期：2026-09-02（研发分支 choice 资源与受限真实模型检查通过，main 未合并）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -12,8 +12,7 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**尚未完成项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的受限真实模型验证；
-PG 注册身份等反例检查、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
+**尚未完成项**：PG 注册身份等反例检查、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
@@ -53,6 +52,15 @@ fixture 调用、10 次取消与 10 次阻塞 DNS/恢复均通过预定阈值。
 预算/HTTP seam 新增 8/8；本地既有 83/83 同时通过。真实模型请求为 0，未重跑构建/TAP，旧 919/919
 仍只绑定 `39007150`。详见[资源验证](../experiments/results/postgresql/choice_resources_20260902/README.md)。
 当前 gateway 仍串行服务整个会话；零任务双连接检查复现第二握手等待，不能声称已支持多算子。
+
+四 C 的[受限真实服务检查](../experiments/results/postgresql/choice_service_20260902/README.md)随后通过。
+初始工具 `87b7963b` 在首个真实响应后将 BatchEncoding 字段数误作 tokens，整轮失败；`0a1c12d3`
+仅修复采集工具，离线反例与回归测试通过后在新目录完成 14 次 old/choice 请求和两个 NULL 对照。
+本地/服务器各 94/94；实际 JSON 仅差 choice，PG rows/calls/usage 与原始输出一致。累计预算 15/100，
+包含首轮 1 次；启动失败、主动停止和工具失败均保留。未改 PG/runtime/provider 生产代码，未重跑
+TAP/构建；工程接入完成不表示三值判断质量合格、恢复校准或实现第二路径。已完成的专项计划移入
+`experiments/plans/completed/`，主计划继续定义真实 Map 与可组合执行，分支待审查/合并。
+
 当前 PG 可执行 SELECT 使用 schema v1/v2/v3、wire v2/v3/v4 与同步单在途 port；recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程

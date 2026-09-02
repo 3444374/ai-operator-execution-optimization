@@ -8,7 +8,7 @@
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
 schema v1/v2 planner-owned plan spec、wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；
-schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证，独立分支新增受控资源检查；真实 choice 服务验证仍待完成。
+schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证，独立分支的受控资源与受限真实 choice 服务检查均通过。
 小规模真实模型只证明纵切面可运行，
 deterministic calibration artifact 只证明生成/验证/planner 消费，不支持真实 cost accuracy、语义质量、第二 physical path、
 bounded async 或性能优化已经完成。当前顺序看工程计划和
@@ -28,6 +28,13 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
 
 ## 1. 证据等级
+
+2026-09-02 的 [choice 真实服务检查](postgresql/choice_service_20260902/README.md)绑定工具 `0a1c12d3`，
+复用 `39007150` 的 PG18.3 二进制；Qwen2.5-1.5B/vLLM 0.25.1 下原定 14 次（old/choice 各 7）
+与两个 NULL 对照通过，实际请求仅差 choice，原 parser/SQL rows/calls/usage 一致。累计预算 15/100，
+首轮工具误计 BatchEncoding 长度导致的 1 次失败保留，另保留所有启动尝试。本地/服务器各 94/94，
+未重跑 TAP/构建。只证明工程接入，汤食谱 UNKNOWN、含糊输入 TRUE 等原始结果不作质量通过依据；
+不恢复校准、不改变默认 reference，也没有第二路径或多算子结果。
 
 2026-09-02 的 [choice 资源检查](postgresql/choice_resources_20260902/README.md)绑定工具 `4464fe9b`，
 复用并核对 `39007150` 的 PG18.3 二进制：v3/v4 各 5,164 次 65,536-byte fixture 调用、10 次取消、

@@ -1,0 +1,16 @@
+test_concurrent_runners_cannot_overspend (test_choice_attempt_ledger.AttemptLedgerTests.test_concurrent_runners_cannot_overspend) ... ok
+test_corrupt_or_missing_history_fails_closed (test_choice_attempt_ledger.AttemptLedgerTests.test_corrupt_or_missing_history_fails_closed) ... ok
+test_existing_history_is_never_reinitialized (test_choice_attempt_ledger.AttemptLedgerTests.test_existing_history_is_never_reinitialized) ... ok
+test_failed_persistence_or_http_does_not_refund_attempt (test_choice_attempt_ledger.AttemptLedgerTests.test_failed_persistence_or_http_does_not_refund_attempt) ... ok
+test_invalid_digest_consumes_nothing (test_choice_attempt_ledger.AttemptLedgerTests.test_invalid_digest_consumes_nothing) ... ok
+test_reopen_does_not_restore_spent_attempts (test_choice_attempt_ledger.AttemptLedgerTests.test_reopen_does_not_restore_spent_attempts) ... ok
+test_persistence_failure_prevents_dispatch (test_choice_http_observer.ChoiceHttpObserverTests.test_persistence_failure_prevents_dispatch) ... ok
+test_reserves_before_dispatch_and_preserves_actual_body (test_choice_http_observer.ChoiceHttpObserverTests.test_reserves_before_dispatch_and_preserves_actual_body) ... ok
+test_only_choice_may_differ_in_actual_requests (test_choice_service_checks.ChoiceServiceChecksTests.test_only_choice_may_differ_in_actual_requests) ... ok
+test_prompt_usage_counts_tokens_not_batch_encoding_fields (test_choice_service_checks.ChoiceServiceChecksTests.test_prompt_usage_counts_tokens_not_batch_encoding_fields) ... ok
+test_sql_disposition_and_usage_must_match_raw_completion (test_choice_service_checks.ChoiceServiceChecksTests.test_sql_disposition_and_usage_must_match_raw_completion) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 1.338s
+
+OK

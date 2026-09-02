@@ -14,7 +14,10 @@ to v3 or unconstrained requests. See the [PG connection qualification](../experi
 The later [Filter INSERT fix](../experiments/results/postgresql/semfilter_insert_20260902/README.md) handles
 PostgreSQL's pulled-up source query without changing the runtime or wire. Its `39007150` qualification passes
 PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks, including 171 INSERT checks. Supported single-table
-SELECT and INSERT ... SELECT are verified with fixtures; new resource and real-model checks remain pending.
+SELECT and INSERT ... SELECT are verified with fixtures. Later controlled resource checks and the
+[bounded real-service check](../experiments/results/postgresql/choice_service_20260902/README.md) pass.
+The latter executes 14 old/choice requests and two NULL controls; the cumulative budget is 15/100 including
+one failed collector run. This is execution evidence, not model-quality qualification.
 
 Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
@@ -97,12 +100,13 @@ See `INFRA_STATUS.md` for the current evidence.
 A qualified Filter reference must precede real collection and held-out validation under one fixed semantic plan, model,
 workload distribution, service, and hardware signature. Only then may a distinct
 Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
-The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
-with a full engineering comparison, then [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
-driving the necessary shared task/result changes. [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
+The [opt-in choice engineering slice](../experiments/plans/completed/postgresql_choice_profile_engineering.md) is qualified on the development branch.
+Next, [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
+drives the necessary shared task/result changes after the full engineering comparison.
+[Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT on the development branch.
-[Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) pass; real-model
-validation remains pending and main is not merged. The fixture connection does not qualify a model,
+[Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) and the bounded
+real-model execution check pass; main is not merged. Execution checks do not qualify a model,
 change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
 own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
 demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.

@@ -5,7 +5,7 @@
 正文保留当时的顺序、未实施设计、接口描述及完整资格尝试条件，其中部分表述已被修正。
 
 当前架构与工作包依赖见[主计划](../postgresql_ai_semantic_operator_architecture_20260827.md)；
-choice 详细实施条件见[四 C 计划](../postgresql_choice_profile_engineering.md)。
+choice 详细实施条件见[四 C 计划](../completed/postgresql_choice_profile_engineering.md)。
 源码状态以[INFRA_STATUS](../../../code/INFRA_STATUS.md)为准，实际测试与失败证据以
 [证据台账](../../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及各结果目录为准。
 本快照不授予 GPU、模型、公司代码部署或重新执行旧实验的权限。

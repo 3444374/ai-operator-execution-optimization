@@ -1,12 +1,18 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`in-progress / PG-choice-SELECT-and-INSERT-fixture-validated / resource-and-real-model-pending`
+状态：`engineering-qualified / independent-review-and-merge-pending`
+
+四 C 工程验证已完成：[真实服务结果](../../results/postgresql/choice_service_20260902/README.md)。
+`0a1c12d3` 的 14 次真实请求与 NULL 对照、各 94/94 工具/合同测试通过，累计预算 15/100；
+此前受控资源结果保持原身份。以下保存实施合同与历史切片，不再作为待开发工作包。
+后续真实 Map、可组合执行及 Filter 质量/校准由[主计划](../postgresql_ai_semantic_operator_architecture_20260827.md)维护。
+研发分支未合并，工程完成不表示 reference 质量通过。
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
-跨工作包依赖、模块分工和公司接入由[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md)维护；
-源码是否已实现看[INFRA_STATUS](../../code/INFRA_STATUS.md)，运行结果看
-[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。文档拆分本身不构成实现或运行证据。
+跨工作包依赖、模块分工和公司接入由[主架构计划](../postgresql_ai_semantic_operator_architecture_20260827.md)维护；
+源码是否已实现看[INFRA_STATUS](../../../code/INFRA_STATUS.md)，运行结果看
+[证据台账](../../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。文档拆分本身不构成实现或运行证据。
 
 本工作包只增加 Filter 的受约束生成能力。真实生成型 SemMap 由主计划四 D 单独定义，不能照搬
 Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立核心研发不以本工作包的模型质量
@@ -16,7 +22,7 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 审查；它是工程决策，不是新的算法或质量实验结论。首个代码切片已实现不可变 profile 值、严格
 校验与独立 C/Python canonical bytes；后续 `00cc6bbf` 已接入 SQL options 和 PG plan，`7d72d9ad`
 已接入 gateway wire v4 与 fixed-model 映射；`8674269d` 接通 C open spec/codec，`80bb7fc5` 完成
-新 SELECT 路径与旧路径兼容验证。资源与真实模型 smoke 尚未完成，不表示四 C 全部通过。
+新 SELECT 路径与旧路径兼容验证。随后资源与受限真实模型检查完成，见顶部结果；不外推为模型质量通过。
 
 **目标与非目标。** 证明数据库能显式选择、保存、传输并验证受约束生成配置，保持现有生命周期和
 旧行为；不证明 reference 语义质量、性能收益或成本精度。新配置是 opt-in、unqualified 的工程能力，
@@ -113,7 +119,7 @@ plan digest；只改 profile ID 或只依靠 schema version 变化不足以绑�
 本 profile 共 114 bytes；在写实现前用独立 OpenSSL 对已展开的字节向量计算 SHA-256，结果为
 `941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7`。
 完整字节常量和拒绝测试见
-[`test_semloom_generation_profile.py`](../../code/tests/postgres/test_semloom_generation_profile.py)。
+[`test_semloom_generation_profile.py`](../../../code/tests/postgres/test_semloom_generation_profile.py)。
 C 只输出供现有 PG SHA-256 消费的规范 bytes，不另写密码算法；当前测试独立验证这些 bytes 的摘要。
 Python record 恰有 `profile_id/profile_version/constraint_kind/choices/profile_digest` 五字段；这是
 已解码值的合同。gateway v4 另在 framing 标记 JSON 重复字段，并在 schema 校验时拒绝；
@@ -259,14 +265,14 @@ chat template 与生成配置 SHA，核对启动参数及前后进程身份。�
 | C port/wire 接入（已实现） | 完整 profile 复制、独立 v4 字段/版本/identity/evidence 校验，回归公共 runtime；源码 `80bb7fc5`，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83，通过记录见下方 |
 | 功能验证（当前 SELECT / 受限 INSERT 已通过） | 中立 C11、PG18.3 warning-free `-O2 -Werror`、完整 TAP；新旧配置、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、savepoint/错误/取消、HTTP 参数对照。INSERT 另有真实写入/回滚、源 RLS 与目标权限/约束。只用 fixtures，不外推为真实模型或所有 SQL 形状 |
 | 资源验证（受控 fixture 已通过） | `4464fe9b` 通过 C.5 受控重跑：v3/v4 各 5,164 次、10 次取消和 10 次阻塞 DNS/恢复；保存 RSS/FD/线程时间序列与失败运行。只证明本规模、单会话及无后台表维护条件 |
-| 受限真实 smoke | preflight 与服务支持证据齐备；请求在总预算内，实际参数差异仅为 choice；新配置返回值通过原 parser，model/usage/finish reason/PG 计数一致；旧配置与全部失败如实记录 |
+| 受限真实 smoke（已通过） | `0a1c12d3` 完成 14 次及 NULL 对照；累计 15/100 包含首轮工具计数失败的 1 次。模型/模板/参数身份及前后状态一致，实际 JSON 只差 choice，PG parser、行数与 usage 核对通过；不评价质量 |
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |
 
 新 profile 的工程完成标准不包含“九例全部分类正确”、召回/精确率达标、性能改善或 reference 晋升。
-代码逐项实现；当前值合同的[验证记录](../results/postgresql/choice_profile_contract_20260902/README.md)
+代码逐项实现；当前值合同的[验证记录](../../results/postgresql/choice_profile_contract_20260902/README.md)
 不代替上述 SQL/plan/wire、PG lifecycle 或真实模型接入证据。
 
-此前 C 接线证据见[PG choice 验证](../results/postgresql/choice_pg_wire_20260902/README.md)。该轮还用旧/新
+此前 C 接线证据见[PG choice 验证](../../results/postgresql/choice_pg_wire_20260902/README.md)。该轮还用旧/新
 二进制复现了 Filter `INSERT ... SELECT` 未 lowering（均为 `55000`）；它是既有 carrier 缺口，不是
 新 profile 回归。下方独立切片已修复并验证受限 INSERT；历史失败保留，不把普通写入事务回滚测试
 当作 Filter INSERT 证据，也不因此开启 core patch 或改写公共 runtime。
@@ -291,12 +297,13 @@ carrier 的合法源关系识别，不改 runtime、parser、profile、wire 或 
 
 完成记录：生产修复 `8e50addf` 仅修改 `sem_filter_path.c`；最终测试 `39007150` 通过 PG18.3
 warning-free 构建、regression 1/1、TAP 919/919（含 INSERT 171）、本地/服务器各 83/83 与 C11。
-详见[INSERT 验证](../results/postgresql/semfilter_insert_20260902/README.md)。没有修改 runtime、provider、
+详见[INSERT 验证](../../results/postgresql/semfilter_insert_20260902/README.md)。没有修改 runtime、provider、
 wire、parser 或 cost。参考公司经验不限制自有能力；未来移植仍覆盖算子处理/优化与 SemLoom，
 不以单个 Adapter 接通替代整体移植。该历史 INSERT 切片未做资源与真实服务检查，校准继续暂停。
 
-后续[资源与预算工具验证](../results/postgresql/choice_resources_20260902/README.md)已完成本节受控
-fixture 检查，生产 PG/gateway 未修改；真实模型请求为 0，受限真实服务验证仍是四 C 的剩余项。
+后续[资源与预算工具验证](../../results/postgresql/choice_resources_20260902/README.md)已完成本节受控
+fixture 检查，生产 PG/gateway 未修改；该历史切片真实模型请求为 0，当时尚有受限真实服务验证。
+该项已由顶部 `0a1c12d3` 结果完成，以下保留原资源检查条件，不重新解释其数字。
 完整工程参照已跟随主计划 §8.7 更新，不只核对多算子；本轮实际修改仅在实验观测与检查工具。
 
 ## C.7 暂存的质量决策（不阻塞本工程切片）

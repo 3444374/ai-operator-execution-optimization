@@ -1,0 +1,75 @@
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:339] 
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:339]        █     █     █▄   ▄█
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:339]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.25.1
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:339]   █▄█▀ █     █     █     █  model   <runtime-path>
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:339]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:339] 
+(APIServer pid=52902) INFO 09-02 15:45:29 [api_utils.py:273] non-default args: {'host': '127.0.0.1', 'port': 8013, 'model': '<runtime-path>', 'dtype': 'bfloat16', 'max_model_len': 4096, 'enforce_eager': True, 'served_model_name': ['Qwen2.5-1.5B-Instruct'], 'gpu_memory_utilization': 0.25, 'enable_prefix_caching': False, 'max_num_batched_tokens': 4096, 'max_num_seqs': 1}
+(APIServer pid=52902) INFO 09-02 15:45:41 [model.py:619] Resolved architecture: Qwen2ForCausalLM
+(APIServer pid=52902) INFO 09-02 15:45:41 [model.py:1776] Using max model len 4096
+(APIServer pid=52902) INFO 09-02 15:45:41 [scheduler.py:252] Chunked prefill is enabled with max_num_batched_tokens=4096.
+(APIServer pid=52902) INFO 09-02 15:45:41 [vllm.py:1042] Asynchronous scheduling is enabled.
+(APIServer pid=52902) WARNING 09-02 15:45:41 [vllm.py:1096] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+(APIServer pid=52902) WARNING 09-02 15:45:41 [vllm.py:1144] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(APIServer pid=52902) INFO 09-02 15:45:41 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+(APIServer pid=52902) INFO 09-02 15:45:41 [vllm.py:1322] Cudagraph is disabled under eager mode
+(APIServer pid=52902) INFO 09-02 15:45:41 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+(APIServer pid=52902) Traceback (most recent call last):
+(APIServer pid=52902)   File "<frozen runpy>", line 198, in _run_module_as_main
+(APIServer pid=52902)   File "<frozen runpy>", line 88, in _run_code
+(APIServer pid=52902)   File "<runtime-path>", line 738, in <module>
+(APIServer pid=52902)     uvloop.run(run_server(args))
+(APIServer pid=52902)   File "<runtime-path>", line 96, in run
+(APIServer pid=52902)     return __asyncio.run(
+(APIServer pid=52902)            ^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 194, in run
+(APIServer pid=52902)     return runner.run(main)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 118, in run
+(APIServer pid=52902)     return self._loop.run_until_complete(task)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=52902)   File "<runtime-path>", line 48, in wrapper
+(APIServer pid=52902)     return await main
+(APIServer pid=52902)            ^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 698, in run_server
+(APIServer pid=52902)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=52902)   File "<runtime-path>", line 712, in run_server_worker
+(APIServer pid=52902)     async with build_async_engine_client(
+(APIServer pid=52902)   File "<runtime-path>", line 210, in __aenter__
+(APIServer pid=52902)     return await anext(self.gen)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 100, in build_async_engine_client
+(APIServer pid=52902)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=52902)   File "<runtime-path>", line 210, in __aenter__
+(APIServer pid=52902)     return await anext(self.gen)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 136, in build_async_engine_client_from_engine_args
+(APIServer pid=52902)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=52902)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 217, in from_vllm_config
+(APIServer pid=52902)     return cls(
+(APIServer pid=52902)            ^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 146, in __init__
+(APIServer pid=52902)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=52902)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 178, in sync_wrapper
+(APIServer pid=52902)     return func(*args, **kwargs)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 132, in make_async_mp_client
+(APIServer pid=52902)     return AsyncMPClient(*client_args)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 178, in sync_wrapper
+(APIServer pid=52902)     return func(*args, **kwargs)
+(APIServer pid=52902)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 963, in __init__
+(APIServer pid=52902)     super().__init__(
+(APIServer pid=52902)   File "<runtime-path>", line 553, in __init__
+(APIServer pid=52902)     self.input_socket = self.resources.input_socket = make_zmq_socket(
+(APIServer pid=52902)                                                       ^^^^^^^^^^^^^^^^
+(APIServer pid=52902)   File "<runtime-path>", line 338, in make_zmq_socket
+(APIServer pid=52902)     socket.bind(path)
+(APIServer pid=52902)   File "<runtime-path>", line 320, in bind
+(APIServer pid=52902)     super().bind(addr)
+(APIServer pid=52902)   File "zmq/backend/cython/_zmq.py", line 1002, in zmq.backend.cython._zmq.Socket.bind
+(APIServer pid=52902) zmq.error.ZMQError: ipc path "<artifact-root>/model-service/tmp/3f3b0a6b-0c39-4152-bebe-62b0227c6b59" is longer than 107 characters (sizeof(sockaddr_un.sun_path)). zmq.IPC_PATH_MAX_LEN constant can be used to check addr length (if it is defined). (addr='ipc://<artifact-root>/model-service/tmp/3f3b0a6b-0c39-4152-bebe-62b0227c6b59')

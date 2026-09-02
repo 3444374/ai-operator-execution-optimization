@@ -52,7 +52,7 @@ deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments
 [单一 prompt 后续对照](experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
 未发现实际 messages/template 不一致；新 prompt 在 1.5B 的旧/新样例各 5/9，matched 7B 上为
 7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停。下一工程切片独立接入
-[显式选择的 choice 生成配置](experiments/plans/postgresql_choice_profile_engineering.md)，
+[显式选择的 choice 生成配置](experiments/plans/completed/postgresql_choice_profile_engineering.md)，
 让数据库保存并传递三值输出要求。
 首个[值与编码切片](experiments/results/postgresql/choice_profile_contract_20260902/README.md)已通过
 C/Python 对照及本地/服务器 68/68 测试，另有 PG18.3 仅构建记录。
@@ -65,7 +65,8 @@ profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 
 解决：`39007150` 的 PG18.3 regression 1/1、TAP 919/919、各 83/83 通过，新增 171 项实际写入与
 事务验证。旧三字段配置继续执行，不把 fixture 接线写成模型质量或整个四 C 已通过。
 后续[受控资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)通过 v3/v4 各 5,164 次
-fixture 调用、取消/阻塞 DNS 各 10 次与恢复；真实 choice 服务检查仍待完成，main 未合并研发分支。
+fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice 检查](experiments/results/postgresql/choice_service_20260902/README.md)
+完成 14 次 old/choice 请求与两个 NULL 对照，累计 15/100 含首轮工具失败，main 未合并研发分支。
 这些只验证接入与本规模资源使用，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
 按最新安排，在完整工程对照和四 C 收尾后，PG 先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共整理，
 再扩展[两个 Filter AND / Filter → Map 及有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)。
@@ -484,7 +485,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 工作对象 | 近期工作 | 与其他工作的依赖 |
 |---|---|---|
-| 自有 PG 算子 | 完整工程对照 / [四 C 剩余检查](experiments/plans/postgresql_choice_profile_engineering.md) → [四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package) → [可组合执行 / 有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) | Map 驱动必要公共整理，不以多算子为其前置；每调用独立计划/状态，不等待 Filter 分类质量通过 |
+| 自有 PG 算子 | [四 C 工程验证已完成](experiments/plans/completed/postgresql_choice_profile_engineering.md)，接下来 [四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package) → [可组合执行 / 有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) | Map 驱动必要公共整理，不以多算子为其前置；每调用独立计划/状态，不等待 Filter 分类质量通过 |
 | SemLoom 核心 | 现有行为表征、公开任务驱动增量 session、work organization、有界提交、多 Job 与路由 | 可以先用 fixture/外部 workload；不是已接入数据库的证据 |
 | Filter 语义优化 | 确定质量任务与标签，取得 reference、matched cost，再实现 proxy/oracle 第二路径与 fallback | 仍是 Filter 计划比较的重要完成项，不再阻塞独立核心或生成型 Map |
 | carrier 审查 | 随生成型 Map、PG batch/reorder、Filter 第二路径分别核对 identity、placement 和生命周期 | 只在目标路径出现已复现阻断时增加最小 core patch |

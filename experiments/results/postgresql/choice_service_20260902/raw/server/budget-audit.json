@@ -1,0 +1,7 @@
+{
+  "prior_4c_real_attempts": 0,
+  "basis": "previous choice slices recorded zero real requests; no existing real ledger found",
+  "cap": 100,
+  "planned_requests": 14,
+  "fixture_ledger_is_separate": true
+}

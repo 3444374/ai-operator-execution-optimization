@@ -9,10 +9,11 @@
 [架构研究](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)。
 
 本次仅修订文档。四 C 的值合同、PG plan、中立 open spec、wire v4/gateway 接线及受限 Filter
-INSERT 已在独立分支完成；新 profile 的受控资源检查已通过，真实模型验证仍待完成，main 尚未合并。分支与主线实际状态由
+INSERT 已在独立分支完成；受控资源与[受限真实服务检查](../results/postgresql/choice_service_20260902/README.md)
+均已通过，四 C 工程验证完成，main 尚未合并。分支与主线实际状态由
 INFRA_STATUS 区分，文档更新不代替合并或验收。
 真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
-四 C 的字段、预算和逐项测试只由[专项计划](postgresql_choice_profile_engineering.md)维护。
+四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
 
@@ -144,7 +145,7 @@ planned choice profile 必须自包含并进入新 semantic digest；provider id
 
 model 与 generation constraints 不逐行复制成 task 字段。本表描述 main 当前 C seam；独立四 C 分支
 已把 profile 接入 PG plan、中立 open spec 和 wire v4，fixture 执行已接通；这不表示 main 已升级，
-新 profile 已另有受控 fixture 资源证据，但真实模型验证尚未完成。
+新 profile 已另有受控 fixture 资源和受限真实模型接入证据，不表示分类质量已合格。
 `PreparedSemanticTask/CompletionRecord` 只在旧设计中作为概念名使用，不是当前两个 C struct 的别名。
 wire task/completion 可携带身份摘要用于核验，不意味着这些字段全部暴露在中立 C task/completion 中。
 
@@ -422,7 +423,7 @@ opaque task/job/attempt ID、异步 registry 与批协议按实际关联需求�
 | 时机 | 具体动作 | 该步完成条件 |
 |---|---|---|
 | 现在：完整工程对照 | 按 §8.7.2 覆盖 SQL/PG carrier、算子目的、请求/结果、资源与外部执行，而非仅看多算子 | 每一维在当前切片登记版本/工作副本、文件/符号、源码事实、自有现状、采用/保留/延期/不适用及原因、改动位置与可观察用例；未知项显式保留，不用公司测试替代自有证据 |
-| 四 C 收尾 | 保持已接通的 choice 与受限 INSERT 行为，完成专项剩余验证 | 资源与受限真实 smoke 分别有证据；不把新的通用 SQL/会话重构并入该版本收尾，旧语义与失败记录不变 |
+| 四 C 收尾（工程验证已完成） | 保持已接通的 choice 与受限 INSERT 行为，保留专项验证记录 | 资源与受限真实 smoke 分别有证据；不把新的通用 SQL/会话重构并入该版本，旧语义与失败记录不变，分支待审查/合并 |
 | 四 D 的真实生成实现 | 先定生成合同，再按真实 Map/Filter 消费者整理 task 编译、结果解释与模型 Adapter 复用 | 规范消息、列绑定、NULL/空串/大输出、截断/失败及旧 Filter 行为可独立验证；真实 Map 不照搬 Filter 标签或 token 上限 |
 | 对应路径的 PG 接入检查 | 工作包六逐项核对注册身份、函数属性、placement、普通 PG 复用、重扫/参数变化；多算子组合是其中一个子切片 | 先补反例，再做小范围重构/能力扩展；保留已通过的 pump/runtime。未使用的 Join、聚合等不提前实现，不以重构文件数验收 |
 | Map 可执行后扩组合/多节点 | 按 §6.4 调整外部 gateway 的会话服务与活跃工作上限，再验证两个 Filter AND、Filter → Map | 空闲会话不挡住其他节点，容量不足不会永久等待，错误/取消/资源隔离通过；单节点仍可同步，不等于已完成 PG 批协议或 SemLoom 调度 |
@@ -456,10 +457,12 @@ fork/修改权限不等于外部发布或部署权限；改名、翻写、打包
 
 本工作包实现已选定的三值 choice profile，保留旧 SQL/schema/wire，不成为默认或质量合格的 reference；
 它不规定所有 Filter 必须三值。值合同、PG plan、open spec/wire v4/gateway 和受限 Filter INSERT
-已在独立分支验收，main 未合并；受控 fixture 资源检查已通过，真实模型验证仍待完成。当前分支已移除接通前的临时拒绝，
+已在独立分支验收，main 未合并；受控 fixture 资源与 14 次受限真实请求检查均已通过。
+原始结果见[收尾记录](../results/postgresql/choice_service_20260902/README.md)，字段/预算计划已归入 completed。
+当前分支已移除接通前的临时拒绝，
 未知或不受支持的版本仍不回落 v3。二值候选及完整算子工程重构不混入该版本收尾。
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
-[四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
+[四 C 专项计划](completed/postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
 
 <a id="composable-operators-work-package"></a>
@@ -467,7 +470,7 @@ PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配
 ### 四 C 之后：完整工程对照 → 真实 Map → 可组合执行（待实现）
 
 按用户本轮最新安排，先完成 §8.7 全链路对照与决定，以四 D 的真实 Map 整理必要公共实现，再扩
-可组合执行与研究接口。两个 Filter AND 不再作为真实 Map 的前置条件；四 C 剩余真实服务验证仍独立收尾。
+可组合执行与研究接口。两个 Filter AND 不再作为真实 Map 的前置条件；四 C 工程验证已收尾，质量未晋升。
 注册身份、函数属性、已有 PG 能力复用与计划/结果绑定逐项补反例，只有实际问题才改已完成代码。
 随后以两个 Filter AND 和 Filter → Map 为组合消费者，整理公共调用分析与外部多会话服务。
 详细动作与验收分别在[改造顺序](#operator-engineering-actions)、[多会话要求](#multi-session-execution)
@@ -621,7 +624,7 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 | 入口 | 唯一职责 |
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
-| [四 C 专项计划](postgresql_choice_profile_engineering.md) | choice 字段/版本/预算/资源与详细实施验收；主文只保留摘要和指向 |
+| [四 C 专项计划](completed/postgresql_choice_profile_engineering.md) | choice 字段/版本/预算/资源与详细实施验收；主文只保留摘要和指向 |
 | [INFRA_STATUS](../../code/INFRA_STATUS.md) | 实际源码结构、接线、协议版本、测试状态及未实现能力 |
 | [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录 | 提交/构建身份、测试数字、运行配置、失败、原始记录与证据包；结果目录保留请求前条件 |
 | [历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md) | 旧顺序、原接口表述与完整历史合同，供溯源，不授予执行权限 |

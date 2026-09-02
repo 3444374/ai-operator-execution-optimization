@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "<runtime-path>",
+    "<test-worktree>/code/scripts/experiments/run_choice_service_checks.py",
+    "--repo",
+    "<test-worktree>",
+    "--root",
+    "<artifact-root>/pg-real-r2",
+    "--prefix",
+    "<pg18.3-prefix>",
+    "--config",
+    "<artifact-root>/fixed.json",
+    "--ledger",
+    "<runtime-path>",
+    "--identity",
+    "<artifact-root>/service-identity-r4.json",
+    "--model-root",
+    "<runtime-path>",
+    "--model-manifest",
+    "<artifact-root>/model-files.json"
+  ],
+  "exit_code": 0,
+  "automatic_retries": 0,
+  "previous_failed_run": "pg-real",
+  "previous_failure": "audit counted BatchEncoding fields instead of token IDs; fixed in 0a1c12d3"
+}

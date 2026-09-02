@@ -1,7 +1,7 @@
 # 四 C：gateway wire v4 与 choice 请求映射
 
 内部工程验证记录，2026-09-02。依据生产源码、独立固定向量及实际测试；对应
-[四 C 专项计划](../../../plans/postgresql_choice_profile_engineering.md)。源码提交为
+[四 C 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)。源码提交为
 `7d72d9ad0998bf308c17edd68ddb38971d30dafc`，保存在独立研发分支，未合并或推送。
 
 ## 验证对象和实现范围

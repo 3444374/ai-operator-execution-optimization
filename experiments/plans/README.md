@@ -11,7 +11,7 @@
 |---|---|
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
-| choice 的字段、协议、请求预算与逐项实施验收 | [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) |
+| choice 的字段、协议、请求预算与逐项实施验收 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
 | 自有语义算子、SemLoom 与公司 fork 如何分工和接入 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
@@ -22,8 +22,8 @@
 INFRA_STATUS 和证据台账。按最新安排，完整工程对照与四 C 收尾之后，先做四 D 真实生成型 SemMap，
 再做[可组合执行 / 有界多会话](postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；SemLoom 可独立开展
 增量核心表征与 fixture 测试，公司接口可只读核对。四 C 的 PG choice SELECT 已接通 C 与 gateway v4，
-Filter INSERT 的既有接管问题已独立修复并验证；受控 fixture 资源检查也已通过，真实 choice 服务验证、
-多会话/组合、独立核心与公司接口工作仍待实施，main 尚未合并研发分支。
+Filter INSERT 的既有接管问题已独立修复并验证；受控 fixture 资源与受限真实 choice 服务检查均已通过，
+四 C 工程验证完成，专项已归入 completed。多会话/组合、独立核心与公司接口仍待实施，main 尚未合并研发分支。
 Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
 
 ## 2. 状态分层
@@ -33,7 +33,6 @@ Filter 的 reference 质量、matched cost 与第二路径继续保留，但不�
 | 文件 | 当前状态与用途 |
 |---|---|
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
-| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 进行中：研发分支已接通 SELECT/受限 INSERT，受控资源检查通过，真实模型待验证；字段、错误、兼容性、预算和资源验收的唯一详细入口 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
@@ -48,6 +47,9 @@ Filter 的 reference 质量、matched cost 与第二路径继续保留，但不�
 - [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md)：完成度、证据强度与缺口的唯一状态入口。
 
 ### 已完成计划
+
+[四 C choice 专项](completed/postgresql_choice_profile_engineering.md)已完成工程验证，保存字段/预算/验收条件，
+结果见[真实服务记录](../results/postgresql/choice_service_20260902/README.md)。不表示质量合格或已合并 main。
 
 [`completed/`](completed/) 保存已执行完成、已被结果替代，或其当前范围已经闭合的合同。正文不删除，
 以便追溯预注册变量与执行边界；不得把正文中的“下一步”自动视为当前任务。

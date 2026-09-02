@@ -1,0 +1,125 @@
+{
+  "choice": false,
+  "input_index": 0,
+  "repeat": -1,
+  "plan": {
+    "Node Type": "Custom Scan",
+    "Custom Plan Provider": "SemLoom SemFilter",
+    "Parallel Aware": false,
+    "Async Capable": false,
+    "Startup Cost": 0.0,
+    "Total Cost": 30.3,
+    "Plan Rows": 2,
+    "Plan Width": 4,
+    "Actual Startup Time": 88.82,
+    "Actual Total Time": 88.829,
+    "Actual Rows": 1.0,
+    "Actual Loops": 1,
+    "Disabled": false,
+    "Provider": "uds-openai-compatible-fixed",
+    "Physical Role": "reference",
+    "Semantic Spec": "semloom.semantic.sem_filter.exact.v1",
+    "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+    "Prompt Program": "semloom.sem_filter.exact_chat.v1",
+    "Result Parser": "semloom.sem_filter.tristate_ascii.v1",
+    "Model": "Qwen2.5-1.5B-Instruct",
+    "AI Cost Model": "semloom.exact_filter.uncalibrated.v1",
+    "AI Cost Calibration": "unavailable",
+    "AI Cost Calibration Reason": "not-configured",
+    "Model Role": "reference",
+    "Semantic Input Rows": 6.0,
+    "Output Selectivity": 0.331667,
+    "Estimated Model Calls": 5.97,
+    "Estimated Prompt Tokens": 447.75,
+    "Estimated Output Tokens": 47.76,
+    "AI Work Cost": 1.2537,
+    "Filter Input Column": 2,
+    "Model Calls": 1,
+    "Prompt Tokens": 65,
+    "Output Tokens": 2,
+    "Accepted Rows": 1,
+    "Emitted Rows": 1,
+    "Shared Hit Blocks": 1,
+    "Shared Read Blocks": 0,
+    "Shared Dirtied Blocks": 0,
+    "Shared Written Blocks": 0,
+    "Local Hit Blocks": 0,
+    "Local Read Blocks": 0,
+    "Local Dirtied Blocks": 0,
+    "Local Written Blocks": 0,
+    "Temp Read Blocks": 0,
+    "Temp Written Blocks": 0,
+    "Plans": [
+      {
+        "Node Type": "Seq Scan",
+        "Parent Relationship": "child",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Relation Name": "choice_inputs",
+        "Alias": "choice_inputs",
+        "Startup Cost": 0.0,
+        "Total Cost": 29.05,
+        "Plan Rows": 6,
+        "Plan Width": 36,
+        "Actual Startup Time": 0.003,
+        "Actual Total Time": 0.009,
+        "Actual Rows": 1.0,
+        "Actual Loops": 1,
+        "Disabled": false,
+        "Filter": "(true AND (id = '0'::smallint))",
+        "Rows Removed by Filter": 3,
+        "Shared Hit Blocks": 1,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      }
+    ]
+  },
+  "sqlstate": null,
+  "elapsed_seconds": 0.08967078477144241,
+  "events": [
+    {
+      "event": "request",
+      "attempt": 1,
+      "body": {
+        "model": "Qwen2.5-1.5B-Instruct",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Evaluate whether the input satisfies the instruction. Reply with exactly TRUE, FALSE, or UNKNOWN. Use UNKNOWN only when the input lacks enough information.\nInstruction:\nThe input asks for writing, explaining, or debugging computer code."
+          },
+          {
+            "role": "user",
+            "content": "Write a Python function that adds two integers."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 8,
+        "n": 1,
+        "stream": false,
+        "stop": [
+          "\n"
+        ]
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "91739e6684d8256addaedd6a350da82fca37062799404e139de1806a0a852222",
+      "elapsed_seconds": 0.08686412498354912,
+      "raw_output": "TRUE",
+      "response_model_id": "Qwen2.5-1.5B-Instruct",
+      "prompt_tokens": 65,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    }
+  ],
+  "attempts_before": 0,
+  "attempts_after": 1
+}

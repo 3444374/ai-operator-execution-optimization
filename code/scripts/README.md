@@ -43,7 +43,7 @@ model、timeout 和 bearer-token 环境变量名不进入仓库。
 `experiments/run_choice_resource_checks.py` 是内部、仅限 Linux 的 fixture 资源验证入口。它使用指定的
 PG18.3 安装创建独立集群，测旧/新配置、取消恢复和阻塞 DNS；不启动或调用真实模型。
 运行前遵循 runtime preflight，并使用新的仓库外产物目录，采样与判定条件见
-[choice 专项计划 C.5](../../experiments/plans/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)。
+[choice 专项计划 C.5](../../experiments/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)。
 
 ```bash
 python code/scripts/experiments/run_choice_resource_checks.py \
@@ -60,7 +60,7 @@ python code/scripts/experiments/run_choice_resource_checks.py \
 两个 NULL 对照。它要求已有持久 ledger；真实模式核对 live service、模型文件及继承参数，fixture 模式
 必须显式指定。记录实际 HTTP JSON、raw completion、SQLSTATE、EXPLAIN 行数/usage，以及前后身份；
 仅删除 choice 字段后仍有值或类型差异则拒绝通过。程序不启动模型、不创建真实预算、不读取 held-out，
-也不评定标签质量；先按同一 [C.5 计划](../../experiments/plans/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)
+也不评定标签质量；先按同一 [C.5 计划](../../experiments/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)
 完成 preflight、模型服务与账本核验，再使用 `--help` 中的路径参数运行。
 
 ## Exact SemFilter reference calibration

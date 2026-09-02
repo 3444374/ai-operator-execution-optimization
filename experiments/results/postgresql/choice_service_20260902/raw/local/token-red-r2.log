@@ -1,0 +1,18 @@
+test_only_choice_may_differ_in_actual_requests (test_choice_service_checks.ChoiceServiceChecksTests.test_only_choice_may_differ_in_actual_requests) ... ok
+test_prompt_usage_counts_tokens_not_batch_encoding_fields (test_choice_service_checks.ChoiceServiceChecksTests.test_prompt_usage_counts_tokens_not_batch_encoding_fields) ... ERROR
+test_sql_disposition_and_usage_must_match_raw_completion (test_choice_service_checks.ChoiceServiceChecksTests.test_sql_disposition_and_usage_must_match_raw_completion) ... ok
+
+======================================================================
+ERROR: test_prompt_usage_counts_tokens_not_batch_encoding_fields (test_choice_service_checks.ChoiceServiceChecksTests.test_prompt_usage_counts_tokens_not_batch_encoding_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/experiments/test_choice_service_checks.py", line 17, in test_prompt_usage_counts_tokens_not_batch_encoding_fields
+    verify_prompt_usage(tokenizer, request, {'prompt_tokens': 3})
+  File "<test-worktree>/code/src/experiments/choice_service_checks.py", line 54, in verify_prompt_usage
+    raise ValueError('reported prompt usage differs from chat template tokens')
+ValueError: reported prompt usage differs from chat template tokens
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (errors=1)

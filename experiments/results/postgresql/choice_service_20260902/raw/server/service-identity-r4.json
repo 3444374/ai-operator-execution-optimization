@@ -1,0 +1,10 @@
+{
+  "package_root": "<runtime-path>",
+  "package_version": "0.25.1",
+  "pid": 54634,
+  "port": 8013,
+  "process_start_time_ticks": "440108927",
+  "python_executable_argv0": "<runtime-path>",
+  "schema_version": 1,
+  "sys_prefix": "<runtime-path>"
+}

@@ -1,0 +1,6 @@
+{
+  "endpoint_url": "http://127.0.0.1:8013/v1/chat/completions",
+  "model_id": "Qwen2.5-1.5B-Instruct",
+  "timeout_ms": 60000,
+  "choice_format": "vllm_structured_outputs"
+}

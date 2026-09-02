@@ -1,0 +1,45 @@
+{
+  "status": "fixture-passed-real-passed",
+  "fixture_requests": 14,
+  "fixture_null_controls": 2,
+  "real_model_requests": 14,
+  "cumulative_real_budget_used": 15,
+  "cumulative_real_budget_limit": 100,
+  "quality_evaluated": false,
+  "calibration_resumed": false,
+  "previous_run": {
+    "source_commit": "87b7963b",
+    "requests": 1,
+    "status": "failed",
+    "reason": "audit counted BatchEncoding fields; PG received TRUE with 65 prompt tokens"
+  },
+  "starts": [
+    {
+      "attempt": 1,
+      "status": "failed",
+      "reason": "IPC path too long",
+      "log": "model.log"
+    },
+    {
+      "attempt": 2,
+      "status": "failed",
+      "reason": "ninja not on service PATH",
+      "log": "model-r2.log"
+    },
+    {
+      "attempt": 3,
+      "status": "started-then-stopped",
+      "startup_complete_logged": true,
+      "health_endpoint_verified": false,
+      "reason": "FlashInfer compilation cache on system disk",
+      "shutdown_warning": "resource tracker reported one semaphore; not proof of a persistent leak",
+      "log": "model-r3.log"
+    },
+    {
+      "attempt": 4,
+      "status": "served-real-queries-then-stopped",
+      "log": "model-r4.log"
+    }
+  ],
+  "fourth_start_executed": true
+}

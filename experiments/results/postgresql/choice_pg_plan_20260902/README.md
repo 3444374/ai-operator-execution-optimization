@@ -1,7 +1,7 @@
 # 四 C：choice profile 的 PostgreSQL plan 接入
 
 内部工程验证记录；来源为生产源码、独立编码向量及实际 PG18.3 测试。
-对应[四 C 专项计划](../../../plans/postgresql_choice_profile_engineering.md)，不是质量或性能实验。
+对应[四 C 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)，不是质量或性能实验。
 生产实现为 `00cc6bbf0eba5f57ec0d9bbfed99b0dbdc8a0c0c`；最终测试修订和验收源码为
 `134447dd324fe1fbb47c15bc7dbf97fe0b948be0`。独立分支保存，未合并或推送。
 

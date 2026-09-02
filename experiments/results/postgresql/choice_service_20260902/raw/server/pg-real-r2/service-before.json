@@ -1,0 +1,68 @@
+{
+  "kind": "real",
+  "identity": {
+    "package_root": "<runtime-path>",
+    "package_version": "0.25.1",
+    "pid": 54634,
+    "port": 8013,
+    "process_start_time_ticks": "440108927",
+    "python_executable_argv0": "<runtime-path>",
+    "schema_version": 1,
+    "sys_prefix": "<runtime-path>"
+  },
+  "argv": [
+    "<runtime-path>",
+    "-m",
+    "vllm.entrypoints.openai.api_server",
+    "--model",
+    "<runtime-path>",
+    "--served-model-name",
+    "Qwen2.5-1.5B-Instruct",
+    "--dtype",
+    "bfloat16",
+    "--max-model-len",
+    "4096",
+    "--gpu-memory-utilization",
+    "0.25",
+    "--scheduling-policy",
+    "fcfs",
+    "--port",
+    "8013",
+    "--host",
+    "127.0.0.1",
+    "--enforce-eager",
+    "--no-enable-prefix-caching",
+    "--max-num-seqs",
+    "1",
+    "--max-num-batched-tokens",
+    "4096",
+    "--tensor-parallel-size",
+    "1",
+    "--generation-config",
+    "auto"
+  ],
+  "model_files": {
+    "config.json": "98d2ff8cc47488d08a2b0b3acf4eb99ef210779b42bd48605f6b8e36acdbf670",
+    "generation_config.json": "e558847a8b4402616f1273797b015104dc266fe4b520056fca88823ba8f8ebe6",
+    "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+    "model.safetensors": "dd924a11b4c220f385b51ffa522daea7c9f3d850e31b162bb5661df483c6d3ee",
+    "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+  },
+  "inherited_generation": {
+    "bos_token_id": 151643,
+    "pad_token_id": 151643,
+    "do_sample": true,
+    "eos_token_id": [
+      151645,
+      151643
+    ],
+    "repetition_penalty": 1.1,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "top_k": 20,
+    "transformers_version": "4.37.0"
+  },
+  "config_sha256": "4d2e17363d96d47d5e26a78608c0e3f1b6e900ac6e37f9ac0b8c6d9660b41b7c"
+}

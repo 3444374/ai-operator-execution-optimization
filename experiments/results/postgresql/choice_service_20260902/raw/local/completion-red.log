@@ -1,0 +1,21 @@
+test_choice_service_checks (unittest.loader._FailedTest.test_choice_service_checks) ... ERROR
+
+======================================================================
+ERROR: test_choice_service_checks (unittest.loader._FailedTest.test_choice_service_checks)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_choice_service_checks
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "<test-worktree>/code/tests/experiments/test_choice_service_checks.py", line 5, in <module>
+    from src.experiments.choice_service_checks import verify_choice_pair, verify_completion
+ImportError: cannot import name 'verify_completion' from 'src.experiments.choice_service_checks' (<test-worktree>/code/src/experiments/choice_service_checks.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

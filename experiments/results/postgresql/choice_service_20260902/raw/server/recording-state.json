@@ -1,0 +1,14 @@
+{
+  "observed_at_utc": "2026-09-02T08:13:54.495056+00:00",
+  "scoped_processes": [],
+  "scoped_tcp_listeners": [],
+  "scoped_unix_listeners": [],
+  "pg_postmaster_pid_present": false,
+  "real_attempts": 15,
+  "real_collector_started": true,
+  "fourth_start_executed": true,
+  "source_worktree_retained": true,
+  "gpu_compute_processes": [],
+  "flashinfer_system_cache_bytes": 6454772,
+  "flashinfer_system_cache_disposition": "retained; not all cache ownership established; no broad deletion"
+}

@@ -1,0 +1,8 @@
+{
+  "status": "failed",
+  "kind": "real",
+  "initial_attempts": 0,
+  "final_attempts": 1,
+  "attempted_requests": 1,
+  "quality_evaluated": false
+}

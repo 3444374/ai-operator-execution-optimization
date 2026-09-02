@@ -32,13 +32,16 @@
 > 格式 30/30，但语义预期仅符合 4/9 独立样例（三次重复共 12/27），独立资格未通过。
 > [后续单一 prompt 对照](../results/postgresql/semfilter_prompt_qualification_20260901/README.md)确认实际
 > messages/template 一致，1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，均未通过；未改
-> 生产配置或访问校准 held-out。当前工程计划新增了[独立 choice 接入切片](postgresql_choice_profile_engineering.md)，
+> 生产配置或访问校准 held-out。当前工程计划新增了[独立 choice 接入切片](completed/postgresql_choice_profile_engineering.md)，
 > 值合同之后又完成 [SQL opt-in/schema 3 的 PG plan 验证](../results/postgresql/choice_pg_plan_20260902/README.md)：
 > 先支持保存与 EXPLAIN；后续 [C/wire v4 接线](../results/postgresql/choice_pg_wire_20260902/README.md)已通过
 > PG18.3 TAP 748/748、regression 1/1、83/83 合同，choice SELECT 可通过公共 runtime 调用 golden/fake HTTP。
 > 后续 [Filter INSERT 修复](../results/postgresql/semfilter_insert_20260902/README.md)通过 PG18.3 regression 1/1、
 > TAP 919/919、各 83/83；171 项新增用例实际验证写入与事务。随后[受控资源检查](../results/postgresql/choice_resources_20260902/README.md)
 > 通过 v3/v4 各 5,164 次 fixture 调用、取消/DNS 各 10 次与恢复，本地 91/91；未重跑 TAP 或真实模型。
+> 随后[真实 choice 服务检查](../results/postgresql/choice_service_20260902/README.md)以 `0a1c12d3` 完成 14 次
+> 及两个 NULL 对照，累计预算 15/100 含首轮计数工具失败；各 94/94 测试通过。四 C 工程验证完成，
+> 无新 TAP/构建，不改变模型质量未合格和校准暂停的结论，main 仍未合并。
 > 按最新安排，完整工程对照与四 C 收尾后，先做真实生成型 Map 与必要公共整理，再做可组合执行/有界多会话。
 > 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来算子方法和执行能力的移植方案
 > 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。

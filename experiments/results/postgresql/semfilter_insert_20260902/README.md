@@ -1,7 +1,7 @@
 # Filter INSERT 的 PostgreSQL 18.3 carrier 修复
 
 内部工程验证，2026-09-02。来源为自有源码、官方 PG18.3 源码及实际回归输出。
-对应[专项计划的 INSERT 切片](../../../plans/postgresql_choice_profile_engineering.md#filter-insert-的独立修复切片已完成)。
+对应[专项计划的 INSERT 切片](../../../plans/completed/postgresql_choice_profile_engineering.md#filter-insert-的独立修复切片已完成)。
 生产修复为 `8e50addf`，最终测试源码为 `39007150d5d0f84904fcd0c36b7bab87de7c07c1`。
 本切片支持数据库语义算子的正确执行，不是数据组织、调度或模型质量实验。
 

@@ -1,7 +1,7 @@
 # 四 C 首个切片：profile 值与规范编码
 
 内部工程验证记录；来源为源码、独立字节向量及本地/Linux 测试，对应
-[四 C 专项计划](../../../plans/postgresql_choice_profile_engineering.md)。
+[四 C 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)。
 源码提交：`d26e210db2391fc4d69032e317488bbef2008028`，基于 `3636e6f8`，仅在独立分支保存。
 
 ## 实现范围

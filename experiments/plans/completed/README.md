@@ -5,6 +5,7 @@
 
 | 文件 | 完成状态 | 结果入口 |
 |---|---|---|
+| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 工程验证完成：SQL/plan/wire、受控资源与受限真实服务；分支未合并，质量/校准未通过 | [真实服务及收尾](../../results/postgresql/choice_service_20260902/README.md)、[受控资源](../../results/postgresql/choice_resources_20260902/README.md) |
 | [`image_clip_workload_lock_20260731.md`](image_clip_workload_lock_20260731.md) | 图像 workload、5K 画像、原生静态 baseline 和 matched-resource 证据已完成；动态部分迁入当前 state-aware 总合同 | [`image_ai_embed_operator_formal_20260803/`](../../results/image_ai_embed_operator_formal_20260803/)、[`motivation/results/gpu/`](../../../motivation/results/gpu/) |
 | [`operator_cost_profile_pilot_20260804.md`](operator_cost_profile_pilot_20260804.md) | pilot 采样合同完成 | [`operator_cost_profile_pilot_20260804/`](../../results/operator_cost_profile_pilot_20260804/) |
 | [`operator_cost_profile_dual4090_formal_20260804.md`](operator_cost_profile_dual4090_formal_20260804.md) | 首次 formal 因共享竞争/local Ray 被排除；修复版 320/320 有效 | [首次事故证据](../../results/operator_cost_profile_dual4090_formal_20260804/)、[v2 有效结果](../../results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/) |

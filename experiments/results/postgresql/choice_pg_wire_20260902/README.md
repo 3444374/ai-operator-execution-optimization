@@ -1,7 +1,7 @@
 # 四 C：PG choice SELECT 的 open spec 与 wire v4 接线
 
 内部工程验证记录，2026-09-02。来源为自有生产源码、固定向量、实际 PostgreSQL 18.3 测试和
-旧/新扩展二进制对照。对应[choice 专项计划](../../../plans/postgresql_choice_profile_engineering.md)，
+旧/新扩展二进制对照。对应[choice 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)，
 不作为模型质量、成本或 GPU 性能实验。最终源码为 `80bb7fc508d42a44f2ca485944d800131fa59df3`；
 保存在独立研发分支，未合并或推送，主工作区用户文档未覆盖。
 

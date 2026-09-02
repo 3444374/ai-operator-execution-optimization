@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "<runtime-path>",
+    "<test-worktree>/code/scripts/experiments/run_choice_service_checks.py",
+    "--repo",
+    "<test-worktree>",
+    "--root",
+    "<artifact-root>/pg-real",
+    "--prefix",
+    "<pg18.3-prefix>",
+    "--config",
+    "<artifact-root>/fixed.json",
+    "--ledger",
+    "<runtime-path>",
+    "--identity",
+    "<artifact-root>/service-identity-r4.json",
+    "--model-root",
+    "<runtime-path>",
+    "--model-manifest",
+    "<artifact-root>/model-files.json"
+  ],
+  "exit_code": 1,
+  "retries": 0
+}

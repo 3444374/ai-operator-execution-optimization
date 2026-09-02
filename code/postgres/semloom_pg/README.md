@@ -7,7 +7,7 @@ PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic cont
 OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
 scheduling, asynchronous execution, or a second physical path.
 
-The [opt-in choice generation profile](../../../experiments/plans/postgresql_choice_profile_engineering.md)
+The [opt-in choice generation profile](../../../experiments/plans/completed/postgresql_choice_profile_engineering.md)
 now has PostgreSQL plan support (`00cc6bbf`). Adding the fourth option
 `"generation_profile":"semloom.generation.choice.tristate.v1"` saves a complete ordered profile in schema 3.
 Ordinary EXPLAIN displays its ID, version, choices, digest and unqualified status; prepared/generic plans retain
@@ -24,12 +24,16 @@ The external config must explicitly opt in with `"choice_format":"vllm_structure
 send a constrained HTTP request. Missing support or HTTP rejection never triggers an unconstrained retry.
 These fixture results prove the supported PostgreSQL choice SELECT execution, not a real endpoint's constrained
 decoding or RSS/FD growth limits. The later [controlled resource run](../../../experiments/results/postgresql/choice_resources_20260902/README.md)
-passes at the declared fixture scales, including cancellation and blocked DNS recovery; real choice-model checks remain pending.
+passes at the declared fixture scales, including cancellation and blocked DNS recovery. The subsequent
+[real-service check](../../../experiments/results/postgresql/choice_service_20260902/README.md) completes
+14 old/choice requests and two NULL controls on PG18.3 with Qwen2.5-1.5B/vLLM 0.25.1. All reported usage and
+SQL dispositions match; 15/100 cumulative attempts include one failed token-count audit before its correction.
+This completes choice engineering qualification on the development branch, not model quality or calibration.
 The later [Filter INSERT qualification](../../../experiments/results/postgresql/semfilter_insert_20260902/README.md)
 at `39007150` passes PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks. The planner now handles a
 pulled-up INSERT source while keeping the ordinary PostgreSQL write node. New tests cover recording/exact/choice
 write results, rollback, savepoint recovery, target constraints, permissions and cancellation using fixtures.
-After the full engineering comparison and remaining choice checks, real generative SemMap drives the necessary shared
+After the full engineering comparison and completed choice checks, real generative SemMap drives the necessary shared
 task/result changes. Composable execution and bounded sessions follow, including two Filter conjuncts and Filter → Map;
 recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.

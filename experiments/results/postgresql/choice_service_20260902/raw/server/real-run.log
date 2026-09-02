@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<test-worktree>/code/scripts/experiments/run_choice_service_checks.py", line 10, in <module>
+    main()
+  File "<test-worktree>/code/src/experiments/choice_service_checks.py", line 204, in main
+    run(args)
+  File "<test-worktree>/code/src/experiments/choice_service_checks.py", line 180, in run
+    results = run_queries(args, connection, ledger, tokenizer)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<test-worktree>/code/src/experiments/choice_service_checks.py", line 144, in run_queries
+    assert completion['prompt_tokens'] == expected_tokens
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

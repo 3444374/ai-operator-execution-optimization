@@ -1,0 +1,21 @@
+{
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1",
+  "environment": {
+    "PATH": "<runtime-path>",
+    "CUDA_VISIBLE_DEVICES": "0",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "HF_HOME": "<artifact-root>/model-service/hf",
+    "XDG_CACHE_HOME": "<artifact-root>/model-service/xdg",
+    "VLLM_CACHE_ROOT": "<artifact-root>/model-service/vllm",
+    "TRITON_CACHE_DIR": "<artifact-root>/model-service/triton",
+    "TORCHINDUCTOR_CACHE_DIR": "<artifact-root>/model-service/inductor",
+    "TMPDIR": "<runtime-path>",
+    "FLASHINFER_WORKSPACE_BASE": "<artifact-root>/model-service",
+    "TORCH_EXTENSIONS_DIR": "<artifact-root>/model-service/torch-extensions",
+    "TVM_FFI_CACHE_DIR": "<artifact-root>/model-service/tvm-ffi"
+  },
+  "data_disk_verified": true,
+  "endpoint_port_available": true,
+  "ipc_path_length_checked": true
+}

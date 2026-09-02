@@ -2,7 +2,7 @@
 
 ## 目的与范围
 
-按[四 C 专项 C.5](../../../plans/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)检查新 profile
+按[四 C 专项 C.5](../../../plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)检查新 profile
 是否在已声明规模下回收本地资源，为后续受限真实服务检查准备持久预算工具。它是执行基础的工程验证，
 不是语义质量、模型性能、成本校准或多算子优化实验。
 

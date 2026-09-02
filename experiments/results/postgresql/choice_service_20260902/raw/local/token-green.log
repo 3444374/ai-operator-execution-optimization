@@ -1,0 +1,46 @@
+test_concurrent_runners_cannot_overspend (test_choice_attempt_ledger.AttemptLedgerTests.test_concurrent_runners_cannot_overspend) ... ok
+test_corrupt_or_missing_history_fails_closed (test_choice_attempt_ledger.AttemptLedgerTests.test_corrupt_or_missing_history_fails_closed) ... ok
+test_existing_history_is_never_reinitialized (test_choice_attempt_ledger.AttemptLedgerTests.test_existing_history_is_never_reinitialized) ... ok
+test_failed_persistence_or_http_does_not_refund_attempt (test_choice_attempt_ledger.AttemptLedgerTests.test_failed_persistence_or_http_does_not_refund_attempt) ... ok
+test_invalid_digest_consumes_nothing (test_choice_attempt_ledger.AttemptLedgerTests.test_invalid_digest_consumes_nothing) ... ok
+test_reopen_does_not_restore_spent_attempts (test_choice_attempt_ledger.AttemptLedgerTests.test_reopen_does_not_restore_spent_attempts) ... ok
+test_persistence_failure_prevents_dispatch (test_choice_http_observer.ChoiceHttpObserverTests.test_persistence_failure_prevents_dispatch) ... ERROR
+test_reserves_before_dispatch_and_preserves_actual_body (test_choice_http_observer.ChoiceHttpObserverTests.test_reserves_before_dispatch_and_preserves_actual_body) ... ERROR
+test_only_choice_may_differ_in_actual_requests (test_choice_service_checks.ChoiceServiceChecksTests.test_only_choice_may_differ_in_actual_requests) ... ok
+test_prompt_usage_counts_tokens_not_batch_encoding_fields (test_choice_service_checks.ChoiceServiceChecksTests.test_prompt_usage_counts_tokens_not_batch_encoding_fields) ... ok
+test_sql_disposition_and_usage_must_match_raw_completion (test_choice_service_checks.ChoiceServiceChecksTests.test_sql_disposition_and_usage_must_match_raw_completion) ... ok
+
+======================================================================
+ERROR: test_persistence_failure_prevents_dispatch (test_choice_http_observer.ChoiceHttpObserverTests.test_persistence_failure_prevents_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/experiments/test_choice_http_observer.py", line 30, in setUp
+    self.server = HTTPServer(('127.0.0.1', 0), Handler)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_reserves_before_dispatch_and_preserves_actual_body (test_choice_http_observer.ChoiceHttpObserverTests.test_reserves_before_dispatch_and_preserves_actual_body)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/experiments/test_choice_http_observer.py", line 30, in setUp
+    self.server = HTTPServer(('127.0.0.1', 0), Handler)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.054s
+
+FAILED (errors=2)
