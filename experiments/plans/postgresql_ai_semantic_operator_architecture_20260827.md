@@ -385,11 +385,42 @@ TAP 919/919。结果见[INSERT 验证](../results/postgresql/semfilter_insert_20
 [四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
 
+<a id="composable-operators-work-package"></a>
+
+### 四 C 之后的独立切片：两个 Filter 的 AND 组合（待设计与实现）
+
+首先完成四 C 既定资源与受限真实服务检查，再以同一表上的两个 Filter AND 谓词推动可组合计划。
+目标不是逐条解除 SQL 特例，也不把 marker 改为逐行调用模型的普通函数。调用的逻辑语义、计划位置/
+物理方法、具体外部执行分别拥有明确职责；保留已有 scan/pump/machine/runtime/provider 底座。
+
+公司参照的实际区别：2026-09-02 只读 `x_semantic` 的 `4601bf7` 工作副本，相关文件有未提交修改；
+`sql/x_semantic--0.1.0.sql:sem_filter` 是可执行的 C boolean 函数，而
+`src/operators/sem_map_op.c` 明确限制每查询层一个调用。可借鉴表达便利性与算子经验，但普通函数可
+组合不证明其专用计划支持任意组合。所给目录是 PGXS extension，没有据此推断未提供的公司 core。
+自有方向和能力仍由本计划定义；未来移植包括算子方法与 SemLoom，不仅是公司 Adapter。
+
+| 实施顺序 | 最小职责及验收 |
+|---|---|
+| 先固定行为与 SQL 范围 | 仅同表两个独立 Filter 的顶层 AND；不同或相同 instruction/input 都是独立调用。固定 source/call identity、规划期选择的链顺序、三值/NULL、错误、短路与任务计数预期；不承诺 SQL 文本从左到右求值，不重排/融合/缓存去重 |
+| gateway 有界多会话 | 当前 `server.py` 在一个 session 返回后才 accept 下一个，不能直接支撑上下游各持连接。先验证两会话同时握手/推进；分别限制握手中、活动及等待会话，容量不足明确拒绝或有界结束，不能让已持连接的节点无限等待下一连接。每会话仍同步单在途，PG 内不加 listener |
+| 公共 planner 调用分析 | 抽取 Map/Filter 真实共享的调用识别、位置合法性、输入绑定和依赖信息；每调用独立 plan spec、binding 与 state。Map/Filter 分别构造自己的 paths/关系语义，不建立通用 DAG 或让分析函数管理模型/连接 |
+| 两 Filter 接线 | 单条 PG 计划中两个独立 Filter 节点；各自拥有 sequence/identity/EXPLAIN/counters/cleanup。验证输入被前一级丢弃时后一级不创建任务、NULL/错误/取消、LIMIT、prepared/invalidation、容量不足、同 backend 恢复与并发 backend 隔离 |
+| 回归与交接 | PG18.3 旧 Map/Filter 与 INSERT 兼容、两会话资源采样和容量/取消清理通过；之后四 D 在同一分析机制上验证 Filter → 生成型 Map。多会话不等于多在途，不顺便扩 port/wire accepted-prefix |
+
+同时保留三条设计不变量：Adapter 隔离数据库与外部执行；Strategy 只表达有实际消费者的执行算法；
+未来 Filter 投影/NOT 先将三值解析与 WHERE 的 keep/drop 分开，不直接复用 DROP 代替布尔值。
+CASE、OR/NOT、aggregate、Join 等须分别定义条件求值与位置，不能提前执行全部调用。
+依据为 [Custom Scan 接口](https://www.postgresql.org/docs/18/custom-scan.html)与
+[表达式求值规则](https://www.postgresql.org/docs/18/sql-expressions.html#SYNTAX-EXPRESS-EVAL)，以及知识库
+关于 Sema/LOTUS/Cortex 的既有分析；这是工程接线，不宣称新的研究机制。只有可复现的 PG18.3
+extension 表达障碍才讨论最小 core patch；SemLoom 独立核心仍不等待全部 SQL 组合能力。
+
 <a id="real-semmap-work-package"></a>
 
 ### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（新增，待设计与实现）
 
-这是四 C 之后的自有 PG 优先任务，为文本生成 work 提供真实数据库入口，不依赖 Filter 三值分类通过。
+这是四 C 和上述最小组合切片之后的自有 PG 任务，为文本生成 work 提供真实数据库入口，并验证
+Filter → Map；不依赖 Filter 三值分类质量通过。
 AI_COMPLETE 在这里是工作负载含义，不预先承诺新增同名 SQL alias；SQL 重载与具体 profile 在首个切片定案。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving

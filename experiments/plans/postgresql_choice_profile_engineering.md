@@ -209,6 +209,28 @@ HTTP JSON：去除唯一的 choice 字段后，结构、值及其类型一致。
 RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热基线与判定阈值；异常及无效采样保留，
 不在观察结果后放宽阈值。故意阻塞 DNS 的测试与正常恢复测试使用各自明确的判定条件。
 
+### 本轮剩余检查的预先设置（2026-09-02）
+
+只验证四 C，不引入多算子、多会话或新调度。采用显式 PG18.3 独立安装/集群，模型侧先用既有 HTTP
+fixture；同一 backend/gateway 内连续执行各规模，以免通过重启掩盖累积。验证位置为 SQL/EXPLAIN、
+实际 HTTP 请求/完成记录与 OS 进程资源；预算工具只属于实验侧，不进入生产 runtime/provider。
+
+| 检查 | 固定设置与通过条件 |
+|---|---|
+| 正常资源 | 旧 v3 与新 v4 各运行一次；input 为 65,536-byte 合成文本，64 行预热，随后 100/1,000/4,000 行；恒定合法 TRUE fixture。每个查询核对输入、调用、输出行数及 usage；不报告性能优劣 |
+| 采样 | 20 ms 采样 backend/gateway RSS(bytes)、FD 和 OS threads；保留时间序列及各 cell 起始/峰值/结束；每轮结束等待 0.5 s 后采 5 点作为 settled 值 |
+| 正常资源判定 | 相对预热后基线，两进程各自峰值 RSS 增量不超过 16 MiB、settled 增量不超过 4 MiB；settled FD/threads 回到基线，峰值 FD 不超过基线+3、threads 不超过基线+2。报告完整序列，不以本规模 smoke 宣称所有规模无泄漏 |
+| 取消与恢复 | choice 固定 HTTP fixture 延迟 300 ms、HTTP deadline 1 s、PG statement timeout 50 ms，连续 10 次；每次 PG 在 2 s 内报 57014，等待 0.5 s 后资源恢复，随后正常查询成功；listener 仅在 gateway 退出后消失 |
+| 阻塞 DNS | 单独的 qualification 进程在 OS resolver 处注入等待；同一 fixed adapter 连续 10 次超时，HTTP 发送为 0，settled thread 只允许多 1 个 DNS worker，FD 不增长；释放等待后正常完成，worker 退出。不声称真实系统 resolver 可强制取消 |
+| 实际服务 | 使用已有 Qwen2.5-1.5B-Instruct / vLLM 0.25.1，单 GPU、单 endpoint、TP=1、BF16、max length=4096、max sequences=1、batch tokens=4096、memory utilization=0.25、FCFS；不下载、不调模型或 prompt，实际路径/文件 SHA 与继承 generation 配置在运行前核对 |
+| 真实请求 | 指令仍为 `The input asks for writing, explaining, or debugging computer code.`；3 个公开合成输入各运行旧/新配置两次，另每配置 1 次预热，计划共 14 次。包含 SQL NULL 的对照不得产生请求；实际请求只差 choice，原 parser 决定关系结果，不按人工标签评定质量 |
+| 预算与停止 | 整个四 C 共用仓库外固定 ledger，最高 100 次；每次实际 POST 前持久预留，异常/重启/未知发送状态不退款。ledger 损坏、身份不匹配、计数不明或预算耗尽均在发送前停止；choice 被拒绝或返回非法结果即停止 smoke，不无约束重试 |
+
+前置检查：预算模块先在合成 HTTP 与临时文件上验证重启、并发预留、失败不退款与损坏拒绝；实际
+模型请求前核验已有历史尝试数。此处的三条真实输入使用独立公开文本，不读取原校准或 held-out。
+公司来源沿用主计划的有效请求与错误处理观察；本轮不移植公司代码或改其标量函数，参考记录只在文档。
+单会话 gateway 限制另登记为下一组合切片的前置项，不把这轮资源通过写成多会话资源保证。
+
 ## C.6 按小步实现与完成条件
 
 | 步骤 | 完成条件 |
