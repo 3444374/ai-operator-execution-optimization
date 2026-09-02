@@ -38,6 +38,24 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
 golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
 model、timeout 和 bearer-token 环境变量名不进入仓库。
 
+## Choice resource qualification tools
+
+`experiments/run_choice_resource_checks.py` 是内部、仅限 Linux 的 fixture 资源验证入口。它使用指定的
+PG18.3 安装创建独立集群，测旧/新配置、取消恢复和阻塞 DNS；不启动或调用真实模型。
+运行前遵循 runtime preflight，并使用新的仓库外产物目录，采样与判定条件见
+[choice 专项计划 C.5](../../experiments/plans/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)。
+
+```bash
+python code/scripts/experiments/run_choice_resource_checks.py \
+  --repo /path/to/repository --root /path/to/new-artifact-directory \
+  --prefix /path/to/postgresql-18.3-install
+```
+
+实验侧 `src/experiments/choice_attempt_ledger.py` 在 POST 前持久预留最多 100 次尝试，失败不退款；
+已有 ledger 不重新初始化。`choice_gateway_observer.py` 只在独立验证进程中记录实际请求/完成，
+不记录认证头，也不改变生产 gateway 或 PG port。真实 smoke 必须复用同一外部 ledger；这些工具
+本身不证明真实服务支持 choice 或通过模型质量验证。
+
 ## Exact SemFilter reference calibration
 
 `analysis/build_semfilter_reference_calibration.py` 将离线收集的 exact-reference training/held-out
