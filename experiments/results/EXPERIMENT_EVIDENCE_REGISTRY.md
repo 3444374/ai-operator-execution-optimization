@@ -1,9 +1,10 @@
 # 实验与机制证据台账
 
-更新日期：2026-09-01
+更新日期：2026-09-02
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
+主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
 当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、三参数 exact `SemFilter` golden/fixed-model
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
@@ -25,6 +26,29 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 和 chat template 一致，但 1.5B 新 prompt 旧/新各 5/9、matched 7B 为 7/9 与 6/9，仍无配置通过。
 这些分母是独立工程样例，每例重复三次；中止的默认参数失配 7B 尝试单列保留。生产配置未改，
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
+
+### 独立分支：choice 接线与 Filter INSERT（2026-09-02，未合并至 main）
+
+来源为 `codex/choice-profile-contract` 的源码及归档：值合同实现 `d26e210d`；PG plan 实现
+`00cc6bbf`，最终测试修订 `134447dd`，文档 `94e927d5`。原始结果在该分支的
+`experiments/results/postgresql/choice_profile_contract_20260902/` 和
+`experiments/results/postgresql/choice_pg_plan_20260902/`；main 尚未包含这些目录，本条只登记分支定位。
+
+值合同以独立 C/Python 编码向量验证；后续 schema 3 保存完整 profile，严格解码、copyObject、
+prepared/generic plan、EXPLAIN 与旧校准拒绝已通过。PG plan 归档记录精确 PG18.3 无警告
+`-O2 -Werror`、regression 1/1、TAP 537/537，以及本地/服务器分别 68/68 合同测试。
+上述 plan-only 历史切片在执行前以 `0A000` 拒绝，包括 no-task 形状；早期 536 项的 socket sentinel
+配置有误，最终修订及全部失败单独保留。后续实现没有改写这些历史结果：
+
+| 分支归档源码 | 后续实现与对应证据 | 未验证范围 |
+|---|---|---|
+| `80bb7fc5`，文档 `21f41364` | PG→中立 open spec→wire v4→gateway SELECT 接线；移除临时执行拒绝，复用 lazy open。PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83 Python；记录在分支 `postgresql/choice_pg_wire_20260902/` | Filter INSERT 当时仍未接管；没有新资源/真实模型资格 |
+| `39007150`，文档 `52303cea` | Filter INSERT planner 最小修复及完整验证；PG18.3 `-O2 -Werror`、regression 1/1、TAP 919/919、Python 各 83/83、中立 C11；记录在分支 `postgresql/semfilter_insert_20260902/` | fixture 功能不证明新路径 RSS/FD 或真实 choice；不覆盖任意 SQL 形状 |
+
+表中目录均相对该分支的 `experiments/results/`，未移入 main。资源专项、受限真实模型、语义质量与
+真实成本校准尚无新增通过证据。后续 `d36bc969` / `7da954f9` 增加计划和实验检查工具，不由工具存在
+推定采样或模型运行通过；最新源码进度见 INFRA_STATUS。
+本次文档同步只核对既有源码/归档，不新增 PG、资源或模型运行，不把数字重新绑定到 main。
 
 ## 1. 证据等级
 

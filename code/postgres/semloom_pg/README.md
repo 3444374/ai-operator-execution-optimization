@@ -8,16 +8,25 @@ OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend 
 scheduling, asynchronous execution, or a second physical path.
 
 Next PG engineering work is the [opt-in choice generation profile](../../../experiments/plans/postgresql_choice_profile_engineering.md).
-Its fourth SQL option, plan schema 3 and wire v4 are designed but not implemented; the interfaces below remain
-the current executable behavior. The new profile will be non-default and not quality-qualified. Engineering
+Its value contract, SQL option/plan schema 3, neutral open-spec mapping and wire-v4 gateway execution are
+qualified on an unmerged development branch; the interfaces below still describe main. The branch also fixes
+Filter INSERT lowering. New resource and real-model checks remain pending; the earlier plan-only execution
+rejection has been removed. See [source status](../../INFRA_STATUS.md) for evidence bound to each code revision.
+The new profile will be non-default and not quality-qualified. Engineering
 support will not resume calibration or allow old calibration artifacts to match the new semantic identity.
-Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
+PG foundation checks and minimal composition precede real generative SemMap; recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
-This extension remains the project's own frontend; the company demo is an engineering reference, not its
-replacement. A later adapter in the company fork should connect to the same SemLoom execution provider.
-That integration is not implemented. Ownership and early mapping checks belong to the
-[frontend-adapter design](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+This extension remains the project's own frontend. The company demo provides scoped engineering references;
+later the project's own operator semantics, processing/optimization methods and SemLoom execution capabilities
+may be transferred into the company system. Planner/executor adaptation and provider integration are separate
+tasks, neither completed. The current tristate profile does not require all future filters to expose UNKNOWN;
+binary semantics and legacy error handling need explicit identities and tests. Concrete reference lookups,
+adoption decisions and preservation of this extension's shared layers belong to the
+[engineering-reference and transfer plan](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+That comparison covers SQL registration, choice of PG integration, operator semantics, task construction,
+tuple/result binding, lifecycle and external execution, not just multiple operators or gateway concurrency.
+The current thin scan, PG-private runtime and neutral provider interface remain the implementation base.
 
 The current supported query shape is deliberately narrow:
 
@@ -28,8 +37,8 @@ The current supported query shape is deliberately narrow:
   non-NULL constant instruction and exactly `model`, numeric-zero `temperature`, and integer `max_tokens=8`;
   the external golden adapter returns fixture-bound raw output and PostgreSQL alone parses exact uppercase
   `TRUE`, `FALSE`, or `UNKNOWN`;
-- direct single-table `INSERT ... SELECT` for either reference operator, without `RETURNING`,
-  `ON CONFLICT`, or `OVERRIDING`;
+- direct single-table `INSERT ... SELECT` for SemMap, without `RETURNING`, `ON CONFLICT`, or `OVERRIDING`;
+  Filter's direct INSERT lowering fix is qualified only on the unmerged branch described above;
 - ordinary child filters and projections;
 - forward execution with child order preserved;
 - `LIMIT`, including `LIMIT 0` and early stop; SemFilter is placed below `LIMIT`, so keep/drop is

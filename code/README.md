@@ -86,16 +86,24 @@ See `INFRA_STATUS.md` for the current evidence.
 A qualified Filter reference must precede real collection and held-out validation under one fixed semantic plan, model,
 workload distribution, service, and hardware signature. Only then may a distinct
 Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
-The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
-followed by [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
-The choice SQL selector, plan schema 3 and wire v4 are not implemented. Adding that capability will not qualify a model,
-change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
-own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
-demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.
-Check interface mapping early, without making that private repository a prerequisite for the main implementation.
+The next PG engineering slice completes the [opt-in choice integration](../experiments/plans/postgresql_choice_profile_engineering.md),
+followed by [PG foundation checks and minimal composition](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)
+and [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
+This README describes main: choice plan/open-spec/wire-v4 execution and the Filter INSERT fix are qualified on
+a separate, unmerged branch; new resource and real-model checks remain pending. See
+`INFRA_STATUS.md` for branch identities and evidence; that qualification does not change main's running paths.
+Adding the capability will not qualify a model, change the default reference, resume calibration, or supply
+second-path quality evidence. Both the project's own `semloom_pg` frontend and SemLoom remain responsibilities.
+Use the company demo as an engineering reference across SQL registration, PG integration, operator semantics,
+task construction, tuple/result binding, lifecycle and external execution. Keep the current provider seam and
+PG-owned semantics; comparison does not imply replacing them with in-backend HTTP or full input collection.
+Later transfer the project's own operator semantics, processing/optimization methods and execution
+capabilities into the company system. Operator migration needs target planner/executor work; a provider adapter
+alone only connects execution. Keep one reusable method implementation and execution core, without a private
+repository prerequisite. The existing tristate Filter is one profile, not a requirement for every future Filter.
 Direct code reuse still requires clear provenance and destination permissions; no source is moved in this update.
-See the [frontend-adapter design](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy),
-which is planned integration, not evidence of a second frontend already working.
+See the [engineering-reference and transfer plan](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+for concrete source lookups, adoption decisions and tests. It is not evidence that company migration already works.
 SemLoom core characterization, incremental sessions, organization and bounded execution may proceed with
 public sealed tasks and fixtures independently of Filter quality or its second path. PG port/wire expansion and
 database-E2E comparisons still require the relevant real operator, lifecycle, identity and resource checks; see

@@ -12,15 +12,17 @@
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
 | choice 的字段、协议、请求预算与逐项实施验收 | [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) |
-| 自有语义算子、SemLoom 与公司 fork 如何分工和接入 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) |
+| 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
 主架构只维护分工、依赖与完成条件，详细的 choice 字段和验收由专项计划维护；源码与实验事实分别看
-INFRA_STATUS 和证据台账。PG 近期先做四 C，再做四 D 真实生成型 SemMap；SemLoom 可独立开展
-增量核心表征与 fixture 测试，公司接口可只读核对。它们都仍是待实施工作，真实 PG 接入另行验收。
+INFRA_STATUS 和证据台账。PG 近期先收尾四 C，再做基础检查/最小组合及四 D 真实生成型 SemMap；
+SemLoom 可独立开展增量核心表征与 fixture 测试。四 C 接线和受限 Filter INSERT 已在独立分支完成、
+尚未合并，资源与真实模型验证仍待完成；实际状态见 INFRA_STATUS，不以工具实现代替运行验证。
+完整工程参考按 §8.7 覆盖两个链路表；后续切片只重查受影响项，未来移植同时覆盖算子方法和执行能力。
 Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
 
 ## 2. 状态分层
@@ -30,7 +32,7 @@ Filter 的 reference 质量、matched cost 与第二路径继续保留，但不�
 | 文件 | 当前状态与用途 |
 |---|---|
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
-| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 待实施专项；SQL opt-in、版本化 profile、严格错误、兼容性、预算和资源验收的唯一详细入口 |
+| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 详细专项；分支已完成接线与受限 SQL 功能，仍待资源和真实 smoke；不代表 main 已接入 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |

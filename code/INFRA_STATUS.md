@@ -12,8 +12,9 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**尚未实现项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的 SQL opt-in、
-schema 3 / wire v4；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。
+**main 尚未接入项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的 SQL opt-in、
+schema 3 / wire v4；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/多在途，以及
+自有算子方法和执行能力向公司系统的移植。下述主线代码事实与独立开发分支分开记录。
 当前仍是 schema v1/v2、wire v2/v3 与同步单在途 port；recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
@@ -23,6 +24,32 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
 本次没有新增源码、模型调用或测试运行结果，Filter 校准暂停与原始失败结论不变。
+
+**独立分支已有进度（尚未合并至 main）**：`codex/choice-profile-contract` 的值合同、schema 3 PG plan、
+中立 open spec 与 C/Python wire v4 已接通。`80bb7fc5` 的 SELECT 接线移除了早期 plan-only 的临时
+`0A000` 拒绝，新查询复用 lazy open 和旧 runtime；`39007150` 的最终测试覆盖受限 Filter INSERT
+修复，文档归档为 `52303cea`。该修复只改 Filter planner，不改变公共 runtime、wire 或 parser。
+main 仍有已确认的 Filter direct INSERT 接管缺口，不能把 Map INSERT 的旧验证推广到 Filter。
+
+`39007150` 归档记录精确 PG18.3 无警告 `-O2 -Werror`、regression 1/1、TAP 919/919、本地与服务器
+各 83/83 Python 检查及中立 C11 编译。结果仅限 fixture 功能和所列生命周期行为，新资源 smoke 与
+受限真实 choice 验证仍待完成；校准未恢复。原始目录为该分支的
+`experiments/results/postgresql/choice_pg_wire_20260902/` 和
+`experiments/results/postgresql/semfilter_insert_20260902/`，main 尚未包含，故只登记位置。
+本次另只读看到 `d36bc969` 的组合/剩余验证计划与 `7da954f9` 的实验侧请求观测、预算和资源检查工具；
+工具提交不等于运行通过，919 项证据仍绑定 `39007150`，不重新绑定这些后续提交或 main。
+本次仅核对源码和既有归档，没有重跑 PG、资源或模型验证，也未修改研发分支。
+
+**公司工程参考不是已复用代码的声明**：已只读核对 SQL 函数注册、marker/CustomScan、pgvector
+表达式复用、对象身份、列映射/rescan、prompt/有效请求、批执行与资源回收；完整取舍见主计划 §8.7。
+公司 Filter 为大模型二值判断，embedding cascade 未启用；自有当前
+三值 profile 与其 NULL/error 行为不同，不能据名称认定等价。未来移植包含算子语义/处理/优化与
+SemLoom 执行两部分，目前都没有公司路径验收证据。
+
+**本轮核对的工程限制**：Map 的真实生成合同尚未实现，公共 task 编译仍主要服务 Filter；planner
+限制单 marker，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway 按整个会话串行服务；函数查找尚未
+额外核验扩展成员身份。这些是源码事实或待验证加固点，不是已经重构或已证实的安全漏洞。后续改动
+与验收要求只在主计划维护；现有 PG-private runtime、neutral port 和严格错误/结果处理继续保留。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
@@ -505,9 +532,10 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 ### PostgreSQL 中立语义算子与 provider 状态
 
 1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
-   recording reference paths 已验证当前受限 `SELECT` 与 direct `INSERT ... SELECT` 的 ordinary child
+   recording reference paths 已验证当前受限 `SELECT` 与 SemMap direct `INSERT ... SELECT` 的 ordinary child
    plan、三值/NULL、cardinality、snapshot、取消、rollback/commit、错误恢复和结果生命周期；
-   rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽 query shapes 仍保持 fail-closed；
+   Filter direct INSERT 的修复仅在上方独立分支归档；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT`
+   与更宽 query shapes 仍保持 fail-closed；
 2. PostgreSQL-private `PgSemanticRuntime`、thin `SemloomExecPump`、独立 Map/Filter machines、provider-neutral
    `AiOpenSpec → AiPreparedTask → AiCompletion`、独立 recording/UDS adapters、协议 v2 canonical digest
    与同步单在途 `open/drive/close` 已实现；lazy open、PostgreSQL-owned `PROPAGATE_NULL`、query-context

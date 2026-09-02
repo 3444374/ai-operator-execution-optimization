@@ -89,8 +89,10 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
    也不等待无关的 Filter 资格；自身实验仍满足适合任务的质量、资源和可比性要求。
 5. carrier audit 随真实路径增量进行；已有同步证据不能代替新增 batch/reorder 或第二路径的检查。
    extension 能表达则保留，只有目标 identity/placement/lifecycle 出现已复现阻断才增加最小 core patch。
-6. 公司接口可提前只读核对；最小 spike、正式 adapter 和环境验证按授权及可执行 Interface 分步推进。
-   公司接入不作为自有主实现前置项，不复制 SemLoom 核心；代码复用和外部部署遵守本文件 Git/隐私规则。
+6. 当前参考公司 demo 的工程经验完成自有系统；未来可将自有算子语义、处理/优化方法和 SemLoom
+   执行/调度能力移植到公司系统。算子策略移植与 provider 执行接入分别验证，不能以一次连通替代前者。
+   公司接口可提前只读核对；最小 spike、正式移植和环境验证按授权分步推进，不作为自有主实现前置项。
+   保持同一套方法与执行核心，代码复用和外部部署遵守本文件 Git/隐私规则。
 
 上述允许独立研发不自动授权模型运行或正式实验；仍先有具体计划、环境、baseline、资源和停止条件。
 既有 profiler/manifest、Daft/Ray/static/SAOR 结果保持外部执行或 emulated operator 身份，不自动恢复旧

@@ -8,7 +8,10 @@
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录；理论与文献依据看
 [架构研究](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)。
 
-本次仅修订设计：四 C、真实生成型 SemMap、增量 SchedulingSession 与公司 adapter 均不因文档存在而视为完成。
+本次仅修订文档。四 C 的值合同、PG plan、中立 open spec、wire v4/gateway 接线及受限 Filter
+INSERT 已在独立分支完成；新资源与真实模型验证仍待完成，main 尚未合并。分支与主线实际状态由
+INFRA_STATUS 区分，文档更新不代替合并或验收。
+真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
 四 C 的字段、预算和逐项测试只由[专项计划](postgresql_choice_profile_engineering.md)维护。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
@@ -16,8 +19,14 @@
 ## 1. 目标与架构决策
 
 研究对象保持为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
-自有 PG18.3 `semloom_pg` 与 SemLoom 数据执行/调度都继续完成；公司 demo 是工程参考，公司 fork
-通过薄 Adapter 接入同一个执行核心，不替代自有算子，也不复制调度策略。
+自有 PG18.3 `semloom_pg` 与 SemLoom 数据执行/调度都继续完成。现在参考公司 demo 减少算子工程的
+重复探索；未来可把自有算子语义、处理/优化方法及 SemLoom 执行能力移植到公司系统。
+算子方法进入目标 planner/executor，执行能力通过 Adapter 接入同一核心；两者不能缩减为一次 provider 连通。
+
+工程对比覆盖 SQL 注册、PG 接入方式、算子语义与物理策略、请求构造、取数/结果映射、生命周期和
+外部执行，不限于多个算子能否同时出现。采用公司经验的判断标准是能否服务上述目标、减少重复实现
+并保持可验证的职责；不以函数数量、目录相似或复用率作为完成标准。LOTUS/Cortex-like 算子优化与
+SemLoom 数据执行研究都保留，公司 demo 的现有能力不是自有系统的上限。
 
 数据库拥有 SQL、ordinary child plan、语义计划、结果解释及查询生命周期。模型、Python、Ray、
 vLLM 位于进程外；“内置”不表示 payload 不会离开数据库。直接复用 PostgreSQL 的 MVCC、事务、锁、
@@ -34,17 +43,17 @@ plan identity、placement 或 executor lifecycle 出现可复现阻断后，才�
 
 | 工作 | 近期次序 | 不再等待什么 | 仍需满足什么 |
 |---|---|---|---|
-| 自有 PG 语义算子 | 四 C choice → 四 D 真实生成型 SemMap；Filter 的质量、校准、第二路径作为独立工作包五推进 | 真实生成型 SemMap 不等待 Filter 分类质量通过 | 各算子的语义定义、PG18.3 生命周期与兼容性验证 |
+| 自有 PG 语义算子 | 四 C 收尾 → PG 基础检查与最小组合 → 四 D 真实生成型 SemMap；Filter 质量、校准、第二路径独立推进 | 真实生成型 SemMap 不等待 Filter 分类质量或所有 SQL 形状审查通过 | 各算子的语义定义、PG18.3 生命周期与兼容性验证 |
 | SemLoom 执行与调度 | 现有行为表征 → fixture/sealed-task 驱动增量 session → work organization → 有界提交、多 Job 与路由 | 独立核心不等待 Filter 质量、matched artifact、第二路径或完整 carrier audit | 现有代码行为兼容、资源上限、终态、取消、关联正确性；真实实验另有计划 |
-| 公司前端接入 | 只读映射 → 有实际疑点时做 deterministic spike → 稳定后正式 adapter 与环境验证 | 映射核对不等待自有全部功能完成 | 公司权限、可执行中立 Interface、明确差异与获批环境 |
+| 公司工程参照与自有成果移植 | 自有开发前按模块参考 demo → 有实际疑点时做 deterministic spike → 按需分别移植算子方法与执行能力 | 工程参照现在进行，不等待自有全部功能完成；公司移植不阻塞主线 | 来源/权限、算子目的与语义差异、目标 planner/executor 和执行 Interface、获批环境 |
 
 ```text
-PG：四 C -> 四 D + 本路径 carrier/lifecycle 检查 ----+
+PG：四 C -> 基础检查/最小组合 -> 四 D + 逐路径审查 --+
                                                    +-> 自有 PG + SemLoom 接入验证
-SemLoom：旧行为表征 -> 增量核心 -> 有界执行测试 ----+
+SemLoom：旧行为表征 -> 增量核心 -> 有界执行测试 -----+
 
 Filter：reference 质量 -> matched cost -> 第二路径 -> 优化相关 carrier audit
-公司：只读映射 -> 必要的最小 spike -> 获批 fork 正式接入
+公司经验 -> 当前自有实现；自有方法 -> 必要的最小 spike -> 按需向公司系统移植
 ```
 
 不能把研发允许与结果可声称混在一起：
@@ -101,7 +110,9 @@ MemoryContext、external-FD accounting、executor callback 和 longjmp 机制，
 ### 5.1 算子范围
 
 - 一参 `ai_semantic.map(text)` / `filter(text)` 继续是 recording 兼容入口。
-- 三参 exact Filter 使用数据库保存的 instruction、prompt/parser、model/generation 与三值语义；
+- Filter 的目的为按自然语言条件保留满足条件的行。当前三参 exact Filter 使用数据库保存的
+  instruction、prompt/parser、model/generation，并接受 TRUE/FALSE/UNKNOWN 模型输出；SQL 只保留 TRUE。
+  三值是当前 profile 的选择，不是所有 Filter 的必要条件；二值及公司行为的对照见 §8.7.2。
   模型链路可运行不等于自然语言判断质量已通过。
 - 四 D 为真正的 row-preserving 生成型 SemMap 提供独立定义；不能把 recording echo 改名为 AI_COMPLETE。
 - Filter 第二路径仍是必需研究工作；Join、aggregate、order、fusion 等只在各自立项后设计。
@@ -131,7 +142,9 @@ planned choice profile 必须自包含并进入新 semantic digest；provider id
 | `AiCompletion`（per-item） | `sequence`、`output`、`response_model_id`、`finish_reason`、`prompt_tokens/output_tokens`、`is_null` |
 | `AiProviderError` | caller-owned 中立分类、errno、限长脱敏详情及必要固定宽度参数 |
 
-model 与 generation constraints 不逐行复制成 task 字段；四 C 拟加的 generation profile 当前尚不存在。
+model 与 generation constraints 不逐行复制成 task 字段。本表描述 main 当前 C seam；独立四 C 分支
+已把 profile 接入 PG plan、中立 open spec 和 wire v4，fixture 执行已接通；这不表示 main 已升级，
+也不表示新 profile 已通过真实模型或资源验证。
 `PreparedSemanticTask/CompletionRecord` 只在旧设计中作为概念名使用，不是当前两个 C struct 的别名。
 wire task/completion 可携带身份摘要用于核验，不意味着这些字段全部暴露在中立 C task/completion 中。
 
@@ -143,11 +156,14 @@ wire task/completion 可携带身份摘要用于核验，不意味着这些字�
 
 当前没有跨进程 `query_id/operator_instance_id/task_id/job_id` 组合，也没有 query-level registry。
 未来多节点、多 Job 或重连场景确需时再引入 opaque identity；只有引入 retry 才讨论 attempt identity。
-四 C 的 wire v4 仍是待实现的同步扩展，不能把它写成已部署协议或顺带加入上述 ID。
+四 C 分支的 wire v4 仍采用同步连接/sequence 关联；它尚未合并到 main，也没有顺带加入上述 ID。
 
 ## 6. 同步 port 与未来增量执行
 
 ### 6.1 当前同步行为
+
+本节描述 main 已实现路径；四 C 分支接通 wire v4 后也复用该同步生命周期。接通前的临时执行拒绝
+只属于历史切片，不再作为该分支的当前行为；具体范围见专项计划和 INFRA_STATUS。
 
 当前 `AiProviderPort` 只有 `open/drive/close`，一次 `drive` 接收一项任务、返回一项 completion 或错误。
 query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真正 open，plain EXPLAIN、LIMIT 0、
@@ -177,6 +193,29 @@ reorder：未接受的后缀仍归调用方，接受后保持可核验终态；�
 PG per-tuple 值或已结束 drive 的借用 slice。具体转移和释放时机先在 session 合同测试中固定。
 显式 close/cancel disposition 属于该后续协议，不得反写成当前 v3/v4 的能力。
 
+<a id="multi-session-execution"></a>
+
+### 6.4 多节点会话与单节点多在途分开设计（待实现）
+
+当前 gateway 的 `server.py` 在一个 session runner 返回后才服务下一个连接；session runner 等待
+该连接的后续任务直至结束。多个算子各自持有长会话时，不能只放开 planner 的单算子限制：上游交出
+一行后仍保持连接，下游的新会话可能等不到服务。该判断来自当前源码，不是已支持多节点路径的回归。
+
+多节点同步执行首先需要外部 gateway 能服务多个存活会话；每个会话仍可保持单任务同步，不因此
+增加 PG accepted-prefix、乱序或批协议。实施时复用成熟 I/O 设施，具体选型留在该实现切片，并满足：
+
+- 会话/连接上限、活跃模型请求上限、排队项与 bytes 上限分别定义；空闲会话不独占模型执行名额，
+  也不能占满所有服务能力而使依赖它的下游永久等待。有限线程数本身不构成无死等证明。
+- 任务完成后释放本地使用权，连接可继续复用；容量不足有明确拒绝或可取消、有截止时间的等待。
+  远端是否仍在计算按真实终态记录，不能仅因本地断连就视为模型容量已经释放。
+- 会话内 sequence、计划身份、完成结果和错误彼此隔离；相同 payload/digest 不是同一算子实例。
+  需要额外关联标识时按实际消费者设计，不提前建立通用 query registry。
+- 用无模型 fixture 验证 A 空闲时 B 能完成、嵌套依赖超过服务容量不会挂死、超限/断连/取消隔离、
+  单会话旧路径和结束后 FD/线程/缓冲回收。共享 Adapter 的并发访问与配置不漂移也须验证。
+
+这项改动属于 gateway 执行服务能力；PG 仍只拥有客户端和查询清理，不新增库内 listener 或 HTTP。
+本节不授权替换现有 HTTP Adapter、增加连接池、重试或真实模型运行；这些变化按实际需要单独验收。
+
 ## 7. 数据传输与 batching 的不同作用
 
 | 对象 | 谁决定 | 语义与测试重点 |
@@ -189,7 +228,8 @@ PG per-tuple 值或已结束 drive 的借用 slice。具体转移和释放时机
 允许 PG 的必要取数窗口与 backpressure；避免两层复制同一组织/准入控制器。只有逐项语义允许时
 才可 rebatch；不可拆分 batch 必须显式表达或拒绝。IMLane-like DB batch 与 provider rebatch 是研究
 对照，等真实 PG 增量接入和匹配条件满足后运行，而不是预先认定某个位置最优。
-Kalypso-like lineage/KV、跨算子依赖、Join 与 blocking operator 仍只作另行立项后的参考。
+同一查询内一元算子的基本数据依赖属于工作包六的组合检查；Kalypso-like lineage/KV、Join 与
+blocking operator 的新算法仍只作另行立项后的参考。
 
 ## 8. 工程落点与维护方式
 
@@ -201,7 +241,7 @@ Kalypso-like lineage/KV、跨算子依赖、Join 与 blocking operator 仍只作
 | `code/src/execution_provider/` | 公共 gateway、版本化 codec、completion Adapter；旧 extension gateway 只保留兼容入口 |
 | `code/src/planning/`、`code/src/scheduling/` | 已有 work/cost、组织、准入、路由和执行代码；增量核心先从真实调用和测试表征中抽取 |
 | 未来 SemLoom gateway Adapter | 将中立 task 映射到现有核心，不能再写一套 scheduler；具体文件只在有实现消费者时创建 |
-| 公司 fork | 前端差异、provider client 与本地 lifecycle 映射；见 §8.7 |
+| 公司 fork | 承接自有算子语义/处理/优化方法的 planner/executor 适配，以及 SemLoom provider client 与本地 lifecycle 映射；见 §8.7 |
 
 源码文件树与可运行命令只由代码 README/INFRA_STATUS 维护，不在本计划复制易过期的全量清单。
 
@@ -214,8 +254,13 @@ Ports & Adapters 只用于已存在的外部变化；Factory 只负责 query-fix
 
 ### 8.3 carrier audit 与最小 core patch
 
-审查随对应目标增量进行：同步 Map/Filter、真实生成型 Map、batch/reorder、第二 Filter path 分别验证
-其 marker/plan identity、prepared invalidation、hook coexistence、placement 与 executor 生命周期。
+先按算子目的选择 PG 接入方式：普通本地辅助计算可用 SQL/C 函数；需要独立语义策略、AI-work cost
+与执行生命周期的路径保留 planner-visible 表达；已经能由 PG/pgvector 完成的表达式、索引或 ordinary
+plan 优先复用。CustomScan 是当前载体，不是所有功能都必须新增节点的理由；也不能把现有 marker
+静默改成逐行 HTTP fallback 来冒充路径优化。公司三类接入方式的源码对照见 §8.7.2。
+
+审查随对应目标增量进行：同步 Map/Filter、真实生成型 Map、算子组合、batch/reorder、第二 Filter path
+分别验证对象身份、SQL 函数属性、prepared invalidation、hook coexistence、placement 与 executor 生命周期。
 无需等 Filter 第二路径完成才检查生成型 Map；也不能用旧同步证据替代新 batch carrier 资格。
 
 若问题仅在 identity/path generation，最小 patch 仍 lower 到既有 CustomScan；只有 executor lifecycle
@@ -224,105 +269,181 @@ Ports & Adapters 只用于已存在的外部变化；Factory 只负责 query-fix
 
 <a id="frontend-adapter-strategy"></a>
 
-### 8.7 自有主实现与公司前端适配（决策已定，适配尚未实现）
+### 8.7 公司工程参照与自有成果向公司移植（工程设计，尚未移植）
 
-本节维护两类数据库前端与同一个执行核心的工程分工；不是新研究内容或公司接入已经成功的证据。
-自有主实现以独立构建、公开可复现为目标，公司 fork 承担工业前端的兼容接入与获批环境验证，不成为主实验的私有前置依赖。
+两件事方向不同：**现在吸收公司 demo 的工程经验，完成自有系统；未来可把自有成果移植到公司系统。**
+自有成果包括语义算子的定义与处理、reference/optimized 策略、代价/质量与回退方法，以及 SemLoom
+数据组织、提交、路由和调度。公司算子调用 SemLoom 只是执行接入，不代表前述算子方法已经移植。
+自有 PG18.3 主实现继续独立构建和复现；公司移植是可选应用方向，不成为主实验的私有前置依赖。
+
+本节是完整算子工程对照的唯一入口：从“算子做什么、怎样进入 PG”到“如何产生请求、恢复关系结果、
+管理新增资源”，多算子组合只是其中一项。每项采用决定都回到 §1 的研究目标；公司实现更宽的 SQL
+表面、已有连接池或更多函数，不自动成为自有系统必须照搬的实现方式。
+
+<a id="own-to-company-transfer"></a>
+
+#### 8.7.1 迁移范围与 Module 分工
+
+| 层次 | 自有实现继续完成什么 | 未来向公司系统移植什么 / 本地保留什么 |
+|---|---|---|
+| 算子语义与策略 | prompt/parser/model/generation identity、关系结果处理，以及按工作包实现的 reference/optimized 策略、work/cost、质量与回退 | 移植可复用的策略计算、状态流程和合同测试；由公司 planner/executor 保存并执行相应语义与物理选择，不能交给 scheduler 暗中决策 |
+| PG carrier | SQL marker、合法 placement、CustomPath/CustomScan、plan 编解码、tuple binding 与 query lifecycle | 适配目标 PG 版本及公司载体；Plan/Datum/slot、snapshot、权限、错误和事务仍由目标数据库处理，不要求 C 结构或 hook 完全相同 |
+| SemLoom execution provider | work 组织、有界提交、路由、多 Job 调度、可替换 backend 与观测 | 复用同一执行核心，通过公司侧 Adapter 转换请求与完成结果；公司 fork 不另维护第二套 organizer/scheduler/router |
+| 模型执行 Adapter | 已定语义到模型请求的映射、原始结果与模型证据 | 按实际模型能力适配，HTTP/认证/供应商字段留在模型 Adapter；不改写前端选定的 prompt/parser |
+
+以上是职责划分，不要求现在创建独立策略 SDK、registry 或新目录。可独立测试的值/策略先与 PG
+binding 分开；已有文件能承载时继续使用，出现真实消费者和变化原因再抽取。两类数据库前端都使用
+当前查询提供的 tuple/task，gateway 不重新连库取数、不重做事务/MVCC/WAL。
 
 ```text
-自有 PG18.3 语义算子 -> 自有 PG adapter --------+
-                                               | 中立 execution-provider interface
-公司语义算子 -> 公司 fork 内 adapter（待实现）--+-> 同一个 SemLoom execution provider
-                                                   -> 数据组织、提交、路由、多 Job 调度
-                                                   -> 可替换的 Ray / 模型执行 adapter
+工程经验：公司 demo ------------------------> 自有语义算子实现
+未来移植：自有算子语义 / 处理 / 优化方法 ----> 公司 planner / executor 适配
+          自有 SemLoom 执行 / 调度核心 -----> 公司系统可用的同一核心与 Adapter
 ```
 
-这是目标关系，不是当前接线图。现有自有路径已接到 recording/golden/fixed-model gateway；
-增量 SchedulingSession 的独立核心与 PG 接入按工作包七分别推进；公司 adapter 尚未实现，尚无兼容通过证据。
+上图表达成果移植方向；运行时请求仍由公司算子经 Adapter 进入 SemLoom，再将结果返回数据库。
+移植后仍由数据库选择 semantic/physical plan，SemLoom 执行已确定的 work。接口连通、算子行为等价、
+优化策略等价、质量与性能分别验收；当前公司路径没有这些通过证据。
 
-#### 8.7.1 分工、复用与独立性
+<a id="company-engineering-reference"></a>
 
-| Module | 必须继续完成的 Implementation | 不应承担的职责 |
+#### 8.7.2 现在就参考：具体定位、采用范围与验证
+
+来源：2026-09-02 对用户提供的 `x_semantic` 当前工作副本的只读源码核对；该副本有未提交改动，
+不是一个已经锁定或通过 PG18.3 验证的 release。下面是源码观察与工程决定，不是模型/性能结论。
+自有对照包含 main 和四 C 独立分支，差异按 INFRA_STATUS 记录；未合并能力不计入 main。两边所查目录
+均为 PGXS extension，未据此发现必须引入 core patch 的依据；该观察不覆盖未提供的公司数据库内核。
+路径相对用户提供的参考目录；后续切片须重新确认实际版本和函数体。这里只记录最小定位与行为摘要，
+不复制公司源码、prompt 原文、内部测试数据或日志；详细快照与来源证明保留在授权位置。
+同一表格单元内省略目录的文件名沿用前一个文件的目录；自有 C 文件位于 `code/postgres/semloom_pg/src/`。
+
+**PG 接入与执行语义。** 先确定函数的目的、输入输出和返回行数，再选择载体；不能把注册函数、
+planner-visible 算子和外部执行请求当成同一件事。
+
+| 公司参考对象（只读定位） | 当前观察与自有差异 | 自有决定、落点与必查用例 |
 |---|---|---|
-| 自有 PostgreSQL 语义算子 | SQL、CustomPath/CustomScan、语义计划、prompt/parser/model/generation identity、结果关系语义、EXPLAIN，以及所需 LOTUS/Cortex-like reference/optimized paths；使用 PG 原生 snapshot、权限与 query lifecycle | 公司私有结构的兼容分支、模型 HTTP、重复实现事务/MVCC/WAL、SemLoom 调度策略 |
-| SemLoom execution provider | work 画像、工作单元组织、有界提交、路由、多 Job 调度、可替换执行 backend 与统一观测；只维护一套核心 | 自有或公司 PG 的 Plan/Datum/slot、SQL 重写、隐式更换 prompt/parser 或近似语义 |
-| 公司 fork 内的 Adapter | 将公司任务与完成结果映射到中立 Interface，绑定本地 identity、错误、取消和结果恢复；复用该 fork 已有查询生命周期设施 | 复制 SemLoom organizer/scheduler/router，或要求主仓库依赖公司源码才能运行 |
+| `Makefile`、`sql/x_semantic--0.1.0.sql` | 同时注册实际执行的标量/集合函数和不能直接执行的 marker；部分函数标为 parallel safe。自有 Map/Filter 是 fail-closed marker，当前禁并行 | 保留自有语义路径的 planner 接管；辅助计算按目的选普通函数。核对 `VOLATILE/STRICT/PARALLEL/SECURITY/LEAKPROOF/COST` 的实际含义，不为解锁计划改属性。测 NULL/default、未加载 hook、权限与普通 SQL；只有独立验证后才开放并行 |
+| `src/operators/sem_distance_planner.c:lower_sem_distance_marker`、`sem_distance_scan.c` | 距离 marker 改写为 pgvector 距离表达式，查询 embedding 经子查询求值，并包装已有路径；并非所有计算重写成专用执行循环 | 在后续向量/候选检索路径复用已有表达式、索引和 child plan；当前不增加新算子。若采用，测实际 path、类型/维度、空输入和 plain EXPLAIN 零模型调用；向量距离不能自动替代自然语言 Filter 真值 |
+| `src/operators/sem_distance_planner.c:lookup_extension_function` | 除 schema/参数 OID 外还核验扩展成员关系；自有 `extension.c` 当前按固定 schema/签名查 OID | 将对象身份列为待验证加固点，不先称为漏洞。用同名非成员、重载、删除重建/失效、扩展缺失等反例检查误接管；有反例才最小调整解析，不顺带扩可迁移 schema 或改语法 |
+| `src/operators/sem_map_op.c`、`sem_generate_op.c` 与 `src/hooks/x_semantic_hooks.c` | 普通函数可按 SQL 规则组合，但专用 Map/Generate 同层仍只允许一次，并有 shape 限制；自有也有单 marker 和 Map/Filter 互斥检查 | 从 `sem_path_common.*`、`sem_path.c`、`sem_filter_path.c` 提炼真正共用的调用识别、查询层级和绑定；各算子保留独立 placement。工作包六用实际组合验证，不仅删除 guard，也不声称公司已实现任意 SQL 组合 |
+| `src/operators/sem_map_op.c:sem_map_exec` | 已有真实文本生成、输入/输出列映射和结果存储；先收集全部 child 行，再取 GUC 配置调用模型。自有 Map 仍为 recording，已有增量 pump | 四 D 复用 Map lowering、plan spec、pump/runtime，增加真实生成合同。保留计划内语义和增量取数；测行数保持、列顺序/别名、重复输入、多字节/大输出、LIMIT、INSERT 与取消。不把全量 collect 当成所有算子的公共行为 |
+| `src/operators/sem_map_op.c:sem_map_rescan`、`sem_topk_op.c` | Map rescan 清空结果状态并重扫 child；自有当前明确拒绝 rescan/EPQ | 需要新 SQL 形状时先定义同参重扫复用还是重新求值、参数变化怎样重建、模型调用如何计数；再决定 tuple store 或新状态。测参数变化、重复扫、早停、错误和取消，不把 callback 存在当作语义正确；有全局状态的算子另定内存/落盘上限 |
+| `test/sql/sem_map_offline.sql`、`sem_generate_offline.sql`、`llm_offline.sql` | 覆盖离线 SQL 形状、配置与空值；公司 Map 可将行内 NULL 当空串发送 | 在自有 regression/TAP 使用公开合成数据，预期由自有语义定义。分别测 NULL 不调模型、空串、RLS/权限、snapshot、prepared/invalidation、普通 SQL 非干扰；不复制私有输入或沿用公司测试资格 |
 
-两类前端 Adapter 都只使用当前查询交给它的 tuple/task；gateway 不重新连接数据库读取 SQL 数据，
-也不自行实现 snapshot、事务或权限判断。
+SQL 属性与扩展回调以 [PG18 CREATE FUNCTION](https://www.postgresql.org/docs/18/sql-createfunction.html)
+和 [CustomScan execution](https://www.postgresql.org/docs/18/custom-scan-execution.html) 为公开依据；
+实际编译与验证仍锁定 `REL_18_3`，官方文档不能代替该版本的运行证据。
 
-公司 demo 可提供 SQL 暴露、输入组织、模型调用封装、错误恢复和测试场景的工程参照；采用具体做法前，
-核对其在 PG18.3、自有计划语义和生命周期中的条件，不把 demo 可运行等同于 planner-visible 或质量正确。
-保留真实且最小充分的自主算子实现，不先扩全套 join/aggregate/structured-output DSL；也不将
-SemFilter 降为只有接线测试、从计划中删掉已约定的第二优化路径。后续文本数据执行仍以 AI_COMPLETE
-类异构 work 为主场景，其数据库入口按真实语义独立实现；当前 recording SemMap 不因此变成真实生成算子。
+**请求构造与外部执行。** 同样比较复用方式和所有权，不因公司公共 LLM 层位于 PG 进程内，就把
+它的网络、分词或调度实现搬入自有 backend。
 
-采用 Ports & Adapters：变化集中在前端 Adapter 和模型执行 Adapter，公共 Module 隐藏组织、提交和
-调度的 Implementation。Interface 同时写清 ownership、顺序、错误、取消和资源要求；测试从同一
-Seam 验证 observable behavior。当前已有 recording/golden/fixed-model 等真实替换实现；公司 Adapter
-仍是候选，不能据此宣称第二个数据库前端已验证，也不为未来接入先造 registry 或空 Module。
-
-#### 8.7.2 现在要核对的最小映射
-
-以现有 `AiOpenSpec → AiPreparedTask → AiCompletion` 和 `open/drive/close` 为出发点，不把 C header
-直接宣布为适用于任意前端的完整 SDK。公开的中立表示表达实际任务及语义要求，PG 专用 plan 留在各自
-adapter 一侧；供应商请求字段留在模型 adapter 一侧。两边不要求同 SQL、plan node、C 结构或 wire bytes。
-
-下表是尽早开展只读接口核对的清单，**公司列是待核对问题，不是已经确认具备的能力**。每项结果应注明
-可直接对应、需要显式转换或暂不支持；涉及私有实现的证据留在公司授权范围内，本计划只保存脱敏结论。
-
-| 映射对象 | 自有路径的当前事实 | 公司接入需核对 / 不可默默补齐的内容 |
+| 公司参考对象（只读定位） | 当前观察 / 值得吸收的经验 | 自有决定、落点与必查用例 |
 |---|---|---|
-| 数据库载体 | 自有目标为 `REL_18_3`，使用受限 CustomPath/CustomScan | 实际 PG 版本、调用入口与 planner 可见性；接通 provider 不等于取得同等优化能力 |
-| 算子与计划身份 | plan 保存 operator/spec/algorithm/role；中立 open spec 传递身份 | 能否从实际调用形成稳定语义身份；不得仅凭算子同名认定等价 |
-| prompt、parser、model、生成配置 | exact Filter 已有对应 identity；choice profile 仍待四 C | 能否保留原始语义与有效生成参数；不同定义必须有不同 identity |
-| 值表示与大小 | 当前为 text 输入及 text/tristate 结果，有 UTF-8 与长度检查 | 类型、编码与上限是否兼容；多列/图像等未支持表示不能隐式当作 text 接受 |
-| 单项关联与顺序 | session 内 `uint64 sequence`，同步单在途，NULL 不占序号 | 可用什么本地关联方式恢复每项结果、处理重复 payload；不要求相同字段名 |
-| NULL、错误、结果 | PG 解释 SQL NULL、严格三值 parser 与 keep/drop；错误终止查询 | 两值/三值、空串/NULL、错误/UNKNOWN 是否同义；差异显式记录或拒绝 |
-| 取消与关闭 | query cleanup 关闭本地 provider，远端停止能力有限 | 何时获知取消、怎样释放自有资源；不得承诺尚未具备的远端 cancel |
-| 模型证据与 work 观测 | completion 带 model、usage、finish reason；estimated work 与 actual usage 分列 | 哪些证据可真实取得；缺失要标 unavailable，不伪造 token 或把估计当实际 |
-| 分组与 work hint | 目前一任务一完成；batch、accepted-prefix 与调度 work hint 尚未接入 | 是否允许逐项重组、有哪些不可拆分语义；先记录，不提前增加协议字段 |
+| `src/operators/sem_map.c:sem_map_build_params`、`src/llm/llm_prompt.c:llm_build_per_row_requests` | Map 的不同入口共用构造，固定内容与逐行输入分开。自有 `sem_operator_machine.c` 的真实 task 编译目前仍使用 Filter 模板，Map 未消费生成合同 | 四 D 引入真实 Map 时把公共消息编码与算子自己的 prompt/text parser 分开；复用已有 task/Adapter，不复制 Filter 执行栈。测完整规范消息、Unicode/空串/模板样式输入、输入输出上限，以及旧 Filter bytes/digest/错误不变 |
+| `src/llm/llm_protocol.{h,c}:llm_effective_request / llm_resolve_request` | 请求默认值先消解，再给编码与缓存使用；当前视图借用请求/GUC 字符串且含 PG 依赖和 endpoint 方言 | 吸收“实际参数只有一个来源”：`sem_plan_spec.c` 保存语义参数，`pg_semantic_runtime.c` 只转换到中立 `AiOpenSpec`；HTTP endpoint/方言检查归模型 Adapter。测缺省与显式参数、配置变化、身份与真实出站字段一致，不直接把该 C struct 作为跨进程合同 |
+| `src/llm/llm_chat.{h,c}`、`llm_error.c` | 请求编码与响应解析分开，结果有 model、usage、finish reason 与错误分类 | 需要相关能力时补在 `code/src/execution_provider/adapters/openai_compatible_fixed.py` 等实际模型 Adapter，复用自有 framing/deadline/脱敏错误机制；测试错误模型、截断、缺失 usage、无效编码。只吸收本次需求，缺失观测不得填零冒充实际值 |
+| `src/operators/sem_filter.c:sem_filter / parse_bool_from_llm / filter_cascade_check` | 当前是标量 boolean 函数：未命中缓存时调用大模型，再宽松解析 True/False；输入 NULL 返回 false，调用无结果或解析失败告警后返回 false。没有 UNKNOWN 输出类，embedding cascade 始终 disabled | 先对齐自然语言条件筛行的目的；二值是贴近公司的候选，不要求所有 Filter 都有 UNKNOWN。保留现有三值 profile 的兼容与严格解析；新增二值或容错策略须单独定合同/身份。向量粗筛不是公司已有能力，不可直接记为复用完成 |
+| `src/llm/llm_batch.c:llm_batch_execute`、`llm_conn.c:llm_pool_multi_begin / llm_pool_multi_end` | 当前 backend 独有的连接池，批次内有界 serial/multi、完成后补位，结束后归还使用权但可保留连接；不是跨查询统一调度器，也没有自有路径这种 UDS gateway | 借鉴执行名额与连接寿命分开，落实在外部 gateway/SemLoom；多会话要求见 §6.4。未来公司执行接入点见 §8.7.4。测配置/容量、原行关联、逆序完成、异常清理；不因连接可复用就认定可以无限持有执行名额 |
+| `src/llm/llm_batch.c`、`llm_error.c`、`llm_cache.c` | 串行路径可重试部分传输错误，prompt 层可命中完整有效请求缓存；这些都会改变实际模型调用数 | 现有自有路径继续无自动重试/缓存。将来独立指定 owner、键的语义/模型/权限范围、淘汰与资源上限、重试终态和重复结果处理；分列逻辑项、cache hit、实际尝试与 usage，不把失败变成合法空结果 |
+| `src/llm/llm_tokenizer.c`、`llm_prompt.c:llm_build_per_row_requests / llm_build_merged_requests` | 检查完整消息的上下文长度，可回退估计；merged 将多行写进同一 prompt，不是只把独立请求一起发送 | work 估计与模型 Adapter 的有效请求保持一致，精确/估计明确区分；超长单项的处理由算子合同决定。prompt 合并按 §7 归语义算法，独立请求组织归 SemLoom，服务内部 batching 归 serving；不在四 D 暗加截断、拆行或 prompt 合并 |
 
-设计材料中的 `ExecutionPlan/ExecutionItem` 及 `source_frontend/item_id/chunk_id/work_unit_id/model_batch_id`
-只是说明性候选，不在本轮加入代码或正式 ABI。新增字段须由真实消费者、关联关系或错误恢复场景驱动，
-遵守本计划的版本化与最小抽取规则。不同 prompt/parser/UNKNOWN 行为不能共用 semantic digest，
-也不能让适配器偷偷改答案以通过同一测试；可迁移性与语义等价性分别验证。
+首次完整对照按两张表逐维给出采用、保留、延期或不适用的判断；后续切片只读取其受影响项，不要求
+每次通读公司仓库。四 C 核对参数身份、错误与 Filter 差异；四 D 同时核对 PG 注册/载体、生成任务、
+取数和结果恢复；涉及会话或执行接入时再核对 batch/config/cancel。算子优化仍以相应论文、公开实现
+与自有实验为依据。缺少参考目录只阻塞依赖私有实现的移植判断，不阻塞按公开依据完成自有算子。
 
-#### 8.7.3 传输、组织与调度不能重复拥有
+**先贴近算子目的，再选择实现细节。** 公司 Filter 与自有 Filter 都判断一行是否满足自然语言条件；
+真实模型 reference 都采用大模型判断，公司命中缓存时复用旧回答，不是通过 embedding 直接判真值；
+自有 recording/golden 路径只是机制测试，不作为模型判断能力。
+TRUE/FALSE 是可成立的二值合同；UNKNOWN 只在明确需要表达“无法判断”的 profile 中保留，不能和
+SQL NULL、调用失败或解析失败混为一类。后续若以二值为目标，先确定输出词、严格 parser、NULL/error
+policy 和测试预期，再增加显式版本/profile；不暗改已有 tristate 身份，也不把旧三值质量失败改判为通过。
+贴近公司不要求复制其宽松搜词或失败转 false。公司 Map/Generate 的共同目的是逐行生成文本；四 D
+参考这种输入/输出关系，具体 prompt、NULL 和输出上限仍由自有合同明确，不继承未声明的 GUC 默认值。
 
-前端为传输效率或 query lifecycle 使用的有界取数/传输块，不自动成为不可拆分的模型 batch；只有
-语义允许逐项独立时，SemLoom 才可重组为 work units。已有不可拆分 batch 要显式声明，不能为了适配
-擅自拆开。transport chunk、semantic work、work unit 与 model batch 先在概念上分清，暂不为每层加 ID。
+三值可继续作为自有 profile，用于区分否定与无法判断；是否更适合任务由实际需求与质量测试决定。
+可移植性不要求公司 SQL 新增一个 UNKNOWN 字面返回值：在已经声明的 WHERE 过滤范围内，可以复用
+自有 parser/keep-drop 规则，将 UNKNOWN 映射为不保留该行，并保留原始完成状态用于审计。该关系结果
+映射不是把原始模型答案改成 FALSE，更不允许把执行错误伪装成模型判断。SELECT 投影、NOT、复合
+谓词或其他 SQL 位置的等价性须另行定义和测试，不能从 WHERE 不保留推断。
 
-公司 fork 不再复制 SemLoom 的 work-aware organization、路由或多 Job 控制；数据库必要的取数窗口、
-backpressure、生命周期管理仍保留。IMLane-like database batch placement 也仍是后续研究变量，
-并非禁止数据库做任何组批；若选择数据库拥有某项策略，就明确其 owner，不能在两层各实现一套同职责控制器。
+#### 8.7.3 已完成部分：保留底座，按实际问题定点修改
 
-#### 8.7.4 接入时机与证据
-
-| 时机 | 动作与完成条件 |
+| 已有部分 | 本轮决定 / 后续允许调整的条件 |
 |---|---|
-| 现在 / 近期设计核对 | 保留自有两个 Module 的主实现责任；按上表只读核对公司接口，记录未知项，不据此修改公司 fork 或宣称兼容通过 |
-| 只读核对留下实际疑点、所需自有 Interface 可执行后 | 经独立授权做最小映射 spike，核对一份 plan、一项 task、一次 completion 和取消/清理路径；先用 deterministic provider，不要求完整模型或性能实验 |
-| 自有主路径和 Interface 稳定后 | 在公司 fork 正式实现最小 Adapter、必要 provider client 与内部测试，接入同一 SemLoom 核心；按真实差异选文件和接入点，不预建七个空文件 |
+| thin scan、pump、PgSemanticRuntime、neutral port、UDS/wire、query cleanup | 继续作为自有底座；不因公司目录不同重写或合并层次。新消费者暴露真正遗漏时，先用失败用例定位再改相应 Module |
+| plan-owned 语义、严格 Filter、独立分支中的四 C 切片 | 保留现有接口及原证据；二值 profile 或公司兼容策略可另行明确，但不静默修改已有三值身份和错误表现。分支是否完成/合并以源码和各自证据为准，不把已完成状态当作语义永远不能调整的理由 |
+| prompt、有效生成参数与结果解析 | 四 D 引入真实 Map 消费者时，把当前 Filter 专用 task 编译与公共消息编码分开；原始值解析与 WHERE keep/drop 在其他 SQL 位置出现时再分别表达。行为变化独立版本化，结构重构保持旧输出与错误 |
+| marker 识别、query shape 与列绑定 | 围绕实际 SQL 形状和两个算子消费者整理共同分析；新增算子不应复制整套 rewrite-tree 特判。对象身份、placement、列绑定与具体语义策略分别验证，不只删除单 marker guard |
+| operator strategy 与 PG binding | 可独立表达的计算和关系 disposition 留在语义 Module；SQL/Plan/slot 操作留在 PG adapter。实际公司移植需要的局部适配可做，但不为假想数据库改造全部现有代码 |
 
-正式适配可以后做，但第一次接口对照不能等两部分全部完成后才开始。映射发现不支持项时，优先在
-公司 Adapter 局部处理；只有两个真实消费者证明中立 Interface 缺少必要概念时才版本化扩展，
-不把两套 PG 的特例推进 organizer/scheduler。公司兼容不是自有公开主路径的前置验收项，也不据单个
-接入示例宣称支持任意数据库或生产环境。自有算子、SemLoom 核心与公司映射可分别推进；独立核心
-研发不等待 Filter 质量或第二路径，真实 PG 接入按 §2 的对应路径条件验收。
+修改已完成代码前，切片记录须写明具体耦合/反例、涉及调用方、保留行为和复验范围。没有发现问题时
+记录“保留现有实现”即可。不得用“学习 demo”替代问题定义，也不能把尚未移植当成已完成代码有缺陷。
 
-代码复用与部署分别确认权限：
+验收重构看变化是否集中：新增生成语义不修改 UDS socket 等待，新增执行 Adapter 不修改 Filter
+真值，新增合法 SQL 位置不复制 provider 生命周期。缺陷修复、结构重构、语义变化分别可审阅；
+同一算子差异散落多个层时应集中到拥有该语义的 Module，而不是只追求减少少量分支或提前创建通用框架。
+
+#### 8.7.4 两个不同的移植接点
+
+**算子方法进入公司 planner/executor。** 自有语义定义、task/result 处理与策略计算可复用；公司侧
+仍需表达逻辑/物理身份、合法 placement、path 生成与选择、cost/quality/evidence/fallback 和生命周期。
+公司现有生成型 CustomScan 可作为载体候选；其 Filter 标量函数不自动拥有上述能力。先选择一个已经
+在自有系统实现并验证的算子/策略移植，检查计划真正消费这些字段，而不只新增 EXPLAIN 标签。
+新旧 NULL、parser、失败策略不同就显式保留不同语义身份，不能静默改公司旧 SQL 或共用同一 digest。
+自有 quality/calibration 证据不自动适用于不同模型、任务分布、服务或目标 PG 环境。
+
+**执行能力通过公司 provider Adapter 接入。** `llm_batch_execute` 附近是当前候选位置，不是已经
+完成的接口。现有请求构造和结果回填继续由公司调用方拥有，提供显式选择的 native 与 SemLoom 两种
+执行 Implementation；原 native 可保留作兼容/对照，SemLoom 分支不再进入它的 curl 调度或重试循环。
+首次只支持受约束的 per-row 文本请求；独立 deterministic Adapter 先证明映射，真实接入再使用已经
+可执行的自有文本生成合同。当前 Filter wire v3 与 choice v4 不能充当任意消息/生成请求的通用协议。
+
+开始该 Adapter 切片前确认以下对象，不只替换函数调用：
+
+- 请求：消解模型/生成默认值，固定实际 messages 与 identity；借用值跨调用时复制到有明确上限和
+  生命周期的存储。PG 类型与供应商方言不穿过中立 Interface；只在 native 实现检查其 HTTP 配置。
+- 关联与输出：原始行位置与 task sequence 明确对应；重复 payload 仍是不同项。返回 raw output、
+  model、usage、finish reason 与中立错误；公司适配恢复结果，缺失证据标 unavailable 或按该合同拒绝。
+- 调用 owner：首个对照明确关闭或隔离缓存、传输重试和业务补发，记录实际调用数。后续恢复策略时
+  分别指定 owner，native 与 SemLoom 不叠加同职责控制器，也不在失败后暗中换 backend。
+- 资源：公司 Map 全量 materialization 只可用于事先限定规模的映射验证；形成增量路径时另改为有界
+  child 窗口。普通传输块可按逐项语义重组，merged prompt 不得随意拆开；IMLane-like placement 仍待匹配实验。
+- 取消：公司 `llm_set_cancel` 当前没有启用实现，本地 PG interrupt 与远端停止分别核对。注册/复用
+  目标 PG 的清理设施，验证 no-task、早停、异常、取消、重复关闭与新查询；不承诺远端 GPU 立即停算。
+
+公司私有差异集中在其 Adapter/载体中；只有真实双方消费者证明缺少概念时才扩展中立合同。
+opaque task/job/attempt ID、异步 registry 与批协议按实际关联需求设计，不在首次移植中预建。
+
+<a id="operator-engineering-actions"></a>
+
+#### 8.7.5 研发顺序与完成记录
+
+| 时机 | 具体动作 | 该步完成条件 |
+|---|---|---|
+| 现在：完整工程对照 | 按 §8.7.2 覆盖 SQL/PG carrier、算子目的、请求/结果、资源与外部执行，而非仅看多算子 | 每一维在当前切片登记版本/工作副本、文件/符号、源码事实、自有现状、采用/保留/延期/不适用及原因、改动位置与可观察用例；未知项显式保留，不用公司测试替代自有证据 |
+| 四 C 收尾 | 保持已接通的 choice 与受限 INSERT 行为，完成专项剩余验证 | 资源与受限真实 smoke 分别有证据；不把新的通用 SQL/会话重构并入该版本收尾，旧语义与失败记录不变 |
+| 对应路径的 PG 接入检查 | 工作包六逐项核对注册身份、函数属性、placement、普通 PG 复用、重扫/参数变化；多算子组合是其中一个子切片 | 先补反例，再做小范围重构/能力扩展；保留已通过的 pump/runtime。未使用的 Join、聚合等不提前实现，不以重构文件数验收 |
+| 多节点会话确需服务时 | 按 §6.4 调整外部 gateway 的会话服务与活跃工作上限 | 空闲会话不挡住其他节点，容量不足不会永久等待，错误/取消/资源隔离通过；单节点仍可同步，不等于已完成 PG 批协议或 SemLoom 调度 |
+| 四 D 的真实生成实现 | 先定生成合同，再按真实 Map/Filter 消费者整理 task 编译、结果解释与模型 Adapter 复用 | 规范消息、列绑定、NULL/空串/大输出、截断/失败及旧 Filter 行为可独立验证；真实 Map 不照搬 Filter 标签或 token 上限 |
+| 有具体移植疑点且所需 Interface 可执行后 | 经授权在公司 fork 做一个算子/一类请求的最小 deterministic 验证 | 计划或请求身份、结果关联、NULL/error、取消/回收和拒绝条件可观察；未运行模型，不宣称质量或性能 |
+| 相应自有方法稳定后，按需正式移植 | 算子方法移植和 SemLoom 执行接入分别提交、分别验收 | 目标 planner/executor 真正执行相应策略；执行 Adapter 复用同一核心；目标版本、兼容、资源与相同条件下的质量/成本分别验证 |
+
+不必等待全部算子完成才参考公司经验，也不必等待公司移植才推进自有系统。完成记录放当前切片
+计划/结果与现有状态入口，不新增平行复用台账；公司材料的详细版本与审计信息保留在授权位置。
+只有实际变动的 Module 才进入修改清单，未采用项可明确写出理由，不要求为了“复用率”复制代码。
+
+#### 8.7.6 代码来源与环境
 
 | 目标 | 允许范围与条件 |
 |---|---|
-| 公司内网 fork | 在公司制度及授权范围内，可直接复用既有 plan/executor、provider/client、生命周期和测试设施 |
-| 可公开主实现 | 公司源码、内部测试、常量或衍生实现只有获得明确外部发布授权后才能进入；否则参考工程行为，依据 PG 官方接口、论文与公开资料独立实现并记录来源 |
-| 公开 AutoDL 实验 | 自有 `semloom_pg`、可公开的 SemLoom、公开或获准使用的模型、公开/合成数据；遵守 runtime preflight 与独立实验计划 |
-| 公司 fork 实验 | 只在公司批准的环境运行。AutoDL 未获批准时不上传 fork、二进制、容器、数据或日志；内网 deterministic/provider 测试也须在获批范围内 |
+| 公司内网 fork | 在公司制度及授权范围内直接复用既有 plan/executor、provider/client、生命周期和测试设施，并承接获准移植的自有方法与执行核心 |
+| 可公开主实现 | 公司源码、内部测试、常量或衍生实现只有获得明确外部发布授权后才能进入；否则依据公开接口/资料独立实现，记录工程参照与不照搬原因 |
+| 公开 AutoDL 实验 | 自有 `semloom_pg`、可公开的 SemLoom、公开或获准模型、公开/合成数据；遵守 runtime preflight 与独立实验计划 |
+| 公司 fork 实验 | 仅在公司批准的环境运行；AutoDL 未获批准时不上传 fork、二进制、容器、数据或日志，内网测试亦须在授权范围内 |
 
-拥有 fork 和修改权限不等于拥有外部发布或部署权限；改名、逐文件翻写、打包成镜像均不改变来源要求。
-公司兼容既可服务后续实际接入，也可提供环境验证，但主系统可复现性不依赖公开公司私有材料。
+fork/修改权限不等于外部发布或部署权限；改名、翻写、打包均不改变来源要求。当前具体参考与未来
+移植服务于自有完整实现和可复现研究，不增加新的研究内容，也不授予模型运行或公司代码修改权限。
 
 ## 9. 工作包与完成条件
 
@@ -333,24 +454,44 @@ backpressure、生命周期管理仍保留。IMLane-like database batch placemen
 
 ### 工作包四 C：可选 choice 生成配置
 
-目标是显式选择三值受约束生成，保留旧 SQL/schema/wire，不成为默认或质量合格的 reference。
+本工作包实现已选定的三值 choice profile，保留旧 SQL/schema/wire，不成为默认或质量合格的 reference；
+它不规定所有 Filter 必须三值。值合同、PG plan、open spec/wire v4/gateway 和受限 Filter INSERT
+已在独立分支验收，main 未合并；新资源与真实模型验证仍待完成。当前分支已移除接通前的临时拒绝，
+未知或不受支持的版本仍不回落 v3。二值候选及完整算子工程重构不混入该版本收尾。
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
 [四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
+
+<a id="composable-operators-work-package"></a>
+
+### 四 C 之后：PG 基础检查与最小组合（待实现）
+
+先按 §8.7 的完整对照核对注册身份、函数属性、已有 PG 能力复用及计划/结果绑定，只有实际问题才
+改已完成代码；再以两个 Filter AND 为首个组合消费者，整理公共调用分析与外部多会话服务。
+详细动作与验收分别在[改造顺序](#operator-engineering-actions)、[多会话要求](#multi-session-execution)
+和[工作包六](#carrier-audit-work-package)，不在此复制第二套合同。多算子不是完整工程对照的替代品。
+不等待未来所有 Join、aggregate、CASE 等形状实现，也不阻塞独立 SemLoom 核心或 Filter 质量研究。
 
 <a id="real-semmap-work-package"></a>
 
 ### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（新增，待设计与实现）
 
-这是四 C 之后的自有 PG 优先任务，为文本生成 work 提供真实数据库入口，不依赖 Filter 三值分类通过。
+这是四 C 与上述最小组合切片之后的自有 PG 任务，为文本生成 work 提供真实数据库入口，并验证
+Filter → Map；不依赖 Filter 三值分类质量通过。
 AI_COMPLETE 在这里是工作负载含义，不预先承诺新增同名 SQL alias；SQL 重载与具体 profile 在首个切片定案。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。
 
+开始该工作包前按[公司工程参考表](#company-engineering-reference)核对 SQL 注册、PG 载体、Map/Generate、
+prompt、取数和结果处理，写下采用/适配/保留自有实现的决定。优先复用现有 `sem_plan_spec.c`、SemMap lowering、machine、
+pump/runtime 与外部 completion Adapter；参考公司逐行文本生成、列映射和参数构造，不复制全量
+materialization、执行时语义漂移或 PG 内 HTTP。已有层次仅在新消费者证明必要时定点调整。
+
 | 切片 | 完成条件 |
 |---|---|
-| 先定最小合同 | 明确 SQL 形状、plan-time constant、prompt program、text-output contract、model/generation identity、NULL/error/order、输入/输出上限与版本选择；在实现前写下拒绝条件和 golden vectors |
+| 先定最小合同 | 对照公司逐行 Map/Generate 的目的，写清具体参考对象、自有落点及差异；确定 SQL 形状、plan-time constant、prompt/text-output、model/generation identity、NULL/error/order、输入/输出上限与版本，在实现前写下拒绝条件和 golden vectors |
+| task/result 公共实现整理 | 由真实 Map 消费者驱动，将算子专用 prompt/parser 与公共消息编码分开；生成约束有唯一来源，runtime/transport 不判断算子真值。先证明旧 Filter 的 bytes/digest/错误不变，再引入新 Map 合同；不复制第二套 gateway、deadline 或 provider 生命周期 |
 | deterministic 纵切面 | 每行输出关联与顺序正确，NULL 不调模型，空字符串与 SQL NULL 区分；规划/执行真正消费上述字段，普通 SQL、recording Map 与现有 Filter 保持行为 |
 | 固定模型纵切面 | 复用外部 completion Adapter，记录真实 model/usage/finish reason；text encoding、长度、截断/非 stop 的处理按预定合同验证，不以能解析文本宣称内容正确 |
 | PG18.3 与资源 | plain EXPLAIN/EXPLAIN ANALYZE、prepared/invalidation、snapshot/权限、INSERT/rollback、错误/取消、RSS/FD/大输入输出全部通过；证据绑定真实源码与路径 |
@@ -365,6 +506,8 @@ SemMap CustomScan → provider → raw text completion → PG 输出列。仍先
 该工作包保留，和生成型 Map/SemLoom 核心分别推进。先确认任务、标签和统计判定，取得符合要求的
 reference；再用同 semantic/model/workload/service 的真实观测及 held-out 检验校准，之后实现
 LOTUS/Cortex-like proxy/oracle 两路径、显式质量授权、threshold/evidence 与 reference fallback。
+reference 的二值/三值输出应服务该过滤任务，不以旧三值合同限制所有未来任务；更换合同后重新建立
+对应身份、独立预期与质量证据，不沿用不匹配的校准。公司预留的 embedding cascade 不算已实现优化。
 
 planner 生成可区分且可比较的 paths，executor 按计划执行，provider 不暗换算法。输入基数、NULL-adjusted
 calls、usage、AI-work estimate 与真实成本分开；工程启发式不能冒充已校准成本。
@@ -373,11 +516,24 @@ calls、usage、AI-work estimate 与真实成本分开；工程启发式不能�
 历史快照中保留。恢复采集前须有新的当前计划，不靠本次排期调整降低旧阈值或删除失败。
 该工作包不再阻塞独立 SchedulingSession 或四 D，但仍是 Filter 优化结论的必要前提。
 
+<a id="carrier-audit-work-package"></a>
+
 ### 工作包六：按实际路径增量做 carrier audit
 
-为四 D、PG 增量桥接和 Filter 第二路径分别形成审查结果，记录已有 hooks 能否表达目标及反例。
-完成标准是对应路径通过 plan/placement/lifecycle 检查；需要 core 时先有可重复阻断与最小 patch diff。
+为四 D、算子组合、PG 增量桥接和 Filter 第二路径分别形成审查结果，记录已有 hooks 能否表达目标及反例。
+完成标准是对应路径通过注册/对象身份、函数属性、plan/placement、prepared/invalidation、权限/RLS、
+结果绑定与 lifecycle 检查；需要 core 时先有可重复阻断与最小 patch diff。
 多个路径都要覆盖，不能把分阶段审查缩减成只验证一次同步 Map，也不把完整审查作为纯核心单测的前置项。
+
+**可组合一元算子子切片（待实现）。** 先用两个 Filter 的 AND 组合检查独立计划、输入绑定、顺序与
+计数，再在四 D 可执行后验证 Filter → 真实 Map。共同分析只管理调用位置、查询层级和依赖，算子
+builder 管理自身 placement/关系语义；执行状态与 provider 关联按节点隔离。同一 gateway 的多会话
+测试先满足 §6.4，不以两个独立 gateway 绕开共享入口问题。首版固定可解释的执行顺序，不加入谓词
+重排、融合、异步或通用 DAG 引擎；相同输入值的不同调用仍独立关联。
+
+该子切片覆盖 projection、LIMIT 前后位置、NULL/UNKNOWN、prepared plan、INSERT、错误/取消和
+资源总上限。NOT/OR/CASE、参数化 Join、aggregate/window 等不由 AND/Map 组合推定支持；确需时先
+定义值语义、条件求值、rescan/参数失效与模型调用规则。未实现形状继续明确拒绝。
 
 ### 工作包七：独立增量核心与数据库桥接分开验收
 
@@ -434,6 +590,8 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 | 修改 payload、错误版本、错误模型/摘要、重复或越序 completion | 当前同步 session/sequence 校验拒绝，错误脱敏且终止 session |
 | NULL、空串、UNKNOWN、无效模型文本 | 各算子按自己的计划解释；provider 不猜真值、不修补输出 |
 | no-task、LIMIT、ERROR、cancel、savepoint 与新查询 | 懒连接、本地回收、结果隔离和恢复通过；不能要求不存在的 provider.cancel |
+| 同名函数、不同扩展成员、参数改变与重复扫描 | 按工作包六先验证对象身份和重扫语义；未开放 rescan/EPQ 的路径继续拒绝，不能把再次调用模型当作无影响的回调实现 |
+| 后续多个算子/会话 | 每个节点的计划、计数与完成关联独立；空闲会话与容量不足的处理按 §6.4 验证，不由单节点测试推出通过 |
 | 后续多在途/乱序/输入 seal | 仅在新增接口实现后验证前缀所有权、唯一终态、reorder 上限、取消和排空；不写成当前能力 |
 | provider crash 或断连 | PG 明确错误；外部计算不保证回滚，未提交 INSERT 的数据库效果由 PG 回滚 |
 
@@ -449,7 +607,7 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 
 ## 12. 当前不能声称
 
-- 四 C、四 D、增量 SchedulingSession、PG batch/reorder 或公司 Adapter 已因计划存在而实现；
+- 四 C 已合并或已完成全部资源/模型验证，或四 D、算子组合、增量 SchedulingSession、PG batch/reorder、公司 Adapter 已因计划存在而实现；
 - fixture、emulated producer 或历史外部执行结果来自新增的 PG 内置算子路径；
 - choice 格式合法代表自然语言判断正确，或 raw text 可返回代表任务质量达标；
 - 独立核心测试替代 PG lifecycle、资源、语义/质量或真实匹配 E2E 验证；

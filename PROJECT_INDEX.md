@@ -16,6 +16,7 @@
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 回答 semantic plan/provider interface 如何实现、工作包顺序和验收条件；不承担第二份文献综述或实现证据 |
 | choice 详细实施计划 | [`experiments/plans/postgresql_choice_profile_engineering.md`](experiments/plans/postgresql_choice_profile_engineering.md) | 只定义四 C 的字段、版本、预算与逐项验收；跨工作包依赖由主架构维护 |
+| 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
 | 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
 | 对外叙事与主张 | [`opening/claim_matrix.md`](opening/claim_matrix.md)、[`opening/report/opening_report.md`](opening/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
@@ -47,8 +48,12 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
 按任务选择主计划中的工作包：PG 接入先读[四 C 详细计划](experiments/plans/postgresql_choice_profile_engineering.md)
-及[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)；
-增量核心读工作包七，Filter 质量/成本/第二路径读工作包五，公司接入读 §8.7。
+及后续[基础检查/最小组合](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)、
+[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)；
+增量核心读工作包七，Filter 质量/成本/第二路径读工作包五。新增算子、请求/结果处理前按
+[具体工程参考表](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)
+按完整链路逐维判断采用、保留或延期，后续切片重查受影响项；未来自有成果向公司移植读同一 §8.7
+的职责与两个移植接点。多算子、gateway 只是完整工程对照中的部分问题。
 独立核心研发不等待 Filter 资格；实际 PG 接入和端到端比较仍按对应路径验证。
 旧串行顺序与完整历史条件见[设计快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 当前源码与实验状态不从该快照推断。

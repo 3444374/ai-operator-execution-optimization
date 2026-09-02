@@ -1,25 +1,47 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`planned / implementation-pending`
+状态：`in-progress / wired-and-insert-validated-on-branch / resource-and-real-model-pending`
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
 跨工作包依赖、模块分工和公司接入由[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md)维护；
 源码是否已实现看[INFRA_STATUS](../../code/INFRA_STATUS.md)，运行结果看
-[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。本次分离文档不增加实现或运行证据。
+[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。本次文档修订不增加实现或运行证据。
 
 本工作包只增加 Filter 的受约束生成能力。真实生成型 SemMap 由主计划四 D 单独定义，不能照搬
 Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立核心研发不以本工作包的模型质量
 通过为前提；真实数据库接入与语义优化仍分别满足主计划的验收条件。
 
 本节是本轮工程设计与验收的唯一详细入口。来源是现有源码接口、此前 choice 格式诊断及本次设计
-审查；它是工程决策，不是新的算法或质量实验结论。当前授权仅为文档更新，代码实现与验证尚未执行。
+审查；它是工程决策，不是新的算法或质量实验结论。值合同、PG plan、中立 open spec、wire v4/gateway
+接线和受限 Filter INSERT 已在独立分支完成，main 尚未合并；新资源与受限真实模型验证仍待完成。
+提交身份与验收范围只从 INFRA_STATUS 和证据台账读取，不把分支验收描述成 main 已可运行。
 
 **目标与非目标。** 证明数据库能显式选择、保存、传输并验证受约束生成配置，保持现有生命周期和
 旧行为；不证明 reference 语义质量、性能收益或成本精度。新配置是 opt-in、unqualified 的工程能力，
 不成为默认 reference，不恢复正式校准，不用于第二路径质量比较。工作包五保留的旧资格失败、
 标签、阈值和 held-out 数据不因本节而改变。“先有语义资格才能编码 choice”的旧实验执行前提，
 只对本节的独立工程接入不再适用；质量采用和成本校准仍须另行验证。
+
+## C.0 算子目的与公司工程参照
+
+Filter 的业务目的为按自然语言条件筛选行，不要求所有模型都输出 UNKNOWN。公司当前实现未命中
+缓存时直接调用大模型，解析 True/False；embedding cascade 只是预留，尚未参与执行。
+本工作包实现的是此前选定的 `choice.tristate.v1`，不是全项目唯一允许的 Filter 输出模式。已有三值
+接口保持兼容；贴近公司的二值输出可作为后续明确合同的候选，但不在同一个 profile ID 下删除 UNKNOWN、
+放宽 parser 或把调用失败变成 false，也不因此重新解释旧质量失败。
+保留三值与未来移植不矛盾：在声明的 WHERE 范围内，目标 Adapter 可以按同一 keep/drop 规则恢复
+关系结果，保留原始模型输出；SQL 表面二值不要求内部丢失 UNKNOWN。其他 SQL 位置与公司原有
+NULL/error 语义另行核对，不能只凭筛出的行相同就宣布全部等价。
+
+按[主计划的具体参考表](postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)
+核对 Filter 的目的、有效参数与错误处理即可，不必通读整个 demo。当前吸收“请求实际参数先确定、
+编码和身份共用同一来源”的经验；不将公司宽松二值解析、GUC/HTTP 配置或未启用的 cascade 搬进本切片。
+若调整已完成部分，先写可观察反例与保留行为，按主计划定点修改，而不再次拆分已经验证的公共层。
+
+完整算子工程对照、PG 接入方式选择、公共 task 编译重构、重扫语义和多算子/多会话能力由
+[主计划的改造顺序](postgresql_ai_semantic_operator_architecture_20260827.md#operator-engineering-actions)
+维护，不扩成本工作包的新验收项。当前收尾仍按 C.5 验证单会话资源与受限真实服务；多会话不由此通过。
 
 ## C.1 SQL 选择与版本分流
 
@@ -34,8 +56,10 @@ Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立
 }
 ```
 
-这是待实现接口，不能作为当前可运行示例。上述 profile selector 是本节唯一拟定名称，不增加
-讨论草案中的其他别名；它由下述 profile ID 和 version 组合得到。
+这是独立分支已接通的 SQL 选项，main 尚未接入。早期 plan-only 切片的临时 `0A000` 拒绝已移除；
+新路径复用 lazy open，LIMIT 0、zero-row 与 NULL-only 不创建 provider 会话。旧端或不受支持的版本
+仍明确拒绝，不能回落旧 v3 或无约束请求。
+上述 profile selector 是本节唯一名称，不增加其他别名；它由下述 profile ID 和 version 组合得到。
 
 | SQL options | 计划与 wire | 行为 |
 |---|---|---|
@@ -139,16 +163,18 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 
 | 步骤 | 完成条件 |
 |---|---|
-| 计划与设计（本次） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；状态仍为 pending |
-| 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
-| PG plan 接入 | 新 options、schema 3、copyObject-safe profile、摘要、prepared/generic-plan 保存及中立 port 映射通过；旧常量、字段和值行为不变 |
-| wire/gateway 接入 | v4 严格校验、两侧 golden parity、已知 profile 映射与不降级证明通过；复用公共传输/生命周期，不复制执行栈 |
-| 功能与资源验证 | Python/protocol/static、中立 C11、精确 PG18.3 warning-free `-O2 -Werror`、regression、完整相关 TAP、新旧配置、普通 SQL、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、错误/取消/资源检查通过 |
+| 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；工作包整体未完成 |
+| 值合同与 PG 表征（独立分支已完成） | C/Python canonical vectors、严格 profile 校验及旧行为测试通过；红测试定位非法节点与列号窄化问题并修复；原失败证据保留 |
+| PG plan 接入（独立分支已完成） | 新 options、schema 3、完整 profile/摘要、copyObject、prepared/generic plan、EXPLAIN 与旧校准拒绝已验证；临时执行拒绝已在后续完整接线中移除 |
+| 中立 open spec / wire / gateway 接入（独立分支已完成） | query-fixed profile 的所有权与中立映射、v4 严格校验、两侧 golden parity、已知 profile 映射与不降级证明通过；复用公共传输/生命周期，不复制执行栈 |
+| 受限 SQL 功能（独立分支已完成） | SELECT 与修复后的单表 Filter INSERT、新旧配置、普通 SQL、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、错误/取消及事务行为有对应 PG18.3 归档；不泛化为任意 SQL 支持 |
+| 新路径资源验证（待完成） | 按 C.5 预先选定设置检查 RSS/FD/线程、no-task、取消及恢复；工具或账本实现不等于资源测试已经通过，旧路径资源证据不能重新绑定到 choice |
 | 受限真实 smoke | preflight 与服务支持证据齐备；请求在总预算内，实际参数差异仅为 choice；新配置返回值通过原 parser，model/usage/finish reason/PG 计数一致；旧配置与全部失败如实记录 |
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |
 
 新 profile 的工程完成标准不包含“九例全部分类正确”、召回/精确率达标、性能改善或 reference 晋升。
-代码任务另行启动；本次文档修改不产生上述构建、协议或模型验证通过的证据。
+已完成项只限已登记分支与路径；本次文档修改不重跑测试或合并源码。后续仍需完成新路径资源与
+受预算限制的真实 smoke；后续改动按影响范围复跑相关测试，不能用工具实现或 fixture 代替实际验证。
 
 ## C.7 暂存的质量决策（不阻塞本工程切片）
 
