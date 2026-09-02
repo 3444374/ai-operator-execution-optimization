@@ -3,15 +3,18 @@
 
 #include "common/cryptohash.h"
 #include "common/sha2.h"
+#include "commands/explain_format.h"
 #include "nodes/makefuncs.h"
 #include "nodes/value.h"
 
 #include "recording_contract.h"
+#include "generation_profile.h"
 #include "semantic_filter_contract.h"
 #include "sem_plan_spec.h"
 
 #define SEMLOOM_RECORDING_PLAN_FIELD_COUNT 10
 #define SEMLOOM_EXACT_FILTER_PLAN_FIELD_COUNT 27
+#define SEMLOOM_CHOICE_FILTER_PLAN_FIELD_COUNT 28
 #define SEMLOOM_PLAN_SPEC_ID_MAX_BYTES 128
 #define SEMLOOM_PLAN_ALGORITHM_MAX_BYTES 64
 #define SEMLOOM_PLAN_ROLE_MAX_BYTES 32
@@ -44,8 +47,10 @@
 #define SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE "physical_role"
 #define SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_DIGEST "semantic_spec_digest"
 #define SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM_DIGEST "physical_algorithm_digest"
+#define SEMLOOM_PLAN_FIELD_GENERATION_PROFILE "generation_profile"
 
 #define SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN "semloom-semantic-spec-v2\0"
+#define SEMLOOM_CHOICE_SEMANTIC_SPEC_DIGEST_DOMAIN "semloom-semantic-spec-v3\0"
 #define SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN \
 	"semloom-physical-algorithm-v2\0"
 
@@ -78,10 +83,12 @@ typedef enum SemloomPlanFieldBit
 	SEMLOOM_PLAN_SEEN_STOP = 1U << 24,
 	SEMLOOM_PLAN_SEEN_SEMANTIC_SPEC_DIGEST = 1U << 25,
 	SEMLOOM_PLAN_SEEN_PHYSICAL_ALGORITHM_DIGEST = 1U << 26,
+	SEMLOOM_PLAN_SEEN_GENERATION_PROFILE = 1U << 27,
 } SemloomPlanFieldBit;
 
 #define SEMLOOM_RECORDING_PLAN_FIELDS ((1U << 10) - 1U)
 #define SEMLOOM_EXACT_FILTER_PLAN_FIELDS ((1U << 27) - 1U)
+#define SEMLOOM_CHOICE_FILTER_PLAN_FIELDS ((1U << 28) - 1U)
 
 static List *semloom_plan_spec_integer_field(const char *name, int value);
 static List *semloom_plan_spec_string_field(const char *name, const char *value);
@@ -93,9 +100,17 @@ static const char *semloom_plan_spec_read_string(Node *value,
 											  uint32 *length_out);
 static void semloom_plan_spec_mark_seen(uint32 *seen_fields, uint32 field_bit);
 static void semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec);
+static List *semloom_make_filter_private(const char *instruction,
+	const char *model_id, AttrNumber input_column, const AiGenerationProfile *profile);
+static List *semloom_plan_profile_encode(const AiGenerationProfile *profile);
+static void semloom_plan_profile_decode(Node *node, MemoryContext owner_context,
+	SemloomPlanSpec *plan_spec);
+static void semloom_plan_profile_digest(const AiGenerationProfile *profile,
+	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
 static void semloom_exact_filter_semantic_digest(
 	const char *instruction,
 	const char *model_id,
+	const AiGenerationProfile *profile,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
 static void semloom_exact_filter_physical_digest(
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
@@ -161,13 +176,29 @@ semloom_plan_spec_make_exact_filter_private(const char *instruction,
 										const char *model_id,
 										AttrNumber input_column)
 {
+	return semloom_make_filter_private(instruction, model_id, input_column, NULL);
+}
+
+List *
+semloom_plan_spec_make_choice_filter_private(const char *instruction,
+										 const char *model_id,
+										 AttrNumber input_column)
+{
+	return semloom_make_filter_private(instruction, model_id, input_column,
+		semloom_generation_profile_tristate());
+}
+
+static List *
+semloom_make_filter_private(const char *instruction, const char *model_id,
+						   AttrNumber input_column, const AiGenerationProfile *profile)
+{
 	char semantic_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	char physical_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	List *fields = NIL;
 
 	if (instruction == NULL || model_id == NULL || input_column <= 0)
 		semloom_plan_spec_invalid("invalid exact SemFilter plan specification");
-	semloom_exact_filter_semantic_digest(instruction, model_id, semantic_digest);
+	semloom_exact_filter_semantic_digest(instruction, model_id, profile, semantic_digest);
 	semloom_exact_filter_physical_digest(physical_digest);
 
 #define APPEND_INT(name, value) \
@@ -175,7 +206,8 @@ semloom_plan_spec_make_exact_filter_private(const char *instruction,
 #define APPEND_STRING(name, value) \
 	do { fields = lappend(fields, semloom_plan_spec_string_field((name), (value))); } while (0)
 	APPEND_INT(SEMLOOM_PLAN_FIELD_SCHEMA_VERSION,
-			   SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION);
+			   profile == NULL ? SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION :
+			   SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_OPERATOR_KIND, SEMLOOM_PLAN_OPERATOR_FILTER);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_INPUT_VALUE_KIND, SEMLOOM_PLAN_VALUE_TEXT);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_OUTPUT_VALUE_KIND, SEMLOOM_PLAN_VALUE_TRISTATE);
@@ -208,6 +240,10 @@ semloom_plan_spec_make_exact_filter_private(const char *instruction,
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_STOP, SEMLOOM_FILTER_STOP);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_DIGEST, semantic_digest);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM_DIGEST, physical_digest);
+	if (profile != NULL)
+		fields = lappend(fields, list_make2(
+			makeString(pstrdup(SEMLOOM_PLAN_FIELD_GENERATION_PROFILE)),
+			semloom_plan_profile_encode(profile)));
 #undef APPEND_STRING
 #undef APPEND_INT
 
@@ -234,12 +270,13 @@ semloom_plan_spec_decode(List *custom_private,
 		semloom_plan_spec_invalid("invalid semantic plan specification");
 	fields_node = (Node *) linitial(custom_private);
 	binding_node = (Node *) lsecond(custom_private);
-	if (!IsA(fields_node, List) || !IsA(binding_node, Integer))
+	if (fields_node == NULL || binding_node == NULL ||
+		!IsA(fields_node, List) || !IsA(binding_node, Integer))
 		semloom_plan_spec_invalid("invalid semantic plan specification");
 	fields = (List *) fields_node;
-	*input_column = (AttrNumber) intVal(binding_node);
-	if (*input_column <= 0)
+	if (intVal(binding_node) <= 0 || intVal(binding_node) > PG_INT16_MAX)
 		semloom_plan_spec_invalid("invalid semantic executor binding");
+	*input_column = (AttrNumber) intVal(binding_node);
 
 	foreach(cell, fields)
 	{
@@ -250,14 +287,14 @@ semloom_plan_spec_decode(List *custom_private,
 		const char *name;
 		uint32 ignored_length;
 
-		if (!IsA(field_node, List))
+		if (field_node == NULL || !IsA(field_node, List))
 			semloom_plan_spec_invalid("invalid semantic plan specification field");
 		field = (List *) field_node;
 		if (list_length(field) != 2)
 			semloom_plan_spec_invalid("invalid semantic plan specification field");
 		name_node = (Node *) linitial(field);
 		value_node = (Node *) lsecond(field);
-		if (!IsA(name_node, String))
+		if (name_node == NULL || !IsA(name_node, String))
 			semloom_plan_spec_invalid("invalid semantic plan specification field");
 		name = strVal(name_node);
 
@@ -372,6 +409,11 @@ semloom_plan_spec_decode(List *custom_private,
 						 plan_spec->physical_algorithm_digest,
 						 SEMLOOM_SHA256_HEX_LENGTH,
 						 &ignored_length)
+		else if (strcmp(name, SEMLOOM_PLAN_FIELD_GENERATION_PROFILE) == 0)
+		{
+			semloom_plan_spec_mark_seen(&seen_fields, SEMLOOM_PLAN_SEEN_GENERATION_PROFILE);
+			semloom_plan_profile_decode(value_node, owner_context, plan_spec);
+		}
 		else
 			semloom_plan_spec_invalid("unknown semantic plan specification field");
 #undef READ_STRING
@@ -391,9 +433,165 @@ semloom_plan_spec_decode(List *custom_private,
 			list_length(fields) != SEMLOOM_EXACT_FILTER_PLAN_FIELD_COUNT)
 			semloom_plan_spec_invalid("incomplete semantic plan specification");
 	}
+	else if (plan_spec->schema_version == SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION)
+	{
+		if (seen_fields != SEMLOOM_CHOICE_FILTER_PLAN_FIELDS ||
+			list_length(fields) != SEMLOOM_CHOICE_FILTER_PLAN_FIELD_COUNT)
+			semloom_plan_spec_invalid("incomplete semantic plan specification");
+	}
 	else
 		semloom_plan_spec_invalid("unsupported semantic plan specification");
 	semloom_plan_spec_validate(plan_spec);
+}
+
+/* Named PG nodes, including ordered choices: no pointer to a live registry. */
+static List *
+semloom_plan_profile_encode(const AiGenerationProfile *profile)
+{
+	List *fields = NIL;
+	List *choices = NIL;
+	char digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+	uint32 index;
+
+	semloom_plan_profile_digest(profile, digest);
+	fields = lappend(fields, semloom_plan_spec_string_field("profile_id",
+		pnstrdup((const char *) profile->profile_id.data, profile->profile_id.length)));
+	fields = lappend(fields, semloom_plan_spec_integer_field("profile_version",
+		profile->profile_version));
+	fields = lappend(fields, semloom_plan_spec_string_field("constraint_kind", "CHOICE"));
+	for (index = 0; index < profile->choice_count; index++)
+		choices = lappend(choices, makeString(pnstrdup(
+			(const char *) profile->choices[index].data, profile->choices[index].length)));
+	fields = lappend(fields, list_make2(makeString(pstrdup("choices")), choices));
+	fields = lappend(fields, semloom_plan_spec_string_field("profile_digest", digest));
+	return fields;
+}
+
+static void
+semloom_plan_profile_decode(Node *node, MemoryContext owner_context,
+							SemloomPlanSpec *plan_spec)
+{
+	AiGenerationProfile *profile = &plan_spec->generation_profile;
+	ListCell *cell;
+	uint32 seen = 0;
+	char digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+
+	if (node == NULL || !IsA(node, List) || list_length((List *) node) != 5)
+		semloom_plan_spec_invalid("invalid generation profile fields");
+	foreach(cell, (List *) node)
+	{
+		Node *field_node = lfirst(cell);
+		List *field;
+		Node *value;
+		const char *name;
+		uint32 length;
+
+		if (field_node == NULL || !IsA(field_node, List) ||
+			list_length((List *) field_node) != 2 || linitial((List *) field_node) == NULL ||
+			!IsA(linitial((List *) field_node), String))
+			semloom_plan_spec_invalid("invalid generation profile field");
+		field = (List *) field_node;
+		name = strVal(linitial(field));
+		value = lsecond(field);
+		if (strcmp(name, "profile_id") == 0)
+		{
+			semloom_plan_spec_mark_seen(&seen, 1U);
+			profile->profile_id.data = (const uint8 *) semloom_plan_spec_read_string(
+				value, 128, owner_context, &profile->profile_id.length);
+		}
+		else if (strcmp(name, "profile_version") == 0)
+		{
+			semloom_plan_spec_mark_seen(&seen, 2U);
+			profile->profile_version = semloom_plan_spec_read_positive_integer(value);
+		}
+		else if (strcmp(name, "constraint_kind") == 0)
+		{
+			const char *kind;
+
+			semloom_plan_spec_mark_seen(&seen, 4U);
+			kind = semloom_plan_spec_read_string(value, 16, owner_context, &length);
+			if (strcmp(kind, "CHOICE") != 0)
+				semloom_plan_spec_invalid("unsupported generation profile constraint");
+			profile->constraint_kind = AI_GENERATION_CONSTRAINT_CHOICE;
+		}
+		else if (strcmp(name, "choices") == 0)
+		{
+			ListCell *choice;
+			uint32 index = 0;
+
+			semloom_plan_spec_mark_seen(&seen, 8U);
+			if (value == NULL || !IsA(value, List) ||
+				list_length((List *) value) != AI_GENERATION_PROFILE_MAX_CHOICES)
+				semloom_plan_spec_invalid("invalid generation profile choices");
+			foreach(choice, (List *) value)
+			{
+				profile->choices[index].data = (const uint8 *) semloom_plan_spec_read_string(
+					lfirst(choice), 7, owner_context, &profile->choices[index].length);
+				index++;
+			}
+			profile->choice_count = index;
+		}
+		else if (strcmp(name, "profile_digest") == 0)
+		{
+			semloom_plan_spec_mark_seen(&seen, 16U);
+			plan_spec->generation_profile_digest = semloom_plan_spec_read_string(
+				value, SEMLOOM_SHA256_HEX_LENGTH, owner_context, &length);
+		}
+		else
+			semloom_plan_spec_invalid("unknown generation profile field");
+	}
+	if (seen != 31U)
+		semloom_plan_spec_invalid("incomplete generation profile");
+	semloom_plan_profile_digest(profile, digest);
+	if (strcmp(digest, plan_spec->generation_profile_digest) != 0)
+		semloom_plan_spec_invalid("generation profile digest mismatch");
+}
+
+static void
+semloom_plan_profile_digest(const AiGenerationProfile *profile,
+						   char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
+{
+	uint8 bytes[SEMLOOM_GENERATION_PROFILE_CANONICAL_BYTES];
+	uint32 length;
+	pg_cryptohash_ctx *context;
+
+	if (!semloom_generation_profile_encode(profile, bytes, sizeof(bytes), &length))
+		semloom_plan_spec_invalid("unsupported generation profile");
+	semloom_hash_begin(&context);
+	semloom_hash_bytes(context, bytes, length);
+	semloom_hash_finish(context, output);
+}
+
+void
+semloom_plan_spec_explain(const SemloomPlanSpec *plan_spec, ExplainState *explain_state)
+{
+	ExplainPropertyText("Physical Role", plan_spec->physical_role, explain_state);
+	if (plan_spec->model_id != NULL)
+	{
+		ExplainPropertyText("Semantic Spec", plan_spec->semantic_spec_id, explain_state);
+		ExplainPropertyText("Physical Algorithm", plan_spec->physical_algorithm, explain_state);
+		ExplainPropertyText("Prompt Program", plan_spec->prompt_program_id, explain_state);
+		ExplainPropertyText("Result Parser", plan_spec->result_parser_id, explain_state);
+		ExplainPropertyText("Model", plan_spec->model_id, explain_state);
+	}
+	if (plan_spec->generation_profile_digest != NULL)
+	{
+		List *choices = NIL;
+		uint32 index;
+
+		ExplainPropertyInteger("Semantic Plan Schema", NULL, plan_spec->schema_version, explain_state);
+		ExplainPropertyText("Semantic Spec Digest", plan_spec->semantic_spec_digest, explain_state);
+		ExplainPropertyText("Generation Profile",
+			(const char *) plan_spec->generation_profile.profile_id.data, explain_state);
+		ExplainPropertyInteger("Generation Profile Version", NULL,
+			plan_spec->generation_profile.profile_version, explain_state);
+		ExplainPropertyText("Generation Constraint", "CHOICE", explain_state);
+		for (index = 0; index < plan_spec->generation_profile.choice_count; index++)
+			choices = lappend(choices, (char *) plan_spec->generation_profile.choices[index].data);
+		ExplainPropertyList("Generation Choices", choices, explain_state);
+		ExplainPropertyText("Generation Profile Digest", plan_spec->generation_profile_digest, explain_state);
+		ExplainPropertyText("Generation Quality", "unqualified", explain_state);
+	}
 }
 
 static List *
@@ -411,7 +609,7 @@ semloom_plan_spec_string_field(const char *name, const char *value)
 static int
 semloom_plan_spec_read_positive_integer(Node *value)
 {
-	if (!IsA(value, Integer) || intVal(value) <= 0)
+	if (value == NULL || !IsA(value, Integer) || intVal(value) <= 0)
 		semloom_plan_spec_invalid("invalid semantic plan specification field");
 	return intVal(value);
 }
@@ -419,7 +617,7 @@ semloom_plan_spec_read_positive_integer(Node *value)
 static int
 semloom_plan_spec_read_nonnegative_integer(Node *value)
 {
-	if (!IsA(value, Integer) || intVal(value) < 0)
+	if (value == NULL || !IsA(value, Integer) || intVal(value) < 0)
 		semloom_plan_spec_invalid("invalid semantic plan specification field");
 	return intVal(value);
 }
@@ -433,7 +631,7 @@ semloom_plan_spec_read_string(Node *value,
 	const char *source;
 	Size length;
 
-	if (!IsA(value, String))
+	if (value == NULL || !IsA(value, String))
 		semloom_plan_spec_invalid("invalid semantic plan specification field");
 	source = strVal(value);
 	length = strlen(source);
@@ -480,6 +678,8 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 
 		semloom_exact_filter_semantic_digest(plan_spec->instruction,
 										  plan_spec->model_id,
+										  plan_spec->generation_profile_digest == NULL ? NULL :
+										  &plan_spec->generation_profile,
 										  semantic_digest);
 		semloom_exact_filter_physical_digest(physical_digest);
 		if (plan_spec->operator_kind != SEMLOOM_PLAN_OPERATOR_FILTER ||
@@ -515,15 +715,24 @@ static void
 semloom_exact_filter_semantic_digest(
 	const char *instruction,
 	const char *model_id,
+	const AiGenerationProfile *profile,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
 {
 	pg_cryptohash_ctx *context;
 	uint8 stream = SEMLOOM_FILTER_STREAM;
+	uint8 profile_bytes[SEMLOOM_GENERATION_PROFILE_CANONICAL_BYTES];
+	uint32 profile_length = 0;
+	const char *domain = profile == NULL ? SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN :
+		SEMLOOM_CHOICE_SEMANTIC_SPEC_DIGEST_DOMAIN;
+
+	if (profile != NULL && !semloom_generation_profile_encode(profile,
+			profile_bytes, sizeof(profile_bytes), &profile_length))
+		semloom_plan_spec_invalid("unsupported generation profile");
 
 	semloom_hash_begin(&context);
-	semloom_hash_bytes(context, SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN,
-					   sizeof(SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN) - 1);
-	semloom_hash_uint32(context, SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION);
+	semloom_hash_bytes(context, domain, strlen(domain) + 1);
+	semloom_hash_uint32(context, profile == NULL ? SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION :
+		SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION);
 	semloom_hash_text(context, SEMLOOM_EXACT_FILTER_SPEC_ID);
 	semloom_hash_uint32(context, SEMLOOM_EXACT_FILTER_SPEC_VERSION);
 	semloom_hash_text(context, "SEM_FILTER");
@@ -546,6 +755,11 @@ semloom_exact_filter_semantic_digest(
 	semloom_hash_uint32(context, SEMLOOM_FILTER_N);
 	semloom_hash_bytes(context, &stream, sizeof(stream));
 	semloom_hash_text(context, SEMLOOM_FILTER_STOP);
+	if (profile != NULL)
+	{
+		semloom_hash_uint32(context, profile_length);
+		semloom_hash_bytes(context, profile_bytes, profile_length);
+	}
 	semloom_hash_finish(context, output);
 }
 

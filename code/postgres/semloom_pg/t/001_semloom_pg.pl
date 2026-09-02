@@ -683,6 +683,17 @@ is(
 	0,
 	'plan exposes held-out error evidence separately from cost');
 
+my $choice_cost_plan = decode_json($node->safe_psql('postgres', qq{
+SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+SET semloom_pg.reference_calibration_file = '$calibration_artifact_path';
+EXPLAIN (FORMAT JSON) SELECT doc_id FROM semloom_exact_filter_cost_inputs
+WHERE doc_id <= 50 AND ai_semantic.filter(payload, 'Input describes a database system.',
+'{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+}))->[0]->{'Plan'};
+is($choice_cost_plan->{'AI Cost Calibration'}, 'rejected', 'choice rejects the otherwise matched old calibration');
+is($choice_cost_plan->{'AI Cost Calibration Reason'}, 'semantic-spec-mismatch', 'complete profile changes calibration identity');
+is($choice_cost_plan->{'AI Cost Model'}, 'semloom.exact_filter.uncalibrated.v1', 'choice does not use old calibrated coefficients');
+
 my $mismatched_cost_explain = decode_json(
 	$node->safe_psql(
 		'postgres',

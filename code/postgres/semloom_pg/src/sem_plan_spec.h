@@ -5,8 +5,10 @@
 #include "postgres.h"
 
 #include "access/attnum.h"
+#include "commands/explain_state.h"
 #include "nodes/pg_list.h"
 #include "utils/memutils.h"
+#include "ai_provider_port.h"
 
 #define SEMLOOM_PLAN_SPEC_SCHEMA_VERSION 1
 
@@ -70,6 +72,9 @@ typedef struct SemloomPlanSpec
 	const char *physical_role;
 	const char *semantic_spec_digest;
 	const char *physical_algorithm_digest;
+	/* Present only in schema 3; all slices are owned by the decode context. */
+	AiGenerationProfile generation_profile;
+	const char *generation_profile_digest;
 } SemloomPlanSpec;
 
 extern List *semloom_plan_spec_make_recording_private(
@@ -79,6 +84,12 @@ extern List *semloom_plan_spec_make_exact_filter_private(
 	const char *instruction,
 	const char *model_id,
 	AttrNumber input_column);
+extern List *semloom_plan_spec_make_choice_filter_private(
+	const char *instruction,
+	const char *model_id,
+	AttrNumber input_column);
+extern void semloom_plan_spec_explain(const SemloomPlanSpec *plan_spec,
+									 ExplainState *explain_state);
 extern void semloom_plan_spec_decode(List *custom_private,
 									 MemoryContext owner_context,
 									 SemloomPlanSpec *plan_spec,

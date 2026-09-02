@@ -335,7 +335,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn("SEMLOOM_RECORDING_ALGORITHM", machine_source)
         self.assertNotIn("AiOpenSpec", machine_source)
         self.assertIn("semloom_plan_spec_decode", pump_source)
-        self.assertIn("runtime->plan_spec.physical_role", runtime_source)
+        self.assertIn("semloom_plan_spec_explain(&runtime->plan_spec", runtime_source)
+        self.assertIn("plan_spec->physical_role", plan_source)
         self.assertNotIn('ExplainPropertyText("Physical Role", "reference"', runtime_source)
 
     def test_neutral_provider_contract_has_no_postgres_dependencies(self) -> None:

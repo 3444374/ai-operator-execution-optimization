@@ -53,7 +53,8 @@ static bool semloom_is_filter_marker(Oid function_oid,
 									Oid exact_oid);
 static void semloom_exact_filter_arguments(FuncExpr *marker,
 										 char **instruction,
-										 char **model_id);
+										 char **model_id,
+										 bool *choice_profile);
 static bool semloom_json_key_equals(const JsonbValue *key, const char *expected);
 static bool semloom_numeric_text_is_zero(const char *value);
 static void semloom_estimate_exact_filter_cost(
@@ -290,12 +291,12 @@ semloom_make_filter_path(PlannerInfo *root,
 	{
 		char *instruction = NULL;
 		char *model_id = NULL;
+		bool choice_profile = false;
 
-		semloom_exact_filter_arguments(marker, &instruction, &model_id);
-		plan_private = semloom_plan_spec_make_exact_filter_private(
-			instruction,
-			model_id,
-			(AttrNumber) input_column);
+		semloom_exact_filter_arguments(marker, &instruction, &model_id, &choice_profile);
+		plan_private = choice_profile ?
+			semloom_plan_spec_make_choice_filter_private(instruction, model_id, (AttrNumber) input_column) :
+			semloom_plan_spec_make_exact_filter_private(instruction, model_id, (AttrNumber) input_column);
 		{
 			AttrNumber calibration_input_column;
 			SemloomFilterCalibration calibration;
@@ -562,7 +563,8 @@ semloom_is_filter_marker(Oid function_oid, Oid recording_oid, Oid exact_oid)
 static void
 semloom_exact_filter_arguments(FuncExpr *marker,
 								 char **instruction,
-								 char **model_id)
+								 char **model_id,
+								 bool *choice_profile)
 {
 	Node *instruction_node = lsecond(marker->args);
 	Node *options_node = lthird(marker->args);
@@ -577,6 +579,10 @@ semloom_exact_filter_arguments(FuncExpr *marker,
 	bool seen_model = false;
 	bool seen_temperature = false;
 	bool seen_max_tokens = false;
+	JsonbValue profile_key;
+	JsonbValue *profile_value;
+
+	*choice_profile = false;
 
 	if (!IsA(instruction_node, Const) || ((Const *) instruction_node)->constisnull)
 		semloom_invalid_exact_filter_argument(
@@ -600,9 +606,22 @@ semloom_exact_filter_arguments(FuncExpr *marker,
 	*instruction = pnstrdup(VARDATA_ANY(instruction_text), instruction_length);
 
 	options = DatumGetJsonbP(options_const->constvalue);
-	if (!JB_ROOT_IS_OBJECT(options) || JB_ROOT_COUNT(options) != 3)
+	profile_key.type = jbvString;
+	profile_key.val.string.val = "generation_profile";
+	profile_key.val.string.len = strlen(profile_key.val.string.val);
+	profile_value = JB_ROOT_IS_OBJECT(options) ?
+		findJsonbValueFromContainer(&options->root, JB_FOBJECT, &profile_key) : NULL;
+	/* No selector: retain the old count/error boundary, including extra keys. */
+	if (!JB_ROOT_IS_OBJECT(options) ||
+		JB_ROOT_COUNT(options) != (profile_value == NULL ? 3 : 4))
 		semloom_invalid_exact_filter_argument(
 			"SemFilter options must contain exactly model, temperature, and max_tokens");
+	if (profile_value != NULL)
+	{
+		if (!semloom_json_key_equals(profile_value, SEMLOOM_CHOICE_FILTER_PROFILE_SELECTOR))
+			semloom_invalid_exact_filter_argument("unsupported SemFilter generation_profile");
+		*choice_profile = true;
+	}
 	iterator = JsonbIteratorInit(&options->root);
 	while ((token = JsonbIteratorNext(&iterator, &value, true)) != WJB_DONE)
 	{
@@ -657,6 +676,11 @@ semloom_exact_filter_arguments(FuncExpr *marker,
 					"SemFilter max_tokens must be integer 8");
 			pfree(numeric_text);
 			seen_max_tokens = true;
+		}
+		else if (semloom_json_key_equals(&value, "generation_profile"))
+		{
+			/* Its type and exact supported selector were checked above. */
+			Assert(*choice_profile);
 		}
 		else
 			semloom_invalid_exact_filter_argument(

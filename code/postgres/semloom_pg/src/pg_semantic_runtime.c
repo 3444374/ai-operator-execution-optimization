@@ -254,27 +254,7 @@ pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
 	ExplainPropertyText("Provider",
 						runtime->provider.ops->adapter_name,
 						explain_state);
-	ExplainPropertyText("Physical Role",
-						runtime->plan_spec.physical_role,
-						explain_state);
-	if (runtime->plan_spec.model_id != NULL)
-	{
-		ExplainPropertyText("Semantic Spec",
-							runtime->plan_spec.semantic_spec_id,
-							explain_state);
-		ExplainPropertyText("Physical Algorithm",
-							runtime->plan_spec.physical_algorithm,
-							explain_state);
-		ExplainPropertyText("Prompt Program",
-							runtime->plan_spec.prompt_program_id,
-							explain_state);
-		ExplainPropertyText("Result Parser",
-							runtime->plan_spec.result_parser_id,
-							explain_state);
-		ExplainPropertyText("Model",
-							runtime->plan_spec.model_id,
-							explain_state);
-	}
+	semloom_plan_spec_explain(&runtime->plan_spec, explain_state);
 }
 
 void

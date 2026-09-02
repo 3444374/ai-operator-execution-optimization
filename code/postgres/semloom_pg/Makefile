@@ -2,6 +2,7 @@ EXTENSION = semloom_pg
 MODULE_big = semloom_pg
 OBJS = \
 	src/extension.o \
+	src/generation_profile.o \
 	src/marker.o \
 	src/provider.o \
 	src/pg_semantic_runtime.o \
