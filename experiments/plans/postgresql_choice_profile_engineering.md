@@ -231,6 +231,16 @@ fixture；同一 backend/gateway 内连续执行各规模，以免通过重启�
 公司来源沿用主计划的有效请求与错误处理观察；本轮不移植公司代码或改其标量函数，参考记录只在文档。
 单会话 gateway 限制另登记为下一组合切片的前置项，不把这轮资源通过写成多会话资源保证。
 
+真实服务检查的输入与记录补充（运行前登记）：使用 `Write a Python function that adds two integers.`、
+`Give me a recipe for tomato soup.`、`Can you explain this?` 三条公开合成文本，不读取校准数据。
+先 old/choice 各预热第一条一次，再按重复号、输入编号、old/choice 的固定交错顺序各两次，共 14 次；
+SQL NULL 对照额外执行但不产生 HTTP。完整实际 JSON 按值及类型比较，completion 与 PG 行集/usage 对照。
+使用已有模型 generation config 的 `repetition_penalty=1.1`，同一进程对两臂一致；同时记录模型、tokenizer、
+chat template 与生成配置 SHA，核对启动参数及前后进程身份。一次运行发生 provider 错误或 choice 非法输出
+即终止并保留已消费额度，不自动重跑；old 的非法输出如实保留。先以 HTTP fixture 验证该采集流程。
+此轮公司参照仍为 §8.7 的有效请求、原始完成和错误分层；落点仅实验采集/核验工具，PG/runtime/provider
+生产实现不变。供应商 choice 字段依据 [vLLM 0.25.1 文档](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)。
+
 资源检查的受控重跑设置：首轮正常 v3/v4 与取消检查通过，但 DNS 阶段 backend FD 从 38 降到 37，
 不满足预先写定的“恰好相等”。追加句柄诊断确认减少的是测试表的 `_fsm` 文件，socket 未增加；
 另一次诊断因容器 root 无权读取其他 UID 的 proc 链接而失败。这些运行全部保留为未通过。

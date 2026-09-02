@@ -15,6 +15,7 @@ import time
 from src.execution_provider import server
 from src.execution_provider.adapters.semantic_session import CompletionAdapterError
 from src.experiments.choice_attempt_ledger import AttemptLedger, observe_http_posts
+from src.baselines.common.redact import redact_text
 
 
 def main():
@@ -31,7 +32,7 @@ def main():
 
     def record(event):
         with args.events.open('a', encoding='utf-8') as handle:
-            handle.write(json.dumps(event, ensure_ascii=False, separators=(',', ':')) + '\n')
+            handle.write(redact_text(json.dumps(event, ensure_ascii=False, separators=(',', ':'))) + '\n')
 
     original_adapter = server.OpenAICompatibleFixedAdapter
 

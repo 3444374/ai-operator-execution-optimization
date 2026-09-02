@@ -56,6 +56,13 @@ python code/scripts/experiments/run_choice_resource_checks.py \
 不记录认证头，也不改变生产 gateway 或 PG port。真实 smoke 必须复用同一外部 ledger；这些工具
 本身不证明真实服务支持 choice 或通过模型质量验证。
 
+`experiments/run_choice_service_checks.py` 以独立 PG18.3 集群执行预先登记的 14 次 old/choice 请求与
+两个 NULL 对照。它要求已有持久 ledger；真实模式核对 live service、模型文件及继承参数，fixture 模式
+必须显式指定。记录实际 HTTP JSON、raw completion、SQLSTATE、EXPLAIN 行数/usage，以及前后身份；
+仅删除 choice 字段后仍有值或类型差异则拒绝通过。程序不启动模型、不创建真实预算、不读取 held-out，
+也不评定标签质量；先按同一 [C.5 计划](../../experiments/plans/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)
+完成 preflight、模型服务与账本核验，再使用 `--help` 中的路径参数运行。
+
 ## Exact SemFilter reference calibration
 
 `analysis/build_semfilter_reference_calibration.py` 将离线收集的 exact-reference training/held-out

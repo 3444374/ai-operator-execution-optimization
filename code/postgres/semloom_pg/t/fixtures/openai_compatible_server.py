@@ -30,6 +30,7 @@ class FixtureServer(HTTPServer):
     invalid_json: bool
     request_index: int
     require_choice: bool
+    allow_choice: bool
     request_log: Path | None
 
 
@@ -53,7 +54,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if self.server.response_status != 200:
             self._send(self.server.response_status, {"error": "fixture failure"})
             return
-        if not _valid_request(request_value, self.server.model_id, self.server.require_choice):
+        with_choice = self.server.require_choice or (
+            self.server.allow_choice and isinstance(request_value, dict)
+            and 'structured_outputs' in request_value)
+        if not _valid_request(request_value, self.server.model_id, with_choice):
             self._send(400, {"error": "invalid request"})
             return
         if self.server.invalid_json:
@@ -133,6 +137,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--invalid-json", action="store_true")
     parser.add_argument("--max-requests", type=int, default=1)
     parser.add_argument("--require-choice", action="store_true")
+    parser.add_argument("--allow-choice", action="store_true")
     parser.add_argument("--request-log", type=Path)
     return parser.parse_args()
 
@@ -161,6 +166,7 @@ def main() -> int:
     server.invalid_json = args.invalid_json
     server.request_index = 0
     server.require_choice = args.require_choice
+    server.allow_choice = args.allow_choice
     server.request_log = args.request_log
     args.port_file.write_text(str(server.server_port), encoding="ascii")
     try:
