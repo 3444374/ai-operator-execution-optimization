@@ -2,10 +2,22 @@
 import copy
 import unittest
 
-from src.experiments.choice_service_checks import verify_choice_pair, verify_completion
+from src.experiments.choice_service_checks import verify_choice_pair, verify_completion, verify_prompt_usage
 
 
 class ChoiceServiceChecksTests(unittest.TestCase):
+    def test_prompt_usage_counts_tokens_not_batch_encoding_fields(self):
+        class Tokenizer:
+            def apply_chat_template(self, messages, *, tokenize, add_generation_prompt, return_dict=True):
+                tokens = [11, 22, 33]
+                return {'input_ids': tokens, 'attention_mask': [1, 1, 1]} if return_dict else tokens
+
+        tokenizer = Tokenizer()
+        request = {'messages': [{'role': 'user', 'content': 'text'}]}
+        verify_prompt_usage(tokenizer, request, {'prompt_tokens': 3})
+        with self.assertRaises(ValueError):
+            verify_prompt_usage(tokenizer, request, {'prompt_tokens': 2})
+
     def test_only_choice_may_differ_in_actual_requests(self):
         old = {'model': 'fixture', 'temperature': 0, 'max_tokens': 8,
                'messages': [{'role': 'user', 'content': 'text'}]}

@@ -46,6 +46,14 @@ def verify_completion(completion, plan, sqlstate, model):
     return True
 
 
+def verify_prompt_usage(tokenizer, request, completion):
+    """Compare reported prompt usage with the tokenizer's rendered messages."""
+    tokens = tokenizer.apply_chat_template(
+        request['messages'], tokenize=True, add_generation_prompt=True, return_dict=False)
+    if completion['prompt_tokens'] != len(tokens):
+        raise ValueError('reported prompt usage differs from chat template tokens')
+
+
 def save(path, value):
     with path.open('x', encoding='utf-8') as handle:
         handle.write(redact_text(json.dumps(value, ensure_ascii=False, indent=2)) + '\n')
@@ -139,9 +147,7 @@ def run_queries(args, connection, ledger, tokenizer):
         else:
             old_request = request
         if tokenizer is not None:
-            expected_tokens = len(tokenizer.apply_chat_template(
-                request['messages'], tokenize=True, add_generation_prompt=True))
-            assert completion['prompt_tokens'] == expected_tokens
+            verify_prompt_usage(tokenizer, request, completion)
         results.append(dict(choice=choice, input_index=index, repeat=repeat,
                             format_valid=valid, sqlstate=state, raw_output=completion['raw_output']))
     return results
