@@ -41,8 +41,13 @@ def settled(processes):
     for _ in range(5):
         snapshots.append({key: sample(value) for key, value in processes.items()})
         time.sleep(SAMPLE_SECONDS)
-    return {key: {field: int(statistics.median(item[key][field] for item in snapshots))
-                  for field in ('rss_bytes', 'fd', 'threads')} for key in processes}
+    result = {key: {field: int(statistics.median(item[key][field] for item in snapshots))
+                    for field in ('rss_bytes', 'fd', 'threads')} for key in processes}
+    for key, process in processes.items():
+        result[key]['fd_targets'] = {
+            path.name: os.readlink(path) for path in Path(f'/proc/{process.pid}/fd').iterdir()
+        }
+    return result
 
 
 def observe(processes, operation):
