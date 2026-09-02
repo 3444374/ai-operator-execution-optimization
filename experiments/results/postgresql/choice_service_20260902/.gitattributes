@@ -1,0 +1,2 @@
+# Preserve whitespace in captured model logs and their integrity hashes.
+raw/server/model*.log -whitespace

@@ -86,15 +86,15 @@ def main() -> int:
         raise SystemExit("--test-max-sessions must be non-negative")
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
-    v3_adapter: CompletionAdapter
+    completion_adapter: CompletionAdapter
     if args.fixed_model_config is None:
-        v3_adapter = GoldenCompletionAdapter(golden_fixtures)
+        completion_adapter = GoldenCompletionAdapter(golden_fixtures)
     else:
         try:
             fixed_config = load_fixed_model_config(args.fixed_model_config)
         except ValueError:
             raise SystemExit("invalid fixed model configuration") from None
-        v3_adapter = OpenAICompatibleFixedAdapter(fixed_config)
+        completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)
     if socket_path.exists():
         mode = socket_path.stat().st_mode
         kind = "socket" if stat.S_ISSOCK(mode) else "non-socket file"
@@ -135,7 +135,7 @@ def main() -> int:
                 continue
             _run_session(
                 connection,
-                v3_adapter=v3_adapter,
+                completion_adapter=completion_adapter,
                 response_delay_ms=args.test_response_delay_ms,
                 tamper_evidence_digest=args.test_tamper_evidence_digest,
                 disconnect_on_task=args.test_disconnect_on_task,
@@ -185,7 +185,7 @@ def _load_golden_fixtures(path: Path | None) -> dict[str, str]:
 def _run_session(
     connection: socket.socket,
     *,
-    v3_adapter: CompletionAdapter,
+    completion_adapter: CompletionAdapter,
     response_delay_ms: int,
     tamper_evidence_digest: bool,
     disconnect_on_task: bool,
@@ -204,7 +204,7 @@ def _run_session(
         run_session = run_v3_session if protocol_version == 3 else run_v4_session
         run_session(
             connection,
-            v3_adapter,
+            completion_adapter,
             open_message=opened,
             response_delay_ms=response_delay_ms,
             tamper_evidence_digest=tamper_evidence_digest,
