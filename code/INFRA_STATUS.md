@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-01
+日期：2026-09-02（本次只更新文档，源码与运行证据未变）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -12,13 +12,17 @@
 `SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
 不修改 vLLM 内部。
 
-**已定设计、尚未实现**：下一工程切片为[choice profile 接入](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)。
-拟新增 SQL opt-in、plan schema 3 与 wire v4；当前源码仍只有原有 options、schema v1/v2 与 wire v2/v3。
-新 profile 即使完成工程接入也保持非默认、未通过语义质量验证，不恢复校准或成为第二优化路径。
-自有 `semloom_pg` 与 SemLoom execution provider 都继续实现；公司 demo 是工程参考，后续通过公司
-fork 的 adapter 接入同一执行核心。该[适配设计与映射清单](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
-不是已经接通的证据；当前没有公司 adapter。本次只修改文档，没有复制或修改两边源码。
-字段、实施顺序和完成标准只由上述计划维护；本页及既有证据不宣称新配置已经可用。
+**尚未实现项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的 SQL opt-in、
+schema 3 / wire v4；四 D 真实生成型 SemMap；增量 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。
+当前仍是 schema v1/v2、wire v2/v3 与同步单在途 port；recording Map 不是生成算子。
+模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
+逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
+query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
+取消通过 close/disconnect 和 PG cleanup。既有 `SynchronousScheduler` 不等于已实现增量 session。
+
+独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
+[主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
+本次没有新增源码、模型调用或测试运行结果，Filter 校准暂停与原始失败结论不变。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
@@ -158,7 +162,7 @@ planner estimate 明确标为 uncalibrated/calibration unavailable；精确 18.3
 目录已清理；该结论不覆盖服务器其他工作负载。accepted-prefix、多在途/
 乱序 completion、增量 SemLoom session 和 LOTUS compatibility adapter 仍未实现。
 LOTUS v1.2.4 不再是核心前置依赖。
-下文图像和 SAOR 待办均为数据库资格步骤之后恢复的条件性工作。
+下文图像和 SAOR 待办仍是条件性工作，未因独立核心的并行研发安排获得运行授权。
 
 系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
 `SemLoom*`/`run_semloom_*` 名称；既有 `Project*` import 与 `project_static`、`project_ray` 身份保持

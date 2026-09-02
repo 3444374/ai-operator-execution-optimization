@@ -1,6 +1,6 @@
 # 实验计划与设计文档
 
-更新日期：2026-09-01
+更新日期：2026-09-02
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -11,27 +11,17 @@
 |---|---|
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
+| choice 的字段、协议、请求预算与逐项实施验收 | [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) |
 | 自有语义算子、SemLoom 与公司 fork 如何分工和接入 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
-当前 recording carrier、shared runtime、同步 provider seam、planner-owned 最小 recording plan spec、
-transport-neutral error interface、compatibility suite 与行为不变的 gateway 公共目录迁移已完成。
-唯一详细工程顺序由架构实施计划 §9
-维护：exact-reference 纵切面实际消费的最小 plan/task/result contract 已依次通过 deterministic golden、
-固定模型 endpoint 和 HTTP/DNS boundary hardening；reference rows/work/actual usage 已显式可观察，
-calibration artifact mechanism 已通过 deterministic qualification。工作包五首轮真实采集因模型输出格式失败停止，
-held-out 和拟合未运行。独立小切片已修复 builder 可辨识性并验证 PG18.3 普通多列统计，但 choice
-仅解决格式，预期语义仍只符合 4/9 个独立样例（三次重复共 12/27）。后续单一 prompt 与 matched
-7B 对照亦未满足三值判断要求，实际 messages/template 无不一致；整轮采集继续暂停。
-下一工程切片为[工作包四 C：choice profile 工程接入](postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
-设计已定、实现待完成：它只提供显式 opt-in、未通过质量验证的能力，不恢复真实校准，也不是第二
-physical path。自有 `semloom_pg` 与 SemLoom 执行/调度两部分都继续完成，公司 demo 作为工程参考；
-接口映射尽早核对，后续在公司 fork 内通过 adapter 接入同一执行核心，不要求整仓迁移。
-后续仍须先取得 reference 语义资格与独立验证通过的 matched artifact，再实现第二 path、quality
-policy、carrier audit 和增量 SemLoom。本 README 只导航，不复制工作包的字段或验收标准。
+主架构只维护分工、依赖与完成条件，详细的 choice 字段和验收由专项计划维护；源码与实验事实分别看
+INFRA_STATUS 和证据台账。PG 近期先做四 C，再做四 D 真实生成型 SemMap；SemLoom 可独立开展
+增量核心表征与 fixture 测试，公司接口可只读核对。它们都仍是待实施工作，真实 PG 接入另行验收。
+Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
 
 ## 2. 状态分层
 
@@ -40,6 +30,7 @@ policy、carrier audit 和增量 SemLoom。本 README 只导航，不复制工�
 | 文件 | 当前状态与用途 |
 |---|---|
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
+| [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 待实施专项；SQL opt-in、版本化 profile、严格错误、兼容性、预算和资源验收的唯一详细入口 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
@@ -70,6 +61,8 @@ policy、carrier audit 和增量 SemLoom。本 README 只导航，不复制工�
 
 2026-08-21 的 PostgreSQL+LOTUS 主计划与 LOTUS frontend 子计划已进入归档；其中的 v1.2.4 源码
 审计、Q1–Q23 决策和反例测试仍可追溯，但当前架构不再以 LOTUS 为语义所有者或前置依赖。
+2026-09-01 的[串行架构历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)
+保留原有完整资格尝试条件、接口原文与历史数字；其中的“当前/下一步”不覆盖现行工作包依赖。
 
 ## 3. 当前研究内容与实验对应
 

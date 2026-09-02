@@ -9,7 +9,7 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-09-01）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+当前状态（2026-09-02，源码未因本次文档修订改变）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
 错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
@@ -26,19 +26,20 @@ execution-provider gateway 的权威实现已经迁到公共 `code/src/execution
 固定 endpoint、model identity、timeout 与认证只来自 gateway 进程外配置。reference path 已独立
 区分 semantic-input rows、NULL rate、output selectivity、model calls、prompt/output usage、
 model role 和 AI-work cost，并在执行时分列实际 usage；该工程启发式还没有校准为性能模型。
-下一步先接入[显式选择的 choice 生成配置](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
-让数据库能够要求模型从 `TRUE/FALSE/UNKNOWN` 中生成答案；新 SQL option、plan schema 3 和 wire v4
-目前只是设计，尚未实现。它不更换默认配置，也不代表判断正确。现有模型未通过预设语义测试，
-真实成本校准仍暂停；后续须先取得合格 reference，再用独立保留数据验证成本估计，之后才比较
-reference 与 LOTUS/Cortex-like optimized paths。只有这些路径暴露 extension 无法封闭的
-plan identity、placement 或 lifecycle 问题时，才增加最小 PostgreSQL core patch。路径选择资格完成后
-再扩 bounded async、SemLoom scheduling 与 IMLane-like batch placement；Kalypso-like dependency/KV
-机制等真实多阶段依赖出现后再评估。
+接下来分别推进自有 PG 算子、SemLoom 核心和公司接口对照。PG 先做
+[可选 choice 生成配置](experiments/plans/postgresql_choice_profile_engineering.md)，再做
+[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)；
+两者仍待实现。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
+分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
+Filter 的真实校准仍暂停，其质量、成本与 LOTUS/Cortex-like 第二路径继续单独推进，不降低既有要求。
+carrier 检查随实际路径进行，只有可复现的限制才触发最小 core patch。IMLane-like 组批位置对照
+需要真实 PG 增量接入；Kalypso-like 多阶段机制仍按实际需求另行决定。
 
 主实现继续完成两部分：自有 `semloom_pg` 语义算子，以及 SemLoom 数据执行与调度；目标是不依赖
 公司私有仓库也能复现。公司 demo 用作算子工程参考，后续在公司 fork 中加入适配层，接入同一个
-SemLoom 执行核心。接口差异提前核对，正式适配后做；经来源和存放权限确认仍可复用合适代码，
-不要求整仓迁移。具体分工见[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+SemLoom 执行核心，承担工业前端接入与获批环境验证。接口差异提前核对，正式适配后做；内网复用与
+外部发布/部署分别确认权限，fork 不自动获得 AutoDL 部署许可。具体分工见
+[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
 
 目标执行链路是（第二优化路径与调度部分尚未接入数据库）：
 
@@ -64,6 +65,7 @@ SQL semantic intent
 | 核对当前源码真实完成度 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) |
 | 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 继续 PostgreSQL AI 语义算子实现（CustomScan、公共层、解耦、core patch 条件与工作包） | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 实施可选 choice 配置（字段、版本、预算与验收） | [`postgresql_choice_profile_engineering.md`](experiments/plans/postgresql_choice_profile_engineering.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
 | 准备开题报告或答辩 | [`opening/README.md`](opening/README.md) |
 

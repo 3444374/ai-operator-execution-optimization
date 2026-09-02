@@ -74,26 +74,28 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
 
 ## 3. 当前资格顺序
 
-当前实现按以下顺序推进：
+区分独立研发、数据库接入和方法结论的前置条件，不把某一算子的质量实验设为所有工程工作的串行前置项：
 
-1. 锁定 `REL_18_3`，先以 extension/planner-visible recording reference paths 验证 ordinary child plan、
-   snapshot、cancel、error、result lifecycle 和中立 execution-provider seam；
-2. 在扩展异步协议前，实现数据库拥有的最小真实 `SemanticPlanSpec`：instruction、prompt program、
-   result parser、model/generation constraints 与 NULL/error/order policy 都进入 plan identity；用同步单在途
-   provider 完成 exact `SemFilter` 真实语义纵切面；
-3. 在同一逻辑语义下增加显式 reference/optimized `SemFilter` physical paths；PostgreSQL 保存
-   algorithm/model role、quality policy、calibration evidence、reference fallback 和可比较的 AI work cost；
-4. 用上述真实路径审查 extension 对 plan identity、prepared-plan、hook coexistence、有限 predicate
-   placement 与 LOTUS/Cortex alternatives 的支持；能表达则保留 extension，出现已复现阻断才增加最小
-   core semantic patch；
-5. 数据库语义和路径选择资格完成后，再扩 accepted-prefix、多在途、增量 SemLoom scheduling session，
-   并比较 IMLane-like database batch 与 provider rebatching；
-6. 上述资格验证完成后，再恢复图像动态控制、HSE GPU 对照和其他策略扩展；Kalypso-like lineage/KV
-   机制只有出现真实多阶段依赖后才另行立项。
+1. 自有数据库载体锁定 `REL_18_3`。每个真实算子由数据库拥有 instruction、prompt/parser、
+   model/generation 与 NULL/error/order policy，并先建立可验证的同步 reference 与中立 provider seam。
+2. SemLoom 核心可在公开 sealed-task producer、fixture 或现有外部 workload 上独立开展行为表征、
+   增量 session、数据组织、有界提交、多 Job 和路由研发；不等待 SemFilter 语义质量、真实成本校准、
+   第二路径或完整 carrier audit。fixture/外部 producer 必须保留真实身份，不能据此声称已接入 PG。
+3. PG port/wire 的多在途、accepted-prefix 与结果重排单独版本化，依赖对应算子的真实语义与同步基线。
+   每条实际接入路径须通过 plan/task/result、snapshot/权限、取消/错误、关联/顺序及资源上限检查；
+   公共层变化还须验证受影响的旧路径。通过后才纳入该路径的 PG 匹配端到端或 batch-placement 实验。
+4. SemFilter reference/optimized 路径的质量与成本比较仍需要独立 reference 质量、matched calibration、
+   显式近似授权、algorithm/model role、quality evidence 与 fallback。生成型 SemMap 或独立核心不借用、
+   也不等待无关的 Filter 资格；自身实验仍满足适合任务的质量、资源和可比性要求。
+5. carrier audit 随真实路径增量进行；已有同步证据不能代替新增 batch/reorder 或第二路径的检查。
+   extension 能表达则保留，只有目标 identity/placement/lifecycle 出现已复现阻断才增加最小 core patch。
+6. 公司接口可提前只读核对；最小 spike、正式 adapter 和环境验证按授权及可执行 Interface 分步推进。
+   公司接入不作为自有主实现前置项，不复制 SemLoom 核心；代码复用和外部部署遵守本文件 Git/隐私规则。
 
-在前五个数据库核心步骤完成前，现有 profiler、manifest、Daft/Ray/static/SAOR 路径统一标为外部物理执行基座或
-emulated operator contract；不扩 GPU 参数矩阵，不继续调 SAOR，也不把它们写成已实现数据库内算子。
-当前状态只从 `PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和实验证据台账引用。
+上述允许独立研发不自动授权模型运行或正式实验；仍先有具体计划、环境、baseline、资源和停止条件。
+既有 profiler/manifest、Daft/Ray/static/SAOR 结果保持外部执行或 emulated operator 身份，不自动恢复旧
+GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多阶段需求后才另行立项。
+当前任务与实现状态只从主计划、`PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和证据台账引用。
 
 ## 4. 工作方式与证据纪律
 
@@ -213,6 +215,9 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 
 - commit message 不添加 `Co-Authored-By` 或任何 AI 署名；用户署名只属于项目开发者。
 - API key、token、私钥、外部服务器 IP/host、非 localhost 用户名/口令和真实 runtime env 不进入 Git。
+- 公司内网 fork 的复用/修改权限不自动包含外部发布或部署权限；公司源码、二进制、容器、测试数据
+  和日志进入公开仓库或 AutoDL 等外部环境前，须有覆盖材料和目标环境的明确授权。未获授权时留在
+  获批内网环境，公开实现依据公开接口/资料并保留可说明的来源。
 - 新连接串使用环境变量；示例只允许 localhost 公共默认值或明显占位符。
 - evidence 中的命令、异常和 traceback 在落盘前使用 `code/src/baselines/common/redact.py` 脱敏。
 - commit 前运行 `python code/scripts/environment/scan_git_secrets.py`；误报只以最小正则登记到

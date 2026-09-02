@@ -83,11 +83,12 @@ native choice decoding still fails the predeclared semantic cases. A subsequent 
 matching actual HTTP messages and chat-template token IDs, but neither the new prompt on 1.5B nor its matched
 7B comparison met the predeclared tristate expectations. Production configuration remains unchanged.
 See `INFRA_STATUS.md` for the current evidence.
-A qualified reference must precede real collection and held-out validation under one fixed semantic plan, model,
+A qualified Filter reference must precede real collection and held-out validation under one fixed semantic plan, model,
 workload distribution, service, and hardware signature. Only then may a distinct
-reference/optimized path with quality evidence and fallback be implemented, followed by carrier audit.
-Separately, the next engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering).
-Its SQL selector, plan schema 3 and wire v4 are not implemented. Adding that capability will not qualify a model,
+Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
+The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
+followed by [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
+The choice SQL selector, plan schema 3 and wire v4 are not implemented. Adding that capability will not qualify a model,
 change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
 own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
 demo is an engineering reference; a later adapter in the company fork should connect to the same execution core.
@@ -95,8 +96,9 @@ Check interface mapping early, without making that private repository a prerequi
 Direct code reuse still requires clear provenance and destination permissions; no source is moved in this update.
 See the [frontend-adapter design](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy),
 which is planned integration, not evidence of a second frontend already working.
-Accepted-prefix, multiple in-flight tasks, and incremental SemLoom sessions follow database semantic and
-path-selection qualification; see
+SemLoom core characterization, incremental sessions, organization and bounded execution may proceed with
+public sealed tasks and fixtures independently of Filter quality or its second path. PG port/wire expansion and
+database-E2E comparisons still require the relevant real operator, lifecycle, identity and resource checks; see
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. LOTUS v1.2.4 is an optional
 compatibility profile and native full-path baseline, not a prerequisite for the core operator.
 

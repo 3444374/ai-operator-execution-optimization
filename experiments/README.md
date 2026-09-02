@@ -1,18 +1,18 @@
 # 正式研究实验
 
-更新日期：2026-08-30
+更新日期：2026-09-02
 
 本目录回答“提出的方法或系统改动是否有效”。动机测试回答“问题是否存在”，放在
 `../motivation/`；组件和环境验证放在 `../feasibility/`。
 
 ## 当前状态
 
-当前不扩展 GPU 实验矩阵。PostgreSQL 18.3 recording `SemMap/SemFilter`、shared runtime、同步 UDS 和
-compatibility suite 已完成；短期先实现真实 `SemanticPlanSpec` 与同步 exact model reference，再实现
-第二 physical path 和 cost/quality，随后做载体审查。路径选择资格完成后才扩增量 SemLoom 并比较
-IMLane-like batch placement；
-Kalypso lineage、`SemJoin`、fusion/AQE 仅作后续参考。LOTUS compatibility/native baseline 不再是前置
-依赖。现阶段性能实验可使用明确标注的 emulated operator contract，但不能称为已实现数据库内算子。
+当前工程依赖以[架构计划](plans/postgresql_ai_semantic_operator_architecture_20260827.md)为准：PG 的 choice 与
+真实生成型 SemMap、SemLoom 独立增量核心、公司接口映射可分别推进。Filter 质量与真实成本校准仍待
+通过，但不再阻塞独立核心研发；真实 PG 接入和匹配端到端实验仍需对应路径的语义、生命周期、资源与
+质量验证。fixture/emulated producer 保留实际身份；已有同步 reference 证据不能替代新增接入检查。
+这次排期调整没有授权模型运行，也不恢复旧 GPU 矩阵或 SAOR formal。IMLane-like batch placement
+在真实 PG 增量接入后比较；Kalypso、Join、fusion/AQE 仍按实际需求另立计划。
 
 已有文本与图像证据继续保留：
 

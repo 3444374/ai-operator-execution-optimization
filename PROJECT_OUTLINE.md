@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-01
+更新时间：2026-09-02
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -52,16 +52,16 @@ deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments
 [单一 prompt 后续对照](experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
 未发现实际 messages/template 不一致；新 prompt 在 1.5B 的旧/新样例各 5/9，matched 7B 上为
 7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停。下一工程切片独立接入
-[显式选择的 choice 生成配置](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+[显式选择的 choice 生成配置](experiments/plans/postgresql_choice_profile_engineering.md)，
 让数据库保存并传递三值输出要求；新 SQL option、schema 3 与 wire v4 均尚未实现。
 这只验证新能力能否正确接入，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
-后续仍须确定任务、标签与质量判定，取得合格 reference 及真实 matched artifact，之后才实现
-LOTUS/Cortex-like 第二 path。随后用
-reference/optimized 实际路径审查 extension，只有已复现阻断才增加最小 core patch；accepted-prefix、
-多在途和增量 SemLoom 在数据库语义与路径选择资格之后实现。
-上述步骤完成前不扩展
-GPU 矩阵、不调 SAOR、不启动五臂 formal，也不把 external/emulated operator contract 重标为数据库内
-算子结果。LOTUS v1.2.4 compatibility/native baseline 后置且不阻塞数据库核心。
+PG 随后优先完成[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)。
+SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
+不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
+其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较
+分别验证对应语义、生命周期和资源，不借用纯核心测试。只有已复现阻断才增加最小 core patch。
+并行研发不自动恢复旧 GPU 矩阵、SAOR 或五臂 formal；外部/emulated 结果保持原身份，新的实验需要
+具体计划与授权。LOTUS compatibility/native baseline 后置且不阻塞主实现。
 
 下方 2026-08-19 至 2026-08-21 的 SAOR/readiness/rehearsal 细节是已完成准备工作的历史记录，
 用于解释证据来源和 formal 为何仍未授权；它们不能覆盖上述当前顺序。
@@ -76,9 +76,9 @@ module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 que
 extension 验证，是否升级最小 core patch 由反例审查决定。execution-provider interface 只接收数据库
 编译完成的 sealed tasks。
 自有 `semloom_pg` 语义算子与 SemLoom 数据执行/调度都继续完成，主实现以不依赖公司私有仓库、
-可公开复现为目标。公司 demo 作为算子工程参考，正式接入后置到公司 fork 的薄适配层，复用同一
-SemLoom execution provider；不是替代自有前端或复制第二套调度器。接口映射提前核对，合适代码仍可
-在来源与目标仓库存放权限明确后复用。详细分工与待核对项见[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+可公开复现为目标。公司 demo 作为算子工程参考，公司 fork 承担工业前端接入与获批环境验证，复用同一
+SemLoom execution provider；不是替代自有前端或复制第二套调度器。接口映射提前核对，内网代码复用与
+外部发布/AutoDL 部署分别确认权限。详细分工与待核对项见[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
 当前状态是 `exact-semfilter-reference-calibration-mechanism-validated`：受限 recording `SemMap`/`SemFilter` 与三参
 exact `SemFilter CustomScan` paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，direct `INSERT ... SELECT`、PostgreSQL-private
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
@@ -111,7 +111,7 @@ SQL semantic intent
 两类 cost 通过 task work hint 与 completion telemetry 衔接，但不合并成一个模糊标量。
 
 当前 recording、deterministic-golden 与 fixed-model paths 证明 carrier、生命周期、seam 和最小真实语义合同；
-项目已具备 reference calibration 的生成、验证和 planner 消费机制，但达到数据库优化资格仍需要真实
+项目已具备 reference calibration 的生成、验证和 planner 消费机制，但 Filter 双路径成本比较仍需要真实
 model/workload/service 的 held-out artifact，以及同一逻辑语义下可由 PostgreSQL 区分和选择的第二
 physical path。当前 deterministic fixture 不提供真实可比较成本。
 数据执行研究随后在固定 semantic task set 上比较，避免把“少做 work”和
@@ -466,45 +466,28 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. **PostgreSQL reference capability**：锁定 `REL_18_3`；extension / planner-visible `SemMap` 与 exact
-   `SemFilter` deterministic reference paths 已证明当前受限 SQL、ordinary child plan、snapshot、
-   cancel/error/result lifecycle 和 Filter cardinality。
-2. **公共 provider runtime**：同步单在途 UDS recording slice、`PgSemanticRuntime`、thin pump、neutral port、
-   recording/UDS adapters 与初始 digest 已通过。PG backend 不增加 listener、TCP/HTTP、连接池或模型
-   adapter，也不重新实现 transaction/MVCC/WAL/ACL/snapshot。
-3. **公共 PostgreSQL 兼容性**：extension 级 suite 已验证普通 SQL 非干扰、RLS/权限、snapshot、
-   事务/savepoint、prepared/generic plan 与 invalidation、planner-hook chaining、多 backend 隔离、
-   cancel/ERROR/资源清理和无任务不连接；不在每个语义算子中重复。
-4. **真实语义 reference slice**：最小 SemFilter plan/task/result contract 已通过 deterministic golden
-   与同步 fixed-model adapters，canonical prompt、parser、model/usage identity 和 relation result 已验证；
-   小规模真实模型结果只作 capability，不先扩异步。
-5. **下一工程切片**：实现[显式 choice profile](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
-   保持原 SQL 行为，新配置另用 plan schema 3 / wire v4；只验证接入、版本隔离与资源管理。
-   目前只有设计，不成为默认配置，不把格式合法当作语义正确，不恢复真实成本校准。
-6. **质量、成本与第二路径**：SemFilter rows/selectivity、calls/work 与 actual usage 已可观察，离线
-   artifact 和 planner loader 已通过 deterministic 验证。另行确定质量任务与标签，先取得合格 reference，
-   再用真实 matched evidence 生成并独立验证成本 artifact，之后建立一条可辨认的
-   LOTUS/Cortex-like SemFilter proxy/oracle path，并保持 reference/alternative、AI-work cost、quality policy
-   和 reference fallback 的显式身份；真实质量结论必须再与同步 reference 路径比较。
-7. **载体审查**：用上述真实 paths 验证 plan identity、prepared-plan、hook coexistence 与 placement；能表达
-   则保留 extension，只有已复现阻断才增加最小 core patch。
-8. **数据执行研究**：资格成立后再扩 accepted-prefix、多在途/乱序 completion、增量 SemLoom session，
-   并优先验证 IMLane-like batch placement。Kalypso-like dependency/KV execution 只作条件满足后的参考方向。
-9. **公司前端适配（后置）**：主实现继续独立推进两部分；近期只核对公司接口映射，待自有 Interface
-   可执行后再单独验证最小接入，稳定后在公司 fork 实现正式 adapter。它不是自有主实验的前置条件，
-   当前也没有公司兼容通过的证据；SemLoom 数据执行与调度核心只维护一套。
-10. **兼容与 baseline**：LOTUS compatibility 与可运行的 Sema/LOTUS/IMLane native path 后置；Kalypso
-   当前只作论文参照，不预注册 native baseline。它们不得覆盖默认语义或阻塞当前数据库工程。
-11. **证据维护**：已完成的文本、图像静态/observe-only、database-E2E 和代价估计结果只做审计、
-   报告与索引维护；无明确缺口时不重跑、不扩产品/workload/参数矩阵。
-12. **条件性恢复**：数据库语义、路径选择、载体审查和数据执行接口完成验证后，再按
-   `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 恢复 HSE/static 非劣、五臂
-   system-level matched comparison 与小规模 pgvector 写回、读回和质量核对。
-13. **继续暂停**：SAOR selector 1+3 formal、跨层 capability、4-Job/reservation/dynamic K、完整
-   full-grid 和 ShareGPT C128 纠正补测均不会自动解锁；每项需重新确认当前版本、环境、资源和授权。
+已有 recording/真实 Filter 同步 reference、公共 runtime/provider 与生命周期验证继续复用；下一步按
+工作对象分别推进，不把某一分类模型的失败变成整个执行系统研发的前置阻塞。
 
-历史文本 phase-change 判定、bounded-ready attribution 与五臂 rehearsal 结果保留在 §5 和对应结果目录，
-用于解释候选机制与停止原因，不作为上述执行顺序中的隐含待办。
+| 工作对象 | 近期工作 | 与其他工作的依赖 |
+|---|---|---|
+| 自有 PG 算子 | [四 C 可选 choice](experiments/plans/postgresql_choice_profile_engineering.md)，随后[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package) | 新算子拥有独立语义、版本与同步验证，不等待 Filter 分类质量通过 |
+| SemLoom 核心 | 现有行为表征、公开任务驱动增量 session、work organization、有界提交、多 Job 与路由 | 可以先用 fixture/外部 workload；不是已接入数据库的证据 |
+| Filter 语义优化 | 确定质量任务与标签，取得 reference、matched cost，再实现 proxy/oracle 第二路径与 fallback | 仍是 Filter 计划比较的重要完成项，不再阻塞独立核心或生成型 Map |
+| carrier 审查 | 随生成型 Map、PG batch/reorder、Filter 第二路径分别核对 identity、placement 和生命周期 | 只在目标路径出现已复现阻断时增加最小 core patch |
+| 公司接入 | 只读接口映射、必要且单独授权的 deterministic spike，之后在 fork 正式适配 | 共用一套 SemLoom 核心；内网复用、外部发布与部署分别获批，不作为自有主实现的私有依赖 |
+
+真实 PG + SemLoom 接入须有相应真实算子、同步对照、版本化 Interface 和 PG18.3 关联/取消/资源等
+验证。只有本路径接入通过且 task/model/generation/service/capacity、质量与计时条件匹配，才运行
+数据库端到端或 IMLane-like batch placement 对照；不要求先完成不相关的 Filter 第二路径。
+独立核心测试也不能替代这些数据库检查。
+
+目前新增项均是待实施设计，本次没有启动源码或模型任务。LOTUS compatibility/native baseline
+后置；Join、aggregate、Kalypso-like lineage/KV 按真实需求另立项。旧 GPU 矩阵、SAOR、图像动态/HSE、
+五臂 formal 与条件性补测继续等待各自计划和授权，不能由“可以并行研发”自动恢复。
+
+历史文本 phase-change 判定、bounded-ready attribution 与五臂 rehearsal 保留在 §5 和结果目录，
+只解释证据来源与停止原因，不构成当前隐含待办。
 
 ## 9. 结果解释与写作规则
 

@@ -7,10 +7,12 @@ PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic cont
 OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
 scheduling, asynchronous execution, or a second physical path.
 
-Next engineering work is the [opt-in choice generation profile](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering).
+Next PG engineering work is the [opt-in choice generation profile](../../../experiments/plans/postgresql_choice_profile_engineering.md).
 Its fourth SQL option, plan schema 3 and wire v4 are designed but not implemented; the interfaces below remain
 the current executable behavior. The new profile will be non-default and not quality-qualified. Engineering
 support will not resume calibration or allow old calibration artifacts to match the new semantic identity.
+Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
+core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
 This extension remains the project's own frontend; the company demo is an engineering reference, not its
 replacement. A later adapter in the company fork should connect to the same SemLoom execution provider.

@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-09-02 按证据修订研发依赖，分离主架构与 choice 详细计划
+
+- 将外部评审作为参考而非逐项照搬。源码确认三处文档偏差：model/generation 属于 query-fixed
+  `AiOpenSpec`；逐项 `AiPreparedTask` 不重复保存这些字段；当前 PG→gateway 依靠 session/sequence/摘要，
+  没有跨进程 query/operator/task ID 组合或 provider.cancel，查询取消走 close/disconnect 与 PG cleanup。
+- 调整根规则和[主架构计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)：
+  SemLoom 可用公开任务/fixture 独立表征增量核心、组织和有界调度，不再等待 Filter 质量、真实校准或
+  第二路径。真实 PG 接入、资源/生命周期、新协议与匹配 E2E 仍按相应路径验证；未恢复旧 GPU/SAOR/formal。
+- 增加四 D 真实生成型 SemMap 工作包，放在 PG 的四 C 之后；仅定义目标、首个合同切片和完成条件，
+  不预定 SQL 别名、schema/wire 编号或泛化类型。返回 text 不等于任务质量通过，原 Filter 失败不改判。
+- 公司 fork 定位为工业前端接入与获批环境验证，保留早期只读映射；内网代码复用、公开发布与 AutoDL
+  部署分别确认授权。附件中的方法名/ID 仍为候选，不因讨论直接进入 ABI 或代码。
+- 按 `writing-for-agents` 分离阅读路径：主计划只保留架构、Interface、依赖和完成条件；
+  [四 C 专项](experiments/plans/postgresql_choice_profile_engineering.md)维护详细字段、预算和验收；
+  [历史快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)保留
+  `31e2432b` 的旧正文与完整资格尝试条件，仅机械调整相对链接并标明不可作为当前执行指令。
+  原始结果、失败和证据台账未删除、未重新绑定；当前状态仍由 INFRA_STATUS 维护。
+- 已同步总纲、导航、相关 README 与状态说明。验证范围仅为文档一致性、历史正文保留、Markdown
+  本地目标/章节链接、读者措辞、diff 和隐私检查；没有修改源码、运行 PG/模型、操作公司仓库或服务器。
+  本轮未提交、推送或合并。
+
 ## 2026-09-01 明确自有主实现与后续公司适配，分开 choice 接入和质量验证
 
 - 只更新设计相关文档。详细设计统一进入

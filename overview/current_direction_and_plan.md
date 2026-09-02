@@ -1,6 +1,6 @@
 # SemLoom 当前方向与计划
 
-最后更新：2026-09-01
+最后更新：2026-09-02
 
 这是两分钟快速参考卡片。完整定义以根 [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) 为准；
 实验完成度以
@@ -24,27 +24,21 @@ batching、Ray scheduler、模型结构或 GPU kernel，也不使用
 核心研究链路是：PostgreSQL 定义 semantic intent/reference policy，生成并比较 physical paths；
 SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 PostgreSQL 后恢复关系结果。
 
-1. **已验证受限数据库接入**：`REL_18_3` extension / planner-visible recording `SemMap` 与 exact
-   `SemFilter`、shared runtime、同步单在途 UDS 和公共 compatibility suite 已通过；它们证明数据库
-   生命周期与外部 seam。planner-owned 最小 recording plan spec 和 transport-neutral error interface
-   也已通过；这些基础层本身不代表模型质量或性能收益。
-2. **真实语义 reference 已接通**：exact-reference 实际消费的 instruction、prompt、parser、
-   model/generation fields 已进入最小 plan/task/result contract；同一合同已依次通过 deterministic golden
-   和同步 fixed-model endpoint。固定 endpoint 的小规模真实模型运行只证明链路可运行，不是质量或性能结论。
-3. **下一步接入可选 choice 配置**：允许 SQL 要求模型从 `TRUE/FALSE/UNKNOWN` 中生成答案。
-   新 SQL option、plan schema 3 和 wire v4 尚未实现；不更换默认配置，不把格式合法当作判断正确。
-4. **之后验证质量、成本和第二路径**：现有模型未通过预设语义测试，真实校准继续暂停。另行确定任务和
-   标签，取得合格 reference 及独立验证的成本数据后，才实现 LOTUS/Cortex-like proxy/oracle path。
-5. **随后审查载体**：用真实 paths 验证 prepared-plan identity、hook coexistence 和有限 predicate
-   placement；extension 能表达就继续使用，只有已复现阻断才增加最小 core patch。
-6. **最后进入数据执行研究**：扩 accepted-prefix、多在途/乱序 completion 和增量 SemLoom session，
-   比较 IMLane-like database batch 与 provider rebatching。Kalypso-like lineage/KV 机制只有出现真实
-   多阶段依赖后才另行立项。
-7. 上述数据库资格完成前不扩 GPU 矩阵、不调 SAOR；既有外部物理执行证据继续保留原身份。
+现有 PG18.3 recording Map/Filter、真实 Filter 同步 reference 与公共生命周期设施继续复用；
+小规模模型链路不代表质量或性能通过。接下来按对象分别推进：
 
-自有语义算子和 SemLoom 执行/调度都继续完成；公司 demo 是工程参考，后续在公司 fork 用适配层
-接入同一个执行核心。接口差异提前核对，正式适配后做；有明确权限时仍可复用代码。具体见
-[前端适配设计](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)与[下一工程切片](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)。
+| 对象 | 下一步 |
+|---|---|
+| 自有 PG 算子 | [可选 choice 配置](../experiments/plans/postgresql_choice_profile_engineering.md)，随后真实生成型 SemMap；都尚未实现 |
+| SemLoom 核心 | 旧行为表征、公开任务/fixture 驱动增量 session、work organization、有界提交与多 Job；不等待 Filter 质量 |
+| Filter 语义优化 | 保留 reference 质量、真实校准、proxy/oracle 第二路径与对应载体审查；校准仍暂停 |
+| 公司接入 | 只读映射、必要的最小 spike，稳定后在获批 fork/环境中适配同一核心；不是公开实现的私有依赖 |
+
+实际 PG 接入仍须通过本路径的语义、关联、取消和资源检查，之后才做匹配端到端与组批位置实验。
+carrier 审查随路径增量进行；fixture 不能替代数据库验证。旧 GPU 矩阵、SAOR 和远期 lineage/KV
+不会自动恢复。公司内网复用、外部发布和 AutoDL 部署分别需要授权。
+
+详细依赖、真实生成型 SemMap 与公司接入见[主架构计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)。
 
 ## 3. 研究内容
 
@@ -77,7 +71,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 仍待验证：
 
-- 可选 choice 配置的工程接入、独立语义质量验证与真实 reference 成本校准；
+- choice 配置、真实生成型 SemMap、独立增量核心及其 PG 桥接；Filter 质量与真实成本校准；
 - SemFilter 第二 physical path、可比较的 AI-work cost、近似质量 policy 与 reference fallback；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；

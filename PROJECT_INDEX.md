@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-08-30
+更新时间：2026-09-02
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -15,6 +15,7 @@
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 回答 semantic plan/provider interface 如何实现、工作包顺序和验收条件；不承担第二份文献综述或实现证据 |
+| choice 详细实施计划 | [`experiments/plans/postgresql_choice_profile_engineering.md`](experiments/plans/postgresql_choice_profile_engineering.md) | 只定义四 C 的字段、版本、预算与逐项验收；跨工作包依赖由主架构维护 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
 | 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
 | 对外叙事与主张 | [`opening/claim_matrix.md`](opening/claim_matrix.md)、[`opening/report/opening_report.md`](opening/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
@@ -26,7 +27,7 @@
 规则按路径继承：根 `AGENTS.md` 始终生效，目标目录沿途的 `AGENTS.md` 只追加局部职责与验证要求，
 README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根入口，不再复制或无条件导入
 所有子目录规则。根“文档受众与对外表达”规则适用于任意目录中的读者型文档；子目录不能允许
-对外稿重新使用“冻结、门禁、闭环”等未解释的项目管理词。
+对外稿重新使用未解释的项目管理词。
 
 ## 2. 常用阅读路径
 
@@ -45,12 +46,12 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-当前 `REL_18_3` recording `SemMap/SemFilter`、PostgreSQL-private shared runtime、neutral provider port、
-独立 recording/UDS adapters、compatibility suite 与行为不变的 Python gateway 公共目录迁移已通过。
-最短期任务是让 exact-reference 实际消费的最小 plan/task/result contract 依次通过 deterministic golden 与同步 fixed-model
-SemFilter；随后修正 semantic AI-work cost，并实现显式 reference/optimized second path，再做 carrier audit。
-accepted-prefix、多在途和增量 SemLoom 在路径选择资格之后实现。
-既有 Daft/Ray/static/SAOR 代码作为 SemLoom provider 后方的可替换 backend，不先扩大 GPU 参数矩阵。
+按任务选择主计划中的工作包：PG 接入先读[四 C 详细计划](experiments/plans/postgresql_choice_profile_engineering.md)
+及[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)；
+增量核心读工作包七，Filter 质量/成本/第二路径读工作包五，公司接入读 §8.7。
+独立核心研发不等待 Filter 资格；实际 PG 接入和端到端比较仍按对应路径验证。
+旧串行顺序与完整历史条件见[设计快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
+当前源码与实验状态不从该快照推断。
 
 ### 运行实验或迁移机器
 
