@@ -1,0 +1,34 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/004_filter_insert.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'INSERT plans Filter below the PostgreSQL write node'
+#   at t/004_filter_insert.pl line 22.
+#                   'Insert on filter_sink
+#   ->  Seq Scan on filter_source
+#         Filter: ((id > 1) AND ai_semantic.filter(decision))'
+#     doesn't match '(?^s:Insert on filter_sink.*Custom Scan \(SemLoom SemFilter\))'
+
+#   Failed test 'direct Filter INSERT executes'
+#   at t/004_filter_insert.pl line 25.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:2: ERROR:  ai_semantic.filter marker was not lowered to a semantic plan
+# HINT:  Load semloom_pg before planning and use a supported SemFilter query shape.
+
+#   Failed test 'ordinary predicate, projection and tristate Filter select the inserted row'
+#   at t/004_filter_insert.pl line 26.
+#          got: ''
+#     expected: '15'
+# Looks like you failed 3 tests of 3.
+t/004_filter_insert.pl ..
+Dubious, test returned 3 (wstat 768, 0x300)
+Failed 3/3 subtests
+
+Test Summary Report
+-------------------
+t/004_filter_insert.pl (Wstat: 768 Tests: 3 Failed: 3)
+  Failed tests:  1-3
+  Non-zero exit status: 3
+Files=1, Tests=3,  1 wallclock secs ( 0.02 usr  0.00 sys +  0.53 cusr  0.19 csys =  0.74 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

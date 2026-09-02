@@ -7,8 +7,9 @@
 当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、三参数 exact `SemFilter` golden/fixed-model
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、
-schema v1/v2 planner-owned plan spec（schema 3 另有 plan-only 验证）、
-wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；小规模真实模型只证明纵切面可运行，
+schema v1/v2 planner-owned plan spec、wire v2/v3 和公共 compatibility suite 的功能与资源生命周期；
+schema 3 / wire v4 已另有 SELECT 与受限 INSERT 的 fixture 功能验证，新资源测试仍待完成。
+小规模真实模型只证明纵切面可运行，
 deterministic calibration artifact 只证明生成/验证/planner 消费，不支持真实 cost accuracy、语义质量、第二 physical path、
 bounded async 或性能优化已经完成。当前顺序看工程计划和
 `experiments/plans/experiment_status_and_gaps.md`，既有文本、图像和 SAOR 条目继续保持外部物理执行身份。
@@ -27,6 +28,13 @@ Python 59/59 通过，普通统计 estimate 从 8 修正为 64；choice 候选�
 整轮校准仍暂停；本轮 Python 60/60 复跑，不新增 PG18.3 TAP 或资源证据。
 
 ## 1. 证据等级
+
+2026-09-02 的 [Filter INSERT 修复](postgresql/semfilter_insert_20260902/README.md)绑定最终 `39007150`：
+生产改动只在 `sem_filter_path.c`，支持上拉后的单表 INSERT 源查询，公共层与语义身份不变。
+PG18.3 warning-free `-O2 -Werror`、regression 1/1、完整 TAP 919/919、本地/服务器各 83/83 与 C11
+通过；新增 INSERT 171 项实际验证行集、三值/NULL、计数、LIMIT、prepared/invalidation、部分写入
+回滚、目标约束及 choice RLS/权限/取消恢复。不支持形状继续拒绝，旧失败与所有原始尝试保留。
+未运行真实模型、新资源 smoke 或校准；不是四 C 全部完成，也不是模型质量或成本准确性证据。
 
 2026-09-02 的 [PG choice 接线](postgresql/choice_pg_wire_20260902/README.md)绑定最终 `80bb7fc5`：
 中立 open spec 与 C v4 已进入公共 runtime；PG18.3 warning-free `-O2 -Werror`、regression 1/1、

@@ -29,7 +29,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 | 对象 | 下一步 |
 |---|---|
-| 自有 PG 算子 | [choice SELECT](../experiments/plans/postgresql_choice_profile_engineering.md)已接通 C 与 gateway；资源/真实模型、Filter INSERT 修复待完成；生成型 SemMap 尚未实现 |
+| 自有 PG 算子 | [choice](../experiments/plans/postgresql_choice_profile_engineering.md)已接通 C/gateway 与受限 Filter INSERT；资源/真实模型待验证；生成型 SemMap 尚未实现 |
 | SemLoom 核心 | 旧行为表征、公开任务/fixture 驱动增量 session、work organization、有界提交与多 Job；不等待 Filter 质量 |
 | Filter 语义优化 | 保留 reference 质量、真实校准、proxy/oracle 第二路径与对应载体审查；校准仍暂停 |
 | 公司接入 | 只读映射、必要的最小 spike，稳定后在获批 fork/环境中适配同一核心；不是公开实现的私有依赖 |
@@ -71,7 +71,7 @@ carrier 审查随路径增量进行；fixture 不能替代数据库验证。旧 
 
 仍待验证：
 
-- choice 的资源/真实模型验证、Filter INSERT 修复、生成型 SemMap、独立增量核心与 PG 桥接；Filter 质量与真实成本校准；
+- choice 的资源/真实模型验证、生成型 SemMap、独立增量核心与 PG 桥接；Filter 质量与真实成本校准；
 - SemFilter 第二 physical path、可比较的 AI-work cost、近似质量 policy 与 reference fallback；
 - extension/core 载体审查与 LOTUS/Cortex semantic alternatives；
 - IMLane-like execution-batch placement；Kalypso-like dependency/KV execution 仅作后续参考；

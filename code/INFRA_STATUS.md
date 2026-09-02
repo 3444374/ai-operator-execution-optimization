@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-02（PG choice SELECT 接通；资源/真实模型验证待完成）
+日期：2026-09-02（Filter INSERT carrier 已修复；choice 资源/真实模型验证待完成）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -13,7 +13,7 @@
 不修改 vLLM 内部。
 
 **尚未完成项**：[四 C choice](../experiments/plans/postgresql_choice_profile_engineering.md) 的新资源 smoke
-与受限真实模型验证；Filter `INSERT ... SELECT` carrier 修复；四 D 真实生成型 SemMap；增量
+与受限真实模型验证；四 D 真实生成型 SemMap；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
@@ -38,8 +38,13 @@ schema 3 SELECT 回到公共 runtime 与原严格 parser；无任务仍不连接
 83/83 Python 与中立 C11。见 [PG choice 接线验证](../experiments/results/postgresql/choice_pg_wire_20260902/README.md)。
 新增 218 项 choice 执行检查含真实 PG→golden/fake HTTP、三值/NULL、Unicode/空串、prepared/invalidation、
 savepoint、错误/取消恢复、旧端拒绝和实际 HTTP 参数对照；不代表真实模型或 RSS/FD 资格。
-另用旧 `7d72d9ad` 与当前二进制确认所有 Filter profile 的 `INSERT ... SELECT` 均未 lowering，执行报
-`55000`。此前关于两种算子都支持该形状的表述过强；当前只有 recording Map 的直接 INSERT 有通过证据。
+该轮用旧 `7d72d9ad` 与 `80bb7fc5` 二进制确认三种 Filter profile 的 `INSERT ... SELECT` 均未 lowering，
+执行报 `55000`，历史证据保留。后续 `8e50addf` 只修改 Filter planner 的源 FromExpr 与 INSERT 检查，
+修复简单源 SELECT 上拉后未被接管的问题，未改 runtime/provider/wire/parser/cost。
+最终 `39007150` 通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 919/919（新增 INSERT 171）、
+本地/服务器各 83/83 和 C11；见[INSERT 验证](../experiments/results/postgresql/semfilter_insert_20260902/README.md)。
+受限单表 recording/exact v3/choice v4 INSERT 已验证实际写入、三值、NULL、LIMIT、prepared、
+savepoint 部分写入回滚、目标约束及 choice RLS/权限/取消恢复。新资源与真实服务验证仍待完成。
 当前 PG 可执行 SELECT 使用 schema v1/v2/v3、wire v2/v3/v4 与同步单在途 port；recording Map 不是生成算子。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
@@ -48,7 +53,7 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-本次新增 PG choice 接线并重跑隔离 PG18.3 测试，但没有真实模型调用；Filter 校准暂停与原始失败结论不变。
+本次修复 Filter INSERT 并重跑隔离 PG18.3 测试，没有真实模型调用；Filter 校准暂停与原始失败结论不变。
 
 **当前实现事实**：按
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
@@ -531,7 +536,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 ### PostgreSQL 中立语义算子与 provider 状态
 
 1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
-   recording reference paths 已验证当前受限 `SELECT`，其中 Map 另验证 direct `INSERT ... SELECT` 的 ordinary child
+   recording reference paths 已验证当前受限 `SELECT` 和 direct `INSERT ... SELECT` 的 ordinary child
    plan、三值/NULL、cardinality、snapshot、取消、rollback/commit、错误恢复和结果生命周期；
    rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT` 与更宽 query shapes 仍保持 fail-closed；
 2. PostgreSQL-private `PgSemanticRuntime`、thin `SemloomExecPump`、独立 Map/Filter machines、provider-neutral

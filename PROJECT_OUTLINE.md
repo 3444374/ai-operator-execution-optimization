@@ -15,7 +15,7 @@
 
 当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible recording `SemMap`/`SemFilter`
 与三参 exact `SemFilter` golden/fixed-model reference paths 已验证
-`SELECT`、ordinary child plan、snapshot 与 query lifecycle；Map 另有 direct `INSERT ... SELECT` 验证，并通过初始
+`SELECT`、ordinary child plan、snapshot 与 query lifecycle；Map 与 Filter 另有受限 direct `INSERT ... SELECT` 验证，并通过初始
 PostgreSQL-private pump 和 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口调用
 in-process 与同步单在途 Unix-domain socket（UDS）provider。scan/pump、neutral port、
 recording/UDS adapter 与 versioned wire 的职责拆分已完成。
@@ -62,8 +62,9 @@ option、schema 3、完整 profile 的计划复制与 EXPLAIN；该阶段的新�
 profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 regression 1/1、TAP 537/537
 通过。后续 [C 接线](experiments/results/postgresql/choice_pg_wire_20260902/README.md)已让 choice SELECT
 进入公共 runtime，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83。新资源与真实模型
-smoke 仍待完成；旧/新二进制同时复现 Filter INSERT 未 lowering，尚不支持该形状。旧三字段配置
-继续执行，不把 fixture 接线写成模型质量或整个四 C 已通过。
+smoke 仍待完成。该轮发现的 Filter INSERT 缺口已由[独立修复](experiments/results/postgresql/semfilter_insert_20260902/README.md)
+解决：`39007150` 的 PG18.3 regression 1/1、TAP 919/919、各 83/83 通过，新增 171 项实际写入与
+事务验证。旧三字段配置继续执行，不把 fixture 接线写成模型质量或整个四 C 已通过。
 这只验证新能力能否正确接入，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
 PG 随后优先完成[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
@@ -90,7 +91,7 @@ extension 验证，是否升级最小 core patch 由反例审查决定。executi
 SemLoom execution provider；不是替代自有前端或复制第二套调度器。接口映射提前核对，内网代码复用与
 外部发布/AutoDL 部署分别确认权限。详细分工与待核对项见[前端适配设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
 当前状态是 `exact-semfilter-reference-calibration-mechanism-validated`：受限 recording `SemMap`/`SemFilter` 与三参
-exact `SemFilter CustomScan` paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，Map 的 direct `INSERT ... SELECT`、PostgreSQL-private
+exact `SemFilter CustomScan` paths 已在 `REL_18_3` 通过 PGXS 与生命周期 TAP，受限 direct `INSERT ... SELECT`、PostgreSQL-private
 `PgSemanticRuntime`、thin `SemloomExecPump`、独立 operator machines 和
 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口已实现；同步单在途
 UDS provider 与协议 v2/v3 分域 identity/payload/completion digest 已验证。planner-owned schema v1/v2、

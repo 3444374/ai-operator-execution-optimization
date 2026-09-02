@@ -21,7 +21,7 @@
 主架构只维护分工、依赖与完成条件，详细的 choice 字段和验收由专项计划维护；源码与实验事实分别看
 INFRA_STATUS 和证据台账。PG 近期先做四 C，再做四 D 真实生成型 SemMap；SemLoom 可独立开展
 增量核心表征与 fixture 测试，公司接口可只读核对。四 C 的 PG choice SELECT 已接通 C 与 gateway v4，
-资源/真实模型验证及 Filter INSERT 的既有接管问题仍待处理；独立核心与公司接口工作仍待实施。
+Filter INSERT 的既有接管问题已独立修复并验证；资源/真实模型验证、独立核心与公司接口工作仍待实施。
 Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
 
 ## 2. 状态分层

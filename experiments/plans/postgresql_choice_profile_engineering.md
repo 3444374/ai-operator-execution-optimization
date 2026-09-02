@@ -1,7 +1,7 @@
 # PostgreSQL choice profile 工程接入（工作包四 C）
 
 更新日期：2026-09-02
-状态：`in-progress / PG-choice-SELECT-fixture-validated / resource-and-real-model-pending`
+状态：`in-progress / PG-choice-SELECT-and-INSERT-fixture-validated / resource-and-real-model-pending`
 
 文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
 跨工作包依赖、模块分工和公司接入由[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md)维护；
@@ -75,7 +75,7 @@ framing/JSON primitive，不新增 registry 或异步接口。profile 在 open �
 }
 ```
 
-上述 options 已可用于规划、EXPLAIN 和当前受支持的 SELECT 执行；需配置相应 gateway。
+上述 options 已可用于规划、EXPLAIN 和当前受支持的 SELECT / 单表 INSERT ... SELECT；需配置相应 gateway。
 本轮只用 fixture 验证，不将示例当作真实模型已执行约束的证据。
 上述 profile selector 是本节唯一名称，不增加
 讨论草案中的其他别名；它由下述 profile ID 和 version 组合得到。
@@ -83,7 +83,7 @@ framing/JSON primitive，不新增 registry 或异步接口。profile 在 open �
 | SQL options | 计划与 wire | 行为 |
 |---|---|---|
 | 恰好原有三个字段 | 原 schema 2 / wire v3 | 原计划内容、digest、wire bytes、错误与稳定 EXPLAIN 字段不变 |
-| 恰好四个字段且 profile 为上述值 | schema 3 / C wire v4 / gateway v4 已接通 | 显式 choice；非默认、未通过质量验证；SELECT 已通过 fixture 验证 |
+| 恰好四个字段且 profile 为上述值 | schema 3 / C wire v4 / gateway v4 已接通 | 显式 choice；非默认、未通过质量验证；SELECT 与受限 INSERT 已通过 fixture 验证 |
 | 未知 profile、null、非字符串、缺字段或多余字段 | planning 阶段拒绝 | 不打开 provider，不发送模型请求 |
 
 原有 instruction/options 的计划期常量、类型、长度和数值要求继续成立；schema 1 / recording wire v2
@@ -219,7 +219,7 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 | PG plan 接入（已实现） | 新 options、schema 3、copyObject-safe 完整 profile、摘要、prepared/generic-plan 与 invalidation；旧校准拒绝、新执行不回落 v3；旧字段和值行为不变 |
 | gateway wire v4（已实现） | `7d72d9ad` 共享固定 exact codec/session，严格 profile/字段/版本/摘要与 terminal error；fixture 验证已知 profile 映射、未声明支持时零 HTTP、拒绝后不降级。83/83 合同与旧 PG18.3 TAP 537/537 通过，未调用真实模型 |
 | C port/wire 接入（已实现） | 完整 profile 复制、独立 v4 字段/版本/identity/evidence 校验，回归公共 runtime；源码 `80bb7fc5`，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83，通过记录见下方 |
-| 功能验证（当前 SELECT 已通过） | 中立 C11、PG18.3 warning-free `-O2 -Werror`、完整 TAP；新旧配置、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、savepoint/错误/取消、HTTP 参数对照。只用 fixtures，不外推为真实模型或所有 SQL 形状 |
+| 功能验证（当前 SELECT / 受限 INSERT 已通过） | 中立 C11、PG18.3 warning-free `-O2 -Werror`、完整 TAP；新旧配置、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、savepoint/错误/取消、HTTP 参数对照。INSERT 另有真实写入/回滚、源 RLS 与目标权限/约束。只用 fixtures，不外推为真实模型或所有 SQL 形状 |
 | 资源验证（待完成） | 按 C.5 预先登记 RSS/FD/线程与任务量采样，验证 query/gateway 取消后和后续恢复，无累计增长；不拿历史资源数字替代新 profile |
 | 受限真实 smoke | preflight 与服务支持证据齐备；请求在总预算内，实际参数差异仅为 choice；新配置返回值通过原 parser，model/usage/finish reason/PG 计数一致；旧配置与全部失败如实记录 |
 | 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |
@@ -228,12 +228,12 @@ RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热�
 代码逐项实现；当前值合同的[验证记录](../results/postgresql/choice_profile_contract_20260902/README.md)
 不代替上述 SQL/plan/wire、PG lifecycle 或真实模型接入证据。
 
-当前 C 接线证据见[PG choice 验证](../results/postgresql/choice_pg_wire_20260902/README.md)。本轮还用旧/新
+此前 C 接线证据见[PG choice 验证](../results/postgresql/choice_pg_wire_20260902/README.md)。该轮还用旧/新
 二进制复现了 Filter `INSERT ... SELECT` 未 lowering（均为 `55000`）；它是既有 carrier 缺口，不是
-新 profile 回归。当前仅声明 SELECT，后续须单独修复并验证 INSERT；不把普通写入事务回滚测试当作
-Filter INSERT 已通过，也不因此开启 core patch 或改写公共 runtime。
+新 profile 回归。下方独立切片已修复并验证受限 INSERT；历史失败保留，不把普通写入事务回滚测试
+当作 Filter INSERT 证据，也不因此开启 core patch 或改写公共 runtime。
 
-### Filter INSERT 的独立修复切片（实施中）
+### Filter INSERT 的独立修复切片（已完成）
 
 2026-09-02，以 `21f41364` 为起点处理已复现的 `INSERT ... SELECT` 未 lowering。只修改 PG
 carrier 的合法源关系识别，不改 runtime、parser、profile、wire 或 cost 公式，不做 core patch。
@@ -250,6 +250,12 @@ carrier 的合法源关系识别，不改 runtime、parser、profile、wire 或 
 参考说明只保存在本计划，不进入生产代码、测试或注释。测试使用自有合成行和本地 fixture；
 不运行真实模型，不消耗 100 次 smoke 预算或访问 held-out。通过后保存新源码身份、完整 PG18.3
 回归及失败原始记录；本切片不替代 C.5 的资源与真实服务验证，也不自动合并或推送。
+
+完成记录：生产修复 `8e50addf` 仅修改 `sem_filter_path.c`；最终测试 `39007150` 通过 PG18.3
+warning-free 构建、regression 1/1、TAP 919/919（含 INSERT 171）、本地/服务器各 83/83 与 C11。
+详见[INSERT 验证](../results/postgresql/semfilter_insert_20260902/README.md)。没有修改 runtime、provider、
+wire、parser 或 cost。参考公司经验不限制自有能力；未来移植仍覆盖算子处理/优化与 SemLoom，
+不以单个 Adapter 接通替代整体移植。资源与真实服务检查尚未完成，校准继续暂停。
 
 ## C.7 暂存的质量决策（不阻塞本工程切片）
 

@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-09-02 独立修复 Filter INSERT carrier
+
+- `efc24bb1` 在 PG18.3 以 SQL/EXPLAIN/目标行集复现 3/3 失败；同时修正专项计划仍称 AiOpenSpec
+  未扩展的旧文字。`8e50addf` 只修改 Filter planner：识别上拉源 FromExpr，并在正确 INSERT 层检查限制。
+  未改 Query 树、公共 runtime、provider/wire、parser、成本或 core。相同 3/3 转为通过。
+- 最终 `39007150` 的 171 项 INSERT 测试覆盖 recording/exact v3/choice v4、实际行集/计数、LIMIT、
+  prepared/invalidation、savepoint 部分回滚、目标约束及 choice RLS/权限/取消恢复。PG18.3 干净
+  warning-free `-O2 -Werror`、regression 1/1、完整 TAP 919/919、本地/服务器各 83/83 与中立 C11 通过。
+- Git 所有权导致一次修复未同步、短 commit 导致一次验收身份拒绝、本地 socket sandbox 失败均保留。
+  131 项中间测试对缺失 digest 的比较没有证明力，最终改为公开字段与 choice 独立向量后重新验证。
+- 参考公司 demo 的目的仍是减少工程探索，不限制自有能力；未来移植包括算子处理/优化及 SemLoom，
+  Adapter 只是一部分。本次只读核对，无公司代码/数据复制；来源说明只在工程计划与结果记录。
+- [验收与原始证据](experiments/results/postgresql/semfilter_insert_20260902/README.md)已归档，manifest 校验通过。
+  本轮服务器 worktree 归档后移除，其他工作负载未处理。独立分支保留，主工作区用户文档未覆盖，
+  未合并或推送。没有真实模型、held-out 或新资源 smoke；四 C 的余项和暂停校准不变。
+
 ## 2026-09-02 PG choice 的中立 open spec、C wire v4 与执行验证
 
 - `d99cd168` 先在真实 PG18.3 得到执行拒绝红测试；`8e7cd92d` 接入 query/session-owned 完整 profile

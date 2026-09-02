@@ -379,8 +379,9 @@ fork/修改权限不等于外部发布或部署权限；改名、翻写、打包
 PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配旧 calibration artifact。
 当前已完成值合同、PG plan 保存/严格解码/EXPLAIN、C port/wire v4 和固定 HTTP choice 映射；
 PG choice SELECT 已进入公共 runtime，并通过 fixture/lifecycle 与旧路径兼容验证。
-新资源 smoke 与真实模型验证仍待完成。另已复现旧/新 Filter INSERT 未 lowering，需独立 carrier
-修复；当前不声明 Filter INSERT 支持，不把普通写入回滚当作该形状已验证。
+新资源 smoke 与真实模型验证仍待完成。此前发现的 Filter INSERT 未 lowering 已独立修复：
+仅调整源查询上拉后的 carrier 识别，171 项新增测试验证真实写入、事务和拒绝形状，完整 PG18.3
+TAP 919/919。结果见[INSERT 验证](../results/postgresql/semfilter_insert_20260902/README.md)，不扩大 core/runtime。
 [四 C 专项计划](postgresql_choice_profile_engineering.md)是字段、canonical vectors、错误、累计请求预算、
 资源验证和逐项完成条件的唯一入口。完成工程接入不恢复 Filter 真实校准，也不用于第二路径质量结论。
 

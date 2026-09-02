@@ -24,12 +24,17 @@ The external config must explicitly opt in with `"choice_format":"vllm_structure
 send a constrained HTTP request. Missing support or HTTP rejection never triggers an unconstrained retry.
 These fixture results prove the supported PostgreSQL choice SELECT execution, not a real endpoint's constrained
 decoding or new RSS/FD growth limits. The remaining resource and real-model checks are separate work.
+The later [Filter INSERT qualification](../../../experiments/results/postgresql/semfilter_insert_20260902/README.md)
+at `39007150` passes PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks. The planner now handles a
+pulled-up INSERT source while keeping the ordinary PostgreSQL write node. New tests cover recording/exact/choice
+write results, rollback, savepoint recovery, target constraints, permissions and cancellation using fixtures.
 Real generative SemMap is the next planned PG slice; recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
 This extension remains the project's own frontend; the company demo is an engineering reference, not its
-replacement. A later adapter in the company fork should connect to the same SemLoom execution provider.
-That integration is not implemented. Ownership and early mapping checks belong to the
+replacement or a limit on this system's capabilities. Future transfer includes operator semantics, processing
+and optimization as well as SemLoom execution/scheduling; a company adapter is only one part of that work.
+That transfer is not implemented. Ownership and early mapping checks belong to the
 [frontend-adapter design](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
 
 The current supported query shape is deliberately narrow:
@@ -41,7 +46,7 @@ The current supported query shape is deliberately narrow:
   non-NULL constant instruction and exactly `model`, numeric-zero `temperature`, and integer `max_tokens=8`;
   the external golden adapter returns fixture-bound raw output and PostgreSQL alone parses exact uppercase
   `TRUE`, `FALSE`, or `UNKNOWN`;
-- direct single-table `INSERT ... SELECT` for recording SemMap only, without `RETURNING`,
+- direct single-table `INSERT ... SELECT` for recording SemMap and recording/exact SemFilter, without `RETURNING`,
   `ON CONFLICT`, or `OVERRIDING`;
 - ordinary child filters and projections;
 - forward execution with child order preserved;

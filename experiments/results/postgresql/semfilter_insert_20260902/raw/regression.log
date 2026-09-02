@@ -1,0 +1,6 @@
+echo "# +++ regress install-check in  +++" && <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg18.3-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/regression/socket, port 55445
+ok 1         - semloom_pg                                 20 ms
+1..1
+# All 1 tests passed.

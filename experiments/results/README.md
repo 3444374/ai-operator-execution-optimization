@@ -8,6 +8,10 @@
 
 ## PostgreSQL choice profile（2026-09-02）
 
+[Filter INSERT 修复](postgresql/semfilter_insert_20260902/README.md)：`39007150` 的 PG18.3 regression 1/1、
+TAP 919/919、本地/服务器各 83/83 通过。生产只修改 Filter planner，新增 171 项验证真正的写入、
+事务和限制；资源/真实模型验证仍待完成。此前 SELECT 接线与 INSERT 失败证据保持原提交身份。
+
 [PG C/wire v4 接线](postgresql/choice_pg_wire_20260902/README.md)：`80bb7fc5` 的 choice SELECT 共用
 现有 runtime 与严格 parser。本地/服务器各 83/83、PG18.3 regression 1/1、TAP 748/748；实际新旧
 HTTP 请求仅差 choice 字段。另用旧/新二进制复现 Filter INSERT 未 lowering。资源与真实模型验证待完成。

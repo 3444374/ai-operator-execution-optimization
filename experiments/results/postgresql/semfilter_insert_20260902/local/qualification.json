@@ -1,0 +1,10 @@
+{
+  "source_commit": "39007150d5d0f84904fcd0c36b7bab87de7c07c1",
+  "tests": {
+    "postgres": 68,
+    "gateway": 5,
+    "calibration": 10
+  },
+  "matching_server_source_hashes": true,
+  "collector_sha256": "2bc05df39e49e6780824578f6fa9933ae8c2911ecdece18c43e3fd693ee2bb6d"
+}

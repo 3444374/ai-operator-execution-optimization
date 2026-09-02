@@ -11,9 +11,10 @@ and share canonical bytes/identity tests. SQL opt-in, schema 3, the C `AiOpenSpe
 execute through the existing runtime. Fixed-model choice mapping remains in the gateway, with no fallback
 to v3 or unconstrained requests. See the [PG connection qualification](../experiments/results/postgresql/choice_pg_wire_20260902/README.md):
 83/83 Python tests locally and on the server, PG18.3 regression 1/1 and TAP 748/748. No real model was called.
-The new path is qualified for the supported SELECT shape only. Separate old/current binary checks found
-that Filter INSERT ... SELECT is not lowered; this pre-existing carrier issue remains open. New resource
-smoke and real-model choice verification remain pending.
+The later [Filter INSERT fix](../experiments/results/postgresql/semfilter_insert_20260902/README.md) handles
+PostgreSQL's pulled-up source query without changing the runtime or wire. Its `39007150` qualification passes
+PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks, including 171 INSERT checks. Supported single-table
+SELECT and INSERT ... SELECT are verified with fixtures; new resource and real-model checks remain pending.
 
 Status as of 2026-09-01: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
@@ -98,7 +99,7 @@ workload distribution, service, and hardware signature. Only then may a distinct
 Filter reference/optimized path with quality evidence and fallback be implemented, with its carrier audit.
 The next PG engineering slice is the [planned opt-in choice profile](../experiments/plans/postgresql_choice_profile_engineering.md),
 followed by [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package).
-Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT; resource and real-model
+Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT; resource and real-model
 validation remain pending. The fixture connection does not qualify a model,
 change the default reference, resume calibration, or supply second-path quality evidence. Both the project's
 own `semloom_pg` frontend and its SemLoom execution provider remain implementation responsibilities. The company
