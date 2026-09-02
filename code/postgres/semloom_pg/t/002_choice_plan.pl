@@ -17,8 +17,10 @@ my $socket_path = $node->host . '/choice-never-connect.sock';
 my $listener = IO::Socket::UNIX->new(Type => SOCK_STREAM, Local => $socket_path, Listen => 8)
   or die "could not create test provider listener: $!";
 $node->append_conf('postgresql.conf', "shared_preload_libraries = 'semloom_pg'\n");
-$node->append_conf('postgresql.conf', "semloom_pg.gateway_socket_path = '$socket_path'\n");
+$node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = '$socket_path'\n");
 $node->start;
+is($node->safe_psql('postgres', 'SHOW semloom_pg.gateway_socket'), $socket_path,
+   'connection sentinel is the actual configured provider socket');
 $node->safe_psql('postgres', q{
 CREATE EXTENSION semloom_pg;
 CREATE TABLE choice_inputs(id integer, content text);
