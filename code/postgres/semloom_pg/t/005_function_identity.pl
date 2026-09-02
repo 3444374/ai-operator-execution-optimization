@@ -1,6 +1,7 @@
 use strict;
 use warnings FATAL => 'all';
 
+use JSON::PP qw(encode_json);
 use PostgreSQL::Test::Cluster;
 use PostgreSQL::Test::Utils;
 use Test::More;
@@ -123,6 +124,47 @@ for my $call (@calls)
     like($prepared->query_safe('EXPLAIN EXECUTE identity_plan'), qr/Custom Scan \(SemLoom Sem/,
          "$label: recreated extension member is lowered after revalidation");
     $prepared->quit;
+}
+
+for my $call (@calls)
+{
+    my ($label, $signature, undef, undef, $query) = @$call;
+    my $qualified = "ai_semantic.$signature";
+    my $reader = $node->background_psql('postgres');
+    my $ddl = $node->background_psql('postgres');
+    isnt($reader->query_safe('SELECT pg_backend_pid()'), $ddl->query_safe('SELECT pg_backend_pid()'),
+          "$label: membership test uses two physical connections");
+    my $definition_query = "SELECT '$qualified'::regprocedure::oid, pg_get_functiondef('$qualified'::regprocedure)";
+    my $original = $ddl->query_safe($definition_query);
+    $reader->query_safe("SET plan_cache_mode=force_generic_plan; PREPARE membership_plan AS $query;");
+    like($reader->query_safe('EXPLAIN EXECUTE membership_plan'), qr/Custom Scan \(SemLoom Sem/,
+         "$label: reader caches the member plan before DDL");
+
+    for my $action ('DROP', 'ADD')
+    {
+        $ddl->query_safe("BEGIN; ALTER EXTENSION semloom_pg $action FUNCTION $qualified; COMMIT;");
+        is($ddl->query_safe($definition_query), $original,
+           "$label: $action changes membership without changing function identity or body");
+        my $before_refresh = $reader->query_safe('EXPLAIN EXECUTE membership_plan');
+        $reader->query_safe('DISCARD PLANS');
+        my $after_refresh = $reader->query_safe('EXPLAIN EXECUTE membership_plan');
+        note(encode_json({operator => $label, membership_action => $action,
+                          before_refresh => $before_refresh, after_refresh => $after_refresh}));
+        if ($action eq 'DROP')
+        {
+            unlike($after_refresh, qr/Custom Scan/,
+                   "$label: reader refresh stops lowering the detached marker");
+        }
+        else
+        {
+            like($after_refresh, qr/Custom Scan \(SemLoom Sem/,
+                 "$label: reader refresh resumes lowering the reattached marker");
+        }
+        is($reader->query_safe(q{SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'}),
+           1, "$label: $action refresh preserves the prepared statement for replanning");
+    }
+    $reader->quit;
+    $ddl->quit;
 }
 
 $node->safe_psql('postgres', 'DROP EXTENSION semloom_pg CASCADE; CREATE SCHEMA ai_semantic;');
