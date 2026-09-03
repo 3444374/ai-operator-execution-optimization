@@ -1,6 +1,8 @@
 use strict;
 use warnings FATAL => 'all';
 
+use Cwd qw(abs_path);
+use FindBin;
 use JSON::PP qw(decode_json);
 use IO::Select;
 use IO::Socket::UNIX;
@@ -9,12 +11,14 @@ use PostgreSQL::Test::Cluster;
 use PostgreSQL::Test::Utils;
 use Test::More;
 
+my $test_dir = abs_path("$FindBin::RealBin/plan_contract");
+command_ok(['make', '-s', '-C', $test_dir, 'COPT=-O2 -Werror'], 'build the production plan codec caller and callback observer');
 my $node = PostgreSQL::Test::Cluster->new('map_plan');
 $node->init;
 my $socket_path = $node->host . '/map-never-connect.sock';
 my $listener = IO::Socket::UNIX->new(Type => SOCK_STREAM, Local => $socket_path, Listen => 8)
   or die "could not create provider connection sentinel";
-$node->append_conf('postgresql.conf', "shared_preload_libraries = 'semloom_pg'\n");
+$node->append_conf('postgresql.conf', "shared_preload_libraries = '$test_dir/semloom_plan_contract_test,semloom_pg'\n");
 $node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = '$socket_path'\n");
 $node->start;
 $node->safe_psql('postgres', q{CREATE EXTENSION semloom_pg VERSION '0.1.0';});
@@ -66,12 +70,10 @@ INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
     for my $mode ('force_custom_plan', 'force_generic_plan')
     {
         for my $parameter (
-            ['instruction', 'text', '\$1', $options, q|'Echo the input.'|],
-            ['options', 'jsonb', q|'Echo the input.'|, '\$1', $options])
+            ['instruction', 'text', '$1', $options, q|'Echo the input.'|],
+            ['options', 'jsonb', q|'Echo the input.'|, '$1', $options])
         {
             my ($label, $type, $instruction, $config, $value) = @$parameter;
-            $instruction =~ s/\\\$/\$/g;
-            $config =~ s/\\\$/\$/g;
             my $sql = "SET plan_cache_mode=$mode; PREPARE map_parameter($type) AS " .
                 "SELECT ai_semantic.map(body, $instruction, $config) FROM ONLY map_inputs; " .
                 "EXPLAIN EXECUTE map_parameter($value);";
@@ -153,6 +155,71 @@ END $$;
         $reader->query_safe('DEALLOCATE map_acl');
     }
     $reader->quit;
+
+    $node->safe_psql('postgres', qq{
+CREATE FUNCTION test_map_plan(text, oid) RETURNS text
+AS '$test_dir/semloom_plan_contract_test', 'semloom_test_map_plan' LANGUAGE C STRICT;
+CREATE FUNCTION map_watch(oid, oid) RETURNS void
+AS '$test_dir/semloom_plan_contract_test', 'semloom_test_map_watch' LANGUAGE C STRICT;
+CREATE FUNCTION map_events() RETURNS text
+AS '$test_dir/semloom_plan_contract_test', 'semloom_test_map_events' LANGUAGE C;
+CREATE FUNCTION map_child_probe(text) RETURNS text LANGUAGE plpgsql VOLATILE
+AS \$\$ BEGIN RETURN \$1; END \$\$;
+});
+    my $marker_oid = $node->safe_psql('postgres', "SELECT 'ai_semantic.map(text,text,jsonb)'::regprocedure::oid");
+    my $physical_digest = '558e50ae5e2716d2e699e09ddb8ffb953f772ba9a1be9dbb15379d9bfcf08d66';
+    my $map_digest = 'b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba';
+    my $suffix = "$map_digest|$physical_digest|128|163840|65536|absent|golden-map-v1|Echo the input.";
+    is($node->safe_psql('postgres', "SELECT test_map_plan('copy', $marker_oid)"),
+       "4|1|$marker_oid|$suffix", 'Map values survive deletion of both the source and copied plan contexts');
+    is($node->safe_psql('postgres', "SELECT test_map_plan('column', $marker_oid)"),
+       "4|2|$marker_oid|$suffix", 'Map column binding is outside semantic identity');
+    is($node->safe_psql('postgres', "SELECT test_map_plan('copy', 4026531841::oid)"),
+       "4|1|4026531841|$suffix", 'full-width private function OID survives copying without changing semantic identity');
+    my %invalid_plans = (
+        duplicate => 'duplicate semantic plan specification field',
+        missing => 'incomplete semantic plan specification',
+        unknown => 'unknown semantic plan specification field',
+        map { $_ => 'invalid semantic executor binding' }
+            qw(binding-type binding-column binding-function-type binding-function-null binding-function-zero binding-function-byref),
+    );
+    for my $field (qw(schema_version operator_kind input_value_kind output_value_kind null_policy error_policy
+        semantic_spec_version semantic_spec_id physical_algorithm physical_role order_policy instruction prompt_program_id
+        prompt_program_version prompt_program_digest result_parser_id result_parser_version result_parser_digest model_id
+        temperature top_p max_tokens n stream has_stop max_input_bytes max_output_bytes semantic_spec_digest physical_algorithm_digest))
+    {
+        $invalid_plans{"field:$field"} = $field eq 'schema_version' ? 'unsupported semantic plan specification' :
+            'unsupported generative SemMap plan specification';
+    }
+    for my $mutation (sort keys %invalid_plans)
+    {
+        my ($result, $output, $error) = $node->psql('postgres',
+            "\\set VERBOSITY verbose\nSELECT test_map_plan('$mutation', $marker_oid);");
+        isnt($result, 0, "strict Map decoding rejects $mutation");
+        like($error, qr/ERROR:  XX000: \Q$invalid_plans{$mutation}\E\n/, "$mutation has the exact redacted decoder error");
+    }
+
+    my $child_oid = $node->safe_psql('postgres', "SELECT 'map_child_probe(text)'::regprocedure::oid");
+    my $hooks = $node->background_psql('postgres');
+    $hooks->query_safe("SELECT map_watch($marker_oid, $child_oid); SET plan_cache_mode=force_generic_plan; " .
+        "PREPARE hook_map(integer) AS $query WHERE id >= \$1;");
+    $hooks->query_safe('EXPLAIN EXECUTE hook_map(1)');
+    $hooks->query_safe('EXPLAIN EXECUTE hook_map(1)');
+    is($hooks->query_safe('SELECT map_events()'), '2|0|1',
+       'cached Map calls the native execution hook once per initialization and chains the previous planner hook');
+    $hooks->query_safe("SELECT map_watch($marker_oid, $child_oid); PREPARE hook_child AS " .
+        "SELECT ai_semantic.map(map_child_probe(body), 'Echo the input.', $options) FROM ONLY map_inputs;");
+    is($hooks->query_safe(q{SELECT map_test_capture('EXECUTE hook_child')}),
+       '0A000|generative SemMap execution is not connected', 'unconnected execution stops before child initialization');
+    is($hooks->query_safe('SELECT map_events()'), '1|0|1', 'child function initialization has not run when execution is refused');
+    $node->safe_psql('postgres', 'REVOKE EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) FROM map_reader;');
+    $hooks->query_safe("SET ROLE map_reader; SELECT map_watch($marker_oid, $child_oid)");
+    is($hooks->query_safe(q{SELECT map_test_capture('EXPLAIN EXECUTE hook_child')}),
+       '42501|permission denied for function map', 'permission is checked before even the explain-only child initializer');
+    my @denied_events = split /\|/, $hooks->query_safe('SELECT map_events()');
+    is($denied_events[0], 0, 'failed ACL does not invoke the Map execution hook');
+    is($denied_events[1], 0, 'failed ACL does not initialize the ordinary child function');
+    $hooks->quit;
 
     for my $unsupported (
         ['constant CASE', "SELECT CASE WHEN true THEN ai_semantic.map(body, 'Echo the input.', $options) ELSE '' END FROM ONLY map_inputs",
