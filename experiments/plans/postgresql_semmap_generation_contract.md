@@ -420,6 +420,19 @@ CLI 尚未识别版本的首帧不可解析时只关闭该连接，后续合法�
 坏连接，下一合法连接仍成功；Adapter 自身同名异常继续归为脱敏内部错误，旧 v3/v4 会话分类保留。
 这是对既有输入隔离的定点修复，不宣称支持任意 JSON 深度，也不增加 PG 接线或模型运行范围。
 
+PG 计划子切片从已集成 `340356e8` 独立推进。复核现有 `extension.c` 成员查找、`sem_path.c`
+单 Map placement、`sem_plan_spec.c` 命名节点与 `sem_pump_begin` 后，继续使用这些实际调用点：
+增加三参 OID/0.2.0 安装升级，在 PG 常量替换前只检查新 Map 的 instruction/options；普通 input 和
+谓词参数不动。schema 4 保存完整最小语义，原函数 OID 只作 PG 私有绑定，并登记原生计划依赖。
+每次节点初始化先执行原生 ACL/function-execute hook；未接 C v5 时，合法新计划仍明确 0A000，
+不进入 child/runtime/provider。plain EXPLAIN 只展示已验证的计划值，不创建 provider 或算子执行状态。
+这是 §3、§7 和主计划工程对照中“保留自有载体、共享接口、原生权限”的具体落点，不读取或移植
+公司实现；PG REL_18_3 的 ExecInitFunc、常量折叠与 plan dependency 是实现依据。
+预先确认的测试表面是 SQL 新装/升级、EXPLAIN、prepared/custom/generic、执行权限与既有测试专用
+PG plan codec caller；使用公开合成输入与 §10 独立向量，不增加生产测试 GUC 或私有状态断言。
+按 SQL 注册 → plan/值/复制 → 前置来源 → ACL/依赖逐项 red/green；每次保留失败与实际源码身份。
+本阶段只允许独立 PG18.3 fixture 验证，不使用真实模型预算，不修改 runtime/provider/wire 或旧输出语义。
+
 ### 8.1 开工前的研发复核
 
 研发 agent 阅读本稿和上述实际源码后，登记“可直接实现 / 需修订及反例”，至少回答：
