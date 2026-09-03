@@ -531,8 +531,9 @@ PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配
 组合或 Filter 三值分类质量。先验收独立生成型 Map，Filter → Map 留给后续组合切片验证。
 AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重载、参数、文本输出规则和版本由
 [四 D 专项合同](postgresql_semmap_generation_contract.md)唯一定义；合同已定稿，§8.0 已登记源码复核。
-独立分支 `6903cf46` 只完成规范消息编译和旧路径兼容验证，见[结果记录](../results/postgresql/semmap_messages_20260903/README.md)；
-完整纯值/协议、PG＋golden、真实模型与资源须继续分阶段验收，不能把本子切片写成可执行生成型 Map。
+独立分支 `6903cf46` 完成[规范消息编译](../results/postgresql/semmap_messages_20260903/README.md)，
+`425d2b1c` 随后验证[C/Python 纯值和 Python v5](../results/postgresql/semmap_values_20260903/README.md)。
+PG plan、C v5 互通、PG＋golden、真实模型与资源须继续分阶段验收，不能把本子切片写成可执行生成型 Map。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。

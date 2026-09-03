@@ -1,0 +1,30 @@
+test_completion_metadata_and_wire_counters_survive_without_text_changes (test_semloom_map_protocol.MapProtocolTests.test_completion_metadata_and_wire_counters_survive_without_text_changes) ... ERROR
+test_error_frames_are_strict_and_only_v5_admits_output_too_large (test_semloom_map_protocol.MapProtocolTests.test_error_frames_are_strict_and_only_v5_admits_output_too_large) ... ERROR
+test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors) ... ok
+test_identity_encoding_rejects_invalid_representations_and_binds_metadata (test_semloom_map_protocol.MapProtocolTests.test_identity_encoding_rejects_invalid_representations_and_binds_metadata) ... ok
+test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields (test_semloom_map_protocol.MapProtocolTests.test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields) ... ok
+test_strict_open_and_task_bind_the_actual_instruction_and_sequence (test_semloom_map_protocol.MapProtocolTests.test_strict_open_and_task_bind_the_actual_instruction_and_sequence) ... ok
+test_task_rejects_wire_counter_types_and_nested_mutations (test_semloom_map_protocol.MapProtocolTests.test_task_rejects_wire_counter_types_and_nested_mutations) ... ok
+
+======================================================================
+ERROR: test_completion_metadata_and_wire_counters_survive_without_text_changes (test_semloom_map_protocol.MapProtocolTests.test_completion_metadata_and_wire_counters_survive_without_text_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 216, in test_completion_metadata_and_wire_counters_survive_without_text_changes
+    frame = v5.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'src.execution_provider.wire.v5' has no attribute 'build_completion_message'. Did you mean: 'build_open_message'?
+
+======================================================================
+ERROR: test_error_frames_are_strict_and_only_v5_admits_output_too_large (test_semloom_map_protocol.MapProtocolTests.test_error_frames_are_strict_and_only_v5_admits_output_too_large)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 192, in test_error_frames_are_strict_and_only_v5_admits_output_too_large
+    error = v5.build_error_message("OUTPUT_TOO_LARGE", sequence=0)
+            ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'src.execution_provider.wire.v5' has no attribute 'build_error_message'. Did you mean: 'build_open_message'?
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.009s
+
+FAILED (errors=2)

@@ -1,0 +1,6 @@
+test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK

@@ -1,0 +1,17 @@
+test_map_session_uses_fixed_identity_and_verbatim_generation_request (test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_map_session_uses_fixed_identity_and_verbatim_generation_request) ... FAIL
+
+======================================================================
+FAIL: test_map_session_uses_fixed_identity_and_verbatim_generation_request (test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_map_session_uses_fixed_identity_and_verbatim_generation_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 181, in test_map_session_uses_fixed_identity_and_verbatim_generation_request
+    self.assertEqual(read_frame(client)["type"], "opened")
+AssertionError: 'error' != 'opened'
+- error
++ opened
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.507s
+
+FAILED (failures=1)

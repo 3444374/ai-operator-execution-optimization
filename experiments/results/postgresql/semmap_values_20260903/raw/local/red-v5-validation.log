@@ -1,0 +1,16 @@
+test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors) ... ok
+test_identity_encoding_rejects_invalid_representations_and_binds_metadata (test_semloom_map_protocol.MapProtocolTests.test_identity_encoding_rejects_invalid_representations_and_binds_metadata) ... FAIL
+
+======================================================================
+FAIL: test_identity_encoding_rejects_invalid_representations_and_binds_metadata (test_semloom_map_protocol.MapProtocolTests.test_identity_encoding_rejects_invalid_representations_and_binds_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 72, in test_identity_encoding_rejects_invalid_representations_and_binds_metadata
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.007s
+
+FAILED (failures=1)

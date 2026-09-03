@@ -1,0 +1,35 @@
+test_map_completion_checks_representation_model_and_usage_first (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_checks_representation_model_and_usage_first) ... ERROR
+test_map_completion_preserves_text_and_distinguishes_failure_classes (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_preserves_text_and_distinguishes_failure_classes) ... ERROR
+test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector) ... ok
+test_map_plan_preserves_identity_and_exposes_fresh_generation_values (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_preserves_identity_and_exposes_fresh_generation_values) ... ok
+test_map_plan_validates_all_variable_values_before_encoding (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_validates_all_variable_values_before_encoding) ... ok
+test_shared_completion_preserves_legacy_imports_and_raw_values (test_semloom_map_contract.SemanticMapContractTests.test_shared_completion_preserves_legacy_imports_and_raw_values) ... ERROR
+
+======================================================================
+ERROR: test_map_completion_checks_representation_model_and_usage_first (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_checks_representation_model_and_usage_first)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_contract.py", line 86, in test_map_completion_checks_representation_model_and_usage_first
+    from src.execution_provider.completion import Completion
+ModuleNotFoundError: No module named 'src.execution_provider.completion'
+
+======================================================================
+ERROR: test_map_completion_preserves_text_and_distinguishes_failure_classes (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_preserves_text_and_distinguishes_failure_classes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_contract.py", line 67, in test_map_completion_preserves_text_and_distinguishes_failure_classes
+    from src.execution_provider.completion import Completion
+ModuleNotFoundError: No module named 'src.execution_provider.completion'
+
+======================================================================
+ERROR: test_shared_completion_preserves_legacy_imports_and_raw_values (test_semloom_map_contract.SemanticMapContractTests.test_shared_completion_preserves_legacy_imports_and_raw_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_contract.py", line 55, in test_shared_completion_preserves_legacy_imports_and_raw_values
+    from src.execution_provider.completion import Completion
+ModuleNotFoundError: No module named 'src.execution_provider.completion'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+FAILED (errors=3)

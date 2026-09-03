@@ -1,0 +1,22 @@
+setUpClass (test_semloom_map_contract.MapCContractTests) ... ERROR
+test_map_completion_checks_representation_model_and_usage_first (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_checks_representation_model_and_usage_first) ... ok
+test_map_completion_preserves_text_and_distinguishes_failure_classes (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_preserves_text_and_distinguishes_failure_classes) ... ok
+test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector) ... ok
+test_map_plan_preserves_identity_and_exposes_fresh_generation_values (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_preserves_identity_and_exposes_fresh_generation_values) ... ok
+test_map_plan_validates_all_variable_values_before_encoding (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_validates_all_variable_values_before_encoding) ... ok
+test_shared_completion_preserves_legacy_imports_and_raw_values (test_semloom_map_contract.SemanticMapContractTests.test_shared_completion_preserves_legacy_imports_and_raw_values) ... ok
+
+======================================================================
+ERROR: setUpClass (test_semloom_map_contract.MapCContractTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_contract.py", line 125, in setUpClass
+    subprocess.run(["cc", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-pedantic",
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['cc', '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-pedantic', '-shared', '-fPIC', '<test-worktree>/code/postgres/semloom_pg/src/semantic_map_contract.c', '<test-worktree>/code/postgres/semloom_pg/src/sem_text.c', '-o', '/var/folders/gj/ysb08vvj3jjgs2ck1tn9tsrw0000gn/T/semloom-map-values-4qhu27v9/map-values.so']' returned non-zero exit status 1.
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.097s
+
+FAILED (errors=1)

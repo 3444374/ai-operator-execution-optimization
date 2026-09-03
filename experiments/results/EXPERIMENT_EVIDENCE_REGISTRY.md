@@ -5,6 +5,10 @@
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
+独立分支的[Map 纯值与 Python v5](postgresql/semmap_values_20260903/README.md)绑定 `425d2b1c`：
+C/Python 身份/完成值、严格 Python v5 和共享 gateway 通过本地/服务器各 135/135，精确 PG18.3
+重新构建与旧 SQL 路径 regression 1/1、TAP 1022/1022。没有 PG schema 4/C v5/三参 Map 执行、
+真实模型或资源资格；独立审查修复与失败证据保留。下方消息子切片保持原始范围和身份。
 独立分支的[Map 消息子切片](postgresql/semmap_messages_20260903/README.md)绑定 `6903cf46`：
 C/Python 规范消息与共享 JSON 编码通过本地/服务器各 107/107，精确 PG18.3 新构建与旧路径
 regression 1/1、TAP 1022/1022。没有完整 Map identity/output、三参 SQL/schema 4/wire v5 或模型/资源资格；

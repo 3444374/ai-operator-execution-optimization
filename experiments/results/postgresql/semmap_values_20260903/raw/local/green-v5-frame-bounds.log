@@ -1,0 +1,13 @@
+test_completion_metadata_and_wire_counters_survive_without_text_changes (test_semloom_map_protocol.MapProtocolTests.test_completion_metadata_and_wire_counters_survive_without_text_changes) ... ok
+test_error_frames_are_strict_and_only_v5_admits_output_too_large (test_semloom_map_protocol.MapProtocolTests.test_error_frames_are_strict_and_only_v5_admits_output_too_large) ... ok
+test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors) ... ok
+test_frame_bounds_use_decimal_strings_and_output_policy_order (test_semloom_map_protocol.MapProtocolTests.test_frame_bounds_use_decimal_strings_and_output_policy_order) ... ok
+test_identity_encoding_rejects_invalid_representations_and_binds_metadata (test_semloom_map_protocol.MapProtocolTests.test_identity_encoding_rejects_invalid_representations_and_binds_metadata) ... ok
+test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields (test_semloom_map_protocol.MapProtocolTests.test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields) ... ok
+test_strict_open_and_task_bind_the_actual_instruction_and_sequence (test_semloom_map_protocol.MapProtocolTests.test_strict_open_and_task_bind_the_actual_instruction_and_sequence) ... ok
+test_task_rejects_wire_counter_types_and_nested_mutations (test_semloom_map_protocol.MapProtocolTests.test_task_rejects_wire_counter_types_and_nested_mutations) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.009s
+
+OK

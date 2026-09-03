@@ -1,0 +1,6 @@
+test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

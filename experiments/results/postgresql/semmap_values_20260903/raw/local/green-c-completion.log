@@ -1,0 +1,13 @@
+test_c_completion_policy_matches_python_and_never_changes_text (test_semloom_map_contract.MapCContractTests.test_c_completion_policy_matches_python_and_never_changes_text) ... ok
+test_c_plan_identity_matches_independent_vectors_and_python (test_semloom_map_contract.MapCContractTests.test_c_plan_identity_matches_independent_vectors_and_python) ... ok
+test_map_completion_checks_representation_model_and_usage_first (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_checks_representation_model_and_usage_first) ... ok
+test_map_completion_preserves_text_and_distinguishes_failure_classes (test_semloom_map_contract.SemanticMapContractTests.test_map_completion_preserves_text_and_distinguishes_failure_classes) ... ok
+test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector) ... ok
+test_map_plan_preserves_identity_and_exposes_fresh_generation_values (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_preserves_identity_and_exposes_fresh_generation_values) ... ok
+test_map_plan_validates_all_variable_values_before_encoding (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_validates_all_variable_values_before_encoding) ... ok
+test_shared_completion_preserves_legacy_imports_and_raw_values (test_semloom_map_contract.SemanticMapContractTests.test_shared_completion_preserves_legacy_imports_and_raw_values) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.626s
+
+OK

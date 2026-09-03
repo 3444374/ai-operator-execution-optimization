@@ -1,0 +1,14 @@
+test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors) ... ERROR
+
+======================================================================
+ERROR: test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 7, in test_execution_payload_and_completion_match_independent_vectors
+    from src.execution_provider.wire import v5
+ImportError: cannot import name 'v5' from 'src.execution_provider.wire' (<test-worktree>/code/src/execution_provider/wire/__init__.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)

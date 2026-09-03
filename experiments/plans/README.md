@@ -36,7 +36,7 @@ Filter 的 reference 质量、matched cost 与第二路径继续保留，但不�
 | 文件 | 当前状态与用途 |
 |---|---|
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
-| [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md) | 四 D 生成型 Map 合同定稿；独立分支只完成规范消息及旧路径兼容，完整纯值/PG 接线、资源和模型仍待验证 |
+| [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md) | 四 D 定稿；独立分支已验证消息、C/Python 纯值和 Python v5；PG plan/C v5/完整 golden、资源与模型仍待验证 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |

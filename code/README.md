@@ -110,7 +110,11 @@ Next, [real generative SemMap](../experiments/plans/postgresql_ai_semantic_opera
 drives the necessary shared task/result changes after the full engineering comparison.
 Its first unmerged [message-compilation slice](../experiments/results/postgresql/semmap_messages_20260903/README.md)
 at `6903cf46` passes 107/107 local/server checks and fresh PG18.3 build/regression/TAP compatibility checks.
-This adds no executable generative Map SQL or wire v5; complete values/identity, plan, golden and real-model checks remain pending.
+That slice adds no executable generative Map SQL. The subsequent unmerged
+[values and Python v5 slice](../experiments/results/postgresql/semmap_values_20260903/README.md) at `425d2b1c`
+adds C/Python identity and completion values, strict v5 schemas and shared gateway/HTTP execution.
+It passes 135/135 local/server checks and fresh PG18.3 build/regression/TAP compatibility checks.
+PG schema 4, the C v5 client, generative Map SQL, PG golden execution and real-model/resource checks remain pending.
 [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT in the current integrated code.
 [Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) and the bounded

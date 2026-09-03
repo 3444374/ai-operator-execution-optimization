@@ -1,0 +1,18 @@
+test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error (test_semloom_map_protocol.MapSessionTests.test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error) ...
+  test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error (test_semloom_map_protocol.MapSessionTests.test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error) (version=5) ... FAIL
+
+======================================================================
+FAIL: test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error (test_semloom_map_protocol.MapSessionTests.test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error) (version=5)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 282, in test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error
+    self.assertEqual(error["code"], code)
+AssertionError: 'GATEWAY_INTERNAL' != 'INVALID_TASK'
+- GATEWAY_INTERNAL
++ INVALID_TASK
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

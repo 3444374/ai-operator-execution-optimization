@@ -42,7 +42,10 @@ The unmerged `codex/semmap-message-contract` branch adds only pure Map message c
 verbatim system/user text, strict UTF-8 and byte limits, with shared JSON encoding and unchanged Filter messages.
 [This slice's checks](../../../experiments/results/postgresql/semmap_messages_20260903/README.md) pass 107/107 locally
 and on the server, plus a fresh PG18.3 `-Werror` build, regression 1/1 and TAP 1022/1022 for existing paths.
-Full Map identity/output handling, SQL/schema 4/wire v5, golden execution and real-model/resource checks remain pending.
+The subsequent [values and Python v5 slice](../../../experiments/results/postgresql/semmap_values_20260903/README.md)
+at `425d2b1c` adds C/Python Map identity/completion values and a strict v5 gateway using the shared session and HTTP adapter.
+Its 135/135 local/server checks and fresh PG18.3 build/regression/TAP checks pass for existing SQL paths.
+The PG schema 4 plan, C v5 client, generative Map SQL and PG golden/real-model/resource checks remain pending.
 
 This extension remains the project's own frontend. The company demo provides scoped engineering references;
 later the project's own operator semantics, processing/optimization methods and SemLoom execution capabilities

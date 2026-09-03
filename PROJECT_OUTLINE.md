@@ -506,8 +506,9 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 数据库端到端或 IMLane-like batch placement 对照；不要求先完成不相关的 Filter 第二路径。
 独立核心测试也不能替代这些数据库检查。
 
-新增能力按主线、分支验收和待实现项分别记录；独立分支已完成[Map 消息编译与旧路径兼容验证](experiments/results/postgresql/semmap_messages_20260903/README.md)，
-完整生成型 Map、真实模型和资源验证仍待实施。LOTUS compatibility/native baseline
+新增能力按主线、分支验收和待实现项分别记录；独立分支已验证[Map 消息](experiments/results/postgresql/semmap_messages_20260903/README.md)
+及[C/Python 纯值、Python v5 与旧路径兼容](experiments/results/postgresql/semmap_values_20260903/README.md)。
+PG plan/C v5、完整生成型 Map、真实模型和资源验证仍待实施。LOTUS compatibility/native baseline
 后置；Join、aggregate、Kalypso-like lineage/KV 按真实需求另立项。旧 GPU 矩阵、SAOR、图像动态/HSE、
 五臂 formal 与条件性补测继续等待各自计划和授权，不能由“可以并行研发”自动恢复。
 

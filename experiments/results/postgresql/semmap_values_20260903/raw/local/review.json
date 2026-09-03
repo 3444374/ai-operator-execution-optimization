@@ -1,0 +1,21 @@
+{
+  "baseline": "63d86c0e",
+  "reviewed_code": "c338d81b",
+  "correction_commit": "425d2b1c",
+  "scope": "Map messages, C/Python values, Python v5 and shared gateway; not PG Map execution",
+  "standards": {
+    "initial_findings": 2,
+    "findings": ["Persisted argv needed redaction in the new local recorder", "Parameterized failures needed semantic labels"],
+    "followup": "Both resolved; preserve historical evidence and archive the corrected recorder",
+    "tests_run_by_reviewer": false
+  },
+  "spec": {
+    "initial_findings": 1,
+    "finding": "Unrepresentable JSON integer in a v5 task was classified as GATEWAY_INTERNAL",
+    "followup": "Narrow v5 read-frame mapping resolves the issue; adapter errors and legacy classifications preserved",
+    "initial_local_checks": 64,
+    "followup_local_checks": 53,
+    "server_or_model_run_by_reviewer": false
+  },
+  "documentation_followup": "Synchronize current status and qualification without rebinding historical commits"
+}

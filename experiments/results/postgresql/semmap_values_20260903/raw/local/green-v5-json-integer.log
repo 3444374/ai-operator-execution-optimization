@@ -1,0 +1,6 @@
+test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error (test_semloom_map_protocol.MapSessionTests.test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK

@@ -1,0 +1,14 @@
+test_self_locating_cli_routes_map_and_preserves_explicit_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_routes_map_and_preserves_explicit_metadata) ... FAIL
+
+======================================================================
+FAIL: test_self_locating_cli_routes_map_and_preserves_explicit_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_routes_map_and_preserves_explicit_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/execution_provider/test_map_gateway.py", line 53, in test_self_locating_cli_routes_map_and_preserves_explicit_metadata
+    self.fail(f"gateway did not start: {process.communicate(timeout=1)[1]!r}")
+AssertionError: gateway did not start: b'golden fixture must map SHA-256 strings to raw text outputs\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.055s
+
+FAILED (failures=1)

@@ -1,0 +1,27 @@
+test_execution_payload_and_completion_match_independent_vectors (test_semloom_map_protocol.MapProtocolTests.test_execution_payload_and_completion_match_independent_vectors) ... ok
+test_identity_encoding_rejects_invalid_representations_and_binds_metadata (test_semloom_map_protocol.MapProtocolTests.test_identity_encoding_rejects_invalid_representations_and_binds_metadata) ... ok
+test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields (test_semloom_map_protocol.MapProtocolTests.test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields) ... ERROR
+test_strict_open_and_task_bind_the_actual_instruction_and_sequence (test_semloom_map_protocol.MapProtocolTests.test_strict_open_and_task_bind_the_actual_instruction_and_sequence) ... ERROR
+
+======================================================================
+ERROR: test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields (test_semloom_map_protocol.MapProtocolTests.test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 130, in test_open_rejects_wrong_types_constraints_limits_and_duplicate_fields
+    opened = v5.build_open_message(SemanticMapPlan("echo", "golden-map-v1", 128))
+             ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'src.execution_provider.wire.v5' has no attribute 'build_open_message'
+
+======================================================================
+ERROR: test_strict_open_and_task_bind_the_actual_instruction_and_sequence (test_semloom_map_protocol.MapProtocolTests.test_strict_open_and_task_bind_the_actual_instruction_and_sequence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 97, in test_strict_open_and_task_bind_the_actual_instruction_and_sequence
+    opened = v5.build_open_message(plan)
+             ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'src.execution_provider.wire.v5' has no attribute 'build_open_message'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.007s
+
+FAILED (errors=2)

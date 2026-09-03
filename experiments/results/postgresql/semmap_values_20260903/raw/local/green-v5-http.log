@@ -1,0 +1,6 @@
+test_map_session_uses_fixed_identity_and_verbatim_generation_request (test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_map_session_uses_fixed_identity_and_verbatim_generation_request) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.507s
+
+OK

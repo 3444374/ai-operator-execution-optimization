@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-09-03 生成型 Map 纯值、Python v5 与独立复核
+
+- `c338d81b` 实现 C/Python 最小 Map 值与摘要、共享完成值、严格 Python v5、显式 Adapter execution ID、
+  完整 fixture metadata；复用既有 framing/session/HTTP，不增加 PG 内网络或新调度框架。
+- 工程规范与合同两路独立复核后，`425d2b1c` 补 JSON 超长整数反例：v5 仅在读帧处转换输入错误，
+  Adapter 编程错误仍为内部错误；未知版本坏首帧只关连接，gateway 可继续服务。旧 v3/v4 会话表现保留。
+  测试改为语义标签；新证据记录器对 argv 与全文脱敏并用合成参数验证，旧历史文件不改写。
+- 绑定 `425d2b1c` 的本地/服务器各 135/135，PG18.3 `-O2 -Werror`、regression 1/1、TAP 1022/1022
+  重新通过；七个纯 C module 和 neutral header 通过。40 个服务器公开文件与 98 个源码哈希已核对，
+  见[本轮记录](experiments/results/postgresql/semmap_values_20260903/README.md)。原 prefix 和 main 未覆盖。
+- 保留全部测试先行失败、审查反例和中间通过记录；服务器 c338d81b 只同步未运行，最终验收在新目录。
+  临时测试节点已停止，证据与二进制保存在仓库外持久目录；当前仍未合并或推送 main。
+- 用户确认缓存 Qwen2.5-7B、最多 32 次尝试与资源阈值，并允许双 GPU；本轮仍预选单 GPU，实际模型
+  请求为 0。PG schema 4、C port/wire、三参 Map SQL、PG golden 与真实服务/资源验收继续按专项推进。
+  不把本轮 Python gateway fixture 或旧 SQL TAP 写成生成型 Map 已进入 PG executor。
+- 276 个 Markdown 本地链接、136 项归档 SHA、差异空白和 7,996 文件隐私扫描通过；读者措辞命中仅为
+  已解释 SQLSTATE。已注销确认干净、未运行验收的 c338d81b 临时 worktree，Git bundle 与正式证据保留。
+
 ## 2026-09-03 生成型 Map 消息子切片与 PG18.3 兼容验收
 
 - 从 `63d86c0e` 新建 `codex/semmap-message-contract`，在专项 §8.0 登记源码事实、落点和验证范围。

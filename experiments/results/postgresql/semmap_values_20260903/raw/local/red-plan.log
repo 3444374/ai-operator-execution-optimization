@@ -1,0 +1,14 @@
+test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector) ... ERROR
+
+======================================================================
+ERROR: test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_contract.py", line 8, in test_map_plan_identity_matches_independent_ascii_vector
+    from src.execution_provider.semantic_map import SemanticMapPlan
+ImportError: cannot import name 'SemanticMapPlan' from 'src.execution_provider.semantic_map' (<test-worktree>/code/src/execution_provider/semantic_map.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (errors=1)

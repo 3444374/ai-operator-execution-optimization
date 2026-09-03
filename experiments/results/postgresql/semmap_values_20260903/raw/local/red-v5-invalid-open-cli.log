@@ -1,0 +1,14 @@
+test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) ... ERROR
+
+======================================================================
+ERROR: test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/execution_provider/test_map_gateway.py", line 61, in test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata
+    client.connect(str(socket_path))
+FileNotFoundError: [Errno 2] No such file or directory
+
+----------------------------------------------------------------------
+Ran 1 test in 0.057s
+
+FAILED (errors=1)

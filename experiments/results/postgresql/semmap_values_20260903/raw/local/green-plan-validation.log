@@ -1,0 +1,8 @@
+test_map_plan_identity_matches_independent_ascii_vector (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_identity_matches_independent_ascii_vector) ... ok
+test_map_plan_preserves_identity_and_exposes_fresh_generation_values (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_preserves_identity_and_exposes_fresh_generation_values) ... ok
+test_map_plan_validates_all_variable_values_before_encoding (test_semloom_map_contract.SemanticMapContractTests.test_map_plan_validates_all_variable_values_before_encoding) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+OK

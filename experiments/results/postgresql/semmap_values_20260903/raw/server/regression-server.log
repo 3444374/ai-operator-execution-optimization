@@ -1,0 +1,50 @@
+2026-09-03 12:22:48.295 CST [92675] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 12:22:48.295 CST [92675] LOG:  listening on Unix socket "<artifact-root>/regression/socket/.s.PGSQL.55446"
+2026-09-03 12:22:48.298 CST [92681] LOG:  database system was shut down at 2026-09-03 12:22:48 CST
+2026-09-03 12:22:48.300 CST [92675] LOG:  database system is ready to accept connections
+2026-09-03 12:22:48.516 CST [92713] ERROR:  nested ai_semantic.map expressions are not supported
+2026-09-03 12:22:48.516 CST [92713] STATEMENT:  SELECT upper(ai_semantic.map(payload))
+	FROM semloom_documents;
+2026-09-03 12:22:48.516 CST [92713] ERROR:  query shape is outside the current SemMap capability
+2026-09-03 12:22:48.516 CST [92713] DETAIL:  Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, and LIMIT is supported.
+2026-09-03 12:22:48.516 CST [92713] STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	ORDER BY doc_id;
+2026-09-03 12:22:48.519 CST [92713] ERROR:  SemFilter provider completion must be true, false, or unknown
+2026-09-03 12:22:48.519 CST [92713] STATEMENT:  SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 6 AND ai_semantic.filter(decision);
+2026-09-03 12:22:48.520 CST [92713] ERROR:  ai_semantic.filter must be one top-level AND predicate
+2026-09-03 12:22:48.520 CST [92713] STATEMENT:  SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE NOT ai_semantic.filter(decision);
+2026-09-03 12:22:48.520 CST [92713] ERROR:  ai_semantic.filter must be one top-level AND predicate
+2026-09-03 12:22:48.520 CST [92713] STATEMENT:  SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	  AND ai_semantic.filter(decision || '');
+2026-09-03 12:22:48.520 CST [92713] ERROR:  SemMap and SemFilter cannot be combined in the current capability
+2026-09-03 12:22:48.520 CST [92713] STATEMENT:  SELECT ai_semantic.map(decision)
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision);
+2026-09-03 12:22:48.521 CST [92713] ERROR:  INSERT shape is outside the current SemMap capability
+2026-09-03 12:22:48.521 CST [92713] DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 12:22:48.521 CST [92713] STATEMENT:  INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE doc_id = 3
+	RETURNING completion;
+2026-09-03 12:22:48.521 CST [92713] ERROR:  INSERT shape is outside the current SemMap capability
+2026-09-03 12:22:48.521 CST [92713] DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 12:22:48.521 CST [92713] STATEMENT:  INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE doc_id = 3
+	ON CONFLICT DO NOTHING;
+2026-09-03 12:22:48.538 CST [92675] LOG:  received fast shutdown request
+2026-09-03 12:22:48.539 CST [92675] LOG:  aborting any active transactions
+2026-09-03 12:22:48.540 CST [92675] LOG:  background worker "logical replication launcher" (PID 92684) exited with exit code 1
+2026-09-03 12:22:48.540 CST [92679] LOG:  shutting down
+2026-09-03 12:22:48.540 CST [92679] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 12:22:48.560 CST [92679] LOG:  checkpoint complete: wrote 915 buffers (5.6%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.017 s, sync=0.003 s, total=0.020 s; sync files=305, longest=0.001 s, average=0.001 s; distance=4176 kB, estimate=4176 kB; lsn=0/1B016F0, redo lsn=0/1B016F0
+2026-09-03 12:22:48.571 CST [92675] LOG:  database system is shut down

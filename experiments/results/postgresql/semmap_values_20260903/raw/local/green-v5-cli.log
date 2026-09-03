@@ -1,0 +1,6 @@
+test_self_locating_cli_routes_map_and_preserves_explicit_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_routes_map_and_preserves_explicit_metadata) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.052s
+
+OK
