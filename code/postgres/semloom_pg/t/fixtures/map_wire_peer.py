@@ -28,8 +28,9 @@ def evidence(message, raw_output=None):
 class FixtureAdapter:
     model_id = None
 
-    def __init__(self, output):
+    def __init__(self, output, prompt_tokens):
         self.output = output
+        self.prompt_tokens = prompt_tokens
         self.calls = 0
 
     def execution_id_for(self, version):
@@ -37,7 +38,7 @@ class FixtureAdapter:
 
     def complete(self, request):
         self.calls += 1
-        return Completion(self.output, request.model_id, 17, 1, 'stop')
+        return Completion(self.output, request.model_id, self.prompt_tokens, 1, 'stop')
 
 
 class FaultConnection:
@@ -84,7 +85,7 @@ class FaultConnection:
             message['output_tokens'] = 1
         elif mutation == 'usage-overflow':
             message['prompt_tokens'] = '18446744073709551616'
-        elif mutation == 'usage-total-overflow':
+        elif mutation == 'usage-evidence-mismatch':
             message['prompt_tokens'] = '18446744073709551615'
         elif mutation == 'usage-leading-zero':
             message['prompt_tokens'] = '017'
@@ -131,6 +132,7 @@ def main():
     parser.add_argument('--fault', default='none')
     parser.add_argument('--output', default='hello')
     parser.add_argument('--output-length', type=int)
+    parser.add_argument('--prompt-tokens', type=int, default=17)
     args = parser.parse_args()
     if args.socket.exists():
         raise SystemExit('refusing to replace a filesystem entry')
@@ -140,7 +142,7 @@ def main():
         listener.listen(1)
         try:
             connection, _ = listener.accept()
-            adapter = FixtureAdapter(output)
+            adapter = FixtureAdapter(output, args.prompt_tokens)
             run_v5_session(FaultConnection(connection, args.fault), adapter)
             if args.fault.startswith('open-') and adapter.calls != 0:
                 raise AssertionError('invalid open must not execute a task')

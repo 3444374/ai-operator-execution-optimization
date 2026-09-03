@@ -165,7 +165,7 @@ my @faults = (
     (map { ["open-$_", '08P01', 'SemLoom provider open response does not match wire v5'] }
         qw(version fractional max_input_bytes max_output_bytes max_frame_bytes max_inflight_tasks semantic_spec_digest physical_algorithm_digest provider_execution_digest)),
     (map { ["completion-$_", '08P01', 'SemLoom provider completion does not match wire v5 task identity'] }
-        qw(version fractional sequence semantic_spec_digest physical_algorithm_digest provider_execution_digest semantic_payload_digest completion_evidence_digest model usage-budget usage-total-overflow finish-empty finish-long over-output-evidence)),
+        qw(version fractional sequence semantic_spec_digest physical_algorithm_digest provider_execution_digest semantic_payload_digest completion_evidence_digest model usage-budget usage-evidence-mismatch finish-empty finish-long over-output-evidence)),
     (map { ["completion-$_", '08P01', 'SemLoom provider response has an invalid uint64 field'] }
         qw(usage-overflow usage-leading-zero)),
     (map { ["completion-$_", '08P01', 'SemLoom provider response has an invalid text field'] }
@@ -189,6 +189,17 @@ for my $case (@faults)
     like($stderr, qr/ERROR:  \Q$state\E: \Q$message\E\n/, "$fault preserves its exact redacted error");
     unlike($stderr, qr/private-provider-text|wrong-model/, 'provider values do not appear in errors');
 }
+
+($status, $stdout, $stderr) = run_query("EXPLAIN (ANALYZE, COSTS OFF) $query WHERE id=1",
+    $peer_script, '--prompt-tokens', '18446744073709551615');
+is($status, 0, 'Map accepts independent uint64 usage fields') or diag($stderr);
+like($stdout, qr/Prompt Tokens: 18446744073709551615\b/, 'Map preserves the full prompt-token counter');
+like($stdout, qr/Output Tokens: 1\b/, 'output usage has its own counter');
+($status, $stdout, $stderr) = run_query("$query WHERE id IN (1,4)",
+    $peer_script, '--prompt-tokens', '18446744073709551615');
+isnt($status, 0, 'Map rejects overflow when accumulating consecutive completions');
+like($stderr, qr/ERROR:  22003: SemLoom provider usage counters exceed uint64 range\n/,
+    'runtime counter overflow is not a malformed completion');
 
 ($status, $stdout, $stderr) = run_query("TRUNCATE map_sink; INSERT INTO map_sink $query WHERE id=1; SELECT octet_length(generated) FROM map_sink;",
     $peer_script, '--output-length', '65536');

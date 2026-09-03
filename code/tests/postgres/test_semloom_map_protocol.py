@@ -242,6 +242,21 @@ class MapProtocolTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ProtocolError):
                 v5.validate_completion({**frame, field: value}, expected_sequence=0, payload_digest=payload, open_context=context)
 
+    def test_usage_fields_have_independent_uint64_ranges(self) -> None:
+        from src.execution_provider.completion import Completion
+        from src.execution_provider.wire import v5
+        from src.execution_provider.semantic_map import SemanticMapPlan
+
+        plan = SemanticMapPlan("echo", "golden-map-v1", 128)
+        context = v5.validate_open(v5.build_open_message(plan))
+        payload = v5.build_task_message(plan, sequence=0, input_value="hello")["semantic_payload_digest"]
+        result = Completion("hello", plan.model_id, 18446744073709551615, 1, "stop")
+        frame = v5.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
+        self.assertEqual(frame["prompt_tokens"], "18446744073709551615")
+        self.assertEqual(frame["output_tokens"], "1")
+        self.assertEqual(v5.validate_completion(frame, expected_sequence=0,
+            payload_digest=payload, open_context=context), result)
+
     def test_frame_bounds_use_decimal_strings_and_output_policy_order(self) -> None:
         from src.execution_provider.completion import Completion
         from src.execution_provider.wire import v5
