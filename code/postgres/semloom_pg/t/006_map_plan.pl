@@ -105,6 +105,54 @@ CREATE FUNCTION volatile_instruction() RETURNS text LANGUAGE sql VOLATILE AS $$ 
         ') FROM ONLY map_inputs;'))->[0]->{'Plan'};
     is($folded->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
        'ordinary immutable folding and equal numeric values preserve Map identity');
+
+    $node->safe_psql('postgres', q{
+CREATE ROLE map_reader;
+GRANT USAGE ON SCHEMA ai_semantic TO map_reader;
+GRANT SELECT ON map_inputs TO map_reader;
+REVOKE ALL ON FUNCTION ai_semantic.map(text,text,jsonb) FROM PUBLIC;
+CREATE FUNCTION map_test_capture(statement text) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE code text; message text;
+BEGIN
+  EXECUTE statement;
+  RETURN 'unexpected success';
+EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS code = RETURNED_SQLSTATE, message = MESSAGE_TEXT;
+  RETURN code || '|' || message;
+END $$;
+});
+    my $reader = $node->background_psql('postgres');
+    $reader->query_safe('SET ROLE map_reader');
+    my $capture = sub {
+        my ($sql) = @_;
+        $sql =~ s/'/''/g;
+        return $reader->query_safe("SELECT map_test_capture('$sql');");
+    };
+    for my $statement ($query, "$query LIMIT 0", "$query WHERE false", "$query WHERE body IS NULL", "EXPLAIN $query")
+    {
+        is($capture->($statement), '42501|permission denied for function map',
+           'missing EXECUTE is checked even for plan-only, empty and NULL queries');
+    }
+    $node->safe_psql('postgres', 'GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;');
+    for my $mode ('force_custom_plan', 'force_generic_plan')
+    {
+        $reader->query_safe("SET plan_cache_mode=$mode; PREPARE map_acl(integer) AS $query WHERE id >= \$1;");
+        my $saved = decode_json($reader->query_safe('EXPLAIN (FORMAT JSON) EXECUTE map_acl(1)'))->[0]->{'Plan'};
+        is($saved->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'}, "$mode caches the complete Map definition");
+        is($capture->('EXECUTE map_acl(1)'), '0A000|generative SemMap execution is not connected',
+           "$mode authorized execution reaches the explicit unconnected state");
+        my $counter = $mode eq 'force_custom_plan' ? 'custom_plans' : 'generic_plans';
+        is($reader->query_safe("SELECT $counter > 0 FROM pg_prepared_statements WHERE name='map_acl'"), 't',
+           "$mode actually exercised its requested plan kind before revocation");
+        $node->safe_psql('postgres', 'REVOKE EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) FROM map_reader;');
+        is($capture->('EXECUTE map_acl(1)'), '42501|permission denied for function map',
+           "$mode rechecks EXECUTE after another session revokes it");
+        $node->safe_psql('postgres', 'GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;');
+        is($capture->('EXECUTE map_acl(1)'), '0A000|generative SemMap execution is not connected',
+           "$mode permission grant restores authorized plan initialization");
+        $reader->query_safe('DEALLOCATE map_acl');
+    }
+    $reader->quit;
 }
 ok(!IO::Select->new($listener)->can_read(0), 'plan-only Map made zero provider connections');
 close($listener);
