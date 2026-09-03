@@ -1,4 +1,4 @@
-"""Fixed OpenAI-compatible Chat Completions adapter for exact SemFilter."""
+"""Fixed OpenAI-compatible Chat Completions adapter for validated semantic tasks."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from typing import Mapping
 from urllib import parse
 
 from ..generation_profile import GenerationProfile
+from ..wire.v5 import FIXED_EXECUTION_ID as MAP_EXECUTION_ID
 from .semantic_session import CompletionAdapterError, Completion, CompletionRequest
 
 
@@ -261,6 +262,10 @@ class OpenAICompatibleFixedAdapter:
 
     execution_id = FIXED_EXECUTION_ID
     choice_execution_id = CHOICE_EXECUTION_ID
+
+    def execution_id_for(self, protocol_version: int) -> str | None:
+        return {3: self.execution_id, 4: self.choice_execution_id,
+                5: MAP_EXECUTION_ID}.get(protocol_version)
 
     def __init__(self, config: FixedModelConfig) -> None:
         self._config = config

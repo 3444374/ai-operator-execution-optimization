@@ -12,6 +12,7 @@ from typing import Any
 from .framing import MAX_FRAME_BYTES, ProtocolError, has_duplicate_fields
 from ..generation_profile import GenerationProfile
 from ..message_encoding import encode_messages
+from ..completion import Completion
 
 
 MAX_INPUT_BYTES = 163_840
@@ -424,6 +425,42 @@ class ExactFilterWire:
             message["generation_profile_digest"] = plan.generation_profile.digest
         return message
 
+
+    def build_completion_message(
+        self, context: OpenContext, *, sequence: int, payload_digest: str,
+        completion: Completion,
+    ) -> dict[str, Any]:
+        """Encode the existing Filter completion fields without changing policy."""
+        evidence = self.completion_evidence_digest(
+            semantic_spec_sha256=context.semantic_spec_digest,
+            physical_algorithm_sha256=context.physical_algorithm_digest,
+            provider_execution_sha256=context.provider_execution_digest,
+            semantic_payload_sha256=payload_digest,
+            sequence=sequence,
+            raw_output=completion.raw_output,
+            finish_reason=completion.finish_reason,
+            response_model_id=completion.response_model_id,
+            prompt_tokens=completion.prompt_tokens,
+            output_tokens=completion.output_tokens,
+        )
+        message: dict[str, Any] = {
+            "type": "completion",
+            "protocol_version": self.protocol_version,
+            "sequence": str(sequence),
+            "semantic_spec_digest": context.semantic_spec_digest,
+            "physical_algorithm_digest": context.physical_algorithm_digest,
+            "provider_execution_digest": context.provider_execution_digest,
+            "semantic_payload_digest": payload_digest,
+            "raw_output": completion.raw_output,
+            "response_model_id": completion.response_model_id,
+            "prompt_tokens": str(completion.prompt_tokens),
+            "output_tokens": str(completion.output_tokens),
+            "finish_reason": completion.finish_reason,
+            "completion_evidence_digest": evidence,
+        }
+        if context.generation_profile is not None:
+            message["generation_profile_digest"] = context.generation_profile.digest
+        return message
 
     def build_error_message(self, code: str, *, sequence: int | None) -> dict[str, Any]:
         """Build the strict redacted versioned error object."""

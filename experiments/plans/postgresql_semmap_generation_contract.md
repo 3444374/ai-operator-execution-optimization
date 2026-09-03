@@ -2,7 +2,8 @@
 
 日期：2026-09-03
 
-状态：语义与工程验收合同已定稿，待研发 agent 对照源码登记落点/反例后实施；实现、PG 验收和模型运行均 pending。
+状态：合同已定稿；独立分支已验证消息编译及旧 PG 路径兼容，正在实现纯值和 Python v5。
+新三参 Map 的 PG plan、C wire 接线、完整 golden/模型/资源验收仍 pending，不能由旧路径通过代替。
 
 生产代码对照基线：a3199bd9。本文面向研发与审查者，不是已发布功能说明。
 
@@ -400,6 +401,14 @@ Map 完成检查与证据编码分开：表示/model/usage 先验证，合法超
 不 trim、截断、返回 NULL 或改用 Filter parser。先验证纯值、旧 public import/消息/结果，再进入 wire v5；
 这些函数存在不能代表 PG 已保存新 plan 或完成元数据已跨 port 传递。
 
+Python v5 子切片复用现有 `semantic_session` 的同步循环和 fixed HTTP Adapter，不新建 gateway。
+将旧 v3/v4 的完成帧构造机械移入原 Filter codec；v5 单独拥有字段/身份/输出上限校验。
+Adapter 用显式 `execution_id_for(version)` 返回已支持身份，旧属性/import 保留，旧自定义 Adapter
+仅按已有 v3/v4 属性兼容，不能隐式支持 v5。新 Map golden 值必须给出 raw output/model/两项 usage/
+finish reason；旧 Filter 的字符串 fixture 不变，也不能拿它给新 Map 补造完成元数据。
+验证表面是 C/Python 纯值、公开 codec、socketpair 会话、独立 CLI 和 localhost HTTP fixture；
+这些验证尚不是 C→Python 的 wire v5 互通或 PG Map 执行证据，后者须待计划与 C client 接线后单独验收。
+
 ### 8.1 开工前的研发复核
 
 研发 agent 阅读本稿和上述实际源码后，登记“可直接实现 / 需修订及反例”，至少回答：
@@ -476,6 +485,27 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
 使用其剩余额度。每次失败尝试计入新预算，不为“得到一次成功”自动重试或更换配置。
 本工作包只证明请求/文本/usage/生命周期可运行；任务质量及后续优化比较另有独立样例与预期，
 不能把原模型输出回填成标签后声称正确。
+
+### 8.4.1 本轮有限服务/资源配置（2026-09-03，已确认上限，尚未运行）
+
+用户已确认以下模型与上限，并允许使用双 GPU；本轮仍选择单 GPU，不因资源许可扩大请求预算。
+只读检查已发现缓存模型和所列软件版本，未下载、改环境或启动模型。执行前再检查资源归属、
+模型/tokenizer/chat-template 文件哈希及有效配置，PG＋golden 阶段未通过时不执行本节。
+
+| 项目 | 本轮固定选择与停止要求 |
+|---|---|
+| 模型与软件 | 已缓存 Qwen2.5-7B-Instruct；vLLM 0.25.1、torch 2.11.0；不用旧 Filter 的质量或校准资格 |
+| 服务 | 一张 RTX 4090、BF16、max_model_len=4096、max_num_seqs=4、max_num_batched_tokens=4096、GPU memory utilization=0.8、eager；generation_config 采用 vLLM 默认而非继承模型文件，完整有效值/EOS/tokenizer/template 另记哈希 |
+| 隔离 | 仅 localhost、全新 gateway/socket/服务日志与 PID；显式 PG18.3 prefix 与测试库；不覆盖任何已有服务或环境 |
+| 真实尝试预算 | 新建独立持久 ledger，最多 32 次，预热、失败、取消均计入；不复用四 C 的余额，不因源码重跑重置，不自动重试/换模型/扩大预算 |
+| 样例 | 预先固定 ASCII、多行、引号/反斜线、Unicode、字面 TRUE/FALSE/UNKNOWN/NULL、花括号、非 NULL 空串、SQL NULL；每类核对 PG 值与实际 raw completion、顺序/行数/usage。NULL 必须零调用；输出质量另记观察，不回填固定标签 |
+| 生成与上下文 | 原样两消息、temperature=0/top_p=1/n=1/stream=false/stop=null；常规 max_tokens=128。样例须适合实际上下文；不裁剪或降低参数换取通过。完整失败矩阵先由 fake HTTP 执行 |
+| 停止 | 非预期合同、身份/字节/计数/清理错误即停止；服务配置、上下文或有效默认无法核对时不发送真实请求；保留失败及账本，不用剩余预算搜索参数 |
+| fixture 资源 | 按 §8.4 三轮 × 2000 任务；不消耗真实模型预算。gateway RSS 相对预热起点峰值增量≤32 MiB、结束增量≤16 MiB；会话关闭后 60 秒内满足 §8.4 清理条件，不事后放宽 |
+
+真实阶段仍只验证执行工程，不声称生成质量、成本校准或优化效果。服务观察、预算预留、取消后的实际
+模型尝试和本地关闭分别记录；不能把已向客户端返回若干行当作 SQL 最终成功，也不能把关闭 UDS
+当作远端 GPU 已停止。若单 GPU 不满足上述配置，先保留诊断并提交新配置，不自动改为双卡继续。
 
 ## 9. 完成与未完成如何表达
 

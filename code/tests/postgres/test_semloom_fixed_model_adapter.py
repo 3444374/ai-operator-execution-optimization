@@ -154,6 +154,50 @@ class FixedModelAdapterDeadlineTests(unittest.TestCase):
 
 
 class FixedModelAdapterTests(unittest.TestCase):
+    def test_map_session_uses_fixed_identity_and_verbatim_generation_request(self) -> None:
+        from src.execution_provider.adapters.semantic_session import run_v5_session
+        from src.execution_provider.semantic_map import SemanticMapPlan
+        from src.execution_provider.wire import v5
+
+        plan = SemanticMapPlan('原样返回输入。\n"instruction"', "fixed-model-v1", 128)
+        task = v5.build_task_message(plan, sequence=0, input_value='TRUE\n{}\\中文',
+                                     provider_execution_id=v5.FIXED_EXECUTION_ID)
+        raw = " TRUE\n世界\t "
+        _CompletionHandler.response_value = {
+            "model": plan.model_id,
+            "choices": [{"message": {"role": "assistant", "content": raw}, "finish_reason": "length"}],
+            "usage": {"prompt_tokens": 27, "completion_tokens": 9},
+        }
+        adapter = OpenAICompatibleFixedAdapter(FixedModelConfig(
+            endpoint_url=f"http://127.0.0.1:{self.httpd.server_port}/v1/chat/completions",
+            model_id=plan.model_id, timeout_ms=1000))
+        client, server = socket.socketpair()
+        client.settimeout(3)
+        worker = threading.Thread(target=run_v5_session, args=(server, adapter), daemon=True)
+        worker.start()
+        try:
+            opened = v5.build_open_message(plan, provider_execution_id=v5.FIXED_EXECUTION_ID)
+            client.sendall(encode_frame(opened))
+            self.assertEqual(read_frame(client)["type"], "opened")
+            client.sendall(encode_frame(task))
+            completion = v5.validate_completion(read_frame(client), expected_sequence=0,
+                payload_digest=task["semantic_payload_digest"],
+                open_context=v5.validate_open(opened, provider_execution_id=v5.FIXED_EXECUTION_ID))
+            self.assertEqual((completion.raw_output, completion.finish_reason, completion.output_tokens), (raw, "length", 9))
+        finally:
+            client.close()
+            worker.join(3)
+            server.close()
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(_CompletionHandler.request_count, 1)
+        self.assertEqual(json.loads(_CompletionHandler.request_body), {
+            "model": "fixed-model-v1",
+            "messages": [{"role": "system", "content": '原样返回输入。\n"instruction"'},
+                         {"role": "user", "content": 'TRUE\n{}\\中文'}],
+            "temperature": 0, "top_p": 1, "max_tokens": 128, "n": 1, "stream": False, "stop": None,
+        })
+        self.assertIsNone(adapter.execution_id_for(6))
+
     def setUp(self) -> None:
         _CompletionHandler.request_body = None
         _CompletionHandler.authorization = None

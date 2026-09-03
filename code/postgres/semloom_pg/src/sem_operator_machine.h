@@ -14,19 +14,23 @@ typedef enum SemloomTupleDisposition
 	SEMLOOM_TUPLE_INVALID_COMPLETION = 4,
 } SemloomTupleDisposition;
 
-typedef struct SemloomMachineCompletion
-{
-	const uint8_t *data;
-	uint32_t length;
-	bool is_null;
-} SemloomMachineCompletion;
-
 typedef struct SemloomBoundValue
 {
 	const uint8_t *data;
 	uint32_t length;
 	bool is_null;
 } SemloomBoundValue;
+
+typedef struct SemloomMachineCompletion
+{
+	const uint8_t *data;
+	uint32_t length;
+	bool is_null;
+	SemloomBoundValue response_model_id;
+	SemloomBoundValue finish_reason;
+	uint64_t prompt_tokens;
+	uint64_t output_tokens;
+} SemloomMachineCompletion;
 
 struct SemloomOperatorMachine;
 

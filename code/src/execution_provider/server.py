@@ -17,7 +17,8 @@ from .adapters.openai_compatible_fixed import (
     load_fixed_model_config,
 )
 from .adapters.recording import run_recording_session
-from .adapters.semantic_session import CompletionAdapter, run_v3_session, run_v4_session
+from .adapters.semantic_session import CompletionAdapter, run_v3_session, run_v4_session, run_v5_session
+from .completion import Completion
 from .wire.framing import ProtocolError, read_frame
 
 
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     adapter_group.add_argument(
         "--golden-fixture",
         type=Path,
-        help="payload-digest to raw-output JSON object for exact Filter tests",
+        help="payload-digest to raw Filter text or explicit Map completion JSON object",
     )
     adapter_group.add_argument(
         "--fixed-model-config",
@@ -164,7 +165,7 @@ def main() -> int:
     return 0
 
 
-def _load_golden_fixtures(path: Path | None) -> dict[str, str]:
+def _load_golden_fixtures(path: Path | None) -> dict[str, str | Completion]:
     if path is None:
         return {}
     try:
@@ -175,11 +176,20 @@ def _load_golden_fixtures(path: Path | None) -> dict[str, str]:
         not isinstance(key, str)
         or len(key) != 64
         or any(character not in "0123456789abcdef" for character in key)
-        or not isinstance(output, str)
+        or not isinstance(output, (str, dict))
         for key, output in value.items()
     ):
         raise SystemExit("golden fixture must map SHA-256 strings to raw text outputs")
-    return value
+    fixtures: dict[str, str | Completion] = {}
+    completion_fields = {"raw_output", "response_model_id", "prompt_tokens", "output_tokens", "finish_reason"}
+    for digest, output in value.items():
+        if isinstance(output, str):
+            fixtures[digest] = output
+        else:
+            if set(output) != completion_fields:
+                raise SystemExit("Map golden fixture requires explicit completion metadata")
+            fixtures[digest] = Completion(**output)
+    return fixtures
 
 
 def _run_session(
@@ -200,8 +210,8 @@ def _run_session(
         connection.close()
         return
     protocol_version = opened.get("protocol_version")
-    if type(protocol_version) is int and protocol_version in (3, 4):
-        run_session = run_v3_session if protocol_version == 3 else run_v4_session
+    if type(protocol_version) is int and protocol_version in (3, 4, 5):
+        run_session = {3: run_v3_session, 4: run_v4_session, 5: run_v5_session}[protocol_version]
         run_session(
             connection,
             completion_adapter,

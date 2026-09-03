@@ -14,6 +14,8 @@ OBJS = \
 	src/sem_map_machine.o \
 	src/sem_message_writer.o \
 	src/sem_operator_machine.o \
+	src/sem_text.o \
+	src/semantic_map_contract.o \
 	src/sem_plan_spec.o \
 	src/sem_path_common.o \
 	src/sem_path.o \

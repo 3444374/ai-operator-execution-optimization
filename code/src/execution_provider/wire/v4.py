@@ -36,6 +36,7 @@ semantic_payload_digest = _CODEC.semantic_payload_digest
 completion_evidence_digest = _CODEC.completion_evidence_digest
 build_open_message = _CODEC.build_open_message
 build_task_message = _CODEC.build_task_message
+build_completion_message = _CODEC.build_completion_message
 build_error_message = _CODEC.build_error_message
 validate_open = _CODEC.validate_open
 validate_task = _CODEC.validate_task
@@ -69,6 +70,7 @@ __all__ = [
     "completion_evidence_digest",
     "build_open_message",
     "build_task_message",
+    "build_completion_message",
     "build_error_message",
     "validate_open",
     "validate_task",

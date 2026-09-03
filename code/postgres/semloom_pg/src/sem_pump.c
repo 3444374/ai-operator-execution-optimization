@@ -156,7 +156,7 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			size_t task_length;
 			uint8 *task_data = NULL;
 			PgSemanticCompletion completion = {0};
-			SemloomMachineCompletion machine_completion;
+			SemloomMachineCompletion machine_completion = {0};
 
 			pg_semantic_runtime_preflight_input(pump->runtime, input);
 			task_length = semloom_operator_machine_task_size(

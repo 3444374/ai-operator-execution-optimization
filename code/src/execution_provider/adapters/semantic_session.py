@@ -1,4 +1,4 @@
-"""Shared single-task session loop for the two exact-Filter wire versions."""
+"""Shared synchronous session loop; each codec owns its semantic wire checks."""
 
 from __future__ import annotations
 
@@ -9,34 +9,25 @@ from dataclasses import dataclass
 from typing import Mapping, Protocol
 
 from ..wire.framing import ProtocolError, encode_frame, read_frame
-from ..wire import v3, v4
+from ..wire import v3, v4, v5
 from ..generation_profile import GenerationProfile
+from ..completion import Completion
 
 
 @dataclass(frozen=True)
 class CompletionRequest:
-    """One validated exact-Filter task passed to a completion adapter."""
+    """One validated semantic task passed to a completion adapter."""
 
     semantic_payload_digest: str
     model_id: str
     canonical_messages: tuple[dict[str, str], ...]
     generation_constraints: Mapping[str, object]
     generation_profile: GenerationProfile | None = None
-
-
-@dataclass(frozen=True)
-class Completion:
-    """Raw model result returned for PostgreSQL-side validation and parsing."""
-
-    raw_output: str
-    response_model_id: str
-    prompt_tokens: int
-    output_tokens: int
-    finish_reason: str
+    protocol_version: int = 3
 
 
 class CompletionAdapterError(Exception):
-    """A redacted exact-Filter error code returned by a completion adapter."""
+    """A redacted error code returned by a completion adapter."""
 
     def __init__(self, code: str) -> None:
         super().__init__(code)
@@ -44,11 +35,14 @@ class CompletionAdapterError(Exception):
 
 
 class CompletionAdapter(Protocol):
-    """Query-independent adapter used by the shared exact-Filter session runner."""
+    """Query-independent adapter used by the shared semantic session runner."""
 
     execution_id: str
     choice_execution_id: str
     model_id: str | None
+
+    def execution_id_for(self, protocol_version: int) -> str | None:
+        """Return an explicit supported identity, or None to reject the version."""
 
     def complete(self, request: CompletionRequest) -> Completion:
         """Return one raw completion or raise a redacted adapter error."""
@@ -96,6 +90,27 @@ def run_v4_session(
     )
 
 
+def run_v5_session(
+    connection: socket.socket,
+    adapter: CompletionAdapter,
+    *,
+    open_message: dict[str, object] | None = None,
+    response_delay_ms: int = 0,
+    tamper_evidence_digest: bool = False,
+    disconnect_on_task: bool = False,
+    completion_fixture: str | None = None,
+) -> None:
+    """Serve exactly wire v5; other versions are rejected."""
+    _run_semantic_session(
+        connection, adapter, wire_version=5,
+        open_message=open_message,
+        response_delay_ms=response_delay_ms,
+        tamper_evidence_digest=tamper_evidence_digest,
+        disconnect_on_task=disconnect_on_task,
+        completion_fixture=completion_fixture,
+    )
+
+
 def _run_semantic_session(
     connection: socket.socket,
     adapter: CompletionAdapter,
@@ -107,19 +122,20 @@ def _run_semantic_session(
     disconnect_on_task: bool = False,
     completion_fixture: str | None = None,
 ) -> None:
-    """Serve one strict synchronous exact-Filter session through an adapter."""
-    codec = v3 if wire_version == 3 else v4
+    """Serve one strict synchronous semantic session through an adapter."""
+    codec = {3: v3, 4: v4, 5: v5}[wire_version]
     error_sequence: str | None = None
     open_context = None
     try:
         opened = open_message if open_message is not None else read_frame(connection)
         if opened is None:
             return
-        execution_id = (
-            adapter.execution_id
-            if wire_version == 3
-            else getattr(adapter, "choice_execution_id", None)
-        )
+        identity_for = getattr(adapter, "execution_id_for", None)
+        if identity_for is not None:
+            execution_id = identity_for(wire_version)
+        else:
+            legacy_attribute = {3: "execution_id", 4: "choice_execution_id"}.get(wire_version)
+            execution_id = getattr(adapter, legacy_attribute, None) if legacy_attribute else None
         if execution_id is None:
             raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
         open_context = codec.validate_open(
@@ -148,6 +164,7 @@ def _run_semantic_session(
                     "max_inflight_tasks": codec.MAX_INFLIGHT_TASKS,
                     "max_frame_bytes": codec.MAX_FRAME_BYTES,
                     "max_input_bytes": codec.MAX_INPUT_BYTES,
+                    **({"max_output_bytes": codec.MAX_OUTPUT_BYTES} if wire_version == 5 else {}),
                     **({"generation_profile_digest": open_context.generation_profile.digest}
                        if open_context.generation_profile is not None else {}),
                 }
@@ -156,13 +173,16 @@ def _run_semantic_session(
 
         expected_sequence = 0
         while True:
+            if wire_version == 5:
+                error_sequence = str(expected_sequence)
             task = read_frame(connection)
             if task is None:
                 return
             sequence_text = task.get("sequence")
-            if wire_version == 4 and isinstance(sequence_text, str) and len(sequence_text) > 20:
+            if wire_version in (4, 5) and isinstance(sequence_text, str) and len(sequence_text) > 20:
                 raise ProtocolError("INVALID_TASK")
-            error_sequence = _valid_sequence_or_none(sequence_text)
+            if wire_version != 5:
+                error_sequence = _valid_sequence_or_none(sequence_text)
             sequence, payload_digest = codec.validate_task(
                 task,
                 expected_sequence=expected_sequence,
@@ -189,50 +209,28 @@ def _run_semantic_session(
                     semantic_payload_digest=payload_digest,
                     model_id=open_context.model_id,
                     canonical_messages=tuple(
-                        dict(message) for message in task["canonical_messages"]
+                        ({"role": message["role"], "content": message["content"]}
+                         if wire_version == 5 else dict(message))
+                        for message in task["canonical_messages"]
                     ),
                     generation_constraints=copy.deepcopy(opened["generation_constraints"]),
                     generation_profile=open_context.generation_profile,
+                    protocol_version=wire_version,
                 )
             )
-            evidence_digest = codec.completion_evidence_digest(
-                semantic_spec_sha256=open_context.semantic_spec_digest,
-                physical_algorithm_sha256=open_context.physical_algorithm_digest,
-                provider_execution_sha256=open_context.provider_execution_digest,
-                semantic_payload_sha256=payload_digest,
-                sequence=sequence,
-                raw_output=result.raw_output,
-                finish_reason=result.finish_reason,
-                response_model_id=result.response_model_id,
-                prompt_tokens=result.prompt_tokens,
-                output_tokens=result.output_tokens,
+            completion = codec.build_completion_message(
+                open_context, sequence=sequence, payload_digest=payload_digest,
+                completion=result,
             )
             if tamper_evidence_digest:
-                evidence_digest = "0" * 64
-            completion: dict[str, object] = {
-                "type": "completion",
-                "protocol_version": codec.PROTOCOL_VERSION,
-                "sequence": str(sequence),
-                "semantic_spec_digest": open_context.semantic_spec_digest,
-                "physical_algorithm_digest": open_context.physical_algorithm_digest,
-                "provider_execution_digest": open_context.provider_execution_digest,
-                "semantic_payload_digest": payload_digest,
-                "raw_output": result.raw_output,
-                "response_model_id": result.response_model_id,
-                "prompt_tokens": str(result.prompt_tokens),
-                "output_tokens": str(result.output_tokens),
-                "finish_reason": result.finish_reason,
-                "completion_evidence_digest": evidence_digest,
-            }
-            if open_context.generation_profile is not None:
-                completion["generation_profile_digest"] = open_context.generation_profile.digest
+                completion["completion_evidence_digest"] = "0" * 64
             _apply_completion_fixture(completion, completion_fixture)
             connection.sendall(encode_frame(completion))
             expected_sequence += 1
             error_sequence = None
     except ProtocolError as failure:
         code = failure.code
-        if wire_version == 4 and code not in codec.ERROR_CODES:
+        if wire_version in (4, 5) and code not in codec.ERROR_CODES:
             code = "INVALID_OPEN" if open_context is None else "INVALID_TASK"
         _send_error(connection, code, error_sequence, codec=codec)
     except CompletionAdapterError as failure:
@@ -302,5 +300,5 @@ def _apply_completion_fixture(
 
 __all__ = [
     "CompletionAdapter", "CompletionAdapterError", "Completion",
-    "CompletionRequest", "run_v3_session", "run_v4_session",
+    "CompletionRequest", "run_v3_session", "run_v4_session", "run_v5_session",
 ]
