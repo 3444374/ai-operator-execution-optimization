@@ -127,7 +127,7 @@ def _run_semantic_session(
     error_sequence: str | None = None
     open_context = None
     try:
-        opened = open_message if open_message is not None else read_frame(connection)
+        opened = open_message if open_message is not None else _read_semantic_frame(connection, wire_version)
         if opened is None:
             return
         identity_for = getattr(adapter, "execution_id_for", None)
@@ -175,7 +175,7 @@ def _run_semantic_session(
         while True:
             if wire_version == 5:
                 error_sequence = str(expected_sequence)
-            task = read_frame(connection)
+            task = _read_semantic_frame(connection, wire_version)
             if task is None:
                 return
             sequence_text = task.get("sequence")
@@ -241,6 +241,16 @@ def _run_semantic_session(
         _send_error(connection, "GATEWAY_INTERNAL", error_sequence, codec=codec)
     finally:
         connection.close()
+
+
+def _read_semantic_frame(connection: socket.socket, wire_version: int) -> dict[str, object] | None:
+    try:
+        return read_frame(connection)
+    except ValueError:
+        if wire_version != 5:
+            raise
+        # JSON integers can exceed the interpreter's conversion limit.
+        raise ProtocolError("invalid_json") from None
 
 
 def _valid_sequence_or_none(value: object) -> str | None:

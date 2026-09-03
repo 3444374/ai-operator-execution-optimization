@@ -408,6 +408,10 @@ Adapter 用显式 `execution_id_for(version)` 返回已支持身份，旧属性/
 finish reason；旧 Filter 的字符串 fixture 不变，也不能拿它给新 Map 补造完成元数据。
 验证表面是 C/Python 纯值、公开 codec、socketpair 会话、独立 CLI 和 localhost HTTP fixture；
 这些验证尚不是 C→Python 的 wire v5 互通或 PG Map 执行证据，后者须待计划与 C client 接线后单独验收。
+独立复核补出既有 JSON 数字转换上限被 v5 继承的问题：新会话只在读帧时将该输入异常归为
+INVALID_OPEN/INVALID_TASK，Adapter 自身 ValueError 仍为 GATEWAY_INTERNAL；旧 v3/v4 的会话错误不改。
+CLI 尚未识别版本的首帧不可解析时只关闭该连接，后续合法会话仍可执行，不再让该输入异常结束 gateway。
+首帧尚无可验证版本时不构造猜测版本的错误帧；该项是独立错误恢复加固，不改变正常 wire 字段或语义。
 
 ### 8.1 开工前的研发复核
 

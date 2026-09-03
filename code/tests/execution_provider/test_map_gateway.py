@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -21,7 +22,7 @@ CLI = CODE_ROOT / "scripts/services/run_execution_provider_gateway.py"
 
 
 class MapGatewayTests(unittest.TestCase):
-    def test_self_locating_cli_routes_map_and_preserves_explicit_metadata(self) -> None:
+    def test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata(self) -> None:
         plan = SemanticMapPlan("Echo the input.", "golden-map-v1", 128)
         task = v5.build_task_message(plan, sequence=0, input_value="hello")
         expected = Completion(' \nTRUE 世界\t ', plan.model_id, 23, 7, "stop")
@@ -36,7 +37,7 @@ class MapGatewayTests(unittest.TestCase):
             socket_path = path / "provider.sock"
             environment = os.environ.copy()
             environment.pop("PYTHONPATH", None)
-            process = subprocess.Popen([sys.executable, str(CLI), "--once", "--socket", str(socket_path),
+            process = subprocess.Popen([sys.executable, str(CLI), "--test-max-sessions", "2", "--socket", str(socket_path),
                                         "--golden-fixture", str(fixture_path)],
                                        cwd=directory, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -51,6 +52,13 @@ class MapGatewayTests(unittest.TestCase):
                         time.sleep(0.01)
                 else:
                     self.fail(f"gateway did not start: {process.communicate(timeout=1)[1]!r}")
+                invalid_open = b'{"protocol_version":5,"max_tokens":' + b"9" * 5000 + b"}"
+                client.sendall(struct.pack("!I", len(invalid_open)) + invalid_open)
+                self.assertIsNone(read_frame(client))
+                client.close()
+                client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                client.settimeout(3)
+                client.connect(str(socket_path))
                 opened = v5.build_open_message(plan)
                 client.sendall(encode_frame(opened))
                 self.assertEqual(read_frame(client)["type"], "opened")

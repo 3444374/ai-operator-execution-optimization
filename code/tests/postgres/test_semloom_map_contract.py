@@ -94,15 +94,19 @@ class SemanticMapContractTests(unittest.TestCase):
         valid = dict(raw_output="x" * 65537, response_model_id="golden-map-v1", prompt_tokens=17,
                      output_tokens=1, finish_reason="length")
         invalid_fields = {
-            "raw_output": [None, b"text", "x\0y", "x\ud800y"],
-            "response_model_id": [None, "", "another-model", "x" * 129, "x\0y", "\udfff"],
-            "prompt_tokens": [None, True, -1, 2**64, 1.0],
-            "output_tokens": [None, True, -1, 129, 2**64, 1.0],
-            "finish_reason": [None, "", "x" * 33, "x\0y", "\ud800"],
+            "raw_output": [("null", None), ("bytes", b"text"), ("nul", "x\0y"), ("surrogate", "x\ud800y")],
+            "response_model_id": [("null", None), ("empty", ""), ("mismatch", "another-model"),
+                                  ("too-long", "x" * 129), ("nul", "x\0y"), ("surrogate", "\udfff")],
+            "prompt_tokens": [("null", None), ("boolean", True), ("negative", -1),
+                              ("overflow", 2**64), ("float", 1.0)],
+            "output_tokens": [("null", None), ("boolean", True), ("negative", -1),
+                              ("plan-limit", 129), ("overflow", 2**64), ("float", 1.0)],
+            "finish_reason": [("null", None), ("empty", ""), ("too-long", "x" * 33),
+                              ("nul", "x\0y"), ("surrogate", "\ud800")],
         }
         for field, values in invalid_fields.items():
-            for value in values:
-                with self.subTest(field=field, type=type(value).__name__):
+            for label, value in values:
+                with self.subTest(field=field, invalid=label):
                     completion = Completion(**{**valid, field: value})
                     self.assertEqual(completion_status(plan, completion), MapCompletionStatus.INVALID)
 

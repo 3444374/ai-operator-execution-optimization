@@ -203,7 +203,7 @@ def _run_session(
 ) -> None:
     try:
         opened = read_frame(connection)
-    except ProtocolError:
+    except (ProtocolError, ValueError):
         connection.close()
         return
     if opened is None:

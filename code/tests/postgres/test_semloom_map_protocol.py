@@ -165,25 +165,29 @@ class MapProtocolTests(unittest.TestCase):
         plan = SemanticMapPlan("echo", "golden-map-v1", 128)
         context = v5.validate_open(v5.build_open_message(plan))
         task = v5.build_task_message(plan, sequence=0, input_value="hello")
-        for value in (0, True, None, "", "00", "+0", "-1", "0.0", "0e0", "０", "18446744073709551616", "1" * 5000):
-            with self.subTest(sequence_type=type(value).__name__, sequence_length=len(value) if isinstance(value, str) else 0):
+        for label, value in (("number", 0), ("boolean", True), ("null", None), ("empty", ""),
+                             ("leading-zero", "00"), ("positive-sign", "+0"), ("negative", "-1"),
+                             ("fraction", "0.0"), ("exponent", "0e0"), ("non-ascii", "０"),
+                             ("uint64-overflow", "18446744073709551616"), ("too-long", "1" * 5000)):
+            with self.subTest(invalid_sequence=label):
                 with self.assertRaises(ProtocolError):
                     v5.validate_task({**task, "sequence": value}, expected_sequence=0, open_context=context)
         mutations = []
         for field in task:
             mutated = copy.deepcopy(task)
             del mutated[field]
-            mutations.append(mutated)
-        for role, content in (("assistant", "hello"), ("user", None), ("user", "x\0y"), ("user", "\udfff"),
-                              ("user", "x" * 163841)):
+            mutations.append(("missing-" + field, mutated))
+        for label, role, content in (("wrong-role", "assistant", "hello"), ("null-content", "user", None),
+                                    ("nul-content", "user", "x\0y"), ("surrogate-content", "user", "\udfff"),
+                                    ("too-long-content", "user", "x" * 163841)):
             mutated = copy.deepcopy(task)
             mutated["canonical_messages"][1] = {"role": role, "content": content}
-            mutations.append(mutated)
+            mutations.append((label, mutated))
         mutated = copy.deepcopy(task)
         mutated["canonical_messages"][0]["extra"] = 1
-        mutations.append(mutated)
-        for index, mutated in enumerate(mutations):
-            with self.subTest(mutation=index), self.assertRaises(ProtocolError):
+        mutations.append(("extra-message-field", mutated))
+        for label, mutated in mutations:
+            with self.subTest(mutation=label), self.assertRaises(ProtocolError):
                 v5.validate_task(mutated, expected_sequence=0, open_context=context)
 
     def test_error_frames_are_strict_and_only_v5_admits_output_too_large(self) -> None:
@@ -260,6 +264,61 @@ class MapProtocolTests(unittest.TestCase):
 
 
 class MapSessionTests(unittest.TestCase):
+    def test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error(self) -> None:
+        import sys
+        from src.execution_provider.adapters.golden import GoldenCompletionAdapter
+        from src.execution_provider.adapters.semantic_session import run_v3_session, run_v5_session
+        from src.execution_provider.wire import v3, v5
+        from src.execution_provider.wire.framing import encode_frame, read_frame
+        from src.execution_provider.semantic_map import SemanticMapPlan
+
+        previous_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(4300)
+        self.addCleanup(sys.set_int_max_str_digits, previous_limit)
+        cases = ((run_v3_session, v3, v3.SemanticFilterPlan("echo", "model"), "GATEWAY_INTERNAL"),
+                 (run_v5_session, v5, SemanticMapPlan("echo", "model", 128), "INVALID_TASK"))
+        for runner, codec, plan, code in cases:
+            with self.subTest(version=codec.PROTOCOL_VERSION), _socket_pair() as pair:
+                pair[0].settimeout(3)
+                worker = threading.Thread(target=runner, args=(pair[1], GoldenCompletionAdapter({})), daemon=True)
+                worker.start()
+                pair[0].sendall(encode_frame(codec.build_open_message(plan)))
+                self.assertEqual(read_frame(pair[0])["type"], "opened")
+                payload = b'{"sequence":' + b"9" * 5000 + b"}"
+                pair[0].sendall(struct.pack("!I", len(payload)) + payload)
+                error = read_frame(pair[0])
+                self.assertEqual(error["code"], code)
+                if codec is v5:
+                    self.assertEqual(error["sequence"], "0")
+                self.assertIsNone(read_frame(pair[0]))
+                worker.join(3)
+                self.assertFalse(worker.is_alive())
+
+    def test_adapter_value_error_remains_internal_and_redacted(self) -> None:
+        from src.execution_provider.adapters.golden import GoldenCompletionAdapter
+        from src.execution_provider.adapters.semantic_session import run_v5_session
+        from src.execution_provider.wire import v5
+        from src.execution_provider.wire.framing import encode_frame, read_frame
+        from src.execution_provider.semantic_map import SemanticMapPlan
+
+        class BrokenAdapter(GoldenCompletionAdapter):
+            def complete(self, request):
+                raise ValueError("secret-payload")
+
+        plan = SemanticMapPlan("echo", "golden-map-v1", 128)
+        with _socket_pair() as pair:
+            pair[0].settimeout(3)
+            worker = threading.Thread(target=run_v5_session, args=(pair[1], BrokenAdapter({})), daemon=True)
+            worker.start()
+            pair[0].sendall(encode_frame(v5.build_open_message(plan)))
+            self.assertEqual(read_frame(pair[0])["type"], "opened")
+            pair[0].sendall(encode_frame(v5.build_task_message(plan, sequence=0, input_value="hello")))
+            self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": 5,
+                                                "sequence": "0", "code": "GATEWAY_INTERNAL"})
+            self.assertIsNone(read_frame(pair[0]))
+            worker.join(3)
+            self.assertFalse(worker.is_alive())
+
     def test_map_fixture_errors_are_terminal_and_never_invent_metadata(self) -> None:
         from src.execution_provider.completion import Completion
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
