@@ -1,4 +1,4 @@
-/* Fixed exact-Filter schemas for wire v3/v4 above shared bounded framing. */
+/* Versioned synchronous semantic schemas above shared bounded framing. */
 #include "postgres.h"
 
 #include "common/cryptohash.h"
@@ -10,6 +10,7 @@
 #include "wire_common.h"
 #include "wire_semantic.h"
 #include "generation_profile.h"
+#include "semantic_map_contract.h"
 
 #define SEMLOOM_SEMANTIC_ERROR_FIELD_COUNT 4
 
@@ -96,7 +97,7 @@ semloom_wire_semantic_identity_init(const AiOpenSpec *spec,
 	Assert(identity != NULL);
 	Assert(spec->semantic_spec_digest.length == SEMLOOM_SHA256_HEX_LENGTH);
 	Assert(spec->physical_algorithm_digest.length == SEMLOOM_SHA256_HEX_LENGTH);
-	Assert(protocol_version == 3 || protocol_version == 4);
+	Assert(protocol_version == 3 || protocol_version == 4 || protocol_version == 5);
 	identity->protocol_version = protocol_version;
 	identity->provider_execution_id = provider_execution_id;
 	memcpy(identity->semantic_spec_digest,
@@ -151,7 +152,8 @@ semloom_wire_semantic_open(pgsocket socket_fd,
 		identity->physical_algorithm_digest,
 		identity->provider_execution_digest);
 	escape_json(&request, identity->provider_execution_id);
-	appendStringInfoString(&request, ",\"operator_kind\":\"SEM_FILTER\",\"semantic_spec_id\":");
+	appendStringInfo(&request, ",\"operator_kind\":\"%s\",\"semantic_spec_id\":",
+		identity->protocol_version == 5 ? "SEM_MAP" : "SEM_FILTER");
 	escape_json_with_len(&request,
 						 (const char *) spec->semantic_spec_id.data,
 						 spec->semantic_spec_id.length);
@@ -179,17 +181,28 @@ semloom_wire_semantic_open(pgsocket socket_fd,
 						 spec->model_id.length);
 	appendStringInfo(&request,
 		",\"generation_constraints\":{\"temperature\":%u,\"top_p\":%u,"
-		"\"max_tokens\":%u,\"n\":%u,\"stream\":%s,\"stop\":[",
+		"\"max_tokens\":%u,\"n\":%u,\"stream\":%s,\"stop\":",
 		spec->temperature,
 		spec->top_p,
 		spec->max_tokens,
 		spec->n,
 		spec->stream ? "true" : "false");
-	escape_json_with_len(&request, (const char *) spec->stop.data, spec->stop.length);
+	if (spec->has_stop)
+	{
+		appendStringInfoChar(&request, '[');
+		escape_json_with_len(&request, (const char *) spec->stop.data, spec->stop.length);
+		appendStringInfoChar(&request, ']');
+	}
+	else
+		appendStringInfoString(&request, "null");
 	appendStringInfoString(&request,
-		"]},\"null_policy\":\"PROPAGATE_NULL\","
+		"},\"null_policy\":\"PROPAGATE_NULL\","
 		"\"error_policy\":\"FAIL_QUERY\",\"order_policy\":\"INPUT_ORDER\","
-		"\"input_type\":\"text\",\"raw_output_type\":\"tristate_ascii\"");
+		"\"input_type\":\"text\",\"raw_output_type\":");
+	escape_json(&request, identity->protocol_version == 5 ? "text" : "tristate_ascii");
+	if (identity->protocol_version == 5)
+		appendStringInfo(&request, ",\"max_input_bytes\":%u,\"max_output_bytes\":%u",
+			spec->max_input_bytes, spec->max_output_bytes);
 	if (identity->protocol_version == 4)
 		semloom_semantic_append_profile(&request, &spec->generation_profile,
 			identity->generation_profile_digest);
@@ -204,13 +217,13 @@ semloom_wire_semantic_open(pgsocket socket_fd,
 	status = semloom_wire_common_receive_frame(socket_fd, &response, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
-	status = (identity->protocol_version == 4 ?
+	status = (identity->protocol_version != 3 ?
 		semloom_wire_common_parse_json_unique(response, &message, error) :
 		semloom_wire_common_parse_json(response, &message, error));
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
 	if (!semloom_semantic_validate_response(message, identity->protocol_version,
-		"opened", identity->protocol_version == 4 ? 9 : 8, NULL, error))
+		"opened", identity->protocol_version != 3 ? 9 : 8, NULL, error))
 		return AI_PROVIDER_STATUS_ERROR;
 	if (!semloom_wire_common_json_int32(message,
 										"protocol_version",
@@ -244,7 +257,12 @@ semloom_wire_semantic_open(pgsocket socket_fd,
 										"max_input_bytes",
 										&integer_value,
 										error) ||
-		integer_value != SEMLOOM_WIRE_SEMANTIC_MAX_INPUT_BYTES)
+		integer_value != (identity->protocol_version == 5 ?
+			spec->max_input_bytes : SEMLOOM_WIRE_SEMANTIC_MAX_INPUT_BYTES))
+		goto mismatch;
+	if (identity->protocol_version == 5 &&
+		(!semloom_wire_common_json_int32(message, "max_output_bytes", &integer_value, error) ||
+		 integer_value != spec->max_output_bytes))
 		goto mismatch;
 	return AI_PROVIDER_STATUS_OK;
 
@@ -256,7 +274,8 @@ mismatch:
 								   AI_PROVIDER_ERROR_PROTOCOL,
 								   0,
 								   0,
-								   identity->protocol_version == 4 ?
+								   identity->protocol_version == 5 ?
+		"SemLoom provider open response does not match wire v5" : identity->protocol_version == 4 ?
 		"SemLoom provider open response does not match wire v4" :
 		"SemLoom provider open response does not match wire v3");
 	return AI_PROVIDER_STATUS_ERROR;
@@ -326,14 +345,18 @@ semloom_wire_semantic_drive(pgsocket socket_fd,
 	status = semloom_wire_common_receive_frame(socket_fd, &response, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
-	status = (identity->protocol_version == 4 ?
+	status = (identity->protocol_version != 3 ?
 		semloom_wire_common_parse_json_unique(response, &message, error) :
 		semloom_wire_common_parse_json(response, &message, error));
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
 	if (!semloom_semantic_validate_response(message, identity->protocol_version,
 		"completion", identity->protocol_version == 4 ? 14 : 13, sequence, error))
+	{
+		if (error->code == AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE)
+			error->limit_bytes = spec->max_output_bytes;
 		return AI_PROVIDER_STATUS_ERROR;
+	}
 	{
 		int32 protocol_version;
 
@@ -366,12 +389,17 @@ semloom_wire_semantic_drive(pgsocket socket_fd,
 		!semloom_semantic_json_uint64(message, "prompt_tokens", &prompt_tokens, error) ||
 		!semloom_semantic_json_uint64(message, "output_tokens", &output_tokens, error) ||
 		!semloom_semantic_json_slice(message, "finish_reason", &finish_reason, error) ||
-		!semloom_semantic_slice_equals_cstring(finish_reason, "stop") ||
+		(identity->protocol_version != 5 &&
+		 !semloom_semantic_slice_equals_cstring(finish_reason, "stop")) ||
 		!semloom_semantic_json_slice(message,
 								 "completion_evidence_digest",
 								 &evidence_digest,
 								 error))
 		goto mismatch_or_error;
+	if (identity->protocol_version == 5 &&
+		(finish_reason.length == 0 || finish_reason.length > SEMLOOM_MAP_MAX_FINISH_REASON_BYTES ||
+		 output_tokens > spec->max_tokens || prompt_tokens > PG_UINT64_MAX - output_tokens))
+		goto mismatch;
 	semloom_semantic_completion_digest(identity,
 								 payload_digest,
 								 task->sequence,
@@ -384,6 +412,12 @@ semloom_wire_semantic_drive(pgsocket socket_fd,
 	if (!semloom_semantic_slice_equals_cstring(evidence_digest,
 										 expected_evidence_digest))
 		goto mismatch;
+	if (identity->protocol_version == 5 && raw_output.length > spec->max_output_bytes)
+	{
+		semloom_provider_error_set(error, AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE, 0,
+			spec->max_output_bytes, NULL);
+		return AI_PROVIDER_STATUS_ERROR;
+	}
 
 	completion->sequence = task->sequence;
 	completion->is_null = false;
@@ -402,7 +436,8 @@ mismatch:
 								   AI_PROVIDER_ERROR_PROTOCOL,
 								   0,
 								   0,
-								   identity->protocol_version == 4 ?
+								   identity->protocol_version == 5 ?
+		"SemLoom provider completion does not match wire v5 task identity" : identity->protocol_version == 4 ?
 		"SemLoom provider completion does not match wire v4 task identity" :
 		"SemLoom provider completion does not match wire v3 task identity");
 	return AI_PROVIDER_STATUS_ERROR;
@@ -557,7 +592,8 @@ semloom_semantic_validate_error(Jsonb *message,
 		protocol_version != wire_version ||
 		!semloom_wire_common_json_value(message, "sequence", &sequence_value, error) ||
 		!semloom_semantic_json_slice(message, "code", code, error) ||
-		!semloom_semantic_error_code_allowed(*code))
+		(!semloom_semantic_error_code_allowed(*code) &&
+		 !(wire_version == 5 && semloom_semantic_slice_equals_cstring(*code, "OUTPUT_TOO_LARGE"))))
 		goto invalid;
 	if (expected_sequence == NULL)
 	{
@@ -577,7 +613,8 @@ invalid:
 								   AI_PROVIDER_ERROR_PROTOCOL,
 								   0,
 								   0,
-								   wire_version == 4 ?
+								   wire_version == 5 ?
+		"SemLoom provider returned an invalid wire v5 error frame" : wire_version == 4 ?
 		"SemLoom provider returned an invalid wire v4 error frame" :
 		"SemLoom provider returned an invalid wire v3 error frame");
 	return false;
@@ -612,6 +649,11 @@ semloom_semantic_set_error_code(AiByteSlice code, AiProviderError *error)
 	else if (semloom_semantic_slice_equals_cstring(code, "GATEWAY_INTERNAL"))
 	{
 		neutral_code = AI_PROVIDER_ERROR_ADAPTER_INTERNAL;
+		detail = NULL;
+	}
+	else if (semloom_semantic_slice_equals_cstring(code, "OUTPUT_TOO_LARGE"))
+	{
+		neutral_code = AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE;
 		detail = NULL;
 	}
 	semloom_provider_error_set(error, neutral_code, 0, 0, detail);
@@ -656,7 +698,8 @@ semloom_semantic_provider_execution_digest(
 
 	semloom_semantic_hash_begin(&context);
 	semloom_semantic_hash_bytes(context,
-						  protocol_version == 4 ? "semloom-provider-execution-v4" : "semloom-provider-execution-v3",
+						  protocol_version == 5 ? "semloom-provider-execution-v5" :
+						  (protocol_version == 4 ? "semloom-provider-execution-v4" : "semloom-provider-execution-v3"),
 						  sizeof("semloom-provider-execution-v3"));
 	semloom_semantic_hash_uint32(context, protocol_version);
 	semloom_semantic_hash_slice(context, execution_id);
@@ -680,7 +723,8 @@ semloom_semantic_completion_digest(
 
 	semloom_semantic_hash_begin(&context);
 	semloom_semantic_hash_bytes(context,
-						  identity->protocol_version == 4 ? "semloom-completion-v4" : "semloom-completion-v3",
+						  identity->protocol_version == 5 ? "semloom-completion-v5" :
+						  (identity->protocol_version == 4 ? "semloom-completion-v4" : "semloom-completion-v3"),
 						  sizeof("semloom-completion-v3"));
 	semloom_semantic_hash_bytes(context,
 						  identity->semantic_spec_digest,

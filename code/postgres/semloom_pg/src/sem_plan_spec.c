@@ -125,7 +125,7 @@ static void semloom_exact_filter_semantic_digest(
 	const char *model_id,
 	const AiGenerationProfile *profile,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
-static void semloom_exact_filter_physical_digest(
+static void semloom_model_reference_physical_digest(
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
 static void semloom_generate_map_semantic_digest(const char *instruction,
 	const char *model_id, uint32 max_tokens,
@@ -215,7 +215,7 @@ semloom_make_filter_private(const char *instruction, const char *model_id,
 	if (instruction == NULL || model_id == NULL || input_column <= 0)
 		semloom_plan_spec_invalid("invalid exact SemFilter plan specification");
 	semloom_exact_filter_semantic_digest(instruction, model_id, profile, semantic_digest);
-	semloom_exact_filter_physical_digest(physical_digest);
+	semloom_model_reference_physical_digest(physical_digest);
 
 #define APPEND_INT(name, value) \
 	do { fields = lappend(fields, semloom_plan_spec_integer_field((name), (value))); } while (0)
@@ -233,8 +233,8 @@ semloom_make_filter_private(const char *instruction, const char *model_id,
 			   SEMLOOM_EXACT_FILTER_SPEC_VERSION);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_ID, SEMLOOM_EXACT_FILTER_SPEC_ID);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM,
-				  SEMLOOM_EXACT_FILTER_ALGORITHM);
-	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_EXACT_FILTER_ROLE);
+				  SEMLOOM_MODEL_REFERENCE_ALGORITHM);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_MODEL_REFERENCE_ROLE);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_ORDER_POLICY, SEMLOOM_PLAN_ORDER_INPUT);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_INSTRUCTION, instruction);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PROMPT_PROGRAM_ID, SEMLOOM_PROMPT_PROGRAM_ID);
@@ -279,7 +279,7 @@ semloom_plan_spec_make_generate_map_private(const char *instruction,
 	if (input_column <= 0 || !OidIsValid(marker_function_oid))
 		semloom_plan_spec_invalid("invalid semantic executor binding");
 	semloom_generate_map_semantic_digest(instruction, model_id, max_tokens, semantic_digest);
-	semloom_exact_filter_physical_digest(physical_digest);
+	semloom_model_reference_physical_digest(physical_digest);
 #define APPEND_INT(name, value) \
 	do { fields = lappend(fields, semloom_plan_spec_integer_field((name), (value))); } while (0)
 #define APPEND_STRING(name, value) \
@@ -292,8 +292,8 @@ semloom_plan_spec_make_generate_map_private(const char *instruction,
 	APPEND_INT(SEMLOOM_PLAN_FIELD_ERROR_POLICY, SEMLOOM_PLAN_ERROR_FAIL_QUERY);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_VERSION, 1);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_ID, SEMLOOM_MAP_SPEC_ID);
-	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM, SEMLOOM_EXACT_FILTER_ALGORITHM);
-	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_EXACT_FILTER_ROLE);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM, SEMLOOM_MODEL_REFERENCE_ALGORITHM);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_MODEL_REFERENCE_ROLE);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_ORDER_POLICY, SEMLOOM_PLAN_ORDER_INPUT);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_INSTRUCTION, instruction);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PROMPT_PROGRAM_ID, SEMLOOM_MAP_PROMPT_PROGRAM_ID);
@@ -796,7 +796,7 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 
 		semloom_generate_map_semantic_digest(plan_spec->instruction, plan_spec->model_id,
 			plan_spec->max_tokens, semantic_digest);
-		semloom_exact_filter_physical_digest(physical_digest);
+		semloom_model_reference_physical_digest(physical_digest);
 		if (plan_spec->operator_kind != SEMLOOM_PLAN_OPERATOR_MAP ||
 			plan_spec->input_value_kind != SEMLOOM_PLAN_VALUE_TEXT ||
 			plan_spec->output_value_kind != SEMLOOM_PLAN_VALUE_TEXT ||
@@ -815,8 +815,8 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 			plan_spec->stream || plan_spec->has_stop || plan_spec->stop != NULL ||
 			plan_spec->max_input_bytes != SEMLOOM_MAP_MAX_INPUT_BYTES ||
 			plan_spec->max_output_bytes != SEMLOOM_MAP_MAX_OUTPUT_BYTES ||
-			strcmp(plan_spec->physical_algorithm, SEMLOOM_EXACT_FILTER_ALGORITHM) != 0 ||
-			strcmp(plan_spec->physical_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
+			strcmp(plan_spec->physical_algorithm, SEMLOOM_MODEL_REFERENCE_ALGORITHM) != 0 ||
+			strcmp(plan_spec->physical_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
 			strcmp(plan_spec->semantic_spec_digest, semantic_digest) != 0 ||
 			strcmp(plan_spec->physical_algorithm_digest, physical_digest) != 0)
 			semloom_plan_spec_invalid("unsupported generative SemMap plan specification");
@@ -831,7 +831,7 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 										  plan_spec->generation_profile_digest == NULL ? NULL :
 										  &plan_spec->generation_profile,
 										  semantic_digest);
-		semloom_exact_filter_physical_digest(physical_digest);
+		semloom_model_reference_physical_digest(physical_digest);
 		if (plan_spec->operator_kind != SEMLOOM_PLAN_OPERATOR_FILTER ||
 			plan_spec->input_value_kind != SEMLOOM_PLAN_VALUE_TEXT ||
 			plan_spec->output_value_kind != SEMLOOM_PLAN_VALUE_TRISTATE ||
@@ -853,8 +853,8 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 			plan_spec->stream != (bool) SEMLOOM_FILTER_STREAM ||
 			strcmp(plan_spec->stop, SEMLOOM_FILTER_STOP) != 0 ||
 			strcmp(plan_spec->physical_algorithm,
-				   SEMLOOM_EXACT_FILTER_ALGORITHM) != 0 ||
-			strcmp(plan_spec->physical_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
+				   SEMLOOM_MODEL_REFERENCE_ALGORITHM) != 0 ||
+			strcmp(plan_spec->physical_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
 			strcmp(plan_spec->semantic_spec_digest, semantic_digest) != 0 ||
 			strcmp(plan_spec->physical_algorithm_digest, physical_digest) != 0)
 			semloom_plan_spec_invalid("unsupported exact SemFilter plan specification");
@@ -943,7 +943,7 @@ semloom_exact_filter_semantic_digest(
 }
 
 static void
-semloom_exact_filter_physical_digest(
+semloom_model_reference_physical_digest(
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
 {
 	pg_cryptohash_ctx *context;
@@ -951,8 +951,8 @@ semloom_exact_filter_physical_digest(
 	semloom_hash_begin(&context);
 	semloom_hash_bytes(context, SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN,
 					   sizeof(SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN) - 1);
-	semloom_hash_text(context, SEMLOOM_EXACT_FILTER_ALGORITHM);
-	semloom_hash_text(context, SEMLOOM_EXACT_FILTER_ROLE);
+	semloom_hash_text(context, SEMLOOM_MODEL_REFERENCE_ALGORITHM);
+	semloom_hash_text(context, SEMLOOM_MODEL_REFERENCE_ROLE);
 	semloom_hash_finish(context, output);
 }
 

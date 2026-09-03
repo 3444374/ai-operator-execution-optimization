@@ -131,7 +131,22 @@ class MessageCompilationTests(unittest.TestCase):
                     ctypes.byref(machine), ctypes.byref(value), None, 0))
                 self.assertEqual(self.library.semloom_operator_machine_handle_null(ctypes.byref(machine)), null_disposition)
         machine = OperatorMachine()
-        self.assertFalse(self.library.semloom_operator_machine_init(ctypes.byref(machine), 1, 4, data, 5))
+        self.assertFalse(self.library.semloom_operator_machine_init(ctypes.byref(machine), 1, 99, data, 5))
+
+    def test_generated_machine_dispatch_uses_map_message_vectors(self) -> None:
+        for instruction, value, length, expected in MAP_VECTORS:
+            instruction_data = ctypes.create_string_buffer(instruction.encode())
+            input_data = ctypes.create_string_buffer(value.encode())
+            bound = BoundValue(ctypes.addressof(input_data), len(value.encode()), False)
+            machine = OperatorMachine()
+            self.assertTrue(self.library.semloom_operator_machine_init(
+                ctypes.byref(machine), 1, 4, instruction_data, len(instruction.encode())))
+            self.assertEqual(self.library.semloom_operator_machine_task_size(ctypes.byref(machine), ctypes.byref(bound)), length)
+            output = ctypes.create_string_buffer(length)
+            self.assertTrue(self.library.semloom_operator_machine_write_task(
+                ctypes.byref(machine), ctypes.byref(bound), output, length))
+            self.assertEqual(output.raw, expected)
+            self.assertEqual(self.library.semloom_operator_machine_handle_null(ctypes.byref(machine)), 1)
 
 
     def test_map_compiles_two_verbatim_messages_without_filter_directive(self) -> None:

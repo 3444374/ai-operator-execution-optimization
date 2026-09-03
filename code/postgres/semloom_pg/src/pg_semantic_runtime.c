@@ -11,6 +11,7 @@
 
 #include "pg_semantic_runtime.h"
 #include "provider_private.h"
+#include "semantic_map_contract.h"
 
 typedef enum PgSemanticRuntimeState
 {
@@ -68,6 +69,8 @@ static void pg_semantic_runtime_hash_uint64(pg_cryptohash_ctx *context,
 											  uint64 value);
 static bool pg_semantic_runtime_slice_equals(AiByteSlice actual,
 											AiByteSlice expected);
+static void pg_semantic_runtime_validate_map(PgSemanticRuntime *runtime,
+	const AiCompletion *completion);
 
 PgSemanticRuntime *
 pg_semantic_runtime_begin(MemoryContext owner_context,
@@ -126,15 +129,17 @@ void
 pg_semantic_runtime_preflight_input(PgSemanticRuntime *runtime, AiByteSlice input)
 {
 	AiProviderError error;
+	uint32 limit;
 
 	Assert(runtime != NULL);
-	if (runtime->provider.max_input_bytes == 0 ||
-		input.length <= runtime->provider.max_input_bytes)
+	limit = runtime->open_spec.max_input_bytes != 0 ?
+		runtime->open_spec.max_input_bytes : runtime->provider.max_input_bytes;
+	if (limit == 0 || input.length <= limit)
 		return;
 	semloom_provider_error_set(&error,
 								   AI_PROVIDER_ERROR_INPUT_TOO_LARGE,
 								   0,
-								   runtime->provider.max_input_bytes,
+								   limit,
 								   NULL);
 	pg_semantic_runtime_fail(runtime, &error);
 }
@@ -197,7 +202,9 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 								   NULL);
 		pg_semantic_runtime_fail(runtime, &error);
 	}
-	if (runtime->open_spec.model_id.length > 0 &&
+	if (runtime->open_spec.plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+		pg_semantic_runtime_validate_map(runtime, &provider_completion);
+	else if (runtime->open_spec.model_id.length > 0 &&
 		(provider_completion.is_null ||
 		 !pg_semantic_runtime_slice_equals(provider_completion.response_model_id,
 										 runtime->open_spec.model_id) ||
@@ -405,6 +412,9 @@ pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
 	open_spec->max_tokens = plan_spec->max_tokens;
 	open_spec->n = plan_spec->n;
 	open_spec->stream = plan_spec->stream;
+	open_spec->has_stop = plan_spec->stop != NULL;
+	open_spec->max_input_bytes = plan_spec->max_input_bytes;
+	open_spec->max_output_bytes = plan_spec->max_output_bytes;
 	open_spec->has_generation_profile = plan_spec->generation_profile_digest != NULL;
 	if (open_spec->has_generation_profile)
 		open_spec->generation_profile = plan_spec->generation_profile;
@@ -419,6 +429,45 @@ static void
 pg_semantic_runtime_cleanup(void *argument)
 {
 	pg_semantic_runtime_close((PgSemanticRuntime *) argument);
+}
+
+static void
+pg_semantic_runtime_validate_map(PgSemanticRuntime *runtime,
+	const AiCompletion *completion)
+{
+	SemloomMapPlanValues values = {
+		.instruction = {(const uint8 *) runtime->plan_spec.instruction,
+			runtime->plan_spec.instruction_length, false},
+		.model_id = {runtime->open_spec.model_id.data, runtime->open_spec.model_id.length, false},
+		.max_tokens = runtime->open_spec.max_tokens,
+	};
+	SemloomMachineCompletion value = {
+		.data = completion->output.data, .length = completion->output.length,
+		.is_null = completion->is_null,
+		.response_model_id = {completion->response_model_id.data, completion->response_model_id.length, false},
+		.finish_reason = {completion->finish_reason.data, completion->finish_reason.length, false},
+		.prompt_tokens = completion->prompt_tokens, .output_tokens = completion->output_tokens,
+	};
+	uint32 status = semloom_map_completion_status(&values, &value);
+	AiProviderError error;
+
+	if (status == SEMLOOM_MAP_COMPLETION_VALID)
+		return;
+	if (status == SEMLOOM_MAP_COMPLETION_INCOMPLETE)
+	{
+		runtime->state = PG_SEMANTIC_RUNTIME_TERMINAL;
+		pg_semantic_runtime_release_session(runtime);
+		ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION),
+			errmsg("SemMap model completion must finish with stop")));
+	}
+	semloom_provider_error_clear(&error);
+	semloom_provider_error_set(&error,
+		status == SEMLOOM_MAP_COMPLETION_TOO_LARGE ?
+		AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE : AI_PROVIDER_ERROR_PROTOCOL,
+		0, runtime->open_spec.max_output_bytes,
+		status == SEMLOOM_MAP_COMPLETION_TOO_LARGE ? NULL :
+		"SemMap provider returned invalid completion metadata");
+	pg_semantic_runtime_fail(runtime, &error);
 }
 
 static void
@@ -626,8 +675,9 @@ pg_semantic_runtime_payload_digest(
 	AiByteSlice canonical_messages,
 	char output[AI_PROVIDER_SHA256_HEX_LENGTH + 1])
 {
-	const char *domain = open_spec->has_generation_profile ?
-		"semloom-payload-v4" : "semloom-payload-v3";
+	const char *domain = open_spec->plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION ?
+		"semloom-payload-v5" : (open_spec->has_generation_profile ?
+		"semloom-payload-v4" : "semloom-payload-v3");
 	static const char hex[] = "0123456789abcdef";
 	pg_cryptohash_ctx *context;
 	uint8 digest[PG_SHA256_DIGEST_LENGTH];

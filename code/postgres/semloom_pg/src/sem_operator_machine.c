@@ -2,6 +2,7 @@
 #include <stddef.h>
 
 #include "sem_operator_machine.h"
+#include "semantic_map_contract.h"
 
 #define SEMLOOM_MACHINE_OPERATOR_MAP 1
 #define SEMLOOM_MACHINE_OPERATOR_FILTER 2
@@ -34,6 +35,15 @@ semloom_operator_machine_init(SemloomOperatorMachine *machine,
 		plan_schema_version == SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION)
 	{
 		machine->methods = &semloom_map_machine_methods;
+		machine->invalid_completion_message =
+			"SemMap provider returned an invalid completion";
+	}
+	else if (operator_kind == SEMLOOM_MACHINE_OPERATOR_MAP &&
+			 plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		if (instruction == NULL || instruction_length == 0)
+			return false;
+		machine->methods = &semloom_map_generate_machine_methods;
 		machine->invalid_completion_message =
 			"SemMap provider returned an invalid completion";
 	}

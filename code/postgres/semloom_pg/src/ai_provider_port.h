@@ -114,7 +114,10 @@ typedef struct AiOpenSpec
 	uint32_t max_tokens;
 	uint32_t n;
 	bool stream;
+	bool has_stop;
 	AiByteSlice stop;
+	uint32_t max_input_bytes;
+	uint32_t max_output_bytes;
 	bool has_generation_profile;
 	AiGenerationProfile generation_profile;
 } AiOpenSpec;
