@@ -1,0 +1,5 @@
+2026-09-03 18:19:20.763 CST [120456] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 18:19:20.763 CST [120456] LOG:  Unix-domain socket path "<artifact-root>/regression/socket/.s.PGSQL.55446" is too long (maximum 107 bytes)
+2026-09-03 18:19:20.763 CST [120456] WARNING:  could not create Unix-domain socket in directory "<artifact-root>/regression/socket"
+2026-09-03 18:19:20.764 CST [120456] FATAL:  could not create any Unix-domain sockets
+2026-09-03 18:19:20.766 CST [120456] LOG:  database system is shut down

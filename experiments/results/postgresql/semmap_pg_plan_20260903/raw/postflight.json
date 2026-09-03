@@ -1,0 +1,16 @@
+{
+  "source_commit": "2205ccbbb764e273ee80cede0a2dd1170136f785",
+  "source": "read-only server inspection after all qualification commands completed",
+  "scope": "Only this slice's 14 test worktrees, prefixes and regression directories; current inspection Python and parent shell excluded from process matching",
+  "stage_postmaster_pidfiles": {
+    "d6705574": 0, "56c0d913": 0, "3512cc38": 0, "2bb9196e": 0,
+    "a1638e4c": 0, "97f35227": 0, "afdaf94d": 0, "58ba199b": 0,
+    "5c598ada": 0, "848f9ad3": 0, "a347def7": 0, "b746e28a": 0,
+    "52e0fcd4": 0, "2205ccbb": 0
+  },
+  "matching_test_processes": [],
+  "server_main": "5d4ecf96b5e6fb86885ea8b6e744db5506a0effc",
+  "server_main_dirty": false,
+  "artifacts_and_worktrees_retained": true,
+  "global_server_idle_claimed": false
+}

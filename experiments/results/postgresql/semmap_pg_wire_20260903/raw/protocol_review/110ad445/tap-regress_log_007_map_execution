@@ -1,0 +1,520 @@
+# Checking port 22298
+# Found port 22298
+Name: map_execution
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/archives
+Connection string: port=22298 host=/tmp/NlPTOBb8Sf
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/007_map_execution_map_execution.log
+[18:09:02.552](0.021s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata
+### Starting node "map_execution"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/007_map_execution_map_execution.log --options --cluster-name=map_execution start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "map_execution" is 117156
+[18:09:03.328](0.775s) ok 1 - Map peer listens
+[18:09:03.354](0.026s) ok 2 - Map peer exits after the session
+[18:09:03.354](0.000s) ok 3 - Map peer removes its listener
+[18:09:03.354](0.001s) ok 4 - generative Map executes through PostgreSQL and golden wire v5
+[18:09:03.355](0.000s) ok 5 - the independent ASCII vector returns generated text
+[18:09:03.439](0.085s) ok 6 - Map peer listens
+[18:09:03.462](0.023s) ok 7 - Map peer exits after the session
+[18:09:03.462](0.000s) ok 8 - Map peer removes its listener
+[18:09:03.463](0.001s) ok 9 - distinct Map output binding executes
+[18:09:03.463](0.000s) ok 10 - generated output cannot alias an equal ordinary input expression
+[18:09:03.548](0.085s) ok 11 - Map peer listens
+[18:09:03.573](0.025s) ok 12 - Map peer exits after the session
+[18:09:03.573](0.000s) ok 13 - Map peer removes its listener
+[18:09:03.573](0.000s) ok 14 - distinct Map output binding executes
+[18:09:03.574](0.000s) ok 15 - generated output cannot alias an equal ordinary input expression
+[18:09:03.658](0.085s) ok 16 - Map peer listens
+[18:09:03.683](0.024s) ok 17 - Map peer exits after the session
+[18:09:03.683](0.000s) ok 18 - Map peer removes its listener
+[18:09:03.684](0.001s) ok 19 - distinct Map output binding executes
+[18:09:03.684](0.000s) ok 20 - generated output cannot alias an equal ordinary input expression
+[18:09:03.768](0.084s) ok 21 - Map peer listens
+[18:09:03.790](0.022s) ok 22 - Map peer exits after the session
+[18:09:03.790](0.000s) ok 23 - Map peer removes its listener
+[18:09:03.791](0.000s) ok 24 - distinct Map output binding executes
+[18:09:03.791](0.000s) ok 25 - generated output cannot alias an equal ordinary input expression
+[18:09:03.801](0.010s) ok 26 - recording Map also keeps a distinct generated output position
+[18:09:03.809](0.007s) ok 27 - recording Map also keeps a distinct generated output position
+[18:09:03.818](0.009s) ok 28 - recording Map also keeps a distinct generated output position
+[18:09:03.939](0.121s) ok 29 - Map peer listens
+[18:09:03.965](0.027s) ok 30 - Map peer exits after the session
+[18:09:03.966](0.000s) ok 31 - Map peer removes its listener
+[18:09:03.966](0.001s) ok 32 - Map preserves cardinality across NULL, empty input and duplicates
+[18:09:03.967](0.000s) ok 33 - generated text stays associated with its input row
+[18:09:04.090](0.124s) ok 34 - Map peer listens
+[18:09:04.118](0.028s) ok 35 - Map peer exits after the session
+[18:09:04.118](0.000s) ok 36 - Map peer removes its listener
+[18:09:04.119](0.001s) ok 37 - Map EXPLAIN ANALYZE executes
+[18:09:04.123](0.004s) ok 38 - generated Map identifies the semantic adapter
+[18:09:04.123](0.000s) ok 39 - NULL consumes no model task
+[18:09:04.123](0.000s) ok 40 - actual prompt usage includes zero/empty completion metadata
+[18:09:04.123](0.000s) ok 41 - actual output usage preserves explicit zero
+[18:09:04.123](0.000s) ok 42 - sequence progresses only for non-NULL tasks
+[18:09:04.123](0.000s) ok 43 - successful task counter excludes local NULL propagation
+[18:09:04.249](0.125s) ok 44 - Map peer listens
+[18:09:04.275](0.027s) ok 45 - Map peer exits after the session
+[18:09:04.276](0.000s) ok 46 - Map peer removes its listener
+[18:09:04.276](0.001s) ok 47 - LIMIT and OFFSET close a partially consumed Map session
+[18:09:04.277](0.000s) ok 48 - OFFSET counts the propagated NULL row
+[18:09:04.423](0.146s) ok 49 - Map peer listens
+[18:09:04.451](0.028s) ok 50 - Map peer exits after the session
+[18:09:04.452](0.000s) ok 51 - Map peer removes its listener
+[18:09:04.452](0.001s) ok 52 - generated Map INSERT uses the same executed path
+[18:09:04.453](0.000s) ok 53 - INSERT distinguishes SQL NULL from empty generated text
+[18:09:04.578](0.125s) ok 54 - Map peer listens
+[18:09:04.609](0.031s) ok 55 - Map peer exits after the session
+[18:09:04.609](0.000s) ok 56 - Map peer removes its listener
+[18:09:04.610](0.001s) ok 57 - generated Map write participates in rollback
+[18:09:04.610](0.000s) ok 58 - rollback discards newly generated rows
+[18:09:04.630](0.020s) ok 59 - SQL fixture bytes independently match the Unicode input vector
+[18:09:04.744](0.114s) ok 60 - Map peer listens
+[18:09:04.767](0.024s) ok 61 - Map peer exits after the session
+[18:09:04.768](0.000s) ok 62 - Map peer removes its listener
+[18:09:04.768](0.001s) ok 63 - Unicode instruction/input cross C and Python without canonicalization drift
+[18:09:04.769](0.000s) ok 64 - multibyte raw text and control characters are preserved
+[18:09:04.853](0.084s) ok 65 - Map peer listens
+[18:09:04.878](0.025s) ok 66 - Map peer exits after the session
+[18:09:04.878](0.000s) ok 67 - Map peer removes its listener
+[18:09:04.878](0.000s) ok 68 - Map accepts arbitrary valid generated text
+[18:09:04.879](0.000s) ok 69 - Map does not trim or reinterpret text as Filter/SQL labels
+[18:09:04.974](0.095s) ok 70 - Map peer listens
+[18:09:05.000](0.027s) ok 71 - Map peer exits after the session
+[18:09:05.001](0.000s) ok 72 - Map peer removes its listener
+[18:09:05.001](0.000s) ok 73 - Map accepts arbitrary valid generated text
+[18:09:05.001](0.000s) ok 74 - Map does not trim or reinterpret text as Filter/SQL labels
+[18:09:05.097](0.095s) ok 75 - Map peer listens
+[18:09:05.123](0.026s) ok 76 - Map peer exits after the session
+[18:09:05.123](0.000s) ok 77 - Map peer removes its listener
+[18:09:05.124](0.001s) ok 78 - Map accepts arbitrary valid generated text
+[18:09:05.124](0.000s) ok 79 - Map does not trim or reinterpret text as Filter/SQL labels
+[18:09:05.219](0.095s) ok 80 - Map peer listens
+[18:09:05.247](0.028s) ok 81 - Map peer exits after the session
+[18:09:05.247](0.000s) ok 82 - Map peer removes its listener
+[18:09:05.247](0.000s) ok 83 - Map accepts arbitrary valid generated text
+[18:09:05.248](0.000s) ok 84 - Map does not trim or reinterpret text as Filter/SQL labels
+[18:09:05.342](0.095s) ok 85 - Map peer listens
+[18:09:05.368](0.026s) ok 86 - Map peer exits after the session
+[18:09:05.368](0.000s) ok 87 - Map peer removes its listener
+[18:09:05.369](0.000s) ok 88 - Map accepts arbitrary valid generated text
+[18:09:05.369](0.000s) ok 89 - Map does not trim or reinterpret text as Filter/SQL labels
+[18:09:05.453](0.084s) ok 90 - Map peer listens
+[18:09:05.479](0.026s) ok 91 - Map peer exits after the session
+[18:09:05.479](0.000s) ok 92 - Map peer removes its listener
+[18:09:05.480](0.000s) ok 93 - Map accepts arbitrary valid generated text
+[18:09:05.480](0.000s) ok 94 - Map does not trim or reinterpret text as Filter/SQL labels
+[18:09:05.594](0.114s) ok 95 - Map peer listens
+[18:09:05.624](0.030s) ok 96 - Map peer exits after the session
+[18:09:05.624](0.000s) ok 97 - Map peer removes its listener
+[18:09:05.624](0.000s) ok 98 - force_custom_plan keeps Map execution after relation invalidation
+[18:09:05.624](0.000s) ok 99 - prepared binding returns the same generated values
+[18:09:05.738](0.114s) ok 100 - Map peer listens
+[18:09:05.770](0.032s) ok 101 - Map peer exits after the session
+[18:09:05.770](0.000s) ok 102 - Map peer removes its listener
+[18:09:05.771](0.000s) ok 103 - force_generic_plan keeps Map execution after relation invalidation
+[18:09:05.771](0.000s) ok 104 - prepared binding returns the same generated values
+[18:09:05.907](0.136s) ok 105 - Map peer listens
+[18:09:05.939](0.032s) ok 106 - Map peer exits after the session
+[18:09:05.940](0.000s) ok 107 - Map peer removes its listener
+[18:09:05.940](0.000s) ok 108 - VOLATILE Map input executes with ordinary child evaluation
+[18:09:05.940](0.000s) ok 109 - Map does not add input expression evaluations before/after LIMIT
+[18:09:06.071](0.131s) ok 110 - Map peer listens
+[18:09:06.097](0.026s) ok 111 - Map peer exits after the session
+[18:09:06.098](0.000s) ok 112 - Map peer removes its listener
+[18:09:06.098](0.001s) ok 113 - VOLATILE Map input executes with ordinary child evaluation
+[18:09:06.099](0.000s) ok 114 - Map does not add input expression evaluations before/after LIMIT
+[18:09:06.236](0.137s) ok 115 - Map peer listens
+[18:09:06.264](0.028s) ok 116 - Map peer exits after the session
+[18:09:06.264](0.000s) ok 117 - Map peer removes its listener
+[18:09:06.265](0.001s) ok 118 - VOLATILE Map input executes with ordinary child evaluation
+[18:09:06.266](0.000s) ok 119 - Map does not add input expression evaluations before/after LIMIT
+[18:09:06.391](0.126s) ok 120 - Map peer listens
+[18:09:06.422](0.030s) ok 121 - Map peer exits after the session
+[18:09:06.422](0.000s) ok 122 - Map peer removes its listener
+[18:09:06.423](0.001s) ok 123 - later child expression error retains native SQLSTATE
+[18:09:06.423](0.000s) ok 124 - later child failure closes the session and leaves no partial INSERT rows
+[18:09:06.518](0.095s) ok 125 - Map peer listens
+[18:09:06.538](0.020s) ok 126 - Map peer exits after the session
+[18:09:06.538](0.000s) ok 127 - Map peer removes its listener
+[18:09:06.538](0.001s) ok 128 - open-output-too-large terminates the Map query
+[18:09:06.539](0.001s) not ok 129 - open-output-too-large preserves its exact redacted error
+[18:09:06.540](0.000s)
+[18:09:06.540](0.000s) #   Failed test 'open-output-too-large preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+[18:09:06.540](0.000s) #                   'psql:<stdin>:3: ERROR:  54000: SemLoom provider message exceeds its configured limit
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+[18:09:06.540](0.000s) ok 130 - provider values do not appear in errors
+[18:09:06.625](0.085s) ok 131 - Map peer listens
+[18:09:06.651](0.026s) ok 132 - Map peer exits after the session
+[18:09:06.651](0.000s) ok 133 - Map peer removes its listener
+[18:09:06.652](0.001s) ok 134 - open-version terminates the Map query
+[18:09:06.652](0.000s) ok 135 - open-version preserves its exact redacted error
+[18:09:06.652](0.000s) ok 136 - provider values do not appear in errors
+[18:09:06.748](0.096s) ok 137 - Map peer listens
+[18:09:06.778](0.030s) ok 138 - Map peer exits after the session
+[18:09:06.778](0.000s) ok 139 - Map peer removes its listener
+[18:09:06.779](0.000s) ok 140 - open-fractional terminates the Map query
+[18:09:06.779](0.000s) ok 141 - open-fractional preserves its exact redacted error
+[18:09:06.779](0.000s) ok 142 - provider values do not appear in errors
+[18:09:06.863](0.084s) ok 143 - Map peer listens
+[18:09:06.891](0.027s) ok 144 - Map peer exits after the session
+[18:09:06.891](0.000s) ok 145 - Map peer removes its listener
+[18:09:06.891](0.000s) ok 146 - open-max_input_bytes terminates the Map query
+[18:09:06.891](0.000s) ok 147 - open-max_input_bytes preserves its exact redacted error
+[18:09:06.892](0.000s) ok 148 - provider values do not appear in errors
+[18:09:06.976](0.084s) ok 149 - Map peer listens
+[18:09:06.999](0.023s) ok 150 - Map peer exits after the session
+[18:09:07.000](0.000s) ok 151 - Map peer removes its listener
+[18:09:07.000](0.001s) ok 152 - open-max_output_bytes terminates the Map query
+[18:09:07.001](0.000s) ok 153 - open-max_output_bytes preserves its exact redacted error
+[18:09:07.001](0.000s) ok 154 - provider values do not appear in errors
+[18:09:07.085](0.084s) ok 155 - Map peer listens
+[18:09:07.108](0.023s) ok 156 - Map peer exits after the session
+[18:09:07.108](0.000s) ok 157 - Map peer removes its listener
+[18:09:07.109](0.001s) ok 158 - open-max_frame_bytes terminates the Map query
+[18:09:07.109](0.000s) ok 159 - open-max_frame_bytes preserves its exact redacted error
+[18:09:07.109](0.000s) ok 160 - provider values do not appear in errors
+[18:09:07.195](0.085s) ok 161 - Map peer listens
+[18:09:07.218](0.024s) ok 162 - Map peer exits after the session
+[18:09:07.219](0.000s) ok 163 - Map peer removes its listener
+[18:09:07.219](0.001s) ok 164 - open-max_inflight_tasks terminates the Map query
+[18:09:07.220](0.000s) ok 165 - open-max_inflight_tasks preserves its exact redacted error
+[18:09:07.220](0.000s) ok 166 - provider values do not appear in errors
+[18:09:07.305](0.085s) ok 167 - Map peer listens
+[18:09:07.329](0.024s) ok 168 - Map peer exits after the session
+[18:09:07.329](0.000s) ok 169 - Map peer removes its listener
+[18:09:07.330](0.000s) ok 170 - open-semantic_spec_digest terminates the Map query
+[18:09:07.330](0.000s) ok 171 - open-semantic_spec_digest preserves its exact redacted error
+[18:09:07.330](0.000s) ok 172 - provider values do not appear in errors
+[18:09:07.415](0.085s) ok 173 - Map peer listens
+[18:09:07.439](0.024s) ok 174 - Map peer exits after the session
+[18:09:07.439](0.000s) ok 175 - Map peer removes its listener
+[18:09:07.439](0.001s) ok 176 - open-physical_algorithm_digest terminates the Map query
+[18:09:07.440](0.000s) ok 177 - open-physical_algorithm_digest preserves its exact redacted error
+[18:09:07.440](0.000s) ok 178 - provider values do not appear in errors
+[18:09:07.535](0.095s) ok 179 - Map peer listens
+[18:09:07.558](0.023s) ok 180 - Map peer exits after the session
+[18:09:07.559](0.000s) ok 181 - Map peer removes its listener
+[18:09:07.559](0.001s) ok 182 - open-provider_execution_digest terminates the Map query
+[18:09:07.560](0.000s) ok 183 - open-provider_execution_digest preserves its exact redacted error
+[18:09:07.560](0.000s) ok 184 - provider values do not appear in errors
+[18:09:07.655](0.095s) ok 185 - Map peer listens
+[18:09:07.679](0.023s) ok 186 - Map peer exits after the session
+[18:09:07.679](0.000s) ok 187 - Map peer removes its listener
+[18:09:07.679](0.000s) ok 188 - completion-version terminates the Map query
+[18:09:07.680](0.000s) ok 189 - completion-version preserves its exact redacted error
+[18:09:07.680](0.000s) ok 190 - provider values do not appear in errors
+[18:09:07.764](0.084s) ok 191 - Map peer listens
+[18:09:07.787](0.023s) ok 192 - Map peer exits after the session
+[18:09:07.787](0.000s) ok 193 - Map peer removes its listener
+[18:09:07.788](0.001s) ok 194 - completion-fractional terminates the Map query
+[18:09:07.788](0.000s) ok 195 - completion-fractional preserves its exact redacted error
+[18:09:07.789](0.000s) ok 196 - provider values do not appear in errors
+[18:09:07.874](0.086s) ok 197 - Map peer listens
+[18:09:07.902](0.028s) ok 198 - Map peer exits after the session
+[18:09:07.903](0.000s) ok 199 - Map peer removes its listener
+[18:09:07.903](0.001s) ok 200 - completion-sequence terminates the Map query
+[18:09:07.904](0.000s) ok 201 - completion-sequence preserves its exact redacted error
+[18:09:07.904](0.000s) ok 202 - provider values do not appear in errors
+[18:09:08.000](0.096s) ok 203 - Map peer listens
+[18:09:08.025](0.025s) ok 204 - Map peer exits after the session
+[18:09:08.025](0.000s) ok 205 - Map peer removes its listener
+[18:09:08.026](0.001s) ok 206 - completion-semantic_spec_digest terminates the Map query
+[18:09:08.026](0.000s) ok 207 - completion-semantic_spec_digest preserves its exact redacted error
+[18:09:08.026](0.000s) ok 208 - provider values do not appear in errors
+[18:09:08.111](0.085s) ok 209 - Map peer listens
+[18:09:08.136](0.025s) ok 210 - Map peer exits after the session
+[18:09:08.136](0.000s) ok 211 - Map peer removes its listener
+[18:09:08.137](0.001s) ok 212 - completion-physical_algorithm_digest terminates the Map query
+[18:09:08.137](0.000s) ok 213 - completion-physical_algorithm_digest preserves its exact redacted error
+[18:09:08.138](0.000s) ok 214 - provider values do not appear in errors
+[18:09:08.222](0.084s) ok 215 - Map peer listens
+[18:09:08.245](0.023s) ok 216 - Map peer exits after the session
+[18:09:08.245](0.000s) ok 217 - Map peer removes its listener
+[18:09:08.246](0.001s) ok 218 - completion-provider_execution_digest terminates the Map query
+[18:09:08.246](0.000s) ok 219 - completion-provider_execution_digest preserves its exact redacted error
+[18:09:08.246](0.000s) ok 220 - provider values do not appear in errors
+[18:09:08.332](0.085s) ok 221 - Map peer listens
+[18:09:08.359](0.027s) ok 222 - Map peer exits after the session
+[18:09:08.359](0.000s) ok 223 - Map peer removes its listener
+[18:09:08.360](0.000s) ok 224 - completion-semantic_payload_digest terminates the Map query
+[18:09:08.360](0.000s) ok 225 - completion-semantic_payload_digest preserves its exact redacted error
+[18:09:08.360](0.000s) ok 226 - provider values do not appear in errors
+[18:09:08.444](0.084s) ok 227 - Map peer listens
+[18:09:08.466](0.022s) ok 228 - Map peer exits after the session
+[18:09:08.466](0.000s) ok 229 - Map peer removes its listener
+[18:09:08.467](0.000s) ok 230 - completion-completion_evidence_digest terminates the Map query
+[18:09:08.467](0.000s) ok 231 - completion-completion_evidence_digest preserves its exact redacted error
+[18:09:08.467](0.000s) ok 232 - provider values do not appear in errors
+[18:09:08.552](0.085s) ok 233 - Map peer listens
+[18:09:08.576](0.023s) ok 234 - Map peer exits after the session
+[18:09:08.576](0.000s) ok 235 - Map peer removes its listener
+[18:09:08.576](0.001s) ok 236 - completion-model terminates the Map query
+[18:09:08.577](0.000s) ok 237 - completion-model preserves its exact redacted error
+[18:09:08.577](0.000s) ok 238 - provider values do not appear in errors
+[18:09:08.660](0.083s) ok 239 - Map peer listens
+[18:09:08.681](0.021s) ok 240 - Map peer exits after the session
+[18:09:08.682](0.000s) ok 241 - Map peer removes its listener
+[18:09:08.682](0.001s) ok 242 - completion-usage-budget terminates the Map query
+[18:09:08.683](0.000s) ok 243 - completion-usage-budget preserves its exact redacted error
+[18:09:08.683](0.000s) ok 244 - provider values do not appear in errors
+[18:09:08.766](0.083s) ok 245 - Map peer listens
+[18:09:08.797](0.030s) ok 246 - Map peer exits after the session
+[18:09:08.797](0.000s) ok 247 - Map peer removes its listener
+[18:09:08.797](0.001s) ok 248 - completion-usage-total-overflow terminates the Map query
+[18:09:08.798](0.000s) ok 249 - completion-usage-total-overflow preserves its exact redacted error
+[18:09:08.798](0.000s) ok 250 - provider values do not appear in errors
+[18:09:08.893](0.095s) ok 251 - Map peer listens
+[18:09:08.917](0.024s) ok 252 - Map peer exits after the session
+[18:09:08.918](0.000s) ok 253 - Map peer removes its listener
+[18:09:08.918](0.001s) ok 254 - completion-finish-empty terminates the Map query
+[18:09:08.919](0.000s) ok 255 - completion-finish-empty preserves its exact redacted error
+[18:09:08.919](0.000s) ok 256 - provider values do not appear in errors
+[18:09:09.015](0.096s) ok 257 - Map peer listens
+[18:09:09.040](0.025s) ok 258 - Map peer exits after the session
+[18:09:09.040](0.000s) ok 259 - Map peer removes its listener
+[18:09:09.040](0.001s) ok 260 - completion-finish-long terminates the Map query
+[18:09:09.041](0.000s) ok 261 - completion-finish-long preserves its exact redacted error
+[18:09:09.041](0.000s) ok 262 - provider values do not appear in errors
+[18:09:09.135](0.095s) ok 263 - Map peer listens
+[18:09:09.161](0.025s) ok 264 - Map peer exits after the session
+[18:09:09.161](0.000s) ok 265 - Map peer removes its listener
+[18:09:09.161](0.001s) ok 266 - completion-over-output-evidence terminates the Map query
+[18:09:09.162](0.000s) ok 267 - completion-over-output-evidence preserves its exact redacted error
+[18:09:09.162](0.000s) ok 268 - provider values do not appear in errors
+[18:09:09.257](0.095s) ok 269 - Map peer listens
+[18:09:09.282](0.025s) ok 270 - Map peer exits after the session
+[18:09:09.282](0.000s) ok 271 - Map peer removes its listener
+[18:09:09.283](0.000s) ok 272 - completion-usage-overflow terminates the Map query
+[18:09:09.283](0.000s) ok 273 - completion-usage-overflow preserves its exact redacted error
+[18:09:09.283](0.000s) ok 274 - provider values do not appear in errors
+[18:09:09.378](0.095s) ok 275 - Map peer listens
+[18:09:09.403](0.025s) ok 276 - Map peer exits after the session
+[18:09:09.403](0.000s) ok 277 - Map peer removes its listener
+[18:09:09.404](0.001s) ok 278 - completion-usage-leading-zero terminates the Map query
+[18:09:09.404](0.000s) ok 279 - completion-usage-leading-zero preserves its exact redacted error
+[18:09:09.404](0.000s) ok 280 - provider values do not appear in errors
+[18:09:09.489](0.084s) ok 281 - Map peer listens
+[18:09:09.510](0.021s) ok 282 - Map peer exits after the session
+[18:09:09.510](0.000s) ok 283 - Map peer removes its listener
+[18:09:09.510](0.001s) ok 284 - completion-sequence-number terminates the Map query
+[18:09:09.511](0.000s) ok 285 - completion-sequence-number preserves its exact redacted error
+[18:09:09.511](0.000s) ok 286 - provider values do not appear in errors
+[18:09:09.597](0.086s) ok 287 - Map peer listens
+[18:09:09.619](0.022s) ok 288 - Map peer exits after the session
+[18:09:09.619](0.000s) ok 289 - Map peer removes its listener
+[18:09:09.620](0.000s) ok 290 - completion-usage-number terminates the Map query
+[18:09:09.620](0.000s) ok 291 - completion-usage-number preserves its exact redacted error
+[18:09:09.620](0.000s) ok 292 - provider values do not appear in errors
+[18:09:09.707](0.087s) ok 293 - Map peer listens
+[18:09:09.729](0.023s) ok 294 - Map peer exits after the session
+[18:09:09.730](0.000s) ok 295 - Map peer removes its listener
+[18:09:09.730](0.001s) ok 296 - completion-null terminates the Map query
+[18:09:09.731](0.000s) ok 297 - completion-null preserves its exact redacted error
+[18:09:09.731](0.000s) ok 298 - provider values do not appear in errors
+[18:09:09.816](0.085s) ok 299 - Map peer listens
+[18:09:09.839](0.023s) ok 300 - Map peer exits after the session
+[18:09:09.839](0.000s) ok 301 - Map peer removes its listener
+[18:09:09.840](0.001s) ok 302 - open-extra terminates the Map query
+[18:09:09.840](0.000s) ok 303 - open-extra preserves its exact redacted error
+[18:09:09.840](0.000s) ok 304 - provider values do not appear in errors
+[18:09:09.924](0.084s) ok 305 - Map peer listens
+[18:09:09.948](0.024s) ok 306 - Map peer exits after the session
+[18:09:09.948](0.000s) ok 307 - Map peer removes its listener
+[18:09:09.949](0.000s) ok 308 - open-missing terminates the Map query
+[18:09:09.949](0.000s) ok 309 - open-missing preserves its exact redacted error
+[18:09:09.949](0.000s) ok 310 - provider values do not appear in errors
+[18:09:10.032](0.084s) ok 311 - Map peer listens
+[18:09:10.056](0.024s) ok 312 - Map peer exits after the session
+[18:09:10.057](0.000s) ok 313 - Map peer removes its listener
+[18:09:10.057](0.001s) ok 314 - completion-extra terminates the Map query
+[18:09:10.058](0.000s) ok 315 - completion-extra preserves its exact redacted error
+[18:09:10.058](0.000s) ok 316 - provider values do not appear in errors
+[18:09:10.142](0.084s) ok 317 - Map peer listens
+[18:09:10.164](0.023s) ok 318 - Map peer exits after the session
+[18:09:10.165](0.000s) ok 319 - Map peer removes its listener
+[18:09:10.165](0.000s) ok 320 - completion-missing terminates the Map query
+[18:09:10.165](0.000s) ok 321 - completion-missing preserves its exact redacted error
+[18:09:10.165](0.000s) ok 322 - provider values do not appear in errors
+[18:09:10.259](0.094s) ok 323 - Map peer listens
+[18:09:10.283](0.024s) ok 324 - Map peer exits after the session
+[18:09:10.283](0.000s) ok 325 - Map peer removes its listener
+[18:09:10.284](0.001s) ok 326 - open-duplicate terminates the Map query
+[18:09:10.284](0.000s) ok 327 - open-duplicate preserves its exact redacted error
+[18:09:10.284](0.000s) ok 328 - provider values do not appear in errors
+[18:09:10.368](0.084s) ok 329 - Map peer listens
+[18:09:10.387](0.019s) ok 330 - Map peer exits after the session
+[18:09:10.387](0.000s) ok 331 - Map peer removes its listener
+[18:09:10.388](0.001s) ok 332 - completion-duplicate terminates the Map query
+[18:09:10.388](0.000s) ok 333 - completion-duplicate preserves its exact redacted error
+[18:09:10.389](0.000s) ok 334 - provider values do not appear in errors
+[18:09:10.474](0.085s) ok 335 - Map peer listens
+[18:09:10.498](0.024s) ok 336 - Map peer exits after the session
+[18:09:10.498](0.000s) ok 337 - Map peer removes its listener
+[18:09:10.499](0.001s) ok 338 - completion-escaped-nul terminates the Map query
+[18:09:10.499](0.000s) ok 339 - completion-escaped-nul preserves its exact redacted error
+[18:09:10.500](0.000s) ok 340 - provider values do not appear in errors
+[18:09:10.594](0.095s) ok 341 - Map peer listens
+[18:09:10.617](0.023s) ok 342 - Map peer exits after the session
+[18:09:10.617](0.000s) ok 343 - Map peer removes its listener
+[18:09:10.617](0.001s) ok 344 - completion-raw-nul terminates the Map query
+[18:09:10.618](0.000s) ok 345 - completion-raw-nul preserves its exact redacted error
+[18:09:10.618](0.000s) ok 346 - provider values do not appear in errors
+[18:09:10.702](0.084s) ok 347 - Map peer listens
+[18:09:10.727](0.025s) ok 348 - Map peer exits after the session
+[18:09:10.728](0.000s) ok 349 - Map peer removes its listener
+[18:09:10.728](0.000s) ok 350 - completion-utf8 terminates the Map query
+[18:09:10.728](0.000s) ok 351 - completion-utf8 preserves its exact redacted error
+[18:09:10.728](0.000s) ok 352 - provider values do not appear in errors
+[18:09:10.812](0.084s) ok 353 - Map peer listens
+[18:09:10.836](0.023s) ok 354 - Map peer exits after the session
+[18:09:10.836](0.000s) ok 355 - Map peer removes its listener
+[18:09:10.836](0.001s) ok 356 - completion-utf8-over-output terminates the Map query
+[18:09:10.837](0.000s) ok 357 - completion-utf8-over-output preserves its exact redacted error
+[18:09:10.837](0.000s) ok 358 - provider values do not appear in errors
+[18:09:10.922](0.085s) ok 359 - Map peer listens
+[18:09:10.945](0.023s) ok 360 - Map peer exits after the session
+[18:09:10.945](0.000s) ok 361 - Map peer removes its listener
+[18:09:10.945](0.000s) ok 362 - completion-finish-length terminates the Map query
+[18:09:10.946](0.000s) ok 363 - completion-finish-length preserves its exact redacted error
+[18:09:10.946](0.000s) ok 364 - provider values do not appear in errors
+[18:09:11.031](0.085s) ok 365 - Map peer listens
+[18:09:11.055](0.025s) ok 366 - Map peer exits after the session
+[18:09:11.056](0.000s) ok 367 - Map peer removes its listener
+[18:09:11.056](0.001s) ok 368 - completion-finish-tool terminates the Map query
+[18:09:11.057](0.000s) ok 369 - completion-finish-tool preserves its exact redacted error
+[18:09:11.057](0.000s) ok 370 - provider values do not appear in errors
+[18:09:11.152](0.095s) ok 371 - Map peer listens
+[18:09:11.173](0.021s) ok 372 - Map peer exits after the session
+[18:09:11.173](0.000s) ok 373 - Map peer removes its listener
+[18:09:11.174](0.001s) ok 374 - completion-finish-space terminates the Map query
+[18:09:11.174](0.000s) ok 375 - completion-finish-space preserves its exact redacted error
+[18:09:11.175](0.000s) ok 376 - provider values do not appear in errors
+[18:09:11.270](0.095s) ok 377 - Map peer listens
+[18:09:11.297](0.027s) ok 378 - Map peer exits after the session
+[18:09:11.297](0.000s) ok 379 - Map peer removes its listener
+[18:09:11.298](0.001s) ok 380 - completion-over-output terminates the Map query
+[18:09:11.299](0.001s) ok 381 - completion-over-output preserves its exact redacted error
+[18:09:11.300](0.001s) ok 382 - provider values do not appear in errors
+[18:09:11.387](0.087s) ok 383 - Map peer listens
+[18:09:11.415](0.028s) ok 384 - Map peer exits after the session
+[18:09:11.415](0.000s) ok 385 - Map peer removes its listener
+[18:09:11.416](0.001s) ok 386 - completion-over-output-finish terminates the Map query
+[18:09:11.416](0.000s) ok 387 - completion-over-output-finish preserves its exact redacted error
+[18:09:11.416](0.000s) ok 388 - provider values do not appear in errors
+[18:09:11.511](0.095s) ok 389 - Map peer listens
+[18:09:11.535](0.024s) ok 390 - Map peer exits after the session
+[18:09:11.535](0.000s) ok 391 - Map peer removes its listener
+[18:09:11.536](0.001s) ok 392 - error-valid terminates the Map query
+[18:09:11.536](0.000s) ok 393 - error-valid preserves its exact redacted error
+[18:09:11.537](0.000s) ok 394 - provider values do not appear in errors
+[18:09:11.631](0.094s) ok 395 - Map peer listens
+[18:09:11.652](0.021s) ok 396 - Map peer exits after the session
+[18:09:11.652](0.000s) ok 397 - Map peer removes its listener
+[18:09:11.653](0.000s) ok 398 - error-extra terminates the Map query
+[18:09:11.653](0.000s) ok 399 - error-extra preserves its exact redacted error
+[18:09:11.653](0.000s) ok 400 - provider values do not appear in errors
+[18:09:11.748](0.095s) ok 401 - Map peer listens
+[18:09:11.774](0.025s) ok 402 - Map peer exits after the session
+[18:09:11.774](0.000s) ok 403 - Map peer removes its listener
+[18:09:11.775](0.001s) ok 404 - error-missing terminates the Map query
+[18:09:11.775](0.000s) ok 405 - error-missing preserves its exact redacted error
+[18:09:11.775](0.000s) ok 406 - provider values do not appear in errors
+[18:09:11.860](0.085s) ok 407 - Map peer listens
+[18:09:11.882](0.022s) ok 408 - Map peer exits after the session
+[18:09:11.882](0.000s) ok 409 - Map peer removes its listener
+[18:09:11.883](0.000s) ok 410 - error-version terminates the Map query
+[18:09:11.883](0.000s) ok 411 - error-version preserves its exact redacted error
+[18:09:11.883](0.000s) ok 412 - provider values do not appear in errors
+[18:09:11.978](0.095s) ok 413 - Map peer listens
+[18:09:12.000](0.022s) ok 414 - Map peer exits after the session
+[18:09:12.000](0.000s) ok 415 - Map peer removes its listener
+[18:09:12.001](0.000s) ok 416 - error-sequence terminates the Map query
+[18:09:12.001](0.000s) ok 417 - error-sequence preserves its exact redacted error
+[18:09:12.001](0.000s) ok 418 - provider values do not appear in errors
+[18:09:12.087](0.086s) ok 419 - Map peer listens
+[18:09:12.110](0.023s) ok 420 - Map peer exits after the session
+[18:09:12.111](0.000s) ok 421 - Map peer removes its listener
+[18:09:12.111](0.001s) ok 422 - error-code terminates the Map query
+[18:09:12.112](0.000s) ok 423 - error-code preserves its exact redacted error
+[18:09:12.112](0.000s) ok 424 - provider values do not appear in errors
+[18:09:12.197](0.085s) ok 425 - Map peer listens
+[18:09:12.230](0.033s) ok 426 - Map peer exits after the session
+[18:09:12.230](0.000s) ok 427 - Map peer removes its listener
+[18:09:12.230](0.000s) ok 428 - the full 65536-byte completion is accepted
+[18:09:12.230](0.000s) ok 429 - the output boundary is not truncated
+[18:09:12.314](0.084s) ok 430 - Map peer listens
+[18:09:12.337](0.023s) ok 431 - Map peer exits after the session
+[18:09:12.338](0.000s) ok 432 - Map peer removes its listener
+[18:09:12.338](0.001s) ok 433 - oversized fixture completion is rejected by the canonical session
+[18:09:12.338](0.000s) ok 434 - v5 OUTPUT_TOO_LARGE reaches the PG length error
+[18:09:12.350](0.012s) ok 435 - no-task Map succeeds with a provider that never responds
+[18:09:12.350](0.000s) ok 436 - no-task Map makes zero provider connections
+[18:09:12.358](0.008s) ok 437 - no-task Map succeeds with a provider that never responds
+[18:09:12.358](0.000s) ok 438 - no-task Map makes zero provider connections
+[18:09:12.372](0.013s) ok 439 - no-task Map succeeds with a provider that never responds
+[18:09:12.372](0.000s) ok 440 - no-task Map makes zero provider connections
+[18:09:12.384](0.011s) ok 441 - no-task Map succeeds with a provider that never responds
+[18:09:12.384](0.000s) ok 442 - no-task Map makes zero provider connections
+[18:09:12.395](0.012s) ok 443 - first child expression failure retains native SQLSTATE
+[18:09:12.396](0.000s) ok 444 - first child error precedes provider open
+[18:09:12.407](0.012s) ok 445 - input preflight rejects the first excess byte
+[18:09:12.408](0.000s) ok 446 - oversized input is rejected before encoding/open
+[18:09:12.493](0.085s) ok 447 - Map peer listens
+[18:09:12.527](0.035s) ok 448 - Map peer exits after the session
+[18:09:12.527](0.000s) ok 449 - Map peer removes its listener
+[18:09:12.528](0.000s) ok 450 - the full 163840-byte input reaches the validated v5 task
+[18:09:12.528](0.000s) ok 451 - large input is processed without changing result policy
+[18:09:12.644](0.115s) ok 452 - Map peer listens
+[18:09:12.974](0.331s) ok 453 - Map peer exits after the session
+[18:09:12.975](0.000s) ok 454 - Map peer removes its listener
+[18:09:12.975](0.000s) ok 455 - Map waiting for a result preserves native cancellation
+[18:09:12.975](0.000s) ok 456 - cancel/savepoint recovery has no secondary errors
+[18:09:12.975](0.000s) ok 457 - same backend can execute Map after cancel and savepoint recovery
+### Stopping node "map_execution" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_007_map_execution_map_execution_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "map_execution"
+[18:09:13.080](0.105s) 1..457
+[18:09:13.083](0.003s) # Looks like you failed 1 test of 457.

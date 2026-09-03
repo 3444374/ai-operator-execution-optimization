@@ -5,6 +5,25 @@
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
+已纳入 main 的 [Map C v5/PG golden 切片](postgresql/semmap_pg_wire_20260903/README.md)原资格绑定 `5031bb50`：
+生成型 SELECT/INSERT、常量/相同表达式列位置、任意有效文本、NULL/空串、输入输出上限、严格协议与
+child/provider 错误、取消/savepoint 恢复通过。PG18.3 `-Werror`、regression 1/1、TAP 1741/1741、
+本地/服务器各 137/137 与 8/8 C11；来源/原生权限检查保留。
+合并前 `f46fe936` 修正错误帧阶段与独立 usage 字段校验，重新通过 PG18.3 `-O2 -Werror`、
+regression 1/1、TAP 1758/1758、两端各 139/139 和 C11 8/8。两次预期红测试、一次测试 socket
+路径过长中止和短路径完整重跑分别保留，详见同一记录的[合并复核](postgresql/semmap_pg_wire_20260903/README.md#merge-review)。
+真实模型仍 0/32，资源压力未运行；不据此声称真实 Map 模型、RSS/FD、性能或四 D 整体通过。
+以下原始证据保留对应提交和阶段身份。
+
+此前独立 [Map PG plan/权限切片](postgresql/semmap_pg_plan_20260903/README.md)绑定 `2205ccbb`：
+SQL 0.2.0/schema 4、固定参数、计划复制、严格解码、原生函数权限/hook 和重规划通过验证；
+PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新 plan 238）、两端各 136/136 与 C11 通过。
+该次只支持普通 EXPLAIN，实际执行在 child/provider 前明确拒绝；当时未合入或推送 main，没有真实 Map 或资源资格。
+中间反例、fixture 语法错误与最终结果分别保存；旧 1022 TAP 不重新绑定到本次提交。
+[SQL wrapper 补充](postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)绑定 `676615fa`：
+实际复现 custom 接受而 generic 拒绝隐藏 Map 指令参数，修复来源识别后两者均拒绝、零连接；
+PG18.3 regression 1/1、TAP 1283/1283、两端各 136/136 与 8/8 C11 通过。
+普通函数内联和权限检查保留；当时新 Map 未执行，模型累计 0/32，未合并或推送 main。
 Map 消息、纯值、Python v5 及深层 JSON 修复已随 `b0400944` 合入本地 main；
 [合并复查](postgresql/semmap_values_20260903/README.md#main-integration)重新通过本地 136/136 和 C11，未运行服务器或模型。
 [Map 纯值与 Python v5](postgresql/semmap_values_20260903/README.md)的服务器资格仍绑定 `425d2b1c`：

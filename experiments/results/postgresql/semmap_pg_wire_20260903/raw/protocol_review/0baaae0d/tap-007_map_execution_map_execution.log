@@ -1,0 +1,454 @@
+2026-09-03 18:14:12.939 CST [117810] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 18:14:12.939 CST [117810] LOG:  listening on Unix socket "/tmp/tFC2edf3cG/.s.PGSQL.31669"
+2026-09-03 18:14:12.941 CST [117816] LOG:  database system was shut down at 2026-09-03 18:14:12 CST
+2026-09-03 18:14:12.944 CST [117810] LOG:  database system is ready to accept connections
+2026-09-03 18:14:13.040 CST [117821] 007_map_execution.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 18:14:13.042 CST [117821] 007_map_execution.pl LOG:  statement: CREATE TABLE map_rows(id integer, body text);
+2026-09-03 18:14:13.044 CST [117821] 007_map_execution.pl LOG:  statement: INSERT INTO map_rows VALUES (1, 'hello');
+2026-09-03 18:14:13.182 CST [117824] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:13.182 CST [117824] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:13.182 CST [117824] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:13.306 CST [117827] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:13.306 CST [117827] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:13.306 CST [117827] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map('hello', 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:13.426 CST [117830] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:13.426 CST [117830] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:13.426 CST [117830] 007_map_execution.pl LOG:  statement: SELECT body, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:13.544 CST [117833] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:13.544 CST [117833] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:13.544 CST [117833] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb), body FROM ONLY map_rows
+2026-09-03 18:14:13.664 CST [117836] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:13.664 CST [117836] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:13.665 CST [117836] 007_map_execution.pl LOG:  statement: SELECT body || '!', ai_semantic.map(body || '!', 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:13.688 CST [117838] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map('hello') FROM ONLY map_rows
+2026-09-03 18:14:13.696 CST [117840] 007_map_execution.pl LOG:  statement: SELECT body, ai_semantic.map(body) FROM ONLY map_rows
+2026-09-03 18:14:13.703 CST [117842] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(body), body FROM ONLY map_rows
+2026-09-03 18:14:13.710 CST [117844] 007_map_execution.pl LOG:  statement: INSERT INTO map_rows VALUES (2,NULL),(3,''),(4,'hello');
+2026-09-03 18:14:13.847 CST [117847] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:13.847 CST [117847] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:13.847 CST [117847] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:14.000 CST [117850] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.000 CST [117850] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.000 CST [117850] 007_map_execution.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:14.156 CST [117853] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.156 CST [117853] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.156 CST [117853] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows LIMIT 1 OFFSET 2
+2026-09-03 18:14:14.183 CST [117855] 007_map_execution.pl LOG:  statement: CREATE TABLE map_sink(id integer, generated text);
+2026-09-03 18:14:14.315 CST [117858] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.316 CST [117858] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.316 CST [117858] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows;
+2026-09-03 18:14:14.318 CST [117858] 007_map_execution.pl LOG:  statement: SELECT id, generated, generated IS NULL FROM map_sink ORDER BY id;
+2026-09-03 18:14:14.457 CST [117861] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.458 CST [117861] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.458 CST [117861] 007_map_execution.pl LOG:  statement: BEGIN;
+2026-09-03 18:14:14.458 CST [117861] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows;
+2026-09-03 18:14:14.461 CST [117861] 007_map_execution.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:14:14.461 CST [117861] 007_map_execution.pl LOG:  statement: SELECT count(*) FROM map_sink;
+2026-09-03 18:14:14.486 CST [117863] 007_map_execution.pl LOG:  statement: INSERT INTO map_rows VALUES(5,U&'\7532\000A"\4E59"' || chr(92) || U&'\4E19\0009{}');
+2026-09-03 18:14:14.496 CST [117865] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(body,'UTF8'),'hex') FROM map_rows WHERE id=5
+2026-09-03 18:14:14.622 CST [117868] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.622 CST [117868] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.622 CST [117868] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, U&'\539F\6837\8FD4\56DE\8F93\5165\3002', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=5;
+2026-09-03 18:14:14.625 CST [117868] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex') FROM map_sink WHERE id=5;
+2026-09-03 18:14:14.738 CST [117871] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.738 CST [117871] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.739 CST [117871] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:14.740 CST [117871] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:14.742 CST [117871] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex'), generated IS NULL FROM map_sink;
+2026-09-03 18:14:14.854 CST [117874] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.854 CST [117874] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.854 CST [117874] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:14.856 CST [117874] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:14.858 CST [117874] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex'), generated IS NULL FROM map_sink;
+2026-09-03 18:14:14.972 CST [117877] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:14.972 CST [117877] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:14.972 CST [117877] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:14.974 CST [117877] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:14.976 CST [117877] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex'), generated IS NULL FROM map_sink;
+2026-09-03 18:14:15.093 CST [117882] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:15.093 CST [117882] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:15.093 CST [117882] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:15.095 CST [117882] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:15.098 CST [117882] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex'), generated IS NULL FROM map_sink;
+2026-09-03 18:14:15.215 CST [117885] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:15.215 CST [117885] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:15.215 CST [117885] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:15.217 CST [117885] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:15.219 CST [117885] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex'), generated IS NULL FROM map_sink;
+2026-09-03 18:14:15.335 CST [117888] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:15.335 CST [117888] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:15.335 CST [117888] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:15.337 CST [117888] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:15.339 CST [117888] 007_map_execution.pl LOG:  statement: SELECT encode(convert_to(generated,'UTF8'),'hex'), generated IS NULL FROM map_sink;
+2026-09-03 18:14:15.486 CST [117891] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:15.486 CST [117891] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:15.486 CST [117891] 007_map_execution.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 18:14:15.486 CST [117891] 007_map_execution.pl LOG:  statement: PREPARE mapped(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=$1;
+2026-09-03 18:14:15.486 CST [117891] 007_map_execution.pl LOG:  statement: EXECUTE mapped(1);
+2026-09-03 18:14:15.486 CST [117891] 007_map_execution.pl DETAIL:  prepare: PREPARE mapped(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=$1;
+2026-09-03 18:14:15.488 CST [117891] 007_map_execution.pl LOG:  statement: ALTER TABLE map_rows ADD COLUMN extra_force_custom_plan integer;
+2026-09-03 18:14:15.489 CST [117891] 007_map_execution.pl LOG:  statement: EXECUTE mapped(1);
+2026-09-03 18:14:15.489 CST [117891] 007_map_execution.pl DETAIL:  prepare: PREPARE mapped(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=$1;
+2026-09-03 18:14:15.639 CST [117894] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:15.639 CST [117894] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:15.639 CST [117894] 007_map_execution.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 18:14:15.639 CST [117894] 007_map_execution.pl LOG:  statement: PREPARE mapped(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=$1;
+2026-09-03 18:14:15.640 CST [117894] 007_map_execution.pl LOG:  statement: EXECUTE mapped(1);
+2026-09-03 18:14:15.640 CST [117894] 007_map_execution.pl DETAIL:  prepare: PREPARE mapped(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=$1;
+2026-09-03 18:14:15.642 CST [117894] 007_map_execution.pl LOG:  statement: ALTER TABLE map_rows ADD COLUMN extra_force_generic_plan integer;
+2026-09-03 18:14:15.642 CST [117894] 007_map_execution.pl LOG:  statement: EXECUTE mapped(1);
+2026-09-03 18:14:15.642 CST [117894] 007_map_execution.pl DETAIL:  prepare: PREPARE mapped(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=$1;
+2026-09-03 18:14:15.666 CST [117896] 007_map_execution.pl LOG:  statement: CREATE SEQUENCE map_input_calls;
+2026-09-03 18:14:15.667 CST [117896] 007_map_execution.pl LOG:  statement: CREATE FUNCTION counted_map_input(value text) RETURNS text LANGUAGE plpgsql VOLATILE AS $$
+	BEGIN PERFORM nextval('map_input_calls'); RETURN value; END $$;
+2026-09-03 18:14:15.668 CST [117896] 007_map_execution.pl LOG:  statement: CREATE FUNCTION checked_map_input(value text, row_id integer) RETURNS text LANGUAGE plpgsql VOLATILE AS $$
+	BEGIN IF row_id=4 THEN PERFORM 1/0; END IF; RETURN value; END $$;
+2026-09-03 18:14:15.676 CST [117898] 007_map_execution.pl LOG:  statement: ALTER SEQUENCE map_input_calls RESTART WITH 1;
+2026-09-03 18:14:15.677 CST [117898] 007_map_execution.pl LOG:  statement: SELECT counted_map_input(body) FROM ONLY map_rows WHERE id<=4 ;
+2026-09-03 18:14:15.679 CST [117898] 007_map_execution.pl LOG:  statement: SELECT last_value FROM map_input_calls;
+2026-09-03 18:14:15.810 CST [117901] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:15.811 CST [117901] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:15.811 CST [117901] 007_map_execution.pl LOG:  statement: ALTER SEQUENCE map_input_calls RESTART WITH 1;
+2026-09-03 18:14:15.813 CST [117901] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(counted_map_input(body),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id<=4 ;
+2026-09-03 18:14:15.816 CST [117901] 007_map_execution.pl LOG:  statement: SELECT last_value FROM map_input_calls;
+2026-09-03 18:14:15.841 CST [117903] 007_map_execution.pl LOG:  statement: ALTER SEQUENCE map_input_calls RESTART WITH 1;
+2026-09-03 18:14:15.842 CST [117903] 007_map_execution.pl LOG:  statement: SELECT counted_map_input(body) FROM ONLY map_rows WHERE id<=4 LIMIT 2;
+2026-09-03 18:14:15.843 CST [117903] 007_map_execution.pl LOG:  statement: SELECT last_value FROM map_input_calls;
+2026-09-03 18:14:16.008 CST [117906] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.008 CST [117906] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.008 CST [117906] 007_map_execution.pl LOG:  statement: ALTER SEQUENCE map_input_calls RESTART WITH 1;
+2026-09-03 18:14:16.010 CST [117906] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(counted_map_input(body),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id<=4 LIMIT 2;
+2026-09-03 18:14:16.013 CST [117906] 007_map_execution.pl LOG:  statement: SELECT last_value FROM map_input_calls;
+2026-09-03 18:14:16.043 CST [117908] 007_map_execution.pl LOG:  statement: ALTER SEQUENCE map_input_calls RESTART WITH 1;
+2026-09-03 18:14:16.044 CST [117908] 007_map_execution.pl LOG:  statement: SELECT counted_map_input(body) FROM ONLY map_rows WHERE id<=4 LIMIT 1 OFFSET 2;
+2026-09-03 18:14:16.046 CST [117908] 007_map_execution.pl LOG:  statement: SELECT last_value FROM map_input_calls;
+2026-09-03 18:14:16.185 CST [117911] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.185 CST [117911] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.185 CST [117911] 007_map_execution.pl LOG:  statement: ALTER SEQUENCE map_input_calls RESTART WITH 1;
+2026-09-03 18:14:16.186 CST [117911] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(counted_map_input(body),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id<=4 LIMIT 1 OFFSET 2;
+2026-09-03 18:14:16.189 CST [117911] 007_map_execution.pl LOG:  statement: SELECT last_value FROM map_input_calls;
+2026-09-03 18:14:16.330 CST [117914] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.330 CST [117914] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.330 CST [117914] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:16.332 CST [117914] 007_map_execution.pl LOG:  statement: BEGIN;
+2026-09-03 18:14:16.332 CST [117914] 007_map_execution.pl LOG:  statement: SAVEPOINT before_child;
+2026-09-03 18:14:16.332 CST [117914] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(checked_map_input(body,id),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id IN (1,4);
+2026-09-03 18:14:16.335 CST [117914] 007_map_execution.pl ERROR:  division by zero
+2026-09-03 18:14:16.335 CST [117914] 007_map_execution.pl CONTEXT:  SQL statement "SELECT 1/0"
+	PL/pgSQL function checked_map_input(text,integer) line 2 at PERFORM
+2026-09-03 18:14:16.335 CST [117914] 007_map_execution.pl STATEMENT:  INSERT INTO map_sink SELECT id, ai_semantic.map(checked_map_input(body,id),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id IN (1,4);
+2026-09-03 18:14:16.335 CST [117914] 007_map_execution.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_child;
+2026-09-03 18:14:16.335 CST [117914] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:16.336 CST [117914] 007_map_execution.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:14:16.336 CST [117914] 007_map_execution.pl LOG:  statement: SELECT count(*) FROM map_sink;
+2026-09-03 18:14:16.454 CST [117917] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.455 CST [117917] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.455 CST [117917] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.456 CST [117917] 007_map_execution.pl ERROR:  SemLoom provider returned an invalid wire v5 error frame
+2026-09-03 18:14:16.456 CST [117917] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.575 CST [117920] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.576 CST [117920] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.576 CST [117920] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.578 CST [117920] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:16.578 CST [117920] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.684 CST [117923] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.684 CST [117923] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.684 CST [117923] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.685 CST [117923] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:16.685 CST [117923] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.792 CST [117926] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.792 CST [117926] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.792 CST [117926] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.793 CST [117926] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:16.793 CST [117926] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.903 CST [117929] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:16.903 CST [117929] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:16.903 CST [117929] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:16.904 CST [117929] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:16.904 CST [117929] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.010 CST [117932] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.010 CST [117932] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.010 CST [117932] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.012 CST [117932] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:17.012 CST [117932] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.119 CST [117935] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.119 CST [117935] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.119 CST [117935] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.121 CST [117935] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:17.121 CST [117935] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.228 CST [117938] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.228 CST [117938] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.228 CST [117938] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.230 CST [117938] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:17.230 CST [117938] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.338 CST [117941] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.338 CST [117941] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.338 CST [117941] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.339 CST [117941] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:17.339 CST [117941] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.456 CST [117944] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.456 CST [117944] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.456 CST [117944] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.458 CST [117944] 007_map_execution.pl ERROR:  SemLoom provider open response does not match wire v5
+2026-09-03 18:14:17.458 CST [117944] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.576 CST [117947] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.576 CST [117947] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.576 CST [117947] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.578 CST [117947] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:17.578 CST [117947] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.675 CST [117950] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.675 CST [117950] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.675 CST [117950] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.677 CST [117950] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:17.677 CST [117950] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.785 CST [117953] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.785 CST [117953] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.785 CST [117953] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.787 CST [117953] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:17.787 CST [117953] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.906 CST [117956] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:17.906 CST [117956] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:17.906 CST [117956] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:17.907 CST [117956] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:17.907 CST [117956] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.004 CST [117959] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.004 CST [117959] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.004 CST [117959] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.006 CST [117959] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.006 CST [117959] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.120 CST [117962] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.121 CST [117962] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.122 CST [117962] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.124 CST [117962] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.124 CST [117962] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.242 CST [117965] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.242 CST [117965] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.243 CST [117965] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.245 CST [117965] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.245 CST [117965] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.352 CST [117968] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.352 CST [117968] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.353 CST [117968] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.355 CST [117968] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.355 CST [117968] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.473 CST [117971] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.473 CST [117971] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.473 CST [117971] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.475 CST [117971] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.475 CST [117971] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.594 CST [117974] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.594 CST [117974] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.594 CST [117974] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.597 CST [117974] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.597 CST [117974] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.718 CST [117977] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.718 CST [117977] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.718 CST [117977] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.720 CST [117977] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.720 CST [117977] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.840 CST [117980] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.840 CST [117980] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.840 CST [117980] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.842 CST [117980] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.842 CST [117980] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.951 CST [117983] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:18.951 CST [117983] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:18.951 CST [117983] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:18.954 CST [117983] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:18.954 CST [117983] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.057 CST [117986] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.057 CST [117986] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.057 CST [117986] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.061 CST [117986] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:19.061 CST [117986] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.179 CST [117989] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.179 CST [117989] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.179 CST [117989] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.181 CST [117989] 007_map_execution.pl ERROR:  SemLoom provider response has an invalid uint64 field
+2026-09-03 18:14:19.181 CST [117989] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.288 CST [117992] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.289 CST [117992] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.289 CST [117992] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.291 CST [117992] 007_map_execution.pl ERROR:  SemLoom provider response has an invalid uint64 field
+2026-09-03 18:14:19.291 CST [117992] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.408 CST [117995] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.408 CST [117995] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.408 CST [117995] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.411 CST [117995] 007_map_execution.pl ERROR:  SemLoom provider response has an invalid text field
+2026-09-03 18:14:19.411 CST [117995] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.525 CST [117998] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.525 CST [117998] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.526 CST [117998] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.528 CST [117998] 007_map_execution.pl ERROR:  SemLoom provider response has an invalid text field
+2026-09-03 18:14:19.528 CST [117998] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.625 CST [118001] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.625 CST [118001] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.625 CST [118001] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.627 CST [118001] 007_map_execution.pl ERROR:  SemLoom provider response has an invalid text field
+2026-09-03 18:14:19.627 CST [118001] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.723 CST [118004] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.723 CST [118004] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.723 CST [118004] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.725 CST [118004] 007_map_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 18:14:19.725 CST [118004] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.842 CST [118007] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.843 CST [118007] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.843 CST [118007] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.844 CST [118007] 007_map_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 18:14:19.844 CST [118007] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.953 CST [118010] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:19.954 CST [118010] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:19.954 CST [118010] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:19.958 CST [118010] 007_map_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 18:14:19.958 CST [118010] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.068 CST [118015] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.068 CST [118015] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.068 CST [118015] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.071 CST [118015] 007_map_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 18:14:20.071 CST [118015] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.193 CST [118018] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.193 CST [118018] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.193 CST [118018] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.195 CST [118018] 007_map_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 18:14:20.195 CST [118018] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.312 CST [118021] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.312 CST [118021] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.312 CST [118021] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.314 CST [118021] 007_map_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 18:14:20.314 CST [118021] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.433 CST [118024] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.433 CST [118024] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.433 CST [118024] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.435 CST [118024] 007_map_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 18:14:20.435 CST [118024] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.553 CST [118027] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.553 CST [118027] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.553 CST [118027] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.555 CST [118027] 007_map_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 18:14:20.555 CST [118027] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.672 CST [118030] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.672 CST [118030] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.672 CST [118030] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.675 CST [118030] 007_map_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 18:14:20.675 CST [118030] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.783 CST [118033] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.783 CST [118033] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.783 CST [118033] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.785 CST [118033] 007_map_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 18:14:20.785 CST [118033] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.890 CST [118036] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:20.890 CST [118036] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:20.890 CST [118036] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:20.892 CST [118036] 007_map_execution.pl ERROR:  SemMap model completion must finish with stop
+2026-09-03 18:14:20.892 CST [118036] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.008 CST [118039] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.009 CST [118039] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.009 CST [118039] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.011 CST [118039] 007_map_execution.pl ERROR:  SemMap model completion must finish with stop
+2026-09-03 18:14:21.011 CST [118039] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.131 CST [118042] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.131 CST [118042] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.131 CST [118042] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.133 CST [118042] 007_map_execution.pl ERROR:  SemMap model completion must finish with stop
+2026-09-03 18:14:21.133 CST [118042] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.242 CST [118045] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.242 CST [118045] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.242 CST [118045] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.245 CST [118045] 007_map_execution.pl ERROR:  SemLoom provider message exceeds its configured limit
+2026-09-03 18:14:21.245 CST [118045] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.361 CST [118048] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.361 CST [118048] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.361 CST [118048] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.365 CST [118048] 007_map_execution.pl ERROR:  SemLoom provider message exceeds its configured limit
+2026-09-03 18:14:21.365 CST [118048] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.474 CST [118051] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.474 CST [118051] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.475 CST [118051] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.479 CST [118051] 007_map_execution.pl ERROR:  SemLoom provider message exceeds its configured limit
+2026-09-03 18:14:21.479 CST [118051] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.589 CST [118054] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.589 CST [118054] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.589 CST [118054] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.591 CST [118054] 007_map_execution.pl ERROR:  SemLoom provider returned an invalid wire v5 error frame
+2026-09-03 18:14:21.591 CST [118054] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.704 CST [118057] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.704 CST [118057] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.704 CST [118057] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.706 CST [118057] 007_map_execution.pl ERROR:  SemLoom provider returned an invalid wire v5 error frame
+2026-09-03 18:14:21.706 CST [118057] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.814 CST [118060] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.814 CST [118060] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.814 CST [118060] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.816 CST [118060] 007_map_execution.pl ERROR:  SemLoom provider returned an invalid wire v5 error frame
+2026-09-03 18:14:21.816 CST [118060] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.927 CST [118063] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:21.927 CST [118063] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:21.927 CST [118063] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:21.929 CST [118063] 007_map_execution.pl ERROR:  SemLoom provider returned an invalid wire v5 error frame
+2026-09-03 18:14:21.929 CST [118063] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.034 CST [118066] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.034 CST [118066] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.035 CST [118066] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.036 CST [118066] 007_map_execution.pl ERROR:  SemLoom provider returned an invalid wire v5 error frame
+2026-09-03 18:14:22.036 CST [118066] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.128 CST [118069] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.128 CST [118069] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.128 CST [118069] 007_map_execution.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF) SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.130 CST [118069] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:22.130 CST [118069] 007_map_execution.pl STATEMENT:  EXPLAIN (ANALYZE, COSTS OFF) SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.225 CST [118072] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.225 CST [118072] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.226 CST [118072] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id IN (1,4)
+2026-09-03 18:14:22.228 CST [118072] 007_map_execution.pl ERROR:  SemLoom provider completion does not match wire v5 task identity
+2026-09-03 18:14:22.228 CST [118072] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id IN (1,4)
+2026-09-03 18:14:22.347 CST [118075] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.347 CST [118075] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.347 CST [118075] 007_map_execution.pl LOG:  statement: TRUNCATE map_sink;
+2026-09-03 18:14:22.349 CST [118075] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:22.355 CST [118075] 007_map_execution.pl LOG:  statement: SELECT octet_length(generated) FROM map_sink;
+2026-09-03 18:14:22.470 CST [118078] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.470 CST [118078] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.470 CST [118078] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.472 CST [118078] 007_map_execution.pl ERROR:  SemLoom provider message exceeds its configured limit
+2026-09-03 18:14:22.472 CST [118078] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.497 CST [118080] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.498 CST [118080] 007_map_execution.pl LOG:  statement: EXPLAIN SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows
+2026-09-03 18:14:22.508 CST [118082] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.508 CST [118082] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows LIMIT 0
+2026-09-03 18:14:22.517 CST [118084] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.517 CST [118084] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE false
+2026-09-03 18:14:22.526 CST [118086] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.526 CST [118086] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=2
+2026-09-03 18:14:22.536 CST [118088] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.536 CST [118088] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(checked_map_input(body,id),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=4
+2026-09-03 18:14:22.538 CST [118088] 007_map_execution.pl ERROR:  division by zero
+2026-09-03 18:14:22.538 CST [118088] 007_map_execution.pl CONTEXT:  SQL statement "SELECT 1/0"
+	PL/pgSQL function checked_map_input(text,integer) line 2 at PERFORM
+2026-09-03 18:14:22.538 CST [118088] 007_map_execution.pl STATEMENT:  SELECT ai_semantic.map(checked_map_input(body,id),'Echo the input.',' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=4
+2026-09-03 18:14:22.550 CST [118090] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.550 CST [118090] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(repeat('x',163841), 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.554 CST [118090] 007_map_execution.pl ERROR:  SemLoom provider input exceeds the 163840 byte limit
+2026-09-03 18:14:22.554 CST [118090] 007_map_execution.pl STATEMENT:  SELECT ai_semantic.map(repeat('x',163841), 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.651 CST [118093] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.651 CST [118093] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.651 CST [118093] 007_map_execution.pl LOG:  statement: SELECT ai_semantic.map(repeat('x',163840), 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1
+2026-09-03 18:14:22.800 CST [118096] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:14:22.800 CST [118096] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/tFC2edf3cG/map.sock';
+2026-09-03 18:14:22.800 CST [118096] 007_map_execution.pl LOG:  statement: BEGIN;
+2026-09-03 18:14:22.800 CST [118096] 007_map_execution.pl LOG:  statement: SAVEPOINT before_cancel;
+2026-09-03 18:14:22.800 CST [118096] 007_map_execution.pl LOG:  statement: SET LOCAL statement_timeout='50ms';
+2026-09-03 18:14:22.800 CST [118096] 007_map_execution.pl LOG:  statement: INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:22.850 CST [118096] 007_map_execution.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 18:14:22.850 CST [118096] 007_map_execution.pl STATEMENT:  INSERT INTO map_sink SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:22.851 CST [118096] 007_map_execution.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_cancel;
+2026-09-03 18:14:22.851 CST [118096] 007_map_execution.pl LOG:  statement: SET LOCAL statement_timeout='5s';
+2026-09-03 18:14:22.851 CST [118096] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows WHERE id=1;
+2026-09-03 18:14:23.105 CST [118096] 007_map_execution.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:14:23.105 CST [118096] 007_map_execution.pl LOG:  statement: SELECT 1;
+2026-09-03 18:14:23.126 CST [117810] LOG:  received fast shutdown request
+2026-09-03 18:14:23.126 CST [117810] LOG:  aborting any active transactions
+2026-09-03 18:14:23.127 CST [117810] LOG:  background worker "logical replication launcher" (PID 117819) exited with exit code 1
+2026-09-03 18:14:23.127 CST [117814] LOG:  shutting down
+2026-09-03 18:14:23.127 CST [117814] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 18:14:23.130 CST [117814] LOG:  checkpoint complete: wrote 66 buffers (0.4%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=427 kB, estimate=427 kB; lsn=0/17582A0, redo lsn=0/17582A0
+2026-09-03 18:14:23.136 CST [117810] LOG:  database system is shut down

@@ -1,0 +1,40 @@
+{
+  "source_commit": "676615fafd602d609aa7216f45f3534145bcb194",
+  "verified_manifest_entries": 56,
+  "verified_source_blobs": 172,
+  "stages": [
+    {
+      "commit": "ae6589a906dc47daf2c29a573e7aab0e7bb73e6f",
+      "directory": "red",
+      "tap_tests": 206,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "676615fafd602d609aa7216f45f3534145bcb194",
+      "directory": "server",
+      "tap_tests": 1283,
+      "tap_passed": true,
+      "expected_failure": false
+    }
+  ],
+  "current_documentation_only_source_differences": [
+    "code/postgres/semloom_pg/README.md"
+  ],
+  "local_tests": 136,
+  "server_tests": 136,
+  "tap_tests": 1283,
+  "regression_tests": 1,
+  "markdown_files_checked": [
+    "PROJECT_LOG.md",
+    "code/INFRA_STATUS.md",
+    "code/postgres/semloom_pg/README.md",
+    "experiments/plans/postgresql_semmap_generation_contract.md",
+    "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+    "experiments/results/README.md",
+    "experiments/results/postgresql/semmap_pg_plan_20260903/README.md"
+  ],
+  "local_link_targets_checked": 130,
+  "model_requests": 0,
+  "passed": true
+}

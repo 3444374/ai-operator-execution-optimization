@@ -24,9 +24,12 @@ extern const char *semloom_reference_calibration_path(void);
 extern SemloomProviderExecutionProfile semloom_provider_execution_profile(void);
 extern const char *semloom_provider_execution_profile_name(void);
 extern Oid semloom_map_function_oid(void);
+extern Oid semloom_generate_map_function_oid(void);
 extern Oid semloom_filter_function_oid(void);
 extern Oid semloom_exact_filter_function_oid(void);
 extern bool semloom_is_map_function(Oid function_oid);
+extern int semloom_validate_generate_map_source(Query *parse);
+extern bool semloom_generate_map_source_checked(int query_level);
 extern void semloom_add_sem_map_paths(PlannerInfo *root,
 									 UpperRelationKind stage,
 									 RelOptInfo *input_rel,

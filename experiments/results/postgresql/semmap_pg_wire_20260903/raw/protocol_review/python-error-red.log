@@ -1,0 +1,26 @@
+test_output_too_large_requires_a_current_task (test_semloom_map_protocol.MapProtocolTests.test_output_too_large_requires_a_current_task) ...
+  test_output_too_large_requires_a_current_task (test_semloom_map_protocol.MapProtocolTests.test_output_too_large_requires_a_current_task) (interface='encode') ... FAIL
+  test_output_too_large_requires_a_current_task (test_semloom_map_protocol.MapProtocolTests.test_output_too_large_requires_a_current_task) (interface='decode') ... FAIL
+
+======================================================================
+FAIL: test_output_too_large_requires_a_current_task (test_semloom_map_protocol.MapProtocolTests.test_output_too_large_requires_a_current_task) (interface='encode')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 215, in test_output_too_large_requires_a_current_task
+    with self.subTest(interface="encode"), self.assertRaises(ValueError):
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_output_too_large_requires_a_current_task (test_semloom_map_protocol.MapProtocolTests.test_output_too_large_requires_a_current_task) (interface='decode')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 221, in test_output_too_large_requires_a_current_task
+    with self.subTest(interface="decode"), self.assertRaises(ProtocolError):
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ProtocolError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (failures=2)

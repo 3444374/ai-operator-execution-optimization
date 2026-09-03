@@ -1,0 +1,18 @@
+{
+  "source_commit": "5031bb5072cd42f08357d6d7aa604009e03bc9c9",
+  "verified_manifest_entries_including_history": 590,
+  "changed_local_links_checked": 223,
+  "documentation_differences_since_qualification": [
+    "code/postgres/semloom_pg/README.md"
+  ],
+  "unchanged_production_and_test_source": true,
+  "owned_test_processes_stopped": true,
+  "reader_language_checks": {
+    "files": [
+      "code/README.md",
+      "code/postgres/semloom_pg/README.md"
+    ],
+    "hits": "only SQLSTATE 08P01, explicitly described as a technical error code"
+  },
+  "internal_documents": "plans, project outline, status, evidence registry and log describe implementation/verification state"
+}

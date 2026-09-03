@@ -19,23 +19,34 @@ SELECT and INSERT ... SELECT are verified with fixtures. Later controlled resour
 The latter executes 14 old/choice requests and two NULL controls; the cumulative budget is 15/100 including
 one failed collector run. This is execution evidence, not model-quality qualification.
 
+The Map PG slices, now included in main, add the 0.2.0 three-argument marker, schema 4, copied-plan validation and
+native permission checks. [PG plan verification](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md)
+at `2205ccbb` passes PG18.3 regression 1/1, TAP 1260/1260 and 136/136 local/server Python tests.
+The subsequent [C v5/PG golden checks](../experiments/results/postgresql/semmap_pg_wire_20260903/README.md)
+at `5031bb50` connect actual generated text execution, preserving source/permission checks and old paths:
+PG18.3 regression 1/1, TAP 1741/1741, local/server 137/137 and C11 pass at that commit. The later
+[merge review](../experiments/results/postgresql/semmap_pg_wire_20260903/README.md#merge-review) at `f46fe936`
+centralizes error-phase rules and aligns usage validation: PG18.3 regression 1/1, TAP 1758/1758,
+local/server 139/139 and C11 8/8 pass. Real Map model and resource-pressure validation remain pending;
+golden completions do not establish model quality or performance.
+
 The integrated [function-identity slice](../experiments/results/postgresql/function_identity_20260902/README.md)
 checks extension membership before lowering markers and tests function replacement/drop-recreate plan revalidation.
 Its implementation and evidence are included in main. Membership-only ADD/DROP requires refreshing every relevant physical connection
 after the committed DDL; automatic cross-session refresh remains pending. See the extension README for the procedure.
 
-Status as of 2026-09-02: this directory contains the existing external physical-execution runtime
+Status as of 2026-09-03: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
 includes narrow `REL_18_3` planner-visible recording `SemMap/SemFilter` compatibility paths and a three-argument
-exact `SemFilter` golden/fixed-model reference under `postgres/semloom_pg/`. PostgreSQL owns the versioned
-schema-v1/v2/v3 plan, canonical messages, strict result parser, tuple/cardinality behavior, and query lifecycle;
+exact `SemFilter` golden/fixed-model reference and a generated `SemMap` golden path under `postgres/semloom_pg/`.
+PostgreSQL owns the versioned schema-v1/v2/v3/v4 plan, canonical messages, result policy, tuple/cardinality behavior, and query lifecycle;
 the exact reference path also carries separate planner cost/cardinality metadata, can consume a planner-only static
 reference calibration artifact, and reports actual provider usage. The checked-in qualification artifact is
 deterministic contract evidence; a real model/workload/service calibration and any second path remain pending.
 The provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
-The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3/v4, recording
+The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3/v4/v5, recording
 and golden/fixed-model implementations, and self-locating compatibility entry points under the extension tree.
 
 Commit `359ffdf3` completes the behavior-preserving 4A.1 hardening after the 4A implementation at `3b2077e1`.
@@ -119,7 +130,8 @@ at `a1bbdd30` passes 136/136 local checks and C11; it adds frame-read isolation 
 without rerunning PostgreSQL or models or changing the archived server qualification.
 These changes and their evidence are now included in local main through `b0400944`;
 the [integration recheck](../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11.
-PG schema 4, the C v5 client, generative Map SQL, PG golden execution and real-model/resource checks remain pending.
+The later PG schema 4/C v5 slices above now execute generated Map through golden. Map real-model and
+resource-pressure checks remain pending.
 [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT in the current integrated code.
 [Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) and the bounded
@@ -250,7 +262,7 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   ├── execution_provider/       ← semantic gateway、wire v2/v3/v4 与 recording/golden/fixed-model adapters
+│   ├── execution_provider/       ← semantic gateway、wire v2/v3/v4/v5 与 recording/golden/fixed-model adapters
 │   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner

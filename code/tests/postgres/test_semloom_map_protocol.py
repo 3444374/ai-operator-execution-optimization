@@ -208,6 +208,19 @@ class MapProtocolTests(unittest.TestCase):
             with self.subTest(version=codec.PROTOCOL_VERSION), self.assertRaises(ValueError):
                 codec.build_error_message("OUTPUT_TOO_LARGE", sequence=0)
 
+    def test_output_too_large_requires_a_current_task(self) -> None:
+        from src.execution_provider.wire import v5
+        from src.execution_provider.wire.framing import ProtocolError
+
+        with self.subTest(interface="encode"), self.assertRaises(ValueError):
+            v5.build_error_message("OUTPUT_TOO_LARGE", sequence=None)
+        open_error = {
+            "type": "error", "protocol_version": 5,
+            "sequence": None, "code": "OUTPUT_TOO_LARGE",
+        }
+        with self.subTest(interface="decode"), self.assertRaises(ProtocolError):
+            v5.validate_error(open_error, expected_sequence=None)
+
     def test_completion_metadata_and_wire_counters_survive_without_text_changes(self) -> None:
         from src.execution_provider.completion import Completion
         from src.execution_provider.wire import v5
@@ -228,6 +241,21 @@ class MapProtocolTests(unittest.TestCase):
                              ("output_tokens", "129"), ("sequence", "1"), ("finish_reason", "")):
             with self.subTest(field=field), self.assertRaises(ProtocolError):
                 v5.validate_completion({**frame, field: value}, expected_sequence=0, payload_digest=payload, open_context=context)
+
+    def test_usage_fields_have_independent_uint64_ranges(self) -> None:
+        from src.execution_provider.completion import Completion
+        from src.execution_provider.wire import v5
+        from src.execution_provider.semantic_map import SemanticMapPlan
+
+        plan = SemanticMapPlan("echo", "golden-map-v1", 128)
+        context = v5.validate_open(v5.build_open_message(plan))
+        payload = v5.build_task_message(plan, sequence=0, input_value="hello")["semantic_payload_digest"]
+        result = Completion("hello", plan.model_id, 18446744073709551615, 1, "stop")
+        frame = v5.build_completion_message(context, sequence=0, payload_digest=payload, completion=result)
+        self.assertEqual(frame["prompt_tokens"], "18446744073709551615")
+        self.assertEqual(frame["output_tokens"], "1")
+        self.assertEqual(v5.validate_completion(frame, expected_sequence=0,
+            payload_digest=payload, open_context=context), result)
 
     def test_frame_bounds_use_decimal_strings_and_output_policy_order(self) -> None:
         from src.execution_provider.completion import Completion

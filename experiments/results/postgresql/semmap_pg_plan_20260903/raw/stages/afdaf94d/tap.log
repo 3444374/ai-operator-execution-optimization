@@ -1,0 +1,50 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'missing EXECUTE is checked even for plan-only, empty and NULL queries'
+#   at t/006_map_plan.pl line 133.
+#          got: '0A000|generative SemMap execution is not connected'
+#     expected: '42501|permission denied for function map'
+
+#   Failed test 'missing EXECUTE is checked even for plan-only, empty and NULL queries'
+#   at t/006_map_plan.pl line 133.
+#          got: '0A000|generative SemMap execution is not connected'
+#     expected: '42501|permission denied for function map'
+
+#   Failed test 'missing EXECUTE is checked even for plan-only, empty and NULL queries'
+#   at t/006_map_plan.pl line 133.
+#          got: '0A000|generative SemMap execution is not connected'
+#     expected: '42501|permission denied for function map'
+
+#   Failed test 'missing EXECUTE is checked even for plan-only, empty and NULL queries'
+#   at t/006_map_plan.pl line 133.
+#          got: '0A000|generative SemMap execution is not connected'
+#     expected: '42501|permission denied for function map'
+
+#   Failed test 'missing EXECUTE is checked even for plan-only, empty and NULL queries'
+#   at t/006_map_plan.pl line 133.
+#          got: 'unexpected success'
+#     expected: '42501|permission denied for function map'
+
+#   Failed test 'force_custom_plan rechecks EXECUTE after another session revokes it'
+#   at t/006_map_plan.pl line 148.
+#          got: '0A000|generative SemMap execution is not connected'
+#     expected: '42501|permission denied for function map'
+
+#   Failed test 'force_generic_plan rechecks EXECUTE after another session revokes it'
+#   at t/006_map_plan.pl line 148.
+#          got: '0A000|generative SemMap execution is not connected'
+#     expected: '42501|permission denied for function map'
+# Looks like you failed 7 tests of 52.
+t/006_map_plan.pl ..
+Dubious, test returned 7 (wstat 1792, 0x700)
+Failed 7/52 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 1792 Tests: 52 Failed: 7)
+  Failed tests:  37-41, 45, 50
+  Non-zero exit status: 7
+Files=1, Tests=52,  2 wallclock secs ( 0.03 usr  0.01 sys +  0.65 cusr  0.27 csys =  0.96 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

@@ -389,7 +389,7 @@ semloom_calibration_validate(
 		parsed->training_samples <= 0 || parsed->held_out_samples <= 0 ||
 		strcmp(parsed->cost_model_id, SEMLOOM_CALIBRATION_COST_MODEL_ID) != 0 ||
 		strcmp(parsed->provider_profile, SEMLOOM_CALIBRATION_PROFILE) != 0 ||
-		strcmp(parsed->model_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
+		strcmp(parsed->model_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
 		!semloom_calibration_timestamp(parsed->generated_at) ||
 		!semloom_calibration_sha256(parsed->artifact_id) ||
 		!semloom_calibration_sha256(parsed->semantic_digest) ||

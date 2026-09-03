@@ -1,0 +1,8 @@
+{
+  "source": "read-only postflight for two isolated wrapper test directories",
+  "postmaster_pidfiles": [],
+  "matching_test_processes": [],
+  "server_main": "5d4ecf96b5e6fb86885ea8b6e744db5506a0effc",
+  "server_main_dirty": false,
+  "global_idle_claimed": false
+}

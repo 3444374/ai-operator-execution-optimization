@@ -1,0 +1,1447 @@
+# Checking port 17969
+# Found port 17969
+Name: function_identity
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/archives
+Connection string: port=17969 host=/tmp/ij8ZN0c94e
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log
+[18:18:53.330](0.021s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata
+### Starting node "function_identity"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/005_function_identity_function_identity.log --options --cluster-name=function_identity start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "function_identity" is 119362
+[18:18:54.066](0.736s) ok 1 - extension absent: map keeps the ordinary implementation
+[18:18:54.074](0.008s) ok 2 - extension absent: map is not lowered
+[18:18:54.086](0.012s) ok 3 - extension absent: recording filter keeps the ordinary implementation
+[18:18:54.096](0.010s) ok 4 - extension absent: recording filter is not lowered
+[18:18:54.104](0.007s) ok 5 - extension absent: exact filter keeps the ordinary implementation
+[18:18:54.114](0.010s) ok 6 - extension absent: exact filter is not lowered
+[18:18:54.125](0.011s) ok 7 - extension absent: choice filter keeps the ordinary implementation
+[18:18:54.141](0.016s) ok 8 - extension absent: choice filter is not lowered
+#### Begin standard error
+psql:<stdin>:1: NOTICE:  drop cascades to 3 other objects
+DETAIL:  drop cascades to function ai_semantic.map(text)
+drop cascades to function ai_semantic.filter(text)
+drop cascades to function ai_semantic.filter(text,text,jsonb)
+#### End standard error
+[18:18:54.161](0.020s) ok 9 - extension member: map is lowered
+[18:18:54.172](0.011s) ok 10 - extension member: recording filter is lowered
+[18:18:54.183](0.011s) ok 11 - extension member: exact filter is lowered
+[18:18:54.193](0.010s) ok 12 - extension member: choice filter is lowered
+[18:18:54.200](0.007s) ok 13 - member Map keeps recording behavior
+[18:18:54.211](0.011s) ok 14 - member Filter keeps FALSE/drop behavior
+[18:18:54.228](0.017s) ok 15 - other schema Map keeps its result
+[18:18:54.239](0.010s) ok 16 - other schema Map is not lowered
+[18:18:54.249](0.011s) ok 17 - other schema Filter keeps its result
+[18:18:54.260](0.011s) ok 18 - other schema Filter is not lowered
+[18:18:54.275](0.014s) ok 19 - overloaded Map keeps its result
+[18:18:54.284](0.010s) ok 20 - overloaded Map is not lowered
+[18:18:54.292](0.008s) ok 21 - overloaded Filter keeps its result
+[18:18:54.300](0.008s) ok 22 - overloaded Filter is not lowered
+[18:18:54.332](0.033s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.333](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT ai_semantic.map(content) FROM identity_inputs;
+[18:18:54.334](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.334](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.335](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.335](0.000s) ok 23 - map: generic plan initially uses the extension member
+[18:18:54.351](0.017s) ok 24 - map: fresh planning rejects a detached marker
+[18:18:54.372](0.021s) ok 25 - map: replacing the detached function keeps its OID
+[18:18:54.372](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[18:18:54.375](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'ordinary:false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.375](0.000s) ok 26 - map: same-OID replacement invalidates the prepared semantic plan
+[18:18:54.375](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.375](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.376](0.000s) ok 27 - map: prepared plan now uses the ordinary function
+[18:18:54.396](0.021s) ok 28 - map: membership in another extension does not qualify
+[18:18:54.417](0.020s) ok 29 - map: drop and recreate gives the function a new OID
+[18:18:54.417](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[18:18:54.418](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'ordinary:false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.418](0.000s) ok 30 - map: prepared plan resolves the recreated ordinary function
+[18:18:54.418](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.419](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.419](0.000s) ok 31 - map: recreated non-member is not lowered
+[18:18:54.431](0.012s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.432](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.432](0.000s) ok 32 - map: recreated extension member is lowered after revalidation
+[18:18:54.456](0.023s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.456](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content);
+[18:18:54.457](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.457](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.458](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.458](0.000s) ok 33 - recording filter: generic plan initially uses the extension member
+[18:18:54.478](0.020s) ok 34 - recording filter: fresh planning rejects a detached marker
+[18:18:54.499](0.021s) ok 35 - recording filter: replacing the detached function keeps its OID
+[18:18:54.500](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[18:18:54.502](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.502](0.000s) ok 36 - recording filter: same-OID replacement invalidates the prepared semantic plan
+[18:18:54.502](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.502](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.503](0.000s) ok 37 - recording filter: prepared plan now uses the ordinary function
+[18:18:54.525](0.023s) ok 38 - recording filter: membership in another extension does not qualify
+[18:18:54.545](0.019s) ok 39 - recording filter: drop and recreate gives the function a new OID
+[18:18:54.545](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[18:18:54.546](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.546](0.000s) ok 40 - recording filter: prepared plan resolves the recreated ordinary function
+[18:18:54.546](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.547](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.547](0.000s) ok 41 - recording filter: recreated non-member is not lowered
+[18:18:54.556](0.009s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.557](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.557](0.000s) ok 42 - recording filter: recreated extension member is lowered after revalidation
+[18:18:54.582](0.025s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.582](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+[18:18:54.583](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.583](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.584](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.584](0.000s) ok 43 - exact filter: generic plan initially uses the extension member
+[18:18:54.601](0.017s) ok 44 - exact filter: fresh planning rejects a detached marker
+[18:18:54.617](0.016s) ok 45 - exact filter: replacing the detached function keeps its OID
+[18:18:54.617](0.000s) # issuing query 3 via background psql: EXECUTE identity_plan
+[18:18:54.619](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.619](0.000s) ok 46 - exact filter: same-OID replacement invalidates the prepared semantic plan
+[18:18:54.619](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.620](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.620](0.000s) ok 47 - exact filter: prepared plan now uses the ordinary function
+[18:18:54.637](0.017s) ok 48 - exact filter: membership in another extension does not qualify
+[18:18:54.656](0.019s) ok 49 - exact filter: drop and recreate gives the function a new OID
+[18:18:54.657](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[18:18:54.658](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.658](0.000s) ok 50 - exact filter: prepared plan resolves the recreated ordinary function
+[18:18:54.658](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.659](0.001s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.659](0.000s) ok 51 - exact filter: recreated non-member is not lowered
+[18:18:54.668](0.010s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.670](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.670](0.000s) ok 52 - exact filter: recreated extension member is lowered after revalidation
+[18:18:54.698](0.028s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.699](0.000s) # issuing query 1 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE identity_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+[18:18:54.700](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.700](0.000s) # issuing query 2 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.701](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.701](0.000s) ok 53 - choice filter: generic plan initially uses the extension member
+[18:18:54.727](0.026s) ok 54 - choice filter: fresh planning rejects a detached marker
+[18:18:54.748](0.021s) ok 55 - choice filter: replacing the detached function keeps its OID
+[18:18:54.749](0.001s) # issuing query 3 via background psql: EXECUTE identity_plan
+[18:18:54.751](0.002s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.751](0.000s) ok 56 - choice filter: same-OID replacement invalidates the prepared semantic plan
+[18:18:54.751](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.752](0.001s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0, "generation_profile": "semloom.generation.choice.tristate.v1"}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.752](0.000s) ok 57 - choice filter: prepared plan now uses the ordinary function
+[18:18:54.774](0.022s) ok 58 - choice filter: membership in another extension does not qualify
+[18:18:54.795](0.021s) ok 59 - choice filter: drop and recreate gives the function a new OID
+[18:18:54.795](0.000s) # issuing query 5 via background psql: EXECUTE identity_plan
+[18:18:54.796](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'false
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.797](0.000s) ok 60 - choice filter: prepared plan resolves the recreated ordinary function
+[18:18:54.797](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.797](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..363.60 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0, "generation_profile": "semloom.generation.choice.tristate.v1"}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.797](0.000s) ok 61 - choice filter: recreated non-member is not lowered
+[18:18:54.805](0.008s) # issuing query 7 via background psql: EXPLAIN EXECUTE identity_plan
+[18:18:54.807](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.807](0.000s) ok 62 - choice filter: recreated extension member is lowered after revalidation
+[18:18:54.815](0.008s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.825](0.010s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.825](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.826](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119529
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.827](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.827](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119531
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.828](0.000s) ok 63 - map: membership test uses two physical connections
+[18:18:54.828](0.000s) # issuing query 2 via background psql: SELECT 'ai_semantic.map(text)'::regprocedure::oid, pg_get_functiondef('ai_semantic.map(text)'::regprocedure)
+[18:18:54.828](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '16405|CREATE OR REPLACE FUNCTION ai_semantic.map(input text)
+#  RETURNS text
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_map$function$
+#
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.828](0.000s) # issuing query 2 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE membership_plan AS SELECT ai_semantic.map(content) FROM identity_inputs;
+[18:18:54.829](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.829](0.000s) # issuing query 3 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.830](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.830](0.000s) ok 64 - map: reader caches the member plan before DDL
+[18:18:54.830](0.000s) # issuing query 3 via background psql: BEGIN; ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.map(text); COMMIT;
+[18:18:54.830](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.831](0.000s) # issuing query 4 via background psql: SELECT 'ai_semantic.map(text)'::regprocedure::oid, pg_get_functiondef('ai_semantic.map(text)'::regprocedure)
+[18:18:54.831](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => '16405|CREATE OR REPLACE FUNCTION ai_semantic.map(input text)
+#  RETURNS text
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_map$function$
+#
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.831](0.000s) ok 65 - map: DROP changes membership without changing function identity or body
+[18:18:54.831](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.832](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.832](0.000s) # issuing query 5 via background psql: DISCARD PLANS
+[18:18:54.832](0.000s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.832](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.833](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.833](0.000s) # {"operator":"map","membership_action":"DROP","before_refresh":"Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)\n  Provider: in-process-recording\n  Physical Role: reference\n  Mapped Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)","after_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)"}
+[18:18:54.833](0.000s) ok 66 - map: reader refresh stops lowering the detached marker
+[18:18:54.833](0.000s) # issuing query 7 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.834](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.834](0.000s) ok 67 - map: DROP refresh preserves the prepared statement for replanning
+[18:18:54.834](0.000s) # issuing query 5 via background psql: BEGIN; ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.map(text); COMMIT;
+[18:18:54.835](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.835](0.000s) # issuing query 6 via background psql: SELECT 'ai_semantic.map(text)'::regprocedure::oid, pg_get_functiondef('ai_semantic.map(text)'::regprocedure)
+[18:18:54.835](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => '16405|CREATE OR REPLACE FUNCTION ai_semantic.map(input text)
+#  RETURNS text
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_map$function$
+#
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.836](0.000s) ok 68 - map: ADD changes membership without changing function identity or body
+[18:18:54.836](0.000s) # issuing query 8 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.836](0.000s) # results query 8:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 8:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 8:
+# '
+# }
+[18:18:54.836](0.000s) # issuing query 9 via background psql: DISCARD PLANS
+[18:18:54.836](0.000s) # results query 9:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 9:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 9:
+# '
+# }
+[18:18:54.836](0.000s) # issuing query 10 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.837](0.000s) # results query 10:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 10:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Mapped Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+# background_psql: QUERY_SEPARATOR 10:
+# '
+# }
+[18:18:54.837](0.000s) # {"operator":"map","membership_action":"ADD","after_refresh":"Custom Scan (SemLoom SemMap)  (cost=0.00..30.40 rows=1360 width=32)\n  Provider: in-process-recording\n  Physical Role: reference\n  Mapped Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)","before_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)"}
+[18:18:54.837](0.000s) ok 69 - map: reader refresh resumes lowering the reattached marker
+[18:18:54.837](0.000s) # issuing query 11 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.838](0.000s) # results query 11:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 11:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 11:
+# '
+# }
+[18:18:54.838](0.000s) ok 70 - map: ADD refresh preserves the prepared statement for replanning
+[18:18:54.849](0.011s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.858](0.010s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.858](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.859](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119533
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.859](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.860](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119535
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.860](0.000s) ok 71 - recording filter: membership test uses two physical connections
+[18:18:54.861](0.000s) # issuing query 2 via background psql: SELECT 'ai_semantic.filter(text)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text)'::regprocedure)
+[18:18:54.861](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '16407|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.861](0.000s) # issuing query 2 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE membership_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content);
+[18:18:54.862](0.000s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.862](0.000s) # issuing query 3 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.862](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.863](0.000s) ok 72 - recording filter: reader caches the member plan before DDL
+[18:18:54.863](0.000s) # issuing query 3 via background psql: BEGIN; ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.filter(text); COMMIT;
+[18:18:54.863](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.863](0.000s) # issuing query 4 via background psql: SELECT 'ai_semantic.filter(text)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text)'::regprocedure)
+[18:18:54.864](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => '16407|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.864](0.000s) ok 73 - recording filter: DROP changes membership without changing function identity or body
+[18:18:54.864](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.864](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.864](0.000s) # issuing query 5 via background psql: DISCARD PLANS
+[18:18:54.865](0.000s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.865](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.865](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#   Filter: ai_semantic.filter(content)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.865](0.000s) # {"membership_action":"DROP","before_refresh":"Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)\n  Provider: in-process-recording\n  Physical Role: reference\n  Filter Input Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n        Filter: true","after_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n  Filter: ai_semantic.filter(content)","operator":"recording filter"}
+[18:18:54.866](0.000s) ok 74 - recording filter: reader refresh stops lowering the detached marker
+[18:18:54.866](0.000s) # issuing query 7 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.866](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.867](0.000s) ok 75 - recording filter: DROP refresh preserves the prepared statement for replanning
+[18:18:54.867](0.000s) # issuing query 5 via background psql: BEGIN; ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.filter(text); COMMIT;
+[18:18:54.867](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.867](0.000s) # issuing query 6 via background psql: SELECT 'ai_semantic.filter(text)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text)'::regprocedure)
+[18:18:54.868](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => '16407|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.868](0.000s) ok 76 - recording filter: ADD changes membership without changing function identity or body
+[18:18:54.868](0.000s) # issuing query 8 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.868](0.000s) # results query 8:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 8:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#   Filter: ai_semantic.filter(content)
+# background_psql: QUERY_SEPARATOR 8:
+# '
+# }
+[18:18:54.869](0.000s) # issuing query 9 via background psql: DISCARD PLANS
+[18:18:54.869](0.000s) # results query 9:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 9:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 9:
+# '
+# }
+[18:18:54.869](0.000s) # issuing query 10 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.869](0.000s) # results query 10:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 10:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)
+#   Provider: in-process-recording
+#   Physical Role: reference
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 10:
+# '
+# }
+[18:18:54.869](0.000s) # {"before_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n  Filter: ai_semantic.filter(content)","after_refresh":"Custom Scan (SemLoom SemFilter)  (cost=0.00..28.13 rows=453 width=32)\n  Provider: in-process-recording\n  Physical Role: reference\n  Filter Input Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n        Filter: true","membership_action":"ADD","operator":"recording filter"}
+[18:18:54.870](0.000s) ok 77 - recording filter: reader refresh resumes lowering the reattached marker
+[18:18:54.870](0.000s) # issuing query 11 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.870](0.000s) # results query 11:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 11:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 11:
+# '
+# }
+[18:18:54.870](0.000s) ok 78 - recording filter: ADD refresh preserves the prepared statement for replanning
+[18:18:54.880](0.010s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.890](0.009s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.890](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.891](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119537
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.891](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.892](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119539
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.892](0.000s) ok 79 - exact filter: membership test uses two physical connections
+[18:18:54.892](0.000s) # issuing query 2 via background psql: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+[18:18:54.893](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '16411|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.893](0.000s) # issuing query 2 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE membership_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+[18:18:54.894](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.894](0.000s) # issuing query 3 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.894](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.894](0.000s) ok 80 - exact filter: reader caches the member plan before DDL
+[18:18:54.895](0.000s) # issuing query 3 via background psql: BEGIN; ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.filter(text,text,jsonb); COMMIT;
+[18:18:54.895](0.000s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.895](0.000s) # issuing query 4 via background psql: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+[18:18:54.896](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => '16411|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.896](0.000s) ok 81 - exact filter: DROP changes membership without changing function identity or body
+[18:18:54.896](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.896](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.896](0.000s) # issuing query 5 via background psql: DISCARD PLANS
+[18:18:54.897](0.000s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.897](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.897](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.897](0.000s) # {"after_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n  Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0}'::jsonb)","before_refresh":"Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1360.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1353.20\n  Estimated Prompt Tokens: 83898.40\n  Estimated Output Tokens: 10825.60\n  AI Work Cost: 240.1930\n  Filter Input Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)\n        Filter: true","membership_action":"DROP","operator":"exact filter"}
+[18:18:54.898](0.000s) ok 82 - exact filter: reader refresh stops lowering the detached marker
+[18:18:54.898](0.000s) # issuing query 7 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.898](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.899](0.000s) ok 83 - exact filter: DROP refresh preserves the prepared statement for replanning
+[18:18:54.899](0.000s) # issuing query 5 via background psql: BEGIN; ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.filter(text,text,jsonb); COMMIT;
+[18:18:54.899](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.899](0.000s) # issuing query 6 via background psql: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+[18:18:54.900](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => '16411|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.900](0.000s) ok 84 - exact filter: ADD changes membership without changing function identity or body
+[18:18:54.900](0.000s) # issuing query 8 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.900](0.000s) # results query 8:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 8:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 8:
+# '
+# }
+[18:18:54.900](0.000s) # issuing query 9 via background psql: DISCARD PLANS
+[18:18:54.901](0.000s) # results query 9:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 9:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 9:
+# '
+# }
+[18:18:54.901](0.000s) # issuing query 10 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.901](0.001s) # results query 10:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 10:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 10:
+# '
+# }
+[18:18:54.902](0.000s) # {"after_refresh":"Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1360.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1353.20\n  Estimated Prompt Tokens: 83898.40\n  Estimated Output Tokens: 10825.60\n  AI Work Cost: 240.1930\n  Filter Input Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)\n        Filter: true","before_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n  Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0}'::jsonb)","membership_action":"ADD","operator":"exact filter"}
+[18:18:54.902](0.000s) ok 85 - exact filter: reader refresh resumes lowering the reattached marker
+[18:18:54.902](0.000s) # issuing query 11 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.902](0.000s) # results query 11:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 11:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 11:
+# '
+# }
+[18:18:54.902](0.000s) ok 86 - exact filter: ADD refresh preserves the prepared statement for replanning
+[18:18:54.914](0.011s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.923](0.009s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[18:18:54.923](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.925](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119541
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.925](0.000s) # issuing query 1 via background psql: SELECT pg_backend_pid()
+[18:18:54.926](0.002s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '119543
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[18:18:54.927](0.000s) ok 87 - choice filter: membership test uses two physical connections
+[18:18:54.927](0.000s) # issuing query 2 via background psql: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+[18:18:54.928](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '16411|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.928](0.000s) # issuing query 2 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE membership_plan AS SELECT content FROM identity_inputs WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+[18:18:54.928](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[18:18:54.929](0.000s) # issuing query 3 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.929](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.929](0.000s) ok 88 - choice filter: reader caches the member plan before DDL
+[18:18:54.930](0.000s) # issuing query 3 via background psql: BEGIN; ALTER EXTENSION semloom_pg DROP FUNCTION ai_semantic.filter(text,text,jsonb); COMMIT;
+[18:18:54.930](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[18:18:54.930](0.000s) # issuing query 4 via background psql: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+[18:18:54.931](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => '16411|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.931](0.000s) ok 89 - choice filter: DROP changes membership without changing function identity or body
+[18:18:54.931](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.931](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[18:18:54.931](0.000s) # issuing query 5 via background psql: DISCARD PLANS
+[18:18:54.932](0.000s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.932](0.000s) # issuing query 6 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.932](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0, "generation_profile": "semloom.generation.choice.tristate.v1"}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.933](0.000s) # {"membership_action":"DROP","after_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n  Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0, \"generation_profile\": \"semloom.generation.choice.tristate.v1\"}'::jsonb)","before_refresh":"Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  Semantic Plan Schema: 3\n  Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5\n  Generation Profile: semloom.generation.choice.tristate\n  Generation Profile Version: 1\n  Generation Constraint: CHOICE\n  Generation Choices: TRUE, FALSE, UNKNOWN\n  Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7\n  Generation Quality: unqualified\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1360.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1353.20\n  Estimated Prompt Tokens: 83898.40\n  Estimated Output Tokens: 10825.60\n  AI Work Cost: 240.1930\n  Filter Input Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)\n        Filter: true","operator":"choice filter"}
+[18:18:54.933](0.000s) ok 90 - choice filter: reader refresh stops lowering the detached marker
+[18:18:54.933](0.000s) # issuing query 7 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.933](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[18:18:54.934](0.000s) ok 91 - choice filter: DROP refresh preserves the prepared statement for replanning
+[18:18:54.934](0.000s) # issuing query 5 via background psql: BEGIN; ALTER EXTENSION semloom_pg ADD FUNCTION ai_semantic.filter(text,text,jsonb); COMMIT;
+[18:18:54.934](0.000s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[18:18:54.934](0.000s) # issuing query 6 via background psql: SELECT 'ai_semantic.filter(text,text,jsonb)'::regprocedure::oid, pg_get_functiondef('ai_semantic.filter(text,text,jsonb)'::regprocedure)
+[18:18:54.935](0.000s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => '16411|CREATE OR REPLACE FUNCTION ai_semantic.filter(input text, instruction text, options jsonb)
+#  RETURNS boolean
+#  LANGUAGE c
+# AS \'$libdir/semloom_pg\', $function$semloom_marker_filter$function$
+#
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[18:18:54.935](0.000s) ok 92 - choice filter: ADD changes membership without changing function identity or body
+[18:18:54.935](0.000s) # issuing query 8 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.935](0.000s) # results query 8:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 8:
+# ',
+#   'stdout' => 'Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)
+#   Filter: ai_semantic.filter(content, \'Classify input.\'::text, \'{"model": "golden-model-v1", "max_tokens": 8, "temperature": 0, "generation_profile": "semloom.generation.choice.tristate.v1"}\'::jsonb)
+# background_psql: QUERY_SEPARATOR 8:
+# '
+# }
+[18:18:54.935](0.000s) # issuing query 9 via background psql: DISCARD PLANS
+[18:18:54.936](0.000s) # results query 9:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 9:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 9:
+# '
+# }
+[18:18:54.936](0.000s) # issuing query 10 via background psql: EXPLAIN EXECUTE membership_plan
+[18:18:54.936](0.001s) # results query 10:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 10:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_filter.exact_chat.v1
+#   Result Parser: semloom.sem_filter.tristate_ascii.v1
+#   Model: golden-model-v1
+#   Semantic Plan Schema: 3
+#   Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5
+#   Generation Profile: semloom.generation.choice.tristate
+#   Generation Profile Version: 1
+#   Generation Constraint: CHOICE
+#   Generation Choices: TRUE, FALSE, UNKNOWN
+#   Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7
+#   Generation Quality: unqualified
+#   AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#   AI Cost Calibration: unavailable
+#   AI Cost Calibration Reason: not-configured
+#   Model Role: reference
+#   Semantic Input Rows: 1360.00
+#   Output Selectivity: 0.331667
+#   Estimated Model Calls: 1353.20
+#   Estimated Prompt Tokens: 83898.40
+#   Estimated Output Tokens: 10825.60
+#   AI Work Cost: 240.1930
+#   Filter Input Column: 1
+#   ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)
+#         Filter: true
+# background_psql: QUERY_SEPARATOR 10:
+# '
+# }
+[18:18:54.937](0.000s) # {"membership_action":"ADD","after_refresh":"Custom Scan (SemLoom SemFilter)  (cost=0.00..267.19 rows=451 width=32)\n  Provider: uds-golden\n  Physical Role: reference\n  Semantic Spec: semloom.semantic.sem_filter.exact.v1\n  Physical Algorithm: MODEL_REFERENCE_SYNC_V1\n  Prompt Program: semloom.sem_filter.exact_chat.v1\n  Result Parser: semloom.sem_filter.tristate_ascii.v1\n  Model: golden-model-v1\n  Semantic Plan Schema: 3\n  Semantic Spec Digest: 3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5\n  Generation Profile: semloom.generation.choice.tristate\n  Generation Profile Version: 1\n  Generation Constraint: CHOICE\n  Generation Choices: TRUE, FALSE, UNKNOWN\n  Generation Profile Digest: 941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7\n  Generation Quality: unqualified\n  AI Cost Model: semloom.exact_filter.uncalibrated.v1\n  AI Cost Calibration: unavailable\n  AI Cost Calibration Reason: not-configured\n  Model Role: reference\n  Semantic Input Rows: 1360.00\n  Output Selectivity: 0.331667\n  Estimated Model Calls: 1353.20\n  Estimated Prompt Tokens: 83898.40\n  Estimated Output Tokens: 10825.60\n  AI Work Cost: 240.1930\n  Filter Input Column: 1\n  ->  Seq Scan on identity_inputs  (cost=0.00..27.00 rows=1360 width=32)\n        Filter: true","before_refresh":"Seq Scan on identity_inputs  (cost=0.00..27.00 rows=453 width=32)\n  Filter: ai_semantic.filter(content, 'Classify input.'::text, '{\"model\": \"golden-model-v1\", \"max_tokens\": 8, \"temperature\": 0, \"generation_profile\": \"semloom.generation.choice.tristate.v1\"}'::jsonb)","operator":"choice filter"}
+[18:18:54.937](0.000s) ok 93 - choice filter: reader refresh resumes lowering the reattached marker
+[18:18:54.937](0.000s) # issuing query 11 via background psql: SELECT count(*) FROM pg_prepared_statements WHERE name='membership_plan'
+[18:18:54.937](0.000s) # results query 11:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 11:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 11:
+# '
+# }
+[18:18:54.937](0.000s) ok 94 - choice filter: ADD refresh preserves the prepared statement for replanning
+#### Begin standard error
+psql:<stdin>:1: NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to function ai_semantic.map(integer)
+drop cascades to function ai_semantic.filter(integer)
+#### End standard error
+[18:18:55.000](0.063s) ok 95 - extension dropped: map keeps the ordinary implementation
+[18:18:55.011](0.011s) ok 96 - extension dropped: map is not lowered
+[18:18:55.022](0.011s) ok 97 - extension dropped: recording filter keeps the ordinary implementation
+[18:18:55.031](0.009s) ok 98 - extension dropped: recording filter is not lowered
+[18:18:55.040](0.009s) ok 99 - extension dropped: exact filter keeps the ordinary implementation
+[18:18:55.050](0.010s) ok 100 - extension dropped: exact filter is not lowered
+[18:18:55.059](0.010s) ok 101 - extension dropped: choice filter keeps the ordinary implementation
+[18:18:55.069](0.010s) ok 102 - extension dropped: choice filter is not lowered
+[18:18:55.077](0.008s) ok 103 - ordinary SQL remains usable
+### Stopping node "function_identity" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_005_function_identity_function_identity_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "function_identity"
+[18:18:55.183](0.107s) 1..103

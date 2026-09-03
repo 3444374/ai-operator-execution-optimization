@@ -7,12 +7,39 @@
 static SemloomTupleDisposition semloom_map_handle_null(void);
 static SemloomTupleDisposition semloom_map_apply_completion(
 	const SemloomMachineCompletion *completion);
+static bool semloom_map_build_task(const SemloomOperatorMachine *machine,
+	const SemloomBoundValue *input, uint8_t *destination, size_t capacity,
+	size_t *written);
 
 const SemloomOperatorMachineMethods semloom_map_machine_methods = {
 	.input_explain_property = "Mapped Column",
 	.handle_null = semloom_map_handle_null,
 	.apply_completion = semloom_map_apply_completion,
 };
+
+const SemloomOperatorMachineMethods semloom_map_generate_machine_methods = {
+	.input_explain_property = "Mapped Column",
+	.handle_null = semloom_map_handle_null,
+	.apply_completion = semloom_map_apply_completion,
+	.build_task = semloom_map_build_task,
+};
+
+static bool
+semloom_map_build_task(const SemloomOperatorMachine *machine,
+	const SemloomBoundValue *input, uint8_t *destination, size_t capacity,
+	size_t *written)
+{
+	SemloomBoundValue instruction = {machine->instruction, machine->instruction_length, false};
+	size_t required = semloom_map_task_size(&instruction, input);
+
+	if (required == 0)
+		return false;
+	if (destination != NULL &&
+		!semloom_map_write_task(&instruction, input, destination, capacity))
+		return false;
+	*written = required;
+	return true;
+}
 
 size_t
 semloom_map_task_size(const SemloomBoundValue *instruction,

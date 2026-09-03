@@ -27,12 +27,16 @@
 #define SEMLOOM_UDS_CHOICE_GOLDEN_EXECUTION_ID "semloom.provider.golden.uds.v4"
 #define SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID \
 	"semloom.provider.openai-compatible-fixed.uds.v4"
+#define SEMLOOM_UDS_MAP_GOLDEN_EXECUTION_ID "semloom.provider.golden.uds.v5"
+#define SEMLOOM_UDS_MAP_FIXED_EXECUTION_ID \
+	"semloom.provider.openai-compatible-fixed.uds.v5"
 
 extern void semloom_provider_select(MemoryContext owner_context,
 									const AiOpenSpec *spec,
 									AiProvider *provider);
 extern bool semloom_provider_spec_is_recording(const AiOpenSpec *spec);
 extern bool semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec);
+extern bool semloom_provider_spec_is_generate_map(const AiOpenSpec *spec);
 extern void semloom_provider_error_clear(AiProviderError *error);
 extern void semloom_provider_error_set(AiProviderError *error,
 									uint32 code,

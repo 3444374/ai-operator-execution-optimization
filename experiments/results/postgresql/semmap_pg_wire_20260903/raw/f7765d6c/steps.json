@@ -1,0 +1,95 @@
+[
+  {
+    "name": "source-preflight",
+    "argv": [
+      "<driver-env>/bin/python",
+      "code/scripts/environment/manage_environment.py",
+      "check",
+      "--groups",
+      "core",
+      "--json-out",
+      "<test-worktree>-preflight.json"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "pg-version",
+    "argv": [
+      "<pg18.3-prefix>/bin/pg_config",
+      "--version"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "extension-clean",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "clean"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "plan-caller-clean",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "clean"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "build",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "COPT=-O2 -Werror",
+      "-j8"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "install",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "install"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "test-owner",
+    "argv": [
+      "chown",
+      "-R",
+      "postgres:postgres",
+      "<test-worktree>"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "tap",
+    "argv": [
+      "runuser",
+      "-u",
+      "postgres",
+      "--",
+      "env",
+      "PATH=<pg18.3-prefix>/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "PG_TEST_NOCLEAN=1",
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "installcheck",
+      "REGRESS="
+    ],
+    "exit_code": 2,
+    "expected_exit_code": 0
+  }
+]

@@ -1,0 +1,45 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'constant CASE is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 167.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'constant CASE has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 168.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: ai_semantic\.map\ is\ only\ supported\ as\ a\ top\-level\ output\ expression\n)'
+
+#   Failed test 'WHERE expression is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 167.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'WHERE expression has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 168.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: ai_semantic\.map\ is\ only\ supported\ as\ a\ top\-level\ output\ expression\n)'
+
+#   Failed test 'Map and Filter is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 167.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'Map and Filter has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 168.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap\ and\ SemFilter\ cannot\ be\ combined\ in\ the\ current\ capability\n)'
+# Looks like you failed 6 tests of 58.
+t/006_map_plan.pl ..
+Dubious, test returned 6 (wstat 1536, 0x600)
+Failed 6/58 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 1536 Tests: 58 Failed: 6)
+  Failed tests:  52-57
+  Non-zero exit status: 6
+Files=1, Tests=58,  1 wallclock secs ( 0.04 usr  0.00 sys +  0.68 cusr  0.26 csys =  0.98 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

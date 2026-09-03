@@ -1,0 +1,333 @@
+2026-09-03 18:18:49.507 CST [119151] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 18:18:49.507 CST [119151] LOG:  listening on Unix socket "/tmp/B7075oDYjZ/.s.PGSQL.19310"
+2026-09-03 18:18:49.509 CST [119157] LOG:  database system was shut down at 2026-09-03 18:18:49 CST
+2026-09-03 18:18:49.512 CST [119151] LOG:  database system is ready to accept connections
+2026-09-03 18:18:49.610 CST [119162] 004_filter_insert.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 18:18:49.612 CST [119162] 004_filter_insert.pl LOG:  statement: CREATE TABLE filter_source(id integer, decision text);
+2026-09-03 18:18:49.613 CST [119162] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_source VALUES
+	    (1,'true'), (2,'false'), (3,'unknown'), (4,NULL), (5,'true');
+2026-09-03 18:18:49.614 CST [119162] 004_filter_insert.pl LOG:  statement: CREATE TABLE filter_sink(id integer);
+2026-09-03 18:18:49.624 CST [119164] 004_filter_insert.pl LOG:  statement: EXPLAIN (COSTS OFF) INSERT INTO filter_sink
+	SELECT id + 10 FROM filter_source WHERE id > 1 AND ai_semantic.filter(decision)
+2026-09-03 18:18:49.636 CST [119166] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink
+	SELECT id + 10 FROM filter_source WHERE id > 1 AND ai_semantic.filter(decision)
+2026-09-03 18:18:49.644 CST [119168] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id
+2026-09-03 18:18:49.652 CST [119170] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink;
+2026-09-03 18:18:49.666 CST [119170] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_source VALUES (6,'true'), (7,'bad');
+2026-09-03 18:18:49.667 CST [119170] 004_filter_insert.pl LOG:  statement: CREATE TABLE checked_sink(id integer CHECK(id < 6));
+2026-09-03 18:18:49.679 CST [119172] 004_filter_insert.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision)
+2026-09-03 18:18:49.687 CST [119174] 004_filter_insert.pl LOG:  statement: EXPLAIN (FORMAT JSON) INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision)
+2026-09-03 18:18:49.698 CST [119176] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:49.698 CST [119176] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='';
+2026-09-03 18:18:49.698 CST [119176] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.699 CST [119176] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id;
+2026-09-03 18:18:49.710 CST [119178] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:49.719 CST [119180] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:49.719 CST [119180] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='';
+2026-09-03 18:18:49.719 CST [119180] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:49.719 CST [119180] 004_filter_insert.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.720 CST [119180] 004_filter_insert.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:18:49.731 CST [119182] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:49.731 CST [119182] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='';
+2026-09-03 18:18:49.731 CST [119182] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:49.731 CST [119182] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id+10 FROM filter_source WHERE id>1 AND id<7 AND ai_semantic.filter(decision) ORDER BY id DESC LIMIT 1;
+2026-09-03 18:18:49.732 CST [119182] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:49.732 CST [119182] 004_filter_insert.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:18:49.732 CST [119182] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink;
+2026-09-03 18:18:49.740 CST [119184] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:49.740 CST [119184] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='';
+2026-09-03 18:18:49.740 CST [119184] 004_filter_insert.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 18:18:49.740 CST [119184] 004_filter_insert.pl LOG:  statement: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.740 CST [119184] 004_filter_insert.pl LOG:  statement: EXECUTE filtered_insert(1);
+2026-09-03 18:18:49.740 CST [119184] 004_filter_insert.pl DETAIL:  prepare: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.741 CST [119184] 004_filter_insert.pl LOG:  statement: ALTER TABLE filter_source ADD COLUMN spare integer;
+2026-09-03 18:18:49.741 CST [119184] 004_filter_insert.pl LOG:  statement: EXECUTE filtered_insert(5);
+2026-09-03 18:18:49.741 CST [119184] 004_filter_insert.pl DETAIL:  prepare: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.742 CST [119184] 004_filter_insert.pl LOG:  statement: DEALLOCATE filtered_insert;
+2026-09-03 18:18:49.742 CST [119184] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id;
+2026-09-03 18:18:49.742 CST [119184] 004_filter_insert.pl LOG:  statement: ALTER TABLE filter_source DROP COLUMN spare;
+2026-09-03 18:18:49.752 CST [119186] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:49.762 CST [119188] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:49.762 CST [119188] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='';
+2026-09-03 18:18:49.762 CST [119188] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:49.762 CST [119188] 004_filter_insert.pl LOG:  statement: SAVEPOINT before_failure;
+2026-09-03 18:18:49.763 CST [119188] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id>=6 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.763 CST [119188] 004_filter_insert.pl ERROR:  SemFilter provider completion must be true, false, or unknown
+2026-09-03 18:18:49.763 CST [119188] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id>=6 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.763 CST [119188] 004_filter_insert.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_failure;
+2026-09-03 18:18:49.763 CST [119188] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=1 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.764 CST [119188] 004_filter_insert.pl LOG:  statement: COMMIT;
+2026-09-03 18:18:49.764 CST [119188] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:49.772 CST [119190] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:49.781 CST [119192] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:49.781 CST [119192] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='';
+2026-09-03 18:18:49.781 CST [119192] 004_filter_insert.pl LOG:  statement: INSERT INTO checked_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.781 CST [119192] 004_filter_insert.pl ERROR:  new row for relation "checked_sink" violates check constraint "checked_sink_id_check"
+2026-09-03 18:18:49.781 CST [119192] 004_filter_insert.pl DETAIL:  Failing row contains (6).
+2026-09-03 18:18:49.781 CST [119192] 004_filter_insert.pl STATEMENT:  INSERT INTO checked_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.791 CST [119194] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM checked_sink
+2026-09-03 18:18:49.800 CST [119196] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.800 CST [119196] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id<0 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.812 CST [119198] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.812 CST [119198] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE decision IS NULL AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.822 CST [119200] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.822 CST [119200] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE ai_semantic.filter(decision) AND id<7 LIMIT 0;
+2026-09-03 18:18:49.833 CST [119202] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink
+2026-09-03 18:18:49.843 CST [119204] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.843 CST [119204] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision)  RETURNING id;
+2026-09-03 18:18:49.844 CST [119204] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:49.844 CST [119204] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:49.844 CST [119204] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision)  RETURNING id;
+2026-09-03 18:18:49.851 CST [119206] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.851 CST [119206] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision) LIMIT 1 RETURNING id;
+2026-09-03 18:18:49.851 CST [119206] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:49.851 CST [119206] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:49.851 CST [119206] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision) LIMIT 1 RETURNING id;
+2026-09-03 18:18:49.864 CST [119208] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.865 CST [119208] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision)  ON CONFLICT DO NOTHING;
+2026-09-03 18:18:49.865 CST [119208] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:49.865 CST [119208] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:49.865 CST [119208] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision)  ON CONFLICT DO NOTHING;
+2026-09-03 18:18:49.875 CST [119210] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.875 CST [119210] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision) LIMIT 1 ON CONFLICT DO NOTHING;
+2026-09-03 18:18:49.876 CST [119210] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:49.876 CST [119210] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:49.876 CST [119210] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision) LIMIT 1 ON CONFLICT DO NOTHING;
+2026-09-03 18:18:49.883 CST [119212] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.883 CST [119212] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink OVERRIDING SYSTEM VALUE SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.884 CST [119212] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:49.884 CST [119212] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:49.884 CST [119212] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink OVERRIDING SYSTEM VALUE SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision);
+2026-09-03 18:18:49.893 CST [119214] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.893 CST [119214] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE ai_semantic.filter(decision);
+2026-09-03 18:18:49.894 CST [119214] 004_filter_insert.pl ERROR:  the SemFilter capability requires one non-inherited table
+2026-09-03 18:18:49.894 CST [119214] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE ai_semantic.filter(decision);
+2026-09-03 18:18:49.904 CST [119216] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:49.904 CST [119216] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE ai_semantic.filter(decision);
+2026-09-03 18:18:49.905 CST [119216] 004_filter_insert.pl ERROR:  query shape is outside the current SemFilter capability
+2026-09-03 18:18:49.905 CST [119216] 004_filter_insert.pl DETAIL:  Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, ORDER BY, and LIMIT is supported.
+2026-09-03 18:18:49.905 CST [119216] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE ai_semantic.filter(decision);
+2026-09-03 18:18:49.915 CST [119218] 004_filter_insert.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-03 18:18:49.924 CST [119220] 004_filter_insert.pl LOG:  statement: EXPLAIN (FORMAT JSON) INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+2026-09-03 18:18:50.053 CST [119225] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:50.053 CST [119225] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.054 CST [119225] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.058 CST [119225] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id;
+2026-09-03 18:18:50.081 CST [119227] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:50.217 CST [119230] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:50.217 CST [119230] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.217 CST [119230] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:50.217 CST [119230] 004_filter_insert.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.221 CST [119230] 004_filter_insert.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:18:50.375 CST [119233] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:50.376 CST [119233] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.376 CST [119233] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:50.376 CST [119233] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id+10 FROM filter_source WHERE id>1 AND id<7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) ORDER BY id DESC LIMIT 1;
+2026-09-03 18:18:50.379 CST [119233] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:50.380 CST [119233] 004_filter_insert.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:18:50.380 CST [119233] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink;
+2026-09-03 18:18:50.516 CST [119236] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:50.517 CST [119236] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.517 CST [119236] 004_filter_insert.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 18:18:50.517 CST [119236] 004_filter_insert.pl LOG:  statement: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.518 CST [119236] 004_filter_insert.pl LOG:  statement: EXECUTE filtered_insert(1);
+2026-09-03 18:18:50.518 CST [119236] 004_filter_insert.pl DETAIL:  prepare: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.520 CST [119236] 004_filter_insert.pl LOG:  statement: ALTER TABLE filter_source ADD COLUMN spare integer;
+2026-09-03 18:18:50.520 CST [119236] 004_filter_insert.pl LOG:  statement: EXECUTE filtered_insert(5);
+2026-09-03 18:18:50.520 CST [119236] 004_filter_insert.pl DETAIL:  prepare: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.521 CST [119236] 004_filter_insert.pl LOG:  statement: DEALLOCATE filtered_insert;
+2026-09-03 18:18:50.521 CST [119236] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id;
+2026-09-03 18:18:50.522 CST [119236] 004_filter_insert.pl LOG:  statement: ALTER TABLE filter_source DROP COLUMN spare;
+2026-09-03 18:18:50.543 CST [119238] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:50.681 CST [119241] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:50.681 CST [119241] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.681 CST [119241] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:50.681 CST [119241] 004_filter_insert.pl LOG:  statement: SAVEPOINT before_failure;
+2026-09-03 18:18:50.681 CST [119241] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id>=6 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.683 CST [119241] 004_filter_insert.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-03 18:18:50.683 CST [119241] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id>=6 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.684 CST [119241] 004_filter_insert.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_failure;
+2026-09-03 18:18:50.684 CST [119241] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.684 CST [119241] 004_filter_insert.pl LOG:  statement: COMMIT;
+2026-09-03 18:18:50.684 CST [119241] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:50.709 CST [119243] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:50.847 CST [119246] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:50.848 CST [119246] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.848 CST [119246] 004_filter_insert.pl LOG:  statement: INSERT INTO checked_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.851 CST [119246] 004_filter_insert.pl ERROR:  new row for relation "checked_sink" violates check constraint "checked_sink_id_check"
+2026-09-03 18:18:50.851 CST [119246] 004_filter_insert.pl DETAIL:  Failing row contains (6).
+2026-09-03 18:18:50.851 CST [119246] 004_filter_insert.pl STATEMENT:  INSERT INTO checked_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.875 CST [119248] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM checked_sink
+2026-09-03 18:18:50.884 CST [119250] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.884 CST [119250] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id<0 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.892 CST [119252] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.892 CST [119252] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE decision IS NULL AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.899 CST [119254] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.900 CST [119254] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) AND id<7 LIMIT 0;
+2026-09-03 18:18:50.911 CST [119256] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink
+2026-09-03 18:18:50.919 CST [119258] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.919 CST [119258] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)  RETURNING id;
+2026-09-03 18:18:50.919 CST [119258] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:50.919 CST [119258] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:50.919 CST [119258] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)  RETURNING id;
+2026-09-03 18:18:50.928 CST [119260] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.929 CST [119260] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) LIMIT 1 RETURNING id;
+2026-09-03 18:18:50.929 CST [119260] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:50.929 CST [119260] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:50.929 CST [119260] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) LIMIT 1 RETURNING id;
+2026-09-03 18:18:50.938 CST [119262] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.938 CST [119262] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)  ON CONFLICT DO NOTHING;
+2026-09-03 18:18:50.939 CST [119262] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:50.939 CST [119262] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:50.939 CST [119262] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)  ON CONFLICT DO NOTHING;
+2026-09-03 18:18:50.947 CST [119264] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.947 CST [119264] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) LIMIT 1 ON CONFLICT DO NOTHING;
+2026-09-03 18:18:50.947 CST [119264] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:50.947 CST [119264] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:50.947 CST [119264] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) LIMIT 1 ON CONFLICT DO NOTHING;
+2026-09-03 18:18:50.956 CST [119266] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.956 CST [119266] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink OVERRIDING SYSTEM VALUE SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.957 CST [119266] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:50.957 CST [119266] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:50.957 CST [119266] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink OVERRIDING SYSTEM VALUE SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.964 CST [119268] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.964 CST [119268] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.964 CST [119268] 004_filter_insert.pl ERROR:  the SemFilter capability requires one non-inherited table
+2026-09-03 18:18:50.964 CST [119268] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.972 CST [119270] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:50.972 CST [119270] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.972 CST [119270] 004_filter_insert.pl ERROR:  query shape is outside the current SemFilter capability
+2026-09-03 18:18:50.972 CST [119270] 004_filter_insert.pl DETAIL:  Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, ORDER BY, and LIMIT is supported.
+2026-09-03 18:18:50.972 CST [119270] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 18:18:50.979 CST [119272] 004_filter_insert.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-03 18:18:50.988 CST [119274] 004_filter_insert.pl LOG:  statement: EXPLAIN (FORMAT JSON) INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-03 18:18:51.129 CST [119277] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:51.129 CST [119277] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.129 CST [119277] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.133 CST [119277] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id;
+2026-09-03 18:18:51.156 CST [119279] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:51.283 CST [119282] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:51.283 CST [119282] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.283 CST [119282] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:51.283 CST [119282] 004_filter_insert.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.288 CST [119282] 004_filter_insert.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:18:51.444 CST [119285] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:51.444 CST [119285] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.445 CST [119285] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:51.445 CST [119285] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id+10 FROM filter_source WHERE id>1 AND id<7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) ORDER BY id DESC LIMIT 1;
+2026-09-03 18:18:51.449 CST [119285] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:51.450 CST [119285] 004_filter_insert.pl LOG:  statement: ROLLBACK;
+2026-09-03 18:18:51.450 CST [119285] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink;
+2026-09-03 18:18:51.600 CST [119288] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:51.600 CST [119288] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.600 CST [119288] 004_filter_insert.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 18:18:51.601 CST [119288] 004_filter_insert.pl LOG:  statement: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.601 CST [119288] 004_filter_insert.pl LOG:  statement: EXECUTE filtered_insert(1);
+2026-09-03 18:18:51.601 CST [119288] 004_filter_insert.pl DETAIL:  prepare: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.603 CST [119288] 004_filter_insert.pl LOG:  statement: ALTER TABLE filter_source ADD COLUMN spare integer;
+2026-09-03 18:18:51.603 CST [119288] 004_filter_insert.pl LOG:  statement: EXECUTE filtered_insert(5);
+2026-09-03 18:18:51.603 CST [119288] 004_filter_insert.pl DETAIL:  prepare: PREPARE filtered_insert(integer) AS INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=$1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.605 CST [119288] 004_filter_insert.pl LOG:  statement: DEALLOCATE filtered_insert;
+2026-09-03 18:18:51.605 CST [119288] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink ORDER BY id;
+2026-09-03 18:18:51.605 CST [119288] 004_filter_insert.pl LOG:  statement: ALTER TABLE filter_source DROP COLUMN spare;
+2026-09-03 18:18:51.628 CST [119290] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:51.754 CST [119293] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:51.754 CST [119293] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.754 CST [119293] 004_filter_insert.pl LOG:  statement: BEGIN;
+2026-09-03 18:18:51.754 CST [119293] 004_filter_insert.pl LOG:  statement: SAVEPOINT before_failure;
+2026-09-03 18:18:51.754 CST [119293] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id>=6 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.757 CST [119293] 004_filter_insert.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-03 18:18:51.757 CST [119293] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id>=6 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.757 CST [119293] 004_filter_insert.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_failure;
+2026-09-03 18:18:51.757 CST [119293] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.758 CST [119293] 004_filter_insert.pl LOG:  statement: COMMIT;
+2026-09-03 18:18:51.758 CST [119293] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:51.781 CST [119295] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink
+2026-09-03 18:18:51.918 CST [119298] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:51.918 CST [119298] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.918 CST [119298] 004_filter_insert.pl LOG:  statement: INSERT INTO checked_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.922 CST [119298] 004_filter_insert.pl ERROR:  new row for relation "checked_sink" violates check constraint "checked_sink_id_check"
+2026-09-03 18:18:51.922 CST [119298] 004_filter_insert.pl DETAIL:  Failing row contains (6).
+2026-09-03 18:18:51.922 CST [119298] 004_filter_insert.pl STATEMENT:  INSERT INTO checked_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.946 CST [119300] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM checked_sink
+2026-09-03 18:18:51.962 CST [119302] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.962 CST [119302] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id<0 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.971 CST [119304] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.972 CST [119304] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE decision IS NULL AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:51.982 CST [119306] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:51.982 CST [119306] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id<7 LIMIT 0;
+2026-09-03 18:18:51.993 CST [119308] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink
+2026-09-03 18:18:52.002 CST [119310] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.004 CST [119310] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)  RETURNING id;
+2026-09-03 18:18:52.004 CST [119310] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:52.004 CST [119310] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:52.004 CST [119310] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)  RETURNING id;
+2026-09-03 18:18:52.012 CST [119312] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.012 CST [119312] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 1 RETURNING id;
+2026-09-03 18:18:52.013 CST [119312] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:52.013 CST [119312] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:52.013 CST [119312] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 1 RETURNING id;
+2026-09-03 18:18:52.021 CST [119314] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.021 CST [119314] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)  ON CONFLICT DO NOTHING;
+2026-09-03 18:18:52.022 CST [119314] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:52.022 CST [119314] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:52.022 CST [119314] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)  ON CONFLICT DO NOTHING;
+2026-09-03 18:18:52.030 CST [119316] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.031 CST [119316] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 1 ON CONFLICT DO NOTHING;
+2026-09-03 18:18:52.032 CST [119316] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:52.032 CST [119316] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:52.032 CST [119316] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 1 ON CONFLICT DO NOTHING;
+2026-09-03 18:18:52.039 CST [119318] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.039 CST [119318] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink OVERRIDING SYSTEM VALUE SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.040 CST [119318] 004_filter_insert.pl ERROR:  INSERT shape is outside the current SemFilter capability
+2026-09-03 18:18:52.040 CST [119318] 004_filter_insert.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 18:18:52.040 CST [119318] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink OVERRIDING SYSTEM VALUE SELECT id FROM filter_source WHERE id < 7 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.046 CST [119320] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.046 CST [119320] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.047 CST [119320] 004_filter_insert.pl ERROR:  the SemFilter capability requires one non-inherited table
+2026-09-03 18:18:52.047 CST [119320] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink SELECT a.id FROM filter_source a JOIN filter_sink b ON a.id=b.id WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.056 CST [119322] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.056 CST [119322] 004_filter_insert.pl LOG:  statement: EXPLAIN INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.057 CST [119322] 004_filter_insert.pl ERROR:  query shape is outside the current SemFilter capability
+2026-09-03 18:18:52.057 CST [119322] 004_filter_insert.pl DETAIL:  Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, ORDER BY, and LIMIT is supported.
+2026-09-03 18:18:52.057 CST [119322] 004_filter_insert.pl STATEMENT:  EXPLAIN INSERT INTO filter_sink SELECT count(*) FROM filter_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.066 CST [119324] 004_filter_insert.pl LOG:  statement: CREATE ROLE filter_writer;
+2026-09-03 18:18:52.067 CST [119324] 004_filter_insert.pl LOG:  statement: CREATE TABLE secure_source(id integer, decision text, owner_name text);
+2026-09-03 18:18:52.068 CST [119324] 004_filter_insert.pl LOG:  statement: INSERT INTO secure_source VALUES (1,'true','filter_writer'), (2,'bad','other');
+2026-09-03 18:18:52.069 CST [119324] 004_filter_insert.pl LOG:  statement: ALTER TABLE secure_source ENABLE ROW LEVEL SECURITY;
+2026-09-03 18:18:52.069 CST [119324] 004_filter_insert.pl LOG:  statement: CREATE POLICY reader_policy ON secure_source USING(owner_name=current_user::text);
+2026-09-03 18:18:52.069 CST [119324] 004_filter_insert.pl LOG:  statement: GRANT USAGE ON SCHEMA ai_semantic TO filter_writer;
+2026-09-03 18:18:52.069 CST [119324] 004_filter_insert.pl LOG:  statement: GRANT EXECUTE ON FUNCTION ai_semantic.filter(text,text,jsonb) TO filter_writer;
+2026-09-03 18:18:52.069 CST [119324] 004_filter_insert.pl LOG:  statement: GRANT SELECT ON secure_source TO filter_writer;
+2026-09-03 18:18:52.070 CST [119324] 004_filter_insert.pl LOG:  statement: GRANT INSERT,SELECT ON filter_sink TO filter_writer;
+2026-09-03 18:18:52.205 CST [119327] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:52.205 CST [119327] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.205 CST [119327] 004_filter_insert.pl LOG:  statement: SET ROLE filter_writer;
+2026-09-03 18:18:52.205 CST [119327] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM secure_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.208 CST [119327] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:52.232 CST [119329] 004_filter_insert.pl LOG:  statement: TRUNCATE filter_sink;
+2026-09-03 18:18:52.233 CST [119329] 004_filter_insert.pl LOG:  statement: REVOKE INSERT ON filter_sink FROM filter_writer;
+2026-09-03 18:18:52.245 CST [119331] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.245 CST [119331] 004_filter_insert.pl LOG:  statement: SET ROLE filter_writer;
+2026-09-03 18:18:52.245 CST [119331] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM secure_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.246 CST [119331] 004_filter_insert.pl ERROR:  permission denied for table filter_sink
+2026-09-03 18:18:52.246 CST [119331] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM secure_source WHERE ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.253 CST [119333] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink
+2026-09-03 18:18:52.380 CST [119336] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:52.380 CST [119336] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:52.381 CST [119336] 004_filter_insert.pl LOG:  statement: SET statement_timeout='100ms';
+2026-09-03 18:18:52.381 CST [119336] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.481 CST [119336] 004_filter_insert.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 18:18:52.481 CST [119336] 004_filter_insert.pl STATEMENT:  INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:52.914 CST [119338] 004_filter_insert.pl LOG:  statement: SELECT count(*) FROM filter_sink
+2026-09-03 18:18:53.052 CST [119341] 004_filter_insert.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 18:18:53.052 CST [119341] 004_filter_insert.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/B7075oDYjZ/insert.sock';
+2026-09-03 18:18:53.053 CST [119341] 004_filter_insert.pl LOG:  statement: INSERT INTO filter_sink SELECT id FROM filter_source WHERE id=1 AND ai_semantic.filter(decision, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 18:18:53.055 CST [119341] 004_filter_insert.pl LOG:  statement: SELECT id FROM filter_sink;
+2026-09-03 18:18:53.074 CST [119151] LOG:  received fast shutdown request
+2026-09-03 18:18:53.075 CST [119151] LOG:  aborting any active transactions
+2026-09-03 18:18:53.075 CST [119151] LOG:  background worker "logical replication launcher" (PID 119160) exited with exit code 1
+2026-09-03 18:18:53.076 CST [119155] LOG:  shutting down
+2026-09-03 18:18:53.076 CST [119155] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 18:18:53.079 CST [119155] LOG:  checkpoint complete: wrote 85 buffers (0.5%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.004 s; sync files=0, longest=0.000 s, average=0.000 s; distance=328 kB, estimate=328 kB; lsn=0/173F570, redo lsn=0/173F570
+2026-09-03 18:18:53.087 CST [119151] LOG:  database system is shut down

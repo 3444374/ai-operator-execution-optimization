@@ -27,6 +27,7 @@ typedef struct SemloomUdsProviderConfig
 {
 	char *socket_path;
 	const char *semantic_execution_id;
+	uint32 protocol_version;
 } SemloomUdsProviderConfig;
 
 struct AiProviderSession
@@ -36,9 +37,8 @@ struct AiProviderSession
 	pgsocket socket_fd;
 	const SemloomUdsProviderConfig *config;
 	AiOpenSpec open_spec;
-	bool exact_filter;
 	SemloomWireV2Identity identity;
-	SemloomWireV3Identity semantic_identity;
+	SemloomWireSemanticIdentity semantic_identity;
 	MemoryContext scratch_context;
 	MemoryContext completion_context;
 };
@@ -100,7 +100,9 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	config = MemoryContextAllocZero(owner_context, sizeof(*config));
 	config->socket_path = MemoryContextAlloc(owner_context, path_length + 1);
 	memcpy(config->socket_path, socket_path, path_length + 1);
-	if (!semloom_provider_spec_is_exact_filter(spec))
+	config->protocol_version = semloom_provider_spec_is_recording(spec) ? 2 :
+		(semloom_provider_spec_is_generate_map(spec) ? 5 : (spec->has_generation_profile ? 4 : 3));
+	if (semloom_provider_spec_is_recording(spec))
 	{
 		provider->ops = &semloom_uds_recording_ops;
 		config->semantic_execution_id = NULL;
@@ -108,19 +110,19 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_GOLDEN)
 	{
 		provider->ops = &semloom_uds_golden_ops;
-		config->semantic_execution_id = spec->has_generation_profile ?
-			SEMLOOM_UDS_CHOICE_GOLDEN_EXECUTION_ID : SEMLOOM_UDS_GOLDEN_EXECUTION_ID;
+		config->semantic_execution_id = config->protocol_version == 5 ? SEMLOOM_UDS_MAP_GOLDEN_EXECUTION_ID :
+			(spec->has_generation_profile ? SEMLOOM_UDS_CHOICE_GOLDEN_EXECUTION_ID : SEMLOOM_UDS_GOLDEN_EXECUTION_ID);
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED)
 	{
 		provider->ops = &semloom_uds_fixed_ops;
-		config->semantic_execution_id = spec->has_generation_profile ?
-			SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID : SEMLOOM_UDS_FIXED_EXECUTION_ID;
+		config->semantic_execution_id = config->protocol_version == 5 ? SEMLOOM_UDS_MAP_FIXED_EXECUTION_ID :
+			(spec->has_generation_profile ? SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID : SEMLOOM_UDS_FIXED_EXECUTION_ID);
 	}
 	else
 		elog(ERROR, "unrecognized SemLoom provider execution profile: %d", profile);
 	provider->config = config;
-	provider->max_input_bytes = semloom_provider_spec_is_exact_filter(spec) ?
+	provider->max_input_bytes = config->protocol_version != 2 ?
 		SEMLOOM_WIRE_V3_MAX_INPUT_BYTES : SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
 }
 
@@ -137,7 +139,8 @@ semloom_uds_open(const void *config_value,
 		*session_out = NULL;
 	if (config == NULL || session_out == NULL || error == NULL ||
 		(!semloom_provider_spec_is_recording(spec) &&
-		 !semloom_provider_spec_is_exact_filter(spec)))
+		 !semloom_provider_spec_is_exact_filter(spec) &&
+		 !semloom_provider_spec_is_generate_map(spec)))
 	{
 		if (error != NULL)
 				semloom_provider_error_set(error,
@@ -151,7 +154,6 @@ semloom_uds_open(const void *config_value,
 	session = palloc0(sizeof(*session));
 	session->socket_fd = PGINVALID_SOCKET;
 	session->config = config;
-	session->exact_filter = semloom_provider_spec_is_exact_filter(spec);
 	*session_out = session;
 	session->open_spec = *spec;
 	session->open_spec.semantic_spec_id = semloom_uds_copy_slice(spec->semantic_spec_id);
@@ -183,13 +185,9 @@ semloom_uds_open(const void *config_value,
 	session->completion_context = AllocSetContextCreate(CurrentMemoryContext,
 													  "SemLoom UDS completion",
 													  ALLOCSET_DEFAULT_SIZES);
-	if (spec->has_generation_profile)
-		semloom_wire_v4_identity_init(&session->open_spec,
-			config->semantic_execution_id, &session->semantic_identity);
-	else if (session->exact_filter)
-		semloom_wire_v3_identity_init(&session->open_spec,
-										  config->semantic_execution_id,
-										  &session->semantic_identity);
+	if (config->protocol_version != 2)
+		semloom_wire_semantic_identity_init(&session->open_spec,
+			config->semantic_execution_id, config->protocol_version, &session->semantic_identity);
 	else
 		semloom_wire_v2_identity_init(&session->open_spec,
 										 SEMLOOM_UDS_RECORDING_EXECUTION_ID,
@@ -316,15 +314,16 @@ semloom_uds_drive_internal(AiProviderSession *session,
 								   NULL);
 		return AI_PROVIDER_STATUS_ERROR;
 	}
-	if ((!session->exact_filter &&
+	if ((session->config->protocol_version == 2 &&
 		 task->input.length > SEMLOOM_WIRE_V2_MAX_INPUT_BYTES) ||
-		(session->exact_filter &&
-		 task->input.length > SEMLOOM_WIRE_V3_MAX_INPUT_BYTES))
+		(session->config->protocol_version != 2 &&
+		 task->input.length > (session->config->protocol_version == 5 ?
+			session->open_spec.max_input_bytes : SEMLOOM_WIRE_V3_MAX_INPUT_BYTES)))
 	{
 		semloom_provider_error_set(error,
 								   AI_PROVIDER_ERROR_INPUT_TOO_LARGE,
 								   0,
-								   session->exact_filter ?
+								   session->config->protocol_version != 2 ?
 									   SEMLOOM_WIRE_V3_MAX_INPUT_BYTES :
 									   SEMLOOM_WIRE_V2_MAX_INPUT_BYTES,
 								   NULL);
@@ -336,7 +335,7 @@ semloom_uds_drive_internal(AiProviderSession *session,
 								   AI_PROVIDER_ERROR_UNSUPPORTED_ENCODING,
 								   0,
 								   0,
-								   session->exact_filter ?
+								   session->config->protocol_version != 2 ?
 									   "SemLoom exact semantic provider requires UTF8 database encoding" :
 									   "SemLoom UDS recording provider requires UTF8 database encoding");
 		return AI_PROVIDER_STATUS_ERROR;
@@ -347,10 +346,13 @@ semloom_uds_drive_internal(AiProviderSession *session,
 		if (status != AI_PROVIDER_STATUS_OK)
 			return status;
 	}
-	if (session->open_spec.has_generation_profile)
+	if (session->config->protocol_version == 5)
+		return semloom_wire_semantic_drive(session->socket_fd, &session->open_spec,
+			task, &session->semantic_identity, completion, error);
+	if (session->config->protocol_version == 4)
 		return semloom_wire_v4_drive(session->socket_fd, &session->open_spec,
 			task, &session->semantic_identity, completion, error);
-	if (session->exact_filter)
+	if (session->config->protocol_version == 3)
 		return semloom_wire_v3_drive(session->socket_fd,
 									 &session->open_spec,
 									 task,
@@ -462,10 +464,13 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
-	if (session->open_spec.has_generation_profile)
+	if (session->config->protocol_version == 5)
+		return semloom_wire_semantic_open(session->socket_fd, &session->open_spec,
+			&session->semantic_identity, error);
+	if (session->config->protocol_version == 4)
 		return semloom_wire_v4_open(session->socket_fd, &session->open_spec,
 			&session->semantic_identity, error);
-	if (session->exact_filter)
+	if (session->config->protocol_version == 3)
 		return semloom_wire_v3_open(session->socket_fd,
 								   &session->open_spec,
 								   &session->semantic_identity,

@@ -1,0 +1,21 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/007_map_execution.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'open-output-too-large preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  54000: SemLoom provider message exceeds its configured limit
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+# Looks like you failed 1 test of 457.
+t/007_map_execution.pl ..
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/457 subtests
+
+Test Summary Report
+-------------------
+t/007_map_execution.pl (Wstat: 256 Tests: 457 Failed: 1)
+  Failed test:  129
+  Non-zero exit status: 1
+Files=1, Tests=457, 11 wallclock secs ( 0.08 usr  0.01 sys +  7.81 cusr  1.76 csys =  9.66 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

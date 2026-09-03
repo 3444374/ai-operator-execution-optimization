@@ -1,0 +1,77 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'generative Map uses the existing Map carrier'
+#   at t/006_map_plan.pl line 48.
+#          got: undef
+#     expected: 'SemLoom SemMap'
+
+#   Failed test 'new Map owns schema 4'
+#   at t/006_map_plan.pl line 49.
+#          got: undef
+#     expected: '4'
+
+#   Failed test 'plan identifies generative Map semantics'
+#   at t/006_map_plan.pl line 50.
+#          got: undef
+#     expected: 'semloom.semantic.sem_map.generate.v1'
+
+#   Failed test 'PG plan identity matches the independent Map vector'
+#   at t/006_map_plan.pl line 51.
+#          got: undef
+#     expected: 'b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba'
+
+#   Failed test 'Map owns its prompt program'
+#   at t/006_map_plan.pl line 53.
+#          got: undef
+#     expected: 'semloom.sem_map.chat.v1'
+
+#   Failed test 'Map owns its text result policy'
+#   at t/006_map_plan.pl line 54.
+#          got: undef
+#     expected: 'semloom.sem_map.utf8_text.v1'
+
+#   Failed test 'plan owns the model'
+#   at t/006_map_plan.pl line 55.
+#          got: undef
+#     expected: 'golden-map-v1'
+
+#   Failed test 'plan owns the normalized output token cap'
+#   at t/006_map_plan.pl line 56.
+#          got: undef
+#     expected: '128'
+
+#   Failed test 'plan owns its input byte cap'
+#   at t/006_map_plan.pl line 57.
+#          got: undef
+#     expected: '163840'
+
+#   Failed test 'plan owns its output byte cap'
+#   at t/006_map_plan.pl line 58.
+#          got: undef
+#     expected: '65536'
+
+#   Failed test 'EXPLAIN does not claim connected execution'
+#   at t/006_map_plan.pl line 59.
+#          got: undef
+#     expected: 'plan-only'
+
+#   Failed test 'new plan cannot silently use an old provider path'
+#   at t/006_map_plan.pl line 63.
+#                   'psql:<stdin>:2: ERROR:  55000: ai_semantic.map marker was not lowered to a semantic plan
+# HINT:  Load semloom_pg before planning and use a supported SemMap query shape.
+# LOCATION:  semloom_marker_map, marker.c:11'
+#     doesn't match '(?^:ERROR:  0A000: generative SemMap execution is not connected\n)'
+# Looks like you failed 12 tests of 18.
+t/006_map_plan.pl ..
+Dubious, test returned 12 (wstat 3072, 0xc00)
+Failed 12/18 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 3072 Tests: 18 Failed: 12)
+  Failed tests:  4-14, 17
+  Non-zero exit status: 12
+Files=1, Tests=18,  1 wallclock secs ( 0.01 usr  0.01 sys +  0.53 cusr  0.24 csys =  0.79 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

@@ -476,7 +476,7 @@ semloom_estimate_exact_filter_cost(
 	estimate->calibration_id = "";
 	estimate->workload_signature = "";
 	estimate->service_signature = "";
-	estimate->model_role = SEMLOOM_EXACT_FILTER_ROLE;
+	estimate->model_role = SEMLOOM_MODEL_REFERENCE_ROLE;
 	estimate->semantic_input_rows = clamp_row_est(
 		rel->tuples * ordinary_selectivity);
 	estimate->output_selectivity =

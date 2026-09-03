@@ -1,0 +1,38 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/007_map_execution.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'Map accepts independent uint64 usage fields'
+#   at t/007_map_execution.pl line 195.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  08P01: SemLoom provider completion does not match wire v5 task identity
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map preserves the full prompt-token counter'
+#   at t/007_map_execution.pl line 196.
+#                   ''
+#     doesn't match '(?^:Prompt Tokens: 18446744073709551615\b)'
+
+#   Failed test 'output usage has its own counter'
+#   at t/007_map_execution.pl line 197.
+#                   ''
+#     doesn't match '(?^:Output Tokens: 1\b)'
+
+#   Failed test 'runtime counter overflow is not a malformed completion'
+#   at t/007_map_execution.pl line 201.
+#                   'psql:<stdin>:3: ERROR:  08P01: SemLoom provider completion does not match wire v5 task identity
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  22003: SemLoom provider usage counters exceed uint64 range\n)'
+# Looks like you failed 4 tests of 468.
+t/007_map_execution.pl ..
+Dubious, test returned 4 (wstat 1024, 0x400)
+Failed 4/468 subtests
+
+Test Summary Report
+-------------------
+t/007_map_execution.pl (Wstat: 1024 Tests: 468 Failed: 4)
+  Failed tests:  428-430, 435
+  Non-zero exit status: 4
+Files=1, Tests=468, 11 wallclock secs ( 0.09 usr  0.02 sys +  7.93 cusr  1.86 csys =  9.90 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

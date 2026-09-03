@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "scope": "four current-task fixture runs only",
+  "runs": [
+    {
+      "run": "phase-red",
+      "source_commit": "110ad44509f9fb97e5ea5aea3dd328a657c3a3cc",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": []
+    },
+    {
+      "run": "usage-red",
+      "source_commit": "0baaae0d688aa931f6b75266111eb2c56b55b559",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": []
+    },
+    {
+      "run": "long-path",
+      "source_commit": "f46fe936cdaceae8b5e3571321e28dfae6ac724a",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": []
+    },
+    {
+      "run": "final",
+      "source_commit": "f46fe936cdaceae8b5e3571321e28dfae6ac724a",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": []
+    }
+  ],
+  "server_main_commit": "5d4ecf96b5e6fb86885ea8b6e744db5506a0effc",
+  "server_main_dirty": false,
+  "passed": true
+}

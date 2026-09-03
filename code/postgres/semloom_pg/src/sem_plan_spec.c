@@ -3,6 +3,7 @@
 
 #include "common/cryptohash.h"
 #include "common/sha2.h"
+#include "catalog/pg_type_d.h"
 #include "commands/explain_format.h"
 #include "nodes/makefuncs.h"
 #include "nodes/value.h"
@@ -10,11 +11,13 @@
 #include "recording_contract.h"
 #include "generation_profile.h"
 #include "semantic_filter_contract.h"
+#include "semantic_map_contract.h"
 #include "sem_plan_spec.h"
 
 #define SEMLOOM_RECORDING_PLAN_FIELD_COUNT 10
 #define SEMLOOM_EXACT_FILTER_PLAN_FIELD_COUNT 27
 #define SEMLOOM_CHOICE_FILTER_PLAN_FIELD_COUNT 28
+#define SEMLOOM_GENERATE_MAP_PLAN_FIELD_COUNT 29
 #define SEMLOOM_PLAN_SPEC_ID_MAX_BYTES 128
 #define SEMLOOM_PLAN_ALGORITHM_MAX_BYTES 64
 #define SEMLOOM_PLAN_ROLE_MAX_BYTES 32
@@ -48,6 +51,9 @@
 #define SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_DIGEST "semantic_spec_digest"
 #define SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM_DIGEST "physical_algorithm_digest"
 #define SEMLOOM_PLAN_FIELD_GENERATION_PROFILE "generation_profile"
+#define SEMLOOM_PLAN_FIELD_HAS_STOP "has_stop"
+#define SEMLOOM_PLAN_FIELD_MAX_INPUT_BYTES "max_input_bytes"
+#define SEMLOOM_PLAN_FIELD_MAX_OUTPUT_BYTES "max_output_bytes"
 
 #define SEMLOOM_SEMANTIC_SPEC_DIGEST_DOMAIN "semloom-semantic-spec-v2\0"
 #define SEMLOOM_CHOICE_SEMANTIC_SPEC_DIGEST_DOMAIN "semloom-semantic-spec-v3\0"
@@ -84,11 +90,18 @@ typedef enum SemloomPlanFieldBit
 	SEMLOOM_PLAN_SEEN_SEMANTIC_SPEC_DIGEST = 1U << 25,
 	SEMLOOM_PLAN_SEEN_PHYSICAL_ALGORITHM_DIGEST = 1U << 26,
 	SEMLOOM_PLAN_SEEN_GENERATION_PROFILE = 1U << 27,
+	SEMLOOM_PLAN_SEEN_HAS_STOP = 1U << 28,
+	SEMLOOM_PLAN_SEEN_MAX_INPUT_BYTES = 1U << 29,
+	SEMLOOM_PLAN_SEEN_MAX_OUTPUT_BYTES = 1U << 30,
 } SemloomPlanFieldBit;
 
 #define SEMLOOM_RECORDING_PLAN_FIELDS ((1U << 10) - 1U)
 #define SEMLOOM_EXACT_FILTER_PLAN_FIELDS ((1U << 27) - 1U)
 #define SEMLOOM_CHOICE_FILTER_PLAN_FIELDS ((1U << 28) - 1U)
+#define SEMLOOM_GENERATE_MAP_PLAN_FIELDS \
+	((SEMLOOM_EXACT_FILTER_PLAN_FIELDS & ~SEMLOOM_PLAN_SEEN_STOP) | \
+	 SEMLOOM_PLAN_SEEN_HAS_STOP | SEMLOOM_PLAN_SEEN_MAX_INPUT_BYTES | \
+	 SEMLOOM_PLAN_SEEN_MAX_OUTPUT_BYTES)
 
 static List *semloom_plan_spec_integer_field(const char *name, int value);
 static List *semloom_plan_spec_string_field(const char *name, const char *value);
@@ -112,7 +125,10 @@ static void semloom_exact_filter_semantic_digest(
 	const char *model_id,
 	const AiGenerationProfile *profile,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
-static void semloom_exact_filter_physical_digest(
+static void semloom_model_reference_physical_digest(
+	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
+static void semloom_generate_map_semantic_digest(const char *instruction,
+	const char *model_id, uint32 max_tokens,
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1]);
 static void semloom_hash_begin(pg_cryptohash_ctx **context);
 static void semloom_hash_bytes(pg_cryptohash_ctx *context,
@@ -199,7 +215,7 @@ semloom_make_filter_private(const char *instruction, const char *model_id,
 	if (instruction == NULL || model_id == NULL || input_column <= 0)
 		semloom_plan_spec_invalid("invalid exact SemFilter plan specification");
 	semloom_exact_filter_semantic_digest(instruction, model_id, profile, semantic_digest);
-	semloom_exact_filter_physical_digest(physical_digest);
+	semloom_model_reference_physical_digest(physical_digest);
 
 #define APPEND_INT(name, value) \
 	do { fields = lappend(fields, semloom_plan_spec_integer_field((name), (value))); } while (0)
@@ -217,8 +233,8 @@ semloom_make_filter_private(const char *instruction, const char *model_id,
 			   SEMLOOM_EXACT_FILTER_SPEC_VERSION);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_ID, SEMLOOM_EXACT_FILTER_SPEC_ID);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM,
-				  SEMLOOM_EXACT_FILTER_ALGORITHM);
-	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_EXACT_FILTER_ROLE);
+				  SEMLOOM_MODEL_REFERENCE_ALGORITHM);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_MODEL_REFERENCE_ROLE);
 	APPEND_INT(SEMLOOM_PLAN_FIELD_ORDER_POLICY, SEMLOOM_PLAN_ORDER_INPUT);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_INSTRUCTION, instruction);
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PROMPT_PROGRAM_ID, SEMLOOM_PROMPT_PROGRAM_ID);
@@ -250,6 +266,60 @@ semloom_make_filter_private(const char *instruction, const char *model_id,
 	return list_make2(fields, makeInteger(input_column));
 }
 
+List *
+semloom_plan_spec_make_generate_map_private(const char *instruction,
+										  const char *model_id, uint32 max_tokens,
+										  AttrNumber input_column, Oid marker_function_oid)
+{
+	char semantic_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+	char physical_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+	List *fields = NIL;
+	Const *function_binding;
+
+	if (input_column <= 0 || !OidIsValid(marker_function_oid))
+		semloom_plan_spec_invalid("invalid semantic executor binding");
+	semloom_generate_map_semantic_digest(instruction, model_id, max_tokens, semantic_digest);
+	semloom_model_reference_physical_digest(physical_digest);
+#define APPEND_INT(name, value) \
+	do { fields = lappend(fields, semloom_plan_spec_integer_field((name), (value))); } while (0)
+#define APPEND_STRING(name, value) \
+	do { fields = lappend(fields, semloom_plan_spec_string_field((name), (value))); } while (0)
+	APPEND_INT(SEMLOOM_PLAN_FIELD_SCHEMA_VERSION, SEMLOOM_MAP_PLAN_SCHEMA_VERSION);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_OPERATOR_KIND, SEMLOOM_PLAN_OPERATOR_MAP);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_INPUT_VALUE_KIND, SEMLOOM_PLAN_VALUE_TEXT);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_OUTPUT_VALUE_KIND, SEMLOOM_PLAN_VALUE_TEXT);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_NULL_POLICY, SEMLOOM_PLAN_NULL_PROPAGATE);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_ERROR_POLICY, SEMLOOM_PLAN_ERROR_FAIL_QUERY);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_VERSION, 1);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_ID, SEMLOOM_MAP_SPEC_ID);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM, SEMLOOM_MODEL_REFERENCE_ALGORITHM);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ROLE, SEMLOOM_MODEL_REFERENCE_ROLE);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_ORDER_POLICY, SEMLOOM_PLAN_ORDER_INPUT);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_INSTRUCTION, instruction);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PROMPT_PROGRAM_ID, SEMLOOM_MAP_PROMPT_PROGRAM_ID);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_PROMPT_PROGRAM_VERSION, 1);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PROMPT_PROGRAM_DIGEST, SEMLOOM_MAP_PROMPT_PROGRAM_DIGEST);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_RESULT_PARSER_ID, SEMLOOM_MAP_RESULT_PARSER_ID);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_RESULT_PARSER_VERSION, 1);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_RESULT_PARSER_DIGEST, SEMLOOM_MAP_RESULT_PARSER_DIGEST);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_MODEL_ID, model_id);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_TEMPERATURE, 0);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_TOP_P, 1);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_MAX_TOKENS, max_tokens);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_N, 1);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_STREAM, 0);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_HAS_STOP, 0);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_MAX_INPUT_BYTES, SEMLOOM_MAP_MAX_INPUT_BYTES);
+	APPEND_INT(SEMLOOM_PLAN_FIELD_MAX_OUTPUT_BYTES, SEMLOOM_MAP_MAX_OUTPUT_BYTES);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_SEMANTIC_SPEC_DIGEST, semantic_digest);
+	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM_DIGEST, physical_digest);
+#undef APPEND_STRING
+#undef APPEND_INT
+	function_binding = makeConst(OIDOID, -1, InvalidOid, sizeof(Oid),
+		ObjectIdGetDatum(marker_function_oid), false, true);
+	return list_make2(fields, list_make2(makeInteger(input_column), function_binding));
+}
+
 void
 semloom_plan_spec_decode(List *custom_private,
 						 MemoryContext owner_context,
@@ -271,12 +341,15 @@ semloom_plan_spec_decode(List *custom_private,
 	fields_node = (Node *) linitial(custom_private);
 	binding_node = (Node *) lsecond(custom_private);
 	if (fields_node == NULL || binding_node == NULL ||
-		!IsA(fields_node, List) || !IsA(binding_node, Integer))
+		!IsA(fields_node, List))
 		semloom_plan_spec_invalid("invalid semantic plan specification");
 	fields = (List *) fields_node;
-	if (intVal(binding_node) <= 0 || intVal(binding_node) > PG_INT16_MAX)
-		semloom_plan_spec_invalid("invalid semantic executor binding");
-	*input_column = (AttrNumber) intVal(binding_node);
+	if (IsA(binding_node, Integer))
+	{
+		if (intVal(binding_node) <= 0 || intVal(binding_node) > PG_INT16_MAX)
+			semloom_plan_spec_invalid("invalid semantic executor binding");
+		*input_column = (AttrNumber) intVal(binding_node);
+	}
 
 	foreach(cell, fields)
 	{
@@ -409,6 +482,12 @@ semloom_plan_spec_decode(List *custom_private,
 						 plan_spec->physical_algorithm_digest,
 						 SEMLOOM_SHA256_HEX_LENGTH,
 						 &ignored_length)
+		else READ_NONNEG(SEMLOOM_PLAN_FIELD_HAS_STOP,
+			SEMLOOM_PLAN_SEEN_HAS_STOP, plan_spec->has_stop)
+		else READ_POS(SEMLOOM_PLAN_FIELD_MAX_INPUT_BYTES,
+			SEMLOOM_PLAN_SEEN_MAX_INPUT_BYTES, plan_spec->max_input_bytes)
+		else READ_POS(SEMLOOM_PLAN_FIELD_MAX_OUTPUT_BYTES,
+			SEMLOOM_PLAN_SEEN_MAX_OUTPUT_BYTES, plan_spec->max_output_bytes)
 		else if (strcmp(name, SEMLOOM_PLAN_FIELD_GENERATION_PROFILE) == 0)
 		{
 			semloom_plan_spec_mark_seen(&seen_fields, SEMLOOM_PLAN_SEEN_GENERATION_PROFILE);
@@ -439,8 +518,39 @@ semloom_plan_spec_decode(List *custom_private,
 			list_length(fields) != SEMLOOM_CHOICE_FILTER_PLAN_FIELD_COUNT)
 			semloom_plan_spec_invalid("incomplete semantic plan specification");
 	}
+	else if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		if (seen_fields != SEMLOOM_GENERATE_MAP_PLAN_FIELDS ||
+			list_length(fields) != SEMLOOM_GENERATE_MAP_PLAN_FIELD_COUNT)
+			semloom_plan_spec_invalid("incomplete semantic plan specification");
+	}
 	else
 		semloom_plan_spec_invalid("unsupported semantic plan specification");
+	if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		List *binding;
+		Const *function_binding;
+		Node *column;
+
+		if (!IsA(binding_node, List) || list_length((List *) binding_node) != 2)
+			semloom_plan_spec_invalid("invalid semantic executor binding");
+		binding = (List *) binding_node;
+		column = linitial(binding);
+		if (column == NULL || !IsA(column, Integer) || intVal(column) <= 0 ||
+			intVal(column) > PG_INT16_MAX || lsecond(binding) == NULL ||
+			!IsA(lsecond(binding), Const))
+			semloom_plan_spec_invalid("invalid semantic executor binding");
+		function_binding = lsecond_node(Const, binding);
+		if (function_binding->consttype != OIDOID || function_binding->constisnull ||
+			!function_binding->constbyval || function_binding->constlen != sizeof(Oid) ||
+			function_binding->consttypmod != -1 || OidIsValid(function_binding->constcollid) ||
+			!OidIsValid(DatumGetObjectId(function_binding->constvalue)))
+			semloom_plan_spec_invalid("invalid semantic executor binding");
+		*input_column = (AttrNumber) intVal(column);
+		plan_spec->marker_function_oid = DatumGetObjectId(function_binding->constvalue);
+	}
+	else if (!IsA(binding_node, Integer))
+		semloom_plan_spec_invalid("invalid semantic executor binding");
 	semloom_plan_spec_validate(plan_spec);
 }
 
@@ -574,6 +684,14 @@ semloom_plan_spec_explain(const SemloomPlanSpec *plan_spec, ExplainState *explai
 		ExplainPropertyText("Result Parser", plan_spec->result_parser_id, explain_state);
 		ExplainPropertyText("Model", plan_spec->model_id, explain_state);
 	}
+	if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		ExplainPropertyInteger("Semantic Plan Schema", NULL, plan_spec->schema_version, explain_state);
+		ExplainPropertyText("Semantic Spec Digest", plan_spec->semantic_spec_digest, explain_state);
+		ExplainPropertyInteger("Max Tokens", NULL, plan_spec->max_tokens, explain_state);
+		ExplainPropertyInteger("Max Input Bytes", NULL, plan_spec->max_input_bytes, explain_state);
+		ExplainPropertyInteger("Max Output Bytes", NULL, plan_spec->max_output_bytes, explain_state);
+	}
 	if (plan_spec->generation_profile_digest != NULL)
 	{
 		List *choices = NIL;
@@ -671,6 +789,38 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 			semloom_plan_spec_invalid("unsupported semantic plan specification");
 		return;
 	}
+	else if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		char semantic_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+		char physical_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
+
+		semloom_generate_map_semantic_digest(plan_spec->instruction, plan_spec->model_id,
+			plan_spec->max_tokens, semantic_digest);
+		semloom_model_reference_physical_digest(physical_digest);
+		if (plan_spec->operator_kind != SEMLOOM_PLAN_OPERATOR_MAP ||
+			plan_spec->input_value_kind != SEMLOOM_PLAN_VALUE_TEXT ||
+			plan_spec->output_value_kind != SEMLOOM_PLAN_VALUE_TEXT ||
+			plan_spec->null_policy != SEMLOOM_PLAN_NULL_PROPAGATE ||
+			plan_spec->error_policy != SEMLOOM_PLAN_ERROR_FAIL_QUERY ||
+			plan_spec->order_policy != SEMLOOM_PLAN_ORDER_INPUT ||
+			plan_spec->semantic_spec_version != 1 ||
+			strcmp(plan_spec->semantic_spec_id, SEMLOOM_MAP_SPEC_ID) != 0 ||
+			strcmp(plan_spec->prompt_program_id, SEMLOOM_MAP_PROMPT_PROGRAM_ID) != 0 ||
+			plan_spec->prompt_program_version != 1 ||
+			strcmp(plan_spec->prompt_program_digest, SEMLOOM_MAP_PROMPT_PROGRAM_DIGEST) != 0 ||
+			strcmp(plan_spec->result_parser_id, SEMLOOM_MAP_RESULT_PARSER_ID) != 0 ||
+			plan_spec->result_parser_version != 1 ||
+			strcmp(plan_spec->result_parser_digest, SEMLOOM_MAP_RESULT_PARSER_DIGEST) != 0 ||
+			plan_spec->temperature != 0 || plan_spec->top_p != 1 || plan_spec->n != 1 ||
+			plan_spec->stream || plan_spec->has_stop || plan_spec->stop != NULL ||
+			plan_spec->max_input_bytes != SEMLOOM_MAP_MAX_INPUT_BYTES ||
+			plan_spec->max_output_bytes != SEMLOOM_MAP_MAX_OUTPUT_BYTES ||
+			strcmp(plan_spec->physical_algorithm, SEMLOOM_MODEL_REFERENCE_ALGORITHM) != 0 ||
+			strcmp(plan_spec->physical_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
+			strcmp(plan_spec->semantic_spec_digest, semantic_digest) != 0 ||
+			strcmp(plan_spec->physical_algorithm_digest, physical_digest) != 0)
+			semloom_plan_spec_invalid("unsupported generative SemMap plan specification");
+	}
 	else
 	{
 		char semantic_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
@@ -681,7 +831,7 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 										  plan_spec->generation_profile_digest == NULL ? NULL :
 										  &plan_spec->generation_profile,
 										  semantic_digest);
-		semloom_exact_filter_physical_digest(physical_digest);
+		semloom_model_reference_physical_digest(physical_digest);
 		if (plan_spec->operator_kind != SEMLOOM_PLAN_OPERATOR_FILTER ||
 			plan_spec->input_value_kind != SEMLOOM_PLAN_VALUE_TEXT ||
 			plan_spec->output_value_kind != SEMLOOM_PLAN_VALUE_TRISTATE ||
@@ -703,12 +853,41 @@ semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 			plan_spec->stream != (bool) SEMLOOM_FILTER_STREAM ||
 			strcmp(plan_spec->stop, SEMLOOM_FILTER_STOP) != 0 ||
 			strcmp(plan_spec->physical_algorithm,
-				   SEMLOOM_EXACT_FILTER_ALGORITHM) != 0 ||
-			strcmp(plan_spec->physical_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
+				   SEMLOOM_MODEL_REFERENCE_ALGORITHM) != 0 ||
+			strcmp(plan_spec->physical_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
 			strcmp(plan_spec->semantic_spec_digest, semantic_digest) != 0 ||
 			strcmp(plan_spec->physical_algorithm_digest, physical_digest) != 0)
 			semloom_plan_spec_invalid("unsupported exact SemFilter plan specification");
 	}
+}
+
+static void
+semloom_generate_map_semantic_digest(const char *instruction, const char *model_id,
+									 uint32 max_tokens,
+									 char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
+{
+	SemloomMapPlanValues values;
+	pg_cryptohash_ctx *context;
+	uint8 *bytes;
+	size_t length;
+	size_t written;
+
+	if (instruction == NULL || model_id == NULL)
+		semloom_plan_spec_invalid("invalid generative SemMap plan specification");
+	values = (SemloomMapPlanValues) {
+		.instruction = {(const uint8 *) instruction, strlen(instruction), false},
+		.model_id = {(const uint8 *) model_id, strlen(model_id), false},
+		.max_tokens = max_tokens,
+	};
+	if (!semloom_map_plan_encode(&values, NULL, 0, &length))
+		semloom_plan_spec_invalid("invalid generative SemMap plan specification");
+	bytes = palloc(length);
+	if (!semloom_map_plan_encode(&values, bytes, length, &written) || written != length)
+		semloom_plan_spec_invalid("invalid generative SemMap plan specification");
+	semloom_hash_begin(&context);
+	semloom_hash_bytes(context, bytes, length);
+	semloom_hash_finish(context, output);
+	pfree(bytes);
 }
 
 static void
@@ -764,7 +943,7 @@ semloom_exact_filter_semantic_digest(
 }
 
 static void
-semloom_exact_filter_physical_digest(
+semloom_model_reference_physical_digest(
 	char output[SEMLOOM_SHA256_HEX_LENGTH + 1])
 {
 	pg_cryptohash_ctx *context;
@@ -772,8 +951,8 @@ semloom_exact_filter_physical_digest(
 	semloom_hash_begin(&context);
 	semloom_hash_bytes(context, SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN,
 					   sizeof(SEMLOOM_PHYSICAL_ALGORITHM_DIGEST_DOMAIN) - 1);
-	semloom_hash_text(context, SEMLOOM_EXACT_FILTER_ALGORITHM);
-	semloom_hash_text(context, SEMLOOM_EXACT_FILTER_ROLE);
+	semloom_hash_text(context, SEMLOOM_MODEL_REFERENCE_ALGORITHM);
+	semloom_hash_text(context, SEMLOOM_MODEL_REFERENCE_ROLE);
 	semloom_hash_finish(context, output);
 }
 

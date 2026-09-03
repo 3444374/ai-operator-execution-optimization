@@ -5,14 +5,39 @@
 #include "nodes/nodeFuncs.h"
 #include "optimizer/cost.h"
 #include "optimizer/optimizer.h"
+#include "optimizer/planmain.h"
 #include "parser/parsetree.h"
+#include "utils/builtins.h"
+#include "utils/fmgrprotos.h"
+#include "utils/jsonb.h"
 #include "utils/lsyscache.h"
 
+#include "semantic_map_contract.h"
+#include "sem_text.h"
 #include "sem_path_common.h"
 #include "sem_plan_spec.h"
 #include "semloom_pg.h"
 
+typedef struct SemloomMapPlacement
+{
+	Oid generate_oid;
+	Oid recording_oid;
+	Oid filter_oid;
+	Oid exact_filter_oid;
+	List *visible_markers;
+	int generate_count;
+	bool misplaced;
+	bool has_recording_map;
+	bool has_filter;
+} SemloomMapPlacement;
+
 static FuncExpr *semloom_supported_marker(Query *parse, Oid marker_oid);
+static Oid semloom_map_marker_oid(Query *parse);
+static List *semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column);
+static bool semloom_map_nonconstant_source(Node *node, void *context);
+static bool semloom_map_constant_walker(Node *node, void *context);
+static bool semloom_map_placement_walker(Node *node, void *context);
+static void semloom_validate_map_placement(Query *parse, Oid marker_oid);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
 static CustomPath *semloom_make_path(RelOptInfo *parent_rel, Path *child_path);
 static Plan *semloom_plan_path(PlannerInfo *root,
@@ -28,6 +53,161 @@ static const CustomPathMethods semloom_path_methods = {
 	.CustomName = SEMLOOM_MAP_CUSTOM_SCAN_NAME,
 	.PlanCustomPath = semloom_plan_path,
 };
+
+int
+semloom_validate_generate_map_source(Query *parse)
+{
+	Oid marker_oid = semloom_generate_map_function_oid();
+	int query_level = 1;
+	ListCell *cell;
+
+	if (!OidIsValid(marker_oid))
+		return 0;
+	semloom_map_constant_walker((Node *) parse, &marker_oid);
+	if (parse->commandType == CMD_INSERT)
+	{
+		RangeTblRef *reference;
+		RangeTblEntry *entry;
+
+		if (parse->jointree == NULL || list_length(parse->jointree->fromlist) != 1 ||
+			!IsA(linitial(parse->jointree->fromlist), RangeTblRef))
+			return 0;
+		reference = linitial_node(RangeTblRef, parse->jointree->fromlist);
+		entry = rt_fetch(reference->rtindex, parse->rtable);
+		if (entry->rtekind != RTE_SUBQUERY)
+			return 0;
+		parse = entry->subquery;
+		query_level = 2;
+	}
+	if (parse->commandType != CMD_SELECT)
+		return 0;
+	foreach(cell, parse->targetList)
+	{
+		TargetEntry *entry = lfirst_node(TargetEntry, cell);
+
+		if (!entry->resjunk && IsA(entry->expr, FuncExpr) &&
+			((FuncExpr *) entry->expr)->funcid == marker_oid)
+			return query_level;
+	}
+	return 0;
+}
+
+static bool
+semloom_map_placement_walker(Node *node, void *context)
+{
+	SemloomMapPlacement *placement = context;
+
+	/* Each query level is checked separately by the outer Query walker. */
+	if (node == NULL || IsA(node, Query))
+		return false;
+	if (IsA(node, FuncExpr))
+	{
+		Oid function_oid = ((FuncExpr *) node)->funcid;
+
+		if (function_oid == placement->generate_oid)
+		{
+			placement->generate_count++;
+			if (!list_member_ptr(placement->visible_markers, node))
+				placement->misplaced = true;
+		}
+		else if (function_oid == placement->recording_oid)
+			placement->has_recording_map = true;
+		else if (function_oid == placement->filter_oid || function_oid == placement->exact_filter_oid)
+			placement->has_filter = true;
+	}
+	return expression_tree_walker(node, semloom_map_placement_walker, context);
+}
+
+static void
+semloom_validate_map_placement(Query *parse, Oid marker_oid)
+{
+	SemloomMapPlacement placement = {
+		.generate_oid = marker_oid,
+		.recording_oid = semloom_map_function_oid(),
+		.filter_oid = semloom_filter_function_oid(),
+		.exact_filter_oid = semloom_exact_filter_function_oid(),
+	};
+	ListCell *cell;
+
+	foreach(cell, parse->targetList)
+	{
+		TargetEntry *entry = lfirst_node(TargetEntry, cell);
+
+		if (!entry->resjunk && IsA(entry->expr, FuncExpr) &&
+			((FuncExpr *) entry->expr)->funcid == marker_oid)
+			placement.visible_markers = lappend(placement.visible_markers, entry->expr);
+	}
+	query_tree_walker(parse, semloom_map_placement_walker, &placement, 0);
+	list_free(placement.visible_markers);
+	if (placement.generate_count == 0)
+		return;
+	if (placement.has_filter)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("SemMap and SemFilter cannot be combined in the current capability")));
+	if (placement.has_recording_map || placement.generate_count != 1)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("the SemMap capability supports exactly one visible marker")));
+	if (placement.misplaced)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("ai_semantic.map is only supported as a top-level output expression")));
+}
+
+static bool
+semloom_map_nonconstant_source(Node *node, void *context)
+{
+	if (node == NULL)
+		return false;
+	if (IsA(node, Param) || IsA(node, Var) || IsA(node, SubLink))
+		return true;
+	return expression_tree_walker(node, semloom_map_nonconstant_source, context);
+}
+
+static bool
+semloom_map_constant_walker(Node *node, void *context)
+{
+	Oid marker_oid = *((Oid *) context);
+
+	if (node == NULL)
+		return false;
+	if (IsA(node, Query))
+	{
+		semloom_validate_map_placement((Query *) node, marker_oid);
+		return query_tree_walker((Query *) node, semloom_map_constant_walker, context, 0);
+	}
+	if (IsA(node, FuncExpr) && ((FuncExpr *) node)->funcid == marker_oid)
+	{
+		FuncExpr *marker = (FuncExpr *) node;
+		List *fixed_arguments;
+
+		if (list_length(marker->args) != 3)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("invalid generative SemMap marker arguments")));
+		fixed_arguments = list_make2(lsecond(marker->args), lthird(marker->args));
+		if (semloom_map_nonconstant_source((Node *) fixed_arguments, NULL) ||
+			contain_mutable_functions((Node *) fixed_arguments))
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("SemMap instruction and options must be fixed immutable constants")));
+		list_free(fixed_arguments);
+	}
+	return expression_tree_walker(node, semloom_map_constant_walker, context);
+}
+
+static Oid
+semloom_map_marker_oid(Query *parse)
+{
+	Oid recording_oid = semloom_map_function_oid();
+	Oid generate_oid = semloom_generate_map_function_oid();
+	int recording_count = OidIsValid(recording_oid) ?
+		semloom_marker_count((Node *) parse->targetList, recording_oid) : 0;
+	int generate_count = OidIsValid(generate_oid) ?
+		semloom_marker_count((Node *) parse->targetList, generate_oid) : 0;
+
+	if (recording_count > 0 && generate_count > 0)
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("the SemMap capability supports exactly one visible marker")));
+	return generate_count > 0 ? generate_oid : recording_oid;
+}
 
 static FuncExpr *
 semloom_supported_marker(Query *parse, Oid marker_oid)
@@ -69,7 +249,12 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 
 	if (marker == NULL)
 		return;
+	if (marker_oid == semloom_generate_map_function_oid() &&
+		!semloom_generate_map_source_checked(root->query_level))
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("generative SemMap must be a direct query output")));
 	if ((root->query_level != 1 && !insert_source) || parse->commandType != CMD_SELECT ||
+		(marker_oid == semloom_generate_map_function_oid() && parse->hasSubLinks) ||
 		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
 		parse->groupClause != NIL || parse->groupingSets != NIL || parse->havingQual != NULL ||
 		parse->hasWindowFuncs || parse->windowClause != NIL || parse->distinctClause != NIL ||
@@ -105,7 +290,8 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("ai_semantic.map is only supported as a top-level output expression")));
-	if (list_length(marker->args) != 1 || exprType(linitial(marker->args)) != TEXTOID ||
+	if (list_length(marker->args) != (marker_oid == semloom_generate_map_function_oid() ? 3 : 1) ||
+		exprType(linitial(marker->args)) != TEXTOID ||
 		marker->funcresulttype != TEXTOID)
 		ereport(ERROR,
 				(errcode(ERRCODE_DATATYPE_MISMATCH),
@@ -124,7 +310,7 @@ semloom_add_sem_map_paths(PlannerInfo *root,
 
 	if (stage != UPPERREL_FINAL)
 		return;
-	marker_oid = semloom_map_function_oid();
+	marker_oid = semloom_map_marker_oid(root->parse);
 	if (!OidIsValid(marker_oid) ||
 		semloom_marker_count((Node *) root->parse->targetList, marker_oid) == 0)
 		return;
@@ -184,8 +370,9 @@ semloom_plan_path(PlannerInfo *root,
 				   List *clauses,
 				   List *custom_plans)
 {
-	Oid marker_oid = semloom_map_function_oid();
+	Oid marker_oid = semloom_map_marker_oid(root->parse);
 	CustomScan *scan = makeNode(CustomScan);
+	FuncExpr *marker = NULL;
 	List *scan_target_list;
 	List *mapped_columns = NIL;
 	ListCell *cell;
@@ -196,14 +383,17 @@ semloom_plan_path(PlannerInfo *root,
 				 errmsg("invalid SemMap custom path state")));
 
 	semloom_replace_marker_in_plan(linitial_node(Plan, custom_plans), marker_oid);
-	scan_target_list = (List *) semloom_replace_marker((Node *) target_list, &marker_oid);
+	scan_target_list = copyObject(target_list);
 	foreach(cell, target_list)
 	{
 		TargetEntry *entry = lfirst_node(TargetEntry, cell);
 
 		if (IsA(entry->expr, FuncExpr) &&
 			((FuncExpr *) entry->expr)->funcid == marker_oid)
+		{
 			mapped_columns = lappend_int(mapped_columns, entry->resno);
+			marker = (FuncExpr *) entry->expr;
+		}
 	}
 	if (list_length(mapped_columns) != 1)
 		ereport(ERROR,
@@ -211,9 +401,10 @@ semloom_plan_path(PlannerInfo *root,
 				 errmsg("SemMap plan lost its mapped output identity")));
 
 	/*
-	 * Leave these expressions in planner form.  set_customscan_references()
-	 * matches them against custom_scan_tlist and creates INDEX_VAR references
-	 * after the complete plan tree is available.
+	 * Keep the logical output identity distinct from its child input.  setrefs
+	 * matches the marker to this descriptor and builds an INDEX_VAR; substituting
+	 * the input here would re-project constants or alias equal ordinary columns.
+	 * Only the child evaluates the input; this descriptor is never executed.
 	 */
 	scan->scan.plan.targetlist = copyObject(scan_target_list);
 	scan->scan.plan.qual = NIL;
@@ -221,9 +412,15 @@ semloom_plan_path(PlannerInfo *root,
 	scan->flags = CUSTOMPATH_SUPPORT_PROJECTION;
 	scan->custom_plans = custom_plans;
 	scan->custom_exprs = NIL;
-	scan->custom_private = semloom_plan_spec_make_recording_private(
-		SEMLOOM_PLAN_OPERATOR_MAP,
-		(AttrNumber) linitial_int(mapped_columns));
+	if (marker_oid == semloom_generate_map_function_oid())
+	{
+		scan->custom_private = semloom_generate_map_private(marker,
+			(AttrNumber) linitial_int(mapped_columns));
+		record_plan_function_dependency(root, marker_oid);
+	}
+	else
+		scan->custom_private = semloom_plan_spec_make_recording_private(
+			SEMLOOM_PLAN_OPERATOR_MAP, (AttrNumber) linitial_int(mapped_columns));
 	scan->custom_scan_tlist = scan_target_list;
 	scan->methods = &semloom_map_scan_methods;
 
@@ -241,7 +438,7 @@ semloom_replace_marker(Node *node, void *context)
 	{
 		FuncExpr *marker = (FuncExpr *) node;
 
-		if (list_length(marker->args) != 1)
+		if (list_length(marker->args) != (marker_oid == semloom_generate_map_function_oid() ? 3 : 1))
 			ereport(ERROR,
 					(errcode(ERRCODE_INTERNAL_ERROR),
 					 errmsg("invalid SemMap marker arguments during plan lowering")));
@@ -260,4 +457,85 @@ semloom_replace_marker_in_plan(Plan *plan, Oid marker_oid)
 	plan->qual = (List *) semloom_replace_marker((Node *) plan->qual, &marker_oid);
 	semloom_replace_marker_in_plan(plan->lefttree, marker_oid);
 	semloom_replace_marker_in_plan(plan->righttree, marker_oid);
+}
+
+static JsonbValue *
+semloom_map_option(Jsonb *options, const char *name)
+{
+	JsonbValue key;
+
+	key.type = jbvString;
+	key.val.string.val = (char *) name;
+	key.val.string.len = strlen(name);
+	return findJsonbValueFromContainer(&options->root, JB_FOBJECT, &key);
+}
+
+static List *
+semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column)
+{
+	Const *instruction_const;
+	Const *options_const;
+	text *instruction;
+	Size instruction_length;
+	Jsonb *options;
+	JsonbValue *model;
+	JsonbValue *temperature;
+	JsonbValue *max_tokens;
+	Datum numeric_tokens;
+	int32 tokens;
+
+	if (!IsA(lsecond(marker->args), Const) || !IsA(lthird(marker->args), Const))
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("SemMap instruction and options must be plan-time constants")));
+	instruction_const = lsecond_node(Const, marker->args);
+	options_const = lthird_node(Const, marker->args);
+	if (instruction_const->consttype != TEXTOID || options_const->consttype != JSONBOID ||
+		instruction_const->constisnull || options_const->constisnull)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap instruction and options must be non-NULL text and jsonb constants")));
+	instruction = DatumGetTextPP(instruction_const->constvalue);
+	instruction_length = VARSIZE_ANY_EXHDR(instruction);
+	if (instruction_length == 0 || instruction_length > SEMLOOM_MAP_MAX_INSTRUCTION_BYTES ||
+		!semloom_text_is_utf8_no_nul((const uint8 *) VARDATA_ANY(instruction), instruction_length))
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap instruction must contain 1 to 4096 UTF8 bytes")));
+	options = DatumGetJsonbP(options_const->constvalue);
+	if (!JB_ROOT_IS_OBJECT(options) || JB_ROOT_COUNT(options) != 3)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap options must contain exactly model, temperature, and max_tokens")));
+	model = semloom_map_option(options, "model");
+	temperature = semloom_map_option(options, "temperature");
+	max_tokens = semloom_map_option(options, "max_tokens");
+	if (model == NULL || temperature == NULL || max_tokens == NULL)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap options must contain exactly model, temperature, and max_tokens")));
+	if (model->type != jbvString || model->val.string.len <= 0 ||
+		model->val.string.len > SEMLOOM_MAP_MAX_MODEL_BYTES ||
+		!semloom_text_is_utf8_no_nul((const uint8 *) model->val.string.val, model->val.string.len))
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap model must contain 1 to 128 UTF8 bytes")));
+	if (temperature->type != jbvNumeric ||
+		DatumGetInt32(DirectFunctionCall2(numeric_cmp, NumericGetDatum(temperature->val.numeric),
+			DirectFunctionCall1(int4_numeric, Int32GetDatum(0)))) != 0)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap temperature must be numeric zero")));
+	if (max_tokens->type != jbvNumeric)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap max_tokens must be an integer from 1 to 4096")));
+	numeric_tokens = NumericGetDatum(max_tokens->val.numeric);
+	if (DatumGetInt32(DirectFunctionCall2(numeric_cmp, numeric_tokens,
+			DirectFunctionCall1(int4_numeric, Int32GetDatum(1)))) < 0 ||
+		DatumGetInt32(DirectFunctionCall2(numeric_cmp, numeric_tokens,
+			DirectFunctionCall1(int4_numeric, Int32GetDatum(SEMLOOM_MAP_MAX_GENERATION_TOKENS)))) > 0)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap max_tokens must be an integer from 1 to 4096")));
+	tokens = DatumGetInt32(DirectFunctionCall1(numeric_int4, numeric_tokens));
+	if (DatumGetInt32(DirectFunctionCall2(numeric_cmp, numeric_tokens,
+			DirectFunctionCall1(int4_numeric, Int32GetDatum(tokens)))) != 0)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("SemMap max_tokens must be an integer from 1 to 4096")));
+	return semloom_plan_spec_make_generate_map_private(
+		pnstrdup(VARDATA_ANY(instruction), instruction_length),
+		pnstrdup(model->val.string.val, model->val.string.len),
+		(uint32) tokens, input_column, marker->funcid);
 }

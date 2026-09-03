@@ -19,7 +19,8 @@
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护；消息、纯值和 Python v5 子切片已验证并合入本地 main，
-PG plan/权限、C v5 与完整 golden/模型/资源检查仍待完成，不表示新增 Map SQL 已可执行。
+PG plan/权限及 C v5/golden 执行已验证并纳入 main；新增 Map SQL 能返回文本，
+真实模型和资源压力仍待完成，不用 fixture 结果代替模型或性能证据。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
 
@@ -119,6 +120,11 @@ PG 只增加 lazy UDS client 和新增资源清理；listener、模型连接与�
 MemoryContext、external-FD accounting、executor callback 和 longjmp 机制，不重写数据库资源管理器。
 共享 Module 以两个真实消费者、变化原因与 Interface 测试为依据；不是按行数机械拆分。
 
+协议表示、版本与 open/task 阶段的合法性由各版本 codec 集中校验；算子完成值规则由纯语义
+Module 表达，PG runtime 调用后映射错误，并独自管理跨任务累计计数与清理。C/Python 采用同一份
+专项语义与独立预期用例，不能在某一端另加接受条件。当前 Map 与 Filter 共用执行栈，不新增
+协议 registry 或通用解析框架；本次规则归属复核见[Map 接线记录](../results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)。
+
 算子优化不另建外部服务：PG planner 拥有合法候选与选择，纯策略计算留在语义 Module，executor
 执行计划允许的动作，SemLoom 只调度已授权的 work。改变模型/生成语义与选择等价执行副本是不同
 动作；前者需要相应算子合同及质量依据，后者也须满足部署能力和数据外发许可，具体见 §6.5。
@@ -155,7 +161,7 @@ planned choice profile 必须自包含并进入新 semantic digest；provider id
 
 | 对象 | 当前字段职责 |
 |---|---|
-| `AiOpenSpec`（query-fixed） | operator/value kinds、policy、schema/spec identity、algorithm/role、prompt/parser/model identity、semantic/physical digests，以及 `temperature/top_p/max_tokens/n/stream/stop`；choice 路径另持有完整 generation profile |
+| `AiOpenSpec`（query-fixed） | operator/value kinds、policy、schema/spec identity、algorithm/role、prompt/parser/model identity、semantic/physical digests，以及 `temperature/top_p/max_tokens/n/stream/has_stop/stop`；choice 路径另持有完整 generation profile；生成型 Map 传递计划 input/output 字节上限 |
 | `AiPreparedTask`（per-item） | `sequence`、`input`、`canonical_messages`、`semantic_payload_digest`、`is_null` |
 | `AiCompletion`（per-item） | `sequence`、`output`、`response_model_id`、`finish_reason`、`prompt_tokens/output_tokens`、`is_null` |
 | `AiProviderError` | caller-owned 中立分类、errno、限长脱敏详情及必要固定宽度参数 |
@@ -168,9 +174,9 @@ wire task/completion 可携带身份摘要用于核验，不意味着这些字�
 
 ### 5.4 生命周期身份与证据
 
-当前 wire v2/v3/v4 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
-关联任务。v3/v4 校验 semantic-spec、physical-algorithm、provider-execution、payload 和 completion evidence；
-v4 另核对完整 generation profile 及其摘要。
+当前 wire v2/v3/v4/v5 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
+关联任务。v3/v4/v5 校验 semantic-spec、physical-algorithm、provider-execution、payload 和 completion evidence；
+v4 另核对完整 generation profile 及其摘要，v5 使用生成型 Map 的语义、文本和生成要求。
 五类主摘要的职责如下；prompt/parser 与 choice profile 还有各自摘要，不能把“五类”当作字段总数：
 
 | 摘要 | 回答的问题 | 不代表什么 |
@@ -181,8 +187,8 @@ v4 另核对完整 generation profile 及其摘要。
 | semantic payload | 实际输入与规范消息是什么 | 相同 payload 是同一个任务或可直接命中缓存 |
 | completion evidence | 完成值、usage、sequence 与上述身份是否对应 | 远端真实执行的加密证明或 exactly-once inference |
 
-当前 v3/v4 的 provider 摘要只编码 domain、协议版本、provider execution ID 与 model ID；Python v5
-也保持这一粒度。不包含 endpoint URL、部署实例、timeout 或硬件。该粒度符合固定实现身份的现有
+当前 v3/v4/v5 的 provider 摘要只编码 domain、协议版本、provider execution ID 与 model ID，
+不包含 endpoint URL、部署实例、timeout 或硬件。该粒度符合固定实现身份的现有
 用途，但不能承担未来跨部署归因。当前 calibration 另保存 workload/service signature，由实验编排
 选择匹配记录，PG 没有在线核实 endpoint。部署证据应补足，而不是据此重写旧摘要或改判旧功能测试。
 摘要用于内容一致性与关联检查，不是认证/授权；计算摘要的一方也能重算它。tuple binding 留在 PG，
@@ -196,8 +202,8 @@ sequence 会传到 provider，真实部署的可信度仍依赖受控配置、�
 
 ### 6.1 当前同步行为
 
-本节描述 main 已实现的 recording、exact 和 choice 路径，它们共用同步生命周期。
-接通 wire v4 前的临时执行拒绝只属于历史切片；当前支持范围见专项完成记录和 INFRA_STATUS。
+本节描述 main 已实现的 recording、exact/choice Filter 和生成型 Map golden 路径，它们共用同步生命周期。
+接通 wire v4/v5 前的临时执行拒绝只属于历史切片；Map 真实模型和资源专项尚未通过，当前支持范围见 INFRA_STATUS。
 
 当前 `AiProviderPort` 只有 `open/drive/close`，一次 `drive` 接收一项任务、返回一项 completion 或错误。
 query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真正 open，plain EXPLAIN、LIMIT 0、
@@ -210,8 +216,8 @@ query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真
 ### 6.2 版本策略
 
 recording wire v2 与 exact Filter wire v3 的字段集合、摘要 golden、错误和旧 SQL 行为保持不变。
-choice 使用独立 schema 3 / wire v4，详见四 C；四 D 已确定 schema 4 / wire v5 用于同步生成型 Map，
-PG client 尚未接线。v5 不是异步通用协议。后续多在途、部署绑定或多算子复用一条连接时，先定
+choice 使用独立 schema 3 / wire v4，详见四 C；生成型 Map 的 schema 4 / wire v5 已接通 PG 与 golden，
+真实模型/资源验收仍见四 D 专项。v5 不是异步通用协议。后续多在途、部署绑定或多算子复用一条连接时，先定
 实际合同再选择新版本，不能占用 v5、向旧帧塞可选字段，或预先承诺某个后续版本号。
 复用 framing、JSON primitives、session loop 与 deadline，不用“可选字段大集合”放宽旧 schema，
 也不复制整套 socket/HTTP/runtime。未有数据拷贝瓶颈证据前，不新增共享内存或零拷贝传输。
@@ -449,6 +455,8 @@ binding 分开；已有文件能承载时继续使用，出现真实消费者和
 
 来源：2026-09-02 对用户提供的 `x_semantic` 当前工作副本的只读源码核对；该副本有未提交改动，
 不是一个已经锁定或通过 PG18.3 验证的 release。下面是源码观察与工程决定，不是模型/性能结论。
+表中自有实现描述保留该次核对基线；后续共享消息、PG plan 和 C v5/golden 的进展见四 D 及
+INFRA_STATUS，不因表中的历史差异再次重构已完成模块。
 参考核对当时区分 main 与四 C 独立分支；当前集成状态见 INFRA_STATUS，原始证据不重新绑定。两边所查目录
 均为 PGXS extension，未据此发现必须引入 core patch 的依据；该观察不覆盖未提供的公司数据库内核。
 路径相对用户提供的参考目录；后续切片须重新确认实际版本和函数体。这里只记录最小定位与行为摘要，
@@ -665,7 +673,9 @@ AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重
 `6903cf46` 完成[规范消息编译](../results/postgresql/semmap_messages_20260903/README.md)，
 `425d2b1c` 随后验证[C/Python 纯值和 Python v5](../results/postgresql/semmap_values_20260903/README.md)。
 上述子切片与后续深层 JSON 修复已合入本地 main，历史验证范围与提交身份保留。
-PG plan、C v5 互通、PG＋golden、真实模型与资源须继续分阶段验收，不能把本子切片写成可执行生成型 Map。
+后续已完成并纳入 main 的 [PG plan/权限检查](../results/postgresql/semmap_pg_plan_20260903/README.md)，
+随后 [C v5/PG golden 验证](../results/postgresql/semmap_pg_wire_20260903/README.md)完成实际文本执行，
+保留来源/权限并修复常量与等值列输出绑定；真实模型与资源仍分阶段验收，不能把 golden 写成四 D 全部完成。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。

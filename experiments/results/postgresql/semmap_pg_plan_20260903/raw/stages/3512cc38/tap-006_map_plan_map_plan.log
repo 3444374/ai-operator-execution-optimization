@@ -1,0 +1,31 @@
+2026-09-03 14:46:42.679 CST [96975] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 14:46:42.680 CST [96975] LOG:  listening on Unix socket "/tmp/1f1kuy9uXK/.s.PGSQL.32090"
+2026-09-03 14:46:42.682 CST [96981] LOG:  database system was shut down at 2026-09-03 14:46:42 CST
+2026-09-03 14:46:42.684 CST [96975] LOG:  database system is ready to accept connections
+2026-09-03 14:46:42.783 CST [96986] 006_map_plan.pl LOG:  statement: CREATE EXTENSION semloom_pg VERSION '0.1.0';
+2026-09-03 14:46:42.795 CST [96988] 006_map_plan.pl LOG:  statement: SELECT oid, proname, proargtypes, provolatile, proparallel, proisstrict, prosecdef, proleakproof,
+	       coalesce(proacl::text, '')
+	FROM pg_proc WHERE pronamespace = 'ai_semantic'::regnamespace ORDER BY oid;
+2026-09-03 14:46:42.811 CST [96990] 006_map_plan.pl LOG:  statement: ALTER EXTENSION semloom_pg UPDATE TO '0.2.0';
+2026-09-03 14:46:42.820 CST [96992] 006_map_plan.pl LOG:  statement: SELECT oid, proname, proargtypes, provolatile, proparallel, proisstrict, prosecdef, proleakproof,
+	       coalesce(proacl::text, '')
+	FROM pg_proc WHERE pronamespace = 'ai_semantic'::regnamespace
+	AND oid <> 'ai_semantic.map(text,text,jsonb)'::regprocedure ORDER BY oid;
+2026-09-03 14:46:42.831 CST [96994] 006_map_plan.pl LOG:  statement: SELECT prorettype::regtype, l.lanname, provolatile, proparallel, proisstrict, prosecdef, proleakproof
+	FROM pg_proc p JOIN pg_language l ON l.oid = p.prolang
+	WHERE p.oid = 'ai_semantic.map(text,text,jsonb)'::regprocedure;
+2026-09-03 14:46:42.842 CST [96996] 006_map_plan.pl LOG:  statement: CREATE TABLE map_inputs(id integer, body text);
+2026-09-03 14:46:42.844 CST [96996] 006_map_plan.pl LOG:  statement: INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
+2026-09-03 14:46:42.850 CST [96998] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs
+2026-09-03 14:46:42.862 CST [97000] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs
+2026-09-03 14:46:42.871 CST [97002] 006_map_plan.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs;
+2026-09-03 14:46:42.872 CST [97002] 006_map_plan.pl ERROR:  ai_semantic.map marker was not lowered to a semantic plan
+2026-09-03 14:46:42.872 CST [97002] 006_map_plan.pl HINT:  Load semloom_pg before planning and use a supported SemMap query shape.
+2026-09-03 14:46:42.872 CST [97002] 006_map_plan.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs;
+2026-09-03 14:46:42.876 CST [96975] LOG:  received fast shutdown request
+2026-09-03 14:46:42.876 CST [96975] LOG:  aborting any active transactions
+2026-09-03 14:46:42.877 CST [96975] LOG:  background worker "logical replication launcher" (PID 96984) exited with exit code 1
+2026-09-03 14:46:42.877 CST [96979] LOG:  shutting down
+2026-09-03 14:46:42.877 CST [96979] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 14:46:42.879 CST [96979] LOG:  checkpoint complete: wrote 50 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=201 kB, estimate=201 kB; lsn=0/171F8E8, redo lsn=0/171F8E8
+2026-09-03 14:46:42.886 CST [96975] LOG:  database system is shut down

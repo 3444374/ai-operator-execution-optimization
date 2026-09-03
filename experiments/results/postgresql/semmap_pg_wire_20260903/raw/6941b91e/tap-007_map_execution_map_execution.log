@@ -1,0 +1,17 @@
+2026-09-03 16:58:54.815 CST [108336] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 16:58:54.815 CST [108336] LOG:  listening on Unix socket "/tmp/APONd3asAY/.s.PGSQL.13769"
+2026-09-03 16:58:54.817 CST [108342] LOG:  database system was shut down at 2026-09-03 16:58:54 CST
+2026-09-03 16:58:54.820 CST [108336] LOG:  database system is ready to accept connections
+2026-09-03 16:58:54.918 CST [108347] 007_map_execution.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 16:58:54.920 CST [108347] 007_map_execution.pl LOG:  statement: CREATE TABLE map_rows(id integer, body text);
+2026-09-03 16:58:54.922 CST [108347] 007_map_execution.pl LOG:  statement: INSERT INTO map_rows VALUES (1, 'hello');
+2026-09-03 16:58:55.061 CST [108352] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:58:55.062 CST [108352] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/APONd3asAY/map.sock';
+2026-09-03 16:58:55.062 CST [108352] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows;
+2026-09-03 16:58:55.083 CST [108336] LOG:  received fast shutdown request
+2026-09-03 16:58:55.083 CST [108336] LOG:  aborting any active transactions
+2026-09-03 16:58:55.084 CST [108336] LOG:  background worker "logical replication launcher" (PID 108345) exited with exit code 1
+2026-09-03 16:58:55.084 CST [108340] LOG:  shutting down
+2026-09-03 16:58:55.084 CST [108340] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 16:58:55.087 CST [108340] LOG:  checkpoint complete: wrote 50 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.004 s; sync files=0, longest=0.000 s, average=0.000 s; distance=201 kB, estimate=201 kB; lsn=0/171FBA0, redo lsn=0/171FBA0
+2026-09-03 16:58:55.095 CST [108336] LOG:  database system is shut down

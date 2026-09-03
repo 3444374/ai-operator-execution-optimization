@@ -1,0 +1,47 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'force_custom_plan rejects a prepared instruction inside an inlined Map wrapper'
+#   at t/006_map_plan.pl line 103.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'force_custom_plan rejects the wrapped source before execution'
+#   at t/006_map_plan.pl line 104.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: )'
+
+#   Failed test 'wrapped parameter cannot acquire a generative Map plan'
+#   at t/006_map_plan.pl line 105.
+#                   'Custom Scan (SemLoom SemMap)  (cost=0.00..29.05 rows=1270 width=32)
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_map.generate.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_map.chat.v1
+#   Result Parser: semloom.sem_map.utf8_text.v1
+#   Model: golden-map-v1
+#   Semantic Plan Schema: 4
+#   Semantic Spec Digest: b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba
+#   Max Tokens: 128
+#   Max Input Bytes: 163840
+#   Max Output Bytes: 65536
+#   Execution Support: plan-only
+#   Provider: not-connected
+#   Mapped Column: 1
+#   ->  Seq Scan on map_inputs  (cost=0.00..25.88 rows=1270 width=32)'
+#           matches '(?^:Custom Scan \(SemLoom SemMap\))'
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 206.
+t/006_map_plan.pl ..
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+Failed 3/206 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 7424 Tests: 206 Failed: 3)
+  Failed tests:  23-25
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+Files=1, Tests=206,  3 wallclock secs ( 0.05 usr  0.01 sys +  1.61 cusr  0.74 csys =  2.41 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

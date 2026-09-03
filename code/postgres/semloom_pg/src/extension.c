@@ -16,6 +16,9 @@ PG_MODULE_MAGIC;
 
 static create_upper_paths_hook_type previous_create_upper_paths_hook = NULL;
 static set_rel_pathlist_hook_type previous_set_rel_pathlist_hook = NULL;
+static planner_hook_type previous_planner_hook = NULL;
+/* Scoped to one planner invocation, including nested planning and ERROR. */
+static int generate_map_source_level = 0;
 static char *semloom_gateway_socket = NULL;
 static char *semloom_reference_calibration_file = NULL;
 static int semloom_execution_profile = SEMLOOM_PROVIDER_PROFILE_GOLDEN;
@@ -36,6 +39,8 @@ static void semloom_set_rel_pathlist(PlannerInfo *root,
 									RelOptInfo *rel,
 									Index rti,
 									RangeTblEntry *rte);
+static PlannedStmt *semloom_planner(Query *parse, const char *query_string,
+	int cursor_options, ParamListInfo bound_params);
 
 void _PG_init(void);
 void _PG_fini(void);
@@ -65,6 +70,14 @@ Oid
 semloom_map_function_oid(void)
 {
 	Oid argument_types[1] = {TEXTOID};
+
+	return semloom_lookup_marker("map", lengthof(argument_types), argument_types);
+}
+
+Oid
+semloom_generate_map_function_oid(void)
+{
+	Oid argument_types[3] = {TEXTOID, TEXTOID, JSONBOID};
 
 	return semloom_lookup_marker("map", lengthof(argument_types), argument_types);
 }
@@ -116,8 +129,10 @@ bool
 semloom_is_map_function(Oid function_oid)
 {
 	Oid marker_oid = semloom_map_function_oid();
+	Oid generate_oid = semloom_generate_map_function_oid();
 
-	return OidIsValid(marker_oid) && function_oid == marker_oid;
+	return (OidIsValid(marker_oid) && function_oid == marker_oid) ||
+		(OidIsValid(generate_oid) && function_oid == generate_oid);
 }
 
 void
@@ -160,6 +175,8 @@ _PG_init(void)
 	create_upper_paths_hook = semloom_create_upper_paths;
 	previous_set_rel_pathlist_hook = set_rel_pathlist_hook;
 	set_rel_pathlist_hook = semloom_set_rel_pathlist;
+	previous_planner_hook = planner_hook;
+	planner_hook = semloom_planner;
 }
 
 void
@@ -169,6 +186,37 @@ _PG_fini(void)
 		create_upper_paths_hook = previous_create_upper_paths_hook;
 	if (set_rel_pathlist_hook == semloom_set_rel_pathlist)
 		set_rel_pathlist_hook = previous_set_rel_pathlist_hook;
+	if (planner_hook == semloom_planner)
+		planner_hook = previous_planner_hook;
+}
+
+static PlannedStmt *
+semloom_planner(Query *parse, const char *query_string,
+				int cursor_options, ParamListInfo bound_params)
+{
+	int previous_source_level = generate_map_source_level;
+	PlannedStmt *result;
+
+	generate_map_source_level = semloom_validate_generate_map_source(parse);
+	PG_TRY();
+	{
+		if (previous_planner_hook != NULL)
+			result = previous_planner_hook(parse, query_string, cursor_options, bound_params);
+		else
+			result = standard_planner(parse, query_string, cursor_options, bound_params);
+	}
+	PG_FINALLY();
+	{
+		generate_map_source_level = previous_source_level;
+	}
+	PG_END_TRY();
+	return result;
+}
+
+bool
+semloom_generate_map_source_checked(int query_level)
+{
+	return generate_map_source_level != 0 && query_level == generate_map_source_level;
 }
 
 static void

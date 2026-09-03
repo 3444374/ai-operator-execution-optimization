@@ -1,0 +1,127 @@
+{
+  "source_commit": "2205ccbbb764e273ee80cede0a2dd1170136f785",
+  "verified_manifest_entries": 186,
+  "verified_source_blobs": 1000,
+  "stages": [
+    {
+      "commit": "2205ccbbb764e273ee80cede0a2dd1170136f785",
+      "directory": "server",
+      "tap_tests": 1260,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "2bb9196e32f2fd307662445e19d21d7623fd4d58",
+      "directory": "stages/2bb9196e",
+      "tap_tests": 18,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "3512cc387534b1dfb9ab867fb9c89e2d9fc00449",
+      "directory": "stages/3512cc38",
+      "tap_tests": 18,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "52e0fcd4536d9e87aecd1d4ccdb91a29704b15a7",
+      "directory": "stages/52e0fcd4",
+      "tap_tests": 238,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "56c0d913025a32adf6eebdeab507834693216b91",
+      "directory": "stages/56c0d913",
+      "tap_tests": 3,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "58ba199bc905355d4a4fd46ccb9ff6d6c9056de1",
+      "directory": "stages/58ba199b",
+      "tap_tests": 52,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "5c598ada0cc751fa4c75e49076bda5e2f9e7060d",
+      "directory": "stages/5c598ada",
+      "tap_tests": 58,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "848f9ad3b28b9ad89e6651aa784824e6be22eba7",
+      "directory": "stages/848f9ad3",
+      "tap_tests": 58,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "97f352271d10563dcb17eb0e58707aab728eb7ba",
+      "directory": "stages/97f35227",
+      "tap_tests": 37,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "a1638e4c9c8fec4f4864753fc9d33db5254dc2af",
+      "directory": "stages/a1638e4c",
+      "tap_tests": 37,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "a347def7cc27860d31f597588b66fb8560ea8860",
+      "directory": "stages/a347def7",
+      "tap_tests": 144,
+      "tap_passed": true,
+      "expected_failure": false
+    },
+    {
+      "commit": "afdaf94d91e89a292784ac07735b50e243391ae9",
+      "directory": "stages/afdaf94d",
+      "tap_tests": 52,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "b746e28a0b53c405014c46394b4738a5d30b01d0",
+      "directory": "stages/b746e28a",
+      "tap_tests": 0,
+      "tap_passed": false,
+      "expected_failure": true
+    },
+    {
+      "commit": "d6705574028f2cc7a1045ec86abe386ca49f3d7e",
+      "directory": "stages/d6705574",
+      "tap_tests": 1,
+      "tap_passed": false,
+      "expected_failure": true
+    }
+  ],
+  "current_documentation_only_source_differences": [
+    "code/postgres/semloom_pg/README.md"
+  ],
+  "local_tests": 136,
+  "server_tests": 136,
+  "tap_tests": 1260,
+  "regression_tests": 1,
+  "markdown_files_checked": [
+    "PROJECT_LOG.md",
+    "code/INFRA_STATUS.md",
+    "code/README.md",
+    "code/postgres/semloom_pg/README.md",
+    "experiments/plans/README.md",
+    "experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md",
+    "experiments/plans/postgresql_semmap_generation_contract.md",
+    "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md",
+    "experiments/results/README.md",
+    "experiments/results/postgresql/semmap_pg_plan_20260903/README.md"
+  ],
+  "local_link_targets_checked": 187,
+  "model_requests": 0,
+  "passed": true
+}

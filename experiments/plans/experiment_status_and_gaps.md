@@ -51,7 +51,8 @@
 > 自有语义算子与 SemLoom 执行核心仍都继续实现；公司 demo 为工程参考，未来算子方法和执行能力的移植方案
 > 与待核对项见[主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，尚无公司适配通过证据。
 > 工程接入不等于 Filter reference 质量通过，其真实采集继续暂停。生成型 SemMap 与独立增量核心
-> 不再等待 Filter 质量或第二路径；它们仍待实现，也没有新增运行证据。Filter 的质量、标签、matched
+> 不再等待 Filter 质量或第二路径。生成型 Map 的 [C v5/PG golden 执行与协议复核](../results/postgresql/semmap_pg_wire_20260903/README.md)已通过并纳入 main，
+> 真实模型与资源压力仍未运行；独立增量核心仍待实现。Filter 的质量、标签、matched
 > calibration、第二路径与 fallback 仍按自己的条件验证；carrier 检查随各实际路径增量进行。
 > PG accepted-prefix、多在途与增量桥接须通过对应真实算子的生命周期、关联和资源检查后，才用于
 > 匹配端到端及 IMLane-like batch placement 实验。Kalypso-like lineage 只作后续参考，

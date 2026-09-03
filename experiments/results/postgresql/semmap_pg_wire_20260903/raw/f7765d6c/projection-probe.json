@@ -1,0 +1,30 @@
+[
+  {
+    "unicode_input_hex": {
+      "status": 0,
+      "out": "e794b20a22e4b999225c34453139097b7d",
+      "error": ""
+    }
+  },
+  {
+    "status": 0,
+    "out": "hello",
+    "error": "",
+    "expected": "generated",
+    "matched": false
+  },
+  {
+    "status": 0,
+    "out": "hello|hello",
+    "error": "",
+    "expected": "hello|generated",
+    "matched": false
+  },
+  {
+    "status": 0,
+    "out": "generated|generated",
+    "error": "",
+    "expected": "generated|hello",
+    "matched": false
+  }
+]

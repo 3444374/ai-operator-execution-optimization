@@ -57,6 +57,7 @@ typedef struct SemloomOperatorMachine
 } SemloomOperatorMachine;
 
 extern const SemloomOperatorMachineMethods semloom_map_machine_methods;
+extern const SemloomOperatorMachineMethods semloom_map_generate_machine_methods;
 extern const SemloomOperatorMachineMethods semloom_filter_recording_machine_methods;
 extern const SemloomOperatorMachineMethods semloom_filter_exact_machine_methods;
 

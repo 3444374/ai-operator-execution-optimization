@@ -1,0 +1,16 @@
+{
+  "baseline": "b58479f70cba53d562e27edbcaad77356feb010e",
+  "source_commit": "676615fafd602d609aa7216f45f3534145bcb194",
+  "diff_command": "git diff b58479f7...676615fa",
+  "review_scope": "Two independent read-only source/test reviews; neither reviewer ran server or model tests",
+  "standards": {
+    "findings": 0,
+    "hard_violations": 0,
+    "report": "未发现 Standards 问题（0 项硬性违规，0 项值得报告的代码异味）。extension.c 的源级状态仅保存整数，验证成功后赋值，通过 PG_FINALLY 恢复，未发现借用对象生命周期或嵌套状态泄漏。sem_path.c 检查限定原始直接输出来源，保持 carrier/runtime/provider 分工，符合 code/AGENTS.md §2、§5。测试覆盖两种 wrapper、custom/generic、普通内联、零连接和嵌套规划成功/异常恢复，符合 §6。"
+  },
+  "spec": {
+    "findings": 0,
+    "report": "No actionable findings. §3.2 前置参数检查仍先于原 planner hook；直接 SELECT/INSERT 来源记录层级 1/2，后续仍受单 Map、顶层输出和查询形状检查限制。§8.0 要求内联新暴露的 Map 返回 0A000，新增检查关闭 whole-Map wrapper 绕过，不关闭普通内联或改变直接 Map 输入。PG_FINALLY 恢复正常/ERROR 状态；前置校验抛错时尚未赋值。测试涵盖两种 SQL 定义、custom/generic 参数、零连接、literal wrapper 拒绝及普通输入包装保持。权限、计划依赖、wire、摘要未改。"
+  },
+  "remaining_work": "C v5, PG golden execution, real-model and resource qualification remain pending; shared Filter-named physical constants are deferred to wiring."
+}

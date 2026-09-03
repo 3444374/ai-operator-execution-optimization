@@ -1,0 +1,158 @@
+# Checking port 20777
+# Found port 20777
+Name: map_plan
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/archives
+Connection string: port=20777 host=/tmp/LLfZQFCjF4
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log
+[14:56:51.367](0.016s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+### Starting node "map_plan"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log --options --cluster-name=map_plan start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "map_plan" is 97724
+[14:56:52.067](0.700s) ok 1 - existing extension upgrades to the generative Map SQL interface
+[14:56:52.077](0.010s) ok 2 - upgrade preserves all old function identities, attributes and grants
+[14:56:52.088](0.011s) ok 3 - new Map has text output and explicit safe marker attributes
+[14:56:52.110](0.022s) ok 4 - generative Map uses the existing Map carrier
+[14:56:52.111](0.000s) ok 5 - new Map owns schema 4
+[14:56:52.111](0.000s) ok 6 - plan identifies generative Map semantics
+[14:56:52.111](0.000s) ok 7 - PG plan identity matches the independent Map vector
+[14:56:52.111](0.000s) ok 8 - Map owns its prompt program
+[14:56:52.111](0.000s) ok 9 - Map owns its text result policy
+[14:56:52.111](0.000s) ok 10 - plan owns the model
+[14:56:52.111](0.000s) ok 11 - plan owns the normalized output token cap
+[14:56:52.111](0.000s) ok 12 - plan owns its input byte cap
+[14:56:52.112](0.000s) ok 13 - plan owns its output byte cap
+[14:56:52.112](0.000s) ok 14 - EXPLAIN does not claim connected execution
+[14:56:52.119](0.008s) ok 15 - EXPLAIN does not disclose the instruction
+[14:56:52.129](0.010s) ok 16 - unconnected generative Map cannot execute
+[14:56:52.130](0.000s) ok 17 - new plan cannot silently use an old provider path
+[14:56:52.139](0.009s) not ok 18 - force_custom_plan rejects a parameter used as instruction
+[14:56:52.139](0.000s)
+[14:56:52.139](0.000s) #   Failed test 'force_custom_plan rejects a parameter used as instruction'
+#   at t/006_map_plan.pl line 79.
+[14:56:52.139](0.000s) #          got: '0'
+#     expected: anything else
+[14:56:52.140](0.000s) not ok 19 - force_custom_plan reports the same early-source error for instruction
+[14:56:52.140](0.000s)
+[14:56:52.140](0.000s) #   Failed test 'force_custom_plan reports the same early-source error for instruction'
+#   at t/006_map_plan.pl line 80.
+[14:56:52.140](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.151](0.011s) not ok 20 - force_custom_plan rejects a parameter used as options
+[14:56:52.151](0.000s)
+[14:56:52.151](0.000s) #   Failed test 'force_custom_plan rejects a parameter used as options'
+#   at t/006_map_plan.pl line 79.
+[14:56:52.152](0.000s) #          got: '0'
+#     expected: anything else
+[14:56:52.152](0.000s) not ok 21 - force_custom_plan reports the same early-source error for options
+[14:56:52.152](0.000s)
+[14:56:52.152](0.000s) #   Failed test 'force_custom_plan reports the same early-source error for options'
+#   at t/006_map_plan.pl line 80.
+[14:56:52.152](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.164](0.012s) ok 22 - force_custom_plan still permits ordinary input and predicate parameters
+[14:56:52.173](0.009s) ok 23 - force_generic_plan rejects a parameter used as instruction
+[14:56:52.173](0.000s) not ok 24 - force_generic_plan reports the same early-source error for instruction
+[14:56:52.174](0.000s)
+[14:56:52.174](0.000s) #   Failed test 'force_generic_plan reports the same early-source error for instruction'
+#   at t/006_map_plan.pl line 80.
+[14:56:52.174](0.000s) #                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.187](0.013s) ok 25 - force_generic_plan rejects a parameter used as options
+[14:56:52.187](0.000s) not ok 26 - force_generic_plan reports the same early-source error for options
+[14:56:52.187](0.000s)
+[14:56:52.187](0.000s) #   Failed test 'force_generic_plan reports the same early-source error for options'
+#   at t/006_map_plan.pl line 80.
+[14:56:52.187](0.000s) #                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.198](0.011s) ok 27 - force_generic_plan still permits ordinary input and predicate parameters
+[14:56:52.214](0.016s) ok 28 - fixed instruction rejects body
+[14:56:52.214](0.000s) not ok 29 - non-constant instruction has the exact early-source error
+[14:56:52.215](0.000s)
+[14:56:52.215](0.000s) #   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+[14:56:52.215](0.000s) #                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.224](0.009s) ok 30 - fixed instruction rejects (SELECT 'Echo the input.'::text)
+[14:56:52.224](0.000s) not ok 31 - non-constant instruction has the exact early-source error
+[14:56:52.225](0.000s)
+[14:56:52.225](0.000s) #   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+[14:56:52.225](0.000s) #                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.232](0.008s) not ok 32 - fixed instruction rejects stable_instruction()
+[14:56:52.233](0.000s)
+[14:56:52.233](0.000s) #   Failed test 'fixed instruction rejects stable_instruction()'
+#   at t/006_map_plan.pl line 98.
+[14:56:52.233](0.000s) #          got: '0'
+#     expected: anything else
+[14:56:52.233](0.000s) not ok 33 - non-constant instruction has the exact early-source error
+[14:56:52.233](0.000s)
+[14:56:52.233](0.000s) #   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+[14:56:52.233](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.242](0.009s) not ok 34 - fixed instruction rejects volatile_instruction()
+[14:56:52.243](0.001s)
+[14:56:52.243](0.000s) #   Failed test 'fixed instruction rejects volatile_instruction()'
+#   at t/006_map_plan.pl line 98.
+[14:56:52.243](0.000s) #          got: '0'
+#     expected: anything else
+[14:56:52.244](0.001s) not ok 35 - non-constant instruction has the exact early-source error
+[14:56:52.244](0.000s)
+[14:56:52.244](0.000s) #   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+[14:56:52.244](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+[14:56:52.253](0.009s) ok 36 - ordinary immutable folding and equal numeric values preserve Map identity
+[14:56:52.253](0.000s) ok 37 - plan-only Map made zero provider connections
+### Stopping node "map_plan" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "map_plan"
+[14:56:52.358](0.105s) 1..37
+[14:56:52.359](0.001s) # Looks like you failed 12 tests of 37.

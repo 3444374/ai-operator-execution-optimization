@@ -5,15 +5,22 @@
 状态：合同已定稿；已验证消息、C/Python 纯值、Python v5 及旧 PG 路径兼容，
 见[本轮记录](../results/postgresql/semmap_values_20260903/README.md)（服务器资格源码 `425d2b1c`）。
 包含后续深层 JSON 修复的 `b0400944` 已合入本地 main，各次测试仍绑定原提交，不重新归属旧证据。
-新三参 Map 的 PG plan、C wire 接线、完整 golden/模型/资源验收仍 pending，不能由旧路径通过代替。
+新三参 Map 的 SQL/schema 4、PG plan 与权限初始化检查已完成并纳入 main，
+见 [PG plan 记录](../results/postgresql/semmap_pg_plan_20260903/README.md)（原资格源码 `2205ccbb`）。
+后续 `5031bb50` 已完成 [C v5/PG golden 接线](../results/postgresql/semmap_pg_wire_20260903/README.md)：
+实际 SELECT/INSERT 文本、列关联、NULL/空串、错误/取消与旧路径通过 PG18.3 regression 1/1、
+TAP 1741/1741、两端各 137/137 和 8/8 C11。合并前协议复核修复 `f46fe936` 重新通过
+PG18.3 regression 1/1、TAP 1758/1758、两端各 139/139 和 C11 8/8，见同一记录的
+[合并复核](../results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)。上述实现纳入 main；
+真实模型与资源压力仍 pending，不能由 golden、plan-only 或旧路径通过代替。真实模型预算仍 0/32。
 
 生产代码对照基线：a3199bd9。本文面向研发与审查者，不是已发布功能说明。
 
 本合同规定调用方与实现方必须一致理解的算子行为、数据表示和验收标准。它是四 D 具体 SQL、
 prompt、输出、版本和测试预期的唯一入口；[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
 继续拥有系统分工与工作包顺序，[INFRA_STATUS](../../code/INFRA_STATUS.md)记录实际实现。
-下面的版本号、上限及失败策略是本稿的明确工程选择，不是文献结论，也不表示已经得到运行验证。
-研发复核可以在首次实现前统一修订这些未发布候选并重算向量；已有 Filter/recording 身份不能改义。
+下面的版本号、上限及失败策略是明确工程选择，不是文献结论；已经实现和验证的范围以上方记录为准。
+后续改变已实现语义须独立版本化并验证新旧行为；已有 Map、Filter/recording 身份不能暗中改义。
 
 ## 1. 要完成什么，当前不完成什么
 
@@ -53,7 +60,7 @@ temperature=0 也不保证不同硬件、模型版本或重复运行逐字相同
 
 ### 3.1 入口与形状
 
-以下是待实现语法示例，当前 main 还不能执行该重载：
+以下是目标执行语法；独立 PG plan 分支已注册该重载并支持 EXPLAIN，但当前仍不能执行生成请求：
 
 ```sql
 SELECT doc_id,
@@ -217,6 +224,7 @@ provider 的容量只说明能否承载这些值：能力至少覆盖计划要�
 gateway 的 v5 完成校验先检查表示、model、usage 和 finish_reason 的合法形态，再检查解码后
 raw_output 的 UTF-8 字节数。超限时发送仅 v5 接受的 OUTPUT_TOO_LARGE；UDS 将它映射为已有中立
 AI_PROVIDER_ERROR_MESSAGE_TOO_LARGE，由 PG 返回 54000。该错误的 sequence 必须匹配当前 task。
+open 阶段没有完成文本，因此不能接收该错误码；即使 sequence 为 null，也作为非法 v5 错误帧报 08P01。
 PG 接收普通 completion 时仍在表示/关联/evidence/model/usage 校验之后防御性检查输出上限，
 最后才执行 stop-only 输出 policy；多项违规按这个顺序分类，不让超长文本先被误报为非 stop。
 HTTP 整体响应超限或无法解析时尚不能建立合法 completion，仍使用原有 MODEL_RESPONSE_INVALID，
@@ -227,8 +235,9 @@ response_model_id 与计划 model_id 均为有效 UTF-8、无 U+0000 的 1–128
 finish_reason 为有效 UTF-8、无 U+0000 的 1–32 字节字符串，不 trim 或 normalization；不额外限制
 可打印字符。wire 中表示非法时为 08P01；SQL 输入更早触发的 PG 编码错误仍保留原生 SQLSTATE。
 usage 是明确提供的非负 uint64 值，零值合法但不等同缺失；不能将缺失值补零或按字符数伪造。
+prompt_tokens 与 output_tokens 是独立字段，不要求两者之和落在单个 uint64 中。
 fixture 的合成 usage 保持测试身份，不冒充真实模型测量。
-成功请求的 output_tokens 不超过计划 max_tokens，计数累加检查溢出。
+成功请求的 output_tokens 不超过计划 max_tokens；runtime 对各计数的跨任务累加分别检查溢出。
 非 stop 的合法完成状态属于“不满足本算子输出要求”，不是 malformed JSON；v5 不得先在通用
 wire/HTTP 解析器中丢掉该状态，使 PG 无法按上述 22000 分类。旧 v3/v4 的错误分类保持原样。
 
@@ -371,6 +380,24 @@ provider 接通不等于算子策略已移植，本合同不要求现在创建�
 
 ### 8.0 本次源码复核与首个子切片（2026-09-03）
 
+C v5 接线以 `035b0ccf` 为基线：保留已验证的 planner 来源检查和节点初始化 ACL/hook，
+只移除临时 plan-only 执行拒绝。继续采用 §7 的共享请求/生命周期原则，不读取或复制公司代码。
+`AiOpenSpec` 显式传递 stop 是否存在及计划 limits；factory 正向识别 recording、Filter 与生成 Map。
+`wire_semantic.c` 共用 framing/JSON/摘要步骤，v5 单独检查字段、身份、能力与错误 code；旧版本不变。
+runtime 在结果复制前调用现有纯值 `semloom_map_completion_status`，只负责把分类映射为
+SQLSTATE 和关闭 session；Map policy 仍由纯值模块拥有，不让通用 port 解释 SQL 或模型策略。
+先以 §10 独立 ASCII 向量通过 SQL 观察 red/green，再扩展实际文本、NULL/空串、错误、取消与
+事务测试；已有来源/权限用例随临时拒绝移除更新预期，不删除检查。共有物理身份只整理命名，摘要不变。
+此接线切片使用 PG18.3 和确定性 fixture，不启动真实模型、不消费 32 次请求预算。
+
+实际 PG 接线测试随后复现载体的输出位置问题：常量 Map 输出被重投影为输入常量；Map 与普通列
+使用相同表达式时，setrefs 还可能将两个输出绑定到同一位置。修复限定在 `sem_path.c`：child
+继续求值输入，scan 的逻辑输出描述保留 marker 身份供 PG 建立独立 slot 引用，不在执行时调用 marker。
+新增生成型和 recording 的常量/相同列前后位置反例，按普通 SQL 对照 VOLATILE 输入求值次数。
+另以正确 evidence 配合非法 UTF-8＋超长输出复现错误分类优先级；v5 在 JSON 解析前验证 UTF-8，
+旧 v3/v4 行为不变。Unicode 首轮失败来自测试 SQL 转义，修正 fixture 并先验证其独立 UTF-8 hex。
+上述失败原始记录保留，不用修正后的 fixture 回写旧运行，也不修改输出语义或为此增加 core patch。
+
 复核基线 `63d86c0e`；未发现需要改写本合同语义或 §10 向量的源码反例。按现有接口登记如下，
 未接线项不算已实现：
 
@@ -409,7 +436,7 @@ Adapter 用显式 `execution_id_for(version)` 返回已支持身份，旧属性/
 仅按已有 v3/v4 属性兼容，不能隐式支持 v5。新 Map golden 值必须给出 raw output/model/两项 usage/
 finish reason；旧 Filter 的字符串 fixture 不变，也不能拿它给新 Map 补造完成元数据。
 验证表面是 C/Python 纯值、公开 codec、socketpair 会话、独立 CLI 和 localhost HTTP fixture；
-这些验证尚不是 C→Python 的 wire v5 互通或 PG Map 执行证据，后者须待计划与 C client 接线后单独验收。
+这些纯值/Python 子切片本身不构成 C→Python wire v5 互通或 PG Map 执行证据；后续独立 PG 验收见顶部记录。
 独立复核补出既有 JSON 数字转换上限被 v5 继承的问题：新会话只在读帧时将该输入异常归为
 INVALID_OPEN/INVALID_TASK，Adapter 自身 ValueError 仍为 GATEWAY_INTERNAL；旧 v3/v4 的会话错误不改。
 CLI 尚未识别版本的首帧不可解析时只关闭该连接，后续合法会话仍可执行，不再让该输入异常结束 gateway。
@@ -419,6 +446,30 @@ CLI 尚未识别版本的首帧不可解析时只关闭该连接，后续合法�
 验证表面保持公开 CLI 与 session：约 20 KB、低于帧上限的深层 JSON 在首帧/已握手 task 均终止
 坏连接，下一合法连接仍成功；Adapter 自身同名异常继续归为脱敏内部错误，旧 v3/v4 会话分类保留。
 这是对既有输入隔离的定点修复，不宣称支持任意 JSON 深度，也不增加 PG 接线或模型运行范围。
+
+PG 计划子切片从已集成 `340356e8` 独立推进。复核现有 `extension.c` 成员查找、`sem_path.c`
+单 Map placement、`sem_plan_spec.c` 命名节点与 `sem_pump_begin` 后，继续使用这些实际调用点：
+增加三参 OID/0.2.0 安装升级，在 PG 常量替换前只检查新 Map 的 instruction/options；普通 input 和
+谓词参数不动。schema 4 保存完整最小语义，原函数 OID 只作 PG 私有绑定，并登记原生计划依赖。
+每次节点初始化先执行原生 ACL/function-execute hook；未接 C v5 时，合法新计划仍明确 0A000，
+不进入 child/runtime/provider。plain EXPLAIN 只展示已验证的计划值，不创建 provider 或算子执行状态。
+这是 §3、§7 和主计划工程对照中“保留自有载体、共享接口、原生权限”的具体落点，不读取或移植
+公司实现；PG REL_18_3 的 ExecInitFunc、常量折叠与 plan dependency 是实现依据。
+预先确认的测试表面是 SQL 新装/升级、EXPLAIN、prepared/custom/generic、执行权限与既有测试专用
+PG plan codec caller；使用公开合成输入与 §10 独立向量，不增加生产测试 GUC 或私有状态断言。
+按 SQL 注册 → plan/值/复制 → 前置来源 → ACL/依赖逐项 red/green；每次保留失败与实际源码身份。
+本阶段只允许独立 PG18.3 fixture 验证，不使用真实模型预算，不修改 runtime/provider/wire 或旧输出语义。
+
+PG plan 后续复核增加整个 Map 被 SQL 函数包装的来源反例：以 `b58479f7` 为基线，核对
+REL_18_3 `clauses.c:inline_function / eval_const_expressions_mutator`；前置 Query 不一定已经包含
+随后内联暴露的 Map。先在同一 SQL/EXPLAIN 表面验证 instruction 参数的 custom/generic 模式与零连接，
+若风险成立，只修 planner 来源识别；不全局关闭普通函数内联，不移动权限检查或改变 wire/摘要。
+本补充不新增公司参考/复用或模型运行；测试先行事实与修复结果追加到原 PG plan 结果记录。
+反例现已确认：custom 模式在 SQL wrapper 内联后接受参数生成的指令，generic 模式拒绝。
+本版不新增 wrapper Map 入口：只允许原始 SELECT 顶层或直接 INSERT 来源中、已经检查固定参数的
+显式 Map 被 lowering；规划中才由内联暴露的 Map 返回 0A000，包括常量调用 wrapper。
+普通 SQL 函数的内联、直接 Map 的普通 input 表达式、旧 Map/Filter 行为保持；规划嵌套和 ERROR
+必须恢复调用方的临时检查状态，不保存跨查询 registry，不依赖 SQL 文本位置推断来源。
 
 ### 8.1 开工前的研发复核
 

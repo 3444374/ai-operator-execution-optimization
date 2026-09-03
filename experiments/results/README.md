@@ -6,11 +6,29 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## PostgreSQL 生成型 Map C v5/PG golden（2026-09-03）
+
+[实际执行与恢复验证](postgresql/semmap_pg_wire_20260903/README.md)的原资格绑定 `5031bb50`；
+合并前协议复核修复 `f46fe936` 重新通过 PG18.3 `-Werror`、regression 1/1、TAP 1758/1758、
+两端各 139/139 和 8/8 C11，原 1741/1741 与 137/137 证据不重新绑定。
+生成型 Map 可返回完整文本；常量/等值列输出关联、UTF-8 优先级、NULL/空串、INSERT、错误与取消已验证。
+来源/权限保留，实现及复核修复纳入 main。真实模型 0/32、资源压力未运行；失败和历史记录独立保留。
+
+## PostgreSQL 生成型 Map PG plan/权限（2026-09-03）
+
+[PG plan 与权限验证](postgresql/semmap_pg_plan_20260903/README.md)：独立分支 `2205ccbb`，
+新 SQL 0.2.0/schema 4、固定参数、复制/严格解码、原生 EXECUTE ACL/hook 与缓存计划检查；
+PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260、本地/服务器各 136/136 与 C11 通过。
+该次只验证 plan，实际生成执行明确拒绝；后续执行实现已随上方切片纳入 main。没有新 Map 模型或资源验收，失败与中间结果单独保留。
+后续 [SQL wrapper 修复](postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check) `676615fa`
+关闭内联后的参数来源旁路，重新通过 PG18.3 TAP 1283/1283、regression 1/1 和两端各 136/136；
+只接管显式 Map，普通 SQL 内联保留；该历史切片没有 C v5 执行或模型资格，后续执行见上方记录。
+
 ## PostgreSQL 生成型 Map 纯值与 Python v5（2026-09-03）
 
 [纯值与 gateway 验证](postgresql/semmap_values_20260903/README.md)：独立分支源码 `425d2b1c`，
 C/Python 身份/完成值和严格 Python v5 复用旧 session/HTTP；本地/服务器各 135/135，重新运行
-PG18.3 `-Werror`、regression 1/1、TAP 1022/1022。尚未接 PG Map plan/C v5/SQL；未运行真实模型或资源验收。
+PG18.3 `-Werror`、regression 1/1、TAP 1022/1022。该次尚未接 PG Map plan/C v5/SQL；未运行真实模型或资源验收。
 独立复核发现的数字输入错误、记录器脱敏和测试标签问题已处理，失败与历史结果保留。
 后续[深层 JSON 输入隔离](postgresql/semmap_values_20260903/README.md#json-depth-repair)在 `a1bbdd30`
 通过本地 136/136 和 C11；仅修 gateway 读帧，未重跑服务器 PG 或真实模型，原验收身份不变。

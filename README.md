@@ -31,12 +31,13 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
 再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
 生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
-消息编译、C/Python 值表示和 Python v5 gateway 已合入本地 main，详见[实现与验证记录](experiments/results/postgresql/semmap_values_20260903/README.md)。
-生成型 Map 的 PG plan、C v5 接线及新 SQL 重载仍未实现，不能从 PostgreSQL 执行该新重载。
+消息编译、C/Python 值表示、PG plan/权限和 C v5 gateway 接线已纳入 main，
+三参 Map 已能通过 PostgreSQL＋golden 返回文本，详见[执行与复核记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)。
+真实模型、资源压力验证仍待完成；golden 是合成完成值，不代表大模型质量或性能。
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
 当前代码已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)；
 后续[真实服务检查](experiments/results/postgresql/choice_service_20260902/README.md)也已通过，但不表示模型判断质量合格。
-多算子组合、生成型 SemMap 与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
+生成型 Map 的剩余验证、多算子组合与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
 分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
 Filter 的真实校准仍暂停，其质量、成本与 LOTUS/Cortex-like 第二路径继续单独推进，不降低既有要求。
 carrier 检查随实际路径进行，只有可复现的限制才触发最小 core patch。IMLane-like 组批位置对照

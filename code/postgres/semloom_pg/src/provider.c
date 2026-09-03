@@ -12,6 +12,8 @@
 #include "generation_profile.h"
 #include "provider_private.h"
 #include "semantic_filter_contract.h"
+#include "semantic_map_contract.h"
+#include "sem_text.h"
 #include "sem_plan_spec.h"
 #include "semloom_pg.h"
 
@@ -28,7 +30,11 @@ semloom_provider_select(MemoryContext owner_context,
 	Assert(owner_context != NULL);
 	Assert(spec != NULL);
 	Assert(provider != NULL);
-	if (socket_path[0] == '\0' && !semloom_provider_spec_is_exact_filter(spec))
+	if (!semloom_provider_spec_is_recording(spec) &&
+		!semloom_provider_spec_is_exact_filter(spec) &&
+		!semloom_provider_spec_is_generate_map(spec))
+		elog(ERROR, "unsupported semantic provider plan specification");
+	if (socket_path[0] == '\0' && semloom_provider_spec_is_recording(spec))
 		semloom_recording_provider_select(provider);
 	else
 		semloom_uds_provider_select(owner_context,
@@ -90,8 +96,8 @@ semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec)
 		spec->semantic_spec_version == SEMLOOM_EXACT_FILTER_SPEC_VERSION &&
 		semloom_slice_equals(&spec->semantic_spec_id, SEMLOOM_EXACT_FILTER_SPEC_ID) &&
 		semloom_slice_equals(&spec->physical_algorithm,
-						 SEMLOOM_EXACT_FILTER_ALGORITHM) &&
-		semloom_slice_equals(&spec->physical_role, SEMLOOM_EXACT_FILTER_ROLE) &&
+						 SEMLOOM_MODEL_REFERENCE_ALGORITHM) &&
+		semloom_slice_equals(&spec->physical_role, SEMLOOM_MODEL_REFERENCE_ROLE) &&
 		semloom_slice_equals(&spec->prompt_program_digest,
 						 SEMLOOM_PROMPT_PROGRAM_DIGEST) &&
 		semloom_slice_equals(&spec->result_parser_digest,
@@ -107,6 +113,33 @@ semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec)
 		spec->n == SEMLOOM_FILTER_N &&
 		spec->stream == (bool) SEMLOOM_FILTER_STREAM &&
 		semloom_slice_equals(&spec->stop, SEMLOOM_FILTER_STOP);
+}
+
+bool
+semloom_provider_spec_is_generate_map(const AiOpenSpec *spec)
+{
+	return spec != NULL && spec->plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION &&
+		spec->operator_kind == AI_PROVIDER_OPERATOR_MAP &&
+		spec->input_value_kind == AI_PROVIDER_VALUE_TEXT &&
+		spec->output_value_kind == AI_PROVIDER_VALUE_TEXT &&
+		spec->null_policy == AI_PROVIDER_NULL_PROPAGATE &&
+		spec->error_policy == AI_PROVIDER_ERROR_FAIL_QUERY &&
+		spec->order_policy == AI_PROVIDER_ORDER_INPUT &&
+		spec->semantic_spec_version == 1 &&
+		semloom_slice_equals(&spec->semantic_spec_id, SEMLOOM_MAP_SPEC_ID) &&
+		semloom_slice_equals(&spec->physical_algorithm, SEMLOOM_MODEL_REFERENCE_ALGORITHM) &&
+		semloom_slice_equals(&spec->physical_role, SEMLOOM_MODEL_REFERENCE_ROLE) &&
+		semloom_slice_equals(&spec->prompt_program_digest, SEMLOOM_MAP_PROMPT_PROGRAM_DIGEST) &&
+		semloom_slice_equals(&spec->result_parser_digest, SEMLOOM_MAP_RESULT_PARSER_DIGEST) &&
+		spec->model_id.length > 0 && spec->model_id.length <= SEMLOOM_MAP_MAX_MODEL_BYTES &&
+		semloom_text_is_utf8_no_nul(spec->model_id.data, spec->model_id.length) &&
+		semloom_slice_is_sha256(&spec->semantic_spec_digest) &&
+		semloom_slice_is_sha256(&spec->physical_algorithm_digest) &&
+		spec->temperature == 0 && spec->top_p == 1 && spec->n == 1 && !spec->stream &&
+		spec->max_tokens >= 1 && spec->max_tokens <= SEMLOOM_MAP_MAX_GENERATION_TOKENS &&
+		!spec->has_stop && spec->stop.length == 0 && !spec->has_generation_profile &&
+		spec->max_input_bytes == SEMLOOM_MAP_MAX_INPUT_BYTES &&
+		spec->max_output_bytes == SEMLOOM_MAP_MAX_OUTPUT_BYTES;
 }
 
 void

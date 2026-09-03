@@ -1,0 +1,340 @@
+[
+  {
+    "name": "source-preflight",
+    "argv": [
+      "<driver-env>/bin/python",
+      "code/scripts/environment/manage_environment.py",
+      "check",
+      "--groups",
+      "core",
+      "--json-out",
+      "<test-worktree>-preflight.json"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "pg-version",
+    "argv": [
+      "<pg18.3-prefix>/bin/pg_config",
+      "--version"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "extension-clean",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "clean"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "plan-caller-clean",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "clean"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "build",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "COPT=-O2 -Werror",
+      "-j8"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "install",
+    "argv": [
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "install"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "test-owner",
+    "argv": [
+      "chown",
+      "-R",
+      "postgres:postgres",
+      "<test-worktree>"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "tap",
+    "argv": [
+      "runuser",
+      "-u",
+      "postgres",
+      "--",
+      "env",
+      "PATH=<pg18.3-prefix>/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "PG_TEST_NOCLEAN=1",
+      "make",
+      "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+      "installcheck",
+      "REGRESS="
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "tests-postgres",
+    "argv": [
+      "<driver-env>/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "code/tests/postgres",
+      "-p",
+      "test*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "tests-gateway",
+    "argv": [
+      "<driver-env>/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "code/tests/execution_provider",
+      "-p",
+      "test*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "tests-calibration",
+    "argv": [
+      "<driver-env>/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "code/tests/planning",
+      "-p",
+      "test_semfilter_reference_calibration.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "tests-choice-tools",
+    "argv": [
+      "<driver-env>/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "code/tests/experiments",
+      "-p",
+      "test_choice*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-generation_profile",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/generation_profile.c",
+      "-o",
+      "<artifact-root>/generation_profile.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-sem_operator_machine",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/sem_operator_machine.c",
+      "-o",
+      "<artifact-root>/sem_operator_machine.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-sem_filter_machine",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/sem_filter_machine.c",
+      "-o",
+      "<artifact-root>/sem_filter_machine.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-sem_map_machine",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/sem_map_machine.c",
+      "-o",
+      "<artifact-root>/sem_map_machine.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-sem_message_writer",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/sem_message_writer.c",
+      "-o",
+      "<artifact-root>/sem_message_writer.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-sem_text",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/sem_text.c",
+      "-o",
+      "<artifact-root>/sem_text.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-semantic_map_contract",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-c",
+      "code/postgres/semloom_pg/src/semantic_map_contract.c",
+      "-o",
+      "<artifact-root>/semantic_map_contract.o"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "c11-neutral-header",
+    "argv": [
+      "cc",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "-Icode/postgres/semloom_pg/src",
+      "-x",
+      "c",
+      "-fsyntax-only",
+      "-"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "reg-initdb",
+    "argv": [
+      "runuser",
+      "-u",
+      "postgres",
+      "--",
+      "<pg18.3-prefix>/bin/initdb",
+      "-D",
+      "<artifact-root>/regression/data",
+      "--no-locale",
+      "-E",
+      "UTF8"
+    ],
+    "exit_code": 0,
+    "expected_exit_code": 0
+  },
+  {
+    "name": "reg-start",
+    "argv": [
+      "runuser",
+      "-u",
+      "postgres",
+      "--",
+      "<pg18.3-prefix>/bin/pg_ctl",
+      "-D",
+      "<artifact-root>/regression/data",
+      "-l",
+      "<artifact-root>/regression/server.log",
+      "-o",
+      "-c listen_addresses='' -c shared_preload_libraries=semloom_pg -k <artifact-root>/regression/socket -p 55446",
+      "-w",
+      "start"
+    ],
+    "exit_code": 1,
+    "expected_exit_code": 0
+  }
+]

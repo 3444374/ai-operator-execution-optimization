@@ -1,0 +1,79 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'force_custom_plan rejects a parameter used as instruction'
+#   at t/006_map_plan.pl line 79.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'force_custom_plan reports the same early-source error for instruction'
+#   at t/006_map_plan.pl line 80.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'force_custom_plan rejects a parameter used as options'
+#   at t/006_map_plan.pl line 79.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'force_custom_plan reports the same early-source error for options'
+#   at t/006_map_plan.pl line 80.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'force_generic_plan reports the same early-source error for instruction'
+#   at t/006_map_plan.pl line 80.
+#                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'force_generic_plan reports the same early-source error for options'
+#   at t/006_map_plan.pl line 80.
+#                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+#                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+#                   'psql:<stdin>:2: ERROR:  0A000: SemMap instruction and options must be plan-time constants
+# LOCATION:  semloom_generate_map_private, sem_path.c:327'
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'fixed instruction rejects stable_instruction()'
+#   at t/006_map_plan.pl line 98.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+
+#   Failed test 'fixed instruction rejects volatile_instruction()'
+#   at t/006_map_plan.pl line 98.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'non-constant instruction has the exact early-source error'
+#   at t/006_map_plan.pl line 99.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n)'
+# Looks like you failed 12 tests of 37.
+t/006_map_plan.pl ..
+Dubious, test returned 12 (wstat 3072, 0xc00)
+Failed 12/37 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 3072 Tests: 37 Failed: 12)
+  Failed tests:  18-21, 24, 26, 29, 31-35
+  Non-zero exit status: 12
+Files=1, Tests=37,  1 wallclock secs ( 0.02 usr  0.00 sys +  0.59 cusr  0.25 csys =  0.86 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

@@ -7,8 +7,7 @@
 #define SEMLOOM_CHOICE_FILTER_PROFILE_SELECTOR "semloom.generation.choice.tristate.v1"
 #define SEMLOOM_EXACT_FILTER_SPEC_ID "semloom.semantic.sem_filter.exact.v1"
 #define SEMLOOM_EXACT_FILTER_SPEC_VERSION 1
-#define SEMLOOM_EXACT_FILTER_ALGORITHM "MODEL_REFERENCE_SYNC_V1"
-#define SEMLOOM_EXACT_FILTER_ROLE "reference"
+#include "semantic_reference_contract.h"
 #define SEMLOOM_EXACT_FILTER_ORDER_POLICY "INPUT_ORDER"
 
 #define SEMLOOM_FILTER_INSTRUCTION_MAX_BYTES 4096

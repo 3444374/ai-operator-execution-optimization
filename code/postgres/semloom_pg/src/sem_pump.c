@@ -7,18 +7,24 @@
  */
 #include "postgres.h"
 
+#include "catalog/objectaccess.h"
+#include "catalog/pg_proc_d.h"
 #include "commands/explain.h"
 #include "commands/explain_format.h"
 #include "executor/executor.h"
 #include "miscadmin.h"
+#include "utils/acl.h"
 #include "utils/builtins.h"
+#include "utils/lsyscache.h"
 
 #include "pg_semantic_runtime.h"
 #include "sem_filter_cost.h"
 #include "sem_operator_machine.h"
 #include "sem_plan_spec.h"
 #include "semantic_filter_contract.h"
+#include "semantic_map_contract.h"
 #include "sem_pump.h"
+#include "semloom_pg.h"
 
 struct SemloomExecPump
 {
@@ -82,14 +88,27 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("semantic operator input is outside the scan tuple")));
 
+	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		AclResult aclresult;
+
+		if (plan_spec.marker_function_oid != semloom_generate_map_function_oid())
+			ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+				errmsg("invalid generative SemMap function binding")));
+		aclresult = object_aclcheck(ProcedureRelationId, plan_spec.marker_function_oid,
+			GetUserId(), ACL_EXECUTE);
+		if (aclresult != ACLCHECK_OK)
+			aclcheck_error(aclresult, OBJECT_FUNCTION, get_func_name(plan_spec.marker_function_oid));
+		InvokeFunctionExecuteHook(plan_spec.marker_function_oid);
+	}
 	if (!semloom_operator_machine_init(&pump->machine,
-									   (uint32) plan_spec.operator_kind,
-									   plan_spec.schema_version,
-									   (const uint8 *) plan_spec.instruction,
-									   plan_spec.instruction_length))
+										   (uint32) plan_spec.operator_kind,
+										   plan_spec.schema_version,
+										   (const uint8 *) plan_spec.instruction,
+										   plan_spec.instruction_length))
 		ereport(ERROR,
-				(errcode(ERRCODE_INTERNAL_ERROR),
-				 errmsg("unknown semantic operator machine")));
+					(errcode(ERRCODE_INTERNAL_ERROR),
+					 errmsg("unknown semantic operator machine")));
 	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
 	pump->input_column = input_column;
 	pump->child_state =

@@ -214,6 +214,8 @@ def validate_task(message: dict, *, expected_sequence: int, open_context: OpenCo
 def build_error_message(code: str, *, sequence: int | None) -> dict:
     if type(code) is not str or code not in ERROR_CODES:
         raise ValueError("invalid Map error code")
+    if code == "OUTPUT_TOO_LARGE" and sequence is None:
+        raise ValueError("Map output error requires a current task")
     if sequence is not None:
         _uint64(sequence)
     return {"type": "error", "protocol_version": PROTOCOL_VERSION,
@@ -226,13 +228,12 @@ def validate_error(message: dict, *, expected_sequence: int | None) -> str:
         if message["type"] != "error" or not _matches(message["protocol_version"], PROTOCOL_VERSION):
             raise ValueError("invalid Map error version")
         code = message["code"]
-        if type(code) is not str or code not in ERROR_CODES:
-            raise ValueError("invalid Map error code")
         if expected_sequence is None:
             if message["sequence"] is not None:
                 raise ValueError("invalid Map open error sequence")
         elif decimal_uint64(message["sequence"]) != expected_sequence:
             raise ValueError("invalid Map task error sequence")
+        build_error_message(code, sequence=expected_sequence)
         return code
     except (KeyError, TypeError, ValueError, ProtocolError):
         raise ProtocolError("INVALID_ERROR") from None

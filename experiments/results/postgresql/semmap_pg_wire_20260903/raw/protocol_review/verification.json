@@ -1,0 +1,64 @@
+{
+  "source_commit": "f46fe936cdaceae8b5e3571321e28dfae6ac724a",
+  "prior_wire_manifest_entries": 139,
+  "prior_plan_manifest_entries": 205,
+  "final_server_manifest_entries": 44,
+  "source_blobs_verified": 105,
+  "runs": [
+    {
+      "run": "phase-red",
+      "source_commit": "110ad44509f9fb97e5ea5aea3dd328a657c3a3cc",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": [],
+      "artifact_directory": "110ad445",
+      "tap_tests": 457,
+      "tap_exit_code": 2,
+      "last_step": "tap",
+      "last_step_exit_code": 2
+    },
+    {
+      "run": "usage-red",
+      "source_commit": "0baaae0d688aa931f6b75266111eb2c56b55b559",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": [],
+      "artifact_directory": "0baaae0d",
+      "tap_tests": 468,
+      "tap_exit_code": 2,
+      "last_step": "tap",
+      "last_step_exit_code": 2
+    },
+    {
+      "run": "long-path",
+      "source_commit": "f46fe936cdaceae8b5e3571321e28dfae6ac724a",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": [],
+      "artifact_directory": "long-path",
+      "tap_tests": 1758,
+      "tap_exit_code": 0,
+      "last_step": "reg-start",
+      "last_step_exit_code": 1
+    },
+    {
+      "run": "final",
+      "source_commit": "f46fe936cdaceae8b5e3571321e28dfae6ac724a",
+      "dirty": false,
+      "pg_pid_files": [],
+      "owned_processes": [],
+      "artifact_directory": "server",
+      "tap_tests": 1758,
+      "tap_exit_code": 0,
+      "last_step": "reg-stop",
+      "last_step_exit_code": 0
+    }
+  ],
+  "local_contracts": 139,
+  "local_c11": 8,
+  "standards_unresolved": 0,
+  "spec_resolved": 2,
+  "spec_unresolved": 0,
+  "model_requests_attempted": 0,
+  "resource_smoke_run": false
+}

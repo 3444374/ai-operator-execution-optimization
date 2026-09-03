@@ -1,0 +1,527 @@
+{
+  "source_commit": "5031bb5072cd42f08357d6d7aa604009e03bc9c9",
+  "tests": {
+    "postgres": 110,
+    "gateway": 6,
+    "calibration": 10,
+    "choice-tools": 11
+  },
+  "steps": [
+    {
+      "name": "source-preflight",
+      "argv": [
+        "<driver-env>/bin/python",
+        "code/scripts/environment/manage_environment.py",
+        "check",
+        "--groups",
+        "core",
+        "--json-out",
+        "<test-worktree>-preflight.json"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "pg-version",
+      "argv": [
+        "<pg18.3-prefix>/bin/pg_config",
+        "--version"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "extension-clean",
+      "argv": [
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "clean"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "plan-caller-clean",
+      "argv": [
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "clean"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "build",
+      "argv": [
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "COPT=-O2 -Werror",
+        "-j8"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "install",
+      "argv": [
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "install"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "test-owner",
+      "argv": [
+        "chown",
+        "-R",
+        "postgres:postgres",
+        "<test-worktree>"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "tap",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "env",
+        "PATH=<pg18.3-prefix>/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "PG_TEST_NOCLEAN=1",
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "installcheck",
+        "REGRESS="
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "tests-postgres",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/postgres",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "tests-gateway",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/execution_provider",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "tests-calibration",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/planning",
+        "-p",
+        "test_semfilter_reference_calibration.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "tests-choice-tools",
+      "argv": [
+        "<driver-env>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/experiments",
+        "-p",
+        "test_choice*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-generation_profile",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/generation_profile.c",
+        "-o",
+        "<artifact-root>/generation_profile.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-sem_operator_machine",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_operator_machine.c",
+        "-o",
+        "<artifact-root>/sem_operator_machine.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-sem_filter_machine",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_filter_machine.c",
+        "-o",
+        "<artifact-root>/sem_filter_machine.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-sem_map_machine",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_map_machine.c",
+        "-o",
+        "<artifact-root>/sem_map_machine.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-sem_message_writer",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_message_writer.c",
+        "-o",
+        "<artifact-root>/sem_message_writer.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-sem_text",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/sem_text.c",
+        "-o",
+        "<artifact-root>/sem_text.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-semantic_map_contract",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-c",
+        "code/postgres/semloom_pg/src/semantic_map_contract.c",
+        "-o",
+        "<artifact-root>/semantic_map_contract.o"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "c11-neutral-header",
+      "argv": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-x",
+        "c",
+        "-fsyntax-only",
+        "-"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "reg-initdb",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/initdb",
+        "-D",
+        "<artifact-root>/regression/data",
+        "--no-locale",
+        "-E",
+        "UTF8"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "reg-start",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/pg_ctl",
+        "-D",
+        "<artifact-root>/regression/data",
+        "-l",
+        "<artifact-root>/regression/server.log",
+        "-o",
+        "-c listen_addresses='' -c shared_preload_libraries=semloom_pg -k <artifact-root>/regression/socket -p 55446",
+        "-w",
+        "start"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "reg-server-version",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/psql",
+        "-h",
+        "<artifact-root>/regression/socket",
+        "-p",
+        "55446",
+        "-d",
+        "postgres",
+        "-Atc",
+        "SHOW server_version;"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "regression",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "make",
+        "PG_CONFIG=<pg18.3-prefix>/bin/pg_config",
+        "TAP_TESTS=",
+        "installcheck"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "reg-stop",
+      "argv": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg18.3-prefix>/bin/pg_ctl",
+        "-D",
+        "<artifact-root>/regression/data",
+        "-m",
+        "fast",
+        "-w",
+        "stop"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    }
+  ],
+  "source_sha256": {
+    "code/postgres/semloom_pg/.gitattributes": "fd821b12102065e4e693a55c0da8af80767a61eced1ad6d94b0d553a125f2943",
+    "code/postgres/semloom_pg/.gitignore": "8f6d777150d8b2dbc99c74261752cedd941a5bcd068b325f4ffe80a1c331e432",
+    "code/postgres/semloom_pg/Makefile": "47ee0d8fcc8923ced50278a257341d57318832d78f35176ddeed08d201f4d0ba",
+    "code/postgres/semloom_pg/README.md": "30cfdac73066d26ea4bea0a025080f6dd7b8f0724c9eef9952de6a6d90b2f417",
+    "code/postgres/semloom_pg/expected/semloom_pg.out": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+    "code/postgres/semloom_pg/gateway/protocol.py": "627b92fc6fe8a64d969f931820e40bbac7a92e21045994fc4646be145e9b77e0",
+    "code/postgres/semloom_pg/gateway/recording_gateway.py": "518e9813ef4379d6f3ca42e70b8d05de893e976568cd4e5b297e1ab056ebefb8",
+    "code/postgres/semloom_pg/semloom_pg.control": "829eb3ab0c66d2fe55982885b0c698a43e78c526ba393661b9285552b2c1076d",
+    "code/postgres/semloom_pg/sql/semloom_pg--0.1.0--0.2.0.sql": "efcbf04365c97f2c904c9fe7e88b9d31e9d6461785ab6053339b86807497df92",
+    "code/postgres/semloom_pg/sql/semloom_pg--0.1.0.sql": "89791186a3aae18613f8a0b3cb844bc6a25005240ca8d7c07dfab7902ef80538",
+    "code/postgres/semloom_pg/sql/semloom_pg--0.2.0.sql": "b3fd9def890e38c053e4a5a81e1f90866862303e0162f4550fbbc7ae0d18c4fb",
+    "code/postgres/semloom_pg/sql/semloom_pg.sql": "b50aa8e312f202b4feb10147f162a63b914396b1230d5c4a5c959829d4c49eed",
+    "code/postgres/semloom_pg/src/ai_provider_port.h": "c9525985cc42d5ecb51dde6b907c52cf80b329e6119abd915a2b5cb08ef55cb8",
+    "code/postgres/semloom_pg/src/extension.c": "15fdd281e8757cea58c7ad55bc49b9d4aa1e4a80f3b60c2081b93bab854757af",
+    "code/postgres/semloom_pg/src/generation_profile.c": "c1b284f89b955b8c687a6e8c4812fb9c2a99a765c81f59914bb4a7233d162080",
+    "code/postgres/semloom_pg/src/generation_profile.h": "6f8ca30676b535f405bac6fba78b2fa79a7beaf5cbc76f0d362d773b4c9865a0",
+    "code/postgres/semloom_pg/src/marker.c": "a410400e7f4e24cee4ba6facfc3ccf6f6615450a79e5c3d45aad979e9b536079",
+    "code/postgres/semloom_pg/src/pg_semantic_runtime.c": "258d77bce7597102dd26a3080ba785eb34f1701bfa954990e151ce8fe98099a8",
+    "code/postgres/semloom_pg/src/pg_semantic_runtime.h": "5ada461667f7cd66e4912e5f604a0cf1f787b38ba8f59e71ddc754b9754134a6",
+    "code/postgres/semloom_pg/src/provider.c": "dfe4e3e7efbe4d8d925114db17f42d17665c59e5cd0c79f299e0be405a70767f",
+    "code/postgres/semloom_pg/src/provider_private.h": "425ba1bd2dab220a27fbc9f0b78c35173b59fb87b1a6c548138ecf9af457f7bd",
+    "code/postgres/semloom_pg/src/recording_contract.h": "bb431549c9347e5d709287e853137b802cc1800c7b929813fefda9821689c60b",
+    "code/postgres/semloom_pg/src/recording_provider.c": "8d87d9de67d79fbb25f03581ebd89fa9171b1d4c473afe6e54eb8d435a98c0d8",
+    "code/postgres/semloom_pg/src/sem_filter_calibration.c": "9a3fdd7d24ba00f0354bf8fff6b72dff98f4b7d64aff6fa2090aeec8473dce8f",
+    "code/postgres/semloom_pg/src/sem_filter_calibration.h": "41bb8fa8dd2fec7bcb909b55b9bd4a039aafa993eb922814cf5e9609d21ed196",
+    "code/postgres/semloom_pg/src/sem_filter_cost.c": "a2080f43cd58f968ae93534aec89cf4c5121ff5ec418e35bd473f2edd673f1f4",
+    "code/postgres/semloom_pg/src/sem_filter_cost.h": "9b1b1bd63cface74bb752067b2bd868ba44a15383460a25b123e51c5aa7629b7",
+    "code/postgres/semloom_pg/src/sem_filter_machine.c": "74e3defd075f892f77b09a3d49bdd40b874a7f69682e24abf9e4dcb0f15b9f32",
+    "code/postgres/semloom_pg/src/sem_filter_path.c": "89e4764a4c5d8e5a1ef41aaa6dada824f5a2c066cf1d988c6811c42cccb8ea8b",
+    "code/postgres/semloom_pg/src/sem_map_machine.c": "977f8ee5b31155993b2a78039dabc06f7f317a4c257e874b5f727e286b1d57e7",
+    "code/postgres/semloom_pg/src/sem_message_writer.c": "f0fa729a143f089ca75341fae093b0e5e238434786ff4fea939da7fec41060db",
+    "code/postgres/semloom_pg/src/sem_message_writer.h": "07827d66846df036fb9af2b66a3c0e88e18528998dc873f038b687e1fa0826b3",
+    "code/postgres/semloom_pg/src/sem_operator_machine.c": "f25c4c0db8a29d951476f33757782b3dcd7be82a99aa979c8de7b6eb79bcac46",
+    "code/postgres/semloom_pg/src/sem_operator_machine.h": "4f8758b1e4d8c01c7e15806dbacf2ff40bc4c3c0b6048b47944a5b32db2b00bc",
+    "code/postgres/semloom_pg/src/sem_path.c": "7cd7017cc6d6db574650ec1c4aa16273424977ab4f9e8e0b6191e780800183ca",
+    "code/postgres/semloom_pg/src/sem_path_common.c": "ba669404a7937df9642689a927419b60ee6238fd6c55bfbe7094a923732c0158",
+    "code/postgres/semloom_pg/src/sem_path_common.h": "48b875b27d9a58f526646ced11475c1ee7709b445fc0066e43ed94b509647b9c",
+    "code/postgres/semloom_pg/src/sem_plan_spec.c": "aff35c3010c0ba1292969559a6111c1c6033539ae8de5b8a53e5a04608362813",
+    "code/postgres/semloom_pg/src/sem_plan_spec.h": "e1026d1582caae5a3e1781e866ce44ec59db580672ecf9c2baf609db7e5d7c5d",
+    "code/postgres/semloom_pg/src/sem_pump.c": "79c7caffc6159ff858f16ebeafee6d1c696ecd524cf1dba78a050f61fc8c0f3c",
+    "code/postgres/semloom_pg/src/sem_pump.h": "42df54d6ccf99961b998ce157956fe230ce9229dd15f62e593f2e67c782c5a47",
+    "code/postgres/semloom_pg/src/sem_scan.c": "cc4e1d13fcfad48122ef201ba10eb0f4e5dc86fd9c4d74d70e75cadfb15eb98c",
+    "code/postgres/semloom_pg/src/sem_text.c": "4b0cf9d13c16ce33ddac1134e76a4c98d52b4445e0eefd576c67cfe9af19ab40",
+    "code/postgres/semloom_pg/src/sem_text.h": "008f37a095c87e392477c993ecbb156e47e35f23b50c39c16b4d03ee7384f6ae",
+    "code/postgres/semloom_pg/src/semantic_filter_contract.h": "8716e031aacf8ffa33eafb83fcbca0b77b0a9bc5e8609fff3b4bafb578e8c7af",
+    "code/postgres/semloom_pg/src/semantic_map_contract.c": "5254a9063852b56bc8d64b65fa3dc62c016702f95a06cbb396e0ef3d19f8a966",
+    "code/postgres/semloom_pg/src/semantic_map_contract.h": "b660c16193e81808e510669b364359a486c3c7414593e4cfb1cb9f8dbf8a92e8",
+    "code/postgres/semloom_pg/src/semantic_reference_contract.h": "06348ad8388a581fc1cf4368e56ceabbff27d80a9809243d21d8f96cb15f343e",
+    "code/postgres/semloom_pg/src/semloom_pg.h": "45e27aaca399aa22914b5b9fce60e35c5950bda4f5923322f6155aca86de1df3",
+    "code/postgres/semloom_pg/src/uds_provider.c": "eeb34b8c804be553e324d93c60b0bd466ee85cce52b516c051aa875207274c6c",
+    "code/postgres/semloom_pg/src/wire_common.c": "7ad36c5e5d52c1ce9bb86a31a674d5585e9754185aaba2e5ceba514332300036",
+    "code/postgres/semloom_pg/src/wire_common.h": "8d06940f8fe2f3dd257a14f7a7e98ccbf880812f371c920d7128adfd5d9be219",
+    "code/postgres/semloom_pg/src/wire_semantic.c": "5311cf2b7e4378cd5c21ce64c80bc85e8aa68f06aeec3dcfd245068e4719a072",
+    "code/postgres/semloom_pg/src/wire_semantic.h": "45949a4b151421517a437c2b1ea85a230fbeccc4ccf71fd8c36e9439f5ca7e22",
+    "code/postgres/semloom_pg/src/wire_v2.c": "7ac0eff420f848a78b80133e95890d9bcf35ae77fe19a3361ac4b50b6435a92b",
+    "code/postgres/semloom_pg/src/wire_v2.h": "ca0c75f471f20408e7ba618fe30778daa7bdd9f1261984e2f7d8a382872f7802",
+    "code/postgres/semloom_pg/src/wire_v3.c": "2cea37955506455533e4d9fe6159d2dbd8828df6d34b293afd3378591a462a91",
+    "code/postgres/semloom_pg/src/wire_v3.h": "3631540e1472a722c284a8334d3ae5649cd3148566d47a093f03f869e0858c7b",
+    "code/postgres/semloom_pg/src/wire_v4.c": "461cc26f21f172ed315ef29206413be8d4296495dacbc1c28c680b2eb44d0a36",
+    "code/postgres/semloom_pg/src/wire_v4.h": "4964658aa4949d1ff376dd5dccfe051ba8da7ac70d52133dedaa5cae66a4235d",
+    "code/postgres/semloom_pg/t/001_semloom_pg.pl": "fbc0fde9e627d65a787b781c92643372f558645fd6ba0fb9fffeccaf4c600445",
+    "code/postgres/semloom_pg/t/002_choice_plan.pl": "5d54d5186630673d37f51294d5c212a5856e369fe8fd555b64b40f66282064ae",
+    "code/postgres/semloom_pg/t/003_choice_execution.pl": "bdf850eb19de114b4ea13bca786a982a7e75765e9ed42d24f3812d44f4e19b0c",
+    "code/postgres/semloom_pg/t/004_filter_insert.pl": "c8142bab2c0e8a34f3b1681052cde435ca36b17af5fd1b5173102aae2f939d7d",
+    "code/postgres/semloom_pg/t/005_function_identity.pl": "5b651280beda5ae95c5ecb32ed11dee01582352d41168c06d5ded9d3632daf43",
+    "code/postgres/semloom_pg/t/006_map_plan.pl": "192e32f046be85b28445006a1d0e58700bc5a11ed82493bbe396d132e7b2c79b",
+    "code/postgres/semloom_pg/t/007_map_execution.pl": "c1ff6da97fc444468069c8b514cf7c98096775470bc9ca20530a1ff179fb6917",
+    "code/postgres/semloom_pg/t/fixtures/choice_wire_peer.py": "d8bbccb85b7aa69493cb2c0099a6e5ebd166dfea5f5bbff1d79a4f2321570208",
+    "code/postgres/semloom_pg/t/fixtures/map_wire_peer.py": "f58dbe9d2e69395912cbd57ed0c7372143e614a2286f1e4f8eba4a2ff7f53173",
+    "code/postgres/semloom_pg/t/fixtures/openai_compatible_server.py": "236d9d2907f4e5a75468261815acd4772c5fbf334af05fbdc1206335105726ef",
+    "code/postgres/semloom_pg/t/plan_contract/Makefile": "cd5f921c5d4b2585b66b9427bb7229e376ed8a5c74f211d7b4ff550159aca63a",
+    "code/postgres/semloom_pg/t/plan_contract/map_plan_contract.c": "d61cc2b6695d8dcc299a9b5fae7c9027440d05b59e45c1587a741b40b4b93a12",
+    "code/postgres/semloom_pg/t/plan_contract/plan_contract.c": "fa0e318fc048ee979225aad619badeeac93f10c39737fdbc2f33aecb56494396",
+    "code/src/execution_provider/__init__.py": "78dbe2a2fa36cc2e8c6e783d94dd00bb53df8e28cc47edbe13b99ddea1cdbb56",
+    "code/src/execution_provider/adapters/__init__.py": "0051dc2729cb710f10e839405553092469ee6edb28beb56b6b55430ead5c359c",
+    "code/src/execution_provider/adapters/golden.py": "ea2f7a4b560809d77fc7818ecb1370819e9f3d0d964167753ce6144c141fe9c7",
+    "code/src/execution_provider/adapters/openai_compatible_fixed.py": "f841c3772a1e5b20f350356bcee78ec9489375eaa68dd32ca1744972daf39c70",
+    "code/src/execution_provider/adapters/recording.py": "38d85d800551cf5c4becb52fbb3e084d182c73e305fdbc4051f974292fcbd1a6",
+    "code/src/execution_provider/adapters/semantic_session.py": "b0f5ddb15ef7cc98044d362cc7e375dc596386bc596c9aaa9c2343858ce21955",
+    "code/src/execution_provider/adapters/v3_session.py": "01da532752fbe1b222d73bf6dbe8edb0b50c16e46bc2a0ee662e5bcbedb2ef2c",
+    "code/src/execution_provider/completion.py": "abe008580d10c623086a043137097d03b1e8eb1aae1a618de6a0857d68dc45bb",
+    "code/src/execution_provider/generation_profile.py": "b15bd6499e06b43872b5150ea4717477d0a6e94c7124b477a36103123a9c0659",
+    "code/src/execution_provider/message_encoding.py": "ccc118dfd0e7be0c720aa60b9db6b6cca7f283723c40c17b0c18b8ce577a85a7",
+    "code/src/execution_provider/semantic_map.py": "682200ba314149a968b40981e981250e2abac729d4cc668a577ccad18d629682",
+    "code/src/execution_provider/server.py": "a4364be27e06c305623655b9977bb5041c5193b9066ad0b36e5680ece6eca35f",
+    "code/src/execution_provider/wire/__init__.py": "5905989d397b01e55d8a923a7065b1bd8c00e030191eccb5ccc5a8dac78cdb64",
+    "code/src/execution_provider/wire/framing.py": "4e6ec4bf5fbc2abdb2783dbf36d3e79a62fa6fe2fa5ca9dc7994e2adabe24ded",
+    "code/src/execution_provider/wire/semantic.py": "98e2eb85544378bd9f15e47caaeecae9b6e97538e1f0c0fd584ae600c4ad2a00",
+    "code/src/execution_provider/wire/v2.py": "a664f7b8236833e62925e5eab9468b437a86506a9152440ff5e68f29c896e853",
+    "code/src/execution_provider/wire/v3.py": "a7674d82f11a1d74323ac64b065f04841144cea0edc5686824dfb3a81a24eff4",
+    "code/src/execution_provider/wire/v4.py": "9a39981d7f8c248acd5b7c18bf2d79116f383133a0bb6c6404830582d41d0b2c",
+    "code/src/execution_provider/wire/v5.py": "cde391219a7ab73d38d8aa2b29b613ab2fb667a6be7a4b9cf45a0c13811218d1",
+    "code/tests/execution_provider/__init__.py": "40f8619799fb11756148463bb4aac64e8eb1da8d08d0f4915539f2662317c56c",
+    "code/tests/execution_provider/test_gateway_migration.py": "ba3064d27104ec6b521cd9ca168860757b4eb03266593ac26fdcedf1dc172cc1",
+    "code/tests/execution_provider/test_map_gateway.py": "47f9b5cb2301ac65ee51565e4c2028a72845b00a4e3ce02de02e81f3374c2165",
+    "code/tests/postgres/__init__.py": "6c990d8affd372f7dfcb6d53652834f5c9db0242a00f3c439c4ac4026fde3407",
+    "code/tests/postgres/test_semloom_choice_protocol.py": "1e939d86c9c5a8913842869a6c7f331330845efec9247f530b050a5807572b6e",
+    "code/tests/postgres/test_semloom_fixed_model_adapter.py": "168f4f5cf1162da9f597169bf61798b88c3a65fb2204b2cf223bbc66cacd7c2f",
+    "code/tests/postgres/test_semloom_generation_profile.py": "040b464e610cde7bed45045bddf5673bf8bb6087a368b3c89265e548b208b15b",
+    "code/tests/postgres/test_semloom_map_contract.py": "a92aa5e805fda6561f430d864ec697d9f299c2f18e136ae3e95083d87741b98d",
+    "code/tests/postgres/test_semloom_map_protocol.py": "2539c191e598111cf0b5e3eb7045d143e6b61ab4d650cb051eda51d5731edb67",
+    "code/tests/postgres/test_semloom_message_compilation.py": "9a7d512e9c835442161c7c2bec875f4e9c592ca93e2fc252a1c63bd9efff976b",
+    "code/tests/postgres/test_semloom_pg_static_contract.py": "ef9e0639de44797242b295dca13450c88ae30970bf15db1f8d9d60b36aeecf12",
+    "code/tests/postgres/test_semloom_recording_protocol.py": "0d34f9e224f6a819c44515157521be0c73cbbcea1e8b4f233e7d19b20f91a4bf",
+    "code/tests/postgres/test_semloom_semantic_protocol.py": "784ff2a7d7cce783325318f415b8e0c6d75cf4df7d5d98e1acded13b0a6ae912"
+  },
+  "preflight_status": "ok",
+  "preflight_sha256": "8b252fa55b78956c69c7679f4529fbf0192ba7e59ea4a256fd5a6da28f20bcea",
+  "pg_upstream_commit": "62d6c7d3df6287f1bd83199c1a746e50d31571a0",
+  "pg_build_version": "PostgreSQL 18.3",
+  "pg_build_warning_free": true,
+  "pg_runtime_version": "18.3",
+  "tap_files": 7,
+  "tap_tests": 1741,
+  "regression_tests": 1,
+  "regression_actual_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+  "regression_expected_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+  "extension_sha256": "c09846ff12ec33db6cb716617a47059fee4f70c3828485b97d2c4d6f48b205c4",
+  "base_extension_unchanged": true,
+  "real_model_requests_attempted": 0,
+  "calibration_held_out_used": false,
+  "isolated_prefix_only": true,
+  "resource_smoke_run": false,
+  "generated_map_execution_connected": true
+}

@@ -1,0 +1,7 @@
+{
+  "file": "checks.log",
+  "change": "Removed one empty trailing line added by the aggregate log writer; no command output or results changed.",
+  "original_sha256": "3371da333bcddfe1226de2d7789e1702ceef19597d03594ec1bfe5fc98d844ba",
+  "repository_copy_sha256": "4f42974eb1282cf51c6a572c8640e683794422a8855ffdb0fa37b5b4e7253959",
+  "original_external_artifact_retained": true
+}

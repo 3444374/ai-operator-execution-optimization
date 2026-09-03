@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-09-03 Map 合并复核：协议规则收拢与 main 集成
+
+- 按用户要求复核 Map PG plan/C v5 接线后合入 main；同时检查执行栈职责，而非只按测试数量验收。
+  保留 main 原有研究设计与 SPEAR 笔记，以及开发分支的计划、失败和验收历史。
+- TDD 先复现 Python 编解码均接受非法握手错误；`6ea34477` 让两者共享本版本的合法值规则。
+  PG `110ad445` 的 457 项测试中握手分类 1 项失败，`65b8382d` 将 C 错误码/版本/阶段判断集中。
+  `0baaae0d` 的 468 项测试仅新 usage 的 4 项断言失败；`f46fe936` 删除合同外的两字段求和限制，
+  保留独立字段、output budget、evidence 和 runtime 跨任务累计检查。
+- 两路 code-review 加上 codebase-design 复核确认当前 machine、PG pump/runtime、中立 provider、
+  UDS/wire 与外部 session/模型 Adapter 职责可继续复用；没有为两个错误另建 registry 或执行框架。
+  Standards 无未解决项；Spec 的 2 项修复后无未解决项。组合与异步的新增所有权仍按主计划另行实现。
+- `f46fe936` 在精确 PG18.3 通过无 warning `-O2 -Werror`、regression 1/1、TAP 1758/1758，
+  本地/服务器合同各 139/139、C11 各 8/8。首次完整运行的 regression 因验证目录造成 socket 路径
+  过长而中止，原始记录保留；短路径同源码独立重跑全部通过，未修改生产代码掩盖环境错误。
+- writing-for-agents 用于同步现役入口、真实接口和 pending 项；合并冲突按 resolving-merge-conflicts
+  保留两侧意图。没有改研究方向、公司来源条件、Filter 质量失败、模型预算或历史资格身份。
+- [完整复核与证据](experiments/results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)保存
+  红/绿、本地、路径中止与收尾记录；原有证据 SHA 和最终提交绑定源码均核对。
+  本轮四个服务器测试目录无匹配 PG/gateway 进程，工作树干净，原安装与服务器 main 未改。
+  隔离工作树、二进制与原始产物保留。真实 Map 模型仍 0/32，资源压力未运行，不宣布四 D 全部完成。
+
 ## 2026-09-03 登记 SPEAR 精读笔记
 
 - 按用户要求提交新增的 [SPEAR 精读笔记](research/精读文献笔记/spear_cidr2026/spear_cidr2026.md)，
@@ -60,6 +81,66 @@
 - 本轮 10 项无网络源码合同检查、114 个本地链接/30 个章节引用、新增措辞与差异空白检查通过；
   全仓隐私扫描 8,025 个跟踪文件与此前待推送的 292 个新增文本 blob 均无新增问题。
   未运行 PG、资源或模型实验，旧资格不重新绑定。
+
+## 2026-09-03 Map C v5 接线与实际 PostgreSQL golden 验证
+
+- 从已复核 `035b0ccf` 继续独立分支。`76156526` 先记录 PG plan-only 拒绝，`6941b91e`
+  通过 C v5 → Python golden 的 ASCII SQL；随后扩完整 Map 与旧路径检查，不启动真实模型。
+- open spec 显式传递 stop absence/计划 limits，factory 正向识别语义；复用 runtime/UDS/framing/session，
+  Map 纯值模块负责输出策略，PG 管理错误和清理。移除临时拒绝，保留来源与 ACL/hook。
+- 全量测试复现常量结果被重投影、等值普通列串位，以及非法 UTF-8＋超长且正确摘要时误报长度。
+  `114a411a` 只在 child 降低输入，scan 保留独立逻辑输出身份；v5 在 JSON 前校验 UTF-8，旧版本不变。
+  Unicode fixture 转义错误、后续测试角色 GUC 权限不足分别保留，不冒充生产缺陷。
+- `5031bb50` 最终通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1741/1741（Map plan 268、
+  execution 451）、两端各 137/137 与 8/8 C11。包含列关联、文本/NULL/空串、限额、VOLATILE
+  求值对照、首项/后续 child 错误、INSERT/rollback/savepoint 与取消后恢复。
+- [完整记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)保存六次服务器运行和本地最终验证，
+  原 plan 205＋63 项证据不变。两路只读 Standards/Spec 复核的可操作代码问题均修复后再验。
+- 本次按 TDD 和诊断技能先保留失败与最小复现，再修复；技能审查还促使合并重复测试生命周期、
+  恢复有效权限 sentinel。源码、状态与证据分别登记，不扩架构或复制公司实现。
+- 六个本切片目录无存活 PG/gateway、无 PG PID 文件；测试工作树与仓库外原始产物保留，未操作
+  其他历史工作树。服务器主工作树保持干净，主安装未覆盖。此结论仅覆盖本切片，不是全机清理声明。
+- 真实 Map 请求仍 0/32；RSS/FD/线程压力和固定模型验证尚未执行。未合入或推送 main。
+
+## 2026-09-03 Map SQL wrapper 来源反例补充
+
+- 按用户对 `b58479f7` 的复核，仅在已约定 SQL/EXPLAIN 表面追加反例。`ae6589a9` 真实 PG18.3
+  custom 接受内联 wrapper 中的指令参数，generic 拒绝，两者零 provider 连接。首轮后续身份测试
+  因新建 wrapper 依赖未清理而中止；原始输出保留，不能把该 fixture 中止当作第二个生产缺陷。
+- `676615fa` 只改 planner 来源识别：前置检查记录显式 SELECT/INSERT 来源层级，后期不得接管
+  新出现的 Map；普通 SQL 内联不关闭。规划嵌套与 ERROR 用 PG_FINALLY 恢复临时状态，
+  不建 registry、不改 schema/digest、权限、runtime/provider/wire 或旧 Map/Filter 输出。
+- 按现有受限入口，整个 Map wrapper（包括字面量调用）仍不支持；直接 Map 的普通 input wrapper
+  继续允许。测试覆盖两种 SQL 函数体、custom/generic、零连接、正常内联及嵌套错误恢复。
+- 独立 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1283/1283（Map plan 261），本地/服务器各
+  136/136 与 8/8 C11 通过；[追加记录](experiments/results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)
+  使用新 SHA 清单，保留原 1260 项身份与原始证据。仅两个新隔离测试目录，未覆盖原安装/main。
+- 本轮依 TDD 先复现再修复，遵循最小改动；未运行真实模型或资源压力，Map 累计请求仍 0/32。
+  Filter 命名的共有常量整理留在下一段 C v5 接线；现有权限检查与临时执行拒绝保留。
+- code-review 按用户固定基线分派 Standards/Spec 两路只读源码复核，各 0 项发现；审查不代替实际
+  服务器测试。两个本次目录已停止 PG、无匹配测试进程，服务器 main 干净；历史产物未删除。
+- 原 205 项 SHA 保持一致；本次 63 个产物（另有总清单）、172 项提交绑定源码哈希与 130 个本地
+  链接目标检查通过。70 个暂存文件隐私扫描与 diff 检查通过；本次仍未合并或推送 main。
+
+## 2026-09-03 生成型 Map PG plan 与权限接入
+
+- 从 `340356e8` 创建独立 `codex/semmap-pg-plan`；按四 D 已确认接口测试先行，复用现有 carrier/plan/pump，
+  增加 SQL 0.2.0 安装/升级、schema 4、固定参数来源/值、计划复制/解码及原生权限/hook/依赖。
+- 测试依次复现并修复参数内联、撤权、CASE/WHERE/混用与子查询限制问题；`2205ccbb` 完成当前
+  plan-only 资格，实际执行仍在 child/provider 前返回 `0A000`，未接 C v5、未修改 runtime/provider/wire。
+- 精确 PG18.3 独立前缀 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新计划 238 项），
+  本地/服务器各 136/136 与七个纯 C module/neutral header C11 通过；[本轮记录](experiments/results/postgresql/semmap_pg_plan_20260903/README.md)
+  保存全部中间失败/通过和最终源码哈希。新增 fixture 引号错误没有运行子测试，单列保留，不作生产反例。
+- 仅成员变更仍需所有相关物理连接手动刷新；新重载双会话 ADD/DROP、函数替换/删除重建与
+  custom/generic 缓存撤权均验证，未引入跨会话 registry 或 core patch。
+- 14 个本切片测试目录已停止节点、未发现匹配测试源码/前缀的存活进程；worktree、二进制与原始证据
+  保留在持久 artifact 目录。服务器原 main 与原安装二进制未覆盖，不宣称服务器全局没有其他工作负载。
+- 期间核对 main 新文档 `c7b1e9e6`/`0bf56253`，不改变四 D 范围；本分支尚未合入或推送 main。
+  模型请求 0、Map 累计 0/32，未运行新资源 smoke、held-out 或恢复 Filter 校准。
+- `karpathy-guidelines` 限定最小充分改动；TDD 在已约定 SQL/EXPLAIN/plan codec 接口固定反例。
+  参考来源与采用说明只在专项记录，不进入生产或测试注释，没有复制或外发公司材料。
+- 205 个公开产物（另有总 SHA 清单）、1,000 项提交绑定的源码内容哈希、187 个本地链接目标核对通过；
+  读者文件检索仅命中已说明的 SQLSTATE，差异空白检查通过。
 
 ## 2026-09-03 Map 基础子切片合入本地 main
 

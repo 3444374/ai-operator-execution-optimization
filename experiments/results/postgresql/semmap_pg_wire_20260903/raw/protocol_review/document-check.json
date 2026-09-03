@@ -1,0 +1,15 @@
+{
+  "documents": 14,
+  "links": 310,
+  "anchors": 72,
+  "readerFiles": [
+    "README.md",
+    "code/README.md",
+    "code/postgres/semloom_pg/README.md"
+  ],
+  "explainedSqlstates": 3,
+  "qualifiedCodeUnchanged": true,
+  "manifests": 32,
+  "entries": 1075,
+  "errors": []
+}

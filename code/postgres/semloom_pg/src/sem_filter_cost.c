@@ -80,7 +80,7 @@ semloom_filter_cost_make_private(const SemloomFilterCostEstimate *estimate)
 		estimate->workload_signature == NULL ||
 		estimate->service_signature == NULL ||
 		estimate->model_role == NULL ||
-		strcmp(estimate->model_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
+		strcmp(estimate->model_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
 		!isfinite(estimate->semantic_input_rows) ||
 		estimate->semantic_input_rows < 0 ||
 		!isfinite(estimate->output_selectivity) ||
@@ -278,7 +278,7 @@ semloom_filter_cost_decode(List *custom_private,
 	if (schema_version != SEMLOOM_FILTER_COST_SCHEMA_VERSION ||
 		seen_fields != SEMLOOM_FILTER_COST_FIELDS ||
 		list_length(fields) != SEMLOOM_FILTER_COST_FIELD_COUNT ||
-		strcmp(estimate->model_role, SEMLOOM_EXACT_FILTER_ROLE) != 0 ||
+		strcmp(estimate->model_role, SEMLOOM_MODEL_REFERENCE_ROLE) != 0 ||
 		estimate->output_selectivity > 1 ||
 		estimate->accepted_max_relative_error > 1 ||
 		estimate->held_out_max_relative_error >
