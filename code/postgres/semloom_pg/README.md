@@ -38,7 +38,7 @@ task/result changes. Composable execution and bounded sessions follow, including
 recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
-The unmerged `codex/semmap-message-contract` branch adds only pure Map message compilation at `6903cf46`:
+The integrated message slice at `6903cf46` adds only pure Map message compilation:
 verbatim system/user text, strict UTF-8 and byte limits, with shared JSON encoding and unchanged Filter messages.
 [This slice's checks](../../../experiments/results/postgresql/semmap_messages_20260903/README.md) pass 107/107 locally
 and on the server, plus a fresh PG18.3 `-Werror` build, regression 1/1 and TAP 1022/1022 for existing paths.
@@ -47,6 +47,8 @@ at `425d2b1c` adds C/Python Map identity/completion values and a strict v5 gatew
 Its 135/135 local/server checks and fresh PG18.3 build/regression/TAP checks pass for existing SQL paths.
 The [JSON-depth follow-up](../../../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)
 at `a1bbdd30` fixes gateway input isolation with 136/136 local checks; C/SQL are unchanged and PG was not rerun.
+These slices and their evidence are included in local main through `b0400944`;
+the [integration recheck](../../../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11 without a new server run.
 The PG schema 4 plan, C v5 client, generative Map SQL and PG golden/real-model/resource checks remain pending.
 
 This extension remains the project's own frontend. The company demo provides scoped engineering references;

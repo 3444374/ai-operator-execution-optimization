@@ -2,8 +2,9 @@
 
 日期：2026-09-03
 
-状态：合同已定稿；独立分支已验证消息、C/Python 纯值、Python v5 及旧 PG 路径兼容，
-见[本轮记录](../results/postgresql/semmap_values_20260903/README.md)（源码 `425d2b1c`，尚未合入 main）。
+状态：合同已定稿；已验证消息、C/Python 纯值、Python v5 及旧 PG 路径兼容，
+见[本轮记录](../results/postgresql/semmap_values_20260903/README.md)（服务器资格源码 `425d2b1c`）。
+包含后续深层 JSON 修复的 `b0400944` 已合入本地 main，各次测试仍绑定原提交，不重新归属旧证据。
 新三参 Map 的 PG plan、C wire 接线、完整 golden/模型/资源验收仍 pending，不能由旧路径通过代替。
 
 生产代码对照基线：a3199bd9。本文面向研发与审查者，不是已发布功能说明。

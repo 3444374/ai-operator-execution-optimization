@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-09-03 Map 基础子切片合入本地 main
+
+- 按用户要求，fetch 确认 main 与 origin/main 均为 `63d86c0e`、主工作树与研发工作树干净，
+  将 `codex/semmap-message-contract` 快进合入本地 main 至 `b0400944`；无冲突，未推送或部署服务器。
+- 消息编译、C/Python 纯值、Python v5 及深层 JSON 修复均进入主线；合并后固定提交重新通过
+  本地 136/136、七个纯 C module 和 neutral header C11。检查器第一次因 Markdown 路径模式
+  在测试前停止，明确核对文档差异后修正；[完整记录](experiments/results/postgresql/semmap_values_20260903/README.md#main-integration)保留该过程。
+- 更新现役计划、状态与导航中的分支归属；新 Map 的 PG plan/权限、C v5、PG＋golden、真实模型与
+  资源验收仍待完成。未重跑服务器 PG，旧 1022 TAP 仍绑定 `425d2b1c`；Map 请求预算保持 0/32。
+- 原 241 项归档 SHA 核对通过，原始与失败记录、其他 worktree 均保留；未删除旧 wire 或改写历史验收数字。
+- 319 个本地 Markdown 链接、读者措辞与差异检查通过；全仓 8,021 个文件及本次 17 个暂存文件隐私扫描通过。
+
 ## 2026-09-03 深层 JSON 读帧隔离补充
 
 - 按用户复核，以 20,012 字节深层 JSON 复现 v5 错报内部错误、首帧使 gateway 退出；

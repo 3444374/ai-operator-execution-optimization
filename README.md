@@ -9,7 +9,7 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-09-02，源码未因本次文档修订改变）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+当前状态（2026-09-03）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
 错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
@@ -31,7 +31,8 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
 再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
 生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
-待研发对照源码复核和实现，文档中的新重载与版本还不能使用。
+消息编译、C/Python 值表示和 Python v5 gateway 已合入本地 main，详见[实现与验证记录](experiments/results/postgresql/semmap_values_20260903/README.md)。
+生成型 Map 的 PG plan、C v5 接线及新 SQL 重载仍未实现，不能从 PostgreSQL 执行该新重载。
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
 当前代码已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)；
 后续[真实服务检查](experiments/results/postgresql/choice_service_20260902/README.md)也已通过，但不表示模型判断质量合格。

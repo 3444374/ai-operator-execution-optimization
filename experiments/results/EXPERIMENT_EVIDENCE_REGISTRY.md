@@ -5,14 +5,16 @@
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
-独立分支的[Map 纯值与 Python v5](postgresql/semmap_values_20260903/README.md)绑定 `425d2b1c`：
+Map 消息、纯值、Python v5 及深层 JSON 修复已随 `b0400944` 合入本地 main；
+[合并复查](postgresql/semmap_values_20260903/README.md#main-integration)重新通过本地 136/136 和 C11，未运行服务器或模型。
+[Map 纯值与 Python v5](postgresql/semmap_values_20260903/README.md)的服务器资格仍绑定 `425d2b1c`：
 C/Python 身份/完成值、严格 Python v5 和共享 gateway 通过本地/服务器各 135/135，精确 PG18.3
 重新构建与旧 SQL 路径 regression 1/1、TAP 1022/1022。没有 PG schema 4/C v5/三参 Map 执行、
 真实模型或资源资格；独立审查修复与失败证据保留。下方消息子切片保持原始范围和身份。
 其后[深层 JSON 修复](postgresql/semmap_values_20260903/README.md#json-depth-repair)绑定 `a1bbdd30`：
 本地 136/136 与 C11 通过，坏连接后同一 gateway 可继续完成合法请求；未重跑服务器、PG 或模型。
 新产物使用独立 SHA 清单，不改绑原 135/135 和 1022 TAP。
-独立分支的[Map 消息子切片](postgresql/semmap_messages_20260903/README.md)绑定 `6903cf46`：
+[Map 消息子切片](postgresql/semmap_messages_20260903/README.md)的验证仍绑定 `6903cf46`：
 C/Python 规范消息与共享 JSON 编码通过本地/服务器各 107/107，精确 PG18.3 新构建与旧路径
 regression 1/1、TAP 1022/1022。没有完整 Map identity/output、三参 SQL/schema 4/wire v5 或模型/资源资格；
 这不是生成型 Map 已进入 executor 的证据，也没有新增性能或质量结论。

@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-03（研发分支已验证 Map 纯值与 Python v5；PG Map 接线、质量/校准仍未完成）
+日期：2026-09-03（Map 纯值、Python v5 与深层 JSON 修复已合入本地 main；PG Map 接线、质量/校准仍未完成）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -29,12 +29,14 @@ SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合
 独立分支 `codex/semmap-message-contract` 的 `6903cf46` 只实现 C/Python Map 消息编译与公共 JSON writer，
 将 Filter 的 system 内容留在 Filter machine；原 recording/Filter 行为保持。
 [本轮验证](../experiments/results/postgresql/semmap_messages_20260903/README.md)：本地/服务器各 107/107，
-精确 PG18.3 重新构建 `-Werror`、regression 1/1、TAP 1022/1022。该分支尚未合入 main。
+精确 PG18.3 重新构建 `-Werror`、regression 1/1、TAP 1022/1022。该消息切片已随下述修改合入本地 main。
 后续 `c338d81b` / `425d2b1c` 已实现并验证 C/Python Map 纯值摘要与完成策略、Python v5 及共享 gateway。
 [本轮资格](../experiments/results/postgresql/semmap_values_20260903/README.md)绑定 `425d2b1c`：本地/服务器各
 135/135，PG18.3 `-O2 -Werror`、旧路径 regression 1/1、TAP 1022/1022 重新通过；独立复核问题已修复。
 后续 `a1bbdd30` 补深层 JSON 读帧隔离与同进程恢复，本地 136/136 及 C11 通过；
 见[追加验证](../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)。未重跑服务器 PG 或模型，旧 TAP 仍绑定 `425d2b1c`。
+已从 `63d86c0e` 快进合入 `b0400944`；合并后的本地 main 复跑 136/136 与 C11 通过，
+见[合并检查](../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration)。本次未推送或部署服务器。
 schema 4 的 PG 保存、C port/wire v5、三参 Map 与新 PG 行为仍待实现；当前 SQL Map 仍为 recording。
 没有真实 Map 模型或资源资格，下方历史实现与测试记录保持原提交身份。
 

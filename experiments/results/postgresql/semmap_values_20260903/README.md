@@ -10,7 +10,7 @@
 本轮没有测试优化方法、训练模型或进行成本校准。
 
 源码：`c338d81b` 实现，`425d2b1cfb4a9a2e85dad7e96c4da91fb6884d25` 修复独立复核反例并作为最终验收身份。
-分支为 `codex/semmap-message-contract`，尚未合入 main。
+验收分支为 `codex/semmap-message-contract`；后续包含本轮与深层 JSON 修复的 `b0400944` 已合入本地 main。
 前一[消息子切片](../semmap_messages_20260903/README.md)仍绑定 `6903cf46`。
 后续深层 JSON 修复绑定 `a1bbdd30`，见[追加验证](#json-depth-repair)；下方 135 项和服务器证据仍保持原提交身份。
 
@@ -88,6 +88,24 @@ RecursionError；本轮以 20,012 字节、10,000 层嵌套的合成帧复现，
 `red-session-verified-fixture` 保留原错误分类；`red-cli` 保留进程退出及失败路径上的测试 socket 警告。
 `red-session` 是首轮测试 profile 的 CHOICE 大小写错误，修正夹具后才用于生产反例，不算产品故障。
 测试随后补充幂等关闭，并用 ResourceWarning 检查复跑 CLI。上述失败未删除，不声称已经穷尽全部畸形输入。
+
+<a id="main-integration"></a>
+
+## 本地 main 合并检查（2026-09-03）
+
+按用户要求，确认本地 main 与刚 fetch 的 origin/main 均为 `63d86c0e`、两个工作树干净后，
+将本分支快进合入本地 main 至 `b04009449a65f3b961959c07466e0de443d31dd6`。没有合并冲突，
+未推送远端、部署服务器或删除研发分支/证据。
+
+在该干净提交上重新运行 109 项 PG/protocol/static/C 值测试、6 项 gateway、10 项校准机制与
+11 项 choice 工具测试，共 136/136；七个纯 C module 和 neutral header 的严格 C11 检查通过。
+源码/测试与 `a1bbdd30` 相同，`code/` 下仅文档不同。记录器首次因 Markdown 排除模式漏掉
+`code/` 顶层文档而在测试前停止；改为逐项核对差异文件后通过，不是生产代码不一致或测试失败。
+
+[检查摘要](raw/main_integration_20260903/verification.json)、[完整输出](raw/main_integration_20260903/checks.log)
+及[复查脚本](raw/main_integration_20260903/verify.py)由[新 SHA 清单](raw/main_integration_20260903/SHA256SUMS)绑定。
+合并前核对原消息 81、纯值 136、JSON 修复 24 项归档哈希全部一致；历史日志与清单没有改写。
+本次没有服务器 PG18.3 构建/TAP、真实模型或资源运行，Map 预算仍为 0/32；旧 PG 资格不转绑到合并提交。
 
 ## 事实、不能声称与下一步
 

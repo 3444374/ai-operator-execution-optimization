@@ -72,6 +72,9 @@ fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice �
 再扩展[两个 Filter AND / Filter → Map 及有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)。
 [函数身份检查](experiments/results/postgresql/function_identity_20260902/README.md)已复现并最小修复
 非成员误接管，实现与证据已合入 main；仅成员关系变更仍须按工程计划刷新所有相关物理连接，不支持自动在线变更。
+生成型 Map 的消息编译、C/Python 纯值、Python v5 与深层 JSON 修复已合入本地 main，
+见[分阶段验证](experiments/results/postgresql/semmap_values_20260903/README.md)；PG plan/权限、C v5、
+新 Map SQL、完整 golden 与真实模型/资源验收仍未完成，不改变当前 SQL Map 的 recording 身份。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
 不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
 其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较

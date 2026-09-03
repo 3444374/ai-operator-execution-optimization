@@ -108,15 +108,17 @@ Filter reference/optimized path with quality evidence and fallback be implemente
 The [opt-in choice engineering slice](../experiments/plans/completed/postgresql_choice_profile_engineering.md) is qualified in the current integrated code.
 Next, [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
 drives the necessary shared task/result changes after the full engineering comparison.
-Its first unmerged [message-compilation slice](../experiments/results/postgresql/semmap_messages_20260903/README.md)
+Its first [message-compilation slice](../experiments/results/postgresql/semmap_messages_20260903/README.md)
 at `6903cf46` passes 107/107 local/server checks and fresh PG18.3 build/regression/TAP compatibility checks.
-That slice adds no executable generative Map SQL. The subsequent unmerged
+That slice adds no executable generative Map SQL. The subsequent
 [values and Python v5 slice](../experiments/results/postgresql/semmap_values_20260903/README.md) at `425d2b1c`
 adds C/Python identity and completion values, strict v5 schemas and shared gateway/HTTP execution.
 It passes 135/135 local/server checks and fresh PG18.3 build/regression/TAP compatibility checks.
 The later [JSON-depth repair](../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)
 at `a1bbdd30` passes 136/136 local checks and C11; it adds frame-read isolation and same-process recovery,
 without rerunning PostgreSQL or models or changing the archived server qualification.
+These changes and their evidence are now included in local main through `b0400944`;
+the [integration recheck](../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11.
 PG schema 4, the C v5 client, generative Map SQL, PG golden execution and real-model/resource checks remain pending.
 [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT in the current integrated code.

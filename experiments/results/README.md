@@ -14,13 +14,15 @@ PG18.3 `-Werror`、regression 1/1、TAP 1022/1022。尚未接 PG Map plan/C v5/S
 独立复核发现的数字输入错误、记录器脱敏和测试标签问题已处理，失败与历史结果保留。
 后续[深层 JSON 输入隔离](postgresql/semmap_values_20260903/README.md#json-depth-repair)在 `a1bbdd30`
 通过本地 136/136 和 C11；仅修 gateway 读帧，未重跑服务器 PG 或真实模型，原验收身份不变。
+上述消息、纯值/v5 与修复已随 `b0400944` 合入本地 main；[合并复查](postgresql/semmap_values_20260903/README.md#main-integration)
+重新通过本地 136/136 与 C11，不新增 PG 或真实模型资格。
 
 ## PostgreSQL 生成型 Map 消息编译（2026-09-03）
 
 [规范消息与旧路径兼容](postgresql/semmap_messages_20260903/README.md)：独立分支源码 `6903cf46`，
 C/Python 共享两消息编码，Map 原样文本、Filter 字节不变；本地/服务器各 107/107，重新执行 PG18.3
 `-Werror`、regression 1/1、TAP 1022/1022。只完成消息子切片，不表示完整值/摘要、生成型 SQL/v5、
-golden/真实模型或资源验证通过；尚未合入 main。
+golden/真实模型或资源验证通过；后续已随上方修改合入本地 main，原证据范围不变。
 
 ## PostgreSQL 函数对象身份（2026-09-02）
 

@@ -11,7 +11,7 @@
 |---|---|
 | 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
-| 生成型 Map 的具体行为、数据表示与验收 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md)：合同定稿，§8.0 已登记源码复核；消息子切片已验证，其余实现按 §8 推进 |
+| 生成型 Map 的具体行为、数据表示与验收 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md)：消息、纯值与 Python v5 已验证并合入本地 main；PG plan/权限、C v5、完整 golden/模型/资源检查按 §8 继续 |
 | 回查 choice 已完成的字段、协议、请求预算与实施验收要求 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
 | 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
 | 从 pgml 借鉴哪些模型接入做法 | [主计划 §8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)：SQL 入口、公共模型调用、资源复用与单项/批量接口的采用时机和验证；保持 PG 外执行，不增加四 C 任务 |

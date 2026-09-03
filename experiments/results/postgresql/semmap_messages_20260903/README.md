@@ -2,7 +2,8 @@
 
 内部工程验证，对应[四 D 合同 §8.0](../../../plans/postgresql_semmap_generation_contract.md#80-本次源码复核与首个子切片2026-09-03)。
 目的只是在新增 Map 消息编译时保留现有算子行为，不是模型质量、成本或调度性能实验。
-研发分支 `codex/semmap-message-contract`，起点 `63d86c0e`；本记录不表示已经合入 main。
+验收时使用研发分支 `codex/semmap-message-contract`，起点 `63d86c0e`；本记录的原始数字保持下方提交身份。
+后续包含本切片的 `b0400944` 已合入本地 main，见[合并检查](../semmap_values_20260903/README.md#main-integration)。
 
 ## 改动与实际结果
 
