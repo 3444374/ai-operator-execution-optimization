@@ -159,6 +159,7 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 - 总入口：[`research/README.md`](research/README.md)
 - 知识汇总：[`research/knowledge_hub.md`](research/knowledge_hub.md)
 - Sema-like 架构审计：[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md)
+- 前缀/表示候选的瓶颈、文献与可证伪设计：[`research/semantic_prefix_reuse_design_audit_20260903.md`](research/semantic_prefix_reuse_design_audit_20260903.md)（研究辅助材料；工程次序仍看主计划）
 - 文献库存：[`research/ai_operator_literature_inventory.md`](research/ai_operator_literature_inventory.md)
 - Top 15：[`research/top15_ranked_papers.md`](research/top15_ranked_papers.md)
 - 泛读笔记：[`research/reading_notes/README.md`](research/reading_notes/README.md)

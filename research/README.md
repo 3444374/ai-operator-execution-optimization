@@ -15,6 +15,7 @@
 | `reference/REFERENCE_INDEX.md` | 历史题录与用途索引；当前工作区可解析实体为 Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane 七份 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
 | `sema_native_semantic_operator_architecture_reference_20260827.md` | PostgreSQL 语义算子的理论与迁移审计：Sema/Cortex 说明数据库语义所有权，LOTUS 提供 reference/optimized algorithms，IMLane/Kalypso 提供后续执行参照；工程实施另看 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` |
+| [语义前缀候选审查](semantic_prefix_reuse_design_audit_20260903.md) | 专项研究辅助材料：前缀/表示的源码事实、最近邻反例、瓶颈推导、质量条件与创新性验证；不是新的架构主计划或已运行实验 |
 | `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |

@@ -1,10 +1,15 @@
 # 实验状态与缺口分析
 
-更新日期：2026-09-02
+更新日期：2026-09-03
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
 [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md)。
+
+2026-09-03 [前缀/表示设计审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)已完成，
+没有新增模型、tokenizer、缓存、PG 或性能运行。same-message 组织/提交和新表示质量分别作为候选；
+实际 token 机会、质量、收益与新颖性均待验证，不恢复旧校准/SAOR，也不阻塞 Map 和独立增量核心。
+工程切片与对照分别见主计划 §7、baseline reference §0.3；此处不把方案存在登记为实验完成。
 
 > **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference
 > paths、SemMap direct `INSERT ... SELECT`、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator

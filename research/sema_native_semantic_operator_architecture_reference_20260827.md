@@ -1,6 +1,6 @@
 # Sema-like 数据库原生语义算子架构参照审计
 
-更新日期：2026-08-30
+更新日期：2026-09-03（补充前缀/表示专项审查入口；旧版本的审计范围保持）
 
 当前研究判断以 §11 的 2026-08-28 增补为准；实施范围与顺序只由
 [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
@@ -9,6 +9,10 @@
 文档角色：本文是**理论、文献和架构迁移依据**，回答 Sema/Cortex/LOTUS/IMLane/Kalypso 已解决什么、
 哪些机制可迁移以及适用条件；它不维护当前代码完成度、工作包顺序或测试数字。工程实施只看上述计划，
 源码事实看 `code/INFRA_STATUS.md`，证据看实验证据台账。
+
+讨论 prompt 表示或跨算子前缀时，再读 2026-09-03 的[专项研究审查](semantic_prefix_reuse_design_audit_20260903.md)。
+其中核对 Kalypso virtual pinning、MLSys 的逐行布局/质量实验及 SPEAR 等最近邻；本文件旧有
+“可迁移 prefix lease”的建议不意味着普通外部 credit 能保证 KV 驻留，也不构成已确认的创新。
 
 ## 0. 研究问题与结论
 

@@ -1,5 +1,28 @@
 # 项目日志
 
+## 2026-09-03 前缀与表示候选的研究设计审查
+
+- 以 main c7b1e9e6 对照用户两份讨论、当前 machine/writer/pump/runtime、同步 wire v5、外部 session、
+  调度 work/HRW 与 Filter cost；只改研究/工程/实验说明，不改生产或测试代码、四 D 合同及预算。
+- 新增[专项研究审查](research/semantic_prefix_reuse_design_audit_20260903.md)，角色是理论候选与证据分析，
+  不另建架构主计划。Kalypso 已有依赖内存计账和默认 virtual pinning；MLSys 2025 不是仅单算子/
+  全局固定字段序，也评估准确率；SPEAR 与 KVFlow 进一步限制多表示、共享前缀与依赖组合的宽泛新颖性。
+  SPEAR 增入核心补充线索，不改变 Top 15、精读数量或开题已完成贡献。
+- 保留实际 token 机会与 2×2 因果设计，补充横纵前缀可嵌套而非必然冲突、最长命中不可重复求和、
+  sum(service) 不等于并行 JCT、opaque text 无任意字段布局，以及总 kv_usage 不证明前缀驻留。
+- [主计划 §7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)
+  分开 same-message 组织/提交和新表示质量；写清真实消费者、代码落点与完成条件。Map、独立核心、
+  多会话与相应 PG 接入不等待前缀候选成功；保留薄 adapter 与现有 runtime，不预建复合 pump/布局 registry。
+- [baseline reference §0.3](experiments/plans/baseline_reference.md#semantic-prefix-causal-controls)
+  增加强对照、同窗口/容量、自然质量结果与固定任务图诊断、cache-off、预定压力/反例和选择 regret；
+  不用不同 survivor/calls/output work 或事后缩 KV 制造收益，不借用旧校准或 Map 模型预算。
+- 按 research skill 分派一个有界一手文献核验；主线程独立核对源码与关键原文。idea-evaluator 将方案
+  判为有条件接受；codebase-design 与 writing-for-agents 用于保持小 Interface、职责分开和单一权威。
+  临时文献核验稿与 9 项无网络源码/符号检查脚本留在忽略的 tmp，未作为模型/缓存实验或 PG 验收。
+- 9 项无网络源码/符号检查、238 个本地链接与 59 个章节引用、读者措辞和差异空白检查通过；
+  修正知识库一处原有章节跳转。11 个本次文档与全仓 8,025 个跟踪文件隐私扫描均无新增问题。
+  没有访问服务器或运行 PG/tokenizer/真实模型/性能测试，历史证据不重新绑定。
+
 ## 2026-09-03 固定服务、部署身份与分层对照的设计复核
 
 - 最初以 main `63d86c0e` 核对用户的两份架构说明及评价；期间另一任务将 Map 子切片集成至

@@ -19,6 +19,7 @@
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
 | 固定服务如何扩到可审计的多 endpoint | [主计划 §6.5](postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)：显式选择、部署快照、query-fixed 身份与逐任务记录；待实现，不修改四 D v5 |
 | 怎样区分 gateway、PG 接入和 SemLoom 的开销 | [baseline reference §0.2](baseline_reference.md#gateway-layered-controls)：A/B/C/D 匹配诊断与方法消融；待执行，不是运行授权或原生排名 |
+| 前缀/表示候选为何值得做、怎样进入代码 | [研究审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)说明依据与待证命题；[主计划 §7](postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)规定 Module 落点；[对照 §0.3](baseline_reference.md#semantic-prefix-causal-controls)区分质量、任务量与执行收益。均不改变四 D 或授权实验 |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 

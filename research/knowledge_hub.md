@@ -6,7 +6,7 @@
 实现事实见 [`../code/INFRA_STATUS.md`](../code/INFRA_STATUS.md)，证据强度见
 [`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
-生成日期：2026-07-16（最近更新：2026-08-30，收敛文献、工程计划、实现状态与证据的文档职责）
+生成日期：2026-07-16（最近更新：2026-09-03，补充前缀/表示候选的证据审查，不改变两项研究内容）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -21,6 +21,10 @@
 ---
 
 ## 阅读指南
+
+讨论 prompt 表示、跨行/跨算子前缀或其创新性时，先读
+[候选设计审查](semantic_prefix_reuse_design_audit_20260903.md)：源码事实、最近邻反例、可证伪命题与
+论文可声称范围；工程改动和实验次序仍分别回到主计划与 baseline reference。
 
 | 我想知道... | 跳转到 |
 |---|---|
@@ -37,7 +41,7 @@
 | 预研实验有什么证据？边界在哪里？ | [§6 本项目已有实验证据](#6-本项目已有实验证据) |
 | 当前策略版本是什么？实验怎么设计？ | [§7 策略设计与实验路线](#7-策略设计与实验路线) |
 | Baseline 怎么分级？ | [§7.3 Baseline 分级](#73-baseline-分级) |
-| 缺什么？下一步该查什么？ | [§8 知识缺口](#8-知识缺口) |
+| 缺什么？下一步该查什么？ | [§8 知识缺口](#8-研究问题与知识缺口) |
 | 所有参考文件在哪里？ | [§9 文件清单](#9-文件清单) |
 | Daft+Ray 多模态是什么？和本课题什么关系？ | [§10 Daft+Ray 多模态与具身智能](#10-daftray-多模态执行引擎与具身智能负载) |
 
@@ -76,11 +80,14 @@
 
 ### 1.3 vLLM Prefix Caching
 
-- 16-token block → SHA-256 哈希 → 内容寻址
-- 新请求从 token 0 匹配，第一个 hash miss 即停止
-- 只有完整 block 可缓存，LRU 淘汰 + reference counting
+- 所查 V1 设计按完整 token block 及前序 prefix 建立内容哈希；块大小与哈希实现以部署配置为准。
+- 可复用的是从起始位置连续兼容的前缀，不是任意相同文本片段；模型额外输入与隔离域也要兼容。
+- reference counting 与空闲块淘汰由引擎管理；上游同组标记不锁定真实缓存。
 
-**上游如何利用**：共享 system prompt 的行合并为一个请求 → APC 命中率最大化；并发提交共享 prefix 的请求 → 多请求同时命中同一批 cached blocks。
+**上游如何利用**：保持每行一个完整独立请求，在合法重排范围内把兼容 prefix 的请求靠近提交。
+这只提供复用机会，不保证命中最大化；并发请求也可能尚未得到可复用的已计算块。把多行拼成一个
+prompt 是另一种语义算法，不能当作普通组织操作。实际 token/block、namespace 和驻留条件见
+[vLLM 官方设计](https://docs.vllm.ai/en/stable/design/prefix_caching/)及[候选审查 §4](semantic_prefix_reuse_design_audit_20260903.md#4-第一性原理优化的是可兑现的工作不是命中率数字)。
 
 ### 1.4 Chunked Prefill 与上游策略的安全边界
 
@@ -370,6 +377,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 |---|---|---|
 | IMLane: Composable Framework for Efficient AI Function Execution in Database Engine (PVLDB 2026) | DBEnd/data conversion、shared-memory Lane、进程级 Python executor、数据库 physical batch 的异步提交、per-function resource scheduler 与 Ray adapter | 不定义 semantic algebra/rewrite，也未实现 token/work-aware multi-Job fairness、SLO 或完整 PostgreSQL cancel protocol |
 | Kalypso: Relational LLM Serving (arXiv 2026) | 让 serving 层接收 semantic query plan，以跨 operator pipelining、依赖感知 prefix 生命周期和动态 memory budget 提高 KV-cache reuse；官方摘要报告 query completion time 最高 4.57× | 当前论文聚焦单条 semantic query 的 query completion 与一个 serving cache domain；未覆盖 PostgreSQL planner/query lifecycle、多 query/多 Job 公平、多个独立 endpoint 路由和数据库管理的流式 child-plan 交接 |
+| Making Prompts First-Class Citizens for Adaptive LLM Pipelines (CIDR 2026, SPEAR) | 版本化 prompt views、policy/refinement，初步实验含 evidence-first 的布局及质量/成本；[正式论文 §2–4](https://www.vldb.org/cidrdb/papers/2026/p26-cetintemel.pdf) | 缓存/batching/fusion 在 §3 多属设计机会；未证明本项目有限增量任务上的联合调度，不能把其全部设想写成已实现 |
 | Sema: A High-performance System for LLM-based Semantic Query Processing (VLDB 2026 accepted) | 把 semantic expression/operator 纳入 DuckDB query plan，在数据库内做 expression rewrite、fusion、prompt batching、reordering 和 AQE | 当前论文不研究 PostgreSQL extension/query lifecycle、分布式 Daft/Ray provider、多 Job 公平与多个独立 endpoint 路由；论文也把 routing、privacy、governance 和外部推理 fault tolerance 留作后续 |
 | Optimizing LLM Queries in Relational Data Analytics Workloads (MLSys 2025) | 利用完整关系数据、函数依赖和列统计重排 row/field，提高 KV prefix reuse | 主要面向离线完整输入，不建模在线到达、复杂 cache eviction、多作业干扰和实际 endpoint state |
 | BlendServe (ASPLOS 2026) | offline serving 内的 resource-aware batching，同时考虑 compute/memory 需求和 prefix locality | 假定有足够大的可重排请求池，不覆盖数据库数据准备、Job 语义和上游多 endpoint 路由 |
@@ -1025,6 +1033,7 @@ PostgreSQL Sema-like semantic optimizer/executor
 | `SemFilter` 的三值/NULL/error 语义如何在 bounded async、乱序 completion 下保持 relation cardinality | 路径选择资格后的问题 |
 | IMLane-like database batch 与 SemLoom provider rebatching 在同 task/capacity 下应如何放置 | 高；数据库资格完成后验证 |
 | Kalypso-like lineage 在多 Job/多 endpoint 下是否有增量 | 参考问题；满足前置证据后再决定是否立项 |
+| 有限增量输入中，合法表示与组织/提交的收益能否超过普通 prefix/work 方法 | 条件性候选；见[设计审查](semantic_prefix_reuse_design_audit_20260903.md)，不阻塞 Map 或独立核心 |
 | LOTUS v1.2.4 compatibility profile 与 LOTUS/Sema native full-system baselines 的身份和行为如何核对 | 高；不阻塞数据库核心 |
 | 图像 HSE static 是否在真实 GPU 上不劣于 direct-dependency static，以及 stage/CE5 状态能否产生受控动作增量 | 高 |
 | 小规模 pgvector 写回后 embedding 检索质量是否保持（Recall@K/nDCG 等） | 高 |

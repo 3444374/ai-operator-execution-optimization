@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-08-27
+更新日期：2026-09-03
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -62,6 +62,12 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | LLM for Data Management | PVLDB 2024 | DB/LLM 研究版图 |
 | Smart、SmartLite、LEADS、InferDB | 正式数据库论文 | 近数据库推理、模型选择和动态执行对照 |
 | Kalypso: Relational LLM Serving | arXiv:2607.23815，2026；未标注正式 venue | 直接连接 semantic query plan 与 request-centric LLM serving，研究跨算子流水、KV prefix 生命周期和 memory-aware admission；最接近本课题接口，迫使增量收窄到 PostgreSQL query lifecycle、多 Job、多 endpoint 与不修改 vLLM 的外部控制 |
+| Making Prompts First-Class Citizens for Adaptive LLM Pipelines（SPEAR） | CIDR 2026；vision/initial design 与初步实验，不算 CCF-A full research | [官方论文](https://www.vldb.org/cidrdb/papers/2026/p26-cetintemel.pdf) §2–4：版本化 prompt views/refinement，R3 评估 evidence-first 调整；缓存与 fusion 等仍多为设计机会。约束“多表示＋质量检查”的新颖性主张；本次相关章节核验不等于新增全文精读 |
+
+2026-09-03 的[前缀/表示专项审查](semantic_prefix_reuse_design_audit_20260903.md)进一步收窄上述比较：
+Kalypso 的默认 virtual pinning 不要求 explicit pin API；MLSys 2025 已含多次 LLM 查询、逐行字段序与
+准确率评估；KVFlow、DLPM/D²LPM 与 SPEAR 也覆盖部分组合机制。不能仅凭“PG、流水、多表示、
+质量记录、不改引擎”的名称组合推断新颖性。此增补不调整 Top 15 或既定开题题录。
 
 ### 2.2 LLM 公平调度与程序级执行
 

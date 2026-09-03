@@ -14,6 +14,8 @@
 工程完成不表示模型质量、真实成本校准或优化路径已通过。
 真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
 本轮补充显式 endpoint 选择、部署身份与分层开销对照；均为后续设计，不改变现有协议、运行授权或四 D 范围。
+后续研究机制经[前缀与表示设计审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)收窄：
+不改变 messages 的组织/提交与需要新语义资格的表示分别验证，不以“五个创新点”同时开工。
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护；消息、纯值和 Python v5 子切片已验证并合入本地 main，
@@ -319,6 +321,52 @@ HTTP 方言不等于真实服务已经通过 model/usage/finish/choice 合同或
 对照，等真实 PG 增量接入和匹配条件满足后运行，而不是预先认定某个位置最优。
 同一查询内一元算子的基本数据依赖属于工作包六的组合检查；Kalypso-like lineage/KV、Join 与
 blocking operator 的新算法仍只作另行立项后的参考。
+
+<a id="research-mechanism-slices"></a>
+
+### 7.1 工程能力与研究机制分别推进
+
+需要解释新颖性、前缀瓶颈、布局选择或论文主张时，先读
+[研究审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)；涉及性能归因再读
+[因果对照](baseline_reference.md#semantic-prefix-causal-controls)。本文只规定实现位置与完成条件，
+不复制推导或新建平行研究内容。当前代码能发请求不等于前缀重算是主要瓶颈。
+
+| 类别 | 当前决定 | 升级条件 |
+|---|---|---|
+| 可靠语义与执行能力 | 继续四 D、公共增量核心、外部多会话与受限组合 | 按各工作包验证，不等待新布局、cache hit 或 Filter 第二路径 |
+| same-message 组织/提交候选 | 对既定独立请求使用有限可见窗口、work budget 与软亲和；消息/调用语义不变 | 先有具体供给、重算或等待损失；同容量/同观测的简单控制无法充分消除它，再加最小决策规则 |
+| 新 prompt 表示候选 | canonical 加一个明确候选；由数据库选择，query 内不变 | 有字段/消息语义、独立质量与适用性、实际 token 机会和强对照；不在 gateway 自动重写，不混入四 D |
+| lineage/KV 与多 Job 联合候选 | 仍按真实消费者和独立问题决定，保留不使用这些信息的对照 | 依赖/Job 信息消融有增量，控制动作可实现；多 Job 本身可独立推进，不必等待 prefix 路线成功 |
+
+第一版亲和规则只选择已就绪且合法的任务/目标：比较可省 prefill 的保守收益与新增等待、组织和
+重排成本；观测不足或区间重叠就使用同上限普通策略。先不增加等待未来输入、学习控制、硬 KV lease
+或逐行布局选择。实际 shared-prefix token 信息不存在时，不能用 payload/spec digest 冒充。
+这是一项待验证候选，普通 HRW、longest-prefix 或最少 work 已能解决时，不将多一层封装算作创新。
+
+### 7.2 按真实消费者确定代码改动
+
+下表是条件性工程映射，不是要求研发立即创建所有结构或增加协议字段；具体 Interface 先由切片测试固定。
+
+| 切片 / 输入输出 | 复用位置与必要改动 | 完成条件 |
+|---|---|---|
+| 机会分析：选定程序/公开输入 → 实际 token/block 机会及成本范围 | 算子自己的 compiler 继续生成消息；tokenizer/template 相关计算放进外部模态/分析 Adapter，不放 planner 或公共 JSON writer；先在实验工具完成 | 完整消息、实际 tokenizer/template、block/config 身份明确；区分潜在 LCP、实际 hit、估计/不可用；无模型分析不冒充 cache 实验 |
+| 增量 same-message 组织：sealed tasks → 有界接纳/完成事件 | 从 scheduling/core/scheduler.py 及真实调用方表征行为，复用 ready_window.py、planning/work.py 和既有 policy；gateway 只做任务适配 | 旧行为与窗口 1 对照一致；未接受项仍归调用方，所有缓冲有限；取消、部分失败、晚到结果、永久背压有终态；不复制 scheduler |
+| PG 单算子多在途：对应 reference → 新执行路径 | 同一最小切片调整 ai_provider_port、wire、PgSemanticRuntime、pump；跨调用存活的 slot 所需值/消息/结果由有界 owned storage 持有 | input-order 输出之外，还验证函数求值/模型调用、LIMIT 过取、错误先后、结果缓冲、取消与长文本；不能沿用同步借用对象或仅恢复行序就称等价 |
+| 受限多算子：两个真实 spec → PG 可见的依赖与结果绑定 | 先用嵌套的现有 CustomScan/独立 runtime 与外部多会话形成同步可组合路径；共同调用分析与各算子 placement 分开 | 两个 Filter AND、Filter→Map 的独立身份/权限/计数和生命周期通过；普通 pull 能推进时不新建 SemCompose 或隐藏组合 pump |
+| 一个新表示：显式语义选择 → query-fixed 程序 | 纯语义 Module 增加版本化程序，plan spec 保存真正消费的选择；公共 sem_message_writer 仅在两种合法编码确有共同点时扩展；cost 与 quality artifact 分开 | 不能把 opaque text 自行拆成字段；新字段表示先定义 schema/NULL/序列化。程序改变有独立 opt-in/质量检查，旧消息/摘要不变，prepared plan 可核验 |
+| 必要的软亲和/部署观测：获准任务与状态 → 目标选择/审计 | 复用 endpoint_routing 与 work 描述；模型 Adapter 解释指标，SemLoom 只看中立的值/来源/时间。身份按 §6.5，cache epoch 与内容亲和分开 | 缺失不是 0；总 kv_usage 不当作逐前缀驻留；不因亲和扩大发送目的地，不保留已完成 task credit 假装 pin KV；按需版本化独立 telemetry |
+
+组合首先验证嵌套的既有节点，而不是预定新万能 DAG 执行器。只有同步嵌套节点已验证，而进一步跨节点共享窗口的收益和
+生命周期要求确实需要整体 physical alternative 时，再评估显式复合 plan；每个 stage 的 spec、列依赖、
+质量与错误归属仍要可见。先用一个轻量连接/节点方案证明需求，不把所有算子都收进 pump。
+
+依赖只表达“何时允许产生后继”，亲和只表达“可能在哪复用计算”；二者不互相替代。两个任意内容
+hash 不足以证明跨算子亲和，两个独立 endpoint 的兼容配置也不表示共享 KV。首版无需把横向/纵向
+做成两个硬编码字段；先由实际消费算法证明需要哪种最小描述，再决定是否引入有界 prefix index。
+
+研究切片启动前，在既有切片记录写清：瓶颈信号及反例、最接近的已实现 baseline、唯一改变的动作、
+输入/输出与所有权、受影响 Module、可判定测试、真实运行前提和停止条件。不预定新 schema/wire 号，
+不改变 Map 的 schema 4/v5，不添加没有消费者的 layout/prefix/parent 字段。
 
 ## 8. 工程落点与维护方式
 
@@ -732,6 +780,8 @@ PG 新增语义/接口的审查通过后，才做本路径真实匹配 E2E；Fil
 错误终态。批大小 1 与同步 reference 对照通过后，再扩有界窗口，固定值由实验计划而不是本架构猜定。
 SemLoom 接入时复用同一核心，具体 CLI/Adapter 名称由实施决定，不先添加未使用的配置项。
 部署/路由跨实际 endpoint 时先满足 §6.5；同请求路径的开销和方法增量按 §11 分开测量。
+新增研究机制的代码位置与采用条件见 §7.1–7.2；本工作包提供其可测试执行基础，不将前缀布局实验
+成功设为增量 session、PG 单算子多在途或多 Job 工程的前置条件。
 
 ### IMLane-like placement 与远期工作
 
