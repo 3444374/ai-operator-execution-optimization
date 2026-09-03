@@ -221,6 +221,7 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 	if (marker == NULL)
 		return;
 	if ((root->query_level != 1 && !insert_source) || parse->commandType != CMD_SELECT ||
+		(marker_oid == semloom_generate_map_function_oid() && parse->hasSubLinks) ||
 		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
 		parse->groupClause != NIL || parse->groupingSets != NIL || parse->havingQual != NULL ||
 		parse->hasWindowFuncs || parse->windowClause != NIL || parse->distinctClause != NIL ||
