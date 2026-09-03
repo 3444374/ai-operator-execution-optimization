@@ -1,5 +1,5 @@
 comment = 'SemLoom planner-visible semantic operator capability spike'
-default_version = '0.1.0'
+default_version = '0.2.0'
 module_pathname = '$libdir/semloom_pg'
 relocatable = false
 superuser = true

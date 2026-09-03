@@ -28,7 +28,9 @@ OBJS = \
 	src/wire_v3.o \
 	src/wire_v4.o
 
-DATA = sql/semloom_pg--0.1.0.sql
+DATA = sql/semloom_pg--0.1.0.sql \
+	sql/semloom_pg--0.2.0.sql \
+	sql/semloom_pg--0.1.0--0.2.0.sql
 REGRESS = semloom_pg
 TAP_TESTS = 1
 PGFILEDESC = "semloom_pg - planner-visible semantic operator capability spike"
