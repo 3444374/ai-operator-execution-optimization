@@ -391,6 +391,15 @@ Python 同样只增加纯消息函数；旧 public import/异常、Filter bytes/
 再运行 `-Werror`、旧路径完整 regression/TAP 与同一批本地合同；任一步失败保留产物并停止验收。
 没有真实模型请求、资源规模测试或校准数据采集授权；本轮 PG 通过也只证明旧路径兼容，不证明新 Map SQL 可执行。
 
+后续纯值步骤继续使用 `f7d579af` 的已验证消息作为输入，不改变已有消息字节。源码复核发现
+Python 的原始 `Completion` 五字段已足够表达本合同，但定义在含 socket/session loop 的 module；
+将它移到不含 I/O 的公共完成值 module，并保留原 import 别名，不为 Map 重造一种 HTTP 完成值。
+新增最小 `SemanticMapPlan` 只保存 instruction/model/max_tokens，固定程序和有效 limits 由本合同确定；
+按 §10 先测独立摘要向量及篡改，再编码。C 使用同一纯值语义，SHA-256 仍由调用方负责，编码器不另造密码库。
+Map 完成检查与证据编码分开：表示/model/usage 先验证，合法超长输出再报长度，最后判断非 stop，
+不 trim、截断、返回 NULL 或改用 Filter parser。先验证纯值、旧 public import/消息/结果，再进入 wire v5；
+这些函数存在不能代表 PG 已保存新 plan 或完成元数据已跨 port 传递。
+
 ### 8.1 开工前的研发复核
 
 研发 agent 阅读本稿和上述实际源码后，登记“可直接实现 / 需修订及反例”，至少回答：
