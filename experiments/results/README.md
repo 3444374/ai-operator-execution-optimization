@@ -6,6 +6,13 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## PostgreSQL 生成型 Map 消息编译（2026-09-03）
+
+[规范消息与旧路径兼容](postgresql/semmap_messages_20260903/README.md)：独立分支源码 `6903cf46`，
+C/Python 共享两消息编码，Map 原样文本、Filter 字节不变；本地/服务器各 107/107，重新执行 PG18.3
+`-Werror`、regression 1/1、TAP 1022/1022。只完成消息子切片，不表示完整值/摘要、生成型 SQL/v5、
+golden/真实模型或资源验证通过；尚未合入 main。
+
 ## PostgreSQL 函数对象身份（2026-09-02）
 
 [身份加固与准备计划验证](postgresql/function_identity_20260902/README.md)：测试源码 `934f4f61`

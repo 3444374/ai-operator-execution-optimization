@@ -38,6 +38,12 @@ task/result changes. Composable execution and bounded sessions follow, including
 recording Map remains unchanged. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
+The unmerged `codex/semmap-message-contract` branch adds only pure Map message compilation at `6903cf46`:
+verbatim system/user text, strict UTF-8 and byte limits, with shared JSON encoding and unchanged Filter messages.
+[This slice's checks](../../../experiments/results/postgresql/semmap_messages_20260903/README.md) pass 107/107 locally
+and on the server, plus a fresh PG18.3 `-Werror` build, regression 1/1 and TAP 1022/1022 for existing paths.
+Full Map identity/output handling, SQL/schema 4/wire v5, golden execution and real-model/resource checks remain pending.
+
 This extension remains the project's own frontend. The company demo provides scoped engineering references;
 later the project's own operator semantics, processing/optimization methods and SemLoom execution capabilities
 may be transferred into the company system. Planner/executor adaptation and provider integration are separate

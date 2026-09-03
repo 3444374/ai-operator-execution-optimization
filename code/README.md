@@ -108,6 +108,9 @@ Filter reference/optimized path with quality evidence and fallback be implemente
 The [opt-in choice engineering slice](../experiments/plans/completed/postgresql_choice_profile_engineering.md) is qualified in the current integrated code.
 Next, [real generative SemMap](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
 drives the necessary shared task/result changes after the full engineering comparison.
+Its first unmerged [message-compilation slice](../experiments/results/postgresql/semmap_messages_20260903/README.md)
+at `6903cf46` passes 107/107 local/server checks and fresh PG18.3 build/regression/TAP compatibility checks.
+This adds no executable generative Map SQL or wire v5; complete values/identity, plan, golden and real-model checks remain pending.
 [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT in the current integrated code.
 [Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) and the bounded
@@ -120,7 +123,7 @@ Later transfer the project's own operator semantics, processing/optimization met
 capabilities into the company system. Operator migration needs target planner/executor work; a provider adapter
 alone only connects execution. Keep one reusable method implementation and execution core, without a private
 repository prerequisite. The existing tristate Filter is one profile, not a requirement for every future Filter.
-Direct code reuse still requires clear provenance and destination permissions; no source is moved in this update.
+Direct code reuse still requires clear provenance and destination permissions; no company source is included in this implementation.
 See the [engineering-reference and transfer plan](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
 for concrete source lookups, adoption decisions and tests. It is not evidence that company migration already works.
 SemLoom core characterization, incremental sessions, organization and bounded execution may proceed with

@@ -1,0 +1,7 @@
+test_existing_filter_profiles_keep_their_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_their_literal_messages) ... ok
+test_map_compiles_two_verbatim_messages_without_filter_directive (test_semloom_message_compilation.MessageCompilationTests.test_map_compiles_two_verbatim_messages_without_filter_directive) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.707s
+
+OK

@@ -1,10 +1,14 @@
 # 实验与机制证据台账
 
-更新日期：2026-09-02
+更新日期：2026-09-03
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
+独立分支的[Map 消息子切片](postgresql/semmap_messages_20260903/README.md)绑定 `6903cf46`：
+C/Python 规范消息与共享 JSON 编码通过本地/服务器各 107/107，精确 PG18.3 新构建与旧路径
+regression 1/1、TAP 1022/1022。没有完整 Map identity/output、三参 SQL/schema 4/wire v5 或模型/资源资格；
+这不是生成型 Map 已进入 executor 的证据，也没有新增性能或质量结论。
 当前证据支持 `REL_18_3` extension recording `SemMap/SemFilter`、三参数 exact `SemFilter` golden/fixed-model
 reference、独立 cost/cardinality metadata 及 planner-only static calibration mechanism、同步单在途 UDS、
 shared runtime、neutral provider port、

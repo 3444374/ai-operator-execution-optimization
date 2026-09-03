@@ -1,0 +1,9 @@
+test_existing_filter_profiles_keep_their_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_their_literal_messages) ... ok
+test_map_compiles_two_verbatim_messages_without_filter_directive (test_semloom_message_compilation.MessageCompilationTests.test_map_compiles_two_verbatim_messages_without_filter_directive) ... ok
+test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) ... ok
+test_map_rejects_oversized_text_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_oversized_text_before_publishing) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.475s
+
+OK

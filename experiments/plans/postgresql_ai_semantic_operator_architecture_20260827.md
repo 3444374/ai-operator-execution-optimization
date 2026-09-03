@@ -182,7 +182,7 @@ query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真
 ### 6.2 版本策略
 
 recording wire v2 与 exact Filter wire v3 的字段集合、摘要 golden、错误和旧 SQL 行为保持不变。
-choice 使用独立 schema 3 / wire v4，详见四 C；生成型 SemMap 的版本选择由四 D 首个设计切片确定。
+choice 使用独立 schema 3 / wire v4，详见四 C；生成型 SemMap 的 schema 4 / wire v5 目标与验收见四 D 专项，尚未接线。
 复用 framing、JSON primitives、session loop 与 deadline，不用“可选字段大集合”放宽旧 schema，
 也不复制整套 socket/HTTP/runtime。未有数据拷贝瓶颈证据前，不新增共享内存或零拷贝传输。
 
@@ -525,12 +525,14 @@ PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配
 
 <a id="real-semmap-work-package"></a>
 
-### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（合同定稿，待实施）
+### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（合同定稿，实施中）
 
 这是完整工程对照之后的自有 PG 任务，为文本生成 work 提供真实数据库入口；不依赖先完成多算子
 组合或 Filter 三值分类质量。先验收独立生成型 Map，Filter → Map 留给后续组合切片验证。
 AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重载、参数、文本输出规则和版本由
-[四 D 专项合同](postgresql_semmap_generation_contract.md)唯一定义；合同已定稿，待研发对照源码登记落点/反例并实施。
+[四 D 专项合同](postgresql_semmap_generation_contract.md)唯一定义；合同已定稿，§8.0 已登记源码复核。
+独立分支 `6903cf46` 只完成规范消息编译和旧路径兼容验证，见[结果记录](../results/postgresql/semmap_messages_20260903/README.md)；
+完整纯值/协议、PG＋golden、真实模型与资源须继续分阶段验收，不能把本子切片写成可执行生成型 Map。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。

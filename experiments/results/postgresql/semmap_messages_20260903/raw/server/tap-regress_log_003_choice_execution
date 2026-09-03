@@ -1,0 +1,274 @@
+# Checking port 26792
+# Found port 26792
+Name: choice_execution
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/archives
+Connection string: port=26792 host=/tmp/ZvTLF44yeT
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/003_choice_execution_choice_execution.log
+[10:57:41.514](0.021s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata
+### Starting node "choice_execution"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/003_choice_execution_choice_execution.log --options --cluster-name=choice_execution start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "choice_execution" is 88185
+[10:57:42.280](0.766s) ok 1 - choice golden gateway listens
+[10:57:42.293](0.013s) ok 2 - choice executes through PostgreSQL and golden wire v4
+[10:57:42.293](0.000s) ok 3 - choice preserves the TRUE row and drops SQL NULL
+[10:57:42.409](0.116s) ok 4 - test peer is listening
+[10:57:42.439](0.030s) ok 5 - test peer exits successfully
+[10:57:42.439](0.000s) ok 6 - test peer closed its listener
+[10:57:42.440](0.001s) ok 7 - choice handles all three decisions
+[10:57:42.440](0.000s) ok 8 - FALSE/UNKNOWN/NULL drop, duplicate TRUE rows remain ordered
+[10:57:42.535](0.095s) ok 9 - test peer is listening
+[10:57:42.562](0.027s) ok 10 - test peer exits successfully
+[10:57:42.563](0.000s) ok 11 - test peer closed its listener
+[10:57:42.563](0.001s) ok 12 - choice EXPLAIN ANALYZE succeeds
+[10:57:42.568](0.004s) ok 13 - SQL NULL consumes no task
+[10:57:42.568](0.000s) ok 14 - successful task count excludes NULL
+[10:57:42.568](0.000s) ok 15 - emitted rows count only TRUE
+[10:57:42.568](0.000s) ok 16 - execution does not qualify model quality
+[10:57:42.568](0.000s) ok 17 - new identity stays uncalibrated
+[10:57:42.673](0.105s) ok 18 - test peer is listening
+[10:57:42.699](0.026s) ok 19 - test peer exits successfully
+[10:57:42.699](0.000s) ok 20 - test peer closed its listener
+[10:57:42.700](0.000s) ok 21 - early stop closes the choice session
+[10:57:42.700](0.000s) ok 22 - LIMIT sees kept tuples
+[10:57:42.805](0.105s) ok 23 - test peer is listening
+[10:57:42.831](0.026s) ok 24 - test peer exits successfully
+[10:57:42.831](0.000s) ok 25 - test peer closed its listener
+[10:57:42.832](0.000s) ok 26 - Unicode instruction and input survive C/Python canonicalization
+[10:57:42.832](0.000s) ok 27 - Unicode choice returns the expected row
+[10:57:42.927](0.095s) ok 28 - test peer is listening
+[10:57:42.954](0.027s) ok 29 - test peer exits successfully
+[10:57:42.954](0.000s) ok 30 - test peer closed its listener
+[10:57:42.955](0.000s) ok 31 - prepared choice survives relation invalidation
+[10:57:42.955](0.000s) ok 32 - prepared query retains profile and results
+[10:57:43.059](0.104s) ok 33 - test peer is listening
+[10:57:43.087](0.028s) ok 34 - test peer exits successfully
+[10:57:43.087](0.000s) ok 35 - test peer closed its listener
+[10:57:43.087](0.000s) ok 36 - invalid raw output is rejected by the unchanged PG parser
+[10:57:43.087](0.000s) ok 37 - parser error exposes no input
+[10:57:43.088](0.000s) ok 38 - savepoint recovery has no secondary statement error
+[10:57:43.088](0.000s) ok 39 - same-backend choice recovery and ordinary write rollback preserve PG ownership
+[10:57:43.164](0.076s) ok 40 - test peer is listening
+[10:57:43.177](0.014s) ok 41 - open-profile fails closed
+[10:57:43.177](0.000s) ok 42 - open-profile has an exact redacted error
+[10:57:43.178](0.000s) ok 43 - open-profile exposes no input or injected field
+[10:57:43.186](0.009s) ok 44 - test peer exits successfully
+[10:57:43.186](0.000s) ok 45 - test peer closed its listener
+[10:57:43.261](0.074s) ok 46 - test peer is listening
+[10:57:43.276](0.015s) ok 47 - open-version fails closed
+[10:57:43.276](0.000s) ok 48 - open-version has an exact redacted error
+[10:57:43.276](0.000s) ok 49 - open-version exposes no input or injected field
+[10:57:43.285](0.009s) ok 50 - test peer exits successfully
+[10:57:43.285](0.000s) ok 51 - test peer closed its listener
+[10:57:43.371](0.085s) ok 52 - test peer is listening
+[10:57:43.385](0.015s) ok 53 - open-extra fails closed
+[10:57:43.386](0.000s) ok 54 - open-extra has an exact redacted error
+[10:57:43.386](0.000s) ok 55 - open-extra exposes no input or injected field
+[10:57:43.394](0.008s) ok 56 - test peer exits successfully
+[10:57:43.394](0.000s) ok 57 - test peer closed its listener
+[10:57:43.469](0.075s) ok 58 - test peer is listening
+[10:57:43.479](0.010s) ok 59 - open-missing fails closed
+[10:57:43.479](0.000s) ok 60 - open-missing has an exact redacted error
+[10:57:43.479](0.000s) ok 61 - open-missing exposes no input or injected field
+[10:57:43.487](0.008s) ok 62 - test peer exits successfully
+[10:57:43.488](0.000s) ok 63 - test peer closed its listener
+[10:57:43.563](0.075s) ok 64 - test peer is listening
+[10:57:43.577](0.014s) ok 65 - open-duplicate fails closed
+[10:57:43.577](0.000s) ok 66 - open-duplicate has an exact redacted error
+[10:57:43.577](0.000s) ok 67 - open-duplicate exposes no input or injected field
+[10:57:43.586](0.008s) ok 68 - test peer exits successfully
+[10:57:43.586](0.000s) ok 69 - test peer closed its listener
+[10:57:43.661](0.075s) ok 70 - test peer is listening
+[10:57:43.675](0.015s) ok 71 - completion-profile fails closed
+[10:57:43.676](0.000s) ok 72 - completion-profile has an exact redacted error
+[10:57:43.676](0.000s) ok 73 - completion-profile exposes no input or injected field
+[10:57:43.683](0.007s) ok 74 - test peer exits successfully
+[10:57:43.683](0.000s) ok 75 - test peer closed its listener
+[10:57:43.758](0.075s) ok 76 - test peer is listening
+[10:57:43.775](0.016s) ok 77 - completion-version fails closed
+[10:57:43.775](0.000s) ok 78 - completion-version has an exact redacted error
+[10:57:43.775](0.000s) ok 79 - completion-version exposes no input or injected field
+[10:57:43.784](0.008s) ok 80 - test peer exits successfully
+[10:57:43.784](0.000s) ok 81 - test peer closed its listener
+[10:57:43.858](0.075s) ok 82 - test peer is listening
+[10:57:43.874](0.015s) ok 83 - completion-sequence fails closed
+[10:57:43.874](0.001s) ok 84 - completion-sequence has an exact redacted error
+[10:57:43.874](0.000s) ok 85 - completion-sequence exposes no input or injected field
+[10:57:43.881](0.007s) ok 86 - test peer exits successfully
+[10:57:43.882](0.000s) ok 87 - test peer closed its listener
+[10:57:43.956](0.075s) ok 88 - test peer is listening
+[10:57:43.974](0.018s) ok 89 - completion-evidence fails closed
+[10:57:43.975](0.001s) ok 90 - completion-evidence has an exact redacted error
+[10:57:43.975](0.000s) ok 91 - completion-evidence exposes no input or injected field
+[10:57:43.981](0.006s) ok 92 - test peer exits successfully
+[10:57:43.982](0.000s) ok 93 - test peer closed its listener
+[10:57:44.057](0.075s) ok 94 - test peer is listening
+[10:57:44.071](0.014s) ok 95 - completion-extra fails closed
+[10:57:44.072](0.000s) ok 96 - completion-extra has an exact redacted error
+[10:57:44.072](0.000s) ok 97 - completion-extra exposes no input or injected field
+[10:57:44.080](0.008s) ok 98 - test peer exits successfully
+[10:57:44.080](0.000s) ok 99 - test peer closed its listener
+[10:57:44.155](0.075s) ok 100 - test peer is listening
+[10:57:44.168](0.014s) ok 101 - completion-missing fails closed
+[10:57:44.169](0.001s) ok 102 - completion-missing has an exact redacted error
+[10:57:44.169](0.000s) ok 103 - completion-missing exposes no input or injected field
+[10:57:44.180](0.011s) ok 104 - test peer exits successfully
+[10:57:44.181](0.001s) ok 105 - test peer closed its listener
+[10:57:44.258](0.077s) ok 106 - test peer is listening
+[10:57:44.273](0.015s) ok 107 - completion-duplicate fails closed
+[10:57:44.274](0.001s) ok 108 - completion-duplicate has an exact redacted error
+[10:57:44.274](0.000s) ok 109 - completion-duplicate exposes no input or injected field
+[10:57:44.283](0.008s) ok 110 - test peer exits successfully
+[10:57:44.283](0.000s) ok 111 - test peer closed its listener
+[10:57:44.358](0.075s) ok 112 - test peer is listening
+[10:57:44.369](0.011s) ok 113 - completion-escaped-nul fails closed
+[10:57:44.369](0.000s) ok 114 - completion-escaped-nul has an exact redacted error
+[10:57:44.369](0.000s) ok 115 - completion-escaped-nul exposes no input or injected field
+[10:57:44.377](0.008s) ok 116 - test peer exits successfully
+[10:57:44.377](0.000s) ok 117 - test peer closed its listener
+[10:57:44.453](0.075s) ok 118 - test peer is listening
+[10:57:44.467](0.015s) ok 119 - completion-raw-nul fails closed
+[10:57:44.468](0.000s) ok 120 - completion-raw-nul has an exact redacted error
+[10:57:44.468](0.000s) ok 121 - completion-raw-nul exposes no input or injected field
+[10:57:44.476](0.008s) ok 122 - test peer exits successfully
+[10:57:44.476](0.000s) ok 123 - test peer closed its listener
+[10:57:44.551](0.074s) ok 124 - test peer is listening
+[10:57:44.567](0.016s) ok 125 - completion-fractional fails closed
+[10:57:44.568](0.001s) ok 126 - completion-fractional has an exact redacted error
+[10:57:44.568](0.000s) ok 127 - completion-fractional exposes no input or injected field
+[10:57:44.574](0.006s) ok 128 - test peer exits successfully
+[10:57:44.574](0.000s) ok 129 - test peer closed its listener
+[10:57:44.649](0.075s) ok 130 - test peer is listening
+[10:57:44.664](0.014s) ok 131 - legacy fails closed
+[10:57:44.664](0.000s) ok 132 - legacy has an exact redacted error
+[10:57:44.665](0.000s) ok 133 - legacy exposes no input or injected field
+[10:57:44.676](0.011s) ok 134 - test peer exits successfully
+[10:57:44.676](0.000s) ok 135 - test peer closed its listener
+[10:57:44.750](0.074s) ok 136 - test peer is listening
+[10:57:44.764](0.014s) ok 137 - error-extra fails closed
+[10:57:44.764](0.000s) ok 138 - error-extra has an exact redacted error
+[10:57:44.765](0.000s) ok 139 - error-extra exposes no input or injected field
+[10:57:44.773](0.009s) ok 140 - test peer exits successfully
+[10:57:44.773](0.000s) ok 141 - test peer closed its listener
+[10:57:44.848](0.075s) ok 142 - test peer is listening
+[10:57:44.863](0.015s) ok 143 - error-missing fails closed
+[10:57:44.864](0.000s) ok 144 - error-missing has an exact redacted error
+[10:57:44.864](0.000s) ok 145 - error-missing exposes no input or injected field
+[10:57:44.872](0.008s) ok 146 - test peer exits successfully
+[10:57:44.872](0.000s) ok 147 - test peer closed its listener
+[10:57:44.947](0.075s) ok 148 - test peer is listening
+[10:57:44.956](0.009s) ok 149 - error-version fails closed
+[10:57:44.957](0.000s) ok 150 - error-version has an exact redacted error
+[10:57:44.957](0.000s) ok 151 - error-version exposes no input or injected field
+[10:57:44.965](0.008s) ok 152 - test peer exits successfully
+[10:57:44.965](0.000s) ok 153 - test peer closed its listener
+[10:57:45.039](0.074s) ok 154 - test peer is listening
+[10:57:45.051](0.013s) ok 155 - error-sequence fails closed
+[10:57:45.052](0.000s) ok 156 - error-sequence has an exact redacted error
+[10:57:45.052](0.000s) ok 157 - error-sequence exposes no input or injected field
+[10:57:45.060](0.008s) ok 158 - test peer exits successfully
+[10:57:45.060](0.000s) ok 159 - test peer closed its listener
+[10:57:45.134](0.074s) ok 160 - test peer is listening
+[10:57:45.148](0.014s) ok 161 - error-code fails closed
+[10:57:45.148](0.000s) ok 162 - error-code has an exact redacted error
+[10:57:45.148](0.000s) ok 163 - error-code exposes no input or injected field
+[10:57:45.157](0.009s) ok 164 - test peer exits successfully
+[10:57:45.157](0.000s) ok 165 - test peer closed its listener
+[10:57:45.233](0.075s) ok 166 - test peer is listening
+[10:57:45.247](0.015s) ok 167 - error-duplicate fails closed
+[10:57:45.248](0.000s) ok 168 - error-duplicate has an exact redacted error
+[10:57:45.248](0.000s) ok 169 - error-duplicate exposes no input or injected field
+[10:57:45.256](0.008s) ok 170 - test peer exits successfully
+[10:57:45.256](0.000s) ok 171 - test peer closed its listener
+[10:57:45.351](0.096s) ok 172 - test peer is listening
+[10:57:45.881](0.529s) ok 173 - test peer exits successfully
+[10:57:45.881](0.000s) ok 174 - test peer closed its listener
+[10:57:45.882](0.001s) ok 175 - PG cancels an in-flight choice task
+[10:57:45.883](0.000s) ok 176 - query cancel keeps its original SQLSTATE
+[10:57:45.968](0.085s) ok 177 - test peer is listening
+[10:57:45.993](0.025s) ok 178 - test peer exits successfully
+[10:57:45.994](0.000s) ok 179 - test peer closed its listener
+[10:57:45.994](0.001s) ok 180 - fresh choice session works after cancel and protocol errors
+[10:57:45.994](0.000s) ok 181 - recovery preserves SQL results
+[10:57:46.070](0.076s) ok 182 - legacy HTTP fixture is ready
+[10:57:46.168](0.098s) ok 183 - test peer is listening
+[10:57:46.190](0.022s) ok 184 - legacy fixed-model path executes
+[10:57:46.194](0.004s) ok 185 - fixed adapter is observable
+[10:57:46.194](0.000s) ok 186 - HTTP task count excludes SQL NULL
+[10:57:46.195](0.000s) ok 187 - provider prompt usage is preserved
+[10:57:46.195](0.000s) ok 188 - provider output usage is preserved
+[10:57:46.195](0.000s) ok 189 - raw UNKNOWN is parsed and dropped by PostgreSQL
+[10:57:46.201](0.007s) ok 190 - test peer exits successfully
+[10:57:46.201](0.000s) ok 191 - test peer closed its listener
+[10:57:46.202](0.001s) ok 192 - legacy HTTP fixture stopped
+[10:57:46.203](0.000s) ok 193 - legacy issued exactly one HTTP request, without fallback retry
+[10:57:46.277](0.074s) ok 194 - choice HTTP fixture is ready
+[10:57:46.374](0.097s) ok 195 - test peer is listening
+[10:57:46.395](0.021s) ok 196 - choice fixed-model path executes
+[10:57:46.399](0.004s) ok 197 - fixed adapter is observable
+[10:57:46.399](0.000s) ok 198 - HTTP task count excludes SQL NULL
+[10:57:46.399](0.000s) ok 199 - provider prompt usage is preserved
+[10:57:46.399](0.000s) ok 200 - provider output usage is preserved
+[10:57:46.399](0.000s) ok 201 - raw UNKNOWN is parsed and dropped by PostgreSQL
+[10:57:46.406](0.006s) ok 202 - test peer exits successfully
+[10:57:46.406](0.000s) ok 203 - test peer closed its listener
+[10:57:46.406](0.000s) ok 204 - choice HTTP fixture stopped
+[10:57:46.406](0.000s) ok 205 - choice issued exactly one HTTP request, without fallback retry
+[10:57:46.482](0.076s) ok 206 - rejected HTTP fixture is ready
+[10:57:46.578](0.096s) ok 207 - test peer is listening
+[10:57:46.597](0.019s) ok 208 - service rejection does not become FALSE
+[10:57:46.597](0.000s) ok 209 - choice service rejection retains the neutral SQLSTATE mapping
+[10:57:46.610](0.013s) ok 210 - test peer exits successfully
+[10:57:46.610](0.000s) ok 211 - test peer closed its listener
+[10:57:46.611](0.000s) ok 212 - rejected HTTP fixture stopped
+[10:57:46.611](0.000s) ok 213 - rejected issued exactly one HTTP request, without fallback retry
+[10:57:46.612](0.001s) ok 214 - the actual choice request carries the ordered constraint
+[10:57:46.613](0.000s) ok 215 - actual old/new HTTP requests differ only by the explicit constraint
+[10:57:46.613](0.000s) ok 216 - the rejected request was constrained, not silently downgraded
+[10:57:46.629](0.016s) ok 217 - oversized choice input is refused before provider connection
+[10:57:46.630](0.001s) ok 218 - choice preserves the encoding preflight and neutral limit error
+### Stopping node "choice_execution" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_003_choice_execution_choice_execution_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "choice_execution"
+[10:57:46.735](0.105s) 1..218

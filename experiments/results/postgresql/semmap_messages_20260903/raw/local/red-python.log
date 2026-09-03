@@ -1,0 +1,30 @@
+test_existing_filter_profiles_keep_their_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_their_literal_messages) ... ok
+test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion (test_semloom_message_compilation.MessageCompilationTests.test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion) ... FAIL
+test_map_compiles_two_verbatim_messages_without_filter_directive (test_semloom_message_compilation.MessageCompilationTests.test_map_compiles_two_verbatim_messages_without_filter_directive) ... ok
+test_map_distinguishes_empty_from_null_and_invalid_storage (test_semloom_message_compilation.MessageCompilationTests.test_map_distinguishes_empty_from_null_and_invalid_storage) ... ok
+test_map_preserves_scalar_boundaries_whitespace_and_normalization (test_semloom_message_compilation.MessageCompilationTests.test_map_preserves_scalar_boundaries_whitespace_and_normalization) ... ok
+test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) ... ok
+test_map_rejects_oversized_text_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_oversized_text_before_publishing) ... ok
+test_map_requires_exact_capacity_without_writing_on_failure (test_semloom_message_compilation.MessageCompilationTests.test_map_requires_exact_capacity_without_writing_on_failure) ... ok
+test_python_map_compiles_the_same_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_python_map_compiles_the_same_literal_messages) ... ERROR
+
+======================================================================
+ERROR: test_python_map_compiles_the_same_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_python_map_compiles_the_same_literal_messages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 186, in test_python_map_compiles_the_same_literal_messages
+    from src.execution_provider.semantic_map import canonical_messages as map_messages
+ModuleNotFoundError: No module named 'src.execution_provider.semantic_map'
+
+======================================================================
+FAIL: test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion (test_semloom_message_compilation.MessageCompilationTests.test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 183, in test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion
+    self.assertEqual(len(output), 168997)
+AssertionError: 167997 != 168997
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.589s
+
+FAILED (failures=1, errors=1)

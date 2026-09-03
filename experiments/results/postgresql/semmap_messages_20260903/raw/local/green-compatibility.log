@@ -1,0 +1,18 @@
+test_existing_filter_profiles_keep_their_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_their_literal_messages) ... ok
+test_existing_filter_profiles_keep_unicode_and_escaping (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_unicode_and_escaping) ... ok
+test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion (test_semloom_message_compilation.MessageCompilationTests.test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion) ... ok
+test_map_compiles_two_verbatim_messages_without_filter_directive (test_semloom_message_compilation.MessageCompilationTests.test_map_compiles_two_verbatim_messages_without_filter_directive) ... ok
+test_map_distinguishes_empty_from_null_and_invalid_storage (test_semloom_message_compilation.MessageCompilationTests.test_map_distinguishes_empty_from_null_and_invalid_storage) ... ok
+test_map_preserves_scalar_boundaries_whitespace_and_normalization (test_semloom_message_compilation.MessageCompilationTests.test_map_preserves_scalar_boundaries_whitespace_and_normalization) ... ok
+test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) ... ok
+test_map_rejects_oversized_text_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_oversized_text_before_publishing) ... ok
+test_map_requires_exact_capacity_without_writing_on_failure (test_semloom_message_compilation.MessageCompilationTests.test_map_requires_exact_capacity_without_writing_on_failure) ... ok
+test_python_and_c_map_match_text_and_byte_boundaries (test_semloom_message_compilation.MessageCompilationTests.test_python_and_c_map_match_text_and_byte_boundaries) ... ok
+test_python_map_compiles_the_same_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_python_map_compiles_the_same_literal_messages) ... ok
+test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) ... ok
+test_recording_machines_still_do_not_compile_messages (test_semloom_message_compilation.MessageCompilationTests.test_recording_machines_still_do_not_compile_messages) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.596s
+
+OK

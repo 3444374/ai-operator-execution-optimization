@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-03（生成型 Map 合同定稿；生产代码基线 a3199bd9，质量/校准仍未通过）
+日期：2026-09-03（主线保留原能力；研发分支完成 Map 消息编译，质量/校准仍未通过）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -25,11 +25,13 @@
 
 **尚未完成项**：仅成员变更自动刷新、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
-四 D 的[合同](../experiments/plans/postgresql_semmap_generation_contract.md)已定稿，明确 SQL、消息/输出、版本、
-必要公共改造与验收；本次进一步收紧 wire 字段类型、初始化权限、逐行结果读取和 task 语义验证，
-待研发对照源码登记落点/反例后实施。
-schema 4/wire v5 是该设计的目标，不是当前已接通协议；
-本次没有修改生产代码，当前 Map 仍为 recording。下方历史实现与测试记录保持原提交身份。
+四 D 的[合同](../experiments/plans/postgresql_semmap_generation_contract.md)已定稿，源码复核已登记于 §8.0。
+独立分支 `codex/semmap-message-contract` 的 `6903cf46` 只实现 C/Python Map 消息编译与公共 JSON writer，
+将 Filter 的 system 内容留在 Filter machine；原 recording/Filter 行为保持。
+[本轮验证](../experiments/results/postgresql/semmap_messages_20260903/README.md)：本地/服务器各 107/107，
+精确 PG18.3 重新构建 `-Werror`、regression 1/1、TAP 1022/1022。该分支尚未合入 main。
+完整纯值摘要/完成策略、schema 4/wire v5、三参 Map 和新 PG 行为仍待实现；当前 SQL Map 仍为 recording。
+没有真实 Map 模型或资源资格，下方历史实现与测试记录保持原提交身份。
 
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范

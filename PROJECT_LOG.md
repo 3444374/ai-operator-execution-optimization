@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-09-03 生成型 Map 消息子切片与 PG18.3 兼容验收
+
+- 从 `63d86c0e` 新建 `codex/semmap-message-contract`，在专项 §8.0 登记源码事实、落点和验证范围。
+  `ef26a06c` 先固定旧 Filter 字节并记录 Map 编译 API 缺失的失败；`6903cf46` 实现 Map 消息编译、
+  公共 C/Python JSON writer 和 UTF-8/长度/容量检查，不改 SQL、runtime/port 或旧协议。
+- 本地与服务器各 107/107，含 13 项新消息测试。服务器从 Git bundle 建独立 worktree/prefix，
+  精确 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1022/1022 重新通过；原 prefix `.so` 与 main 未变。
+  38 个服务器文件及 88 个源码哈希一致，81 项归档见[记录](experiments/results/postgresql/semmap_messages_20260903/README.md)。
+- 保留测试先行失败、最大非转义长度预期加法修正、沙箱监听失败与获准重跑；中间 dirty 清单不充当
+  最终源码证明。Git bundle 首次短 SHA ref 导出失败；同步审批拦截后用户明确允许 Git 同步才继续。
+- 本切片测试进程已结束，源码/二进制/机器报告留在仓库外持久产物目录；未操作其他服务或公司工作副本。
+  没有真实模型请求、资源规模验收或 held-out；没有合并 main 或推送。当前 SQL Map 仍为 recording。
+- 用户同意继续按纯值/协议、PG＋golden、真实模型与资源分阶段推进；下步先补身份摘要和完成值策略，
+  真实运行前另确认服务配置、样例、预算、停止条件与资源阈值，不改变既定 SQL/输出语义。
+- 本次 191 个 Markdown 本地链接、读者措辞、差异空白、81 项证据 SHA 及全仓隐私扫描通过。
+
 ## 2026-09-03 四 D 合同定稿前的类型与执行时机复核
 
 - 基于 main `7a2b0d99`，只调整[生成型 Map 合同](experiments/plans/postgresql_semmap_generation_contract.md)

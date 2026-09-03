@@ -1,0 +1,217 @@
+test_existing_filter_profiles_keep_their_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_their_literal_messages) ... ok
+test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion (test_semloom_message_compilation.MessageCompilationTests.test_map_accepts_maximum_utf8_byte_lengths_and_escape_expansion) ... ok
+test_map_compiles_two_verbatim_messages_without_filter_directive (test_semloom_message_compilation.MessageCompilationTests.test_map_compiles_two_verbatim_messages_without_filter_directive) ... ok
+test_map_distinguishes_empty_from_null_and_invalid_storage (test_semloom_message_compilation.MessageCompilationTests.test_map_distinguishes_empty_from_null_and_invalid_storage) ... ok
+test_map_preserves_scalar_boundaries_whitespace_and_normalization (test_semloom_message_compilation.MessageCompilationTests.test_map_preserves_scalar_boundaries_whitespace_and_normalization) ... ok
+test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) ... ok
+test_map_rejects_oversized_text_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_oversized_text_before_publishing) ... ok
+test_map_requires_exact_capacity_without_writing_on_failure (test_semloom_message_compilation.MessageCompilationTests.test_map_requires_exact_capacity_without_writing_on_failure) ... ok
+test_python_map_compiles_the_same_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_python_map_compiles_the_same_literal_messages) ... ok
+test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) ...
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=8) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=8) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=8) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=4097) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=2049) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='NoneType') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='int') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='bytes') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='list') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=8) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=8) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=8) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=163841) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=81921) ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='NoneType') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='int') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='bytes') ... FAIL
+  test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='list') ... FAIL
+test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) ... FAIL
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 201, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(ValueError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 204, in test_python_map_rejects_invalid_text_with_static_errors
+    self.assertEqual(str(caught.exception), "invalid Map message text")
+AssertionError: "'utf-8' codec can't encode character '\\[41 chars]owed" != 'invalid Map message text'
+- 'utf-8' codec can't encode character '\ud800' in position 30: surrogates not allowed
++ invalid Map message text
+
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 204, in test_python_map_rejects_invalid_text_with_static_errors
+    self.assertEqual(str(caught.exception), "invalid Map message text")
+AssertionError: "'utf-8' codec can't encode character '\\[41 chars]owed" != 'invalid Map message text'
+- 'utf-8' codec can't encode character '\udfff' in position 30: surrogates not allowed
++ invalid Map message text
+
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=4097)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 201, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(ValueError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', length=2049)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 201, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(ValueError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='NoneType')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 207, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(TypeError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TypeError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='int')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 207, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(TypeError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TypeError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='bytes')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 210, in test_python_map_rejects_invalid_text_with_static_errors
+    self.assertEqual(str(caught.exception), "Map message contents must be text")
+AssertionError: 'Object of type bytes is not JSON serializable' != 'Map message contents must be text'
+- Object of type bytes is not JSON serializable
++ Map message contents must be text
+
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='instruction', type='list')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 207, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(TypeError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TypeError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 201, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(ValueError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 204, in test_python_map_rejects_invalid_text_with_static_errors
+    self.assertEqual(str(caught.exception), "invalid Map message text")
+AssertionError: "'utf-8' codec can't encode character '\\[41 chars]owed" != 'invalid Map message text'
+- 'utf-8' codec can't encode character '\ud800' in position 63: surrogates not allowed
++ invalid Map message text
+
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 204, in test_python_map_rejects_invalid_text_with_static_errors
+    self.assertEqual(str(caught.exception), "invalid Map message text")
+AssertionError: "'utf-8' codec can't encode character '\\[41 chars]owed" != 'invalid Map message text'
+- 'utf-8' codec can't encode character '\udfff' in position 63: surrogates not allowed
++ invalid Map message text
+
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=163841)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 201, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(ValueError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', length=81921)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 201, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(ValueError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='NoneType')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 207, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(TypeError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TypeError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='int')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 207, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(TypeError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TypeError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='bytes')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 210, in test_python_map_rejects_invalid_text_with_static_errors
+    self.assertEqual(str(caught.exception), "Map message contents must be text")
+AssertionError: 'Object of type bytes is not JSON serializable' != 'Map message contents must be text'
+- Object of type bytes is not JSON serializable
++ Map message contents must be text
+
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors) (field='input', type='list')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 207, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaises(TypeError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TypeError not raised
+
+======================================================================
+FAIL: test_python_map_rejects_invalid_text_with_static_errors (test_semloom_message_compilation.MessageCompilationTests.test_python_map_rejects_invalid_text_with_static_errors)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 211, in test_python_map_rejects_invalid_text_with_static_errors
+    with self.assertRaisesRegex(ValueError, "^invalid Map message text$"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.598s
+
+FAILED (failures=19)

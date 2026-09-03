@@ -1,0 +1,693 @@
+# Checking port 10530
+# Found port 10530
+Name: semloom_pg
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/archives
+Connection string: port=10530 host=/tmp/k4EyM6LP6S
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/001_semloom_pg_semloom_pg.log
+[10:57:23.386](0.025s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata
+### Starting node "semloom_pg"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/001_semloom_pg_semloom_pg.log --options --cluster-name=semloom_pg start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "semloom_pg" is 87638
+[10:57:24.059](0.673s) ok 1 - marker fails closed when the planner hook was not preloaded
+[10:57:24.059](0.000s) ok 2 - fail-closed error identifies the residual marker
+### Restarting node "semloom_pg"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/001_semloom_pg_semloom_pg.log restart
+waiting for server to shut down.... done
+server stopped
+waiting for server to start.... done
+server started
+# Postmaster PID for node "semloom_pg" is 87653
+[10:57:24.283](0.224s) ok 3 - prepared SemMap executes through the recording CustomScan
+[10:57:24.307](0.023s) ok 4 - prepared SemFilter preserves exact TRUE/FALSE/UNKNOWN semantics
+[10:57:24.318](0.011s) ok 5 - generic SemFilter plan is invalidated and rebuilt after a relation change
+[10:57:24.326](0.008s) ok 6 - SemFilter executes below LIMIT
+[10:57:24.327](0.000s) ok 7 - SemFilter counters distinguish completed decisions from emitted rows
+[10:57:24.338](0.011s) ok 8 - LIMIT is applied after SemFilter keep/drop semantics
+[10:57:24.360](0.022s) ok 9 - INSERT SELECT emits mapped rows and rollback leaves the sink empty
+[10:57:24.370](0.011s) ok 10 - committed INSERT SELECT persists the mapped row
+[10:57:24.382](0.011s) ok 11 - INSERT SELECT RETURNING remains fail-closed
+[10:57:24.382](0.000s) ok 12 - RETURNING failure identifies the INSERT boundary
+[10:57:24.392](0.010s) ok 13 - INSERT SELECT ON CONFLICT remains fail-closed
+[10:57:24.392](0.000s) ok 14 - ON CONFLICT failure identifies the INSERT boundary
+[10:57:24.402](0.009s) ok 15 - failed INSERT variants leave the committed sink unchanged
+[10:57:24.511](0.109s) ok 16 - statement timeout cancels work in the ordinary child plan
+[10:57:24.513](0.002s) ok 17 - cancel is reported to the client
+[10:57:24.521](0.008s) ok 18 - normal execution succeeds after cancellation
+[10:57:24.534](0.012s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[10:57:24.534](0.000s) # issuing query 1 via background psql: BEGIN ISOLATION LEVEL REPEATABLE READ;
+[10:57:24.535](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[10:57:24.535](0.000s) # issuing query 2 via background psql: SELECT ai_semantic.map(payload) FROM semloom_documents;
+[10:57:24.535](0.001s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'recorded:alpha
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[10:57:24.536](0.000s) ok 19 - first SemMap read observes the transaction snapshot
+[10:57:24.545](0.009s) # issuing query 3 via background psql: SELECT ai_semantic.map(payload) FROM semloom_documents;
+[10:57:24.546](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'recorded:alpha
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[10:57:24.546](0.000s) ok 20 - repeated SemMap read preserves the repeatable-read snapshot
+[10:57:24.546](0.000s) # issuing query 4 via background psql: COMMIT;
+[10:57:24.546](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[10:57:24.555](0.008s) ok 21 - a new snapshot observes the committed row
+[10:57:24.587](0.032s) ok 22 - ordinary child plan applies RLS before SemFilter emits rows
+[10:57:24.597](0.010s) ok 23 - ordinary SQL remains unaffected by semantic planner hooks
+[10:57:24.605](0.008s) ok 24 - instruction NULL fails during exact SemFilter planning
+[10:57:24.605](0.000s) ok 25 - instruction NULL preserves SQLSTATE 22023
+[10:57:24.614](0.009s) ok 26 - instruction empty fails during exact SemFilter planning
+[10:57:24.614](0.000s) ok 27 - instruction empty preserves SQLSTATE 22023
+[10:57:24.622](0.008s) ok 28 - instruction non-constant fails during exact SemFilter planning
+[10:57:24.623](0.000s) ok 29 - instruction non-constant preserves SQLSTATE 22023
+[10:57:24.631](0.009s) ok 30 - options missing field fails during exact SemFilter planning
+[10:57:24.632](0.000s) ok 31 - options missing field preserves SQLSTATE 22023
+[10:57:24.641](0.009s) ok 32 - options extra field fails during exact SemFilter planning
+[10:57:24.641](0.000s) ok 33 - options extra field preserves SQLSTATE 22023
+[10:57:24.648](0.007s) ok 34 - temperature boolean fails during exact SemFilter planning
+[10:57:24.649](0.000s) ok 35 - temperature boolean preserves SQLSTATE 22023
+[10:57:24.658](0.010s) ok 36 - temperature nonzero fails during exact SemFilter planning
+[10:57:24.659](0.000s) ok 37 - temperature nonzero preserves SQLSTATE 22023
+[10:57:24.669](0.010s) ok 38 - max_tokens fractional form fails during exact SemFilter planning
+[10:57:24.669](0.000s) ok 39 - max_tokens fractional form preserves SQLSTATE 22023
+[10:57:24.702](0.033s) ok 40 - exact SemFilter cost contract belongs to the planner-visible CustomScan
+[10:57:24.702](0.000s) ok 41 - exact SemFilter identifies its uncalibrated AI cost estimate
+[10:57:24.703](0.000s) ok 42 - exact SemFilter does not present its engineering heuristic as calibrated
+[10:57:24.703](0.000s) ok 43 - exact SemFilter cost is bound to the reference model role
+[10:57:24.703](0.000s) ok 44 - exact SemFilter separates pre-semantic input rows from output rows
+[10:57:24.703](0.000s) ok 45 - exact SemFilter output rows equal semantic input rows times selectivity
+[10:57:24.703](0.000s) ok 46 - exact SemFilter excludes estimated NULL inputs from model calls
+[10:57:24.703](0.000s) ok 47 - exact SemFilter estimates prompt work as more than one token per call
+[10:57:24.703](0.000s) ok 48 - exact SemFilter uses the plan output-token cap for estimated output work
+[10:57:24.703](0.000s) ok 49 - exact SemFilter adds positive AI work cost
+[10:57:24.703](0.000s) ok 50 - exact SemFilter total cost exceeds its ordinary child cost
+[10:57:24.809](0.105s) ok 51 - matched artifact selects the calibrated reference cost model
+[10:57:24.809](0.000s) ok 52 - matched artifact is visible in the PostgreSQL plan
+[10:57:24.809](0.000s) ok 53 - matched artifact has a stable plan reason
+[10:57:24.809](0.000s) ok 54 - plan saves the validated calibration identity
+[10:57:24.810](0.000s) ok 55 - plan saves the workload applicability signature
+[10:57:24.810](0.000s) ok 56 - plan saves the service applicability signature
+[10:57:24.810](0.000s) ok 57 - calibrated cardinality uses the matched training selectivity
+[10:57:24.810](0.000s) ok 58 - calibrated model calls use the matched call rate
+[10:57:24.810](0.000s) ok 59 - calibrated prompt work remains a separate estimate
+[10:57:24.810](0.000s) ok 60 - calibrated service estimate supplies the comparable AI path cost
+[10:57:24.810](0.000s) ok 61 - plan exposes held-out error evidence separately from cost
+[10:57:24.820](0.010s) ok 62 - choice rejects the otherwise matched old calibration
+[10:57:24.821](0.000s) ok 63 - complete profile changes calibration identity
+[10:57:24.821](0.000s) ok 64 - choice does not use old calibrated coefficients
+[10:57:24.831](0.010s) ok 65 - semantic mismatch keeps the reference path but rejects calibration
+[10:57:24.831](0.000s) ok 66 - semantic mismatch has a stable redacted reason
+[10:57:24.831](0.000s) ok 67 - rejected calibration falls back to the uncalibrated reference estimate
+[10:57:24.844](0.013s) ok 68 - provider-profile mismatch keeps calibration out of reference costing
+[10:57:24.844](0.000s) ok 69 - provider-profile mismatch has a stable redacted reason
+[10:57:24.857](0.012s) ok 70 - duplicate artifact field cannot calibrate the reference path
+[10:57:24.857](0.000s) ok 71 - duplicate artifact field reports a stable redacted reason
+[10:57:24.867](0.010s) ok 72 - escaped NUL artifact cannot bypass the planner calibration boundary
+[10:57:24.867](0.000s) ok 73 - escaped NUL artifact reports a stable redacted reason
+[10:57:24.877](0.009s) ok 74 - missing artifact keeps the exact reference path executable
+[10:57:24.877](0.000s) ok 75 - missing artifact reports a stable non-path-bearing reason
+[10:57:24.999](0.122s) ok 76 - recording gateway creates its Unix socket
+[10:57:25.065](0.066s) ok 77 - exact SemFilter emits only TRUE and preserves duplicate tuple identity
+[10:57:25.078](0.013s) ok 78 - recording gateway removes its Unix socket
+[10:57:25.182](0.104s) ok 79 - recording gateway creates its Unix socket
+[10:57:25.245](0.064s) ok 80 - valid v3 task error frame fails the exact query
+[10:57:25.246](0.000s) ok 81 - valid v3 task error preserves SQLSTATE 08P01
+[10:57:25.246](0.000s) ok 82 - valid v3 task error uses the existing redacted message
+[10:57:25.246](0.000s) ok 83 - valid v3 task error exposes no input
+[10:57:25.258](0.012s) ok 84 - recording gateway removes its Unix socket
+[10:57:25.364](0.106s) ok 85 - recording gateway creates its Unix socket
+[10:57:25.425](0.061s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[10:57:25.425](0.000s) # issuing query 1 via background psql: SET semloom_pg.gateway_socket = '/tmp/MntecFx_SG/recording.sock';
+# BEGIN;
+# SAVEPOINT semloom_exact_filter_failure;
+# SELECT doc_id
+# FROM semloom_exact_filter_inputs
+# WHERE doc_id = 6 AND ai_semantic.filter(
+#   payload,
+#   'Input describes a database system.',
+#   '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+# ROLLBACK TO SAVEPOINT semloom_exact_filter_failure;
+# SELECT doc_id
+# FROM semloom_exact_filter_inputs
+# WHERE doc_id = 1 AND ai_semantic.filter(
+#   payload,
+#   'Input describes a database system.',
+#   '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+# COMMIT;
+[10:57:25.429](0.004s) # results query 1:
+# {
+#   'stderr' => 'psql:<stdin>:11: ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+# background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[10:57:25.429](0.000s) ok 86 - invalid exact result aborts only its statement
+[10:57:25.429](0.000s) ok 87 - exact SemFilter succeeds after savepoint rollback in the same backend
+[10:57:25.442](0.012s) ok 88 - recording gateway removes its Unix socket
+[10:57:25.537](0.096s) ok 89 - recording gateway creates its Unix socket
+[10:57:25.602](0.064s) ok 90 - exact SemFilter preserves Unicode instruction/input across C and Python
+[10:57:25.614](0.012s) ok 91 - recording gateway removes its Unix socket
+[10:57:25.719](0.106s) ok 92 - recording gateway creates its Unix socket
+[10:57:25.784](0.065s) ok 93 - exact SemFilter treats empty text as a non-NULL provider task
+[10:57:25.797](0.013s) ok 94 - recording gateway removes its Unix socket
+[10:57:25.893](0.097s) ok 95 - recording gateway creates its Unix socket
+[10:57:25.960](0.067s) ok 96 - exact SemFilter exposes reference identity and keep/drop counters
+[10:57:25.973](0.012s) ok 97 - recording gateway removes its Unix socket
+[10:57:25.985](0.013s) ok 98 - plain exact SemFilter EXPLAIN does not open the provider
+[10:57:25.994](0.009s) ok 99 - exact SemFilter LIMIT 0 does not open the provider
+[10:57:26.002](0.008s) ok 100 - exact SemFilter NULL input creates no provider task
+[10:57:26.096](0.094s) ok 101 - recording gateway creates its Unix socket
+[10:57:26.161](0.065s) ok 102 - exact SemFilter supports a generic plan with constant semantic identity
+[10:57:26.173](0.012s) ok 103 - recording gateway removes its Unix socket
+[10:57:26.269](0.096s) ok 104 - recording gateway creates its Unix socket
+[10:57:26.333](0.065s) ok 105 - invalid exact SemFilter raw output fails closed
+[10:57:26.334](0.000s) ok 106 - invalid exact raw output preserves SQLSTATE 22000
+[10:57:26.334](0.000s) ok 107 - invalid exact raw output preserves its redacted canonical message
+[10:57:26.334](0.000s) ok 108 - exact parser error exposes no input or raw output
+[10:57:26.347](0.013s) ok 109 - recording gateway removes its Unix socket
+[10:57:26.453](0.106s) ok 110 - recording gateway creates its Unix socket
+[10:57:26.517](0.065s) ok 111 - exact SemFilter valid open error fails closed
+[10:57:26.518](0.000s) ok 112 - exact SemFilter valid open error preserves SQLSTATE 08P01
+[10:57:26.518](0.000s) ok 113 - exact SemFilter valid open error is redacted
+[10:57:26.518](0.000s) ok 114 - valid open error exposes no task input
+[10:57:26.531](0.013s) ok 115 - recording gateway removes its Unix socket
+[10:57:26.625](0.094s) ok 116 - recording gateway creates its Unix socket
+[10:57:26.690](0.065s) ok 117 - exact SemFilter open error sequence mismatch fails closed
+[10:57:26.690](0.000s) ok 118 - exact SemFilter open error sequence mismatch preserves SQLSTATE 08P01
+[10:57:26.691](0.000s) ok 119 - exact SemFilter open error sequence mismatch is redacted
+[10:57:26.691](0.000s) ok 120 - open error sequence mismatch exposes no task input
+[10:57:26.702](0.011s) ok 121 - recording gateway removes its Unix socket
+[10:57:26.797](0.096s) ok 122 - recording gateway creates its Unix socket
+[10:57:26.862](0.064s) ok 123 - exact SemFilter tampered evidence fails closed
+[10:57:26.862](0.000s) ok 124 - exact SemFilter tampered evidence preserves SQLSTATE 08P01
+[10:57:26.862](0.000s) ok 125 - exact SemFilter tampered evidence is redacted
+[10:57:26.863](0.000s) ok 126 - tampered evidence exposes no task input
+[10:57:26.874](0.011s) ok 127 - recording gateway removes its Unix socket
+[10:57:26.970](0.096s) ok 128 - recording gateway creates its Unix socket
+[10:57:27.035](0.065s) ok 129 - exact SemFilter model mismatch fails closed
+[10:57:27.035](0.000s) ok 130 - exact SemFilter model mismatch preserves SQLSTATE 08P01
+[10:57:27.036](0.000s) ok 131 - exact SemFilter model mismatch is redacted
+[10:57:27.036](0.000s) ok 132 - model mismatch exposes no task input
+[10:57:27.046](0.011s) ok 133 - recording gateway removes its Unix socket
+[10:57:27.141](0.095s) ok 134 - recording gateway creates its Unix socket
+[10:57:27.205](0.064s) ok 135 - exact SemFilter invalid usage fails closed
+[10:57:27.206](0.000s) ok 136 - exact SemFilter invalid usage preserves SQLSTATE 08P01
+[10:57:27.206](0.000s) ok 137 - exact SemFilter invalid usage is redacted
+[10:57:27.206](0.000s) ok 138 - invalid usage exposes no task input
+[10:57:27.221](0.015s) ok 139 - recording gateway removes its Unix socket
+[10:57:27.315](0.094s) ok 140 - recording gateway creates its Unix socket
+[10:57:27.382](0.067s) ok 141 - exact SemFilter finish reason mismatch fails closed
+[10:57:27.382](0.000s) ok 142 - exact SemFilter finish reason mismatch preserves SQLSTATE 08P01
+[10:57:27.383](0.000s) ok 143 - exact SemFilter finish reason mismatch is redacted
+[10:57:27.383](0.000s) ok 144 - finish reason mismatch exposes no task input
+[10:57:27.393](0.011s) ok 145 - recording gateway removes its Unix socket
+[10:57:27.487](0.094s) ok 146 - recording gateway creates its Unix socket
+[10:57:27.548](0.061s) ok 147 - exact SemFilter extra completion field fails closed
+[10:57:27.548](0.000s) ok 148 - exact SemFilter extra completion field preserves SQLSTATE 08P01
+[10:57:27.548](0.000s) ok 149 - exact SemFilter extra completion field is redacted
+[10:57:27.548](0.000s) ok 150 - extra completion field exposes no task input
+[10:57:27.558](0.010s) ok 151 - recording gateway removes its Unix socket
+[10:57:27.653](0.095s) ok 152 - recording gateway creates its Unix socket
+[10:57:27.718](0.065s) ok 153 - exact SemFilter missing error field fails closed
+[10:57:27.719](0.001s) ok 154 - exact SemFilter missing error field preserves SQLSTATE 08P01
+[10:57:27.720](0.001s) ok 155 - exact SemFilter missing error field is redacted
+[10:57:27.720](0.000s) ok 156 - missing error field exposes no task input
+[10:57:27.733](0.013s) ok 157 - recording gateway removes its Unix socket
+[10:57:27.837](0.104s) ok 158 - recording gateway creates its Unix socket
+[10:57:27.901](0.064s) ok 159 - exact SemFilter extra error field fails closed
+[10:57:27.902](0.000s) ok 160 - exact SemFilter extra error field preserves SQLSTATE 08P01
+[10:57:27.902](0.000s) ok 161 - exact SemFilter extra error field is redacted
+[10:57:27.902](0.000s) ok 162 - extra error field exposes no task input
+[10:57:27.913](0.012s) ok 163 - recording gateway removes its Unix socket
+[10:57:28.010](0.096s) ok 164 - recording gateway creates its Unix socket
+[10:57:28.074](0.064s) ok 165 - exact SemFilter error sequence mismatch fails closed
+[10:57:28.075](0.000s) ok 166 - exact SemFilter error sequence mismatch preserves SQLSTATE 08P01
+[10:57:28.075](0.000s) ok 167 - exact SemFilter error sequence mismatch is redacted
+[10:57:28.075](0.000s) ok 168 - error sequence mismatch exposes no task input
+[10:57:28.086](0.011s) ok 169 - recording gateway removes its Unix socket
+[10:57:28.181](0.095s) ok 170 - recording gateway creates its Unix socket
+[10:57:28.245](0.063s) ok 171 - exact SemFilter unknown error code fails closed
+[10:57:28.245](0.000s) ok 172 - exact SemFilter unknown error code preserves SQLSTATE 08P01
+[10:57:28.245](0.000s) ok 173 - exact SemFilter unknown error code is redacted
+[10:57:28.246](0.000s) ok 174 - unknown error code exposes no task input
+[10:57:28.257](0.012s) ok 175 - recording gateway removes its Unix socket
+[10:57:28.267](0.010s) ok 176 - oversized exact SemFilter input fails before provider connection
+[10:57:28.267](0.000s) ok 177 - exact input limit preserves SQLSTATE 54000
+[10:57:28.268](0.000s) ok 178 - exact input limit reports the adapter-provided v3 limit
+[10:57:28.268](0.000s) ok 179 - exact input limit does not connect
+[10:57:28.362](0.095s) ok 180 - recording gateway creates its Unix socket
+[10:57:28.523](0.161s) ok 181 - statement timeout interrupts exact SemFilter provider wait
+[10:57:28.523](0.000s) ok 182 - exact SemFilter wait preserves PostgreSQL cancellation
+[10:57:28.939](0.415s) ok 183 - recording gateway removes its Unix socket
+[10:57:29.035](0.097s) ok 184 - recording gateway creates its Unix socket
+[10:57:29.101](0.066s) ok 185 - exact SemFilter succeeds after cancellation cleanup
+[10:57:29.115](0.014s) ok 186 - recording gateway removes its Unix socket
+[10:57:29.199](0.084s) ok 187 - fixed model fixture publishes its port
+[10:57:29.200](0.001s) ok 188 - fixed model fixture publishes a numeric port
+[10:57:29.306](0.106s) ok 189 - recording gateway creates its Unix socket
+[10:57:29.385](0.079s) ok 190 - fixed model SemFilter preserves exact keep/drop and duplicate identity
+[10:57:29.397](0.012s) ok 191 - recording gateway removes its Unix socket
+[10:57:29.397](0.000s) ok 192 - fixed model fixture removes its port file
+[10:57:29.471](0.074s) ok 193 - fixed model fixture publishes its port
+[10:57:29.472](0.001s) ok 194 - fixed model fixture publishes a numeric port
+[10:57:29.578](0.106s) ok 195 - recording gateway creates its Unix socket
+[10:57:29.649](0.071s) ok 196 - fixed model EXPLAIN exposes its query-fixed adapter and reference counters
+[10:57:29.660](0.012s) ok 197 - recording gateway removes its Unix socket
+[10:57:29.661](0.000s) ok 198 - fixed model fixture removes its port file
+[10:57:29.755](0.094s) ok 199 - recording gateway creates its Unix socket
+[10:57:29.817](0.062s) ok 200 - fixed model identity mismatch fails before HTTP
+[10:57:29.817](0.000s) ok 201 - fixed model identity mismatch preserves SQLSTATE 38000
+[10:57:29.818](0.000s) ok 202 - fixed model identity mismatch uses a redacted canonical message
+[10:57:29.818](0.000s) ok 203 - fixed model identity error exposes no endpoint
+[10:57:29.829](0.011s) ok 204 - recording gateway removes its Unix socket
+[10:57:29.902](0.073s) ok 205 - fixed model fixture publishes its port
+[10:57:29.902](0.000s) ok 206 - fixed model fixture publishes a numeric port
+[10:57:29.996](0.094s) ok 207 - recording gateway creates its Unix socket
+[10:57:30.062](0.066s) ok 208 - fixed model HTTP unavailable fails closed
+[10:57:30.063](0.000s) ok 209 - HTTP unavailable preserves its SQLSTATE
+[10:57:30.063](0.000s) ok 210 - HTTP unavailable uses its canonical message
+[10:57:30.063](0.000s) ok 211 - HTTP unavailable exposes no task input
+[10:57:30.074](0.011s) ok 212 - recording gateway removes its Unix socket
+[10:57:30.075](0.001s) ok 213 - fixed model fixture removes its port file
+[10:57:30.161](0.086s) ok 214 - fixed model fixture publishes its port
+[10:57:30.162](0.001s) ok 215 - fixed model fixture publishes a numeric port
+[10:57:30.258](0.096s) ok 216 - recording gateway creates its Unix socket
+[10:57:30.328](0.070s) ok 217 - fixed model HTTP request rejection fails closed
+[10:57:30.328](0.000s) ok 218 - HTTP request rejection preserves its SQLSTATE
+[10:57:30.329](0.000s) ok 219 - HTTP request rejection uses its canonical message
+[10:57:30.329](0.000s) ok 220 - HTTP request rejection exposes no task input
+[10:57:30.339](0.010s) ok 221 - recording gateway removes its Unix socket
+[10:57:30.340](0.000s) ok 222 - fixed model fixture removes its port file
+[10:57:30.415](0.075s) ok 223 - fixed model fixture publishes its port
+[10:57:30.416](0.001s) ok 224 - fixed model fixture publishes a numeric port
+[10:57:30.522](0.107s) ok 225 - recording gateway creates its Unix socket
+[10:57:30.596](0.074s) ok 226 - fixed model invalid HTTP response fails closed
+[10:57:30.597](0.000s) ok 227 - invalid HTTP response preserves its SQLSTATE
+[10:57:30.597](0.000s) ok 228 - invalid HTTP response uses its canonical message
+[10:57:30.597](0.000s) ok 229 - invalid HTTP response exposes no task input
+[10:57:30.610](0.013s) ok 230 - recording gateway removes its Unix socket
+[10:57:30.610](0.000s) ok 231 - fixed model fixture removes its port file
+[10:57:30.686](0.075s) ok 232 - fixed model fixture publishes its port
+[10:57:30.686](0.001s) ok 233 - fixed model fixture publishes a numeric port
+[10:57:30.793](0.107s) ok 234 - recording gateway creates its Unix socket
+[10:57:30.868](0.074s) ok 235 - fixed model response model mismatch fails closed
+[10:57:30.868](0.001s) ok 236 - response model mismatch preserves its SQLSTATE
+[10:57:30.869](0.000s) ok 237 - response model mismatch uses its canonical message
+[10:57:30.869](0.000s) ok 238 - response model mismatch exposes no task input
+[10:57:30.883](0.014s) ok 239 - recording gateway removes its Unix socket
+[10:57:30.883](0.000s) ok 240 - fixed model fixture removes its port file
+[10:57:30.957](0.074s) ok 241 - fixed model fixture publishes its port
+[10:57:30.958](0.001s) ok 242 - fixed model fixture publishes a numeric port
+[10:57:31.064](0.106s) ok 243 - recording gateway creates its Unix socket
+[10:57:31.141](0.076s) ok 244 - fixed model HTTP timeout fails closed
+[10:57:31.141](0.001s) ok 245 - HTTP timeout preserves its SQLSTATE
+[10:57:31.142](0.000s) ok 246 - HTTP timeout uses its canonical message
+[10:57:31.142](0.000s) ok 247 - HTTP timeout exposes no task input
+[10:57:31.152](0.011s) ok 248 - recording gateway removes its Unix socket
+[10:57:31.245](0.093s) ok 249 - fixed model fixture removes its port file
+[10:57:31.331](0.086s) ok 250 - fixed model fixture publishes its port
+[10:57:31.332](0.001s) ok 251 - fixed model fixture publishes a numeric port
+[10:57:31.429](0.097s) ok 252 - recording gateway creates its Unix socket
+[10:57:31.490](0.061s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[10:57:31.490](0.000s) # issuing query 1 via background psql: SET semloom_pg.gateway_socket = '/tmp/MntecFx_SG/recording.sock';
+# SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+# BEGIN;
+# SAVEPOINT semloom_fixed_model_failure;
+# SELECT doc_id
+# FROM semloom_exact_filter_inputs
+# WHERE doc_id = 1 AND ai_semantic.filter(
+# 	payload,
+# 	'Input describes a database system.',
+# 	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+# ROLLBACK TO SAVEPOINT semloom_fixed_model_failure;
+# SELECT doc_id
+# FROM semloom_exact_filter_inputs
+# WHERE doc_id = 1 AND ai_semantic.filter(
+# 	payload,
+# 	'Input describes a database system.',
+# 	'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+# COMMIT;
+[10:57:31.499](0.009s) # results query 1:
+# {
+#   'stderr' => 'psql:<stdin>:12: ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+# background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[10:57:31.500](0.000s) ok 253 - invalid fixed model raw output aborts only its statement
+[10:57:31.500](0.000s) ok 254 - fixed model SemFilter recovers after savepoint rollback in the same backend
+[10:57:31.514](0.015s) ok 255 - recording gateway removes its Unix socket
+[10:57:31.515](0.001s) ok 256 - fixed model fixture removes its port file
+[10:57:31.591](0.076s) ok 257 - fixed model fixture publishes its port
+[10:57:31.592](0.001s) ok 258 - fixed model fixture publishes a numeric port
+[10:57:31.687](0.095s) ok 259 - recording gateway creates its Unix socket
+[10:57:31.851](0.164s) ok 260 - statement timeout interrupts fixed model provider wait
+[10:57:31.851](0.000s) ok 261 - fixed model wait preserves PostgreSQL cancellation
+[10:57:32.275](0.424s) ok 262 - recording gateway removes its Unix socket
+[10:57:32.275](0.001s) ok 263 - fixed model fixture removes its port file
+[10:57:32.362](0.087s) ok 264 - fixed model fixture publishes its port
+[10:57:32.363](0.001s) ok 265 - fixed model fixture publishes a numeric port
+[10:57:32.459](0.096s) ok 266 - recording gateway creates its Unix socket
+[10:57:32.532](0.073s) ok 267 - fresh fixed model session succeeds after cancellation cleanup
+[10:57:32.544](0.012s) ok 268 - recording gateway removes its Unix socket
+[10:57:32.544](0.000s) ok 269 - fixed model fixture removes its port file
+[10:57:32.556](0.012s) ok 270 - fixed model LIMIT 0 does not open the provider or HTTP endpoint
+[10:57:32.667](0.111s) ok 271 - recording gateway creates its Unix socket
+[10:57:32.731](0.064s) ok 272 - UDS and in-process adapters emit identical rows across the parity dataset
+[10:57:32.743](0.011s) ok 273 - recording gateway removes its Unix socket
+[10:57:32.840](0.097s) ok 274 - recording gateway creates its Unix socket
+[10:57:32.908](0.068s) ok 275 - UDS and in-process adapters preserve the same EXPLAIN shape and counters
+[10:57:32.917](0.009s) ok 276 - recording gateway removes its Unix socket
+[10:57:33.032](0.115s) ok 277 - recording gateway creates its Unix socket
+[10:57:33.097](0.064s) ok 278 - SemFilter emits identical rows through UDS and in-process adapters
+[10:57:33.109](0.013s) ok 279 - recording gateway removes its Unix socket
+[10:57:33.214](0.105s) ok 280 - recording gateway creates its Unix socket
+[10:57:33.280](0.066s) ok 281 - SemFilter adapters preserve the same EXPLAIN shape and lifecycle counters
+[10:57:33.281](0.000s) ok 282 - SemFilter EXPLAIN reports non-NULL decisions and emitted TRUE rows
+[10:57:33.293](0.012s) ok 283 - recording gateway removes its Unix socket
+[10:57:33.398](0.105s) ok 284 - recording gateway creates its Unix socket
+[10:57:33.545](0.147s) ok 285 - recording gateway creates its Unix socket
+[10:57:33.606](0.061s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[10:57:33.616](0.011s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[10:57:33.617](0.000s) # issuing query 1 via background psql: SET semloom_pg.gateway_socket = '/tmp/MntecFx_SG/backend-a.sock';
+[10:57:33.617](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[10:57:33.618](0.000s) # issuing query 1 via background psql: SET semloom_pg.gateway_socket = '/tmp/MntecFx_SG/backend-b.sock';
+[10:57:33.618](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[10:57:33.618](0.000s) # issuing query 2 via background psql:
+# SELECT doc_id
+# FROM semloom_filter_decisions
+# WHERE ai_semantic.filter(decision)
+# ORDER BY doc_id;
+[10:57:33.622](0.004s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '1
+# 5
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[10:57:33.623](0.000s) ok 286 - first backend owns an independent SemFilter provider session
+[10:57:33.623](0.000s) # issuing query 2 via background psql: SELECT ai_semantic.map(payload)
+# FROM semloom_documents
+# WHERE payload = 'alpha';
+[10:57:33.625](0.002s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'recorded:alpha
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[10:57:33.625](0.000s) ok 287 - second backend owns an independent SemMap provider session
+[10:57:33.636](0.011s) ok 288 - recording gateway removes its Unix socket
+[10:57:33.638](0.002s) ok 289 - recording gateway removes its Unix socket
+[10:57:33.744](0.106s) ok 290 - recording gateway creates its Unix socket
+[10:57:33.808](0.064s) ok 291 - malformed-json completion fails closed
+[10:57:33.808](0.000s) ok 292 - malformed-json exposes an error signature
+[10:57:33.809](0.000s) ok 293 - malformed-json error does not expose the task payload
+[10:57:33.820](0.011s) ok 294 - recording gateway removes its Unix socket
+[10:57:33.820](0.000s) ok 295 - malformed-json preserves its SQLSTATE
+[10:57:33.821](0.000s) ok 296 - malformed-json preserves its redacted message
+[10:57:33.915](0.094s) ok 297 - recording gateway creates its Unix socket
+[10:57:33.978](0.063s) ok 298 - invalid-utf8 completion fails closed
+[10:57:33.978](0.000s) ok 299 - invalid-utf8 exposes an error signature
+[10:57:33.978](0.000s) ok 300 - invalid-utf8 error does not expose the task payload
+[10:57:33.990](0.011s) ok 301 - recording gateway removes its Unix socket
+[10:57:33.990](0.000s) ok 302 - invalid-utf8 preserves its SQLSTATE
+[10:57:33.990](0.000s) ok 303 - invalid-utf8 preserves its redacted message
+[10:57:34.084](0.094s) ok 304 - recording gateway creates its Unix socket
+[10:57:34.149](0.065s) ok 305 - escaped-nul completion fails closed
+[10:57:34.149](0.000s) ok 306 - escaped-nul exposes an error signature
+[10:57:34.150](0.000s) ok 307 - escaped-nul error does not expose the task payload
+[10:57:34.165](0.016s) ok 308 - recording gateway removes its Unix socket
+[10:57:34.166](0.000s) ok 309 - escaped-nul preserves its SQLSTATE
+[10:57:34.166](0.000s) ok 310 - escaped-nul preserves its redacted message
+[10:57:34.260](0.094s) ok 311 - recording gateway creates its Unix socket
+[10:57:34.320](0.060s) ok 312 - raw-nul completion fails closed
+[10:57:34.320](0.000s) ok 313 - raw-nul exposes an error signature
+[10:57:34.320](0.000s) ok 314 - raw-nul error does not expose the task payload
+[10:57:34.331](0.011s) ok 315 - recording gateway removes its Unix socket
+[10:57:34.332](0.000s) ok 316 - raw-nul preserves its SQLSTATE
+[10:57:34.332](0.000s) ok 317 - raw-nul preserves its redacted message
+[10:57:34.428](0.096s) ok 318 - recording gateway creates its Unix socket
+[10:57:34.492](0.064s) ok 319 - non-object completion fails closed
+[10:57:34.492](0.000s) ok 320 - non-object exposes an error signature
+[10:57:34.493](0.000s) ok 321 - non-object error does not expose the task payload
+[10:57:34.504](0.012s) ok 322 - recording gateway removes its Unix socket
+[10:57:34.505](0.000s) ok 323 - non-object preserves its SQLSTATE
+[10:57:34.505](0.000s) ok 324 - non-object preserves its redacted message
+[10:57:34.600](0.095s) ok 325 - recording gateway creates its Unix socket
+[10:57:34.664](0.064s) ok 326 - missing-field completion fails closed
+[10:57:34.665](0.000s) ok 327 - missing-field exposes an error signature
+[10:57:34.665](0.000s) ok 328 - missing-field error does not expose the task payload
+[10:57:34.678](0.013s) ok 329 - recording gateway removes its Unix socket
+[10:57:34.679](0.001s) ok 330 - missing-field preserves its SQLSTATE
+[10:57:34.679](0.000s) ok 331 - missing-field preserves its redacted message
+[10:57:34.775](0.096s) ok 332 - recording gateway creates its Unix socket
+[10:57:34.842](0.067s) ok 333 - extra-field completion fails closed
+[10:57:34.843](0.001s) ok 334 - extra-field exposes an error signature
+[10:57:34.844](0.001s) ok 335 - extra-field error does not expose the task payload
+[10:57:34.854](0.010s) ok 336 - recording gateway removes its Unix socket
+[10:57:34.855](0.000s) ok 337 - extra-field preserves its SQLSTATE
+[10:57:34.855](0.000s) ok 338 - extra-field preserves its redacted message
+[10:57:34.950](0.095s) ok 339 - recording gateway creates its Unix socket
+[10:57:35.012](0.062s) ok 340 - wrong-integer-type completion fails closed
+[10:57:35.012](0.000s) ok 341 - wrong-integer-type exposes an error signature
+[10:57:35.012](0.000s) ok 342 - wrong-integer-type error does not expose the task payload
+[10:57:35.024](0.012s) ok 343 - recording gateway removes its Unix socket
+[10:57:35.025](0.000s) ok 344 - wrong-integer-type preserves its SQLSTATE
+[10:57:35.025](0.000s) ok 345 - wrong-integer-type preserves its redacted message
+[10:57:35.119](0.094s) ok 346 - recording gateway creates its Unix socket
+[10:57:35.183](0.064s) ok 347 - fractional-integer completion fails closed
+[10:57:35.183](0.000s) ok 348 - fractional-integer exposes an error signature
+[10:57:35.183](0.000s) ok 349 - fractional-integer error does not expose the task payload
+[10:57:35.194](0.011s) ok 350 - recording gateway removes its Unix socket
+[10:57:35.194](0.000s) ok 351 - fractional-integer preserves its SQLSTATE
+[10:57:35.195](0.000s) ok 352 - fractional-integer preserves its redacted message
+[10:57:35.290](0.095s) ok 353 - recording gateway creates its Unix socket
+[10:57:35.355](0.065s) ok 354 - integer-overflow completion fails closed
+[10:57:35.355](0.000s) ok 355 - integer-overflow exposes an error signature
+[10:57:35.355](0.000s) ok 356 - integer-overflow error does not expose the task payload
+[10:57:35.367](0.012s) ok 357 - recording gateway removes its Unix socket
+[10:57:35.367](0.000s) ok 358 - integer-overflow preserves its SQLSTATE
+[10:57:35.367](0.000s) ok 359 - integer-overflow preserves its redacted message
+[10:57:35.473](0.106s) ok 360 - recording gateway creates its Unix socket
+[10:57:35.536](0.063s) ok 361 - identity-mismatch completion fails closed
+[10:57:35.537](0.000s) ok 362 - identity-mismatch exposes an error signature
+[10:57:35.537](0.000s) ok 363 - identity-mismatch error does not expose the task payload
+[10:57:35.548](0.011s) ok 364 - recording gateway removes its Unix socket
+[10:57:35.548](0.000s) ok 365 - identity-mismatch preserves its SQLSTATE
+[10:57:35.549](0.000s) ok 366 - identity-mismatch preserves its redacted message
+[10:57:35.644](0.095s) ok 367 - recording gateway creates its Unix socket
+[10:57:35.708](0.064s) ok 368 - error-message completion fails closed
+[10:57:35.709](0.000s) ok 369 - error-message exposes an error signature
+[10:57:35.709](0.000s) ok 370 - error-message error does not expose the task payload
+[10:57:35.720](0.011s) ok 371 - recording gateway removes its Unix socket
+[10:57:35.721](0.000s) ok 372 - error-message preserves its SQLSTATE
+[10:57:35.721](0.000s) ok 373 - error-message preserves its redacted message
+[10:57:35.742](0.022s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[10:57:35.743](0.000s) # issuing query 1 via background psql: SET semloom_pg.gateway_socket = '';
+# BEGIN;
+# SAVEPOINT semloom_filter_failure;
+# SELECT doc_id
+# FROM semloom_filter_decisions
+# WHERE doc_id = 6 AND ai_semantic.filter(decision);
+# ROLLBACK TO SAVEPOINT semloom_filter_failure;
+# SELECT doc_id
+# FROM semloom_filter_decisions
+# WHERE doc_id = 1 AND ai_semantic.filter(decision);
+# COMMIT;
+[10:57:35.744](0.002s) # results query 1:
+# {
+#   'stderr' => 'psql:<stdin>:8: ERROR:  SemFilter provider completion must be true, false, or unknown
+# background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '1
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[10:57:35.745](0.000s) ok 374 - invalid SemFilter completion aborts its statement
+[10:57:35.745](0.000s) ok 375 - ROLLBACK TO SAVEPOINT restores semantic execution in the same backend
+[10:57:35.819](0.074s) ok 376 - recording gateway creates its Unix socket
+[10:57:35.882](0.063s) ok 377 - invalid UDS SemFilter completion fails closed
+[10:57:35.882](0.000s) ok 378 - invalid SemFilter completion preserves SQLSTATE
+[10:57:35.883](0.000s) ok 379 - invalid SemFilter completion preserves its canonical message
+[10:57:35.893](0.010s) ok 380 - recording gateway removes its Unix socket
+[10:57:35.989](0.096s) ok 381 - recording gateway creates its Unix socket
+[10:57:36.053](0.064s) ok 382 - a fresh SemFilter session succeeds after invalid completion cleanup
+[10:57:36.065](0.012s) ok 383 - recording gateway removes its Unix socket
+[10:57:36.075](0.010s) ok 384 - plain EXPLAIN does not open the configured provider
+[10:57:36.085](0.010s) ok 385 - LIMIT 0 does not open the configured provider
+[10:57:36.095](0.010s) ok 386 - a zero-row child plan does not open the configured provider
+[10:57:36.109](0.013s) ok 387 - PROPAGATE_NULL is owned by PostgreSQL without opening the provider
+[10:57:36.118](0.009s) ok 388 - plain SemFilter EXPLAIN does not open the configured provider
+[10:57:36.126](0.008s) ok 389 - SemFilter LIMIT 0 does not open the configured provider
+[10:57:36.135](0.009s) ok 390 - SemFilter NULL input is dropped without opening the provider
+[10:57:36.155](0.020s) ok 391 - table permissions are checked before SemFilter execution
+[10:57:36.155](0.000s) ok 392 - permission denial preserves PostgreSQL SQLSTATE
+[10:57:36.155](0.000s) ok 393 - permission denial does not open the provider
+[10:57:36.167](0.012s) ok 394 - oversized input fails before provider connection
+[10:57:36.167](0.000s) ok 395 - oversized input preserves its SQLSTATE
+[10:57:36.167](0.000s) ok 396 - oversized input preserves its pre-encoding limit message
+[10:57:36.168](0.000s) ok 397 - oversized input does not attempt a provider connection
+[10:57:36.177](0.009s) ok 398 - missing UDS provider fails the first non-NULL task
+[10:57:36.177](0.000s) ok 399 - missing UDS provider preserves socket-access SQLSTATE
+[10:57:36.177](0.000s) ok 400 - missing UDS provider preserves its operation prefix
+[10:57:36.177](0.000s) ok 401 - socket failure does not expose its path
+[10:57:36.271](0.094s) ok 402 - recording gateway creates its Unix socket
+[10:57:36.331](0.060s) ok 403 - UDS recording provider preserves Unicode and cross-language digests
+[10:57:36.344](0.012s) ok 404 - recording gateway removes its Unix socket
+[10:57:36.439](0.095s) ok 405 - recording gateway creates its Unix socket
+[10:57:36.504](0.065s) ok 406 - EXPLAIN identifies the external UDS recording provider
+[10:57:36.516](0.012s) ok 407 - recording gateway removes its Unix socket
+[10:57:36.611](0.095s) ok 408 - recording gateway creates its Unix socket
+[10:57:36.775](0.164s) ok 409 - statement timeout interrupts provider connect wait
+[10:57:36.776](0.000s) ok 410 - connect wait preserves PostgreSQL cancellation
+[10:57:37.121](0.346s) ok 411 - recording gateway removes its Unix socket
+[10:57:37.226](0.105s) ok 412 - recording gateway creates its Unix socket
+[10:57:37.290](0.064s) ok 413 - tampered completion evidence fails closed
+[10:57:37.291](0.000s) ok 414 - tampered completion evidence preserves its SQLSTATE
+[10:57:37.291](0.000s) ok 415 - tampered completion evidence preserves its redacted message
+[10:57:37.291](0.000s) ok 416 - digest failure does not echo the task payload
+[10:57:37.303](0.012s) ok 417 - recording gateway removes its Unix socket
+[10:57:37.409](0.106s) ok 418 - recording gateway creates its Unix socket
+[10:57:37.474](0.065s) ok 419 - gateway disconnect fails the query
+[10:57:37.475](0.000s) ok 420 - gateway disconnect preserves its SQLSTATE
+[10:57:37.475](0.000s) ok 421 - disconnect preserves its redacted message
+[10:57:37.487](0.012s) ok 422 - recording gateway removes its Unix socket
+[10:57:37.592](0.105s) ok 423 - recording gateway creates its Unix socket
+[10:57:37.756](0.164s) ok 424 - statement timeout interrupts a provider socket wait
+[10:57:37.757](0.001s) ok 425 - UDS wait preserves PostgreSQL cancellation
+[10:57:38.171](0.414s) ok 426 - recording gateway removes its Unix socket
+[10:57:38.267](0.096s) ok 427 - recording gateway creates its Unix socket
+[10:57:38.333](0.066s) ok 428 - fresh UDS execution succeeds after cancellation and cleanup
+[10:57:38.346](0.013s) ok 429 - recording gateway removes its Unix socket
+[10:57:38.442](0.096s) ok 430 - recording gateway creates its Unix socket
+[10:57:38.606](0.163s) ok 431 - statement timeout interrupts a SemFilter provider wait
+[10:57:38.606](0.000s) ok 432 - SemFilter wait preserves PostgreSQL cancellation
+[10:57:39.023](0.417s) ok 433 - recording gateway removes its Unix socket
+[10:57:39.122](0.099s) ok 434 - recording gateway creates its Unix socket
+[10:57:39.188](0.066s) ok 435 - fresh SemFilter execution succeeds after cancellation and cleanup
+[10:57:39.202](0.014s) ok 436 - recording gateway removes its Unix socket
+[10:57:39.283](0.080s) ok 437 - UDS provider rejects a non-UTF8 database before connection
+[10:57:39.283](0.000s) ok 438 - non-UTF8 database rejection preserves its SQLSTATE
+[10:57:39.283](0.000s) ok 439 - encoding failure preserves the wire requirement message
+[10:57:39.283](0.000s) ok 440 - encoding validation does not attempt a provider connection
+### Stopping node "semloom_pg" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "semloom_pg"
+[10:57:39.389](0.106s) 1..440

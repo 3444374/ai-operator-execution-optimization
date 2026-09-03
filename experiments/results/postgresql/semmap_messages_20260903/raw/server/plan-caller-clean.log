@@ -1,0 +1,2 @@
+rm -f semloom_plan_contract_test.so   libsemloom_plan_contract_test.a  libsemloom_plan_contract_test.pc
+rm -f plan_contract.o sem_plan_spec.o generation_profile.o plan_contract.bc sem_plan_spec.bc generation_profile.bc

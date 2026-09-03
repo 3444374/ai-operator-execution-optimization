@@ -1,0 +1,224 @@
+test_existing_filter_profiles_keep_their_literal_messages (test_semloom_message_compilation.MessageCompilationTests.test_existing_filter_profiles_keep_their_literal_messages) ... ok
+test_map_compiles_two_verbatim_messages_without_filter_directive (test_semloom_message_compilation.MessageCompilationTests.test_map_compiles_two_verbatim_messages_without_filter_directive) ... ok
+test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) ...
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='00') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='780079') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='80') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='c0af') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='e08080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='eda080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='f0808080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='f4908080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='f5808080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='e4b8') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='c241') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='ff') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='00') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='780079') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='80') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='c0af') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='e08080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='eda080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='f0808080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='f4908080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='f5808080') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='e4b8') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='c241') ... FAIL
+  test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='ff') ... FAIL
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='00')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 71 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='780079')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 73 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='80')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 66 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='c0af')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 67 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='e08080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 68 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='eda080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 68 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='f0808080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 69 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='f4908080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 69 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='f5808080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 69 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='e4b8')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 67 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='c241')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 67 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='instruction', data='ff')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 66 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='00')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 71 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='780079')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 73 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='80')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 66 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='c0af')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 67 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='e08080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 68 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='eda080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 68 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='f0808080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 69 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='f4908080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 69 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='f5808080')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 69 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='e4b8')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 67 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='c241')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 67 != 0
+
+======================================================================
+FAIL: test_map_rejects_nul_and_malformed_utf8_before_publishing (test_semloom_message_compilation.MessageCompilationTests.test_map_rejects_nul_and_malformed_utf8_before_publishing) (field='input', data='ff')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_message_compilation.py", line 103, in test_map_rejects_nul_and_malformed_utf8_before_publishing
+    self.assertEqual(self.library.semloom_map_task_size(ctypes.byref(instruction), ctypes.byref(value)), 0)
+AssertionError: 66 != 0
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.582s
+
+FAILED (failures=24)
