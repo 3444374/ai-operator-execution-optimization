@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-09-02
+更新时间：2026-09-03
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -15,6 +15,7 @@
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 回答 semantic plan/provider interface 如何实现、工作包顺序和验收条件；不承担第二份文献综述或实现证据 |
+| 生成型 Map 实现规格 | [`experiments/plans/postgresql_semmap_generation_contract.md`](experiments/plans/postgresql_semmap_generation_contract.md) | 四 D 的 SQL、消息/文本行为、版本和验收预期；设计稿已完成，代码尚未实现 |
 | choice 已完成实施记录 | [`experiments/plans/completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) | 保留四 C 的字段、版本、预算与验收条件；结果从证据台账查阅，后续顺序由主架构维护 |
 | 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
@@ -48,6 +49,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
 按任务选择主计划中的工作包：PG 新研发读[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)，
+再读[生成型 Map 专项规格](experiments/plans/postgresql_semmap_generation_contract.md)中的源码复核清单和小步实施要求；
 choice 已有行为回查[四 C 完成记录](experiments/plans/completed/postgresql_choice_profile_engineering.md)；
 增量核心读工作包七，Filter 质量/成本/第二路径读工作包五。新增算子、请求/结果处理前按
 [具体工程参考表](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)

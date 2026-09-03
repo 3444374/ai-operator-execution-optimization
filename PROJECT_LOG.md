@@ -1,5 +1,31 @@
 # 项目日志
 
+## 2026-09-03 四 D 生成型 Map 合同与复核修订
+
+- 基于干净 main `a3199bd9`，新增[生成型 Map 合同](experiments/plans/postgresql_semmap_generation_contract.md)，
+  作为四 D 具体行为与验收的唯一说明；主架构保留依赖与分工，目录、根入口、导航和源码状态只增加指向。
+  已按复核意见收紧可观察要求，待研发核对代码落点，不能把设计完成写成算子实现或服务器验证通过。
+- 对照当前 Map planner/machine、PG runtime、provider factory、v3/v4 codec、golden/fixed Adapter，
+  明确 Filter 专用 prompt/换行 stop/8-token、二版本选择、完成元数据和 factory fallback 的必要改造点。
+  保留现有 thin scan、query lifecycle、单项 port 和 PG 外模型执行，不启动组合、异步或 core patch。
+- 公司参考的私有定位与原观察保留在本地不跟踪的对照记录，本次公开稿不新增这些实现细节；未修改或
+  复制公司源码。固定提交的 pgml transform 两入口与 PG 官方源码提供公开参考，来源、采用理由与
+  测试对应只写在计划；未安装或运行公司实现、pgml 或模型。
+- 本稿选择三参 text Map、固定计划参数、两消息程序、完整 UTF-8 原样文本、NULL 零调用与失败报错，
+  提出 schema 4/wire v5 和标准 extension 升级；具体定义只在专项维护。保留对新装/升级、常量/准备计划、
+  权限/身份、空输出、截断、计数和 RSS/FD 的可观察验收要求，不挪用旧 Filter 资格。
+- 复核修订明确参数替换前检查与 IMMUTABLE 折叠、执行期原生 ACL 与零请求、v5 输出超限错误、
+  plan 有效限制与 provider 能力的关系、stop presence、明确 0.2.0 升级及 gateway 资源结束条件。
+  保留已有 §10，补充 fixed-provider 身份/完成证据向量；不增加 core patch、tokenizer、通用 registry
+  或性能实验范围。采用 codebase-design 与 writing-for-agents 的小 Interface、唯一说明与可判定验收原则。
+- 用独立 Node.js/Python 临时计算核对四个规范消息/摘要向量及公共和 fixed-provider 摘要；仅验证文档数学预期，
+  未运行 C 实现、PG TAP、资源 smoke、真实请求或 held-out。旧生产代码与原始证据保持不变。
+- 初次完整 uint64 帧尺寸重算定位出 16 字节口径差异：原 completion 的 394,837 字节按
+  output_tokens≤4096 计算，覆盖 uint64 表示范围的上界应为 394,853 字节；文档已区分两者，均未超限。
+- 文档自检通过：186 个本地链接、25 个章节引用、三段 JSON、四组向量和 fixed-provider 补充向量；最大转义 task/completion
+  分别为 1,008,142/394,853 字节，低于帧体上限。七份变更文件隐私检查与差异空白检查通过；
+  读者型根入口/导航未新增管理术语。上述是文档核对，不是研发 agent 或 PG 运行验收。
+
 ## 2026-09-02 函数身份切片主线合并复核
 
 - 复核固定范围 `c494e1b2...390f666a` 的 6 个提交，工程规范和计划符合性两项审查均未发现阻止合并的

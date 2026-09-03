@@ -1,6 +1,6 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-09-02
+更新日期：2026-09-03
 状态：`current / design-revised / implementation-in-progress`
 
 本文只维护架构决策、Module 职责、Interface、工作包依赖与完成条件。源码实际状态看
@@ -14,6 +14,8 @@
 工程完成不表示模型质量、真实成本校准或优化路径已通过。
 真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
+四 D 的[生成型 Map 合同修订稿](postgresql_semmap_generation_contract.md)已完成；具体 SQL、消息、输出、
+版本与验收只在该文维护，仍待研发源码复核和实施，不扩大当前已支持能力。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
 
@@ -523,11 +525,12 @@ PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配
 
 <a id="real-semmap-work-package"></a>
 
-### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（新增，待设计与实现）
+### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（合同修订稿完成，待实施）
 
 这是完整工程对照之后的自有 PG 任务，为文本生成 work 提供真实数据库入口；不依赖先完成多算子
 组合或 Filter 三值分类质量。先验收独立生成型 Map，Filter → Map 留给后续组合切片验证。
-AI_COMPLETE 在这里是工作负载含义，不预先承诺新增同名 SQL alias；SQL 重载与具体 profile 在首个切片定案。
+AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重载、参数、文本输出规则和版本由
+[四 D 专项合同](postgresql_semmap_generation_contract.md)唯一定义；已补齐复核要求，待研发核对代码落点并实施。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。
@@ -538,18 +541,13 @@ prompt、取数和结果处理；按 [pgml 公开工程参照](#pgml-engineering
 pump/runtime 与外部 completion Adapter；参考公司逐行文本生成、列映射和参数构造，不复制全量
 materialization、执行时语义漂移或 PG 内 HTTP。已有层次仅在新消费者证明必要时定点调整。
 
-| 切片 | 完成条件 |
-|---|---|
-| 先定最小合同 | 对照公司逐行 Map/Generate 的目的，写清具体参考对象、自有落点及差异；确定 SQL 形状、plan-time constant、prompt/text-output、model/generation identity、NULL/error/order、输入/输出上限与版本，在实现前写下拒绝条件和 golden vectors |
-| task/result 公共实现整理 | 由真实 Map 消费者驱动，将算子专用 prompt/parser 与公共消息编码分开；生成约束有唯一来源，runtime/transport 不判断算子真值。先证明旧 Filter 的 bytes/digest/错误不变，再引入新 Map 合同；不复制第二套 gateway、deadline 或 provider 生命周期 |
-| deterministic 纵切面 | 每行输出关联与顺序正确，NULL 不调模型，空字符串与 SQL NULL 区分；规划/执行真正消费上述字段，普通 SQL、recording Map 与现有 Filter 保持行为 |
-| 固定模型纵切面 | 复用外部 completion Adapter，记录真实 model/usage/finish reason；text encoding、长度、截断/非 stop 的处理按预定合同验证，不以能解析文本宣称内容正确 |
-| PG18.3 与资源 | plain EXPLAIN/EXPLAIN ANALYZE、prepared/invalidation、snapshot/权限、INSERT/rollback、错误/取消、RSS/FD/大输入输出全部通过；证据绑定真实源码与路径 |
-| 交接给 SemLoom | 使用同一 semantic task/result Interface 和已验证的同步路径作对照；增量桥接由工作包七独立验收 |
+专项合同依次管理研发复核、纯值与公共 task/result 整理、PG plan、golden 完整执行、固定模型和资源
+验收；本节不复制其字段或 golden vectors。只有相应实现和验证完成，才记为四 D 工程完成。
+保留现有 scan/pump/runtime/provider Seam，按 Map 暴露的真实变化原因调整；不复制 Filter 执行栈，
+不让新 Map 继承三值 parser、8-token 上限或换行 stop。具体版本改变不重定义旧接口。
 
-不照搬 Filter 的 8-token 上限或三值 parser，不复用不匹配的校准 artifact。新 generation/profile、schema
-和 wire 的具体编号留给合同切片决定，既有版本不改变含义。生成任务更适合观察输入/输出 work 和长短
-任务干扰，但不自动产生性能结论：真实比较仍须选定任务质量指标、模型/服务/资源与相同输出要求。
+生成任务为输入/输出 work 与长短任务研究提供入口，不自动产生性能结论；真实比较仍须选定任务质量、
+模型/服务/资源与相同输出要求。验证后的同步路径作为工作包七增量桥接的对照，组合与桥接分别验收。
 
 ### 工作包五：Filter 质量、matched cost 与第二 physical path
 
@@ -693,6 +691,7 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
 | [四 C 专项完成记录](completed/postgresql_choice_profile_engineering.md) | 保存 choice 字段/版本/预算/资源与当时的详细实施要求；结果看证据台账，后续工作看本主计划 |
+| [四 D 生成型 Map 合同](postgresql_semmap_generation_contract.md) | 唯一定义生成型 Map 的 SQL、消息/文本语义、版本、golden vectors 与实施验收；修订稿完成，不代表代码完成 |
 | [INFRA_STATUS](../../code/INFRA_STATUS.md) | 实际源码结构、接线、协议版本、测试状态及未实现能力 |
 | [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录 | 提交/构建身份、测试数字、运行配置、失败、原始记录与证据包；结果目录保留请求前条件 |
 | [历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md) | 旧顺序、原接口表述与完整历史合同，供溯源，不授予执行权限 |
