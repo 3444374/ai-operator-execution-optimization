@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-09-03 生成型 Map PG plan 与权限接入
+
+- 从 `340356e8` 创建独立 `codex/semmap-pg-plan`；按四 D 已确认接口测试先行，复用现有 carrier/plan/pump，
+  增加 SQL 0.2.0 安装/升级、schema 4、固定参数来源/值、计划复制/解码及原生权限/hook/依赖。
+- 测试依次复现并修复参数内联、撤权、CASE/WHERE/混用与子查询限制问题；`2205ccbb` 完成当前
+  plan-only 资格，实际执行仍在 child/provider 前返回 `0A000`，未接 C v5、未修改 runtime/provider/wire。
+- 精确 PG18.3 独立前缀 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新计划 238 项），
+  本地/服务器各 136/136 与七个纯 C module/neutral header C11 通过；[本轮记录](experiments/results/postgresql/semmap_pg_plan_20260903/README.md)
+  保存全部中间失败/通过和最终源码哈希。新增 fixture 引号错误没有运行子测试，单列保留，不作生产反例。
+- 仅成员变更仍需所有相关物理连接手动刷新；新重载双会话 ADD/DROP、函数替换/删除重建与
+  custom/generic 缓存撤权均验证，未引入跨会话 registry 或 core patch。
+- 14 个本切片测试目录已停止节点、未发现匹配测试源码/前缀的存活进程；worktree、二进制与原始证据
+  保留在持久 artifact 目录。服务器原 main 与原安装二进制未覆盖，不宣称服务器全局没有其他工作负载。
+- 期间核对 main 新文档 `c7b1e9e6`/`0bf56253`，不改变四 D 范围；本分支尚未合入或推送 main。
+  模型请求 0、Map 累计 0/32，未运行新资源 smoke、held-out 或恢复 Filter 校准。
+- `karpathy-guidelines` 限定最小充分改动；TDD 在已约定 SQL/EXPLAIN/plan codec 接口固定反例。
+  参考来源与采用说明只在专项记录，不进入生产或测试注释，没有复制或外发公司材料。
+- 205 个公开产物（另有总 SHA 清单）、1,000 项提交绑定的源码内容哈希、187 个本地链接目标核对通过；
+  读者文件检索仅命中已说明的 SQLSTATE，差异空白检查通过。
+
 ## 2026-09-03 Map 基础子切片合入本地 main
 
 - 按用户要求，fetch 确认 main 与 origin/main 均为 `63d86c0e`、主工作树与研发工作树干净，

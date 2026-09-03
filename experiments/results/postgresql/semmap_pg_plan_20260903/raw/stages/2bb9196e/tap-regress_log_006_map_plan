@@ -1,0 +1,74 @@
+# Checking port 26024
+# Found port 26024
+Name: map_plan
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/archives
+Connection string: port=26024 host=/tmp/4qwRvClSb4
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log
+[14:53:42.702](0.020s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+### Starting node "map_plan"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log --options --cluster-name=map_plan start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "map_plan" is 97392
+[14:53:43.373](0.671s) ok 1 - existing extension upgrades to the generative Map SQL interface
+[14:53:43.383](0.010s) ok 2 - upgrade preserves all old function identities, attributes and grants
+[14:53:43.394](0.011s) ok 3 - new Map has text output and explicit safe marker attributes
+[14:53:43.415](0.021s) ok 4 - generative Map uses the existing Map carrier
+[14:53:43.415](0.000s) ok 5 - new Map owns schema 4
+[14:53:43.415](0.000s) ok 6 - plan identifies generative Map semantics
+[14:53:43.416](0.000s) ok 7 - PG plan identity matches the independent Map vector
+[14:53:43.416](0.000s) ok 8 - Map owns its prompt program
+[14:53:43.416](0.000s) ok 9 - Map owns its text result policy
+[14:53:43.416](0.000s) ok 10 - plan owns the model
+[14:53:43.416](0.000s) ok 11 - plan owns the normalized output token cap
+[14:53:43.416](0.000s) ok 12 - plan owns its input byte cap
+[14:53:43.416](0.000s) ok 13 - plan owns its output byte cap
+[14:53:43.416](0.000s) ok 14 - EXPLAIN does not claim connected execution
+[14:53:43.424](0.007s) ok 15 - EXPLAIN does not disclose the instruction
+[14:53:43.431](0.007s) ok 16 - unconnected generative Map cannot execute
+[14:53:43.431](0.000s) ok 17 - new plan cannot silently use an old provider path
+[14:53:43.431](0.000s) ok 18 - plan-only Map made zero provider connections
+### Stopping node "map_plan" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "map_plan"
+[14:53:43.538](0.107s) 1..18

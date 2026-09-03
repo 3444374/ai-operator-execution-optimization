@@ -1,0 +1,18 @@
+2026-09-03 14:40:28.686 CST [96347] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 14:40:28.686 CST [96347] LOG:  listening on Unix socket "/tmp/ESBJGS_JDh/.s.PGSQL.27357"
+2026-09-03 14:40:28.688 CST [96353] LOG:  database system was shut down at 2026-09-03 14:40:28 CST
+2026-09-03 14:40:28.690 CST [96347] LOG:  database system is ready to accept connections
+2026-09-03 14:40:28.788 CST [96358] 006_map_plan.pl LOG:  statement: CREATE EXTENSION semloom_pg VERSION '0.1.0';
+2026-09-03 14:40:28.799 CST [96360] 006_map_plan.pl LOG:  statement: SELECT oid, proname, proargtypes, provolatile, proparallel, proisstrict, prosecdef, proleakproof,
+	       coalesce(proacl::text, '')
+	FROM pg_proc WHERE pronamespace = 'ai_semantic'::regnamespace ORDER BY oid;
+2026-09-03 14:40:28.810 CST [96362] 006_map_plan.pl LOG:  statement: ALTER EXTENSION semloom_pg UPDATE TO '0.2.0';
+2026-09-03 14:40:28.810 CST [96362] 006_map_plan.pl ERROR:  extension "semloom_pg" has no update path from version "0.1.0" to version "0.2.0"
+2026-09-03 14:40:28.810 CST [96362] 006_map_plan.pl STATEMENT:  ALTER EXTENSION semloom_pg UPDATE TO '0.2.0';
+2026-09-03 14:40:28.814 CST [96347] LOG:  received fast shutdown request
+2026-09-03 14:40:28.814 CST [96347] LOG:  aborting any active transactions
+2026-09-03 14:40:28.815 CST [96347] LOG:  background worker "logical replication launcher" (PID 96356) exited with exit code 1
+2026-09-03 14:40:28.816 CST [96351] LOG:  shutting down
+2026-09-03 14:40:28.816 CST [96351] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 14:40:28.818 CST [96351] LOG:  checkpoint complete: wrote 24 buffers (0.1%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.002 s; sync files=0, longest=0.000 s, average=0.000 s; distance=82 kB, estimate=82 kB; lsn=0/1701FA8, redo lsn=0/1701FA8
+2026-09-03 14:40:28.825 CST [96347] LOG:  database system is shut down

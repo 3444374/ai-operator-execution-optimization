@@ -1,0 +1,137 @@
+# Checking port 32090
+# Found port 32090
+Name: map_plan
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/archives
+Connection string: port=32090 host=/tmp/1f1kuy9uXK
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log
+[14:46:42.116](0.019s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+### Starting node "map_plan"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log --options --cluster-name=map_plan start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "map_plan" is 96975
+[14:46:42.814](0.698s) ok 1 - existing extension upgrades to the generative Map SQL interface
+[14:46:42.823](0.009s) ok 2 - upgrade preserves all old function identities, attributes and grants
+[14:46:42.834](0.011s) ok 3 - new Map has text output and explicit safe marker attributes
+[14:46:42.852](0.018s) not ok 4 - generative Map uses the existing Map carrier
+[14:46:42.852](0.000s)
+[14:46:42.852](0.000s) #   Failed test 'generative Map uses the existing Map carrier'
+#   at t/006_map_plan.pl line 48.
+[14:46:42.852](0.000s) #          got: undef
+#     expected: 'SemLoom SemMap'
+[14:46:42.852](0.000s) not ok 5 - new Map owns schema 4
+[14:46:42.853](0.000s)
+[14:46:42.853](0.000s) #   Failed test 'new Map owns schema 4'
+#   at t/006_map_plan.pl line 49.
+[14:46:42.853](0.000s) #          got: undef
+#     expected: '4'
+[14:46:42.853](0.000s) not ok 6 - plan identifies generative Map semantics
+[14:46:42.853](0.000s)
+[14:46:42.853](0.000s) #   Failed test 'plan identifies generative Map semantics'
+#   at t/006_map_plan.pl line 50.
+[14:46:42.853](0.000s) #          got: undef
+#     expected: 'semloom.semantic.sem_map.generate.v1'
+[14:46:42.853](0.000s) not ok 7 - PG plan identity matches the independent Map vector
+[14:46:42.853](0.000s)
+[14:46:42.853](0.000s) #   Failed test 'PG plan identity matches the independent Map vector'
+#   at t/006_map_plan.pl line 51.
+[14:46:42.853](0.000s) #          got: undef
+#     expected: 'b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba'
+[14:46:42.853](0.000s) not ok 8 - Map owns its prompt program
+[14:46:42.853](0.000s)
+[14:46:42.853](0.000s) #   Failed test 'Map owns its prompt program'
+#   at t/006_map_plan.pl line 53.
+[14:46:42.854](0.000s) #          got: undef
+#     expected: 'semloom.sem_map.chat.v1'
+[14:46:42.854](0.000s) not ok 9 - Map owns its text result policy
+[14:46:42.854](0.000s)
+[14:46:42.854](0.000s) #   Failed test 'Map owns its text result policy'
+#   at t/006_map_plan.pl line 54.
+[14:46:42.854](0.000s) #          got: undef
+#     expected: 'semloom.sem_map.utf8_text.v1'
+[14:46:42.854](0.000s) not ok 10 - plan owns the model
+[14:46:42.854](0.000s)
+[14:46:42.854](0.000s) #   Failed test 'plan owns the model'
+#   at t/006_map_plan.pl line 55.
+[14:46:42.854](0.000s) #          got: undef
+#     expected: 'golden-map-v1'
+[14:46:42.854](0.000s) not ok 11 - plan owns the normalized output token cap
+[14:46:42.854](0.000s)
+[14:46:42.854](0.000s) #   Failed test 'plan owns the normalized output token cap'
+#   at t/006_map_plan.pl line 56.
+[14:46:42.854](0.000s) #          got: undef
+#     expected: '128'
+[14:46:42.854](0.000s) not ok 12 - plan owns its input byte cap
+[14:46:42.854](0.000s)
+[14:46:42.854](0.000s) #   Failed test 'plan owns its input byte cap'
+#   at t/006_map_plan.pl line 57.
+[14:46:42.855](0.000s) #          got: undef
+#     expected: '163840'
+[14:46:42.855](0.000s) not ok 13 - plan owns its output byte cap
+[14:46:42.855](0.000s)
+[14:46:42.855](0.000s) #   Failed test 'plan owns its output byte cap'
+#   at t/006_map_plan.pl line 58.
+[14:46:42.855](0.000s) #          got: undef
+#     expected: '65536'
+[14:46:42.855](0.000s) not ok 14 - EXPLAIN does not claim connected execution
+[14:46:42.855](0.000s)
+[14:46:42.855](0.000s) #   Failed test 'EXPLAIN does not claim connected execution'
+#   at t/006_map_plan.pl line 59.
+[14:46:42.855](0.000s) #          got: undef
+#     expected: 'plan-only'
+[14:46:42.865](0.010s) ok 15 - EXPLAIN does not disclose the instruction
+[14:46:42.873](0.008s) ok 16 - unconnected generative Map cannot execute
+[14:46:42.873](0.000s) not ok 17 - new plan cannot silently use an old provider path
+[14:46:42.873](0.000s)
+[14:46:42.873](0.000s) #   Failed test 'new plan cannot silently use an old provider path'
+#   at t/006_map_plan.pl line 63.
+[14:46:42.873](0.000s) #                   'psql:<stdin>:2: ERROR:  55000: ai_semantic.map marker was not lowered to a semantic plan
+# HINT:  Load semloom_pg before planning and use a supported SemMap query shape.
+# LOCATION:  semloom_marker_map, marker.c:11'
+#     doesn't match '(?^:ERROR:  0A000: generative SemMap execution is not connected\n)'
+[14:46:42.874](0.000s) ok 18 - plan-only Map made zero provider connections
+### Stopping node "map_plan" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "map_plan"
+[14:46:42.978](0.105s) 1..18
+[14:46:42.980](0.002s) # Looks like you failed 12 tests of 18.

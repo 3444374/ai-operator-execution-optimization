@@ -19,6 +19,12 @@ SELECT and INSERT ... SELECT are verified with fixtures. Later controlled resour
 The latter executes 14 old/choice requests and two NULL controls; the cumulative budget is 15/100 including
 one failed collector run. This is execution evidence, not model-quality qualification.
 
+The independent Map PG branch adds the 0.2.0 three-argument marker, schema 4, copied-plan validation and
+native permission checks. [PG plan verification](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md)
+at `2205ccbb` passes PG18.3 regression 1/1, TAP 1260/1260 and 136/136 local/server Python tests.
+It is not merged into main: EXPLAIN is available, but actual generated Map execution explicitly rejects until
+the C v5 client is connected. No real Map model or resource validation was run.
+
 The integrated [function-identity slice](../experiments/results/postgresql/function_identity_20260902/README.md)
 checks extension membership before lowering markers and tests function replacement/drop-recreate plan revalidation.
 Its implementation and evidence are included in main. Membership-only ADD/DROP requires refreshing every relevant physical connection

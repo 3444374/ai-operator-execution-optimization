@@ -16,7 +16,8 @@
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护；消息、纯值和 Python v5 子切片已验证并合入本地 main，
-PG plan/权限、C v5 与完整 golden/模型/资源检查仍待完成，不表示新增 Map SQL 已可执行。
+独立分支的 PG plan/权限子切片已验证，尚未合入 main；C v5 与完整 golden/模型/资源检查仍待完成，
+不表示新增 Map SQL 已可执行。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
 
@@ -535,7 +536,9 @@ AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重
 `6903cf46` 完成[规范消息编译](../results/postgresql/semmap_messages_20260903/README.md)，
 `425d2b1c` 随后验证[C/Python 纯值和 Python v5](../results/postgresql/semmap_values_20260903/README.md)。
 上述子切片与后续深层 JSON 修复已合入本地 main，历史验证范围与提交身份保留。
-PG plan、C v5 互通、PG＋golden、真实模型与资源须继续分阶段验收，不能把本子切片写成可执行生成型 Map。
+后续独立分支已完成 [PG plan/权限检查](../results/postgresql/semmap_pg_plan_20260903/README.md)，
+只支持 EXPLAIN、实际执行明确拒绝。C v5 互通、PG＋golden、真实模型与资源继续分阶段验收，
+不能把本子切片写成可执行生成型 Map。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。

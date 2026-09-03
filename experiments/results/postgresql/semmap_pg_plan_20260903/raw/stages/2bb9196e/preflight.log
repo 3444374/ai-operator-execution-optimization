@@ -1,0 +1,153 @@
+{
+  "assets_manifest": "<test-worktree>/deploy/runtime/assets.json",
+  "checks": [
+    {
+      "check": "machine:platform",
+      "detail": "observed=Linux; allowed=['Linux']",
+      "status": "ok"
+    },
+    {
+      "check": "machine:python",
+      "detail": "observed=3.12.3; minimum=3.10",
+      "status": "ok"
+    },
+    {
+      "check": "machine:cpu_slots",
+      "detail": "observed=128; minimum=10",
+      "status": "ok"
+    },
+    {
+      "check": "environment:PROJECT_ROOT",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "environment:ARTIFACT_ROOT",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "environment:MODEL_ROOT",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "environment:DATA_ROOT",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "environment:VENV_ROOT",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "environment:DATABASE_URL",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "environment:GPU_IDS",
+      "detail": "set",
+      "status": "ok"
+    },
+    {
+      "check": "command:git",
+      "detail": "/usr/bin/git",
+      "status": "ok"
+    },
+    {
+      "check": "command:psql",
+      "detail": "/usr/bin/psql",
+      "status": "ok"
+    },
+    {
+      "check": "command:nvidia-smi",
+      "detail": "/usr/bin/nvidia-smi",
+      "status": "ok"
+    },
+    {
+      "check": "command:nvcc",
+      "detail": "not found on PATH",
+      "status": "optional_missing"
+    },
+    {
+      "check": "path:PROJECT_ROOT",
+      "detail": "<private-runtime-path>",
+      "status": "ok"
+    },
+    {
+      "check": "path:VENV_ROOT",
+      "detail": "<private-runtime-path>",
+      "status": "ok"
+    },
+    {
+      "check": "machine:disk_free",
+      "detail": "path=<private-runtime-path> free_gib=205.56; minimum=20.00",
+      "status": "ok"
+    },
+    {
+      "check": "machine:gpu",
+      "detail": "count=2; minimum_count=2; memory_mib=[24564, 24564]; minimum_memory_mib=20000; rows=['NVIDIA GeForce RTX 4090, 24564, 595.71.05', 'NVIDIA GeForce RTX 4090, 24564, 595.71.05']",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:numpy",
+      "detail": "import=numpy; version=numpy==2.4.6; install=numpy",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:pyarrow",
+      "detail": "import=pyarrow; version=pyarrow==24.0.0; install=pyarrow>=16,<25",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:ray",
+      "detail": "import=ray; version=ray==2.56.1; install=ray[data,serve]",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:psycopg",
+      "detail": "import=psycopg; version=psycopg==3.3.4; install=psycopg[binary]>=3.2",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:daft",
+      "detail": "import=daft; version=daft==0.7.21; install=daft",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:psutil",
+      "detail": "import=psutil; version=psutil==7.2.2; install=psutil>=5.9",
+      "status": "ok"
+    }
+  ],
+  "env_file": "<runtime-env>",
+  "groups": [
+    "core"
+  ],
+  "machine": {
+    "cpu_slots": 128,
+    "gpu_driver_versions": [
+      "595.71.05",
+      "595.71.05"
+    ],
+    "gpu_memory_mib": [
+      24564,
+      24564
+    ],
+    "gpu_names": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "machine_id": "machine-4309732bb2d407f0",
+    "platform": "Linux",
+    "python": "3.12.3"
+  },
+  "platform": "Linux-5.15.0-97-generic-x86_64-with-glibc2.35",
+  "profile": "<test-worktree>/deploy/runtime/profiles/autodl_2x4090.json",
+  "profile_selection": "automatic",
+  "python": "3.12.3 | packaged by Anaconda, Inc. | (main, May  6 2024, 19:46:43) [GCC 11.2.0]",
+  "schema_version": 1,
+  "status": "ok"
+}

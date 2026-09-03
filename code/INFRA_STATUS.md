@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-03（Map 纯值、Python v5 与深层 JSON 修复已合入本地 main；PG Map 接线、质量/校准仍未完成）
+日期：2026-09-03（Map PG plan/权限在独立分支完成；C v5 执行接线、质量/校准仍未完成）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -37,7 +37,15 @@ SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合
 见[追加验证](../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)。未重跑服务器 PG 或模型，旧 TAP 仍绑定 `425d2b1c`。
 已从 `63d86c0e` 快进合入 `b0400944`；合并后的本地 main 复跑 136/136 与 C11 通过，
 见[合并检查](../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration)。本次未推送或部署服务器。
-schema 4 的 PG 保存、C port/wire v5、三参 Map 与新 PG 行为仍待实现；当前 SQL Map 仍为 recording。
+随后独立分支 `codex/semmap-pg-plan` 的 `2205ccbb` 已完成 schema 4 的 PG 保存、SQL 0.2.0
+新三参 Map 注册/升级、固定参数来源与值检查、计划复制/严格解码、原生 EXECUTE ACL/hook 和函数依赖。
+普通 EXPLAIN 显示 `plan-only / not-connected`；实际执行在 child/provider 初始化前以 `0A000` 明确拒绝。
+新重载的 SELECT/直接 INSERT SELECT 规划、缓存计划跨会话撤权、函数替换/删除重建与成员手动刷新
+均有测试。输入/谓词子查询反例已最小修复；仅成员变化的自动刷新仍未实现。
+[PG plan 验证](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md)绑定 `2205ccbb`：
+PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新 plan 238 项）、本地/服务器各 136/136 与 C11。
+该分支尚未合入或推送 main；服务器原主工作树/工具链未覆盖。C port/wire v5 与新 Map 实际逐行执行
+仍待接线，当前可执行 SQL Map 仍为 recording。
 没有真实 Map 模型或资源资格，下方历史实现与测试记录保持原提交身份。
 
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定

@@ -6,6 +6,13 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## PostgreSQL 生成型 Map PG plan/权限（2026-09-03）
+
+[PG plan 与权限验证](postgresql/semmap_pg_plan_20260903/README.md)：独立分支 `2205ccbb`，
+新 SQL 0.2.0/schema 4、固定参数、复制/严格解码、原生 EXECUTE ACL/hook 与缓存计划检查；
+PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260、本地/服务器各 136/136 与 C11 通过。
+本分支未合入 main，实际生成执行仍明确拒绝；没有新 Map 模型或资源验收。失败与中间结果单独保留。
+
 ## PostgreSQL 生成型 Map 纯值与 Python v5（2026-09-03）
 
 [纯值与 gateway 验证](postgresql/semmap_values_20260903/README.md)：独立分支源码 `425d2b1c`，

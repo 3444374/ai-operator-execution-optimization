@@ -49,7 +49,15 @@ The [JSON-depth follow-up](../../../experiments/results/postgresql/semmap_values
 at `a1bbdd30` fixes gateway input isolation with 136/136 local checks; C/SQL are unchanged and PG was not rerun.
 These slices and their evidence are included in local main through `b0400944`;
 the [integration recheck](../../../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11 without a new server run.
-The PG schema 4 plan, C v5 client, generative Map SQL and PG golden/real-model/resource checks remain pending.
+The independent `codex/semmap-pg-plan` branch now adds the SQL 0.2.0 `map(text,text,jsonb)` marker and schema 4,
+including fresh installation/upgrade, copied plans, fixed argument validation and native EXECUTE permission checks.
+See the [PG plan checks](../../../experiments/results/postgresql/semmap_pg_plan_20260903/README.md), bound to `2205ccbb`:
+PG18.3 warning-free build, regression 1/1, TAP 1260/1260 and 136/136 local/server Python checks pass.
+This branch has not been merged or pushed to main. Plain EXPLAIN reports `Execution Support: plan-only`;
+actual execution raises `0A000: generative SemMap execution is not connected` before initializing a child or provider.
+The C v5 client and new Map golden/real-model/resource checks remain pending. Executable Map is still recording.
+After installation, an existing 0.1.0 database can register the new marker with
+`ALTER EXTENSION semloom_pg UPDATE TO '0.2.0'`; this preserves existing function identities and grants.
 
 This extension remains the project's own frontend. The company demo provides scoped engineering references;
 later the project's own operator semantics, processing/optimization methods and SemLoom execution capabilities

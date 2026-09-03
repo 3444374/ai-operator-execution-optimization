@@ -1,0 +1,415 @@
+# Checking port 28609
+# Found port 28609
+Name: map_plan
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/archives
+Connection string: port=28609 host=/tmp/I2jpHybXBu
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log
+[15:13:33.376](0.020s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+### Starting node "map_plan"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log --options --cluster-name=map_plan start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "map_plan" is 99268
+[15:13:34.073](0.698s) ok 1 - existing extension upgrades to the generative Map SQL interface
+[15:13:34.083](0.009s) ok 2 - upgrade preserves all old function identities, attributes and grants
+[15:13:34.091](0.008s) ok 3 - new Map has text output and explicit safe marker attributes
+[15:13:34.112](0.021s) ok 4 - generative Map uses the existing Map carrier
+[15:13:34.112](0.000s) ok 5 - new Map owns schema 4
+[15:13:34.112](0.000s) ok 6 - plan identifies generative Map semantics
+[15:13:34.112](0.000s) ok 7 - PG plan identity matches the independent Map vector
+[15:13:34.113](0.000s) ok 8 - Map owns its prompt program
+[15:13:34.113](0.000s) ok 9 - Map owns its text result policy
+[15:13:34.113](0.000s) ok 10 - plan owns the model
+[15:13:34.113](0.000s) ok 11 - plan owns the normalized output token cap
+[15:13:34.113](0.000s) ok 12 - plan owns its input byte cap
+[15:13:34.113](0.000s) ok 13 - plan owns its output byte cap
+[15:13:34.113](0.000s) ok 14 - EXPLAIN does not claim connected execution
+[15:13:34.124](0.010s) ok 15 - EXPLAIN does not disclose the instruction
+[15:13:34.135](0.011s) ok 16 - unconnected generative Map cannot execute
+[15:13:34.135](0.000s) ok 17 - new plan cannot silently use an old provider path
+[15:13:34.145](0.010s) ok 18 - force_custom_plan rejects a parameter used as instruction
+[15:13:34.145](0.000s) ok 19 - force_custom_plan reports the same early-source error for instruction
+[15:13:34.155](0.010s) ok 20 - force_custom_plan rejects a parameter used as options
+[15:13:34.155](0.000s) ok 21 - force_custom_plan reports the same early-source error for options
+[15:13:34.168](0.013s) ok 22 - force_custom_plan still permits ordinary input and predicate parameters
+[15:13:34.177](0.009s) ok 23 - force_generic_plan rejects a parameter used as instruction
+[15:13:34.177](0.000s) ok 24 - force_generic_plan reports the same early-source error for instruction
+[15:13:34.184](0.007s) ok 25 - force_generic_plan rejects a parameter used as options
+[15:13:34.184](0.000s) ok 26 - force_generic_plan reports the same early-source error for options
+[15:13:34.194](0.009s) ok 27 - force_generic_plan still permits ordinary input and predicate parameters
+[15:13:34.211](0.018s) ok 28 - fixed instruction rejects body
+[15:13:34.212](0.000s) ok 29 - non-constant instruction has the exact early-source error
+[15:13:34.221](0.010s) ok 30 - fixed instruction rejects (SELECT 'Echo the input.'::text)
+[15:13:34.221](0.000s) ok 31 - non-constant instruction has the exact early-source error
+[15:13:34.228](0.007s) ok 32 - fixed instruction rejects stable_instruction()
+[15:13:34.229](0.000s) ok 33 - non-constant instruction has the exact early-source error
+[15:13:34.235](0.007s) ok 34 - fixed instruction rejects volatile_instruction()
+[15:13:34.236](0.000s) ok 35 - non-constant instruction has the exact early-source error
+[15:13:34.248](0.013s) ok 36 - ordinary immutable folding and equal numeric values preserve Map identity
+[15:13:34.268](0.020s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[15:13:34.268](0.000s) # issuing query 1 via background psql: SET ROLE map_reader
+[15:13:34.269](0.000s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[15:13:34.269](0.000s) # issuing query 2 via background psql: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs');
+[15:13:34.271](0.002s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[15:13:34.271](0.000s) ok 37 - missing EXECUTE is checked even for plan-only, empty and NULL queries
+[15:13:34.271](0.000s) # issuing query 3 via background psql: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs LIMIT 0');
+[15:13:34.272](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[15:13:34.272](0.000s) ok 38 - missing EXECUTE is checked even for plan-only, empty and NULL queries
+[15:13:34.272](0.000s) # issuing query 4 via background psql: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs WHERE false');
+[15:13:34.273](0.001s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[15:13:34.273](0.000s) ok 39 - missing EXECUTE is checked even for plan-only, empty and NULL queries
+[15:13:34.273](0.000s) # issuing query 5 via background psql: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs WHERE body IS NULL');
+[15:13:34.274](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[15:13:34.274](0.000s) ok 40 - missing EXECUTE is checked even for plan-only, empty and NULL queries
+[15:13:34.274](0.000s) # issuing query 6 via background psql: SELECT map_test_capture('EXPLAIN SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs');
+[15:13:34.274](0.001s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[15:13:34.275](0.000s) ok 41 - missing EXECUTE is checked even for plan-only, empty and NULL queries
+[15:13:34.285](0.011s) # issuing query 7 via background psql: SET plan_cache_mode=force_custom_plan; PREPARE map_acl(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs WHERE id >= $1;
+[15:13:34.286](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[15:13:34.286](0.000s) # issuing query 8 via background psql: EXPLAIN (FORMAT JSON) EXECUTE map_acl(1)
+[15:13:34.287](0.001s) # results query 8:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 8:
+# ',
+#   'stdout' => '[
+#   {
+#     "Plan": {
+#       "Node Type": "Custom Scan",
+#       "Custom Plan Provider": "SemLoom SemMap",
+#       "Parallel Aware": false,
+#       "Async Capable": false,
+#       "Startup Cost": 0.00,
+#       "Total Cost": 27.99,
+#       "Plan Rows": 423,
+#       "Plan Width": 36,
+#       "Disabled": false,
+#       "Physical Role": "reference",
+#       "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+#       "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+#       "Prompt Program": "semloom.sem_map.chat.v1",
+#       "Result Parser": "semloom.sem_map.utf8_text.v1",
+#       "Model": "golden-map-v1",
+#       "Semantic Plan Schema": 4,
+#       "Semantic Spec Digest": "b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba",
+#       "Max Tokens": 128,
+#       "Max Input Bytes": 163840,
+#       "Max Output Bytes": 65536,
+#       "Execution Support": "plan-only",
+#       "Provider": "not-connected",
+#       "Mapped Column": 2,
+#       "Plans": [
+#         {
+#           "Node Type": "Seq Scan",
+#           "Parent Relationship": "child",
+#           "Parallel Aware": false,
+#           "Async Capable": false,
+#           "Relation Name": "map_inputs",
+#           "Alias": "map_inputs",
+#           "Startup Cost": 0.00,
+#           "Total Cost": 26.93,
+#           "Plan Rows": 423,
+#           "Plan Width": 36,
+#           "Disabled": false,
+#           "Filter": "(id >= 1)"
+#         }
+#       ]
+#     }
+#   }
+# ]
+# background_psql: QUERY_SEPARATOR 8:
+# '
+# }
+[15:13:34.289](0.001s) ok 42 - force_custom_plan caches the complete Map definition
+[15:13:34.289](0.000s) # issuing query 9 via background psql: SELECT map_test_capture('EXECUTE map_acl(1)');
+[15:13:34.290](0.001s) # results query 9:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 9:
+# ',
+#   'stdout' => '0A000|generative SemMap execution is not connected
+# background_psql: QUERY_SEPARATOR 9:
+# '
+# }
+[15:13:34.290](0.000s) ok 43 - force_custom_plan authorized execution reaches the explicit unconnected state
+[15:13:34.290](0.000s) # issuing query 10 via background psql: SELECT custom_plans > 0 FROM pg_prepared_statements WHERE name='map_acl'
+[15:13:34.291](0.001s) # results query 10:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 10:
+# ',
+#   'stdout' => 't
+# background_psql: QUERY_SEPARATOR 10:
+# '
+# }
+[15:13:34.291](0.000s) ok 44 - force_custom_plan actually exercised its requested plan kind before revocation
+[15:13:34.301](0.010s) # issuing query 11 via background psql: SELECT map_test_capture('EXECUTE map_acl(1)');
+[15:13:34.302](0.001s) # results query 11:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 11:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 11:
+# '
+# }
+[15:13:34.302](0.000s) ok 45 - force_custom_plan rechecks EXECUTE after another session revokes it
+[15:13:34.310](0.008s) # issuing query 12 via background psql: SELECT map_test_capture('EXECUTE map_acl(1)');
+[15:13:34.311](0.001s) # results query 12:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 12:
+# ',
+#   'stdout' => '0A000|generative SemMap execution is not connected
+# background_psql: QUERY_SEPARATOR 12:
+# '
+# }
+[15:13:34.312](0.000s) ok 46 - force_custom_plan permission grant restores authorized plan initialization
+[15:13:34.312](0.000s) # issuing query 13 via background psql: DEALLOCATE map_acl
+[15:13:34.312](0.000s) # results query 13:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 13:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 13:
+# '
+# }
+[15:13:34.312](0.000s) # issuing query 14 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE map_acl(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs WHERE id >= $1;
+[15:13:34.313](0.001s) # results query 14:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 14:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 14:
+# '
+# }
+[15:13:34.313](0.000s) # issuing query 15 via background psql: EXPLAIN (FORMAT JSON) EXECUTE map_acl(1)
+[15:13:34.314](0.001s) # results query 15:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 15:
+# ',
+#   'stdout' => '[
+#   {
+#     "Plan": {
+#       "Node Type": "Custom Scan",
+#       "Custom Plan Provider": "SemLoom SemMap",
+#       "Parallel Aware": false,
+#       "Async Capable": false,
+#       "Startup Cost": 0.00,
+#       "Total Cost": 27.99,
+#       "Plan Rows": 423,
+#       "Plan Width": 36,
+#       "Disabled": false,
+#       "Physical Role": "reference",
+#       "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+#       "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+#       "Prompt Program": "semloom.sem_map.chat.v1",
+#       "Result Parser": "semloom.sem_map.utf8_text.v1",
+#       "Model": "golden-map-v1",
+#       "Semantic Plan Schema": 4,
+#       "Semantic Spec Digest": "b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba",
+#       "Max Tokens": 128,
+#       "Max Input Bytes": 163840,
+#       "Max Output Bytes": 65536,
+#       "Execution Support": "plan-only",
+#       "Provider": "not-connected",
+#       "Mapped Column": 2,
+#       "Plans": [
+#         {
+#           "Node Type": "Seq Scan",
+#           "Parent Relationship": "child",
+#           "Parallel Aware": false,
+#           "Async Capable": false,
+#           "Relation Name": "map_inputs",
+#           "Alias": "map_inputs",
+#           "Startup Cost": 0.00,
+#           "Total Cost": 26.93,
+#           "Plan Rows": 423,
+#           "Plan Width": 36,
+#           "Disabled": false,
+#           "Filter": "(id >= $1)"
+#         }
+#       ]
+#     }
+#   }
+# ]
+# background_psql: QUERY_SEPARATOR 15:
+# '
+# }
+[15:13:34.315](0.001s) ok 47 - force_generic_plan caches the complete Map definition
+[15:13:34.315](0.000s) # issuing query 16 via background psql: SELECT map_test_capture('EXECUTE map_acl(1)');
+[15:13:34.315](0.000s) # results query 16:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 16:
+# ',
+#   'stdout' => '0A000|generative SemMap execution is not connected
+# background_psql: QUERY_SEPARATOR 16:
+# '
+# }
+[15:13:34.316](0.000s) ok 48 - force_generic_plan authorized execution reaches the explicit unconnected state
+[15:13:34.316](0.000s) # issuing query 17 via background psql: SELECT generic_plans > 0 FROM pg_prepared_statements WHERE name='map_acl'
+[15:13:34.316](0.000s) # results query 17:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 17:
+# ',
+#   'stdout' => 't
+# background_psql: QUERY_SEPARATOR 17:
+# '
+# }
+[15:13:34.316](0.000s) ok 49 - force_generic_plan actually exercised its requested plan kind before revocation
+[15:13:34.325](0.009s) # issuing query 18 via background psql: SELECT map_test_capture('EXECUTE map_acl(1)');
+[15:13:34.326](0.001s) # results query 18:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 18:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 18:
+# '
+# }
+[15:13:34.326](0.000s) ok 50 - force_generic_plan rechecks EXECUTE after another session revokes it
+[15:13:34.336](0.009s) # issuing query 19 via background psql: SELECT map_test_capture('EXECUTE map_acl(1)');
+[15:13:34.337](0.001s) # results query 19:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 19:
+# ',
+#   'stdout' => '0A000|generative SemMap execution is not connected
+# background_psql: QUERY_SEPARATOR 19:
+# '
+# }
+[15:13:34.337](0.000s) ok 51 - force_generic_plan permission grant restores authorized plan initialization
+[15:13:34.337](0.000s) # issuing query 20 via background psql: DEALLOCATE map_acl
+[15:13:34.337](0.000s) # results query 20:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 20:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 20:
+# '
+# }
+[15:13:34.348](0.011s) not ok 52 - constant CASE is not silently enabled by adding Map
+[15:13:34.348](0.000s)
+[15:13:34.348](0.000s) #   Failed test 'constant CASE is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 167.
+[15:13:34.349](0.000s) #          got: '0'
+#     expected: anything else
+[15:13:34.349](0.000s) not ok 53 - constant CASE has an explicit unsupported-shape error
+[15:13:34.349](0.000s)
+[15:13:34.349](0.000s) #   Failed test 'constant CASE has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 168.
+[15:13:34.349](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: ai_semantic\.map\ is\ only\ supported\ as\ a\ top\-level\ output\ expression\n)'
+[15:13:34.360](0.011s) not ok 54 - WHERE expression is not silently enabled by adding Map
+[15:13:34.360](0.000s)
+[15:13:34.360](0.000s) #   Failed test 'WHERE expression is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 167.
+[15:13:34.360](0.000s) #          got: '0'
+#     expected: anything else
+[15:13:34.361](0.000s) not ok 55 - WHERE expression has an explicit unsupported-shape error
+[15:13:34.361](0.000s)
+[15:13:34.361](0.000s) #   Failed test 'WHERE expression has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 168.
+[15:13:34.361](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: ai_semantic\.map\ is\ only\ supported\ as\ a\ top\-level\ output\ expression\n)'
+[15:13:34.369](0.008s) not ok 56 - Map and Filter is not silently enabled by adding Map
+[15:13:34.369](0.000s)
+[15:13:34.369](0.000s) #   Failed test 'Map and Filter is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 167.
+[15:13:34.369](0.000s) #          got: '0'
+#     expected: anything else
+[15:13:34.370](0.000s) not ok 57 - Map and Filter has an explicit unsupported-shape error
+[15:13:34.370](0.000s)
+[15:13:34.370](0.000s) #   Failed test 'Map and Filter has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 168.
+[15:13:34.370](0.000s) #                   ''
+#     doesn't match '(?^:ERROR:  0A000: SemMap\ and\ SemFilter\ cannot\ be\ combined\ in\ the\ current\ capability\n)'
+[15:13:34.370](0.000s) ok 58 - plan-only Map made zero provider connections
+### Stopping node "map_plan" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "map_plan"
+[15:13:34.475](0.105s) 1..58
+[15:13:34.477](0.002s) # Looks like you failed 6 tests of 58.

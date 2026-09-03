@@ -5,7 +5,10 @@
 状态：合同已定稿；已验证消息、C/Python 纯值、Python v5 及旧 PG 路径兼容，
 见[本轮记录](../results/postgresql/semmap_values_20260903/README.md)（服务器资格源码 `425d2b1c`）。
 包含后续深层 JSON 修复的 `b0400944` 已合入本地 main，各次测试仍绑定原提交，不重新归属旧证据。
-新三参 Map 的 PG plan、C wire 接线、完整 golden/模型/资源验收仍 pending，不能由旧路径通过代替。
+独立分支 `codex/semmap-pg-plan` 已完成新三参 Map 的 SQL/schema 4、PG plan 与权限初始化检查，
+见 [PG plan 记录](../results/postgresql/semmap_pg_plan_20260903/README.md)（`2205ccbb`，尚未合入 main）。
+只支持普通 EXPLAIN；实际执行仍以 `0A000` 拒绝。C wire 接线、完整 golden/模型/资源验收仍 pending，
+不能由 plan-only 或旧路径通过代替。
 
 生产代码对照基线：a3199bd9。本文面向研发与审查者，不是已发布功能说明。
 
@@ -53,7 +56,7 @@ temperature=0 也不保证不同硬件、模型版本或重复运行逐字相同
 
 ### 3.1 入口与形状
 
-以下是待实现语法示例，当前 main 还不能执行该重载：
+以下是目标执行语法；独立 PG plan 分支已注册该重载并支持 EXPLAIN，但当前仍不能执行生成请求：
 
 ```sql
 SELECT doc_id,

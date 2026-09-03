@@ -1,0 +1,35 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'input subquery is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 388.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'input subquery has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 389.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: query\ shape\ is\ outside\ the\ current\ SemMap\ capability\n)'
+
+#   Failed test 'predicate subquery is not silently enabled by adding Map'
+#   at t/006_map_plan.pl line 388.
+#          got: '0'
+#     expected: anything else
+
+#   Failed test 'predicate subquery has an explicit unsupported-shape error'
+#   at t/006_map_plan.pl line 389.
+#                   ''
+#     doesn't match '(?^:ERROR:  0A000: query\ shape\ is\ outside\ the\ current\ SemMap\ capability\n)'
+# Looks like you failed 4 tests of 238.
+t/006_map_plan.pl ..
+Dubious, test returned 4 (wstat 1024, 0x400)
+Failed 4/238 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 1024 Tests: 238 Failed: 4)
+  Failed tests:  222-225
+  Non-zero exit status: 4
+Files=1, Tests=238,  3 wallclock secs ( 0.06 usr  0.01 sys +  1.68 cusr  0.77 csys =  2.52 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

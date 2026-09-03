@@ -1,0 +1,29 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+syntax error at t/006_map_plan.pl line 147, near "|,"
+"my" variable $accepted masks earlier declaration in same statement at t/006_map_plan.pl line 151.
+syntax error at t/006_map_plan.pl line 152, near "}"
+Can't use global $_ in "my" at t/006_map_plan.pl line 164, near ". $_ "
+"my" variable $option_case masks earlier declaration in same statement at t/006_map_plan.pl line 167.
+Can't redeclare "my" in "my" at t/006_map_plan.pl line 168, near "my"
+Global symbol "$config" requires explicit package name (did you forget to declare "my $config"?) at t/006_map_plan.pl line 169.
+syntax error at t/006_map_plan.pl line 172, near "}"
+Can't redeclare "my" in "my" at t/006_map_plan.pl line 175, near "my"
+"my" variable $accepted masks earlier declaration in same scope at t/006_map_plan.pl line 175.
+"my" variable $node masks earlier declaration in same statement at t/006_map_plan.pl line 175.
+"my" variable $accepted masks earlier declaration in same statement at t/006_map_plan.pl line 178.
+"my" variable $tokens masks earlier declaration in same statement at t/006_map_plan.pl line 178.
+syntax error at t/006_map_plan.pl line 179, near "}"
+t/006_map_plan.pl has too many errors.
+t/006_map_plan.pl ..
+Dubious, test returned 255 (wstat 65280, 0xff00)
+No subtests run
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 65280 Tests: 0 Failed: 0)
+  Non-zero exit status: 255
+  Parse errors: No plan found in TAP output
+Files=1, Tests=0,  1 wallclock secs ( 0.02 usr  0.00 sys +  0.11 cusr  0.03 csys =  0.16 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

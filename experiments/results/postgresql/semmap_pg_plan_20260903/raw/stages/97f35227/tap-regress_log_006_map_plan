@@ -1,0 +1,93 @@
+# Checking port 15131
+# Found port 15131
+Name: map_plan
+Version: 18.3
+Data directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+Backup directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/backup
+Archive directory: <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/archives
+Connection string: port=15131 host=/tmp/TCTpvQRb6t
+Log file: <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log
+[15:00:41.296](0.020s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata -l logfile start
+
+# Running: <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata
+### Starting node "map_plan"
+# Running: pg_ctl --wait --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --log <test-worktree>/code/postgres/semloom_pg/tmp_check/log/006_map_plan_map_plan.log --options --cluster-name=map_plan start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "map_plan" is 98090
+[15:00:41.970](0.674s) ok 1 - existing extension upgrades to the generative Map SQL interface
+[15:00:41.980](0.010s) ok 2 - upgrade preserves all old function identities, attributes and grants
+[15:00:41.990](0.009s) ok 3 - new Map has text output and explicit safe marker attributes
+[15:00:42.009](0.020s) ok 4 - generative Map uses the existing Map carrier
+[15:00:42.009](0.000s) ok 5 - new Map owns schema 4
+[15:00:42.010](0.000s) ok 6 - plan identifies generative Map semantics
+[15:00:42.010](0.000s) ok 7 - PG plan identity matches the independent Map vector
+[15:00:42.010](0.000s) ok 8 - Map owns its prompt program
+[15:00:42.010](0.000s) ok 9 - Map owns its text result policy
+[15:00:42.010](0.000s) ok 10 - plan owns the model
+[15:00:42.010](0.000s) ok 11 - plan owns the normalized output token cap
+[15:00:42.010](0.000s) ok 12 - plan owns its input byte cap
+[15:00:42.010](0.000s) ok 13 - plan owns its output byte cap
+[15:00:42.011](0.000s) ok 14 - EXPLAIN does not claim connected execution
+[15:00:42.018](0.008s) ok 15 - EXPLAIN does not disclose the instruction
+[15:00:42.028](0.010s) ok 16 - unconnected generative Map cannot execute
+[15:00:42.029](0.000s) ok 17 - new plan cannot silently use an old provider path
+[15:00:42.037](0.008s) ok 18 - force_custom_plan rejects a parameter used as instruction
+[15:00:42.037](0.000s) ok 19 - force_custom_plan reports the same early-source error for instruction
+[15:00:42.046](0.009s) ok 20 - force_custom_plan rejects a parameter used as options
+[15:00:42.047](0.000s) ok 21 - force_custom_plan reports the same early-source error for options
+[15:00:42.057](0.011s) ok 22 - force_custom_plan still permits ordinary input and predicate parameters
+[15:00:42.066](0.009s) ok 23 - force_generic_plan rejects a parameter used as instruction
+[15:00:42.067](0.000s) ok 24 - force_generic_plan reports the same early-source error for instruction
+[15:00:42.077](0.010s) ok 25 - force_generic_plan rejects a parameter used as options
+[15:00:42.077](0.000s) ok 26 - force_generic_plan reports the same early-source error for options
+[15:00:42.090](0.013s) ok 27 - force_generic_plan still permits ordinary input and predicate parameters
+[15:00:42.107](0.017s) ok 28 - fixed instruction rejects body
+[15:00:42.107](0.000s) ok 29 - non-constant instruction has the exact early-source error
+[15:00:42.116](0.009s) ok 30 - fixed instruction rejects (SELECT 'Echo the input.'::text)
+[15:00:42.117](0.000s) ok 31 - non-constant instruction has the exact early-source error
+[15:00:42.125](0.008s) ok 32 - fixed instruction rejects stable_instruction()
+[15:00:42.125](0.000s) ok 33 - non-constant instruction has the exact early-source error
+[15:00:42.136](0.011s) ok 34 - fixed instruction rejects volatile_instruction()
+[15:00:42.137](0.001s) ok 35 - non-constant instruction has the exact early-source error
+[15:00:42.153](0.016s) ok 36 - ordinary immutable folding and equal numeric values preserve Map identity
+[15:00:42.153](0.000s) ok 37 - plan-only Map made zero provider connections
+### Stopping node "map_plan" using mode fast
+# Running: pg_ctl --pgdata <test-worktree>/code/postgres/semloom_pg/tmp_check/t_006_map_plan_map_plan_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "map_plan"
+[15:00:42.258](0.105s) 1..37

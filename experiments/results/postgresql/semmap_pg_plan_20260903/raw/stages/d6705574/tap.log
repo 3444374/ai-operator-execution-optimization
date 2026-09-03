@@ -1,0 +1,21 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/006_map_plan.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'existing extension upgrades to the generative Map SQL interface'
+#   at t/006_map_plan.pl line 19.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:1: ERROR:  extension "semloom_pg" has no update path from version "0.1.0" to version "0.2.0"
+# Looks like you failed 1 test of 1.
+t/006_map_plan.pl ..
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/1 subtests
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl (Wstat: 256 Tests: 1 Failed: 1)
+  Failed test:  1
+  Non-zero exit status: 1
+Files=1, Tests=1,  1 wallclock secs ( 0.02 usr  0.00 sys +  0.51 cusr  0.21 csys =  0.74 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1
