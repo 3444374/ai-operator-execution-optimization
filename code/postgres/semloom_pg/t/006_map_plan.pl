@@ -62,6 +62,49 @@ INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
     isnt($code, 0, 'unconnected generative Map cannot execute');
     like($err, qr/ERROR:  0A000: generative SemMap execution is not connected\n/,
          'new plan cannot silently use an old provider path');
+
+    for my $mode ('force_custom_plan', 'force_generic_plan')
+    {
+        for my $parameter (
+            ['instruction', 'text', '\$1', $options, q|'Echo the input.'|],
+            ['options', 'jsonb', q|'Echo the input.'|, '\$1', $options])
+        {
+            my ($label, $type, $instruction, $config, $value) = @$parameter;
+            $instruction =~ s/\\\$/\$/g;
+            $config =~ s/\\\$/\$/g;
+            my $sql = "SET plan_cache_mode=$mode; PREPARE map_parameter($type) AS " .
+                "SELECT ai_semantic.map(body, $instruction, $config) FROM ONLY map_inputs; " .
+                "EXPLAIN EXECUTE map_parameter($value);";
+            my ($result, $output, $error) = $node->psql('postgres', "\\set VERBOSITY verbose\n$sql");
+            isnt($result, 0, "$mode rejects a parameter used as $label");
+            like($error, qr/ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n/,
+                 "$mode reports the same early-source error for $label");
+        }
+        my $parameter_plan = decode_json($node->safe_psql('postgres',
+            "SET plan_cache_mode=$mode; PREPARE map_input(text, integer) AS " .
+            "SELECT ai_semantic.map(\$1, 'Echo the input.', $options) FROM ONLY map_inputs WHERE id >= \$2; " .
+            "EXPLAIN (FORMAT JSON) EXECUTE map_input('hello', 1);"))->[0]->{'Plan'};
+        is($parameter_plan->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
+           "$mode still permits ordinary input and predicate parameters");
+    }
+    $node->safe_psql('postgres', q{
+CREATE FUNCTION stable_instruction() RETURNS text LANGUAGE sql STABLE AS $$ SELECT 'Echo the input.'::text $$;
+CREATE FUNCTION volatile_instruction() RETURNS text LANGUAGE sql VOLATILE AS $$ SELECT 'Echo the input.'::text $$;
+});
+    for my $instruction ('body', "(SELECT 'Echo the input.'::text)", 'stable_instruction()', 'volatile_instruction()')
+    {
+        my ($result, $output, $error) = $node->psql('postgres',
+            "\\set VERBOSITY verbose\nEXPLAIN SELECT ai_semantic.map(body, $instruction, $options) FROM ONLY map_inputs;");
+        isnt($result, 0, "fixed instruction rejects $instruction");
+        like($error, qr/ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n/,
+             'non-constant instruction has the exact early-source error');
+    }
+    my $folded = decode_json($node->safe_psql('postgres',
+        "EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo ' || 'the input.', " .
+        q|' {"max_tokens":128.0,"temperature":-0.0,"model":"golden-map-v1"}'::jsonb| .
+        ') FROM ONLY map_inputs;'))->[0]->{'Plan'};
+    is($folded->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
+       'ordinary immutable folding and equal numeric values preserve Map identity');
 }
 ok(!IO::Select->new($listener)->can_read(0), 'plan-only Map made zero provider connections');
 close($listener);
