@@ -374,6 +374,16 @@ provider 接通不等于算子策略已移植，本合同不要求现在创建�
 
 ### 8.0 本次源码复核与首个子切片（2026-09-03）
 
+C v5 接线以 `035b0ccf` 为基线：保留已验证的 planner 来源检查和节点初始化 ACL/hook，
+只移除临时 plan-only 执行拒绝。继续采用 §7 的共享请求/生命周期原则，不读取或复制公司代码。
+`AiOpenSpec` 显式传递 stop 是否存在及计划 limits；factory 正向识别 recording、Filter 与生成 Map。
+`wire_semantic.c` 共用 framing/JSON/摘要步骤，v5 单独检查字段、身份、能力与错误 code；旧版本不变。
+runtime 在结果复制前调用现有纯值 `semloom_map_completion_status`，只负责把分类映射为
+SQLSTATE 和关闭 session；Map policy 仍由纯值模块拥有，不让通用 port 解释 SQL 或模型策略。
+先以 §10 独立 ASCII 向量通过 SQL 观察 red/green，再扩展实际文本、NULL/空串、错误、取消与
+事务测试；已有来源/权限用例随临时拒绝移除更新预期，不删除检查。共有物理身份只整理命名，摘要不变。
+此接线切片使用 PG18.3 和确定性 fixture，不启动真实模型、不消费 32 次请求预算。
+
 复核基线 `63d86c0e`；未发现需要改写本合同语义或 §10 向量的源码反例。按现有接口登记如下，
 未接线项不算已实现：
 
