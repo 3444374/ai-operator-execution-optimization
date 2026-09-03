@@ -90,6 +90,22 @@ INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
     like($err, qr/ERROR:  0A000: generative SemMap execution is not connected\n/,
          'new plan cannot silently use an old provider path');
 
+    $node->safe_psql('postgres', q{
+CREATE FUNCTION wrapped_map(input text, instruction text, options jsonb) RETURNS text
+LANGUAGE sql VOLATILE RETURN ai_semantic.map(input, instruction, options);
+});
+    for my $mode ('force_custom_plan', 'force_generic_plan')
+    {
+        my ($result, $output, $error) = $node->psql('postgres',
+            "\\set VERBOSITY verbose\nSET plan_cache_mode=$mode; PREPARE wrapped_map_parameter(text) AS " .
+            "SELECT wrapped_map(body, \$1, $options) FROM ONLY map_inputs; " .
+            "EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');");
+        isnt($result, 0, "$mode rejects a prepared instruction inside an inlined Map wrapper");
+        like($error, qr/ERROR:  0A000: /, "$mode rejects the wrapped source before execution");
+        unlike($output, qr/Custom Scan \(SemLoom SemMap\)/, 'wrapped parameter cannot acquire a generative Map plan');
+        ok(!IO::Select->new($listener)->can_read(0), "$mode wrapper check made zero provider connections");
+    }
+
     for my $mode ('force_custom_plan', 'force_generic_plan')
     {
         for my $parameter (

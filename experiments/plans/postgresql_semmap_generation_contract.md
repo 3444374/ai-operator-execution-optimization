@@ -436,6 +436,12 @@ PG plan codec caller；使用公开合成输入与 §10 独立向量，不增加
 按 SQL 注册 → plan/值/复制 → 前置来源 → ACL/依赖逐项 red/green；每次保留失败与实际源码身份。
 本阶段只允许独立 PG18.3 fixture 验证，不使用真实模型预算，不修改 runtime/provider/wire 或旧输出语义。
 
+PG plan 后续复核增加整个 Map 被 SQL 函数包装的来源反例：以 `b58479f7` 为基线，核对
+REL_18_3 `clauses.c:inline_function / eval_const_expressions_mutator`；前置 Query 不一定已经包含
+随后内联暴露的 Map。先在同一 SQL/EXPLAIN 表面验证 instruction 参数的 custom/generic 模式与零连接，
+若风险成立，只修 planner 来源识别；不全局关闭普通函数内联，不移动权限检查或改变 wire/摘要。
+本补充不新增公司参考/复用或模型运行；测试先行事实与修复结果追加到原 PG plan 结果记录。
+
 ### 8.1 开工前的研发复核
 
 研发 agent 阅读本稿和上述实际源码后，登记“可直接实现 / 需修订及反例”，至少回答：
