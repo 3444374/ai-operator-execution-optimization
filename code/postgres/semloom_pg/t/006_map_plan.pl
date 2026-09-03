@@ -22,6 +22,11 @@ $node->append_conf('postgresql.conf', "shared_preload_libraries = '$test_dir/sem
 $node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = '$socket_path'\n");
 $node->start;
 $node->safe_psql('postgres', q{CREATE EXTENSION semloom_pg VERSION '0.1.0';});
+$node->safe_psql('postgres', q{
+CREATE ROLE old_map_reader;
+REVOKE EXECUTE ON FUNCTION ai_semantic.map(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION ai_semantic.map(text) TO old_map_reader;
+});
 my $old_functions = $node->safe_psql('postgres', q{
 SELECT oid, proname, proargtypes, provolatile, proparallel, proisstrict, prosecdef, proleakproof,
        coalesce(proacl::text, '')
@@ -42,6 +47,24 @@ SELECT prorettype::regtype, l.lanname, provolatile, proparallel, proisstrict, pr
 FROM pg_proc p JOIN pg_language l ON l.oid = p.prolang
 WHERE p.oid = 'ai_semantic.map(text,text,jsonb)'::regprocedure;
 }), 'text|c|v|u|f|f|f', 'new Map has text output and explicit safe marker attributes');
+    my $definition_query = q{
+SELECT pg_get_functiondef('ai_semantic.map(text,text,jsonb)'::regprocedure);
+};
+    my $map_definition = $node->safe_psql('postgres', $definition_query);
+    $node->safe_psql('postgres', 'CREATE DATABASE map_fresh');
+    $node->safe_psql('map_fresh', 'CREATE EXTENSION semloom_pg');
+    is($node->safe_psql('map_fresh', "SELECT extversion FROM pg_extension WHERE extname='semloom_pg'"),
+       '0.2.0', 'fresh installation selects the new extension version');
+    is($node->safe_psql('map_fresh', $definition_query), $map_definition,
+       'fresh and upgraded installations expose the same new SQL definition');
+    for my $database ('postgres', 'map_fresh')
+    {
+        is($node->safe_psql($database, q{
+SELECT e.extname FROM pg_depend d JOIN pg_extension e ON e.oid = d.refobjid
+WHERE d.classid = 'pg_proc'::regclass AND d.objid = 'ai_semantic.map(text,text,jsonb)'::regprocedure
+AND d.refclassid = 'pg_extension'::regclass AND d.deptype = 'e';
+}), 'semloom_pg', "$database: the generated Map function belongs to the expected extension");
+    }
     $node->safe_psql('postgres', q{
 CREATE TABLE map_inputs(id integer, body text);
 INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
@@ -107,6 +130,59 @@ CREATE FUNCTION volatile_instruction() RETURNS text LANGUAGE sql VOLATILE AS $$ 
         ') FROM ONLY map_inputs;'))->[0]->{'Plan'};
     is($folded->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
        'ordinary immutable folding and equal numeric values preserve Map identity');
+
+    for my $invalid (
+        ['NULL instruction', 'NULL::text', $options, 'SemMap instruction and options must be non-NULL text and jsonb constants'],
+        ['NULL options', q|'Echo the input.'|, 'NULL::jsonb', 'SemMap instruction and options must be non-NULL text and jsonb constants'],
+        ['empty instruction', q|''|, $options, 'SemMap instruction must contain 1 to 4096 UTF8 bytes'],
+        ['long instruction', q|repeat('x',4097)|, $options, 'SemMap instruction must contain 1 to 4096 UTF8 bytes'],
+        ['long Unicode instruction', q|repeat(chr(30028),1366)|, $options, 'SemMap instruction must contain 1 to 4096 UTF8 bytes'])
+    {
+        my ($label, $instruction, $config, $message) = @$invalid;
+        my ($result, $output, $error) = $node->psql('postgres',
+            "\\set VERBOSITY verbose\nEXPLAIN SELECT ai_semantic.map(body, $instruction, $config) FROM ONLY map_inputs;");
+        isnt($result, 0, "$label is rejected at planning");
+        like($error, qr/ERROR:  22023: \Q$message\E\n/, "$label returns its bounded SQL validation error");
+    }
+    for my $instruction (q|repeat('x',4096)|, q|repeat(chr(30028),1365) || 'x'|, q|' '|)
+    {
+        my $accepted = decode_json($node->safe_psql('postgres',
+            "EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, $instruction, $options) FROM ONLY map_inputs"))->[0]->{'Plan'};
+        is($accepted->{'Semantic Plan Schema'}, 4, 'instruction boundary counts UTF8 bytes without trimming');
+    }
+    for my $option_case (
+        ['JSON null', 'null', 'SemMap options must contain exactly model, temperature, and max_tokens'],
+        ['array', '[]', 'SemMap options must contain exactly model, temperature, and max_tokens'],
+        ['missing field', '{"model":"golden-map-v1","temperature":0}', 'SemMap options must contain exactly model, temperature, and max_tokens'],
+        ['extra field', '{"model":"golden-map-v1","temperature":0,"max_tokens":128,"stop":[]}', 'SemMap options must contain exactly model, temperature, and max_tokens'],
+        ['wrong field', '{"model":"golden-map-v1","temperature":0,"tokens":128}', 'SemMap options must contain exactly model, temperature, and max_tokens'],
+        ['empty model', '{"model":"","temperature":0,"max_tokens":128}', 'SemMap model must contain 1 to 128 UTF8 bytes'],
+        ['NULL model', '{"model":null,"temperature":0,"max_tokens":128}', 'SemMap model must contain 1 to 128 UTF8 bytes'],
+        ['numeric model', '{"model":7,"temperature":0,"max_tokens":128}', 'SemMap model must contain 1 to 128 UTF8 bytes'],
+        ['nonzero temperature', '{"model":"golden-map-v1","temperature":0.1,"max_tokens":128}', 'SemMap temperature must be numeric zero'],
+        ['string temperature', '{"model":"golden-map-v1","temperature":"0","max_tokens":128}', 'SemMap temperature must be numeric zero'],
+        map { ["token cap $_", '{"model":"golden-map-v1","temperature":0,"max_tokens":' . $_ . '}',
+               'SemMap max_tokens must be an integer from 1 to 4096'] } qw(0 -1 4097 1.5 1e30 null true "128"))
+    {
+        my ($label, $config, $message) = @$option_case;
+        my ($result, $output, $error) = $node->psql('postgres',
+            "\\set VERBOSITY verbose\nEXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '$config'::jsonb) FROM ONLY map_inputs;");
+        isnt($result, 0, "$label is rejected in Map options");
+        like($error, qr/ERROR:  22023: \Q$message\E\n/, "$label has an exact non-payload option error");
+    }
+    for my $tokens (1, 4096)
+    {
+        my $accepted = decode_json($node->safe_psql('postgres',
+            "EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo the input.', " .
+            "'{\"model\":\"golden-map-v1\",\"temperature\":0,\"max_tokens\":$tokens}'::jsonb) FROM ONLY map_inputs"))->[0]->{'Plan'};
+        is($accepted->{'Max Tokens'}, $tokens, 'Map accepts its own output cap boundary independently of Filter');
+    }
+    my $canonical = decode_json($node->safe_psql('postgres',
+        "EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo the input.', " .
+        q|' {"model":"unused","model":"golden-map-v1","temperature":0e10,"max_tokens":1.28e2}'::jsonb| .
+        ') FROM ONLY map_inputs;'))->[0]->{'Plan'};
+    is($canonical->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
+       'JSONB last-key semantics and equivalent exponent numbers normalize before plan identity');
 
     $node->safe_psql('postgres', q{
 CREATE ROLE map_reader;
@@ -221,13 +297,91 @@ AS \$\$ BEGIN RETURN \$1; END \$\$;
     is($denied_events[1], 0, 'failed ACL does not initialize the ordinary child function');
     $hooks->quit;
 
+    my $qualified = 'ai_semantic.map(text,text,jsonb)';
+    my $identity = $node->background_psql('postgres');
+    $identity->query_safe("SET plan_cache_mode=force_generic_plan; PREPARE map_identity(integer) AS $query WHERE id=\$1;");
+    like($identity->query_safe('EXPLAIN EXECUTE map_identity(1)'), qr/Custom Scan \(SemLoom SemMap\)/,
+         'new Map generic plan initially uses its extension member');
+    my $ordinary_definition = q{
+CREATE OR REPLACE FUNCTION ai_semantic.map(input text, instruction text, options jsonb) RETURNS text
+LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || input; END $$;
+};
+    $node->safe_psql('postgres', "ALTER EXTENSION semloom_pg DROP FUNCTION $qualified; $ordinary_definition");
+    is($node->safe_psql('postgres', "SELECT '$qualified'::regprocedure::oid"), $marker_oid,
+       'detached function replacement keeps its OID');
+    is($identity->query_safe('EXECUTE map_identity(1)'), '1|ordinary:hello',
+       'same-OID body replacement invalidates the cached new Map plan');
+    unlike($identity->query_safe('EXPLAIN EXECUTE map_identity(1)'), qr/Custom Scan/,
+           'revalidated generic plan executes the ordinary non-member function');
+    $node->safe_psql('postgres', "ALTER EXTENSION plpgsql ADD FUNCTION $qualified");
+    unlike($node->safe_psql('postgres', "EXPLAIN $query"), qr/Custom Scan/,
+           'membership in another extension does not qualify the new signature');
+    $node->safe_psql('postgres', "ALTER EXTENSION plpgsql DROP FUNCTION $qualified; DROP FUNCTION $qualified; $ordinary_definition");
+    isnt($node->safe_psql('postgres', "SELECT '$qualified'::regprocedure::oid"), $marker_oid,
+          'drop and recreate changes the new signature OID');
+    is($identity->query_safe('EXECUTE map_identity(1)'), '1|ordinary:hello',
+       'cached statement resolves a newly created ordinary function');
+    $node->safe_psql('postgres', "DROP FUNCTION $qualified; $map_definition; ALTER EXTENSION semloom_pg ADD FUNCTION $qualified;");
+    like($identity->query_safe('EXPLAIN EXECUTE map_identity(1)'), qr/Custom Scan \(SemLoom SemMap\)/,
+         'restored extension member is lowered after generic-plan invalidation');
+
+    my $member_definition = $node->safe_psql('postgres', $definition_query);
+    $node->safe_psql('postgres', "ALTER EXTENSION semloom_pg DROP FUNCTION $qualified");
+    my $before_drop = $identity->query_safe(q{SELECT map_test_capture('EXPLAIN EXECUTE map_identity(1)')});
+    note("member-only DROP before refresh: $before_drop");
+    $identity->query_safe('DISCARD PLANS');
+    unlike($identity->query_safe('EXPLAIN EXECUTE map_identity(1)'), qr/Custom Scan/,
+           'manual refresh in the caching backend removes member-only Map lowering');
+    $node->safe_psql('postgres', "ALTER EXTENSION semloom_pg ADD FUNCTION $qualified");
+    my $before_add = $identity->query_safe('EXPLAIN EXECUTE map_identity(1)');
+    note("member-only ADD before refresh: $before_add");
+    $identity->query_safe('DISCARD PLANS');
+    like($identity->query_safe('EXPLAIN EXECUTE map_identity(1)'), qr/Custom Scan \(SemLoom SemMap\)/,
+         'manual refresh in the caching backend restores member-only Map lowering');
+    is($node->safe_psql('postgres', $definition_query), $member_definition,
+       'member-only ADD and DROP did not change the function body');
+    $identity->quit;
+
+    $node->safe_psql('postgres', 'CREATE TABLE map_target(id integer, generated text)');
+    like($node->safe_psql('postgres', "EXPLAIN INSERT INTO map_target $query"),
+         qr/Custom Scan \(SemLoom SemMap\)/, 'direct INSERT SELECT uses the same new Map plan');
+    is($node->safe_psql('postgres', "SELECT map_test_capture(\$sql\$INSERT INTO map_target $query\$sql\$)"),
+       '0A000|generative SemMap execution is not connected', 'unconnected INSERT cannot invoke an old executor');
+    is($node->safe_psql('postgres', 'SELECT count(*) FROM map_target'), 0, 'unconnected INSERT leaves no target rows');
+    for my $mode ('force_custom_plan', 'force_generic_plan')
+    {
+        for my $source (
+            ['instruction', 'text', '$1', $options, q|'Echo the input.'|],
+            ['options', 'jsonb', q|'Echo the input.'|, '$1', $options])
+        {
+            my ($label, $type, $instruction, $config, $value) = @$source;
+            my ($result, $output, $error) = $node->psql('postgres',
+                "\\set VERBOSITY verbose\nSET plan_cache_mode=$mode; PREPARE map_insert($type) AS " .
+                "INSERT INTO map_target SELECT id, ai_semantic.map(body, $instruction, $config) FROM ONLY map_inputs; " .
+                "EXPLAIN EXECUTE map_insert($value);");
+            isnt($result, 0, "$mode rejects INSERT source $label parameter");
+            like($error, qr/ERROR:  0A000: SemMap instruction and options must be fixed immutable constants\n/,
+                 'INSERT source receives the same pre-substitution constant validation');
+        }
+    }
+
     for my $unsupported (
         ['constant CASE', "SELECT CASE WHEN true THEN ai_semantic.map(body, 'Echo the input.', $options) ELSE '' END FROM ONLY map_inputs",
          'ai_semantic.map is only supported as a top-level output expression'],
         ['WHERE expression', "SELECT id FROM ONLY map_inputs WHERE ai_semantic.map(body, 'Echo the input.', $options) = 'hello'",
          'ai_semantic.map is only supported as a top-level output expression'],
         ['Map and Filter', "$query WHERE ai_semantic.filter(body)",
-         'SemMap and SemFilter cannot be combined in the current capability'])
+         'SemMap and SemFilter cannot be combined in the current capability'],
+        ['input subquery', "SELECT ai_semantic.map((SELECT 'hello'::text), 'Echo the input.', $options) FROM ONLY map_inputs",
+         'query shape is outside the current SemMap capability'],
+        ['predicate subquery', "$query WHERE id = (SELECT 1)", 'query shape is outside the current SemMap capability'],
+        ['ORDER BY', "$query ORDER BY id", 'query shape is outside the current SemMap capability'],
+        ['DISTINCT', "SELECT DISTINCT ai_semantic.map(body, 'Echo the input.', $options) FROM ONLY map_inputs",
+         'query shape is outside the current SemMap capability'],
+        ['JOIN', "$query JOIN ONLY map_target USING(id)", 'the SemMap capability requires exactly one base relation'],
+        ['RETURNING', "INSERT INTO map_target $query RETURNING id", 'INSERT shape is outside the current SemMap capability'],
+        ['ON CONFLICT', "INSERT INTO map_target $query ON CONFLICT DO NOTHING", 'INSERT shape is outside the current SemMap capability'],
+        ['OVERRIDING', "INSERT INTO map_target OVERRIDING SYSTEM VALUE $query", 'INSERT shape is outside the current SemMap capability'])
     {
         my ($label, $statement, $message) = @$unsupported;
         my ($result, $output, $error) = $node->psql('postgres', "\\set VERBOSITY verbose\nEXPLAIN $statement;");
