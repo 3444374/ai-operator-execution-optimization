@@ -153,6 +153,20 @@ END $$;
         $reader->query_safe('DEALLOCATE map_acl');
     }
     $reader->quit;
+
+    for my $unsupported (
+        ['constant CASE', "SELECT CASE WHEN true THEN ai_semantic.map(body, 'Echo the input.', $options) ELSE '' END FROM ONLY map_inputs",
+         'ai_semantic.map is only supported as a top-level output expression'],
+        ['WHERE expression', "SELECT id FROM ONLY map_inputs WHERE ai_semantic.map(body, 'Echo the input.', $options) = 'hello'",
+         'ai_semantic.map is only supported as a top-level output expression'],
+        ['Map and Filter', "$query WHERE ai_semantic.filter(body)",
+         'SemMap and SemFilter cannot be combined in the current capability'])
+    {
+        my ($label, $statement, $message) = @$unsupported;
+        my ($result, $output, $error) = $node->psql('postgres', "\\set VERBOSITY verbose\nEXPLAIN $statement;");
+        isnt($result, 0, "$label is not silently enabled by adding Map");
+        like($error, qr/ERROR:  0A000: \Q$message\E\n/, "$label has an explicit unsupported-shape error");
+    }
 }
 ok(!IO::Select->new($listener)->can_read(0), 'plan-only Map made zero provider connections');
 close($listener);
