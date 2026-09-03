@@ -62,7 +62,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | LLM for Data Management | PVLDB 2024 | DB/LLM 研究版图 |
 | Smart、SmartLite、LEADS、InferDB | 正式数据库论文 | 近数据库推理、模型选择和动态执行对照 |
 | Kalypso: Relational LLM Serving | arXiv:2607.23815，2026；未标注正式 venue | 直接连接 semantic query plan 与 request-centric LLM serving，研究跨算子流水、KV prefix 生命周期和 memory-aware admission；最接近本课题接口，迫使增量收窄到 PostgreSQL query lifecycle、多 Job、多 endpoint 与不修改 vLLM 的外部控制 |
-| Making Prompts First-Class Citizens for Adaptive LLM Pipelines（SPEAR） | CIDR 2026；vision/initial design 与初步实验，不算 CCF-A full research | [官方论文](https://www.vldb.org/cidrdb/papers/2026/p26-cetintemel.pdf) §2–4：版本化 prompt views/refinement，R3 评估 evidence-first 调整；缓存与 fusion 等仍多为设计机会。约束“多表示＋质量检查”的新颖性主张；本次相关章节核验不等于新增全文精读 |
+| Making Prompts First-Class Citizens for Adaptive LLM Pipelines（SPEAR） | CIDR 2026；vision/initial design 与初步实验，不算 CCF-A full research | [官方论文](https://www.vldb.org/cidrdb/papers/2026/p26-cetintemel.pdf) §2–4：版本化 prompt views/refinement，R3 评估 evidence-first 调整；缓存与 fusion 等仍多为设计机会。约束“多表示＋质量检查”的新颖性主张；后续新增的[精读笔记](精读文献笔记/spear_cidr2026/spear_cidr2026.md)与此前专项章节核验分别保留 |
 
 2026-09-03 的[前缀/表示专项审查](semantic_prefix_reuse_design_audit_20260903.md)进一步收窄上述比较：
 Kalypso 的默认 virtual pinning 不要求 explicit pin API；MLSys 2025 已含多次 LLM 查询、逐行字段序与
@@ -158,7 +158,7 @@ Kalypso 的默认 virtual pinning 不要求 explicit pin API；MLSys 2025 已含
 ## 六、当前本地状态
 
 - `research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
-- `research/精读文献笔记/`：精读笔记权威库，当前有十七篇主笔记、160 张论文原图裁剪件；Kalypso Figure 1–12 与 IMLane Figure 1–15 已加入对应笔记。Kalypso 继续按 arXiv 核心补充管理，IMLane 按正式 PVLDB 2026 论文记录；两篇均未进入原十五篇速览或开题正文。
+- `research/精读文献笔记/`：精读笔记权威库，当前有十八篇主笔记、160 张论文原图裁剪件；新增 SPEAR 主笔记，未增加论文原图裁剪件。Kalypso Figure 1–12 与 IMLane Figure 1–15 已加入对应笔记。Kalypso 按 arXiv 核心补充管理，IMLane 按正式 PVLDB 2026 论文记录，SPEAR 按 CIDR 2026 vision/early-design paper 解读；三篇均未进入原十五篇速览或开题正文。
 - `research/reference/`：当前工作区有 7 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
 - `opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
 - 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。
