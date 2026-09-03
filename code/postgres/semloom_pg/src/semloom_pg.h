@@ -24,6 +24,7 @@ extern const char *semloom_reference_calibration_path(void);
 extern SemloomProviderExecutionProfile semloom_provider_execution_profile(void);
 extern const char *semloom_provider_execution_profile_name(void);
 extern Oid semloom_map_function_oid(void);
+extern Oid semloom_generate_map_function_oid(void);
 extern Oid semloom_filter_function_oid(void);
 extern Oid semloom_exact_filter_function_oid(void);
 extern bool semloom_is_map_function(Oid function_oid);

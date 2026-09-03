@@ -70,6 +70,14 @@ semloom_map_function_oid(void)
 }
 
 Oid
+semloom_generate_map_function_oid(void)
+{
+	Oid argument_types[3] = {TEXTOID, TEXTOID, JSONBOID};
+
+	return semloom_lookup_marker("map", lengthof(argument_types), argument_types);
+}
+
+Oid
 semloom_filter_function_oid(void)
 {
 	Oid argument_types[1] = {TEXTOID};
@@ -116,8 +124,10 @@ bool
 semloom_is_map_function(Oid function_oid)
 {
 	Oid marker_oid = semloom_map_function_oid();
+	Oid generate_oid = semloom_generate_map_function_oid();
 
-	return OidIsValid(marker_oid) && function_oid == marker_oid;
+	return (OidIsValid(marker_oid) && function_oid == marker_oid) ||
+		(OidIsValid(generate_oid) && function_oid == generate_oid);
 }
 
 void

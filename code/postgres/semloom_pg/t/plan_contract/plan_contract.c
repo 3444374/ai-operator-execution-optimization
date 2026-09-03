@@ -61,7 +61,7 @@ semloom_test_plan(PG_FUNCTION_ARGS)
 		else if (strcmp(mode, "old-with-profile") == 0)
 			lsecond(named_field(fields, "schema_version")) = makeInteger(2);
 		else if (strcmp(mode, "future-schema") == 0)
-			lsecond(named_field(fields, "schema_version")) = makeInteger(4);
+			lsecond(named_field(fields, "schema_version")) = makeInteger(5);
 		else if (strcmp(mode, "binding") == 0)
 			lsecond(copied) = makeInteger(2);
 		else if (strcmp(mode, "binding-overflow") == 0)

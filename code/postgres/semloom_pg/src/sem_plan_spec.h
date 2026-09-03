@@ -75,6 +75,11 @@ typedef struct SemloomPlanSpec
 	/* Present only in schema 3; all slices are owned by the decode context. */
 	AiGenerationProfile generation_profile;
 	const char *generation_profile_digest;
+	/* Schema 4 only; marker identity is a PG binding, not semantic identity. */
+	bool has_stop;
+	uint32 max_input_bytes;
+	uint32 max_output_bytes;
+	Oid marker_function_oid;
 } SemloomPlanSpec;
 
 extern List *semloom_plan_spec_make_recording_private(
@@ -88,6 +93,9 @@ extern List *semloom_plan_spec_make_choice_filter_private(
 	const char *instruction,
 	const char *model_id,
 	AttrNumber input_column);
+extern List *semloom_plan_spec_make_generate_map_private(
+	const char *instruction, const char *model_id, uint32 max_tokens,
+	AttrNumber input_column, Oid marker_function_oid);
 extern void semloom_plan_spec_explain(const SemloomPlanSpec *plan_spec,
 									 ExplainState *explain_state);
 extern void semloom_plan_spec_decode(List *custom_private,

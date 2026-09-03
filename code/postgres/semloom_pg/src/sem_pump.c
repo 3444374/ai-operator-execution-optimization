@@ -18,6 +18,7 @@
 #include "sem_operator_machine.h"
 #include "sem_plan_spec.h"
 #include "semantic_filter_contract.h"
+#include "semantic_map_contract.h"
 #include "sem_pump.h"
 
 struct SemloomExecPump
@@ -28,6 +29,7 @@ struct SemloomExecPump
 	SemloomFilterCostEstimate filter_cost;
 	bool has_filter_cost;
 	AttrNumber input_column;
+	SemloomPlanSpec *plan_only_spec;
 };
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
@@ -82,15 +84,26 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("semantic operator input is outside the scan tuple")));
 
-	if (!semloom_operator_machine_init(&pump->machine,
-									   (uint32) plan_spec.operator_kind,
-									   plan_spec.schema_version,
-									   (const uint8 *) plan_spec.instruction,
-									   plan_spec.instruction_length))
-		ereport(ERROR,
-				(errcode(ERRCODE_INTERNAL_ERROR),
-				 errmsg("unknown semantic operator machine")));
-	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
+	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	{
+		if ((executor_flags & EXEC_FLAG_EXPLAIN_ONLY) == 0)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("generative SemMap execution is not connected")));
+		pump->plan_only_spec = MemoryContextAlloc(owner_context, sizeof(plan_spec));
+		*pump->plan_only_spec = plan_spec;
+	}
+	else
+	{
+		if (!semloom_operator_machine_init(&pump->machine,
+										   (uint32) plan_spec.operator_kind,
+										   plan_spec.schema_version,
+										   (const uint8 *) plan_spec.instruction,
+										   plan_spec.instruction_length))
+			ereport(ERROR,
+					(errcode(ERRCODE_INTERNAL_ERROR),
+					 errmsg("unknown semantic operator machine")));
+		pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
+	}
 	pump->input_column = input_column;
 	pump->child_state =
 		ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
@@ -235,6 +248,14 @@ semloom_pump_stop(SemloomExecPump *pump, CustomScanState *node)
 void
 semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 {
+	if (pump->plan_only_spec != NULL)
+	{
+		semloom_plan_spec_explain(pump->plan_only_spec, explain_state);
+		ExplainPropertyText("Execution Support", "plan-only", explain_state);
+		ExplainPropertyText("Provider", "not-connected", explain_state);
+		ExplainPropertyInteger("Mapped Column", NULL, pump->input_column, explain_state);
+		return;
+	}
 	pg_semantic_runtime_explain(pump->runtime, explain_state);
 	if (pump->has_filter_cost)
 		semloom_filter_cost_explain(&pump->filter_cost, explain_state);
