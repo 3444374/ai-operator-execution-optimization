@@ -144,7 +144,7 @@ CREATE FUNCTION volatile_instruction() RETURNS text LANGUAGE sql VOLATILE AS $$ 
         isnt($result, 0, "$label is rejected at planning");
         like($error, qr/ERROR:  22023: \Q$message\E\n/, "$label returns its bounded SQL validation error");
     }
-    for my $instruction (q|repeat('x',4096)|, q|repeat(chr(30028),1365) || 'x'|, q|' '|)
+    for my $instruction (q{repeat('x',4096)}, q{repeat(chr(30028),1365) || 'x'}, q{' '})
     {
         my $accepted = decode_json($node->safe_psql('postgres',
             "EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, $instruction, $options) FROM ONLY map_inputs"))->[0]->{'Plan'};

@@ -34,7 +34,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("TAP_TESTS = 1", makefile)
         self.assertIn("SEMLOOM_PG_TARGET_VERSION ?= 18.3", makefile)
         self.assertIn("PG_CONFIG reports", makefile)
-        self.assertIn("default_version = '0.1.0'", control)
+        self.assertIn("default_version = '0.2.0'", control)
         self.assertIn("module_pathname = '$libdir/semloom_pg'", control)
 
     def test_marker_is_never_an_implicit_remote_udf(self) -> None:
