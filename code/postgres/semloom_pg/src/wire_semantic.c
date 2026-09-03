@@ -63,7 +63,8 @@ static bool semloom_semantic_validate_error(Jsonb *message,
 									  AiByteSlice *code,
 									  AiProviderError *error);
 static bool semloom_semantic_error_code_allowed(AiByteSlice code,
-	uint32 wire_version, bool has_task);
+											  uint32 wire_version,
+											  bool has_task);
 static void semloom_semantic_set_error_code(AiByteSlice code,
 									 AiProviderError *error);
 static AiProviderStatus semloom_semantic_parse_response(const char *response,
@@ -413,7 +414,7 @@ semloom_wire_semantic_drive(pgsocket socket_fd,
 		goto mismatch_or_error;
 	if (identity->protocol_version == 5 &&
 		(finish_reason.length == 0 || finish_reason.length > SEMLOOM_MAP_MAX_FINISH_REASON_BYTES ||
-		 output_tokens > spec->max_tokens || prompt_tokens > PG_UINT64_MAX - output_tokens))
+		 output_tokens > spec->max_tokens))
 		goto mismatch;
 	semloom_semantic_completion_digest(identity,
 								 payload_digest,
@@ -608,7 +609,7 @@ semloom_semantic_validate_error(Jsonb *message,
 		!semloom_wire_common_json_value(message, "sequence", &sequence_value, error) ||
 		!semloom_semantic_json_slice(message, "code", code, error) ||
 		!semloom_semantic_error_code_allowed(*code, wire_version,
-			expected_sequence != NULL))
+												expected_sequence != NULL))
 		goto invalid;
 	if (expected_sequence == NULL)
 	{
@@ -675,8 +676,9 @@ semloom_semantic_set_error_code(AiByteSlice code, AiProviderError *error)
 }
 
 static bool
-semloom_semantic_error_code_allowed(AiByteSlice code, uint32 wire_version,
-	bool has_task)
+semloom_semantic_error_code_allowed(AiByteSlice code,
+									  uint32 wire_version,
+									  bool has_task)
 {
 	static const char *allowed_codes[] = {
 		"GATEWAY_INTERNAL",
