@@ -33,6 +33,8 @@ SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合
 后续 `c338d81b` / `425d2b1c` 已实现并验证 C/Python Map 纯值摘要与完成策略、Python v5 及共享 gateway。
 [本轮资格](../experiments/results/postgresql/semmap_values_20260903/README.md)绑定 `425d2b1c`：本地/服务器各
 135/135，PG18.3 `-O2 -Werror`、旧路径 regression 1/1、TAP 1022/1022 重新通过；独立复核问题已修复。
+后续 `a1bbdd30` 补深层 JSON 读帧隔离与同进程恢复，本地 136/136 及 C11 通过；
+见[追加验证](../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)。未重跑服务器 PG 或模型，旧 TAP 仍绑定 `425d2b1c`。
 schema 4 的 PG 保存、C port/wire v5、三参 Map 与新 PG 行为仍待实现；当前 SQL Map 仍为 recording。
 没有真实 Map 模型或资源资格，下方历史实现与测试记录保持原提交身份。
 

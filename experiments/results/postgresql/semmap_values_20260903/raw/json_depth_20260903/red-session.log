@@ -1,0 +1,18 @@
+test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error) ... ERROR
+
+======================================================================
+ERROR: test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 281, in test_deep_json_is_a_v5_frame_input_error
+    v4.SemanticFilterPlan("echo", "model", GenerationProfile(
+                                           ^^^^^^^^^^^^^^^^^^
+  File "<string>", line 7, in __init__
+  File "<test-worktree>/code/src/execution_provider/generation_profile.py", line 33, in __post_init__
+    raise ValueError("invalid generation profile")
+ValueError: invalid generation profile
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (errors=1)

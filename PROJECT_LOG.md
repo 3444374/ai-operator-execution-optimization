@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-09-03 深层 JSON 读帧隔离补充
+
+- 按用户复核，以 20,012 字节深层 JSON 复现 v5 错报内部错误、首帧使 gateway 退出；
+  `a1bbdd30` 只在两个读帧调用处补 RecursionError 分类/隔离，未扩大 Adapter 异常捕获或重构分层。
+- 固定提交本地 136/136，七个纯 C module 和 neutral header C11 通过；同进程每次坏连接后均完成
+  合法 Map 会话，Adapter 自身 ValueError/RecursionError 和旧 v3/v4 分类保留。
+- 24 个新产物、98 个源码哈希的[追加记录](experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)
+  独立归档，测试夹具大小写失败、生产反例和 CLI 失败路径警告保留。旧 135/135、PG18.3 1022 TAP
+  仍绑定 `425d2b1c`；本轮未访问服务器、重跑 PG、模型或资源验收，真实预算仍为 0/32。
+- 上轮确认的运行上限文档已独立提交为 `d472fa4b`；新 Map 的 PG plan/权限、C v5 与 PG＋golden
+  仍待完成，不把当前修复写成整个四 D 已通过。未合并或推送 main。
+
 ## 2026-09-03 四 D 有限真实服务上限确认
 
 - 将[专项 §8.4.1](experiments/plans/postgresql_semmap_generation_contract.md#841-本轮有限服务资源配置2026-09-03固定验收值尚未运行)

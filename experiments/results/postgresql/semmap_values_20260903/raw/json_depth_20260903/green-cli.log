@@ -1,0 +1,6 @@
+test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.072s
+
+OK

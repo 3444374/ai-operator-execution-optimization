@@ -114,6 +114,9 @@ That slice adds no executable generative Map SQL. The subsequent unmerged
 [values and Python v5 slice](../experiments/results/postgresql/semmap_values_20260903/README.md) at `425d2b1c`
 adds C/Python identity and completion values, strict v5 schemas and shared gateway/HTTP execution.
 It passes 135/135 local/server checks and fresh PG18.3 build/regression/TAP compatibility checks.
+The later [JSON-depth repair](../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)
+at `a1bbdd30` passes 136/136 local checks and C11; it adds frame-read isolation and same-process recovery,
+without rerunning PostgreSQL or models or changing the archived server qualification.
 PG schema 4, the C v5 client, generative Map SQL, PG golden execution and real-model/resource checks remain pending.
 [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT in the current integrated code.

@@ -1,0 +1,42 @@
+test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) ...
+  test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) (invalid_frame='deep-open') ... ERROR
+<test-worktree>/code/tests/execution_provider/test_map_gateway.py:66: ResourceWarning: unclosed <socket.socket fd=4, family=1, type=1, proto=0>
+  client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+  test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) (invalid_frame='deep-task') ... ERROR
+test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) ... FAIL
+
+======================================================================
+ERROR: test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) (invalid_frame='deep-open')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/execution_provider/test_map_gateway.py", line 81, in test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata
+    client.connect(str(socket_path))
+FileNotFoundError: [Errno 2] No such file or directory
+
+======================================================================
+ERROR: test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) (invalid_frame='deep-task')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/execution_provider/test_map_gateway.py", line 68, in test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata
+    client.connect(str(socket_path))
+FileNotFoundError: [Errno 2] No such file or directory
+
+======================================================================
+FAIL: test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/execution_provider/test_map_gateway.py", line 92, in test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata
+    self.assertEqual((process.returncode, stdout, stderr), (0, b"", b""))
+AssertionError: Tuples differ: (1, b'', b'Traceback (most recent call las[1497 chars]g\n') != (0, b'', b'')
+
+First differing element 0:
+1
+0
+
+Diff is 1709 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.089s
+
+FAILED (failures=1, errors=2)

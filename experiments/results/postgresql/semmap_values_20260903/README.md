@@ -12,6 +12,7 @@
 源码：`c338d81b` 实现，`425d2b1cfb4a9a2e85dad7e96c4da91fb6884d25` 修复独立复核反例并作为最终验收身份。
 分支为 `codex/semmap-message-contract`，尚未合入 main。
 前一[消息子切片](../semmap_messages_20260903/README.md)仍绑定 `6903cf46`。
+后续深层 JSON 修复绑定 `a1bbdd30`，见[追加验证](#json-depth-repair)；下方 135 项和服务器证据仍保持原提交身份。
 
 ## 设置与合规自检
 
@@ -66,6 +67,27 @@ regression actual/expected 原始 SHA 相等；公开输出已去路径/行尾�
 新增反例先复现 GATEWAY_INTERNAL 和坏首帧使 CLI 退出，再修复：v5 仅在读帧处分类输入错误；
 Adapter 自身 ValueError 仍为内部错误。未知版本首帧不猜测错误帧版本，只关连接并继续服务。
 旧 v3/v4 会话表现保留；不按错误文本判断或吞掉 Adapter 编程异常。
+
+<a id="json-depth-repair"></a>
+
+## 后续修复：深层 JSON 输入隔离（2026-09-03）
+
+源码 `a1bbdd3057b194de528e4a1e3b89786dd51d76a8`。用户补测发现旧加固遗漏 JSON 解析的
+RecursionError；本轮以 20,012 字节、10,000 层嵌套的合成帧复现，未超过 1 MiB 帧上限。
+只在 `server` 首帧与 `semantic_session` 的读帧处捕获该输入异常；不扩大 Adapter 异常处理范围。
+
+- 首帧结束坏连接但不退出 gateway；已识别的 v5 open/task 分别返回 INVALID_OPEN/INVALID_TASK。
+- CLI 在同一进程中依次处理超长数字首帧、深层首帧、深层 v5 task；每次之后立即完成一条合法
+  Map 会话的两个任务，最终正常退出，无 stderr。该 fixture 测试不是 RSS/FD 资源验收。
+- Adapter 自身 ValueError/RecursionError 仍返回脱敏 GATEWAY_INTERNAL；旧 v3/v4 深层 task 分类保留。
+- 固定源码本地回归 109+6+10+11=136/136；七个纯 C module 和 neutral header 的 C11 语法检查通过。
+  未修改 C/SQL/TAP 源码，未访问服务器、重跑 PG18.3、调用真实模型或运行资源 smoke；预算仍为 0/32。
+
+新[核对摘要](raw/json_depth_20260903/verification.json)验证 98 个源码哈希，
+[独立清单](raw/json_depth_20260903/SHA256SUMS)覆盖 24 个本次产物；原 136 项清单和全部原日志未改写。
+`red-session-verified-fixture` 保留原错误分类；`red-cli` 保留进程退出及失败路径上的测试 socket 警告。
+`red-session` 是首轮测试 profile 的 CHOICE 大小写错误，修正夹具后才用于生产反例，不算产品故障。
+测试随后补充幂等关闭，并用 ResourceWarning 检查复跑 CLI。上述失败未删除，不声称已经穷尽全部畸形输入。
 
 ## 事实、不能声称与下一步
 

@@ -1,0 +1,34 @@
+test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error) ...
+  test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error) (case='v5-open') ... FAIL
+  test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error) (case='v5-task') ... FAIL
+
+======================================================================
+FAIL: test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error) (case='v5-open')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 293, in test_deep_json_is_a_v5_frame_input_error
+    self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": codec.PROTOCOL_VERSION,
+AssertionError: {'code': 'GATEWAY_INTERNAL', 'protocol_vers[38 chars]ror'} != {'type': 'error', 'protocol_version': 5, 's[34 chars]PEN'}
+- {'code': 'GATEWAY_INTERNAL',
++ {'code': 'INVALID_OPEN',
+   'protocol_version': 5,
+   'sequence': None,
+   'type': 'error'}
+
+======================================================================
+FAIL: test_deep_json_is_a_v5_frame_input_error (test_semloom_map_protocol.MapSessionTests.test_deep_json_is_a_v5_frame_input_error) (case='v5-task')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<test-worktree>/code/tests/postgres/test_semloom_map_protocol.py", line 293, in test_deep_json_is_a_v5_frame_input_error
+    self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": codec.PROTOCOL_VERSION,
+AssertionError: {'code': 'GATEWAY_INTERNAL', 'protocol_vers[37 chars]ror'} != {'type': 'error', 'protocol_version': 5, 's[33 chars]ASK'}
+- {'code': 'GATEWAY_INTERNAL',
++ {'code': 'INVALID_TASK',
+   'protocol_version': 5,
+   'sequence': '0',
+   'type': 'error'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=2)

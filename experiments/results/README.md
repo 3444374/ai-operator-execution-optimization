@@ -12,6 +12,8 @@
 C/Python 身份/完成值和严格 Python v5 复用旧 session/HTTP；本地/服务器各 135/135，重新运行
 PG18.3 `-Werror`、regression 1/1、TAP 1022/1022。尚未接 PG Map plan/C v5/SQL；未运行真实模型或资源验收。
 独立复核发现的数字输入错误、记录器脱敏和测试标签问题已处理，失败与历史结果保留。
+后续[深层 JSON 输入隔离](postgresql/semmap_values_20260903/README.md#json-depth-repair)在 `a1bbdd30`
+通过本地 136/136 和 C11；仅修 gateway 读帧，未重跑服务器 PG 或真实模型，原验收身份不变。
 
 ## PostgreSQL 生成型 Map 消息编译（2026-09-03）
 
