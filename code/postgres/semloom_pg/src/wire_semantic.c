@@ -62,7 +62,8 @@ static bool semloom_semantic_validate_error(Jsonb *message,
 									  const char *expected_sequence,
 									  AiByteSlice *code,
 									  AiProviderError *error);
-static bool semloom_semantic_error_code_allowed(AiByteSlice code);
+static bool semloom_semantic_error_code_allowed(AiByteSlice code,
+	uint32 wire_version, bool has_task);
 static void semloom_semantic_set_error_code(AiByteSlice code,
 									 AiProviderError *error);
 static AiProviderStatus semloom_semantic_parse_response(const char *response,
@@ -606,8 +607,8 @@ semloom_semantic_validate_error(Jsonb *message,
 		protocol_version != wire_version ||
 		!semloom_wire_common_json_value(message, "sequence", &sequence_value, error) ||
 		!semloom_semantic_json_slice(message, "code", code, error) ||
-		(!semloom_semantic_error_code_allowed(*code) &&
-		 !(wire_version == 5 && semloom_semantic_slice_equals_cstring(*code, "OUTPUT_TOO_LARGE"))))
+		!semloom_semantic_error_code_allowed(*code, wire_version,
+			expected_sequence != NULL))
 		goto invalid;
 	if (expected_sequence == NULL)
 	{
@@ -674,7 +675,8 @@ semloom_semantic_set_error_code(AiByteSlice code, AiProviderError *error)
 }
 
 static bool
-semloom_semantic_error_code_allowed(AiByteSlice code)
+semloom_semantic_error_code_allowed(AiByteSlice code, uint32 wire_version,
+	bool has_task)
 {
 	static const char *allowed_codes[] = {
 		"GATEWAY_INTERNAL",
@@ -694,7 +696,8 @@ semloom_semantic_error_code_allowed(AiByteSlice code)
 		if (semloom_semantic_slice_equals_cstring(code, allowed_codes[index]))
 			return true;
 	}
-	return false;
+	return wire_version == 5 && has_task &&
+		semloom_semantic_slice_equals_cstring(code, "OUTPUT_TOO_LARGE");
 }
 
 static void
