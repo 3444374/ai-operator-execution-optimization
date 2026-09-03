@@ -264,6 +264,38 @@ class MapProtocolTests(unittest.TestCase):
 
 
 class MapSessionTests(unittest.TestCase):
+    def test_deep_json_is_a_v5_frame_input_error(self) -> None:
+        from src.execution_provider.adapters.golden import GoldenCompletionAdapter
+        from src.execution_provider.adapters.semantic_session import run_v3_session, run_v4_session, run_v5_session
+        from src.execution_provider.generation_profile import GenerationProfile
+        from src.execution_provider.wire import v3, v4, v5
+        from src.execution_provider.wire.framing import MAX_FRAME_BYTES, encode_frame, read_frame
+        from src.execution_provider.semantic_map import SemanticMapPlan
+
+        payload = b'{"nested":' + b"[" * 10000 + b"0" + b"]" * 10000 + b"}"
+        self.assertLess(len(payload), MAX_FRAME_BYTES)
+        cases = (("v5-open", run_v5_session, v5, None, "INVALID_OPEN", None),
+                 ("v5-task", run_v5_session, v5, SemanticMapPlan("echo", "model", 128), "INVALID_TASK", "0"),
+                 ("v3-task", run_v3_session, v3, v3.SemanticFilterPlan("echo", "model"), "GATEWAY_INTERNAL", None),
+                 ("v4-task", run_v4_session, v4,
+                  v4.SemanticFilterPlan("echo", "model", GenerationProfile(
+                      "semloom.generation.choice.tristate", 1, "CHOICE", ("TRUE", "FALSE", "UNKNOWN"))),
+                  "GATEWAY_INTERNAL", None))
+        for label, runner, codec, plan, code, sequence in cases:
+            with self.subTest(case=label), _socket_pair() as pair:
+                pair[0].settimeout(3)
+                worker = threading.Thread(target=runner, args=(pair[1], GoldenCompletionAdapter({})), daemon=True)
+                worker.start()
+                if plan is not None:
+                    pair[0].sendall(encode_frame(codec.build_open_message(plan)))
+                    self.assertEqual(read_frame(pair[0])["type"], "opened")
+                pair[0].sendall(struct.pack("!I", len(payload)) + payload)
+                self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": codec.PROTOCOL_VERSION,
+                                                    "sequence": sequence, "code": code})
+                self.assertIsNone(read_frame(pair[0]))
+                worker.join(3)
+                self.assertFalse(worker.is_alive())
+
     def test_unrepresentable_json_integer_is_a_v5_input_error_not_an_adapter_error(self) -> None:
         import sys
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
@@ -294,7 +326,7 @@ class MapSessionTests(unittest.TestCase):
                 worker.join(3)
                 self.assertFalse(worker.is_alive())
 
-    def test_adapter_value_error_remains_internal_and_redacted(self) -> None:
+    def test_adapter_value_and_recursion_errors_remain_internal_and_redacted(self) -> None:
         from src.execution_provider.adapters.golden import GoldenCompletionAdapter
         from src.execution_provider.adapters.semantic_session import run_v5_session
         from src.execution_provider.wire import v5
@@ -302,22 +334,27 @@ class MapSessionTests(unittest.TestCase):
         from src.execution_provider.semantic_map import SemanticMapPlan
 
         class BrokenAdapter(GoldenCompletionAdapter):
+            def __init__(self, error_type):
+                super().__init__({})
+                self.error_type = error_type
+
             def complete(self, request):
-                raise ValueError("secret-payload")
+                raise self.error_type("secret-payload")
 
         plan = SemanticMapPlan("echo", "golden-map-v1", 128)
-        with _socket_pair() as pair:
-            pair[0].settimeout(3)
-            worker = threading.Thread(target=run_v5_session, args=(pair[1], BrokenAdapter({})), daemon=True)
-            worker.start()
-            pair[0].sendall(encode_frame(v5.build_open_message(plan)))
-            self.assertEqual(read_frame(pair[0])["type"], "opened")
-            pair[0].sendall(encode_frame(v5.build_task_message(plan, sequence=0, input_value="hello")))
-            self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": 5,
-                                                "sequence": "0", "code": "GATEWAY_INTERNAL"})
-            self.assertIsNone(read_frame(pair[0]))
-            worker.join(3)
-            self.assertFalse(worker.is_alive())
+        for error_type in (ValueError, RecursionError):
+            with self.subTest(adapter_error=error_type.__name__), _socket_pair() as pair:
+                pair[0].settimeout(3)
+                worker = threading.Thread(target=run_v5_session, args=(pair[1], BrokenAdapter(error_type)), daemon=True)
+                worker.start()
+                pair[0].sendall(encode_frame(v5.build_open_message(plan)))
+                self.assertEqual(read_frame(pair[0])["type"], "opened")
+                pair[0].sendall(encode_frame(v5.build_task_message(plan, sequence=0, input_value="hello")))
+                self.assertEqual(read_frame(pair[0]), {"type": "error", "protocol_version": 5,
+                                                    "sequence": "0", "code": "GATEWAY_INTERNAL"})
+                self.assertIsNone(read_frame(pair[0]))
+                worker.join(3)
+                self.assertFalse(worker.is_alive())
 
     def test_map_fixture_errors_are_terminal_and_never_invent_metadata(self) -> None:
         from src.execution_provider.completion import Completion

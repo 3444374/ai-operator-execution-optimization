@@ -246,10 +246,10 @@ def _run_semantic_session(
 def _read_semantic_frame(connection: socket.socket, wire_version: int) -> dict[str, object] | None:
     try:
         return read_frame(connection)
-    except ValueError:
+    except (ValueError, RecursionError):
         if wire_version != 5:
             raise
-        # JSON integers can exceed the interpreter's conversion limit.
+        # JSON integer conversion and nesting can exceed interpreter limits.
         raise ProtocolError("invalid_json") from None
 
 
