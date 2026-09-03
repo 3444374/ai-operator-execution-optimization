@@ -242,6 +242,7 @@ CREATE FUNCTION volatile_instruction() RETURNS text LANGUAGE sql VOLATILE AS $$ 
 
     $node->safe_psql('postgres', q{
 CREATE ROLE map_reader;
+GRANT SET ON PARAMETER semloom_pg.gateway_socket TO map_reader;
 GRANT USAGE ON SCHEMA ai_semantic TO map_reader;
 GRANT SELECT ON map_inputs TO map_reader;
 REVOKE ALL ON FUNCTION ai_semantic.map(text,text,jsonb) FROM PUBLIC;
