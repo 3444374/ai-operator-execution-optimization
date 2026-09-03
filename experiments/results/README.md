@@ -12,6 +12,9 @@
 新 SQL 0.2.0/schema 4、固定参数、复制/严格解码、原生 EXECUTE ACL/hook 与缓存计划检查；
 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260、本地/服务器各 136/136 与 C11 通过。
 本分支未合入 main，实际生成执行仍明确拒绝；没有新 Map 模型或资源验收。失败与中间结果单独保留。
+后续 [SQL wrapper 修复](postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check) `676615fa`
+关闭内联后的参数来源旁路，重新通过 PG18.3 TAP 1283/1283、regression 1/1 和两端各 136/136；
+只接管显式 Map，普通 SQL 内联保留，仍没有 C v5 执行或模型资格。
 
 ## PostgreSQL 生成型 Map 纯值与 Python v5（2026-09-03）
 

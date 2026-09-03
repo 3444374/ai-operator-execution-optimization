@@ -44,6 +44,10 @@ SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合
 均有测试。输入/谓词子查询反例已最小修复；仅成员变化的自动刷新仍未实现。
 [PG plan 验证](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md)绑定 `2205ccbb`：
 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新 plan 238 项）、本地/服务器各 136/136 与 C11。
+后续 `676615fa` 复现并修复 SQL wrapper 在 custom 模式通过内联绕过来源检查；新 Map 只接管规划前
+已核验的显式输出，整个 Map wrapper 明确拒绝，普通函数内联保留。临时检查状态在嵌套/ERROR 后恢复。
+[追加资格](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)：
+PG18.3 regression 1/1、TAP 1283/1283（Map plan 261）、两端各 136/136、`-Werror` 与 8/8 C11 通过。
 该分支尚未合入或推送 main；服务器原主工作树/工具链未覆盖。C port/wire v5 与新 Map 实际逐行执行
 仍待接线，当前可执行 SQL Map 仍为 recording。
 没有真实 Map 模型或资源资格，下方历史实现与测试记录保持原提交身份。

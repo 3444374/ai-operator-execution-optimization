@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-09-03 Map SQL wrapper 来源反例补充
+
+- 按用户对 `b58479f7` 的复核，仅在已约定 SQL/EXPLAIN 表面追加反例。`ae6589a9` 真实 PG18.3
+  custom 接受内联 wrapper 中的指令参数，generic 拒绝，两者零 provider 连接。首轮后续身份测试
+  因新建 wrapper 依赖未清理而中止；原始输出保留，不能把该 fixture 中止当作第二个生产缺陷。
+- `676615fa` 只改 planner 来源识别：前置检查记录显式 SELECT/INSERT 来源层级，后期不得接管
+  新出现的 Map；普通 SQL 内联不关闭。规划嵌套与 ERROR 用 PG_FINALLY 恢复临时状态，
+  不建 registry、不改 schema/digest、权限、runtime/provider/wire 或旧 Map/Filter 输出。
+- 按现有受限入口，整个 Map wrapper（包括字面量调用）仍不支持；直接 Map 的普通 input wrapper
+  继续允许。测试覆盖两种 SQL 函数体、custom/generic、零连接、正常内联及嵌套错误恢复。
+- 独立 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1283/1283（Map plan 261），本地/服务器各
+  136/136 与 8/8 C11 通过；[追加记录](experiments/results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)
+  使用新 SHA 清单，保留原 1260 项身份与原始证据。仅两个新隔离测试目录，未覆盖原安装/main。
+- 本轮依 TDD 先复现再修复，遵循最小改动；未运行真实模型或资源压力，Map 累计请求仍 0/32。
+  Filter 命名的共有常量整理留在下一段 C v5 接线；现有权限检查与临时执行拒绝保留。
+- code-review 按用户固定基线分派 Standards/Spec 两路只读源码复核，各 0 项发现；审查不代替实际
+  服务器测试。两个本次目录已停止 PG、无匹配测试进程，服务器 main 干净；历史产物未删除。
+- 原 205 项 SHA 保持一致；本次 63 个产物（另有总清单）、172 项提交绑定源码哈希与 130 个本地
+  链接目标检查通过。70 个暂存文件隐私扫描与 diff 检查通过；本次仍未合并或推送 main。
+
 ## 2026-09-03 生成型 Map PG plan 与权限接入
 
 - 从 `340356e8` 创建独立 `codex/semmap-pg-plan`；按四 D 已确认接口测试先行，复用现有 carrier/plan/pump，

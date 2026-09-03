@@ -53,6 +53,10 @@ The independent `codex/semmap-pg-plan` branch now adds the SQL 0.2.0 `map(text,t
 including fresh installation/upgrade, copied plans, fixed argument validation and native EXECUTE permission checks.
 See the [PG plan checks](../../../experiments/results/postgresql/semmap_pg_plan_20260903/README.md), bound to `2205ccbb`:
 PG18.3 warning-free build, regression 1/1, TAP 1260/1260 and 136/136 local/server Python checks pass.
+The [wrapper follow-up](../../../experiments/results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)
+at `676615fa` closes a custom-plan source-check bypass: Map must appear directly in the supported query output,
+not become visible only after inlining a whole-Map SQL wrapper. Ordinary input functions still inline.
+The follow-up reruns PG18.3 regression 1/1, TAP 1283/1283 and 136/136 local/server Python checks.
 This branch has not been merged or pushed to main. Plain EXPLAIN reports `Execution Support: plan-only`;
 actual execution raises `0A000: generative SemMap execution is not connected` before initializing a child or provider.
 The C v5 client and new Map golden/real-model/resource checks remain pending. Executable Map is still recording.

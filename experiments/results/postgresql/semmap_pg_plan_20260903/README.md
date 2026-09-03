@@ -2,6 +2,9 @@
 
 日期：2026-09-03。类型：源码、真实 PostgreSQL 功能测试与确定性 fixture；不是模型或性能实验。
 
+最新追加：[SQL wrapper 来源修复](#sql-wrapper-source-check)绑定 `676615fa`，PG18.3 完整 TAP
+1283/1283。下文首次 1260 项及原始产物仍绑定 `2205ccbb`，不重新归属。
+
 ## 目的与范围
 
 按[四 D 合同 §3、§8](../../../plans/postgresql_semmap_generation_contract.md)完成 SQL 注册、schema 4
@@ -100,3 +103,48 @@ python <qualification-script> --repo <isolated-worktree> --root <new-artifact-di
 下一步按专项合同连接 `AiOpenSpec → C v5 → gateway`，复用现有 machine/pump/runtime，移除本次临时
 plan-only 分支；先用 PG＋golden/fake HTTP 验证真实取数、完成值、INSERT、取消及资源生命周期，
 再满足运行前登记要求后使用已批准的真实模型预算。无需增加 core patch、异步或通用框架。
+
+<a id="sql-wrapper-source-check"></a>
+
+## SQL wrapper 来源反例与修复
+
+对照基线 `b58479f7`；反例源码 `ae6589a906dc47daf2c29a573e7aab0e7bb73e6f`，
+修复与最终验收源码 `676615fafd602d609aa7216f45f3534145bcb194`。本次仅修新 Map 的 planner 识别，
+未修改 plan schema/digest、权限初始化、runtime/provider/wire、模型或资源预算；Filter 命名的共有常量
+整理继续留到实际 C v5 接线，不在此另建公共层。
+
+**实际反例。** SQL 函数包装整个 Map，调用方将准备语句 `$1` 作为 instruction。
+PG18.3 custom plan 接受并生成 schema 4 CustomScan；generic plan 拒绝。
+两种模式各自的连接哨兵均为零，见[反例 TAP](raw/inline_20260903/red/tap.log)和
+[逐项输出](raw/inline_20260903/red/tap-regress_log_006_map_plan)。首次测试运行到第 206 项后，
+因为 SQL-standard 函数体对 Map 的依赖阻止后续身份测试 DROP 而中止；这是 fixture 清理问题，
+不改变先前已经实际复现的 3 个 custom 失败断言。修复测试在 wrapper 检查后显式删除自己创建的函数，
+然后继续完整旧测试，不删除生产对象或放宽预期。
+
+**修复方式。** 现有入口只支持原始 SELECT 顶层或直接 INSERT 来源中的显式 Map。
+前置检查记录本次规划已验证的唯一来源层级，后续路径构造须匹配；内联后才暴露的 Map 返回
+`0A000 / generative SemMap must be a direct query output`。因此整个 Map 的 wrapper（包括固定字面量参数）
+不是本版新增入口。普通 SQL 函数内联、直接 Map 的普通 input wrapper 与合法常量仍保留。
+临时状态仅覆盖本次 planner 调用，通过 `PG_FINALLY` 在成功、嵌套规划和 ERROR 后恢复；
+不依赖源码字符位置推断来源，不使用跨查询 registry，不修改 PostgreSQL 内联开关或 core。
+
+这是依据现有受限入口的工程选择，而不是尝试在这一切片支持任意包装函数。官方
+[REL_18_3 clauses.c](https://github.com/postgres/postgres/blob/REL_18_3/src/backend/optimizer/util/clauses.c)
+的 `inline_function` 使用已经简化的实参并递归简化展开结果，与上述实测风险链一致；本轮还核对了
+服务器官方源码，不把源码推断代替反例。参考来源只记录于此及专项合同，不进入生产/测试注释。
+
+| 追加检查 | 实际结果 |
+|---|---|
+| 新增行为 | 两种 SQL 函数体写法 × custom/generic 均拒绝，零 provider 连接；普通函数仍内联，直接 Map 的输入函数仍允许；嵌套规划成功/捕获 ERROR 后外层计划身份正确 |
+| 完整 PG18.3 | 无 warning 的 `-O2 -Werror`，regression 1/1、TAP **1283/1283**（Map plan 261 项），原生权限/旧路径同时重跑 |
+| 本地与服务器 | 各 **136/136** Python/static/protocol；七个独立 C module 与 neutral header 共 **8/8** C11 检查 |
+| 模型、资源 | 真实模型请求 0，累计 **0/32**；没有运行新 Map RSS/FD 压力、质量或校准 |
+
+证据入口：[服务器资格](raw/inline_20260903/server/qualification.json)、
+[TAP](raw/inline_20260903/server/tap.log)、[本地](raw/inline_20260903/local/verification.json)、
+[独立 SHA 清单](raw/inline_20260903/SHA256SUMS)。原 205 项归档及首次构建/测试清单没有重写。
+本次只增加两个隔离测试工作树/前缀，原安装二进制和服务器 main 未覆盖，测试节点停止后保留证据。
+[退出核对](raw/inline_20260903/postflight.json)确认本次目录无 postmaster.pid 或匹配测试进程，
+不对服务器其他工作负载作全局清理声明。[两路只读复核](raw/inline_20260903/review.json)分别为
+Standards 0 项、Spec 0 项；复核者未重跑服务器或模型，运行证据由上述原始日志支持。
+新 Map 仍处于 plan-only，C v5、PG＋golden 与真实模型尚未接通；本次修复不能改写为整个四 D 完成。

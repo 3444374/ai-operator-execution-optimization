@@ -1,0 +1,164 @@
+2026-09-03 16:21:34.925 CST [105750] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 16:21:34.925 CST [105750] LOG:  listening on Unix socket "/tmp/9G58qxy37y/.s.PGSQL.15602"
+2026-09-03 16:21:34.927 CST [105756] LOG:  database system was shut down at 2026-09-03 16:21:34 CST
+2026-09-03 16:21:34.929 CST [105750] LOG:  database system is ready to accept connections
+2026-09-03 16:21:35.026 CST [105762] 003_choice_execution.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 16:21:35.029 CST [105762] 003_choice_execution.pl LOG:  statement: CREATE TABLE choice_rows(id integer, content text);
+2026-09-03 16:21:35.030 CST [105762] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_rows VALUES (1, U&'\6570\636E\5E93\+01F642'), (2, NULL);
+2026-09-03 16:21:35.148 CST [105766] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.148 CST [105766] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 16:21:35.177 CST [105768] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_rows VALUES (3, ''), (4, 'negative'), (5, 'uncertain'), (6, 'database'), (7, 'database');
+2026-09-03 16:21:35.283 CST [105771] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:35.283 CST [105771] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.283 CST [105771] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) ORDER BY id;
+2026-09-03 16:21:35.407 CST [105774] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:35.408 CST [105774] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.408 CST [105774] 003_choice_execution.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 16:21:35.537 CST [105777] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:35.537 CST [105777] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.537 CST [105777] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) LIMIT 1;
+2026-09-03 16:21:35.668 CST [105780] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:35.668 CST [105780] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.668 CST [105780] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE id=1 AND ai_semantic.filter(content, U&'\5224\65AD\662F\5426\662F\6570\636E\5E93\3002', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb)
+2026-09-03 16:21:35.800 CST [105783] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:35.801 CST [105783] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.801 CST [105783] 003_choice_execution.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 16:21:35.802 CST [105783] 003_choice_execution.pl LOG:  statement: PREPARE chosen(integer) AS SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=$1;
+2026-09-03 16:21:35.802 CST [105783] 003_choice_execution.pl LOG:  statement: EXECUTE chosen(1);
+2026-09-03 16:21:35.802 CST [105783] 003_choice_execution.pl DETAIL:  prepare: PREPARE chosen(integer) AS SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=$1;
+2026-09-03 16:21:35.804 CST [105783] 003_choice_execution.pl LOG:  statement: ALTER TABLE choice_rows ADD COLUMN extra integer;
+2026-09-03 16:21:35.804 CST [105783] 003_choice_execution.pl LOG:  statement: EXECUTE chosen(1);
+2026-09-03 16:21:35.804 CST [105783] 003_choice_execution.pl DETAIL:  prepare: PREPARE chosen(integer) AS SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=$1;
+2026-09-03 16:21:35.829 CST [105785] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_rows(id,content) VALUES(8,'invalid-label');
+2026-09-03 16:21:35.830 CST [105785] 003_choice_execution.pl LOG:  statement: CREATE TABLE choice_sink(id integer);
+2026-09-03 16:21:35.946 CST [105788] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:35.946 CST [105788] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:35.946 CST [105788] 003_choice_execution.pl LOG:  statement: BEGIN;
+2026-09-03 16:21:35.947 CST [105788] 003_choice_execution.pl LOG:  statement: SAVEPOINT before_bad_label;
+2026-09-03 16:21:35.947 CST [105788] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=8;
+2026-09-03 16:21:35.949 CST [105788] 003_choice_execution.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-03 16:21:35.949 CST [105788] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=8;
+2026-09-03 16:21:35.949 CST [105788] 003_choice_execution.pl LOG:  statement: ROLLBACK TO SAVEPOINT before_bad_label;
+2026-09-03 16:21:35.949 CST [105788] 003_choice_execution.pl LOG:  statement: INSERT INTO choice_sink VALUES (9);
+2026-09-03 16:21:35.949 CST [105788] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:35.951 CST [105788] 003_choice_execution.pl LOG:  statement: ROLLBACK;
+2026-09-03 16:21:35.951 CST [105788] 003_choice_execution.pl LOG:  statement: SELECT count(*) FROM choice_sink;
+2026-09-03 16:21:36.061 CST [105791] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.061 CST [105791] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.063 CST [105791] 003_choice_execution.pl ERROR:  SemLoom provider open response does not match wire v4
+2026-09-03 16:21:36.063 CST [105791] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.159 CST [105794] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.159 CST [105794] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.161 CST [105794] 003_choice_execution.pl ERROR:  SemLoom provider open response does not match wire v4
+2026-09-03 16:21:36.161 CST [105794] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.256 CST [105797] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.256 CST [105797] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.258 CST [105797] 003_choice_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 16:21:36.258 CST [105797] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.352 CST [105800] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.352 CST [105800] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.354 CST [105800] 003_choice_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 16:21:36.354 CST [105800] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.463 CST [105803] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.463 CST [105803] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.465 CST [105803] 003_choice_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 16:21:36.465 CST [105803] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.560 CST [105806] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.560 CST [105806] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.563 CST [105806] 003_choice_execution.pl ERROR:  SemLoom provider completion does not match wire v4 task identity
+2026-09-03 16:21:36.563 CST [105806] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.661 CST [105809] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.661 CST [105809] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.663 CST [105809] 003_choice_execution.pl ERROR:  SemLoom provider completion does not match wire v4 task identity
+2026-09-03 16:21:36.663 CST [105809] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.772 CST [105812] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.772 CST [105812] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.775 CST [105812] 003_choice_execution.pl ERROR:  SemLoom provider completion does not match wire v4 task identity
+2026-09-03 16:21:36.775 CST [105812] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.869 CST [105815] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.869 CST [105815] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.872 CST [105815] 003_choice_execution.pl ERROR:  SemLoom provider completion does not match wire v4 task identity
+2026-09-03 16:21:36.872 CST [105815] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.967 CST [105818] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:36.967 CST [105818] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:36.969 CST [105818] 003_choice_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 16:21:36.969 CST [105818] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.064 CST [105821] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.064 CST [105821] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.066 CST [105821] 003_choice_execution.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 16:21:37.066 CST [105821] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.179 CST [105824] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.179 CST [105824] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.181 CST [105824] 003_choice_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 16:21:37.181 CST [105824] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.279 CST [105827] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.279 CST [105827] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.282 CST [105827] 003_choice_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 16:21:37.282 CST [105827] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.378 CST [105830] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.378 CST [105830] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.380 CST [105830] 003_choice_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 16:21:37.380 CST [105830] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.478 CST [105833] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.478 CST [105833] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.480 CST [105833] 003_choice_execution.pl ERROR:  SemLoom provider completion does not match wire v4 task identity
+2026-09-03 16:21:37.480 CST [105833] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.576 CST [105836] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.576 CST [105836] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.578 CST [105836] 003_choice_execution.pl ERROR:  SemLoom provider returned an invalid wire v4 error frame
+2026-09-03 16:21:37.578 CST [105836] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.672 CST [105839] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.673 CST [105839] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.675 CST [105839] 003_choice_execution.pl ERROR:  SemLoom provider returned an invalid wire v4 error frame
+2026-09-03 16:21:37.675 CST [105839] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.775 CST [105842] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.775 CST [105842] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.778 CST [105842] 003_choice_execution.pl ERROR:  SemLoom provider returned an invalid wire v4 error frame
+2026-09-03 16:21:37.778 CST [105842] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.881 CST [105845] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.881 CST [105845] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.883 CST [105845] 003_choice_execution.pl ERROR:  SemLoom provider returned an invalid wire v4 error frame
+2026-09-03 16:21:37.883 CST [105845] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.978 CST [105848] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:37.978 CST [105848] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:37.981 CST [105848] 003_choice_execution.pl ERROR:  SemLoom provider returned an invalid wire v4 error frame
+2026-09-03 16:21:37.981 CST [105848] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.078 CST [105851] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:38.078 CST [105851] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.080 CST [105851] 003_choice_execution.pl ERROR:  SemLoom provider returned an invalid wire v4 error frame
+2026-09-03 16:21:38.080 CST [105851] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.176 CST [105854] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:38.176 CST [105854] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.179 CST [105854] 003_choice_execution.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 16:21:38.179 CST [105854] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.303 CST [105857] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:38.303 CST [105857] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:38.304 CST [105857] 003_choice_execution.pl LOG:  statement: SET statement_timeout='100ms';
+2026-09-03 16:21:38.304 CST [105857] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.404 CST [105857] 003_choice_execution.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 16:21:38.404 CST [105857] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:38.937 CST [105860] 003_choice_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:21:38.937 CST [105860] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:38.937 CST [105860] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id=1;
+2026-09-03 16:21:39.136 CST [105864] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:39.136 CST [105864] 003_choice_execution.pl LOG:  statement: SET semloom_pg.provider_execution_profile='openai-compatible-fixed';
+2026-09-03 16:21:39.136 CST [105864] 003_choice_execution.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb) AND id <= 2;
+2026-09-03 16:21:39.339 CST [105870] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:39.339 CST [105870] 003_choice_execution.pl LOG:  statement: SET semloom_pg.provider_execution_profile='openai-compatible-fixed';
+2026-09-03 16:21:39.339 CST [105870] 003_choice_execution.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id <= 2;
+2026-09-03 16:21:39.541 CST [105876] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/9G58qxy37y/choice.sock';
+2026-09-03 16:21:39.542 CST [105876] 003_choice_execution.pl LOG:  statement: SET semloom_pg.provider_execution_profile='openai-compatible-fixed';
+2026-09-03 16:21:39.542 CST [105876] 003_choice_execution.pl LOG:  statement: EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id <= 2;
+2026-09-03 16:21:39.551 CST [105876] 003_choice_execution.pl ERROR:  SemLoom model request was rejected
+2026-09-03 16:21:39.551 CST [105876] 003_choice_execution.pl STATEMENT:  EXPLAIN (ANALYZE, FORMAT JSON) SELECT id FROM choice_rows WHERE ai_semantic.filter(content, 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb) AND id <= 2;
+2026-09-03 16:21:39.575 CST [105880] 003_choice_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/nonexistent/choice-provider.sock';
+2026-09-03 16:21:39.575 CST [105880] 003_choice_execution.pl LOG:  statement: SELECT id FROM choice_rows WHERE id=1 AND ai_semantic.filter(repeat('x', 163841), 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 16:21:39.577 CST [105880] 003_choice_execution.pl ERROR:  SemLoom provider input exceeds the 163840 byte limit
+2026-09-03 16:21:39.577 CST [105880] 003_choice_execution.pl STATEMENT:  SELECT id FROM choice_rows WHERE id=1 AND ai_semantic.filter(repeat('x', 163841), 'Classify input.', '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 16:21:39.580 CST [105750] LOG:  received fast shutdown request
+2026-09-03 16:21:39.580 CST [105750] LOG:  aborting any active transactions
+2026-09-03 16:21:39.581 CST [105750] LOG:  background worker "logical replication launcher" (PID 105759) exited with exit code 1
+2026-09-03 16:21:39.581 CST [105754] LOG:  shutting down
+2026-09-03 16:21:39.582 CST [105754] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 16:21:39.585 CST [105754] LOG:  checkpoint complete: wrote 56 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=235 kB, estimate=235 kB; lsn=0/1728080, redo lsn=0/1728080
+2026-09-03 16:21:39.591 CST [105750] LOG:  database system is shut down

@@ -10,6 +10,10 @@ SQL 0.2.0/schema 4、固定参数、计划复制、严格解码、原生函数�
 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新 plan 238）、两端各 136/136 与 C11 通过。
 只支持普通 EXPLAIN，实际执行在 child/provider 前明确拒绝；未合入或推送 main，没有真实 Map 或资源资格。
 中间反例、fixture 语法错误与最终结果分别保存；旧 1022 TAP 不重新绑定到本次提交。
+[SQL wrapper 补充](postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)绑定 `676615fa`：
+实际复现 custom 接受而 generic 拒绝隐藏 Map 指令参数，修复来源识别后两者均拒绝、零连接；
+PG18.3 regression 1/1、TAP 1283/1283、两端各 136/136 与 8/8 C11 通过。
+普通函数内联和权限检查保留；新 Map 仍未执行，模型累计 0/32，未合并或推送 main。
 Map 消息、纯值、Python v5 及深层 JSON 修复已随 `b0400944` 合入本地 main；
 [合并复查](postgresql/semmap_values_20260903/README.md#main-integration)重新通过本地 136/136 和 C11，未运行服务器或模型。
 [Map 纯值与 Python v5](postgresql/semmap_values_20260903/README.md)的服务器资格仍绑定 `425d2b1c`：
