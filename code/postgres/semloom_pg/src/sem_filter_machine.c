@@ -3,12 +3,19 @@
 #include <string.h>
 
 #include "sem_operator_machine.h"
+#include "sem_message_writer.h"
+#include "semantic_filter_contract.h"
 
 static SemloomTupleDisposition semloom_filter_handle_null(void);
 static SemloomTupleDisposition semloom_filter_recording_apply_completion(
 	const SemloomMachineCompletion *completion);
 static SemloomTupleDisposition semloom_filter_exact_apply_completion(
 	const SemloomMachineCompletion *completion);
+static bool semloom_filter_build_task(const SemloomOperatorMachine *machine,
+									 const SemloomBoundValue *input,
+									 uint8_t *destination,
+									 size_t destination_length,
+									 size_t *written_length);
 
 const SemloomOperatorMachineMethods semloom_filter_recording_machine_methods = {
 	.input_explain_property = "Filter Input Column",
@@ -20,7 +27,29 @@ const SemloomOperatorMachineMethods semloom_filter_exact_machine_methods = {
 	.input_explain_property = "Filter Input Column",
 	.handle_null = semloom_filter_handle_null,
 	.apply_completion = semloom_filter_exact_apply_completion,
+	.build_task = semloom_filter_build_task,
 };
+
+static bool
+semloom_filter_build_task(const SemloomOperatorMachine *machine,
+						 const SemloomBoundValue *input,
+						 uint8_t *destination,
+						 size_t destination_length,
+						 size_t *written_length)
+{
+	static const char directive[] = SEMLOOM_FILTER_SYSTEM_DIRECTIVE;
+	static const char separator[] = SEMLOOM_FILTER_INSTRUCTION_SEPARATOR;
+	SemloomMessagePart system_parts[] = {
+		{(const uint8_t *) directive, sizeof(directive) - 1},
+		{(const uint8_t *) separator, sizeof(separator) - 1},
+		{machine->instruction, machine->instruction_length},
+	};
+	SemloomMessagePart user = {input->data, input->length};
+
+	return semloom_message_write(system_parts,
+								 sizeof(system_parts) / sizeof(system_parts[0]),
+								 user, destination, destination_length, written_length);
+}
 
 static SemloomTupleDisposition
 semloom_filter_handle_null(void)

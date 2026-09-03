@@ -28,12 +28,19 @@ typedef struct SemloomBoundValue
 	bool is_null;
 } SemloomBoundValue;
 
+struct SemloomOperatorMachine;
+
 typedef struct SemloomOperatorMachineMethods
 {
 	const char *input_explain_property;
 	SemloomTupleDisposition (*handle_null)(void);
 	SemloomTupleDisposition (*apply_completion)(
 		const SemloomMachineCompletion *completion);
+	bool (*build_task)(const struct SemloomOperatorMachine *machine,
+					   const SemloomBoundValue *input,
+					   uint8_t *destination,
+					   size_t destination_length,
+					   size_t *written_length);
 } SemloomOperatorMachineMethods;
 
 typedef struct SemloomOperatorMachine
@@ -48,6 +55,19 @@ typedef struct SemloomOperatorMachine
 extern const SemloomOperatorMachineMethods semloom_map_machine_methods;
 extern const SemloomOperatorMachineMethods semloom_filter_recording_machine_methods;
 extern const SemloomOperatorMachineMethods semloom_filter_exact_machine_methods;
+
+/* Compile a Map task only; does not select or enable an execution machine.
+ * Inputs are borrowed, length-delimited text with separate SQL NULL flags.
+ * Size is zero for invalid/NULL input or instruction. Write requires an exact
+ * non-overlapping destination; failure leaves it unchanged. No terminator is
+ * appended. The caller retains all input and destination storage.
+ */
+extern size_t semloom_map_task_size(const SemloomBoundValue *instruction,
+								   const SemloomBoundValue *input);
+extern bool semloom_map_write_task(const SemloomBoundValue *instruction,
+								  const SemloomBoundValue *input,
+								  uint8_t *destination,
+								  size_t destination_length);
 
 extern bool semloom_operator_machine_init(SemloomOperatorMachine *machine,
 										 uint32_t operator_kind,

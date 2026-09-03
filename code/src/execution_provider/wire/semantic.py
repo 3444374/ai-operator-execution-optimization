@@ -11,6 +11,7 @@ from typing import Any
 
 from .framing import MAX_FRAME_BYTES, ProtocolError, has_duplicate_fields
 from ..generation_profile import GenerationProfile
+from ..message_encoding import encode_messages
 
 
 MAX_INPUT_BYTES = 163_840
@@ -169,18 +170,7 @@ def canonical_messages(instruction: str, input_value: str) -> bytes:
         raise TypeError("input_value must be text")
     if len(input_value.encode("utf-8")) > MAX_INPUT_BYTES:
         raise ValueError("input length is outside the wire contract")
-    messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_DIRECTIVE + INSTRUCTION_SEPARATOR + instruction,
-        },
-        {"role": "user", "content": input_value},
-    ]
-    return json.dumps(
-        messages,
-        ensure_ascii=False,
-        separators=(",", ":"),
-    ).encode("utf-8")
+    return encode_messages(SYSTEM_DIRECTIVE + INSTRUCTION_SEPARATOR + instruction, input_value)
 
 
 def physical_algorithm_digest() -> str:

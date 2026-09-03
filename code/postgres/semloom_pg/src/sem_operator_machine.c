@@ -1,9 +1,7 @@
 /* Dispatch for PostgreSQL-independent SemMap/SemFilter result machines. */
 #include <stddef.h>
-#include <string.h>
 
 #include "sem_operator_machine.h"
-#include "semantic_filter_contract.h"
 
 #define SEMLOOM_MACHINE_OPERATOR_MAP 1
 #define SEMLOOM_MACHINE_OPERATOR_FILTER 2
@@ -11,20 +9,6 @@
 #define SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION 2
 #define SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION 3
 
-typedef struct SemloomTaskWriter
-{
-	uint8_t *destination;
-	size_t capacity;
-	size_t length;
-	bool valid;
-} SemloomTaskWriter;
-
-static void semloom_task_writer_bytes(SemloomTaskWriter *writer,
-										  const void *data,
-										  size_t length);
-static void semloom_task_writer_json_string(SemloomTaskWriter *writer,
-												 const uint8_t *data,
-												 size_t length);
 static bool semloom_operator_machine_build_task(
 	const SemloomOperatorMachine *machine,
 	const SemloomBoundValue *input,
@@ -137,18 +121,6 @@ semloom_operator_machine_build_task(const SemloomOperatorMachine *machine,
 									size_t destination_length,
 									size_t *written_length)
 {
-	static const char prefix[] = "[{\"role\":\"system\",\"content\":";
-	static const char middle[] = "},{\"role\":\"user\",\"content\":";
-	static const char suffix[] = "}]";
-	static const char directive[] = SEMLOOM_FILTER_SYSTEM_DIRECTIVE;
-	static const char separator[] = SEMLOOM_FILTER_INSTRUCTION_SEPARATOR;
-	SemloomTaskWriter writer = {
-		.destination = destination,
-		.capacity = destination_length,
-		.length = 0,
-		.valid = true,
-	};
-
 	if (machine == NULL || input == NULL || written_length == NULL || input->is_null ||
 		(input->length > 0 && input->data == NULL))
 		return false;
@@ -157,93 +129,10 @@ semloom_operator_machine_build_task(const SemloomOperatorMachine *machine,
 		*written_length = 0;
 		return true;
 	}
-	if ((machine->plan_schema_version != SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION &&
-		 machine->plan_schema_version != SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION) ||
+	if (machine->methods == NULL || machine->methods->build_task == NULL ||
 		machine->instruction == NULL || machine->instruction_length == 0)
 		return false;
 
-	semloom_task_writer_bytes(&writer, prefix, sizeof(prefix) - 1);
-	semloom_task_writer_bytes(&writer, "\"", 1);
-	semloom_task_writer_json_string(&writer,
-									(const uint8_t *) directive,
-									sizeof(directive) - 1);
-	semloom_task_writer_json_string(&writer,
-									(const uint8_t *) separator,
-									sizeof(separator) - 1);
-	semloom_task_writer_json_string(&writer,
-									machine->instruction,
-									machine->instruction_length);
-	semloom_task_writer_bytes(&writer, "\"", 1);
-	semloom_task_writer_bytes(&writer, middle, sizeof(middle) - 1);
-	semloom_task_writer_bytes(&writer, "\"", 1);
-	semloom_task_writer_json_string(&writer, input->data, input->length);
-	semloom_task_writer_bytes(&writer, "\"", 1);
-	semloom_task_writer_bytes(&writer, suffix, sizeof(suffix) - 1);
-	*written_length = writer.length;
-	return writer.valid &&
-		(destination == NULL || writer.length == destination_length);
-}
-
-static void
-semloom_task_writer_bytes(SemloomTaskWriter *writer,
-							  const void *data,
-							  size_t length)
-{
-	if (writer->destination != NULL)
-	{
-		if (writer->length > writer->capacity ||
-			length > writer->capacity - writer->length)
-		{
-			writer->valid = false;
-			return;
-		}
-		memcpy(writer->destination + writer->length, data, length);
-	}
-	writer->length += length;
-}
-
-static void
-semloom_task_writer_json_string(SemloomTaskWriter *writer,
-								 const uint8_t *data,
-								 size_t length)
-{
-	static const char hex[] = "0123456789abcdef";
-	size_t index;
-
-	for (index = 0; index < length; index++)
-	{
-		uint8_t byte = data[index];
-
-		if (byte == '"' || byte == '\\')
-		{
-			uint8_t escaped[2] = {'\\', byte};
-
-			semloom_task_writer_bytes(writer, escaped, sizeof(escaped));
-		}
-		else if (byte == '\b' || byte == '\f' || byte == '\n' ||
-				 byte == '\r' || byte == '\t')
-		{
-			uint8_t escaped[2] = {'\\', 0};
-
-			switch (byte)
-			{
-				case '\b': escaped[1] = 'b'; break;
-				case '\f': escaped[1] = 'f'; break;
-				case '\n': escaped[1] = 'n'; break;
-				case '\r': escaped[1] = 'r'; break;
-				default: escaped[1] = 't'; break;
-			}
-			semloom_task_writer_bytes(writer, escaped, sizeof(escaped));
-		}
-		else if (byte < 0x20)
-		{
-			uint8_t escaped[6] = {'\\', 'u', '0', '0',
-				(uint8_t) hex[byte >> 4],
-				(uint8_t) hex[byte & 0x0f]};
-
-			semloom_task_writer_bytes(writer, escaped, sizeof(escaped));
-		}
-		else
-			semloom_task_writer_bytes(writer, &byte, 1);
-	}
+	return machine->methods->build_task(machine, input, destination,
+									  destination_length, written_length);
 }
