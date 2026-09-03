@@ -138,6 +138,28 @@ for my $mode ('force_custom_plan', 'force_generic_plan')
     is($stdout, "1|hello\n1|hello", 'prepared binding returns the same generated values');
 }
 
+$node->safe_psql('postgres', q{
+CREATE SEQUENCE map_input_calls;
+CREATE FUNCTION counted_map_input(value text) RETURNS text LANGUAGE plpgsql VOLATILE AS $$
+BEGIN PERFORM nextval('map_input_calls'); RETURN value; END $$;
+CREATE FUNCTION checked_map_input(value text, row_id integer) RETURNS text LANGUAGE plpgsql VOLATILE AS $$
+BEGIN IF row_id=4 THEN PERFORM 1/0; END IF; RETURN value; END $$;
+});
+for my $limit ('', 'LIMIT 2', 'LIMIT 1 OFFSET 2')
+{
+    my $ordinary = $node->safe_psql('postgres', "ALTER SEQUENCE map_input_calls RESTART WITH 1; SELECT counted_map_input(body) FROM ONLY map_rows WHERE id<=4 $limit; SELECT last_value FROM map_input_calls;");
+    my @lines = split /\n/, $ordinary;
+    my $expected_calls = $lines[-1];
+    ($status, $stdout, $stderr) = golden_query("ALTER SEQUENCE map_input_calls RESTART WITH 1; SELECT ai_semantic.map(counted_map_input(body),'Echo the input.',$options) FROM ONLY map_rows WHERE id<=4 $limit; SELECT last_value FROM map_input_calls;");
+    is($status, 0, 'VOLATILE Map input executes with ordinary child evaluation') or diag($stderr);
+    @lines = split /\n/, $stdout;
+    is($lines[-1], $expected_calls, 'Map does not add input expression evaluations before/after LIMIT');
+}
+my $child_query = "SELECT id, ai_semantic.map(checked_map_input(body,id),'Echo the input.',$options) FROM ONLY map_rows WHERE id IN (1,4)";
+($status, $stdout, $stderr) = golden_query("TRUNCATE map_sink; \\set ON_ERROR_STOP 0\nBEGIN; SAVEPOINT before_child; INSERT INTO map_sink $child_query; ROLLBACK TO SAVEPOINT before_child; $query WHERE id=1; ROLLBACK; SELECT count(*) FROM map_sink;", '--test-max-sessions', '2');
+like($stderr, qr/ERROR:  22012: division by zero\n/, 'later child expression error retains native SQLSTATE');
+is($stdout, "1|hello\n0", 'later child failure closes the session and leaves no partial INSERT rows');
+
 my @faults = (
     (map { ["open-$_", '08P01', 'SemLoom provider open response does not match wire v5'] }
         qw(version fractional max_input_bytes max_output_bytes max_frame_bytes max_inflight_tasks semantic_spec_digest physical_algorithm_digest provider_execution_digest)),
@@ -183,6 +205,9 @@ for my $sql ("EXPLAIN $query", "$query LIMIT 0", "$query WHERE false", "$query W
     is($status, 0, 'no-task Map succeeds with a provider that never responds') or diag($stderr);
     ok(!IO::Select->new($sentinel)->can_read(0), 'no-task Map makes zero provider connections');
 }
+($status, $stdout, $stderr) = $node->psql('postgres', "\\set VERBOSITY verbose\nSET semloom_pg.gateway_socket='$socket'; SELECT ai_semantic.map(checked_map_input(body,id),'Echo the input.',$options) FROM ONLY map_rows WHERE id=4");
+like($stderr, qr/ERROR:  22012: division by zero\n/, 'first child expression failure retains native SQLSTATE');
+ok(!IO::Select->new($sentinel)->can_read(0), 'first child error precedes provider open');
 ($status, $stdout, $stderr) = $node->psql('postgres', "\\set VERBOSITY verbose\nSET semloom_pg.gateway_socket='$socket'; SELECT ai_semantic.map(repeat('x',163841), 'Echo the input.', $options) FROM ONLY map_rows WHERE id=1");
 like($stderr, qr/ERROR:  54000: SemLoom provider input exceeds the 163840 byte limit\n/, 'input preflight rejects the first excess byte');
 ok(!IO::Select->new($sentinel)->can_read(0), 'oversized input is rejected before encoding/open');

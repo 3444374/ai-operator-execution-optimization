@@ -100,24 +100,21 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	config = MemoryContextAllocZero(owner_context, sizeof(*config));
 	config->socket_path = MemoryContextAlloc(owner_context, path_length + 1);
 	memcpy(config->socket_path, socket_path, path_length + 1);
+	config->protocol_version = semloom_provider_spec_is_recording(spec) ? 2 :
+		(semloom_provider_spec_is_generate_map(spec) ? 5 : (spec->has_generation_profile ? 4 : 3));
 	if (semloom_provider_spec_is_recording(spec))
 	{
-		config->protocol_version = 2;
 		provider->ops = &semloom_uds_recording_ops;
 		config->semantic_execution_id = NULL;
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_GOLDEN)
 	{
-		config->protocol_version = semloom_provider_spec_is_generate_map(spec) ? 5 :
-			(spec->has_generation_profile ? 4 : 3);
 		provider->ops = &semloom_uds_golden_ops;
 		config->semantic_execution_id = config->protocol_version == 5 ? SEMLOOM_UDS_MAP_GOLDEN_EXECUTION_ID :
 			(spec->has_generation_profile ? SEMLOOM_UDS_CHOICE_GOLDEN_EXECUTION_ID : SEMLOOM_UDS_GOLDEN_EXECUTION_ID);
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED)
 	{
-		config->protocol_version = semloom_provider_spec_is_generate_map(spec) ? 5 :
-			(spec->has_generation_profile ? 4 : 3);
 		provider->ops = &semloom_uds_fixed_ops;
 		config->semantic_execution_id = config->protocol_version == 5 ? SEMLOOM_UDS_MAP_FIXED_EXECUTION_ID :
 			(spec->has_generation_profile ? SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID : SEMLOOM_UDS_FIXED_EXECUTION_ID);

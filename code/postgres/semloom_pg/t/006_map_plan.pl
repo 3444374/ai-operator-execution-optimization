@@ -19,7 +19,7 @@ my $socket_path = $node->host . '/map-never-connect.sock';
 my $listener = IO::Socket::UNIX->new(Type => SOCK_STREAM, Local => $socket_path, Listen => 8)
   or die "could not create provider connection sentinel";
 $node->append_conf('postgresql.conf', "shared_preload_libraries = '$test_dir/semloom_plan_contract_test,semloom_pg'\n");
-$node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = 'invalid-relative-path'\n");
+$node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = '$socket_path'\n");
 $node->start;
 $node->safe_psql('postgres', q{CREATE EXTENSION semloom_pg VERSION '0.1.0';});
 $node->safe_psql('postgres', q{
@@ -85,7 +85,7 @@ INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
     is($plan->{'Max Output Bytes'}, 65536, 'plan owns its output byte cap');
     is($plan->{'Provider'}, 'uds-golden', 'EXPLAIN selects the semantic adapter without opening it');
     unlike($node->safe_psql('postgres', "EXPLAIN $query"), qr/Echo the input\./, 'EXPLAIN does not disclose the instruction');
-    my ($code, $out, $err) = $node->psql('postgres', "\\set VERBOSITY verbose\n$query;");
+    my ($code, $out, $err) = $node->psql('postgres', "\\set VERBOSITY verbose\nSET semloom_pg.gateway_socket='invalid-relative-path'; $query;");
     isnt($code, 0, 'generative Map rejects an invalid provider path');
     like($err, qr/ERROR:  22023: SemLoom provider socket path must be absolute\n/,
          'new plan cannot silently use an old provider path');
@@ -266,6 +266,7 @@ END $$;
     {
         is($capture->($statement), '42501|permission denied for function map',
            'missing EXECUTE is checked even for EXPLAIN, empty and NULL queries');
+        ok(!IO::Select->new($listener)->can_read(0), 'denied Map does not connect to its configured provider');
     }
     $node->safe_psql('postgres', 'GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;');
     for my $mode ('force_custom_plan', 'force_generic_plan')
@@ -273,15 +274,19 @@ END $$;
         $reader->query_safe("SET plan_cache_mode=$mode; PREPARE map_acl(integer) AS $query WHERE id >= \$1;");
         my $saved = decode_json($reader->query_safe('EXPLAIN (FORMAT JSON) EXECUTE map_acl(1)'))->[0]->{'Plan'};
         is($saved->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'}, "$mode caches the complete Map definition");
+        $reader->query_safe("SET semloom_pg.gateway_socket='invalid-relative-path'");
         is($capture->('EXECUTE map_acl(1)'), '22023|SemLoom provider socket path must be absolute',
            "$mode authorized execution reaches lazy provider validation");
         my $counter = $mode eq 'force_custom_plan' ? 'custom_plans' : 'generic_plans';
         is($reader->query_safe("SELECT $counter > 0 FROM pg_prepared_statements WHERE name='map_acl'"), 't',
            "$mode actually exercised its requested plan kind before revocation");
         $node->safe_psql('postgres', 'REVOKE EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) FROM map_reader;');
+        $reader->query_safe("SET semloom_pg.gateway_socket='$socket_path'");
         is($capture->('EXECUTE map_acl(1)'), '42501|permission denied for function map',
            "$mode rechecks EXECUTE after another session revokes it");
+        ok(!IO::Select->new($listener)->can_read(0), 'cached revoked Map never connects to its configured provider');
         $node->safe_psql('postgres', 'GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;');
+        $reader->query_safe("SET semloom_pg.gateway_socket='invalid-relative-path'");
         is($capture->('EXECUTE map_acl(1)'), '22023|SemLoom provider socket path must be absolute',
            "$mode permission grant restores authorized plan initialization");
         $reader->query_safe('DEALLOCATE map_acl');
@@ -341,11 +346,12 @@ AS \$\$ BEGIN RETURN \$1; END \$\$;
        'cached Map calls the native execution hook once per initialization and chains the previous planner hook');
     $hooks->query_safe("SELECT map_watch($marker_oid, $child_oid); PREPARE hook_child AS " .
         "SELECT ai_semantic.map(map_child_probe(body), 'Echo the input.', $options) FROM ONLY map_inputs;");
+    $hooks->query_safe("SET semloom_pg.gateway_socket='invalid-relative-path'");
     is($hooks->query_safe(q{SELECT map_test_capture('EXECUTE hook_child')}),
        '22023|SemLoom provider socket path must be absolute', 'authorized execution reaches the provider after child initialization');
     is($hooks->query_safe('SELECT map_events()'), '1|1|1', 'authorized Map and ordinary child initialize once');
     $node->safe_psql('postgres', 'REVOKE EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) FROM map_reader;');
-    $hooks->query_safe("SET ROLE map_reader; SELECT map_watch($marker_oid, $child_oid)");
+    $hooks->query_safe("SET semloom_pg.gateway_socket='$socket_path'; SET ROLE map_reader; SELECT map_watch($marker_oid, $child_oid)");
     is($hooks->query_safe(q{SELECT map_test_capture('EXPLAIN EXECUTE hook_child')}),
        '42501|permission denied for function map', 'permission is checked before even the explain-only child initializer');
     my @denied_events = split /\|/, $hooks->query_safe('SELECT map_events()');
@@ -401,7 +407,7 @@ LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || input; END $$;
     $node->safe_psql('postgres', 'CREATE TABLE map_target(id integer, generated text)');
     like($node->safe_psql('postgres', "EXPLAIN INSERT INTO map_target $query"),
          qr/Custom Scan \(SemLoom SemMap\)/, 'direct INSERT SELECT uses the same new Map plan');
-    is($node->safe_psql('postgres', "SELECT map_test_capture(\$sql\$INSERT INTO map_target $query\$sql\$)"),
+    is($node->safe_psql('postgres', "SET semloom_pg.gateway_socket='invalid-relative-path'; SELECT map_test_capture(\$sql\$INSERT INTO map_target $query\$sql\$)"),
        '22023|SemLoom provider socket path must be absolute', 'INSERT cannot silently invoke an old executor');
     is($node->safe_psql('postgres', 'SELECT count(*) FROM map_target'), 0, 'failed provider INSERT leaves no target rows');
     for my $mode ('force_custom_plan', 'force_generic_plan')

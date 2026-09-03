@@ -11,6 +11,7 @@
 #include "wire_semantic.h"
 #include "generation_profile.h"
 #include "semantic_map_contract.h"
+#include "sem_text.h"
 
 #define SEMLOOM_SEMANTIC_ERROR_FIELD_COUNT 4
 
@@ -64,6 +65,23 @@ static bool semloom_semantic_validate_error(Jsonb *message,
 static bool semloom_semantic_error_code_allowed(AiByteSlice code);
 static void semloom_semantic_set_error_code(AiByteSlice code,
 									 AiProviderError *error);
+static AiProviderStatus semloom_semantic_parse_response(const char *response,
+	uint32 version, Jsonb **message, AiProviderError *error);
+
+static AiProviderStatus
+semloom_semantic_parse_response(const char *response,
+	uint32 version, Jsonb **message, AiProviderError *error)
+{
+	if (version == 5 &&
+		!semloom_text_is_utf8_no_nul((const uint8 *) response, strlen(response)))
+	{
+		semloom_provider_error_set(error, AI_PROVIDER_ERROR_PROTOCOL, 0, 0,
+			"SemLoom provider returned invalid JSON");
+		return AI_PROVIDER_STATUS_ERROR;
+	}
+	return version == 3 ? semloom_wire_common_parse_json(response, message, error) :
+		semloom_wire_common_parse_json_unique(response, message, error);
+}
 
 static void
 semloom_semantic_append_profile(StringInfo request,
@@ -217,9 +235,7 @@ semloom_wire_semantic_open(pgsocket socket_fd,
 	status = semloom_wire_common_receive_frame(socket_fd, &response, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
-	status = (identity->protocol_version != 3 ?
-		semloom_wire_common_parse_json_unique(response, &message, error) :
-		semloom_wire_common_parse_json(response, &message, error));
+	status = semloom_semantic_parse_response(response, identity->protocol_version, &message, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
 	if (!semloom_semantic_validate_response(message, identity->protocol_version,
@@ -345,9 +361,7 @@ semloom_wire_semantic_drive(pgsocket socket_fd,
 	status = semloom_wire_common_receive_frame(socket_fd, &response, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
-	status = (identity->protocol_version != 3 ?
-		semloom_wire_common_parse_json_unique(response, &message, error) :
-		semloom_wire_common_parse_json(response, &message, error));
+	status = semloom_semantic_parse_response(response, identity->protocol_version, &message, error);
 	if (status != AI_PROVIDER_STATUS_OK)
 		return status;
 	if (!semloom_semantic_validate_response(message, identity->protocol_version,

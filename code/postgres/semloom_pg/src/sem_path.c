@@ -383,7 +383,7 @@ semloom_plan_path(PlannerInfo *root,
 				 errmsg("invalid SemMap custom path state")));
 
 	semloom_replace_marker_in_plan(linitial_node(Plan, custom_plans), marker_oid);
-	scan_target_list = (List *) semloom_replace_marker((Node *) target_list, &marker_oid);
+	scan_target_list = copyObject(target_list);
 	foreach(cell, target_list)
 	{
 		TargetEntry *entry = lfirst_node(TargetEntry, cell);
@@ -401,9 +401,10 @@ semloom_plan_path(PlannerInfo *root,
 				 errmsg("SemMap plan lost its mapped output identity")));
 
 	/*
-	 * Leave these expressions in planner form.  set_customscan_references()
-	 * matches them against custom_scan_tlist and creates INDEX_VAR references
-	 * after the complete plan tree is available.
+	 * Keep the logical output identity distinct from its child input.  setrefs
+	 * matches the marker to this descriptor and builds an INDEX_VAR; substituting
+	 * the input here would re-project constants or alias equal ordinary columns.
+	 * Only the child evaluates the input; this descriptor is never executed.
 	 */
 	scan->scan.plan.targetlist = copyObject(scan_target_list);
 	scan->scan.plan.qual = NIL;

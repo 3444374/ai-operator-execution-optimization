@@ -164,7 +164,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("path->custom_paths = list_make1(child_path)", path_source)
         self.assertIn("output_rel->pathlist = semantic_paths", path_source)
         self.assertIn("CUSTOMPATH_SUPPORT_PROJECTION", path_source)
-        self.assertIn("set_customscan_references()", path_source)
+        self.assertIn("scan->custom_scan_tlist = scan_target_list", path_source)
         self.assertNotIn("makeVar(INDEX_VAR", path_source)
         self.assertIn("semloom_is_insert_source", path_source)
         self.assertIn("source_entry->rtekind == RTE_SUBQUERY", common_path_source)
