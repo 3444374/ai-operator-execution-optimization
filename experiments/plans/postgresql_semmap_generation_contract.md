@@ -2,9 +2,9 @@
 
 日期：2026-09-03
 
-状态：合同复核修订已完成，待研发 agent 验证代码落点；实现、PG 验收和模型运行均 pending。
+状态：语义与工程验收合同已定稿，待研发 agent 对照源码登记落点/反例后实施；实现、PG 验收和模型运行均 pending。
 
-源码基线：main a3199bd9。本文面向研发与审查者，不是已发布功能说明。
+生产代码对照基线：a3199bd9。本文面向研发与审查者，不是已发布功能说明。
 
 本合同规定调用方与实现方必须一致理解的算子行为、数据表示和验收标准。它是四 D 具体 SQL、
 prompt、输出、版本和测试预期的唯一入口；[主架构计划](postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)
@@ -126,8 +126,10 @@ copyObject、计划解码、同 OID 函数替换/新 OID 重建均须验证；�
 
 函数必须经现有成员身份检查识别；同名普通函数不能被接管。
 新重载缺少 EXECUTE 权限时必须返回 42501，provider open 和模型请求均为零；不能降为已知限制。
-PG carrier 保留原函数 OID 的私有绑定/依赖，在每次执行初始化、取 child 和打开 provider 前，
-按当前有效用户复用 PG 原生 ACL 检查及 function-execute hook；不把权限结果永久缓存进语义计划。
+PG carrier 保留原函数 OID 的私有绑定/依赖。每个生成型 Map 节点在每次 executor 初始化时，
+完成必要的只读计划/函数身份校验后、初始化 ordinary child 或建立 PgSemanticRuntime 之前，
+按当前有效用户执行一次 PG 原生 ACL 检查；通过后调用一次原生 function-execute hook。
+检查通过才继续 child/runtime/provider 路径；不在逐行循环重复检查或重复调用 hook，结果不跨执行缓存。
 函数 OID 不进入语义摘要或中立 port。lowering 移除了函数表达式，不能因此省略原来在
 [PG18.3 ExecInitFunc](https://github.com/postgres/postgres/blob/REL_18_3/src/backend/executor/execExpr.c#L2539)
 中的检查，也不另建授权系统。
@@ -218,6 +220,9 @@ HTTP 整体响应超限或无法解析时尚不能建立合法 completion，仍�
 不将其冒充上述文本长度错误。v3/v4 白名单和旧错误表现不变。
 
 响应须保留 response_model_id、finish_reason、prompt_tokens、output_tokens。
+response_model_id 与计划 model_id 均为有效 UTF-8、无 U+0000 的 1–128 字节字符串，两者逐字节相同。
+finish_reason 为有效 UTF-8、无 U+0000 的 1–32 字节字符串，不 trim 或 normalization；不额外限制
+可打印字符。wire 中表示非法时为 08P01；SQL 输入更早触发的 PG 编码错误仍保留原生 SQLSTATE。
 usage 是明确提供的非负 uint64 值，零值合法但不等同缺失；不能将缺失值补零或按字符数伪造。
 fixture 的合成 usage 保持测试身份，不冒充真实模型测量。
 成功请求的 output_tokens 不超过计划 max_tokens，计数累加检查溢出。
@@ -267,8 +272,14 @@ semantic digest 绑定语义，physical digest 绑定算法/role，provider dige
 ### 5.2 严格 v5 消息
 
 复用已有四字节网络序长度 framing、JSON 校验、FD/latch/超时与 session loop。
-下面列出 v5 字段集合；未知/重复/缺失字段拒绝，数字类型与 uint64 范围严格检查，
-sequence 仍是无前导零的十进制字符串，open error 的 sequence 为 JSON null。
+下面列出 v5 字段集合；未知/重复/缺失字段拒绝，字段类型与 uint64 范围严格检查。
+sequence、prompt_tokens、output_tokens 沿用现有 wire 的 JSON 十进制字符串表示：匹配
+0 或 [1-9][0-9]*，最多 20 个 ASCII 字符，数值不超过 18446744073709551615；
+拒绝 JSON 数字、boolean、空串、符号、小数/指数、前导零及溢出。open error 的 sequence 才为 JSON null。
+中立 port 与 §10 摘要计算仍使用 uint64 数值；模型 HTTP usage 的数值由 Adapter 严格校验后再转成
+wire 字符串。protocol_version、spec version、容量等字段继续使用各自规定的 JSON 数值类型。
+此约定对照了现有 [session writer](../../code/src/execution_provider/adapters/semantic_session.py)
+与 [C uint64 reader](../../code/postgres/semloom_pg/src/wire_semantic.c)；旧版本行为不变。
 
 | 帧 | 必须字段 |
 |---|---|
@@ -282,8 +293,13 @@ open 的 operator_kind=SEM_MAP、input_type=raw_output_type=text、protocol_vers
 generation_constraints 恰为 §4.2 六字段。opened 的 max_input_bytes/max_output_bytes 是本 session
 确认的有效计划限制，必须与 open 一致；max_frame_bytes=1048576、max_inflight_tasks=1。
 provider 底层能力可以更大，但不能在 opened 中扩大实际限制；无法承载该合同则按 INVALID_OPEN 拒绝。
-open 不传 SQL/Plan 或额外 instruction 副本。gateway 从 task 的两条消息取得 instruction/input，
-按 §10 重新核对消息与语义/payload 摘要，不能只相信收到的 digest。
+open 不传 SQL/Plan 或额外 instruction 副本。opened 确认固定字段、配置/容量、摘要形态及可独立
+重算的物理/provider 身份；instruction 尚未到达，不能声称已独立验证完整 semantic digest。
+gateway 在首项 task 到达后，从两条消息取得 instruction/input，按 §10 重算 S/PD 并与 open/task
+声明核对，通过后才绑定该 session 的 instruction 并调用 completion Adapter。后续每项仍须核对
+S/PD，instruction 字节与 semantic identity 都保持不变；不匹配即 INVALID_TASK、session 终止，
+不产生该项模型请求。只有格式合法但内容错误的 S 时，允许 open 后在首项 task 拒绝。
+无 task 不做语义执行，也不为验证 instruction 额外发送内容；PG 正常零任务路径仍不打开 session。
 完成帧先验证表示、关联和 evidence，再做 plan/model/usage 与 Map 输出规则检查。
 v5 的 finish_reason 为非空、最多 32 字节的字符串，合法非 stop 值交给 Map policy 拒绝。
 旧端不支持 v5 时明确失败，绝不回落到 v3/v4、recording 或不受限请求。
@@ -382,7 +398,7 @@ Interface 为表面，不依靠模块私有状态。旧行为测试只有在等�
 | 零外部工作 | plain EXPLAIN、空表、NULL-only、LIMIT 0 配坏 socket/未启动 gateway 仍零连接；非法 instruction/options 仍报错 |
 | 输出 | 空串、首尾空白、多行、Unicode/组合字符、TRUE/UNKNOWN 文本、65536 与 65537 字节、长度完成、缺/错 usage/model、超 max_tokens、无效 UTF-8/NUL |
 | 协议 | 摘要 mutation、重复/未知/缺字段、sequence 关联/溢出/重复；v5 超限错误及跨版本拒绝；底层容量大于/小于计划、opened 限制不符；旧端拒绝、不回落、不重试 |
-| PG 所有权 | §3.3 的直接/缓存/custom/generic/空输入 EXECUTE 撤权零请求及 GRANT 恢复；列权限/RLS、snapshot、事务/savepoint、child/provider 等待取消、新查询恢复 |
+| PG 所有权 | §3.3 的直接/缓存/custom/generic/空输入 EXECUTE 撤权零请求及 GRANT 恢复；每次节点初始化只检查一次且不在逐行循环调用 hook；列权限/RLS、snapshot、事务/savepoint、取消与恢复 |
 | 资源 | toasted input 的 detoast 与编码/复制只活到本 tuple；正常/错误/取消/早停/重复 close 后 FD 与 context 可回收 |
 | 兼容 | recording Map/Filter、exact v3、choice v4 的现有 regression/TAP、协议 golden、错误/脱敏/EXPLAIN 与 public imports |
 | 未支持形状 | 多个新旧 Map、Map+Filter、嵌套/WHERE/CASE、Join/CTE/aggregate/window、排序、rescan/EPQ、并行与不支持 INSERT 修饰 |
@@ -398,7 +414,13 @@ Python 和 neutral/machine C11。源码、二进制、原始/公开日志哈希�
 
 默认资源验收配置：同一已预热 backend 连续三轮纯 SELECT，各 2,000 个非 NULL 任务，
 每项 input=100,000 字节、fixture raw output=65,536 字节；输出排空而不混入 INSERT 写回。
-用 psql 直接输出到 /dev/null 或 libpq single-row mode 流式排空，不用测试 helper 捕获全部结果。
+资源验收使用 [libpq single-row mode](https://www.postgresql.org/docs/18/libpq-single-row-mode.html)，
+或已证明逐行读取并释放结果、保持同一条 SQL/计划/事务语义的等价驱动。每轮在发送查询后立即启用
+single-row mode 并检查成功；逐项处理后 PQclear，不保留完整结果集，读到最终成功状态并排空结果后
+才记该轮成功。收到若干行后仍可能报错，不能用已收行数替代最终成功状态。
+默认 psql 重定向到 /dev/null 只控制输出去向，不证明 libpq 不缓存全量结果，不能单独作为本轮
+流式资源验收依据。其他 psql 获取模式须另证有界读取及 SQL/计划/事务未变，不在本轮默认引入 cursor。
+客户端 RSS 与读取模式也要记录，避免观察器缓存干扰；此前 psql smoke 保留其原始观察身份，不据此删除历史证据。
 fixture 复用一个或很小一组 payload/output，起点前准备好；每项仍由连续 sequence 独立关联，
 任务数另由输入数、gateway 记录及成功退出核对，不把观察器/fixture 存储归因于 provider。
 每轮及跨三轮的 PG RSS 相对预热起点：峰值增量不超过 16 MiB、结束增量不超过 8 MiB；
@@ -500,7 +522,8 @@ E_fixed        = 6782bdee3092bc43c885e0c90e57c602bd08364f20946bacc4dc9d8283feae2
 CE_ascii_fixed = 1d6007a0388e09464262e7cceabd102bbd441ffdba9bf377dc0a2c944a8b0cbb
 ```
 
-下列 JSON 中的转义先解码得到 instruction/input/raw_output；再按 §4.1 编码 M。
+下列 JSON 是计算输入向量，不是完整 wire 帧；sequence/usage 在此以数值列出，实际 wire 按 §5.2
+编码为十进制字符串，摘要仍按 U64 编码。转义先解码得到 instruction/input/raw_output；再按 §4.1 编码 M。
 换行和 tab 不是两个普通字符，ASCII/Unicode 也不能先做 normalization。
 
 ```json
@@ -545,7 +568,7 @@ CE_ascii_fixed = 1d6007a0388e09464262e7cceabd102bbd441ffdba9bf377dc0a2c944a8b0cb
     "completion_evidence_digest": "4ddf117564c9ebffc55c579bfce150fd2c88b1df338b5db58f9f15a60db960c2"
   },
   {
-    "name": "duplicate-sequence",
+    "name": "same-payload-sequence-1",
     "instruction": "Echo the input.",
     "input": "hello",
     "raw_output": "hello",
@@ -562,17 +585,24 @@ CE_ascii_fixed = 1d6007a0388e09464262e7cceabd102bbd441ffdba9bf377dc0a2c944a8b0cb
 
 ### 10.3 反例和不变量
 
-- 只改 sequence：S/PH/E/PD 不变，CE 改变；duplicate-sequence 不能被当作缓存命中并少发请求。
+- 只改 sequence：S/PH/E/PD 不变，CE 改变；same-payload-sequence-1 是正常的下一项任务，不能因
+  payload 相同而少发请求，不是重复序号反例。
+- 真正重复 task 序号：0 已成功完成后再次发送 0，返回 INVALID_TASK 并终止 session，不再次调用模型。
+  另测 0→2 跳号、超过 uint64、前导零；PG 对迟到/重复 completion 按关联检查拒绝，不重复输出或计数。
 - 改 instruction 或 max_tokens：S 与 PD 改变；改 input：S 不变而 PD 改变。
 - SQL options 的键顺序/等值数值写法、物理列号变化不改变 S。
 - 改模型、输出、finish_reason 或 usage 后，原 CE 不能通过；改 provider execution ID 后，E 改变。
 - 将完整多行文本沿用 Filter 换行 stop、把生成结果套三值 parser、把空串转换为 NULL，均是失败用例。
+- open 的 S 格式合法但与首项 instruction 不符：opened 不等于语义验证通过，首项 task 必须零模型调用
+  地失败；后续 instruction 变化同样拒绝。metadata 的无效 UTF-8/NUL，以及 wire usage 错用 JSON 数字均为反例。
 - 对 U+0001、引号/反斜线构造最大 input/instruction/output，独立核对完整 frame 大小；
   编码上限不只测 ASCII。边界字节数与多字节字符跨界同时验证。
 - C、Python 和文档值须三方一致；不得只让 C 与 Python 共用同一个错误预期。
 
 本稿按字段表做离线最大转义核对：task body 为 1,008,142 字节；含最大模型/结束原因字符串及
-完整 uint64 编码范围的 completion body 为 394,853 字节，均小于 1,048,576 字节。长度不含四字节帧头。
-若 output_tokens 已满足计划上限 4096，后者为 394,837 字节；较大的上界也覆盖先解码、随后因
-output_tokens 越过计划而拒绝的帧。复核修正了初稿混用这两个口径造成的 16 字节差异。
+完整 uint64 编码范围的 completion body 为 394,857 字节，均小于 1,048,576 字节。长度不含四字节帧头。
+这里 sequence/两项 usage 均为最大 uint64 的 20 位十进制 JSON 字符串；若仅将 output_tokens
+限制为计划最大值字符串 "4096"，后者为 394,841 字节。较大上界也覆盖先解码、随后因 token 数越过
+计划而拒绝的帧。前稿的 394,853/394,837 把 usage 写成了 JSON 数字；本次补齐其两对引号和类型定义，
+不改变 U64 摘要编码或已有向量哈希。
 这只验证本稿编码尺寸有余量，不替代 C/Python 实现的边界测试或运行内存验收。

@@ -14,7 +14,7 @@
 工程完成不表示模型质量、真实成本校准或优化路径已通过。
 真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
-四 D 的[生成型 Map 合同修订稿](postgresql_semmap_generation_contract.md)已完成；具体 SQL、消息、输出、
+四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护，仍待研发源码复核和实施，不扩大当前已支持能力。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
@@ -525,12 +525,12 @@ PG 保存自包含 profile，gateway 做供应商映射；新 identity 不匹配
 
 <a id="real-semmap-work-package"></a>
 
-### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（合同修订稿完成，待实施）
+### 工作包四 D：真实 SEM_MAP / AI_COMPLETE 生成纵切面（合同定稿，待实施）
 
 这是完整工程对照之后的自有 PG 任务，为文本生成 work 提供真实数据库入口；不依赖先完成多算子
 组合或 Filter 三值分类质量。先验收独立生成型 Map，Filter → Map 留给后续组合切片验证。
 AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重载、参数、文本输出规则和版本由
-[四 D 专项合同](postgresql_semmap_generation_contract.md)唯一定义；已补齐复核要求，待研发核对代码落点并实施。
+[四 D 专项合同](postgresql_semmap_generation_contract.md)唯一定义；合同已定稿，待研发对照源码登记落点/反例并实施。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。
@@ -691,7 +691,7 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
 | [四 C 专项完成记录](completed/postgresql_choice_profile_engineering.md) | 保存 choice 字段/版本/预算/资源与当时的详细实施要求；结果看证据台账，后续工作看本主计划 |
-| [四 D 生成型 Map 合同](postgresql_semmap_generation_contract.md) | 唯一定义生成型 Map 的 SQL、消息/文本语义、版本、golden vectors 与实施验收；修订稿完成，不代表代码完成 |
+| [四 D 生成型 Map 合同](postgresql_semmap_generation_contract.md) | 唯一定义生成型 Map 的 SQL、消息/文本语义、版本、golden vectors 与实施验收；合同定稿，不代表代码完成 |
 | [INFRA_STATUS](../../code/INFRA_STATUS.md) | 实际源码结构、接线、协议版本、测试状态及未实现能力 |
 | [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)及结果目录 | 提交/构建身份、测试数字、运行配置、失败、原始记录与证据包；结果目录保留请求前条件 |
 | [历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md) | 旧顺序、原接口表述与完整历史合同，供溯源，不授予执行权限 |

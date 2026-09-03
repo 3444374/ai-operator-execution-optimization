@@ -30,7 +30,7 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 [可选 choice 生成配置](experiments/plans/completed/postgresql_choice_profile_engineering.md)的工程验证已完成；
 在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
 再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
-生成型 Map 的输入输出与验收要求已写入[设计稿](experiments/plans/postgresql_semmap_generation_contract.md)，
+生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
 待研发对照源码复核和实现，文档中的新重载与版本还不能使用。
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
 当前代码已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)；

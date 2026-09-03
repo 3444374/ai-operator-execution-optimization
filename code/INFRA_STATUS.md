@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-03（增加生成型 Map 设计入口；当前源码基线 a3199bd9，质量/校准仍未通过）
+日期：2026-09-03（生成型 Map 合同定稿；生产代码基线 a3199bd9，质量/校准仍未通过）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -25,8 +25,9 @@
 
 **尚未完成项**：仅成员变更自动刷新、两个 Filter AND / 有界多会话、四 D 真实生成型 SemMap 与 Filter → Map；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
-四 D 的[合同修订稿](../experiments/plans/postgresql_semmap_generation_contract.md)已明确 SQL、消息/输出、版本、
-必要公共改造与验收，并补充参数检查时机、权限、上限和资源要求，待研发核对代码落点后实施。
+四 D 的[合同](../experiments/plans/postgresql_semmap_generation_contract.md)已定稿，明确 SQL、消息/输出、版本、
+必要公共改造与验收；本次进一步收紧 wire 字段类型、初始化权限、逐行结果读取和 task 语义验证，
+待研发对照源码登记落点/反例后实施。
 schema 4/wire v5 是该设计的目标，不是当前已接通协议；
 本次没有修改生产代码，当前 Map 仍为 recording。下方历史实现与测试记录保持原提交身份。
 

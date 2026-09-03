@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-09-03 四 D 合同定稿前的类型与执行时机复核
+
+- 基于 main `7a2b0d99`，只调整[生成型 Map 合同](experiments/plans/postgresql_semmap_generation_contract.md)
+  及状态入口。语义与工程验收定义已定稿，下一步仍是研发对照源码登记落点/反例，再按失败测试实施；
+  不表示 SQL 重载、schema 4、wire v5 或资源资格已完成。
+- 源码核对发现上一轮独立计算共同采用了错误的 wire usage 类型：现有 session writer 和 C reader
+  使用十进制字符串，而此前按 JSON 数字计算。明确 v5 的 sequence/两项 usage 都为严格十进制
+  字符串，修正最大 completion body 为 394,857 字节；output_tokens 限于计划最大值时为 394,841。
+  下方历史记录中的 394,853/394,837 是旧表示口径，不能继续作为当前 wire 上界；摘要的 U64 编码不变。
+- 将正例名称改为 same-payload-sequence-1，另列真正重复序号、跳号和重复/迟到 completion 的负例；
+  区分 opened 对固定字段/身份的确认与 task 到达后的完整 S/PD 校验，补充 metadata 无 NUL 要求。
+- ACL 明确为每次 Map 节点初始化检查一次，通过后执行 hook 一次，发生在 child/runtime 初始化前；
+  资源验收采用可验证的逐行读取/释放，默认 psql 重定向不能独自证明有界结果缓存。历史观察保留。
+- 沿用 codebase-design 的现有 Interface 与 writing-for-agents 的单一说明原则，只收紧可判定要求；
+  不新增抽象层、协议版本或功能范围，不改生产/测试代码，不运行 PG、模型或资源实验。
+- 文档验证：Node/Python 独立复算四组向量、公共/fixed 摘要和帧尺寸一致；再用现有公开 encode_frame
+  核对三个边界帧的四字节长度头及帧体，未运行 v5 session。189 个本地链接、25 个章节引用、读者措辞、
+  差异空白与隐私检查通过；公司私有对照仍未进入 Git。
+
 ## 2026-09-03 四 D 生成型 Map 合同与复核修订
 
 - 基于干净 main `a3199bd9`，新增[生成型 Map 合同](experiments/plans/postgresql_semmap_generation_contract.md)，
