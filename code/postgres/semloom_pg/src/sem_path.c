@@ -18,11 +18,26 @@
 #include "sem_plan_spec.h"
 #include "semloom_pg.h"
 
+typedef struct SemloomMapPlacement
+{
+	Oid generate_oid;
+	Oid recording_oid;
+	Oid filter_oid;
+	Oid exact_filter_oid;
+	List *visible_markers;
+	int generate_count;
+	bool misplaced;
+	bool has_recording_map;
+	bool has_filter;
+} SemloomMapPlacement;
+
 static FuncExpr *semloom_supported_marker(Query *parse, Oid marker_oid);
 static Oid semloom_map_marker_oid(Query *parse);
 static List *semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column);
 static bool semloom_map_nonconstant_source(Node *node, void *context);
 static bool semloom_map_constant_walker(Node *node, void *context);
+static bool semloom_map_placement_walker(Node *node, void *context);
+static void semloom_validate_map_placement(Query *parse, Oid marker_oid);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
 static CustomPath *semloom_make_path(RelOptInfo *parent_rel, Path *child_path);
 static Plan *semloom_plan_path(PlannerInfo *root,
@@ -45,7 +60,67 @@ semloom_validate_generate_map_constants(Query *parse)
 	Oid marker_oid = semloom_generate_map_function_oid();
 
 	if (OidIsValid(marker_oid))
-		query_tree_walker(parse, semloom_map_constant_walker, &marker_oid, 0);
+		semloom_map_constant_walker((Node *) parse, &marker_oid);
+}
+
+static bool
+semloom_map_placement_walker(Node *node, void *context)
+{
+	SemloomMapPlacement *placement = context;
+
+	/* Each query level is checked separately by the outer Query walker. */
+	if (node == NULL || IsA(node, Query))
+		return false;
+	if (IsA(node, FuncExpr))
+	{
+		Oid function_oid = ((FuncExpr *) node)->funcid;
+
+		if (function_oid == placement->generate_oid)
+		{
+			placement->generate_count++;
+			if (!list_member_ptr(placement->visible_markers, node))
+				placement->misplaced = true;
+		}
+		else if (function_oid == placement->recording_oid)
+			placement->has_recording_map = true;
+		else if (function_oid == placement->filter_oid || function_oid == placement->exact_filter_oid)
+			placement->has_filter = true;
+	}
+	return expression_tree_walker(node, semloom_map_placement_walker, context);
+}
+
+static void
+semloom_validate_map_placement(Query *parse, Oid marker_oid)
+{
+	SemloomMapPlacement placement = {
+		.generate_oid = marker_oid,
+		.recording_oid = semloom_map_function_oid(),
+		.filter_oid = semloom_filter_function_oid(),
+		.exact_filter_oid = semloom_exact_filter_function_oid(),
+	};
+	ListCell *cell;
+
+	foreach(cell, parse->targetList)
+	{
+		TargetEntry *entry = lfirst_node(TargetEntry, cell);
+
+		if (!entry->resjunk && IsA(entry->expr, FuncExpr) &&
+			((FuncExpr *) entry->expr)->funcid == marker_oid)
+			placement.visible_markers = lappend(placement.visible_markers, entry->expr);
+	}
+	query_tree_walker(parse, semloom_map_placement_walker, &placement, 0);
+	list_free(placement.visible_markers);
+	if (placement.generate_count == 0)
+		return;
+	if (placement.has_filter)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("SemMap and SemFilter cannot be combined in the current capability")));
+	if (placement.has_recording_map || placement.generate_count != 1)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("the SemMap capability supports exactly one visible marker")));
+	if (placement.misplaced)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("ai_semantic.map is only supported as a top-level output expression")));
 }
 
 static bool
@@ -66,7 +141,10 @@ semloom_map_constant_walker(Node *node, void *context)
 	if (node == NULL)
 		return false;
 	if (IsA(node, Query))
+	{
+		semloom_validate_map_placement((Query *) node, marker_oid);
 		return query_tree_walker((Query *) node, semloom_map_constant_walker, context, 0);
+	}
 	if (IsA(node, FuncExpr) && ((FuncExpr *) node)->funcid == marker_oid)
 	{
 		FuncExpr *marker = (FuncExpr *) node;
