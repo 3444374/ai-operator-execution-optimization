@@ -30,11 +30,13 @@ class FixtureAdapter:
 
     def __init__(self, output):
         self.output = output
+        self.calls = 0
 
     def execution_id_for(self, version):
         return GOLDEN_EXECUTION_ID if version == 5 else None
 
     def complete(self, request):
+        self.calls += 1
         return Completion(self.output, request.model_id, 17, 1, 'stop')
 
 
@@ -55,7 +57,9 @@ class FaultConnection:
         if message['type'] != expected:
             self.connection.sendall(frame)
             return
-        if target == 'error':
+        if target == 'open' and mutation == 'output-too-large':
+            message = dict(type='error', protocol_version=5, sequence=None, code='OUTPUT_TOO_LARGE')
+        elif target == 'error':
             message = dict(type='error', protocol_version=5, sequence=message['sequence'], code='OUTPUT_TOO_LARGE')
         if mutation == 'version':
             message['protocol_version'] = 4
@@ -136,7 +140,10 @@ def main():
         listener.listen(1)
         try:
             connection, _ = listener.accept()
-            run_v5_session(FaultConnection(connection, args.fault), FixtureAdapter(output))
+            adapter = FixtureAdapter(output)
+            run_v5_session(FaultConnection(connection, args.fault), adapter)
+            if args.fault.startswith('open-') and adapter.calls != 0:
+                raise AssertionError('invalid open must not execute a task')
         finally:
             args.socket.unlink()
 

@@ -161,6 +161,7 @@ like($stderr, qr/ERROR:  22012: division by zero\n/, 'later child expression err
 is($stdout, "1|hello\n0", 'later child failure closes the session and leaves no partial INSERT rows');
 
 my @faults = (
+    ['open-output-too-large', '08P01', 'SemLoom provider returned an invalid wire v5 error frame'],
     (map { ["open-$_", '08P01', 'SemLoom provider open response does not match wire v5'] }
         qw(version fractional max_input_bytes max_output_bytes max_frame_bytes max_inflight_tasks semantic_spec_digest physical_algorithm_digest provider_execution_digest)),
     (map { ["completion-$_", '08P01', 'SemLoom provider completion does not match wire v5 task identity'] }
