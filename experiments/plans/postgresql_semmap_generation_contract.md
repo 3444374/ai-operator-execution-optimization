@@ -366,6 +366,28 @@ provider 接通不等于算子策略已移植，本合同不要求现在创建�
 
 ## 8. 切片顺序与验收
 
+### 8.0 本次源码复核与首个子切片（2026-09-03）
+
+复核基线 `63d86c0e`；未发现需要改写本合同语义或 §10 向量的源码反例。按现有接口登记如下，
+未接线项不算已实现：
+
+| 复核问题 | 源码事实与采用方式 | 验证所在切片 |
+|---|---|---|
+| 新旧 marker | `extension.c` 已有成员校验，`sem_path.c` 只绑定一个一参 Map；安装仍为 0.1.0 | PG 切片增加三参 OID 和 0.2.0 安装/升级，不修改旧 OID/属性；保留混用拒绝 |
+| 常量与 ACL | 当前仅 rel/upper hooks，pump 初始化没有原 marker 的执行权限检查 | PG 切片在已有 planner 前加窄来源检查；保存私有函数 OID，每次初始化先做原生 ACL/hook，再 child/runtime；按 §3 反例验证 |
+| stop、limits、metadata | `AiOpenSpec` 的 stop 为 slice，`PgSemanticCompletion`/machine completion 仅见 bytes/null | 接线切片显式增加 absence、计划 limits 和必要完成值；借用/复制生命周期不变，不在当前消息编译步骤提前宣称完成 |
+| v5 与 Adapter | factory 仍用非 exact Filter 判 recording；codec/session 仅区分 v3/v4 | 接线时正向识别已支持语义，显式版本/执行 ID；复用 frame/session/HTTP，仅 v5 接受新错误与非 stop 元数据 |
+| 公共消息编译 | `sem_operator_machine.c` 的 JSON writer 与 Filter system 内容混在一起；Python Filter 也在 codec 内组装消息 | 首个子切片只抽公共两消息编码；Filter 保留原 directive/分隔符，Map 提供原样 instruction/input。不得复制另一套 escaping |
+| 不变行为 | recording 无消息体；exact/choice 共享原 Filter message bytes | 先通过 machine 公开 size/write 与 Python canonical_messages 固定旧字节，再加入 Map 的公开消息编译函数及独立 §10 消息向量 |
+
+本次只实现规范消息编译，不接新 SQL/schema 4/port/v5，也不实现完成元数据、输出 policy 或全部摘要。
+C 的 Map 消息函数属于现有 machine Module 的公开 task-size/write Interface，独立接受借用的 instruction/input；
+内部 writer 不作为测试入口。等新语义 machine 完整接线时复用这些函数，不先让 recording machine 冒充生成算子。
+Python 同样只增加纯消息函数；旧 public import/异常、Filter bytes/digest/SQLSTATE 的行为保留。
+测试采用合同已有 machine/codec 表面及固定消息向量，增加 Unicode/NUL/边界/缓冲失败检查；不使用私有状态。
+工程来源与取舍仍由 §7 和主计划 §8.7/8.8 记录，本子切片只移动自有 writer，不读取、复制或上传公司源码。
+本地 C11/Python 先验；PG18.3 构建/TAP 未运行时必须标 pending，不能复用旧 1022 项当本次证明。
+
 ### 8.1 开工前的研发复核
 
 研发 agent 阅读本稿和上述实际源码后，登记“可直接实现 / 需修订及反例”，至少回答：
