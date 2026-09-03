@@ -13,6 +13,7 @@
 实现与归档已合入本地 main。具体提交与验证范围由 INFRA_STATUS 和结果记录维护，
 工程完成不表示模型质量、真实成本校准或优化路径已通过。
 真实生成型 SemMap、增量 SchedulingSession 与自有成果向公司的移植均不因文档存在而视为完成。
+本轮补充显式 endpoint 选择、部署身份与分层开销对照；均为后续设计，不改变现有协议、运行授权或四 D 范围。
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护；消息、纯值和 Python v5 子切片已验证并合入本地 main，
@@ -85,7 +86,7 @@ SQL -> PostgreSQL planner / ordinary child
           -> gateway execution Adapter
              -> fixed endpoint reference
              or SemLoom organization / admission / routing / scheduling
-                -> replaceable Ray / model execution Adapter
+                -> direct model / Ray / Daft-on-Ray execution Adapter
        <- completion validation / parser / tuple binding
        -> downstream SQL or INSERT
 ```
@@ -93,6 +94,11 @@ SQL -> PostgreSQL planner / ordinary child
 这是目标关系；当前 recording/golden/fixed-model、待接入的 SemLoom 和未来公司前端的实际完成度只看
 INFRA_STATUS。数据库决定产生什么 AI work，SemLoom 决定已定语义的 work 如何组织和执行。
 provider 不接收 SQL/Plan、不重新连库拉取数据，不改 prompt/parser/关系语义，不把失败默认为 NULL 或成功。
+
+HTTP 是通信方式，GPU 是执行资源，本地/第三方是部署与信任范围，三者分别描述。一个固定的
+OpenAI-compatible Adapter 可以通过不同配置访问自有 vLLM 或获准的第三方服务，不按部署位置复制
+Adapter 类；协议方言确实不同才增加实现。文本任务不必经过 Daft/Ray；它们是可替换的执行设施，
+不是每个请求都必须经过的层级，也不代替 SemLoom 的组织、准入与多 Job 决策。
 
 ## 4. Module 职责与复用
 
@@ -110,6 +116,10 @@ provider 不接收 SQL/Plan、不重新连库拉取数据，不改 prompt/parser
 PG 只增加 lazy UDS client 和新增资源清理；listener、模型连接与分布式执行在外部。复用 PG 的
 MemoryContext、external-FD accounting、executor callback 和 longjmp 机制，不重写数据库资源管理器。
 共享 Module 以两个真实消费者、变化原因与 Interface 测试为依据；不是按行数机械拆分。
+
+算子优化不另建外部服务：PG planner 拥有合法候选与选择，纯策略计算留在语义 Module，executor
+执行计划允许的动作，SemLoom 只调度已授权的 work。改变模型/生成语义与选择等价执行副本是不同
+动作；前者需要相应算子合同及质量依据，后者也须满足部署能力和数据外发许可，具体见 §6.5。
 
 ## 5. 语义、计划与逐项数据
 
@@ -159,7 +169,22 @@ wire task/completion 可携带身份摘要用于核验，不意味着这些字�
 当前 wire v2/v3/v4 依靠一个已建立的 query-scoped session connection、连接内 `sequence` 和相应摘要
 关联任务。v3/v4 校验 semantic-spec、physical-algorithm、provider-execution、payload 和 completion evidence；
 v4 另核对完整 generation profile 及其摘要。
-这些摘要证明内容/执行身份一致，不代替单项序号。tuple binding 留在 PG，sequence 会传到 provider。
+五类主摘要的职责如下；prompt/parser 与 choice profile 还有各自摘要，不能把“五类”当作字段总数：
+
+| 摘要 | 回答的问题 | 不代表什么 |
+|---|---|---|
+| semantic spec | 算子的指令、程序、模型/生成参数和结果 policy 是什么 | 同名模型在任意部署中都等价 |
+| physical algorithm | 计划选择什么算法与 role | 当前已经有第二条可比较路径 |
+| provider execution | 使用什么版本的执行实现/profile | 已验证实际 endpoint、GPU 或模型权重所在位置 |
+| semantic payload | 实际输入与规范消息是什么 | 相同 payload 是同一个任务或可直接命中缓存 |
+| completion evidence | 完成值、usage、sequence 与上述身份是否对应 | 远端真实执行的加密证明或 exactly-once inference |
+
+当前 v3/v4 的 provider 摘要只编码 domain、协议版本、provider execution ID 与 model ID；Python v5
+也保持这一粒度。不包含 endpoint URL、部署实例、timeout 或硬件。该粒度符合固定实现身份的现有
+用途，但不能承担未来跨部署归因。当前 calibration 另保存 workload/service signature，由实验编排
+选择匹配记录，PG 没有在线核实 endpoint。部署证据应补足，而不是据此重写旧摘要或改判旧功能测试。
+摘要用于内容一致性与关联检查，不是认证/授权；计算摘要的一方也能重算它。tuple binding 留在 PG，
+sequence 会传到 provider，真实部署的可信度仍依赖受控配置、运行观测和相应信任假设。
 
 当前没有跨进程 `query_id/operator_instance_id/task_id/job_id` 组合，也没有 query-level registry。
 未来多节点、多 Job 或重连场景确需时再引入 opaque identity；只有引入 retry 才讨论 attempt identity。
@@ -183,7 +208,9 @@ query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真
 ### 6.2 版本策略
 
 recording wire v2 与 exact Filter wire v3 的字段集合、摘要 golden、错误和旧 SQL 行为保持不变。
-choice 使用独立 schema 3 / wire v4，详见四 C；生成型 SemMap 的 schema 4 / wire v5 目标与验收见四 D 专项，尚未接线。
+choice 使用独立 schema 3 / wire v4，详见四 C；四 D 已确定 schema 4 / wire v5 用于同步生成型 Map，
+PG client 尚未接线。v5 不是异步通用协议。后续多在途、部署绑定或多算子复用一条连接时，先定
+实际合同再选择新版本，不能占用 v5、向旧帧塞可选字段，或预先承诺某个后续版本号。
 复用 framing、JSON primitives、session loop 与 deadline，不用“可选字段大集合”放宽旧 schema，
 也不复制整套 socket/HTTP/runtime。未有数据拷贝瓶颈证据前，不新增共享内存或零拷贝传输。
 
@@ -199,6 +226,15 @@ reorder：未接受的后缀仍归调用方，接受后保持可核验终态；�
 跨调用保留的已接受任务须有明确的 owned storage/copy 规则，并计入相应容量；不能继续引用已重置的
 PG per-tuple 值或已结束 drive 的借用 slice。具体转移和释放时机先在 session 合同测试中固定。
 显式 close/cancel disposition 属于该后续协议，不得反写成当前 v3/v4 的能力。
+
+同语义的有界并发不等于 Filter 的 proxy/oracle 第二路径，也不自动需要近似授权；但它改变执行
+算法、调用时机、资源和可能的过取量，不能继续冒充 `MODEL_REFERENCE_SYNC_V1`。切片须明确
+physical/provider identity、代价适用条件与计划需保存的实际选择；只有语义字段未变且旧载体足够时，
+才可保留 semantic digest/plan schema，不能事先承诺“plan 零改动”。
+输入重排后恢复行序只是一个条件；还须验证 LIMIT/OFFSET、条件求值、错误先后、no-task、取消和
+已提交但未消费的模型工作。新的过取行为须先定义可接受上限和使用条件，不以结果行相同替代检查。
+PG 执行线程负责 child/slot/MemoryContext 与结果推进；本项目不在 backend 内启动线程访问这些
+对象。非阻塞 I/O/latch 是当前路线，未来原生 PG parallel worker 仍须独立审查，不称 PG 完全不能并行。
 
 <a id="multi-session-execution"></a>
 
@@ -220,8 +256,54 @@ PG per-tuple 值或已结束 drive 的借用 slice。具体转移和释放时机
 - 用无模型 fixture 验证 A 空闲时 B 能完成、嵌套依赖超过服务容量不会挂死、超限/断连/取消隔离、
   单会话旧路径和结束后 FD/线程/缓冲回收。共享 Adapter 的并发访问与配置不漂移也须验证。
 
+上述是进展与隔离检查，不以两个 golden 会话“吞吐约两倍”作为正确性或真实性能的通过标准。
+不预定 thread-per-session、worker pool 或事件循环；实现先证明空闲连接不会耗尽执行 worker，
+再用最小充分机制满足上限。现有 resolver 的锁不足以证明整个 Adapter 已经通过并发资格。
+连接复用是可独立测量的工程优化，不是多会话/多在途正确性的必然前置条件。若引入连接池，单独
+验证 acquire 等待计入总 deadline、旧 timer 不影响下一借用者、未排空响应/不可用连接不再使用、
+认证与 endpoint 隔离、有限 idle FD 和关闭；不得在借用失败后隐式重发已有模型请求。
+
 这项改动属于 gateway 执行服务能力；PG 仍只拥有客户端和查询清理，不新增库内 listener 或 HTTP。
 本节不授权替换现有 HTTP Adapter、增加连接池、重试或真实模型运行；这些变化按实际需要单独验收。
+
+<a id="execution-deployment-identity"></a>
+
+### 6.5 显式 endpoint 选择与部署证据（增量设计，待实现）
+
+先保留固定 endpoint reference。当前用仓库外 `--fixed-model-config` 显式选择一份配置，
+不是新 SQL option 或动态路由；同一 Adapter 的两份本地/第三方配置无需两个类。配置支持某种
+HTTP 方言不等于真实服务已经通过 model/usage/finish/choice 合同或获得数据外发授权。
+后续可命名 endpoint profile（服务配置身份），但名称本身不证明模型版本、部署等价或授权。
+
+按实际消费方分开保存以下对象；表中是待实现职责，不是可直接加入旧 wire 的字段清单：
+
+| 对象与 owner | 需要表达什么 | 变化如何处理 |
+|---|---|---|
+| PG 选定、gateway 核验的执行 profile | 版本化 provider 实现、路由 policy 及有效参数、获准候选 endpoint 配置集合的摘要 | 查询内保持不变；有新身份需求时独立版本化 provider 摘要/握手，不能静默扩候选集 |
+| 外部部署 manifest | 不含秘密的 endpoint profile ID/配置版本；模型 revision、tokenizer/template、有效生成默认、serving/资源与数据处理许可；timeout/连接策略等运行签名 | 保存私有地址映射与可核验快照；配置内容改变需新签名。无法验证的 revision/能力写 unavailable，不据 model ID 推断等价 |
+| 逐任务执行记录 | session/节点/sequence 的实际关联、选中 endpoint profile/部署版本、终态、usage；失败和未确认请求也记录 | 随路由动作记录；未获授权不重试，不能在事后只记录成功 endpoint |
+| 运行期容量与健康观测 | 当前可用名额、队列、服务状态与采样时间 | 可在已授权候选内影响选择，不逐条重写 query-fixed 摘要，也不自动授权新部署 |
+
+实施时先在一个固定 endpoint 上建立部署快照和记录，再考虑候选集；不预建服务发现系统。
+候选集按规范化内容而非显示名称计算身份，必要时使用 ID/版本排序以消除列表次序差异。
+查询开始选定要求，首个非 NULL task 的惰性 open 先确认匹配，再发送 payload；继续保留无任务零连接。
+如果部署身份只留在外部 trace，准确标为外部审计证据；若声称逐项协议已绑定实际 endpoint，
+新 completion evidence 必须覆盖其部署引用，PG 验证该引用属于选定集合。仅增加日志列不能作此声明。
+既有 v2/v3/v4 及四 D v5 的字段与 golden vectors 不因本设计改义；精确的新编码/协商先在独立切片定稿。
+
+显式选择应在首次外发前同时满足语义与数据处理要求：
+
+- 不做静默本地→第三方 fallback，超时/容量不足不授予换模型或扩大目的地的权限；当前路径继续失败即终止。
+- 同名 model ID 不足以允许副本互换；至少核对所需模型/模板/生成能力和数据处理许可。换模型或改变
+  请求语义交回 PG 所选 semantic/physical alternative；等价副本的实时选择才由 SemLoom 执行。
+- credential reference 与 token 分开；真实 token 只供 gateway HTTP 认证，不进入 SQL/Plan/EXPLAIN、
+  摘要或公开记录。实际地址、账号与私有部署映射留在仓库外，凭据轮换不改变算子语义身份。
+- 质量与成本校准分别核对模型/workload/service 条件；增加部署摘要不能把未校准成本变成可比较成本。
+
+最小验收：同 profile 内容变化不能复用配置签名；同模型不同部署可分别追溯；open 声明与查询要求
+不符时在 payload 前拒绝，路由候选越界时在 HTTP 前拒绝；完成记录引用越界或关联错误时不发布结果。
+不得因 primary 超时调用未授权目的地；计划复制/新查询仍绑定正确 profile，并保留旧路径、no-task、
+错误与取消测试。多会话本身不依赖多 endpoint，这项设计不插入四 D 前置项。
 
 ## 7. 数据传输与 batching 的不同作用
 
@@ -604,6 +686,12 @@ builder 管理自身 placement/关系语义；执行状态与 provider 关联按
 测试先满足 §6.4，不以两个独立 gateway 绕开共享入口问题。首版固定可解释的执行顺序，不加入谓词
 重排、融合、异步或通用 DAG 引擎；相同输入值的不同调用仍独立关联。
 
+当前还没有可执行的 Filter → Map 计划，不能把“先跑完整个 Filter 再跑 Map”写成现有 PG 事实。
+普通 pull executor 的非阻塞节点可以逐行传递，是否被 materialize/排序等节点阻挡应从真实计划确认。
+组合的调用依赖、独立 spec 与列绑定必须由 PG 计划表达；不能只在 pump 隐藏一张 DAG。
+现有一次 open 只绑定一份算子 spec，即使两个算子使用同一 model，也不能直接共用一条现有语义 session。
+首版仍按节点隔离；只有多路复用确有消费者时，才另定节点身份、关联、容量和关闭合同。
+
 该子切片覆盖 projection、LIMIT 前后位置、NULL/UNKNOWN、prepared plan、INSERT、错误/取消和
 资源总上限。NOT/OR/CASE、参数化 Join、aggregate/window 等不由 AND/Map 组合推定支持；确需时先
 定义值语义、条件求值、rescan/参数失效与模型调用规则。未实现形状继续明确拒绝。
@@ -638,12 +726,27 @@ PG 保留 tuple binding、snapshot、order/result 与 cancel，gateway 负责适
 新 batch 接口补充接受前缀、输入结束、乱序、早停、异常、取消隔离和全部缓冲的资源检查。
 PG 新增语义/接口的审查通过后，才做本路径真实匹配 E2E；Filter 第二路径不是生成型 Map 接入的先决条件。
 
+工程依赖不是“先全面异步，再改 pump，最后才做 SemLoom”：多会话可以保持现有单项 wire，独立
+增量核心可以使用 fixture；实际 PG 批接线则需要 port、wire、runtime 与 pump 的同一最小纵切面。
+同步 `drive` 不简单包装成未经定义的 submit/poll；先明确是否已接纳、借用结束时机、零进展、完成及
+错误终态。批大小 1 与同步 reference 对照通过后，再扩有界窗口，固定值由实验计划而不是本架构猜定。
+SemLoom 接入时复用同一核心，具体 CLI/Adapter 名称由实施决定，不先添加未使用的配置项。
+部署/路由跨实际 endpoint 时先满足 §6.5；同请求路径的开销和方法增量按 §11 分开测量。
+
 ### IMLane-like placement 与远期工作
 
 DB batch preserved / provider rebatch 在真实 PG 增量接入、取消/backpressure 与匹配条件满足后对照；
 分别记录 child pull、组织、提交、模型、fan-in、overfetch、取消浪费和服务空闲，组织策略 owner 只有一处。
 Join、aggregate、fusion/AQE、Kalypso-like lineage/KV、图像动态/HSE 和旧 SAOR formal 均不由本次
 并行排期自动启动；需要实际需求、独立计划和相应资格。LOTUS compatibility/native baseline 不阻塞主实现。
+
+Kalypso-like 前缀复用仅保留为条件性研究参考：当前 Filter 与生成型 Map 的 system 内容不同，
+相同 tuple/model 不保证相同 token prefix。先核对实际 tokenizer/chat template 后的共同 token 段，
+不能为制造命中改写既有 canonical messages；新 prompt 程序须另定语义身份与质量检查。
+vLLM 自己管理缓存与淘汰，SemLoom 持有 work credit 不等于锁住 KV，也不能保证远端缓存驻留。
+没有真实依赖、可观测命中与缓存生命周期证据时，不提前添加 prefix/parent 字段或保留 credit 到所有
+后继结束。指标缺失写 unavailable；资源压力分组、否定条件和参数范围在运行前确定，不为出现收益
+临时缩 KV 池。该参考不新增第三项研究内容，也不要求当前修改 vLLM。
 
 ## 10. 查询、取消与事务正确性
 
@@ -676,6 +779,10 @@ INSERT 的数据库效果由 PG transaction 决定。模型调用不可回滚；
 原生 baseline 保留自己的 execution/scheduler owner；自写 control 不冒充 LOTUS/Sema/IMLane/Daft/Ray 原生。
 同一 task/model/generation/service/capacity 与适合任务的质量要求满足后，才归因组织/提交/路由；
 减少模型调用与同量 work 执行更快分开评价，阶段可能重叠，不要求分阶段 wall time 相加等于 E2E。
+
+gateway、PG 接入与 SemLoom 增量使用
+[baseline reference 的 A/B/C/D 分层对照](baseline_reference.md#gateway-layered-controls)，不以 RSS/FD
+或 fixture 正确性证明协议开销可忽略。它们是机制诊断，不替代原生系统比较，也不沿用四 D 的真实请求预算。
 
 正式实验继续遵守[baseline reference](baseline_reference.md)、根环境规则及具体计划。公开 AutoDL
 和公司环境的材料与授权按 §8.7 区分；本次修订没有运行实验或批准新模型下载。
@@ -710,3 +817,12 @@ Sema/Cortex 的数据库语义所有权、LOTUS 的 reference/optimized algorith
 batch placement、Kalypso 的条件性 dependency/KV 参考，统一由
 [架构研究与一手来源审计](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)
 及[知识库](../../research/knowledge_hub.md)说明。本次并行排期和文档拆分是工程决策，不是新的文献结论。
+
+本轮部署/路由判断结合 [Cortex AISQL: A Production SQL Engine for Unstructured Data §2](https://arxiv.org/html/2511.07663v3#S2)：
+其模型平台已有引擎调度与 partner endpoint 分派；支持自有 GPU/外部服务、gateway 或 cascade 本身
+不作为自有创新。IMLane 的桥接、资源调度与异步 batch 参照仍按上述一手来源审计和本地精读说明；
+不把其全部进程外设计归因于 GIL，也不由此推断本项目需要相同线程结构。
+[Kalypso 精读 §2.3–2.4](../../research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)与
+[vLLM Automatic Prefix Caching](https://docs.vllm.ai/en/stable/design/prefix_caching/)
+仅支持“相同 token 前缀及缓存状态是复用条件”的判断，不提供当前 SemLoom 的性能或 KV pinning 证据。
+具体实现仍核对选定 serving 版本；多 Job/work 与本地性的方法收益由匹配实验检验，不预写成贡献。

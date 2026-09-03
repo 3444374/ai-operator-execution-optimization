@@ -2,6 +2,8 @@
 
 整理日期：2026-07-16；文献、官方 benchmark、厂商 AI 算子可安装性与指标合同复审：2026-08-05
 
+2026-09-03 增补：§0.2 定义 PG semantic gateway 的分层开销对照；仅为设计，未运行或恢复旧矩阵。
+
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以根 `AGENTS.md`“项目范围/当前资格顺序”、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
 来源：`research/ai_operator_literature_inventory.md` 与 `research/top15_ranked_papers.md`
@@ -178,6 +180,50 @@ per-tenant buffer cap 与 anti-splitting 门，不能把 flat `job_id` 竞争直
 SLO 变化）分表报告。
 
 ---
+
+<a id="gateway-layered-controls"></a>
+
+### 0.2 PG semantic gateway：A/B/C/D 分层开销对照（设计，待执行）
+
+问题是：额外 UDS/wire、PG carrier 与 SemLoom 执行控制各引入多少成本，在哪些请求规模和并发条件下
+影响端到端表现。它支撑数据组织与提交/路由研究，不是新的研究内容，也不是原生产品的排名。
+架构与实现条件见[主计划](postgresql_ai_semantic_operator_architecture_20260827.md#multi-session-execution)；
+当前 fixture 资源检查不能回答性能开销。历史 observation-only HTTP gateway 与本处 semantic UDS
+gateway 的协议/职责不同，其数字不直接移用。
+
+| 臂 | 执行关系 | 用途与进入条件 |
+|---|---|---|
+| A：matched direct | 合成/公开任务客户端 → fixed HTTP Adapter → 同一模型服务 | 与 B 使用相同请求和 HTTP 实现/配置，隔离额外 semantic 协议路径；这一个点不是服务最大容量，上限另用匹配的原生 benchmark/并发扫描 |
+| B：thin semantic gateway | 同一任务客户端 → UDS/wire → 固定 gateway → 同一模型服务 | 补足无 PG 的协议路径对照；仍遵守选定算子的完整 spec、sequence、messages 与 completion 校验，不把 v3/v4 当任意 prompt API |
+| C：PG reference | PG18.3 ordinary child → 语义算子 → 同一 gateway/Adapter → 模型服务 | 衡量 PG 集成路径；只用已验收 SQL/协议，生成型 Map 须先完成其 PG 接线与资格 |
+| D：PG + SemLoom | 同一 PG 输入与语义 → gateway → SemLoom → 同一模型服务 | 相应增量接入与资源检查通过后执行；同量 work 下比较执行控制，不将异步窗口或换模型收益混称调度算法贡献 |
+
+先验证请求与结果一致，再分别作低负载单请求开销和同上限负载扫描：
+
+1. 选定同一输入/规范消息 manifest、模型 revision、模板、有效生成参数、服务/硬件、输出检查、
+   冷热状态、到达时间与重复方法。记录实际 model calls/attempts、prompt/output usage、输出与错误；
+   token 数或模型工作不匹配时单列，不直接归因执行开销。固定模型 reference 可以用于工程诊断，
+   但不会因此获得尚未通过的 Filter 质量资格。
+2. A/B 对齐 HTTP 客户端、连接复用策略、DNS/TLS 条件与总 deadline，分列 gateway 启动/握手及稳定期。
+   B 包含客户端编码、UDS、两端摘要/JSON/复制和返回校验等成本，B−A 不是“纯网络转发耗时”。
+   连接池的收益另做同路径 on/off 对照，不把两个臂不同的连接策略隐藏在协议开销里。
+3. 当前每 session 一个在途任务且 gateway 串行服务会话，只能按该实际能力定义 A/B/C 的匹配点。
+   多会话正确性通过后才测多 backend，分别限制活跃 session、全局请求/estimated work 和队列 bytes；
+   PG 一项同步与无界异步客户端的差值只能说明供给差异，不能据此评价 gateway 或方法优劣。
+4. C/D 使用相同 PG 数据、ordinary child/snapshot、SQL 输出或 INSERT 写回与消费方式，结果有界读取。
+   A/B 明确排除数据库取数，不冒充 database-E2E。分别报告服务窗口和含 source/结果校验的完整窗口；
+   C−B 是这两条匹配路径的实测差异，须结合分阶段观测解释，不能称为一个恒定的 PG 税。
+5. D 可运行后先保留同一 SemLoom 路径上固定顺序/固定上限的无策略控制，再逐项启用组织、准入、路由。
+   D−C 是接入与方法的组合差异；方法消融须保持物理路径、观测、容量及 HTTP 复用相同。
+   原生系统仍使用自己的执行与调度，此处的自有控制不冒充原生 baseline。
+6. 记录序列化/摘要/拷贝、open、queue/admission、DNS/connect/TLS、HTTP/model、fan-in/reorder、
+   PG result/writeback，报告全部重复的 JCT、吞吐、延迟分位、CPU/RSS/FD、调用/usage、取消浪费与错误。
+   无可靠观测的细分阶段标 unavailable；重叠阶段、吞吐及分位数不能通过相减得到可加的独立成本。
+
+fake/golden 先验证关联、并发进展、停止与资源上限，不能据人工 delay 推出真实模型吞吐或“两倍并发收益”。
+正式运行另立具体切片计划，固定 workload、请求预算、配置、重复/交错顺序、资源与停止条件；
+已有 A/B/C 所需部件不等于该比较已获授权或已可完整运行。D 尚未接入时写 pending，不用占位数字补齐。
+本节不消耗四 D 的有限真实服务预算，不恢复校准、旧 SAOR formal 或新的模型下载。
 
 ## 使用规则
 

@@ -17,6 +17,8 @@
 | 从 pgml 借鉴哪些模型接入做法 | [主计划 §8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)：SQL 入口、公共模型调用、资源复用与单项/批量接口的采用时机和验证；保持 PG 外执行，不增加四 C 任务 |
 | LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
 | baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
+| 固定服务如何扩到可审计的多 endpoint | [主计划 §6.5](postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)：显式选择、部署快照、query-fixed 身份与逐任务记录；待实现，不修改四 D v5 |
+| 怎样区分 gateway、PG 接入和 SemLoom 的开销 | [baseline reference §0.2](baseline_reference.md#gateway-layered-controls)：A/B/C/D 匹配诊断与方法消融；待执行，不是运行授权或原生排名 |
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 

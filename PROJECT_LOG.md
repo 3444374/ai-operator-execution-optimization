@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-09-03 固定服务、部署身份与分层对照的设计复核
+
+- 最初以 main `63d86c0e` 核对用户的两份架构说明及评价；期间另一任务将 Map 子切片集成至
+  `b0400944` 并以 `340356e8` 同步集成状态，本轮保留这些改动。用户确认允许一并推送已有提交；
+  本轮自身未执行代码合并，不修改生产/测试代码或四 D 语义、协议及请求预算。
+- 对照 `server.py`、fixed HTTP Adapter、`wire_semantic.c`/Python v5 与 calibration：确认单固定
+  配置/串行 session、五项可用配置字段、300,000 ms 超时上限与逐请求新连接。token 由环境变量
+  读入 gateway 内存/认证头；provider 摘要是执行实现身份，不是部署或模型执行的认证证明。
+- [主计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)
+  增补显式服务选择、部署快照、query-fixed 路由 policy/候选集和逐任务记录的职责与验收；禁止静默
+  扩目的地或换模型。保留现有摘要、已有 service/workload signature 与校准要求，不立即新造 registry。
+- [baseline reference](experiments/plans/baseline_reference.md#gateway-layered-controls)增加无 PG 的 B 臂，
+  定义 A/B/C/D 的匹配条件、冷启动/稳态与连接策略、同容量和同路径消融；差值不是天然可加的组件成本，
+  fixture 资源或人工延迟不证明真实性能。实验与预算仍须单独批准。
+- 修正参考建议中的确定性过强表述：v5 已用于同步 Map；多会话不必先做连接池；异步不等于近似，
+  但仍需执行身份、过取/错误/取消与计划承载检查；组合依赖不能只藏在 pump 或共用单 spec session。
+  prefix/KV 研究须先确认真实 token 共享与可观测缓存条件，不能以保留 credit 冒充缓存驻留。
+- 已查知识库、文献清单、Cortex §2、IMLane/Kalypso 精读及 vLLM 前缀缓存说明；来源与工程取舍只在
+  计划/日志中记录，不增加公司源码或私有材料。采用 codebase-design 的真实变化点与 writing-for-agents
+  的单一权威/可判定完成条件，没有新建平行架构文档，也没有增加第三项研究内容。
+- 本轮 10 项无网络源码合同检查、114 个本地链接/30 个章节引用、新增措辞与差异空白检查通过；
+  全仓隐私扫描 8,025 个跟踪文件与此前待推送的 292 个新增文本 blob 均无新增问题。
+  未运行 PG、资源或模型实验，旧资格不重新绑定。
+
 ## 2026-09-03 Map 基础子切片合入本地 main
 
 - 按用户要求，fetch 确认 main 与 origin/main 均为 `63d86c0e`、主工作树与研发工作树干净，

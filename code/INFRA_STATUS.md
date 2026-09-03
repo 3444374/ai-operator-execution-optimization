@@ -93,6 +93,22 @@ TAP/构建；工程接入完成不表示三值判断质量合格、恢复校准�
 query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
 取消通过 close/disconnect 和 PG cleanup。既有 `SynchronousScheduler` 不等于已实现增量 session。
 
+**固定 endpoint 与部署身份（2026-09-03，核对已集成源码至 `b0400944`，无新增接线）。**
+`execution_provider/server.py` 在 golden 与 fixed 配置间二选一，串行服务整个 session；没有多 endpoint
+路由。`adapters/openai_compatible_fixed.py` 的配置必填 endpoint_url/model_id/timeout_ms，可选
+bearer_token_env/choice_format；timeout 为 1–300,000 ms，choice_format 用于显式 choice 能力声明。
+同一个 HTTP(S) Adapter 可以指向本地或获准的第三方服务；它逐请求创建并关闭 HTTP 连接，
+resolver 有独立同步保护，不等于已经完成连接池或多会话资格。token 从指定环境变量读入 gateway
+内存，再用于认证头，并非只留在环境变量中；不进入 PG plan/wire 摘要或公开证据。
+
+`wire_semantic.c` 的 v3/v4 provider digest 仅绑定 domain、协议版本、execution ID、model ID；
+Python v5 也没有增加部署绑定，均不含 endpoint URL/部署实例/timeout。completion evidence 又绑定
+三类身份摘要、payload、sequence、raw output/finish/model/两项 usage，不证明实际模型部署。
+现有 calibration 的 workload/service signature 是外部选择与审计信息，PG 不在线探测部署。
+显式 profile、部署快照与逐任务路由证据设计见
+[主计划 §6.5](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)，
+尚未实现；不据此更改旧摘要、原始资格或四 D v5 的用途。
+
 独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
 [主计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
 受限 choice 真实执行检查不改变 Filter 校准暂停与原始质量失败结论。
