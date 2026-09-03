@@ -317,7 +317,9 @@ each design column by its maximum magnitude, forms and inverts the Gram matrix w
 and rejects singularity or an infinity-norm Gram condition of at least `1e16`. Checking only individual pivots
 missed a chained near-dependence fixture. This engineering limit is not a held-out error limit or an SVD condition
 number. Ten local calibration tests cover exact/near/joint dependence and valid unit/row-order changes.
-Production SQL, the strict C parser, and wire v3 do not yet support the constrained-decoding candidate.
+At that diagnostic point, the constrained-decoding candidate was not part of production SQL or wire v3.
+The later opt-in choice implementation described above uses wire v4 while preserving the strict C parser;
+it does not retroactively qualify the diagnostic models or resume calibration.
 
 The [independent qualification slice](../../../experiments/results/postgresql/semfilter_qualification_20260901/README.md)
 at `6c111b24` passes PostgreSQL 18.3 `-Werror`, regression 1/1, TAP 437/437 and 59/59 Python contracts.
@@ -335,7 +337,7 @@ verifies actual HTTP messages against the service and model chat-template token 
 times. No configuration qualifies; production SQL/plan/wire and the strict parser remain unchanged. Full collection
 stays paused. Python contracts pass 60/60 again; PostgreSQL regression/TAP were not rerun in that diagnostic.
 
-The in-process provider remains the default. To exercise the external recording boundary, start the canonical
+For recording compatibility calls, the in-process provider remains the default. To exercise external recording, start the canonical
 gateway from the repository root with an absolute socket path and set the superuser-only GUC for the SQL session:
 
 ```bash

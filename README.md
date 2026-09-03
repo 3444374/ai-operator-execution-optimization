@@ -31,7 +31,7 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
 再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
 生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
-消息编译、C/Python 值表示、PG plan/权限和 C v5 gateway 接线已纳入 main，
+消息编译、C/Python 值表示、PG plan/权限和 C client→wire v5→gateway 接线已纳入 main，
 三参 Map 已能通过 PostgreSQL＋golden 返回文本，详见[执行与复核记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)。
 真实模型、资源压力验证仍待完成；golden 是合成完成值，不代表大模型质量或性能。
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
