@@ -208,6 +208,19 @@ class MapProtocolTests(unittest.TestCase):
             with self.subTest(version=codec.PROTOCOL_VERSION), self.assertRaises(ValueError):
                 codec.build_error_message("OUTPUT_TOO_LARGE", sequence=0)
 
+    def test_output_too_large_requires_a_current_task(self) -> None:
+        from src.execution_provider.wire import v5
+        from src.execution_provider.wire.framing import ProtocolError
+
+        with self.subTest(interface="encode"), self.assertRaises(ValueError):
+            v5.build_error_message("OUTPUT_TOO_LARGE", sequence=None)
+        open_error = {
+            "type": "error", "protocol_version": 5,
+            "sequence": None, "code": "OUTPUT_TOO_LARGE",
+        }
+        with self.subTest(interface="decode"), self.assertRaises(ProtocolError):
+            v5.validate_error(open_error, expected_sequence=None)
+
     def test_completion_metadata_and_wire_counters_survive_without_text_changes(self) -> None:
         from src.execution_provider.completion import Completion
         from src.execution_provider.wire import v5
