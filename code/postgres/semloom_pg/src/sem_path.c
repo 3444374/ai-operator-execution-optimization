@@ -21,6 +21,8 @@
 static FuncExpr *semloom_supported_marker(Query *parse, Oid marker_oid);
 static Oid semloom_map_marker_oid(Query *parse);
 static List *semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column);
+static bool semloom_map_nonconstant_source(Node *node, void *context);
+static bool semloom_map_constant_walker(Node *node, void *context);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
 static CustomPath *semloom_make_path(RelOptInfo *parent_rel, Path *child_path);
 static Plan *semloom_plan_path(PlannerInfo *root,
@@ -36,6 +38,52 @@ static const CustomPathMethods semloom_path_methods = {
 	.CustomName = SEMLOOM_MAP_CUSTOM_SCAN_NAME,
 	.PlanCustomPath = semloom_plan_path,
 };
+
+void
+semloom_validate_generate_map_constants(Query *parse)
+{
+	Oid marker_oid = semloom_generate_map_function_oid();
+
+	if (OidIsValid(marker_oid))
+		query_tree_walker(parse, semloom_map_constant_walker, &marker_oid, 0);
+}
+
+static bool
+semloom_map_nonconstant_source(Node *node, void *context)
+{
+	if (node == NULL)
+		return false;
+	if (IsA(node, Param) || IsA(node, Var) || IsA(node, SubLink))
+		return true;
+	return expression_tree_walker(node, semloom_map_nonconstant_source, context);
+}
+
+static bool
+semloom_map_constant_walker(Node *node, void *context)
+{
+	Oid marker_oid = *((Oid *) context);
+
+	if (node == NULL)
+		return false;
+	if (IsA(node, Query))
+		return query_tree_walker((Query *) node, semloom_map_constant_walker, context, 0);
+	if (IsA(node, FuncExpr) && ((FuncExpr *) node)->funcid == marker_oid)
+	{
+		FuncExpr *marker = (FuncExpr *) node;
+		List *fixed_arguments;
+
+		if (list_length(marker->args) != 3)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("invalid generative SemMap marker arguments")));
+		fixed_arguments = list_make2(lsecond(marker->args), lthird(marker->args));
+		if (semloom_map_nonconstant_source((Node *) fixed_arguments, NULL) ||
+			contain_mutable_functions((Node *) fixed_arguments))
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("SemMap instruction and options must be fixed immutable constants")));
+		list_free(fixed_arguments);
+	}
+	return expression_tree_walker(node, semloom_map_constant_walker, context);
+}
 
 static Oid
 semloom_map_marker_oid(Query *parse)
