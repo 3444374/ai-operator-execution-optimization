@@ -93,18 +93,58 @@ INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
     $node->safe_psql('postgres', q{
 CREATE FUNCTION wrapped_map(input text, instruction text, options jsonb) RETURNS text
 LANGUAGE sql VOLATILE RETURN ai_semantic.map(input, instruction, options);
+CREATE FUNCTION wrapped_map_text(input text, instruction text, options jsonb) RETURNS text
+LANGUAGE sql VOLATILE AS $$ SELECT ai_semantic.map($1, $2, $3) $$;
+CREATE FUNCTION ordinary_echo(text) RETURNS text LANGUAGE sql IMMUTABLE RETURN $1 || '';
 });
     for my $mode ('force_custom_plan', 'force_generic_plan')
     {
+      for my $wrapper ('wrapped_map', 'wrapped_map_text')
+      {
         my ($result, $output, $error) = $node->psql('postgres',
             "\\set VERBOSITY verbose\nSET plan_cache_mode=$mode; PREPARE wrapped_map_parameter(text) AS " .
-            "SELECT wrapped_map(body, \$1, $options) FROM ONLY map_inputs; " .
+            "SELECT $wrapper(body, \$1, $options) FROM ONLY map_inputs; " .
             "EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');");
-        isnt($result, 0, "$mode rejects a prepared instruction inside an inlined Map wrapper");
-        like($error, qr/ERROR:  0A000: /, "$mode rejects the wrapped source before execution");
+        isnt($result, 0, "$mode rejects a prepared instruction inside $wrapper");
+        like($error, qr/ERROR:  0A000: generative SemMap must be a direct query output\n/,
+             "$mode rejects the wrapped source before execution");
         unlike($output, qr/Custom Scan \(SemLoom SemMap\)/, 'wrapped parameter cannot acquire a generative Map plan');
         ok(!IO::Select->new($listener)->can_read(0), "$mode wrapper check made zero provider connections");
+      }
+      my $ordinary_plan = $node->safe_psql('postgres',
+          "SET plan_cache_mode=$mode; PREPARE ordinary_input(text) AS " .
+          'SELECT ordinary_echo($1) FROM ONLY map_inputs; EXPLAIN (VERBOSE) EXECUTE ordinary_input(\'hello\');');
+      unlike($ordinary_plan, qr/ordinary_echo/, "$mode keeps ordinary SQL function inlining");
+      my $map_input = decode_json($node->safe_psql('postgres',
+          "SET plan_cache_mode=$mode; PREPARE direct_map_input(text) AS " .
+          "SELECT ai_semantic.map(ordinary_echo(\$1), 'Echo the input.', $options) FROM ONLY map_inputs; " .
+          "EXPLAIN (FORMAT JSON) EXECUTE direct_map_input('hello');"))->[0]->{'Plan'};
+      is($map_input->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
+         "$mode permits an ordinary input wrapper beneath a direct Map");
     }
+    my ($wrapped_code, $wrapped_out, $wrapped_err) = $node->psql('postgres',
+        "\\set VERBOSITY verbose\nEXPLAIN SELECT wrapped_map(body, 'Echo the input.', $options) FROM ONLY map_inputs;");
+    isnt($wrapped_code, 0, 'a literal wrapper does not implicitly add a new Map SQL entry');
+    like($wrapped_err, qr/ERROR:  0A000: generative SemMap must be a direct query output\n/,
+         'wrapper rejection does not depend on parameter values');
+    $node->safe_psql('postgres', 'DROP FUNCTION wrapped_map(text,text,jsonb); DROP FUNCTION wrapped_map_text(text,text,jsonb);');
+    $node->safe_psql('postgres', q{
+CREATE FUNCTION nested_instruction() RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE result text;
+BEGIN
+  BEGIN
+    EXECUTE 'SELECT 1 / 0';
+  EXCEPTION WHEN division_by_zero THEN
+    NULL;
+  END;
+  EXECUTE 'SELECT ''Echo the input.''::text' INTO result;
+  RETURN result;
+END $$;
+});
+    my $nested_plan = decode_json($node->safe_psql('postgres',
+        "EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, nested_instruction(), $options) FROM ONLY map_inputs;"))->[0]->{'Plan'};
+    is($nested_plan->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'},
+       'nested planning success and caught ERROR restore the outer source check');
 
     for my $mode ('force_custom_plan', 'force_generic_plan')
     {

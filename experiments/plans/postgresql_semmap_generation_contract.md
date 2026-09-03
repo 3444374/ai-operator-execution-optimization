@@ -441,6 +441,11 @@ REL_18_3 `clauses.c:inline_function / eval_const_expressions_mutator`；前置 Q
 随后内联暴露的 Map。先在同一 SQL/EXPLAIN 表面验证 instruction 参数的 custom/generic 模式与零连接，
 若风险成立，只修 planner 来源识别；不全局关闭普通函数内联，不移动权限检查或改变 wire/摘要。
 本补充不新增公司参考/复用或模型运行；测试先行事实与修复结果追加到原 PG plan 结果记录。
+反例现已确认：custom 模式在 SQL wrapper 内联后接受参数生成的指令，generic 模式拒绝。
+本版不新增 wrapper Map 入口：只允许原始 SELECT 顶层或直接 INSERT 来源中、已经检查固定参数的
+显式 Map 被 lowering；规划中才由内联暴露的 Map 返回 0A000，包括常量调用 wrapper。
+普通 SQL 函数的内联、直接 Map 的普通 input 表达式、旧 Map/Filter 行为保持；规划嵌套和 ERROR
+必须恢复调用方的临时检查状态，不保存跨查询 registry，不依赖 SQL 文本位置推断来源。
 
 ### 8.1 开工前的研发复核
 

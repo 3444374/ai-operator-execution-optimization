@@ -54,13 +54,42 @@ static const CustomPathMethods semloom_path_methods = {
 	.PlanCustomPath = semloom_plan_path,
 };
 
-void
-semloom_validate_generate_map_constants(Query *parse)
+int
+semloom_validate_generate_map_source(Query *parse)
 {
 	Oid marker_oid = semloom_generate_map_function_oid();
+	int query_level = 1;
+	ListCell *cell;
 
-	if (OidIsValid(marker_oid))
-		semloom_map_constant_walker((Node *) parse, &marker_oid);
+	if (!OidIsValid(marker_oid))
+		return 0;
+	semloom_map_constant_walker((Node *) parse, &marker_oid);
+	if (parse->commandType == CMD_INSERT)
+	{
+		RangeTblRef *reference;
+		RangeTblEntry *entry;
+
+		if (parse->jointree == NULL || list_length(parse->jointree->fromlist) != 1 ||
+			!IsA(linitial(parse->jointree->fromlist), RangeTblRef))
+			return 0;
+		reference = linitial_node(RangeTblRef, parse->jointree->fromlist);
+		entry = rt_fetch(reference->rtindex, parse->rtable);
+		if (entry->rtekind != RTE_SUBQUERY)
+			return 0;
+		parse = entry->subquery;
+		query_level = 2;
+	}
+	if (parse->commandType != CMD_SELECT)
+		return 0;
+	foreach(cell, parse->targetList)
+	{
+		TargetEntry *entry = lfirst_node(TargetEntry, cell);
+
+		if (!entry->resjunk && IsA(entry->expr, FuncExpr) &&
+			((FuncExpr *) entry->expr)->funcid == marker_oid)
+			return query_level;
+	}
+	return 0;
 }
 
 static bool
@@ -220,6 +249,10 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 
 	if (marker == NULL)
 		return;
+	if (marker_oid == semloom_generate_map_function_oid() &&
+		!semloom_generate_map_source_checked(root->query_level))
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("generative SemMap must be a direct query output")));
 	if ((root->query_level != 1 && !insert_source) || parse->commandType != CMD_SELECT ||
 		(marker_oid == semloom_generate_map_function_oid() && parse->hasSubLinks) ||
 		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
