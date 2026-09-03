@@ -7,11 +7,15 @@
  */
 #include "postgres.h"
 
+#include "catalog/objectaccess.h"
+#include "catalog/pg_proc_d.h"
 #include "commands/explain.h"
 #include "commands/explain_format.h"
 #include "executor/executor.h"
 #include "miscadmin.h"
+#include "utils/acl.h"
 #include "utils/builtins.h"
+#include "utils/lsyscache.h"
 
 #include "pg_semantic_runtime.h"
 #include "sem_filter_cost.h"
@@ -20,6 +24,7 @@
 #include "semantic_filter_contract.h"
 #include "semantic_map_contract.h"
 #include "sem_pump.h"
+#include "semloom_pg.h"
 
 struct SemloomExecPump
 {
@@ -86,6 +91,16 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 
 	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
 	{
+		AclResult aclresult;
+
+		if (plan_spec.marker_function_oid != semloom_generate_map_function_oid())
+			ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+				errmsg("invalid generative SemMap function binding")));
+		aclresult = object_aclcheck(ProcedureRelationId, plan_spec.marker_function_oid,
+			GetUserId(), ACL_EXECUTE);
+		if (aclresult != ACLCHECK_OK)
+			aclcheck_error(aclresult, OBJECT_FUNCTION, get_func_name(plan_spec.marker_function_oid));
+		InvokeFunctionExecuteHook(plan_spec.marker_function_oid);
 		if ((executor_flags & EXEC_FLAG_EXPLAIN_ONLY) == 0)
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				errmsg("generative SemMap execution is not connected")));
