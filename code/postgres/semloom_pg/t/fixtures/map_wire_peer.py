@@ -14,14 +14,14 @@ from src.execution_provider.wire.framing import encode_frame
 from src.execution_provider.wire.v5 import GOLDEN_EXECUTION_ID
 
 
-def evidence(message):
+def evidence(message, raw_output=None):
     def text(value):
-        value = value.encode('utf-8')
+        value = value.encode('utf-8') if isinstance(value, str) else value
         return struct.pack('!I', len(value)) + value
     identity = b''.join(message[key].encode('ascii') for key in (
         'semantic_spec_digest', 'physical_algorithm_digest', 'provider_execution_digest', 'semantic_payload_digest'))
     return hashlib.sha256(b'semloom-completion-v5\0' + identity + struct.pack('!Q', int(message['sequence']))
-        + text(message['raw_output']) + text(message['finish_reason']) + text(message['response_model_id'])
+        + text(message['raw_output'] if raw_output is None else raw_output) + text(message['finish_reason']) + text(message['response_model_id'])
         + struct.pack('!QQ', int(message['prompt_tokens']), int(message['output_tokens']))).hexdigest()
 
 
@@ -104,6 +104,9 @@ class FaultConnection:
             message['protocol_version'] = 5.4
         elif mutation == 'escaped-nul':
             message['raw_output'] = '\0'
+        invalid_output = b'\xff' + b'x' * 65536
+        if mutation == 'utf8-over-output':
+            message['completion_evidence_digest'] = evidence(message, invalid_output)
         raw = encode_frame(message)[4:]
         if mutation == 'duplicate':
             raw = b'{"protocol_version":5,' + raw[1:]
@@ -111,6 +114,8 @@ class FaultConnection:
             raw += b'\0private-provider-text'
         elif mutation == 'utf8':
             raw = raw.replace(b'hello', b'\xff')
+        elif mutation == 'utf8-over-output':
+            raw = raw.replace(b'hello', invalid_output)
         elif mutation == 'array':
             raw = b'[]'
         self.connection.sendall(struct.pack('!I', len(raw)) + raw)

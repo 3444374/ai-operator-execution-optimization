@@ -41,21 +41,7 @@ print $file encode_json({
 });
 close($file);
 my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
-my ($out, $err) = ('', '');
-my $gateway = IPC::Run::start(['python3', $gateway_script, '--socket', $socket,
-    '--once', '--golden-fixture', $fixture], '>', \$out, '2>', \$err);
-for (1 .. 200) { last if -S $socket; sleep(0.01); }
-ok(-S $socket, 'Map golden gateway listens') or diag($err);
 my $options = q|' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb|;
-my ($status, $stdout, $stderr) = $node->psql('postgres', qq{
-SET statement_timeout='5s';
-SET semloom_pg.gateway_socket='$socket';
-SELECT id, ai_semantic.map(body, 'Echo the input.', $options) FROM ONLY map_rows;
-});
-is($status, 0, 'generative Map executes through PostgreSQL and golden wire v5') or diag($stderr);
-is($stdout, '1|hello', 'the independent ASCII vector returns generated text');
-if ($status == 0) { $gateway->finish; }
-else { $gateway->kill_kill; }
 
 sub run_query
 {
@@ -83,6 +69,27 @@ sub golden_query
 my $peer_script = abs_path("$FindBin::RealBin/fixtures/map_wire_peer.py");
 my $map = "ai_semantic.map(body, 'Echo the input.', $options)";
 my $query = "SELECT id, $map FROM ONLY map_rows";
+my ($status, $stdout, $stderr) = golden_query($query);
+is($status, 0, 'generative Map executes through PostgreSQL and golden wire v5') or diag($stderr);
+is($stdout, '1|hello', 'the independent ASCII vector returns generated text');
+for my $projection (
+    ["ai_semantic.map('hello', 'Echo the input.', $options)", 'generated'],
+    ["body, $map", 'hello|generated'],
+    ["$map, body", 'generated|hello'],
+    ["body || '!', ai_semantic.map(body || '!', 'Echo the input.', $options)", 'hello!|generated'])
+{
+    ($status, $stdout, $stderr) = run_query("SELECT $projection->[0] FROM ONLY map_rows", $peer_script, '--output', 'generated');
+    is($status, 0, 'distinct Map output binding executes') or diag($stderr);
+    is($stdout, $projection->[1], 'generated output cannot alias an equal ordinary input expression');
+}
+for my $projection (
+    ["ai_semantic.map('hello')", 'recorded:hello'],
+    ['body, ai_semantic.map(body)', 'hello|recorded:hello'],
+    ['ai_semantic.map(body), body', 'recorded:hello|hello'])
+{
+    is($node->safe_psql('postgres', "SELECT $projection->[0] FROM ONLY map_rows"), $projection->[1],
+       'recording Map also keeps a distinct generated output position');
+}
 $node->safe_psql('postgres', q{INSERT INTO map_rows VALUES (2,NULL),(3,''),(4,'hello');});
 ($status, $stdout, $stderr) = golden_query($query);
 is($status, 0, 'Map preserves cardinality across NULL, empty input and duplicates') or diag($stderr);
@@ -108,7 +115,9 @@ is($stdout, "1|hello|f\n2||t\n3||f\n4|hello|f", 'INSERT distinguishes SQL NULL f
 is($status, 0, 'generated Map write participates in rollback') or diag($stderr);
 is($stdout, '4', 'rollback discards newly generated rows');
 
-$node->safe_psql('postgres', q{INSERT INTO map_rows VALUES(5,U&'\7532\000A"\4E59"\\\4E19\0009{}');});
+$node->safe_psql('postgres', q{INSERT INTO map_rows VALUES(5,U&'\7532\000A"\4E59"' || chr(92) || U&'\4E19\0009{}');});
+is($node->safe_psql('postgres', "SELECT encode(convert_to(body,'UTF8'),'hex') FROM map_rows WHERE id=5"),
+   'e794b20a22e4b999225ce4b899097b7d', 'SQL fixture bytes independently match the Unicode input vector');
 my $unicode = "INSERT INTO map_sink SELECT id, ai_semantic.map(body, U&'\\539F\\6837\\8FD4\\56DE\\8F93\\5165\\3002', $options) FROM ONLY map_rows WHERE id=5; SELECT encode(convert_to(generated,'UTF8'),'hex') FROM map_sink WHERE id=5;";
 ($status, $stdout, $stderr) = golden_query($unicode);
 is($status, 0, 'Unicode instruction/input cross C and Python without canonicalization drift') or diag($stderr);
@@ -141,7 +150,7 @@ my @faults = (
     (map { [$_, '08P01', 'SemLoom provider returned an unexpected message'] }
         qw(open-extra open-missing completion-extra completion-missing)),
     (map { [$_, '08P01', 'SemLoom provider returned invalid JSON'] }
-        qw(open-duplicate completion-duplicate completion-escaped-nul completion-raw-nul completion-utf8)),
+        qw(open-duplicate completion-duplicate completion-escaped-nul completion-raw-nul completion-utf8 completion-utf8-over-output)),
     (map { ["completion-$_", '22000', 'SemMap model completion must finish with stop'] }
         qw(finish-length finish-tool finish-space)),
     (map { [$_, '54000', 'SemLoom provider message exceeds its configured limit'] }
