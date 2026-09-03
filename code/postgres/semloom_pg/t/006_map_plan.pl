@@ -19,7 +19,7 @@ my $socket_path = $node->host . '/map-never-connect.sock';
 my $listener = IO::Socket::UNIX->new(Type => SOCK_STREAM, Local => $socket_path, Listen => 8)
   or die "could not create provider connection sentinel";
 $node->append_conf('postgresql.conf', "shared_preload_libraries = '$test_dir/semloom_plan_contract_test,semloom_pg'\n");
-$node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = '$socket_path'\n");
+$node->append_conf('postgresql.conf', "semloom_pg.gateway_socket = 'invalid-relative-path'\n");
 $node->start;
 $node->safe_psql('postgres', q{CREATE EXTENSION semloom_pg VERSION '0.1.0';});
 $node->safe_psql('postgres', q{
@@ -83,11 +83,11 @@ INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
     is($plan->{'Max Tokens'}, 128, 'plan owns the normalized output token cap');
     is($plan->{'Max Input Bytes'}, 163840, 'plan owns its input byte cap');
     is($plan->{'Max Output Bytes'}, 65536, 'plan owns its output byte cap');
-    is($plan->{'Execution Support'}, 'plan-only', 'EXPLAIN does not claim connected execution');
+    is($plan->{'Provider'}, 'uds-golden', 'EXPLAIN selects the semantic adapter without opening it');
     unlike($node->safe_psql('postgres', "EXPLAIN $query"), qr/Echo the input\./, 'EXPLAIN does not disclose the instruction');
     my ($code, $out, $err) = $node->psql('postgres', "\\set VERBOSITY verbose\n$query;");
-    isnt($code, 0, 'unconnected generative Map cannot execute');
-    like($err, qr/ERROR:  0A000: generative SemMap execution is not connected\n/,
+    isnt($code, 0, 'generative Map rejects an invalid provider path');
+    like($err, qr/ERROR:  22023: SemLoom provider socket path must be absolute\n/,
          'new plan cannot silently use an old provider path');
 
     $node->safe_psql('postgres', q{
@@ -265,7 +265,7 @@ END $$;
     for my $statement ($query, "$query LIMIT 0", "$query WHERE false", "$query WHERE body IS NULL", "EXPLAIN $query")
     {
         is($capture->($statement), '42501|permission denied for function map',
-           'missing EXECUTE is checked even for plan-only, empty and NULL queries');
+           'missing EXECUTE is checked even for EXPLAIN, empty and NULL queries');
     }
     $node->safe_psql('postgres', 'GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;');
     for my $mode ('force_custom_plan', 'force_generic_plan')
@@ -273,8 +273,8 @@ END $$;
         $reader->query_safe("SET plan_cache_mode=$mode; PREPARE map_acl(integer) AS $query WHERE id >= \$1;");
         my $saved = decode_json($reader->query_safe('EXPLAIN (FORMAT JSON) EXECUTE map_acl(1)'))->[0]->{'Plan'};
         is($saved->{'Semantic Spec Digest'}, $plan->{'Semantic Spec Digest'}, "$mode caches the complete Map definition");
-        is($capture->('EXECUTE map_acl(1)'), '0A000|generative SemMap execution is not connected',
-           "$mode authorized execution reaches the explicit unconnected state");
+        is($capture->('EXECUTE map_acl(1)'), '22023|SemLoom provider socket path must be absolute',
+           "$mode authorized execution reaches lazy provider validation");
         my $counter = $mode eq 'force_custom_plan' ? 'custom_plans' : 'generic_plans';
         is($reader->query_safe("SELECT $counter > 0 FROM pg_prepared_statements WHERE name='map_acl'"), 't',
            "$mode actually exercised its requested plan kind before revocation");
@@ -282,7 +282,7 @@ END $$;
         is($capture->('EXECUTE map_acl(1)'), '42501|permission denied for function map',
            "$mode rechecks EXECUTE after another session revokes it");
         $node->safe_psql('postgres', 'GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;');
-        is($capture->('EXECUTE map_acl(1)'), '0A000|generative SemMap execution is not connected',
+        is($capture->('EXECUTE map_acl(1)'), '22023|SemLoom provider socket path must be absolute',
            "$mode permission grant restores authorized plan initialization");
         $reader->query_safe('DEALLOCATE map_acl');
     }
@@ -342,8 +342,8 @@ AS \$\$ BEGIN RETURN \$1; END \$\$;
     $hooks->query_safe("SELECT map_watch($marker_oid, $child_oid); PREPARE hook_child AS " .
         "SELECT ai_semantic.map(map_child_probe(body), 'Echo the input.', $options) FROM ONLY map_inputs;");
     is($hooks->query_safe(q{SELECT map_test_capture('EXECUTE hook_child')}),
-       '0A000|generative SemMap execution is not connected', 'unconnected execution stops before child initialization');
-    is($hooks->query_safe('SELECT map_events()'), '1|0|1', 'child function initialization has not run when execution is refused');
+       '22023|SemLoom provider socket path must be absolute', 'authorized execution reaches the provider after child initialization');
+    is($hooks->query_safe('SELECT map_events()'), '1|1|1', 'authorized Map and ordinary child initialize once');
     $node->safe_psql('postgres', 'REVOKE EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) FROM map_reader;');
     $hooks->query_safe("SET ROLE map_reader; SELECT map_watch($marker_oid, $child_oid)");
     is($hooks->query_safe(q{SELECT map_test_capture('EXPLAIN EXECUTE hook_child')}),
@@ -402,8 +402,8 @@ LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || input; END $$;
     like($node->safe_psql('postgres', "EXPLAIN INSERT INTO map_target $query"),
          qr/Custom Scan \(SemLoom SemMap\)/, 'direct INSERT SELECT uses the same new Map plan');
     is($node->safe_psql('postgres', "SELECT map_test_capture(\$sql\$INSERT INTO map_target $query\$sql\$)"),
-       '0A000|generative SemMap execution is not connected', 'unconnected INSERT cannot invoke an old executor');
-    is($node->safe_psql('postgres', 'SELECT count(*) FROM map_target'), 0, 'unconnected INSERT leaves no target rows');
+       '22023|SemLoom provider socket path must be absolute', 'INSERT cannot silently invoke an old executor');
+    is($node->safe_psql('postgres', 'SELECT count(*) FROM map_target'), 0, 'failed provider INSERT leaves no target rows');
     for my $mode ('force_custom_plan', 'force_generic_plan')
     {
         for my $source (
@@ -445,7 +445,7 @@ LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || input; END $$;
         like($error, qr/ERROR:  0A000: \Q$message\E\n/, "$label has an explicit unsupported-shape error");
     }
 }
-ok(!IO::Select->new($listener)->can_read(0), 'plan-only Map made zero provider connections');
+ok(!IO::Select->new($listener)->can_read(0), 'plan and invalid-path checks made zero provider connections');
 close($listener);
 unlink($socket_path) or die "could not remove provider connection sentinel";
 $node->stop;
