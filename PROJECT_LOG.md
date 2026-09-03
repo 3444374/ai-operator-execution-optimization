@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-09-03 Map C v5 接线与实际 PostgreSQL golden 验证
+
+- 从已复核 `035b0ccf` 继续独立分支。`76156526` 先记录 PG plan-only 拒绝，`6941b91e`
+  通过 C v5 → Python golden 的 ASCII SQL；随后扩完整 Map 与旧路径检查，不启动真实模型。
+- open spec 显式传递 stop absence/计划 limits，factory 正向识别语义；复用 runtime/UDS/framing/session，
+  Map 纯值模块负责输出策略，PG 管理错误和清理。移除临时拒绝，保留来源与 ACL/hook。
+- 全量测试复现常量结果被重投影、等值普通列串位，以及非法 UTF-8＋超长且正确摘要时误报长度。
+  `114a411a` 只在 child 降低输入，scan 保留独立逻辑输出身份；v5 在 JSON 前校验 UTF-8，旧版本不变。
+  Unicode fixture 转义错误、后续测试角色 GUC 权限不足分别保留，不冒充生产缺陷。
+- `5031bb50` 最终通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1741/1741（Map plan 268、
+  execution 451）、两端各 137/137 与 8/8 C11。包含列关联、文本/NULL/空串、限额、VOLATILE
+  求值对照、首项/后续 child 错误、INSERT/rollback/savepoint 与取消后恢复。
+- [完整记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)保存六次服务器运行和本地最终验证，
+  原 plan 205＋63 项证据不变。两路只读 Standards/Spec 复核的可操作代码问题均修复后再验。
+- 本次按 TDD 和诊断技能先保留失败与最小复现，再修复；技能审查还促使合并重复测试生命周期、
+  恢复有效权限 sentinel。源码、状态与证据分别登记，不扩架构或复制公司实现。
+- 六个本切片目录无存活 PG/gateway、无 PG PID 文件；测试工作树与仓库外原始产物保留，未操作
+  其他历史工作树。服务器主工作树保持干净，主安装未覆盖。此结论仅覆盖本切片，不是全机清理声明。
+- 真实 Map 请求仍 0/32；RSS/FD/线程压力和固定模型验证尚未执行。未合入或推送 main。
+
 ## 2026-09-03 Map SQL wrapper 来源反例补充
 
 - 按用户对 `b58479f7` 的复核，仅在已约定 SQL/EXPLAIN 表面追加反例。`ae6589a9` 真实 PG18.3

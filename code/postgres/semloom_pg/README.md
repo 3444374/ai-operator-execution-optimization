@@ -35,7 +35,7 @@ pulled-up INSERT source while keeping the ordinary PostgreSQL write node. New te
 write results, rollback, savepoint recovery, target constraints, permissions and cancellation using fixtures.
 After the full engineering comparison and completed choice checks, real generative SemMap drives the necessary shared
 task/result changes. Composable execution and bounded sessions follow, including two Filter conjuncts and Filter → Map;
-recording Map remains unchanged. The independent SemLoom
+recording Map keeps its existing semantic contract; the shared output-binding fix described below also covers it. The independent SemLoom
 core may be developed with fixtures before Filter qualification, but its PG integration needs separate validation.
 
 The integrated message slice at `6903cf46` adds only pure Map message compilation:
@@ -57,9 +57,15 @@ The [wrapper follow-up](../../../experiments/results/postgresql/semmap_pg_plan_2
 at `676615fa` closes a custom-plan source-check bypass: Map must appear directly in the supported query output,
 not become visible only after inlining a whole-Map SQL wrapper. Ordinary input functions still inline.
 The follow-up reruns PG18.3 regression 1/1, TAP 1283/1283 and 136/136 local/server Python checks.
-This branch has not been merged or pushed to main. Plain EXPLAIN reports `Execution Support: plan-only`;
-actual execution raises `0A000: generative SemMap execution is not connected` before initializing a child or provider.
-The C v5 client and new Map golden/real-model/resource checks remain pending. Executable Map is still recording.
+The subsequent [C v5/PG golden qualification](../../../experiments/results/postgresql/semmap_pg_wire_20260903/README.md)
+at `5031bb50` connects generated Map to the shared runtime and gateway. Source and EXECUTE checks stay before
+child/provider initialization; plain EXPLAIN selects `uds-golden` without opening a session. Input/output limits
+and absent stop come from the plan. Constant inputs and ordinary columns equal to Map inputs retain distinct
+output positions. Raw text is preserved, including empty text; SQL NULL creates no task. Invalid metadata is
+`08P01`, oversized output is `54000`, and a valid non-stop completion is `22000` without truncation or retry.
+PG18.3 warning-free build, regression 1/1, TAP 1741/1741, local/server 137/137 and 8/8 C11 checks pass.
+This branch is not merged or pushed to main. Real Map model requests remain 0/32; resource-pressure and
+real-model qualification are pending. Golden results are not model quality or performance evidence.
 After installation, an existing 0.1.0 database can register the new marker with
 `ALTER EXTENSION semloom_pg UPDATE TO '0.2.0'`; this preserves existing function identities and grants.
 
@@ -97,6 +103,10 @@ automatic plan-revalidation tests; they are not deferred by this temporary requi
 The current supported query shape is deliberately narrow:
 
 - one top-level `ai_semantic.map(text)` in a single-table `SELECT` target list;
+- one top-level `ai_semantic.map(text,text,jsonb)` in a non-inherited single-table `SELECT` or direct
+  `INSERT ... SELECT`, with immutable constant instruction/options and text output. Options are exactly
+  `model`, numeric-zero `temperature`, and integer `max_tokens` from 1 to 4096. Whole-Map SQL wrappers,
+  multiple semantic calls, and Map/Filter combinations are not supported;
 - one top-level `ai_semantic.filter(text)` base-relation predicate in `WHERE`; exact `true` emits the
   tuple, while `false`, `unknown`, and SQL `NULL` drop it without letting the provider create rows;
 - one top-level `ai_semantic.filter(text,text,jsonb)` exact-reference predicate. The planner requires a

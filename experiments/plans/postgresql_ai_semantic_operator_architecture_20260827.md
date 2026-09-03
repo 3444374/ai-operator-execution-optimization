@@ -16,8 +16,8 @@
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护；消息、纯值和 Python v5 子切片已验证并合入本地 main，
-独立分支的 PG plan/权限子切片已验证，尚未合入 main；C v5 与完整 golden/模型/资源检查仍待完成，
-不表示新增 Map SQL 已可执行。
+独立分支的 PG plan/权限及 C v5/golden 执行已验证，尚未合入 main；新增 Map SQL 能返回文本，
+真实模型和资源压力仍待完成，不用 fixture 结果代替模型或性能证据。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
 
@@ -184,7 +184,7 @@ query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真
 ### 6.2 版本策略
 
 recording wire v2 与 exact Filter wire v3 的字段集合、摘要 golden、错误和旧 SQL 行为保持不变。
-choice 使用独立 schema 3 / wire v4，详见四 C；生成型 SemMap 的 schema 4 / wire v5 目标与验收见四 D 专项，尚未接线。
+choice 使用独立 schema 3 / wire v4，详见四 C；生成型 SemMap 的 schema 4 / wire v5 已在独立分支接通 golden，真实模型/资源验收见四 D 专项。
 复用 framing、JSON primitives、session loop 与 deadline，不用“可选字段大集合”放宽旧 schema，
 也不复制整套 socket/HTTP/runtime。未有数据拷贝瓶颈证据前，不新增共享内存或零拷贝传输。
 
@@ -320,6 +320,8 @@ binding 分开；已有文件能承载时继续使用，出现真实消费者和
 
 来源：2026-09-02 对用户提供的 `x_semantic` 当前工作副本的只读源码核对；该副本有未提交改动，
 不是一个已经锁定或通过 PG18.3 验证的 release。下面是源码观察与工程决定，不是模型/性能结论。
+表中自有实现描述保留该次核对基线；后续共享消息、PG plan 和 C v5/golden 的进展见四 D 及
+INFRA_STATUS，不因表中的历史差异再次重构已完成模块。
 参考核对当时区分 main 与四 C 独立分支；当前集成状态见 INFRA_STATUS，原始证据不重新绑定。两边所查目录
 均为 PGXS extension，未据此发现必须引入 core patch 的依据；该观察不覆盖未提供的公司数据库内核。
 路径相对用户提供的参考目录；后续切片须重新确认实际版本和函数体。这里只记录最小定位与行为摘要，
@@ -537,8 +539,8 @@ AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重
 `425d2b1c` 随后验证[C/Python 纯值和 Python v5](../results/postgresql/semmap_values_20260903/README.md)。
 上述子切片与后续深层 JSON 修复已合入本地 main，历史验证范围与提交身份保留。
 后续独立分支已完成 [PG plan/权限检查](../results/postgresql/semmap_pg_plan_20260903/README.md)，
-只支持 EXPLAIN、实际执行明确拒绝。C v5 互通、PG＋golden、真实模型与资源继续分阶段验收，
-不能把本子切片写成可执行生成型 Map。
+随后 [C v5/PG golden 验证](../results/postgresql/semmap_pg_wire_20260903/README.md)完成实际文本执行，
+保留来源/权限并修复常量与等值列输出绑定；真实模型与资源仍分阶段验收，不能把 golden 写成四 D 全部完成。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。

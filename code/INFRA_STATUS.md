@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-03（Map PG plan/权限在独立分支完成；C v5 执行接线、质量/校准仍未完成）
+日期：2026-09-03（独立分支 Map C v5/PG golden 已验证；真实 Map 模型/资源与质量/校准未完成）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -39,7 +39,7 @@ SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合
 见[合并检查](../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration)。本次未推送或部署服务器。
 随后独立分支 `codex/semmap-pg-plan` 的 `2205ccbb` 已完成 schema 4 的 PG 保存、SQL 0.2.0
 新三参 Map 注册/升级、固定参数来源与值检查、计划复制/严格解码、原生 EXECUTE ACL/hook 和函数依赖。
-普通 EXPLAIN 显示 `plan-only / not-connected`；实际执行在 child/provider 初始化前以 `0A000` 明确拒绝。
+该历史 plan 切片的 EXPLAIN 为 `plan-only / not-connected`，实际执行拒绝；现已被下方接线替代。
 新重载的 SELECT/直接 INSERT SELECT 规划、缓存计划跨会话撤权、函数替换/删除重建与成员手动刷新
 均有测试。输入/谓词子查询反例已最小修复；仅成员变化的自动刷新仍未实现。
 [PG plan 验证](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md)绑定 `2205ccbb`：
@@ -48,9 +48,13 @@ PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新 plan 238 项）、�
 已核验的显式输出，整个 Map wrapper 明确拒绝，普通函数内联保留。临时检查状态在嵌套/ERROR 后恢复。
 [追加资格](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)：
 PG18.3 regression 1/1、TAP 1283/1283（Map plan 261）、两端各 136/136、`-Werror` 与 8/8 C11 通过。
-该分支尚未合入或推送 main；服务器原主工作树/工具链未覆盖。C port/wire v5 与新 Map 实际逐行执行
-仍待接线，当前可执行 SQL Map 仍为 recording。
-没有真实 Map 模型或资源资格，下方历史实现与测试记录保持原提交身份。
+随后 `5031bb50` 完成 [C v5/PG golden 资格](../experiments/results/postgresql/semmap_pg_wire_20260903/README.md)：
+生成型 Map 已复用现有 runtime 逐行执行，显式 stop absence/limits 与 v5 身份贯通，原来源/ACL 检查保留。
+同时修复常量/等值普通列的输出绑定和非法 UTF-8＋超长完成值的错误优先级；旧版本协议行为不变。
+PG18.3 `-Werror`、regression 1/1、TAP 1741/1741（Map plan 268、execution 451）、两端各 137/137
+与 8/8 C11 通过。该分支仍未合入或推送 main；原主工作树/工具链未覆盖。
+真实 Map 模型请求仍 0/32，RSS/FD/线程压力尚未运行；这些 pending 项不能由 golden 资格代替。
+下方历史实现与测试记录保持原提交身份。
 
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
 context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范

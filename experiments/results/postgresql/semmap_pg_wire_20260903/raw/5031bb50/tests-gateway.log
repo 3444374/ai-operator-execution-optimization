@@ -1,0 +1,11 @@
+test_canonical_cli_serves_the_frozen_recording_contract (test_gateway_migration.GatewayMigrationTests.test_canonical_cli_serves_the_frozen_recording_contract) ... ok
+test_canonical_wire_v2_preserves_frozen_digest_vectors (test_gateway_migration.GatewayMigrationTests.test_canonical_wire_v2_preserves_frozen_digest_vectors) ... ok
+test_legacy_and_canonical_clis_are_self_locating (test_gateway_migration.GatewayMigrationTests.test_legacy_and_canonical_clis_are_self_locating) ... ok
+test_legacy_files_are_bootstrap_only (test_gateway_migration.GatewayMigrationTests.test_legacy_files_are_bootstrap_only) ... ok
+test_legacy_protocol_reexports_canonical_public_api (test_gateway_migration.GatewayMigrationTests.test_legacy_protocol_reexports_canonical_public_api) ... ok
+test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata (test_map_gateway.MapGatewayTests.test_self_locating_cli_survives_invalid_open_and_preserves_map_metadata) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.503s
+
+OK

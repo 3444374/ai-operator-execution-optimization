@@ -1,0 +1,11 @@
+{
+  "verified_server_manifest_entries": 77,
+  "verified_commit_bound_source_hashes": 321,
+  "final_source_commit": "5031bb5072cd42f08357d6d7aa604009e03bc9c9",
+  "local_tests": 137,
+  "server_tests": 137,
+  "tap": 1741,
+  "regression": 1,
+  "model_requests": 0,
+  "resource_smoke": false
+}

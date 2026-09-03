@@ -1,0 +1,241 @@
+{
+  "commit": "5031bb5072cd42f08357d6d7aa604009e03bc9c9",
+  "branch": "codex/semmap-pg-plan",
+  "dirty_before": false,
+  "code_tree": "d32aadf420683cff3ede6108062b387446307fc3",
+  "checks": [
+    {
+      "name": "postgres-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/postgres",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests": 110,
+      "expected_tests": 110,
+      "seconds": 9.017,
+      "passed": true
+    },
+    {
+      "name": "gateway",
+      "command": [
+        "python3",
+        "-W",
+        "error::ResourceWarning",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/execution_provider",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests": 6,
+      "expected_tests": 6,
+      "seconds": 0.328,
+      "passed": true
+    },
+    {
+      "name": "calibration",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/planning",
+        "-p",
+        "test_semfilter_reference_calibration.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests": 10,
+      "expected_tests": 10,
+      "seconds": 0.117,
+      "passed": true
+    },
+    {
+      "name": "choice-tools",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/experiments",
+        "-p",
+        "test_choice*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests": 11,
+      "expected_tests": 11,
+      "seconds": 1.175,
+      "passed": true
+    },
+    {
+      "name": "c11-generation_profile",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/generation_profile.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.036,
+      "passed": true
+    },
+    {
+      "name": "c11-sem_operator_machine",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/sem_operator_machine.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.027,
+      "passed": true
+    },
+    {
+      "name": "c11-sem_filter_machine",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/sem_filter_machine.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.029,
+      "passed": true
+    },
+    {
+      "name": "c11-sem_map_machine",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/sem_map_machine.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.024,
+      "passed": true
+    },
+    {
+      "name": "c11-sem_message_writer",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/sem_message_writer.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.024,
+      "passed": true
+    },
+    {
+      "name": "c11-sem_text",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/sem_text.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.021,
+      "passed": true
+    },
+    {
+      "name": "c11-semantic_map_contract",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/semantic_map_contract.c"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.025,
+      "passed": true
+    },
+    {
+      "name": "c11-neutral-header",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-x",
+        "c",
+        "-fsyntax-only",
+        "code/postgres/semloom_pg/src/ai_provider_port.h"
+      ],
+      "exit_code": 0,
+      "tests": null,
+      "expected_tests": null,
+      "seconds": 0.021,
+      "passed": true
+    }
+  ],
+  "test_total": 137,
+  "passed": true,
+  "postgres_server_rerun": false,
+  "model_requests": 0,
+  "resource_smoke": false
+}

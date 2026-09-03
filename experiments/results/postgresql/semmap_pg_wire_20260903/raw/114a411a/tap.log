@@ -1,0 +1,22 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ... ok
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 127.
+t/006_map_plan.pl ...........
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+All 127 subtests passed
+t/007_map_execution.pl ...... ok
+
+Test Summary Report
+-------------------
+t/006_map_plan.pl         (Wstat: 7424 Tests: 127 Failed: 0)
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+Files=7, Tests=1600, 41 wallclock secs ( 0.32 usr  0.03 sys + 23.17 cusr  6.86 csys = 30.38 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

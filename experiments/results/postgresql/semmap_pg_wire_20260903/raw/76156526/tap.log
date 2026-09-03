@@ -1,0 +1,26 @@
+echo "# +++ tap install-check in  +++" && rm -rf '<test-worktree>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<test-worktree>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<test-worktree>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<test-worktree>/code/postgres/semloom_pg/tmp_check' PATH="<pg18.3-prefix>/bin:<test-worktree>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg18.3-prefix>/lib/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/007_map_execution.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'generative Map executes through PostgreSQL and golden wire v5'
+#   at t/007_map_execution.pl line 44.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:4: ERROR:  generative SemMap execution is not connected
+
+#   Failed test 'the independent ASCII vector returns generated text'
+#   at t/007_map_execution.pl line 45.
+#          got: ''
+#     expected: '1|hello'
+# Looks like you failed 2 tests of 3.
+t/007_map_execution.pl ..
+Dubious, test returned 2 (wstat 512, 0x200)
+Failed 2/3 subtests
+
+Test Summary Report
+-------------------
+t/007_map_execution.pl (Wstat: 512 Tests: 3 Failed: 2)
+  Failed tests:  2-3
+  Non-zero exit status: 2
+Files=1, Tests=3,  2 wallclock secs ( 0.02 usr  0.01 sys +  0.65 cusr  0.22 csys =  0.90 CPU)
+Result: FAIL
+make: *** [<pg18.3-prefix>/lib/pgxs/src/makefiles/pgxs.mk:439: installcheck] Error 1

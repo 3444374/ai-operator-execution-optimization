@@ -22,8 +22,10 @@ one failed collector run. This is execution evidence, not model-quality qualific
 The independent Map PG branch adds the 0.2.0 three-argument marker, schema 4, copied-plan validation and
 native permission checks. [PG plan verification](../experiments/results/postgresql/semmap_pg_plan_20260903/README.md)
 at `2205ccbb` passes PG18.3 regression 1/1, TAP 1260/1260 and 136/136 local/server Python tests.
-It is not merged into main: EXPLAIN is available, but actual generated Map execution explicitly rejects until
-the C v5 client is connected. No real Map model or resource validation was run.
+It is not merged into main. The subsequent [C v5/PG golden checks](../experiments/results/postgresql/semmap_pg_wire_20260903/README.md)
+at `5031bb50` connect actual generated text execution, preserving source/permission checks and old paths:
+PG18.3 regression 1/1, TAP 1741/1741, local/server 137/137 and C11 pass. Real Map model and resource-pressure
+validation remain pending; golden completions do not establish model quality or performance.
 
 The integrated [function-identity slice](../experiments/results/postgresql/function_identity_20260902/README.md)
 checks extension membership before lowering markers and tests function replacement/drop-recreate plan revalidation.

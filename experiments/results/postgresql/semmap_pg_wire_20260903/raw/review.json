@@ -1,0 +1,11 @@
+{
+  "baseline": "035b0ccfbeab0b97305a534e3a8a0be8f1a9e683",
+  "reviewed_fix": "114a411aa201975648ea14ab185cc79488c27a34",
+  "mode": "two independent read-only source reviews, not server evidence",
+  "initial_spec_findings": ["Map output positional identity", "v5 text representation before output length", "volatile/child-error coverage", "Unicode fixture escaping"],
+  "initial_standards_findings": ["pending document synchronization", "duplicated protocol selection", "duplicated test process lifecycle", "disconnected ACL sentinel"],
+  "followup_standards_code_findings": 0,
+  "followup_spec_findings": 0,
+  "final_test_only_commit": "5031bb5072cd42f08357d6d7aa604009e03bc9c9",
+  "test_only_change": "permit the isolated reader role to set the fixture address without switching the query role"
+}

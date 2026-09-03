@@ -73,8 +73,10 @@ fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice �
 [函数身份检查](experiments/results/postgresql/function_identity_20260902/README.md)已复现并最小修复
 非成员误接管，实现与证据已合入 main；仅成员关系变更仍须按工程计划刷新所有相关物理连接，不支持自动在线变更。
 生成型 Map 的消息编译、C/Python 纯值、Python v5 与深层 JSON 修复已合入本地 main，
-见[分阶段验证](experiments/results/postgresql/semmap_values_20260903/README.md)；PG plan/权限、C v5、
-新 Map SQL、完整 golden 与真实模型/资源验收仍未完成，不改变当前 SQL Map 的 recording 身份。
+见[分阶段验证](experiments/results/postgresql/semmap_values_20260903/README.md)。独立分支后续完成
+[PG plan/权限及 C v5/golden 执行](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)：
+`5031bb50` 通过 PG18.3 regression 1/1、TAP 1741/1741 和两端各 137/137，生成型 Map 已能返回文本。
+尚未合入 main；真实 Map 模型和资源压力仍待验证，不用 fixture 证明模型质量或性能。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
 不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
 其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较
@@ -511,7 +513,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 新增能力按主线、分支验收和待实现项分别记录；独立分支已验证[Map 消息](experiments/results/postgresql/semmap_messages_20260903/README.md)
 及[C/Python 纯值、Python v5 与旧路径兼容](experiments/results/postgresql/semmap_values_20260903/README.md)。
-PG plan/C v5、完整生成型 Map、真实模型和资源验证仍待实施。LOTUS compatibility/native baseline
+独立分支 PG plan/C v5/golden 已验证，完整生成型 Map 的真实模型和资源验证仍待实施。LOTUS compatibility/native baseline
 后置；Join、aggregate、Kalypso-like lineage/KV 按真实需求另立项。旧 GPU 矩阵、SAOR、图像动态/HSE、
 五臂 formal 与条件性补测继续等待各自计划和授权，不能由“可以并行研发”自动恢复。
 

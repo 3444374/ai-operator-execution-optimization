@@ -1,0 +1,246 @@
+2026-09-03 17:18:23.051 CST [112700] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 17:18:23.052 CST [112700] LOG:  listening on Unix socket "/tmp/6AcSBb39xa/.s.PGSQL.32612"
+2026-09-03 17:18:23.054 CST [112706] LOG:  database system was shut down at 2026-09-03 17:18:23 CST
+2026-09-03 17:18:23.055 CST [112700] LOG:  database system is ready to accept connections
+2026-09-03 17:18:23.152 CST [112711] 006_map_plan.pl LOG:  statement: CREATE EXTENSION semloom_pg VERSION '0.1.0';
+2026-09-03 17:18:23.166 CST [112713] 006_map_plan.pl LOG:  statement: CREATE ROLE old_map_reader;
+2026-09-03 17:18:23.166 CST [112713] 006_map_plan.pl LOG:  statement: REVOKE EXECUTE ON FUNCTION ai_semantic.map(text) FROM PUBLIC;
+2026-09-03 17:18:23.166 CST [112713] 006_map_plan.pl LOG:  statement: GRANT EXECUTE ON FUNCTION ai_semantic.map(text) TO old_map_reader;
+2026-09-03 17:18:23.175 CST [112715] 006_map_plan.pl LOG:  statement: SELECT oid, proname, proargtypes, provolatile, proparallel, proisstrict, prosecdef, proleakproof,
+	       coalesce(proacl::text, '')
+	FROM pg_proc WHERE pronamespace = 'ai_semantic'::regnamespace ORDER BY oid;
+2026-09-03 17:18:23.188 CST [112717] 006_map_plan.pl LOG:  statement: ALTER EXTENSION semloom_pg UPDATE TO '0.2.0';
+2026-09-03 17:18:23.199 CST [112719] 006_map_plan.pl LOG:  statement: SELECT oid, proname, proargtypes, provolatile, proparallel, proisstrict, prosecdef, proleakproof,
+	       coalesce(proacl::text, '')
+	FROM pg_proc WHERE pronamespace = 'ai_semantic'::regnamespace
+	AND oid <> 'ai_semantic.map(text,text,jsonb)'::regprocedure ORDER BY oid;
+2026-09-03 17:18:23.208 CST [112721] 006_map_plan.pl LOG:  statement: SELECT prorettype::regtype, l.lanname, provolatile, proparallel, proisstrict, prosecdef, proleakproof
+	FROM pg_proc p JOIN pg_language l ON l.oid = p.prolang
+	WHERE p.oid = 'ai_semantic.map(text,text,jsonb)'::regprocedure;
+2026-09-03 17:18:23.218 CST [112723] 006_map_plan.pl LOG:  statement: SELECT pg_get_functiondef('ai_semantic.map(text,text,jsonb)'::regprocedure);
+2026-09-03 17:18:23.225 CST [112725] 006_map_plan.pl LOG:  statement: CREATE DATABASE map_fresh
+2026-09-03 17:18:23.285 CST [112727] 006_map_plan.pl LOG:  statement: CREATE EXTENSION semloom_pg
+2026-09-03 17:18:23.295 CST [112729] 006_map_plan.pl LOG:  statement: SELECT extversion FROM pg_extension WHERE extname='semloom_pg'
+2026-09-03 17:18:23.304 CST [112731] 006_map_plan.pl LOG:  statement: SELECT pg_get_functiondef('ai_semantic.map(text,text,jsonb)'::regprocedure);
+2026-09-03 17:18:23.313 CST [112733] 006_map_plan.pl LOG:  statement: SELECT e.extname FROM pg_depend d JOIN pg_extension e ON e.oid = d.refobjid
+	WHERE d.classid = 'pg_proc'::regclass AND d.objid = 'ai_semantic.map(text,text,jsonb)'::regprocedure
+	AND d.refclassid = 'pg_extension'::regclass AND d.deptype = 'e';
+2026-09-03 17:18:23.324 CST [112735] 006_map_plan.pl LOG:  statement: SELECT e.extname FROM pg_depend d JOIN pg_extension e ON e.oid = d.refobjid
+	WHERE d.classid = 'pg_proc'::regclass AND d.objid = 'ai_semantic.map(text,text,jsonb)'::regprocedure
+	AND d.refclassid = 'pg_extension'::regclass AND d.deptype = 'e';
+2026-09-03 17:18:23.336 CST [112737] 006_map_plan.pl LOG:  statement: CREATE TABLE map_inputs(id integer, body text);
+2026-09-03 17:18:23.338 CST [112737] 006_map_plan.pl LOG:  statement: INSERT INTO map_inputs VALUES (1, 'hello'), (2, NULL);
+2026-09-03 17:18:23.348 CST [112739] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs
+2026-09-03 17:18:23.361 CST [112741] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs
+2026-09-03 17:18:23.370 CST [112743] 006_map_plan.pl LOG:  statement: SET semloom_pg.gateway_socket='invalid-relative-path';
+2026-09-03 17:18:23.370 CST [112743] 006_map_plan.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs;
+2026-09-03 17:18:23.371 CST [112743] 006_map_plan.pl ERROR:  SemLoom provider socket path must be absolute
+2026-09-03 17:18:23.371 CST [112743] 006_map_plan.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs;
+2026-09-03 17:18:23.380 CST [112745] 006_map_plan.pl LOG:  statement: CREATE FUNCTION wrapped_map(input text, instruction text, options jsonb) RETURNS text
+	LANGUAGE sql VOLATILE RETURN ai_semantic.map(input, instruction, options);
+2026-09-03 17:18:23.381 CST [112745] 006_map_plan.pl LOG:  statement: CREATE FUNCTION wrapped_map_text(input text, instruction text, options jsonb) RETURNS text
+	LANGUAGE sql VOLATILE AS $$ SELECT ai_semantic.map($1, $2, $3) $$;
+2026-09-03 17:18:23.381 CST [112745] 006_map_plan.pl LOG:  statement: CREATE FUNCTION ordinary_echo(text) RETURNS text LANGUAGE sql IMMUTABLE RETURN $1 || '';
+2026-09-03 17:18:23.391 CST [112747] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.392 CST [112747] 006_map_plan.pl LOG:  statement: PREPARE wrapped_map_parameter(text) AS SELECT wrapped_map(body, $1, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.392 CST [112747] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.393 CST [112747] 006_map_plan.pl ERROR:  generative SemMap must be a direct query output
+2026-09-03 17:18:23.393 CST [112747] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.403 CST [112749] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.403 CST [112749] 006_map_plan.pl LOG:  statement: PREPARE wrapped_map_parameter(text) AS SELECT wrapped_map_text(body, $1, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.404 CST [112749] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.404 CST [112749] 006_map_plan.pl ERROR:  generative SemMap must be a direct query output
+2026-09-03 17:18:23.404 CST [112749] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.411 CST [112751] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.411 CST [112751] 006_map_plan.pl LOG:  statement: PREPARE ordinary_input(text) AS SELECT ordinary_echo($1) FROM ONLY map_inputs;
+2026-09-03 17:18:23.411 CST [112751] 006_map_plan.pl LOG:  statement: EXPLAIN (VERBOSE) EXECUTE ordinary_input('hello');
+2026-09-03 17:18:23.419 CST [112753] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.420 CST [112753] 006_map_plan.pl LOG:  statement: PREPARE direct_map_input(text) AS SELECT ai_semantic.map(ordinary_echo($1), 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.420 CST [112753] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE direct_map_input('hello');
+2026-09-03 17:18:23.430 CST [112755] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.430 CST [112755] 006_map_plan.pl LOG:  statement: PREPARE wrapped_map_parameter(text) AS SELECT wrapped_map(body, $1, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.431 CST [112755] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.431 CST [112755] 006_map_plan.pl ERROR:  generative SemMap must be a direct query output
+2026-09-03 17:18:23.431 CST [112755] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.441 CST [112757] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.441 CST [112757] 006_map_plan.pl LOG:  statement: PREPARE wrapped_map_parameter(text) AS SELECT wrapped_map_text(body, $1, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.442 CST [112757] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.442 CST [112757] 006_map_plan.pl ERROR:  generative SemMap must be a direct query output
+2026-09-03 17:18:23.442 CST [112757] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE wrapped_map_parameter('Echo the input.');
+2026-09-03 17:18:23.451 CST [112759] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.451 CST [112759] 006_map_plan.pl LOG:  statement: PREPARE ordinary_input(text) AS SELECT ordinary_echo($1) FROM ONLY map_inputs;
+2026-09-03 17:18:23.452 CST [112759] 006_map_plan.pl LOG:  statement: EXPLAIN (VERBOSE) EXECUTE ordinary_input('hello');
+2026-09-03 17:18:23.460 CST [112761] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.461 CST [112761] 006_map_plan.pl LOG:  statement: PREPARE direct_map_input(text) AS SELECT ai_semantic.map(ordinary_echo($1), 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.461 CST [112761] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE direct_map_input('hello');
+2026-09-03 17:18:23.471 CST [112763] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT wrapped_map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.472 CST [112763] 006_map_plan.pl ERROR:  generative SemMap must be a direct query output
+2026-09-03 17:18:23.472 CST [112763] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT wrapped_map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.481 CST [112765] 006_map_plan.pl LOG:  statement: DROP FUNCTION wrapped_map(text,text,jsonb);
+2026-09-03 17:18:23.481 CST [112765] 006_map_plan.pl LOG:  statement: DROP FUNCTION wrapped_map_text(text,text,jsonb);
+2026-09-03 17:18:23.489 CST [112767] 006_map_plan.pl LOG:  statement: CREATE FUNCTION nested_instruction() RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
+	DECLARE result text;
+	BEGIN
+	  BEGIN
+	    EXECUTE 'SELECT 1 / 0';
+	  EXCEPTION WHEN division_by_zero THEN
+	    NULL;
+	  END;
+	  EXECUTE 'SELECT ''Echo the input.''::text' INTO result;
+	  RETURN result;
+	END $$;
+2026-09-03 17:18:23.498 CST [112769] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, nested_instruction(), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.510 CST [112771] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.511 CST [112771] 006_map_plan.pl LOG:  statement: PREPARE map_parameter(text) AS SELECT ai_semantic.map(body, $1, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.511 CST [112771] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE map_parameter('Echo the input.');
+2026-09-03 17:18:23.511 CST [112771] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.511 CST [112771] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE map_parameter('Echo the input.');
+2026-09-03 17:18:23.521 CST [112773] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.521 CST [112773] 006_map_plan.pl LOG:  statement: PREPARE map_parameter(jsonb) AS SELECT ai_semantic.map(body, 'Echo the input.', $1) FROM ONLY map_inputs;
+2026-09-03 17:18:23.522 CST [112773] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE map_parameter('{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb);
+2026-09-03 17:18:23.522 CST [112773] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.522 CST [112773] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE map_parameter('{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb);
+2026-09-03 17:18:23.532 CST [112775] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.532 CST [112775] 006_map_plan.pl LOG:  statement: PREPARE map_input(text, integer) AS SELECT ai_semantic.map($1, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs WHERE id >= $2;
+2026-09-03 17:18:23.533 CST [112775] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE map_input('hello', 1);
+2026-09-03 17:18:23.546 CST [112777] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.546 CST [112777] 006_map_plan.pl LOG:  statement: PREPARE map_parameter(text) AS SELECT ai_semantic.map(body, $1, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.546 CST [112777] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE map_parameter('Echo the input.');
+2026-09-03 17:18:23.546 CST [112777] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.546 CST [112777] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE map_parameter('Echo the input.');
+2026-09-03 17:18:23.558 CST [112779] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.558 CST [112779] 006_map_plan.pl LOG:  statement: PREPARE map_parameter(jsonb) AS SELECT ai_semantic.map(body, 'Echo the input.', $1) FROM ONLY map_inputs;
+2026-09-03 17:18:23.558 CST [112779] 006_map_plan.pl LOG:  statement: EXPLAIN EXECUTE map_parameter('{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb);
+2026-09-03 17:18:23.559 CST [112779] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.559 CST [112779] 006_map_plan.pl STATEMENT:  EXPLAIN EXECUTE map_parameter('{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb);
+2026-09-03 17:18:23.567 CST [112781] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_generic_plan;
+2026-09-03 17:18:23.568 CST [112781] 006_map_plan.pl LOG:  statement: PREPARE map_input(text, integer) AS SELECT ai_semantic.map($1, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs WHERE id >= $2;
+2026-09-03 17:18:23.568 CST [112781] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE map_input('hello', 1);
+2026-09-03 17:18:23.577 CST [112783] 006_map_plan.pl LOG:  statement: CREATE FUNCTION stable_instruction() RETURNS text LANGUAGE sql STABLE AS $$ SELECT 'Echo the input.'::text $$;
+2026-09-03 17:18:23.577 CST [112783] 006_map_plan.pl LOG:  statement: CREATE FUNCTION volatile_instruction() RETURNS text LANGUAGE sql VOLATILE AS $$ SELECT 'Echo the input.'::text $$;
+2026-09-03 17:18:23.586 CST [112785] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, body, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.586 CST [112785] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.586 CST [112785] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, body, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.595 CST [112787] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, (SELECT 'Echo the input.'::text), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.595 CST [112787] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.595 CST [112787] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, (SELECT 'Echo the input.'::text), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.602 CST [112789] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, stable_instruction(), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.602 CST [112789] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.602 CST [112789] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, stable_instruction(), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.612 CST [112791] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, volatile_instruction(), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.612 CST [112791] 006_map_plan.pl ERROR:  SemMap instruction and options must be fixed immutable constants
+2026-09-03 17:18:23.612 CST [112791] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, volatile_instruction(), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.621 CST [112793] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo ' || 'the input.', ' {"max_tokens":128.0,"temperature":-0.0,"model":"golden-map-v1"}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.631 CST [112795] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, NULL::text, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.632 CST [112795] 006_map_plan.pl ERROR:  SemMap instruction and options must be non-NULL text and jsonb constants
+2026-09-03 17:18:23.632 CST [112795] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, NULL::text, '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.641 CST [112797] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', NULL::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.642 CST [112797] 006_map_plan.pl ERROR:  SemMap instruction and options must be non-NULL text and jsonb constants
+2026-09-03 17:18:23.642 CST [112797] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', NULL::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.652 CST [112799] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, '', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.652 CST [112799] 006_map_plan.pl ERROR:  SemMap instruction must contain 1 to 4096 UTF8 bytes
+2026-09-03 17:18:23.652 CST [112799] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, '', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.660 CST [112801] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, repeat('x',4097), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.661 CST [112801] 006_map_plan.pl ERROR:  SemMap instruction must contain 1 to 4096 UTF8 bytes
+2026-09-03 17:18:23.661 CST [112801] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, repeat('x',4097), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.667 CST [112803] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, repeat(chr(30028),1366), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.668 CST [112803] 006_map_plan.pl ERROR:  SemMap instruction must contain 1 to 4096 UTF8 bytes
+2026-09-03 17:18:23.668 CST [112803] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, repeat(chr(30028),1366), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.675 CST [112805] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, repeat('x',4096), '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs
+2026-09-03 17:18:23.683 CST [112807] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, repeat(chr(30028),1365) || 'x', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs
+2026-09-03 17:18:23.692 CST [112809] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, ' ', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs
+2026-09-03 17:18:23.703 CST [112811] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', 'null'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.704 CST [112811] 006_map_plan.pl ERROR:  SemMap options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:18:23.704 CST [112811] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', 'null'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.715 CST [112813] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '[]'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.715 CST [112813] 006_map_plan.pl ERROR:  SemMap options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:18:23.715 CST [112813] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '[]'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.724 CST [112815] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.725 CST [112815] 006_map_plan.pl ERROR:  SemMap options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:18:23.725 CST [112815] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.732 CST [112817] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128,"stop":[]}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.732 CST [112817] 006_map_plan.pl ERROR:  SemMap options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:18:23.732 CST [112817] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128,"stop":[]}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.741 CST [112819] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.742 CST [112819] 006_map_plan.pl ERROR:  SemMap options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:18:23.742 CST [112819] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.752 CST [112821] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.753 CST [112821] 006_map_plan.pl ERROR:  SemMap model must contain 1 to 128 UTF8 bytes
+2026-09-03 17:18:23.753 CST [112821] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.763 CST [112823] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":null,"temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.763 CST [112823] 006_map_plan.pl ERROR:  SemMap model must contain 1 to 128 UTF8 bytes
+2026-09-03 17:18:23.763 CST [112823] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":null,"temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.772 CST [112825] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":7,"temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.772 CST [112825] 006_map_plan.pl ERROR:  SemMap model must contain 1 to 128 UTF8 bytes
+2026-09-03 17:18:23.772 CST [112825] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":7,"temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.781 CST [112827] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0.1,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.782 CST [112827] 006_map_plan.pl ERROR:  SemMap temperature must be numeric zero
+2026-09-03 17:18:23.782 CST [112827] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0.1,"max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.792 CST [112829] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":"0","max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.793 CST [112829] 006_map_plan.pl ERROR:  SemMap temperature must be numeric zero
+2026-09-03 17:18:23.793 CST [112829] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":"0","max_tokens":128}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.803 CST [112831] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":0}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.804 CST [112831] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.804 CST [112831] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":0}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.816 CST [112833] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":-1}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.816 CST [112833] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.816 CST [112833] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":-1}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.826 CST [112835] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":4097}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.826 CST [112835] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.826 CST [112835] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":4097}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.838 CST [112837] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":1.5}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.838 CST [112837] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.838 CST [112837] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":1.5}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.847 CST [112839] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":1e30}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.848 CST [112839] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.848 CST [112839] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":1e30}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.856 CST [112841] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":null}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.856 CST [112841] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.856 CST [112841] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":null}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.864 CST [112843] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":true}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.865 CST [112843] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.865 CST [112843] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":true}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.872 CST [112845] 006_map_plan.pl LOG:  statement: EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":"128"}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.873 CST [112845] 006_map_plan.pl ERROR:  SemMap max_tokens must be an integer from 1 to 4096
+2026-09-03 17:18:23.873 CST [112845] 006_map_plan.pl STATEMENT:  EXPLAIN SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":"128"}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.883 CST [112847] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":1}'::jsonb) FROM ONLY map_inputs
+2026-09-03 17:18:23.893 CST [112849] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":4096}'::jsonb) FROM ONLY map_inputs
+2026-09-03 17:18:23.903 CST [112851] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT ai_semantic.map(body, 'Echo the input.', ' {"model":"unused","model":"golden-map-v1","temperature":0e10,"max_tokens":1.28e2}'::jsonb) FROM ONLY map_inputs;
+2026-09-03 17:18:23.914 CST [112853] 006_map_plan.pl LOG:  statement: CREATE ROLE map_reader;
+2026-09-03 17:18:23.914 CST [112853] 006_map_plan.pl LOG:  statement: GRANT USAGE ON SCHEMA ai_semantic TO map_reader;
+2026-09-03 17:18:23.914 CST [112853] 006_map_plan.pl LOG:  statement: GRANT SELECT ON map_inputs TO map_reader;
+2026-09-03 17:18:23.915 CST [112853] 006_map_plan.pl LOG:  statement: REVOKE ALL ON FUNCTION ai_semantic.map(text,text,jsonb) FROM PUBLIC;
+2026-09-03 17:18:23.915 CST [112853] 006_map_plan.pl LOG:  statement: CREATE FUNCTION map_test_capture(statement text) RETURNS text LANGUAGE plpgsql AS $$
+	DECLARE code text; message text;
+	BEGIN
+	  EXECUTE statement;
+	  RETURN 'unexpected success';
+	EXCEPTION WHEN OTHERS THEN
+	  GET STACKED DIAGNOSTICS code = RETURNED_SQLSTATE, message = MESSAGE_TEXT;
+	  RETURN code || '|' || message;
+	END $$;
+2026-09-03 17:18:23.929 CST [112855] 006_map_plan.pl LOG:  statement: SET ROLE map_reader
+	;
+2026-09-03 17:18:23.930 CST [112855] 006_map_plan.pl LOG:  statement: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs');
+2026-09-03 17:18:23.932 CST [112855] 006_map_plan.pl LOG:  statement: ;
+2026-09-03 17:18:23.932 CST [112855] 006_map_plan.pl LOG:  statement: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs LIMIT 0');
+2026-09-03 17:18:23.933 CST [112855] 006_map_plan.pl LOG:  statement: ;
+2026-09-03 17:18:23.933 CST [112855] 006_map_plan.pl LOG:  statement: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs WHERE false');
+2026-09-03 17:18:23.934 CST [112855] 006_map_plan.pl LOG:  statement: ;
+2026-09-03 17:18:23.934 CST [112855] 006_map_plan.pl LOG:  statement: SELECT map_test_capture('SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs WHERE body IS NULL');
+2026-09-03 17:18:23.935 CST [112855] 006_map_plan.pl LOG:  statement: ;
+2026-09-03 17:18:23.935 CST [112855] 006_map_plan.pl LOG:  statement: SELECT map_test_capture('EXPLAIN SELECT id, ai_semantic.map(body, ''Echo the input.'', ''{"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) AS generated FROM ONLY map_inputs');
+2026-09-03 17:18:23.935 CST [112855] 006_map_plan.pl LOG:  statement: ;
+2026-09-03 17:18:23.944 CST [112857] 006_map_plan.pl LOG:  statement: GRANT EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) TO map_reader;
+2026-09-03 17:18:23.946 CST [112855] 006_map_plan.pl LOG:  statement: SET plan_cache_mode=force_custom_plan;
+2026-09-03 17:18:23.946 CST [112855] 006_map_plan.pl LOG:  statement: PREPARE map_acl(integer) AS SELECT id, ai_semantic.map(body, 'Echo the input.', '{"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) AS generated FROM ONLY map_inputs WHERE id >= $1;
+2026-09-03 17:18:23.946 CST [112855] 006_map_plan.pl LOG:  statement: ;
+2026-09-03 17:18:23.947 CST [112855] 006_map_plan.pl LOG:  statement: EXPLAIN (FORMAT JSON) EXECUTE map_acl(1)
+	;
+2026-09-03 17:18:23.949 CST [112855] 006_map_plan.pl LOG:  statement: SET semloom_pg.gateway_socket='invalid-relative-path'
+	;
+2026-09-03 17:18:23.949 CST [112855] 006_map_plan.pl ERROR:  permission denied to set parameter "semloom_pg.gateway_socket"
+2026-09-03 17:18:23.949 CST [112855] 006_map_plan.pl STATEMENT:  SET semloom_pg.gateway_socket='invalid-relative-path'
+	;
+2026-09-03 17:18:23.954 CST [112700] LOG:  received immediate shutdown request
+2026-09-03 17:18:23.964 CST [112700] LOG:  database system is shut down

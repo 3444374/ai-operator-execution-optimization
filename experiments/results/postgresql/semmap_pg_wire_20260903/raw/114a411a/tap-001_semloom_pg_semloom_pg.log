@@ -1,0 +1,1082 @@
+2026-09-03 17:17:53.133 CST [111540] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 17:17:53.133 CST [111540] LOG:  listening on Unix socket "/tmp/aFm2Wfaj2O/.s.PGSQL.16013"
+2026-09-03 17:17:53.135 CST [111546] LOG:  database system was shut down at 2026-09-03 17:17:53 CST
+2026-09-03 17:17:53.138 CST [111540] LOG:  database system is ready to accept connections
+2026-09-03 17:17:53.237 CST [111551] 001_semloom_pg.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 17:17:53.239 CST [111551] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_documents (payload text);
+2026-09-03 17:17:53.241 CST [111551] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_documents VALUES ('alpha');
+2026-09-03 17:17:53.254 CST [111553] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.254 CST [111553] 001_semloom_pg.pl ERROR:  ai_semantic.map marker was not lowered to a semantic plan
+2026-09-03 17:17:53.254 CST [111553] 001_semloom_pg.pl HINT:  Load semloom_pg before planning and use a supported SemMap query shape.
+2026-09-03 17:17:53.254 CST [111553] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.259 CST [111540] LOG:  received fast shutdown request
+2026-09-03 17:17:53.259 CST [111540] LOG:  aborting any active transactions
+2026-09-03 17:17:53.260 CST [111540] LOG:  background worker "logical replication launcher" (PID 111549) exited with exit code 1
+2026-09-03 17:17:53.260 CST [111544] LOG:  shutting down
+2026-09-03 17:17:53.260 CST [111544] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 17:17:53.263 CST [111544] LOG:  checkpoint complete: wrote 50 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=202 kB, estimate=202 kB; lsn=0/171FF80, redo lsn=0/171FF80
+2026-09-03 17:17:53.269 CST [111540] LOG:  database system is shut down
+2026-09-03 17:17:53.375 CST [111555] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 17:17:53.375 CST [111555] LOG:  listening on Unix socket "/tmp/aFm2Wfaj2O/.s.PGSQL.16013"
+2026-09-03 17:17:53.377 CST [111561] LOG:  database system was shut down at 2026-09-03 17:17:53 CST
+2026-09-03 17:17:53.379 CST [111555] LOG:  database system is ready to accept connections
+2026-09-03 17:17:53.474 CST [111566] 001_semloom_pg.pl LOG:  statement: PREPARE semloom_map AS SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.475 CST [111566] 001_semloom_pg.pl LOG:  statement: EXECUTE semloom_map;
+2026-09-03 17:17:53.475 CST [111566] 001_semloom_pg.pl DETAIL:  prepare: PREPARE semloom_map AS SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.476 CST [111566] 001_semloom_pg.pl LOG:  statement: DEALLOCATE semloom_map;
+2026-09-03 17:17:53.485 CST [111568] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_filter_decisions (
+			doc_id integer PRIMARY KEY,
+			decision text
+		);
+2026-09-03 17:17:53.488 CST [111568] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_filter_decisions VALUES
+		(1, 'true'),
+		(2, 'false'),
+		(3, 'unknown'),
+		(4, NULL),
+		(5, 'true');
+2026-09-03 17:17:53.497 CST [111570] 001_semloom_pg.pl LOG:  statement: PREPARE semloom_filter AS
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:17:53.497 CST [111570] 001_semloom_pg.pl LOG:  statement: EXECUTE semloom_filter;
+2026-09-03 17:17:53.497 CST [111570] 001_semloom_pg.pl DETAIL:  prepare: PREPARE semloom_filter AS
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:17:53.498 CST [111570] 001_semloom_pg.pl LOG:  statement: DEALLOCATE semloom_filter;
+2026-09-03 17:17:53.508 CST [111572] 001_semloom_pg.pl LOG:  statement: SET plan_cache_mode = force_generic_plan;
+2026-09-03 17:17:53.508 CST [111572] 001_semloom_pg.pl LOG:  statement: PREPARE semloom_filter_from(integer) AS
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id >= $1 AND ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:17:53.509 CST [111572] 001_semloom_pg.pl LOG:  statement: EXECUTE semloom_filter_from(2);
+2026-09-03 17:17:53.509 CST [111572] 001_semloom_pg.pl DETAIL:  prepare: PREPARE semloom_filter_from(integer) AS
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id >= $1 AND ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:17:53.509 CST [111572] 001_semloom_pg.pl LOG:  statement: ALTER TABLE semloom_filter_decisions ADD COLUMN note text;
+2026-09-03 17:17:53.510 CST [111572] 001_semloom_pg.pl LOG:  statement: EXECUTE semloom_filter_from(2);
+2026-09-03 17:17:53.510 CST [111572] 001_semloom_pg.pl DETAIL:  prepare: PREPARE semloom_filter_from(integer) AS
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id >= $1 AND ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:17:53.510 CST [111572] 001_semloom_pg.pl LOG:  statement: DEALLOCATE semloom_filter_from;
+2026-09-03 17:17:53.510 CST [111572] 001_semloom_pg.pl LOG:  statement: RESET plan_cache_mode;
+2026-09-03 17:17:53.520 CST [111574] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id >= 2 AND ai_semantic.filter(decision)
+	ORDER BY doc_id
+	LIMIT 1;
+2026-09-03 17:17:53.530 CST [111576] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id >= 2 AND ai_semantic.filter(decision)
+	ORDER BY doc_id
+	LIMIT 1;
+2026-09-03 17:17:53.539 CST [111578] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_sink (completion text);
+2026-09-03 17:17:53.549 CST [111580] 001_semloom_pg.pl LOG:  statement: BEGIN;
+2026-09-03 17:17:53.549 CST [111580] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.550 CST [111580] 001_semloom_pg.pl LOG:  statement: SELECT completion FROM semloom_sink;
+2026-09-03 17:17:53.550 CST [111580] 001_semloom_pg.pl LOG:  statement: ROLLBACK;
+2026-09-03 17:17:53.550 CST [111580] 001_semloom_pg.pl LOG:  statement: SELECT count(*) FROM semloom_sink;
+2026-09-03 17:17:53.559 CST [111582] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.560 CST [111582] 001_semloom_pg.pl LOG:  statement: SELECT completion FROM semloom_sink;
+2026-09-03 17:17:53.568 CST [111584] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload) FROM semloom_documents
+	RETURNING completion;
+2026-09-03 17:17:53.568 CST [111584] 001_semloom_pg.pl ERROR:  INSERT shape is outside the current SemMap capability
+2026-09-03 17:17:53.568 CST [111584] 001_semloom_pg.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 17:17:53.568 CST [111584] 001_semloom_pg.pl STATEMENT:  INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload) FROM semloom_documents
+	RETURNING completion;
+2026-09-03 17:17:53.578 CST [111586] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload) FROM semloom_documents
+	ON CONFLICT DO NOTHING;
+2026-09-03 17:17:53.578 CST [111586] 001_semloom_pg.pl ERROR:  INSERT shape is outside the current SemMap capability
+2026-09-03 17:17:53.578 CST [111586] 001_semloom_pg.pl DETAIL:  ON CONFLICT, RETURNING, and OVERRIDING are not supported.
+2026-09-03 17:17:53.578 CST [111586] 001_semloom_pg.pl STATEMENT:  INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload) FROM semloom_documents
+	ON CONFLICT DO NOTHING;
+2026-09-03 17:17:53.587 CST [111588] 001_semloom_pg.pl LOG:  statement: SELECT count(*) FROM semloom_sink;
+2026-09-03 17:17:53.596 CST [111590] 001_semloom_pg.pl LOG:  statement: SET statement_timeout = '100ms';
+2026-09-03 17:17:53.596 CST [111590] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE pg_sleep(10) IS NULL;
+2026-09-03 17:17:53.696 CST [111590] 001_semloom_pg.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 17:17:53.696 CST [111590] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE pg_sleep(10) IS NULL;
+2026-09-03 17:17:53.708 CST [111592] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.723 CST [111594] 001_semloom_pg.pl LOG:  statement: BEGIN ISOLATION LEVEL REPEATABLE READ;
+2026-09-03 17:17:53.723 CST [111594] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:17:53.723 CST [111594] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.724 CST [111594] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:17:53.733 CST [111596] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_documents VALUES ('beta');
+2026-09-03 17:17:53.735 CST [111594] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.735 CST [111594] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:17:53.736 CST [111594] 001_semloom_pg.pl LOG:  statement: COMMIT;
+2026-09-03 17:17:53.736 CST [111594] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:17:53.745 CST [111598] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:17:53.757 CST [111600] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_documents VALUES ('héllo世界'), (NULL), ('');
+2026-09-03 17:17:53.764 CST [111602] 001_semloom_pg.pl LOG:  statement: CREATE ROLE semloom_reader;
+2026-09-03 17:17:53.764 CST [111602] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_secure (owner_name text, decision text);
+2026-09-03 17:17:53.766 CST [111602] 001_semloom_pg.pl LOG:  statement: ALTER TABLE semloom_secure ENABLE ROW LEVEL SECURITY;
+2026-09-03 17:17:53.766 CST [111602] 001_semloom_pg.pl LOG:  statement: CREATE POLICY semloom_secure_owner ON semloom_secure
+		USING (owner_name = current_user::text);
+2026-09-03 17:17:53.766 CST [111602] 001_semloom_pg.pl LOG:  statement: GRANT USAGE ON SCHEMA ai_semantic TO semloom_reader;
+2026-09-03 17:17:53.768 CST [111602] 001_semloom_pg.pl LOG:  statement: GRANT EXECUTE ON FUNCTION ai_semantic.filter(text) TO semloom_reader;
+2026-09-03 17:17:53.768 CST [111602] 001_semloom_pg.pl LOG:  statement: GRANT SELECT ON semloom_secure TO semloom_reader;
+2026-09-03 17:17:53.768 CST [111602] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_secure VALUES
+		('semloom_reader', 'true'),
+		('semloom_reader', 'false'),
+		('someone_else', 'true');
+2026-09-03 17:17:53.776 CST [111604] 001_semloom_pg.pl LOG:  statement: SET ROLE semloom_reader;
+2026-09-03 17:17:53.776 CST [111604] 001_semloom_pg.pl LOG:  statement: SELECT owner_name
+	FROM semloom_secure
+	WHERE ai_semantic.filter(decision);
+2026-09-03 17:17:53.777 CST [111604] 001_semloom_pg.pl LOG:  statement: RESET ROLE;
+2026-09-03 17:17:53.785 CST [111606] 001_semloom_pg.pl LOG:  statement: SELECT count(*) FROM semloom_secure;
+2026-09-03 17:17:53.796 CST [111608] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, NULL,
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.796 CST [111608] 001_semloom_pg.pl ERROR:  SemFilter instruction must be a non-NULL plan-time constant
+2026-09-03 17:17:53.796 CST [111608] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, NULL,
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.804 CST [111610] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, '',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.804 CST [111610] 001_semloom_pg.pl ERROR:  SemFilter instruction must contain 1 to 4096 UTF8 bytes
+2026-09-03 17:17:53.804 CST [111610] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, '',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.811 CST [111612] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, decision,
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.811 CST [111612] 001_semloom_pg.pl ERROR:  SemFilter instruction must be a non-NULL plan-time constant
+2026-09-03 17:17:53.811 CST [111612] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, decision,
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.820 CST [111614] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0}'::jsonb);
+2026-09-03 17:17:53.821 CST [111614] 001_semloom_pg.pl ERROR:  SemFilter options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:17:53.821 CST [111614] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0}'::jsonb);
+2026-09-03 17:17:53.828 CST [111616] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"future":true}'::jsonb);
+2026-09-03 17:17:53.829 CST [111616] 001_semloom_pg.pl ERROR:  SemFilter options must contain exactly model, temperature, and max_tokens
+2026-09-03 17:17:53.829 CST [111616] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8,"future":true}'::jsonb);
+2026-09-03 17:17:53.837 CST [111618] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":true,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.838 CST [111618] 001_semloom_pg.pl ERROR:  SemFilter temperature must be numeric zero
+2026-09-03 17:17:53.838 CST [111618] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":true,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.848 CST [111620] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0.1,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.848 CST [111620] 001_semloom_pg.pl ERROR:  SemFilter temperature must be numeric zero
+2026-09-03 17:17:53.848 CST [111620] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0.1,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.857 CST [111622] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8.0}'::jsonb);
+2026-09-03 17:17:53.858 CST [111622] 001_semloom_pg.pl ERROR:  SemFilter max_tokens must be integer 8
+2026-09-03 17:17:53.858 CST [111622] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision, 'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8.0}'::jsonb);
+2026-09-03 17:17:53.867 CST [111624] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_exact_filter_inputs (
+			doc_id integer PRIMARY KEY,
+			payload text
+		);
+2026-09-03 17:17:53.869 CST [111624] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_exact_filter_inputs VALUES
+		(1, 'PostgreSQL is a database.'),
+		(2, 'A cat sleeps.'),
+		(3, 'Insufficient context'),
+			(4, NULL),
+			(5, 'PostgreSQL is a database.'),
+			(6, 'invalid raw'),
+			(7, '数据库系统 PostgreSQL。'),
+			(8, ''),
+			(9, 'missing golden fixture');
+2026-09-03 17:17:53.883 CST [111626] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_exact_filter_cost_inputs (
+			doc_id integer PRIMARY KEY,
+			payload text
+		);
+2026-09-03 17:17:53.885 CST [111626] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_exact_filter_cost_inputs
+	SELECT value,
+		CASE WHEN value % 4 = 0 THEN NULL ELSE repeat('x', 32) END
+	FROM generate_series(1, 100) AS value;
+2026-09-03 17:17:53.886 CST [111626] 001_semloom_pg.pl LOG:  statement: ANALYZE semloom_exact_filter_cost_inputs;
+2026-09-03 17:17:53.895 CST [111628] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:53.999 CST [111631] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:53.999 CST [111631] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '<test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/reference-calibration.json';
+2026-09-03 17:17:54.000 CST [111631] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.020 CST [111633] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:54.020 CST [111633] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '<test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/reference-calibration.json';
+2026-09-03 17:17:54.020 CST [111633] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON) SELECT doc_id FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(payload, 'Input describes a database system.',
+	'{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb);
+2026-09-03 17:17:54.033 CST [111635] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:54.034 CST [111635] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '<test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/reference-calibration.json';
+2026-09-03 17:17:54.034 CST [111635] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'A different semantic instruction.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.045 CST [111637] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'golden';
+2026-09-03 17:17:54.045 CST [111637] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '<test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/reference-calibration.json';
+2026-09-03 17:17:54.045 CST [111637] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.055 CST [111639] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:54.055 CST [111639] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '<test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/duplicate-calibration.json';
+2026-09-03 17:17:54.055 CST [111639] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.066 CST [111641] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:54.066 CST [111641] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '<test-worktree>/code/postgres/semloom_pg/tmp_check/t_001_semloom_pg_semloom_pg_data/nul-calibration.json';
+2026-09-03 17:17:54.067 CST [111641] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.079 CST [111643] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:54.080 CST [111643] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.reference_calibration_file = '/does/not/exist/semloom-calibration.json';
+2026-09-03 17:17:54.080 CST [111643] 001_semloom_pg.pl LOG:  statement: EXPLAIN (FORMAT JSON)
+	SELECT doc_id
+	FROM semloom_exact_filter_cost_inputs
+	WHERE doc_id <= 50 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.093 CST [111645] 001_semloom_pg.pl LOG:  statement: RESET semloom_pg.reference_calibration_file;
+2026-09-03 17:17:54.093 CST [111645] 001_semloom_pg.pl LOG:  statement: RESET semloom_pg.provider_execution_profile;
+2026-09-03 17:17:54.280 CST [111648] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:54.280 CST [111648] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id <= 5 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	ORDER BY doc_id;
+2026-09-03 17:17:54.447 CST [111651] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:54.447 CST [111651] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 9 AND ai_semantic.filter(
+	  payload,
+	  'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.449 CST [111651] 001_semloom_pg.pl ERROR:  SemLoom provider rejected the protocol message
+2026-09-03 17:17:54.449 CST [111651] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 9 AND ai_semantic.filter(
+	  payload,
+	  'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.610 CST [111654] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:54.610 CST [111654] 001_semloom_pg.pl LOG:  statement: BEGIN;
+2026-09-03 17:17:54.610 CST [111654] 001_semloom_pg.pl LOG:  statement: SAVEPOINT semloom_exact_filter_failure;
+2026-09-03 17:17:54.610 CST [111654] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 6 AND ai_semantic.filter(
+	  payload,
+	  'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.612 CST [111654] 001_semloom_pg.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-03 17:17:54.612 CST [111654] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 6 AND ai_semantic.filter(
+	  payload,
+	  'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.612 CST [111654] 001_semloom_pg.pl LOG:  statement: ROLLBACK TO SAVEPOINT semloom_exact_filter_failure;
+2026-09-03 17:17:54.612 CST [111654] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+	  payload,
+	  'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.613 CST [111654] 001_semloom_pg.pl LOG:  statement: COMMIT;
+2026-09-03 17:17:54.613 CST [111654] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:17:54.793 CST [111657] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:54.793 CST [111657] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 7 AND ai_semantic.filter(
+	  payload,
+	  '输入描述数据库系统。',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:54.967 CST [111660] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:54.967 CST [111660] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 8 AND ai_semantic.filter(
+	  payload,
+	  'Input describes a database system.',
+	  '{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.151 CST [111665] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:55.151 CST [111665] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id <= 5 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	ORDER BY doc_id;
+2026-09-03 17:17:55.179 CST [111667] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:17:55.179 CST [111667] 001_semloom_pg.pl LOG:  statement: EXPLAIN (COSTS OFF)
+	SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id <= 5 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	ORDER BY doc_id;
+2026-09-03 17:17:55.189 CST [111669] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:17:55.189 CST [111669] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	LIMIT 0;
+2026-09-03 17:17:55.200 CST [111671] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:17:55.200 CST [111671] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE payload IS NULL AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.358 CST [111674] 001_semloom_pg.pl LOG:  statement: SET plan_cache_mode = force_generic_plan;
+2026-09-03 17:17:55.358 CST [111674] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:55.358 CST [111674] 001_semloom_pg.pl LOG:  statement: PREPARE semloom_exact_filter(integer) AS
+	SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id BETWEEN $1 AND 5 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	ORDER BY doc_id;
+2026-09-03 17:17:55.359 CST [111674] 001_semloom_pg.pl LOG:  statement: EXECUTE semloom_exact_filter(5);
+2026-09-03 17:17:55.359 CST [111674] 001_semloom_pg.pl DETAIL:  prepare: PREPARE semloom_exact_filter(integer) AS
+	SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id BETWEEN $1 AND 5 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	ORDER BY doc_id;
+2026-09-03 17:17:55.361 CST [111674] 001_semloom_pg.pl LOG:  statement: DEALLOCATE semloom_exact_filter;
+2026-09-03 17:17:55.361 CST [111674] 001_semloom_pg.pl LOG:  statement: RESET plan_cache_mode;
+2026-09-03 17:17:55.535 CST [111677] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:55.535 CST [111677] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 6 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.538 CST [111677] 001_semloom_pg.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-03 17:17:55.538 CST [111677] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 6 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.722 CST [111680] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:55.722 CST [111680] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.724 CST [111680] 001_semloom_pg.pl ERROR:  SemLoom provider rejected the protocol message
+2026-09-03 17:17:55.724 CST [111680] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.893 CST [111683] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:55.893 CST [111683] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:55.894 CST [111683] 001_semloom_pg.pl ERROR:  SemLoom provider returned an invalid wire v3 error frame
+2026-09-03 17:17:55.894 CST [111683] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.073 CST [111686] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:56.073 CST [111686] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.075 CST [111686] 001_semloom_pg.pl ERROR:  SemLoom provider completion does not match wire v3 task identity
+2026-09-03 17:17:56.075 CST [111686] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.241 CST [111689] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:56.241 CST [111689] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.243 CST [111689] 001_semloom_pg.pl ERROR:  SemLoom provider completion does not match wire v3 task identity
+2026-09-03 17:17:56.243 CST [111689] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.427 CST [111692] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:56.427 CST [111692] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.431 CST [111692] 001_semloom_pg.pl ERROR:  SemLoom provider response has an invalid text field
+2026-09-03 17:17:56.431 CST [111692] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.612 CST [111695] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:56.612 CST [111695] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.615 CST [111695] 001_semloom_pg.pl ERROR:  SemLoom provider completion does not match wire v3 task identity
+2026-09-03 17:17:56.615 CST [111695] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.797 CST [111698] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:56.797 CST [111698] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.800 CST [111698] 001_semloom_pg.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 17:17:56.800 CST [111698] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.981 CST [111701] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:56.982 CST [111701] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:56.984 CST [111701] 001_semloom_pg.pl ERROR:  SemLoom provider returned an invalid wire v3 error frame
+2026-09-03 17:17:56.984 CST [111701] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.156 CST [111704] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:57.156 CST [111704] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.159 CST [111704] 001_semloom_pg.pl ERROR:  SemLoom provider returned an invalid wire v3 error frame
+2026-09-03 17:17:57.159 CST [111704] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.337 CST [111707] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:57.337 CST [111707] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.339 CST [111707] 001_semloom_pg.pl ERROR:  SemLoom provider returned an invalid wire v3 error frame
+2026-09-03 17:17:57.339 CST [111707] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.513 CST [111710] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:57.513 CST [111710] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.515 CST [111710] 001_semloom_pg.pl ERROR:  SemLoom provider returned an invalid wire v3 error frame
+2026-09-03 17:17:57.515 CST [111710] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.540 CST [111712] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:17:57.540 CST [111712] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		repeat(payload, 7000),
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.541 CST [111712] 001_semloom_pg.pl ERROR:  SemLoom provider input exceeds the 163840 byte limit
+2026-09-03 17:17:57.541 CST [111712] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		repeat(payload, 7000),
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.709 CST [111715] 001_semloom_pg.pl LOG:  statement: SET statement_timeout = '100ms';
+2026-09-03 17:17:57.709 CST [111715] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:57.709 CST [111715] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:57.809 CST [111715] 001_semloom_pg.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 17:17:57.809 CST [111715] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:58.396 CST [111718] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:58.396 CST [111718] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:58.657 CST [111722] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:58.657 CST [111722] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:58.657 CST [111722] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id <= 5 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	ORDER BY doc_id;
+2026-09-03 17:17:58.953 CST [111731] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:58.954 CST [111731] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:58.954 CST [111731] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.144 CST [111736] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:59.144 CST [111736] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:59.144 CST [111736] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"different-model","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.146 CST [111736] 001_semloom_pg.pl ERROR:  SemLoom model request was rejected
+2026-09-03 17:17:59.146 CST [111736] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"different-model","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.386 CST [111740] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:59.387 CST [111740] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:59.387 CST [111740] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.395 CST [111740] 001_semloom_pg.pl ERROR:  SemLoom model endpoint is unavailable
+2026-09-03 17:17:59.395 CST [111740] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.668 CST [111746] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:59.668 CST [111746] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:59.668 CST [111746] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.676 CST [111746] 001_semloom_pg.pl ERROR:  SemLoom model request was rejected
+2026-09-03 17:17:59.676 CST [111746] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.935 CST [111752] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:17:59.935 CST [111752] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:17:59.935 CST [111752] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:17:59.943 CST [111752] 001_semloom_pg.pl ERROR:  SemLoom model endpoint returned an invalid response
+2026-09-03 17:17:59.943 CST [111752] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.203 CST [111760] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:00.203 CST [111760] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:18:00.204 CST [111760] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.212 CST [111760] 001_semloom_pg.pl ERROR:  SemLoom provider completion does not match wire v3 task identity
+2026-09-03 17:18:00.212 CST [111760] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.472 CST [111766] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:00.472 CST [111766] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:18:00.472 CST [111766] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.485 CST [111766] 001_semloom_pg.pl ERROR:  SemLoom model endpoint timed out
+2026-09-03 17:18:00.485 CST [111766] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.822 CST [111772] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:00.822 CST [111772] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:18:00.822 CST [111772] 001_semloom_pg.pl LOG:  statement: BEGIN;
+2026-09-03 17:18:00.822 CST [111772] 001_semloom_pg.pl LOG:  statement: SAVEPOINT semloom_fixed_model_failure;
+2026-09-03 17:18:00.822 CST [111772] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.829 CST [111772] 001_semloom_pg.pl ERROR:  SemFilter model completion must be TRUE, FALSE, or UNKNOWN
+2026-09-03 17:18:00.829 CST [111772] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.829 CST [111772] 001_semloom_pg.pl LOG:  statement: ROLLBACK TO SAVEPOINT semloom_fixed_model_failure;
+2026-09-03 17:18:00.829 CST [111772] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:00.831 CST [111772] 001_semloom_pg.pl LOG:  statement: COMMIT;
+2026-09-03 17:18:00.831 CST [111772] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:18:01.079 CST [111779] 001_semloom_pg.pl LOG:  statement: SET statement_timeout = '100ms';
+2026-09-03 17:18:01.079 CST [111779] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:01.079 CST [111779] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:18:01.079 CST [111779] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:01.179 CST [111779] 001_semloom_pg.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 17:18:01.179 CST [111779] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:01.860 CST [111785] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:01.860 CST [111785] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:18:01.860 CST [111785] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE doc_id = 1 AND ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb);
+2026-09-03 17:18:01.892 CST [111789] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:01.893 CST [111789] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.provider_execution_profile = 'openai-compatible-fixed';
+2026-09-03 17:18:01.893 CST [111789] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_exact_filter_inputs
+	WHERE ai_semantic.filter(
+		payload,
+		'Input describes a database system.',
+		'{"model":"fixed-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+	LIMIT 0;
+2026-09-03 17:18:01.903 CST [111791] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '';
+2026-09-03 17:18:01.903 CST [111791] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents;
+2026-09-03 17:18:01.913 CST [111793] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '';
+2026-09-03 17:18:01.913 CST [111793] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT ai_semantic.map(payload)
+	FROM semloom_documents;
+2026-09-03 17:18:02.078 CST [111796] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:02.078 CST [111796] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents;
+2026-09-03 17:18:02.253 CST [111799] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:02.253 CST [111799] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT ai_semantic.map(payload)
+	FROM semloom_documents;
+2026-09-03 17:18:02.279 CST [111801] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '';
+2026-09-03 17:18:02.279 CST [111801] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:18:02.288 CST [111803] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '';
+2026-09-03 17:18:02.288 CST [111803] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:18:02.446 CST [111806] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:02.446 CST [111806] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:18:02.631 CST [111809] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:02.632 CST [111809] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:18:02.974 CST [111813] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/backend-a.sock';
+2026-09-03 17:18:02.974 CST [111813] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:18:02.974 CST [111815] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/backend-b.sock';
+2026-09-03 17:18:02.975 CST [111815] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:18:02.975 CST [111813] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	ORDER BY doc_id;
+2026-09-03 17:18:02.979 CST [111813] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:18:02.980 CST [111815] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:02.982 CST [111815] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:18:03.164 CST [111818] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:03.164 CST [111818] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.165 CST [111818] 001_semloom_pg.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 17:18:03.165 CST [111818] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.349 CST [111821] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:03.349 CST [111821] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.350 CST [111821] 001_semloom_pg.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 17:18:03.350 CST [111821] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.533 CST [111824] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:03.533 CST [111824] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.535 CST [111824] 001_semloom_pg.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 17:18:03.535 CST [111824] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.699 CST [111827] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:03.699 CST [111827] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.701 CST [111827] 001_semloom_pg.pl ERROR:  SemLoom provider returned invalid JSON
+2026-09-03 17:18:03.701 CST [111827] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.871 CST [111830] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:03.871 CST [111830] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:03.873 CST [111830] 001_semloom_pg.pl ERROR:  SemLoom provider response must be a JSON object
+2026-09-03 17:18:03.873 CST [111830] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.044 CST [111833] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:04.044 CST [111833] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.045 CST [111833] 001_semloom_pg.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 17:18:04.045 CST [111833] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.217 CST [111836] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:04.217 CST [111836] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.218 CST [111836] 001_semloom_pg.pl ERROR:  SemLoom provider returned an unexpected message
+2026-09-03 17:18:04.218 CST [111836] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.389 CST [111839] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:04.389 CST [111839] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.391 CST [111839] 001_semloom_pg.pl ERROR:  SemLoom provider response has an invalid integer field
+2026-09-03 17:18:04.391 CST [111839] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.565 CST [111842] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:04.565 CST [111842] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.566 CST [111842] 001_semloom_pg.pl ERROR:  SemLoom provider response has an invalid integer field
+2026-09-03 17:18:04.566 CST [111842] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.748 CST [111845] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:04.748 CST [111845] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.750 CST [111845] 001_semloom_pg.pl ERROR:  integer out of range
+2026-09-03 17:18:04.750 CST [111845] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.923 CST [111848] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:04.923 CST [111848] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:04.924 CST [111848] 001_semloom_pg.pl ERROR:  SemLoom provider completion identity does not match the task
+2026-09-03 17:18:04.924 CST [111848] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:05.096 CST [111853] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:05.096 CST [111853] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:05.097 CST [111853] 001_semloom_pg.pl ERROR:  SemLoom provider rejected the protocol message
+2026-09-03 17:18:05.097 CST [111853] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+		WHERE payload = 'alpha';
+2026-09-03 17:18:05.123 CST [111855] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_filter_decisions (doc_id, decision)
+	VALUES (6, 'invalid');
+2026-09-03 17:18:05.132 CST [111857] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '';
+2026-09-03 17:18:05.132 CST [111857] 001_semloom_pg.pl LOG:  statement: BEGIN;
+2026-09-03 17:18:05.132 CST [111857] 001_semloom_pg.pl LOG:  statement: SAVEPOINT semloom_filter_failure;
+2026-09-03 17:18:05.132 CST [111857] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 6 AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.133 CST [111857] 001_semloom_pg.pl ERROR:  SemFilter provider completion must be true, false, or unknown
+2026-09-03 17:18:05.133 CST [111857] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 6 AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.133 CST [111857] 001_semloom_pg.pl LOG:  statement: ROLLBACK TO SAVEPOINT semloom_filter_failure;
+2026-09-03 17:18:05.133 CST [111857] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 1 AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.133 CST [111857] 001_semloom_pg.pl LOG:  statement: COMMIT;
+2026-09-03 17:18:05.133 CST [111857] 001_semloom_pg.pl LOG:  statement: ;
+2026-09-03 17:18:05.291 CST [111860] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:05.291 CST [111860] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 6 AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.293 CST [111860] 001_semloom_pg.pl ERROR:  SemFilter provider completion must be true, false, or unknown
+2026-09-03 17:18:05.293 CST [111860] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 6 AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.453 CST [111863] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:05.453 CST [111863] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 1 AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.474 CST [111865] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.475 CST [111865] 001_semloom_pg.pl LOG:  statement: EXPLAIN (COSTS OFF)
+	SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:18:05.488 CST [111867] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.488 CST [111867] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents LIMIT 0;
+2026-09-03 17:18:05.497 CST [111869] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.497 CST [111869] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE false;
+2026-09-03 17:18:05.505 CST [111871] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.505 CST [111871] 001_semloom_pg.pl LOG:  statement: TRUNCATE semloom_sink;
+2026-09-03 17:18:05.507 CST [111871] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_sink
+	SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload IS NULL;
+2026-09-03 17:18:05.507 CST [111871] 001_semloom_pg.pl LOG:  statement: SELECT count(*) FROM semloom_sink WHERE completion IS NULL;
+2026-09-03 17:18:05.515 CST [111873] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.515 CST [111873] 001_semloom_pg.pl LOG:  statement: EXPLAIN (COSTS OFF)
+	SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision);
+2026-09-03 17:18:05.522 CST [111875] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.522 CST [111875] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE ai_semantic.filter(decision)
+	LIMIT 0;
+2026-09-03 17:18:05.533 CST [111877] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.533 CST [111877] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE decision IS NULL AND ai_semantic.filter(decision);
+2026-09-03 17:18:05.543 CST [111879] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_private (decision text);
+2026-09-03 17:18:05.545 CST [111879] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_private VALUES ('true');
+2026-09-03 17:18:05.553 CST [111881] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.553 CST [111881] 001_semloom_pg.pl LOG:  statement: SET ROLE semloom_reader;
+2026-09-03 17:18:05.553 CST [111881] 001_semloom_pg.pl LOG:  statement: SELECT * FROM semloom_private WHERE ai_semantic.filter(decision);
+2026-09-03 17:18:05.554 CST [111881] 001_semloom_pg.pl ERROR:  permission denied for table semloom_private
+2026-09-03 17:18:05.554 CST [111881] 001_semloom_pg.pl STATEMENT:  SELECT * FROM semloom_private WHERE ai_semantic.filter(decision);
+2026-09-03 17:18:05.564 CST [111883] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.564 CST [111883] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(repeat(payload, 200000))
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:05.566 CST [111883] 001_semloom_pg.pl ERROR:  SemLoom provider input exceeds the 174080 byte limit
+2026-09-03 17:18:05.566 CST [111883] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(repeat(payload, 200000))
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:05.574 CST [111885] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:05.574 CST [111885] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:05.575 CST [111885] 001_semloom_pg.pl ERROR:  could not connect to SemLoom provider socket: No such file or directory
+2026-09-03 17:18:05.575 CST [111885] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:05.735 CST [111888] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:05.735 CST [111888] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'héllo世界';
+2026-09-03 17:18:05.917 CST [111891] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:05.917 CST [111891] 001_semloom_pg.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF)
+	SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:06.094 CST [111894] 001_semloom_pg.pl LOG:  statement: SET statement_timeout = '100ms';
+2026-09-03 17:18:06.094 CST [111894] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:06.094 CST [111894] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:06.194 CST [111894] 001_semloom_pg.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 17:18:06.194 CST [111894] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:06.703 CST [111897] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:06.703 CST [111897] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:06.704 CST [111897] 001_semloom_pg.pl ERROR:  SemLoom provider completion evidence digest does not match
+2026-09-03 17:18:06.704 CST [111897] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:06.875 CST [111900] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:06.875 CST [111900] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:06.876 CST [111900] 001_semloom_pg.pl ERROR:  SemLoom provider disconnected before completing a frame
+2026-09-03 17:18:06.876 CST [111900] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:07.047 CST [111903] 001_semloom_pg.pl LOG:  statement: SET statement_timeout = '100ms';
+2026-09-03 17:18:07.047 CST [111903] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:07.047 CST [111903] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:07.147 CST [111903] 001_semloom_pg.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 17:18:07.147 CST [111903] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:07.734 CST [111906] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:07.734 CST [111906] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload)
+	FROM semloom_documents
+	WHERE payload = 'alpha';
+2026-09-03 17:18:07.908 CST [111909] 001_semloom_pg.pl LOG:  statement: SET statement_timeout = '100ms';
+2026-09-03 17:18:07.908 CST [111909] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:07.909 CST [111909] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 1 AND ai_semantic.filter(decision);
+2026-09-03 17:18:08.009 CST [111909] 001_semloom_pg.pl ERROR:  canceling statement due to statement timeout
+2026-09-03 17:18:08.009 CST [111909] 001_semloom_pg.pl STATEMENT:  SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 1 AND ai_semantic.filter(decision);
+2026-09-03 17:18:08.584 CST [111912] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/recording.sock';
+2026-09-03 17:18:08.585 CST [111912] 001_semloom_pg.pl LOG:  statement: SELECT doc_id
+	FROM semloom_filter_decisions
+	WHERE doc_id = 1 AND ai_semantic.filter(decision);
+2026-09-03 17:18:08.611 CST [111914] 001_semloom_pg.pl LOG:  statement: CREATE DATABASE semloom_latin1
+	ENCODING 'LATIN1' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;
+2026-09-03 17:18:08.666 CST [111916] 001_semloom_pg.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 17:18:08.667 CST [111916] 001_semloom_pg.pl LOG:  statement: CREATE TABLE semloom_documents (payload text);
+2026-09-03 17:18:08.668 CST [111916] 001_semloom_pg.pl LOG:  statement: INSERT INTO semloom_documents VALUES ('alpha');
+2026-09-03 17:18:08.677 CST [111918] 001_semloom_pg.pl LOG:  statement: SET semloom_pg.gateway_socket = '/tmp/dgthmdR7_5/missing.sock';
+2026-09-03 17:18:08.677 CST [111918] 001_semloom_pg.pl LOG:  statement: SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:18:08.678 CST [111918] 001_semloom_pg.pl ERROR:  SemLoom UDS recording provider requires UTF8 database encoding
+2026-09-03 17:18:08.678 CST [111918] 001_semloom_pg.pl STATEMENT:  SELECT ai_semantic.map(payload) FROM semloom_documents;
+2026-09-03 17:18:08.683 CST [111555] LOG:  received fast shutdown request
+2026-09-03 17:18:08.683 CST [111555] LOG:  aborting any active transactions
+2026-09-03 17:18:08.684 CST [111555] LOG:  background worker "logical replication launcher" (PID 111564) exited with exit code 1
+2026-09-03 17:18:08.685 CST [111559] LOG:  shutting down
+2026-09-03 17:18:08.685 CST [111559] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 17:18:08.694 CST [111559] LOG:  checkpoint complete: wrote 1010 buffers (6.2%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.009 s, sync=0.001 s, total=0.010 s; sync files=0, longest=0.000 s, average=0.000 s; distance=7820 kB, estimate=7820 kB; lsn=0/1EC32F0, redo lsn=0/1EC32F0
+2026-09-03 17:18:08.709 CST [111555] LOG:  database system is shut down

@@ -1,0 +1,19 @@
+2026-09-03 16:51:05.467 CST [107915] LOG:  starting PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-09-03 16:51:05.467 CST [107915] LOG:  listening on Unix socket "/tmp/LTnRVA6SbB/.s.PGSQL.19738"
+2026-09-03 16:51:05.469 CST [107921] LOG:  database system was shut down at 2026-09-03 16:51:05 CST
+2026-09-03 16:51:05.471 CST [107915] LOG:  database system is ready to accept connections
+2026-09-03 16:51:05.559 CST [107926] 007_map_execution.pl LOG:  statement: CREATE EXTENSION semloom_pg;
+2026-09-03 16:51:05.561 CST [107926] 007_map_execution.pl LOG:  statement: CREATE TABLE map_rows(id integer, body text);
+2026-09-03 16:51:05.563 CST [107926] 007_map_execution.pl LOG:  statement: INSERT INTO map_rows VALUES (1, 'hello');
+2026-09-03 16:51:05.699 CST [107929] 007_map_execution.pl LOG:  statement: SET statement_timeout='5s';
+2026-09-03 16:51:05.699 CST [107929] 007_map_execution.pl LOG:  statement: SET semloom_pg.gateway_socket='/tmp/LTnRVA6SbB/map.sock';
+2026-09-03 16:51:05.699 CST [107929] 007_map_execution.pl LOG:  statement: SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows;
+2026-09-03 16:51:05.699 CST [107929] 007_map_execution.pl ERROR:  generative SemMap execution is not connected
+2026-09-03 16:51:05.699 CST [107929] 007_map_execution.pl STATEMENT:  SELECT id, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY map_rows;
+2026-09-03 16:51:05.955 CST [107915] LOG:  received fast shutdown request
+2026-09-03 16:51:05.955 CST [107915] LOG:  aborting any active transactions
+2026-09-03 16:51:05.956 CST [107915] LOG:  background worker "logical replication launcher" (PID 107924) exited with exit code 1
+2026-09-03 16:51:05.956 CST [107919] LOG:  shutting down
+2026-09-03 16:51:05.956 CST [107919] LOG:  checkpoint starting: shutdown immediate
+2026-09-03 16:51:05.959 CST [107919] LOG:  checkpoint complete: wrote 50 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.003 s; sync files=0, longest=0.000 s, average=0.000 s; distance=201 kB, estimate=201 kB; lsn=0/171FBA0, redo lsn=0/171FBA0
+2026-09-03 16:51:05.967 CST [107915] LOG:  database system is shut down

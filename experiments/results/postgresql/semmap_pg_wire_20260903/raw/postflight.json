@@ -1,0 +1,45 @@
+{
+  "runs": [
+    {
+      "commit": "76156526ce0d66d7e9efbc0853f2fc8f4c77462e",
+      "dirty": false,
+      "pg_pid_files": 0,
+      "owned_pg_or_python_processes": []
+    },
+    {
+      "commit": "6941b91e61ba97bb86151e1874722cb532b46962",
+      "dirty": false,
+      "pg_pid_files": 0,
+      "owned_pg_or_python_processes": []
+    },
+    {
+      "commit": "f7765d6c8db1ca8ff46dc32617c69b7fb45e8215",
+      "dirty": false,
+      "pg_pid_files": 0,
+      "owned_pg_or_python_processes": []
+    },
+    {
+      "commit": "69139c03f50da83114780aca7e9bd86de8c56a74",
+      "dirty": false,
+      "pg_pid_files": 0,
+      "owned_pg_or_python_processes": []
+    },
+    {
+      "commit": "114a411aa201975648ea14ab185cc79488c27a34",
+      "dirty": false,
+      "pg_pid_files": 0,
+      "owned_pg_or_python_processes": []
+    },
+    {
+      "commit": "5031bb5072cd42f08357d6d7aa604009e03bc9c9",
+      "dirty": false,
+      "pg_pid_files": 0,
+      "owned_pg_or_python_processes": []
+    }
+  ],
+  "scope": "only the six Map wire slice roots",
+  "main_head": "5d4ecf96b5e6fb86885ea8b6e744db5506a0effc",
+  "main_dirty": false,
+  "temporary_worktrees_retained": true,
+  "real_model_requests": 0
+}
