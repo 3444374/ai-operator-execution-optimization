@@ -41,6 +41,7 @@ class ProcfsSampler:
     def __init__(self, pids: Mapping[str, int], provider_socket_path: str | None):
         self._pids = dict(pids)
         self._provider_socket_path = provider_socket_path
+        self._previous: dict[str, ProcessSnapshot] = {}
 
     def __call__(self, role: str, monotonic_ns: int) -> ProcessSnapshot:
         gateway_overrides = {
@@ -50,12 +51,15 @@ class ProcfsSampler:
             FdKind.PROVIDER_UDS_ACCEPTED: FdKind.PROVIDER_UDS_CLIENT,
         }
         overrides = backend_overrides if role == "backend" else gateway_overrides
-        return snapshot_process(
+        snapshot = snapshot_process(
             self._pids[role],
             monotonic_ns=monotonic_ns,
             provider_socket_path=self._provider_socket_path,
             role_overrides=overrides,
+            previous=self._previous.get(role),
         )
+        self._previous[role] = snapshot
+        return snapshot
 
 
 def _serialize_fd(item: FdIdentity) -> dict:

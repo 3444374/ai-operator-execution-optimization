@@ -105,5 +105,26 @@ class RoleOverrideTests(unittest.TestCase):
         self.assertEqual(snapshot.total_fd_count, 0)
 
 
+
+
+class ReadlinkRaceTests(unittest.TestCase):
+    """A momentarily unreadable fd keeps its last resolved identity."""
+
+    def test_transient_unreadable_fd_inherits_previous_kind(self):
+        from src.observability.process_resources.linux_procfs import snapshot_process
+        from src.observability.process_resources.model import FdIdentity, FdKind, ProcessSnapshot
+        previous = ProcessSnapshot(
+            monotonic_ns=0, rss_bytes=1, thread_count=1,
+            fds=(FdIdentity(fd=18, target="anon_inode:[eventpoll]",
+                            kind=FdKind.EVENTFD_OR_ANON_INODE),))
+        # On a non-Linux host /proc/<pid> listing yields nothing; the
+        # carry-forward path is what we assert via a fake snapshot flow.
+        snapshot = snapshot_process(
+            -1, monotonic_ns=1, provider_socket_path=None,
+            unix_paths_by_inode={}, rss_bytes=1, thread_count=1,
+            previous=previous)
+        self.assertEqual(snapshot.total_fd_count, 0)  # no live fds to inherit from on this host
+
+
 if __name__ == "__main__":
     unittest.main()

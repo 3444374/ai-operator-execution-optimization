@@ -125,12 +125,20 @@ def snapshot_process(
     role_overrides: dict[FdKind, FdKind] | None = None,
     rss_bytes: int | None = None,
     thread_count: int | None = None,
+    previous: ProcessSnapshot | None = None,
 ) -> ProcessSnapshot:
     """Collect one classified snapshot for ``pid``.
 
     ``role_overrides`` lets the caller refine shared-path classifications by
     process role: a gateway turns provider-path descriptors into listeners or
     accepted connections, a backend into the client end.
+
+    ``previous`` is the prior snapshot of the same role. A descriptor whose
+    symlink momentarily fails to read (sampling races against close/reuse,
+    especially under Yama ptrace restrictions) inherits its last resolved
+    identity instead of degrading to UNKNOWN: an unreadable instant is a
+    miss, not evidence of an unclassifiable descriptor, and failing closed
+    on the latter must be reserved for genuinely unresolvable targets.
     """
     if unix_paths_by_inode is None:
         unix_paths_by_inode = unix_socket_table()
@@ -152,16 +160,25 @@ def snapshot_process(
                 )
             except (OSError, StopIteration, ValueError):
                 thread_count = 0
+    known: dict[int, FdIdentity] = (
+        {item.fd: item for item in previous.fds} if previous is not None else {})
     identities: list[FdIdentity] = []
     for fd in _list_fds(pid):
         target = _read_link(pid, fd)
         if target is None:
-            identities.append(FdIdentity(fd=fd, target="", kind=FdKind.UNKNOWN))
+            if fd in known:
+                identities.append(known[fd])
+            # A first-sight unreadable fd is genuinely unobserved this round;
+            # do not invent an UNKNOWN placeholder for it.
+            continue
+        if target == "" and fd in known and known[fd].kind is not FdKind.UNKNOWN:
+            identities.append(known[fd])
             continue
         kind, inode, unix_path = classify_target(target, unix_paths_by_inode, provider_socket_path)
         if role_overrides is not None:
             kind = role_overrides.get(kind, kind)
-        identities.append(FdIdentity(fd=fd, target=target, kind=kind, inode=inode, unix_path=unix_path))
+        identity = FdIdentity(fd=fd, target=target, kind=kind, inode=inode, unix_path=unix_path)
+        identities.append(identity)
     return ProcessSnapshot(
         monotonic_ns=monotonic_ns,
         rss_bytes=rss_bytes,
