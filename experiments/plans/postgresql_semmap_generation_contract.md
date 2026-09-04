@@ -12,7 +12,11 @@
 TAP 1741/1741、两端各 137/137 和 8/8 C11。合并前协议复核修复 `f46fe936` 重新通过
 PG18.3 regression 1/1、TAP 1758/1758、两端各 139/139 和 C11 8/8，见同一记录的
 [合并复核](../results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)。上述实现纳入 main；
-真实模型与资源压力仍 pending，不能由 golden、plan-only 或旧路径通过代替。真实模型预算仍 0/32。
+2026-09-04 的[后续验证](../results/postgresql/semmap_real_model_resource_20260904/README.md)在
+`main@b19486a1` 完成真实 PG18.3 → wire v5 → Qwen2.5-7B → PG 链路，持久账本累计 25/32；
+SELECT/INSERT、NULL 零调用、空串、取消、模型拒绝及恢复通过。fixture 主压力完成 3×2,000 个大输入/
+大输出 task，但固定 RSS/FD 条件失败且采集器未保存具体超限项；后置 fault 子项按停止条件未运行。
+因此真实链路已验证，资源资格和四 D 整体仍 pending，不能由前者或 golden 代替。
 
 生产代码对照基线：a3199bd9。本文面向研发与审查者，不是已发布功能说明。
 
@@ -60,7 +64,8 @@ temperature=0 也不保证不同硬件、模型版本或重复运行逐字相同
 
 ### 3.1 入口与形状
 
-以下重载已支持 EXPLAIN，并能通过 PG＋golden 执行受支持的 SELECT/INSERT；真实模型与资源压力验收仍待完成：
+以下重载已支持 EXPLAIN，并能通过 PG＋golden 和受限真实模型执行受支持的 SELECT/INSERT；
+资源压力资格仍待完成：
 
 ```sql
 SELECT doc_id,

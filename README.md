@@ -9,7 +9,7 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-09-03）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+当前状态（2026-09-04）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
 错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
@@ -33,11 +33,14 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
 消息编译、C/Python 值表示、PG plan/权限和 C client→wire v5→gateway 接线已纳入 main，
 三参 Map 已能通过 PostgreSQL＋golden 返回文本，详见[执行与复核记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)。
-真实模型、资源压力验证仍待完成；golden 是合成完成值，不代表大模型质量或性能。
+后续[真实模型与资源检查](experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+以持久账本完成 25/32 个 Qwen2.5-7B 请求：SELECT、INSERT、NULL 零调用、取消、模型拒绝和恢复通过。
+同轮 3×2,000 个大输入/大输出 fixture task 功能完成，但至少一项固定 RSS/FD 条件失败，后置 fault
+子项未运行；因此资源资格和四 D 整体仍待完成。真实或 golden completion 都不代表模型质量或性能。
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
 当前代码已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)；
 后续[真实服务检查](experiments/results/postgresql/choice_service_20260902/README.md)也已通过，但不表示模型判断质量合格。
-生成型 Map 的剩余验证、多算子组合与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
+生成型 Map 的资源补证、多算子组合与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
 分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
 Filter 的真实校准仍暂停，其质量、成本与 LOTUS/Cortex-like 第二路径继续单独推进，不降低既有要求。
 carrier 检查随实际路径进行，只有可复现的限制才触发最小 core patch。IMLane-like 组批位置对照

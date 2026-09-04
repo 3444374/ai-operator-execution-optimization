@@ -27,15 +27,19 @@ at `5031bb50` connect actual generated text execution, preserving source/permiss
 PG18.3 regression 1/1, TAP 1741/1741, local/server 137/137 and C11 pass at that commit. The later
 [merge review](../experiments/results/postgresql/semmap_pg_wire_20260903/README.md#merge-review) at `f46fe936`
 centralizes error-phase rules and aligns usage validation: PG18.3 regression 1/1, TAP 1758/1758,
-local/server 139/139 and C11 8/8 pass. Real Map model and resource-pressure validation remain pending;
-golden completions do not establish model quality or performance.
+local/server 139/139 and C11 8/8 pass. The later
+[real-model/resource check](../experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+at `main@b19486a1` completes 25/32 fixed Qwen2.5-7B requests through PG18.3, including SELECT, INSERT,
+NULL zero-call, cancellation, model rejection, and recovery. Its fixture stress transfers 3×2,000 large rows but
+fails at least one fixed RSS/FD condition, so resource qualification and work package 4D remain pending;
+golden or real completions do not establish model quality or performance.
 
 The integrated [function-identity slice](../experiments/results/postgresql/function_identity_20260902/README.md)
 checks extension membership before lowering markers and tests function replacement/drop-recreate plan revalidation.
 Its implementation and evidence are included in main. Membership-only ADD/DROP requires refreshing every relevant physical connection
 after the committed DDL; automatic cross-session refresh remains pending. See the extension README for the procedure.
 
-Status as of 2026-09-03: this directory contains the existing external physical-execution runtime
+Status as of 2026-09-04: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
@@ -130,8 +134,9 @@ at `a1bbdd30` passes 136/136 local checks and C11; it adds frame-read isolation 
 without rerunning PostgreSQL or models or changing the archived server qualification.
 These changes and their evidence are now included in local main through `b0400944`;
 the [integration recheck](../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11.
-The later PG schema 4/C v5 slices above now execute generated Map through golden. Map real-model and
-resource-pressure checks remain pending.
+The later PG schema 4/C v5 slices above execute generated Map through golden, and the 2026-09-04 check executes
+the same path through a fixed Qwen2.5-7B service. Its resource threshold check failed after functionally completing
+3×2,000 fixture tasks, so resource qualification remains pending.
 [Composable execution and bounded sessions](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) follow.
 Choice SQL/plan, C provider mapping and gateway v4 are implemented for SELECT and supported INSERT in the current integrated code.
 [Controlled resource checks](../experiments/results/postgresql/choice_resources_20260902/README.md) and the bounded

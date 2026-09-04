@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "source_commit": "b19486a1a475ff8dc867c4533c7ab95c0d8dc15b",
+  "postgresql_version": "18.3",
+  "extension_build": {
+    "cflags": "-O2 -Werror",
+    "status": "passed",
+    "extension_sha256": "5950711dc5513ccbdaa2160c754489865d5d2229da26e26b97a5c443bc5fe8a5"
+  },
+  "model_service": {
+    "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "served_model": "qwen2.5-7b",
+    "vllm": "0.25.1",
+    "torch": "2.11.0+cu130",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 4,
+    "max_num_batched_tokens": 4096,
+    "gpu_memory_utilization": 0.8,
+    "enforce_eager": true,
+    "enable_prefix_caching": false,
+    "generation_config": "vllm",
+    "offline_only": true
+  },
+  "real_model": {
+    "status": "passed",
+    "budget_limit": 32,
+    "attempts": 25,
+    "completions": 24,
+    "expected_request_rejections": 1,
+    "completion_finish_reasons": {
+      "stop": 23,
+      "length_after_pg_cancel": 1
+    },
+    "completion_prompt_tokens": 927,
+    "completion_output_tokens": 218,
+    "select": {
+      "rows": 11,
+      "model_calls": 10,
+      "sql_null_model_calls": 0,
+      "prompt_tokens": 390,
+      "output_tokens": 40
+    },
+    "insert": {
+      "rows": 11,
+      "model_calls": 10,
+      "accepted_rows": 10,
+      "emitted_rows": 10,
+      "prompt_tokens": 390,
+      "output_tokens": 40
+    },
+    "cancel": {
+      "sqlstate": "57014",
+      "recovery": "passed"
+    },
+    "model_request_rejection": {
+      "input_bytes": 108000,
+      "provider_code": "MODEL_REQUEST_REJECTED",
+      "sqlstate": "38000",
+      "recovery": "passed"
+    },
+    "gateway_cleanup": {
+      "baseline_fd": 4,
+      "ending_fd": 4,
+      "baseline_threads": 1,
+      "ending_threads": 1,
+      "ending_rss_delta_bytes": 1544192
+    },
+    "service_identity_before_after_equal": true,
+    "owned_service_cleanup": "passed",
+    "quality_evaluated": false
+  },
+  "resource_fixture": {
+    "status": "failed",
+    "model_requests": 0,
+    "warmup_tasks": 1,
+    "measured_rounds": 3,
+    "tasks_per_round": 2000,
+    "completed_measured_tasks": 6000,
+    "input_bytes_per_task": 100000,
+    "output_bytes_per_task": 65536,
+    "gateway_task_records": 6001,
+    "session_start_records": 4,
+    "session_end_records": 4,
+    "baseline": {
+      "postgres_rss_bytes": 17276928,
+      "postgres_fd": 17,
+      "postgres_threads": 1,
+      "gateway_rss_bytes": 22802432,
+      "gateway_fd": 5,
+      "gateway_threads": 1
+    },
+    "limits": {
+      "gateway_peak_rss_delta_mib": 32,
+      "gateway_end_rss_delta_mib": 16,
+      "postgres_peak_rss_delta_mib": 16,
+      "postgres_end_rss_delta_mib": 8,
+      "combined_uds_fd_peak_delta": 2,
+      "combined_uds_fd_end_delta": 0,
+      "recovery_deadline_seconds": 60
+    },
+    "failure": "At least one fixed resource condition was not met; the temporary runner failed to persist samples before asserting, so the specific exceeded condition is unavailable.",
+    "cancel_fixture": "not_run_after_resource_failure",
+    "disconnect_fixture": "not_run_after_resource_failure",
+    "gateway_exit_fixture": "not_run_after_resource_failure",
+    "owned_process_cleanup": "passed"
+  },
+  "work_package_4d": "incomplete",
+  "selected_evidence_archive_sha256": "c1cd42182f16b6f607909128b8eb39cbd660e20014b31433c37c1d4c42f78a30"
+}

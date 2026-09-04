@@ -67,8 +67,13 @@ PG18.3 warning-free build, regression 1/1, TAP 1741/1741, local/server 137/137 a
 The later [merge review](../../../experiments/results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)
 at `f46fe936` centralizes version/phase error validation and removes a C-only combined-usage restriction while
 preserving separate runtime counter-overflow checks. PG18.3 regression 1/1, TAP 1758/1758, local/server
-139/139 and C11 8/8 pass. These slices are included in main. Real Map requests remain 0/32;
-resource-pressure and real-model qualification are pending. Golden results are not model quality or performance evidence.
+139/139 and C11 8/8 pass. These slices are included in main. The later
+[real-model/resource check](../../../experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+at `main@b19486a1` completes 25/32 fixed Qwen2.5-7B requests through PG18.3: SELECT, INSERT, NULL zero-call,
+empty text, cancellation, model rejection, and recovery pass. Its fixture stress functionally completes
+3×2,000 large rows but fails at least one fixed RSS/FD condition; the specific exceeded condition was not persisted.
+Resource qualification and work package 4D therefore remain incomplete. Golden and real outputs are not model-quality
+or performance evidence.
 After installation, an existing 0.1.0 database can register the new marker with
 `ALTER EXTENSION semloom_pg UPDATE TO '0.2.0'`; this preserves existing function identities and grants.
 

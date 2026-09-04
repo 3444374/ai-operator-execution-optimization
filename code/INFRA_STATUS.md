@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-03（Map PG plan/C v5/golden 与协议复核修复纳入 main；真实 Map 模型/资源与质量/校准未完成）
+日期：2026-09-04（Map 真实模型纵向链路通过；资源阈值失败，质量/校准和四 D 整体未完成）
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
@@ -23,8 +23,15 @@
 所有相关物理连接（包括连接池）再恢复，不能只刷新 DDL 会话，也不能用成员移除即时撤销权限。
 无法保证所有连接刷新时不使用此临时方案；函数替换/删除重建的既有自动失效测试不延期。
 
-**尚未完成项**：仅成员变更自动刷新、两个 Filter AND / 有界多会话、四 D 生成型 Map 的真实模型/资源验证与 Filter → Map；增量
+**尚未完成项**：仅成员变更自动刷新、四 D 生成型 Map 的资源资格、两个 Filter AND / 有界多会话与 Filter → Map；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
+
+**真实 Map 追加结果**：[`main@b19486a1` 的 2026-09-04 检查](../experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+用精确 PG18.3、wire v5、固定 Qwen2.5-7B/vLLM 0.25.1 完成累计 25/32 个有持久账本的请求。
+SELECT/INSERT 各 10 个非 NULL task，NULL 零调用；空串、Unicode、取消、模型 4xx 拒绝和恢复通过，
+gateway FD/线程回到基线，vLLM 正常清理。fixture 主压力又完成 3×2,000 个 100,000-byte 输入和
+65,536-byte 输出，但 60 秒内至少一个固定 RSS/FD 条件失败；采集器未在断言前保存具体差值，后置
+取消/断连/gateway-exit 子项未运行。因此真实纵向链路已验证，资源与四 D 整体仍未通过。
 四 D 的[合同](../experiments/plans/postgresql_semmap_generation_contract.md)已定稿，源码复核已登记于 §8.0。
 独立分支 `codex/semmap-message-contract` 的 `6903cf46` 只实现 C/Python Map 消息编译与公共 JSON writer，
 将 Filter 的 system 内容留在 Filter machine；原 recording/Filter 行为保持。
@@ -58,7 +65,8 @@ PG18.3 `-Werror`、regression 1/1、TAP 1741/1741（Map plan 268、execution 451
 PG18.3 `-O2 -Werror`、regression 1/1、TAP 1758/1758（Map execution 468）、两端各 139/139、C11 8/8。
 源码与文档现纳入 main；详细[复核记录](../experiments/results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)
 分别保存失败、通过及安装/进程检查，不重新绑定旧 1741 项或历史资源证据。
-真实 Map 模型请求仍 0/32，RSS/FD/线程压力尚未运行；这些 pending 项不能由 golden 资格代替。
+后续真实 Map 请求累计 25/32 并通过受限 PG18.3 纵向链路；RSS/FD fixture 主压力虽完成全部 task，
+固定资源条件仍失败，详见本文顶部追加结果。资源 pending 不能由 golden 或真实 completion 代替。
 下方历史实现与测试记录保持原提交身份。
 
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
@@ -109,7 +117,8 @@ TAP/构建；工程接入完成不表示三值判断质量合格、恢复校准�
 `experiments/plans/completed/`，主计划继续定义真实 Map 与可组合执行，当前集成版本已包含实现与归档。
 
 当前 PG 可执行路径使用 schema v1/v2/v3/v4、wire v2/v3/v4/v5 与同步单在途 port；
-一参 recording Map 保留兼容身份，三参生成型 Map 已通过 PG＋golden，而非真实模型验收。
+一参 recording Map 保留兼容身份，三参生成型 Map 已通过 PG＋golden，并在 `b19486a1` 上通过受限
+真实模型纵向验收；资源资格仍失败。
 模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
 逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
 query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
@@ -141,7 +150,8 @@ Python v5 也没有增加部署绑定，均不含 endpoint URL/部署实例/time
 三值 profile 与其 NULL/error 行为不同，不能据名称认定等价。未来移植包含算子语义/处理/优化与
 SemLoom 执行两部分，目前都没有公司路径验收证据。
 
-**当前工程限制**：生成型 Map 的 PG→C v5→golden 已接通，真实模型与资源压力仍未验证；planner
+**当前工程限制**：生成型 Map 的 PG→C v5→golden 与固定 Qwen2.5-7B 真实链路已接通，资源压力资格
+未通过；planner
 限制单 marker，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway 按整个会话串行服务。函数查找已核验
 扩展成员，并由上方切片验证非成员不被误接管；不据此声称发现权限绕过。后续改动
 与验收要求只在主计划维护；现有 PG-private runtime、neutral port 和严格错误/结果处理继续保留。

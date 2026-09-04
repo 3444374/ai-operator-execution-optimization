@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-02
+更新时间：2026-09-04
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -77,7 +77,10 @@ fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice �
 [PG plan/权限及 C v5/golden 执行](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)：
 实现已让生成型 Map 返回文本。合并前复核修正协议阶段和 usage 校验后，`f46fe936` 通过
 PG18.3 regression 1/1、TAP 1758/1758 和两端各 139/139；原 `5031bb50` 证据保留原身份。
-真实 Map 模型和资源压力仍待验证，不用 fixture 证明模型质量或性能。
+2026-09-04 的[追加检查](experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+完成 PG18.3 → wire v5 → Qwen2.5-7B → PG 的 25/32 次真实请求，SELECT/INSERT、NULL 零调用、取消、
+模型拒绝和恢复通过。fixture 主压力完成 3×2,000 个大输入/大输出 task，但固定资源条件失败且缺少
+断言前采样，后置 fault 子项未运行；不用真实 completion 或 fixture 证明模型质量、性能或四 D 整体通过。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
 不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
 其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较
@@ -514,7 +517,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 新增能力按主线、分支验收和待实现项分别记录；独立分支已验证[Map 消息](experiments/results/postgresql/semmap_messages_20260903/README.md)
 及[C/Python 纯值、Python v5 与旧路径兼容](experiments/results/postgresql/semmap_values_20260903/README.md)。
-PG plan/C v5/golden 已验证并纳入 main，完整生成型 Map 的真实模型和资源验证仍待实施。LOTUS compatibility/native baseline
+PG plan/C v5/golden 和受限真实模型链路已验证并纳入当前状态；生成型 Map 的资源补证仍待实施。LOTUS compatibility/native baseline
 后置；Join、aggregate、Kalypso-like lineage/KV 按真实需求另立项。旧 GPU 矩阵、SAOR、图像动态/HSE、
 五臂 formal 与条件性补测继续等待各自计划和授权，不能由“可以并行研发”自动恢复。
 

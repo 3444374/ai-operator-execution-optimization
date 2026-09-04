@@ -1,6 +1,6 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-09-03
+更新日期：2026-09-04
 状态：`current / design-revised / implementation-in-progress`
 
 本文只维护架构决策、Module 职责、Interface、工作包依赖与完成条件。源码实际状态看
@@ -19,8 +19,11 @@
 四 C 的字段、预算和逐项测试只由[专项计划](completed/postgresql_choice_profile_engineering.md)维护。
 四 D 的[生成型 Map 合同](postgresql_semmap_generation_contract.md)已定稿；具体 SQL、消息、输出、
 版本与验收只在该文维护；消息、纯值和 Python v5 子切片已验证并合入本地 main，
-PG plan/权限及 C v5/golden 执行已验证并纳入 main；新增 Map SQL 能返回文本，
-真实模型和资源压力仍待完成，不用 fixture 结果代替模型或性能证据。
+PG plan/权限及 C v5/golden 执行已验证并纳入 main；新增 Map SQL 能返回文本。
+2026-09-04 的[追加检查](../results/postgresql/semmap_real_model_resource_20260904/README.md)完成 25/32 次
+固定 Qwen2.5-7B 真实请求，SELECT/INSERT、NULL、取消、模型拒绝和恢复通过；同轮 fixture 主压力完成
+全部 3×2,000 个 task，但至少一项固定资源条件失败且缺少断言前采样。四 D 仍未完成，不用真实模型
+或 fixture 结果代替资源、质量或性能证据。
 旧串行顺序、完整资格尝试条件和历史数字保存在[历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 不再作为当前执行指令；原始结果没有删除或改判。
 
@@ -675,7 +678,8 @@ AI_COMPLETE 在这里是工作负载含义，不新增同名 SQL alias。SQL 重
 上述子切片与后续深层 JSON 修复已合入本地 main，历史验证范围与提交身份保留。
 后续已完成并纳入 main 的 [PG plan/权限检查](../results/postgresql/semmap_pg_plan_20260903/README.md)，
 随后 [C v5/PG golden 验证](../results/postgresql/semmap_pg_wire_20260903/README.md)完成实际文本执行，
-保留来源/权限并修复常量与等值列输出绑定；真实模型与资源仍分阶段验收，不能把 golden 写成四 D 全部完成。
+保留来源/权限并修复常量与等值列输出绑定。追加的[固定模型检查](../results/postgresql/semmap_real_model_resource_20260904/README.md)
+证明真实纵向链路，但资源条件失败；不能把 golden 或真实 completion 写成四 D 全部完成。
 
 最小执行关系：SQL input/instruction/options → planner-owned SemanticPlanSpec → row-preserving
 SemMap CustomScan → provider → raw text completion → PG 输出列。仍先同步单在途，再对接增量核心。

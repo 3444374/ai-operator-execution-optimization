@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-09-04 生成型 Map 真实模型通过、资源资格失败
+
+- 服务器 main 从旧提交只以 Git fast-forward 同步到 `b19486a1`；本地、远端和服务器源码身份一致。
+  从独立 PostgreSQL 18.3 工具链复制本次 prefix，以 `-O2 -Werror` 构建安装扩展，二进制哈希一致。
+- 固定 Qwen2.5-7B-Instruct revision `a09a3545…`、vLLM 0.25.1、单 RTX 4090/BF16、4096 context，
+  不下载、换模型、改精度或重试。首个请求前保存 32 次持久账本和完整运行配置。
+- 前三次尝试分别暴露无表查询形状、临时账本 SHA 正则和诊断路径问题，均在 HTTP 前失败并保留；
+  第 1 个真实 warmup 成功后，采集器因 Transformers 5.14 未指定 `return_dict=false` 误计 token。
+  驱动与 vLLM 环境离线复核均为 38 tokens，后续复用该请求，不重复消耗。带 `ORDER BY` 的未支持
+  查询又在 HTTP 前被 PG 拒绝。所有失败使用独立 run 目录，没有覆盖或退款。
+- 最终真实链路累计 25/32：SELECT/INSERT 各 10 个非 NULL task，SQL NULL 零调用；Unicode、空串、
+  模型身份和 usage 对齐。取消为 `57014`，外部完成未回写且下一查询成功；超上下文 4xx 映射为
+  `MODEL_REQUEST_REJECTED` / `38000`，随后恢复。gateway FD/线程回到基线，vLLM 身份前后一致并按
+  PID/start-time 正常停止，GPU 显存回收。
+- fixture-only 主压力使用同一预热 gateway、libpq single-row mode 和 3×2,000 个 task；每个输入/
+  输出为 100,000/65,536 bytes，6,000 行和 6,001 个含 warmup 的 task 均完成。但是 60 秒后至少一项
+  固定 RSS/FD 条件失败，临时 runner 又没有在断言前保存采样，无法识别具体超限项。按停止条件没有
+  重跑或放宽阈值，也没有继续取消/断连/gateway-exit 子项；所有自有进程、端口和 UDS 已清理。
+- [结果记录](experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)明确区分真实链路通过
+  与资源资格失败。四 D 仍未全部完成，也没有开始可组合 planner 或有界多会话；下一次运行前先修复
+  资源采样失败落盘，但需要新的运行授权。
+
 ## 2026-09-03 Map 合并复核：协议规则收拢与 main 集成
 
 - 按用户要求复核 Map PG plan/C v5 接线后合入 main；同时检查执行栈职责，而非只按测试数量验收。

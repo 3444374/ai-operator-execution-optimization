@@ -1,10 +1,21 @@
 # 实验与机制证据台账
 
-更新日期：2026-09-03
+更新日期：2026-09-04
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 主线能力与独立开发分支分开记录；未合并分支的验收不改变 main 的源码或运行能力。
+
+2026-09-04 的[生成型 Map 真实模型与资源检查](postgresql/semmap_real_model_resource_20260904/README.md)
+绑定 `main@b19486a1`。精确 PG18.3、Qwen2.5-7B-Instruct revision `a09a3545…`、vLLM 0.25.1、
+单 RTX 4090/BF16 下，持久账本累计 25/32。受限 SELECT/INSERT 各 10 个非 NULL task，SQL NULL
+零调用；空串、Unicode、取消 `57014`、模型请求拒绝 `38000` 及两类恢复通过，模型/usage 和 PG 输出
+逐项对应。真实链路通过只证明执行接线，不是质量或性能结果。
+
+同轮 fixture-only 资源运行完成 1 个 warmup 和 3×2,000 个 task，每个输入/输出为 100,000/65,536
+bytes，C 客户端使用 libpq single-row mode；但是 60 秒恢复窗口结束时至少一项固定 RSS/FD 条件未满足。
+临时 runner 没有在断言前保存采样，具体超限项不可恢复；取消/断连/gateway-exit 子项按停止条件未运行。
+因此四 D 仍不完整，不能进入可组合执行资格。原始失败、模型账本和清理证据均保留，未放宽阈值重跑。
 已纳入 main 的 [Map C v5/PG golden 切片](postgresql/semmap_pg_wire_20260903/README.md)原资格绑定 `5031bb50`：
 生成型 SELECT/INSERT、常量/相同表达式列位置、任意有效文本、NULL/空串、输入输出上限、严格协议与
 child/provider 错误、取消/savepoint 恢复通过。PG18.3 `-Werror`、regression 1/1、TAP 1741/1741、
@@ -12,7 +23,8 @@ child/provider 错误、取消/savepoint 恢复通过。PG18.3 `-Werror`、regre
 合并前 `f46fe936` 修正错误帧阶段与独立 usage 字段校验，重新通过 PG18.3 `-O2 -Werror`、
 regression 1/1、TAP 1758/1758、两端各 139/139 和 C11 8/8。两次预期红测试、一次测试 socket
 路径过长中止和短路径完整重跑分别保留，详见同一记录的[合并复核](postgresql/semmap_pg_wire_20260903/README.md#merge-review)。
-真实模型仍 0/32，资源压力未运行；不据此声称真实 Map 模型、RSS/FD、性能或四 D 整体通过。
+该切片当时真实模型仍为 0/32、资源压力未运行；后续结果使用上方独立 2026-09-04 身份，
+不把新运行重新绑定到旧提交或声称资源、性能、四 D 整体通过。
 以下原始证据保留对应提交和阶段身份。
 
 此前独立 [Map PG plan/权限切片](postgresql/semmap_pg_plan_20260903/README.md)绑定 `2205ccbb`：
