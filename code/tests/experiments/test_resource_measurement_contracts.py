@@ -178,9 +178,9 @@ class HardcodedVerdictContractTests(unittest.TestCase):
 
     def test_runner_source_has_no_unsupported_hardcoded_verdicts(self):
         from pathlib import Path
-        source = Path(
-            "src/experiments/postgresql/semmap_resource_runner.py"
-        ).read_text(encoding="utf-8")
+        runner_source = Path(__file__).resolve().parents[2] / (
+            "src/experiments/postgresql/semmap_resource_runner.py")
+        source = runner_source.read_text(encoding="utf-8")
         for needle in (
             '"measurement_status": "valid",\n                  "qualification_status": "passed"',
         ):
