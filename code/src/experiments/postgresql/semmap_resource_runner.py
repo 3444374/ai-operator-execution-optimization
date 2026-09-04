@@ -239,21 +239,33 @@ def _evaluate_case(
     persist_lifecycles(root / "raw", recorded.trace)
     persist_operation_outcome(root / "raw", recorded, case_name)
     attribution = None
+    attribution_problems: list[str] = []
     if windows:
-        attribution = attribute_provider_sessions(
+        result = attribute_provider_sessions(
             backend_pid=_case_backend_pid(recorded),
             baseline=baseline_capture.baseline,
             trace=recorded.trace,
             windows=windows)
-    save(root / "attribution.json", attribution or {"problems": ["no_sessions"]})
+        attribution = result.attribution
+        attribution_problems = result.problems
+    else:
+        attribution_problems = ["no_session_events"]
+    save(root / "attribution.json", {
+        "attributed": attribution,
+        "problems": attribution_problems})
     trace = recorded.trace if attribution is None else reclassify_clients(
         recorded.trace, attribution)
     peak_report = build_qualification_report(
         baseline_capture.baseline, trace, phase="stress")
     if cleanup_trace is None:
-        cleanup_trace = trace
-    cleanup_report = build_qualification_report(
-        baseline_capture.baseline, cleanup_trace, phase="cleanup")
+        # No cleanup phase was captured for this case: the stress trace
+        # must never stand in as a cleanup verdict — that conflation is
+        # exactly what separated phases exist to prevent. Report the
+        # missing phase explicitly instead.
+        cleanup_report = None
+    else:
+        cleanup_report = build_qualification_report(
+            baseline_capture.baseline, cleanup_trace, phase="cleanup")
     correctness_failures = list(correctness or [])
     if expected_sqlstate is not None and observed_sqlstate != expected_sqlstate:
         correctness_failures.append({
@@ -266,15 +278,25 @@ def _evaluate_case(
             "exception_type": recorded.operation_error.exception_type})
     composed = peak_report, cleanup_report
     measurement = peak_report.measurement_status
-    if cleanup_report.measurement_status == "invalid":
-        measurement = "invalid"
-    elif cleanup_report.measurement_status == "inconclusive" and measurement == "valid":
+    # Attribution failure means backend provider sockets were never
+    # identified: the provider gates then ran on zero evidence, which is
+    # an inconclusive measurement, never a pass.
+    if attribution is None and measurement == "valid":
         measurement = "inconclusive"
+    if cleanup_report is None:
+        measurement = "inconclusive"
+    else:
+        if cleanup_report.measurement_status == "invalid":
+            measurement = "invalid"
+        elif (cleanup_report.measurement_status == "inconclusive"
+                  and measurement == "valid"):
+            measurement = "inconclusive"
     qualification = "passed"
     if measurement != "valid":
         qualification = "not_evaluated"
     elif (peak_report.qualification_status == "failed"
-            or cleanup_report.qualification_status == "failed"
+            or (cleanup_report is not None
+                and cleanup_report.qualification_status == "failed")
             or correctness_failures):
         qualification = "failed"
     report = {
@@ -282,16 +304,24 @@ def _evaluate_case(
         "metric_schema": METRIC_SCHEMA,
         "measurement_status": measurement,
         "qualification_status": qualification,
+        "attribution_problems": attribution_problems,
         "peak_policy": [v.__dict__ for v in peak_report.peak_policy],
-        "cleanup_policy": [v.__dict__ for v in cleanup_report.cleanup_policy],
+        "cleanup_policy": ([] if cleanup_report is None else
+                           [v.__dict__ for v in cleanup_report.cleanup_policy]),
         "correctness_failures": correctness_failures,
         "peak_diagnostics": peak_report.diagnostics,
-        "cleanup_diagnostics": cleanup_report.diagnostics,
+        "cleanup_diagnostics": (None if cleanup_report is None else
+                                cleanup_report.diagnostics),
         "attribution": attribution,
         "operation_error": (None if recorded.operation_error is None else {
             "exception_type": recorded.operation_error.exception_type,
             "sqlstate": recorded.operation_error.sqlstate}),
     }
+    if attribution is None or cleanup_report is None:
+        report["reason"] = "; ".join(
+            attribution_problems + (
+                ["cleanup_phase_not_captured"]
+                if cleanup_report is None else []))
     save(root / "gate_report.json", report)
     return report
 

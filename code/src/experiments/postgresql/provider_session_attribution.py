@@ -42,6 +42,19 @@ class SessionWindow:
     accepted_inode: int | None
 
 
+@dataclass(frozen=True)
+class AttributionResult:
+    """Attribution outcome: evidence dict plus why it failed, if it did.
+
+    ``attribution`` is a per-session evidence dict when every window was
+    uniquely attributed; None otherwise. ``problems`` always survives so
+    the persisted artifact states the cause of an inconclusive verdict
+    instead of a placeholder.
+    """
+    attribution: dict | None
+    problems: list[str]
+
+
 def load_session_events(path: Path) -> list[dict]:
     events = []
     for line in path.read_text(encoding="ascii").splitlines():
@@ -89,16 +102,21 @@ def attribute_provider_sessions(
     baseline: Mapping[str, ProcessSnapshot],
     trace: ResourceTrace,
     windows: list[SessionWindow],
-) -> dict | None:
+) -> AttributionResult:
     """Attribute backend unbound sockets to gateway provider sessions.
 
-    Returns per-session attribution evidence, or None when the evidence
-    cannot support a unique attribution (caller must go inconclusive).
+    Returns an ``AttributionResult``. ``attribution`` is a dict of
+    per-session evidence plus the problems that blocked a unique answer
+    (never discarded — the caller persists them so an inconclusive run
+    states its cause); it is None only when no unique attribution was
+    possible (caller must go inconclusive). A run with no session
+    windows at all is also None: nothing was observed, so nothing can
+    be qualified.
     """
     problems: list[str] = []
     base = baseline.get("backend")
     if base is None or base.fds is None:
-        return None
+        return AttributionResult(None, ["backend_baseline_unreadable"])
     base_unbound = {item.fd: item for item in base.fds
                     if item.kind is FdKind.UNBOUND_UNIX_SOCKET}
 
@@ -143,7 +161,18 @@ def attribute_provider_sessions(
                 "attributed": None})
             continue
         fd, identity = next(iter(candidates.items()))
-        # Gateway must hold the recorded accepted inode during the window.
+        # Condition 3: the gateway must hold the accepted inode recorded by
+        # the session_start event. A missing accepted_inode in the event is
+        # itself an observer failure — it may not silently disable the
+        # condition (four-of-five attribution is not attribution).
+        if window.accepted_inode is None:
+            problems.append(
+                f"session{window.session_id}_accepted_inode_unrecorded")
+            attribution["sessions"].append({
+                "session_id": window.session_id,
+                "candidate_fds": [fd],
+                "attributed": None})
+            continue
         accepted_seen = False
         for tick in trace.ticks:
             if not (window.start_ns <= tick.monotonic_ns <= window.end_ns):
@@ -152,10 +181,9 @@ def attribute_provider_sessions(
             if gateway is None or gateway.fds is None:
                 continue
             for item in gateway.fds:
-                if window.accepted_inode is not None and \
-                        item.inode == window.accepted_inode:
+                if item.inode == window.accepted_inode:
                     accepted_seen = True
-        if not accepted_seen and window.accepted_inode is not None:
+        if not accepted_seen:
             problems.append(f"session{window.session_id}_accepted_inode_unseen")
         attribution["sessions"].append({
             "session_id": window.session_id,
@@ -176,10 +204,15 @@ def attribute_provider_sessions(
             if window.start_ns <= tick.monotonic_ns <= window.end_ns]
         if in_window and max(in_window) > 1:
             problems.append(f"session{window.session_id}_concurrent_{max(in_window)}")
+    if not windows:
+        # No session windows at all: the workload never opened a provider
+        # session the observer saw. Nothing was measured, so a provider
+        # verdict of "zero deltas, passed" would be fabricated.
+        return AttributionResult(None, ["no_session_windows"])
     attribution["problems"] = problems
     if problems:
-        return None
-    return attribution
+        return AttributionResult(None, problems)
+    return AttributionResult(attribution, [])
 
 
 def reclassify_clients(

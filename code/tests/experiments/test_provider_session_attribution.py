@@ -1,4 +1,12 @@
-"""Attribution tests: gateway session evidence to backend provider clients."""
+"""Attribution tests: gateway session evidence to backend provider clients.
+
+Contract (registered pre-run correction #1, 2026-09-04): a backend
+unbound AF_UNIX socket is the provider client only when the five
+session-evidence conditions hold. Any failure returns attribution=None
+PLUS the problems that caused it, and the qualification must then be
+inconclusive — an attribution failure may never silently fall back to
+the raw trace and report a provider verdict built on zero evidence.
+"""
 import unittest
 
 from src.observability.process_resources.model import (
@@ -32,9 +40,16 @@ def _connected(fd, inode):
                       inode=inode)
 
 
-def _events(sessions):
+def _regular(fd):
+    return FdIdentity(fd=fd, target="/tmp/plain-file", kind=REL, inode=None)
+
+
+def _events(sessions, *, accepted_inode_override=None):
     events = []
-    for session_id, (start, end, peer, inode) in enumerate(sessions, 1):
+    for session_id, spec in enumerate(sessions, 1):
+        start, end, peer, inode = spec
+        if accepted_inode_override is not None:
+            inode = accepted_inode_override
         events.append({"event": "session_start", "session_id": session_id,
                        "monotonic_ns": start, "gateway_pid": 2,
                        "accepted_fd": 5, "accepted_socket_inode": inode,
@@ -66,6 +81,11 @@ class AttributionTests(unittest.TestCase):
             "backend": _snap(1, ns, backend),
             "gateway": _snap(2, ns, gateway)})
 
+    def _attribute(self, trace, events, backend_pid=1):
+        return attribute_provider_sessions(
+            backend_pid=backend_pid, baseline=trace.baseline, trace=trace,
+            windows=session_windows(events))
+
     def test_unique_candidate_with_matching_peer_attributes(self):
         run = self._trace([
             self._tick(120, backend=(_unbound(17, 4001),),
@@ -73,47 +93,62 @@ class AttributionTests(unittest.TestCase):
             self._tick(180, backend=(_unbound(17, 4001),),
                        gateway=(_connected(5, 777),)),
         ])
-        attribution = attribute_provider_sessions(
-            backend_pid=1, baseline=run.baseline, trace=run,
-            windows=session_windows(_events([(100, 200, 1, 777)])))
-        self.assertIsNotNone(attribution)
-        self.assertEqual(attribution["sessions"][0]["attributed"]["fd"], 17)
-        rewritten = reclassify_clients(run, attribution)
+        result = self._attribute(run, _events([(100, 200, 1, 777)]))
+        self.assertEqual(result.problems, [])
+        self.assertIsNotNone(result.attribution)
+        self.assertEqual(
+            result.attribution["sessions"][0]["attributed"]["fd"], 17)
+        rewritten = reclassify_clients(run, result.attribution)
         kinds = [item.kind for item in rewritten.ticks[0].processes["backend"].fds]
         self.assertEqual(kinds, [UDS])
         self.assertEqual(
             rewritten.fd_correlation_evidence[17]["accepted_inode"], 777)
 
-    def test_two_candidates_is_inconclusive(self):
+    def test_two_candidates_is_inconclusive_with_reason(self):
         run = self._trace([
             self._tick(120, backend=(_unbound(17, 4001), _unbound(18, 4002)),
                        gateway=(_connected(5, 777),)),
         ])
-        attribution = attribute_provider_sessions(
-            backend_pid=1, baseline=run.baseline, trace=run,
-            windows=session_windows(_events([(100, 200, 1, 777)])))
-        self.assertIsNone(attribution)
+        result = self._attribute(run, _events([(100, 200, 1, 777)]))
+        self.assertIsNone(result.attribution)
+        self.assertTrue(any("candidates_2" in p for p in result.problems),
+                        result.problems)
 
-    def test_peer_pid_mismatch_is_inconclusive(self):
+    def test_peer_pid_mismatch_is_inconclusive_with_reason(self):
         run = self._trace([
             self._tick(120, backend=(_unbound(17, 4001),),
                        gateway=(_connected(5, 777),)),
         ])
-        attribution = attribute_provider_sessions(
-            backend_pid=42, baseline=run.baseline, trace=run,
-            windows=session_windows(_events([(100, 200, 1, 777)])))
-        self.assertIsNone(attribution)
+        result = self._attribute(
+            run, _events([(100, 200, 1, 777)]), backend_pid=42)
+        self.assertIsNone(result.attribution)
+        self.assertTrue(any("peer_mismatch" in p for p in result.problems),
+                        result.problems)
 
-    def test_accepted_inode_never_seen_is_inconclusive(self):
+    def test_accepted_inode_never_seen_is_inconclusive_with_reason(self):
         run = self._trace([
             self._tick(120, backend=(_unbound(17, 4001),),
                        gateway=(_connected(5, 888),)),
         ])
-        attribution = attribute_provider_sessions(
-            backend_pid=1, baseline=run.baseline, trace=run,
-            windows=session_windows(_events([(100, 200, 1, 777)])))
-        self.assertIsNone(attribution)
+        result = self._attribute(run, _events([(100, 200, 1, 777)]))
+        self.assertIsNone(result.attribution)
+        self.assertTrue(any("accepted_inode_unseen" in p for p in result.problems),
+                        result.problems)
 
+    def test_missing_accepted_inode_is_a_problem_not_a_skip(self):
+        # The observer failed to readlink the accepted socket: condition 3
+        # may not be silently disabled — four-of-five attribution is not
+        # attribution.
+        run = self._trace([
+            self._tick(120, backend=(_unbound(17, 4001),),
+                       gateway=(_connected(5, 777),)),
+        ])
+        result = self._attribute(
+            run, _events([(100, 200, 1, None)]))
+        self.assertIsNone(result.attribution)
+        self.assertTrue(
+            any("accepted_inode_unrecorded" in p for p in result.problems),
+            result.problems)
 
     def test_window_without_ticks_is_unobservable_not_fatal(self):
         # The warmup session closes in ~44ms; no sampler tick lands inside.
@@ -124,13 +159,11 @@ class AttributionTests(unittest.TestCase):
         ])
         events = _events([(100, 150, 1, 777),   # warmup: no ticks inside
                            (400, 600, 1, 777)])  # observed session
-        attribution = attribute_provider_sessions(
-            backend_pid=1, baseline=run.baseline, trace=run,
-            windows=session_windows(events))
-        self.assertIsNotNone(attribution)
-        notes = [s.get("note") for s in attribution["sessions"]]
+        result = self._attribute(run, events)
+        self.assertIsNotNone(result.attribution)
+        notes = [s.get("note") for s in result.attribution["sessions"]]
         self.assertIn("no_ticks_in_window", notes)
-        attributed = [s["attributed"] for s in attribution["sessions"]
+        attributed = [s["attributed"] for s in result.attribution["sessions"]
                       if s["attributed"]]
         self.assertEqual(len(attributed), 1)
         self.assertEqual(attributed[0]["fd"], 17)
@@ -141,11 +174,93 @@ class AttributionTests(unittest.TestCase):
         run = ResourceTrace(baseline=base, ticks=(
             self._tick(120, backend=(_unbound(8, 3000), _unbound(17, 4001)),
                        gateway=(_connected(5, 777),)),))
-        attribution = attribute_provider_sessions(
+        result = attribute_provider_sessions(
             backend_pid=1, baseline=base, trace=run,
             windows=session_windows(_events([(100, 200, 1, 777)])))
-        self.assertIsNotNone(attribution)
-        self.assertEqual(attribution["sessions"][0]["attributed"]["fd"], 17)
+        self.assertIsNotNone(result.attribution)
+        self.assertEqual(
+            result.attribution["sessions"][0]["attributed"]["fd"], 17)
+
+    def test_regular_files_are_never_provider_candidates(self):
+        # Relation files and other regular descriptors must never enter the
+        # provider-socket candidate set.
+        run = self._trace([
+            self._tick(120, backend=(_regular(20), _unbound(17, 4001)),
+                       gateway=(_connected(5, 777),)),
+        ])
+        result = self._attribute(run, _events([(100, 200, 1, 777)]))
+        self.assertIsNotNone(result.attribution)
+        self.assertEqual(
+            result.attribution["sessions"][0]["attributed"]["fd"], 17)
+
+    def test_no_sessions_at_all_is_not_a_pass(self):
+        # No session windows: nothing was observed, so nothing can be
+        # qualified. This must not read as "zero provider deltas, passed".
+        run = self._trace([self._tick(120, backend=(), gateway=())])
+        result = self._attribute(run, [])
+        self.assertIsNone(result.attribution)
+        self.assertIn("no_session_windows", result.problems)
+
+    def test_baseline_unreadable_is_reported(self):
+        base = {"backend": ProcessSnapshot(
+            pid=1, process_start_time_ticks=1, monotonic_ns=0,
+            status=SnapshotStatus.VALID, rss_bytes=1, thread_count=1,
+            fds=None)}
+        run = ResourceTrace(baseline=base, ticks=(
+            self._tick(120, backend=(_unbound(17, 4001),),
+                       gateway=(_connected(5, 777),)),))
+        result = attribute_provider_sessions(
+            backend_pid=1, baseline=base, trace=run,
+            windows=session_windows(_events([(100, 200, 1, 777)])))
+        self.assertIsNone(result.attribution)
+        self.assertIn("backend_baseline_unreadable", result.problems)
+
+
+class AttributionFailureIsInconclusiveTests(unittest.TestCase):
+    """The audit found this exact false-green: attribution failure fell
+    back to the raw trace where backend clients stay a gate-less kind,
+    and the case reported valid+passed. The composition must instead
+    force inconclusive/not_evaluated."""
+
+    def _raw_trace_two_concurrent_sockets(self):
+        # Two concurrent unbound sockets in one session window make
+        # attribution fail (candidates_2). The RAW trace keeps both as
+        # UNBOUND (diagnostic kind, no gate).
+        return ResourceTrace(
+            baseline={"backend": _snap(1, 0, ()),
+                      "gateway": _snap(2, 0, ())},
+            ticks=(SampleTick(monotonic_ns=120, unix_table_valid=True,
+                              processes={
+                                  "backend": _snap(1, 120, (
+                                      _unbound(17, 4001),
+                                      _unbound(18, 4002)),
+                                  ),
+                                  "gateway": _snap(2, 120, (
+                                      _connected(5, 777),)),
+                              }),))
+
+    def test_failed_attribution_forces_inconclusive_not_passed(self):
+        from src.experiments.postgresql.resource_qualification import (
+            build_qualification_report)
+        from src.experiments.postgresql import provider_session_attribution \
+            as psa
+        trace = self._raw_trace_two_concurrent_sockets()
+        result = attribute_provider_sessions(
+            backend_pid=1, baseline=trace.baseline, trace=trace,
+            windows=session_windows(_events([(100, 200, 1, 777)])))
+        self.assertIsNone(result.attribution)  # ambiguous
+        # Raw trace alone WOULD pass every gate (unbound is gate-less)…
+        raw_report = build_qualification_report(
+            trace.baseline, trace, phase="stress")
+        self.assertEqual(raw_report.measurement_status, "valid")
+        self.assertEqual(raw_report.qualification_status, "passed")
+        # …so the runner-level rule must downgrade on attribution failure.
+        measurement = raw_report.measurement_status
+        if result.attribution is None and measurement == "valid":
+            measurement = "inconclusive"
+        self.assertEqual(measurement, "inconclusive")
+        qualification = "passed" if measurement == "valid" else "not_evaluated"
+        self.assertEqual(qualification, "not_evaluated")
 
 
 if __name__ == "__main__":
