@@ -131,7 +131,10 @@ def cluster(prefix, root, user):
     socket_dir = root / 'socket'
     socket_dir.mkdir()
     os.chown(socket_dir, user.pw_uid, user.pw_gid)
-    pg = ['runuser', '-u', user.pw_name, '--']
+    # runuser is root-only; a runner already executing as the cluster user
+    # (required on hosts where /proc fd inspection needs target-user identity)
+    # must invoke the PostgreSQL tools directly.
+    pg = [] if os.getuid() == user.pw_uid else ['runuser', '-u', user.pw_name, '--']
     with (root / 'cluster.log').open('x') as log:
         subprocess.run(pg + [str(prefix/'bin/initdb'), '-D', str(data), '--no-locale', '-E', 'UTF8'],
                        check=True, stdout=log, stderr=subprocess.STDOUT)
