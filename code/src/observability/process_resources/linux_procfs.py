@@ -142,9 +142,11 @@ def classify_target(
                     return FdKind.TOAST_RELATION_FILE, inode, None
                 if filenode in pg_context.relation_filenodes:
                     return FdKind.RELATION_FILE, inode, None
+            # Numeric basename under PGDATA whose filenode the run never
+            # learned from the catalog: unknown, never guessed — relation
+            # classification requires the exact filenode evidence.
+            return FdKind.UNKNOWN, inode, None
         base = os.path.basename(target)
-        if re.fullmatch(r"\d+(_fsm|_vm|_init)?(\.\d+)?", base):
-            return FdKind.RELATION_FILE, inode, None
         if lowered.endswith((".sock", ".socket")):
             return FdKind.SOCKET_OTHER, inode, None
         return FdKind.REGULAR_FILE_OTHER, inode, None

@@ -57,6 +57,21 @@ class ClassifyTargetTests(unittest.TestCase):
         kind, _, _ = classify_target("/pgdata/base/16384/16390", {}, None, context)
         self.assertEqual(kind, FdKind.TOAST_RELATION_FILE)
 
+    def test_unknown_filenode_under_pgdata_is_unknown_not_guessed(self):
+        # A numeric basename the run never learned from the catalog is NOT
+        # relation evidence: classifying it by name-shape alone was the
+        # v1-era guessing this schema exists to remove.
+        context = PgFileClassificationContext(
+            data_directory="/pgdata",
+            relation_filenodes=frozenset({16388}),
+            toast_filenodes=frozenset({16390}))
+        kind, _, _ = classify_target("/pgdata/base/16384/99999", {}, None, context)
+        self.assertEqual(kind, FdKind.UNKNOWN)
+        # Outside the data directory entirely, a numeric name is likewise
+        # never a relation file.
+        kind, _, _ = classify_target("/tmp/12345", {}, None, context)
+        self.assertEqual(kind, FdKind.REGULAR_FILE_OTHER)
+
     def test_postgres_temp_file(self):
         kind, _, _ = classify_target("/pgdata/base/pgsql_tmp/123.0", {}, None)
         self.assertEqual(kind, FdKind.POSTGRES_TEMP_FILE)

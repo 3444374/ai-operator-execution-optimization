@@ -62,6 +62,7 @@ from src.experiments.postgresql.provider_session_attribution import (
 from src.experiments.postgresql.resource_qualification import (
     METRIC_SCHEMA,
     build_qualification_report,
+    evaluate_session_drain,
 )
 
 try:
@@ -447,6 +448,17 @@ def run_stress_case(args, connection, user, fixture_path, expected_digest):
             report["cleanup_policy"] = [
                 v.__dict__ for v in cleanup_report.cleanup_policy]
             report["cleanup_diagnostics"] = cleanup_report.diagnostics
+            # Session drain from the event log (active sessions == 0):
+            # /proc snapshots cannot see this; the event replay can.
+            drain_violations, drain_diag = evaluate_session_drain(
+                load_session_events(event_path))
+            report["cleanup_policy"].extend(
+                v.__dict__ for v in drain_violations)
+            report["cleanup_diagnostics"]["session_drain"] = drain_diag
+            if drain_violations:
+                report["measurement_status"] = _worse_measurement(
+                    report.get("measurement_status"), "inconclusive")
+                report["qualification_status"] = "not_evaluated"
             if (report["measurement_status"] == "valid"
                     and cleanup_report.qualification_status == "failed"):
                 report["qualification_status"] = "failed"

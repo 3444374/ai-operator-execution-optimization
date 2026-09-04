@@ -111,6 +111,17 @@ class ProcessSnapshot:
         return frozenset(
             item.fd for item in (self.fds or ()) if item.kind in kinds)
 
+    def unknown_identities(self) -> frozenset[tuple[int, str]]:
+        """(fd, target) pairs of unclassified descriptors.
+
+        End-state policies compare identity sets, not counts: an UNKNOWN
+        replacing a closed classified fd keeps the count delta at zero
+        while the process state is demonstrably NOT the baseline state.
+        """
+        return frozenset(
+            (item.fd, item.target) for item in (self.fds or ())
+            if item.kind is FdKind.UNKNOWN)
+
 
 @dataclass(frozen=True)
 class SampleTick:

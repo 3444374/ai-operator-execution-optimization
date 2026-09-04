@@ -178,5 +178,103 @@ class StatusCompositionTests(unittest.TestCase):
         self.assertIsNone(compose_status(("invalid", "failed")))
 
 
+class MissingRoleIsHoleTests(unittest.TestCase):
+    """Audit finding: a tick missing a required role entirely was silently
+    treated as a zero in every gate (client_now=0 etc.), a vacuous-green
+    path. Role absence must surface as a measurement problem."""
+
+    def test_tick_missing_gateway_role_is_inconclusive(self):
+        from src.observability.process_resources.model import SampleTick
+        one_role = SampleTick(
+            monotonic_ns=1, unix_table_valid=True,
+            processes={"backend": _snap(1, 1, ())})
+        run = ResourceTrace(baseline=base(), ticks=(one_role,))
+        report = build_qualification_report(run.baseline, run, phase="stress")
+        self.assertEqual(report.measurement_status, "inconclusive")
+        self.assertEqual(report.qualification_status, "not_evaluated")
+        self.assertTrue(any("gateway_missing" in problem for problem in
+                            report.diagnostics["measurement_problems"]))
+
+    def test_final_tick_missing_role_is_a_violation_not_a_skip(self):
+        from src.observability.process_resources.model import SampleTick
+        final_no_gateway = SampleTick(
+            monotonic_ns=2, unix_table_valid=True,
+            processes={"backend": _snap(1, 2, ())})
+        run = ResourceTrace(baseline=base(), ticks=(final_no_gateway,))
+        violations, diagnostics = evaluate_cleanup_policy(run.baseline, run)
+        self.assertTrue(any(v.metric == "role_missing_in_final_tick"
+                            for v in violations))
+        self.assertTrue(diagnostics["per_role"]["gateway"]
+                        ["role_absent_in_final_tick"])
+
+
+class CleanupUnknownTests(unittest.TestCase):
+    """Audit finding: a new UNKNOWN fd appearing only in the cleanup trace
+    (e.g. replacing a closed classified fd, keeping counts equal) passed
+    the cleanup phase clean. Unknown state is unqualifiable, not green."""
+
+    def test_new_unknown_in_cleanup_is_inconclusive(self):
+        baseline = base(backend=_ids([(10, "/dev/null", REL)]))
+        final = tick(1, backend=_ids([(10, "/proc/never-seen-before", UNK)]))
+        run = trace(baseline, [final])
+        report = build_qualification_report(
+            run.baseline, run, phase="cleanup")
+        self.assertEqual(report.measurement_status, "inconclusive")
+        self.assertEqual(report.qualification_status, "not_evaluated")
+        new = report.diagnostics["cleanup"]["per_role"]["backend"] \
+            .get("unknown_fd_identities_new", [])
+        self.assertTrue(new)
+
+    def test_same_unknown_as_baseline_still_passes(self):
+        baseline = base(backend=_ids([(10, "/dev/mystery", UNK)]))
+        final = tick(1, backend=_ids([(10, "/dev/mystery", UNK)]))
+        run = trace(baseline, [final])
+        report = build_qualification_report(
+            run.baseline, run, phase="cleanup")
+        self.assertEqual(report.qualification_status, "passed")
+
+
+class TotalFdPeakDiagnosticTests(unittest.TestCase):
+    """total_fd_peak_delta is a registered no-gate diagnostic; it must be
+    recorded from same-tick counts."""
+
+    def test_total_fd_peak_delta_recorded_without_gate(self):
+        run = trace(base(), [
+            tick(1, backend=_ids([(17, "/dev/null", REL),
+                                  (18, "/dev/null2", REL)])),
+            tick(2)])
+        violations, diagnostics = evaluate_peak_policy(run.baseline, run)
+        self.assertEqual(
+            diagnostics["per_role"]["backend"]["total_fd_peak_delta"], 2)
+        self.assertFalse(any(v.metric == "total_fd_peak_delta"
+                             for v in violations))
+
+
+class SessionDrainTests(unittest.TestCase):
+    def test_open_session_is_a_violation(self):
+        from src.experiments.postgresql.resource_qualification import (
+            evaluate_session_drain)
+        events = [
+            {"event": "session_start", "session_id": 1, "monotonic_ns": 10},
+            {"event": "task", "session_id": 1, "payload_digest": "x"},
+        ]
+        violations, diagnostics = evaluate_session_drain(events)
+        self.assertEqual(diagnostics["active_sessions"], 1)
+        self.assertTrue(any(v.metric == "active_sessions"
+                            for v in violations))
+
+    def test_ended_sessions_pass(self):
+        from src.experiments.postgresql.resource_qualification import (
+            evaluate_session_drain)
+        events = [
+            {"event": "session_start", "session_id": 1, "monotonic_ns": 10},
+            {"event": "task", "session_id": 1, "payload_digest": "x"},
+            {"event": "session_end", "session_id": 1, "monotonic_ns": 20},
+        ]
+        violations, diagnostics = evaluate_session_drain(events)
+        self.assertEqual(diagnostics["active_sessions"], 0)
+        self.assertEqual(violations, [])
+
+
 if __name__ == "__main__":
     unittest.main()
