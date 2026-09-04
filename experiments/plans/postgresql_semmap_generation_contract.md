@@ -607,6 +607,29 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
   accepted provider 会话。诊断运行验证共现率 1575/1578（3 个偏离样本为亚采样交错）。每次
   重分类记录 first_seen_ns/last_seen_ns/被替换的原分类/rule，进入 gate report 的
   `fd_correlation` 证据区，原始 trace 不被改写。该规则是度量实现完善，不改变任何阈值。
+
+**pre-run static-review correction（2026-09-04，首次正式 v2 运行前登记）**：在首次正式 v2/v2.1
+资格运行之前，静态审查确认并修复了以下度量实现缺陷（均不改阈值、不改生产 PG/provider/wire）：
+
+1. **client 归因**：generic `/proc` 分类不再声称识别 backend client；改为源码管理的 gateway
+   observer（SO_PEERCRED peer pid/uid/gid + accepted inode）与 backend unbound AF_UNIX 候选的
+   五条件唯一归因（peer pid 匹配、唯一候选、accepted inode 可见、生命周期重叠、单会话），
+   不唯一即 inconclusive。
+2. **峰值公式**：峰值是同一 tick 内的最大同时增量，不是运行期间 FD 编号的历史并集；顺序复用
+   fd 18/19/20 的真实峰值为 1。FD 生命周期历史仅作诊断。
+3. **稳定 baseline**：baseline 要求连续多 tick 的 FD identity set（fd+target）完全一致并通过
+   pid start-time 校验，不再接受单帧或 median count。
+4. **采集有效性**：`/proc` 读失败以 invalid/partial 状态显式暴露，禁止以零值/空集合伪装观测；
+   readlink 竞态通过连续两次一致的 FD 列表读取消除。
+5. **phase 分离**：stress 峰值与 cleanup 结束态分别评估；stress trace 的最后一帧永不产生
+   cleanup 判定。
+6. **失败持久化**：operation 异常被捕获为脱敏结构，trace 在任何判定或异常重新抛出前原子落盘。
+7. **fault case 真实测量**：cancel/disconnect/gateway-exit 各自拥有 baseline、trace、归因、
+   cleanup settle 与 policy 判定；disconnect 与 gateway-exit 按 subphase 分立 gateway 与 baseline；
+   SQLSTATE 只接受已登记的单一合同值，不一致记为 correctness failure 并独立报告生产 bug。
+8. **状态组合与退出码**：仅 valid+passed / valid+failed / inconclusive+not_evaluated /
+   invalid+not_evaluated 四种合法组合，invalid > inconclusive > failed > passed；CLI 退出码
+   0/1/2/3 在 summary.json 落盘后返回。
 - **unknown 分类 fail-closed**：任何未能分类的 FD 峰值增量使该 run 的
   `measurement_status = inconclusive`、`qualification_status = not_evaluated`，
   不得因"未归类"而从 provider 指标中静默排除。

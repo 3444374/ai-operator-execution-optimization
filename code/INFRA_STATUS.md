@@ -67,6 +67,11 @@ PG18.3 `-O2 -Werror`、regression 1/1、TAP 1758/1758（Map execution 468）、�
 分别保存失败、通过及安装/进程检查，不重新绑定旧 1741 项或历史资源证据。
 后续真实 Map 请求累计 25/32 并通过受限 PG18.3 纵向链路；RSS/FD fixture 主压力虽完成全部 task，
 固定资源条件仍失败，详见本文顶部追加结果。资源 pending 不能由 golden 或真实 completion 代替。
+2026-09-04 静态审查后：资源观测链路已按 metric schema v2 重写（shared-tick 采样、显式 snapshot
+有效性、稳定 FD-identity baseline、SO_PEERCRED 会话归因、same-tick 峰值、stress/cleanup phase
+分离、异常安全落盘、真实 fault case、CLI 退出码 0/1/2/3；合同 §8.4.2 pre-run static-review
+correction 已登记）。这是测量实现修复，不构成资源资格通过；小规模 diagnostic 与正式
+3×2,000 qualification 仍待运行授权。
 下方历史实现与测试记录保持原提交身份。
 
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定

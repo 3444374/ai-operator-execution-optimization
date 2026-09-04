@@ -22,6 +22,12 @@ import time
 import psycopg
 import psutil
 
+from src.experiments.postgresql.runtime_helpers import (
+    isolated_pg18_cluster as cluster,
+    owned_child_process as child,
+    wait_for_path as wait_file,
+)
+
 
 SAMPLE_SECONDS = 0.02
 MIB = 1024 * 1024
@@ -97,64 +103,6 @@ def check_resources(baseline, ending, samples, *, blocked_dns=False):
             assert value['fd'] <= baseline[key]['fd'] + 3, (key, 'peak FD')
             assert value['threads'] <= baseline[key]['threads'] + 2, (key, 'peak threads')
 
-
-def wait_file(path, process):
-    for _ in range(500):
-        if path.exists():
-            return
-        assert process.poll() is None, ('child exited before ready', process.returncode)
-        time.sleep(0.02)
-    raise RuntimeError('test process did not become ready')
-
-
-@contextmanager
-def child(command, root, name, env, user):
-    with (root / (name + '.log')).open('x') as log:
-        # setuid to the target user only when the caller is someone else;
-        # an unprivileged caller cannot setuid, and runuser is root-only.
-        if os.getuid() == user.pw_uid:
-            process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT)
-        else:
-            process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT,
-                                       user=user.pw_uid, group=user.pw_gid, extra_groups=[])
-        try:
-            yield process
-        finally:
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-                    raise RuntimeError('owned test process required forced termination')
-
-
-@contextmanager
-def cluster(prefix, root, user):
-    data = root / 'data'
-    socket_dir = root / 'socket'
-    socket_dir.mkdir()
-    os.chown(socket_dir, user.pw_uid, user.pw_gid)
-    # runuser is root-only; a runner already executing as the cluster user
-    # (required on hosts where /proc fd inspection needs target-user identity)
-    # must invoke the PostgreSQL tools directly.
-    pg = [] if os.getuid() == user.pw_uid else ['runuser', '-u', user.pw_name, '--']
-    with (root / 'cluster.log').open('x') as log:
-        subprocess.run(pg + [str(prefix/'bin/initdb'), '-D', str(data), '--no-locale', '-E', 'UTF8'],
-                       check=True, stdout=log, stderr=subprocess.STDOUT)
-        ctl = pg + [str(prefix/'bin/pg_ctl'), '-D', str(data)]
-        subprocess.run(ctl + ['-l', str(root/'postgres.log'), '-o',
-            f"-c listen_addresses='' -c shared_preload_libraries=semloom_pg -k {socket_dir} -p 55446",
-            '-w', 'start'], check=True, stdout=log, stderr=subprocess.STDOUT)
-        try:
-            with psycopg.connect(host=str(socket_dir), port=55446, user='postgres', dbname='postgres',
-                                  autocommit=True) as connection:
-                assert connection.execute('SHOW server_version').fetchone()[0] == '18.3'
-                connection.execute('CREATE EXTENSION semloom_pg')
-                yield connection
-        finally:
-            subprocess.run(ctl + ['-m', 'fast', '-w', 'stop'], check=True, stdout=log, stderr=subprocess.STDOUT)
 
 
 @contextmanager
