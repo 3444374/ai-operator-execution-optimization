@@ -382,6 +382,10 @@ def run_stress_case(args, connection, user, fixture_path, expected_digest):
         command = [
             str(args.client), str(args.root / "socket"), "55446",
             str(socket_path), str(release), str(finish),
+            # The client's workload must match the runner's expectations:
+            # a diagnostic run passes its reduced rounds/rows here so the
+            # reduced workload is real, not just a re-labelled expectation.
+            str(ROUNDS), str(ROWS_PER_ROUND),
         ]
         with child(command, root, "client", env, user) as client:
             warmup = wait_log(root / "client.log", "warmup_complete")
@@ -838,6 +842,18 @@ def run(args):
             return preflight_failure("working_tree_dirty")
     except OSError as error:
         return preflight_failure(f"preflight_error:{type(error).__name__}")
+    # Build the parameterized v3 client AFTER preflight, from source under
+    # management: the workload argv this runner passes is guaranteed
+    # supported (the archived v2 client accepts none and silently runs
+    # full scale — the diagnostic-workload mismatch came from exactly
+    # that gap).
+    try:
+        build_client(Path(__file__).with_name("resource_client_v3.c"),
+                     args.root / "resource_client_v3", args.prefix)
+        args.client = args.root / "resource_client_v3"
+    except (OSError, RuntimeError) as error:
+        return preflight_failure(
+            f"client_build_error:{type(error).__name__}")
     args.root.mkdir()
     user = pwd.getpwnam("postgres")
     _chown(args.root, user)
@@ -848,6 +864,12 @@ def run(args):
         "supersedes_measurement_implementation": "v1",
         "model_requests": 0,
         "mode": "diagnostic" if getattr(args, "diagnostic", False) else "formal",
+        "workload": {
+            "rounds": ROUNDS,
+            "rows_per_round": ROWS_PER_ROUND,
+            "input_bytes_per_row": 100000,
+            "fixture_output_bytes": 65536,
+        },
         "cases": {},
     }
     try:
@@ -857,7 +879,7 @@ def run(args):
                 "WITH (autovacuum_enabled=false, toast.autovacuum_enabled=false)")
             connection.execute(
                 "INSERT INTO resource_rows SELECT n,repeat('x',100000) "
-                "FROM generate_series(1,2000) n")
+                f"FROM generate_series(1,{ROWS_PER_ROUND}) n")
             connection.execute("VACUUM ANALYZE resource_rows")
             connection.execute("SET statement_timeout='300s'")
             stress = run_stress_case(args, connection, user, fixture_path, digest)
@@ -894,6 +916,20 @@ def run(args):
     finally:
         save(args.root / "summary.json", summary)
     return _exit_code(summary)
+
+
+def build_client(client_source: Path, target: Path, pg_prefix: Path) -> None:
+    """Compile the parameterized v3 client against the run's PG prefix."""
+    import subprocess as _sp
+    compiled = _sp.run(
+        ["cc", "-O2", "-Wall", "-Werror",
+         f"-I{pg_prefix / 'include'}", str(client_source),
+         "-o", str(target), f"-L{pg_prefix / 'lib'}", "-lpq"],
+        capture_output=True, text=True)
+    if compiled.returncode != 0:
+        raise RuntimeError(f"client build failed:\n{compiled.stderr}")
+    log = target.with_name(target.name + "-build.log")
+    log.write_text(compiled.stderr or "(no warnings)\n", encoding="utf-8")
 
 
 def main() -> int:

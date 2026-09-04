@@ -162,5 +162,40 @@ class WorseMeasurementTests(unittest.TestCase):
         self.assertEqual(runner._worse_measurement(None, None), None)
 
 
+class WorkloadIdentityTests(unittest.TestCase):
+    """The diagnostic mismatch: --diagnostic re-labelled the runner's
+    EXPECTATIONS (1x100) while the archived client silently ran its
+    hardcoded 3x2000, so the README's workload claim was false and the
+    stress case carried fabricated correctness failures. The client
+    command must carry the same rounds/rows the runner expects, and the
+    table INSERT must use the same rows count."""
+
+    def test_client_command_carries_rounds_and_rows(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        stress_body = source.split("def run_stress_case", 1)[1] \
+                            .split("def run_cancel_case", 1)[0]
+        self.assertIn("str(ROUNDS), str(ROWS_PER_ROUND),", stress_body)
+
+    def test_insert_uses_rows_per_round_not_hardcoded(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        self.assertIn(
+            'f"FROM generate_series(1,{ROWS_PER_ROUND}) n"', source)
+        self.assertNotIn("generate_series(1,2000)", source)
+
+    def test_runner_builds_v3_client_after_preflight(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        self.assertIn("resource_client_v3.c", source)
+        self.assertIn("build_client(", source)
+        # build must come after the preflight gates
+        self.assertLess(
+            source.index('"PostgreSQL 18.3"'),
+            source.index("build_client(Path(__file__)"))
+
+    def test_summary_records_workload_identity(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        self.assertIn('"workload": {', source)
+        self.assertIn('"rows_per_round": ROWS_PER_ROUND', source)
+
+
 if __name__ == "__main__":
     unittest.main()
