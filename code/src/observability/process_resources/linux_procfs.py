@@ -179,8 +179,12 @@ def _consistent_fd_snapshot(
 ) -> tuple[tuple[FdIdentity, ...] | None, list[str]]:
     """Read the fd set until two consecutive listings agree.
 
-    Returns (identities, errors): identities stays None when a consistent
-    read could not be obtained, so the caller marks the snapshot invalid.
+    A descriptor whose symlink persistently fails to read is recorded as an
+    UNREADABLE placeholder with its error noted and skipped from
+    classification (policies see an explicit partial marker, not a zero);
+    only a changed fd listing between the two reads triggers a retry.
+    Returns (identities, errors): identities stays None only when the fd
+    directory itself is unreadable.
     """
     errors: list[str] = []
     for _attempt in range(_CONSISTENT_RETRIES):
@@ -188,17 +192,22 @@ def _consistent_fd_snapshot(
         if first is None:
             errors.append("fd_list_unreadable")
             return None, errors
-        targets: dict[int, str | None] = {}
-        unreadable = False
+        placeholders: list[FdIdentity] = []
+        read_any = False
         for fd in first:
             target = _read_link(pid, fd)
             if target is None:
-                unreadable = True
-                break
-            targets[fd] = target
-        if unreadable:
-            errors.append("fd_readlink_race")
-            continue
+                placeholders.append(FdIdentity(
+                    fd=fd, target="", kind=FdKind.UNKNOWN))
+                continue
+            read_any = True
+            kind, inode, unix_path = classify_target(
+                target, unix_paths_by_inode, provider_socket_path, pg_context)
+            if role_overrides is not None:
+                kind = role_overrides.get(kind, kind)
+            placeholders.append(FdIdentity(
+                fd=fd, target=target, kind=kind, inode=inode,
+                unix_path=unix_path))
         second = _list_fds(pid)
         if second is None:
             errors.append("fd_list_unreadable")
@@ -206,16 +215,9 @@ def _consistent_fd_snapshot(
         if second != first:
             errors.append("fd_set_changed_during_read")
             continue
-        identities = []
-        for fd, target in targets.items():
-            kind, inode, unix_path = classify_target(
-                target, unix_paths_by_inode, provider_socket_path, pg_context)
-            if role_overrides is not None:
-                kind = role_overrides.get(kind, kind)
-            identities.append(FdIdentity(
-                fd=fd, target=target, kind=kind, inode=inode,
-                unix_path=unix_path))
-        return tuple(identities), errors
+        if not read_any and first:
+            errors.append("fd_readlinks_all_unreadable")
+        return tuple(placeholders), errors
     return None, errors
 
 
