@@ -61,10 +61,12 @@ def _parse_inode(target: str) -> int | None:
 def unix_socket_table() -> dict[int, str | None]:
     """Map every AF_UNIX socket inode to its bound path (None when unbound).
 
-    /proc/net/unix lists connected-but-unbound client sockets too; they
-    appear with an empty path column. Keeping them (value None) lets the
-    generic collector mark those descriptors UNBOUND_UNIX_SOCKET instead of
-    lumping them with unrelated named sockets.
+    /proc/net/unix lists connected-but-unbound client sockets too, as rows
+    whose trailing path column is absent entirely (7 columns vs 8 for a
+    bound socket) — verified empirically on the target kernel. Keeping
+    those rows (value None) lets the generic collector mark such
+    descriptors UNBOUND_UNIX_SOCKET instead of lumping them with unrelated
+    named sockets.
     """
     table: dict[int, str | None] = {}
     try:
@@ -73,7 +75,7 @@ def unix_socket_table() -> dict[int, str | None]:
         return table
     for line in text.splitlines()[1:]:
         parts = line.split(maxsplit=7)
-        if len(parts) < 8 or not parts[6].isdigit():
+        if len(parts) < 7 or not parts[6].isdigit():
             continue
         table[int(parts[6])] = parts[7] if len(parts) > 7 else None
     return table
