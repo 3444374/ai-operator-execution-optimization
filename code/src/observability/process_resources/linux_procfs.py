@@ -55,6 +55,13 @@ def unix_socket_table() -> dict[int, str]:
 
     Unbound/anonymous entries have no usable path and are omitted; callers
     treat a missing inode as unclassified rather than guessing.
+
+    Note: a *connected* client socket (e.g. the backend's libpq link to its
+    own postmaster, or the provider UDS client end) has no bound path and
+    never appears here; externally those can only be classified by
+    correlation or cooperative getsockname, never by this table alone.
+    POSTGRES_CLIENT_SOCKET therefore remains unreachable from pure /proc
+    observation and is reserved for cooperative samplers.
     """
     table: dict[int, str] = {}
     try:

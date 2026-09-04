@@ -13,6 +13,12 @@ from typing import Mapping
 class FdKind(Enum):
     """Classification of one file descriptor target.
 
+    POSTGRES_CLIENT_SOCKET (the backend's own libpq link to its postmaster)
+    is unreachable from pure /proc observation: a connected AF_UNIX client
+    socket has no bound path and is absent from /proc/net/unix. The value
+    exists for cooperative samplers that can call getsockname in-process;
+    external observers must leave such descriptors as SOCKET_OTHER.
+
     UNKNOWN must stay the default for unrecognized targets so that
     fail-closed policies can reject unclassified observations instead of
     silently dropping them from provider-UDS metrics.
