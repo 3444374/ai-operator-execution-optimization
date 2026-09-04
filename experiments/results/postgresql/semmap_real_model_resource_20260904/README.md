@@ -67,6 +67,18 @@ summary/log 已落盘。采样显示 93 次均记录
 按照停止条件，本轮没有重跑资源压力，也没有继续执行后置的 fixture 取消、provider 断连和 gateway
 退出/恢复子项。失败后 client、gateway 和 PG18.3 集群均已停止，端口和 UDS listener 已释放。
 
+### 指标实现口径的事后审计（2026-09-04 补记，不改变本次 verdict）
+
+本次运行按实际执行的 metric schema v1 判定失败。后续审计确认 v1 的 `uds_peak_delta`
+实际采集的是 backend 与 gateway 的**进程总 FD** 峰值增量，与 `uds_peak_delta` 名称和冻结合同
+所称的 provider UDS FD 不是同一对象；93 个 attempt 均为对同一不可逆峰值的重复判定。
+诊断运行（metric schema v2，`experiments/plans/postgresql_semmap_generation_contract.md` §8.4.2）
+进一步把 v1 观察到的 +3 分解为：backend 新增 provider UDS client socket ×1（connected 端无绑定路径，
+不在 `/proc/net/unix`）、backend `anon_inode:[eventpoll]` ×1（PostgreSQL WaitEventSet 正常瞬态）、
+gateway accepted provider 会话 ×1，三类均于查询结束后释放。原始失败结果和全部采样继续保留；
+本次运行证明 3×2,000 fixture task 功能完成及结束态 FD 回到基线，但不能据此判定 intended
+UDS resource gate 通过。后续以预登记的 metric schema v2/v2.1 进行独立重跑，不追溯修改本次 verdict。
+
 ## 结论边界与下一步
 
 本轮可以声称：受限三参数生成型 Map 已在 PostgreSQL 18.3 中通过真实 Qwen2.5-7B 固定服务完成 SELECT、
