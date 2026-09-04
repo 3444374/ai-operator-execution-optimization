@@ -8,8 +8,12 @@ from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
-import pwd
 import statistics
+
+try:
+    import pwd
+except ImportError:  # Windows checkouts import this module for unit tests only.
+    pwd = None
 import subprocess
 import sys
 import threading
