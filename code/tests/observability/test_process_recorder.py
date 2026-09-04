@@ -95,3 +95,52 @@ class RecorderTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FdEventTests(unittest.TestCase):
+    """Derived change-event stream: open/close/change with evidence fields."""
+
+    def test_open_close_and_change_events_derived_from_samples(self):
+        from src.observability.process_resources.recorder import fd_events
+        from src.observability.process_resources.model import FdIdentity, FdKind, ProcessSnapshot
+        def snap(ns, fds):
+            return ProcessSnapshot(
+                monotonic_ns=ns, rss_bytes=1, thread_count=1,
+                fds=tuple(FdIdentity(fd=fd, target=target, kind=kind)
+                          for fd, target, kind in fds))
+        run = type("T", (), {
+            "baseline": {"backend": snap(0, [(5, "pipe:[1]", FdKind.PIPE)])},
+            "samples": (
+                {"backend": snap(1, [(5, "pipe:[1]", FdKind.PIPE), (9, "socket:[2]", FdKind.SOCKET_OTHER)])},
+                {"backend": snap(2, [(5, "pipe:[1]", FdKind.PIPE), (9, "socket:[2]", FdKind.PROVIDER_UDS_CLIENT)])},
+                {"backend": snap(3, [(5, "pipe:[1]", FdKind.PIPE)])},
+            ),
+        })()
+        events = fd_events(run)
+        kinds = [e["event"] for e in events]
+        self.assertEqual(kinds, ["fd_open", "fd_change", "fd_close"])
+        opened = events[0]
+        self.assertEqual(opened["fd"], 9)
+        self.assertEqual(opened["kind"], "socket_other")
+        self.assertEqual(opened["classification_evidence"], {})
+        changed = events[1]
+        self.assertEqual(changed["classification_evidence"]["previous_kind"], "socket_other")
+        closed = events[2]
+        self.assertEqual(closed["classification_evidence"]["first_seen_ns"], 1)
+        self.assertEqual(closed["classification_evidence"]["last_seen_ns"], 3)
+
+    def test_persist_fd_events_writes_gzip(self):
+        from src.observability.process_resources.recorder import persist_fd_events
+        import tempfile, gzip as gz, json as js
+        run = type("T", (), {
+            "baseline": {"backend": snap(0, [FdKind.PIPE])},
+            "samples": ({"backend": snap(2, [])},),
+        })()
+        with tempfile.TemporaryDirectory() as directory:
+            persist_fd_events(Path(directory), run)
+            artifact = Path(directory) / "fd_events.jsonl.gz"
+            self.assertTrue(artifact.exists())
+            with gz.open(artifact, "rt", encoding="utf-8") as handle:
+                lines = [js.loads(line) for line in handle]
+        self.assertEqual(lines[0]["event"], "fd_close")
+        self.assertEqual(lines[0]["fd"], 0)

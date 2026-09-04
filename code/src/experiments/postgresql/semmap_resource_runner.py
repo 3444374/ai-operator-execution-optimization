@@ -45,6 +45,7 @@ from psycopg import sql
 from src.observability.process_resources.model import ProcessSnapshot
 from src.observability.process_resources.recorder import (
     ProcfsSampler,
+    persist_fd_events,
     persist_trace,
     record_operation,
 )
@@ -217,6 +218,7 @@ def run_stress_case(args, connection, user, fixture_path, expected_digest):
             assert completed["rows"] == ROWS_PER_ROUND * ROUNDS
             # PERSIST_STRESS_RAW before any evaluation.
             persist_trace(root / "raw", stress_trace)
+            persist_fd_events(root / "raw", stress_trace)
 
             # EVALUATE_IMMUTABLE_PEAKS: judged once over the frozen window.
             peak_report = build_qualification_report(
