@@ -759,6 +759,7 @@ def run(args):
         "metric_schema": METRIC_SCHEMA,
         "supersedes_measurement_implementation": "v1",
         "model_requests": 0,
+        "mode": "diagnostic" if getattr(args, "diagnostic", False) else "formal",
         "cases": {},
     }
     try:
@@ -788,6 +789,13 @@ def run(args):
                 summary["cases"][name] = check(
                     args, connection, user, fixture_path)
                 stop = _is_unsafe(summary["cases"][name])
+            if getattr(args, "diagnostic", False):
+                # A diagnostic run answers identity/peak questions only; it
+                # can never produce a qualification verdict.
+                for case in summary["cases"].values():
+                    case["qualification_status"] = "not_evaluated"
+                    case["diagnostic_note"] = (
+                        "diagnostic mode: identity/peak evidence only")
             required = [c for n, c in summary["cases"].items()]
             summary["status"] = (
                 "passed" if all(
@@ -805,7 +813,14 @@ def main() -> int:
     for name in ("repo", "root", "prefix", "client"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--commit", required=True)
-    return run(parser.parse_args())
+    parser.add_argument("--diagnostic", action="store_true",
+                        help="1 round x 100 rows, verdicts forced not_evaluated")
+    args = parser.parse_args()
+    if args.diagnostic:
+        global ROWS_PER_ROUND, ROUNDS
+        ROWS_PER_ROUND = 100
+        ROUNDS = 1
+    return run(args)
 
 
 if __name__ == "__main__":
