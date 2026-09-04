@@ -1,6 +1,17 @@
 # SemMap 资源度量 v2 修复后小规模 diagnostic（2026-09-04）
 
-> **性质**：metric schema v2 度量实现修复后的首轮小规模诊断运行（`--diagnostic`，1 轮 × 100 行）。
+> **2026-09-04 更正（证据核对后发现）**：本 README 初版声称 workload 为"1 轮 × 100 行"，与原始
+> 证据不符。核对服务器 artifact（`stress/client.log` 三轮 `round_complete rows=2000`、
+> `session_events.jsonl` 含 6,001 个 task 事件、summary 的 `expected 100 / observed 6000`
+> correctness failure）确认：当时 `--diagnostic` 只改写了 runner 的**期望值**，归档 C 客户端
+> `resource_client_v2.c` 硬编码 3 轮 × 2000 行，实际执行的是**全规模 3×2000 workload**。
+> 本轮实测峰值/归因/清理数字真实（已独立复算），但它们来自全规模而非缩减负载；stress case 的
+> 两条 correctness failure 正是该 bug 的自证。修复（runner 传递真实 rounds/rows、
+> `resource_client_v3.c` 参数化客户端、INSERT 使用 `ROWS_PER_ROUND`）已在后续 commit 落地；
+> 下一次 diagnostic 必须用修复后的 runner 重跑，本 README 不据"1×100"身份引用。
+
+> **性质**：metric schema v2 度量实现修复后的首轮诊断运行（`--diagnostic` 标记，实际 workload
+> 3 轮 × 2000 行，见上方更正）。
 > 只回答度量工具是否真的测到了目标资源；`qualification_status` 全部强制 `not_evaluated`，
 > 不构成资源资格结论，更不构成四 D 完成。
 
@@ -23,9 +34,11 @@
 
 ## 3. workload
 
-1 轮 × 100 行（diagnostic 缩减），input=100,000 bytes/行，fixture output=65,536 bytes，
+**实际执行**：3 轮 × 2000 行 = 6,000 任务 + 1 warmup（见顶部更正；`--diagnostic` 当时未缩减
+实际负载）。input=100,000 bytes/行，fixture output=65,536 bytes，
 fixture digest 与 4D v1 相同（`9fb95190…`），采样 0.02s/tick，稳定 baseline 需连续 5 tick
-FD identity set 一致。
+FD identity set 一致。stress case 因期望值（1×100）与实际（3×2000）不一致记录了 2 条
+correctness failure（rows/tasks）——这是工具 bug 的记录，不是 workload 质量问题。
 
 ## 4. 采集有效性
 
@@ -38,7 +51,7 @@ FD identity set 一致。
 
 ## 5. provider UDS 归因证据（核心问题）
 
-- session 窗口（含 task 总数 101 = 1 warmup + 100 行）：
+- session 窗口（task 总数 6,001 = 1 warmup + 3×2000 行，见顶部更正）：
   - session 1（warmup，~44ms）：`no_ticks_in_window`——采样 tick 尚未落入，按不可观察记录
   - session 2/3/4（stress 各轮）：全部**唯一归因成功**，`peer_pid` 与被测 backend pid 匹配，
     accepted inode 在窗口内可见，active session 峰值 = 1（同步单会话合同成立）

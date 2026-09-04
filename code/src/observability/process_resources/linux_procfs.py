@@ -196,9 +196,11 @@ def _consistent_fd_snapshot(
             return None, errors
         placeholders: list[FdIdentity] = []
         read_any = False
+        unreadable_fds: list[int] = []
         for fd in first:
             target = _read_link(pid, fd)
             if target is None:
+                unreadable_fds.append(fd)
                 placeholders.append(FdIdentity(
                     fd=fd, target="", kind=FdKind.UNKNOWN))
                 continue
@@ -217,6 +219,12 @@ def _consistent_fd_snapshot(
         if second != first:
             errors.append("fd_set_changed_during_read")
             continue
+        if unreadable_fds:
+            # A persistently unreadable descriptor is a partial
+            # observation, never silent: name the fds so the artifact
+            # says which evidence is missing.
+            errors.append(
+                "fd_readlink_unreadable:" + ",".join(map(str, unreadable_fds)))
         if not read_any and first:
             errors.append("fd_readlinks_all_unreadable")
         return tuple(placeholders), errors
@@ -287,15 +295,11 @@ def sample_tick(
     processes: dict[str, ProcessSnapshot] = {}
     for role, pid in pids.items():
         expected = (expected_start_times or {}).get(role)
-        gateway_overrides = {FdKind.PROVIDER_UDS_CONNECTED: FdKind.PROVIDER_UDS_CONNECTED}
-        backend_overrides = {FdKind.PROVIDER_UDS_CONNECTED: FdKind.PROVIDER_UDS_CONNECTED}
-        overrides = backend_overrides if role == "backend" else gateway_overrides
         processes[role] = snapshot_process(
             pid, monotonic_ns=monotonic_ns,
             unix_paths_by_inode=unix_paths,
             provider_socket_path=provider_socket_path,
             pg_context=pg_context,
-            role_overrides=overrides,
             expected_start_time_ticks=expected)
     return SampleTick(
         monotonic_ns=monotonic_ns, unix_table_valid=unix_valid,

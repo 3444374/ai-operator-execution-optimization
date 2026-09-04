@@ -600,11 +600,14 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
 
 - provider UDS FD 以 `/proc/<pid>/fd` 符号链接 + `/proc/net/unix` 的 inode→path 匹配识别；
   仅"是 socket"不构成 provider UDS。gateway listener 属于预热基线，不进入增量。
-- **client 端识别（v2.1 补充登记，2026-09-04 诊断运行后）**：connected 状态的 AF_UNIX client socket
+- **client 端识别（v2.1 补充登记，2026-09-04 诊断运行后；已被五条件归因取代——见下方
+  pre-run correction 第 1 条）**：connected 状态的 AF_UNIX client socket
   没有绑定路径、不出现于 `/proc/net/unix`，且内核对一对 socket 两端分别分配 inode，gateway 侧
-  inode 无法反向匹配 client 端。同步单会话合同下，backend 中一个 fd 判为 provider UDS client
+  inode 无法反向匹配 client 端。~~同步单会话合同下，backend 中一个 fd 判为 provider UDS client
   当且仅当同一采样点满足：(a) 是 socket；(b) 不在 baseline；(c) gateway 侧存在至少一个
-  accepted provider 会话。诊断运行验证共现率 1575/1578（3 个偏离样本为亚采样交错）。每次
+  accepted provider 会话。诊断运行验证共现率 1575/1578（3 个偏离样本为亚采样交错）。~~
+  该"共现即 client"规则只证明统计相关性，不构成唯一归因，已按下方 correction 第 1 条被
+  gateway-observer 五条件归因取代；共现率数字保留为历史诊断证据。每次
   重分类记录 first_seen_ns/last_seen_ns/被替换的原分类/rule，进入 gate report 的
   `fd_correlation` 证据区，原始 trace 不被改写。该规则是度量实现完善，不改变任何阈值。
 
@@ -630,6 +633,35 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
 8. **状态组合与退出码**：仅 valid+passed / valid+failed / inconclusive+not_evaluated /
    invalid+not_evaluated 四种合法组合，invalid > inconclusive > failed > passed；CLI 退出码
    0/1/2/3 在 summary.json 落盘后返回。
+
+**post-diagnostic 实现审查更正（2026-09-04 第二轮，首次正式 v2 运行前登记）**：诊断运行后的
+逐行代码审查又确认并修复了以下假绿/失实路径（同样不改阈值、不改生产 PG/provider/wire）：
+
+9. **归因失败即 inconclusive**：归因不唯一（或无 session 窗口、observer 未记录 accepted
+   inode）时，不得回落到原始 trace 让 provider 指标以"零证据"通过；case 强制
+   `inconclusive/not_evaluated` 且 gate report 记录具体 problems，不再以 `no_sessions`
+   占位符掩盖真实原因。
+10. **diagnostic workload 真实缩减**：`--diagnostic` 必须把 rounds/rows 传给客户端并同步
+    INSERT 行数；归档 `resource_client_v2.c`（硬编码 3×2000）由受源码管理的
+    `resource_client_v3.c`（默认行为不变、可选 rounds/rows argv）取代，runner 在 preflight
+    后自行编译。2026-09-04 诊断 run 因此实际执行了全规模负载（README 已更正），其期望值
+    correctness failure 是该 bug 的自证。
+11. **缺 role 的 tick 是观测空洞**：tick 缺少必需 role 时记 `tickN_<role>_missing`，不得以
+    0 代入各 gate；cleanup 最终 tick 缺 role 记 violation，不得跳过该 role 的全部结束态检查。
+12. **cleanup 相新 unknown**：cleanup trace 相对 baseline 新增的 UNKNOWN FD（按 fd+target
+    身份判定）同样强制 inconclusive；计数相等不能掩盖身份替换。
+13. **active session 归零有门**：`evaluate_session_drain` 从 gateway 事件重放
+    session_start/session_end（当前协议无独立 task-complete 事件，session 内任务队列在
+    session_end 前同步排空，per-task 送达由 task-count/digest correctness 覆盖）。
+14. **baseline 失败即 invalid**：全部 `acquire_stable_baseline` 调用点检查 None；recovery
+    subphase 的 baseline 超时输出 invalid/not_evaluated 与原因，不得以 AttributeError 崩溃
+    （崩溃退出码 1 与 valid/failed 撞车）。
+15. **数值文件名不猜 relation**：PGDATA 下数值 basename 仅当 filenode 在本轮 catalog 查询
+    结果中才判 RELATION/TOAST；未知 filenode 与 PGDATA 外数值路径分别为 UNKNOWN/
+    REGULAR_FILE_OTHER。
+16. **证据先于致命检查**：stress case 在 `client.wait`/事件 settle 前先落盘
+    trace/lifecycles/outcome；gateway-exit alive 相在 terminate 前持久化，socket path
+    检查改为结构化 correctness failure。
 - **unknown 分类 fail-closed**：任何未能分类的 FD 峰值增量使该 run 的
   `measurement_status = inconclusive`、`qualification_status = not_evaluated`，
   不得因"未归类"而从 provider 指标中静默排除。
