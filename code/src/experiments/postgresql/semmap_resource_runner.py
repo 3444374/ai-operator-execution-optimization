@@ -168,7 +168,7 @@ def _roles(connection, gateway_pid):
 
 
 def _chown_tree(path: Path, user) -> None:
-    if pwd is None or not hasattr(os, "chown"):
+    if pwd is None or user is None or not hasattr(os, "chown"):
         return
     os.chown(path, user.pw_uid, user.pw_gid)
 
