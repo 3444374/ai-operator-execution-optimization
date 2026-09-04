@@ -110,8 +110,13 @@ def wait_file(path, process):
 @contextmanager
 def child(command, root, name, env, user):
     with (root / (name + '.log')).open('x') as log:
-        process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT,
-                                   user=user.pw_uid, group=user.pw_gid, extra_groups=[])
+        # setuid to the target user only when the caller is someone else;
+        # an unprivileged caller cannot setuid, and runuser is root-only.
+        if os.getuid() == user.pw_uid:
+            process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT)
+        else:
+            process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT,
+                                       user=user.pw_uid, group=user.pw_gid, extra_groups=[])
         try:
             yield process
         finally:
