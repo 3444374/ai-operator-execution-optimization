@@ -5,7 +5,7 @@ Experiment-specific limit policies consume these snapshots elsewhere.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Mapping
 
@@ -80,3 +80,7 @@ class ResourceTrace:
 
     baseline: Mapping[str, ProcessSnapshot]
     samples: tuple[Mapping[str, ProcessSnapshot], ...]
+    # Audit evidence for post-hoc fd reclassification (e.g. provider client
+    # correlation); empty for raw traces straight from the recorder.
+    fd_correlation_evidence: Mapping[int, Mapping[str, object]] = field(
+        default_factory=dict)

@@ -97,6 +97,72 @@ def _end_snapshot(trace: ResourceTrace, role: str) -> ProcessSnapshot | None:
     return last
 
 
+def correlate_client_uds(trace: ResourceTrace) -> ResourceTrace:
+    """Re-classify backend client-side provider UDS sockets by session correlation.
+
+    A connected AF_UNIX client socket has no bound path and therefore never
+    appears in ``/proc/net/unix``; kernel bookkeeping gives the two ends of a
+    pair distinct inodes, so gateway-side inode matching cannot identify the
+    client end either (verified on the 2026-09-04 diagnostic run: the
+    correlated fd appeared together with a gateway accepted session in
+    1575/1578 samples; the 3 outliers are sub-sample interleaving).
+
+    Under the synchronous single-session contract a backend socket fd is the
+    provider client end when, at the same sample point: (a) it is a socket,
+    (b) it was not present in the baseline, and (c) the gateway holds at
+    least one accepted provider session. Every fd reclassified this way keeps
+    its original kind in ``classification_evidence`` so audits can see what
+    the correlation replaced. Classification only; no thresholds involved.
+    """
+    samples = []
+    reclassified: dict[int, dict] = {}
+    base = trace.baseline.get("backend")
+    base_numbers = frozenset() if base is None else {
+        item.fd for item in base.fds if item.target.startswith("socket:")
+    }
+    for sample in trace.samples:
+        backend = sample.get("backend")
+        gateway = sample.get("gateway")
+        if backend is None or gateway is None:
+            samples.append(sample)
+            continue
+        gateway_holds_session = gateway.count(
+            frozenset({FdKind.PROVIDER_UDS_ACCEPTED, FdKind.PROVIDER_UDS_LISTENER})
+        ) - gateway.count(FdKind.PROVIDER_UDS_LISTENER) > 0
+        replacement = {}
+        for item in backend.fds:
+            if (gateway_holds_session
+                    and item.fd not in base_numbers
+                    and item.target.startswith("socket:")
+                    and item.kind is not FdKind.PROVIDER_UDS_CLIENT):
+                replacement[item.fd] = FdIdentity(
+                    fd=item.fd, target=item.target,
+                    kind=FdKind.PROVIDER_UDS_CLIENT,
+                    inode=item.inode, unix_path=item.unix_path)
+                evidence = reclassified.setdefault(item.fd, {
+                    "first_seen_ns": backend.monotonic_ns,
+                    "original_kind": item.kind.value,
+                    "rule": "session-correlation",
+                })
+                evidence["last_seen_ns"] = backend.monotonic_ns
+        if replacement:
+            samples.append({
+                **sample,
+                "backend": ProcessSnapshot(
+                    monotonic_ns=backend.monotonic_ns,
+                    rss_bytes=backend.rss_bytes,
+                    thread_count=backend.thread_count,
+                    fds=tuple(replacement.get(item.fd, item)
+                              for item in backend.fds),
+                ),
+            })
+        else:
+            samples.append(sample)
+    trace = ResourceTrace(baseline=trace.baseline, samples=tuple(samples),
+                          fd_correlation_evidence=reclassified)
+    return trace
+
+
 def evaluate_peak_policy(
     baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
 ) -> tuple[list[Violation], dict]:
@@ -227,7 +293,13 @@ def evaluate_cleanup_policy(
 def build_qualification_report(
     baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
 ) -> GateReport:
-    """Combine peak + cleanup verdicts with fail-closed measurement status."""
+    """Combine peak + cleanup verdicts with fail-closed measurement status.
+
+    Client-side provider UDS sockets are first reclassified by session
+    correlation (see ``correlate_client_uds``); the raw trace itself is
+    never mutated, and the correlation evidence rides along in diagnostics.
+    """
+    trace = correlate_client_uds(trace)
     peak_violations, peak_diagnostics = evaluate_peak_policy(baseline, trace)
     cleanup_violations, cleanup_diagnostics = evaluate_cleanup_policy(baseline, trace)
     unknown_peak = peak_diagnostics.get("unknown_fd_peak_delta_combined", 0)
@@ -249,5 +321,9 @@ def build_qualification_report(
         qualification_status=qualification_status,
         peak_policy=peak_violations,
         cleanup_policy=cleanup_violations,
-        diagnostics={"peak": peak_diagnostics, "cleanup": cleanup_diagnostics},
+        diagnostics={
+            "peak": peak_diagnostics,
+            "cleanup": cleanup_diagnostics,
+            "fd_correlation": dict(trace.fd_correlation_evidence),
+        },
     )

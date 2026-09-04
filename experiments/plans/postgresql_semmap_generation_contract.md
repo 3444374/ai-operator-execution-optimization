@@ -600,6 +600,13 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
 
 - provider UDS FD 以 `/proc/<pid>/fd` 符号链接 + `/proc/net/unix` 的 inode→path 匹配识别；
   仅"是 socket"不构成 provider UDS。gateway listener 属于预热基线，不进入增量。
+- **client 端识别（v2.1 补充登记，2026-09-04 诊断运行后）**：connected 状态的 AF_UNIX client socket
+  没有绑定路径、不出现于 `/proc/net/unix`，且内核对一对 socket 两端分别分配 inode，gateway 侧
+  inode 无法反向匹配 client 端。同步单会话合同下，backend 中一个 fd 判为 provider UDS client
+  当且仅当同一采样点满足：(a) 是 socket；(b) 不在 baseline；(c) gateway 侧存在至少一个
+  accepted provider 会话。诊断运行验证共现率 1575/1578（3 个偏离样本为亚采样交错）。每次
+  重分类记录 first_seen_ns/last_seen_ns/被替换的原分类/rule，进入 gate report 的
+  `fd_correlation` 证据区，原始 trace 不被改写。该规则是度量实现完善，不改变任何阈值。
 - **unknown 分类 fail-closed**：任何未能分类的 FD 峰值增量使该 run 的
   `measurement_status = inconclusive`、`qualification_status = not_evaluated`，
   不得因"未归类"而从 provider 指标中静默排除。

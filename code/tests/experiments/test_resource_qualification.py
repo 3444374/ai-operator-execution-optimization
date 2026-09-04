@@ -9,11 +9,25 @@ from src.experiments.postgresql.resource_qualification import (
 
 
 def snap(ns, fds, rss=1_000_000, threads=1):
+    # Real traces give UNKNOWN only when the target could not be resolved
+    # (empty string); sockets always carry a resolvable "socket:[inode]"
+    # target. Keep that distinction so session correlation cannot swallow
+    # genuinely unclassifiable descriptors in tests either.
+    targets = {
+        FdKind.UNKNOWN: "",
+        FdKind.SOCKET_OTHER: "socket:[7]",
+        FdKind.RELATION_FILE: "/pgdata/base/16384/16388",
+        FdKind.TOAST_RELATION_FILE: "/pgdata/base/16384/16388_toast",
+        FdKind.POSTGRES_TEMP_FILE: "/pgdata/base/pgsql_tmp/123.0",
+        FdKind.REGULAR_FILE_OTHER: "/etc/hostname",
+        FdKind.PIPE: "pipe:[9]",
+        FdKind.EVENTFD_OR_ANON_INODE: "anon_inode:[eventpoll]",
+    }
     return ProcessSnapshot(
         monotonic_ns=ns,
         rss_bytes=rss,
         thread_count=threads,
-        fds=tuple(FdIdentity(fd=10 + i, target="socket:[1]", kind=kind)
+        fds=tuple(FdIdentity(fd=10 + i, target=targets.get(kind, "socket:[1]"), kind=kind)
                   for i, kind in enumerate(fds)),
     )
 
@@ -137,6 +151,100 @@ class CleanupPolicyTests(unittest.TestCase):
         report = build_qualification_report(run.baseline, run)
         self.assertEqual(report.measurement_status, "invalid")
         self.assertEqual(report.qualification_status, "not_evaluated")
+
+
+class SessionCorrelationTests(unittest.TestCase):
+    """v2.1: client-side UDS reclassification by gateway session co-occurrence."""
+
+    def test_correlated_client_socket_counts_as_uds_client(self):
+        from src.experiments.postgresql.resource_qualification import (
+            correlate_client_uds)
+        # backend fd 17: new unbound socket while gateway holds an accepted session
+        run = trace(
+            baseline_fds={},
+            sample_fds_list=[{"backend": [UNK], "gateway": [UDS_A]}],
+            end_fds={})
+        run.samples[0]["backend"].fds[0].__new__  # noqa: B018 - just proving tuple immutability
+        # build with a socket-like target: unknown kind but socket target
+        from src.observability.process_resources.model import FdIdentity, ProcessSnapshot
+        rebuilt = ResourceTrace(
+            baseline=run.baseline,
+            samples=({
+                "backend": ProcessSnapshot(1, 1_000_000, 1, (
+                    FdIdentity(fd=17, target="socket:[999]", kind=FdKind.SOCKET_OTHER),)),
+                "gateway": ProcessSnapshot(1, 1_000_000, 1, (
+                    FdIdentity(fd=4, target="socket:[1]", kind=FdKind.PROVIDER_UDS_ACCEPTED),)),
+            },))
+        correlated = correlate_client_uds(rebuilt)
+        kinds = [f.kind for f in correlated.samples[0]["backend"].fds]
+        self.assertEqual(kinds, [FdKind.PROVIDER_UDS_CLIENT])
+        self.assertEqual(correlated.fd_correlation_evidence[17]["original_kind"],
+                         "socket_other")
+        self.assertEqual(correlated.fd_correlation_evidence[17]["rule"],
+                         "session-correlation")
+
+    def test_baseline_socket_is_not_reclassified(self):
+        from src.experiments.postgresql.resource_qualification import (
+            correlate_client_uds)
+        from src.observability.process_resources.model import FdIdentity, ProcessSnapshot
+        base_socket = FdIdentity(fd=8, target="socket:[42]", kind=FdKind.SOCKET_OTHER)
+        run = ResourceTrace(
+            baseline={"backend": ProcessSnapshot(0, 1, 1, (base_socket,)),
+                      "gateway": ProcessSnapshot(0, 1, 1, ())},
+            samples=({
+                "backend": ProcessSnapshot(1, 1_000_000, 1, (base_socket,)),
+                "gateway": ProcessSnapshot(1, 1_000_000, 1, (
+                    FdIdentity(fd=4, target="socket:[1]", kind=FdKind.PROVIDER_UDS_ACCEPTED),)),
+            },))
+        correlated = correlate_client_uds(run)
+        self.assertEqual(correlated.samples[0]["backend"].fds[0].kind,
+                         FdKind.SOCKET_OTHER)
+        self.assertFalse(correlated.fd_correlation_evidence)
+
+    def test_no_gateway_session_means_no_reclassification(self):
+        from src.experiments.postgresql.resource_qualification import (
+            correlate_client_uds)
+        from src.observability.process_resources.model import FdIdentity, ProcessSnapshot
+        run = ResourceTrace(
+            baseline={"backend": ProcessSnapshot(0, 1, 1, ()),
+                      "gateway": ProcessSnapshot(0, 1, 1, ())},
+            samples=({
+                "backend": ProcessSnapshot(1, 1_000_000, 1, (
+                    FdIdentity(fd=17, target="socket:[999]", kind=FdKind.SOCKET_OTHER),)),
+                "gateway": ProcessSnapshot(1, 1_000_000, 1, ()),
+            },))
+        correlated = correlate_client_uds(run)
+        self.assertEqual(correlated.samples[0]["backend"].fds[0].kind,
+                         FdKind.SOCKET_OTHER)
+
+    def test_run7_shape_now_valid_passed_with_correlation(self):
+        # The archived diagnostic shape: new backend socket + accepted gateway
+        # session + an eventpoll fd; under correlation this maps to the
+        # pass verdict instead of inconclusive.
+        run = trace(
+            baseline_fds={},
+            sample_fds_list=[{"backend": [UNK], "gateway": [UDS_A]}],
+            end_fds={})
+        # give backend fd the socket target so correlation applies
+        from src.observability.process_resources.model import FdIdentity, ProcessSnapshot
+        EPOLL = FdKind.EVENTFD_OR_ANON_INODE
+        rebuilt = ResourceTrace(
+            baseline={"backend": ProcessSnapshot(0, 1_000_000, 1, ()),
+                      "gateway": ProcessSnapshot(0, 1_000_000, 1, ())},
+            samples=({
+                "backend": ProcessSnapshot(1, 1_000_000, 1, (
+                    FdIdentity(fd=17, target="socket:[999]", kind=FdKind.SOCKET_OTHER),
+                    FdIdentity(fd=18, target="anon_inode:[eventpoll]", kind=EPOLL))),
+                "gateway": ProcessSnapshot(1, 1_000_000, 1, (
+                    FdIdentity(fd=5, target="socket:[1]", kind=FdKind.PROVIDER_UDS_ACCEPTED),)),
+            }, {
+                "backend": ProcessSnapshot(2, 1_000_000, 1, ()),
+                "gateway": ProcessSnapshot(2, 1_000_000, 1, ()),
+            }))
+        report = build_qualification_report(rebuilt.baseline, rebuilt)
+        self.assertEqual(report.measurement_status, "valid")
+        self.assertEqual(report.qualification_status, "passed")
+        self.assertIn(17, report.diagnostics["fd_correlation"])
 
 
 class V1ReplayShapeTests(unittest.TestCase):
