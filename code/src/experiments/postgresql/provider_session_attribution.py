@@ -155,14 +155,16 @@ def attribute_provider_sessions(
                 "accepted_inode": window.accepted_inode,
                 "peer_pid": window.peer_pid,
             }})
-    # Synchronous single-session contract.
+    # Synchronous single-session contract. A window with no tick inside it
+    # cannot support the concurrency check; that is already an attribution
+    # gap flagged as candidates_0 above, not a crash.
     for window in windows:
-        peak = max(
+        in_window = [
             _active_count(windows, tick.monotonic_ns)
             for tick in trace.ticks
-            if window.start_ns <= tick.monotonic_ns <= window.end_ns)
-        if peak > 1:
-            problems.append(f"session{window.session_id}_concurrent_{peak}")
+            if window.start_ns <= tick.monotonic_ns <= window.end_ns]
+        if in_window and max(in_window) > 1:
+            problems.append(f"session{window.session_id}_concurrent_{max(in_window)}")
     attribution["problems"] = problems
     if problems:
         return None
