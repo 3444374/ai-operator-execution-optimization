@@ -147,7 +147,9 @@ def fixture(args, root: Path):
             "raw_output": OUTPUT,
             "response_model_id": MODEL,
             "prompt_tokens": 25032,
-            "output_tokens": 16384,
+            # output_tokens must stay <= the plan max_tokens (128) or the
+            # gateway's usage validation rejects the fixture; matches v1.
+            "output_tokens": 128,
             "finish_reason": "stop",
         }
     }
