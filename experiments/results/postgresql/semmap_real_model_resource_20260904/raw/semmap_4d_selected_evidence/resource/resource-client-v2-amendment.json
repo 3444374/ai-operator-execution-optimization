@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "prior_result": "client_compile_failed_before_resource_run",
+  "model_ledger_attempts": 25,
+  "change": "Define _POSIX_C_SOURCE=200809L before headers so nanosleep is declared under strict C11 compilation.",
+  "production_change": false,
+  "next_client": "resource_client_v2"
+}

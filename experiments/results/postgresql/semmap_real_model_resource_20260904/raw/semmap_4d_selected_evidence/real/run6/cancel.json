@@ -1,0 +1,38 @@
+{
+  "sqlstate": "57014",
+  "events": [
+    {
+      "event": "request",
+      "attempt": 22,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Write exactly 128 numbered one-word items and do not stop early."
+          },
+          {
+            "role": "user",
+            "content": "cancel this generation"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "da8678c0b49ee8ae6e0645e43fb1c2c2ca9bad7d02157fe53a110373db19e711",
+      "elapsed_seconds": 2.0363347502425313,
+      "raw_output": "1. Stop\n2. End\n3. Reverse\n4. Nullify\n5. Invalidate\n6. Revoke\n7. Void\n8. Deny\n9. Reject\n10. Prohibit\n11. Halt\n12. Terminate\n13. Abolish\n14. Dismiss\n15. Expel\n16. Expunge\n17. Expel\n18. Exclude\n19. Exclude\n20. Exclude\n21. Exclude\n22. Exclude\n23. Exclude\n24. Exclude\n25. Exclude\n",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 32,
+      "output_tokens": 128,
+      "finish_reason": "length"
+    }
+  ]
+}

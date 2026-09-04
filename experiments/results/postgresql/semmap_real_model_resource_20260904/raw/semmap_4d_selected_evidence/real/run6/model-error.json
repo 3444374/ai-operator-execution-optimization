@@ -1,0 +1,28 @@
+{
+  "sqlstate": "38000",
+  "message": "SemLoom model request was rejected",
+  "input_sha256": "e9703776c2fecf80699e73c2c1dc152e7fd521520b192b2433c07ad4805739ac",
+  "input_bytes": 108000,
+  "events": [
+    {
+      "event": "request",
+      "attempt": 24,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": "redacted-large-input",
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "error",
+      "payload_digest": "8bf6c2fee01fdddf3489db38c43228b7fa7d5475751e8f3af08b51466951ef07",
+      "code": "MODEL_REQUEST_REJECTED",
+      "elapsed_seconds": 0.0958325369283557
+    }
+  ]
+}

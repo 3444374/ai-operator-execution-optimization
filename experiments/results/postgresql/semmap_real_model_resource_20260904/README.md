@@ -53,8 +53,13 @@ fixture-only 主压力没有调用模型，功能传输完成：
 
 但是，运行在 60 秒恢复窗口结束后触发了固定资源断言。预先规定的条件是：gateway peak/end RSS 增量
 不超过 32/16 MiB，PostgreSQL backend peak/end RSS 增量不超过 16/8 MiB，backend 与 gateway 的 UDS FD
-合计 peak/end 增量不超过 2/0。临时 runner 在断言前没有把内存采样写入文件，因此现存证据不能判断究竟
-是哪一项超过条件。该证据缺口不能解释成通过，也不能通过放宽阈值修正。
+合计 peak/end 增量不超过 2/0。
+
+本轮同步已补齐失败采样：`raw/semmap_res2/stress/measurements.tar.gz` 内含全部 93 个
+`measurements-attempt-*.json`（每文件含 baseline/peaks/samples/ violations 全字段），`raw/semmap_res2/`
+下完整 summary/log 已落盘（SHA256SUMS 登记 tar 包与散件哈希）。采样显示 93 次均记录
+`metric=uds_peak_delta, extra_metric=fd, observed=3, limit=2`，即 `gateway+backend.uds_peak_delta`
+超过阈值，因此当前仍不能判定为通过。
 
 按照停止条件，本轮没有重跑资源压力，也没有继续执行后置的 fixture 取消、provider 断连和 gateway
 退出/恢复子项。失败后 client、gateway 和 PG18.3 集群均已停止，端口和 UDS listener 已释放。

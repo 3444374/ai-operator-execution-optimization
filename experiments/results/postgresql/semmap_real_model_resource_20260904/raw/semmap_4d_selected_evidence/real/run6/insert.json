@@ -1,0 +1,510 @@
+{
+  "rows": [
+    [
+      1,
+      "Hello, SemLoom.",
+      "Hello, SemLoom."
+    ],
+    [
+      2,
+      "first line\nsecond line",
+      "first line\nsecond line"
+    ],
+    [
+      3,
+      "He said \"hi\" \\ path",
+      "He said \"hi\" \\ path"
+    ],
+    [
+      4,
+      "数据库与人工智能",
+      "数据库与人工智能"
+    ],
+    [
+      5,
+      "TRUE",
+      "TRUE"
+    ],
+    [
+      6,
+      "FALSE",
+      "FALSE"
+    ],
+    [
+      7,
+      "UNKNOWN",
+      "UNKNOWN"
+    ],
+    [
+      8,
+      "NULL",
+      "NULL"
+    ],
+    [
+      9,
+      "{\"key\":\"value\"}",
+      "{\"key\":\"value\"}"
+    ],
+    [
+      10,
+      "",
+      ""
+    ],
+    [
+      11,
+      null,
+      null
+    ]
+  ],
+  "plan": {
+    "Plan": {
+      "Node Type": "ModifyTable",
+      "Operation": "Insert",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Relation Name": "map_sink",
+      "Alias": "map_sink",
+      "Startup Cost": 0.0,
+      "Total Cost": 22.75,
+      "Plan Rows": 0,
+      "Plan Width": 0,
+      "Actual Startup Time": 837.694,
+      "Actual Total Time": 837.698,
+      "Actual Rows": 0.0,
+      "Actual Loops": 1,
+      "Disabled": false,
+      "Shared Hit Blocks": 36,
+      "Shared Read Blocks": 1,
+      "Shared Dirtied Blocks": 3,
+      "Shared Written Blocks": 2,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0,
+      "Plans": [
+        {
+          "Node Type": "Custom Scan",
+          "Parent Relationship": "Outer",
+          "Custom Plan Provider": "SemLoom SemMap",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.0,
+          "Total Cost": 22.75,
+          "Plan Rows": 850,
+          "Plan Width": 36,
+          "Actual Startup Time": 126.521,
+          "Actual Total Time": 837.244,
+          "Actual Rows": 11.0,
+          "Actual Loops": 1,
+          "Disabled": false,
+          "Provider": "uds-openai-compatible-fixed",
+          "Physical Role": "reference",
+          "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+          "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+          "Prompt Program": "semloom.sem_map.chat.v1",
+          "Result Parser": "semloom.sem_map.utf8_text.v1",
+          "Model": "qwen2.5-7b",
+          "Semantic Plan Schema": 4,
+          "Semantic Spec Digest": "e828653edd035328afeec902186b5c83d58beae6a9665d051e6ddf11da9bb952",
+          "Max Tokens": 128,
+          "Max Input Bytes": 163840,
+          "Max Output Bytes": 65536,
+          "Mapped Column": 2,
+          "Model Calls": 10,
+          "Prompt Tokens": 390,
+          "Output Tokens": 40,
+          "Accepted Rows": 10,
+          "Emitted Rows": 10,
+          "Shared Hit Blocks": 1,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "child",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "map_inputs",
+              "Alias": "map_inputs",
+              "Startup Cost": 0.0,
+              "Total Cost": 20.62,
+              "Plan Rows": 850,
+              "Plan Width": 36,
+              "Actual Startup Time": 0.015,
+              "Actual Total Time": 0.04,
+              "Actual Rows": 11.0,
+              "Actual Loops": 1,
+              "Disabled": false,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        }
+      ]
+    },
+    "Planning": {
+      "Shared Hit Blocks": 66,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning Time": 0.398,
+    "Triggers": [],
+    "Execution Time": 837.819
+  },
+  "events": [
+    {
+      "event": "request",
+      "attempt": 12,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "Hello, SemLoom."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "9a5ae7a01577d32e120b716e6d40e07400117f1a8f95d9846b7247d36a23e91d",
+      "elapsed_seconds": 0.12490082997828722,
+      "raw_output": "Hello, SemLoom.",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 42,
+      "output_tokens": 7,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 13,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "first line\nsecond line"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "1f59773ff66a426b6116e28b6ceede16b949ffb88e1c659e90e4d03516ecc5dd",
+      "elapsed_seconds": 0.11204762291163206,
+      "raw_output": "first line\nsecond line",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 41,
+      "output_tokens": 6,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 14,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "He said \"hi\" \\ path"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "97933e7b1f38ad431c363e0d93b1e03b8ca99ba04f9207c77206ab15c7263f61",
+      "elapsed_seconds": 0.14452135656028986,
+      "raw_output": "He said \"hi\" \\ path",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 43,
+      "output_tokens": 8,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 15,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "数据库与人工智能"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "f75cede92b120269f05a5e376bb317cdf34913b05b7cede4a1d8c317b72cea3e",
+      "elapsed_seconds": 0.08497586101293564,
+      "raw_output": "数据库与人工智能",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 39,
+      "output_tokens": 4,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 16,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "TRUE"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "d4d7eb796edd0e77511e163108c43823328b8a57d8a5c4b374c16620eea37819",
+      "elapsed_seconds": 0.051317944191396236,
+      "raw_output": "TRUE",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 17,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "FALSE"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "c3c49f71c0fb9af89b930e252a636bb7a4608f32a63e9e4b1366eaf56c84d490",
+      "elapsed_seconds": 0.051899928599596024,
+      "raw_output": "FALSE",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 18,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "UNKNOWN"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "ae94b95ea234edb300b39935ae73411164b9ce24b4c99e68077949b7ed657b39",
+      "elapsed_seconds": 0.05808602645993233,
+      "raw_output": "UNKNOWN",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 19,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "NULL"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "8af3f1ccd8d57b03d43022186f984ed60ec996ac388af28dcb6e761fffe7d048",
+      "elapsed_seconds": 0.04564735013991594,
+      "raw_output": "NULL",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 20,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "{\"key\":\"value\"}"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "9945bb48225974962b4f430f7374fa4bbd6fd5e1d11619fcfe1b5e4cb140a1ac",
+      "elapsed_seconds": 0.11255214549601078,
+      "raw_output": "{\"key\":\"value\"}",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 41,
+      "output_tokens": 6,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 21,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": ""
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "7145893dc0981fa623502170660c51c3982b59c93d1a9a117816be2ece646a42",
+      "elapsed_seconds": 0.038810218684375286,
+      "raw_output": "",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 36,
+      "output_tokens": 1,
+      "finish_reason": "stop"
+    }
+  ]
+}

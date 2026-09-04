@@ -1,0 +1,38 @@
+{
+  "output": "after model error",
+  "events": [
+    {
+      "event": "request",
+      "attempt": 25,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "after model error"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "d3613755963c8c1dc2819c74d965e1bbe429425231f15835ba8f55eec8397597",
+      "elapsed_seconds": 0.07764522731304169,
+      "raw_output": "after model error",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 39,
+      "output_tokens": 4,
+      "finish_reason": "stop"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "prior_run": "run2",
+  "prior_result": "gateway_internal_before_http_post",
+  "prior_ledger_attempts": 0,
+  "change": "The experiment-only gateway observer records only the caught exception type and a redacted 200-character detail when the production session emits GATEWAY_INTERNAL, then delegates to the unchanged error sender.",
+  "production_change": false,
+  "model_or_protocol_change": false,
+  "next_run": "run3"
+}

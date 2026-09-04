@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "prior_run": "run",
+  "prior_result": "failed_before_http_post",
+  "prior_ledger_attempts": 0,
+  "observed_sqlstate": "0A000",
+  "reason": "The qualification runner used a constant-only SELECT, while the supported SemMap carrier requires one non-inherited table.",
+  "change": "Run warmup, cancellation, recovery, and error probes against one row of the existing test table; preserve all model, wire, SQL output, identity, timeout, and budget settings.",
+  "next_run": "run2"
+}

@@ -1,0 +1,7 @@
+{
+  "payload_digest": "9fb95190506c78228ae85940fd8833bf113bedca2ca380fe5e561eb8203470ee",
+  "input_bytes": 100000,
+  "output_bytes": 65536,
+  "model": "golden-map-resource-v1",
+  "model_requests": 0
+}

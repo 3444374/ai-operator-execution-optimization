@@ -1,0 +1,62 @@
+{
+  "identity": {
+    "package_root": "/root/autodl-tmp/venvs/vllm-4090/lib/python3.12/site-packages/vllm",
+    "package_version": "0.25.1",
+    "pid": 2348,
+    "port": 18150,
+    "process_start_time_ticks": "454966998",
+    "python_executable_argv0": "/root/autodl-tmp/venvs/vllm-4090/bin/python",
+    "schema_version": 1,
+    "sys_prefix": "/root/autodl-tmp/venvs/vllm-4090"
+  },
+  "argv": [
+    "/root/autodl-tmp/venvs/vllm-4090/bin/python",
+    "-m",
+    "vllm.entrypoints.openai.api_server",
+    "--model",
+    "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+    "--tokenizer",
+    "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+    "--served-model-name",
+    "qwen2.5-7b",
+    "--dtype",
+    "bfloat16",
+    "--max-model-len",
+    "4096",
+    "--gpu-memory-utilization",
+    "0.8",
+    "--scheduling-policy",
+    "fcfs",
+    "--max-num-seqs",
+    "4",
+    "--max-num-batched-tokens",
+    "4096",
+    "--tensor-parallel-size",
+    "1",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18150",
+    "--enforce-eager",
+    "--generation-config",
+    "vllm",
+    "--no-enable-prefix-caching"
+  ],
+  "model": {
+    "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "files": {
+      "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+    }
+  },
+  "observed_model_files": {
+    "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+    "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+    "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+  },
+  "config_sha256": "155c3b4290eb7e9aaa4e0ec6d3e265dfcd8eb2cbdafc3d550d83eb84c9b7d095"
+}

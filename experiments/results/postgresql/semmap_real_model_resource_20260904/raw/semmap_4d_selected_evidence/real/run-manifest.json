@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "qualification_id": "semloom.semmap.4d.b19486a1.20260904",
+  "source_commit": "b19486a1a475ff8dc867c4533c7ab95c0d8dc15b",
+  "postgresql_version": "18.3",
+  "model": {
+    "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "served_name": "qwen2.5-7b"
+  },
+  "service": {
+    "vllm": "0.25.1",
+    "torch": "2.11.0+cu130",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "cuda_visible_devices": "0",
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 4,
+    "max_num_batched_tokens": 4096,
+    "gpu_memory_utilization": 0.8,
+    "tensor_parallel_size": 1,
+    "scheduling_policy": "fcfs",
+    "enforce_eager": true,
+    "enable_prefix_caching": false,
+    "generation_config": "vllm",
+    "hf_hub_offline": true,
+    "transformers_offline": true,
+    "host": "127.0.0.1",
+    "port": 18150
+  },
+  "request_contract": {
+    "timeout_ms": 120000,
+    "budget_id": "semloom.semmap.4d.real.v1",
+    "budget_limit": 32,
+    "initial_attempts": 0,
+    "planned_attempts": 25,
+    "ordinary_max_tokens": 128,
+    "ordinary_instruction": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything.",
+    "cancel_statement_timeout_ms": 500,
+    "samples": [
+      {"id": 1, "kind": "ascii", "value": "Hello, SemLoom."},
+      {"id": 2, "kind": "multiline", "value": "first line\nsecond line"},
+      {"id": 3, "kind": "quotes-backslash", "value": "He said \"hi\" \\ path"},
+      {"id": 4, "kind": "unicode", "value": "数据库与人工智能"},
+      {"id": 5, "kind": "literal-true", "value": "TRUE"},
+      {"id": 6, "kind": "literal-false", "value": "FALSE"},
+      {"id": 7, "kind": "literal-unknown", "value": "UNKNOWN"},
+      {"id": 8, "kind": "literal-null", "value": "NULL"},
+      {"id": 9, "kind": "braces", "value": "{\"key\":\"value\"}"},
+      {"id": 10, "kind": "empty", "value": ""},
+      {"id": 11, "kind": "sql-null", "value": null}
+    ]
+  },
+  "stop_conditions": [
+    "unexpected contract, identity, sequence, count, SQLSTATE, or cleanup result",
+    "request budget exhausted",
+    "model identity or fixed service configuration cannot be verified",
+    "owned process or resource cannot be reclaimed"
+  ],
+  "resource_contract": {
+    "model_requests": 0,
+    "rounds": 3,
+    "nonnull_tasks_per_round": 2000,
+    "input_bytes_per_task": 100000,
+    "output_bytes_per_task": 65536,
+    "gateway_peak_rss_delta_mib": 32,
+    "gateway_end_rss_delta_mib": 16,
+    "postgres_peak_rss_delta_mib": 16,
+    "postgres_end_rss_delta_mib": 8,
+    "uds_fd_peak_delta": 2,
+    "uds_fd_end_delta": 0,
+    "recovery_deadline_seconds": 60
+  }
+}

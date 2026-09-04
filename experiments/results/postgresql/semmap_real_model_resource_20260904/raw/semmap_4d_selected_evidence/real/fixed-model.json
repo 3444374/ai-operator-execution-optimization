@@ -1,0 +1,5 @@
+{
+  "endpoint_url": "http://127.0.0.1:18150/v1/chat/completions",
+  "model_id": "qwen2.5-7b",
+  "timeout_ms": 120000
+}

@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "initial_attempts": 1,
+  "final_attempts": 25,
+  "attempted_requests": 24,
+  "select_nonnull_tasks": 10,
+  "insert_nonnull_tasks": 10,
+  "sql_null_tasks": 0,
+  "cancel_sqlstate": "57014",
+  "model_error_sqlstate": "38000",
+  "quality_evaluated": false
+}

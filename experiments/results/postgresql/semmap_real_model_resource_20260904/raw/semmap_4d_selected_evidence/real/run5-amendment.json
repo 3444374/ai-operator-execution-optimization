@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "prior_run": "run4",
+  "prior_result": "real_warmup_succeeded_then_driver_tokenizer_assertion_failed",
+  "prior_ledger_attempts": 1,
+  "change": "Pass return_dict=false when independently applying the chat template. Reuse and revalidate run4's recorded successful warmup instead of sending it again, then continue the remaining 24 planned requests.",
+  "production_change": false,
+  "model_or_protocol_change": false,
+  "next_run": "run5"
+}

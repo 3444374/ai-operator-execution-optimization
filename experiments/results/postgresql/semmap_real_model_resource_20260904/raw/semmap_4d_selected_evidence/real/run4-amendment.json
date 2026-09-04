@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "prior_run": "run3",
+  "prior_result": "experiment_ledger_rejected_valid_sha256_before_http_post",
+  "prior_ledger_attempts": 0,
+  "change": "Correct the experiment-only SHA-256 anchor and capture the diagnostic event path before the canonical gateway rewrites argv.",
+  "production_change": false,
+  "model_or_protocol_change": false,
+  "next_run": "run4"
+}

@@ -1,0 +1,17 @@
+{
+  "backend": {
+    "rss_bytes": 17260544,
+    "fd": 17,
+    "threads": 1
+  },
+  "gateway": {
+    "rss_bytes": 22736896,
+    "fd": 5,
+    "threads": 1
+  },
+  "client": {
+    "rss_bytes": 1339392,
+    "fd": 4,
+    "threads": 1
+  }
+}

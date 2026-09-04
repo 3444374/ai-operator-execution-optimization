@@ -1,0 +1,402 @@
+{
+  "rows": [
+    [
+      1,
+      "ascii",
+      "Hello, SemLoom.",
+      "Hello, SemLoom."
+    ],
+    [
+      2,
+      "multiline",
+      "first line\nsecond line",
+      "first line\nsecond line"
+    ],
+    [
+      3,
+      "quotes-backslash",
+      "He said \"hi\" \\ path",
+      "He said \"hi\" \\ path"
+    ],
+    [
+      4,
+      "unicode",
+      "数据库与人工智能",
+      "数据库与人工智能"
+    ],
+    [
+      5,
+      "literal-true",
+      "TRUE",
+      "TRUE"
+    ],
+    [
+      6,
+      "literal-false",
+      "FALSE",
+      "FALSE"
+    ],
+    [
+      7,
+      "literal-unknown",
+      "UNKNOWN",
+      "UNKNOWN"
+    ],
+    [
+      8,
+      "literal-null",
+      "NULL",
+      "NULL"
+    ],
+    [
+      9,
+      "braces",
+      "{\"key\":\"value\"}",
+      "{\"key\":\"value\"}"
+    ],
+    [
+      10,
+      "empty",
+      "",
+      ""
+    ],
+    [
+      11,
+      "sql-null",
+      null,
+      null
+    ]
+  ],
+  "events": [
+    {
+      "event": "request",
+      "attempt": 2,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "Hello, SemLoom."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "9a5ae7a01577d32e120b716e6d40e07400117f1a8f95d9846b7247d36a23e91d",
+      "elapsed_seconds": 0.14509340096265078,
+      "raw_output": "Hello, SemLoom.",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 42,
+      "output_tokens": 7,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 3,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "first line\nsecond line"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "1f59773ff66a426b6116e28b6ceede16b949ffb88e1c659e90e4d03516ecc5dd",
+      "elapsed_seconds": 0.11683802213519812,
+      "raw_output": "first line\nsecond line",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 41,
+      "output_tokens": 6,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 4,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "He said \"hi\" \\ path"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "97933e7b1f38ad431c363e0d93b1e03b8ca99ba04f9207c77206ab15c7263f61",
+      "elapsed_seconds": 0.14084604289382696,
+      "raw_output": "He said \"hi\" \\ path",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 43,
+      "output_tokens": 8,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 5,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "数据库与人工智能"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "f75cede92b120269f05a5e376bb317cdf34913b05b7cede4a1d8c317b72cea3e",
+      "elapsed_seconds": 0.08256297931075096,
+      "raw_output": "数据库与人工智能",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 39,
+      "output_tokens": 4,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 6,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "TRUE"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "d4d7eb796edd0e77511e163108c43823328b8a57d8a5c4b374c16620eea37819",
+      "elapsed_seconds": 0.057315634563565254,
+      "raw_output": "TRUE",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 7,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "FALSE"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "c3c49f71c0fb9af89b930e252a636bb7a4608f32a63e9e4b1366eaf56c84d490",
+      "elapsed_seconds": 0.049192752689123154,
+      "raw_output": "FALSE",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 8,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "UNKNOWN"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "ae94b95ea234edb300b39935ae73411164b9ce24b4c99e68077949b7ed657b39",
+      "elapsed_seconds": 0.0504987258464098,
+      "raw_output": "UNKNOWN",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 9,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "NULL"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "8af3f1ccd8d57b03d43022186f984ed60ec996ac388af28dcb6e761fffe7d048",
+      "elapsed_seconds": 0.06151905655860901,
+      "raw_output": "NULL",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 37,
+      "output_tokens": 2,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 10,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": "{\"key\":\"value\"}"
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "9945bb48225974962b4f430f7374fa4bbd6fd5e1d11619fcfe1b5e4cb140a1ac",
+      "elapsed_seconds": 0.1078442856669426,
+      "raw_output": "{\"key\":\"value\"}",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 41,
+      "output_tokens": 6,
+      "finish_reason": "stop"
+    },
+    {
+      "event": "request",
+      "attempt": 11,
+      "body": {
+        "model": "qwen2.5-7b",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything."
+          },
+          {
+            "role": "user",
+            "content": ""
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "n": 1,
+        "stream": false,
+        "stop": null
+      }
+    },
+    {
+      "event": "completion",
+      "payload_digest": "7145893dc0981fa623502170660c51c3982b59c93d1a9a117816be2ece646a42",
+      "elapsed_seconds": 0.046428557485342026,
+      "raw_output": "",
+      "response_model_id": "qwen2.5-7b",
+      "prompt_tokens": 36,
+      "output_tokens": 1,
+      "finish_reason": "stop"
+    }
+  ]
+}

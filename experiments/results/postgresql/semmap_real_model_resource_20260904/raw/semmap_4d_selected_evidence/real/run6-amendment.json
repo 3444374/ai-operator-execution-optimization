@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "prior_run": "run5",
+  "prior_result": "unsupported_order_by_rejected_before_http_post",
+  "prior_ledger_attempts": 1,
+  "change": "Remove ORDER BY from the Map-bearing SELECT and INSERT ... SELECT. Validate SELECT in returned stream order and sort only the later ordinary SQL read of the sink table.",
+  "production_change": false,
+  "model_or_protocol_change": false,
+  "next_run": "run6"
+}
