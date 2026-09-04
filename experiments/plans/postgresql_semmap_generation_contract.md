@@ -576,6 +576,42 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
 上下文定义已对照 [vLLM 0.25.1 的 max-model-len 说明](https://docs.vllm.ai/en/v0.25.1/cli/run-batch/#max-model-len)；
 这是参数口径核对，不是本轮模型、上下文余量或 BF16 已通过预检的证据。
 
+### 8.4.2 资源指标实现修订：metric schema v2（2026-09-04 登记，运行前冻结）
+
+2026-09-04 资源运行的执行审计确认：v1 采集器只采样了各进程的 rss/fd/threads 总量，
+其 `uds_peak_delta` 实际把 backend 与 gateway 的**进程总 FD** 峰值增量与 provider UDS 阈值 2/0
+比较，没有测量冻结合同所称的 "UDS 所有的 FD"。93 个 attempt 均为对同一不可逆峰值的重复判定，
+其失败结果按 v1 实际口径保留，不追溯改判；`total_fd` 结束增量回零、3×2,000 task 功能完成等
+可确认部分继续有效。本节在重跑前冻结 v2 指标实现，**不改变任何阈值**：
+
+| 指标 | 资格判定 | 阈值 |
+|---|---|---|
+| `provider_uds_client_fd_peak_delta`（backend 侧，按 socket inode 匹配 provider socket path 识别） | 是 | ≤1 |
+| `provider_uds_accepted_fd_peak_delta`（gateway 侧，同上按 path 识别） | 是 | ≤1 |
+| `provider_uds_session_fd_peak_delta_combined` | 是 | ≤2 |
+| `provider_uds_session_fd_end_delta_combined` | 是 | =0 |
+| `total_fd_end_delta`（backend、gateway 各自） | 是 | =0 |
+| `thread_end_delta`（backend、gateway 各自） | 是 | =0 |
+| RSS peak/end 增量（backend ≤16/8 MiB、gateway ≤32/16 MiB） | 是 | 不变 |
+| `total_fd_peak_delta`、`relation/toast/temp_file_fd_peak_delta`、`other_socket_fd_peak_delta` | 记录与诊断 | 不设门 |
+| `unknown_fd_peak_delta` | 必须为 0 | 否则测量不充分 |
+
+识别与判定规则：
+
+- provider UDS FD 以 `/proc/<pid>/fd` 符号链接 + `/proc/net/unix` 的 inode→path 匹配识别；
+  仅"是 socket"不构成 provider UDS。gateway listener 属于预热基线，不进入增量。
+- **unknown 分类 fail-closed**：任何未能分类的 FD 峰值增量使该 run 的
+  `measurement_status = inconclusive`、`qualification_status = not_evaluated`，
+  不得因"未归类"而从 provider 指标中静默排除。
+- runner 状态机拆分：stress 结束后**一次性**判定不可逆峰值；清理时限（60 s）只等待结束态回收，
+  settle 轮询记录为 `cleanup_sample`，不再产生重复 attempt 文件；原始 trace 在任何
+  pass/fail 判定或异常抛出**之前**原子落盘（`process_samples.jsonl.gz` + `gate_report.json`）。
+- 每个 fault 子项（cancel、provider disconnect、gateway exit）作为独立 case 各自带
+  `measurement_status`/`qualification_status`；仅当出现"结束态不回收/进程不健康/unknown 持续增长"
+  这类安全阻断时才停止后续 case，已清理完成的峰值失败不阻断诊断性后续 case。
+- 重跑使用同一 workload（3×2,000，100 KB 输入，65,536 B fixture 输出）、同一阈值、零模型请求；
+  新 run 声明 `supersedes measurement implementation: v1`，不覆盖旧 run 身份。
+
 真实阶段仍只验证执行工程，不声称生成质量、成本校准或优化效果。服务观察、预算预留、取消后的实际
 模型尝试和本地关闭分别记录；不能把已向客户端返回若干行当作 SQL 最终成功，也不能把关闭 UDS
 当作远端 GPU 已停止。若单 GPU 不满足上述配置，先保留诊断并提交新配置，不自动改为双卡继续。
