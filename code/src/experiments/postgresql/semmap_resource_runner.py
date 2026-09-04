@@ -291,6 +291,58 @@ def fault_gateway(args, user, label, fixture_path, extra=()):
     return root, socket_path, event_path, env, command
 
 
+def recording_control_case(args, connection, user):
+    """Matched control: same 100 KB scan through the in-process recording path.
+
+    Diagnostic case, not a qualification gate: the single-argument
+    ai_semantic.map(payload) executes the in-process recording transform
+    (no provider UDS, no gateway). If the same transient descriptors seen
+    during the UDS stress run (eventpoll, relation VFDs) appear here, they
+    are attributable to PostgreSQL data handling rather than the UDS
+    lifecycle.
+    """
+    root = args.root / "recording-control"
+    root.mkdir()
+    _chown_tree(root, user)
+    statement = sql.SQL(
+        "SELECT count(*), sum(length(m)) FROM ("
+        "SELECT ai_semantic.map(payload) AS m FROM resource_rows) t"
+    )
+    sampler = ProcfsSampler(
+        {"backend": connection.info.backend_pid}, None)
+
+    def run_scan():
+        return connection.execute(statement).fetchone()
+
+    (rows, total), trace = record_operation(
+        sampler, ("backend",), run_scan, sample_seconds=SAMPLE_SECONDS)
+    persist_trace(root / "raw", trace)
+    persist_fd_events(root / "raw", trace)
+    baseline = trace.baseline
+    peak_kinds = {}
+    for role in baseline:
+        seen = {item.fd: item.kind for item in baseline[role].fds}
+        for sample in trace.samples:
+            for item in sample[role].fds:
+                seen.setdefault(item.fd, item.kind)
+        for kind in set(seen.values()):
+            delta = sum(1 for fd, k in seen.items() if k is kind) - sum(
+                1 for item in baseline[role].fds if item.kind is kind)
+            if delta > 0:
+                peak_kinds[kind.value] = delta
+    result = {
+        "case": "recording_control",
+        "role": "diagnostic",
+        "rows": rows,
+        "total_output_bytes": total,
+        "transient_fd_kinds": peak_kinds,
+        "measurement_status": "valid",
+        "qualification_status": "not_applicable",
+    }
+    save(root / "result.json", result)
+    return result
+
+
 def cancel_check(args, connection, user, fixture_path):
     root, socket_path, event_path, env, command = fault_gateway(
         args, user, "cancel", fixture_path, ("--test-response-delay-ms", "1000"))
@@ -418,6 +470,10 @@ def run(args):
             connection.execute("SET statement_timeout='300s'")
             stress = run_stress_case(args, connection, user, fixture_path, digest)
             summary["cases"]["stress_large_payload"] = stress
+            # Diagnostic matched control runs before the fault cases; it is
+            # not a qualification gate, so its verdict cannot block them.
+            summary["cases"]["recording_control"] = recording_control_case(
+                args, connection, user)
             # Fault cases run independently unless an unsafe state appeared.
             stop = _is_unsafe(stress)
             for name, check in (("cancel_and_cleanup", cancel_check),
@@ -435,7 +491,8 @@ def run(args):
             summary["status"] = (
                 "passed" if all(
                     c.get("qualification_status") == "passed"
-                    for c in summary["cases"].values())
+                    for name, c in summary["cases"].items()
+                    if name != "recording_control")
                 else "failed")
     finally:
         # WRITE_FINAL_REPORT: always persisted, pass or fail.
