@@ -1,8 +1,9 @@
-"""Periodic process-resource recorder with FD-change capture and atomic output.
+"""Sampling, trace building, stable baseline, and atomic persistence.
 
 The recorder is passive: it samples, records, and serializes traces. It never
-decides pass/fail and owns no thresholds. Artifacts are written atomically
-so that raw evidence exists before any policy evaluation can raise.
+decides pass/fail and owns no thresholds. An operation that raises still
+yields its trace through RecordedOperation so evidence can hit disk before
+any verdict is reported.
 """
 from __future__ import annotations
 
@@ -14,8 +15,18 @@ import time
 from pathlib import Path
 from typing import Callable, Mapping, Protocol
 
-from .linux_procfs import snapshot_process
-from .model import FdIdentity, FdKind, ProcessSnapshot, ResourceTrace
+from .linux_procfs import sample_tick, unix_socket_table, process_start_time_ticks
+from .model import (
+    CapturedError,
+    FdIdentity,
+    PgFileClassificationContext,
+    ProcessSnapshot,
+    RecordedOperation,
+    ResourceTrace,
+    SampleTick,
+    SnapshotStatus,
+    StableBaseline,
+)
 
 
 class Clock(Protocol):
@@ -29,37 +40,35 @@ class SystemClock:
         return time.monotonic_ns()
 
 
-class ProcessSampler(Protocol):
-    """Minimal sampler seam so unit tests can inject synthetic snapshots."""
+class TickSampler(Protocol):
+    """One call observes every role under a single shared /proc view."""
 
-    def __call__(self, role: str, monotonic_ns: int) -> ProcessSnapshot: ...
+    def sample_all(self, monotonic_ns: int) -> SampleTick: ...
 
 
-class ProcfsSampler:
-    """Snapshot live processes; provider-path descriptors classified per role."""
+class ProcfsTickSampler:
+    """Sample the live roles; one /proc/net/unix read per tick."""
 
-    def __init__(self, pids: Mapping[str, int], provider_socket_path: str | None):
+    def __init__(
+        self,
+        pids: Mapping[str, int],
+        provider_socket_path: str | None,
+        pg_context: PgFileClassificationContext | None = None,
+    ):
         self._pids = dict(pids)
         self._provider_socket_path = provider_socket_path
-        self._previous: dict[str, ProcessSnapshot] = {}
+        self._pg_context = pg_context
+        self._start_times = {
+            role: process_start_time_ticks(pid)
+            for role, pid in self._pids.items()}
 
-    def __call__(self, role: str, monotonic_ns: int) -> ProcessSnapshot:
-        gateway_overrides = {
-            FdKind.PROVIDER_UDS_ACCEPTED: FdKind.PROVIDER_UDS_ACCEPTED,
-        }
-        backend_overrides = {
-            FdKind.PROVIDER_UDS_ACCEPTED: FdKind.PROVIDER_UDS_CLIENT,
-        }
-        overrides = backend_overrides if role == "backend" else gateway_overrides
-        snapshot = snapshot_process(
-            self._pids[role],
+    def sample_all(self, monotonic_ns: int) -> SampleTick:
+        return sample_tick(
+            self._pids,
             monotonic_ns=monotonic_ns,
             provider_socket_path=self._provider_socket_path,
-            role_overrides=overrides,
-            previous=self._previous.get(role),
-        )
-        self._previous[role] = snapshot
-        return snapshot
+            pg_context=self._pg_context,
+            expected_start_times=self._start_times)
 
 
 def _serialize_fd(item: FdIdentity) -> dict:
@@ -75,12 +84,37 @@ def _serialize_fd(item: FdIdentity) -> dict:
 def serialize_snapshot(role: str, snapshot: ProcessSnapshot) -> dict:
     return {
         "role": role,
+        "pid": snapshot.pid,
+        "process_start_time_ticks": snapshot.process_start_time_ticks,
         "monotonic_ns": snapshot.monotonic_ns,
+        "status": snapshot.status.value,
+        "errors": list(snapshot.errors),
         "rss_bytes": snapshot.rss_bytes,
         "thread_count": snapshot.thread_count,
         "total_fd_count": snapshot.total_fd_count,
-        "fds": [_serialize_fd(item) for item in snapshot.fds],
+        "fds": None if snapshot.fds is None else [
+            _serialize_fd(item) for item in snapshot.fds],
     }
+
+
+def serialize_tick(tick: SampleTick) -> list[str]:
+    lines = []
+    for role in sorted(tick.processes):
+        lines.append(json.dumps({
+            "kind": "tick",
+            "unix_table_valid": tick.unix_table_valid,
+            **serialize_snapshot(role, tick.processes[role]),
+        }))
+    return lines
+
+
+def _write_gzip_atomic(path: Path, lines: list[str]) -> None:
+    temporary = path.with_name(path.name + ".partial")
+    with gzip.open(temporary, "wt", encoding="utf-8", newline="\n") as handle:
+        for line in lines:
+            handle.write(line)
+            handle.write("\n")
+    os.replace(temporary, path)
 
 
 def write_atomic(path: Path, payload: str) -> None:
@@ -92,162 +126,194 @@ def write_atomic(path: Path, payload: str) -> None:
     os.replace(temporary, path)
 
 
+def acquire_stable_baseline(
+    sampler: TickSampler,
+    *,
+    required_consecutive: int = 5,
+    interval_seconds: float = 0.05,
+    timeout_seconds: float = 10.0,
+    clock: Clock | None = None,
+    extra_stability: Callable[[SampleTick], bool] | None = None,
+) -> tuple[StableBaseline | None, list[SampleTick]]:
+    """Accept a baseline only after the FD identity set stopped changing.
+
+    Stability requires every observed role to stay alive with an unchanged
+    process start time, be VALID, keep an identical FD identity set (fd
+    number AND target), and satisfy ``extra_stability`` (e.g. zero active
+    provider sessions). Count equality is never sufficient: fd replacement
+    keeps the count but changes the identity set.
+    """
+    clock = clock or SystemClock()
+    deadline = time.monotonic() + timeout_seconds
+    observed: list[SampleTick] = []
+    stable_run: list[SampleTick] = []
+    while time.monotonic() < deadline:
+        tick = sampler.sample_all(clock.monotonic_ns())
+        observed.append(tick)
+
+        def identity_set(snapshot: ProcessSnapshot) -> tuple | None:
+            if snapshot.fds is None:
+                return None
+            return tuple(sorted((item.fd, item.target) for item in snapshot.fds))
+
+        def stable_against(previous: SampleTick, current: SampleTick) -> bool:
+            for role in current.processes:
+                before = previous.processes.get(role)
+                after = current.processes.get(role)
+                if before is None or after is None:
+                    return False
+                if after.status is not SnapshotStatus.VALID:
+                    return False
+                if before.process_start_time_ticks != after.process_start_time_ticks:
+                    return False
+                if identity_set(before) != identity_set(after):
+                    return False
+            if extra_stability is not None and not extra_stability(tick):
+                return False
+            return True
+
+        if stable_run and stable_against(stable_run[-1], tick):
+            stable_run.append(tick)
+        else:
+            stable_run = [tick]
+        if len(stable_run) >= required_consecutive:
+            baseline = {
+                role: stable_run[-1].processes[role]
+                for role in sorted(stable_run[-1].processes)}
+            return StableBaseline(ticks=tuple(stable_run), baseline=baseline), observed
+        time.sleep(interval_seconds)
+    return None, observed
+
+
 def record_operation(
-    sampler: ProcessSampler,
-    roles: tuple[str, ...],
+    sampler: TickSampler,
     operation: Callable[[], object],
     *,
     sample_seconds: float,
+    baseline: Mapping[str, ProcessSnapshot] | None = None,
     clock: Clock | None = None,
-) -> tuple[object, ResourceTrace]:
-    """Run ``operation`` while sampling every role; return result and trace.
+) -> RecordedOperation:
+    """Run ``operation`` while sampling; return outcome AND trace together.
 
-    Sampling covers the whole operation; baseline is the first sample of the
-    run and is captured before the operation starts so peak deltas always
-    have a pre-operation reference.
+    The operation error is captured, never re-raised, so the caller can
+    persist the trace before reporting the failure. Sampling errors are
+    captured the same way. A final sample is taken after the operation so
+    the trace's last tick reflects the post-operation state.
     """
     clock = clock or SystemClock()
-    samples: list[Mapping[str, ProcessSnapshot]] = []
-    failures: list[str] = []
-    baseline: dict[str, ProcessSnapshot] = {}
+    ticks: list[SampleTick] = []
     stopping = threading.Event()
+    sampling_error: CapturedError | None = None
 
-    def take(point_ns: int) -> dict[str, ProcessSnapshot]:
-        return {role: sampler(role, point_ns) for role in roles}
+    def first_snapshot() -> dict[str, ProcessSnapshot]:
+        tick = sampler.sample_all(clock.monotonic_ns())
+        ticks.append(tick)
+        return dict(tick.processes)
 
-    baseline = take(clock.monotonic_ns())
+    starting = first_snapshot()
+    if baseline is None:
+        baseline = starting
 
     def collect() -> None:
         while not stopping.is_set():
             try:
-                samples.append(take(clock.monotonic_ns()))
+                ticks.append(sampler.sample_all(clock.monotonic_ns()))
             except OSError as error:
-                failures.append(type(error).__name__)
+                nonlocal sampling_error
+                sampling_error = CapturedError(
+                    exception_type=type(error).__name__, sqlstate=None,
+                    message=str(error)[:200], phase="sampling")
                 return
             stopping.wait(sample_seconds)
 
+    operation_error: CapturedError | None = None
+    result = None
     worker = threading.Thread(target=collect)
     worker.start()
     try:
         result = operation()
+    except Exception as error:  # noqa: BLE001 - captured, sanitized below
+        sqlstate = getattr(error, "sqlstate", None)
+        operation_error = CapturedError(
+            exception_type=type(error).__name__,
+            sqlstate=str(sqlstate) if sqlstate else None,
+            message=str(error)[:200], phase="operation")
     finally:
         stopping.set()
         worker.join()
-    if failures or not samples:
-        raise OSError(f"resource sampling failed: {failures or 'no samples'}")
-    return result, ResourceTrace(baseline=baseline, samples=tuple(samples))
+    ticks.append(sampler.sample_all(clock.monotonic_ns()))
+    trace = ResourceTrace(baseline=baseline, ticks=tuple(ticks))
+    return RecordedOperation(
+        result=result, operation_error=operation_error,
+        sampling_error=sampling_error, trace=trace)
+
+
+def fd_lifecycles(trace: ResourceTrace) -> list[dict]:
+    """Per-(role, fd, target) lifecycle records for diagnostics only.
+
+    Never used for peak math: sequential fd reuse must not be summed.
+    """
+    records: dict[tuple[str, int, str], dict] = {}
+    ordered: list[tuple[int, Mapping[str, ProcessSnapshot]]] = [
+        (-1, dict(trace.baseline))] if trace.baseline else []
+    ordered.extend((index, dict(tick.processes)) for index, tick in enumerate(trace.ticks))
+    for position, processes in ordered:
+        for role in sorted(processes):
+            snapshot = processes[role]
+            if snapshot.fds is None:
+                continue
+            for item in snapshot.fds:
+                key = (role, item.fd, item.target)
+                record = records.setdefault(key, {
+                    "role": role, "fd": item.fd, "target": item.target,
+                    "kind": item.kind.value, "inode": item.inode,
+                    "first_seen_tick": position,
+                    "last_seen_tick": position})
+                record["last_seen_tick"] = position
+    return [records[key] for key in sorted(records, key=lambda k: (k[0], k[1]))]
 
 
 def persist_trace(directory: Path, trace: ResourceTrace) -> None:
-    """Write one JSONL.gz artifact containing baseline and all samples."""
+    """Write baseline plus ticks as gzip JSONL, streamed to a partial file."""
     directory.mkdir(parents=True, exist_ok=True)
-    lines = [json.dumps({
-        "kind": "baseline",
-        **serialize_snapshot(role, snapshot),
-    }) for role, snapshot in sorted(trace.baseline.items())]
-    for sample in trace.samples:
-        for role in sorted(sample):
-            lines.append(json.dumps({
-                "kind": "sample",
-                **serialize_snapshot(role, sample[role]),
-            }))
-    payload = "\n".join(lines) + "\n"
-    temporary = directory / "process_samples.jsonl.gz.partial"
-    with gzip.open(temporary, "wt", encoding="utf-8", newline="\n") as handle:
-        handle.write(payload)
-    os.replace(temporary, directory / "process_samples.jsonl.gz")
-
-
-def fd_events(trace: ResourceTrace) -> list[dict]:
-    """Derive fd-level first-seen/last-seen events from a sampled trace.
-
-    Emits one record per (role, fd) whose identity set changed relative to
-    the previous sample: appearances, disappearances, and kind/target
-    changes. This is the change-event stream the qualification audits
-    consume; it is derived, never sampled independently, so it cannot
-    disagree with process_samples.jsonl.gz.
-    """
-    events: list[dict] = []
-
-    def emit(kind, role, point, item, extra=None):
-        record = {
-            "event": kind,
-            "monotonic_ns": point.monotonic_ns,
-            "role": role,
-            "fd": item.fd,
-            "target": item.target,
-            "kind": item.kind.value,
-            "inode": item.inode,
-            "unix_path": item.unix_path,
-            "classification_evidence": extra or {},
-        }
-        events.append(record)
-
+    lines = []
     for role in sorted(trace.baseline):
-        previous = {item.fd: item for item in trace.baseline[role].fds}
-        first_seen = {fd: trace.baseline[role].monotonic_ns for fd in previous}
-        for sample in trace.samples:
-            point = sample.get(role)
-            if point is None:
-                continue
-            current = {item.fd: item for item in point.fds}
-            for fd, item in current.items():
-                if fd not in previous:
-                    first_seen[fd] = point.monotonic_ns
-                    emit("fd_open", role, point, item)
-                elif (previous[fd].kind is not item.kind
-                        or previous[fd].target != item.target):
-                    emit("fd_change", role, point, item, {
-                        "previous_kind": previous[fd].kind.value,
-                    })
-            for fd, item in previous.items():
-                if fd not in current:
-                    emit("fd_close", role, point, item, {
-                        "first_seen_ns": first_seen.get(fd),
-                        "last_seen_ns": point.monotonic_ns,
-                    })
-            previous = current
-    return events
+        lines.append(json.dumps({
+            "kind": "baseline",
+            **serialize_snapshot(role, trace.baseline[role])}))
+    for tick in trace.ticks:
+        lines.extend(serialize_tick(tick))
+    _write_gzip_atomic(directory / "process_samples.jsonl.gz", lines)
 
 
-def persist_fd_events(directory: Path, trace: ResourceTrace) -> None:
-    """Write the derived change-event stream next to the samples artifact."""
+def persist_lifecycles(directory: Path, trace: ResourceTrace) -> None:
+    """Write the fd lifecycle diagnostic stream."""
     directory.mkdir(parents=True, exist_ok=True)
-    lines = "\n".join(json.dumps(item) for item in fd_events(trace)) + "\n"
-    temporary = directory / "fd_events.jsonl.gz.partial"
-    with gzip.open(temporary, "wt", encoding="utf-8", newline="\n") as handle:
-        handle.write(lines)
-    os.replace(temporary, directory / "fd_events.jsonl.gz")
+    lines = [json.dumps(item) for item in fd_lifecycles(trace)]
+    _write_gzip_atomic(directory / "fd_lifecycles.jsonl.gz", lines)
 
 
-def peaks(trace: ResourceTrace) -> dict[str, ProcessSnapshot]:
-    """Per-role snapshot holding the maximum observed value of every field."""
-    combined: dict[str, ProcessSnapshot] = {}
-    for role, base in trace.baseline.items():
-        rss = base.rss_bytes
-        threads = base.thread_count
-        fd_identities: dict[int, FdIdentity] = {item.fd: item for item in base.fds}
-        for sample in trace.samples:
-            point = sample.get(role)
-            if point is None:
-                continue
-            rss = max(rss, point.rss_bytes)
-            threads = max(threads, point.thread_count)
-            for item in point.fds:
-                fd_identities.setdefault(item.fd, item)
-        combined[role] = ProcessSnapshot(
-            monotonic_ns=base.monotonic_ns,
-            rss_bytes=rss,
-            thread_count=threads,
-            fds=tuple(fd_identities[fd] for fd in sorted(fd_identities)),
-        )
-    return combined
-
-
-def ending(trace: ResourceTrace) -> dict[str, ProcessSnapshot]:
-    """Last observed snapshot per role."""
-    last: dict[str, ProcessSnapshot] = {}
-    for sample in trace.samples:
-        for role, point in sample.items():
-            last[role] = point
-    return last
+def persist_operation_outcome(
+    directory: Path, recorded: RecordedOperation, phase: str,
+) -> None:
+    """Persist the sanitized operation outcome beside its trace."""
+    directory.mkdir(parents=True, exist_ok=True)
+    payload = {"phase": phase, "result_summary": None}
+    if recorded.operation_error is not None:
+        payload["operation_error"] = {
+            "exception_type": recorded.operation_error.exception_type,
+            "sqlstate": recorded.operation_error.sqlstate,
+            "message": recorded.operation_error.message,
+            "phase": recorded.operation_error.phase}
+    if recorded.sampling_error is not None:
+        payload["sampling_error"] = {
+            "exception_type": recorded.sampling_error.exception_type,
+            "message": recorded.sampling_error.message}
+    if isinstance(recorded.result, dict):
+        payload["result_summary"] = {
+            key: recorded.result[key] for key in recorded.result
+            if isinstance(recorded.result[key], (int, str, bool, float, type(None)))}
+    elif isinstance(recorded.result, (int, str, bool, float, type(None))):
+        payload["result_summary"] = recorded.result
+    write_atomic(directory / "operation_outcome.json",
+                 json.dumps(payload, indent=2) + "\n")

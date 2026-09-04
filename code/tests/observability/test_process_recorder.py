@@ -1,80 +1,118 @@
-"""Recorder tests: atomic persistence precedes evaluation; one artifact per run."""
+"""Recorder tests: stable baseline, failure-safe recording, atomic persistence."""
 import gzip
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from src.observability.process_resources.model import FdIdentity, FdKind, ProcessSnapshot
+from src.observability.process_resources.model import (
+    FdIdentity, FdKind, ProcessSnapshot, ResourceTrace, SampleTick,
+    SnapshotStatus)
 from src.observability.process_resources.recorder import (
-    peaks,
-    ending,
+    acquire_stable_baseline,
+    fd_lifecycles,
+    persist_lifecycles,
+    persist_operation_outcome,
     persist_trace,
     record_operation,
     write_atomic,
 )
 
 
-def snap(ns, fds, rss=100):
+def _snap(pid, ns, fds, threads=1):
     return ProcessSnapshot(
-        monotonic_ns=ns,
-        rss_bytes=rss,
-        thread_count=1,
-        fds=tuple(FdIdentity(fd=i, target="socket:[1]", kind=kind) for i, kind in enumerate(fds)),
-    )
+        pid=pid, process_start_time_ticks=pid, monotonic_ns=ns,
+        status=SnapshotStatus.VALID, rss_bytes=1_000_000,
+        thread_count=threads, fds=tuple(fds))
 
 
-class FakeClock:
-    def __init__(self):
-        self.now = 1_000
-
-    def monotonic_ns(self) -> int:
-        self.now += 1
-        return self.now
+def _fd(fd, target="pipe:[1]", kind=FdKind.PIPE):
+    return FdIdentity(fd=fd, target=target, kind=kind)
 
 
-class RecorderTests(unittest.TestCase):
-    def test_operation_failure_still_returns_nothing_but_persists_outside(self):
-        # record_operation propagates the operation error; the caller keeps
-        # the responsibility to persist whatever it captured via its own
-        # trace handle. Here we verify the success path returns a trace.
-        clock = FakeClock()
-        calls = []
+class FakeTickSampler:
+    """Deterministic sampler cycling a scripted tick sequence forever."""
 
-        def sampler(role, monotonic_ns):
-            calls.append((role, monotonic_ns))
-            return snap(monotonic_ns, [FdKind.PROVIDER_UDS_CLIENT])
+    def __init__(self, ticks):
+        self._ticks = list(ticks)
+        self._index = 0
 
-        result, trace = record_operation(
-            sampler, ("backend",), lambda: 42,
-            sample_seconds=0.0, clock=clock)
-        self.assertEqual(result, 42)
-        self.assertIn("backend", trace.baseline)
-        self.assertTrue(trace.samples)
+    def sample_all(self, monotonic_ns):
+        tick = self._ticks[self._index % len(self._ticks)]
+        self._index += 1
+        return tick
 
-    def test_peaks_union_of_fd_identities_and_max_rss(self):
-        base = {"backend": snap(1, [FdKind.POSTGRES_CLIENT_SOCKET], rss=100)}
-        samples = (
-            {"backend": snap(2, [FdKind.POSTGRES_CLIENT_SOCKET, FdKind.POSTGRES_TEMP_FILE], rss=500)},
-            {"backend": snap(3, [FdKind.POSTGRES_CLIENT_SOCKET], rss=200)},
-        )
-        combined = peaks(type("T", (), {"baseline": base, "samples": samples})())
-        self.assertEqual(combined["backend"].rss_bytes, 500)
-        self.assertEqual(combined["backend"].total_fd_count, 2)
 
-    def test_ending_is_last_sample(self):
-        samples = (
-            {"backend": snap(2, [FdKind.PIPE])},
-            {"backend": snap(3, [])},
-        )
-        last = ending(type("T", (), {"baseline": {"backend": snap(1, [])}, "samples": samples})())
-        self.assertEqual(last["backend"].monotonic_ns, 3)
+def _tick(ns, backend_fds=(), gateway_fds=()):
+    return SampleTick(
+        monotonic_ns=ns, unix_table_valid=True,
+        processes={"backend": _snap(1, ns, backend_fds),
+                   "gateway": _snap(2, ns, gateway_fds)})
 
+
+class StableBaselineTests(unittest.TestCase):
+    def test_five_identical_ticks_accept_baseline(self):
+        ticks = [_tick(n) for n in range(5)]
+        baseline, observed = acquire_stable_baseline(
+            FakeTickSampler(ticks), required_consecutive=5,
+            interval_seconds=0, timeout_seconds=1)
+        self.assertIsNotNone(baseline)
+        self.assertEqual(baseline.baseline["backend"].pid, 1)
+
+    def test_fd_identity_replacement_is_not_stable(self):
+        # Count identical, identity different: must never stabilize.
+        changing = [_tick(0, backend_fds=(_fd(18, "socket:[1]", FdKind.SOCKET_OTHER),)),
+                    _tick(1, backend_fds=(_fd(18, "socket:[2]", FdKind.SOCKET_OTHER),))]
+        baseline, _ = acquire_stable_baseline(
+            FakeTickSampler(changing), required_consecutive=5,
+            interval_seconds=0, timeout_seconds=0.3)
+        self.assertIsNone(baseline, "fd replacement must break stability")
+
+    def test_constant_tick_sequence_is_stable(self):
+        # A single constant tick cycled forever is a legitimately stable
+        # process; the baseline must be accepted, not time out.
+        baseline, _ = acquire_stable_baseline(
+            FakeTickSampler([_tick(0)]), required_consecutive=5,
+            interval_seconds=0, timeout_seconds=1)
+        self.assertIsNotNone(baseline)
+
+    def test_endlessly_changing_ticks_time_out(self):
+        ticks = [_tick(n, backend_fds=(_fd(18, f"socket:[{n}]", FdKind.SOCKET_OTHER),))
+                 for n in range(50)]
+        baseline, observed = acquire_stable_baseline(
+            FakeTickSampler(ticks), required_consecutive=5,
+            interval_seconds=0, timeout_seconds=0.2)
+        self.assertIsNone(baseline)
+        self.assertTrue(observed)
+
+
+class RecordOperationTests(unittest.TestCase):
+    def test_operation_failure_still_returns_trace(self):
+        def failing():
+            raise RuntimeError("sentinel")
+        recorded = record_operation(
+            FakeTickSampler([_tick(0)]), failing, sample_seconds=0)
+        self.assertIsNotNone(recorded.trace)
+        self.assertIsNotNone(recorded.operation_error)
+        self.assertEqual(recorded.operation_error.exception_type, "RuntimeError")
+        self.assertEqual(recorded.operation_error.message, "sentinel")
+
+    def test_success_returns_result_and_final_sample(self):
+        recorded = record_operation(
+            FakeTickSampler([_tick(0)]), lambda: 42, sample_seconds=0)
+        self.assertEqual(recorded.result, 42)
+        self.assertIsNone(recorded.operation_error)
+        self.assertGreaterEqual(len(recorded.trace.ticks), 2,
+                                "pre-sample plus post-operation sample")
+
+
+class PersistenceTests(unittest.TestCase):
     def test_persist_trace_writes_gzip_jsonl_atomically(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
-            base = {"backend": snap(1, [FdKind.PROVIDER_UDS_CLIENT])}
-            trace = type("T", (), {"baseline": base, "samples": ({"backend": snap(2, [])},)})()
+            trace = ResourceTrace(
+                baseline={"backend": _snap(1, 0, (_fd(3),))},
+                ticks=(_tick(1), _tick(2)))
             persist_trace(target, trace)
             artifact = target / "process_samples.jsonl.gz"
             self.assertTrue(artifact.exists())
@@ -82,8 +120,39 @@ class RecorderTests(unittest.TestCase):
             with gzip.open(artifact, "rt", encoding="utf-8") as handle:
                 lines = [json.loads(line) for line in handle]
             self.assertEqual(lines[0]["kind"], "baseline")
-            self.assertEqual(lines[-1]["kind"], "sample")
-            self.assertEqual(lines[0]["fds"][0]["kind"], "provider_uds_client")
+            self.assertEqual(lines[-1]["kind"], "tick")
+            self.assertEqual(lines[0]["status"], "valid")
+            self.assertEqual(lines[0]["fds"][0]["kind"], "pipe")
+
+    def test_persist_lifecycles_records_reuse_separately(self):
+        trace = ResourceTrace(
+            baseline={"backend": _snap(1, 0, ())},
+            ticks=(_tick(1, backend_fds=(_fd(18, "socket:[1]", FdKind.SOCKET_OTHER),)),
+                   _tick(2),
+                   _tick(3, backend_fds=(_fd(18, "socket:[2]", FdKind.SOCKET_OTHER),))))
+        records = fd_lifecycles(trace)
+        self.assertEqual(len(records), 2,
+                         "same fd number with a different target is two lifecycles")
+        with tempfile.TemporaryDirectory() as directory:
+            persist_lifecycles(Path(directory), trace)
+            self.assertTrue((Path(directory) / "fd_lifecycles.jsonl.gz").exists())
+
+    def test_persist_operation_outcome_sanitizes(self):
+        from src.observability.process_resources.model import CapturedError
+        from src.observability.process_resources.model import RecordedOperation
+        recorded = RecordedOperation(
+            result=None,
+            operation_error=CapturedError(
+                exception_type="RuntimeError", sqlstate=None,
+                message="secret-path/detail", phase="operation"),
+            sampling_error=None,
+            trace=ResourceTrace(baseline={"backend": _snap(1, 0, ())}, ticks=()))
+        with tempfile.TemporaryDirectory() as directory:
+            persist_operation_outcome(Path(directory), recorded, "stress")
+            payload = json.loads(
+                (Path(directory) / "operation_outcome.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["operation_error"]["exception_type"], "RuntimeError")
+        self.assertEqual(payload["phase"], "stress")
 
     def test_write_atomic_replaces_existing(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -95,52 +164,3 @@ class RecorderTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-class FdEventTests(unittest.TestCase):
-    """Derived change-event stream: open/close/change with evidence fields."""
-
-    def test_open_close_and_change_events_derived_from_samples(self):
-        from src.observability.process_resources.recorder import fd_events
-        from src.observability.process_resources.model import FdIdentity, FdKind, ProcessSnapshot
-        def snap(ns, fds):
-            return ProcessSnapshot(
-                monotonic_ns=ns, rss_bytes=1, thread_count=1,
-                fds=tuple(FdIdentity(fd=fd, target=target, kind=kind)
-                          for fd, target, kind in fds))
-        run = type("T", (), {
-            "baseline": {"backend": snap(0, [(5, "pipe:[1]", FdKind.PIPE)])},
-            "samples": (
-                {"backend": snap(1, [(5, "pipe:[1]", FdKind.PIPE), (9, "socket:[2]", FdKind.SOCKET_OTHER)])},
-                {"backend": snap(2, [(5, "pipe:[1]", FdKind.PIPE), (9, "socket:[2]", FdKind.PROVIDER_UDS_CLIENT)])},
-                {"backend": snap(3, [(5, "pipe:[1]", FdKind.PIPE)])},
-            ),
-        })()
-        events = fd_events(run)
-        kinds = [e["event"] for e in events]
-        self.assertEqual(kinds, ["fd_open", "fd_change", "fd_close"])
-        opened = events[0]
-        self.assertEqual(opened["fd"], 9)
-        self.assertEqual(opened["kind"], "socket_other")
-        self.assertEqual(opened["classification_evidence"], {})
-        changed = events[1]
-        self.assertEqual(changed["classification_evidence"]["previous_kind"], "socket_other")
-        closed = events[2]
-        self.assertEqual(closed["classification_evidence"]["first_seen_ns"], 1)
-        self.assertEqual(closed["classification_evidence"]["last_seen_ns"], 3)
-
-    def test_persist_fd_events_writes_gzip(self):
-        from src.observability.process_resources.recorder import persist_fd_events
-        import tempfile, gzip as gz, json as js
-        run = type("T", (), {
-            "baseline": {"backend": snap(0, [FdKind.PIPE])},
-            "samples": ({"backend": snap(2, [])},),
-        })()
-        with tempfile.TemporaryDirectory() as directory:
-            persist_fd_events(Path(directory), run)
-            artifact = Path(directory) / "fd_events.jsonl.gz"
-            self.assertTrue(artifact.exists())
-            with gz.open(artifact, "rt", encoding="utf-8") as handle:
-                lines = [js.loads(line) for line in handle]
-        self.assertEqual(lines[0]["event"], "fd_close")
-        self.assertEqual(lines[0]["fd"], 0)

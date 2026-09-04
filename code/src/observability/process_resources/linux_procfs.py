@@ -1,22 +1,29 @@
-"""Linux /proc collection and FD classification for process-resource traces.
+"""Linux /proc collection, validation, and FD classification.
 
-Only reads and classifies: no thresholds and no experiment policy live here.
-Socket classification pairs ``/proc/<pid>/fd`` symlink targets with
-``/proc/net/unix`` so that a provider UDS descriptor is identified by its
-bound path, never by "it is a socket".
+Only reads and classifies: no thresholds and no experiment policy live
+here. Every failure surfaces as SnapshotStatus/errors or None fields —
+never as zeros or empty sets that could fake a green verdict.
 """
 from __future__ import annotations
 
 import os
 import re
+import time
 from pathlib import Path
 
-from .model import FdIdentity, FdKind, ProcessSnapshot
+from .model import (
+    FdIdentity,
+    FdKind,
+    PgFileClassificationContext,
+    ProcessSnapshot,
+    SampleTick,
+    SnapshotStatus,
+)
 
 _SOCKET_INODE_PATTERN = re.compile(r"^socket:\[(\d+)\]$")
 _FILE_INODE_PATTERN = re.compile(r"^(\d+)$")
 _PG_TEMP_DIR = "pgsql_tmp"
-_TOAST_SUFFIXES = ("_toast",)
+_CONSISTENT_RETRIES = 3
 
 
 def _read_link(pid: int, fd: int) -> str | None:
@@ -26,11 +33,12 @@ def _read_link(pid: int, fd: int) -> str | None:
         return None
 
 
-def _list_fds(pid: int) -> list[int]:
+def _list_fds(pid: int) -> list[int] | None:
+    """Return sorted fd numbers, or None when the directory is unreadable."""
     try:
         entries = os.listdir(f"/proc/{pid}/fd")
     except OSError:
-        return []
+        return None
     numbers = []
     for entry in entries:
         try:
@@ -50,50 +58,71 @@ def _parse_inode(target: str) -> int | None:
     return None
 
 
-def unix_socket_table() -> dict[int, str]:
-    """Map AF_UNIX socket inode -> bound path from ``/proc/net/unix``.
+def unix_socket_table() -> dict[int, str | None]:
+    """Map every AF_UNIX socket inode to its bound path (None when unbound).
 
-    Unbound/anonymous entries have no usable path and are omitted; callers
-    treat a missing inode as unclassified rather than guessing.
-
-    Note: a *connected* client socket (e.g. the backend's libpq link to its
-    own postmaster, or the provider UDS client end) has no bound path and
-    never appears here; externally those can only be classified by
-    correlation or cooperative getsockname, never by this table alone.
-    POSTGRES_CLIENT_SOCKET therefore remains unreachable from pure /proc
-    observation and is reserved for cooperative samplers.
+    /proc/net/unix lists connected-but-unbound client sockets too; they
+    appear with an empty path column. Keeping them (value None) lets the
+    generic collector mark those descriptors UNBOUND_UNIX_SOCKET instead of
+    lumping them with unrelated named sockets.
     """
-    table: dict[int, str] = {}
+    table: dict[int, str | None] = {}
     try:
         text = Path("/proc/net/unix").read_text(encoding="ascii", errors="replace")
     except OSError:
         return table
     for line in text.splitlines()[1:]:
-        parts = line.split()
+        parts = line.split(maxsplit=7)
         if len(parts) < 8 or not parts[6].isdigit():
             continue
-        table[int(parts[6])] = parts[7]
+        table[int(parts[6])] = parts[7] if len(parts) > 7 else None
     return table
+
+
+def process_start_time_ticks(pid: int) -> int | None:
+    """Read the scheduler start time used to detect pid reuse."""
+    try:
+        text = Path(f"/proc/{pid}/stat").read_text(encoding="ascii", errors="replace")
+    except OSError:
+        return None
+    tail = text[text.rfind(")") + 1:].split()
+    try:
+        return int(tail[19])
+    except (IndexError, ValueError):
+        return None
+
+
+def _filenode_of(basename: str) -> int | None:
+    base = basename
+    for suffix in ("_fsm", "_vm", "_init"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+            break
+    if "." in base:
+        base = base.split(".", 1)[0]
+    if base.isdigit():
+        return int(base)
+    return None
 
 
 def classify_target(
     target: str,
-    unix_paths_by_inode: dict[int, str],
+    unix_paths_by_inode: dict[int, str | None],
     provider_socket_path: str | None,
+    pg_context: PgFileClassificationContext | None = None,
 ) -> tuple[FdKind, int | None, str | None]:
     """Return ``(kind, inode, unix_path)`` for one descriptor target."""
     inode = _parse_inode(target)
     if target.startswith("socket:[") and inode is not None:
-        path = unix_paths_by_inode.get(inode)
-        if path is not None and provider_socket_path is not None:
-            resolved = str(Path(path))
-            if resolved == str(Path(provider_socket_path)):
-                # A listener and its accepted/connection peers share the
-                # bound path; process role decides client vs accepted vs
-                # listener, which callers supply via ``role_kind``.
-                return FdKind.PROVIDER_UDS_ACCEPTED, inode, path
-        if path is not None:
+        path = unix_paths_by_inode.get(inode, "")
+        if path is None:
+            return FdKind.UNBOUND_UNIX_SOCKET, inode, None
+        if path and provider_socket_path is not None and \
+                str(Path(path)) == str(Path(provider_socket_path)):
+            return FdKind.PROVIDER_UDS_CONNECTED, inode, path
+        if path:
             return FdKind.SOCKET_OTHER, inode, path
+        # Present in the table without a path column entry: treat as named.
         return FdKind.SOCKET_OTHER, inode, None
     if target.startswith("pipe:"):
         return FdKind.PIPE, inode, None
@@ -103,12 +132,16 @@ def classify_target(
         lowered = target.lower()
         if _PG_TEMP_DIR in lowered:
             return FdKind.POSTGRES_TEMP_FILE, inode, None
-        if lowered.endswith(_TOAST_SUFFIXES):
-            return FdKind.TOAST_RELATION_FILE, inode, None
+        if pg_context is not None and target.startswith(pg_context.data_directory):
+            basename = os.path.basename(target)
+            filenode = _filenode_of(basename)
+            if filenode is not None:
+                if filenode in pg_context.toast_filenodes:
+                    return FdKind.TOAST_RELATION_FILE, inode, None
+                if filenode in pg_context.relation_filenodes:
+                    return FdKind.RELATION_FILE, inode, None
         base = os.path.basename(target)
-        # PostgreSQL relation files are numeric basenames such as "16384"
-        # or fork suffixes "16384_fsm"/"16384_vm" under the data directory.
-        if re.fullmatch(r"\d+(_fsm|_vm|_init)?", base):
+        if re.fullmatch(r"\d+(_fsm|_vm|_init)?(\.\d+)?", base):
             return FdKind.RELATION_FILE, inode, None
         if lowered.endswith((".sock", ".socket")):
             return FdKind.SOCKET_OTHER, inode, None
@@ -116,72 +149,148 @@ def classify_target(
     return FdKind.UNKNOWN, inode, None
 
 
+def _read_rss_threads(pid: int) -> tuple[int | None, int | None]:
+    rss_bytes = None
+    thread_count = None
+    try:
+        statm = Path(f"/proc/{pid}/statm").read_text(encoding="ascii").split()
+        page_size = getattr(os, "sysconf", lambda _name: 4096)("SC_PAGE_SIZE")
+        rss_bytes = int(statm[1]) * page_size
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        status = Path(f"/proc/{pid}/status").read_text(encoding="ascii", errors="replace")
+        thread_count = next(
+            int(line.split()[1]) for line in status.splitlines()
+            if line.startswith("Threads:"))
+    except (OSError, StopIteration, ValueError):
+        pass
+    return rss_bytes, thread_count
+
+
+def _consistent_fd_snapshot(
+    pid: int,
+    unix_paths_by_inode: dict[int, str | None],
+    provider_socket_path: str | None,
+    pg_context: PgFileClassificationContext | None,
+    role_overrides: dict[FdKind, FdKind] | None,
+) -> tuple[tuple[FdIdentity, ...] | None, list[str]]:
+    """Read the fd set until two consecutive listings agree.
+
+    Returns (identities, errors): identities stays None when a consistent
+    read could not be obtained, so the caller marks the snapshot invalid.
+    """
+    errors: list[str] = []
+    for _attempt in range(_CONSISTENT_RETRIES):
+        first = _list_fds(pid)
+        if first is None:
+            errors.append("fd_list_unreadable")
+            return None, errors
+        targets: dict[int, str | None] = {}
+        unreadable = False
+        for fd in first:
+            target = _read_link(pid, fd)
+            if target is None:
+                unreadable = True
+                break
+            targets[fd] = target
+        if unreadable:
+            errors.append("fd_readlink_race")
+            continue
+        second = _list_fds(pid)
+        if second is None:
+            errors.append("fd_list_unreadable")
+            return None, errors
+        if second != first:
+            errors.append("fd_set_changed_during_read")
+            continue
+        identities = []
+        for fd, target in targets.items():
+            kind, inode, unix_path = classify_target(
+                target, unix_paths_by_inode, provider_socket_path, pg_context)
+            if role_overrides is not None:
+                kind = role_overrides.get(kind, kind)
+            identities.append(FdIdentity(
+                fd=fd, target=target, kind=kind, inode=inode,
+                unix_path=unix_path))
+        return tuple(identities), errors
+    return None, errors
+
+
 def snapshot_process(
     pid: int,
     *,
     monotonic_ns: int,
-    provider_socket_path: str | None,
-    unix_paths_by_inode: dict[int, str] | None = None,
+    unix_paths_by_inode: dict[int, str | None],
+    provider_socket_path: str | None = None,
+    pg_context: PgFileClassificationContext | None = None,
     role_overrides: dict[FdKind, FdKind] | None = None,
-    rss_bytes: int | None = None,
-    thread_count: int | None = None,
-    previous: ProcessSnapshot | None = None,
+    expected_start_time_ticks: int | None = None,
 ) -> ProcessSnapshot:
-    """Collect one classified snapshot for ``pid``.
+    """Collect one validated snapshot for ``pid``.
 
-    ``role_overrides`` lets the caller refine shared-path classifications by
-    process role: a gateway turns provider-path descriptors into listeners or
-    accepted connections, a backend into the client end.
-
-    ``previous`` is the prior snapshot of the same role. A descriptor whose
-    symlink momentarily fails to read (sampling races against close/reuse,
-    especially under Yama ptrace restrictions) inherits its last resolved
-    identity instead of degrading to UNKNOWN: an unreadable instant is a
-    miss, not evidence of an unclassifiable descriptor, and failing closed
-    on the latter must be reserved for genuinely unresolvable targets.
+    Unreadable data stays None and the status explains it. A changed
+    process start time (pid reuse) makes the snapshot invalid outright.
     """
-    if unix_paths_by_inode is None:
-        unix_paths_by_inode = unix_socket_table()
-    if rss_bytes is None or thread_count is None:
-        try:
-            statm = Path(f"/proc/{pid}/statm").read_text(encoding="ascii").split()
-            rss_pages = int(statm[1])
-        except (OSError, ValueError, IndexError):
-            rss_pages = 0
-        if rss_bytes is None:
-            page_size = getattr(os, "sysconf", lambda _name: 4096)("SC_PAGE_SIZE")
-            rss_bytes = rss_pages * page_size
-        if thread_count is None:
-            try:
-                status = Path(f"/proc/{pid}/status").read_text(encoding="ascii", errors="replace")
-                thread_count = next(
-                    int(line.split()[1]) for line in status.splitlines()
-                    if line.startswith("Threads:")
-                )
-            except (OSError, StopIteration, ValueError):
-                thread_count = 0
-    known: dict[int, FdIdentity] = (
-        {item.fd: item for item in previous.fds} if previous is not None else {})
-    identities: list[FdIdentity] = []
-    for fd in _list_fds(pid):
-        target = _read_link(pid, fd)
-        if target is None:
-            if fd in known:
-                identities.append(known[fd])
-            # A first-sight unreadable fd is genuinely unobserved this round;
-            # do not invent an UNKNOWN placeholder for it.
-            continue
-        if target == "" and fd in known and known[fd].kind is not FdKind.UNKNOWN:
-            identities.append(known[fd])
-            continue
-        kind, inode, unix_path = classify_target(target, unix_paths_by_inode, provider_socket_path)
-        if role_overrides is not None:
-            kind = role_overrides.get(kind, kind)
-        identity = FdIdentity(fd=fd, target=target, kind=kind, inode=inode, unix_path=unix_path)
-        identities.append(identity)
+    errors: list[str] = []
+    start_time = process_start_time_ticks(pid)
+    if start_time is None:
+        return ProcessSnapshot(
+            pid=pid, process_start_time_ticks=None, monotonic_ns=monotonic_ns,
+            status=SnapshotStatus.INVALID, errors=("stat_unreadable",))
+    if (expected_start_time_ticks is not None
+            and start_time != expected_start_time_ticks):
+        return ProcessSnapshot(
+            pid=pid, process_start_time_ticks=start_time,
+            monotonic_ns=monotonic_ns, status=SnapshotStatus.INVALID,
+            errors=("process_replaced",))
+    rss_bytes, thread_count = _read_rss_threads(pid)
+    if rss_bytes is None:
+        errors.append("statm_unreadable")
+    if thread_count is None:
+        errors.append("status_unreadable")
+    fds, fd_errors = _consistent_fd_snapshot(
+        pid, unix_paths_by_inode, provider_socket_path, pg_context,
+        role_overrides)
+    errors.extend(fd_errors)
+    status = SnapshotStatus.VALID
+    if fds is None:
+        status = SnapshotStatus.INVALID
+    elif errors:
+        status = SnapshotStatus.PARTIAL
     return ProcessSnapshot(
-        monotonic_ns=monotonic_ns,
-        rss_bytes=rss_bytes,
-        thread_count=thread_count,
-        fds=tuple(identities),
-    )
+        pid=pid, process_start_time_ticks=start_time,
+        monotonic_ns=monotonic_ns, status=status,
+        errors=tuple(errors), rss_bytes=rss_bytes,
+        thread_count=thread_count, fds=fds)
+
+
+def sample_tick(
+    pids: Mapping[str, int],
+    *,
+    monotonic_ns: int | None = None,
+    provider_socket_path: str | None = None,
+    pg_context: PgFileClassificationContext | None = None,
+    expected_start_times: Mapping[str, int] | None = None,
+) -> SampleTick:
+    """Observe every role under one shared /proc/net/unix view."""
+    if monotonic_ns is None:
+        monotonic_ns = time.monotonic_ns()
+    unix_paths = unix_socket_table()
+    unix_valid = bool(unix_paths)
+    processes: dict[str, ProcessSnapshot] = {}
+    for role, pid in pids.items():
+        expected = (expected_start_times or {}).get(role)
+        gateway_overrides = {FdKind.PROVIDER_UDS_CONNECTED: FdKind.PROVIDER_UDS_CONNECTED}
+        backend_overrides = {FdKind.PROVIDER_UDS_CONNECTED: FdKind.PROVIDER_UDS_CONNECTED}
+        overrides = backend_overrides if role == "backend" else gateway_overrides
+        processes[role] = snapshot_process(
+            pid, monotonic_ns=monotonic_ns,
+            unix_paths_by_inode=unix_paths,
+            provider_socket_path=provider_socket_path,
+            pg_context=pg_context,
+            role_overrides=overrides,
+            expected_start_time_ticks=expected)
+    return SampleTick(
+        monotonic_ns=monotonic_ns, unix_table_valid=unix_valid,
+        processes=processes)

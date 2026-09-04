@@ -1,4 +1,26 @@
 """Passive Linux process-resource observation (RSS, threads, classified FDs)."""
-from .model import FdIdentity, FdKind, ProcessSnapshot, ResourceTrace
+from .model import (
+    CapturedError,
+    FdIdentity,
+    FdKind,
+    PgFileClassificationContext,
+    ProcessSnapshot,
+    RecordedOperation,
+    ResourceTrace,
+    SampleTick,
+    SnapshotStatus,
+    StableBaseline,
+)
 
-__all__ = ["FdIdentity", "FdKind", "ProcessSnapshot", "ResourceTrace"]
+__all__ = [
+    "CapturedError",
+    "FdIdentity",
+    "FdKind",
+    "PgFileClassificationContext",
+    "ProcessSnapshot",
+    "RecordedOperation",
+    "ResourceTrace",
+    "SampleTick",
+    "SnapshotStatus",
+    "StableBaseline",
+]

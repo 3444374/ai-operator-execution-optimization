@@ -1,15 +1,20 @@
 """Pure metric-schema-v2 gate policies for PostgreSQL resource qualification.
 
-Consumes classified ``ResourceTrace`` snapshots from
+Consumes classified ``ResourceTrace`` ticks from
 ``observability.process_resources`` and returns structured verdicts. No
 process management, no /proc access, no I/O: every function is a pure
 mapping so unit tests can drive all red/green/inconclusive paths with
 synthetic traces.
 
 Schema registered in experiments/plans/postgresql_semmap_generation_contract.md
-§8.4.2 (2026-09-04, frozen before any v2 rerun). Thresholds are unchanged
-from the user-confirmed §8.4.1 values; only the measurement implementation
+§8.4.2 (2026-09-04, frozen before any v2 rerun; pre-run static-review
+correction pending registration). Thresholds are unchanged from the
+user-confirmed §8.4.1 values; only the measurement implementation
 differs from v1.
+
+Peak semantics: the maximum SIMULTANEOUS same-tick delta. The union of
+fd numbers observed across the run is diagnostic data only and may
+never feed a peak threshold — sequential fd reuse must count as one.
 """
 from __future__ import annotations
 
@@ -21,22 +26,27 @@ from src.observability.process_resources.model import (
     FdIdentity,
     ProcessSnapshot,
     ResourceTrace,
+    SampleTick,
+    SnapshotStatus,
 )
 
 METRIC_SCHEMA = "semloom.pg.resource.v2"
 
 MIB = 1024 * 1024
 
-RSS_LIMITS = {
-    "backend": (16 * MIB, 8 * MIB),   # (peak_delta_limit, end_delta_limit)
-    "gateway": (32 * MIB, 16 * MIB),
-}
+RSS_PEAK_LIMITS = {"backend": 16 * MIB, "gateway": 32 * MIB}
+RSS_END_LIMITS = {"backend": 8 * MIB, "gateway": 16 * MIB}
 UDS_CLIENT_PEAK_LIMIT = 1
 UDS_ACCEPTED_PEAK_LIMIT = 1
 UDS_SESSION_COMBINED_PEAK_LIMIT = 2
 UDS_SESSION_COMBINED_END_LIMIT = 0
 TOTAL_FD_END_LIMIT = 0
 THREAD_END_LIMIT = 0
+
+PROVIDER_SESSION_KINDS = frozenset({
+    FdKind.PROVIDER_UDS_CONNECTED,
+    FdKind.PROVIDER_UDS_LISTENER,
+})
 
 DIAGNOSTIC_KINDS = (
     FdKind.POSTGRES_CLIENT_SOCKET,
@@ -47,15 +57,42 @@ DIAGNOSTIC_KINDS = (
     FdKind.PIPE,
     FdKind.EVENTFD_OR_ANON_INODE,
     FdKind.SOCKET_OTHER,
+    FdKind.UNBOUND_UNIX_SOCKET,
 )
+
+_LEGAL_STATUSES = frozenset({
+    ("valid", "passed"),
+    ("valid", "failed"),
+    ("inconclusive", "not_evaluated"),
+    ("invalid", "not_evaluated"),
+})
+
+
+def compose_status(*statuses: tuple[str, str]) -> tuple[str, str] | None:
+    """Compose (measurement, qualification) pairs under strict precedence.
+
+    Precedence: invalid > inconclusive > valid-failed > valid-passed. The
+    result is always one of the four legal combinations; an input that
+    would compose into an illegal pair (e.g. inconclusive+passed) returns
+    None so callers can reject it instead of silently coercing.
+    """
+    if any(pair not in _LEGAL_STATUSES for pair in statuses):
+        return None
+    if any(m == "invalid" for m, _ in statuses):
+        return ("invalid", "not_evaluated")
+    if any(m == "inconclusive" for m, _ in statuses):
+        return ("inconclusive", "not_evaluated")
+    if any(q == "failed" for _, q in statuses):
+        return ("valid", "failed")
+    return ("valid", "passed")
 
 
 @dataclass(frozen=True)
 class Violation:
     scope: str
     metric: str
-    observed: int
-    limit: int
+    observed: object
+    limit: object
     detail: dict = field(default_factory=dict)
 
 
@@ -70,219 +107,191 @@ class GateReport:
 
     @property
     def passed(self) -> bool:
-        return self.qualification_status == "passed"
+        return (self.measurement_status == "valid"
+                and self.qualification_status == "passed")
 
 
-def _peak_fd_delta(
-    baseline: ProcessSnapshot, trace: ResourceTrace, role: str,
-    kinds: frozenset[FdKind],
-) -> tuple[int, set[int]]:
-    """Return (peak minus baseline count, union of peak fd numbers) per kind set."""
-    base_numbers = baseline.fd_numbers(kinds)
-    peak_numbers = set(base_numbers)
-    for sample in trace.samples:
-        point = sample.get(role)
-        if point is None:
-            continue
-        peak_numbers |= point.fd_numbers(kinds)
-    return len(peak_numbers) - len(base_numbers), peak_numbers
+def _ticks(trace: ResourceTrace) -> tuple[SampleTick, ...]:
+    return trace.ticks
 
 
-def _end_snapshot(trace: ResourceTrace, role: str) -> ProcessSnapshot | None:
-    last = None
-    for sample in trace.samples:
-        point = sample.get(role)
-        if point is not None:
-            last = point
-    return last
-
-
-def correlate_client_uds(trace: ResourceTrace) -> ResourceTrace:
-    """Re-classify backend client-side provider UDS sockets by session correlation.
-
-    A connected AF_UNIX client socket has no bound path and therefore never
-    appears in ``/proc/net/unix``; kernel bookkeeping gives the two ends of a
-    pair distinct inodes, so gateway-side inode matching cannot identify the
-    client end either (verified on the 2026-09-04 diagnostic run: the
-    correlated fd appeared together with a gateway accepted session in
-    1575/1578 samples; the 3 outliers are sub-sample interleaving).
-
-    Under the synchronous single-session contract a backend socket fd is the
-    provider client end when, at the same sample point: (a) it is a socket,
-    (b) it was not present in the baseline, and (c) the gateway holds at
-    least one accepted provider session. Every fd reclassified this way keeps
-    its original kind in ``classification_evidence`` so audits can see what
-    the correlation replaced. Classification only; no thresholds involved.
-    """
-    samples = []
-    reclassified: dict[int, dict] = {}
-    base = trace.baseline.get("backend")
-    base_numbers = frozenset() if base is None else {
-        item.fd for item in base.fds if item.target.startswith("socket:")
-    }
-    for sample in trace.samples:
-        backend = sample.get("backend")
-        gateway = sample.get("gateway")
-        if backend is None or gateway is None:
-            samples.append(sample)
-            continue
-        gateway_holds_session = gateway.count(
-            frozenset({FdKind.PROVIDER_UDS_ACCEPTED, FdKind.PROVIDER_UDS_LISTENER})
-        ) - gateway.count(FdKind.PROVIDER_UDS_LISTENER) > 0
-        replacement = {}
-        for item in backend.fds:
-            if (gateway_holds_session
-                    and item.fd not in base_numbers
-                    and item.target.startswith("socket:")
-                    and item.kind is not FdKind.PROVIDER_UDS_CLIENT):
-                replacement[item.fd] = FdIdentity(
-                    fd=item.fd, target=item.target,
-                    kind=FdKind.PROVIDER_UDS_CLIENT,
-                    inode=item.inode, unix_path=item.unix_path)
-                evidence = reclassified.setdefault(item.fd, {
-                    "first_seen_ns": backend.monotonic_ns,
-                    "original_kind": item.kind.value,
-                    "rule": "session-correlation",
-                })
-                evidence["last_seen_ns"] = backend.monotonic_ns
-        if replacement:
-            samples.append({
-                **sample,
-                "backend": ProcessSnapshot(
-                    monotonic_ns=backend.monotonic_ns,
-                    rss_bytes=backend.rss_bytes,
-                    thread_count=backend.thread_count,
-                    fds=tuple(replacement.get(item.fd, item)
-                              for item in backend.fds),
-                ),
-            })
-        else:
-            samples.append(sample)
-    trace = ResourceTrace(baseline=trace.baseline, samples=tuple(samples),
-                          fd_correlation_evidence=reclassified)
-    return trace
+def _count(snapshot: ProcessSnapshot, kinds) -> int | None:
+    return snapshot.count(kinds)
 
 
 def evaluate_peak_policy(
     baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
 ) -> tuple[list[Violation], dict]:
-    """Judge the irreversible stress-window peaks exactly once."""
+    """Judge the maximum SIMULTANEOUS deltas across same-tick observations.
+
+    backend provider-client peak and gateway provider-accepted peak are
+    each max-over-ticks of the per-tick delta; the combined peak is the
+    max-over-ticks of the per-tick SUM. Cross-tick per-role maxima are
+    never added together.
+    """
     violations: list[Violation] = []
-    diagnostics: dict = {"per_role": {}}
+    diagnostics: dict = {"per_role": {}, "ticks": len(trace.ticks)}
+    if not trace.ticks:
+        return violations, diagnostics
 
-    for role in ("backend", "gateway"):
-        base = baseline.get(role)
-        if base is None:
-            continue
-        kind = (
-            FdKind.PROVIDER_UDS_CLIENT if role == "backend"
-            else FdKind.PROVIDER_UDS_ACCEPTED
-        )
-        delta, numbers = _peak_fd_delta(base, trace, role, frozenset({kind}))
-        diagnostics["per_role"][role] = {
-            "provider_uds_peak_fds": sorted(numbers),
-            "provider_uds_peak_delta": delta,
-        }
-        limit = UDS_CLIENT_PEAK_LIMIT if role == "backend" else UDS_ACCEPTED_PEAK_LIMIT
-        if delta > limit:
-            violations.append(Violation(
-                scope=role,
-                metric=f"provider_uds_{'client' if role == 'backend' else 'accepted'}_fd_peak_delta",
-                observed=delta, limit=limit,
-                detail={"peak_fds": sorted(numbers)}))
+    client_kind = FdKind.PROVIDER_UDS_CONNECTED
+    accepted_kind = FdKind.PROVIDER_UDS_CONNECTED
+    base_backend = baseline.get("backend")
+    base_gateway = baseline.get("gateway")
+    base_client = _count(base_backend, client_kind) if base_backend else 0
+    base_accepted = _count(base_gateway, accepted_kind) if base_gateway else 0
 
-    combined = 0
-    for role in ("backend", "gateway"):
-        base = baseline.get(role)
-        if base is None:
-            continue
-        kinds = frozenset({FdKind.PROVIDER_UDS_CLIENT, FdKind.PROVIDER_UDS_ACCEPTED})
-        delta, _ = _peak_fd_delta(base, trace, role, kinds)
-        combined += delta
-    diagnostics["provider_uds_session_fd_peak_delta_combined"] = combined
-    if combined > UDS_SESSION_COMBINED_PEAK_LIMIT:
+    client_peak = 0
+    accepted_peak = 0
+    combined_peak = 0
+    unknown_peak = 0
+    peak_fds: dict[str, set[int]] = {"backend": set(), "gateway": set()}
+
+    for tick in trace.ticks:
+        backend = tick.processes.get("backend")
+        gateway = tick.processes.get("gateway")
+        client_now = _count(backend, client_kind) if backend else 0
+        accepted_now = _count(gateway, accepted_kind) if gateway else 0
+        if backend is not None and backend.fds is not None:
+            peak_fds["backend"].update(
+                backend.fd_numbers(client_kind))
+        if gateway is not None and gateway.fds is not None:
+            peak_fds["gateway"].update(gateway.fd_numbers(accepted_kind))
+        client_delta = (client_now - base_client) if client_now is not None else 0
+        accepted_delta = (accepted_now - base_accepted) if accepted_now is not None else 0
+        client_peak = max(client_peak, client_delta)
+        accepted_peak = max(accepted_peak, accepted_delta)
+        combined_peak = max(combined_peak, client_delta + accepted_delta)
+        for role, snapshot in tick.processes.items():
+            if snapshot.status is not SnapshotStatus.VALID:
+                continue
+            base = baseline.get(role)
+            if base is None or base.fds is None or snapshot.fds is None:
+                continue
+            unknown_now = sum(
+                1 for item in snapshot.fds if item.kind is FdKind.UNKNOWN)
+            unknown_base = sum(
+                1 for item in base.fds if item.kind is FdKind.UNKNOWN)
+            unknown_peak = max(unknown_peak, unknown_now - unknown_base)
+
+    diagnostics["per_role"]["backend"] = {
+        "provider_uds_peak_delta": client_peak,
+        "provider_uds_peak_fds_observed": sorted(peak_fds["backend"])}
+    diagnostics["per_role"]["gateway"] = {
+        "provider_uds_peak_delta": accepted_peak,
+        "provider_uds_peak_fds_observed": sorted(peak_fds["gateway"])}
+    diagnostics["provider_uds_session_fd_peak_delta_combined"] = combined_peak
+    diagnostics["unknown_fd_peak_delta"] = unknown_peak
+
+    if client_peak > UDS_CLIENT_PEAK_LIMIT:
+        violations.append(Violation(
+            scope="backend", metric="provider_uds_client_fd_peak_delta",
+            observed=client_peak, limit=UDS_CLIENT_PEAK_LIMIT,
+            detail={"fds_observed": sorted(peak_fds["backend"])}))
+    if accepted_peak > UDS_ACCEPTED_PEAK_LIMIT:
+        violations.append(Violation(
+            scope="gateway", metric="provider_uds_accepted_fd_peak_delta",
+            observed=accepted_peak, limit=UDS_ACCEPTED_PEAK_LIMIT,
+            detail={"fds_observed": sorted(peak_fds["gateway"])}))
+    if combined_peak > UDS_SESSION_COMBINED_PEAK_LIMIT:
         violations.append(Violation(
             scope="backend+gateway",
             metric="provider_uds_session_fd_peak_delta_combined",
-            observed=combined, limit=UDS_SESSION_COMBINED_PEAK_LIMIT))
+            observed=combined_peak, limit=UDS_SESSION_COMBINED_PEAK_LIMIT))
 
-    for role, (peak_limit, _) in RSS_LIMITS.items():
+    for role, limit in RSS_PEAK_LIMITS.items():
         base = baseline.get(role)
-        if base is None:
-            continue
-        peak_rss = base.rss_bytes
-        for sample in trace.samples:
-            point = sample.get(role)
-            if point is not None:
-                peak_rss = max(peak_rss, point.rss_bytes)
-        delta = peak_rss - base.rss_bytes
-        diagnostics["per_role"].setdefault(role, {})["rss_peak_delta"] = delta
-        if delta > peak_limit:
-            violations.append(Violation(
-                scope=role, metric="rss_peak_delta",
-                observed=delta, limit=peak_limit))
+        peak_rss = base.rss_bytes if base else None
+        for tick in trace.ticks:
+            snapshot = tick.processes.get(role)
+            if snapshot is not None and snapshot.rss_bytes is not None:
+                if peak_rss is None:
+                    peak_rss = snapshot.rss_bytes
+                else:
+                    peak_rss = max(peak_rss, snapshot.rss_bytes)
+        if peak_rss is not None and base is not None and base.rss_bytes is not None:
+            delta = peak_rss - base.rss_bytes
+            diagnostics["per_role"].setdefault(role, {})["rss_peak_delta"] = delta
+            if delta > limit:
+                violations.append(Violation(
+                    scope=role, metric="rss_peak_delta",
+                    observed=delta, limit=limit))
 
-    unknown_combined = 0
-    for role in ("backend", "gateway"):
+    for role in baseline:
         base = baseline.get(role)
-        if base is None:
-            continue
-        delta, numbers = _peak_fd_delta(base, trace, role, frozenset({FdKind.UNKNOWN}))
-        if delta > 0:
-            diagnostics["per_role"][role]["unknown_peak_fds"] = sorted(numbers)
-        unknown_combined += max(delta, 0)
-    diagnostics["unknown_fd_peak_delta_combined"] = unknown_combined
-
-    for role in ("backend", "gateway"):
-        base = baseline.get(role)
-        if base is None:
+        if base is None or base.fds is None:
             continue
         for kind in DIAGNOSTIC_KINDS:
-            delta, numbers = _peak_fd_delta(base, trace, role, frozenset({kind}))
-            if delta > 0:
-                diagnostics["per_role"][role].setdefault("diagnostic_peak_fds", {})[kind.value] = {
-                    "delta": delta, "fds": sorted(numbers)}
+            peak = 0
+            for tick in trace.ticks:
+                snapshot = tick.processes.get(role)
+                if snapshot is None or snapshot.fds is None:
+                    continue
+                now = sum(1 for item in snapshot.fds if item.kind is kind)
+                base_count = sum(1 for item in base.fds if item.kind is kind)
+                peak = max(peak, now - base_count)
+            if peak > 0:
+                diagnostics["per_role"].setdefault(
+                    role, {}).setdefault("diagnostic_peak_deltas", {})[kind.value] = peak
     return violations, diagnostics
 
 
 def evaluate_cleanup_policy(
     baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
 ) -> tuple[list[Violation], dict]:
-    """Judge the post-run end state after the settle window."""
+    """Judge the post-run end state after the settle window.
+
+    FD and thread counts must return to baseline EXACTLY: delta != 0 is a
+    violation in both directions, because a negative delta also proves the
+    resource did not return to the baseline state.
+    """
     violations: list[Violation] = []
     diagnostics: dict = {"per_role": {}}
+    if not trace.ticks:
+        return violations, diagnostics
+    final = trace.ticks[-1]
 
     combined_end = 0
     for role in ("backend", "gateway"):
         base = baseline.get(role)
-        end = _end_snapshot(trace, role)
+        end = final.processes.get(role)
         if base is None or end is None:
             continue
-        diagnostics["per_role"][role] = {
-            "total_fd_end_delta": end.total_fd_count - base.total_fd_count,
-            "thread_end_delta": end.thread_count - base.thread_count,
-            "rss_end_delta": end.rss_bytes - base.rss_bytes,
-        }
-        if end.total_fd_count - base.total_fd_count > TOTAL_FD_END_LIMIT:
-            violations.append(Violation(
-                scope=role, metric="total_fd_end_delta",
-                observed=end.total_fd_count - base.total_fd_count,
-                limit=TOTAL_FD_END_LIMIT))
-        if end.thread_count - base.thread_count > THREAD_END_LIMIT:
-            violations.append(Violation(
-                scope=role, metric="thread_end_delta",
-                observed=end.thread_count - base.thread_count,
-                limit=THREAD_END_LIMIT))
-        rss_end_limit = RSS_LIMITS[role][1]
-        if end.rss_bytes - base.rss_bytes > rss_end_limit:
-            violations.append(Violation(
-                scope=role, metric="rss_end_delta",
-                observed=end.rss_bytes - base.rss_bytes, limit=rss_end_limit))
-        kinds = frozenset({FdKind.PROVIDER_UDS_CLIENT, FdKind.PROVIDER_UDS_ACCEPTED})
-        combined_end += end.count(kinds) - base.count(kinds)
+        role_diagnostics: dict = {}
+        if end.status is not SnapshotStatus.VALID or base.status is not SnapshotStatus.VALID:
+            role_diagnostics["snapshot_status"] = (
+                end.status.value, base.status.value)
+        else:
+            if end.total_fd_count is not None and base.total_fd_count is not None:
+                delta = end.total_fd_count - base.total_fd_count
+                role_diagnostics["total_fd_end_delta"] = delta
+                if delta != TOTAL_FD_END_LIMIT:
+                    violations.append(Violation(
+                        scope=role, metric="total_fd_end_delta",
+                        observed=delta, limit=TOTAL_FD_END_LIMIT))
+            if end.thread_count is not None and base.thread_count is not None:
+                delta = end.thread_count - base.thread_count
+                role_diagnostics["thread_end_delta"] = delta
+                if delta != THREAD_END_LIMIT:
+                    violations.append(Violation(
+                        scope=role, metric="thread_end_delta",
+                        observed=delta, limit=THREAD_END_LIMIT))
+            if end.rss_bytes is not None and base.rss_bytes is not None:
+                delta = end.rss_bytes - base.rss_bytes
+                role_diagnostics["rss_end_delta"] = delta
+                if delta > RSS_END_LIMITS[role]:
+                    violations.append(Violation(
+                        scope=role, metric="rss_end_delta",
+                        observed=delta, limit=RSS_END_LIMITS[role]))
+            end_provider = _count(end, PROVIDER_SESSION_KINDS) or 0
+            base_provider = _count(base, PROVIDER_SESSION_KINDS) or 0
+            combined_end += end_provider - base_provider
+            role_diagnostics["provider_session_end_delta"] = (
+                end_provider - base_provider)
+        diagnostics["per_role"][role] = role_diagnostics
 
     diagnostics["provider_uds_session_fd_end_delta_combined"] = combined_end
-    if combined_end > UDS_SESSION_COMBINED_END_LIMIT:
+    if combined_end != UDS_SESSION_COMBINED_END_LIMIT:
         violations.append(Violation(
             scope="backend+gateway",
             metric="provider_uds_session_fd_end_delta_combined",
@@ -290,40 +299,72 @@ def evaluate_cleanup_policy(
     return violations, diagnostics
 
 
+def validate_measurement(
+    baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
+) -> tuple[str, list[str]]:
+    """Classify whether the observations can support any qualification."""
+    problems: list[str] = []
+    if not trace.ticks:
+        return "invalid", ["no_ticks"]
+    for role in baseline:
+        base = baseline.get(role)
+        if base is None:
+            problems.append(f"{role}_baseline_missing")
+            continue
+        if base.status is not SnapshotStatus.VALID:
+            problems.append(f"{role}_baseline_{base.status.value}")
+        if base.fds is None:
+            problems.append(f"{role}_baseline_fds_unreadable")
+    for index, tick in enumerate(trace.ticks):
+        for role, snapshot in tick.processes.items():
+            if snapshot.status is SnapshotStatus.INVALID:
+                problems.append(f"tick{index}_{role}_invalid")
+            elif snapshot.status is SnapshotStatus.PARTIAL:
+                problems.append(f"tick{index}_{role}_partial")
+        if not tick.unix_table_valid:
+            problems.append(f"tick{index}_unix_table_unavailable")
+    if any("invalid" in problem for problem in problems):
+        return "invalid", problems
+    return ("valid", []) if not problems else ("inconclusive", problems)
+
+
 def build_qualification_report(
     baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
+    *,
+    phase: str = "combined",
 ) -> GateReport:
-    """Combine peak + cleanup verdicts with fail-closed measurement status.
+    """Compose measurement validity with the phase-appropriate policies.
 
-    Client-side provider UDS sockets are first reclassified by session
-    correlation (see ``correlate_client_uds``); the raw trace itself is
-    never mutated, and the correlation evidence rides along in diagnostics.
+    ``phase='stress'`` judges peaks only; ``phase='cleanup'`` judges the
+    end state only; ``phase='combined'`` judges both. The stress trace's
+    final tick is never allowed to act as a cleanup verdict — that
+    conflation previously produced contradictory failed-with-no-violations
+    reports.
     """
-    trace = correlate_client_uds(trace)
-    peak_violations, peak_diagnostics = evaluate_peak_policy(baseline, trace)
-    cleanup_violations, cleanup_diagnostics = evaluate_cleanup_policy(baseline, trace)
-    unknown_peak = peak_diagnostics.get("unknown_fd_peak_delta_combined", 0)
-    if unknown_peak > 0:
-        measurement_status = "inconclusive"
-        qualification_status = "not_evaluated"
-    elif not trace.samples:
-        measurement_status = "invalid"
-        qualification_status = "not_evaluated"
+    measurement, problems = validate_measurement(baseline, trace)
+    peak_violations: list[Violation] = []
+    cleanup_violations: list[Violation] = []
+    diagnostics: dict = {"measurement_problems": problems, "phase": phase}
+    if measurement == "valid":
+        if phase in ("stress", "combined"):
+            peak_violations, peak_diagnostics = evaluate_peak_policy(baseline, trace)
+            diagnostics["peak"] = peak_diagnostics
+        if phase in ("cleanup", "combined"):
+            cleanup_violations, cleanup_diagnostics = evaluate_cleanup_policy(baseline, trace)
+            diagnostics["cleanup"] = cleanup_diagnostics
+    unknown_peak = diagnostics.get("peak", {}).get("unknown_fd_peak_delta", 0)
+    if measurement == "inconclusive" or unknown_peak > 0:
+        composed = ("inconclusive", "not_evaluated")
+    elif measurement == "invalid":
+        composed = ("invalid", "not_evaluated")
     elif peak_violations or cleanup_violations:
-        measurement_status = "valid"
-        qualification_status = "failed"
+        composed = ("valid", "failed")
     else:
-        measurement_status = "valid"
-        qualification_status = "passed"
+        composed = ("valid", "passed")
     return GateReport(
         metric_schema=METRIC_SCHEMA,
-        measurement_status=measurement_status,
-        qualification_status=qualification_status,
+        measurement_status=composed[0],
+        qualification_status=composed[1],
         peak_policy=peak_violations,
         cleanup_policy=cleanup_violations,
-        diagnostics={
-            "peak": peak_diagnostics,
-            "cleanup": cleanup_diagnostics,
-            "fd_correlation": dict(trace.fd_correlation_evidence),
-        },
-    )
+        diagnostics=diagnostics)

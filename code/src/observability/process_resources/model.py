@@ -13,11 +13,14 @@ from typing import Mapping
 class FdKind(Enum):
     """Classification of one file descriptor target.
 
-    POSTGRES_CLIENT_SOCKET (the backend's own libpq link to its postmaster)
-    is unreachable from pure /proc observation: a connected AF_UNIX client
-    socket has no bound path and is absent from /proc/net/unix. The value
-    exists for cooperative samplers that can call getsockname in-process;
-    external observers must leave such descriptors as SOCKET_OTHER.
+    The generic /proc collector distinguishes provider-path listeners and
+    provider-path connected sockets by bound path only. An *unbound* AF_UNIX
+    client (the backend provider end and the backend's own libpq link) has
+    no pathname and is kept as UNBOUND_UNIX_SOCKET; experiment-specific
+    attribution decides which of those are provider clients.
+
+    POSTGRES_CLIENT_SOCKET remains reserved for cooperative in-process
+    samplers (getsockname); external observers cannot produce it.
 
     UNKNOWN must stay the default for unrecognized targets so that
     fail-closed policies can reject unclassified observations instead of
@@ -25,8 +28,8 @@ class FdKind(Enum):
     """
 
     PROVIDER_UDS_LISTENER = "provider_uds_listener"
-    PROVIDER_UDS_CLIENT = "provider_uds_client"
-    PROVIDER_UDS_ACCEPTED = "provider_uds_accepted"
+    PROVIDER_UDS_CONNECTED = "provider_uds_connected"
+    UNBOUND_UNIX_SOCKET = "unbound_unix_socket"
     POSTGRES_CLIENT_SOCKET = "postgres_client_socket"
     RELATION_FILE = "relation_file"
     TOAST_RELATION_FILE = "toast_relation_file"
@@ -38,11 +41,16 @@ class FdKind(Enum):
     UNKNOWN = "unknown"
 
 
-PROVIDER_UDS_KINDS = frozenset({
-    FdKind.PROVIDER_UDS_LISTENER,
-    FdKind.PROVIDER_UDS_CLIENT,
-    FdKind.PROVIDER_UDS_ACCEPTED,
-})
+class SnapshotStatus(Enum):
+    """Explicit validity of one process snapshot.
+
+    A snapshot may never use zeros or empty sets to mean "could not read":
+    unreadable data stays ``None`` and the status says why.
+    """
+
+    VALID = "valid"
+    PARTIAL = "partial"
+    INVALID = "invalid"
 
 
 @dataclass(frozen=True)
@@ -57,19 +65,42 @@ class FdIdentity:
 
 
 @dataclass(frozen=True)
-class ProcessSnapshot:
-    """One point-in-time observation of a single process."""
+class PgFileClassificationContext:
+    """Filenodes the runner learned from PostgreSQL for exact classification.
 
+    Relation/toast classification matches these filenodes under the run's
+    own data directory instead of guessing from numeric basenames.
+    """
+
+    data_directory: str
+    relation_filenodes: frozenset[int] = frozenset()
+    toast_filenodes: frozenset[int] = frozenset()
+
+
+@dataclass(frozen=True)
+class ProcessSnapshot:
+    """One point-in-time observation of a single process.
+
+    ``rss_bytes``/``thread_count``/``fds`` are ``None`` exactly when they
+    could not be read; absent optionality means the value was observed.
+    """
+
+    pid: int
+    process_start_time_ticks: int | None
     monotonic_ns: int
-    rss_bytes: int
-    thread_count: int
-    fds: tuple[FdIdentity, ...]
+    status: SnapshotStatus
+    errors: tuple[str, ...] = ()
+    rss_bytes: int | None = None
+    thread_count: int | None = None
+    fds: tuple[FdIdentity, ...] | None = None
 
     @property
-    def total_fd_count(self) -> int:
-        return len(self.fds)
+    def total_fd_count(self) -> int | None:
+        return None if self.fds is None else len(self.fds)
 
-    def count(self, kinds: FdKind | frozenset[FdKind]) -> int:
+    def count(self, kinds: FdKind | frozenset[FdKind]) -> int | None:
+        if self.fds is None:
+            return None
         if isinstance(kinds, FdKind):
             kinds = frozenset({kinds})
         return sum(1 for item in self.fds if item.kind in kinds)
@@ -77,16 +108,78 @@ class ProcessSnapshot:
     def fd_numbers(self, kinds: FdKind | frozenset[FdKind]) -> frozenset[int]:
         if isinstance(kinds, FdKind):
             kinds = frozenset({kinds})
-        return frozenset(item.fd for item in self.fds if item.kind in kinds)
+        return frozenset(
+            item.fd for item in (self.fds or ()) if item.kind in kinds)
+
+
+@dataclass(frozen=True)
+class SampleTick:
+    """One simultaneous observation of every role under one shared view.
+
+    A tick reads ``/proc/net/unix`` once and then observes each role, so
+    socket-table lookups cannot disagree between roles within the tick.
+    """
+
+    monotonic_ns: int
+    unix_table_valid: bool
+    processes: Mapping[str, ProcessSnapshot]
+
+
+@dataclass(frozen=True)
+class StableBaseline:
+    """A baseline accepted only after the identity set stopped changing."""
+
+    ticks: tuple[SampleTick, ...]
+    baseline: Mapping[str, ProcessSnapshot]
+
+    @property
+    def rss_median(self) -> dict[str, int]:
+        medians: dict[str, int] = {}
+        for role, snapshot in self.baseline.items():
+            values = sorted(
+                tick.processes[role].rss_bytes or 0
+                for tick in self.ticks
+                if tick.processes.get(role) is not None
+                and tick.processes[role].rss_bytes is not None)
+            if values:
+                medians[role] = values[len(values) // 2]
+        return medians
+
+
+@dataclass(frozen=True)
+class CapturedError:
+    """Sanitized operation error: type, SQLSTATE, and a stable message."""
+
+    exception_type: str
+    sqlstate: str | None
+    message: str
+    phase: str
+
+
+@dataclass(frozen=True)
+class RecordedOperation:
+    """Operation outcome plus the trace, preserved even when it raised."""
+
+    result: object | None
+    operation_error: CapturedError | None
+    sampling_error: CapturedError | None
+    trace: "ResourceTrace"
 
 
 @dataclass(frozen=True)
 class ResourceTrace:
-    """Baseline plus sampled observations for every observed process role."""
+    """Baseline plus sampled ticks for every observed process role.
+
+    ``fd_correlation_evidence`` records post-hoc reclassification audits
+    (e.g. provider client attribution); empty for raw recorder output.
+    """
 
     baseline: Mapping[str, ProcessSnapshot]
-    samples: tuple[Mapping[str, ProcessSnapshot], ...]
-    # Audit evidence for post-hoc fd reclassification (e.g. provider client
-    # correlation); empty for raw traces straight from the recorder.
+    ticks: tuple[SampleTick, ...] = ()
+
+    @property
+    def samples(self) -> tuple[Mapping[str, ProcessSnapshot], ...]:
+        return tuple(dict(tick.processes) for tick in self.ticks)
+
     fd_correlation_evidence: Mapping[int, Mapping[str, object]] = field(
         default_factory=dict)

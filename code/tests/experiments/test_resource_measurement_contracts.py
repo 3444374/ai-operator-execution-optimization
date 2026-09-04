@@ -30,25 +30,35 @@ from src.experiments.postgresql.resource_qualification import (
 )
 
 
+from src.observability.process_resources.model import SampleTick, SnapshotStatus
+
+
+def _snapshot(pid, ns, fds):
+    return ProcessSnapshot(
+        pid=pid, process_start_time_ticks=pid, monotonic_ns=ns,
+        status=SnapshotStatus.VALID, rss_bytes=1_000_000, thread_count=1,
+        fds=tuple(fds))
+
+
 def snap(ns, backend_fds=(), gateway_fds=()):
-    return {
-        "backend": ProcessSnapshot(
-            monotonic_ns=ns, rss_bytes=1_000_000, thread_count=1,
-            fds=tuple(FdIdentity(fd=fd, target="socket:[1]",
-                                  kind=FdKind.PROVIDER_UDS_CLIENT)
-                      for fd in backend_fds)),
-        "gateway": ProcessSnapshot(
-            monotonic_ns=ns, rss_bytes=1_000_000, thread_count=1,
-            fds=tuple(FdIdentity(fd=fd, target="socket:[2]",
-                                  kind=FdKind.PROVIDER_UDS_ACCEPTED)
-                      for fd in gateway_fds)),
-    }
+    return SampleTick(
+        monotonic_ns=ns, unix_table_valid=True,
+        processes={
+            "backend": _snapshot(1, ns, tuple(
+                FdIdentity(fd=fd, target="socket:[1]",
+                           kind=FdKind.PROVIDER_UDS_CONNECTED)
+                for fd in backend_fds)),
+            "gateway": _snapshot(2, ns, tuple(
+                FdIdentity(fd=fd, target="socket:[2]",
+                           kind=FdKind.PROVIDER_UDS_CONNECTED)
+                for fd in gateway_fds)),
+        })
 
 
 def empty_baseline():
     return {
-        "backend": ProcessSnapshot(0, 1_000_000, 1, ()),
-        "gateway": ProcessSnapshot(0, 1_000_000, 1, ()),
+        "backend": _snapshot(1, 0, ()),
+        "gateway": _snapshot(2, 0, ()),
     }
 
 
@@ -58,7 +68,7 @@ class SameTickPeakContractTests(unittest.TestCase):
     def test_three_sequential_sessions_reusing_fd_numbers_peak_is_one(self):
         # Rounds execute strictly sequentially: fd 18 closes before 19 opens.
         # The union-of-history implementation reports 3; the true peak is 1.
-        trace = ResourceTrace(baseline=empty_baseline(), samples=(
+        trace = ResourceTrace(baseline=empty_baseline(), ticks=(
             snap(1, backend_fds=(18,), gateway_fds=(4,)),
             snap(2, backend_fds=(), gateway_fds=()),
             snap(3, backend_fds=(19,), gateway_fds=(4,)),
@@ -78,7 +88,7 @@ class SameTickPeakContractTests(unittest.TestCase):
         # backend +1 on tick A only, gateway +1 on tick B only: the combined
         # peak per tick is 1, and per-role historical maxima (1 + 1) may not
         # be added across different ticks to manufacture a violation.
-        trace = ResourceTrace(baseline=empty_baseline(), samples=(
+        trace = ResourceTrace(baseline=empty_baseline(), ticks=(
             snap(1, backend_fds=(18,), gateway_fds=()),
             snap(2, backend_fds=(), gateway_fds=(4,)),
         ))
@@ -88,7 +98,7 @@ class SameTickPeakContractTests(unittest.TestCase):
             "combined peak must be computed within one tick")
 
     def test_combined_three_in_one_tick_fails(self):
-        trace = ResourceTrace(baseline=empty_baseline(), samples=(
+        trace = ResourceTrace(baseline=empty_baseline(), ticks=(
             snap(1, backend_fds=(18, 19), gateway_fds=(4,)),
         ))
         violations, _ = evaluate_peak_policy(trace.baseline, trace)
@@ -110,10 +120,10 @@ class ProcFailureContractTests(unittest.TestCase):
                         "ProcessSnapshot must carry the pid it observed")
 
     def test_invalid_snapshot_cannot_compose_a_passing_report(self):
-        trace = ResourceTrace(baseline=empty_baseline(), samples=(snap(1),))
+        trace = ResourceTrace(baseline=empty_baseline(), ticks=(snap(1),))
         # A tick flagged invalid/partial must force invalid/inconclusive
         # overall, never valid/passed.
-        pending = getattr(trace.samples[0]["backend"], "status", None)
+        pending = getattr(trace.ticks[0].processes["backend"], "status", None)
         if pending is None:
             self.fail("cannot express an invalid tick in the current model")
 
@@ -123,15 +133,23 @@ class OperationFailureContractTests(unittest.TestCase):
 
     def test_record_operation_returns_trace_on_operation_error(self):
         from src.observability.process_resources.recorder import record_operation
+        from src.observability.process_resources.model import SampleTick, SnapshotStatus
 
-        def sampler(role, monotonic_ns):
-            return ProcessSnapshot(monotonic_ns, 1_000_000, 1, ())
+        class FakeTickSampler:
+            def sample_all(self, monotonic_ns):
+                return SampleTick(
+                    monotonic_ns=monotonic_ns, unix_table_valid=True,
+                    processes={"backend": ProcessSnapshot(
+                        pid=1, process_start_time_ticks=1,
+                        monotonic_ns=monotonic_ns,
+                        status=SnapshotStatus.VALID, rss_bytes=1,
+                        thread_count=1, fds=())})
 
         def failing():
             raise RuntimeError("sentinel")
 
         recorded = record_operation(
-            sampler, ("backend",), failing, sample_seconds=0)
+            FakeTickSampler(), failing, sample_seconds=0)
         self.assertIsNotNone(getattr(recorded, "trace", None),
                              "the recorded result must expose the trace")
         self.assertIsNotNone(getattr(recorded, "operation_error", None),
@@ -145,13 +163,13 @@ class StatusCompositionContractTests(unittest.TestCase):
     def test_illegal_combinations_are_rejected(self):
         from src.experiments.postgresql.resource_qualification import (
             compose_status)
-        self.assertEqual(compose_status("inconclusive", "passed"), None)
-        self.assertEqual(compose_status("invalid", "failed"), None)
+        self.assertEqual(compose_status(("inconclusive", "passed")), None)
+        self.assertEqual(compose_status(("invalid", "failed")), None)
 
     def test_priority_invalid_beats_everything(self):
         from src.experiments.postgresql.resource_qualification import (
             compose_status)
-        self.assertEqual(compose_status("invalid", "not_evaluated"),
+        self.assertEqual(compose_status(("invalid", "not_evaluated")),
                          ("invalid", "not_evaluated"))
 
 
