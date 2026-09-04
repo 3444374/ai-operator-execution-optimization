@@ -553,8 +553,9 @@ def run_disconnect_case(args, connection, user, fixture_path):
                                recovery_events),
                recovery_root, "gateway", env, user) as gateway:
         wait_file(recovery_socket, gateway)
-        sampler = _sampler_for({"backend_pid": connection.info.backend_pid},
-                               connection, gateway, recovery_socket, pg_context)
+        sampler = _sampler_for(
+            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
+            recovery_socket, pg_context)
         baseline_capture, _ = acquire_stable_baseline(sampler)
 
         def recovery():
@@ -654,8 +655,9 @@ def run_exit_case(args, connection, user, fixture_path):
                                recovery_events),
                recovery_root, "gateway", env, user) as gateway:
         wait_file(recovery_socket, gateway)
-        sampler = _sampler_for({"backend_pid": connection.info.backend_pid},
-                               connection, gateway, recovery_socket, pg_context)
+        sampler = _sampler_for(
+            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
+            recovery_socket, pg_context)
         baseline_capture, _ = acquire_stable_baseline(sampler)
 
         def recovery():
