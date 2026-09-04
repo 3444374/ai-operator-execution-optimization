@@ -55,11 +55,14 @@ fixture-only 主压力没有调用模型，功能传输完成：
 不超过 32/16 MiB，PostgreSQL backend peak/end RSS 增量不超过 16/8 MiB，backend 与 gateway 的 UDS FD
 合计 peak/end 增量不超过 2/0。
 
-本轮同步已补齐失败采样：`raw/semmap_res2/stress/measurements.tar.gz` 内含全部 93 个
-`measurements-attempt-*.json`（每文件含 baseline/peaks/samples/ violations 全字段），`raw/semmap_res2/`
-下完整 summary/log 已落盘（SHA256SUMS 登记 tar 包与散件哈希）。采样显示 93 次均记录
+本轮同步已补齐失败采样：`raw/semmap_res2/stress/measurements-aggregate.json` 收录全部 93 个
+attempt 的 violations/baseline/peaks/ending/tasks/sessions 与 samples 计数；attempt 1/47/93 三个
+代表文件以散件保留（每文件含完整 1,534 条 samples 时间序列）。`raw/semmap_res2/` 下完整
+summary/log 已落盘。采样显示 93 次均记录
 `metric=uds_peak_delta, extra_metric=fd, observed=3, limit=2`，即 `gateway+backend.uds_peak_delta`
-超过阈值，因此当前仍不能判定为通过。
+超过阈值，因此当前仍不能判定为通过。全部 93 个原始 attempt 文件（tar SHA-256 `cffd58c9…`）
+与完整精选证据包（bundle SHA-256 `c1cd4218…`）保存在仓库外服务器 artifact
+`semmap_4d_b19486a1_20260904`。
 
 按照停止条件，本轮没有重跑资源压力，也没有继续执行后置的 fixture 取消、provider 断连和 gateway
 退出/恢复子项。失败后 client、gateway 和 PG18.3 集群均已停止，端口和 UDS listener 已释放。

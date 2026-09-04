@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/resource/resource_checks.py", line 405, in <module>
+    main()
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/resource/resource_checks.py", line 401, in main
+    run(parser.parse_args())
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/resource/resource_checks.py", line 378, in run
+    stress_result = stress(args, connection, user, fixture_path, digest)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/resource/resource_checks.py", line 250, in stress
+    raise AssertionError(f"resource recovery did not meet limits: {last_error}")
+AssertionError: resource recovery did not meet limits: 

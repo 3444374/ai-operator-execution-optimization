@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 432, in <module>
+    main()
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 428, in main
+    run(parser.parse_args())
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 266, in run
+    warmup = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.ConnectionFailure: SemLoom provider disconnected before completing a frame

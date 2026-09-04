@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run5.py", line 446, in <module>
+    main()
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run5.py", line 442, in main
+    run(parser.parse_args())
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run5.py", line 289, in run
+    rows = connection.execute(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.FeatureNotSupported: query shape is outside the current SemMap capability
+DETAIL:  Only a single-table SELECT or INSERT ... SELECT with ordinary filters, projections, and LIMIT is supported.

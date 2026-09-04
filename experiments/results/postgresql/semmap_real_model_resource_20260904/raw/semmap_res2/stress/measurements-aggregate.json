@@ -1,0 +1,6335 @@
+{
+  "source": "measurements.tar.gz (93 attempts, sha256 98b89411eb4be829d48af2253a9fdd85b63b1a4b7aff8127a914c3ede6430d32)",
+  "attempts_total": 93,
+  "kept_loose": [
+    "measurements-attempt-1.json",
+    "measurements-attempt-47.json",
+    "measurements-attempt-93.json"
+  ],
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 10,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 11,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 12,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 13,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 14,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 15,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 16,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 17,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 18,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 19,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 2,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 20,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 21,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 22,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 23,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 24,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 25,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 26,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 27,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 28,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 29,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 3,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 30,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 31,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 32,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 33,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 34,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 35,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 36,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 37,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 38,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 39,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 4,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 40,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 41,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 42,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 43,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 44,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 45,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 46,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 47,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 48,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 49,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 5,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 50,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 51,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 52,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 53,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 54,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 55,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 56,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 57,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 58,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 59,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 6,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 60,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 61,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 62,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 63,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 64,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 65,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 66,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 67,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 68,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 69,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 7,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 70,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 71,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 72,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 73,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 74,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 75,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 76,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 77,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 78,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 79,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 8,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 80,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 81,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 82,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 83,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 84,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 85,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 86,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 87,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 88,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 89,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 9,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 90,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 91,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 92,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    },
+    {
+      "attempt": 93,
+      "violations": [
+        {
+          "scope": "gateway+backend",
+          "metric": "uds_peak_delta",
+          "observed": 3,
+          "limit": 2,
+          "base_uds": 22,
+          "peak_uds": 25,
+          "extra_metric": "fd"
+        }
+      ],
+      "tasks": 6001,
+      "sessions": 4,
+      "baseline": {
+        "backend": {
+          "rss_bytes": 17260544,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22736896,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "peaks": {
+        "backend": {
+          "rss_bytes": 17575936,
+          "fd": 19,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 23568384,
+          "fd": 6,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "ending": {
+        "backend": {
+          "rss_bytes": 17313792,
+          "fd": 17,
+          "threads": 1
+        },
+        "gateway": {
+          "rss_bytes": 22900736,
+          "fd": 5,
+          "threads": 1
+        },
+        "client": {
+          "rss_bytes": 1339392,
+          "fd": 4,
+          "threads": 1
+        }
+      },
+      "samples_count": 1534
+    }
+  ]
+}

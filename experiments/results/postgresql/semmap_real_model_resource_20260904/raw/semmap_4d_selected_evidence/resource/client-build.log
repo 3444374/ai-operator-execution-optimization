@@ -1,0 +1,5 @@
+/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/resource/resource_client.c: In function ‘wait_for_file’:
+/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/resource/resource_client.c:30:9: error: implicit declaration of function ‘nanosleep’ [-Werror=implicit-function-declaration]
+   30 |         nanosleep(&delay, NULL);
+      |         ^~~~~~~~~
+cc1: all warnings being treated as errors

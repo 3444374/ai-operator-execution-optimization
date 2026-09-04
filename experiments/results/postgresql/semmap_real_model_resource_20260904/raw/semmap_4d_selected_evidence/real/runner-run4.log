@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 432, in <module>
+    main()
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 428, in main
+    run(parser.parse_args())
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 270, in run
+    verify_success_pairs(current, ["warmup"], [warmup], tokenizer)
+  File "/root/autodl-tmp/experiment-artifacts/semmap_4d_b19486a1_20260904/real/real_checks_run2.py", line 186, in verify_success_pairs
+    assert completion["prompt_tokens"] == len(rendered)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,5 @@
+{"event":"warmup_complete","backend_pid":5250}
+{"event":"round_complete","round":1,"rows":2000}
+{"event":"round_complete","round":2,"rows":2000}
+{"event":"round_complete","round":3,"rows":2000}
+{"event":"all_complete","rows":6000}
