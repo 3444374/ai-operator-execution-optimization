@@ -118,5 +118,49 @@ class OneArtifactTests(unittest.TestCase):
         self.assertIn("cleanup", source)
 
 
+class BaselineFailureIsInvalidTests(unittest.TestCase):
+    """Audit finding: the two recovery subphases dereferenced
+    acquire_stable_baseline's result without a None check — a baseline
+    timeout crashed the runner (exit 1, colliding with valid/failed)
+    instead of producing an invalid verdict. Every call site must check."""
+
+    def test_every_baseline_call_site_checks_none(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        calls = source.count("acquire_stable_baseline(sampler)")
+        checks = source.count("if baseline_capture is None:")
+        self.assertGreaterEqual(checks, calls,
+                                f"{calls} baseline calls vs {checks} None checks")
+
+    def test_stress_persists_before_fatal_checks(self):
+        # The stress case must persist trace/lifecycles/outcome BEFORE
+        # client.wait/wait_gateway_events — anything that can raise must
+        # sit after the raw evidence is on disk.
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        stress_body = source.split("def run_stress_case", 1)[1] \
+                            .split("def run_cancel_case", 1)[0]
+        first_persist = stress_body.index('persist_trace(root / "raw"')
+        client_wait = stress_body.index("client.wait(timeout=30)")
+        events_wait = stress_body.index("events = wait_gateway_events(")
+        self.assertLess(first_persist, client_wait)
+        self.assertLess(first_persist, events_wait)
+
+    def test_exit_case_alive_phase_persists_before_terminate(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        exit_body = source.split("def run_exit_case", 1)[1] \
+                         .split("def _is_unsafe", 1)[0]
+        alive_persist = exit_body.index('persist_trace(root / "raw_alive"')
+        terminate = exit_body.index("gateway.terminate()")
+        self.assertLess(alive_persist, terminate)
+
+
+class WorseMeasurementTests(unittest.TestCase):
+    def test_invalid_beats_inconclusive_beats_valid(self):
+        self.assertEqual(runner._worse_measurement("valid", "invalid"), "invalid")
+        self.assertEqual(
+            runner._worse_measurement("valid", "inconclusive"), "inconclusive")
+        self.assertEqual(runner._worse_measurement("valid", None), "valid")
+        self.assertEqual(runner._worse_measurement(None, None), None)
+
+
 if __name__ == "__main__":
     unittest.main()

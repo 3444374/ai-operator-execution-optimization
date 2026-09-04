@@ -409,6 +409,12 @@ def run_stress_case(args, connection, user, fixture_path, expected_digest):
             recorded = record_operation(
                 sampler, run_rounds, sample_seconds=SAMPLE_SECONDS,
                 baseline=baseline_capture.baseline)
+            # Persist the stress evidence BEFORE anything that can kill the
+            # runner (client wait, event settle) — an exception here must
+            # never lose the trace.
+            persist_trace(root / "raw", recorded.trace)
+            persist_lifecycles(root / "raw", recorded.trace)
+            persist_operation_outcome(root / "raw", recorded, "stress")
             finish.touch(exist_ok=False)
             client.wait(timeout=30)
 
@@ -587,28 +593,39 @@ def run_disconnect_case(args, connection, user, fixture_path):
             {"backend": connection.info.backend_pid, "gateway": gateway.pid},
             recovery_socket, pg_context)
         baseline_capture, _ = acquire_stable_baseline(sampler)
+        if baseline_capture is None:
+            recovery_report = {
+                "case": "provider_disconnect_and_recovery/recovery",
+                "measurement_status": "invalid",
+                "qualification_status": "not_evaluated",
+                "reason": "stable baseline not achieved (recovery subphase)",
+            }
+            save(recovery_root / "gate_report.json", recovery_report)
+        else:
+            def recovery():
+                value = query_one(connection, recovery_socket)
+                return {"len": len(value)}
 
-        def recovery():
-            value = query_one(connection, recovery_socket)
-            return {"len": len(value)}
-
-        recorded = record_operation(
-            sampler, recovery, sample_seconds=SAMPLE_SECONDS,
-            baseline=baseline_capture.baseline)
-        events = load_session_events(recovery_events)
-        cleanup_trace = _cleanup_settle(sampler, recovery_root, "recovery", baseline_capture.baseline)
-        recovery_report = _evaluate_case(
-            case_name="provider_disconnect_and_recovery/recovery",
-            root=recovery_root, baseline_capture=baseline_capture,
-            recorded=recorded, windows=session_windows(events),
-            correctness=(
-                [] if recorded.operation_error is None
-                else [{"metric": "recovery_query_failed"}]),
-            cleanup_trace=cleanup_trace)
+            recorded = record_operation(
+                sampler, recovery, sample_seconds=SAMPLE_SECONDS,
+                baseline=baseline_capture.baseline)
+            events = load_session_events(recovery_events)
+            cleanup_trace = _cleanup_settle(sampler, recovery_root, "recovery", baseline_capture.baseline)
+            recovery_report = _evaluate_case(
+                case_name="provider_disconnect_and_recovery/recovery",
+                root=recovery_root, baseline_capture=baseline_capture,
+                recorded=recorded, windows=session_windows(events),
+                correctness=(
+                    [] if recorded.operation_error is None
+                    else [{"metric": "recovery_query_failed"}]),
+                cleanup_trace=cleanup_trace)
         gateway.terminate()
         gateway.wait(timeout=10)
     if recovery_report["qualification_status"] != "passed":
         report["qualification_status"] = "failed"
+    report["measurement_status"] = _worse_measurement(
+        report.get("measurement_status"),
+        recovery_report["measurement_status"])
     report["recovery"] = {
         "measurement_status": recovery_report["measurement_status"],
         "qualification_status": recovery_report["qualification_status"]}
@@ -650,10 +667,16 @@ def run_exit_case(args, connection, user, fixture_path):
         recorded = record_operation(
             sampler, warm, sample_seconds=SAMPLE_SECONDS,
             baseline=baseline_capture.baseline)
+        # Persist the alive-phase evidence BEFORE anything that can kill
+        # the runner: terminate/wait/path-assert must never lose the trace.
+        persist_trace(root / "raw_alive", recorded.trace)
+        persist_operation_outcome(root / "raw_alive", recorded,
+                                  "gateway_exit/alive")
+        events = load_session_events(event_path)
         wait_gateway_events(event_path, tasks=1, sessions_ended=1, timeout=10)
         gateway.terminate()
         gateway.wait(timeout=10)
-        assert not socket_path.exists()
+        socket_path_gone = not socket_path.exists()
 
     # Absent phase: only the backend's socket cleanup and the SQLSTATE contract.
     absent_ticks = []
@@ -689,24 +712,32 @@ def run_exit_case(args, connection, user, fixture_path):
             {"backend": connection.info.backend_pid, "gateway": gateway.pid},
             recovery_socket, pg_context)
         baseline_capture, _ = acquire_stable_baseline(sampler)
+        if baseline_capture is None:
+            recovery_report = {
+                "case": "gateway_exit_and_recovery/recovery",
+                "measurement_status": "invalid",
+                "qualification_status": "not_evaluated",
+                "reason": "stable baseline not achieved (recovery subphase)",
+            }
+            save(recovery_root / "gate_report.json", recovery_report)
+        else:
+            def recovery():
+                value = query_one(connection, recovery_socket)
+                return {"len": len(value)}
 
-        def recovery():
-            value = query_one(connection, recovery_socket)
-            return {"len": len(value)}
-
-        recorded_recovery = record_operation(
-            sampler, recovery, sample_seconds=SAMPLE_SECONDS,
-            baseline=baseline_capture.baseline)
-        events = load_session_events(recovery_events)
-        cleanup_trace = _cleanup_settle(sampler, recovery_root, "recovery", baseline_capture.baseline)
-        recovery_report = _evaluate_case(
-            case_name="gateway_exit_and_recovery/recovery",
-            root=recovery_root, baseline_capture=baseline_capture,
-            recorded=recorded_recovery, windows=session_windows(events),
-            correctness=(
-                [] if recorded_recovery.operation_error is None
-                else [{"metric": "recovery_query_failed"}]),
-            cleanup_trace=cleanup_trace)
+            recorded_recovery = record_operation(
+                sampler, recovery, sample_seconds=SAMPLE_SECONDS,
+                baseline=baseline_capture.baseline)
+            events = load_session_events(recovery_events)
+            cleanup_trace = _cleanup_settle(sampler, recovery_root, "recovery", baseline_capture.baseline)
+            recovery_report = _evaluate_case(
+                case_name="gateway_exit_and_recovery/recovery",
+                root=recovery_root, baseline_capture=baseline_capture,
+                recorded=recorded_recovery, windows=session_windows(events),
+                correctness=(
+                    [] if recorded_recovery.operation_error is None
+                    else [{"metric": "recovery_query_failed"}]),
+                cleanup_trace=cleanup_trace)
         gateway.terminate()
         gateway.wait(timeout=10)
 
@@ -717,14 +748,17 @@ def run_exit_case(args, connection, user, fixture_path):
         correctness.append({"metric": "sqlstate_contract",
                             "expected": GATEWAY_EXIT_SQLSTATE,
                             "observed": absent_sqlstate})
+    if not socket_path_gone:
+        correctness.append({"metric": "socket_path_not_removed"})
     report = {
         "case": "gateway_exit_and_recovery",
         "metric_schema": METRIC_SCHEMA,
-        "measurement_status": recovery_report["measurement_status"],
+        "measurement_status": _worse_measurement(
+            recovery_report["measurement_status"], None),
         "qualification_status": recovery_report["qualification_status"],
         "correctness_failures": correctness,
         "post_exit_sqlstate": absent_sqlstate,
-        "socket_path_removed": not socket_path.exists(),
+        "socket_path_removed": socket_path_gone,
         "recovery": {"qualification_status":
                      recovery_report["qualification_status"]},
     }
@@ -739,6 +773,16 @@ def _is_unsafe(case_result) -> bool:
         if violation.get("metric") in SAFETY_METRICS:
             return True
     return False
+
+
+def _worse_measurement(*statuses):
+    """Combine measurement statuses under invalid > inconclusive > valid."""
+    values = [s for s in statuses if s]
+    if "invalid" in values:
+        return "invalid"
+    if "inconclusive" in values:
+        return "inconclusive"
+    return values[0] if values else None
 
 
 def _exit_code(summary) -> int:
