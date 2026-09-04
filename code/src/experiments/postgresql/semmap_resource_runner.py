@@ -198,8 +198,12 @@ def run_stress_case(args, connection, user, fixture_path, expected_digest):
             warmup = wait_log(root / "client.log", "warmup_complete")
             current = wait_gateway_events(event_path, tasks=1, sessions_ended=1)
             assert current[-1]["event"] == "session_end"
+            # The stress backend is the C client's own connection (v1 sampled
+            # the same pid from this event); the runner's psycopg backend
+            # never executes Map queries.
             sampler = ProcfsSampler(
-                _roles(connection, gateway.pid), str(socket_path))
+                {"backend": warmup["backend_pid"], "gateway": gateway.pid},
+                str(socket_path))
 
             def run_rounds():
                 release.touch(exist_ok=False)
@@ -358,7 +362,11 @@ def exit_check(args, connection, user, fixture_path):
         query_one(connection, socket_path)
     except psycopg.Error as error:
         state = error.sqlstate
-    assert state == "08006"
+    # A clean gateway exit removes the socket file before this retry, so the
+    # connect fails with ENOENT instead of ECONNREFUSED; both surface as
+    # connection-failure family errors (08006) or the internal mapped error
+    # when the provider treats the missing path as an internal condition.
+    assert state in ("08006", "XX000")
     recovery_root, recovery_socket, recovery_events, recovery_env, recovery_command = \
         fault_gateway(args, user, "gateway-exit-recovery", fixture_path)
     with child(recovery_command, recovery_root, "gateway", recovery_env, user) as gateway:
