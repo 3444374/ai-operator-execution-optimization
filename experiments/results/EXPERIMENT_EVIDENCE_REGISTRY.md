@@ -14,7 +14,8 @@
 
 同轮 fixture-only 资源运行完成 1 个 warmup 和 3×2,000 个 task，每个输入/输出为 100,000/65,536
 bytes，C 客户端使用 libpq single-row mode；但是 60 秒恢复窗口结束时至少一项固定 RSS/FD 条件未满足。
-后续已同步到 `raw/semmap_res2/stress/measurements-attempt-*.json`，明确超限项为 `gateway+backend.uds_peak_delta`
+后续已同步到 `raw/semmap_res2/stress/measurements-aggregate.json`（93 个 attempt 全部
+violations/baseline/peaks/ending 摘要）及 attempt 1/47/93 代表散件，明确超限项为 `gateway+backend.uds_peak_delta`
 （observed 3/limit 2，额外字段 `fd`）；取消/断连/gateway-exit 子项按停止条件未运行。
 因此四 D 仍不完整，不能进入可组合执行资格。原始失败、模型账本和清理证据均保留，未放宽阈值重跑。
 已纳入 main 的 [Map C v5/PG golden 切片](postgresql/semmap_pg_wire_20260903/README.md)原资格绑定 `5031bb50`：
