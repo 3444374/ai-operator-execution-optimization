@@ -114,6 +114,27 @@ class AttributionTests(unittest.TestCase):
             windows=session_windows(_events([(100, 200, 1, 777)])))
         self.assertIsNone(attribution)
 
+
+    def test_window_without_ticks_is_unobservable_not_fatal(self):
+        # The warmup session closes in ~44ms; no sampler tick lands inside.
+        # Attribution must still succeed for the observed sessions.
+        run = self._trace([
+            self._tick(500, backend=(_unbound(17, 4001),),
+                       gateway=(_connected(5, 777),)),
+        ])
+        events = _events([(100, 150, 1, 777),   # warmup: no ticks inside
+                           (400, 600, 1, 777)])  # observed session
+        attribution = attribute_provider_sessions(
+            backend_pid=1, baseline=run.baseline, trace=run,
+            windows=session_windows(events))
+        self.assertIsNotNone(attribution)
+        notes = [s.get("note") for s in attribution["sessions"]]
+        self.assertIn("no_ticks_in_window", notes)
+        attributed = [s["attributed"] for s in attribution["sessions"]
+                      if s["attributed"]]
+        self.assertEqual(len(attributed), 1)
+        self.assertEqual(attributed[0]["fd"], 17)
+
     def test_baseline_unbound_socket_is_not_a_candidate(self):
         base = {"backend": _snap(1, 0, (_unbound(8, 3000),)),
                 "gateway": _snap(2, 0, ())}

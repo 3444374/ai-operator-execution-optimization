@@ -111,9 +111,11 @@ def attribute_provider_sessions(
     attribution: dict = {"sessions": [], "problems": problems}
     for window in windows:
         candidates: dict[int, FdIdentity] = {}
+        ticks_in_window = 0
         for tick in trace.ticks:
             if not (window.start_ns <= tick.monotonic_ns <= window.end_ns):
                 continue
+            ticks_in_window += 1
             backend = tick.processes.get("backend")
             if backend is None or backend.fds is None:
                 continue
@@ -123,6 +125,15 @@ def attribute_provider_sessions(
                 if (item.kind is FdKind.UNBOUND_UNIX_SOCKET
                         and item.fd not in base_unbound):
                     candidates.setdefault(item.fd, item)
+        if ticks_in_window == 0:
+            # A window the sampler never observed (e.g. the sub-100ms warmup)
+            # is unobservable, not ambiguous: record it and continue.
+            attribution["sessions"].append({
+                "session_id": window.session_id,
+                "candidate_fds": [],
+                "attributed": None,
+                "note": "no_ticks_in_window"})
+            continue
         if len(candidates) != 1:
             problems.append(
                 f"session{window.session_id}_candidates_{len(candidates)}")
