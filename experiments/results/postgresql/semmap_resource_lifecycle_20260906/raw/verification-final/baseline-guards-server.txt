@@ -1,0 +1,6 @@
+test_phase_baseline_rejects_missing_changing_listener_and_live_accepted (__main__.LifecycleTests.test_phase_baseline_rejects_missing_changing_listener_and_live_accepted) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.242s
+
+OK

@@ -1,0 +1,21 @@
+{
+  "runtime_source_commit": "77a123de21af2f19eacad207a310109393d0894c",
+  "test_source_sha256": "32a4744e661cd0c1d445bcd2bd502e060d6027193b8dba94f4002da4b2289639",
+  "test": "LifecycleTests.test_phase_baseline_rejects_missing_changing_listener_and_live_accepted",
+  "local": {
+    "run": 1,
+    "failures": 0,
+    "errors": 0
+  },
+  "linux": {
+    "run": 1,
+    "failures": 0,
+    "errors": 0
+  },
+  "subcases": [
+    "missing_listener",
+    "changing_listener_identity",
+    "active_accepted_socket"
+  ],
+  "note": "Added after full suites; same runtime code. Count once in each platform total."
+}

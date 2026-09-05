@@ -8,9 +8,9 @@
 
 ## SemMap resource measurement repair (2026-09-06)
 
-[Lifecycle repair evidence](postgresql/semmap_resource_lifecycle_20260906/README.md) records the controlled
-local tests, independent result-directory ownership and complete phase assessment. Linux/PG18.3 diagnostic
-results remain pending; no formal resource qualification is claimed.
+[Lifecycle repair evidence](postgresql/semmap_resource_lifecycle_20260906/README.md) records the completed
+tool repair, controlled tests and isolated PG18.3 fixture diagnostic at `77a123de`: actual 1×100, all nine
+required phases valid/passed, zero model requests. Formal 3×2000 remains unrun and requires separate authorization.
 
 ## PostgreSQL 生成型 Map 真实模型与资源检查（2026-09-04）
 

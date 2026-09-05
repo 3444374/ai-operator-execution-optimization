@@ -9093,3 +9093,15 @@ Linux 上 126 项相关检查通过；私有 PG18.3 按 -O2 -Werror 构建通过
 第二次1×100诊断绑定72c665a0：全部阶段测量有效，所有资源条件通过，唯一失败是absent-path期待08006
 而实际XX000。核对已有PG TAP的missing-UDS断言及shared connect错误分支，确认runner混淆首次连接
 失败与建立连接后断开。独立修订phase-lifecycle-3只更正该场景期待为XX000，生产路径和旧失败不改。
+
+第三次隔离PG18.3诊断绑定77a123de：实际1×100，输入/输出100000/65536 bytes，四场景九阶段
+全部valid/passed，模型请求0。所有清理阶段保持原PID/start-time，最终FD identity匹配原基线，
+FD/线程增量0；运行结束后本轮进程均退出。原始哈希在服务器原地复算均匹配，公开部分只保存
+允许字段的统计和哈希，不导出私有日志或payload。事件观察中的eventpoll已保留身份/时序，来源仍待验证。
+
+最终相关验证集合：本地119项（117通过、2项Linux跳过）、Linux130项通过；118/129项绑定77a123de，
+后增1项listener缺失/变更/accepted未清的基线回归另记测试源码hash。保存中间构建、测试和诊断失败，
+修复测试驱动工作目录后完整组通过。两轴审查提出的实质问题已关闭。
+详细结果与R1–R7/T01–T20映射见
+[资源工具验收记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md)。
+正式3×2000未授权、未执行，完整资源资格与四D仍pending；本轮没有push或改写原分支历史。

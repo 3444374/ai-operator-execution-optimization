@@ -77,6 +77,29 @@ class LifecycleTests(unittest.TestCase):
             state="completed",measurement_status="valid",policy_status="passed",safe=True)])
         self.assertEqual(complete["assessment"]["qualification_status"],"passed")
 
+    def test_phase_baseline_rejects_missing_changing_listener_and_live_accepted(self):
+        for scenario in ("missing", "changing", "accepted"):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                workload = ControlledWorkload()
+                class Sampler:
+                    def sample_all(self, ns):
+                        value = workload.sample_all(ns)
+                        gateway = value.processes["gateway"]
+                        if scenario == "missing":
+                            resources = ()
+                        elif scenario == "changing":
+                            inode = 100 + workload.sample_count
+                            resources = (FdIdentity(3, f"socket:[{inode}]", FdKind.PROVIDER_UDS_LISTENER, inode),)
+                        else:
+                            resources = gateway.fds + (FdIdentity(5, "socket:[5]", FdKind.PROVIDER_UDS_CONNECTED, 5),)
+                        return replace(value, processes={**value.processes, "gateway": replace(gateway, fds=resources)})
+                called = []
+                result = execute_phase(root=Path(directory)/"phase", phase="operation", spec=FAST,
+                    sampler=Sampler(), operation=lambda: called.append(True), events=lambda: [])
+                self.assertEqual(result.measurement_status, "invalid")
+                self.assertIn("stable_baseline_unavailable", result.problems)
+                self.assertEqual(called, [])
+
     def test_invalid_original_survives_failed_recovery(self):
         value = assess_phases(("fault","recovery"), [
             PhaseResult("fault","completed","invalid","not_evaluated",problems=("gap",)),

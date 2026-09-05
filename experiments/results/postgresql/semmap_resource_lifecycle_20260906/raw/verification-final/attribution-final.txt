@@ -1,0 +1,22 @@
+test_failed_attribution_forces_inconclusive_not_passed (test_provider_session_attribution.AttributionFailureIsInconclusiveTests.test_failed_attribution_forces_inconclusive_not_passed) ... ok
+test_duplicate_orphan_and_unclosed_events_are_rejected (test_provider_session_attribution.AttributionIdentityTests.test_duplicate_orphan_and_unclosed_events_are_rejected) ... ok
+test_endpoints_in_different_ticks_cannot_be_paired (test_provider_session_attribution.AttributionIdentityTests.test_endpoints_in_different_ticks_cannot_be_paired) ... ok
+test_post_session_residual_remains_in_cleanup_evidence (test_provider_session_attribution.AttributionIdentityTests.test_post_session_residual_remains_in_cleanup_evidence) ... ok
+test_reused_baseline_fd_with_new_inode_is_new_candidate (test_provider_session_attribution.AttributionIdentityTests.test_reused_baseline_fd_with_new_inode_is_new_candidate) ... ok
+test_unknown_reuse_and_other_session_are_not_reclassified (test_provider_session_attribution.AttributionIdentityTests.test_unknown_reuse_and_other_session_are_not_reclassified) ... ok
+test_accepted_inode_never_seen_is_inconclusive_with_reason (test_provider_session_attribution.AttributionTests.test_accepted_inode_never_seen_is_inconclusive_with_reason) ... ok
+test_baseline_unbound_socket_is_not_a_candidate (test_provider_session_attribution.AttributionTests.test_baseline_unbound_socket_is_not_a_candidate) ... ok
+test_baseline_unreadable_is_reported (test_provider_session_attribution.AttributionTests.test_baseline_unreadable_is_reported) ... ok
+test_missing_accepted_inode_is_a_problem_not_a_skip (test_provider_session_attribution.AttributionTests.test_missing_accepted_inode_is_a_problem_not_a_skip) ... ok
+test_no_sessions_at_all_is_not_a_pass (test_provider_session_attribution.AttributionTests.test_no_sessions_at_all_is_not_a_pass) ... ok
+test_one_observed_session_does_not_qualify_another_tickless_session (test_provider_session_attribution.AttributionTests.test_one_observed_session_does_not_qualify_another_tickless_session) ... ok
+test_peer_pid_mismatch_is_inconclusive_with_reason (test_provider_session_attribution.AttributionTests.test_peer_pid_mismatch_is_inconclusive_with_reason) ... ok
+test_regular_files_are_never_provider_candidates (test_provider_session_attribution.AttributionTests.test_regular_files_are_never_provider_candidates) ... ok
+test_two_candidates_is_inconclusive_with_reason (test_provider_session_attribution.AttributionTests.test_two_candidates_is_inconclusive_with_reason) ... ok
+test_unique_candidate_with_matching_peer_attributes (test_provider_session_attribution.AttributionTests.test_unique_candidate_with_matching_peer_attributes) ... ok
+test_windows_fold_from_events (test_provider_session_attribution.SessionWindowTests.test_windows_fold_from_events) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.001s
+
+OK

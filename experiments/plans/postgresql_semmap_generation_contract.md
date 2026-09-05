@@ -698,7 +698,7 @@ PG/provider/wire）：
 模型尝试和本地关闭分别记录；不能把已向客户端返回若干行当作 SQL 最终成功，也不能把关闭 UDS
 当作远端 GPU 已停止。若单 GPU 不满足上述配置，先保留诊断并提交新配置，不自动改为双卡继续。
 
-### 8.4.3 资源测量生命周期修复（2026-09-06；实施版本 phase-lifecycle-1）
+### 8.4.3 资源测量生命周期修复（2026-09-06；当前实施版本 phase-lifecycle-3）
 
 本节是当前资源工具修复的唯一实施入口，替代 §8.4.2 中针对旧 runner 的执行建议；旧 v1/v2
 运行、数值和 verdict 均保留原身份。起点为 `semmap-resource-v2@e5f4dd12`。本轮只修改实验工具，
@@ -726,7 +726,8 @@ PG planner/executor、Map 语义、provider、wire v5、调度层与模型配置
   关联 FD 在 session_end 后仍存在会进入残留检查；task/start/terminal 的 ID、重复和孤立事件被校验。
   session_end 只证明关闭，不证明完成输出已送达，成功场景还核对完整 fixture 输出及 task terminal。
 
-新增运行使用 `semloom.pg.resource.v2.1`、`phase-lifecycle-1`，不继续复用已有 v2 artifact 身份。
+新增运行使用 `semloom.pg.resource.v2.1`，首次修订为 `phase-lifecycle-1`，当前为以下登记的
+`phase-lifecycle-3`；不继续复用已有 v2 artifact 身份。
 保留 socket 专用阈值：client/accepted 各峰值≤1、同 tick 合计≤2、结束增量=0；每进程 total FD/
 thread 结束增量=0；PG RSS peak/end≤16/8 MiB、gateway≤32/16 MiB。另核对 FD 身份防止数量抵消。
 eventpoll 属于 I/O 等待配套 FD 候选，不能仅因不是 socket 就称与 provider 无关；记录其观测与清理，
@@ -759,7 +760,10 @@ established-connection disconnect=08006、absent-path initial connect=XX000。�
 场景合同重跑。此处取代旧资源runner所写的gateway-exit=08006期待，不改写旧证据。
 
 正式 3×2000 未授权。必须先有当前版本有效的完整 diagnostic，才能另行决定正式运行；目前
-formal blocked。测试和目标环境结果由证据台账及本轮结果目录登记，不以计划存在代替通过。
+formal 尚未授权。当前 `77a123de` 的真实1×100 diagnostic 已完成，四场景九阶段均有效且通过；
+前两次运行保留不完整/失败原判定。测试和目标环境结果由
+[本轮结果](../results/postgresql/semmap_resource_lifecycle_20260906/README.md)与证据台账登记，
+不以计划存在代替通过，也不把小规模通过外推为正式资源资格。
 
 ## 9. 完成与未完成如何表达
 

@@ -1,0 +1,40 @@
+test_file_inode_permission_failure_is_not_a_valid_identity (test_proc_collection_validity.ConsistentSnapshotTests.test_file_inode_permission_failure_is_not_a_valid_identity) ... ok
+test_persistent_churn_is_partial_with_errors (test_proc_collection_validity.ConsistentSnapshotTests.test_persistent_churn_is_partial_with_errors) ... ok
+test_race_then_agreement_retains_attempt_history_without_poisoning_final_read (test_proc_collection_validity.ConsistentSnapshotTests.test_race_then_agreement_retains_attempt_history_without_poisoning_final_read) ... ok
+test_single_unreadable_fd_is_a_partial_marker_not_invalid (test_proc_collection_validity.ConsistentSnapshotTests.test_single_unreadable_fd_is_a_partial_marker_not_invalid) ... ok
+test_fd_directory_unreadable_is_invalid_not_empty (test_proc_collection_validity.SnapshotValidityTests.test_fd_directory_unreadable_is_invalid_not_empty) ... ok
+test_pid_replaced_is_invalid (test_proc_collection_validity.SnapshotValidityTests.test_pid_replaced_is_invalid) ... ok
+test_pid_start_time_unreadable_is_invalid (test_proc_collection_validity.SnapshotValidityTests.test_pid_start_time_unreadable_is_invalid) ... ok
+test_statm_unreadable_leaves_rss_none_with_error (test_proc_collection_validity.SnapshotValidityTests.test_statm_unreadable_leaves_rss_none_with_error) ... ok
+test_status_unreadable_leaves_threads_none_with_error (test_proc_collection_validity.SnapshotValidityTests.test_status_unreadable_leaves_threads_none_with_error) ... ok
+test_unix_table_unreadable_makes_tick_inconclusive (test_proc_collection_validity.UnixTableValidityTests.test_unix_table_unreadable_makes_tick_inconclusive) ... ok
+test_valid_empty_table_and_parse_failure_are_distinct (test_proc_collection_validity.UnixTableValidityTests.test_valid_empty_table_and_parse_failure_are_distinct) ... ok
+test_persist_lifecycles_records_reuse_separately (test_process_recorder.PersistenceTests.test_persist_lifecycles_records_reuse_separately) ... ok
+test_persist_operation_outcome_sanitizes (test_process_recorder.PersistenceTests.test_persist_operation_outcome_sanitizes) ... ok
+test_persist_trace_writes_gzip_jsonl_atomically (test_process_recorder.PersistenceTests.test_persist_trace_writes_gzip_jsonl_atomically) ... ok
+test_write_atomic_replaces_existing (test_process_recorder.PersistenceTests.test_write_atomic_replaces_existing) ... ok
+test_operation_failure_still_returns_trace (test_process_recorder.RecordOperationTests.test_operation_failure_still_returns_trace) ... ok
+test_success_returns_result_and_final_sample (test_process_recorder.RecordOperationTests.test_success_returns_result_and_final_sample) ... ok
+test_constant_tick_sequence_is_stable (test_process_recorder.StableBaselineTests.test_constant_tick_sequence_is_stable) ... ok
+test_endlessly_changing_ticks_time_out (test_process_recorder.StableBaselineTests.test_endlessly_changing_ticks_time_out) ... ok
+test_fd_identity_replacement_is_not_stable (test_process_recorder.StableBaselineTests.test_fd_identity_replacement_is_not_stable) ... ok
+test_five_identical_ticks_accept_baseline (test_process_recorder.StableBaselineTests.test_five_identical_ticks_accept_baseline) ... ok
+test_filenode_context_classifies_exact_relations (test_process_resources.ClassifyTargetTests.test_filenode_context_classifies_exact_relations) ... ok
+test_other_bound_unix_socket_is_socket_other (test_process_resources.ClassifyTargetTests.test_other_bound_unix_socket_is_socket_other) ... ok
+test_pipe_and_anon_inode (test_process_resources.ClassifyTargetTests.test_pipe_and_anon_inode) ... ok
+test_postgres_temp_file (test_process_resources.ClassifyTargetTests.test_postgres_temp_file) ... ok
+test_provider_path_socket_is_provider_connected (test_process_resources.ClassifyTargetTests.test_provider_path_socket_is_provider_connected) ... ok
+test_regular_file_and_unknown (test_process_resources.ClassifyTargetTests.test_regular_file_and_unknown) ... ok
+test_socket_absent_from_table_is_socket_other (test_process_resources.ClassifyTargetTests.test_socket_absent_from_table_is_socket_other) ... ok
+test_unbound_unix_socket_is_kept_distinct (test_process_resources.ClassifyTargetTests.test_unbound_unix_socket_is_kept_distinct) ... ok
+test_unknown_filenode_under_pgdata_is_unknown_not_guessed (test_process_resources.ClassifyTargetTests.test_unknown_filenode_under_pgdata_is_unknown_not_guessed) ... ok
+test_counts_by_kind_set (test_process_resources.ModelTests.test_counts_by_kind_set) ... ok
+test_snapshot_unreadable_fields_stay_none (test_process_resources.ModelTests.test_snapshot_unreadable_fields_stay_none) ... ok
+test_table_retains_listener_flags_and_unbound_rows (test_process_resources.UnixSocketTableTests.test_table_retains_listener_flags_and_unbound_rows) ... ok
+test_live_two_process_pair_and_same_identity_cleanup (test_process_resources_linux.CrossProcessUdsIntegration.test_live_two_process_pair_and_same_identity_cleanup) ... skipped 'Linux procfs/SO_PEERCRED required'
+test_valid_empty_table_distinct_from_unreadable (test_process_resources_linux.CrossProcessUdsIntegration.test_valid_empty_table_distinct_from_unreadable) ... skipped 'Linux procfs/SO_PEERCRED required'
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.505s
+
+OK (skipped=2)

@@ -1,0 +1,10 @@
+test_ninety_three_attempts_are_one_irreversible_peak (test_v1_resource_gate_characterization.V1GateCharacterization.test_ninety_three_attempts_are_one_irreversible_peak) ... ok
+test_peak_composition_backend_two_gateway_one (test_v1_resource_gate_characterization.V1GateCharacterization.test_peak_composition_backend_two_gateway_one) ... ok
+test_v1_end_state_returns_to_baseline (test_v1_resource_gate_characterization.V1GateCharacterization.test_v1_end_state_returns_to_baseline) ... ok
+test_v1_metric_measured_total_fd_not_udS_identity (test_v1_resource_gate_characterization.V1GateCharacterization.test_v1_metric_measured_total_fd_not_udS_identity) ... ok
+test_v1_replay_reproduces_archived_violation (test_v1_resource_gate_characterization.V1GateCharacterization.test_v1_replay_reproduces_archived_violation) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK

@@ -1,0 +1,13 @@
+test_active_provider_socket_is_not_quiet_baseline (test_sampling_lifecycle.SamplingLifecycleTests.test_active_provider_socket_is_not_quiet_baseline) ... ok
+test_final_sample_exception_preserves_operation_and_earlier_ticks (test_sampling_lifecycle.SamplingLifecycleTests.test_final_sample_exception_preserves_operation_and_earlier_ticks) ... ok
+test_first_sample_exception_preserves_outcome_without_running_operation (test_sampling_lifecycle.SamplingLifecycleTests.test_first_sample_exception_preserves_outcome_without_running_operation) ... ok
+test_invalid_first_snapshot_does_not_execute_workload (test_sampling_lifecycle.SamplingLifecycleTests.test_invalid_first_snapshot_does_not_execute_workload) ... ok
+test_middle_non_oserror_stops_sampling_and_cannot_disappear (test_sampling_lifecycle.SamplingLifecycleTests.test_middle_non_oserror_stops_sampling_and_cannot_disappear) ... ok
+test_operation_interrupt_checkpoints_then_propagates (test_sampling_lifecycle.SamplingLifecycleTests.test_operation_interrupt_checkpoints_then_propagates) ... ok
+test_persisted_error_uses_stable_code_without_exception_body (test_sampling_lifecycle.SamplingLifecycleTests.test_persisted_error_uses_stable_code_without_exception_body) ... ok
+test_thread_changes_do_not_form_a_baseline (test_sampling_lifecycle.SamplingLifecycleTests.test_thread_changes_do_not_form_a_baseline) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.067s
+
+OK

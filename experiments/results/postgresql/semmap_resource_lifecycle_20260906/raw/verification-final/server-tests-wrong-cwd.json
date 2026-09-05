@@ -1,0 +1,84 @@
+{
+  "source_commit": "77a123de21af2f19eacad207a310109393d0894c",
+  "platform": "Linux",
+  "python": "3.12.3",
+  "groups": {
+    "resource": {
+      "run": 53,
+      "failures": 1,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_resource_lifecycle",
+        "test_resource_measurement_contracts",
+        "test_resource_qualification",
+        "test_semmap_resource_cli",
+        "test_semmap_resource_gateway_observer",
+        "test_semmap_resource_runner"
+      ],
+      "log_sha256": "c90dfe220946e4d8c4d37f1828aec759e9e7c340d8e1d690a10c4b63c5aa7fd3"
+    },
+    "attribution": {
+      "run": 17,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_provider_session_attribution"
+      ],
+      "log_sha256": "23c1fc93d7075ce182d7b3fd33b21dc12d9a302df80d36c34cee6132dd90a18e"
+    },
+    "process": {
+      "run": 35,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_proc_collection_validity",
+        "test_process_recorder",
+        "test_process_resources",
+        "test_process_resources_linux"
+      ],
+      "log_sha256": "a3c8f750443121cef8a692c04c789cf516005aaf264015c5ef2692dee685191a"
+    },
+    "sampling_lifecycle": {
+      "run": 8,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_sampling_lifecycle"
+      ],
+      "log_sha256": "42d5cc1831d66e950d958a39652d4a3d00c71628e823f53f1aac13c3591e6c29"
+    },
+    "v1_replay": {
+      "run": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_v1_resource_gate_characterization"
+      ],
+      "log_sha256": "b0e166c4dd7d6d0a667aea25919946601898ab2927abfa556684d3ab84a761c2"
+    },
+    "choice": {
+      "run": 11,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_choice_attempt_ledger",
+        "test_choice_http_observer",
+        "test_choice_service_checks"
+      ],
+      "log_sha256": "246019174eac3197f0b56455001773bcf83dabd270e88f92a2300f0317b09fa3"
+    }
+  },
+  "total": 129
+}

@@ -1,14 +1,17 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-09-04（Map 真实模型纵向链路通过；资源阈值失败，质量/校准和四 D 整体未完成）
+日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
 
 
 2026-09-06 资源工具修复分支：已受限重写独占结果目录、阶段采集和最终聚合，新增
 `resource_lifecycle.py` / `resource_phase.py`，修正归因、稳定基线、异常采样和中断证据。
-测量身份为 `semloom.pg.resource.v2.1`；当前观测修订 `phase-lifecycle-2` 增加独立故障夹具同步点；PG/provider/wire 生产路径未修改。
-本地当前 115 项检查中 113 通过、2 项 Linux 专属跳过；[证据](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md)单独登记。
-Linux 的126项检查已通过；836448ab 的真实1×100压力和取消/恢复有效，瞬时断连观测不完整，
-修订2待新目录诊断。正式资源资格和四 D 完成仍 pending。
+测量身份为 `semloom.pg.resource.v2.1`，当前修订 `phase-lifecycle-3`；PG/provider/wire 生产路径未修改。
+最终验证集合为本地119项（117通过、2项Linux专属跳过）、Linux130项通过；其中118/129项绑定
+`77a123de`，另追加1项包含三种listener基线反例的测试，运行时代码相同。
+`77a123de` 的隔离PG18.3真实1×100 fixture-only诊断，四场景九阶段均valid/passed，模型请求0；
+同一存活backend/gateway完成清理，各阶段结束FD/线程增量0。前两次不完整/失败运行保留。
+[证据与哈希](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md)单独登记。
+正式3×2000未授权、未运行；正式资源资格和四D完成仍pending。
 当前实施依据见 [资源工具生命周期修复](../experiments/plans/postgresql_semmap_generation_contract.md)。
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与

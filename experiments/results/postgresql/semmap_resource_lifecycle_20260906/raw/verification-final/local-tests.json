@@ -1,0 +1,74 @@
+{
+  "source_commit": "77a123de21af2f19eacad207a310109393d0894c",
+  "platform": "Darwin",
+  "python": "3.12.6",
+  "groups": {
+    "resource": {
+      "run": 53,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_resource_lifecycle",
+        "test_resource_measurement_contracts",
+        "test_resource_qualification",
+        "test_semmap_resource_cli",
+        "test_semmap_resource_gateway_observer",
+        "test_semmap_resource_runner"
+      ],
+      "log_sha256": "06ae8c3bffda49fe9f17554a1d763536be5f9adf1d614ed6e892ed8ce4d66128"
+    },
+    "attribution": {
+      "run": 17,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_provider_session_attribution"
+      ],
+      "log_sha256": "0116d62ed07a5321e0eac53a4ae7b339eb449481fcff3a1b8de8ce81d68fdb16"
+    },
+    "process": {
+      "run": 35,
+      "failures": 0,
+      "errors": 0,
+      "skips": 2,
+      "skip_reasons": [
+        "Linux procfs/SO_PEERCRED required",
+        "Linux procfs/SO_PEERCRED required"
+      ],
+      "modules": [
+        "test_proc_collection_validity",
+        "test_process_recorder",
+        "test_process_resources",
+        "test_process_resources_linux"
+      ],
+      "log_sha256": "2d97c701edb3cb41ba3ca20bb301ffa4aaf1f5121352d80e6c696eb97867b0d4"
+    },
+    "sampling_lifecycle": {
+      "run": 8,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_sampling_lifecycle"
+      ],
+      "log_sha256": "75ed3befb59579ae1d13f327b467c50148aee3a30d3a5d4b9bedd2733d951b71"
+    },
+    "v1_replay": {
+      "run": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "skip_reasons": [],
+      "modules": [
+        "test_v1_resource_gate_characterization"
+      ],
+      "log_sha256": "bec11a51d495cbd517984f74d1057a1f40564a709623455be297137c9c1f54ee"
+    }
+  },
+  "total": 118
+}

@@ -56,6 +56,8 @@ for AF_UNIX. Each phase preserves baseline, operation, cleanup, session events a
 Case and run reports use the same assessment; diagnostic qualification is always `not_evaluated` (exit 2).
 Formal results use exit 0 for all required phases/cases passing, 1 for valid failed checks, 2 for incomplete
 measurement, and 3 for runner/preflight failure. Interrupts preserve available evidence and propagate.
+Fault/recovery connections use a separate experiment fixture that waits up to five seconds for both endpoints
+to be observed before releasing the handshake. Pressure timing is unchanged; these fault timings are not performance evidence.
 See the [Map contract](../../experiments/plans/postgresql_semmap_generation_contract.md) for thresholds and
 current authorization. Formal 3×2000 remains unavailable until a valid current diagnostic and separate authorization.
 

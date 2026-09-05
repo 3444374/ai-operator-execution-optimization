@@ -1,0 +1,7 @@
+{
+  "case": "C argv multiplication overflow before connection",
+  "exit_code": 2,
+  "expected_message_matches": true,
+  "stdout_empty": true,
+  "binary_sha256": "8b284721443114d4a699a2c44f2bfe58f20a95738a09c121fb5a71b64b89fef8"
+}

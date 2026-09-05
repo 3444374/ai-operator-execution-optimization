@@ -102,7 +102,8 @@ combined peak = 2（阈值内）、unknown = 0、end 全归零；三个实质 se
 2026-09-06 更新：旧建议已被后续源码审查撤回。本目录只保留 `a4119e73` 的历史诊断记录；
 当前工具须按 [Map 资源生命周期修复计划](../../../plans/postgresql_semmap_generation_contract.md)
 重新通过受控行为测试及有效的小规模诊断。旧记录存在不完整采样和工作量身份更正，不能为当前源码
-提供正式运行依据。正式运行目前不可开始，需新的完整诊断与独立授权。旧 raw/verdict 不修改。
+提供正式运行依据。[修复后的完整小规模诊断](../semmap_resource_lifecycle_20260906/README.md)现已通过；
+正式运行仍需独立授权。旧 raw/verdict 不修改。
 
 ## 11. 证据位置
 

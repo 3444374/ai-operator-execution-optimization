@@ -1,0 +1,42 @@
+{
+  "raw/sampling_lifecycle-local.txt": {
+    "original_sha256": "38d3f57e973717f5c9d1b77fab6e19f6f7c56bbbb6ae5c79b6910f4c382180d3",
+    "public_sha256": "38d3f57e973717f5c9d1b77fab6e19f6f7c56bbbb6ae5c79b6910f4c382180d3"
+  },
+  "raw/process-local.txt": {
+    "original_sha256": "ebfb5ab80fc6bdeb07c41bd51e66262ab2b13c5eaf5b2981507630d8a2e04968",
+    "public_sha256": "ebfb5ab80fc6bdeb07c41bd51e66262ab2b13c5eaf5b2981507630d8a2e04968"
+  },
+  "raw/resource-local.txt": {
+    "original_sha256": "6ec263483a15ffe9c4bcdc95119df8f924d06afc8c5411adb5c3b416cb914699",
+    "public_sha256": "6ec263483a15ffe9c4bcdc95119df8f924d06afc8c5411adb5c3b416cb914699"
+  },
+  "raw/v1_replay-local.txt": {
+    "original_sha256": "baf49b59538192f3e136ca0404cac516ecb8dd2fe5ba1416604056f3080fa49c",
+    "public_sha256": "baf49b59538192f3e136ca0404cac516ecb8dd2fe5ba1416604056f3080fa49c"
+  },
+  "raw/attribution-local.txt": {
+    "original_sha256": "af890835a53604f465328ce9151c282bedee7a7e368f3af8e6007bdd9bb6db32",
+    "public_sha256": "af890835a53604f465328ce9151c282bedee7a7e368f3af8e6007bdd9bb6db32"
+  },
+  "raw/verification-final/process-final.txt": {
+    "original_sha256": "2d97c701edb3cb41ba3ca20bb301ffa4aaf1f5121352d80e6c696eb97867b0d4",
+    "public_sha256": "2d97c701edb3cb41ba3ca20bb301ffa4aaf1f5121352d80e6c696eb97867b0d4"
+  },
+  "raw/verification-final/sampling_lifecycle-final.txt": {
+    "original_sha256": "75ed3befb59579ae1d13f327b467c50148aee3a30d3a5d4b9bedd2733d951b71",
+    "public_sha256": "75ed3befb59579ae1d13f327b467c50148aee3a30d3a5d4b9bedd2733d951b71"
+  },
+  "raw/verification-final/resource-final.txt": {
+    "original_sha256": "06ae8c3bffda49fe9f17554a1d763536be5f9adf1d614ed6e892ed8ce4d66128",
+    "public_sha256": "06ae8c3bffda49fe9f17554a1d763536be5f9adf1d614ed6e892ed8ce4d66128"
+  },
+  "raw/verification-final/v1_replay-final.txt": {
+    "original_sha256": "bec11a51d495cbd517984f74d1057a1f40564a709623455be297137c9c1f54ee",
+    "public_sha256": "bec11a51d495cbd517984f74d1057a1f40564a709623455be297137c9c1f54ee"
+  },
+  "raw/verification-final/attribution-final.txt": {
+    "original_sha256": "0116d62ed07a5321e0eac53a4ae7b339eb449481fcff3a1b8de8ce81d68fdb16",
+    "public_sha256": "0116d62ed07a5321e0eac53a4ae7b339eb449481fcff3a1b8de8ce81d68fdb16"
+  }
+}

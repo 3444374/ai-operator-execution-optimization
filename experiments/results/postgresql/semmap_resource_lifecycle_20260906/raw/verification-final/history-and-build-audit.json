@@ -1,0 +1,97 @@
+{
+  "old_diagnostic": {
+    "exists": true,
+    "metadata_files": [
+      "summary.json",
+      "fixture.json",
+      "fixture-identity.json"
+    ],
+    "checksum_files": [],
+    "summary_sha256": "3ee4e7acad264194ec3bac59a8bace7e5d07572cf32860eb585c2658158c154f",
+    "schema": "semloom.pg.resource.v2",
+    "mode": "diagnostic",
+    "cases": {
+      "stress_large_payload": {
+        "measurement_status": "inconclusive",
+        "qualification_status": "not_evaluated",
+        "correctness_failures": [
+          {
+            "metric": "rows",
+            "expected": 100,
+            "observed": 6000
+          },
+          {
+            "metric": "tasks",
+            "expected": 101,
+            "observed": 6001
+          }
+        ]
+      },
+      "cancel_and_cleanup": {
+        "measurement_status": "valid",
+        "qualification_status": "not_evaluated",
+        "correctness_failures": []
+      },
+      "provider_disconnect_and_recovery": {
+        "measurement_status": "valid",
+        "qualification_status": "not_evaluated",
+        "correctness_failures": []
+      },
+      "gateway_exit_and_recovery": {
+        "measurement_status": "valid",
+        "qualification_status": "not_evaluated",
+        "correctness_failures": [
+          {
+            "metric": "sqlstate_contract",
+            "expected": "08006",
+            "observed": "XX000"
+          }
+        ]
+      }
+    },
+    "snapshot_status_counts": {
+      "valid": 2546,
+      "partial": 266,
+      "invalid": 2
+    },
+    "anonymous_fd_targets": {
+      "anon_inode:[signalfd]": 1405,
+      "anon_inode:[eventpoll]": 3254
+    },
+    "identity_metadata_candidates": [],
+    "stress_trace_files": {
+      "stress/raw_baseline/process_samples.jsonl.gz": {
+        "status_counts": {
+          "valid": 10
+        },
+        "sha256": "e16715f255af9db71a191d4f3fbe2e35d118ee881c360ec6f4e1dc1e954a71a7"
+      },
+      "stress/raw/process_samples.jsonl.gz": {
+        "status_counts": {
+          "valid": 2534,
+          "partial": 266
+        },
+        "sha256": "351c4fdd5094e68dd6bd410e9e165421099c2fef53c0200a297eb3600e060fb1"
+      },
+      "stress/raw_stress_cleanup/process_samples.jsonl.gz": {
+        "status_counts": {
+          "invalid": 2,
+          "valid": 2
+        },
+        "sha256": "81d8b7f765e4c09ec0c10d612572c421265717108ab477cc32e0073543bf1d9a"
+      }
+    }
+  },
+  "supported_pg_build_exit_codes": {
+    "clean": 0,
+    "build": 0,
+    "install": 0
+  },
+  "build_sha256": {
+    "postgres": "22943b3e4a7078ddb0efddaf3ea8da9ef243e6c69443bd7b1569de504a996869",
+    "pg_config": "ae51e9db8447628e8491d1ff3841526a6a700179a6270611989eb62649c4bef9",
+    "extension": "68a29821bbc4339cbe341404f8622b2dd303c822ee1c66a93bdec66873a3d7c8",
+    "client_source": "e25df074bb57dea53c554398d8aec77c9dec0721505d498c629f82fc1608f637"
+  },
+  "original_audit_sha256": "9c39965405a4b4ec82dfc6c0fa3b4b0ef8c582584127a09cd9ae049f2e1a233c"
+}
