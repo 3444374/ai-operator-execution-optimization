@@ -8,6 +8,10 @@
 
 ## SemMap resource measurement repair (2026-09-06)
 
+后续 [推送前真实模型复验](postgresql/semmap_prepush_20260906/README.md)使用新8次预算，
+SELECT、独立审计连接下的INSERT、取消/拒绝及恢复六阶段全部有效通过；模型和PG/gateway已清理。
+该结果不包含正式fixture3×2000或质量/性能比较，旧失败记录保留。
+
 [Lifecycle repair evidence](postgresql/semmap_resource_lifecycle_20260906/README.md) records the completed
 tool repair, controlled tests and isolated PG18.3 fixture diagnostic at `77a123de`: actual 1×100, all nine
 required phases valid/passed, zero model requests. Formal 3×2000 remains unrun and requires separate authorization.

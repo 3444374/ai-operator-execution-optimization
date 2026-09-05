@@ -81,6 +81,10 @@ PG18.3 regression 1/1、TAP 1758/1758 和两端各 139/139；原 `5031bb50` 证�
 完成 PG18.3 → wire v5 → Qwen2.5-7B → PG 的 25/32 次真实请求，SELECT/INSERT、NULL 零调用、取消、
 模型拒绝和恢复通过。fixture 主压力完成 3×2,000 个大输入/大输出 task，但固定资源条件失败且缺少
 断言前采样，后置 fault 子项未运行；不用真实 completion 或 fixture 证明模型质量、性能或四 D 整体通过。
+2026-09-06 的[后续真实复验](experiments/results/postgresql/semmap_prepush_20260906/README.md)使用修复后的
+共享观测实现和8次新请求，SELECT、独立连接审计的INSERT、取消/拒绝及恢复均通过；所列小规模
+场景满足资源条件，运行结束后服务全部退出。该检查加入了100ms任务派发等待以观察短连接，
+不能用于性能比较，也不替代修复后的正式资源压力测试或生成质量评估。
 SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
 不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
 其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较

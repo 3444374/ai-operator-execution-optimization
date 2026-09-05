@@ -2,6 +2,12 @@
 
 日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
 
+最新 [推送前真实模型复验](../experiments/results/postgresql/semmap_prepush_20260906/README.md)
+在 `b7eeea53`、PG18.3、固定Qwen2.5-7B/vLLM下使用新8次预算完成完整小规模检查。
+SELECT、独立审计连接下的INSERT、取消/拒绝及恢复六阶段均valid/passed；真实INSERT资源缺口关闭。
+本轮未改生产代码，沿用共享预算/观测。旧32/32账本未改，本轮所有服务已清理；正式压力和质量/
+性能结论仍未获得。旧记录中的“待复查”表示当时状态，当前以上述新证据为准。
+
 
 2026-09-06 资源工具修复分支：已受限重写独占结果目录、阶段采集和最终聚合，新增
 `resource_lifecycle.py` / `resource_phase.py`，修正归因、稳定基线、异常采样和中断证据。
@@ -15,7 +21,7 @@
 用户随后授权的[有限真实模型复查](../experiments/results/postgresql/semmap_real_followup_20260906/README.md)
 新增7次请求，原账本25→32：SELECT/INSERT输出与usage、NULL零调用、取消/拒绝及恢复功能核对通过；
 SELECT及四个故障/恢复阶段资源通过。真实INSERT的测量受同backend验收JOIN打开系统目录FD影响而
-未通过；已用独立无模型PG反例定位，并把审计连接分离，原测量不改判、修正后的真实INSERT待新预算复查。
+未通过；已用独立无模型PG反例定位并分离审计连接，原测量不改判；后续真实INSERT复查见顶部新记录。
 全部本轮PG/gateway/vLLM进程已清理。不同run不合并成完整资源通过。
 当前实施依据见 [资源工具生命周期修复](../experiments/plans/postgresql_semmap_generation_contract.md)。
 

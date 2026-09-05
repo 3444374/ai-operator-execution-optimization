@@ -10,6 +10,8 @@ Their lifecycle repair is recorded separately from production Map behavior and h
 Filter and Map checks share [session observation](src/experiments/gateway_observer.py) and
 [durable request budgeting](src/experiments/attempt_ledger.py). Machine settings and budget identity are
 supplied at the [documented CLI](scripts/README.md); historical result scripts are retained as run snapshots.
+The shared implementation has also passed an [eight-request real-model check](../experiments/results/postgresql/semmap_prepush_20260906/README.md),
+including INSERT with independent result auditing. This is a bounded functional/resource check, not a quality or performance comparison.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile

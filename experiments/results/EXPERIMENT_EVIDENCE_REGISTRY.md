@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+[推送前真实模型复验](postgresql/semmap_prepush_20260906/README.md)绑定 `b7eeea53`，新预算8/8，
+旧32/32账本SHA不变。SELECT、独立审计连接下的INSERT、cancel/recovery/reject/recovery六阶段
+均valid/passed，结束FD/线程增量0；INSERT资源复查已完成。1162项原始哈希全部匹配，
+本轮PG/gateway/模型退出，端口关闭、两GPU均1MiB。首次ninja/PATH准备失败为0请求并保留。
+这是带100ms任务派发辅助等待的小规模真实接线/资源证据，不是质量、性能或正式3×2000资格。
+
 同日的 [共享观测与配置重构](postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)
 本地212项回归中210通过、2项Linux专属跳过；`b7eeea53` 在Linux212项全部通过。
 同提交使用新端口55499完成隔离PG18.3实际1×100 fixture，四场景九阶段全部valid/passed，

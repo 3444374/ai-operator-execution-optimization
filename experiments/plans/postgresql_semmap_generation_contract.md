@@ -872,6 +872,42 @@ v3/v4/v5 接线、预算跨重启/并发/身份拒绝、不同端口/用户与 l
 下次增加算子只扩展自身task编译、结果解释及必要placement，继续复用已有runtime/provider；
 新的机器使用自己的runtime env/fixed-model配置，不能从历史结果脚本继承机器或预算。
 
+### 8.4.6 推送前真实模型复验（2026-09-06，用户授权，已通过）
+
+用户要求“试一下真实模型的测试，没有问题之后提交推送”。本次以 `1a8b7e8d`（运行时代码
+`b7eeea53`）为基线，验证重构后的公共观测入口，重点补齐独立审计连接下的真实 INSERT 资源。
+通过后提交结果并推送当前 `codex/semmap-resource-repair`；不改写原分支历史。
+
+新持久预算 ID 为 `semloom.semmap.prepush.20260906.v1`、上限8次：PG预热1次，SELECT的Unicode/
+空串2次，INSERT的ASCII1次，cancel/recovery/reject/recovery各1次。NULL、plain EXPLAIN、
+LIMIT 0不发送请求。旧32/32账本保持原字节，不退款、不自动重试；异常或未知结果也消耗新预算。
+任何身份、结果、资源或服务清理检查失败先保存证据并停止，不据此推送“已通过”的结论。
+
+沿用§8.4.4的公开合成输入、prompt、固定模型revision、生成参数与服务配置；运行前重新验证
+机器空闲、core/text环境、权重/tokenizer哈希、实际模型ID及进程/配置身份。模型/endpoint/路径
+从仓库外配置读取，不运行历史结果目录的脚本，也不下载/替换模型。此次为同步reference接线与
+资源诊断，无对照算法/消融，不作质量或性能结论，不包含正式fixture3×2000。
+
+共享 `choice_gateway_observer` + `AttemptLedger` 记录真实HTTP与会话；`execute_phase` 保存
+各次baseline/operation/cleanup。为保证短请求可观测，使用既有gateway测试参数在每task模型派发前
+固定等待100ms，完整消息与响应不变；明确为测量辅助延迟，不能把该时间作为模型或系统性能。
+资源策略仍为schema v2.1、phase-lifecycle-3的既有阈值，20ms采样，不放宽条件。
+预热在资源测量外单列，INSERT读取/校验由独立连接在清理采样后完成；查询执行、原始完成结果、
+模型身份、finish reason、tokenizer/usage及plan计数逐项核验。取消期待57014、超长模型拒绝期待
+38000，随后各一次恢复；每阶段等待HTTP终态及服务running/waiting回零，不能用UDS关闭代替模型停止。
+结束按本轮PID/start-time清理并确认端口/GPU释放，原始数据保存在新独立目录，公开仅允许字段摘要。
+
+第一次服务准备在0请求时因PATH未包含serving venv的`ninja`而失败。现有venv中已安装该工具，
+修正启动PATH并在新准备目录继续，原模型/生成参数与同一8次账本不变；仅空账本允许重新准备，
+不创建替代预算。临时目录也由外部settings指定短路径。旧失败日志、driver和controller原字节保留，
+这不是推理重试，也不记作生产算子失败。
+
+最终完整运行使用8/8次新请求，六阶段全部valid/passed；独立审计连接后的真实INSERT资源复查
+已关闭。INSERT模型调用/接受/输出计数各1、prompt/output tokens为42/7；所有阶段结束FD/线程
+增量0，原始哈希1162项匹配。模型、gateway和PG已退出，两GPU恢复1MiB，旧32/32账本不变。
+详见[真实复验记录](../results/postgresql/semmap_prepush_20260906/README.md)；本次只增加运行证据，
+不修改生产代码，也不升级正式3×2000、质量或性能结论。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。
