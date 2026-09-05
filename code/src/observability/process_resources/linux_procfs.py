@@ -10,9 +10,12 @@ import os
 import re
 import time
 from pathlib import Path
+from typing import Mapping
 
 from .model import (
     FdIdentity,
+    FdSnapshotAttempt,
+    UnixSocketInfo,
     FdKind,
     PgFileClassificationContext,
     ProcessSnapshot,
@@ -20,7 +23,7 @@ from .model import (
     SnapshotStatus,
 )
 
-_SOCKET_INODE_PATTERN = re.compile(r"^socket:\[(\d+)\]$")
+_SOCKET_INODE_PATTERN = re.compile(r"^(?:socket|pipe):\[(\d+)\]$")
 _FILE_INODE_PATTERN = re.compile(r"^(\d+)$")
 _PG_TEMP_DIR = "pgsql_tmp"
 _CONSISTENT_RETRIES = 3
@@ -58,26 +61,27 @@ def _parse_inode(target: str) -> int | None:
     return None
 
 
-def unix_socket_table() -> dict[int, str | None]:
-    """Map every AF_UNIX socket inode to its bound path (None when unbound).
+def unix_socket_table() -> dict[int, UnixSocketInfo] | None:
+    """Read AF_UNIX identities. None means unreadable; {} is a valid empty table.
 
-    /proc/net/unix lists connected-but-unbound client sockets too, as rows
-    whose trailing path column is absent entirely (7 columns vs 8 for a
-    bound socket) — verified empirically on the target kernel. Keeping
-    those rows (value None) lets the generic collector mark such
-    descriptors UNBOUND_UNIX_SOCKET instead of lumping them with unrelated
-    named sockets.
+    Malformed rows raise ValueError so parse and read failures stay distinct.
     """
-    table: dict[int, str | None] = {}
     try:
-        text = Path("/proc/net/unix").read_text(encoding="ascii", errors="replace")
+        text = Path("/proc/net/unix").read_text(encoding="ascii")
     except OSError:
-        return table
-    for line in text.splitlines()[1:]:
+        return None
+    lines = text.splitlines()
+    if not lines or not lines[0].startswith("Num"):
+        raise ValueError("unix_table_header")
+    table = {}
+    for line in lines[1:]:
         parts = line.split(maxsplit=7)
-        if len(parts) < 7 or not parts[6].isdigit():
-            continue
-        table[int(parts[6])] = parts[7] if len(parts) > 7 else None
+        if len(parts) < 7:
+            raise ValueError("unix_table_row")
+        inode = int(parts[6])
+        table[inode] = UnixSocketInfo(
+            parts[7] if len(parts) == 8 else None,
+            int(parts[3], 16), int(parts[5], 16), int(parts[4], 16))
     return table
 
 
@@ -95,16 +99,8 @@ def process_start_time_ticks(pid: int) -> int | None:
 
 
 def _filenode_of(basename: str) -> int | None:
-    base = basename
-    for suffix in ("_fsm", "_vm", "_init"):
-        if base.endswith(suffix):
-            base = base[: -len(suffix)]
-            break
-    if "." in base:
-        base = base.split(".", 1)[0]
-    if base.isdigit():
-        return int(base)
-    return None
+    match = re.fullmatch(r"(\d+)(?:_(?:fsm|vm|init))?(?:\.\d+)?", basename)
+    return int(match.group(1)) if match else None
 
 
 def classify_target(
@@ -116,12 +112,16 @@ def classify_target(
     """Return ``(kind, inode, unix_path)`` for one descriptor target."""
     inode = _parse_inode(target)
     if target.startswith("socket:[") and inode is not None:
-        path = unix_paths_by_inode.get(inode, "")
+        info = unix_paths_by_inode.get(inode, "")
+        path = info.path if isinstance(info, UnixSocketInfo) else info
         if path is None:
             return FdKind.UNBOUND_UNIX_SOCKET, inode, None
         if path and provider_socket_path is not None and \
                 str(Path(path)) == str(Path(provider_socket_path)):
-            return FdKind.PROVIDER_UDS_CONNECTED, inode, path
+            kind = (FdKind.PROVIDER_UDS_LISTENER
+                    if isinstance(info, UnixSocketInfo) and info.flags & 0x10000
+                    else FdKind.PROVIDER_UDS_CONNECTED)
+            return kind, inode, path
         if path:
             return FdKind.SOCKET_OTHER, inode, path
         # Present in the table without a path column entry: treat as named.
@@ -132,9 +132,9 @@ def classify_target(
         return FdKind.EVENTFD_OR_ANON_INODE, inode, None
     if target.startswith("/"):
         lowered = target.lower()
-        if _PG_TEMP_DIR in lowered:
+        if _PG_TEMP_DIR in Path(target).parts:
             return FdKind.POSTGRES_TEMP_FILE, inode, None
-        if pg_context is not None and target.startswith(pg_context.data_directory):
+        if pg_context is not None and Path(target).is_relative_to(Path(pg_context.data_directory)):
             basename = os.path.basename(target)
             filenode = _filenode_of(basename)
             if filenode is not None:
@@ -173,62 +173,48 @@ def _read_rss_threads(pid: int) -> tuple[int | None, int | None]:
 
 
 def _consistent_fd_snapshot(
-    pid: int,
-    unix_paths_by_inode: dict[int, str | None],
-    provider_socket_path: str | None,
-    pg_context: PgFileClassificationContext | None,
-    role_overrides: dict[FdKind, FdKind] | None,
-) -> tuple[tuple[FdIdentity, ...] | None, list[str]]:
-    """Read the fd set until two consecutive listings agree.
-
-    A descriptor whose symlink persistently fails to read is recorded as an
-    UNREADABLE placeholder with its error noted and skipped from
-    classification (policies see an explicit partial marker, not a zero);
-    only a changed fd listing between the two reads triggers a retry.
-    Returns (identities, errors): identities stays None only when the fd
-    directory itself is unreadable.
-    """
-    errors: list[str] = []
-    for _attempt in range(_CONSISTENT_RETRIES):
+    pid, unix_paths_by_inode, provider_socket_path, pg_context, role_overrides,
+):
+    """Keep every attempt; only the final successful read defines current state."""
+    attempts = []
+    fds = None
+    errors = []
+    for _ in range(_CONSISTENT_RETRIES):
+        started = time.monotonic_ns()
         first = _list_fds(pid)
+        errors = []
         if first is None:
-            errors.append("fd_list_unreadable")
-            return None, errors
-        placeholders: list[FdIdentity] = []
-        read_any = False
-        unreadable_fds: list[int] = []
+            errors = ["fd_list_unreadable"]
+            attempts.append(FdSnapshotAttempt(started, time.monotonic_ns(), None, tuple(errors)))
+            return None, errors, tuple(attempts)
+        identities = []
         for fd in first:
             target = _read_link(pid, fd)
             if target is None:
-                unreadable_fds.append(fd)
-                placeholders.append(FdIdentity(
-                    fd=fd, target="", kind=FdKind.UNKNOWN))
+                errors.append(f"fd_readlink_unreadable:{fd}")
+                identities.append(FdIdentity(fd, "", FdKind.UNKNOWN))
                 continue
-            read_any = True
             kind, inode, unix_path = classify_target(
                 target, unix_paths_by_inode, provider_socket_path, pg_context)
-            if role_overrides is not None:
+            if role_overrides:
                 kind = role_overrides.get(kind, kind)
-            placeholders.append(FdIdentity(
-                fd=fd, target=target, kind=kind, inode=inode,
-                unix_path=unix_path))
+            # Files and pipes have identity too; socket identity comes from its target.
+            if inode is None:
+                try:
+                    inode = os.stat(f"/proc/{pid}/fd/{fd}").st_ino
+                except OSError:
+                    errors.append(f"fd_inode_unreadable:{fd}")
+            identities.append(FdIdentity(fd, target, kind, inode, unix_path))
         second = _list_fds(pid)
         if second is None:
             errors.append("fd_list_unreadable")
-            return None, errors
-        if second != first:
+        elif first != second:
             errors.append("fd_set_changed_during_read")
-            continue
-        if unreadable_fds:
-            # A persistently unreadable descriptor is a partial
-            # observation, never silent: name the fds so the artifact
-            # says which evidence is missing.
-            errors.append(
-                "fd_readlink_unreadable:" + ",".join(map(str, unreadable_fds)))
-        if not read_any and first:
-            errors.append("fd_readlinks_all_unreadable")
-        return tuple(placeholders), errors
-    return None, errors
+        fds = tuple(identities)
+        attempts.append(FdSnapshotAttempt(started, time.monotonic_ns(), fds, tuple(errors)))
+        if not errors:
+            return fds, [], tuple(attempts)
+    return fds, errors, tuple(attempts)
 
 
 def snapshot_process(
@@ -246,6 +232,7 @@ def snapshot_process(
     Unreadable data stays None and the status explains it. A changed
     process start time (pid reuse) makes the snapshot invalid outright.
     """
+    observed_start = time.monotonic_ns()
     errors: list[str] = []
     start_time = process_start_time_ticks(pid)
     if start_time is None:
@@ -263,12 +250,14 @@ def snapshot_process(
         errors.append("statm_unreadable")
     if thread_count is None:
         errors.append("status_unreadable")
-    fds, fd_errors = _consistent_fd_snapshot(
+    fds, fd_errors, attempts = _consistent_fd_snapshot(
         pid, unix_paths_by_inode, provider_socket_path, pg_context,
         role_overrides)
     errors.extend(fd_errors)
+    if process_start_time_ticks(pid) != start_time:
+        errors.append("process_replaced")
     status = SnapshotStatus.VALID
-    if fds is None:
+    if fds is None or "process_replaced" in errors or "fd_list_unreadable" in errors:
         status = SnapshotStatus.INVALID
     elif errors:
         status = SnapshotStatus.PARTIAL
@@ -276,7 +265,9 @@ def snapshot_process(
         pid=pid, process_start_time_ticks=start_time,
         monotonic_ns=monotonic_ns, status=status,
         errors=tuple(errors), rss_bytes=rss_bytes,
-        thread_count=thread_count, fds=fds)
+        thread_count=thread_count, fds=fds,
+        observed_start_ns=observed_start, observed_end_ns=time.monotonic_ns(),
+        fd_attempts=attempts)
 
 
 def sample_tick(
@@ -290,17 +281,25 @@ def sample_tick(
     """Observe every role under one shared /proc/net/unix view."""
     if monotonic_ns is None:
         monotonic_ns = time.monotonic_ns()
-    unix_paths = unix_socket_table()
-    unix_valid = bool(unix_paths)
+    errors = []
+    try:
+        unix_paths = unix_socket_table()
+        unix_valid = unix_paths is not None
+        if not unix_valid:
+            errors.append("unix_table_unreadable")
+    except (ValueError, UnicodeError):
+        unix_paths = None
+        unix_valid = False
+        errors.append("unix_table_parse_error")
     processes: dict[str, ProcessSnapshot] = {}
     for role, pid in pids.items():
         expected = (expected_start_times or {}).get(role)
         processes[role] = snapshot_process(
             pid, monotonic_ns=monotonic_ns,
-            unix_paths_by_inode=unix_paths,
+            unix_paths_by_inode=unix_paths or {},
             provider_socket_path=provider_socket_path,
             pg_context=pg_context,
             expected_start_time_ticks=expected)
     return SampleTick(
         monotonic_ns=monotonic_ns, unix_table_valid=unix_valid,
-        processes=processes)
+        processes=processes, ended_ns=time.monotonic_ns(), errors=tuple(errors))

@@ -63,6 +63,26 @@ class FdIdentity:
     inode: int | None = None
     unix_path: str | None = None
 
+    @property
+    def identity(self) -> tuple:
+        return (self.fd, self.inode, self.target)
+
+
+@dataclass(frozen=True)
+class UnixSocketInfo:
+    path: str | None
+    flags: int
+    state: int
+    socket_type: int
+
+
+@dataclass(frozen=True)
+class FdSnapshotAttempt:
+    started_ns: int
+    ended_ns: int
+    fds: tuple[FdIdentity, ...] | None
+    errors: tuple[str, ...]
+
 
 @dataclass(frozen=True)
 class PgFileClassificationContext:
@@ -93,6 +113,13 @@ class ProcessSnapshot:
     rss_bytes: int | None = None
     thread_count: int | None = None
     fds: tuple[FdIdentity, ...] | None = None
+    observed_start_ns: int | None = None
+    observed_end_ns: int | None = None
+    fd_attempts: tuple[FdSnapshotAttempt, ...] = ()
+
+    @property
+    def process_identity(self) -> tuple:
+        return (self.pid, self.process_start_time_ticks)
 
     @property
     def total_fd_count(self) -> int | None:
@@ -125,7 +152,7 @@ class ProcessSnapshot:
 
 @dataclass(frozen=True)
 class SampleTick:
-    """One simultaneous observation of every role under one shared view.
+    """Sequential observation batch, not an atomic cross-process snapshot.
 
     A tick reads ``/proc/net/unix`` once and then observes each role, so
     socket-table lookups cannot disagree between roles within the tick.
@@ -134,6 +161,8 @@ class SampleTick:
     monotonic_ns: int
     unix_table_valid: bool
     processes: Mapping[str, ProcessSnapshot]
+    ended_ns: int | None = None
+    errors: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -175,6 +204,9 @@ class RecordedOperation:
     operation_error: CapturedError | None
     sampling_error: CapturedError | None
     trace: "ResourceTrace"
+    started_ns: int | None = None
+    ended_ns: int | None = None
+    sampling_errors: tuple[CapturedError, ...] = ()
 
 
 @dataclass(frozen=True)

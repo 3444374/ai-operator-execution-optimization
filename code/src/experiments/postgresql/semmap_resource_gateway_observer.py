@@ -47,69 +47,77 @@ def _accepted_inode(connection: socket.socket) -> int | None:
     return None
 
 
+class SessionObserver:
+    """Record closure and completion separately; neither implies SQL delivery."""
+    def __init__(self, record):
+        self.record = record
+        self.sessions = 0
+        self.tasks = 0
+        self.current_session = None
+
+    def run_session(self, connection, run, **keywords):
+        self.sessions += 1
+        self.current_session = self.sessions
+        current = self.current_session
+        peer = _peer_credentials(connection)
+        self.record({"event": "session_start", "session_id": current,
+                     "monotonic_ns": time.monotonic_ns(), "gateway_pid": os.getpid(),
+                     "accepted_fd": connection.fileno(),
+                     "accepted_socket_inode": _accepted_inode(connection),
+                     "peer_pid": peer[0] if peer else None,
+                     "peer_uid": peer[1] if peer else None,
+                     "peer_gid": peer[2] if peer else None})
+        reason = "returned"
+        try:
+            return run(connection, **keywords)
+        except BaseException:
+            reason = "raised"
+            raise
+        finally:
+            self.record({"event": "session_end", "session_id": current,
+                         "monotonic_ns": time.monotonic_ns(), "termination": reason,
+                         "connection_closed": connection.fileno() == -1})
+            self.current_session = None
+
+    def complete(self, request, complete):
+        self.tasks += 1
+        task = self.tasks
+        self.record({"event": "task", "session_id": self.current_session,
+                     "task": task, "payload_digest": request.semantic_payload_digest,
+                     "monotonic_ns": time.monotonic_ns()})
+        try:
+            result = complete(request)
+        except Exception as error:
+            self.record({"event": "task_error", "session_id": self.current_session,
+                         "task": task, "monotonic_ns": time.monotonic_ns(),
+                         "error_type": type(error).__name__})
+            raise
+        self.record({"event": "task_complete", "session_id": self.current_session,
+                     "task": task, "monotonic_ns": time.monotonic_ns()})
+        return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--events", type=Path, required=True)
     args, gateway_args = parser.parse_known_args()
-    args.events.touch(exist_ok=False)
-    handle = args.events.open("a", encoding="ascii", buffering=1)
-
-    def record(value):
-        handle.write(json.dumps(value, separators=(",", ":")) + "\n")
-
     from src.execution_provider import server
-
-    session_count = 0
-    task_count = 0
-    original_adapter = server.GoldenCompletionAdapter
-
-    class ObservedGoldenAdapter(original_adapter):
-        def complete(self, request):
-            nonlocal task_count
-            task_count += 1
-            record({
-                "event": "task",
-                "task": task_count,
-                "payload_digest": request.semantic_payload_digest,
-                "monotonic_ns": time.monotonic_ns(),
-            })
-            return super().complete(request)
-
-    original_session = server._run_session
-
-    def observed_session(connection, **keywords):
-        nonlocal session_count
-        session_count += 1
-        current = session_count
-        peer = _peer_credentials(connection)
-        record({
-            "event": "session_start",
-            "session_id": current,
-            "monotonic_ns": time.monotonic_ns(),
-            "gateway_pid": os.getpid(),
-            "accepted_fd": connection.fileno(),
-            "accepted_socket_inode": _accepted_inode(connection),
-            "peer_pid": peer[0] if peer else None,
-            "peer_uid": peer[1] if peer else None,
-            "peer_gid": peer[2] if peer else None,
-        })
+    original_adapter, original_session = server.GoldenCompletionAdapter, server._run_session
+    with args.events.open("x", encoding="ascii", buffering=1) as handle:
+        observer = SessionObserver(lambda value: handle.write(json.dumps(value) + "\n"))
+        class ObservedGoldenAdapter(original_adapter):
+            def complete(self, request):
+                return observer.complete(request, super().complete)
+        def observed_session(connection, **keywords):
+            return observer.run_session(connection, original_session, **keywords)
+        server.GoldenCompletionAdapter, server._run_session = ObservedGoldenAdapter, observed_session
+        old_argv = sys.argv
+        sys.argv = [sys.argv[0]] + (gateway_args[1:] if gateway_args[:1] == ["--"] else gateway_args)
         try:
-            return original_session(connection, **keywords)
+            return server.main()
         finally:
-            record({
-                "event": "session_end",
-                "session_id": current,
-                "monotonic_ns": time.monotonic_ns(),
-            })
-
-    server.GoldenCompletionAdapter = ObservedGoldenAdapter
-    server._run_session = observed_session
-    sys.argv = [sys.argv[0]] + (
-        gateway_args[1:] if gateway_args[:1] == ["--"] else gateway_args)
-    try:
-        raise SystemExit(server.main())
-    finally:
-        handle.close()
+            sys.argv = old_argv
+            server.GoldenCompletionAdapter, server._run_session = original_adapter, original_session
 
 
 if __name__ == "__main__":

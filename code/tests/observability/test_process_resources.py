@@ -84,12 +84,16 @@ class ClassifyTargetTests(unittest.TestCase):
 
 
 class UnixSocketTableTests(unittest.TestCase):
-    def test_table_maps_inode_to_path_or_none(self):
-        table = unix_socket_table()
-        self.assertIsInstance(table, dict)
-        for inode, path in table.items():
-            self.assertIsInstance(inode, int)
-            self.assertTrue(path is None or isinstance(path, str))
+    def test_table_retains_listener_flags_and_unbound_rows(self):
+        from unittest.mock import patch
+        text = "Num RefCount Protocol Flags Type St Inode Path\n1: 2 0 00010000 0001 01 10 /tmp/provider.sock\n2: 2 0 00000000 0001 03 11\n"
+        with patch("pathlib.Path.read_text", return_value=text):
+            table = unix_socket_table()
+        self.assertEqual(table[10].path, "/tmp/provider.sock")
+        self.assertEqual(table[10].flags, 0x10000)
+        self.assertIsNone(table[11].path)
+        kind, _, _ = classify_target("socket:[10]", table, "/tmp/provider.sock")
+        self.assertEqual(kind, FdKind.PROVIDER_UDS_LISTENER)
 
 
 class ModelTests(unittest.TestCase):

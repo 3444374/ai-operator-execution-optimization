@@ -1,35 +1,15 @@
-"""Provider UDS session attribution from gateway events and process ticks.
+"""Single-session experiment attribution using peer identity and co-observed FDs.
 
-Experiment-specific reasoning that the generic /proc collector must not
-own: under the synchronous single-session SemMap contract, a backend
-unbound AF_UNIX socket is the provider client end only when the gateway
-session evidence uniquely supports it. All five conditions must hold:
-
-1. every gateway session_start.peer_pid equals the observed backend pid;
-2. within each session's active window, the backend gained exactly one
-   unbound AF_UNIX socket relative to baseline;
-3. during that window the gateway holds the accepted socket whose inode
-   the session_start event recorded;
-4. the candidate's lifetime overlaps the session window;
-5. at most one session is active at any instant (synchronous contract).
-
-Any ambiguity returns ``None`` attributions so the qualification can be
-inconclusive instead of guessed.
+SO_PEERCRED identifies a process, not its FD. This bounded experiment uses a
+unique new unbound socket and the event's accepted inode in the same usable
+observation batch. It is not a general Unix socket topology algorithm.
 """
-from __future__ import annotations
-
+from dataclasses import dataclass, replace
 import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 from src.observability.process_resources.model import (
-    FdIdentity,
-    FdKind,
-    ProcessSnapshot,
-    ResourceTrace,
-    SnapshotStatus,
-)
+    FdKind, ResourceTrace, SnapshotStatus)
 
 
 @dataclass(frozen=True)
@@ -40,243 +20,182 @@ class SessionWindow:
     peer_pid: int | None
     accepted_fd: int | None
     accepted_inode: int | None
+    gateway_pid: int | None = None
 
 
 @dataclass(frozen=True)
 class AttributionResult:
-    """Attribution outcome: evidence dict plus why it failed, if it did.
-
-    ``attribution`` is a per-session evidence dict when every window was
-    uniquely attributed; None otherwise. ``problems`` always survives so
-    the persisted artifact states the cause of an inconclusive verdict
-    instead of a placeholder.
-    """
     attribution: dict | None
     problems: list[str]
 
 
 def load_session_events(path: Path) -> list[dict]:
-    events = []
-    for line in path.read_text(encoding="ascii").splitlines():
-        if line.startswith("{"):
-            events.append(json.loads(line))
-    return events
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="ascii").splitlines()
+            if line.strip()]
 
 
 def session_windows(events: list[dict]) -> list[SessionWindow]:
-    """Fold session_start/session_end events into windows."""
-    windows: list[SessionWindow] = []
-    open_sessions: dict[int, SessionWindow] = {}
+    """Reject duplicate, orphan, backwards, and unclosed lifecycle events."""
+    opened, seen, windows = {}, set(), []
+    tasks, terminals = set(), set()
+    last_ns = -1
     for event in events:
-        if event.get("event") == "session_start":
-            window = SessionWindow(
-                session_id=event["session_id"],
-                start_ns=event["monotonic_ns"],
-                end_ns=event["monotonic_ns"],
-                peer_pid=event.get("peer_pid"),
-                accepted_fd=event.get("accepted_fd"),
-                accepted_inode=event.get("accepted_socket_inode"))
-            open_sessions[window.session_id] = window
-        elif event.get("event") == "session_end":
-            window = open_sessions.pop(event["session_id"], None)
-            if window is not None:
-                windows.append(SessionWindow(
-                    session_id=window.session_id,
-                    start_ns=window.start_ns,
-                    end_ns=event["monotonic_ns"],
-                    peer_pid=window.peer_pid,
-                    accepted_fd=window.accepted_fd,
-                    accepted_inode=window.accepted_inode))
-    windows.extend(open_sessions.values())
-    windows.sort(key=lambda w: w.start_ns)
-    return windows
+        ns = event["monotonic_ns"]
+        if not isinstance(ns, int) or ns < last_ns:
+            raise ValueError("event_time_reversed")
+        last_ns = ns
+        kind = event["event"]
+        if kind == "session_start":
+            sid = event["session_id"]
+            if sid in seen:
+                raise ValueError("duplicate_session_start")
+            seen.add(sid)
+            opened[sid] = event
+        elif kind == "session_end":
+            sid = event["session_id"]
+            if sid not in opened:
+                raise ValueError("orphan_session_end")
+            start = opened.pop(sid)
+            if event.get("connection_closed") is not True:
+                raise ValueError("session_socket_not_closed")
+            if any(key[0] == sid and key not in terminals for key in tasks):
+                raise ValueError("unfinished_task")
+            windows.append(SessionWindow(
+                sid, start["monotonic_ns"], ns, start.get("peer_pid"),
+                start.get("accepted_fd"), start.get("accepted_socket_inode"),
+                start.get("gateway_pid")))
+        elif kind in ("task", "task_complete", "task_error"):
+            sid, task = event["session_id"], event["task"]
+            if sid not in opened:
+                raise ValueError("task_outside_session")
+            key = (sid, task)
+            if kind == "task":
+                if key in tasks:
+                    raise ValueError("duplicate_task")
+                tasks.add(key)
+            else:
+                if key not in tasks or key in terminals:
+                    raise ValueError("orphan_or_duplicate_task_terminal")
+                terminals.add(key)
+        else:
+            raise ValueError("unknown_session_event")
+    if opened:
+        raise ValueError("unclosed_session")
+    return sorted(windows, key=lambda w: w.start_ns)
 
 
-def _active_count(windows: list[SessionWindow], when_ns: int) -> int:
-    return sum(1 for w in windows if w.start_ns <= when_ns <= w.end_ns)
-
-
-def attribute_provider_sessions(
-    *,
-    backend_pid: int,
-    baseline: Mapping[str, ProcessSnapshot],
-    trace: ResourceTrace,
-    windows: list[SessionWindow],
-) -> AttributionResult:
-    """Attribute backend unbound sockets to gateway provider sessions.
-
-    Returns an ``AttributionResult``. ``attribution`` is a dict of
-    per-session evidence plus the problems that blocked a unique answer
-    (never discarded — the caller persists them so an inconclusive run
-    states its cause); it is None only when no unique attribution was
-    possible (caller must go inconclusive). A run with no session
-    windows at all is also None: nothing was observed, so nothing can
-    be qualified.
-    """
-    problems: list[str] = []
+def attribute_provider_sessions(*, backend_pid, baseline, trace, windows):
+    problems, entries = [], []
     base = baseline.get("backend")
-    if base is None or base.fds is None:
+    gateway_base = baseline.get("gateway")
+    if base is None or base.fds is None or gateway_base is None:
         return AttributionResult(None, ["backend_baseline_unreadable"])
-    base_unbound = {item.fd: item for item in base.fds
-                    if item.kind is FdKind.UNBOUND_UNIX_SOCKET}
-
+    base_ids = {fd.identity for fd in base.fds}
+    for previous, current in zip(windows, windows[1:]):
+        if current.start_ns < previous.end_ns:
+            problems.append("concurrent_sessions")
     for window in windows:
-        if window.peer_pid is None:
-            problems.append(f"session{window.session_id}_peer_pid_missing")
-        elif window.peer_pid != backend_pid:
-            problems.append(f"session{window.session_id}_peer_mismatch")
-
-    attribution: dict = {"sessions": [], "problems": problems}
-    tickless_windows = 0
-    for window in windows:
-        candidates: dict[int, FdIdentity] = {}
-        ticks_in_window = 0
-        for tick in trace.ticks:
-            if not (window.start_ns <= tick.monotonic_ns <= window.end_ns):
-                continue
-            ticks_in_window += 1
-            backend = tick.processes.get("backend")
-            if backend is None or backend.fds is None:
-                continue
-            if backend.status is not SnapshotStatus.VALID:
-                continue
-            for item in backend.fds:
-                if (item.kind is FdKind.UNBOUND_UNIX_SOCKET
-                        and item.fd not in base_unbound):
-                    candidates.setdefault(item.fd, item)
-        if ticks_in_window == 0:
-            # A window the sampler never observed (e.g. the sub-100ms warmup)
-            # is unobservable, not ambiguous: record it and continue.
-            tickless_windows += 1
-            attribution["sessions"].append({
-                "session_id": window.session_id,
-                "candidate_fds": [],
-                "attributed": None,
-                "note": "no_ticks_in_window"})
-            continue
-        if len(candidates) != 1:
-            problems.append(
-                f"session{window.session_id}_candidates_{len(candidates)}")
-            attribution["sessions"].append({
-                "session_id": window.session_id,
-                "candidate_fds": sorted(candidates),
-                "attributed": None})
-            continue
-        fd, identity = next(iter(candidates.items()))
-        # Condition 3: the gateway must hold the accepted inode recorded by
-        # the session_start event. A missing accepted_inode in the event is
-        # itself an observer failure — it may not silently disable the
-        # condition (four-of-five attribution is not attribution).
+        prefix = f"session{window.session_id}_"
+        if window.peer_pid != backend_pid or base.pid != backend_pid:
+            problems.append(prefix + "peer_mismatch")
+        if window.gateway_pid is not None and window.gateway_pid != gateway_base.pid:
+            problems.append(prefix + "gateway_mismatch")
         if window.accepted_inode is None:
-            problems.append(
-                f"session{window.session_id}_accepted_inode_unrecorded")
-            attribution["sessions"].append({
-                "session_id": window.session_id,
-                "candidate_fds": [fd],
-                "attributed": None})
-            continue
-        accepted_seen = False
+            problems.append(prefix + "accepted_inode_unrecorded")
+        candidates, paired, usable = {}, set(), 0
         for tick in trace.ticks:
-            if not (window.start_ns <= tick.monotonic_ns <= window.end_ns):
+            end = tick.ended_ns if tick.ended_ns is not None else tick.monotonic_ns
+            if not window.start_ns <= tick.monotonic_ns <= end <= window.end_ns:
                 continue
-            gateway = tick.processes.get("gateway")
-            if gateway is None or gateway.fds is None:
+            backend, gateway = (tick.processes.get(r) for r in ("backend", "gateway"))
+            if (not tick.unix_table_valid or backend is None or gateway is None
+                    or backend.status is not SnapshotStatus.VALID
+                    or gateway.status is not SnapshotStatus.VALID
+                    or backend.process_identity != base.process_identity
+                    or gateway.process_identity != gateway_base.process_identity
+                    or backend.fds is None or gateway.fds is None):
                 continue
-            for item in gateway.fds:
-                if item.inode == window.accepted_inode:
-                    accepted_seen = True
-        if not accepted_seen:
-            problems.append(f"session{window.session_id}_accepted_inode_unseen")
-        attribution["sessions"].append({
-            "session_id": window.session_id,
-            "candidate_fds": [fd],
-            "attributed": {
-                "fd": fd,
-                "inode": identity.inode,
-                "accepted_inode": window.accepted_inode,
-                "peer_pid": window.peer_pid,
-            }})
-    # Synchronous single-session contract. A window with no tick inside it
-    # cannot support the concurrency check; that is already an attribution
-    # gap flagged as candidates_0 above, not a crash.
-    for window in windows:
-        in_window = [
-            _active_count(windows, tick.monotonic_ns)
-            for tick in trace.ticks
-            if window.start_ns <= tick.monotonic_ns <= window.end_ns]
-        if in_window and max(in_window) > 1:
-            problems.append(f"session{window.session_id}_concurrent_{max(in_window)}")
+            usable += 1
+            found = [fd for fd in backend.fds
+                     if fd.kind is FdKind.UNBOUND_UNIX_SOCKET and fd.identity not in base_ids]
+            for fd in found:
+                candidates[fd.identity] = fd
+            accepted = any(fd.inode == window.accepted_inode
+                           and (window.accepted_fd is None or fd.fd == window.accepted_fd)
+                           and fd.kind is FdKind.PROVIDER_UDS_CONNECTED
+                           for fd in gateway.fds)
+            if accepted and len(found) == 1:
+                paired.add(found[0].identity)
+        if usable == 0:
+            problems.append(prefix + "no_ticks_in_window")
+        if len(candidates) != 1:
+            problems.append(prefix + f"candidates_{len(candidates)}")
+        if len(paired) != 1 or set(candidates) != paired:
+            problems.append(prefix + "accepted_inode_unseen_same_tick")
+        entry = {"session_id": window.session_id, "start_ns": window.start_ns,
+                 "end_ns": window.end_ns, "candidate_fds": sorted(f.fd for f in candidates.values()),
+                 "attributed": None}
+        if len(candidates) == 1 and set(candidates) == paired:
+            fd = next(iter(candidates.values()))
+            entry["attributed"] = {
+                "fd": fd.fd, "inode": fd.inode, "target": fd.target,
+                "peer_pid": base.pid, "process_start_time_ticks": base.process_start_time_ticks,
+                "accepted_inode": window.accepted_inode, "accepted_fd": window.accepted_fd,
+                "gateway_pid": gateway_base.pid,
+                "gateway_start_time_ticks": gateway_base.process_start_time_ticks}
+        entries.append(entry)
     if not windows:
-        # No session windows at all: the workload never opened a provider
-        # session the observer saw. Nothing was measured, so a provider
-        # verdict of "zero deltas, passed" would be fabricated.
-        return AttributionResult(None, ["no_session_windows"])
-    if tickless_windows == len(windows):
-        # Every window fell between sample ticks: the attribution and the
-        # provider gates downstream would run on zero observation
-        # evidence. A pass here would be fabricated, so fail closed.
-        return AttributionResult(None, ["all_session_windows_tickless"])
-    attribution["problems"] = problems
+        problems.append("no_session_windows")
     if problems:
         return AttributionResult(None, problems)
-    return AttributionResult(attribution, [])
+    return AttributionResult({"sessions": entries, "problems": []}, [])
 
 
-def reclassify_clients(
-    trace: ResourceTrace, attribution: dict,
-    windows: list[SessionWindow] | None = None,
-) -> ResourceTrace:
-    """Rewrite attributed backend sockets as provider clients in a copy.
-
-    The raw trace is never mutated; the rewritten copy feeds the policy
-    together with the attribution evidence. The rewrite is scoped to the
-    session windows AND to the exact ``(fd, inode)`` pairs the
-    attribution identified: an fd number reused by a different socket
-    after the session closed must not be relabelled a provider client
-    (that would inflate the provider peaks and pollute the lifecycle
-    diagnostics).
-    """
-    windows = windows or []
-    attributed = {
-        (entry["attributed"]["fd"], entry["attributed"].get("inode")):
-            entry["attributed"]
-        for entry in attribution["sessions"] if entry["attributed"]}
-    from src.observability.process_resources.model import ProcessSnapshot, SampleTick
+def reclassify_clients(trace: ResourceTrace, attribution: dict, windows=None) -> ResourceTrace:
+    """Classify only the corresponding session/process/FD/inode observation."""
+    entries = attribution["sessions"]
     ticks = []
     for tick in trace.ticks:
         backend = tick.processes.get("backend")
-        if backend is None or backend.fds is None or not attributed:
+        if backend is None or backend.fds is None:
             ticks.append(tick)
             continue
-        in_window = any(
-            window.start_ns <= tick.monotonic_ns <= window.end_ns
-            for window in windows)
-        if not in_window:
-            ticks.append(tick)
+        def classified(fd):
+            for entry in entries:
+                identity = entry["attributed"]
+                if (identity and entry["start_ns"] <= tick.monotonic_ns <= entry["end_ns"]
+                        and backend.process_identity == (identity["peer_pid"], identity["process_start_time_ticks"])
+                        and fd.kind is FdKind.UNBOUND_UNIX_SOCKET
+                        and fd.identity == (identity["fd"], identity["inode"], identity["target"])):
+                    return replace(fd, kind=FdKind.PROVIDER_UDS_CONNECTED)
+            return fd
+        ticks.append(replace(tick, processes={**tick.processes,
+            "backend": replace(backend, fds=tuple(classified(fd) for fd in backend.fds))}))
+    return replace(trace, ticks=tuple(ticks), fd_correlation_evidence={
+        str(e["session_id"]): e for e in entries})
+
+
+def residual_provider_fds(trace, attribution):
+    """Keep associated identities visible after session_end for cleanup checks."""
+    residuals = []
+    if not trace.ticks or attribution is None:
+        return residuals
+    for entry in attribution["sessions"]:
+        identity = entry["attributed"]
+        if not identity:
             continue
-        fds = tuple(
-            FdIdentity(
-                fd=item.fd, target=item.target,
-                kind=FdKind.PROVIDER_UDS_CONNECTED,
-                inode=item.inode, unix_path=None)
-            if (item.fd, item.inode) in attributed else item
-            for item in backend.fds)
-        rewritten = ProcessSnapshot(
-            pid=backend.pid,
-            process_start_time_ticks=backend.process_start_time_ticks,
-            monotonic_ns=backend.monotonic_ns,
-            status=backend.status, errors=backend.errors,
-            rss_bytes=backend.rss_bytes,
-            thread_count=backend.thread_count, fds=fds)
-        ticks.append(SampleTick(
-            monotonic_ns=tick.monotonic_ns,
-            unix_table_valid=tick.unix_table_valid,
-            processes={**tick.processes, "backend": rewritten}))
-    return ResourceTrace(baseline=trace.baseline, ticks=tuple(ticks),
-                         fd_correlation_evidence={
-                             str(fd): {"rule": "session-attribution",
-                                       "inode": inode,
-                                       "peer_pid": entry["peer_pid"],
-                                       "accepted_inode":
-                                           entry["accepted_inode"]}
-                             for (fd, inode), entry in attributed.items()})
+        for role, pid_key, start_key, fd_key, inode_key in (
+            ("backend", "peer_pid", "process_start_time_ticks", "fd", "inode"),
+            ("gateway", "gateway_pid", "gateway_start_time_ticks", "accepted_fd", "accepted_inode")):
+            snapshot = trace.ticks[-1].processes.get(role)
+            if snapshot is None or snapshot.fds is None:
+                continue
+            if snapshot.process_identity != (identity[pid_key], identity[start_key]):
+                continue
+            for fd in snapshot.fds:
+                if fd.fd == identity[fd_key] and fd.inode == identity[inode_key]:
+                    residuals.append({"role": role, "session_id": entry["session_id"],
+                                      "fd": fd.fd, "inode": fd.inode})
+    return residuals

@@ -25,6 +25,7 @@ def _readers(fds=None, targets=None, start_time=100, rss=(4096 * 100, 3)):
     rss:        (rss_bytes, threads) or None-values for unreadable
     """
     rss_bytes, threads = rss
+    # Pipe targets include their inode, matching Linux procfs.
     return {
         "_list_fds": mock.Mock(side_effect=(
             (lambda _calls=[]: (fds() if callable(fds) else fds)))),
@@ -85,15 +86,14 @@ class ConsistentSnapshotTests(unittest.TestCase):
             return lp.snapshot_process(
                 1, monotonic_ns=1, unix_paths_by_inode={})
 
-    def test_race_then_agreement_is_partial_with_recovery_note(self):
-        # First pair of listings disagree (fd opened between them); the
-        # retry pair agrees. The snapshot is usable evidence but stays
-        # PARTIAL with the churn error retained — a tick that raced once
-        # may not silently re-badge itself VALID.
+    def test_race_then_agreement_retains_attempt_history_without_poisoning_final_read(self):
+        # Earlier attempts remain raw evidence; the agreed final observation is valid.
         calls = iter([[0, 1], [0, 1, 2], [0, 1, 2], [0, 1, 2]])
         snap = self._snapshot_with_list(lambda _pid: next(calls))
-        self.assertEqual(snap.status, SnapshotStatus.PARTIAL)
-        self.assertIn("fd_set_changed_during_read", snap.errors)
+        self.assertEqual(snap.status, SnapshotStatus.VALID)
+        self.assertEqual(snap.errors, ())
+        self.assertIn("fd_set_changed_during_read", snap.fd_attempts[0].errors)
+        self.assertEqual(snap.fd_attempts[-1].errors, ())
         self.assertEqual(len(snap.fds), 3)   # the agreed set IS recorded
 
     def test_persistent_churn_is_partial_with_errors(self):
@@ -104,9 +104,10 @@ class ConsistentSnapshotTests(unittest.TestCase):
             return [0, 1, next(counter)]
 
         snap = self._snapshot_with_list(churning)
-        self.assertEqual(snap.status, SnapshotStatus.INVALID)
+        self.assertEqual(snap.status, SnapshotStatus.PARTIAL)
         self.assertIn("fd_set_changed_during_read", snap.errors)
-        self.assertIsNone(snap.fds)
+        self.assertEqual(len(snap.fd_attempts), 3)
+        self.assertIsNotNone(snap.fds)
 
     def test_single_unreadable_fd_is_a_partial_marker_not_invalid(self):
         # One fd whose readlink keeps failing stays as an UNKNOWN
@@ -122,6 +123,14 @@ class ConsistentSnapshotTests(unittest.TestCase):
         self.assertEqual(len(placeholders), 1)
         self.assertEqual(placeholders[0].kind, FdKind.UNKNOWN)
 
+    def test_file_inode_permission_failure_is_not_a_valid_identity(self):
+        readers=_readers(fds=[0],targets={0:"/tmp/ordinary-file"})
+        with mock.patch.multiple(lp,**readers),mock.patch.object(lp.os,'stat',side_effect=PermissionError()):
+            value=lp.snapshot_process(1,monotonic_ns=1,unix_paths_by_inode={})
+        self.assertEqual(value.status,SnapshotStatus.PARTIAL)
+        self.assertIn('fd_inode_unreadable:0',value.errors)
+        self.assertEqual(len(value.fd_attempts),3)
+
 
 class UnixTableValidityTests(unittest.TestCase):
     def test_unix_table_unreadable_makes_tick_inconclusive(self):
@@ -129,10 +138,22 @@ class UnixTableValidityTests(unittest.TestCase):
         # collector must therefore mark the tick, not silently pass an
         # empty dict as if no sockets existed.
         readers = _readers(fds=[0, 1])
-        readers["unix_socket_table"] = mock.Mock(return_value={})
+        readers["unix_socket_table"] = mock.Mock(return_value=None)
         with mock.patch.multiple(lp, **readers):
             tick = lp.sample_tick({"backend": 1}, monotonic_ns=1)
         self.assertFalse(tick.unix_table_valid)
+
+    def test_valid_empty_table_and_parse_failure_are_distinct(self):
+        readers=_readers(fds=[0])
+        readers['unix_socket_table']=mock.Mock(return_value={})
+        with mock.patch.multiple(lp,**readers):
+            value=lp.sample_tick({'backend':1},monotonic_ns=1)
+        self.assertTrue(value.unix_table_valid)
+        readers['unix_socket_table']=mock.Mock(side_effect=ValueError('bad row'))
+        with mock.patch.multiple(lp,**readers):
+            value=lp.sample_tick({'backend':1},monotonic_ns=1)
+        self.assertFalse(value.unix_table_valid)
+        self.assertIn('unix_table_parse_error',value.errors)
 
 
 if __name__ == "__main__":

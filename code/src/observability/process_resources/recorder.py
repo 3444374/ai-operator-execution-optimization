@@ -12,13 +12,17 @@ import json
 import os
 import threading
 import time
+from dataclasses import asdict, replace
+from statistics import median
 from pathlib import Path
 from typing import Callable, Mapping, Protocol
 
-from .linux_procfs import sample_tick, unix_socket_table, process_start_time_ticks
+from .linux_procfs import sample_tick, process_start_time_ticks
+from src.baselines.common.redact import redact_text
 from .model import (
     CapturedError,
     FdIdentity,
+    FdKind,
     PgFileClassificationContext,
     ProcessSnapshot,
     RecordedOperation,
@@ -92,6 +96,12 @@ def serialize_snapshot(role: str, snapshot: ProcessSnapshot) -> dict:
         "rss_bytes": snapshot.rss_bytes,
         "thread_count": snapshot.thread_count,
         "total_fd_count": snapshot.total_fd_count,
+        "observed_start_ns": snapshot.observed_start_ns,
+        "observed_end_ns": snapshot.observed_end_ns,
+        "fd_attempts": [{"started_ns": a.started_ns, "ended_ns": a.ended_ns,
+                         "errors": list(a.errors),
+                         "fds": None if a.fds is None else [_serialize_fd(f) for f in a.fds]}
+                        for a in snapshot.fd_attempts],
         "fds": None if snapshot.fds is None else [
             _serialize_fd(item) for item in snapshot.fds],
     }
@@ -103,6 +113,8 @@ def serialize_tick(tick: SampleTick) -> list[str]:
         lines.append(json.dumps({
             "kind": "tick",
             "unix_table_valid": tick.unix_table_valid,
+            "tick_start_ns": tick.monotonic_ns, "tick_end_ns": tick.ended_ns,
+            "tick_errors": list(tick.errors),
             **serialize_snapshot(role, tick.processes[role]),
         }))
     return lines
@@ -126,126 +138,140 @@ def write_atomic(path: Path, payload: str) -> None:
     os.replace(temporary, path)
 
 
-def acquire_stable_baseline(
-    sampler: TickSampler,
-    *,
-    required_consecutive: int = 5,
-    interval_seconds: float = 0.05,
-    timeout_seconds: float = 10.0,
-    clock: Clock | None = None,
-    extra_stability: Callable[[SampleTick], bool] | None = None,
-) -> tuple[StableBaseline | None, list[SampleTick]]:
-    """Accept a baseline only after the FD identity set stopped changing.
+def capture_error(error: BaseException, phase: str) -> CapturedError:
+    """Persist reason codes, never exception bodies or connection parameters."""
+    state = getattr(error, "sqlstate", None)
+    return CapturedError(type(error).__name__, str(state) if state else None,
+                         f"{phase}_error", phase)
 
-    Stability requires every observed role to stay alive with an unchanged
-    process start time, be VALID, keep an identical FD identity set (fd
-    number AND target), and satisfy ``extra_stability`` (e.g. zero active
-    provider sessions). Count equality is never sufficient: fd replacement
-    keeps the count but changes the identity set.
-    """
+
+def acquire_stable_baseline(
+    sampler: TickSampler, *, required_consecutive=5, interval_seconds=.05,
+    timeout_seconds=10., clock=None, extra_stability=None,
+    required_roles=("backend", "gateway"), on_interrupt=None,
+):
+    """Require readable, quiet, identity/thread-stable roles; use median RSS."""
+    if not required_roles or required_consecutive < 2:
+        raise ValueError("invalid_baseline_config")
     clock = clock or SystemClock()
     deadline = time.monotonic() + timeout_seconds
-    observed: list[SampleTick] = []
-    stable_run: list[SampleTick] = []
-    while time.monotonic() < deadline:
-        tick = sampler.sample_all(clock.monotonic_ns())
-        observed.append(tick)
+    observed, stable_run = [], []
 
-        def identity_set(snapshot: ProcessSnapshot) -> tuple | None:
-            if snapshot.fds is None:
+    def signature(tick):
+        if not tick.unix_table_valid or set(tick.processes) != set(required_roles):
+            return None
+        result = []
+        for role in required_roles:
+            snap = tick.processes[role]
+            if (snap.status is not SnapshotStatus.VALID or snap.fds is None
+                    or snap.rss_bytes is None or snap.thread_count is None
+                    or snap.process_start_time_ticks is None
+                    or snap.count(FdKind.PROVIDER_UDS_CONNECTED)):
                 return None
-            return tuple(sorted((item.fd, item.target) for item in snapshot.fds))
+            result.append((role, snap.process_identity, snap.thread_count,
+                           tuple(sorted(f.identity for f in snap.fds))))
+        if extra_stability is not None and not extra_stability(tick):
+            return None
+        return tuple(result)
 
-        def stable_against(previous: SampleTick, current: SampleTick) -> bool:
-            for role in current.processes:
-                before = previous.processes.get(role)
-                after = current.processes.get(role)
-                if before is None or after is None:
-                    return False
-                if after.status is not SnapshotStatus.VALID:
-                    return False
-                if before.process_start_time_ticks != after.process_start_time_ticks:
-                    return False
-                if identity_set(before) != identity_set(after):
-                    return False
-            if extra_stability is not None and not extra_stability(tick):
-                return False
-            return True
-
-        if stable_run and stable_against(stable_run[-1], tick):
-            stable_run.append(tick)
-        else:
-            stable_run = [tick]
-        if len(stable_run) >= required_consecutive:
-            baseline = {
-                role: stable_run[-1].processes[role]
-                for role in sorted(stable_run[-1].processes)}
-            return StableBaseline(ticks=tuple(stable_run), baseline=baseline), observed
-        time.sleep(interval_seconds)
+    previous = None
+    try:
+        while time.monotonic() < deadline:
+            ns = clock.monotonic_ns()
+            try:
+                tick = sampler.sample_all(ns)
+                current = signature(tick)
+            except Exception as error:
+                tick = SampleTick(ns, False, {}, errors=(type(error).__name__,))
+                current = None
+            observed.append(tick)
+            stable_run = stable_run + [tick] if current is not None and current == previous else ([tick] if current is not None else [])
+            previous = current
+            if len(stable_run) >= required_consecutive:
+                baseline = {
+                    role: replace(stable_run[-1].processes[role], rss_bytes=int(median(
+                        t.processes[role].rss_bytes for t in stable_run)))
+                    for role in required_roles}
+                return StableBaseline(tuple(stable_run), baseline), observed
+            time.sleep(interval_seconds)
+    except (KeyboardInterrupt, SystemExit):
+        if on_interrupt is not None:
+            on_interrupt(tuple(observed))
+        raise
     return None, observed
 
 
 def record_operation(
-    sampler: TickSampler,
-    operation: Callable[[], object],
-    *,
-    sample_seconds: float,
-    baseline: Mapping[str, ProcessSnapshot] | None = None,
-    clock: Clock | None = None,
+    sampler: TickSampler, operation, *, sample_seconds, baseline=None,
+    clock=None, on_checkpoint=None,
 ) -> RecordedOperation:
-    """Run ``operation`` while sampling; return outcome AND trace together.
+    """Capture first/middle/final errors and checkpoint before propagating interrupts.
 
-    The operation error is captured, never re-raised, so the caller can
-    persist the trace before reporting the failure. Sampling errors are
-    captured the same way. A final sample is taken after the operation so
-    the trace's last tick reflects the post-operation state.
+    The initial successful sample is the ready barrier. An unreadable initial
+    sample prevents the operation. Finalization does not discard earlier ticks.
     """
+    if sample_seconds < 0:
+        raise ValueError("negative_sample_interval")
     clock = clock or SystemClock()
-    ticks: list[SampleTick] = []
+    started = clock.monotonic_ns()
+    ticks, errors, interrupts = [], [], []
     stopping = threading.Event()
-    sampling_error: CapturedError | None = None
 
-    def first_snapshot() -> dict[str, ProcessSnapshot]:
-        tick = sampler.sample_all(clock.monotonic_ns())
-        ticks.append(tick)
-        return dict(tick.processes)
+    def sample(phase):
+        try:
+            ticks.append(sampler.sample_all(clock.monotonic_ns()))
+            return True
+        except BaseException as error:
+            errors.append(capture_error(error, phase))
+            if isinstance(error, (KeyboardInterrupt, SystemExit)):
+                interrupts.append(error)
+            return False
 
-    starting = first_snapshot()
-    if baseline is None:
-        baseline = starting
-
-    def collect() -> None:
-        while not stopping.is_set():
-            try:
-                ticks.append(sampler.sample_all(clock.monotonic_ns()))
-            except OSError as error:
-                nonlocal sampling_error
-                sampling_error = CapturedError(
-                    exception_type=type(error).__name__, sqlstate=None,
-                    message=str(error)[:200], phase="sampling")
-                return
-            stopping.wait(sample_seconds)
-
-    operation_error: CapturedError | None = None
     result = None
-    worker = threading.Thread(target=collect)
-    worker.start()
-    try:
-        result = operation()
-    except Exception as error:  # noqa: BLE001 - captured, sanitized below
-        sqlstate = getattr(error, "sqlstate", None)
-        operation_error = CapturedError(
-            exception_type=type(error).__name__,
-            sqlstate=str(sqlstate) if sqlstate else None,
-            message=str(error)[:200], phase="operation")
-    finally:
-        stopping.set()
-        worker.join()
-    ticks.append(sampler.sample_all(clock.monotonic_ns()))
-    trace = ResourceTrace(baseline=baseline, ticks=tuple(ticks))
-    return RecordedOperation(
-        result=result, operation_error=operation_error,
-        sampling_error=sampling_error, trace=trace)
+    operation_error = None
+    ready = sample("sampling_first")
+    if ready:
+        first = ticks[0]
+        required = set(baseline) if baseline is not None else set(first.processes)
+        ready = (bool(required) and set(first.processes) == required
+                 and first.unix_table_valid and not first.errors
+                 and all(s.status is SnapshotStatus.VALID and s.fds is not None
+                         and s.rss_bytes is not None and s.thread_count is not None
+                         and s.process_start_time_ticks is not None
+                         and (baseline is None or s.process_identity == baseline[r].process_identity)
+                         for r, s in first.processes.items()))
+        if not ready:
+            errors.append(CapturedError("ObservationUnavailable", None,
+                                        "sampling_first_invalid", "sampling_first"))
+    actual_baseline = baseline if baseline is not None else (dict(ticks[0].processes) if ticks else {})
+
+    def collect():
+        while not stopping.wait(max(sample_seconds, .0001)):
+            if not sample("sampling_middle"):
+                return
+
+    worker = threading.Thread(target=collect, name="resource-sampler")
+    if ready:
+        worker.start()
+        try:
+            result = operation()
+        except BaseException as error:
+            operation_error = capture_error(error, "operation")
+            if isinstance(error, (KeyboardInterrupt, SystemExit)):
+                interrupts.append(error)
+        finally:
+            stopping.set()
+            worker.join()
+            sample("sampling_final")
+    recorded = RecordedOperation(
+        result, operation_error, errors[0] if errors else None,
+        ResourceTrace(actual_baseline, tuple(ticks)), started,
+        clock.monotonic_ns(), tuple(errors))
+    if on_checkpoint is not None:
+        on_checkpoint(recorded)
+    if interrupts:
+        raise interrupts[0]
+    return recorded
 
 
 def fd_lifecycles(trace: ResourceTrace) -> list[dict]:
@@ -276,14 +302,15 @@ def fd_lifecycles(trace: ResourceTrace) -> list[dict]:
 def persist_trace(directory: Path, trace: ResourceTrace) -> None:
     """Write baseline plus ticks as gzip JSONL, streamed to a partial file."""
     directory.mkdir(parents=True, exist_ok=True)
-    lines = []
-    for role in sorted(trace.baseline):
-        lines.append(json.dumps({
-            "kind": "baseline",
-            **serialize_snapshot(role, trace.baseline[role])}))
-    for tick in trace.ticks:
-        lines.extend(serialize_tick(tick))
-    _write_gzip_atomic(directory / "process_samples.jsonl.gz", lines)
+    def records():
+        for role in sorted(trace.baseline):
+            yield json.dumps({"kind": "baseline", **serialize_snapshot(role, trace.baseline[role])})
+        for tick in trace.ticks:
+            if not tick.processes:
+                yield json.dumps({"kind": "empty_tick", "monotonic_ns": tick.monotonic_ns,
+                                  "tick_errors": tick.errors, "unix_table_valid": tick.unix_table_valid})
+            yield from serialize_tick(tick)
+    _write_gzip_atomic(directory / "process_samples.jsonl.gz", records())
 
 
 def persist_lifecycles(directory: Path, trace: ResourceTrace) -> None:
@@ -298,17 +325,20 @@ def persist_operation_outcome(
 ) -> None:
     """Persist the sanitized operation outcome beside its trace."""
     directory.mkdir(parents=True, exist_ok=True)
-    payload = {"phase": phase, "result_summary": None}
+    payload = {"phase": phase, "result_summary": None,
+               "started_ns": recorded.started_ns, "ended_ns": recorded.ended_ns,
+               "sample_count": len(recorded.trace.ticks),
+               "sampling_errors": [asdict(e) for e in recorded.sampling_errors]}
     if recorded.operation_error is not None:
         payload["operation_error"] = {
             "exception_type": recorded.operation_error.exception_type,
             "sqlstate": recorded.operation_error.sqlstate,
-            "message": recorded.operation_error.message,
+            "message": redact_text(recorded.operation_error.message),
             "phase": recorded.operation_error.phase}
     if recorded.sampling_error is not None:
         payload["sampling_error"] = {
             "exception_type": recorded.sampling_error.exception_type,
-            "message": recorded.sampling_error.message}
+            "message": redact_text(recorded.sampling_error.message)}
     if isinstance(recorded.result, dict):
         payload["result_summary"] = {
             key: recorded.result[key] for key in recorded.result
@@ -316,4 +346,4 @@ def persist_operation_outcome(
     elif isinstance(recorded.result, (int, str, bool, float, type(None))):
         payload["result_summary"] = recorded.result
     write_atomic(directory / "operation_outcome.json",
-                 json.dumps(payload, indent=2) + "\n")
+                 redact_text(json.dumps(payload, indent=2)) + "\n")

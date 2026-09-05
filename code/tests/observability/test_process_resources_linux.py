@@ -1,14 +1,7 @@
-"""Linux integration: cross-process UDS pair, peer credentials, attribution.
-
-Runs only on Linux with /proc, AF_UNIX, and SO_PEERCRED. A real child
-process holds the unbound client end so the attribution rules can be
-exercised exactly as the qualification uses them: the parent owns the
-listener and accepted socket, the child owns the pathnameless client.
-The child SIGSTOPs before creating its socket so the backend baseline is
-sampled in the same pre-session state the qualification lifecycle has.
-"""
+"""Linux integration: observe separate live client/gateway processes from a third process."""
+import json
 import os
-import signal
+from pathlib import Path
 import socket
 import subprocess
 import sys
@@ -16,162 +9,92 @@ import tempfile
 import time
 import unittest
 
-from src.observability.process_resources.linux_procfs import (
-    sample_tick,
-    snapshot_process,
-    unix_socket_table,
-)
-from src.observability.process_resources.model import (
-    FdKind, ResourceTrace)
+from src.observability.process_resources.linux_procfs import sample_tick, unix_socket_table
+from src.observability.process_resources.model import FdKind, ResourceTrace, SnapshotStatus
 from src.experiments.postgresql.provider_session_attribution import (
-    attribute_provider_sessions,
-    reclassify_clients,
-    session_windows,
-)
-from src.experiments.postgresql.semmap_resource_gateway_observer import (
-    _accepted_inode,
-    _peer_credentials,
-)
+    attribute_provider_sessions, reclassify_clients, session_windows, residual_provider_fds)
+from src.experiments.postgresql.resource_qualification import build_qualification_report
 
-CHILD_HOLDER = """
-import os, signal, socket, sys, time
-path, started, go = sys.argv[1], sys.argv[2], sys.argv[3]
-os.kill(os.getpid(), signal.SIGSTOP)  # baseline moment: no socket yet
-open(started, 'w').write('ready')
-while not os.path.exists(go):
-    time.sleep(0.02)
-client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-client.connect(path)
-while True:
-    time.sleep(0.05)
-"""
-
-
-def _wait_state(pid, wanted, tries=400):
-    for _ in range(tries):
-        try:
-            with open(f"/proc/{pid}/stat") as handle:
-                state = handle.read().split(")")[-1].split()[0]
-        except OSError:
-            return False
-        if state == wanted:
-            return True
-        time.sleep(0.02)
-    return False
+GATEWAY = '''
+import json,os,socket,struct,sys,time
+listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+listener.bind(sys.argv[1]); listener.listen(1)
+unrelated=open(sys.argv[2],'w')
+print('ready',flush=True)
+connection,_=listener.accept()
+peer=struct.unpack('3i',connection.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))
+inode=int(os.readlink('/proc/self/fd/'+str(connection.fileno()))[8:-1])
+print(json.dumps({'event':'session_start','session_id':1,'monotonic_ns':time.monotonic_ns(),
+'gateway_pid':os.getpid(),'peer_pid':peer[0],'accepted_fd':connection.fileno(),'accepted_socket_inode':inode}),flush=True)
+sys.stdin.readline(); connection.close()
+print(json.dumps({'event':'session_end','session_id':1,'monotonic_ns':time.monotonic_ns(),'connection_closed':True}),flush=True)
+sys.stdin.readline(); unrelated.close(); listener.close()
+'''
+CLIENT = '''
+import socket,sys
+print('ready',flush=True); sys.stdin.readline()
+client=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM); client.connect(sys.argv[1])
+print('connected',flush=True); sys.stdin.readline(); client.close()
+print('closed',flush=True); sys.stdin.readline()
+'''
 
 
-@unittest.skipUnless(os.path.exists("/proc/net/unix"), "Linux /proc required")
+def signal_child(child):
+    child.stdin.write('go\n')
+    child.stdin.flush()
+
+
+@unittest.skipUnless(sys.platform.startswith('linux') and hasattr(socket,'SO_PEERCRED'), 'Linux procfs/SO_PEERCRED required')
 class CrossProcessUdsIntegration(unittest.TestCase):
-    def test_child_client_attributed_via_peer_evidence(self):
-        accepted = None
-        child = None
-        with tempfile.TemporaryDirectory(prefix="semloom-xproc-") as directory:
-            path = os.path.join(directory, "provider.sock")
-            started = os.path.join(directory, "started")
-            go = os.path.join(directory, "go")
-            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            server.bind(path)
-            server.listen(1)
+    def test_live_two_process_pair_and_same_identity_cleanup(self):
+        with tempfile.TemporaryDirectory(prefix='slri-') as directory:
+            path=str(Path(directory)/'provider.sock')
+            children=[]
             try:
-                child = subprocess.Popen(
-                    [sys.executable, "-c", CHILD_HOLDER, path, started, go],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                self.assertTrue(_wait_state(child.pid, "T"),
-                                "child must SIGSTOP before opening its socket")
-                baseline_tick = sample_tick(
-                    {"gateway": os.getpid(), "backend": child.pid},
-                    monotonic_ns=0, provider_socket_path=path)
-                baseline_unbound = [
-                    item.fd for item in
-                    baseline_tick.processes["backend"].fds or ()
-                    if item.kind is FdKind.UNBOUND_UNIX_SOCKET]
-                self.assertEqual(baseline_unbound, [],
-                                 "baseline must predate the client socket")
-                os.kill(child.pid, signal.SIGCONT)
-                for _ in range(400):
-                    if os.path.exists(started):
-                        break
-                    time.sleep(0.02)
-                open(go, "w").write("go")
-                server.settimeout(10)
-                accepted, _ = server.accept()
-                peer = _peer_credentials(accepted)
-                self.assertIsNotNone(peer)
-                self.assertEqual(peer[0], child.pid,
-                                 "SO_PEERCRED peer pid must be the client child")
-                inode = _accepted_inode(accepted)
-                self.assertIsNotNone(inode)
-
-                events = [
-                    {"event": "session_start", "session_id": 1,
-                     "monotonic_ns": 1, "gateway_pid": os.getpid(),
-                     "accepted_fd": accepted.fileno(),
-                     "accepted_socket_inode": inode,
-                     "peer_pid": peer[0], "peer_uid": peer[1],
-                     "peer_gid": peer[2]},
-                    {"event": "session_end", "session_id": 1,
-                     "monotonic_ns": 4_000_000_000},
-                ]
-                ticks = [
-                    sample_tick(
-                        {"gateway": os.getpid(), "backend": child.pid},
-                        monotonic_ns=ns, provider_socket_path=path)
-                    for ns in (1_000_000_000, 2_000_000_000, 3_000_000_000)]
-                trace = ResourceTrace(
-                    baseline=dict(baseline_tick.processes), ticks=tuple(ticks))
-
-                attribution = attribute_provider_sessions(
-                    backend_pid=child.pid, baseline=trace.baseline,
-                    trace=trace, windows=session_windows(events))
-                self.assertIsNotNone(attribution,
-                                     "unique child client must be attributed")
-                attributed_fd = attribution["sessions"][0]["attributed"]["fd"]
-                rewritten = reclassify_clients(trace, attribution)
-                kinds = [
-                    item.kind for item in
-                    rewritten.ticks[0].processes["backend"].fds
-                    if item.fd == attributed_fd]
-                self.assertEqual(kinds, [FdKind.PROVIDER_UDS_CONNECTED])
+                gateway=subprocess.Popen([sys.executable,'-u','-c',GATEWAY,path,str(Path(directory)/'unrelated')],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                children.append(gateway)
+                self.assertEqual(gateway.stdout.readline().strip(),'ready')
+                client=subprocess.Popen([sys.executable,'-u','-c',CLIENT,path],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                children.append(client)
+                self.assertEqual(client.stdout.readline().strip(),'ready')
+                pids={'backend':client.pid,'gateway':gateway.pid}
+                baseline=sample_tick(pids,provider_socket_path=path)
+                self.assertTrue(all(s.status is SnapshotStatus.VALID for s in baseline.processes.values()),baseline)
+                self.assertEqual(baseline.processes['gateway'].count(FdKind.PROVIDER_UDS_LISTENER),1)
+                self.assertGreaterEqual(baseline.processes['gateway'].count(FdKind.REGULAR_FILE_OTHER),1)
+                signal_child(client)
+                self.assertEqual(client.stdout.readline().strip(),'connected')
+                start=json.loads(gateway.stdout.readline())
+                ticks=tuple(sample_tick(pids,provider_socket_path=path) for _ in range(3))
+                signal_child(client)
+                self.assertEqual(client.stdout.readline().strip(),'closed')
+                signal_child(gateway)
+                end=json.loads(gateway.stdout.readline())
+                trace=ResourceTrace(baseline.processes,ticks)
+                result=attribute_provider_sessions(backend_pid=client.pid,baseline=baseline.processes,
+                    trace=trace,windows=session_windows([start,end]))
+                self.assertIsNotNone(result.attribution,result.problems)
+                rewritten=reclassify_clients(trace,result.attribution)
+                peak=build_qualification_report(baseline.processes,rewritten,phase='stress')
+                self.assertTrue(peak.passed,peak)
+                self.assertEqual(peak.diagnostics['peak']['provider_uds_session_fd_peak_delta_combined'],2)
+                clean=ResourceTrace(baseline.processes,(sample_tick(pids,provider_socket_path=path),))
+                report=build_qualification_report(baseline.processes,clean,phase='cleanup')
+                self.assertTrue(report.passed,report)
+                self.assertEqual(residual_provider_fds(clean,result.attribution),[])
+                self.assertTrue(all(child.poll() is None for child in children))
             finally:
-                if accepted is not None:
-                    accepted.close()
-                if child is not None:
-                    child.terminate()
-                    child.wait(timeout=5)
-                server.close()
-                if os.path.exists(path):
-                    os.unlink(path)
+                for child in children:
+                    if child.poll() is None:
+                        child.terminate()
+                    child.communicate(timeout=5)
 
-    def test_unbound_unix_entries_are_kept_in_table(self):
-        # A connected client socket appears in /proc/net/unix without a path.
-        with tempfile.TemporaryDirectory(prefix="semloom-unbound-") as directory:
-            path = os.path.join(directory, "u.sock")
-            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            server.bind(path)
-            server.listen(1)
-            client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            client.connect(path)
-            accepted, _ = server.accept()
-            try:
-                table = unix_socket_table()
-                client_inode = int(os.readlink(
-                    f"/proc/self/fd/{client.fileno()}")[len("socket:["):-1])
-                self.assertIn(client_inode, table)
-                self.assertIsNone(table[client_inode],
-                                  "connected client has no bound path")
-                snapshot = snapshot_process(
-                    os.getpid(), monotonic_ns=1,
-                    unix_paths_by_inode=table,
-                    provider_socket_path=path)
-                kinds = [item.kind for item in snapshot.fds or ()
-                         if item.inode == client_inode]
-                self.assertEqual(kinds, [FdKind.UNBOUND_UNIX_SOCKET])
-            finally:
-                accepted.close()
-                client.close()
-                server.close()
-                os.unlink(path)
+    def test_valid_empty_table_distinct_from_unreadable(self):
+        from unittest.mock import patch
+        with patch('pathlib.Path.read_text',return_value='Num RefCount Protocol Flags Type St Inode Path\n'):
+            self.assertEqual(unix_socket_table(),{})
+        with patch('pathlib.Path.read_text',side_effect=PermissionError()):
+            self.assertIsNone(unix_socket_table())
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__=='__main__': unittest.main()

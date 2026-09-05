@@ -30,7 +30,8 @@ from src.observability.process_resources.model import (
     SnapshotStatus,
 )
 
-METRIC_SCHEMA = "semloom.pg.resource.v2"
+METRIC_SCHEMA = "semloom.pg.resource.v2.1"
+IMPLEMENTATION_REVISION = "phase-lifecycle-1"
 
 MIB = 1024 * 1024
 
@@ -76,7 +77,7 @@ def compose_status(*statuses: tuple[str, str]) -> tuple[str, str] | None:
     would compose into an illegal pair (e.g. inconclusive+passed) returns
     None so callers can reject it instead of silently coercing.
     """
-    if any(pair not in _LEGAL_STATUSES for pair in statuses):
+    if not statuses or any(pair not in _LEGAL_STATUSES for pair in statuses):
         return None
     if any(m == "invalid" for m, _ in statuses):
         return ("invalid", "not_evaluated")
@@ -168,11 +169,8 @@ def evaluate_peak_policy(
             base = baseline.get(role)
             if base is None or base.fds is None or snapshot.fds is None:
                 continue
-            unknown_now = sum(
-                1 for item in snapshot.fds if item.kind is FdKind.UNKNOWN)
-            unknown_base = sum(
-                1 for item in base.fds if item.kind is FdKind.UNKNOWN)
-            unknown_peak = max(unknown_peak, unknown_now - unknown_base)
+            unknown_peak = max(unknown_peak, len(
+                snapshot.unknown_identities() - base.unknown_identities()))
 
     diagnostics["per_role"]["backend"] = {
         "provider_uds_peak_delta": client_peak,
@@ -268,7 +266,7 @@ def evaluate_cleanup_policy(
     final = trace.ticks[-1]
 
     combined_end = 0
-    for role in ("backend", "gateway"):
+    for role in baseline:
         base = baseline.get(role)
         end = final.processes.get(role)
         if base is None:
@@ -293,6 +291,13 @@ def evaluate_cleanup_policy(
                     violations.append(Violation(
                         scope=role, metric="total_fd_end_delta",
                         observed=delta, limit=TOTAL_FD_END_LIMIT))
+            if end.fds is not None and base.fds is not None:
+                before = {fd.identity for fd in base.fds}
+                after = {fd.identity for fd in end.fds}
+                if before != after:
+                    violations.append(Violation(
+                        scope=role, metric="fd_identity_end_mismatch", observed=len(after - before),
+                        limit=0, detail={"added": sorted(after - before), "removed": sorted(before - after)}))
             if end.thread_count is not None and base.thread_count is not None:
                 delta = end.thread_count - base.thread_count
                 role_diagnostics["thread_end_delta"] = delta
@@ -328,43 +333,44 @@ def evaluate_cleanup_policy(
     return violations, diagnostics
 
 
-def validate_measurement(
-    baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
-    *,
-    required_roles: tuple[str, ...] = ("backend", "gateway"),
-) -> tuple[str, list[str]]:
-    """Classify whether the observations can support any qualification.
-
-    A tick missing a required role entirely is a hole in the observation,
-    never a zero to substitute into the gates: role absence is flagged so
-    a vacuous tick cannot compose a green report.
-    """
-    problems: list[str] = []
-    if not trace.ticks:
-        return "invalid", ["no_ticks"]
-    for role in baseline:
+def validate_measurement(baseline, trace, *, required_roles=("backend", "gateway")):
+    """Check required data and process identities independently of policy values."""
+    if not required_roles or not trace.ticks:
+        return "invalid", ["no_required_roles_or_ticks"]
+    problems, invalid = [], False
+    if set(baseline) != set(required_roles):
+        problems.append("baseline_roles_missing_or_extra")
+        invalid = True
+    for role in required_roles:
         base = baseline.get(role)
         if base is None:
-            problems.append(f"{role}_baseline_missing")
             continue
-        if base.status is not SnapshotStatus.VALID:
-            problems.append(f"{role}_baseline_{base.status.value}")
-        if base.fds is None:
-            problems.append(f"{role}_baseline_fds_unreadable")
+        if (base.status is not SnapshotStatus.VALID or base.fds is None
+                or base.rss_bytes is None or base.thread_count is None
+                or base.process_start_time_ticks is None):
+            problems.append(f"{role}_baseline_invalid")
+            invalid = True
     for index, tick in enumerate(trace.ticks):
         for role in required_roles:
-            if role not in tick.processes:
+            snap, base = tick.processes.get(role), baseline.get(role)
+            if snap is None:
                 problems.append(f"tick{index}_{role}_missing")
-        for role, snapshot in tick.processes.items():
-            if snapshot.status is SnapshotStatus.INVALID:
+                continue
+            if snap.status is SnapshotStatus.INVALID:
                 problems.append(f"tick{index}_{role}_invalid")
-            elif snapshot.status is SnapshotStatus.PARTIAL:
+                invalid = True
+            elif snap.status is SnapshotStatus.PARTIAL:
                 problems.append(f"tick{index}_{role}_partial")
-        if not tick.unix_table_valid:
+            if (snap.fds is None or snap.rss_bytes is None or snap.thread_count is None
+                    or snap.process_start_time_ticks is None):
+                problems.append(f"tick{index}_{role}_unreadable")
+                invalid = True
+            if base is not None and snap.process_identity != base.process_identity:
+                problems.append(f"tick{index}_{role}_process_replaced")
+                invalid = True
+        if not tick.unix_table_valid or tick.errors:
             problems.append(f"tick{index}_unix_table_unavailable")
-    if any("invalid" in problem for problem in problems):
-        return "invalid", problems
-    return ("valid", []) if not problems else ("inconclusive", problems)
+    return ("invalid" if invalid else "inconclusive" if problems else "valid"), problems
 
 
 def evaluate_session_drain(events: list[dict]) -> tuple[list[Violation], dict]:
@@ -379,33 +385,26 @@ def evaluate_session_drain(events: list[dict]) -> tuple[list[Violation], dict]:
     checks instead. Undelivered tasks would surface as a missing
     session_end (still-open session) here.
     """
-    violations: list[Violation] = []
-    diagnostics: dict = {}
-    open_sessions: dict[int, int] = {}
-    task_count = 0
-    for event in events:
-        kind = event.get("event")
-        if kind == "session_start":
-            open_sessions[event["session_id"]] = event.get("monotonic_ns", 0)
-        elif kind == "session_end":
-            open_sessions.pop(event["session_id"], None)
-        elif kind == "task":
-            task_count += 1
-    diagnostics["active_sessions"] = len(open_sessions)
-    diagnostics["open_session_ids"] = sorted(open_sessions)
-    diagnostics["tasks_recorded"] = task_count
-    if open_sessions:
-        violations.append(Violation(
-            scope="gateway", metric="active_sessions",
-            observed=len(open_sessions), limit=0,
-            detail={"session_ids": sorted(open_sessions)}))
-    return violations, diagnostics
+    from .provider_session_attribution import session_windows
+    violations = []
+    try:
+        windows = session_windows(events)
+    except (ValueError, KeyError, TypeError) as error:
+        violations.append(Violation("gateway", "session_events_incomplete", type(error).__name__, "complete"))
+        return violations, {"active_sessions": None, "event_integrity": "invalid"}
+    starts = {e["session_id"] for e in events if e.get("event") == "session_start"}
+    return violations, {"active_sessions": 0, "sessions": len(windows),
+                        "session_ids": sorted(starts),
+                        "tasks_recorded": sum(e.get("event") == "task" for e in events),
+                        "event_integrity": "valid",
+                        "success_inferred_from_session_end": False}
 
 
 def build_qualification_report(
     baseline: Mapping[str, ProcessSnapshot], trace: ResourceTrace,
     *,
     phase: str = "combined",
+    required_roles: tuple[str, ...] = ("backend", "gateway"),
 ) -> GateReport:
     """Compose measurement validity with the phase-appropriate policies.
 
@@ -415,23 +414,34 @@ def build_qualification_report(
     conflation previously produced contradictory failed-with-no-violations
     reports.
     """
-    measurement, problems = validate_measurement(baseline, trace)
+    if phase not in ("stress", "cleanup", "combined"):
+        raise ValueError("unknown_policy_phase")
+    measurement, problems = validate_measurement(baseline, trace, required_roles=required_roles)
     peak_violations: list[Violation] = []
     cleanup_violations: list[Violation] = []
     diagnostics: dict = {"measurement_problems": problems, "phase": phase}
-    if measurement == "valid":
-        if phase in ("stress", "combined"):
-            peak_violations, peak_diagnostics = evaluate_peak_policy(baseline, trace)
-            diagnostics["peak"] = peak_diagnostics
-        if phase in ("cleanup", "combined"):
-            cleanup_violations, cleanup_diagnostics = evaluate_cleanup_policy(baseline, trace)
-            diagnostics["cleanup"] = cleanup_diagnostics
+    # Complete valid observations can prove violations even when another
+    # observation leaves the overall measurement inconclusive. Keep those
+    # failures; a missing interval cannot erase an observed overload.
+    valid_ticks = tuple(t for t in trace.ticks
+        if validate_measurement(baseline, ResourceTrace(baseline, (t,)),
+                                required_roles=required_roles)[0] == "valid")
+    if valid_ticks and phase in ("stress", "combined"):
+        peak_violations, peak_diagnostics = evaluate_peak_policy(
+            baseline, ResourceTrace(baseline, valid_ticks))
+        diagnostics["peak"] = peak_diagnostics
+        diagnostics["peak"]["coverage"] = "complete" if measurement == "valid" else "valid_observations_only"
+    if trace.ticks and phase in ("cleanup", "combined"):
+        cleanup_violations, cleanup_diagnostics = evaluate_cleanup_policy(baseline, trace)
+        diagnostics["cleanup"] = cleanup_diagnostics
     unknown_peak = diagnostics.get("peak", {}).get("unknown_fd_peak_delta", 0)
     unknown_cleanup_new = [
         role for role, diag in diagnostics.get("cleanup", {})
         .get("per_role", {}).items()
         if diag.get("unknown_fd_identities_new")]
-    if measurement == "inconclusive" or unknown_peak > 0 or unknown_cleanup_new:
+    if measurement == "invalid":
+        composed = ("invalid", "not_evaluated")
+    elif measurement == "inconclusive" or unknown_peak > 0 or unknown_cleanup_new:
         composed = ("inconclusive", "not_evaluated")
     elif measurement == "invalid":
         composed = ("invalid", "not_evaluated")

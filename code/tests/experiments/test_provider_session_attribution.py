@@ -54,7 +54,7 @@ def _events(sessions, *, accepted_inode_override=None):
                        "monotonic_ns": start, "gateway_pid": 2,
                        "accepted_fd": 5, "accepted_socket_inode": inode,
                        "peer_pid": peer, "peer_uid": 999, "peer_gid": 999})
-        events.append({"event": "session_end", "session_id": session_id,
+        events.append({"event": "session_end", "session_id": session_id, "connection_closed": True,
                        "monotonic_ns": end})
     return events
 
@@ -103,7 +103,7 @@ class AttributionTests(unittest.TestCase):
         kinds = [item.kind for item in rewritten.ticks[0].processes["backend"].fds]
         self.assertEqual(kinds, [UDS])
         self.assertEqual(
-            rewritten.fd_correlation_evidence["17"]["accepted_inode"], 777)
+            rewritten.fd_correlation_evidence["1"]["attributed"]["accepted_inode"], 777)
 
     def test_two_candidates_is_inconclusive_with_reason(self):
         run = self._trace([
@@ -151,23 +151,11 @@ class AttributionTests(unittest.TestCase):
             any("accepted_inode_unrecorded" in p for p in result.problems),
             result.problems)
 
-    def test_window_without_ticks_is_unobservable_not_fatal(self):
-        # The warmup session closes in ~44ms; no sampler tick lands inside.
-        # Attribution must still succeed for the observed sessions.
-        run = self._trace([
-            self._tick(500, backend=(_unbound(17, 4001),),
-                       gateway=(_connected(5, 777),)),
-        ])
-        events = _events([(100, 150, 1, 777),   # warmup: no ticks inside
-                           (400, 600, 1, 777)])  # observed session
-        result = self._attribute(run, events)
-        self.assertIsNotNone(result.attribution)
-        notes = [s.get("note") for s in result.attribution["sessions"]]
-        self.assertIn("no_ticks_in_window", notes)
-        attributed = [s["attributed"] for s in result.attribution["sessions"]
-                      if s["attributed"]]
-        self.assertEqual(len(attributed), 1)
-        self.assertEqual(attributed[0]["fd"], 17)
+    def test_one_observed_session_does_not_qualify_another_tickless_session(self):
+        run = self._trace([self._tick(500, backend=(_unbound(17, 4001),), gateway=(_connected(5, 777),))])
+        result = self._attribute(run, _events([(100, 150, 1, 777), (400, 600, 1, 777)]))
+        self.assertIsNone(result.attribution)
+        self.assertTrue(any("session1_no_ticks" in p for p in result.problems))
 
     def test_baseline_unbound_socket_is_not_a_candidate(self):
         base = {"backend": _snap(1, 0, (_unbound(8, 3000),)),
@@ -266,3 +254,44 @@ class AttributionFailureIsInconclusiveTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class AttributionIdentityTests(unittest.TestCase):
+    _trace = AttributionTests._trace
+    _tick = AttributionTests._tick
+    _attribute = AttributionTests._attribute
+
+    def test_endpoints_in_different_ticks_cannot_be_paired(self):
+        run=self._trace([self._tick(120,backend=(_unbound(17,4001),)),
+                         self._tick(180,gateway=(_connected(5,777),))])
+        result=self._attribute(run,_events([(100,200,1,777)]))
+        self.assertIsNone(result.attribution)
+
+    def test_reused_baseline_fd_with_new_inode_is_new_candidate(self):
+        base={"backend":_snap(1,0,(_unbound(17,3000),)),"gateway":_snap(2,0,())}
+        run=ResourceTrace(base,(self._tick(120,backend=(_unbound(17,4001),),gateway=(_connected(5,777),)),))
+        result=self._attribute(run,_events([(100,200,1,777)]))
+        self.assertIsNotNone(result.attribution,result.problems)
+
+    def test_unknown_reuse_and_other_session_are_not_reclassified(self):
+        from dataclasses import replace
+        run=self._trace([self._tick(120,backend=(_unbound(17,4001),),gateway=(_connected(5,777),))])
+        result=self._attribute(run,_events([(100,200,1,777)]))
+        later=self._tick(300,backend=(_unbound(17,4001),))
+        unknown=FdIdentity(17,"memfd:other",FdKind.UNKNOWN,999)
+        trace=replace(run,ticks=run.ticks+(self._tick(180,backend=(unknown,)),later))
+        rewritten=reclassify_clients(trace,result.attribution)
+        self.assertEqual(rewritten.ticks[1].processes['backend'].fds[0].kind,FdKind.UNKNOWN)
+        self.assertEqual(rewritten.ticks[2].processes['backend'].fds[0].kind,UNBOUND)
+
+    def test_post_session_residual_remains_in_cleanup_evidence(self):
+        from src.experiments.postgresql.provider_session_attribution import residual_provider_fds
+        run=self._trace([self._tick(120,backend=(_unbound(17,4001),),gateway=(_connected(5,777),))])
+        result=self._attribute(run,_events([(100,200,1,777)]))
+        cleanup=self._trace([self._tick(300,backend=(_unbound(17,4001),))])
+        self.assertEqual(residual_provider_fds(cleanup,result.attribution)[0]['inode'],4001)
+
+    def test_duplicate_orphan_and_unclosed_events_are_rejected(self):
+        events=_events([(100,200,1,777)])
+        for bad in ([events[0],events[0]], [events[1]], [events[0]]):
+            with self.subTest(bad=bad),self.assertRaises(ValueError):
+                session_windows(bad)

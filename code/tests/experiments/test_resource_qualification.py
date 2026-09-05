@@ -256,11 +256,11 @@ class SessionDrainTests(unittest.TestCase):
             evaluate_session_drain)
         events = [
             {"event": "session_start", "session_id": 1, "monotonic_ns": 10},
-            {"event": "task", "session_id": 1, "payload_digest": "x"},
+            {"event": "task", "session_id": 1, "payload_digest": "x", "monotonic_ns": 11, "task": 1},
         ]
         violations, diagnostics = evaluate_session_drain(events)
-        self.assertEqual(diagnostics["active_sessions"], 1)
-        self.assertTrue(any(v.metric == "active_sessions"
+        self.assertIsNone(diagnostics["active_sessions"])
+        self.assertTrue(any(v.metric == "session_events_incomplete"
                             for v in violations))
 
     def test_ended_sessions_pass(self):
@@ -268,8 +268,9 @@ class SessionDrainTests(unittest.TestCase):
             evaluate_session_drain)
         events = [
             {"event": "session_start", "session_id": 1, "monotonic_ns": 10},
-            {"event": "task", "session_id": 1, "payload_digest": "x"},
-            {"event": "session_end", "session_id": 1, "monotonic_ns": 20},
+            {"event": "task", "session_id": 1, "payload_digest": "x", "monotonic_ns": 11, "task": 1},
+            {"event": "task_complete", "session_id": 1, "monotonic_ns": 19, "task": 1},
+            {"event": "session_end", "session_id": 1, "monotonic_ns": 20, "connection_closed": True},
         ]
         violations, diagnostics = evaluate_session_drain(events)
         self.assertEqual(diagnostics["active_sessions"], 0)

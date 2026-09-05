@@ -95,7 +95,7 @@ class RecordOperationTests(unittest.TestCase):
         self.assertIsNotNone(recorded.trace)
         self.assertIsNotNone(recorded.operation_error)
         self.assertEqual(recorded.operation_error.exception_type, "RuntimeError")
-        self.assertEqual(recorded.operation_error.message, "sentinel")
+        self.assertEqual(recorded.operation_error.message, "operation_error")
 
     def test_success_returns_result_and_final_sample(self):
         recorded = record_operation(
