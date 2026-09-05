@@ -24,7 +24,9 @@ SELECT及四个故障/恢复阶段资源通过。真实INSERT的测量受同back
 接受外部 ID/总上限及会话事件，旧 choice 默认保留。隔离 PG 用户/端口可配置，C 客户端从实际
 连接取参数。模型 endpoint/ID/timeout 原已由外部 JSON 拥有。
 本地212项回归中210通过、2项Linux专属跳过，包含v3/v4/v5×golden/合成HTTP的六条接线；
-PG18.3 libpq fixture 客户端严格编译通过。本次 Linux/隔离PG重跑待登记，历史真实/正式资源结论不变。
+`b7eeea53` 在Linux212项全部通过；新端口55499的隔离PG18.3 1×100 fixture九阶段全部valid/passed，
+libpq客户端严格编译通过，8个已观测进程均退出，模型请求0。旧32/32账本只读兼容且字节不变。
+历史真实/正式资源结论不变。
 取舍由 Map 合同 §8.4.5 维护，[验证记录](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)另列。
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与

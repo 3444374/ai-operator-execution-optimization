@@ -1,0 +1,160 @@
+{
+  "diagnostic_status": "passed",
+  "exit_code": 2,
+  "ledger_read_only_compatibility": {
+    "bytes_unchanged": true,
+    "limit": 32,
+    "sha256": "0f7e7c83e5a9ee1203f5bf49a2b8a33766fa8cd5a3ecfe9a4f87bd2aac0893c8",
+    "used": 32
+  },
+  "model_requests": 0,
+  "owned_process_checks": {
+    "observed_pids": 8,
+    "pg_pidfile_absent": true,
+    "still_present": 0
+  },
+  "phases": {
+    "cancel_and_cleanup/cancel": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "cancel",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "da38ae75bb7b40402c0834f52e4d78513bfb73e7974030516c74088dbc89a137",
+      "safe": true,
+      "state": "completed"
+    },
+    "cancel_and_cleanup/recovery": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "recovery",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "7b7675cf860aa4f9a7e3910b8f34e1023520d5ec88e9d1475a1ce0e26d6b0dd0",
+      "safe": true,
+      "state": "completed"
+    },
+    "gateway_exit_and_recovery/absent": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "absent",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "b6681d9f01bc35fc00cd074c2645a032f03bde21efb8a31abb86caa06b613dec",
+      "safe": true,
+      "state": "completed"
+    },
+    "gateway_exit_and_recovery/alive": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "alive",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "355cc9ceb1fb9dc5daf6398b76ff56e501c7123c0d46fdf48354ada43d9eb582",
+      "safe": true,
+      "state": "completed"
+    },
+    "gateway_exit_and_recovery/recovery": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "recovery",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "7427bfae2643301b0bfeab64510f120988fe33ef08d7e0fcd75aa1aa6095ef35",
+      "safe": true,
+      "state": "completed"
+    },
+    "provider_disconnect_and_recovery/disconnect": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "disconnect",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "f716b10745ce669ad6442eb2d546920b52de4d355927ee2a4c1669a1fa754d6c",
+      "safe": true,
+      "state": "completed"
+    },
+    "provider_disconnect_and_recovery/recovery": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "recovery",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "63e9f1243313106152a6aa7a92485c3b7ef2dfe897a6ac418ac687f789361e83",
+      "safe": true,
+      "state": "completed"
+    },
+    "stress_large_payload/client_exit": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "client_exit",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "06249e4c07dee4f3acba7a213c0e76bea1aea652f0e0c57abe0e4c78e84a4c01",
+      "safe": true,
+      "state": "completed"
+    },
+    "stress_large_payload/stress": {
+      "diagnostic_status": "passed",
+      "measurement_status": "valid",
+      "phase": "stress",
+      "policy_status": "passed",
+      "qualification_status": "not_evaluated",
+      "report_sha256": "bc5955ac8267763bc7d55518c21925083a7aae0edddf23fd7f902874ac70caae",
+      "safe": true,
+      "state": "completed"
+    }
+  },
+  "qualification_status": "not_evaluated",
+  "raw_hash_entries_checked": 1190,
+  "raw_hash_mismatches": 0,
+  "root_hash_manifest_sha256": "691603d72a1fe01e0d71b8fc160ecfc976cdfd6b92e884d304f112bc4cecae00",
+  "runtime_configuration": {
+    "pg_owner_sha256": "a942b37ccfaf5a813b1432caa209a43b9d144e47ad0de1549c289c253e556cd5",
+    "pg_port": 55499,
+    "transport": "unix"
+  },
+  "source_identity": {
+    "commit": "b7eeea536c1f9c57faadb01ccdc8b4ae6658e50d",
+    "postgresql": "PostgreSQL 18.3",
+    "source_clean": true
+  },
+  "workload": {
+    "baseline_interval_seconds": 0.05,
+    "baseline_samples": 5,
+    "baseline_timeout_seconds": 10.0,
+    "cleanup_interval_seconds": 0.25,
+    "cleanup_samples": 3,
+    "cleanup_timeout_seconds": 60.0,
+    "error_contract_revision": "socket-access-v1",
+    "fault_fixture_barrier_timeout_seconds": 5.0,
+    "fault_fixture_protocol": "observe-before-handshake-v1",
+    "implementation_revision": "phase-lifecycle-3",
+    "input_bytes": 100000,
+    "metric_schema": "semloom.pg.resource.v2.1",
+    "mode": "diagnostic",
+    "output_bytes": 65536,
+    "required_cases": {
+      "cancel_and_cleanup": [
+        "cancel",
+        "recovery"
+      ],
+      "gateway_exit_and_recovery": [
+        "alive",
+        "absent",
+        "recovery"
+      ],
+      "provider_disconnect_and_recovery": [
+        "disconnect",
+        "recovery"
+      ],
+      "stress_large_payload": [
+        "stress",
+        "client_exit"
+      ]
+    },
+    "rounds": 1,
+    "rows_per_round": 100,
+    "sample_seconds": 0.02
+  }
+}

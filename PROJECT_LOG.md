@@ -9134,3 +9134,9 @@ gateway 接受显式包装函数，删除全局替换；故障 CLI 转发同一 
 PG18.3 fixture 客户端严格编译通过。需求/规范复核缺口均关闭；Linux/隔离PG复跑待登记。
 本轮没有新增真实模型请求、性能结论或正式3×2000结果。具体取舍仅维护于Map合同§8.4.5，
 证据追加在[资源工具记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)。
+
+重构提交 `b7eeea53`：Linux212项全部通过，新端口55499的隔离PG18.3实际1×100 fixture
+四场景九阶段全部valid/passed。1190项原始哈希匹配，8个已观测backend/gateway进程退出；
+旧32/32预算由共享代码只读打开，字节不变，模型请求0。公开派生审计登记于上述记录，旧raw不改。
+首次本地监听测试被sandbox阻止，换到允许本地fixture监听环境通过；服务器源码复制首次因Git
+所有权拒绝，改由仓库所属用户操作后成功，没有添加全局safe.directory例外。没有推送。

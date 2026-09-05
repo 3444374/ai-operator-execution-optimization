@@ -176,7 +176,20 @@ R1–R7 的实现问题已关闭，小规模目标环境验证已完成。正式
 [本地测试清单](raw/refactor-local-tests.json)共212项：210通过，2项Linux专属跳过；包含
 v3/v4/v5 × golden/合成HTTP六条接线、跨重启/并发/身份拒绝预算、观测异常关闭与不同连接参数。
 记录每组模块及日志SHA；HTTP只返回合成响应，模型请求0。目标PG18.3头文件/libpq下
-fixture客户端 `-O2 -Wall -Werror` 编译通过。本次 Linux/隔离PG运行结果待登记。
+fixture客户端 `-O2 -Wall -Werror` 编译通过。该测试源码在提交 `b7eeea53` 中固定，
+同一组 [Linux测试](raw/refactor-linux-tests.json)212项全部通过。
+
+[隔离PG审计](raw/refactor-diagnostic-audit.json)绑定 `b7eeea53` 的干净源码、PG18.3、
+schema v2.1 / phase-lifecycle-3，实际使用新端口55499。1×100、100000/65536-byte输入/输出的
+四场景九阶段全部valid/passed，diagnostic退出2且正式qualification保持not_evaluated。
+原始哈希1190项（含嵌套重复）全部匹配，8个已观测backend/gateway进程均退出，PG pidfile已消失。
+新预算实现只读验证旧32/32账本成功，文件SHA前后一致，没有新预留或模型请求。
+服务器数据盘空间与core预检通过；使用既有隔离PG工具链和driver，无安装/下载或服务配置变化。
+原始新run保留在服务器独立reuse1目录；公开版仅收录允许字段的派生审计及哈希。
+
+复现时使用上述CLI，源码改为 `b7eeea536c1f9c57faadb01ccdc8b4ae6658e50d`，增加
+`--pg-port 55499` 并选择新目录。操作系统用户可用 `--pg-user` 指定；不同用户名的参数传播
+有受控测试，本次实际目标用户仍为既有测试用户，不宣称完成另一真实OS用户的运行。
 
 需求复核发现的 fixture 入口可绕过账本，以及规范复核发现的运行配置未入 manifest，均已修正
 并用行为测试验证。旧 choice 的默认账本格式、CLI、各版本消息与错误行为保留；fixture CLI

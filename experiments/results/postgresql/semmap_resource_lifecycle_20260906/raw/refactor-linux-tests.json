@@ -1,0 +1,80 @@
+{
+  "platform": "Linux",
+  "python": "3.12.3",
+  "groups": {
+    "resource": {
+      "run": 56,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_resource_lifecycle",
+        "test_resource_measurement_contracts",
+        "test_resource_qualification",
+        "test_semmap_resource_cli",
+        "test_semmap_resource_gateway_observer",
+        "test_semmap_resource_runner",
+        "test_postgresql_runtime_helpers"
+      ],
+      "log_sha256": "5a98d7bc43064297c15a2c175860cef23d447743a64691ff8824b772604749ab"
+    },
+    "observer_and_budget": {
+      "run": 15,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_gateway_observation",
+        "test_choice_attempt_ledger",
+        "test_choice_http_observer",
+        "test_choice_service_checks"
+      ],
+      "log_sha256": "6d198856788e57fcc12d8c17d3c8e42a47094c4a4770d3f2678b9dc006330aa4"
+    },
+    "attribution": {
+      "run": 17,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_provider_session_attribution"
+      ],
+      "log_sha256": "23c1fc93d7075ce182d7b3fd33b21dc12d9a302df80d36c34cee6132dd90a18e"
+    },
+    "process": {
+      "run": 48,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_proc_collection_validity",
+        "test_process_recorder",
+        "test_process_resources",
+        "test_process_resources_linux",
+        "test_sampling_lifecycle",
+        "test_v1_resource_gate_characterization"
+      ],
+      "log_sha256": "42cb0224812f124eb7b676d1ec0a9161fd44712c5b7ceedb0b8c8e01b39d0a8c"
+    },
+    "provider": {
+      "run": 76,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_gateway_migration",
+        "test_map_gateway",
+        "test_semloom_map_contract",
+        "test_semloom_map_protocol",
+        "test_semloom_semantic_protocol",
+        "test_semloom_choice_protocol",
+        "test_semloom_fixed_model_adapter",
+        "test_semloom_generation_profile"
+      ],
+      "log_sha256": "b76b8b58e50292556a8671987a7f32f642facda4c51bd23df1bf445c75231812"
+    }
+  },
+  "model_requests": 0,
+  "total": 212,
+  "source_commit": "b7eeea536c1f9c57faadb01ccdc8b4ae6658e50d"
+}
