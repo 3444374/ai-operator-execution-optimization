@@ -72,7 +72,12 @@ def wait_idle():
 
 def run(args):
     args.root.mkdir()
+    required = ['cancel', 'cancel_recovery', 'reject', 'reject_recovery']
+    if not args.remaining_faults_only:
+        required = ['select', 'insert', *required]
     summary = {'status': 'incomplete', 'runtime_commit': args.commit, 'initial_attempts': None,
+               'scope': 'remaining_faults' if args.remaining_faults_only else 'full_followup',
+               'required_phases': required,
                'request_limit': 32, 'quality_evaluated': False, 'performance_evaluated': False, 'phases': {}}
     try:
         summary['initial_attempts'] = attempts(args.ledger)
@@ -82,7 +87,7 @@ def run(args):
             role: hashlib.sha256(path.read_bytes()).hexdigest()
             for role, path in {'runner': Path(__file__), 'gateway': args.gateway,
                                'legacy_checks': args.legacy_checks, 'legacy_observer': args.legacy_observer}.items()}})
-        assert summary['initial_attempts'] == 25, 'unexpected_existing_attempt_count'
+        assert summary['initial_attempts'] == (28 if args.remaining_faults_only else 25), 'unexpected_existing_attempt_count'
         assert subprocess.check_output(['git', '-C', str(args.repo), 'rev-parse', 'HEAD'], text=True).strip() == args.commit
         assert not subprocess.check_output(['git', '-C', str(args.repo), 'status', '--porcelain'], text=True).strip()
         service = json.loads(args.service_verification.read_text())
@@ -116,7 +121,9 @@ def run(args):
         save_json(args.root/'token-preflight.json', tokens)
         save_json(args.root/'service-initial-queue.json', wait_idle())
         user = pwd.getpwuid(os.getuid())
-        with isolated_pg18_cluster(args.prefix, args.root, user) as connection:
+        with isolated_pg18_cluster(args.prefix, args.root, user) as connection, psycopg.connect(
+                host=str(args.root/'socket'), port=55446, user='postgres', dbname='postgres',
+                autocommit=True) as audit_connection:
             for table in ('resource_rows', 'insert_rows', 'map_sink'):
                 connection.execute(sql.SQL('CREATE TABLE {} (id integer, payload text)').format(sql.Identifier(table)))
             with connection.cursor() as cursor:
@@ -144,9 +151,9 @@ def run(args):
                 connection.execute(sql.SQL('EXPLAIN SELECT {} FROM resource_rows').format(expr)).fetchall()
                 assert connection.execute(sql.SQL('SELECT {} FROM resource_rows LIMIT 0').format(expr)).fetchall() == []
                 assert connection.execute(sql.SQL('SELECT {} FROM resource_rows WHERE id=3').format(expr)).fetchall() == [(None,)]
-                assert attempts(args.ledger) == 25 and load_events(http_events) == []
-                save_json(args.root/'zero-calls.json', {'explain_limit0_null_only': True, 'attempts': 25})
-                accumulated = 25
+                assert attempts(args.ledger) == summary['initial_attempts'] and load_events(http_events) == []
+                save_json(args.root/'zero-calls.json', {'explain_limit0_null_only': True, 'attempts': summary['initial_attempts']})
+                accumulated = summary['initial_attempts']
 
                 def phase(name, query, inputs, expected_state=None, instruction=None):
                     nonlocal accumulated
@@ -170,8 +177,9 @@ def run(args):
                             canceler.start()
                         try:
                             actual['rows'] = query()
-                            save_json(args.root/name/'sql-result.json', actual['rows'])
-                            return {'sql_completed': True, 'rows': len(actual['rows'])}
+                            if name != 'insert':
+                                save_json(args.root/name/'sql-result.json', actual['rows'])
+                            return {'sql_completed': True, 'rows_returned': None if name == 'insert' else len(actual['rows'])}
                         except psycopg.Error as error:
                             actual['error_message'] = error.diag.message_primary
                             raise
@@ -189,6 +197,10 @@ def run(args):
                             prior.verify_request(event, text, instruction or prior.INSTRUCTION)
                         assert attempts(args.ledger) == accumulated + len(inputs), 'ledger_count'
                         if expected_state is None:
+                            if name == 'insert':
+                                actual['rows'] = audit_connection.execute('SELECT i.id,i.payload,s.payload FROM insert_rows i JOIN map_sink s USING(id) ORDER BY i.id').fetchall()
+                                save_json(args.root/name/'sql-result.json', actual['rows'])
+                                save_json(args.root/name/'readback-identity.json', {'observer_backend_pid': audit_connection.info.backend_pid, 'measured_backend_pid': connection.info.backend_pid})
                             rows = actual['rows']
                             expected_ids = [1, 2, 3] if name == 'select' else ([4, 5] if name == 'insert' else [1])
                             assert all(len(row) == 3 for row in rows) and sorted(row[0] for row in rows) == expected_ids, 'row_shape_ids'
@@ -217,14 +229,16 @@ def run(args):
                     assert result.assessment == ('valid', 'passed'), 'phase_did_not_pass'
                     accumulated += len(inputs)
 
-                phase('select', lambda: connection.execute(sql.SQL('SELECT id,payload,{} FROM resource_rows').format(expr)).fetchall(), ['数据库与人工智能', ''])
+                if not args.remaining_faults_only:
+                    phase('select', lambda: connection.execute(sql.SQL('SELECT id,payload,{} FROM resource_rows').format(expr)).fetchall(), ['数据库与人工智能', ''])
                 def insert():
                     plan = connection.execute(sql.SQL('EXPLAIN (ANALYZE, FORMAT JSON) INSERT INTO map_sink SELECT id,{} FROM insert_rows').format(expr)).fetchone()[0][0]
                     save_json(args.root/'insert/plan.json', plan)
                     node = prior.find_map_plan(plan)
                     assert node['Model Calls'] == node['Accepted Rows'] == node['Emitted Rows'] == 1
-                    return connection.execute('SELECT i.id,i.payload,s.payload FROM insert_rows i JOIN map_sink s USING(id) ORDER BY i.id').fetchall()
-                phase('insert', insert, ['Hello, SemLoom.'])
+                    return []
+                if not args.remaining_faults_only:
+                    phase('insert', insert, ['Hello, SemLoom.'])
                 def one(text, instruction=None):
                     expression = prior.map_expression(sql.Literal(text), instruction or prior.INSTRUCTION)
                     output = connection.execute(sql.SQL('SELECT {} FROM ONLY resource_rows WHERE id=1').format(expression)).fetchone()[0]
@@ -234,6 +248,7 @@ def run(args):
                 phase('reject', lambda: one('token ' * 18000), ['token ' * 18000], '38000')
                 phase('reject_recovery', lambda: one('after model error'), ['after model error'])
                 assert attempts(args.ledger) == 32
+                assert list(summary['phases']) == required, 'required_phase_set'
                 verify_service_identity()
                 summary['status'] = 'passed'
     except BaseException as error:
@@ -256,4 +271,5 @@ if __name__ == '__main__':
     for name in ('repo', 'root', 'prefix', 'ledger', 'config', 'model-root', 'gateway', 'legacy-checks', 'legacy-observer', 'service-verification'):
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--commit', required=True)
+    parser.add_argument('--remaining-faults-only', action='store_true')
     run(parser.parse_args())

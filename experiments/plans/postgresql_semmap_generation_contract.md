@@ -817,6 +817,14 @@ cmdline SHA及fixed-model配置SHA，绑定到本轮manifest。
 `f0feb209…1ef217`，分别修正旧正则及Transformers `return_dict` 口径。新driver在开始任何外部工作
 前核对两份完整SHA。原失败run保留；这次修正不重置账本、不重试已经发出的模型请求。
 
+`acb88ef5` 的第二次运行新增3次请求：SELECT通过，INSERT字节/写回/usage核对成功，但结束时
+backend新增4个系统目录FD而停止，账本28/32。无模型隔离PG反例证明验收JOIN本身可打开这四个
+系统目录及其他目录FD；把读回放在独立审计连接后，被测backend的FD身份不变。后续实验driver
+将读回核对移到独立连接、放在采样完成后；原INSERT测量仍inconclusive/not_evaluated，不追溯改判。
+新run只执行原计划尚未派发的cancel/recovery/reject/recovery四次，显式使用
+`--remaining-faults-only`，初始账本必须28，终点不超过32；不重复SELECT或INSERT模型请求。
+其结果单列为剩余故障子集，不把两个run拼成完整资源资格，修正后的真实INSERT资源复查仍待后续授权。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。
