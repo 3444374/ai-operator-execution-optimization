@@ -9,9 +9,11 @@ Resource-measurement tools now have a [dedicated module index](src/experiments/p
 Their lifecycle repair is recorded separately from production Map behavior and has no formal qualification yet.
 Filter and Map checks share [session observation](src/experiments/gateway_observer.py) and
 [durable request budgeting](src/experiments/attempt_ledger.py). Machine settings and budget identity are
-supplied at the [documented CLI](scripts/README.md); historical result scripts are retained as run snapshots.
+supplied at the [documented CLI](scripts/README.md); retired result scripts are recoverable from their pinned Git snapshots.
 The shared implementation has also passed an [eight-request real-model check](../experiments/results/postgresql/semmap_prepush_20260906/README.md),
-including INSERT with independent result auditing. This is a bounded functional/resource check, not a quality or performance comparison.
+including INSERT with independent result auditing. The later [complete operator checks](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
+pass all seven PG18.3 TAP files, regression, and a nine-request real-model SELECT/INSERT check for Filter v3/v4
+and Map v5. These establish the supported synchronous paths; composition and asynchronous execution remain pending.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile
@@ -47,12 +49,12 @@ checks extension membership before lowering markers and tests function replaceme
 Its implementation and evidence are included in main. Membership-only ADD/DROP requires refreshing every relevant physical connection
 after the committed DDL; automatic cross-session refresh remains pending. See the extension README for the procedure.
 
-Status as of 2026-09-04: this directory contains the existing external physical-execution runtime
+Status as of 2026-09-06: this directory contains the existing external physical-execution runtime
 (PostgreSQL sources/sinks, Daft/Arrow organization, Ray execution, vLLM/CLIP backends, observation,
 static/shared scheduling controls, and offline cost estimation). It does **not** yet contain a
 complete optimized PostgreSQL AI semantic system or an asynchronous scheduling provider. It now
 includes narrow `REL_18_3` planner-visible recording `SemMap/SemFilter` compatibility paths and a three-argument
-exact `SemFilter` golden/fixed-model reference and a generated `SemMap` golden path under `postgres/semloom_pg/`.
+exact `SemFilter` golden/fixed-model reference and a generated `SemMap` golden/fixed-model path under `postgres/semloom_pg/`.
 PostgreSQL owns the versioned schema-v1/v2/v3/v4 plan, canonical messages, result policy, tuple/cardinality behavior, and query lifecycle;
 the exact reference path also carries separate planner cost/cardinality metadata, can consume a planner-only static
 reference calibration artifact, and reports actual provider usage. The checked-in qualification artifact is

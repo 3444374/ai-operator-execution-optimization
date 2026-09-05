@@ -231,3 +231,59 @@ SQL recording/reference、wire v2/v3/v4/v5、当前 Filter 校准/质量代码�
 匹配原 SHA。初次局部测试暴露了测试自身在 bind/listen 之间抢连的时序问题，已改为有时限的
 实际连接等待，随后局部组 73/73 与完整组通过；不把删除测试导致的计数变化当作能力增加。
 既有真实模型结果仍绑定 `b7eeea53`，本次结果不替代正式资源、质量或性能实验。
+
+<a id="main-integration"></a>
+
+## 8. 两算子完整回归与 main 合并验证（2026-09-06）
+
+用户在清理后要求确认两个算子可完整运行，并授权验证无误后合并。计划见 [Map 合同 §8.4.8](../../../plans/postgresql_semmap_generation_contract.md)。
+被测提交 `5771cef1305fb5c95b372319e249deaa3d0c0be7`，运行时代码与 `fcd12373` 一致；
+合并起点为 `main@d3fb71a0`。本次只补验证和状态文档，代码无需再次修正。main 采用快进合并，
+让经过验证的源码原样进入主分支；合并后的 Git 身份另由分支引用核对，不倒填进原测试记录。
+
+**当前支持的同步单算子路径验证通过；没有新增组合、异步、质量或性能能力。**
+源码、原始运行与结果的对应关系见[公开审计](raw/main-integration-verification.json)。
+
+| 验证 | 结果与依据 |
+|---|---|
+| Linux Python/公共协议/C消息编译 | 247/247，无跳过；包含新增纳入完整组的14项消息编译测试 |
+| 本地补查 | 同一14项C/Python消息编译通过；其余233项沿用上一节，不称本轮全部重跑 |
+| PG18.3 | `-O2 -Werror`构建、安装件/构建件SHA一致；PGXS regression 1/1，actual/expected逐字节相同 |
+| 全部TAP | 7文件、1758/1758，覆盖安装升级、计划与权限、两算子执行/INSERT、NULL/顺序、取消/错误恢复及明确拒绝的查询形状 |
+| 临时驱动预检 | 同一六个SQL场景对本地HTTP fixture通过，9次合成请求、0次模型请求，单独记录身份 |
+| 真实模型 | 固定Qwen2.5-7B/vLLM，9/9请求、六场景通过，无重试；旧8/8账本SHA不变 |
+| 清理 | 6个provider session均关闭、9个task均有completion；PG/gateway/model进程残留0、模型端口关闭，两GPU各1MiB |
+
+真实运行复用现有私有环境：模型revision `a09a35458c702b33eeacc393d103063234e8bc28`，
+单RTX4090、BF16、vLLM0.25.1、Torch2.11.0、Transformers5.14.1。9个模型/tokenizer/配置
+文件重新哈希并匹配先前固定记录，4个权重分片也匹配已保存的官方revision元数据；实际安装版本
+重新只读核对。服务沿用context4096、seqs4、batched-tokens4096、显存比例0.8、FCFS、TP1、
+eager、关闭prefix cache和generation-config=vllm，没有安装/下载或更换模型。
+
+新预算 `semloom.operators.maincheck.20260906.v1` 上限9，服务开始前选定配置，全程不变。
+Filter v3/v4均为max_tokens8，v4显式选择tristate choice；Map v5为max_tokens128；均为
+非流式、temperature0、单completion。这里没有单独预热、人工派发延迟或资源峰值采集，不能借用
+上一节的采样阈值声称本轮完整资源通过。fixture和真实请求使用不同账本，各自保存完整记录。
+
+| 真实场景 | 请求数 | SQL结果行数 | prompt/output tokens |
+|---|---:|---:|---:|
+| exact Filter v3 SELECT | 2 | 1 | 115/4 |
+| exact Filter v3 INSERT | 1 | 1 | 57/2 |
+| choice Filter v4 SELECT | 2 | 1 | 115/4 |
+| choice Filter v4 INSERT | 1 | 1 | 57/2 |
+| Map v5 SELECT | 2 | 3，含SQL NULL | 75/5 |
+| Map v5 INSERT | 1 | 2，含SQL NULL | 42/7 |
+
+Filter以明确的蓝色/非蓝色陈述检查TRUE/FALSE和实际保留行；Map覆盖Unicode、空串、ASCII，
+将PG输出逐项与实际模型原始completion比较。三个模式的plain EXPLAIN、LIMIT0和NULL-only均为
+零请求，INSERT后使用独立连接读回。所有响应模型身份和finish reason匹配，prompt usage由
+同一tokenizer独立复算；INSERT计划的调用数和prompt/output usage与事件总和一致。
+
+完整日志、单次驱动及HTTP/session事件保存在仓库外，公开摘要保存对应SHA，未重新加入一套
+历史可执行脚本。当前测试与运行入口仍在 `code/`：Python模块列表见审计JSON，PG完整验证按
+扩展README启动隔离集群并运行不筛选TAP的`make installcheck`。模型配置和预算必须使用本机
+外部settings与新授权，不能重用已耗尽的9次账本。
+
+这证明当前同步单算子在已声明SQL形状下的执行与合并兼容性。真实取消/拒绝证据保持原来各次
+运行身份，本次通过全TAP检查对应行为；正式资源3×2000、Filter质量/校准、性能、同一SQL的
+Filter→Map组合及异步多在途仍未完成，不因main合并而改变状态。

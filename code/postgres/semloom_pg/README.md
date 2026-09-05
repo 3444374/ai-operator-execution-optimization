@@ -7,6 +7,11 @@ PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic cont
 OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
 scheduling, asynchronous execution, or a second physical path.
 
+The [2026-09-06 integration checks](../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
+at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (1758 checks), and 247 related
+Python/C message tests. Nine real-model requests verify separate Filter v3/v4 and Map v5 SELECT/INSERT
+paths, including NULL controls, results, usage and writeback. The supported shapes below remain unchanged.
+
 The [opt-in choice generation profile](../../../experiments/plans/completed/postgresql_choice_profile_engineering.md)
 now has PostgreSQL plan support (`00cc6bbf`). Adding the fourth option
 `"generation_profile":"semloom.generation.choice.tristate.v1"` saves a complete ordered profile in schema 3.

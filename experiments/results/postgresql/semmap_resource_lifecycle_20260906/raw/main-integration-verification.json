@@ -1,0 +1,253 @@
+{
+  "source_commit": "5771cef1305fb5c95b372319e249deaa3d0c0be7",
+  "runtime_code_commit": "fcd1237398f10f136c4f43d82935bf3cef612e04",
+  "main_base_commit": "d3fb71a0db1546451e1fb999c7fdaa589f88d758",
+  "preflight": {
+    "groups": [
+      "core",
+      "text"
+    ],
+    "status": "ok"
+  },
+  "python": {
+    "platform": "Linux",
+    "python": "3.12.3",
+    "groups": {
+      "resource": {
+        "run": 56,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_resource_lifecycle",
+          "test_resource_measurement_contracts",
+          "test_resource_qualification",
+          "test_semmap_resource_cli",
+          "test_semmap_resource_gateway_observer",
+          "test_semmap_resource_runner",
+          "test_postgresql_runtime_helpers"
+        ],
+        "log_sha256": "40a4bfd79b2ed6c4948d9b0e3390f51e75f5852a7bd55ca4c6935131fcca4c3c"
+      },
+      "observer_and_budget": {
+        "run": 15,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_gateway_observation",
+          "test_choice_attempt_ledger",
+          "test_choice_http_observer",
+          "test_choice_service_checks"
+        ],
+        "log_sha256": "bcbf357db268f7829679245a34d47355d9d535349a04e0ed12c1b22e94261334"
+      },
+      "attribution": {
+        "run": 17,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_provider_session_attribution"
+        ],
+        "log_sha256": "23c1fc93d7075ce182d7b3fd33b21dc12d9a302df80d36c34cee6132dd90a18e"
+      },
+      "process": {
+        "run": 43,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_proc_collection_validity",
+          "test_process_recorder",
+          "test_process_resources",
+          "test_process_resources_linux",
+          "test_sampling_lifecycle"
+        ],
+        "log_sha256": "5ed370594180e1ca7c896bd7ccd0a78025bb127fac4c10b613eb3bf41f684bff"
+      },
+      "provider": {
+        "run": 116,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_gateway_migration",
+          "test_semloom_pg_static_contract",
+          "test_semloom_message_compilation",
+          "test_semloom_recording_protocol",
+          "test_map_gateway",
+          "test_semloom_map_contract",
+          "test_semloom_map_protocol",
+          "test_semloom_semantic_protocol",
+          "test_semloom_choice_protocol",
+          "test_semloom_fixed_model_adapter",
+          "test_semloom_generation_profile"
+        ],
+        "log_sha256": "5fb34bea46843afefe7c45ac2d777b45d5f7505d682b1629fcaad3432d787de4"
+      }
+    },
+    "model_requests": 0,
+    "total": 247
+  },
+  "postgresql": {
+    "version": "18.3",
+    "build_flags": "-O2 -Werror",
+    "regression_passed": 1,
+    "regression_expected_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+    "tap_summary": [
+      "t/001_semloom_pg.pl ......... ok",
+      "t/002_choice_plan.pl ........ ok",
+      "t/003_choice_execution.pl ... ok",
+      "t/004_filter_insert.pl ...... ok",
+      "t/005_function_identity.pl .. ok",
+      "t/006_map_plan.pl ........... ok",
+      "t/007_map_execution.pl ...... ok",
+      "All tests successful.",
+      "Files=7, Tests=1758, 48 wallclock secs ( 0.36 usr  0.03 sys + 28.73 cusr  7.70 csys = 36.82 CPU)",
+      "Result: PASS"
+    ],
+    "installed_extension_matches": true,
+    "extension_sha256": "68a29821bbc4339cbe341404f8622b2dd303c822ee1c66a93bdec66873a3d7c8"
+  },
+  "real_model": {
+    "budget_id": "semloom.operators.maincheck.20260906.v1",
+    "request_limit": 9,
+    "model_requests": 9,
+    "phases": {
+      "filter_v3_select": {
+        "passed": true,
+        "wire": 3,
+        "model_requests": 2,
+        "sql_rows": 1,
+        "zero_task_controls": true,
+        "prompt_tokens": 115,
+        "output_tokens": 4,
+        "plan_usage_verified": false
+      },
+      "filter_v3_insert": {
+        "passed": true,
+        "wire": 3,
+        "model_requests": 1,
+        "sql_rows": 1,
+        "zero_task_controls": true,
+        "prompt_tokens": 57,
+        "output_tokens": 2,
+        "plan_usage_verified": true
+      },
+      "filter_v4_select": {
+        "passed": true,
+        "wire": 4,
+        "model_requests": 2,
+        "sql_rows": 1,
+        "zero_task_controls": true,
+        "prompt_tokens": 115,
+        "output_tokens": 4,
+        "plan_usage_verified": false
+      },
+      "filter_v4_insert": {
+        "passed": true,
+        "wire": 4,
+        "model_requests": 1,
+        "sql_rows": 1,
+        "zero_task_controls": true,
+        "prompt_tokens": 57,
+        "output_tokens": 2,
+        "plan_usage_verified": true
+      },
+      "map_select": {
+        "passed": true,
+        "wire": 5,
+        "model_requests": 2,
+        "sql_rows": 3,
+        "zero_task_controls": true,
+        "prompt_tokens": 75,
+        "output_tokens": 5,
+        "plan_usage_verified": false
+      },
+      "map_insert": {
+        "passed": true,
+        "wire": 5,
+        "model_requests": 1,
+        "sql_rows": 2,
+        "zero_task_controls": true,
+        "prompt_tokens": 42,
+        "output_tokens": 7,
+        "plan_usage_verified": true
+      }
+    },
+    "session_starts": 6,
+    "closed_session_ends": 6,
+    "ledger_sha256": "0c059161ba1decab724b462bdca5cb2bc8f57ca83afc46c81c48cca80932e64a",
+    "previous_budget_sha256": "ff54de62877ac01e35aba170db403246faa1cddbc5014b1436c808a1a65e8bf3",
+    "previous_budget_unchanged": true,
+    "model": {
+      "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+      "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "files": {
+        "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+        "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+        "model-00001-of-00004.safetensors": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+        "model-00002-of-00004.safetensors": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+        "model-00003-of-00004.safetensors": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+        "model-00004-of-00004.safetensors": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+        "model.safetensors.index.json": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+        "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+        "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+      },
+      "versions": {
+        "vllm": "0.25.1",
+        "torch": "2.11.0",
+        "transformers": "5.14.1"
+      }
+    },
+    "controller": {
+      "driver_exit_code": 0,
+      "gpu_memory_mib": {
+        "0": 1,
+        "1": 1
+      },
+      "model_port_closed": true,
+      "model_requests": 9,
+      "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "official_weights_match": true,
+      "status": "passed"
+    },
+    "owned_processes_remaining": 0,
+    "quality_evaluated": false,
+    "performance_evaluated": false,
+    "resource_qualification_evaluated": false
+  },
+  "driver_fixture": {
+    "passed": true,
+    "http_requests": 9,
+    "model_requests": 0
+  },
+  "private_file_sha256": {
+    "tests/preflight.json": "5a3bc12525af1df75dfcc0022e4b3aeed076d5f304a6083390bde390a966be2b",
+    "tests/python/summary.json": "fceddcb97c60512b2d6e4f193b4c753495808ff80d7db9ca0e224fc184ca4812",
+    "tests/build.log": "22a78a159dc8de50bee4b5c1a95461cc0f81ca84503d98a11fb19a4686644131",
+    "tests/install.log": "fa734783b05d9a0980d678a3ae8245932b282f14054e25c591e495e1d298cd25",
+    "tests/pgsuite/installcheck.log": "b687d7318effb724cea502597573ee1a9c82f0716df66a486b368c8cb2fcd87c",
+    "tests/pgsuite/summary.json": "88644a17b29832cb36fcb6c267fc8b6a26287b8739ce989b8749e46dc1144ede",
+    "preparation/launch.py": "c2976f7469bbe731971f3c1f0170477aa0005ad8c89b6fc75cc885107f8bbf22",
+    "preparation/real_check.py": "ea4bd849ac3104103e85f88a947862258097321c57fa499cbe9828ccbde106c7",
+    "preparation/fixture_check.py": "3813eccdf09315edd47999d79a7ae1e7b37d6260170291030f6d7a2067663192",
+    "preparation/fixture-check.log": "661efa4ac75f5957f99f30d4b36e0606b29bc9b7940b922712c0eb39d800db5c",
+    "preparation/model-verification.json": "b5bf3da204eec6414345d8f9eaf06452bbbaa3d2fba9153ebaf148045d8842a1",
+    "preparation/vllm-identity.json": "e9a5fdafc358dacc7b4abfb0bebe40f6915416bcc0d9fe1d0f8ca4793f1cebf8",
+    "preparation/service-verified.json": "0ef1a8cb9066853a5d7be2bf40eb3bee698330a764d1ec65653774203190fb54",
+    "preparation/controller-summary.json": "1a1ef35b1f23572e96b6b45bba42d8aced40c48a424f1e966846e96357618fbc",
+    "preparation/driver.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "preparation/budget.jsonl": "0c059161ba1decab724b462bdca5cb2bc8f57ca83afc46c81c48cca80932e64a",
+    "run/summary.json": "a4b43f469f8115723d608c7e2130947148462fb64a2924bc63d00ef2ce6dacce",
+    "run/http-events.jsonl": "97d919fc934de341999fe30a6520ca6612ca6520b587798277b63d7e1cfe48c3",
+    "run/sessions.jsonl": "1dae44aa48e668cb1b3d6c09bb7a3cfae49aeb24dcb17f85ec1e4eb32a4b4945",
+    "run/filter_v3_select.json": "4c2bcbb3ccf84597956db219a267c2aa0df4b3fb09fc714548b6f25995677998",
+    "run/filter_v3_insert.json": "d943e10de67a38485451183818440b0da4259cb6ada4d923921232c30d92be94",
+    "run/filter_v4_select.json": "08237fdc7205ee8e3d751ad0d03a685d249eb6959f58369351721c07082de9ec",
+    "run/filter_v4_insert.json": "f3ab9d5de5e621cd14fcc3b0349d902a185cab6c5d3506e20b25836d34ee4196",
+    "run/map_select.json": "251c6488b5b14e517cf56c034e16e0903b12410c1f410f2ba3a9e7f13571842a",
+    "run/map_insert.json": "ae17e46a2d9f04d4ff99ff81bb9c181e3f6c88be99f4f480253706cf878a14b9"
+  }
+}

@@ -9167,3 +9167,14 @@ prompt/output tokens为42/7，两个角色结束FD/线程增量均0。原32/32�
 PG18.3 严格构建及四个受影响 TAP 1297/1297 通过，安装件与构建件相同，测试进程残留 0。
 19 个归档源码 blob/SHA 与历史清单的 71 个本地条目、4 个 Git 源码条目均匹配。
 不调用模型、不合并 main。详见[清理记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。
+
+
+## 2026-09-06 两算子完整验证与 main 合并
+
+用户授权“无误的话可以合并”。固定`5771cef1`（运行时代码`fcd12373`）在新的独立目录通过
+core/text预检、Linux247/247、PG18.3严格编译、PGXS regression1/1及全部7个TAP1758/1758；
+同一临时SQL驱动先以HTTP fixture完成六场景，再使用新预算9/9次真实模型请求，验证
+Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和写回。无生产修复、
+无推理重试；旧8/8账本不变，模型/PG/gateway已清理。提交公开证据后对main执行快进合并，
+不改写原分支历史。正式资源、质量/校准、性能、同查询组合与异步能力仍未完成。
+[完整记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)保存准确测试身份与哈希。

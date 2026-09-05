@@ -8,6 +8,10 @@
 
 ## SemMap resource measurement repair (2026-09-06)
 
+最新[两算子合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)通过
+完整PG18.3 regression/TAP与247项相关测试，并完成Filter v3/v4、Map v5六个真实SELECT/INSERT
+场景，共9次模型请求。仅确认现有同步单算子能力，不改变组合、异步、正式资源或质量/性能状态。
+
 [退役源码索引](postgresql/retired_sources.json)登记本次清理的 19 个文件及已推送 `d93e3f9b` 的
 源码 URL、Git blob 和 SHA-256。历史采样、失败结果和报告保留；旧脚本只从对应版本恢复，
 后续实验使用 `code/` 中的公共入口。清理验证记录在[工具记录](postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。

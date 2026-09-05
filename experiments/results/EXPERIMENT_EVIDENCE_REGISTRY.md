@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+[两算子完整回归与合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
+绑定`5771cef1`（运行时代码`fcd12373`）：Linux247/247、PG18.3严格构建、regression1/1、
+全部7个TAP1758/1758通过；新9次真实请求覆盖Filter v3/v4与Map v5各自的SELECT/INSERT。
+NULL零调用、输出/筛选、usage和写回通过，6会话关闭、9任务完成、所有测试服务退出。
+旧8/8账本不变；质量、性能、正式资源及组合/异步能力没有据此升级。
+
+
 [退役清理记录](postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)登记 19 个删除文件的
 固定 Git 恢复身份、当前入口迁移与验证。`fcd12373` 本地 233 项中 231 通过、2 项 Linux 专属
 跳过，Linux 233/233 通过；PG18.3 严格构建与四个受影响 TAP 1297/1297 通过。

@@ -1,5 +1,5 @@
 {
-  "README.md": "3631dc42ea77ba5214d8ce7c66faf822e529922db1057e108d8a8681c22681e7",
+  "README.md": "d6786318ea776e6f2600ce35d91d4510e4e76bb31e8cddf0cd06d0680e69dda9",
   "raw/attribution-local.txt": "af890835a53604f465328ce9151c282bedee7a7e368f3af8e6007bdd9bb6db32",
   "raw/controlled-evidence.json": "c2718d660fb17bc75d8471ff155694138fa1295e4f81ef333315f2a1b63c1d78",
   "raw/controlled_failure/SHA256SUMS.json": "9d80b8391e4b10ac25114c74aa148f6cadd4a892c7c67887c72c60dde936609c",
@@ -145,6 +145,7 @@
   "raw/controlled_success/stress_large_payload/stress/session_events.json": "9d402bf551620fad57640c7d3b02d65d6389f30355c2e07a338da66664714467",
   "raw/controlled_success/summary.json": "a99ad8986e2a01b686f4c9f0a0339c4657c735fbbaa2a9e25b569b58f323fafb",
   "raw/local-tests.json": "5d42d821ae27fd2452f0760031850e40c7e39a900afdf8c9b29d90e1e9712709",
+  "raw/main-integration-verification.json": "61d85c2a6bac6f8496719bbcde9e972fe69e1b4f8327e00453397b0e199285b6",
   "raw/process-local.txt": "ebfb5ab80fc6bdeb07c41bd51e66262ab2b13c5eaf5b2981507630d8a2e04968",
   "raw/refactor-diagnostic-audit.json": "fd2be595af11ac5bfeecb564f963fa85b2dbe32fb30f7a041dd9ffe056c9d183",
   "raw/refactor-linux-tests.json": "f63420860771300244846e4d3d621f1c29cb41bc772c765a9ad8923f232d83cf",

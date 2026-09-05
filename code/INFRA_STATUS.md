@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+最新[两算子合并验证](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
+在`5771cef1`通过Linux247/247、PG18.3严格构建、regression1/1和全部TAP1758/1758。
+固定7B模型新9/9请求覆盖Filter v3/v4与Map v5的SELECT/INSERT，NULL零调用、结果/筛选、
+usage和写回均通过；服务退出，旧8/8账本不变。运行时代码仍为`fcd12373`。
+本次确认当前同步单算子能力，未新增同查询组合、异步执行、正式资源或质量/性能证据。
+
+
 日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
 
 合并前清理已迁移四个 TAP 至公共 gateway CLI，并删除旧 Python 兼容入口、重复转发及
