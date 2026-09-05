@@ -152,11 +152,13 @@ class LifecycleTests(unittest.TestCase):
 
     def test_cleanup_interrupt_keeps_collected_ticks_before_propagation(self):
         import gzip
+        import threading
         workload=ControlledWorkload()
         class Sampler:
             calls_after_operation=0
             def sample_all(self,ns):
-                if workload.events and workload.events[-1]['event']=='session_end':
+                if (threading.current_thread() is threading.main_thread()
+                        and workload.events and workload.events[-1]['event']=='session_end'):
                     self.calls_after_operation+=1
                     if self.calls_after_operation==3:
                         raise KeyboardInterrupt()
