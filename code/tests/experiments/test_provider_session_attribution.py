@@ -93,16 +93,17 @@ class AttributionTests(unittest.TestCase):
             self._tick(180, backend=(_unbound(17, 4001),),
                        gateway=(_connected(5, 777),)),
         ])
+        windows = session_windows(_events([(100, 200, 1, 777)]))
         result = self._attribute(run, _events([(100, 200, 1, 777)]))
         self.assertEqual(result.problems, [])
         self.assertIsNotNone(result.attribution)
         self.assertEqual(
             result.attribution["sessions"][0]["attributed"]["fd"], 17)
-        rewritten = reclassify_clients(run, result.attribution)
+        rewritten = reclassify_clients(run, result.attribution, windows)
         kinds = [item.kind for item in rewritten.ticks[0].processes["backend"].fds]
         self.assertEqual(kinds, [UDS])
         self.assertEqual(
-            rewritten.fd_correlation_evidence[17]["accepted_inode"], 777)
+            rewritten.fd_correlation_evidence["17"]["accepted_inode"], 777)
 
     def test_two_candidates_is_inconclusive_with_reason(self):
         run = self._trace([

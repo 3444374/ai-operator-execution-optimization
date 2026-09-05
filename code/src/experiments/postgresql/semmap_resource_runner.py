@@ -256,7 +256,7 @@ def _evaluate_case(
         "attributed": attribution,
         "problems": attribution_problems})
     trace = recorded.trace if attribution is None else reclassify_clients(
-        recorded.trace, attribution)
+        recorded.trace, attribution, list(windows))
     peak_report = build_qualification_report(
         baseline_capture.baseline, trace, phase="stress")
     if cleanup_trace is None:

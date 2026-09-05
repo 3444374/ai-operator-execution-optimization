@@ -127,6 +127,7 @@ def attribute_provider_sessions(
             problems.append(f"session{window.session_id}_peer_mismatch")
 
     attribution: dict = {"sessions": [], "problems": problems}
+    tickless_windows = 0
     for window in windows:
         candidates: dict[int, FdIdentity] = {}
         ticks_in_window = 0
@@ -146,6 +147,7 @@ def attribute_provider_sessions(
         if ticks_in_window == 0:
             # A window the sampler never observed (e.g. the sub-100ms warmup)
             # is unobservable, not ambiguous: record it and continue.
+            tickless_windows += 1
             attribution["sessions"].append({
                 "session_id": window.session_id,
                 "candidate_fds": [],
@@ -209,6 +211,11 @@ def attribute_provider_sessions(
         # session the observer saw. Nothing was measured, so a provider
         # verdict of "zero deltas, passed" would be fabricated.
         return AttributionResult(None, ["no_session_windows"])
+    if tickless_windows == len(windows):
+        # Every window fell between sample ticks: the attribution and the
+        # provider gates downstream would run on zero observation
+        # evidence. A pass here would be fabricated, so fail closed.
+        return AttributionResult(None, ["all_session_windows_tickless"])
     attribution["problems"] = problems
     if problems:
         return AttributionResult(None, problems)
@@ -217,14 +224,22 @@ def attribute_provider_sessions(
 
 def reclassify_clients(
     trace: ResourceTrace, attribution: dict,
+    windows: list[SessionWindow] | None = None,
 ) -> ResourceTrace:
     """Rewrite attributed backend sockets as provider clients in a copy.
 
     The raw trace is never mutated; the rewritten copy feeds the policy
-    together with the attribution evidence.
+    together with the attribution evidence. The rewrite is scoped to the
+    session windows AND to the exact ``(fd, inode)`` pairs the
+    attribution identified: an fd number reused by a different socket
+    after the session closed must not be relabelled a provider client
+    (that would inflate the provider peaks and pollute the lifecycle
+    diagnostics).
     """
+    windows = windows or []
     attributed = {
-        entry["attributed"]["fd"]: entry["attributed"]
+        (entry["attributed"]["fd"], entry["attributed"].get("inode")):
+            entry["attributed"]
         for entry in attribution["sessions"] if entry["attributed"]}
     from src.observability.process_resources.model import ProcessSnapshot, SampleTick
     ticks = []
@@ -233,12 +248,18 @@ def reclassify_clients(
         if backend is None or backend.fds is None or not attributed:
             ticks.append(tick)
             continue
+        in_window = any(
+            window.start_ns <= tick.monotonic_ns <= window.end_ns
+            for window in windows)
+        if not in_window:
+            ticks.append(tick)
+            continue
         fds = tuple(
             FdIdentity(
                 fd=item.fd, target=item.target,
                 kind=FdKind.PROVIDER_UDS_CONNECTED,
                 inode=item.inode, unix_path=None)
-            if item.fd in attributed else item
+            if (item.fd, item.inode) in attributed else item
             for item in backend.fds)
         rewritten = ProcessSnapshot(
             pid=backend.pid,
@@ -253,7 +274,9 @@ def reclassify_clients(
             processes={**tick.processes, "backend": rewritten}))
     return ResourceTrace(baseline=trace.baseline, ticks=tuple(ticks),
                          fd_correlation_evidence={
-                             fd: {"rule": "session-attribution",
-                                  "peer_pid": entry["peer_pid"],
-                                  "accepted_inode": entry["accepted_inode"]}
-                             for fd, entry in attributed.items()})
+                             str(fd): {"rule": "session-attribution",
+                                       "inode": inode,
+                                       "peer_pid": entry["peer_pid"],
+                                       "accepted_inode":
+                                           entry["accepted_inode"]}
+                             for (fd, inode), entry in attributed.items()})
