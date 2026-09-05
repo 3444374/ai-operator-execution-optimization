@@ -811,6 +811,12 @@ cmdline SHA及fixed-model配置SHA，绑定到本轮manifest。
 外部服务结束后按本轮PID/start-time清理并确认GPU占用/端口释放。原始payload/日志留在服务器，
 公开版仅含允许字段的摘要与单独哈希。正式fixture3×2000的授权与运行不包含在此次追加授权中。
 
+首轮准备在0新增请求时停止：指定了历史初版预算observer，其中摘要正则含错误转义，因而拒绝
+有效的25条账本。账本经字段、序号和64位摘要检查完整，原字节未改。后续明确绑定历史成功辅助
+版本：`map_gateway_observer_run4.py` SHA `476424cd…45880d4`、`real_checks_run6.py` SHA
+`f0feb209…1ef217`，分别修正旧正则及Transformers `return_dict` 口径。新driver在开始任何外部工作
+前核对两份完整SHA。原失败run保留；这次修正不重置账本、不重试已经发出的模型请求。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。

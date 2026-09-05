@@ -29,6 +29,11 @@ from src.experiments.postgresql.semmap_resource_runner import ObservationProbe, 
 from src.observability.process_resources.model import PgFileClassificationContext
 from src.observability.process_resources.recorder import ProcfsTickSampler
 
+LEGACY_HASHES = {
+    'legacy_checks': 'f0feb20978e0c8d4389cbfae322f38515c74c1b26f908dace511ae2ea11ef217',
+    'legacy_observer': '476424cd689390f3e86d0a7dec4c6186dbb2b7eb48bab8774541b05fa45880d4',
+}
+
 
 def load_events(path):
     return [] if not path.exists() else [json.loads(line) for line in path.read_text().splitlines()]
@@ -71,6 +76,8 @@ def run(args):
                'request_limit': 32, 'quality_evaluated': False, 'performance_evaluated': False, 'phases': {}}
     try:
         summary['initial_attempts'] = attempts(args.ledger)
+        for role, expected in LEGACY_HASHES.items():
+            assert hashlib.sha256(getattr(args, role).read_bytes()).hexdigest() == expected, 'legacy_helper_identity'
         save_json(args.root/'manifest.json', {**summary, 'experiment_files_sha256': {
             role: hashlib.sha256(path.read_bytes()).hexdigest()
             for role, path in {'runner': Path(__file__), 'gateway': args.gateway,
