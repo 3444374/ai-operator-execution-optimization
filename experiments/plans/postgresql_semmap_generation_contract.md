@@ -932,6 +932,27 @@ Linux PG18.3验证。此次不调用模型；既有真实8次复验证据保持�
 通过，测试进程残留 0。历史原始清单 71 个本地文件和 4 个归档源码全部匹配，模型请求 0。
 [清理验证记录](../results/postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)保存复现入口与哈希。
 
+
+### 8.4.8 两算子完整回归与 main 合并（2026-09-06，实施中）
+
+用户要求确认两算子可完整运行，并明确授权“无误的话可以合并”。本轮起点为 `b65661a6`，
+运行时代码为 `fcd12373`；实时 main 为其祖先 `d3fb71a0`，最终再次检查远端后才合并推送。
+验收范围是现已支持的同步单算子 SELECT/INSERT、安装/升级、plan/权限、NULL/顺序、
+取消/错误恢复与结果写回；同查询 Filter→Map、异步多在途、正式资源3×2000及质量/性能仍不包含。
+
+在新的独立短目录执行 core/text preflight、全部 PostgreSQL/Python provider 合同、C 消息编译、
+PG18.3 严格构建、PGXS regression 与全部7个 TAP。任一失败保留原始结果，修正后复查受影响项，
+不得把部分 TAP 通过称为完整测试通过。合并只允许快进到经过验证的代码，不覆盖远端新增提交。
+
+沿用§8.4.6的现有7B模型revision、服务容量、生成配置与单GPU；不下载/安装。新增持久预算
+`semloom.operators.maincheck.20260906.v1`，上限9次：exact Filter v3、choice Filter v4和
+Map v5各执行SELECT两条非NULL与INSERT一条非NULL。每条再覆盖SQL NULL，plain EXPLAIN与
+LIMIT0应为零请求；Filter输入为明确蓝色/非蓝色陈述，Map覆盖Unicode、空串与ASCII。
+没有单独预热或性能测量。验证模型身份、真实请求/completion、PG输出或筛选、usage、写回及
+服务回空和退出；取消/拒绝由当前全部TAP及此前绑定旧提交的真实故障证据分别覆盖。
+旧32/32和8/8账本不改写；失败或未知结果也消耗预算，无推理重试。模型/路径/端点从仓库外
+settings读取；一旦身份、输出、请求数或清理不符即停止合并。公开只记录审计摘要与原始文件SHA。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。
