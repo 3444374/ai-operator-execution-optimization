@@ -887,10 +887,22 @@ def run(args):
     except (OSError, RuntimeError) as error:
         return preflight_failure(
             f"client_build_error:{type(error).__name__}")
-    args.root.mkdir()
-    user = pwd.getpwnam("postgres")
-    _chown(args.root, user)
-    fixture_path, digest = fixture(args, args.root)
+    # The result root must be created (or validated as an empty fresh
+    # directory) before any case runs; a reused/non-empty root must fail
+    # as a runner failure WITH a written summary, never as a bare
+    # traceback before summary construction.
+    try:
+        args.root.mkdir(exist_ok=False)
+    except FileExistsError:
+        args.root.mkdir(parents=True, exist_ok=True)
+        if any(args.root.iterdir()):
+            save(args.root / "summary.json", {
+                "status": "runner_failure",
+                "reason": "result_root_not_empty",
+                "metric_schema": METRIC_SCHEMA,
+                "model_requests": 0,
+                "cases": {}})
+            return EXIT_RUNNER_FAILURE
     summary = {
         "status": "failed",
         "metric_schema": METRIC_SCHEMA,
@@ -906,6 +918,9 @@ def run(args):
         "cases": {},
     }
     try:
+        user = pwd.getpwnam("postgres")
+        _chown(args.root, user)
+        fixture_path, digest = fixture(args, args.root)
         with cluster(args.prefix, args.root, user) as connection:
             connection.execute(
                 "CREATE TABLE resource_rows(id integer, payload text) "
