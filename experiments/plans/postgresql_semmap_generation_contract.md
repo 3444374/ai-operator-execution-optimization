@@ -765,6 +765,52 @@ formal 尚未授权。当前 `77a123de` 的真实1×100 diagnostic 已完成，�
 [本轮结果](../results/postgresql/semmap_resource_lifecycle_20260906/README.md)与证据台账登记，
 不以计划存在代替通过，也不把小规模通过外推为正式资源资格。
 
+### 8.4.4 修复后的有限真实模型复查（2026-09-06，用户追加授权）
+
+用户在工具修复验收后明确允许真实模型测试。本节沿用§8.4.1的固定单GPU服务、原32次持久账本，
+不重置历史预算。只读核对账本已用25次，本次最多新增7次；每次派发前持久预留，取消、失败、未知
+结果均计数；非预期结果立即停止，不自动重试，不额外发送直接模型探测/预热。
+
+目的为确认当前PG→wire v5→fixed provider→真实模型→PG的输出字节、NULL零调用、usage、SQL取消、
+模型拒绝及后续恢复。生产路径沿用修复后的源码，工具修复验收提交为`3e5801dc`；测试驱动/observer
+在首次请求前另记录源码与SHA。不改变模型语义或错误码。没有baseline算法比较、消融或性能结论。
+
+| 次序 | 输入/操作 | 新增请求上限 |
+|---|---|---:|
+| 0 | plain EXPLAIN、LIMIT 0、NULL-only；预热普通表文件访问 | 0 |
+| 1 | SELECT：Unicode“数据库与人工智能”、非NULL空串、SQL NULL；核对行ID/shape与原始completion | 2 |
+| 2 | INSERT SELECT：ASCII“Hello, SemLoom.”与SQL NULL；核对写回、plan的calls/rows/usage | 1 |
+| 3 | “cancel this generation”，instruction要求128项；HTTP派发后取消，期待57014 | 1 |
+| 4 | “after cancel”，恢复查询与完整输出/usage核对 | 1 |
+| 5 | 18000次“token ”构成108000-byte输入，期待服务上下文拒绝映射38000 | 1 |
+| 6 | “after model error”，恢复查询与完整输出/usage核对 | 1 |
+
+常规instruction沿用原“Return only the input text exactly as received. Do not add, remove, translate,
+normalize, or explain anything.”，temperature=0/top_p=1/n=1/stream=false/stop=null/max_tokens=128，
+timeout_ms=120000；取消指令沿用原128项样例。模型输出只与本次真实raw completion核对，不把输入
+当作生成质量标签。运行前用实际chat template离线计算所有输入token；常规请求须留足4096总上下文
+中的128输出预算；超长拒绝样例单独标为预期错误，不能截断后执行。
+
+沿用Qwen/Qwen2.5-7B-Instruct revision `a09a35458c702b33eeacc393d103063234e8bc28`、vLLM0.25.1、
+torch2.11.0、单RTX4090/BF16，max_model_len=4096、seqs=4、batched_tokens=4096、memory_utilization=0.8、
+eager、关闭prefix cache、generation-config=vllm。首个请求前核对全部权重SHA、tokenizer/template、
+有效默认、GPU/进程身份与空闲状态。仅启动本轮localhost服务与隔离PG；不改已有服务、不下载模型。
+
+真实HTTP预算observer沿用原32次账本实现；使用现有SessionObserver记录会话，复用已修复的采集器
+保存每个阶段的baseline/operation/cleanup。本次允许冷gateway首个SELECT建立预热事实，并分别报告
+其峰值，不将它与预热后的正式压力结果混用。需要观察短连接的阶段在首个HTTP前使用已登记的握手
+观察夹具，保持请求payload不变；人工等待不作为模型性能。全部成功阶段核对原始输出字节、模型ID、
+finish reason和usage；取消时分别记录PG返回、HTTP尝试结束、vLLM队列回空，不能用UDS关闭代表GPU停止。
+复用的观察驱动在放行后最多等待查询10秒，未返回则取消；HTTP自身仍为120秒上限，清理/服务队列
+另最多等待60秒。三个计时范围分别记录，不把HTTP timeout误写成整段运行时限。预算读取失败也先
+保存本轮失败summary；原始模型身份检查由独立启动侧车完成，runner再核对该PID/start-time、
+cmdline SHA及fixed-model配置SHA，绑定到本轮manifest。
+
+采用schema v2.1的socket专用2/0、FD/thread结束0以及PG/gateway原RSS阈值作为本次诊断停止条件。
+任一资源/身份/预算/输出条件不满足即停止并保存已有证据；归因不完整不得声称资源通过。
+外部服务结束后按本轮PID/start-time清理并确认GPU占用/端口释放。原始payload/日志留在服务器，
+公开版仅含允许字段的摘要与单独哈希。正式fixture3×2000的授权与运行不包含在此次追加授权中。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。

@@ -12,6 +12,9 @@
 tool repair, controlled tests and isolated PG18.3 fixture diagnostic at `77a123de`: actual 1×100, all nine
 required phases valid/passed, zero model requests. Formal 3×2000 remains unrun and requires separate authorization.
 
+[有限真实模型复查](postgresql/semmap_real_followup_20260906/README.md)已获得用户追加授权，
+沿原32次账本的25次初值最多增加7次；独立服务身份已核对，结果待执行，不代表正式资源或性能验证。
+
 ## PostgreSQL 生成型 Map 真实模型与资源检查（2026-09-04）
 
 [真实链路与资源记录](postgresql/semmap_real_model_resource_20260904/README.md)绑定

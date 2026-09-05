@@ -9105,3 +9105,8 @@ FD/线程增量0；运行结束后本轮进程均退出。原始哈希在服务�
 详细结果与R1–R7/T01–T20映射见
 [资源工具验收记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md)。
 正式3×2000未授权、未执行，完整资源资格与四D仍pending；本轮没有push或改写原分支历史。
+
+用户随后追加允许真实模型测试，实施范围登记于Map合同§8.4.4。现场原账本25/32，沿同一账本
+最多新增7次，覆盖SELECT/INSERT/NULL、取消/拒绝及恢复，不重置预算、不自动重试。四个缓存权重
+分片与Hugging Face固定revision官方SHA一致，原服务配置/BF16已核对；本轮独立localhost服务就绪。
+实验driver在首请求前复核，账本读取失败漏summary问题已通过受控反例修复；真实结果仍待执行。
