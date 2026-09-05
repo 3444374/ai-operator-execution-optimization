@@ -53,7 +53,9 @@ class RunSpec:
     def manifest(self):
         return {**asdict(self), "rounds": self.rounds, "rows_per_round": self.rows_per_round,
                 "metric_schema": METRIC_SCHEMA, "implementation_revision": IMPLEMENTATION_REVISION,
-                "required_cases": REQUIRED_PHASES}
+                "required_cases": REQUIRED_PHASES,
+                "fault_fixture_protocol": "observe-before-handshake-v1",
+                "fault_fixture_barrier_timeout_seconds": 5.}
 
 
 @dataclass(frozen=True)

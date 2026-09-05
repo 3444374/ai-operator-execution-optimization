@@ -14,6 +14,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import threading
 
 from src.observability.process_resources.recorder import ProcfsTickSampler
 from src.observability.process_resources.model import PgFileClassificationContext
@@ -131,7 +132,7 @@ def wait_drain(events, timeout=10.):
 
 
 @contextmanager
-def gateway(args, root, name, fixture_path, user, extra=()):
+def gateway(args, root, name, fixture_path, user, extra=(), release=None):
     from .runtime_helpers import owned_child_process, wait_for_path
     root.mkdir()
     if user is not None:
@@ -139,7 +140,9 @@ def gateway(args, root, name, fixture_path, user, extra=()):
     socket_path = args.root / "socket" / (name + ".sock")
     event_path = root / "session_events.jsonl"
     env = dict(os.environ, PYTHONPATH=str(args.repo / "code"), PYTHONDONTWRITEBYTECODE="1")
-    command = [sys.executable, str(args.repo / "code/src/experiments/postgresql/semmap_resource_gateway_observer.py"),
+    script = "semmap_resource_gateway_observer.py" if release is None else "semmap_resource_fault_gateway.py"
+    command = [sys.executable, str(args.repo / "code/src/experiments/postgresql" / script),
+               *([] if release is None else ["--release", str(release)]),
                "--events", str(event_path), "--", "--socket", str(socket_path),
                "--golden-fixture", str(fixture_path), *extra]
     with owned_child_process(command, root, "gateway", env, user) as process:
@@ -147,14 +150,89 @@ def gateway(args, root, name, fixture_path, user, extra=()):
         yield process, socket_path, lambda: load_session_events(event_path)
 
 
+class ObservationProbe:
+    """Publish the recorder's latest tick; the fixture driver owns the barrier."""
+    def __init__(self, sampler):
+        self.sampler = sampler
+        self.latest = None
+        self.lock = threading.Lock()
+
+    def sample_all(self, ns):
+        tick = self.sampler.sample_all(ns)
+        with self.lock:
+            self.latest = tick
+        return tick
+
+    def read(self):
+        with self.lock:
+            return self.latest
+
+
+def query_after_observation(query, probe, release, cancel, timeout=5.):
+    """Drive one held fixture query, release after co-observation, then propagate its result."""
+    from src.observability.process_resources.model import FdKind, SnapshotStatus
+    release.unlink(missing_ok=True)
+    before = probe.read()
+    baseline_ids = {fd.identity for fd in before.processes["backend"].fds}
+    result, error = [], []
+    def execute():
+        try:
+            result.append(query())
+        except BaseException as caught:
+            error.append(caught)
+    started = time.monotonic_ns()
+    worker = threading.Thread(target=execute, name="fixture-query")
+    worker.start()
+    observed = False
+    try:
+        deadline = time.monotonic() + timeout
+        while worker.is_alive() and time.monotonic() < deadline:
+            tick = probe.read()
+            if tick is not None and tick.monotonic_ns > started and tick.unix_table_valid:
+                backend, gateway = (tick.processes.get(r) for r in ("backend", "gateway"))
+                observed = (backend is not None and gateway is not None
+                    and backend.status is SnapshotStatus.VALID and gateway.status is SnapshotStatus.VALID
+                    and backend.fds is not None and gateway.fds is not None
+                    and any(fd.kind is FdKind.UNBOUND_UNIX_SOCKET and fd.identity not in baseline_ids for fd in backend.fds)
+                    and gateway.count(FdKind.PROVIDER_UDS_CONNECTED) > 0)
+                if observed:
+                    release.touch()
+                    break
+            time.sleep(.001)
+        if not observed:
+            if error:
+                raise error[0]
+            raise TimeoutError("fixture_connection_unobserved")
+        worker.join(timeout=10.)
+        if worker.is_alive():
+            raise TimeoutError("fixture_query_not_finished")
+        if error:
+            raise error[0]
+        return result[0]
+    finally:
+        if worker.is_alive():
+            try:
+                cancel()
+            finally:
+                release.touch(exist_ok=True)
+                worker.join(timeout=10.)
+            if worker.is_alive():
+                raise RuntimeError("fixture_query_thread_survived_cancel")
+
+
 def phase(args, spec, root, name, connection, gateway_process, socket_path,
-          events, digest, **kwargs):
+          events, digest, release=None, **kwargs):
     pids = {"backend": connection.info.backend_pid}
     if gateway_process is not None:
         pids["gateway"] = gateway_process.pid
     sampler = ProcfsTickSampler(pids, str(socket_path), pg_file_context(connection))
+    operation = lambda: query_one(connection, socket_path)
+    if release is not None:
+        sampler = ObservationProbe(sampler)
+        operation = lambda: query_after_observation(
+            lambda: query_one(connection, socket_path), sampler, release, connection.cancel)
     return execute_phase(root=root / name, phase=name, spec=spec, sampler=sampler,
-        operation=lambda: query_one(connection, socket_path), events=events,
+        operation=operation, events=events,
         roles=tuple(pids), expected_digest=digest, check_result=check_output, **kwargs)
 
 
@@ -217,13 +295,14 @@ def stress_case(args, spec, connection, user, fixture_path, digest):
 def cancel_case(args, spec, connection, user, fixture_path, digest):
     root = args.root / "cancel_and_cleanup"
     root.mkdir()
+    release = root / "release"
     with gateway(args, root / "gateway", "cancel", fixture_path, user,
-                 ("--test-response-delay-ms", "1000")) as (process, socket_path, events):
+                 ("--test-response-delay-ms", "1000"), release=release) as (process, socket_path, events):
         connection.execute("SET statement_timeout='50ms'")
         result = phase(args, spec, root, "cancel", connection, process, socket_path, events, digest,
-                       expected_sqlstate=CANCEL_SQLSTATE)
+                       expected_sqlstate=CANCEL_SQLSTATE, release=release)
         connection.execute("SET statement_timeout='5s'")
-        recovery = (phase(args, spec, root, "recovery", connection, process, socket_path, events, digest)
+        recovery = (phase(args, spec, root, "recovery", connection, process, socket_path, events, digest, release=release)
                     if result.safe else skipped("recovery", "cancel_state_unsafe_or_unknown"))
         return [result, recovery]
 
@@ -231,22 +310,24 @@ def cancel_case(args, spec, connection, user, fixture_path, digest):
 def disconnect_case(args, spec, connection, user, fixture_path, digest):
     root = args.root / "provider_disconnect_and_recovery"
     root.mkdir()
+    release = root / "release"
     with gateway(args, root / "old_gateway", "disconnect", fixture_path, user,
-                 ("--test-disconnect-on-task",)) as (process, socket_path, events):
+                 ("--test-disconnect-on-task",), release=release) as (process, socket_path, events):
         result = phase(args, spec, root, "disconnect", connection, process, socket_path, events, digest,
-                       expected_sqlstate=DISCONNECT_SQLSTATE, expected_tasks=0)
+                       expected_sqlstate=DISCONNECT_SQLSTATE, expected_tasks=0, release=release)
     if not result.safe:
         return [result, skipped("recovery", "disconnect_state_unsafe_or_unknown")]
-    with gateway(args, root / "new_gateway", "disconnect-recovery", fixture_path, user) as (process, socket_path, events):
-        recovery = phase(args, spec, root, "recovery", connection, process, socket_path, events, digest)
+    with gateway(args, root / "new_gateway", "disconnect-recovery", fixture_path, user, release=release) as (process, socket_path, events):
+        recovery = phase(args, spec, root, "recovery", connection, process, socket_path, events, digest, release=release)
     return [result, recovery]
 
 
 def exit_case(args, spec, connection, user, fixture_path, digest):
     root = args.root / "gateway_exit_and_recovery"
     root.mkdir()
-    with gateway(args, root / "old_gateway", "exit", fixture_path, user) as (process, socket_path, events):
-        alive = phase(args, spec, root, "alive", connection, process, socket_path, events, digest)
+    release = root / "release"
+    with gateway(args, root / "old_gateway", "exit", fixture_path, user, release=release) as (process, socket_path, events):
+        alive = phase(args, spec, root, "alive", connection, process, socket_path, events, digest, release=release)
         if not alive.safe:
             return [alive, skipped("absent", "alive_state_unknown"), skipped("recovery", "alive_state_unknown")]
         process.terminate()
@@ -258,8 +339,8 @@ def exit_case(args, spec, connection, user, fixture_path, digest):
                               if old_returncode is None or socket_path.exists() else []))
     if not absent.safe:
         return [alive, absent, skipped("recovery", "absent_state_unsafe_or_unknown")]
-    with gateway(args, root / "new_gateway", "exit-recovery", fixture_path, user) as (process, recovery_socket, events):
-        recovery = phase(args, spec, root, "recovery", connection, process, recovery_socket, events, digest)
+    with gateway(args, root / "new_gateway", "exit-recovery", fixture_path, user, release=release) as (process, recovery_socket, events):
+        recovery = phase(args, spec, root, "recovery", connection, process, recovery_socket, events, digest, release=release)
     return [alive, absent, recovery]
 
 

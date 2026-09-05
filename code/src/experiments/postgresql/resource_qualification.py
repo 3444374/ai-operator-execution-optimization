@@ -31,7 +31,7 @@ from src.observability.process_resources.model import (
 )
 
 METRIC_SCHEMA = "semloom.pg.resource.v2.1"
-IMPLEMENTATION_REVISION = "phase-lifecycle-1"
+IMPLEMENTATION_REVISION = "phase-lifecycle-2"
 
 MIB = 1024 * 1024
 

@@ -739,6 +739,15 @@ input/output 仍为100000/65536 bytes；不启动模型、不修改已有服务�
 源码管理版 C client；diagnostic 不修改全局行数。所有层使用同一 assessment，diagnostic 的
 qualification_status 固定 not_evaluated，并单列 diagnostic_status；退出码仍为2。
 
+**首次目标诊断后的观测修订（phase-lifecycle-2）**：`836448ab` 的真实 1×100 压力与取消/恢复
+观测有效且资源检查通过，但瞬时 disconnect session 没有周期采样覆盖；该运行保留 not_evaluated，
+后续未运行场景保留跳过。为避免靠重复碰运气获得覆盖，下一次运行预先采用
+`observe-before-handshake-v1` 故障夹具：仅单查询 fault/recovery 连接在握手前由独立故障注入器等待，
+驱动线程在采样器发布同批次可见的 backend client/gateway accepted 后释放；最多等待5s，失败即
+取消本轮查询并保留证据。压力场景不加等待。被动 observer 仍只记录；生产 server/wire 不改。
+这些阶段只评价故障清理与关联，不把人为等待作为性能或自然服务时间。每个新 run manifest 记录
+该夹具协议和等待上限，沿用原数值阈值，在新目录保存版本2证据。
+
 正式 3×2000 未授权。必须先有当前版本有效的完整 diagnostic，才能另行决定正式运行；目前
 formal blocked。测试和目标环境结果由证据台账及本轮结果目录登记，不以计划存在代替通过。
 

@@ -5,9 +5,10 @@
 
 2026-09-06 资源工具修复分支：已受限重写独占结果目录、阶段采集和最终聚合，新增
 `resource_lifecycle.py` / `resource_phase.py`，修正归因、稳定基线、异常采样和中断证据。
-测量身份改为 `semloom.pg.resource.v2.1 / phase-lifecycle-1`；PG/provider/wire 生产路径未修改。
+测量身份为 `semloom.pg.resource.v2.1`；当前观测修订 `phase-lifecycle-2` 增加独立故障夹具同步点；PG/provider/wire 生产路径未修改。
 本地当前 115 项检查中 113 通过、2 项 Linux 专属跳过；[证据](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md)单独登记。
-Linux/PG18.3 小规模诊断尚未完成，正式资源资格和四 D 完成仍 pending。
+Linux 的126项检查已通过；836448ab 的真实1×100压力和取消/恢复有效，瞬时断连观测不完整，
+修订2待新目录诊断。正式资源资格和四 D 完成仍 pending。
 当前实施依据见 [资源工具生命周期修复](../experiments/plans/postgresql_semmap_generation_contract.md)。
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与

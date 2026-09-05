@@ -12,6 +12,7 @@ owns the implementation and verification plan.
 | `resource_qualification.py` | Sampled peak and cleanup policies with versioned thresholds |
 | `provider_session_attribution.py` | Strict session/task replay, scoped socket attribution and residual identity checks |
 | `semmap_resource_gateway_observer.py` | Experiment-only peer/socket/session observations |
+| `semmap_resource_fault_gateway.py` | Separate test-only handshake barrier for observable fault/recovery connections |
 | `resource_client_v3.c` | Parameterized single-row libpq fixture consumer with an explicit exit barrier |
 | `runtime_helpers.py` | Shared owned-process and isolated PostgreSQL helpers, also used by choice checks |
 

@@ -71,4 +71,46 @@ class StressOwnershipTests(unittest.TestCase):
             self.assertTrue((client_root/'backend_dead').exists())
 
 
+class FaultBarrierTests(unittest.TestCase):
+    def test_driver_releases_only_after_published_endpoint_observation(self):
+        import threading,time
+        with tempfile.TemporaryDirectory() as directory:
+            release=Path(directory)/'release'
+            workload=ControlledWorkload()
+            probe=runner.ObservationProbe(workload)
+            probe.sample_all(time.monotonic_ns())
+            entered=threading.Event()
+            observed=[]
+            def query():
+                entered.set()
+                while not release.exists():time.sleep(.001)
+                return 'completed'
+            def publish():
+                entered.wait(1)
+                observed.append(release.exists())
+                workload.active=True
+                probe.sample_all(time.monotonic_ns())
+            publisher=threading.Thread(target=publish)
+            publisher.start()
+            value=runner.query_after_observation(query,probe,release,lambda:None)
+            publisher.join()
+            self.assertEqual(observed,[False])
+            self.assertEqual(value,'completed')
+            self.assertTrue(release.exists())
+
+    def test_unobserved_connection_cancels_and_joins_query(self):
+        import threading,time
+        with tempfile.TemporaryDirectory() as directory:
+            release=Path(directory)/'release'
+            probe=runner.ObservationProbe(ControlledWorkload())
+            probe.sample_all(time.monotonic_ns())
+            cancelled=[]
+            def query():
+                while not release.exists():time.sleep(.001)
+            with self.assertRaises(TimeoutError):
+                runner.query_after_observation(query,probe,release,lambda:cancelled.append(True),timeout=.02)
+            self.assertEqual(cancelled,[True])
+            self.assertFalse(any(t.name=='fixture-query' for t in threading.enumerate()))
+
+
 if __name__=='__main__': unittest.main()

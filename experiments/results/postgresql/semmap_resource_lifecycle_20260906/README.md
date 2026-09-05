@@ -43,9 +43,19 @@ and its accepted peer in the same usable observation batch. Scope is the synchro
 
 ## Target environment and limits
 
-Linux integration and the authorized isolated PG18.3 1×100 fixture diagnostic are pending at this source-registration point.
+Linux checks at 836448ab pass 126/126, including the real two-process socket/cleanup integration and 11 choice checks.
+The private PG18.3 extension build passes -O2 -Werror. An earlier added -Wextra attempt failed on PostgreSQL
+header unused-parameter warnings; its log is retained.
+
+The first actual 1×100 diagnostic at 836448ab has valid passing pressure and cancel/recovery assessments.
+The instantaneous disconnect window has no sampled tick, so it is not evaluated; subsequent phases/cases
+are skipped. Formal qualification remains blocked. Revision phase-lifecycle-2 registers a separate test-only
+handshake barrier for single-query fault/recovery connections before a new run. Pressure timing is unchanged.
 The old diagnostic README is historical evidence at `a4119e73`, with a corrected actual workload of 3×2000; its
-raw files have not yet been independently verified in this repair. It does not qualify the new implementation.
+raw was read independently during this repair. The summary confirms expected100/observed6000 and
+expected101/observed6001 mismatches. Its stress cleanup trace contains two invalid process records,
+and the reported checksum/source/environment manifests were not found inside that artifact root.
+The old gateway-exit correctness record also reports observed XX000 versus expected08006. It does not qualify the new implementation.
 
 Formal 3×2000 is blocked and has not been authorized. This repair cannot establish completion of the full Map
 engineering work, model quality, asynchronous scheduling or performance benefits.
