@@ -1,5 +1,5 @@
 {
-  "README.md": "5e86c27d3cadb168f5f8cef58dfd3bee52709a4a31335f7d8f72fdc67d8bd6af",
+  "README.md": "3631dc42ea77ba5214d8ce7c66faf822e529922db1057e108d8a8681c22681e7",
   "raw/attribution-local.txt": "af890835a53604f465328ce9151c282bedee7a7e368f3af8e6007bdd9bb6db32",
   "raw/controlled-evidence.json": "c2718d660fb17bc75d8471ff155694138fa1295e4f81ef333315f2a1b63c1d78",
   "raw/controlled_failure/SHA256SUMS.json": "9d80b8391e4b10ac25114c74aa148f6cadd4a892c7c67887c72c60dde936609c",
@@ -150,6 +150,7 @@
   "raw/refactor-linux-tests.json": "f63420860771300244846e4d3d621f1c29cb41bc772c765a9ad8923f232d83cf",
   "raw/refactor-local-tests.json": "19f698647e3c12fdae07794d966a2e491beecd30841ddf005b6604e90affcc78",
   "raw/resource-local.txt": "6ec263483a15ffe9c4bcdc95119df8f924d06afc8c5411adb5c3b416cb914699",
+  "raw/retirement-verification.json": "cf7b700f728580887b646c0c2be6fa96f6bb3a25a524bf6e3ae987e456bfab24",
   "raw/sampling_lifecycle-local.txt": "38d3f57e973717f5c9d1b77fab6e19f6f7c56bbbb6ae5c79b6910f4c382180d3",
   "raw/v1_replay-local.txt": "baf49b59538192f3e136ca0404cac516ecb8dd2fe5ba1416604056f3080fa49c",
   "raw/verification-final/additional-baseline-regression.json": "5ecf22e9159d7f4fa8d1249918351e6be59f5aaa6dcb708af0bf96c1438b3ba7",

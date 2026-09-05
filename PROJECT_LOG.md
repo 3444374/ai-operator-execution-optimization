@@ -9163,5 +9163,7 @@ prompt/output tokens为42/7，两个角色结束FD/线程增量均0。原32/32�
 删除 5 个兼容入口、1 个旧错误重放测试和 13 个一次性实验驱动（共 19 文件、2208 原有行），
 同时去除 golden session 转发和 adapter 旧属性 fallback。四个 TAP 使用公共 gateway CLI。
 固定 Git 路径/blob/SHA 保存可恢复身份，原始数据、失败结果与历史报告保留；现行文档移除旧入口说明。
-本地 233 项中 231 通过、2 项 Linux 专属跳过；Linux Python/PG18.3 TAP 待执行。
+清理提交 `fcd12373`：本地 233 项中 231 通过、2 项 Linux 专属跳过；Linux 233/233 通过，
+PG18.3 严格构建及四个受影响 TAP 1297/1297 通过，安装件与构建件相同，测试进程残留 0。
+19 个归档源码 blob/SHA 与历史清单的 71 个本地条目、4 个 Git 源码条目均匹配。
 不调用模型、不合并 main。详见[清理记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。

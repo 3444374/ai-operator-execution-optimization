@@ -3,8 +3,9 @@
 日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
 
 合并前清理已迁移四个 TAP 至公共 gateway CLI，并删除旧 Python 兼容入口、重复转发及
-13 个一次性实验驱动；原始证据与固定 Git 源码恢复身份保留。本地 233 项中 231 通过、
-2 项 Linux 专属跳过，Linux PG18.3 验证待执行。详见[清理记录](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。
+13 个一次性实验驱动；原始证据与固定 Git 源码恢复身份保留。`fcd12373` 的本地 233 项中
+231 通过、2 项 Linux 专属跳过，Linux 233/233 通过；PG18.3 严格构建、四个受影响 TAP
+1297/1297 通过，测试进程残留 0、模型请求 0。详见[清理记录](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。
 
 最新 [推送前真实模型复验](../experiments/results/postgresql/semmap_prepush_20260906/README.md)
 在 `b7eeea53`、PG18.3、固定Qwen2.5-7B/vLLM下使用新8次预算完成完整小规模检查。

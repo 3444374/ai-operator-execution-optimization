@@ -1,0 +1,199 @@
+{
+  "source_commit": "fcd1237398f10f136c4f43d82935bf3cef612e04",
+  "model_requests": 0,
+  "linux_python": {
+    "platform": "Linux",
+    "python": "3.12.3",
+    "groups": {
+      "resource": {
+        "run": 56,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_resource_lifecycle",
+          "test_resource_measurement_contracts",
+          "test_resource_qualification",
+          "test_semmap_resource_cli",
+          "test_semmap_resource_gateway_observer",
+          "test_semmap_resource_runner",
+          "test_postgresql_runtime_helpers"
+        ],
+        "log_sha256": "bd5ce37e420c61a02fd44f5af821f2f6f63807baf42b608f17dadcb1479ed3ba"
+      },
+      "observer_and_budget": {
+        "run": 15,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_gateway_observation",
+          "test_choice_attempt_ledger",
+          "test_choice_http_observer",
+          "test_choice_service_checks"
+        ],
+        "log_sha256": "35b2665f3159963b1eeb2a27fb03540dea47b06c9905b451f688e06c77344c69"
+      },
+      "attribution": {
+        "run": 17,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_provider_session_attribution"
+        ],
+        "log_sha256": "23c1fc93d7075ce182d7b3fd33b21dc12d9a302df80d36c34cee6132dd90a18e"
+      },
+      "process": {
+        "run": 43,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_proc_collection_validity",
+          "test_process_recorder",
+          "test_process_resources",
+          "test_process_resources_linux",
+          "test_sampling_lifecycle"
+        ],
+        "log_sha256": "973ffb2bc485ce76019a189994b399974828e6f1dc0b5d87e9c05d6520491a27"
+      },
+      "provider": {
+        "run": 102,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_gateway_migration",
+          "test_semloom_pg_static_contract",
+          "test_semloom_recording_protocol",
+          "test_map_gateway",
+          "test_semloom_map_contract",
+          "test_semloom_map_protocol",
+          "test_semloom_semantic_protocol",
+          "test_semloom_choice_protocol",
+          "test_semloom_fixed_model_adapter",
+          "test_semloom_generation_profile"
+        ],
+        "log_sha256": "d04bf11cf227e1404a43a8cf4cc87c2615fcc74c24e998eb45a599a15d82de61"
+      }
+    },
+    "model_requests": 0,
+    "total": 233
+  },
+  "pg_version": "PostgreSQL 18.3",
+  "preflight": {
+    "groups": [
+      "core"
+    ],
+    "status": "ok"
+  },
+  "tap_summary": [
+    "t/001_semloom_pg.pl ........ ok",
+    "t/003_choice_execution.pl .. ok",
+    "t/004_filter_insert.pl ..... ok",
+    "t/007_map_execution.pl ..... ok",
+    "All tests successful.",
+    "Files=4, Tests=1297, 40 wallclock secs ( 0.21 usr  0.02 sys + 24.72 cusr  5.79 csys = 30.74 CPU)",
+    "Result: PASS"
+  ],
+  "build_flags": "-O2 -Werror",
+  "extension_sha256": "68a29821bbc4339cbe341404f8622b2dd303c822ee1c66a93bdec66873a3d7c8",
+  "installed_extension_matches": true,
+  "owned_test_processes_remaining": 0,
+  "private_file_sha256": {
+    "preflight.json": "29df63db91580b8659022257b10971bdd63f8091c758d4e6f538100a72b6d612",
+    "preflight.log": "29df63db91580b8659022257b10971bdd63f8091c758d4e6f538100a72b6d612",
+    "python/summary.json": "95c2f74c69668cbc947ff1f951e78af378e20716ab3a9237fc15827be909787b",
+    "build.log": "4325a7ae515631a6f4a0d1d80675650263fa6207318afc25870710958514c048",
+    "install.log": "cfddfb30dd66bd4a2d283e2fc09f9b845dad39f2801dcbf4d0ee3e1c22c87b8e",
+    "tap.log": "b36fb36ba34f10ebcde0a8e72fcc49743fb09ecbaa4c7e9a06228ce5adf00ef9"
+  },
+  "local_python": {
+    "platform": "Darwin",
+    "python": "3.12.6",
+    "groups": {
+      "resource": {
+        "run": 56,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_resource_lifecycle",
+          "test_resource_measurement_contracts",
+          "test_resource_qualification",
+          "test_semmap_resource_cli",
+          "test_semmap_resource_gateway_observer",
+          "test_semmap_resource_runner",
+          "test_postgresql_runtime_helpers"
+        ],
+        "log_sha256": "bd634e1f269a71422a661228dec68a2e3b4b6f57dd10cbd443368b66040a651b"
+      },
+      "observer_and_budget": {
+        "run": 15,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_gateway_observation",
+          "test_choice_attempt_ledger",
+          "test_choice_http_observer",
+          "test_choice_service_checks"
+        ],
+        "log_sha256": "4cabfcdcffd97d31e86649e966980945acd7bb808a2321616a34f2399938be7f"
+      },
+      "attribution": {
+        "run": 17,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_provider_session_attribution"
+        ],
+        "log_sha256": "23c1fc93d7075ce182d7b3fd33b21dc12d9a302df80d36c34cee6132dd90a18e"
+      },
+      "process": {
+        "run": 43,
+        "failures": 0,
+        "errors": 0,
+        "skips": 2,
+        "modules": [
+          "test_proc_collection_validity",
+          "test_process_recorder",
+          "test_process_resources",
+          "test_process_resources_linux",
+          "test_sampling_lifecycle"
+        ],
+        "log_sha256": "f263d9d5946ff575e4dae42687f865a593adb842939faa9a9b04cd41a7a88c67"
+      },
+      "provider": {
+        "run": 102,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "modules": [
+          "test_gateway_migration",
+          "test_semloom_pg_static_contract",
+          "test_semloom_recording_protocol",
+          "test_map_gateway",
+          "test_semloom_map_contract",
+          "test_semloom_map_protocol",
+          "test_semloom_semantic_protocol",
+          "test_semloom_choice_protocol",
+          "test_semloom_fixed_model_adapter",
+          "test_semloom_generation_profile"
+        ],
+        "log_sha256": "bcc266707328678b6862fcd72752062454250dbb3c615ffb40d1eced500fa1cd"
+      }
+    },
+    "model_requests": 0,
+    "total": 233
+  },
+  "local_source_identity": "Working tree tested immediately before fcd12373; all code and test files match that commit.",
+  "artifact_integrity": {
+    "retired_sources_verified": 19,
+    "historical_raw_local_entries_verified": 71,
+    "historical_raw_archived_source_entries_verified": 4,
+    "historical_raw_manifest_changed": false
+  }
+}

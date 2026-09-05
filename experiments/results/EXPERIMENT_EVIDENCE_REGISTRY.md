@@ -1,8 +1,9 @@
 # 实验与机制证据台账
 
 [退役清理记录](postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)登记 19 个删除文件的
-固定 Git 恢复身份、当前入口迁移与验证。本地 233 项中 231 通过、2 项 Linux 专属跳过；
-Linux PG18.3 验证待执行。该清理不增加模型证据，也不改变历史失败结论。
+固定 Git 恢复身份、当前入口迁移与验证。`fcd12373` 本地 233 项中 231 通过、2 项 Linux 专属
+跳过，Linux 233/233 通过；PG18.3 严格构建与四个受影响 TAP 1297/1297 通过。
+模型请求 0，测试进程残留 0；历史失败和真实模型结果保持各自提交身份。
 
 [推送前真实模型复验](postgresql/semmap_prepush_20260906/README.md)绑定 `b7eeea53`，新预算8/8，
 旧32/32账本SHA不变。SELECT、独立审计连接下的INSERT、cancel/recovery/reject/recovery六阶段

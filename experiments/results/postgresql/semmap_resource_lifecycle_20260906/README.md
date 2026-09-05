@@ -216,7 +216,18 @@ SQL recording/reference、wire v2/v3/v4/v5、当前 Filter 校准/质量代码�
 `git show d93e3f9b:<path>` 的原始字节核验。历史数据、失败记录和当时哈希不改写；历史 raw 中
 的旧 import 只在其报告绑定的完整 Git 版本执行，不作为现役依赖。本次没有合并 main。
 
-本地受影响组 233 项中 231 通过、2 项因 Linux procfs/SO_PEERCRED 跳过。入口迁移的 Linux
-PG18.3 TAP 与 Linux Python 完整组验证待执行；本次清理不增加模型请求，既有真实模型结果仍
-绑定 `b7eeea53`。初次局部测试暴露了测试自身在 bind/listen 之间抢连的时序问题，已改为有时限
-的实际连接等待，随后局部组 73/73 与完整组通过；不把删除测试导致的计数变化当作能力增加。
+运行时代码提交为 `fcd1237398f10f136c4f43d82935bf3cef612e04`。本地受影响组 233 项中 231 通过、
+2 项因 Linux procfs/SO_PEERCRED 跳过；Linux 同组 233/233 通过。core 预检通过，PG18.3
+`-O2 -Werror` 构建成功，安装件与构建件 SHA 相同；四个迁移后的 TAP 文件实际执行 1297/1297
+通过，测试进程残留 0。当前公共入口覆盖 recording、exact/choice Filter、Filter INSERT 与 Map；
+本次没有执行其余 TAP 文件或 PGXS SQL regression，也没有新增模型请求。
+
+[验证摘要](raw/retirement-verification.json)保存每组模块、数量、日志 SHA、TAP 输出和编译件 SHA；
+完整日志在仓库外，公开摘要不含机器连接信息。对应组可按摘要的 `modules` 列表使用
+`PYTHONPATH=code:code/tests/experiments:code/tests/observability:code/tests/postgres:code/tests/execution_provider`
+运行 `python -m unittest <modules> -v`。TAP 使用 README 的 PG18.3 安装环境，以
+`make PG_CONFIG=<pg18.3>/bin/pg_config REGRESS= PROVE_TESTS='t/001_semloom_pg.pl t/003_choice_execution.pl t/004_filter_insert.pl t/007_map_execution.pl' installcheck`
+只选择四个受影响文件，作为非 root 用户运行。历史清单的 71 个本地条目与 4 个 Git 源码条目均
+匹配原 SHA。初次局部测试暴露了测试自身在 bind/listen 之间抢连的时序问题，已改为有时限的
+实际连接等待，随后局部组 73/73 与完整组通过；不把删除测试导致的计数变化当作能力增加。
+既有真实模型结果仍绑定 `b7eeea53`，本次结果不替代正式资源、质量或性能实验。
