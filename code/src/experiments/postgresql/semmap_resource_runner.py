@@ -29,7 +29,7 @@ INPUT = "x" * 100000
 OUTPUT = "y" * 65536
 CANCEL_SQLSTATE = "57014"
 DISCONNECT_SQLSTATE = "08006"
-GATEWAY_EXIT_SQLSTATE = "08006"
+GATEWAY_ABSENT_CONNECT_SQLSTATE = "XX000"
 
 
 def preflight(args):
@@ -334,7 +334,7 @@ def exit_case(args, spec, connection, user, fixture_path, digest):
         process.wait(timeout=10)
         old_returncode = process.returncode
     absent = phase(args, spec, root, "absent", connection, None, socket_path, lambda: [], digest,
-        require_sessions=False, expected_sqlstate=GATEWAY_EXIT_SQLSTATE,
+        require_sessions=False, expected_sqlstate=GATEWAY_ABSENT_CONNECT_SQLSTATE,
         extra_checks=lambda: ([{"metric": "gateway_not_absent"}]
                               if old_returncode is None or socket_path.exists() else []))
     if not absent.safe:

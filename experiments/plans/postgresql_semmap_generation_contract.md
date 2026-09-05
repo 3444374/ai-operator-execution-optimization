@@ -748,6 +748,16 @@ qualification_status 固定 not_evaluated，并单列 diagnostic_status；退出
 这些阶段只评价故障清理与关联，不把人为等待作为性能或自然服务时间。每个新 run manifest 记录
 该夹具协议和等待上限，沿用原数值阈值，在新目录保存版本2证据。
 
+**错误期待的独立修正（phase-lifecycle-3 / socket-access-v1）**：`72c665a0` 的第二次诊断中，
+全部阶段观测有效，资源检查通过；只有 gateway absent 的08006期待与实际XX000冲突。
+源码核对发现这不是新的生产行为：`uds_provider.c::semloom_uds_connect` 在不存在路径的 connect
+失败时产生 AI_PROVIDER_ERROR_SYSTEM；`pg_semantic_runtime.c` 保留 errcode_for_socket_access；
+已有 `t/001_semloom_pg.pl` 明确断言 missing UDS provider 为XX000，已建立连接后 disconnect 则为08006。
+因此按源码/既有资格优先的规则，独立修正资源 runner 的场景期待：cancel=57014、
+established-connection disconnect=08006、absent-path initial connect=XX000。不是允许两种任意错误
+通过，不改变生产代码、错误消息或资源阈值。第二次运行保留valid/failed，下一次新目录按此明确
+场景合同重跑。此处取代旧资源runner所写的gateway-exit=08006期待，不改写旧证据。
+
 正式 3×2000 未授权。必须先有当前版本有效的完整 diagnostic，才能另行决定正式运行；目前
 formal blocked。测试和目标环境结果由证据台账及本轮结果目录登记，不以计划存在代替通过。
 

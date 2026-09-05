@@ -185,6 +185,25 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(report.measurement_status,'inconclusive')
         self.assertTrue(any(v.metric=='rss_peak_delta' for v in report.peak_policy))
 
+    def test_absent_path_and_established_disconnect_have_distinct_error_contracts(self):
+        self.assertEqual(runner.GATEWAY_ABSENT_CONNECT_SQLSTATE,'XX000')
+        self.assertEqual(runner.DISCONNECT_SQLSTATE,'08006')
+        workload=ControlledWorkload()
+        class Sampler:
+            def sample_all(self,ns):
+                value=workload.sample_all(ns)
+                return replace(value,processes={'backend':value.processes['backend']})
+        class SocketAccessError(Exception):
+            sqlstate='XX000'
+        def operation():
+            raise SocketAccessError()
+        with tempfile.TemporaryDirectory() as directory:
+            result=execute_phase(root=Path(directory)/'absent',phase='absent',spec=FAST,
+                sampler=Sampler(),operation=operation,events=lambda:[],roles=('backend',),
+                require_sessions=False,expected_sqlstate=runner.GATEWAY_ABSENT_CONNECT_SQLSTATE)
+        self.assertEqual(result.policy_status,'passed')
+        self.assertTrue(result.safe)
+
 
 class RunnerOwnershipTests(unittest.TestCase):
     def args(self,root,diagnostic=False):

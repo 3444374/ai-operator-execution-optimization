@@ -55,7 +55,8 @@ class RunSpec:
                 "metric_schema": METRIC_SCHEMA, "implementation_revision": IMPLEMENTATION_REVISION,
                 "required_cases": REQUIRED_PHASES,
                 "fault_fixture_protocol": "observe-before-handshake-v1",
-                "fault_fixture_barrier_timeout_seconds": 5.}
+                "fault_fixture_barrier_timeout_seconds": 5.,
+                "error_contract_revision": "socket-access-v1"}
 
 
 @dataclass(frozen=True)
