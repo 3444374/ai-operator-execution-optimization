@@ -1,0 +1,98 @@
+{
+  "artifacts": [
+    "attributed_operation/process_samples.jsonl.gz",
+    "attribution.json",
+    "baseline/process_samples.jsonl.gz",
+    "cleanup/fd_lifecycles.jsonl.gz",
+    "cleanup/process_samples.jsonl.gz",
+    "operation/fd_lifecycles.jsonl.gz",
+    "operation/operation_outcome.json",
+    "operation/process_samples.jsonl.gz",
+    "progress.json",
+    "session_events.json"
+  ],
+  "assessment": {
+    "measurement_status": "valid",
+    "qualification_status": "failed"
+  },
+  "diagnostic_status": null,
+  "diagnostics": {
+    "cleanup": {
+      "cleanup": {
+        "per_role": {
+          "backend": {
+            "provider_session_end_delta": 0,
+            "rss_end_delta": 0,
+            "thread_end_delta": 0,
+            "total_fd_end_delta": 0
+          },
+          "gateway": {
+            "provider_session_end_delta": 0,
+            "rss_end_delta": 0,
+            "thread_end_delta": 0,
+            "total_fd_end_delta": 0
+          }
+        },
+        "provider_uds_session_fd_end_delta_combined": 0
+      },
+      "measurement_problems": [],
+      "phase": "cleanup"
+    },
+    "peak": {
+      "measurement_problems": [],
+      "peak": {
+        "coverage": "complete",
+        "per_role": {
+          "backend": {
+            "provider_uds_peak_delta": 1,
+            "provider_uds_peak_fds_observed": [
+              9
+            ],
+            "rss_peak_delta": 0,
+            "total_fd_peak_delta": 1
+          },
+          "gateway": {
+            "provider_uds_peak_delta": 1,
+            "provider_uds_peak_fds_observed": [
+              5
+            ],
+            "rss_peak_delta": 0,
+            "total_fd_peak_delta": 1
+          }
+        },
+        "provider_uds_session_fd_peak_delta_combined": 2,
+        "ticks": 11,
+        "unknown_fd_peak_delta": 0
+      },
+      "phase": "stress"
+    },
+    "session_drain": {
+      "active_sessions": 0,
+      "event_integrity": "valid",
+      "session_ids": [
+        1
+      ],
+      "sessions": 1,
+      "success_inferred_from_session_end": false,
+      "tasks_recorded": 1
+    },
+    "settled": true
+  },
+  "failures": [
+    {
+      "exception_type": "RuntimeError",
+      "message": "operation_error",
+      "metric": "operation_failed",
+      "phase": "operation",
+      "sqlstate": null
+    }
+  ],
+  "measurement_status": "valid",
+  "mode": "formal",
+  "phase": "operation",
+  "policy_status": "failed",
+  "problems": [],
+  "qualification_status": "failed",
+  "safe": true,
+  "state": "completed"
+}

@@ -5,6 +5,9 @@ Module targets, implementation order, and acceptance criteria belong to
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
 the code tree and must not become a competing engineering plan.
 
+Resource-measurement tools now have a [dedicated module index](src/experiments/postgresql/README.md).
+Their lifecycle repair is recorded separately from production Map behavior and has no formal qualification yet.
+
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile
 and share canonical bytes/identity tests. SQL opt-in, schema 3, the C `AiOpenSpec` mapping and wire v4 now

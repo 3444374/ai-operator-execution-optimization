@@ -1,0 +1,10 @@
+{
+  "phase": "recovery",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425466861708,
+  "ended_ns": 135425479368125,
+  "sample_count": 11,
+  "sampling_errors": []
+}

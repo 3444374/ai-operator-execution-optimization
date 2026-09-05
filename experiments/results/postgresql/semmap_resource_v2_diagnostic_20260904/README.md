@@ -99,11 +99,10 @@ combined peak = 2（阈值内）、unknown = 0、end 全归零；三个实质 se
 
 ## 10. 是否允许进入正式资格（决策规则对照）
 
-对照 §八 决策规则：**情况 A**——client +1、accepted +1、combined peak = 2、第三个 FD 明确为
-eventpoll（已分类）、所有 end delta = 0。**建议允许进入正式 3×2,000 qualification**，
-前置条件剩余两项：①partial tick 比例在高负载下是否仍可接受（正式 run 直接检验）；②正式运行
-需独立授权（本诊断不授权正式运行）。正式运行若 partial tick 使 measurement=inconclusive，
-按合同输出 not_evaluated，不放宽任何口径。
+2026-09-06 更新：旧建议已被后续源码审查撤回。本目录只保留 `a4119e73` 的历史诊断记录；
+当前工具须按 [Map 资源生命周期修复计划](../../../plans/postgresql_semmap_generation_contract.md)
+重新通过受控行为测试及有效的小规模诊断。旧记录存在不完整采样和工作量身份更正，不能为当前源码
+提供正式运行依据。正式运行目前不可开始，需新的完整诊断与独立授权。旧 raw/verdict 不修改。
 
 ## 11. 证据位置
 

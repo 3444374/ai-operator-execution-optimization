@@ -1,0 +1,10 @@
+{
+  "phase": "alive",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425435554791,
+  "ended_ns": 135425446934333,
+  "sample_count": 11,
+  "sampling_errors": []
+}

@@ -1,0 +1,39 @@
+{
+  "requested_commit": "fixture",
+  "spec": {
+    "baseline_interval_seconds": 0.05,
+    "baseline_samples": 5,
+    "baseline_timeout_seconds": 10.0,
+    "cleanup_interval_seconds": 0.25,
+    "cleanup_samples": 3,
+    "cleanup_timeout_seconds": 60.0,
+    "implementation_revision": "phase-lifecycle-1",
+    "input_bytes": 100000,
+    "metric_schema": "semloom.pg.resource.v2.1",
+    "mode": "formal",
+    "output_bytes": 65536,
+    "required_cases": {
+      "cancel_and_cleanup": [
+        "cancel",
+        "recovery"
+      ],
+      "gateway_exit_and_recovery": [
+        "alive",
+        "absent",
+        "recovery"
+      ],
+      "provider_disconnect_and_recovery": [
+        "disconnect",
+        "recovery"
+      ],
+      "stress_large_payload": [
+        "stress",
+        "client_exit"
+      ]
+    },
+    "rounds": 3,
+    "rows_per_round": 2000,
+    "sample_seconds": 0.02
+  },
+  "state": "started"
+}

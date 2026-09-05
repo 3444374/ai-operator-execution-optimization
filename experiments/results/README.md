@@ -6,6 +6,12 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## SemMap resource measurement repair (2026-09-06)
+
+[Lifecycle repair evidence](postgresql/semmap_resource_lifecycle_20260906/README.md) records the controlled
+local tests, independent result-directory ownership and complete phase assessment. Linux/PG18.3 diagnostic
+results remain pending; no formal resource qualification is claimed.
+
 ## PostgreSQL 生成型 Map 真实模型与资源检查（2026-09-04）
 
 [真实链路与资源记录](postgresql/semmap_real_model_resource_20260904/README.md)绑定

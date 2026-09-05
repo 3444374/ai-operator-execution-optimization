@@ -1,0 +1,10 @@
+{
+  "phase": "cancel",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425367572500,
+  "ended_ns": 135425380186833,
+  "sample_count": 11,
+  "sampling_errors": []
+}

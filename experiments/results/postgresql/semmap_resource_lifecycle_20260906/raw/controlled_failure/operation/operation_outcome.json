@@ -1,0 +1,14 @@
+{
+  "phase": "operation",
+  "result_summary": null,
+  "started_ns": 135425492038333,
+  "ended_ns": 135425503735416,
+  "sample_count": 11,
+  "sampling_errors": [],
+  "operation_error": {
+    "exception_type": "RuntimeError",
+    "sqlstate": null,
+    "message": "operation_error",
+    "phase": "operation"
+  }
+}

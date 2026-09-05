@@ -20,6 +20,7 @@
 #include <libpq-fe.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -149,9 +150,11 @@ static int
 parse_positive(const char *text, const char *what)
 {
     char *end = NULL;
-    long value = strtol(text, &end, 10);
+    long value;
+    errno = 0;
+    value = strtol(text, &end, 10);
 
-    if (end == text || *end != '\0' || value <= 0 || value > 1000000)
+    if (errno == ERANGE || end == text || *end != '\0' || value <= 0 || value > 1000000)
     {
         fprintf(stderr, "invalid %s: %s\n", what, text);
         exit(2);
@@ -180,6 +183,11 @@ main(int argc, char **argv)
         rounds = parse_positive(argv[6], "rounds");
     if (argc >= 8)
         rows_per_round = parse_positive(argv[7], "rows-per-round");
+    if (rounds > INT_MAX / rows_per_round)
+    {
+        fprintf(stderr, "workload row count overflow\n");
+        return 2;
+    }
     total_rows = rounds * rows_per_round;
     if (snprintf(connection_info, sizeof(connection_info),
                  "host=%s port=%s user=postgres dbname=postgres", argv[1], argv[2]) >=
@@ -194,14 +202,16 @@ main(int argc, char **argv)
     set_gateway(connection, argv[3]);
 
     run_query(connection, "WHERE id=1", 1);
-    printf("{\"event\":\"warmup_complete\",\"backend_pid\":%d}\n", PQbackendPID(connection));
+    printf("{\"event\":\"warmup_complete\",\"backend_pid\":%d,\"rounds\":%d,\"rows_per_round\":%d}\n",
+           PQbackendPID(connection), rounds, rows_per_round);
     wait_for_file(argv[4], 120);
     for (round = 1; round <= rounds; round++)
     {
         int rows = run_query(connection, "", rows_per_round);
         printf("{\"event\":\"round_complete\",\"round\":%d,\"rows\":%d}\n", round, rows);
     }
-    printf("{\"event\":\"all_complete\",\"rows\":%d}\n", total_rows);
+    printf("{\"event\":\"all_complete\",\"rows\":%d,\"rounds\":%d,\"rows_per_round\":%d}\n",
+           total_rows, rounds, rows_per_round);
     wait_for_file(argv[5], 120);
     PQfinish(connection);
     return 0;

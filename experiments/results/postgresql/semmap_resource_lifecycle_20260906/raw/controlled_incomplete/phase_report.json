@@ -1,0 +1,90 @@
+{
+  "artifacts": [
+    "attribution.json",
+    "baseline/process_samples.jsonl.gz",
+    "cleanup/fd_lifecycles.jsonl.gz",
+    "cleanup/process_samples.jsonl.gz",
+    "operation/fd_lifecycles.jsonl.gz",
+    "operation/operation_outcome.json",
+    "operation/process_samples.jsonl.gz",
+    "progress.json",
+    "session_events.json"
+  ],
+  "assessment": {
+    "measurement_status": "invalid",
+    "qualification_status": "not_evaluated"
+  },
+  "diagnostic_status": null,
+  "diagnostics": {
+    "cleanup": {
+      "cleanup": {
+        "per_role": {
+          "backend": {
+            "provider_session_end_delta": 0,
+            "rss_end_delta": 0,
+            "thread_end_delta": 0,
+            "total_fd_end_delta": 0
+          },
+          "gateway": {
+            "provider_session_end_delta": 0,
+            "rss_end_delta": 0,
+            "thread_end_delta": 0,
+            "total_fd_end_delta": 0
+          }
+        },
+        "provider_uds_session_fd_end_delta_combined": 0
+      },
+      "measurement_problems": [],
+      "phase": "cleanup"
+    },
+    "peak": {
+      "measurement_problems": [],
+      "peak": {
+        "coverage": "complete",
+        "per_role": {
+          "backend": {
+            "provider_uds_peak_delta": 0,
+            "provider_uds_peak_fds_observed": [],
+            "rss_peak_delta": 0,
+            "total_fd_peak_delta": 0
+          },
+          "gateway": {
+            "provider_uds_peak_delta": 0,
+            "provider_uds_peak_fds_observed": [],
+            "rss_peak_delta": 0,
+            "total_fd_peak_delta": 0
+          }
+        },
+        "provider_uds_session_fd_peak_delta_combined": 0,
+        "ticks": 2,
+        "unknown_fd_peak_delta": 0
+      },
+      "phase": "stress"
+    },
+    "session_drain": {
+      "active_sessions": 0,
+      "event_integrity": "valid",
+      "session_ids": [
+        1
+      ],
+      "sessions": 1,
+      "success_inferred_from_session_end": false,
+      "tasks_recorded": 1
+    },
+    "settled": true
+  },
+  "failures": [],
+  "measurement_status": "invalid",
+  "mode": "formal",
+  "phase": "operation",
+  "policy_status": "not_evaluated",
+  "problems": [
+    "session1_no_ticks_in_window",
+    "session1_candidates_0",
+    "session1_accepted_inode_unseen_same_tick",
+    "operation_sampling_failed"
+  ],
+  "qualification_status": "not_evaluated",
+  "safe": false,
+  "state": "completed"
+}

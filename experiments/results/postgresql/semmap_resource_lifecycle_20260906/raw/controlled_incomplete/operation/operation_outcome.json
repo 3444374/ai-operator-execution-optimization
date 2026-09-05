@@ -1,0 +1,21 @@
+{
+  "phase": "operation",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425508252750,
+  "ended_ns": 135425520071875,
+  "sample_count": 2,
+  "sampling_errors": [
+    {
+      "exception_type": "ValueError",
+      "sqlstate": null,
+      "message": "sampling_middle_error",
+      "phase": "sampling_middle"
+    }
+  ],
+  "sampling_error": {
+    "exception_type": "ValueError",
+    "message": "sampling_middle_error"
+  }
+}

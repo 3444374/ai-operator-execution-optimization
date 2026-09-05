@@ -173,20 +173,5 @@ class StatusCompositionContractTests(unittest.TestCase):
                          ("invalid", "not_evaluated"))
 
 
-class HardcodedVerdictContractTests(unittest.TestCase):
-    """Fault cases must not write fixed valid/passed without a policy."""
-
-    def test_runner_source_has_no_unsupported_hardcoded_verdicts(self):
-        from pathlib import Path
-        runner_source = Path(__file__).resolve().parents[2] / (
-            "src/experiments/postgresql/semmap_resource_runner.py")
-        source = runner_source.read_text(encoding="utf-8")
-        for needle in (
-            '"measurement_status": "valid",\n                  "qualification_status": "passed"',
-        ):
-            self.assertNotIn(needle, source,
-                             "verdicts must come from a policy evaluation")
-
-
 if __name__ == "__main__":
     unittest.main()

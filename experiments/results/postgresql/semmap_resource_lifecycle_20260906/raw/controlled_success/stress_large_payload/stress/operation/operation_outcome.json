@@ -1,0 +1,10 @@
+{
+  "phase": "stress",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425333330500,
+  "ended_ns": 135425345059541,
+  "sample_count": 11,
+  "sampling_errors": []
+}

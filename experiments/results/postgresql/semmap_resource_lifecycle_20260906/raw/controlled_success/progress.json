@@ -1,0 +1,8 @@
+{
+  "completed_cases": [
+    "stress_large_payload",
+    "cancel_and_cleanup",
+    "provider_disconnect_and_recovery",
+    "gateway_exit_and_recovery"
+  ]
+}

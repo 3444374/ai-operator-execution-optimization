@@ -1,0 +1,866 @@
+{
+  "assessment": {
+    "measurement_status": "valid",
+    "qualification_status": "passed"
+  },
+  "cases": {
+    "cancel_and_cleanup": {
+      "assessment": {
+        "measurement_status": "valid",
+        "qualification_status": "passed"
+      },
+      "case": "cancel_and_cleanup",
+      "diagnostic_status": null,
+      "execution_state": "completed",
+      "failures": [],
+      "mode": "formal",
+      "phases": [
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "cancel",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        },
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 10,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "recovery",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        }
+      ],
+      "problems": [],
+      "qualification_status": "passed",
+      "safe": true
+    },
+    "gateway_exit_and_recovery": {
+      "assessment": {
+        "measurement_status": "valid",
+        "qualification_status": "passed"
+      },
+      "case": "gateway_exit_and_recovery",
+      "diagnostic_status": null,
+      "execution_state": "completed",
+      "failures": [],
+      "mode": "formal",
+      "phases": [
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "alive",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        },
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 10,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "absent",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        },
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "recovery",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        }
+      ],
+      "problems": [],
+      "qualification_status": "passed",
+      "safe": true
+    },
+    "provider_disconnect_and_recovery": {
+      "assessment": {
+        "measurement_status": "valid",
+        "qualification_status": "passed"
+      },
+      "case": "provider_disconnect_and_recovery",
+      "diagnostic_status": null,
+      "execution_state": "completed",
+      "failures": [],
+      "mode": "formal",
+      "phases": [
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "disconnect",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        },
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "recovery",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        }
+      ],
+      "problems": [],
+      "qualification_status": "passed",
+      "safe": true
+    },
+    "stress_large_payload": {
+      "assessment": {
+        "measurement_status": "valid",
+        "qualification_status": "passed"
+      },
+      "case": "stress_large_payload",
+      "diagnostic_status": null,
+      "execution_state": "completed",
+      "failures": [],
+      "mode": "formal",
+      "phases": [
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "stress",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        },
+        {
+          "artifacts": [
+            "attributed_operation/process_samples.jsonl.gz",
+            "attribution.json",
+            "baseline/process_samples.jsonl.gz",
+            "cleanup/fd_lifecycles.jsonl.gz",
+            "cleanup/process_samples.jsonl.gz",
+            "operation/fd_lifecycles.jsonl.gz",
+            "operation/operation_outcome.json",
+            "operation/process_samples.jsonl.gz",
+            "progress.json",
+            "session_events.json"
+          ],
+          "diagnostics": {
+            "cleanup": {
+              "cleanup": {
+                "per_role": {
+                  "backend": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  },
+                  "gateway": {
+                    "provider_session_end_delta": 0,
+                    "rss_end_delta": 0,
+                    "thread_end_delta": 0,
+                    "total_fd_end_delta": 0
+                  }
+                },
+                "provider_uds_session_fd_end_delta_combined": 0
+              },
+              "measurement_problems": [],
+              "phase": "cleanup"
+            },
+            "peak": {
+              "measurement_problems": [],
+              "peak": {
+                "coverage": "complete",
+                "per_role": {
+                  "backend": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      9
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  },
+                  "gateway": {
+                    "provider_uds_peak_delta": 1,
+                    "provider_uds_peak_fds_observed": [
+                      5
+                    ],
+                    "rss_peak_delta": 0,
+                    "total_fd_peak_delta": 1
+                  }
+                },
+                "provider_uds_session_fd_peak_delta_combined": 2,
+                "ticks": 11,
+                "unknown_fd_peak_delta": 0
+              },
+              "phase": "stress"
+            },
+            "session_drain": {
+              "active_sessions": 0,
+              "event_integrity": "valid",
+              "session_ids": [
+                1
+              ],
+              "sessions": 1,
+              "success_inferred_from_session_end": false,
+              "tasks_recorded": 1
+            },
+            "settled": true
+          },
+          "failures": [],
+          "measurement_status": "valid",
+          "phase": "client_exit",
+          "policy_status": "passed",
+          "problems": [],
+          "safe": true,
+          "state": "completed"
+        }
+      ],
+      "problems": [],
+      "qualification_status": "passed",
+      "safe": true
+    }
+  },
+  "diagnostic_status": null,
+  "execution_state": "completed",
+  "exit_code": 0,
+  "failures": [],
+  "implementation_revision": "phase-lifecycle-1",
+  "metric_schema": "semloom.pg.resource.v2.1",
+  "mode": "formal",
+  "model_requests": 0,
+  "problems": [],
+  "qualification_status": "passed",
+  "runner_error": null,
+  "safe": true,
+  "workload": {
+    "baseline_interval_seconds": 0.05,
+    "baseline_samples": 5,
+    "baseline_timeout_seconds": 10.0,
+    "cleanup_interval_seconds": 0.25,
+    "cleanup_samples": 3,
+    "cleanup_timeout_seconds": 60.0,
+    "implementation_revision": "phase-lifecycle-1",
+    "input_bytes": 100000,
+    "metric_schema": "semloom.pg.resource.v2.1",
+    "mode": "formal",
+    "output_bytes": 65536,
+    "required_cases": {
+      "cancel_and_cleanup": [
+        "cancel",
+        "recovery"
+      ],
+      "gateway_exit_and_recovery": [
+        "alive",
+        "absent",
+        "recovery"
+      ],
+      "provider_disconnect_and_recovery": [
+        "disconnect",
+        "recovery"
+      ],
+      "stress_large_payload": [
+        "stress",
+        "client_exit"
+      ]
+    },
+    "rounds": 3,
+    "rows_per_round": 2000,
+    "sample_seconds": 0.02
+  }
+}

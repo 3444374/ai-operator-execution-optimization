@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-09-06 的 [SemMap 资源工具生命周期修复](postgresql/semmap_resource_lifecycle_20260906/README.md)
+以 `e5f4dd12` 为起点，仅改实验工具，新增 measurement schema v2.1 / phase-lifecycle-1。
+当前本地 115 项检查中 113 通过、2 项 Linux 专属跳过；受控文件与子进程测试不冒充 PG 资源资格。
+Linux/PG18.3 1×100 诊断待完成；3×2000 未授权，旧 v1 failed 与 v2 原始证据不改写。
+
+
 更新日期：2026-09-04
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、

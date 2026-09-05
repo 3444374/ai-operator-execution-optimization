@@ -1,0 +1,10 @@
+{
+  "phase": "client_exit",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425349975750,
+  "ended_ns": 135425361651333,
+  "sample_count": 11,
+  "sampling_errors": []
+}

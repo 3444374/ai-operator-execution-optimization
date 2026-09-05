@@ -11,3 +11,8 @@ over the execution policy it observes.
 
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
+
+`process_resources/` provides Linux FD identity observations, explicit missing values, sampling windows,
+stable baselines, operation/error capture and gzip JSONL persistence. A tick is a sequential observation
+batch, not an atomic snapshot. PostgreSQL session attribution and threshold policies live under
+`src/experiments/postgresql/`; the collector makes no qualification decision.

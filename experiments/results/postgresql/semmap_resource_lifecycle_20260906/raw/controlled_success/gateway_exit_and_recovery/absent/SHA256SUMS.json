@@ -1,0 +1,13 @@
+{
+  "attributed_operation/process_samples.jsonl.gz": "a4519084548b6cc6dbf6c7ccc3a708cb0910adff42bea1b038cc7743312b39c2",
+  "attribution.json": "b0e89abfa3c185689cbf0b9d75fd73df94011c97654511e005f879b5ae7d17a8",
+  "baseline/process_samples.jsonl.gz": "94e55d0a5802172a1cfe610334477f70ed568d26cbdd2559347c268e508cb0f4",
+  "cleanup/fd_lifecycles.jsonl.gz": "4160b65a3b21344e6d3d0cf66e38edfcd6638cb89daa07b1a30e8708b2a9f05b",
+  "cleanup/process_samples.jsonl.gz": "d65e62cfe9ca828473ceb98bd662e60efdb41125ddb0616ff90a1caab1e28355",
+  "operation/fd_lifecycles.jsonl.gz": "a1dc56ce036e49eb760755b9c0e61937418f866f6ba5fbfa6d0513653e9158b0",
+  "operation/operation_outcome.json": "b20ec0c8fd96af2d0a2a1906fe42e341e7668f3d0fdde3898287a4b80e4ef63f",
+  "operation/process_samples.jsonl.gz": "e459d2067120229f02932388610f784b5532e0da7160202f7b755b7c88e9ca7d",
+  "phase_report.json": "7f04a8e6193361f6fafd0c904c758a840c104dffa7a563d5adc53bb36b7e620d",
+  "progress.json": "a1ece8bbbbd40031a29d9223521cc946c2a412f4cb2ea79277efe65e1603d511",
+  "session_events.json": "c99c53635425d3e15919d43ab36bc919fa257412740997ab6aa244857cd9a18c"
+}

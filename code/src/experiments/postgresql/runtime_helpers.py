@@ -14,7 +14,6 @@ from pathlib import Path
 import subprocess
 import time
 
-import psycopg
 
 try:
     import pwd
@@ -27,8 +26,8 @@ def wait_for_path(path, process):
     for _ in range(500):
         if path.exists():
             return
-        assert process.poll() is None, ('child exited before ready',
-                                        process.returncode)
+        if process.poll() is not None:
+            raise RuntimeError("child_exited_before_ready")
         time.sleep(0.02)
     raise RuntimeError('test process did not become ready')
 
@@ -39,7 +38,7 @@ def owned_child_process(command, root, name, env, user):
     with (root / (name + '.log')).open('x') as log:
         # setuid to the target user only when the caller is someone else;
         # an unprivileged caller cannot setuid, and runuser is root-only.
-        if pwd is None or os.getuid() == user.pw_uid or not hasattr(os, 'chown'):
+        if user is None or pwd is None or os.getuid() == user.pw_uid or not hasattr(os, 'chown'):
             process = subprocess.Popen(command, env=env, stdout=log,
                                        stderr=subprocess.STDOUT)
         else:
@@ -64,6 +63,7 @@ def owned_child_process(command, root, name, env, user):
 @contextmanager
 def isolated_pg18_cluster(prefix, root, user):
     """Initdb + start an isolated PG18.3 cluster with semloom_pg preloaded."""
+    import psycopg
     data = root / 'data'
     socket_dir = root / 'socket'
     socket_dir.mkdir()

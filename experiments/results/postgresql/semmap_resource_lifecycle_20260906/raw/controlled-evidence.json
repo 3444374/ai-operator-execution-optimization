@@ -1,0 +1,11 @@
+{
+  "existing_root_exit": 3,
+  "existing_root_hashes_unchanged": true,
+  "failure_status": "failed",
+  "incomplete_status": "not_evaluated",
+  "producer": "synthetic_process_observations",
+  "refused_compiler_calls": 0,
+  "refused_preflight_calls": 0,
+  "scope": "orchestration_only_no_PostgreSQL_or_model",
+  "success_exit": 0
+}

@@ -9076,3 +9076,11 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 提交 `74506654` 在隔离 `REL_18_3` 上无警告构建，PGXS regression 1/1、TAP 16/16 通过；服务器
   通过 Git/bundle 同步，原始测试输出继续保存在仓库外 artifact 目录。本轮没有启动模型服务或 GPU
   实验。
+
+
+## 2026-09-06：SemMap 资源工具生命周期修复启动
+
+以 `semmap-resource-v2@e5f4dd12` 为起点，在独立 `codex/semmap-resource-repair` 分支修复资源工具。
+保留生产 PG/provider/wire，新增统一阶段和结果聚合，修正独占目录、同 backend 清理、归因/采样异常，
+以真实文件/子进程副作用替代源码字符串检查。实施细节仅由 Map 合同 §8.4.3 维护。
+用户授权无模型 Linux 与隔离 PG18.3 1×100 诊断；3×2000 正式资格未授权，旧证据保持原判定。

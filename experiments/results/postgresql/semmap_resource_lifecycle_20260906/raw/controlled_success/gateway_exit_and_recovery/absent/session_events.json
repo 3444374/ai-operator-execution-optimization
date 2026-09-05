@@ -1,0 +1,30 @@
+[
+  {
+    "accepted_fd": 5,
+    "accepted_socket_inode": 5,
+    "event": "session_start",
+    "gateway_pid": 2,
+    "monotonic_ns": 135425451601166,
+    "peer_pid": 1,
+    "session_id": 1
+  },
+  {
+    "event": "task",
+    "monotonic_ns": 135425451601708,
+    "payload_digest": "fixture",
+    "session_id": 1,
+    "task": 1
+  },
+  {
+    "event": "task_complete",
+    "monotonic_ns": 135425461767416,
+    "session_id": 1,
+    "task": 1
+  },
+  {
+    "connection_closed": true,
+    "event": "session_end",
+    "monotonic_ns": 135425461767791,
+    "session_id": 1
+  }
+]

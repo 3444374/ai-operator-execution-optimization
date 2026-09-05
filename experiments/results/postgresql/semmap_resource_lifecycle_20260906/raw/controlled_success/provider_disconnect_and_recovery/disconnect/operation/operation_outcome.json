@@ -1,0 +1,10 @@
+{
+  "phase": "disconnect",
+  "result_summary": {
+    "output_matches": true
+  },
+  "started_ns": 135425401341500,
+  "ended_ns": 135425412748958,
+  "sample_count": 11,
+  "sampling_errors": []
+}

@@ -698,6 +698,50 @@ PG/provider/wire）：
 模型尝试和本地关闭分别记录；不能把已向客户端返回若干行当作 SQL 最终成功，也不能把关闭 UDS
 当作远端 GPU 已停止。若单 GPU 不满足上述配置，先保留诊断并提交新配置，不自动改为双卡继续。
 
+### 8.4.3 资源测量生命周期修复（2026-09-06；实施版本 phase-lifecycle-1）
+
+本节是当前资源工具修复的唯一实施入口，替代 §8.4.2 中针对旧 runner 的执行建议；旧 v1/v2
+运行、数值和 verdict 均保留原身份。起点为 `semmap-resource-v2@e5f4dd12`。本轮只修改实验工具，
+PG planner/executor、Map 语义、provider、wire v5、调度层与模型配置不改。
+
+工程决定及落点：
+
+- `resource_lifecycle.py`：不可变 RunSpec、PhaseResult 和纯 phase/case/run 聚合；执行进度与观测
+  有效性分开。必需阶段/场景缺失不通过，已知失败不因另一段观测不完整而删除。
+- `resource_phase.py`：先保存 baseline 与操作原始记录，再采 cleanup、校验事件/归因并形成最终
+  阶段结果。原始、归因派生和各恢复阶段使用独立目录，各自计算哈希。流式 gzip 按记录写出；
+  不逐 tick fsync，不承诺电源故障下未完成采样仍可恢复；可处理的异常/中断先保存已有记录。
+- `semmap_resource_runner.py`：运行目录必须尚不存在，原子创建后才预检/编译；旧目录任何文件
+  均不改。stress 的同一客户端/backend 在 cleanup 后才释放，客户端退出另作 client_exit 阶段。
+  cancel/recovery、disconnect/recovery、alive/absent/recovery 各自保存和评价全部必需阶段。
+- collector/recorder：PID+start-time、FD/inode/target、线程数和 listener 身份进入稳定基线，连续
+  5 次间隔 50ms，最多 10s；基线 RSS 实际使用这 5 次的中位数。cleanup 连续 3 次有效且资源/事件
+  条件满足才结束，间隔 250ms、最多 60s；保留所有早先不完整/失败观察，不能用结尾好样本消除它们。
+- Unix table 空表、读取失败和解析失败分别表达；listener 由 flags 识别。每次完整 FD 读取尝试
+  独立记录时间、可见身份与错误，成功重试不继承前次错误为当前状态；未解决读取缺口仍不可资格。
+  同一 tick 是顺序读取的一批观察，保存整批及各进程时间范围，只报告 sampled peak，不声称微秒级
+  原子跨进程峰值。重试期间已知异常身份保留在 attempt 证据中，不删除失败读取。
+- 归因限定同步、单会话实验：peer process、session、FD/inode 与窗口绑定；两端必须在同一可用
+  观察批次内可见。范围内短会话没有观察则 inconclusive；warmup 在阶段开始前明确排除。
+  关联 FD 在 session_end 后仍存在会进入残留检查；task/start/terminal 的 ID、重复和孤立事件被校验。
+  session_end 只证明关闭，不证明完成输出已送达，成功场景还核对完整 fixture 输出及 task terminal。
+
+新增运行使用 `semloom.pg.resource.v2.1`、`phase-lifecycle-1`，不继续复用已有 v2 artifact 身份。
+保留 socket 专用阈值：client/accepted 各峰值≤1、同 tick 合计≤2、结束增量=0；每进程 total FD/
+thread 结束增量=0；PG RSS peak/end≤16/8 MiB、gateway≤32/16 MiB。另核对 FD 身份防止数量抵消。
+eventpoll 属于 I/O 等待配套 FD 候选，不能仅因不是 socket 就称与 provider 无关；记录其观测与清理，
+不增设未经验证的配套 FD 总量阈值。absent 阶段只要求原 backend 存活并清理。
+
+本地先通过保留真实文件/子进程副作用的受控成功、失败、观测缺失与旧目录不覆盖检查，再进入
+Linux 双进程 AF_UNIX integration。用户已授权独立 PG18.3 的 fixture-only 1×100 diagnostic，
+input/output 仍为100000/65536 bytes；不启动模型、不修改已有服务。源码/配置/客户端实际 rounds/rows
+及环境哈希在运行前记录，后续变更使用新目录。CLI 删除了原来被忽略的必填 `--client`，统一编译
+源码管理版 C client；diagnostic 不修改全局行数。所有层使用同一 assessment，diagnostic 的
+qualification_status 固定 not_evaluated，并单列 diagnostic_status；退出码仍为2。
+
+正式 3×2000 未授权。必须先有当前版本有效的完整 diagnostic，才能另行决定正式运行；目前
+formal blocked。测试和目标环境结果由证据台账及本轮结果目录登记，不以计划存在代替通过。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。

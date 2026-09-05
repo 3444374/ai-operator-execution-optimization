@@ -38,6 +38,27 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
 golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
 model、timeout 和 bearer-token 环境变量名不进入仓库。
 
+## SemMap resource measurement
+
+`experiments/run_semmap_resource_checks.py` creates a new, exclusively owned result directory before
+preflight and compilation. Existing directories are refused without writing into them. It compiles the
+source-managed C client; the obsolete `--client` argument has been removed.
+
+```bash
+python code/scripts/experiments/run_semmap_resource_checks.py \
+  --repo /path/to/repository --root /path/to/new-artifact-directory \
+  --prefix /path/to/postgresql-18.3-install --commit <source-commit> --diagnostic
+```
+
+The diagnostic performs an actual 1×100 fixture workload with 100000-byte input and 65536-byte output.
+It sends no real model requests. Run the runtime preflight first; keep the artifact/socket path short enough
+for AF_UNIX. Each phase preserves baseline, operation, cleanup, session events and its own report/hash list.
+Case and run reports use the same assessment; diagnostic qualification is always `not_evaluated` (exit 2).
+Formal results use exit 0 for all required phases/cases passing, 1 for valid failed checks, 2 for incomplete
+measurement, and 3 for runner/preflight failure. Interrupts preserve available evidence and propagate.
+See the [Map contract](../../experiments/plans/postgresql_semmap_generation_contract.md) for thresholds and
+current authorization. Formal 3×2000 remains unavailable until a valid current diagnostic and separate authorization.
+
 ## Choice resource qualification tools
 
 `experiments/run_choice_resource_checks.py` 是内部、仅限 Linux 的 fixture 资源验证入口。它使用指定的

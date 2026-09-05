@@ -1,35 +1,13 @@
-"""Fixture-only SemMap resource qualification runner (metric schema v2).
+"""Fixture-only PG18.3 resource checks with owned roots and complete phase evidence.
 
-Lifecycle per case, in order, with raw evidence persisted before any
-verdict anywhere:
-
-    prepare -> warmup -> stable baseline -> operation (recorded, errors
-    captured) -> persist trace + outcome -> attribute provider sessions
-    -> validate measurement -> evaluate stress peak exactly once ->
-    synchronous cleanup settle -> persist cleanup -> evaluate end state
-    -> compose report -> summary (atomic, always) -> exit code.
-
-Differences from the v1 runner that produced 93 duplicate attempt files
-and from the earlier v2 drafts called out by static review:
-
-- Peak is judged once over the frozen stress window; the stress trace's
-  final tick is never a cleanup verdict.
-- Fault cases (cancel, provider disconnect, gateway exit) each perform
-  their own stable baseline, recorded operation, attribution, cleanup
-  settle, and policy evaluation. No case writes a verdict that a policy
-  did not compute.
-- disconnect and gateway-exit are split into subphases with their own
-  gateways and baselines; the deliberately-exited gateway is an expected
-  phase boundary, not a collector failure.
-- Correctness mismatches (rows/tasks/sessions/digest/sqlstate) are
-  structured failures recorded in the report, not asserts that could
-  preempt evidence persistence.
-- The CLI returns 0 all-pass, 1 valid/failed, 2 invalid or
-  inconclusive, 3 runner/preflight failure, after summary.json lands.
+Create an exclusive run root, preflight/build, execute explicit phases, compose
+one final report, and release only owned processes. No production code or real
+model configuration is changed. See resource_lifecycle for mode/exit semantics.
 """
-from __future__ import annotations
-
+from contextlib import contextmanager
+from dataclasses import asdict
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -37,978 +15,325 @@ import subprocess
 import sys
 import time
 
-import psycopg
-from psycopg import sql
-
-from src.observability.process_resources.model import (
-    PgFileClassificationContext,
-    ResourceTrace,
-    SampleTick,
-    SnapshotStatus,
-)
-from src.observability.process_resources.recorder import (
-    acquire_stable_baseline,
-    persist_lifecycles,
-    persist_operation_outcome,
-    persist_trace,
-    record_operation,
-)
-from src.experiments.postgresql.provider_session_attribution import (
-    attribute_provider_sessions,
-    load_session_events,
-    reclassify_clients,
-    session_windows,
-)
-from src.experiments.postgresql.resource_qualification import (
-    METRIC_SCHEMA,
-    build_qualification_report,
-    compose_status,
-    evaluate_session_drain,
-)
-
-try:
-    import pwd
-except ImportError:  # Windows checkouts import this module for unit tests only.
-    pwd = None
-
+from src.observability.process_resources.recorder import ProcfsTickSampler
+from src.observability.process_resources.model import PgFileClassificationContext
+from .provider_session_attribution import load_session_events
+from .resource_qualification import evaluate_session_drain
+from .resource_lifecycle import RunSpec, PhaseResult, REQUIRED_PHASES, case_report, run_report
+from .resource_phase import execute_phase, finish_phase, hashes, save_json
 
 MODEL = "golden-map-resource-v1"
 INSTRUCTION = "Generate fixed output."
 INPUT = "x" * 100000
 OUTPUT = "y" * 65536
-SAMPLE_SECONDS = 0.02
-CLEANUP_TIMEOUT_SECONDS = 60.0
-SETTLE_INTERVAL_SECONDS = 0.25
-ROWS_PER_ROUND = 2000
-ROUNDS = 3
-
-# SQLSTATE contracts registered by the existing PG regression/TAP evidence.
 CANCEL_SQLSTATE = "57014"
 DISCONNECT_SQLSTATE = "08006"
 GATEWAY_EXIT_SQLSTATE = "08006"
 
-EXIT_ALL_PASS = 0
-EXIT_VALID_FAILED = 1
-EXIT_NOT_EVALUATED = 2
-EXIT_RUNNER_FAILURE = 3
 
-# Cleanup failures that stop later cases (unrecovered resources).
-SAFETY_METRICS = {"total_fd_end_delta", "thread_end_delta",
-                  "provider_uds_session_fd_end_delta_combined"}
-
-
-def save(path: Path, value) -> None:
-    temporary = path.with_name(path.name + ".partial")
-    with temporary.open("w", encoding="utf-8", newline="\n") as handle:
-        json.dump(value, handle, indent=2)
-        handle.write("\n")
-    os.replace(temporary, path)
+def preflight(args):
+    version = subprocess.check_output([str(args.prefix / "bin/pg_config"), "--version"], text=True).strip()
+    if version != "PostgreSQL 18.3":
+        raise ValueError("pg_version_mismatch")
+    actual = subprocess.check_output(["git", "-C", str(args.repo), "rev-parse", "HEAD"], text=True).strip()
+    if actual != args.commit:
+        raise ValueError("commit_mismatch")
+    if subprocess.check_output(["git", "-C", str(args.repo), "status", "--porcelain"], text=True).strip():
+        raise ValueError("working_tree_dirty")
+    if Path(__file__).resolve() != (args.repo / "code/src/experiments/postgresql/semmap_resource_runner.py").resolve():
+        raise ValueError("runner_source_mismatch")
+    return {"commit": actual, "postgresql": version, "source_clean": True}
 
 
-def _chown(path: Path, user) -> None:
-    if pwd is None or user is None or not hasattr(os, "chown"):
-        return
-    os.chown(path, user.pw_uid, user.pw_gid)
+def build_client(client_source, target, pg_prefix):
+    compiled = subprocess.run([
+        "cc", "-O2", "-Wall", "-Werror", f"-I{pg_prefix / 'include'}",
+        str(client_source), "-o", str(target), f"-L{pg_prefix / 'lib'}", "-lpq"],
+        capture_output=True, text=True)
+    # Only stable diagnostics enter portable evidence. Compilation stderr can
+    # contain private absolute paths; never copy it into the public report.
+    save_json(target.with_suffix(".build.json"), {"exit_code": compiled.returncode,
+              "source_sha256": hashlib.sha256(client_source.read_bytes()).hexdigest(),
+              "stderr_present": bool(compiled.stderr)})
+    if compiled.returncode:
+        raise RuntimeError("client_build_failed")
 
 
-def wait_log(path: Path, event_name: str, timeout=300):
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if path.exists():
-            for line in path.read_text(encoding="utf-8").splitlines():
-                if line.startswith("{"):
-                    event = json.loads(line)
-                    if event.get("event") == event_name:
-                        return event
-        time.sleep(0.05)
-    raise RuntimeError(f"client did not report {event_name}")
-
-
-def wait_gateway_events(path: Path, *, tasks: int, sessions_ended: int, timeout=60):
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        current = load_session_events(path)
-        if (sum(item["event"] == "task" for item in current) >= tasks and
-                sum(item["event"] == "session_end" for item in current) >= sessions_ended):
-            return current
-        time.sleep(0.05)
-    raise RuntimeError("gateway event counts did not settle")
-
-
-def gateway_command(args, socket_path, fixture_path, event_path, extra=()):
-    return [
-        sys.executable,
-        str(args.repo / "code/src/experiments/postgresql/"
-                       "semmap_resource_gateway_observer.py"),
-        "--events", str(event_path),
-        "--",
-        "--socket", str(socket_path),
-        "--golden-fixture", str(fixture_path),
-        *extra,
-    ]
+def fixture(root):
+    from src.execution_provider.semantic_map import SemanticMapPlan
+    from src.execution_provider.wire import v5
+    task = v5.build_task_message(SemanticMapPlan(INSTRUCTION, MODEL, 128),
+                                 sequence=0, input_value=INPUT)
+    digest = task["semantic_payload_digest"]
+    path = root / "fixture.json"
+    save_json(path, {digest: {"raw_output": OUTPUT, "response_model_id": MODEL,
+              "prompt_tokens": 25032, "output_tokens": 128, "finish_reason": "stop"}})
+    save_json(root / "fixture_identity.json", {"payload_digest": digest,
+              "input_bytes": len(INPUT), "output_bytes": len(OUTPUT),
+              "output_sha256": hashlib.sha256(OUTPUT.encode()).hexdigest(), "model_requests": 0})
+    return path, digest
 
 
 def query_one(connection, socket_path):
+    from psycopg import sql
     connection.execute("SET semloom_pg.provider_execution_profile='golden'")
-    connection.execute("SELECT set_config('semloom_pg.gateway_socket',%s,false)",
-                       (str(socket_path),))
-    options = json.dumps({"model": MODEL, "temperature": 0, "max_tokens": 128},
-                         separators=(",", ":"))
-    statement = sql.SQL(
-        "SELECT ai_semantic.map(payload,{},{}::jsonb) FROM ONLY resource_rows WHERE id=1"
-    ).format(sql.Literal(INSTRUCTION), sql.Literal(options))
-    value = connection.execute(statement).fetchone()[0]
-    return value
+    connection.execute("SELECT set_config('semloom_pg.gateway_socket',%s,false)", (str(socket_path),))
+    options = json.dumps({"model": MODEL, "temperature": 0, "max_tokens": 128}, separators=(",", ":"))
+    statement = sql.SQL("SELECT ai_semantic.map(payload,{},{}::jsonb) FROM ONLY resource_rows WHERE id=1").format(
+        sql.Literal(INSTRUCTION), sql.Literal(options))
+    rows = connection.execute(statement).fetchall()
+    value = rows[0][0] if len(rows) == 1 and len(rows[0]) == 1 else None
+    return {"rows": len(rows), "shape_valid": len(rows) == 1 and len(rows[0]) == 1,
+            "is_null": value is None, "output_matches": value == OUTPUT,
+            "output_sha256": hashlib.sha256(value.encode()).hexdigest() if isinstance(value, str) else None}
 
 
-def fixture(args, root: Path):
-    from src.execution_provider.completion import Completion
-    from src.execution_provider.semantic_map import SemanticMapPlan
-    from src.execution_provider.wire import v5
-
-    plan = SemanticMapPlan(INSTRUCTION, MODEL, 128)
-    task = v5.build_task_message(plan, sequence=0, input_value=INPUT)
-    digest = task["semantic_payload_digest"]
-    fixture_path = root / "fixture.json"
-    fixture_payload = {
-        digest: {
-            "raw_output": OUTPUT,
-            "response_model_id": MODEL,
-            "prompt_tokens": 25032,
-            "output_tokens": 128,
-            "finish_reason": "stop",
-        }
-    }
-    save(fixture_path, fixture_payload)
-    save(root / "fixture-identity.json", {
-        "payload_digest": digest,
-        "input_bytes": len(INPUT),
-        "output_bytes": len(OUTPUT),
-        "model": MODEL,
-        "model_requests": 0,
-    })
-    return fixture_path, digest
+def check_output(value):
+    if not isinstance(value, dict) or value.get("rows") != 1 or not value.get("shape_valid") or not value.get("output_matches") or value.get("is_null"):
+        return [{"metric": "fixture_output_mismatch"}]
+    return []
 
 
-def pg_file_context(connection) -> PgFileClassificationContext:
-    """Learn this run's relation/toast filenodes from PostgreSQL itself."""
-    data_directory = connection.execute("SHOW data_directory").fetchone()[0]
-    rows = connection.execute("""
-        SELECT (SELECT relfilenode FROM pg_class
-                 WHERE oid = 'resource_rows'::regclass),
-               (SELECT relfilenode FROM pg_class c
-                 JOIN pg_attribute a ON a.attrelid = c.oid AND a.attname = 'payload'
-                WHERE c.oid = 'resource_rows'::regclass AND a.atttypid = 'text'::regtype)
-    """).fetchall()
-    relation_filenodes = set()
-    toast_filenodes = set()
-    for relation_node, _toast_probe in rows:
-        if relation_node:
-            relation_filenodes.add(relation_node)
-    toast = connection.execute("""
-        SELECT relfilenode FROM pg_class WHERE oid = (
-            SELECT reltoastrelid FROM pg_class
-             WHERE oid = 'resource_rows'::regclass)
+def pg_file_context(connection):
+    data = connection.execute("SHOW data_directory").fetchone()[0]
+    relation, toast = connection.execute("""
+        SELECT c.relfilenode, t.relfilenode FROM pg_class c
+        LEFT JOIN pg_class t ON t.oid=c.reltoastrelid
+        WHERE c.oid='resource_rows'::regclass
     """).fetchone()
-    if toast and toast[0]:
-        toast_filenodes.add(toast[0])
-    return PgFileClassificationContext(
-        data_directory=str(data_directory),
-        relation_filenodes=frozenset(relation_filenodes),
-        toast_filenodes=frozenset(toast_filenodes))
+    return PgFileClassificationContext(data, frozenset([relation]), frozenset([toast] if toast else []))
 
 
-def _sampler_for(pids, socket_path, pg_context):
-    """Build a tick sampler over the given role->pid mapping."""
-    from src.observability.process_resources.recorder import ProcfsTickSampler
-    return ProcfsTickSampler(pids, str(socket_path), pg_context)
-
-
-def _evaluate_case(
-    *,
-    case_name,
-    root: Path,
-    baseline_capture,
-    recorded,
-    windows,
-    expected_sqlstate=None,
-    observed_sqlstate=None,
-    correctness=None,
-    cleanup_trace=None,
-):
-    """Shared tail: attribute, validate, evaluate peak + cleanup, compose."""
-    persist_trace(root / "raw", recorded.trace)
-    persist_lifecycles(root / "raw", recorded.trace)
-    persist_operation_outcome(root / "raw", recorded, case_name)
-    attribution = None
-    attribution_problems: list[str] = []
-    if windows:
-        result = attribute_provider_sessions(
-            backend_pid=_case_backend_pid(recorded),
-            baseline=baseline_capture.baseline,
-            trace=recorded.trace,
-            windows=windows)
-        attribution = result.attribution
-        attribution_problems = result.problems
-    else:
-        attribution_problems = ["no_session_events"]
-    save(root / "attribution.json", {
-        "attributed": attribution,
-        "problems": attribution_problems})
-    trace = recorded.trace if attribution is None else reclassify_clients(
-        recorded.trace, attribution, list(windows))
-    peak_report = build_qualification_report(
-        baseline_capture.baseline, trace, phase="stress")
-    if cleanup_trace is None:
-        # No cleanup phase was captured for this case: the stress trace
-        # must never stand in as a cleanup verdict — that conflation is
-        # exactly what separated phases exist to prevent. Report the
-        # missing phase explicitly instead.
-        cleanup_report = None
-    else:
-        cleanup_report = build_qualification_report(
-            baseline_capture.baseline, cleanup_trace, phase="cleanup")
-    correctness_failures = list(correctness or [])
-    if expected_sqlstate is not None and observed_sqlstate != expected_sqlstate:
-        correctness_failures.append({
-            "metric": "sqlstate_contract",
-            "expected": expected_sqlstate,
-            "observed": observed_sqlstate})
-    if recorded.operation_error is not None and expected_sqlstate is None:
-        correctness_failures.append({
-            "metric": "operation_error",
-            "exception_type": recorded.operation_error.exception_type})
-    composed = peak_report, cleanup_report
-    # Compose through the registered four-pair vocabulary. A missing
-    # cleanup phase must never borrow the stress trace as a cleanup
-    # verdict — it defers to the caller's later finalize, and until then
-    # the case can only be inconclusive (fail-closed), never valid.
-    inputs: list[tuple[str, str]] = [
-        (peak_report.measurement_status, peak_report.qualification_status)]
-    if attribution is None and inputs[0][0] == "valid":
-        # Attribution failure means backend provider sockets were never
-        # identified: the provider gates then ran on zero evidence, which
-        # is an inconclusive measurement, never a pass.
-        inputs[0] = ("inconclusive", "not_evaluated")
-    if cleanup_report is None:
-        inputs.append(("inconclusive", "not_evaluated"))
-    else:
-        inputs.append(
-            (cleanup_report.measurement_status,
-             cleanup_report.qualification_status))
-    if correctness_failures:
-        inputs.append(("valid", "failed"))
-    composed_status = compose_status(*inputs)
-    if composed_status is None:  # illegal input pair: fail closed
-        composed_status = ("inconclusive", "not_evaluated")
-    measurement, qualification = composed_status
-    report = {
-        "case": case_name,
-        "metric_schema": METRIC_SCHEMA,
-        "measurement_status": measurement,
-        "qualification_status": qualification,
-        "attribution_problems": attribution_problems,
-        "peak_policy": [v.__dict__ for v in peak_report.peak_policy],
-        "cleanup_policy": ([] if cleanup_report is None else
-                           [v.__dict__ for v in cleanup_report.cleanup_policy]),
-        "correctness_failures": correctness_failures,
-        "peak_diagnostics": peak_report.diagnostics,
-        "cleanup_diagnostics": (None if cleanup_report is None else
-                                cleanup_report.diagnostics),
-        "attribution": attribution,
-        "operation_error": (None if recorded.operation_error is None else {
-            "exception_type": recorded.operation_error.exception_type,
-            "sqlstate": recorded.operation_error.sqlstate}),
-    }
-    if attribution is None or cleanup_report is None:
-        report["reason"] = "; ".join(
-            attribution_problems + (
-                ["cleanup_phase_not_captured"]
-                if cleanup_report is None else []))
-    save(root / "gate_report.json", report)
-    return report
-
-
-def _case_backend_pid(recorded):
-    for tick in recorded.trace.ticks:
-        backend = tick.processes.get("backend")
-        if backend is not None:
-            return backend.pid
-    return -1
-
-
-def _cleanup_settle(sampler, root: Path, phase: str, baseline):
-    """Synchronous settle against the case baseline; full snapshots persisted."""
-    ticks = []
-    deadline = time.monotonic() + CLEANUP_TIMEOUT_SECONDS
+def wait_log(path, event, timeout, process=None):
+    deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        tick = sampler.sample_all(time.monotonic_ns())
-        ticks.append(tick)
-        from src.experiments.postgresql.resource_qualification import (
-            evaluate_cleanup_policy)
-        violations, _ = evaluate_cleanup_policy(baseline, _trace_of(ticks))
-        if not violations:
-            break
-        time.sleep(SETTLE_INTERVAL_SECONDS)
-    trace = _trace_of(ticks)
-    persist_trace(root / f"raw_{phase}_cleanup", trace)
-    return trace
+        if path.exists():
+            for line in path.read_text().splitlines():
+                if line.startswith("{"):
+                    value = json.loads(line)
+                    if value.get("event") == event:
+                        return value
+        if process is not None and process.poll() is not None:
+            raise RuntimeError("client_exited_before_event")
+        time.sleep(.01)
+    raise TimeoutError("client_event_timeout")
 
 
-def _trace_of(ticks):
-    """Baseline is the first settle tick; end state is the final tick."""
-    if not ticks:
-        return ResourceTrace(baseline={}, ticks=())
-    return ResourceTrace(
-        baseline=dict(ticks[0].processes), ticks=tuple(ticks[1:]) or tuple(ticks[:1]))
+def wait_drain(events, timeout=10.):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        values = events()
+        violations, _ = evaluate_session_drain(values)
+        if values and not violations:
+            return
+        time.sleep(.02)
+    raise TimeoutError("warmup_session_drain_timeout")
 
 
-def run_stress_case(args, connection, user, fixture_path, expected_digest):
-    """Stress case through the full lifecycle; returns its report."""
-    from src.experiments.choice_resource_checks import child, wait_file
-
-    root = args.root / "stress"
+@contextmanager
+def gateway(args, root, name, fixture_path, user, extra=()):
+    from .runtime_helpers import owned_child_process, wait_for_path
     root.mkdir()
-    _chown(root, user)
-    socket_path = args.root / "socket/stress.sock"
+    if user is not None:
+        os.chown(root, user.pw_uid, user.pw_gid)
+    socket_path = args.root / "socket" / (name + ".sock")
     event_path = root / "session_events.jsonl"
-    env = dict(os.environ, PYTHONPATH=str(args.repo / "code"),
-               PYTHONDONTWRITEBYTECODE="1")
-    pg_context = pg_file_context(connection)
-
-    with child(gateway_command(args, socket_path, fixture_path, event_path),
-               root, "gateway", env, user) as gateway:
-        wait_file(socket_path, gateway)
-        release = root / "release"
-        finish = root / "finish"
-        command = [
-            str(args.client), str(args.root / "socket"), "55446",
-            str(socket_path), str(release), str(finish),
-            # The client's workload must match the runner's expectations:
-            # a diagnostic run passes its reduced rounds/rows here so the
-            # reduced workload is real, not just a re-labelled expectation.
-            str(ROUNDS), str(ROWS_PER_ROUND),
-        ]
-        with child(command, root, "client", env, user) as client:
-            warmup = wait_log(root / "client.log", "warmup_complete")
-            current = wait_gateway_events(event_path, tasks=1, sessions_ended=1)
-            assert current[-1]["event"] == "session_end"
-            sampler = _sampler_for(
-                {"backend": warmup["backend_pid"], "gateway": gateway.pid},
-                socket_path, pg_context)
-            baseline_capture, observed = acquire_stable_baseline(sampler)
-            if baseline_capture is None:
-                result = {
-                    "case": "stress_large_payload",
-                    "metric_schema": METRIC_SCHEMA,
-                    "measurement_status": "invalid",
-                    "qualification_status": "not_evaluated",
-                    "reason": "stable baseline not achieved",
-                }
-                save(root / "gate_report.json", result)
-                return result
-            persist_trace(root / "raw_baseline", _trace_of(observed))
-
-            def run_rounds():
-                release.touch(exist_ok=False)
-                return wait_log(root / "client.log", "all_complete", timeout=600)
-
-            recorded = record_operation(
-                sampler, run_rounds, sample_seconds=SAMPLE_SECONDS,
-                baseline=baseline_capture.baseline)
-            # Persist the stress evidence BEFORE anything that can kill the
-            # runner (client wait, event settle) — an exception here must
-            # never lose the trace.
-            persist_trace(root / "raw", recorded.trace)
-            persist_lifecycles(root / "raw", recorded.trace)
-            persist_operation_outcome(root / "raw", recorded, "stress")
-            finish.touch(exist_ok=False)
-            client.wait(timeout=30)
-
-            events = wait_gateway_events(
-                event_path,
-                tasks=1 + ROWS_PER_ROUND * ROUNDS,
-                sessions_ended=1 + ROUNDS)
-            task_events = [item for item in events if item["event"] == "task"]
-            correctness = []
-            rows = getattr(recorded.result, "get", lambda _k: None)("rows")
-            if rows != ROWS_PER_ROUND * ROUNDS:
-                correctness.append({"metric": "rows",
-                                    "expected": ROWS_PER_ROUND * ROUNDS,
-                                    "observed": rows})
-            if len(task_events) != 1 + ROWS_PER_ROUND * ROUNDS:
-                correctness.append({"metric": "tasks",
-                                    "expected": 1 + ROWS_PER_ROUND * ROUNDS,
-                                    "observed": len(task_events)})
-            if any(item["payload_digest"] != expected_digest for item in task_events):
-                correctness.append({"metric": "digest_mismatch"})
-            report = _evaluate_case(
-                case_name="stress_large_payload", root=root,
-                baseline_capture=baseline_capture, recorded=recorded,
-                windows=session_windows(events), correctness=correctness,
-                cleanup_trace=None)
-            # Separate cleanup settle AFTER the peak verdict is already
-            # saved, then FINALIZE: compose the deferred cleanup phase
-            # through the registered vocabulary so a fully clean run can
-            # compose valid+passed (the interim report is deliberately
-            # fail-closed until this point).
-            cleanup_trace = _cleanup_settle(sampler, root, "stress", baseline_capture.baseline)
-            cleanup_report = build_qualification_report(
-                baseline_capture.baseline, cleanup_trace, phase="cleanup")
-            report["cleanup_policy"] = [
-                v.__dict__ for v in cleanup_report.cleanup_policy]
-            report["cleanup_diagnostics"] = cleanup_report.diagnostics
-            finalized = compose_status(
-                (report["measurement_status"],
-                 report["qualification_status"]),
-                (cleanup_report.measurement_status,
-                 cleanup_report.qualification_status))
-            if finalized is None:
-                finalized = ("inconclusive", "not_evaluated")
-            report["measurement_status"], report["qualification_status"] = (
-                finalized)
-            # Session drain from the event log (active sessions == 0):
-            # /proc snapshots cannot see this; the event replay can.
-            drain_violations, drain_diag = evaluate_session_drain(
-                load_session_events(event_path))
-            report["cleanup_policy"].extend(
-                v.__dict__ for v in drain_violations)
-            report["cleanup_diagnostics"]["session_drain"] = drain_diag
-            if drain_violations:
-                report["measurement_status"] = _worse_measurement(
-                    report.get("measurement_status"), "inconclusive")
-                report["qualification_status"] = "not_evaluated"
-            if (report["measurement_status"] == "valid"
-                    and cleanup_report.qualification_status == "failed"):
-                report["qualification_status"] = "failed"
-            save(root / "gate_report.json", report)
-        gateway.terminate()
-        gateway.wait(timeout=10)
-    return report
+    env = dict(os.environ, PYTHONPATH=str(args.repo / "code"), PYTHONDONTWRITEBYTECODE="1")
+    command = [sys.executable, str(args.repo / "code/src/experiments/postgresql/semmap_resource_gateway_observer.py"),
+               "--events", str(event_path), "--", "--socket", str(socket_path),
+               "--golden-fixture", str(fixture_path), *extra]
+    with owned_child_process(command, root, "gateway", env, user) as process:
+        wait_for_path(socket_path, process)
+        yield process, socket_path, lambda: load_session_events(event_path)
 
 
-def run_cancel_case(args, connection, user, fixture_path):
-    """Cancel + recovery with a full trace; SQLSTATE per registered contract."""
-    from src.experiments.choice_resource_checks import child, wait_file
+def phase(args, spec, root, name, connection, gateway_process, socket_path,
+          events, digest, **kwargs):
+    pids = {"backend": connection.info.backend_pid}
+    if gateway_process is not None:
+        pids["gateway"] = gateway_process.pid
+    sampler = ProcfsTickSampler(pids, str(socket_path), pg_file_context(connection))
+    return execute_phase(root=root / name, phase=name, spec=spec, sampler=sampler,
+        operation=lambda: query_one(connection, socket_path), events=events,
+        roles=tuple(pids), expected_digest=digest, check_result=check_output, **kwargs)
 
-    root = args.root / "cancel"
+
+def skipped(name, reason):
+    return PhaseResult(name, "skipped", problems=(reason,))
+
+
+def stress_case(args, spec, connection, user, fixture_path, digest):
+    from .runtime_helpers import owned_child_process
+    root = args.root / "stress_large_payload"
     root.mkdir()
-    _chown(root, user)
-    socket_path = args.root / "socket" / "cancel.sock"
-    event_path = root / "session_events.jsonl"
-    env = dict(os.environ, PYTHONPATH=str(args.repo / "code"),
-               PYTHONDONTWRITEBYTECODE="1")
-    pg_context = pg_file_context(connection)
-    with child(gateway_command(args, socket_path, fixture_path, event_path,
-                               ("--test-response-delay-ms", "1000")),
-               root, "gateway", env, user) as gateway:
-        wait_file(socket_path, gateway)
-        sampler = _sampler_for(
-            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
-            socket_path, pg_context)
-        baseline_capture, _ = acquire_stable_baseline(sampler)
-        if baseline_capture is None:
-            result = {"case": "cancel_and_cleanup",
-                      "measurement_status": "invalid",
-                      "qualification_status": "not_evaluated",
-                      "reason": "stable baseline not achieved"}
-            save(root / "result.json", result)
-            return result
+    with gateway(args, root / "gateway", "stress", fixture_path, user) as (process, socket_path, events):
+        client_root = root / "client"
+        client_root.mkdir()
+        release, finish = client_root / "release", client_root / "finish"
+        env = dict(os.environ, LD_LIBRARY_PATH=str(args.prefix / "lib"))
+        command = [str(args.root / "build/resource_client_v3"), str(args.root / "socket"), "55446",
+                   str(socket_path), str(release), str(finish), str(spec.rounds), str(spec.rows_per_round)]
+        with owned_child_process(command, client_root, "client", env, user) as client:
+            warm = wait_log(client_root / "client.log", "warmup_complete", 30, client)
+            wait_drain(events)
+            sampler = ProcfsTickSampler({"backend": warm["backend_pid"], "gateway": process.pid},
+                                       str(socket_path), pg_file_context(connection))
+            def operation():
+                release.touch()
+                return wait_log(client_root / "client.log", "all_complete", 600, client)
+            def correctness(result):
+                expected = {"rows": spec.rounds * spec.rows_per_round,
+                            "rounds": spec.rounds, "rows_per_round": spec.rows_per_round}
+                return [{"metric": "client_workload", "expected": expected, "observed": result}] if not isinstance(result, dict) or any(result.get(k) != v for k,v in expected.items()) else []
+            # Client remains connected throughout execute_phase's operation and
+            # cleanup. Only its finish barrier permits PQfinish/backend exit.
+            result = execute_phase(root=root / "stress", phase="stress", spec=spec,
+                sampler=sampler, operation=operation, events=events,
+                expected_tasks=spec.rounds * spec.rows_per_round, expected_sessions=spec.rounds,
+                expected_digest=digest, check_result=correctness)
+            exit_root = root / "client_exit"
+            exit_root.mkdir()
+            failure = None
+            try:
+                finish.touch()
+                client.wait(timeout=30)
+            except Exception as error:
+                failure = type(error).__name__
+            observed_code = client.poll()
+            save_json(exit_root / "outcome.json", {
+                "returncode": observed_code, "error_type": failure,
+                "released_after_cleanup": True})
+            exit_result = PhaseResult(
+                "client_exit", "completed",
+                "invalid" if failure else "valid",
+                "not_evaluated" if failure else "passed" if observed_code == 0 else "failed",
+                ("client_exit_unobserved",) if failure else (),
+                ({"metric": "client_exit", "observed": observed_code},) if observed_code != 0 else (),
+                failure is None and observed_code == 0, ("outcome.json",))
+            finish_phase(exit_root, exit_result, spec)
+            return [result, exit_result]
+
+
+def cancel_case(args, spec, connection, user, fixture_path, digest):
+    root = args.root / "cancel_and_cleanup"
+    root.mkdir()
+    with gateway(args, root / "gateway", "cancel", fixture_path, user,
+                 ("--test-response-delay-ms", "1000")) as (process, socket_path, events):
         connection.execute("SET statement_timeout='50ms'")
-        observed_sqlstate = None
-
-        def attempt_cancel():
-            nonlocal observed_sqlstate
-            try:
-                query_one(connection, socket_path)
-            except psycopg.Error as error:
-                observed_sqlstate = error.sqlstate
-
-        recorded = record_operation(
-            sampler, attempt_cancel, sample_seconds=SAMPLE_SECONDS,
-            baseline=baseline_capture.baseline)
-        wait_gateway_events(event_path, tasks=1, sessions_ended=1, timeout=10)
+        result = phase(args, spec, root, "cancel", connection, process, socket_path, events, digest,
+                       expected_sqlstate=CANCEL_SQLSTATE)
         connection.execute("SET statement_timeout='5s'")
-
-        def recovery():
-            value = query_one(connection, socket_path)
-            return {"len": len(value)}
-
-        recorded_recovery = record_operation(
-            sampler, recovery, sample_seconds=SAMPLE_SECONDS,
-            baseline=baseline_capture.baseline)
-        wait_gateway_events(event_path, tasks=2, sessions_ended=2, timeout=10)
-        events = load_session_events(event_path)
-        correctness = []
-        if recorded_recovery.operation_error is not None:
-            correctness.append({"metric": "recovery_query_failed"})
-        cleanup_trace = _cleanup_settle(sampler, root, "cancel", baseline_capture.baseline)
-        report = _evaluate_case(
-            case_name="cancel_and_cleanup", root=root,
-            baseline_capture=baseline_capture, recorded=recorded,
-            windows=session_windows(events),
-            expected_sqlstate=CANCEL_SQLSTATE,
-            observed_sqlstate=observed_sqlstate,
-            correctness=correctness,
-            cleanup_trace=cleanup_trace)
-        gateway.terminate()
-        gateway.wait(timeout=10)
-    return report
+        recovery = (phase(args, spec, root, "recovery", connection, process, socket_path, events, digest)
+                    if result.safe else skipped("recovery", "cancel_state_unsafe_or_unknown"))
+        return [result, recovery]
 
 
-def run_disconnect_case(args, connection, user, fixture_path):
-    """Disconnect subphase then recovery subphase, each with its own gateway."""
-    from src.experiments.choice_resource_checks import child, wait_file
-
-    root = args.root / "disconnect"
+def disconnect_case(args, spec, connection, user, fixture_path, digest):
+    root = args.root / "provider_disconnect_and_recovery"
     root.mkdir()
-    _chown(root, user)
-    pg_context = pg_file_context(connection)
-    env = dict(os.environ, PYTHONPATH=str(args.repo / "code"),
-               PYTHONDONTWRITEBYTECODE="1")
-
-    # Subphase 1: disconnect while the gateway lives.
-    socket_path = args.root / "socket" / "disconnect.sock"
-    event_path = root / "disconnect_events.jsonl"
-    with child(gateway_command(args, socket_path, fixture_path, event_path,
-                               ("--test-disconnect-on-task",)),
-               root, "gateway", env, user) as gateway:
-        wait_file(socket_path, gateway)
-        sampler = _sampler_for(
-            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
-            socket_path, pg_context)
-        baseline_capture, _ = acquire_stable_baseline(sampler)
-        if baseline_capture is None:
-            result = {"case": "provider_disconnect_and_recovery",
-                      "measurement_status": "invalid",
-                      "qualification_status": "not_evaluated",
-                      "reason": "stable baseline not achieved"}
-            save(root / "result.json", result)
-            return result
-        observed_sqlstate = None
-
-        def attempt():
-            nonlocal observed_sqlstate
-            try:
-                query_one(connection, socket_path)
-            except psycopg.Error as error:
-                observed_sqlstate = error.sqlstate
-
-        recorded = record_operation(
-            sampler, attempt, sample_seconds=SAMPLE_SECONDS,
-            baseline=baseline_capture.baseline)
-        wait_gateway_events(event_path, tasks=0, sessions_ended=1, timeout=10)
-        events = load_session_events(event_path)
-        cleanup_trace = _cleanup_settle(sampler, root, "disconnect", baseline_capture.baseline)
-        report = _evaluate_case(
-            case_name="provider_disconnect_and_recovery", root=root,
-            baseline_capture=baseline_capture, recorded=recorded,
-            windows=session_windows(events),
-            expected_sqlstate=DISCONNECT_SQLSTATE,
-            observed_sqlstate=observed_sqlstate,
-            cleanup_trace=cleanup_trace)
-        gateway.terminate()
-        gateway.wait(timeout=10)
-
-    # Subphase 2: fresh gateway, fresh baseline, recovery query.
-    recovery_root = args.root / "disconnect-recovery"
-    recovery_root.mkdir()
-    _chown(recovery_root, user)
-    recovery_socket = args.root / "socket" / "disconnect-recovery.sock"
-    recovery_events = recovery_root / "session_events.jsonl"
-    with child(gateway_command(args, recovery_socket, fixture_path,
-                               recovery_events),
-               recovery_root, "gateway", env, user) as gateway:
-        wait_file(recovery_socket, gateway)
-        sampler = _sampler_for(
-            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
-            recovery_socket, pg_context)
-        baseline_capture, _ = acquire_stable_baseline(sampler)
-        if baseline_capture is None:
-            recovery_report = {
-                "case": "provider_disconnect_and_recovery/recovery",
-                "measurement_status": "invalid",
-                "qualification_status": "not_evaluated",
-                "reason": "stable baseline not achieved (recovery subphase)",
-            }
-            save(recovery_root / "gate_report.json", recovery_report)
-        else:
-            def recovery():
-                value = query_one(connection, recovery_socket)
-                return {"len": len(value)}
-
-            recorded = record_operation(
-                sampler, recovery, sample_seconds=SAMPLE_SECONDS,
-                baseline=baseline_capture.baseline)
-            events = load_session_events(recovery_events)
-            cleanup_trace = _cleanup_settle(sampler, recovery_root, "recovery", baseline_capture.baseline)
-            recovery_report = _evaluate_case(
-                case_name="provider_disconnect_and_recovery/recovery",
-                root=recovery_root, baseline_capture=baseline_capture,
-                recorded=recorded, windows=session_windows(events),
-                correctness=(
-                    [] if recorded.operation_error is None
-                    else [{"metric": "recovery_query_failed"}]),
-                cleanup_trace=cleanup_trace)
-        gateway.terminate()
-        gateway.wait(timeout=10)
-    if recovery_report["qualification_status"] != "passed":
-        # Compose through the registered vocabulary: a not-evaluated
-        # recovery subphase may never combine with a top-level failed.
-        sub = (recovery_report["measurement_status"],
-               recovery_report["qualification_status"])
-        composed = compose_status(sub, ("valid", "failed"))
-        report["measurement_status"], report["qualification_status"] = (
-            composed if composed is not None
-            else ("inconclusive", "not_evaluated"))
-        if composed is not None and composed[1] == "failed":
-            report["recovery_not_passed"] = True
-    else:
-        report["measurement_status"] = _worse_measurement(
-            report.get("measurement_status"),
-            recovery_report["measurement_status"])
-    report["recovery"] = {
-        "measurement_status": recovery_report["measurement_status"],
-        "qualification_status": recovery_report["qualification_status"]}
-    save(root / "result.json", report)
-    return report
+    with gateway(args, root / "old_gateway", "disconnect", fixture_path, user,
+                 ("--test-disconnect-on-task",)) as (process, socket_path, events):
+        result = phase(args, spec, root, "disconnect", connection, process, socket_path, events, digest,
+                       expected_sqlstate=DISCONNECT_SQLSTATE, expected_tasks=0)
+    if not result.safe:
+        return [result, skipped("recovery", "disconnect_state_unsafe_or_unknown")]
+    with gateway(args, root / "new_gateway", "disconnect-recovery", fixture_path, user) as (process, socket_path, events):
+        recovery = phase(args, spec, root, "recovery", connection, process, socket_path, events, digest)
+    return [result, recovery]
 
 
-def run_exit_case(args, connection, user, fixture_path):
-    """Gateway-exit: alive phase, absent phase, fresh-gateway recovery phase."""
-    from src.experiments.choice_resource_checks import child, wait_file
-
-    root = args.root / "gateway_exit"
+def exit_case(args, spec, connection, user, fixture_path, digest):
+    root = args.root / "gateway_exit_and_recovery"
     root.mkdir()
-    _chown(root, user)
-    pg_context = pg_file_context(connection)
-    env = dict(os.environ, PYTHONPATH=str(args.repo / "code"),
-               PYTHONDONTWRITEBYTECODE="1")
-    socket_path = args.root / "socket" / "exit.sock"
-    event_path = root / "session_events.jsonl"
-    with child(gateway_command(args, socket_path, fixture_path, event_path),
-               root, "gateway", env, user) as gateway:
-        wait_file(socket_path, gateway)
-        sampler = _sampler_for(
-            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
-            socket_path, pg_context)
-        baseline_capture, _ = acquire_stable_baseline(sampler)
-        if baseline_capture is None:
-            result = {"case": "gateway_exit_and_recovery",
-                      "measurement_status": "invalid",
-                      "qualification_status": "not_evaluated",
-                      "reason": "stable baseline not achieved"}
-            save(root / "result.json", result)
-            return result
-
-        def warm():
-            value = query_one(connection, socket_path)
-            return {"len": len(value)}
-
-        recorded = record_operation(
-            sampler, warm, sample_seconds=SAMPLE_SECONDS,
-            baseline=baseline_capture.baseline)
-        # Persist the alive-phase evidence BEFORE anything that can kill
-        # the runner: terminate/wait/path-assert must never lose the trace.
-        persist_trace(root / "raw_alive", recorded.trace)
-        persist_operation_outcome(root / "raw_alive", recorded,
-                                  "gateway_exit/alive")
-        events = load_session_events(event_path)
-        wait_gateway_events(event_path, tasks=1, sessions_ended=1, timeout=10)
-        gateway.terminate()
-        gateway.wait(timeout=10)
-        socket_path_gone = not socket_path.exists()
-
-    # Absent phase: only the backend's socket cleanup and the SQLSTATE contract.
-    absent_ticks = []
-    sampler_absent = _sampler_for(
-        {"backend": connection.info.backend_pid},
-        socket_path, pg_context)
-
-    def absent_probe():
-        try:
-            query_one(connection, socket_path)
-        except psycopg.Error as error:
-            return error.sqlstate
-        return None
-
-    recorded_absent = record_operation(
-        sampler_absent, absent_probe, sample_seconds=SAMPLE_SECONDS,
-        baseline={r: s for r, s in baseline_capture.baseline.items()
-                  if r == "backend"})
-    absent_sqlstate = recorded_absent.result
-    persist_trace(root / "raw_absent", recorded_absent.trace)
-
-    # Recovery phase: fresh gateway, fresh baseline.
-    recovery_root = args.root / "gateway_exit-recovery"
-    recovery_root.mkdir()
-    _chown(recovery_root, user)
-    recovery_socket = args.root / "socket" / "exit-recovery.sock"
-    recovery_events = recovery_root / "session_events.jsonl"
-    with child(gateway_command(args, recovery_socket, fixture_path,
-                               recovery_events),
-               recovery_root, "gateway", env, user) as gateway:
-        wait_file(recovery_socket, gateway)
-        sampler = _sampler_for(
-            {"backend": connection.info.backend_pid, "gateway": gateway.pid},
-            recovery_socket, pg_context)
-        baseline_capture, _ = acquire_stable_baseline(sampler)
-        if baseline_capture is None:
-            recovery_report = {
-                "case": "gateway_exit_and_recovery/recovery",
-                "measurement_status": "invalid",
-                "qualification_status": "not_evaluated",
-                "reason": "stable baseline not achieved (recovery subphase)",
-            }
-            save(recovery_root / "gate_report.json", recovery_report)
-        else:
-            def recovery():
-                value = query_one(connection, recovery_socket)
-                return {"len": len(value)}
-
-            recorded_recovery = record_operation(
-                sampler, recovery, sample_seconds=SAMPLE_SECONDS,
-                baseline=baseline_capture.baseline)
-            events = load_session_events(recovery_events)
-            cleanup_trace = _cleanup_settle(sampler, recovery_root, "recovery", baseline_capture.baseline)
-            recovery_report = _evaluate_case(
-                case_name="gateway_exit_and_recovery/recovery",
-                root=recovery_root, baseline_capture=baseline_capture,
-                recorded=recorded_recovery, windows=session_windows(events),
-                correctness=(
-                    [] if recorded_recovery.operation_error is None
-                    else [{"metric": "recovery_query_failed"}]),
-                cleanup_trace=cleanup_trace)
-        gateway.terminate()
-        gateway.wait(timeout=10)
-
-    correctness = []
-    if absent_sqlstate != GATEWAY_EXIT_SQLSTATE:
-        # Registered contract mismatch is a separate production bug report,
-        # recorded here, never absorbed by widening the accepted set.
-        correctness.append({"metric": "sqlstate_contract",
-                            "expected": GATEWAY_EXIT_SQLSTATE,
-                            "observed": absent_sqlstate})
-    if not socket_path_gone:
-        correctness.append({"metric": "socket_path_not_removed"})
-    report = {
-        "case": "gateway_exit_and_recovery",
-        "metric_schema": METRIC_SCHEMA,
-        "measurement_status": _worse_measurement(
-            recovery_report["measurement_status"], None),
-        "qualification_status": recovery_report["qualification_status"],
-        "correctness_failures": correctness,
-        "post_exit_sqlstate": absent_sqlstate,
-        "socket_path_removed": socket_path_gone,
-        "recovery": {"qualification_status":
-                     recovery_report["qualification_status"]},
-    }
-    if correctness:
-        # Same registered composition: correctness failures demote a
-        # valid measurement to failed but never combine an
-        # inconclusive/invalid measurement with failed.
-        sub = (report["measurement_status"],
-               report["qualification_status"])
-        composed = compose_status(sub, ("valid", "failed"))
-        report["measurement_status"], report["qualification_status"] = (
-            composed if composed is not None
-            else ("inconclusive", "not_evaluated"))
-    save(root / "result.json", report)
-    return report
+    with gateway(args, root / "old_gateway", "exit", fixture_path, user) as (process, socket_path, events):
+        alive = phase(args, spec, root, "alive", connection, process, socket_path, events, digest)
+        if not alive.safe:
+            return [alive, skipped("absent", "alive_state_unknown"), skipped("recovery", "alive_state_unknown")]
+        process.terminate()
+        process.wait(timeout=10)
+        old_returncode = process.returncode
+    absent = phase(args, spec, root, "absent", connection, None, socket_path, lambda: [], digest,
+        require_sessions=False, expected_sqlstate=GATEWAY_EXIT_SQLSTATE,
+        extra_checks=lambda: ([{"metric": "gateway_not_absent"}]
+                              if old_returncode is None or socket_path.exists() else []))
+    if not absent.safe:
+        return [alive, absent, skipped("recovery", "absent_state_unsafe_or_unknown")]
+    with gateway(args, root / "new_gateway", "exit-recovery", fixture_path, user) as (process, recovery_socket, events):
+        recovery = phase(args, spec, root, "recovery", connection, process, recovery_socket, events, digest)
+    return [alive, absent, recovery]
 
 
-def _is_unsafe(case_result) -> bool:
-    for violation in case_result.get("cleanup_policy") or []:
-        if violation.get("metric") in SAFETY_METRICS:
-            return True
-    return False
-
-
-def _worse_measurement(*statuses):
-    """Combine measurement statuses under invalid > inconclusive > valid."""
-    values = [s for s in statuses if s]
-    if "invalid" in values:
-        return "invalid"
-    if "inconclusive" in values:
-        return "inconclusive"
-    return values[0] if values else None
-
-
-def _exit_code(summary) -> int:
-    statuses = [
-        (case.get("measurement_status"), case.get("qualification_status"))
-        for case in summary["cases"].values()]
-    if any(m == "invalid" or m == "inconclusive" for m, _ in statuses):
-        return EXIT_NOT_EVALUATED
-    if any(q == "not_evaluated" for _, q in statuses):
-        return EXIT_NOT_EVALUATED
-    if any(q == "failed" for _, q in statuses):
-        return EXIT_VALID_FAILED
-    return EXIT_ALL_PASS
+def execute_cases(args, spec):
+    import pwd
+    from .runtime_helpers import isolated_pg18_cluster
+    user = pwd.getpwnam("postgres")
+    os.chown(args.root, user.pw_uid, user.pw_gid)
+    fixture_path, digest = fixture(args.root)
+    with isolated_pg18_cluster(args.prefix, args.root, user) as connection:
+        connection.execute("CREATE TABLE resource_rows(id integer, payload text) WITH (autovacuum_enabled=false, toast.autovacuum_enabled=false)")
+        connection.execute(f"INSERT INTO resource_rows SELECT n,repeat('x',100000) FROM generate_series(1,{spec.rows_per_round}) n")
+        connection.execute("VACUUM ANALYZE resource_rows")
+        connection.execute("SET statement_timeout='300s'")
+        safe = True
+        for name, check in zip(REQUIRED_PHASES, (stress_case, cancel_case, disconnect_case, exit_case)):
+            if safe:
+                phases = check(args, spec, connection, user, fixture_path, digest)
+            else:
+                phases = [skipped(p, "prior_case_unsafe_or_unknown") for p in REQUIRED_PHASES[name]]
+            safe = all(p.safe for p in phases)
+            yield name, phases
 
 
 def run(args):
-    from src.experiments.choice_resource_checks import cluster
-
-    def preflight_failure(reason):
-        args.root.mkdir(parents=True, exist_ok=True)
-        save(args.root / "summary.json", {
-            "status": "runner_failure",
-            "reason": reason,
-            "metric_schema": METRIC_SCHEMA,
-            "model_requests": 0,
-            "cases": {}})
-        return EXIT_RUNNER_FAILURE
-
+    spec = RunSpec("diagnostic" if args.diagnostic else "formal")
     try:
-        if subprocess.check_output(
-                [str(args.prefix / "bin/pg_config"), "--version"],
-                text=True).strip() != "PostgreSQL 18.3":
-            return preflight_failure("pg_version_mismatch")
-        if subprocess.check_output(
-                ["git", "-C", str(args.repo), "rev-parse", "HEAD"],
-                text=True).strip() != args.commit:
-            return preflight_failure("commit_mismatch")
-        if subprocess.check_output(
-                ["git", "-C", str(args.repo), "status", "--porcelain"],
-                text=True).strip():
-            return preflight_failure("working_tree_dirty")
-    except OSError as error:
-        return preflight_failure(f"preflight_error:{type(error).__name__}")
-    # Build the parameterized v3 client AFTER preflight, from source under
-    # management: the workload argv this runner passes is guaranteed
-    # supported (the archived v2 client accepts none and silently runs
-    # full scale — the diagnostic-workload mismatch came from exactly
-    # that gap).
+        # Atomic ownership. Existing roots are read-only to this invocation.
+        args.root.mkdir(parents=False, exist_ok=False)
+    except OSError:
+        print("run_root_unavailable: choose a new result directory", file=sys.stderr)
+        return 3
+    cases = {}
+    error = None
+    interrupted = None
     try:
-        build_client(Path(__file__).with_name("resource_client_v3.c"),
-                     args.root / "resource_client_v3", args.prefix)
-        args.client = args.root / "resource_client_v3"
-    except (OSError, RuntimeError) as error:
-        return preflight_failure(
-            f"client_build_error:{type(error).__name__}")
-    # The result root must be created (or validated as an empty fresh
-    # directory) before any case runs; a reused/non-empty root must fail
-    # as a runner failure WITH a written summary, never as a bare
-    # traceback before summary construction.
-    try:
-        args.root.mkdir(exist_ok=False)
-    except FileExistsError:
-        args.root.mkdir(parents=True, exist_ok=True)
-        if any(args.root.iterdir()):
-            save(args.root / "summary.json", {
-                "status": "runner_failure",
-                "reason": "result_root_not_empty",
-                "metric_schema": METRIC_SCHEMA,
-                "model_requests": 0,
-                "cases": {}})
-            return EXIT_RUNNER_FAILURE
-    summary = {
-        "status": "failed",
-        "metric_schema": METRIC_SCHEMA,
-        "supersedes_measurement_implementation": "v1",
-        "model_requests": 0,
-        "mode": "diagnostic" if getattr(args, "diagnostic", False) else "formal",
-        "workload": {
-            "rounds": ROUNDS,
-            "rows_per_round": ROWS_PER_ROUND,
-            "input_bytes_per_row": 100000,
-            "fixture_output_bytes": 65536,
-        },
-        "cases": {},
-    }
-    try:
-        user = pwd.getpwnam("postgres")
-        _chown(args.root, user)
-        fixture_path, digest = fixture(args, args.root)
-        with cluster(args.prefix, args.root, user) as connection:
-            connection.execute(
-                "CREATE TABLE resource_rows(id integer, payload text) "
-                "WITH (autovacuum_enabled=false, toast.autovacuum_enabled=false)")
-            connection.execute(
-                "INSERT INTO resource_rows SELECT n,repeat('x',100000) "
-                f"FROM generate_series(1,{ROWS_PER_ROUND}) n")
-            connection.execute("VACUUM ANALYZE resource_rows")
-            connection.execute("SET statement_timeout='300s'")
-            stress = run_stress_case(args, connection, user, fixture_path, digest)
-            summary["cases"]["stress_large_payload"] = stress
-            stop = _is_unsafe(stress)
-            for name, check in (
-                    ("cancel_and_cleanup", run_cancel_case),
-                    ("provider_disconnect_and_recovery", run_disconnect_case),
-                    ("gateway_exit_and_recovery", run_exit_case)):
-                if stop:
-                    summary["cases"][name] = {
-                        # Skipped-by-safety stays inside the four-value
-                        # vocabulary: the earlier case's unsafe state
-                        # means this case's measurement never happened,
-                        # which is an inconclusive measurement, never a
-                        # fabricated valid one.
-                        "measurement_status": "inconclusive",
-                        "qualification_status": "not_evaluated",
-                        "reason": "unsafe cleanup state in earlier case",
-                    }
-                    continue
-                summary["cases"][name] = check(
-                    args, connection, user, fixture_path)
-                stop = _is_unsafe(summary["cases"][name])
-            if getattr(args, "diagnostic", False):
-                # A diagnostic run answers identity/peak questions only; it
-                # can never produce a qualification verdict.
-                for case in summary["cases"].values():
-                    case["qualification_status"] = "not_evaluated"
-                    case["diagnostic_note"] = (
-                        "diagnostic mode: identity/peak evidence only")
-            required = [c for n, c in summary["cases"].items()]
-            summary["status"] = (
-                "passed" if all(
-                    c.get("measurement_status") == "valid"
-                    and c.get("qualification_status") == "passed"
-                    for c in required)
-                else "failed")
-    except Exception as error:  # noqa: BLE001 — the runner must outlive
-        # its cases: a case-level crash is a runner failure (exit 3),
-        # never the valid-failed exit code, and the already-persisted
-        # case evidence plus this reason must reach summary.json.
-        summary["status"] = "runner_failure"
-        summary["reason"] = (
-            f"{type(error).__name__}:"
-            f"{getattr(error, 'sqlstate', None) or ''}")
-        return_code = EXIT_RUNNER_FAILURE
-        save(args.root / "summary.json", summary)
-        return return_code
+        (args.root / "build").mkdir()
+        save_json(args.root / "manifest.json", {"state": "started", "spec": spec.manifest(),
+                  "requested_commit": args.commit})
+        save_json(args.root / "source_identity.json", preflight(args))
+        build_client(args.repo / "code/src/experiments/postgresql/resource_client_v3.c",
+                     args.root / "build/resource_client_v3", args.prefix)
+        for name, phases in execute_cases(args, spec):
+            report = case_report(name, phases, spec)
+            case_root = args.root / name
+            case_root.mkdir(exist_ok=True)
+            save_json(case_root / "case_report.json", report)
+            cases[name] = report
+            save_json(args.root / "progress.json", {"completed_cases": list(cases)})
+    except BaseException as failure:
+        error = {"type": type(failure).__name__, "reason": "runner_failure",
+                 "sqlstate": getattr(failure, "sqlstate", None)}
+        if isinstance(failure, (KeyboardInterrupt, SystemExit)):
+            interrupted = failure
     finally:
-        save(args.root / "summary.json", summary)
-    return _exit_code(summary)
+        report = run_report(cases, spec, runner_error=error)
+        save_json(args.root / "summary.json", report)
+        save_json(args.root / "SHA256SUMS.json", hashes(args.root))
+    if interrupted is not None:
+        raise interrupted
+    return report["exit_code"]
 
 
-def build_client(client_source: Path, target: Path, pg_prefix: Path) -> None:
-    """Compile the parameterized v3 client against the run's PG prefix."""
-    import subprocess as _sp
-    compiled = _sp.run(
-        ["cc", "-O2", "-Wall", "-Werror",
-         f"-I{pg_prefix / 'include'}", str(client_source),
-         "-o", str(target), f"-L{pg_prefix / 'lib'}", "-lpq"],
-        capture_output=True, text=True)
-    if compiled.returncode != 0:
-        raise RuntimeError(f"client build failed:\n{compiled.stderr}")
-    log = target.with_name(target.name + "-build.log")
-    log.write_text(compiled.stderr or "(no warnings)\n", encoding="utf-8")
-
-
-def main() -> int:
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("repo", "root", "prefix", "client"):
+    for name in ("repo", "root", "prefix"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--commit", required=True)
-    parser.add_argument("--diagnostic", action="store_true",
-                        help="1 round x 100 rows, verdicts forced not_evaluated")
-    args = parser.parse_args()
-    if args.diagnostic:
-        global ROWS_PER_ROUND, ROUNDS
-        ROWS_PER_ROUND = 100
-        ROUNDS = 1
-    return run(args)
+    parser.add_argument("--diagnostic", action="store_true", help="Real 1x100 fixture workload; no formal qualification")
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    return run(parse_args(argv))
 
 
 if __name__ == "__main__":

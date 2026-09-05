@@ -1,0 +1,40 @@
+{
+  "resource": {
+    "run": 50,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "skip_reasons": []
+  },
+  "attribution": {
+    "run": 17,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "skip_reasons": []
+  },
+  "process": {
+    "run": 35,
+    "failures": 0,
+    "errors": 0,
+    "skips": 2,
+    "skip_reasons": [
+      "Linux procfs/SO_PEERCRED required",
+      "Linux procfs/SO_PEERCRED required"
+    ]
+  },
+  "sampling_lifecycle": {
+    "run": 8,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "skip_reasons": []
+  },
+  "v1_replay": {
+    "run": 5,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "skip_reasons": []
+  }
+}
