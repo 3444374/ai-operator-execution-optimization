@@ -9115,3 +9115,9 @@ FD/线程增量0；运行结束后本轮进程均退出。原始哈希在服务�
 SELECT有效通过；INSERT功能/usage核对通过，但同backend验收JOIN打开系统目录FD，导致资源阶段
 不完整并按条件停止。独立无模型PG反例观察到JOIN新增目录FD（包含原4个），独立审计连接对目标
 backend增量0；实验driver据此分离审计连接。只继续尚未发出的4次故障/恢复，原INSERT不改判、不重试。
+
+9cf5ff88驱动执行剩余四阶段均valid/passed，原账本最终32/32，本轮共7次真实请求、无推理重试。
+SELECT/INSERT输出与usage、NULL、57014取消、38000模型拒绝及恢复均完成了功能核对；INSERT资源
+原判定仍不通过，修正后真实复查未执行。三次运行哈希原地核验无差异，原25条账本前缀不变。
+独立模型/PG/gateway进程按身份清理，端口关闭，两张GPU显存均回到1MiB。
+结果与未完成项见[真实复查记录](experiments/results/postgresql/semmap_real_followup_20260906/README.md)。

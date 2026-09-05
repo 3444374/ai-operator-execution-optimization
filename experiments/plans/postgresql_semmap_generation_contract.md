@@ -825,6 +825,11 @@ backend新增4个系统目录FD而停止，账本28/32。无模型隔离PG反例
 `--remaining-faults-only`，初始账本必须28，终点不超过32；不重复SELECT或INSERT模型请求。
 其结果单列为剩余故障子集，不把两个run拼成完整资源资格，修正后的真实INSERT资源复查仍待后续授权。
 
+执行结果：剩余四阶段在`9cf5ff88`实验driver下全部valid/passed，账本最终32/32；本轮累计新增7次，
+没有推理重试。服务PID/启动身份与配置前后一致，结束后本轮PG/gateway/vLLM已全部清理，GPU占用
+恢复到空闲值。详细数值、失败与哈希见[真实复查记录](../results/postgresql/semmap_real_followup_20260906/README.md)。
+本节的实际请求计划已执行；INSERT资源修正后复查及正式fixture3×2000仍未完成，后续真实请求需新预算。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。

@@ -12,6 +12,11 @@
 同一存活backend/gateway完成清理，各阶段结束FD/线程增量0。前两次不完整/失败运行保留。
 [证据与哈希](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md)单独登记。
 正式3×2000未授权、未运行；正式资源资格和四D完成仍pending。
+用户随后授权的[有限真实模型复查](../experiments/results/postgresql/semmap_real_followup_20260906/README.md)
+新增7次请求，原账本25→32：SELECT/INSERT输出与usage、NULL零调用、取消/拒绝及恢复功能核对通过；
+SELECT及四个故障/恢复阶段资源通过。真实INSERT的测量受同backend验收JOIN打开系统目录FD影响而
+未通过；已用独立无模型PG反例定位，并把审计连接分离，原测量不改判、修正后的真实INSERT待新预算复查。
+全部本轮PG/gateway/vLLM进程已清理。不同run不合并成完整资源通过。
 当前实施依据见 [资源工具生命周期修复](../experiments/plans/postgresql_semmap_generation_contract.md)。
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
