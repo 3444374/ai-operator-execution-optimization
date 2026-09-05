@@ -662,6 +662,26 @@ gateway 另有以下可判定结束条件，均在运行前选定的清理时限
 16. **证据先于致命检查**：stress case 在 `client.wait`/事件 settle 前先落盘
     trace/lifecycles/outcome；gateway-exit alive 相在 terminate 前持久化，socket path
     检查改为结构化 correctness failure。
+
+**post-report 组合链审查更正（2026-09-05 第三轮，首次正式 v2 运行前登记）**：第二轮修复后的
+逐行状态机审查又确认并修复了以下组合与 fail-closed 缺口（同样不改阈值、不改生产
+PG/provider/wire）：
+
+17. **stress verdict 可组合**：`_evaluate_case(cleanup_trace=None)` 一度无条件强制
+    inconclusive，而 stress 尾部的真实 cleanup 报告只做单向恶化——完美输入下 stress 也永远
+    inconclusive/not_evaluated，正式 run 结构性退出码 2。现在 stress 在真实 cleanup 报告就绪后
+    经 `compose_status` 终组合；缺 cleanup 相仍 fail-closed 为 inconclusive。
+18. **runner 全路径走 compose_status**：disconnect/exit 顶层不得在 recovery
+    not_evaluated 时直接覆写 `qualification_status='failed'`（产生合同外的
+    (inconclusive|invalid, failed) 组合）；`_evaluate_case` 的手写优先级由注册的
+    `compose_status` 取代，纯函数不再是 dead code。
+19. **全 tickless 窗口 fail-closed**：所有 session 窗口都无采样 tick 时归因必须返回 None
+    (`all_session_windows_tickless`)，不得以零观察证据通过 provider 门。
+20. **reclassify 限定窗口与 inode**：改写只作用于 session 窗口内、且仅限归因确认的
+    (fd, inode) 对；窗口外 fd 编号被无关 socket 复用不得改标 provider client。
+21. **runner 异常路径**：case 级崩溃写 `runner_failure` summary 并退出码 3（不与 valid/failed
+    的退出码 1 撞车）；复用/非空结果根目录同样 fail 为 runner_failure 且落 summary；安全跳过态
+    使用词表内 `inconclusive/not_evaluated`，不再使用 `not_run`。
 - **unknown 分类 fail-closed**：任何未能分类的 FD 峰值增量使该 run 的
   `measurement_status = inconclusive`、`qualification_status = not_evaluated`，
   不得因"未归类"而从 provider 指标中静默排除。

@@ -77,6 +77,12 @@ correction 已登记）。这是测量实现修复，不构成资源资格通过
 （`semmap_resource_v2_diagnostic_20260904`，实际负载 3×2000，README 已更正）确认归因/峰值/
 清理数字真实，但其负载身份与 `--diagnostic` 标记不符；修复后的小规模 diagnostic 需重跑，正式
 3×2,000 qualification 仍待独立授权。
+2026-09-05 三轮审查又修复了状态机组合链缺口（合同 §8.4.2 第 17–21 条）：stress 判定曾因
+cleanup 延迟组合而结构性永远 inconclusive；disconnect/exit 顶层曾可产生合同外状态对（runner
+现全路径经 `compose_status` 组合）；全 tickless 归因窗口与窗口外 fd 复用改标两个假绿/失真面已
+关闭；case 级崩溃与非空结果根目录现输出 runner_failure（退出码 3）。补齐指令点名的
+observer/CLI 测试文件。仍不构成资源资格通过；小规模 diagnostic 与 Linux 全套测试在目标环境
+重验前，正式 qualification 不启动。
 下方历史实现与测试记录保持原提交身份。
 
 `00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
