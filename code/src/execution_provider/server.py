@@ -22,7 +22,7 @@ from .completion import Completion
 from .wire.framing import ProtocolError, read_frame
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     """Parse the versioned provider gateway command line."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", type=Path, required=True)
@@ -73,12 +73,12 @@ def parse_args() -> argparse.Namespace:
         ),
         help=argparse.SUPPRESS,
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    """Bind one UDS listener and serve versioned provider sessions until stopped."""
-    args = parse_args()
+def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
+    """Serve sessions; optional decorators observe this invocation only."""
+    args = parse_args(argv)
     if args.test_response_delay_ms < 0:
         raise SystemExit("--test-response-delay-ms must be non-negative")
     if args.test_fill_connect_queue_ms < 0:
@@ -96,6 +96,9 @@ def main() -> int:
         except ValueError:
             raise SystemExit("invalid fixed model configuration") from None
         completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)
+    if adapter_wrapper is not None:
+        completion_adapter = adapter_wrapper(completion_adapter)
+    run_session = _run_session if session_wrapper is None else session_wrapper(_run_session)
     if socket_path.exists():
         mode = socket_path.stat().st_mode
         kind = "socket" if stat.S_ISSOCK(mode) else "non-socket file"
@@ -134,14 +137,15 @@ def main() -> int:
                 connection, _ = listener.accept()
             except TimeoutError:
                 continue
-            _run_session(
-                connection,
-                completion_adapter=completion_adapter,
-                response_delay_ms=args.test_response_delay_ms,
-                tamper_evidence_digest=args.test_tamper_evidence_digest,
-                disconnect_on_task=args.test_disconnect_on_task,
-                completion_fixture=args.test_completion_fixture,
-            )
+            with connection:
+                run_session(
+                    connection,
+                    completion_adapter=completion_adapter,
+                    response_delay_ms=args.test_response_delay_ms,
+                    tamper_evidence_digest=args.test_tamper_evidence_digest,
+                    disconnect_on_task=args.test_disconnect_on_task,
+                    completion_fixture=args.test_completion_fixture,
+                )
             served_sessions += 1
             if args.once or (
                 args.test_max_sessions > 0

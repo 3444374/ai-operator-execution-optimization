@@ -1,0 +1,101 @@
+{
+  "platform": "Darwin",
+  "python": "3.12.6",
+  "groups": {
+    "resource": {
+      "run": 56,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_resource_lifecycle",
+        "test_resource_measurement_contracts",
+        "test_resource_qualification",
+        "test_semmap_resource_cli",
+        "test_semmap_resource_gateway_observer",
+        "test_semmap_resource_runner",
+        "test_postgresql_runtime_helpers"
+      ],
+      "log_sha256": "9663299c987951e4ea8b9d7eed76a38985297db32519d84dd64ccbbbc09c6a75"
+    },
+    "observer_and_budget": {
+      "run": 15,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_gateway_observation",
+        "test_choice_attempt_ledger",
+        "test_choice_http_observer",
+        "test_choice_service_checks"
+      ],
+      "log_sha256": "42340791f183cacb08d22c2099be0bfeefe46478b04842cce01b1cd00edc53a5"
+    },
+    "attribution": {
+      "run": 17,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_provider_session_attribution"
+      ],
+      "log_sha256": "23c1fc93d7075ce182d7b3fd33b21dc12d9a302df80d36c34cee6132dd90a18e"
+    },
+    "process": {
+      "run": 48,
+      "failures": 0,
+      "errors": 0,
+      "skips": 2,
+      "modules": [
+        "test_proc_collection_validity",
+        "test_process_recorder",
+        "test_process_resources",
+        "test_process_resources_linux",
+        "test_sampling_lifecycle",
+        "test_v1_resource_gate_characterization"
+      ],
+      "log_sha256": "bfc74d14cb3b5889fab5a65e405d741574c8b01c56ebef4bd2089e40dd7b261f"
+    },
+    "provider": {
+      "run": 76,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "modules": [
+        "test_gateway_migration",
+        "test_map_gateway",
+        "test_semloom_map_contract",
+        "test_semloom_map_protocol",
+        "test_semloom_semantic_protocol",
+        "test_semloom_choice_protocol",
+        "test_semloom_fixed_model_adapter",
+        "test_semloom_generation_profile"
+      ],
+      "log_sha256": "59e99dd59d02c2657e327e5163a32bcfda115cda13d01e28cb004868d5108bb2"
+    }
+  },
+  "model_requests": 0,
+  "total": 212,
+  "base_commit": "66d23963",
+  "source_files_sha256": {
+    "code/src/execution_provider/server.py": "6de409e989dc426ad55ca18eaf9aec924a4a79b5ea7ec8e2849fe578b86f2141",
+    "code/src/experiments/attempt_ledger.py": "f4461aaa703d103c47ef3ea253bbe0eff7bdc05f24658d8234a4d78816795c01",
+    "code/src/experiments/choice_attempt_ledger.py": "0f9f4076519d20a62855557783c76e0aae148ab19178e009358cd89948b0243e",
+    "code/src/experiments/choice_gateway_observer.py": "98ad29df75ce381012bc92bfe0b1250fed2716c2eef2257123b764667ca55629",
+    "code/src/experiments/gateway_observer.py": "7fc8ebef9622f0f8a75a57aac018c635e5049b0ec232632cfe52ec6888228611",
+    "code/src/experiments/postgresql/README.md": "3170b1d406939b4b589d93a6f4f20433629c8de3e26a7b1b8bfc7336703e046a",
+    "code/src/experiments/postgresql/resource_client_v3.c": "94aa5ccdf6a9c63a841b1e5b9b48e830c01d7f31c4506d6bf96a0e7b1020e412",
+    "code/src/experiments/postgresql/resource_phase.py": "5bbd67ae27df2232b7687e920b98a5d7b59720a1b272334f46963cc87262115f",
+    "code/src/experiments/postgresql/runtime_helpers.py": "bef6cdb9714120061fd7951251681b97b4c5922bcda190f8c1ffeb058325bf90",
+    "code/src/experiments/postgresql/semmap_resource_fault_gateway.py": "50a5ef9bd4b8de74b49c95ba5b6be8fdb270c4facb4e5aaf0d00da0873264827",
+    "code/src/experiments/postgresql/semmap_resource_gateway_observer.py": "8676fbc19fc3aca6948dd90955fd8406352f51fdbfded85c3902f2f61cb757c2",
+    "code/src/experiments/postgresql/semmap_resource_runner.py": "6afca106baa51df076781e674c076f5abf8208509ab492022a5feeafea21a96d",
+    "code/tests/experiments/test_choice_attempt_ledger.py": "a424616bc1094c405976027172dc602dd7d9e2e74a2da3a60f34584d0110fed1",
+    "code/tests/experiments/test_gateway_observation.py": "501689e7c3ce98ed133adcb7f4afbf61a87a04964c40336429adc15767006595",
+    "code/tests/experiments/test_postgresql_runtime_helpers.py": "d01c931072d36f99add63230fb939a253d842641195fc6a61d0a4f811d9fad0e",
+    "code/tests/experiments/test_resource_lifecycle.py": "5a4b1092fb4b20c917905b4a241a661853ecf67e2ceaa13fae2deb1479432018",
+    "code/tests/experiments/test_semmap_resource_cli.py": "b7eabedb354e715710b3d785d2e9c67c5b3ec36e4dccbc1f733dc76f311b5609",
+    "code/tests/experiments/test_semmap_resource_gateway_observer.py": "a22433905889b92aafb1993fcf736c85f94deef7f7c57367619cef2e79512db3",
+    "code/tests/experiments/test_semmap_resource_runner.py": "4b7e37b76f7552e2457e610557801a2261d12e42667b0ac24d2b3fac65153581"
+  }
+}

@@ -6,9 +6,31 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.experiments.choice_attempt_ledger import AttemptLedger, BudgetError, BudgetExhausted
+from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger as ConfiguredLedger
 
 
 class AttemptLedgerTests(unittest.TestCase):
+    def test_operator_budgets_share_storage_without_sharing_authorization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'attempts.jsonl'
+            budget = AttemptBudget('fixture.map.v1', 2)
+            ledger = ConfiguredLedger.create(path, budget)
+            ledger.reserve('a' * 64)
+            before = path.read_bytes()
+            for wrong in (AttemptBudget('fixture.filter.v1', 2), AttemptBudget('fixture.map.v1', 3)):
+                with self.subTest(budget=wrong), self.assertRaises(BudgetError):
+                    ConfiguredLedger(path, wrong)
+                self.assertEqual(path.read_bytes(), before)
+            reopened = ConfiguredLedger(path, budget)
+            self.assertEqual(reopened.reserve('b' * 64), 2)
+            with self.assertRaises(BudgetExhausted):
+                ledger.reserve('c' * 64)
+
+    def test_invalid_budget_configuration_is_rejected(self):
+        for identity, limit in (('', 1), ('a\nb', 1), ('valid', True), ('valid', 0)):
+            with self.subTest(identity=identity, limit=limit), self.assertRaises(ValueError):
+                AttemptBudget(identity, limit)
+
     def test_reopen_does_not_restore_spent_attempts(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'attempts.jsonl'

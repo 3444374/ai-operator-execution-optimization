@@ -163,3 +163,24 @@ PYTHONPATH=<repo>/code <driver-python> <repo>/code/scripts/experiments/run_semma
 R1–R7 的实现问题已关闭，小规模目标环境验证已完成。正式 3×2000 仍须用户单独授权，并使用固定源码/测量修订、同一完整运行的全部必需场景；本轮不执行。eventpoll 创建调用链仍未证实，归因方法仍限同步单 session；这些限制已明确记录，没有被扩展成通用精确 FD 拓扑或性能结论。
 
 以后变更 PG/provider 多在途、重排或调度接入时，应沿各自真实路径重新验证，而不能借用这次 fixture-only 资源诊断。完整 SemMap/四 D、质量/成本及性能状态继续由主计划和证据台账维护。
+
+<a id="reuse-refactor"></a>
+
+## 7. 后续共享观测与配置重构
+
+来源为 `66d23963` 后的维护性重构，实施依据为 Map 合同 §8.4.5。复核确认已有 PG runtime、
+消息编码、provider 和 HTTP adapter 由 Filter/Map 共用。删除的是实验入口的重复观测、故障包装
+以及 gateway 全局替换；不删除各算子 placement、prompt/parser 或版本化 wire 校验。
+预算 ID/总上限、隔离 PG 用户/端口改为调用配置，C 客户端读取实际连接参数。
+
+[本地测试清单](raw/refactor-local-tests.json)共212项：210通过，2项Linux专属跳过；包含
+v3/v4/v5 × golden/合成HTTP六条接线、跨重启/并发/身份拒绝预算、观测异常关闭与不同连接参数。
+记录每组模块及日志SHA；HTTP只返回合成响应，模型请求0。目标PG18.3头文件/libpq下
+fixture客户端 `-O2 -Wall -Werror` 编译通过。本次 Linux/隔离PG运行结果待登记。
+
+需求复核发现的 fixture 入口可绕过账本，以及规范复核发现的运行配置未入 manifest，均已修正
+并用行为测试验证。旧 choice 的默认账本格式、CLI、各版本消息与错误行为保留；fixture CLI
+拒绝 fixed-model 是唯一明确收紧，真实配置须走预算入口。Linux 专有 peer/socket 信息在其他
+平台记录不可用，不能据此声称资源归因通过。历史真实脚本字节保持原状，后续执行不再依赖它们。
+
+该重构不改变上面 d1/d2/d3 或真实模型运行的结论，也没有增加真实请求或正式资源资格。

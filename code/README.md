@@ -7,6 +7,9 @@ the code tree and must not become a competing engineering plan.
 
 Resource-measurement tools now have a [dedicated module index](src/experiments/postgresql/README.md).
 Their lifecycle repair is recorded separately from production Map behavior and has no formal qualification yet.
+Filter and Map checks share [session observation](src/experiments/gateway_observer.py) and
+[durable request budgeting](src/experiments/attempt_ledger.py). Machine settings and budget identity are
+supplied at the [documented CLI](scripts/README.md); historical result scripts are retained as run snapshots.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile

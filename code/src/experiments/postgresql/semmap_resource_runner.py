@@ -140,7 +140,7 @@ def gateway(args, root, name, fixture_path, user, extra=(), release=None):
     socket_path = args.root / "socket" / (name + ".sock")
     event_path = root / "session_events.jsonl"
     env = dict(os.environ, PYTHONPATH=str(args.repo / "code"), PYTHONDONTWRITEBYTECODE="1")
-    script = "semmap_resource_gateway_observer.py" if release is None else "semmap_resource_fault_gateway.py"
+    script = "semmap_resource_gateway_observer.py"
     command = [sys.executable, str(args.repo / "code/src/experiments/postgresql" / script),
                *([] if release is None else ["--release", str(release)]),
                "--events", str(event_path), "--", "--socket", str(socket_path),
@@ -249,8 +249,9 @@ def stress_case(args, spec, connection, user, fixture_path, digest):
         client_root.mkdir()
         release, finish = client_root / "release", client_root / "finish"
         env = dict(os.environ, LD_LIBRARY_PATH=str(args.prefix / "lib"))
-        command = [str(args.root / "build/resource_client_v3"), str(args.root / "socket"), "55446",
-                   str(socket_path), str(release), str(finish), str(spec.rounds), str(spec.rows_per_round)]
+        command = [str(args.root / "build/resource_client_v3"), connection.info.host, str(connection.info.port),
+                   str(socket_path), str(release), str(finish), str(spec.rounds), str(spec.rows_per_round),
+                   connection.info.user, connection.info.dbname]
         with owned_child_process(command, client_root, "client", env, user) as client:
             warm = wait_log(client_root / "client.log", "warmup_complete", 30, client)
             wait_drain(events)
@@ -347,10 +348,10 @@ def exit_case(args, spec, connection, user, fixture_path, digest):
 def execute_cases(args, spec):
     import pwd
     from .runtime_helpers import isolated_pg18_cluster
-    user = pwd.getpwnam("postgres")
+    user = pwd.getpwnam(args.pg_user)
     os.chown(args.root, user.pw_uid, user.pw_gid)
     fixture_path, digest = fixture(args.root)
-    with isolated_pg18_cluster(args.prefix, args.root, user) as connection:
+    with isolated_pg18_cluster(args.prefix, args.root, user, port=args.pg_port) as connection:
         connection.execute("CREATE TABLE resource_rows(id integer, payload text) WITH (autovacuum_enabled=false, toast.autovacuum_enabled=false)")
         connection.execute(f"INSERT INTO resource_rows SELECT n,repeat('x',100000) FROM generate_series(1,{spec.rows_per_round}) n")
         connection.execute("VACUUM ANALYZE resource_rows")
@@ -379,7 +380,9 @@ def run(args):
     try:
         (args.root / "build").mkdir()
         save_json(args.root / "manifest.json", {"state": "started", "spec": spec.manifest(),
-                  "requested_commit": args.commit})
+                  "requested_commit": args.commit,
+                  "runtime_configuration": {"transport": "unix", "pg_port": args.pg_port,
+                      "pg_owner_sha256": hashlib.sha256(args.pg_user.encode()).hexdigest()}})
         save_json(args.root / "source_identity.json", preflight(args))
         build_client(args.repo / "code/src/experiments/postgresql/resource_client_v3.c",
                      args.root / "build/resource_client_v3", args.prefix)
@@ -409,8 +412,13 @@ def parse_args(argv=None):
     for name in ("repo", "root", "prefix"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--commit", required=True)
+    parser.add_argument("--pg-user", default="postgres", help="OS owner and initial role of the isolated cluster")
+    parser.add_argument("--pg-port", type=int, default=55446, help="port number in the private Unix socket directory")
     parser.add_argument("--diagnostic", action="store_true", help="Real 1x100 fixture workload; no formal qualification")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if not 1 <= args.pg_port <= 65535:
+        parser.error("--pg-port must be between 1 and 65535")
+    return args
 
 
 def main(argv=None):

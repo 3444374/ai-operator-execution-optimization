@@ -59,12 +59,16 @@ class StressOwnershipTests(unittest.TestCase):
                 yield SimpleNamespace(pid=2),root/'gateway.sock',events
             @contextmanager
             def fake_client(command,path,name,env,user):
+                self.assertEqual(command[1:3], ['/tmp/custom socket', '55499'])
+                self.assertEqual(command[-2:], ['fixture-owner', 'fixture-db'])
                 with owned_child_process([sys.executable,'-c',CLIENT,str(path)],path,name,env,None) as process:
                     yield process
             with patch.object(runner,'gateway',fake_gateway),patch.object(runner,'pg_file_context',return_value=None), \
                  patch.object(runner,'ProcfsTickSampler',return_value=Sampler()), \
                  patch('src.experiments.postgresql.runtime_helpers.owned_child_process',fake_client):
-                phases=runner.stress_case(args,FAST.__class__(**{**FAST.__dict__,'mode':'diagnostic'}),None,None,root/'fixture','fixture')
+                connection = SimpleNamespace(info=SimpleNamespace(
+                    host='/tmp/custom socket', port=55499, user='fixture-owner', dbname='fixture-db'))
+                phases=runner.stress_case(args,FAST.__class__(**{**FAST.__dict__,'mode':'diagnostic'}),connection,None,root/'fixture','fixture')
             self.assertEqual(phases[0].policy_status,'passed',phases[0])
             self.assertTrue(all(observations))
             self.assertGreaterEqual(len(observations),FAST.baseline_samples+FAST.cleanup_samples+2)

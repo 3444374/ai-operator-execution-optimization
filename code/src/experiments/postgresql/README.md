@@ -11,10 +11,17 @@ owns the implementation and verification plan.
 | `semmap_resource_runner.py` | Exclusive run directory, build, isolated PG cases and CLI |
 | `resource_qualification.py` | Sampled peak and cleanup policies with versioned thresholds |
 | `provider_session_attribution.py` | Strict session/task replay, scoped socket attribution and residual identity checks |
-| `semmap_resource_gateway_observer.py` | Experiment-only peer/socket/session observations |
-| `semmap_resource_fault_gateway.py` | Separate test-only handshake barrier for observable fault/recovery connections |
+| `semmap_resource_gateway_observer.py` | Fixture CLI composing the shared observer with an optional bounded handshake barrier |
+| `semmap_resource_fault_gateway.py` | Compatibility CLI forwarding the required `--release` option; no independent observer |
 | `resource_client_v3.c` | Parameterized single-row libpq fixture consumer with an explicit exit barrier |
 | `runtime_helpers.py` | Shared owned-process and isolated PostgreSQL helpers, also used by choice checks |
+
+Filter and Map share [session observation](../gateway_observer.py) and the
+[configured request ledger](../attempt_ledger.py). The fixed-model observation CLI remains
+`src.experiments.choice_gateway_observer` for compatibility; it accepts a budget ID/limit and optional
+`--session-events` for either operator. Historical result scripts are evidence snapshots, not runtime dependencies.
+The fixture runner accepts `--pg-user` and `--pg-port`; its streaming client uses the actual connection's
+host, port, role and database. Model endpoint/identity/timeout remain in repository-external fixed-model JSON.
 
 Collector and recorder primitives live in `src/observability/process_resources/`. Test categories are
 lifecycle, collection, attribution, policy, observer and CLI; the old `audit_round2` source-string checks

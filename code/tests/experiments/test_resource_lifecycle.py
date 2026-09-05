@@ -230,7 +230,9 @@ class LifecycleTests(unittest.TestCase):
 
 class RunnerOwnershipTests(unittest.TestCase):
     def args(self,root,diagnostic=False):
-        return SimpleNamespace(root=root,repo=Path.cwd(),prefix=root.parent,commit="fixture",diagnostic=diagnostic)
+        return runner.parse_args(['--root', str(root), '--repo', str(Path.cwd()),
+            '--prefix', str(root.parent), '--commit', 'fixture', '--pg-port', '55499',
+            *(['--diagnostic'] if diagnostic else [])])
 
     @staticmethod
     def compiler(source,target,prefix):
@@ -256,6 +258,9 @@ class RunnerOwnershipTests(unittest.TestCase):
             self.assertEqual(summary["qualification_status"],"passed")
             self.assertEqual(set(summary["cases"]),set(REQUIRED_PHASES))
             self.assertTrue((args.root/"build/resource_client_v3").exists())
+            manifest=json.loads((args.root/'manifest.json').read_text())
+            self.assertEqual(manifest['runtime_configuration']['pg_port'],55499)
+            self.assertEqual(len(manifest['runtime_configuration']['pg_owner_sha256']),64)
 
     def test_existing_root_is_byte_identical_and_no_actions_run(self):
         with tempfile.TemporaryDirectory() as directory:

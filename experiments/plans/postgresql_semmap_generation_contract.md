@@ -830,6 +830,37 @@ backend新增4个系统目录FD而停止，账本28/32。无模型隔离PG反例
 恢复到空闲值。详细数值、失败与哈希见[真实复查记录](../results/postgresql/semmap_real_followup_20260906/README.md)。
 本节的实际请求计划已执行；INSERT资源修正后复查及正式fixture3×2000仍未完成，后续真实请求需新预算。
 
+### 8.4.5 复用与配置清理（2026-09-06，实施中）
+
+本次为用户要求的维护性重构，不改变 SQL、canonical bytes、wire v3/v4/v5、错误码、
+NULL/顺序或资源阈值。源码基线 `66d23963`；从 Map 接入前 `792a0408` 统计目录净增：
+PG src 1121 行、provider 522 行、测试 4457 行、其余 code 3125 行；结果与文档另计，
+不把归档脚本或原始数据算成算子运行时代码。行数只用于定位，不作质量指标。
+
+复核主架构 §8.7/§8.8 的既有参考记录（公司公开摘要与 pgml `caf2b6cc`，本次未访问私有源码）：
+采用“多个算子归一请求后共用调用、配置只消解一次”的原则。当前 `sem_map_machine.c`、
+`pg_semantic_runtime.c`、`adapters/semantic_session.py` 已满足主要复用要求；保留各算子的
+prompt/parser/placement 与版本校验，不新建算子 registry 或复制 provider。
+
+实际需要修改的是实验接入。工程决定与可验证目标如下：
+
+- `server.main` 显式接受 argv、adapter/session 包装函数；Map/Filter 观测入口通过该接口组合，
+  删除对 server 类型、私有函数和 `sys.argv` 的全局替换。故障握手只由 fixture 入口配置；
+  旧 fault CLI 保留兼容转发，避免重复维护生命周期。
+  唯一显式 CLI 收紧：fixture 入口拒绝 fixed-model 配置，防止无账本派发；真实配置必须走预算入口。
+- 持久预算复用同一个实现，以明确的预算 ID/上限绑定已有账本；choice 的旧默认及账本字节不变。
+  新 Map 观测不再执行历史结果目录中的预算脚本。缺失、篡改、超额和预算身份不符仍拒绝派发；
+  取消/失败/未知结果不退款。HTTP 精确派发观测仍仅用于隔离实验进程。
+- 隔离 PG 的端口、操作系统用户由 CLI 配置；libpq 子进程读取当前连接的 host/port/user/dbname，
+  删除分散的 55446 与 postgres 假设。PG18.3 是项目版本要求，固定 fixture 大小是实验合同，
+  两者不当作临时机器配置删除。模型、endpoint、timeout 继续来自已有外部 fixed-model JSON。
+  manifest 记录 Unix transport、端口与 OS owner 的 SHA-256，避免把真实机器用户名写入公共证据。
+- 历史真实 run 驱动与哈希保留为证据，明确不是可复用入口；不为删除行数改写原始失败/成功记录。
+
+验证先建立原测试基线，再检查默认入口兼容、观测异常清理、golden 与本地 HTTP fixture 的
+v3/v4/v5 接线、预算跨重启/并发/身份拒绝、不同端口/用户与 libpq 参数传递。模型请求为零；
+本次代码检查不升级历史真实 INSERT 资源结论或正式 3×2000 资格。
+
 ## 9. 完成与未完成如何表达
 
 合同定稿、纯值实现、PG plan 接入、golden 执行、真实模型、资源验收分别标状态。

@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import time
 
-from src.observability.process_resources.model import ResourceTrace, SampleTick, SnapshotStatus
+from src.observability.process_resources.model import ResourceTrace, SampleTick
 from src.observability.process_resources.recorder import (
     acquire_stable_baseline, capture_error, persist_lifecycles,
     persist_operation_outcome, persist_trace, record_operation, write_atomic)
@@ -43,7 +43,7 @@ def checkpoint(root, recorded, phase):
 
 def cleanup_settle(sampler, baseline, spec, events, *, roles, attribution=None, on_interrupt=None):
     """Wait for a stable valid end window, retaining every attempted tick."""
-    ticks, problems, stable = [], [], 0
+    ticks, stable = [], 0
     deadline = time.monotonic() + spec.cleanup_timeout_seconds
     try:
         while time.monotonic() < deadline:

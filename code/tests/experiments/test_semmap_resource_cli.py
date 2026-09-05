@@ -17,6 +17,9 @@ class CliTests(unittest.TestCase):
         self.assertFalse(formal.diagnostic)
         self.assertEqual(RunSpec('formal').rounds,3)
         self.assertFalse(hasattr(formal,'client'))
+        configured=parse_args(base+['--pg-user','fixture_owner','--pg-port','55499'])
+        self.assertEqual((formal.pg_user,formal.pg_port),('postgres',55446))
+        self.assertEqual((configured.pg_user,configured.pg_port),('fixture_owner',55499))
 
     def test_real_entry_refuses_existing_root_without_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:

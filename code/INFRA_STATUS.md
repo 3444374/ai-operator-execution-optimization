@@ -19,6 +19,14 @@ SELECT及四个故障/恢复阶段资源通过。真实INSERT的测量受同back
 全部本轮PG/gateway/vLLM进程已清理。不同run不合并成完整资源通过。
 当前实施依据见 [资源工具生命周期修复](../experiments/plans/postgresql_semmap_generation_contract.md)。
 
+后续维护性重构已让 Filter/Map 共用 session observer 与持久预算；`server.main` 显式接入观测，
+不再替换 gateway 全局对象，异常仍关闭自有连接。fixture CLI 拒绝 fixed-model 配置；预算入口
+接受外部 ID/总上限及会话事件，旧 choice 默认保留。隔离 PG 用户/端口可配置，C 客户端从实际
+连接取参数。模型 endpoint/ID/timeout 原已由外部 JSON 拥有。
+本地212项回归中210通过、2项Linux专属跳过，包含v3/v4/v5×golden/合成HTTP的六条接线；
+PG18.3 libpq fixture 客户端严格编译通过。本次 Linux/隔离PG重跑待登记，历史真实/正式资源结论不变。
+取舍由 Map 合同 §8.4.5 维护，[验证记录](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)另列。
+
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
 验收标准由
 [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)

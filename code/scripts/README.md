@@ -50,16 +50,36 @@ python code/scripts/experiments/run_semmap_resource_checks.py \
   --prefix /path/to/postgresql-18.3-install --commit <source-commit> --diagnostic
 ```
 
+`--pg-user` selects the isolated cluster's OS owner and initial database role; `--pg-port` selects its
+Unix socket port number. Defaults remain `postgres` and `55446`. The streaming client takes connection
+values from the running cluster, so changing machines does not require editing Python or C code.
+
 The diagnostic performs an actual 1×100 fixture workload with 100000-byte input and 65536-byte output.
 It sends no real model requests. Run the runtime preflight first; keep the artifact/socket path short enough
 for AF_UNIX. Each phase preserves baseline, operation, cleanup, session events and its own report/hash list.
 Case and run reports use the same assessment; diagnostic qualification is always `not_evaluated` (exit 2).
 Formal results use exit 0 for all required phases/cases passing, 1 for valid failed checks, 2 for incomplete
 measurement, and 3 for runner/preflight failure. Interrupts preserve available evidence and propagate.
-Fault/recovery connections use a separate experiment fixture that waits up to five seconds for both endpoints
+Fault/recovery connections use the observer's optional fixture barrier that waits up to five seconds for both endpoints
 to be observed before releasing the handshake. Pressure timing is unchanged; these fault timings are not performance evidence.
 See the [Map contract](../../experiments/plans/postgresql_semmap_generation_contract.md) for thresholds and
 current authorization. Formal 3×2000 remains unavailable until a valid current diagnostic and separate authorization.
+
+The fixed-model observer can serve Filter or Map using the same implementation:
+
+```bash
+PYTHONPATH=code python -m src.experiments.choice_gateway_observer \
+  --events /path/to/new-http-events.jsonl --session-events /path/to/new-session-events.jsonl \
+  --ledger /path/to/existing-attempt-ledger.jsonl \
+  --budget-id <approved-budget-id> --max-attempts <approved-total-limit> -- \
+  --socket /path/to/provider.sock --fixed-model-config /path/to/fixed-model.json
+```
+
+Supply both budget options together. Without them the legacy choice identity and total limit of 100 apply.
+The existing ledger must match the expected identity and limit; opening it never restores spent attempts.
+Endpoint, model ID and timeout come from the fixed-model JSON. This is a reusable observation entry point,
+not authorization for new requests or a complete PG experiment. Dated scripts under results are retained
+only to explain their original runs; future checks must not import their machine settings or budget code.
 
 ## Choice resource qualification tools
 

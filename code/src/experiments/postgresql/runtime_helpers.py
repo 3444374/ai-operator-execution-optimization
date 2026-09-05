@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import os
-from pathlib import Path
+import shlex
 import subprocess
 import time
 
@@ -61,9 +61,11 @@ def owned_child_process(command, root, name, env, user):
 
 
 @contextmanager
-def isolated_pg18_cluster(prefix, root, user):
+def isolated_pg18_cluster(prefix, root, user, *, port=55446):
     """Initdb + start an isolated PG18.3 cluster with semloom_pg preloaded."""
     import psycopg
+    if type(port) is not int or not 1 <= port <= 65535:
+        raise ValueError('invalid PostgreSQL port')
     data = root / 'data'
     socket_dir = root / 'socket'
     socket_dir.mkdir()
@@ -77,19 +79,19 @@ def isolated_pg18_cluster(prefix, root, user):
     with (root / 'cluster.log').open('x') as log:
         subprocess.run(
             pg + [str(prefix / 'bin/initdb'), '-D', str(data),
-                  '--no-locale', '-E', 'UTF8'],
+                  '--no-locale', '-E', 'UTF8', '-U', user.pw_name],
             check=True, stdout=log, stderr=subprocess.STDOUT)
         ctl = pg + [str(prefix / 'bin/pg_ctl'), '-D', str(data)]
         subprocess.run(
             ctl + ['-l', str(root / 'postgres.log'), '-o',
                    f"-c listen_addresses='' "
                    f"-c shared_preload_libraries=semloom_pg "
-                   f"-k {socket_dir} -p 55446",
+                   f"-k {shlex.quote(str(socket_dir))} -p {port}",
                    '-w', 'start'],
             check=True, stdout=log, stderr=subprocess.STDOUT)
         try:
             with psycopg.connect(
-                    host=str(socket_dir), port=55446, user='postgres',
+                    host=str(socket_dir), port=port, user=user.pw_name,
                     dbname='postgres', autocommit=True) as connection:
                 assert connection.execute(
                     'SHOW server_version').fetchone()[0] == '18.3'

@@ -1,14 +1,27 @@
 """Execute the real observer wrapper, including exceptional session closure."""
 import socket
 import struct
+from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch, Mock
-from src.experiments.postgresql import semmap_resource_gateway_observer as observer
+from src.experiments import gateway_observer as observer
 from src.experiments.postgresql.provider_session_attribution import session_windows
+from src.experiments.postgresql import semmap_resource_gateway_observer as fixture_cli
 
 
 class ObserverTests(unittest.TestCase):
+    def test_fixture_entry_refuses_fixed_model_without_creating_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            events = Path(directory) / 'events.jsonl'
+            with patch.object(fixture_cli.server, 'main') as gateway, self.assertRaises(SystemExit) as error:
+                fixture_cli.main(['--events', str(events), '--', '--socket', 'unused',
+                                  '--fixed-model-config', 'unused-config'])
+            self.assertEqual(error.exception.code, 2)
+            gateway.assert_not_called()
+            self.assertFalse(events.exists())
+
     def test_peer_and_inode_reads(self):
         connection=Mock()
         connection.getsockopt.return_value=struct.pack("3i",42,100,100)

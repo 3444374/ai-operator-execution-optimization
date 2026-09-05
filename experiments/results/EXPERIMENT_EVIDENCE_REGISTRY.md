@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+同日的 [共享观测与配置重构](postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)
+本地212项回归中210通过、2项Linux专属跳过；PG18.3 fixture 客户端严格编译通过。
+这是行为兼容与配置传递证据，尚待本次 Linux/隔离PG运行登记，没有新增真实模型、质量或性能结论。
+
 2026-09-06 的 [SemMap 资源工具生命周期修复](postgresql/semmap_resource_lifecycle_20260906/README.md)
 以 `e5f4dd12` 为起点，仅改实验工具；最终运行时代码 `77a123de`，measurement schema v2.1 / phase-lifecycle-3。
 本地119项检查中117通过、2项Linux专属跳过；Linux130项通过（118/129项完整组加1项后增基线回归）。

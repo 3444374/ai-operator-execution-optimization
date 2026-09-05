@@ -3,6 +3,10 @@
 内部工程验证记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 实施依据为 [Map 合同 §8.4.4](../../../plans/postgresql_semmap_generation_contract.md)。
 
+本目录的 Python 文件是上述三次运行的历史快照，保留原始字节以便复查，不能作为后续运行入口。
+新的 Filter/Map 请求与会话观测使用 [code 中的共享实现](../../../../code/scripts/README.md#semmap-resource-measurement)，
+从外部配置接收预算身份、模型与 endpoint；不再导入本目录的固定机器参数或历史辅助脚本。
+
 **本轮新增7次真实请求，原账本由25/32到32/32；没有推理重试。** SELECT、INSERT的输出/写回/usage，
 SQL NULL零调用，真实取消、模型拒绝及两次恢复均完成了功能核对。SELECT和四个故障/恢复阶段的资源
 检查通过；真实INSERT的资源测量被验收SQL自身打开的目录FD污染，原判定保留为

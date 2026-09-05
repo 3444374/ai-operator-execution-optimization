@@ -9121,3 +9121,16 @@ SELECT/INSERT输出与usage、NULL、57014取消、38000模型拒绝及恢复均
 原判定仍不通过，修正后真实复查未执行。三次运行哈希原地核验无差异，原25条账本前缀不变。
 独立模型/PG/gateway进程按身份清理，端口关闭，两张GPU显存均回到1MiB。
 结果与未完成项见[真实复查记录](experiments/results/postgresql/semmap_real_followup_20260906/README.md)。
+
+
+## 2026-09-06：Filter/Map 复用与机器配置清理
+
+按用户对冗余、硬编码与可维护性的要求，复核 Map 接入前后的源码。保留已有共享 PG runtime、
+provider、消息编码及算子特有验证；将实验 session observer 和持久预算由两个算子共同使用。
+gateway 接受显式包装函数，删除全局替换；故障 CLI 转发同一 fixture 入口。配置隔离 PG
+用户/端口，libpq 读取实际连接信息；模型/endpoint/timeout 继续来自外部 JSON。
+历史运行脚本与原始数据不删除，标明历史角色；未来观测不导入历史脚本。
+本地212项检查中210通过、2项Linux专属跳过，六条v3/v4/v5×golden/合成HTTP接线通过；
+PG18.3 fixture 客户端严格编译通过。需求/规范复核缺口均关闭；Linux/隔离PG复跑待登记。
+本轮没有新增真实模型请求、性能结论或正式3×2000结果。具体取舍仅维护于Map合同§8.4.5，
+证据追加在[资源工具记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)。

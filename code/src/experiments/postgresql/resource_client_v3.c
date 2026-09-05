@@ -1,19 +1,11 @@
 /*
- * resource_client_v3 — parameterized successor of the archived 4D
- * resource_client_v2 (experiments/results/postgresql/
- * semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/
- * resource/resource_client_v2.c), which stays untouched as evidence.
- *
- * Identical single-row-mode semantics and wire behavior; the only change
- * is an optional rounds/rows argv so a --diagnostic run actually runs a
- * reduced workload instead of lying about it in the README (the v2
- * client hardcoded 3 rounds x 2000 rows, so the diagnostic runner's
- * expected-values-only override produced fabricated correctness
- * failures while the client still ran full scale).
+ * Stream fixed SemMap fixture results and hold the backend until the
+ * runner completes cleanup observation. Connection values are literal
+ * libpq parameters, so socket paths and role names need no SQL escaping.
  *
  * usage: client socket-dir port gateway release-file finish-file
- *                [rounds [rows-per-round]]
- * Defaults preserve the v2 formal identity: 3 rounds x 2000 rows.
+ *                [rounds [rows-per-round [user [database]]]]
+ * Defaults: 3 rounds x 2000 rows; local test user/database postgres.
  */
 #define _POSIX_C_SOURCE 200809L
 
@@ -165,18 +157,19 @@ parse_positive(const char *text, const char *what)
 int
 main(int argc, char **argv)
 {
-    char connection_info[1024];
+    const char *connection_keys[] = {"host", "port", "user", "dbname", NULL};
+    const char *connection_values[5];
     PGconn *connection;
     int rounds = 3;
     int rows_per_round = 2000;
     int total_rows;
     int round;
 
-    if (argc < 6 || argc > 8)
+    if (argc < 6 || argc > 10)
     {
         fprintf(stderr,
                 "usage: client socket-dir port gateway release-file finish-file"
-                " [rounds [rows-per-round]]\n");
+                " [rounds [rows-per-round [user [database]]]]\n");
         return 2;
     }
     if (argc >= 7)
@@ -189,12 +182,13 @@ main(int argc, char **argv)
         return 2;
     }
     total_rows = rounds * rows_per_round;
-    if (snprintf(connection_info, sizeof(connection_info),
-                 "host=%s port=%s user=postgres dbname=postgres", argv[1], argv[2]) >=
-        (int) sizeof(connection_info))
-        return 2;
+    connection_values[0] = argv[1];
+    connection_values[1] = argv[2];
+    connection_values[2] = argc >= 9 ? argv[8] : "postgres";
+    connection_values[3] = argc >= 10 ? argv[9] : "postgres";
+    connection_values[4] = NULL;
     setvbuf(stdout, NULL, _IOLBF, 0);
-    connection = PQconnectdb(connection_info);
+    connection = PQconnectdbParams(connection_keys, connection_values, 0);
     if (PQstatus(connection) != CONNECTION_OK)
         fail(connection, "connection failed");
     exec_command(connection, "SET semloom_pg.provider_execution_profile='golden'");
