@@ -40,7 +40,7 @@ print $file encode_json({
     },
 });
 close($file);
-my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
+my $gateway_script = abs_path("$FindBin::RealBin/../../../scripts/services/run_execution_provider_gateway.py");
 my $options = q|' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb|;
 
 sub run_query

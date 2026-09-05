@@ -1,6 +1,5 @@
 {
-  "README.md": "f8948363499927eed23decb9662fb157a07140a10155e388dabcf88480a5d9cc",
-  "audit_diagnostics.py": "23867fdc84fbb7a8e0f0271c703543e5e767e6fc822bf2ac45f14ca834cb7882",
+  "README.md": "5e86c27d3cadb168f5f8cef58dfd3bee52709a4a31335f7d8f72fdc67d8bd6af",
   "raw/attribution-local.txt": "af890835a53604f465328ce9151c282bedee7a7e368f3af8e6007bdd9bb6db32",
   "raw/controlled-evidence.json": "c2718d660fb17bc75d8471ff155694138fa1295e4f81ef333315f2a1b63c1d78",
   "raw/controlled_failure/SHA256SUMS.json": "9d80b8391e4b10ac25114c74aa148f6cadd4a892c7c67887c72c60dde936609c",
@@ -167,6 +166,5 @@
   "raw/verification-final/sampling_lifecycle-final.txt": "75ed3befb59579ae1d13f327b467c50148aee3a30d3a5d4b9bedd2733d951b71",
   "raw/verification-final/server-tests-wrong-cwd.json": "f4d03b21f0f45b7d59fb63a6660f70f142ef739fc992ea94a5261308567dc6ac",
   "raw/verification-final/server-tests.json": "98e3bbf38f016cdee677c0f3a4e63ebcd59cff350c6bbbb50123ea1a2d7dc34c",
-  "raw/verification-final/v1_replay-final.txt": "bec11a51d495cbd517984f74d1057a1f40564a709623455be297137c9c1f54ee",
-  "verify_tests.py": "4ab092c73727bb4a0ff6c42a54a0762ee9d1a59b107795073741bd863815450f"
+  "raw/verification-final/v1_replay-final.txt": "bec11a51d495cbd517984f74d1057a1f40564a709623455be297137c9c1f54ee"
 }

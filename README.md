@@ -20,8 +20,9 @@ semantic spec identity、physical algorithm 和 physical role 写入版本化、
 adapter 已在相同 wire v3、PostgreSQL parser 与 keep/drop 路径上接通 OpenAI-compatible endpoint；它尚未
 实现 quality policy、第二 physical path、异步调度或性能优化。
 
-execution-provider gateway 的权威实现已经迁到公共 `code/src/execution_provider/`，旧 extension 路径只保留
-无需额外 `PYTHONPATH` 的 import/CLI 兼容入口；wire v2 bytes、digest 和 SQL 行为保持不变。
+execution-provider gateway 实现位于公共 `code/src/execution_provider/`，统一通过
+`code/scripts/services/run_execution_provider_gateway.py` 启动；旧 extension import/CLI 别名已删除，
+调用方与测试使用公共入口。wire v2 bytes、digest 和 SQL 行为保持不变。
 同一 plan/task/result contract 已先通过 deterministic golden adapter，再通过同步 fixed-model endpoint；
 固定 endpoint、model identity、timeout 与认证只来自 gateway 进程外配置。reference path 已独立
 区分 semantic-input rows、NULL rate、output selectivity、model calls、prompt/output usage、

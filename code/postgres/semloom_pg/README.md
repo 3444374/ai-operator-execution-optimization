@@ -350,8 +350,8 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
   --socket /absolute/path/semloom-recording.sock
 ```
 
-The historical `code/postgres/semloom_pg/gateway/recording_gateway.py` path remains a bootstrap-only
-compatibility CLI for TAP and existing callers; it contains no protocol or server logic.
+TAP and other callers use this self-locating public CLI. The historical extension gateway CLI/import aliases
+have been removed; Python callers import the corresponding `src.execution_provider` module directly.
 
 ```sql
 SET semloom_pg.gateway_socket = '/absolute/path/semloom-recording.sock';

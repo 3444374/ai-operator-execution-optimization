@@ -21,9 +21,9 @@ from src.execution_provider.adapters.openai_compatible_fixed import (
     OpenAICompatibleFixedAdapter,
     load_fixed_model_config,
 )
-from src.execution_provider.adapters.v3_session import (
+from src.execution_provider.adapters.semantic_session import (
     CompletionAdapterError,
-    V3CompletionRequest,
+    CompletionRequest,
 )
 from src.execution_provider.wire.framing import encode_frame, read_frame
 from src.execution_provider.wire.v3 import (
@@ -125,7 +125,7 @@ class FixedModelAdapterDeadlineTests(unittest.TestCase):
                 timeout_ms=100,
             )
         )
-        request = V3CompletionRequest(
+        request = CompletionRequest(
             semantic_payload_digest="a" * 64,
             model_id="fixed-model-v1",
             canonical_messages=(
@@ -243,7 +243,7 @@ class FixedModelAdapterTests(unittest.TestCase):
         )
 
         completion = adapter.complete(
-            V3CompletionRequest(
+            CompletionRequest(
                 semantic_payload_digest="a" * 64,
                 model_id="fixed-model-v1",
                 canonical_messages=messages,
@@ -422,7 +422,7 @@ class FixedModelAdapterTests(unittest.TestCase):
                 )
                 with self.assertRaises(CompletionAdapterError) as raised:
                     adapter.complete(
-                        V3CompletionRequest(
+                        CompletionRequest(
                             semantic_payload_digest="a" * 64,
                             model_id="fixed-model-v1",
                             canonical_messages=(
@@ -437,8 +437,8 @@ class FixedModelAdapterTests(unittest.TestCase):
                 self.assertNotIn(endpoint_url, str(raised.exception))
 
     @staticmethod
-    def _completion_request() -> V3CompletionRequest:
-        return V3CompletionRequest(
+    def _completion_request() -> CompletionRequest:
+        return CompletionRequest(
             semantic_payload_digest="a" * 64,
             model_id="fixed-model-v1",
             canonical_messages=(

@@ -55,13 +55,9 @@ class SemanticMapContractTests(unittest.TestCase):
         for maximum in (1, 4096):
             self.assertEqual(SemanticMapPlan("é" * 2048, "é" * 64, maximum).max_tokens, maximum)
 
-    def test_shared_completion_preserves_legacy_imports_and_raw_values(self) -> None:
+    def test_shared_completion_preserves_raw_values(self) -> None:
         from src.execution_provider.completion import Completion
-        from src.execution_provider.adapters.semantic_session import Completion as OldCompletion
-        from src.execution_provider.adapters.v3_session import V3Completion
 
-        self.assertIs(Completion, OldCompletion)
-        self.assertIs(Completion, V3Completion)
         value = Completion(" \nTRUE\t", "golden-map-v1", 17, 1, "stop")
         self.assertEqual(value.raw_output, " \nTRUE\t")
         with self.assertRaises(FrozenInstanceError):

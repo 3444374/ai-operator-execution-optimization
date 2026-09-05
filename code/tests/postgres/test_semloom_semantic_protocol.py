@@ -6,11 +6,11 @@ import socket
 import threading
 import unittest
 
-from src.execution_provider.adapters.golden import run_golden_session
+from src.execution_provider.adapters.golden import GoldenCompletionAdapter
 from src.execution_provider.adapters.openai_compatible_fixed import FIXED_EXECUTION_ID
-from src.execution_provider.adapters.v3_session import (
-    V3Completion,
-    V3CompletionRequest,
+from src.execution_provider.adapters.semantic_session import (
+    Completion,
+    CompletionRequest,
     run_v3_session,
 )
 from src.execution_provider.wire.framing import encode_frame, read_frame
@@ -156,8 +156,8 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
         fixtures = {task["semantic_payload_digest"]: "TRUE"}
         client, server = socket.socketpair()
         thread = threading.Thread(
-            target=run_golden_session,
-            args=(server, fixtures),
+            target=run_v3_session,
+            args=(server, GoldenCompletionAdapter(fixtures)),
         )
         thread.start()
         self.addCleanup(client.close)
@@ -187,9 +187,12 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
             execution_id = FIXED_EXECUTION_ID
             model_id = "golden-model-v1"
 
-            def complete(self, request: V3CompletionRequest) -> V3Completion:
+            def execution_id_for(self, version):
+                return self.execution_id if version == 3 else None
+
+            def complete(self, request: CompletionRequest) -> Completion:
                 self.request = request
-                return V3Completion(
+                return Completion(
                     raw_output="TRUE",
                     response_model_id=request.model_id,
                     prompt_tokens=19,
@@ -239,7 +242,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
     def test_unknown_payload_digest_fails_closed_without_prompt_echo(self) -> None:
         task = build_task_message(self.plan, sequence=0, input_value="private payload")
         client, server = socket.socketpair()
-        thread = threading.Thread(target=run_golden_session, args=(server, {}))
+        thread = threading.Thread(target=run_v3_session, args=(server, GoldenCompletionAdapter({})))
         thread.start()
         self.addCleanup(client.close)
 
@@ -265,7 +268,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
         open_message = build_open_message(self.plan)
         open_message["generation_constraints"]["future"] = True
         client, server = socket.socketpair()
-        thread = threading.Thread(target=run_golden_session, args=(server, {}))
+        thread = threading.Thread(target=run_v3_session, args=(server, GoldenCompletionAdapter({})))
         thread.start()
         self.addCleanup(client.close)
         client.sendall(encode_frame(open_message))
@@ -286,7 +289,7 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
                 task = build_task_message(self.plan, sequence=0, input_value="x")
                 task["sequence"] = invalid_sequence
                 client2, server2 = socket.socketpair()
-                thread2 = threading.Thread(target=run_golden_session, args=(server2, {}))
+                thread2 = threading.Thread(target=run_v3_session, args=(server2, GoldenCompletionAdapter({})))
                 thread2.start()
                 client2.sendall(encode_frame(build_open_message(self.plan)))
                 self.assertEqual(read_frame(client2)["type"], "opened")
@@ -311,8 +314,8 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
             with self.subTest(fixture=fixture):
                 client, server = socket.socketpair()
                 thread = threading.Thread(
-                    target=run_golden_session,
-                    args=(server, fixtures),
+                    target=run_v3_session,
+                    args=(server, GoldenCompletionAdapter(fixtures)),
                     kwargs={"completion_fixture": fixture},
                 )
                 thread.start()
@@ -339,8 +342,8 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
             with self.subTest(fixture=fixture):
                 client, server = socket.socketpair()
                 thread = threading.Thread(
-                    target=run_golden_session,
-                    args=(server, fixtures),
+                    target=run_v3_session,
+                    args=(server, GoldenCompletionAdapter(fixtures)),
                     kwargs={"completion_fixture": fixture},
                 )
                 thread.start()
@@ -363,8 +366,8 @@ class SemloomSemanticProtocolTests(unittest.TestCase):
             with self.subTest(fixture=fixture):
                 client, server = socket.socketpair()
                 thread = threading.Thread(
-                    target=run_golden_session,
-                    args=(server, {}),
+                    target=run_v3_session,
+                    args=(server, GoldenCompletionAdapter({})),
                     kwargs={"completion_fixture": fixture},
                 )
                 thread.start()

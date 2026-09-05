@@ -14,9 +14,11 @@ import time
 from src.execution_provider import server
 from src.execution_provider.adapters.semantic_session import CompletionAdapterError
 from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger, observe_http_posts
-from src.experiments.choice_attempt_ledger import CHOICE_BUDGET
 from src.experiments.gateway_observer import ObservedAdapter, SessionObserver
 from src.baselines.common.redact import redact_text
+
+
+CHOICE_BUDGET = AttemptBudget("semloom.choice.4c.v1", 100)
 
 
 def main(argv=None):

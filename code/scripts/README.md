@@ -33,8 +33,8 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
   --socket /absolute/path/semloom-recording.sock
 ```
 
-`postgres/semloom_pg/gateway/recording_gateway.py` 与同目录 `protocol.py` 只为既有 TAP 和 import
-保留自定位兼容入口；它们不要求调用方额外设置 `PYTHONPATH`，也不保存协议或 server 逻辑。
+上述公共 CLI 可从任意工作目录启动，无需额外设置 `PYTHONPATH`。TAP 已迁移至该入口；旧
+extension CLI/import 别名已删除。Python 调用方直接导入 `src.execution_provider` 中的对应模块。
 golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
 model、timeout 和 bearer-token 环境变量名不进入仓库。
 
@@ -94,7 +94,8 @@ python code/scripts/experiments/run_choice_resource_checks.py \
   --prefix /path/to/postgresql-18.3-install
 ```
 
-实验侧 `src/experiments/choice_attempt_ledger.py` 在 POST 前持久预留最多 100 次尝试，失败不退款；
+实验侧共享 `src/experiments/attempt_ledger.py`，在 POST 前持久预留尝试，失败不退款；
+choice 入口显式提供默认的 100 次预算，其他运行由外部配置提供预算身份与上限。
 已有 ledger 不重新初始化。`choice_gateway_observer.py` 只在独立验证进程中记录实际请求/完成，
 不记录认证头，也不改变生产 gateway 或 PG port。真实 smoke 必须复用同一外部 ledger；这些工具
 本身不证明真实服务支持 choice 或通过模型质量验证。

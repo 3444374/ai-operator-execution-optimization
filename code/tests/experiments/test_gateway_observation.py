@@ -90,11 +90,14 @@ class GatewayObservationTests(unittest.TestCase):
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
                 client.settimeout(4)
                 deadline = time.monotonic() + 4
-                while not path.exists():
-                    if process.poll() is not None or time.monotonic() > deadline:
-                        self.fail('gateway failed to start')
-                    time.sleep(.01)
-                client.connect(str(path))
+                while time.monotonic() < deadline and process.poll() is None:
+                    try:
+                        client.connect(str(path))
+                        break
+                    except (FileNotFoundError, ConnectionRefusedError):
+                        time.sleep(.01)
+                else:
+                    self.fail('gateway failed to start')
                 client.sendall(encode_frame(opened))
                 self.assertEqual(read_frame(client)['type'], 'opened')
                 client.sendall(encode_frame(task))

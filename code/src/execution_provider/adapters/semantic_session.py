@@ -37,8 +37,6 @@ class CompletionAdapterError(Exception):
 class CompletionAdapter(Protocol):
     """Query-independent adapter used by the shared semantic session runner."""
 
-    execution_id: str
-    choice_execution_id: str
     model_id: str | None
 
     def execution_id_for(self, protocol_version: int) -> str | None:
@@ -131,11 +129,7 @@ def _run_semantic_session(
         if opened is None:
             return
         identity_for = getattr(adapter, "execution_id_for", None)
-        if identity_for is not None:
-            execution_id = identity_for(wire_version)
-        else:
-            legacy_attribute = {3: "execution_id", 4: "choice_execution_id"}.get(wire_version)
-            execution_id = getattr(adapter, legacy_attribute, None) if legacy_attribute else None
+        execution_id = identity_for(wire_version) if identity_for is not None else None
         if execution_id is None:
             raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
         open_context = codec.validate_open(

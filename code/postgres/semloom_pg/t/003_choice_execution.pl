@@ -33,7 +33,7 @@ print $file encode_json({
     '2f0862f3ef168265b087632345a24dde26887a8ce945a147e0e540adae5bfd71' => 'true',
 });
 close($file);
-my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
+my $gateway_script = abs_path("$FindBin::RealBin/../../../scripts/services/run_execution_provider_gateway.py");
 my ($gateway_out, $gateway_err) = ('', '');
 my $gateway = IPC::Run::start(['python3', $gateway_script, '--socket', $socket,
     '--once', '--golden-fixture', $fixture], '>', \$gateway_out, '2>', \$gateway_err);

@@ -8,6 +8,10 @@
 
 ## SemMap resource measurement repair (2026-09-06)
 
+[退役源码索引](postgresql/retired_sources.json)登记本次清理的 19 个文件及已推送 `d93e3f9b` 的
+源码 URL、Git blob 和 SHA-256。历史采样、失败结果和报告保留；旧脚本只从对应版本恢复，
+后续实验使用 `code/` 中的公共入口。清理验证记录在[工具记录](postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。
+
 后续 [推送前真实模型复验](postgresql/semmap_prepush_20260906/README.md)使用新8次预算，
 SELECT、独立审计连接下的INSERT、取消/拒绝及恢复六阶段全部有效通过；模型和PG/gateway已清理。
 该结果不包含正式fixture3×2000或质量/性能比较，旧失败记录保留。

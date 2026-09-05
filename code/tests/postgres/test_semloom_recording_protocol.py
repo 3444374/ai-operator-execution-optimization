@@ -5,17 +5,9 @@ from __future__ import annotations
 import socket
 import threading
 import unittest
-from pathlib import Path
+from src.execution_provider.adapters.recording import run_recording_session
 
-
-CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
-GATEWAY_ROOT = CODE_ROOT / "postgres" / "semloom_pg" / "gateway"
-
-import sys
-
-sys.path.insert(0, str(GATEWAY_ROOT))
-
-from protocol import (  # noqa: E402
+from src.execution_provider.wire.v2 import (
     MAX_FRAME_BYTES,
     MAX_INPUT_BYTES,
     PROTOCOL_VERSION,
@@ -28,7 +20,6 @@ from protocol import (  # noqa: E402
     physical_algorithm_digest,
     provider_execution_digest,
     read_frame,
-    run_recording_session,
     semantic_payload_digest,
     semantic_spec_digest,
 )

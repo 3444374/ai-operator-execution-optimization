@@ -87,8 +87,6 @@ class ObservedAdapter:
     def __init__(self, adapter, observe):
         self.adapter = adapter
         self.observe = observe
-        self.execution_id = adapter.execution_id
-        self.choice_execution_id = adapter.choice_execution_id
         self.model_id = adapter.model_id
 
     def execution_id_for(self, version):

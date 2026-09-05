@@ -3,7 +3,9 @@
 内部工程验证记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 实施依据为 [Map 合同 §8.4.4](../../../plans/postgresql_semmap_generation_contract.md)。
 
-本目录的 Python 文件是上述三次运行的历史快照，保留原始字节以便复查，不能作为后续运行入口。
+上述三次运行的一次性 Python 驱动已从工作树退役，源码链接指向已推送的 `d93e3f9b`。
+[退役源码索引](../retired_sources.json)保存原文件 SHA-256 和 Git blob，可在该提交恢复完整运行版本。
+报告、原始审计和失败记录保留；`PUBLIC_SHA256SUMS.json` 校验当前保留文件，历史清单仍可从该提交读取。
 新的 Filter/Map 请求与会话观测使用 [code 中的共享实现](../../../../code/scripts/README.md#semmap-resource-measurement)，
 从外部配置接收预算身份、模型与 endpoint；不再导入本目录的固定机器参数或历史辅助脚本。
 
@@ -106,9 +108,9 @@ baseline/operation/cleanup统计、原始文件SHA与原地哈希核验结果。
 
 源码与复算入口：
 
-- [real_checks.py](real_checks.py)：固定辅助脚本身份、预算、SQL核对与阶段执行；`--remaining-faults-only`只允许账本28起步。
-- [real_gateway.py](real_gateway.py)：复用32次预算/HTTP observer及SessionObserver，真实adapter只调用一次。
-- [audit_real.py](audit_real.py)：服务器原地复算，仅输出允许字段；通过`--trace-auditor`复用[资源trace审计](../semmap_resource_lifecycle_20260906/audit_diagnostics.py)。
+- [real_checks.py](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_followup_20260906/real_checks.py)：固定辅助脚本身份、预算、SQL核对与阶段执行；`--remaining-faults-only`只允许账本28起步。
+- [real_gateway.py](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_followup_20260906/real_gateway.py)：复用32次预算/HTTP observer及SessionObserver，真实adapter只调用一次。
+- [audit_real.py](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_followup_20260906/audit_real.py)：服务器原地复算，仅输出允许字段；通过`--trace-auditor`复用[资源trace审计](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_resource_lifecycle_20260906/audit_diagnostics.py)。
 - [PUBLIC_SHA256SUMS.json](PUBLIC_SHA256SUMS.json)：本目录公开文件自身的哈希；它们与原始日志/trace的哈希分列。
 
 本轮授权工作已执行并保留了失败。尚未完成：修正后的真实INSERT资源复查、正式fixture3×2000、

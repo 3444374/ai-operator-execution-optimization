@@ -59,7 +59,8 @@ reference calibration artifact, and reports actual provider usage. The checked-i
 deterministic contract evidence; a real model/workload/service calibration and any second path remain pending.
 The provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` seam remains synchronous and single-task.
 The Python gateway authority lives in `src/execution_provider/`, with frozen wire v2, strict wire v3/v4/v5, recording
-and golden/fixed-model implementations, and self-locating compatibility entry points under the extension tree.
+and golden/fixed-model implementations. Callers and TAP tests use the self-locating
+`scripts/services/run_execution_provider_gateway.py` CLI; retired extension import/CLI aliases are removed.
 
 Commit `359ffdf3` completes the behavior-preserving 4A.1 hardening after the 4A implementation at `3b2077e1`.
 `wire_common.c` now owns shared bounded framing, cancellable socket/connect waits, and PostgreSQL JSON

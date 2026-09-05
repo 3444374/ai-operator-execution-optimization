@@ -12,7 +12,8 @@ import sys
 import time
 
 from src.baselines.common.redact import redact_text
-from src.experiments.choice_attempt_ledger import AttemptLedger
+from src.experiments.attempt_ledger import AttemptLedger
+from src.experiments.choice_gateway_observer import CHOICE_BUDGET
 
 
 MODEL = 'Qwen2.5-1.5B-Instruct'
@@ -160,7 +161,7 @@ def run(args):
     user = pwd.getpwnam('postgres')
     args.root.mkdir()
     os.chown(args.root, user.pw_uid, user.pw_gid)
-    ledger = AttemptLedger(args.ledger)
+    ledger = AttemptLedger(args.ledger, CHOICE_BUDGET)
     initial_attempts = ledger.attempts
     assert initial_attempts + 14 <= 100
     before = service_snapshot(args)

@@ -13,8 +13,6 @@ from pathlib import Path
 
 
 CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
-LEGACY_GATEWAY_ROOT = CODE_ROOT / "postgres" / "semloom_pg" / "gateway"
-LEGACY_GATEWAY_CLI = LEGACY_GATEWAY_ROOT / "recording_gateway.py"
 CANONICAL_GATEWAY_CLI = CODE_ROOT / "scripts" / "services" / "run_execution_provider_gateway.py"
 
 
@@ -53,18 +51,9 @@ class GatewayMigrationTests(unittest.TestCase):
             "2df0c970538d8ac3a604e88753aef3d587c6ae04bf5402d0798c951d810a4a30",
         )
 
-    def test_legacy_protocol_reexports_canonical_public_api(self) -> None:
-        command = (
-            "import sys; "
-            f"sys.path.insert(0, {str(LEGACY_GATEWAY_ROOT)!r}); "
-            "import protocol; "
-            "from src.execution_provider.wire import v2; "
-            "from src.execution_provider.adapters.recording import run_recording_session; "
-            "assert protocol.encode_frame is v2.encode_frame; "
-            "assert protocol.run_recording_session is run_recording_session"
-        )
+    def test_canonical_cli_is_self_locating(self) -> None:
         result = subprocess.run(
-            [sys.executable, "-c", command],
+            [sys.executable, str(CANONICAL_GATEWAY_CLI), "--help"],
             cwd=tempfile.gettempdir(),
             env=_clean_python_environment(),
             capture_output=True,
@@ -73,21 +62,7 @@ class GatewayMigrationTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-
-    def test_legacy_and_canonical_clis_are_self_locating(self) -> None:
-        for cli_path in (LEGACY_GATEWAY_CLI, CANONICAL_GATEWAY_CLI):
-            with self.subTest(cli_path=cli_path):
-                result = subprocess.run(
-                    [sys.executable, str(cli_path), "--help"],
-                    cwd=tempfile.gettempdir(),
-                    env=_clean_python_environment(),
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn("--socket", result.stdout)
+        self.assertIn("--socket", result.stdout)
 
     def test_canonical_cli_serves_the_frozen_recording_contract(self) -> None:
         sys.path.insert(0, str(CODE_ROOT))
@@ -186,27 +161,6 @@ class GatewayMigrationTests(unittest.TestCase):
             self.assertEqual(stderr, "")
             self.assertFalse(socket_path.exists())
 
-    def test_legacy_files_are_bootstrap_only(self) -> None:
-        protocol_source = (LEGACY_GATEWAY_ROOT / "protocol.py").read_text(encoding="utf-8")
-        gateway_source = LEGACY_GATEWAY_CLI.read_text(encoding="utf-8")
-
-        for forbidden in (
-            "import hashlib",
-            "import json",
-            "import socket",
-            "def encode_frame",
-            "def read_frame",
-            "def run_recording_session",
-        ):
-            self.assertNotIn(forbidden, protocol_source)
-        for forbidden in (
-            "import argparse",
-            "import socket",
-            "listener.bind",
-            "listener.accept",
-            "def parse_args",
-        ):
-            self.assertNotIn(forbidden, gateway_source)
 
 
 if __name__ == "__main__":

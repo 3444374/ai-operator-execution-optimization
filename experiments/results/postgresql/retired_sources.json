@@ -1,0 +1,120 @@
+{
+  "files": {
+    "code/postgres/semloom_pg/gateway/protocol.py": {
+      "git_blob": "56b6e8f09b5f5c49081678dc4addcd04c5fdbf39",
+      "role": "retired_interface_or_characterization",
+      "sha256": "627b92fc6fe8a64d969f931820e40bbac7a92e21045994fc4646be145e9b77e0",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/code/postgres/semloom_pg/gateway/protocol.py"
+    },
+    "code/postgres/semloom_pg/gateway/recording_gateway.py": {
+      "git_blob": "ff147176f3e4c1cbdf80b94074f90c6809802b4a",
+      "role": "retired_interface_or_characterization",
+      "sha256": "518e9813ef4379d6f3ca42e70b8d05de893e976568cd4e5b297e1ab056ebefb8",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/code/postgres/semloom_pg/gateway/recording_gateway.py"
+    },
+    "code/src/execution_provider/adapters/v3_session.py": {
+      "git_blob": "324abf7bbf713a705995ff27c9795fb54ee8a1fa",
+      "role": "retired_interface_or_characterization",
+      "sha256": "01da532752fbe1b222d73bf6dbe8edb0b50c16e46bc2a0ee662e5bcbedb2ef2c",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/code/src/execution_provider/adapters/v3_session.py"
+    },
+    "code/src/experiments/choice_attempt_ledger.py": {
+      "git_blob": "8780fe7e108cf1634ff0a45fd9d8760846fceeeb",
+      "role": "retired_interface_or_characterization",
+      "sha256": "0f9f4076519d20a62855557783c76e0aae148ab19178e009358cd89948b0243e",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/code/src/experiments/choice_attempt_ledger.py"
+    },
+    "code/src/experiments/postgresql/semmap_resource_fault_gateway.py": {
+      "git_blob": "19878e8d7fafc48c9664a184a5a97fb09732980d",
+      "role": "retired_interface_or_characterization",
+      "sha256": "50a5ef9bd4b8de74b49c95ba5b6be8fdb270c4facb4e5aaf0d00da0873264827",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/code/src/experiments/postgresql/semmap_resource_fault_gateway.py"
+    },
+    "code/tests/observability/test_v1_resource_gate_characterization.py": {
+      "git_blob": "4d186430a6586ffa3fecf82abb3ed0d85eb67e2f",
+      "role": "retired_interface_or_characterization",
+      "sha256": "675aa3b154e01e3daef61054261c75e0938e39729d0770fa757a34b9a5302f09",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/code/tests/observability/test_v1_resource_gate_characterization.py"
+    },
+    "experiments/results/postgresql/semmap_prepush_20260906/audit.py": {
+      "git_blob": "078562cf0893310feef07e1226b342c8f5746f80",
+      "role": "historical_experiment_source",
+      "sha256": "798e20aec32f239e7483d0e7c3f038aa9cc0dbbbb3224bae25d0be4f5179880d",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/audit.py"
+    },
+    "experiments/results/postgresql/semmap_prepush_20260906/launch.py": {
+      "git_blob": "46a5a00f42d89d019e3b886ce282b0afbe7c012e",
+      "role": "historical_experiment_source",
+      "sha256": "c2976f7469bbe731971f3c1f0170477aa0005ad8c89b6fc75cc885107f8bbf22",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/launch.py"
+    },
+    "experiments/results/postgresql/semmap_prepush_20260906/real_check.py": {
+      "git_blob": "7f11d552ded8018ffcd28a01092da92f16a92d0b",
+      "role": "historical_experiment_source",
+      "sha256": "169a39f4ff52167610540bc9e7cd617a686dbce1f32858dc88a489b8157d42a6",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/real_check.py"
+    },
+    "experiments/results/postgresql/semmap_prepush_20260906/test_controller.py": {
+      "git_blob": "c6f3e5d7337f473182af8c537918427b90e75772",
+      "role": "historical_experiment_source",
+      "sha256": "306c5577ef9e0a898093ffa4491b485073725ac34a8f34eca738df6ed56e85cc",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/test_controller.py"
+    },
+    "experiments/results/postgresql/semmap_real_followup_20260906/audit_real.py": {
+      "git_blob": "24050a9ca371074f55680e9a3cd8f7406047f3ae",
+      "role": "historical_experiment_source",
+      "sha256": "55932c6a4143300b87f197ca03682ed01c361ab8aeccac887e0ca92b8714d724",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_followup_20260906/audit_real.py"
+    },
+    "experiments/results/postgresql/semmap_real_followup_20260906/real_checks.py": {
+      "git_blob": "3b4bb1628e742b2917f33a04e7e103ec7f3f1c4e",
+      "role": "historical_experiment_source",
+      "sha256": "5b00c70420c94ffef87a66e3661f7f4b01fef364b1eb1bdaf814a29155501cdd",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_followup_20260906/real_checks.py"
+    },
+    "experiments/results/postgresql/semmap_real_followup_20260906/real_gateway.py": {
+      "git_blob": "652f8ac709e0aa4afc88ea2a36232e8ece3cdea4",
+      "role": "historical_experiment_source",
+      "sha256": "e85853c387951fd531ff82f3eb2cd495039b8b99e93f8576c974234c4b6e817f",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_followup_20260906/real_gateway.py"
+    },
+    "experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_checks.py": {
+      "git_blob": "d0cb70d1e4067c2b917f18a911a24b93506d3e45",
+      "role": "historical_experiment_source",
+      "sha256": "02614925402561a90735e0f7dd1ffefe88f9f810e01194e15134a786204ac3f5",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_checks.py"
+    },
+    "experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_client.c": {
+      "git_blob": "163b8f6d4f7283816686ecca8e4bc28167ac8585",
+      "role": "historical_experiment_source",
+      "sha256": "54b20539f430a300b41e6f37d486effd97855b06e4232115ec23556f312bc497",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_client.c"
+    },
+    "experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_client_v2.c": {
+      "git_blob": "5ece503a4f5f164d4156bb151074c0a6775260d0",
+      "role": "historical_experiment_source",
+      "sha256": "6285b458216554f1afe99a713084713cd4eda6b326404a2ee4fe482e732a7ee0",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_client_v2.c"
+    },
+    "experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_gateway_observer.py": {
+      "git_blob": "72a6391cc0805ef2c46451f5a648a89b00d6622d",
+      "role": "historical_experiment_source",
+      "sha256": "c3b7320155623d91478bd4b8bf81d5feedfe90854f350b4aa71f6647cc562cab",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_real_model_resource_20260904/raw/semmap_4d_selected_evidence/resource/resource_gateway_observer.py"
+    },
+    "experiments/results/postgresql/semmap_resource_lifecycle_20260906/audit_diagnostics.py": {
+      "git_blob": "a7ccdab1acc607729637040a0c7996bea189a9cd",
+      "role": "historical_experiment_source",
+      "sha256": "23867fdc84fbb7a8e0f0271c703543e5e767e6fc822bf2ac45f14ca834cb7882",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_resource_lifecycle_20260906/audit_diagnostics.py"
+    },
+    "experiments/results/postgresql/semmap_resource_lifecycle_20260906/verify_tests.py": {
+      "git_blob": "5a43caf450e3ae26b18d9979e5fb5c0ebca9d41e",
+      "role": "historical_experiment_source",
+      "sha256": "4ab092c73727bb4a0ff6c42a54a0762ee9d1a59b107795073741bd863815450f",
+      "source_url": "https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_resource_lifecycle_20260906/verify_tests.py"
+    }
+  },
+  "schema_version": 1,
+  "source_commit": "d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6"
+}

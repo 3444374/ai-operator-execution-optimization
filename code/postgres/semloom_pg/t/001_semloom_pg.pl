@@ -10,7 +10,7 @@ use PostgreSQL::Test::Utils;
 use Test::More;
 use Time::HiRes qw(sleep);
 
-my $gateway_script = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
+my $gateway_script = abs_path("$FindBin::RealBin/../../../scripts/services/run_execution_provider_gateway.py");
 my $fixed_model_server_script =
   abs_path("$FindBin::RealBin/fixtures/openai_compatible_server.py");
 my $calibration_builder = abs_path(

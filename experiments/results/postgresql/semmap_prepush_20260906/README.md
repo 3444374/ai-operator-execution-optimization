@@ -2,8 +2,11 @@
 
 本文件是内部验证记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 依据为 [Map 合同 §8.4.6](../../../plans/postgresql_semmap_generation_contract.md)。用户明确授权真实
-测试通过后提交推送。本目录 Python 文件是本次运行的证据快照，不是后续实验的公共入口；实际
+测试通过后提交推送。本次一次性 Python 驱动已从工作树退役，源码链接指向已推送的 `d93e3f9b`；实际
 PG、provider、预算、观测与资源判定均复用 `code/` 的实现，不导入旧结果脚本。
+
+[退役源码索引](../retired_sources.json)保存原文件 SHA-256 和 Git blob，可在该固定提交恢复完整运行版本。
+本目录保留报告和原始审计；`PUBLIC_SHA256SUMS.json` 校验当前保留文件，历史版本清单仍可从该提交读取。
 
 **真实请求8次，六个测量阶段全部有效且通过。修正测量方式后的 INSERT 资源复查已完成。**
 本次没有改生产代码；被测运行时代码为 `b7eeea536c1f9c57faadb01ccdc8b4ae6658e50d`，本地基线
@@ -72,8 +75,8 @@ INSERT只执行一次：模型调用/接受/输出计数各1，prompt/output tok
 
 ## 4. 复查与证据范围
 
-[审计器](audit.py)、[SQL检查驱动](real_check.py)、[服务控制器](launch.py)和
-[无模型控制测试](test_controller.py)保存本次实际版本。驱动SHA与服务器运行版本逐一匹配。
+[审计器](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/audit.py)、[SQL检查驱动](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/real_check.py)、[服务控制器](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/launch.py)和
+[无模型控制测试](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_prepush_20260906/test_controller.py)保存本次实际版本。驱动SHA与服务器运行版本逐一匹配。
 私有settings、模型身份清单与完整raw留在服务器；公开文件自身哈希见
 [PUBLIC_SHA256SUMS.json](PUBLIC_SHA256SUMS.json)。
 

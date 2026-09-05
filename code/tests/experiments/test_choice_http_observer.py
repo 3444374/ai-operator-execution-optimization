@@ -7,9 +7,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.experiments.choice_attempt_ledger import (
-    AttemptLedger, BudgetError, observe_http_posts,
+from src.experiments.attempt_ledger import (
+    AttemptBudget, AttemptLedger, BudgetError, observe_http_posts,
 )
+
+
+BUDGET = AttemptBudget("fixture.request-budget", 100)
 
 
 class ChoiceHttpObserverTests(unittest.TestCase):
@@ -31,7 +34,7 @@ class ChoiceHttpObserverTests(unittest.TestCase):
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.directory = tempfile.TemporaryDirectory()
-        self.ledger = AttemptLedger.create(Path(self.directory.name) / 'attempts.jsonl')
+        self.ledger = AttemptLedger.create(Path(self.directory.name) / 'attempts.jsonl', BUDGET)
 
     def tearDown(self):
         self.server.shutdown()

@@ -3,6 +3,10 @@
 本文件是内部工程验收记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 当前实施入口仍是 [Map 合同 §8.4.3](../../../plans/postgresql_semmap_generation_contract.md)，本文件记录实际执行证据。
 
+历史验证/审计驱动已从工作树退役，源码链接指向已推送的 `d93e3f9b`；[退役源码索引](../retired_sources.json)
+保存原文件 SHA-256 和 Git blob。原始审计、失败记录和历史测试数量保留，`PUBLIC_SHA256SUMS.json`
+校验当前保留文件。下文旧驱动命令需在固定 Git 版本执行；当前实验使用 `code/` 公共入口。
+
 **结论：受限重写和已授权的小规模验证完成。** 实际 PG18.3 1×100 fixture-only 诊断的四组场景、九个必需阶段均有效且通过；正式 3×2000 未运行、未授权，四 D 整体仍未完成。模型请求为 0；本轮结果不证明模型质量、异步调度能力或性能收益。
 
 ## 1. 实现判断与提交身份
@@ -39,7 +43,7 @@
 其中完整组的 118/129 项绑定 `77a123de`；随后新增 1 项 listener 基线回归，在两平台分别执行，包含缺失、身份持续变化、accepted 未清理三个子情况。统计不重复计算旧测试；[附加测试身份](raw/verification-final/additional-baseline-regression.json)记录测试文件 SHA。
 两项跳过的理由都是 `Linux procfs/SO_PEERCRED required`。Linux integration 由独立采集进程观察两个子进程，验证 listener/client/accepted、无关普通 FD 和同一存活身份的清理。
 
-[本地完整组](raw/verification-final/local-tests.json)、[Linux 完整组](raw/verification-final/server-tests.json)、[验证脚本](verify_tests.py)记录模块、版本、数量和日志哈希。C 客户端还实际通过[乘法溢出拒绝检查](raw/verification-final/client-overflow.json)，在连接之前退出。
+[本地完整组](raw/verification-final/local-tests.json)、[Linux 完整组](raw/verification-final/server-tests.json)、[验证脚本](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_resource_lifecycle_20260906/verify_tests.py)记录模块、版本、数量和日志哈希。C 客户端还实际通过[乘法溢出拒绝检查](raw/verification-final/client-overflow.json)，在连接之前退出。
 
 初始已有测试是 process 33 项（2 跳过）、resource 46 项（本地缺 psycopg，3 个导入错误）、attribution 12 项；随后五个行为反例产生 3 failures / 2 errors，暴露不稳定基线、首末采样异常和异常正文持久化。修复后的第一组 [115 项历史检查](raw/local-tests.json)保留原记录，不能与最终数量混写。现在 psycopg 延迟到实际 PG adapter 导入，受控测试无需安装该依赖。
 
@@ -131,7 +135,7 @@ d2 的 SQLSTATE 差异单独核对生产源码与既有 [PG TAP](../../../../cod
 
 ## 5. 原始证据、公开摘要与复现
 
-三次原始诊断继续保留在服务器的独立 d1/d2/d3 根目录。未批量导出原始日志、payload 或私有 FD 路径。公开的 [diagnostic-audit.json](raw/verification-final/diagnostic-audit.json)由 [audit_diagnostics.py](audit_diagnostics.py)在服务器只读复算，只包含允许字段；这是派生摘要，与原始 raw 不是同字节文件。
+三次原始诊断继续保留在服务器的独立 d1/d2/d3 根目录。未批量导出原始日志、payload 或私有 FD 路径。公开的 [diagnostic-audit.json](raw/verification-final/diagnostic-audit.json)由 [audit_diagnostics.py](https://github.com/3444374/ai-operator-execution-optimization/blob/d93e3f9b58b4ecfedd46b32754d69c82b4ed3dc6/experiments/results/postgresql/semmap_resource_lifecycle_20260906/audit_diagnostics.py)在服务器只读复算，只包含允许字段；这是派生摘要，与原始 raw 不是同字节文件。
 
 机器审计列出原始 selected-file SHA 和每个原始 SHA256SUMS 清单自身的 SHA；d1/d2/d3 分别校验 1093/1190/1190 个清单条目（含嵌套重复条目），不匹配数均为 0。其余原始日志保留在原处，通过哈希引用。公开文件自身的 SHA 单独见 [PUBLIC_SHA256SUMS.json](PUBLIC_SHA256SUMS.json)；[本地日志转换记录](raw/verification-final/local-log-provenance.json)区分原文件与公开副本 SHA。
 
@@ -197,3 +201,22 @@ schema v2.1 / phase-lifecycle-3，实际使用新端口55499。1×100、100000/6
 平台记录不可用，不能据此声称资源归因通过。历史真实脚本字节保持原状，后续执行不再依赖它们。
 
 该重构不改变上面 d1/d2/d3 或真实模型运行的结论，也没有增加真实请求或正式资源资格。
+
+<a id="retirement"></a>
+
+## 7. 合并前退役代码清理（2026-09-06）
+
+依据 [Map 合同 §8.4.7](../../../plans/postgresql_semmap_generation_contract.md)，从已推送的
+`d93e3f9b` 清理 19 个退役文件：5 个兼容入口、1 个仅重放旧错误的测试、13 个历史实验驱动。
+删除文件原有 2208 行；另外删除 golden session 转发与 adapter 旧身份属性 fallback。
+四个 TAP 直接启动公共 gateway CLI；Python 调用方使用公共协议、session 和明确预算的通用账本。
+SQL recording/reference、wire v2/v3/v4/v5、当前 Filter 校准/质量代码和资源判定反例保留。
+
+[退役源码索引](../retired_sources.json)逐文件登记固定 Git blob、SHA-256 和源码 URL，已与
+`git show d93e3f9b:<path>` 的原始字节核验。历史数据、失败记录和当时哈希不改写；历史 raw 中
+的旧 import 只在其报告绑定的完整 Git 版本执行，不作为现役依赖。本次没有合并 main。
+
+本地受影响组 233 项中 231 通过、2 项因 Linux procfs/SO_PEERCRED 跳过。入口迁移的 Linux
+PG18.3 TAP 与 Linux Python 完整组验证待执行；本次清理不增加模型请求，既有真实模型结果仍
+绑定 `b7eeea53`。初次局部测试暴露了测试自身在 bind/listen 之间抢连的时序问题，已改为有时限
+的实际连接等待，随后局部组 73/73 与完整组通过；不把删除测试导致的计数变化当作能力增加。

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import socket
 from collections.abc import Mapping
 
 from ..wire.v3 import GOLDEN_EXECUTION_ID
@@ -12,7 +11,6 @@ from .semantic_session import (
     CompletionAdapterError,
     Completion,
     CompletionRequest,
-    run_v3_session,
 )
 
 
@@ -49,26 +47,5 @@ class GoldenCompletionAdapter:
         )
 
 
-def run_golden_session(
-    connection: socket.socket,
-    fixtures: Mapping[str, str],
-    *,
-    open_message: dict[str, object] | None = None,
-    response_delay_ms: int = 0,
-    tamper_evidence_digest: bool = False,
-    disconnect_on_task: bool = False,
-    completion_fixture: str | None = None,
-) -> None:
-    """Compatibility entry point for one deterministic wire-v3 session."""
-    run_v3_session(
-        connection,
-        GoldenCompletionAdapter(fixtures),
-        open_message=open_message,
-        response_delay_ms=response_delay_ms,
-        tamper_evidence_digest=tamper_evidence_digest,
-        disconnect_on_task=disconnect_on_task,
-        completion_fixture=completion_fixture,
-    )
 
-
-__all__ = ["GoldenCompletionAdapter", "run_golden_session"]
+__all__ = ["GoldenCompletionAdapter"]

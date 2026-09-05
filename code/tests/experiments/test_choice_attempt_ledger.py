@@ -5,8 +5,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
 
-from src.experiments.choice_attempt_ledger import AttemptLedger, BudgetError, BudgetExhausted
+from src.experiments.attempt_ledger import AttemptLedger, BudgetError, BudgetExhausted
 from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger as ConfiguredLedger
+
+
+BUDGET = AttemptBudget("fixture.request-budget", 100)
 
 
 class AttemptLedgerTests(unittest.TestCase):
@@ -34,23 +37,23 @@ class AttemptLedgerTests(unittest.TestCase):
     def test_reopen_does_not_restore_spent_attempts(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'attempts.jsonl'
-            ledger = AttemptLedger.create(path)
+            ledger = AttemptLedger.create(path, BUDGET)
             self.assertEqual(ledger.reserve('a' * 64), 1)
-            reopened = AttemptLedger(path)
+            reopened = AttemptLedger(path, BUDGET)
             for expected in range(2, 101):
                 self.assertEqual(reopened.reserve('b' * 64), expected)
             with self.assertRaises(BudgetExhausted):
                 ledger.reserve('c' * 64)
-            self.assertEqual(AttemptLedger(path).attempts, 100)
+            self.assertEqual(AttemptLedger(path, BUDGET).attempts, 100)
 
     def test_concurrent_runners_cannot_overspend(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'attempts.jsonl'
-            AttemptLedger.create(path)
+            AttemptLedger.create(path, BUDGET)
 
             def reserve(_):
                 try:
-                    return AttemptLedger(path).reserve('d' * 64)
+                    return AttemptLedger(path, BUDGET).reserve('d' * 64)
                 except BudgetExhausted:
                     return None
 
@@ -63,8 +66,8 @@ class AttemptLedgerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'attempts.jsonl'
             with self.assertRaises(BudgetError):
-                AttemptLedger(path)
-            ledger = AttemptLedger.create(path)
+                AttemptLedger(path, BUDGET)
+            ledger = AttemptLedger.create(path, BUDGET)
             original = path.read_text()
             for invalid in (
                 '', original.rstrip('\n'),
@@ -85,31 +88,31 @@ class AttemptLedgerTests(unittest.TestCase):
     def test_existing_history_is_never_reinitialized(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'attempts.jsonl'
-            AttemptLedger.create(path).reserve('f' * 64)
+            AttemptLedger.create(path, BUDGET).reserve('f' * 64)
             before = path.read_bytes()
             with self.assertRaises(FileExistsError):
-                AttemptLedger.create(path)
+                AttemptLedger.create(path, BUDGET)
             self.assertEqual(path.read_bytes(), before)
             alias = path.with_name('alias.jsonl')
             alias.symlink_to(path)
             with self.assertRaises(BudgetError):
-                AttemptLedger(alias)
+                AttemptLedger(alias, BUDGET)
 
     def test_failed_persistence_or_http_does_not_refund_attempt(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'attempts.jsonl'
-            ledger = AttemptLedger.create(path)
+            ledger = AttemptLedger.create(path, BUDGET)
             with patch('os.fsync', side_effect=OSError('injected storage failure')):
                 with self.assertRaises(BudgetError):
                     ledger.reserve('1' * 64)
-            self.assertEqual(AttemptLedger(path).attempts, 1)
+            self.assertEqual(AttemptLedger(path, BUDGET).attempts, 1)
             self.assertEqual(ledger.reserve('2' * 64), 2)
             # No completion or refund is necessary to retain an uncertain attempt.
-            self.assertEqual(AttemptLedger(path).attempts, 2)
+            self.assertEqual(AttemptLedger(path, BUDGET).attempts, 2)
 
     def test_invalid_digest_consumes_nothing(self):
         with tempfile.TemporaryDirectory() as directory:
-            ledger = AttemptLedger.create(Path(directory) / 'attempts.jsonl')
+            ledger = AttemptLedger.create(Path(directory) / 'attempts.jsonl', BUDGET)
             for value in ('payload', '', 'A' * 64, None):
                 with self.assertRaises(BudgetError):
                     ledger.reserve(value)

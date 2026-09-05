@@ -414,13 +414,6 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         gateway_framing_source = (
             CODE_ROOT / "src" / "execution_provider" / "wire" / "framing.py"
         ).read_text(encoding="utf-8")
-        legacy_protocol_source = (EXTENSION_ROOT / "gateway" / "protocol.py").read_text(
-            encoding="utf-8"
-        )
-        legacy_cli_source = (
-            EXTENSION_ROOT / "gateway" / "recording_gateway.py"
-        ).read_text(encoding="utf-8")
-
         self.assertIn("src/recording_provider.o", makefile)
         self.assertIn("src/uds_provider.o", makefile)
         self.assertIn("src/wire_common.o", makefile)
@@ -483,8 +476,6 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("MAX_FRAME_BYTES = 1024 * 1024", gateway_framing_source)
         self.assertIn("MAX_INPUT_BYTES", gateway_wire_source)
         self.assertNotIn('"mapped_column"', gateway_wire_source)
-        self.assertIn("from src.execution_provider.wire.v2 import", legacy_protocol_source)
-        self.assertIn("from src.execution_provider.server import main", legacy_cli_source)
         self.assertNotIn("postgres.semloom_pg.gateway", gateway_wire_source)
 
         allowed_transport_sources = {

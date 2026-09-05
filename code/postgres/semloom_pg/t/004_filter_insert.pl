@@ -45,7 +45,7 @@ print $file encode_json({
     'fc3a636c28e5a5a0466e57efcfe9c3dc84a75e81b558a4b0f4f53c0e34a50120' => 'bad',
 });
 close($file);
-my $gateway = abs_path("$FindBin::RealBin/../gateway/recording_gateway.py");
+my $gateway = abs_path("$FindBin::RealBin/../../../scripts/services/run_execution_provider_gateway.py");
 my $legacy_options = q|'{"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb|;
 my $choice_options = q|'{"model":"golden-model-v1","temperature":0,"max_tokens":8,"generation_profile":"semloom.generation.choice.tristate.v1"}'::jsonb|;
 my @profiles = (
