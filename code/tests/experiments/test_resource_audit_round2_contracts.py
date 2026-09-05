@@ -86,7 +86,8 @@ class StressCaseComposabilityTests(unittest.TestCase):
             trace = stress
 
         class FakeBaselineCapture:
-            baseline = baseline
+            def __init__(self):
+                self.baseline = baseline
 
         class FakeWindow:
             session_id = 2

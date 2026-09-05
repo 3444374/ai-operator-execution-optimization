@@ -62,6 +62,7 @@ from src.experiments.postgresql.provider_session_attribution import (
 from src.experiments.postgresql.resource_qualification import (
     METRIC_SCHEMA,
     build_qualification_report,
+    compose_status,
     evaluate_session_drain,
 )
 
@@ -278,28 +279,29 @@ def _evaluate_case(
             "metric": "operation_error",
             "exception_type": recorded.operation_error.exception_type})
     composed = peak_report, cleanup_report
-    measurement = peak_report.measurement_status
-    # Attribution failure means backend provider sockets were never
-    # identified: the provider gates then ran on zero evidence, which is
-    # an inconclusive measurement, never a pass.
-    if attribution is None and measurement == "valid":
-        measurement = "inconclusive"
+    # Compose through the registered four-pair vocabulary. A missing
+    # cleanup phase must never borrow the stress trace as a cleanup
+    # verdict — it defers to the caller's later finalize, and until then
+    # the case can only be inconclusive (fail-closed), never valid.
+    inputs: list[tuple[str, str]] = [
+        (peak_report.measurement_status, peak_report.qualification_status)]
+    if attribution is None and inputs[0][0] == "valid":
+        # Attribution failure means backend provider sockets were never
+        # identified: the provider gates then ran on zero evidence, which
+        # is an inconclusive measurement, never a pass.
+        inputs[0] = ("inconclusive", "not_evaluated")
     if cleanup_report is None:
-        measurement = "inconclusive"
+        inputs.append(("inconclusive", "not_evaluated"))
     else:
-        if cleanup_report.measurement_status == "invalid":
-            measurement = "invalid"
-        elif (cleanup_report.measurement_status == "inconclusive"
-                  and measurement == "valid"):
-            measurement = "inconclusive"
-    qualification = "passed"
-    if measurement != "valid":
-        qualification = "not_evaluated"
-    elif (peak_report.qualification_status == "failed"
-            or (cleanup_report is not None
-                and cleanup_report.qualification_status == "failed")
-            or correctness_failures):
-        qualification = "failed"
+        inputs.append(
+            (cleanup_report.measurement_status,
+             cleanup_report.qualification_status))
+    if correctness_failures:
+        inputs.append(("valid", "failed"))
+    composed_status = compose_status(*inputs)
+    if composed_status is None:  # illegal input pair: fail closed
+        composed_status = ("inconclusive", "not_evaluated")
+    measurement, qualification = composed_status
     report = {
         "case": case_name,
         "metric_schema": METRIC_SCHEMA,
@@ -445,13 +447,26 @@ def run_stress_case(args, connection, user, fixture_path, expected_digest):
                 baseline_capture=baseline_capture, recorded=recorded,
                 windows=session_windows(events), correctness=correctness,
                 cleanup_trace=None)
-            # Separate cleanup settle AFTER the peak verdict is already saved.
+            # Separate cleanup settle AFTER the peak verdict is already
+            # saved, then FINALIZE: compose the deferred cleanup phase
+            # through the registered vocabulary so a fully clean run can
+            # compose valid+passed (the interim report is deliberately
+            # fail-closed until this point).
             cleanup_trace = _cleanup_settle(sampler, root, "stress", baseline_capture.baseline)
             cleanup_report = build_qualification_report(
                 baseline_capture.baseline, cleanup_trace, phase="cleanup")
             report["cleanup_policy"] = [
                 v.__dict__ for v in cleanup_report.cleanup_policy]
             report["cleanup_diagnostics"] = cleanup_report.diagnostics
+            finalized = compose_status(
+                (report["measurement_status"],
+                 report["qualification_status"]),
+                (cleanup_report.measurement_status,
+                 cleanup_report.qualification_status))
+            if finalized is None:
+                finalized = ("inconclusive", "not_evaluated")
+            report["measurement_status"], report["qualification_status"] = (
+                finalized)
             # Session drain from the event log (active sessions == 0):
             # /proc snapshots cannot see this; the event replay can.
             drain_violations, drain_diag = evaluate_session_drain(
@@ -638,10 +653,20 @@ def run_disconnect_case(args, connection, user, fixture_path):
         gateway.terminate()
         gateway.wait(timeout=10)
     if recovery_report["qualification_status"] != "passed":
-        report["qualification_status"] = "failed"
-    report["measurement_status"] = _worse_measurement(
-        report.get("measurement_status"),
-        recovery_report["measurement_status"])
+        # Compose through the registered vocabulary: a not-evaluated
+        # recovery subphase may never combine with a top-level failed.
+        sub = (recovery_report["measurement_status"],
+               recovery_report["qualification_status"])
+        composed = compose_status(sub, ("valid", "failed"))
+        report["measurement_status"], report["qualification_status"] = (
+            composed if composed is not None
+            else ("inconclusive", "not_evaluated"))
+        if composed is not None and composed[1] == "failed":
+            report["recovery_not_passed"] = True
+    else:
+        report["measurement_status"] = _worse_measurement(
+            report.get("measurement_status"),
+            recovery_report["measurement_status"])
     report["recovery"] = {
         "measurement_status": recovery_report["measurement_status"],
         "qualification_status": recovery_report["qualification_status"]}
@@ -779,7 +804,15 @@ def run_exit_case(args, connection, user, fixture_path):
                      recovery_report["qualification_status"]},
     }
     if correctness:
-        report["qualification_status"] = "failed"
+        # Same registered composition: correctness failures demote a
+        # valid measurement to failed but never combine an
+        # inconclusive/invalid measurement with failed.
+        sub = (report["measurement_status"],
+               report["qualification_status"])
+        composed = compose_status(sub, ("valid", "failed"))
+        report["measurement_status"], report["qualification_status"] = (
+            composed if composed is not None
+            else ("inconclusive", "not_evaluated"))
     save(root / "result.json", report)
     return report
 
@@ -891,7 +924,12 @@ def run(args):
                     ("gateway_exit_and_recovery", run_exit_case)):
                 if stop:
                     summary["cases"][name] = {
-                        "measurement_status": "not_run",
+                        # Skipped-by-safety stays inside the four-value
+                        # vocabulary: the earlier case's unsafe state
+                        # means this case's measurement never happened,
+                        # which is an inconclusive measurement, never a
+                        # fabricated valid one.
+                        "measurement_status": "inconclusive",
                         "qualification_status": "not_evaluated",
                         "reason": "unsafe cleanup state in earlier case",
                     }
@@ -913,6 +951,17 @@ def run(args):
                     and c.get("qualification_status") == "passed"
                     for c in required)
                 else "failed")
+    except Exception as error:  # noqa: BLE001 — the runner must outlive
+        # its cases: a case-level crash is a runner failure (exit 3),
+        # never the valid-failed exit code, and the already-persisted
+        # case evidence plus this reason must reach summary.json.
+        summary["status"] = "runner_failure"
+        summary["reason"] = (
+            f"{type(error).__name__}:"
+            f"{getattr(error, 'sqlstate', None) or ''}")
+        return_code = EXIT_RUNNER_FAILURE
+        save(args.root / "summary.json", summary)
+        return return_code
     finally:
         save(args.root / "summary.json", summary)
     return _exit_code(summary)
