@@ -68,7 +68,7 @@ A2a没有Map数据依赖另一语义值，故不先增加通用dependencies列�
 
 ```text
 SemanticBindingV1:
-  input_resno: child中本次算子输入（1-based，类型为text）
+  input_resno: child中本次算子输入（1-based；当前算子要求text）
   passthrough: [(child_resno, scan_resno), ...]
   result_resno: Filter为空；生成Map为独立新增scan列
   result_type/typmod/collation
@@ -77,6 +77,9 @@ SemanticBindingV1:
 A2a Map结果列追加在child列之后，不能覆盖输入列；最终TargetEntry用现有PG投影只输出用户要求的列。
 Filter只透传存活行，不新增语义布尔列。临时输入列可作为resjunk保留在内部，不泄漏到SELECT/INSERT结果。
 透传目的位置唯一、范围合法；结果位置不与输入/透传混同；所有scan列必须有定义，不允许未初始化slot。
+公共binding只验证位置、映射覆盖、引用与类型一致性；text输入和text/boolean结果由当前算子合同
+检查，不把TEXTOID写成所有语义算子的永久要求。多个输入/结果或新类型需要对应版本和编码验证，
+沿用列映射与节点生命周期；FINAL_MAP也是当前placement，不限制未来方法必须位于FINAL。
 
 A2a首先仅在新组合的Map节点使用V1，Filter child和现有单算子仍保留legacy。新Map的`custom_private`采用可复制PG Node构成的带版本命名envelope：`carrier_version=1`、`call_key`、
 `semantic_fields`、`binding`及可选`cost_fields`，字段缺失/重复/未知或类型错误均拒绝。
@@ -96,14 +99,18 @@ decoder仅接受明确的legacy或V1形式，不能遇到未知V1字段后尝试
 1. planner_hook校验原始Map调用来源和固定参数规则；将控制权交回既有PG规划链。
 2. base hook收集/验证Filter描述并构造其Path；透传下游所需原始Vars，不提前求值Map输入。
 3. final hook验证完整形状只属于A2a许可组合，从已有output path构造Map。保留Filter子树及LIMIT位置；
-   新child target只承载原始依赖和普通输出，去除本Map拥有的marker计算；不能沿用旧的递归
+   新child target只承载原始Vars及已有结果，尚未求值的普通输出表达式也按PG原位置保留，
+   不因“非Map”而下推。去除本Map拥有的marker计算；不能沿用旧的递归
    marker→完整input替换，把Map输入函数留在LIMIT下。必要的内部占位列使用typed NULL而不求值，
    它不是SQL语义结果，不能被最终投影引用。由V1绑定恢复最终marker到新结果列的对应。
-   在紧邻Map且位于LIMIT之上的projection计算Map输入，生成独立结果绑定。若PG将投影下推跨越Filter/LIMIT，
-   用当前已有projection capability控制避免该转换；无法维持的路径在规划时拒绝，禁止改写最终executor补救。
+   在紧邻Map且位于LIMIT之上的projection计算Map输入，生成独立结果绑定。
+   CUSTOMPATH_SUPPORT_PROJECTION只声明投影能力，不作为通用求值屏障；需以最终Plan和调用次数
+   证明位置。重建本候选所需Path/target，不能原地修改其它候选共享对象。无法维持的路径在规划时拒绝。
 4. Plan callback从选中Path描述编码binding/spec，不再按表达式相等扫描所有结果列猜归属。
 5. Exec初始化先校验新carrier/类型、函数身份与权限，创建节点私有方法/runtime，再初始化child；
-   无任务时不连接provider。新carrier走PG原生Expr初始化检查；legacy Map手动检查保持，避免同一节点重复Invoke hook。
+   无任务时不连接provider。新Map选择显式使用PG原生ACL/object hook设施，每个marker出现检查一次；
+   legacy Map原检查保持。权限入口不依赖custom_exprs中marker经setrefs后仍是FuncExpr，
+   普通输入/输出表达式仍由PG正常初始化；不能为检查而执行marker或重复Invoke hook。
 6. 下游Map拉取一行 → Filter驱动ordinary child直到存活行 → LIMIT/OFFSET处理 → Map输入投影求值。
    Map input为NULL时本地产生NULL结果，否则复用lazy open/drive，校验并复制completion至tuple context。
 7. pump按passthrough写入scan slot，写独立result_resno，再交PG投影/INSERT。消费该行之前不拉下一行。
@@ -147,16 +154,30 @@ Filter fixture按decision返回指定判断，Map fixture把alpha映为`A`。这
 | 同一输入既是普通输出又是Map输入 | 普通列/原输入保持，结果写独立列；常量输入也不能混同 |
 | `LIMIT 0` | 两节点零任务和零provider连接 |
 | 所有输入TRUE/非NULL的fixture加LIMIT 1 | 结果一行；Filter、Map各1任务，无下一行预取；不假定返回哪个id |
+| 全TRUE输入，`SELECT tick(body), M(tick(body)) ... OFFSET 3 LIMIT 1`，tick为计数后返回原值的VOLATILE函数 | Filter4请求、Map1请求、tick共2次且只在最终输出行；不依赖无ORDER BY时的id，不合并两个出现 |
+| 新Map经过setrefs、generic prepared再撤权 | 最终表达式形状留证，marker EXECUTE撤销仍报42501，object hook每个出现一次，错误前零模型请求 |
 | Filter全部FALSE/UNKNOWN/NULL | Map零任务；NULL按原规则零Filter请求 |
 | Map中途错误的INSERT | 目标表新增0行，两个节点关闭；下一次合法查询成功 |
 | generic prepared反复执行、撤销函数权限、RLS隐藏bad行 | 每次运行状态独立；撤权42501；隐藏行无模型请求；不靠EXPLAIN摘要替代调用审计 |
 | 两Filter旧路径、单Map/Filter、v2–v5 | 原合同回归通过；新增内部carrier缺字段/越界列在provider打开前拒绝 |
 | 三调用、OR、嵌套Map、排序等不在本切片范围 | 规划期稳定拒绝；fixture不收到任何任务 |
 
-A1先完成共同描述/legacy适配与绑定单测；A2a先接新carrier/pump，再放开一个Filter→一个Map。
+A1先完成共同描述/legacy适配与绑定单测；A2a先用最小PG原型验证权限与FINAL投影，
+再接新carrier/pump并放开一个Filter→一个Map。原型使用公开合成fixture，不需要模型运行。
 每步分别保存失败反例、实际计划与请求记录；共享路径最终跑完整PG18.3回归/TAP及相关Python/C合同。
 B2/Core、真实质量、正式资源不是A2a的前置，也不由此获得新证据。本轮没有给上述待实现用例写“通过”。
 
 若final-stage输入投影或setrefs身份在指定形状下不能稳定表达，记录最小SQL/Plan/版本反例并暂停该形状；
 不能由实现者悄悄变更求值位置、复用输入结果或加入外部SQL重写。实现不确定性需要这种实际验证，
 不影响本文件已经选定的职责、绑定方向和兼容策略。
+
+## 7. 补充审查的依据与实施判断
+
+补充资料提出setrefs可能将marker匹配为INDEX_VAR，导致期望的FuncExpr权限初始化消失；这是
+待复现的具体风险，不能写成已发现现有路径漏洞。A2a选择显式PG权限入口，仍须保留表达式依赖、
+函数身份重验证及撤权测试；不能仅保留一个私有OID而丢掉计划依赖。
+公开依据为[CustomScan计划表达式职责](https://www.postgresql.org/docs/18/custom-scan-plan.html)、
+[投影能力标志](https://www.postgresql.org/docs/18/custom-scan-path.html)与
+[SELECT输出求值规则](https://www.postgresql.org/docs/18/sql-select.html#SQL-SELECT-LIST)。
+实现时核对REL_18_3的set_customscan_references、fix_upper_expr_mutator、ExecInitFunc和
+create_projection_path；官方接口说明与补充资料不替代锁定版本的小原型。

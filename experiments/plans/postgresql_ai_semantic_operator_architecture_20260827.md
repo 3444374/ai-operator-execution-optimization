@@ -17,6 +17,9 @@
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
 [增量session详细设计](semloom_incremental_session_design.md)；两者均已写明方案，尚未实现或动态验证。
 总体决策只由本文拥有，下级详细设计不重复总体架构；全部专项与恢复入口见§13。
+补充审查已收敛到这两份规格：交付提交点、唯一终态结算、可立即推进状态、分阶段等待和残余归属；
+PG新Map先验证权限与OFFSET/LIMIT投影。FIFO、bytes、单成员提交、预留时机与当前placement是
+首版可替换选择。实施从A1行为保持提取开始，B1表征可独立推进，不预造多模态或多Job平台。
 
 ## 1. 目标与架构决策
 

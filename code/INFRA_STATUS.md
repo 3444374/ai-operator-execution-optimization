@@ -4,6 +4,8 @@
 [单流增量session规格](../experiments/plans/semloom_incremental_session_design.md)。前者先保持旧行为，
 再接一个Filter→一个生成Map并分开输入/结果位置；后者选定非阻塞单步、接受前缀、完成lease与
 Engine残余账本。以上是设计及静态源码复核，动态表征、实现、PG/Core桥接均未因文档更新而完成。
+补充评审已明确交付原子性、取消唯一结算、唤醒/期限与跨session残余归属；新Map改为显式PG权限
+设施并先验证投影位置。后续A1保持现有行为，A2a和B2仍须各自实现及反例验证。
 
 2026-09-07 的[总体架构修订](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 只调整设计与实施依赖：区分调用/方法/任务/工作单元，明确PG/Core职责、查询与流资源及接纳所有权。
