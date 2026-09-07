@@ -1,0 +1,137 @@
+{
+  "source_commit": "11e89b08 plus shared binding r3 (delta-r3.json)",
+  "version": "PostgreSQL 18.3",
+  "steps": [
+    {
+      "name": "extension-clean",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "make",
+        "clean"
+      ],
+      "exit_code": 0,
+      "seconds": 0.035
+    },
+    {
+      "name": "extension-build",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "make",
+        "-j4",
+        "COPT=-O2 -Werror"
+      ],
+      "exit_code": 0,
+      "seconds": 1.094
+    },
+    {
+      "name": "extension-install",
+      "argv": [
+        "make",
+        "install",
+        "COPT=-O2 -Werror"
+      ],
+      "exit_code": 0,
+      "seconds": 0.038
+    },
+    {
+      "name": "initdb",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg-prefix>/bin/initdb",
+        "-D",
+        "<artifact-root>/pg3/pgdata",
+        "-A",
+        "trust",
+        "--no-locale",
+        "--encoding=UTF8"
+      ],
+      "exit_code": 0,
+      "seconds": 0.69
+    },
+    {
+      "name": "pg-start",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg-prefix>/bin/pg_ctl",
+        "-D",
+        "<artifact-root>/pg3/pgdata",
+        "-l",
+        "<artifact-root>/pg3/pgdata/server.log",
+        "-w",
+        "start"
+      ],
+      "exit_code": 0,
+      "seconds": 0.115
+    },
+    {
+      "name": "server-version",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg-prefix>/bin/psql",
+        "-XAt",
+        "-c",
+        "SHOW server_version"
+      ],
+      "exit_code": 0,
+      "seconds": 0.018
+    },
+    {
+      "name": "installcheck",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "make",
+        "installcheck",
+        "COPT=-O2 -Werror"
+      ],
+      "exit_code": 0,
+      "seconds": 49.788
+    },
+    {
+      "name": "pg-stop",
+      "argv": [
+        "/usr/sbin/runuser",
+        "-u",
+        "postgres",
+        "--",
+        "<pg-prefix>/bin/pg_ctl",
+        "-D",
+        "<artifact-root>/pg3/pgdata",
+        "-m",
+        "fast",
+        "-w",
+        "stop"
+      ],
+      "exit_code": 0,
+      "seconds": 0.111
+    }
+  ],
+  "status": "passed",
+  "model_requests": 0,
+  "port": 54595,
+  "configuration": "'--prefix=/opt/semloom-pg18.3-layout-20b22a55' '--enable-tap-tests' '--without-readline' '--without-icu'",
+  "built_sha256": "549094cc6c54f1c013d387e1d2b9ce42a6bf69a62fc523f194abd29c338bbc25",
+  "installed_sha256": "549094cc6c54f1c013d387e1d2b9ce42a6bf69a62fc523f194abd29c338bbc25",
+  "regression_passed": 1,
+  "regression_sha256": "ca119e46b41474e118084fca7a91f228a2b0b103bf965e3bbdb67fa239386d1f",
+  "tap_files": 9,
+  "tap_tests": 1848,
+  "main_cluster_stopped": true
+}

@@ -5,9 +5,10 @@
 受众：PG扩展实施者。所属工作为[主设计A1–A2](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)。
 本文件唯一定义近期调用/绑定的实现方案；总体分工、远期SQL与研究方向仍由主设计拥有。
 
-原设计代码依据为`66887463`，主设计依据为`440f7cea`及本次修订。下列共同调用对象、carrier格式
-或Filter→Map尚未实现，接口名称仍为拟议名称；原设计阶段仅做静态复核。
-后续A1首步已按§8完成Map调用分析的行为保持提取及PG回归；上述新对象/组合仍待实施，
+原设计代码依据为`66887463`，主设计依据为`440f7cea`及本次修订。共同调用对象和tuple绑定已按§9实现；外层carrier格式
+及Filter→Map仍待实现。原设计阶段仅做静态复核。
+后续A1首步已按§8完成Map调用分析提取；共同基础与setrefs原型的运行结果见
+[绑定验证](../results/postgresql/semantic_binding_20260907/README.md)，组合仍待实施。早期提取
 结果见[验证记录](../results/postgresql/semantic_call_extraction_20260907/README.md)。
 
 ## 1. 首批范围与选定方案
@@ -44,7 +45,7 @@ OVERRIDING及整个Map的SQL包装函数保持拒绝。普通输入表达式和�
 
 ### 3.1 规划期共同描述
 
-拟在`planner/semantic_call.{h,c}`提供内部`SemanticCall`值与校验；`sem_filter_call`和Map收集器消费它。
+`planner/semantic_call.{h,c}`已提供内部`SemloomSemanticCall`；Filter和Map收集器共同消费它。
 不建立全局registry；对象由对应PlannerInfo使用的规划内存拥有。
 
 | 字段 | 定义 |
@@ -52,7 +53,7 @@ OVERRIDING及整个Map的SQL包装函数保持拒绝。普通输入表达式和�
 | `call_key` | 当前规划上下文内的(query_level, placement_kind, occurrence_ordinal)，不是持久/跨进程ID |
 | `function_oid`, `operator_kind` | 通过扩展成员身份校验的函数与本算子种类 |
 | `placement_kind` | BASE_FILTER或FINAL_MAP；此切片不引入任意层级搜索 |
-| `input_expr`, `marker_expr` | 当前阶段的PG Expr，按调用出现复制，不以equal或指针相同合并出现 |
+| `input_expr`, `marker_expr` | marker按出现复制；input通过semloom_call_input从同一marker读取，不以equal或指针相同合并出现 |
 | `source_locator` | Filter restriction列表位置或Map TargetEntry.resno；只在该规划阶段解释 |
 | `semantic_fields` | 已经由算子验证的参数/语义字段，复用现有spec builder |
 | `result_type`, `typmod`, `collation` | 交给PG绑定/结果投影的类型描述 |
@@ -73,7 +74,7 @@ SemanticBindingV1:
   input_resno: child中本次算子输入（1-based；当前算子要求text）
   passthrough: [(child_resno, scan_resno), ...]
   result_resno: Filter为空；生成Map为独立新增scan列
-  result_type/typmod/collation
+  result_type/typmod/collation由PG child/scan TupleDesc提供，不在binding中重复保存
 ```
 
 A2a Map结果列追加在child列之后，不能覆盖输入列；最终TargetEntry用现有PG投影只输出用户要求的列。
@@ -101,8 +102,8 @@ decoder仅接受明确的legacy或V1形式，不能遇到未知V1字段后尝试
 1. planner_hook校验原始Map调用来源和固定参数规则；将控制权交回既有PG规划链。
 2. base hook收集/验证Filter描述并构造其Path；透传下游所需原始Vars，不提前求值Map输入。
 3. final hook验证完整形状只属于A2a许可组合，从已有output path构造Map。保留Filter子树及LIMIT位置；
-   新child target只承载原始Vars及已有结果，尚未求值的普通输出表达式也按PG原位置保留，
-   不因“非Map”而下推。去除本Map拥有的marker计算；不能沿用旧的递归
+   新child target只承载原始Vars及已有结果，普通输出表达式按PG实际选择的位置保留，
+   不强制把它们移到LIMIT/OFFSET上方。去除本Map拥有的marker计算；不能沿用旧的递归
    marker→完整input替换，把Map输入函数留在LIMIT下。必要的内部占位列使用typed NULL而不求值，
    它不是SQL语义结果，不能被最终投影引用。由V1绑定恢复最终marker到新结果列的对应。
    在紧邻Map且位于LIMIT之上的projection计算Map输入，生成独立结果绑定。
@@ -156,7 +157,7 @@ Filter fixture按decision返回指定判断，Map fixture把alpha映为`A`。这
 | 同一输入既是普通输出又是Map输入 | 普通列/原输入保持，结果写独立列；常量输入也不能混同 |
 | `LIMIT 0` | 两节点零任务和零provider连接 |
 | 所有输入TRUE/非NULL的fixture加LIMIT 1 | 结果一行；Filter、Map各1任务，无下一行预取；不假定返回哪个id |
-| 全TRUE输入，`SELECT tick(body), M(tick(body)) ... OFFSET 3 LIMIT 1`，tick为计数后返回原值的VOLATILE函数 | Filter4请求、Map1请求、tick共2次且只在最终输出行；不依赖无ORDER BY时的id，不合并两个出现 |
+| 全TRUE输入，`SELECT tick(body), M(tick(body)) ... OFFSET 3 LIMIT 1`，tick为计数后返回原值的VOLATILE函数 | Filter4请求、Map1请求；普通输出tick按PG18.3基线求值4次，Map输入tick在OFFSET/LIMIT后1次，共5次；不合并两个出现 |
 | 新Map经过setrefs、generic prepared再撤权 | 最终表达式形状留证，marker EXECUTE撤销仍报42501，object hook每个出现一次，错误前零模型请求 |
 | Filter全部FALSE/UNKNOWN/NULL | Map零任务；NULL按原规则零Filter请求 |
 | Map中途错误的INSERT | 目标表新增0行，两个节点关闭；下一次合法查询成功 |
@@ -203,3 +204,41 @@ NULL/LIMIT、复制计划及双Filter；无新行为时不添加同义断言。�
 该步骤不完成A1全部绑定，不开放Filter→Map，不替代A2a权限/投影原型或B1/B2动态验证。
 实际验证：本地115项、Linux138项、PG18.3 regression1项及TAP1808项全部通过，模型请求0；
 首次本地沙箱端口拒绝导致16项setup错误，按相同测试重跑通过，原失败保留在上述验证记录。
+
+## 9. A1共同调用与tuple绑定实施
+
+基线为`11e89b08`。两个collector统一使用SemloomSemanticCall，按规划层级/placement/出现序号
+标识调用，各自持有marker副本。函数OID、input及结果type/typmod/collation从同一marker读取，
+不再复制一套可互相矛盾的字段；算子固定参数仍归各自语义校验。来源列表位置仅在对应阶段解释。
+
+semantic_binding集中校验列范围、目的列唯一、完整覆盖、类型/typmod/collation及dropped列。
+旧pump通过legacy适配保持同列数/覆盖输入；pump改为从child读input，按独立result位置写结果。
+新绑定内部Node表示选为`[input_resno, result_resno或0, [[child_resno,scan_resno],...]]`，
+外层carrier版本仍归A2a。类型描述以child/scan的PG TupleDesc为事实，不在绑定中复制类型OID。
+绑定模块只计列与类型，不检查TEXTOID；现行算子的text限制仍在算子及语义decoder。
+
+新增test-only PG caller直接调用生产绑定接口，验证copyObject/源内存释放、重排、独立结果、
+二进制载荷、NULL、legacy与错误输入。既有PG全套和相关Python/C必须继续通过，错误不放宽。
+沿用§8的工程参照判断；本步采用自有PG Node/TupleDesc/slot接口，不复制参考系统实现。
+服务器core preflight后使用新隔离前缀/数据目录，fixture-only、零模型请求；失败轮次单独保留。
+共同调用/绑定通过后再验证A2a投影与权限；该顺序不把基础单测成功当作已经开放组合。
+
+## 10. PG18.3前置原型的实际发现
+
+2026-09-07受控8行诊断：普通`SELECT tick(body), tick(body) OFFSET 3 LIMIT 1`的计数为8；
+旧单Map路径中普通tick为4、返回NULL的Map输入tick为4，Map为NULL不发模型请求。说明OFFSET
+跳过行仍可触发普通输出求值，不能把资料中“两个tick总共2次”当作PG18.3基线。第一个Filter
+诊断没有启动所需recording provider而连接失败；随后显式LOAD并启动recording gateway，
+重复诊断确认单Filter后的两个普通tick也是8次，原失败保留。
+
+因此A2a继续选择让Map输入在OFFSET/LIMIT之后求值，这是该语义载体的显式选型；普通输出
+表达式则保持PG对应查询的实际位置和次数，不能一起搬到上方。相同VOLATILE函数在普通输出
+和Map输入的两个出现不能因结果列匹配而复用。将用分别计数的函数与最终Plan验证这两个条件。
+
+新增生产set_plan_references的test-only调用验证：独立结果位于scan列2时，targetlist与
+custom_exprs中的相同marker均被改写为INDEX_VAR列2，同时保留函数依赖。因此新Map使用显式
+PG ACL/object hook的决定得到直接机制依据；这项检查不是新组合路径的实际执行/撤权资格。
+共同调用/tuple绑定的全回归及这些原型在各自结果记录中保存；A2a外层carrier和组合仍待实现。
+
+本轮最终验证：本地115项、Linux138项、PG18.3回归1项及9个TAP共1848项通过，605项非Markdown源码哈希一致。
+完整结果见[绑定验证](../results/postgresql/semantic_binding_20260907/README.md)；模型请求0，测试服务均停止。

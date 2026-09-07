@@ -21,6 +21,7 @@
 #include "planner/sem_filter_cost.h"
 #include "semantics/sem_operator_machine.h"
 #include "planner/sem_plan_spec.h"
+#include "planner/semantic_binding.h"
 #include "semantics/semantic_filter_contract.h"
 #include "semantics/semantic_map_contract.h"
 #include "executor/sem_pump.h"
@@ -33,13 +34,13 @@ struct SemloomExecPump
 	PgSemanticRuntime *runtime;
 	SemloomFilterCostEstimate filter_cost;
 	bool has_filter_cost;
-	AttrNumber input_column;
+	SemloomTupleBinding *binding;
 };
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
 										 MemoryContext task_context);
 static void semloom_pump_store_completion(TupleTableSlot *slot,
-										 AttrNumber input_column,
+										 AttrNumber result_column,
 										 const PgSemanticCompletion *completion,
 										 MemoryContext result_context);
 
@@ -112,9 +113,12 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 					(errcode(ERRCODE_INTERNAL_ERROR),
 					 errmsg("unknown semantic operator machine")));
 	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
-	pump->input_column = input_column;
 	pump->child_state =
 		ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
+	pump->binding = semloom_binding_legacy(input_column,
+		plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_MAP,
+		ExecGetResultType(pump->child_state),
+		node->ss.ss_ScanTupleSlot->tts_tupleDescriptor);
 	node->custom_ps = list_make1(pump->child_state);
 	return pump;
 }
@@ -129,31 +133,14 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 		TupleTableSlot *child_slot = ExecProcNode(pump->child_state);
 		MemoryContext tuple_context =
 			scan_state->ps.ps_ExprContext->ecxt_per_tuple_memory;
-		AttrNumber input_column = pump->input_column;
+		AttrNumber input_column = pump->binding->input_column;
 		SemloomTupleDisposition disposition;
-		int attribute_index;
 
 		if (TupIsNull(child_slot))
 			return ExecClearTuple(scan_slot);
-		slot_getallattrs(child_slot);
-		if (child_slot->tts_tupleDescriptor->natts !=
-			scan_slot->tts_tupleDescriptor->natts)
-			ereport(ERROR,
-					(errcode(ERRCODE_INTERNAL_ERROR),
-					 errmsg("semantic child and scan tuple descriptors do not match")));
+		semloom_binding_store(pump->binding, child_slot, scan_slot);
 
-		ExecClearTuple(scan_slot);
-		for (attribute_index = 0;
-			 attribute_index < scan_slot->tts_tupleDescriptor->natts;
-			 attribute_index++)
-		{
-			scan_slot->tts_isnull[attribute_index] =
-				child_slot->tts_isnull[attribute_index];
-			scan_slot->tts_values[attribute_index] =
-				child_slot->tts_values[attribute_index];
-		}
-
-		if (scan_slot->tts_isnull[input_column - 1])
+		if (child_slot->tts_isnull[input_column - 1])
 		{
 			disposition = semloom_operator_machine_handle_null(&pump->machine);
 			if (disposition == SEMLOOM_TUPLE_EMIT)
@@ -167,7 +154,7 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 		else
 		{
 			AiByteSlice input = semloom_pump_bind_text(
-				scan_slot->tts_values[input_column - 1],
+				child_slot->tts_values[input_column - 1],
 				tuple_context);
 			SemloomBoundValue bound_input = {
 				.data = input.data,
@@ -212,7 +199,7 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			if (disposition == SEMLOOM_TUPLE_EMIT_COMPLETION)
 			{
 				semloom_pump_store_completion(scan_slot,
-									  input_column,
+									  pump->binding->result_column,
 									  &completion,
 									  tuple_context);
 				disposition = SEMLOOM_TUPLE_EMIT;
@@ -262,7 +249,7 @@ semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 	ExplainPropertyInteger(
 		semloom_operator_machine_explain_property(&pump->machine),
 		NULL,
-		pump->input_column,
+		pump->binding->input_column,
 		explain_state);
 	pg_semantic_runtime_explain_counters(pump->runtime, explain_state);
 }
@@ -296,7 +283,7 @@ semloom_pump_bind_text(Datum input, MemoryContext task_context)
 
 static void
 semloom_pump_store_completion(TupleTableSlot *slot,
-							  AttrNumber input_column,
+							  AttrNumber result_column,
 							  const PgSemanticCompletion *completion,
 							  MemoryContext result_context)
 {
@@ -306,8 +293,8 @@ semloom_pump_store_completion(TupleTableSlot *slot,
 
 	if (completion->is_null)
 	{
-		slot->tts_isnull[input_column - 1] = true;
-		slot->tts_values[input_column - 1] = (Datum) 0;
+		slot->tts_isnull[result_column - 1] = true;
+		slot->tts_values[result_column - 1] = (Datum) 0;
 		return;
 	}
 	output_data = completion->length == 0 ? "" : (const char *) completion->data;
@@ -323,6 +310,6 @@ semloom_pump_store_completion(TupleTableSlot *slot,
 		PG_RE_THROW();
 	}
 	PG_END_TRY();
-	slot->tts_isnull[input_column - 1] = false;
-	slot->tts_values[input_column - 1] = PointerGetDatum(output_text);
+	slot->tts_isnull[result_column - 1] = false;
+	slot->tts_values[result_column - 1] = PointerGetDatum(output_text);
 }

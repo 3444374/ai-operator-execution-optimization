@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+共同调用描述与tuple绑定已在开发分支完成[验证](../experiments/results/postgresql/semantic_binding_20260907/README.md)：
+两个collector使用独立出现记录，pump复用列路由；本地115、Linux138、PG18.3回归1及TAP1848项通过。
+605项源码哈希一致，模型请求0。外层V1 carrier、Filter→Map和增量Core尚未实现。
+PG18.3原型纠正OFFSET普通输出求值次数，并确认setrefs会把匹配marker改为结果Var，详见验证记录。
+
 2026-09-07 A1首步已在`codex/semantic-call-binding`完成[Map调用分析提取验证](../experiments/results/postgresql/semantic_call_extraction_20260907/README.md)：
 来源/常量/可见调用检查进入`planner/sem_map_call`，路径构造继续使用原有逻辑。15个函数体等价，
 本地115/115、Linux138/138、PG18.3严格编译、regression1/1及TAP1808/1808通过，618源码哈希匹配。

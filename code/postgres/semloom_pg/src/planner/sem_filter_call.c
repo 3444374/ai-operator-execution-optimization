@@ -18,7 +18,7 @@ static bool semloom_numeric_text_is_zero(const char *value);
 pg_noreturn static void semloom_invalid_exact_filter_argument(const char *message);
 
 List *
-semloom_filter_calls(RelOptInfo *rel,
+semloom_filter_calls(PlannerInfo *root, RelOptInfo *rel,
 								Oid recording_oid,
 								Oid exact_oid)
 {
@@ -46,7 +46,6 @@ semloom_filter_calls(RelOptInfo *rel,
 			SemloomFilterCall *call = palloc0(sizeof(*call));
 
 			call->restriction = restriction;
-			call->marker = marker;
 			call->is_exact = marker->funcid == exact_oid;
 			if (marker->funcid == recording_oid &&
 				(list_length(marker->args) != 1 ||
@@ -67,6 +66,8 @@ semloom_filter_calls(RelOptInfo *rel,
 			if (call->is_exact)
 				semloom_exact_filter_arguments(marker, &call->instruction,
 											   &call->model_id, &call->choice_profile);
+			call->semantic = semloom_call_create(root->query_level, SEMLOOM_CALL_BASE_FILTER,
+				list_length(calls), foreach_current_index(cell) + 1, marker);
 			calls = lappend(calls, call);
 		}
 	}

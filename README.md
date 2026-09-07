@@ -33,7 +33,8 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 NULL 零调用、结果与写回均通过。main中的两个算子各自同步执行；已推送的`codex/semfilter-and@66887463`增加两个Filter AND与
 有界gateway会话，已合并main，异步PG接入仍待实现。
 后续开发已完成[Map调用分析提取](experiments/results/postgresql/semantic_call_extraction_20260907/README.md)，
-保持现有行为；共同调用记录与新的结果列绑定继续按设计推进。
+保持现有行为；当前开发分支的[共同调用与列绑定](experiments/results/postgresql/semantic_binding_20260907/README.md)
+也已完成基础验证，实际Filter→Map接入仍在推进。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

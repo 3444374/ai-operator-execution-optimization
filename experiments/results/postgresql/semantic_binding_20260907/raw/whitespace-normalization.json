@@ -1,0 +1,34 @@
+{
+  "r1-initdb.log": {
+    "redacted_export_sha256": "c7f3ec6f7ceec69389a60bb0dcba55c0d3c4fc2975d3d21cc32e8e10ee1a5fe6",
+    "public_sha256": "20c72692ae185f1d69316ed19aa7b6230171b249d962b884b82e24908e7fd0a7"
+  },
+  "r1-installcheck.log": {
+    "redacted_export_sha256": "a7a5d036307a6c68042d1eea6aa044dbb2a5a2f89c678aac116f9b262d1a3454",
+    "public_sha256": "3a6c35e2ed8f6773dbc1a930eefe65e2b9d5a981890070d2b18ce1b5b09731aa"
+  },
+  "r3-initdb.log": {
+    "redacted_export_sha256": "85344a8cbc9d995f93cbb661fd2e8ac29218b56e5e00bd822ae1ebafe60d69a3",
+    "public_sha256": "06c1199b9f4e55f3e265e481dea3ec0c07c1195e73c0d4f4b1f3a8d445285de8"
+  },
+  "r1-extension-build.log": {
+    "redacted_export_sha256": "2b542f00955df5823d62208e24aca7e1ae40451147b2bbbb758a6f18cb0bb77b",
+    "public_sha256": "a0025253c7a77ca1a62220d33174a144fead602f13ff0b8435d493412d5ebb3c"
+  },
+  "r3-extension-build.log": {
+    "redacted_export_sha256": "2b542f00955df5823d62208e24aca7e1ae40451147b2bbbb758a6f18cb0bb77b",
+    "public_sha256": "a0025253c7a77ca1a62220d33174a144fead602f13ff0b8435d493412d5ebb3c"
+  },
+  "r2-extension-build.log": {
+    "redacted_export_sha256": "2b542f00955df5823d62208e24aca7e1ae40451147b2bbbb758a6f18cb0bb77b",
+    "public_sha256": "a0025253c7a77ca1a62220d33174a144fead602f13ff0b8435d493412d5ebb3c"
+  },
+  "r2-initdb.log": {
+    "redacted_export_sha256": "f66b931bee663701c7e858ea3381545139f7fbf1abaf8f44fe0241aa9f055ddc",
+    "public_sha256": "91bf296d0b5b7c18b0c3cabc0d6ce0d29ff4f8f0f83e2c327e112d1e35406120"
+  },
+  "r1-binding-build.log": {
+    "redacted_export_sha256": "9e081b7b35155a736c932e774270b7b5b39cc7b05011b0833e786facf33740ec",
+    "public_sha256": "ee7777ea107e45bc43526fe35c005ee207e902b7ed463816bcde09963f739444"
+  }
+}

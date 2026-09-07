@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-09-07 共同调用与tuple绑定
+
+- 在11e89b08上实现独立调用出现记录、类型中立的列映射/校验及pump兼容适配。
+- [验证记录](experiments/results/postgresql/semantic_binding_20260907/README.md)：本地115、Linux138、
+  PG18.3回归1及TAP1848项通过，605源码哈希一致；测试头文件缺失的失败保留，模型请求0。
+- setrefs原型确认匹配marker被替换为结果Var；8行OFFSET诊断发现原设计普通tick计数错误，
+  改为保持PG原生次数。Filter首轮缺少fixture provider的失败与修正后的实际计划分别保留。
+- 外层V1 carrier与实际Filter→Map继续推进，不能由基础单测推定已支持组合。
+
 ## 2026-09-07 A1首步Map调用分析提取
 
 - main设计集成推送后，在`codex/semantic-call-binding`分离Map来源/常量/出现检查与路径构造，

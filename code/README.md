@@ -1,9 +1,11 @@
 # SemLoom Code
 
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
-The first call-binding preparation separates Map call analysis from path construction; its
+The shared call and tuple-binding modules now pass [PG18.3 checks](../experiments/results/postgresql/semantic_binding_20260907/README.md).
+The versioned outer carrier and Filter→Map remain pending.
+The earlier call-binding preparation separates Map call analysis from path construction; its
 [checks](../experiments/results/postgresql/semantic_call_extraction_20260907/README.md) preserve existing behavior.
-This preparation does not yet implement shared call records or new result binding.
+The earlier extraction was preparation; the shared modules above are the subsequent verified step.
 The `codex/semfilter-and` branch now supports two top-level Filter AND predicates through one bounded
 multi-session gateway. [Validation](../experiments/results/postgresql/semfilter_and_20260907/README.md)
 passes Linux 138 checks and PG18.3 regression plus 1808 TAP checks; it is now included in main.

@@ -100,7 +100,7 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 	if (linitial_node(RangeTblRef, source->fromlist)->rtindex != rti)
 		return;
 
-	calls = semloom_filter_calls(rel, recording_oid, exact_oid);
+	calls = semloom_filter_calls(root, rel, recording_oid, exact_oid);
 	foreach(cell, rel->pathlist)
 	{
 		Path *child = lfirst_node(Path, cell);
@@ -114,7 +114,7 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 			foreach(call_cell, calls)
 			{
 				SemloomFilterCall *call = lfirst(call_cell);
-				List *variables = pull_var_clause(linitial(call->marker->args),
+				List *variables = pull_var_clause((Node *) semloom_call_input(call->semantic),
 												PVC_RECURSE_PLACEHOLDERS);
 
 				add_new_columns_to_pathtarget(intermediate, variables);
@@ -218,11 +218,11 @@ semloom_make_filter_path(PlannerInfo *root,
 						 SemloomFilterCall *call,
 						 bool downstream)
 {
-	FuncExpr *marker = call->marker;
+	FuncExpr *marker = call->semantic->marker;
 	CustomPath *path = makeNode(CustomPath);
 	PathTarget *child_target;
 	Path *projected_child = child_path;
-	Node *input = linitial(marker->args);
+	Node *input = (Node *) semloom_call_input(call->semantic);
 	List *plan_private;
 	double path_rows = child_path->rows;
 	double ai_work_cost = cpu_operator_cost * child_path->rows;

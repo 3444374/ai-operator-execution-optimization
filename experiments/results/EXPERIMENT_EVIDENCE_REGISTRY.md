@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+[共同调用与tuple绑定](postgresql/semantic_binding_20260907/README.md)在11e89b08基线上实现：本地115、
+Linux138、PG18.3严格编译/regression1及TAP1848项通过，605源码哈希一致。保留测试头文件缺失的首轮
+失败及两轮成功；零模型请求、服务已停。setrefs与OFFSET原型修正设计，未据此开放Filter→Map。
+
 [Map调用分析提取](postgresql/semantic_call_extraction_20260907/README.md)以`b4b93b2e`为行为基线，
 源码由618项哈希固定；15个相关函数体等价，本地115/115、Linux138/138、PG18.3严格编译、
 regression1/1、8个TAP1808/1808通过。首次本地端口权限失败原样保留并说明重跑环境差异。

@@ -1,0 +1,52 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/pg1/socket, port 39379
+ok 1         - semloom_pg                                 21 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<artifact-root>/source/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/90 subtests
+t/003_choice_execution.pl ... ok
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+t/006_map_plan.pl ...........
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/268 subtests
+t/007_map_execution.pl ...... ok
+t/008_filter_and.pl ......... ok
+t/009_binding.pl ............
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+Failed 1/1 subtests
+
+Test Summary Report
+-------------------
+t/002_choice_plan.pl      (Wstat: 256 Tests: 90 Failed: 1)
+  Failed test:  12
+  Non-zero exit status: 1
+t/006_map_plan.pl         (Wstat: 256 Tests: 268 Failed: 1)
+  Failed test:  1
+  Non-zero exit status: 1
+t/009_binding.pl          (Wstat: 7424 Tests: 1 Failed: 1)
+  Failed test:  1
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+Files=9, Tests=1809, 50 wallclock secs ( 0.38 usr  0.04 sys + 27.46 cusr  9.19 csys = 37.07 CPU)
+Result: FAIL
+
+#   Failed test 'build test-only PG plan codec caller'
+#   at t/002_choice_plan.pl line 51.
+# Looks like you failed 1 test of 90.
+
+#   Failed test 'build the production plan codec caller and callback observer'
+#   at t/006_map_plan.pl line 15.
+# Looks like you failed 1 test of 268.
+
+#   Failed test 'build production binding callers'
+#   at t/009_binding.pl line 10.
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 1.
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

@@ -1,0 +1,20 @@
+{
+  "kind": "PG18.3 diagnostic; not Filter-to-Map qualification",
+  "model_requests": 0,
+  "runs": [
+    {
+      "name": "ordinary",
+      "exit_code": 0
+    },
+    {
+      "name": "filter",
+      "exit_code": 0
+    },
+    {
+      "name": "legacy_map",
+      "exit_code": 0
+    }
+  ],
+  "gateway_stopped": true,
+  "cluster_stopped": true
+}

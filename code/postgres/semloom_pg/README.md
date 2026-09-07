@@ -122,7 +122,10 @@ seven TAP files (1758 checks). The integration was a fast-forward to `103e2715`;
 `planner/sem_map_call.{c,h}`; extension registration and Map path construction consume that interface.
 The extraction preserves all 15 affected function bodies, apart from the collector name, and passes
 [local and PG18.3 checks](../../../experiments/results/postgresql/semantic_call_extraction_20260907/README.md).
-Shared call records and independent result binding remain pending. `semloom_pg.h` has been
+Shared occurrence records and tuple mapping now live in `semantic_call` and `semantic_binding`.
+The pump uses the legacy adapter, while explicit independent result mapping is verified through production
+callers. [Verification](../../../experiments/results/postgresql/semantic_binding_20260907/README.md) passes
+1848 PG TAP checks; a versioned outer carrier and Filter→Map remain pending. `semloom_pg.h` has been
 replaced by the four actual interfaces listed above, and all callers include the relevant header directly.
 Marker identity functions retain their original bodies in `planner/marker_identity.c`. The recording schema
 constant now lives with its semantic contract, so the provider no longer imports the planner for that value.

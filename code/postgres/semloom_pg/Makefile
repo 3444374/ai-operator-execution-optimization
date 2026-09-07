@@ -20,6 +20,8 @@ OBJS = \
 	src/semantics/semantic_map_contract.o \
 	src/planner/sem_plan_spec.o \
 	src/planner/sem_path_common.o \
+	src/planner/semantic_call.o \
+	src/planner/semantic_binding.o \
 	src/planner/sem_map_call.o \
 	src/planner/sem_map_path.o \
 	src/executor/sem_pump.o \

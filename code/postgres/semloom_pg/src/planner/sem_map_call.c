@@ -182,13 +182,13 @@ semloom_map_marker_oid(Query *parse)
 	return generate_count > 0 ? generate_oid : recording_oid;
 }
 
-FuncExpr *
-semloom_map_call(Query *parse, Oid marker_oid)
+SemloomSemanticCall *
+semloom_map_call(PlannerInfo *root, Oid marker_oid)
 {
-	FuncExpr *supported = NULL;
+	SemloomSemanticCall *supported = NULL;
 	ListCell *cell;
 
-	foreach(cell, parse->targetList)
+	foreach(cell, root->parse->targetList)
 	{
 		TargetEntry *entry = lfirst_node(TargetEntry, cell);
 		int count = semloom_marker_count((Node *) entry->expr, marker_oid);
@@ -205,7 +205,8 @@ semloom_map_call(Query *parse, Oid marker_oid)
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					 errmsg("the SemMap capability supports exactly one visible marker")));
 
-		supported = (FuncExpr *) entry->expr;
+		supported = semloom_call_create(root->query_level, SEMLOOM_CALL_FINAL_MAP,
+			0, entry->resno, (FuncExpr *) entry->expr);
 	}
 
 	return supported;

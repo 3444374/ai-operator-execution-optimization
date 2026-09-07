@@ -1,0 +1,61 @@
+LOAD
+CREATE EXTENSION
+SELECT 8
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+SET
+[
+  {
+    "Plan": {
+      "Node Type": "Limit",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 1.73,
+      "Total Cost": 2.30,
+      "Plan Rows": 1,
+      "Plan Width": 64,
+      "Disabled": false,
+      "Output": ["(pg_temp.probe_tick(body))", "(pg_temp.probe_tick(body))"],
+      "Plans": [
+        {
+          "Node Type": "Custom Scan",
+          "Parent Relationship": "Outer",
+          "Custom Plan Provider": "SemLoom SemFilter",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.00,
+          "Total Cost": 162.83,
+          "Plan Rows": 283,
+          "Plan Width": 64,
+          "Disabled": false,
+          "Output": ["pg_temp.probe_tick(body)", "pg_temp.probe_tick(body)"],
+          "Provider": "uds-recording",
+          "Physical Role": "reference",
+          "Filter Input Column": 2,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "child",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "probe_inputs",
+              "Schema": "pg_temp",
+              "Alias": "probe_inputs",
+              "Startup Cost": 0.00,
+              "Total Cost": 20.62,
+              "Plan Rows": 283,
+              "Plan Width": 64,
+              "Disabled": false,
+              "Output": ["body", "decision"],
+              "Filter": "true"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
+value|value
+ordinary|8
+NOTICE:  extension "semloom_pg" already exists, skipping

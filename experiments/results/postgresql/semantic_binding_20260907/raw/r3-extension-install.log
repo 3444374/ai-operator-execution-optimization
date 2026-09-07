@@ -1,0 +1,6 @@
+/usr/bin/mkdir -p '<pg-prefix>/lib/postgresql'
+/usr/bin/mkdir -p '<pg-prefix>/share/postgresql/extension'
+/usr/bin/mkdir -p '<pg-prefix>/share/postgresql/extension'
+/usr/bin/install -c -m 755  semloom_pg.so '<pg-prefix>/lib/postgresql/semloom_pg.so'
+/usr/bin/install -c -m 644 .//semloom_pg.control '<pg-prefix>/share/postgresql/extension/'
+/usr/bin/install -c -m 644 .//sql/semloom_pg--0.1.0.sql .//sql/semloom_pg--0.2.0.sql .//sql/semloom_pg--0.1.0--0.2.0.sql  '<pg-prefix>/share/postgresql/extension/'

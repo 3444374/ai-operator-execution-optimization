@@ -1,0 +1,71 @@
+LOAD
+CREATE EXTENSION
+SELECT 8
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+SET
+[
+  {
+    "Plan": {
+      "Node Type": "Custom Scan",
+      "Custom Plan Provider": "SemLoom SemMap",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 1.57,
+      "Total Cost": 2.10,
+      "Plan Rows": 1,
+      "Plan Width": 64,
+      "Disabled": false,
+      "Output": ["(pg_temp.probe_tick(body))", "(ai_semantic.map(pg_temp.probe_null_tick(body), 'Echo.'::text, '{\"model\": \"golden-map-v1\", \"max_tokens\": 128, \"temperature\": 0}'::jsonb))"],
+      "Provider": "uds-golden",
+      "Physical Role": "reference",
+      "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+      "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+      "Prompt Program": "semloom.sem_map.chat.v1",
+      "Result Parser": "semloom.sem_map.utf8_text.v1",
+      "Model": "golden-map-v1",
+      "Semantic Plan Schema": 4,
+      "Semantic Spec Digest": "a58e05e6667b86bae82dd2571444f21e60c799beb97fb32220ddcc0ffbc5b84c",
+      "Max Tokens": 128,
+      "Max Input Bytes": 163840,
+      "Max Output Bytes": 65536,
+      "Mapped Column": 2,
+      "Plans": [
+        {
+          "Node Type": "Limit",
+          "Parent Relationship": "child",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 1.57,
+          "Total Cost": 2.10,
+          "Plan Rows": 1,
+          "Plan Width": 64,
+          "Disabled": false,
+          "Output": ["(pg_temp.probe_tick(body))", "(pg_temp.probe_null_tick(body))"],
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "probe_inputs",
+              "Schema": "pg_temp",
+              "Alias": "probe_inputs",
+              "Startup Cost": 0.00,
+              "Total Cost": 445.62,
+              "Plan Rows": 850,
+              "Plan Width": 64,
+              "Disabled": false,
+              "Output": ["pg_temp.probe_tick(body)", "pg_temp.probe_null_tick(body)"]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
+value|
+map-input|4
+ordinary|4
+NOTICE:  extension "semloom_pg" already exists, skipping

@@ -42,7 +42,8 @@ static void
 semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 {
 	Query *parse = root->parse;
-	FuncExpr *marker = semloom_map_call(parse, marker_oid);
+	SemloomSemanticCall *call = semloom_map_call(root, marker_oid);
+	FuncExpr *marker = call == NULL ? NULL : call->marker;
 	bool insert_source = semloom_is_insert_source(root);
 	RangeTblRef *range_reference;
 	RangeTblEntry *range_entry;
@@ -91,7 +92,7 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("ai_semantic.map is only supported as a top-level output expression")));
 	if (list_length(marker->args) != (marker_oid == semloom_generate_map_function_oid() ? 3 : 1) ||
-		exprType(linitial(marker->args)) != TEXTOID ||
+		exprType((Node *) semloom_call_input(call)) != TEXTOID ||
 		marker->funcresulttype != TEXTOID)
 		ereport(ERROR,
 				(errcode(ERRCODE_DATATYPE_MISMATCH),

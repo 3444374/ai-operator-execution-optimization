@@ -15,9 +15,10 @@
 有界的数据组织与多作业调度。新增能力应沿这三项职责扩展，不以某个AND用例或某个cost字段决定整个架构。
 近期实施与未定问题见[§9](#implementation-sequence)。A1/A2a的确定方案见
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
-[增量session详细设计](semloom_incremental_session_design.md)；共同绑定与增量session仍未实现。
+[增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定已实现，增量session仍未实现。
 A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
-这不完成A1的共同调用/绑定，不替代A2a权限/投影原型。
+后续共同调用与tuple绑定及setrefs原型已[通过验证](../results/postgresql/semantic_binding_20260907/README.md)。
+外层carrier/组合未接入；OFFSET普通输出行为按PG18.3实测修订，详细结果与预期由近期规格维护。
 总体决策只由本文拥有，下级详细设计不重复总体架构；全部专项与恢复入口见§13。
 补充审查已收敛到这两份规格：交付提交点、唯一终态结算、可立即推进状态、分阶段等待和残余归属；
 PG新Map先验证权限与OFFSET/LIMIT投影。FIFO、bytes、单成员提交、预留时机与当前placement是
@@ -789,7 +790,7 @@ SemFilter/SemJoin 计划优化器；也不能据此说普通 PG 优化器完全�
 
 | 次序 | 交付与现有落点 | 前提和完成条件 |
 |---|---|---|
-| A1 公共调用/绑定 | 按[PG详细设计](postgresql_call_binding_design.md)提取共同描述、carrier与绑定校验，各算子保留placement规则 | 方案已写明，实施先保持66887463行为；来源检查、规划期出现和执行状态分开 |
+| A1 公共调用/绑定 | 按[PG详细设计](postgresql_call_binding_design.md)共同描述/tuple绑定已实现，外层carrier在A2a接入，各算子保留placement规则 | 现有SQL与wire回归通过；来源检查、规划期出现和执行状态分开 |
 | A2 真实组合消费者 | A2a先一个Filter→一个生成Map，详见[近期规格](postgresql_call_binding_design.md)；多个/依赖Map为后续A2b | A2a保持final Map位置与同步wire；新输入/结果位置分开，验证投影/NULL/LIMIT/权限/取消；A2b另定稿 |
 | A3 方法扩展验证 | 同步reference与有界确定性两阶段fixture共同检验方法接口 | 同一输入的阶段任务与唯一结果关联、阶段失败/取消、零任务、资源释放；不据fixture宣称近似方法质量 |
 | A4 条件与复杂关系 | 值语义/OR/NOT/CASE；重扫/参数化/Join等按实际需求分别推进 | 先定三值/NULL/错误及求值规则，再验证合法载体；无可靠extension表达时保留阻断并评估最小core方案 |
