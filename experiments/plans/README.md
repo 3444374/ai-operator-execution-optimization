@@ -11,6 +11,8 @@
 |---|---|
 | 当前实验完成度、证据缺口与运行条件 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [主设计](postgresql_ai_semantic_operator_architecture_20260827.md)：长期能力、PG/方法/Core职责、调用与任务关系、资源所有权；[实施与验收](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence) |
+| 近期PG公共调用/绑定与首个组合怎样编码 | [PG调用与绑定详细设计](postgresql_call_binding_design.md)：A1及A2a一个Filter→一个生成Map，含对象/时序/新旧绑定/具体预期；实施待进行 |
+| 增量session如何接纳、推进、取消和回收 | [增量session详细设计](semloom_incremental_session_design.md)：B1静态复核/B2单流合同、完成lease与Engine账本、B4分层依赖；动态表征/实施待进行 |
 | 生成型 Map 的具体行为、数据表示与验收 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md)：消息、纯值、PG plan/权限与 C/Python v5/golden 已纳入 main；真实模型与资源检查按 §8 继续 |
 | 回查 choice 已完成的字段、协议、请求预算与实施验收要求 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
 | 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
@@ -26,7 +28,8 @@
 主设计已按项目长期能力重写，choice与生成型Map具体语义仍由专项维护，实际代码/实验状态只看
 INFRA_STATUS和证据台账。当前双Filter/多会话分支已推送、未合并main；数据库公共调用/绑定与
 独立增量Core可分别推进，再完成对应PG桥接。Filter质量/成本资格独立，复杂SQL、方法优化与公司
-移植按实际需求验证。全部工程依赖统一见主设计§9；本次设计更新没有新增实现、模型运行或实验资格。
+移植按实际需求验证。全部工程依赖统一见主设计§9；上述两份下级规格只拥有近期细节，不另定义总体方向。
+本次设计更新没有新增实现、模型运行或实验资格。
 
 ## 2. 状态分层
 

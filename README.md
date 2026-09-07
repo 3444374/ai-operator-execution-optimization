@@ -36,6 +36,9 @@ NULL 零调用、结果与写回均通过。main中的两个算子各自同步�
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
 分别推进数据库调用/绑定、增量Core及共同资源/观测，再验证实际桥接。
+近期实现分别由[PG调用与绑定规格](experiments/plans/postgresql_call_binding_design.md)和
+[单流增量执行规格](experiments/plans/semloom_incremental_session_design.md)描述具体对象、时序与验收；
+它们是待实施设计，未增加当前支持能力。
 [可选 choice 生成配置](experiments/plans/completed/postgresql_choice_profile_engineering.md)的工程验证已完成；
 已有[生成型Map](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与
 [受限组合](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)
