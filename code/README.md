@@ -1,8 +1,8 @@
 # SemLoom Code
 
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
-The `codex/pg-module-layout` branch groups extension code by responsibility; see its [module map](postgres/semloom_pg/README.md#module-layout).
-Local checks and the full PG18.3 recheck at `20b22a55` pass; the layout branch remains unmerged. The earlier database results below retain their recorded source versions.
+The integrated main branch groups extension code by responsibility; see its [module map](postgres/semloom_pg/README.md#module-layout).
+Local checks and the full PG18.3 recheck at `20b22a55` pass; the layout has been fast-forwarded into local main. The earlier database results below retain their recorded source versions.
 Module targets, implementation order, and acceptance criteria belong to
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
 the code tree and must not become a competing engineering plan.

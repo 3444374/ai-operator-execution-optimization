@@ -6,7 +6,7 @@
 失败保留，单独修正测试；没有改变生产超时或重试策略。用户随后授权服务器补验，`20b22a55`通过
 Linux112+4项、PG18.3严格构建、regression1/1及完整7个TAP1758/1758；源码107项哈希匹配，安装件
 与构建件相同。此前下载、临时驱动PATH与SQL_ASCII初始化失败分别保留，最终独立UTF8运行通过。
-自有活跃进程0、socket关闭；分支未合并main，模型请求0。本轮PG证据独立于下列旧版本和真实模型记录。
+自有活跃进程0、socket关闭；用户授权后已快进合入本地main，模型请求0。本轮PG证据独立于下列旧版本和真实模型记录。
 
 [两算子完整回归与合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 绑定`5771cef1`（运行时代码`fcd12373`）：Linux247/247、PG18.3严格构建、regression1/1、

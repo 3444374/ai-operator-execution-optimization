@@ -96,10 +96,10 @@ The current thin scan, PG-private runtime and neutral provider interface remain 
 ### Module layout
 
 The extension source is grouped by its existing responsibilities. SQL definitions and TAP assertions keep
-their original locations and behavior. The current layout refactor is on `codex/pg-module-layout`; its local
+their original locations and behavior. The layout was integrated into local main from `codex/pg-module-layout`; its local
 validation is recorded in the [layout verification](../../../experiments/results/postgresql/pg_module_layout_20260907/README.md).
 Commit `20b22a55` also passes Linux 112+4 contracts, strict PG18.3 compilation, regression 1/1 and all
-seven TAP files (1758 checks). The branch has not been merged into main; no real model was used in this recheck.
+seven TAP files (1758 checks). The integration was a fast-forward to `103e2715`; no real model was used in this recheck.
 
 | Location | Contents and interface |
 |---|---|

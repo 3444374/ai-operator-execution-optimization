@@ -1,14 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
 2026-09-07 的[扩展目录重构](../experiments/results/postgresql/pg_module_layout_20260907/README.md)
-位于独立分支 `codex/pg-module-layout`，起点为 `41e103f2`。现有实现按 planner、semantics、executor、
+从独立分支 `codex/pg-module-layout` 快进合入本地main，起点为 `41e103f2`。现有实现按 planner、semantics、executor、
 provider/wire 整理，Map 路径明确命名；总头文件拆为配置、marker 身份、path 与 scan 的实际接口，
 provider 不再依赖 planner 头文件。迁移函数体、SQL、协议和错误语义保持，未增加组合或异步。
 本地112项算子合同、4项网关测试和8项严格C11编译通过；保留并修正了一次旧HTTP deadline测试的
 错误计数假设。用户随后授权服务器补验：`20b22a55`通过Linux112+4项、PG18.3严格构建、
 regression1/1和全部TAP1758/1758，107项源码哈希匹配，安装件与构建件相同。准备过程的下载超时、
 临时驱动PATH与SQL_ASCII环境失败分别保留，最终独立UTF8运行完整通过；未修改源码或断言。
-本轮自有活跃进程0、socket关闭、真实模型请求0；分支尚未合并main。下文旧模型结果保持原身份。
+本轮自有活跃进程0、socket关闭、真实模型请求0；已合并本地main，尚未推送。下文旧模型结果保持原身份。
 
 最新[两算子合并验证](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 在`5771cef1`通过Linux247/247、PG18.3严格构建、regression1/1和全部TAP1758/1758。
