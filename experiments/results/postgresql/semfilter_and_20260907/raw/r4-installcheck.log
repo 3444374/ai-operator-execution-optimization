@@ -1,0 +1,33 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/pg4/socket, port 46067
+ok 1         - semloom_pg                                 19 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<artifact-root>/source/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ... ok
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+t/006_map_plan.pl ........... ok
+t/007_map_execution.pl ...... ok
+t/008_filter_and.pl .........
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/41 subtests
+
+Test Summary Report
+-------------------
+t/008_filter_and.pl       (Wstat: 256 Tests: 41 Failed: 1)
+  Failed test:  3
+  Non-zero exit status: 1
+Files=8, Tests=1799, 46 wallclock secs ( 0.35 usr  0.02 sys + 26.16 cusr  8.11 csys = 34.64 CPU)
+Result: FAIL
+
+#   Failed test 'different instructions retain independent specs'
+#   at t/008_filter_and.pl line 65.
+#          got: undef
+#     expected: anything else
+# Looks like you failed 1 test of 41.
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

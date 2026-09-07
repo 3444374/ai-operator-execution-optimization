@@ -1,6 +1,9 @@
 # SemLoom Code
 
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
+The `codex/semfilter-and` branch now supports two top-level Filter AND predicates through one bounded
+multi-session gateway. [Validation](../experiments/results/postgresql/semfilter_and_20260907/README.md)
+passes Linux 138 checks and PG18.3 regression plus 1808 TAP checks; it is not yet merged into main.
 The integrated main branch groups extension code by responsibility; see its [module map](postgres/semloom_pg/README.md#module-layout).
 Local checks and the full PG18.3 recheck at `20b22a55` pass; the layout has been fast-forwarded into local main. The earlier database results below retain their recorded source versions.
 Module targets, implementation order, and acceptance criteria belong to
@@ -15,7 +18,8 @@ supplied at the [documented CLI](scripts/README.md); retired result scripts are 
 The shared implementation has also passed an [eight-request real-model check](../experiments/results/postgresql/semmap_prepush_20260906/README.md),
 including INSERT with independent result auditing. The later [complete operator checks](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 pass all seven PG18.3 TAP files, regression, and a nine-request real-model SELECT/INSERT check for Filter v3/v4
-and Map v5. These establish the supported synchronous paths; composition and asynchronous execution remain pending.
+and Map v5. These earlier results establish the separate synchronous paths. The AND branch above adds one composition;
+Filter→Map and asynchronous execution remain pending.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/semantics/generation_profile.{h,c}`. They validate one immutable tristate profile

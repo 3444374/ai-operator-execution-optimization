@@ -146,9 +146,15 @@ WHERE NOT ai_semantic.filter(decision);
 ERROR:  ai_semantic.filter must be one top-level AND predicate
 SELECT doc_id
 FROM semloom_filter_decisions
-WHERE ai_semantic.filter(decision)
-  AND ai_semantic.filter(decision || '');
-ERROR:  ai_semantic.filter must be one top-level AND predicate
+WHERE doc_id < 6 AND ai_semantic.filter(decision)
+  AND ai_semantic.filter(decision || '')
+ORDER BY doc_id;
+ doc_id 
+--------
+      1
+      5
+(2 rows)
+
 SELECT ai_semantic.map(decision)
 FROM semloom_filter_decisions
 WHERE ai_semantic.filter(decision);

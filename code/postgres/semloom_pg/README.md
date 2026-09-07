@@ -7,6 +7,13 @@ PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic cont
 OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
 scheduling, asynchronous execution, or a second physical path.
 
+The `codex/semfilter-and` branch adds up to two top-level Filter predicates joined by AND through one
+bounded multi-session gateway. It reuses the existing scans, row pump and synchronous provider port.
+[Verification](../../../experiments/results/postgresql/semfilter_and_20260907/README.md) passes Linux 138
+contracts, strict PG18.3 compilation, regression 1/1 and all eight TAP files (1808 checks). It includes
+independent volatile-input evaluation, native function permissions, RLS, snapshots and cancellation.
+This branch has not been merged into main; Filter→Map and per-session asynchronous work remain pending.
+
 The [2026-09-06 integration checks](../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (1758 checks), and 247 related
 Python/C message tests. Nine real-model requests verify separate Filter v3/v4 and Map v5 SELECT/INSERT
@@ -116,6 +123,12 @@ replaced by the four actual interfaces listed above, and all callers include the
 Marker identity functions retain their original bodies in `planner/marker_identity.c`. The recording schema
 constant now lives with its semantic contract, so the provider no longer imports the planner for that value.
 
+The AND branch separates validated call collection into `planner/sem_filter_call.{c,h}`. Path construction
+nests existing Filter scans and passes raw downstream dependencies. Intermediate scans cannot absorb the
+next input projection, so identical volatile expressions still evaluate once for each Filter. Retained marker
+expressions in `custom_exprs` let PostgreSQL initialize native function permissions/hooks and track plan
+dependencies without executing the markers. The existing pump and provider interfaces are reused.
+
 Builds use one source include root (`-Isrc`) and module-qualified project includes. The production PGXS
 Makefile lists every object explicitly; the test-only plan codec Makefile resolves production inputs from
 `planner/` and `semantics/`. C/header files remain internal implementation paths, while SQL signatures,
@@ -149,10 +162,11 @@ The current supported query shape is deliberately narrow:
 - one top-level `ai_semantic.map(text,text,jsonb)` in a non-inherited single-table `SELECT` or direct
   `INSERT ... SELECT`, with immutable constant instruction/options and text output. Options are exactly
   `model`, numeric-zero `temperature`, and integer `max_tokens` from 1 to 4096. Whole-Map SQL wrappers,
-  multiple semantic calls, and Map/Filter combinations are not supported;
-- one top-level `ai_semantic.filter(text)` base-relation predicate in `WHERE`; exact `true` emits the
+  multiple Map calls and Map/Filter combinations are not supported;
+- one or two top-level `ai_semantic.filter(text)` predicates joined by AND in `WHERE`; exact `true` emits the
   tuple, while `false`, `unknown`, and SQL `NULL` drop it without letting the provider create rows;
-- one top-level `ai_semantic.filter(text,text,jsonb)` exact-reference predicate. The planner requires a
+- one or two top-level `ai_semantic.filter(text,text,jsonb)` exact-reference predicates joined by AND.
+  Recording and exact/choice Filter calls can coexist; each call retains its own input evaluation and state. The planner requires a
   non-NULL constant instruction and `model`, numeric-zero `temperature`, and integer `max_tokens=8`.
   Exactly those three option fields select schema 2/wire v3; adding the known `generation_profile` option
   shown above selects schema 3/wire v4. Other option fields are rejected;
@@ -175,8 +189,8 @@ The current supported query shape is deliberately narrow:
   raw result.
 
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
-set operations, row locks, set-returning targets, nested/multiple marker use, and combined SemMap/SemFilter.
-SemMap remains target-list-only and rejects sorting; SemFilter remains one top-level `AND` predicate and
+set operations, row locks, set-returning targets, nested markers, more than two Filter calls, and combined SemMap/SemFilter.
+SemMap remains target-list-only and rejects sorting; SemFilter supports up to two top-level `AND` predicates and
 allows ordinary predicates, `ORDER BY`, and `LIMIT`. The executor rejects backward scan, mark/restore,
 rescan, and EPQ. Parallel execution is disabled. The version-2 UDS protocol is deliberately synchronous
 with one in-flight task, a 1 MiB frame limit, and a conservative 174,080-byte input limit applied before

@@ -71,8 +71,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("semloom_exact_filter_function_oid", filter_path)
         self.assertIn("SEMLOOM_FILTER_INSTRUCTION_MAX_BYTES 4096", contract_header)
         self.assertIn("SEMLOOM_FILTER_MODEL_MAX_BYTES 128", contract_header)
-        self.assertIn("JB_ROOT_IS_OBJECT", filter_path)
-        self.assertIn("ERRCODE_INVALID_PARAMETER_VALUE", filter_path)
+        filter_calls = (EXTENSION_ROOT / "src/planner/sem_filter_call.c").read_text()
+        self.assertIn("JB_ROOT_IS_OBJECT", filter_calls)
+        self.assertIn("ERRCODE_INVALID_PARAMETER_VALUE", filter_calls)
         for field_name in (
             "instruction",
             "prompt_program_digest",

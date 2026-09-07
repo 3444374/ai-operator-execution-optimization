@@ -9,6 +9,8 @@ import signal
 import socket
 import stat
 import time
+import threading
+from functools import partial
 from pathlib import Path
 
 from .adapters.golden import GoldenCompletionAdapter
@@ -16,16 +18,20 @@ from .adapters.openai_compatible_fixed import (
     OpenAICompatibleFixedAdapter,
     load_fixed_model_config,
 )
-from .adapters.recording import run_recording_session
-from .adapters.semantic_session import CompletionAdapter, run_v3_session, run_v4_session, run_v5_session
+from .adapters.semantic_session import CompletionAdapter
 from .completion import Completion
-from .wire.framing import ProtocolError, read_frame
+from .gateway_runtime import GatewayLimits, GatewayRuntime
+from .request_admission import RequestAdmission
+from .session_dispatch import run_session as _run_session
 
 
 def parse_args(argv=None) -> argparse.Namespace:
     """Parse the versioned provider gateway command line."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", type=Path, required=True)
+    parser.add_argument("--max-connections", type=int, default=GatewayLimits.max_connections)
+    parser.add_argument("--max-active-requests", type=int, default=GatewayLimits.max_active_requests)
+    parser.add_argument("--frame-timeout-ms", type=int, default=GatewayLimits.frame_timeout_ms)
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
     adapter_group = parser.add_mutually_exclusive_group()
     adapter_group.add_argument(
@@ -79,6 +85,10 @@ def parse_args(argv=None) -> argparse.Namespace:
 def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
     """Serve sessions; optional decorators observe this invocation only."""
     args = parse_args(argv)
+    try:
+        limits = GatewayLimits(args.max_connections, args.max_active_requests, args.frame_timeout_ms)
+    except ValueError as error:
+        raise SystemExit(str(error)) from None
     if args.test_response_delay_ms < 0:
         raise SystemExit("--test-response-delay-ms must be non-negative")
     if args.test_fill_connect_queue_ms < 0:
@@ -98,6 +108,7 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
         completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)
     if adapter_wrapper is not None:
         completion_adapter = adapter_wrapper(completion_adapter)
+    completion_adapter = RequestAdmission(completion_adapter, limits.max_active_requests)
     run_session = _run_session if session_wrapper is None else session_wrapper(_run_session)
     if socket_path.exists():
         mode = socket_path.stat().st_mode
@@ -105,11 +116,10 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
         raise SystemExit(f"refusing to replace existing {kind}: {socket_path}")
     socket_path.parent.mkdir(parents=True, exist_ok=True)
 
-    stopping = False
+    stopping = threading.Event()
 
     def request_stop(_signum: int, _frame: object) -> None:
-        nonlocal stopping
-        stopping = True
+        stopping.set()
 
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
@@ -121,7 +131,7 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
         socket_metadata = socket_path.lstat()
         socket_identity = (socket_metadata.st_dev, socket_metadata.st_ino)
         os.chmod(socket_path, 0o600)
-        listener.listen(0 if args.test_fill_connect_queue_ms else socket.SOMAXCONN)
+        listener.listen(0 if args.test_fill_connect_queue_ms else limits.max_connections)
         if args.test_fill_connect_queue_ms:
             blocker = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             try:
@@ -130,28 +140,15 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
             finally:
                 blocker.close()
             return 0
-        listener.settimeout(0.25)
-        served_sessions = 0
-        while not stopping:
-            try:
-                connection, _ = listener.accept()
-            except TimeoutError:
-                continue
-            with connection:
-                run_session(
-                    connection,
-                    completion_adapter=completion_adapter,
-                    response_delay_ms=args.test_response_delay_ms,
-                    tamper_evidence_digest=args.test_tamper_evidence_digest,
-                    disconnect_on_task=args.test_disconnect_on_task,
-                    completion_fixture=args.test_completion_fixture,
-                )
-            served_sessions += 1
-            if args.once or (
-                args.test_max_sessions > 0
-                and served_sessions >= args.test_max_sessions
-            ):
-                break
+        handler = partial(
+            run_session, completion_adapter=completion_adapter,
+            response_delay_ms=args.test_response_delay_ms,
+            tamper_evidence_digest=args.test_tamper_evidence_digest,
+            disconnect_on_task=args.test_disconnect_on_task,
+            completion_fixture=args.test_completion_fixture,
+        )
+        GatewayRuntime(handler, limits).serve(
+            listener, stopping, session_limit=1 if args.once else args.test_max_sessions)
     finally:
         listener.close()
         if socket_identity is not None:
@@ -194,43 +191,3 @@ def _load_golden_fixtures(path: Path | None) -> dict[str, str | Completion]:
                 raise SystemExit("Map golden fixture requires explicit completion metadata")
             fixtures[digest] = Completion(**output)
     return fixtures
-
-
-def _run_session(
-    connection: socket.socket,
-    *,
-    completion_adapter: CompletionAdapter,
-    response_delay_ms: int,
-    tamper_evidence_digest: bool,
-    disconnect_on_task: bool,
-    completion_fixture: str | None,
-) -> None:
-    try:
-        opened = read_frame(connection)
-    except (ProtocolError, ValueError, RecursionError):
-        connection.close()
-        return
-    if opened is None:
-        connection.close()
-        return
-    protocol_version = opened.get("protocol_version")
-    if type(protocol_version) is int and protocol_version in (3, 4, 5):
-        run_session = {3: run_v3_session, 4: run_v4_session, 5: run_v5_session}[protocol_version]
-        run_session(
-            connection,
-            completion_adapter,
-            open_message=opened,
-            response_delay_ms=response_delay_ms,
-            tamper_evidence_digest=tamper_evidence_digest,
-            disconnect_on_task=disconnect_on_task,
-            completion_fixture=completion_fixture,
-        )
-        return
-    run_recording_session(
-        connection,
-        open_message=opened,
-        response_delay_ms=response_delay_ms,
-        tamper_evidence_digest=tamper_evidence_digest,
-        disconnect_on_task=disconnect_on_task,
-        completion_fixture=completion_fixture,
-    )

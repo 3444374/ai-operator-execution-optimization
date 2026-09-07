@@ -9,6 +9,7 @@ OBJS = \
 	src/executor/pg_semantic_runtime.o \
 	src/provider/recording_provider.o \
 	src/planner/sem_filter_calibration.o \
+	src/planner/sem_filter_call.o \
 	src/planner/sem_filter_cost.o \
 	src/semantics/sem_filter_machine.o \
 	src/planner/sem_filter_path.o \

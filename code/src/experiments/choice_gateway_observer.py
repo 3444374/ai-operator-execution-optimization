@@ -10,10 +10,11 @@ import json
 from pathlib import Path
 import socket
 import time
+import threading
 
 from src.execution_provider import server
 from src.execution_provider.adapters.semantic_session import CompletionAdapterError
-from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger, observe_http_posts
+from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger, BudgetError, observe_http_posts
 from src.experiments.gateway_observer import ObservedAdapter, SessionObserver
 from src.baselines.common.redact import redact_text
 
@@ -41,15 +42,22 @@ def main(argv=None):
     budget = CHOICE_BUDGET if args.budget_id is None else AttemptBudget(args.budget_id, args.max_attempts)
     ledger = AttemptLedger(args.ledger, budget) if args.ledger else None
     args.events.touch(exist_ok=False)
+    record_lock = threading.Lock()
+    session_observer = SessionObserver(lambda event: None)
 
     def record(event):
-        with args.events.open('a', encoding='utf-8') as handle:
+        event = dict(event, session_id=session_observer.current_session,
+                     task=session_observer.current_task)
+        with record_lock, args.events.open('a', encoding='utf-8') as handle:
             handle.write(redact_text(json.dumps(event, ensure_ascii=False, separators=(',', ':'))) + '\n')
 
     def observe_completion(request, complete):
         started = time.monotonic()
         try:
             completion = complete(request)
+        except BudgetError:
+            # The HTTP observer rejected dispatch before calling the transport.
+            raise CompletionAdapterError('GATEWAY_INTERNAL') from None
         except CompletionAdapterError as error:
             record(dict(event='error', payload_digest=request.semantic_payload_digest,
                         code=error.code, elapsed_seconds=time.monotonic() - started))
@@ -77,22 +85,20 @@ def main(argv=None):
     gateway_args = gateway_args[1:] if gateway_args[:1] == ['--'] else gateway_args
     try:
         with ExitStack() as stack:
-            session_observer = None
             if args.session_events:
                 handle = stack.enter_context(args.session_events.open('x', encoding='ascii', buffering=1))
                 session_observer = SessionObserver(lambda event: handle.write(json.dumps(event) + '\n'))
 
             def wrap_adapter(adapter):
                 observed = ObservedAdapter(adapter, observe_completion)
-                return (observed if session_observer is None else
-                        ObservedAdapter(observed, session_observer.complete))
+                return ObservedAdapter(observed, session_observer.complete)
 
             def wrap_session(run):
                 return lambda connection, **kw: session_observer.run_session(connection, run, **kw)
 
             stack.enter_context(observer)
             return server.main(gateway_args, adapter_wrapper=wrap_adapter,
-                               session_wrapper=wrap_session if session_observer else None)
+                               session_wrapper=wrap_session)
     finally:
         socket.getaddrinfo = original_resolve
 

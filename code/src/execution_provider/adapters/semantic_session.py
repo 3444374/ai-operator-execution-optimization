@@ -29,9 +29,10 @@ class CompletionRequest:
 class CompletionAdapterError(Exception):
     """A redacted error code returned by a completion adapter."""
 
-    def __init__(self, code: str) -> None:
+    def __init__(self, code: str, *, remote_outcome_unknown: bool = False) -> None:
         super().__init__(code)
         self.code = code
+        self.remote_outcome_unknown = remote_outcome_unknown
 
 
 class CompletionAdapter(Protocol):

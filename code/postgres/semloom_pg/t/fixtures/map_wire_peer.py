@@ -45,6 +45,12 @@ class FaultConnection:
     def __init__(self, connection, fault):
         self.connection, self.fault = connection, fault
 
+    def gettimeout(self):
+        return self.connection.gettimeout()
+
+    def settimeout(self, value):
+        self.connection.settimeout(value)
+
     def recv(self, length):
         return self.connection.recv(length)
 

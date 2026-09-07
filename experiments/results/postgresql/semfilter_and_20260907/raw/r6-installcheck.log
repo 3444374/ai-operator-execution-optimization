@@ -1,0 +1,33 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/pg6/socket, port 39409
+ok 1         - semloom_pg                                 22 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<artifact-root>/source/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ... ok
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+t/006_map_plan.pl ........... ok
+t/007_map_execution.pl ...... ok
+t/008_filter_and.pl .........
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/50 subtests
+
+Test Summary Report
+-------------------
+t/008_filter_and.pl       (Wstat: 256 Tests: 50 Failed: 1)
+  Failed test:  21
+  Non-zero exit status: 1
+Files=8, Tests=1808, 47 wallclock secs ( 0.33 usr  0.05 sys + 25.99 cusr  9.03 csys = 35.40 CPU)
+Result: FAIL
+
+#   Failed test 'each Filter evaluates its own volatile input'
+#   at t/008_filter_and.pl line 98.
+#          got: '1'
+#     expected: '2'
+# Looks like you failed 1 test of 50.
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

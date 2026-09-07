@@ -6,6 +6,13 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## Two Filter AND and bounded gateway sessions (2026-09-07)
+
+[Implementation checks](postgresql/semfilter_and_20260907/README.md) cover two Filter nodes through one
+gateway, independent input evaluation, native permissions and lifecycle. Linux138/138 and PG18.3
+regression1/1 plus TAP1808/1808 pass; seven PG attempts are retained. No real model was used.
+The branch remains separate from main; Filter→Map and per-session asynchronous work remain pending.
+
 ## PostgreSQL 扩展目录整理（2026-09-07）
 
 [本地结构与合同检查](postgresql/pg_module_layout_20260907/README.md)对应独立分支

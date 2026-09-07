@@ -392,7 +392,8 @@ semloom_filter_cost_valid_calibration(const SemloomFilterCostEstimate *estimate)
 		estimate->accepted_max_relative_error != 0)
 		return false;
 	if (strcmp(estimate->calibration_status, "unavailable") == 0)
-		return strcmp(estimate->calibration_reason, "not-configured") == 0;
+		return strcmp(estimate->calibration_reason, "not-configured") == 0 ||
+			strcmp(estimate->calibration_reason, "upstream-semantic-filter") == 0;
 	return strcmp(estimate->calibration_status, "rejected") == 0 &&
 		semloom_filter_cost_rejection_reason(estimate->calibration_reason);
 }

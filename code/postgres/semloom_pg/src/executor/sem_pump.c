@@ -88,6 +88,8 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("semantic operator input is outside the scan tuple")));
 
+	/* Compile retained markers for permissions/hooks without evaluating them. */
+	ExecInitExprList(scan->custom_exprs, &node->ss.ps);
 	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
 	{
 		AclResult aclresult;

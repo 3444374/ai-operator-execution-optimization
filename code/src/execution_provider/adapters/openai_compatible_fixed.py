@@ -311,6 +311,8 @@ class OpenAICompatibleFixedAdapter:
         deadline = _RequestDeadline(self._config.timeout_ms)
         connection: http.client.HTTPConnection | None = None
         response: http.client.HTTPResponse | None = None
+        dispatched = False
+        terminal_response = False
         try:
             resolved_addresses = self._resolver.resolve(deadline)
             connection = connection_type(
@@ -331,12 +333,17 @@ class OpenAICompatibleFixedAdapter:
 
             connection._create_connection = connect_resolved  # type: ignore[attr-defined]
             deadline.bind(connection)
+            connection.connect()
+            deadline.bind_socket(connection.sock)
+            deadline.set_socket_timeout()
+            dispatched = True
             connection.request("POST", endpoint_path, body=payload, headers=headers)
             deadline.bind_socket(connection.sock)
             deadline.set_socket_timeout()
             response = connection.getresponse()
             deadline.bind_response(response)
             if 300 <= response.status < 400 or not (200 <= response.status < 300):
+                terminal_response = True
                 if 400 <= response.status < 500:
                     code = "MODEL_REQUEST_REJECTED"
                 elif 500 <= response.status < 600:
@@ -345,14 +352,15 @@ class OpenAICompatibleFixedAdapter:
                     code = "MODEL_RESPONSE_INVALID"
                 raise CompletionAdapterError(code)
             response_bytes = _read_response(response, deadline)
+            terminal_response = True
         except (TimeoutError, socket.timeout):
-            raise CompletionAdapterError("MODEL_TIMEOUT") from None
+            raise CompletionAdapterError("MODEL_TIMEOUT", remote_outcome_unknown=dispatched and not terminal_response) from None
         except http.client.HTTPException:
             code = "MODEL_TIMEOUT" if deadline.expired else "MODEL_RESPONSE_INVALID"
-            raise CompletionAdapterError(code) from None
+            raise CompletionAdapterError(code, remote_outcome_unknown=dispatched and not terminal_response) from None
         except OSError:
             code = "MODEL_TIMEOUT" if deadline.expired else "MODEL_UNAVAILABLE"
-            raise CompletionAdapterError(code) from None
+            raise CompletionAdapterError(code, remote_outcome_unknown=dispatched and not terminal_response) from None
         finally:
             if response is not None:
                 response.close()
@@ -361,8 +369,6 @@ class OpenAICompatibleFixedAdapter:
             deadline.close()
         if deadline.expired:
             raise CompletionAdapterError("MODEL_TIMEOUT")
-        if len(response_bytes) > MAX_MODEL_RESPONSE_BYTES:
-            raise CompletionAdapterError("MODEL_RESPONSE_INVALID")
         try:
             response_value = json.loads(response_bytes.decode("utf-8"))
             return _parse_completion(response_value)
@@ -403,24 +409,27 @@ def _read_response(
     response: http.client.HTTPResponse,
     deadline: _RequestDeadline,
 ) -> bytes:
-    chunks: list[bytes] = []
-    total_bytes = 0
-    while total_bytes <= MAX_MODEL_RESPONSE_BYTES:
+    buffer = bytearray()
+    while len(buffer) <= MAX_MODEL_RESPONSE_BYTES:
         deadline.remaining_seconds()
         chunk = response.read1(
             min(
                 _RESPONSE_READ_BYTES,
-                MAX_MODEL_RESPONSE_BYTES + 1 - total_bytes,
+                MAX_MODEL_RESPONSE_BYTES + 1 - len(buffer),
             )
         )
+        deadline.remaining_seconds()
         if not chunk:
+            if response.length not in (None, 0):
+                raise CompletionAdapterError("MODEL_RESPONSE_INVALID", remote_outcome_unknown=True)
             break
-        chunks.append(chunk)
-        total_bytes += len(chunk)
+        buffer.extend(chunk)
         deadline.remaining_seconds()
     if deadline.expired:
         raise TimeoutError
-    return b"".join(chunks)
+    if len(buffer) > MAX_MODEL_RESPONSE_BYTES:
+        raise CompletionAdapterError("MODEL_RESPONSE_INVALID", remote_outcome_unknown=True)
+    return bytes(buffer)
 
 
 def _parse_completion(value: object) -> Completion:

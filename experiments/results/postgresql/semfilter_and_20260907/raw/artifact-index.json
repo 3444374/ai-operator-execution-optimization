@@ -1,0 +1,332 @@
+[
+  {
+    "artifact": "final-python-execution_provider.log",
+    "sha256": "9c94a165834fff8e0c7c703f6ba1e5c44a168fc800c5f77a3bf2e133e17751a0",
+    "published": true,
+    "published_sha256": "9c94a165834fff8e0c7c703f6ba1e5c44a168fc800c5f77a3bf2e133e17751a0"
+  },
+  {
+    "artifact": "final-python-experiments.log",
+    "sha256": "6d1e7f200c680a393e75a6ac77ac93317f55ee6f65bfe35bc9ca1cdb72c24865",
+    "published": true,
+    "published_sha256": "6d1e7f200c680a393e75a6ac77ac93317f55ee6f65bfe35bc9ca1cdb72c24865"
+  },
+  {
+    "artifact": "final-python-postgres.log",
+    "sha256": "f0e36cd1631eaf59dff444cdf642dcdb1cfc3ccb0cb7276aaad2d7c95226d418",
+    "published": true,
+    "published_sha256": "f0e36cd1631eaf59dff444cdf642dcdb1cfc3ccb0cb7276aaad2d7c95226d418"
+  },
+  {
+    "artifact": "final-python-summary.json",
+    "sha256": "b762a0128998d74ac16527a5899ef9f934af12a785a27ed8eb0e4ed48b4c5f72",
+    "published": true,
+    "published_sha256": "b762a0128998d74ac16527a5899ef9f934af12a785a27ed8eb0e4ed48b4c5f72"
+  },
+  {
+    "artifact": "r1-extension-build.log",
+    "sha256": "566850d328129bc9041dc8a28d798476a153c1d7358bd0a85494cfddf3516d20",
+    "published": false
+  },
+  {
+    "artifact": "r1-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r1-initdb.log",
+    "sha256": "c7f3ec6f7ceec69389a60bb0dcba55c0d3c4fc2975d3d21cc32e8e10ee1a5fe6",
+    "published": false
+  },
+  {
+    "artifact": "r1-installcheck.log",
+    "sha256": "ae12431c41b1bd92c958d56aeaec82896420e2c4e204c4fdf74fba4283f97c87",
+    "published": true,
+    "published_sha256": "ae12431c41b1bd92c958d56aeaec82896420e2c4e204c4fdf74fba4283f97c87"
+  },
+  {
+    "artifact": "r1-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r1-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r1-pg-verification.json",
+    "sha256": "affcfdf863bde8ed3f1729ce21f59e9a757130d4d63fa1b43e38fde77e10ea94",
+    "published": true,
+    "published_sha256": "affcfdf863bde8ed3f1729ce21f59e9a757130d4d63fa1b43e38fde77e10ea94"
+  },
+  {
+    "artifact": "r1-regression.diffs",
+    "sha256": "d1e0d04ac818659121901e4066c406a90318637f0159bd9553d59f4666c74c49",
+    "published": false
+  },
+  {
+    "artifact": "r1-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "r2-extension-build.log",
+    "sha256": "68c5f548009ee20966e380682cc0b78f39bea9c8895af0403577a7204fef2e99",
+    "published": false
+  },
+  {
+    "artifact": "r2-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r2-initdb.log",
+    "sha256": "f66b931bee663701c7e858ea3381545139f7fbf1abaf8f44fe0241aa9f055ddc",
+    "published": false
+  },
+  {
+    "artifact": "r2-installcheck.log",
+    "sha256": "0ae7d6ec36dfcf7602a9f0195cdc23ae93df85f72fb3d8b666f51d17dd72501d",
+    "published": true,
+    "published_sha256": "efa58984af833359347ded47eed64002f9d2317e4fc6a6fdb4b8ac2fa7545796"
+  },
+  {
+    "artifact": "r2-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r2-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r2-pg-verification.json",
+    "sha256": "b2ed1045e8c68f15cb8d8cbab6c4b328cb9b8c2dfe8c1a455429ed76af392120",
+    "published": true,
+    "published_sha256": "b2ed1045e8c68f15cb8d8cbab6c4b328cb9b8c2dfe8c1a455429ed76af392120"
+  },
+  {
+    "artifact": "r2-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "r3-extension-build.log",
+    "sha256": "daeb6099d66fc8aac8371277dfe1d433099259c5309106b21a1f6adc8672ec9c",
+    "published": false
+  },
+  {
+    "artifact": "r3-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r3-initdb.log",
+    "sha256": "85344a8cbc9d995f93cbb661fd2e8ac29218b56e5e00bd822ae1ebafe60d69a3",
+    "published": false
+  },
+  {
+    "artifact": "r3-installcheck.log",
+    "sha256": "c799f9f5414bb1981cb5f43ab9050881b5da8f97b53ee6365857022676755b58",
+    "published": true,
+    "published_sha256": "91a263e0269fa67700316d21238246df42cf9182323a670b80328301dfbd5f49"
+  },
+  {
+    "artifact": "r3-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r3-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r3-pg-verification.json",
+    "sha256": "6c80745033fa76759f9d209005c77bf48a1d62cf5bba53ee2a4c2fe1ddc6c478",
+    "published": true,
+    "published_sha256": "6c80745033fa76759f9d209005c77bf48a1d62cf5bba53ee2a4c2fe1ddc6c478"
+  },
+  {
+    "artifact": "r3-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "r4-extension-build.log",
+    "sha256": "6830556de18298edc9e4b28bbf862c51577aa34df05d74d8f83432430b50b4c4",
+    "published": false
+  },
+  {
+    "artifact": "r4-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r4-initdb.log",
+    "sha256": "cd8d24b94b4de1164efe3fc525e671a39f4c9a39545e552554a94b48457f8d5c",
+    "published": false
+  },
+  {
+    "artifact": "r4-installcheck.log",
+    "sha256": "d258d045f85743f730b92e9aeaa89c9acd04ee914afd487dc67d09984540ef3e",
+    "published": true,
+    "published_sha256": "e21aa149566fa6b9659412e0b858f619e1b6d092b426302a1197d9b1fa868cf5"
+  },
+  {
+    "artifact": "r4-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r4-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r4-pg-verification.json",
+    "sha256": "fd3656ac6ed2670f3c7987b8941cb944a4327ac44b4216fe32ce61f98e964dbc",
+    "published": true,
+    "published_sha256": "fd3656ac6ed2670f3c7987b8941cb944a4327ac44b4216fe32ce61f98e964dbc"
+  },
+  {
+    "artifact": "r4-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "r5-extension-build.log",
+    "sha256": "68c5f548009ee20966e380682cc0b78f39bea9c8895af0403577a7204fef2e99",
+    "published": false
+  },
+  {
+    "artifact": "r5-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r5-initdb.log",
+    "sha256": "69f115395675b33673c73e99376567eb56664c342e80665dd9bb011181cb178f",
+    "published": false
+  },
+  {
+    "artifact": "r5-installcheck.log",
+    "sha256": "1201bde9373818a898e134ac44d84db7777e51e99f2c998ea70c8d8b1e2d31d8",
+    "published": true,
+    "published_sha256": "1201bde9373818a898e134ac44d84db7777e51e99f2c998ea70c8d8b1e2d31d8"
+  },
+  {
+    "artifact": "r5-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r5-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r5-pg-verification.json",
+    "sha256": "0df276a64803e9c1b09471648c7edcde15737829f4d840c057edc43fe13feb69",
+    "published": true,
+    "published_sha256": "0df276a64803e9c1b09471648c7edcde15737829f4d840c057edc43fe13feb69"
+  },
+  {
+    "artifact": "r5-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "r6-extension-build.log",
+    "sha256": "68c5f548009ee20966e380682cc0b78f39bea9c8895af0403577a7204fef2e99",
+    "published": false
+  },
+  {
+    "artifact": "r6-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r6-initdb.log",
+    "sha256": "6610248dbac5afd529b75ebb917038853186615a89b662a80f0c8fa78f369580",
+    "published": false
+  },
+  {
+    "artifact": "r6-installcheck.log",
+    "sha256": "3255248c020cbf66db9600e65789d782971061f53b59670fb10304d2e106dce9",
+    "published": true,
+    "published_sha256": "9d98d47a36a61892f62cf2815b567d4653db63cb81fc10e0a15cc154c781da28"
+  },
+  {
+    "artifact": "r6-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r6-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r6-pg-verification.json",
+    "sha256": "85c320a06062228223c623b5e592bc79abfbabef2567a5f068dc8b3c3339b438",
+    "published": true,
+    "published_sha256": "85c320a06062228223c623b5e592bc79abfbabef2567a5f068dc8b3c3339b438"
+  },
+  {
+    "artifact": "r6-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "r7-extension-build.log",
+    "sha256": "4c766cb49fb9cd11077c5736463a76b49019dae14a1871f2a3754cddc339d726",
+    "published": true,
+    "published_sha256": "12470353a4b7a3859962f16c5d831f3987a4b28f90784b6083e0cff443ff6e0b"
+  },
+  {
+    "artifact": "r7-extension-install.log",
+    "sha256": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+    "published": false
+  },
+  {
+    "artifact": "r7-initdb.log",
+    "sha256": "cb140c262e1402103f6dd2170ccec194b249ee90bd776307ba24b2570b71cd81",
+    "published": false
+  },
+  {
+    "artifact": "r7-installcheck.log",
+    "sha256": "927c303c3866cf95c9f58f2e431b21a96e1b5300480a7e8b19f65edc1f40a4f2",
+    "published": true,
+    "published_sha256": "927c303c3866cf95c9f58f2e431b21a96e1b5300480a7e8b19f65edc1f40a4f2"
+  },
+  {
+    "artifact": "r7-pg-start.log",
+    "sha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "published": false
+  },
+  {
+    "artifact": "r7-pg-stop.log",
+    "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "published": false
+  },
+  {
+    "artifact": "r7-pg-verification.json",
+    "sha256": "762e68a4400e4212571f10069eeefd4962e650035246bae37c11aca4b17d7ad0",
+    "published": true,
+    "published_sha256": "762e68a4400e4212571f10069eeefd4962e650035246bae37c11aca4b17d7ad0"
+  },
+  {
+    "artifact": "r7-server-version.log",
+    "sha256": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "published": false
+  },
+  {
+    "artifact": "source-manifest.json",
+    "sha256": "6cbbc0354b9589aef8790963861dda24b1baf26317cbe39eb4833e677997cd8d",
+    "published": true,
+    "published_sha256": "6cbbc0354b9589aef8790963861dda24b1baf26317cbe39eb4833e677997cd8d"
+  }
+]

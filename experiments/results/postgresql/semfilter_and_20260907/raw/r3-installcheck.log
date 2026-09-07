@@ -1,0 +1,88 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/pg3/socket, port 34811
+ok 1         - semloom_pg                                 22 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<artifact-root>/source/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ... ok
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+t/006_map_plan.pl ........... ok
+t/007_map_execution.pl ...... ok
+t/008_filter_and.pl .........
+Dubious, test returned 12 (wstat 3072, 0xc00)
+Failed 12/41 subtests
+
+Test Summary Report
+-------------------
+t/008_filter_and.pl       (Wstat: 3072 Tests: 41 Failed: 12)
+  Failed tests:  2-4, 6-10, 17-19, 38
+  Non-zero exit status: 12
+Files=8, Tests=1799, 47 wallclock secs ( 0.31 usr  0.05 sys + 26.14 cusr  8.75 csys = 35.25 CPU)
+Result: FAIL
+
+#   Failed test 'AND has two visible Filter nodes'
+#   at t/008_filter_and.pl line 64.
+#          got: '0'
+#     expected: '2'
+
+#   Failed test 'different instructions retain independent specs'
+#   at t/008_filter_and.pl line 65.
+#          got: undef
+#     expected: anything else
+
+#   Failed test 'downstream subset does not borrow base-input calibration'
+#   at t/008_filter_and.pl line 67.
+#          got: undef
+#     expected: 'upstream-semantic-filter'
+
+#   Failed test 'both actual Filter nodes are visible'
+#   at t/008_filter_and.pl line 71.
+#          got: '0'
+#     expected: '2'
+
+#   Failed test 'first Filter skips SQL NULL'
+#   at t/008_filter_and.pl line 72.
+#          got: undef
+#     expected: '9'
+
+#   Failed test 'second Filter sees only upstream survivors and skips its NULL'
+#   at t/008_filter_and.pl line 73.
+#          got: undef
+#     expected: '6'
+
+#   Failed test 'upstream emitted count is independent'
+#   at t/008_filter_and.pl line 74.
+#          got: undef
+#     expected: '7'
+
+#   Failed test 'downstream emitted count is independent'
+#   at t/008_filter_and.pl line 75.
+#          got: undef
+#     expected: '4'
+
+#   Failed test 'identical expressions retain two call instances'
+#   at t/008_filter_and.pl line 86.
+#          got: '0'
+#     expected: '2'
+
+#   Failed test 'identical first occurrence calls once per nonnull input'
+#   at t/008_filter_and.pl line 87.
+#          got: undef
+#     expected: '9'
+
+#   Failed test 'identical second occurrence executes on survivors'
+#   at t/008_filter_and.pl line 88.
+#          got: undef
+#     expected: '7'
+
+#   Failed test 'function permission is checked for the composed path'
+#   at t/008_filter_and.pl line 122.
+#                   ''
+#     doesn't match '(?^:ERROR:  42501:)'
+# Looks like you failed 12 tests of 41.
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

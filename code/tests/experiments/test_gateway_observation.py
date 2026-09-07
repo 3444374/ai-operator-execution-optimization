@@ -1,4 +1,6 @@
 """Exercise shared observers over real local UDS and a synthetic HTTP endpoint."""
+from concurrent.futures import ThreadPoolExecutor
+import http.client
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
@@ -21,6 +23,8 @@ from src.execution_provider.generation_profile import GenerationProfile
 from src.execution_provider.adapters.openai_compatible_fixed import VLLM_CHOICE_FORMAT
 from src.execution_provider.wire.framing import encode_frame, read_frame
 from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger
+from src.experiments import choice_gateway_observer
+from src.execution_provider.adapters.semantic_session import CompletionRequest
 from src.experiments.postgresql.provider_session_attribution import session_windows
 
 CODE = Path(__file__).resolve().parents[2]
@@ -138,6 +142,56 @@ class GatewayObservationTests(unittest.TestCase):
                 worker.join()
                 endpoint.server_close()
 
+    def test_interleaved_identical_payloads_keep_http_attempt_and_completion_identity(self):
+        with tempfile.TemporaryDirectory(dir='/tmp', prefix='obs-pair-') as directory:
+            root = Path(directory)
+            ledger = AttemptLedger.create(root / 'ledger.jsonl', AttemptBudget('fixture.pair', 2))
+            first_posted, second_done = threading.Event(), threading.Event()
+            request = CompletionRequest('a' * 64, 'model', (), {})
+            class Adapter:
+                model_id = 'model'
+                def execution_id_for(self, version): return 'fixture'
+                def complete(self, request):
+                    first = not first_posted.is_set()
+                    http.client.HTTPConnection('localhost').request('POST', '/', body='{}')
+                    if first:
+                        first_posted.set()
+                        if not second_done.wait(2): raise TimeoutError('second task did not finish')
+                    else:
+                        second_done.set()
+                    return Completion('TRUE', 'model', 11 if first else 22, 1, 'stop')
+            def drive(args, *, adapter_wrapper, session_wrapper):
+                adapter = adapter_wrapper(Adapter())
+                def execute(connection):
+                    try: return adapter.complete(request)
+                    finally: connection.close()
+                run = session_wrapper(execute)
+                a, peer_a = socket.socketpair()
+                b, peer_b = socket.socketpair()
+                with a, peer_a, b, peer_b, ThreadPoolExecutor(max_workers=2) as pool:
+                    first = pool.submit(run, a)
+                    self.assertTrue(first_posted.wait(2))
+                    second = pool.submit(run, b)
+                    self.assertEqual(second.result(timeout=2).prompt_tokens, 22)
+                    self.assertEqual(first.result(timeout=2).prompt_tokens, 11)
+                return 0
+            with patch.object(server, 'main', side_effect=drive), \
+                    patch.object(http.client.HTTPConnection, 'request', new=lambda *args, **kwargs: None):
+                self.assertEqual(choice_gateway_observer.main([
+                    '--events', str(root / 'events.jsonl'), '--session-events', str(root / 'sessions.jsonl'),
+                    '--ledger', str(ledger.path), '--budget-id', 'fixture.pair', '--max-attempts', '2']), 0)
+            events = [json.loads(line) for line in (root / 'events.jsonl').read_text().splitlines()]
+            requests = [event for event in events if event['event'] == 'request']
+            completions = [event for event in events if event['event'] == 'completion']
+            self.assertEqual(len(requests), 2)
+            self.assertEqual(len(completions), 2)
+            for event, usage in zip(requests, (11, 22)):
+                matching = [done for done in completions if
+                            (done['session_id'], done['task']) == (event['session_id'], event['task'])]
+                self.assertEqual([done['prompt_tokens'] for done in matching], [usage])
+            self.assertNotEqual(requests[0]['session_id'], requests[1]['session_id'])
+            self.assertNotEqual(requests[0]['attempt'], requests[1]['attempt'])
+
     def test_wrapper_failure_closes_owned_connection_without_global_replacement(self):
         with tempfile.TemporaryDirectory(dir='/tmp', prefix='obs-') as directory:
             path = Path(directory) / 'provider.sock'
@@ -153,7 +207,7 @@ class GatewayObservationTests(unittest.TestCase):
                 return fail
             with peer, patch.object(server.socket, 'socket', return_value=listener), \
                  patch.object(server.signal, 'signal'):
-                with self.assertRaisesRegex(RuntimeError, 'observer failed'):
+                with self.assertRaisesRegex(RuntimeError, 'gateway session handler failed'):
                     server.main(['--socket', str(path), '--once'], session_wrapper=wrapper)
             self.assertEqual(connection.fileno(), -1)
             self.assertIs(server._run_session, original)

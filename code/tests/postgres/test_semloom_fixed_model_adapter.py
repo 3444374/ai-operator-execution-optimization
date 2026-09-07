@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import http.client
+import io
 import json
 import os
 import socket
@@ -27,6 +28,7 @@ from src.execution_provider.adapters.semantic_session import (
     CompletionRequest,
 )
 from src.execution_provider.wire.framing import encode_frame, read_frame
+from src.execution_provider.request_admission import RequestAdmission, RequestCapacity
 from src.execution_provider.wire.v3 import (
     GENERATION_CONSTRAINTS,
     SemanticFilterPlan,
@@ -441,10 +443,78 @@ class FixedModelAdapterTests(unittest.TestCase):
                     # The total deadline may expire before DNS/connect reaches HTTP.
                     self.assertLessEqual(requests.call_count, 1)
                     self.assertLessEqual(_CompletionHandler.request_count, requests.call_count)
+                    if requests.call_count == 0:
+                        self.assertFalse(raised.exception.remote_outcome_unknown)
+                    if _CompletionHandler.request_count == 1:
+                        self.assertTrue(raised.exception.remote_outcome_unknown)
                 else:
                     self.assertEqual(requests.call_count, 1)
                     self.assertEqual(_CompletionHandler.request_count, 1)
+                    self.assertFalse(raised.exception.remote_outcome_unknown)
                 self.assertNotIn(endpoint_url, str(raised.exception))
+
+    def test_connection_refusal_releases_capacity_without_http_dispatch(self):
+        adapter = OpenAICompatibleFixedAdapter(FixedModelConfig(
+            endpoint_url="http://127.0.0.1:9/v1/chat/completions",
+            model_id="fixed-model-v1", timeout_ms=1000))
+        gate = RequestAdmission(adapter, 1)
+        with mock.patch.object(adapter._resolver, 'resolve', return_value=[]), \
+                mock.patch('src.execution_provider.adapters.openai_compatible_fixed._connect_resolved',
+                           side_effect=ConnectionRefusedError), \
+                mock.patch('http.client.HTTPConnection.request') as request:
+            for _ in range(2):
+                with self.assertRaises(CompletionAdapterError) as caught:
+                    gate.complete(self._completion_request())
+                self.assertEqual(caught.exception.code, 'MODEL_UNAVAILABLE')
+                self.assertFalse(caught.exception.remote_outcome_unknown)
+                self.assertEqual(gate.capacity(), RequestCapacity(0, 0))
+        request.assert_not_called()
+
+    def test_truncated_content_length_never_becomes_a_successful_completion(self):
+        body = json.dumps(_CompletionHandler.response_value).encode()
+        class MemorySocket:
+            def makefile(self, mode):
+                return io.BytesIO(b'HTTP/1.1 200 OK\r\nContent-Length: 9999\r\n\r\n' + body)
+        response = http.client.HTTPResponse(MemorySocket())
+        response.begin()
+        adapter = OpenAICompatibleFixedAdapter(FixedModelConfig(
+            endpoint_url="http://127.0.0.1:9/v1/chat/completions",
+            model_id="fixed-model-v1", timeout_ms=1000))
+        gate = RequestAdmission(adapter, 1)
+        connection = mock.Mock(sock=mock.Mock())
+        connection.getresponse.return_value = response
+        with mock.patch.object(adapter._resolver, 'resolve', return_value=[]), \
+                mock.patch('http.client.HTTPConnection', return_value=connection), \
+                self.assertLogs('src.execution_provider.request_admission', level='WARNING'):
+            with self.assertRaises(CompletionAdapterError) as caught:
+                gate.complete(self._completion_request())
+            self.assertEqual(caught.exception.code, 'MODEL_RESPONSE_INVALID')
+            self.assertTrue(caught.exception.remote_outcome_unknown)
+            self.assertEqual(gate.capacity(), RequestCapacity(0, 1))
+        self.assertGreater(response.length, 0)
+
+    def test_oversized_unfinished_response_retains_request_capacity(self):
+        adapter = OpenAICompatibleFixedAdapter(FixedModelConfig(
+            endpoint_url="http://127.0.0.1:9/v1/chat/completions",
+            model_id="fixed-model-v1", timeout_ms=1000))
+        gate = RequestAdmission(adapter, 1)
+        response = mock.Mock(status=200)
+        response.read1.side_effect = lambda size: b'x' * size
+        connection = mock.Mock(sock=mock.Mock())
+        connection.getresponse.return_value = response
+        with mock.patch.object(adapter._resolver, 'resolve', return_value=[]), \
+                mock.patch('http.client.HTTPConnection', return_value=connection), \
+                self.assertLogs('src.execution_provider.request_admission', level='WARNING'):
+            with self.assertRaises(CompletionAdapterError) as caught:
+                gate.complete(self._completion_request())
+            self.assertEqual(caught.exception.code, 'MODEL_RESPONSE_INVALID')
+            self.assertTrue(caught.exception.remote_outcome_unknown)
+            self.assertEqual(gate.capacity(), RequestCapacity(0, 1))
+            with self.assertRaises(CompletionAdapterError) as rejected:
+                gate.complete(self._completion_request())
+            self.assertEqual(rejected.exception.code, 'MODEL_REQUEST_REJECTED')
+        connection.request.assert_called_once()
+        response.close.assert_called_once()
 
     @staticmethod
     def _completion_request() -> CompletionRequest:

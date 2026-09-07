@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import contextvars
+import threading
 import socket
 import struct
 import time
@@ -39,48 +41,71 @@ class SessionObserver:
         self.record = record
         self.sessions = 0
         self.tasks = 0
-        self.current_session = None
+        self._session = contextvars.ContextVar('gateway_session', default=None)
+        self._task = contextvars.ContextVar('gateway_task', default=None)
+        self._lock = threading.RLock()
+
+    @property
+    def current_session(self):
+        return self._session.get()
+
+    @property
+    def current_task(self):
+        return self._task.get()
+
+    def _emit(self, event):
+        with self._lock:
+            self.record(event)
 
     def run_session(self, connection, run, **keywords):
-        self.sessions += 1
-        self.current_session = self.sessions
-        current = self.current_session
-        peer = _peer_credentials(connection)
-        self.record({"event": "session_start", "session_id": current,
-                     "monotonic_ns": time.monotonic_ns(), "gateway_pid": os.getpid(),
-                     "accepted_fd": connection.fileno(),
-                     "accepted_socket_inode": _accepted_inode(connection),
-                     "peer_pid": peer[0] if peer else None,
-                     "peer_uid": peer[1] if peer else None,
-                     "peer_gid": peer[2] if peer else None})
-        reason = "returned"
+        with self._lock:
+            self.sessions += 1
+            current = self.sessions
+        token = self._session.set(current)
         try:
-            return run(connection, **keywords)
-        except BaseException:
-            reason = "raised"
-            raise
+            peer = _peer_credentials(connection)
+            self._emit({"event": "session_start", "session_id": current,
+                        "monotonic_ns": time.monotonic_ns(), "gateway_pid": os.getpid(),
+                        "accepted_fd": connection.fileno(),
+                        "accepted_socket_inode": _accepted_inode(connection),
+                        "peer_pid": peer[0] if peer else None,
+                        "peer_uid": peer[1] if peer else None,
+                        "peer_gid": peer[2] if peer else None})
+            reason = "returned"
+            try:
+                return run(connection, **keywords)
+            except BaseException:
+                reason = "raised"
+                raise
+            finally:
+                self._emit({"event": "session_end", "session_id": current,
+                            "monotonic_ns": time.monotonic_ns(), "termination": reason,
+                            "connection_closed": connection.fileno() == -1})
         finally:
-            self.record({"event": "session_end", "session_id": current,
-                         "monotonic_ns": time.monotonic_ns(), "termination": reason,
-                         "connection_closed": connection.fileno() == -1})
-            self.current_session = None
+            self._session.reset(token)
 
     def complete(self, request, complete):
-        self.tasks += 1
-        task = self.tasks
-        self.record({"event": "task", "session_id": self.current_session,
-                     "task": task, "payload_digest": request.semantic_payload_digest,
-                     "monotonic_ns": time.monotonic_ns()})
+        with self._lock:
+            self.tasks += 1
+            task = self.tasks
+        token = self._task.set(task)
         try:
-            result = complete(request)
-        except Exception as error:
-            self.record({"event": "task_error", "session_id": self.current_session,
-                         "task": task, "monotonic_ns": time.monotonic_ns(),
-                         "error_type": type(error).__name__})
-            raise
-        self.record({"event": "task_complete", "session_id": self.current_session,
-                     "task": task, "monotonic_ns": time.monotonic_ns()})
-        return result
+            self._emit({"event": "task", "session_id": self.current_session,
+                         "task": task, "payload_digest": request.semantic_payload_digest,
+                         "monotonic_ns": time.monotonic_ns()})
+            try:
+                result = complete(request)
+            except Exception as error:
+                self._emit({"event": "task_error", "session_id": self.current_session,
+                             "task": task, "monotonic_ns": time.monotonic_ns(),
+                             "error_type": type(error).__name__})
+                raise
+            self._emit({"event": "task_complete", "session_id": self.current_session,
+                         "task": task, "monotonic_ns": time.monotonic_ns()})
+            return result
+        finally:
+            self._task.reset(token)
+
 
 class ObservedAdapter:
     """Preserve provider identity and decorate only completion observation."""

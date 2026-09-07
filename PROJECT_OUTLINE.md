@@ -69,7 +69,8 @@ fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice �
 完成 14 次 old/choice 请求与两个 NULL 对照，累计 15/100 含首轮工具失败；当前集成版本已包含实现和归档。
 这些只验证接入与本规模资源使用，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
 按最新安排，在完整工程对照和四 C 收尾后，PG 先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共整理，
-再扩展[两个 Filter AND / Filter → Map 及有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)。
+两个Filter AND与有界多会话已在独立分支通过[工程验证](experiments/results/postgresql/semfilter_and_20260907/README.md)，
+尚未合并main；之后扩展[Filter → Map及单节点多在途](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)。
 [函数身份检查](experiments/results/postgresql/function_identity_20260902/README.md)已复现并最小修复
 非成员误接管，实现与证据已合入 main；仅成员关系变更仍须按工程计划刷新所有相关物理连接，不支持自动在线变更。
 生成型 Map 的消息编译、C/Python 纯值、Python v5 与深层 JSON 修复已合入本地 main，

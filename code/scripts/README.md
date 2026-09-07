@@ -38,6 +38,15 @@ extension CLI/import 别名已删除。Python 调用方直接导入 `src.executi
 golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
 model、timeout 和 bearer-token 环境变量名不进入仓库。
 
+`--max-connections`（默认8）限制同时存活会话，`--max-active-requests`（默认1）独立限制活跃或
+远端终态未知的模型请求；没有待执行任务队列。连接满时新连接关闭，请求满时返回
+`MODEL_REQUEST_REJECTED`。每会话仍同步逐项执行，空闲会话不占模型请求名额。
+`--frame-timeout-ms`（默认120000）限制一个完整帧的读取时间，帧头与帧体共用期限。
+这些值是可配置的工程默认，不绑定具体机器或模型吞吐。未知远端终态不会因断连而自动退还名额；
+确认服务端请求已结束后，通过重启gateway恢复。系统DNS解析线程可能持续到解析自身返回。
+请求观测事件携带`session_id`与`task`，可关联相同payload的并发请求/完成；
+旧独占会话资源测量器仍不能用于并发资源归因。
+
 ## SemMap resource measurement
 
 `experiments/run_semmap_resource_checks.py` creates a new, exclusively owned result directory before

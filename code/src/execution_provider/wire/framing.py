@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import socket
 import struct
+import time
 from typing import Any
 
 
@@ -43,14 +44,19 @@ def encode_frame(message: dict[str, Any]) -> bytes:
 
 def read_frame(connection: socket.socket) -> dict[str, Any] | None:
     """Read one bounded frame; return None only for clean EOF between frames."""
-    header = _read_exact(connection, 4, allow_initial_eof=True)
-    if header is None:
-        return None
-    length = struct.unpack("!I", header)[0]
-    if length == 0 or length > MAX_FRAME_BYTES:
-        raise ProtocolError("invalid_frame_length")
-    raw = _read_exact(connection, length, allow_initial_eof=False)
-    assert raw is not None
+    timeout = connection.gettimeout()
+    deadline = None if timeout is None else time.monotonic() + timeout
+    try:
+        header = _read_exact(connection, 4, allow_initial_eof=True, deadline=deadline)
+        if header is None:
+            return None
+        length = struct.unpack("!I", header)[0]
+        if length == 0 or length > MAX_FRAME_BYTES:
+            raise ProtocolError("invalid_frame_length")
+        raw = _read_exact(connection, length, allow_initial_eof=False, deadline=deadline)
+        assert raw is not None
+    finally:
+        connection.settimeout(timeout)
     duplicate_fields = False
 
     def decode_object(pairs):
@@ -76,15 +82,19 @@ def _read_exact(
     length: int,
     *,
     allow_initial_eof: bool,
+    deadline: float | None = None,
 ) -> bytes | None:
-    chunks: list[bytes] = []
-    received = 0
-    while received < length:
-        chunk = connection.recv(length - received)
+    buffer = bytearray()
+    while len(buffer) < length:
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('frame deadline expired')
+            connection.settimeout(remaining)
+        chunk = connection.recv(length - len(buffer))
         if not chunk:
-            if allow_initial_eof and received == 0:
+            if allow_initial_eof and not buffer:
                 return None
             raise ProtocolError("unexpected_eof")
-        chunks.append(chunk)
-        received += len(chunk)
-    return b"".join(chunks)
+        buffer.extend(chunk)
+    return bytes(buffer)

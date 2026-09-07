@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-07 的[两个Filter AND与gateway多会话验证](../experiments/results/postgresql/semfilter_and_20260907/README.md)
+在`codex/semfilter-and`完成：复用两个独立CustomScan/pump/runtime，分开调用分析与路径构造；
+中间节点不吸收下游输入投影，保留PG原生函数权限检查。gateway分开CLI装配、连接生命周期、
+协议分发与请求容量；默认8连接、1模型请求，无等待队列，未知远端终态保留名额。
+Linux138/138通过，PG18.3严格构建、regression1/1、8个TAP1808/1808，584源码哈希匹配。
+包含RLS/快照/取消、相同VOLATILE输入两次求值和存活gateway的40会话FD/线程回收。
+本轮测试进程已清理，模型请求0；分支尚未合并main。Filter→Map、单节点多在途及正式资源仍待完成。
+
 2026-09-07 的[扩展目录重构](../experiments/results/postgresql/pg_module_layout_20260907/README.md)
 从独立分支 `codex/pg-module-layout` 快进合入本地main，起点为 `41e103f2`。现有实现按 planner、semantics、executor、
 provider/wire 整理，Map 路径明确命名；总头文件拆为配置、marker 身份、path 与 scan 的实际接口，
@@ -78,7 +86,7 @@ libpq客户端严格编译通过，8个已观测进程均退出，模型请求0�
 所有相关物理连接（包括连接池）再恢复，不能只刷新 DDL 会话，也不能用成员移除即时撤销权限。
 无法保证所有连接刷新时不使用此临时方案；函数替换/删除重建的既有自动失效测试不延期。
 
-**尚未完成项**：仅成员变更自动刷新、四 D 生成型 Map 的资源资格、两个 Filter AND / 有界多会话与 Filter → Map；增量
+**尚未完成项**：仅成员变更自动刷新、四 D 生成型 Map 的资源资格、Filter → Map与单节点多在途；增量
 SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
 
 **真实 Map 追加结果**：[`main@b19486a1` 的 2026-09-04 检查](../experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
@@ -196,7 +204,8 @@ query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS �
 取消通过 close/disconnect 和 PG cleanup。既有 `SynchronousScheduler` 不等于已实现增量 session。
 
 **固定 endpoint 与部署身份（2026-09-03，核对已集成源码至 `b0400944`，无新增接线）。**
-`execution_provider/server.py` 在 golden 与 fixed 配置间二选一，串行服务整个 session；没有多 endpoint
+该日期版本的`execution_provider/server.py`在golden与fixed配置间二选一，串行服务整个session；
+本轮已改为上方有界多会话。仍没有多endpoint
 路由。`adapters/openai_compatible_fixed.py` 的配置必填 endpoint_url/model_id/timeout_ms，可选
 bearer_token_env/choice_format；timeout 为 1–300,000 ms，choice_format 用于显式 choice 能力声明。
 同一个 HTTP(S) Adapter 可以指向本地或获准的第三方服务；它逐请求创建并关闭 HTTP 连接，
@@ -223,7 +232,7 @@ SemLoom 执行两部分，目前都没有公司路径验收证据。
 
 **当前工程限制**：生成型 Map 的 PG→C v5→golden 与固定 Qwen2.5-7B 真实链路已接通，资源压力资格
 未通过；planner
-限制单 marker，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway 按整个会话串行服务。函数查找已核验
+支持至多两个顶层Filter AND，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway支持有界多会话。函数查找已核验
 扩展成员，并由上方切片验证非成员不被误接管；不据此声称发现权限绕过。后续改动
 与验收要求只在主计划维护；现有 PG-private runtime、neutral port 和严格错误/结果处理继续保留。
 

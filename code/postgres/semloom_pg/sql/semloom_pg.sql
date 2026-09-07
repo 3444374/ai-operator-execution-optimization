@@ -92,8 +92,9 @@ WHERE NOT ai_semantic.filter(decision);
 
 SELECT doc_id
 FROM semloom_filter_decisions
-WHERE ai_semantic.filter(decision)
-  AND ai_semantic.filter(decision || '');
+WHERE doc_id < 6 AND ai_semantic.filter(decision)
+  AND ai_semantic.filter(decision || '')
+ORDER BY doc_id;
 
 SELECT ai_semantic.map(decision)
 FROM semloom_filter_decisions

@@ -1,0 +1,692 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/pg2/socket, port 36781
+ok 1         - semloom_pg                                 20 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<artifact-root>/source/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<artifact-root>/source/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<artifact-root>/source/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ......... ok
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ...
+Dubious, test returned 21 (wstat 5376, 0x1500)
+Failed 21/218 subtests
+t/004_filter_insert.pl ...... ok
+t/005_function_identity.pl .. ok
+t/006_map_plan.pl ........... ok
+t/007_map_execution.pl ......
+Dubious, test returned 79 (wstat 20224, 0x4f00)
+Failed 79/468 subtests
+t/008_filter_and.pl .........
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+All 1 subtests passed
+
+Test Summary Report
+-------------------
+t/003_choice_execution.pl (Wstat: 5376 Tests: 218 Failed: 21)
+  Failed tests:  42, 48, 54, 60, 66, 72, 78, 84, 90, 96
+                102, 108, 114, 120, 126, 138, 144, 150
+                156, 162, 168
+  Non-zero exit status: 21
+t/007_map_execution.pl    (Wstat: 20224 Tests: 468 Failed: 79)
+  Failed tests:  9-10, 14-15, 19-20, 24-25, 68-69, 73-74
+                78-79, 83-84, 88-89, 93-94, 129, 135, 141
+                147, 153, 159, 165, 171, 177, 183, 189
+                195, 201, 207, 213, 219, 225, 231, 237
+                243, 249, 255, 261, 267, 273, 279, 285
+                291, 297, 303, 309, 315, 321, 327, 333
+                339, 345, 351, 357, 363, 369, 375, 381
+                387, 393, 399, 405, 411, 417, 423, 428-430
+                435, 439-440, 445, 461-462
+  Non-zero exit status: 79
+t/008_filter_and.pl       (Wstat: 7424 Tests: 1 Failed: 0)
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+Files=8, Tests=1759, 46 wallclock secs ( 0.34 usr  0.03 sys + 26.44 cusr  8.10 csys = 34.91 CPU)
+Result: FAIL
+
+#   Failed test 'open-profile has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v4\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'open-version has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v4\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'open-extra has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'open-missing has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'open-duplicate has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-profile has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v4\ task\ identity\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-version has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v4\ task\ identity\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-sequence has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v4\ task\ identity\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-evidence has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v4\ task\ identity\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-extra has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-missing has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-duplicate has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-escaped-nul has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-raw-nul has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'completion-fractional has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v4\ task\ identity\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'error-extra has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v4\ error\ frame\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'error-missing has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v4\ error\ frame\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'error-version has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v4\ error\ frame\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'error-sequence has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v4\ error\ frame\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'error-code has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v4\ error\ frame\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'error-duplicate has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+# psql:<stdin>:2: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+# Looks like you failed 21 tests of 218.
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'generated'
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'hello|generated'
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'generated|hello'
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'hello!|generated'
+
+#   Failed test 'Map accepts arbitrary valid generated text'
+#   at t/007_map_execution.pl line 130.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map does not trim or reinterpret text as Filter/SQL labels'
+#   at t/007_map_execution.pl line 131.
+#          got: ''
+#     expected: '|f'
+
+#   Failed test 'Map accepts arbitrary valid generated text'
+#   at t/007_map_execution.pl line 130.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map does not trim or reinterpret text as Filter/SQL labels'
+#   at t/007_map_execution.pl line 131.
+#          got: ''
+#     expected: '205452554520|f'
+
+#   Failed test 'Map accepts arbitrary valid generated text'
+#   at t/007_map_execution.pl line 130.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map does not trim or reinterpret text as Filter/SQL labels'
+#   at t/007_map_execution.pl line 131.
+#          got: ''
+#     expected: '46414c5345|f'
+
+#   Failed test 'Map accepts arbitrary valid generated text'
+#   at t/007_map_execution.pl line 130.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map does not trim or reinterpret text as Filter/SQL labels'
+#   at t/007_map_execution.pl line 131.
+#          got: ''
+#     expected: '554e4b4e4f574e|f'
+
+#   Failed test 'Map accepts arbitrary valid generated text'
+#   at t/007_map_execution.pl line 130.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map does not trim or reinterpret text as Filter/SQL labels'
+#   at t/007_map_execution.pl line 131.
+#          got: ''
+#     expected: '4e554c4c|f'
+
+#   Failed test 'Map accepts arbitrary valid generated text'
+#   at t/007_map_execution.pl line 130.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map does not trim or reinterpret text as Filter/SQL labels'
+#   at t/007_map_execution.pl line 131.
+#          got: ''
+#     expected: '6c696e65206f6e650a6c696e652074776f097b7d|f'
+
+#   Failed test 'open-output-too-large preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+
+#   Failed test 'open-version preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-fractional preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-max_input_bytes preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-max_output_bytes preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-max_frame_bytes preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-max_inflight_tasks preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-semantic_spec_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-physical_algorithm_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'open-provider_execution_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ open\ response\ does\ not\ match\ wire\ v5\n)'
+
+#   Failed test 'completion-version preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-fractional preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-sequence preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-semantic_spec_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-physical_algorithm_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-provider_execution_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-semantic_payload_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-completion_evidence_digest preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-model preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-usage-budget preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-usage-evidence-mismatch preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-finish-empty preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-finish-long preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-over-output-evidence preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ completion\ does\ not\ match\ wire\ v5\ task\ identity\n)'
+
+#   Failed test 'completion-usage-overflow preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ response\ has\ an\ invalid\ uint64\ field\n)'
+
+#   Failed test 'completion-usage-leading-zero preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ response\ has\ an\ invalid\ uint64\ field\n)'
+
+#   Failed test 'completion-sequence-number preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ response\ has\ an\ invalid\ text\ field\n)'
+
+#   Failed test 'completion-usage-number preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ response\ has\ an\ invalid\ text\ field\n)'
+
+#   Failed test 'completion-null preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ response\ has\ an\ invalid\ text\ field\n)'
+
+#   Failed test 'open-extra preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+
+#   Failed test 'open-missing preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+
+#   Failed test 'completion-extra preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+
+#   Failed test 'completion-missing preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ unexpected\ message\n)'
+
+#   Failed test 'open-duplicate preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+
+#   Failed test 'completion-duplicate preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+
+#   Failed test 'completion-escaped-nul preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+
+#   Failed test 'completion-raw-nul preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+
+#   Failed test 'completion-utf8 preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+
+#   Failed test 'completion-utf8-over-output preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ invalid\ JSON\n)'
+
+#   Failed test 'completion-finish-length preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  22000: SemMap\ model\ completion\ must\ finish\ with\ stop\n)'
+
+#   Failed test 'completion-finish-tool preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  22000: SemMap\ model\ completion\ must\ finish\ with\ stop\n)'
+
+#   Failed test 'completion-finish-space preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  22000: SemMap\ model\ completion\ must\ finish\ with\ stop\n)'
+
+#   Failed test 'completion-over-output preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  54000: SemLoom\ provider\ message\ exceeds\ its\ configured\ limit\n)'
+
+#   Failed test 'completion-over-output-finish preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  54000: SemLoom\ provider\ message\ exceeds\ its\ configured\ limit\n)'
+
+#   Failed test 'error-valid preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  54000: SemLoom\ provider\ message\ exceeds\ its\ configured\ limit\n)'
+
+#   Failed test 'error-extra preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+
+#   Failed test 'error-missing preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+
+#   Failed test 'error-version preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+
+#   Failed test 'error-sequence preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+
+#   Failed test 'error-code preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+
+#   Failed test 'Map accepts independent uint64 usage fields'
+#   at t/007_map_execution.pl line 195.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'Map preserves the full prompt-token counter'
+#   at t/007_map_execution.pl line 196.
+#                   ''
+#     doesn't match '(?^:Prompt Tokens: 18446744073709551615\b)'
+
+#   Failed test 'output usage has its own counter'
+#   at t/007_map_execution.pl line 197.
+#                   ''
+#     doesn't match '(?^:Output Tokens: 1\b)'
+
+#   Failed test 'runtime counter overflow is not a malformed completion'
+#   at t/007_map_execution.pl line 201.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  22003: SemLoom provider usage counters exceed uint64 range\n)'
+
+#   Failed test 'the full 65536-byte completion is accepted'
+#   at t/007_map_execution.pl line 206.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'the output boundary is not truncated'
+#   at t/007_map_execution.pl line 207.
+#          got: ''
+#     expected: '65536'
+
+#   Failed test 'v5 OUTPUT_TOO_LARGE reaches the PG length error'
+#   at t/007_map_execution.pl line 210.
+#                   'psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  54000: SemLoom provider message exceeds its configured limit\n)'
+
+#   Failed test 'the full 163840-byte input reaches the validated v5 task'
+#   at t/007_map_execution.pl line 230.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  XX000: SemLoom provider failed internally
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'large input is processed without changing result policy'
+#   at t/007_map_execution.pl line 231.
+#          got: ''
+#     expected: 'hello'
+# Looks like you failed 79 tests of 468.
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 1.
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

@@ -1,0 +1,23 @@
+test_idle_session_does_not_block_another_and_errors_are_isolated (test_gateway_sessions.GatewaySessionsTests.test_idle_session_does_not_block_another_and_errors_are_isolated) ... ERROR
+
+======================================================================
+ERROR: test_idle_session_does_not_block_another_and_errors_are_isolated (test_gateway_sessions.GatewaySessionsTests.test_idle_session_does_not_block_another_and_errors_are_isolated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/execution_provider/test_gateway_sessions.py", line 75, in test_idle_session_does_not_block_another_and_errors_are_isolated
+    self.open(second, plans[1])
+  File "<repository>/code/tests/execution_provider/test_gateway_sessions.py", line 62, in open
+    self.assertEqual(read_frame(connection)['type'], 'opened')
+                     ^^^^^^^^^^^^^^^^^^^^^^
+  File "<repository>/code/src/execution_provider/wire/framing.py", line 46, in read_frame
+    header = _read_exact(connection, 4, allow_initial_eof=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repository>/code/src/execution_provider/wire/framing.py", line 83, in _read_exact
+    chunk = connection.recv(length - received)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: timed out
+
+----------------------------------------------------------------------
+Ran 1 test in 1.079s
+
+FAILED (errors=1)

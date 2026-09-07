@@ -1,0 +1,9 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <artifact-root>/pg1/socket, port 48173
+not ok 1     - semloom_pg                                 21 ms
+1..1
+# 1 of 1 tests failed.
+# The differences that caused some tests to fail can be viewed in the file "<artifact-root>/source/code/postgres/semloom_pg/regression.diffs".
+# A copy of the test summary that you see above is saved in the file "<artifact-root>/source/code/postgres/semloom_pg/regression.out".
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:433: installcheck] Error 1

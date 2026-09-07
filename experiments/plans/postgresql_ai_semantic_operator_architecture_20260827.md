@@ -249,11 +249,11 @@ PG 执行线程负责 child/slot/MemoryContext 与结果推进；本项目不在
 
 <a id="multi-session-execution"></a>
 
-### 6.4 多节点会话与单节点多在途分开设计（待实现）
+### 6.4 多节点会话与单节点多在途分开设计
 
-当前 gateway 的 `server.py` 在一个 session runner 返回后才服务下一个连接；session runner 等待
-该连接的后续任务直至结束。多个算子各自持有长会话时，不能只放开 planner 的单算子限制：上游交出
-一行后仍保持连接，下游的新会话可能等不到服务。该判断来自当前源码，不是已支持多节点路径的回归。
+`1d83c975` 的 gateway 按整会话串行，曾导致上游持有连接时下游无法进展。
+[2026-09-07切片](#semfilter-and-slice)已用有界会话线程、独立请求名额和保留的同步wire解决该问题，
+并通过两个Filter AND的PG18.3验证。下面的要求继续约束后续路径；单节点多在途仍未实现。
 
 多节点同步执行首先需要外部 gateway 能服务多个存活会话；每个会话仍可保持单任务同步，不因此
 增加 PG accepted-prefix、乱序或批协议。实施时复用成熟 I/O 设施，具体选型留在该实现切片，并满足：
@@ -445,6 +445,54 @@ regression与全部7个TAP；失败先保存，修复后另存运行记录，不
 安装件/构建件哈希一致，自有活跃PG/gateway进程0；用户随后授权合并，本地main已从41e103f2快进至103e2715，后续仅登记合并状态。
 
 ### 8.2 设计模式与验证
+
+<a id="semfilter-and-slice"></a>
+
+#### 两个SemFilter AND实施切片（2026-09-07，已验证）
+
+用户授权在`1d83c975`基础上完成两个Filter的AND组合，分支`codex/semfilter-and`。本轮只支持
+既有单表SELECT/INSERT形状中的至多两个顶层Filter谓词，复用独立CustomScan、plan spec和pump；
+固定按解析后的谓词列表顺序执行，不做重排/融合，不扩Filter→Map、OR/NOT/CASE、Join或批协议。
+相同payload不合并成一次算子调用；节点各自拥有输入绑定、NULL/drop、调用计数和关闭。
+
+源码依据为`1d83c975`的`planner/sem_filter_path.c`单marker收集/路径包装、`server.py`按整会话串行、
+`SessionObserver.current_session`单共享变量。按§8.7历史工程对照的调用识别与连接/执行名额分离原则，
+以及§8.8 pgml固定提交的共享客户端原则，保留自有PG载体与库外执行；本轮没有重新细读公司实现，
+不把历史观察称为公司最新能力。公开依据为[PG18 CustomPath](https://www.postgresql.org/docs/18/custom-scan-path.html)
+和[Python3.12 Semaphore](https://docs.python.org/3.12/library/threading.html#semaphore-objects)。
+以下为工程决策，不作为新的研究机制或性能结论。
+
+- 调用分析进入`planner/sem_filter_call`，路径构造只消费已验证调用；保留按算子区分的placement，
+  不提前增加跨算子registry。PG按现有rel路径嵌套两个Filter；普通child只保留普通谓词，内外节点保存独立spec。保留外层需要的
+  输入列，按上游输出估计下游输入；每个spec都做原有参数和身份检查。普通表达式/权限与执行生命周期
+  沿用PG机制，以projection、LIMIT、prepared、INSERT和失败反例核对，而非仅删除guard。
+- gateway使用受连接上限约束的会话线程，模型请求另设非等待式名额；没有待接纳任务队列。
+  空闲会话不持有请求名额，连接满立即关闭新连接，请求满按既有MODEL_REQUEST_REJECTED终止该任务，
+  不等待同一查询的上游关闭。不增加重试或wire字段；每会话仍只有一个在途任务。
+  每个编码帧保留现有MAX_FRAME_BYTES限制，帧头和帧体共享120秒可配置总读取期限；连接数限制并发
+  帧数量，但这不是整个进程的RSS上限：解析对象、open/task、请求和响应缓冲可能同时存活。
+  关闭时唤醒空闲读并等待已派发Adapter结束。Adapter内部区分未派发、已收到终态响应与远端结果未知；
+  只有最后一种保留名额并记录，不把客户端断连当远端已停算。
+  这类名额须核对服务终态后重启gateway恢复，不在线猜测或按固定等待退还。
+- CLI装配保留在`server`，连接/线程所有权进入`gateway_runtime`，协议分发进入`session_dispatch`，
+  请求名额由`request_admission`包装既有Adapter。这四处分别因部署、连接、协议与请求容量而变化。
+  比较后未采用selectors（需要重写现有阻塞协议与Adapter）、集中任务队列（引入额外等待/取消状态）；
+  当前有限同步会话选择无等待队列的线程方案。以上是工程决策，不承诺高连接数吞吐。
+- 观测session身份改为上下文局部，计数和记录串行化；共享固定Adapter保持配置不可变，deadline为请求私有。
+  不引入query registry或模型连接池，默认请求上限1，连接上限8；它们是保守工程默认，不是性能校准值。
+
+先保留红测试：A空闲而B完成、连接/请求超限立即拒绝、同payload独立sequence、取消后其他会话正常、
+晚到完成不提前退还容量、未知终态保留容量、FD/线程清理；再接PG两个AND的计划/输入/计数/NULL/
+LIMIT0和早停/INSERT/权限/prepared/错误及取消恢复。共享层回归包含旧v2/v3/v4/v5和全部PG18.3 TAP。
+无模型fixture先验证；沿用已授权的服务器隔离验证方式，不请求真实模型或扩大正式实验。
+原始失败与每次源码/环境身份分别保留。
+
+[验证记录](../results/postgresql/semfilter_and_20260907/README.md)：Linux138项全部通过；PG18.3严格构建、
+regression1/1、8个TAP1808/1808，584项源码哈希匹配。保留7轮PG结果；新增VOLATILE反例曾实测
+两调用只求值一次，中间Filter禁止吸收下游projection后通过。原marker保存在custom_exprs，
+由PG原生Expr初始化检查函数权限/依赖而不执行marker；旧Filter权限缺口同时修复。
+HTTP响应截断/提前EOF与连接拒绝、首帧超时观测、同payload并发HTTP归因反例均有测试。
+本次测试进程已清理，真实模型请求0；未合并main，Filter→Map/单节点多在途/正式资源资格仍未完成。
 
 Ports & Adapters 只用于已存在的外部变化；Factory 只负责 query-fixed Adapter 选择；Strategy 区分
 真实 operator/physical algorithms；状态机分别封装 PG 生命周期与增量执行状态，不合成万能执行器。
