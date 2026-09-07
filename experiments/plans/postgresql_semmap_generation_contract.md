@@ -296,7 +296,7 @@ sequence、prompt_tokens、output_tokens 沿用现有 wire 的 JSON 十进制字
 中立 port 与 §10 摘要计算仍使用 uint64 数值；模型 HTTP usage 的数值由 Adapter 严格校验后再转成
 wire 字符串。protocol_version、spec version、容量等字段继续使用各自规定的 JSON 数值类型。
 此约定对照了现有 [session writer](../../code/src/execution_provider/adapters/semantic_session.py)
-与 [C uint64 reader](../../code/postgres/semloom_pg/src/wire_semantic.c)；旧版本行为不变。
+与 [C uint64 reader](../../code/postgres/semloom_pg/src/provider/wire/wire_semantic.c)；旧版本行为不变。
 
 | 帧 | 必须字段 |
 |---|---|

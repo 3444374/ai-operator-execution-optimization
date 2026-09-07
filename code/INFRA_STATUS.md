@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-07 的[扩展目录重构](../experiments/results/postgresql/pg_module_layout_20260907/README.md)
+位于独立分支 `codex/pg-module-layout`，起点为 `41e103f2`。现有实现按 planner、semantics、executor、
+provider/wire 整理，Map 路径明确命名；总头文件拆为配置、marker 身份、path 与 scan 的实际接口，
+provider 不再依赖 planner 头文件。迁移函数体、SQL、协议和错误语义保持，未增加组合或异步。
+本地112项算子合同、4项网关测试和8项严格C11编译通过；保留并修正了一次旧HTTP deadline测试的
+错误计数假设。本机无PG18.3工具链，完整PGXS/regression/TAP仍pending，未合并main。
+本轮没有连接服务器或请求模型；下文Linux和真实模型结果只属于各自已记录的旧源码版本。
+
 最新[两算子合并验证](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 在`5771cef1`通过Linux247/247、PG18.3严格构建、regression1/1和全部TAP1758/1758。
 固定7B模型新9/9请求覆盖Filter v3/v4与Map v5的SELECT/INSERT，NULL零调用、结果/筛选、
@@ -7,7 +15,7 @@ usage和写回均通过；服务退出，旧8/8账本不变。运行时代码仍
 本次确认当前同步单算子能力，未新增同查询组合、异步执行、正式资源或质量/性能证据。
 
 
-日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
+最近服务器验证日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
 
 合并前清理已迁移四个 TAP 至公共 gateway CLI，并删除旧 Python 兼容入口、重复转发及
 13 个一次性实验驱动；原始证据与固定 Git 源码恢复身份保留。`fcd12373` 的本地 233 项中

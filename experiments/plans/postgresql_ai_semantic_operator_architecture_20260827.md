@@ -160,7 +160,7 @@ planned choice profile 必须自包含并进入新 semantic digest；provider id
 
 ### 5.3 当前中立 Interface：open spec 与 per-item task 分开
 
-以下是当前 C seam 的分工，精确定义见[ai_provider_port.h](../../code/postgres/semloom_pg/src/ai_provider_port.h)：
+以下是当前 C seam 的分工，精确定义见[ai_provider_port.h](../../code/postgres/semloom_pg/src/provider/ai_provider_port.h)：
 
 | 对象 | 当前字段职责 |
 |---|---|
@@ -384,12 +384,54 @@ hash 不足以证明跨算子亲和，两个独立 endpoint 的兼容配置也�
 | 位置 | 工程职责 |
 |---|---|
 | `code/postgres/semloom_pg/` | 自有 PG carrier、plan spec、machine、pump/runtime、neutral port 与 UDS/wire |
-| `code/src/execution_provider/` | 公共 gateway、版本化 codec、completion Adapter；旧 extension gateway 只保留兼容入口 |
+| `code/src/execution_provider/` | 公共 gateway、版本化 codec、completion Adapter；现役调用方已使用公共入口，旧 extension gateway 别名已删除 |
 | `code/src/planning/`、`code/src/scheduling/` | 已有 work/cost、组织、准入、路由和执行代码；增量核心先从真实调用和测试表征中抽取 |
 | 未来 SemLoom gateway Adapter | 将中立 task 映射到现有核心，不能再写一套 scheduler；具体文件只在有实现消费者时创建 |
 | 公司 fork | 承接自有算子语义/处理/优化方法的 planner/executor 适配，以及 SemLoom provider client 与本地 lifecycle 映射；见 §8.7 |
 
 源码文件树与可运行命令只由代码 README/INFRA_STATUS 维护，不在本计划复制易过期的全量清单。
+
+### 8.1.1 扩展职责目录重构（2026-09-07，本地验证通过，PG验证待补）
+
+用户要求先整理数据库扩展结构，再推进组合与执行侧接入。本轮固定起点 `41e103f2`，工作分支
+`codex/pg-module-layout`；只进行行为不变的结构重构。共享 scan/pump/runtime/provider 保留，
+SQL定义、消息字节/摘要、协议版本、错误码、NULL/顺序、权限、取消与配置默认值不变。
+组合、多会话、异步或新调度能力不在本轮实现。服务器已结束使用，本轮不连接服务器或请求模型。
+
+依据§4、§8.7.3的现有职责与保留底座决定，以及§8.8已核对的pgml
+`caf2b6ccdf0d6efc2c1910cbc06725a34320181a`公共入口/共享实现原则，直接整理自有代码，不复制
+公司或pgml源码。当前没有重新访问公司环境；不以历史参考表推断其最新实现。
+
+实际问题是48个C/头文件平铺、`sem_path.c`实为Map路径但名称不明确，以及`semloom_pg.h`
+混合配置、marker身份、planner与scan声明。provider只需配置却间接包含planner类型。
+先按planner、semantics、executor、provider/wire迁移现有文件，将Map路径命名为
+`sem_map_path.c`；构建和全部现役调用方同步迁移，公共声明使用明确的模块路径。
+再将总头文件收窄为配置、marker身份、路径构造和scan四个实际被使用的Interface。
+marker身份查找从扩展装配中独立出来，函数体原样迁移；不增加registry、DAG或转发兼容壳。
+文件清单与模块使用规则由扩展README维护，本计划不保存第二份全量目录树。
+factory原为一个recording schema常量包含完整plan头文件；该常量移至现有recording语义合同，
+plan头文件仍导入它，数值与调用行为不变，provider不再依赖planner头文件。
+
+用户随后提供`x_semantic`作为可选目录参考。本轮只读目录和Makefile，参考工作副本Git基于
+`4601bf7272766d18d370ab95c588cb708d3d1d87`，所读Makefile SHA-256为
+`032e1df449338220f7e0228c809fb74ee9cf758c7c26145975e06f896a22db73`；没有细读算子实现或运行其构建。
+采用其按职责划分目录、PGXS显式列对象的组织方式；自有planner/semantics/executor/provider
+继续按现有职责划分。未复制demo源码、SQL、库内LLM层、tokenizer桥或其构建依赖。
+
+
+验证：迁移前后运行相同Python/provider/C消息与值合同，实际编译所有PG-independent C模块与
+中立header；检查共享层依赖和PGXS生产/测试对象路径。既有SQL回归expected与TAP断言保持，
+只改必要源码路径。当前本机尚未找到PG18.3安装；若没有可用工具链，完整PGXS构建/regression/
+TAP记为待验证，不把旧Linux/真实模型结果归给本轮，不自动合并main。原始证据、历史源码快照
+和失败记录不修改；当前源码链接跟随新路径，确属历史路径的引用保持对应提交身份。
+
+本地最终112项算子合同、4项网关测试和8项严格C11编译通过，27个生产对象和6个测试对象路径
+均可解析。45个迁移文件除include及上述常量位置外内容一致，marker函数体与原extern声明保留。
+迁移中实际遇到旧HTTP测试的1ms总deadline在请求发出前到期：生产适配器正确返回MODEL_TIMEOUT，
+原断言却要求服务端必收到一次请求。单独修正测试为直接统计客户端HTTP派发最多一次；其他错误仍
+严格一次，超时值、错误码、重试策略和生产实现不变。失败与各次检查分别保存在
+[本轮验证记录](../results/postgresql/pg_module_layout_20260907/README.md)。
+本地没有PG18.3工具链，完整构建/regression/TAP仍pending；该分支未合并main。
 
 ### 8.2 设计模式与验证
 

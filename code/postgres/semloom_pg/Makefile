@@ -2,31 +2,32 @@ EXTENSION = semloom_pg
 MODULE_big = semloom_pg
 OBJS = \
 	src/extension.o \
-	src/generation_profile.o \
+	src/planner/marker_identity.o \
+	src/semantics/generation_profile.o \
 	src/marker.o \
-	src/provider.o \
-	src/pg_semantic_runtime.o \
-	src/recording_provider.o \
-	src/sem_filter_calibration.o \
-	src/sem_filter_cost.o \
-	src/sem_filter_machine.o \
-	src/sem_filter_path.o \
-	src/sem_map_machine.o \
-	src/sem_message_writer.o \
-	src/sem_operator_machine.o \
-	src/sem_text.o \
-	src/semantic_map_contract.o \
-	src/sem_plan_spec.o \
-	src/sem_path_common.o \
-	src/sem_path.o \
-	src/sem_pump.o \
-	src/sem_scan.o \
-	src/uds_provider.o \
-	src/wire_common.o \
-	src/wire_semantic.o \
-	src/wire_v2.o \
-	src/wire_v3.o \
-	src/wire_v4.o
+	src/provider/provider.o \
+	src/executor/pg_semantic_runtime.o \
+	src/provider/recording_provider.o \
+	src/planner/sem_filter_calibration.o \
+	src/planner/sem_filter_cost.o \
+	src/semantics/sem_filter_machine.o \
+	src/planner/sem_filter_path.o \
+	src/semantics/sem_map_machine.o \
+	src/semantics/sem_message_writer.o \
+	src/semantics/sem_operator_machine.o \
+	src/semantics/sem_text.o \
+	src/semantics/semantic_map_contract.o \
+	src/planner/sem_plan_spec.o \
+	src/planner/sem_path_common.o \
+	src/planner/sem_map_path.o \
+	src/executor/sem_pump.o \
+	src/executor/sem_scan.o \
+	src/provider/uds_provider.o \
+	src/provider/wire/wire_common.o \
+	src/provider/wire/wire_semantic.o \
+	src/provider/wire/wire_v2.o \
+	src/provider/wire/wire_v3.o \
+	src/provider/wire/wire_v4.o
 
 DATA = sql/semloom_pg--0.1.0.sql \
 	sql/semloom_pg--0.2.0.sql \

@@ -10,7 +10,7 @@
 #include "optimizer/planner.h"
 #include "utils/builtins.h"
 
-#include "sem_plan_spec.h"
+#include "planner/sem_plan_spec.h"
 
 PG_FUNCTION_INFO_V1(semloom_test_map_plan);
 PG_FUNCTION_INFO_V1(semloom_test_map_watch);

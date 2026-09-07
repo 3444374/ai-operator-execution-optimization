@@ -1,0 +1,187 @@
+{
+  "compiler": "Apple clang version 17.0.0 (clang-1700.6.3.2)",
+  "pure_c_and_header": [
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/generation_profile.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/generation_profile.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/generation_profile.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/sem_filter_machine.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/sem_filter_machine.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/sem_filter_machine.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/sem_map_machine.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/sem_map_machine.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/sem_map_machine.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/sem_message_writer.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/sem_message_writer.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/sem_message_writer.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/sem_operator_machine.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/sem_operator_machine.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/sem_operator_machine.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/sem_text.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/sem_text.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/sem_text.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "code/postgres/semloom_pg/src/semantics/semantic_map_contract.c",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "-c",
+        "code/postgres/semloom_pg/src/semantics/semantic_map_contract.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/semantic_map_contract.o"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "source": "neutral_header_client",
+      "command": [
+        "cc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+        "-Icode/postgres/semloom_pg/src",
+        "tmp/pg-module-layout/c-audit/port_client.c",
+        "-o",
+        "tmp/pg-module-layout/c-audit/port_client"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "production_objects": [
+    "src/extension.o",
+    "src/planner/marker_identity.o",
+    "src/semantics/generation_profile.o",
+    "src/marker.o",
+    "src/provider/provider.o",
+    "src/executor/pg_semantic_runtime.o",
+    "src/provider/recording_provider.o",
+    "src/planner/sem_filter_calibration.o",
+    "src/planner/sem_filter_cost.o",
+    "src/semantics/sem_filter_machine.o",
+    "src/planner/sem_filter_path.o",
+    "src/semantics/sem_map_machine.o",
+    "src/semantics/sem_message_writer.o",
+    "src/semantics/sem_operator_machine.o",
+    "src/semantics/sem_text.o",
+    "src/semantics/semantic_map_contract.o",
+    "src/planner/sem_plan_spec.o",
+    "src/planner/sem_path_common.o",
+    "src/planner/sem_map_path.o",
+    "src/executor/sem_pump.o",
+    "src/executor/sem_scan.o",
+    "src/provider/uds_provider.o",
+    "src/provider/wire/wire_common.o",
+    "src/provider/wire/wire_semantic.o",
+    "src/provider/wire/wire_v2.o",
+    "src/provider/wire/wire_v3.o",
+    "src/provider/wire/wire_v4.o"
+  ],
+  "plan_contract_objects": [
+    "plan_contract.o",
+    "map_plan_contract.o",
+    "sem_plan_spec.o",
+    "generation_profile.o",
+    "semantic_map_contract.o",
+    "sem_text.o"
+  ],
+  "object_graph_valid": true,
+  "postgres_build": "pending: pg_config/PGXS/18.3 headers unavailable"
+}

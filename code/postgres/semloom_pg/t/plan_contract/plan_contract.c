@@ -3,8 +3,8 @@
 #include "fmgr.h"
 #include "nodes/makefuncs.h"
 #include "utils/builtins.h"
-#include "generation_profile.h"
-#include "sem_plan_spec.h"
+#include "semantics/generation_profile.h"
+#include "planner/sem_plan_spec.h"
 
 PG_MODULE_MAGIC;
 PG_FUNCTION_INFO_V1(semloom_test_plan);

@@ -129,8 +129,8 @@ class MapCContractTests(unittest.TestCase):
         cls.addClassCleanup(directory.cleanup)
         library = Path(directory.name) / "map-values.so"
         subprocess.run(["cc", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-pedantic",
-                        "-shared", "-fPIC", str(source / "semantic_map_contract.c"),
-                        str(source / "sem_text.c"), "-o", str(library)], check=True, capture_output=True)
+                        "-shared", "-fPIC", "-I", str(source), str(source / "semantics/semantic_map_contract.c"),
+                        str(source / "semantics/sem_text.c"), "-o", str(library)], check=True, capture_output=True)
         cls.library = ctypes.CDLL(str(library))
         cls.library.semloom_map_plan_encode.argtypes = [ctypes.POINTER(MapPlanValues), ctypes.c_void_p,
                                                        ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]

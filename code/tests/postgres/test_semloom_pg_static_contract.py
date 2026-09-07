@@ -54,14 +54,14 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         install_sql = (EXTENSION_ROOT / "sql" / "semloom_pg--0.1.0.sql").read_text(
             encoding="utf-8"
         )
-        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+        filter_path = (EXTENSION_ROOT / "src" / "planner/sem_filter_path.c").read_text(
             encoding="utf-8"
         )
-        plan_header = (EXTENSION_ROOT / "src" / "sem_plan_spec.h").read_text(
+        plan_header = (EXTENSION_ROOT / "src" / "planner/sem_plan_spec.h").read_text(
             encoding="utf-8"
         )
         contract_header = (
-            EXTENSION_ROOT / "src" / "semantic_filter_contract.h"
+            EXTENSION_ROOT / "src" / "semantics/semantic_filter_contract.h"
         ).read_text(encoding="utf-8")
 
         self.assertIn(
@@ -85,26 +85,26 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_exact_semfilter_cost_is_planner_visible_but_not_semantic_identity(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        cost_header = (EXTENSION_ROOT / "src" / "sem_filter_cost.h").read_text(
+        cost_header = (EXTENSION_ROOT / "src" / "planner/sem_filter_cost.h").read_text(
             encoding="utf-8"
         )
-        cost_source = (EXTENSION_ROOT / "src" / "sem_filter_cost.c").read_text(
+        cost_source = (EXTENSION_ROOT / "src" / "planner/sem_filter_cost.c").read_text(
             encoding="utf-8"
         )
-        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+        filter_path = (EXTENSION_ROOT / "src" / "planner/sem_filter_path.c").read_text(
             encoding="utf-8"
         )
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(
             encoding="utf-8"
         )
         runtime_source = (
-            EXTENSION_ROOT / "src" / "pg_semantic_runtime.c"
+            EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c"
         ).read_text(encoding="utf-8")
-        plan_header = (EXTENSION_ROOT / "src" / "sem_plan_spec.h").read_text(
+        plan_header = (EXTENSION_ROOT / "src" / "planner/sem_plan_spec.h").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("src/sem_filter_cost.o", makefile)
+        self.assertIn("src/planner/sem_filter_cost.o", makefile)
         self.assertIn("semloom.exact_filter.uncalibrated.v1", cost_header)
         self.assertIn("SEMLOOM_FILTER_COST_CALIBRATION_STATUS", cost_header)
         for field_name in (
@@ -135,17 +135,17 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(
             encoding="utf-8"
         )
-        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+        filter_path = (EXTENSION_ROOT / "src" / "planner/sem_filter_path.c").read_text(
             encoding="utf-8"
         )
         runtime_source = (
-            EXTENSION_ROOT / "src" / "pg_semantic_runtime.c"
+            EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c"
         ).read_text(encoding="utf-8")
-        provider_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+        provider_header = (EXTENSION_ROOT / "src" / "provider/ai_provider_port.h").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("src/sem_filter_calibration.o", makefile)
+        self.assertIn("src/planner/sem_filter_calibration.o", makefile)
         self.assertIn("semloom_pg.reference_calibration_file", extension_source)
         self.assertIn("semloom_filter_calibration_load", filter_path)
         self.assertIn("semloom_filter_calibration_apply", filter_path)
@@ -154,8 +154,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_planner_wraps_an_ordinary_child_path_and_chains_hooks(self) -> None:
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(encoding="utf-8")
-        path_source = (EXTENSION_ROOT / "src" / "sem_path.c").read_text(encoding="utf-8")
-        common_path_source = (EXTENSION_ROOT / "src" / "sem_path_common.c").read_text(
+        path_source = (EXTENSION_ROOT / "src" / "planner/sem_map_path.c").read_text(encoding="utf-8")
+        common_path_source = (EXTENSION_ROOT / "src" / "planner/sem_path_common.c").read_text(
             encoding="utf-8"
         )
 
@@ -172,8 +172,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("parent_root->parse->onConflict != NULL", path_source)
 
     def test_executor_is_incremental_and_rejects_rescan(self) -> None:
-        scan_source = (EXTENSION_ROOT / "src" / "sem_scan.c").read_text(encoding="utf-8")
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
+        scan_source = (EXTENSION_ROOT / "src" / "executor/sem_scan.c").read_text(encoding="utf-8")
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(encoding="utf-8")
 
         self.assertNotIn("ExecProcNode", scan_source)
         self.assertIn("ExecProcNode(pump->child_state)", pump_source)
@@ -184,17 +184,17 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_scan_delegates_tuple_flow_to_the_pump_and_runtime(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        scan_source = (EXTENSION_ROOT / "src" / "sem_scan.c").read_text(encoding="utf-8")
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        scan_source = (EXTENSION_ROOT / "src" / "executor/sem_scan.c").read_text(encoding="utf-8")
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(encoding="utf-8")
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
-        machine_source = (EXTENSION_ROOT / "src" / "sem_operator_machine.c").read_text(
+        machine_source = (EXTENSION_ROOT / "src" / "semantics/sem_operator_machine.c").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("src/sem_pump.o", makefile)
-        self.assertIn("src/pg_semantic_runtime.o", makefile)
+        self.assertIn("src/executor/sem_pump.o", makefile)
+        self.assertIn("src/executor/pg_semantic_runtime.o", makefile)
         self.assertIn("semloom_pump_begin", scan_source)
         self.assertIn("semloom_pump_next", scan_source)
         self.assertIn("semloom_pump_stop", scan_source)
@@ -215,24 +215,24 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_two_operators_share_one_postgres_semantic_runtime(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(encoding="utf-8")
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
-        runtime_header = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.h").read_text(
+        runtime_header = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.h").read_text(
             encoding="utf-8"
         )
-        map_machine = (EXTENSION_ROOT / "src" / "sem_map_machine.c").read_text(
+        map_machine = (EXTENSION_ROOT / "src" / "semantics/sem_map_machine.c").read_text(
             encoding="utf-8"
         )
-        filter_machine = (EXTENSION_ROOT / "src" / "sem_filter_machine.c").read_text(
+        filter_machine = (EXTENSION_ROOT / "src" / "semantics/sem_filter_machine.c").read_text(
             encoding="utf-8"
         )
 
         for object_name in (
-            "src/pg_semantic_runtime.o",
-            "src/sem_map_machine.o",
-            "src/sem_filter_machine.o",
+            "src/executor/pg_semantic_runtime.o",
+            "src/semantics/sem_map_machine.o",
+            "src/semantics/sem_filter_machine.o",
         ):
             self.assertIn(object_name, makefile)
         self.assertIn("typedef struct PgSemanticRuntime", runtime_header)
@@ -275,7 +275,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn('"FALSE"', filter_machine)
         self.assertIn('"UNKNOWN"', filter_machine)
 
-        machine_header = (EXTENSION_ROOT / "src" / "sem_operator_machine.h").read_text(
+        machine_header = (EXTENSION_ROOT / "src" / "semantics/sem_operator_machine.h").read_text(
             encoding="utf-8"
         )
         for postgres_type in (
@@ -289,28 +289,29 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_planner_owns_the_versioned_semantic_plan_spec(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        plan_header = (EXTENSION_ROOT / "src" / "sem_plan_spec.h").read_text(
+        plan_header = (EXTENSION_ROOT / "src" / "planner/sem_plan_spec.h").read_text(
             encoding="utf-8"
         )
-        plan_source = (EXTENSION_ROOT / "src" / "sem_plan_spec.c").read_text(
+        plan_source = (EXTENSION_ROOT / "src" / "planner/sem_plan_spec.c").read_text(
             encoding="utf-8"
         )
-        map_path = (EXTENSION_ROOT / "src" / "sem_path.c").read_text(encoding="utf-8")
-        filter_path = (EXTENSION_ROOT / "src" / "sem_filter_path.c").read_text(
+        map_path = (EXTENSION_ROOT / "src" / "planner/sem_map_path.c").read_text(encoding="utf-8")
+        filter_path = (EXTENSION_ROOT / "src" / "planner/sem_filter_path.c").read_text(
             encoding="utf-8"
         )
-        machine_source = (EXTENSION_ROOT / "src" / "sem_operator_machine.c").read_text(
+        machine_source = (EXTENSION_ROOT / "src" / "semantics/sem_operator_machine.c").read_text(
             encoding="utf-8"
         )
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(
             encoding="utf-8"
         )
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("src/sem_plan_spec.o", makefile)
-        self.assertIn("SEMLOOM_PLAN_SPEC_SCHEMA_VERSION", plan_header)
+        self.assertIn("src/planner/sem_plan_spec.o", makefile)
+        self.assertIn("SEMLOOM_PLAN_SPEC_SCHEMA_VERSION 1",
+                      (EXTENSION_ROOT / "src/semantics/recording_contract.h").read_text())
         for field_name in (
             "schema_version",
             "operator_kind",
@@ -328,7 +329,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertIn("incomplete semantic plan specification", plan_source)
 
         for planner_source in (map_path, filter_path):
-            self.assertNotIn('#include "ai_provider_port.h"', planner_source)
+            self.assertNotIn('#include "provider/ai_provider_port.h"', planner_source)
             self.assertNotIn("AI_PROVIDER_", planner_source)
             self.assertIn("semloom_plan_spec", planner_source)
         self.assertNotIn("SEMLOOM_RECORDING_SPEC", machine_source)
@@ -340,7 +341,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn('ExplainPropertyText("Physical Role", "reference"', runtime_source)
 
     def test_neutral_provider_contract_has_no_postgres_dependencies(self) -> None:
-        header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(encoding="utf-8")
+        header = (EXTENSION_ROOT / "src" / "provider/ai_provider_port.h").read_text(encoding="utf-8")
 
         self.assertIn("#include <stdbool.h>", header)
         self.assertIn("#include <stdint.h>", header)
@@ -371,10 +372,10 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertNotIn(forbidden, header)
 
     def test_neutral_provider_error_interface_hides_adapter_operations(self) -> None:
-        header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+        header = (EXTENSION_ROOT / "src" / "provider/ai_provider_port.h").read_text(
             encoding="utf-8"
         )
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
 
@@ -394,30 +395,30 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_recording_and_uds_are_separate_provider_adapters(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        factory_source = (EXTENSION_ROOT / "src" / "provider.c").read_text(encoding="utf-8")
-        recording_source = (EXTENSION_ROOT / "src" / "recording_provider.c").read_text(
+        factory_source = (EXTENSION_ROOT / "src" / "provider/provider.c").read_text(encoding="utf-8")
+        recording_source = (EXTENSION_ROOT / "src" / "provider/recording_provider.c").read_text(
             encoding="utf-8"
         )
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(encoding="utf-8")
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(encoding="utf-8")
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
-        uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(encoding="utf-8")
-        wire_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(encoding="utf-8")
-        wire_common_source = (EXTENSION_ROOT / "src" / "wire_common.c").read_text(
+        uds_source = (EXTENSION_ROOT / "src" / "provider/uds_provider.c").read_text(encoding="utf-8")
+        wire_source = (EXTENSION_ROOT / "src" / "provider/wire/wire_v2.c").read_text(encoding="utf-8")
+        wire_common_source = (EXTENSION_ROOT / "src" / "provider/wire/wire_common.c").read_text(
             encoding="utf-8"
         )
-        wire_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(encoding="utf-8")
+        wire_header = (EXTENSION_ROOT / "src" / "provider/wire/wire_v2.h").read_text(encoding="utf-8")
         gateway_wire_source = (
             CODE_ROOT / "src" / "execution_provider" / "wire" / "v2.py"
         ).read_text(encoding="utf-8")
         gateway_framing_source = (
             CODE_ROOT / "src" / "execution_provider" / "wire" / "framing.py"
         ).read_text(encoding="utf-8")
-        self.assertIn("src/recording_provider.o", makefile)
-        self.assertIn("src/uds_provider.o", makefile)
-        self.assertIn("src/wire_common.o", makefile)
-        self.assertIn("src/wire_v2.o", makefile)
+        self.assertIn("src/provider/recording_provider.o", makefile)
+        self.assertIn("src/provider/uds_provider.o", makefile)
+        self.assertIn("src/provider/wire/wire_common.o", makefile)
+        self.assertIn("src/provider/wire/wire_v2.o", makefile)
         self.assertNotIn("src/provider_protocol.o", makefile)
         self.assertIn("semloom_gateway_socket_path", factory_source)
         self.assertIn("SEMLOOM_RECORDING_PREFIX", recording_source)
@@ -493,7 +494,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "recv(",
             "WaitLatchOrSocket",
         )
-        for source_path in (EXTENSION_ROOT / "src").glob("*.c"):
+        for source_path in (EXTENSION_ROOT / "src").rglob("*.c"):
             if source_path.name in allowed_transport_sources:
                 continue
             source = source_path.read_text(encoding="utf-8")
@@ -502,13 +503,13 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_wire_v3_is_strict_and_does_not_mutate_recording_v2(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        wire_v2_header = (EXTENSION_ROOT / "src" / "wire_v2.h").read_text(
+        wire_v2_header = (EXTENSION_ROOT / "src" / "provider/wire/wire_v2.h").read_text(
             encoding="utf-8"
         )
-        wire_v3_header = (EXTENSION_ROOT / "src" / "wire_v3.h").read_text(
+        wire_v3_header = (EXTENSION_ROOT / "src" / "provider/wire/wire_v3.h").read_text(
             encoding="utf-8"
         )
-        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_semantic.c").read_text(
+        wire_v3_source = (EXTENSION_ROOT / "src" / "provider/wire/wire_semantic.c").read_text(
             encoding="utf-8"
         )
         python_v2 = (
@@ -524,8 +525,8 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             CODE_ROOT / "src" / "execution_provider" / "adapters" / "golden.py"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("src/wire_v2.o", makefile)
-        self.assertIn("src/wire_v3.o", makefile)
+        self.assertIn("src/provider/wire/wire_v2.o", makefile)
+        self.assertIn("src/provider/wire/wire_v3.o", makefile)
         self.assertIn("SEMLOOM_WIRE_V2_PROTOCOL_VERSION 2", wire_v2_header)
         self.assertIn("SEMLOOM_WIRE_V3_PROTOCOL_VERSION 3", wire_v3_header)
         self.assertIn("SEMLOOM_WIRE_V3_MAX_INPUT_BYTES 163840", wire_v3_header)
@@ -544,7 +545,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertNotIn(forbidden, golden_adapter.lower())
 
     def test_wire_v3_owns_and_strictly_validates_error_frames(self) -> None:
-        wire_v3_source = (EXTENSION_ROOT / "src" / "wire_semantic.c").read_text(
+        wire_v3_source = (EXTENSION_ROOT / "src" / "provider/wire/wire_semantic.c").read_text(
             encoding="utf-8"
         )
 
@@ -569,19 +570,19 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         extension_source = (EXTENSION_ROOT / "src" / "extension.c").read_text(
             encoding="utf-8"
         )
-        port_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+        port_header = (EXTENSION_ROOT / "src" / "provider/ai_provider_port.h").read_text(
             encoding="utf-8"
         )
-        provider_header = (EXTENSION_ROOT / "src" / "provider_private.h").read_text(
+        provider_header = (EXTENSION_ROOT / "src" / "provider/provider_private.h").read_text(
             encoding="utf-8"
         )
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
-        uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(
+        uds_source = (EXTENSION_ROOT / "src" / "provider/uds_provider.c").read_text(
             encoding="utf-8"
         )
-        wire_v3_header = (EXTENSION_ROOT / "src" / "wire_v3.h").read_text(
+        wire_v3_header = (EXTENSION_ROOT / "src" / "provider/wire/wire_v3.h").read_text(
             encoding="utf-8"
         )
 
@@ -605,16 +606,16 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertIn(neutral_error, runtime_source)
 
     def test_input_limit_preflight_runs_before_canonical_task_construction(self) -> None:
-        port_header = (EXTENSION_ROOT / "src" / "ai_provider_port.h").read_text(
+        port_header = (EXTENSION_ROOT / "src" / "provider/ai_provider_port.h").read_text(
             encoding="utf-8"
         )
-        runtime_header = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.h").read_text(
+        runtime_header = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.h").read_text(
             encoding="utf-8"
         )
-        runtime_source = (EXTENSION_ROOT / "src" / "pg_semantic_runtime.c").read_text(
+        runtime_source = (EXTENSION_ROOT / "src" / "executor/pg_semantic_runtime.c").read_text(
             encoding="utf-8"
         )
-        pump_source = (EXTENSION_ROOT / "src" / "sem_pump.c").read_text(
+        pump_source = (EXTENSION_ROOT / "src" / "executor/sem_pump.c").read_text(
             encoding="utf-8"
         )
         pump_next = _c_function_body(pump_source, "semloom_pump_next")
@@ -631,20 +632,20 @@ class SemloomPgStaticContractTests(unittest.TestCase):
 
     def test_wire_common_c_owns_shared_transport_and_json_primitives(self) -> None:
         makefile = (EXTENSION_ROOT / "Makefile").read_text(encoding="utf-8")
-        common_source = (EXTENSION_ROOT / "src" / "wire_common.c").read_text(
+        common_source = (EXTENSION_ROOT / "src" / "provider/wire/wire_common.c").read_text(
             encoding="utf-8"
         )
-        common_header = (EXTENSION_ROOT / "src" / "wire_common.h").read_text(
+        common_header = (EXTENSION_ROOT / "src" / "provider/wire/wire_common.h").read_text(
             encoding="utf-8"
         )
-        wire_v2_source = (EXTENSION_ROOT / "src" / "wire_v2.c").read_text(
+        wire_v2_source = (EXTENSION_ROOT / "src" / "provider/wire/wire_v2.c").read_text(
             encoding="utf-8"
         )
-        uds_source = (EXTENSION_ROOT / "src" / "uds_provider.c").read_text(
+        uds_source = (EXTENSION_ROOT / "src" / "provider/uds_provider.c").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("src/wire_common.o", makefile)
+        self.assertIn("src/provider/wire/wire_common.o", makefile)
         for shared_implementation in (
             "send(",
             "recv(",

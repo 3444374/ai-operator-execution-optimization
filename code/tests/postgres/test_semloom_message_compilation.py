@@ -44,10 +44,10 @@ class MessageCompilationTests(unittest.TestCase):
         cls.addClassCleanup(directory.cleanup)
         library = Path(directory.name) / "messages.so"
         subprocess.run([
-            "cc", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-pedantic", "-shared", "-fPIC",
-            str(source / "sem_operator_machine.c"), str(source / "sem_filter_machine.c"),
-            str(source / "sem_map_machine.c"), str(source / "sem_message_writer.c"),
-            str(source / "sem_text.c"), "-o", str(library),
+            "cc", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-pedantic", "-shared", "-fPIC", "-I", str(source),
+            str(source / "semantics/sem_operator_machine.c"), str(source / "semantics/sem_filter_machine.c"),
+            str(source / "semantics/sem_map_machine.c"), str(source / "semantics/sem_message_writer.c"),
+            str(source / "semantics/sem_text.c"), "-o", str(library),
         ], check=True, capture_output=True, text=True)
         cls.library = ctypes.CDLL(str(library))
         cls.library.semloom_operator_machine_init.argtypes = [ctypes.POINTER(OperatorMachine),

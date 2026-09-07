@@ -1,0 +1,39 @@
+/* Fixed PostgreSQL-owned contract for the first exact SemFilter reference. */
+#ifndef SEMLOOM_SEMANTIC_FILTER_CONTRACT_H
+#define SEMLOOM_SEMANTIC_FILTER_CONTRACT_H
+
+#define SEMLOOM_EXACT_FILTER_PLAN_SCHEMA_VERSION 2
+#define SEMLOOM_CHOICE_FILTER_PLAN_SCHEMA_VERSION 3
+#define SEMLOOM_CHOICE_FILTER_PROFILE_SELECTOR "semloom.generation.choice.tristate.v1"
+#define SEMLOOM_EXACT_FILTER_SPEC_ID "semloom.semantic.sem_filter.exact.v1"
+#define SEMLOOM_EXACT_FILTER_SPEC_VERSION 1
+#include "semantics/semantic_reference_contract.h"
+#define SEMLOOM_EXACT_FILTER_ORDER_POLICY "INPUT_ORDER"
+
+#define SEMLOOM_FILTER_INSTRUCTION_MAX_BYTES 4096
+#define SEMLOOM_FILTER_MODEL_MAX_BYTES 128
+
+#define SEMLOOM_PROMPT_PROGRAM_ID "semloom.sem_filter.exact_chat.v1"
+#define SEMLOOM_PROMPT_PROGRAM_VERSION 1
+#define SEMLOOM_PROMPT_PROGRAM_DIGEST \
+	"83540ad1cf326c0e92272b0cc9389a1bec6321c9213499f0ebf261e7a7313ae1"
+#define SEMLOOM_RESULT_PARSER_ID "semloom.sem_filter.tristate_ascii.v1"
+#define SEMLOOM_RESULT_PARSER_VERSION 1
+#define SEMLOOM_RESULT_PARSER_DIGEST \
+	"39ef25e06022452f7f97083785e01caaaf3acd2c70c44bea02ada7139e45263d"
+
+#define SEMLOOM_FILTER_SYSTEM_DIRECTIVE \
+	"Evaluate whether the input satisfies the instruction. Reply with exactly " \
+	"TRUE, FALSE, or UNKNOWN. Use UNKNOWN only when the input lacks enough information."
+#define SEMLOOM_FILTER_INSTRUCTION_SEPARATOR "\nInstruction:\n"
+
+#define SEMLOOM_FILTER_TEMPERATURE 0
+#define SEMLOOM_FILTER_TOP_P 1
+#define SEMLOOM_FILTER_MAX_TOKENS 8
+#define SEMLOOM_FILTER_N 1
+#define SEMLOOM_FILTER_STREAM 0
+#define SEMLOOM_FILTER_STOP "\n"
+
+#define SEMLOOM_SHA256_HEX_LENGTH 64
+
+#endif

@@ -23,6 +23,7 @@ adapter 已在相同 wire v3、PostgreSQL parser 与 keep/drop 路径上接通 O
 execution-provider gateway 实现位于公共 `code/src/execution_provider/`，统一通过
 `code/scripts/services/run_execution_provider_gateway.py` 启动；旧 extension import/CLI 别名已删除，
 调用方与测试使用公共入口。wire v2 bytes、digest 和 SQL 行为保持不变。
+`codex/pg-module-layout` 分支按 planner、semantics、executor 和 provider 整理现有实现；本地检查已通过，PG18.3重验待补，源码入口见[模块说明](code/postgres/semloom_pg/README.md#module-layout)。
 同一 plan/task/result contract 已先通过 deterministic golden adapter，再通过同步 fixed-model endpoint；
 固定 endpoint、model identity、timeout 与认证只来自 gateway 进程外配置。reference path 已独立
 区分 semantic-input rows、NULL rate、output selectivity、model calls、prompt/output usage、

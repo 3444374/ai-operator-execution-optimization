@@ -118,7 +118,7 @@ class CGenerationProfileTests(unittest.TestCase):
         library_path = Path(directory.name) / "profile.so"
         subprocess.run([
             "cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-pedantic",
-            "-shared", "-fPIC", "-I", str(source), str(source / "generation_profile.c"),
+            "-shared", "-fPIC", "-I", str(source), str(source / "semantics/generation_profile.c"),
             "-o", str(library_path),
         ], check=True, capture_output=True, text=True)
         cls.library = ctypes.CDLL(str(library_path))

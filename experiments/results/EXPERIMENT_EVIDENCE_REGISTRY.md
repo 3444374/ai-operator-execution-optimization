@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+[扩展目录重构验证](postgresql/pg_module_layout_20260907/README.md)记录基于 `41e103f2` 的
+`codex/pg-module-layout` 工作树及文件SHA-256：本地算子合同112/112、网关4/4、严格C11编译8/8，
+45个文件的机械迁移及marker函数体/extern声明一致性通过。旧1ms HTTP deadline测试的计数假设
+失败保留，单独修正测试；没有改变生产超时或重试策略。PG18.3工具链不可用，完整构建/regression/
+TAP为pending；分支未合并main，模型请求0。这是局部结构与合同检查，不继承下列旧版本的PG证据。
+
 [两算子完整回归与合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 绑定`5771cef1`（运行时代码`fcd12373`）：Linux247/247、PG18.3严格构建、regression1/1、
 全部7个TAP1758/1758通过；新9次真实请求覆盖Filter v3/v4与Map v5各自的SELECT/INSERT。
@@ -39,7 +45,7 @@ NULL零调用、输出/筛选、usage和写回通过，6会话关闭、9任务�
 原始哈希核验无差异，原25条预算前缀字节不变，本轮所有模型/PG/gateway进程和端口已清理。
 
 
-更新日期：2026-09-06
+更新日期：2026-09-07
 
 文档角色：本文只回答机制是否实现、通过何种验证以及是否已有真实 GPU 性能证据；它不定义架构、
 接口或下一步顺序。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。

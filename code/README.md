@@ -1,6 +1,8 @@
 # SemLoom Code
 
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
+The `codex/pg-module-layout` branch groups extension code by responsibility; see its [module map](postgres/semloom_pg/README.md#module-layout).
+Local checks pass; full PG18.3 revalidation of this layout remains pending. The earlier database results below retain their recorded source versions.
 Module targets, implementation order, and acceptance criteria belong to
 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`; this README only introduces
 the code tree and must not become a competing engineering plan.
@@ -16,7 +18,7 @@ pass all seven PG18.3 TAP files, regression, and a nine-request real-model SELEC
 and Map v5. These establish the supported synchronous paths; composition and asynchronous execution remain pending.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
-encoder under `postgres/semloom_pg/src/generation_profile.{h,c}`. They validate one immutable tristate profile
+encoder under `postgres/semloom_pg/src/semantics/generation_profile.{h,c}`. They validate one immutable tristate profile
 and share canonical bytes/identity tests. SQL opt-in, schema 3, the C `AiOpenSpec` mapping and wire v4 now
 execute through the existing runtime. Fixed-model choice mapping remains in the gateway, with no fallback
 to v3 or unconstrained requests. See the [PG connection qualification](../experiments/results/postgresql/choice_pg_wire_20260902/README.md):

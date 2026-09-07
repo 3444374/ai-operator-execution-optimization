@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-07",
+  "branch": "codex/pg-module-layout",
+  "base_commit": "41e103f2afff26ef2afe617659670ed80c36ccd8",
+  "platform": "macOS-15.6.1-arm64-arm-64bit",
+  "python": "3.12.6",
+  "logs": [
+    {
+      "file": "baseline-postgres.log",
+      "stage": "baseline",
+      "tests": 112,
+      "failures": 0,
+      "source_sha256": "4569b60bc3821341acb42fe674015b3e02f88158d9900512fa121decc02dd867",
+      "published_sha256": "4569b60bc3821341acb42fe674015b3e02f88158d9900512fa121decc02dd867"
+    },
+    {
+      "file": "moved-postgres.log",
+      "stage": "paths moved; original timeout assertion",
+      "tests": 112,
+      "failures": 1,
+      "source_sha256": "31934726bac32f9e540e5238568276622547bb0612ca9d8943d81bb3845bd76d",
+      "published_sha256": "c1939bac0a5604d74c3a3d9d8893e3b007657134fb89269516fec528e25ddee2"
+    },
+    {
+      "file": "interfaces-postgres.log",
+      "stage": "interfaces split; original timeout assertion",
+      "tests": 112,
+      "failures": 0,
+      "source_sha256": "cc3e02acd9757c6d06c0503035b431cd311136bbf14156c09f54a3099dbd173a",
+      "published_sha256": "cc3e02acd9757c6d06c0503035b431cd311136bbf14156c09f54a3099dbd173a"
+    },
+    {
+      "file": "http-deadline.log",
+      "stage": "timeout assertion corrected",
+      "tests": 9,
+      "failures": 0,
+      "source_sha256": "8aff63aeabefebfa298e5e8e8d0d67e62b6a08ee8de97e59caf22fa216e6fa38",
+      "published_sha256": "8aff63aeabefebfa298e5e8e8d0d67e62b6a08ee8de97e59caf22fa216e6fa38"
+    },
+    {
+      "file": "final-postgres.log",
+      "stage": "final",
+      "tests": 112,
+      "failures": 0,
+      "source_sha256": "2366a45d2c7080c344c0f48f6beefcaeb33b5475e34f6f6ed0c07f59de6e5afc",
+      "published_sha256": "2366a45d2c7080c344c0f48f6beefcaeb33b5475e34f6f6ed0c07f59de6e5afc"
+    },
+    {
+      "file": "final-gateway.log",
+      "stage": "final",
+      "tests": 4,
+      "failures": 0,
+      "source_sha256": "d3aea0c990869ac01edc188e87301d86bc371874b3aee56113978b1b18d3f2eb",
+      "published_sha256": "d3aea0c990869ac01edc188e87301d86bc371874b3aee56113978b1b18d3f2eb"
+    }
+  ],
+  "strict_c_compiles_passed": 8,
+  "production_objects_checked": 27,
+  "test_objects_checked": 6,
+  "pg18_3_build_regression_tap": {
+    "status": "pending",
+    "reason": "no local pg_config, PGXS or target headers; remote server not used"
+  },
+  "real_model_requests": 0,
+  "server_connections": 0,
+  "main_merged": false,
+  "public_log_normalization": [
+    "common redact_text",
+    "workspace root to <repo>",
+    "strip trailing line whitespace"
+  ]
+}

@@ -93,6 +93,35 @@ That comparison covers SQL registration, choice of PG integration, operator sema
 tuple/result binding, lifecycle and external execution, not just multiple operators or gateway concurrency.
 The current thin scan, PG-private runtime and neutral provider interface remain the implementation base.
 
+### Module layout
+
+The extension source is grouped by its existing responsibilities. SQL definitions and TAP assertions keep
+their original locations and behavior. The current layout refactor is on `codex/pg-module-layout`; its local
+validation is recorded in the [layout verification](../../../experiments/results/postgresql/pg_module_layout_20260907/README.md),
+and full PG18.3 build/regression/TAP revalidation is still pending.
+
+| Location | Contents and interface |
+|---|---|
+| `src/extension.c`, `src/marker.c`, `src/extension_config.h` | Extension registration, chained hooks, SQL marker entry points and configuration access |
+| `src/planner/` | Marker identity, Map/Filter placement, versioned plan storage and Filter cost/calibration; `paths.h` exposes path construction, `marker_identity.h` exposes catalog identity checks |
+| `src/semantics/` | Operator machines, Filter/Map contracts, generation profiles, message encoding and UTF-8 values; these compile without PostgreSQL headers |
+| `src/executor/` | `sem_scan.h` exposes PostgreSQL scan registration; scan callbacks, the shared row pump and PG runtime own tuple/query lifetime |
+| `src/provider/ai_provider_port.h` | The PostgreSQL-independent synchronous input/result/error interface |
+| `src/provider/` | Query-fixed adapter selection and recording/UDS implementations; only extension configuration and semantic contracts are imported, not planner definitions |
+| `src/provider/wire/` | Shared framing/JSON and versioned recording/semantic codecs; physical transport remains behind the provider interface |
+
+`sem_map_path.c` is the former `sem_path.c`; its function bodies are unchanged. `semloom_pg.h` has been
+replaced by the four actual interfaces listed above, and all callers include the relevant header directly.
+Marker identity functions retain their original bodies in `planner/marker_identity.c`. The recording schema
+constant now lives with its semantic contract, so the provider no longer imports the planner for that value.
+
+Builds use one source include root (`-Isrc`) and module-qualified project includes. The production PGXS
+Makefile lists every object explicitly; the test-only plan codec Makefile resolves production inputs from
+`planner/` and `semantics/`. C/header files remain internal implementation paths, while SQL signatures,
+wire bytes/digests, defaults and errors stay unchanged. Historical raw scripts must run at their recorded
+Git versions; current tests and source links use this layout. No forwarding files or speculative framework
+have been added at the old locations.
+
 ### Function identity and administrative membership changes
 
 The integrated function-identity slice requires each resolved marker to belong to `semloom_pg`;

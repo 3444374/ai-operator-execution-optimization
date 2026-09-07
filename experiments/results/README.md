@@ -6,6 +6,13 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## PostgreSQL 扩展目录整理（2026-09-07）
+
+[本地结构与合同检查](postgresql/pg_module_layout_20260907/README.md)对应独立分支
+`codex/pg-module-layout`：112项算子合同、4项网关测试和8项严格C11编译通过。生产实现按职责迁移，
+头文件依赖收窄；一次旧HTTP deadline测试失败及修正单独保留。PG18.3完整构建与TAP尚未复验，
+分支未合并main，没有新增服务器或模型运行。
+
 ## SemMap resource measurement repair (2026-09-06)
 
 最新[两算子合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)通过

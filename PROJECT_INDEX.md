@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-09-03
+更新时间：2026-09-07
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -121,7 +121,8 @@ choice 已有行为回查[四 C 完成记录](experiments/plans/completed/postgr
 | 文本/图像模态适配 | `code/src/modalities/` |
 | 指标与 profiler | `code/src/observability/` |
 | baseline 适配 | `code/src/baselines/` |
-| PostgreSQL semantic execution-provider gateway | `code/src/execution_provider/`；旧 extension 路径只作兼容入口 |
+| PostgreSQL 扩展模块与调用关系 | [`semloom_pg 模块说明`](code/postgres/semloom_pg/README.md#module-layout) |
+| PostgreSQL semantic execution-provider gateway | `code/src/execution_provider/`，现役调用方使用公共入口 |
 | 测试 | `code/tests/` |
 
 [`code/ARCHITECTURE_REFACTOR_PLAN.md`](code/ARCHITECTURE_REFACTOR_PLAN.md) 是 2026-08-03 已完成

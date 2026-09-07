@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-09-07 PostgreSQL 扩展职责目录整理
+
+- 基于 `41e103f2` 在 `codex/pg-module-layout` 直接整理现有代码，依据
+  [主计划§8.1.1](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)。用户提供的
+  `x_semantic` 仅浅看目录/Makefile，借鉴职责分类；来源版本与采用决定记录于主计划，未复制源码。
+- 45个C/头文件迁移至planner、semantics、executor、provider/wire，`sem_path.c`改为
+  `sem_map_path.c`。总头文件拆为配置、marker身份、路径构造与scan接口；marker函数体原样提取，
+  recording schema常量移回语义合同，provider不再导入planner。C/头文件净增36行，没有新增框架层。
+- PGXS对象、测试源码路径、当前入口与历史源码链接同步；SQL/TAP断言、wire、默认值及生产行为不改。
+  112项算子合同、4项网关测试、8项严格C11编译通过，27个生产/6个测试对象路径核对通过。
+- 一次1ms HTTP总deadline测试错误要求服务端必收到请求，保留失败后直接观测客户端派发次数，
+  最多一次；其他错误仍严格一次。测试修正单独审查，生产deadline和无重试规则不变。
+- [本轮证据](experiments/results/postgresql/pg_module_layout_20260907/README.md)保存各次运行、源码和
+  哈希。当前无本地PG18.3工具链，完整构建/regression/TAP待补；未连接服务器、未请求模型、未合并main。
+
 ## 2026-09-07 项目指令按任务加载与验证范围调整
 
 - 依据用户先审计后处理的要求，参照
