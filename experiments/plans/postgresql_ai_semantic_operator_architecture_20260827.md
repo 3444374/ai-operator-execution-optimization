@@ -5,7 +5,7 @@
 受众：项目维护者；本文是架构、接口演进与实施依赖的唯一主入口，不是新增运行授权。
 
 本次以`codex/semfilter-and@66887463`为代码基线，吸收用户补充设计并重新核对现有源码。
-该分支已推送、尚未合并main。已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
+该实现及设计已合并main。已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
 尚未实现通用调用/结果绑定、Filter→Map、按需语义值、增量SemLoom的PG接线及查询级共享资源控制。
 已有真实模型接线与小规模资源诊断不等于正式资源、语义质量或性能资格全部完成。
 具体状态看[INFRA_STATUS](../../code/INFRA_STATUS.md)，提交、测试与失败看
@@ -535,7 +535,7 @@ PG节点方法、算子方法状态与Core任务状态各自描述其责任，�
 
 #### 两个SemFilter AND实施切片（2026-09-07，已验证）
 
-`codex/semfilter-and@66887463`已推送、未合并main。调用分析进入`sem_filter_call`，两个现有Filter
+`codex/semfilter-and@66887463`实现已合并main。调用分析进入`sem_filter_call`，两个现有Filter
 节点保留独立spec、输入、计数与runtime；中间节点不吸收下游projection，修复VOLATILE输入被复用。
 保留marker于PG表达式字段，并以原生表达式初始化执行权限检查，修复转换后的权限遗漏。
 

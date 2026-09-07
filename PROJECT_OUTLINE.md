@@ -71,7 +71,7 @@ fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice �
 [总体设计与实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
 现按长期能力组织：PG拥有SQL和关系执行，算子方法产生具体任务，SemLoom承担有界组织与多作业调度。
 数据库公共调用/绑定、独立增量Core和共同资源/观测可以协同推进；两个Filter AND与有界多会话已有
-[工程验证](experiments/results/postgresql/semfilter_and_20260907/README.md)，分支已推送、尚未合并main。
+[工程验证](experiments/results/postgresql/semfilter_and_20260907/README.md)，现已合并main。
 [函数身份检查](experiments/results/postgresql/function_identity_20260902/README.md)已复现并最小修复
 非成员误接管，实现与证据已合入 main；仅成员关系变更仍须按工程计划刷新所有相关物理连接，不支持自动在线变更。
 生成型 Map 的消息编译、C/Python 纯值、Python v5 与深层 JSON 修复已合入本地 main，

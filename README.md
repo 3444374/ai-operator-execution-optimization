@@ -31,7 +31,7 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 最新[两算子完整验证](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 覆盖全部 PostgreSQL18.3 回归与 TAP；Filter v3/v4 和生成型 Map v5 的真实 SELECT/INSERT、
 NULL 零调用、结果与写回均通过。main中的两个算子各自同步执行；已推送的`codex/semfilter-and@66887463`增加两个Filter AND与
-有界gateway会话，尚未合并main，异步PG接入仍待实现。
+有界gateway会话，已合并main，异步PG接入仍待实现。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

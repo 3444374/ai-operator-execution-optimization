@@ -18,7 +18,7 @@ Engine残余账本。以上是设计及静态源码复核，动态表征、实�
 协议分发与请求容量；默认8连接、1模型请求，无等待队列，未知远端终态保留名额。
 Linux138/138通过，PG18.3严格构建、regression1/1、8个TAP1808/1808，584源码哈希匹配。
 包含RLS/快照/取消、相同VOLATILE输入两次求值和存活gateway的40会话FD/线程回收。
-本轮测试进程已清理，模型请求0；分支尚未合并main。Filter→Map、单节点多在途及正式资源仍待完成。
+本轮测试进程已清理，模型请求0；已合并main。Filter→Map、单节点多在途及正式资源仍待完成。
 
 2026-09-07 的[扩展目录重构](../experiments/results/postgresql/pg_module_layout_20260907/README.md)
 从独立分支 `codex/pg-module-layout` 快进合入本地main，起点为 `41e103f2`。现有实现按 planner、semantics、executor、

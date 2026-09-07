@@ -3,7 +3,7 @@
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
 The `codex/semfilter-and` branch now supports two top-level Filter AND predicates through one bounded
 multi-session gateway. [Validation](../experiments/results/postgresql/semfilter_and_20260907/README.md)
-passes Linux 138 checks and PG18.3 regression plus 1808 TAP checks; it is not yet merged into main.
+passes Linux 138 checks and PG18.3 regression plus 1808 TAP checks; it is now included in main.
 The integrated main branch groups extension code by responsibility; see its [module map](postgres/semloom_pg/README.md#module-layout).
 Local checks and the full PG18.3 recheck at `20b22a55` pass; the layout has been fast-forwarded into local main. The earlier database results below retain their recorded source versions.
 Module targets, implementation order, and acceptance criteria belong to

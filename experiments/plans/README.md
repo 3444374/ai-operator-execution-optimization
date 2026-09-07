@@ -26,7 +26,7 @@
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
 主设计已按项目长期能力重写，choice与生成型Map具体语义仍由专项维护，实际代码/实验状态只看
-INFRA_STATUS和证据台账。当前双Filter/多会话分支已推送、未合并main；数据库公共调用/绑定与
+INFRA_STATUS和证据台账。当前双Filter/多会话实现已合并main；数据库公共调用/绑定与
 独立增量Core可分别推进，再完成对应PG桥接。Filter质量/成本资格独立，复杂SQL、方法优化与公司
 移植按实际需求验证。全部工程依赖统一见主设计§9；上述两份下级规格只拥有近期细节，不另定义总体方向。
 本次设计更新没有新增实现、模型运行或实验资格。
