@@ -5,11 +5,11 @@
 受众：PG扩展实施者。所属工作为[主设计A1–A2](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)。
 本文件唯一定义近期调用/绑定的实现方案；总体分工、远期SQL与研究方向仍由主设计拥有。
 
-原设计代码依据为`66887463`，主设计依据为`440f7cea`及本次修订。共同调用对象和tuple绑定已按§9实现；外层carrier格式
-及Filter→Map仍待实现。原设计阶段仅做静态复核。
-后续A1首步已按§8完成Map调用分析提取；共同基础与setrefs原型的运行结果见
-[绑定验证](../results/postgresql/semantic_binding_20260907/README.md)，组合仍待实施。早期提取
-结果见[验证记录](../results/postgresql/semantic_call_extraction_20260907/README.md)。
+原设计代码依据为`66887463`。共同调用与tuple绑定在19326609完成，§11的V1载体与一个Filter→一个生成Map
+已在开发分支实现并通过[验证](../results/postgresql/filter_map_binding_20260907/README.md)：
+PG18.3回归1、TAP1910项，本地115、Linux138项，611源码哈希一致。模型请求0，尚未合入main。
+前序基础与setrefs/OFFSET原型见[绑定验证](../results/postgresql/semantic_binding_20260907/README.md)。
+§8–10保留当时实施记录；当前格式和行为以§3–5与§11为准。
 
 ## 1. 首批范围与选定方案
 
@@ -67,11 +67,11 @@ A2a没有Map数据依赖另一语义值，故不先增加通用dependencies列�
 
 ### 3.2 绑定值与Plan存储
 
-拟在`planner/semantic_binding.{h,c}`集中绑定构造、严格解码与校验；执行层消费解码值，不重算列位置。
+在`planner/semantic_binding.{h,c}`集中绑定构造、严格解码与校验；执行层消费解码值，不重算列位置。
 
 ```text
 SemanticBindingV1:
-  input_resno: child中本次算子输入（1-based；当前算子要求text）
+  input: 新Map由custom_exprs中的唯一text表达式提供；legacy使用child列号
   passthrough: [(child_resno, scan_resno), ...]
   result_resno: Filter为空；生成Map为独立新增scan列
   result_type/typmod/collation由PG child/scan TupleDesc提供，不在binding中重复保存
@@ -85,9 +85,10 @@ Filter只透传存活行，不新增语义布尔列。临时输入列可作为re
 沿用列映射与节点生命周期；FINAL_MAP也是当前placement，不限制未来方法必须位于FINAL。
 
 A2a首先仅在新组合的Map节点使用V1，Filter child和现有单算子仍保留legacy。新Map的`custom_private`采用可复制PG Node构成的带版本命名envelope：`carrier_version=1`、`call_key`、
-`semantic_fields`、`binding`及可选`cost_fields`，字段缺失/重复/未知或类型错误均拒绝。
-这是**PG内部carrier格式**，不改变语义schema或wire。语义解码复用原字段解码器；如需旧`[fields,input]`
-视图，在一个适配函数中由binding.input_resno构造，不重复存两个权威输入位置。
+`function_oid`、`semantic_fields`、`binding`，字段缺失/重复/未知或类型错误均拒绝。
+binding固定为[result_resno, passthrough]；新Map不携带Filter成本字段。
+这是**PG内部carrier格式**，不改变语义schema或wire。语义解码复用原字段解码器；
+legacy视图只在原路径适配，新Map不生成虚构的输入列号。
 旧路径保留旧格式；legacy适配保留原来Map覆盖输入的绑定模式，V1严格禁止这种别名，不将宽松模式暴露为新配置。
 decoder仅接受明确的legacy或V1形式，不能遇到未知V1字段后尝试legacy。
 新旧carrier格式的判别和解码集中一处，不让pump/各算子分别推测list长度。
@@ -106,7 +107,7 @@ decoder仅接受明确的legacy或V1形式，不能遇到未知V1字段后尝试
    不强制把它们移到LIMIT/OFFSET上方。去除本Map拥有的marker计算；不能沿用旧的递归
    marker→完整input替换，把Map输入函数留在LIMIT下。必要的内部占位列使用typed NULL而不求值，
    它不是SQL语义结果，不能被最终投影引用。由V1绑定恢复最终marker到新结果列的对应。
-   在紧邻Map且位于LIMIT之上的projection计算Map输入，生成独立结果绑定。
+   Map以原生ExprState在取得LIMIT之后的一行时计算输入，生成独立结果绑定。
    CUSTOMPATH_SUPPORT_PROJECTION只声明投影能力，不作为通用求值屏障；需以最终Plan和调用次数
    证明位置。重建本候选所需Path/target，不能原地修改其它候选共享对象。无法维持的路径在规划时拒绝。
 4. Plan callback从选中Path描述编码binding/spec，不再按表达式相等扫描所有结果列猜归属。
@@ -114,7 +115,7 @@ decoder仅接受明确的legacy或V1形式，不能遇到未知V1字段后尝试
    无任务时不连接provider。新Map选择显式使用PG原生ACL/object hook设施，每个marker出现检查一次；
    legacy Map原检查保持。权限入口不依赖custom_exprs中marker经setrefs后仍是FuncExpr，
    普通输入/输出表达式仍由PG正常初始化；不能为检查而执行marker或重复Invoke hook。
-6. 下游Map拉取一行 → Filter驱动ordinary child直到存活行 → LIMIT/OFFSET处理 → Map输入投影求值。
+6. 下游Map拉取一行 → Filter驱动ordinary child直到存活行 → LIMIT/OFFSET处理 → Map输入ExprState求值。
    Map input为NULL时本地产生NULL结果，否则复用lazy open/drive，校验并复制completion至tuple context。
 7. pump按passthrough写入scan slot，写独立result_resno，再交PG投影/INSERT。消费该行之前不拉下一行。
    每个节点一份不可变spec、一个私有runtime/sequence和按需打开的provider session。
@@ -168,7 +169,7 @@ Filter fixture按decision返回指定判断，Map fixture把alpha映为`A`。这
 A1先完成共同描述/legacy适配与绑定单测；A2a先用最小PG原型验证权限与FINAL投影，
 再接新carrier/pump并放开一个Filter→一个Map。原型使用公开合成fixture，不需要模型运行。
 每步分别保存失败反例、实际计划与请求记录；共享路径最终跑完整PG18.3回归/TAP及相关Python/C合同。
-B2/Core、真实质量、正式资源不是A2a的前置，也不由此获得新证据。本轮没有给上述待实现用例写“通过”。
+B2/Core、真实质量、正式资源不是A2a的前置，也不由此获得新证据。实际实现及逐项证据以§11与其结果记录为准。
 
 若final-stage输入投影或setrefs身份在指定形状下不能稳定表达，记录最小SQL/Plan/版本反例并暂停该形状；
 不能由实现者悄悄变更求值位置、复用输入结果或加入外部SQL重写。实现不确定性需要这种实际验证，
@@ -215,7 +216,7 @@ semantic_binding集中校验列范围、目的列唯一、完整覆盖、类型/
 旧pump通过legacy适配保持同列数/覆盖输入；pump改为从child读input，按独立result位置写结果。
 新绑定内部Node表示选为`[input_resno, result_resno或0, [[child_resno,scan_resno],...]]`，
 外层carrier版本仍归A2a。类型描述以child/scan的PG TupleDesc为事实，不在绑定中复制类型OID。
-绑定模块只计列与类型，不检查TEXTOID；现行算子的text限制仍在算子及语义decoder。
+通用列绑定只计列与类型；后续新增的projected Map适配单独检查text结果，不收紧通用接口。
 
 新增test-only PG caller直接调用生产绑定接口，验证copyObject/源内存释放、重排、独立结果、
 二进制载荷、NULL、legacy与错误输入。既有PG全套和相关Python/C必须继续通过，错误不放宽。
@@ -242,3 +243,26 @@ PG ACL/object hook的决定得到直接机制依据；这项检查不是新组�
 
 本轮最终验证：本地115项、Linux138项、PG18.3回归1项及9个TAP共1848项通过，605项非Markdown源码哈希一致。
 完整结果见[绑定验证](../results/postgresql/semantic_binding_20260907/README.md)；模型请求0，测试服务均停止。
+
+## 11. A2a载体接入的具体选择
+
+在19326609基础上接入一个Filter→一个生成Map。独立Result投影可能把相同VOLATILE输入匹配到
+已计算的普通输出，因此选择由Map CustomScan持有一个PG原生ExprState，在取得LIMIT/OFFSET
+之后的一行时求值；不自行解释SQL表达式，也不把整行交给外部服务。输入表达式放custom_exprs，
+原始依赖Vars透传；已计算的普通非Var输出在Map scan描述中使用其INDEX_VAR列身份，避免新输入
+与它做整表达式匹配。普通输出继续在原计划的位置计算，Map输出追加独立列。占位NULL只替代
+本Map在child计划中的未执行marker，不能成为用户结果。仅修改选中候选新生成的Plan，不修改共享Path。
+
+由此将A2a的绑定确定为**表达式输入**，不再强制物化child输入列：carrier_version=1包含且仅包含
+call_key、function_oid、semantic_fields、binding四个命名字段及版本字段；binding为[result_resno,
+passthrough映射]，custom_exprs恰好一个text输入表达式。函数OID用PG OID Const表示，语义字段
+使用独立于旧列绑定的公共decoder。legacy载体仍走原格式，Filter成本仍只属于legacy Filter字段。
+共同tuple绑定中input_column=0只表示这个显式表达式模式，不能作为普通列输入解码成功；不生成
+虚构的输入列号，也不改语义摘要或wire。新Map显式检查PG marker权限，input ExprState原生检查自身函数权限。
+
+首批测试使用现有Filter fixture加独立Map向量，分别验证recording/exact/choice Filter、原输入保留、
+NULL、丢弃行不求值、LIMIT/OFFSET、prepared、INSERT失败回滚和拒绝范围。先验证数据绑定，再扩展
+实际撤权、RLS、snapshot和取消。每轮测试保存独立源码清单和失败；没有完整通过前不声明组合资格。
+
+实际结果：四轮PG测试分别1875、1889、1908、1910项通过，全部回归通过；
+最后45项组合测试及19项carrier测试覆盖上述行为，详见[结果记录](../results/postgresql/filter_map_binding_20260907/README.md)。

@@ -433,8 +433,6 @@ LANGUAGE plpgsql VOLATILE AS $$ BEGIN RETURN 'ordinary:' || input; END $$;
          'ai_semantic.map is only supported as a top-level output expression'],
         ['WHERE expression', "SELECT id FROM ONLY map_inputs WHERE ai_semantic.map(body, 'Echo the input.', $options) = 'hello'",
          'ai_semantic.map is only supported as a top-level output expression'],
-        ['Map and Filter', "$query WHERE ai_semantic.filter(body)",
-         'SemMap and SemFilter cannot be combined in the current capability'],
         ['input subquery', "SELECT ai_semantic.map((SELECT 'hello'::text), 'Echo the input.', $options) FROM ONLY map_inputs",
          'query shape is outside the current SemMap capability'],
         ['predicate subquery', "$query WHERE id = (SELECT 1)", 'query shape is outside the current SemMap capability'],

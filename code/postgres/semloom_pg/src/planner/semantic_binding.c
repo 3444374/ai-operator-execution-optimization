@@ -1,6 +1,8 @@
 /* Decode and validate routing once, then copy borrowed Datums without re-inferring columns. */
 #include "postgres.h"
+#include "catalog/pg_type_d.h"
 #include "nodes/value.h"
+#include "nodes/makefuncs.h"
 #include "planner/semantic_binding.h"
 
 pg_noreturn static void invalid_binding(void);
@@ -44,8 +46,8 @@ validate_passthrough(TupleDesc child, int source, TupleDesc scan, int target)
 		invalid_binding();
 }
 
-SemloomTupleBinding *
-semloom_binding_decode(List *fields, TupleDesc child, TupleDesc scan)
+static SemloomTupleBinding *
+decode_binding(List *fields, TupleDesc child, TupleDesc scan, bool projected)
 {
 	SemloomTupleBinding *binding = allocate_binding(child, scan);
 	List *mapping;
@@ -54,9 +56,10 @@ semloom_binding_decode(List *fields, TupleDesc child, TupleDesc scan)
 
 	if (fields == NIL || !IsA(fields, List) || list_length(fields) != 3)
 		invalid_binding();
-	binding->input_column = read_column(linitial(fields), child->natts, false);
+	binding->input_column = read_column(linitial(fields), child->natts, projected);
 	binding->result_column = read_column(lsecond(fields), scan->natts, true);
-	if (TupleDescAttr(child, binding->input_column - 1)->attisdropped)
+	if (projected ? (binding->input_column != 0 || binding->result_column == 0) :
+		TupleDescAttr(child, binding->input_column - 1)->attisdropped)
 		invalid_binding();
 	mapping = lthird(fields);
 	if (mapping != NIL && !IsA(mapping, List))
@@ -80,13 +83,29 @@ semloom_binding_decode(List *fields, TupleDesc child, TupleDesc scan)
 	{
 		if (column == binding->result_column)
 		{
-			if (TupleDescAttr(scan, column - 1)->attisdropped)
+			if (TupleDescAttr(scan, column - 1)->attisdropped ||
+				(projected && TupleDescAttr(scan, column - 1)->atttypid != TEXTOID))
 				invalid_binding();
 		}
 		else if (binding->child_columns[column - 1] == 0)
 			invalid_binding();
 	}
 	return binding;
+}
+
+SemloomTupleBinding *
+semloom_binding_decode(List *fields, TupleDesc child, TupleDesc scan)
+{
+	return decode_binding(fields, child, scan, false);
+}
+
+SemloomTupleBinding *
+semloom_binding_projected(List *fields, TupleDesc child, TupleDesc scan)
+{
+	if (fields == NIL || !IsA(fields, List) || list_length(fields) != 2)
+		invalid_binding();
+	return decode_binding(list_make3(makeInteger(0), linitial(fields), lsecond(fields)),
+		child, scan, true);
 }
 
 SemloomTupleBinding *

@@ -1,9 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
-共同调用描述与tuple绑定已在开发分支完成[验证](../experiments/results/postgresql/semantic_binding_20260907/README.md)：
-两个collector使用独立出现记录，pump复用列路由；本地115、Linux138、PG18.3回归1及TAP1848项通过。
-605项源码哈希一致，模型请求0。外层V1 carrier、Filter→Map和增量Core尚未实现。
-PG18.3原型纠正OFFSET普通输出求值次数，并确认setrefs会把匹配marker改为结果Var，详见验证记录。
+开发分支`codex/semantic-call-binding`已完成[一个Filter→一个生成Map验证](../experiments/results/postgresql/filter_map_binding_20260907/README.md)：
+V1载体分离语义与列绑定，Map使用PG原生ExprState在LIMIT/OFFSET之后计算输入，并写独立结果列。
+本地115、Linux138、PG18.3回归1及10个TAP共1910项通过；611项源码哈希一致，模型请求0，测试服务已停。
+覆盖权限/钩子、RLS、快照、取消恢复及畸形载体。main尚未包含本轮代码；多Map/嵌套、增量Core与PG异步仍待实现。
+
+共同调用与tuple绑定基础及OFFSET/setrefs原型见[前序验证](../experiments/results/postgresql/semantic_binding_20260907/README.md)。
+
+以下为按时间记录的前序状态，当前能力以上述入口为准。
 
 2026-09-07 A1首步已在`codex/semantic-call-binding`完成[Map调用分析提取验证](../experiments/results/postgresql/semantic_call_extraction_20260907/README.md)：
 来源/常量/可见调用检查进入`planner/sem_map_call`，路径构造继续使用原有逻辑。15个函数体等价，

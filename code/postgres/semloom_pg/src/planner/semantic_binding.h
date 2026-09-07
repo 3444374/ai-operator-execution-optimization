@@ -19,6 +19,9 @@ typedef struct SemloomTupleBinding
 /* V1: [input, result-or-zero, [[child, scan], ...]]. All values are PG Nodes. */
 extern SemloomTupleBinding *semloom_binding_decode(List *fields,
 	TupleDesc child, TupleDesc scan);
+/* Input is evaluated by the owning CustomScan; fields contain [result, mapping]. */
+extern SemloomTupleBinding *semloom_binding_projected(List *fields,
+	TupleDesc child, TupleDesc scan);
 /* Only old carriers may overwrite input; they retain the original tuple layout. */
 extern SemloomTupleBinding *semloom_binding_legacy(AttrNumber input_column,
 	bool produces_result, TupleDesc child, TupleDesc scan);

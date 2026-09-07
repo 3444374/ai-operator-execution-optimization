@@ -1,0 +1,21 @@
+{
+  "source_files": 19,
+  "mismatches": [],
+  "model_requests": 0,
+  "tests": [
+    {
+      "group": "postgres",
+      "exit_code": 0
+    },
+    {
+      "group": "execution_provider",
+      "exit_code": 0
+    },
+    {
+      "group": "experiments",
+      "exit_code": 0
+    }
+  ],
+  "owned_service_pids": [],
+  "status": "passed"
+}

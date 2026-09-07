@@ -1,0 +1,380 @@
+# Checking port 24331
+# Found port 24331
+Name: filter_map
+Version: 18.3
+Data directory: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata
+Backup directory: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/backup
+Archive directory: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/archives
+Connection string: port=24331 host=<artifact-root>/pg4/test-tmp/2yOqqBirM5
+Log file: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/log/010_filter_map_filter_map.log
+[17:42:46.782](0.020s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata --auth trust --encoding=UTF8
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.utf8
+  LC_CTYPE:    C.utf8
+  LC_MESSAGES: C
+  LC_MONETARY: C.utf8
+  LC_NUMERIC:  C.utf8
+  LC_TIME:     C.utf8
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... PRC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata -l logfile start
+
+# Running: <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata
+### Starting node "filter_map"
+# Running: pg_ctl --wait --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata --log <artifact-root>/source/code/postgres/semloom_pg/tmp_check/log/010_filter_map_filter_map.log --options --cluster-name=filter_map start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "filter_map" is 59169
+[17:42:47.675](0.894s) ok 1 - shared fixture gateway listens
+### Reloading node "filter_map"
+# Running: pg_ctl --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata reload
+server signaled
+[17:42:47.698](0.023s) ok 2 - Filter-to-Map preserves original input and SQL NULL
+[17:42:47.719](0.021s) ok 3 - Map owns final-stage input evaluation
+[17:42:47.719](0.000s) ok 4 - result has an independent internal column
+[17:42:47.720](0.000s) ok 5 - Map requests only the nonnull survivor
+[17:42:47.720](0.000s) ok 6 - Filter independently evaluates all four inputs
+[17:42:47.735](0.015s) ok 7 - recording and choice Filters use the same Map binding
+[17:42:47.749](0.014s) ok 8 - recording and choice Filters use the same Map binding
+[17:42:47.764](0.015s) ok 9 - discarded input does not evaluate the Map expression
+[17:42:47.777](0.013s) ok 10 - LIMIT zero needs no provider connection
+[17:42:47.791](0.015s) ok 11 - LIMIT stops at the first survivor
+[17:42:47.802](0.011s) ok 12 - empty Filter output never evaluates Map
+[17:42:47.819](0.017s) ok 13 - force_custom_plan owns independent execution state
+[17:42:47.838](0.018s) ok 14 - force_generic_plan owns independent execution state
+[17:42:47.859](0.022s) ok 15 - INSERT consumes the same bound results
+[17:42:47.883](0.023s) ok 16 - missing Map fixture terminates INSERT
+[17:42:47.892](0.009s) ok 17 - failed INSERT writes no partial rows
+[17:42:47.906](0.015s) ok 18 - query recovers after Map failure
+[17:42:47.932](0.025s) ok 19 - RLS-hidden input reaches neither provider
+[17:42:47.948](0.017s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:42:47.948](0.000s) # issuing query 1 via background psql: BEGIN ISOLATION LEVEL REPEATABLE READ
+[17:42:47.949](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:42:47.949](0.000s) # issuing query 2 via background psql: SELECT id, body, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, 'Keep first.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+[17:42:47.955](0.006s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '1|hello|generated
+# 3||
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:42:47.955](0.000s) ok 20 - composition reads the initial snapshot
+[17:42:47.965](0.010s) # issuing query 3 via background psql: SELECT id, body, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, 'Keep first.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+[17:42:47.969](0.004s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => '1|hello|generated
+# 3||
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:42:47.969](0.000s) ok 21 - both operators retain the transaction snapshot
+[17:42:47.970](0.000s) # issuing query 4 via background psql: COMMIT
+[17:42:47.970](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:42:47.986](0.016s) ok 22 - new snapshot sees the committed input
+[17:42:48.319](0.333s) ok 23 - cancellation interrupts late Map input evaluation
+[17:42:48.331](0.012s) ok 24 - cancelled composition rolls back earlier output
+[17:42:48.344](0.013s) ok 25 - both sessions recover after cancellation
+[17:42:48.364](0.020s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:42:48.364](0.000s) # issuing query 1 via background psql: SET ROLE composed_reader
+[17:42:48.365](0.000s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:42:48.365](0.000s) # issuing query 2 via background psql: SELECT capture_composed('SELECT id, body, ai_semantic.map(body, ''Echo the input.'', '' {"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, ''Keep first.'', '' {"model":"golden-model-v1","temperature":0,"max_tokens":8}''::jsonb)')
+[17:42:48.367](0.002s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:42:48.367](0.000s) ok 26 - bound result still checks Map EXECUTE before execution
+[17:42:48.367](0.000s) # issuing query 3 via background psql: SELECT capture_composed('SELECT id, body, ai_semantic.map(body, ''Echo the input.'', '' {"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, ''Keep first.'', '' {"model":"golden-model-v1","temperature":0,"max_tokens":8}''::jsonb) LIMIT 0')
+[17:42:48.368](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:42:48.368](0.000s) ok 27 - bound result still checks Map EXECUTE before execution
+[17:42:48.368](0.000s) # issuing query 4 via background psql: SELECT capture_composed('EXPLAIN SELECT id, body, ai_semantic.map(body, ''Echo the input.'', '' {"model":"golden-map-v1","temperature":0,"max_tokens":128}''::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, ''Keep first.'', '' {"model":"golden-model-v1","temperature":0,"max_tokens":8}''::jsonb)')
+[17:42:48.369](0.001s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:42:48.369](0.000s) ok 28 - bound result still checks Map EXECUTE before execution
+[17:42:48.380](0.011s) # issuing query 5 via background psql: SET plan_cache_mode=force_custom_plan; PREPARE composed_acl AS SELECT id, body, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, 'Keep first.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+[17:42:48.381](0.001s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[17:42:48.381](0.000s) # issuing query 6 via background psql: EXECUTE composed_acl
+[17:42:48.386](0.005s) # results query 6:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 6:
+# ',
+#   'stdout' => '1|hello|generated
+# 3||
+# background_psql: QUERY_SEPARATOR 6:
+# '
+# }
+[17:42:48.386](0.000s) ok 29 - force_custom_plan executes authorized composition
+[17:42:48.394](0.008s) # issuing query 7 via background psql: SELECT capture_composed('EXECUTE composed_acl')
+[17:42:48.396](0.001s) # results query 7:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 7:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 7:
+# '
+# }
+[17:42:48.396](0.000s) ok 30 - force_custom_plan rechecks revoked marker permission
+[17:42:48.404](0.008s) # issuing query 8 via background psql: DEALLOCATE composed_acl
+[17:42:48.404](0.001s) # results query 8:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 8:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 8:
+# '
+# }
+[17:42:48.405](0.000s) # issuing query 9 via background psql: SET plan_cache_mode=force_generic_plan; PREPARE composed_acl AS SELECT id, body, ai_semantic.map(body, 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, 'Keep first.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+[17:42:48.405](0.001s) # results query 9:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 9:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 9:
+# '
+# }
+[17:42:48.405](0.000s) # issuing query 10 via background psql: EXECUTE composed_acl
+[17:42:48.409](0.004s) # results query 10:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 10:
+# ',
+#   'stdout' => '1|hello|generated
+# 3||
+# background_psql: QUERY_SEPARATOR 10:
+# '
+# }
+[17:42:48.409](0.000s) ok 31 - force_generic_plan executes authorized composition
+[17:42:48.418](0.008s) # issuing query 11 via background psql: SELECT capture_composed('EXECUTE composed_acl')
+[17:42:48.419](0.001s) # results query 11:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 11:
+# ',
+#   'stdout' => '42501|permission denied for function map
+# background_psql: QUERY_SEPARATOR 11:
+# '
+# }
+[17:42:48.419](0.000s) ok 32 - force_generic_plan rechecks revoked marker permission
+[17:42:48.428](0.009s) # issuing query 12 via background psql: DEALLOCATE composed_acl
+[17:42:48.429](0.001s) # results query 12:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 12:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 12:
+# '
+# }
+[17:42:48.458](0.029s) # connect output:
+# {
+#   'stderr' => 'background_psql: ready
+# ',
+#   'stdout' => 'background_psql: ready
+# '
+# }
+[17:42:48.458](0.000s) # issuing query 1 via background psql: SELECT composed_watch('ai_semantic.map(text,text,jsonb)'::regprocedure,
+#     'composed_identity(text)'::regprocedure); SET plan_cache_mode=force_generic_plan;
+[17:42:48.459](0.001s) # results query 1:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 1:
+# ',
+#   'stdout' => '
+# background_psql: QUERY_SEPARATOR 1:
+# '
+# }
+[17:42:48.460](0.000s) # issuing query 2 via background psql: PREPARE composed_hook AS SELECT ai_semantic.map(composed_identity(body), 'Echo the input.', ' {"model":"golden-map-v1","temperature":0,"max_tokens":128}'::jsonb) FROM ONLY inputs WHERE ai_semantic.filter(decision, 'Keep first.', ' {"model":"golden-model-v1","temperature":0,"max_tokens":8}'::jsonb)
+[17:42:48.460](0.000s) # results query 2:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 2:
+# ',
+#   'stdout' => 'background_psql: QUERY_SEPARATOR 2:
+# '
+# }
+[17:42:48.460](0.000s) # issuing query 3 via background psql: EXPLAIN EXECUTE composed_hook
+[17:42:48.461](0.001s) # results query 3:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 3:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..240.54 rows=282 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_map.generate.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_map.chat.v1
+#   Result Parser: semloom.sem_map.utf8_text.v1
+#   Model: golden-map-v1
+#   Semantic Plan Schema: 4
+#   Semantic Spec Digest: b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba
+#   Max Tokens: 128
+#   Max Input Bytes: 163840
+#   Max Output Bytes: 65536
+#   Input Binding: expression
+#   Result Column: 3
+#   ->  Custom Scan (SemLoom SemFilter)  (cost=0.00..239.84 rows=282 width=32)
+#         Provider: uds-golden
+#         Physical Role: reference
+#         Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#         Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#         Prompt Program: semloom.sem_filter.exact_chat.v1
+#         Result Parser: semloom.sem_filter.tristate_ascii.v1
+#         Model: golden-model-v1
+#         AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#         AI Cost Calibration: unavailable
+#         AI Cost Calibration Reason: not-configured
+#         Model Role: reference
+#         Semantic Input Rows: 850.00
+#         Output Selectivity: 0.331667
+#         Estimated Model Calls: 845.75
+#         Estimated Prompt Tokens: 51590.75
+#         Estimated Output Tokens: 6766.00
+#         AI Work Cost: 148.0062
+#         Filter Input Column: 2
+#         ->  Seq Scan on inputs  (cost=0.00..20.62 rows=850 width=64)
+#               Filter: true
+# background_psql: QUERY_SEPARATOR 3:
+# '
+# }
+[17:42:48.461](0.000s) # issuing query 4 via background psql: EXPLAIN EXECUTE composed_hook
+[17:42:48.462](0.000s) # results query 4:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 4:
+# ',
+#   'stdout' => 'Custom Scan (SemLoom SemMap)  (cost=0.00..240.54 rows=282 width=32)
+#   Provider: uds-golden
+#   Physical Role: reference
+#   Semantic Spec: semloom.semantic.sem_map.generate.v1
+#   Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#   Prompt Program: semloom.sem_map.chat.v1
+#   Result Parser: semloom.sem_map.utf8_text.v1
+#   Model: golden-map-v1
+#   Semantic Plan Schema: 4
+#   Semantic Spec Digest: b39cf274ee1a8c75a81995f0324cb3ab6cd18ce13ae68aaffc15fcba78e5f8ba
+#   Max Tokens: 128
+#   Max Input Bytes: 163840
+#   Max Output Bytes: 65536
+#   Input Binding: expression
+#   Result Column: 3
+#   ->  Custom Scan (SemLoom SemFilter)  (cost=0.00..239.84 rows=282 width=32)
+#         Provider: uds-golden
+#         Physical Role: reference
+#         Semantic Spec: semloom.semantic.sem_filter.exact.v1
+#         Physical Algorithm: MODEL_REFERENCE_SYNC_V1
+#         Prompt Program: semloom.sem_filter.exact_chat.v1
+#         Result Parser: semloom.sem_filter.tristate_ascii.v1
+#         Model: golden-model-v1
+#         AI Cost Model: semloom.exact_filter.uncalibrated.v1
+#         AI Cost Calibration: unavailable
+#         AI Cost Calibration Reason: not-configured
+#         Model Role: reference
+#         Semantic Input Rows: 850.00
+#         Output Selectivity: 0.331667
+#         Estimated Model Calls: 845.75
+#         Estimated Prompt Tokens: 51590.75
+#         Estimated Output Tokens: 6766.00
+#         AI Work Cost: 148.0062
+#         Filter Input Column: 2
+#         ->  Seq Scan on inputs  (cost=0.00..20.62 rows=850 width=64)
+#               Filter: true
+# background_psql: QUERY_SEPARATOR 4:
+# '
+# }
+[17:42:48.462](0.000s) # issuing query 5 via background psql: SELECT composed_events()
+[17:42:48.462](0.000s) # results query 5:
+# {
+#   'stderr' => 'background_psql: QUERY_SEPARATOR 5:
+# ',
+#   'stdout' => '2|2|1
+# background_psql: QUERY_SEPARATOR 5:
+# '
+# }
+[17:42:48.463](0.000s) ok 33 - each cached initialization invokes marker and input hooks once and chains planning
+[17:42:48.482](0.019s) ok 34 - input expression permission is checked even without a requested row
+[17:42:48.506](0.024s) ok 35 - OFFSET uses the independent generated result
+[17:42:48.516](0.010s) ok 36 - four native ordinary evaluations and one late Map input occurrence
+[17:42:48.536](0.020s) ok 37 - OFFSET skips Map requests
+[17:42:48.536](0.000s) ok 38 - Filter finds the fourth survivor without prefetch
+[17:42:48.545](0.009s) ok 39 - unsupported composition remains rejected
+[17:42:48.545](0.000s) ok 40 - unsupported composition is a planning error
+[17:42:48.555](0.010s) ok 41 - unsupported composition remains rejected
+[17:42:48.555](0.000s) ok 42 - unsupported composition is a planning error
+[17:42:48.565](0.010s) ok 43 - unsupported composition remains rejected
+[17:42:48.566](0.000s) ok 44 - unsupported composition is a planning error
+### Stopping node "filter_map" using mode fast
+# Running: pg_ctl --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_010_filter_map_filter_map_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "filter_map"
+[17:42:48.798](0.233s) ok 45 - fixture gateway removes its socket
+[17:42:48.799](0.001s) 1..45

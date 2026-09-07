@@ -101,6 +101,11 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 		return;
 
 	calls = semloom_filter_calls(root, rel, recording_oid, exact_oid);
+	if (OidIsValid(semloom_generate_map_function_oid()) &&
+		semloom_marker_count((Node *) root->parse->targetList, semloom_generate_map_function_oid()) > 0 &&
+		list_length(calls) != 1)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("Filter-to-Map supports exactly one Filter")));
 	foreach(cell, rel->pathlist)
 	{
 		Path *child = lfirst_node(Path, cell);

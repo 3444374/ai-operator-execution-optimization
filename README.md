@@ -34,7 +34,8 @@ NULL 零调用、结果与写回均通过。main中的两个算子各自同步�
 有界gateway会话，已合并main，异步PG接入仍待实现。
 后续开发已完成[Map调用分析提取](experiments/results/postgresql/semantic_call_extraction_20260907/README.md)，
 保持现有行为；当前开发分支的[共同调用与列绑定](experiments/results/postgresql/semantic_binding_20260907/README.md)
-也已完成基础验证，实际Filter→Map接入仍在推进。
+已完成基础验证；[一个Filter→一个生成Map](experiments/results/postgresql/filter_map_binding_20260907/README.md)也已在开发分支通过PG18.3全部1910项TAP检查。
+本轮使用合成响应验证正确性，组合的真实模型验证仍待进行。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

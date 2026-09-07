@@ -267,17 +267,12 @@ semloom_make_filter_private(const char *instruction, const char *model_id,
 }
 
 List *
-semloom_plan_spec_make_generate_map_private(const char *instruction,
-										  const char *model_id, uint32 max_tokens,
-										  AttrNumber input_column, Oid marker_function_oid)
+semloom_plan_spec_make_generate_map_fields(const char *instruction,
+										  const char *model_id, uint32 max_tokens)
 {
 	char semantic_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	char physical_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	List *fields = NIL;
-	Const *function_binding;
-
-	if (input_column <= 0 || !OidIsValid(marker_function_oid))
-		semloom_plan_spec_invalid("invalid semantic executor binding");
 	semloom_generate_map_semantic_digest(instruction, model_id, max_tokens, semantic_digest);
 	semloom_model_reference_physical_digest(physical_digest);
 #define APPEND_INT(name, value) \
@@ -315,42 +310,41 @@ semloom_plan_spec_make_generate_map_private(const char *instruction,
 	APPEND_STRING(SEMLOOM_PLAN_FIELD_PHYSICAL_ALGORITHM_DIGEST, physical_digest);
 #undef APPEND_STRING
 #undef APPEND_INT
+	return fields;
+}
+
+List *
+semloom_plan_spec_bind_generate_map(List *fields, AttrNumber input_column, Oid function_oid)
+{
+	Const *function_binding;
+
+	if (input_column <= 0 || !OidIsValid(function_oid))
+		semloom_plan_spec_invalid("invalid semantic executor binding");
 	function_binding = makeConst(OIDOID, -1, InvalidOid, sizeof(Oid),
-		ObjectIdGetDatum(marker_function_oid), false, true);
+		ObjectIdGetDatum(function_oid), false, true);
 	return list_make2(fields, list_make2(makeInteger(input_column), function_binding));
 }
 
-void
-semloom_plan_spec_decode(List *custom_private,
-						 MemoryContext owner_context,
-						 SemloomPlanSpec *plan_spec,
-						 AttrNumber *input_column)
+List *
+semloom_plan_spec_make_generate_map_private(const char *instruction,
+	const char *model_id, uint32 max_tokens, AttrNumber input_column, Oid function_oid)
 {
-	Node *fields_node;
-	Node *binding_node;
-	List *fields;
+	if (input_column <= 0 || !OidIsValid(function_oid))
+		semloom_plan_spec_invalid("invalid semantic executor binding");
+	return semloom_plan_spec_bind_generate_map(
+		semloom_plan_spec_make_generate_map_fields(instruction, model_id, max_tokens),
+		input_column, function_oid);
+}
+
+static void
+semloom_decode_fields(List *fields, MemoryContext owner_context, SemloomPlanSpec *plan_spec)
+{
 	uint32 seen_fields = 0;
 	ListCell *cell;
 
-	Assert(owner_context != NULL);
-	Assert(plan_spec != NULL);
-	Assert(input_column != NULL);
 	MemSet(plan_spec, 0, sizeof(*plan_spec));
-	if (list_length(custom_private) != 2)
+	if (fields == NIL || !IsA(fields, List))
 		semloom_plan_spec_invalid("invalid semantic plan specification");
-	fields_node = (Node *) linitial(custom_private);
-	binding_node = (Node *) lsecond(custom_private);
-	if (fields_node == NULL || binding_node == NULL ||
-		!IsA(fields_node, List))
-		semloom_plan_spec_invalid("invalid semantic plan specification");
-	fields = (List *) fields_node;
-	if (IsA(binding_node, Integer))
-	{
-		if (intVal(binding_node) <= 0 || intVal(binding_node) > PG_INT16_MAX)
-			semloom_plan_spec_invalid("invalid semantic executor binding");
-		*input_column = (AttrNumber) intVal(binding_node);
-	}
-
 	foreach(cell, fields)
 	{
 		Node *field_node = (Node *) lfirst(cell);
@@ -526,6 +520,45 @@ semloom_plan_spec_decode(List *custom_private,
 	}
 	else
 		semloom_plan_spec_invalid("unsupported semantic plan specification");
+}
+
+void
+semloom_plan_spec_decode_fields(List *fields, MemoryContext owner_context, SemloomPlanSpec *plan_spec)
+{
+	semloom_decode_fields(fields, owner_context, plan_spec);
+	semloom_plan_spec_validate(plan_spec);
+}
+
+void
+semloom_plan_spec_decode(List *custom_private,
+						 MemoryContext owner_context,
+						 SemloomPlanSpec *plan_spec,
+						 AttrNumber *input_column)
+{
+	Node *fields_node;
+	Node *binding_node;
+	List *fields;
+
+	Assert(owner_context != NULL);
+	Assert(plan_spec != NULL);
+	Assert(input_column != NULL);
+	MemSet(plan_spec, 0, sizeof(*plan_spec));
+	if (list_length(custom_private) != 2)
+		semloom_plan_spec_invalid("invalid semantic plan specification");
+	fields_node = (Node *) linitial(custom_private);
+	binding_node = (Node *) lsecond(custom_private);
+	if (fields_node == NULL || binding_node == NULL ||
+		!IsA(fields_node, List))
+		semloom_plan_spec_invalid("invalid semantic plan specification");
+	fields = (List *) fields_node;
+	if (IsA(binding_node, Integer))
+	{
+		if (intVal(binding_node) <= 0 || intVal(binding_node) > PG_INT16_MAX)
+			semloom_plan_spec_invalid("invalid semantic executor binding");
+		*input_column = (AttrNumber) intVal(binding_node);
+	}
+
+	semloom_decode_fields(fields, owner_context, plan_spec);
 	if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
 	{
 		List *binding;

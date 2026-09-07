@@ -6,7 +6,7 @@
 
 本次以`codex/semfilter-and@66887463`为代码基线，吸收用户补充设计并重新核对现有源码。
 该实现及设计已合并main。已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
-尚未实现通用调用/结果绑定、Filter→Map、按需语义值、增量SemLoom的PG接线及查询级共享资源控制。
+开发分支已实现共同调用/结果绑定和一个Filter→一个生成Map；按需语义值、多个Map、增量SemLoom的PG接线及查询级共享资源控制尚未实现。
 已有真实模型接线与小规模资源诊断不等于正式资源、语义质量或性能资格全部完成。
 具体状态看[INFRA_STATUS](../../code/INFRA_STATUS.md)，提交、测试与失败看
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)；本文不再逐段复制实验数字。
@@ -18,7 +18,8 @@
 [增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定已实现，增量session仍未实现。
 A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
 后续共同调用与tuple绑定及setrefs原型已[通过验证](../results/postgresql/semantic_binding_20260907/README.md)。
-外层carrier/组合未接入；OFFSET普通输出行为按PG18.3实测修订，详细结果与预期由近期规格维护。
+在此基础上，一个Filter→一个生成Map通过[PG18.3完整检查](../results/postgresql/filter_map_binding_20260907/README.md)，1910项TAP通过；仅在开发分支，本轮零真实模型请求。
+外层carrier已接入该组合；OFFSET普通输出行为按PG18.3实测修订，详细结果与预期由近期规格维护。
 总体决策只由本文拥有，下级详细设计不重复总体架构；全部专项与恢复入口见§13。
 补充审查已收敛到这两份规格：交付提交点、唯一终态结算、可立即推进状态、分阶段等待和残余归属；
 PG新Map先验证权限与OFFSET/LIMIT投影。FIFO、bytes、单成员提交、预留时机与当前placement是
@@ -261,7 +262,7 @@ prompt或把多行拼成一个模型请求。跨行语义batching须先获授权
 | 场景 | 设计要求 | 目前状态/开放条件 |
 |---|---|---|
 | 顶层Filter AND | 连续过滤可作为物理实现；次序/投影必须满足调用语义 | 双Filter已验证；数量限制是当前支持范围，不是永久对象模型 |
-| 多个独立Map、Filter→Map | 独立结果绑定，消费者仍在PG计划树中；不强制全量materialize | 待实现，用来驱动公共分析与绑定 |
+| 多个独立Map、Filter→Map | 独立结果绑定，消费者仍在PG计划树中；不强制全量materialize | 一个Filter→一个生成Map已在开发分支验证；多个Map仍待实现 |
 | `M_b(M_a(x))`、`length(M_a(x))` | 前者表达语义结果依赖，后者由PG普通表达式消费结果 | 待实现；不为每个普通函数增加组合分支 |
 | OR/NOT、布尔投影、IS NULL | 先有布尔值合同，再由PG表达式组合；不能串联两个丢行节点 | 模型UNKNOWN、SQL NULL、错误的对应关系尚须独立定稿 |
 | CASE等有条件求值 | 按条件保护整个输入准备与模型任务，而非只阻止HTTP派发 | 按需求验证惰性载体；增加结果列不代表已解决 |
@@ -963,7 +964,7 @@ gateway、PG 接入与 SemLoom 增量使用
 | 入口 | 唯一职责 |
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
-| [PG调用/绑定详细设计](postgresql_call_binding_design.md) | A1与A2a的范围、对象、PG接入时序、carrier/slot绑定、兼容与具体预期；设计已写明，实施待进行 |
+| [PG调用/绑定详细设计](postgresql_call_binding_design.md) | A1与A2a的范围、对象、PG接入时序、carrier/slot绑定、兼容与具体预期；共同基础及一个Filter→一个生成Map已验证，后续形状另行实施 |
 | [增量session详细设计](semloom_incremental_session_design.md) | B1静态复核与B2的输入/状态/lease/资源/后端进展合同，以及B4a–c最低依赖；动态表征/实施待进行 |
 | [四 C 专项完成记录](completed/postgresql_choice_profile_engineering.md) | 保存 choice 字段/版本/预算/资源与当时的详细实施要求；结果看证据台账，后续工作看本主计划 |
 | [四 D 生成型 Map 合同](postgresql_semmap_generation_contract.md) | 唯一定义生成型 Map 的 SQL、消息/文本语义、版本、golden vectors 与实施验收；合同定稿，不代表代码完成 |

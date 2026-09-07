@@ -336,7 +336,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
         self.assertNotIn("SEMLOOM_RECORDING_SPEC", machine_source)
         self.assertNotIn("SEMLOOM_RECORDING_ALGORITHM", machine_source)
         self.assertNotIn("AiOpenSpec", machine_source)
-        self.assertIn("semloom_plan_spec_decode", pump_source)
+        self.assertIn("semloom_carrier_decode", pump_source)
+        self.assertIn("semloom_plan_spec_decode",
+                      (EXTENSION_ROOT / "src/planner/semantic_carrier.c").read_text())
         self.assertIn("semloom_plan_spec_explain(&runtime->plan_spec", runtime_source)
         self.assertIn("plan_spec->physical_role", plan_source)
         self.assertNotIn('ExplainPropertyText("Physical Role", "reference"', runtime_source)

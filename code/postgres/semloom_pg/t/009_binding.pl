@@ -19,7 +19,19 @@ AS '$test_dir/semloom_plan_contract_test', 'semloom_test_call' LANGUAGE C;
 CREATE FUNCTION test_binding_setrefs(oid) RETURNS boolean
 AS '$test_dir/semloom_plan_contract_test', 'semloom_test_binding_setrefs' LANGUAGE C STRICT;
 CREATE EXTENSION semloom_pg;
+CREATE FUNCTION test_carrier(text) RETURNS boolean
+AS '$test_dir/semloom_plan_contract_test', 'semloom_test_carrier' LANGUAGE C STRICT;
 });
+is($node->safe_psql('postgres', "SELECT test_carrier('valid')"), 't',
+   'versioned Map carrier survives PG copy and text roundtrip');
+for my $mode ('version', 'unknown', 'duplicate', 'missing', 'key', 'oid', 'semantic', 'binding', 'result-type')
+{
+    my ($status, $out, $err) = $node->psql('postgres',
+        "\\set VERBOSITY verbose\nSELECT test_carrier('$mode')");
+    isnt($status, 0, "$mode carrier rejected");
+    like($err, qr/ERROR:  XX000: invalid semantic (?:plan carrier|tuple binding)/,
+         "$mode carrier fails with a bounded internal error");
+}
 is($node->safe_psql('postgres', q{SELECT test_binding_setrefs('ai_semantic.map(text,text,jsonb)'::regprocedure)}),
    't', 'setrefs maps matching marker to independent result Var and retains plan dependency');
 is($node->safe_psql('postgres', 'SELECT test_call()'), 't',

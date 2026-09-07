@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+
+
+[Filter→Map验证](postgresql/filter_map_binding_20260907/README.md)以19326609为基线，开发分支支持一个关系Filter接一个生成Map。
+本地115、Linux138、PG18.3回归1及TAP1910项通过；611源码哈希一致，四轮递增测试均通过且分别保留。
+覆盖原生求值、权限/钩子、RLS/快照/取消与计划解码；模型请求0，服务已停，尚未合入main。
+
+以下早期记录保持对应版本的能力与证据范围。
+
 [共同调用与tuple绑定](postgresql/semantic_binding_20260907/README.md)在11e89b08基线上实现：本地115、
 Linux138、PG18.3严格编译/regression1及TAP1848项通过，605源码哈希一致。保留测试头文件缺失的首轮
 失败及两轮成功；零模型请求、服务已停。setrefs与OFFSET原型修正设计，未据此开放Filter→Map。

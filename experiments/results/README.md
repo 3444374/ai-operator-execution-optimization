@@ -1,5 +1,13 @@
 # Research Experiment Results
 
+## Filter→Map绑定（2026-09-07）
+
+[Filter→Map验证](postgresql/filter_map_binding_20260907/README.md)以19326609为基线，开发分支支持一个关系Filter接一个生成Map。
+本地115、Linux138、PG18.3回归1及TAP1910项通过；611源码哈希一致，四轮递增测试均通过且分别保留。
+覆盖原生求值、权限/钩子、RLS/快照/取消与计划解码；模型请求0，服务已停，尚未合入main。
+
+以下早期记录保持对应版本的能力与证据范围。
+
 ## 统一入口
 
 先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账只登记主要机制结果与证据强度，

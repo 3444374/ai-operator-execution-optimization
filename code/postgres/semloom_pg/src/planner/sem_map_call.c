@@ -7,6 +7,7 @@
 
 #include "planner/marker_identity.h"
 #include "planner/sem_map_call.h"
+#include "planner/sem_filter_call.h"
 #include "planner/sem_path_common.h"
 
 typedef struct SemloomMapPlacement
@@ -19,7 +20,7 @@ typedef struct SemloomMapPlacement
 	int generate_count;
 	bool misplaced;
 	bool has_recording_map;
-	bool has_filter;
+	int filter_count;
 } SemloomMapPlacement;
 
 static bool semloom_map_nonconstant_source(Node *node, void *context);
@@ -86,7 +87,7 @@ semloom_map_placement_walker(Node *node, void *context)
 		else if (function_oid == placement->recording_oid)
 			placement->has_recording_map = true;
 		else if (function_oid == placement->filter_oid || function_oid == placement->exact_filter_oid)
-			placement->has_filter = true;
+			placement->filter_count++;
 	}
 	return expression_tree_walker(node, semloom_map_placement_walker, context);
 }
@@ -114,9 +115,12 @@ semloom_validate_map_placement(Query *parse, Oid marker_oid)
 	list_free(placement.visible_markers);
 	if (placement.generate_count == 0)
 		return;
-	if (placement.has_filter)
+	if (placement.filter_count != 0 &&
+		(placement.filter_count != 1 || parse->jointree == NULL ||
+		 semloom_filter_marker_count(parse->jointree->quals,
+			placement.filter_oid, placement.exact_filter_oid) != 1))
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-			errmsg("SemMap and SemFilter cannot be combined in the current capability")));
+			errmsg("Filter-to-Map requires one top-level WHERE Filter")));
 	if (placement.has_recording_map || placement.generate_count != 1)
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 			errmsg("the SemMap capability supports exactly one visible marker")));

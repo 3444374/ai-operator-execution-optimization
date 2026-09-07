@@ -1,0 +1,115 @@
+# Running: make -s -C <artifact-root>/source/code/postgres/semloom_pg/t/plan_contract COPT=-O2 -Werror
+[17:42:45.409](0.039s) ok 1 - build production binding callers
+# Checking port 24576
+# Found port 24576
+Name: binding
+Version: 18.3
+Data directory: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata
+Backup directory: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/backup
+Archive directory: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/archives
+Connection string: port=24576 host=<artifact-root>/pg4/test-tmp/w5ViBB6w2Z
+Log file: <artifact-root>/source/code/postgres/semloom_pg/tmp_check/log/009_binding_binding.log
+[17:42:45.415](0.005s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata --auth trust --encoding=UTF8
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.utf8
+  LC_CTYPE:    C.utf8
+  LC_MESSAGES: C
+  LC_MONETARY: C.utf8
+  LC_NUMERIC:  C.utf8
+  LC_TIME:     C.utf8
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... PRC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata -l logfile start
+
+# Running: <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --config-auth <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata
+### Starting node "binding"
+# Running: pg_ctl --wait --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata --log <artifact-root>/source/code/postgres/semloom_pg/tmp_check/log/009_binding_binding.log --options --cluster-name=binding start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "binding" is 59069
+[17:42:46.197](0.783s) ok 2 - versioned Map carrier survives PG copy and text roundtrip
+[17:42:46.206](0.009s) ok 3 - version carrier rejected
+[17:42:46.207](0.000s) ok 4 - version carrier fails with a bounded internal error
+[17:42:46.217](0.010s) ok 5 - unknown carrier rejected
+[17:42:46.217](0.000s) ok 6 - unknown carrier fails with a bounded internal error
+[17:42:46.225](0.008s) ok 7 - duplicate carrier rejected
+[17:42:46.225](0.000s) ok 8 - duplicate carrier fails with a bounded internal error
+[17:42:46.235](0.010s) ok 9 - missing carrier rejected
+[17:42:46.235](0.000s) ok 10 - missing carrier fails with a bounded internal error
+[17:42:46.244](0.009s) ok 11 - key carrier rejected
+[17:42:46.244](0.000s) ok 12 - key carrier fails with a bounded internal error
+[17:42:46.254](0.009s) ok 13 - oid carrier rejected
+[17:42:46.254](0.000s) ok 14 - oid carrier fails with a bounded internal error
+[17:42:46.262](0.008s) ok 15 - semantic carrier rejected
+[17:42:46.262](0.000s) ok 16 - semantic carrier fails with a bounded internal error
+[17:42:46.270](0.008s) ok 17 - binding carrier rejected
+[17:42:46.270](0.000s) ok 18 - binding carrier fails with a bounded internal error
+[17:42:46.277](0.007s) ok 19 - result-type carrier rejected
+[17:42:46.278](0.000s) ok 20 - result-type carrier fails with a bounded internal error
+[17:42:46.287](0.010s) ok 21 - setrefs maps matching marker to independent result Var and retains plan dependency
+[17:42:46.299](0.011s) ok 22 - equal occurrences own independent copies and distinct planner-local keys
+[17:42:46.307](0.008s) ok 23 - map preserves input and routes results after source-plan memory is freed
+[17:42:46.317](0.010s) ok 24 - binary preserves input and routes results after source-plan memory is freed
+[17:42:46.328](0.011s) ok 25 - null preserves input and routes results after source-plan memory is freed
+[17:42:46.338](0.010s) ok 26 - reuse preserves input and routes results after source-plan memory is freed
+[17:42:46.348](0.010s) ok 27 - legacy-map preserves input and routes results after source-plan memory is freed
+[17:42:46.356](0.008s) ok 28 - legacy-filter preserves input and routes results after source-plan memory is freed
+[17:42:46.366](0.010s) ok 29 - input-range rejected
+[17:42:46.366](0.000s) ok 30 - input-range has bounded deterministic error
+[17:42:46.375](0.009s) ok 31 - input-overflow rejected
+[17:42:46.375](0.000s) ok 32 - input-overflow has bounded deterministic error
+[17:42:46.384](0.009s) ok 33 - input-type rejected
+[17:42:46.385](0.000s) ok 34 - input-type has bounded deterministic error
+[17:42:46.393](0.008s) ok 35 - result-range rejected
+[17:42:46.393](0.000s) ok 36 - result-range has bounded deterministic error
+[17:42:46.404](0.011s) ok 37 - result-overlap rejected
+[17:42:46.405](0.000s) ok 38 - result-overlap has bounded deterministic error
+[17:42:46.415](0.011s) ok 39 - duplicate-target rejected
+[17:42:46.416](0.000s) ok 40 - duplicate-target has bounded deterministic error
+[17:42:46.423](0.007s) ok 41 - missing-target rejected
+[17:42:46.423](0.000s) ok 42 - missing-target has bounded deterministic error
+[17:42:46.429](0.006s) ok 43 - malformed-pair rejected
+[17:42:46.430](0.000s) ok 44 - malformed-pair has bounded deterministic error
+[17:42:46.439](0.009s) ok 45 - malformed-list rejected
+[17:42:46.439](0.000s) ok 46 - malformed-list has bounded deterministic error
+[17:42:46.447](0.008s) ok 47 - unknown-field rejected
+[17:42:46.447](0.000s) ok 48 - unknown-field has bounded deterministic error
+[17:42:46.454](0.007s) ok 49 - type-mismatch rejected
+[17:42:46.454](0.000s) ok 50 - type-mismatch has bounded deterministic error
+[17:42:46.461](0.007s) ok 51 - typmod-mismatch rejected
+[17:42:46.461](0.000s) ok 52 - typmod-mismatch has bounded deterministic error
+[17:42:46.469](0.008s) ok 53 - collation-mismatch rejected
+[17:42:46.470](0.000s) ok 54 - collation-mismatch has bounded deterministic error
+[17:42:46.477](0.008s) ok 55 - dropped-input rejected
+[17:42:46.478](0.000s) ok 56 - dropped-input has bounded deterministic error
+[17:42:46.487](0.009s) ok 57 - dropped-result rejected
+[17:42:46.487](0.000s) ok 58 - dropped-result has bounded deterministic error
+[17:42:46.496](0.009s) ok 59 - legal binding works after errors
+### Stopping node "binding" using mode fast
+# Running: pg_ctl --pgdata <artifact-root>/source/code/postgres/semloom_pg/tmp_check/t_009_binding_binding_data/pgdata --mode fast stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "binding"
+[17:42:46.601](0.105s) 1..59

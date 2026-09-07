@@ -16,12 +16,13 @@
 #include "semantics/sem_text.h"
 #include "planner/sem_path_common.h"
 #include "planner/sem_map_call.h"
+#include "planner/sem_map_binding.h"
 #include "planner/sem_plan_spec.h"
 #include "planner/marker_identity.h"
 #include "planner/paths.h"
 #include "executor/sem_scan.h"
 
-static List *semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column);
+static List *semloom_generate_map_fields(FuncExpr *marker);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
 static CustomPath *semloom_make_path(RelOptInfo *parent_rel, Path *child_path);
 static Plan *semloom_plan_path(PlannerInfo *root,
@@ -183,6 +184,14 @@ semloom_plan_path(PlannerInfo *root,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("invalid SemMap custom path state")));
 
+	if (semloom_plan_has_filter(linitial_node(Plan, custom_plans)))
+	{
+		SemloomSemanticCall *call = semloom_map_call(root, marker_oid);
+
+		return semloom_plan_bound_map(target_list, linitial_node(Plan, custom_plans), call,
+			semloom_generate_map_fields(call->marker));
+	}
+
 	semloom_replace_marker_in_plan(linitial_node(Plan, custom_plans), marker_oid);
 	scan_target_list = copyObject(target_list);
 	foreach(cell, target_list)
@@ -215,8 +224,8 @@ semloom_plan_path(PlannerInfo *root,
 	scan->custom_exprs = NIL;
 	if (marker_oid == semloom_generate_map_function_oid())
 	{
-		scan->custom_private = semloom_generate_map_private(marker,
-			(AttrNumber) linitial_int(mapped_columns));
+		scan->custom_private = semloom_plan_spec_bind_generate_map(semloom_generate_map_fields(marker),
+			(AttrNumber) linitial_int(mapped_columns), marker_oid);
 		record_plan_function_dependency(root, marker_oid);
 	}
 	else
@@ -272,7 +281,7 @@ semloom_map_option(Jsonb *options, const char *name)
 }
 
 static List *
-semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column)
+semloom_generate_map_fields(FuncExpr *marker)
 {
 	Const *instruction_const;
 	Const *options_const;
@@ -335,8 +344,8 @@ semloom_generate_map_private(FuncExpr *marker, AttrNumber input_column)
 			DirectFunctionCall1(int4_numeric, Int32GetDatum(tokens)))) != 0)
 		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 			errmsg("SemMap max_tokens must be an integer from 1 to 4096")));
-	return semloom_plan_spec_make_generate_map_private(
+	return semloom_plan_spec_make_generate_map_fields(
 		pnstrdup(VARDATA_ANY(instruction), instruction_length),
 		pnstrdup(model->val.string.val, model->val.string.len),
-		(uint32) tokens, input_column, marker->funcid);
+		(uint32) tokens);
 }

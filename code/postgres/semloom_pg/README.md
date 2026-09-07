@@ -12,7 +12,9 @@ bounded multi-session gateway. It reuses the existing scans, row pump and synchr
 [Verification](../../../experiments/results/postgresql/semfilter_and_20260907/README.md) passes Linux 138
 contracts, strict PG18.3 compilation, regression 1/1 and all eight TAP files (1808 checks). It includes
 independent volatile-input evaluation, native function permissions, RLS, snapshots and cancellation.
-This implementation is now included in main; Filter→Map and per-session asynchronous work remain pending.
+This two-Filter implementation is included in main. The development branch additionally verifies
+[one Filter→one generated Map](../../../experiments/results/postgresql/filter_map_binding_20260907/README.md) with 1910 PG TAP checks.
+Per-session asynchronous work remains pending.
 
 The [2026-09-06 integration checks](../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (1758 checks), and 247 related
@@ -123,9 +125,9 @@ seven TAP files (1758 checks). The integration was a fast-forward to `103e2715`;
 The extraction preserves all 15 affected function bodies, apart from the collector name, and passes
 [local and PG18.3 checks](../../../experiments/results/postgresql/semantic_call_extraction_20260907/README.md).
 Shared occurrence records and tuple mapping now live in `semantic_call` and `semantic_binding`.
-The pump uses the legacy adapter, while explicit independent result mapping is verified through production
-callers. [Verification](../../../experiments/results/postgresql/semantic_binding_20260907/README.md) passes
-1848 PG TAP checks; a versioned outer carrier and Filter→Map remain pending. `semloom_pg.h` has been
+The pump retains legacy adapters and consumes the new `semantic_carrier` for Filter→Map.
+`sem_map_binding` retains raw inputs and ordinary projections, while the Map node evaluates its native
+input expression after LIMIT/OFFSET and writes an independent result column. `semloom_pg.h` has been
 replaced by the four actual interfaces listed above, and all callers include the relevant header directly.
 Marker identity functions retain their original bodies in `planner/marker_identity.c`. The recording schema
 constant now lives with its semantic contract, so the provider no longer imports the planner for that value.

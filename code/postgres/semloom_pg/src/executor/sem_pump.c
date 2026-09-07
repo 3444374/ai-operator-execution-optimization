@@ -22,6 +22,9 @@
 #include "semantics/sem_operator_machine.h"
 #include "planner/sem_plan_spec.h"
 #include "planner/semantic_binding.h"
+#include "planner/semantic_carrier.h"
+#include "catalog/pg_type_d.h"
+#include "nodes/nodeFuncs.h"
 #include "semantics/semantic_filter_contract.h"
 #include "semantics/semantic_map_contract.h"
 #include "executor/sem_pump.h"
@@ -35,6 +38,7 @@ struct SemloomExecPump
 	SemloomFilterCostEstimate filter_cost;
 	bool has_filter_cost;
 	SemloomTupleBinding *binding;
+	ExprState *input_expression;
 };
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
@@ -51,7 +55,7 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	MemoryContext owner_context = estate->es_query_cxt;
 	SemloomExecPump *pump;
 	SemloomPlanSpec plan_spec;
-	List *semantic_private = scan->custom_private;
+	SemloomPlanCarrier carrier;
 	AttrNumber input_column;
 	int unsupported_flags = EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_REWIND;
 
@@ -65,17 +69,11 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				 errmsg("invalid semantic operator executor state")));
 
 	pump = MemoryContextAllocZero(owner_context, sizeof(*pump));
-	pump->has_filter_cost = semloom_filter_cost_decode(
-		scan->custom_private,
-		&pump->filter_cost);
-	if (pump->has_filter_cost)
-		semantic_private = list_make2(
-			linitial(scan->custom_private),
-			lsecond(scan->custom_private));
-	semloom_plan_spec_decode(semantic_private,
-		owner_context,
-		&plan_spec,
-		&input_column);
+	semloom_carrier_decode(scan->custom_private, owner_context, &carrier);
+	plan_spec = carrier.spec;
+	input_column = carrier.input_column;
+	pump->has_filter_cost = carrier.has_cost;
+	pump->filter_cost = carrier.cost;
 	if (pump->has_filter_cost &&
 		(plan_spec.operator_kind != SEMLOOM_PLAN_OPERATOR_FILTER ||
 		 plan_spec.model_id == NULL ||
@@ -83,14 +81,22 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("SemFilter cost does not match its semantic plan")));
-	if (input_column <= 0 ||
-		input_column > node->ss.ss_ScanTupleSlot->tts_tupleDescriptor->natts)
+	if (!carrier.projected_input && (input_column <= 0 ||
+		input_column > node->ss.ss_ScanTupleSlot->tts_tupleDescriptor->natts))
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
 				 errmsg("semantic operator input is outside the scan tuple")));
 
-	/* Compile retained markers for permissions/hooks without evaluating them. */
-	ExecInitExprList(scan->custom_exprs, &node->ss.ps);
+	/* Native expression setup checks input functions; the marker is checked below. */
+	if (carrier.projected_input)
+	{
+		if (list_length(scan->custom_exprs) != 1 ||
+			exprType(linitial(scan->custom_exprs)) != TEXTOID)
+			elog(ERROR, "invalid projected Map input");
+		pump->input_expression = ExecInitExpr(linitial(scan->custom_exprs), &node->ss.ps);
+	}
+	else
+		ExecInitExprList(scan->custom_exprs, &node->ss.ps);
 	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
 	{
 		AclResult aclresult;
@@ -115,7 +121,10 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
 	pump->child_state =
 		ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
-	pump->binding = semloom_binding_legacy(input_column,
+	pump->binding = carrier.projected_input ?
+		semloom_binding_projected(carrier.binding_fields, ExecGetResultType(pump->child_state),
+			node->ss.ss_ScanTupleSlot->tts_tupleDescriptor) :
+		semloom_binding_legacy(input_column,
 		plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_MAP,
 		ExecGetResultType(pump->child_state),
 		node->ss.ss_ScanTupleSlot->tts_tupleDescriptor);
@@ -135,12 +144,26 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			scan_state->ps.ps_ExprContext->ecxt_per_tuple_memory;
 		AttrNumber input_column = pump->binding->input_column;
 		SemloomTupleDisposition disposition;
+		Datum input_value;
+		bool input_null;
 
 		if (TupIsNull(child_slot))
 			return ExecClearTuple(scan_slot);
 		semloom_binding_store(pump->binding, child_slot, scan_slot);
 
-		if (child_slot->tts_isnull[input_column - 1])
+		if (pump->input_expression != NULL)
+		{
+			ExecStoreVirtualTuple(scan_slot);
+			scan_state->ps.ps_ExprContext->ecxt_scantuple = scan_slot;
+			input_value = ExecEvalExprSwitchContext(pump->input_expression,
+				scan_state->ps.ps_ExprContext, &input_null);
+		}
+		else
+		{
+			input_value = child_slot->tts_values[input_column - 1];
+			input_null = child_slot->tts_isnull[input_column - 1];
+		}
+		if (input_null)
 		{
 			disposition = semloom_operator_machine_handle_null(&pump->machine);
 			if (disposition == SEMLOOM_TUPLE_EMIT)
@@ -154,7 +177,7 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 		else
 		{
 			AiByteSlice input = semloom_pump_bind_text(
-				child_slot->tts_values[input_column - 1],
+				input_value,
 				tuple_context);
 			SemloomBoundValue bound_input = {
 				.data = input.data,
@@ -246,7 +269,13 @@ semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 	pg_semantic_runtime_explain(pump->runtime, explain_state);
 	if (pump->has_filter_cost)
 		semloom_filter_cost_explain(&pump->filter_cost, explain_state);
-	ExplainPropertyInteger(
+	if (pump->input_expression != NULL)
+	{
+		ExplainPropertyText("Input Binding", "expression", explain_state);
+		ExplainPropertyInteger("Result Column", NULL, pump->binding->result_column, explain_state);
+	}
+	else
+		ExplainPropertyInteger(
 		semloom_operator_machine_explain_property(&pump->machine),
 		NULL,
 		pump->binding->input_column,

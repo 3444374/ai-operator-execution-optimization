@@ -2,7 +2,8 @@
 
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
 The shared call and tuple-binding modules now pass [PG18.3 checks](../experiments/results/postgresql/semantic_binding_20260907/README.md).
-The versioned outer carrier and Filter→Map remain pending.
+The development branch now passes [one Filter→one generated Map checks](../experiments/results/postgresql/filter_map_binding_20260907/README.md).
+The versioned carrier uses a native input expression and an independent result column; PG18.3 passes 1910 TAP checks.
 The earlier call-binding preparation separates Map call analysis from path construction; its
 [checks](../experiments/results/postgresql/semantic_call_extraction_20260907/README.md) preserve existing behavior.
 The earlier extraction was preparation; the shared modules above are the subsequent verified step.
@@ -24,7 +25,7 @@ The shared implementation has also passed an [eight-request real-model check](..
 including INSERT with independent result auditing. The later [complete operator checks](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 pass all seven PG18.3 TAP files, regression, and a nine-request real-model SELECT/INSERT check for Filter v3/v4
 and Map v5. These earlier results establish the separate synchronous paths. The AND branch above adds one composition;
-Filter→Map and asynchronous execution remain pending.
+The later Filter→Map development is described above; asynchronous execution remains pending.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/semantics/generation_profile.{h,c}`. They validate one immutable tristate profile

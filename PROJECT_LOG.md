@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-07 Filter→Map独立输入与结果绑定
+
+- 在19326609基础上接入一个关系Filter和一个生成Map，复用现有方法、runtime、provider与gateway。
+- V1内部载体独立表示语义/函数身份/结果映射；原生ExprState在LIMIT/OFFSET之后计算Map输入，普通输出保持PG行为。
+- [验证记录](experiments/results/postgresql/filter_map_binding_20260907/README.md)：本地115、Linux138、PG18.3回归1、TAP1910项通过，611项源码哈希一致。
+- 四轮递增测试均通过，权限钩子、撤权、RLS、快照、取消回滚与畸形载体有直接测试；模型请求0，测试服务已停。
+- 本轮保留在开发分支；真实模型组合、多Map/嵌套、增量Core及PG异步尚未验证或实现。
+
 ## 2026-09-07 共同调用与tuple绑定
 
 - 在11e89b08上实现独立调用出现记录、类型中立的列映射/校验及pump兼容适配。

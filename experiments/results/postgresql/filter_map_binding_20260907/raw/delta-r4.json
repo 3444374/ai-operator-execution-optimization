@@ -1,0 +1,21 @@
+{
+  "code/postgres/semloom_pg/Makefile": "fa1b4cc80b3f5cf133b800f41cf2b7f2211c534ca76b846e4b466f188f371329",
+  "code/postgres/semloom_pg/src/executor/sem_pump.c": "1e05d8b10ffde40ba3aef81c668164a5a34e6c37d85f092142a40367c9c41e57",
+  "code/postgres/semloom_pg/src/planner/sem_filter_path.c": "2a9fac0d543591fd9cdd102941cc4ef9ee0a897727eba978c835804e5de99dfc",
+  "code/postgres/semloom_pg/src/planner/sem_map_binding.c": "57458546fd665651fb5543a7f75b52a460c097d90a3ab18846e2e0550808025e",
+  "code/postgres/semloom_pg/src/planner/sem_map_binding.h": "0a67a16991a56187ecc1f8ee9e24dacbdb0263da8ff4b99ce725c6f0a6d5cc5c",
+  "code/postgres/semloom_pg/src/planner/sem_map_call.c": "190944bb4d354f83833fe0e4f7ad1bb940145d4cdbfd009b2db10585bfc8d4de",
+  "code/postgres/semloom_pg/src/planner/sem_map_path.c": "afe85e70f6e0f32da2d83af1a6103ca6b3b543cdda7bb13792cdb2636fe295e0",
+  "code/postgres/semloom_pg/src/planner/sem_plan_spec.c": "0d3d71413b6c95fea8908f260abd366cc7b0d897f3c2d6f2ed956812241b9477",
+  "code/postgres/semloom_pg/src/planner/sem_plan_spec.h": "9ace9c71ce7694c00a9c1d5c045baaed23e282cbfcda08a80a049b7347bff4dc",
+  "code/postgres/semloom_pg/src/planner/semantic_binding.c": "4f5568396f4b62f26473f654fa69d86930efed1ddf4bdff235ec0f23a655c589",
+  "code/postgres/semloom_pg/src/planner/semantic_binding.h": "c99042ac28e9c0f440e57f311a4a1f844f95a3345528667a112d5e23dd34c197",
+  "code/postgres/semloom_pg/src/planner/semantic_carrier.c": "806d1c157cb6b9d05e0688ff6eaed5a3b2275e9732d86bf893b99210ae13ff19",
+  "code/postgres/semloom_pg/src/planner/semantic_carrier.h": "dcd508f2d8f338353d3eac5c068b882097ee2f4063c0271ed8654e6feeaea918",
+  "code/postgres/semloom_pg/t/006_map_plan.pl": "38cb0d81da7bfe1b3862dd4b98cc72eadeb657ad838c68e8d1d559c6f23023ed",
+  "code/postgres/semloom_pg/t/009_binding.pl": "7e605e004114aa75836aef6a3454a0e3fef6debf71facfb0be3bbc62d0dab634",
+  "code/postgres/semloom_pg/t/010_filter_map.pl": "28fb6c31be23a5f9780e4bd43a18104d7208795f4184aaec74dab72b388b8955",
+  "code/postgres/semloom_pg/t/plan_contract/Makefile": "976876aeb731ddf7166d571555c2674392c41593d63e1f69accc165fc60f15d1",
+  "code/postgres/semloom_pg/t/plan_contract/carrier_contract.c": "6de11b8f81114f909ac69defa3a23a8a7409549c14d8c6be7273765793a34bdc",
+  "code/tests/postgres/test_semloom_pg_static_contract.py": "3a04af8d5f6ee4f3c73e924196eb5a43460d30ef737b233bc44db51ecb182cd0"
+}
