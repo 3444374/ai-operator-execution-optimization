@@ -1,0 +1,229 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <run-root>/pg2/socket, port 35495
+ok 1         - semloom_pg                                 20 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<run-root>/source/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<run-root>/source/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<run-root>/source/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<run-root>/source/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<run-root>/source/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl .........
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+All 76 subtests passed
+t/002_choice_plan.pl ........ ok
+t/003_choice_execution.pl ...
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+No subtests run
+t/004_filter_insert.pl ......
+Dubious, test returned 2 (wstat 512, 0x200)
+Failed 5/53 subtests
+t/005_function_identity.pl .. ok
+t/006_map_plan.pl ...........
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+Failed 2/75 subtests
+t/007_map_execution.pl ......
+Dubious, test returned 29 (wstat 7424, 0x1d00)
+Failed 26/37 subtests
+
+Test Summary Report
+-------------------
+t/001_semloom_pg.pl       (Wstat: 7424 Tests: 76 Failed: 0)
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+t/003_choice_execution.pl (Wstat: 7424 Tests: 0 Failed: 0)
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+t/004_filter_insert.pl    (Wstat: 512 Tests: 53 Failed: 5)
+  Failed tests:  46, 48-49, 51, 53
+  Non-zero exit status: 2
+  Parse errors: No plan found in TAP output
+t/006_map_plan.pl         (Wstat: 7424 Tests: 75 Failed: 2)
+  Failed tests:  22, 74
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+t/007_map_execution.pl    (Wstat: 7424 Tests: 37 Failed: 26)
+  Failed tests:  2, 4-5, 7-10, 12-15, 17-20, 22-25, 30-33
+                35-37
+  Non-zero exit status: 29
+  Parse errors: No plan found in TAP output
+Files=7, Tests=434, 65 wallclock secs ( 0.12 usr  0.03 sys +  6.35 cusr  3.09 csys =  9.59 CPU)
+Result: FAIL
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 76.
+# INSERT gateway exceeded its time limit
+
+#   Failed test 'INSERT gateway exits normally'
+#   at t/004_filter_insert.pl line 75.
+#
+
+#   Failed test 'exact v3 commits the selected rows'
+#   at t/004_filter_insert.pl line 119.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'exact v3 retains duplicates and drops FALSE/UNKNOWN/NULL'
+#   at t/004_filter_insert.pl line 120.
+#          got: ''
+#     expected: '1
+# 5
+# 6'
+# INSERT gateway exceeded its time limit
+
+#   Failed test 'INSERT gateway exits normally'
+#   at t/004_filter_insert.pl line 75.
+#
+
+#   Failed test 'exact v3 INSERT reports actual execution counters'
+#   at t/004_filter_insert.pl line 125.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 2 just after 53.
+
+#   Failed test 'new plan cannot silently use an old provider path'
+#   at t/006_map_plan.pl line 90.
+#                   'psql:<stdin>:2: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654'
+#     doesn't match '(?^:ERROR:  22023: SemLoom provider socket path must be absolute\n)'
+
+#   Failed test 'long Unicode instruction returns its bounded SQL validation error'
+#   at t/006_map_plan.pl line 201.
+#                   'psql:<stdin>:2: ERROR:  54000: requested character too large for encoding: 30028
+# LOCATION:  chr, oracle_compat.c:1118'
+#     doesn't match '(?^:ERROR:  22023: SemMap\ instruction\ must\ contain\ 1\ to\ 4096\ UTF8\ bytes\n)'
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 75.
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+#
+
+#   Failed test 'generative Map executes through PostgreSQL and golden wire v5'
+#   at t/007_map_execution.pl line 73.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'the independent ASCII vector returns generated text'
+#   at t/007_map_execution.pl line 74.
+#          got: ''
+#     expected: '1|hello'
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+#
+
+#   Failed test 'Map peer removes its listener'
+#   at t/007_map_execution.pl line 59.
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'generated'
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+# refusing to replace a filesystem entry
+
+#   Failed test 'Map peer removes its listener'
+#   at t/007_map_execution.pl line 59.
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'hello|generated'
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+# refusing to replace a filesystem entry
+
+#   Failed test 'Map peer removes its listener'
+#   at t/007_map_execution.pl line 59.
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'generated|hello'
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+# refusing to replace a filesystem entry
+
+#   Failed test 'Map peer removes its listener'
+#   at t/007_map_execution.pl line 59.
+
+#   Failed test 'distinct Map output binding executes'
+#   at t/007_map_execution.pl line 82.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated output cannot alias an equal ordinary input expression'
+#   at t/007_map_execution.pl line 83.
+#          got: ''
+#     expected: 'hello!|generated'
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+# refusing to replace existing socket: <run-root>/pg2/test-tmp/tslCmhZaP0/map.sock
+
+#   Failed test 'Map peer removes its listener'
+#   at t/007_map_execution.pl line 59.
+
+#   Failed test 'Map preserves cardinality across NULL, empty input and duplicates'
+#   at t/007_map_execution.pl line 95.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+
+#   Failed test 'generated text stays associated with its input row'
+#   at t/007_map_execution.pl line 96.
+#          got: ''
+#     expected: '1|hello
+# 2|
+# 3|
+# 4|hello'
+
+#   Failed test 'Map peer exits after the session'
+#   at t/007_map_execution.pl line 58.
+# refusing to replace existing socket: <run-root>/pg2/test-tmp/tslCmhZaP0/map.sock
+
+#   Failed test 'Map peer removes its listener'
+#   at t/007_map_execution.pl line 59.
+
+#   Failed test 'Map EXPLAIN ANALYZE executes'
+#   at t/007_map_execution.pl line 98.
+#          got: '3'
+#     expected: '0'
+# psql:<stdin>:3: ERROR:  0A000: SemLoom exact semantic provider requires UTF8 database encoding
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:654
+# Tests were run but no plan was declared and done_testing() was not seen.
+# Looks like your test exited with 29 just after 37.
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

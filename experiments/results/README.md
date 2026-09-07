@@ -10,8 +10,9 @@
 
 [本地结构与合同检查](postgresql/pg_module_layout_20260907/README.md)对应独立分支
 `codex/pg-module-layout`：112项算子合同、4项网关测试和8项严格C11编译通过。生产实现按职责迁移，
-头文件依赖收窄；一次旧HTTP deadline测试失败及修正单独保留。PG18.3完整构建与TAP尚未复验，
-分支未合并main，没有新增服务器或模型运行。
+头文件依赖收窄；一次旧HTTP deadline测试失败及修正单独保留。后续服务器在`20b22a55`通过
+Linux112+4项、PG18.3严格构建、regression1/1和全部TAP1758/1758。准备失败保留，自有测试进程
+已清理；分支未合并main，本轮没有真实模型请求。
 
 ## SemMap resource measurement repair (2026-09-06)
 

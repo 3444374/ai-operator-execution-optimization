@@ -1,5 +1,5 @@
 {
-  "README.md": "d9e7dc00a58814c4b73d9de0f4a20825f617f8ff45d6739b71c9806c017c18a7",
+  "README.md": "86064f745686c835fd9e0797a92cd752c4232dbed33d62eb4d4896671916fda4",
   "raw/baseline-postgres.log": "4569b60bc3821341acb42fe674015b3e02f88158d9900512fa121decc02dd867",
   "raw/build-audit.json": "39025a83eb587941b06aa7baff4a6cd6cb514e4dcda5c8614e2f17b765be76f8",
   "raw/equivalence.json": "d684f6127067ea5932d70306fd8de112968b40ef86a2e1efa7cf82f6931eff84",
@@ -8,6 +8,15 @@
   "raw/http-deadline.log": "8aff63aeabefebfa298e5e8e8d0d67e62b6a08ee8de97e59caf22fa216e6fa38",
   "raw/interfaces-postgres.log": "cc3e02acd9757c6d06c0503035b431cd311136bbf14156c09f54a3099dbd173a",
   "raw/moved-postgres.log": "c1939bac0a5604d74c3a3d9d8893e3b007657134fb89269516fec528e25ddee2",
+  "raw/server/download.log": "4df60bd11b1d3885aed24dee92300aeab7097cad252d48d7e1371f635ebddee5",
+  "raw/server/linux-execution_provider.log": "f5907ac17052ce355907c264d795b8c3bee39b9296c67623397d1236a0a15f50",
+  "raw/server/linux-postgres.log": "33ce74c44e72a22531a814030618624e461a0db0768658fa482c6ca5d66c4eb7",
+  "raw/server/pg2-installcheck.log": "08063941e0e988f4176d248c6d80652cf1512c3d3c51ca6b43b6d103a354e6bd",
+  "raw/server/pg3-extension-build.log": "9b738e9d1390b9bfff79b2bdc873975ffc6a2acd1a381099cbb6e9af70fde577",
+  "raw/server/pg3-extension-install.log": "d38bc187f5e342ce62c9f6e25c8c50256f6cb98670fd3fa0fc7222f476259b37",
+  "raw/server/pg3-installcheck.log": "52b424d1a8ac68bba69df1e2e4b41b7454792367f3c654fefbb04bff899dd4be",
+  "raw/server/pg3-pg-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+  "raw/server/verification.json": "f5332bf0d363a180ece91131716eaf0f1c97b717c94532ad70457c27fd2f475e",
   "raw/source-manifest.json": "ae9afc4ac5f9addfde2b59a5074085fb964f0a472de6456a2f6cbdf41e19565f",
   "raw/validation.json": "bc9929758ee2cb7efbdae9aad15cc7d60715fff8820b8dcd5c733eb7bcf6980a"
 }

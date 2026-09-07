@@ -97,8 +97,9 @@ The current thin scan, PG-private runtime and neutral provider interface remain 
 
 The extension source is grouped by its existing responsibilities. SQL definitions and TAP assertions keep
 their original locations and behavior. The current layout refactor is on `codex/pg-module-layout`; its local
-validation is recorded in the [layout verification](../../../experiments/results/postgresql/pg_module_layout_20260907/README.md),
-and full PG18.3 build/regression/TAP revalidation is still pending.
+validation is recorded in the [layout verification](../../../experiments/results/postgresql/pg_module_layout_20260907/README.md).
+Commit `20b22a55` also passes Linux 112+4 contracts, strict PG18.3 compilation, regression 1/1 and all
+seven TAP files (1758 checks). The branch has not been merged into main; no real model was used in this recheck.
 
 | Location | Contents and interface |
 |---|---|
@@ -466,7 +467,7 @@ reported version is not 18.3:
 ```bash
 make PG_CONFIG=/path/to/postgresql-18.3/bin/pg_config
 make PG_CONFIG=/path/to/postgresql-18.3/bin/pg_config install
-make PG_CONFIG=/path/to/postgresql-18.3/bin/pg_config installcheck
+PG_TEST_INITDB_EXTRA_OPTS='--encoding=UTF8' make PG_CONFIG=/path/to/postgresql-18.3/bin/pg_config installcheck
 ```
 
 `installcheck` uses the standard PGXS regression harness and expects an already running PostgreSQL
@@ -474,3 +475,5 @@ make PG_CONFIG=/path/to/postgresql-18.3/bin/pg_config installcheck
 deployments are compatibility/rehearsal environments and do not substitute for this qualification. The
 PostgreSQL build must include `--enable-tap-tests`; run the test target as a non-root user because TAP creates
 an additional temporary cluster.
+The TAP clusters also require UTF8: the explicit initdb option above avoids inheriting SQL_ASCII from a
+`C` locale. Tests that create a separate non-UTF8 database to check rejection still retain that encoding.

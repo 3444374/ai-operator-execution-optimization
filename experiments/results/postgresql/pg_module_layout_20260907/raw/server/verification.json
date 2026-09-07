@@ -1,0 +1,497 @@
+{
+  "source_commit": "20b22a55b4e5dcdbf5dd65649160210721cd0f85",
+  "source_worktree_clean": true,
+  "source_hashes_matched": 107,
+  "server_main_unchanged": true,
+  "preflight": {
+    "status": "ok",
+    "groups": [
+      "core",
+      "text"
+    ],
+    "checks": 28,
+    "profile_selection": "automatic"
+  },
+  "toolchain_source": {
+    "url": "https://ftp.postgresql.org/pub/source/v18.3/postgresql-18.3.tar.bz2",
+    "expected_sha256": "d95663fbbf3a80f81a9d98d895266bdcb74ba274bcc04ef6d76630a72dee016f",
+    "actual_sha256": "d95663fbbf3a80f81a9d98d895266bdcb74ba274bcc04ef6d76630a72dee016f",
+    "matches": true,
+    "transport": "local HTTPS download then SSH transfer; initial server curl timeout preserved",
+    "initial_partial_bytes": 5637574
+  },
+  "toolchain_initial_steps": [
+    {
+      "name": "dependencies",
+      "argv": [
+        "apt-get",
+        "-o",
+        "Dir::Cache::archives=<run-root>/apt-cache",
+        "install",
+        "-y",
+        "--no-install-recommends",
+        "bison",
+        "flex",
+        "libipc-run-perl"
+      ],
+      "cwd": "<run-root>",
+      "exit_code": 0,
+      "seconds": 3.535
+    },
+    {
+      "name": "download",
+      "argv": [
+        "curl",
+        "-fLsS",
+        "--max-time",
+        "180",
+        "--output",
+        "<run-root>/postgresql-18.3.tar.bz2",
+        "https://ftp.postgresql.org/pub/source/v18.3/postgresql-18.3.tar.bz2"
+      ],
+      "cwd": "<run-root>",
+      "exit_code": 28,
+      "seconds": 180.014
+    }
+  ],
+  "toolchain_build_steps": [
+    {
+      "name": "extract",
+      "argv": [
+        "tar",
+        "-xjf",
+        "<run-root>/postgresql-18.3-verified.tar.bz2"
+      ],
+      "cwd": "<run-root>",
+      "exit_code": 0,
+      "seconds": 5.3
+    },
+    {
+      "name": "configure",
+      "argv": [
+        "<run-root>/postgresql-18.3/configure",
+        "--prefix=<pg-prefix>",
+        "--enable-tap-tests",
+        "--without-readline",
+        "--without-icu"
+      ],
+      "cwd": "<run-root>/postgresql-18.3",
+      "exit_code": 0,
+      "seconds": 11.968
+    },
+    {
+      "name": "postgres-build",
+      "argv": [
+        "make",
+        "-j8"
+      ],
+      "cwd": "<run-root>/postgresql-18.3",
+      "exit_code": 0,
+      "seconds": 50.77
+    },
+    {
+      "name": "postgres-install",
+      "argv": [
+        "make",
+        "install"
+      ],
+      "cwd": "<run-root>/postgresql-18.3",
+      "exit_code": 0,
+      "seconds": 2.531
+    }
+  ],
+  "linux_tests": [
+    {
+      "group": "postgres",
+      "argv": [
+        "<driver-venv>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/postgres",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests": 112,
+      "seconds": 8.132
+    },
+    {
+      "group": "execution_provider",
+      "argv": [
+        "<driver-venv>/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "code/tests/execution_provider",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests": 4,
+      "seconds": 0.454
+    }
+  ],
+  "attempts": {
+    "pg1": {
+      "source_commit": "20b22a55b4e5dcdbf5dd65649160210721cd0f85",
+      "version": "PostgreSQL 18.3",
+      "steps": [],
+      "status": "failed",
+      "model_requests": 0,
+      "port": 34589,
+      "configuration": "'--prefix=<pg-prefix>' '--enable-tap-tests' '--without-readline' '--without-icu'",
+      "failure": "[Errno 2] No such file or directory: 'runuser'",
+      "main_cluster_stopped": true
+    },
+    "pg2": {
+      "source_commit": "20b22a55b4e5dcdbf5dd65649160210721cd0f85",
+      "version": "PostgreSQL 18.3",
+      "steps": [
+        {
+          "name": "extension-build",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "make",
+            "-j4",
+            "COPT=-O2 -Werror"
+          ],
+          "exit_code": 0,
+          "seconds": 1.018
+        },
+        {
+          "name": "extension-install",
+          "argv": [
+            "make",
+            "install",
+            "COPT=-O2 -Werror"
+          ],
+          "exit_code": 0,
+          "seconds": 0.032
+        },
+        {
+          "name": "initdb",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/initdb",
+            "-D",
+            "<run-root>/pg2/pgdata",
+            "-A",
+            "trust",
+            "--no-locale",
+            "--encoding=UTF8"
+          ],
+          "exit_code": 0,
+          "seconds": 0.68
+        },
+        {
+          "name": "pg-start",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/pg_ctl",
+            "-D",
+            "<run-root>/pg2/pgdata",
+            "-l",
+            "<run-root>/pg2/pgdata/server.log",
+            "-w",
+            "start"
+          ],
+          "exit_code": 0,
+          "seconds": 0.114
+        },
+        {
+          "name": "server-version",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/psql",
+            "-XAt",
+            "-c",
+            "SHOW server_version"
+          ],
+          "exit_code": 0,
+          "seconds": 0.019
+        },
+        {
+          "name": "installcheck",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "make",
+            "installcheck",
+            "COPT=-O2 -Werror"
+          ],
+          "exit_code": 2,
+          "seconds": 64.813
+        },
+        {
+          "name": "pg-stop",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/pg_ctl",
+            "-D",
+            "<run-root>/pg2/pgdata",
+            "-m",
+            "fast",
+            "-w",
+            "stop"
+          ],
+          "exit_code": 0,
+          "seconds": 0.111
+        }
+      ],
+      "status": "failed",
+      "model_requests": 0,
+      "port": 35495,
+      "configuration": "'--prefix=<pg-prefix>' '--enable-tap-tests' '--without-readline' '--without-icu'",
+      "built_sha256": "2507c1b418430c4d8494326a4cccfc4f91735ecc6c9e99d952ce24e9d1f90506",
+      "installed_sha256": "2507c1b418430c4d8494326a4cccfc4f91735ecc6c9e99d952ce24e9d1f90506",
+      "failure": "installcheck failed; see its saved log",
+      "main_cluster_stopped": true
+    },
+    "pg3": {
+      "source_commit": "20b22a55b4e5dcdbf5dd65649160210721cd0f85",
+      "version": "PostgreSQL 18.3",
+      "steps": [
+        {
+          "name": "extension-build",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "make",
+            "-j4",
+            "COPT=-O2 -Werror"
+          ],
+          "exit_code": 0,
+          "seconds": 1.035
+        },
+        {
+          "name": "extension-install",
+          "argv": [
+            "make",
+            "install",
+            "COPT=-O2 -Werror"
+          ],
+          "exit_code": 0,
+          "seconds": 0.034
+        },
+        {
+          "name": "initdb",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/initdb",
+            "-D",
+            "<run-root>/pg3/pgdata",
+            "-A",
+            "trust",
+            "--no-locale",
+            "--encoding=UTF8"
+          ],
+          "exit_code": 0,
+          "seconds": 0.681
+        },
+        {
+          "name": "pg-start",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/pg_ctl",
+            "-D",
+            "<run-root>/pg3/pgdata",
+            "-l",
+            "<run-root>/pg3/pgdata/server.log",
+            "-w",
+            "start"
+          ],
+          "exit_code": 0,
+          "seconds": 0.114
+        },
+        {
+          "name": "server-version",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/psql",
+            "-XAt",
+            "-c",
+            "SHOW server_version"
+          ],
+          "exit_code": 0,
+          "seconds": 0.017
+        },
+        {
+          "name": "installcheck",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "make",
+            "installcheck",
+            "COPT=-O2 -Werror"
+          ],
+          "exit_code": 0,
+          "seconds": 45.291
+        },
+        {
+          "name": "pg-stop",
+          "argv": [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "<pg-prefix>/bin/pg_ctl",
+            "-D",
+            "<run-root>/pg3/pgdata",
+            "-m",
+            "fast",
+            "-w",
+            "stop"
+          ],
+          "exit_code": 0,
+          "seconds": 0.109
+        }
+      ],
+      "status": "passed",
+      "model_requests": 0,
+      "port": 59733,
+      "configuration": "'--prefix=<pg-prefix>' '--enable-tap-tests' '--without-readline' '--without-icu'",
+      "built_sha256": "2507c1b418430c4d8494326a4cccfc4f91735ecc6c9e99d952ce24e9d1f90506",
+      "installed_sha256": "2507c1b418430c4d8494326a4cccfc4f91735ecc6c9e99d952ce24e9d1f90506",
+      "regression_passed": 1,
+      "regression_sha256": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+      "tap_files": 7,
+      "tap_tests": 1758,
+      "main_cluster_stopped": true
+    }
+  },
+  "cleanup": {
+    "owned_active_processes": [],
+    "regression_sockets": [
+      {
+        "attempt": "pg2",
+        "socket_exists": false,
+        "connect_errno": 2,
+        "closed": true
+      },
+      {
+        "attempt": "pg3",
+        "socket_exists": false,
+        "connect_errno": 2,
+        "closed": true
+      }
+    ],
+    "previous_gateway_cleanup": {
+      "pid": 12594,
+      "expected_start_ticks": "1268712960",
+      "signal_sent": true,
+      "active_after": false
+    }
+  },
+  "model_requests": 0,
+  "private_artifact_sha256": {
+    "source-setup.log": "153b164c28c68472ebe9f8f9ad6f78ca5cb25e39c158f5ac23aacf22a0742224",
+    "preflight.log": "8fab816ae9cf9861c3c31f719a6c1418a9bc7825c66e0eb17d12d545958e11df",
+    "preflight.json": "8fab816ae9cf9861c3c31f719a6c1418a9bc7825c66e0eb17d12d545958e11df",
+    "dependency-dry-run.log": "854fd3202aa2d527e29fe7f10e9510978d73a7daf2bc9a81c273cb92dcb37e2f",
+    "dependencies.log": "e2c3d95efd43a2e40bd7880f69f52902aa045dec2823a55f78faec45231e80bc",
+    "toolchain-steps.json": "7a6937f67622bbc0a27823a61995aa8325f8477cec84564f665e9e38cee5c9ca",
+    "download.log": "4df60bd11b1d3885aed24dee92300aeab7097cad252d48d7e1371f635ebddee5",
+    "linux-postgres.log": "33ce74c44e72a22531a814030618624e461a0db0768658fa482c6ca5d66c4eb7",
+    "linux-tests.json": "25b58eba683989e8372255bbfb6d88f6b7ebe9b00b1df50fe023a479ab7fc45e",
+    "linux-execution_provider.log": "f5907ac17052ce355907c264d795b8c3bee39b9296c67623397d1236a0a15f50",
+    "toolchain-source.json": "9b7664a3491fe4b29c53d6cdc7b511451f42614f76a47612b3784d32bdf4b028",
+    "extract.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "toolchain-build-steps.json": "ad77eedb37ec0bbc97dabb41aebb193675e0565cff94cfb05f00ba621e29979f",
+    "configure.log": "70be228e2c5111d95913d4fbbe5ec9cc264f2d81292674781f8d6d42fdd67341",
+    "verify_pg.py": "4b8232a7e7a2162d60509bc98218123c08480f26366b125886841f0bef5b324d",
+    "postgres-build.log": "65000ffcf5f732b6225ff4cd62bf2e6ec72e502295e23886e1e192fbf758e797",
+    "postgres-install.log": "8185a6a379604dad0871a7532ceb0e957a00f8bcfedac0f67b3dc8773d8d1d56",
+    "pg-verification.json": "e896355ce956e75c6b82e52ec9c499a9256492d67c4183144667422a68fb5460",
+    "pg2/verify_pg.py": "943ec2e94fec3ef2bc5907e2eff22401b6186ab5215bbc773a45e6f772ad7288",
+    "pg2/pg-verification.json": "5b06a054545de7d514c8f1dd9d5f7858e3055e0a9ef1df81472379cd0a774add",
+    "pg2/extension-build.log": "316acf947c47565787e15827c05fd9777b4298691871d23689f9968342e0b3c8",
+    "pg2/extension-install.log": "7f4fc93f120cd3908b36f4576ef69a428da7d698b2a7ba5fa5a97b2d595f6932",
+    "pg2/initdb.log": "a4ccb546c206a2218fda6a8f4fce6fd403912c099e6b6de9a497b441f13d767f",
+    "pg2/pg-start.log": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "pg2/server-version.log": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "pg2/installcheck.log": "2878c146274440aee10f05514280aa3404b74e58fa390f371440e7c443a9a4f8",
+    "pg2/pg-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "pg2/cleanup.json": "1488a60b4de9382217d236a57969c2d6af359098b6d0e57c58e2b35cb5e5115d",
+    "pg2/tmp_check/log/001_semloom_pg_semloom_pg.log": "0d88acbeaf4c25c2c1931588420a04f2567f00cf263427a5754c4dd13b574c40",
+    "pg2/tmp_check/log/002_choice_plan_choice_plan.log": "78870b74030457e52209c3a7511303cc62cd51a0cf8d3d6a061ac28b2809c81c",
+    "pg2/tmp_check/log/003_choice_execution_choice_execution.log": "754d8a348bb515fc89300ca811884c9a99dda0f13fc5f4c860b9e58baf0ccce7",
+    "pg2/tmp_check/log/004_filter_insert_filter_insert.log": "3ac52ad209e6152deef431af1e1ed876d3c8699491f6cdc43ff1dfc176afc0a3",
+    "pg2/tmp_check/log/005_function_identity_function_identity.log": "d5e3ab0079c056373aa8d05397e0e0ead56588a8b87761a7f976e9839022cd25",
+    "pg2/tmp_check/log/006_map_plan_map_plan.log": "d69d2fb3fbb51844e792e505a3d11f1b74c84a53c0dc57f7965a32865d78f902",
+    "pg2/tmp_check/log/007_map_execution_map_execution.log": "1d579309267e35cd85c4f2a01c8625311ba90307b4d42273c2a5f3822344d0a4",
+    "pg2/tmp_check/t_001_semloom_pg_semloom_pg_data/reference-calibration-source.json": "b8e682289a783b2289a6d9beb75afa271b9386c5c517fabb07a1eaaa920e0c04",
+    "pg2/tmp_check/t_001_semloom_pg_semloom_pg_data/reference-calibration.json": "edb51ace3aa47059abc4feaf11e2b4ae40de6a5d63671c205e4c18e29c9d9e79",
+    "pg2/tmp_check/t_001_semloom_pg_semloom_pg_data/duplicate-calibration.json": "468bd78eb7c22fac98d25a180716c33670f0ebc21e832afc151a95027ff6a9a6",
+    "pg2/tmp_check/t_001_semloom_pg_semloom_pg_data/nul-calibration.json": "4b49effa79fcf94b4b627200fdf0cf4694c4d6bc79426e1770367a9d686deee2",
+    "pg2/tmp_check/t_004_filter_insert_filter_insert_data/insert.json": "c0c966fda7de42e38063db7152ede0d9554a88ce289b592895e5c049d2f88e41",
+    "pg2/tmp_check/t_007_map_execution_map_execution_data/map.json": "6aa4f05a041d4d6750e057afd6f3411144470deb201cdc86a03f216e3b6fdfe2",
+    "pg2/results/semloom_pg.out": "8b261aa9247bee846a24e76f2f4e1b4afe5b060444dc11771296eea004ab5b5c",
+    "pg3/extension-clean.log": "b90baad3bdf97f6d8a683deaa9bfb6afd15e4d32445c7585e712a5b8e6c01f80",
+    "pg3/plan-test-clean.log": "e0f548de9a5301a1e0967b0ff9dccf1f0121afcae15bc3842ca934b332c75d8e",
+    "pg3/verify_pg.py": "023d29229a9b9b422dffe42663055660153905190dfb654d7916d1482150369e",
+    "pg3/pg-verification.json": "c7fe465b208130de90760eeffbac7a80735b8c4eae9adb6828b5996cd8f58813",
+    "pg3/extension-build.log": "316acf947c47565787e15827c05fd9777b4298691871d23689f9968342e0b3c8",
+    "pg3/extension-install.log": "7f4fc93f120cd3908b36f4576ef69a428da7d698b2a7ba5fa5a97b2d595f6932",
+    "pg3/initdb.log": "23ce853e98957be43f43d49e0dbc4f199966b1e69dc77c43e6672ee64038a6e1",
+    "pg3/pg-start.log": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "pg3/server-version.log": "db30afc39d5ef78d14fb0bea738da1cb945c03e035d87561e94f7c2cdeae0e1e",
+    "pg3/installcheck.log": "310687dac3af9ec476f1cfdee7d81b8250305f08360d60214bcb1ba29c84a31f",
+    "pg3/pg-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+  },
+  "passed_tap_log_sha256": {
+    "tmp_check/log/regress_log_001_semloom_pg": "07ea4c6ed50a820f49d3cddb36850be6437d4fe7f68ccc8108275501aff51bb8",
+    "tmp_check/log/001_semloom_pg_semloom_pg.log": "73b9327cfc361c65bc2e3f3d27bf6a2a1f1296853f357522af7d21b31638ab25",
+    "tmp_check/log/regress_log_002_choice_plan": "7180a1618b2a0f2138f919d2b6628ccedbfe71cb5ebc04fb34937d6ac38673d3",
+    "tmp_check/log/002_choice_plan_choice_plan.log": "83acbd3b424ddb8a55fdadd08592ddcc5e3af65f65ae5bd0559690f833bb7c7f",
+    "tmp_check/log/regress_log_003_choice_execution": "f41839e3bf889b9a52ac5d5cd957a877d42349d903ac30312475e78259f9e47c",
+    "tmp_check/log/003_choice_execution_choice_execution.log": "14818b120bc53a840246aedc470ef2d6b0fabd06ea965c8ca198c46cdfc064f9",
+    "tmp_check/log/regress_log_004_filter_insert": "71825dccef0f2c0bcf14040e83fba0beb1ecd5369c1e6577795c4c435ffb546d",
+    "tmp_check/log/004_filter_insert_filter_insert.log": "113478f050c6591e4f758a8bbbf508e7f35e544b28d3babc4e8e9fbc8d5d400b",
+    "tmp_check/log/regress_log_005_function_identity": "eccc2c04c462f37c863c0412ec2914d633eee34613a437ebe7041bbdf0010ed4",
+    "tmp_check/log/005_function_identity_function_identity.log": "01c8094872fff8d3415f86280d0c38a6a54e8f07d0cf81f3205294c31e3041bd",
+    "tmp_check/log/regress_log_006_map_plan": "c3b427b59b2a2e58f9d6d8582a229603a36756e4e44575adb1698dea6e78ad58",
+    "tmp_check/log/006_map_plan_map_plan.log": "1dfa8b8814c588926926e4476fc360e595a142e7638a9fe9d9a43153fdbebcfd",
+    "tmp_check/log/regress_log_007_map_execution": "9e55df2d0d548b315c15d2eb20b95cb75124cf54a924bdb52e981a070ee611fe",
+    "tmp_check/log/007_map_execution_map_execution.log": "24d5fea39374d37f4cddc84aa93accbddf9d976a2f3ec1e8b92175804844ceb8"
+  },
+  "public_log_normalization": [
+    "common redact_text",
+    "private path placeholders",
+    "strip trailing whitespace"
+  ]
+}

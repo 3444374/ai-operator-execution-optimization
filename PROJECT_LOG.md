@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-09-07 扩展目录重构的服务器补验
+
+- 用户授权服务器验证后，以Git bundle创建`20b22a55`独立工作树，核对数据盘与仓库外runtime env，
+  core/text的28项检查通过。服务器原main保持干净的`41e103f2`，本轮没有发布或合并分支。
+- 服务器只有PG18.4，故校验官方18.3源码包后独立构建并安装专用prefix。补齐6个必要依赖包，
+  原有包没有升级/删除，未改变已有数据库服务；源码、构建缓存、PGDATA和测试产物放数据盘。
+- Linux112项算子、4项网关测试通过；`-O2 -Werror`扩展构建、regression1/1及全部7个TAP1758/1758
+  通过。107项源码文件哈希匹配；安装件与构建件相同，最终实际server_version为18.3。
+- 保留官方源码下载超时、临时驱动PATH缺少runuser、TAP在C locale下初始化SQL_ASCII的失败记录。
+  修正仅涉及准备/临时驱动，新目录显式UTF8完整通过，生产代码和断言保持原样；扩展README补充
+  `PG_TEST_INITDB_EXTRA_OPTS='--encoding=UTF8'`，非UTF8数据库拒绝用例仍通过。
+- [补验记录](experiments/results/postgresql/pg_module_layout_20260907/README.md)单列各次日志和哈希。
+  最终自有活跃PG/gateway进程0、regression socket关闭，真实模型请求0；旧真实模型证据不改写。
+
 ## 2026-09-07 PostgreSQL 扩展职责目录整理
 
 - 基于 `41e103f2` 在 `codex/pg-module-layout` 直接整理现有代码，依据

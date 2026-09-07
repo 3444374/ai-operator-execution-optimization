@@ -3,8 +3,10 @@
 [扩展目录重构验证](postgresql/pg_module_layout_20260907/README.md)记录基于 `41e103f2` 的
 `codex/pg-module-layout` 工作树及文件SHA-256：本地算子合同112/112、网关4/4、严格C11编译8/8，
 45个文件的机械迁移及marker函数体/extern声明一致性通过。旧1ms HTTP deadline测试的计数假设
-失败保留，单独修正测试；没有改变生产超时或重试策略。PG18.3工具链不可用，完整构建/regression/
-TAP为pending；分支未合并main，模型请求0。这是局部结构与合同检查，不继承下列旧版本的PG证据。
+失败保留，单独修正测试；没有改变生产超时或重试策略。用户随后授权服务器补验，`20b22a55`通过
+Linux112+4项、PG18.3严格构建、regression1/1及完整7个TAP1758/1758；源码107项哈希匹配，安装件
+与构建件相同。此前下载、临时驱动PATH与SQL_ASCII初始化失败分别保留，最终独立UTF8运行通过。
+自有活跃进程0、socket关闭；分支未合并main，模型请求0。本轮PG证据独立于下列旧版本和真实模型记录。
 
 [两算子完整回归与合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 绑定`5771cef1`（运行时代码`fcd12373`）：Linux247/247、PG18.3严格构建、regression1/1、
