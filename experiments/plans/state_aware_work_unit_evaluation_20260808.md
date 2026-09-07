@@ -1362,6 +1362,10 @@ runtime 使用 shared credit，replay batching 使用 flush policy，通用执�
 
 #### 5.2.15 SAOR v0.5.1 bounded-priority implementation plan
 
+> **历史执行说明**：本节实现步骤已完成，下方英文工具指令保留为当时的流程记录。其中指定的
+> skill、行数阈值和按任务编号 commit/push 的要求不适用于当前工作，也不授权安装工具或发布变更。
+> 后续任务按现行 `AGENTS.md`、本计划顶部状态及实际受影响行为选择验证。
+
 > **For Codex:** REQUIRED SUB-SKILL: Use `superpowers:test-driven-development` to execute this plan task-by-task. Run every named red test before production code, keep the bounded-priority selector below 100 executable lines excluding dataclasses, and commit/push after Tasks 2, 5, and 7.
 
 **Goal:** 在不改变 endpoint 总 request/work envelope、不可抢占语义和现有 SAOR fallback 的前提下，

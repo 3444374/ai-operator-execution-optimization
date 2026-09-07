@@ -43,7 +43,8 @@ data source/materializer
 ## 3. 请求与流式语义
 
 - 每行对应一个完整、独立的模型请求。token-budget 只组织行间 batch，不把单行 prompt 拆成多个
-  vLLM 请求；超长行由预处理截断、独占 batch 或按 workload 规则排除。
+  vLLM 请求。超长行处理由对应算子语义或 workload 规范明确规定；不从批处理策略推导截断权限。
+  生成型 SemMap 发送完整请求，超限按其错误规则处理；只有输入规范明确允许时才预处理截断或排除。
 - 正式 image runner 不在 driver 上全量 `to_arrow()`、`list(to_arrow_iter())` 或等价 collect；只有写明
   规模上限的 smoke/profile 可以 materialize。
 - image 路径必须固定输入表示、decode/resize/normalize 归属、model/processor revision、dtype、输出
@@ -98,10 +99,12 @@ data source/materializer
 
 - runner 按根实验规则记录版本、配置签名、阶段时间、工作量、失败/重试、资源、质量和 provenance；
   具体指标合同从 `experiments/plans/baseline_reference.md` 读取，不在本文件复制。
-- 新代码至少有针对其合同的最小测试；修 bug 先用测试或最小复现使问题可观察，再修复。
-- 结构重构前先用现有测试、characterization/contract test 或稳定输出快照覆盖必须保持的外部行为；每个
-  最小重构步骤后运行受影响测试并对照重构前结果。缺少可观察证据时，先补证据再继续拆分。
-- 先运行受影响的最小测试，再运行相关 suite 和语法/静态检查；缺依赖时记录 `pending`，按 runtime
+- 新增行为或修复缺陷时，复用或补充能观察该行为的最小测试/复现；不为格式、注释等低影响改动
+  新写与实现同义的测试。
+- 结构重构前确认现有测试或稳定输出覆盖需保持的外部行为；缺少证据时补充 characterization/
+  contract test。按可独立验证的改动运行受影响测试，不要求每次编辑后重复整套检查。
+- 按影响范围选择测试与语法/静态检查；共享接口、协议和执行层变化仍须覆盖受影响的旧路径。
+  所需检查通过后，只有新改动、失败或未解决问题才扩大或重跑。缺依赖时记录 `pending`，按 runtime
   规则处理，不在当前环境直接混装依赖。
 - 实现状态变化时同步 `INFRA_STATUS.md` 和实验证据台账；CLI/路径变化时同步
   `scripts/README.md`、目录 README、测试和调用方。

@@ -131,8 +131,8 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 └── projects/       # 旧 PPT 生成工程归档
 ```
 
-进入目录前从根到目标逐级读取沿途的 `AGENTS.md`，再读目标目录 `README.md`。根规则负责全项目
-范围与安全，子目录规则只增加本地职责和验证要求。`docs/`、`code_doc/`、
+从根到任务目录逐级加载适用的 `AGENTS.md`，首次进入目录或查找入口时再读相应 README；已读且
+未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、`code_doc/`、
 `projects/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
 部署 runbook。
 
@@ -162,5 +162,6 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 - Git 只保存可复现源、必要证据和轻量汇总；本地环境、模型、raw workload、缓存和临时产物不提交。
 - 结构、方向、实验结论或关键入口变化必须同步 `PROJECT_LOG.md` 和受影响目录 README。
 
-提交前至少运行：相关单元测试、Markdown 本地链接检查、`git diff --check` 和
-`python code/scripts/environment/scan_git_secrets.py`。
+验证与改动匹配：代码行为变化运行相关测试，文档变化检查表达和本地链接。提交前运行
+`git diff --check` 和 `python code/scripts/environment/scan_git_secrets.py`；已通过的检查只在新增
+改动、失败或未解决问题需要时重跑。

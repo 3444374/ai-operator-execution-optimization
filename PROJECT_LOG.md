@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-09-07 项目指令按任务加载与验证范围调整
+
+- 依据用户先审计后处理的要求，参照
+  [OpenAI Astra 指南](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra)与
+  [Rethinking skills and prompts for GPT-6 Astra](https://x.com/pvncher/article/2095991462416490862)，
+  调整项目持久指令；第三方 GitHub skills 的正文维护不纳入本次项目变更。
+- 根 `AGENTS.md` 保留路径继承与领域权威关系，明确复用已提供/已读且未变化的材料，按当前问题
+  补读目录入口和领域文档；`CLAUDE.md` 与根 README 同步。已有授权覆盖的步骤持续完成，
+  可参考 skill 按专用能力选用，局部任务不自动进入完整编排。
+- `code/AGENTS.md`、`deploy/AGENTS.md` 和 `deploy/runtime/AGENTS.md` 按行为影响选择验证，保留
+  共享协议/执行层旧路径回归与环境 preflight；纯文字或资产元数据变更复用对应检查。
+  超长输入处理明确服从算子语义，生成型 SemMap 不由批处理策略自行截断。
+- `code_doc/AGENTS.md` 仅在判断当前实现时追加代码规则；`learning/AGENTS.md` 按当前疑问组织
+  讲解，移除重复的通用 skill 依赖和库 API 示例；`figures/AGENTS.md` 沿用已确定的绘图链，
+  专门方法按需参考。数据来源、图形可复现性、实际导出检查和人工编辑保护继续保留。
+- 在原 SAOR bounded-priority 实现段落旁标明历史执行身份，保留原文；其中的指定 skill、行数
+  阈值和按任务编号 commit/push 不再作为当前执行指令。没有改动生产代码、实验配置或原始证据，
+  也没有改变研究方向与现有资格结论。
+- 验证：11 份修改文件均为 Markdown，64 处本地链接无断链；根 README 的读者型语言检查、
+  `git diff --check` 与 11 文件隐私扫描通过。本次为文档变更，未运行代码测试或模型实验。
+
 ## 2026-09-04 生成型 Map 真实模型通过、资源资格失败
 
 - 服务器 main 从旧提交只以 Git fast-forward 同步到 `b19486a1`；本地、远端和服务器源码身份一致。

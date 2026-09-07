@@ -19,7 +19,8 @@
 
 ## 规则
 
-- 每次修改 compose 或 init SQL 后，必须跑通对应目录的 smoke test 验证。
+- compose 或 init SQL 的运行行为变化后，执行对应 smoke test；仅修改注释、说明或格式时检查
+  受影响内容即可。实际环境操作仍遵守 runtime preflight 和目标平台规则。
 - 镜像版本、端口、挂载路径要明确写清楚，不依赖隐式默认值。
 - `postgres18.4/` 的结果只能标注为 PG18.4 本地预演，不能写成 PostgreSQL 18.3 内部平台结论。
 - 平台指南中的 vLLM、torch、transformers、Pillow、Ray、Daft、PostgreSQL 和 pgvector 版本必须与
