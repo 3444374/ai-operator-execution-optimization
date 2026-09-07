@@ -1,12 +1,14 @@
 # PG调用与结果绑定：近期详细设计
 
 更新日期：2026-09-07
-状态：`current / design-specified / implementation-pending`
+状态：`current / design-specified / implementation-started`
 受众：PG扩展实施者。所属工作为[主设计A1–A2](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)。
 本文件唯一定义近期调用/绑定的实现方案；总体分工、远期SQL与研究方向仍由主设计拥有。
 
-代码依据为`66887463`，主设计依据为`440f7cea`及本次修订。已完成源码复核和本设计，尚未实现下列
-新对象、carrier格式或Filter→Map；没有运行PG/模型实验。下列名称为拟议内部接口，不是已存在符号。
+原设计代码依据为`66887463`，主设计依据为`440f7cea`及本次修订。下列共同调用对象、carrier格式
+或Filter→Map尚未实现，接口名称仍为拟议名称；原设计阶段仅做静态复核。
+后续A1首步已按§8完成Map调用分析的行为保持提取及PG回归；上述新对象/组合仍待实施，
+结果见[验证记录](../results/postgresql/semantic_call_extraction_20260907/README.md)。
 
 ## 1. 首批范围与选定方案
 
@@ -181,3 +183,23 @@ B2/Core、真实质量、正式资源不是A2a的前置，也不由此获得新�
 [SELECT输出求值规则](https://www.postgresql.org/docs/18/sql-select.html#SQL-SELECT-LIST)。
 实现时核对REL_18_3的set_customscan_references、fix_upper_expr_mutator、ExecInitFunc和
 create_projection_path；官方接口说明与补充资料不替代锁定版本的小原型。
+
+## 8. A1首个实现步骤：分离Map调用分析
+
+实施基线为main `b4b93b2e`，工作分支`codex/semantic-call-binding`。本步只把Map调用/来源分析
+提取到`planner/sem_map_call.{c,h}`，对应已有`sem_filter_call`；现有marker计数与身份解析继续复用。
+路径/Plan构造、spec、pump、权限、SQL与wire不变，查询借用指针只在原有规划阶段使用。
+后续再引入共同SemanticCall和V1 binding；本步不生成尚无消费者的字段、空类或通用builder。
+
+来源核对：2026-09-07只读查看用户参考副本`4601bf7`的`sem_map_op.c:sem_map_validate_query`，
+该副本有未提交改动，观察到目标列表检查和单调用限制；保留自有成员OID/原始参数检查、分阶段
+调用分析，不复制公司实现。参考只作职责比较，不作行为真值或向服务器上传的材料。
+这一步不涉及模型API/客户端或批接口，pgml固定来源表保持原记录，不重复读取无关实现。
+
+可验证目标：移动的函数体保持等价，只有内部collector命名改变；所有既有115项Python/C合同和
+PG18.3严格编译、regression1项、8个TAP共1808项仍通过。fixture已覆盖来源、常量、撤权、
+NULL/LIMIT、复制计划及双Filter；无新行为时不添加同义断言。服务器使用新数据目录、独立PG前缀
+和合成fixture，先core preflight；任一失败保留输出并停止完成声明，模型请求预算为0。
+该步骤不完成A1全部绑定，不开放Filter→Map，不替代A2a权限/投影原型或B1/B2动态验证。
+实际验证：本地115项、Linux138项、PG18.3 regression1项及TAP1808项全部通过，模型请求0；
+首次本地沙箱端口拒绝导致16项setup错误，按相同测试重跑通过，原失败保留在上述验证记录。

@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-09-07 A1首步Map调用分析提取
+
+- main设计集成推送后，在`codex/semantic-call-binding`分离Map来源/常量/出现检查与路径构造，
+  新增`sem_map_call`实际接口，与已有Filter调用分析层对应；不增加无消费者的通用对象或空框架。
+- 以`b4b93b2e`作行为基线，15个函数体等价；[验证记录](experiments/results/postgresql/semantic_call_extraction_20260907/README.md)
+  保存本地115项、Linux138项、PG18.3严格编译/regression1项/TAP1808项通过及618源码哈希。
+- 本地首次沙箱拒绝16项localhost fixture启动，保留失败后以相同测试重跑通过。服务器用新PG前缀
+  和新数据目录，测试数据库及gateway全部停止，模型请求0，旧环境未修改。
+- 本步仅完成A1准备；共同SemanticCall、V1绑定、Filter→Map和增量session仍待实现。
+
 ## 2026-09-07 现有实现与架构设计合入main
 
 - 按用户授权，将`codex/semfilter-and`从`1d83c975`快进合并至`1b8fa3b0`，包含已验证的

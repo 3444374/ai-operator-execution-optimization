@@ -6,6 +6,11 @@
 区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 它不定义工程架构或下一步实施顺序。
 
+## Map调用分析提取（2026-09-07）
+
+[验证记录](postgresql/semantic_call_extraction_20260907/README.md)：15个函数体等价，本地115项、
+Linux138项、PG18.3严格编译及regression1项、TAP1808项通过。只调整模块职责，模型请求0。
+
 ## Two Filter AND and bounded gateway sessions (2026-09-07)
 
 [Implementation checks](postgresql/semfilter_and_20260907/README.md) cover two Filter nodes through one

@@ -6,7 +6,6 @@
 #include "nodes/parsenodes.h"
 #include "nodes/pathnodes.h"
 
-extern int semloom_validate_generate_map_source(Query *parse);
 extern bool semloom_generate_map_source_checked(int query_level);
 extern void semloom_add_sem_map_paths(PlannerInfo *root,
 									 UpperRelationKind stage,

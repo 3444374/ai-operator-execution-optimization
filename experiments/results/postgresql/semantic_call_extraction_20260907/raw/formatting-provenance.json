@@ -1,0 +1,20 @@
+{
+  "production_source": {
+    "path": "code/postgres/semloom_pg/src/planner/sem_map_call.c",
+    "tested_sha256": "bf946cda42277c8c3a0cd75a5150390f7f64a2dcff26a30cc83ba578d70520d5",
+    "final_sha256": "cf62467a63be5577fc9be4be07715240ce46b0e56ae8e54768ae8936329eb4cf",
+    "change": "Remove one empty line at EOF after tests; function bodies unchanged."
+  },
+  "public_logs": {
+    "r1-initdb.log": {
+      "export_sha256": "c7f3ec6f7ceec69389a60bb0dcba55c0d3c4fc2975d3d21cc32e8e10ee1a5fe6",
+      "public_sha256": "20c72692ae185f1d69316ed19aa7b6230171b249d962b884b82e24908e7fd0a7",
+      "change": "Trailing whitespace only; original export retained outside Git."
+    },
+    "r1-extension-build.log": {
+      "export_sha256": "c43e1cf7b369061622ba85ffb4c8e43289ad9159f4fb40ec2a3a8d91cd0b1be3",
+      "public_sha256": "f314be8ffb20227db6f7e27adf472ac018110002b3de9a223dc090ed26aee7c8",
+      "change": "Trailing whitespace only; original export retained outside Git."
+    }
+  }
+}

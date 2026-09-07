@@ -1,0 +1,245 @@
+EEEEE...........EEEEEEEEEEE........................................................................................
+======================================================================
+ERROR: test_canonical_gateway_serves_both_versions_without_rewriting_results (tests.postgres.test_semloom_choice_protocol.ChoiceFixedAdapterTests.test_canonical_gateway_serves_both_versions_without_rewriting_results)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_choice_protocol.py", line 242, in setUp
+    self.http = ThreadingHTTPServer(("127.0.0.1", 0), _ModelServer)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_choice_mapping_changes_only_the_explicit_constraint (tests.postgres.test_semloom_choice_protocol.ChoiceFixedAdapterTests.test_choice_mapping_changes_only_the_explicit_constraint)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_choice_protocol.py", line 242, in setUp
+    self.http = ThreadingHTTPServer(("127.0.0.1", 0), _ModelServer)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_gateway_refuses_undeclared_choice_without_model_request (tests.postgres.test_semloom_choice_protocol.ChoiceFixedAdapterTests.test_gateway_refuses_undeclared_choice_without_model_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_choice_protocol.py", line 242, in setUp
+    self.http = ThreadingHTTPServer(("127.0.0.1", 0), _ModelServer)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_service_rejection_is_terminal_without_unconstrained_retry (tests.postgres.test_semloom_choice_protocol.ChoiceFixedAdapterTests.test_service_rejection_is_terminal_without_unconstrained_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_choice_protocol.py", line 242, in setUp
+    self.http = ThreadingHTTPServer(("127.0.0.1", 0), _ModelServer)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_undeclared_choice_support_fails_before_http (tests.postgres.test_semloom_choice_protocol.ChoiceFixedAdapterTests.test_undeclared_choice_support_fails_before_http)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_choice_protocol.py", line 242, in setUp
+    self.http = ThreadingHTTPServer(("127.0.0.1", 0), _ModelServer)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_adapter_forwards_the_exact_v3_request_once (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_adapter_forwards_the_exact_v3_request_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_adapter_maps_remote_failures_to_redacted_wire_codes_without_retry (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_adapter_maps_remote_failures_to_redacted_wire_codes_without_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_adapter_rejects_redirect_without_contacting_target (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_adapter_rejects_redirect_without_contacting_target)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_adapter_timeout_is_a_total_deadline_for_slow_response (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_adapter_timeout_is_a_total_deadline_for_slow_response)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_canonical_gateway_routes_wire_v3_through_the_fixed_adapter (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_canonical_gateway_routes_wire_v3_through_the_fixed_adapter)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_config_loader_reads_auth_from_a_named_environment_variable (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_config_loader_reads_auth_from_a_named_environment_variable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_config_loader_rejects_unknown_fields_and_missing_auth (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_config_loader_rejects_unknown_fields_and_missing_auth)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_connection_refusal_releases_capacity_without_http_dispatch (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_connection_refusal_releases_capacity_without_http_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_map_session_uses_fixed_identity_and_verbatim_generation_request (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_map_session_uses_fixed_identity_and_verbatim_generation_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_oversized_unfinished_response_retains_request_capacity (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_oversized_unfinished_response_retains_request_capacity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+======================================================================
+ERROR: test_truncated_content_length_never_becomes_a_successful_completion (tests.postgres.test_semloom_fixed_model_adapter.FixedModelAdapterTests.test_truncated_content_length_never_becomes_a_successful_completion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/postgres/test_semloom_fixed_model_adapter.py", line 223, in setUp
+    self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), _CompletionHandler)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+----------------------------------------------------------------------
+Ran 115 tests in 2.068s
+
+FAILED (errors=16)

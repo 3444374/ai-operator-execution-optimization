@@ -30,6 +30,8 @@ INFRA_STATUS和证据台账。当前双Filter/多会话实现已合并main；数
 独立增量Core可分别推进，再完成对应PG桥接。Filter质量/成本资格独立，复杂SQL、方法优化与公司
 移植按实际需求验证。全部工程依赖统一见主设计§9；上述两份下级规格只拥有近期细节，不另定义总体方向。
 本次设计更新没有新增实现、模型运行或实验资格。
+后续A1首步已完成Map调用分析的行为保持提取，见[PG规格§8](postgresql_call_binding_design.md)
+及[验证记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；共同调用/绑定与新组合仍待实施。
 
 ## 2. 状态分层
 

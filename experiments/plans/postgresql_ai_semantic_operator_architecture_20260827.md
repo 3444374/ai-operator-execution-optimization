@@ -15,7 +15,9 @@
 有界的数据组织与多作业调度。新增能力应沿这三项职责扩展，不以某个AND用例或某个cost字段决定整个架构。
 近期实施与未定问题见[§9](#implementation-sequence)。A1/A2a的确定方案见
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
-[增量session详细设计](semloom_incremental_session_design.md)；两者均已写明方案，尚未实现或动态验证。
+[增量session详细设计](semloom_incremental_session_design.md)；共同绑定与增量session仍未实现。
+A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
+这不完成A1的共同调用/绑定，不替代A2a权限/投影原型。
 总体决策只由本文拥有，下级详细设计不重复总体架构；全部专项与恢复入口见§13。
 补充审查已收敛到这两份规格：交付提交点、唯一终态结算、可立即推进状态、分阶段等待和残余归属；
 PG新Map先验证权限与OFFSET/LIMIT投影。FIFO、bytes、单成员提交、预留时机与当前placement是

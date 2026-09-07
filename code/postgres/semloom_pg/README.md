@@ -118,7 +118,11 @@ seven TAP files (1758 checks). The integration was a fast-forward to `103e2715`;
 | `src/provider/` | Query-fixed adapter selection and recording/UDS implementations; only extension configuration and semantic contracts are imported, not planner definitions |
 | `src/provider/wire/` | Shared framing/JSON and versioned recording/semantic codecs; physical transport remains behind the provider interface |
 
-`sem_map_path.c` is the former `sem_path.c`; its function bodies are unchanged. `semloom_pg.h` has been
+`sem_map_path.c` is the former `sem_path.c`. Map occurrence and source validation now live in
+`planner/sem_map_call.{c,h}`; extension registration and Map path construction consume that interface.
+The extraction preserves all 15 affected function bodies, apart from the collector name, and passes
+[local and PG18.3 checks](../../../experiments/results/postgresql/semantic_call_extraction_20260907/README.md).
+Shared call records and independent result binding remain pending. `semloom_pg.h` has been
 replaced by the four actual interfaces listed above, and all callers include the relevant header directly.
 Marker identity functions retain their original bodies in `planner/marker_identity.c`. The recording schema
 constant now lives with its semantic contract, so the provider no longer imports the planner for that value.

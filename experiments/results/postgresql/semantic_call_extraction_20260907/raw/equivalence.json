@@ -1,0 +1,20 @@
+{
+  "baseline": "b4b93b2e",
+  "function_bodies": {
+    "semloom_validate_generate_map_source": true,
+    "semloom_map_placement_walker": true,
+    "semloom_validate_map_placement": true,
+    "semloom_map_nonconstant_source": true,
+    "semloom_map_constant_walker": true,
+    "semloom_map_marker_oid": true,
+    "semloom_supported_marker": true,
+    "semloom_validate_query_shape": true,
+    "semloom_add_sem_map_paths": true,
+    "semloom_make_path": true,
+    "semloom_plan_path": true,
+    "semloom_replace_marker": true,
+    "semloom_replace_marker_in_plan": true,
+    "semloom_map_option": true,
+    "semloom_generate_map_private": true
+  }
+}

@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+[Map调用分析提取](postgresql/semantic_call_extraction_20260907/README.md)以`b4b93b2e`为行为基线，
+源码由618项哈希固定；15个相关函数体等价，本地115/115、Linux138/138、PG18.3严格编译、
+regression1/1、8个TAP1808/1808通过。首次本地端口权限失败原样保留并说明重跑环境差异。
+模型请求0，隔离服务已停；这是A1准备步骤，未完成共同调用/绑定、Filter→Map或增量Core。
+
 [两个Filter AND与有界gateway会话](postgresql/semfilter_and_20260907/README.md)在`codex/semfilter-and`
 完成同步组合：Linux138/138、PG18.3严格构建、regression1/1、8个TAP1808/1808，584项源码哈希
 一致。覆盖独立输入/身份/计数、VOLATILE两次求值、权限/RLS/快照/INSERT取消恢复和40会话FD/线程

@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-07 A1首步已在`codex/semantic-call-binding`完成[Map调用分析提取验证](../experiments/results/postgresql/semantic_call_extraction_20260907/README.md)：
+来源/常量/可见调用检查进入`planner/sem_map_call`，路径构造继续使用原有逻辑。15个函数体等价，
+本地115/115、Linux138/138、PG18.3严格编译、regression1/1及TAP1808/1808通过，618源码哈希匹配。
+模型请求0，测试服务已停；此步骤尚未合入main，共同SemanticCall、V1 binding和Filter→Map仍未实现。
+
 近期待实现模块已有[PG调用/绑定规格](../experiments/plans/postgresql_call_binding_design.md)与
 [单流增量session规格](../experiments/plans/semloom_incremental_session_design.md)。前者先保持旧行为，
 再接一个Filter→一个生成Map并分开输入/结果位置；后者选定非阻塞单步、接受前缀、完成lease与

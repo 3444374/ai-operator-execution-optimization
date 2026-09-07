@@ -7,6 +7,7 @@
 
 #include "extension_config.h"
 #include "planner/paths.h"
+#include "planner/sem_map_call.h"
 #include "executor/sem_scan.h"
 
 PG_MODULE_MAGIC;
