@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import socket
@@ -420,7 +421,10 @@ class FixedModelAdapterTests(unittest.TestCase):
                         timeout_ms=timeout_ms,
                     )
                 )
-                with self.assertRaises(CompletionAdapterError) as raised:
+                with mock.patch.object(
+                    http.client.HTTPConnection, "request", autospec=True,
+                    side_effect=http.client.HTTPConnection.request,
+                ) as requests, self.assertRaises(CompletionAdapterError) as raised:
                     adapter.complete(
                         CompletionRequest(
                             semantic_payload_digest="a" * 64,
@@ -433,7 +437,13 @@ class FixedModelAdapterTests(unittest.TestCase):
                         )
                     )
                 self.assertEqual(raised.exception.code, expected_code)
-                self.assertEqual(_CompletionHandler.request_count, 1)
+                if expected_code == "MODEL_TIMEOUT":
+                    # The total deadline may expire before DNS/connect reaches HTTP.
+                    self.assertLessEqual(requests.call_count, 1)
+                    self.assertLessEqual(_CompletionHandler.request_count, requests.call_count)
+                else:
+                    self.assertEqual(requests.call_count, 1)
+                    self.assertEqual(_CompletionHandler.request_count, 1)
                 self.assertNotIn(endpoint_url, str(raised.exception))
 
     @staticmethod
