@@ -8,7 +8,7 @@ provider 不再依赖 planner 头文件。迁移函数体、SQL、协议和错�
 错误计数假设。用户随后授权服务器补验：`20b22a55`通过Linux112+4项、PG18.3严格构建、
 regression1/1和全部TAP1758/1758，107项源码哈希匹配，安装件与构建件相同。准备过程的下载超时、
 临时驱动PATH与SQL_ASCII环境失败分别保留，最终独立UTF8运行完整通过；未修改源码或断言。
-本轮自有活跃进程0、socket关闭、真实模型请求0；已合并本地main，尚未推送。下文旧模型结果保持原身份。
+本轮自有活跃进程0、socket关闭、真实模型请求0；已合并main。下文旧模型结果保持原身份。
 
 最新[两算子合并验证](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 在`5771cef1`通过Linux247/247、PG18.3严格构建、regression1/1和全部TAP1758/1758。
