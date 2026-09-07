@@ -12,7 +12,7 @@ bounded multi-session gateway. It reuses the existing scans, row pump and synchr
 [Verification](../../../experiments/results/postgresql/semfilter_and_20260907/README.md) passes Linux 138
 contracts, strict PG18.3 compilation, regression 1/1 and all eight TAP files (1808 checks). It includes
 independent volatile-input evaluation, native function permissions, RLS, snapshots and cancellation.
-This branch has not been merged into main; Filter→Map and per-session asynchronous work remain pending.
+This implementation is now included in main; Filter→Map and per-session asynchronous work remain pending.
 
 The [2026-09-06 integration checks](../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (1758 checks), and 247 related

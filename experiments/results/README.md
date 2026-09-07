@@ -11,7 +11,7 @@
 [Implementation checks](postgresql/semfilter_and_20260907/README.md) cover two Filter nodes through one
 gateway, independent input evaluation, native permissions and lifecycle. Linux138/138 and PG18.3
 regression1/1 plus TAP1808/1808 pass; seven PG attempts are retained. No real model was used.
-The branch remains separate from main; Filter→Map and per-session asynchronous work remain pending.
+The implementation is now included in main; Filter→Map and per-session asynchronous work remain pending.
 
 ## PostgreSQL 扩展目录整理（2026-09-07）
 

@@ -3,7 +3,7 @@
 [两个Filter AND与有界gateway会话](postgresql/semfilter_and_20260907/README.md)在`codex/semfilter-and`
 完成同步组合：Linux138/138、PG18.3严格构建、regression1/1、8个TAP1808/1808，584项源码哈希
 一致。覆盖独立输入/身份/计数、VOLATILE两次求值、权限/RLS/快照/INSERT取消恢复和40会话FD/线程
-回收；保留7轮PG失败/成功记录。测试服务已停，模型请求0；未合并main，未证明Filter→Map、
+回收；保留7轮PG失败/成功记录。测试服务已停，模型请求0；现已合并main，未证明Filter→Map、
 单节点异步、正式资源、质量或性能。
 
 [扩展目录重构验证](postgresql/pg_module_layout_20260907/README.md)记录基于 `41e103f2` 的
