@@ -9,7 +9,7 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-09-06）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+当前状态（2026-09-07）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
 错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
@@ -30,11 +30,16 @@ main已按 planner、semantics、executor 和 provider 整理现有实现；本�
 model role 和 AI-work cost，并在执行时分列实际 usage；该工程启发式还没有校准为性能模型。
 最新[两算子完整验证](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 覆盖全部 PostgreSQL18.3 回归与 TAP；Filter v3/v4 和生成型 Map v5 的真实 SELECT/INSERT、
-NULL 零调用、结果与写回均通过。两个算子目前各自同步执行，同查询组合与异步执行仍待实现。
-接下来分别推进自有 PG 算子、SemLoom 核心和公司接口对照。
+NULL 零调用、结果与写回均通过。main中的两个算子各自同步执行；已推送的`codex/semfilter-and@66887463`增加两个Filter AND与
+有界gateway会话，尚未合并main，异步PG接入仍待实现。
+[总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
+PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
+[实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+分别推进数据库调用/绑定、增量Core及共同资源/观测，再验证实际桥接。
 [可选 choice 生成配置](experiments/plans/completed/postgresql_choice_profile_engineering.md)的工程验证已完成；
-在完整工程对照后先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共实现整理，
-再扩展[可组合执行与有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；
+已有[生成型Map](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与
+[受限组合](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)
+作为后续接口演进的同步参照；
 生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
 消息编译、C/Python 值表示、PG plan/权限和 C client→wire v5→gateway 接线已纳入 main，
 三参 Map 已能通过 PostgreSQL＋golden 返回文本，详见[执行与复核记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)。

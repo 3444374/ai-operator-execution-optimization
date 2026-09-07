@@ -68,9 +68,10 @@ profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 
 fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice 检查](experiments/results/postgresql/choice_service_20260902/README.md)
 完成 14 次 old/choice 请求与两个 NULL 对照，累计 15/100 含首轮工具失败；当前集成版本已包含实现和归档。
 这些只验证接入与本规模资源使用，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
-按最新安排，在完整工程对照和四 C 收尾后，PG 先做[真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与必要公共整理，
-两个Filter AND与有界多会话已在独立分支通过[工程验证](experiments/results/postgresql/semfilter_and_20260907/README.md)，
-尚未合并main；之后扩展[Filter → Map及单节点多在途](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)。
+[总体设计与实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+现按长期能力组织：PG拥有SQL和关系执行，算子方法产生具体任务，SemLoom承担有界组织与多作业调度。
+数据库公共调用/绑定、独立增量Core和共同资源/观测可以协同推进；两个Filter AND与有界多会话已有
+[工程验证](experiments/results/postgresql/semfilter_and_20260907/README.md)，分支已推送、尚未合并main。
 [函数身份检查](experiments/results/postgresql/function_identity_20260902/README.md)已复现并最小修复
 非成员误接管，实现与证据已合入 main；仅成员关系变更仍须按工程计划刷新所有相关物理连接，不支持自动在线变更。
 生成型 Map 的消息编译、C/Python 纯值、Python v5 与深层 JSON 修复已合入本地 main，
@@ -509,7 +510,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 工作对象 | 近期工作 | 与其他工作的依赖 |
 |---|---|---|
-| 自有 PG 算子 | [四 C 工程验证已完成](experiments/plans/completed/postgresql_choice_profile_engineering.md)，接下来 [四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package) → [可组合执行 / 有界多会话](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package) | Map 驱动必要公共整理，不以多算子为其前置；每调用独立计划/状态，不等待 Filter 分类质量通过 |
+| 自有 PG 算子 | [主设计的数据库调用/绑定与方法工作](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)，已有同步Map/Filter及双Filter作为参照 | 与独立增量Core协同；各路径分别验证语义、身份、结果和生命周期，不等待无关Filter质量 |
 | SemLoom 核心 | 现有行为表征、公开任务驱动增量 session、work organization、有界提交、多 Job 与路由 | 可以先用 fixture/外部 workload；不是已接入数据库的证据 |
 | Filter 语义优化 | 确定质量任务与标签，取得 reference、matched cost，再实现 proxy/oracle 第二路径与 fallback | 仍是 Filter 计划比较的重要完成项，不再阻塞独立核心或生成型 Map |
 | carrier 审查 | 随真实路径核对注册身份、函数属性、PG 能力复用、placement、绑定/重扫及生命周期，包含多算子组合 | 只在目标路径出现已复现阻断时增加最小 core patch |

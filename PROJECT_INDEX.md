@@ -14,8 +14,8 @@
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
-| PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 回答 semantic plan/provider interface 如何实现、工作包顺序和验收条件；不承担第二份文献综述或实现证据 |
-| 生成型 Map 实现规格 | [`experiments/plans/postgresql_semmap_generation_contract.md`](experiments/plans/postgresql_semmap_generation_contract.md) | SQL、消息/文本行为与验收；分支已验证消息/纯值/Python v5，PG 接线和完整执行待完成 |
+| PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |
+| 生成型 Map 实现规格 | [`experiments/plans/postgresql_semmap_generation_contract.md`](experiments/plans/postgresql_semmap_generation_contract.md) | SQL、消息/文本行为与专项验收；同步PG/真实模型接线已有证据，正式资源资格仍待完成 |
 | choice 已完成实施记录 | [`experiments/plans/completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) | 保留四 C 的字段、版本、预算与验收条件；结果从证据台账查阅，后续顺序由主架构维护 |
 | 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
@@ -48,14 +48,12 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
 4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-按任务选择主计划中的工作包：PG 新研发读[四 D 真实生成型 SemMap](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)，
-再读[生成型 Map 专项规格](experiments/plans/postgresql_semmap_generation_contract.md)中的源码复核清单和小步实施要求；
-choice 已有行为回查[四 C 完成记录](experiments/plans/completed/postgresql_choice_profile_engineering.md)；
-增量核心读工作包七，Filter 质量/成本/第二路径读工作包五。新增算子、请求/结果处理前按
-[具体工程参考表](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)
-按完整链路逐维判断采用、保留或延期，后续切片重查受影响项；未来自有成果向公司移植读同一 §8.7
-的职责与两个移植接点。多算子、gateway 只是完整工程对照中的部分问题。
-独立核心研发不等待 Filter 资格；实际 PG 接入和端到端比较仍按对应路径验证。
+先读主计划的能力与职责，再按[实施与验收](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+选择数据库调用/绑定、增量Core或共同支撑任务。既有choice、生成型Map及已完成AND的专项和证据入口
+仍保留；不能把历史阶段重新列为当前待实现任务。新增算子/方法/接入前按
+[工程参考表](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)
+与pgml参考重查受影响项，公司移植仍有独立授权和验证要求。
+
 旧串行顺序与完整历史条件见[设计快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 当前源码与实验状态不从该快照推断。
 

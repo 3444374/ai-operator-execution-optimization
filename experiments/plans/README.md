@@ -1,6 +1,6 @@
 # 实验计划与设计文档
 
-更新日期：2026-09-03
+更新日期：2026-09-07
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -9,8 +9,8 @@
 
 | 问题 | 入口 |
 |---|---|
-| 当前先做什么、哪些仍有缺口 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
-| 当前系统架构与实现顺序 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 当前实验完成度、证据缺口与运行条件 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
+| 当前系统架构与实现顺序 | [主设计](postgresql_ai_semantic_operator_architecture_20260827.md)：长期能力、PG/方法/Core职责、调用与任务关系、资源所有权；[实施与验收](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence) |
 | 生成型 Map 的具体行为、数据表示与验收 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md)：消息、纯值、PG plan/权限与 C/Python v5/golden 已纳入 main；真实模型与资源检查按 §8 继续 |
 | 回查 choice 已完成的字段、协议、请求预算与实施验收要求 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
 | 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
@@ -23,14 +23,10 @@
 | work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
 | 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 
-主架构只维护分工、依赖与完成条件，详细的 choice 与生成型 Map 行为和验收由各自专项维护；源码与实验事实分别看
-INFRA_STATUS 和证据台账。四 C 已收尾，后续按完整工程对照的决定先做四 D 真实生成型 SemMap，
-再做[可组合执行 / 有界多会话](postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)；SemLoom 可独立开展
-增量核心表征与 fixture 测试，公司接口可只读核对。四 C 的 PG choice SELECT 已接通 C 与 gateway v4，
-Filter INSERT 的既有接管问题已独立修复并验证；受控 fixture 资源与受限真实 choice 服务检查均已通过，
-四 C 工程验证完成，专项已归入 completed。多会话/组合、独立核心与公司接口仍待实施，当前集成版本已包含实现与证据。
-完整工程参考按 §8.7 覆盖两个链路表；后续切片只重查受影响项，未来移植同时覆盖算子方法和执行能力。
-Filter 的 reference 质量、matched cost 与第二路径继续保留，但不阻塞独立核心研发。校准失败结论不变。
+主设计已按项目长期能力重写，choice与生成型Map具体语义仍由专项维护，实际代码/实验状态只看
+INFRA_STATUS和证据台账。当前双Filter/多会话分支已推送、未合并main；数据库公共调用/绑定与
+独立增量Core可分别推进，再完成对应PG桥接。Filter质量/成本资格独立，复杂SQL、方法优化与公司
+移植按实际需求验证。全部工程依赖统一见主设计§9；本次设计更新没有新增实现、模型运行或实验资格。
 
 ## 2. 状态分层
 
