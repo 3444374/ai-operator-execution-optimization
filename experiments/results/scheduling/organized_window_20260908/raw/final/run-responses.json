@@ -1,0 +1,326 @@
+{
+  "0:0": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write one short sentence about a red apple."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-abcc0d7c69cfbe0d",
+      "object": "chat.completion",
+      "created": 1788835936,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The red apple gleams in the sunlight.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 38,
+        "total_tokens": 48,
+        "completion_tokens": 10,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    },
+    "capability": "draft-chat",
+    "member": {
+      "batch_key": {
+        "session_id": 0,
+        "sequence": 0
+      },
+      "index": 0,
+      "size": 2
+    },
+    "info": {
+      "call_id": "synthetic-map",
+      "row_sequence": 0,
+      "stage_id": "draft",
+      "work": {
+        "stages": [
+          {
+            "stage": "model",
+            "units": 1,
+            "unit": "work_units"
+          }
+        ],
+        "primary_stage": "model",
+        "calibration_signature": "diagnostic-one-request",
+        "locality_key": "shared-prefix",
+        "deadline_s": null,
+        "lower_primary_units": null,
+        "upper_primary_units": null
+      }
+    }
+  },
+  "0:1": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write one short sentence about a blue sky."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-90cade235391b887",
+      "object": "chat.completion",
+      "created": 1788835936,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The blue sky stretches endlessly, painted with fluffy white clouds.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 38,
+        "total_tokens": 51,
+        "completion_tokens": 13,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    },
+    "capability": "draft-chat",
+    "member": {
+      "batch_key": {
+        "session_id": 0,
+        "sequence": 0
+      },
+      "index": 1,
+      "size": 2
+    },
+    "info": {
+      "call_id": "synthetic-map",
+      "row_sequence": 1,
+      "stage_id": "draft",
+      "work": {
+        "stages": [
+          {
+            "stage": "model",
+            "units": 1,
+            "unit": "work_units"
+          }
+        ],
+        "primary_stage": "model",
+        "calibration_signature": "diagnostic-one-request",
+        "locality_key": "shared-prefix",
+        "deadline_s": null,
+        "lower_primary_units": null,
+        "upper_primary_units": null
+      }
+    }
+  },
+  "0:2": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Rewrite the following as one brief sentence: The red apple gleams in the sunlight."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-9cd7ea43c8e97e39",
+      "object": "chat.completion",
+      "created": 1788835936,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The red apple shines in the sunlight.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 47,
+        "total_tokens": 56,
+        "completion_tokens": 9,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    },
+    "capability": "revise-chat",
+    "member": {
+      "batch_key": {
+        "session_id": 0,
+        "sequence": 1
+      },
+      "index": 0,
+      "size": 2
+    },
+    "info": {
+      "call_id": "synthetic-map",
+      "row_sequence": 0,
+      "stage_id": "revise",
+      "work": {
+        "stages": [
+          {
+            "stage": "model",
+            "units": 1,
+            "unit": "work_units"
+          }
+        ],
+        "primary_stage": "model",
+        "calibration_signature": "diagnostic-one-request",
+        "locality_key": "shared-prefix",
+        "deadline_s": null,
+        "lower_primary_units": null,
+        "upper_primary_units": null
+      }
+    }
+  },
+  "0:3": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Rewrite the following as one brief sentence: The blue sky stretches endlessly, painted with fluffy white clouds."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-a22b6fda5d778c5d",
+      "object": "chat.completion",
+      "created": 1788835936,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The blue sky stretches endlessly, adorned with fluffy white clouds.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 50,
+        "total_tokens": 63,
+        "completion_tokens": 13,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    },
+    "capability": "revise-chat",
+    "member": {
+      "batch_key": {
+        "session_id": 0,
+        "sequence": 1
+      },
+      "index": 1,
+      "size": 2
+    },
+    "info": {
+      "call_id": "synthetic-map",
+      "row_sequence": 1,
+      "stage_id": "revise",
+      "work": {
+        "stages": [
+          {
+            "stage": "model",
+            "units": 1,
+            "unit": "work_units"
+          }
+        ],
+        "primary_stage": "model",
+        "calibration_signature": "diagnostic-one-request",
+        "locality_key": "shared-prefix",
+        "deadline_s": null,
+        "lower_primary_units": null,
+        "upper_primary_units": null
+      }
+    }
+  }
+}

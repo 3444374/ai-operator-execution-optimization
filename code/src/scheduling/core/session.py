@@ -17,6 +17,8 @@ from .session_contract import (
     Acceptance,
     AdvanceResult,
     BackendTask,
+    BatchKey,
+    BatchMember,
     CleanupReport,
     CloseReport,
     Delivery,
@@ -32,6 +34,7 @@ from .session_contract import (
     Terminal,
 )
 from .session_policy import IncrementalCreditPolicy, SessionPolicies
+from .task_info import validate_task_info
 
 UINT64_MAX = (1 << 64) - 1
 TERMINAL_STATES = (State.CANCELLED, State.FAILED, State.FINISHED)
@@ -245,6 +248,8 @@ class SchedulingSession:
         self.error: str | None = None
         self._next_sequence = 0
         self._next_lease = 0
+        self._next_batch = 0
+        self._pending_members: tuple[TaskKey, ...] = ()
         self._cancel = threading.Event()
         self._closed: CloseReport | None = None
         self._retry_at = 0.0
@@ -279,7 +284,8 @@ class SchedulingSession:
             ):
                 return False
             try:
-                self.spec.resolve(task.profile_name)
+                spec = self.spec.resolve(task.profile_name)
+                validate_task_info(task, spec, self.limits.metadata_bytes)
             except ValueError:
                 return False
             if type(task.payload) is not bytes or type(task.metadata) is not bytes:
@@ -358,6 +364,7 @@ class SchedulingSession:
             self.request_cancel()
 
     def _cleanup(self, budget: int) -> int:
+        self._pending_members = ()
         used = 0
         for record in self._records():
             if used >= budget:
@@ -425,7 +432,7 @@ class SchedulingSession:
         record.since = now
         try:
             outcome = engine.backend.try_submit(
-                BackendTask(record.key, record.spec, record.task), endpoint
+                BackendTask(record.key, record.spec, record.task, record.member), endpoint
             )
         except Exception:
             outcome = Submission(Acceptance.UNKNOWN)
@@ -458,6 +465,25 @@ class SchedulingSession:
         engine._emit("submitted", record.key)
         return True
 
+    def _next_record(self, queued: tuple[TaskRecord, ...]) -> TaskRecord | None:
+        if self.engine.policies.organize is None:
+            return self.engine.policies.select_task(queued)
+        if not self._pending_members:
+            group = self.engine.policies.select_batch(queued)
+            if not group:
+                return None
+            if self._next_batch > UINT64_MAX:
+                raise OverflowError("batch identity exhausted")
+            batch = BatchKey(self.session_id, self._next_batch)
+            members = tuple(BatchMember(batch, i, len(group)) for i in range(len(group)))
+            keys = tuple(r.key for r in group)
+            # Save only keys: payloads and reservations remain in the single task table.
+            for record, member in zip(group, members):
+                record.member = member
+            self._pending_members = keys
+            self._next_batch += 1
+        return self.engine.capacity.records[self._pending_members[0]]
+
     def advance(self, max_deliveries: int) -> AdvanceResult:
         with self.engine._operation():
             self._check_open_handle()
@@ -474,6 +500,7 @@ class SchedulingSession:
                 # share the step budget. Empty polls never consume local progress.
                 budget -= self.engine._poll(budget)
                 if self.state in (State.CANCELLED, State.FAILED):
+                    self._pending_members = ()
                     self._cleanup(budget)
                 elif now >= self._retry_at:
                     while budget and self.state not in TERMINAL_STATES:
@@ -481,10 +508,12 @@ class SchedulingSession:
                         if not queued:
                             break
                         budget -= 1
-                        record = self.engine.policies.select_task(queued)
+                        record = self._next_record(queued)
                         if record is None or not self._dispatch(record, now):
                             self._retry_at = now + self.limits.poll_interval_s
                             break
+                        # Only accepted physical submissions advance the batch cursor.
+                        self._pending_members = self._pending_members[1:]
                 return self._deliver(max_deliveries, now, budget)
             except Exception:
                 self._fail("session advancement failed")
@@ -503,7 +532,12 @@ class SchedulingSession:
         selected = ready[: min(maximum, max(0, budget))]
         deliveries = tuple(
             Delivery(
-                r.key, r.result, r.result_metadata, LeaseId(self.session_id, self._next_lease + i)
+                r.key,
+                r.result,
+                r.result_metadata,
+                LeaseId(self.session_id, self._next_lease + i),
+                info=r.task.info,
+                member=r.member,
             )
             for i, r in enumerate(selected)
         )
@@ -517,7 +551,8 @@ class SchedulingSession:
             or (
                 queued
                 and now >= self._retry_at
-                and self.engine.capacity.can_dispatch(queued[0], self.limits)
+                # A reordered member can fit even when the input-order head cannot.
+                and any(self.engine.capacity.can_dispatch(r, self.limits) for r in queued)
             )
         )
         if self.state == State.DRAINING and not records:

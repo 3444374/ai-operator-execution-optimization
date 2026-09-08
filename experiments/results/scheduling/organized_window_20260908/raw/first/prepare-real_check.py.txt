@@ -1,0 +1,137 @@
+"""Four actual model requests through SessionEngine and the bounded async transport."""
+import argparse,asyncio,hashlib,json,os,sys,time,subprocess
+from pathlib import Path
+from dataclasses import asdict,replace
+import httpx
+from transformers import AutoTokenizer
+from src.scheduling.core.session import SessionEngine
+from src.scheduling.core.session_contract import SessionLimits,SessionSpec,OfferedTask,State,TaskProfile,TaskKey,TaskInfo
+from src.planning.work import WorkDescriptor,StageWork
+from src.scheduling.organization.session_window import WorkWindowOrganizer
+from src.semantic_methods.continuation import MethodRun,MethodLimits,Continue,Final,Request
+from src.scheduling.core.session_policy import SessionPolicies
+from src.scheduling.core.models import EndpointSnapshot,TopologySnapshot
+from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
+from src.scheduling.submission_control.admission import StaticAdmissionController
+from src.scheduling.runtime.async_backend import BoundedAsyncBackend
+from src.serving.backends.completion import build_completion_request_body
+from src.experiments.attempt_ledger import AttemptLedger,AttemptBudget
+from src.baselines.common.redact import redact_text
+
+def save(path,value):path.write_text(redact_text(json.dumps(value,indent=2,ensure_ascii=False))+'\n')
+def run(settings):
+ root=Path(settings['root']);root.mkdir();repo=Path(settings['source'])
+ assert subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()==settings['source_commit'],'source_identity'
+ for name,digest in settings['source_delta'].items():assert hashlib.sha256((repo/name).read_bytes()).hexdigest()==digest,'source_delta_identity'
+ config=json.loads(Path(settings['config']).read_text());ledger=AttemptLedger(Path(settings['ledger']),AttemptBudget(settings['budget_id'],4));assert ledger.attempts==0,'budget_not_fresh'
+ tokenizer=AutoTokenizer.from_pretrained(settings['model_root'],local_files_only=True)
+ client=None;active=0;peak=0;responses={};trace=[]
+ async def execute(request,endpoint):
+  nonlocal client,active,peak
+  assert endpoint=='model','endpoint_identity'
+  assert request.spec.capability in ('draft-chat','revise-chat'),'stage_capability'
+  assert request.spec.operator=='ai_complete','stage_operator'
+  if client is None:client=httpx.AsyncClient(timeout=30,trust_env=False,headers={'Content-Type':'application/json','Accept-Encoding':'identity'},limits=httpx.Limits(max_connections=2,max_keepalive_connections=2))
+  ledger.reserve(hashlib.sha256(request.task.payload).hexdigest())
+  active+=1;peak=max(peak,active)
+  try:
+   async with client.stream('POST',config['endpoint_url'],content=request.task.payload) as response:
+    response.raise_for_status();buffer=bytearray()
+    async for chunk in response.aiter_raw(chunk_size=4096):
+     if len(buffer)+len(chunk)>request.task.max_result_bytes:raise RuntimeError('bounded_response_exceeded')
+     buffer.extend(chunk)
+   result=bytes(buffer);value=json.loads(result);body=json.loads(request.task.payload)
+   assert value['model']==config['model_id'],'response_model'
+   usage=value['usage'];assert 0<usage['completion_tokens']<=body['max_tokens'],'completion_usage'
+   assert usage['prompt_tokens']==len(tokenizer.apply_chat_template(body['messages'],tokenize=True,add_generation_prompt=True,return_dict=False)),'prompt_usage'
+   responses[f'{request.key.session_id}:{request.key.sequence}']={'body':body,'response':value,'capability':request.spec.capability,'member':asdict(request.member),'info':asdict(request.task.info)}
+   return result
+  finally:active-=1
+ async def finalize():
+  if client is not None:await client.aclose()
+ backend=BoundedAsyncBackend(execute,max_tasks=2,notify=lambda: engine.wake.notify(),finalize=finalize)
+ bound=SessionLimits(2,16384,131072,2,2,2,8192,65536,1024,16,120,.01)
+ topology=TopologySnapshot((EndpointSnapshot('model',config['endpoint_url'],'default','0',True,0,0,0.,1.),),time.monotonic())
+ engine=SessionEngine(bound,backend,SessionPolicies(StaticAdmissionController(2),RoundRobinEndpointRouter(),topology,'default',organize=WorkWindowOrganizer(2,2)))
+ def task(seq,prompt,tokens=64):
+  body=build_completion_request_body(config['model_id'],[prompt],tokens,'chat_completions',temperature=0);body['stream']=False
+  return OfferedTask(seq,json.dumps(body,separators=(',',':')).encode(),1,65536)
+ def advance(session):
+  result=session.advance(2)
+  assert result.state!=State.FAILED, result.error
+  trace.append({'session':session.session_id,'state':result.state.value,'delivered':[d.key.sequence for d in result.deliveries],'usage':asdict(engine.capacity.usage())})
+  return result
+ def collect(session,count):
+  output=[];deadline=time.monotonic()+120
+  while len(output)<count:
+   result=advance(session);output.extend(result.deliveries)
+   assert time.monotonic()<deadline,'completion_deadline'
+   if len(output)<count and not result.has_immediate_work:engine.wake.wait(result.generation,.02)
+  return output
+ summary={'status':'incomplete','source_commit':settings['source_commit'],'source_delta':settings['source_delta'],'request_limit':4,'model_requests':0,'pg_bridge_evaluated':False,'quality_evaluated':False,'performance_evaluated':False}
+ sessions=[]
+ try:
+  class DraftRevise:
+   def start(self,value):
+    return Continue(Request('draft',task(0,value.decode()).payload,1,65536))
+   def resume(self,state,result):
+    content=json.loads(result)['choices'][0]['message']['content']
+    assert isinstance(content,str) and content.strip(),'stage_content'
+    if not state:
+     prompt='Rewrite the following as one brief sentence: '+content
+     return Continue(Request('revise',task(0,prompt).payload,1,65536),b'final')
+    return Final(content.encode())
+  session=engine.open(SessionSpec('method','flow','unused',task_profiles=(
+    TaskProfile('draft','draft-chat'),TaskProfile('revise','revise-chat'))));sessions.append(session)
+  rows=[MethodRun(DraftRevise(),p,MethodLimits(8192,64,65536,2)) for p in (
+    b'Write one short sentence about a red apple.',b'Write one short sentence about a blue sky.')]
+  sequence=0;delivered=[];blocked=0;groups=[]
+  for stage in ('draft','revise'):
+   offered=[]
+   for row_id,method in enumerate(rows):
+    info=TaskInfo('synthetic-map',row_id,stage,WorkDescriptor(
+      (StageWork('model',1,'work_units'),),'model','diagnostic-one-request','shared-prefix'))
+    offered.append(replace(method.pending.offered(sequence),info=info));sequence+=1
+   assert session.offer(offered).accepted_prefix_count==2,'stage_admission'
+   for method,request in zip(rows,offered):method.accepted(TaskKey(session.session_id,request.sequence))
+   result=advance(session);assert not result.deliveries,'submission_is_nonblocking'
+   assert engine.capacity.usage().active_requests==2,'batch_expands_to_two_requests'
+   deliveries=collect(session,2)
+   assert len({d.member.batch_key for d in deliveries})==1,'same_organization_batch'
+   assert {d.member.index for d in deliveries}=={0,1},'member_indices'
+   groups.append(asdict(deliveries[0].member.batch_key))
+   try:
+    for delivery in deliveries:
+     key=delivery.key
+     assert delivery.status=='completed','stage_delivery'
+     assert json.loads(delivery.result)==responses[f'{key.session_id}:{key.sequence}']['response'],'response_identity'
+     delivered.append({'row_id':delivery.info.row_sequence,'key':asdict(key),'member':asdict(delivery.member)})
+     rows[delivery.info.row_sequence].complete(key,delivery.result)
+    assert session.state==State.OPEN,'source_eof_is_not_seal'
+    if rows[0].pending:
+     info=replace(offered[0].info,stage_id='revise')
+     candidate=replace(rows[0].pending.offered(sequence),info=info)
+     assert session.offer([candidate]).accepted_prefix_count==0,'stage_result_backpressure'
+     blocked+=1
+   finally:session.release([d.lease_id for d in deliveries])
+   assert engine.capacity.usage().held_tasks==0,'stage_release'
+  finals=[{'row_id':i,'value':method.final.value.decode()} for i,method in enumerate(rows)]
+  session.seal();assert advance(session).state==State.FINISHED,'method_flow_finished'
+  assert session.close().status=='CLOSED','method_flow_closed'
+  assert ledger.attempts==4 and len(responses)==4 and peak==2 and blocked==1,'actual_request_matrix'
+  assert groups[0]!=groups[1],'distinct_stage_batches'
+  summary.update(status='passed',peak_http_requests=peak,terminal_responses=len(responses),
+    final_usage=asdict(engine.capacity.usage()),delivered_keys=delivered,rows=finals,
+    organization_batches=groups,physical_requests=4,
+    stage_release_backpressure_checks=blocked,source_eof_before_final=True)
+
+ finally:
+  for s in sessions:
+   if s._closed is None:
+    s.cancel();s.close()
+  summary['model_requests']=ledger.attempts
+  summary['transport_closed']=backend.close()
+  if not summary['transport_closed']:summary['status']='incomplete'
+  save(root/'trace.json',trace);save(root/'responses.json',responses);save(root/'summary.json',summary)
+if __name__=='__main__':
+ parser=argparse.ArgumentParser();parser.add_argument('--settings',type=Path,required=True);args=parser.parse_args();run(json.loads(args.settings.read_text()))

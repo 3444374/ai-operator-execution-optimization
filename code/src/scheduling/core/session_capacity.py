@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .session_contract import OfferedTask, SessionLimits, SessionSpec, TaskKey, Usage
+from .session_contract import BatchMember, OfferedTask, SessionLimits, SessionSpec, TaskKey, Usage
 
 
 @dataclass
@@ -23,6 +23,7 @@ class TaskRecord:
     result_metadata: bytes = b""
     lease: int | None = None
     ready_order: int = 0
+    member: BatchMember | None = None
 
 
 class SessionCapacity:

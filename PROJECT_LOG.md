@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-09-08 有界组织窗口接入
+
+- TaskInfo复用WorkDescriptor，保留调用/行/阶段、单位/校准与局部性；BatchKey/BatchMember独立表达组织成员。
+- WorkWindowOrganizer复用既有完整任务work切片；只消费已接受窗口，session保存待提交key，不增加payload缓存或账本。
+- 本轮明确展开为多个单成员物理请求，各自计费回收；短注释说明身份、接纳、重排与所有权，PG接口尚未迁移。
+- 修复has_immediate_work只看输入头部、遗漏可提交重排任务的问题；保留复现失败和修复补丁。
+- [验证](experiments/results/scheduling/organized_window_20260908/README.md)：最终本地54、Linux335项，624源码一致；两轮各4次真实请求通过、实际并发2，资源归零、模型退出。
+- 旧同步runner仍有消费者；后续单请求多成员协议、总缓冲预算、多session及PG接入分别推进，不宣称完成这些能力。
+
 ## 2026-09-08 方法续体与任务能力接入
 
 - 新增semantic_methods的有界逐行start/resume续体，session预声明可使用的任务profile；默认调用保持兼容。

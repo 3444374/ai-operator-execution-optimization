@@ -9,7 +9,7 @@ from .errors import EndpointCapacityUnavailable
 from .models import BatchRequest, TopologySnapshot
 from .scheduler import AdmissionPolicy, EndpointRouter, PoolRouter, SharedCreditPolicy
 from .session_capacity import TaskRecord
-from .session_contract import OfferedTask, TaskKey
+from .session_contract import OfferedTask, SessionSpec, TaskKey
 
 
 class IncrementalCreditPolicy(SharedCreditPolicy, Protocol):
@@ -24,6 +24,7 @@ class TaskCandidate:
 
     key: TaskKey
     task: OfferedTask
+    spec: SessionSpec | None = None
 
 
 def fifo_task(candidates: tuple[TaskCandidate, ...]) -> TaskKey | None:
@@ -41,8 +42,10 @@ class SessionPolicies:
     pool_router: PoolRouter | None = None
     choose_task: Callable[[tuple[TaskCandidate, ...]], TaskKey | None] = fifo_task
 
+    organize: Callable[[tuple[TaskCandidate, ...]], tuple[TaskKey, ...]] | None = None
+
     def select_task(self, queued: tuple[TaskRecord, ...]) -> TaskRecord | None:
-        candidates = tuple(TaskCandidate(record.key, record.task) for record in queued)
+        candidates = tuple(TaskCandidate(record.key, record.task, record.spec) for record in queued)
         key = self.choose_task(candidates)
         if key is None:
             return None
@@ -57,6 +60,23 @@ class SessionPolicies:
                 return record
         raise ValueError("selector returned a task outside the ready window")
 
+    def select_batch(self, queued: tuple[TaskRecord, ...]) -> tuple[TaskRecord, ...]:
+        if self.organize is None:
+            selected = self.select_task(queued)
+            return () if selected is None else (selected,)
+        keys = self.organize(tuple(TaskCandidate(r.key, r.task, r.spec) for r in queued))
+        if type(keys) is not tuple or len(keys) > len(queued):
+            raise ValueError("organizer exceeded its accepted window")
+        if any(
+            type(k) is not TaskKey or type(k.session_id) is not int or type(k.sequence) is not int
+            for k in keys
+        ):
+            raise ValueError("invalid organized task identity")
+        records = {r.key: r for r in queued}
+        if len(set(keys)) != len(keys) or any(k not in records for k in keys):
+            raise ValueError("organizer returned duplicate or unowned members")
+        return tuple(records[k] for k in keys)
+
     def select(self, record: TaskRecord, active: tuple[TaskRecord, ...], now: float) -> str | None:
         oldest = max((now - r.since for r in active), default=0.0)
         if not self.admission.decide(len(active), hol_age_s=max(0.0, oldest)).allowed:
@@ -68,13 +88,14 @@ class SessionPolicies:
             row_count=1,
             prompt_tokens=0,
             estimated_output_tokens=0,
-            prefix_key="",
+            prefix_key=record.task.info.work.locality_key if record.task.info else "",
             first_arrival_s=record.since,
             oldest_arrival_s=record.since,
             payload_id=f"{record.key.session_id}:{record.key.sequence}",
             work_units=record.task.estimated_work,
             work_unit=record.spec.work_unit,
             estimated_payload_bytes=len(record.task.payload),
+            work_descriptor=record.task.info.work if record.task.info else None,
         )
         endpoints = tuple(
             replace(

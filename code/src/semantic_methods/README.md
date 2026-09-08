@@ -35,9 +35,10 @@ The driver owns aggregate method-state/final-result memory, limits live rows, an
 runs. `MethodLimits` bounds each run's retained input/state/result and number of stages; it is not a
 query-wide memory budget. `TaskKey` is execution identity, not a replacement for row/call identity.
 Invalid continuations fail the run; an unrelated completion leaves the active stage unchanged.
-The contract currently supports zero, one, or several sequential requests. Parallel stage fan-out,
-calibration over sampled rows, cross-row joins, multi-member batches, and PG bridging need their own
-bounded integration. They are not hidden behind this interface or claimed implemented.
+The contract currently supports zero, one, or several sequential requests. The session can now organize
+accepted tasks using `WorkWindowOrganizer`; its current backend expands each group into independent
+single-member requests. Parallel stage fan-out, calibration over sampled rows, cross-row joins, a
+single physical request with multiple member results, and PG bridging need their own bounded integration. They are not hidden behind this interface or claimed implemented.
 
 For future LOTUS reuse, keep scoring, calibration artifacts, threshold decisions, and parsers in a
 versioned method adapter. Translate model calls to `Request`; retain SemLoom's existing admission,
@@ -48,3 +49,28 @@ behavior against that revision. No LOTUS source has been copied in this slice.
 The [two-stage controlled test](../../tests/scheduling/test_method_continuation.py) demonstrates the
 same session with one held-task slot and two declared capabilities. The design and remaining work are
 recorded in [the incremental design](../../../experiments/plans/semloom_incremental_session_design.md).
+
+
+To enter the organized path, the producer adds `TaskInfo` to each offered request after the semantic
+method has chosen the stage. Keep `row_sequence` and `call_id` stable across stages; task sequence
+continues to increase. The typed `WorkDescriptor` must match session work units and the admitted work
+estimate. Its locality key and calibration identity are explicit inputs, never parsed from request
+bytes. Typed and opaque metadata together must fit the per-task metadata limit.
+
+`BatchMember` identifies an organization batch and the task's member index. It does not change which
+row owns a result, promise atomic group acceptance, or imply one HTTP request for the whole group.
+The result consumer uses `Delivery.info` for row/stage association and decides when to emit SQL rows;
+completion order alone is not SQL output order. Partial failure currently fails the session under the
+existing policy, cancels siblings, and waits for their terminal events before returning their credits.
+
+The producer must offer only work whose evaluation and submission are already permitted. A finite
+window limits speculative volume; it does not establish correct LIMIT, volatile-expression or error
+ordering behavior. Those are verified by the future PG carrier before enlarging its input window.
+
+
+When `SessionPolicies.organize` is configured, it selects batches in place of `choose_task`.
+The default path keeps `choose_task` and leaves membership unset. `WorkWindowOrganizer` uses the oldest
+accepted task's compatibility group, optionally sorts that group by work, and invokes the existing
+complete-task work slicer. An oversized task remains whole. This static policy does not promise fairness
+under continuous arrival. The core validates returned membership before dispatch and preserves an
+unfinished group across capacity or backend rejection; the organizer stores no payload history.

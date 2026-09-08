@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_reordered_small_member_reports_immediate_progress (tests.scheduling.test_organized_session.OrganizedSessionTests.test_reordered_small_member_reports_immediate_progress)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<source-root>/code/tests/scheduling/test_organized_session.py", line 156, in test_reordered_small_member_reports_immediate_progress
+    self.assertTrue(result.has_immediate_work)
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

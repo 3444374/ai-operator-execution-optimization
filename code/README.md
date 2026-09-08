@@ -516,6 +516,13 @@ and predeclared per-task capabilities. It supports a method returning another re
 while the existing session retains scheduling and lease ownership. Cascade algorithms, aggregate
 method-state accounting, production model capability routing, and PG integration remain pending.
 
+The opt-in `WorkWindowOrganizer` now connects the existing complete-task work slicing to accepted
+session tasks. `TaskInfo` carries row/call/stage identity and `WorkDescriptor`; `BatchMember` preserves
+organization membership through backend submission and delivery. The current backend expands a group
+into independent one-member requests, each charged separately. A pending group retains only task keys
+across backpressure. Unconfigured callers keep their existing single-task behavior. See
+[the organized-window design](../experiments/plans/semloom_incremental_session_design.md#organized-window).
+
 ## Scheduling foundation
 
 `code/src/scheduling/` contains immutable request metadata, endpoint topology,

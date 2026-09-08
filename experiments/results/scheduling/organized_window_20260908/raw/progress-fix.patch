@@ -1,0 +1,18 @@
+--- a/code/src/scheduling/core/session.py
++++ b/code/src/scheduling/core/session.py
+@@ -554 +554,2 @@
+-                and self.engine.capacity.can_dispatch(queued[0], self.limits)
++                # A reordered member can fit even when the input-order head cannot.
++                and any(self.engine.capacity.can_dispatch(r, self.limits) for r in queued)
+--- a/code/tests/scheduling/test_organized_session.py
++++ b/code/tests/scheduling/test_organized_session.py
+@@ -150,0 +151,9 @@
++    def test_reordered_small_member_reports_immediate_progress(self):
++        engine, session, backend, _ = organized(active_work=3, step_actions=1)
++        session.offer([described(0, 3), described(1), described(2)])
++        result = session.advance(4)
++        self.assertEqual([key.sequence for key in backend.pending], [1])
++        self.assertTrue(result.has_immediate_work)
++        session.advance(4)
++        self.assertEqual([key.sequence for key in backend.pending], [1, 2])
++

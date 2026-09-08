@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Protocol, get_args
 
 from .models import OperatorName
+from ...planning.work import WorkDescriptor
 
 
 MAX_TASK_PROFILES = 32
@@ -113,6 +114,31 @@ class TaskKey:
 
 
 @dataclass(frozen=True)
+class TaskInfo:
+    """Logical identity survives regrouping; work describes an already authorized stage."""
+
+    call_id: str
+    row_sequence: int
+    stage_id: str
+    work: WorkDescriptor
+
+
+@dataclass(frozen=True)
+class BatchKey:
+    session_id: int
+    sequence: int
+
+
+@dataclass(frozen=True)
+class BatchMember:
+    """An organization batch expands to size independent single-member requests."""
+
+    batch_key: BatchKey
+    index: int
+    size: int
+
+
+@dataclass(frozen=True)
 class OfferedTask:
     sequence: int
     payload: bytes
@@ -120,6 +146,7 @@ class OfferedTask:
     max_result_bytes: int
     metadata: bytes = b""
     profile_name: str | None = None
+    info: TaskInfo | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +154,7 @@ class BackendTask:
     key: TaskKey
     spec: SessionSpec
     task: OfferedTask
+    member: BatchMember | None = None
 
 
 @dataclass(frozen=True)
@@ -172,6 +200,8 @@ class Delivery:
     metadata: bytes
     lease_id: LeaseId
     status: str = "completed"
+    info: TaskInfo | None = None
+    member: BatchMember | None = None
 
 
 @dataclass(frozen=True)
