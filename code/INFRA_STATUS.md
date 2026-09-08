@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-08：[逐行方法框架验证](../experiments/results/scheduling/method_framework_20260908/README.md)补充预声明任务能力与有界方法续体，复用现有session账本。
+本地44项、Linux325项通过，621份源码哈希一致；两行各两个生成阶段共4次真实请求通过。
+首次诊断脚本参数错误在0次请求时停止，失败记录保留；修正脚本后复用同一4次预算。
+最终资源归零、传输与模型退出、端口关闭；embedding/级联算法、总方法内存计费及PG接入仍待实现。
+
 2026-09-08最新真实验证：同步[Filter→Map](../experiments/results/postgresql/filter_map_real_20260908/README.md)完成12次请求；
 [增量SessionEngine与有界异步HTTP](../experiments/results/scheduling/incremental_real_20260908/README.md)完成独立5次请求，实际HTTP并发峰值2。
 新传输单元测试加核心测试本地37项、Linux全调度318项通过，618项源码哈希一致。

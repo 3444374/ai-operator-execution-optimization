@@ -511,6 +511,11 @@ HTTP operations, release backpressure and late-result cleanup across sessions. T
 reuses the existing request builder and bounds response reads. Production PG bridging and multi-member
 submission remain pending. The old synchronous runtime still serves existing callers with its original outputs.
 
+The [semantic method module](src/semantic_methods/README.md) adds bounded sequential continuations
+and predeclared per-task capabilities. It supports a method returning another request after a result,
+while the existing session retains scheduling and lease ownership. Cascade algorithms, aggregate
+method-state accounting, production model capability routing, and PG integration remain pending.
+
 ## Scheduling foundation
 
 `code/src/scheduling/` contains immutable request metadata, endpoint topology,

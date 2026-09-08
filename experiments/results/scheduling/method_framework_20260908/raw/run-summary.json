@@ -1,0 +1,11 @@
+{
+  "status": "incomplete",
+  "source_commit": "2d2dee35a782dc2588eb792058140331fb6796a2",
+  "request_limit": 4,
+  "model_requests": 0,
+  "pg_bridge_evaluated": false,
+  "quality_evaluated": false,
+  "performance_evaluated": false,
+  "transport_closed": true,
+  "source_manifest": "source-hashes.json"
+}

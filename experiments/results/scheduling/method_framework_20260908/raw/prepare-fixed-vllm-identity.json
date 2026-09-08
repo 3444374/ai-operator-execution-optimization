@@ -1,0 +1,10 @@
+{
+  "package_root": "<model-venv>/lib/python3.12/site-packages/vllm",
+  "package_version": "0.25.1",
+  "pid": 117211,
+  "port": 38069,
+  "process_start_time_ticks": "1277274462",
+  "python_executable_argv0": "<model-venv>/bin/python",
+  "schema_version": 1,
+  "sys_prefix": "<model-venv>"
+}

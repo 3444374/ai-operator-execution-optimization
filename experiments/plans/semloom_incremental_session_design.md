@@ -1,6 +1,6 @@
 # SemLoom单流增量session：近期详细设计
 
-更新日期：2026-09-07
+更新日期：2026-09-08
 状态：`current / bounded-http-smoke-verified / pg-and-batch-migration-pending`
 受众：执行核心实施者。所属工作为[主设计B1–B2](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)。
 本文件唯一定义首个增量核心的操作/所有权/状态；不定义PG wire或多Job策略。
@@ -8,6 +8,9 @@
 原设计依据代码66887463。单流增量核心已在2d2dee35基础上实现，并以受控后端及有界异步HTTP小规模真实验证；
 旧同步入口保持原行为，生产模型协议适配、完整legacy包装及PG桥接仍未迁移。
 实现与逐项测试见[验证记录](../results/scheduling/incremental_session_20260908/README.md)。
+
+§13补充预声明能力与逐行方法续体；[受控及真实验证](../results/scheduling/method_framework_20260908/README.md)
+通过44项本地/325项Linux测试和两行共4次真实生成请求。具体优化算法、总方法状态计费及PG桥接仍待实现。
 
 ## 1. 范围、选型与旧实现复用
 
@@ -347,3 +350,65 @@ request与task分别计数、部分失败及取消后的整批/成员归属测�
 
 实际验证：本地37项核心/传输测试、Linux318项调度回归通过；新核心5次真实请求通过，峰值HTTP并发2。
 [结果记录](../results/scheduling/incremental_real_20260908/README.md)保留配置/身份、预算、结果、状态与清理。
+
+
+## 13. 多阶段方法接入准备（工程决策，2026-09-08）
+
+本轮只完善接入接口，不实现embedding评分、阈值校准、级联算法或PG异步协议。
+沿用主架构§8.7、§8.8已记录的公司语义Module/carrier分工和pgml模型能力封装比较；
+保留自有SessionEngine，不引入公司实现。公开LOTUS approximation cascades说明用于核对
+“代理判断后可继续请求主模型”的变化需求；尚未复制LOTUS源码或声称1.2.4行为等价。
+当前公开LICENSE为Apache-2.0；后续源码适配须固定实际commit、保留license/NOTICE及修改说明，
+并用该版本输入输出进行parity测试。
+
+源码落点：session_contract预声明任务profile，session对整个offer批次验证profile并为每项绑定
+有效能力；semantic_methods提供只产生请求/最终结果的有界逐行方法续体。算子方法决定阶段，
+执行核心继续拥有提交、背压和回收。方法不持有backend、全局模型客户端或独立提交循环。
+默认profile保持原路径；不同阶段的work须由适配器换算成同一session work_unit，不能混加原始单位。
+方法续体保存的bytes及阶段数有界；外部驱动仍须限制活跃行数、合计方法状态和最终结果占用。
+输入EOF不等于session可seal：必须等所有方法不再产生任务。请求接受后才绑定TaskKey，
+阶段结果由驱动交给对应方法并释放lease；不能在持有唯一结果槽时等待下一阶段。
+
+验证使用零请求提前完成、一阶段及两阶段合成方法，复用真实SessionEngine和受控backend，
+检查profile切换、整批拒绝、关联、续体大小、阶段上限和单槽回收；不建立模型质量结论。
+
+用户随后授权本轮启动真实模型。追加独立4次POST预算，合成两行各执行draft→revise两个生成阶段；
+两种profile映射同一已核验7B模型，第二阶段输入包含第一阶段真实响应。单任务/单HTTP槽，响应上限
+64KiB，输入上限8KiB，状态64bytes，最多两阶段，每次生成64tokens，temperature=0；不额外warm-up或重试。
+复用已验证的控制器/HTTP诊断适配器，使用新的源哈希、preflight和AttemptLedger；不使用旧请求预算。
+检查阶段profile、TaskKey、原始响应、lease释放前背压、读完输入仍可继续阶段任务、最终行结果和资源归零。
+失败即保留本次记录并停止，不扩大预算；控制器负责退出I/O线程与自有模型进程、检查端口关闭和GPU空闲。
+这只验证新框架真实接通，不涉及embedding、近似质量、性能比较或PG异步。
+
+第一次真实准备在0次POST时被advance的delivery bound校验拒绝：诊断脚本仍传2，held_tasks已改为1。
+保留失败控制器/日志，修正为advance(1)后在新的准备目录验证；复用同一持久4次预算，
+不增加模型请求许可，不改变生产代码或验收标准。
+
+## 14. 后续接线与旧入口迁移顺序（待实现）
+
+结合本轮源码审查确认：SessionPolicies仍构造row_count=1、空prefix_key的BatchRequest，
+Engine仍限一个活动session；数据组织尚未接入这条路径。方法续体只是逐行顺序接入点，
+不能据此声称支持跨行校准、并行阶段、物理批次或多Job调度。下一步按以下顺序形成实际消费者，
+不预先增加空registry、万能DAG或第二个资源账本。
+
+1. **任务与物理批次分开表达。** 复用现有WorkDescriptor、batching/token-budget/service-quantum
+   以及§11列出的阶段描述。方法产生稳定TaskKey和已确定语义的工作；组织器从有界就绪窗口选择成员，
+   产生包含成员身份、能力、表示及work信息的物理提交。prefix/locality信息来自可验证的typed描述，
+   不能从opaque payload猜测，也不能继续用空值假装已支持。一个批次到底对应一个HTTP请求还是
+   多个backend请求须由适配器明确声明；request额度按实际物理提交计，不再与task数混为一谈。
+2. **先贯通单流组织与回收。** 用真实消费者连接“方法→组织器→物理提交→session/backend→成员结果”。
+   验证至少两个成员、逆序完成、成员部分失败、结果映射、取消及迟到终态；每个成员只交付一次，
+   每笔request额度只结算一次。对不能批量执行的backend保留显式单成员回退及对应计费。
+3. **表示转换共用预算。** 接入encoded/prepared/张量表示前定义申请、转换重叠峰值、释放与取消归属，
+   BoundedStageBroker消费Engine授予的预算，不能持有另一份完整容量。方法状态、最终结果也要纳入
+   驱动层总预算。GPU显存能力按后端实际可观测/可控制程度声明，不能把估计work标量说成显存保证。
+4. **再扩展同一Engine的多session。** 在共同资源域中保存各流就绪状态及份额，接纳/选择跨流进行；
+   先验证总量不超限、一个流取消不影响其他流、旧任务不向新流交付，再进行公平策略研究。
+   不以复制多个Engine的完整服务额度代替共享调度。
+5. **迁移后退出旧编排。** 先从scheduler.py抽出已被两条入口使用的公共策略Protocol，保留原import
+   兼容；选取一个现有runner通过新核心运行，对比输出、错误、取消、统计及资源行为。逐个迁移调用方，
+   直到旧同步循环无直接执行消费者且兼容回归通过，再删除旧循环。最终保留的同步入口只驱动同一
+   增量核心；原始实验、失败证据及可恢复版本继续保留。
+
+跨行校准应由有界样本/方法上下文承接，不塞入单行续体；并行阶段需要显式依赖及fan-in协议。
+这两项先有具体方法消费者再落实，避免为未来任意算法预建通用工作流系统。

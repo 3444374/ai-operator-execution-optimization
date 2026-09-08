@@ -42,8 +42,9 @@ data source/materializer
 
 ## 3. 请求与流式语义
 
-- 每行对应一个完整、独立的模型请求。token-budget 只组织行间 batch，不把单行 prompt 拆成多个
-  vLLM 请求。超长行处理由对应算子语义或 workload 规范明确规定；不从批处理策略推导截断权限。
+- 在一个已确定的生成阶段内，每行对应一个完整、独立的模型请求。token-budget 只组织行间 batch，
+  不把单行 prompt 拆成多个 vLLM 请求。经算子方法明确授权的多个阶段可以分别产生请求；
+  阶段转换由方法决定，调度器不能借此擅自改写语义。超长行处理由对应算子语义或 workload 规范明确规定；不从批处理策略推导截断权限。
   生成型 SemMap 发送完整请求，超限按其错误规则处理；只有输入规范明确允许时才预处理截断或排除。
 - 正式 image runner 不在 driver 上全量 `to_arrow()`、`list(to_arrow_iter())` 或等价 collect；只有写明
   规模上限的 smoke/profile 可以 materialize。

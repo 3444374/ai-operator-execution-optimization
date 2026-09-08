@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "<artifact-root>/prepare/real_check.py", line 123, in <module>
+    parser=argparse.ArgumentParser();parser.add_argument('--settings',type=Path,required=True);args=parser.parse_args();run(json.loads(args.settings.read_text()))
+                                                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<artifact-root>/prepare/real_check.py", line 92, in run
+    delivery,=collect(session,1)
+              ^^^^^^^^^^^^^^^^^^
+  File "<artifact-root>/prepare/real_check.py", line 65, in collect
+    result=advance(session);output.extend(result.deliveries)
+           ^^^^^^^^^^^^^^^^
+  File "<artifact-root>/prepare/real_check.py", line 58, in advance
+    result=session.advance(2)
+           ^^^^^^^^^^^^^^^^^^
+  File "<source-root>/code/src/scheduling/core/session.py", line 465, in advance
+    raise ValueError("invalid delivery bound")
+ValueError: invalid delivery bound

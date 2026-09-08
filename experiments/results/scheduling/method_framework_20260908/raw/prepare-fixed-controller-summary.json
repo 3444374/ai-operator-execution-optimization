@@ -1,0 +1,15 @@
+{
+  "driver_exit_code": 0,
+  "gpu_memory_mib": {
+    "0": 1,
+    "1": 1
+  },
+  "model_port_closed": true,
+  "model_requests": 4,
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "official_weights_match": true,
+  "request_limit": 4,
+  "run_status": "passed",
+  "source_commit": "2d2dee35a782dc2588eb792058140331fb6796a2",
+  "status": "passed"
+}

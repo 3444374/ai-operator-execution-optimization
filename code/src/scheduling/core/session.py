@@ -278,6 +278,10 @@ class SchedulingSession:
                 or not 0 <= task.sequence <= UINT64_MAX
             ):
                 return False
+            try:
+                self.spec.resolve(task.profile_name)
+            except ValueError:
+                return False
             if type(task.payload) is not bytes or type(task.metadata) is not bytes:
                 return False
             if type(task.estimated_work) is not int or type(task.max_result_bytes) is not int:
@@ -316,7 +320,7 @@ class SchedulingSession:
                 ):
                     break
                 key = TaskKey(self.session_id, task.sequence)
-                candidate[key] = TaskRecord(key, self.spec, task, now)
+                candidate[key] = TaskRecord(key, self.spec.resolve(task.profile_name), task, now)
                 delta = dict(
                     held_tasks=local.held_tasks + 1,
                     input_bytes=local.input_bytes + len(task.payload),
@@ -421,7 +425,7 @@ class SchedulingSession:
         record.since = now
         try:
             outcome = engine.backend.try_submit(
-                BackendTask(record.key, self.spec, record.task), endpoint
+                BackendTask(record.key, record.spec, record.task), endpoint
             )
         except Exception:
             outcome = Submission(Acceptance.UNKNOWN)

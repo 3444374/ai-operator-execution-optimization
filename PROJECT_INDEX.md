@@ -16,7 +16,7 @@
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |
 | PG调用/绑定近期规格 | [详细设计](experiments/plans/postgresql_call_binding_design.md) | 公共描述/绑定及一个Filter→一个Map的接入、寿命、兼容与验收；共同调用、V1载体和一个Filter→一个生成Map已在开发分支验证；增量Core另行推进 |
-| 单流增量执行近期规格 | [详细设计](experiments/plans/semloom_incremental_session_design.md) | 单步操作、输入/结果所有权、进展和资源账本；受控核心及有界异步HTTP真实smoke已验证，生产协议、批处理和PG接入待进行 |
+| 单流增量执行近期规格 | [详细设计](experiments/plans/semloom_incremental_session_design.md) | 单步操作、输入/结果所有权、进展和资源账本；受控核心及有界异步HTTP真实smoke已验证，生产协议、批处理和PG接入待进行；[方法续体入口](code/src/semantic_methods/README.md)准备多阶段适配 |
 | 生成型 Map 实现规格 | [`experiments/plans/postgresql_semmap_generation_contract.md`](experiments/plans/postgresql_semmap_generation_contract.md) | SQL、消息/文本行为与专项验收；同步PG/真实模型接线已有证据，正式资源资格仍待完成 |
 | choice 已完成实施记录 | [`experiments/plans/completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) | 保留四 C 的字段、版本、预算与验收条件；结果从证据台账查阅，后续顺序由主架构维护 |
 | 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |

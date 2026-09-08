@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "source_commit": "2d2dee35a782dc2588eb792058140331fb6796a2",
+  "request_limit": 4,
+  "model_requests": 4,
+  "pg_bridge_evaluated": false,
+  "quality_evaluated": false,
+  "performance_evaluated": false,
+  "peak_http_requests": 1,
+  "terminal_responses": 4,
+  "final_usage": {
+    "held_tasks": 0,
+    "input_bytes": 0,
+    "result_bytes": 0,
+    "active_requests": 0,
+    "active_work": 0
+  },
+  "delivered_keys": [
+    {
+      "row_id": 0,
+      "key": {
+        "session_id": 0,
+        "sequence": 0
+      }
+    },
+    {
+      "row_id": 0,
+      "key": {
+        "session_id": 0,
+        "sequence": 1
+      }
+    },
+    {
+      "row_id": 1,
+      "key": {
+        "session_id": 0,
+        "sequence": 2
+      }
+    },
+    {
+      "row_id": 1,
+      "key": {
+        "session_id": 0,
+        "sequence": 3
+      }
+    }
+  ],
+  "rows": [
+    {
+      "row_id": 0,
+      "value": "The red apple shines in the sunlight."
+    },
+    {
+      "row_id": 1,
+      "value": "The blue sky stretches endlessly, adorned with fluffy white clouds."
+    }
+  ],
+  "stage_release_backpressure_checks": 2,
+  "source_eof_before_final": true,
+  "transport_closed": true,
+  "source_manifest": "source-hashes.json"
+}

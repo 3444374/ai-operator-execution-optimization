@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Protocol, get_args
 
 from .models import OperatorName
+
+
+MAX_TASK_PROFILES = 32
 
 
 class State(str, Enum):
@@ -53,6 +56,26 @@ class SessionLimits:
                 raise ValueError(f"{name} must be a positive integer")
 
 
+def _identity(value: str) -> None:
+    if type(value) is not str or not value or len(value.encode()) > 256:
+        raise ValueError("identity must contain 1..256 UTF-8 bytes")
+
+
+@dataclass(frozen=True)
+class TaskProfile:
+    """A caller-authorized capability; all profiles share the session's work unit."""
+
+    name: str
+    capability: str
+    operator: OperatorName = "ai_complete"
+
+    def __post_init__(self):
+        for value in (self.name, self.capability, self.operator):
+            _identity(value)
+        if self.operator not in get_args(OperatorName):
+            raise ValueError("unknown scheduling operator")
+
+
 @dataclass(frozen=True)
 class SessionSpec:
     job_id: str
@@ -60,13 +83,27 @@ class SessionSpec:
     capability: str
     operator: OperatorName = "ai_complete"
     work_unit: str = "work_units"
+    task_profiles: tuple[TaskProfile, ...] = ()
 
     def __post_init__(self):
-        for value in vars(self).values():
-            if type(value) is not str or not value or len(value.encode()) > 256:
-                raise ValueError("session identity must contain 1..256 UTF-8 bytes")
+        for value in (self.job_id, self.flow_id, self.capability, self.operator, self.work_unit):
+            _identity(value)
+        if type(self.task_profiles) is not tuple or len(self.task_profiles) > MAX_TASK_PROFILES:
+            raise ValueError("at most 32 immutable task profiles are allowed")
+        if any(type(profile) is not TaskProfile for profile in self.task_profiles):
+            raise ValueError("invalid task profile")
+        if len({profile.name for profile in self.task_profiles}) != len(self.task_profiles):
+            raise ValueError("duplicate task profile")
         if self.operator not in get_args(OperatorName):
             raise ValueError("unknown scheduling operator")
+
+    def resolve(self, profile_name: str | None) -> SessionSpec:
+        if profile_name is None:
+            return self
+        for profile in self.task_profiles:
+            if type(profile_name) is str and profile.name == profile_name:
+                return replace(self, capability=profile.capability, operator=profile.operator)
+        raise ValueError("undeclared task profile")
 
 
 @dataclass(frozen=True)
@@ -82,6 +119,7 @@ class OfferedTask:
     estimated_work: int
     max_result_bytes: int
     metadata: bytes = b""
+    profile_name: str | None = None
 
 
 @dataclass(frozen=True)
