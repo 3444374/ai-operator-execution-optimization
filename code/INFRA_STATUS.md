@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-08：三项会话接口清理61fa6967已快进合入main。合并前644份源码/配置及74份证据校验一致，未修改已验证源码；
+[集成记录](../experiments/results/scheduling/session_api_cleanup_20260908/README.md#main-integration)保留验证范围与后续工作。
+
 2026-09-08：[三项会话接口清理](../experiments/results/scheduling/session_api_cleanup_20260908/README.md)完成公开fail/派发控制/消费者关闭、可注入Job选择，以及独立单流适配器退役。
 网关不再访问session私有账本/状态；默认轮转、同步语义参照和未知请求计费规则保留。生产源码净减70行，旧测试迁到生产网关。
 Linux519项、PG回归1项/TAP1963项及最终12/18次真实模型通过；首轮12次记录保留，累计42次POST。最终644项源码/配置身份一致，测试服务已清理。

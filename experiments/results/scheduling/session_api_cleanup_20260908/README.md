@@ -80,3 +80,11 @@ PYTHONPATH=code python -m unittest discover -s code/tests/postgres -t code
 
 PG按平台runbook隔离运行`make installcheck`；模型driver/controller见归档，使用仓库外runtime配置
 和全新账本，不复用已消费账本。当前剩余的PG多算子Job归属、动态资源策略等不属于本次三项整理。
+
+<a id="main-integration"></a>
+## 主干集成
+
+2026-09-08，main从2ad67c06快进到61fa6967，无冲突或代码改写。合并前再次核对最终644份
+源码/配置和74份归档材料，全部一致；最终12/18次真实模型记录通过，已有Linux519项与PG
+回归1项/TAP1963项适用于此次源码。本次集成只补记文档，没有重新启动服务器或模型。
+同查询多算子Job归属等后续功能未因本次清理而新增。
