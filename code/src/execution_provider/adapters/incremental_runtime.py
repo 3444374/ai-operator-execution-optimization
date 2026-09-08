@@ -24,6 +24,7 @@ from ...scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from ...scheduling.organization.session_window import WorkWindowOrganizer
 from ...scheduling.runtime.async_backend import BoundedAsyncBackend
 from ...scheduling.submission_control.admission import StaticAdmissionController
+from ..limits import MAX_INCREMENTAL_TASKS
 from ..wire.framing import MAX_FRAME_BYTES
 from .model_config import FixedModelConfig, MAX_MODEL_RESPONSE_BYTES
 from ..completion import CompletionRequest
@@ -36,9 +37,24 @@ class IncrementalMapRuntime:
     before accepting another connection; unknown work quarantines this engine.
     """
 
-    def __init__(self, config: FixedModelConfig, *, execute=None, observer=None, max_tasks=1):
-        if type(max_tasks) is not int or not 1 <= max_tasks <= 64:
+    def __init__(
+        self,
+        config: FixedModelConfig,
+        *,
+        execute=None,
+        observer=None,
+        max_tasks=1,
+        max_active_requests=None,
+        input_bytes=None,
+        result_bytes=None,
+    ):
+        if type(max_tasks) is not int or not 1 <= max_tasks <= MAX_INCREMENTAL_TASKS:
             raise ValueError("invalid incremental task capacity")
+        if max_active_requests is None:
+            max_active_requests = max_tasks
+        if type(max_active_requests) is not int or max_active_requests < 1:
+            raise ValueError("invalid incremental request capacity")
+        self.max_active_requests = max_active_requests
         self.max_tasks = max_tasks
         self.config = config
         self.model_id = config.model_id
@@ -50,26 +66,22 @@ class IncrementalMapRuntime:
         self._transport_error = None
         self._observer = observer
         self._stopping: Callable[[], bool] = lambda: False
-        self._backend = BoundedAsyncBackend(
-            execute or self._execute,
-            max_tasks=max_tasks,
-            notify=lambda: self.engine.wake.notify(),
-            finalize=self._finalize,
-        )
         timeout = config.timeout_ms / 1000 + 1
         limits = SessionLimits(
-            max_tasks,
-            max_tasks * MAX_FRAME_BYTES,
-            max_tasks * MAX_MODEL_RESPONSE_BYTES,
-            max_tasks,
-            max_tasks,
-            max_tasks,
-            MAX_FRAME_BYTES,
-            MAX_MODEL_RESPONSE_BYTES,
-            1024,
-            8,
-            timeout,
-            0.01,
+            held_tasks=max_tasks,
+            input_bytes=max_tasks * MAX_FRAME_BYTES if input_bytes is None else input_bytes,
+            result_bytes=max_tasks * MAX_MODEL_RESPONSE_BYTES
+            if result_bytes is None
+            else result_bytes,
+            active_requests=max_active_requests,
+            active_work=max_active_requests,
+            offer_tasks=max_tasks,
+            item_input_bytes=MAX_FRAME_BYTES,
+            item_result_bytes=MAX_MODEL_RESPONSE_BYTES,
+            metadata_bytes=1024,
+            step_actions=8,
+            wait_timeout_s=timeout,
+            poll_interval_s=0.01,
         )
         topology = TopologySnapshot(
             (
@@ -87,11 +99,17 @@ class IncrementalMapRuntime:
             ),
             time.monotonic(),
         )
+        self._backend = BoundedAsyncBackend(
+            execute or self._execute,
+            max_tasks=max_active_requests,
+            notify=lambda: self.engine.wake.notify(),
+            finalize=self._finalize,
+        )
         self.engine = SessionEngine(
             limits,
             self._backend,
             SessionPolicies(
-                StaticAdmissionController(max_tasks),
+                StaticAdmissionController(max_active_requests),
                 RoundRobinEndpointRouter(),
                 topology,
                 "default",
@@ -121,7 +139,8 @@ class IncrementalMapRuntime:
                 timeout=None,
                 follow_redirects=False,
                 limits=httpx.Limits(
-                    max_connections=self.max_tasks, max_keepalive_connections=self.max_tasks
+                    max_connections=self.max_active_requests,
+                    max_keepalive_connections=self.max_active_requests,
                 ),
             )
         if self._observer:
@@ -194,7 +213,9 @@ class IncrementalMapRuntime:
                 if self.engine.error or time.monotonic() >= deadline:
                     raise RuntimeError("remote outcome unconfirmed; engine quarantined")
                 self.engine.reap(1)
-                self.engine.wake.wait(self.engine.wake.generation, 0.01)
+                self.engine.wake.wait(
+                    self.engine.wake.generation, self.engine.capacity.limits.poll_interval_s
+                )
 
             if self._observer:
                 self._observer(

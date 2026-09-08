@@ -1,0 +1,187 @@
+{
+  "baseline_commit": "21909415",
+  "linux_provider_tests": 31,
+  "linux_pg_contract_tests": 115,
+  "local_targeted_tests": 14,
+  "pg_regression": 1,
+  "pg_tap_tests": 1961,
+  "artifact_count": 35,
+  "archive_sha256": "557fb3481dfd2fbf695bdd8dc62559560cf373d2c5dd7c6f0a0facd389d9280f",
+  "first_run": {
+    "driver_exit_code": 0,
+    "gpu_memory_mib": {
+      "0": 1,
+      "1": 1
+    },
+    "model_port_closed": true,
+    "model_requests": 12,
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "official_weights_match": true,
+    "request_limit": 12,
+    "run_status": "passed",
+    "source_commit": "21909415 plus capacity-cleanup manifest",
+    "status": "passed"
+  },
+  "final_run": {
+    "driver_exit_code": 0,
+    "gpu_memory_mib": {
+      "0": 1,
+      "1": 1
+    },
+    "model_port_closed": true,
+    "model_requests": 12,
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "official_weights_match": true,
+    "request_limit": 12,
+    "run_status": "passed",
+    "source_commit": "21909415 plus capacity-cleanup manifest",
+    "status": "passed"
+  },
+  "final_results": {
+    "status": "passed",
+    "request_limit": 12,
+    "multi_inflight_pg": true,
+    "window": 2,
+    "phases": {
+      "reference": {
+        "rows": [
+          [
+            1,
+            "Hello, SemLoom.",
+            "Hello, SemLoom."
+          ],
+          [
+            2,
+            "Blue sky.",
+            "Blue sky."
+          ],
+          [
+            3,
+            null,
+            null
+          ]
+        ],
+        "plan": [
+          {
+            "Plan": {
+              "Node Type": "Custom Scan",
+              "Custom Plan Provider": "SemLoom SemMap",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.0,
+              "Total Cost": 29.05,
+              "Plan Rows": 1270,
+              "Plan Width": 68,
+              "Disabled": false,
+              "Provider": "uds-openai-compatible-fixed",
+              "Physical Role": "reference",
+              "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+              "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+              "Prompt Program": "semloom.sem_map.chat.v1",
+              "Result Parser": "semloom.sem_map.utf8_text.v1",
+              "Model": "Qwen2.5-7B-Instruct",
+              "Semantic Plan Schema": 4,
+              "Semantic Spec Digest": "26fce8c7e12ecbf9d4e0fb7f201e610420ce06241b7e7c482bb56a67ec4c5a28",
+              "Max Tokens": 128,
+              "Max Input Bytes": 163840,
+              "Max Output Bytes": 65536,
+              "Mapped Column": 3,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "child",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "inputs",
+                  "Alias": "inputs",
+                  "Startup Cost": 0.0,
+                  "Total Cost": 25.88,
+                  "Plan Rows": 1270,
+                  "Plan Width": 68,
+                  "Disabled": false
+                }
+              ]
+            }
+          }
+        ],
+        "zero_controls": true
+      },
+      "incremental": {
+        "rows": [
+          [
+            1,
+            "Hello, SemLoom.",
+            "Hello, SemLoom."
+          ],
+          [
+            2,
+            "Blue sky.",
+            "Blue sky."
+          ],
+          [
+            3,
+            null,
+            null
+          ]
+        ],
+        "plan": [
+          {
+            "Plan": {
+              "Node Type": "Custom Scan",
+              "Custom Plan Provider": "SemLoom SemMap",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.0,
+              "Total Cost": 29.05,
+              "Plan Rows": 1270,
+              "Plan Width": 68,
+              "Disabled": false,
+              "Provider": "semloom_incremental_map",
+              "Physical Role": "reference",
+              "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+              "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+              "Prompt Program": "semloom.sem_map.chat.v1",
+              "Result Parser": "semloom.sem_map.utf8_text.v1",
+              "Model": "Qwen2.5-7B-Instruct",
+              "Semantic Plan Schema": 4,
+              "Semantic Spec Digest": "26fce8c7e12ecbf9d4e0fb7f201e610420ce06241b7e7c482bb56a67ec4c5a28",
+              "Max Tokens": 128,
+              "Max Input Bytes": 163840,
+              "Max Output Bytes": 65536,
+              "Semantic Input Window": 2,
+              "Mapped Column": 3,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "child",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "inputs",
+                  "Alias": "inputs",
+                  "Startup Cost": 0.0,
+                  "Total Cost": 25.88,
+                  "Plan Rows": 1270,
+                  "Plan Width": 68,
+                  "Disabled": false
+                }
+              ]
+            }
+          }
+        ],
+        "zero_controls": true
+      }
+    },
+    "http_peak": 2,
+    "incremental_tasks": 10,
+    "drained_sessions": 6,
+    "cancel_sqlstate": "57014",
+    "resources_zero": true,
+    "model_requests": 12
+  },
+  "postflight": {
+    "source_files_match": 639,
+    "owned_processes": [],
+    "raylets": [],
+    "extension_sha256": "d9bfc13b1b8d3448d6d2c1f3ce25e40c8dea5dde41c03f90e312bcb067f7dc79"
+  }
+}

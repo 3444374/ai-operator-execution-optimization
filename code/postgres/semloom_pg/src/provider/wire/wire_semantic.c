@@ -266,7 +266,7 @@ semloom_wire_semantic_open(pgsocket socket_fd,
 										&integer_value,
 										error) ||
 		(identity->protocol_version == 6 ?
-		 (integer_value < identity->max_inflight_tasks || integer_value > AI_PROVIDER_MAX_WINDOW_TASKS) : integer_value != 1))
+		 (integer_value < 1 || (uint32) integer_value < identity->max_inflight_tasks) : integer_value != 1))
 		goto mismatch;
 	if (!semloom_wire_common_json_int32(message,
 										"max_frame_bytes",

@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define AI_PROVIDER_MAX_WINDOW_TASKS 64
 
 #define AI_PROVIDER_ERROR_DETAIL_CAPACITY 160
 #define AI_PROVIDER_SHA256_HEX_LENGTH 64

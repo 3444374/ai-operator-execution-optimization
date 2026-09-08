@@ -70,7 +70,8 @@ class FaultConnection:
 
 adapter = IncrementalMapSessionAdapter(
     FixedModelConfig("http://localhost/v1/chat/completions", "model", 3000),
-    max_tasks=2,
+    max_tasks=65,
+    max_active_requests=2,
     execute=execute,
     observer=observe,
 )

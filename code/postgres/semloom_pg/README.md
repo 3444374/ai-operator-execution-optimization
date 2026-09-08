@@ -8,8 +8,8 @@ OpenAI-compatible model adapter. HTTP remains outside the PostgreSQL backend. Ge
 opt into bounded multi-in-flight execution through the incremental core.
 
 The `incremental-map` profile uses wire v6 and optional provider `offer`/`receive` operations.
-Set `semloom_pg.provider_window_tasks` (default 2, range 1–64) no higher than the gateway's
-`--max-active-requests`; launch that gateway with `--incremental-map`. The PG retained-row byte
+Set `semloom_pg.provider_window_tasks` (default 2, positive int32) no higher than the gateway's
+`--max-held-tasks` (defaults to `--max-active-requests`); launch with `--incremental-map`. The PG retained-row byte
 budget is `semloom_pg.provider_window_bytes` (default 8 MiB, split across window reservations).
 Plain column/constant inputs on an ordinary child without quals use the configured window;
 other expressions show an effective window of 1 in EXPLAIN. Input order is the current Map
@@ -18,6 +18,13 @@ one generated Map and one active gateway connection; Filter/composition and mult
 execution remain pending. [Validation](../../../experiments/results/postgresql/async_window_20260908/README.md)
 passes 1958 PG TAP checks and 12 actual model requests, including two overlapping HTTP requests
 from one PG query. Existing synchronous profiles remain available.
+
+The task window is a retained-row budget, independent of backend concurrency. Row slots and
+provider metadata are allocated for the configured window and checked against
+`semloom_pg.provider_window_bytes` before allocation. There is no fixed 64-task ceiling;
+the int32 field range is an encoding limit, not a recommended capacity. Input/result bytes
+must still fit the configured budgets. Gateway intake and backend request budgets are described
+in the [CLI guide](../../scripts/README.md).
 
 The development profile `incremental-map-window-one` uses a distinct v5 execution identity and one
 shared gateway engine. It preserves the supported Map query shapes and synchronous PG port, with

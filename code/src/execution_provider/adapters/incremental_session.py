@@ -2,10 +2,9 @@
 
 from collections import deque
 from dataclasses import asdict
-import json
 
 from .incremental_runtime import IncrementalMapRuntime
-from .completion_response import parse_completion
+from .completion_response import decode_backend_completion
 from ..completion import CompletionAdapterError, CompletionRequest
 from ..wire import v6
 from ..wire.framing import ProtocolError, encode_frame, read_frame, has_duplicate_fields
@@ -23,6 +22,7 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
         error_sequence = None
         pending = {}
         ready = deque()
+        active_delivery = None
         sequence = 0
 
         def progress():
@@ -70,16 +70,13 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
                             raise ConnectionResetError("provider peer stopped")
                         result = progress()
                         if not ready and not result.has_immediate_work:
-                            self.engine.wake.wait(result.generation, 0.01)
+                            self.engine.wake.wait(
+                                result.generation, self.engine.capacity.limits.poll_interval_s
+                            )
                     delivery = ready.popleft()
+                    active_delivery = delivery
                     error_sequence = delivery.key.sequence
-                    value = json.loads(delivery.result)
-                    if isinstance(value, dict) and "bridge_error" in value:
-                        raise CompletionAdapterError(value["bridge_error"])
-                    try:
-                        completion = parse_completion(value)
-                    except (ValueError, TypeError):
-                        raise CompletionAdapterError("MODEL_RESPONSE_INVALID") from None
+                    completion = decode_backend_completion(delivery.result)
                     send(
                         v6.build_completion_message(
                             context,
@@ -98,6 +95,7 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
                             }
                         )
                     self._session.release((delivery.lease_id,))
+                    active_delivery = None
                     del pending[delivery.key.sequence]
                 else:
                     error_sequence = sequence
@@ -137,3 +135,8 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
         except (OSError, ValueError, RecursionError):
             # Framing/transport failure is terminal, never a task replay.
             return
+        finally:
+            # These deliveries have settled remotely; no peer can consume them now.
+            abandoned = ([active_delivery] if active_delivery is not None else []) + list(ready)
+            if abandoned:
+                self._session.release(tuple(delivery.lease_id for delivery in abandoned))

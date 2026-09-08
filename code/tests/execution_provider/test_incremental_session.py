@@ -5,10 +5,13 @@ import json
 import socket
 import threading
 import unittest
+from unittest.mock import patch
 
 from src.execution_provider.adapters.incremental_session import IncrementalMapSessionAdapter
 from src.execution_provider.adapters.openai_compatible_fixed import FixedModelConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
+from src.execution_provider.completion import CompletionRequest
+from src.execution_provider.adapters.model_config import MAX_MODEL_RESPONSE_BYTES
 from src.execution_provider.wire import v5, v6
 from src.execution_provider.wire.framing import encode_frame, read_frame, ProtocolError
 
@@ -102,6 +105,98 @@ class IncrementalSessionTests(unittest.TestCase):
         if failures:
             raise failures[0]
         self.assertTrue(any(event["usage"]["active_requests"] == 2 for event in observed))
+
+    def test_invalid_backend_output_reports_error_and_releases_resources(self):
+        for payload, code in (
+            (b"not json", "MODEL_RESPONSE_INVALID"),
+            (b"\xff", "MODEL_RESPONSE_INVALID"),
+            (b"{}", "MODEL_RESPONSE_INVALID"),
+            (b'{"bridge_error":"MODEL_REQUEST_REJECTED"}', "MODEL_REQUEST_REJECTED"),
+        ):
+            with self.subTest(payload=payload):
+                peer, server = socket.socketpair()
+                peer.settimeout(3)
+                failures = []
+
+                async def execute(request, endpoint):
+                    return payload
+
+                adapters = []
+
+                def run():
+                    adapter = IncrementalMapSessionAdapter(
+                        FixedModelConfig("http://localhost/v1/chat/completions", "model", 2000),
+                        execute=execute,
+                    )
+                    adapters.append(adapter)
+                    try:
+                        adapter.serve_connection(
+                            server, lambda conn: adapter.run_incremental(conn, read_frame(conn))
+                        )
+                    except BaseException as exc:
+                        failures.append(exc)
+                    finally:
+                        server.close()
+
+                worker = threading.Thread(target=run)
+                worker.start()
+                try:
+                    plan = SemanticMapPlan("Return input.", "model", 8)
+                    peer.sendall(encode_frame(v6.build_open_message(plan)))
+                    self.assertEqual(read_frame(peer)["type"], "opened")
+                    peer.sendall(
+                        encode_frame(v6.build_task_message(plan, sequence=0, input_value="x"))
+                    )
+                    self.assertEqual(read_frame(peer)["accepted_prefix_count"], 1)
+                    peer.sendall(encode_frame({"type": "poll", "protocol_version": 6}))
+                    self.assertEqual(read_frame(peer), v6.build_error_message(code, sequence=0))
+                finally:
+                    peer.close()
+                    worker.join(3)
+                    if adapters:
+                        adapters[0].close()
+                self.assertFalse(worker.is_alive())
+                if failures:
+                    raise failures[0]
+                usage = adapters[0].engine.capacity.usage()
+                self.assertEqual(usage.held_tasks, 0)
+                self.assertEqual(usage.active_requests, 0)
+
+    def test_result_budget_limits_intake_independently_of_request_capacity(self):
+        adapter = IncrementalMapSessionAdapter(
+            FixedModelConfig("http://localhost/v1/chat/completions", "model", 2000),
+            max_tasks=65,
+            max_active_requests=1,
+            result_bytes=2 * MAX_MODEL_RESPONSE_BYTES,
+        )
+        peer, server = socket.socketpair()
+
+        def offer(connection):
+            request = CompletionRequest("a" * 64, "model", (), {}, protocol_version=6)
+            tasks = tuple(adapter.prepare_task(request, i) for i in range(3))
+            self.assertEqual(adapter._session.offer(tasks).accepted_prefix_count, 2)
+            usage = adapter.engine.capacity.usage()
+            self.assertEqual(usage.held_tasks, 2)
+            self.assertEqual(usage.active_requests, 0)
+
+        try:
+            adapter.serve_connection(server, offer)
+            self.assertEqual(adapter.engine.capacity.usage().held_tasks, 0)
+        finally:
+            peer.close()
+            server.close()
+            adapter.close()
+
+    def test_invalid_budget_is_rejected_before_starting_transport(self):
+        with patch(
+            "src.execution_provider.adapters.incremental_runtime.BoundedAsyncBackend"
+        ) as backend:
+            with self.assertRaises(ValueError):
+                IncrementalMapSessionAdapter(
+                    FixedModelConfig("http://localhost/v1/chat/completions", "model", 2000),
+                    result_bytes=0,
+                )
+            backend.assert_not_called()
 
     def test_protocol_identity_cannot_be_relabelled(self):
         plan = SemanticMapPlan("Return input.", "model", 8)

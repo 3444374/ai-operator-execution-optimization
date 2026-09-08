@@ -95,7 +95,7 @@ _PG_init(void)
 							   NULL,
 							   NULL);
 	DefineCustomIntVariable("semloom_pg.provider_window_tasks", "Maximum retained Map rows.", NULL,
-		&provider_window_tasks, 2, 1, 64, PGC_USERSET, 0, NULL, NULL, NULL);
+		&provider_window_tasks, 2, 1, INT_MAX, PGC_USERSET, 0, NULL, NULL, NULL);
 	DefineCustomIntVariable("semloom_pg.provider_window_bytes", "Maximum retained Map row and task bytes.", NULL,
 		&provider_window_bytes, 8 * 1024 * 1024, 1024 * 1024, 256 * 1024 * 1024, PGC_USERSET, GUC_UNIT_BYTE, NULL, NULL, NULL);
 	DefineCustomEnumVariable("semloom_pg.provider_execution_profile",

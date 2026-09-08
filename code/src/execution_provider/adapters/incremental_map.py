@@ -1,10 +1,9 @@
 """Window-one compatibility adapter over the shared incremental Map runtime."""
 
-import json
 from ...scheduling.core.session_contract import State
 from ..completion import Completion, CompletionAdapterError, CompletionRequest
 from ..wire import v5
-from .completion_response import parse_completion
+from .completion_response import decode_backend_completion
 from .incremental_runtime import IncrementalMapRuntime
 
 
@@ -42,13 +41,10 @@ class IncrementalMapAdapter(IncrementalMapRuntime):
             if result.deliveries:
                 (delivery,) = result.deliveries
                 try:
-                    value = json.loads(delivery.result)
-                    if isinstance(value, dict) and "bridge_error" in value:
-                        raise CompletionAdapterError(value["bridge_error"])
-                    return parse_completion(value)
-                except (ValueError, UnicodeError, TypeError):
-                    raise CompletionAdapterError("MODEL_RESPONSE_INVALID") from None
+                    return decode_backend_completion(delivery.result)
                 finally:
                     self._session.release((delivery.lease_id,))
             if not result.has_immediate_work:
-                self.engine.wake.wait(result.generation, 0.01)
+                self.engine.wake.wait(
+                    result.generation, self.engine.capacity.limits.poll_interval_s
+                )

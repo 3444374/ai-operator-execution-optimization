@@ -529,3 +529,26 @@ Linux运行完整scheduling及受影响provider/PG/observer检查，再使用同
 638份文件与最终验证源码一致。独立12次真实请求通过，同一查询HTTP峰值2，十个增量任务/六会话资源归零，
 模型、PG、网关与Ray测试进程均退出。旧入口的实际消费者仍保留，§14第5项的公共Protocol提取已完成，
 后续仍需逐个迁移旧runner后才能删除同步循环。本轮不增加SQL、协议或调度能力。
+
+## 18. Capacity separation and completion cleanup (2026-09-08)
+
+This engineering slice retains the §17 source decisions and architecture §8.7–8.8 ownership:
+PG retains SQL/row lifecycle; provider adapters retain transport and settled-result leases.
+No company implementation is copied. The source baseline is `21909415`.
+
+- Share incremental backend completion decoding; normalize malformed JSON/UTF-8 to
+  `MODEL_RESPONSE_INVALID`. Release abandoned settled deliveries on terminal v6 paths,
+  without treating unresolved HTTP work as remotely cancelled.
+- Separate accepted tasks, input/result bytes and active backend requests. Existing default
+  configurations remain unchanged. The handshake integer range is signed int32, not a
+  calibrated execution capacity. Replace PG's fixed 64-entry arrays with query-owned
+  allocation and check row/provider metadata against configured byte budgets before allocation.
+- Keep v5 window-one bridge and synchronous reference; retirement is a separate migration.
+- Validate controlled malformed/error outputs, 65 retained tasks with only two active requests,
+  insufficient byte budgets, old provider/PG contracts and PG18.3 regression/TAP.
+- Real-model validation uses the previous bounded 12-request synthetic PG driver, a new ledger,
+  verified model identity, isolated rebuilt extension and fresh result paths. Stop on first failure;
+  preserve failed evidence, verify outputs and cancellation/recovery, and clean owned processes.
+  This is correctness evidence, not quality, performance or optimal-capacity calibration.
+
+Status: implemented and validated; [results](../results/scheduling/capacity_cleanup_20260908/README.md) record controlled/PG tests and two independent 12-request model runs. Multi-Job resource allocation remains pending.

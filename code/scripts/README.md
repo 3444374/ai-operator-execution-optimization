@@ -59,7 +59,12 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
 
 若要使用PG多在途，改为 `--incremental-map --max-active-requests 2`，并选择
 `SET semloom_pg.provider_execution_profile='incremental-map'`；PG的 `provider_window_tasks`
-默认2且不得超过网关容量，`provider_window_bytes`默认8MiB。该路径使用v6接纳/结果协议，
+默认2且不得超过网关公布的接纳任务数，`provider_window_bytes`默认8MiB。
+网关用 `--max-held-tasks` 设置接纳任务数，用 `--max-active-requests` 设置后端并发；
+`--input-buffer-bytes` 和 `--result-buffer-bytes` 分别限制输入与结果预留空间。
+未指定新参数时保留原默认值：接纳数等于请求容量，字节预算按单任务上限乘接纳数计算。
+任务窗口可以大于后端并发，字节预算不足时通过接纳结果施加背压；这些预算不是GPU显存测量值。
+PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6接纳/结果协议，
 仅支持受限生成Map；EXPLAIN展示实际输入窗口，复杂表达式退回窗口1。
 [验证记录](../../experiments/results/postgresql/async_window_20260908/README.md)包含同一PG查询的真实并发、取消与回收。
 

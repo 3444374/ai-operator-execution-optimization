@@ -1,6 +1,8 @@
 """Shared strict model response decoding for synchronous and asynchronous transports."""
 
-from ..completion import Completion
+import json
+
+from ..completion import Completion, CompletionAdapterError
 
 
 def parse_completion(value: object) -> Completion:
@@ -41,3 +43,14 @@ def parse_completion(value: object) -> Completion:
         output_tokens=output_tokens,
         finish_reason=finish_reason,
     )
+
+
+def decode_backend_completion(payload: bytes) -> Completion:
+    """Decode settled backend output; the caller still owns the delivery lease."""
+    try:
+        value = json.loads(payload)
+        if isinstance(value, dict) and "bridge_error" in value:
+            raise CompletionAdapterError(value["bridge_error"])
+        return parse_completion(value)
+    except (ValueError, UnicodeError, TypeError):
+        raise CompletionAdapterError("MODEL_RESPONSE_INVALID") from None

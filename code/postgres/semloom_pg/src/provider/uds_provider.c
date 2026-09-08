@@ -42,8 +42,8 @@ struct AiProviderSession
 	SemloomWireSemanticIdentity semantic_identity;
 	MemoryContext scratch_context;
 	MemoryContext completion_context;
-	AiPreparedTask pending[AI_PROVIDER_MAX_WINDOW_TASKS];
-	char payload_digests[AI_PROVIDER_MAX_WINDOW_TASKS][AI_PROVIDER_SHA256_HEX_LENGTH];
+	AiPreparedTask *pending;
+	char (*payload_digests)[AI_PROVIDER_SHA256_HEX_LENGTH];
 };
 
 static AiProviderStatus semloom_uds_open(const void *config,
@@ -201,6 +201,17 @@ semloom_uds_open(const void *config_value,
 	session->socket_fd = PGINVALID_SOCKET;
 	session->config = config;
 	*session_out = session;
+	if (config->protocol_version == 6)
+	{
+		Size entry_bytes = sizeof(*session->pending) + sizeof(*session->payload_digests);
+
+		/* Bound metadata before allocating; query context owns both arrays. */
+		if (config->max_inflight_tasks > semloom_provider_window_bytes() / entry_bytes)
+			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+				errmsg("semantic provider task window exceeds byte budget")));
+		session->pending = palloc0(config->max_inflight_tasks * sizeof(*session->pending));
+		session->payload_digests = palloc0(config->max_inflight_tasks * sizeof(*session->payload_digests));
+	}
 	session->open_spec = *spec;
 	session->open_spec.semantic_spec_id = semloom_uds_copy_slice(spec->semantic_spec_id);
 	session->open_spec.physical_algorithm =

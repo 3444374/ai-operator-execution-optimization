@@ -177,8 +177,14 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 		pump->window = 1;
 	if (pump->window > 1)
 	{
-		pump->rows = MemoryContextAllocZero(owner_context, pump->window * sizeof(SemloomWindowRow));
 		pump->window_bytes = semloom_provider_window_bytes();
+		/* Reserve row metadata and one result per slot before reading the child. */
+		if (pump->window > pump->window_bytes /
+			(sizeof(SemloomWindowRow) + SEMLOOM_MAP_MAX_OUTPUT_BYTES))
+			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+				errmsg("semantic Map task window exceeds byte budget")));
+		pump->rows = MemoryContextAllocZero(owner_context, pump->window * sizeof(SemloomWindowRow));
+		pump->window_bytes -= pump->window * sizeof(SemloomWindowRow);
 		pump->receive_context = AllocSetContextCreate(owner_context, "SemLoom receive", ALLOCSET_DEFAULT_SIZES);
 	}
 	node->custom_ps = list_make1(pump->child_state);

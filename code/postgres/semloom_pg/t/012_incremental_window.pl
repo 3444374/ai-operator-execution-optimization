@@ -57,6 +57,14 @@ is($node->safe_psql('postgres', "$settings SELECT $map FROM controls WHERE id=1 
 $node->safe_psql('postgres', 'CREATE TABLE paging AS SELECT g AS id,repeat(g::text,500) AS body FROM generate_series(1,40) g');
 my $expected = join("\n", map {my $body = "$_" x 500; "$_|$body|mapped:$body"} (1..40));
 is($node->safe_psql('postgres', "$settings SELECT id,body,$map FROM paging"),$expected,'retained input survives many child pages and slot reuse');
+$node->safe_psql('postgres', 'CREATE TABLE wide_window AS SELECT g AS id,g::text AS body FROM generate_series(1,65) g');
+my $wide_expected = join("\n", map {"$_|mapped:$_"} (1..65));
+is($node->safe_psql('postgres', "$settings SET semloom_pg.provider_window_tasks=65; SELECT id,$map FROM wide_window"),
+    $wide_expected, '65 retained tasks execute through a two-request backend');
+my ($budget_ret, $budget_out, $budget_err) = $node->psql('postgres',
+    "$settings SET semloom_pg.provider_window_tasks=65; SET semloom_pg.provider_window_bytes=1048576; SELECT $map FROM wide_window");
+isnt($budget_ret, 0, 'row window cannot exceed its byte budget');
+like($budget_err, qr/task window exceeds byte budget/, 'byte budget rejects before row allocation');
 $gateway->signal('TERM');
 my $done = eval { $gateway->finish };
 ok($done,'gateway closes transport') or diag($err);

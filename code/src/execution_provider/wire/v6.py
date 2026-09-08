@@ -7,10 +7,11 @@ Only one transport RPC may await its reply; model requests remain concurrent.
 
 from functools import partial
 
+from ..limits import MAX_INCREMENTAL_TASKS
 from . import map_codec
 
 PROTOCOL_VERSION = 6
-MAX_WINDOW_TASKS = 64
+MAX_WINDOW_TASKS = MAX_INCREMENTAL_TASKS
 EXECUTION_ID = map_codec.ASYNC_EXECUTION_ID
 MAX_FRAME_BYTES = map_codec.MAX_FRAME_BYTES
 MAX_INPUT_BYTES = map_codec.MAX_INPUT_BYTES

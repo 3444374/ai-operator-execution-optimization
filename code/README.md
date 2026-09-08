@@ -1,5 +1,10 @@
 # SemLoom Code
 
+Incremental Map now separates retained tasks, input/result bytes and active HTTP requests.
+Its v5/v6 adapters share backend completion decoding while retaining their delivery ownership.
+PG window storage is allocated from the configured count and checked against byte budgets;
+64 is no longer a scheduling ceiling. See the [CLI budgets](scripts/README.md).
+
 Current source facts and explicit missing capabilities are summarized in `code/INFRA_STATUS.md`.
 The shared call and tuple-binding modules now pass [PG18.3 checks](../experiments/results/postgresql/semantic_binding_20260907/README.md).
 The development branch now passes [one Filter→one generated Map checks](../experiments/results/postgresql/filter_map_binding_20260907/README.md).

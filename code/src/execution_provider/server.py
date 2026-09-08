@@ -21,6 +21,7 @@ from .adapters.model_config import load_fixed_model_config
 from .completion import CompletionAdapter
 from .completion import Completion
 from .gateway_runtime import GatewayLimits, GatewayRuntime
+from .limits import MAX_INCREMENTAL_TASKS
 from .request_admission import RequestAdmission
 from .session_dispatch import run_session as _run_session
 
@@ -32,6 +33,15 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument("--max-connections", type=int, default=GatewayLimits.max_connections)
     parser.add_argument(
         "--max-active-requests", type=int, default=GatewayLimits.max_active_requests
+    )
+    parser.add_argument(
+        "--max-held-tasks",
+        type=int,
+        help="incremental accepted task budget; defaults to request capacity",
+    )
+    parser.add_argument("--input-buffer-bytes", type=int, help="incremental input byte budget")
+    parser.add_argument(
+        "--result-buffer-bytes", type=int, help="incremental reserved result byte budget"
     )
     parser.add_argument("--frame-timeout-ms", type=int, default=GatewayLimits.frame_timeout_ms)
     parser.add_argument(
@@ -113,13 +123,27 @@ def main(
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter
     incremental_adapter = None
+    held_tasks = args.max_active_requests if args.max_held_tasks is None else args.max_held_tasks
+    if (
+        any(
+            value is not None
+            for value in (args.max_held_tasks, args.input_buffer_bytes, args.result_buffer_bytes)
+        )
+        and not args.incremental_map
+    ):
+        raise SystemExit("incremental buffer budgets require --incremental-map")
+    if any(
+        value is not None and value < 1
+        for value in (args.input_buffer_bytes, args.result_buffer_bytes)
+    ):
+        raise SystemExit("incremental byte budgets must be positive")
     if args.incremental_map and (
         args.incremental_map_window_one
         or args.fixed_model_config is None
-        or limits.max_active_requests > 64
+        or not 1 <= held_tasks <= MAX_INCREMENTAL_TASKS
     ):
         raise SystemExit(
-            "incremental Map v6 requires a fixed model, capacity 1..64, and no v5 flag"
+            f"incremental Map v6 requires a fixed model, capacity 1..{MAX_INCREMENTAL_TASKS}, and no v5 flag"
         )
     if args.incremental_map_window_one and (
         args.fixed_model_config is None or limits.max_active_requests != 1
@@ -136,7 +160,12 @@ def main(
             from .adapters.incremental_session import IncrementalMapSessionAdapter
 
             incremental_adapter = IncrementalMapSessionAdapter(
-                fixed_config, observer=incremental_observer, max_tasks=limits.max_active_requests
+                fixed_config,
+                observer=incremental_observer,
+                max_tasks=held_tasks,
+                max_active_requests=limits.max_active_requests,
+                input_bytes=args.input_buffer_bytes,
+                result_bytes=args.result_buffer_bytes,
             )
             completion_adapter = incremental_adapter
         elif args.incremental_map_window_one:
