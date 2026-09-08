@@ -93,13 +93,6 @@ static const AiProviderOps semloom_uds_fixed_ops = {
 	.close = semloom_uds_close,
 };
 
-static const AiProviderOps semloom_uds_incremental_ops = {
-	.adapter_name = "semloom_incremental_map_window_one",
-	.open = semloom_uds_open,
-	.drive = semloom_uds_drive,
-	.close = semloom_uds_close,
-};
-
 static const AiProviderOps semloom_uds_async_ops = {
 	.adapter_name = "semloom_incremental_map",
 	.open = semloom_uds_open,
@@ -142,16 +135,6 @@ semloom_uds_provider_select(MemoryContext owner_context,
 		config->max_inflight_tasks = provider->max_inflight_tasks;
 		config->protocol_version = 6;
 		config->semantic_execution_id = "semloom.provider.incremental-map.uds.v6";
-	}
-	else if (profile == SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP)
-	{
-		/* Window one retains PG's existing evaluation and result lifecycle. */
-		if (!semloom_provider_spec_is_generate_map(spec))
-			ereport(ERROR,
-				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-				 errmsg("incremental-map-window-one supports generated Map only")));
-		provider->ops = &semloom_uds_incremental_ops;
-		config->semantic_execution_id = SEMLOOM_UDS_MAP_INCREMENTAL_EXECUTION_ID;
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_GOLDEN)
 	{

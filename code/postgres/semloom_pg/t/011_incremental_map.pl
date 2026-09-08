@@ -43,11 +43,11 @@ open(my $config, '>', $config_file) or die $!;
 print $config encode_json({endpoint_url=>"http://127.0.0.1:$port/v1/chat/completions", model_id=>'model',timeout_ms=>5000});
 close($config);
 $gateway = IPC::Run::start(['python3', $gateway_script, '--socket', $socket,
-    '--fixed-model-config', $config_file, '--incremental-map-window-one',
+    '--fixed-model-config', $config_file, '--incremental-map', '--max-held-tasks', '1', '--max-active-requests', '1',
     '--test-max-sessions', '3'], '>', \$gateway_out, '2>', \$gateway_err, IPC::Run::timeout(60));
 for (1..500) { last if -S $socket; sleep(.01); }
 ok(-S $socket, 'incremental gateway ready') or die $gateway_err;
-my $settings = "SET statement_timeout='10s'; SET semloom_pg.gateway_socket='$socket'; SET semloom_pg.provider_execution_profile='incremental-map-window-one';";
+my $settings = "SET statement_timeout='10s'; SET semloom_pg.gateway_socket='$socket'; SET semloom_pg.provider_execution_profile='incremental-map'; SET semloom_pg.provider_window_tasks=1;";
 my $options = q|' {"model":"model","temperature":0,"max_tokens":128}'::jsonb|;
 my $map = "ai_semantic.map(touch_input(body), 'Echo.', $options)";
 is($node->safe_psql('postgres', "$settings SELECT $map FROM inputs LIMIT 0"), '', 'LIMIT zero has no result');
@@ -74,5 +74,9 @@ my $filter_options = q|' {"model":"model","temperature":0,"max_tokens":8}'::json
 my ($ret,$out,$err) = $node->psql('postgres', "$settings SELECT id FROM inputs WHERE ai_semantic.filter(body,'True.', $filter_options)");
 isnt($ret, 0, 'new profile does not silently execute Filter through old path');
 like($err, qr/supports generated Map only/, 'unsupported operator is explicit');
+my ($old_ret,$old_out,$old_err) = $node->psql('postgres',
+    "SET semloom_pg.provider_execution_profile='incremental-map-window-one'");
+isnt($old_ret, 0, 'retired v5 bridge profile is rejected');
+like($old_err, qr/invalid value for parameter/, 'retired profile does not silently map to v6');
 $node->stop;
 done_testing();

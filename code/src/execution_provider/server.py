@@ -45,11 +45,6 @@ def parse_args(argv=None) -> argparse.Namespace:
     )
     parser.add_argument("--frame-timeout-ms", type=int, default=GatewayLimits.frame_timeout_ms)
     parser.add_argument(
-        "--incremental-map-window-one",
-        action="store_true",
-        help="serve generated Map through one shared incremental engine",
-    )
-    parser.add_argument(
         "--incremental-map", action="store_true", help="serve Map with version-six bounded intake"
     )
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
@@ -143,17 +138,11 @@ def main(
     ):
         raise SystemExit("incremental byte budgets must be positive")
     if args.incremental_map and (
-        args.incremental_map_window_one
-        or args.fixed_model_config is None
-        or not 1 <= held_tasks <= MAX_INCREMENTAL_TASKS
+        args.fixed_model_config is None or not 1 <= held_tasks <= MAX_INCREMENTAL_TASKS
     ):
         raise SystemExit(
-            f"incremental Map v6 requires a fixed model, capacity 1..{MAX_INCREMENTAL_TASKS}, and no v5 flag"
+            f"incremental Map v6 requires a fixed model, capacity 1..{MAX_INCREMENTAL_TASKS}"
         )
-    if args.incremental_map_window_one and (
-        args.fixed_model_config is None or limits.max_active_requests != 1
-    ):
-        raise SystemExit("incremental Map requires a fixed model and request capacity one")
     if args.fixed_model_config is None:
         completion_adapter = GoldenCompletionAdapter(golden_fixtures)
     else:
@@ -171,15 +160,6 @@ def main(
                 max_active_requests=limits.max_active_requests,
                 input_bytes=args.input_buffer_bytes,
                 result_bytes=args.result_buffer_bytes,
-                execution_factory=incremental_execution_factory,
-            )
-            completion_adapter = incremental_adapter
-        elif args.incremental_map_window_one:
-            from .adapters.incremental_map import IncrementalMapAdapter
-
-            incremental_adapter = IncrementalMapAdapter(
-                fixed_config,
-                observer=incremental_observer,
                 execution_factory=incremental_execution_factory,
             )
             completion_adapter = incremental_adapter

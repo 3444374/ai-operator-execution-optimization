@@ -1,7 +1,7 @@
 # SemLoom Code
 
 Incremental Map now separates retained tasks, input/result bytes and active HTTP requests.
-Its v5/v6 adapters share backend completion decoding while retaining their delivery ownership.
+The incremental adapter decodes settled backend results separately from delivery ownership.
 Queue, backend and consumer deadlines can be set independently with `SessionTimeouts`; the gateway
 leaves queue/consumer phase deadlines to PG and socket lifecycle by default. Callers that omit the
 phase policy retain the legacy `wait_timeout_s` behavior.
@@ -506,7 +506,7 @@ The versioned adapters now depend on shared modules directly:
 |---|---|
 | [execution_provider/completion.py](src/execution_provider/completion.py) | Request/result values, adapter interface and redacted errors; no session loop |
 | [execution_provider/adapters/model_config.py](src/execution_provider/adapters/model_config.py) | Fixed endpoint/model configuration and validation for both HTTP implementations |
-| [execution_provider/adapters/incremental_runtime.py](src/execution_provider/adapters/incremental_runtime.py) | Connection lifetime, peer cancellation and resource draining shared by v5/v6 |
+| [execution_provider/adapters/incremental_runtime.py](src/execution_provider/adapters/incremental_runtime.py) | Incremental connection lifetime, peer cancellation and resource draining |
 | [execution_provider/adapters/incremental_execution.py](src/execution_provider/adapters/incremental_execution.py) | Fixed-model assembly; existing policies, work descriptions and backend can be supplied independently of wire handling |
 | [execution_provider/adapters/async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) | Bounded HTTP I/O, model timeout and client cleanup |
 | [execution_provider/wire/map_codec.py](src/execution_provider/wire/map_codec.py) | Common Map semantic validation and digest construction |
@@ -527,21 +527,14 @@ PG row window. It reuses the existing organizer, core and HTTP adapter. Plain in
 can have multiple model requests in flight; other expressions retain window one. See the
 [configuration and checks](../experiments/results/postgresql/async_window_20260908/README.md)
 for exact supported shapes, 1958 PG TAP checks, lifecycle checks and 12 real model requests.
-Filter/composed v6 paths and multiple active core sessions remain pending. The following describes
-the retained window-one implementation.
+Filter/composed v6 paths and multiple active core sessions remain pending.
 
-The opt-in `incremental-map-window-one` execution profile now connects generated Map to SessionEngine,
-WorkWindowOrganizer and BoundedAsyncBackend. It reuses wire v5 and the existing PG input/result lifecycle,
-with a distinct provider execution digest. One gateway owns one engine and one active connection;
-it does not add a second RequestAdmission ledger. HTTP is asynchronous while the PG port remains at
-window one. Cancellation stops delivery; authoritative late responses settle the old reservation before
-another query is admitted. Unknown outcomes quarantine the service.
-
-[Verification](../experiments/results/postgresql/incremental_window_one_20260908/README.md) includes
-115 PostgreSQL contracts, 23 provider tests, 9 observer tests, PG18.3 SQL regression and 1926 TAP checks,
-and nine real model requests comparing reference results, INSERT, transaction error, cancellation and
-recovery. This does not implement PG multi-in-flight execution, multiple active sessions, composition
-on the new profile, or GPU memory management. The [CLI](scripts/README.md) describes explicit opt-in.
+The transitional `incremental-map-window-one` bridge has been retired. Use the same
+`incremental-map` v6 profile for both one-row and larger windows; set gateway held tasks,
+backend requests and PG `provider_window_tasks` to 1 for single-row operation. See the
+[migration and checks](../experiments/results/scheduling/bridge_retirement_20260908/README.md).
+Synchronous v5 Map and its semantic reference remain supported. Historical bridge evidence
+continues to describe its original source version.
 
 ## Incremental execution context
 

@@ -26,7 +26,6 @@ PROTOCOL_VERSION = 5
 PLAN_SCHEMA_VERSION = 4
 GOLDEN_EXECUTION_ID = "semloom.provider.golden.uds.v5"
 FIXED_EXECUTION_ID = "semloom.provider.openai-compatible-fixed.uds.v5"
-INCREMENTAL_EXECUTION_ID = "semloom.provider.incremental-map-window-one.uds.v5"
 ASYNC_EXECUTION_ID = "semloom.provider.incremental-map.uds.v6"
 MAX_INFLIGHT_TASKS = 1
 
@@ -142,7 +141,7 @@ def provider_execution_digest(
 ) -> str:
     SemanticMapPlan("validation", model_id, 1)
     allowed = {
-        5: (GOLDEN_EXECUTION_ID, FIXED_EXECUTION_ID, INCREMENTAL_EXECUTION_ID),
+        5: (GOLDEN_EXECUTION_ID, FIXED_EXECUTION_ID),
         6: (ASYNC_EXECUTION_ID,),
     }
     if provider_execution_id not in allowed.get(protocol_version, ()):

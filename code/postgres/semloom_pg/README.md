@@ -26,12 +26,11 @@ the int32 field range is an encoding limit, not a recommended capacity. Input/re
 must still fit the configured budgets. Gateway intake and backend request budgets are described
 in the [CLI guide](../../scripts/README.md).
 
-The development profile `incremental-map-window-one` uses a distinct v5 execution identity and one
-shared gateway engine. It preserves the supported Map query shapes and synchronous PG port, with
-asynchronous external HTTP and cancellation draining. [Validation](../../../experiments/results/postgresql/incremental_window_one_20260908/README.md)
-passes PG18.3 regression, 1926 TAP checks and nine actual model requests. SELECT/INSERT values, NULL,
-LIMIT, input evaluation, transaction rollback, query cancellation and subsequent recovery are covered.
-No planner binding rewrite was retained. The new profile does not yet serve Filter or composed queries.
+The transitional v5 `incremental-map-window-one` profile has been removed after window-one
+qualification. Use `incremental-map` with PG `provider_window_tasks=1` and gateway
+`--max-held-tasks 1 --max-active-requests 1`. Old profile/CLI names are rejected, not silently
+remapped; synchronous Map v5 remains supported. See the
+[retirement checks](../../../experiments/results/scheduling/bridge_retirement_20260908/README.md).
 
 The `codex/semfilter-and` branch adds up to two top-level Filter predicates joined by AND through one
 bounded multi-session gateway. It reuses the existing scans, row pump and synchronous provider port.
@@ -40,7 +39,7 @@ contracts, strict PG18.3 compilation, regression 1/1 and all eight TAP files (18
 independent volatile-input evaluation, native function permissions, RLS, snapshots and cancellation.
 This two-Filter implementation is included in main. The development branch additionally verifies
 [one Filter→one generated Map](../../../experiments/results/postgresql/filter_map_binding_20260907/README.md) with 1910 PG TAP checks.
-Per-session asynchronous work remains pending.
+Asynchronous Filter and composed execution remain pending.
 
 The [2026-09-06 integration checks](../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (1758 checks), and 247 related

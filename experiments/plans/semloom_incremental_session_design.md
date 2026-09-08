@@ -464,7 +464,9 @@ temperature=0。work为诊断请求计数，不作为模型成本校准；同局
 
 <a id="pg-map-window-one"></a>
 
-## 16. PG生成Map窗口1接入（工程决策）
+## 16. PG生成Map窗口1接入（历史工程决策）
+
+本节记录原v5桥接的实现和验证；后续退役与v6窗口1替代见§20。
 
 本轮接入一个真实生成Map，保留v5窗口1和PG现有输入求值/NULL/LIMIT/输出绑定；新增独立
 provider执行身份与GUC选项，不能把增量核心执行记录为旧同步适配器。沿用主架构§8.7/§8.8的
@@ -543,7 +545,7 @@ No company implementation is copied. The source baseline is `21909415`.
   configurations remain unchanged. The handshake integer range is signed int32, not a
   calibrated execution capacity. Replace PG's fixed 64-entry arrays with query-owned
   allocation and check row/provider metadata against configured byte budgets before allocation.
-- Keep v5 window-one bridge and synchronous reference; retirement is a separate migration.
+- This slice kept the v5 window-one bridge and synchronous reference; later bridge retirement is recorded in §20.
 - Validate controlled malformed/error outputs, 65 retained tasks with only two active requests,
   insufficient byte budgets, old provider/PG contracts and PG18.3 regression/TAP.
 - Real-model validation uses the previous bounded 12-request synthetic PG driver, a new ledger,
@@ -572,6 +574,27 @@ editing the wire adapters. This is composition, not a new scheduler. Test an alt
 and selection policy through the actual adapter. Verify affected legacy tests and a fresh bounded
 12-request real-model PG run with model/source identity and cleanup evidence.
 
-The v5 window-one bridge is a migration candidate, not yet retired. Review its current callers
-and v6-window-one coverage before removing names or tests. Multi-session core and PG window
+At this slice the v5 window-one bridge remained a migration candidate; its subsequent
+qualification and retirement are recorded in §20. Multi-session core and PG window
 module extraction are separate subsequent work; do not duplicate Engine capacity per connection.
+
+## 20. Consumer deadline publication and window-one bridge retirement (2026-09-08)
+
+Status: completed; [results](../results/scheduling/bridge_retirement_20260908/README.md) record 503 Linux tests, 1963 PG TAP checks and 32 real requests across qualification and final runs. Baseline `e803e659`. Source inspection confirmed `_advance` computed its
+returned deadline before transferring READY results to LEASED. Include the prospective consumer
+deadline in the result without moving ownership publication ahead of fallible work. Preserve
+legacy timeout behavior, disabled consumer timers, and cleanup ownership.
+
+Retirement follows architecture §8.7–8.8's shared-provider/PG-lifecycle decisions, with no company
+code copied. Qualify v6 with one held task and one backend request against current bridge tests
+and PG SELECT/INSERT, NULL, volatile input, LIMIT, error, disconnect, cancellation and recovery.
+Before removal, run a fresh 10-request real-model comparison of the v5 incremental bridge and
+v6 window one. Then migrate the existing tests/observer and remove only bridge-specific Python,
+CLI, PG profile and identity branches. Retain synchronous semantic references and wire v5.
+
+After removal, run full affected suites, rebuild/test the isolated PG18.3 extension and use
+separate real-model ledgers: 10 requests for v6 window one and 12 for window two, both against
+the synchronous reference. Source/model identities, exact budgets and process cleanup are
+required for each run. Stop on failed model validation; preserve all evidence. These 32 planned
+requests are engineering checks, not quality or performance calibration. Multi-session work,
+other compatibility exports and legacy timeout migration remain separate tasks.

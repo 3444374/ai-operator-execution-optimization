@@ -73,18 +73,13 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 默认 `build_fixed_model_execution` 接受已有 `SessionPolicies`、工作量描述和阶段超时配置。
 这不表示网关已经支持多个活动session。
 
-下面保留待迁移的v5窗口1兼容入口说明；使用 `--incremental-map-window-one --max-active-requests 1` 启动：
-
-数据库会话显式选择 `SET semloom_pg.provider_execution_profile='incremental-map-window-one'`，
-并将 `semloom_pg.gateway_socket` 指向同一socket。新身份为
-`semloom.provider.incremental-map-window-one.uds.v5`；保留v5窗口1，当前只接生成型Map。
-PG仍同步等待本行结果，HTTP由有界异步传输执行；不是PG多在途协议，也不支持Filter→Map组合。
-一个网关只有一个活动查询，排空已取消查询的旧请求后才接受下一查询，不复制Engine容量。
-未知远端结果会停止服务接纳，需确认后端已结束后再恢复，不能通过自动重启重置额度。
-
-观测CLI仍使用同一持久AttemptLedger；新模式选择异步POST观测，记录core提交、终态、排空和
-传输关闭事件。header不落日志，机器配置继续留在仓库外。详见
-[窗口1验证](../../experiments/results/postgresql/incremental_window_one_20260908/README.md)。
+v5过渡桥接 `--incremental-map-window-one` 已移除。单行窗口使用同一条v6路径：
+`--incremental-map --max-held-tasks 1 --max-active-requests 1`，数据库同时设置
+`provider_execution_profile='incremental-map'` 和 `provider_window_tasks=1`。
+旧CLI/PG名称会明确报错；同步语义参考与wire v5仍保留。
+[迁移验证](../../experiments/results/scheduling/bridge_retirement_20260908/README.md)记录旧桥接对照及最终版本的真实模型检查。
+一个网关仍只有一个活动查询；取消后保留未确认的远端占用，不能通过新建Engine重置额度。
+观测CLI继续使用同一持久请求账本，记录提交、终态、排空和传输关闭，header不进入日志。
 
 ## SemMap resource measurement
 

@@ -28,8 +28,6 @@
 #define SEMLOOM_UDS_CHOICE_FIXED_EXECUTION_ID \
 	"semloom.provider.openai-compatible-fixed.uds.v4"
 #define SEMLOOM_UDS_MAP_GOLDEN_EXECUTION_ID "semloom.provider.golden.uds.v5"
-#define SEMLOOM_UDS_MAP_INCREMENTAL_EXECUTION_ID \
-	"semloom.provider.incremental-map-window-one.uds.v5"
 #define SEMLOOM_UDS_MAP_FIXED_EXECUTION_ID \
 	"semloom.provider.openai-compatible-fixed.uds.v5"
 

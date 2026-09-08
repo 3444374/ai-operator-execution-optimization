@@ -1,0 +1,100 @@
+{
+  "baseline_commit": "e803e659",
+  "linux_tests": {
+    "scheduling": 338,
+    "provider": 33,
+    "pg_contracts": 115,
+    "observer": 17
+  },
+  "local_targeted_tests": 52,
+  "pg_regression": 1,
+  "pg_tap_tests": 1963,
+  "qualification_pg_tap_tests": 1961,
+  "implementation_net_lines": -101,
+  "artifact_count": 62,
+  "archive_sha256": "0ec9304d2857892d180c18ad37a545bd4b493612f14aeea15b54230da68fac67",
+  "runs": {
+    "qual": {
+      "status": "passed",
+      "window": 1,
+      "model_requests": 10,
+      "http_peak": 1,
+      "incremental_tasks": 8,
+      "drained_sessions": 6,
+      "cancel_sqlstate": "57014",
+      "resources_zero": true,
+      "controller": {
+        "driver_exit_code": 0,
+        "gpu_memory_mib": {
+          "0": 1,
+          "1": 1
+        },
+        "model_port_closed": true,
+        "model_requests": 10,
+        "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "official_weights_match": true,
+        "request_limit": 10,
+        "run_status": "passed",
+        "source_commit": "e803e659 plus retirement manifest",
+        "status": "passed"
+      }
+    },
+    "w1": {
+      "status": "passed",
+      "window": 1,
+      "model_requests": 10,
+      "http_peak": 1,
+      "incremental_tasks": 8,
+      "drained_sessions": 6,
+      "cancel_sqlstate": "57014",
+      "resources_zero": true,
+      "controller": {
+        "driver_exit_code": 0,
+        "gpu_memory_mib": {
+          "0": 1,
+          "1": 1
+        },
+        "model_port_closed": true,
+        "model_requests": 10,
+        "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "official_weights_match": true,
+        "request_limit": 10,
+        "run_status": "passed",
+        "source_commit": "e803e659 plus retirement manifest",
+        "status": "passed"
+      }
+    },
+    "w2": {
+      "status": "passed",
+      "window": 2,
+      "model_requests": 12,
+      "http_peak": 2,
+      "incremental_tasks": 10,
+      "drained_sessions": 6,
+      "cancel_sqlstate": "57014",
+      "resources_zero": true,
+      "controller": {
+        "driver_exit_code": 0,
+        "gpu_memory_mib": {
+          "0": 1,
+          "1": 1
+        },
+        "model_port_closed": true,
+        "model_requests": 12,
+        "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "official_weights_match": true,
+        "request_limit": 12,
+        "run_status": "passed",
+        "source_commit": "e803e659 plus retirement manifest",
+        "status": "passed"
+      }
+    }
+  },
+  "postflight": {
+    "source_files_match": 640,
+    "owned_processes": [],
+    "raylets": [],
+    "retired_adapter_importable": false,
+    "extension_sha256": "2e2aa03492630c59695ce663bde1eb3a21743b53673c5e8c85eaa9d22477d2a5"
+  }
+}

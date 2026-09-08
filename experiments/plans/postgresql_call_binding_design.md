@@ -286,9 +286,10 @@ v3 SELECT、v4 SELECT、v4 INSERT各4次，总预算12次，由现有持久Attem
 
 <a id="pg-async-readiness"></a>
 
-## 13. PG多在途接入前核对（2026-09-08，待实现）
+## 13. PG多在途接入前核对（2026-09-08，历史检查）
 
-源码基线`27729f34`。生成Map窗口1已接入增量核心，但不是PG多在途。受控反例确认：
+当前多在途实现见§13.1；旧v5窗口1桥接的后续退役见[迁移验证](../results/scheduling/bridge_retirement_20260908/README.md)。
+以下保留源码基线`27729f34`的检查：当时生成Map窗口1已接入增量核心，但不是PG多在途。受控反例确认：
 等待第一项完成期间发送下一帧会终止当前会话，远端额度仍正确保留到完成；
 [本地/Linux各7项验证](../results/postgresql/incremental_window_one_20260908/README.md#async-readiness)
 不改变此前真实模型只证明窗口1的范围。本轮没有直接调大窗口或修改生产接口。

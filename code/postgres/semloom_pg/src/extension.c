@@ -30,7 +30,6 @@ static const struct config_enum_entry semloom_execution_profile_options[] = {
 	{"openai-compatible-fixed",
 	 SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED,
 	 false},
-	{"incremental-map-window-one", SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP, false},
 	{"incremental-map", SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP, false},
 	{NULL, 0, false},
 };
@@ -74,8 +73,6 @@ semloom_provider_execution_profile_name(void)
 {
 	if (semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP)
 		return "incremental-map";
-	if (semloom_execution_profile == SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP)
-		return "incremental-map-window-one";
 	return semloom_execution_profile ==
 		SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED ?
 		"openai-compatible-fixed" : "golden";

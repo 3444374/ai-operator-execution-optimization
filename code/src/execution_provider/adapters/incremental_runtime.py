@@ -1,4 +1,4 @@
-"""Map execution ownership shared by the version-five and version-six protocol adapters."""
+"""Connection and resource lifecycle for incremental Map execution."""
 
 from __future__ import annotations
 
@@ -37,7 +37,6 @@ class IncrementalMapRuntime:
         self.model_id = config.model_id
         self._connection = None
         self._session = None
-        self._sequence = 0
         self._connections = 0
         self._observer = observer
         self._stopping: Callable[[], bool] = lambda: False
@@ -62,7 +61,6 @@ class IncrementalMapRuntime:
             raise RuntimeError("incremental engine unavailable")
         self._connections += 1
         self._connection, self._stopping = connection, stopping
-        self._sequence = 0
         self._session = self.engine.open(
             SessionSpec(
                 f"pg-{self._connections}",

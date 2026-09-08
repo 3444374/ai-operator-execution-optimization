@@ -14,7 +14,6 @@ import sys
 from src.execution_provider.adapters.incremental_session import IncrementalMapSessionAdapter
 from src.scheduling.core.session import SessionEngine
 for name in (
-    "src.execution_provider.adapters.incremental_map",
     "src.execution_provider.adapters.semantic_session",
     "src.execution_provider.adapters.openai_compatible_fixed",
     "src.execution_provider.wire.v5",
