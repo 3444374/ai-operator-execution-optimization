@@ -11,7 +11,7 @@ from ..wire.framing import ProtocolError, encode_frame, read_frame, has_duplicat
 from ...scheduling.core.session_contract import State
 
 
-class IncrementalMapSessionAdapter(IncrementalMapRuntime):
+class IncrementalMapProtocol:
     """One service ledger; delivery leases remain charged until their frame is sent."""
 
     def execution_id_for(self, version):
@@ -29,7 +29,11 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
             result = self._session.advance(self.max_tasks)
             ready.extend(result.deliveries)
             if result.state == State.FAILED:
-                raise CompletionAdapterError(self._transport_error or "MODEL_UNAVAILABLE")
+                raise CompletionAdapterError(
+                    result.error
+                    if result.error in ("MODEL_TIMEOUT", "MODEL_UNAVAILABLE")
+                    else self._transport_error or "MODEL_UNAVAILABLE"
+                )
             return result
 
         def send(message):
@@ -55,7 +59,7 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
             while True:
                 message = read_frame(connection)
                 if message is None:
-                    return
+                    return not pending
                 if message.get("type") == "poll":
                     if (
                         has_duplicate_fields(message)
@@ -70,9 +74,7 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
                             raise ConnectionResetError("provider peer stopped")
                         result = progress()
                         if not ready and not result.has_immediate_work:
-                            self.engine.wake.wait(
-                                result.generation, self.engine.capacity.limits.poll_interval_s
-                            )
+                            self.wait_for_progress(result)
                     delivery = ready.popleft()
                     active_delivery = delivery
                     error_sequence = delivery.key.sequence
@@ -140,3 +142,7 @@ class IncrementalMapSessionAdapter(IncrementalMapRuntime):
             abandoned = ([active_delivery] if active_delivery is not None else []) + list(ready)
             if abandoned:
                 self._session.release(tuple(delivery.lease_id for delivery in abandoned))
+
+
+class IncrementalMapSessionAdapter(IncrementalMapProtocol, IncrementalMapRuntime):
+    """Direct single-connection owner retained for embedded callers and comparison."""

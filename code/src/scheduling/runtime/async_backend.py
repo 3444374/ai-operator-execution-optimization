@@ -13,7 +13,14 @@ from itertools import count
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 
-from ..core.session_contract import Acceptance, BackendTask, Submission, TaskKey, Terminal
+from ..core.session_contract import (
+    Acceptance,
+    BackendTask,
+    Submission,
+    TaskKey,
+    Terminal,
+    Uncertain,
+)
 
 
 @dataclass
@@ -41,10 +48,12 @@ class BoundedAsyncBackend:
         max_tasks: int,
         notify: Callable[[], None],
         finalize: Callable[[], Awaitable[None]] | None = None,
+        isolate_failures: bool = False,
     ):
         if type(max_tasks) is not int or max_tasks <= 0:
             raise ValueError("max_tasks must be positive")
         self._execute, self._finalize = execute, finalize
+        self._isolate_failures = isolate_failures
         self._maximum, self._notify = max_tasks, notify
         self._lock = threading.Lock()
         self._slots: dict[TaskKey, _Pending] = {}
@@ -94,7 +103,7 @@ class BoundedAsyncBackend:
 
     def poll(
         self, handles: tuple[tuple[TaskKey, str | None], ...], max_events: int
-    ) -> tuple[Terminal, ...]:
+    ) -> tuple[Terminal | Uncertain, ...]:
         if type(max_events) is not int or max_events <= 0:
             raise ValueError("max_events must be positive")
         if not self._lock.acquire(blocking=False):
@@ -116,12 +125,30 @@ class BoundedAsyncBackend:
                 # No successful event is consumed if this poll raises instead.
                 try:
                     result = slot.future.result()
-                except BaseException:
+                except BaseException as error:
                     slot.reported_unknown = True
-                    raise RuntimeError("asynchronous remote outcome unknown") from None
+                    if not self._isolate_failures:
+                        raise RuntimeError("asynchronous remote outcome unknown") from None
+                    events.append(
+                        Uncertain(
+                            key,
+                            slot.handle,
+                            "MODEL_TIMEOUT"
+                            if isinstance(error, TimeoutError)
+                            else "MODEL_UNAVAILABLE",
+                        )
+                    )
+                    if len(events) == max_events:
+                        break
+                    continue
                 if type(result) is not bytes or len(result) > slot.task.task.max_result_bytes:
-                    slot.reported_unknown = True
-                    raise RuntimeError("asynchronous result exceeds its reservation")
+                    if not self._isolate_failures:
+                        slot.reported_unknown = True
+                        raise RuntimeError("asynchronous result exceeds its reservation")
+                    events.append(Terminal(key, slot.handle, "failed"))
+                    if len(events) == max_events:
+                        break
+                    continue
                 if (key, slot.handle) not in handles:
                     raise RuntimeError("asynchronous terminal has no registered owner")
                 events.append(Terminal(key, slot.handle, "completed", result))
@@ -129,7 +156,8 @@ class BoundedAsyncBackend:
                     break
             result = tuple(events)
             for event in result:
-                del self._slots[event.key]
+                if type(event) is Terminal:
+                    del self._slots[event.key]
             return result
         finally:
             self._lock.release()

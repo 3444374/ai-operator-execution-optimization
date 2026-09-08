@@ -20,7 +20,8 @@ PG18.3回归/1926项TAP、9次真实模型请求，窗口扩大和多活动查�
 
 生成Map的后续[PG多在途接入](../results/postgresql/async_window_20260908/README.md)已通过受控与12次真实模型验证。
 具体PG缓冲、v6接纳/完成协议和受限输入形状由[PG规格§13](postgresql_call_binding_design.md#pg-async-readiness)维护，
-本文件不复制该协议；多活动session、Filter/组合接入和物理多成员请求仍未完成。
+本文件不复制该协议。多活动session与Job预算/轮转由[多Job设计](semloom_multisession_design.md)
+接续；Filter/组合接入和物理多成员请求仍未完成。
 
 ## 1. 范围、选型与旧实现复用
 

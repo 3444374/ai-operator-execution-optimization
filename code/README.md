@@ -1,6 +1,14 @@
 # SemLoom Code
 
-Incremental Map now separates retained tasks, input/result bytes and active HTTP requests.
+Incremental Map shares one Engine across registered Jobs and sessions. PG owns local row buffers
+and query lifetime; the external execution layer allocates and accounts for Job resources.
+The same incremental service loop handles one or multiple Jobs. Synchronous Filter/Map and recording
+handlers retain their semantics and share connection infrastructure with the incremental path.
+See the [multi-Job design](../experiments/plans/semloom_multisession_design.md) and [CLI](scripts/README.md).
+Static storage shares and request opportunities are supported; GPU accounting, dynamic borrowing and
+trusted multi-operator PG Job attribution remain future work.
+
+Incremental Map separates retained tasks, input/result bytes and active HTTP requests.
 The incremental adapter decodes settled backend results separately from delivery ownership.
 Queue, backend and consumer deadlines can be set independently with `SessionTimeouts`; the gateway
 leaves queue/consumer phase deadlines to PG and socket lifecycle by default. Callers that omit the

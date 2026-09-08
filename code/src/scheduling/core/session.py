@@ -32,9 +32,11 @@ from .session_contract import (
     Submission,
     TaskKey,
     Terminal,
+    Uncertain,
 )
 from .session_policy import IncrementalCreditPolicy, SessionPolicies
 from .task_info import validate_task_info
+from .session_jobs import JobBudget, JobHandle, JobRegistry
 
 UINT64_MAX = (1 << 64) - 1
 TERMINAL_STATES = (State.CANCELLED, State.FAILED, State.FINISHED)
@@ -76,6 +78,7 @@ class SessionEngine:
         clock: Callable[[], float] = time.monotonic,
         credit: IncrementalCreditPolicy | None = None,
         sink: Callable[[str, TaskKey], None] | None = None,
+        max_jobs: int = 1,
     ):
         if credit is not None and not getattr(credit, "incremental_safe", False):
             raise ValueError("credit must qualify local bounded incremental operation")
@@ -84,7 +87,10 @@ class SessionEngine:
         self.credit, self.sink = credit, sink
         self.wake = WakeSignal()
         self.error: str | None = None
-        self._session: SchedulingSession | None = None
+        self._sessions: dict[int, SchedulingSession] = {}
+        self.jobs = JobRegistry(self.capacity, max_jobs)
+        self._last_job = None
+        self._last_flow = {}
         self._next_session = 0
         self._next_ready = 0
         self._owner = threading.get_ident()
@@ -101,12 +107,115 @@ class SessionEngine:
         finally:
             self._busy = False
 
-    def open(self, spec: SessionSpec, limits: SessionLimits | None = None) -> SchedulingSession:
+    def register_job(self, label: str, budget: JobBudget) -> JobHandle:
+        with self._operation():
+            if self.error or any(s.job is None for s in self._sessions.values()):
+                raise RuntimeError("engine unavailable for Job registration")
+            if any(
+                r.spec.job_id not in self.capacity.job_limits
+                for r in self.capacity.records.values()
+            ):
+                raise RuntimeError("legacy work still owns capacity")
+            return self.jobs.register(label, budget)
+
+    def close_job(self, job: JobHandle) -> None:
+        with self._operation():
+            registered = self.jobs.require(job)
+            registered.closing = True
+            for session in self._sessions.values():
+                if session.job is job:
+                    session.request_cancel()
+            self._finish_retired()
+            self.wake.notify()
+
+    def advance(self, max_actions: int | None = None) -> CleanupReport:
+        """One owner tick: settle globally, then grant bounded opportunities by Job."""
+        with self._operation():
+            maximum = self.capacity.limits.step_actions if max_actions is None else max_actions
+            if type(maximum) is not int or not 0 < maximum <= self.capacity.limits.step_actions:
+                raise ValueError("invalid global action bound")
+            if any(s.job is None for s in self._sessions.values()):
+                raise RuntimeError("legacy session owns its own advance loop")
+            now = self.clock()
+            for session in tuple(self._sessions.values()):
+                if session._cancel.is_set() and session.state not in TERMINAL_STATES:
+                    session.state = State.CANCELLED
+                if session.state not in TERMINAL_STATES:
+                    session._expired(now)
+            used = self._poll(maximum)
+            for session in tuple(self._sessions.values()):
+                if session.state in TERMINAL_STATES:
+                    used += session._cleanup(max(0, maximum - used))
+            while used < maximum and not self.error:
+                selected = self._select_job_flow(now)
+                if selected is None:
+                    break
+                job_id, session = selected
+                used += 1
+                self._last_job = job_id
+                self._last_flow[job_id] = session.session_id
+                try:
+                    queued = tuple(r for r in session._records() if r.phase == "QUEUED")
+                    record = session._next_record(queued)
+                    if record is None or not session._dispatch(record, now):
+                        session._retry_at = now + session.limits.poll_interval_s
+                    else:
+                        session._pending_members = session._pending_members[1:]
+                except Exception:
+                    session._fail("session advancement failed")
+                    used += session._cleanup(max(0, maximum - used))
+            self._finish_retired()
+            return CleanupReport(used, self.capacity.usage(), self.error)
+
+    @staticmethod
+    def _rotate_after(values, previous):
+        if previous in values:
+            index = values.index(previous) + 1
+            return values[index:] + values[:index]
+        return values
+
+    def _select_job_flow(self, now):
+        ready = {}
+        for session in self._sessions.values():
+            if (
+                session.state in TERMINAL_STATES
+                or not session.dispatch_enabled
+                or now < session._retry_at
+                or session._cancel.is_set()
+            ):
+                continue
+            if any(
+                r.phase == "QUEUED" and self.capacity.can_dispatch(r, session.limits)
+                for r in session._records()
+            ):
+                ready.setdefault(session.spec.job_id, []).append(session.session_id)
+        for job_id in self._rotate_after(list(ready), self._last_job):
+            flows = self._rotate_after(ready[job_id], self._last_flow.get(job_id))
+            return job_id, self._sessions[flows[0]]
+        return None
+
+    def open(
+        self,
+        spec: SessionSpec,
+        limits: SessionLimits | None = None,
+        *,
+        job: JobHandle | None = None,
+    ) -> SchedulingSession:
         with self._operation():
             if type(spec) is not SessionSpec:
                 raise ValueError("invalid session specification")
-            if self._session is not None or self.error:
+            if self.error or (job is None and (self._sessions or self.jobs.jobs)):
                 raise RuntimeError("engine is occupied or failed")
+            if job is not None:
+                registered = self.jobs.require(job, joining=True)
+                if any(s.job is None for s in self._sessions.values()):
+                    raise RuntimeError("cannot mix legacy and registered sessions")
+                if (
+                    sum(s.job is job for s in self._sessions.values())
+                    >= registered.budget.max_sessions
+                ):
+                    raise ValueError("Job session capacity exhausted")
+                spec = replace(spec, job_id=job.job_id)
             limits = limits or self.capacity.limits
             for name, value in vars(limits).items():
                 if (
@@ -121,13 +230,14 @@ class SessionEngine:
                 raise ValueError("job still owns remote work")
             session = SchedulingSession(self, self._next_session, spec, limits)
             self._next_session += 1
-            self._session = session
+            session.job = job
+            self._sessions[session.session_id] = session
             return session
 
     def _fault(self, reason: str) -> None:
         self.error = self.error or reason
-        if self._session:
-            self._session._fail(self.error)
+        for session in self._sessions.values():
+            session._fail(self.error)
         self.wake.notify()
 
     def _emit(self, kind: str, key: TaskKey) -> None:
@@ -138,7 +248,12 @@ class SessionEngine:
                 self._fault("observation sink failed")
 
     def _finish_retired(self) -> None:
+        for handle, registered in tuple(self.jobs.jobs.items()):
+            if registered.closing and not any(s.job is handle for s in self._sessions.values()):
+                self._retired_jobs.add(handle.job_id)
         for job in tuple(self._retired_jobs):
+            if any(s.spec.job_id == job for s in self._sessions.values()):
+                continue
             if any(r.spec.job_id == job for r in self.capacity.records.values()):
                 continue
             try:
@@ -149,6 +264,10 @@ class SessionEngine:
                 self._fault("credit finish failed")
             finally:
                 self._retired_jobs.remove(job)
+                for handle in tuple(self.jobs.jobs):
+                    if handle.job_id == job:
+                        self.jobs.finish(handle)
+                        self._last_flow.pop(job, None)
 
     def _terminal(self, event: Terminal) -> None:
         record = self.capacity.records.get(event.key)
@@ -175,8 +294,8 @@ class SessionEngine:
             and len(event.result) <= record.task.max_result_bytes
             and len(event.metadata) <= self.capacity.limits.metadata_bytes
         )
-        session = self._session
-        owned = session is not None and session.session_id == event.key.session_id
+        session = self._sessions.get(event.key.session_id)
+        owned = session is not None
         if (
             owned
             and type(event.metadata) is bytes
@@ -184,7 +303,11 @@ class SessionEngine:
         ):
             valid = False
         if not valid:
-            self._fault("backend result violates bounds")
+            if record.spec.job_id in self.capacity.job_limits:
+                if owned:
+                    session._fail("backend result violates bounds")
+            else:
+                self._fault("backend result violates bounds")
         if owned and session.state not in TERMINAL_STATES and valid and event.status == "completed":
             record.task = replace(record.task, payload=b"", metadata=b"")
             record.result, record.result_metadata = event.result, event.metadata
@@ -197,6 +320,23 @@ class SessionEngine:
             if owned and session.state not in TERMINAL_STATES:
                 session._fail("backend task failed")
         self._emit("terminal", event.key)
+        self.wake.notify()
+
+    def _uncertain(self, event: Uncertain) -> None:
+        record = self.capacity.records.get(event.key)
+        if (
+            record is None
+            or not record.compute
+            or record.handle != event.handle
+            or event.code not in ("MODEL_UNAVAILABLE", "MODEL_TIMEOUT")
+        ):
+            self._fault("backend uncertainty identity conflict")
+            return
+        record.phase = "UNCERTAIN"
+        session = self._sessions.get(event.key.session_id)
+        if session is not None:
+            session._fail(event.code)
+        self._emit("uncertain", event.key)
         self.wake.notify()
 
     @staticmethod
@@ -217,7 +357,7 @@ class SessionEngine:
             return 0
         for event in events:
             if (
-                type(event) is not Terminal
+                type(event) not in (Terminal, Uncertain)
                 or type(event.key) is not TaskKey
                 or type(event.key.session_id) is not int
                 or type(event.key.sequence) is not int
@@ -225,6 +365,8 @@ class SessionEngine:
                 or not 0 <= event.key.sequence <= UINT64_MAX
             ):
                 self._fault("backend terminal invalid")
+            elif type(event) is Uncertain:
+                self._uncertain(event)
             else:
                 self._terminal(event)
         self._finish_retired()
@@ -257,6 +399,8 @@ class SchedulingSession:
         self._cancel = threading.Event()
         self._closed: CloseReport | None = None
         self._retry_at = 0.0
+        self.job: JobHandle | None = None
+        self.dispatch_enabled = True
 
     def _records(self) -> tuple[TaskRecord, ...]:
         return tuple(
@@ -292,6 +436,11 @@ class SchedulingSession:
                 validate_task_info(task, spec, self.limits.metadata_bytes)
             except ValueError:
                 return False
+            job_budget = self.engine.capacity.job_limits.get(self.spec.job_id)
+            if job_budget is not None and (
+                type(task.estimated_work) is not int or task.estimated_work > job_budget.active_work
+            ):
+                return False
             if type(task.payload) is not bytes or type(task.metadata) is not bytes:
                 return False
             if type(task.estimated_work) is not int or type(task.max_result_bytes) is not int:
@@ -322,12 +471,16 @@ class SchedulingSession:
             capacity = self.engine.capacity
             candidate = dict(capacity.records)
             total, local = capacity.usage(), capacity.usage(self.session_id)
+            job_usage = capacity.usage(job_id=self.spec.job_id)
+            job_budget = capacity.job_limits.get(self.spec.job_id)
             accepted = 0
             now = self.engine.clock()
             for task in tasks:
                 if not capacity.fits(total, capacity.limits, task) or not capacity.fits(
                     local, self.limits, task
                 ):
+                    break
+                if job_budget is not None and not capacity.fits(job_usage, job_budget, task):
                     break
                 key = TaskKey(self.session_id, task.sequence)
                 candidate[key] = TaskRecord(key, self.spec.resolve(task.profile_name), task, now)
@@ -342,6 +495,12 @@ class SchedulingSession:
                     held_tasks=total.held_tasks + 1,
                     input_bytes=total.input_bytes + len(task.payload),
                     result_bytes=total.result_bytes + task.max_result_bytes,
+                )
+                job_usage = replace(
+                    job_usage,
+                    held_tasks=job_usage.held_tasks + 1,
+                    input_bytes=job_usage.input_bytes + len(task.payload),
+                    result_bytes=job_usage.result_bytes + task.max_result_bytes,
                 )
                 accepted += 1
             status = "ACCEPTED" if accepted == len(tasks) else "BACKPRESSURE"
@@ -493,6 +652,9 @@ class SchedulingSession:
                 raise ValueError("invalid delivery bound")
             now = self.engine.clock()
             budget = self.limits.step_actions
+            if self.job is not None:
+                # Registered flows cannot acquire more dispatch opportunities by polling faster.
+                return self._deliver(max_deliveries, now, budget)
             try:
                 if self._cancel.is_set() and self.state not in TERMINAL_STATES:
                     self.state = State.CANCELLED
@@ -643,7 +805,8 @@ class SchedulingSession:
             )
             if report.status == "CLOSED":
                 self._closed = report
-                self.engine._session = None
-                self.engine._retired_jobs.add(self.spec.job_id)
+                self.engine._sessions.pop(self.session_id, None)
+                if self.job is None or self.engine.jobs.require(self.job).closing:
+                    self.engine._retired_jobs.add(self.spec.job_id)
                 self.engine._finish_retired()
             return report

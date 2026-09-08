@@ -1,6 +1,6 @@
 """Compose existing execution interfaces; wire adapters do not choose policies or work units."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, replace
 from functools import partial
 import json
 import time
@@ -9,6 +9,7 @@ from typing import Callable
 from ...planning.work import StageWork, WorkDescriptor
 from ...scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from ...scheduling.core.session import SessionEngine
+from ...scheduling.core.session_jobs import equal_share_job_budget
 from ...scheduling.core.session_contract import (
     OfferedTask,
     SessionLimits,
@@ -37,6 +38,26 @@ class IncrementalExecution:
     error_code: Callable[[], str | None]
     drain_timeout_s: float
     work_unit: str = "work_units"
+    allocate_job: Callable = equal_share_job_budget
+
+    def open_job(self, label, spec):
+        # Resource policy grants a budget; the Engine validates and owns its lifetime.
+        budget = self.allocate_job(self.engine)
+        job = self.engine.register_job(label, budget)
+        try:
+            limits = replace(
+                self.engine.capacity.limits,
+                held_tasks=budget.held_tasks,
+                input_bytes=budget.input_bytes,
+                result_bytes=budget.result_bytes,
+                active_requests=budget.active_requests,
+                active_work=budget.active_work,
+                offer_tasks=budget.held_tasks,
+            )
+            return job, self.engine.open(spec, limits, job=job), budget
+        except BaseException:
+            self.engine.close_job(job)
+            raise
 
 
 def request_count_work(request: CompletionRequest) -> WorkDescriptor:
@@ -78,6 +99,9 @@ def build_fixed_model_execution(
     active_work=None,
     work_unit="work_units",
     timeouts=None,
+    max_jobs=1,
+    allocate_job=equal_share_job_budget,
+    registered_jobs=False,
 ):
     """Default single-endpoint assembly; supplied policies/work reuse the same core and transport."""
     if type(max_tasks) is not int or not 1 <= max_tasks <= MAX_INCREMENTAL_TASKS:
@@ -139,9 +163,11 @@ def build_fixed_model_execution(
         max_tasks=max_active_requests,
         notify=lambda: engine.wake.notify(),
         finalize=transport.close,
+        isolate_failures=registered_jobs or max_jobs > 1,
     )
     try:
-        engine = SessionEngine(limits, backend, policies, sink=observe)
+        engine = SessionEngine(limits, backend, policies, sink=observe, max_jobs=max_jobs)
+        allocate_job(engine)  # Reject impossible resource policies before accepting sockets.
     except BaseException:
         backend.close()
         raise
@@ -152,4 +178,5 @@ def build_fixed_model_execution(
         lambda: transport.error_code,
         drain_timeout_s,
         work_unit,
+        allocate_job,
     )

@@ -49,7 +49,7 @@ model、timeout 和 bearer-token 环境变量名不进入仓库。
 
 ### 生成 Map 的增量核心接入
 
-启动同一服务级 Engine 的单连接路径：
+启动同一服务级 Engine 的增量路径（默认一个活动Job）：
 
 ```sh
 python3 code/scripts/services/run_execution_provider_gateway.py \
@@ -71,14 +71,25 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 网关默认不使用单次模型超时限制排队或结果等待；模型HTTP仍有独立超时，PG取消与socket超时仍生效。
 嵌入式入口 `server.main(incremental_execution_factory=...)` 可传入执行组装函数；
 默认 `build_fixed_model_execution` 接受已有 `SessionPolicies`、工作量描述和阶段超时配置。
-这不表示网关已经支持多个活动session。
+同一组装函数还可注入`allocate_job(engine)`，返回`JobBudget`。默认资源策略静态均分存储与
+执行上限，不借用其它Job空闲份额；Engine校验总登记量、计费和释放，网关不计算份额。
+
+多个独立PG查询共享Engine时，在上述命令追加`--max-active-jobs 2 --max-held-tasks 4`，
+保留`--max-active-requests 2`。默认每Job可接纳2项、执行1项；`--max-connections`限制含
+待登记连接在内的socket总量。总任务及字节容量须足以让每Job容纳至少一项最大请求与结果。
+接纳数与执行请求数可独立配置；增加连接数不会增加执行容量。
+
+一条PG连接由服务登记一个Job；同查询多算子共享Job的可信归属协议尚未接入。
+独立生产器可用`engine.register_job(label, budget)`取得能力句柄，并以`engine.open(..., job=handle)`
+打开多个流；由控制线程调用`engine.advance()`，各流`advance()`只交付结果。字符串标签不能加入Job。
+[多Job设计](../../experiments/plans/semloom_multisession_design.md)说明资源归属、错误范围和待实现项。
 
 v5过渡桥接 `--incremental-map-window-one` 已移除。单行窗口使用同一条v6路径：
 `--incremental-map --max-held-tasks 1 --max-active-requests 1`，数据库同时设置
 `provider_execution_profile='incremental-map'` 和 `provider_window_tasks=1`。
 旧CLI/PG名称会明确报错；同步语义参考与wire v5仍保留。
 [迁移验证](../../experiments/results/scheduling/bridge_retirement_20260908/README.md)记录旧桥接对照及最终版本的真实模型检查。
-一个网关仍只有一个活动查询；取消后保留未确认的远端占用，不能通过新建Engine重置额度。
+取消后保留未确认的远端占用；其它Job仅使用剩余容量，不能通过新建Engine重置额度。
 观测CLI继续使用同一持久请求账本，记录提交、终态、排空和传输关闭，header不进入日志。
 
 ## SemMap resource measurement

@@ -32,10 +32,14 @@ class SessionCapacity:
     def __init__(self, limits: SessionLimits):
         self.limits = limits
         self.records: dict[TaskKey, TaskRecord] = {}
+        self.job_limits = {}
 
-    def usage(self, session_id: int | None = None) -> Usage:
+    def usage(self, session_id: int | None = None, *, job_id: str | None = None) -> Usage:
         records = tuple(
-            r for r in self.records.values() if session_id is None or r.key.session_id == session_id
+            r
+            for r in self.records.values()
+            if (session_id is None or r.key.session_id == session_id)
+            and (job_id is None or r.spec.job_id == job_id)
         )
         return Usage(
             len(records),
@@ -54,10 +58,12 @@ class SessionCapacity:
         )
 
     def can_dispatch(self, record: TaskRecord, limits: SessionLimits) -> bool:
-        for usage, bound in (
-            (self.usage(), self.limits),
-            (self.usage(record.key.session_id), limits),
-        ):
+        bounds = [(self.usage(), self.limits), (self.usage(record.key.session_id), limits)]
+        if record.spec.job_id in self.job_limits:
+            bounds.append(
+                (self.usage(job_id=record.spec.job_id), self.job_limits[record.spec.job_id])
+            )
+        for usage, bound in bounds:
             if (
                 usage.active_requests >= bound.active_requests
                 or usage.active_work + record.task.estimated_work > bound.active_work

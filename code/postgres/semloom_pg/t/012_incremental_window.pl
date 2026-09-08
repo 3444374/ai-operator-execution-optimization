@@ -73,7 +73,7 @@ my @events = map {decode_json($_)} <$log>; close($log);
 ok(scalar(grep {$_->{event} eq 'submitted' && $_->{usage}->{active_requests} == 2} @events),'core observed two simultaneous active requests');
 my @ends = map {$_->{input}} grep {$_->{event} eq 'model_end'} @events;
 is_deeply([@ends[0,1]],['fast','slow'],'model completes in reverse order');
-my @drained = grep {$_->{event} eq 'drained'} @events;
+my @drained = grep {$_->{event} eq 'job_drained'} @events;
 ok(@drained >= 6,'normal and cancelled sessions drained');
 ok(!scalar(grep {my $sum=0; $sum += $_ for values %{$_->{usage}}; $sum != 0} @drained),'drained sessions hold no resource credits');
 ok(!-e $socket,'gateway socket removed');

@@ -32,6 +32,12 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument("--socket", type=Path, required=True)
     parser.add_argument("--max-connections", type=int, default=GatewayLimits.max_connections)
     parser.add_argument(
+        "--max-active-jobs",
+        type=int,
+        default=1,
+        help="registered incremental Jobs sharing one engine; storage is partitioned",
+    )
+    parser.add_argument(
         "--max-active-requests", type=int, default=GatewayLimits.max_active_requests
     )
     parser.add_argument(
@@ -119,6 +125,10 @@ def main(
         raise SystemExit("--test-fill-connect-queue-ms must be non-negative")
     if args.test_max_sessions < 0:
         raise SystemExit("--test-max-sessions must be non-negative")
+    if not 1 <= args.max_active_jobs <= limits.max_connections:
+        raise SystemExit("active Jobs must fit connection capacity")
+    if args.max_active_jobs != 1 and not args.incremental_map:
+        raise SystemExit("multiple active Jobs require --incremental-map")
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter
@@ -151,15 +161,18 @@ def main(
         except ValueError:
             raise SystemExit("invalid fixed model configuration") from None
         if args.incremental_map:
-            from .adapters.incremental_session import IncrementalMapSessionAdapter
+            from .multiplexed_gateway import MultiSessionMapGateway
 
-            incremental_adapter = IncrementalMapSessionAdapter(
+            incremental_adapter = MultiSessionMapGateway(
                 fixed_config,
-                observer=incremental_observer,
+                max_jobs=args.max_active_jobs,
+                max_connections=limits.max_connections,
                 max_tasks=held_tasks,
                 max_active_requests=limits.max_active_requests,
+                frame_timeout_ms=limits.frame_timeout_ms,
                 input_bytes=args.input_buffer_bytes,
                 result_bytes=args.result_buffer_bytes,
+                observer=incremental_observer,
                 execution_factory=incremental_execution_factory,
             )
             completion_adapter = incremental_adapter
@@ -214,30 +227,14 @@ def main(
             tamper_evidence_digest=args.test_tamper_evidence_digest,
             disconnect_on_task=args.test_disconnect_on_task,
             completion_fixture=args.test_completion_fixture,
-            **(
-                {"incremental_handler": incremental_adapter.run_incremental}
-                if args.incremental_map
-                else {}
-            ),
         )
         session_limit = 1 if args.once else args.test_max_sessions
         if incremental_adapter is None:
             GatewayRuntime(handler, limits).serve(listener, stopping, session_limit=session_limit)
         else:
-            # One owner thread and one service ledger; no per-connection engine replicas.
-            listener.settimeout(0.25)
-            served = 0
-            while not stopping.is_set() and (not session_limit or served < session_limit):
-                try:
-                    connection, _ = listener.accept()
-                except TimeoutError:
-                    continue
-                connection.settimeout(limits.frame_timeout_ms / 1000)
-                try:
-                    incremental_adapter.serve_connection(connection, handler, stopping.is_set)
-                finally:
-                    connection.close()
-                served += 1
+            incremental_adapter.serve(
+                listener, stopping, handler=handler, session_limit=session_limit
+            )
     finally:
         listener.close()
         transport_closed = incremental_adapter is None or incremental_adapter.close()

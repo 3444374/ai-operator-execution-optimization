@@ -111,6 +111,9 @@ class IncrementalMapRuntime:
         # Readability during that wait is EOF or invalid RPC pipelining.
         return True
 
+    def wait_for_progress(self, result):
+        self.engine.wake.wait(result.generation, self.engine.capacity.limits.poll_interval_s)
+
     def prepare_task(self, request: CompletionRequest, sequence: int) -> OfferedTask:
         return self.execution.prepare_task(request, sequence)
 

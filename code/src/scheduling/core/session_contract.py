@@ -203,10 +203,20 @@ class Terminal:
     metadata: bytes = b""
 
 
+@dataclass(frozen=True)
+class Uncertain:
+    """Identified remote work without a terminal; its reservation must remain held."""
+
+    key: TaskKey
+    handle: str | None
+    code: str = "MODEL_UNAVAILABLE"
+
+
 class IncrementalBackend(Protocol):
     """All operations must be bounded and nonblocking, including buffer allocation.
 
-    poll returns an exact tuple of at most max_events authoritative terminal events.
+    poll returns at most max_events identified terminal or uncertain events.
+    Uncertain notices retain remote ownership; only terminals release it.
     Cancellation is only a request; only poll can confirm the end of remote ownership.
     The adapter must enforce task result/metadata bounds before buffering an event.
     """
@@ -214,7 +224,7 @@ class IncrementalBackend(Protocol):
     def try_submit(self, task: BackendTask, endpoint: str) -> Submission: ...
     def poll(
         self, handles: tuple[tuple[TaskKey, str | None], ...], max_events: int
-    ) -> tuple[Terminal, ...]: ...
+    ) -> tuple[Terminal | Uncertain, ...]: ...
     def request_cancel(self, key: TaskKey, handle: str | None) -> None: ...
 
 
