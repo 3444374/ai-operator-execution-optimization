@@ -4,15 +4,15 @@ from collections import deque
 from dataclasses import asdict
 import json
 
-from .incremental_map import IncrementalMapAdapter
+from .incremental_runtime import IncrementalMapRuntime
 from .completion_response import parse_completion
-from .semantic_session import CompletionAdapterError, CompletionRequest
+from ..completion import CompletionAdapterError, CompletionRequest
 from ..wire import v6
 from ..wire.framing import ProtocolError, encode_frame, read_frame, has_duplicate_fields
 from ...scheduling.core.session_contract import State
 
 
-class IncrementalMapSessionAdapter(IncrementalMapAdapter):
+class IncrementalMapSessionAdapter(IncrementalMapRuntime):
     """One service ledger; delivery leases remain charged until their frame is sent."""
 
     def execution_id_for(self, version):

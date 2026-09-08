@@ -4,11 +4,11 @@ import socket
 
 from .adapters.recording import run_recording_session
 from .adapters.semantic_session import (
-    CompletionAdapter,
     run_v3_session,
     run_v4_session,
     run_v5_session,
 )
+from .completion import CompletionAdapter
 from .wire.framing import ProtocolError, read_frame
 
 

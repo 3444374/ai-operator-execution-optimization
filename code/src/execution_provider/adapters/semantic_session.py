@@ -5,46 +5,15 @@ from __future__ import annotations
 import copy
 import socket
 import time
-from dataclasses import dataclass
-from typing import Mapping, Protocol
 
 from ..wire.framing import ProtocolError, encode_frame, read_frame
 from ..wire import v3, v4, v5
-from ..generation_profile import GenerationProfile
-from ..completion import Completion
-
-
-@dataclass(frozen=True)
-class CompletionRequest:
-    """One validated semantic task passed to a completion adapter."""
-
-    semantic_payload_digest: str
-    model_id: str
-    canonical_messages: tuple[dict[str, str], ...]
-    generation_constraints: Mapping[str, object]
-    generation_profile: GenerationProfile | None = None
-    protocol_version: int = 3
-
-
-class CompletionAdapterError(Exception):
-    """A redacted error code returned by a completion adapter."""
-
-    def __init__(self, code: str, *, remote_outcome_unknown: bool = False) -> None:
-        super().__init__(code)
-        self.code = code
-        self.remote_outcome_unknown = remote_outcome_unknown
-
-
-class CompletionAdapter(Protocol):
-    """Query-independent adapter used by the shared semantic session runner."""
-
-    model_id: str | None
-
-    def execution_id_for(self, protocol_version: int) -> str | None:
-        """Return an explicit supported identity, or None to reject the version."""
-
-    def complete(self, request: CompletionRequest) -> Completion:
-        """Return one raw completion or raise a redacted adapter error."""
+from ..completion import (
+    Completion as Completion,
+    CompletionRequest as CompletionRequest,
+    CompletionAdapter as CompletionAdapter,
+    CompletionAdapterError as CompletionAdapterError,
+)
 
 
 def run_v3_session(
@@ -59,7 +28,9 @@ def run_v3_session(
 ) -> None:
     """Serve exactly wire v3; other versions are rejected."""
     _run_semantic_session(
-        connection, adapter, wire_version=3,
+        connection,
+        adapter,
+        wire_version=3,
         open_message=open_message,
         response_delay_ms=response_delay_ms,
         tamper_evidence_digest=tamper_evidence_digest,
@@ -80,7 +51,9 @@ def run_v4_session(
 ) -> None:
     """Serve exactly wire v4; other versions are rejected."""
     _run_semantic_session(
-        connection, adapter, wire_version=4,
+        connection,
+        adapter,
+        wire_version=4,
         open_message=open_message,
         response_delay_ms=response_delay_ms,
         tamper_evidence_digest=tamper_evidence_digest,
@@ -101,7 +74,9 @@ def run_v5_session(
 ) -> None:
     """Serve exactly wire v5; other versions are rejected."""
     _run_semantic_session(
-        connection, adapter, wire_version=5,
+        connection,
+        adapter,
+        wire_version=5,
         open_message=open_message,
         response_delay_ms=response_delay_ms,
         tamper_evidence_digest=tamper_evidence_digest,
@@ -126,7 +101,11 @@ def _run_semantic_session(
     error_sequence: str | None = None
     open_context = None
     try:
-        opened = open_message if open_message is not None else _read_semantic_frame(connection, wire_version)
+        opened = (
+            open_message
+            if open_message is not None
+            else _read_semantic_frame(connection, wire_version)
+        )
         if opened is None:
             return
         identity_for = getattr(adapter, "execution_id_for", None)
@@ -160,8 +139,11 @@ def _run_semantic_session(
                     "max_frame_bytes": codec.MAX_FRAME_BYTES,
                     "max_input_bytes": codec.MAX_INPUT_BYTES,
                     **({"max_output_bytes": codec.MAX_OUTPUT_BYTES} if wire_version == 5 else {}),
-                    **({"generation_profile_digest": open_context.generation_profile.digest}
-                       if open_context.generation_profile is not None else {}),
+                    **(
+                        {"generation_profile_digest": open_context.generation_profile.digest}
+                        if open_context.generation_profile is not None
+                        else {}
+                    ),
                 }
             )
         )
@@ -174,7 +156,11 @@ def _run_semantic_session(
             if task is None:
                 return
             sequence_text = task.get("sequence")
-            if wire_version in (4, 5) and isinstance(sequence_text, str) and len(sequence_text) > 20:
+            if (
+                wire_version in (4, 5)
+                and isinstance(sequence_text, str)
+                and len(sequence_text) > 20
+            ):
                 raise ProtocolError("INVALID_TASK")
             if wire_version != 5:
                 error_sequence = _valid_sequence_or_none(sequence_text)
@@ -188,9 +174,7 @@ def _run_semantic_session(
                 return
             if response_delay_ms > 0:
                 time.sleep(response_delay_ms / 1000)
-            if completion_fixture is not None and completion_fixture.startswith(
-                "v3-error-"
-            ):
+            if completion_fixture is not None and completion_fixture.startswith("v3-error-"):
                 _send_error(
                     connection,
                     "GOLDEN_FIXTURE_MISSING",
@@ -204,8 +188,11 @@ def _run_semantic_session(
                     semantic_payload_digest=payload_digest,
                     model_id=open_context.model_id,
                     canonical_messages=tuple(
-                        ({"role": message["role"], "content": message["content"]}
-                         if wire_version == 5 else dict(message))
+                        (
+                            {"role": message["role"], "content": message["content"]}
+                            if wire_version == 5
+                            else dict(message)
+                        )
                         for message in task["canonical_messages"]
                     ),
                     generation_constraints=copy.deepcopy(opened["generation_constraints"]),
@@ -214,7 +201,9 @@ def _run_semantic_session(
                 )
             )
             completion = codec.build_completion_message(
-                open_context, sequence=sequence, payload_digest=payload_digest,
+                open_context,
+                sequence=sequence,
+                payload_digest=payload_digest,
                 completion=result,
             )
             if tamper_evidence_digest:
@@ -250,12 +239,7 @@ def _read_semantic_frame(connection: socket.socket, wire_version: int) -> dict[s
 
 def _valid_sequence_or_none(value: object) -> str | None:
     if not isinstance(value, str) or (
-        value != "0"
-        and (
-            not value.isascii()
-            or not value.isdigit()
-            or value[0] == "0"
-        )
+        value != "0" and (not value.isascii() or not value.isdigit() or value[0] == "0")
     ):
         return None
     if int(value) >= 2**64:
@@ -304,6 +288,11 @@ def _apply_completion_fixture(
 
 
 __all__ = [
-    "CompletionAdapter", "CompletionAdapterError", "Completion",
-    "CompletionRequest", "run_v3_session", "run_v4_session", "run_v5_session",
+    "CompletionAdapter",
+    "CompletionAdapterError",
+    "Completion",
+    "CompletionRequest",
+    "run_v3_session",
+    "run_v4_session",
+    "run_v5_session",
 ]

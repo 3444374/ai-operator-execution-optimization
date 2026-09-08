@@ -7,10 +7,8 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 
 from ..core.models import PayloadEnvelope, TopologySnapshot
+from ..core.policy_contracts import AdmissionPolicy, EndpointRouter, PoolRouter
 from ..core.scheduler import (
-    AdmissionPolicy,
-    EndpointRouter,
-    PoolRouter,
     SchedulerConfig,
     SchedulerResult,
     SubmissionAdapter,

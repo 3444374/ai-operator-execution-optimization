@@ -505,3 +505,27 @@ HTTP fixture另增严格Map模式（max_tokens128/stop=null），Filter模式的
 11个TAP文件共1926项通过。9次真实POST全部完成，增量核心承担其中7项，5个增量会话排空后资源归零；
 取消返回57014，后续查询恢复，PG/网关/传输/模型退出。628份源码哈希与真实运行一致；临时planner
 修改已撤回，最终保留原绑定逻辑。见[结果](../results/postgresql/incremental_window_one_20260908/README.md)。
+
+<a id="shared-module-cleanup"></a>
+
+## 17. 已有公共实现归位（2026-09-08）
+
+基线bf327649，本轮保持行为，不删除有执行消费者的同步调度器、wire版本或历史证据。
+沿用主架构§8.7/8.8对请求/响应、连接寿命与执行额度分开的源码核对；没有复制公司实现。
+实际自有落点：四个共享策略Protocol从scheduler.py移入独立policy_contracts；Map公共runtime从
+incremental_map移出，使v5/v6适配器成为同级消费者；Map编解码从v5移入map_codec；
+CompletionRequest/错误/Adapter Protocol移入已有completion模块，固定模型配置移出同步HTTP实现。
+旧公开导入保留别名，生产消费者直接使用新所属模块。策略选择、HTTP/取消、消息bytes/digest和错误处理不改。
+
+先逐个比较迁移函数/类的AST，运行原有测试；新增导入隔离检查应证明新路径不再加载旧同步循环。
+Linux运行完整scheduling及受影响provider/PG/observer检查，再使用同一PG18.3二进制运行完整TAP。
+沿用已通过的真实验证流程，另设12次独立POST预算（参考2、v6 SELECT2、INSERT2、约束失败2、取消2、恢复1、LIMIT1），
+正常/取消分别128/256tokens、temperature0；重新核对源码/模型和preflight，不下载、不重试、不追加请求。
+失败保留并停止该轮。最后核对原始结果、同一查询并发2、资源归零及服务清理。不是新算法或性能实验。
+
+
+本轮[验证完成](../results/scheduling/shared_modules_20260908/README.md)：43个迁移定义和24个原地定义AST不变，
+新增导入隔离及兼容对象身份检查。本地11项、Linux495项、PG18.3回归1/1958项TAP通过；
+638份文件与最终验证源码一致。独立12次真实请求通过，同一查询HTTP峰值2，十个增量任务/六会话资源归零，
+模型、PG、网关与Ray测试进程均退出。旧入口的实际消费者仍保留，§14第5项的公共Protocol提取已完成，
+后续仍需逐个迁移旧runner后才能删除同步循环。本轮不增加SQL、协议或调度能力。

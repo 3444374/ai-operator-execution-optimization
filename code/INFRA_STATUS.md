@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-08：[公共实现归位](../experiments/results/scheduling/shared_modules_20260908/README.md)将共享runtime、Map codec、请求类型、模型配置和策略接口从旧执行模块移出；旧导入保留别名，功能范围不变。
+43个迁移定义及24个原地定义的AST保持一致；Linux495项、PG18.3回归1/1958项TAP和独立12次真实请求通过。
+638份源码一致，同一查询HTTP峰值2，资源归零且测试服务已停止；本轮27份原始材料压缩归档，历史证据未移动或删除。
+
 2026-09-08：[生成Map的PG多在途接入](../experiments/results/postgresql/async_window_20260908/README.md)已完成v6 offer/receive、PG有界行槽和按身份返回结果，复用原组织器与增量核心。
 PG18.3严格构建、回归1项、12个TAP共1958项及Linux199项Python检查通过；另核对v6权限、RLS和快照。
 独立12次真实POST全部通过，同一PG查询HTTP峰值2，增量10任务/6会话排空后资源归零，服务已停止。

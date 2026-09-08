@@ -490,6 +490,26 @@ Ollama smoke runs, use
 `src/profile_*.py` compatibility modules have been removed; production and test callers now
 use the owning subpackage directly, and an AST architecture test prevents the old paths from returning.
 
+## Shared execution implementation
+
+The versioned adapters now depend on shared modules directly:
+
+| Owner | Responsibility |
+|---|---|
+| [execution_provider/completion.py](src/execution_provider/completion.py) | Request/result values, adapter interface and redacted errors; no session loop |
+| [execution_provider/adapters/model_config.py](src/execution_provider/adapters/model_config.py) | Fixed endpoint/model configuration and validation for both HTTP implementations |
+| [execution_provider/adapters/incremental_runtime.py](src/execution_provider/adapters/incremental_runtime.py) | Map engine, HTTP, connection lifetime and resource draining shared by v5/v6 |
+| [execution_provider/wire/map_codec.py](src/execution_provider/wire/map_codec.py) | Common Map semantic validation and digest construction |
+| [scheduling/core/policy_contracts.py](src/scheduling/core/policy_contracts.py) | Admission/routing/shared-credit interfaces used by both scheduling loops |
+
+`incremental_map.py` and `incremental_session.py` are sibling protocol adapters.
+`v5.py` preserves its public imports; v6 binds the common codec directly. The synchronous scheduler
+also preserves its old type exports, while the incremental core imports their owner directly.
+Existing synchronous runners and recording/Filter/reference protocols still have consumers.
+Historical experiment records are retained. This changes code ownership, not supported SQL or scheduling policy.
+[Cleanup verification](../experiments/results/scheduling/shared_modules_20260908/README.md) covers
+import isolation, compatibility aliases, full scheduling/PG checks and a fresh 12-request model run.
+
 ## PostgreSQL Map through the incremental core
 
 The `incremental-map` profile now adds the v6 task acknowledgement/completion port and a bounded

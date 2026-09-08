@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-08 公共执行实现归位
+
+- 新旧Map适配器改为共享IncrementalMapRuntime；v6直接绑定map_codec，不再依附旧版本实现。
+- 请求/结果/错误类型进入completion，模型配置独立；四个策略Protocol脱离同步调度循环，旧公开导入仍指向同一对象。
+- 删除迁移后多余import，保留仍有消费者的同步执行与wire版本。生产Python净变化+31行，主要收益是依赖清晰。
+- [验证](experiments/results/scheduling/shared_modules_20260908/README.md)：43个迁移/24个保留定义AST一致；Linux495项、PG1958项TAP、12次真实请求通过，638份源码一致，全部服务清理。
+- 本轮原始日志在脱敏/扫描后压缩归档，并保留可读摘要和逐文件哈希；旧证据未删除。
+
 ## 2026-09-08 PG生成Map有界多在途实现
 
 - 新v6 provider offer/receive分离接纳和完成；复用Map消息校验、组织器、SessionEngine和异步HTTP，不修改PG内核。

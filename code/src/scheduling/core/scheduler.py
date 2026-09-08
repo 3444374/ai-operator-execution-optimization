@@ -17,16 +17,22 @@ from .execution import (
     SubmissionExecutionLedger,
 )
 from .models import (
-    AdmissionDecision,
     BatchRequest,
     CollectedSubmission,
     EndpointSnapshot,
     PayloadEnvelope,
-    PoolRoutingDecision,
     RoutingDecision,
     SubmissionCompletion,
     SubmissionLifecycleEvent,
     TopologySnapshot,
+)
+
+# Compatibility exports; the definitions live independently of this loop.
+from .policy_contracts import (
+    AdmissionPolicy as AdmissionPolicy,
+    EndpointRouter as EndpointRouter,
+    PoolRouter as PoolRouter,
+    SharedCreditPolicy as SharedCreditPolicy,
 )
 from .ready_window import BoundedReadyWindow, ReadySubmission
 
@@ -37,80 +43,17 @@ SOURCE_THREAD_CLOSE_TIMEOUT_S = 0.1
 
 
 class SubmissionAdapter(Protocol):
-    def submit(self, envelope: PayloadEnvelope, endpoint_id: str) -> object:
-        ...
+    def submit(self, envelope: PayloadEnvelope, endpoint_id: str) -> object: ...
 
     def wait_one(
         self,
         pending: list[tuple[object, PayloadEnvelope]],
-    ) -> CollectedSubmission:
-        ...
+    ) -> CollectedSubmission: ...
 
     def poll_one(
         self,
         pending: list[tuple[object, PayloadEnvelope]],
-    ) -> CollectedSubmission | None:
-        ...
-
-
-class AdmissionPolicy(Protocol):
-    limit: int
-
-    def decide(
-        self, inflight: int, *, hol_age_s: float | None = None
-    ) -> AdmissionDecision:
-        ...
-
-
-class PoolRouter(Protocol):
-    def route(
-        self,
-        request: BatchRequest,
-        topology: TopologySnapshot,
-    ) -> PoolRoutingDecision:
-        ...
-
-
-class EndpointRouter(Protocol):
-    def route(
-        self,
-        request: BatchRequest,
-        topology: TopologySnapshot,
-        pool_id: str,
-    ) -> RoutingDecision:
-        ...
-
-
-class SharedCreditPolicy(Protocol):
-    def try_acquire(
-        self,
-        *,
-        request_id: str,
-        job_id: str,
-        endpoint_id: str,
-        estimated_work: int,
-        weight: int = 1,
-        priority: int = 0,
-        slo_budget_remaining_s: float | None = None,
-        priority_window_s: float | None = None,
-        fairness_debt_cap: float | None = None,
-    ) -> bool:
-        ...
-
-    def release(
-        self,
-        request_id: str,
-        *,
-        job_id: str,
-        actual_work: int | None = None,
-    ) -> None:
-        ...
-
-    def finish_job(self, job_id: str) -> None:
-        ...
-
-    def cancel_waiter(self, request_id: str, *, job_id: str) -> bool:
-        ...
+    ) -> CollectedSubmission | None: ...
 
 
 @dataclass(frozen=True)
@@ -119,9 +62,7 @@ class EndpointCapacityConfig:
 
     request_limit: int | None = None
     work_limit: int | None = None
-    admission_by_endpoint: Mapping[str, AdmissionPolicy] = field(
-        default_factory=dict
-    )
+    admission_by_endpoint: Mapping[str, AdmissionPolicy] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.request_limit is not None and self.request_limit <= 0:
@@ -157,17 +98,13 @@ class ReadyWindowConfig:
         ):
             raise ValueError("shared_ready_work_limit must be positive")
         if self.request_limit > 1 and self.work_limit is None:
-            raise ValueError(
-                "a multi-candidate ready window requires a work limit"
-            )
+            raise ValueError("a multi-candidate ready window requires a work limit")
         if self.payload_bytes_limit is not None and (
             not isinstance(self.payload_bytes_limit, int)
             or isinstance(self.payload_bytes_limit, bool)
             or self.payload_bytes_limit <= 0
         ):
-            raise ValueError(
-                "shared_ready_payload_bytes_limit must be positive"
-            )
+            raise ValueError("shared_ready_payload_bytes_limit must be positive")
 
 
 @dataclass(frozen=True)
@@ -194,9 +131,7 @@ class JobSchedulingContract:
             (self.priority_window_s, "job_priority_window_s"),
             (self.fairness_debt_cap, "job_fairness_debt_cap"),
         ):
-            if value is not None and (
-                not math.isfinite(value) or value <= 0
-            ):
+            if value is not None and (not math.isfinite(value) or value <= 0):
                 raise ValueError(f"{name} must be finite and positive")
         if self.priority_window_s is not None and self.slo_target_s is None:
             raise ValueError("a priority window requires a Job SLO target")
@@ -228,13 +163,9 @@ class SharedCreditConfig:
 class SchedulerConfig:
     """Self-validating scheduler settings, independent of engine adapters."""
 
-    endpoint_capacity: EndpointCapacityConfig = field(
-        default_factory=EndpointCapacityConfig
-    )
+    endpoint_capacity: EndpointCapacityConfig = field(default_factory=EndpointCapacityConfig)
     shared_credit: SharedCreditConfig = field(default_factory=SharedCreditConfig)
-    actual_work_extractor: Callable[
-        [SubmissionCompletion], int | None
-    ] | None = None
+    actual_work_extractor: Callable[[SubmissionCompletion], int | None] | None = None
 
 
 @dataclass(frozen=True)
@@ -349,9 +280,7 @@ class SynchronousScheduler:
         job_slo_target_s: float | None = None,
         job_priority_window_s: float | None = None,
         job_fairness_debt_cap: float | None = None,
-        actual_work_extractor: Callable[
-            [SubmissionCompletion], int | None
-        ] | None = None,
+        actual_work_extractor: Callable[[SubmissionCompletion], int | None] | None = None,
     ):
         config = SchedulerConfig(
             endpoint_capacity=EndpointCapacityConfig(
@@ -437,17 +366,13 @@ class SynchronousScheduler:
         self.epoch_clock = epoch_clock
         self.per_endpoint_limit = endpoint_capacity.request_limit
         self.per_endpoint_work_limit = endpoint_capacity.work_limit
-        self.per_endpoint_admission = dict(
-            endpoint_capacity.admission_by_endpoint
-        )
+        self.per_endpoint_admission = dict(endpoint_capacity.admission_by_endpoint)
         self.shared_credit = shared_credit.policy
         self.shared_credit_poll_s = shared_credit.poll_interval_s
         self.shared_credit_acquire_timeout_s = shared_credit.acquire_timeout_s
         self.shared_ready_request_limit = ready_window.request_limit
         self.shared_ready_work_limit = ready_window.work_limit
-        self.shared_ready_payload_bytes_limit = (
-            ready_window.payload_bytes_limit
-        )
+        self.shared_ready_payload_bytes_limit = ready_window.payload_bytes_limit
         self.job_weight = job.weight
         self.job_priority = job.priority
         self.job_slo_target_s = job.slo_target_s
@@ -463,12 +388,8 @@ class SynchronousScheduler:
         ledger = SubmissionExecutionLedger(
             actual_work_extractor=self.actual_work_extractor,
         )
-        endpoints_by_id = {
-            endpoint.endpoint_id: endpoint for endpoint in topology.endpoints
-        }
-        unknown_admission_endpoints = (
-            set(self.per_endpoint_admission) - set(endpoints_by_id)
-        )
+        endpoints_by_id = {endpoint.endpoint_id: endpoint for endpoint in topology.endpoints}
+        unknown_admission_endpoints = set(self.per_endpoint_admission) - set(endpoints_by_id)
         if unknown_admission_endpoints:
             raise ValueError(
                 "per-endpoint admission contains endpoints outside topology: "
@@ -478,8 +399,7 @@ class SynchronousScheduler:
             set(self.per_endpoint_admission) != set(endpoints_by_id)
         ):
             raise ValueError(
-                "per-endpoint admission must define exactly one policy for "
-                "every topology endpoint"
+                "per-endpoint admission must define exactly one policy for every topology endpoint"
             )
         if self.shared_credit is not None and self.shared_ready_request_limit > 1:
             return self._run_with_shared_ready_window(
@@ -506,9 +426,7 @@ class SynchronousScheduler:
                     fanin_s += collected.result_s
                 continue
             if not isinstance(source_item, PayloadEnvelope):
-                raise ValueError(
-                    "envelopes must contain PayloadEnvelope values"
-                )
+                raise ValueError("envelopes must contain PayloadEnvelope values")
             envelope = source_item
             if self.shared_credit is not None:
                 shared_credit_jobs.add(envelope.request.job_id)
@@ -542,9 +460,7 @@ class SynchronousScheduler:
                     endpoint.healthy and endpoint.available
                     for endpoint in capacity_topology.endpoints
                 ):
-                    preferred_endpoint = endpoints_by_id.get(
-                        envelope.request.preferred_endpoint_id
-                    )
+                    preferred_endpoint = endpoints_by_id.get(envelope.request.preferred_endpoint_id)
                     pool_id = (
                         preferred_endpoint.pool_id
                         if preferred_endpoint is not None
@@ -672,9 +588,7 @@ class SynchronousScheduler:
             ),
             fanin_s=fanin_s,
             submit_s=submit_s,
-            max_active_work_per_endpoint_seen=(
-                max_active_work_per_endpoint_seen
-            ),
+            max_active_work_per_endpoint_seen=(max_active_work_per_endpoint_seen),
         )
 
     def _run_with_shared_ready_window(
@@ -740,9 +654,7 @@ class SynchronousScheduler:
                             source_waiting = True
                             break
                         if not isinstance(source_item, PayloadEnvelope):
-                            raise ValueError(
-                                "envelopes must contain PayloadEnvelope values"
-                            )
+                            raise ValueError("envelopes must contain PayloadEnvelope values")
                         deferred_envelope = source_item
 
                     envelope = deferred_envelope
@@ -750,9 +662,7 @@ class SynchronousScheduler:
                         1,
                         envelope.request.estimated_work_units,
                     )
-                    request_payload_bytes = (
-                        envelope.request.estimated_payload_bytes
-                    )
+                    request_payload_bytes = envelope.request.estimated_payload_bytes
                     if not ready.can_accept(
                         request_work,
                         request_payload_bytes,
@@ -786,9 +696,7 @@ class SynchronousScheduler:
                     )
                     ready_requests_transition_samples.append(len(ready))
                     ready_work_transition_samples.append(ready.work)
-                    ready_payload_bytes_transition_samples.append(
-                        ready.payload_bytes
-                    )
+                    ready_payload_bytes_transition_samples.append(ready.payload_bytes)
 
                 now_monotonic_s = time.monotonic()
                 for candidate in ready.snapshot():
@@ -801,8 +709,7 @@ class SynchronousScheduler:
                         >= self.shared_credit_acquire_timeout_s
                     ):
                         raise TimeoutError(
-                            "shared credit acquire timed out for "
-                            f"{request.job_id}/{request_id}"
+                            f"shared credit acquire timed out for {request.job_id}/{request_id}"
                         )
                     if not candidate.credit_granted:
                         candidate.credit_granted = self.shared_credit.try_acquire(
@@ -852,9 +759,7 @@ class SynchronousScheduler:
                     ready.remove(candidate)
                     ready_requests_transition_samples.append(len(ready))
                     ready_work_transition_samples.append(ready.work)
-                    ready_payload_bytes_transition_samples.append(
-                        ready.payload_bytes
-                    )
+                    ready_payload_bytes_transition_samples.append(ready.payload_bytes)
                     made_progress = True
                     max_inflight_seen = max(
                         max_inflight_seen,
@@ -909,27 +814,17 @@ class SynchronousScheduler:
             applied_limit=self.admission.limit,
             bounded_wait_s=sum(bounded_wait_samples),
             avg_bounded_wait_s=(
-                statistics.mean(bounded_wait_samples)
-                if bounded_wait_samples
-                else 0.0
+                statistics.mean(bounded_wait_samples) if bounded_wait_samples else 0.0
             ),
             fanin_s=fanin_s,
             submit_s=submit_s,
-            max_active_work_per_endpoint_seen=(
-                max_active_work_per_endpoint_seen
-            ),
+            max_active_work_per_endpoint_seen=(max_active_work_per_endpoint_seen),
             max_ready_requests_seen=max_ready_requests_seen,
             max_ready_work_seen=max_ready_work_seen,
             max_ready_payload_bytes_seen=max_ready_payload_bytes_seen,
-            ready_requests_transition_samples=tuple(
-                ready_requests_transition_samples
-            ),
-            ready_work_transition_samples=tuple(
-                ready_work_transition_samples
-            ),
-            ready_payload_bytes_transition_samples=tuple(
-                ready_payload_bytes_transition_samples
-            ),
+            ready_requests_transition_samples=tuple(ready_requests_transition_samples),
+            ready_work_transition_samples=tuple(ready_work_transition_samples),
+            ready_payload_bytes_transition_samples=tuple(ready_payload_bytes_transition_samples),
         )
 
     def _register_ready_candidate(
@@ -948,9 +843,7 @@ class SynchronousScheduler:
             topology,
             routing_context,
         )
-        preferred_endpoint = endpoints_by_id.get(
-            envelope.request.preferred_endpoint_id
-        )
+        preferred_endpoint = endpoints_by_id.get(envelope.request.preferred_endpoint_id)
         pool_id = (
             preferred_endpoint.pool_id
             if preferred_endpoint is not None
@@ -1009,9 +902,7 @@ class SynchronousScheduler:
         ledger: SubmissionExecutionLedger,
     ) -> bool:
         hol_age_s = (
-            ledger.oldest_inflight_age_s(now_s=self.epoch_clock())
-            if ledger.contexts
-            else 0.0
+            ledger.oldest_inflight_age_s(now_s=self.epoch_clock()) if ledger.contexts else 0.0
         )
         if not self.admission.decide(
             ledger.inflight_count,
@@ -1085,9 +976,7 @@ class SynchronousScheduler:
             return {}
         if self.job_priority_window_s is not None:
             if request.oldest_arrival_epoch_s is None:
-                raise ValueError(
-                    "bounded priority requires an explicit oldest arrival epoch"
-                )
+                raise ValueError("bounded priority requires an explicit oldest arrival epoch")
             remaining_slo_budget_s = self.job_slo_target_s - max(
                 0.0,
                 self.epoch_clock() - request.oldest_arrival_epoch_s,
@@ -1113,9 +1002,7 @@ class SynchronousScheduler:
         work_by_endpoint: dict[str, int] = {}
         for item in submission_context.values():
             endpoint_id = item.endpoint_id
-            inflight_by_endpoint[endpoint_id] = (
-                inflight_by_endpoint.get(endpoint_id, 0) + 1
-            )
+            inflight_by_endpoint[endpoint_id] = inflight_by_endpoint.get(endpoint_id, 0) + 1
             work_by_endpoint[endpoint_id] = (
                 work_by_endpoint.get(endpoint_id, 0) + item.estimated_work
             )
@@ -1146,10 +1033,7 @@ class SynchronousScheduler:
                             )
                         )
                     ),
-                    running=(
-                        endpoint.running
-                        + inflight_by_endpoint.get(endpoint.endpoint_id, 0)
-                    ),
+                    running=(endpoint.running + inflight_by_endpoint.get(endpoint.endpoint_id, 0)),
                     estimated_active_work=(
                         endpoint.estimated_active_work
                         + work_by_endpoint.get(endpoint.endpoint_id, 0)
@@ -1169,9 +1053,7 @@ class SynchronousScheduler:
         for item in submission_context.values():
             endpoint_id = item.endpoint_id
             submit_epoch_s = item.submit_epoch_s
-            inflight_by_endpoint[endpoint_id] = (
-                inflight_by_endpoint.get(endpoint_id, 0) + 1
-            )
+            inflight_by_endpoint[endpoint_id] = inflight_by_endpoint.get(endpoint_id, 0) + 1
             oldest_submit_by_endpoint[endpoint_id] = min(
                 submit_epoch_s,
                 oldest_submit_by_endpoint.get(endpoint_id, submit_epoch_s),
@@ -1184,9 +1066,8 @@ class SynchronousScheduler:
                     endpoint,
                     available=(
                         endpoint.available
-                        and self.per_endpoint_admission[
-                            endpoint.endpoint_id
-                        ].decide(
+                        and self.per_endpoint_admission[endpoint.endpoint_id]
+                        .decide(
                             inflight_by_endpoint.get(endpoint.endpoint_id, 0),
                             hol_age_s=max(
                                 0.0,
@@ -1196,7 +1077,8 @@ class SynchronousScheduler:
                                     now,
                                 ),
                             ),
-                        ).allowed
+                        )
+                        .allowed
                     ),
                 )
                 for endpoint in topology.endpoints

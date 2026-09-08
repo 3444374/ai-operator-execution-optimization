@@ -7,7 +7,7 @@ from typing import Callable, Protocol
 
 from .errors import EndpointCapacityUnavailable
 from .models import BatchRequest, TopologySnapshot
-from .scheduler import AdmissionPolicy, EndpointRouter, PoolRouter, SharedCreditPolicy
+from .policy_contracts import AdmissionPolicy, EndpointRouter, PoolRouter, SharedCreditPolicy
 from .session_capacity import TaskRecord
 from .session_contract import OfferedTask, SessionSpec, TaskKey
 

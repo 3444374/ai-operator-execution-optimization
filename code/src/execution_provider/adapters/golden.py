@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from ..wire.v3 import GOLDEN_EXECUTION_ID
 from ..wire.v4 import GOLDEN_EXECUTION_ID as CHOICE_EXECUTION_ID
 from ..wire.v5 import GOLDEN_EXECUTION_ID as MAP_EXECUTION_ID
-from .semantic_session import (
+from ..completion import (
     CompletionAdapterError,
     Completion,
     CompletionRequest,
@@ -25,8 +25,9 @@ class GoldenCompletionAdapter:
         self._fixtures = fixtures
 
     def execution_id_for(self, protocol_version: int) -> str | None:
-        return {3: self.execution_id, 4: self.choice_execution_id,
-                5: MAP_EXECUTION_ID}.get(protocol_version)
+        return {3: self.execution_id, 4: self.choice_execution_id, 5: MAP_EXECUTION_ID}.get(
+            protocol_version
+        )
 
     def complete(self, request: CompletionRequest) -> Completion:
         raw_output = self._fixtures.get(request.semantic_payload_digest)
@@ -45,7 +46,6 @@ class GoldenCompletionAdapter:
             output_tokens=1,
             finish_reason="stop",
         )
-
 
 
 __all__ = ["GoldenCompletionAdapter"]

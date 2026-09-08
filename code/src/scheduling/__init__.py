@@ -97,12 +97,10 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "RequestPoolRouter",
         "RoundRobinEndpointRouter",
     ),
+    ".core.policy_contracts": ("AdmissionPolicy", "EndpointRouter", "PoolRouter"),
     ".core.scheduler": (
-        "AdmissionPolicy",
         "EndpointCapacityConfig",
-        "EndpointRouter",
         "JobSchedulingContract",
-        "PoolRouter",
         "ReadyWindowConfig",
         "SchedulerConfig",
         "SchedulerResult",
@@ -159,11 +157,7 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-_EXPORTS = {
-    name: module
-    for module, names in _EXPORT_GROUPS.items()
-    for name in names
-}
+_EXPORTS = {name: module for module, names in _EXPORT_GROUPS.items() for name in names}
 __all__ = sorted(_EXPORTS)
 
 

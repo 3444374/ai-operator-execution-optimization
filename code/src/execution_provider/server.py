@@ -16,9 +16,9 @@ from pathlib import Path
 from .adapters.golden import GoldenCompletionAdapter
 from .adapters.openai_compatible_fixed import (
     OpenAICompatibleFixedAdapter,
-    load_fixed_model_config,
 )
-from .adapters.semantic_session import CompletionAdapter
+from .adapters.model_config import load_fixed_model_config
+from .completion import CompletionAdapter
 from .completion import Completion
 from .gateway_runtime import GatewayLimits, GatewayRuntime
 from .request_admission import RequestAdmission

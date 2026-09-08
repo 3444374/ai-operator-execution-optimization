@@ -14,7 +14,7 @@ import time
 import threading
 
 from src.execution_provider import server
-from src.execution_provider.adapters.semantic_session import CompletionAdapterError
+from src.execution_provider.completion import CompletionAdapterError
 from src.experiments.attempt_ledger import (
     AttemptBudget,
     AttemptLedger,
