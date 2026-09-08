@@ -90,6 +90,27 @@ def setup(**changes):
 
 
 class IncrementalSessionTests(unittest.TestCase):
+    def test_delivery_reports_new_consumer_deadline(self):
+        for policy, expected in (
+            (SessionTimeouts(consumer_s=3), 5.0),
+            (SessionTimeouts(), None),
+            (None, 12.0),
+        ):
+            with self.subTest(policy=policy):
+                e, s, b, clock = setup(timeouts=policy)
+                s.offer([task(0)])
+                s.advance(1)
+                clock.now = 2
+                b.complete(TaskKey(0, 0))
+                result = s.advance(1)
+                self.assertEqual(len(result.deliveries), 1)
+                self.assertEqual(result.next_deadline, expected)
+                if expected is not None:
+                    clock.now = expected
+                    self.assertEqual(s.advance(1).error, "consumer release timed out")
+                s.release([result.deliveries[0].lease_id])
+                self.assertEqual(e.capacity.usage().held_tasks, 0)
+
     def test_queue_does_not_inherit_backend_timeout(self):
         e, s, b, clock = setup(
             held_tasks=3,

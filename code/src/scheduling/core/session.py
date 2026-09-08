@@ -578,6 +578,10 @@ class SchedulingSession:
             if self.state not in TERMINAL_STATES
             and (duration := self.limits.phase_timeout(r.phase)) is not None
         ]
+        consumer_timeout = self.limits.phase_timeout("LEASED")
+        if selected and consumer_timeout is not None:
+            # Include the leases about to transfer, without publishing ownership early.
+            deadlines.append(now + consumer_timeout)
         if any(r.compute for r in self.engine.capacity.records.values()) or queued:
             deadlines.append(now + self.limits.poll_interval_s)
         result = AdvanceResult(
