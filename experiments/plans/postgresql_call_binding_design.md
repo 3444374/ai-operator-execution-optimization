@@ -320,8 +320,9 @@ SQL线程独占ExprState/Datum/slot操作；Filter和组合路径不能仅因共
 本轮从核查进入代码实现。v6复用Map消息/摘要语义，provider身份和wire版本独立；task RPC返回
 `accepted_prefix_count`为0或1，poll RPC返回任一已接纳任务的完成。同一连接每次等待一个RPC回复，
 但提交确认不等待模型，所以允许多个模型请求在途。没有把多个任务串行等完再拼成批返回。
-网关配置`--max-active-requests`给出服务窗口，PG配置`provider_window_tasks`不得超过握手公布的上限；
-两者范围1–64，默认PG窗口2，数值是可配置工程上限，不是某台GPU的校准结论。
+网关配置`--max-held-tasks`给出接纳窗口，`--max-active-requests`独立限制后端并发；
+PG配置`provider_window_tasks`不得超过握手公布的接纳数，默认2。固定64项限制已移除，
+窗口存储受字节预算检查；int32字段范围是编码限制，不是某台GPU的校准结论。
 
 PG增加可选offer/receive操作；原drive和v2–v5继续回归。数据组织、提交及物理执行仍复用同一Core。
 PG仅保存有界行槽、消息与关联状态，使用原CustomScan回调、MemoryContext、child plan和可中断socket；

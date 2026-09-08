@@ -29,6 +29,25 @@ class Acceptance(str, Enum):
 
 
 @dataclass(frozen=True)
+class SessionTimeouts:
+    """Optional phase durations; None leaves that phase to the caller's lifecycle."""
+
+    queue_s: float | None = None
+    backend_s: float | None = None
+    consumer_s: float | None = None
+
+    def __post_init__(self):
+        for name, value in vars(self).items():
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValueError(f"{name} must be finite and positive or None")
+
+
+@dataclass(frozen=True)
 class SessionLimits:
     held_tasks: int
     input_bytes: int
@@ -42,9 +61,14 @@ class SessionLimits:
     step_actions: int
     wait_timeout_s: float
     poll_interval_s: float
+    timeouts: SessionTimeouts | None = None
 
     def __post_init__(self):
         for name, value in vars(self).items():
+            if name == "timeouts":
+                if value is not None and type(value) is not SessionTimeouts:
+                    raise ValueError("timeouts must be SessionTimeouts or None")
+                continue
             if name.endswith("_s"):
                 if (
                     isinstance(value, bool)
@@ -55,6 +79,13 @@ class SessionLimits:
                     raise ValueError(f"{name} must be finite and positive")
             elif type(value) is not int or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
+
+    def phase_timeout(self, phase: str) -> float | None:
+        field = {"QUEUED": "queue_s", "INFLIGHT": "backend_s", "LEASED": "consumer_s"}.get(phase)
+        if field is None:
+            return None
+        # Existing callers keep their original all-phase timeout until migrated.
+        return self.wait_timeout_s if self.timeouts is None else getattr(self.timeouts, field)
 
 
 def _identity(value: str) -> None:

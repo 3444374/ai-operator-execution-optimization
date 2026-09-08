@@ -103,7 +103,12 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def main(
-    argv=None, *, adapter_wrapper=None, session_wrapper=None, incremental_observer=None
+    argv=None,
+    *,
+    adapter_wrapper=None,
+    session_wrapper=None,
+    incremental_observer=None,
+    incremental_execution_factory=None,
 ) -> int:
     """Serve sessions; optional decorators observe this invocation only."""
     args = parse_args(argv)
@@ -166,12 +171,17 @@ def main(
                 max_active_requests=limits.max_active_requests,
                 input_bytes=args.input_buffer_bytes,
                 result_bytes=args.result_buffer_bytes,
+                execution_factory=incremental_execution_factory,
             )
             completion_adapter = incremental_adapter
         elif args.incremental_map_window_one:
             from .adapters.incremental_map import IncrementalMapAdapter
 
-            incremental_adapter = IncrementalMapAdapter(fixed_config, observer=incremental_observer)
+            incremental_adapter = IncrementalMapAdapter(
+                fixed_config,
+                observer=incremental_observer,
+                execution_factory=incremental_execution_factory,
+            )
             completion_adapter = incremental_adapter
         else:
             completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)

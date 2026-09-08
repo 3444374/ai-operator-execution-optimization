@@ -14,6 +14,7 @@ from src.scheduling.core.session_contract import (
     OfferedTask,
     SessionLimits,
     SessionSpec,
+    SessionTimeouts,
     State,
     Submission,
     TaskKey,
@@ -89,6 +90,54 @@ def setup(**changes):
 
 
 class IncrementalSessionTests(unittest.TestCase):
+    def test_queue_does_not_inherit_backend_timeout(self):
+        e, s, b, clock = setup(
+            held_tasks=3,
+            input_bytes=12,
+            result_bytes=12,
+            wait_timeout_s=11,
+            timeouts=SessionTimeouts(backend_s=11),
+        )
+        self.assertEqual(s.offer([task(i) for i in range(3)]).accepted_prefix_count, 3)
+        s.advance(3)
+        for sequence, now in enumerate((8, 16, 24)):
+            clock.now = now
+            b.complete(TaskKey(0, sequence))
+            result = s.advance(3)
+            self.assertEqual(result.state, State.OPEN)
+            self.assertEqual([d.key.sequence for d in result.deliveries], [sequence])
+            s.release([result.deliveries[0].lease_id])
+            if sequence == 0:
+                clock.now = 11
+                self.assertEqual(s.advance(3).state, State.OPEN)
+        self.assertEqual(e.capacity.usage().held_tasks, 0)
+
+    def test_phase_deadlines_keep_their_own_start_and_resource_ownership(self):
+        for phase, policy, reason in (
+            ("queue", SessionTimeouts(queue_s=3, backend_s=20), "capacity wait timed out"),
+            ("backend", SessionTimeouts(backend_s=3), "backend wait timed out"),
+            ("consumer", SessionTimeouts(consumer_s=3), "consumer release timed out"),
+        ):
+            with self.subTest(phase=phase):
+                e, s, b, clock = setup(timeouts=policy)
+                s.offer([task(0), task(1)])
+                s.advance(2)
+                if phase == "consumer":
+                    clock.now = 2
+                    b.complete(TaskKey(0, 0))
+                    delivery = s.advance(2).deliveries[0]
+                    clock.now = 4
+                    self.assertEqual(s.advance(2).state, State.OPEN)
+                    clock.now = 5
+                else:
+                    clock.now = 3
+                result = s.advance(2)
+                self.assertEqual(result.state, State.FAILED)
+                self.assertEqual(result.error, reason)
+                self.assertGreater(e.capacity.usage().held_tasks, 0)
+                if phase == "consumer":
+                    s.release([delivery.lease_id])
+
     def test_prefix_transfer_release_backpressure_and_no_eager_dispatch(self):
         e, s, b, _ = setup()
         r = s.offer([task(i) for i in range(3)])

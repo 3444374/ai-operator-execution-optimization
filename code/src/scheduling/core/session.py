@@ -109,7 +109,11 @@ class SessionEngine:
                 raise RuntimeError("engine is occupied or failed")
             limits = limits or self.capacity.limits
             for name, value in vars(limits).items():
-                if not name.endswith("_s") and value > getattr(self.capacity.limits, name):
+                if (
+                    name != "timeouts"
+                    and not name.endswith("_s")
+                    and value > getattr(self.capacity.limits, name)
+                ):
                     raise ValueError("session limits exceed engine limits")
             if self._next_session > UINT64_MAX:
                 raise OverflowError("session identity exhausted")
@@ -386,10 +390,8 @@ class SchedulingSession:
 
     def _expired(self, now: float) -> None:
         for r in self._records():
-            if (
-                r.phase in ("QUEUED", "INFLIGHT", "LEASED")
-                and now >= r.since + self.limits.wait_timeout_s
-            ):
+            duration = self.limits.phase_timeout(r.phase)
+            if duration is not None and now >= r.since + duration:
                 self._fail(
                     {
                         "QUEUED": "capacity wait timed out",
@@ -571,14 +573,13 @@ class SchedulingSession:
                 else None
             )
         deadlines = [
-            r.since + self.limits.wait_timeout_s
+            r.since + duration
             for r in records
-            if r.phase in ("QUEUED", "INFLIGHT", "LEASED") and self.state not in TERMINAL_STATES
+            if self.state not in TERMINAL_STATES
+            and (duration := self.limits.phase_timeout(r.phase)) is not None
         ]
         if any(r.compute for r in self.engine.capacity.records.values()) or queued:
             deadlines.append(now + self.limits.poll_interval_s)
-        if selected:
-            deadlines.append(now + self.limits.wait_timeout_s)
         result = AdvanceResult(
             deliveries,
             self.state,

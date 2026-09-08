@@ -47,17 +47,17 @@ model、timeout 和 bearer-token 环境变量名不进入仓库。
 请求观测事件携带`session_id`与`task`，可关联相同payload的并发请求/完成；
 旧独占会话资源测量器仍不能用于并发资源归因。
 
-### 生成 Map 的增量核心接入（窗口 1）
+### 生成 Map 的增量核心接入
 
 启动同一服务级 Engine 的单连接路径：
 
 ```sh
 python3 code/scripts/services/run_execution_provider_gateway.py \
   --socket /path/to/provider.sock --fixed-model-config /path/to/fixed-model.json \
-  --incremental-map-window-one --max-active-requests 1
+  --incremental-map --max-held-tasks 2 --max-active-requests 2
 ```
 
-若要使用PG多在途，改为 `--incremental-map --max-active-requests 2`，并选择
+PG多在途路径选择
 `SET semloom_pg.provider_execution_profile='incremental-map'`；PG的 `provider_window_tasks`
 默认2且不得超过网关公布的接纳任务数，`provider_window_bytes`默认8MiB。
 网关用 `--max-held-tasks` 设置接纳任务数，用 `--max-active-requests` 设置后端并发；
@@ -68,7 +68,12 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 仅支持受限生成Map；EXPLAIN展示实际输入窗口，复杂表达式退回窗口1。
 [验证记录](../../experiments/results/postgresql/async_window_20260908/README.md)包含同一PG查询的真实并发、取消与回收。
 
-下面保留窗口1兼容入口的说明：
+网关默认不使用单次模型超时限制排队或结果等待；模型HTTP仍有独立超时，PG取消与socket超时仍生效。
+嵌入式入口 `server.main(incremental_execution_factory=...)` 可传入执行组装函数；
+默认 `build_fixed_model_execution` 接受已有 `SessionPolicies`、工作量描述和阶段超时配置。
+这不表示网关已经支持多个活动session。
+
+下面保留待迁移的v5窗口1兼容入口说明；使用 `--incremental-map-window-one --max-active-requests 1` 启动：
 
 数据库会话显式选择 `SET semloom_pg.provider_execution_profile='incremental-map-window-one'`，
 并将 `semloom_pg.gateway_socket` 指向同一socket。新身份为

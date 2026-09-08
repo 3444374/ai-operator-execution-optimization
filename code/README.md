@@ -2,6 +2,9 @@
 
 Incremental Map now separates retained tasks, input/result bytes and active HTTP requests.
 Its v5/v6 adapters share backend completion decoding while retaining their delivery ownership.
+Queue, backend and consumer deadlines can be set independently with `SessionTimeouts`; the gateway
+leaves queue/consumer phase deadlines to PG and socket lifecycle by default. Callers that omit the
+phase policy retain the legacy `wait_timeout_s` behavior.
 PG window storage is allocated from the configured count and checked against byte budgets;
 64 is no longer a scheduling ceiling. See the [CLI budgets](scripts/README.md).
 
@@ -503,7 +506,9 @@ The versioned adapters now depend on shared modules directly:
 |---|---|
 | [execution_provider/completion.py](src/execution_provider/completion.py) | Request/result values, adapter interface and redacted errors; no session loop |
 | [execution_provider/adapters/model_config.py](src/execution_provider/adapters/model_config.py) | Fixed endpoint/model configuration and validation for both HTTP implementations |
-| [execution_provider/adapters/incremental_runtime.py](src/execution_provider/adapters/incremental_runtime.py) | Map engine, HTTP, connection lifetime and resource draining shared by v5/v6 |
+| [execution_provider/adapters/incremental_runtime.py](src/execution_provider/adapters/incremental_runtime.py) | Connection lifetime, peer cancellation and resource draining shared by v5/v6 |
+| [execution_provider/adapters/incremental_execution.py](src/execution_provider/adapters/incremental_execution.py) | Fixed-model assembly; existing policies, work descriptions and backend can be supplied independently of wire handling |
+| [execution_provider/adapters/async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) | Bounded HTTP I/O, model timeout and client cleanup |
 | [execution_provider/wire/map_codec.py](src/execution_provider/wire/map_codec.py) | Common Map semantic validation and digest construction |
 | [scheduling/core/policy_contracts.py](src/scheduling/core/policy_contracts.py) | Admission/routing/shared-credit interfaces used by both scheduling loops |
 

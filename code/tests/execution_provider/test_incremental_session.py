@@ -1,6 +1,7 @@
 """Real framed v6 intake against a controlled async backend, without a model."""
 
 import asyncio
+from dataclasses import replace
 import json
 import socket
 import threading
@@ -189,7 +190,7 @@ class IncrementalSessionTests(unittest.TestCase):
 
     def test_invalid_budget_is_rejected_before_starting_transport(self):
         with patch(
-            "src.execution_provider.adapters.incremental_runtime.BoundedAsyncBackend"
+            "src.execution_provider.adapters.incremental_execution.BoundedAsyncBackend"
         ) as backend:
             with self.assertRaises(ValueError):
                 IncrementalMapSessionAdapter(
@@ -197,6 +198,94 @@ class IncrementalSessionTests(unittest.TestCase):
                     result_bytes=0,
                 )
             backend.assert_not_called()
+
+    def test_injected_execution_uses_alternative_work_and_selection(self):
+        from src.execution_provider.adapters.incremental_execution import (
+            build_fixed_model_execution,
+        )
+        from src.planning.work import StageWork, WorkDescriptor
+
+        peer, server = socket.socketpair()
+        peer.settimeout(3)
+        observed, failures = [], []
+
+        def describe(request):
+            length = len(request.canonical_messages[-1]["content"])
+            return WorkDescriptor(
+                (StageWork("model", length, "tokens"),),
+                "model",
+                "synthetic-length",
+                locality_key="shared-prefix",
+            )
+
+        async def execute(request, endpoint):
+            observed.append(
+                (
+                    request.key.sequence,
+                    request.task.estimated_work,
+                    request.task.info.work.locality_key,
+                    json.loads(request.task.payload)["messages"][-1]["content"],
+                )
+            )
+            return json.dumps(
+                {
+                    "model": "model",
+                    "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+                }
+            ).encode()
+
+        def factory(config, **kwargs):
+            execution = build_fixed_model_execution(
+                config, describe_work=describe, active_work=4, work_unit="tokens", **kwargs
+            )
+            execution.engine.policies = replace(
+                execution.engine.policies,
+                organize=None,
+                choose_task=lambda candidates: candidates[-1].key,
+            )
+            return execution
+
+        def run():
+            adapter = IncrementalMapSessionAdapter(
+                FixedModelConfig("http://localhost/v1/chat/completions", "model", 2000),
+                max_tasks=2,
+                max_active_requests=1,
+                execute=execute,
+                execution_factory=factory,
+            )
+            try:
+                adapter.serve_connection(
+                    server, lambda conn: adapter.run_incremental(conn, read_frame(conn))
+                )
+                self.assertEqual(adapter.engine.capacity.usage().held_tasks, 0)
+            except BaseException as exc:
+                failures.append(exc)
+            finally:
+                adapter.close()
+                server.close()
+
+        worker = threading.Thread(target=run)
+        worker.start()
+        try:
+            plan = SemanticMapPlan("Return input.", "model", 8)
+            peer.sendall(encode_frame(v6.build_open_message(plan)))
+            read_frame(peer)
+            for sequence, value in enumerate(("a", "abc")):
+                peer.sendall(
+                    encode_frame(v6.build_task_message(plan, sequence=sequence, input_value=value))
+                )
+                self.assertEqual(read_frame(peer)["accepted_prefix_count"], 1)
+            for sequence in (1, 0):
+                peer.sendall(encode_frame({"type": "poll", "protocol_version": 6}))
+                self.assertEqual(read_frame(peer)["sequence"], str(sequence))
+        finally:
+            peer.close()
+            worker.join(3)
+        self.assertFalse(worker.is_alive())
+        if failures:
+            raise failures[0]
+        self.assertEqual(observed, [(1, 3, "shared-prefix", "abc"), (0, 1, "shared-prefix", "a")])
 
     def test_protocol_identity_cannot_be_relabelled(self):
         plan = SemanticMapPlan("Return input.", "model", 8)

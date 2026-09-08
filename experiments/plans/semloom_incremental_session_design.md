@@ -552,3 +552,26 @@ No company implementation is copied. The source baseline is `21909415`.
   This is correctness evidence, not quality, performance or optimal-capacity calibration.
 
 Status: implemented and validated; [results](../results/scheduling/capacity_cleanup_20260908/README.md) record controlled/PG tests and two independent 12-request model runs. Multi-Job resource allocation remains pending.
+
+## 19. Phase deadlines and execution assembly (2026-09-08)
+
+Status: implemented; [validation](../results/scheduling/phase_policy_20260908/README.md) passes Linux501, PG1961 TAP and 12 real requests. Baseline `2462c76d`. This slice follows the existing
+architecture §8.7–8.8 ownership decisions; no company code is copied. Source inspection of
+`SessionLimits`, `SchedulingSession._expired` and `IncrementalMapRuntime` confirms that one
+model-derived duration currently limits queueing, backend wait and consumer release.
+
+Engineering decision: add optional independent phase deadlines, preserving the legacy duration
+for unchanged callers. The gateway defaults to no queue/consumer phase deadline; PG cancellation
+and the socket RPC timeout still apply. Model I/O has its own timeout; unresolved remote work
+retains capacity during cleanup. Fake-clock tests must show three queued tasks with one request
+slot surviving past the first task's model deadline, while explicit phase deadlines still fail.
+
+Move fixed-model transport/policy/task construction to a concrete execution assembly entry,
+allowing existing SessionPolicies/backend/task description interfaces to be supplied without
+editing the wire adapters. This is composition, not a new scheduler. Test an alternative work
+and selection policy through the actual adapter. Verify affected legacy tests and a fresh bounded
+12-request real-model PG run with model/source identity and cleanup evidence.
+
+The v5 window-one bridge is a migration candidate, not yet retired. Review its current callers
+and v6-window-one coverage before removing names or tests. Multi-session core and PG window
+module extraction are separate subsequent work; do not duplicate Engine capacity per connection.
