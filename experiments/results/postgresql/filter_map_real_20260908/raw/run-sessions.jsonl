@@ -1,0 +1,36 @@
+{"event": "session_start", "session_id": 1, "monotonic_ns": 12770051538826146, "gateway_pid": 103890, "accepted_fd": 5, "accepted_socket_inode": 2881935894, "peer_pid": 103889, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 1, "task": 1, "payload_digest": "7a11179b8cf409ee2241efa9f74be1dfba7c05112d8e4ed718667007d8eec9d1", "monotonic_ns": 12770051540046868}
+{"event": "task_complete", "session_id": 1, "task": 1, "monotonic_ns": 12770051629032198}
+{"event": "session_start", "session_id": 2, "monotonic_ns": 12770051629887101, "gateway_pid": 103890, "accepted_fd": 6, "accepted_socket_inode": 2881935895, "peer_pid": 103889, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 2, "task": 2, "payload_digest": "6c86e77ccadf177d5e22fdbbb57223e7ffb27453bb21c43345e4ced96647f907", "monotonic_ns": 12770051631167017}
+{"event": "task_complete", "session_id": 2, "task": 2, "monotonic_ns": 12770051755720955}
+{"event": "task", "session_id": 1, "task": 3, "payload_digest": "31005bee0217e730ca4127ea4cae94fbdf9d61a8aee0a138fae54c8f8b71c3d1", "monotonic_ns": 12770051756472422}
+{"event": "task_complete", "session_id": 1, "task": 3, "monotonic_ns": 12770051810317255}
+{"event": "task", "session_id": 1, "task": 4, "payload_digest": "7a11179b8cf409ee2241efa9f74be1dfba7c05112d8e4ed718667007d8eec9d1", "monotonic_ns": 12770051811045310}
+{"event": "task_complete", "session_id": 1, "task": 4, "monotonic_ns": 12770051863135870}
+{"event": "session_end", "session_id": 2, "monotonic_ns": 12770051863482779, "termination": "returned", "connection_closed": true}
+{"event": "session_end", "session_id": 1, "monotonic_ns": 12770051863607929, "termination": "returned", "connection_closed": true}
+{"event": "session_start", "session_id": 3, "monotonic_ns": 12770051938202289, "gateway_pid": 103890, "accepted_fd": 5, "accepted_socket_inode": 2881935896, "peer_pid": 103889, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 3, "task": 5, "payload_digest": "c22310981b754b7aa07f671f56d5fa152f1365e455df16630035d03f3dac185c", "monotonic_ns": 12770051939554398}
+{"event": "task_complete", "session_id": 3, "task": 5, "monotonic_ns": 12770052555202901}
+{"event": "session_start", "session_id": 4, "monotonic_ns": 12770052555936273, "gateway_pid": 103890, "accepted_fd": 6, "accepted_socket_inode": 2881935897, "peer_pid": 103889, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 4, "task": 6, "payload_digest": "6c86e77ccadf177d5e22fdbbb57223e7ffb27453bb21c43345e4ced96647f907", "monotonic_ns": 12770052557207487}
+{"event": "task_complete", "session_id": 4, "task": 6, "monotonic_ns": 12770052680971841}
+{"event": "task", "session_id": 3, "task": 7, "payload_digest": "4309e7142deabc1ae01bc7a438c81f2cb6fdb112a183cdb7561278530ef192bb", "monotonic_ns": 12770052681903428}
+{"event": "task_complete", "session_id": 3, "task": 7, "monotonic_ns": 12770052735487939}
+{"event": "task", "session_id": 3, "task": 8, "payload_digest": "c22310981b754b7aa07f671f56d5fa152f1365e455df16630035d03f3dac185c", "monotonic_ns": 12770052736131618}
+{"event": "task_complete", "session_id": 3, "task": 8, "monotonic_ns": 12770052790150252}
+{"event": "session_end", "session_id": 4, "monotonic_ns": 12770052790461203, "termination": "returned", "connection_closed": true}
+{"event": "session_end", "session_id": 3, "monotonic_ns": 12770052790528794, "termination": "returned", "connection_closed": true}
+{"event": "session_start", "session_id": 5, "monotonic_ns": 12770052811130708, "gateway_pid": 103890, "accepted_fd": 5, "accepted_socket_inode": 2881935898, "peer_pid": 103889, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 5, "task": 9, "payload_digest": "c22310981b754b7aa07f671f56d5fa152f1365e455df16630035d03f3dac185c", "monotonic_ns": 12770052812378218}
+{"event": "task_complete", "session_id": 5, "task": 9, "monotonic_ns": 12770052862477629}
+{"event": "session_start", "session_id": 6, "monotonic_ns": 12770052863249802, "gateway_pid": 103890, "accepted_fd": 6, "accepted_socket_inode": 2881935899, "peer_pid": 103889, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 6, "task": 10, "payload_digest": "6c86e77ccadf177d5e22fdbbb57223e7ffb27453bb21c43345e4ced96647f907", "monotonic_ns": 12770052864379074}
+{"event": "task_complete", "session_id": 6, "task": 10, "monotonic_ns": 12770052989227788}
+{"event": "task", "session_id": 5, "task": 11, "payload_digest": "4309e7142deabc1ae01bc7a438c81f2cb6fdb112a183cdb7561278530ef192bb", "monotonic_ns": 12770052990183888}
+{"event": "task_complete", "session_id": 5, "task": 11, "monotonic_ns": 12770053043841739}
+{"event": "task", "session_id": 5, "task": 12, "payload_digest": "c22310981b754b7aa07f671f56d5fa152f1365e455df16630035d03f3dac185c", "monotonic_ns": 12770053044751298}
+{"event": "task_complete", "session_id": 5, "task": 12, "monotonic_ns": 12770053097306834}
+{"event": "session_end", "session_id": 6, "monotonic_ns": 12770053097996277, "termination": "returned", "connection_closed": true}
+{"event": "session_end", "session_id": 5, "monotonic_ns": 12770053098075881, "termination": "returned", "connection_closed": true}

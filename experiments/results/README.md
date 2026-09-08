@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-09-08：[PG同步组合真实验证](postgresql/filter_map_real_20260908/README.md)完成12次模型请求；
+[增量session真实验证](scheduling/incremental_real_20260908/README.md)用独立预算完成5次请求，实际HTTP并发峰值2。
+本地37项核心/传输测试、Linux318项全调度回归通过，618源码哈希一致；账本和服务清理通过。
+两者不等于PG异步接入，不建立模型质量、正式资源或性能结论。旧12次账本在后一次运行后保持原字节。
+
 [单流增量执行验证](scheduling/incremental_session_20260908/README.md)记录2d2dee35之后的受控核心实现：
 接受前缀、结果lease、取消与跨session额度；任务选择复用/适配已有策略，FIFO可替换。
 旧同步入口保持；真实Backend、批处理与PG接入未由本轮完成。

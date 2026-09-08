@@ -1,0 +1,262 @@
+{
+  "0:0": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Return only the word alpha."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-9d6fbbdc6467bfc0",
+      "object": "chat.completion",
+      "created": 1788831947,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "alpha",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 37,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "0:1": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Return only the word beta."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-8230660b1eb599cb",
+      "object": "chat.completion",
+      "created": 1788831947,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "beta",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 37,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "0:2": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Return only the word gamma."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-a865e40d381a40f4",
+      "object": "chat.completion",
+      "created": 1788831947,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "gamma",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 37,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "2:0": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Return only the word delta."
+        }
+      ],
+      "max_tokens": 64,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-8f0e1e725296ec32",
+      "object": "chat.completion",
+      "created": 1788831947,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "delta",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 37,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "1:0": {
+    "body": {
+      "model": "Qwen2.5-7B-Instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write exactly 128 numbered short words."
+        }
+      ],
+      "max_tokens": 128,
+      "temperature": 0,
+      "stream": false
+    },
+    "response": {
+      "id": "chatcmpl-98df599e059a1ab4",
+      "object": "chat.completion",
+      "created": 1788831947,
+      "model": "Qwen2.5-7B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "1. One\n2. Two\n3. Three\n4. Four\n5. Five\n6. Six\n7. Seven\n8. Eight\n9. Nine\n10. Ten\n11. Eleven\n12. Twelve\n13. Thirteen\n14. Fourteen\n15. Fifteen\n16. Sixteen\n17. Seventeen\n18. Eighteen\n19. Nineteen\n20. Twenty\n21. Twenty-one\n22. Twenty-two\n23. Twenty-three\n24. Twenty-four\n25. Twenty-five",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "length",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.25.1-nohash",
+      "usage": {
+        "prompt_tokens": 39,
+        "total_tokens": 167,
+        "completion_tokens": 128,
+        "prompt_tokens_details": null
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "metrics": null
+    }
+  }
+}

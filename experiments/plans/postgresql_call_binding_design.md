@@ -266,3 +266,19 @@ NULL、丢弃行不求值、LIMIT/OFFSET、prepared、INSERT失败回滚和拒�
 
 实际结果：四轮PG测试分别1875、1889、1908、1910项通过，全部回归通过；
 最后45项组合测试及19项carrier测试覆盖上述行为，详见[结果记录](../results/postgresql/filter_map_binding_20260907/README.md)。
+
+## 12. 2026-09-08真实组合小规模验证
+
+在用户明确允许真实模型测试后，计划以当前已提交代码和独立PG18.3实例验证同步Filter→Map。
+使用已缓存Qwen2.5-7B-Instruct，先重新核对权重/配置/tokenizer哈希及实际vLLM版本，单GPU、
+模型长4096、max_num_seqs=4、batched_tokens=4096、BF16、eager、关闭prefix cache；只监听localhost。
+生成参数保持Filter temperature0/max_tokens8，Map temperature0/max_tokens128。四条公开合成输入
+含TRUE/FALSE判定、NULL Map输入及NULL Filter输入；每次3个Filter请求加1个Map请求。
+v3 SELECT、v4 SELECT、v4 INSERT各4次，总预算12次，由现有持久AttemptLedger限制；GET健康检查
+不生成内容，无额外warmup。LIMIT0及NULL Filter查询必须零请求；INSERT用独立审计连接核对。
+核对计划中两个算子实际计数、完整结果/NULL、响应模型、原始生成内容与数据库结果一致及token usage。
+任一失败停止，不自动重试或扩大预算；每次尝试单独目录保留。结束核对数据库/gateway/model退出、
+模型端口关闭及GPU回到空闲。本项不验证新session真实Backend、性能、质量或正式资源资格。
+
+实际结果：上述12次请求全部通过；[真实组合记录](../results/postgresql/filter_map_real_20260908/README.md)
+保存三阶段结果、独立写入审计、请求账本及清理。没有借此声称新session的PG桥接已完成。

@@ -35,9 +35,9 @@ NULL 零调用、结果与写回均通过。main中的两个算子各自同步�
 后续开发已完成[Map调用分析提取](experiments/results/postgresql/semantic_call_extraction_20260907/README.md)，
 保持现有行为；当前开发分支的[共同调用与列绑定](experiments/results/postgresql/semantic_binding_20260907/README.md)
 已完成基础验证；[一个Filter→一个生成Map](experiments/results/postgresql/filter_map_binding_20260907/README.md)也已在开发分支通过PG18.3全部1910项TAP检查。
-本轮使用合成响应验证正确性，组合的真实模型验证仍待进行。
+后续[真实模型组合验证](experiments/results/postgresql/filter_map_real_20260908/README.md)已完成12次请求，覆盖查询与写入。
 [单流增量执行核心](experiments/results/scheduling/incremental_session_20260908/README.md)已完成受控实现；复用已有提交与路由策略，
-为后续数据组织提供同一执行上下文，真实backend与PG异步仍待接入。
+为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过，PG异步与批处理仍待接入。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

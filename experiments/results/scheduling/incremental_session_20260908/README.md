@@ -1,5 +1,8 @@
 # Single-flow incremental execution verification
 
+This records the initial controlled-core snapshot. Later bounded async transport and real-model checks
+are recorded [separately](../incremental_real_20260908/README.md).
+
 ## Purpose and source
 
 This is an engineering correctness check for the common execution context used by data organization

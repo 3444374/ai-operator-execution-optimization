@@ -1,0 +1,107 @@
+"""Twelve-request, no-retry real-model composition check using existing PG interfaces."""
+import argparse,hashlib,json,os,pwd,sys,time,urllib.request,re
+from pathlib import Path
+from urllib.parse import urlsplit,urlunsplit
+import psycopg
+from psycopg import sql
+from transformers import AutoTokenizer
+from src.baselines.common.redact import redact_text
+from src.experiments.attempt_ledger import AttemptBudget,AttemptLedger
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster,owned_child_process,wait_for_path
+
+FILTER='The text states that the sky is blue.'
+MAP='Return only the input text exactly as received. Do not add, remove, translate, normalize, or explain anything.'
+def save(path,value):path.write_text(redact_text(json.dumps(value,indent=2,ensure_ascii=False))+'\n')
+def events(path):return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+def nodes(plan):
+ if isinstance(plan,list):return [n for p in plan for n in nodes(p)]
+ if isinstance(plan,dict):return ([plan] if 'Custom Plan Provider' in plan else [])+[n for p in plan.values() if isinstance(p,(dict,list)) for n in nodes(p)]
+ return []
+def idle(endpoint):
+ u=urlsplit(endpoint);url=urlunsplit((u.scheme,u.netloc,'/metrics','',''));deadline=time.monotonic()+30
+ while time.monotonic()<deadline:
+  with urllib.request.urlopen(url,timeout=3) as r:text=r.read().decode()
+  counts={}
+  for line in text.splitlines():
+   m=re.fullmatch(r'vllm:num_requests_(running|waiting)(?:\{.*\})? ([0-9.e+-]+)',line)
+   if m:counts[m[1]]=counts.get(m[1],0)+float(m[2])
+  assert set(counts)=={'running','waiting'},'missing_model_queue_metrics'
+  if not any(counts.values()):return
+  time.sleep(.1)
+ raise RuntimeError('model_queue_not_idle')
+def run(settings):
+ root=Path(settings['root']);root.mkdir();repo=Path(settings['source'])
+ ledger=AttemptLedger(Path(settings['ledger']),AttemptBudget(settings['budget_id'],12))
+ assert ledger.attempts==0,'budget_not_fresh'
+ config=json.loads(Path(settings['config']).read_text());identity=json.loads(Path(settings['service_verification']).read_text())
+ assert subprocess_commit(repo)==settings['source_commit'],'source_identity'
+ tokenizer=AutoTokenizer.from_pretrained(settings['model_root'],local_files_only=True)
+ summary={'status':'incomplete','source_commit':settings['source_commit'],'model_requests':0,'phases':{},'incremental_backend_evaluated':False,'quality_evaluated':False,'performance_evaluated':False}
+ def verify_service():
+  p=Path('/proc')/str(identity['pid']);stat=(p/'stat').read_text()
+  assert int(stat[stat.rfind(')')+2:].split()[19])==identity['start_time_ticks'],'service_changed'
+  assert hashlib.sha256((p/'cmdline').read_bytes()).hexdigest()==identity['cmdline_sha256'],'service_config_changed'
+ try:
+  with isolated_pg18_cluster(Path(settings['prefix']),root,pwd.getpwuid(os.getuid()),port=settings['pg_port']) as conn:
+   conn.execute('CREATE TABLE inputs(id integer, decision text, body text)')
+   conn.execute('CREATE TABLE outputs(id integer, body text, generated text)')
+   with conn.cursor() as c:c.executemany('INSERT INTO inputs VALUES (%s,%s,%s)',[(1,'The sky is blue.','Hello, SemLoom.'),(2,'The sky is not blue.','discarded'),(3,'The sky is blue.',None),(4,None,'unrequested')])
+   event_path=root/'http-events.jsonl';session_path=root/'sessions.jsonl';socket=root/'socket/provider.sock'
+   command=[sys.executable,'-m','src.experiments.choice_gateway_observer','--events',str(event_path),'--session-events',str(session_path),'--ledger',settings['ledger'],'--budget-id',settings['budget_id'],'--max-attempts','12','--','--socket',str(socket),'--fixed-model-config',settings['config'],'--max-connections','4','--max-active-requests','1']
+   with owned_child_process(command,root,'gateway',dict(os.environ,PYTHONPATH=str(repo/'code')),pwd.getpwuid(os.getuid())) as process:
+    wait_for_path(socket,process)
+    conn.execute("SET semloom_pg.provider_execution_profile='openai-compatible-fixed'")
+    conn.execute("SET statement_timeout='120s'")
+    conn.execute("SELECT set_config('semloom_pg.gateway_socket',%s,false)",(str(socket),))
+    for name,wire,insert in [('v3_select',3,False),('v4_select',4,False),('v4_insert',4,True)]:
+     opts={'model':config['model_id'],'temperature':0,'max_tokens':8}
+     if wire==4:opts['generation_profile']='semloom.generation.choice.tristate.v1'
+     map_opts={'model':config['model_id'],'temperature':0,'max_tokens':128}
+     predicate=sql.SQL('ai_semantic.filter(decision,{},{}::jsonb)').format(sql.Literal(FILTER),sql.Literal(json.dumps(opts)))
+     expression=sql.SQL('ai_semantic.map(body,{},{}::jsonb)').format(sql.Literal(MAP),sql.Literal(json.dumps(map_opts)))
+     query=sql.SQL('SELECT id,body,{} FROM ONLY inputs WHERE {}').format(expression,predicate)
+     before=ledger.attempts
+     assert conn.execute(query+sql.SQL(' LIMIT 0')).fetchall()==[],'limit_zero'
+     assert conn.execute(query+sql.SQL(' AND id=4')).fetchall()==[],'null_filter'
+     conn.execute(sql.SQL('EXPLAIN {}').format(query)).fetchall()
+     assert ledger.attempts==before,'zero_request_controls'
+     start=len(events(event_path));verify_service()
+     if insert:
+      plan=conn.execute(sql.SQL('EXPLAIN (ANALYZE, FORMAT JSON) INSERT INTO outputs {}').format(query)).fetchone()[0]
+      with psycopg.connect(host=conn.info.host,port=conn.info.port,user=conn.info.user,dbname=conn.info.dbname,autocommit=True) as audit:
+       rows=audit.execute('SELECT * FROM outputs ORDER BY id').fetchall()
+     else:rows=sorted(conn.execute(query).fetchall());plan=None
+     idle(config['endpoint_url']);verify_service()
+     recent=events(event_path)[start:];requests=[e for e in recent if e['event']=='request'];completed=[e for e in recent if e['event']=='completion']
+     assert ledger.attempts-before==len(requests)==len(completed)==4,'request_count'
+     assert not [e for e in recent if e['event']=='error'],'model_error'
+     filters=[];maps=[]
+     for request,result in zip(requests,completed):
+      body=request['body'];ismap=body['max_tokens']==128
+      assert body['model']==result['response_model_id']==config['model_id'],'response_model'
+      assert body['temperature']==0 and body['stream'] is False and result['finish_reason']=='stop','generation_parameters'
+      assert ('structured_outputs' in body)==(not ismap and wire==4),'choice_format'
+      assert len(tokenizer.apply_chat_template(body['messages'],tokenize=True,add_generation_prompt=True,return_dict=False))==result['prompt_tokens'],'prompt_usage'
+      assert 0<=result['output_tokens']<=body['max_tokens'],'output_usage'
+      (maps if ismap else filters).append(result)
+     assert [r['raw_output'] for r in filters]==['TRUE','FALSE','TRUE'],'filter_controls'
+     assert len(maps)==1 and rows==[(1,'Hello, SemLoom.',maps[0]['raw_output']),(3,None,None)],'map_bytes_original_and_null'
+     if plan:
+      found=nodes(plan);assert len(found)==2,'composed_plan_nodes'
+      assert sorted(n['Model Calls'] for n in found)==[1,3],'plan_model_calls'
+     phase={'wire':wire,'rows':rows,'model_requests':4,'filter_requests':3,'map_requests':1,'plan':plan,'zero_request_controls':True}
+     summary['phases'][name]=phase;save(root/(name+'.json'),phase);save(root/'summary.json',summary)
+   states=events(session_path)
+   assert len([s for s in states if s['event']=='session_start'])==len([s for s in states if s['event']=='session_end']),'session_cleanup'
+   assert all(s['connection_closed'] for s in states if s['event']=='session_end'),'socket_cleanup'
+  assert ledger.attempts==12 and len(summary['phases'])==3,'complete_matrix'
+  assert not (root/'data/postmaster.pid').exists(),'pg_cleanup'
+  summary['status']='passed'
+ finally:
+  summary['model_requests']=ledger.attempts;save(root/'summary.json',summary)
+def subprocess_commit(repo):
+ import subprocess
+ assert not subprocess.check_output(['git','-C',str(repo),'status','--porcelain'],text=True).strip(),'dirty_source'
+ return subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+if __name__=='__main__':
+ parser=argparse.ArgumentParser();parser.add_argument('--settings',type=Path,required=True);args=parser.parse_args();run(json.loads(args.settings.read_text()))

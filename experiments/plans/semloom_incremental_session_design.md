@@ -1,12 +1,12 @@
 # SemLoom单流增量session：近期详细设计
 
 更新日期：2026-09-07
-状态：`current / controlled-core-implemented / adapter-and-legacy-migration-pending`
+状态：`current / bounded-http-smoke-verified / pg-and-batch-migration-pending`
 受众：执行核心实施者。所属工作为[主设计B1–B2](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)。
 本文件唯一定义首个增量核心的操作/所有权/状态；不定义PG wire或多Job策略。
 
-原设计依据代码66887463。单流增量核心已在2d2dee35基础上实现，并以受控后端验证；
-旧同步入口保持原行为，真实Backend、完整legacy包装及PG桥接仍未迁移。
+原设计依据代码66887463。单流增量核心已在2d2dee35基础上实现，并以受控后端及有界异步HTTP小规模真实验证；
+旧同步入口保持原行为，生产模型协议适配、完整legacy包装及PG桥接仍未迁移。
 实现与逐项测试见[验证记录](../results/scheduling/incremental_session_20260908/README.md)。
 
 ## 1. 范围、选型与旧实现复用
@@ -328,3 +328,22 @@ request与task分别计数、部分失败及取消后的整批/成员归属测�
 迁移完成后删除被替代的运行循环与历史收集重复实现，保留历史证据和恢复身份。
 
 最终验证：本地33项新增测试、Linux314项调度测试通过，616项源码哈希一致；零模型请求、Raylet残留0。
+
+## 12. 有界异步传输与真实核心验证
+
+用户明确要求增量session也进行真实模型测试后，增加runtime/async_backend.py作为受控协程传输。
+它的单个I/O线程运行真正的异步请求，不包装同步drive；try_submit/poll不等待网络、不拥有调度策略。
+传输槽数有明确上限，完成未poll前也占槽；网络异常保留UNKNOWN，request_cancel不伪造远端取消确认。
+其调用方必须在读取响应时限制字节；生产模型适配和完整PG桥接仍需对应协议检查。
+
+独立真实核心诊断使用5次请求的新AttemptLedger，不改此前12次PG组合预算：先offer3项接受2，
+实际并发派发2项，完成后不release时第三项仍背压；release后接受并完成第三项；另一个session
+提交第4项后取消/close，新session提交第5项，旧完成只回收旧责任，不能成为新session的Delivery。
+取消仅验证本地停止交付与等权威响应再结算，不声称vLLM已经接受远端abort。
+模型/版本与前次同一已核验7B资产，单GPU独立localhost服务、最多2个HTTP请求；输入为公开合成
+规范请求bytes，响应逐块限64KiB，单项生成上限64 tokens，取消项128；无重试、无正式性能比较。
+全部请求经新SessionEngine和BoundedAsyncBackend，记录TaskKey、接纳/交付/释放、实际usage与终态；
+正常结束要求任务/额度归零、协程线程退出、模型进程与端口退出和GPU空闲。任一失败保留独立尝试，不自动扩大预算。
+
+实际验证：本地37项核心/传输测试、Linux318项调度回归通过；新核心5次真实请求通过，峰值HTTP并发2。
+[结果记录](../results/scheduling/incremental_real_20260908/README.md)保留配置/身份、预算、结果、状态与清理。

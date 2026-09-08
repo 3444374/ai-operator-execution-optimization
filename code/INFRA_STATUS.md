@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-08最新真实验证：同步[Filter→Map](../experiments/results/postgresql/filter_map_real_20260908/README.md)完成12次请求；
+[增量SessionEngine与有界异步HTTP](../experiments/results/scheduling/incremental_real_20260908/README.md)完成独立5次请求，实际HTTP并发峰值2。
+新传输单元测试加核心测试本地37项、Linux全调度318项通过，618项源码哈希一致。
+取消后的旧响应只回收旧占用，结束时账本归零、I/O线程/模型退出、端口关闭、GPU空闲。
+PG异步桥接、生产模型协议适配、多成员提交/阶段缓冲与多Job公平仍待完成；未宣称性能或质量资格。
+
+以下为前序切片及对应证据。
+
 2026-09-08：单流增量核心已在`codex/incremental-session`实现，详见[受控验证](../experiments/results/scheduling/incremental_session_20260908/README.md)。
 本地33项新增测试、Linux314项全调度测试通过，616项源码哈希一致，零模型请求、Raylet残留0。
 支持前缀接纳、非阻塞推进、完成lease、取消及Engine残余额度；复用既有admission/路由/本地FIFO credit。

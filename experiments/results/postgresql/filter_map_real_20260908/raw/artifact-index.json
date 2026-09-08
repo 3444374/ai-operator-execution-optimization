@@ -1,0 +1,58 @@
+{
+  "prepare-driver.log": {
+    "redacted_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "source-identity.json": {
+    "redacted_sha256": "519f1ad6b396f7013d1bda8a081b1954362b50535aac81eb7c151230cd840f77",
+    "published_sha256": "519f1ad6b396f7013d1bda8a081b1954362b50535aac81eb7c151230cd840f77"
+  },
+  "run-v3_select.json": {
+    "redacted_sha256": "52fb7529245f2c7acec9a803b02ba4e31aca9baa5f4794305c2c4c4ec1b86f8b",
+    "published_sha256": "52fb7529245f2c7acec9a803b02ba4e31aca9baa5f4794305c2c4c4ec1b86f8b"
+  },
+  "run-sessions.jsonl": {
+    "redacted_sha256": "1cbd4da4d3bbc497dae4e41f255e61108b9de68c66a9c7963665a8f42c890b1c",
+    "published_sha256": "1cbd4da4d3bbc497dae4e41f255e61108b9de68c66a9c7963665a8f42c890b1c"
+  },
+  "prepare-vllm-identity.json": {
+    "redacted_sha256": "89d7299cf2139a167652ad4cd7cf0b537e5c1aa325d0201ee4cb70e2fb55a2fb",
+    "published_sha256": "89d7299cf2139a167652ad4cd7cf0b537e5c1aa325d0201ee4cb70e2fb55a2fb"
+  },
+  "run-v4_insert.json": {
+    "redacted_sha256": "938b89a1d7954c9cf8ace91c6ed2376e685757bcdb6ddbf82d3d53288c3bc4ff",
+    "published_sha256": "938b89a1d7954c9cf8ace91c6ed2376e685757bcdb6ddbf82d3d53288c3bc4ff"
+  },
+  "run-v4_select.json": {
+    "redacted_sha256": "483d843f0e474d757054a58ef001d5ac5f0bb53014d40c8af17aedd723337d93",
+    "published_sha256": "483d843f0e474d757054a58ef001d5ac5f0bb53014d40c8af17aedd723337d93"
+  },
+  "prepare-model-verification.json": {
+    "redacted_sha256": "6efeedf9e0e4f7e095800b8e91ce0d835e549e158198b179fa40d1e6cf219de5",
+    "published_sha256": "6efeedf9e0e4f7e095800b8e91ce0d835e549e158198b179fa40d1e6cf219de5"
+  },
+  "prepare-controller-summary.json": {
+    "redacted_sha256": "fc4686efca7180e4a6a7535cf960da1d57a361dc0593e2a3181f57757d24a6bb",
+    "published_sha256": "fc4686efca7180e4a6a7535cf960da1d57a361dc0593e2a3181f57757d24a6bb"
+  },
+  "run-http-events.jsonl": {
+    "redacted_sha256": "6597b1ad384ca3ddc3b06d16718879d352a78c2fdc7e945361b44059970b5910",
+    "published_sha256": "6597b1ad384ca3ddc3b06d16718879d352a78c2fdc7e945361b44059970b5910"
+  },
+  "prepare-budget.jsonl": {
+    "redacted_sha256": "21578e05001c6757db187232be5e370df3c21dd34e1a1db90a1c1452e160b297",
+    "published_sha256": "21578e05001c6757db187232be5e370df3c21dd34e1a1db90a1c1452e160b297"
+  },
+  "run-summary.json": {
+    "redacted_sha256": "b4580a2d484d10d4827c6951daf36ef40ff056de694db839e676425919fcac5e",
+    "published_sha256": "b4580a2d484d10d4827c6951daf36ef40ff056de694db839e676425919fcac5e"
+  },
+  "driver.py.txt": {
+    "redacted_sha256": "bb070e688171a9003cd218627ccf7bb41db58f3378da663466bbcd72c54896df",
+    "published_sha256": "bb070e688171a9003cd218627ccf7bb41db58f3378da663466bbcd72c54896df"
+  },
+  "controller.py.txt": {
+    "redacted_sha256": "f0c8d86564e64c793f372f28bb059db640af41b80145ffa3d0788a046ce912dc",
+    "published_sha256": "f0c8d86564e64c793f372f28bb059db640af41b80145ffa3d0788a046ce912dc"
+  }
+}

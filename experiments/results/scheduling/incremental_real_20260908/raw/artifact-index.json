@@ -1,0 +1,62 @@
+{
+  "prepare-driver.log": {
+    "redacted_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "run-trace.json": {
+    "redacted_sha256": "eead6d4ca1dab7d8bd62a06846420862332e1f205eae302c1143a06238ff7f51",
+    "published_sha256": "eead6d4ca1dab7d8bd62a06846420862332e1f205eae302c1143a06238ff7f51"
+  },
+  "source-identity.json": {
+    "redacted_sha256": "a40e1341c2bab721a5fbd3725e5f26541960453dae4e1e07af775f3f6c16e7a2",
+    "published_sha256": "a40e1341c2bab721a5fbd3725e5f26541960453dae4e1e07af775f3f6c16e7a2"
+  },
+  "run-responses.json": {
+    "redacted_sha256": "253565d81e1d91c7a91df4038a9ec9fa667ffcb3c6dc57c2ddfd309a74549ecf",
+    "published_sha256": "253565d81e1d91c7a91df4038a9ec9fa667ffcb3c6dc57c2ddfd309a74549ecf"
+  },
+  "prepare-vllm-identity.json": {
+    "redacted_sha256": "e42551f97cb03bfcf535cf73ffb757ee90be8b7e4d7b5a802327b20b4af29d26",
+    "published_sha256": "e42551f97cb03bfcf535cf73ffb757ee90be8b7e4d7b5a802327b20b4af29d26"
+  },
+  "prepare-model-verification.json": {
+    "redacted_sha256": "6efeedf9e0e4f7e095800b8e91ce0d835e549e158198b179fa40d1e6cf219de5",
+    "published_sha256": "6efeedf9e0e4f7e095800b8e91ce0d835e549e158198b179fa40d1e6cf219de5"
+  },
+  "prepare-controller-summary.json": {
+    "redacted_sha256": "96e3dfe6d73ebc1d5d2900147e56ea4f57ac51d5033d4bdcbde3148750e69c19",
+    "published_sha256": "96e3dfe6d73ebc1d5d2900147e56ea4f57ac51d5033d4bdcbde3148750e69c19"
+  },
+  "prepare-budget.jsonl": {
+    "redacted_sha256": "848f0cc3dc11256b8f7e695caf4b33a8e1d72d333d2da68467906400390995d5",
+    "published_sha256": "848f0cc3dc11256b8f7e695caf4b33a8e1d72d333d2da68467906400390995d5"
+  },
+  "run-summary.json": {
+    "redacted_sha256": "478b39c05e165ae6fdb05848d843718d95ad60a765d9e842e963f4fccc267932",
+    "published_sha256": "478b39c05e165ae6fdb05848d843718d95ad60a765d9e842e963f4fccc267932"
+  },
+  "async-full.log": {
+    "redacted_sha256": "5e009a4f97d17ee6622cf7e49f8254b17e4670368336da3d0aa535a0e13bdbdb",
+    "published_sha256": "1ffb426af7e6245bc38cbdcdf822be67271ff293d4c7d549432fe7cbd5c07dbb"
+  },
+  "async-ruff.log": {
+    "redacted_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "published_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "local-tests.log": {
+    "redacted_sha256": "19664c49e9d111eccd8195894bff21acecf8c8ce16c2c70507edd225fbf03aa6",
+    "published_sha256": "19664c49e9d111eccd8195894bff21acecf8c8ce16c2c70507edd225fbf03aa6"
+  },
+  "source-hashes.json": {
+    "redacted_sha256": "158813dfff5d9c5a2ddd9752d57c3ef5ebb468d5f255ef2bb9e5a1bdd3d52623",
+    "published_sha256": "158813dfff5d9c5a2ddd9752d57c3ef5ebb468d5f255ef2bb9e5a1bdd3d52623"
+  },
+  "driver.py.txt": {
+    "redacted_sha256": "1441d969f90a6beede8145da2fc2c9c20edfcdab763084edcb3e1e850b088463",
+    "published_sha256": "1441d969f90a6beede8145da2fc2c9c20edfcdab763084edcb3e1e850b088463"
+  },
+  "controller.py.txt": {
+    "redacted_sha256": "f0c8d86564e64c793f372f28bb059db640af41b80145ffa3d0788a046ce912dc",
+    "published_sha256": "f0c8d86564e64c793f372f28bb059db640af41b80145ffa3d0788a046ce912dc"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "source_commit": "e84d308d5754d5f743e4dfc9741d1ccfc0a35199",
+  "source_delta": {
+    "code/src/scheduling/runtime/async_backend.py": "25882a903b2beed9b2ae9e80a8e67228accf337821ab905a4cf718130480de6a",
+    "code/tests/scheduling/test_async_backend.py": "b687e001cf70ebc82cba14fb41f3c068765d5523f983ba1117f293ba90f45884"
+  },
+  "request_limit": 5,
+  "model_requests": 5,
+  "pg_bridge_evaluated": false,
+  "quality_evaluated": false,
+  "performance_evaluated": false,
+  "peak_http_requests": 2,
+  "terminal_responses": 5,
+  "final_usage": {
+    "held_tasks": 0,
+    "input_bytes": 0,
+    "result_bytes": 0,
+    "active_requests": 0,
+    "active_work": 0
+  },
+  "cancel_close": {
+    "status": "CLOSED",
+    "uncertain_requests": 1,
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 160,
+      "result_bytes": 65536,
+      "active_requests": 1,
+      "active_work": 1
+    },
+    "error": null
+  },
+  "delivered_keys": [
+    {
+      "session_id": 0,
+      "sequence": 0
+    },
+    {
+      "session_id": 0,
+      "sequence": 1
+    },
+    {
+      "session_id": 0,
+      "sequence": 2
+    },
+    {
+      "session_id": 2,
+      "sequence": 0
+    }
+  ],
+  "transport_closed": true
+}

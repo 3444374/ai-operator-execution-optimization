@@ -504,7 +504,12 @@ submissions and prepare-stage buffers need explicit member/result mapping and sh
 integration. Existing staged block descriptors and brokers remain reusable inputs to that work.
 The [design](../experiments/plans/semloom_incremental_session_design.md) and
 [verification](../experiments/results/scheduling/incremental_session_20260908/README.md) distinguish this tested core from pending real backend/PG integration.
-The old synchronous runtime still serves existing callers and retains its original outputs.
+`scheduling/runtime/async_backend.py` now supplies a bounded coroutine transport. It uses one async I/O
+thread, retains uncertain outcomes and only releases a slot after poll transfers the terminal event.
+[Real-model checks](../experiments/results/scheduling/incremental_real_20260908/README.md) pass five requests through SessionEngine, including two concurrent
+HTTP operations, release backpressure and late-result cleanup across sessions. The diagnostic client
+reuses the existing request builder and bounds response reads. Production PG bridging and multi-member
+submission remain pending. The old synchronous runtime still serves existing callers with its original outputs.
 
 ## Scheduling foundation
 

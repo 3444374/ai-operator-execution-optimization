@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-09-08 真实模型组合与增量核心验证
+
+- 按用户要求为关键所有权/选择/传输位置保留简短注释，并补真实模型验证。
+- [PG同步Filter→Map](experiments/results/postgresql/filter_map_real_20260908/README.md)完成12次请求：v3/v4查询和v4写入，NULL/LIMIT零请求，独立连接审计写入。
+- 新BoundedAsyncBackend运行实际异步I/O，传输槽有界，异常不伪造远端终态；策略与接纳仍归SessionEngine。
+- [增量核心](experiments/results/scheduling/incremental_real_20260908/README.md)用另一5次预算验证并发2、release背压、取消后的跨session清理；前一账本未变。
+- 本地37、Linux318项回归通过，618源码哈希一致；两次服务均退出、端口关闭、GPU空闲。
+- 生产PG协议桥接、批处理/阶段缓冲和多Job策略仍待后续；未删除仍有消费者的旧同步实现。
+
 ## 2026-09-08 单流增量执行上下文
 
 - 在2d2dee35上实现受控非阻塞session、结果lease和跨session残余占用；已有策略通过适配复用。
