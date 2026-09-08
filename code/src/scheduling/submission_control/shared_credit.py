@@ -513,6 +513,41 @@ class FairEndpointCreditCoordinator:
         for endpoint_id in self._capacities:
             self._grant_waiters(endpoint_id)
 
+    @property
+    def incremental_safe(self) -> bool:
+        """The first streaming integration only qualifies local FIFO without history events."""
+        return self._policy == "fifo" and not self._record_ready_lifecycle_events
+
+    def forget_finished_job(self, job_id: str) -> None:
+        """Drop retired FIFO accounting after its owner has consumed any needed summary.
+
+        Legacy finish_job retains history by default. Streaming callers explicitly
+        retire it; active leases/waiters are never eligible for this operation.
+        """
+        if not self.incremental_safe or job_id not in self._finished_jobs:
+            raise ValueError("only finished incremental FIFO jobs can be forgotten")
+        if any(lease.job_id == job_id for lease in self._active.values()) or any(
+            queues.get(job_id) for queues in self._waiting.values()
+        ):
+            raise ValueError("cannot forget outstanding credit")
+        for mapping in (
+            self._weights, self._priorities, self._saor_slo_target_s,
+            self._priority_windows_s, self._fairness_debt_caps,
+        ):
+            mapping.pop(job_id, None)
+        for endpoint_id in self._capacities:
+            for mapping in (
+                self._granted_requests, self._granted_work, self._attained_service,
+                self._fairness_debt, self._recovery_inflight, self._waiting,
+            ):
+                mapping[endpoint_id].pop(job_id, None)
+            self._deficits.pop((endpoint_id, job_id), None)
+            order = self._job_order[endpoint_id]
+            if job_id in order:
+                order.remove(job_id)
+                self._cursor[endpoint_id] %= max(1, len(order))
+        self._finished_jobs.remove(job_id)
+
     def snapshot(self, endpoint_id: str) -> EndpointCreditSnapshot:
         if endpoint_id not in self._capacities:
             raise ValueError(f"unknown endpoint_id: {endpoint_id}")

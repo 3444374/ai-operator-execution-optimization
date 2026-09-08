@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-08 单流增量执行上下文
+
+- 在2d2dee35上实现受控非阻塞session、结果lease和跨session残余占用；已有策略通过适配复用。
+- FIFO提取为只读候选选择函数，账本不归选择器；补充数据组织、物理提交成员和阶段缓冲的后续职责。
+- 本地基线缺pyarrow的失败保留，服务器使用已有环境完成旧基线和候选回归；[记录](experiments/results/scheduling/incremental_session_20260908/README.md)。
+- 旧scheduler/ledger仍有调用方，不删除；新增已排空FIFO Job的显式历史清理，旧finish_job不改行为。
+- 本轮零真实模型请求，未接PG/真实backend或多成员batch；旧driver迁移和异步桥接继续按主计划推进。
+
 ## 2026-09-07 Filter→Map独立输入与结果绑定
 
 - 在19326609基础上接入一个关系Filter和一个生成Map，复用现有方法、runtime、provider与gateway。

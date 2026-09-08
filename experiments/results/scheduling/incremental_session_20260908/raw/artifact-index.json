@@ -1,0 +1,46 @@
+{
+  "summary.json": {
+    "redacted_sha256": "76c492a1483aad8cb4ff236bf37dfe8bb0cd501c75ccc6c90e8ac4c8398d11ca",
+    "published_sha256": "76c492a1483aad8cb4ff236bf37dfe8bb0cd501c75ccc6c90e8ac4c8398d11ca"
+  },
+  "source-hashes.json": {
+    "redacted_sha256": "05cfefe0bddfef8f582f6df9307c266cab868acaeb528390d56a2503ea138394",
+    "published_sha256": "05cfefe0bddfef8f582f6df9307c266cab868acaeb528390d56a2503ea138394"
+  },
+  "baseline.log": {
+    "redacted_sha256": "10462a9eea7cb3aa56c8794fc326bf06b0eacaaec14034d47b06b4d8638b1454",
+    "published_sha256": "3b39ad72a7d104e76ab5e14c8288bfa9ee17630bd542405743463e14734030df"
+  },
+  "scheduling-r1.log": {
+    "redacted_sha256": "f51fbd551c7525093e48ab03c77a97c68bbf233366a95df1f207502daa1760b4",
+    "published_sha256": "4411b17dda480b861d5efa418c00d904762ba0afebe818b8d982f04d45f29a01"
+  },
+  "scheduling-r2.log": {
+    "redacted_sha256": "97c80592b8dad470f84af4d60d4c69e280023d89a1579a1f0dd0dc7770c8662d",
+    "published_sha256": "3efe9a5f312cd25f20ed3a7e4d00bd2272c3bf05f51fbec42d78dada2649166f"
+  },
+  "scheduling-r3.log": {
+    "redacted_sha256": "ba6f599685f867792a750b3b4119d58834ef1ef3be1aa0278e67b8187f76e104",
+    "published_sha256": "2ec2c24b9781f165c8c91330589ea3c7301ca1ac2c1ead961957b3bb874f11e9"
+  },
+  "ruff-r1.log": {
+    "redacted_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "published_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "ruff-r2.log": {
+    "redacted_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "published_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "ruff-r3.log": {
+    "redacted_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "published_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "local-baseline.log": {
+    "redacted_sha256": "429f04389ca16613794cc9f245cbe5ed9ca27183c26329ab30636b2022baf642",
+    "published_sha256": "429f04389ca16613794cc9f245cbe5ed9ca27183c26329ab30636b2022baf642"
+  },
+  "local-final.log": {
+    "redacted_sha256": "07744367aa00c5a1c54fcc1ac8f0066eec48c7b9fe48837466765b5f1ace92d1",
+    "published_sha256": "07744367aa00c5a1c54fcc1ac8f0066eec48c7b9fe48837466765b5f1ace92d1"
+  }
+}

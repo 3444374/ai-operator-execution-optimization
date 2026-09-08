@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+[单流增量执行验证](scheduling/incremental_session_20260908/README.md)记录2d2dee35之后的受控核心实现：
+接受前缀、结果lease、取消与跨session额度；任务选择复用/适配已有策略，FIFO可替换。
+旧同步入口保持；真实Backend、批处理与PG接入未由本轮完成。
+
 ## Filter→Map绑定（2026-09-07）
 
 [Filter→Map验证](postgresql/filter_map_binding_20260907/README.md)以19326609为基线，开发分支支持一个关系Filter接一个生成Map。

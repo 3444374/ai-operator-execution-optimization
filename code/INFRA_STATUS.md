@@ -1,9 +1,15 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-08：单流增量核心已在`codex/incremental-session`实现，详见[受控验证](../experiments/results/scheduling/incremental_session_20260908/README.md)。
+本地33项新增测试、Linux314项全调度测试通过，616项源码哈希一致，零模型请求、Raylet残留0。
+支持前缀接纳、非阻塞推进、完成lease、取消及Engine残余额度；复用既有admission/路由/本地FIFO credit。
+FIFO任务选择独立于账本；数据组织应接入同一执行上下文。真实Backend、多成员提交和PG异步仍待接入。
+旧同步入口仍有消费者，保留原行为；只增加显式退休已完成FIFO Job历史的清理入口。
+
 开发分支`codex/semantic-call-binding`已完成[一个Filter→一个生成Map验证](../experiments/results/postgresql/filter_map_binding_20260907/README.md)：
 V1载体分离语义与列绑定，Map使用PG原生ExprState在LIMIT/OFFSET之后计算输入，并写独立结果列。
 本地115、Linux138、PG18.3回归1及10个TAP共1910项通过；611项源码哈希一致，模型请求0，测试服务已停。
-覆盖权限/钩子、RLS、快照、取消恢复及畸形载体。main尚未包含本轮代码；多Map/嵌套、增量Core与PG异步仍待实现。
+覆盖权限/钩子、RLS、快照、取消恢复及畸形载体。main尚未包含本轮代码；多Map/嵌套与PG异步仍待实现。
 
 共同调用与tuple绑定基础及OFFSET/setrefs原型见[前序验证](../experiments/results/postgresql/semantic_binding_20260907/README.md)。
 

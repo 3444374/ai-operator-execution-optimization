@@ -1,0 +1,29 @@
+{
+  "candidate-r1.tar.gz": {
+    "code/src/scheduling/core/session_policy.py": "1c4e1d39ec6432fd776e29e12fc0f801e8c903546c53b85503bcdd6a88126912",
+    "code/src/scheduling/core/session.py": "b56fb028ac5d5d927794f1a4f7bc0389ba3801203fd1c73bfdfd22c43cac8ac2",
+    "code/src/scheduling/core/session_contract.py": "1b070e5b18dc4ce742ed58f2e3dd2351a0e0b1b9d59dddd22a57dc055cac1d0b",
+    "code/src/scheduling/core/session_capacity.py": "c670862aba72a8ee0927b256c04b9404e611dea782e6a997115308312cdb712c",
+    "code/src/scheduling/submission_control/shared_credit.py": "923c2b1dbad4d787e1e5d04a6d2306854ec9af0b347fba228a671a695e77e646",
+    "code/tests/scheduling/test_incremental_session.py": "17bcc00f0affc555dc8d273577398658709893a14b09b9903587b67f532079bc",
+    "pyproject.toml": "dcff55c9f9b1db8aea0371197d3a80ae67b49bff66258d91982ebf64dab5d663"
+  },
+  "candidate-r3.tar.gz": {
+    "code/src/scheduling/core/session_policy.py": "64298b83b49d57da6209170db679ebf5b57ac9fa06e463bb5861cab6111f1c37",
+    "code/src/scheduling/core/session.py": "2b6997dd59c0802cf99ceeba4841d5740c88844bbb6d1e1cbe2b5a951455777e",
+    "code/src/scheduling/core/session_contract.py": "1b070e5b18dc4ce742ed58f2e3dd2351a0e0b1b9d59dddd22a57dc055cac1d0b",
+    "code/src/scheduling/core/session_capacity.py": "c670862aba72a8ee0927b256c04b9404e611dea782e6a997115308312cdb712c",
+    "code/src/scheduling/submission_control/shared_credit.py": "923c2b1dbad4d787e1e5d04a6d2306854ec9af0b347fba228a671a695e77e646",
+    "code/tests/scheduling/test_incremental_session.py": "d8917103787b923df18c5b8dc1f33ab1e3f6bddb5b9bf0c277566182936e9d18",
+    "pyproject.toml": "dcff55c9f9b1db8aea0371197d3a80ae67b49bff66258d91982ebf64dab5d663"
+  },
+  "candidate-r2.tar.gz": {
+    "code/src/scheduling/core/session_policy.py": "1c4e1d39ec6432fd776e29e12fc0f801e8c903546c53b85503bcdd6a88126912",
+    "code/src/scheduling/core/session.py": "01e4b71e4969e5a8f3f7527894ecfc0170fb06dc320340a8df4402ae073d832e",
+    "code/src/scheduling/core/session_contract.py": "1b070e5b18dc4ce742ed58f2e3dd2351a0e0b1b9d59dddd22a57dc055cac1d0b",
+    "code/src/scheduling/core/session_capacity.py": "c670862aba72a8ee0927b256c04b9404e611dea782e6a997115308312cdb712c",
+    "code/src/scheduling/submission_control/shared_credit.py": "923c2b1dbad4d787e1e5d04a6d2306854ec9af0b347fba228a671a695e77e646",
+    "code/tests/scheduling/test_incremental_session.py": "1ae3c7139cd9db15dcd42105460b24696e0783ecf324a68890adabd292544a84",
+    "pyproject.toml": "dcff55c9f9b1db8aea0371197d3a80ae67b49bff66258d91982ebf64dab5d663"
+  }
+}

@@ -490,6 +490,22 @@ Ollama smoke runs, use
 `src/profile_*.py` compatibility modules have been removed; production and test callers now
 use the owning subpackage directly, and an AST architecture test prevents the old paths from returning.
 
+## Incremental execution context
+
+`SessionEngine` and `SchedulingSession` in `scheduling/core/session.py` provide a controlled single-flow
+implementation of `offer`, `advance`, `seal`, `cancel`, `release` and `close`. They reuse existing local
+admission, routing and FIFO credit policies. Task choice is configurable over an immutable bounded
+candidate window; resource ownership is managed by the engine. Result leases remain charged until
+released, and uncertain remote work remains charged after session close.
+
+This is where later data organization and submission strategies cooperate, rather than a parallel
+submitter outside the execution layer. The current reference submits one task at a time. Multi-member
+submissions and prepare-stage buffers need explicit member/result mapping and shared budgets before
+integration. Existing staged block descriptors and brokers remain reusable inputs to that work.
+The [design](../experiments/plans/semloom_incremental_session_design.md) and
+[verification](../experiments/results/scheduling/incremental_session_20260908/README.md) distinguish this tested core from pending real backend/PG integration.
+The old synchronous runtime still serves existing callers and retains its original outputs.
+
 ## Scheduling foundation
 
 `code/src/scheduling/` contains immutable request metadata, endpoint topology,

@@ -1,0 +1,20 @@
+...................................................................................................................................................................................................E.................................................................................
+======================================================================
+ERROR: tests.scheduling.test_scheduling_daft_ray_contract (unittest.loader._FailedTest.tests.scheduling.test_scheduling_daft_ray_contract)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: tests.scheduling.test_scheduling_daft_ray_contract
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "<source-root>/code/tests/scheduling/test_scheduling_daft_ray_contract.py", line 9, in <module>
+    import pyarrow as pa
+ModuleNotFoundError: No module named 'pyarrow'
+
+
+----------------------------------------------------------------------
+Ran 277 tests in 1.230s
+
+FAILED (errors=1)

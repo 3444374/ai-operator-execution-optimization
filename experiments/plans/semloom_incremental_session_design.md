@@ -1,12 +1,13 @@
 # SemLoom单流增量session：近期详细设计
 
 更新日期：2026-09-07
-状态：`current / design-specified / implementation-pending`
+状态：`current / controlled-core-implemented / adapter-and-legacy-migration-pending`
 受众：执行核心实施者。所属工作为[主设计B1–B2](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)。
 本文件唯一定义首个增量核心的操作/所有权/状态；不定义PG wire或多Job策略。
 
-依据代码`66887463`与主设计`440f7cea`。已完成下列静态源码复核；动态行为表征、原型、实现与验证
-均未执行。接口名为拟议名称，不是现有Python API。核心可以先用fixture研发，不等待SQL组合。
+原设计依据代码66887463。单流增量核心已在2d2dee35基础上实现，并以受控后端验证；
+旧同步入口保持原行为，真实Backend、完整legacy包装及PG桥接仍未迁移。
+实现与逐项测试见[验证记录](../results/scheduling/incremental_session_20260908/README.md)。
 
 ## 1. 范围、选型与旧实现复用
 
@@ -36,7 +37,7 @@ B1需把上述静态结论转成确定性表征：正常派发/完成顺序、�
 
 ## 2. 公开对象与输入所有权
 
-初始文件落点拟为`scheduling/core/session.py`（对象与单步驱动）和`session_capacity.py`（唯一账本）；
+文件落点为`scheduling/core/session.py`（对象与单步驱动）和`session_capacity.py`（唯一账本），值对象在`session_contract.py`，既有策略适配在`session_policy.py`；
 若实现时已有模块能完整承接则不强制建新文件。后端桥接保留在执行Adapter，不引入供应商类型到Core。
 
 | 拟议对象 | 首版内容与责任 |
@@ -233,8 +234,7 @@ work_limit=2；每项payload=4B、result_bound=4B、work=1。metadata单独使�
 | 空OPEN、持续NOT_ACCEPTED、未release、其它任务持续完成 | 分别按等待对象计时，不误判输入空闲或靠无关动作刷新老任务期限 |
 | 任意有限二进制payload、不同result_bound | Core不解析文本，不假定固定结果长度；跨session lease拒绝 |
 
-B1的实际表征与B2结果进入独立验证记录，并与旧实现差异逐项核对；本设计只规定预期，不声称这些测试
-已经运行。代码实施前先审查接口实现是否满足单步不阻塞和账本原子性；真实后端/PG资格分别验证。
+B1实际表征与受控B2结果见验证记录；只对已测路径声明支持。代码实施前先审查接口实现是否满足单步不阻塞和账本原子性；真实后端/PG资格分别验证。
 
 ## 8. B4桥接的分层前提
 
@@ -263,3 +263,68 @@ B1的实际表征与B2结果进入独立验证记录，并与旧实现差异逐�
 encoded、decoded/prepared与结果可能同时存活，阶段适配负责转换峰值的预留/转移，不能让每种策略
 自行估计内存。estimated_work只限定估计工作量，不是已证明的GPU显存上限。当前没有图像/视频
 适配资格，二进制fixture只检验中立接口。组织batch不自动授权合并多行prompt或改变单行请求语义。
+
+## 10. 2026-09-08实施记录
+
+基线2d2dee35。复核scheduler.run、SubmissionExecutionLedger、BoundedReadyWindow、
+StaticAdmissionController与RoundRobinEndpointRouter：现有策略继续复用；旧账本保留历史和阻塞
+wait_one，不直接进入新advance。单项bytes适配构造已有BatchRequest，保留中性work_units。
+新增单流账本只持有活动责任；旧run不在这一步替换，先运行既有调度表征并核对相同fixture的路由。
+参照主设计§8.7的执行核心共享原则及§1来源表；本步为自有工程决策，不复制公司代码，不涉及
+模型客户端或SQL函数属性。测试使用确定性本地后端和注入时钟，不启动真实模型或PG服务。
+验收覆盖接受前缀、逆序完成、release背压、错误/取消唯一结算、跨session残余、唤醒和阶段期限。
+
+
+### 已实现范围与继续工作
+
+本轮公开实现是SessionEngine/SchedulingSession及不可变输入/结果对象；最多一次有限poll，随后
+终态、派发与交付共享step_actions预算，扫描/计费只遍历受held_tasks限制的活动表。
+没有跨调用的全历史结果/事件集合；完成按实际终态到达次序交付，调用方决定是否另外重排。
+输入规范化在接纳之前；数据组织属于同一执行上下文中的策略阶段，Backend承担实际执行。
+首版只选择已接纳的单任务，传递不变bytes和中性work，不改变prompt或结果解析。
+SessionSpec指定operator/work_unit，转换已有BatchRequest只供旧策略读取，不把payload送给策略。
+
+复用限定：静态admission、已有RoundRobin路由和无历史事件的本地FIFO credit已验证。
+credit新增incremental_safe与forget_finished_job；只有权威终态清空所有责任后才finish并退休历史。
+旧finish_job继续保留原统计，旧SynchronousScheduler/SubmissionExecutionLedger仍由runtime/execution使用，
+本轮不删除有效消费者依赖，也不把旧run全历史collector带入新核心。未知submit异常保留占用，
+与旧run异常即release是有意不同；新接口不承诺旧阻塞等待统计或全量输出形式。
+
+后续工作：验证真实非阻塞Backend的队列/缓冲/取消与唤醒；在表征覆盖对应策略后迁移旧driver与collector。
+尚未迁移的动态/远程credit、pool选择、数据组织batch等不因结构可传入而获得非阻塞资格。
+PG消息版本、accepted-prefix和结果重排按B4另做；多个Job的公平策略按B3另做。
+取消原因目前只用于调用者控制，核心不保留任意调用者文本；稳定错误代码避免将payload带入报告。
+
+
+## 11. 为数据组织与优化执行保留的职责（2026-09-08修订）
+
+session参与提交，是持续运行的执行上下文，不是与“数据执行”并列的外围工具。
+长期顺序为：PG/producer产生已确定任务 → session接纳并拥有输入 → 有界数据组织/准备 →
+提交与路由 → Backend → 成员完成关联与资源回收 → 消费者release。
+优化策略改变执行选择；接纳、所有权、取消和一次结算规则不能由策略另行维护。
+
+当前FIFO已经从advance循环提取为SessionPolicies.choose_task的默认实现。选择器只看到有限的
+不可变TaskCandidate视图，返回一个已接纳TaskKey；Core检查其合法性并独占账本变更。
+反序选择测试证明顺序可替换而额度/身份不变，非法选择在派发前失败。
+这只完成任务选择接口，不声称任意batch形成或多阶段执行已接通。
+
+| 对象 | 当前实现 | 后续批处理接入的责任 |
+|---|---|---|
+| 语义任务TaskKey | 每项固定sequence、payload、结果预留；完成/lease归属稳定 | 即使合批，也保留每个成员的身份、NULL/error和结果归属；不得把整个批次伪装成一个语义任务 |
+| 物理提交 | BackendTask为显式单成员reference；每TaskRecord目前持一个handle/计算预留 | 引入有界提交记录，持member TaskKey列表、成员结果对应及一次request/work lease；同一批终态只结算一次计算额度 |
+| 数据组织策略 | 默认FIFO选择单个已接纳任务；不自行提交 | 在同一session中选择成员/准备表示；不在外面增加拥有独立额度的第二提交器 |
+| 阶段缓冲 | 当前只有不可变输入和最坏结果预留 | 接入encoded/decoded/prepared时先向Engine预算申请阶段lease，计转换时两种表示重叠峰值；不能藏在metadata handle里 |
+| 既有物理资产 | BatchRequest/WorkDescriptor供已有策略读取 | 优先适配planning/blocks.py:StageBlockDescriptor与runtime/stage_broker.py:BoundedStageBroker；任务成员和阶段lease映射由执行适配负责 |
+| 资源所有权 | SessionCapacity管理当前任务与关闭后的残余；本地FIFO credit管理计算许可 | 同一资源只由一个账本授予额度，StageBroker需要消费Engine授予的预算或迁移该维度，不能并列各持完整容量 |
+
+上述StageBlockDescriptor和BoundedStageBroker已按当前源码只读核对：前者包含row_ids、表示、
+物理/逻辑/ready bytes及分阶段work，后者有encoded→prepare→ready→model状态和提前预留。
+它们不等于新session已经支持这些路径，也不应被新写的batch框架复制。
+本轮不实现没有实际消费者的多成员提交对象；打开批处理前必须先实现member/result映射、
+request与task分别计数、部分失败及取消后的整批/成员归属测试。当前单成员计数仅为reference，
+文档和API不得把其等价关系外推为长期要求。
+
+旧同步入口仍有消费者，保留到旧driver可通过同一增量核心得到相同输出/统计时再迁移；
+迁移完成后删除被替代的运行循环与历史收集重复实现，保留历史证据和恢复身份。
+
+最终验证：本地33项新增测试、Linux314项调度测试通过，616项源码哈希一致；零模型请求、Raylet残留0。

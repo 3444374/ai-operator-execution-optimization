@@ -15,7 +15,7 @@
 有界的数据组织与多作业调度。新增能力应沿这三项职责扩展，不以某个AND用例或某个cost字段决定整个架构。
 近期实施与未定问题见[§9](#implementation-sequence)。A1/A2a的确定方案见
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
-[增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定已实现，增量session仍未实现。
+[增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定与受控单流session已实现；真实backend和PG增量桥接仍待完成。
 A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
 后续共同调用与tuple绑定及setrefs原型已[通过验证](../results/postgresql/semantic_binding_20260907/README.md)。
 在此基础上，一个Filter→一个生成Map通过[PG18.3完整检查](../results/postgresql/filter_map_binding_20260907/README.md)，1910项TAP通过；仅在开发分支，本轮零真实模型请求。
@@ -803,8 +803,8 @@ A1不先生成通用registry；以A2的多个真实消费者证明公共接口�
 
 | 次序 | 交付与现有落点 | 前提和完成条件 |
 |---|---|---|
-| B1 旧行为表征 | [增量详细设计§1](semloom_incremental_session_design.md)已记录静态复核与迁移决定；动态表征待运行 | 对照旧run输出、策略时机、错误/credit；全历史collector与在途账本分开 |
-| B2 增量session | 按[增量详细设计](semloom_incremental_session_design.md)实现单流非阻塞step、接受前缀、完成lease/release及Engine残余账本 | 操作/状态/所有权已选定；动态验证未做，旧run仅在表征兼容后包装 |
+| B1 旧行为表征 | [增量详细设计§1](semloom_incremental_session_design.md)已有旧基线及受控单流动态表征；未迁移策略继续走原run | 对照旧run输出、策略时机、错误/credit；全历史collector与在途账本分开 |
+| B2 增量session | 按[增量详细设计](semloom_incremental_session_design.md)实现单流非阻塞step、接受前缀、完成lease/release及Engine残余账本 | 受控核心已验证，FIFO选择独立于账本；真实Backend及旧driver包装仍待迁移 |
 | B3 多流/多Job | 组内算子流与跨组份额、工作单元组织、路由和完成回收 | 多流不增加组权重，计算与存储分账；取消一组不破坏其他组；覆盖等待环、结果堆积、晚完成与无进展 |
 | B4a 单节点窗口1 | 版本化port/wire接单查询单算子，匹配同步reference | 对应算子语义/绑定明确、B2可用及最小残余账本；不要求完整B3公平算法 |
 | B4b 单节点扩大窗口 | PG输入/重排/结果预算与accepted-prefix接纳、消费确认 | B4a通过；生产者自身有界，测试过取/乱序/取消；不声称多节点总量已受控 |
@@ -965,7 +965,7 @@ gateway、PG 接入与 SemLoom 增量使用
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
 | [PG调用/绑定详细设计](postgresql_call_binding_design.md) | A1与A2a的范围、对象、PG接入时序、carrier/slot绑定、兼容与具体预期；共同基础及一个Filter→一个生成Map已验证，后续形状另行实施 |
-| [增量session详细设计](semloom_incremental_session_design.md) | B1静态复核与B2的输入/状态/lease/资源/后端进展合同，以及B4a–c最低依赖；动态表征/实施待进行 |
+| [增量session详细设计](semloom_incremental_session_design.md) | B1静态复核与B2的输入/状态/lease/资源/后端进展合同，以及B4a–c最低依赖；受控实现已验证；真实后端、多成员提交与PG桥接待进行 |
 | [四 C 专项完成记录](completed/postgresql_choice_profile_engineering.md) | 保存 choice 字段/版本/预算/资源与当时的详细实施要求；结果看证据台账，后续工作看本主计划 |
 | [四 D 生成型 Map 合同](postgresql_semmap_generation_contract.md) | 唯一定义生成型 Map 的 SQL、消息/文本语义、版本、golden vectors 与实施验收；合同定稿，不代表代码完成 |
 | [INFRA_STATUS](../../code/INFRA_STATUS.md) | 实际源码结构、接线、协议版本、测试状态及未实现能力 |
