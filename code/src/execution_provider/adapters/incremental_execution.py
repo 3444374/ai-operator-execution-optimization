@@ -9,7 +9,7 @@ from typing import Callable
 from ...planning.work import StageWork, WorkDescriptor
 from ...scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from ...scheduling.core.session import SessionEngine
-from ...scheduling.core.session_jobs import equal_share_job_budget
+from ...scheduling.core.session_jobs import equal_share_job_budget, round_robin_flow
 from ...scheduling.core.session_contract import (
     OfferedTask,
     SessionLimits,
@@ -35,7 +35,6 @@ class IncrementalExecution:
     engine: SessionEngine
     prepare_task: Callable[[CompletionRequest, int], OfferedTask]
     close: Callable[[], bool]
-    error_code: Callable[[], str | None]
     drain_timeout_s: float
     work_unit: str = "work_units"
     allocate_job: Callable = equal_share_job_budget
@@ -101,7 +100,7 @@ def build_fixed_model_execution(
     timeouts=None,
     max_jobs=1,
     allocate_job=equal_share_job_budget,
-    registered_jobs=False,
+    choose_flow=round_robin_flow,
 ):
     """Default single-endpoint assembly; supplied policies/work reuse the same core and transport."""
     if type(max_tasks) is not int or not 1 <= max_tasks <= MAX_INCREMENTAL_TASKS:
@@ -163,10 +162,12 @@ def build_fixed_model_execution(
         max_tasks=max_active_requests,
         notify=lambda: engine.wake.notify(),
         finalize=transport.close,
-        isolate_failures=registered_jobs or max_jobs > 1,
+        isolate_failures=True,
     )
     try:
-        engine = SessionEngine(limits, backend, policies, sink=observe, max_jobs=max_jobs)
+        engine = SessionEngine(
+            limits, backend, policies, sink=observe, max_jobs=max_jobs, choose_flow=choose_flow
+        )
         allocate_job(engine)  # Reject impossible resource policies before accepting sockets.
     except BaseException:
         backend.close()
@@ -175,7 +176,6 @@ def build_fixed_model_execution(
         engine,
         partial(prepare_map_task, describe_work=describe_work),
         backend.close,
-        lambda: transport.error_code,
         drain_timeout_s,
         work_unit,
         allocate_job,

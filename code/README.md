@@ -514,19 +514,28 @@ The versioned adapters now depend on shared modules directly:
 |---|---|
 | [execution_provider/completion.py](src/execution_provider/completion.py) | Request/result values, adapter interface and redacted errors; no session loop |
 | [execution_provider/adapters/model_config.py](src/execution_provider/adapters/model_config.py) | Fixed endpoint/model configuration and validation for both HTTP implementations |
-| [execution_provider/adapters/incremental_runtime.py](src/execution_provider/adapters/incremental_runtime.py) | Incremental connection lifetime, peer cancellation and resource draining |
+| [execution_provider/multiplexed_gateway.py](src/execution_provider/multiplexed_gateway.py) | Shared owner loop and bounded connection proxies; public session operations own failure and consumer closure |
 | [execution_provider/adapters/incremental_execution.py](src/execution_provider/adapters/incremental_execution.py) | Fixed-model assembly; existing policies, work descriptions and backend can be supplied independently of wire handling |
 | [execution_provider/adapters/async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) | Bounded HTTP I/O, model timeout and client cleanup |
 | [execution_provider/wire/map_codec.py](src/execution_provider/wire/map_codec.py) | Common Map semantic validation and digest construction |
 | [scheduling/core/policy_contracts.py](src/scheduling/core/policy_contracts.py) | Admission/routing/shared-credit interfaces used by both scheduling loops |
 
-`incremental_map.py` and `incremental_session.py` are sibling protocol adapters.
+`incremental_session.py` contains the shared v6 protocol handler; obsolete standalone runtime and adapter classes have been removed.
 `v5.py` preserves its public imports; v6 binds the common codec directly. The synchronous scheduler
 also preserves its old type exports, while the incremental core imports their owner directly.
 Existing synchronous runners and recording/Filter/reference protocols still have consumers.
 Historical experiment records are retained. This changes code ownership, not supported SQL or scheduling policy.
 [Cleanup verification](../experiments/results/scheduling/shared_modules_20260908/README.md) covers
 import isolation, compatibility aliases, full scheduling/PG checks and a fresh 12-request model run.
+
+Session owners use `fail(reason)`, `set_dispatch_enabled(enabled)` and `close_consumer(clean=...)`.
+Call `close_consumer` only after the sender has stopped accessing all deliveries; ordinary `close()`
+continues to retain unreleased leases. A remote request still needs an authoritative terminal to release capacity.
+`SessionEngine(choose_flow=...)` and the fixed-model execution factory accept a Job/flow selector over
+immutable ready identities and history. The default remains Job-first round robin; the Engine validates
+selection and owns all capacity checks. Old standalone adapter imports are intentionally retired;
+embedded users should use the same `MultiSessionMapGateway` with `max_jobs=1`.
+
 
 ## PostgreSQL Map through the incremental core
 
@@ -535,7 +544,7 @@ PG row window. It reuses the existing organizer, core and HTTP adapter. Plain in
 can have multiple model requests in flight; other expressions retain window one. See the
 [configuration and checks](../experiments/results/postgresql/async_window_20260908/README.md)
 for exact supported shapes, 1958 PG TAP checks, lifecycle checks and 12 real model requests.
-Filter/composed v6 paths and multiple active core sessions remain pending.
+Filter/composed v6 paths remain pending. Multiple registered Jobs and sessions share the external core.
 
 The transitional `incremental-map-window-one` bridge has been retired. Use the same
 `incremental-map` v6 profile for both one-row and larger windows; set gateway held tasks,

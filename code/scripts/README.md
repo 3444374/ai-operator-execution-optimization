@@ -70,7 +70,7 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 
 网关默认不使用单次模型超时限制排队或结果等待；模型HTTP仍有独立超时，PG取消与socket超时仍生效。
 嵌入式入口 `server.main(incremental_execution_factory=...)` 可传入执行组装函数；
-默认 `build_fixed_model_execution` 接受已有 `SessionPolicies`、工作量描述和阶段超时配置。
+默认 `build_fixed_model_execution` 接受已有 `SessionPolicies`、工作量描述、阶段超时配置及`choose_flow`跨Job选择函数。
 同一组装函数还可注入`allocate_job(engine)`，返回`JobBudget`。默认资源策略静态均分存储与
 执行上限，不借用其它Job空闲份额；Engine校验总登记量、计费和释放，网关不计算份额。
 

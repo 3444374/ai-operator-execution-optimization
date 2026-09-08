@@ -92,3 +92,35 @@ def equal_share_job_budget(engine):
     ):
         raise ValueError("each Job needs storage for one bounded request and result")
     return budget
+
+
+@dataclass(frozen=True)
+class ReadyJob:
+    job_id: str
+    session_ids: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class JobSelectionHistory:
+    last_job: str | None
+    last_sessions: tuple[tuple[str, int], ...]
+
+
+@dataclass(frozen=True)
+class FlowChoice:
+    job_id: str
+    session_id: int
+
+
+def round_robin_flow(ready: tuple[ReadyJob, ...], history: JobSelectionHistory) -> FlowChoice:
+    """One opportunity per Job, then rotate within that Job's ready flows."""
+
+    def after(values, previous):
+        return (
+            values[(values.index(previous) + 1) % len(values)] if previous in values else values[0]
+        )
+
+    job_id = after(tuple(job.job_id for job in ready), history.last_job)
+    job = next(job for job in ready if job.job_id == job_id)
+    session_id = after(job.session_ids, dict(history.last_sessions).get(job_id))
+    return FlowChoice(job_id, session_id)

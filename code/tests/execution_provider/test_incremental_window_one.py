@@ -1,110 +1,38 @@
-"""Window-one v6 lifecycle qualification over actual framed RPCs and a controlled backend."""
+"""Window-one lifecycle uses the same production service as multi-Job execution."""
 
 import asyncio
 import json
-import socket
 import threading
 import unittest
-
-from src.execution_provider.adapters.incremental_session import IncrementalMapSessionAdapter
-from src.execution_provider.adapters.model_config import FixedModelConfig
-from src.execution_provider.semantic_map import SemanticMapPlan
 from src.execution_provider.wire import v5, v6
-from src.execution_provider.wire.framing import encode_frame, read_frame
+from tests.execution_provider.test_multisession_gateway import service, Client, completion, wait_for
 
 
-def response():
-    return json.dumps(
-        {
-            "model": "model",
-            "choices": [{"message": {"content": "hello"}, "finish_reason": "stop"}],
-            "usage": {"prompt_tokens": 2, "completion_tokens": 1},
-        }
-    ).encode()
-
-
-def exchange(adapter, *, interrupt=None, before_drain=None):
-    peer, server = socket.socketpair()
-    peer.settimeout(3)
-    results, failures = [], []
-
-    def client():
-        try:
-            plan = SemanticMapPlan("Echo.", "model", 8)
-            peer.sendall(encode_frame(v6.build_open_message(plan)))
-            assert read_frame(peer)["max_inflight_tasks"] == 1
-            task = v6.build_task_message(plan, sequence=0, input_value="hello")
-            peer.sendall(encode_frame(task))
-            assert read_frame(peer)["accepted_prefix_count"] == 1
-            peer.sendall(encode_frame({"type": "poll", "protocol_version": 6}))
-            if interrupt:
-                interrupt(peer)
-            if peer.fileno() >= 0:
-                result = read_frame(peer)
-                if result and result["type"] == "completion":
-                    v6.validate_completion(
-                        result,
-                        expected_sequence=0,
-                        payload_digest=task["semantic_payload_digest"],
-                        open_context=v6.validate_open(v6.build_open_message(plan)),
-                    )
-                results.append(result)
-        except OSError as exc:
-            if not interrupt:
-                failures.append(exc)
-        except BaseException as exc:
-            failures.append(exc)
-        finally:
-            peer.close()
-
-    def handle(connection):
-        adapter.run_incremental(connection, read_frame(connection))
-        if before_drain:
-            before_drain()
-
-    worker = threading.Thread(target=client)
-    worker.start()
-    try:
-        adapter.serve_connection(server, handle)
-    finally:
-        server.close()
-        worker.join(3)
-        peer.close()
-    assert not worker.is_alive()
-    if failures:
-        raise failures[0]
-    return results[0] if results else None
+def single(execute, **kwargs):
+    return service(execute, max_jobs=1, max_tasks=1, max_active_requests=1, **kwargs)
 
 
 class IncrementalWindowOneTests(unittest.TestCase):
-    def adapter(self, execute, **kwargs):
-        return IncrementalMapSessionAdapter(
-            FixedModelConfig("http://localhost/v1/chat/completions", "model", 1000),
-            execute=execute,
-            max_tasks=1,
-            max_active_requests=1,
-            **kwargs,
-        )
-
     def test_consecutive_queries_share_engine_and_keep_task_identity(self):
-        submitted, observed = [], []
+        submitted = []
 
         async def execute(task, endpoint):
             submitted.append(task)
-            await asyncio.sleep(0.001)
-            return response()
+            return completion("hello")
 
-        adapter = self.adapter(execute, observer=observed.append)
-        try:
+        with single(execute) as (path, gateway, events):
             for _ in range(2):
-                self.assertEqual(exchange(adapter)["raw_output"], "hello")
+                client = Client(path, window=1)
+                try:
+                    client.offer("hello")
+                    client.poll()
+                    self.assertEqual(client.result()["raw_output"], "hello")
+                finally:
+                    client.close()
+            wait_for(lambda: len([e for e in events if e["event"] == "job_drained"]) == 2)
             self.assertEqual([r.key.session_id for r in submitted], [0, 1])
             self.assertEqual([r.member.size for r in submitted], [1, 1])
-            drained = [e for e in observed if e["event"] == "drained"]
-            self.assertEqual(len(drained), 2)
-            self.assertTrue(all(not any(e["usage"].values()) for e in drained))
-        finally:
-            self.assertTrue(adapter.close())
+            self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
 
     def test_disconnect_retains_credit_until_authoritative_response(self):
         self.assert_interrupted_peer_drains(pipelined=False)
@@ -113,62 +41,70 @@ class IncrementalWindowOneTests(unittest.TestCase):
         self.assert_interrupted_peer_drains(pipelined=True)
 
     def assert_interrupted_peer_drains(self, *, pipelined):
-        started, allow_response = threading.Event(), threading.Event()
+        started, release = threading.Event(), threading.Event()
 
         async def execute(task, endpoint):
             started.set()
-            while not allow_response.is_set():
+            while not release.is_set():
                 await asyncio.sleep(0.001)
-            return response()
+            return completion("hello")
 
-        def interrupt(peer):
-            self.assertTrue(started.wait(2))
-            if pipelined:
-                peer.sendall(b"\x00")
-            else:
-                peer.close()
+        with single(execute) as (path, gateway, events):
+            client = Client(path, window=1)
+            try:
+                client.offer("hello")
+                client.poll()
+                self.assertTrue(started.wait(2))
+                if pipelined:
+                    client.socket.sendall(b"\x00")
+                else:
+                    client.close()
+                wait_for(lambda: any(e["event"] == "connection_closed" for e in events))
+                closed = next(e for e in events if e["event"] == "connection_closed")
+                self.assertEqual(closed["usage"]["active_requests"], 1)
+            finally:
+                release.set()
+                client.close()
+            wait_for(lambda: any(e["event"] == "job_drained" for e in events))
+            recovered = Client(path, window=1)
+            try:
+                recovered.offer("hello")
+                recovered.poll()
+                self.assertEqual(recovered.result()["raw_output"], "hello")
+            finally:
+                recovered.close()
 
-        adapter = self.adapter(execute)
-        retained = []
-
-        def before_drain():
-            retained.append(adapter.engine.capacity.usage().active_requests)
-            allow_response.set()
-
-        try:
-            exchange(adapter, interrupt=interrupt, before_drain=before_drain)
-            self.assertEqual(retained, [1])
-            self.assertEqual(adapter.engine.capacity.usage().active_requests, 0)
-            self.assertEqual(exchange(adapter)["raw_output"], "hello")
-        finally:
-            allow_response.set()
-            adapter.close()
-
-    def test_unknown_result_quarantines_engine(self):
+    def test_unknown_result_retains_job_capacity(self):
         async def execute(task, endpoint):
             raise OSError("transport failed")
 
-        adapter = self.adapter(execute)
-        try:
-            with self.assertRaisesRegex(RuntimeError, "quarantined"):
-                exchange(adapter)
-            self.assertEqual(adapter.engine.capacity.usage().active_requests, 1)
-            self.assertTrue(adapter.engine.error)
-        finally:
-            adapter.close()
+        with single(execute, unknown=True) as (path, gateway, events):
+            client = Client(path, window=1)
+            try:
+                client.offer("hello")
+                client.poll()
+                self.assertEqual(client.result()["code"], "MODEL_UNAVAILABLE")
+                self.assertEqual(gateway.engine.capacity.usage().active_requests, 1)
+                self.assertIsNone(gateway.engine.error)
+            finally:
+                client.close()
 
     def test_invalid_response_returns_error_and_releases_lease(self):
         async def execute(task, endpoint):
             return b"{}"
 
-        adapter = self.adapter(execute)
-        try:
-            self.assertEqual(
-                exchange(adapter), v6.build_error_message("MODEL_RESPONSE_INVALID", sequence=0)
-            )
-            self.assertEqual(adapter.engine.capacity.usage().held_tasks, 0)
-        finally:
-            adapter.close()
+        with single(execute) as (path, gateway, events):
+            client = Client(path, window=1)
+            try:
+                client.offer("hello")
+                client.poll()
+                self.assertEqual(
+                    client.result(), v6.build_error_message("MODEL_RESPONSE_INVALID", sequence=0)
+                )
+            finally:
+                client.close()
+            wait_for(lambda: any(e["event"] == "job_drained" for e in events))
+            self.assertEqual(gateway.engine.capacity.usage().held_tasks, 0)
 
     def test_gateway_setup_failure_closes_transport(self):
         import tempfile

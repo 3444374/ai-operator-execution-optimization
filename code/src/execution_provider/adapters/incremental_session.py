@@ -3,7 +3,6 @@
 from collections import deque
 from dataclasses import asdict
 
-from .incremental_runtime import IncrementalMapRuntime
 from .completion_response import decode_backend_completion
 from ..completion import CompletionAdapterError, CompletionRequest
 from ..wire import v6
@@ -32,7 +31,7 @@ class IncrementalMapProtocol:
                 raise CompletionAdapterError(
                     result.error
                     if result.error in ("MODEL_TIMEOUT", "MODEL_UNAVAILABLE")
-                    else self._transport_error or "MODEL_UNAVAILABLE"
+                    else "MODEL_UNAVAILABLE"
                 )
             return result
 
@@ -142,7 +141,3 @@ class IncrementalMapProtocol:
             abandoned = ([active_delivery] if active_delivery is not None else []) + list(ready)
             if abandoned:
                 self._session.release(tuple(delivery.lease_id for delivery in abandoned))
-
-
-class IncrementalMapSessionAdapter(IncrementalMapProtocol, IncrementalMapRuntime):
-    """Direct single-connection owner retained for embedded callers and comparison."""

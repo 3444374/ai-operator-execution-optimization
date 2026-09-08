@@ -45,6 +45,92 @@ def flow(core, handle, name):
 
 
 class MultiSessionTests(unittest.TestCase):
+    def test_consumer_close_reclaims_leases_but_keeps_remote_work(self):
+        e, backend, _ = engine(requests=2)
+        a = e.register_job("A", budget(requests=2))
+        b = e.register_job("B", budget())
+        sa, sb = flow(e, a, "a"), flow(e, b, "b")
+        sa.offer((task(0), task(1)))
+        e.advance()
+        backend.complete(TaskKey(sa.session_id, 0))
+        e.advance()
+        delivery = sa.advance(1).deliveries[0]
+        self.assertEqual(sa.close().status, "WAITING_FOR_RELEASE")
+        self.assertEqual(e.capacity.usage(sa.session_id).held_tasks, 2)
+        e.close_job(a)
+        generation = e.wake.generation
+        closed = sa.close_consumer()
+        self.assertGreater(e.wake.generation, generation)
+        self.assertEqual(closed.status, "CLOSED")
+        self.assertEqual(closed.uncertain_requests, 1)
+        self.assertEqual(e.capacity.usage(sa.session_id).held_tasks, 1)
+        self.assertIs(sa.close_consumer(), closed)
+        sb.offer((task(0),))
+        e.advance()
+        backend.complete(TaskKey(sa.session_id, 1))
+        backend.complete(TaskKey(sb.session_id, 0))
+        e.advance()
+        self.assertEqual(e.capacity.usage(sa.session_id).held_tasks, 0)
+        self.assertNotIn(a, e.jobs.jobs)
+        self.assertEqual(len(sb.advance(1).deliveries), 1)
+        sb.close_consumer(clean=True)
+        e.close_job(b)
+        self.assertEqual(e.capacity.usage().held_tasks, 0)
+        self.assertEqual(delivery.key.session_id, sa.session_id)
+
+    def test_public_failure_is_local_to_the_flow(self):
+        e, backend, _ = engine()
+        a = e.register_job("A", budget())
+        b = e.register_job("B", budget())
+        sa, sb = flow(e, a, "a"), flow(e, b, "b")
+        sa.offer((task(0),))
+        sb.offer((task(0),))
+        sa.fail("connection command rejected")
+        e.advance()
+        self.assertIsNone(e.error)
+        self.assertEqual(sa.state, State.FAILED)
+        self.assertEqual(tuple(backend.pending), (TaskKey(sb.session_id, 0),))
+        sa.close_consumer()
+        e.close_job(a)
+
+    def test_job_selector_can_be_replaced_without_changing_accounting(self):
+        from src.scheduling.core.session_jobs import FlowChoice
+
+        e, backend, _ = engine()
+        a = e.register_job("A", budget())
+        b = e.register_job("B", budget())
+        sa, sb = flow(e, a, "a"), flow(e, b, "b")
+        seen = []
+
+        def prefer_last(candidates, history):
+            seen.append((candidates, history))
+            return FlowChoice(candidates[-1].job_id, candidates[-1].session_ids[-1])
+
+        e.choose_flow = prefer_last
+        sa.offer((task(0),))
+        sb.offer((task(0),))
+        e.advance()
+        self.assertEqual(tuple(backend.pending), (TaskKey(sb.session_id, 0),))
+        self.assertEqual(e.capacity.usage().active_requests, 1)
+        self.assertEqual(seen[0][1].last_job, None)
+        self.assertEqual(len(seen[0][0]), 2)
+        backend.complete(TaskKey(sb.session_id, 0))
+        e.advance()
+        self.assertIn(TaskKey(sa.session_id, 0), backend.pending)
+
+    def test_invalid_job_selection_cannot_dispatch_foreign_work(self):
+        from src.scheduling.core.session_jobs import FlowChoice
+
+        e, backend, _ = engine()
+        a = e.register_job("A", budget())
+        sa = flow(e, a, "a")
+        sa.offer((task(0),))
+        e.choose_flow = lambda candidates, history: FlowChoice(a.job_id, sa.session_id + 1)
+        e.advance()
+        self.assertEqual(e.error, "Job selection failed")
+        self.assertEqual(backend.pending, {})
+        self.assertEqual(e.capacity.usage().active_requests, 0)
+
     def test_membership_is_capability_not_a_label(self):
         e, _, _ = engine()
         a = e.register_job("same-label", budget())

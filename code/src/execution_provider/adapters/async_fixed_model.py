@@ -11,7 +11,6 @@ class AsyncFixedModelTransport:
         self.max_active_requests = max_active_requests
         self._observer = observer
         self._client = None
-        self.error_code = None
 
     async def execute(self, request, endpoint):
         import httpx
@@ -55,13 +54,6 @@ class AsyncFixedModelTransport:
                         )
                         return json.dumps({"bridge_error": code}).encode()
                     return bytes(buffer)
-        except TimeoutError:
-            self.error_code = "MODEL_TIMEOUT"
-            raise
-        except Exception:
-            # Disconnecting HTTP does not prove that the model has stopped computing.
-            self.error_code = "MODEL_UNAVAILABLE"
-            raise
         finally:
             if self._observer:
                 self._observer({"event": "http_finished", "key": asdict(request.key)})

@@ -36,7 +36,15 @@ from .session_contract import (
 )
 from .session_policy import IncrementalCreditPolicy, SessionPolicies
 from .task_info import validate_task_info
-from .session_jobs import JobBudget, JobHandle, JobRegistry
+from .session_jobs import (
+    JobBudget,
+    JobHandle,
+    JobRegistry,
+    ReadyJob,
+    JobSelectionHistory,
+    FlowChoice,
+    round_robin_flow,
+)
 
 UINT64_MAX = (1 << 64) - 1
 TERMINAL_STATES = (State.CANCELLED, State.FAILED, State.FINISHED)
@@ -79,6 +87,9 @@ class SessionEngine:
         credit: IncrementalCreditPolicy | None = None,
         sink: Callable[[str, TaskKey], None] | None = None,
         max_jobs: int = 1,
+        choose_flow: Callable[
+            [tuple[ReadyJob, ...], JobSelectionHistory], FlowChoice
+        ] = round_robin_flow,
     ):
         if credit is not None and not getattr(credit, "incremental_safe", False):
             raise ValueError("credit must qualify local bounded incremental operation")
@@ -89,6 +100,7 @@ class SessionEngine:
         self.error: str | None = None
         self._sessions: dict[int, SchedulingSession] = {}
         self.jobs = JobRegistry(self.capacity, max_jobs)
+        self.choose_flow = choose_flow
         self._last_job = None
         self._last_flow = {}
         self._next_session = 0
@@ -147,7 +159,11 @@ class SessionEngine:
                 if session.state in TERMINAL_STATES:
                     used += session._cleanup(max(0, maximum - used))
             while used < maximum and not self.error:
-                selected = self._select_job_flow(now)
+                try:
+                    selected = self._select_job_flow(now)
+                except Exception:
+                    self._fault("Job selection failed")
+                    break
                 if selected is None:
                     break
                 job_id, session = selected
@@ -167,19 +183,12 @@ class SessionEngine:
             self._finish_retired()
             return CleanupReport(used, self.capacity.usage(), self.error)
 
-    @staticmethod
-    def _rotate_after(values, previous):
-        if previous in values:
-            index = values.index(previous) + 1
-            return values[index:] + values[:index]
-        return values
-
     def _select_job_flow(self, now):
         ready = {}
         for session in self._sessions.values():
             if (
                 session.state in TERMINAL_STATES
-                or not session.dispatch_enabled
+                or not session._dispatch_enabled
                 or now < session._retry_at
                 or session._cancel.is_set()
             ):
@@ -189,10 +198,20 @@ class SessionEngine:
                 for r in session._records()
             ):
                 ready.setdefault(session.spec.job_id, []).append(session.session_id)
-        for job_id in self._rotate_after(list(ready), self._last_job):
-            flows = self._rotate_after(ready[job_id], self._last_flow.get(job_id))
-            return job_id, self._sessions[flows[0]]
-        return None
+        if not ready:
+            return None
+        candidates = tuple(ReadyJob(job, tuple(flows)) for job, flows in ready.items())
+        choice = self.choose_flow(
+            candidates, JobSelectionHistory(self._last_job, tuple(self._last_flow.items()))
+        )
+        # Policies select from eligible identities; they cannot create work or bypass capacity.
+        if (
+            type(choice) is not FlowChoice
+            or type(choice.session_id) is not int
+            or choice.session_id not in ready.get(choice.job_id, ())
+        ):
+            raise ValueError("Job policy selected an ineligible flow")
+        return choice.job_id, self._sessions[choice.session_id]
 
     def open(
         self,
@@ -400,7 +419,7 @@ class SchedulingSession:
         self._closed: CloseReport | None = None
         self._retry_at = 0.0
         self.job: JobHandle | None = None
-        self.dispatch_enabled = True
+        self._dispatch_enabled = True
 
     def _records(self) -> tuple[TaskRecord, ...]:
         return tuple(
@@ -788,25 +807,64 @@ class SchedulingSession:
                     del self.engine.capacity.records[record.key]
             self.engine.wake.notify()
 
-    def close(self) -> CloseReport:
+    def set_dispatch_enabled(self, enabled: bool) -> None:
+        """Gate dispatch while a producer is filling its accepted organization window."""
+        with self.engine._operation():
+            self._check_open_handle()
+            if type(enabled) is not bool:
+                raise ValueError("dispatch gate must be boolean")
+            self._dispatch_enabled = enabled
+            self.engine.wake.notify()
+
+    def fail(self, reason: str) -> None:
+        """Fail this flow without releasing uncertain work or touching another Job."""
+        with self.engine._operation():
+            self._check_open_handle()
+            if type(reason) is not str or not reason:
+                raise ValueError("failure reason must be nonempty text")
+            self._fail(reason)
+            self.engine.wake.notify()
+
+    def close_consumer(self, *, clean: bool = False) -> CloseReport:
+        """Close after the consumer has stopped using every delivery, including unpublished ones.
+
+        The caller must join/stop its sender first. Ordinary close keeps delivery leases.
+        Remote work remains charged until an authoritative terminal arrives.
+        """
         with self.engine._operation():
             if self._closed is not None:
                 return self._closed
-            if self.state not in TERMINAL_STATES:
-                self.state = State.CANCELLED
-            self._cleanup(self.limits.held_tasks)
-            records = self._records()
-            usage = self.engine.capacity.usage(self.session_id)
-            report = CloseReport(
-                "WAITING_FOR_RELEASE" if any(r.phase == "LEASED" for r in records) else "CLOSED",
-                sum(r.compute for r in records),
-                usage,
-                self.error,
-            )
-            if report.status == "CLOSED":
-                self._closed = report
-                self.engine._sessions.pop(self.session_id, None)
-                if self.job is None or self.engine.jobs.require(self.job).closing:
-                    self.engine._retired_jobs.add(self.spec.job_id)
-                self.engine._finish_retired()
+            for record in self._records():
+                if record.phase == "LEASED":
+                    del self.engine.capacity.records[record.key]
+            if clean and not self._records() and self.state not in TERMINAL_STATES:
+                self.state = State.FINISHED
+            report = self._close()
+            self.engine.wake.notify()  # Released leases may unblock another producer or Job.
             return report
+
+    def close(self) -> CloseReport:
+        with self.engine._operation():
+            return self._close()
+
+    def _close(self) -> CloseReport:
+        if self._closed is not None:
+            return self._closed
+        if self.state not in TERMINAL_STATES:
+            self.state = State.CANCELLED
+        self._cleanup(self.limits.held_tasks)
+        records = self._records()
+        usage = self.engine.capacity.usage(self.session_id)
+        report = CloseReport(
+            "WAITING_FOR_RELEASE" if any(r.phase == "LEASED" for r in records) else "CLOSED",
+            sum(r.compute for r in records),
+            usage,
+            self.error,
+        )
+        if report.status == "CLOSED":
+            self._closed = report
+            self.engine._sessions.pop(self.session_id, None)
+            if self.job is None or self.engine.jobs.require(self.job).closing:
+                self.engine._retired_jobs.add(self.spec.job_id)
+            self.engine._finish_retired()
+        return report

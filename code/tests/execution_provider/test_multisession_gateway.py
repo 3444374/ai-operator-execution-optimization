@@ -39,7 +39,16 @@ def wait_for(predicate, timeout=3):
 
 
 @contextmanager
-def service(execute, *, unknown=False, max_jobs=2, execution_factory=None):
+def service(
+    execute,
+    *,
+    unknown=False,
+    max_jobs=2,
+    execution_factory=None,
+    max_tasks=4,
+    max_active_requests=2,
+    result_bytes=None,
+):
     stop, ready = threading.Event(), threading.Event()
     failures, instances, events = [], [], []
     with tempfile.TemporaryDirectory() as directory:
@@ -53,8 +62,9 @@ def service(execute, *, unknown=False, max_jobs=2, execution_factory=None):
                     FixedModelConfig("http://localhost/v1/chat/completions", "model", 100),
                     max_jobs=max_jobs,
                     max_connections=3,
-                    max_tasks=4,
-                    max_active_requests=2,
+                    max_tasks=max_tasks,
+                    max_active_requests=max_active_requests,
+                    result_bytes=result_bytes,
                     frame_timeout_ms=3000,
                     execute=execute,
                     observer=events.append,

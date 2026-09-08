@@ -11,7 +11,7 @@ class ModuleOwnershipTests(unittest.TestCase):
     def test_incremental_imports_do_not_load_legacy_implementations(self):
         script = """
 import sys
-from src.execution_provider.adapters.incremental_session import IncrementalMapSessionAdapter
+from src.execution_provider.adapters.incremental_session import IncrementalMapProtocol
 from src.scheduling.core.session import SessionEngine
 for name in (
     "src.execution_provider.adapters.semantic_session",

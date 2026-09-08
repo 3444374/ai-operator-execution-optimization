@@ -15,7 +15,7 @@ from .wire import v6
 from .completion import CompletionAdapterError
 from .gateway_runtime import ConnectionWorkers, accept_connection, interrupt_connection
 from ..scheduling.core.session import WakeSignal
-from ..scheduling.core.session_contract import LeaseId, SessionSpec
+from ..scheduling.core.session_contract import SessionSpec
 
 _EMPTY = object()
 
@@ -96,7 +96,6 @@ class MapConnection(IncrementalMapProtocol):
         self.max_tasks = limits.held_tasks
         self.poll_interval_s = limits.poll_interval_s
         self.job, self.session_id = job, mailbox.session.session_id
-        self._transport_error = None
 
     def _observer(self, event):
         self.gateway.observe(dict(event, job_id=self.job.job_id, engine_session_id=self.session_id))
@@ -194,7 +193,6 @@ class MultiSessionMapGateway:
             result_bytes=total_result,
             observer=self.observe,
             max_jobs=max_jobs,
-            registered_jobs=True,
             execute=execute,
         )
         self.engine = self.execution.engine
@@ -223,7 +221,9 @@ class MultiSessionMapGateway:
         except ValueError:
             return False
         try:
-            session.dispatch_enabled = False  # A v6 poll exposes the accepted organization window.
+            session.set_dispatch_enabled(
+                False
+            )  # A v6 poll exposes the accepted organization window.
             connection.settimeout(self.frame_timeout)
             mailbox = ConnectionMailbox(session, self.engine.wake, self.frame_timeout)
             adapter = MapConnection(self, connection, mailbox, job, session.limits)
@@ -262,14 +262,14 @@ class MultiSessionMapGateway:
                     task = self.execution.prepare_task(pending.request, pending.sequence)
                     result = session.offer((task,))
                 elif operation == "advance":
-                    session.dispatch_enabled = True
+                    session.set_dispatch_enabled(True)
                     result = replace(session.advance(1), generation=self.progress.generation)
                 elif operation == "release":
                     result = session.release(args[0])
                 else:
                     raise ValueError("unknown owner command")
             except Exception:
-                session._fail("owner command failed")
+                session.fail("owner command failed")
                 # Do not retain traceback frames or arbitrary policy exception payloads in replies.
                 result = CompletionAdapterError("MODEL_UNAVAILABLE")
             mailbox.reply = result
@@ -295,18 +295,8 @@ class MultiSessionMapGateway:
             if not mailbox.done.is_set():
                 continue
             state.worker.join()
-            # The sender no longer holds these bytes. Reclaim even unpublished replies.
-            leases = tuple(
-                LeaseId(session_id, r.lease) for r in session._records() if r.phase == "LEASED"
-            )
-            if leases:
-                session.release(leases)
-            if mailbox.clean and not self.engine.capacity.usage(session_id).held_tasks:
-                session.seal()
-                session.advance(1)
-            else:
-                session.cancel()
-            session.close()
+            # Joining the sender transfers all delivered-result ownership back to the core.
+            session.close_consumer(clean=mailbox.clean)
             if state.job in self.engine.jobs.jobs:
                 self.engine.close_job(state.job)
             with mailbox.condition:
