@@ -4,8 +4,15 @@
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
 fail-closed SQL marker can be lowered to a planner-visible `CustomPath`/`CustomScan` with an ordinary
 PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic contract and a gateway-side fixed
-OpenAI-compatible model adapter. It does not put HTTP in the PostgreSQL backend or implement Ray/SemLoom
-scheduling, asynchronous execution, or a second physical path.
+OpenAI-compatible model adapter. HTTP remains outside the PostgreSQL backend. Generated Map can now
+opt into the incremental core at window one; PG multi-in-flight execution remains pending.
+
+The development profile `incremental-map-window-one` uses a distinct v5 execution identity and one
+shared gateway engine. It preserves the supported Map query shapes and synchronous PG port, with
+asynchronous external HTTP and cancellation draining. [Validation](../../../experiments/results/postgresql/incremental_window_one_20260908/README.md)
+passes PG18.3 regression, 1926 TAP checks and nine actual model requests. SELECT/INSERT values, NULL,
+LIMIT, input evaluation, transaction rollback, query cancellation and subsequent recovery are covered.
+No planner binding rewrite was retained. The new profile does not yet serve Filter or composed queries.
 
 The `codex/semfilter-and` branch adds up to two top-level Filter predicates joined by AND through one
 bounded multi-session gateway. It reuses the existing scans, row pump and synchronous provider port.

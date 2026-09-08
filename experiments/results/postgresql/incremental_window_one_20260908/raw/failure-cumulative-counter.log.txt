@@ -1,0 +1,23 @@
+
+#   Failed test 'LIMIT evaluates only emitted Map input'
+#   at t/011_incremental_map.pl line 57.
+#          got: '2'
+#     expected: '1'
+
+#   Failed test 'unsupported operator is explicit'
+#   at t/011_incremental_map.pl line 73.
+#                   'psql:<stdin>:1: ERROR:  ai_semantic.filter marker was not lowered to a semantic plan
+# HINT:  Load semloom_pg before planning and use a supported SemFilter query shape.'
+#     doesn't match '(?^:supports generated Map only)'
+# Looks like you failed 2 tests of 15.
+t/011_incremental_map.pl ..
+Dubious, test returned 2 (wstat 512, 0x200)
+Failed 2/15 subtests
+
+Test Summary Report
+-------------------
+t/011_incremental_map.pl (Wstat: 512 Tests: 15 Failed: 2)
+  Failed tests:  7, 15
+  Non-zero exit status: 2
+Files=1, Tests=15,  2 wallclock secs ( 0.02 usr  0.00 sys +  1.08 cusr  0.28 csys =  1.38 CPU)
+Result: FAIL

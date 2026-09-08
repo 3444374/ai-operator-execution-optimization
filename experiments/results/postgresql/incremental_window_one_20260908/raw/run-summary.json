@@ -1,0 +1,140 @@
+{
+  "status": "passed",
+  "request_limit": 9,
+  "source_commit": "2d2dee35a782dc2588eb792058140331fb6796a2",
+  "pg_version": "18.3",
+  "window": 1,
+  "phases": {
+    "reference": {
+      "rows": [
+        [
+          1,
+          "Hello, SemLoom.",
+          "Hello, SemLoom."
+        ],
+        [
+          2,
+          null,
+          null
+        ],
+        [
+          3,
+          "Blue sky.",
+          "Blue sky."
+        ]
+      ],
+      "plan": [
+        {
+          "Plan": {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0.0,
+            "Total Cost": 346.55,
+            "Plan Rows": 1270,
+            "Plan Width": 68,
+            "Disabled": false,
+            "Provider": "uds-openai-compatible-fixed",
+            "Physical Role": "reference",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Prompt Program": "semloom.sem_map.chat.v1",
+            "Result Parser": "semloom.sem_map.utf8_text.v1",
+            "Model": "Qwen2.5-7B-Instruct",
+            "Semantic Plan Schema": 4,
+            "Semantic Spec Digest": "26fce8c7e12ecbf9d4e0fb7f201e610420ce06241b7e7c482bb56a67ec4c5a28",
+            "Max Tokens": 128,
+            "Max Input Bytes": 163840,
+            "Max Output Bytes": 65536,
+            "Mapped Column": 3,
+            "Plans": [
+              {
+                "Node Type": "Seq Scan",
+                "Parent Relationship": "child",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Relation Name": "inputs",
+                "Alias": "inputs",
+                "Startup Cost": 0.0,
+                "Total Cost": 343.38,
+                "Plan Rows": 1270,
+                "Plan Width": 68,
+                "Disabled": false
+              }
+            ]
+          }
+        }
+      ],
+      "zero_controls": true
+    },
+    "incremental": {
+      "rows": [
+        [
+          1,
+          "Hello, SemLoom.",
+          "Hello, SemLoom."
+        ],
+        [
+          2,
+          null,
+          null
+        ],
+        [
+          3,
+          "Blue sky.",
+          "Blue sky."
+        ]
+      ],
+      "plan": [
+        {
+          "Plan": {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0.0,
+            "Total Cost": 346.55,
+            "Plan Rows": 1270,
+            "Plan Width": 68,
+            "Disabled": false,
+            "Provider": "semloom_incremental_map_window_one",
+            "Physical Role": "reference",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Prompt Program": "semloom.sem_map.chat.v1",
+            "Result Parser": "semloom.sem_map.utf8_text.v1",
+            "Model": "Qwen2.5-7B-Instruct",
+            "Semantic Plan Schema": 4,
+            "Semantic Spec Digest": "26fce8c7e12ecbf9d4e0fb7f201e610420ce06241b7e7c482bb56a67ec4c5a28",
+            "Max Tokens": 128,
+            "Max Input Bytes": 163840,
+            "Max Output Bytes": 65536,
+            "Mapped Column": 3,
+            "Plans": [
+              {
+                "Node Type": "Seq Scan",
+                "Parent Relationship": "child",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Relation Name": "inputs",
+                "Alias": "inputs",
+                "Startup Cost": 0.0,
+                "Total Cost": 343.38,
+                "Plan Rows": 1270,
+                "Plan Width": 68,
+                "Disabled": false
+              }
+            ]
+          }
+        }
+      ],
+      "zero_controls": true
+    }
+  },
+  "multi_inflight_pg": false,
+  "cancel_sqlstate": "57014",
+  "incremental_tasks": 7,
+  "drained_sessions": 5,
+  "model_requests": 9
+}

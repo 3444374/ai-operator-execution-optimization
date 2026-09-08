@@ -1,0 +1,24 @@
+{"event": "session_start", "session_id": 1, "monotonic_ns": 12778909294044849, "gateway_pid": 142853, "accepted_fd": 8, "accepted_socket_inode": 2882315204, "peer_pid": 142815, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 1, "task": 1, "payload_digest": "a3afb9968a0be4632ccb8e57caf85134eb680471c6b5249bd2925c7c3dd1cf23", "monotonic_ns": 12778909295250990}
+{"event": "task_complete", "session_id": 1, "task": 1, "monotonic_ns": 12778909516276416}
+{"event": "task", "session_id": 1, "task": 2, "payload_digest": "e8acc930fe1b7db1cecfad32aafa1b29fee94b8c889541205680e8fa65f032d8", "monotonic_ns": 12778909517167818}
+{"event": "task_complete", "session_id": 1, "task": 2, "monotonic_ns": 12778909598363203}
+{"event": "session_end", "session_id": 1, "monotonic_ns": 12778909598727618, "termination": "returned", "connection_closed": true}
+{"event": "session_start", "session_id": 2, "monotonic_ns": 12778909600567066, "gateway_pid": 142853, "accepted_fd": 8, "accepted_socket_inode": 2882315206, "peer_pid": 142815, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 2, "task": 3, "payload_digest": "a3afb9968a0be4632ccb8e57caf85134eb680471c6b5249bd2925c7c3dd1cf23", "monotonic_ns": 12778909600968341}
+{"event": "task_complete", "session_id": 2, "task": 3, "monotonic_ns": 12778909730924325}
+{"event": "task", "session_id": 2, "task": 4, "payload_digest": "e8acc930fe1b7db1cecfad32aafa1b29fee94b8c889541205680e8fa65f032d8", "monotonic_ns": 12778909731528996}
+{"event": "task_complete", "session_id": 2, "task": 4, "monotonic_ns": 12778909812465112}
+{"event": "session_end", "session_id": 2, "monotonic_ns": 12778909812957822, "termination": "returned", "connection_closed": true}
+{"event": "session_start", "session_id": 3, "monotonic_ns": 12778909819591769, "gateway_pid": 142853, "accepted_fd": 8, "accepted_socket_inode": 2882463854, "peer_pid": 142815, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 3, "task": 5, "payload_digest": "a3afb9968a0be4632ccb8e57caf85134eb680471c6b5249bd2925c7c3dd1cf23", "monotonic_ns": 12778909820119383}
+{"event": "task_complete", "session_id": 3, "task": 5, "monotonic_ns": 12778909946301971}
+{"event": "session_end", "session_id": 3, "monotonic_ns": 12778909946715886, "termination": "returned", "connection_closed": true}
+{"event": "session_start", "session_id": 4, "monotonic_ns": 12778909954994978, "gateway_pid": 142853, "accepted_fd": 8, "accepted_socket_inode": 2882471038, "peer_pid": 142856, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 4, "task": 6, "payload_digest": "5b05099e14f7c794f1537074ade5b1f147dee8a39d8cacd636a4ad2b9c84de79", "monotonic_ns": 12778909955533826}
+{"event": "task_error", "session_id": 4, "task": 6, "monotonic_ns": 12778909966977308, "error_type": "ConnectionResetError"}
+{"event": "session_end", "session_id": 4, "monotonic_ns": 12778909967055932, "termination": "returned", "connection_closed": true}
+{"event": "session_start", "session_id": 5, "monotonic_ns": 12778914043782367, "gateway_pid": 142853, "accepted_fd": 8, "accepted_socket_inode": 2882463855, "peer_pid": 142815, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 5, "task": 7, "payload_digest": "a3afb9968a0be4632ccb8e57caf85134eb680471c6b5249bd2925c7c3dd1cf23", "monotonic_ns": 12778914044783474}
+{"event": "task_complete", "session_id": 5, "task": 7, "monotonic_ns": 12778914175139213}
+{"event": "session_end", "session_id": 5, "monotonic_ns": 12778914175596577, "termination": "returned", "connection_closed": true}

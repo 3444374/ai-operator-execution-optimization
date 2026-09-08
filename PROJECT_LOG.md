@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-09-08 PG生成Map接入增量核心（窗口1）
+
+- 新provider profile/digest区分增量路径与旧同步参考；PG继续使用v5窗口1，网关单控制线程拥有一个Engine。
+- 复用既有语义消息、完成解析、组织器和异步传输；关闭PG连接只停止交付，晚到结果继续归还原任务额度，未知结果停止新接纳。
+- 真实POST预算观测扩展到异步HTTP，旧同步观测回调保持原合同；补初始化失败和会话排空/传输关闭观测。
+- 新PG用例的IS NULL嵌套/ORDER BY、Filter专用fixture及SQL函数内联累计计数问题已纠正；保留全部诊断记录。
+- 对LIMIT重复求值的初判已撤回，未保留planner改动；使用非内联STRICT函数隔离SQL求值断言。
+- [验证](experiments/results/postgresql/incremental_window_one_20260908/README.md)：115/23/9项Python检查、PG18.3回归1及1926项TAP；9次真实请求通过，628源码一致，全部自有服务清理。
+- 当前仍不是PG多在途或多Job框架；下一步扩大窗口前单独版本化接纳/结果协议并验证PG生命周期。
+
 ## 2026-09-08 有界组织窗口接入
 
 - TaskInfo复用WorkDescriptor，保留调用/行/阶段、单位/校准与局部性；BatchKey/BatchMember独立表达组织成员。

@@ -30,8 +30,15 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", type=Path, required=True)
     parser.add_argument("--max-connections", type=int, default=GatewayLimits.max_connections)
-    parser.add_argument("--max-active-requests", type=int, default=GatewayLimits.max_active_requests)
+    parser.add_argument(
+        "--max-active-requests", type=int, default=GatewayLimits.max_active_requests
+    )
     parser.add_argument("--frame-timeout-ms", type=int, default=GatewayLimits.frame_timeout_ms)
+    parser.add_argument(
+        "--incremental-map-window-one",
+        action="store_true",
+        help="serve generated Map through one shared incremental engine",
+    )
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
     adapter_group = parser.add_mutually_exclusive_group()
     adapter_group.add_argument(
@@ -82,11 +89,15 @@ def parse_args(argv=None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
+def main(
+    argv=None, *, adapter_wrapper=None, session_wrapper=None, incremental_observer=None
+) -> int:
     """Serve sessions; optional decorators observe this invocation only."""
     args = parse_args(argv)
     try:
-        limits = GatewayLimits(args.max_connections, args.max_active_requests, args.frame_timeout_ms)
+        limits = GatewayLimits(
+            args.max_connections, args.max_active_requests, args.frame_timeout_ms
+        )
     except ValueError as error:
         raise SystemExit(str(error)) from None
     if args.test_response_delay_ms < 0:
@@ -98,6 +109,11 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter
+    incremental_adapter = None
+    if args.incremental_map_window_one and (
+        args.fixed_model_config is None or limits.max_active_requests != 1
+    ):
+        raise SystemExit("incremental Map requires a fixed model and request capacity one")
     if args.fixed_model_config is None:
         completion_adapter = GoldenCompletionAdapter(golden_fixtures)
     else:
@@ -105,26 +121,40 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
             fixed_config = load_fixed_model_config(args.fixed_model_config)
         except ValueError:
             raise SystemExit("invalid fixed model configuration") from None
-        completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)
-    if adapter_wrapper is not None:
-        completion_adapter = adapter_wrapper(completion_adapter)
-    completion_adapter = RequestAdmission(completion_adapter, limits.max_active_requests)
-    run_session = _run_session if session_wrapper is None else session_wrapper(_run_session)
-    if socket_path.exists():
-        mode = socket_path.stat().st_mode
-        kind = "socket" if stat.S_ISSOCK(mode) else "non-socket file"
-        raise SystemExit(f"refusing to replace existing {kind}: {socket_path}")
-    socket_path.parent.mkdir(parents=True, exist_ok=True)
+        if args.incremental_map_window_one:
+            from .adapters.incremental_map import IncrementalMapAdapter
 
-    stopping = threading.Event()
+            incremental_adapter = IncrementalMapAdapter(fixed_config, observer=incremental_observer)
+            completion_adapter = incremental_adapter
+        else:
+            completion_adapter = OpenAICompatibleFixedAdapter(fixed_config)
+    try:
+        if adapter_wrapper is not None:
+            completion_adapter = adapter_wrapper(completion_adapter)
+        if incremental_adapter is None:
+            completion_adapter = RequestAdmission(completion_adapter, limits.max_active_requests)
+        run_session = _run_session if session_wrapper is None else session_wrapper(_run_session)
+        if socket_path.exists():
+            mode = socket_path.stat().st_mode
+            kind = "socket" if stat.S_ISSOCK(mode) else "non-socket file"
+            raise SystemExit(f"refusing to replace existing {kind}: {socket_path}")
+        socket_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def request_stop(_signum: int, _frame: object) -> None:
-        stopping.set()
+        stopping = threading.Event()
 
-    signal.signal(signal.SIGINT, request_stop)
-    signal.signal(signal.SIGTERM, request_stop)
+        def request_stop(_signum: int, _frame: object) -> None:
+            stopping.set()
+            if incremental_adapter is not None:
+                incremental_adapter.request_stop()
 
-    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        signal.signal(signal.SIGINT, request_stop)
+        signal.signal(signal.SIGTERM, request_stop)
+
+        listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    except BaseException:
+        if incremental_adapter is not None:
+            incremental_adapter.close()
+        raise
     socket_identity: tuple[int, int] | None = None
     try:
         listener.bind(str(socket_path))
@@ -141,16 +171,34 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
                 blocker.close()
             return 0
         handler = partial(
-            run_session, completion_adapter=completion_adapter,
+            run_session,
+            completion_adapter=completion_adapter,
             response_delay_ms=args.test_response_delay_ms,
             tamper_evidence_digest=args.test_tamper_evidence_digest,
             disconnect_on_task=args.test_disconnect_on_task,
             completion_fixture=args.test_completion_fixture,
         )
-        GatewayRuntime(handler, limits).serve(
-            listener, stopping, session_limit=1 if args.once else args.test_max_sessions)
+        session_limit = 1 if args.once else args.test_max_sessions
+        if incremental_adapter is None:
+            GatewayRuntime(handler, limits).serve(listener, stopping, session_limit=session_limit)
+        else:
+            # One owner thread and one service ledger; no per-connection engine replicas.
+            listener.settimeout(0.25)
+            served = 0
+            while not stopping.is_set() and (not session_limit or served < session_limit):
+                try:
+                    connection, _ = listener.accept()
+                except TimeoutError:
+                    continue
+                connection.settimeout(limits.frame_timeout_ms / 1000)
+                try:
+                    incremental_adapter.serve_connection(connection, handler, stopping.is_set)
+                finally:
+                    connection.close()
+                served += 1
     finally:
         listener.close()
+        transport_closed = incremental_adapter is None or incremental_adapter.close()
         if socket_identity is not None:
             try:
                 current_metadata = socket_path.lstat()
@@ -158,11 +206,10 @@ def main(argv=None, *, adapter_wrapper=None, session_wrapper=None) -> int:
                 pass
             else:
                 current_identity = (current_metadata.st_dev, current_metadata.st_ino)
-                if (
-                    stat.S_ISSOCK(current_metadata.st_mode)
-                    and current_identity == socket_identity
-                ):
+                if stat.S_ISSOCK(current_metadata.st_mode) and current_identity == socket_identity:
                     socket_path.unlink()
+        if not transport_closed:
+            raise RuntimeError("incremental transport did not close")
     return 0
 
 
@@ -182,7 +229,13 @@ def _load_golden_fixtures(path: Path | None) -> dict[str, str | Completion]:
     ):
         raise SystemExit("golden fixture must map SHA-256 strings to raw text outputs")
     fixtures: dict[str, str | Completion] = {}
-    completion_fields = {"raw_output", "response_model_id", "prompt_tokens", "output_tokens", "finish_reason"}
+    completion_fields = {
+        "raw_output",
+        "response_model_id",
+        "prompt_tokens",
+        "output_tokens",
+        "finish_reason",
+    }
     for digest, output in value.items():
         if isinstance(output, str):
             fixtures[digest] = output

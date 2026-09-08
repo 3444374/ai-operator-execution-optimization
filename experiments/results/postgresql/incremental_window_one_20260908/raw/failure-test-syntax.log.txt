@@ -1,0 +1,12 @@
+Bareword found where operator expected at t/011_incremental_map.pl line 71, near ""$settings SELECT id FROM inputs WHERE ai_semantic.filter(body,'True.', '{"model"
+t/011_incremental_map.pl ..
+Dubious, test returned 255 (wstat 65280, 0xff00)
+No subtests run
+
+Test Summary Report
+-------------------
+t/011_incremental_map.pl (Wstat: 65280 Tests: 0 Failed: 0)
+  Non-zero exit status: 255
+  Parse errors: No plan found in TAP output
+Files=1, Tests=0,  1 wallclock secs ( 0.02 usr  0.00 sys +  0.12 cusr  0.01 csys =  0.15 CPU)
+Result: FAIL

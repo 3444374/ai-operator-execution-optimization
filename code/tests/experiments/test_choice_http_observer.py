@@ -1,4 +1,5 @@
 """Real HTTP dispatch is downstream of durable attempt reservation."""
+
 import http.client
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import tempfile
@@ -8,7 +9,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.experiments.attempt_ledger import (
-    AttemptBudget, AttemptLedger, BudgetError, observe_http_posts,
+    AttemptBudget,
+    AttemptLedger,
+    BudgetError,
+    observe_http_posts,
 )
 
 
@@ -22,19 +26,19 @@ class ChoiceHttpObserverTests(unittest.TestCase):
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
-                requests.append(self.rfile.read(int(self.headers['Content-Length'])))
+                requests.append(self.rfile.read(int(self.headers["Content-Length"])))
                 self.send_response(500)
-                self.send_header('Content-Length', '0')
+                self.send_header("Content-Length", "0")
                 self.end_headers()
 
             def log_message(self, *_):
                 pass
 
-        self.server = HTTPServer(('127.0.0.1', 0), Handler)
+        self.server = HTTPServer(("127.0.0.1", 0), Handler)
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.directory = tempfile.TemporaryDirectory()
-        self.ledger = AttemptLedger.create(Path(self.directory.name) / 'attempts.jsonl', BUDGET)
+        self.ledger = AttemptLedger.create(Path(self.directory.name) / "attempts.jsonl", BUDGET)
 
     def tearDown(self):
         self.server.shutdown()
@@ -54,7 +58,7 @@ class ChoiceHttpObserverTests(unittest.TestCase):
         connection = http.client.HTTPConnection(*self.server.server_address)
         try:
             with observe_http_posts(self.ledger, record):
-                connection.request('POST', '/', body=body)
+                connection.request("POST", "/", body=body)
                 self.assertEqual(connection.getresponse().status, 500)
         finally:
             connection.close()
@@ -62,13 +66,44 @@ class ChoiceHttpObserverTests(unittest.TestCase):
         self.assertEqual(self.requests, [body])
         self.assertEqual(self.ledger.attempts, 1)
 
+    def test_async_transport_uses_the_same_durable_budget(self):
+        import asyncio
+
+        try:
+            import httpx
+        except ImportError:
+            self.skipTest("httpx unavailable")
+        from src.experiments.attempt_ledger import observe_async_http_posts
+
+        recorded = []
+
+        async def run():
+            async with httpx.AsyncClient(trust_env=False) as client:
+                with observe_async_http_posts(
+                    self.ledger, lambda n, body: recorded.append((n, body))
+                ):
+                    response = await client.post(
+                        f"http://127.0.0.1:{self.server.server_port}/", content=b"body"
+                    )
+                    self.assertEqual(response.status_code, 500)
+                with observe_async_http_posts(self.ledger, lambda *_: None):
+                    with patch.object(self.ledger, "reserve", side_effect=BudgetError("failed")):
+                        with self.assertRaises(BudgetError):
+                            await client.post(
+                                f"http://127.0.0.1:{self.server.server_port}/", content=b"blocked"
+                            )
+
+        asyncio.run(run())
+        self.assertEqual(recorded, [(1, b"body")])
+        self.assertEqual(self.requests, [b"body"])
+
     def test_persistence_failure_prevents_dispatch(self):
         connection = http.client.HTTPConnection(*self.server.server_address)
         try:
-            with observe_http_posts(self.ledger, lambda *_: self.fail('should not observe a send')):
-                with patch('os.fsync', side_effect=OSError('injected persistence failure')):
+            with observe_http_posts(self.ledger, lambda *_: self.fail("should not observe a send")):
+                with patch("os.fsync", side_effect=OSError("injected persistence failure")):
                     with self.assertRaises(BudgetError):
-                        connection.request('POST', '/', body=b'{}')
+                        connection.request("POST", "/", body=b"{}")
         finally:
             connection.close()
         self.assertEqual(self.requests, [])

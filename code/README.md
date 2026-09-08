@@ -490,6 +490,21 @@ Ollama smoke runs, use
 `src/profile_*.py` compatibility modules have been removed; production and test callers now
 use the owning subpackage directly, and an AST architecture test prevents the old paths from returning.
 
+## PostgreSQL Map through the incremental core
+
+The opt-in `incremental-map-window-one` execution profile now connects generated Map to SessionEngine,
+WorkWindowOrganizer and BoundedAsyncBackend. It reuses wire v5 and the existing PG input/result lifecycle,
+with a distinct provider execution digest. One gateway owns one engine and one active connection;
+it does not add a second RequestAdmission ledger. HTTP is asynchronous while the PG port remains at
+window one. Cancellation stops delivery; authoritative late responses settle the old reservation before
+another query is admitted. Unknown outcomes quarantine the service.
+
+[Verification](../experiments/results/postgresql/incremental_window_one_20260908/README.md) includes
+115 PostgreSQL contracts, 23 provider tests, 9 observer tests, PG18.3 SQL regression and 1926 TAP checks,
+and nine real model requests comparing reference results, INSERT, transaction error, cancellation and
+recovery. This does not implement PG multi-in-flight execution, multiple active sessions, composition
+on the new profile, or GPU memory management. The [CLI](scripts/README.md) describes explicit opt-in.
+
 ## Incremental execution context
 
 `SessionEngine` and `SchedulingSession` in `scheduling/core/session.py` provide a controlled single-flow

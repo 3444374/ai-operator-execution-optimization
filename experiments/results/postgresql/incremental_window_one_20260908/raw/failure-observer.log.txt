@@ -1,0 +1,26 @@
+....E....
+======================================================================
+ERROR: test_interleaved_identical_payloads_keep_http_attempt_and_completion_identity (tests.experiments.test_gateway_observation.GatewayObservationTests.test_interleaved_identical_payloads_keep_http_attempt_and_completion_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<source-root>/code/tests/experiments/test_gateway_observation.py", line 180, in test_interleaved_identical_payloads_keep_http_attempt_and_completion_identity
+    self.assertEqual(choice_gateway_observer.main([
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<source-root>/code/src/experiments/choice_gateway_observer.py", line 145, in main
+    return server.main(
+           ^^^^^^^^^^^^
+  File "<python-base>/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<python-base>/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<python-base>/lib/python3.12/unittest/mock.py", line 1199, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: GatewayObservationTests.test_interleaved_identical_payloads_keep_http_attempt_and_completion_identity.<locals>.drive() got an unexpected keyword argument 'incremental_observer'
+
+----------------------------------------------------------------------
+Ran 9 tests in 4.136s
+
+FAILED (errors=1)

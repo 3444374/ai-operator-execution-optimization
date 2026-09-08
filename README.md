@@ -39,7 +39,8 @@ NULL 零调用、结果与写回均通过。main中的两个算子各自同步�
 [单流增量执行核心](experiments/results/scheduling/incremental_session_20260908/README.md)已完成受控实现；复用已有提交与路由策略，
 [方法续体接口](code/src/semantic_methods/README.md)为后续多阶段算法提供逐行接入方式；
 [组织窗口已接入](experiments/results/scheduling/organized_window_20260908/README.md)，批次展开为各自计费的独立请求；
-为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过，PG异步与批处理仍待接入。
+为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过；生成Map已完成[PG窗口1接入](experiments/results/postgresql/incremental_window_one_20260908/README.md)，
+PG多请求在途和单请求多成员仍待实现。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

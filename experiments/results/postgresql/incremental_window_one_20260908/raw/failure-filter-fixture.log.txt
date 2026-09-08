@@ -1,0 +1,65 @@
+# Checking port 27139
+# Found port 27139
+Name: incremental_map
+Version: 18.3
+Data directory: <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata
+Backup directory: <check-root>/target/data/t_011_incremental_map_incremental_map_data/backup
+Archive directory: <check-root>/target/data/t_011_incremental_map_incremental_map_data/archives
+Connection string: port=27139 host=/tmp/DedRgUhqFh
+Log file: <check-root>/target/log/011_incremental_map_incremental_map.log
+[11:39:29.921](0.020s) # initializing database system by running initdb
+# Running: initdb --no-sync --pgdata <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata --auth trust
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with this locale configuration:
+  locale provider:   libc
+  LC_COLLATE:  C.UTF-8
+  LC_CTYPE:    C.UTF-8
+  LC_MESSAGES: C
+  LC_MONETARY: C.UTF-8
+  LC_NUMERIC:  C.UTF-8
+  LC_TIME:     C.UTF-8
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+creating directory <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+
+Sync to disk skipped.
+The data directory might become corrupt if the operating system crashes.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata -l logfile start
+
+# Running: <pg-prefix>/lib/postgresql/pgxs/src/test/regress/pg_regress --config-auth <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata
+### Starting node "incremental_map"
+# Running: pg_ctl --wait --pgdata <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata --log <check-root>/target/log/011_incremental_map_incremental_map.log --options --cluster-name=incremental_map start
+waiting for server to start.... done
+server started
+# Postmaster PID for node "incremental_map" is 137965
+[11:39:30.691](0.770s) ok 1 - HTTP fixture ready
+[11:39:30.918](0.228s) ok 2 - incremental gateway ready
+[11:39:30.932](0.014s) ok 3 - LIMIT zero has no result
+[11:39:30.942](0.010s) ok 4 - NULL stays NULL
+[11:39:30.942](0.000s) ok 5 - zero controls issue no HTTP request
+error running SQL: 'psql:<stdin>:1: ERROR:  SemLoom model request was rejected'
+while running 'psql --no-psqlrc --no-align --tuples-only --quiet --dbname port=27139 host=/tmp/DedRgUhqFh dbname='postgres' --file - --variable ON_ERROR_STOP=1' with sql 'SET statement_timeout='10s'; SET semloom_pg.gateway_socket='/tmp/DedRgUhqFh/incremental.sock'; SET semloom_pg.provider_execution_profile='incremental-map-window-one'; SELECT id,ai_semantic.map(touch_input(body), 'Echo.', ' {"model":"model","temperature":0,"max_tokens":128}'::jsonb) FROM inputs LIMIT 1' at <pg-prefix>/lib/postgresql/pgxs/src/test/perl/PostgreSQL/Test/Cluster.pm line 2258.
+# Postmaster PID for node "incremental_map" is 137965
+### Stopping node "incremental_map" using mode immediate
+# Running: pg_ctl --pgdata <check-root>/target/data/t_011_incremental_map_incremental_map_data/pgdata --mode immediate stop
+waiting for server to shut down.... done
+server stopped
+# No postmaster PID for node "incremental_map"
+[11:39:31.571](0.629s) # Tests were run but no plan was declared and done_testing() was not seen.
+[11:39:31.571](0.000s) # Looks like your test exited with 29 just after 5.

@@ -1,0 +1,109 @@
+"""Nine actual POSTs comparing reference and incremental PG Map window-one execution."""
+import argparse,hashlib,json,os,pwd,subprocess,sys,threading,time
+from pathlib import Path
+import psycopg
+from psycopg import sql
+from transformers import AutoTokenizer
+from src.baselines.common.redact import redact_text
+from src.experiments.attempt_ledger import AttemptBudget,AttemptLedger
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster,owned_child_process,wait_for_path
+
+INSTRUCTION='Return only the input text exactly as received. Do not add or remove anything.'
+def save(path,value):path.write_text(redact_text(json.dumps(value,indent=2,ensure_ascii=False))+'\n')
+def events(path):return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+def until(predicate,label,seconds=30):
+ deadline=time.monotonic()+seconds
+ while not predicate():
+  assert time.monotonic()<deadline,label
+  time.sleep(.01)
+def run(settings):
+ root=Path(settings['root']);root.mkdir();source=Path(settings['source'])
+ for name,digest in settings['source_delta'].items():assert hashlib.sha256((source/name).read_bytes()).hexdigest()==digest,'source_hash'
+ assert hashlib.sha256((Path(settings['prefix'])/'lib/postgresql/semloom_pg.so').read_bytes()).hexdigest()==settings['extension_sha256'],'extension_identity'
+ config=json.loads(Path(settings['config']).read_text())
+ ledger=AttemptLedger(Path(settings['ledger']),AttemptBudget(settings['budget_id'],9));assert ledger.attempts==0
+ tokenizer=AutoTokenizer.from_pretrained(settings['model_root'],local_files_only=True)
+ summary={'status':'incomplete','request_limit':9,'source_commit':settings['source_commit'],'pg_version':'18.3','window':1,'phases':{},'multi_inflight_pg':False}
+ try:
+  with isolated_pg18_cluster(Path(settings['prefix']),root,pwd.getpwuid(os.getuid()),port=settings['pg_port']) as conn:
+   conn.execute('CREATE TABLE inputs(id integer, body text)');conn.execute('CREATE TABLE outputs(id integer, body text, generated text)')
+   conn.execute('CREATE TABLE rejected(id integer CHECK(id<0), body text, generated text)')
+   conn.execute('CREATE TABLE evaluated(body text)')
+   conn.execute('CREATE FUNCTION tracked(text) RETURNS text LANGUAGE plpgsql VOLATILE STRICT AS $$ BEGIN INSERT INTO evaluated VALUES ($1); RETURN $1; END $$')
+   with conn.cursor() as cur:cur.executemany('INSERT INTO inputs VALUES (%s,%s)',[(1,'Hello, SemLoom.'),(2,None),(3,'Blue sky.')])
+   parameters=dict(host=conn.info.host,port=conn.info.port,user=conn.info.user,dbname=conn.info.dbname,autocommit=True)
+   opts=json.dumps({'model':config['model_id'],'temperature':0,'max_tokens':128})
+   expression=sql.SQL('ai_semantic.map(tracked(body),{},{}::jsonb)').format(sql.Literal(INSTRUCTION),sql.Literal(opts))
+   query=sql.SQL('SELECT id,body,{} FROM ONLY inputs').format(expression)
+   reference=None
+   for mode in ('reference','incremental'):
+    event_path=root/(mode+'-events.jsonl');session_path=root/(mode+'-sessions.jsonl');socket=root/'socket'/(mode+'.sock')
+    command=[sys.executable,'-m','src.experiments.choice_gateway_observer','--events',str(event_path),'--session-events',str(session_path),'--ledger',settings['ledger'],'--budget-id',settings['budget_id'],'--max-attempts','9','--','--socket',str(socket),'--fixed-model-config',settings['config'],'--max-active-requests','1']
+    profile='openai-compatible-fixed' if mode=='reference' else 'incremental-map-window-one'
+    if mode=='incremental':command+=['--incremental-map-window-one']
+    with owned_child_process(command,root,mode,dict(os.environ,PYTHONPATH=str(source/'code')),pwd.getpwuid(os.getuid())) as process:
+     wait_for_path(socket,process)
+     def configure(c):
+      c.execute("SELECT set_config('semloom_pg.gateway_socket',%s,false)",(str(socket),));c.execute("SELECT set_config('semloom_pg.provider_execution_profile',%s,false)",(profile,));c.execute("SET statement_timeout='120s'")
+     configure(conn);before=ledger.attempts
+     conn.execute('TRUNCATE evaluated')
+     assert conn.execute(query+sql.SQL(' LIMIT 0')).fetchall()==[]
+     assert conn.execute(query+sql.SQL(' WHERE id=2')).fetchall()==[(2,None,None)]
+     plan=conn.execute(sql.SQL('EXPLAIN (FORMAT JSON) ')+query).fetchone()[0]
+     assert ledger.attempts==before and conn.execute('SELECT count(*) FROM evaluated').fetchone()[0]==0,'zero_controls'
+     rows=conn.execute(query).fetchall()
+     assert conn.execute('SELECT count(*) FROM evaluated').fetchone()[0]==2,'input_evaluated_once'
+     seen=events(event_path);completed=[e for e in seen if e['event']=='completion']
+     assert len(completed)==2 and rows==[(1,'Hello, SemLoom.',completed[0]['raw_output']),(2,None,None),(3,'Blue sky.',completed[1]['raw_output'])],'sql_response_binding'
+     assert ledger.attempts-before==2
+     summary['phases'][mode]={'rows':rows,'plan':plan,'zero_controls':True}
+     if mode=='reference':reference=rows
+     else:
+      assert rows==reference,'reference_value_parity'
+      assert 'semloom_incremental_map_window_one' in json.dumps(plan),'explicit_provider_identity'
+      conn.execute(sql.SQL('INSERT INTO outputs ')+query)
+      with psycopg.connect(**parameters) as audit:assert audit.execute('SELECT * FROM outputs ORDER BY id').fetchall()==rows,'independent_insert_audit'
+      try:
+       with conn.transaction():conn.execute(sql.SQL('INSERT INTO rejected ')+query)
+       raise AssertionError('missing_constraint_error')
+      except psycopg.errors.CheckViolation:pass
+      assert conn.execute('SELECT count(*) FROM rejected').fetchone()[0]==0,'rollback'
+      assert ledger.attempts==7,'before_cancel_budget'
+      cancellation=[]
+      with psycopg.connect(**parameters) as cancelled:
+       configure(cancelled)
+       long_opts=json.dumps({'model':config['model_id'],'temperature':0,'max_tokens':256})
+       long_query=sql.SQL('SELECT ai_semantic.map(body,{},{}::jsonb) FROM ONLY inputs WHERE id=1').format(sql.Literal('Write a detailed numbered list of one hundred facts about astronomy. Do not stop early.'),sql.Literal(long_opts))
+       def execute_cancelled():
+        try:cancelled.execute(long_query).fetchall();cancellation.append('unexpected_success')
+        except psycopg.Error as error:cancellation.append(error.sqlstate)
+       worker=threading.Thread(target=execute_cancelled);worker.start()
+       until(lambda:ledger.attempts==8,'cancel_dispatch')
+       assert worker.is_alive(),'cancel_before_response'
+       cancelled.cancel();worker.join(30);assert not worker.is_alive() and cancellation==['57014'],'query_cancel'
+      recovered=conn.execute(query+sql.SQL(' WHERE id=1 LIMIT 1')).fetchall()
+      assert len(recovered)==1 and recovered[0][:2]==(1,'Hello, SemLoom.'),'recovery_row'
+      until(lambda:len([e for e in events(event_path) if e['event']=='core_drained'])==5,'drain_all_sessions')
+      seen=events(event_path);submitted=[e for e in seen if e['event']=='core_submitted'];terminal=[e for e in seen if e['event']=='core_terminal'];drained=[e for e in seen if e['event']=='core_drained']
+      assert len(submitted)==len(terminal)==7,'core_actual_tasks'
+      assert all(not any(e['usage'].values()) for e in drained),'shared_resources_zero'
+      assert max(e['usage']['active_requests'] for e in submitted)==1,'window_one_capacity'
+      summary['cancel_sqlstate']='57014';summary['incremental_tasks']=7;summary['drained_sessions']=5
+     seen=events(event_path)
+     requests=[e for e in seen if e['event']=='request'];completed=[e for e in seen if e['event']=='completion']
+     for result in completed:
+      matching=next(e for e in requests if e['session_id']==result['session_id'] and e['task']==result['task'])
+      body=matching['body'];assert body['model']==result['response_model_id']==config['model_id']
+      assert result['prompt_tokens']==len(tokenizer.apply_chat_template(body['messages'],tokenize=True,add_generation_prompt=True,return_dict=False)),'actual_prompt_usage'
+      assert 0<result['output_tokens']<=body['max_tokens'],'actual_output_usage'
+    if mode=='incremental':
+     close=[e for e in events(event_path) if e['event']=='core_transport_closed']
+     assert len(close)==1 and close[0]['closed'] and not any(close[0]['usage'].values()),'transport_cleanup'
+    assert not socket.exists(),'socket_removed'
+   assert ledger.attempts==9,'complete_budget'
+  assert not (root/'data/postmaster.pid').exists(),'pg_cleanup'
+  summary['status']='passed'
+ finally:
+  summary['model_requests']=ledger.attempts;save(root/'summary.json',summary)
+if __name__=='__main__':
+ parser=argparse.ArgumentParser();parser.add_argument('--settings',type=Path,required=True);args=parser.parse_args();run(json.loads(args.settings.read_text()))

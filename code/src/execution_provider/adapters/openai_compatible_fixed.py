@@ -15,6 +15,7 @@ from typing import Mapping
 from urllib import parse
 
 from ..generation_profile import GenerationProfile
+from .completion_response import parse_completion as _parse_completion
 from ..wire.v5 import FIXED_EXECUTION_ID as MAP_EXECUTION_ID
 from .semantic_session import CompletionAdapterError, Completion, CompletionRequest
 
@@ -121,9 +122,7 @@ class _ResolutionAttempt:
 
     def __init__(self) -> None:
         self.completed = threading.Event()
-        self.addresses: list[
-            tuple[int, int, int, str, tuple[object, ...]]
-        ] | None = None
+        self.addresses: list[tuple[int, int, int, str, tuple[object, ...]]] | None = None
         self.error: Exception | None = None
 
 
@@ -142,9 +141,7 @@ class _FixedEndpointResolver:
     ) -> list[tuple[int, int, int, str, tuple[object, ...]]]:
         with self._lock:
             attempt = self._attempt
-            if attempt is None or (
-                attempt.completed.is_set() and attempt.error is not None
-            ):
+            if attempt is None or (attempt.completed.is_set() and attempt.error is not None):
                 attempt = _ResolutionAttempt()
                 self._attempt = attempt
                 worker = threading.Thread(
@@ -264,8 +261,9 @@ class OpenAICompatibleFixedAdapter:
     choice_execution_id = CHOICE_EXECUTION_ID
 
     def execution_id_for(self, protocol_version: int) -> str | None:
-        return {3: self.execution_id, 4: self.choice_execution_id,
-                5: MAP_EXECUTION_ID}.get(protocol_version)
+        return {3: self.execution_id, 4: self.choice_execution_id, 5: MAP_EXECUTION_ID}.get(
+            protocol_version
+        )
 
     def __init__(self, config: FixedModelConfig) -> None:
         self._config = config
@@ -288,7 +286,10 @@ class OpenAICompatibleFixedAdapter:
         }
         profile = completion_request.generation_profile
         if profile is not None:
-            if type(profile) is not GenerationProfile or self._config.choice_format != VLLM_CHOICE_FORMAT:
+            if (
+                type(profile) is not GenerationProfile
+                or self._config.choice_format != VLLM_CHOICE_FORMAT
+            ):
                 raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
             body["structured_outputs"] = {"choice": list(profile.choices)}
         payload = json.dumps(
@@ -300,13 +301,9 @@ class OpenAICompatibleFixedAdapter:
         if self._config.bearer_token is not None:
             headers["Authorization"] = f"Bearer {self._config.bearer_token}"
         parsed = parse.urlsplit(self._config.endpoint_url)
-        endpoint_path = parse.urlunsplit(
-            ("", "", parsed.path or "/", parsed.query, "")
-        )
+        endpoint_path = parse.urlunsplit(("", "", parsed.path or "/", parsed.query, ""))
         connection_type = (
-            http.client.HTTPSConnection
-            if parsed.scheme == "https"
-            else http.client.HTTPConnection
+            http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
         )
         deadline = _RequestDeadline(self._config.timeout_ms)
         connection: http.client.HTTPConnection | None = None
@@ -320,6 +317,7 @@ class OpenAICompatibleFixedAdapter:
                 parsed.port,
                 timeout=deadline.remaining_seconds(),
             )
+
             def connect_resolved(
                 _address: tuple[str, int],
                 _timeout: object,
@@ -354,13 +352,19 @@ class OpenAICompatibleFixedAdapter:
             response_bytes = _read_response(response, deadline)
             terminal_response = True
         except (TimeoutError, socket.timeout):
-            raise CompletionAdapterError("MODEL_TIMEOUT", remote_outcome_unknown=dispatched and not terminal_response) from None
+            raise CompletionAdapterError(
+                "MODEL_TIMEOUT", remote_outcome_unknown=dispatched and not terminal_response
+            ) from None
         except http.client.HTTPException:
             code = "MODEL_TIMEOUT" if deadline.expired else "MODEL_RESPONSE_INVALID"
-            raise CompletionAdapterError(code, remote_outcome_unknown=dispatched and not terminal_response) from None
+            raise CompletionAdapterError(
+                code, remote_outcome_unknown=dispatched and not terminal_response
+            ) from None
         except OSError:
             code = "MODEL_TIMEOUT" if deadline.expired else "MODEL_UNAVAILABLE"
-            raise CompletionAdapterError(code, remote_outcome_unknown=dispatched and not terminal_response) from None
+            raise CompletionAdapterError(
+                code, remote_outcome_unknown=dispatched and not terminal_response
+            ) from None
         finally:
             if response is not None:
                 response.close()
@@ -430,46 +434,6 @@ def _read_response(
     if len(buffer) > MAX_MODEL_RESPONSE_BYTES:
         raise CompletionAdapterError("MODEL_RESPONSE_INVALID", remote_outcome_unknown=True)
     return bytes(buffer)
-
-
-def _parse_completion(value: object) -> Completion:
-    if not isinstance(value, dict):
-        raise ValueError("response must be an object")
-    model_id = value.get("model")
-    choices = value.get("choices")
-    usage = value.get("usage")
-    if (
-        not isinstance(model_id, str)
-        or not isinstance(choices, list)
-        or len(choices) != 1
-        or not isinstance(choices[0], dict)
-        or not isinstance(usage, dict)
-    ):
-        raise ValueError("response is missing completion fields")
-    choice = choices[0]
-    message = choice.get("message")
-    finish_reason = choice.get("finish_reason")
-    prompt_tokens = usage.get("prompt_tokens")
-    output_tokens = usage.get("completion_tokens")
-    if (
-        not isinstance(message, dict)
-        or not isinstance(message.get("content"), str)
-        or not isinstance(finish_reason, str)
-        or type(prompt_tokens) is not int
-        or type(output_tokens) is not int
-        or prompt_tokens < 0
-        or output_tokens < 0
-        or prompt_tokens >= 2**64
-        or output_tokens >= 2**64
-    ):
-        raise ValueError("response completion fields have invalid types")
-    return Completion(
-        raw_output=message["content"],
-        response_model_id=model_id,
-        prompt_tokens=prompt_tokens,
-        output_tokens=output_tokens,
-        finish_reason=finish_reason,
-    )
 
 
 __all__ = [

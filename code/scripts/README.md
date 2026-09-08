@@ -38,7 +38,7 @@ extension CLI/import 别名已删除。Python 调用方直接导入 `src.executi
 golden profile 使用 `--golden-fixture`，fixed profile 使用仓库外 `--fixed-model-config`；endpoint、
 model、timeout 和 bearer-token 环境变量名不进入仓库。
 
-`--max-connections`（默认8）限制同时存活会话，`--max-active-requests`（默认1）独立限制活跃或
+默认同步模式下，`--max-connections`（默认8）限制同时存活会话，`--max-active-requests`（默认1）独立限制活跃或
 远端终态未知的模型请求；没有待执行任务队列。连接满时新连接关闭，请求满时返回
 `MODEL_REQUEST_REJECTED`。每会话仍同步逐项执行，空闲会话不占模型请求名额。
 `--frame-timeout-ms`（默认120000）限制一个完整帧的读取时间，帧头与帧体共用期限。
@@ -46,6 +46,27 @@ model、timeout 和 bearer-token 环境变量名不进入仓库。
 确认服务端请求已结束后，通过重启gateway恢复。系统DNS解析线程可能持续到解析自身返回。
 请求观测事件携带`session_id`与`task`，可关联相同payload的并发请求/完成；
 旧独占会话资源测量器仍不能用于并发资源归因。
+
+### 生成 Map 的增量核心接入（窗口 1）
+
+启动同一服务级 Engine 的单连接路径：
+
+```sh
+python3 code/scripts/services/run_execution_provider_gateway.py \
+  --socket /path/to/provider.sock --fixed-model-config /path/to/fixed-model.json \
+  --incremental-map-window-one --max-active-requests 1
+```
+
+数据库会话显式选择 `SET semloom_pg.provider_execution_profile='incremental-map-window-one'`，
+并将 `semloom_pg.gateway_socket` 指向同一socket。新身份为
+`semloom.provider.incremental-map-window-one.uds.v5`；保留v5窗口1，当前只接生成型Map。
+PG仍同步等待本行结果，HTTP由有界异步传输执行；不是PG多在途协议，也不支持Filter→Map组合。
+一个网关只有一个活动查询，排空已取消查询的旧请求后才接受下一查询，不复制Engine容量。
+未知远端结果会停止服务接纳，需确认后端已结束后再恢复，不能通过自动重启重置额度。
+
+观测CLI仍使用同一持久AttemptLedger；新模式选择异步POST观测，记录core提交、终态、排空和
+传输关闭事件。header不落日志，机器配置继续留在仓库外。详见
+[窗口1验证](../../experiments/results/postgresql/incremental_window_one_20260908/README.md)。
 
 ## SemMap resource measurement
 

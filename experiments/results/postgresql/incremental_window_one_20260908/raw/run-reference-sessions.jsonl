@@ -1,0 +1,6 @@
+{"event": "session_start", "session_id": 1, "monotonic_ns": 12778908403807795, "gateway_pid": 142816, "accepted_fd": 5, "accepted_socket_inode": 2882389517, "peer_pid": 142815, "peer_uid": 105, "peer_gid": 108}
+{"event": "task", "session_id": 1, "task": 1, "payload_digest": "a3afb9968a0be4632ccb8e57caf85134eb680471c6b5249bd2925c7c3dd1cf23", "monotonic_ns": 12778908405116748}
+{"event": "task_complete", "session_id": 1, "task": 1, "monotonic_ns": 12778908551006214}
+{"event": "task", "session_id": 1, "task": 2, "payload_digest": "e8acc930fe1b7db1cecfad32aafa1b29fee94b8c889541205680e8fa65f032d8", "monotonic_ns": 12778908552032735}
+{"event": "task_complete", "session_id": 1, "task": 2, "monotonic_ns": 12778908633588487}
+{"event": "session_end", "session_id": 1, "monotonic_ns": 12778908633852310, "termination": "returned", "connection_closed": true}

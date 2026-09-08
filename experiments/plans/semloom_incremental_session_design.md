@@ -15,6 +15,9 @@
 §15的有界组织窗口已通过[验证](../results/scheduling/organized_window_20260908/README.md)：
 最终本地54项、Linux335项及两轮各4次真实请求；单请求多成员协议与PG接入仍未实现。
 
+§16生成Map的PG窗口1接入已通过[真实验证](../results/postgresql/incremental_window_one_20260908/README.md)：
+PG18.3回归/1926项TAP、9次真实模型请求，窗口扩大和多活动查询仍待实现。
+
 ## 1. 范围、选型与旧实现复用
 
 首版采用**单线程驱动、非阻塞step、单Job单流**的session，允许有界多在途和逆序完成。测试使用可控
@@ -454,3 +457,47 @@ temperature=0。work为诊断请求计数，不作为模型成本校准；同局
 实际HTTP峰值2，行/成员/阶段响应核对通过，资源计数归零、传输及模型退出、端口关闭、GPU空闲。
 首轮53/334结果和重排进展失败用例单独保留；最终确认使用修复后的源码，不混用旧哈希。
 参见[组织窗口结果](../results/scheduling/organized_window_20260908/README.md)。
+
+<a id="pg-map-window-one"></a>
+
+## 16. PG生成Map窗口1接入（工程决策）
+
+本轮接入一个真实生成Map，保留v5窗口1和PG现有输入求值/NULL/LIMIT/输出绑定；新增独立
+provider执行身份与GUC选项，不能把增量核心执行记录为旧同步适配器。沿用主架构§8.7/§8.8的
+PG/carrier与模型适配分工，自有落点为provider入口、v5身份及增量completion适配；复用既有
+语义消息校验、模型completion解析、SessionEngine、WorkWindowOrganizer和BoundedAsyncBackend。
+不包装同步HTTP调用，不复制调度器；单个网关控制线程拥有一个Engine，显式限制一个活动连接。
+
+complete只作为窗口1的同步port适配：输入仍由PG按需提供，内部offer/advance/release；模型HTTP在
+独立异步I/O线程运行。连接断开或服务停止时取消交付，保留已提交占用并等待权威终态；未知远端
+结果令该服务停止接收新查询，不能通过新建Engine重置容量。此模式不套第二层RequestAdmission。
+Filter及多节点组合不属于新profile；后续PG多在途要独立版本化accepted-prefix/结果重排协议。
+
+受控验证覆盖v5新旧身份不混用、结果/错误/NULL基线、断连取消/迟到回收及未知结果拒绝再提交。
+服务器先严格PG18.3构建和既有回归/TAP，再使用真实模型测试生成Map SELECT/INSERT、NULL/LIMIT
+零调用、取消后新查询恢复。先有独立模型预算、合成输入、source/model身份与停止条件，不扩展正式实验。
+
+真实模型预算固定为9次POST：同步参考SELECT两行2次、增量SELECT两行2次、增量INSERT两行2次、
+目标约束导致事务错误1次、取消长生成1次、取消后恢复1次。两条路径均运行NULL/LIMIT 0/EXPLAIN
+零请求控制；Map保持顶层输出，当前不支持的嵌套IS NULL与ORDER BY不扩展，本轮测试按既有SQL范围。
+使用已核验7B模型、单GPU独立localhost服务，正常生成上限128tokens、取消项256tokens、temperature0，
+模型deadline120秒、PG语句120秒；请求/原始结果由已有观测器记录，异步POST也必须先预留持久预算。
+取消在观察到请求派发后由独立客户端发起，随后同一网关必须完成旧响应回收并服务新查询。
+不重试HTTP、不额外warm-up；任何失败保留记录并停止，不扩大本次预算。结束要求PG、网关、I/O线程、
+模型服务退出，资源归零、端口关闭；旧同步及新profile执行身份分别核对。不是PG多在途或性能实验。
+
+受控测试前两次失败均在0次真实模型调用时发生：新增NULL断言误用Map嵌套表达式，随后ORDER BY
+超出既有Map查询范围。改用顶层投影并保持child输入顺序验证；保留失败日志并为TAP补异常进程清理。
+观测器新参数现仅传给增量模式，旧驱动回调合同保持；新增网关初始化失败的I/O线程清理检查。
+
+最初将序列累计值2误认为LIMIT输入重复求值；进一步检查显示，LIMIT之前的NULL控制已使序列为1，
+EXPLAIN中SQL测试函数被内联成body || nextval(...)，NULL结果并不意味着其输入子表达式不执行。
+因此撤回临时planner绑定修改，保留原实现；使用不内联的PL/pgSQL STRICT函数隔离求值次数，并分别
+检查零控制与LIMIT。失败日志与诊断计划保留，不把这次测试设计问题描述为已修复的数据库缺陷。
+HTTP fixture另增严格Map模式（max_tokens128/stop=null），Filter模式的8/newline规则保持不变。
+
+
+最终验证：115项PostgreSQL合同、23项provider、9项observer检查通过；PG18.3严格构建、SQL回归1项、
+11个TAP文件共1926项通过。9次真实POST全部完成，增量核心承担其中7项，5个增量会话排空后资源归零；
+取消返回57014，后续查询恢复，PG/网关/传输/模型退出。628份源码哈希与真实运行一致；临时planner
+修改已撤回，最终保留原绑定逻辑。见[结果](../results/postgresql/incremental_window_one_20260908/README.md)。

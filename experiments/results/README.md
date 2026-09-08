@@ -1,5 +1,12 @@
 # Research Experiment Results
 
+2026-09-08：[生成Map的PG窗口1接入](postgresql/incremental_window_one_20260908/README.md)新增独立provider执行身份，
+复用现有v5与PG语义、SessionEngine和异步HTTP。一个活动连接共用一个Engine，未知结果停止接纳。
+115项PG合同、23项provider、9项observer测试及PG18.3回归/1926项TAP通过；628份源码一致。
+9次真实POST验证参考SELECT、增量SELECT/INSERT、事务错误、取消57014及新查询恢复；
+其中7个增量任务、5个会话排空后资源归零，PG/网关/传输/模型已退出。临时planner修改已撤回。
+PG多在途、该profile的Filter/组合、多活动session及GPU显存管理仍未实现。
+
 2026-09-08：[有界组织窗口验证](scheduling/organized_window_20260908/README.md)接入既有work分组与显式局部性，
 组织批次展开为独立单成员请求；行/阶段与批次身份贯穿backend和结果，原路径保持兼容。
 最终本地54项、Linux335项通过，624份源码一致；两轮各4次真实请求均通过，峰值并发2，服务已停。

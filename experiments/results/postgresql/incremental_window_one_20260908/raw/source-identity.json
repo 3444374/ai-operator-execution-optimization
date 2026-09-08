@@ -1,0 +1,8 @@
+{
+  "remote_checkout_base": "2d2dee35a782dc2588eb792058140331fb6796a2",
+  "source_manifest": "prepare-source-hashes.json",
+  "source_files": 628,
+  "extension_sha256": "f6884f828acda62e964a81e11749ec10ca5549ec33c97a6be25a43d4e690cf62",
+  "driver_sha256": "6a3511f0af8916ca4aeb41c56438d5f5c2d84604c6b6b652043a9e05eec13f29",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28"
+}

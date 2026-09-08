@@ -6,6 +6,7 @@ typedef enum SemloomProviderExecutionProfile
 {
 	SEMLOOM_PROVIDER_PROFILE_GOLDEN = 0,
 	SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED = 1,
+	SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP = 2,
 } SemloomProviderExecutionProfile;
 
 extern const char *semloom_gateway_socket_path(void);
