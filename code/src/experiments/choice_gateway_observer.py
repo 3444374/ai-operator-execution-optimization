@@ -114,7 +114,10 @@ def main(argv=None):
     if ledger is not None:
         observe = (
             observe_async_http_posts
-            if "--incremental-map-window-one" in gateway_args
+            if any(
+                flag in gateway_args
+                for flag in ("--incremental-map-window-one", "--incremental-map")
+            )
             else observe_http_posts
         )
         observer = observe(
@@ -143,7 +146,10 @@ def main(argv=None):
 
             stack.enter_context(observer)
             options = {}
-            if "--incremental-map-window-one" in gateway_args:
+            if any(
+                flag in gateway_args
+                for flag in ("--incremental-map-window-one", "--incremental-map")
+            ):
                 options["incremental_observer"] = lambda event: record(
                     dict(event, event="core_" + event["event"])
                 )

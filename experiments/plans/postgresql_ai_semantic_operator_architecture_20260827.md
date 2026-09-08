@@ -1,12 +1,12 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-09-07
+更新日期：2026-09-08
 状态：`current / architecture-revised / implementation-partial`
 受众：项目维护者；本文是架构、接口演进与实施依赖的唯一主入口，不是新增运行授权。
 
 本次以`codex/semfilter-and@66887463`为代码基线，吸收用户补充设计并重新核对现有源码。
 该实现及设计已合并main。已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
-开发分支已实现共同调用/结果绑定和一个Filter→一个生成Map；按需语义值、多个Map、增量SemLoom的PG接线及查询级共享资源控制尚未实现。
+开发分支已实现共同调用/结果绑定和一个Filter→一个生成Map；受限生成Map也已接入增量核心的v6多在途路径；按需语义值、多个Map、Filter/组合异步及查询级共享资源控制尚未实现。
 已有真实模型接线与小规模资源诊断不等于正式资源、语义质量或性能资格全部完成。
 具体状态看[INFRA_STATUS](../../code/INFRA_STATUS.md)，提交、测试与失败看
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)；本文不再逐段复制实验数字。
@@ -15,7 +15,7 @@
 有界的数据组织与多作业调度。新增能力应沿这三项职责扩展，不以某个AND用例或某个cost字段决定整个架构。
 近期实施与未定问题见[§9](#implementation-sequence)。A1/A2a的确定方案见
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
-[增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定与受控单流session已实现；有界异步HTTP的5请求真实smoke已通过，生产协议和PG增量桥接仍待完成。
+[增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定与受控单流session已实现；有界异步HTTP和受限生成Map的v6 PG多在途已通过[真实验证](../results/postgresql/async_window_20260908/README.md)，其它算子/组合与多活动Core会话仍待接入。
 A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
 后续共同调用与tuple绑定及setrefs原型已[通过验证](../results/postgresql/semantic_binding_20260907/README.md)。
 在此基础上，一个Filter→一个生成Map通过[PG18.3完整检查](../results/postgresql/filter_map_binding_20260907/README.md)，1910项TAP通过；仅在开发分支，本轮零真实模型请求。
@@ -285,13 +285,14 @@ CASE的分支与PG表达式自身的规划期求值规则须分别验证。当�
 接通wire v4/v5前的临时执行拒绝只属于历史切片；Map真实模型接线及小规模资源诊断已有证据，
 正式资源资格仍未完成，当前支持范围见INFRA_STATUS。
 
-当前 `AiProviderPort` 只有 `open/drive/close`，一次 `drive` 接收一项任务、返回一项 completion 或错误。
+同步兼容 `AiProviderPort` 使用 `open/drive/close`，一次 `drive` 接收一项任务、返回一项 completion 或错误。
 query begin 固定 Adapter/config 并注册 cleanup；首个非 NULL task 才真正 open，plain EXPLAIN、LIMIT 0、
 空输入与全 NULL 输入保持无连接。NULL 不消耗 sequence；输入借用至 drive 返回，completion 存活至
 下次 drive/close，PG 及时复制到明确的 tuple context。
 
 非 OK 状态终止 session，先保存中立错误、幂等关闭，再由 PG 映射 SQLSTATE；interrupt/OOM 等
-非协议错误保持 PG 原语义。没有自动重试、重连、多在途或显式 `provider.cancel`。
+非协议错误保持 PG 原语义。这些同步路径没有自动重试、重连、多在途或显式 `provider.cancel`。
+新增可选offer/receive和v6已在受限生成Map接入；字段、缓冲与验收由[PG规格§13](postgresql_call_binding_design.md#pg-async-readiness)维护。
 
 ### 6.2 版本策略
 
@@ -330,7 +331,7 @@ PG 执行线程负责 child/slot/MemoryContext 与结果推进；本项目不在
 
 `1d83c975` 的 gateway 按整会话串行，曾导致上游持有连接时下游无法进展。
 [2026-09-07切片](#semfilter-and-slice)已用有界会话线程、独立请求名额和保留的同步wire解决该问题，
-并通过两个Filter AND的PG18.3验证。下面的要求继续约束后续路径；单节点多在途仍未实现。
+并通过两个Filter AND的PG18.3验证。下面的要求继续约束后续路径；受限生成Map已实现v6单节点多在途，该新模式仍只有一个活动连接，多活动Core会话尚未实现。
 
 多节点同步执行首先需要外部 gateway 能服务多个存活会话；每个会话仍可保持单任务同步，不因此
 增加 PG accepted-prefix、乱序或批协议。当前同步服务采用已验证的有界会话线程；后续Core模式更换连接执行方式时独立验证，不重新打开已完成选型。仍满足：
@@ -804,7 +805,7 @@ A1不先生成通用registry；以A2的多个真实消费者证明公共接口�
 | 次序 | 交付与现有落点 | 前提和完成条件 |
 |---|---|---|
 | B1 旧行为表征 | [增量详细设计§1](semloom_incremental_session_design.md)已有旧基线及受控单流动态表征；未迁移策略继续走原run | 对照旧run输出、策略时机、错误/credit；全历史collector与在途账本分开 |
-| B2 增量session | 按[增量详细设计](semloom_incremental_session_design.md)实现单流非阻塞step、接受前缀、完成lease/release及Engine残余账本 | 受控核心与有界异步HTTP真实smoke已验证，FIFO选择独立于账本；生产协议及旧driver包装仍待迁移 |
+| B2 增量session | 按[增量详细设计](semloom_incremental_session_design.md)实现单流非阻塞step、接受前缀、完成lease/release及Engine残余账本 | 受控核心与有界异步HTTP真实smoke已验证，FIFO选择独立于账本；生成Map已接v6；其它算子协议及旧driver包装仍待迁移 |
 | B3 多流/多Job | 组内算子流与跨组份额、工作单元组织、路由和完成回收 | 多流不增加组权重，计算与存储分账；取消一组不破坏其他组；覆盖等待环、结果堆积、晚完成与无进展 |
 | B4a 单节点窗口1 | 版本化port/wire接单查询单算子，匹配同步reference | 对应算子语义/绑定明确、B2可用及最小残余账本；不要求完整B3公平算法 |
 | B4b 单节点扩大窗口 | PG输入/重排/结果预算与accepted-prefix接纳、消费确认 | B4a通过；生产者自身有界，测试过取/乱序/取消；不声称多节点总量已受控 |
@@ -812,7 +813,8 @@ A1不先生成通用registry；以A2的多个真实消费者证明公共接口�
 
 B1–B3可使用独立producer推进，不等待A2全部完成、Filter质量或公司系统。B4接线时必须验证受影响的
 旧Filter/Map路径；不能用反复调用同步drive、多个独立gateway或全量collect冒充增量接入。
-具体API字段与wire版本由这一步真实消费者决定，§5.3保持当前同步C接口的准确记录。
+具体API字段与wire版本由这一步真实消费者决定，§5.3保留同步C接口的兼容记录。
+生成Map已完成受限B4a/B4b，实际配置与验证见[PG规格§13](postgresql_call_binding_design.md#pg-async-readiness)；B3/B4c及Filter/组合接入仍待完成。
 
 ### 9.3 共同支撑、验收矩阵与停止条件
 
@@ -965,7 +967,7 @@ gateway、PG 接入与 SemLoom 增量使用
 |---|---|
 | 本文 | 当前架构、分工、工作包依赖、完成条件和可声称范围 |
 | [PG调用/绑定详细设计](postgresql_call_binding_design.md) | A1与A2a的范围、对象、PG接入时序、carrier/slot绑定、兼容与具体预期；共同基础及一个Filter→一个生成Map已验证，后续形状另行实施 |
-| [增量session详细设计](semloom_incremental_session_design.md) | B1静态复核与B2的输入/状态/lease/资源/后端进展合同，以及B4a–c最低依赖；受控实现已验证；真实后端、多成员提交与PG桥接待进行 |
+| [增量session详细设计](semloom_incremental_session_design.md) | B1静态复核与B2的输入/状态/lease/资源/后端进展合同，以及B4a–c最低依赖；受控核心、真实后端和受限生成Map多在途已验证；物理多成员提交与其它PG路径待进行 |
 | [四 C 专项完成记录](completed/postgresql_choice_profile_engineering.md) | 保存 choice 字段/版本/预算/资源与当时的详细实施要求；结果看证据台账，后续工作看本主计划 |
 | [四 D 生成型 Map 合同](postgresql_semmap_generation_contract.md) | 唯一定义生成型 Map 的 SQL、消息/文本语义、版本、golden vectors 与实施验收；合同定稿，不代表代码完成 |
 | [INFRA_STATUS](../../code/INFRA_STATUS.md) | 实际源码结构、接线、协议版本、测试状态及未实现能力 |

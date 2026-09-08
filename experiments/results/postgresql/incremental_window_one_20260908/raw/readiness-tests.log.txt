@@ -1,0 +1,15 @@
+test_disconnect_retains_credit_until_late_authoritative_response (test_incremental_map.IncrementalMapTests.test_disconnect_retains_credit_until_late_authoritative_response) ... ok
+test_gateway_setup_failure_closes_new_transport (test_incremental_map.IncrementalMapTests.test_gateway_setup_failure_closes_new_transport) ... ok
+test_invalid_complete_response_returns_error_and_releases_lease (test_incremental_map.IncrementalMapTests.test_invalid_complete_response_returns_error_and_releases_lease) ... ok
+test_new_execution_digest_is_distinct_and_old_values_stay_supported (test_incremental_map.IncrementalMapTests.test_new_execution_digest_is_distinct_and_old_values_stay_supported) ... ok
+test_normal_queries_share_engine_and_use_organized_task_identity (test_incremental_map.IncrementalMapTests.test_normal_queries_share_engine_and_use_organized_task_identity) ... ok
+test_pipelining_is_rejected_without_releasing_remote_credit (test_incremental_map.IncrementalMapTests.test_pipelining_is_rejected_without_releasing_remote_credit) ... ok
+test_unknown_result_quarantines_shared_engine (test_incremental_map.IncrementalMapTests.test_unknown_result_quarantines_shared_engine) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.069s
+
+OK
+
+Test source SHA256: f393dfd06f7dc109d088303536beab49b43fe907dc664f644c02906d56d75136
+Production source: unchanged from 27729f34

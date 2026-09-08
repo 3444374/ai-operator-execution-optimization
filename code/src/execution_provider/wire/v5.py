@@ -27,6 +27,7 @@ PLAN_SCHEMA_VERSION = 4
 GOLDEN_EXECUTION_ID = "semloom.provider.golden.uds.v5"
 FIXED_EXECUTION_ID = "semloom.provider.openai-compatible-fixed.uds.v5"
 INCREMENTAL_EXECUTION_ID = "semloom.provider.incremental-map-window-one.uds.v5"
+ASYNC_EXECUTION_ID = "semloom.provider.incremental-map.uds.v6"
 MAX_INFLIGHT_TASKS = 1
 
 _OPEN_VALUES = {
@@ -137,18 +138,18 @@ def physical_algorithm_digest() -> str:
 
 
 def provider_execution_digest(
-    model_id: str, *, provider_execution_id: str = GOLDEN_EXECUTION_ID
+    model_id: str, *, provider_execution_id: str = GOLDEN_EXECUTION_ID, protocol_version: int = 5
 ) -> str:
     SemanticMapPlan("validation", model_id, 1)
-    if provider_execution_id not in (
-        GOLDEN_EXECUTION_ID,
-        FIXED_EXECUTION_ID,
-        INCREMENTAL_EXECUTION_ID,
-    ):
+    allowed = {
+        5: (GOLDEN_EXECUTION_ID, FIXED_EXECUTION_ID, INCREMENTAL_EXECUTION_ID),
+        6: (ASYNC_EXECUTION_ID,),
+    }
+    if provider_execution_id not in allowed.get(protocol_version, ()):
         raise ValueError("unsupported Map execution identity")
     return hashlib.sha256(
         b"semloom-provider-execution-v5\0"
-        + struct.pack("!I", PROTOCOL_VERSION)
+        + struct.pack("!I", protocol_version)
         + _text(provider_execution_id)
         + _text(model_id)
     ).hexdigest()
@@ -212,22 +213,28 @@ def completion_evidence_digest(
     ).hexdigest()
 
 
-def _identity_fields(plan: SemanticMapPlan, execution_id: str) -> dict[str, str]:
+def _identity_fields(
+    plan: SemanticMapPlan, execution_id: str, protocol_version: int = 5
+) -> dict[str, str]:
     return {
         "semantic_spec_digest": plan.digest,
         "physical_algorithm_digest": physical_algorithm_digest(),
         "provider_execution_digest": provider_execution_digest(
-            plan.model_id, provider_execution_id=execution_id
+            plan.model_id, provider_execution_id=execution_id, protocol_version=protocol_version
         ),
     }
 
 
 def build_open_message(
-    plan: SemanticMapPlan, *, provider_execution_id: str = GOLDEN_EXECUTION_ID
+    plan: SemanticMapPlan,
+    *,
+    provider_execution_id: str = GOLDEN_EXECUTION_ID,
+    protocol_version: int = 5,
 ) -> dict:
     return {
         **_OPEN_VALUES,
-        **_identity_fields(plan, provider_execution_id),
+        "protocol_version": protocol_version,
+        **_identity_fields(plan, provider_execution_id, protocol_version),
         "provider_execution_id": provider_execution_id,
         "model_id": plan.model_id,
         "generation_constraints": plan.generation_constraints(),
@@ -240,14 +247,15 @@ def build_task_message(
     sequence: int,
     input_value: str,
     provider_execution_id: str = GOLDEN_EXECUTION_ID,
+    protocol_version: int = 5,
 ) -> dict:
     _uint64(sequence)
     messages = canonical_messages(plan.instruction, input_value)
     return {
         "type": "task",
-        "protocol_version": PROTOCOL_VERSION,
+        "protocol_version": protocol_version,
         "sequence": str(sequence),
-        **_identity_fields(plan, provider_execution_id),
+        **_identity_fields(plan, provider_execution_id, protocol_version),
         "semantic_payload_digest": semantic_payload_digest(
             semantic_spec_sha256=plan.digest,
             input_value=input_value,
@@ -267,12 +275,15 @@ def _matches(actual: object, expected: object) -> bool:
 
 
 def validate_open(
-    message: dict, *, provider_execution_id: str = GOLDEN_EXECUTION_ID
+    message: dict, *, provider_execution_id: str = GOLDEN_EXECUTION_ID, protocol_version: int = 5
 ) -> OpenContext:
     """Validate fixed values and independent identities; instruction arrives in task."""
     try:
         _require_fields(message, _OPEN_FIELDS)
-        if any(not _matches(message[key], value) for key, value in _OPEN_VALUES.items()):
+        if any(
+            not _matches(message[key], value)
+            for key, value in {**_OPEN_VALUES, "protocol_version": protocol_version}.items()
+        ):
             raise ValueError("invalid Map open values")
         if not _matches(message["provider_execution_id"], provider_execution_id):
             raise ValueError("invalid Map execution identity")
@@ -288,7 +299,11 @@ def validate_open(
             _digest_bytes(message[key])
         if message["physical_algorithm_digest"] != physical_algorithm_digest() or message[
             "provider_execution_digest"
-        ] != provider_execution_digest(plan.model_id, provider_execution_id=provider_execution_id):
+        ] != provider_execution_digest(
+            plan.model_id,
+            provider_execution_id=provider_execution_id,
+            protocol_version=protocol_version,
+        ):
             raise ValueError("invalid Map execution identity")
         return OpenContext(
             message["semantic_spec_digest"],
@@ -317,12 +332,12 @@ def decimal_uint64(value: object) -> int:
 
 
 def validate_task(
-    message: dict, *, expected_sequence: int, open_context: OpenContext
+    message: dict, *, expected_sequence: int, open_context: OpenContext, protocol_version: int = 5
 ) -> tuple[int, str]:
     """Bind actual message contents to open identity on every synchronous task."""
     try:
         _require_fields(message, _TASK_FIELDS)
-        if message["type"] != "task" or not _matches(message["protocol_version"], PROTOCOL_VERSION):
+        if message["type"] != "task" or not _matches(message["protocol_version"], protocol_version):
             raise ValueError("invalid Map task version")
         sequence = decimal_uint64(message["sequence"])
         if sequence != expected_sequence:
@@ -356,7 +371,7 @@ def validate_task(
         raise ProtocolError("INVALID_TASK") from None
 
 
-def build_error_message(code: str, *, sequence: int | None) -> dict:
+def build_error_message(code: str, *, sequence: int | None, protocol_version: int = 5) -> dict:
     if type(code) is not str or code not in ERROR_CODES:
         raise ValueError("invalid Map error code")
     if code == "OUTPUT_TOO_LARGE" and sequence is None:
@@ -365,17 +380,19 @@ def build_error_message(code: str, *, sequence: int | None) -> dict:
         _uint64(sequence)
     return {
         "type": "error",
-        "protocol_version": PROTOCOL_VERSION,
+        "protocol_version": protocol_version,
         "sequence": None if sequence is None else str(sequence),
         "code": code,
     }
 
 
-def validate_error(message: dict, *, expected_sequence: int | None) -> str:
+def validate_error(
+    message: dict, *, expected_sequence: int | None, protocol_version: int = 5
+) -> str:
     try:
         _require_fields(message, {"type", "protocol_version", "sequence", "code"})
         if message["type"] != "error" or not _matches(
-            message["protocol_version"], PROTOCOL_VERSION
+            message["protocol_version"], protocol_version
         ):
             raise ValueError("invalid Map error version")
         code = message["code"]
@@ -384,7 +401,7 @@ def validate_error(message: dict, *, expected_sequence: int | None) -> str:
                 raise ValueError("invalid Map open error sequence")
         elif decimal_uint64(message["sequence"]) != expected_sequence:
             raise ValueError("invalid Map task error sequence")
-        build_error_message(code, sequence=expected_sequence)
+        build_error_message(code, sequence=expected_sequence, protocol_version=protocol_version)
         return code
     except (KeyError, TypeError, ValueError, ProtocolError):
         raise ProtocolError("INVALID_ERROR") from None
@@ -416,7 +433,12 @@ def _check_model_usage(context: OpenContext, completion: Completion) -> None:
 
 
 def build_completion_message(
-    context: OpenContext, *, sequence: int, payload_digest: str, completion: Completion
+    context: OpenContext,
+    *,
+    sequence: int,
+    payload_digest: str,
+    completion: Completion,
+    protocol_version: int = 5,
 ) -> dict:
     """Preserve valid non-stop states for PG policy; do not send oversized text."""
     try:
@@ -429,7 +451,7 @@ def build_completion_message(
     evidence = _completion_evidence(context, payload_digest, sequence, completion)
     return {
         "type": "completion",
-        "protocol_version": PROTOCOL_VERSION,
+        "protocol_version": protocol_version,
         "sequence": str(sequence),
         "semantic_spec_digest": context.semantic_spec_digest,
         "physical_algorithm_digest": context.physical_algorithm_digest,
@@ -445,13 +467,18 @@ def build_completion_message(
 
 
 def validate_completion(
-    message: dict, *, expected_sequence: int, payload_digest: str, open_context: OpenContext
+    message: dict,
+    *,
+    expected_sequence: int,
+    payload_digest: str,
+    open_context: OpenContext,
+    protocol_version: int = 5,
 ) -> Completion:
     """Decode evidence-bound values; only the operator applies stop-only semantics."""
     try:
         _require_fields(message, _COMPLETION_FIELDS)
         if message["type"] != "completion" or not _matches(
-            message["protocol_version"], PROTOCOL_VERSION
+            message["protocol_version"], protocol_version
         ):
             raise ValueError("invalid Map completion version")
         sequence = decimal_uint64(message["sequence"])

@@ -28,6 +28,7 @@ typedef struct SemloomUdsProviderConfig
 	char *socket_path;
 	const char *semantic_execution_id;
 	uint32 protocol_version;
+	uint32 max_inflight_tasks;
 } SemloomUdsProviderConfig;
 
 struct AiProviderSession
@@ -41,6 +42,8 @@ struct AiProviderSession
 	SemloomWireSemanticIdentity semantic_identity;
 	MemoryContext scratch_context;
 	MemoryContext completion_context;
+	AiPreparedTask pending[AI_PROVIDER_MAX_WINDOW_TASKS];
+	char payload_digests[AI_PROVIDER_MAX_WINDOW_TASKS][AI_PROVIDER_SHA256_HEX_LENGTH];
 };
 
 static AiProviderStatus semloom_uds_open(const void *config,
@@ -60,6 +63,14 @@ static AiProviderStatus semloom_uds_connect(AiProviderSession *session,
 static void semloom_uds_close(AiProviderSession *session);
 static void semloom_uds_release_local(AiProviderSession *session);
 static AiByteSlice semloom_uds_copy_slice(AiByteSlice source);
+
+static AiProviderStatus semloom_uds_exchange(AiProviderSession *, const AiPreparedTask *, AiCompletion *, bool *, AiProviderError *);
+static AiProviderStatus semloom_uds_offer(AiProviderSession *session, const AiPreparedTask *task, bool *accepted, AiProviderError *error)
+{ return semloom_uds_exchange(session, task, NULL, accepted, error); }
+static AiProviderStatus semloom_uds_receive(AiProviderSession *session, AiCompletion *completion, AiProviderError *error)
+{ return semloom_uds_exchange(session, NULL, completion, NULL, error); }
+
+static AiProviderStatus semloom_uds_validate_task(AiProviderSession *, const AiPreparedTask *, AiProviderError *);
 
 static const AiProviderOps semloom_uds_recording_ops = {
 	.adapter_name = SEMLOOM_UDS_RECORDING_PROVIDER_NAME,
@@ -89,6 +100,14 @@ static const AiProviderOps semloom_uds_incremental_ops = {
 	.close = semloom_uds_close,
 };
 
+static const AiProviderOps semloom_uds_async_ops = {
+	.adapter_name = "semloom_incremental_map",
+	.open = semloom_uds_open,
+	.offer = semloom_uds_offer,
+	.receive = semloom_uds_receive,
+	.close = semloom_uds_close,
+};
+
 void
 semloom_uds_provider_select(MemoryContext owner_context,
 									const char *socket_path,
@@ -113,6 +132,16 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	{
 		provider->ops = &semloom_uds_recording_ops;
 		config->semantic_execution_id = NULL;
+	}
+	else if (profile == SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP)
+	{
+		if (!semloom_provider_spec_is_generate_map(spec))
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("incremental-map supports generated Map only")));
+		provider->ops = &semloom_uds_async_ops;
+		provider->max_inflight_tasks = semloom_provider_window_tasks();
+		config->max_inflight_tasks = provider->max_inflight_tasks;
+		config->protocol_version = 6;
+		config->semantic_execution_id = "semloom.provider.incremental-map.uds.v6";
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP)
 	{
@@ -209,6 +238,8 @@ semloom_uds_open(const void *config_value,
 		semloom_wire_v2_identity_init(&session->open_spec,
 										 SEMLOOM_UDS_RECORDING_EXECUTION_ID,
 										 &session->identity);
+	if (config->protocol_version == 6)
+		session->semantic_identity.max_inflight_tasks = config->max_inflight_tasks;
 	return AI_PROVIDER_STATUS_OK;
 }
 
@@ -217,12 +248,17 @@ semloom_uds_drive(AiProviderSession *session,
 				  const AiPreparedTask *task,
 				  AiCompletion *completion,
 				  AiProviderError *error)
+{ return semloom_uds_exchange(session, task, completion, NULL, error); }
+
+static AiProviderStatus
+semloom_uds_exchange(AiProviderSession *session, const AiPreparedTask *task,
+	AiCompletion *completion, bool *accepted, AiProviderError *error)
 {
 	MemoryContext previous_context;
 	AiCompletion scratch_completion = {0};
 	AiProviderStatus status = AI_PROVIDER_STATUS_ERROR;
 
-	if (session == NULL || session->closed || task == NULL || completion == NULL ||
+	if (session == NULL || session->closed || (completion == NULL && accepted == NULL) ||
 		error == NULL)
 	{
 		if (error != NULL)
@@ -240,11 +276,51 @@ semloom_uds_drive(AiProviderSession *session,
 	previous_context = MemoryContextSwitchTo(session->scratch_context);
 	PG_TRY();
 	{
-		status = semloom_uds_drive_internal(session,
+		if (session->config->protocol_version == 6)
+		{
+			uint32 index;
+			status = accepted != NULL ? semloom_uds_validate_task(session, task, error) : AI_PROVIDER_STATUS_OK;
+			if (status == AI_PROVIDER_STATUS_OK && session->socket_fd == PGINVALID_SOCKET)
+				status = semloom_uds_connect(session, error);
+			if (status == AI_PROVIDER_STATUS_OK && accepted != NULL)
+			{
+				for (index = 0; index < session->config->max_inflight_tasks; index++)
+					if (!session->pending[index].semantic_payload_digest.length) break;
+				if (index == session->config->max_inflight_tasks)
+					*accepted = false;
+				else
+				{
+					status = semloom_wire_semantic_offer(session->socket_fd, task, &session->semantic_identity, accepted, error);
+					if (status == AI_PROVIDER_STATUS_OK && *accepted)
+					{
+						memcpy(session->payload_digests[index], task->semantic_payload_digest.data, AI_PROVIDER_SHA256_HEX_LENGTH);
+						session->pending[index].sequence = task->sequence;
+						session->pending[index].semantic_payload_digest = (AiByteSlice) {
+							(const uint8 *) session->payload_digests[index], AI_PROVIDER_SHA256_HEX_LENGTH};
+					}
+				}
+			}
+			else if (status == AI_PROVIDER_STATUS_OK)
+			{
+				const char *poll = "{\"type\":\"poll\",\"protocol_version\":6}";
+				status = semloom_wire_common_send_frame(session->socket_fd, poll, strlen(poll), error);
+				if (status == AI_PROVIDER_STATUS_OK)
+					status = semloom_wire_semantic_collect(session->socket_fd, &session->open_spec,
+						session->pending, session->config->max_inflight_tasks,
+						&session->semantic_identity, &scratch_completion, error);
+				if (status == AI_PROVIDER_STATUS_OK)
+					for (index = 0; index < session->config->max_inflight_tasks; index++)
+						if (session->pending[index].sequence == scratch_completion.sequence &&
+							session->pending[index].semantic_payload_digest.length)
+							session->pending[index].semantic_payload_digest.length = 0;
+			}
+		}
+		else
+			status = semloom_uds_drive_internal(session,
 											 task,
 											 &scratch_completion,
 											 error);
-		if (status == AI_PROVIDER_STATUS_OK)
+		if (status == AI_PROVIDER_STATUS_OK && completion != NULL)
 		{
 			uint8 *output = NULL;
 			uint8 *response_model = NULL;
@@ -306,13 +382,13 @@ semloom_uds_drive(AiProviderSession *session,
 }
 
 static AiProviderStatus
-semloom_uds_drive_internal(AiProviderSession *session,
-						   const AiPreparedTask *task,
-						   AiCompletion *completion,
-						   AiProviderError *error)
+semloom_uds_validate_task(AiProviderSession *session, const AiPreparedTask *task, AiProviderError *error)
 {
-	AiProviderStatus status;
-
+	if (task == NULL)
+	{
+		semloom_provider_error_set(error, AI_PROVIDER_ERROR_TASK_MISMATCH, 0, 0, NULL);
+		return AI_PROVIDER_STATUS_ERROR;
+	}
 	if (task->is_null)
 	{
 		semloom_provider_error_set(error,
@@ -334,7 +410,7 @@ semloom_uds_drive_internal(AiProviderSession *session,
 	if ((session->config->protocol_version == 2 &&
 		 task->input.length > SEMLOOM_WIRE_V2_MAX_INPUT_BYTES) ||
 		(session->config->protocol_version != 2 &&
-		 task->input.length > (session->config->protocol_version == 5 ?
+		 task->input.length > (session->config->protocol_version >= 5 ?
 			session->open_spec.max_input_bytes : SEMLOOM_WIRE_V3_MAX_INPUT_BYTES)))
 	{
 		semloom_provider_error_set(error,
@@ -357,13 +433,26 @@ semloom_uds_drive_internal(AiProviderSession *session,
 									   "SemLoom UDS recording provider requires UTF8 database encoding");
 		return AI_PROVIDER_STATUS_ERROR;
 	}
+	return AI_PROVIDER_STATUS_OK;
+}
+
+static AiProviderStatus
+semloom_uds_drive_internal(AiProviderSession *session,
+						   const AiPreparedTask *task,
+						   AiCompletion *completion,
+						   AiProviderError *error)
+{
+	AiProviderStatus status;
+
+	status = semloom_uds_validate_task(session, task, error);
+	if (status != AI_PROVIDER_STATUS_OK) return status;
 	if (session->socket_fd == PGINVALID_SOCKET)
 	{
 		status = semloom_uds_connect(session, error);
 		if (status != AI_PROVIDER_STATUS_OK)
 			return status;
 	}
-	if (session->config->protocol_version == 5)
+	if (session->config->protocol_version >= 5)
 		return semloom_wire_semantic_drive(session->socket_fd, &session->open_spec,
 			task, &session->semantic_identity, completion, error);
 	if (session->config->protocol_version == 4)
@@ -481,7 +570,7 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 		return AI_PROVIDER_STATUS_ERROR;
 	}
 
-	if (session->config->protocol_version == 5)
+	if (session->config->protocol_version >= 5)
 		return semloom_wire_semantic_open(session->socket_fd, &session->open_spec,
 			&session->semantic_identity, error);
 	if (session->config->protocol_version == 4)

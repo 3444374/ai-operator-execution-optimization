@@ -1,0 +1,33 @@
+{
+  "snapshot": {
+    "passed": true,
+    "rows": [
+      [
+        1,
+        "mapped:cancel"
+      ],
+      [
+        2,
+        "mapped:two"
+      ],
+      [
+        3,
+        "mapped:old"
+      ]
+    ],
+    "concurrent_update_and_insert": true
+  },
+  "rls": {
+    "passed": true,
+    "visible_rows": 1,
+    "requests": 1
+  },
+  "permissions": {
+    "passed": true,
+    "sqlstate": "42501",
+    "requests": 0
+  },
+  "status": "passed",
+  "model_requests": 0,
+  "controlled_backend_requests": 4
+}

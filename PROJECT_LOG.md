@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-09-08 PG生成Map有界多在途实现
+
+- 新v6 provider offer/receive分离接纳和完成；复用Map消息校验、组织器、SessionEngine和异步HTTP，不修改PG内核。
+- PG保留行/消息的所有权并关联乱序结果；简单输入窗口可配置，未验证表达式显示窗口1，保留旧同步路径。
+- 修复开发过程中遗漏的输入副本和旧协议错误文本兼容；首轮编译/测试失败与修正结果均保留。
+- [验证](experiments/results/postgresql/async_window_20260908/README.md)：Linux199项检查、PG18.3回归1及1958项TAP；额外v6权限/RLS/快照通过。
+- 独立12次真实请求证明同一查询HTTP峰值2、SELECT/INSERT一致、回滚/取消/恢复与资源归零；633份文件一致，测试服务已停止。
+- Filter/组合异步、多活动session和GPU显存管理未纳入本次完成范围。
+
+## 2026-09-08 PG多在途接入前核对
+
+- 确认当前port仍为阻塞drive，v5与增量桥接仅允许窗口1；新增发送下一帧的受控反例，本地/Linux各7项桥接测试通过。
+- 反例同时核对迟到响应回收与后续连接恢复；未改生产行为，未启动PG/模型，没有新增真实请求。
+- 在[PG绑定规格§13](experiments/plans/postgresql_call_binding_design.md#pg-async-readiness)记录新协议、PG行槽寿命、流控和提前求值的必要工作；当前不能直接调大窗口。
+- [检查记录](experiments/results/postgresql/incremental_window_one_20260908/README.md#async-readiness)与此前窗口1真实结果分别标记。
+
 ## 2026-09-08 PG生成Map接入增量核心（窗口1）
 
 - 新provider profile/digest区分增量路径与旧同步参考；PG继续使用v5窗口1，网关单控制线程拥有一个Engine。

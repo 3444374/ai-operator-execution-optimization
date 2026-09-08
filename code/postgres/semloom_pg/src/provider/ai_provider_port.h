@@ -1,5 +1,5 @@
 /*
- * Provider-neutral synchronous execution contract.
+ * Provider-neutral synchronous and incremental execution contract.
  *
  * Inputs are fixed-width open specs and borrowed task bytes; outputs are
  * session-owned completions or caller-owned errors.  This header passes its
@@ -11,6 +11,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#define AI_PROVIDER_MAX_WINDOW_TASKS 64
 
 #define AI_PROVIDER_ERROR_DETAIL_CAPACITY 160
 #define AI_PROVIDER_SHA256_HEX_LENGTH 64
@@ -162,6 +164,10 @@ typedef struct AiProviderOps
 							  const AiPreparedTask *task,
 							  AiCompletion *completion,
 							  AiProviderError *error);
+	/* Optional incremental operations. Offer borrows bytes through acknowledgement;
+	 * receive may return any accepted sequence. Neither operation retries a task. */
+	AiProviderStatus (*offer)(AiProviderSession *, const AiPreparedTask *, bool *, AiProviderError *);
+	AiProviderStatus (*receive)(AiProviderSession *, AiCompletion *, AiProviderError *);
 	void (*close)(AiProviderSession *session);
 } AiProviderOps;
 
@@ -170,9 +176,14 @@ typedef struct AiProvider
 	const AiProviderOps *ops;
 	const void *config;
 	uint32_t max_input_bytes;
+	uint32_t max_inflight_tasks;
 } AiProvider;
 
 /*
+ * Incremental offer input is borrowed until its acknowledgement returns. Only
+ * accepted tasks may complete; a zero acceptance permits resubmitting that item.
+ * receive may wait for one completion and uses the same cancellable transport.
+ * Completion bytes survive until the next provider operation or close.
  * Task input is borrowed until drive returns.  Completion output is owned by
  * the session and remains valid until the next drive or close.  SQL NULL is
  * represented only by is_null; an empty non-NULL value has length zero.  Any

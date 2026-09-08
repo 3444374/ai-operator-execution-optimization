@@ -40,7 +40,10 @@ class IncrementalMapAdapter:
     before accepting another connection; unknown work quarantines this engine.
     """
 
-    def __init__(self, config: FixedModelConfig, *, execute=None, observer=None):
+    def __init__(self, config: FixedModelConfig, *, execute=None, observer=None, max_tasks=1):
+        if type(max_tasks) is not int or not 1 <= max_tasks <= 64:
+            raise ValueError("invalid incremental task capacity")
+        self.max_tasks = max_tasks
         self.config = config
         self.model_id = config.model_id
         self._client = None
@@ -53,18 +56,18 @@ class IncrementalMapAdapter:
         self._stopping: Callable[[], bool] = lambda: False
         self._backend = BoundedAsyncBackend(
             execute or self._execute,
-            max_tasks=1,
+            max_tasks=max_tasks,
             notify=lambda: self.engine.wake.notify(),
             finalize=self._finalize,
         )
         timeout = config.timeout_ms / 1000 + 1
         limits = SessionLimits(
-            1,
-            MAX_FRAME_BYTES,
-            MAX_MODEL_RESPONSE_BYTES,
-            1,
-            1,
-            1,
+            max_tasks,
+            max_tasks * MAX_FRAME_BYTES,
+            max_tasks * MAX_MODEL_RESPONSE_BYTES,
+            max_tasks,
+            max_tasks,
+            max_tasks,
             MAX_FRAME_BYTES,
             MAX_MODEL_RESPONSE_BYTES,
             1024,
@@ -92,11 +95,11 @@ class IncrementalMapAdapter:
             limits,
             self._backend,
             SessionPolicies(
-                StaticAdmissionController(1),
+                StaticAdmissionController(max_tasks),
                 RoundRobinEndpointRouter(),
                 topology,
                 "default",
-                organize=WorkWindowOrganizer(1, 1),
+                organize=WorkWindowOrganizer(max_tasks, max_tasks),
             ),
             sink=self._observe,
         )
@@ -124,8 +127,12 @@ class IncrementalMapAdapter:
                 trust_env=False,
                 timeout=None,
                 follow_redirects=False,
-                limits=httpx.Limits(max_connections=1, max_keepalive_connections=1),
+                limits=httpx.Limits(
+                    max_connections=self.max_tasks, max_keepalive_connections=self.max_tasks
+                ),
             )
+        if self._observer:
+            self._observer({"event": "http_started", "key": asdict(request.key)})
         try:
             # Total deadline includes DNS, connection setup and bounded response reads.
             async with asyncio.timeout(self.config.timeout_ms / 1000):
@@ -154,6 +161,9 @@ class IncrementalMapAdapter:
             # Disconnecting HTTP does not prove that the model has stopped computing.
             self._transport_error = "MODEL_UNAVAILABLE"
             raise
+        finally:
+            if self._observer:
+                self._observer({"event": "http_finished", "key": asdict(request.key)})
 
     async def _finalize(self):
         if self._client is not None:
@@ -221,26 +231,7 @@ class IncrementalMapAdapter:
             raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
         if request.generation_profile is not None:
             raise CompletionAdapterError("MODEL_REQUEST_REJECTED")
-        payload = json.dumps(
-            {
-                "model": request.model_id,
-                "messages": list(request.canonical_messages),
-                **request.generation_constraints,
-            },
-            ensure_ascii=False,
-            separators=(",", ":"),
-        ).encode()
-        info = TaskInfo(
-            "pg-map",
-            self._sequence,
-            "generate",
-            WorkDescriptor(
-                (StageWork("model", 1, "work_units"),),
-                "model",
-                "window-one-request",
-            ),
-        )
-        task = OfferedTask(self._sequence, payload, 1, MAX_MODEL_RESPONSE_BYTES, info=info)
+        task = self.prepare_task(request, self._sequence)
         if self._peer_stopped():
             raise ConnectionResetError("provider peer stopped")
         if self._session.offer((task,)).accepted_prefix_count != 1:
@@ -269,6 +260,28 @@ class IncrementalMapAdapter:
                     self._session.release((delivery.lease_id,))
             if not result.has_immediate_work:
                 self.engine.wake.wait(result.generation, 0.01)
+
+    def prepare_task(self, request: CompletionRequest, sequence: int) -> OfferedTask:
+        payload = json.dumps(
+            {
+                "model": request.model_id,
+                "messages": list(request.canonical_messages),
+                **request.generation_constraints,
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode()
+        info = TaskInfo(
+            "pg-map",
+            sequence,
+            "generate",
+            WorkDescriptor(
+                (StageWork("model", 1, "work_units"),),
+                "model",
+                "request-count",
+            ),
+        )
+        return OfferedTask(sequence, payload, 1, MAX_MODEL_RESPONSE_BYTES, info=info)
 
     def request_stop(self):
         if self._connection is not None:

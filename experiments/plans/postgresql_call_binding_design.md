@@ -282,3 +282,74 @@ v3 SELECT、v4 SELECT、v4 INSERT各4次，总预算12次，由现有持久Attem
 
 实际结果：上述12次请求全部通过；[真实组合记录](../results/postgresql/filter_map_real_20260908/README.md)
 保存三阶段结果、独立写入审计、请求账本及清理。没有借此声称新session的PG桥接已完成。
+
+
+<a id="pg-async-readiness"></a>
+
+## 13. PG多在途接入前核对（2026-09-08，待实现）
+
+源码基线`27729f34`。生成Map窗口1已接入增量核心，但不是PG多在途。受控反例确认：
+等待第一项完成期间发送下一帧会终止当前会话，远端额度仍正确保留到完成；
+[本地/Linux各7项验证](../results/postgresql/incremental_window_one_20260908/README.md#async-readiness)
+不改变此前真实模型只证明窗口1的范围。本轮没有直接调大窗口或修改生产接口。
+
+复用主设计§8.7–8.8已核对的连接寿命/执行额度分工及公共模型客户端原则；未重新读取或复制公司材料。
+自有源码具体落点和需要补齐的行为如下。这里是工程接入要求，不是新调度算法或性能结论。
+
+| 位置与当前事实 | 接入前必须完成的改动及验证 |
+|---|---|
+| `ai_provider_port.h:AiProviderOps.drive`借用任务直至单项完成 | 独立增量操作应区分提交、接纳确认、收取完成与关闭；保留同步实现，不能将阻塞drive装进PG后台线程。测试部分接纳、零接纳、重复结果与提交后断连 |
+| v5宣告`MAX_INFLIGHT_TASKS=1`，C握手也检查该值 | 新能力独立版本化；任务身份绑定请求摘要，接纳确认与结果身份分别检查，拒绝未知/重复序号。禁止只放宽常量而继续使用单项状态机 |
+| `IncrementalMapAdapter._peer_stopped`将任何可读事件视为停止 | 新桥接需要区分完整/部分输入帧、EOF和停止；在有界收帧、core推进、完成发送间轮转。慢读写客户端不能阻塞取消，也不能饿死已接纳任务 |
+| `sem_pump_next`只持有一个借用child slot及每tuple context | PG保留有界行槽与独立消息/结果寿命，以序号重排输出；接纳后才能释放对应提交副本，输出被消费后才释放行/结果。按行数和bytes共同限制，超大透传列不能绕过内存上限 |
+| Map在`UPPERREL_FINAL`包装包含LIMIT的child path | 继续由PG执行LIMIT/OFFSET；另测VOLATILE、会报错输入、游标暂停、INSERT约束失败，不能推断任意提前求值都等价。未验证形状保留窗口1并明确展示选择原因 |
+
+实施顺序：先完成新协议/桥接的受控多在途消费者，再接PG的受限生成Map路径，窗口1对比后扩大为2。
+输入接纳上限、已完成但未消费的结果及在途模型请求使用不同计数；PG缓冲与core预留明确归属，
+core继续复用已有组织器、策略和容量账本，不能每个连接新建一份完整服务额度。
+SQL线程独占ExprState/Datum/slot操作；Filter和组合路径不能仅因共享pump被自动切换。
+
+接入的验收必须实际包含PG→新协议→同一core→真实backend→PG：观察到两个模型请求同时在途、
+逐行结果/摘要关联及输出顺序一致，并覆盖NULL、LIMIT 0/1、权限、快照、取消、事务错误和后续查询恢复。
+逆序完成、部分接纳、慢读写、迟到响应和未知远端状态使用受控backend精确触发；真实模型不替代这些反例。
+新真实运行另记固定预算、源码/模型身份及清理记录，不把窗口1的九次请求算入多在途验证。
+
+
+### 13.1 多在途实施切片（已验证受限生成Map）
+
+本轮从核查进入代码实现。v6复用Map消息/摘要语义，provider身份和wire版本独立；task RPC返回
+`accepted_prefix_count`为0或1，poll RPC返回任一已接纳任务的完成。同一连接每次等待一个RPC回复，
+但提交确认不等待模型，所以允许多个模型请求在途。没有把多个任务串行等完再拼成批返回。
+网关配置`--max-active-requests`给出服务窗口，PG配置`provider_window_tasks`不得超过握手公布的上限；
+两者范围1–64，默认PG窗口2，数值是可配置工程上限，不是某台GPU的校准结论。
+
+PG增加可选offer/receive操作；原drive和v2–v5继续回归。数据组织、提交及物理执行仍复用同一Core。
+PG仅保存有界行槽、消息与关联状态，使用原CustomScan回调、MemoryContext、child plan和可中断socket；
+不使用PG后台线程。输入顺序是当前Map语义的要求，以窗口内序号关联恢复，不增加SQL排序节点。
+当前先对无qual且target仅Var/Const的普通child开启多行窗口，其它输入表达式显示窗口1；不扩大Filter/组合。
+`provider_window_bytes`按窗口大小划分每行预留，行上下文分配加输出预留超限时明确报54000。
+该值不代表整个PG/backend RSS上限；暂存单个child值的峰值仍依赖PG原节点，不声称能在读取前限制任意TOAST值。
+
+核对用户补充的[CustomScan回调](https://www.postgresql.org/docs/18/custom-scan-execution.html)与
+[postgres_fdw异步范围](https://www.postgresql.org/docs/18/postgres-fdw.html#POSTGRES-FDW-OPTIONS-ASYNCHRONOUS-EXECUTION)：
+复用PG已有生命周期设施，网关接纳/完成适配仍由项目负责；没有证据要求修改PG内核。
+
+受控验证先检查两个在途、逆序完成、满窗口零接纳/释放后重试未接纳项、迟到回收；PG用例检查
+SELECT/INSERT/NULL、LIMIT 0/1、有副作用输入退回窗口1、取消及后续查询恢复。共享C解码调整必须保留旧版
+精确错误文本。初次构建的缩进告警及首轮回归中的旧错误文本差异保留，修正后重跑，不放宽断言。
+PG新用例恢复查询起初错误假定UPDATE后无ORDER BY的首行不变，改用id谓词定位；该失败不算结果重排缺陷。
+
+真实模型检查另设最多12次POST：同步SELECT两行2次、v6 SELECT两行2次、v6 INSERT两行2次、
+约束失败INSERT最多2次、取消两行长生成最多2次、恢复单行1次、LIMIT单行1次。
+使用独立账本和已核验7B模型、单GPU、temperature0，正常输出128tokens/取消256tokens；请求不重试，
+不额外warm-up、不下载。必须观察同一PG查询的两个core请求同时在途，并核对原始模型完成与SQL结果、
+返回模型/token上限、事务回滚、57014取消和资源归零。失败立即停止并保留本轮记录，不能自动追加预算。
+沿用独立控制器的源码/模型哈希、core/text preflight、端口及进程清理，不作性能或质量结论。
+
+
+本切片最终[验证](../results/postgresql/async_window_20260908/README.md)：Linux199项Python检查、PG18.3严格构建、
+回归1及1958项TAP通过。额外v6检查确认并发修改不改变当前快照、RLS只交出可见行、权限撤销在派发前拒绝。
+独立12次真实请求通过，同一查询的HTTP峰值2，十个增量任务/六个会话资源归零，模型及测试服务退出。
+任务先接纳、poll再让组织器看到完整窗口；不在每个offer后立即把窗口切成单成员。结果恢复以现有Map
+输入顺序要求为依据。输入字节在child再次取数前复制到持有行上下文，避免借用地址跨行存活。
+633份源码/测试哈希与实际运行一致；后续仍按本节所列未支持形状逐条扩展，不宣称全部PG路径异步完成。

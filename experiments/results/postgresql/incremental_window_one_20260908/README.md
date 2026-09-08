@@ -127,3 +127,25 @@ correlation/reordering, PG-owned buffering, and separate checks of LIMIT, expres
 snapshots and cancellation. Multiple active sessions, shared query groups, multi-member physical
 requests, preparation-memory accounting, optimized methods and performance/quality experiments are
 not completed here. A scalar work estimate remains a request quota, not measured GPU memory.
+
+
+<a id="async-readiness"></a>
+
+## Follow-up: can PG submit a second task? (2026-09-08)
+
+Source review at `27729f34` found that the PG port still has only blocking `drive`, v5
+advertises one in-flight task, and the bridge rejects incoming bytes while awaiting a result.
+A new controlled test sends the beginning of another frame while the first backend request is
+pending. The bridge rejects it, retains the active request credit, drains the late response,
+and serves the next connection using the same engine. This confirms the current restriction;
+it does not establish a production defect or multi-in-flight support.
+
+The bridge suite passes 7 tests locally and 7 on Linux; the new test reuses the disconnect
+lifecycle check. Linux core preflight passed. [Test output and test source identity](raw/readiness-tests.log.txt)
+are separate from the earlier 628-file real-model manifest; production files are unchanged.
+The initial local invocation used the wrong Python module prefix and failed before executing tests;
+the corrected invocation is `PYTHONPATH=code python3 -m unittest tests.execution_provider.test_incremental_map -v`.
+A standalone `ruff` executable was unavailable on the server, so that check was not completed.
+No PG or model service was started in this follow-up, and there were zero new model requests.
+The earlier nine requests prove window one only. The required PG work is recorded in
+[the binding design](../../../plans/postgresql_call_binding_design.md#pg-async-readiness).

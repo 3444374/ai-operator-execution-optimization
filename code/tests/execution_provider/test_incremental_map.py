@@ -74,6 +74,12 @@ class IncrementalMapTests(unittest.TestCase):
             self.assertTrue(adapter.close())
 
     def test_disconnect_retains_credit_until_late_authoritative_response(self):
+        self._assert_interrupted_peer_drains(pipelined=False)
+
+    def test_pipelining_is_rejected_without_releasing_remote_credit(self):
+        self._assert_interrupted_peer_drains(pipelined=True)
+
+    def _assert_interrupted_peer_drains(self, *, pipelined):
         started = threading.Event()
         allow_response = threading.Event()
 
@@ -91,7 +97,11 @@ class IncrementalMapTests(unittest.TestCase):
 
         def cancel_peer():
             started.wait(2)
-            peer.close()
+            if pipelined:
+                # Even a partial next frame is forbidden while v5 awaits a result.
+                peer.sendall(b"\x00")
+            else:
+                peer.close()
 
         worker = threading.Thread(target=cancel_peer)
         worker.start()
@@ -118,6 +128,7 @@ class IncrementalMapTests(unittest.TestCase):
         finally:
             allow_response.set()
             worker.join(2)
+            peer.close()
             server.close()
             adapter.close()
 

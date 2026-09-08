@@ -9,7 +9,7 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-当前状态（2026-09-07）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
+前序基线（2026-09-07）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
 错误和结果生命周期，并通过可替换 adapter 调用外部执行器。当前 planner 还会把 recording reference
@@ -39,8 +39,8 @@ NULL 零调用、结果与写回均通过。main中的两个算子各自同步�
 [单流增量执行核心](experiments/results/scheduling/incremental_session_20260908/README.md)已完成受控实现；复用已有提交与路由策略，
 [方法续体接口](code/src/semantic_methods/README.md)为后续多阶段算法提供逐行接入方式；
 [组织窗口已接入](experiments/results/scheduling/organized_window_20260908/README.md)，批次展开为各自计费的独立请求；
-为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过；生成Map已完成[PG窗口1接入](experiments/results/postgresql/incremental_window_one_20260908/README.md)，
-PG多请求在途和单请求多成员仍待实现。
+为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过；生成Map已完成[PG有界多在途接入](experiments/results/postgresql/async_window_20260908/README.md)，
+同一PG查询的两个模型请求已验证可同时在途；Filter/组合异步、多活动会话和单请求多成员仍待实现。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

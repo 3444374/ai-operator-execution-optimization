@@ -1,0 +1,23 @@
+{"event": "submitted", "key": {"session_id": 0, "sequence": 0}, "usage": {"held_tasks": 2, "input_bytes": 351, "result_bytes": 2097152, "active_requests": 1, "active_work": 1}}
+{"event": "model_start", "sequence": 0, "input": "cancel"}
+{"event": "submitted", "key": {"session_id": 0, "sequence": 1}, "usage": {"held_tasks": 2, "input_bytes": 351, "result_bytes": 2097152, "active_requests": 2, "active_work": 2}}
+{"event": "model_start", "sequence": 1, "input": "two"}
+{"event": "model_end", "sequence": 1, "input": "two"}
+{"event": "terminal", "key": {"session_id": 0, "sequence": 1}, "usage": {"held_tasks": 2, "input_bytes": 177, "result_bytes": 2097152, "active_requests": 1, "active_work": 1}}
+{"event": "map_completion", "sequence": 1, "payload_digest": "ef355f8e9ccf9d8988fb762c83656b3105ed081da08b806351150dfd44333ae4", "raw_output": "mapped:two", "response_model_id": "model", "prompt_tokens": 2, "output_tokens": 1, "finish_reason": "stop"}
+{"event": "model_end", "sequence": 0, "input": "cancel"}
+{"event": "terminal", "key": {"session_id": 0, "sequence": 0}, "usage": {"held_tasks": 1, "input_bytes": 0, "result_bytes": 1048576, "active_requests": 0, "active_work": 0}}
+{"event": "map_completion", "sequence": 0, "payload_digest": "61a143111982e774c5250c115180ffc8761bc188770c099c64c2915381077bf4", "raw_output": "mapped:cancel", "response_model_id": "model", "prompt_tokens": 2, "output_tokens": 1, "finish_reason": "stop"}
+{"event": "submitted", "key": {"session_id": 0, "sequence": 2}, "usage": {"held_tasks": 1, "input_bytes": 174, "result_bytes": 1048576, "active_requests": 1, "active_work": 1}}
+{"event": "model_start", "sequence": 2, "input": "old"}
+{"event": "model_end", "sequence": 2, "input": "old"}
+{"event": "terminal", "key": {"session_id": 0, "sequence": 2}, "usage": {"held_tasks": 1, "input_bytes": 0, "result_bytes": 1048576, "active_requests": 0, "active_work": 0}}
+{"event": "map_completion", "sequence": 2, "payload_digest": "a974144aa39bfec6bc3c4437fd5f7301fe715edd8f3689107e390911a7637d5d", "raw_output": "mapped:old", "response_model_id": "model", "prompt_tokens": 2, "output_tokens": 1, "finish_reason": "stop"}
+{"event": "drained", "engine_session_id": 0, "usage": {"held_tasks": 0, "input_bytes": 0, "result_bytes": 0, "active_requests": 0, "active_work": 0}}
+{"event": "submitted", "key": {"session_id": 1, "sequence": 0}, "usage": {"held_tasks": 1, "input_bytes": 174, "result_bytes": 1048576, "active_requests": 1, "active_work": 1}}
+{"event": "model_start", "sequence": 0, "input": "two"}
+{"event": "model_end", "sequence": 0, "input": "two"}
+{"event": "terminal", "key": {"session_id": 1, "sequence": 0}, "usage": {"held_tasks": 1, "input_bytes": 0, "result_bytes": 1048576, "active_requests": 0, "active_work": 0}}
+{"event": "map_completion", "sequence": 0, "payload_digest": "ef355f8e9ccf9d8988fb762c83656b3105ed081da08b806351150dfd44333ae4", "raw_output": "mapped:two", "response_model_id": "model", "prompt_tokens": 2, "output_tokens": 1, "finish_reason": "stop"}
+{"event": "drained", "engine_session_id": 1, "usage": {"held_tasks": 0, "input_bytes": 0, "result_bytes": 0, "active_requests": 0, "active_work": 0}}
+{"event": "transport_closed", "closed": true, "usage": {"held_tasks": 0, "input_bytes": 0, "result_bytes": 0, "active_requests": 0, "active_work": 0}}

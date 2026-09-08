@@ -1,0 +1,79 @@
+"""Additional PG-owned ACL, RLS and snapshot checks on the verified v6 binary."""
+import json
+import os
+from pathlib import Path
+import pwd
+import sys
+import threading
+import time
+import psycopg
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster, owned_child_process, wait_for_path
+
+source=Path('<check-root>/source')
+root=source.parent/'lifecycle'
+root.mkdir()
+user=pwd.getpwuid(os.getuid())
+log=root/'events.jsonl'
+def events():return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+def until(predicate):
+ deadline=time.monotonic()+5
+ while not predicate():
+  assert time.monotonic()<deadline
+  time.sleep(.005)
+results={}
+with isolated_pg18_cluster(Path('<pg-prefix>'),root,user,port=60538) as conn:
+ conn.execute('CREATE TABLE inputs(id integer, body text)')
+ conn.execute("INSERT INTO inputs VALUES (1,'cancel'),(2,'two'),(3,'old')")
+ parameters=dict(host=conn.info.host,port=conn.info.port,user=conn.info.user,dbname=conn.info.dbname,autocommit=True)
+ sock=root/'socket'/'lifecycle.sock'
+ cmd=[sys.executable,str(source/'code/postgres/semloom_pg/t/fixtures/incremental_gateway.py'),'--socket',str(sock),'--events',str(log)]
+ with owned_child_process(cmd,root,'gateway',dict(os.environ),user) as process:
+  wait_for_path(sock,process)
+  conn.execute("SELECT set_config('semloom_pg.gateway_socket',%s,false)",(str(sock),))
+  conn.execute("SET semloom_pg.provider_execution_profile='incremental-map'")
+  conn.execute("SET statement_timeout='10s'")
+  query="SELECT id,ai_semantic.map(body,'Echo.','{\"model\":\"model\",\"temperature\":0,\"max_tokens\":128}'::jsonb) FROM ONLY inputs"
+  rows=[];failures=[]
+  def run():
+   try:rows.extend(conn.execute(query).fetchall())
+   except BaseException as exc:failures.append(type(exc).__name__)
+  worker=threading.Thread(target=run);worker.start()
+  until(lambda:len([e for e in events() if e['event']=='model_start'])==2)
+  assert worker.is_alive(),'snapshot_change_before_completion'
+  with psycopg.connect(**parameters) as other:
+   other.execute("UPDATE inputs SET body='new' WHERE id=3")
+   other.execute("INSERT INTO inputs VALUES (4,'added')")
+  worker.join(5)
+  assert not worker.is_alive() and not failures
+  assert rows==[(1,'mapped:cancel'),(2,'mapped:two'),(3,'mapped:old')],rows
+  results['snapshot']={'passed':True,'rows':rows,'concurrent_update_and_insert':True}
+  conn.execute('CREATE ROLE v6_reader')
+  conn.execute('GRANT SELECT ON inputs TO v6_reader')
+  conn.execute('GRANT USAGE ON SCHEMA ai_semantic TO v6_reader')
+  conn.execute('ALTER TABLE inputs ENABLE ROW LEVEL SECURITY')
+  conn.execute('CREATE POLICY visible ON inputs TO v6_reader USING (id=2)')
+  conn.execute('SET ROLE v6_reader')
+  before=len([e for e in events() if e['event']=='model_start'])
+  assert conn.execute(query).fetchall()==[(2,'mapped:two')]
+  until(lambda:len([e for e in events() if e['event']=='drained'])==2)
+  assert len([e for e in events() if e['event']=='model_start'])==before+1
+  results['rls']={'passed':True,'visible_rows':1,'requests':1}
+  conn.execute('RESET ROLE')
+  conn.execute('REVOKE EXECUTE ON FUNCTION ai_semantic.map(text,text,jsonb) FROM PUBLIC')
+  conn.execute('SET ROLE v6_reader')
+  before=len([e for e in events() if e['event']=='model_start'])
+  try:
+   conn.execute(query).fetchall()
+   raise AssertionError('permission_failure_missing')
+  except psycopg.errors.InsufficientPrivilege as exc:
+   assert exc.sqlstate=='42501'
+  assert len([e for e in events() if e['event']=='model_start'])==before
+  results['permissions']={'passed':True,'sqlstate':'42501','requests':0}
+  conn.execute('RESET ROLE')
+ assert not sock.exists()
+assert not (root/'data/postmaster.pid').exists()
+results['status']='passed'
+results['model_requests']=0
+results['controlled_backend_requests']=4
+(root/'summary.json').write_text(json.dumps(results,indent=2)+'\n')
+print(json.dumps(results))

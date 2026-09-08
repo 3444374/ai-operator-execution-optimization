@@ -1,0 +1,63 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <check-root>/full-first/socket, port 60537
+ok 1         - semloom_pg                                 24 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<source-root>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<source-root>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<source-root>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<source-root>/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<source-root>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+
+#   Failed test 'exact SemFilter error sequence mismatch is redacted'
+#   at t/001_semloom_pg.pl line 1162.
+#          got: 'SemLoom provider response has an invalid text field'
+#     expected: 'SemLoom provider returned an invalid wire v3 error frame'
+# Looks like you failed 1 test of 440.
+t/001_semloom_pg.pl ..........
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/440 subtests
+t/002_choice_plan.pl ......... ok
+
+#   Failed test 'error-sequence has an exact redacted error'
+#   at t/003_choice_execution.pl line 166.
+#                   'psql:<stdin>:2: ERROR:  08P01: SemLoom provider response has an invalid text field
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:717'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v4\ error\ frame\n)'
+# psql:<stdin>:2: ERROR:  08P01: SemLoom provider response has an invalid text field
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:717
+# Looks like you failed 1 test of 218.
+t/003_choice_execution.pl ....
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/218 subtests
+t/004_filter_insert.pl ....... ok
+t/005_function_identity.pl ... ok
+t/006_map_plan.pl ............ ok
+
+#   Failed test 'error-sequence preserves its exact redacted error'
+#   at t/007_map_execution.pl line 189.
+#                   'psql:<stdin>:3: ERROR:  08P01: SemLoom provider completion does not match wire v5 task identity
+# LOCATION:  semloom_raise_provider_error, pg_semantic_runtime.c:717'
+#     doesn't match '(?^:ERROR:  08P01: SemLoom\ provider\ returned\ an\ invalid\ wire\ v5\ error\ frame\n)'
+# Looks like you failed 1 test of 468.
+t/007_map_execution.pl .......
+Dubious, test returned 1 (wstat 256, 0x100)
+Failed 1/468 subtests
+t/008_filter_and.pl .......... ok
+t/009_binding.pl ............. ok
+t/010_filter_map.pl .......... ok
+t/011_incremental_map.pl ..... ok
+t/012_incremental_window.pl .. ok
+
+Test Summary Report
+-------------------
+t/001_semloom_pg.pl        (Wstat: 256 Tests: 440 Failed: 1)
+  Failed test:  167
+  Non-zero exit status: 1
+t/003_choice_execution.pl  (Wstat: 256 Tests: 218 Failed: 1)
+  Failed test:  156
+  Non-zero exit status: 1
+t/007_map_execution.pl     (Wstat: 256 Tests: 468 Failed: 1)
+  Failed test:  417
+  Non-zero exit status: 1
+Files=12, Tests=1945, 54 wallclock secs ( 0.40 usr  0.05 sys + 30.14 cusr  8.95 csys = 39.54 CPU)
+Result: FAIL
+make: *** [<pg-prefix>/lib/postgresql/pgxs/src/makefiles/pgxs.mk:434: installcheck] Error 1

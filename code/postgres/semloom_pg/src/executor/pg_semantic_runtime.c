@@ -72,6 +72,53 @@ static bool pg_semantic_runtime_slice_equals(AiByteSlice actual,
 static void pg_semantic_runtime_validate_map(PgSemanticRuntime *runtime,
 	const AiCompletion *completion);
 
+static void
+pg_semantic_runtime_accept_completion(PgSemanticRuntime *runtime,
+	const AiCompletion *provider_completion, MemoryContext result_context, PgSemanticCompletion *completion)
+{
+	AiProviderError error;
+	if (runtime->open_spec.plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+		pg_semantic_runtime_validate_map(runtime, provider_completion);
+	else if (runtime->open_spec.model_id.length > 0 &&
+		(provider_completion->is_null ||
+		 !pg_semantic_runtime_slice_equals(provider_completion->response_model_id,
+										 runtime->open_spec.model_id) ||
+		 provider_completion->finish_reason.length != 4 ||
+		 provider_completion->finish_reason.data == NULL ||
+		 memcmp(provider_completion->finish_reason.data, "stop", 4) != 0))
+	{
+		semloom_provider_error_set(&error,
+								   AI_PROVIDER_ERROR_PROTOCOL,
+								   0,
+								   0,
+								   "SemLoom provider completion metadata does not match the exact plan");
+		pg_semantic_runtime_fail(runtime, &error);
+	}
+	if (runtime->open_spec.model_id.length > 0 &&
+		(runtime->model_calls == PG_UINT64_MAX ||
+		 runtime->prompt_tokens > PG_UINT64_MAX - provider_completion->prompt_tokens ||
+		 runtime->output_tokens > PG_UINT64_MAX - provider_completion->output_tokens))
+	{
+		semloom_provider_error_set(&error,
+								   AI_PROVIDER_ERROR_NUMERIC_RANGE,
+								   0,
+								   0,
+								   "SemLoom provider usage counters exceed uint64 range");
+		pg_semantic_runtime_fail(runtime, &error);
+	}
+
+	pg_semantic_runtime_copy_completion(provider_completion,
+										result_context,
+										completion);
+	if (runtime->open_spec.model_id.length > 0)
+	{
+		runtime->model_calls++;
+		runtime->prompt_tokens += provider_completion->prompt_tokens;
+		runtime->output_tokens += provider_completion->output_tokens;
+	}
+	runtime->state = PG_SEMANTIC_RUNTIME_READY;
+}
+
 PgSemanticRuntime *
 pg_semantic_runtime_begin(MemoryContext owner_context,
 						  const SemloomPlanSpec *plan_spec)
@@ -184,6 +231,19 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 		task.semantic_payload_digest.length = AI_PROVIDER_SHA256_HEX_LENGTH;
 	}
 	semloom_provider_error_clear(&error);
+	if (runtime->provider.ops->drive == NULL)
+	{
+		bool accepted = false;
+		status = runtime->provider.ops->offer(runtime->provider_session, &task, &accepted, &error);
+		if (status == AI_PROVIDER_STATUS_OK && !accepted)
+		{
+			semloom_provider_error_set(&error, AI_PROVIDER_ERROR_RESOURCE_EXHAUSTED, 0, 0, NULL);
+			status = AI_PROVIDER_STATUS_ERROR;
+		}
+		if (status == AI_PROVIDER_STATUS_OK)
+			status = runtime->provider.ops->receive(runtime->provider_session, &provider_completion, &error);
+	}
+	else
 	status = runtime->provider.ops->drive(runtime->provider_session,
 										  &task,
 										  &provider_completion,
@@ -202,48 +262,53 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 								   NULL);
 		pg_semantic_runtime_fail(runtime, &error);
 	}
-	if (runtime->open_spec.plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
-		pg_semantic_runtime_validate_map(runtime, &provider_completion);
-	else if (runtime->open_spec.model_id.length > 0 &&
-		(provider_completion.is_null ||
-		 !pg_semantic_runtime_slice_equals(provider_completion.response_model_id,
-										 runtime->open_spec.model_id) ||
-		 provider_completion.finish_reason.length != 4 ||
-		 provider_completion.finish_reason.data == NULL ||
-		 memcmp(provider_completion.finish_reason.data, "stop", 4) != 0))
-	{
-		semloom_provider_error_set(&error,
-								   AI_PROVIDER_ERROR_PROTOCOL,
-								   0,
-								   0,
-								   "SemLoom provider completion metadata does not match the exact plan");
-		pg_semantic_runtime_fail(runtime, &error);
-	}
-	if (runtime->open_spec.model_id.length > 0 &&
-		(runtime->model_calls == PG_UINT64_MAX ||
-		 runtime->prompt_tokens > PG_UINT64_MAX - provider_completion.prompt_tokens ||
-		 runtime->output_tokens > PG_UINT64_MAX - provider_completion.output_tokens))
-	{
-		semloom_provider_error_set(&error,
-								   AI_PROVIDER_ERROR_NUMERIC_RANGE,
-								   0,
-								   0,
-								   "SemLoom provider usage counters exceed uint64 range");
-		pg_semantic_runtime_fail(runtime, &error);
-	}
-
-	pg_semantic_runtime_copy_completion(&provider_completion,
-										result_context,
-										completion);
+	pg_semantic_runtime_accept_completion(runtime, &provider_completion, result_context, completion);
 	runtime->next_sequence++;
-	if (runtime->open_spec.model_id.length > 0)
-	{
-		runtime->model_calls++;
-		runtime->prompt_tokens += provider_completion.prompt_tokens;
-		runtime->output_tokens += provider_completion.output_tokens;
-	}
 	runtime->accepted_rows++;
-	runtime->state = PG_SEMANTIC_RUNTIME_READY;
+}
+
+uint32
+pg_semantic_runtime_window(const PgSemanticRuntime *runtime)
+{ return runtime->provider.max_inflight_tasks; }
+
+bool
+pg_semantic_runtime_offer(PgSemanticRuntime *runtime, AiByteSlice input,
+	AiByteSlice messages, uint64 *sequence)
+{
+	AiPreparedTask task = {0};
+	AiProviderError error;
+	char digest[AI_PROVIDER_SHA256_HEX_LENGTH + 1];
+	bool accepted = false;
+	if (runtime->next_sequence == PG_UINT64_MAX)
+		ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("semantic task sequence exhausted")));
+	if (runtime->provider_session == NULL) pg_semantic_runtime_open_provider(runtime);
+	pg_semantic_runtime_preflight_input(runtime, input);
+	pg_semantic_runtime_payload_digest(&runtime->open_spec, input, messages, digest);
+	task.sequence = runtime->next_sequence;
+	task.input = input;
+	task.canonical_messages = messages;
+	task.semantic_payload_digest = (AiByteSlice){(const uint8 *) digest, AI_PROVIDER_SHA256_HEX_LENGTH};
+	semloom_provider_error_clear(&error);
+	if (runtime->provider.ops->offer(runtime->provider_session, &task, &accepted, &error) != AI_PROVIDER_STATUS_OK)
+		pg_semantic_runtime_fail(runtime, &error);
+	if (accepted)
+	{
+		*sequence = runtime->next_sequence++;
+		runtime->accepted_rows++;
+	}
+	return accepted;
+}
+
+uint64
+pg_semantic_runtime_receive(PgSemanticRuntime *runtime, MemoryContext context, PgSemanticCompletion *completion)
+{
+	AiProviderError error;
+	AiCompletion value = {0};
+	semloom_provider_error_clear(&error);
+	if (runtime->provider.ops->receive(runtime->provider_session, &value, &error) != AI_PROVIDER_STATUS_OK)
+		pg_semantic_runtime_fail(runtime, &error);
+	pg_semantic_runtime_accept_completion(runtime, &value, context, completion);
+	return value.sequence;
 }
 
 void

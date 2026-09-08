@@ -24,11 +24,25 @@
 #include "planner/semantic_binding.h"
 #include "planner/semantic_carrier.h"
 #include "catalog/pg_type_d.h"
+#include "extension_config.h"
+#include "utils/memutils.h"
+#include "optimizer/optimizer.h"
 #include "nodes/nodeFuncs.h"
 #include "semantics/semantic_filter_contract.h"
 #include "semantics/semantic_map_contract.h"
 #include "executor/sem_pump.h"
 #include "planner/marker_identity.h"
+
+typedef struct SemloomWindowRow
+{
+	MemoryContext context;
+	TupleTableSlot *slot;
+	AiByteSlice input;
+	AiByteSlice messages;
+	uint64 sequence;
+	bool sent;
+	bool ready;
+} SemloomWindowRow;
 
 struct SemloomExecPump
 {
@@ -39,6 +53,15 @@ struct SemloomExecPump
 	bool has_filter_cost;
 	SemloomTupleBinding *binding;
 	ExprState *input_expression;
+	SemloomWindowRow *rows;
+	uint32 window;
+	uint32 head;
+	uint32 count;
+	bool returned;
+	bool exhausted;
+	Size window_bytes;
+	MemoryContext receive_context;
+	MemoryContext owner_context;
 };
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
@@ -47,6 +70,24 @@ static void semloom_pump_store_completion(TupleTableSlot *slot,
 										 AttrNumber result_column,
 										 const PgSemanticCompletion *completion,
 										 MemoryContext result_context);
+
+static TupleTableSlot *semloom_pump_window_next(SemloomExecPump *, ScanState *);
+
+/* A first multi-in-flight path only reads plain columns/constants ahead. Other
+ * expressions keep window one, so side effects and row errors are not moved. */
+static bool
+semloom_pump_plain_child(Plan *plan)
+{
+	ListCell *cell;
+	if (plan == NULL) return true;
+	if (IsA(plan, CustomScan) || plan->qual != NIL) return false;
+	foreach(cell, plan->targetlist)
+	{
+		Node *expr = (Node *) lfirst_node(TargetEntry, cell)->expr;
+		if (!IsA(expr, Var) && !IsA(expr, Const)) return false;
+	}
+	return semloom_pump_plain_child(plan->lefttree) && semloom_pump_plain_child(plan->righttree);
+}
 
 SemloomExecPump *
 semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
@@ -128,6 +169,18 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 		plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_MAP,
 		ExecGetResultType(pump->child_state),
 		node->ss.ss_ScanTupleSlot->tts_tupleDescriptor);
+	pump->owner_context = owner_context;
+	pump->window = pg_semantic_runtime_window(pump->runtime);
+	if (pump->window > 1 &&
+		(!semloom_pump_plain_child(pump->child_state->plan) ||
+		 (pump->input_expression != NULL && !IsA(linitial(scan->custom_exprs), Var) && !IsA(linitial(scan->custom_exprs), Const))))
+		pump->window = 1;
+	if (pump->window > 1)
+	{
+		pump->rows = MemoryContextAllocZero(owner_context, pump->window * sizeof(SemloomWindowRow));
+		pump->window_bytes = semloom_provider_window_bytes();
+		pump->receive_context = AllocSetContextCreate(owner_context, "SemLoom receive", ALLOCSET_DEFAULT_SIZES);
+	}
 	node->custom_ps = list_make1(pump->child_state);
 	return pump;
 }
@@ -137,6 +190,7 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 {
 	TupleTableSlot *scan_slot = scan_state->ss_ScanTupleSlot;
 
+	if (pump->rows != NULL) return semloom_pump_window_next(pump, scan_state);
 	for (;;)
 	{
 		TupleTableSlot *child_slot = ExecProcNode(pump->child_state);
@@ -249,12 +303,133 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 	}
 }
 
+static void
+semloom_window_drop(SemloomWindowRow *row)
+{
+	if (row->slot != NULL) ExecDropSingleTupleTableSlot(row->slot);
+	if (row->context != NULL) MemoryContextDelete(row->context);
+	memset(row, 0, sizeof(*row));
+}
+
+static bool
+semloom_window_read(SemloomExecPump *pump, ScanState *scan, SemloomWindowRow *row)
+{
+	TupleTableSlot *child = ExecProcNode(pump->child_state);
+	MemoryContext previous;
+	bool is_null;
+	Datum value;
+	SemloomBoundValue bound;
+	size_t length;
+	uint8 *messages;
+	if (TupIsNull(child)) { pump->exhausted = true; return false; }
+	row->context = AllocSetContextCreate(pump->owner_context, "SemLoom retained row", ALLOCSET_DEFAULT_SIZES);
+	previous = MemoryContextSwitchTo(row->context);
+	row->slot = MakeSingleTupleTableSlot(scan->ss_ScanTupleSlot->tts_tupleDescriptor, &TTSOpsVirtual);
+	semloom_binding_store(pump->binding, child, row->slot);
+	ExecStoreVirtualTuple(row->slot);
+	if (pump->input_expression != NULL)
+	{
+		scan->ps.ps_ExprContext->ecxt_scantuple = row->slot;
+		value = ExecEvalExprSwitchContext(pump->input_expression, scan->ps.ps_ExprContext, &is_null);
+	}
+	else
+	{
+		value = child->tts_values[pump->binding->input_column - 1];
+		is_null = child->tts_isnull[pump->binding->input_column - 1];
+	}
+	/* Materialize before the next child pull can invalidate any borrowed Datum. */
+	ExecMaterializeSlot(row->slot);
+	row->ready = is_null;
+	if (!is_null)
+	{
+		AiByteSlice borrowed = semloom_pump_bind_text(value, row->context);
+		uint8 *owned;
+		pg_semantic_runtime_preflight_input(pump->runtime, borrowed);
+		owned = palloc(borrowed.length ? borrowed.length : 1);
+		if (borrowed.length) memcpy(owned, borrowed.data, borrowed.length);
+		row->input = (AiByteSlice){owned, borrowed.length};
+		bound = (SemloomBoundValue){.data=row->input.data, .length=row->input.length, .is_null=false};
+		length = semloom_operator_machine_task_size(&pump->machine, &bound);
+		messages = palloc(length);
+		if (!semloom_operator_machine_write_task(&pump->machine, &bound, messages, length))
+			elog(ERROR, "could not prepare semantic operator task");
+		row->messages = (AiByteSlice){messages, length};
+	}
+	/* Split the configured window budget into bounded per-row reservations. */
+	if (MemoryContextMemAllocated(row->context, true) + SEMLOOM_MAP_MAX_OUTPUT_BYTES > pump->window_bytes / pump->window)
+		ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("semantic row exceeds its window byte reservation")));
+	MemoryContextSwitchTo(previous);
+	return true;
+}
+
+static TupleTableSlot *
+semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
+{
+	uint32 index;
+	if (pump->returned)
+	{
+		semloom_window_drop(&pump->rows[pump->head]);
+		pump->head = (pump->head + 1) % pump->window;
+		pump->count--;
+		pump->returned = false;
+	}
+	for (;;)
+	{
+		uint32 in_flight = 0;
+		while (!pump->exhausted && pump->count < pump->window)
+		{
+			SemloomWindowRow *row = &pump->rows[(pump->head + pump->count) % pump->window];
+			CHECK_FOR_INTERRUPTS();
+			if (!semloom_window_read(pump, scan, row)) break;
+			pump->count++;
+		}
+		for (index = 0; index < pump->count; index++)
+		{
+			SemloomWindowRow *row = &pump->rows[(pump->head + index) % pump->window];
+			if (!row->ready && !row->sent)
+				row->sent = pg_semantic_runtime_offer(pump->runtime, row->input, row->messages, &row->sequence);
+			if (row->sent && !row->ready) in_flight++;
+		}
+		if (!pump->count) return ExecClearTuple(scan->ss_ScanTupleSlot);
+		if (pump->rows[pump->head].ready)
+		{
+			pump->returned = true;
+			pg_semantic_runtime_record_emitted(pump->runtime);
+			return pump->rows[pump->head].slot;
+		}
+		if (!in_flight)
+			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("provider rejected the entire semantic window")));
+		{
+			PgSemanticCompletion completion;
+			uint64 sequence;
+			MemoryContextReset(pump->receive_context);
+			sequence = pg_semantic_runtime_receive(pump->runtime, pump->receive_context, &completion);
+			for (index = 0; index < pump->count; index++)
+			{
+				SemloomWindowRow *row = &pump->rows[(pump->head + index) % pump->window];
+				if (row->sent && !row->ready && row->sequence == sequence)
+				{
+					semloom_pump_store_completion(row->slot, pump->binding->result_column, &completion, row->context);
+					row->ready = true;
+					break;
+				}
+			}
+			if (index == pump->count) elog(ERROR, "unmatched semantic completion");
+		}
+	}
+}
+
 void
 semloom_pump_stop(SemloomExecPump *pump, CustomScanState *node)
 {
 	if (pump == NULL)
 		return;
 	pg_semantic_runtime_close(pump->runtime);
+	if (pump->rows != NULL)
+	{
+		uint32 index;
+		for (index = 0; index < pump->window; index++) semloom_window_drop(&pump->rows[index]);
+	}
 	if (pump->child_state != NULL)
 	{
 		ExecEndNode(pump->child_state);
@@ -267,6 +442,8 @@ void
 semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 {
 	pg_semantic_runtime_explain(pump->runtime, explain_state);
+	if (pg_semantic_runtime_window(pump->runtime))
+		ExplainPropertyInteger("Semantic Input Window", NULL, pump->window, explain_state);
 	if (pump->has_filter_cost)
 		semloom_filter_cost_explain(&pump->filter_cost, explain_state);
 	if (pump->input_expression != NULL)

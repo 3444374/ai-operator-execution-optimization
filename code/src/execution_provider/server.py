@@ -39,6 +39,9 @@ def parse_args(argv=None) -> argparse.Namespace:
         action="store_true",
         help="serve generated Map through one shared incremental engine",
     )
+    parser.add_argument(
+        "--incremental-map", action="store_true", help="serve Map with version-six bounded intake"
+    )
     parser.add_argument("--once", action="store_true", help="serve one session and exit")
     adapter_group = parser.add_mutually_exclusive_group()
     adapter_group.add_argument(
@@ -110,6 +113,14 @@ def main(
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter
     incremental_adapter = None
+    if args.incremental_map and (
+        args.incremental_map_window_one
+        or args.fixed_model_config is None
+        or limits.max_active_requests > 64
+    ):
+        raise SystemExit(
+            "incremental Map v6 requires a fixed model, capacity 1..64, and no v5 flag"
+        )
     if args.incremental_map_window_one and (
         args.fixed_model_config is None or limits.max_active_requests != 1
     ):
@@ -121,7 +132,14 @@ def main(
             fixed_config = load_fixed_model_config(args.fixed_model_config)
         except ValueError:
             raise SystemExit("invalid fixed model configuration") from None
-        if args.incremental_map_window_one:
+        if args.incremental_map:
+            from .adapters.incremental_session import IncrementalMapSessionAdapter
+
+            incremental_adapter = IncrementalMapSessionAdapter(
+                fixed_config, observer=incremental_observer, max_tasks=limits.max_active_requests
+            )
+            completion_adapter = incremental_adapter
+        elif args.incremental_map_window_one:
             from .adapters.incremental_map import IncrementalMapAdapter
 
             incremental_adapter = IncrementalMapAdapter(fixed_config, observer=incremental_observer)
@@ -177,6 +195,11 @@ def main(
             tamper_evidence_digest=args.test_tamper_evidence_digest,
             disconnect_on_task=args.test_disconnect_on_task,
             completion_fixture=args.test_completion_fixture,
+            **(
+                {"incremental_handler": incremental_adapter.run_incremental}
+                if args.incremental_map
+                else {}
+            ),
         )
         session_limit = 1 if args.once else args.test_max_sessions
         if incremental_adapter is None:

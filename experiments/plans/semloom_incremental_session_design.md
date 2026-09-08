@@ -18,6 +18,10 @@
 §16生成Map的PG窗口1接入已通过[真实验证](../results/postgresql/incremental_window_one_20260908/README.md)：
 PG18.3回归/1926项TAP、9次真实模型请求，窗口扩大和多活动查询仍待实现。
 
+生成Map的后续[PG多在途接入](../results/postgresql/async_window_20260908/README.md)已通过受控与12次真实模型验证。
+具体PG缓冲、v6接纳/完成协议和受限输入形状由[PG规格§13](postgresql_call_binding_design.md#pg-async-readiness)维护，
+本文件不复制该协议；多活动session、Filter/组合接入和物理多成员请求仍未完成。
+
 ## 1. 范围、选型与旧实现复用
 
 首版采用**单线程驱动、非阻塞step、单Job单流**的session，允许有界多在途和逆序完成。测试使用可控

@@ -20,12 +20,18 @@ static int generate_map_source_level = 0;
 static char *semloom_gateway_socket = NULL;
 static char *semloom_reference_calibration_file = NULL;
 static int semloom_execution_profile = SEMLOOM_PROVIDER_PROFILE_GOLDEN;
+static int provider_window_tasks = 2;
+static int provider_window_bytes = 8 * 1024 * 1024;
+int semloom_provider_window_tasks(void) { return provider_window_tasks; }
+int semloom_provider_window_bytes(void) { return provider_window_bytes; }
+
 static const struct config_enum_entry semloom_execution_profile_options[] = {
 	{"golden", SEMLOOM_PROVIDER_PROFILE_GOLDEN, false},
 	{"openai-compatible-fixed",
 	 SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED,
 	 false},
 	{"incremental-map-window-one", SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP, false},
+	{"incremental-map", SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP, false},
 	{NULL, 0, false},
 };
 
@@ -66,6 +72,8 @@ semloom_provider_execution_profile(void)
 const char *
 semloom_provider_execution_profile_name(void)
 {
+	if (semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP)
+		return "incremental-map";
 	if (semloom_execution_profile == SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP)
 		return "incremental-map-window-one";
 	return semloom_execution_profile ==
@@ -86,6 +94,10 @@ _PG_init(void)
 							   NULL,
 							   NULL,
 							   NULL);
+	DefineCustomIntVariable("semloom_pg.provider_window_tasks", "Maximum retained Map rows.", NULL,
+		&provider_window_tasks, 2, 1, 64, PGC_USERSET, 0, NULL, NULL, NULL);
+	DefineCustomIntVariable("semloom_pg.provider_window_bytes", "Maximum retained Map row and task bytes.", NULL,
+		&provider_window_bytes, 8 * 1024 * 1024, 1024 * 1024, 256 * 1024 * 1024, PGC_USERSET, GUC_UNIT_BYTE, NULL, NULL, NULL);
 	DefineCustomEnumVariable("semloom_pg.provider_execution_profile",
 							 "Execution profile for exact semantic provider queries.",
 							 NULL,

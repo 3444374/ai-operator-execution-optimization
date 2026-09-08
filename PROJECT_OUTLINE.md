@@ -127,7 +127,9 @@ reference `CustomPath` 另有不进入 semantic digest 的 planner estimate meta
 通用 output selectivity、NULL-adjusted calls、estimated prompt/output work 和实际 usage。planner-only
 calibration mechanism 能加载并验证匹配的静态 artifact，或在缺失/失配时保留 uncalibrated reference；
 当前只有 deterministic artifact 资格，真实 matched artifact、第二 physical path、载体反例审查、
-accepted-prefix 和多在途/乱序 completion 尚未实现；
+Filter的多在途/乱序 completion 尚未实现。生成Map已完成[受限v6接入](experiments/results/postgresql/async_window_20260908/README.md)：
+接纳确认与完成接收分离，PG保留有界行数据并关联结果，同一查询可有两个真实模型请求在途；
+复杂表达式仍按窗口1执行，多活动会话和Filter/组合异步继续独立推进。
 不能把既有 profiler/manifest 实验重标为数据库内算子结果。
 
 ### 0.2 核心研究链路

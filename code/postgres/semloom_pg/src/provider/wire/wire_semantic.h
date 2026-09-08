@@ -10,6 +10,7 @@
 typedef struct SemloomWireSemanticIdentity
 {
 	uint32 protocol_version;
+	uint32 max_inflight_tasks;
 	const char *provider_execution_id;
 	char semantic_spec_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
 	char physical_algorithm_digest[SEMLOOM_SHA256_HEX_LENGTH + 1];
@@ -26,4 +27,11 @@ extern AiProviderStatus semloom_wire_semantic_drive(pgsocket socket_fd,
 	const AiOpenSpec *spec, const AiPreparedTask *task,
 	const SemloomWireSemanticIdentity *identity, AiCompletion *completion,
 	AiProviderError *error);
+extern AiProviderStatus semloom_wire_semantic_send_task(pgsocket fd,
+	const AiPreparedTask *task, const SemloomWireSemanticIdentity *identity, AiProviderError *error);
+extern AiProviderStatus semloom_wire_semantic_collect(pgsocket fd, const AiOpenSpec *spec,
+	const AiPreparedTask *tasks, uint32 count, const SemloomWireSemanticIdentity *identity,
+	AiCompletion *completion, AiProviderError *error);
+extern AiProviderStatus semloom_wire_semantic_offer(pgsocket fd, const AiPreparedTask *task,
+	const SemloomWireSemanticIdentity *identity, bool *accepted, AiProviderError *error);
 #endif

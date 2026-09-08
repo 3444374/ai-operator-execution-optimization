@@ -29,6 +29,7 @@ semloom_provider_select(MemoryContext owner_context,
 	Assert(owner_context != NULL);
 	Assert(spec != NULL);
 	Assert(provider != NULL);
+	provider->max_inflight_tasks = 0;
 	if (!semloom_provider_spec_is_recording(spec) &&
 		!semloom_provider_spec_is_exact_filter(spec) &&
 		!semloom_provider_spec_is_generate_map(spec))

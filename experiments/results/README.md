@@ -1,5 +1,12 @@
 # Research Experiment Results
 
+2026-09-08：[生成Map的PG多在途接入](postgresql/async_window_20260908/README.md)已完成v6 offer/receive、PG有界行槽和按身份返回结果，复用原组织器与增量核心。
+PG18.3严格构建、回归1项、12个TAP共1958项及Linux199项Python检查通过；另核对v6权限、RLS和快照。
+独立12次真实POST全部通过，同一PG查询HTTP峰值2，增量10任务/6会话排空后资源归零，服务已停止。
+633份源码/测试文件与真实运行一致；当前只对受限生成Map显式开启，复杂表达式窗口1，Filter/组合和多活动session仍待完成。
+
+以下为之前的核查与实现记录，不能将旧记录中的待实现项当作最新状态。
+
 2026-09-08：[生成Map的PG窗口1接入](postgresql/incremental_window_one_20260908/README.md)新增独立provider执行身份，
 复用现有v5与PG语义、SessionEngine和异步HTTP。一个活动连接共用一个Engine，未知结果停止接纳。
 115项PG合同、23项provider、9项observer测试及PG18.3回归/1926项TAP通过；628份源码一致。

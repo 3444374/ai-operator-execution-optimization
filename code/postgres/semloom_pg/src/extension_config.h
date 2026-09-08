@@ -7,8 +7,11 @@ typedef enum SemloomProviderExecutionProfile
 	SEMLOOM_PROVIDER_PROFILE_GOLDEN = 0,
 	SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED = 1,
 	SEMLOOM_PROVIDER_PROFILE_INCREMENTAL_MAP = 2,
+	SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP = 3,
 } SemloomProviderExecutionProfile;
 
+extern int semloom_provider_window_tasks(void);
+extern int semloom_provider_window_bytes(void);
 extern const char *semloom_gateway_socket_path(void);
 extern const char *semloom_reference_calibration_path(void);
 extern SemloomProviderExecutionProfile semloom_provider_execution_profile(void);

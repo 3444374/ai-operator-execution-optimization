@@ -25,7 +25,7 @@ The shared implementation has also passed an [eight-request real-model check](..
 including INSERT with independent result auditing. The later [complete operator checks](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 pass all seven PG18.3 TAP files, regression, and a nine-request real-model SELECT/INSERT check for Filter v3/v4
 and Map v5. These earlier results establish the separate synchronous paths. The AND branch above adds one composition;
-The later Filter→Map development is described above; asynchronous execution remains pending.
+The later Filter→Map development is described above; generated Map now has the bounded v6 path below, while asynchronous composition remains pending.
 
 The first choice-profile slice adds `src/execution_provider/generation_profile.py` and the standalone C
 encoder under `postgres/semloom_pg/src/semantics/generation_profile.{h,c}`. They validate one immutable tristate profile
@@ -491,6 +491,14 @@ Ollama smoke runs, use
 use the owning subpackage directly, and an AST architecture test prevents the old paths from returning.
 
 ## PostgreSQL Map through the incremental core
+
+The `incremental-map` profile now adds the v6 task acknowledgement/completion port and a bounded
+PG row window. It reuses the existing organizer, core and HTTP adapter. Plain input expressions
+can have multiple model requests in flight; other expressions retain window one. See the
+[configuration and checks](../experiments/results/postgresql/async_window_20260908/README.md)
+for exact supported shapes, 1958 PG TAP checks, lifecycle checks and 12 real model requests.
+Filter/composed v6 paths and multiple active core sessions remain pending. The following describes
+the retained window-one implementation.
 
 The opt-in `incremental-map-window-one` execution profile now connects generated Map to SessionEngine,
 WorkWindowOrganizer and BoundedAsyncBackend. It reuses wire v5 and the existing PG input/result lifecycle,

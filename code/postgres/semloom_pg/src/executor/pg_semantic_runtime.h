@@ -43,4 +43,9 @@ extern void pg_semantic_runtime_explain_counters(
 	const PgSemanticRuntime *runtime,
 	ExplainState *explain_state);
 
+extern uint32 pg_semantic_runtime_window(const PgSemanticRuntime *runtime);
+extern bool pg_semantic_runtime_offer(PgSemanticRuntime *runtime, AiByteSlice input,
+	AiByteSlice messages, uint64 *sequence);
+extern uint64 pg_semantic_runtime_receive(PgSemanticRuntime *runtime, MemoryContext context,
+	PgSemanticCompletion *completion);
 #endif

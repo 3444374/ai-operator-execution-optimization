@@ -57,6 +57,14 @@ python3 code/scripts/services/run_execution_provider_gateway.py \
   --incremental-map-window-one --max-active-requests 1
 ```
 
+若要使用PG多在途，改为 `--incremental-map --max-active-requests 2`，并选择
+`SET semloom_pg.provider_execution_profile='incremental-map'`；PG的 `provider_window_tasks`
+默认2且不得超过网关容量，`provider_window_bytes`默认8MiB。该路径使用v6接纳/结果协议，
+仅支持受限生成Map；EXPLAIN展示实际输入窗口，复杂表达式退回窗口1。
+[验证记录](../../experiments/results/postgresql/async_window_20260908/README.md)包含同一PG查询的真实并发、取消与回收。
+
+下面保留窗口1兼容入口的说明：
+
 数据库会话显式选择 `SET semloom_pg.provider_execution_profile='incremental-map-window-one'`，
 并将 `semloom_pg.gateway_socket` 指向同一socket。新身份为
 `semloom.provider.incremental-map-window-one.uds.v5`；保留v5窗口1，当前只接生成型Map。
