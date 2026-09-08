@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-08：增量执行与多Job基础`f6cd2392`已快进合入本地main，源码未改写。
+[主干集成核对](../experiments/results/scheduling/multijob_20260908/README.md#main-integration)确认644份源码与验证版本一致；本次不重跑服务器/模型。
+
 2026-09-08：[多Job共享执行与网关复用](../experiments/results/scheduling/multijob_20260908/README.md)完成可信Job登记、共享账本、Job轮转、有界连接代理及局部取消/未知结果隔离。
 Job份额策略归外部执行组装层，PG只管本地缓冲和查询生命周期；一个/多个Job使用同一增量循环，同步Filter/Map等复用连接工具并保留协议处理。
 Linux515项、PG回归1项/TAP1963项通过；单Job12次、多Job18次真实请求通过，不同Job HTTP峰值2，9个Job最终归零。644份源码一致，测试服务已清理。
