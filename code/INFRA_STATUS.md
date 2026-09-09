@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+
+2026-09-09：查询归属及生命周期加固已合入main（生产源码1138bee7）。合并后654份源码/测试及归档校验一致，
+未修改已验证代码；[集成记录](../experiments/results/scheduling/query_lifecycle_20260909/README.md#主干集成)说明范围与清理状态。
+
 2026-09-09：[查询生命周期与连接接纳加固](../experiments/results/scheduling/query_lifecycle_20260909/README.md)分开已登记流空闲与帧期限，统一查询/standalone/握手名额，补齐登记与加入失败回滚。
 查询结束策略集中到QueryRegistry，PG runtime持有幂等流句柄，provider不再隐式登记节点。
 旧25c0f090的空闲取消、预留被占用及令牌失败遗留Job已受控复现。Linux521项、PG回归1项/TAP2006项及26次真实POST通过；654份源码一致，测试服务已清理。

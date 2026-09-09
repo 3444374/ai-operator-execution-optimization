@@ -49,3 +49,10 @@
 [控制器清理](raw/prepare-controller-summary.json)、[运行后核对](raw/postflight.json)确认端口关闭、
 无本轮模型/PG/网关/Raylet残留，两卡各1 MiB。[源码清单](raw/lifecycle-manifest.json)共654份，
 运行前后及合并前保持一致；[归档校验](raw/SHA256SUMS.json)用于检查材料完整性。
+
+
+## 主干集成
+
+按用户授权，main从c2bf4c5e快进到1138bee7，包含查询归属25c0f090与本轮加固。
+合并后重新核对654份源码/测试和归档校验值，均与最终验证版本一致；本次集成记录未修改已验证源码。
+模型、PG、网关与端口已清理，后续方法状态预算仍不属于本次实现。
