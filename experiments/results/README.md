@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+2026-09-09：[PG 单 Map 真实数据尝试](postgresql/data_execution_pilot_20260909/README.md)：
+48/68 请求后停止。SQuAD 关联与答案检查可用；ShareGPT 输出合同、摘要质量及源输入身份未通过。
+单 GPU 正确性范围，静态容量、组织增量与双卡性能仍未验证；原失败与清理证据保留。
+
 2026-09-09：[有界多行方法驱动](scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
 独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。
 首次0POST失败暴露缺TaskInfo，修复后双Job10次及最终两阶段2次真实POST通过，合计12次；预算与服务均清理。

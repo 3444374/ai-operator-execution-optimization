@@ -115,9 +115,8 @@ def squad_quality_metrics(
         prediction = predictions.get(example_id)
         if prediction is None:
             missing_predictions += 1
-            prediction = ""
-        else:
-            observed_predictions += 1
+            continue
+        observed_predictions += 1
         exact_match, token_f1 = squad_example_scores(
             prediction,
             reference_answers,

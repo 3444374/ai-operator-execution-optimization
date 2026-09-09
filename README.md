@@ -9,6 +9,11 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
+近期先围绕单 Map 的数据供给与留存完成真实任务测量、静态容量画像和有限窗口组织对照，
+随后进入多 Job。框架开发优先解决这些实验暴露的具体问题；
+[当前数据执行计划](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)维护次序，
+[首次真实数据尝试](experiments/results/postgresql/data_execution_pilot_20260909/README.md)区分可用结果与失败记录。
+
 前序基线（2026-09-07）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、
@@ -31,7 +36,7 @@ model role 和 AI-work cost，并在执行时分列实际 usage；该工程启�
 最新[两算子完整验证](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 覆盖全部 PostgreSQL18.3 回归与 TAP；Filter v3/v4 和生成型 Map v5 的真实 SELECT/INSERT、
 NULL 零调用、结果与写回均通过。main中的两个算子各自同步执行；已推送的`codex/semfilter-and@66887463`增加两个Filter AND与
-有界gateway会话，已合并main，异步PG接入仍待实现。
+有界gateway会话，已合并main；这一历史同步验证不覆盖后文已完成的受限 Map 多在途接入。
 后续开发已完成[Map调用分析提取](experiments/results/postgresql/semantic_call_extraction_20260907/README.md)，
 保持现有行为；当前开发分支的[共同调用与列绑定](experiments/results/postgresql/semantic_binding_20260907/README.md)
 已完成基础验证；[一个Filter→一个生成Map](experiments/results/postgresql/filter_map_binding_20260907/README.md)也已在开发分支通过PG18.3全部1910项TAP检查。

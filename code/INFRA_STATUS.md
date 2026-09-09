@@ -1,5 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-09：[首次真实数据尝试](../experiments/results/postgresql/data_execution_pilot_20260909/README.md)
+使用单 GPU/单 endpoint，共 48/68 次请求后停止。SQuAD 同步与增量各 16 行 EM/F1 均为100%；
+增量检查脚本误把完成顺序当结果顺序，离线按序号/payload 重审通过，原失败和缺失 JCT 保留。
+ShareGPT 在第12行 length 后停止，并发现摘要质量和一行输入被临时脱敏改写；不具备质量/性能资格。
+新增 SQuAD Map 清单/离线评价入口、观测时间戳及缺失预测计零修复；本地/Linux各125项相关测试通过。
+PG、wire、Engine和策略未变；源模型、PG、gateway均已清理。双 endpoint 当前默认装配尚未接入，
+下一步按[数据执行计划](../experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)建立静态画像。
+本轮更改在 `codex/data-execution-pilot` 分支维护，尚未合入 main；以下同日记录属于此前实现历史。
+
 2026-09-09：[有界多行方法驱动](../experiments/results/scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
 独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。
 首次0POST失败暴露缺TaskInfo，修复后双Job10次及最终两阶段2次真实POST通过，合计12次；预算与服务均清理。

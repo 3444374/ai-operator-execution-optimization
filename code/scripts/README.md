@@ -22,6 +22,31 @@
 入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
 
+## SQuAD PG Map 数据准备与离线评价
+
+`baselines/squad_pg_map_pilot.py` 只准备输入或评价已有结果，不连接数据库、不发送模型请求。
+复用原 SQuAD importer 的官方文件哈希/行数检查与解析器，保留旧 workload 的单消息语义；
+新身份 `squad_v11_pg_map_v1` 明确采用 Map 的 system/user 双消息。按完整 context 分组后，
+生成互不重叠的 tuning/evaluation 子集、`manifest.json` 与只有 ID/input_text 的两份 CSV。
+真实 source/model/SQL 资格与额度见[当前计划](../../experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)。
+
+```sh
+python3 code/scripts/baselines/squad_pg_map_pilot.py prepare \
+  --source /path/to/dev-v1.1.json --rows-per-split 64 --output-dir /path/to/new-output
+python3 code/scripts/baselines/squad_pg_map_pilot.py evaluate \
+  --manifest /path/to/new-output/manifest.json --split tuning \
+  --predictions /path/to/predictions.jsonl --output /path/to/new-quality.json
+```
+
+预测 JSONL 每行为 `{"source_example_id":"...","prediction":"..."}`；失败可使用 `null`。
+重复/未知 ID 和清单内容变化会被拒绝；缺失/NULL 仍进入 EM/F1 分母，退出码为 1。
+EM/F1 为答案完全匹配率与词重叠 F1，均采用百分数；完整关联不表示答案正确。
+输出目录/报告已存在则拒绝覆盖。完整数据与预测留在仓库外；CSV 只用于明确有行数上限的小样本，
+不能由此声称大规模流式输入或有界客户端内存已经实现。
+
+`choice_gateway_observer` 的请求、完成与核心事件新增 `monotonic_ns`（观测时单机单调时钟，纳秒），
+可同本机 SQL 计时关联；它不是服务内部阶段时钟，也不能跨机器直接相减。
+
 ## PostgreSQL semantic execution-provider gateway
 
 `services/run_execution_provider_gateway.py` 是外部 semantic execution-provider 的 canonical CLI。

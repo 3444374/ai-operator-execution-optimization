@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "scope": "seven changed Python source/test files; offline evaluator fix follows real requests",
+  "hashes": {
+    "code/src/baselines/text/squad_map.py": "ca8e1a9daeb4622de2a7a2eebce5c19f01ef246940f12ed4c964b7a2eb1c2856",
+    "code/scripts/baselines/squad_pg_map_pilot.py": "942858158bb557ed2cbfa1762df398475c6867d5befb0e8165205ccaebfbbeb8",
+    "code/tests/baselines/test_squad_pg_map_pilot.py": "2649da0374ef3d1566884decddf51d263633234b4ed6a277383e798690fd9335",
+    "code/src/experiments/choice_gateway_observer.py": "8b3dc7e85657b327573161eb8a8904d9698f43cf380090722d58e016e15046c1",
+    "code/tests/experiments/test_choice_http_observer.py": "ad70bed93f70b79c3b2fa78faf8e342d8803d876fc6c6ef211d3ec9430bd2a87",
+    "code/src/observability/metrics/squad.py": "8574df269190b94551fb332177ee8e2bc024206ec3f1a1d1e0b733b49919b52b",
+    "code/tests/observability/test_metrics.py": "e552591dccba54b0f526703ee416e385188f6f890050678a30b91cdcae35def3"
+  },
+  "checks": {
+    "code/src/baselines/text/squad_map.py": true,
+    "code/scripts/baselines/squad_pg_map_pilot.py": true,
+    "code/tests/baselines/test_squad_pg_map_pilot.py": true,
+    "code/src/experiments/choice_gateway_observer.py": true,
+    "code/tests/experiments/test_choice_http_observer.py": true,
+    "code/src/observability/metrics/squad.py": true,
+    "code/tests/observability/test_metrics.py": true
+  }
+}

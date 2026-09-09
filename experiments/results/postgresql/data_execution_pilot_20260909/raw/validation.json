@@ -1,0 +1,19 @@
+{
+  "local_links_checked": 528,
+  "gzip_evidence_scanned": 77,
+  "reader_files_scanned": [
+    "README.md",
+    "PROJECT_INDEX.md",
+    "PROJECT_OUTLINE.md",
+    "data/README.md",
+    "code/src/baselines/README.md"
+  ],
+  "errors": [],
+  "text_secret_scan_exit": 0,
+  "diff_check_exit": 0,
+  "local_related_tests": 125,
+  "linux_related_tests": 125,
+  "model_requests": 48,
+  "model_request_cap": 68,
+  "performance_qualified": false
+}

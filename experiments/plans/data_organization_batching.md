@@ -1,9 +1,125 @@
 # 研究内容一：动态数据组织与批处理构造策略实验计划
 
-> **当前状态（2026-08-27）**：文本主矩阵和 cache-on 双/四 endpoint 重测已完成，结论是
-> 策略效果依赖 KV 压力与 prefix 结构。本文仅保留后续模态复用和条件性扩展合同；当前先完成
-> PostgreSQL 中立语义算子、execution provider 与 query-lifecycle 资格验证，不重复文本参数扫描。已完成合同见
-> [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
+> **当前状态（2026-09-09）**：近期执行合同由下方“当前 PG 单 Map 数据执行切片”维护。
+> 已有外部文本组织实验和 cache-on 双/四 endpoint 结果保留，不能移作当前 PG 路径的性能证据。
+> 本轮先准备真实数据与评价，再测静态容量和有限窗口组织；多 Job 紧随其后，按实测需要复用旧策略。
+> 首次尝试已使用 48/68 次请求并停止：SQuAD 关联/质量检查可用，ShareGPT 未通过；
+> [结果与失败审计](../results/postgresql/data_execution_pilot_20260909/README.md)保留原始原因。
+> 已完成合同见 [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
+
+## 当前 PG 单 Map 数据执行切片
+
+本节是当前数据执行实验的具体合同；工程依赖仍由[主设计 §9](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+维护，完成度见[状态入口](experiment_status_and_gaps.md)。本轮用户授权调整计划并开始小规模尝试，
+先执行离线准备；真实调用须绑定实际环境和下述额度，旧正式矩阵没有因此恢复。
+
+### 问题、顺序与停止条件
+
+研究对象保持为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
+首问是：在相同输入可见窗口、主机数据预算和服务容量下，数据组织能否改善查询完成时间，
+或在相近完成时间下减少数据留存？对应研究内容一，随后扩展到研究内容二的多 Job 竞争。
+这是待检验问题，不预先承诺单 Map 有吞吐增量。
+
+| 次序 | 具体交付 | 继续条件与失败处理 |
+|---|---|---|
+| 真实任务准备 | 复用 SQuAD v1.1 dev 解析器和 EM/F1，生成当前 Map 的 system/user 消息、context 分组的调优/评测子集；检查重复/缺失 ID | 原始 SHA、消息和关联检查通过；先用已知答案测试 evaluator，不能当成模型质量 |
+| 小样本真实检查 | 环境可用时沿用 [ShareGPT 16 行、34 请求合同](bounded_method_driver.md#sharegpt-real-data-slice)；SQuAD 另用 2 行预检＋16 行同步＋16 行增量，共最多 34 请求 | 独立请求账本；超时、身份错误、丢行、重复、资源越界即停，禁止自动重试、截断、更换模型或隐去失败；两数据集总额最多 68 请求 |
+| 静态容量画像 | 同消息 direct 服务参照与 PG incremental-map；先服务并发，再 PG 窗口，再检查输入/结果预算 | 小样本通过后，先根据单次耗时另填规模、请求总额和墙钟上限才启动扫描；本轮不直接扩规模 |
+| 单 Map 组织对照 | 固定行数/输入顺序、固定工作预算、同一有限窗口内长度分组 | 复用组织器，非恒定描述来自完整消息的输入 token，并记录 tokenizer/template 与估计开销；不能使用事后输出长度作在线决策 |
+| 多 Job 对照 | 长短同时到达、长先短后、暂停供给后恢复；随后覆盖不同 Job 数 | 先比较固定份额与可利用空闲计算容量的简单控制，再按需求适配已有工作量公平策略；不以两 Job 外推任意规模 |
+
+SQuAD 是有标准答案的主输入，ShareGPT 是已有的真实文本检查；若 ShareGPT 资产暂缺，
+不阻塞 SQuAD 离线准备，也不下载大资产作为本轮默认动作。小样本只证明关联、质量观察及资源回收，
+不足以建立强静态配置、稳定吞吐或论文性能结论。质量评价须保存每行原输出、EM/F1 和失败分母；
+真实小样本结果出现质量疑问时先审查，不边改提示边汇总性能。完整 EM/F1 与标准答案规则沿用已有实现。
+
+### 数据、消息与实际 SQL
+
+SQuAD 原始文件必须通过既有 importer 的完整 SHA256 和 10,570 行检查；新任务身份为
+`squad_v11_pg_map_v1`，不改旧 `squad_v11_dev_short_answer` 的单 user 消息含义。
+按完整 context 的 SHA256 排序后，交替分配 context 组到 tuning/evaluation，组内及最终输出保留
+原始数据顺序；默认每侧取 64 行，不复制或截断文本。两个子集只是本项目从官方 dev 派生的划分，
+不是官方隐藏测试集。64 行用于输入准备，真实预检只消费 tuning 的前 2/16 行，evaluation 不参与调优。
+
+system 指令固定为 `Answer the question using only the context. Return only the shortest answer span. Do not explain.`；
+user 固定为 `Context:\n{context}\n\nQuestion:\n{question}\n\nAnswer:\n`。
+`max_tokens=64, temperature=0`，其余参数按 PG 生效配置完整保存；模型、revision、模板、缓存和服务配置
+在目标机器预检后写入仓库外运行 manifest。离线消息哈希只证明准备内容，实际出站仍须逐项核对。
+
+把 `source_example_id,input_text` 导入独立临时表；参考答案只留在评价侧。实际测量 SQL 为
+`SELECT source_example_id, ai_semantic.map(input_text, <instruction>, <options>) FROM <input_table>`。
+`options` 必须采用现行 Map 合同；导入、ANALYZE 与无执行的 EXPLAIN 单列准备时间。
+不在测量 SQL 中拼接字符串、筛选 split、加 LIMIT 或排序来制造多在途资格。
+结果按 source ID 校验；SQL 无 ORDER BY 不承诺关系顺序，Map 的输入/结果序号通过 provider trace 核验。
+
+PG 选择 `incremental-map`（v6），一个 Job；同步 profile 是语义参照。开始时固定窗口/HTTP 并发
+为 2/2，`max_active_jobs=1`、held tasks=2；字节上限依据两项最大输入与结果预留显式列出，
+PG 默认 8 MiB 仅为预检起点，不能据此声称调优完成。EXPLAIN 必须出现 SemMap 和实际窗口 2；
+若退到 1，保留原因并停止多在途比较。`query-job` 的 Map 窗口仍为 1，不能替代此实验路径。
+
+### 计时、资源与强静态配置
+
+查询 JCT 从释放 SQL 到完整结果消费，包含执行和消费等待；导入、启动、模型加载分别记录。
+主指标为 JCT、正确行数/JCT、峰值及时间序列的输入留存/已提交工作/已完成未消费结果。
+PG、网关和客户端 RSS 单列；payload 预算不是 RSS 上界。记录 HTTP 真实在途、服务 running/waiting、
+实际 usage、输入准备/组织/提交/完成/消费时刻及观测开销，缺失项标 `unavailable + reason`，不填零。
+缓存设置保持匹配，不启用结果缓存；前缀缓存按性能服务配置固定，关闭缓存仅作后续归因实验。
+
+容量扫描使用 tuning；服务并发候选先为 1/2/4/8，再检查 PG 窗口，避免全参数笛卡尔积。
+每点先一轮诊断，稳态规模和交错重复按 runtime 及 baseline reference 确定；正式比较至少从
+5 个独立配对重复起步。选择满足正确性/资源条件、达到已测峰值 97% 的最小配置；若最高档仍上升，
+报告尚未达到饱和，不宣布强静态参照已建立。evaluation 只运行确定后的配置。
+
+有限窗口组织比较同时固定可见行数、输入/结果字节和服务计算容量。输入 token 是估计单位，
+不是 GPU 时间；组织批会展开成独立请求，不宣称模型内部 batching 收益。
+若扩大窗口不再改善 JCT，优先检查数据留存、按序返回和消费反压；若有就绪数据且服务有余量但
+提交停顿，先定位普通工程缺陷。简单组织已足够或收益落在重复波动内时，保留负结果并转多 Job，
+不继续无目的调参。只有具体流水瓶颈出现后才补 Filter→Map 有界执行。
+
+### 既有资产复用与实现记录
+
+依据 `main@0ba12bfa` 核对 `import_squad_workload.parse_squad_dev`、
+`observability.metrics.squad`、`incremental_execution.prepare_map_task/request_count_work`、
+`semloom_pg/README`、`shared_credit.FairEndpointCreditCoordinator.incremental_safe`。
+本轮只补数据清单/结果校验工具及 `choice_gateway_observer.record` 的单调观测时间戳，
+不修改语义算子、PG、wire、Engine 或调度算法；旧请求合同保留。
+parser 在 CLI 复用，评价使用现有 EM/F1；新增版本只表达 PG 双消息及分组划分，属于工程决策。
+验证覆盖确定性划分、context 不跨集合、完整 Unicode 消息、ID/NULL/失败分母及内容变更可检测。
+观测器回归同时验证增量事件的纳秒时间戳和已有同步/异步 POST 额度约束。
+
+旧 shared credit、FIFO/DRR/VTC-style/SAOR 均保留；当前默认装配未注入 credit，
+增量资格仅允许本地 FIFO 且关闭历史事件。多 Job 时先复用该接点，并核对计算硬上限是否先于
+credit 阻止空闲容量利用；存储预算不能一并取消。公平策略所需有界候选、反馈和状态退役另验，
+不改 `incremental_safe` 绕过验证。原生 Ray Data/Daft 对照随后选择一个接入，不注入项目策略。
+
+本节依据现有知识库、baseline reference 和三份用户附件收敛近期执行，不新增研究新颖性主张。
+后续组合、已有方法与图像验证继续按具体需求推进，不是本轮开始的前置条件。
+
+### 首次尝试后的决定
+
+2026-09-09 本轮只使用一张 GPU、一个固定模型实例，属于正确性检查。两卡空闲不等于两卡已被
+当前 PG 路径使用；默认装配只有一个 endpoint。后续性能实验分别保留单卡参照与双卡目标拓扑：
+双卡优先采用两个同模型 TP1 副本（每副本独占一张 GPU），先按[多 endpoint 接入设计](postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)
+核对实际路由、每 endpoint 请求、共享全局容量和生命周期，再纳入单 Map/多 Job 比较。
+不能把单卡结果外推为双卡或分布式扩展，也不能把 TP2 与双副本混成同一扩展曲线。
+这一接入是双卡实验所需的具体工程项，不恢复无关框架扩展。
+
+近期优先继续 SQuAD 的测量修整与容量画像。已准备的 64 行前缀子集输入偏短；调优前先按完整
+输入 token 分布选样、维持 context 不跨 tuning/evaluation，并把新的样本身份与额度写清。
+第一次增量 SQL 的计时在检查失败前未保存，不能由事件区间补成 JCT；后续必须在验证前保存
+查询起止、失败和部分结果。关联按任务序号与 payload digest 校验，不能要求完成事件按序到达。
+
+ShareGPT 维持暂停：发现任务执行代替摘要、输入指令干扰和第 12 行 `finish_reason=length`；
+另有一行被临时准备脚本的证据脱敏改写，因此本轮不具备原样数据身份。后续如继续，应先将
+私有 workload 准备与公开证据脱敏分开，验证源文本逐字/哈希往返；改变输入或提示时显式建立
+派生任务版本。临时脚本尚不能作为可复用 runner。tokenizer 返回值须取 token ID 序列，不能
+把字典字段数当 token 数；离线已纠正计数并核对本轮输入均未超上下文，不新增模型请求。
+剩余 20 次额度不自动用于重试、加大输出上限或更换提示。ShareGPT 的问题不阻塞已通过的 SQuAD 路径。
+
+## 历史设计与后续条件性扩展
+
+以下保留 2026-07/08 的研究假设与矩阵；其中“当前”“下一步”和运行参数均按原日期解释，
+不能覆盖上方当前切片或自动恢复旧实验。
 
 整理日期：2026-07-16
 对应研究内容：研究内容一

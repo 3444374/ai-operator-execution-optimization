@@ -1,12 +1,13 @@
 # SemLoom PostgreSQL 内置 AI 语义算子整体架构与实施计划
 
-更新日期：2026-09-08
+更新日期：2026-09-09
 状态：`current / architecture-revised / implementation-partial`
 受众：项目维护者；本文是架构、接口演进与实施依赖的唯一主入口，不是新增运行授权。
 
-本次以`codex/semfilter-and@66887463`为代码基线，吸收用户补充设计并重新核对现有源码。
-该实现及设计已合并main。已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
-开发分支已实现共同调用/结果绑定和一个Filter→一个生成Map；受限生成Map也已接入增量核心的v6多在途路径；按需语义值、多个Map和Filter多在途尚未实现；普通Filter/Map的查询级共享资源接入由下述查询专项补充。
+本轮核对基线为 `main@0ba12bfa`；此前设计起点为 `codex/semfilter-and@66887463`。
+已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
+共同调用/结果绑定、同步 Filter→Map、受限 Map v6 多在途和查询级 Job 归属均已有实现与验证；
+按需语义值、多个Map和Filter多在途尚未实现。外部有界多行方法驱动已完成，尚未接入 PG 方法路径。
 已有真实模型接线与小规模资源诊断不等于正式资源、语义质量或性能资格全部完成。
 具体状态看[INFRA_STATUS](../../code/INFRA_STATUS.md)，提交、测试与失败看
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)；本文不再逐段复制实验数字。
@@ -16,10 +17,13 @@
 近期实施与未定问题见[§9](#implementation-sequence)。A1/A2a的确定方案见
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
 [增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定与受控单流session已实现；有界异步HTTP和受限生成Map的v6 PG多在途已通过[真实验证](../results/postgresql/async_window_20260908/README.md)，[多Job设计](semloom_multisession_design.md)已接入共享Core与并发独立PG查询并通过真实模型验证；
-普通Filter/Map的同查询可信Job归属已实现独立切片，接口、状态和验证见[查询级Job设计](postgresql_query_job_design.md)；其它SQL形状及外部方法状态总预算仍待接入。后续工程基础和外部调度研究的职责区分见[多Job后续项](semloom_multisession_design.md#验证完成后的后续项)；动态借用为可选策略，不要求自研GPU底层资源管理。
+普通Filter/Map的同查询可信Job归属已实现，接口、状态和验证见[查询级Job设计](postgresql_query_job_design.md)；
+[外部方法驱动](bounded_method_driver.md)已有共享 payload 预算，但不等于 PG 全链路内存计量。
+后续工程基础和外部调度研究的职责区分见[多Job后续项](semloom_multisession_design.md#验证完成后的后续项)；动态借用为可选策略，不要求自研GPU底层资源管理。
 A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
 后续共同调用与tuple绑定及setrefs原型已[通过验证](../results/postgresql/semantic_binding_20260907/README.md)。
-在此基础上，一个Filter→一个生成Map通过[PG18.3完整检查](../results/postgresql/filter_map_binding_20260907/README.md)，1910项TAP通过；仅在开发分支，本轮零真实模型请求。
+在此基础上，一个Filter→一个生成Map通过[PG18.3完整检查](../results/postgresql/filter_map_binding_20260907/README.md)，
+1910项TAP通过；这份历史检查不包含真实模型调用，后续真实运行从证据台账分别核对。
 外层carrier已接入该组合；OFFSET普通输出行为按PG18.3实测修订，详细结果与预期由近期规格维护。
 总体决策只由本文拥有，下级详细设计不重复总体架构；全部专项与恢复入口见§13。
 补充审查已收敛到这两份规格：交付提交点、唯一终态结算、可立即推进状态、分阶段等待和残余归属；
@@ -99,7 +103,8 @@ flowchart TD
     B --> V
 ```
 
-这是目标职责图，非现有接线图。当前PG实际走同步reference；Core的增量PG Adapter仍待实现。
+这是目标职责图。当前受限单 Map 已通过 v6 接入增量 Core；Filter 与组合仍按各自已验证范围执行。
+外部 MethodDriver 尚未成为 PG 方法桥接，图中完整方法关系不能由单 Map 接通推导为已实现。
 模型、Python、Ray、vLLM在PG进程外。gateway与Core可以同进程，文本任务不必经过Ray或Daft；
 Adapter只在真实协议/执行方式不同处增加，不按本机/云端部署复制实现。
 
@@ -786,6 +791,12 @@ SemFilter/SemJoin 计划优化器；也不能据此说普通 PG 优化器完全�
 
 ## 9. 工作包与完成条件
 
+2026-09-09 执行优先级：先按[单 Map 数据执行切片](data_organization_batching.md#当前-pg-单-map-数据执行切片)
+完成真实任务测量、静态容量画像和简单组织对照，再做多 Job。已有受限 Map v6、共享 Engine、
+查询归属与外部多行方法驱动从当前源码和证据复用；下表保留能力依赖，不表示所有剩余项都要先做。
+只优先补阻塞该实验、比较不公平或观测缺失的代码。FIFO/DRR/VTC-style/SAOR 是既有实现的
+接入与资格验证，不从零重写；更广组合、方法移植和多模态由具体实验触发。
+
 本节是当前实施依赖的唯一入口。下面的A/B/C表示工程工作线，不是研究贡献或已授权运行任务。
 先验证职责与接口能承接真实消费者，再增加机制；不先造完整框架，也不把一次功能案例当作总体设计。
 
@@ -815,7 +826,8 @@ A1不先生成通用registry；以A2的多个真实消费者证明公共接口�
 B1–B3可使用独立producer推进，不等待A2全部完成、Filter质量或公司系统。B4接线时必须验证受影响的
 旧Filter/Map路径；不能用反复调用同步drive、多个独立gateway或全量collect冒充增量接入。
 具体API字段与wire版本由这一步真实消费者决定，§5.3保留同步C接口的兼容记录。
-生成Map已完成受限B4a/B4b，实际配置与验证见[PG规格§13](postgresql_call_binding_design.md#pg-async-readiness)；B3/B4c及Filter/组合接入仍待完成。
+生成Map已完成受限B4a/B4b，实际配置与验证见[PG规格§13](postgresql_call_binding_design.md#pg-async-readiness)。
+B3/B4c的共享Engine、固定Job预算与查询归属子集已实现；动态借用、旧公平策略完整适配及Filter/组合多在途仍待完成。
 
 ### 9.3 共同支撑、验收矩阵与停止条件
 

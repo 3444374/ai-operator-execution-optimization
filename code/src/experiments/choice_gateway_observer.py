@@ -62,7 +62,8 @@ def main(argv=None):
 
     def record(event):
         event = dict(
-            event, session_id=session_observer.current_session, task=session_observer.current_task
+            event, session_id=session_observer.current_session, task=session_observer.current_task,
+            monotonic_ns=time.monotonic_ns(),
         )
         with record_lock, args.events.open("a", encoding="utf-8") as handle:
             handle.write(

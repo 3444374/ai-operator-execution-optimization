@@ -1,17 +1,37 @@
 # 实验状态与缺口分析
 
-更新日期：2026-09-03
+更新日期：2026-09-09
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
 [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md)。
+
+## 当前执行摘要
+
+`main@0ba12bfa` 已包含受限单 Map v6 多在途、共享 Engine/Job、查询生命周期加固和外部
+有界多行方法驱动。`incremental-map` 可使用配置窗口；`query-job` 的 Map 仍为窗口 1，
+外部方法驱动尚未接入 PG 方法路径。真实模型功能检查不等于真实数据质量或强静态性能资格。
+
+近期执行[单 Map 数据执行切片](data_organization_batching.md#当前-pg-单-map-数据执行切片)：
+先完成真实数据关联/评价和可解释测量，再选静态配置及比较简单组织；之后按需适配已有调度策略。
+默认 work=1、默认装配未注入旧 credit；并不表示 shared-credit/FIFO/DRR/VTC-style/SAOR 不存在。
+旧矩阵与负结果保留，不从附件或下方历史叙述恢复正式运行。
+
+[首次真实数据尝试](../results/postgresql/data_execution_pilot_20260909/README.md)已结束：
+48/68次请求，单 GPU；SQuAD 16 行关联与答案检查可用，ShareGPT 输出/任务/源文本身份未通过。
+静态容量、组织性能和双卡接入仍待验证。先扩大有代表性的 SQuAD 调优输入并补足持久计时，
+双卡性能前验证两个单卡副本的 endpoint 路由；ShareGPT 独立暂停，不阻塞这条主输入。
+
+## 截至 2026-09-03 的历史状态（由上方摘要替代）
+
+以下保留当时判断和原证据链接，其中“待实现”“下一步”不代表当前执行顺序。
 
 2026-09-03 [前缀/表示设计审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)已完成，
 没有新增模型、tokenizer、缓存、PG 或性能运行。same-message 组织/提交和新表示质量分别作为候选；
 实际 token 机会、质量、收益与新颖性均待验证，不恢复旧校准/SAOR，也不阻塞 Map 和独立增量核心。
 工程切片与对照分别见主计划 §7、baseline reference §0.3；此处不把方案存在登记为实验完成。
 
-> **当前执行摘要**：`REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference
+> **2026-09-03 历史执行摘要**：`REL_18_3` extension planner-visible `SemMap` 与 exact `SemFilter` reference
 > paths、SemMap direct `INSERT ... SELECT`、PostgreSQL-private `PgSemanticRuntime`、thin pump、独立 operator
 > machines、provider-neutral `open/drive/close` seam、协议 v2
 > C/Python canonical digest 与同步单在途 UDS

@@ -1,7 +1,8 @@
 # 有界多行方法驱动 V1
 
 状态：V1实现、受控与真实模型验证完成；[记录](../results/scheduling/method_driver_20260909/README.md)。
-真实数据切片尚未运行，继续由本文维护；实现f7de79c3已合入main。基于 main 96b1f169；不修改 PG、wire 或 gateway。
+真实数据切片已尝试但未通过，继续由本文维护；[失败记录](../results/postgresql/data_execution_pilot_20260909/README.md)。
+实现f7de79c3已合入main。基于 main 96b1f169；不修改 PG、wire 或 gateway。
 
 ## 对象与来源核对
 
@@ -32,7 +33,18 @@ close_consumer 与 AsyncFixedModelTransport，版本为上述基线。MethodRun 
 固定模型/服务配置，无重试；两阶段使用明确复制任务，检查身份、调用数和预算回零。失败停止并
 保留证据，不把测试称为 PG 多阶段方法接入或质量/性能实验。
 
-## 首个真实数据切片（独立计划，尚未运行）
+<a id="sharegpt-real-data-slice"></a>
+
+## 首个真实数据切片（已有失败记录）
+
+2026-09-09：已使用该切片 14/34 次请求（2 行预检＋同步查询的前 12 行），第 12 行返回
+`length` 后按 Map 合同停止；增量对照未运行。另发现一行准备文本被证据脱敏改写及多条输出
+未遵从摘要任务，不能登记为合格原样数据实验；剩余额度不自动重试。以下保留当时合同。
+
+近期执行顺序由[单 Map 数据执行切片](data_organization_batching.md#当前-pg-单-map-数据执行切片)维护；
+本节只拥有 ShareGPT 选样与 34 次请求合同。这是 PG 单 Map 检查，不是 MethodDriver 的 PG 桥接。
+实际固定预算路径选择 `incremental-map`/v6、一个 Job、窗口 2、HTTP 并发上限 2，
+须以 EXPLAIN 和真实事件核对生效值；`query-job` 窗口 1 不替代该路径。
 
 使用 data/README 中已登记 ShareGPT 资产，核对完整文件 SHA 后，按原顺序选前16条含非空首个
 human 文本、UTF-8长度256–2048 bytes的记录；保留原记录ID，不截断。未选记录按原因计数。
@@ -41,7 +53,7 @@ SQL：对输入表执行单个 ai_semantic.map，指令为将用户请求概括�
 上限128 tokens，temperature=0。不声称存在唯一标准摘要。
 
 先做两个样本 correctness，再做16条同输入的同步参考与现行固定预算路径各一次，共不超过
-34次模型请求；这一计划尚未启动。评价器检查 ID/exactly-once、NULL、非空UTF-8、finish reason、
+34次模型请求；本轮实际完成度见上方状态。评价器检查 ID/exactly-once、NULL、非空UTF-8、finish reason、
 模型/usage及完整输出，人工逐条检查是否保持请求意图和虚构内容，记录逐项判定而非只报平均值。
 记录已可观测阶段时间，未采集阶段写 unavailable；同模型/消息/上限下比较端到端观察值，不从
 单次小样本声称性能收益，不以不同并发的差值归因调度算法。任何丢行、重复或预算越界停止；质量

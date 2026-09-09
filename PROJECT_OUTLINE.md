@@ -1,19 +1,24 @@
 # 项目大纲
 
-更新时间：2026-09-04
+更新时间：2026-09-09
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
-读者说明：本文 §0.3 和 §5 保留实验审计原词。“冻结”表示配置或判定标准在实验开始前选定、运行
-期间不改变；“门禁/晋级”表示候选纳入比较或采用前必须满足的预设正确性、资源和性能条件；`P0`
-等只表示历史实验臂或诊断名称。这些词不构成研究贡献，也不覆盖本文顶部的当前执行顺序。
+读者说明：本文 §0.3 和 §5 保留历史实验审计与结果。历史配置、诊断名称和当时的后续建议
+只供追溯，不覆盖当前执行顺序。
 
 ## 0. 当前优先级与历史记录范围
 
-当前目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible recording `SemMap`/`SemFilter`
+2026-09-09：当前主线转为围绕具体数据执行问题完成测量、对照、机制改进和验证。
+先做真实单 Map 任务与静态容量画像，再比较有限窗口中的数据组织，随后进入多 Job。
+近期合同见[数据执行切片](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)，
+实际完成情况见[实现状态](code/INFRA_STATUS.md)与[实验状态](experiments/plans/experiment_status_and_gaps.md)。
+研究对象和两项研究内容保持不变；框架开发优先解决这条实验链暴露的缺口。
+
+以下为截至 2026-09-04 的接入背景，不覆盖上述顺序。目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible recording `SemMap`/`SemFilter`
 与三参 exact `SemFilter` golden/fixed-model reference paths 已验证
 `SELECT`、ordinary child plan、snapshot 与 query lifecycle；Map 与 Filter 另有受限 direct `INSERT ... SELECT` 验证，并通过初始
 PostgreSQL-private pump 和 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口调用
@@ -158,7 +163,7 @@ physical path。当前 deterministic fixture 不提供真实可比较成本。
 
 ### 0.3 SAOR 系统对照准备记录（历史）
 
-迁移前待执行的 SAOR 系统对照冻结为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
+迁移前待执行的 SAOR 系统对照在运行前确定为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
 执行，不注入项目控制；五臂均 `writeback=none`，不把 PostgreSQL sink 混入调度排名。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
 另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
@@ -166,7 +171,7 @@ native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保
 VTC-on-vLLM reproduction 与 SAOR + native FCFS；当前 frozen installed-source、Job identity 和
 custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修改 vLLM”的主方法边界。
 共同外部到达使用 typed Job release；request arrival replay 不再被误写成 native baseline 的必需能力。
-本轮 MFU denominator 被配置和证据指纹冻结，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
+本轮 MFU denominator 已写入配置和证据指纹，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
 五臂 eager SAOR 的旧 profiler 冲突已在本地修复：只有旧 single-head bounded-priority 继续强制
 request replay；bounded-ready 在完整 concrete pre-registration 门下直接消费 eager request envelopes。
 截至 2026-08-19，当时尚无成功、可比较的完整五臂 rehearsal；formal 从未运行且继续禁止。
@@ -177,18 +182,18 @@ selector-sanity cell 因 `unavailable:missing_gpu_peak_tflops` 被 MFU guard 拒
 `job 0 has no unique successful summary` 被 summary guard 拒绝。两次均通过
 `run_saor_native_system_matched.py ... --rehearsal` 入口、无 formal authorization，服务器未发现
 独立 tar archive；原 shell history 未保留逐字命令，因此这里只登记由 matrix index 证明的执行模式、
-commit/root/cell/原因和冻结 runbook 的等价入口，不伪造历史 argv。
+commit/root/cell/原因和预先选定的 runbook 的等价入口，不伪造历史 argv。
 
 2026-08-21 本地 readiness 合同进一步 fail-closed：外层 runner 固定为独立 `DRIVER_PYTHON`，
 `VLLM_PYTHON` 只用于子进程 source/package 重审；live endpoint 绑定 PID、进程 start time、未解析
-argv0、`sys.prefix` 与实际 vLLM package path/version，并显式冻结 `scheduling_policy=fcfs`。
+argv0、`sys.prefix` 与实际 vLLM package path/version，并明确设置 `scheduling_policy=fcfs`。
 readiness 拆为 static config、service identity、system preflight、correctness smoke 四阶段，仅四者
 全部通过才置 `rehearsal_ready=true`。三份实际 config SHA、Daft/Ray upstream tag commit 与薄
 adapter SHA 进入证据身份；formal 还必须绑定实际 rehearsal validation/root/archive SHA。`862d0008`
 已在服务器完成一次 gateway 前的五臂 correctness smoke 与 rehearsal，证明可运行性但无法给原生臂
 提供同口径 request tail/fairness；formal 未运行。
 
-2026-08-21 的当前修订为五臂统一增加严格透传 observation-only gateway，并冻结 T0--T4：T0 在
+2026-08-21 的当前修订为五臂统一增加严格透传 observation-only gateway，并预先确定 T0--T4：T0 在
 PostgreSQL 读取和 child/Ray 初始化前，T1 为首批 source data，T2/T3 为首请求到达/末请求完成，T4
 为完整正确结果在内存中可见。Job/group JCT 与 correct throughput 使用完整系统边界，同时分列
 source/execution/service span。共同 gateway 不排队、不重试、不重写、不接管原生 scheduler；只用
@@ -360,9 +365,9 @@ PostgreSQL SQL `ai_semantic.map(...)`
 - 固定行数不是稳定 work 代理：固定 16 行批次的 work 最小/最大中位数为 474/6,793 token，相差 14.3 倍。
 - 同一静态上限不是运行状态：W65K 下 high offered load 的运行内峰值 active work/MFU 约为 100%/35%，arrival-limited 约为 29%/7%；前者不是时间平均 active work。
 - 当前双 4090/Qwen/vLLM 签名下，65,536 active work/endpoint 达最大已测吞吐均值的 97.80%；下一档只增 0.92%，继续增压会恶化 P99。
-- 复杂动态控制不天然优于强静态点：AIMD/PID/EWMA、adaptive flush、service quantum 与多 actor 多数未过约 5% 晋级门槛。
+- 复杂动态控制不天然优于强静态点：AIMD/PID/EWMA、adaptive flush、service quantum 与多 actor 多数未满足预先规定的约 5% 改善条件。
 - 数据组织策略排名受 serving regime 影响：双 endpoint 大 KV 池下策略范围约 12%；四 endpoint 小 KV 池饱和时分化约 27% 且排名反转，重排序可使 prefix hit 降至 0.06–0.07。
-- 图像 matched-resource 静态执行结构有可重复收益：主报告冻结约 13%–15% operator-JCT 改善；旧 45.7% 资源不匹配，不再使用。
+- 图像 matched-resource 静态执行结构有可重复收益：主报告保留约 13%–15% operator-JCT 改善；旧 45.7% 资源不匹配，不再使用。
 - 多 Job 干扰已从两作业扩展到受控 `short@0s → 3 long@5s`：Project full/quarter
   single 将 quota 与竞争分离；三条原生路径全部 Job 均出现轨内退化。Project shared 相对
   static 总吞吐 +8.68%，四个 Job JCT 分别 −72.23%/−8.28%/−20.24%/−52.66%，因此在
@@ -388,17 +393,17 @@ PostgreSQL SQL `ai_semantic.map(...)`
   observe-only；它验证的是 fairness-aware release，不是完整 SLO-aware controller。第一性原理
   审计确认：soft fairness release score 无法复制 static 的即时隔离；但 strict-priority 两轮 GPU
   短测达到 11,791 tok/s、fg P99 14.27s、SLO 0%，说明已知 foreground 存活信号下 release-only
-  可达。`saor-v0.5` 已冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
+  可达。`saor-v0.5` 已在运行前确定为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
   completion-corrected actual-work debt cap 优先阻止饥饿，无 guard 时回退 SAOR；debt-critical
   ready head 不 fit 时只为该队首建立 reclaim barrier，其余只在 fitting heads 间选择；首轮只做
   两 Job 的 $0.125W_e/0.25W_e$ 两个 cap（$W_e$ 是 endpoint work limit，不是 request K）。v0.5.1 已完成 selector/coordinator/scheduler/Ray/runner、
   timeout 清理、lossless event ledger、readiness 与两轮汇总器；事件机制门不再依赖 250 ms
-  snapshot。旧 single-head 双轮 GPU development gate 没有 cap 晋级：$0.25W_e$ 第 2 轮 debt-recovery=0，两个
+  snapshot。旧 single-head 双轮 GPU development gate 没有满足容量候选的采用条件：$0.25W_e$ 第 2 轮 debt-recovery=0，两个
   cap 的 fg P99 约 49–56s、SLO violation 85%–95%。request/event 交叉验证定位 per-Job 单-head
   pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；该失败版本状态为
   `development-run/not-promoted/not-formal-registered`。2026-08-13 已完成独立
   `saor_bounded_ready` 修订：旧
-  bounded-priority 保持单-head 回归语义，新路径只预注册已经到达的具体 request，窗口由冻结
+  bounded-priority 保持单-head 回归语义，新路径只预注册已经到达的具体 request，窗口由预先确定
   effective K 与 endpoint 数×W 自动派生；submission trace schema 6 分开 ready、registered、
   granted、submit/service；coordinator release-event schema 2 对 ready registration 与 grant
   统一记录 request ID 和 epoch。runner 先用 submission trace 证明 concrete-ready lifecycle 完整，
@@ -413,7 +418,7 @@ PostgreSQL SQL `ai_semantic.map(...)`
   相对 VTC-style 用约 4.8% 吞吐、5.2% bulk JCT 和更长 no-service interval 换取约 31.8%
   foreground P99 改善，是观测非支配折中而不是 selector 胜出；固定顺序 n=2 且未预注册
   selector non-inferiority margin，故历史结果保持 `formal_authorized=false`。现已另建位置平衡的
-  Project mechanism 1+3 合同，冻结 VTC-style 为公平参照、5% headline、吞吐/bulk JCT/SLO/
+  Project mechanism 1+3 合同，预先确定 VTC-style 为公平参照、5% headline、吞吐/bulk JCT/SLO/
   longest-no-service 非劣与 30s empirical debt-repayment 门；首次最终 rehearsal 在 SAOR cell
   发现单 recovery 在途无法赶上 debt 产生，10/10 recovery completion 仍留下 2 个未退出 episode，
   已正确 fail closed。修正版使用 residual-aware projected-debt work budget，按活动集同时计入
@@ -427,10 +432,10 @@ PostgreSQL SQL `ai_semantic.map(...)`
   未证明胜出。独立 raw/SHA/指标复核已通过；授权 validator 已逐字段绑定 validation SHA、
   commit/root/archive/valid-rehearsal，不完整 fairness trace 分支也已 fail-closed 修复，六臂全组件
   指标已重汇总。当前一次性完整签名 direct ceiling 为 13,684.90 tok/s，SAOR
-  feeding=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA 已绑定，足以按冻结 gate
-  停止当前 formal，但缺结构化 PG/Ray clean record，不能声称稳定损失 7.10%。wrapper/formal contract 已冻结为
+  feeding=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA 已绑定，足以按预先确定 gate
+  停止当前 formal，但缺结构化 PG/Ray clean record，不能声称稳定损失 7.10%。wrapper/formal contract 已在运行前确定为
   `locked_failed_feeding/formal_authorized=false`，当前 1+3 formal 停止。不能下调门槛、调 K/W 或
-  重跑六臂追正。当前仅先做同签名 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W
+  重跑六臂追正。当前仅先做同签名 D0 direct K-only、D1 direct K+W、有界就绪 FIFO K+W 诊断
   的三臂 1+3 配对诊断，分别隔离 W envelope 与 Project plumbing；旧负判决不可被诊断结果撤销。
   代码/合同/结构化 PG-Ray-endpoint clean gate 已就绪，服务器关机故尚无新性能数据。诊断后才补
   同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
@@ -505,15 +510,16 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-已有 recording/真实 Filter 同步 reference、公共 runtime/provider 与生命周期验证继续复用；下一步按
-工作对象分别推进，不把某一分类模型的失败变成整个执行系统研发的前置阻塞。
-四 C 接线、受限 Filter INSERT、受控资源和受限真实模型验证已完成，当前集成版本包含源码与证据。
-主线与分支状态、未运行项目分别见 [INFRA_STATUS](code/INFRA_STATUS.md)，不从文档更新推断已部署。
+先回答“数据库逐步提供的输入怎样组织和提交，才能及时完成查询并减少不必要的数据留存”。
+复用已实现的受限单 Map 多在途、共享执行核心和组织器；真实质量、性能与可比性分别核对。
+具体参数、额度和停止条件只在[数据执行计划](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)维护。
 
 | 工作对象 | 近期工作 | 与其他工作的依赖 |
 |---|---|---|
-| 自有 PG 算子 | [主设计的数据库调用/绑定与方法工作](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)，已有同步Map/Filter及双Filter作为参照 | 与独立增量Core协同；各路径分别验证语义、身份、结果和生命周期，不等待无关Filter质量 |
-| SemLoom 核心 | 现有行为表征、公开任务驱动增量 session、work organization、有界提交、多 Job 与路由 | 可以先用 fixture/外部 workload；不是已接入数据库的证据 |
+| 真实数据单 Map | SQuAD 输入、完整消息、PG 查询、结果消费和答案评价；已有 ShareGPT 小样本检查 | 对应实际 profile 与窗口，先核对结果关联和资源回收 |
+| 静态容量与数据组织 | 先测服务和 PG 供给，再比较输入顺序、工作预算和有限窗口长度分组 | 相同任务与资源，调优数据和评测数据分开；数据留存与完成时间共同判断 |
+| 多 Job 调度 | 按需适配已有共享 credit 和公平策略，检查后到查询、暂停恢复和空闲容量利用 | 不以固定等分的弱对照证明新策略；存储与计算额度分别检查 |
+| 算子与框架实现 | 只优先修补已选实验中的路径、比较和测量缺口 | 组合、多阶段方法和更广 SQL 按实际需求继续验证，不要求先全面扩展 |
 | Filter 语义优化 | 确定质量任务与标签，取得 reference、matched cost，再实现 proxy/oracle 第二路径与 fallback | 仍是 Filter 计划比较的重要完成项，不再阻塞独立核心或生成型 Map |
 | carrier 审查 | 随真实路径核对注册身份、函数属性、PG 能力复用、placement、绑定/重扫及生命周期，包含多算子组合 | 只在目标路径出现已复现阻断时增加最小 core patch |
 | 公司工程参照与成果移植 | 按主计划完整对照 SQL/PG 接入到外部执行；按需在 fork 分别移植自有算子方法和执行能力 | 保留一套可复用方法与 SemLoom 核心；目标数据库的计划/结果/lifecycle 单独验证，内网复用、外部发布与部署分别获批 |

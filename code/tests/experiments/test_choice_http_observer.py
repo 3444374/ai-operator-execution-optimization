@@ -1,9 +1,11 @@
 """Real HTTP dispatch is downstream of durable attempt reservation."""
 
 import http.client
+import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -17,6 +19,25 @@ from src.experiments.attempt_ledger import (
 
 
 BUDGET = AttemptBudget("fixture.request-budget", 100)
+
+
+class GatewayEventTimingTests(unittest.TestCase):
+    def test_incremental_events_have_observer_timestamps(self):
+        from src.experiments.choice_gateway_observer import main
+
+        def emit(_argv, **options):
+            options["incremental_observer"]({"event": "http_started", "key": {"sequence": 0}})
+            return 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "events.jsonl"
+            before = time.monotonic_ns()
+            with patch("src.experiments.choice_gateway_observer.server.main", side_effect=emit):
+                self.assertEqual(main(["--events", str(path), "--fixture-only", "--", "--incremental-map"]), 0)
+            event = json.loads(path.read_text())
+            self.assertEqual(event["event"], "core_http_started")
+            self.assertGreaterEqual(event["monotonic_ns"], before)
+            self.assertLessEqual(event["monotonic_ns"], time.monotonic_ns())
 
 
 class ChoiceHttpObserverTests(unittest.TestCase):

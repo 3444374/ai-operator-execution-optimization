@@ -18,12 +18,20 @@ experiment.
 
 ## Sources (exact)
 
+SQuAD v1.1 dev 的来源为 [官方文件](https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.json)，
+共 10,570 个问题、4,854,279 bytes，SHA256 为
+`95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9`。
+原有 `code/scripts/data/import_squad_workload.py` 维护历史导入；
+当前 PG Map 的 `code/scripts/baselines/squad_pg_map_pilot.py` 复用其解析与校验，生成按 context
+分组的独立输入文件，不修改旧 workload。完整文件和派生输入留在机器自己的仓库外数据目录；
+不能从本轮服务器已有文件推断其他机器已下载。
+
 Raw files are gitignored — **every environment (local machine, server, cloud) must download them fresh**. Use these exact URLs:
 
 跨机器时优先使用 `deploy/runtime/assets.json` 与
 `code/scripts/environment/manage_environment.py` 检查/下载；本节保留人工核验来源和
 应急命令。资产下载完成不代表 PostgreSQL workload 已导入，仍需执行本目录对应 importer
-并通过 runner 的 schema/行数/唯一性门禁。
+并通过 runner 的 schema、行数与唯一性检查。
 
 | Dataset | Exact URL | Repo |
 |---|---|---|

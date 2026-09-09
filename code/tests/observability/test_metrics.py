@@ -132,6 +132,13 @@ class MetricsTests(unittest.TestCase):
         self.assertEqual(metrics["squad_exact_match_percent"], 50.0)
         self.assertEqual(metrics["squad_token_f1_percent"], 50.0)
 
+    def test_squad_missing_prediction_cannot_match_normalized_empty_reference(self) -> None:
+        for prediction in ({}, {"q1": None}):
+            with self.subTest(prediction=prediction):
+                metrics = squad_quality_metrics(prediction, {"q1": ("the",)})
+                self.assertEqual(metrics["squad_exact_match_percent"], 0.0)
+                self.assertEqual(metrics["squad_token_f1_percent"], 0.0)
+
     def test_squad_quality_rejects_manifest_join_errors(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown example IDs"):
             squad_quality_metrics(

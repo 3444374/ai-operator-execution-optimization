@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+2026-09-09：[PG 单 Map 真实数据尝试](postgresql/data_execution_pilot_20260909/README.md)，
+单 GPU/单 endpoint、48/68 次请求。SQuAD 同步/增量各16行 EM/F1 均为100%，仅为小样本观察；
+增量乱序完成按序号/payload/输出离线重审通过，原检查错误与未保存的 JCT 不隐去。
+ShareGPT 使用14次请求后在同步第12行 length 停止；存在任务遵从问题及第7行准备文本被脱敏改写，
+增量臂未运行，不是合格原样数据或性能证据。本地/Linux各125项相关测试通过，源代码不改PG/Engine。
+模型/PG/gateway已清理，未开启双卡性能或旧矩阵。当前更改在 `codex/data-execution-pilot` 分支维护，尚未合入 main。
+
 2026-09-09：[有界多行方法驱动](scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
 独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。
 首次0POST失败暴露缺TaskInfo，修复后双Job10次及最终两阶段2次真实POST通过，合计12次；预算与服务均清理。
