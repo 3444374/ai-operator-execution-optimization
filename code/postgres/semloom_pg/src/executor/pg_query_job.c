@@ -30,6 +30,7 @@ struct PgQueryJobFlow
 {
     PgQueryJobOwner *owner;
     int ordinal;
+    bool ended;
 };
 
 static PgQueryJobOwner *query_owners;
@@ -100,7 +101,7 @@ pg_query_job_register(MemoryContext context, const char *socket_path)
         owner->flow_count == PG_INT32_MAX || strcmp(owner->socket_path, socket_path) != 0)
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                        errmsg("SemLoom query flow registration is no longer available")));
-    flow = MemoryContextAlloc(context, sizeof(*flow));
+    flow = MemoryContextAllocZero(context, sizeof(*flow));
     flow->owner = owner;
     flow->ordinal = owner->flow_count++;
     return flow;
@@ -166,12 +167,12 @@ invalid:
 }
 
 AiProviderStatus
-pg_query_job_join(PgQueryJobFlow *flow, pgsocket stream, AiProviderError *error)
+pg_query_job_prepare(PgQueryJobFlow *flow, AiProviderError *error)
 {
     PgQueryJobOwner *owner = flow->owner;
     char request[256];
     AiProviderStatus status;
-    if (owner->ended)
+    if (owner->ended || flow->ended)
     {
         semloom_provider_error_set(error, AI_PROVIDER_ERROR_PROTOCOL, 0, 0,
                                   "SemLoom query has ended");
@@ -194,6 +195,20 @@ pg_query_job_join(PgQueryJobFlow *flow, pgsocket stream, AiProviderError *error)
         if (status != AI_PROVIDER_STATUS_OK)
             return status;
     }
+    return AI_PROVIDER_STATUS_OK;
+}
+
+AiProviderStatus
+pg_query_job_join(PgQueryJobFlow *flow, pgsocket stream, AiProviderError *error)
+{
+    PgQueryJobOwner *owner = flow->owner;
+    char request[256];
+    if (owner->ended || flow->ended || owner->token[0] == '\0')
+    {
+        semloom_provider_error_set(error, AI_PROVIDER_ERROR_PROTOCOL, 0, 0,
+                                  "SemLoom query flow is not available");
+        return AI_PROVIDER_STATUS_ERROR;
+    }
     snprintf(request, sizeof(request),
              "{\"type\":\"stream_join\",\"binding_version\":%d,\"token\":\"%s\",\"flow\":%d}",
              QUERY_BINDING_VERSION, owner->token, flow->ordinal);
@@ -201,14 +216,13 @@ pg_query_job_join(PgQueryJobFlow *flow, pgsocket stream, AiProviderError *error)
 }
 
 void
-pg_query_job_node_end(MemoryContext context)
+pg_query_job_flow_end(PgQueryJobFlow *flow)
 {
     PgQueryJobOwner *owner;
-    for (owner = query_owners; owner != NULL; owner = owner->next)
-        if (owner->context == context)
-        {
-            if (!owner->ended && ++owner->ended_flows == owner->flow_count)
-                query_close(owner);
-            return;
-        }
+    if (flow == NULL || flow->ended)
+        return;
+    flow->ended = true;
+    owner = flow->owner;
+    if (!owner->ended && ++owner->ended_flows == owner->flow_count)
+        query_close(owner);
 }

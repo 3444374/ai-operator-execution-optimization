@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import secrets
 import socket
 import struct
+from enum import Enum
 
 from ..scheduling.core.session_contract import SessionSpec
 from .wire.framing import ProtocolError, has_duplicate_fields
@@ -73,6 +74,13 @@ class QueryRegistration:
     joined: set[int] = field(default_factory=set)
 
 
+class ConnectionEnd(Enum):
+    CONTROL_EOF = "control_eof"
+    STREAM_CLEAN_END = "stream_clean_end"
+    PEER_FAILURE = "peer_failure"
+    SERVICE_STOP = "service_stop"
+
+
 class QueryRegistry:
     """A live control connection owns membership; an empty Job is not query completion."""
 
@@ -81,11 +89,18 @@ class QueryRegistry:
         self.registrations = {}
 
     def register(self, peer, flow_count):
-        job, limits, budget = self.execution.open_query_job("pg-query", flow_count)
         token = secrets.token_hex(TOKEN_BYTES)
-        registration = QueryRegistration(job, peer, flow_count, limits, token)
-        self.registrations[token] = registration
-        return registration, budget
+        if token in self.registrations:
+            raise ValueError("query capability collision")
+        job, limits, budget = self.execution.open_query_job("pg-query", flow_count)
+        try:
+            registration = QueryRegistration(job, peer, flow_count, limits, token)
+            self.registrations[token] = registration
+            return registration, budget
+        except BaseException:
+            self.registrations.pop(token, None)
+            self.execution.engine.close_job(job)
+            raise
 
     def join(self, peer, token, flow):
         registration = self.registrations.get(token)
@@ -97,16 +112,37 @@ class QueryRegistry:
             or flow in registration.joined
         ):
             raise ValueError("query membership rejected")
-        session = self.execution.engine.open(
-            SessionSpec(
-                "registered", f"operator-{flow}", "fixed-chat", work_unit=self.execution.work_unit
-            ),
-            registration.limits,
-            job=registration.job,
+        spec = SessionSpec(
+            "registered", f"operator-{flow}", "fixed-chat", work_unit=self.execution.work_unit
         )
-        # Ordinals are one-shot in this version; rescan is not supported by the PG carrier.
-        registration.joined.add(flow)
-        return registration, session
+        session = self.execution.engine.open(spec, registration.limits, job=registration.job)
+        try:
+            # Publication transfers responsibility to the connection owner only on success.
+            registration.joined.add(flow)
+            return registration, session
+        except BaseException:
+            registration.joined.discard(flow)
+            session.close_consumer()
+            raise
+
+    def has_job_room(self):
+        engine = self.execution.engine
+        return len(engine.jobs.jobs) < engine.jobs.maximum
+
+    def is_closing(self, job):
+        registered = self.execution.engine.jobs.jobs.get(job)
+        return registered is not None and registered.closing
+
+    def connection_ended(self, job, registration, session, event, *, consumer_stopped=False):
+        """Interpret transport outcomes here; socket closure never settles remote compute."""
+        clean = event in (ConnectionEnd.CONTROL_EOF, ConnectionEnd.STREAM_CLEAN_END)
+        if consumer_stopped and session is not None:
+            session.close_consumer(clean=clean)
+        if registration is not None:
+            if event != ConnectionEnd.STREAM_CLEAN_END:
+                self.close(registration)
+        elif job in self.execution.engine.jobs.jobs:
+            self.execution.engine.close_job(job)
 
     def close(self, registration):
         if self.registrations.pop(registration.token, None) is None:

@@ -32,7 +32,7 @@ struct PgSemanticRuntime
 	MemoryContext owner_context;
 	MemoryContextCallback cleanup_callback;
 	PgSemanticRuntimeState state;
-	bool query_job;
+	PgQueryJobFlow *query_flow;
 	uint64 next_sequence;
 	uint64 model_calls;
 	uint64 prompt_tokens;
@@ -170,9 +170,10 @@ pg_semantic_runtime_begin(MemoryContext owner_context,
 	runtime->cleanup_callback.func = pg_semantic_runtime_cleanup;
 	runtime->cleanup_callback.arg = runtime;
 	MemoryContextRegisterResetCallback(owner_context, &runtime->cleanup_callback);
-	semloom_provider_select(owner_context, &runtime->open_spec, &runtime->provider);
-	runtime->query_job = semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_QUERY_JOB &&
-		!semloom_provider_spec_is_recording(&runtime->open_spec);
+	if (semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_QUERY_JOB &&
+		!semloom_provider_spec_is_recording(&runtime->open_spec))
+		runtime->query_flow = pg_query_job_register(owner_context, semloom_gateway_socket_path());
+	semloom_provider_select(owner_context, &runtime->open_spec, runtime->query_flow, &runtime->provider);
 	return runtime;
 }
 
@@ -330,8 +331,8 @@ pg_semantic_runtime_close(PgSemanticRuntime *runtime)
 		return;
 	runtime->state = PG_SEMANTIC_RUNTIME_CLOSED;
 	pg_semantic_runtime_release_session(runtime);
-	if (runtime->query_job)
-		pg_query_job_node_end(runtime->owner_context);
+	if (runtime->query_flow)
+		pg_query_job_flow_end(runtime->query_flow);
 }
 
 void
@@ -343,7 +344,7 @@ pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
 	ExplainPropertyText("Provider",
 						runtime->provider.ops->adapter_name,
 						explain_state);
-	if (runtime->query_job)
+	if (runtime->query_flow)
 		ExplainPropertyInteger("Query Job Binding Version", NULL, 1, explain_state);
 	semloom_plan_spec_explain(&runtime->plan_spec, explain_state);
 }
@@ -568,6 +569,12 @@ pg_semantic_runtime_open_provider(PgSemanticRuntime *runtime)
 	previous_context = MemoryContextSwitchTo(runtime->owner_context);
 	PG_TRY();
 	{
+		if (runtime->query_flow != NULL)
+		{
+			status = pg_query_job_prepare(runtime->query_flow, &error);
+			if (status != AI_PROVIDER_STATUS_OK)
+				pg_semantic_runtime_fail(runtime, &error);
+		}
 		status = runtime->provider.ops->open(runtime->provider.config,
 											 &runtime->open_spec,
 											 &runtime->provider_session,

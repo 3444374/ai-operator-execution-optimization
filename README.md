@@ -40,7 +40,7 @@ NULL 零调用、结果与写回均通过。main中的两个算子各自同步�
 [方法续体接口](code/src/semantic_methods/README.md)为后续多阶段算法提供逐行接入方式；
 [组织窗口已接入](experiments/results/scheduling/organized_window_20260908/README.md)，批次展开为各自计费的独立请求；
 为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过；生成Map已完成[PG有界多在途接入](experiments/results/postgresql/async_window_20260908/README.md)，
-同一PG查询的两个模型请求已验证可同时在途；多流执行见[多Job设计](experiments/plans/semloom_multisession_design.md)。普通Filter与Map现可通过[查询级Job接入](experiments/plans/postgresql_query_job_design.md)共享预算；Filter多在途、更广组合和单请求多成员仍待实现。
+同一PG查询的两个模型请求已验证可同时在途；多流执行见[多Job设计](experiments/plans/semloom_multisession_design.md)。普通Filter与Map现可通过[查询级Job接入](experiments/plans/postgresql_query_job_design.md)共享预算；[生命周期加固](experiments/results/scheduling/query_lifecycle_20260909/README.md)已验证帧间空闲、连接名额与失败回滚。Filter多在途、更广组合和单请求多成员仍待实现。
 [总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
 [实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)

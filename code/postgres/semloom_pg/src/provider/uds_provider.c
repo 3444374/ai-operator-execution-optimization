@@ -103,7 +103,7 @@ semloom_uds_provider_select(MemoryContext owner_context,
 									const char *socket_path,
 									const AiOpenSpec *spec,
 									SemloomProviderExecutionProfile profile,
-									AiProvider *provider)
+									PgQueryJobFlow *query_flow, AiProvider *provider)
 {
 	SemloomUdsProviderConfig *config;
 	Size path_length;
@@ -127,7 +127,9 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	{
 		if (spec->has_generation_profile)
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("query-job does not yet support choice Filter")));
-		config->query_flow = pg_query_job_register(owner_context, socket_path);
+		if (query_flow == NULL)
+			elog(ERROR, "query-job requires a registered flow");
+		config->query_flow = query_flow;
 		if (semloom_provider_spec_is_generate_map(spec))
 		{
 			provider->ops = &semloom_uds_async_ops;

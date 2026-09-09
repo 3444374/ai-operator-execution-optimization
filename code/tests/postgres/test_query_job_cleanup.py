@@ -10,39 +10,51 @@ import unittest
 class QueryJobCleanupTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("cc"), "C compiler is required")
     def test_repeated_close_ends_each_flow_once(self):
-        source = (
-            Path(__file__).parents[2] / "postgres/semloom_pg/src/executor/pg_semantic_runtime.c"
-        ).read_text()
-        start = source.index("void\npg_semantic_runtime_close(")
-        body_start = source.index("{", start)
-        depth = 1
-        end = body_start + 1
-        while depth:
-            depth += (source[end] == "{") - (source[end] == "}")
-            end += 1
-        function = source[start:end]
+        root = Path(__file__).parents[2] / "postgres/semloom_pg/src/executor"
+
+        def extract(name, symbol):
+            source = (root / name).read_text()
+            start = source.index("void\n" + symbol + "(")
+            end = source.index("{", start) + 1
+            depth = 1
+            while depth:
+                depth += (source[end] == "{") - (source[end] == "}")
+                end += 1
+            return source[start:end]
+
+        function = extract("pg_query_job.c", "pg_query_job_flow_end") + extract(
+            "pg_semantic_runtime.c", "pg_semantic_runtime_close"
+        )
         harness = (
             r"""
 #include <stdbool.h>
 #include <stddef.h>
 #include <assert.h>
 #define PG_SEMANTIC_RUNTIME_CLOSED 5
-typedef struct { int state; bool query_job; void *owner_context; } PgSemanticRuntime;
+typedef struct { bool ended; int ended_flows, flow_count; } PgQueryJobOwner;
+typedef struct { PgQueryJobOwner *owner; int ordinal; bool ended; } PgQueryJobFlow;
+typedef struct { int state; PgQueryJobFlow *query_flow; } PgSemanticRuntime;
 static int sessions_closed, flows_ended;
 static void pg_semantic_runtime_release_session(PgSemanticRuntime *r) { sessions_closed++; }
-static void pg_query_job_node_end(void *owner) { flows_ended++; }
+static void query_close(PgQueryJobOwner *owner) { owner->ended = true; flows_ended++; }
 """
             + function
             + r"""
 int main(void) {
-    PgSemanticRuntime first = {1, true, NULL}, second = {1, true, NULL};
+    PgQueryJobOwner owner = {false, 0, 2};
+    PgQueryJobFlow a = {&owner, 0, false}, b = {&owner, 1, false};
+    PgSemanticRuntime first = {1, &a}, second = {1, &b};
+    pg_query_job_flow_end(&a);
+    pg_query_job_flow_end(&a);
+    assert(owner.ended_flows == 1 && !owner.ended);
     pg_semantic_runtime_close(&first);
     pg_semantic_runtime_close(&first);
     pg_semantic_runtime_close(NULL);
-    assert(flows_ended == 1 && sessions_closed == 1);
+    assert(owner.ended_flows == 1 && sessions_closed == 1);
     pg_semantic_runtime_close(&second);
     pg_semantic_runtime_close(&second);
-    assert(flows_ended == 2 && sessions_closed == 2);
+    pg_query_job_flow_end(&b);
+    assert(owner.ended_flows == 2 && sessions_closed == 2 && flows_ended == 1);
     return 0;
 }
 """

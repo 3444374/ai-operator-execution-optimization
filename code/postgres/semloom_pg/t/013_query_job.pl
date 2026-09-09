@@ -33,7 +33,7 @@ my ($http_out, $http_err, $gateway_out, $gateway_err) = ('','','','');
 my ($http, $gateway);
 END { my $status = $?; eval { $gateway->kill_kill } if defined $gateway; eval { $http->kill_kill } if defined $http; $? = $status; }
 $http = IPC::Run::start(['python3', $http_script, '--port-file', $port_file,
-    '--mixed-mode', '--model-id', 'model', '--raw-outputs', 'TRUE', '--max-requests', '20',
+    '--mixed-mode', '--model-id', 'model', '--raw-outputs', 'TRUE', '--max-requests', '22',
     '--request-log', $requests], '>', \$http_out, '2>', \$http_err, IPC::Run::timeout(120));
 for (1..500) { last if -f $port_file; sleep(.01); }
 ok(-f $port_file, 'HTTP fixture ready') or die $http_err;
@@ -45,7 +45,7 @@ close($config);
 $gateway = IPC::Run::start(['python3', '-m', 'src.experiments.choice_gateway_observer',
     '--fixture-only', '--events', $events_file, '--', '--socket', $socket,
     '--fixed-model-config', $config_file, '--incremental-map', '--max-active-jobs', '3',
-    '--max-connections', '12', '--max-held-tasks', '6', '--max-active-requests', '2'],
+    '--max-connections', '12', '--max-held-tasks', '6', '--max-active-requests', '2', '--frame-timeout-ms', '500'],
     '>', \$gateway_out, '2>', \$gateway_err, IPC::Run::timeout(120));
 for (1..500) { last if -S $socket; sleep(.01); }
 ok(-S $socket, 'query gateway ready') or die $gateway_err;
@@ -102,6 +102,8 @@ $session->query_safe("BEGIN; DECLARE a CURSOR FOR $composed; DECLARE b CURSOR FO
 is($session->query_safe('FETCH 1 FROM a'), '1|TRUE', 'first cursor');
 is($session->query_safe('FETCH 1 FROM b'), '1|TRUE', 'second cursor');
 is(count_event('job_opened') - count_event('job_drained'), 2, 'same backend has two live query Jobs');
+sleep(1.2);
+is($session->query_safe('FETCH 1 FROM a'), '2|TRUE', 'cursor resumes after frame deadline idle');
 $session->query_safe('CLOSE a');
 for (1..500) { last if count_event('job_opened') - count_event('job_drained') == 1; sleep(.01); }
 is(count_event('job_opened') - count_event('job_drained'), 1, 'closing one cursor retains the other');
@@ -130,7 +132,7 @@ ok(scalar(keys %flows) >= 9, 'observed distinct query executions');
 for my $job (sort keys %flows) { is(scalar(keys %{$flows{$job}}), 2, "$job has both operator streams"); }
 open(my $log, '<', $requests) or die $!;
 my @lines = <$log>; close($log);
-is(scalar @lines, 20, 'bounded exact HTTP count');
+is(scalar @lines, 22, 'bounded exact HTTP count');
 ok(eval { $http->finish }, 'fixture consumed all planned requests') or diag($http_err);
 $gateway->signal('TERM');
 ok(eval { $gateway->finish }, 'gateway exits after draining') or diag($gateway_err);

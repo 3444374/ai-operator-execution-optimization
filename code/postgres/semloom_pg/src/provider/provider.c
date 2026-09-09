@@ -22,7 +22,7 @@ static bool semloom_slice_is_sha256(const AiByteSlice *slice);
 void
 semloom_provider_select(MemoryContext owner_context,
 						const AiOpenSpec *spec,
-						AiProvider *provider)
+						PgQueryJobFlow *query_flow, AiProvider *provider)
 {
 	const char *socket_path = semloom_gateway_socket_path();
 
@@ -40,7 +40,7 @@ semloom_provider_select(MemoryContext owner_context,
 		semloom_uds_provider_select(owner_context,
 								 socket_path,
 								 spec,
-								 semloom_provider_execution_profile(),
+								 semloom_provider_execution_profile(), query_flow,
 								 provider);
 }
 

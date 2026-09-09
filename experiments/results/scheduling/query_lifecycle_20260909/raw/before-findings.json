@@ -1,0 +1,5 @@
+{
+  "idle_killed_query": true,
+  "promised_join_rejected": true,
+  "token_failure_orphaned_job": true
+}

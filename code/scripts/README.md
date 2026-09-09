@@ -86,6 +86,10 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 可以为每个双算子查询保留两份任务空间。默认按Job总份额分割流存储，不能靠增加算子扩大预算；
 实际字节预算也必须覆盖所有流的最大输入/结果。控制连接结束才结束查询Job；节点结束只关闭该流。
 `--once`计数的是物理连接，不适用于需要控制与算子连接的query-job模式。
+查询登记还在总连接上限内保留一个有期限的握手入口：双流查询至少需要4个socket名额。
+`ConnectionCapacity`统一记录查询承诺与standalone占用，未打开的流名额不能借给其它工作。
+帧期限从已登记流的首字节开始计算；帧间空闲由PG查询寿命管理。未登记与语义open仍有期限，
+控制连接仅等待EOF，额外数据直接拒绝。
 见[详细设计](../../experiments/plans/postgresql_query_job_design.md)及
 [验证记录](../../experiments/results/scheduling/query_job_20260909/README.md)。
 独立生产器可用`engine.register_job(label, budget)`取得能力句柄，并以`engine.open(..., job=handle)`

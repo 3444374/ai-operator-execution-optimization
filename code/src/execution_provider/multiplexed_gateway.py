@@ -14,11 +14,13 @@ from .adapters.openai_compatible_fixed import FIXED_EXECUTION_ID
 from .query_registration import (
     QueryRegistrationError,
     QueryRegistry,
+    ConnectionEnd,
     trusted_peer,
     validate_registration,
     BINDING_VERSION,
 )
-from .wire.framing import read_frame, encode_frame
+from .wire.framing import read_frame, encode_frame, RegisteredStream
+from .connection_capacity import ConnectionCapacity
 from ..scheduling.core.session_contract import State
 from .adapters.model_config import MAX_MODEL_RESPONSE_BYTES
 from .wire.framing import MAX_FRAME_BYTES
@@ -176,6 +178,8 @@ class ConnectionState:
     interrupted: bool = False
     registration: object = None
     control: bool = False
+    connection_id: int = -1
+    end_reason: ConnectionEnd | None = None
 
 
 class MultiSessionMapGateway:
@@ -238,6 +242,7 @@ class MultiSessionMapGateway:
         )
         self.engine = self.execution.engine
         self.queries = QueryRegistry(self.execution)
+        self.connection_capacity = ConnectionCapacity(max_connections)
         if self.engine.jobs.maximum != max_jobs:
             self.execution.close()
             raise ValueError("execution factory Job capacity differs from gateway registration")
@@ -257,11 +262,18 @@ class MultiSessionMapGateway:
     def _accept(self, connection, handler, sequence):
         connection.settimeout(self.frame_timeout)
         mailbox = ConnectionMailbox(None, self.engine.wake, self.frame_timeout)
-        state = ConnectionState(connection, mailbox, None, None)
+        state = ConnectionState(connection, mailbox, None, None, connection_id=sequence)
         self.connections[sequence] = state
-        state.worker = self.workers.start(
-            connection, lambda _: self._run_connection(state, handler)
-        )
+        self.connection_capacity.accept(sequence)
+        try:
+            state.worker = self.workers.start(
+                connection, lambda _: self._run_connection(state, handler)
+            )
+        except BaseException:
+            self.connection_capacity.release(sequence)
+            del self.connections[sequence]
+            connection.close()
+            raise
         return True
 
     def _run_connection(self, state, handler):
@@ -280,14 +292,15 @@ class MultiSessionMapGateway:
                     # A query may be idle in a cursor for longer than a model deadline.
                     # The owner closes this socket on service stop or a scoped failure.
                     connection.settimeout(None)
-                    message = read_frame(connection)
-                    mailbox.clean = message is None
+                    mailbox.clean = not connection.recv(1)
                     return
                 opened = read_frame(connection)
                 if opened is None:
                     return
             else:
                 mailbox.call("standalone", (), 0)
+            if state.registration is not None:
+                connection = RegisteredStream(connection)
             session = mailbox.session
             adapter = MapConnection(self, connection, mailbox, state.job, session.limits)
             if state.registration is not None and opened.get("protocol_version") == 3:
@@ -318,6 +331,12 @@ class MultiSessionMapGateway:
         except Exception:
             mailbox.clean = False
         finally:
+            if state.end_reason is None:
+                state.end_reason = (
+                    (ConnectionEnd.CONTROL_EOF if state.control else ConnectionEnd.STREAM_CLEAN_END)
+                    if mailbox.clean
+                    else ConnectionEnd.PEER_FAILURE
+                )
             if not mailbox.clean:
                 mailbox.cancel()
             connection.close()
@@ -330,15 +349,12 @@ class MultiSessionMapGateway:
             raise ValueError("connection already registered")
         if operation == "query_open":
             peer, opened = args
-            reserved = sum(r.flow_count + 1 for r in self.queries.registrations.values())
-            reserved += sum(
-                state.job is not None and state.registration is None
-                for state in self.connections.values()
-            )
-            if reserved + opened["flow_count"] + 1 > self.max_connections:
-                raise ValueError("query control and declared streams exceed connection budget")
+            self.connection_capacity.check_query(opened["flow_count"])
             registration, budget = self.queries.register(peer, opened["flow_count"])
             state.registration, state.job, state.control = registration, registration.job, True
+            self.connection_capacity.reserve_query(
+                state.connection_id, state.job, opened["flow_count"]
+            )
             reply = {
                 "type": "query_opened",
                 "binding_version": BINDING_VERSION,
@@ -349,6 +365,7 @@ class MultiSessionMapGateway:
             registration, session = self.queries.join(peer, opened["token"], opened["flow"])
             state.registration, state.job = registration, registration.job
             mailbox.session = session
+            self.connection_capacity.join(state.connection_id, state.job)
             session.set_dispatch_enabled(False)
             self.observe(
                 {
@@ -389,12 +406,13 @@ class MultiSessionMapGateway:
             mailbox.command = None
             try:
                 if operation in ("query_open", "stream_join", "standalone"):
-                    if (
-                        operation != "stream_join"
-                        and len(self.engine.jobs.jobs) >= self.engine.jobs.maximum
-                    ):
-                        mailbox.command = (operation, args)
-                        return
+                    if operation == "standalone":
+                        self.connection_capacity.admit_standalone(state.connection_id)
+                        if not self.queries.has_job_room():
+                            mailbox.command = (operation, args)
+                            return
+                    elif operation == "query_open" and not self.queries.has_job_room():
+                        raise ValueError("Job capacity exhausted")
                     result = self._register(state, operation, args)
                 elif operation == "offer":
                     pending = args[0]
@@ -429,31 +447,32 @@ class MultiSessionMapGateway:
         state.mailbox.cancel()
         interrupt_connection(state.connection)
 
-    def _end_job(self, state):
-        if state.registration is not None:
-            self.queries.close(state.registration)
-        elif state.job in self.engine.jobs.jobs:
-            self.engine.close_job(state.job)
-
     def _controls(self):
         self.workers.reap()
         for connection_id, state in tuple(self.connections.items()):
             mailbox, session = state.mailbox, state.mailbox.session
-            job = self.engine.jobs.jobs.get(state.job)
-            if job is not None and job.closing and not state.closing:
+            if self.queries.is_closing(state.job) and not state.closing:
                 self._interrupt(state)
             if mailbox.cancelled.is_set() and not state.closing:
                 state.closing = True
-                self._end_job(state)
+                self.queries.connection_ended(
+                    state.job,
+                    state.registration,
+                    session,
+                    state.end_reason or ConnectionEnd.PEER_FAILURE,
+                )
                 self._interrupt(state)
             if not mailbox.done.is_set():
                 continue
             state.worker.join()
-            # Only a joined sender's departure transfers its delivery leases back.
-            if session is not None:
-                session.close_consumer(clean=mailbox.clean)
-            if state.control or state.registration is None or not mailbox.clean:
-                self._end_job(state)
+            self.queries.connection_ended(
+                state.job,
+                state.registration,
+                session,
+                state.end_reason or ConnectionEnd.PEER_FAILURE,
+                consumer_stopped=True,
+            )
+            self.connection_capacity.release(connection_id)
             with mailbox.condition:
                 mailbox.command = None
                 mailbox.reply = _EMPTY
@@ -485,9 +504,14 @@ class MultiSessionMapGateway:
                         self.waiting.popleft()[0].close()
                     deadline = deadline or time.monotonic() + self.execution.drain_timeout_s
                     for state in tuple(self.connections.values()):
+                        state.end_reason = ConnectionEnd.SERVICE_STOP
                         self._interrupt(state)
                 admissions_done = bool(session_limit and served >= session_limit)
-                if not stopping.is_set() and not admissions_done:
+                if (
+                    not stopping.is_set()
+                    and not admissions_done
+                    and self.connection_capacity.may_accept()
+                ):
                     connection = accept_connection(
                         listener,
                         occupied=lambda: len(self.connections) + len(self.waiting),
@@ -545,6 +569,7 @@ class MultiSessionMapGateway:
 
     def request_stop(self):
         for state in tuple(self.connections.values()):
+            state.end_reason = ConnectionEnd.SERVICE_STOP
             self._interrupt(state)
         self.engine.wake.notify()
 

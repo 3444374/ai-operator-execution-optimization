@@ -29,7 +29,9 @@ independent profiles are unchanged.
 
 The execution layer partitions one Job storage grant across its declared streams. Allocate enough
 held-task/input/result capacity for every declared flow, and connection capacity for controls plus
-streams. Adding operators does not increase the Job grant. Query errors and resource-owner cleanup
+streams and one bounded handshake slot. Reserved stream slots cannot be granted to standalone work.
+Authenticated streams may idle between frames; once a frame starts it must finish within the frame
+deadline. PG runtimes own explicit, idempotently ended flow handles; the provider only borrows them. Adding operators does not increase the Job grant. Query errors and resource-owner cleanup
 close the control connection; ending one stream does not end the Job. See the
 [query attribution design](../../../experiments/plans/postgresql_query_job_design.md) and
 [checks](../../../experiments/results/scheduling/query_job_20260909/README.md).

@@ -5,6 +5,8 @@ and query lifetime; the external execution layer allocates and accounts for Job 
 The same incremental service loop handles one or multiple Jobs. Synchronous Filter/Map and recording
 handlers retain their semantics and share connection infrastructure with the incremental path.
 See the [multi-Job design](../experiments/plans/semloom_multisession_design.md) and [CLI](scripts/README.md).
+Query registration and stream publication roll back unpublished resources. A common connection
+ledger protects promised stream slots; query lifecycle decisions are owned by the registry.
 Static storage shares and request opportunities are supported. The opt-in Linux `query-job` profile
 associates ordinary Filter and Map streams from one PG execution with one Job; see the
 [query design](../experiments/plans/postgresql_query_job_design.md). Bounded external method state

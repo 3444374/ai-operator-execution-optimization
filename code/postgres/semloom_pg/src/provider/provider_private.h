@@ -15,6 +15,7 @@
 #include "provider/ai_provider_port.h"
 #include "semantics/recording_contract.h"
 #include "extension_config.h"
+#include "executor/pg_query_job.h"
 
 #define SEMLOOM_IN_PROCESS_PROVIDER_NAME "in-process-recording"
 #define SEMLOOM_UDS_RECORDING_PROVIDER_NAME "uds-recording"
@@ -33,7 +34,7 @@
 
 extern void semloom_provider_select(MemoryContext owner_context,
 									const AiOpenSpec *spec,
-									AiProvider *provider);
+									PgQueryJobFlow *query_flow, AiProvider *provider);
 extern bool semloom_provider_spec_is_recording(const AiOpenSpec *spec);
 extern bool semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec);
 extern bool semloom_provider_spec_is_generate_map(const AiOpenSpec *spec);
@@ -48,6 +49,6 @@ extern void semloom_uds_provider_select(MemoryContext owner_context,
 										const char *socket_path,
 										const AiOpenSpec *spec,
 										SemloomProviderExecutionProfile profile,
-										AiProvider *provider);
+										PgQueryJobFlow *query_flow, AiProvider *provider);
 
 #endif

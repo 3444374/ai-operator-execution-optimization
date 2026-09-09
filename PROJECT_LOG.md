@@ -1,6 +1,15 @@
 # 项目日志
 
 
+## 2026-09-09 查询生命周期与接纳加固
+
+- 依据用户附件核对25c0f090，确认既有查询归属已实现；以隔离旧源码复现三项新增问题后定向修复。
+- 帧间空闲与帧期限分开；一个权威连接账本保护未打开流名额，登记/加入自行回滚未交付资源。
+- QueryRegistry集中解释连接结束事件；runtime持有流句柄、provider借用，flow_end与runtime close均幂等。
+- Linux521项、PG回归1项/TAP2006项通过；654份源码校验一致，26次真实模型调用与游标恢复通过。
+- 模型、PG、gateway和端口清理已核对；范围、反例、指标与原始记录见[加固报告](experiments/results/scheduling/query_lifecycle_20260909/README.md)。
+
+
 ## 2026-09-09 查询级Job归属与最小PG接入
 
 - 在独立分支codex/query-job-attribution实现查询控制连接、内核peer核验和算子流加入；普通Filter与Map真正共用Engine预算，未增加PG调度器。

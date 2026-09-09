@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-09-09：[查询生命周期与连接接纳加固](scheduling/query_lifecycle_20260909/README.md)分开已登记流空闲与帧期限，统一查询/standalone/握手名额，补齐登记与加入失败回滚。
+查询结束策略集中到QueryRegistry，PG runtime持有幂等流句柄，provider不再隐式登记节点。
+旧25c0f090的空闲取消、预留被占用及令牌失败遗留Job已受控复现。Linux521项、PG回归1项/TAP2006项及26次真实POST通过；654份源码一致，测试服务已清理。
+
+
 2026-09-09：[查询级Job归属](scheduling/query_job_20260909/README.md)接入普通Filter v3与Map v6；PG查询上下文、可信登记、流与查询分开结束，复用共享Engine和非阻塞UDS工具。
 外部执行层将一份Job存储预算分给多个流；PG不分配Job份额。Linux517项、PG回归1项/TAP2005项通过，652份源码一致。
 真实复测24次POST通过，12个Job均回收；首轮4次因非空条件返回UNKNOWN失败，单独保留，不视为质量问题已修复。

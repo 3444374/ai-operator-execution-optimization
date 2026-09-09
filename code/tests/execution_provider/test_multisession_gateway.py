@@ -49,6 +49,7 @@ def service(
     max_active_requests=2,
     result_bytes=None,
     max_connections=3,
+    frame_timeout_ms=3000,
 ):
     stop, ready = threading.Event(), threading.Event()
     failures, instances, events = [], [], []
@@ -66,7 +67,7 @@ def service(
                     max_tasks=max_tasks,
                     max_active_requests=max_active_requests,
                     result_bytes=result_bytes,
-                    frame_timeout_ms=3000,
+                    frame_timeout_ms=frame_timeout_ms,
                     execute=execute,
                     observer=events.append,
                     execution_factory=execution_factory,
