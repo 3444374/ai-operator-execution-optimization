@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-09：后续职责表述澄清，当前实现未变化。PG多算子查询归属与外部方法状态预算分别属于接入和执行正确性基础；
+动态借用是可选策略，服务容量/工作量驱动的提交、路由及多Job调度归外部执行层，不要求自研GPU底层管理。
+详见[后续工作分工](../experiments/plans/semloom_multisession_design.md#验证完成后的后续项)。
+
 2026-09-08：三项会话接口清理61fa6967已快进合入main。合并前644份源码/配置及74份证据校验一致，未修改已验证源码；
 [集成记录](../experiments/results/scheduling/session_api_cleanup_20260908/README.md#main-integration)保留验证范围与后续工作。
 
