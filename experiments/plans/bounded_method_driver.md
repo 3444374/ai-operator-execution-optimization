@@ -1,7 +1,7 @@
 # 有界多行方法驱动 V1
 
 状态：V1实现、受控与真实模型验证完成；[记录](../results/scheduling/method_driver_20260909/README.md)。
-真实数据切片尚未运行，继续由本文维护；源码未合并main。基于 main 96b1f169；不修改 PG、wire 或 gateway。
+真实数据切片尚未运行，继续由本文维护；实现f7de79c3已合入main。基于 main 96b1f169；不修改 PG、wire 或 gateway。
 
 ## 对象与来源核对
 

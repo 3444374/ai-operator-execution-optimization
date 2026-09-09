@@ -1,9 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
-2026-09-09：[有界多行方法驱动](../experiments/results/scheduling/method_driver_20260909/README.md)已在开发分支实现固定共享payload预算、阶段推进、最终结果反压和取消回收。
+2026-09-09：[有界多行方法驱动](../experiments/results/scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
 独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。
 首次0POST失败暴露缺TaskInfo，修复后双Job10次及最终两阶段2次真实POST通过，合计12次；预算与服务均清理。
-这不是PG多阶段方法桥接或质量/性能实验；ShareGPT真实数据切片已规划、尚未运行，未合并main。
+这不是PG多阶段方法桥接或质量/性能实验；ShareGPT真实数据切片已规划、尚未运行。
 
 
 

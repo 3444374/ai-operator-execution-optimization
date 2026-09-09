@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-09-09 有界多行方法驱动合入main
+
+- 按用户授权，main从96b1f169快进至f7de79c3，无冲突或代码变更。
+- 集成时656份实现/测试/配置与最终真实模型清单一致，44份证据校验通过；只更新文档状态，不重复模型测试。
+- 既有Linux361项和最终专项55项有重叠；两轮成功真实调用10＋2次，服务已清理。
+- [集成记录](experiments/results/scheduling/method_driver_20260909/README.md#主干集成)。
+
 ## 2026-09-09 有界多行方法驱动 V1
 
 - 开发分支codex/bounded-method-driver基于96b1f169；新增固定共享方法存储池及多行驱动，复用MethodRun/session/组织器/HTTP，不修改PG或gateway。
