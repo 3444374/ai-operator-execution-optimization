@@ -1,0 +1,12 @@
+{
+  "cmdline_sha256": "c2d90b8c9446961f303d8fd479a976f75dace34fa2d77bd89c298a4b99caac35",
+  "config_sha256": "47db1f4abdddaf1599932742b28565573292c130d6458e6b58562e5e18821cd9",
+  "endpoint_url": "http://127.0.0.1:53731/v1/chat/completions",
+  "gpu_devices": "0",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "official_weights_match": true,
+  "pid": 51318,
+  "start_time_ticks": 1287736156,
+  "verified": true,
+  "vllm_version": "0.25.1"
+}

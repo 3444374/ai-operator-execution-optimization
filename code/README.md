@@ -582,8 +582,10 @@ submission remain pending. The old synchronous runtime still serves existing cal
 
 The [semantic method module](src/semantic_methods/README.md) adds bounded sequential continuations
 and predeclared per-task capabilities. It supports a method returning another request after a result,
-while the existing session retains scheduling and lease ownership. Cascade algorithms, aggregate
-method-state accounting, production model capability routing, and PG integration remain pending.
+while the existing session retains scheduling and lease ownership. The opt-in `MethodDriver` now
+bounds multiple rows and retained payloads using fixed grants from a shared `MethodBudgetPool`.
+Cascade algorithms, dynamic method budget allocation, production model capability routing, and
+PG method integration remain pending. See the [V1 plan](../experiments/plans/bounded_method_driver.md).
 
 The opt-in `WorkWindowOrganizer` now connects the existing complete-task work slicing to accepted
 session tasks. `TaskInfo` carries row/call/stage identity and `WorkDescriptor`; `BatchMember` preserves

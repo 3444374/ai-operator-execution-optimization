@@ -31,8 +31,8 @@ The driver follows this sequence:
 5. Seal only when source input has ended **and all live methods can produce no more requests**.
    Source EOF alone is insufficient. Ordinary unsealed idle remains a valid waiting state.
 
-The driver owns aggregate method-state/final-result memory, limits live rows, and discards cancelled
-runs. `MethodLimits` bounds each run's retained input/state/result and number of stages; it is not a
+The implemented `MethodDriver` owns aggregate method-state/final-result reservations, limits live
+rows, and discards cancelled runs. `MethodLimits` bounds each run's retained input/state/result and number of stages; it is not a
 query-wide memory budget. `TaskKey` is execution identity, not a replacement for row/call identity.
 Invalid continuations fail the run; an unrelated completion leaves the active stage unchanged.
 The contract currently supports zero, one, or several sequential requests. The session can now organize
@@ -74,3 +74,41 @@ accepted task's compatibility group, optionally sorts that group by work, and in
 complete-task work slicer. An oversized task remains whole. This static policy does not promise fairness
 under continuous arrival. The core validates returned membership before dispatch and preserves an
 unfinished group across capacity or backend rejection; the organizer stores no payload history.
+
+## Bounded multi-row driver
+
+`driver.MethodDriver` owns one new, exclusive session and a bounded mapping of `RowIdentity` to
+`MethodRun`. `offer_row` returns false without running the method when its grant is full. Accepted
+row sequences must strictly increase; call identity is bounded text and payload equality never
+merges rows. The source calls `end_input`, then keeps advancing and consuming until `finished`.
+The service owner continues advancing the shared Engine for registered Jobs; the driver only
+submits and consumes its own session. No PG or gateway path is changed by this opt-in adapter.
+
+Create one `budget.MethodBudgetPool` for the service and explicitly allocate each driver's fixed
+`MethodCapacity`. All grants, including multiple flows of one Job, count against that pool.
+A grant cannot be claimed by two drivers. Pool `allocated` includes idle grants; `used` counts
+active row reservations. Neither is actual RSS or GPU memory. V1 has no dynamic borrowing or
+separate Job-level method budget policy; the external owner decides the grants.
+
+Each row conservatively reserves space for old/new state, request and result values before `start`.
+This avoids waiting for method memory during a stage transition; core task/result slots are accounted
+separately. Trusted callbacks must not retain hidden per-row data or allocate unbounded temporaries.
+The count limit also bounds Python objects, maps and output descriptors, without claiming exact
+interpreter memory measurement. MethodResult is delivered in available order, not guaranteed input
+order. It remains charged until `release_result(row)`; the consumer must relinquish its bytes then.
+
+`advance` releases every core lease before offering later stages and reports immediate work when its
+new submissions require another step. EOF does not seal until every remaining run is final. Failure
+stops this method flow and closes its consumer through the public core API. Stop local result users
+before calling `close`; remote unknown work remains in the Engine for authoritative cleanup. After
+closing all drivers the service owner still drains the Engine and closes its Jobs/backend normally.
+
+The [driver tests](../../tests/scheduling/test_method_driver.py) cover aggregate reservations,
+consumer backpressure, multiple Jobs and late completions. The
+[V1 plan](../../../experiments/plans/bounded_method_driver.md) separates this engineering work from
+the first real-data Map experiment. This driver does not implement PG method bridging or LOTUS cascades.
+
+The driver adds `TaskInfo` for row/call/stage association on the organized path. Optional
+`describe_work(row, stage_ordinal, request)` supplies a `WorkDescriptor` using existing work units
+and locality contracts; the default records the request-declared estimate with no calibration claim.
+The method still owns the request payload and estimated work; the core validates descriptor agreement.

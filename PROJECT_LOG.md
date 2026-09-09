@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-09 有界多行方法驱动 V1
+
+- 开发分支codex/bounded-method-driver基于96b1f169；新增固定共享方法存储池及多行驱动，复用MethodRun/session/组织器/HTTP，不修改PG或gateway。
+- 完整调度361项、最终专项55项（有重叠）通过。首次真实检查0POST失败，缺TaskInfo；补齐typed身份/工作量及组织回归。失败诊断文本改为有界类型名。
+- 两轮成功真实检查分别10与2次POST，累计12次，模型/方法/核心资源已回收；保留失败与独立账本。
+- ShareGPT切片已确定选样、SQL、评价与静态对照，尚未运行。代码尚未合并main。
+- [设计](experiments/plans/bounded_method_driver.md)、[验证与限制](experiments/results/scheduling/method_driver_20260909/README.md)。
+
 
 ## 2026-09-09 查询归属与生命周期加固合入main
 

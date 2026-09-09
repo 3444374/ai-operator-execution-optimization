@@ -1,0 +1,19 @@
+{
+  "status": "incomplete",
+  "source_files": 669,
+  "rows": 8,
+  "expected_posts": 10,
+  "backend_closed": true,
+  "method_allocated": [
+    0,
+    0
+  ],
+  "core_usage": {
+    "held_tasks": 0,
+    "input_bytes": 0,
+    "result_bytes": 0,
+    "active_requests": 0,
+    "active_work": 0
+  },
+  "actual_posts": 0
+}

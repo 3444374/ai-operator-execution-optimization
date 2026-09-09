@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "source_files": 669,
+  "rows": 8,
+  "expected_posts": 10,
+  "requests": 10,
+  "outputs": [
+    {
+      "0": "TRUE",
+      "1": "TRUE",
+      "2": "TRUE",
+      "3": "TRUE"
+    },
+    {
+      "0": "TRUE",
+      "1": "TRUE",
+      "2": "TRUE",
+      "3": "TRUE"
+    }
+  ],
+  "peak_runs": 4,
+  "peak_reserved_bytes": 101504,
+  "method_capacity_bytes": 101504,
+  "iterations": 87,
+  "backend_closed": true,
+  "method_allocated": [
+    0,
+    0
+  ],
+  "core_usage": {
+    "held_tasks": 0,
+    "input_bytes": 0,
+    "result_bytes": 0,
+    "active_requests": 0,
+    "active_work": 0
+  },
+  "actual_posts": 10
+}
