@@ -1,5 +1,7 @@
 # 实验计划与设计文档
 
+查询级Job身份与最小接入见[详细设计](postgresql_query_job_design.md)；这是现有多Job核心的PG归属扩展。
+
 当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享Engine与独立PG查询已通过真实模型验证，可信多算子归属及动态资源策略仍待实施。
 
 更新日期：2026-09-07

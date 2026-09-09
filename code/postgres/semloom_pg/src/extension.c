@@ -31,6 +31,7 @@ static const struct config_enum_entry semloom_execution_profile_options[] = {
 	 SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED,
 	 false},
 	{"incremental-map", SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP, false},
+	{"query-job", SEMLOOM_PROVIDER_PROFILE_QUERY_JOB, false},
 	{NULL, 0, false},
 };
 

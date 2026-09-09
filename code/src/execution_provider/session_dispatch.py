@@ -21,10 +21,11 @@ def run_session(
     disconnect_on_task: bool,
     completion_fixture: str | None,
     incremental_handler=None,
-) -> None:
+    open_message=None,
+) -> bool | None:
     try:
         try:
-            opened = read_frame(connection)
+            opened = read_frame(connection) if open_message is None else open_message
         except (ProtocolError, ValueError, RecursionError):
             connection.close()
             return
@@ -43,7 +44,7 @@ def run_session(
             run_session = {3: run_v3_session, 4: run_v4_session, 5: run_v5_session}[
                 protocol_version
             ]
-            run_session(
+            return run_session(
                 connection,
                 completion_adapter,
                 open_message=opened,

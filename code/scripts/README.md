@@ -79,7 +79,15 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 待登记连接在内的socket总量。总任务及字节容量须足以让每Job容纳至少一项最大请求与结果。
 接纳数与执行请求数可独立配置；增加连接数不会增加执行容量。
 
-一条PG连接由服务登记一个Job；同查询多算子共享Job的可信归属协议尚未接入。
+`incremental-map`模式仍按一个连接登记一个Job。Linux上可设置
+`semloom_pg.provider_execution_profile='query-job'`，让同查询普通Filter与Map共享Job。
+它使用同一个gateway命令，新增独立版本的登记握手；Map窗口为1，choice Filter尚不支持。
+例如`--max-active-jobs 3 --max-held-tasks 6 --max-active-requests 2 --max-connections 12`
+可以为每个双算子查询保留两份任务空间。默认按Job总份额分割流存储，不能靠增加算子扩大预算；
+实际字节预算也必须覆盖所有流的最大输入/结果。控制连接结束才结束查询Job；节点结束只关闭该流。
+`--once`计数的是物理连接，不适用于需要控制与算子连接的query-job模式。
+见[详细设计](../../experiments/plans/postgresql_query_job_design.md)及
+[验证记录](../../experiments/results/scheduling/query_job_20260909/README.md)。
 独立生产器可用`engine.register_job(label, budget)`取得能力句柄，并以`engine.open(..., job=handle)`
 打开多个流；由控制线程调用`engine.advance()`，各流`advance()`只交付结果。字符串标签不能加入Job。
 [多Job设计](../../experiments/plans/semloom_multisession_design.md)说明资源归属、错误范围和待实现项。

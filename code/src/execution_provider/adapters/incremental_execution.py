@@ -58,6 +58,29 @@ class IncrementalExecution:
             self.engine.close_job(job)
             raise
 
+    def open_query_job(self, label, flow_count):
+        """Partition one grant, so dependent flows cannot monopolize each other's storage."""
+        if type(flow_count) is not int or flow_count < 1:
+            raise ValueError("invalid query flow count")
+        budget = self.allocate_job(self.engine)
+        base = self.engine.capacity.limits
+        held = budget.held_tasks // flow_count
+        inputs, results = budget.input_bytes // flow_count, budget.result_bytes // flow_count
+        if held < 1 or inputs < base.item_input_bytes or results < base.item_result_bytes:
+            raise ValueError("query budget cannot reserve one request and result per flow")
+        # More operators change the partition, never the total Job grant or compute share.
+        budget = replace(budget, max_sessions=flow_count)
+        limits = replace(
+            base,
+            held_tasks=held,
+            input_bytes=inputs,
+            result_bytes=results,
+            active_requests=budget.active_requests,
+            active_work=budget.active_work,
+            offer_tasks=held,
+        )
+        return self.engine.register_job(label, budget), limits, budget
+
 
 def request_count_work(request: CompletionRequest) -> WorkDescriptor:
     return WorkDescriptor((StageWork("model", 1, "work_units"),), "model", "request-count")
@@ -80,7 +103,9 @@ def prepare_map_task(request, sequence, *, describe_work=request_count_work):
         payload,
         work.primary.units,
         MAX_MODEL_RESPONSE_BYTES,
-        info=TaskInfo("pg-map", sequence, "generate", work),
+        info=TaskInfo(
+            "pg-filter" if request.protocol_version == 3 else "pg-map", sequence, "model", work
+        ),
     )
 
 

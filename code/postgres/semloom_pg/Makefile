@@ -29,6 +29,8 @@ OBJS = \
 	src/executor/sem_pump.o \
 	src/executor/sem_scan.o \
 	src/provider/uds_provider.o \
+	src/provider/uds_connection.o \
+	src/executor/pg_query_job.o \
 	src/provider/wire/wire_common.o \
 	src/provider/wire/wire_semantic.o \
 	src/provider/wire/wire_v2.o \

@@ -14,10 +14,25 @@ budget is `semloom_pg.provider_window_bytes` (default 8 MiB, split across window
 Plain column/constant inputs on an ordinary child without quals use the configured window;
 other expressions show an effective window of 1 in EXPLAIN. Input order is the current Map
 contract, restored by sequence association without a Sort node. This profile currently serves
-one generated Map and one active gateway connection; Filter/composition and multi-session core
-execution remain pending. [Validation](../../../experiments/results/postgresql/async_window_20260908/README.md)
+one generated Map per connection. Multiple independent queries share the same Engine;
+see the [multi-Job design](../../../experiments/plans/semloom_multisession_design.md). [Validation](../../../experiments/results/postgresql/async_window_20260908/README.md)
 passes 1958 PG TAP checks and 12 actual model requests, including two overlapping HTTP requests
 from one PG query. Existing synchronous profiles remain available.
+
+
+The opt-in `query-job` profile associates ordinary Filter v3 and Map v6 streams from one query
+execution with one external Job. Use the same `--incremental-map` gateway. Each query has a lazy
+control connection; operator connections join it using a live capability bound to Linux kernel
+peer credentials. Prepared executions and separate cursors receive distinct Jobs. Map uses a
+one-row window in this profile. Choice Filter and rescans remain unsupported here; their existing
+independent profiles are unchanged.
+
+The execution layer partitions one Job storage grant across its declared streams. Allocate enough
+held-task/input/result capacity for every declared flow, and connection capacity for controls plus
+streams. Adding operators does not increase the Job grant. Query errors and resource-owner cleanup
+close the control connection; ending one stream does not end the Job. See the
+[query attribution design](../../../experiments/plans/postgresql_query_job_design.md) and
+[checks](../../../experiments/results/scheduling/query_job_20260909/README.md).
 
 The task window is a retained-row budget, independent of backend concurrency. Row slots and
 provider metadata are allocated for the configured window and checked against

@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-09：[查询级Job归属](../experiments/results/scheduling/query_job_20260909/README.md)接入普通Filter v3与Map v6；PG查询上下文、可信登记、流与查询分开结束，复用共享Engine和非阻塞UDS工具。
+外部执行层将一份Job存储预算分给多个流；PG不分配Job份额。Linux517项、PG回归1项/TAP2005项通过，652份源码一致。
+真实复测24次POST通过，12个Job均回收；首轮4次因非空条件返回UNKNOWN失败，单独保留，不视为质量问题已修复。
+测试服务已清理。新模式Map窗口1；choice Filter、重扫、更广SQL形状和方法状态总预算尚未完成。
+
+
 2026-09-09：后续职责表述澄清，当前实现未变化。PG多算子查询归属与外部方法状态预算分别属于接入和执行正确性基础；
 动态借用是可选策略，服务容量/工作量驱动的提交、路由及多Job调度归外部执行层，不要求自研GPU底层管理。
 详见[后续工作分工](../experiments/plans/semloom_multisession_design.md#验证完成后的后续项)。

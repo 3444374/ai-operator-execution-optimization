@@ -1,0 +1,143 @@
+{
+  "status": "passed",
+  "max_requests": 24,
+  "checks": {
+    "zero_work": true,
+    "composition_and_prepared": true,
+    "two_backends": true,
+    "same_backend_cursors": true,
+    "transaction_error": true,
+    "cancel_and_recovery": true
+  },
+  "requests": 24,
+  "query_flows": {
+    "registered-0": [
+      1,
+      0
+    ],
+    "registered-1": [
+      1,
+      0
+    ],
+    "registered-2": [
+      1,
+      0
+    ],
+    "registered-3": [
+      1,
+      0
+    ],
+    "registered-4": [
+      1,
+      0
+    ],
+    "registered-5": [
+      1,
+      0
+    ],
+    "registered-6": [
+      1,
+      0
+    ],
+    "registered-7": [
+      1,
+      0
+    ],
+    "registered-8": [
+      1,
+      0
+    ],
+    "registered-9": [
+      0
+    ],
+    "registered-10": [
+      1,
+      0
+    ],
+    "registered-11": [
+      1,
+      0
+    ]
+  },
+  "plan": [
+    {
+      "Plan": {
+        "Node Type": "Custom Scan",
+        "Custom Plan Provider": "SemLoom SemMap",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 0.0,
+        "Total Cost": 261.76,
+        "Plan Rows": 421,
+        "Plan Width": 36,
+        "Disabled": false,
+        "Provider": "semloom_incremental_map",
+        "Query Job Binding Version": 1,
+        "Physical Role": "reference",
+        "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+        "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+        "Prompt Program": "semloom.sem_map.chat.v1",
+        "Result Parser": "semloom.sem_map.utf8_text.v1",
+        "Model": "Qwen2.5-7B-Instruct",
+        "Semantic Plan Schema": 4,
+        "Semantic Spec Digest": "26fce8c7e12ecbf9d4e0fb7f201e610420ce06241b7e7c482bb56a67ec4c5a28",
+        "Max Tokens": 128,
+        "Max Input Bytes": 163840,
+        "Max Output Bytes": 65536,
+        "Semantic Input Window": 1,
+        "Input Binding": "expression",
+        "Result Column": 4,
+        "Plans": [
+          {
+            "Node Type": "Custom Scan",
+            "Parent Relationship": "child",
+            "Custom Plan Provider": "SemLoom SemFilter",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Startup Cost": 0.0,
+            "Total Cost": 260.7,
+            "Plan Rows": 421,
+            "Plan Width": 36,
+            "Disabled": false,
+            "Provider": "uds-openai-compatible-fixed",
+            "Query Job Binding Version": 1,
+            "Physical Role": "reference",
+            "Semantic Spec": "semloom.semantic.sem_filter.exact.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Prompt Program": "semloom.sem_filter.exact_chat.v1",
+            "Result Parser": "semloom.sem_filter.tristate_ascii.v1",
+            "Model": "Qwen2.5-7B-Instruct",
+            "AI Cost Model": "semloom.exact_filter.uncalibrated.v1",
+            "AI Cost Calibration": "unavailable",
+            "AI Cost Calibration Reason": "not-configured",
+            "Model Role": "reference",
+            "Semantic Input Rows": 1270.0,
+            "Output Selectivity": 0.331667,
+            "Estimated Model Calls": 1263.65,
+            "Estimated Prompt Tokens": 82137.25,
+            "Estimated Output Tokens": 10109.2,
+            "AI Work Cost": 233.7752,
+            "Filter Input Column": 2,
+            "Plans": [
+              {
+                "Node Type": "Seq Scan",
+                "Parent Relationship": "child",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Relation Name": "inputs",
+                "Alias": "inputs",
+                "Startup Cost": 0.0,
+                "Total Cost": 25.88,
+                "Plan Rows": 1270,
+                "Plan Width": 36,
+                "Disabled": false,
+                "Filter": "true"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "actual_requests": 24
+}

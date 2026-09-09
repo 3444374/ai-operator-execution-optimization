@@ -5,8 +5,10 @@ and query lifetime; the external execution layer allocates and accounts for Job 
 The same incremental service loop handles one or multiple Jobs. Synchronous Filter/Map and recording
 handlers retain their semantics and share connection infrastructure with the incremental path.
 See the [multi-Job design](../experiments/plans/semloom_multisession_design.md) and [CLI](scripts/README.md).
-Static storage shares and request opportunities are supported. Trusted multi-operator PG attribution
-and bounded external method state remain engineering work. Dynamic borrowing is an optional research
+Static storage shares and request opportunities are supported. The opt-in Linux `query-job` profile
+associates ordinary Filter and Map streams from one PG execution with one Job; see the
+[query design](../experiments/plans/postgresql_query_job_design.md). Bounded external method state
+and broader SQL shapes remain engineering work. Dynamic borrowing is an optional research
 policy; service-capacity/work-based submission and routing do not require a custom GPU allocator,
 model-internal batching implementation or low-level GPU scheduler.
 

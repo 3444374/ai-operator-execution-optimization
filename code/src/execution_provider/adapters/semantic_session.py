@@ -25,9 +25,9 @@ def run_v3_session(
     tamper_evidence_digest: bool = False,
     disconnect_on_task: bool = False,
     completion_fixture: str | None = None,
-) -> None:
+) -> bool | None:
     """Serve exactly wire v3; other versions are rejected."""
-    _run_semantic_session(
+    return _run_semantic_session(
         connection,
         adapter,
         wire_version=3,
@@ -48,9 +48,9 @@ def run_v4_session(
     tamper_evidence_digest: bool = False,
     disconnect_on_task: bool = False,
     completion_fixture: str | None = None,
-) -> None:
+) -> bool | None:
     """Serve exactly wire v4; other versions are rejected."""
-    _run_semantic_session(
+    return _run_semantic_session(
         connection,
         adapter,
         wire_version=4,
@@ -71,9 +71,9 @@ def run_v5_session(
     tamper_evidence_digest: bool = False,
     disconnect_on_task: bool = False,
     completion_fixture: str | None = None,
-) -> None:
+) -> bool | None:
     """Serve exactly wire v5; other versions are rejected."""
-    _run_semantic_session(
+    return _run_semantic_session(
         connection,
         adapter,
         wire_version=5,
@@ -95,7 +95,7 @@ def _run_semantic_session(
     tamper_evidence_digest: bool = False,
     disconnect_on_task: bool = False,
     completion_fixture: str | None = None,
-) -> None:
+) -> bool | None:
     """Serve one strict synchronous semantic session through an adapter."""
     codec = {3: v3, 4: v4, 5: v5}[wire_version]
     error_sequence: str | None = None
@@ -154,7 +154,7 @@ def _run_semantic_session(
                 error_sequence = str(expected_sequence)
             task = _read_semantic_frame(connection, wire_version)
             if task is None:
-                return
+                return True
             sequence_text = task.get("sequence")
             if (
                 wire_version in (4, 5)

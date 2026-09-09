@@ -7,17 +7,13 @@
  */
 #include "postgres.h"
 
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
 #include "mb/pg_wchar.h"
-#include "miscadmin.h"
-#include "storage/fd.h"
 #include "utils/memutils.h"
 
 #include "provider/provider_private.h"
+#include "provider/uds_connection.h"
+#include "executor/pg_query_job.h"
 #include "provider/wire/wire_common.h"
 #include "provider/wire/wire_v2.h"
 #include "provider/wire/wire_v3.h"
@@ -26,6 +22,7 @@
 typedef struct SemloomUdsProviderConfig
 {
 	char *socket_path;
+	PgQueryJobFlow *query_flow;
 	const char *semantic_execution_id;
 	uint32 protocol_version;
 	uint32 max_inflight_tasks;
@@ -125,6 +122,24 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	{
 		provider->ops = &semloom_uds_recording_ops;
 		config->semantic_execution_id = NULL;
+	}
+	else if (profile == SEMLOOM_PROVIDER_PROFILE_QUERY_JOB)
+	{
+		if (spec->has_generation_profile)
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("query-job does not yet support choice Filter")));
+		config->query_flow = pg_query_job_register(owner_context, socket_path);
+		if (semloom_provider_spec_is_generate_map(spec))
+		{
+			provider->ops = &semloom_uds_async_ops;
+			provider->max_inflight_tasks = config->max_inflight_tasks = 1;
+			config->protocol_version = 6;
+			config->semantic_execution_id = "semloom.provider.incremental-map.uds.v6";
+		}
+		else
+		{
+			provider->ops = &semloom_uds_fixed_ops;
+			config->semantic_execution_id = SEMLOOM_UDS_FIXED_EXECUTION_ID;
+		}
 	}
 	else if (profile == SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP)
 	{
@@ -469,99 +484,17 @@ semloom_uds_drive_internal(AiProviderSession *session,
 static AiProviderStatus
 semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 {
-	const char *socket_path = session->config->socket_path;
-	struct sockaddr_un address;
-	int socket_flags;
-	int connect_result;
+	AiProviderStatus status;
 
-	if (strlen(socket_path) >= sizeof(address.sun_path))
+	status = semloom_uds_connect_socket(session->config->socket_path, &session->socket_fd,
+		&session->external_fd_acquired, error);
+	if (status != AI_PROVIDER_STATUS_OK)
+		return status;
+	if (session->config->query_flow != NULL)
 	{
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_INVALID_SPEC,
-								   0,
-								   0,
-								   "SemLoom provider socket path is too long");
-		return AI_PROVIDER_STATUS_ERROR;
-	}
-	if (socket_path[0] != '/')
-	{
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_INVALID_SPEC,
-								   0,
-								   0,
-								   "SemLoom provider socket path must be absolute");
-		return AI_PROVIDER_STATUS_ERROR;
-	}
-	if (!AcquireExternalFD())
-	{
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_RESOURCE_EXHAUSTED,
-								   0,
-								   0,
-								   "could not reserve a file descriptor for the SemLoom provider");
-		return AI_PROVIDER_STATUS_ERROR;
-	}
-	session->external_fd_acquired = true;
-	session->socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (session->socket_fd == PGINVALID_SOCKET)
-	{
-		int saved_errno = errno;
-
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_SYSTEM,
-								   saved_errno,
-								   0,
-								   "could not create SemLoom provider socket");
-		return AI_PROVIDER_STATUS_ERROR;
-	}
-
-	socket_flags = fcntl(session->socket_fd, F_GETFL, 0);
-	if (socket_flags < 0 ||
-		fcntl(session->socket_fd, F_SETFL, socket_flags | O_NONBLOCK) < 0)
-	{
-		int saved_errno = errno;
-
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_SYSTEM,
-								   saved_errno,
-								   0,
-								   "could not make SemLoom provider socket nonblocking");
-		return AI_PROVIDER_STATUS_ERROR;
-	}
-
-	MemSet(&address, 0, sizeof(address));
-	address.sun_family = AF_UNIX;
-	strlcpy(address.sun_path, socket_path, sizeof(address.sun_path));
-	for (;;)
-	{
-		CHECK_FOR_INTERRUPTS();
-		connect_result = connect(session->socket_fd,
-								 (struct sockaddr *) &address,
-								 sizeof(address));
-		if (connect_result == 0 || errno == EISCONN)
-			break;
-		if (errno == EINTR)
-			continue;
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-		{
-			semloom_wire_common_wait_connect_retry();
-			continue;
-		}
-		if (errno == EINPROGRESS || errno == EALREADY)
-		{
-			AiProviderStatus status =
-				semloom_wire_common_wait_connected(session->socket_fd, error);
-
-			if (status != AI_PROVIDER_STATUS_OK)
-				return status;
-			break;
-		}
-		semloom_provider_error_set(error,
-								   AI_PROVIDER_ERROR_SYSTEM,
-								   errno,
-								   0,
-								   "could not connect to SemLoom provider socket");
-		return AI_PROVIDER_STATUS_ERROR;
+		status = pg_query_job_join(session->config->query_flow, session->socket_fd, error);
+		if (status != AI_PROVIDER_STATUS_OK)
+			return status;
 	}
 
 	if (session->config->protocol_version >= 5)
@@ -595,15 +528,7 @@ semloom_uds_close(AiProviderSession *session)
 static void
 semloom_uds_release_local(AiProviderSession *session)
 {
-	pgsocket socket_fd = session->socket_fd;
-	bool external_fd_acquired = session->external_fd_acquired;
-
-	session->socket_fd = PGINVALID_SOCKET;
-	session->external_fd_acquired = false;
-	if (socket_fd != PGINVALID_SOCKET)
-		closesocket(socket_fd);
-	if (external_fd_acquired)
-		ReleaseExternalFD();
+	semloom_uds_close_socket(&session->socket_fd, &session->external_fd_acquired);
 }
 
 static AiByteSlice

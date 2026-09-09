@@ -6,7 +6,7 @@
 
 本次以`codex/semfilter-and@66887463`为代码基线，吸收用户补充设计并重新核对现有源码。
 该实现及设计已合并main。已实现同步Filter/Map、共享PG运行时、两个Filter AND及有界gateway会话；
-开发分支已实现共同调用/结果绑定和一个Filter→一个生成Map；受限生成Map也已接入增量核心的v6多在途路径；按需语义值、多个Map、Filter/组合异步及查询级共享资源控制尚未实现。
+开发分支已实现共同调用/结果绑定和一个Filter→一个生成Map；受限生成Map也已接入增量核心的v6多在途路径；按需语义值、多个Map和Filter多在途尚未实现；普通Filter/Map的查询级共享资源接入由下述查询专项补充。
 已有真实模型接线与小规模资源诊断不等于正式资源、语义质量或性能资格全部完成。
 具体状态看[INFRA_STATUS](../../code/INFRA_STATUS.md)，提交、测试与失败看
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)；本文不再逐段复制实验数字。
@@ -16,7 +16,7 @@
 近期实施与未定问题见[§9](#implementation-sequence)。A1/A2a的确定方案见
 [PG调用与绑定详细设计](postgresql_call_binding_design.md)，B1静态复核/B2的操作状态与责任见
 [增量session详细设计](semloom_incremental_session_design.md)；共同tuple绑定与受控单流session已实现；有界异步HTTP和受限生成Map的v6 PG多在途已通过[真实验证](../results/postgresql/async_window_20260908/README.md)，[多Job设计](semloom_multisession_design.md)已接入共享Core与并发独立PG查询并通过真实模型验证；
-其它算子/组合、同查询多算子可信Job归属与外部方法状态总预算仍待接入。后续工程基础和外部调度研究的职责区分见[多Job后续项](semloom_multisession_design.md#验证完成后的后续项)；动态借用为可选策略，不要求自研GPU底层资源管理。
+普通Filter/Map的同查询可信Job归属已实现独立切片，接口、状态和验证见[查询级Job设计](postgresql_query_job_design.md)；其它SQL形状及外部方法状态总预算仍待接入。后续工程基础和外部调度研究的职责区分见[多Job后续项](semloom_multisession_design.md#验证完成后的后续项)；动态借用为可选策略，不要求自研GPU底层资源管理。
 A1首步已提取Map调用分析并通过行为保持验证，见[记录](../results/postgresql/semantic_call_extraction_20260907/README.md)；
 后续共同调用与tuple绑定及setrefs原型已[通过验证](../results/postgresql/semantic_binding_20260907/README.md)。
 在此基础上，一个Filter→一个生成Map通过[PG18.3完整检查](../results/postgresql/filter_map_binding_20260907/README.md)，1910项TAP通过；仅在开发分支，本轮零真实模型请求。

@@ -1,0 +1,8 @@
+{
+  "status": "incomplete",
+  "max_requests": 24,
+  "checks": {
+    "zero_work": true
+  },
+  "actual_requests": 4
+}

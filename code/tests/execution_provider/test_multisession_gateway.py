@@ -48,6 +48,7 @@ def service(
     max_tasks=4,
     max_active_requests=2,
     result_bytes=None,
+    max_connections=3,
 ):
     stop, ready = threading.Event(), threading.Event()
     failures, instances, events = [], [], []
@@ -61,7 +62,7 @@ def service(
                 gateway = MultiSessionMapGateway(
                     FixedModelConfig("http://localhost/v1/chat/completions", "model", 100),
                     max_jobs=max_jobs,
-                    max_connections=3,
+                    max_connections=max_connections,
                     max_tasks=max_tasks,
                     max_active_requests=max_active_requests,
                     result_bytes=result_bytes,
@@ -110,10 +111,13 @@ def service(
 
 
 class Client:
-    def __init__(self, path, *, open_now=True, window=2):
+    def __init__(self, path, *, open_now=True, window=2, binding=None):
         self.socket = socket.socket(socket.AF_UNIX)
         self.socket.settimeout(3)
         self.socket.connect(path)
+        if binding is not None:
+            self.send(binding)
+            assert read_frame(self.socket) == {"type": "stream_joined", "binding_version": 1}
         self.plan = SemanticMapPlan("Echo.", "model", 8)
         self.sequence = 0
         self.window = window

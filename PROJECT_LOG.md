@@ -1,5 +1,14 @@
 # 项目日志
 
+
+## 2026-09-09 查询级Job归属与最小PG接入
+
+- 在独立分支codex/query-job-attribution实现查询控制连接、内核peer核验和算子流加入；普通Filter与Map真正共用Engine预算，未增加PG调度器。
+- 复用原UDS非阻塞建连/释放，分开流关闭与查询关闭；ResourceOwner与查询内存回调覆盖错误和退出。
+- Linux517项、PG回归1项/TAP2005项通过，新增PG专项42项；652份源码/测试与最终模型运行一致。
+- 真实首轮4次出现非空条件UNKNOWN，严格停止并保留；修订为重复明确条件的工程用例后，独立24次POST通过。该修改不构成Filter语义质量修复。
+- 模型、PG、网关、Raylet和端口清理已核对。实现范围、失败原因与原始材料见[结果](experiments/results/scheduling/query_job_20260909/README.md)，现行接口见[设计](experiments/plans/postgresql_query_job_design.md)。
+
 ## 2026-09-09 澄清后续接入基础与执行研究分工
 
 - 按用户说明区分PG查询身份/算子归属、外部方法状态总预算及外部数据组织/调度策略。

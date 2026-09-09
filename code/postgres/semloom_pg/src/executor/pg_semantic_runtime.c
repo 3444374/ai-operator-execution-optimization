@@ -10,6 +10,7 @@
 #include "utils/memutils.h"
 
 #include "executor/pg_semantic_runtime.h"
+#include "executor/pg_query_job.h"
 #include "provider/provider_private.h"
 #include "semantics/semantic_map_contract.h"
 
@@ -31,6 +32,7 @@ struct PgSemanticRuntime
 	MemoryContext owner_context;
 	MemoryContextCallback cleanup_callback;
 	PgSemanticRuntimeState state;
+	bool query_job;
 	uint64 next_sequence;
 	uint64 model_calls;
 	uint64 prompt_tokens;
@@ -169,6 +171,8 @@ pg_semantic_runtime_begin(MemoryContext owner_context,
 	runtime->cleanup_callback.arg = runtime;
 	MemoryContextRegisterResetCallback(owner_context, &runtime->cleanup_callback);
 	semloom_provider_select(owner_context, &runtime->open_spec, &runtime->provider);
+	runtime->query_job = semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_QUERY_JOB &&
+		!semloom_provider_spec_is_recording(&runtime->open_spec);
 	return runtime;
 }
 
@@ -322,10 +326,12 @@ pg_semantic_runtime_record_emitted(PgSemanticRuntime *runtime)
 void
 pg_semantic_runtime_close(PgSemanticRuntime *runtime)
 {
-	if (runtime == NULL)
+	if (runtime == NULL || runtime->state == PG_SEMANTIC_RUNTIME_CLOSED)
 		return;
 	runtime->state = PG_SEMANTIC_RUNTIME_CLOSED;
 	pg_semantic_runtime_release_session(runtime);
+	if (runtime->query_job)
+		pg_query_job_node_end(runtime->owner_context);
 }
 
 void
@@ -337,6 +343,8 @@ pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
 	ExplainPropertyText("Provider",
 						runtime->provider.ops->adapter_name,
 						explain_state);
+	if (runtime->query_job)
+		ExplainPropertyInteger("Query Job Binding Version", NULL, 1, explain_state);
 	semloom_plan_spec_explain(&runtime->plan_spec, explain_state);
 }
 
