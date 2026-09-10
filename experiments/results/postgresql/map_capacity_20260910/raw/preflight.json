@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "status": "ok",
+  "groups": [
+    "core",
+    "text",
+    "workload-text"
+  ],
+  "machine": {
+    "cpu_slots": 128,
+    "gpu_driver_versions": [
+      "595.71.05",
+      "595.71.05"
+    ],
+    "gpu_memory_mib": [
+      24564,
+      24564
+    ],
+    "gpu_names": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "machine_id": "machine-35d057661e5470d8",
+    "platform": "Linux",
+    "python": "3.12.3"
+  },
+  "platform": "Linux-5.15.0-97-generic-x86_64-with-glibc2.35",
+  "profile": "/root/autodl-tmp/map-capacity-source-0910/deploy/runtime/profiles/autodl_2x4090.json",
+  "profile_selection": "automatic",
+  "python": "3.12.3 | packaged by Anaconda, Inc. | (main, May  6 2024, 19:46:43) [GCC 11.2.0]"
+}

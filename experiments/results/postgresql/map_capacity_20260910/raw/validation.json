@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "local_and_linux_related_tests_each": 214,
+  "pg_regression": 1,
+  "pg_tap": 2032,
+  "executed_code_files_match": 683,
+  "modified_markdown_local_links_checked": 403,
+  "privacy_includes_decompressed_logs": true,
+  "figure_dimensions": [
+    3450,
+    2280
+  ],
+  "figure_text_exception": "TP1: tensor parallel size 1, explained in caption",
+  "private_archive_indexed_files_verified": 1492
+}

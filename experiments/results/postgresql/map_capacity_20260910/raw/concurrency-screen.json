@@ -1,0 +1,30 @@
+{
+  "role": "1024-row concurrency neighborhood screening, not final D0 selection",
+  "maximum_model_requests": 4096,
+  "cells": [
+    [
+      "screen-pg-c16",
+      "pg",
+      "1024",
+      "16"
+    ],
+    [
+      "screen-direct-c64",
+      "direct",
+      "1024",
+      "64"
+    ],
+    [
+      "screen-pg-c64",
+      "pg",
+      "1024",
+      "64"
+    ],
+    [
+      "screen-pg-c128",
+      "pg",
+      "1024",
+      "128"
+    ]
+  ]
+}

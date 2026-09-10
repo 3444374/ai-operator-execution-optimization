@@ -5,6 +5,10 @@
 `text/squad_map.py` 负责当前 PG Map 的 SQuAD 双消息输入身份、context 分组划分和预测关联，
 复用既有答案评分；离线入口见 `code/scripts/baselines/squad_pg_map_pilot.py`。它不拥有执行或调度。
 
+`text/squad_capacity.py` 先统计全部完整消息的输入 tokens，再按 context 分区选取自然/分层样本，
+记录种子与未修改的原文。`code/scripts/baselines/map_capacity.py` 装配独立 direct 客户端或真实 PG Map；
+查询与评价分别记录时间和进程内存，配置与说明见[容量单元入口](../../scripts/README.md#单-map-容量单元)。
+
 `common/private_artifacts.py` 原样保存仓库外私有文件，公开摘要只含计数与哈希；
 `text/sharegpt_inputs.py` 选择首个 human 原文，`text/map_inputs.py` 核对文本往返和完整消息上下文。
 ShareGPT 数据选择与任务提示分别指定；接口见[脚本说明](../../scripts/README.md#squad-pg-map-数据准备与离线评价)。

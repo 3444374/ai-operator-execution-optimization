@@ -1,0 +1,92 @@
+{
+  "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "source_rows": 10570,
+  "source_contexts": 2067,
+  "excluded_context_rows": 0,
+  "all_input_tokens": {
+    "count": 10570,
+    "minimum": 76,
+    "median": 205.0,
+    "p95": 354,
+    "maximum": 852,
+    "mean": 218.80227057710502
+  },
+  "tokenizer_identity": {
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "transformers": "4.57.6",
+    "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "files": {
+      "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "configuration.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "model.safetensors.index.json": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    }
+  },
+  "samples": {
+    "natural": {
+      "sha256": "0ec866615c8bb40148ebc1796aa29c7bc522171840e5b2514f10c973a3b15fac",
+      "seed": 20260910,
+      "partition": "seeded_context_groups_then_natural",
+      "splits": {
+        "tuning": {
+          "rows": 5000,
+          "contexts": 1034,
+          "input_tokens": {
+            "count": 5000,
+            "minimum": 77,
+            "median": 205.0,
+            "p95": 344,
+            "maximum": 852,
+            "mean": 219.0514
+          }
+        },
+        "evaluation": {
+          "rows": 5000,
+          "contexts": 1033,
+          "input_tokens": {
+            "count": 5000,
+            "minimum": 76,
+            "median": 204.0,
+            "p95": 361,
+            "maximum": 759,
+            "mean": 218.46
+          }
+        }
+      }
+    },
+    "stratified": {
+      "sha256": "c038acae111f746554c70bbe7bf73a09dbcecee78c164983d2b263251ac81821",
+      "seed": 20260910,
+      "partition": "seeded_context_groups_then_stratified",
+      "splits": {
+        "tuning": {
+          "rows": 5000,
+          "contexts": 1033,
+          "input_tokens": {
+            "count": 5000,
+            "minimum": 77,
+            "median": 205.0,
+            "p95": 345,
+            "maximum": 852,
+            "mean": 219.175
+          }
+        },
+        "evaluation": {
+          "rows": 5000,
+          "contexts": 1032,
+          "input_tokens": {
+            "count": 5000,
+            "minimum": 76,
+            "median": 204.0,
+            "p95": 361,
+            "maximum": 759,
+            "mean": 218.2674
+          }
+        }
+      }
+    }
+  }
+}

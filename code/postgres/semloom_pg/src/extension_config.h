@@ -14,6 +14,7 @@ extern int semloom_provider_window_tasks(void);
 extern int semloom_provider_window_bytes(void);
 extern const char *semloom_gateway_socket_path(void);
 extern const char *semloom_reference_calibration_path(void);
+extern const char *semloom_test_map_binding_column(void);
 extern SemloomProviderExecutionProfile semloom_provider_execution_profile(void);
 extern const char *semloom_provider_execution_profile_name(void);
 

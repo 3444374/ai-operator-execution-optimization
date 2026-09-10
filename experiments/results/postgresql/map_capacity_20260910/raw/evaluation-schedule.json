@@ -1,0 +1,39 @@
+{
+  "role": "2000 rows per arm, identity/quality/resources only; not steady performance confirmation",
+  "selection_sha256": "12f3ff61379baecf9cdd35bdf28c3283d68bbe1b0b1b44a0980ef526b4fca265",
+  "maximum_model_requests": 4000,
+  "cells": [
+    [
+      "evaluation-pg",
+      "pg",
+      "2000",
+      "32",
+      "--window",
+      "64",
+      "--input-bytes",
+      "1048576",
+      "--result-bytes",
+      "67108864",
+      "--pg-window-bytes",
+      "67108864",
+      "--split",
+      "evaluation"
+    ],
+    [
+      "evaluation-direct",
+      "direct",
+      "2000",
+      "64",
+      "--window",
+      "64",
+      "--input-bytes",
+      "1048576",
+      "--result-bytes",
+      "67108864",
+      "--pg-window-bytes",
+      "67108864",
+      "--split",
+      "evaluation"
+    ]
+  ]
+}

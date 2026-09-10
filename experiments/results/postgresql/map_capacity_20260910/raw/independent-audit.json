@@ -1,0 +1,328 @@
+{
+  "status": "passed",
+  "model_requests_from_audit": 0,
+  "checked_units": 61,
+  "checked_completed_queries": 62,
+  "checked_partial_queries": 1,
+  "producer_verified_queries": 37,
+  "trace_disabled_queries": 2,
+  "observed_attempts": 96601,
+  "failed_units": [
+    {
+      "unit_id": "repeat-1-pg16",
+      "reserved": 4000,
+      "observed": 793
+    }
+  ],
+  "unit_checks": [
+    {
+      "unit_id": "warm-direct2",
+      "requests": 32,
+      "status": "passed"
+    },
+    {
+      "unit_id": "warm-pg",
+      "requests": 32,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c1",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c1",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c2",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c2",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c4",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c4",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c8",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c8",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c16",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c16",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c32",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c32",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c64",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c64",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-pg-c128",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "coarse-direct-c128",
+      "requests": 256,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-pg-n512",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-direct-n512",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-direct-n1024",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-pg-n1024",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-pg-n2048",
+      "requests": 2048,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-direct-n2048",
+      "requests": 2048,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-direct-n4096",
+      "requests": 4096,
+      "status": "passed"
+    },
+    {
+      "unit_id": "scale-pg-n4096",
+      "requests": 4096,
+      "status": "passed"
+    },
+    {
+      "unit_id": "screen-pg-c16",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "screen-direct-c64",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "screen-pg-c64",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "screen-pg-c128",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "window-pg-l32",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "window-pg-l64",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "window-pg-l96",
+      "requests": 1024,
+      "status": "passed"
+    },
+    {
+      "unit_id": "bytes-input",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "bytes-result",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "bytes-pg",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "observe-pg-buffered",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "observe-pg-no-trace",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "observe-pg-qualification",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "observe-direct-buffered",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "observe-direct-qualification",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "observe-tight-no-trace",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "repeat-1-direct",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "repeat-1-pg16",
+      "requests": 793,
+      "status": "failed"
+    },
+    {
+      "unit_id": "screen-safe-pg64",
+      "requests": 512,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-1-pg16",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-1-pg32",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-2-pg32",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-2-pg16",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-2-direct",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-3-pg16",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-3-direct",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-3-pg32",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-4-pg32",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-4-direct",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-4-pg16",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-5-direct",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-5-pg32",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "final-5-pg16",
+      "requests": 4000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "evaluation-pg",
+      "requests": 2000,
+      "status": "passed"
+    },
+    {
+      "unit_id": "evaluation-direct",
+      "requests": 2000,
+      "status": "passed"
+    }
+  ],
+  "vllm_completed_http_posts": 96601,
+  "allocated_requests": 99808,
+  "unused_failed_reservations": 3207,
+  "main_budget_limit": 100000
+}

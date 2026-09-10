@@ -88,6 +88,56 @@ python3 code/scripts/baselines/map_workload_tools.py summary \
 生成选项或次数漂移在 HTTP 发送前拒绝。拒绝仍消耗已预留的 1 次账本额度，真实 POST 为 0，不退款或重试。
 退出时还有预期请求未出现则返回 1。哈希清单应由独立核对的预期消息构建；它不替代源数据/PG 读回检查。
 
+## 单 Map 容量单元
+
+`baselines/map_capacity.py` 提供 `prepare`、`budget`、`cell`。它复用固定 Map 消息、HTTP transport、
+PG v6 和评分组件；direct 是独立有界客户端诊断，不调用 SessionEngine/组织器，不是原生系统 baseline。
+模型/PG 服务启动、机器与模型身份、缓存初始状态、扫描选点由调用者按当前计划负责。
+
+```sh
+python3 code/scripts/baselines/map_capacity.py prepare \
+  --source /path/to/dev-v1.1.json --tokenizer /path/to/local-model \
+  --model-revision "$MODEL_REVISION" --context-limit 4096 \
+  --rows-per-split 5000 --seed 20260910 --output /path/to/new-private-samples
+python3 code/scripts/baselines/map_capacity.py budget \
+  --budget-id "$BUDGET_ID" --requests "$REQUEST_LIMIT" --seconds "$TIME_LIMIT" \
+  --output /path/to/new-private-budget.sqlite
+python3 code/scripts/baselines/map_capacity.py cell \
+  --config /path/to/cell.json --manifest /path/to/new-private-samples/natural.json \
+  --fixed-model /path/to/fixed-model.json --budget-file /path/to/new-private-budget.sqlite \
+  --budget-id "$BUDGET_ID" --requests "$REQUEST_LIMIT" --output /path/to/new-short-cell-root \
+  --pg-dsn-env MAP_CAPACITY_PG_DSN --pg-log /path/to/actual-postgres-log
+```
+
+`CellConfig` 字段为 `unit_id,arm,split,rows,queries,concurrency,window,input_bytes,result_bytes,pg_window_bytes`；
+`arm=direct|pg`。可选 `statement_timeout_ms`、`flush_rows`、`event_mode=compact-buffered|qualification`、
+`producer_trace=true|false`。窗口 L 与活跃请求 C、三类字节预算分别指定。`queries` 是多条独立 SQL/
+direct 查询，逐条记录 JCT，不能用其总时长冒充单查询稳态。自然/分层样本分别保留完整 token 画像、
+种子和 context 分区，旧前缀选样入口不变。所有规模都有上限；准备值和评价字典仍随声明行数增长。
+
+单元开始前从 SQLite 账本持久预留 `rows*queries`；只允许一个进程领取一次，HTTP 前扣减不读盘。
+崩溃、未发送和不确定结果都不退款，领取后禁止重新领取/复制到其他进程。旧 v1 小账本保留原格式，
+声明规模超过 64 KiB 可容纳范围时提前拒绝，追加也先检查上限。不能单纯增大旧账本额度做容量实验。
+
+PG runner 读取实际 server log 中默认关闭的 `semloom_pg.test_map_binding_id_column` 观测。
+该列必须是本次 Map 输出中的唯一、直接投影 text 列；通过已有 tuple binding 找到 child 中的值，
+不依赖 child 的列名。验证用 PG 的 before-offer 行 ID/stream/sequence/digest 与 accepted 记录，
+再对照 gateway 请求侧事件、可信 socket peer PID、完成及 SQL 返回。缺失日志或字段直接失败。
+`producer_trace=false` 仅用于观测扰动诊断，报告明确没有独立 producer 资格，不能替代开启时的检查。
+
+`record_execution`/`record_async_execution` 保留旧 elapsed，另记 release、首/末接收、EOF/错误终止、
+结果持久化与 stream 清理；主 JCT 为 query terminal 减 release，仍含消费与在线记录干扰。
+`received_rows` 与 `recorded_rows` 分开；`evaluate_recording(...,mode='stream')` 在查询之后消费文件并核对
+行数/哈希。当前 SQuAD evaluator 仍保留有规模上限的 ID/预测字典，RSS 与查询阶段分开采样。
+外部服务、PG 连接和事务的最终清理时间由其所有者另记。
+
+容量事件模式使用字节/条数有上限的队列，后台分批写入，收尾 drain/fsync；满队列或写盘失败使运行失败，
+不丢弃事件继续计性能。`--cell-budget`、`--unit-id`、`--event-mode compact-buffered` 和
+`--observer-summary` 也可直接交给 `choice_gateway_observer`。紧凑事件保存请求/输出哈希与资源计数，
+原始 SQL 结果保存在私有记录中。逻辑 result bytes 是责任预留，不等于实际结果大小或进程 RSS。
+`analysis/sample_capacity_service.py` 对已启动的本地服务采集 running/waiting、KV cache、usage、
+服务进程 RSS 与 GPU 状态；请求均为 metrics GET，不发送模型推理。其采样误差与失败单列。
+
 ## PostgreSQL semantic execution-provider gateway
 
 `services/run_execution_provider_gateway.py` 是外部 semantic execution-provider 的 canonical CLI。

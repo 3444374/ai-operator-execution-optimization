@@ -1,0 +1,376 @@
+{
+  "schema": "semloom.cell_budget.v1",
+  "budget_id": "semloom.map.capacity.20260910",
+  "limit": 100000,
+  "allocated_requests": 99808,
+  "deadline_utc": 1789019667.898996,
+  "units": [
+    {
+      "unit_id": "warm-direct2",
+      "first_attempt": 1,
+      "requests": 32,
+      "claimed": 1
+    },
+    {
+      "unit_id": "warm-pg",
+      "first_attempt": 33,
+      "requests": 32,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c1",
+      "first_attempt": 65,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c1",
+      "first_attempt": 321,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c2",
+      "first_attempt": 577,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c2",
+      "first_attempt": 833,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c4",
+      "first_attempt": 1089,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c4",
+      "first_attempt": 1345,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c8",
+      "first_attempt": 1601,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c8",
+      "first_attempt": 1857,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c16",
+      "first_attempt": 2113,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c16",
+      "first_attempt": 2369,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c32",
+      "first_attempt": 2625,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c32",
+      "first_attempt": 2881,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c64",
+      "first_attempt": 3137,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c64",
+      "first_attempt": 3393,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-pg-c128",
+      "first_attempt": 3649,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "coarse-direct-c128",
+      "first_attempt": 3905,
+      "requests": 256,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-pg-n512",
+      "first_attempt": 4161,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-direct-n512",
+      "first_attempt": 4673,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-direct-n1024",
+      "first_attempt": 5185,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-pg-n1024",
+      "first_attempt": 6209,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-pg-n2048",
+      "first_attempt": 7233,
+      "requests": 2048,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-direct-n2048",
+      "first_attempt": 9281,
+      "requests": 2048,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-direct-n4096",
+      "first_attempt": 11329,
+      "requests": 4096,
+      "claimed": 1
+    },
+    {
+      "unit_id": "scale-pg-n4096",
+      "first_attempt": 15425,
+      "requests": 4096,
+      "claimed": 1
+    },
+    {
+      "unit_id": "screen-pg-c16",
+      "first_attempt": 19521,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "screen-direct-c64",
+      "first_attempt": 20545,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "screen-pg-c64",
+      "first_attempt": 21569,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "screen-pg-c128",
+      "first_attempt": 22593,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "window-pg-l32",
+      "first_attempt": 23617,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "window-pg-l64",
+      "first_attempt": 24641,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "window-pg-l96",
+      "first_attempt": 25665,
+      "requests": 1024,
+      "claimed": 1
+    },
+    {
+      "unit_id": "bytes-input",
+      "first_attempt": 26689,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "bytes-result",
+      "first_attempt": 27201,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "bytes-pg",
+      "first_attempt": 27713,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "observe-pg-buffered",
+      "first_attempt": 28225,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "observe-pg-no-trace",
+      "first_attempt": 28737,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "observe-pg-qualification",
+      "first_attempt": 29249,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "observe-direct-buffered",
+      "first_attempt": 29761,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "observe-direct-qualification",
+      "first_attempt": 30273,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "observe-tight-no-trace",
+      "first_attempt": 30785,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "repeat-1-direct",
+      "first_attempt": 31297,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "repeat-1-pg16",
+      "first_attempt": 35297,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "screen-safe-pg64",
+      "first_attempt": 39297,
+      "requests": 512,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-1-pg16",
+      "first_attempt": 39809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-1-pg32",
+      "first_attempt": 43809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-2-pg32",
+      "first_attempt": 47809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-2-pg16",
+      "first_attempt": 51809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-2-direct",
+      "first_attempt": 55809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-3-pg16",
+      "first_attempt": 59809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-3-direct",
+      "first_attempt": 63809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-3-pg32",
+      "first_attempt": 67809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-4-pg32",
+      "first_attempt": 71809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-4-direct",
+      "first_attempt": 75809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-4-pg16",
+      "first_attempt": 79809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-5-direct",
+      "first_attempt": 83809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-5-pg32",
+      "first_attempt": 87809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "final-5-pg16",
+      "first_attempt": 91809,
+      "requests": 4000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "evaluation-pg",
+      "first_attempt": 95809,
+      "requests": 2000,
+      "claimed": 1
+    },
+    {
+      "unit_id": "evaluation-direct",
+      "first_attempt": 97809,
+      "requests": 2000,
+      "claimed": 1
+    }
+  ],
+  "observed_model_post_attempts": 96601
+}

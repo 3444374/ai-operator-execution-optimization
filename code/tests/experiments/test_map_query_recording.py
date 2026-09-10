@@ -1,6 +1,7 @@
 """Preserve independent execution evidence under query, consumer, and evaluator faults."""
 
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
+import asyncio
 import json
 from pathlib import Path
 import tempfile
@@ -8,6 +9,7 @@ import unittest
 
 from src.experiments.postgresql.map_query_recording import (
     public_execution_summary, record_execution, record_pg_query, verify_map_completions,
+    record_async_execution, evaluate_recording,
 )
 from src.execution_provider.semantic_map import SemanticMapPlan, canonical_messages
 from src.execution_provider.wire.map_codec import semantic_payload_digest
@@ -127,6 +129,88 @@ class QueryRecordingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             record_pg_query(Connection(), "explicit query", self.root, max_rows=1, max_result_bytes=4096)
         self.assertEqual(state, {"generator": True, "cursor": True})
+
+    def test_query_terminal_is_after_last_row_and_not_final_fsync(self):
+        clock = iter(range(1000)).__next__
+        record = record_execution(self.root, self.source([('a', 'first'), ('b', 'last')]),
+                                  max_rows=2, max_result_bytes=4096, clock=clock)
+        ordered = [record[key] for key in ('started_ns', 't_release_ns', 't_first_row_ns',
+                   't_last_row_ns', 't_query_terminal_ns', 't_stream_cleanup_ns',
+                   't_results_durable_ns', 'ended_ns')]
+        self.assertEqual(ordered, sorted(ordered))
+        self.assertLess(record['t_last_row_ns'], record['t_query_terminal_ns'])
+        self.assertLess(record['query_jct_seconds'], record['elapsed_seconds'])
+        self.assertEqual(record['received_rows'], 2)
+
+    def test_empty_and_partial_error_have_terminals_without_inventing_rows(self):
+        self.execute(self.source())
+        empty = json.loads((self.root / 'execution.json').read_text())
+        self.assertIsNone(empty['t_first_row_ns'])
+        self.assertIsNone(empty['t_last_row_ns'])
+        self.assertIsNotNone(empty['t_query_terminal_ns'])
+        self.root = Path(self.tmp.name) / 'partial'
+        with self.assertRaises(RuntimeError):
+            self.execute(self.source([('a', 'partial')], RuntimeError('SQL error')))
+        failed = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual(failed['query_status'], 'failed')
+        self.assertGreaterEqual(failed['t_query_terminal_ns'], failed['t_last_row_ns'])
+
+    def test_result_limit_distinguishes_received_from_recorded(self):
+        with self.assertRaises(ValueError):
+            self.execute(self.source([('a', 'first'), ('b', 'discarded')]), max_rows=1)
+        record = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual((record['received_rows'], record['recorded_rows']), (2, 1))
+        self.assertEqual(record['query_status'], 'consumer_aborted')
+        self.assertIsNone(record['t_query_terminal_ns'])
+        self.assertIsNone(record['query_jct_seconds'])
+
+    def test_stream_evaluation_checks_all_rows_and_separates_its_time(self):
+        def evaluate(rows):
+            self.assertNotIsInstance(rows, list)
+            return {'rows': sum(1 for _ in rows)}
+        record_execution(self.root, self.source([('a', 'first'), ('b', 'last')]),
+                         max_rows=2, max_result_bytes=4096, evaluator=evaluate,
+                         evaluation_mode='stream', flush_rows=2)
+        evaluation = json.loads((self.root / 'evaluation.json').read_text())
+        execution = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual((evaluation['mode'], evaluation['consumed_rows']), ('stream', 2))
+        self.assertGreaterEqual(evaluation['started_ns'], execution['ended_ns'])
+
+    def test_incomplete_stream_evaluation_and_changed_results_fail_separately(self):
+        for variant in ('partial', 'changed'):
+            with self.subTest(variant=variant):
+                self.root = Path(self.tmp.name) / variant
+                self.execute(self.source([('a', 'first'), ('b', 'last')]))
+                if variant == 'changed':
+                    path = self.root / 'results.jsonl'
+                    path.write_text(path.read_text().replace('first', 'other'))
+                def evaluate(rows):
+                    return next(rows) if variant == 'partial' else list(rows)
+                with self.assertRaises(ValueError):
+                    evaluate_recording(self.root, evaluate, mode='stream')
+                self.assertEqual(public_execution_summary(self.root)['execution_status'], 'completed')
+                self.assertEqual(public_execution_summary(self.root)['evaluation_status'], 'failed')
+
+    def test_non_json_evaluation_result_records_failure(self):
+        with self.assertRaises(TypeError):
+            self.execute(self.source([('a', 'answer')]), lambda _: {object()})
+        self.assertEqual(public_execution_summary(self.root)['evaluation_status'], 'failed')
+
+    def test_async_source_uses_same_contract_and_closes_on_failure(self):
+        @asynccontextmanager
+        async def source():
+            async def rows():
+                yield ('a', 'one')
+                raise RuntimeError('async failure')
+            try:
+                yield rows()
+            finally:
+                self.closed = True
+        with self.assertRaisesRegex(RuntimeError, 'async failure'):
+            asyncio.run(record_async_execution(self.root, source, max_rows=2, max_result_bytes=4096))
+        record = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual((record['recorded_rows'], record['query_status']), (1, 'failed'))
+        self.assertTrue(self.closed)
 
 
 class MapAssociationTests(unittest.TestCase):

@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-09-10：[单 Map 测量修复与单卡容量画像](postgresql/map_capacity_20260910/README.md)：
+96601次真实出站、99808次预留，62个完整查询和1个保留的资源拒绝；独立PG绑定、可扩规模预算、分段计时与runner完成。
+本地/Linux各214项、PG回归1/1、TAP2032项通过。五次4000行观测选出C32/L64候选，强D0仍待高并发长查询平台。
+独立样本验证通过，模型/PG/网关/采样及临时ACL已清理；原文和预测私有保存。
+
 2026-09-10：[数据准备与执行记录修复验收](postgresql/data_evaluation_harness_20260910/README.md)：
 本地/Linux 各 168 项相关测试、7 项真实 PG 记录检查通过；新 ShareGPT 原文准备和 PG 146 行读回通过。
 新账本 SQuAD 10/10 次模型请求通过完整消息、token usage、关联及答案检查，增量资源最终归零。

@@ -1,0 +1,98 @@
+{
+  "status": "candidate_pending_steady_high_concurrency_plateau",
+  "selected_pg_concurrency": 32,
+  "window": 64,
+  "input_bytes": 1048576,
+  "result_bytes": 67108864,
+  "pg_window_bytes": 67108864,
+  "direct_concurrency": 64,
+  "groups": {
+    "direct64": {
+      "units": [
+        "repeat-1-direct",
+        "final-2-direct",
+        "final-3-direct",
+        "final-4-direct",
+        "final-5-direct"
+      ],
+      "jct_seconds": [
+        62.0455633,
+        62.762897034,
+        62.678926635,
+        62.717568101,
+        62.233295554
+      ],
+      "median_jct_seconds": 62.678926635,
+      "median_rows_per_second": 63.817302157921674,
+      "minimum_seconds": 62.0455633,
+      "maximum_seconds": 62.762897034
+    },
+    "pg16": {
+      "units": [
+        "final-1-pg16",
+        "final-2-pg16",
+        "final-3-pg16",
+        "final-4-pg16",
+        "final-5-pg16"
+      ],
+      "jct_seconds": [
+        79.929908541,
+        80.20126228,
+        80.609930272,
+        80.276374062,
+        79.960657739
+      ],
+      "median_jct_seconds": 80.20126228,
+      "median_rows_per_second": 49.87452673793503,
+      "minimum_seconds": 79.929908541,
+      "maximum_seconds": 80.609930272
+    },
+    "pg32": {
+      "units": [
+        "final-1-pg32",
+        "final-2-pg32",
+        "final-3-pg32",
+        "final-4-pg32",
+        "final-5-pg32"
+      ],
+      "jct_seconds": [
+        73.072572788,
+        73.023758109,
+        72.610927337,
+        73.337704901,
+        72.636844311
+      ],
+      "median_jct_seconds": 73.023758109,
+      "median_rows_per_second": 54.776693278772925,
+      "minimum_seconds": 72.610927337,
+      "maximum_seconds": 73.337704901
+    }
+  },
+  "selection_rule": "smallest C among repeated 16/32 at least 97% of their median peak",
+  "pg16_fraction_of_peak": 0.910506344077955,
+  "pg32_to_direct_throughput": 0.8583360848320265,
+  "repeat_identity_resource_duration_checks": "passed",
+  "strong_d0_qualified": false,
+  "reason": "highest steady-tested C32 improves over C16; C64/128 have only shorter diagnostic observations, not a same-scale repeated plateau",
+  "heldout_role": "2000 rows per arm, identity/quality/resources only; not steady performance confirmation",
+  "selection_before_heldout": true,
+  "selected_utc": 1789016858.416091,
+  "retained_control": "repeat-1-direct; first block interrupted by rejected PG 8MiB candidate",
+  "source_result_hashes": {
+    "repeat-1-direct": "85a5ef6274f7b178f8f32d3da97a8a6ef82929193555a43e92076eb13923590c",
+    "final-2-direct": "7a3cfb5bef313fda5306f89a51ddc00a53b9715c0d04ce1ede46cae712b581f5",
+    "final-3-direct": "c73532df3953e838877a81c8eb95509d98b03576082a8deea24825a61ef80367",
+    "final-4-direct": "17a4f18f7b3ee96780deebb991a72b1cbbb69689aff06aaf5a948cb0a5f035b4",
+    "final-5-direct": "325a881dfe0e7761b7e03a091f20bc1dac48b41339ff4520835134c97ea1bcf6",
+    "final-1-pg16": "5c75db1cb29d917eb7f979ac3f0ce7ed47e8712707b091d95fb34376e66784f3",
+    "final-2-pg16": "51b052d8d938da65d6751e0549b91dde2fdd953cdaf6e710f1a6ab4c06d5125b",
+    "final-3-pg16": "94a3c7c6cd2fe470caba033b0ecab29c3c09dac219691d1667c9adf5a4d4c33d",
+    "final-4-pg16": "04ff364736842f7703054d73b322ef48f209d4e1eafe6c2404d92edb6e96e1ea",
+    "final-5-pg16": "328f6e66931231c65badba9b16bde950028f4fe61f49d33e0e09a31d8a321291",
+    "final-1-pg32": "dd1c18fe96e73dca79e35edba2d7f351b743fbe5727f0da7d067e1f083c01297",
+    "final-2-pg32": "c2ada1a3e30748c2c1c96efeed5192c4a7272bd94d3823638340a2baaa3fb4b9",
+    "final-3-pg32": "d86edea704e3bbfb5abef765cfd6bcafc3ef01022bd1052a6d5c367296024ff1",
+    "final-4-pg32": "c6f20522e9c4ae30aad1687841c5fb3f60010e503db0226b6e7610655c0d16cb",
+    "final-5-pg32": "675376546c8c7a930cd3421978825858089906cb6048b3cff28e79f71c9be46c"
+  }
+}

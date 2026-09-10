@@ -1,0 +1,62 @@
+{
+  "cells": [
+    {
+      "unit": "scale-pg-n512",
+      "arm": "pg",
+      "rows": 512,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-direct-n512",
+      "arm": "direct",
+      "rows": 512,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-direct-n1024",
+      "arm": "direct",
+      "rows": 1024,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-pg-n1024",
+      "arm": "pg",
+      "rows": 1024,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-pg-n2048",
+      "arm": "pg",
+      "rows": 2048,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-direct-n2048",
+      "arm": "direct",
+      "rows": 2048,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-direct-n4096",
+      "arm": "direct",
+      "rows": 4096,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "scale-pg-n4096",
+      "arm": "pg",
+      "rows": 4096,
+      "concurrency": 32,
+      "window": 128
+    }
+  ],
+  "maximum_model_requests": 15360,
+  "role": "scale stability at fixed C32 L128; no evaluation rows"
+}

@@ -8,6 +8,8 @@
 #include "commands/explain.h"
 #include "commands/explain_format.h"
 #include "utils/memutils.h"
+#include "utils/json.h"
+#include "miscadmin.h"
 
 #include "executor/pg_semantic_runtime.h"
 #include "executor/pg_query_job.h"
@@ -39,7 +41,47 @@ struct PgSemanticRuntime
 	uint64 output_tokens;
 	uint64 accepted_rows;
 	uint64 emitted_rows;
+	uint64 trace_stream;
+	uint64 trace_offer;
 };
+
+static uint64 next_trace_stream = 0;
+
+static uint64
+pg_semantic_trace_input(PgSemanticRuntime *runtime, const AiPreparedTask *task,
+	const char *row_id)
+{
+	StringInfoData message;
+	if (row_id == NULL) return 0;
+	if (runtime->trace_stream == 0)
+	{
+		if (next_trace_stream == PG_UINT64_MAX)
+			ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("trace stream identity exhausted")));
+		runtime->trace_stream = ++next_trace_stream;
+	}
+	if (runtime->trace_offer == PG_UINT64_MAX)
+		ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("trace offer identity exhausted")));
+	runtime->trace_offer++;
+	initStringInfo(&message);
+	appendStringInfo(&message, "{\"version\":1,\"phase\":\"before_offer\",\"backend_pid\":%d,\"stream\":" UINT64_FORMAT
+		",\"offer\":" UINT64_FORMAT ",\"sequence\":" UINT64_FORMAT ",\"row_id\":",
+		MyProcPid, runtime->trace_stream, runtime->trace_offer, task->sequence);
+	escape_json(&message, row_id);
+	appendStringInfo(&message, ",\"payload_digest\":\"%.*s\"}",
+		(int) task->semantic_payload_digest.length, (const char *) task->semantic_payload_digest.data);
+	elog(LOG, "SEMLOOM_MAP_BINDING %s", message.data);
+	pfree(message.data);
+	return runtime->trace_offer;
+}
+
+static void
+pg_semantic_trace_accepted(PgSemanticRuntime *runtime, uint64 sequence, uint64 offer)
+{
+	if (offer == 0) return;
+	elog(LOG, "SEMLOOM_MAP_BINDING {\"version\":1,\"phase\":\"accepted\",\"backend_pid\":%d,\"stream\":"
+		UINT64_FORMAT ",\"offer\":" UINT64_FORMAT ",\"sequence\":" UINT64_FORMAT "}",
+		MyProcPid, runtime->trace_stream, offer, sequence);
+}
 
 static AiByteSlice pg_semantic_runtime_copy_slice(MemoryContext owner_context,
 											  AiByteSlice source);
@@ -201,12 +243,14 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 						  AiByteSlice input,
 						  AiByteSlice canonical_messages,
 						  MemoryContext result_context,
-						  PgSemanticCompletion *completion)
+						  PgSemanticCompletion *completion,
+						  const char *trace_row_id)
 {
 	AiPreparedTask task = {0};
 	AiCompletion provider_completion = {0};
 	AiProviderError error;
 	AiProviderStatus status;
+	uint64 trace_offer;
 	char semantic_payload_digest[AI_PROVIDER_SHA256_HEX_LENGTH + 1];
 
 	Assert(runtime != NULL);
@@ -235,6 +279,7 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 			(const uint8 *) semantic_payload_digest;
 		task.semantic_payload_digest.length = AI_PROVIDER_SHA256_HEX_LENGTH;
 	}
+	trace_offer = pg_semantic_trace_input(runtime, &task, trace_row_id);
 	semloom_provider_error_clear(&error);
 	if (runtime->provider.ops->drive == NULL)
 	{
@@ -246,13 +291,20 @@ pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 			status = AI_PROVIDER_STATUS_ERROR;
 		}
 		if (status == AI_PROVIDER_STATUS_OK)
+		{
+			pg_semantic_trace_accepted(runtime, task.sequence, trace_offer);
 			status = runtime->provider.ops->receive(runtime->provider_session, &provider_completion, &error);
+		}
 	}
 	else
-	status = runtime->provider.ops->drive(runtime->provider_session,
+	{
+		status = runtime->provider.ops->drive(runtime->provider_session,
 										  &task,
 										  &provider_completion,
 										  &error);
+		if (status == AI_PROVIDER_STATUS_OK)
+			pg_semantic_trace_accepted(runtime, task.sequence, trace_offer);
+	}
 	if (status != AI_PROVIDER_STATUS_OK)
 		pg_semantic_runtime_fail(runtime, &error);
 	if (provider_completion.sequence != task.sequence ||
@@ -278,12 +330,13 @@ pg_semantic_runtime_window(const PgSemanticRuntime *runtime)
 
 bool
 pg_semantic_runtime_offer(PgSemanticRuntime *runtime, AiByteSlice input,
-	AiByteSlice messages, uint64 *sequence)
+	AiByteSlice messages, uint64 *sequence, const char *trace_row_id)
 {
 	AiPreparedTask task = {0};
 	AiProviderError error;
 	char digest[AI_PROVIDER_SHA256_HEX_LENGTH + 1];
 	bool accepted = false;
+	uint64 trace_offer;
 	if (runtime->next_sequence == PG_UINT64_MAX)
 		ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("semantic task sequence exhausted")));
 	if (runtime->provider_session == NULL) pg_semantic_runtime_open_provider(runtime);
@@ -293,11 +346,13 @@ pg_semantic_runtime_offer(PgSemanticRuntime *runtime, AiByteSlice input,
 	task.input = input;
 	task.canonical_messages = messages;
 	task.semantic_payload_digest = (AiByteSlice){(const uint8 *) digest, AI_PROVIDER_SHA256_HEX_LENGTH};
+	trace_offer = pg_semantic_trace_input(runtime, &task, trace_row_id);
 	semloom_provider_error_clear(&error);
 	if (runtime->provider.ops->offer(runtime->provider_session, &task, &accepted, &error) != AI_PROVIDER_STATUS_OK)
 		pg_semantic_runtime_fail(runtime, &error);
 	if (accepted)
 	{
+		pg_semantic_trace_accepted(runtime, task.sequence, trace_offer);
 		*sequence = runtime->next_sequence++;
 		runtime->accepted_rows++;
 	}

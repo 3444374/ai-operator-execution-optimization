@@ -19,11 +19,14 @@ static planner_hook_type previous_planner_hook = NULL;
 static int generate_map_source_level = 0;
 static char *semloom_gateway_socket = NULL;
 static char *semloom_reference_calibration_file = NULL;
+static char *test_map_binding_id_column = NULL;
 static int semloom_execution_profile = SEMLOOM_PROVIDER_PROFILE_GOLDEN;
 static int provider_window_tasks = 2;
 static int provider_window_bytes = 8 * 1024 * 1024;
 int semloom_provider_window_tasks(void) { return provider_window_tasks; }
 int semloom_provider_window_bytes(void) { return provider_window_bytes; }
+const char *semloom_test_map_binding_column(void)
+{ return test_map_binding_id_column == NULL ? "" : test_map_binding_id_column; }
 
 static const struct config_enum_entry semloom_execution_profile_options[] = {
 	{"golden", SEMLOOM_PROVIDER_PROFILE_GOLDEN, false},
@@ -96,6 +99,9 @@ _PG_init(void)
 		&provider_window_tasks, 2, 1, INT_MAX, PGC_USERSET, 0, NULL, NULL, NULL);
 	DefineCustomIntVariable("semloom_pg.provider_window_bytes", "Maximum retained Map row and task bytes.", NULL,
 		&provider_window_bytes, 8 * 1024 * 1024, 1024 * 1024, 256 * 1024 * 1024, PGC_USERSET, GUC_UNIT_BYTE, NULL, NULL, NULL);
+	DefineCustomStringVariable("semloom_pg.test_map_binding_id_column",
+		"Test-only text row ID column logged before Map task submission; empty disables tracing.",
+		NULL, &test_map_binding_id_column, "", PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
 	DefineCustomEnumVariable("semloom_pg.provider_execution_profile",
 							 "Execution profile for exact semantic provider queries.",
 							 NULL,

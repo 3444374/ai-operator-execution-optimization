@@ -32,6 +32,8 @@ class IncrementalSessionTests(unittest.TestCase):
             client = Client(path)
             try:
                 self.assertEqual([client.offer(str(i)) for i in range(3)], [1, 1, 0])
+                self.assertEqual([e['sequence'] for e in events if e['event'] == 'map_task'], [0, 1])
+                self.assertEqual(submitted, [])
                 client.poll()
                 self.assertTrue(started_two.wait(2))
                 result = client.result()
@@ -51,6 +53,12 @@ class IncrementalSessionTests(unittest.TestCase):
                 self.assertEqual(observed, {"0", "2"})
                 self.assertEqual(submitted, [0, 1, 2])
                 self.assertEqual(members, [2, 2, 1])
+                self.assertEqual([e['sequence'] for e in events if e['event'] == 'map_task'], [0, 1, 2])
+                wait_for(lambda: len([e for e in events if e['event'] == 'map_completion']) == 3)
+                for sequence in range(3):
+                    task_index = next(i for i, e in enumerate(events) if e['event'] == 'map_task' and e['sequence'] == sequence)
+                    result_index = next(i for i, e in enumerate(events) if e['event'] == 'map_completion' and e['sequence'] == sequence)
+                    self.assertLess(task_index, result_index)
             finally:
                 release.set()
                 client.close()

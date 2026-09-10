@@ -1,0 +1,18 @@
+{
+  "archive_sha256": "d978e5f790f5cc3130740ff4f384203b9ad1159d343e07ecf766b8e01761f69a",
+  "archive_bytes": 62779321,
+  "files": 1493,
+  "indexed_files": 1492,
+  "excluded_reproducible_directories": [
+    "cache",
+    "pgdata",
+    "pgsocket",
+    "plot-cache",
+    "tap-trace-data",
+    "tap-trace2-data",
+    "tap-trace3-data",
+    "testtmp"
+  ],
+  "local_copy_verified": true,
+  "verified_indexed_files": 1492
+}

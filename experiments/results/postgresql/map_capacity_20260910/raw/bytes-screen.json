@@ -1,0 +1,36 @@
+{
+  "role": "change one byte limit at a time; fixed C32 L64, 512 tuning rows",
+  "maximum_model_requests": 1536,
+  "cells": [
+    [
+      "bytes-input",
+      "pg",
+      "512",
+      "32",
+      "--window",
+      "64",
+      "--input-bytes",
+      "1048576"
+    ],
+    [
+      "bytes-result",
+      "pg",
+      "512",
+      "32",
+      "--window",
+      "64",
+      "--result-bytes",
+      "33554432"
+    ],
+    [
+      "bytes-pg",
+      "pg",
+      "512",
+      "32",
+      "--window",
+      "64",
+      "--pg-window-bytes",
+      "8388608"
+    ]
+  ]
+}

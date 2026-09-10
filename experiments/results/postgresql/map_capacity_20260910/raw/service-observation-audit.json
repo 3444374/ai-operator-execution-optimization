@@ -1,0 +1,1762 @@
+{
+  "status": "passed",
+  "total_samples": 3489,
+  "total_errors": 18,
+  "errors_overlapping_any_query": 0,
+  "error_scope": "shutdown/idle outside query windows",
+  "sampling_scope": "1s service snapshots; GPU every fifth sample; peaks between samples unavailable",
+  "queries": [
+    {
+      "unit_id": "warm-direct2",
+      "query_index": 0,
+      "samples": 1,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 2.0,
+          "maximum": 2.0,
+          "minimum": 2.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.007818411097099576,
+          "maximum": 0.007818411097099576,
+          "minimum": 0.007818411097099576
+        }
+      },
+      "gpu_utilization_percent": null
+    },
+    {
+      "unit_id": "warm-direct2",
+      "query_index": 1,
+      "samples": 1,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 4.0,
+          "maximum": 4.0,
+          "minimum": 4.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.012358133669609028,
+          "maximum": 0.012358133669609028,
+          "minimum": 0.012358133669609028
+        }
+      },
+      "gpu_utilization_percent": null
+    },
+    {
+      "unit_id": "warm-pg",
+      "query_index": 0,
+      "samples": 1,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 4.0,
+          "maximum": 4.0,
+          "minimum": 4.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.011853720050441385,
+          "maximum": 0.011853720050441385,
+          "minimum": 0.011853720050441385
+        }
+      },
+      "gpu_utilization_percent": null
+    },
+    {
+      "unit_id": "warm-pg",
+      "query_index": 1,
+      "samples": 1,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 4.0,
+          "maximum": 4.0,
+          "minimum": 4.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.013114754098360604,
+          "maximum": 0.013114754098360604,
+          "minimum": 0.013114754098360604
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c1",
+      "query_index": 0,
+      "samples": 29,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 0.8275862068965517,
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0032873853111275346,
+          "maximum": 0.0055485498108448494,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 96.83333333333333,
+        "maximum": 100.0,
+        "samples": 6
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c1",
+      "query_index": 0,
+      "samples": 41,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 0.4146341463414634,
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0014025159167102346,
+          "maximum": 0.004791929382093274,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 68.875,
+        "maximum": 100.0,
+        "samples": 8
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c2",
+      "query_index": 0,
+      "samples": 27,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 0.8148148148148148,
+          "maximum": 2.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0031385736303769056,
+          "maximum": 0.00983606557377048,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 73.66666666666667,
+        "maximum": 100.0,
+        "samples": 6
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c2",
+      "query_index": 0,
+      "samples": 18,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 1.5555555555555556,
+          "maximum": 2.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0055765727896875455,
+          "maximum": 0.009583858764186659,
+          "minimum": 0.002017654476670905
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 4
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c4",
+      "query_index": 0,
+      "samples": 11,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 3.4545454545454546,
+          "maximum": 4.0,
+          "minimum": 2.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.01251862891207151,
+          "maximum": 0.01941992433795714,
+          "minimum": 0.0045397225725094525
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c4",
+      "query_index": 0,
+      "samples": 17,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 1.6470588235294117,
+          "maximum": 4.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0058304280097915455,
+          "maximum": 0.013871374527112179,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 75.0,
+        "maximum": 100.0,
+        "samples": 4
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c8",
+      "query_index": 0,
+      "samples": 13,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 3.230769230769231,
+          "maximum": 7.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.011194102240760503,
+          "maximum": 0.022698612862547263,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 66.66666666666667,
+        "maximum": 100.0,
+        "samples": 3
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c8",
+      "query_index": 0,
+      "samples": 7,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 5.142857142857143,
+          "maximum": 7.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.01812286074581155,
+          "maximum": 0.025725094577553564,
+          "minimum": 0.005296343001261028
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c16",
+      "query_index": 0,
+      "samples": 6,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 11.833333333333334,
+          "maximum": 15.0,
+          "minimum": 10.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.03867171080285834,
+          "maximum": 0.04564943253467846,
+          "minimum": 0.030264817150063017
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c16",
+      "query_index": 0,
+      "samples": 9,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 3.7777777777777777,
+          "maximum": 12.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.012862547288776807,
+          "maximum": 0.039596469104665855,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c32",
+      "query_index": 0,
+      "samples": 12,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 5.916666666666667,
+          "maximum": 29.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.018957545187053382,
+          "maximum": 0.09861286254728874,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 50.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c32",
+      "query_index": 0,
+      "samples": 5,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 22.4,
+          "maximum": 27.0,
+          "minimum": 18.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07848675914249685,
+          "maximum": 0.09558638083228244,
+          "minimum": 0.06355611601513245
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c64",
+      "query_index": 0,
+      "samples": 5,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 46.2,
+          "maximum": 63.0,
+          "minimum": 19.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.1573266078184111,
+          "maximum": 0.2194199243379571,
+          "minimum": 0.05825977301387142
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c64",
+      "query_index": 0,
+      "samples": 11,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 13.272727272727273,
+          "maximum": 64.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.04542015361687493,
+          "maximum": 0.21916771752837327,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 35.5,
+        "maximum": 71.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "coarse-pg-c128",
+      "query_index": 0,
+      "samples": 9,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 27.22222222222222,
+          "maximum": 121.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 4.666666666666667,
+          "maximum": 42.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.08956144038111251,
+          "maximum": 0.3886506935687264,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "coarse-direct-c128",
+      "query_index": 0,
+      "samples": 7,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 32.42857142857143,
+          "maximum": 116.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 6.142857142857143,
+          "maximum": 43.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.10837686903260672,
+          "maximum": 0.3737704918032787,
+          "minimum": 0.003278688524590123
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "scale-pg-n512",
+      "query_index": 0,
+      "samples": 15,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 9.333333333333334,
+          "maximum": 28.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.031172761664564938,
+          "maximum": 0.09306431273644389,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 3
+      }
+    },
+    {
+      "unit_id": "scale-direct-n512",
+      "query_index": 0,
+      "samples": 9,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 23.333333333333332,
+          "maximum": 27.0,
+          "minimum": 18.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07952921395544346,
+          "maximum": 0.09306431273644389,
+          "minimum": 0.06103404791929379
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "scale-direct-n1024",
+      "query_index": 0,
+      "samples": 17,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 23.88235294117647,
+          "maximum": 30.0,
+          "minimum": 18.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.08190787033602848,
+          "maximum": 0.10693568726355607,
+          "minimum": 0.05397225725094579
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 4
+      }
+    },
+    {
+      "unit_id": "scale-pg-n1024",
+      "query_index": 0,
+      "samples": 26,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 12.23076923076923,
+          "maximum": 30.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.041546221747987194,
+          "maximum": 0.10643127364438842,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 80.0,
+        "maximum": 100.0,
+        "samples": 5
+      }
+    },
+    {
+      "unit_id": "scale-pg-n2048",
+      "query_index": 0,
+      "samples": 48,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 9.666666666666666,
+          "maximum": 27.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.03386401849516603,
+          "maximum": 0.09356872635561164,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 9
+      }
+    },
+    {
+      "unit_id": "scale-direct-n2048",
+      "query_index": 0,
+      "samples": 35,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 23.485714285714284,
+          "maximum": 32.0,
+          "minimum": 3.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.08002161772653577,
+          "maximum": 0.1112232030264817,
+          "minimum": 0.01109709962168981
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 7
+      }
+    },
+    {
+      "unit_id": "scale-direct-n4096",
+      "query_index": 0,
+      "samples": 69,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 23.217391304347824,
+          "maximum": 30.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07911252444395708,
+          "maximum": 0.1051702395964691,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 13
+      }
+    },
+    {
+      "unit_id": "scale-pg-n4096",
+      "query_index": 0,
+      "samples": 98,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 11.693877551020408,
+          "maximum": 31.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.039982499935661525,
+          "maximum": 0.11248423707440103,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 94.73684210526316,
+        "maximum": 100.0,
+        "samples": 19
+      }
+    },
+    {
+      "unit_id": "screen-pg-c16",
+      "query_index": 0,
+      "samples": 26,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 9.26923076923077,
+          "maximum": 15.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.03214666796003493,
+          "maximum": 0.058007566204287486,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 83.33333333333333,
+        "maximum": 100.0,
+        "samples": 6
+      }
+    },
+    {
+      "unit_id": "screen-direct-c64",
+      "query_index": 0,
+      "samples": 17,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 44.705882352941174,
+          "maximum": 53.0,
+          "minimum": 2.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15340108300571176,
+          "maximum": 0.18486759142496845,
+          "minimum": 0.005800756620428782
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 3
+      }
+    },
+    {
+      "unit_id": "screen-pg-c64",
+      "query_index": 0,
+      "samples": 30,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 10.8,
+          "maximum": 61.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.03780580075662043,
+          "maximum": 0.21992433795712485,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 97.33333333333333,
+        "maximum": 100.0,
+        "samples": 6
+      }
+    },
+    {
+      "unit_id": "screen-pg-c128",
+      "query_index": 0,
+      "samples": 26,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 23.615384615384617,
+          "maximum": 122.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 1.5,
+          "maximum": 39.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07816471044718208,
+          "maximum": 0.38940731399747797,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 5
+      }
+    },
+    {
+      "unit_id": "window-pg-l32",
+      "query_index": 0,
+      "samples": 21,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 15.857142857142858,
+          "maximum": 32.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.05440461178166095,
+          "maximum": 0.10945775535939473,
+          "minimum": 0.0022698612862547263
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 5
+      }
+    },
+    {
+      "unit_id": "window-pg-l64",
+      "query_index": 0,
+      "samples": 20,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 21.75,
+          "maximum": 32.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07392181588902902,
+          "maximum": 0.1203026481715006,
+          "minimum": 0.0030264817150063017
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 4
+      }
+    },
+    {
+      "unit_id": "window-pg-l96",
+      "query_index": 0,
+      "samples": 24,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 12.583333333333334,
+          "maximum": 30.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.04452501050861706,
+          "maximum": 0.09533417402269861,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 80.0,
+        "maximum": 100.0,
+        "samples": 5
+      }
+    },
+    {
+      "unit_id": "bytes-input",
+      "query_index": 0,
+      "samples": 10,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 24.4,
+          "maximum": 31.0,
+          "minimum": 5.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.08161412358133671,
+          "maximum": 0.10441361916771752,
+          "minimum": 0.0290037831021438
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "bytes-result",
+      "query_index": 0,
+      "samples": 19,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 4.631578947368421,
+          "maximum": 15.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.015981947302050832,
+          "maximum": 0.04590163934426228,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 75.0,
+        "maximum": 100.0,
+        "samples": 4
+      }
+    },
+    {
+      "unit_id": "bytes-pg",
+      "query_index": 0,
+      "samples": 10,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 24.0,
+          "maximum": 32.0,
+          "minimum": 16.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.08176544766708702,
+          "maximum": 0.10870113493064315,
+          "minimum": 0.05699873896595209
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "observe-pg-buffered",
+      "query_index": 0,
+      "samples": 10,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 21.2,
+          "maximum": 32.0,
+          "minimum": 3.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07122320302648173,
+          "maximum": 0.10870113493064315,
+          "minimum": 0.011349306431273631
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "observe-pg-no-trace",
+      "query_index": 0,
+      "samples": 11,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 15.363636363636363,
+          "maximum": 30.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.05337613206465664,
+          "maximum": 0.09936948297604031,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "observe-pg-qualification",
+      "query_index": 0,
+      "samples": 10,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 16.5,
+          "maximum": 29.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.05644388398486759,
+          "maximum": 0.09735182849936952,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "observe-direct-buffered",
+      "query_index": 0,
+      "samples": 9,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 46.0,
+          "maximum": 53.0,
+          "minimum": 32.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15734902620148522,
+          "maximum": 0.1745271122320302,
+          "minimum": 0.11450189155107193
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "observe-direct-qualification",
+      "query_index": 0,
+      "samples": 9,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 45.55555555555556,
+          "maximum": 63.0,
+          "minimum": 15.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15328569426930083,
+          "maximum": 0.21992433795712485,
+          "minimum": 0.050693568726355664
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 1
+      }
+    },
+    {
+      "unit_id": "observe-tight-no-trace",
+      "query_index": 0,
+      "samples": 17,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 6.823529411764706,
+          "maximum": 32.0,
+          "minimum": 2.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.024152510941324815,
+          "maximum": 0.1092055485498108,
+          "minimum": 0.004791929382093274
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 3
+      }
+    },
+    {
+      "unit_id": "repeat-1-direct",
+      "query_index": 0,
+      "samples": 62,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 48.435483870967744,
+          "maximum": 64.0,
+          "minimum": 28.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.03225806451612903,
+          "maximum": 2.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.16185982182809258,
+          "maximum": 0.22219419924337958,
+          "minimum": 0.08827238335435061
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 12
+      }
+    },
+    {
+      "unit_id": "repeat-1-pg16",
+      "query_index": 0,
+      "samples": 17,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 9.941176470588236,
+          "maximum": 15.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.03428529040872336,
+          "maximum": 0.04766708701134925,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 3
+      }
+    },
+    {
+      "unit_id": "screen-safe-pg64",
+      "query_index": 0,
+      "samples": 11,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 24.272727272727273,
+          "maximum": 64.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0805686117161527,
+          "maximum": 0.21715006305170237,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 57.5,
+        "maximum": 100.0,
+        "samples": 2
+      }
+    },
+    {
+      "unit_id": "final-1-pg16",
+      "query_index": 0,
+      "samples": 80,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 10.4,
+          "maximum": 15.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.03739911727616646,
+          "maximum": 0.06481715006305167,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 93.75,
+        "maximum": 100.0,
+        "samples": 16
+      }
+    },
+    {
+      "unit_id": "final-1-pg32",
+      "query_index": 0,
+      "samples": 73,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 21.424657534246574,
+          "maximum": 32.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07279448599906718,
+          "maximum": 0.11500630517023958,
+          "minimum": 0.0030264817150063017
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 15
+      }
+    },
+    {
+      "unit_id": "final-2-pg32",
+      "query_index": 0,
+      "samples": 73,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 19.54794520547945,
+          "maximum": 32.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.0662267442864793,
+          "maximum": 0.11349306431273642,
+          "minimum": 0.002017654476670905
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 15
+      }
+    },
+    {
+      "unit_id": "final-2-pg16",
+      "query_index": 0,
+      "samples": 80,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 11.325,
+          "maximum": 16.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.037966582597730135,
+          "maximum": 0.06179066834804536,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 16
+      }
+    },
+    {
+      "unit_id": "final-2-direct",
+      "query_index": 0,
+      "samples": 63,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 46.96825396825397,
+          "maximum": 63.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15688064212654376,
+          "maximum": 0.2194199243379571,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 12
+      }
+    },
+    {
+      "unit_id": "final-3-pg16",
+      "query_index": 0,
+      "samples": 81,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 10.901234567901234,
+          "maximum": 15.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.037918204038422616,
+          "maximum": 0.058007566204287486,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 16
+      }
+    },
+    {
+      "unit_id": "final-3-direct",
+      "query_index": 0,
+      "samples": 63,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 46.98412698412698,
+          "maximum": 63.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15653635981504835,
+          "maximum": 0.2194199243379571,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 13
+      }
+    },
+    {
+      "unit_id": "final-3-pg32",
+      "query_index": 0,
+      "samples": 73,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 21.136986301369863,
+          "maximum": 32.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.07240753856518509,
+          "maximum": 0.1203026481715006,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 15
+      }
+    },
+    {
+      "unit_id": "final-4-pg32",
+      "query_index": 0,
+      "samples": 74,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 17.77027027027027,
+          "maximum": 32.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.05972189086943185,
+          "maximum": 0.10668348045397225,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 99.2,
+        "maximum": 100.0,
+        "samples": 15
+      }
+    },
+    {
+      "unit_id": "final-4-direct",
+      "query_index": 0,
+      "samples": 63,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 46.80952380952381,
+          "maximum": 57.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15830981404751895,
+          "maximum": 0.19470365699873893,
+          "minimum": 0.009331651954602727
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 13
+      }
+    },
+    {
+      "unit_id": "final-4-pg16",
+      "query_index": 0,
+      "samples": 80,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 10.5,
+          "maximum": 15.0,
+          "minimum": 2.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.035993064312736446,
+          "maximum": 0.05447667087011354,
+          "minimum": 0.0050441361916772065
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 16
+      }
+    },
+    {
+      "unit_id": "final-5-direct",
+      "query_index": 0,
+      "samples": 63,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 46.666666666666664,
+          "maximum": 64.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15609199543625774,
+          "maximum": 0.22269861286254733,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 12
+      }
+    },
+    {
+      "unit_id": "final-5-pg32",
+      "query_index": 0,
+      "samples": 72,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 19.708333333333332,
+          "maximum": 32.0,
+          "minimum": 0.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.06646350007005745,
+          "maximum": 0.1172761664564943,
+          "minimum": 0.0
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 99.64285714285714,
+        "maximum": 100.0,
+        "samples": 14
+      }
+    },
+    {
+      "unit_id": "final-5-pg16",
+      "query_index": 0,
+      "samples": 80,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 11.15,
+          "maximum": 16.0,
+          "minimum": 2.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.038603404791929384,
+          "maximum": 0.06330390920554851,
+          "minimum": 0.008827238335435084
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 16
+      }
+    },
+    {
+      "unit_id": "evaluation-pg",
+      "query_index": 0,
+      "samples": 37,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 19.864864864864863,
+          "maximum": 32.0,
+          "minimum": 1.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.06853890460447837,
+          "maximum": 0.11475409836065575,
+          "minimum": 0.0045397225725094525
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 8
+      }
+    },
+    {
+      "unit_id": "evaluation-direct",
+      "query_index": 0,
+      "samples": 32,
+      "sample_errors": 0,
+      "metrics": {
+        "num_requests_running": {
+          "mean": 47.09375,
+          "maximum": 57.0,
+          "minimum": 35.0
+        },
+        "num_requests_waiting": {
+          "mean": 0.03125,
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "kv_cache_usage_perc": {
+          "mean": 0.15797604035308954,
+          "maximum": 0.2005044136191677,
+          "minimum": 0.1051702395964691
+        }
+      },
+      "gpu_utilization_percent": {
+        "mean": 100.0,
+        "maximum": 100.0,
+        "samples": 7
+      }
+    }
+  ]
+}

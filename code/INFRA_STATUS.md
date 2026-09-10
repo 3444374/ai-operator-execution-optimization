@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：[单 Map 测量修复与容量画像](../experiments/results/postgresql/map_capacity_20260910/README.md)
+完成独立 PG producer 绑定、单元预留预算、分阶段记录、direct/PG 配置 runner 与有界事件/RSS 观测。
+本地/Linux 各214项、PG回归1/1与TAP2032项通过；683个非Markdown代码文件与服务器一致。
+单卡真实出站96601次，预留99808次；62个完整查询、1个PG低内存配置拒绝，原始失败/部分结果保留。
+每臂五次4000行观测，PG C32/L64中位JCT73.024s，direct C64为62.679s；2000行独立样本验证通过。
+C32/L64是候选，C64/128尚无同规模重复平台，强D0仍未成立；不能登记为组织/多Job/双副本性能资格。
+模型/PG/gateway/采样均已停止，两卡1MiB，ACL恢复，准备至清理77.94min。以下记录按当时状态保留。
+
 2026-09-10：[数据准备与执行记录修复](../experiments/results/postgresql/data_evaluation_harness_20260910/README.md)
 已完成本地/Linux 各 168 项相关测试、真实 PG 的 7 项新 recorder 检查与 SQuAD 10/10 次模型请求。
 新 CLI 原样准备 ShareGPT 16 行并完成实际 tokenizer 检查；PG 146 行文本往返相同，部分结果失败、

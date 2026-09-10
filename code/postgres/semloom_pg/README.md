@@ -1,5 +1,11 @@
 # `semloom_pg` capability spike
 
+2026-09-10: the optional `semloom_pg.test_map_binding_id_column` records a named projected text ID
+through the existing tuple binding before provider offer, with stream/sequence/digest and acceptance.
+It defaults to an empty string and rejects missing or unsupported ID projections. It is a private test
+observation, not a wire or scheduling change. Strict PG18.3 build, regression 1/1 and TAP 2032/2032 pass;
+real capacity observations and their limitations are in the [capacity report](../../../experiments/results/postgresql/map_capacity_20260910/README.md).
+
 `semloom_pg` is the current `REL_18_3` reference capability slice from
 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
 fail-closed SQL marker can be lowered to a planner-visible `CustomPath`/`CustomScan` with an ordinary

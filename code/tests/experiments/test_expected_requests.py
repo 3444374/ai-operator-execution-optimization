@@ -6,15 +6,42 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import time
 from unittest.mock import patch
 
 from src.baselines.common.private_artifacts import content_digest
 from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger, BudgetError
 from src.experiments.choice_gateway_observer import main
 from src.experiments.expected_requests import ExpectedRequests, expected_request_manifest
+from src.experiments.cell_budget import CellBudgetLedger
 
 
 class ExpectedRequestTests(unittest.TestCase):
+    def test_buffered_cell_observer_never_opens_sqlite_during_send(self):
+        import httpx
+        body = {'model': 'fixture', 'messages': []}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ledger = CellBudgetLedger.create(root / 'budget.sqlite', AttemptBudget('fixture', 2), deadline_utc=time.time()+60)
+            ledger.reserve_unit('two', 2)
+            (root / 'expected.json').write_text(json.dumps(expected_request_manifest([body, body])))
+            async def send():
+                async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200))) as client:
+                    await asyncio.gather(*(client.post('http://localhost/fixture', json=body) for _ in range(2)))
+            def serve(*_args, **_kwargs):
+                with patch('sqlite3.connect', side_effect=AssertionError('SQLite in send path')):
+                    asyncio.run(send())
+                return 0
+            args = ['--events', str(root/'events.jsonl'), '--cell-budget', str(ledger.path), '--unit-id', 'two',
+                    '--budget-id', 'fixture', '--max-attempts', '2', '--event-mode', 'compact-buffered',
+                    '--observer-summary', str(root/'observer.json'), '--expected-request-hashes', str(root/'expected.json'),
+                    '--', '--incremental-map']
+            with patch('src.experiments.choice_gateway_observer.server.main', side_effect=serve):
+                self.assertEqual(main(args), 0)
+            summary = json.loads((root/'observer.json').read_text())
+            self.assertEqual(summary['observed_attempts'], 2)
+            self.assertTrue(summary['events']['closed'])
+
     def test_multiset_allows_reorder_but_not_extra_calls(self):
         a, b = {"messages": [{"role": "user", "content": "a"}]}, {"messages": [{"role": "user", "content": "b"}]}
         guard = ExpectedRequests(expected_request_manifest([a, a, b]), available_attempts=3)

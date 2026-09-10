@@ -1,0 +1,30 @@
+{
+  "role": "window changes only at fixed C32 and fixed byte budgets",
+  "maximum_model_requests": 3072,
+  "cells": [
+    [
+      "window-pg-l32",
+      "pg",
+      "1024",
+      "32",
+      "--window",
+      "32"
+    ],
+    [
+      "window-pg-l64",
+      "pg",
+      "1024",
+      "32",
+      "--window",
+      "64"
+    ],
+    [
+      "window-pg-l96",
+      "pg",
+      "1024",
+      "32",
+      "--window",
+      "96"
+    ]
+  ]
+}

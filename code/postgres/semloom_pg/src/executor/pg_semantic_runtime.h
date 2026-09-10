@@ -34,7 +34,8 @@ extern void pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 										  AiByteSlice input,
 										  AiByteSlice canonical_messages,
 										  MemoryContext result_context,
-										  PgSemanticCompletion *completion);
+										  PgSemanticCompletion *completion,
+										  const char *trace_row_id);
 extern void pg_semantic_runtime_record_emitted(PgSemanticRuntime *runtime);
 extern void pg_semantic_runtime_close(PgSemanticRuntime *runtime);
 extern void pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
@@ -45,7 +46,7 @@ extern void pg_semantic_runtime_explain_counters(
 
 extern uint32 pg_semantic_runtime_window(const PgSemanticRuntime *runtime);
 extern bool pg_semantic_runtime_offer(PgSemanticRuntime *runtime, AiByteSlice input,
-	AiByteSlice messages, uint64 *sequence);
+	AiByteSlice messages, uint64 *sequence, const char *trace_row_id);
 extern uint64 pg_semantic_runtime_receive(PgSemanticRuntime *runtime, MemoryContext context,
 	PgSemanticCompletion *completion);
 #endif

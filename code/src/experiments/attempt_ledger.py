@@ -52,6 +52,20 @@ class BudgetExhausted(BudgetError):
     """All permitted attempts have been reserved."""
 
 
+def required_ledger_bytes(budget: AttemptBudget) -> int:
+    """Exact size of a full canonical v1 history, without allocating its rows."""
+    header = len(json.dumps(budget.header, separators=(",", ":"))) + 1
+    row = len(json.dumps({"attempt": 0, "request_sha256": "0" * 64},
+                         separators=(",", ":"))) + 1
+    digits = 0
+    first, width = 1, 1
+    while first <= budget.limit:
+        digits += (min(budget.limit, first * 10 - 1) - first + 1) * width
+        first *= 10
+        width += 1
+    return header + budget.limit * (row - 1) + digits
+
+
 @contextmanager
 def observe_http_posts(ledger: "AttemptLedger", record):
     """Reserve and observe POST bytes in one isolated qualification process.
@@ -126,6 +140,8 @@ class AttemptLedger:
 
     @classmethod
     def create(cls, path: Path, budget: AttemptBudget):
+        if required_ledger_bytes(budget) > MAX_LEDGER_BYTES:
+            raise BudgetError("declared budget exceeds v1 history capacity; use a cell budget")
         descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         with os.fdopen(descriptor, "w", encoding="ascii") as handle:
             handle.write(json.dumps(budget.header, separators=(",", ":")) + "\n")
@@ -185,13 +201,12 @@ class AttemptLedger:
             count = self._count(handle)
             if count == self.budget.limit:
                 raise BudgetExhausted("experiment attempt budget exhausted")
+            record = json.dumps({"attempt": count + 1, "request_sha256": request_sha256},
+                                separators=(",", ":")) + "\n"
             handle.seek(0, os.SEEK_END)
-            handle.write(
-                json.dumps(
-                    {"attempt": count + 1, "request_sha256": request_sha256}, separators=(",", ":")
-                )
-                + "\n"
-            )
+            if handle.tell() + len(record) > MAX_LEDGER_BYTES:
+                raise BudgetError("next reservation would exceed v1 history capacity")
+            handle.write(record)
             handle.flush()
             os.fsync(handle.fileno())
             return count + 1

@@ -33,12 +33,15 @@
 #include "executor/sem_pump.h"
 #include "planner/marker_identity.h"
 
+#define SEMLOOM_TRACE_ROW_ID_MAX_BYTES 256
+
 typedef struct SemloomWindowRow
 {
 	MemoryContext context;
 	TupleTableSlot *slot;
 	AiByteSlice input;
 	AiByteSlice messages;
+	char *trace_row_id;
 	uint64 sequence;
 	bool sent;
 	bool ready;
@@ -52,6 +55,7 @@ struct SemloomExecPump
 	SemloomFilterCostEstimate filter_cost;
 	bool has_filter_cost;
 	SemloomTupleBinding *binding;
+	AttrNumber trace_id_column;
 	ExprState *input_expression;
 	SemloomWindowRow *rows;
 	uint32 window;
@@ -72,6 +76,58 @@ static void semloom_pump_store_completion(TupleTableSlot *slot,
 										 MemoryContext result_context);
 
 static TupleTableSlot *semloom_pump_window_next(SemloomExecPump *, ScanState *);
+
+static AttrNumber
+semloom_trace_column(CustomScan *scan, const SemloomTupleBinding *binding,
+	TupleDesc child_descriptor, const char *name)
+{
+	AttrNumber found = 0;
+	ListCell *cell;
+	if (name[0] == '\0') return 0;
+	foreach(cell, scan->scan.plan.targetlist)
+	{
+		TargetEntry *entry = lfirst_node(TargetEntry, cell);
+		if (entry->resname != NULL && strcmp(entry->resname, name) == 0)
+		{
+			Var *variable;
+			AttrNumber source;
+			if (found || !IsA(entry->expr, Var))
+				ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+					errmsg("Map trace ID must be an unambiguous projected text column")));
+			variable = (Var *) entry->expr;
+			if (variable->varno != INDEX_VAR || variable->varattno < 1 ||
+				variable->varattno > binding->scan_natts)
+				ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Map trace ID lacks a scan binding")));
+			source = binding->child_columns[variable->varattno - 1];
+			if (source < 1 || source > child_descriptor->natts ||
+				TupleDescAttr(child_descriptor, source - 1)->atttypid != TEXTOID)
+				ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Map trace ID lacks a text child binding")));
+			found = source;
+		}
+	}
+	if (!found)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Map trace ID column is absent from child output")));
+	return found;
+}
+
+static char *
+semloom_trace_id(SemloomExecPump *pump, TupleTableSlot *slot, MemoryContext context)
+{
+	MemoryContext previous;
+	Datum value;
+	bool is_null;
+	char *identity;
+	if (pump->trace_id_column == 0) return NULL;
+	value = slot_getattr(slot, pump->trace_id_column, &is_null);
+	if (is_null)
+		ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("Map trace row ID cannot be NULL")));
+	previous = MemoryContextSwitchTo(context);
+	identity = TextDatumGetCString(value);
+	if (!identity[0] || strlen(identity) > SEMLOOM_TRACE_ROW_ID_MAX_BYTES)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Map trace row ID must contain 1 to 256 bytes")));
+	MemoryContextSwitchTo(previous);
+	return identity;
+}
 
 /* A first multi-in-flight path only reads plain columns/constants ahead. Other
  * expressions keep window one, so side effects and row errors are not moved. */
@@ -169,6 +225,9 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 		plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_MAP,
 		ExecGetResultType(pump->child_state),
 		node->ss.ss_ScanTupleSlot->tts_tupleDescriptor);
+	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+		pump->trace_id_column = semloom_trace_column(scan, pump->binding,
+			ExecGetResultType(pump->child_state), semloom_test_map_binding_column());
 	pump->owner_context = owner_context;
 	pump->window = pg_semantic_runtime_window(pump->runtime);
 	if (pump->window > 1 &&
@@ -272,7 +331,8 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 										  .length = (uint32) task_length,
 									  },
 									  tuple_context,
-									  &completion);
+									  &completion,
+									  semloom_trace_id(pump, child_slot, tuple_context));
 			machine_completion.data = completion.data;
 			machine_completion.length = completion.length;
 			machine_completion.is_null = completion.is_null;
@@ -360,6 +420,7 @@ semloom_window_read(SemloomExecPump *pump, ScanState *scan, SemloomWindowRow *ro
 		if (!semloom_operator_machine_write_task(&pump->machine, &bound, messages, length))
 			elog(ERROR, "could not prepare semantic operator task");
 		row->messages = (AiByteSlice){messages, length};
+		row->trace_row_id = semloom_trace_id(pump, child, row->context);
 	}
 	/* Split the configured window budget into bounded per-row reservations. */
 	if (MemoryContextMemAllocated(row->context, true) + SEMLOOM_MAP_MAX_OUTPUT_BYTES > pump->window_bytes / pump->window)
@@ -393,7 +454,8 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 		{
 			SemloomWindowRow *row = &pump->rows[(pump->head + index) % pump->window];
 			if (!row->ready && !row->sent)
-				row->sent = pg_semantic_runtime_offer(pump->runtime, row->input, row->messages, &row->sequence);
+				row->sent = pg_semantic_runtime_offer(pump->runtime, row->input, row->messages,
+					&row->sequence, row->trace_row_id);
 			if (row->sent && !row->ready) in_flight++;
 		}
 		if (!pump->count) return ExecClearTuple(scan->ss_ScanTupleSlot);

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "owned_processes_remaining": [],
+  "pg_stopped": true,
+  "gateway_sockets_remaining": [],
+  "model_stop": {
+    "returncode": 0,
+    "forced": false,
+    "stopped_utc": 1789016967.3771245
+  },
+  "model_port_connection_refused": true,
+  "model_port_rebind": true,
+  "gpu_compute_processes": [],
+  "gpu_memory": [
+    "0, 1 MiB",
+    "1, 1 MiB"
+  ],
+  "root_acl_restored": true,
+  "model_hashes_rechecked": 9,
+  "cleanup_utc": 1789017144.0804672,
+  "campaign_elapsed_seconds": 4676.181471824646,
+  "within_original_two_hours": true
+}

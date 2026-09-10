@@ -25,8 +25,10 @@ from src.experiments.attempt_ledger import (
 )
 from src.experiments.gateway_observer import ObservedAdapter, SessionObserver
 from src.baselines.common.redact import redact_json_values
-from src.baselines.common.private_artifacts import content_digest, open_private_text
+from src.baselines.common.private_artifacts import content_digest, open_private_text, write_private_json
 from src.experiments.expected_requests import ExpectedRequests
+from src.experiments.cell_budget import CellBudgetLedger
+from src.experiments.buffered_events import BufferedEvents, compact_event
 
 
 CHOICE_BUDGET = AttemptBudget("semloom.choice.4c.v1", 100)
@@ -40,7 +42,12 @@ def main(argv=None):
                         help="complete request-value multiset checked before HTTP send")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--ledger", type=Path)
+    mode.add_argument("--cell-budget", type=Path, help="pre-reserved experiment-unit budget")
     mode.add_argument("--fixture-only", action="store_true")
+    parser.add_argument("--unit-id")
+    parser.add_argument("--event-mode", choices=("qualification", "compact-buffered"), default="qualification")
+    parser.add_argument("--observer-summary", type=Path)
+    parser.add_argument("--event-buffer-bytes", type=int, default=8 * 1024 * 1024)
     parser.add_argument("--dns-release-file", type=Path)
     parser.add_argument("--budget-id", help="expected identity of the existing ledger")
     parser.add_argument(
@@ -56,7 +63,15 @@ def main(argv=None):
         parser.error("--budget-id and --max-attempts must be supplied together")
     if args.fixture_only and args.budget_id is not None:
         parser.error("fixture mode cannot select a real request budget")
-    if args.expected_request_hashes and not args.ledger:
+    if bool(args.cell_budget) != bool(args.unit_id) or (args.cell_budget and args.budget_id is None):
+        parser.error("cell budgets require unit ID, budget identity and limit")
+    if args.event_mode == "compact-buffered" and args.private_events:
+        parser.error("compact events contain hashes; use qualification mode for full private events")
+    if args.event_buffer_bytes < 1:
+        parser.error("event buffer must be positive")
+    if args.observer_summary and args.observer_summary.exists():
+        parser.error("observer summary already exists")
+    if args.expected_request_hashes and not (args.ledger or args.cell_budget):
         parser.error("expected-request hashes require an existing durable ledger")
     budget = (
         CHOICE_BUDGET
@@ -64,19 +79,27 @@ def main(argv=None):
         else AttemptBudget(args.budget_id, args.max_attempts)
     )
     ledger = AttemptLedger(args.ledger, budget) if args.ledger else None
+    if args.cell_budget:
+        ledger = CellBudgetLedger(args.cell_budget, budget).claim_unit(args.unit_id)
+    available = ledger.remaining if args.cell_budget else budget.limit - ledger.attempts if ledger else 0
     expected = (ExpectedRequests.load(args.expected_request_hashes,
-                available_attempts=budget.limit-ledger.attempts)
+                available_attempts=available)
                 if args.expected_request_hashes else None)
-    args.events.touch(exist_ok=False)
+    if args.event_mode == "qualification":
+        args.events.touch(exist_ok=False)
     record_lock = threading.Lock()
     session_observer = SessionObserver(lambda event: None)
     private_handle = None
+    buffered = session_buffered = None
 
     def record(event):
         event = dict(
             event, session_id=session_observer.current_session, task=session_observer.current_task,
             monotonic_ns=time.monotonic_ns(),
         )
+        if buffered is not None:
+            buffered.record(compact_event(event))
+            return
         with record_lock, args.events.open("a", encoding="utf-8") as handle:
             if private_handle is not None:
                 private_handle.write(json.dumps(event, ensure_ascii=False) + "\n")
@@ -147,15 +170,18 @@ def main(argv=None):
     gateway_args = gateway_args[1:] if gateway_args[:1] == ["--"] else gateway_args
     try:
         with ExitStack() as stack:
+            if args.event_mode == "compact-buffered":
+                buffered = stack.enter_context(BufferedEvents(args.events, max_pending_bytes=args.event_buffer_bytes))
             if args.private_events:
                 private_handle = stack.enter_context(open_private_text(args.private_events))
             if args.session_events:
-                handle = stack.enter_context(
-                    args.session_events.open("x", encoding="ascii", buffering=1)
-                )
-                session_observer = SessionObserver(
-                    lambda event: handle.write(json.dumps(event) + "\n")
-                )
+                if buffered is not None:
+                    session_buffered = stack.enter_context(BufferedEvents(args.session_events,
+                                                                         max_pending_bytes=args.event_buffer_bytes))
+                    session_observer = SessionObserver(session_buffered.record)
+                else:
+                    handle = stack.enter_context(args.session_events.open("x", encoding="ascii", buffering=1))
+                    session_observer = SessionObserver(lambda event: handle.write(json.dumps(event) + "\n"))
 
             def wrap_adapter(adapter):
                 observed = ObservedAdapter(adapter, observe_completion)
@@ -181,6 +207,14 @@ def main(argv=None):
 
     finally:
         socket.getaddrinfo = original_resolve
+        if args.observer_summary:
+            write_private_json(args.observer_summary, {
+                "event_mode": args.event_mode,
+                "unit_id": args.unit_id,
+                "observed_attempts": ledger.attempts if ledger else None,
+                "events": buffered.snapshot() if buffered else None,
+                "sessions": session_buffered.snapshot() if session_buffered else None,
+            })
 
 
 if __name__ == "__main__":

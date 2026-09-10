@@ -114,6 +114,9 @@ class IncrementalMapProtocol:
                         (self.prepare_task(request, sequence),)
                     ).accepted_prefix_count
                     if accepted:
+                        if self._observer:
+                            self._observer({"event": "map_task", "sequence": sequence,
+                                            "payload_digest": digest})
                         pending[sequence] = digest
                         sequence += 1
                     # Intake does not dispatch: poll exposes the accepted window to

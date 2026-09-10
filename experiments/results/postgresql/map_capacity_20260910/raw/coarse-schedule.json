@@ -1,0 +1,118 @@
+{
+  "cells": [
+    {
+      "unit": "coarse-direct-c1",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 1,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c1",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 1,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c2",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 2,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c2",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 2,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c4",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 4,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c4",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 4,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c8",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 8,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c8",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 8,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c16",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 16,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c16",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 16,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c32",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c32",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 32,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c64",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 64,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c64",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 64,
+      "window": 128
+    },
+    {
+      "unit": "coarse-pg-c128",
+      "arm": "pg",
+      "rows": 256,
+      "concurrency": 128,
+      "window": 128
+    },
+    {
+      "unit": "coarse-direct-c128",
+      "arm": "direct",
+      "rows": 256,
+      "concurrency": 128,
+      "window": 128
+    }
+  ],
+  "maximum_model_requests": 4096,
+  "role": "diagnostic only; not steady-state selection evidence"
+}

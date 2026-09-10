@@ -1,0 +1,3493 @@
+[
+  {
+    "unit_id": "warm-direct2",
+    "first_attempt": 1,
+    "requests": 32,
+    "claimed": 1,
+    "observed_attempts": 32,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 32,
+      "events": {
+        "accepted_events": 128,
+        "written_events": 128,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 6662,
+        "enqueue_seconds": 0.004898183,
+        "write_seconds": 0.00053963,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 4,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 10,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 101355520
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 101400576
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "warm-pg",
+    "first_attempt": 33,
+    "requests": 32,
+    "claimed": 1,
+    "observed_attempts": 32,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "warm-pg",
+      "observed_attempts": 32,
+      "events": {
+        "accepted_events": 232,
+        "written_events": 232,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 14255,
+        "enqueue_seconds": 0.009627629,
+        "write_seconds": 0.000648328,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 4,
+        "written_events": 4,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 308,
+        "enqueue_seconds": 0.000311922,
+        "write_seconds": 0.002775193,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 4,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 16,
+        "input_bytes": 16010,
+        "result_bytes": 16777216,
+        "active_requests": 4,
+        "active_work": 4
+      },
+      "drained_jobs": 2,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 10,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93519872,
+        "query:gateway_core": 47144960,
+        "query:pg_backend": 16076800
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 93884416
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c1",
+    "first_attempt": 65,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 1491,
+        "enqueue_seconds": 0.047821602,
+        "write_seconds": 0.007377877,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 1,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 149,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 101625856
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 102678528
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c1",
+    "first_attempt": 321,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c1",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 39049,
+        "enqueue_seconds": 0.089932688,
+        "write_seconds": 0.462524527,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000168028,
+        "write_seconds": 0.00018627,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 1,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 155573,
+        "result_bytes": 134217728,
+        "active_requests": 1,
+        "active_work": 1
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 204,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93880320,
+        "query:gateway_core": 49053696,
+        "query:pg_backend": 17977344
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96636928
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c2",
+    "first_attempt": 577,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c2",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66472,
+        "enqueue_seconds": 0.080933092,
+        "write_seconds": 0.143261289,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000159821,
+        "write_seconds": 8.5483e-05,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 2,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 152960,
+        "result_bytes": 134217728,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 134,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93573120,
+        "query:gateway_core": 48779264,
+        "query:pg_backend": 18264064
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96325632
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c2",
+    "first_attempt": 833,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 2986,
+        "enqueue_seconds": 0.045241872,
+        "write_seconds": 0.007077019,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 2,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 89,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 101253120
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 102182912
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c4",
+    "first_attempt": 1089,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 5225,
+        "enqueue_seconds": 0.038182015,
+        "write_seconds": 0.002843357,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 4,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 54,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 101388288
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 102375424
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c4",
+    "first_attempt": 1345,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c4",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66610,
+        "enqueue_seconds": 0.071308141,
+        "write_seconds": 0.041240357,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000160155,
+        "write_seconds": 0.00014308,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 4,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 4,
+        "active_work": 4
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 86,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93917184,
+        "query:gateway_core": 48451584,
+        "query:pg_backend": 17993728
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96673792
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c8",
+    "first_attempt": 1601,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c8",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68444,
+        "enqueue_seconds": 0.065464004,
+        "write_seconds": 0.059068037,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000122875,
+        "write_seconds": 0.000120143,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 8,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 8,
+        "active_work": 8
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 65,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93638656,
+        "query:gateway_core": 47607808,
+        "query:pg_backend": 18055168
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96395264
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c8",
+    "first_attempt": 1857,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 11932,
+        "enqueue_seconds": 0.034244241,
+        "write_seconds": 0.002186839,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 8,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 36,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 101519360
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 102576128
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c16",
+    "first_attempt": 2113,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 14871,
+        "enqueue_seconds": 0.028235425,
+        "write_seconds": 0.001822014,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 30,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 102023168
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 102805504
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c16",
+    "first_attempt": 2369,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c16",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 67933,
+        "enqueue_seconds": 0.060810002,
+        "write_seconds": 0.042210581,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000166192,
+        "write_seconds": 0.00015438,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 44,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93941760,
+        "query:gateway_core": 48168960,
+        "query:pg_backend": 18059264
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96694272
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c32",
+    "first_attempt": 2625,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c32",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66520,
+        "enqueue_seconds": 0.061783367,
+        "write_seconds": 0.031708091,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000150625,
+        "write_seconds": 0.000726092,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 151375,
+        "result_bytes": 134217728,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 61,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93888512,
+        "query:gateway_core": 48033792,
+        "query:pg_backend": 18210816
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96706560
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c32",
+    "first_attempt": 2881,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 14113,
+        "enqueue_seconds": 0.023354195,
+        "write_seconds": 0.004748244,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 27,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 102125568
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 102510592
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c64",
+    "first_attempt": 3137,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 27502,
+        "enqueue_seconds": 0.020853475,
+        "write_seconds": 0.004010776,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 26,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 103055360
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 103137280
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c64",
+    "first_attempt": 3393,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c64",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 65631,
+        "enqueue_seconds": 0.059936466,
+        "write_seconds": 0.027245514,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000151576,
+        "write_seconds": 0.000127629,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 64,
+        "active_work": 64
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 57,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93929472,
+        "query:gateway_core": 49041408,
+        "query:pg_backend": 17985536
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96768000
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-pg-c128",
+    "first_attempt": 3649,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "coarse-pg-c128",
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1797,
+        "written_events": 1797,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66702,
+        "enqueue_seconds": 0.053062627,
+        "write_seconds": 0.025998447,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.00018127,
+        "write_seconds": 0.000745582,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 128,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 128,
+        "active_work": 128
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 45,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 93929472,
+        "query:gateway_core": 51785728,
+        "query:pg_backend": 18403328
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 96681984
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "coarse-direct-c128",
+    "first_attempt": 3905,
+    "requests": 256,
+    "claimed": 1,
+    "observed_attempts": 256,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 256,
+      "events": {
+        "accepted_events": 1024,
+        "written_events": 1024,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 65614,
+        "enqueue_seconds": 0.019810689,
+        "write_seconds": 0.0065855,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 128,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 35,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 105238528
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 105328640
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-pg-n512",
+    "first_attempt": 4161,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "scale-pg-n512",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66717,
+        "enqueue_seconds": 0.111261869,
+        "write_seconds": 0.048560606,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.00013283,
+        "write_seconds": 0.000173267,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 152048,
+        "result_bytes": 134217728,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 77,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94195712,
+        "query:gateway_core": 48648192,
+        "query:pg_backend": 18771968
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 99713024
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-direct-n512",
+    "first_attempt": 4673,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 2048,
+        "written_events": 2048,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 17919,
+        "enqueue_seconds": 0.047294917,
+        "write_seconds": 0.002912661,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 46,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 102948864
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 104448000
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-direct-n1024",
+    "first_attempt": 5185,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 4096,
+        "written_events": 4096,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 17184,
+        "enqueue_seconds": 0.096739555,
+        "write_seconds": 0.004363084,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 89,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 103657472
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 107188224
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-pg-n1024",
+    "first_attempt": 6209,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "scale-pg-n1024",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68379,
+        "enqueue_seconds": 0.209376927,
+        "write_seconds": 0.086956006,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000136973,
+        "write_seconds": 0.000125985,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 151229,
+        "result_bytes": 134217728,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 129,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94965760,
+        "query:gateway_core": 49434624,
+        "query:pg_backend": 19357696
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 105562112
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-pg-n2048",
+    "first_attempt": 7233,
+    "requests": 2048,
+    "claimed": 1,
+    "observed_attempts": 2048,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "scale-pg-n2048",
+      "observed_attempts": 2048,
+      "events": {
+        "accepted_events": 14341,
+        "written_events": 14341,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68492,
+        "enqueue_seconds": 0.452739189,
+        "write_seconds": 0.160183329,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000176938,
+        "write_seconds": 0.000141427,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 239,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 96251904,
+        "query:gateway_core": 49762304,
+        "query:pg_backend": 20914176
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 116916224
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-direct-n2048",
+    "first_attempt": 9281,
+    "requests": 2048,
+    "claimed": 1,
+    "observed_attempts": 2048,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 2048,
+      "events": {
+        "accepted_events": 8192,
+        "written_events": 8192,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 18020,
+        "enqueue_seconds": 0.189664784,
+        "write_seconds": 0.009753729,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 174,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 104714240
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 111902720
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-direct-n4096",
+    "first_attempt": 11329,
+    "requests": 4096,
+    "claimed": 1,
+    "observed_attempts": 4096,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 4096,
+      "events": {
+        "accepted_events": 16384,
+        "written_events": 16384,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 22524,
+        "enqueue_seconds": 0.377331061,
+        "write_seconds": 0.023944574,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 341,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 107548672
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 123195392
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "scale-pg-n4096",
+    "first_attempt": 15425,
+    "requests": 4096,
+    "claimed": 1,
+    "observed_attempts": 4096,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "scale-pg-n4096",
+      "observed_attempts": 4096,
+      "events": {
+        "accepted_events": 28677,
+        "written_events": 28677,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 73123,
+        "enqueue_seconds": 0.893534121,
+        "write_seconds": 0.494947236,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000174767,
+        "write_seconds": 0.000701559,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150811,
+        "result_bytes": 134217728,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 488,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103133184,
+        "query:gateway_core": 50794496,
+        "query:pg_backend": 23003136
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 142893056
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "screen-pg-c16",
+    "first_attempt": 19521,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "screen-pg-c16",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 67894,
+        "enqueue_seconds": 0.252290251,
+        "write_seconds": 0.132730097,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000149945,
+        "write_seconds": 0.00013931,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 150917,
+        "result_bytes": 134217728,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 134,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 95485952,
+        "query:gateway_core": 49123328,
+        "query:pg_backend": 19795968
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 105824256
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "screen-direct-c64",
+    "first_attempt": 20545,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 4096,
+        "written_events": 4096,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 27539,
+        "enqueue_seconds": 0.084581119,
+        "write_seconds": 0.003729865,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 83,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 104808448
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 107556864
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "screen-pg-c64",
+    "first_attempt": 21569,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "screen-pg-c64",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68304,
+        "enqueue_seconds": 0.244617996,
+        "write_seconds": 0.130426088,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000134835,
+        "write_seconds": 0.000742855,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 152982,
+        "result_bytes": 134217728,
+        "active_requests": 64,
+        "active_work": 64
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 149,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 95039488,
+        "query:gateway_core": 50212864,
+        "query:pg_backend": 19472384
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 105361408
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "screen-pg-c128",
+    "first_attempt": 22593,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "screen-pg-c128",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66819,
+        "enqueue_seconds": 0.204527059,
+        "write_seconds": 0.054961577,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000134986,
+        "write_seconds": 0.000735463,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 128,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 128,
+        "input_bytes": 153536,
+        "result_bytes": 134217728,
+        "active_requests": 128,
+        "active_work": 128
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 131,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 95129600,
+        "query:gateway_core": 52027392,
+        "query:pg_backend": 19279872
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 105783296
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "window-pg-l32",
+    "first_attempt": 23617,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "window-pg-l32",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 54005,
+        "enqueue_seconds": 0.217224478,
+        "write_seconds": 0.005258169,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000142427,
+        "write_seconds": 0.000120007,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 32,
+        "input_bytes": 42265,
+        "result_bytes": 33554432,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 109,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 95481856,
+        "query:gateway_core": 52269056,
+        "query:pg_backend": 18505728
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 104341504
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "window-pg-l64",
+    "first_attempt": 24641,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "window-pg-l64",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 65593,
+        "enqueue_seconds": 0.20986742,
+        "write_seconds": 0.030369323,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000137945,
+        "write_seconds": 0.000957277,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75846,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 98,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 95199232,
+        "query:gateway_core": 49815552,
+        "query:pg_backend": 19070976
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 106070016
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "window-pg-l96",
+    "first_attempt": 25665,
+    "requests": 1024,
+    "claimed": 1,
+    "observed_attempts": 1024,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "window-pg-l96",
+      "observed_attempts": 1024,
+      "events": {
+        "accepted_events": 7173,
+        "written_events": 7173,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68629,
+        "enqueue_seconds": 0.239828559,
+        "write_seconds": 0.065696858,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000157778,
+        "write_seconds": 0.00074491,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 96,
+        "input_bytes": 114579,
+        "result_bytes": 100663296,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 120,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 95043584,
+        "query:gateway_core": 49262592,
+        "query:pg_backend": 19341312
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 105635840
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "bytes-input",
+    "first_attempt": 26689,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "bytes-input",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 50877,
+        "enqueue_seconds": 0.105227703,
+        "write_seconds": 0.009100114,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000123151,
+        "write_seconds": 0.000303389,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75704,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 50,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94224384,
+        "query:gateway_core": 48721920,
+        "query:pg_backend": 18296832
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 99717120
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "bytes-result",
+    "first_attempt": 27201,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "bytes-result",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66369,
+        "enqueue_seconds": 0.134330195,
+        "write_seconds": 0.01175996,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000181883,
+        "write_seconds": 0.00053564,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 32,
+        "input_bytes": 41168,
+        "result_bytes": 33554432,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 92,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94339072,
+        "query:gateway_core": 48967680,
+        "query:pg_backend": 18194432
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 155492352
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "bytes-pg",
+    "first_attempt": 27713,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "bytes-pg",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 48517,
+        "enqueue_seconds": 0.09884532,
+        "write_seconds": 0.00942997,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000133241,
+        "write_seconds": 0.00610602,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75704,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 52,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94568448,
+        "query:gateway_core": 48361472,
+        "query:pg_backend": 18681856
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 100024320
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "observe-pg-buffered",
+    "first_attempt": 28225,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "observe-pg-buffered",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 57176,
+        "enqueue_seconds": 0.106221767,
+        "write_seconds": 0.015208381,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000165122,
+        "write_seconds": 0.000578501,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75704,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 51,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94863360,
+        "query:gateway_core": 48312320,
+        "query:pg_backend": 18558976
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 100122624
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "observe-pg-no-trace",
+    "first_attempt": 28737,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "observe-pg-no-trace",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 67440,
+        "enqueue_seconds": 0.108146682,
+        "write_seconds": 0.024292175,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000143236,
+        "write_seconds": 0.005323051,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75704,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 51,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94515200,
+        "query:gateway_core": 48418816,
+        "query:pg_backend": 18321408
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 99217408
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "observe-pg-qualification",
+    "first_attempt": 29249,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "qualification",
+      "unit_id": "observe-pg-qualification",
+      "observed_attempts": 512,
+      "events": null,
+      "sessions": null
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75704,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 52,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94498816,
+        "query:gateway_core": 48148480,
+        "query:pg_backend": 18329600
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 100827136
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "observe-direct-buffered",
+    "first_attempt": 29761,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 2048,
+        "written_events": 2048,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 26793,
+        "enqueue_seconds": 0.041480263,
+        "write_seconds": 0.007899344,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 45,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 103731200
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 104370176
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "observe-direct-qualification",
+    "first_attempt": 30273,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 512,
+      "events": null,
+      "event_mode": "qualification"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 46,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 103673856
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 104312832
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "observe-tight-no-trace",
+    "first_attempt": 30785,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "observe-tight-no-trace",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 55490,
+        "enqueue_seconds": 0.128145893,
+        "write_seconds": 0.016318292,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000201492,
+        "write_seconds": 0.000144415,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 32,
+        "input_bytes": 41373,
+        "result_bytes": 33554432,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 88,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94339072,
+        "query:gateway_core": 48914432,
+        "query:pg_backend": 18055168
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 98992128
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "repeat-1-direct",
+    "first_attempt": 31297,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 16000,
+        "written_events": 16000,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 37228,
+        "enqueue_seconds": 0.333341477,
+        "write_seconds": 0.030511165,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 309,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 108408832
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 123195392
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "repeat-1-pg16",
+    "first_attempt": 35297,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 793,
+    "status": "failed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "repeat-1-pg16",
+      "observed_attempts": 793,
+      "events": {
+        "accepted_events": 5549,
+        "written_events": 5549,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68507,
+        "enqueue_seconds": 0.188053762,
+        "write_seconds": 0.049178715,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000173142,
+        "write_seconds": 0.00869375,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": null,
+    "query_resources": null,
+    "evaluation_resources": null
+  },
+  {
+    "unit_id": "screen-safe-pg64",
+    "first_attempt": 39297,
+    "requests": 512,
+    "claimed": 1,
+    "observed_attempts": 512,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "screen-safe-pg64",
+      "observed_attempts": 512,
+      "events": {
+        "accepted_events": 3589,
+        "written_events": 3589,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66071,
+        "enqueue_seconds": 0.119050505,
+        "write_seconds": 0.025247138,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000188505,
+        "write_seconds": 9.6414e-05,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 76264,
+        "result_bytes": 67108864,
+        "active_requests": 64,
+        "active_work": 64
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 58,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 94814208,
+        "query:gateway_core": 49664000,
+        "query:pg_backend": 18071552
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 100077568
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-1-pg16",
+    "first_attempt": 39809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-1-pg16",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 69823,
+        "enqueue_seconds": 0.937323418,
+        "write_seconds": 0.277484703,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.00014432,
+        "write_seconds": 0.000506711,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 78640,
+        "result_bytes": 67108864,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 399,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 102936576,
+        "query:gateway_core": 50679808,
+        "query:pg_backend": 22278144
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141619200
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-1-pg32",
+    "first_attempt": 43809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-1-pg32",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66512,
+        "enqueue_seconds": 0.808960098,
+        "write_seconds": 0.081853932,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000170502,
+        "write_seconds": 0.000332545,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75982,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 365,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 102973440,
+        "query:gateway_core": 51769344,
+        "query:pg_backend": 22347776
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141963264
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-2-pg32",
+    "first_attempt": 47809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-2-pg32",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 67214,
+        "enqueue_seconds": 0.792426112,
+        "write_seconds": 0.057086587,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000135033,
+        "write_seconds": 0.000336164,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 76219,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 365,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103161856,
+        "query:gateway_core": 51277824,
+        "query:pg_backend": 22540288
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 142221312
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-2-pg16",
+    "first_attempt": 51809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-2-pg16",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 70680,
+        "enqueue_seconds": 0.931339799,
+        "write_seconds": 0.262666609,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000163887,
+        "write_seconds": 0.009491192,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75841,
+        "result_bytes": 67108864,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 401,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103211008,
+        "query:gateway_core": 51171328,
+        "query:pg_backend": 22167552
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141348864
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-2-direct",
+    "first_attempt": 55809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 16000,
+        "written_events": 16000,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 26793,
+        "enqueue_seconds": 0.307371753,
+        "write_seconds": 0.017693775,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 313,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 108503040
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 123219968
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-3-pg16",
+    "first_attempt": 59809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-3-pg16",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68054,
+        "enqueue_seconds": 0.940101348,
+        "write_seconds": 0.281571441,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000163209,
+        "write_seconds": 0.010227298,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75841,
+        "result_bytes": 67108864,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 403,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103202816,
+        "query:gateway_core": 51339264,
+        "query:pg_backend": 22618112
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141881344
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-3-direct",
+    "first_attempt": 63809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 16000,
+        "written_events": 16000,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 24675,
+        "enqueue_seconds": 0.326520794,
+        "write_seconds": 0.019685951,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 312,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 108290048
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 122953728
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-3-pg32",
+    "first_attempt": 67809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-3-pg32",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68134,
+        "enqueue_seconds": 0.785465651,
+        "write_seconds": 0.092988009,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000127471,
+        "write_seconds": 0.009166333,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 76325,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 363,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103280640,
+        "query:gateway_core": 51449856,
+        "query:pg_backend": 22478848
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141725696
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-4-pg32",
+    "first_attempt": 71809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-4-pg32",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 68270,
+        "enqueue_seconds": 0.801241884,
+        "write_seconds": 0.092727453,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000169127,
+        "write_seconds": 0.005189549,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 76189,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 367,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103284736,
+        "query:gateway_core": 51585024,
+        "query:pg_backend": 22433792
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141410304
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-4-direct",
+    "first_attempt": 75809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 16000,
+        "written_events": 16000,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 30780,
+        "enqueue_seconds": 0.320794755,
+        "write_seconds": 0.019228841,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 313,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 108482560
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 123191296
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-4-pg16",
+    "first_attempt": 79809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-4-pg16",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 71153,
+        "enqueue_seconds": 0.951638603,
+        "write_seconds": 0.242403651,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000140931,
+        "write_seconds": 0.008299249,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 75841,
+        "result_bytes": 67108864,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 401,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103186432,
+        "query:gateway_core": 50724864,
+        "query:pg_backend": 22564864
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 142192640
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-5-direct",
+    "first_attempt": 83809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 16000,
+        "written_events": 16000,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 27783,
+        "enqueue_seconds": 0.332525734,
+        "write_seconds": 0.016786759,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 310,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 108261376
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 2,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 122998784
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-5-pg32",
+    "first_attempt": 87809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-5-pg32",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 66466,
+        "enqueue_seconds": 0.793880964,
+        "write_seconds": 0.076903364,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000166249,
+        "write_seconds": 0.006285974,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 76108,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 363,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 102895616,
+        "query:gateway_core": 51392512,
+        "query:pg_backend": 22495232
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 141910016
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "final-5-pg16",
+    "first_attempt": 91809,
+    "requests": 4000,
+    "claimed": 1,
+    "observed_attempts": 4000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "final-5-pg16",
+      "observed_attempts": 4000,
+      "events": {
+        "accepted_events": 28005,
+        "written_events": 28005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 70552,
+        "enqueue_seconds": 0.917784582,
+        "write_seconds": 0.291091662,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000142442,
+        "write_seconds": 0.00355496,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 16,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 76382,
+        "result_bytes": 67108864,
+        "active_requests": 16,
+        "active_work": 16
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 400,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 103178240,
+        "query:gateway_core": 50757632,
+        "query:pg_backend": 22732800
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 3,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 142372864
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "evaluation-pg",
+    "first_attempt": 95809,
+    "requests": 2000,
+    "claimed": 1,
+    "observed_attempts": 2000,
+    "status": "passed",
+    "observer": {
+      "event_mode": "compact-buffered",
+      "unit_id": "evaluation-pg",
+      "observed_attempts": 2000,
+      "events": {
+        "accepted_events": 14005,
+        "written_events": 14005,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 67433,
+        "enqueue_seconds": 0.417094647,
+        "write_seconds": 0.040762178,
+        "closed": true,
+        "error_type": null
+      },
+      "sessions": {
+        "accepted_events": 2,
+        "written_events": 2,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 188,
+        "enqueue_seconds": 0.000170301,
+        "write_seconds": 0.005409254,
+        "closed": true,
+        "error_type": null
+      }
+    },
+    "resource_accounting": {
+      "http_peak": 32,
+      "final_http_active": 0,
+      "logical_peaks": {
+        "held_tasks": 64,
+        "input_bytes": 80082,
+        "result_bytes": 67108864,
+        "active_requests": 32,
+        "active_work": 32
+      },
+      "drained_jobs": 1,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 186,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer": 96489472,
+        "query:gateway_core": 50774016,
+        "query:pg_backend": 20369408
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 116813824
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  },
+  {
+    "unit_id": "evaluation-direct",
+    "first_attempt": 97809,
+    "requests": 2000,
+    "claimed": 1,
+    "observed_attempts": 2000,
+    "status": "passed",
+    "observer": {
+      "observed_attempts": 2000,
+      "events": {
+        "accepted_events": 8000,
+        "written_events": 8000,
+        "pending_bytes": 0,
+        "peak_pending_bytes": 27544,
+        "enqueue_seconds": 0.162398593,
+        "write_seconds": 0.011867587,
+        "closed": true,
+        "error_type": null
+      },
+      "event_mode": "compact-buffered"
+    },
+    "resource_accounting": {
+      "http_peak": 64,
+      "final_http_active": 0,
+      "logical_peaks": {},
+      "drained_jobs": 0,
+      "work_unit": "one request",
+      "result_bytes_kind": "reserved capacity"
+    },
+    "query_resources": {
+      "samples": 161,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "query:consumer_direct": 106045440
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "evaluation_resources": {
+      "samples": 1,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "evaluation:evaluator": 112664576
+      },
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    }
+  }
+]
