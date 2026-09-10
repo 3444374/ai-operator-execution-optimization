@@ -9,6 +9,7 @@
 - 增加单元共享POST计数与独立worker期限/清理；本地/Linux工具64、Linux PG合同116、PG回归1项通过；PG TAP事件断言修复及全查询fixture1111POST见报告，真实模型0次。
 - IMLane公开源码已核查，PG适配/独立构建仍未完成。全部失败保留；本包交付后暂停，不自动进入C–F。
 - [完整证据与限制](experiments/results/postgresql/database_queries_20260910/README.md)。
+- 实现提交4cefe84e；717份代码与服务器逐文件一致，专用PG/任务进程已停止、ACL恢复，完整私有归档与源数据保留。
 
 ## 2026-09-10：独立新额度完成执行修复真实诊断
 
