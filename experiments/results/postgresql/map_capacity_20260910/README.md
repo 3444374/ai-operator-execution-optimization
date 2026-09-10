@@ -161,3 +161,9 @@ waiting 峰值分别为 **2/0**；GPU utilization 采样均接近 100%，这不�
 归档 SHA256 为 `d978e5f790f5cc3130740ff4f384203b9ad1159d343e07ecf766b8e01761f69a`。
 [归档核验](raw/private-archive.json)说明未打包的可重生成缓存/PGDATA；原始输入、结果、失败、完整日志与测试扩展已保存。
 公开文件校验见 [SHA256SUMS](raw/SHA256SUMS)。
+
+## 主干集成
+
+实现与证据提交 `13d349096c8e66d2986115d86df21c5d607f93a2` 已从 `codex/map-capacity-tools` 快进合入并推送 `main`。
+合并后 683 个非 Markdown 代码目录文件与服务器核验版本相同，公开校验清单与私有归档检查通过。
+强 D0 尚未成立的限定保持不变；本节只补充集成事实，没有新增模型请求或修改已测代码。

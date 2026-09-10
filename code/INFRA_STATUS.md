@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：容量工具与证据提交 `13d34909` 已快进合入并推送 main；合并后683个非Markdown代码文件与服务器一致。强D0仍为待确认状态。
+
 2026-09-10：[单 Map 测量修复与容量画像](../experiments/results/postgresql/map_capacity_20260910/README.md)
 完成独立 PG producer 绑定、单元预留预算、分阶段记录、direct/PG 配置 runner 与有界事件/RSS 观测。
 本地/Linux 各214项、PG回归1/1与TAP2032项通过；683个非Markdown代码文件与服务器一致。
