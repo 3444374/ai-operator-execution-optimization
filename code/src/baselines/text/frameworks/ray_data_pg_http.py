@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 
 from src.experiments.postgresql.map_direct import request_body
+from src.experiments.request_identity import RAY_IDENTITY_FIELD
 from src.execution_provider.adapters.completion_response import decode_backend_completion
 from src.execution_provider.semantic_map import completion_status, MapCompletionStatus
 
@@ -29,13 +30,17 @@ class RaySqlHttpConfig:
 def preprocess(row, inputs, plan):
     raw = (int(row['source_position']), row['row_id'], *(row[c] for c in inputs.columns))
     converted = inputs.convert(raw)
-    return dict(row_id=converted['source_example_id'], source_position=converted['source_position'],
-                payload=request_body(plan, converted['input_text']))
+    identity = dict(row_id=converted['source_example_id'], source_position=converted['source_position'])
+    return dict(**identity, payload=dict(request_body(plan, converted['input_text']),
+                                       **{RAY_IDENTITY_FIELD: identity}))
 
 
 def postprocess(row, plan):
     import json
-    response = row['http_response']
+    response = dict(row['http_response'])
+    identity = response.pop(RAY_IDENTITY_FIELD, None)
+    if identity != dict(row_id=row['row_id'], source_position=row['source_position']):
+        raise ValueError('native Ray response belongs to another input row')
     completion = decode_backend_completion(json.dumps(response).encode())
     if completion_status(plan, completion) != MapCompletionStatus.VALID:
         raise ValueError('native Ray completion violates declared Map semantics')
@@ -48,27 +53,34 @@ def open_rows(inputs, plan, config, connection_factory, session_factory, *, head
     from ray.data.llm import HttpRequestProcessorConfig, build_processor
     if ray.__version__ != config.expected_version or not ray.is_initialized():
         raise RuntimeError('requires a caller-owned Ray runtime at the pinned version')
-    statement, parameters = inputs.select_sql(ordered=False)
-    dataset = ray.data.read_sql(statement, connection_factory, sql_params=parameters,
-        shard_keys=['source_position'], shard_hash_fn='abs', override_num_blocks=config.read_blocks,
-        concurrency=config.read_concurrency, ray_remote_args={'max_retries': 0})
-    processor = build_processor(HttpRequestProcessorConfig(
-        url=session_factory.endpoint, headers=headers, batch_size=config.batch_rows,
-        concurrency=(config.actors, config.actors), max_retries=0, session_factory=session_factory),
-        preprocess=lambda row: preprocess(row, inputs, plan),
-        postprocess=lambda row: postprocess(row, plan),
-        preprocess_map_kwargs={'max_retries': 0}, postprocess_map_kwargs={'max_retries': 0})
-    # Pinned native actor options bound concurrent HTTP batches and disable
-    # recovery replays; Ray still owns the actor pool and processing graph.
-    for stage in processor.stages.values():
-        stage.map_batches_kwargs.update(max_restarts=0, max_task_retries=0,max_concurrency=1)
-    result = processor(dataset)
-    iterator = result.iter_rows()
+    iterator = result = None
+    def rows():
+        nonlocal iterator, result
+        statement, parameters = inputs.select_sql(ordered=False)
+        dataset = ray.data.read_sql(statement, connection_factory, sql_params=parameters,
+            shard_keys=['source_position'], shard_hash_fn='abs', override_num_blocks=config.read_blocks,
+            concurrency=config.read_concurrency, ray_remote_args={'max_retries': 0})
+        processor = build_processor(HttpRequestProcessorConfig(
+            url=session_factory.endpoint, headers=headers, batch_size=config.batch_rows,
+            concurrency=(config.actors, config.actors), max_retries=0, session_factory=session_factory),
+            preprocess=lambda row: preprocess(row, inputs, plan),
+            postprocess=lambda row: postprocess(row, plan),
+            preprocess_map_kwargs={'max_retries': 0}, postprocess_map_kwargs={'max_retries': 0})
+        # Pinned native actor options bound concurrent HTTP batches and disable
+        # recovery replays; Ray still owns the actor pool and processing graph.
+        for stage in processor.stages.values():
+            stage.map_batches_kwargs.update(max_restarts=0, max_task_retries=0,max_concurrency=1)
+        result = processor(dataset)
+        iterator = result.iter_rows()
+        for row in iterator:
+            yield row['row_id'], row['output']
+    stream = rows()
     try:
-        yield ((row['row_id'], row['output']) for row in iterator)
+        yield stream
     finally:
+        stream.close()
         close = getattr(iterator, 'close', None)
         if close is not None:
             close()
-        if record_stats is not None:
+        if record_stats is not None and result is not None:
             record_stats(result.stats())

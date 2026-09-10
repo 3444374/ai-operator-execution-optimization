@@ -9,9 +9,12 @@ from src.execution_provider.wire import v3
 from src.observability.metrics.squad import squad_example_scores
 from .map_direct import request_body
 from .map_bindings import parse_pg_bindings,verify_bound_map_results
+from .native_map_bindings import verify_native_map_results
 from .movie_queries import verify_filter_decisions
 from .query_workloads import read_prepared
 from .window_memory import verify_window_memory
+from .map_query_recording import evaluate_recording
+from src.experiments.query_resources import verify_logical_resources
 
 
 def read_events(path):
@@ -47,7 +50,27 @@ def json_metric(value):
     return value
 
 
+def pg_plan_summary(plan):
+    """Expose the selected nodes and initialized window without another model run."""
+    nodes=[]
+    def visit(node):
+        if 'Semantic Spec' in node or 'Semantic Input Window' in node:
+            nodes.append({key:node.get(key) for key in ('Node Type','Custom Plan Provider','Semantic Spec',
+                'Physical Algorithm','Semantic Input Window','Semantic Window Fallback Reason')})
+        for child in node.get('Plans',[]):
+            visit(child)
+    for item in plan:
+        visit(item['Plan'])
+    return dict(semantic_nodes=nodes,scope='plain EXPLAIN before execution on the same connection/settings',
+                absent_window='not exposed by this plan; never inferred from configured HTTP capacity')
+
+
 def evaluate(config, inputs, plan, manifest_path, root, checkout):
+    return evaluate_recording(root/'q0', lambda rows: _evaluate_rows(
+        config, inputs, plan, manifest_path, root, checkout, rows))['result']
+
+
+def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded):
     raw=list(read_prepared(manifest_path,'raw.jsonl'))
     refs={r['row_id']:r for r in read_prepared(manifest_path,'references.jsonl')}
     if config.task in ('movie-q2','movie-q3'):
@@ -66,23 +89,26 @@ def evaluate(config, inputs, plan, manifest_path, root, checkout):
         body.get('top_p')!=1 or body.get('stop')!=['\n'] or body.get('stream',False) is not False or
         body.get('n',1)!=1 for body in requests):
         raise ValueError('native LOTUS effective generation settings differ')
-    recorded=[value['row'] for value in read_events(root/'q0/results.jsonl')]
     report=dict(actual_posts=len(requests),http=http_accounting(events,config.concurrency))
     if report['http']['started_requests']!=len(requests):
         raise ValueError('outgoing POST and HTTP occupancy histories differ')
     if config.arm=='pg':
+        active_work=config.concurrency
+        report['plan']=pg_plan_summary(json.loads((root/'plan.json').read_text()))
         if config.organization_config is not None:
             from src.execution_provider.adapters.map_organization import MapOrganizationConfig
             from .organization_evaluation import verify_organization
-            report['organization']=verify_organization(MapOrganizationConfig.load(root/'organization.json'),events)
+            organization=MapOrganizationConfig.load(root/'organization.json')
+            active_work=organization.active_work
+            report['organization']=verify_organization(organization,events)
         if config.pg_total_budget:
             report['pg_memory']=verify_window_memory((root/'q0-producer.log').read_text().splitlines(),
                 backend_pid=json.loads((root/'pg-backend.json').read_text())['backend_pid'],
                 retained_limit=config.pg_window_bytes,staging_limit=config.pg_staging_bytes,window=config.window)
-        drained=[e['usage'] for e in events if e['event']=='core_job_drained']
-        if requests and (not drained or any(any(v for v in usage.values()) for usage in drained)):
-            raise ValueError('PG query has no clean final responsibility observation')
-        report['drained_jobs']=len(drained)
+        report['logical_resources']=verify_logical_resources(events,
+            dict(held_tasks=config.window,input_bytes=config.input_bytes,result_bytes=config.result_bytes,
+                 active_requests=config.concurrency,active_work=active_work),require_usage=bool(requests))
+        report['drained_jobs']=report['logical_resources']['drained_jobs']
     if config.task=='map':
         predictions=dict(recorded)
         if len(predictions)!=len(recorded) or set(predictions)!=set(texts) or any(not isinstance(v,str) for v in predictions.values()):
@@ -94,6 +120,9 @@ def evaluate(config, inputs, plan, manifest_path, root, checkout):
             report['association']=verify_bound_map_results(texts.items(),predictions.items(),
                 parse_pg_bindings((root/'q0-producer.log').read_text().splitlines()),events,
                 read_events(root/'sessions.jsonl'),plan=plan)
+        if config.arm in ('pg-source-direct','ray-data'):
+            report['association']=verify_native_map_results(config.arm,texts,predictions,events,plan=plan,
+                source_positions={row[1]:row[0] for row in selected})
         if inputs.kind=='movie':
             report['quality']=classification_audit({key:refs[key]['reference'] for key in texts},predictions.items())
         else:

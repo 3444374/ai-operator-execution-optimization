@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+2026-09-11：[A/B验证补充](postgresql/ab_validation_20260911/README.md)：统一结果文件校验、direct/Ray逐行关联、
+进入/迭代错误与清理时点、全过程逻辑资源和慢源交付。Ray资源分别声明，短命读取峰值保持未知。
+代码与受控集成验证；新增真实模型请求0，强静态参照、正常容量点开销和原生真实质量仍待验证。
+
 2026-09-10：[PG Map token工作量组织](postgresql/map_organization_20260910/README.md)：
 三种静态控制复用同一核心，108受控HTTP与408真实POST全部通过；实际token/候选前缀/分组/顺序可复核。
 PG全套2138项通过，模型/PG/任务进程与临时ACL已清理；短查询不作性能结论。

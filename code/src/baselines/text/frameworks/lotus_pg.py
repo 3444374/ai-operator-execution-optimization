@@ -89,16 +89,18 @@ def open_rows(connection, inputs, checkout, query_id, record_decisions, record_p
     def record(values):
         decisions.extend(values)
         record_decisions(values)
-    with observe_filter_rows(record,record_prompts):
-        result = run_original_lotus_query(checkout,query_id,load)
-    if query_id==3:
-        yield iter([(int(result.iloc[0,0]),)])
-    else:
-        # The pinned original method takes head(5) in input order and projects
-        # reviewId, which is not unique in the upstream data. Retain occurrence
-        # identity for auditing while checking its exact original output values.
-        kept=[key for key,value in decisions if value][:5]
-        returned=list(result.iloc[:,0]) if len(result.columns) else []
-        if returned!=[original_ids[key] for key in kept]:
-            raise ValueError('original LIMIT output differs from its retained row occurrences')
-        yield iter((identity,) for identity in kept)
+    def rows():
+        with observe_filter_rows(record,record_prompts):
+            result = run_original_lotus_query(checkout,query_id,load)
+        if query_id==3:
+            yield (int(result.iloc[0,0]),)
+        else:
+            # The pinned original method takes head(5) in input order and projects
+            # reviewId, which is not unique in the upstream data. Retain occurrence
+            # identity for auditing while checking its exact original output values.
+            kept=[key for key,value in decisions if value][:5]
+            returned=list(result.iloc[:,0]) if len(result.columns) else []
+            if returned!=[original_ids[key] for key in kept]:
+                raise ValueError('original LIMIT output differs from its retained row occurrences')
+            yield from ((identity,) for identity in kept)
+    yield rows()

@@ -127,3 +127,61 @@ class PgSourceDirectTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             QueryInputs('movie', 'reviews; DROP TABLE reviews', 1)
         self.assertNotIn('scoreSentiment', self.inputs().select_sql()[0])
+
+    async def test_slow_next_read_does_not_hold_completed_output(self):
+        for order in ('input', 'completion'):
+            with self.subTest(order=order):
+                blocked = asyncio.Event()
+                reading = asyncio.Event()
+                cancelled = asyncio.Event()
+                source, direct = self.source(), Direct()
+                direct.first.set()
+                async def slow_stream(*args, **kwargs):
+                    yield source.rows[0]
+                    reading.set()
+                    try:
+                        await blocked.wait()
+                    finally:
+                        cancelled.set()
+                    yield source.rows[1]
+                source.stream = slow_stream
+                async with direct.query(source,self.inputs(),1,result_order=order) as rows:
+                    value = await asyncio.wait_for(anext(rows),.5)
+                    self.assertEqual(value,('0','review0'))
+                    await asyncio.wait_for(reading.wait(),.5)
+                    self.assertFalse(blocked.is_set())
+                    self.assertLessEqual(direct.source_metrics['peak_pending'],2)
+                self.assertTrue(cancelled.is_set())
+                self.assertTrue(source.cursor_closed and source.transaction_closed)
+
+    async def test_read_error_is_recorded_before_transaction_cleanup(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from src.experiments.postgresql.map_query_recording import record_async_execution
+        now = [0]
+        class QueryFailure(Exception):
+            sqlstate = '54000'
+        source, direct = self.source(), Direct()
+        async def fail(*args,**kwargs):
+            now[0] = 2_000_000_000
+            raise QueryFailure('source failed')
+            yield
+        @asynccontextmanager
+        async def transaction():
+            try:
+                yield
+            finally:
+                now[0] = 12_000_000_000
+                raise RuntimeError('cleanup failed')
+        source.stream,source.transaction = fail,transaction
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)/'record'
+            with self.assertRaises(QueryFailure):
+                await record_async_execution(root,lambda:direct.query(source,self.inputs(),1),
+                    max_rows=10,max_result_bytes=4096,clock=lambda:now[0])
+            record=json.loads((root/'execution.json').read_text())
+        self.assertEqual(record['query_jct_seconds'],2)
+        self.assertEqual(record['query_error']['sqlstate'],'54000')
+        self.assertEqual(record['cleanup_error']['type'],'RuntimeError')
+        self.assertEqual(record['t_stream_cleanup_ns'],12_000_000_000)

@@ -396,3 +396,67 @@ class MapAssociationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class EntryFailureTests(unittest.TestCase):
+    def setUp(self):
+        tmp=tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root=Path(tmp.name)/'run'
+
+    def test_explicit_entry_failure_precedes_cleanup_sync_and_async(self):
+        from src.experiments.postgresql.map_query_recording import query_failure_scope
+        class Primary(Exception):
+            sqlstate='54000'
+        for asynchronous in (False,True):
+            with self.subTest(asynchronous=asynchronous):
+                now=[0]
+                @contextmanager
+                def source():
+                    try:
+                        with query_failure_scope():
+                            now[0]=2_000_000_000
+                            raise Primary('query entry')
+                        yield
+                    finally:
+                        now[0]=12_000_000_000
+                        raise RuntimeError('entry cleanup')
+                @asynccontextmanager
+                async def async_source():
+                    with source() as rows:
+                        yield rows
+                path=self.root/str(asynchronous)
+                with self.assertRaises(Primary):
+                    if asynchronous:
+                        asyncio.run(record_async_execution(path,async_source,max_rows=1,
+                            max_result_bytes=4096,clock=lambda:now[0]))
+                    else:
+                        record_execution(path,source,max_rows=1,max_result_bytes=4096,clock=lambda:now[0])
+                record=json.loads((path/'execution.json').read_text())
+                self.assertEqual(record['query_jct_seconds'],2)
+                self.assertEqual(record['query_error']['sqlstate'],'54000')
+                self.assertEqual(record['cleanup_error']['type'],'RuntimeError')
+
+    def test_adapter_timeout_observation_is_not_overwritten_after_cleanup(self):
+        from src.experiments.postgresql.map_query_recording import query_failure_scope
+        now=[0]
+        @asynccontextmanager
+        async def source():
+            async def rows():
+                try:
+                    with query_failure_scope():
+                        try:
+                            await asyncio.Future()
+                        except asyncio.CancelledError:
+                            now[0]=2_000_000_000
+                            raise
+                finally:
+                    now[0]=12_000_000_000
+                yield
+            yield rows()
+        with self.assertRaises(TimeoutError):
+            asyncio.run(record_async_execution(self.root,source,max_rows=1,max_result_bytes=4096,
+                clock=lambda:now[0],query_timeout_s=.01))
+        record=json.loads((self.root/'execution.json').read_text())
+        self.assertEqual(record['t_cancel_triggered_ns'],2_000_000_000)
+        self.assertEqual(record['query_jct_seconds'],2)
+        self.assertIsNone(record['cleanup_error'])

@@ -12,6 +12,7 @@ import time
 import uuid
 
 from .buffered_events import BufferedEvents
+from .request_identity import RAY_IDENTITY_FIELD
 from src.baselines.common.private_artifacts import content_digest
 
 
@@ -144,17 +145,22 @@ class ObservedSession:
     async def post(self, url, *, data, headers):
         if url != self.config.endpoint or not isinstance(data, str):
             raise ValueError('native request does not match the declared endpoint/body')
+        values = json.loads(data)
+        identity = values.pop(RAY_IDENTITY_FIELD, None)
+        if not isinstance(identity, dict) or set(identity) != {'row_id', 'source_position'}:
+            raise ValueError('native Ray request lacks its input occurrence identity')
+        data = json.dumps(values, ensure_ascii=False, separators=(',', ':'))
         payload = data.encode('utf-8')
         before = time.monotonic_ns()
         attempt = self.config.budget.reserve(hashlib.sha256(payload).hexdigest())
         reserved = time.monotonic_ns()
-        self.events.record(dict(event='request', attempt=attempt, monotonic_ns=reserved,
+        self.events.record(dict(event='request', attempt=attempt, identity=identity, monotonic_ns=reserved,
             budget_reserve_ns=reserved-before, request_bytes_sha256=hashlib.sha256(payload).hexdigest(),
             request_values_sha256=content_digest(json.loads(data)), body=json.loads(data)))
         self.events.record(dict(event='http_started', attempt=attempt, monotonic_ns=time.monotonic_ns()))
         try:
             response = await self.session.post(url, data=data, headers=headers, allow_redirects=False)
-            return ObservedResponse(response, self.events, attempt)
+            return ObservedResponse(response, self.events, attempt, identity)
         except BaseException as error:
             self.events.record(dict(event='http_finished', attempt=attempt, monotonic_ns=time.monotonic_ns(),
                                     error_type=type(error).__name__))
@@ -162,8 +168,9 @@ class ObservedSession:
 
 
 class ObservedResponse:
-    def __init__(self, response, events, attempt):
+    def __init__(self, response, events, attempt, identity):
         self.response, self.events, self.attempt = response, events, attempt
+        self.identity = identity
 
     @property
     def status(self):
@@ -188,4 +195,6 @@ class ObservedResponse:
         value = await self.response.json()
         self.events.record(dict(event='http_response', attempt=self.attempt,
                                 monotonic_ns=time.monotonic_ns(), response=value))
-        return value
+        if not isinstance(value, dict) or RAY_IDENTITY_FIELD in value:
+            raise ValueError('native response conflicts with observation metadata')
+        return dict(value, **{RAY_IDENTITY_FIELD: self.identity})

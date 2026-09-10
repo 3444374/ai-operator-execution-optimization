@@ -24,6 +24,9 @@ class QueryConfig:
     ray_read_blocks: int = 2
     ray_read_concurrency: int = 2
     ray_batch_rows: int = 32
+    ray_num_cpus: int = 4
+    ray_actors: int = 2
+    ray_object_store_bytes: int = 268435456
 
     def __post_init__(self):
         import math
@@ -41,11 +44,16 @@ class QueryConfig:
         if self.max_posts is not None and (type(self.max_posts) is not int or self.max_posts<1):
             raise ValueError('positive maximum POST count required')
         for name in ('concurrency','window','input_bytes','result_bytes','pg_window_bytes',
-                     'pg_staging_bytes','ray_read_blocks','ray_read_concurrency','ray_batch_rows'):
+                     'pg_staging_bytes','ray_read_blocks','ray_read_concurrency','ray_batch_rows',
+                     'ray_num_cpus','ray_actors','ray_object_store_bytes'):
             if type(getattr(self,name)) is not int or getattr(self,name)<1:
                 raise ValueError('positive query resource limits required')
         if max(self.concurrency,self.window,self.ray_read_blocks,self.ray_read_concurrency)>256:
             raise ValueError('query concurrency/window exceeds the supported range')
+        if self.arm=='ray-data' and (self.ray_actors>self.concurrency or self.ray_num_cpus<=self.ray_actors):
+            raise ValueError('Ray needs HTTP capacity for each actor and CPU slots for SQL reading')
+        if not 80*1048576<=self.ray_object_store_bytes<=4*1073741824:
+            raise ValueError('Ray object store allocation exceeds the supported range')
         if type(self.pg_total_budget) is not bool:
             raise ValueError('PG total budget flag must be boolean')
         if self.pg_total_budget and (self.arm!='pg' or self.task!='map'):

@@ -1,0 +1,16 @@
+{
+  "scope": "Manually summarized observed development failures; not reconstructed full logs",
+  "failures": [
+    {
+      "stage": "initial local invocation",
+      "result": "2 loader errors",
+      "cause": "unittest resolved code as the stdlib module; no test loaded"
+    },
+    {
+      "stage": "initial native association fixture",
+      "result": "3 errors in 5 tests",
+      "cause": "Ray response fixture omitted model required by production codec",
+      "resolution": "Added fixture model; production policy unchanged"
+    }
+  ]
+}

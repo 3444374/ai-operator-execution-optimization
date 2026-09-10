@@ -10,6 +10,8 @@ from src.execution_provider.adapters.completion_response import decode_backend_c
 from src.execution_provider.adapters.model_config import MAX_MODEL_RESPONSE_BYTES
 from src.execution_provider.semantic_map import canonical_messages, completion_status, MapCompletionStatus
 from src.scheduling.core.session_contract import TaskKey
+from src.experiments.request_identity import request_identity
+from src.baselines.common.private_artifacts import content_digest
 
 
 def request_body(plan, text):
@@ -34,7 +36,13 @@ class DirectMap:
         request = SimpleNamespace(key=key, task=SimpleNamespace(
             payload=json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode(),
             max_result_bytes=MAX_MODEL_RESPONSE_BYTES))
-        completion = decode_backend_completion(await self.transport.execute(request, 'model'))
+        self.observer(dict(event='direct_input', key=asdict(key), row_id=row['source_example_id'],
+                           request_values_sha256=content_digest(body)))
+        token = request_identity.set(asdict(key))
+        try:
+            completion = decode_backend_completion(await self.transport.execute(request, 'model'))
+        finally:
+            request_identity.reset(token)
         if completion_status(self.plan, completion) != MapCompletionStatus.VALID:
             raise ValueError('direct completion violates Map policy')
         if row.get('input_tokens') is not None and completion.prompt_tokens != row['input_tokens']:

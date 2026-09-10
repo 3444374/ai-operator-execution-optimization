@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-09-11：[A/B验证补充](postgresql/ab_validation_20260911/README.md)：统一结果文件校验、direct/Ray逐行关联、
+进入/迭代错误与清理时点、全过程逻辑资源和慢源交付。Ray资源分别声明，短命读取峰值保持未知。
+代码与受控集成验证；新增真实模型请求0，强静态参照、正常容量点开销和原生真实质量仍待验证。
+
 2026-09-10：[PG组织工作包D](postgresql/map_organization_20260910/README.md)。
 单Job Map v6、固定tokenizer的rows/work/length；Linux369/55/116及审计6、PG TAP2138通过。
 108受控HTTP与新408/408真实POST通过，244.96秒无失败/重试；726份代码一致，token/关联/候选/分组与清理验证通过。

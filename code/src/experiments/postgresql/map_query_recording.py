@@ -5,6 +5,7 @@ This recorder adds no retry, scheduler, semantic rewrite, or transaction commit.
 """
 
 from contextlib import closing, contextmanager
+from contextvars import ContextVar
 import asyncio
 import json
 import hashlib
@@ -21,6 +22,27 @@ from src.execution_provider.semantic_map import canonical_messages, SemanticMapP
 from src.execution_provider.wire.map_codec import semantic_payload_digest
 from src.baselines.text.map_inputs import text_rows_by_id
 from .query_deadline import QueryDeadline
+
+
+_failure_observer = ContextVar('query_failure_observer', default=None)
+
+
+@contextmanager
+def query_failure_scope():
+    """Report the first query failure before an adapter starts resource cleanup.
+
+    Place this inside resource contexts around entry operations or iteration.
+    Uninstrumented context managers can only be timed when they return/raise.
+    """
+    try:
+        yield
+    except GeneratorExit:
+        raise
+    except BaseException as failure:
+        observer = _failure_observer.get()
+        if observer is not None:
+            observer(failure)
+        raise
 
 
 def _error_details(error):
@@ -44,6 +66,7 @@ class _Recording:
         self.errors = {name: None for name in ("query_error", "cleanup_error", "recording_error")}
         self.release = self.first = self.last = self.terminal = self.durable = self.cleanup = None
         self.cancel_triggered = None
+        self.stream_entered = None
         self.query_status = "not_started"
         self._context = self.stream = None
         self._hash = hashlib.sha256()
@@ -60,7 +83,7 @@ class _Recording:
         self.stream = context.__enter__()
         self._context = context
         self.release = self.clock()
-        self.phase, self.query_status = "execute_or_stream", "running"
+        self.phase, self.query_status = "stream_entry", "running"
 
     def row(self, row):
         received = self.clock()
@@ -91,10 +114,11 @@ class _Recording:
         if failure is self.failure:
             return
         phase = phase or self.phase
-        kind = ("query_error" if phase == "execute_or_stream" else
+        is_query = phase in ("execute_or_stream", "stream_entry")
+        kind = ("query_error" if is_query else
                 "cleanup_error" if phase == "stream_cleanup" else "recording_error")
         detail = dict(_error_details(failure), observed_ns=self.clock())
-        if phase == "execute_or_stream" and self.cancel_triggered is None and (
+        if is_query and self.cancel_triggered is None and (
             isinstance(failure, asyncio.CancelledError) or detail["sqlstate"] == "57014"
         ):
             self.cancel_triggered = detail["observed_ns"]
@@ -103,7 +127,7 @@ class _Recording:
         if self.failure is None:
             self.failure = failure
             self.error, self.error_phase = detail, phase
-        if phase == "execute_or_stream" and self.terminal is None:
+        if is_query and self.terminal is None:
             self.query_terminal("failed")
         elif self.query_status == "running":
             self.query_status = "consumer_aborted"
@@ -135,6 +159,8 @@ class _Recording:
                 "t_first_row_ns": self.first, "t_last_row_ns": self.last,
                 "t_query_terminal_ns": self.terminal, "t_results_durable_ns": self.durable,
                 "t_stream_cleanup_ns": self.cleanup,
+                "t_stream_entered_ns": self.stream_entered,
+                "entry_observation_scope": "context entry return/error; adapters report first failures before internal cleanup",
                 "t_cancel_triggered_ns": self.cancel_triggered,
                 "query_jct_seconds": ((self.terminal - self.release) / 1_000_000_000
                                       if self.terminal is not None and self.release is not None else None),
@@ -169,23 +195,37 @@ def evaluate_recording(directory: Path, evaluator, *, mode="materialized", clock
     if (directory / "evaluation.json").exists():
         raise FileExistsError("evaluation already recorded")
     started = clock()
-    count = 0
+    count = size = 0
     digest = hashlib.sha256()
     failure = None
     try:
         with (directory / "results.jsonl").open("rb") as stream:
             def rows():
-                nonlocal count
+                nonlocal count, size
                 for line in stream:
                     digest.update(line)
+                    size += len(line)
                     count += 1
+                    if count > execution['recorded_rows'] or size > execution['recorded_bytes']:
+                        raise ValueError('recorded result count/bytes exceeds completed execution')
                     yield json.loads(line)["row"]
-            result = evaluator(list(rows()) if mode == "materialized" else rows())
+            materialized = list(rows()) if mode == "materialized" else None
+            def verify():
+                if count != execution['recorded_rows']:
+                    raise ValueError('evaluator did not consume the complete recorded result')
+                if size != execution['recorded_bytes']:
+                    raise ValueError('recorded result byte count differs')
+                expected = execution.get('results_sha256')
+                if not isinstance(expected, str) or digest.hexdigest() != expected:
+                    raise ValueError('recorded results changed before evaluation')
+                if execution.get('query_status') != 'completed':
+                    raise ValueError('cannot qualify an incomplete query')
+            if materialized is not None:
+                verify()
+            result = evaluator(materialized if materialized is not None else rows())
             if count != execution["recorded_rows"] or stream.read(1):
                 raise ValueError("evaluator did not consume the complete recorded result")
-            expected = execution.get("results_sha256")
-            if expected is not None and digest.hexdigest() != expected:
-                raise ValueError("recorded results changed before evaluation")
+            verify()
         json.dumps(result, ensure_ascii=False, allow_nan=False)
         report = {"status": "completed", "result": result}
     except BaseException as error:
@@ -218,11 +258,13 @@ def record_execution(directory: Path, open_rows, *, max_rows: int, max_result_by
                              lambda: setattr(recording, "cancel_triggered", clock()))
     recording = _Recording(directory, max_rows, max_result_bytes, flush_rows, metadata, clock)
     deadline_started = False
+    token = _failure_observer.set(recording.failed)
     try:
         recording.open_results()
         deadline.start()
         deadline_started = True
         with open_rows() as rows:
+            recording.stream_entered, recording.phase = clock(), "execute_or_stream"
             try:
                 for row in rows:
                     deadline.check()
@@ -247,7 +289,10 @@ def record_execution(directory: Path, open_rows, *, max_rows: int, max_result_by
             except BaseException as failure:
                 recording.failed(failure, phase="stream_cleanup")
         recording.cleanup = clock()
-        recording.finish()
+        try:
+            recording.finish()
+        finally:
+            _failure_observer.reset(token)
     recording.raise_if_failed()
     if evaluator is not None:
         evaluate_recording(directory, evaluator, mode=evaluation_mode, clock=clock)
@@ -265,10 +310,19 @@ async def record_async_execution(directory: Path, open_rows, *, max_rows: int, m
         raise ValueError("query timeout must be positive")
     recording = _Recording(directory, max_rows, max_result_bytes, flush_rows, metadata, clock)
     deadline = asyncio.timeout(query_timeout_s)
+    def observe_failure(failure):
+        if deadline.expired() and isinstance(failure,asyncio.CancelledError):
+            if recording.cancel_triggered is None:
+                recording.cancel_triggered=clock()
+            recording.failed(TimeoutError('query deadline exceeded'))
+        else:
+            recording.failed(failure)
+    token = _failure_observer.set(observe_failure)
     try:
         recording.open_results()
         async with deadline:
             async with open_rows() as rows:
+                recording.stream_entered, recording.phase = clock(), "execute_or_stream"
                 try:
                     async for row in rows:
                         recording.row(row)
@@ -276,8 +330,10 @@ async def record_async_execution(directory: Path, open_rows, *, max_rows: int, m
                     deadline.reschedule(None)
                 except BaseException as failure:
                     if deadline.expired() and isinstance(failure, asyncio.CancelledError):
-                        recording.cancel_triggered = clock()
-                        recording.failed(TimeoutError("query deadline exceeded"))
+                        if recording.cancel_triggered is None:
+                            recording.cancel_triggered = clock()
+                        if recording.failure is None:
+                            recording.failed(TimeoutError("query deadline exceeded"))
                     else:
                         recording.failed(failure)
                     if not deadline.expired():
@@ -293,7 +349,10 @@ async def record_async_execution(directory: Path, open_rows, *, max_rows: int, m
             recording.failed(failure)
     finally:
         recording.cleanup = clock()
-        recording.finish()
+        try:
+            recording.finish()
+        finally:
+            _failure_observer.reset(token)
     recording.raise_if_failed()
     if evaluator is not None:
         evaluate_recording(directory, evaluator, mode=evaluation_mode, clock=clock)

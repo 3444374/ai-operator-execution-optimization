@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-11：[A/B验证补充](../experiments/results/postgresql/ab_validation_20260911/README.md)：统一结果文件校验、direct/Ray逐行关联、
+进入/迭代错误与清理时点、全过程逻辑资源和慢源交付。Ray资源分别声明，短命读取峰值保持未知。
+代码与受控集成验证；新增真实模型请求0，强静态参照、正常容量点开销和原生真实质量仍待验证。
+
 2026-09-10：[PG Map token工作量组织](../experiments/results/postgresql/map_organization_20260910/README.md)完成单Job/v6可选rows/work/length控制。
 复用既有组织器与核心，tokenizer SHA、完整消息与实际usage、候选前缀、分组及提交顺序可审计。
 Linux调度369/provider55/PG合同116/审计6、PG TAP2138通过；108受控HTTP及408独立真实POST通过。

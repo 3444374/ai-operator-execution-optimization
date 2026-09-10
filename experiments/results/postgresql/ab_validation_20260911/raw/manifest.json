@@ -1,0 +1,70 @@
+{
+  "cleanup.json.gz": {
+    "bytes": 157,
+    "sha256": "26e296fd278e27d0806fd3837f9f86e625826781f7027b7dc44c413412bf64a0"
+  },
+  "development-failures.json": {
+    "bytes": 542,
+    "sha256": "4025d1cb87f4ea0b7fa1252e352f3d821513aeb61595e3dd1e1b0e8756290665"
+  },
+  "fixture1-summary.json.gz": {
+    "bytes": 487,
+    "sha256": "0ac1c45a3db75fabe43429fcd9753bad534b25c68d26e5d9fdb138f2f788f58a"
+  },
+  "fixture1.log.gz": {
+    "bytes": 2631,
+    "sha256": "149145667d66843b0a0ffaf2b8ea102d3ef896b54310e94bed69bdf8ba3f3d26"
+  },
+  "fixture2-summary.json.gz": {
+    "bytes": 487,
+    "sha256": "af6c50262f9c991c66f7a8ee8487f4d312cab67078175fb95856864916819953"
+  },
+  "fixture2.log.gz": {
+    "bytes": 2633,
+    "sha256": "2f0c6341bd13ce6b88bba2179ceebd991e6e790865a004eacc3901033e493f38"
+  },
+  "inputs-summary.json.gz": {
+    "bytes": 117,
+    "sha256": "4d47b32a667838795fd83b61a1043739a5e763c375f04f8977fe184551b0f63f"
+  },
+  "inputs.log.gz": {
+    "bytes": 2214,
+    "sha256": "e3e825b3d8cae7a53730f61ab8c31a6ac94aa0a28ce6fe21476a80dc341fa276"
+  },
+  "legacy-summary.json.gz": {
+    "bytes": 304,
+    "sha256": "3848121c52aebe3640a35f119533c62e2c958dc69673a8fad64b1d609727b33b"
+  },
+  "legacy.log.gz": {
+    "bytes": 63,
+    "sha256": "fd111e4cf777b05946c67b38a1ab866b2c4239fc9bb319c1f68e9f711845443d"
+  },
+  "linux-final.log.gz": {
+    "bytes": 2316,
+    "sha256": "fb607bed659fe313ea7d01682f53760faa9f5d09f536d965d14e1fc5cc905bec"
+  },
+  "linux-focused.log.gz": {
+    "bytes": 74,
+    "sha256": "6f7a71d7a28aa41dd0aef402685c3c153e52bba35c6361738b6c7b715b2295dc"
+  },
+  "linux-verified.log.gz": {
+    "bytes": 75,
+    "sha256": "d124ab4a2e2b9b9dffc919b82086d17fb5f3316e9b49c1da47fff2fe77a32109"
+  },
+  "local-verified.log.gz": {
+    "bytes": 882,
+    "sha256": "7b48c2347253243b85a5091d7ff4c6ab771e9abb77f020291f8c4fafd6a3e652"
+  },
+  "provenance.json.gz": {
+    "bytes": 232,
+    "sha256": "359903bda7b1d87ea8dcb6a59b752ad73ee20a41261d5f3e58e1e8bcbbf65505"
+  },
+  "source-files.json.gz": {
+    "bytes": 36197,
+    "sha256": "7468d2ae52aae49f8134ffd4a95a9a5c55bc37c1cd35906c0a690d7c36267fe3"
+  },
+  "units.json.gz": {
+    "bytes": 16203,
+    "sha256": "137f2c19ba858b407a057f2594974b45f08c3147dcb49006c10b0f238f5b3682"
+  }
+}

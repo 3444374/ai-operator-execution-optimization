@@ -9,6 +9,20 @@ Movie review IDs separately from unique row occurrences. `query_config.py` decla
 direct, LOTUS and Ray lifecycles; `query_evaluation.py` verifies actual requests, outputs and decisions.
 `query_supervisor.py` bounds owned worker lifetime and closes its shared POST allocation on exit.
 
+All query evaluators now enter through `map_query_recording.evaluate_recording`: completed state,
+full row/byte counts and the recorded SHA are required. `native_map_bindings.py` verifies direct/Ray
+input occurrences against actual requests, completions and final outputs, including duplicate text.
+`query_failure_scope` reports errors before adapter cleanup; arbitrary uninstrumented context entry
+can only be timed at return. Direct reading and result delivery share a bounded event wait.
+The shared `../query_resources.py` checks all recorded logical usage transitions, including missing
+observations. PG plan summaries distinguish configured capacity from an exposed plan window.
+
+Ray declares `ray_num_cpus=4`, `ray_actors=2`, `ray_object_store_bytes=268435456` independently of
+HTTP `concurrency`; each actor requires capacity and SQL reading requires a remaining CPU slot.
+Process sampling includes descendants and registered PG readers, with an initial reader RSS snapshot.
+Short-lived reader peaks and actual object-store usage may remain unavailable; summed RSS can count
+shared pages more than once. [Validation and remaining work](../../../../experiments/results/postgresql/ab_validation_20260911/README.md).
+
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.

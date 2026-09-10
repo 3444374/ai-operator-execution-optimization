@@ -30,6 +30,7 @@ from .map_bindings import parse_pg_bindings, verify_bound_map_results
 from .map_query_recording import record_pg_query, record_async_execution, evaluate_recording
 from .runtime_helpers import owned_child_process, wait_for_path
 from .cell_evidence import CellErrors, collect_cell_evidence
+from src.experiments.query_resources import verify_logical_resources
 
 
 @dataclass(frozen=True)
@@ -87,8 +88,6 @@ def read_events(path):
 
 def resource_accounting(events, config):
     active = peak = 0
-    peaks = {}
-    drained = []
     for event in events:
         if event['event'] in ('http_started', 'core_http_started'):
             active += 1
@@ -97,24 +96,13 @@ def resource_accounting(events, config):
             active -= 1
         if not 0 <= active <= config.concurrency:
             raise ValueError('HTTP concurrency accounting invalid')
-        usage = event.get('usage')
-        if isinstance(usage, dict):
-            for key, value in usage.items():
-                if type(value) is int:
-                    peaks[key] = max(peaks.get(key, 0), value)
-            for key, limit in dict(held_tasks=config.window, input_bytes=config.input_bytes,
-                                   result_bytes=config.result_bytes, active_requests=config.concurrency,
-                                   active_work=config.concurrency).items():
-                if usage.get(key, 0) > limit:
-                    raise ValueError('logical resource limit exceeded')
-        if event['event'] == 'core_job_drained':
-            drained.append(usage)
     if active != 0 or peak == 0:
         raise ValueError('HTTP work did not settle')
-    if config.arm == 'pg' and (len(drained) != config.queries or any(any(v for v in u.values()) for u in drained)):
-        raise ValueError('PG logical resources did not drain')
-    return dict(http_peak=peak, final_http_active=active, logical_peaks=peaks,
-                drained_jobs=len(drained), work_unit='one request', result_bytes_kind='reserved capacity')
+    logical = verify_logical_resources(events,
+        dict(held_tasks=config.window,input_bytes=config.input_bytes,result_bytes=config.result_bytes,
+             active_requests=config.concurrency,active_work=config.concurrency),
+        expected_jobs=config.queries if config.arm == 'pg' else None, require_usage=config.arm == 'pg')
+    return dict(http_peak=peak, final_http_active=active, **logical, work_unit='one request')
 
 
 def evaluate_query(directory, rows, *, plan, bindings=None, events=(), sessions=()):

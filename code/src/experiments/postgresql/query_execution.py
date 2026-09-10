@@ -16,6 +16,7 @@ from .pg_source_direct import PgSourceDirectMap
 from .query_tables import map_statement
 from .movie_queries import movie_statement
 from .runtime_helpers import owned_child_process, wait_for_path
+from src.experiments.request_identity import request_identity
 
 
 def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors):
@@ -94,7 +95,7 @@ async def run_direct(config, inputs, plan, dsn, model, ledger, root, errors):
                 events.record(dict(event,monotonic_ns=time.monotonic_ns()))
             def request(attempt,payload):
                 values=json.loads(payload)
-                record(dict(event='request',attempt=attempt,body=values,request_values_sha256=content_digest(values),
+                record(dict(event='request',attempt=attempt,key=request_identity.get(),body=values,request_values_sha256=content_digest(values),
                             request_bytes_sha256=hashlib.sha256(payload).hexdigest()))
             with observe_async_http_posts(shared,request):
                 direct=PgSourceDirectMap(model,config.concurrency,plan,record)
@@ -148,18 +149,37 @@ def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_roo
     shared=ledger.claim_shared_unit(config.unit_id)
     event_root=root/'worker-events';event_root.mkdir()
     factory=NativeSessionFactory(shared,str(event_root),model.endpoint_url,model.timeout_ms/1000)
+    reader_root=root/'reader-processes';reader_root.mkdir()
     def connect():
-        return psycopg.connect(dsn,options='-c default_transaction_read_only=on -c statement_timeout='+str(int(config.query_timeout_s*1000)))
-    ray.init(address='local',num_cpus=config.concurrency+2,num_gpus=0,include_dashboard=False,
-             _node_ip_address='127.0.0.1',object_store_memory=268435456,_temp_dir=str(ray_temp_root))
+        import uuid
+        import psutil
+        connection=psycopg.connect(dsn,options='-c default_transaction_read_only=on -c statement_timeout='+str(int(config.query_timeout_s*1000)))
+        try:
+            path=reader_root/(uuid.uuid4().hex+'.pending')
+            pid=connection.info.backend_pid
+            process=psutil.Process(pid)
+            times=process.cpu_times()
+            write_private_json(path,dict(pid=pid,created_at=process.create_time(),
+                initial_rss_bytes=process.memory_info().rss,initial_cpu_seconds=times.user+times.system))
+            path.rename(path.with_suffix('.json'))
+        except BaseException:
+            connection.close()
+            raise
+        return connection
+    def reader_pids():
+        return {'pg_reader:'+str(value['pid']):(value['pid'],value['created_at'])
+                for path in reader_root.glob('*.json') for value in [json.loads(path.read_text())]}
+    ray.init(address='local',num_cpus=config.ray_num_cpus,num_gpus=0,include_dashboard=False,
+             _node_ip_address='127.0.0.1',object_store_memory=config.ray_object_store_bytes,_temp_dir=str(ray_temp_root))
     try:
-        with ProcessSampler(root/'query-rss.jsonl',{'consumer_ray':os.getpid()}) as sampler:
+        with ProcessSampler(root/'query-rss.jsonl',{'consumer_ray':os.getpid()},
+                            include_children=True,pid_provider=reader_pids) as sampler:
             headers={'Authorization':'Bearer '+model.bearer_token} if model.bearer_token else None
             def record_stats(value):
                 with open_private_text(root/'ray-stats.txt') as out:out.write(value)
             with errors.capture('query'):
                 result=record_execution(root/'q0',lambda:open_rows(inputs,plan,
-                    RaySqlHttpConfig(config.ray_read_blocks,config.ray_read_concurrency,config.concurrency,config.ray_batch_rows),
+                    RaySqlHttpConfig(config.ray_read_blocks,config.ray_read_concurrency,config.ray_actors,config.ray_batch_rows),
                     connect,factory,headers=headers,record_stats=record_stats),max_rows=inputs.max_rows,max_result_bytes=inputs.max_rows*70000,
                     flush_rows=64,query_timeout_s=config.query_timeout_s,cancel_query=ray.shutdown)
     finally:
@@ -172,4 +192,9 @@ def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_roo
         errors.attempt('worker_event_collection',collect)
     return result,dict(processes=sampler.summary(),ray_runtime_connected=ray.is_initialized(),
         source_retention='native SQL reader materializes each actual shard',
-        requested_reader_blocks=config.ray_read_blocks,native_async_batches_per_actor=1,ray_version=ray.__version__)
+        requested_reader_blocks=config.ray_read_blocks,reader_concurrency=config.ray_read_concurrency,
+        ray_logical_cpus=config.ray_num_cpus,ray_actors=config.ray_actors,
+        http_capacity=config.concurrency,object_store_allocation_bytes=config.ray_object_store_bytes,
+        reader_connection_snapshots=[json.loads(path.read_text()) for path in sorted(reader_root.glob('*.json'))],
+        physical_cpu_isolation=False,object_store_used_bytes=None,
+        native_async_batches_per_actor=1,ray_version=ray.__version__)
