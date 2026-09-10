@@ -342,6 +342,10 @@ uint32
 pg_semantic_runtime_window(const PgSemanticRuntime *runtime)
 { return runtime->provider.max_inflight_tasks; }
 
+uint64
+pg_semantic_runtime_metadata_bytes(const PgSemanticRuntime *runtime)
+{ return runtime->provider.retained_metadata_bytes; }
+
 bool
 pg_semantic_runtime_offer(PgSemanticRuntime *runtime, AiByteSlice input,
 	AiByteSlice messages, uint64 *sequence, const char *trace_row_id)

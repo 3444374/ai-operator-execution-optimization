@@ -176,6 +176,8 @@ typedef struct AiProvider
 	const void *config;
 	uint32_t max_input_bytes;
 	uint32_t max_inflight_tasks;
+	/* Conservative local allocation bound for retained association metadata. */
+	uint64_t retained_metadata_bytes;
 } AiProvider;
 
 /*

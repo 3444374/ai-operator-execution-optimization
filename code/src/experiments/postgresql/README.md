@@ -9,6 +9,11 @@ Movie review IDs separately from unique row occurrences. `query_config.py` decla
 direct, LOTUS and Ray lifecycles; `query_evaluation.py` verifies actual requests, outputs and decisions.
 `query_supervisor.py` bounds owned worker lifetime and closes its shared POST allocation on exit.
 
+For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
+`pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
+producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.
+[Controlled and real-model checks](../../../../experiments/results/postgresql/pg_window_budget_20260910/README.md).
+
 Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
 PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality

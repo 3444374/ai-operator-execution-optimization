@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：[PG Map 总字节留存预算](../experiments/results/postgresql/pg_window_budget_20260910/README.md)完成可选 total 模式，旧等份模式保留。
+按实际行上下文与固定元数据预留计费，单行暂存独立，结果预分配并于消费后释放。
+PG完整TAP2134项、最终专项37项、回归1项及本地/Linux各116项合同通过；288次独立真实POST全部通过。
+B1MiB/L32实际留存峰值13行、计费峰值1028312字节、责任归零；非整个查询RSS或组织性能结论。
+模型已停止，自有PG与临时ACL暂留D受控验证。
+
 2026-09-10：[数据库输入与公共查询接入](../experiments/results/postgresql/database_queries_20260910/README.md)
 完成代码及受控验证：PG-source direct、保守安全WHERE预取、普通PG COUNT(*)、Movie原始Q1/Q2/Q3、
 Movie-derived Map、原生LOTUS和Ray SQL/HTTP入口。两项PG新开关默认OFF；原始reviewId重复与执行行号分开。

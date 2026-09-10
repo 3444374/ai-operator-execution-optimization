@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+2026-09-10：[PG Map 总字节留存预算](postgresql/pg_window_budget_20260910/README.md)：
+默认关闭的新模式将行数作为上限，实际字节控制留存；受控反例与288次真实POST通过。
+B1MiB/L32实际最多13行、计费峰值1028312字节，最终责任归零；模型已停，PG/ACL暂留D验证。
+
 2026-09-10：[数据库原始输入与公共查询](postgresql/database_queries_20260910/README.md)：
 PG-source direct、安全WHERE预取、COUNT与原生Movie/LOTUS/Ray入口完成受控验证，真实模型0次。
 2000行原始Movie数据保留重复reviewId并通过PG读回；真实质量、性能及后续机制另行验证。

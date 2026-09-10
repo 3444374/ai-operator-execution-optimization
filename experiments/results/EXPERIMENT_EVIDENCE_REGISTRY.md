@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-09-10：[PG总字节预算工作包C](postgresql/pg_window_budget_20260910/README.md)。
+PG18.3完整TAP2134、最终专项37（重叠）、回归1，本地/Linux各116合同；120行受控HTTP。
+独立288/288真实POST、202.55秒，无失败/重试；B1MiB/L32峰值13行和1028312字节，清理后责任0。
+功能/资源诊断；L与内存策略同变，不作性能归因。模型停止，PG/ACL暂留D受控验证。
+
 2026-09-10：[数据库原始输入与公共查询](postgresql/database_queries_20260910/README.md)。
 来源：源码、真实PG18.3、原生Ray2.56.1/LOTUS1.2.4、确定性本地HTTP；真实模型0次。
 真实Movie v4由原SemBench generator生成2000行并完整PG往返，135次重复原始reviewId均保留。

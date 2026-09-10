@@ -33,6 +33,13 @@ The `incremental-map` profile uses wire v6 and optional provider `offer`/`receiv
 Set `semloom_pg.provider_window_tasks` (default 2, positive int32) no higher than the gateway's
 `--max-held-tasks` (defaults to `--max-active-requests`); launch with `--incremental-map`. The PG retained-row byte
 budget is `semloom_pg.provider_window_bytes` (default 8 MiB, split across window reservations).
+Superusers can enable `semloom_pg.enable_total_window_budget` (default off) to charge actual retained
+row contexts plus reserved association metadata against that total. A row's full result buffer is
+reserved before admission and released after PG consumption. At most one pending row uses the
+separate `semloom_pg.provider_staging_bytes` budget (default 16 MiB); conversion has a separate
+1 MiB limit. EXPLAIN ANALYZE reports these limits, measured peaks and memory waits. Ordinary child
+plan memory and protocol receive staging are outside the retained-row budget; this is not a query
+RSS ceiling. See [implementation and validation](../../../experiments/results/postgresql/pg_window_budget_20260910/README.md).
 Plain column/constant inputs on an ordinary child without quals use the configured window;
 other expressions show an effective window of 1 in EXPLAIN. Input order is the current Map
 contract, restored by sequence association without a Sort node. This profile currently serves

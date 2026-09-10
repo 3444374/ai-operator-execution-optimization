@@ -1,0 +1,7 @@
+{
+  "model_http_200": 288,
+  "gpu_compute_processes_empty": true,
+  "model_port_bindable": true,
+  "pg_retained_for_D_controlled": true,
+  "temporary_acl_retained_for_D": true
+}

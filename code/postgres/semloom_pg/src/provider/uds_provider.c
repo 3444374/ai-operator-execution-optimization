@@ -170,6 +170,9 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	provider->config = config;
 	provider->max_input_bytes = config->protocol_version != 2 ?
 		SEMLOOM_WIRE_V3_MAX_INPUT_BYTES : SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
+	if (config->protocol_version == 6)
+		provider->retained_metadata_bytes = 2 * (uint64) config->max_inflight_tasks *
+			(sizeof(AiPreparedTask) + AI_PROVIDER_SHA256_HEX_LENGTH) + 64 * 1024;
 }
 
 static AiProviderStatus

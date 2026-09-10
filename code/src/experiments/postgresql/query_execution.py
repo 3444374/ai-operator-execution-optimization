@@ -34,6 +34,9 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
     settings={'semloom_pg.gateway_socket':str(socket),
         'semloom_pg.provider_execution_profile':'incremental-map' if config.task=='map' else 'query-job',
         'semloom_pg.provider_window_tasks':str(config.window),'semloom_pg.provider_window_bytes':str(config.pg_window_bytes),
+        'semloom_pg.enable_total_window_budget':'on' if config.pg_total_budget else 'off',
+        'semloom_pg.provider_staging_bytes':str(config.pg_staging_bytes),
+        'semloom_pg.test_window_memory':'on' if config.pg_total_budget else 'off',
         'semloom_pg.enable_predicate_prefetch':'on','semloom_pg.enable_filter_count':'on',
         'semloom_pg.test_map_binding_id_column':'row_id' if config.task=='map' else '',
         'semloom_pg.test_filter_binding_id_column':'row_id' if config.task!='map' else '',
@@ -45,6 +48,7 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
     from psycopg import sql
     explain=connection.execute(sql.SQL('EXPLAIN (FORMAT JSON) ')+statement).fetchone()[0]
     write_private_json(root/'plan.json',explain)
+    write_private_json(root/'pg-backend.json',dict(backend_pid=connection.info.backend_pid))
     write_private_json(root/'gateway-command.json',command)
     env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[3])+os.pathsep+os.environ.get('PYTHONPATH',''))
     with owned_child_process(command,root,'gateway',env,None) as gateway:

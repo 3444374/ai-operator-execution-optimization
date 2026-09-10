@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-09-10：PG留存总字节预算工作包 C
+
+- total模式默认OFF，实际行内存及固定元数据计费；单行暂存独立、结果接纳前预留、消费后释放。
+- 通过完整PG TAP2134及最终专项37、回归1、本地/Linux各116合同；新真实288POST全部通过，202.55秒。
+- B1MiB/L32实际留存13行峰值、计费1028312字节，最终责任归零。分类质量与配置差异如实报告，不归因性能。
+- 模型已停止；PG和临时ACL暂供D受控验证。[完整报告](experiments/results/postgresql/pg_window_budget_20260910/README.md)。
+
 ## 2026-09-10：数据库输入与公共查询工作包 B
 
 - 完成PG原始列/direct/Ray输入、保守WHERE预取、普通COUNT(*)与Filter逐行trace、原始SemBench Movie Q1/Q2/Q3和原生LOTUS入口。

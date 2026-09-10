@@ -8,6 +8,8 @@
 ## 文件定位
 
 当前数据库原始输入与公共查询入口见[下节](#数据库原始输入与公共查询)，包含准备、安装和有期限的单查询执行。
+PG Map查询配置支持`pg_total_budget=true`与独立`pg_staging_bytes`，由总字节控制实际留存行数；
+逐算子内存观测及真实诊断见[总字节预算报告](../../experiments/results/postgresql/pg_window_budget_20260910/README.md)。
 
 脚本按职责分为七组：
 

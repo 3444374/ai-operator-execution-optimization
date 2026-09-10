@@ -20,6 +20,7 @@ p.add_argument("--socket", required=True)
 p.add_argument("--events", type=Path, required=True)
 p.add_argument("--max-jobs", type=int, default=1)
 p.add_argument("--result-bytes", type=int)
+p.add_argument("--test-output-boundaries", action="store_true")
 p.add_argument("--fault", choices=("ack-version", "sequence", "payload"))
 a = p.parse_args()
 stop = threading.Event()
@@ -45,10 +46,13 @@ async def execute(task, endpoint):
     observe({"event": "model_end", "sequence": task.key.sequence, "input": value})
     if value == "model-error":
         return b"invalid controlled model response"
+    output = "mapped:" + value
+    if a.test_output_boundaries and value in ("max-output", "oversized-output"):
+        output = "x" * (65536 if value == "max-output" else 65537)
     return json.dumps(
         {
             "model": "model",
-            "choices": [{"message": {"content": "mapped:" + value}, "finish_reason": "stop"}],
+            "choices": [{"message": {"content": output}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 2, "completion_tokens": 1},
         }
     ).encode()

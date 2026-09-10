@@ -28,6 +28,7 @@ OBJS = \
 	src/planner/sem_map_path.o \
 	src/executor/sem_pump.o \
 	src/executor/sem_prefetch.o \
+	src/executor/sem_window_memory.o \
 	src/executor/sem_scan.o \
 	src/provider/uds_provider.o \
 	src/provider/uds_connection.o \

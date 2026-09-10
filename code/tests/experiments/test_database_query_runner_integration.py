@@ -82,8 +82,9 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
             active_http=cls.active,server_stopped=not cls.thread.is_alive(),ledger=cls.ledger.snapshot()))
         if cls.active or cls.thread.is_alive():raise RuntimeError('fixture did not settle')
 
-    def run_arm(self, arm, task, *, manifest=None, table=None, unit=None):
-        config=QueryConfig(unit or arm+'-'+task,arm,task,table or self.table,concurrency=2,window=4,ray_batch_rows=16)
+    def run_arm(self, arm, task, *, manifest=None, table=None, unit=None, total_budget=False):
+        config=QueryConfig(unit or arm+'-'+task,arm,task,table or self.table,concurrency=2,window=4,ray_batch_rows=16,
+                           pg_total_budget=total_budget)
         return run_query(config,manifest_path=manifest or self.manifest,model_path=self.model,
             budget_path=self.ledger.path,budget=self.budget,root=self.root/config.unit_id,dsn=os.environ['SEMLOOM_TEST_PG_DSN'],
             pg_log=os.environ['SEMLOOM_TEST_PG_LOG'],checkout=os.environ['SEMLOOM_TEST_SEMBENCH_ROOT'],
@@ -99,6 +100,14 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
                 self.assertEqual(result['evaluation']['quality']['false_positive'],0)
                 self.assertEqual(result['evaluation']['quality']['false_negative'],0)
                 self.assertLessEqual(result['evaluation']['http']['peak_http'],2)
+
+    def test_total_budget_query_reports_independent_pg_memory(self):
+        result=self.run_arm('pg','map',unit='pg-total-map',total_budget=True)
+        self.assertEqual(result['status'],'passed')
+        self.assertEqual(result['evaluation']['actual_posts'],120)
+        memory=result['evaluation']['pg_memory']
+        self.assertEqual(memory['operators'],1)
+        self.assertLessEqual(memory['sum_retained_peaks'],memory['sum_retained_limits'])
 
     def test_supervised_native_cli(self):
         for arm,task in (('pg-source-direct','map'),('lotus','movie-q3'),('ray-data','map')):

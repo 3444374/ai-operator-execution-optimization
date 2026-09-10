@@ -11,6 +11,7 @@ from .map_direct import request_body
 from .map_bindings import parse_pg_bindings,verify_bound_map_results
 from .movie_queries import verify_filter_decisions
 from .query_workloads import read_prepared
+from .window_memory import verify_window_memory
 
 
 def read_events(path):
@@ -70,6 +71,10 @@ def evaluate(config, inputs, plan, manifest_path, root, checkout):
     if report['http']['started_requests']!=len(requests):
         raise ValueError('outgoing POST and HTTP occupancy histories differ')
     if config.arm=='pg':
+        if config.pg_total_budget:
+            report['pg_memory']=verify_window_memory((root/'q0-producer.log').read_text().splitlines(),
+                backend_pid=json.loads((root/'pg-backend.json').read_text())['backend_pid'],
+                retained_limit=config.pg_window_bytes,staging_limit=config.pg_staging_bytes,window=config.window)
         drained=[e['usage'] for e in events if e['event']=='core_job_drained']
         if requests and (not drained or any(any(v for v in usage.values()) for usage in drained)):
             raise ValueError('PG query has no clean final responsibility observation')

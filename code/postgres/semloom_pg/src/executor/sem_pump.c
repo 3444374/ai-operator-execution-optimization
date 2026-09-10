@@ -32,9 +32,11 @@
 #include "semantics/semantic_map_contract.h"
 #include "executor/sem_pump.h"
 #include "executor/sem_prefetch.h"
+#include "executor/sem_window_memory.h"
 #include "planner/marker_identity.h"
 
 #define SEMLOOM_TRACE_ROW_ID_MAX_BYTES 256
+static uint64 next_window_memory_id = 0;
 
 typedef struct SemloomWindowRow
 {
@@ -46,6 +48,8 @@ typedef struct SemloomWindowRow
 	uint64 sequence;
 	bool sent;
 	bool ready;
+	Size allocated_bytes;
+	text *result_storage;
 } SemloomWindowRow;
 
 struct SemloomExecPump
@@ -65,10 +69,28 @@ struct SemloomExecPump
 	bool returned;
 	bool exhausted;
 	bool offer_blocked;
+	bool pending_blocked;
 	const char *prefetch_reason;
 	Size window_bytes;
 	MemoryContext receive_context;
 	MemoryContext owner_context;
+	bool total_budget;
+	bool trace_memory;
+	bool memory_cleaned;
+	Size retained_limit;
+	Size staging_limit;
+	Size retained_bytes;
+	Size metadata_bytes;
+	Size peak_retained_bytes;
+	Size peak_staging_bytes;
+	Size peak_conversion_bytes;
+	Size peak_receive_bytes;
+	uint32 peak_retained_rows;
+	uint64 memory_waits;
+	uint64 memory_id;
+	SemloomWindowRow pending;
+	MemoryContext conversion_context;
+	MemoryContextCallback memory_cleanup;
 };
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
@@ -79,6 +101,8 @@ static void semloom_pump_store_completion(TupleTableSlot *slot,
 										 MemoryContext result_context);
 
 static TupleTableSlot *semloom_pump_window_next(SemloomExecPump *, ScanState *);
+static void semloom_window_memory_cleanup(void *argument);
+static void semloom_window_memory_reset(void *argument);
 
 static AttrNumber
 semloom_trace_column(CustomScan *scan, const SemloomTupleBinding *binding,
@@ -153,6 +177,10 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 				 errmsg("invalid semantic operator executor state")));
 
 	pump = MemoryContextAllocZero(owner_context, sizeof(*pump));
+	/* Register before the provider so its reset callback closes first. */
+	pump->memory_cleanup.func = semloom_window_memory_reset;
+	pump->memory_cleanup.arg = pump;
+	MemoryContextRegisterResetCallback(owner_context, &pump->memory_cleanup);
 	semloom_carrier_decode(scan->custom_private, owner_context, &carrier);
 	plan_spec = carrier.spec;
 	input_column = carrier.input_column;
@@ -228,6 +256,9 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	}
 	pump->owner_context = owner_context;
 	pump->window = pg_semantic_runtime_window(pump->runtime);
+	pump->total_budget = semloom_total_window_budget_enabled() && pump->window > 0;
+	pump->memory_id = ++next_window_memory_id;
+	pump->trace_memory = semloom_test_window_memory_enabled();
 	if (pump->window > 1)
 	{
 		pump->prefetch_reason = semloom_prefetch_reason(pump->child_state->plan,
@@ -235,16 +266,30 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 			semloom_predicate_prefetch_enabled());
 		if (pump->prefetch_reason != NULL) pump->window = 1;
 	}
-	if (pump->window > 1)
+	if (pump->window > 1 || pump->total_budget)
 	{
 		pump->window_bytes = semloom_provider_window_bytes();
 		/* Reserve row metadata and one result per slot before reading the child. */
-		if (pump->window > pump->window_bytes /
+		if (!pump->total_budget && pump->window > pump->window_bytes /
 			(sizeof(SemloomWindowRow) + SEMLOOM_MAP_MAX_OUTPUT_BYTES))
 			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 				errmsg("semantic Map task window exceeds byte budget")));
+		if (pump->total_budget)
+		{
+			uint64 metadata = 2 * (uint64) pump->window * sizeof(SemloomWindowRow) +
+				SEMLOOM_WINDOW_CONTEXT_ALLOWANCE + pg_semantic_runtime_metadata_bytes(pump->runtime);
+			pump->retained_limit = pump->window_bytes;
+			pump->staging_limit = semloom_provider_staging_bytes();
+			if (metadata + SEMLOOM_MAP_MAX_OUTPUT_BYTES >= pump->retained_limit)
+				ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+					errmsg("semantic task metadata and one result exceed total byte budget")));
+			pump->metadata_bytes = (Size) metadata;
+			pump->retained_bytes = pump->peak_retained_bytes = (Size) metadata;
+			pump->conversion_context = AllocSetContextCreate(owner_context,
+				"SemLoom row conversion", ALLOCSET_SMALL_SIZES);
+		}
 		pump->rows = MemoryContextAllocZero(owner_context, pump->window * sizeof(SemloomWindowRow));
-		pump->window_bytes -= pump->window * sizeof(SemloomWindowRow);
+		if (!pump->total_budget) pump->window_bytes -= pump->window * sizeof(SemloomWindowRow);
 		pump->receive_context = AllocSetContextCreate(owner_context, "SemLoom receive", ALLOCSET_DEFAULT_SIZES);
 	}
 	node->custom_ps = list_make1(pump->child_state);
@@ -433,12 +478,128 @@ semloom_window_read(SemloomExecPump *pump, ScanState *scan, SemloomWindowRow *ro
 	return true;
 }
 
+static bool
+semloom_window_read_total(SemloomExecPump *pump, ScanState *scan)
+{
+	SemloomWindowRow *row = &pump->pending;
+	TupleTableSlot *child;
+	TupleTableSlot *borrowed_slot = scan->ss_ScanTupleSlot;
+	MemoryContext previous;
+	Datum value;
+	bool is_null;
+	AiByteSlice borrowed = {0};
+	SemloomBoundValue bound;
+	size_t messages_size = 0;
+	Size allocation_bound;
+	Size conversion_bytes;
+
+	Assert(row->context == NULL);
+	ResetExprContext(scan->ps.ps_ExprContext);
+	child = ExecProcNode(pump->child_state);
+	if (TupIsNull(child)) { pump->exhausted = true; return false; }
+	semloom_binding_store(pump->binding, child, borrowed_slot);
+	ExecStoreVirtualTuple(borrowed_slot);
+	if (pump->input_expression != NULL)
+	{
+		scan->ps.ps_ExprContext->ecxt_scantuple = borrowed_slot;
+		value = ExecEvalExprSwitchContext(pump->input_expression, scan->ps.ps_ExprContext, &is_null);
+	}
+	else
+	{
+		value = child->tts_values[pump->binding->input_column - 1];
+		is_null = child->tts_isnull[pump->binding->input_column - 1];
+	}
+	MemoryContextReset(pump->conversion_context);
+	if (!is_null)
+	{
+		uint32 raw_bytes = semloom_window_raw_text_bytes(value);
+		/* The length-only preflight must precede any detoast allocation. */
+		pg_semantic_runtime_preflight_input(pump->runtime, (AiByteSlice){NULL, raw_bytes});
+		if (4 * (uint64) raw_bytes + SEMLOOM_WINDOW_CONTEXT_ALLOWANCE > SEMLOOM_WINDOW_CONVERSION_LIMIT)
+			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("semantic conversion byte limit exceeded")));
+		borrowed = semloom_pump_bind_text(value, pump->conversion_context);
+		bound = (SemloomBoundValue){.data=borrowed.data, .length=borrowed.length, .is_null=false};
+		messages_size = semloom_operator_machine_task_size(&pump->machine, &bound);
+		if (messages_size == 0) elog(ERROR, "could not measure semantic operator task");
+	}
+	conversion_bytes = MemoryContextMemAllocated(pump->conversion_context, true);
+	pump->peak_conversion_bytes = Max(pump->peak_conversion_bytes, conversion_bytes);
+	if (conversion_bytes > SEMLOOM_WINDOW_CONVERSION_LIMIT)
+		elog(ERROR, "semantic conversion exceeded its preflight allocation bound");
+	if (pump->trace_id_column != 0 && !is_null)
+	{
+		bool trace_null;
+		Datum trace = slot_getattr(child, pump->trace_id_column, &trace_null);
+		if (trace_null || semloom_window_raw_text_bytes(trace) > SEMLOOM_TRACE_ROW_ID_MAX_BYTES)
+			ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Map trace row ID must contain 1 to 256 bytes")));
+	}
+	allocation_bound = semloom_window_row_allocation_bound(borrowed_slot, borrowed.length, messages_size, !is_null);
+	if (allocation_bound > pump->staging_limit)
+		ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+			errmsg("semantic pending row exceeds staging byte limit"),
+			errdetail("Required allocation bound: %zu bytes; staging limit: %zu bytes.", allocation_bound, pump->staging_limit)));
+	row->context = AllocSetContextCreate(pump->owner_context, "SemLoom retained row", ALLOCSET_SMALL_SIZES);
+	previous = MemoryContextSwitchTo(row->context);
+	row->slot = MakeSingleTupleTableSlot(borrowed_slot->tts_tupleDescriptor, &TTSOpsVirtual);
+	semloom_binding_store(pump->binding, child, row->slot);
+	ExecStoreVirtualTuple(row->slot);
+	ExecMaterializeSlot(row->slot);
+	row->ready = is_null;
+	if (!is_null)
+	{
+		uint8 *input = palloc(borrowed.length ? borrowed.length : 1);
+		uint8 *messages = palloc(messages_size);
+		if (borrowed.length) memcpy(input, borrowed.data, borrowed.length);
+		row->input = (AiByteSlice){input, borrowed.length};
+		bound = (SemloomBoundValue){.data=input, .length=borrowed.length, .is_null=false};
+		if (!semloom_operator_machine_write_task(&pump->machine, &bound, messages, messages_size))
+			elog(ERROR, "could not prepare semantic operator task");
+		row->messages = (AiByteSlice){messages, messages_size};
+		row->trace_row_id = semloom_trace_id(pump, child, row->context);
+		row->result_storage = palloc(VARHDRSZ + SEMLOOM_MAP_MAX_OUTPUT_BYTES);
+	}
+	MemoryContextSwitchTo(previous);
+	row->allocated_bytes = MemoryContextMemAllocated(row->context, true);
+	pump->peak_staging_bytes = Max(pump->peak_staging_bytes, row->allocated_bytes);
+	if (row->allocated_bytes > allocation_bound)
+		elog(ERROR, "semantic row exceeded its preflight allocation bound");
+	MemoryContextReset(pump->conversion_context);
+	if (row->allocated_bytes > pump->retained_limit - pump->metadata_bytes)
+		ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+			errmsg("semantic row cannot fit alone in total byte budget")));
+	return true;
+}
+
+static void
+semloom_window_store_reserved(SemloomExecPump *pump, SemloomWindowRow *row,
+	const PgSemanticCompletion *completion)
+{
+	AttrNumber column = pump->binding->result_column;
+	if (completion->is_null)
+	{
+		row->slot->tts_isnull[column - 1] = true;
+		row->slot->tts_values[column - 1] = (Datum) 0;
+		return;
+	}
+	if (row->result_storage == NULL || completion->length > SEMLOOM_MAP_MAX_OUTPUT_BYTES)
+		elog(ERROR, "semantic result exceeds its retained reservation");
+	SET_VARSIZE(row->result_storage, VARHDRSZ + completion->length);
+	if (completion->length) memcpy(VARDATA(row->result_storage), completion->data, completion->length);
+	row->slot->tts_isnull[column - 1] = false;
+	row->slot->tts_values[column - 1] = PointerGetDatum(row->result_storage);
+}
+
 static TupleTableSlot *
 semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 {
 	uint32 index;
 	if (pump->returned)
 	{
+		if (pump->total_budget)
+		{
+			pump->retained_bytes -= pump->rows[pump->head].allocated_bytes;
+			pump->pending_blocked = false;
+		}
 		semloom_window_drop(&pump->rows[pump->head]);
 		pump->head = (pump->head + 1) % pump->window;
 		pump->count--;
@@ -447,12 +608,29 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 	for (;;)
 	{
 		uint32 in_flight = 0;
-		while (!pump->exhausted && pump->count < pump->window)
+		while (!pump->exhausted && pump->count < pump->window && !pump->pending_blocked)
 		{
 			SemloomWindowRow *row = &pump->rows[(pump->head + pump->count) % pump->window];
 			CHECK_FOR_INTERRUPTS();
-			if (!semloom_window_read(pump, scan, row)) break;
+			if (pump->total_budget)
+			{
+				if (pump->pending.context == NULL && !semloom_window_read_total(pump, scan)) break;
+				if (pump->pending.allocated_bytes > pump->retained_limit - pump->retained_bytes)
+				{
+					pump->memory_waits++;
+					/* Receiving into reserved result space does not release a
+					 * retained row. Retry only after the consumer releases one. */
+					pump->pending_blocked = true;
+					break;
+				}
+				*row = pump->pending;
+				memset(&pump->pending, 0, sizeof(pump->pending));
+				pump->retained_bytes += row->allocated_bytes;
+				pump->peak_retained_bytes = Max(pump->peak_retained_bytes, pump->retained_bytes);
+			}
+			else if (!semloom_window_read(pump, scan, row)) break;
 			pump->count++;
+			pump->peak_retained_rows = Max(pump->peak_retained_rows, pump->count);
 		}
 		for (index = 0; index < pump->count; index++)
 		{
@@ -482,13 +660,16 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 			uint64 sequence;
 			MemoryContextReset(pump->receive_context);
 			sequence = pg_semantic_runtime_receive(pump->runtime, pump->receive_context, &completion);
+			pump->peak_receive_bytes = Max(pump->peak_receive_bytes,
+				MemoryContextMemAllocated(pump->receive_context, true));
 			pump->offer_blocked = false;
 			for (index = 0; index < pump->count; index++)
 			{
 				SemloomWindowRow *row = &pump->rows[(pump->head + index) % pump->window];
 				if (row->sent && !row->ready && row->sequence == sequence)
 				{
-					semloom_pump_store_completion(row->slot, pump->binding->result_column, &completion, row->context);
+					if (pump->total_budget) semloom_window_store_reserved(pump, row, &completion);
+					else semloom_pump_store_completion(row->slot, pump->binding->result_column, &completion, row->context);
 					row->ready = true;
 					break;
 				}
@@ -498,12 +679,49 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 	}
 }
 
+static void
+semloom_window_memory_reset(void *argument)
+{
+	SemloomExecPump *pump = argument;
+	if (!pump->total_budget || pump->memory_cleaned) return;
+	/* The parent context owns all allocations. During context reset its child
+	 * contexts may already be gone; never dereference their slots here. */
+	pump->memory_cleaned = true;
+	pump->rows = NULL;
+	memset(&pump->pending, 0, sizeof(pump->pending));
+	pump->conversion_context = pump->receive_context = NULL;
+	pump->retained_bytes = 0;
+	pump->count = 0;
+	if (pump->trace_memory)
+		elog(LOG, "SEMLOOM_WINDOW_MEMORY {\"version\":1,\"backend_pid\":%d,\"memory_id\":" UINT64_FORMAT ",\"retained_rows\":0,\"pending_rows\":0,\"retained_bytes\":0,\"retained_limit\":%zu,\"staging_limit\":%zu,\"peak_retained_bytes\":%zu,\"peak_staging_bytes\":%zu,\"peak_conversion_bytes\":%zu,\"peak_receive_bytes\":%zu,\"peak_retained_rows\":%u,\"memory_waits\":" UINT64_FORMAT "}",
+			MyProcPid, pump->memory_id, pump->retained_limit, pump->staging_limit, pump->peak_retained_bytes, pump->peak_staging_bytes,
+			pump->peak_conversion_bytes, pump->peak_receive_bytes, pump->peak_retained_rows, pump->memory_waits);
+}
+
+static void
+semloom_window_memory_cleanup(void *argument)
+{
+	SemloomExecPump *pump = argument;
+	uint32 index;
+	if (!pump->total_budget || pump->memory_cleaned) return;
+	if (pump->rows != NULL)
+	{
+		for (index = 0; index < pump->window; index++) semloom_window_drop(&pump->rows[index]);
+		pfree(pump->rows);
+	}
+	semloom_window_drop(&pump->pending);
+	if (pump->conversion_context != NULL) MemoryContextDelete(pump->conversion_context);
+	if (pump->receive_context != NULL) MemoryContextDelete(pump->receive_context);
+	semloom_window_memory_reset(pump);
+}
+
 void
 semloom_pump_stop(SemloomExecPump *pump, CustomScanState *node)
 {
 	if (pump == NULL)
 		return;
 	pg_semantic_runtime_close(pump->runtime);
+	if (pump->total_budget) semloom_window_memory_cleanup(pump);
 	if (pump->rows != NULL)
 	{
 		uint32 index;
@@ -525,6 +743,24 @@ semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 		ExplainPropertyInteger("Semantic Input Window", NULL, pump->window, explain_state);
 	if (pump->prefetch_reason != NULL)
 		ExplainPropertyText("Semantic Window Fallback Reason", pump->prefetch_reason, explain_state);
+	if (pump->total_budget)
+	{
+		ExplainPropertyText("Semantic Window Memory Policy", "total", explain_state);
+		ExplainPropertyUInteger("Semantic Retained Byte Limit", NULL, pump->retained_limit, explain_state);
+		ExplainPropertyUInteger("Semantic Staging Byte Limit", NULL, pump->staging_limit, explain_state);
+		ExplainPropertyUInteger("Semantic Conversion Byte Limit", NULL, SEMLOOM_WINDOW_CONVERSION_LIMIT, explain_state);
+		ExplainPropertyUInteger("Semantic Association Metadata Bound", NULL,
+			pg_semantic_runtime_metadata_bytes(pump->runtime), explain_state);
+		if (explain_state->analyze)
+		{
+			ExplainPropertyUInteger("Semantic Peak Retained Bytes", NULL, pump->peak_retained_bytes, explain_state);
+			ExplainPropertyUInteger("Semantic Peak Staging Bytes", NULL, pump->peak_staging_bytes, explain_state);
+			ExplainPropertyUInteger("Semantic Peak Conversion Bytes", NULL, pump->peak_conversion_bytes, explain_state);
+			ExplainPropertyUInteger("Semantic Peak Receive Bytes", NULL, pump->peak_receive_bytes, explain_state);
+			ExplainPropertyUInteger("Semantic Peak Retained Rows", NULL, pump->peak_retained_rows, explain_state);
+			ExplainPropertyUInteger("Semantic Memory Waits", NULL, pump->memory_waits, explain_state);
+		}
+	}
 	if (pump->has_filter_cost)
 		semloom_filter_cost_explain(&pump->filter_cost, explain_state);
 	if (pump->input_expression != NULL)

@@ -244,7 +244,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "AiPreparedTask",
             "provider_session",
             "next_sequence",
-            "MemoryContextRegisterResetCallback",
+            "pg_semantic_runtime_cleanup",
             "semloom_raise_provider_error",
         ):
             self.assertNotIn(leaked_lifecycle_detail, pump_source)

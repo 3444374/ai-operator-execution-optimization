@@ -26,10 +26,16 @@ static int provider_window_tasks = 2;
 static int provider_window_bytes = 8 * 1024 * 1024;
 static bool enable_predicate_prefetch = false;
 static bool enable_filter_count = false;
+static bool enable_total_window_budget = false;
+static bool test_window_memory = false;
+static int provider_staging_bytes = 16 * 1024 * 1024;
 int semloom_provider_window_tasks(void) { return provider_window_tasks; }
 int semloom_provider_window_bytes(void) { return provider_window_bytes; }
 bool semloom_predicate_prefetch_enabled(void) { return enable_predicate_prefetch; }
 bool semloom_filter_count_enabled(void) { return enable_filter_count; }
+bool semloom_total_window_budget_enabled(void) { return enable_total_window_budget; }
+bool semloom_test_window_memory_enabled(void) { return test_window_memory; }
+int semloom_provider_staging_bytes(void) { return provider_staging_bytes; }
 const char *semloom_test_map_binding_column(void)
 { return test_map_binding_id_column == NULL ? "" : test_map_binding_id_column; }
 const char *semloom_test_filter_binding_column(void)
@@ -112,6 +118,16 @@ _PG_init(void)
 	DefineCustomBoolVariable("semloom_pg.enable_filter_count",
 		"Allow experimental single-table COUNT(*) over semantic filters.", NULL,
 		&enable_filter_count, false, PGC_SUSET, 0, NULL, NULL, NULL);
+	DefineCustomBoolVariable("semloom_pg.enable_total_window_budget",
+		"Use a total retained-row budget and one bounded pending row.", NULL,
+		&enable_total_window_budget, false, PGC_SUSET, 0, NULL, NULL, NULL);
+	DefineCustomIntVariable("semloom_pg.provider_staging_bytes",
+		"Maximum allocation bound for one pending semantic row, including its result buffer.", NULL,
+		&provider_staging_bytes, 16 * 1024 * 1024, 65536, 256 * 1024 * 1024,
+		PGC_USERSET, GUC_UNIT_BYTE, NULL, NULL, NULL);
+	DefineCustomBoolVariable("semloom_pg.test_window_memory",
+		"Test-only per-operator window memory cleanup trace.", NULL,
+		&test_window_memory, false, PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
 	DefineCustomStringVariable("semloom_pg.test_map_binding_id_column",
 		"Test-only text row ID column logged before Map task submission; empty disables tracing.",
 		NULL, &test_map_binding_id_column, "", PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
