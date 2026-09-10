@@ -1,5 +1,11 @@
 # Research Experiment Results
 
+2026-09-10：[数据准备与执行记录修复验收](postgresql/data_evaluation_harness_20260910/README.md)：
+本地/Linux 各 168 项相关测试、7 项真实 PG 记录检查通过；新 ShareGPT 原文准备和 PG 146 行读回通过。
+新账本 SQuAD 10/10 次模型请求通过完整消息、token usage、关联及答案检查，增量资源最终归零。
+两次模型准备失败均 0 POST，失败保留，服务/ACL 已清理；旧 48/68 账本与缺失 JCT 不改写。
+这是工具与小样本功能验收，ShareGPT 质量、静态容量、组织性能和双副本路由仍待验证。
+
 2026-09-09：[PG 单 Map 真实数据尝试](postgresql/data_execution_pilot_20260909/README.md)：
 48/68 请求后停止。SQuAD 关联与答案检查可用；ShareGPT 输出合同、摘要质量及源输入身份未通过。
 单 GPU 正确性范围，静态容量、组织增量与双卡性能仍未验证；原失败与清理证据保留。

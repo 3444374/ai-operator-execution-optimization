@@ -1,0 +1,129 @@
+{
+  "status": "passed",
+  "budget_id": "semloom.data-evaluation.harness.20260910",
+  "budget_limit": 10,
+  "reports": [
+    {
+      "name": "sync-precheck",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "completed",
+      "evaluation_status": "completed",
+      "started_ns": 154066697805787,
+      "ended_ns": 154066924057336,
+      "elapsed_seconds": 0.226251549,
+      "recorded_rows": 2,
+      "error_phase": null,
+      "error_type": null,
+      "performance_qualified": false,
+      "association": {
+        "matched_rows": 2,
+        "prediction_values_sha256": "7552b5160a4027e9020b0b3044d845c8631b19033e964487c65bb25785282c25"
+      },
+      "quality": {
+        "squad_quality_status": "ok",
+        "squad_evaluated_rows": 2,
+        "squad_prediction_rows": 2,
+        "squad_missing_prediction_rows": 0,
+        "squad_exact_match_rows": 2,
+        "squad_exact_match_percent": 100.0,
+        "squad_token_f1_percent": 100.0
+      },
+      "requests": 2,
+      "http_peak": null,
+      "final_job_usage": null,
+      "sequence_mapping_source": "observed completion sequence plus unique input payload digest",
+      "completion_arrival_sequences": [
+        0,
+        1
+      ],
+      "prompt_usage_matches_actual_tokenizer": true,
+      "original_outbound_messages_match": true
+    },
+    {
+      "name": "sync",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "completed",
+      "evaluation_status": "completed",
+      "started_ns": 154066970214627,
+      "ended_ns": 154067357950525,
+      "elapsed_seconds": 0.387735898,
+      "recorded_rows": 4,
+      "error_phase": null,
+      "error_type": null,
+      "performance_qualified": false,
+      "association": {
+        "matched_rows": 4,
+        "prediction_values_sha256": "c5e6bac1c05c731d97c283bf984763e0d45a604d1a2d7581cd2ef93f790b8ccb"
+      },
+      "quality": {
+        "squad_quality_status": "ok",
+        "squad_evaluated_rows": 4,
+        "squad_prediction_rows": 4,
+        "squad_missing_prediction_rows": 0,
+        "squad_exact_match_rows": 4,
+        "squad_exact_match_percent": 100.0,
+        "squad_token_f1_percent": 100.0
+      },
+      "requests": 4,
+      "http_peak": null,
+      "final_job_usage": null,
+      "sequence_mapping_source": "observed completion sequence plus unique input payload digest",
+      "completion_arrival_sequences": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "prompt_usage_matches_actual_tokenizer": true,
+      "original_outbound_messages_match": true
+    },
+    {
+      "name": "incremental",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "completed",
+      "evaluation_status": "completed",
+      "started_ns": 154067980833625,
+      "ended_ns": 154068319973953,
+      "elapsed_seconds": 0.339140328,
+      "recorded_rows": 4,
+      "error_phase": null,
+      "error_type": null,
+      "performance_qualified": false,
+      "association": {
+        "matched_rows": 4,
+        "prediction_values_sha256": "c5e6bac1c05c731d97c283bf984763e0d45a604d1a2d7581cd2ef93f790b8ccb"
+      },
+      "quality": {
+        "squad_quality_status": "ok",
+        "squad_evaluated_rows": 4,
+        "squad_prediction_rows": 4,
+        "squad_missing_prediction_rows": 0,
+        "squad_exact_match_rows": 4,
+        "squad_exact_match_percent": 100.0,
+        "squad_token_f1_percent": 100.0
+      },
+      "requests": 4,
+      "http_peak": 2,
+      "final_job_usage": {
+        "held_tasks": 0,
+        "input_bytes": 0,
+        "result_bytes": 0,
+        "active_requests": 0,
+        "active_work": 0
+      },
+      "sequence_mapping_source": "observed completion sequence plus unique input payload digest",
+      "completion_arrival_sequences": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "prompt_usage_matches_actual_tokenizer": true,
+      "original_outbound_messages_match": true
+    }
+  ],
+  "performance_qualified": false,
+  "pg_stopped": true,
+  "gateways_stopped": true,
+  "actual_requests": 10
+}

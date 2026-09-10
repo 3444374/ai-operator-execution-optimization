@@ -1,0 +1,22 @@
+{
+  "original_acl_restored": true,
+  "postgres_process_count": 0,
+  "gpu": [
+    "0, 1 MiB, 0 %",
+    "1, 1 MiB, 0 %"
+  ],
+  "gpu_processes": [],
+  "service_stop": {
+    "returncode": 0,
+    "forced": false
+  },
+  "model_listener_absent": true,
+  "model_port_rebind_with_reuseaddr": true,
+  "first_cleanup_probe": {
+    "plain_bind_errno": 98,
+    "interpretation": "plain bind can reject TIME_WAIT; listener checked separately"
+  },
+  "gateway_sockets_absent": true,
+  "source_files_unchanged": true,
+  "source_files": 682
+}

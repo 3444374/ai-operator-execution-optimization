@@ -1,0 +1,46 @@
+{
+  "schema": "semloom.local_tool_validation.v1",
+  "source_base": "687eb8def8a045320c8241b18257582128c97d5a",
+  "branch": "codex/data-evaluation-harness",
+  "python_version": "3.12.6",
+  "platform": "macOS",
+  "test_command": [
+    "python3",
+    "-m",
+    "unittest",
+    "tests.baselines.test_squad_pg_map_pilot",
+    "tests.baselines.test_map_workload_tools",
+    "tests.data.test_import_squad_workload",
+    "tests.observability.test_metrics",
+    "tests.experiments.test_choice_http_observer",
+    "tests.experiments.test_expected_requests",
+    "tests.experiments.test_map_query_recording",
+    "tests.experiments.test_choice_service_checks",
+    "tests.baselines.common.test_redact",
+    "tests.baselines.test_squad_database_e2e_runner",
+    "tests.baselines.test_squad_capability_gate",
+    "-q"
+  ],
+  "test_environment": {
+    "PYTHONPATH": "code"
+  },
+  "tests": 168,
+  "exit_code": 0,
+  "real_model_requests": 0,
+  "postgresql_live_validation": "pending",
+  "service_tokenizer_validation": "pending",
+  "performance_qualified": false,
+  "static_checks": {
+    "python_compiled_files": 17,
+    "markdown_local_links": "passed_no_missing_targets",
+    "reader_document_language": "passed",
+    "diff_check": "passed",
+    "secret_scan": "passed_28_changed_or_new_files"
+  },
+  "document_audience": {
+    "reader_documents": [
+      "code/src/baselines/README.md"
+    ],
+    "other_modified_markdown": "internal operational instructions, plans, status indexes or verification records"
+  }
+}

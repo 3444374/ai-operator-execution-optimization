@@ -1,0 +1,132 @@
+{
+  "status": "passed",
+  "real_model_requests": 0,
+  "checks": [
+    {
+      "name": "pg-roundtrip",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "completed",
+      "evaluation_status": "completed",
+      "started_ns": 153396159709352,
+      "ended_ns": 153396163911656,
+      "elapsed_seconds": 0.004202304,
+      "recorded_rows": 146,
+      "error_phase": null,
+      "error_type": null,
+      "performance_qualified": false,
+      "expected_error": null
+    },
+    {
+      "name": "pg-partial-error",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "failed",
+      "evaluation_status": "not_run",
+      "started_ns": 153396167650056,
+      "ended_ns": 153396170709503,
+      "elapsed_seconds": 0.003059447,
+      "recorded_rows": 2,
+      "error_phase": "execute_or_stream",
+      "error_type": "DivisionByZero",
+      "performance_qualified": false,
+      "expected_error": "DivisionByZero"
+    },
+    {
+      "name": "pg-before-row-error",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "failed",
+      "evaluation_status": "not_run",
+      "started_ns": 153396171500688,
+      "ended_ns": 153396173906851,
+      "elapsed_seconds": 0.002406163,
+      "recorded_rows": 0,
+      "error_phase": "execute_or_stream",
+      "error_type": "UndefinedTable",
+      "performance_qualified": false,
+      "expected_error": "UndefinedTable"
+    },
+    {
+      "name": "pg-evaluator-error",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "completed",
+      "evaluation_status": "failed",
+      "started_ns": 153396174637130,
+      "ended_ns": 153396175393627,
+      "elapsed_seconds": 0.000756497,
+      "recorded_rows": 1,
+      "error_phase": null,
+      "error_type": null,
+      "performance_qualified": false,
+      "expected_error": "ValueError"
+    },
+    {
+      "name": "pg-result-limit",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "failed",
+      "evaluation_status": "not_run",
+      "started_ns": 153396176495431,
+      "ended_ns": 153396179109207,
+      "elapsed_seconds": 0.002613776,
+      "recorded_rows": 2,
+      "error_phase": "recording",
+      "error_type": "ValueError",
+      "performance_qualified": false,
+      "expected_error": "ValueError"
+    },
+    {
+      "name": "pg-timeout",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "failed",
+      "evaluation_status": "not_run",
+      "started_ns": 153396179888753,
+      "ended_ns": 153396232424983,
+      "elapsed_seconds": 0.05253623,
+      "recorded_rows": 0,
+      "error_phase": "execute_or_stream",
+      "error_type": "QueryCanceled",
+      "performance_qualified": false,
+      "expected_error": "QueryCanceled"
+    },
+    {
+      "name": "pg-empty",
+      "schema": "semloom.query.public_summary.v1",
+      "execution_status": "completed",
+      "evaluation_status": "not_run",
+      "started_ns": 153396234176263,
+      "ended_ns": 153396235212554,
+      "elapsed_seconds": 0.001036291,
+      "recorded_rows": 0,
+      "error_phase": null,
+      "error_type": null,
+      "performance_qualified": false,
+      "expected_error": null
+    }
+  ],
+  "tokens": {
+    "tuning": {
+      "rows": 64,
+      "min": 92,
+      "max": 257,
+      "fits_context": true
+    },
+    "evaluation": {
+      "rows": 64,
+      "min": 118,
+      "max": 228,
+      "fits_context": true
+    },
+    "sharegpt": {
+      "rows": 16,
+      "min": 77,
+      "max": 450,
+      "fits_context": true
+    }
+  },
+  "private_source_roundtrip": {
+    "rows": 16,
+    "text_values_sha256": "447a67af546f5f20d2dfb8fabc9e44932bb3531155e94d793e91902f3b02e20d",
+    "matched": true
+  },
+  "source_files": 682,
+  "model_files": 9,
+  "pg_stopped": true
+}

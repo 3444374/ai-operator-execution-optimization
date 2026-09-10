@@ -1,5 +1,35 @@
 # 项目日志
 
+## 2026-09-10 数据准备与记录修复完成服务器验收
+
+- 按用户授权在服务器 Git 基线 687eb8de 的隔离 worktree 上验证待提交补丁；前后 682 个代码目录文件一致。
+- Linux 相关回归 168/168；新 CLI 原样准备 ShareGPT 16 行和 SQuAD 两侧各 64 行，实际 tokenizer 检查通过。
+- 新 recorder 的真实 PG 检查 7/7，包括 146 行原文读回、部分结果错误、评价错误、上限、超时和空结果。
+- 新账本最多 10 次，实际 SQuAD 同步预检 2＋同步 4＋增量 4 全部通过；消息、usage、ID/结果、答案和落盘顺序独立复核，增量资源归零。
+- 两次模型准备因缓存权限、服务 bin PATH 失败，均 0 POST；补齐显式环境后在新目录继续，未安装依赖或调整模型/提示/预算。
+- 原失败、115 文件私有归档及公开哈希/状态均保留。模型/PG/网关已停、GPU 进程为 0、原 ACL 恢复。
+- 当前修复待按用户授权提交、推送并合入 main；[验收报告](experiments/results/postgresql/data_evaluation_harness_20260910/README.md#服务器完整验收)。
+
+## 2026-09-10 服务器恢复后的零模型请求检查
+
+- 用户提供新连接后，仓库外 runtime env 的 core/text/workload-text 预检通过，两张 RTX 4090 空闲。
+- 实际 tokenizer 重算既有 SQuAD 两侧各 64 行，均满足输入加 64 输出预算不超过 4096；4 项配置/tokenizer SHA 一致，权重未重新哈希。
+- 普通 PG 18.3 隔离实例写入/流式读回 128 行 SQuAD + 2 行 fixture，130/130 UTF-8 相同；不涉及 Map 或新 recorder 部署。
+- 首次 initdb 被目录穿越权限阻止，失败保留；临时最小 ACL 修复后在新目录通过，PG 已停止且原 ACL 恢复。
+- 新模型请求 0；[报告及清理证据](experiments/results/postgresql/data_evaluation_harness_20260910/README.md#服务器恢复检查)。
+
+## 2026-09-10 修复数据准备与执行评价工具
+
+- 按用户审查保留 PG、wire、Engine 与调度实现；只修准备、记录和检查层。
+- 私有 workload 原样写入且拒绝覆盖，公开摘要单独生成；新增 ShareGPT 首个 human 原文选样与完整 token ID 计数。
+- 查询先保存起点、部分结果和执行终点，再运行 evaluator；完成事件按实际 producer 序号与 payload 核对。
+- 观测器新增可选完整私有记录/请求值哈希检查，发现并修复公开 JSON 脱敏破坏引号；被拒请求不发送 HTTP，保留账本占用。
+- 本地 168 项相关测试通过；用户确认服务器关机后仅做本地工作，新增真实请求 0。
+- ShareGPT 暂停当次摘要配置，SQuAD 继续作为后续主输入，SemBench Movie 原始/派生任务已明确写入计划。
+- 独立分支 `codex/data-evaluation-harness`，未合入 main；实际 PG/tokenizer/控制器接入和质量/性能仍待验证。
+- 证据：[本地工具修复](experiments/results/postgresql/data_evaluation_harness_20260910/README.md)；
+  计划：[数据执行切片](experiments/plans/data_organization_batching.md#首次尝试后的决定)。
+
 ## 2026-09-09 收敛数据执行实验并完成首次真实数据尝试
 
 - 按用户三份附件与当前 main@0ba12bfa 核对，近期顺序改为真实单 Map 任务、静态容量画像、有限窗口

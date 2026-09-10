@@ -1,0 +1,29 @@
+[
+  {
+    "attempt": "initial-cache-path",
+    "model_requests": 0,
+    "service_stop": {
+      "returncode": 1,
+      "forced": false
+    },
+    "full_private_log_sha256": "3af2fab32ba05b591df9ca3c34e9557ebf7b7c5fb9381b2fa005dcdf50980e23",
+    "error_excerpt": [
+      "(EngineCore pid=3113) ERROR 09-10 09:51:51 [core.py:1231] PermissionError: [Errno 13] Permission denied: '/root/.cache/flashinfer'",
+      "(EngineCore pid=3113) PermissionError: [Errno 13] Permission denied: '/root/.cache/flashinfer'"
+    ]
+  },
+  {
+    "attempt": "missing-venv-bin-path",
+    "model_requests": 0,
+    "service_stop": {
+      "returncode": 1,
+      "forced": false
+    },
+    "full_private_log_sha256": "79fbc2a070924473391ef9fc3b6b013c0704bc8bddc770dd5de37460f31e457d",
+    "error_excerpt": [
+      "(EngineCore pid=4285) PermissionError: [Errno 13] Permission denied: '/root/.config/vllm/usage_stats.json'",
+      "(EngineCore pid=4285) ERROR 09-10 09:54:36 [core.py:1231] FileNotFoundError: [Errno 2] No such file or directory: 'ninja'",
+      "(EngineCore pid=4285) FileNotFoundError: [Errno 2] No such file or directory: 'ninja'"
+    ]
+  }
+]

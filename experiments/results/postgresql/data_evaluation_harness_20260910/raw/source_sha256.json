@@ -1,0 +1,19 @@
+{
+  "code/scripts/baselines/map_workload_tools.py": "4abcb8469d9fd139f0b72b971e4ff2689cc24af9fec807c8ea3c54ef15a18610",
+  "code/scripts/baselines/squad_pg_map_pilot.py": "c4213aa3136d6ad135ef72a572b4a26e6910502c2879e1d0fb79e591446820e0",
+  "code/src/baselines/common/private_artifacts.py": "e95c977114045c2e2351afbfba9b658257c46a4eaaaeef910c3553189d657db5",
+  "code/src/baselines/common/redact.py": "eea2b1435144bd2206f6a1f289a379661d2f1737e92d162e137d5d5efb1c9c0d",
+  "code/src/baselines/text/map_inputs.py": "837c2122afda31ba96b802d1c4608260ae90d9accb4e12147f71e1c482da72ea",
+  "code/src/baselines/text/sharegpt_inputs.py": "a5351a9eb62de18cebb1f999fef3d6b3092e7aa9178e3ce2ddbae15635035625",
+  "code/src/baselines/text/squad_map.py": "790078574a20dfeeead1691b7f936f24b6f6f93755ace7164e71d1512a6bdeb7",
+  "code/src/experiments/choice_gateway_observer.py": "da12bba8c71dda142ce0cb8518be9a0fc96b8cefb03653973cc91ad08f759f55",
+  "code/src/experiments/choice_service_checks.py": "fdeed63d27c61fae329317071fa1f7f0066e28a10a6a61b7fb19059d993cc173",
+  "code/src/experiments/expected_requests.py": "73463f70370dc8f90174126a927bef5db80a58dbf39b1114a48e54c7e83b3eb0",
+  "code/src/experiments/postgresql/map_query_recording.py": "2a0d47db4e97ccd323c8c7c11cf89da4fad31f7307835207dd1b55c7a0daa892",
+  "code/src/modalities/text/tokenization.py": "f6b3c00d911582e0cbdaa43340fcc8cc96feb458fb0317ce9df12237f8d79dba",
+  "code/tests/baselines/common/test_redact.py": "79565aaf76844578fd6725758be07dfa86469929b5a0bf8f8539d2f4a1b43b7a",
+  "code/tests/baselines/test_map_workload_tools.py": "1d8a31d54f21f02128b92ab59f113f86bc433742c2fe1a66f2bdb3231a9575b1",
+  "code/tests/experiments/test_choice_http_observer.py": "7c2f696ff8d4e03cedd15a964ec2378f7cdb1392b515e81337f676ff43aee6e1",
+  "code/tests/experiments/test_expected_requests.py": "14ae51ea5543d79d84a8baf104cb6216ade8477d702cf159135d713e4af2210d",
+  "code/tests/experiments/test_map_query_recording.py": "c35ebc362967bfc70a1b0ae8863a7865b25b9a37888d46a92233d725aa7398a7"
+}

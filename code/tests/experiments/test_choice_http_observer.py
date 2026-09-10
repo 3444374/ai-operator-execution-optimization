@@ -128,3 +128,17 @@ class ChoiceHttpObserverTests(unittest.TestCase):
         finally:
             connection.close()
         self.assertEqual(self.requests, [])
+
+    def test_request_value_mismatch_prevents_synchronous_http(self):
+        from src.experiments.expected_requests import ExpectedRequests, expected_request_manifest
+
+        guard = ExpectedRequests(expected_request_manifest([{"max_tokens": 128}]), available_attempts=1)
+        connection = http.client.HTTPConnection(*self.server.server_address)
+        try:
+            with observe_http_posts(self.ledger, lambda _n, body: guard.accept(json.loads(body))):
+                with self.assertRaises(BudgetError):
+                    connection.request("POST", "/", body=b'{"max_tokens":256}')
+        finally:
+            connection.close()
+        self.assertEqual(self.requests, [])
+        self.assertEqual(self.ledger.attempts, 1)

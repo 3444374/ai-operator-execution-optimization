@@ -1,0 +1,16 @@
+{
+  "schema": "semloom.pg_text_readback.v1",
+  "real_model_requests": 0,
+  "new_harness_deployed": false,
+  "scope": "PostgreSQL text storage and psycopg stream only",
+  "status": "passed",
+  "postgres_version": "18.3",
+  "squad_rows": 128,
+  "synthetic_rows": 2,
+  "matched_rows": 130,
+  "readback_order": "descending ID",
+  "values_sha256": "f7c74988b74b8ece44346f44685c08e429c8096aae855635ddf19ac2d6c66560",
+  "pg_stop_exit": 0,
+  "pg_pid_file_absent": true,
+  "root_acl_restored": true
+}

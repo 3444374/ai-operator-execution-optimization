@@ -68,6 +68,10 @@ _KNOWN_TOKEN = re.compile(
     r"ghp_[A-Za-z0-9]{8,}|github_pat_[A-Za-z0-9_]{8,}|"
     r"xox[baprs]-[A-Za-z0-9-]{8,}|AIza[A-Za-z0-9_-]{8,})\b"
 )
+_JSON_SECRET_KEY = re.compile(
+    r"^(?:api[_-]?key|auth[_-]?token|access[_-]?token|bearer[_-]?token|"
+    r"client[_-]?secret|secret|password|authorization)$", re.I,
+)
 
 
 def redact_database_url(value: str) -> str:
@@ -103,6 +107,18 @@ def redact_text(value: str) -> str:
     without_named = _UNQUOTED_NAMED_SECRET.sub(r"\1***", without_quoted)
     without_bearer = _BEARER_SECRET.sub(r"\1***", without_named)
     return _KNOWN_TOKEN.sub("***", without_bearer)
+
+
+def redact_json_values(value):
+    """Redact structured values before JSON encoding so quotes cannot be removed."""
+    if isinstance(value, dict):
+        return {key: "***" if isinstance(key, str) and _JSON_SECRET_KEY.fullmatch(key)
+                else redact_json_values(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [redact_json_values(item) for item in value]
+    if isinstance(value, str):
+        return redact_text(value)
+    return value
 
 
 def _is_url_with_password(value: str) -> bool:

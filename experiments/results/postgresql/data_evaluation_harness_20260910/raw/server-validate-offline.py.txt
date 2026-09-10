@@ -1,0 +1,160 @@
+"""One bounded server audit of the proposed tools; no inference or retry."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import pwd
+import subprocess
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--source', type=Path, required=True)
+parser.add_argument('--root', type=Path, required=True)
+args = parser.parse_args()
+sys.path.insert(0, str(args.source / 'code'))
+from src.baselines.common.private_artifacts import write_private_json, content_digest
+from src.baselines.text.map_inputs import verify_text_roundtrip
+from src.baselines.text.sharegpt_inputs import first_human_verbatim
+from src.experiments.postgresql.map_query_recording import record_pg_query, public_execution_summary
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster
+import psycopg
+
+root = args.root
+source = args.source
+serving_python = '/root/autodl-tmp/venvs/vllm-4090/bin/python'
+model = Path('/root/autodl-tmp/models/Qwen2.5-7B-Instruct')
+prior = Path('/root/autodl-tmp/dex1')
+summary = {'status': 'failed', 'real_model_requests': 0, 'checks': []}
+
+
+def digest(path):
+    h = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def cli(name, script, arguments, python=sys.executable):
+    with (root / (name + '.log')).open('x') as log:
+        subprocess.run([python, str(source / script), *map(str, arguments)], cwd=source,
+                       stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
+
+
+def pg_check(conn, name, query, *, expected=None, error=None, evaluator=None, max_rows=200):
+    directory = root / name
+    caught = None
+    try:
+        record_pg_query(conn, query, directory, max_rows=max_rows,
+                        max_result_bytes=2 * 1024 * 1024, evaluator=evaluator)
+    except Exception as failure:
+        caught = type(failure).__name__
+        if error is None or not isinstance(failure, error):
+            raise
+    assert (caught is not None) == (error is not None)
+    result = public_execution_summary(directory)
+    if expected is not None:
+        assert result['recorded_rows'] == expected
+    assert conn.execute('SELECT 1').fetchone() == (1,), 'connection not usable after stream close'
+    summary['checks'].append({'name': name, **result, 'expected_error': caught})
+    return result
+
+
+try:
+    manifest = json.loads((root / 'source_manifest.json').read_text())
+    assert all(digest(source / p) == sha for p, sha in manifest['files'].items())
+    binding = json.loads((prior / 'prepare/model-verification.json').read_text())
+    actual = {name: digest(model / name) for name in binding['files']}
+    assert actual == binding['files'], 'model file identity mismatch'
+    write_private_json(root / 'model-verification.json', {**binding, 'files': actual})
+    prefix = Path('/opt/semloom-pg18.3-query-lifecycle')
+    old_pg = json.loads((prior / 'prepare/pg-source-binding.json').read_text())
+    assert digest(prefix / 'lib/postgresql/semloom_pg.so') == old_pg['extension_sha256']
+    pg_files = [p for p in (source / 'code/postgres/semloom_pg').rglob('*')
+                if p.is_file() and p.suffix in ('.c', '.h', '.sql', '.control')]
+    assert all(digest(p) == digest(prior / 'source' / p.relative_to(source)) for p in pg_files)
+    write_private_json(root / 'pg-source-binding.json', {
+        'files': len(pg_files), 'match': True, 'extension_sha256': old_pg['extension_sha256']})
+    cli('squad-prepare', 'code/scripts/baselines/squad_pg_map_pilot.py', [
+        'prepare', '--source', prior / 'dev-v1.1.json', '--rows-per-split', '64',
+        '--output-dir', root / 'squad'])
+    raw_share = Path('/root/autodl-tmp/ai-operator/data/raw/sharegpt_vicuna/ShareGPT_V3_unfiltered_cleaned_split.json')
+    share_sha = digest(raw_share)
+    cli('sharegpt-prepare', 'code/scripts/baselines/map_workload_tools.py', [
+        'sharegpt', '--source', raw_share, '--source-sha256', share_sha,
+        '--count', '16', '--output-dir', root / 'sharegpt'])
+    squad = json.loads((root / 'squad/manifest.json').read_text())
+    share = json.loads((root / 'sharegpt/manifest.json').read_text())
+    raw = json.loads(raw_share.read_bytes())
+    originals = [(raw[r['source_position']]['id'], first_human_verbatim(raw[r['source_position']]))
+                 for r in share['rows']]
+    selected = [(r['source_example_id'], r['input_text']) for r in share['rows']]
+    roundtrip = verify_text_roundtrip(originals, selected)
+    del raw
+    write_private_json(root / 'sharegpt-source-roundtrip.json', roundtrip)
+    old_share = json.loads((prior / 'sharegpt-manifest.json').read_text())
+    instruction = old_share['instruction']
+    (root / 'sharegpt-instruction.txt').write_bytes(instruction.encode('utf-8'))
+    common = ['tokens', '--tokenizer', model, '--model-id', 'Qwen2.5-7B-Instruct',
+              '--model-revision', binding['revision'], '--context-tokens', '4096']
+    for split in ('tuning', 'evaluation'):
+        cli('tokens-' + split, 'code/scripts/baselines/map_workload_tools.py', [
+            *common, '--manifest', root / 'squad/manifest.json', '--split', split,
+            '--output', root / ('tokens-' + split + '.json')], serving_python)
+    cli('tokens-sharegpt', 'code/scripts/baselines/map_workload_tools.py', [
+        *common, '--manifest', root / 'sharegpt/manifest.json',
+        '--instruction-file', root / 'sharegpt-instruction.txt', '--output-tokens', '128',
+        '--output', root / 'tokens-sharegpt.json'], serving_python)
+    cli('sharegpt-summary', 'code/scripts/baselines/map_workload_tools.py', [
+        'summary', '--manifest', root / 'sharegpt/manifest.json',
+        '--output', root / 'sharegpt-public-summary.json'])
+    summary['tokens'] = {}
+    for name in ('tuning', 'evaluation', 'sharegpt'):
+        value = json.loads((root / ('tokens-' + name + '.json')).read_text())
+        counts = [r['input_tokens'] for r in value['rows']]
+        summary['tokens'][name] = {'rows': len(counts), 'min': min(counts), 'max': max(counts),
+                                  'fits_context': value['fits_context']}
+    pg_root = root / 'offline-pg'
+    pg_root.mkdir(mode=0o700)
+    with isolated_pg18_cluster(prefix, pg_root, pwd.getpwuid(os.getuid()), port=57625) as conn:
+        conn.execute("SET statement_timeout='60s'")
+        expected = [('squad-' + r['source_example_id'], r['input_text'])
+                    for rows in squad['splits'].values() for r in rows]
+        expected += [('share-' + identity, value) for identity, value in selected]
+        expected += [('unicode', '  e\u0301\r\n\t原文  '), ('sensitive', ' password=***  ')]
+        conn.execute('CREATE TEMP TABLE input_check (id text PRIMARY KEY, value text NOT NULL)')
+        with conn.cursor().copy('COPY input_check FROM STDIN') as copy:
+            for row in expected:
+                copy.write_row(row)
+
+        def evaluate_roundtrip(rows):
+            assert (root / 'pg-roundtrip/execution.json').exists()
+            return verify_text_roundtrip(expected, rows)
+
+        pg_check(conn, 'pg-roundtrip', 'SELECT id,value FROM input_check ORDER BY id DESC',
+                 expected=146, evaluator=evaluate_roundtrip)
+        pg_check(conn, 'pg-partial-error', 'SELECT 10/(3-i) FROM generate_series(1,4) AS g(i)',
+                 expected=2, error=psycopg.errors.DivisionByZero)
+        pg_check(conn, 'pg-before-row-error', 'SELECT * FROM missing_table_for_recording_check',
+                 expected=0, error=psycopg.errors.UndefinedTable)
+
+        def fail_evaluation(rows):
+            raise ValueError('deliberate evaluator failure after saved SQL execution')
+
+        result = pg_check(conn, 'pg-evaluator-error', "SELECT 'id','verbatim'", expected=1,
+                          error=ValueError, evaluator=fail_evaluation)
+        assert result['execution_status'] == 'completed' and result['evaluation_status'] == 'failed'
+        pg_check(conn, 'pg-result-limit', 'SELECT i FROM generate_series(1,4) AS g(i)',
+                 expected=2, error=ValueError, max_rows=2)
+        conn.execute("SET statement_timeout='50ms'")
+        pg_check(conn, 'pg-timeout', 'SELECT pg_sleep(0.2)', expected=0,
+                 error=psycopg.errors.QueryCanceled)
+        conn.execute("SET statement_timeout='60s'")
+        pg_check(conn, 'pg-empty', 'SELECT 1 WHERE false', expected=0)
+    assert not (pg_root / 'data/postmaster.pid').exists()
+    summary.update(status='passed', private_source_roundtrip=roundtrip,
+                   source_files=len(manifest['files']), model_files=len(actual), pg_stopped=True)
+finally:
+    write_private_json(root / 'offline-summary.json', summary)
+print(json.dumps(summary, ensure_ascii=False, indent=2))

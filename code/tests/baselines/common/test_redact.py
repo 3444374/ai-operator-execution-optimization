@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import unittest
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from src.baselines.common.redact import (  # noqa: E402
     redact_argument_list,
     redact_database_url,
     redact_text,
+    redact_json_values,
 )
 
 
@@ -86,6 +88,14 @@ class RedactArgumentListTests(unittest.TestCase):
 
 
 class RedactTextTests(unittest.TestCase):
+    def test_structured_redaction_keeps_json_valid_and_input_unchanged(self) -> None:
+        source = {"nested": {"password": "fixture-value"}, "body": ["password=another-fixture", 7, True]}
+        output = redact_json_values(source)
+        self.assertEqual(json.loads(json.dumps(output)), output)
+        self.assertEqual(source["nested"]["password"], "fixture-value")
+        self.assertEqual(output["nested"]["password"], "***")
+        self.assertEqual(output["body"], ["password=***", 7, True])
+
     def test_scrubs_embedded_dsn_in_exception_text(self) -> None:
         msg = "connection failed: postgresql://postgres:postgres@localhost:5432/ai_operator"
         scrubbed = redact_text(msg)

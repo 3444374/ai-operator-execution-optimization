@@ -7,11 +7,11 @@ SQuAD parsing and answer scoring remain in their existing implementations.
 from __future__ import annotations
 
 import hashlib
-import json
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Protocol
 
 from ...observability.metrics.squad import squad_quality_metrics
+from ..common.private_artifacts import content_digest as content_digest
 
 
 WORKLOAD = "squad_v11_pg_map_v1"
@@ -28,12 +28,6 @@ class SquadExample(Protocol):
     context: str
     question: str
     reference_answers: Sequence[str]
-
-
-def content_digest(value: object) -> str:
-    """Hash the full structured value, including list order and Unicode text."""
-    raw = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 def map_messages(input_text: str) -> list[dict[str, str]]:

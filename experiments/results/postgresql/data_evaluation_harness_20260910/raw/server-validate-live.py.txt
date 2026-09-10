@@ -1,0 +1,264 @@
+"""Ten-request server acceptance for the proposed measurement tools, not performance."""
+import argparse
+from collections import Counter
+from contextlib import contextmanager
+import hashlib
+import json
+import os
+from pathlib import Path
+import pwd
+import signal
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--source', type=Path, required=True)
+parser.add_argument('--root', type=Path, required=True)
+args = parser.parse_args()
+sys.path.insert(0, str(args.source / 'code'))
+from src.baselines.common.private_artifacts import content_digest, write_private_json
+from src.infrastructure.environment import load_env_file
+from src.baselines.text.map_inputs import verify_text_roundtrip
+from src.execution_provider.semantic_map import SemanticMapPlan, canonical_messages
+from src.execution_provider.wire.map_codec import semantic_payload_digest
+from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger
+from src.experiments.expected_requests import expected_request_manifest
+from src.experiments.choice_service_checks import verify_prompt_usage
+from src.experiments.postgresql.map_query_recording import record_pg_query, verify_map_completions, public_execution_summary
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster, owned_child_process, wait_for_path
+from src.observability.metrics.squad import squad_quality_metrics
+from transformers import AutoTokenizer
+from psycopg import sql
+
+prepared = args.root
+root = prepared / 'live-attempt3'
+root.mkdir(mode=0o700)
+source = args.source
+live = root / 'live'
+live.mkdir(mode=0o700)
+model = Path('/root/autodl-tmp/models/Qwen2.5-7B-Instruct')
+model_id = 'Qwen2.5-7B-Instruct'
+budget = AttemptBudget('semloom.data-evaluation.harness.20260910', 10)
+ledger = AttemptLedger(prepared / 'live-ledger.jsonl', budget)
+assert ledger.attempts == 0
+summary = {'status': 'failed', 'budget_id': budget.budget_id, 'budget_limit': 10,
+           'reports': [], 'performance_qualified': False}
+user = pwd.getpwuid(os.getuid())
+service_args = ['--model', str(model), '--tokenizer', str(model), '--served-model-name', model_id,
+                '--dtype', 'bfloat16', '--max-model-len', '4096', '--gpu-memory-utilization', '0.8',
+                '--scheduling-policy', 'fcfs', '--max-num-seqs', '4', '--max-num-batched-tokens', '4096',
+                '--tensor-parallel-size', '1', '--host', '127.0.0.1', '--port', '57626',
+                '--generation-config', 'vllm', '--enforce-eager', '--no-enable-prefix-caching']
+
+
+def deadline(_signum, _frame):
+    raise TimeoutError('15 minute acceptance limit reached')
+
+
+def events(path):
+    text = path.read_text()
+    return [json.loads(line) for line in text.splitlines(keepends=True) if line.endswith('\n')]
+
+
+def wait_drained(path):
+    until = time.monotonic() + 20
+    while time.monotonic() < until:
+        current = events(path)
+        opened = sum(r['event'] == 'core_job_opened' for r in current)
+        if opened and opened == sum(r['event'] == 'core_job_drained' for r in current):
+            return
+        time.sleep(.02)
+    raise AssertionError('incremental job did not drain')
+
+
+@contextmanager
+def model_service():
+    for port in (57626,):
+        with socket.socket() as test:
+            test.bind(('127.0.0.1', port))
+    cache = root / 'service-cache'
+    cache.mkdir(mode=0o700)
+    runtime = load_env_file(Path('/root/autodl-tmp/ai-operator-runtime.env'))
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES='0', HF_HUB_OFFLINE='1',
+               CUDA_HOME=runtime['CUDA_HOME'], PATH='/root/autodl-tmp/venvs/vllm-4090/bin:' + runtime['CUDA_NVCC_BIN'] + ':' + os.environ.get('PATH', ''),
+               HF_HOME=str(cache / 'hf'), XDG_CACHE_HOME=str(cache / 'xdg'),
+               VLLM_CACHE_ROOT=str(cache / 'vllm'), TORCHINDUCTOR_CACHE_DIR=str(cache / 'torch'),
+               FLASHINFER_WORKSPACE_BASE=str(cache / 'flashinfer'), TRITON_CACHE_DIR=str(cache / 'triton'),
+               TOKENIZERS_PARALLELISM='false', TMPDIR=str(cache))
+    command = ['/root/autodl-tmp/venvs/vllm-4090/bin/python',
+               str(source / 'code/scripts/services/launch_vllm_with_identity.py'),
+               '--identity-output', str(root / 'vllm-identity.json'), '--port', '57626', '--', *service_args]
+    write_private_json(root / 'service-command.json', {'command': command, 'gpu': '0', 'model_requests_limit': 10, 'cache_environment': {k: env[k] for k in ('FLASHINFER_WORKSPACE_BASE', 'TRITON_CACHE_DIR', 'HF_HOME', 'XDG_CACHE_HOME', 'VLLM_CACHE_ROOT', 'TORCHINDUCTOR_CACHE_DIR', 'TMPDIR', 'CUDA_HOME', 'PATH')}})
+    with (root / 'model.log').open('x') as log:
+        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env,
+                                   start_new_session=True)
+        try:
+            until = time.monotonic() + 240
+            while time.monotonic() < until:
+                if process.poll() is not None:
+                    raise RuntimeError('model exited before ready')
+                try:
+                    with urllib.request.urlopen('http://127.0.0.1:57626/health', timeout=1) as response:
+                        if response.status == 200:
+                            break
+                except OSError:
+                    time.sleep(.5)
+            else:
+                raise TimeoutError('model readiness deadline')
+            with urllib.request.urlopen('http://127.0.0.1:57626/v1/models', timeout=2) as response:
+                models = json.load(response)
+            assert [r['id'] for r in models['data']] == [model_id]
+            identity = json.loads((root / 'vllm-identity.json').read_text())
+            assert identity['pid'] == process.pid and identity['package_version'] == '0.25.1'
+            argv = Path(f'/proc/{process.pid}/cmdline').read_bytes().decode().split('\0')[:-1]
+            assert argv[-len(service_args):] == service_args
+            write_private_json(root / 'service-ready.json', {'identity': identity, 'models': models,
+                                                            'actual_argv_matches': True})
+            yield
+        finally:
+            forced = False
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                forced = True
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=10)
+            write_private_json(root / 'service-stop.json', {'returncode': process.returncode, 'forced': forced})
+            assert not forced, 'model service required forced cleanup'
+
+
+def request_body(plan, text):
+    return {'model': plan.model_id, 'messages': json.loads(canonical_messages(plan.instruction, text)),
+            **plan.generation_constraints()}
+
+
+def run_query(conn, name, rows, profile, trace, plan, tokenizer):
+    conn.execute('DROP TABLE IF EXISTS pilot_inputs')
+    conn.execute('CREATE TEMP TABLE pilot_inputs (source_example_id text PRIMARY KEY,input_text text NOT NULL)')
+    inputs = [(r['source_example_id'], r['input_text']) for r in rows]
+    with conn.cursor().copy('COPY pilot_inputs FROM STDIN') as copy:
+        for row in inputs:
+            copy.write_row(row)
+    write_private_json(live / (name + '-input-roundtrip.json'), verify_text_roundtrip(
+        inputs, conn.execute('SELECT source_example_id,input_text FROM pilot_inputs').fetchall()))
+    conn.execute('ANALYZE pilot_inputs')
+    statement = sql.SQL('SELECT source_example_id,ai_semantic.map(input_text,{},{}::jsonb) FROM ONLY pilot_inputs').format(
+        sql.Literal(plan.instruction), sql.Literal(json.dumps({'model': model_id, 'max_tokens': 64, 'temperature': 0})))
+    explain = conn.execute(sql.SQL('EXPLAIN (FORMAT JSON) ') + statement).fetchone()[0]
+    write_private_json(live / (name + '-plan.json'), explain)
+    serialized = json.dumps(explain)
+    assert 'SemLoom SemMap' in serialized
+    if profile == 'incremental-map':
+        assert '"Semantic Input Window": 2' in serialized
+    before_events, before_attempts = len(events(trace)), ledger.attempts
+    directory = live / (name + '-query')
+
+    def evaluate(results):
+        assert json.loads((directory / 'execution.json').read_text())['status'] == 'completed'
+        if profile == 'incremental-map':
+            wait_drained(trace)
+        observed = events(trace)[before_events:]
+        requests = [r for r in observed if r['event'] == 'request']
+        completions = [r for r in observed if r['event'] in ('completion', 'core_map_completion')]
+        bodies = {identity: request_body(plan, text) for identity, text in inputs}
+        assert Counter(r['request_values_sha256'] for r in requests) == Counter(content_digest(b) for b in bodies.values())
+        assert len(completions) == len(inputs)
+        by_digest = {semantic_payload_digest(semantic_spec_sha256=plan.digest, input_value=text,
+                     canonical_messages_utf8=canonical_messages(plan.instruction, text)): identity
+                     for identity, text in inputs}
+        assert len(by_digest) == len(inputs), 'real audit uses unique input payloads'
+        sequence_ids = [None] * len(inputs)
+        normalized = []
+        for offset, completion in enumerate(completions):
+            sequence = completion.get('sequence', offset)
+            identity = by_digest[completion['payload_digest']]
+            assert 0 <= sequence < len(inputs) and sequence_ids[sequence] is None
+            sequence_ids[sequence] = identity
+            normalized.append(dict(completion, sequence=sequence))
+            verify_prompt_usage(tokenizer, bodies[identity], completion)
+            assert completion['prompt_tokens'] > 0 and completion['output_tokens'] > 0
+        association = verify_map_completions(inputs, results, normalized, plan=plan, sequence_ids=sequence_ids)
+        quality = squad_quality_metrics(dict(results), {r['source_example_id']: r['reference_answers'] for r in rows})
+        assert quality['squad_exact_match_percent'] == quality['squad_token_f1_percent'] == 100.0
+        assert ledger.attempts - before_attempts == len(rows)
+        resource = {'http_peak': None, 'final_job_usage': None}
+        if profile == 'incremental-map':
+            active = peak = 0
+            for event in observed:
+                if event['event'] == 'core_http_started':
+                    active += 1; peak = max(peak, active)
+                elif event['event'] == 'core_http_finished':
+                    active -= 1
+                if isinstance(event.get('usage'), dict):
+                    usage = event['usage']
+                    assert usage.get('held_tasks', 0) <= 2
+                    assert usage.get('input_bytes', 0) <= 2 * 1048576
+                    assert usage.get('result_bytes', 0) <= 2 * 1048576
+            drained = [r['usage'] for r in observed if r['event'] == 'core_job_drained']
+            assert active == 0 and 0 < peak <= 2 and drained and all(value == 0 for value in drained[-1].values())
+            resource = {'http_peak': peak, 'final_job_usage': drained[-1]}
+        return {'association': association, 'quality': quality, 'requests': len(requests), **resource,
+                'sequence_mapping_source': 'observed completion sequence plus unique input payload digest',
+                'completion_arrival_sequences': [r['sequence'] for r in normalized],
+                'prompt_usage_matches_actual_tokenizer': True, 'original_outbound_messages_match': True}
+
+    record_pg_query(conn, statement, directory, max_rows=len(rows), max_result_bytes=1048576,
+                    evaluator=evaluate, metadata={'name': name, 'profile': profile, 'semantic_spec_sha256': plan.digest})
+    evaluation = json.loads((directory / 'evaluation.json').read_text())
+    return {'name': name, **public_execution_summary(directory), **evaluation['result']}
+
+
+signal.signal(signal.SIGALRM, deadline)
+signal.alarm(900)
+try:
+    assert json.loads((prepared / 'offline-summary.json').read_text())['status'] == 'passed'
+    source_manifest = json.loads((prepared / 'source_manifest.json').read_text())
+    assert all(hashlib.sha256((source / p).read_bytes()).hexdigest() == sha for p, sha in source_manifest['files'].items())
+    squad = json.loads((prepared / 'squad/manifest.json').read_text())
+    rows = squad['splits']['tuning'][:4]
+    plan = SemanticMapPlan(squad['instruction'], model_id, 64)
+    tokenizer = AutoTokenizer.from_pretrained(str(model), local_files_only=True)
+    config = {'endpoint_url': 'http://127.0.0.1:57626/v1/chat/completions', 'model_id': model_id, 'timeout_ms': 30000}
+    write_private_json(root / 'fixed-model.json', config)
+    with model_service(), isolated_pg18_cluster(Path('/opt/semloom-pg18.3-query-lifecycle'), live, user, port=57627) as conn:
+        for profile, schedule in [('openai-compatible-fixed', [('sync-precheck', rows[:2]), ('sync', rows)]),
+                                  ('incremental-map', [('incremental', rows)])]:
+            sock = live / 'socket' / ('s.sock' if profile == 'openai-compatible-fixed' else 'i.sock')
+            trace = live / (profile + '-private-events.jsonl')
+            expected = live / (profile + '-expected.json')
+            write_private_json(expected, expected_request_manifest(request_body(plan, r['input_text']) for _, subset in schedule for r in subset))
+            command = [sys.executable, '-m', 'src.experiments.choice_gateway_observer',
+                       '--events', str(live / (profile + '-public-events.jsonl')), '--private-events', str(trace),
+                       '--expected-request-hashes', str(expected), '--ledger', str(prepared / 'live-ledger.jsonl'),
+                       '--budget-id', budget.budget_id, '--max-attempts', '10', '--', '--socket', str(sock),
+                       '--fixed-model-config', str(root / 'fixed-model.json'), '--max-active-requests', '2']
+            if profile == 'incremental-map':
+                command += ['--incremental-map', '--max-active-jobs', '1', '--max-held-tasks', '2',
+                            '--input-buffer-bytes', '2097152', '--result-buffer-bytes', '2097152']
+            with owned_child_process(command, live, profile, dict(os.environ, PYTHONPATH=str(source / 'code')), user) as gateway:
+                wait_for_path(sock, gateway)
+                conn.execute("SELECT set_config('semloom_pg.gateway_socket',%s,false)", (str(sock),))
+                conn.execute("SELECT set_config('semloom_pg.provider_execution_profile',%s,false)", (profile,))
+                conn.execute("SET semloom_pg.provider_window_tasks=2; SET semloom_pg.provider_window_bytes='8MB'; SET statement_timeout='60s'")
+                for name, subset in schedule:
+                    report = run_query(conn, name, subset, profile, trace, plan, tokenizer)
+                    summary['reports'].append(report)
+                    write_private_json(live / (name + '-report.json'), report)
+            assert gateway.returncode == 0 and not sock.exists(), 'gateway cleanup'
+            final = [r for r in events(trace) if r['event'] == 'expected_requests_final']
+            assert len(final) == 1 and final[0]['remaining'] == 0
+        assert ledger.attempts == 10
+    assert not (live / 'data/postmaster.pid').exists()
+    summary.update(status='passed', pg_stopped=True, gateways_stopped=True)
+finally:
+    signal.alarm(0)
+    summary['actual_requests'] = ledger.attempts
+    write_private_json(root / 'live-summary.json', summary)
+print(json.dumps(summary, ensure_ascii=False, indent=2))

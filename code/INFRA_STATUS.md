@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：[数据准备与执行记录修复](../experiments/results/postgresql/data_evaluation_harness_20260910/README.md)
+已完成本地/Linux 各 168 项相关测试、真实 PG 的 7 项新 recorder 检查与 SQuAD 10/10 次模型请求。
+新 CLI 原样准备 ShareGPT 16 行并完成实际 tokenizer 检查；PG 146 行文本往返相同，部分结果失败、
+evaluator 失败、结果上限和超时均保存正确状态。同步/增量 Map 原始出站、token usage 和结果关联通过。
+增量 HTTP 峰值 2，最终资源归零；两次模型启动准备失败各 0 POST，原记录保留，临时服务与 ACL 已清理。
+PG/wire/Engine/调度算法未变；ShareGPT 任务质量、容量/组织性能与双副本仍待验证。
+当前在 `codex/data-evaluation-harness`，待按用户授权提交并合入 main；以下记录按当时状态保留。
+
 2026-09-09：[首次真实数据尝试](../experiments/results/postgresql/data_execution_pilot_20260909/README.md)
 使用单 GPU/单 endpoint，共 48/68 次请求后停止。SQuAD 同步与增量各 16 行 EM/F1 均为100%；
 增量检查脚本误把完成顺序当结果顺序，离线按序号/payload 重审通过，原失败和缺失 JCT 保留。

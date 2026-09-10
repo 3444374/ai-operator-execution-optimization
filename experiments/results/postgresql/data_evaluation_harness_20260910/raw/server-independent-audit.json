@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "observed_http_posts": 10,
+  "ledger_attempts": 10,
+  "messages_and_request_hashes_matched": true,
+  "raw_pg_rows_and_quality_matched": true,
+  "timing_and_evaluation_order_matched": true,
+  "expected_error_records_matched": true,
+  "new_model_requests_for_audit": 0
+}

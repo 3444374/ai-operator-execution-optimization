@@ -7,6 +7,7 @@ select fixture mode; resolver blocking is available only in that mode.
 import argparse
 from contextlib import ExitStack, nullcontext
 from dataclasses import asdict
+import hashlib
 import json
 from pathlib import Path
 import socket
@@ -23,7 +24,9 @@ from src.experiments.attempt_ledger import (
     observe_async_http_posts,
 )
 from src.experiments.gateway_observer import ObservedAdapter, SessionObserver
-from src.baselines.common.redact import redact_text
+from src.baselines.common.redact import redact_json_values
+from src.baselines.common.private_artifacts import content_digest, open_private_text
+from src.experiments.expected_requests import ExpectedRequests
 
 
 CHOICE_BUDGET = AttemptBudget("semloom.choice.4c.v1", 100)
@@ -32,6 +35,9 @@ CHOICE_BUDGET = AttemptBudget("semloom.choice.4c.v1", 100)
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--events", type=Path, required=True)
+    parser.add_argument("--private-events", type=Path, help="verbatim private events outside Git")
+    parser.add_argument("--expected-request-hashes", type=Path,
+                        help="complete request-value multiset checked before HTTP send")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--ledger", type=Path)
     mode.add_argument("--fixture-only", action="store_true")
@@ -50,15 +56,21 @@ def main(argv=None):
         parser.error("--budget-id and --max-attempts must be supplied together")
     if args.fixture_only and args.budget_id is not None:
         parser.error("fixture mode cannot select a real request budget")
+    if args.expected_request_hashes and not args.ledger:
+        parser.error("expected-request hashes require an existing durable ledger")
     budget = (
         CHOICE_BUDGET
         if args.budget_id is None
         else AttemptBudget(args.budget_id, args.max_attempts)
     )
     ledger = AttemptLedger(args.ledger, budget) if args.ledger else None
+    expected = (ExpectedRequests.load(args.expected_request_hashes,
+                available_attempts=budget.limit-ledger.attempts)
+                if args.expected_request_hashes else None)
     args.events.touch(exist_ok=False)
     record_lock = threading.Lock()
     session_observer = SessionObserver(lambda event: None)
+    private_handle = None
 
     def record(event):
         event = dict(
@@ -66,8 +78,11 @@ def main(argv=None):
             monotonic_ns=time.monotonic_ns(),
         )
         with record_lock, args.events.open("a", encoding="utf-8") as handle:
+            if private_handle is not None:
+                private_handle.write(json.dumps(event, ensure_ascii=False) + "\n")
+                private_handle.flush()
             handle.write(
-                redact_text(json.dumps(event, ensure_ascii=False, separators=(",", ":"))) + "\n"
+                json.dumps(redact_json_values(event), ensure_ascii=False, separators=(",", ":")) + "\n"
             )
 
     def observe_completion(request, complete):
@@ -116,15 +131,24 @@ def main(argv=None):
         observe = (
             observe_async_http_posts if "--incremental-map" in gateway_args else observe_http_posts
         )
-        observer = observe(
-            ledger,
-            lambda attempt, body: record(
-                dict(event="request", attempt=attempt, body=json.loads(body))
-            ),
-        )
+        def observe_request(attempt, body):
+            values = json.loads(body)
+            identity = dict(attempt=attempt, request_bytes_sha256=hashlib.sha256(body).hexdigest(),
+                            request_values_sha256=content_digest(values))
+            if expected is not None:
+                try:
+                    expected.accept(values)
+                except BudgetError:
+                    record(dict(event="request_rejected_before_send", **identity))
+                    raise
+            record(dict(event="request", body=values, **identity))
+
+        observer = observe(ledger, observe_request)
     gateway_args = gateway_args[1:] if gateway_args[:1] == ["--"] else gateway_args
     try:
         with ExitStack() as stack:
+            if args.private_events:
+                private_handle = stack.enter_context(open_private_text(args.private_events))
             if args.session_events:
                 handle = stack.enter_context(
                     args.session_events.open("x", encoding="ascii", buffering=1)
@@ -146,9 +170,14 @@ def main(argv=None):
                 options["incremental_observer"] = lambda event: record(
                     dict(event, event="core_" + event["event"])
                 )
-            return server.main(
+            code = server.main(
                 gateway_args, adapter_wrapper=wrap_adapter, session_wrapper=wrap_session, **options
             )
+            if expected is not None:
+                record(dict(event="expected_requests_final", remaining=expected.remaining))
+                if code == 0 and expected.remaining:
+                    return 1
+            return code
 
     finally:
         socket.getaddrinfo = original_resolve

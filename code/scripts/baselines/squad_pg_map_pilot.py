@@ -18,9 +18,13 @@ from scripts.data.import_squad_workload import (  # noqa: E402
     _validate_dev_count, _validate_dev_sha256, parse_squad_dev,
 )
 from src.baselines.text.squad_map import (  # noqa: E402
-    SPLITS, evaluate_predictions, prepare_manifest,
+    SPLITS, evaluate_predictions, prepare_manifest, validate_manifest,
 )
 from src.baselines.common.redact import redact_text  # noqa: E402
+from src.baselines.common.private_artifacts import (  # noqa: E402
+    new_private_directory, open_private_text, write_private_json,
+)
+from src.baselines.text.map_inputs import verify_text_roundtrip  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,13 +47,21 @@ def main(argv: list[str] | None = None) -> int:
         examples = parse_squad_dev(json.loads(raw))
         _validate_dev_count(len(examples))
         manifest = prepare_manifest(examples, digest, rows_per_split=args.rows_per_split)
-        args.output_dir.mkdir(parents=True, exist_ok=False)
-        (args.output_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+        new_private_directory(args.output_dir)
+        write_private_json(args.output_dir / "manifest.json", manifest)
+        restored = json.loads((args.output_dir / "manifest.json").read_text())
+        validate_manifest(restored)
+        if restored != manifest:
+            raise ValueError("SQuAD prepared manifest roundtrip mismatch")
         for split in SPLITS:
-            with (args.output_dir / f"{split}.csv").open("x", newline="", encoding="utf-8") as stream:
+            expected = [(row["source_example_id"], row["input_text"]) for row in manifest["splits"][split]]
+            with open_private_text(args.output_dir / f"{split}.csv", newline="") as stream:
                 writer = csv.writer(stream)
                 writer.writerow(["source_example_id", "input_text"])
-                writer.writerows((row["source_example_id"], row["input_text"]) for row in manifest["splits"][split])
+                writer.writerows(expected)
+            with (args.output_dir / f"{split}.csv").open(newline="", encoding="utf-8") as stream:
+                actual = [(row["source_example_id"], row["input_text"]) for row in csv.DictReader(stream)]
+            verify_text_roundtrip(expected, actual)
         print(json.dumps({"status": "prepared", "manifest_sha256": manifest["sha256"], "model_requests": 0}))
         return 0
     manifest = json.loads(args.manifest.read_text())

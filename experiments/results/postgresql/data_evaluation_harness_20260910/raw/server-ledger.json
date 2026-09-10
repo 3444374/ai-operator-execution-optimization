@@ -1,0 +1,47 @@
+[
+  {
+    "schema_version": 1,
+    "budget_id": "semloom.data-evaluation.harness.20260910",
+    "limit": 10
+  },
+  {
+    "attempt": 1,
+    "request_sha256": "c8fd7ea35bb5468f9ac4fe447ee9f25b4ce2059c6d95d211cf21c0d2b6e6a45f"
+  },
+  {
+    "attempt": 2,
+    "request_sha256": "43792868ce984520a6d0b29c61e0c24417952f05691b348981f45a27414fda07"
+  },
+  {
+    "attempt": 3,
+    "request_sha256": "c8fd7ea35bb5468f9ac4fe447ee9f25b4ce2059c6d95d211cf21c0d2b6e6a45f"
+  },
+  {
+    "attempt": 4,
+    "request_sha256": "43792868ce984520a6d0b29c61e0c24417952f05691b348981f45a27414fda07"
+  },
+  {
+    "attempt": 5,
+    "request_sha256": "7e2956416b0f52986c54eafeaca8da3eb3980ce67117034824e394318f6a6eee"
+  },
+  {
+    "attempt": 6,
+    "request_sha256": "96b69f6057f191274007f65e305e93f431ace1c7fe1bb2e84ae44d5ec3c2852f"
+  },
+  {
+    "attempt": 7,
+    "request_sha256": "c8fd7ea35bb5468f9ac4fe447ee9f25b4ce2059c6d95d211cf21c0d2b6e6a45f"
+  },
+  {
+    "attempt": 8,
+    "request_sha256": "43792868ce984520a6d0b29c61e0c24417952f05691b348981f45a27414fda07"
+  },
+  {
+    "attempt": 9,
+    "request_sha256": "7e2956416b0f52986c54eafeaca8da3eb3980ce67117034824e394318f6a6eee"
+  },
+  {
+    "attempt": 10,
+    "request_sha256": "96b69f6057f191274007f65e305e93f431ace1c7fe1bb2e84ae44d5ec3c2852f"
+  }
+]

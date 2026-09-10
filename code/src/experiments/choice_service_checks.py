@@ -14,6 +14,7 @@ import time
 from src.baselines.common.redact import redact_text
 from src.experiments.attempt_ledger import AttemptLedger
 from src.experiments.choice_gateway_observer import CHOICE_BUDGET
+from src.modalities.text.tokenization import chat_token_count
 
 
 MODEL = 'Qwen2.5-1.5B-Instruct'
@@ -51,9 +52,7 @@ def verify_completion(completion, plan, sqlstate, model):
 
 def verify_prompt_usage(tokenizer, request, completion):
     """Compare reported prompt usage with the tokenizer's rendered messages."""
-    tokens = tokenizer.apply_chat_template(
-        request['messages'], tokenize=True, add_generation_prompt=True, return_dict=False)
-    if completion['prompt_tokens'] != len(tokens):
+    if completion['prompt_tokens'] != chat_token_count(tokenizer, request['messages']):
         raise ValueError('reported prompt usage differs from chat template tokens')
 
 

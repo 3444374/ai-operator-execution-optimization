@@ -1,10 +1,13 @@
 # 研究内容一：动态数据组织与批处理构造策略实验计划
 
-> **当前状态（2026-09-09）**：近期执行合同由下方“当前 PG 单 Map 数据执行切片”维护。
+> **当前状态（2026-09-10）**：近期执行合同由下方“当前 PG 单 Map 数据执行切片”维护。
 > 已有外部文本组织实验和 cache-on 双/四 endpoint 结果保留，不能移作当前 PG 路径的性能证据。
 > 本轮先准备真实数据与评价，再测静态容量和有限窗口组织；多 Job 紧随其后，按实测需要复用旧策略。
-> 首次尝试已使用 48/68 次请求并停止：SQuAD 关联/质量检查可用，ShareGPT 未通过；
+> 首次尝试已使用 48/68 次请求并停止：SQuAD 小样本可用，ShareGPT 的请求意图摘要配置与输入准备未通过；
 > [结果与失败审计](../results/postgresql/data_execution_pilot_20260909/README.md)保留原始原因。
+> 工具修复完成本地/Linux 各 168 项相关测试、7 项真实 PG 检查和 SQuAD 新账本 10/10 次模型验收，
+> 见[修复验证](../results/postgresql/data_evaluation_harness_20260910/README.md)。出站一致性与资源回收通过，
+> ShareGPT 任务质量、静态容量、组织性能及双副本验证仍待执行。
 > 已完成合同见 [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
 
 ## 当前 PG 单 Map 数据执行切片
@@ -97,6 +100,45 @@ credit 阻止空闲容量利用；存储预算不能一并取消。公平策略�
 
 ### 首次尝试后的决定
 
+2026-09-10 用户授权在恢复后的服务器验收当前工具修复，通过后提交、推送并合入 main。
+验收使用从 Git 基线 `687eb8de` 建立的隔离 worktree 与可复核的待提交补丁，核对全部代码身份；
+不更改服务器主工作目录。先执行相关 Linux 回归、新 CLI 的实际源文件准备与 tokenizer 检查，
+再验证新 recorder 的真实 PG 成功/部分结果失败/evaluator 失败记录与连接释放。
+真实模型只使用已核对 revision/文件哈希的 Qwen2.5-7B-Instruct 单 TP1 副本，沿用旧功能检查配置；
+新账本 `semloom.data-evaluation.harness.20260910` 最多 10 次：SQuAD 同步预检 2 行、同步 4 行、
+增量 4 行。每次请求的完整消息/生成参数必须在发送前与预期哈希清单匹配；旧 48/68 账本保持不变。
+PG 单语句上限 60 s、单次模型请求 30 s、模型准备与验收总墙钟上限 15 min；超时、质量/身份错误、
+丢行重复或资源未释放即停止，不自动重试或改提示。ShareGPT 仅准备与文本/上下文检查，不发送模型请求。
+本次不测容量/性能或双副本，检查结果不能替代这些资格。所有原文留在仓库外，失败和部分结果保留；
+结束时停止本轮 PG、gateway、模型及恢复临时 ACL。验收通过后按用户授权提交、推送并合并 main。
+
+2026-09-10 按后续审查收敛本轮修改：先补私有输入准备、文本往返与 token ID 计数，再补执行记录与
+按身份关联；本轮不使用剩余模型额度。数据源 ShareGPT 仍可继续使用，暂停的是当次“首个 human
+请求的一句话意图摘要”配置。第 12 行输入 450 tokens，加 128 输出预算仍低于 4096；失败是输出
+达到预算且任务偏离，不是 PG/SemLoom 静默截短输入。允许未来显式选择新任务/提示/合法预算，
+不能放宽 stop 规则、暗改数据或把新配置结果并入旧实验。
+
+本轮工具切片基于 `687eb8de`，属于测量修复而非新机制：
+
+| 复用与新落点 | 已核对行为及决定 | 验证 |
+|---|---|---|
+| `baselines.common` 私有工件写入与完整值哈希 | workload 原文原样保存；公开摘要另有 schema，不可反读为 workload；旧 SQuAD schema/消息保持兼容 | 含敏感形态的合成文本、Unicode/空白逐字往返、拒绝覆盖、文件权限 |
+| 新 ShareGPT 首个 human 原文入口 | 旧 `import_ai_complete_workload.first_human_prompt` 调用 normalize_text，不适合此次原样合同；保留旧 importer，新增明确身份的原文选样 | 第一 human 为空、非字符串、缺 ID/重复 ID、字节筛选、不得裁剪或规范化 |
+| 统一完整 chat token 计数 | 复用 `choice_service_checks.verify_prompt_usage` 已有 return_dict=False 思路，严格提取 input_ids，验证 token 类型、完整模板与上下文 | list/dict 返回、错误结构、上下文等号与超限、原始输入不变 |
+| `experiments.postgresql` 查询记录与关联 | 复用 psycopg Cursor.stream/closing；起点先持久化，完成/异常保存终点及已消费结果，随后评价；不要求模型完成有序 | 执行前失败、部分结果后异常、评价失败、取消、乱序及重复/错配拒绝 |
+| 既有 `choice_gateway_observer` 与 attempt ledger | 可选完整请求值哈希白名单在 HTTP 发送前验证；实际哈希先于公开脱敏计算，旧默认入口继续有效 | 配平请求通过；改文/参数漂移/超出次数均在发送前拒绝；不取消额度记账 |
+
+已核对主架构 §8.7–8.8：沿用 PG/语义计划/外部 transport 的职责；不涉及公司源码或其材料分发，
+也不改 PG/wire/Engine。参考 [Transformers chat templates](https://huggingface.co/docs/transformers/main/en/chat_templating)
+与 [psycopg stream](https://www.psycopg.org/psycopg3/docs/api/cursors.html#psycopg.Cursor.stream) 的公开接口；
+私有文件和记录先后顺序是工程决策。只有使用这些工具完成实际路径验证后，才能扩大对应结论。
+
+SemBench 明确保留为 SQuAD 执行画像之后的语义查询评测：先核验作者版本、Movie 原始查询与
+evaluator，再进行小样本适配；带 LIMIT 的原始查询测完整查询完成，另立 Movie-derived 全扫描
+Filter 任务测全扫描质量与执行。保留各自结果目标，不删 LIMIT 后仍称原查询。依据
+[SemBench 官方入口](https://sembench.github.io/SemBench/)及 baseline reference；当前尚未构建/运行，
+版本、数据和请求额度须在该阶段确定，不把它当作调度算法或要求实现其全部算子。
+
 2026-09-09 本轮只使用一张 GPU、一个固定模型实例，属于正确性检查。两卡空闲不等于两卡已被
 当前 PG 路径使用；默认装配只有一个 endpoint。后续性能实验分别保留单卡参照与双卡目标拓扑：
 双卡优先采用两个同模型 TP1 副本（每副本独占一张 GPU），先按[多 endpoint 接入设计](postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)
@@ -109,7 +151,7 @@ credit 阻止空闲容量利用；存储预算不能一并取消。公平策略�
 第一次增量 SQL 的计时在检查失败前未保存，不能由事件区间补成 JCT；后续必须在验证前保存
 查询起止、失败和部分结果。关联按任务序号与 payload digest 校验，不能要求完成事件按序到达。
 
-ShareGPT 维持暂停：发现任务执行代替摘要、输入指令干扰和第 12 行 `finish_reason=length`；
+ShareGPT 当次摘要配置维持暂停：发现任务执行代替摘要、输入指令干扰和第 12 行 `finish_reason=length`；
 另有一行被临时准备脚本的证据脱敏改写，因此本轮不具备原样数据身份。后续如继续，应先将
 私有 workload 准备与公开证据脱敏分开，验证源文本逐字/哈希往返；改变输入或提示时显式建立
 派生任务版本。临时脚本尚不能作为可复用 runner。tokenizer 返回值须取 token ID 序列，不能

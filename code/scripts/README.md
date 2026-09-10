@@ -44,8 +44,49 @@ EM/F1 为答案完全匹配率与词重叠 F1，均采用百分数；完整关�
 输出目录/报告已存在则拒绝覆盖。完整数据与预测留在仓库外；CSV 只用于明确有行数上限的小样本，
 不能由此声称大规模流式输入或有界客户端内存已经实现。
 
+准备目录现在必须位于 Git checkout 之外，目录权限为 0700，私有文件为 0600；写入后重新读取
+JSON/CSV 核对完整文本。公开证据脱敏不能用于准备输入。
+
+`baselines/map_workload_tools.py` 提供 `sharegpt`、`tokens`、`summary` 三个离线子命令。
+ShareGPT 只保留首个 human 的原文，不自动选择任务、裁剪或规范化空白；选样范围是 UTF-8 字节数。
+源文件 SHA256 必须事先核对，最多读取 1 GiB JSON 文件，属于有规模上限的准备工具。
+
+```sh
+python3 code/scripts/baselines/map_workload_tools.py sharegpt \
+  --source /path/to/source.json --source-sha256 "$SOURCE_SHA256" \
+  --count 16 --minimum-bytes 256 --maximum-bytes 2048 --output-dir /path/to/new-private-workload
+python3 code/scripts/baselines/map_workload_tools.py tokens \
+  --manifest /path/to/new-private-workload/manifest.json \
+  --instruction-file /path/to/instruction.txt --output-tokens 128 \
+  --tokenizer /path/to/local-tokenizer --model-id "$MODEL_ID" --model-revision "$MODEL_REVISION" \
+  --context-tokens 4096 --output /path/to/new-private-workload/context.json
+python3 code/scripts/baselines/map_workload_tools.py summary \
+  --manifest /path/to/new-private-workload/manifest.json --output /path/to/public-summary.json
+```
+
+这些参数仅演示接口，不代表 ShareGPT 的提示或预算已验证。`tokens` 要求已有本地 Transformers
+和 tokenizer，禁止下载；SQuAD 改用 `--split tuning` 或 `evaluation`，从清单读取指令与预算。
+计数使用完整 chat template 的 token IDs，任何行的输入 tokens 加输出预算超出上下文时退出 1。
+报告记录实际模板与 tokenizer 文件哈希；调用者声明的 revision 仍须与真实服务核对。
+`summary` 只输出独立 schema 的计数与哈希，不能作为 workload 重新读入。
+
+查询记录 API 位于 `src/experiments/postgresql/map_query_recording.py`。`record_pg_query` 接收
+调用者已有的 connection、SQL、新私有目录和结果行数/字节上限；调用者负责有限 statement timeout、
+请求账本、事务和服务生命周期。先保存 `started.json`，消费时追加 `results.jsonl`，成功或异常均
+尝试保存 `execution.json`，之后才写独立 `evaluation.json`。异常继续抛出，部分结果不可当作成功结果。
+记录包含写盘开销；磁盘故障/进程被强制终止时无法保证终点落盘，也不因此证明客户端或 PG RSS 有界。
+`verify_text_roundtrip` 可核对准备值与 PG 读回值；`verify_map_completions` 需要实际 producer 序号，
+按 ID、payload digest、输出、模型与 stop 检查，不从无 ORDER BY 的 SQL 推断输入顺序。
+
 `choice_gateway_observer` 的请求、完成与核心事件新增 `monotonic_ns`（观测时单机单调时钟，纳秒），
 可同本机 SQL 计时关联；它不是服务内部阶段时钟，也不能跨机器直接相减。
+
+观测器可用 `--private-events /path/to/new-private-events.jsonl` 另存完整原文。`--events` 仍为
+脱敏事件，采用字段值脱敏后 JSON 序列化；公开前仍需隐私审查，脱敏器不保证移除任意个人信息。
+可选 `--expected-request-hashes` 接收 `expected_requests.expected_request_manifest(bodies)` 生成的
+完整请求值哈希及次数清单，必须配合已有 durable ledger。JSON 转义/字段顺序不影响值哈希；文本、
+生成选项或次数漂移在 HTTP 发送前拒绝。拒绝仍消耗已预留的 1 次账本额度，真实 POST 为 0，不退款或重试。
+退出时还有预期请求未出现则返回 1。哈希清单应由独立核对的预期消息构建；它不替代源数据/PG 读回检查。
 
 ## PostgreSQL semantic execution-provider gateway
 
