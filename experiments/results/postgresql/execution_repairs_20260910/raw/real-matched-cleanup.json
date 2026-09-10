@@ -1,0 +1,21 @@
+{
+  "scope": "A2 model and two diagnostic clusters only; other controlled cluster and task ACL remain",
+  "model_exit": 0,
+  "forced": false,
+  "pg_exit": {
+    "old": 0,
+    "new": 0
+  },
+  "rebind_ports": [
+    57644,
+    57645,
+    57646
+  ],
+  "gpu_memory_mib": [
+    1,
+    1
+  ],
+  "gpu_compute_processes": [],
+  "actual_model_posts": 8448,
+  "elapsed_seconds": 423.4660892486572
+}

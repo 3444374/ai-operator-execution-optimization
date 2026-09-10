@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：A2匹配真实诊断完成18单元、8,448模型POST，423.47秒内正常停止模型和两套诊断PG。
+L64/结果32MiB：offer 23836/24042→862/858，JCT约17→10秒；其他配置无一致改善。
+全部单元出站/绑定/资源核对通过，新臂无相关release前重复offer为0。短查询不构成强D0或组织收益证据。
+[全部重复与限制](../experiments/results/postgresql/execution_repairs_20260910/README.md#同配置的真实模型修复前后诊断)。下方旧状态按当时记录保留。
+
 2026-09-10：A匹配诊断首个预热在gateway启动前失败，0模型POST、128预留未领取；模型与两套诊断PG
 已正常关闭。runner已显式传递子进程绝对源码目录，移除调用者PYTHONPATH后实际PG/HTTP及相关37项通过。
 失败与修复见[启动记录](../experiments/results/postgresql/execution_repairs_20260910/README.md#真实诊断的零请求启动失败与修复)。
