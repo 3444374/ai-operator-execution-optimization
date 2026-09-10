@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：A匹配诊断首个预热在gateway启动前失败，0模型POST、128预留未领取；模型与两套诊断PG
+已正常关闭。runner已显式传递子进程绝对源码目录，移除调用者PYTHONPATH后实际PG/HTTP及相关37项通过。
+失败与修复见[启动记录](../experiments/results/postgresql/execution_repairs_20260910/README.md#真实诊断的零请求启动失败与修复)。
+
 2026-09-10：[执行修复工作包 A](../experiments/results/postgresql/execution_repairs_20260910/README.md)
 完成代码和受控验证：查询错误先于流清理记录，三类错误独立保留；共同期限与单元失败证据；观测内容/
 写入方式分开；永久单项超限明确拒绝；PG反压等相关结果释放后再探测；Core/gateway有立即工作时有界推进。

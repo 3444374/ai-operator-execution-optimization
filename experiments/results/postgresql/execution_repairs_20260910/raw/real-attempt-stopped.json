@@ -1,0 +1,20 @@
+{
+  "schema": "semloom.execution_repair_real_attempt.v1",
+  "outcome": "stopped_before_gateway_ready",
+  "authorized_model_posts": 8448,
+  "allocated_requests": 128,
+  "claimed_units": 0,
+  "actual_model_posts": 0,
+  "completed_cells": 0,
+  "elapsed_seconds": 204.30566501617432,
+  "model_exit_code": 0,
+  "forced_kill": false,
+  "pg_stop_exit": {
+    "old": 0,
+    "new": 0
+  },
+  "model_port_rebind_verified": true,
+  "cause": "gateway subprocess lacked absolute source PYTHONPATH",
+  "automatic_retry": false,
+  "budget_refunded": false
+}

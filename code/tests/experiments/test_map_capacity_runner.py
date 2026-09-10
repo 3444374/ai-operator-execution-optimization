@@ -1,6 +1,7 @@
 """Exercise sampling and the real cell lifecycle with bounded, zero-network HTTP."""
 import asyncio
 import json
+import os
 from pathlib import Path
 import tempfile
 import time
@@ -26,6 +27,22 @@ def examples():
 
 
 class CapacityTests(unittest.TestCase):
+    def test_gateway_launch_supplies_source_path_without_caller_pythonpath(self):
+        from unittest.mock import Mock
+        from src.experiments.postgresql.cell_evidence import CellErrors
+        from src.experiments.postgresql.map_capacity_runner import _run_pg
+        module = 'src.experiments.postgresql.map_capacity_runner.'
+        config = CellConfig('cell', 'pg', 'tuning', 4, 1, 2, 4, 4*1048576, 4*1048576, 8388608)
+        with tempfile.TemporaryDirectory(dir='/tmp') as directory, patch.dict(os.environ):
+            os.environ.pop('PYTHONPATH', None)
+            root = Path(directory)
+            with patch(module + '_prepare_pg', return_value='SELECT 1'), \
+                 patch(module + 'owned_child_process', side_effect=RuntimeError('captured launch')) as launch:
+                _run_pg(config, [], None, SimpleNamespace(execute=Mock()), root / 'pg.log', root / 'model',
+                        root / 'budget', AttemptBudget('fixture', 4), root, CellErrors())
+            environment = launch.call_args.args[3]
+            self.assertEqual(environment['PYTHONPATH'].split(os.pathsep)[0], str(Path(__file__).resolve().parents[2]))
+
     def test_partial_summary_does_not_hide_independent_cell_evidence(self):
         from src.experiments.postgresql.cell_evidence import collect_cell_evidence
         with tempfile.TemporaryDirectory() as directory:

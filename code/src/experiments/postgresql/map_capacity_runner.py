@@ -322,7 +322,10 @@ def _run_pg(config, rows, plan, connection, pg_log, fixed_file, budget_file, bud
         connection.execute('CREATE TEMP TABLE capacity_inputs (source_example_id text PRIMARY KEY,input_text text NOT NULL)')
         table_created = True
         statement = _prepare_pg(connection, rows, plan, root, config, socket)
-        with owned_child_process(command, root, 'gateway', os.environ.copy(), None) as gateway:
+        environment = os.environ.copy()
+        environment['PYTHONPATH'] = os.pathsep.join(filter(None, (
+            str(Path(__file__).resolve().parents[3]), environment.get('PYTHONPATH'))))
+        with owned_child_process(command, root, 'gateway', environment, None) as gateway:
             with errors.capture('gateway_execution'):
                 wait_for_path(socket, gateway)
                 pids = {'consumer': os.getpid(), 'gateway_core': gateway.pid,

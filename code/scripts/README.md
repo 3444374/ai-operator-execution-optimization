@@ -142,6 +142,7 @@ PG runner 读取实际 server log 中默认关闭的 `semloom_pg.test_map_bindin
 `query_error/cleanup_error/recording_error`；后续错误不覆盖第一原因。`statement_timeout_ms` 同时作为
 两臂查询期限：PG 设置 statement timeout 并用有限客户端取消兜底，direct 使用异步期限。
 PG 容量 API 必须传入专用、空闲、autocommit 连接；通用 recorder 不接管事务。
+runner为gateway子进程显式传递自身的绝对源码目录，不依赖调用者设置PYTHONPATH或保持仓库工作目录。
 准备／执行／评价失败时仍保存可取得的单元证据，未知资源状态不写成零。
 
 真实 PG＋本地 HTTP 的 opt-in 检查入口为

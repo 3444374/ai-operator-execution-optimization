@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-09-10：A真实匹配诊断因gateway子进程缺源码路径在首个预热前停止，0模型POST、128预留未领取；
+模型正常退出，两套诊断PG停止，204.31秒内结束。runner源码路径修复通过实际PG/HTTP与相关37项检查，
+没有自动重试。[失败与修复](postgresql/execution_repairs_20260910/README.md#真实诊断的零请求启动失败与修复)。
+
 2026-09-10：[查询计时、错误保留与执行推进修复](postgresql/execution_repairs_20260910/README.md)。
 来源：源码、受控时钟、真实PG/production gateway和本地HTTP fixture；真实模型请求0。
 旧pump受控32行offer660次、修复后62次，接纳/后端提交均32，无相关释放的重复探测598→0；不据此声称模型性能收益。

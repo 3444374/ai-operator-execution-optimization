@@ -12,6 +12,7 @@ from pathlib import Path
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from src.baselines.common.private_artifacts import content_digest, write_private_json
 from src.experiments.attempt_ledger import AttemptBudget
@@ -93,8 +94,9 @@ class PgQueryExecutionIntegrationTests(unittest.TestCase):
         for arm in ('pg', 'direct'):
             for content, mode in (('full', 'buffered'), ('compact', 'synchronous')):
                 unit = arm[0] + content[0]
-                with self.subTest(arm=arm, content=content, mode=mode), \
+                with self.subTest(arm=arm, content=content, mode=mode), patch.dict(os.environ), \
                      psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'], autocommit=True) as connection:
+                    os.environ.pop('PYTHONPATH', None)
                     config = CellConfig(unit, arm, 'tuning', 4, 2, 2, 4, 4*1048576,
                                         2*1048576, 8388608, event_content=content, event_write_mode=mode)
                     result = run_cell(config, manifest=self.manifest, fixed_model_file=self.model,
