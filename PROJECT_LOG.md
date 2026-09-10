@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-09-10：基础数据组织工作包 D
+
+- 复用WorkWindowOrganizer、typed work和SessionEngine；三种控制共享固定请求、活跃token与字节容量，完整消息不改写。
+- 加入本地tokenizer身份核对和逐行实际usage审计；检查候选确为当时已接纳队列前缀，组织与实际提交分别记录。
+- Linux调度369/provider55/PG合同116/审计6、PG TAP2138通过；108受控HTTP加新408真实POST全部通过，244.96秒。
+- rows/work分组变化未改变HTTP顺序；length改变顺序且128行预测一致。短查询只验证行为与资源，不登记性能贡献。
+- C提交4f626bda已合入并推送main。D模型、自有PG和任务进程已停止，C/D临时ACL恢复；726份代码与模型运行一致。
+- [完整报告与证据](experiments/results/postgresql/map_organization_20260910/README.md)。E/F未启动。
+
 ## 2026-09-10：PG留存总字节预算工作包 C
 
 - total模式默认OFF，实际行内存及固定元数据计费；单行暂存独立、结果接纳前预留、消费后释放。

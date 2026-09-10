@@ -10,11 +10,14 @@ from .service_quantum import slice_service_quanta
 @dataclass(frozen=True)
 class WorkWindowOrganizer:
     max_members: int
-    target_work: int
+    target_work: int | None
     shortest_first: bool = False
+    candidate_window_rows: int | None = None
 
     def __post_init__(self):
-        if any(type(v) is not int or v <= 0 for v in (self.max_members, self.target_work)):
+        values = [self.max_members]
+        values.extend(v for v in (self.target_work, self.candidate_window_rows) if v is not None)
+        if any(type(v) is not int or v <= 0 for v in values):
             raise ValueError("organization limits must be positive integers")
         if type(self.shortest_first) is not bool:
             raise ValueError("shortest_first must be boolean")
@@ -22,6 +25,8 @@ class WorkWindowOrganizer:
     def __call__(self, window: tuple[TaskCandidate, ...]) -> tuple[TaskKey, ...]:
         if not window:
             return ()
+        if self.candidate_window_rows is not None:
+            window = window[:self.candidate_window_rows]
         if any(candidate.task.info is None or candidate.spec is None for candidate in window):
             raise ValueError("work organization requires typed task information")
 
@@ -43,6 +48,8 @@ class WorkWindowOrganizer:
         if self.shortest_first:
             group.sort(key=lambda candidate: candidate.task.estimated_work)
         group = group[: self.max_members]
+        if self.target_work is None:
+            return tuple(candidate.key for candidate in group)
         quantum = slice_service_quanta(
             [candidate.task.estimated_work for candidate in group], self.target_work
         )[0]

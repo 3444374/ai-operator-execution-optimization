@@ -46,6 +46,7 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="incremental accepted task budget; defaults to request capacity",
     )
     parser.add_argument("--input-buffer-bytes", type=int, help="incremental input byte budget")
+    parser.add_argument("--organization-config", type=Path, help="local Map token-work organization configuration")
     parser.add_argument(
         "--result-buffer-bytes", type=int, help="incremental reserved result byte budget"
     )
@@ -129,6 +130,11 @@ def main(
         raise SystemExit("active Jobs must fit connection capacity")
     if args.max_active_jobs != 1 and not args.incremental_map:
         raise SystemExit("multiple active Jobs require --incremental-map")
+    if args.organization_config is not None:
+        if not args.incremental_map or args.max_active_jobs != 1 or incremental_execution_factory is not None:
+            raise SystemExit("organization configuration requires single-Job incremental Map and its own factory")
+        from .adapters.map_organization import MapOrganizationConfig, organization_factory
+        incremental_execution_factory = organization_factory(MapOrganizationConfig.load(args.organization_config))
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter

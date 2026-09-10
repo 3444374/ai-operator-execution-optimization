@@ -12,10 +12,16 @@
 
 ## 0. 当前优先级与历史记录范围
 
+2026-09-10：[按实际字节控制Map数据留存](experiments/results/postgresql/pg_window_budget_20260910/README.md)
+与[有限窗口token工作量组织](experiments/results/postgresql/map_organization_20260910/README.md)已完成。
+独立288次及408次真实模型请求通过结果对应和资源检查；固定行数与固定工作量只改变分组，
+长度排序改变实际提交顺序，三组预测一致。短查询仅作功能与资源依据，尚不能说明稳态性能提升。
+模型与测试数据库已停止、临时目录权限恢复；后续为静态容量复核、更大组织对照、多查询计算共享和图像接入。
+
 2026-09-10：[数据库源与公共查询入口](experiments/results/postgresql/database_queries_20260910/README.md)
 已完成受控验证：PG、直接执行、Ray从原始列构造Map消息，PG与原生LOTUS执行Movie计数和取前五条查询。
 2000条真实评论完整导入，重复原始ID保留；新增真实模型调用0次，质量与性能比较待单独运行。
-本阶段交付后暂停，后续继续单算子留存预算、有限窗口组织、多查询计算共享和图像接入。
+当时交付后暂停；此后留存预算与有限窗口组织已按上项继续完成。
 
 2026-09-10：[执行修复的真实对照](experiments/results/postgresql/execution_repairs_20260910/README.md#同配置的真实模型修复前后诊断)
 完成18组短查询、8448次模型调用。同资源比较中，L64行且结果预留32MiB时过量接纳探测减少，

@@ -15,6 +15,8 @@ class QueryConfig:
     pg_window_bytes: int = 67108864
     pg_total_budget: bool = False
     pg_staging_bytes: int = 16777216
+    organization_config: str | None = None
+    organization_sha256: str | None = None
     query_timeout_s: float = 300
     max_posts: int | None = None
     movie_id: str | None = None
@@ -48,6 +50,14 @@ class QueryConfig:
             raise ValueError('PG total budget flag must be boolean')
         if self.pg_total_budget and (self.arm!='pg' or self.task!='map'):
             raise ValueError('total retained-window budget currently applies to PG Map')
+        if (self.organization_config is None) != (self.organization_sha256 is None):
+            raise ValueError('organization configuration requires its declared SHA-256')
+        if self.organization_config is not None:
+            if (self.arm != 'pg' or self.task != 'map' or not self.pg_total_budget
+                    or not isinstance(self.organization_config, str) or not self.organization_config
+                    or not isinstance(self.organization_sha256, str)
+                    or not re.fullmatch(r'[0-9a-f]{64}', self.organization_sha256)):
+                raise ValueError('organization controls require total-budget PG Map and a configuration identity')
         if max(self.input_bytes,self.result_bytes,self.pg_window_bytes,self.pg_staging_bytes)>256*1048576:
             raise ValueError('query byte configuration exceeds the supported range')
         if self.pg_staging_bytes<65536:

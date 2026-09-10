@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：[PG Map token工作量组织](../experiments/results/postgresql/map_organization_20260910/README.md)完成单Job/v6可选rows/work/length控制。
+复用既有组织器与核心，tokenizer SHA、完整消息与实际usage、候选前缀、分组及提交顺序可审计。
+Linux调度369/provider55/PG合同116/审计6、PG TAP2138通过；108受控HTTP及408独立真实POST通过。
+真实128行输入序控制组数16/28但HTTP顺序相同，长度40组并改变顺序；预测一致。仅功能/资源诊断，非稳态性能。
+模型、自有PG、任务进程均结束，临时ACL恢复；C实现4f626bda已合入main。以下暂留PG/ACL的记录为当时状态。
+
 2026-09-10：[PG Map 总字节留存预算](../experiments/results/postgresql/pg_window_budget_20260910/README.md)完成可选 total 模式，旧等份模式保留。
 按实际行上下文与固定元数据预留计费，单行暂存独立，结果预分配并于消费后释放。
 PG完整TAP2134项、最终专项37项、回归1项及本地/Linux各116项合同通过；288次独立真实POST全部通过。

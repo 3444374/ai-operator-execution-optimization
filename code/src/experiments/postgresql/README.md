@@ -14,6 +14,12 @@ For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.
 [Controlled and real-model checks](../../../../experiments/results/postgresql/pg_window_budget_20260910/README.md).
 
+Optional `organization_config` and `organization_sha256` select a fixed local Map organization file.
+The runner copies the verified configuration into the private unit directory and requires PG Map with
+total retention enabled. `organization_evaluation.py` checks complete-request token estimates against
+actual POST bytes and server prompt usage, accepted candidate prefixes, group membership, dispatch
+order and active token work. Native Ray/LOTUS execution does not use these controls.
+
 Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
 PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality

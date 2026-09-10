@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+2026-09-10：[PG Map token工作量组织](postgresql/map_organization_20260910/README.md)：
+三种静态控制复用同一核心，108受控HTTP与408真实POST全部通过；实际token/候选前缀/分组/顺序可复核。
+PG全套2138项通过，模型/PG/任务进程与临时ACL已清理；短查询不作性能结论。
+
 2026-09-10：[PG Map 总字节留存预算](postgresql/pg_window_budget_20260910/README.md)：
 默认关闭的新模式将行数作为上限，实际字节控制留存；受控反例与288次真实POST通过。
 B1MiB/L32实际最多13行、计费峰值1028312字节，最终责任归零；模型已停，PG/ACL暂留D验证。

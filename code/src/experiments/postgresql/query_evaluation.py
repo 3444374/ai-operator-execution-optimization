@@ -71,6 +71,10 @@ def evaluate(config, inputs, plan, manifest_path, root, checkout):
     if report['http']['started_requests']!=len(requests):
         raise ValueError('outgoing POST and HTTP occupancy histories differ')
     if config.arm=='pg':
+        if config.organization_config is not None:
+            from src.execution_provider.adapters.map_organization import MapOrganizationConfig
+            from .organization_evaluation import verify_organization
+            report['organization']=verify_organization(MapOrganizationConfig.load(root/'organization.json'),events)
         if config.pg_total_budget:
             report['pg_memory']=verify_window_memory((root/'q0-producer.log').read_text().splitlines(),
                 backend_pid=json.loads((root/'pg-backend.json').read_text())['backend_pid'],

@@ -31,6 +31,19 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
         '--fixed-model-config',str(model_path),'--incremental-map','--max-active-jobs','1',
         '--max-active-requests',str(config.concurrency),'--max-held-tasks',str(config.window),
         '--input-buffer-bytes',str(config.input_bytes),'--result-buffer-bytes',str(config.result_bytes)]
+    if config.organization_config is not None:
+        from src.execution_provider.adapters.map_organization import MapOrganizationConfig
+        path = Path(config.organization_config)
+        if path.stat().st_size > 16384:
+            raise ValueError('organization configuration is too large')
+        content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != config.organization_sha256:
+            raise ValueError('organization configuration identity differs')
+        organization = MapOrganizationConfig(**json.loads(content))
+        if organization.model_id != plan.model_id or organization.window_rows > config.window:
+            raise ValueError('organization differs from query model/window')
+        write_private_json(root/'organization.json', json.loads(content))
+        command.extend(('--organization-config',str(root/'organization.json')))
     settings={'semloom_pg.gateway_socket':str(socket),
         'semloom_pg.provider_execution_profile':'incremental-map' if config.task=='map' else 'query-job',
         'semloom_pg.provider_window_tasks':str(config.window),'semloom_pg.provider_window_bytes':str(config.pg_window_bytes),

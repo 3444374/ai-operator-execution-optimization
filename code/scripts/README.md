@@ -10,6 +10,8 @@
 当前数据库原始输入与公共查询入口见[下节](#数据库原始输入与公共查询)，包含准备、安装和有期限的单查询执行。
 PG Map查询配置支持`pg_total_budget=true`与独立`pg_staging_bytes`，由总字节控制实际留存行数；
 逐算子内存观测及真实诊断见[总字节预算报告](../../experiments/results/postgresql/pg_window_budget_20260910/README.md)。
+PG Map还可提供`organization_config`与该文件的`organization_sha256`，选择下述token工作量组织配置；
+实际消息、token usage、候选前缀、分组及出站顺序均由查询评价器核对。
 
 脚本按职责分为七组：
 
@@ -242,6 +244,23 @@ PG多在途路径选择
 PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6接纳/结果协议，
 仅支持受限生成Map；EXPLAIN展示实际输入窗口，复杂表达式退回窗口1。
 [验证记录](../../experiments/results/postgresql/async_window_20260908/README.md)包含同一PG查询的真实并发、取消与回收。
+
+单Job生成Map可额外传`--organization-config /path/to/organization.json`。配置字段为：
+
+| 字段 | 含义 |
+|---|---|
+| `mode` | `rows`按输入序固定行数组；`work`按输入序累计工作量；`length`在有限候选前缀内按工作量升序排列 |
+| `window_rows` / `batch_rows` | 每次最多查看的已接纳候选数 / 每组最多行数，前者不能超过接纳任务容量 |
+| `batch_work` / `active_work` | 组织分组目标 / 执行中工作量总上限，单位为token；超过分组目标的完整单行独占一组 |
+| `model_id` / `model_revision` / `serving_revision` | 固定模型、权重版本和服务版本，组成估计身份 |
+| `tokenizer_path` / `tokenizer_sha256` | 本地tokenizer目录与内容指纹；通过`map_organization.tokenizer_fingerprint()`计算，启动前后核对 |
+| `context_tokens` | 完整输入加生成预算的context上限；超限拒绝，不修改或截断出站消息 |
+
+工作量由完整规范消息的实际token数加`max_tokens`计算，输出部分是预算上界，不是预测真实输出长度。
+三种控制共用计数方法及既有活跃请求/工作量/字节限制。每组仍展开为独立单行请求；分组不会插入
+整组完成等待，因此两个输入序控制可能产生相同的实际提交顺序。此配置只支持单Job Map v6，
+不适用于Filter/query-job或原生Ray/LOTUS。tokenizer常驻内存和预处理时间须随进程RSS与准备事件报告，
+不包含在核心payload字节账本内。连续无限到达下的公平性不由该静态排序保证。
 
 网关默认不使用单次模型超时限制排队或结果等待；模型HTTP仍有独立超时，PG取消与socket超时仍生效。
 嵌入式入口 `server.main(incremental_execution_factory=...)` 可传入执行组装函数；

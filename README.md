@@ -17,6 +17,11 @@ lifecycle；数据库管理的有界数据流把规范化任务交给可替换�
 [数据库源与公共查询入口](experiments/results/postgresql/database_queries_20260910/README.md)已完成PG、
 direct、原生Ray/LOTUS的受控查询检查，并准备2000条真实Movie输入；真实模型质量与性能比较仍待执行。
 
+[Map总字节留存](experiments/results/postgresql/pg_window_budget_20260910/README.md)与
+[有限窗口token工作量组织](experiments/results/postgresql/map_organization_20260910/README.md)已完成独立真实诊断，
+分别288次和408次请求通过。固定行数与固定工作量的实际提交顺序相同，长度排序改变顺序且预测一致；
+这些短查询说明功能和资源行为，稳态性能仍需扩大验证。模型、测试数据库及临时权限已清理。
+
 前序基线（2026-09-07）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、

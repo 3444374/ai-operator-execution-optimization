@@ -119,6 +119,7 @@ def build_fixed_model_execution(
     input_bytes=None,
     result_bytes=None,
     policies=None,
+    organize=None,
     describe_work=request_count_work,
     active_work=None,
     work_unit="work_units",
@@ -128,6 +129,8 @@ def build_fixed_model_execution(
     choose_flow=round_robin_flow,
 ):
     """Default single-endpoint assembly; supplied policies/work reuse the same core and transport."""
+    if policies is not None and organize is not None:
+        raise ValueError("provide policies or an organizer, not both")
     if type(max_tasks) is not int or not 1 <= max_tasks <= MAX_INCREMENTAL_TASKS:
         raise ValueError("invalid incremental task capacity")
     if max_active_requests is None:
@@ -172,7 +175,7 @@ def build_fixed_model_execution(
             RoundRobinEndpointRouter(),
             topology,
             "default",
-            organize=WorkWindowOrganizer(
+            organize=organize or WorkWindowOrganizer(
                 max_tasks, max_tasks if active_work is None else active_work
             ),
         )
@@ -180,7 +183,13 @@ def build_fixed_model_execution(
 
     def observe(event, key):
         if observer:
-            observer({"event": event, "key": asdict(key), "usage": asdict(engine.capacity.usage())})
+            fields = {"event": event, "key": asdict(key), "usage": asdict(engine.capacity.usage())}
+            if organize is not None:
+                record = engine.capacity.records.get(key)
+                if record is not None:
+                    fields.update(estimated_work=record.task.estimated_work, work_unit=work_unit,
+                                  member=asdict(record.member) if record.member else None)
+            observer(fields)
 
     backend = BoundedAsyncBackend(
         execute or transport.execute,

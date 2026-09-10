@@ -74,6 +74,9 @@ accepted task's compatibility group, optionally sorts that group by work, and in
 complete-task work slicer. An oversized task remains whole. This static policy does not promise fairness
 under continuous arrival. The core validates returned membership before dispatch and preserves an
 unfinished group across capacity or backend rejection; the organizer stores no payload history.
+`candidate_window_rows` optionally restricts the accepted prefix examined by the organizer.
+`target_work=None` groups by row count alone. Neither option inserts a group-completion barrier;
+row-count and work-budget FIFO groups can produce the same actual request order.
 
 ## Bounded multi-row driver
 
