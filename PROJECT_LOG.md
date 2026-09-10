@@ -2,6 +2,7 @@
 
 ## 2026-09-10：基础数据组织工作包 D
 
+- 实现提交`d7795a09`已快进合入并推送main；合并后726份代码与真实运行快照逐文件一致。C实现为`4f626bda`。
 - 复用WorkWindowOrganizer、typed work和SessionEngine；三种控制共享固定请求、活跃token与字节容量，完整消息不改写。
 - 加入本地tokenizer身份核对和逐行实际usage审计；检查候选确为当时已接纳队列前缀，组织与实际提交分别记录。
 - Linux调度369/provider55/PG合同116/审计6、PG TAP2138通过；108受控HTTP加新408真实POST全部通过，244.96秒。
