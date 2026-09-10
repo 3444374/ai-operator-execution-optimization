@@ -7,6 +7,8 @@
 
 ## 文件定位
 
+当前数据库原始输入与公共查询入口见[下节](#数据库原始输入与公共查询)，包含准备、安装和有期限的单查询执行。
+
 脚本按职责分为七组：
 
 | 子目录 | 只负责 |
@@ -21,6 +23,42 @@
 
 入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
+
+## 数据库原始输入与公共查询
+
+`experiments/database_queries.py`提供`prepare-movie`、`prepare-squad`、`install`、`run`。
+完整输入、标签、模型配置、额度SQLite和输出目录均放仓库外；连接串只从环境变量读取。
+源表安装独立计时；查询时间包含PG源读取、消息构造和原生SQL规划/探测。
+
+```sh
+PYTHONPATH=code python3 code/scripts/experiments/database_queries.py prepare-movie \
+  --csv /path/to/Reviews.csv --sembench-checkout /path/to/pinned-sembench \
+  --provenance /path/to/source-provenance.json --max-rows 2000 --output /path/to/new-prepared
+PYTHONPATH=code python3 code/scripts/experiments/database_queries.py prepare-squad \
+  --source /path/to/dev-v1.1.json --selection /path/to/qualified-selection.json \
+  --split tuning --max-rows 2000 --output /path/to/new-squad-prepared
+PYTHONPATH=code python3 code/scripts/experiments/database_queries.py install \
+  --manifest /path/to/new-prepared/manifest.json --table query_reviews \
+  --dsn-env SEMLOOM_QUERY_DSN --output /path/to/new-installation
+PYTHONPATH=code python3 code/scripts/experiments/database_queries.py run \
+  --config /path/to/query.json --manifest /path/to/new-prepared/manifest.json \
+  --model /path/to/fixed-model.json --budget /path/to/authorized-budget.sqlite \
+  --budget-id authorized-query-campaign --max-attempts 2000 \
+  --dsn-env SEMLOOM_QUERY_DSN --pg-log /path/to/pg.log --output /path/to/new-short-output
+```
+
+最后一条仅为参数示例，不授予模型运行额度。`run`不创建额度账本，不退款或自动重试；实际上限必须
+与已有授权账本完全一致。最小query.json为
+`{"unit_id":"map-pg-1","arm":"pg","task":"map","table":"query_reviews","max_posts":2000}`。
+arm可取pg、pg-source-direct、ray-data、lotus；task为map或movie-q1/q2/q3。direct/Ray只接Map，
+LOTUS只接原Movie。C、window、字节和期限使用`QueryConfig`内显式字段，正式运行前另行选定配置。
+PG须加`--pg-log`；Movie须加`--sembench-checkout`，LOTUS可加`--tokenizer`；Ray须加新的短
+`--ray-temp-root`。Ray runtime由该单元独占，禁止连接现有共享runtime。
+
+Movie schema v2分别存执行行号与原始reviewId，重复原始ID不去重；原任务评价仍用原字段。
+`run`启动独立worker并保存`unit/`和`supervisor.json`；准备期限120秒、query使用配置期限，
+结束后评价/清理期限120秒，TERM/KILL清理间隔10秒。worker失败保留部分输出并退出非零。
+原生数据物化、语义差异、当前测试与真实验证待执行项见[报告](../../experiments/results/postgresql/database_queries_20260910/README.md)。
 
 ## SQuAD PG Map 数据准备与离线评价
 

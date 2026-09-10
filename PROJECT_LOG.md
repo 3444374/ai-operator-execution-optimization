@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-09-10：数据库输入与公共查询工作包 B
+
+- 完成PG原始列/direct/Ray输入、保守WHERE预取、普通COUNT(*)与Filter逐行trace、原始SemBench Movie Q1/Q2/Q3和原生LOTUS入口。
+- 新PG开关默认OFF；COUNT输出与逐行质量分开核对，原生prompt/parser差异和LOTUS版本适配明确记录。
+- 下载校验Movie v4并运行未修改的上游generator，2000行完整导入；原始reviewId有135次重复，独立执行行号保留所有出现和原评分字段。
+- 修复Ray原生每actor异步批次默认4导致HTTP超出C；设置原生配置为1，不注入SemLoom调度。
+- 增加单元共享POST计数与独立worker期限/清理；本地/Linux工具64、Linux PG合同116、PG回归1项通过；PG TAP事件断言修复及全查询fixture1111POST见报告，真实模型0次。
+- IMLane公开源码已核查，PG适配/独立构建仍未完成。全部失败保留；本包交付后暂停，不自动进入C–F。
+- [完整证据与限制](experiments/results/postgresql/database_queries_20260910/README.md)。
+
 ## 2026-09-10：独立新额度完成执行修复真实诊断
 
 - 用户另行授权A2最多8448模型POST/20分钟；18单元全部完成，8448实际出站，423.47秒，未重试。

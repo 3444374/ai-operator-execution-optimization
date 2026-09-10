@@ -1,7 +1,8 @@
 """Reserve whole experiment units durably; claimed processes spend in memory.
 
 Reservations are never refunded. A claimed unit cannot be claimed again, even
-after a crash before its first request. Only allocation and claim touch SQLite.
+after a crash before its first request. Default process claims spend in memory;
+the opt-in native-worker claim records each POST durably across processes.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -168,3 +169,37 @@ class CellBudgetLedger:
         return {'schema': SCHEMA, 'budget_id': self.budget.budget_id, 'limit': self.budget.limit,
                 'allocated_requests': allocated, 'deadline_utc': deadline,
                 'units': [dict(zip(('unit_id', 'first_attempt', 'requests', 'claimed'), row)) for row in units]}
+
+    def claim_shared_unit(self, unit_id: str):
+        """Claim once for native workers; each outgoing POST spends durably.
+
+        This opt-in observation path adds no execution capacity or scheduling.
+        The original one-process claim path and existing ledgers remain usable.
+        """
+        from .shared_request_budget import SharedClaimedUnit
+        with self._transaction() as connection:
+            allocated, _ = self._active(connection)
+            row = connection.execute('SELECT first_attempt,requests,claimed FROM units WHERE unit_id=?',
+                                     (unit_id,)).fetchone()
+            if (row is None or row[2] != 0 or row[0] < 1 or row[1] < 1
+                    or row[0] + row[1] - 1 > allocated):
+                raise BudgetError('unit missing, already claimed, or invalid')
+            connection.execute('CREATE TABLE IF NOT EXISTS shared_units (unit_id TEXT PRIMARY KEY)')
+            connection.execute('CREATE TABLE IF NOT EXISTS closed_shared_units (unit_id TEXT PRIMARY KEY)')
+            if connection.execute('SELECT 1 FROM closed_shared_units WHERE unit_id=?',(unit_id,)).fetchone():
+                raise BudgetExhausted('shared query unit has been closed')
+            connection.execute('''CREATE TABLE IF NOT EXISTS shared_requests (
+                unit_id TEXT NOT NULL, sequence INTEGER NOT NULL, request_sha256 TEXT NOT NULL,
+                PRIMARY KEY(unit_id,sequence))''')
+            connection.execute('INSERT INTO shared_units VALUES(?)', (unit_id,))
+            connection.execute('UPDATE units SET claimed=1 WHERE unit_id=?', (unit_id,))
+        return SharedClaimedUnit(self.path, self.budget, unit_id)
+
+    def close_shared_unit(self, unit_id):
+        """Stop further worker POSTs after an owned query is cancelled; no refund."""
+        if not isinstance(unit_id,str) or not _ID.fullmatch(unit_id):
+            raise BudgetError('invalid unit identity')
+        with self._transaction() as connection:
+            self._header(connection)
+            connection.execute('CREATE TABLE IF NOT EXISTS closed_shared_units (unit_id TEXT PRIMARY KEY)')
+            connection.execute('INSERT OR IGNORE INTO closed_shared_units VALUES(?)',(unit_id,))

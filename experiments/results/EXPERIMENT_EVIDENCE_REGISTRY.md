@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+2026-09-10：[数据库原始输入与公共查询](postgresql/database_queries_20260910/README.md)。
+来源：源码、真实PG18.3、原生Ray2.56.1/LOTUS1.2.4、确定性本地HTTP；真实模型0次。
+真实Movie v4由原SemBench generator生成2000行并完整PG往返，135次重复原始reviewId均保留。
+最终查询fixture5项/多个子场景、1111POST通过；Map三臂、COUNT/LIMIT、错误、空源与CLI清理均检查。
+PG回归1/1、Linux PG合同116、两端工具65通过；TAP2101中一条事件断言误判，修正文件28/28通过。
+原失败/各次尝试独立保留。新WHERE/COUNT默认关闭，真实语义质量与性能仍待新额度，未形成方法结论。
+
 2026-09-10：[A2同配置真实诊断](postgresql/execution_repairs_20260910/README.md#同配置的真实模型修复前后诊断)完成。
 来源：真实PG18.3/Qwen2.5-7B-Instruct/vLLM0.25.1；18单元、8448预留/实际POST、无重试、423.47秒。
 L64/结果32MiB重复offer显著减少且两次JCT约17→10秒；其他配置无一致改善。

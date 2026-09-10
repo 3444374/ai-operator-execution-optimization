@@ -41,17 +41,17 @@
 | offer 反压 | 旧归档 `bytes-result`：24708 before_offer/512 accepted；正常长查询比例 1；复用 v6 与 producer 绑定，不把比例直接当耗时归因 | PG/provider 真实受控路径在容量不变时不反复探测；未接纳不耗序号，已接纳不重发 | 代码、受控与匹配真实诊断完成 |
 | 全局推进 | `SessionEngine.advance` 一步后仍有可派发项、generation 不变且无 immediate 字段；增加真实可推进信号和期限 | 有容量不空等，容量阻塞不忙等；取消、晚到终态及公平机会保留 | 代码、受控与匹配真实诊断完成 |
 | PG 窗口预算 | `sem_pump.c` 的 B/L 等份与分配后检查；改为总量与一个有界待接纳行，独立报告暂存/转换分配 | 同 B 的合法大行不随 L 改变合法性；宽行/超限/取消与内存责任检查 | 待实现 |
-| 数据库驻留比较 | PG-source direct、实际 WHERE→Map、原始列构造消息；内存 direct 继续是诊断 | 相同源快照/不可变表、计时含读取转换；安全谓词扩大窗口，其他形状明确回退 | 待实现 |
-| 公共任务与原生执行 | SemBench Movie Q3→Q1/Q2、Movie-derived Map；Ray Data SQL/processor、LOTUS 原生程序 | 原任务/evaluator 固定版本；COUNT/LIMIT/Map 各自评价；未注入 SemLoom 调度 | 待实现 |
+| 数据库驻留比较 | PG-source direct、实际 WHERE→Map、原始列构造消息；内存 direct 继续是诊断 | 相同源快照/不可变表、计时含读取转换；安全谓词扩大窗口，其他形状明确回退 | 代码及受控验证完成；真实比较待新额度 |
+| 公共任务与原生执行 | SemBench Movie Q3→Q1/Q2、Movie-derived Map；Ray Data SQL/processor、LOTUS 原生程序 | 原任务/evaluator 固定版本；COUNT/LIMIT/Map 各自评价；未注入 SemLoom 调度 | 代码及受控验证完成；真实比较待新额度 |
 | 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 待实现 |
 | 图像 PG→Ray | CLIP encoded bytea→CPU prepare→GPU actor→real[]；先同步 reference 再增量，复用 typed image/method/stage 组件 | PG/解码/受控模型零权重集成；真实 CLIP 另验，不冒充已通过 | 待实现 |
-| 文献与解释 | KEN 核心补充待精读；IMLane artifact 可用性；修正 direct 日志和非单变量对照解释 | 文献/知识库/状态/结果/日志同步，历史数据不改写 | KEN/历史解释完成；IMLane 待核查 |
+| 文献与解释 | KEN 核心补充待精读；IMLane artifact 可用性；修正 direct 日志和非单变量对照解释 | 文献/知识库/状态/结果/日志同步，历史数据不改写 | KEN/历史解释完成；IMLane 源码已核查、构建待验证 |
 
 工作包 A 已完成代码、受控及独立新额度的匹配真实诊断；18单元/8448POST，全部重复与限制见报告。记录器/runner 保存第一原因与独立清理错误；
 Core 全局进展增加兼容字段；永久 Job 单项超限与暂时存储反压分开；v6 不把永久拒绝发成零接纳确认；
 PG pump 等到对应 receive 释放责任后再探测。真实 PG 受控 32 行为 660→62 次 offer，提交均为32次，
 无相关释放的重复探测598→0；PG回归1/1、TAP2043项通过。证据、失败与当前清理状态见
-[执行修复报告](../results/postgresql/execution_repairs_20260910/README.md)。KEN 与历史解释已完成，IMLane 核查待工作包 B。
+[执行修复报告](../results/postgresql/execution_repairs_20260910/README.md)。KEN 与历史解释已完成，IMLane 公开源码核查结果见工作包 B。
 
 ### 工作包 A 的最小真实验证清单（已完成）
 
@@ -83,6 +83,38 @@ PG pump 等到对应 receive 释放责任后再探测。真实 PG 受控 32 行�
 PostgresML `api.rs` typed embed、共享模型调用仅作公开接口参照；自有 planner/tuple binding、外部
 transport 与 query cleanup 继续拥有各自职责。公司私有副本本轮未复核、未复制或上传。
 窗口/推进改动是基础执行修复，不是新研究算法；相关同核心静态对照一并使用修复后的实现。
+
+### 工作包 B 的接入规格（已完成代码与受控验证）
+
+本包已完成代码、受控查询验证和真实Movie原始数据导入；真实模型比较待新额度。交付后暂停，不自动进入C–F。来源仍采用主架构§8.7–8.8已固定的公开接口，
+保留自有PG生命周期、消息程序与清理；本轮没有读取、复制或上传公司材料。
+
+- 原始输入：`QueryInputs`只读取顺序、执行行ID和context/question或movie/review/reviewId列；标签留在评价侧。
+  一次安装的新表通过COPY往返SHA、唯一键和行/字节上限核对，并拒绝后续数据修改。PG-source direct
+  在计时内打开只读repeatable-read事务、逐行读源并构造消息；完成未消费结果仍占用同一个C窗口。
+- `sem_prefetch.c`白名单以PG18.3内置操作符/类型为依据，不重写qual；新WHERE预取默认关闭。
+  LIMIT保守执行；SQuAD在SQL内拼接原始列仍按输入表达式回退，不能冒充已扩大该形状窗口。
+- 源码发现`sem_filter_path.c`仍拒绝所有aggregate，Q3不能仅靠runner接入。新增显式开启的单表、
+  单目标内置`COUNT(*)`，保持PG原有Aggregate→SemFilter→ordinary child；GROUP BY/HAVING、
+  DISTINCT、aggregate FILTER、其他聚合和INSERT聚合仍不支持。旧默认能力不变。
+- Filter逐行审计使用测试专用ID列：planner保留原始Var并登记PG列权限；先记录row-ID/sequence/payload，
+  再记录PG实际保留/丢弃判断。COUNT输出不参与生成输入绑定。trace元数据不改变SemanticPlanSpec或wire。
+  验证重复文本、NULL、RLS不可见行、无ID列权限、失败及LIMIT；错误不能被后续清理替换。
+- SemBench固定`c814e3807e72d4cf876b852b17e77f3cc94575c2`，原始Movie Q3→Q1/Q2方法和evaluator不改写；
+  原生LOTUS加载PG原始列，仍由其程序过滤、调用LM和取head(5)。本包选LOTUS1.2.4；上游requirements
+  锁定1.1.3，故明确登记软件适配，不称完整上游环境复现。模型/prompt/parser和实际出站分别记录。
+- Ray固定2.56.1，使用`read_sql`与`HttpRequestProcessorConfig`访问同一已部署endpoint；native
+  SQL探测/COUNT、转换和消息构造在JCT内。记录请求的分片配置与实际执行图；小表单reader回退不称多分片。
+  native reader按分片materialize的内存与LOTUS全表DataFrame均按系统实际行为报告。120行受控执行实际2个ReadSQL task，每个60行；规划单reader探测另计。
+- 新共享POST计数只做预算/观测：一个单元只领取一次，每次worker出站前持久化计数，无退款；不含
+  SemLoom调度策略。所有新查询臂采用同一种计数模式，持久化开销留在JCT内。重试与缓存显式关闭。
+- Movie-derived Map使用独立二值情感指令，标签仍不出站；原COUNT指标外补FP/FN，LIMIT补重复执行行号、
+  有效性、行数及额外工作。暂无真实模型新额度；当前受控HTTP结果不登记真实质量或性能。
+
+本包[完整报告](../results/postgresql/database_queries_20260910/README.md)保存版本、原生身份、失败及检查。
+Movie v4原始数据由未修改的SemBench generator生成2000行；1865个原始reviewId的135次重复均保留，
+执行行号独立，原始评价字段不改。CLI默认监督自有worker，取消先关闭后续POST，再清理自有进程；
+远端模型结束未知时保持unknown。Ray原生异步批次配置固定为1，避免每actor默认4批导致实际HTTP超出C。
 
 零模型验证依次覆盖 Python、PG18.3 严格构建/回归/TAP、真实 PG+受控 HTTP、共享 gateway 和
 Ray CPU 阶段。真实实验入口先准备完全匹配的 L32/64×结果预算32/64MiB、可达 C32/64/128

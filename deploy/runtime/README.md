@@ -48,6 +48,12 @@ PYTHONPATH=code python code/scripts/environment/manage_environment.py check \
 `machine_id`、CPU slots、GPU 型号/显存和 driver。只有诊断时才传
 `--machine-profile` 强制覆盖，不能用覆盖掩盖硬件不满足合同。
 
+SemBench Movie原生查询与评价使用`core,text,semantic-benchmarks`：后者额外检查pandas、DuckDB、
+SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1与Arrow版本。
+上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
+若旧driver缺评价依赖，先审查安装预览，再建独立venv，不混装模型服务环境；
+[本轮环境与验证记录](../../experiments/results/postgresql/database_queries_20260910/README.md)。
+
 环境文件按以下顺序查找：显式 `--env-file` → `AI_OPERATOR_ENV_FILE` →
 `~/.config/ai-operator/runtime.env`。首次在一台机器运行时仍需从模板创建一次：
 

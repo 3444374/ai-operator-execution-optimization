@@ -31,6 +31,7 @@
 #include "semantics/semantic_filter_contract.h"
 #include "semantics/semantic_map_contract.h"
 #include "executor/sem_pump.h"
+#include "executor/sem_prefetch.h"
 #include "planner/marker_identity.h"
 
 #define SEMLOOM_TRACE_ROW_ID_MAX_BYTES 256
@@ -64,6 +65,7 @@ struct SemloomExecPump
 	bool returned;
 	bool exhausted;
 	bool offer_blocked;
+	const char *prefetch_reason;
 	Size window_bytes;
 	MemoryContext receive_context;
 	MemoryContext owner_context;
@@ -128,22 +130,6 @@ semloom_trace_id(SemloomExecPump *pump, TupleTableSlot *slot, MemoryContext cont
 		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Map trace row ID must contain 1 to 256 bytes")));
 	MemoryContextSwitchTo(previous);
 	return identity;
-}
-
-/* A first multi-in-flight path only reads plain columns/constants ahead. Other
- * expressions keep window one, so side effects and row errors are not moved. */
-static bool
-semloom_pump_plain_child(Plan *plan)
-{
-	ListCell *cell;
-	if (plan == NULL) return true;
-	if (IsA(plan, CustomScan) || plan->qual != NIL) return false;
-	foreach(cell, plan->targetlist)
-	{
-		Node *expr = (Node *) lfirst_node(TargetEntry, cell)->expr;
-		if (!IsA(expr, Var) && !IsA(expr, Const)) return false;
-	}
-	return semloom_pump_plain_child(plan->lefttree) && semloom_pump_plain_child(plan->righttree);
 }
 
 SemloomExecPump *
@@ -229,12 +215,26 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
 		pump->trace_id_column = semloom_trace_column(scan, pump->binding,
 			ExecGetResultType(pump->child_state), semloom_test_map_binding_column());
+	else if (plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_FILTER &&
+		list_length(scan->custom_exprs) == 2)
+	{
+		Var *trace;
+		if (!IsA(lsecond(scan->custom_exprs), Var)) elog(ERROR, "invalid Filter trace binding");
+		trace = lsecond_node(Var, scan->custom_exprs);
+		if (trace->varno != INDEX_VAR || trace->vartype != TEXTOID ||
+			trace->varattno < 1 || trace->varattno > pump->binding->scan_natts)
+			elog(ERROR, "invalid Filter trace binding");
+		pump->trace_id_column = pump->binding->child_columns[trace->varattno - 1];
+	}
 	pump->owner_context = owner_context;
 	pump->window = pg_semantic_runtime_window(pump->runtime);
-	if (pump->window > 1 &&
-		(!semloom_pump_plain_child(pump->child_state->plan) ||
-		 (pump->input_expression != NULL && !IsA(linitial(scan->custom_exprs), Var) && !IsA(linitial(scan->custom_exprs), Const))))
-		pump->window = 1;
+	if (pump->window > 1)
+	{
+		pump->prefetch_reason = semloom_prefetch_reason(pump->child_state->plan,
+			pump->input_expression != NULL ? linitial(scan->custom_exprs) : NULL,
+			semloom_predicate_prefetch_enabled());
+		if (pump->prefetch_reason != NULL) pump->window = 1;
+	}
 	if (pump->window > 1)
 	{
 		pump->window_bytes = semloom_provider_window_bytes();
@@ -340,6 +340,9 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 			disposition = semloom_operator_machine_apply_completion(
 				&pump->machine,
 				&machine_completion);
+			if (pump->trace_id_column != 0)
+				pg_semantic_runtime_trace_filter_result(pump->runtime,
+					disposition == SEMLOOM_TUPLE_EMIT);
 			if (disposition == SEMLOOM_TUPLE_EMIT_COMPLETION)
 			{
 				semloom_pump_store_completion(scan_slot,
@@ -520,6 +523,8 @@ semloom_pump_explain(const SemloomExecPump *pump, ExplainState *explain_state)
 	pg_semantic_runtime_explain(pump->runtime, explain_state);
 	if (pg_semantic_runtime_window(pump->runtime))
 		ExplainPropertyInteger("Semantic Input Window", NULL, pump->window, explain_state);
+	if (pump->prefetch_reason != NULL)
+		ExplainPropertyText("Semantic Window Fallback Reason", pump->prefetch_reason, explain_state);
 	if (pump->has_filter_cost)
 		semloom_filter_cost_explain(&pump->filter_cost, explain_state);
 	if (pump->input_expression != NULL)

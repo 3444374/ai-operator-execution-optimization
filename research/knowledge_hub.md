@@ -374,6 +374,12 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 ### 4.3 最接近的已有工作（需在论文中区分）
 
+2026-09-10公开源码核查：[IMLane0](https://github.com/IM-DM4AI/IMLane0)提交
+`072f8257db80569e42c9f5727d839587df529652`公开MIT代码和DuckDB/OceanBase示例，未提供PG适配。
+README/安装脚本/CMake已读，尚未构建。脚本中的Arrow16.1.0rc1、Python3.8轮子与本项目当前环境
+不一致，需单独部署验证；当前是可获取的参照，不能称可直接运行的PG baseline。题录与来源见
+[文献清单](ai_operator_literature_inventory.md)。
+
 | 论文 | 研究什么 | 不研究什么 |
 |---|---|---|
 | IMLane: Composable Framework for Efficient AI Function Execution in Database Engine (PVLDB 2026) | DBEnd/data conversion、shared-memory Lane、进程级 Python executor、数据库 physical batch 的异步提交、per-function resource scheduler 与 Ray adapter | 不定义 semantic algebra/rewrite，也未实现 token/work-aware multi-Job fairness、SLO 或完整 PostgreSQL cancel protocol |

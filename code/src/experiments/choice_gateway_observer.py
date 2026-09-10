@@ -43,6 +43,8 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--ledger", type=Path)
     mode.add_argument("--cell-budget", type=Path, help="pre-reserved experiment-unit budget")
+    parser.add_argument("--shared-unit-budget", action="store_true",
+                        help="durably account each POST, matching native worker observation")
     mode.add_argument("--fixture-only", action="store_true")
     parser.add_argument("--unit-id")
     parser.add_argument("--event-mode", choices=("qualification", "compact-buffered"), default="qualification")
@@ -94,9 +96,13 @@ def main(argv=None):
         if args.budget_id is None
         else AttemptBudget(args.budget_id, args.max_attempts)
     )
+    if args.shared_unit_budget and not args.cell_budget:
+        parser.error("shared-unit budget requires --cell-budget")
     ledger = AttemptLedger(args.ledger, budget) if args.ledger else None
     if args.cell_budget:
-        ledger = CellBudgetLedger(args.cell_budget, budget).claim_unit(args.unit_id)
+        owner = CellBudgetLedger(args.cell_budget, budget)
+        ledger = (owner.claim_shared_unit(args.unit_id) if args.shared_unit_budget else
+                  owner.claim_unit(args.unit_id))
     available = ledger.remaining if args.cell_budget else budget.limit - ledger.attempts if ledger else 0
     expected = (ExpectedRequests.load(args.expected_request_hashes,
                 available_attempts=available)

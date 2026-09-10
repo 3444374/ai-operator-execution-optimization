@@ -1,5 +1,21 @@
 # PostgreSQL resource measurement tools
 
+## Database-source queries
+
+`query_workloads.py` prepares separate raw/reference files; `query_tables.py` installs and verifies
+an immutable PG relation. `query_inputs.py` constructs messages from raw columns, preserving original
+Movie review IDs separately from unique row occurrences. `query_config.py` declares one arm/task;
+`query_runner.py` coordinates execution and post-query evaluation. `query_execution.py` owns the PG,
+direct, LOTUS and Ray lifecycles; `query_evaluation.py` verifies actual requests, outputs and decisions.
+`query_supervisor.py` bounds owned worker lifetime and closes its shared POST allocation on exit.
+
+Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
+PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs
+retain native execution ownership. These entries have controlled HTTP evidence, with real model quality
+and performance pending. [Scope, tests and failure history](../../../../experiments/results/postgresql/database_queries_20260910/README.md).
+
+## Resource collectors
+
 These tools observe the existing synchronous SemMap fixture path. Production SQL, planner, provider and
 wire semantics remain in their existing modules. The [Map engineering contract](../../../../experiments/plans/postgresql_semmap_generation_contract.md)
 owns the implementation and verification plan.

@@ -2,6 +2,8 @@
 #include "postgres.h"
 
 #include <math.h>
+#include "access/sysattr.h"
+#include "catalog/pg_type_d.h"
 
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
@@ -10,7 +12,9 @@
 #include "optimizer/pathnode.h"
 #include "optimizer/tlist.h"
 #include "parser/parsetree.h"
+#include "parser/parse_relation.h"
 #include "utils/lsyscache.h"
+#include "utils/fmgroids.h"
 
 #include "semantics/semantic_filter_contract.h"
 #include "planner/sem_filter_calibration.h"
@@ -72,6 +76,49 @@ static const CustomPathMethods semloom_filter_path_methods = {
 	.PlanCustomPath = semloom_plan_filter_path,
 };
 
+static bool
+semloom_plain_filter_count(Query *parse, bool insert_source)
+{
+	TargetEntry *target;
+	Aggref *aggregate;
+	if (!semloom_filter_count_enabled() || insert_source ||
+		parse->commandType != CMD_SELECT || list_length(parse->targetList) != 1)
+		return false;
+	target = linitial_node(TargetEntry, parse->targetList);
+	if (target->resjunk || !IsA(target->expr, Aggref)) return false;
+	aggregate = (Aggref *) target->expr;
+	return aggregate->aggfnoid == F_COUNT_ && aggregate->aggstar &&
+		aggregate->aggtype == INT8OID && aggregate->agglevelsup == 0 &&
+		aggregate->args == NIL && aggregate->aggdirectargs == NIL &&
+		aggregate->aggfilter == NULL && aggregate->aggorder == NIL &&
+		aggregate->aggdistinct == NIL;
+}
+
+static Var *
+semloom_filter_trace_var(PlannerInfo *root, Index rti, RangeTblEntry *rte)
+{
+	const char *name = semloom_test_filter_binding_column();
+	AttrNumber number;
+	Oid type, collation;
+	int32 typmod;
+	RTEPermissionInfo *permissions;
+	if (name[0] == '\0') return NULL;
+	number = get_attnum(rte->relid, name);
+	if (number <= 0)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("Filter trace ID must name a table text column")));
+	get_atttypetypmodcoll(rte->relid, number, &type, &typmod, &collation);
+	if (type != TEXTOID)
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			errmsg("Filter trace ID must name a table text column")));
+	/* Retained diagnostics obey the same column privileges after SET ROLE or
+	 * prepared-plan reuse as an explicitly selected source column. */
+	permissions = getRTEPermissionInfo(root->parse->rteperminfos, rte);
+	permissions->selectedCols = bms_add_member(permissions->selectedCols,
+		number - FirstLowInvalidHeapAttributeNumber);
+	return makeVar(rti, number, type, typmod, collation, 0);
+}
+
 void
 semloom_add_sem_filter_paths(PlannerInfo *root,
 							 RelOptInfo *rel,
@@ -115,6 +162,8 @@ semloom_add_sem_filter_paths(PlannerInfo *root,
 
 		if (list_length(calls) > 1)
 		{
+			Var *trace = semloom_filter_trace_var(root, rti, rte);
+			if (trace != NULL) add_new_column_to_pathtarget(intermediate, (Expr *) trace);
 			/* Pass raw dependencies; evaluate each input only at its own Filter. */
 			foreach(call_cell, calls)
 			{
@@ -170,7 +219,8 @@ semloom_validate_filter_query_shape(PlannerInfo *root,
 
 	if ((root->query_level != 1 && !insert_source) ||
 		(parse->commandType != CMD_SELECT && parse->commandType != CMD_INSERT) ||
-		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
+		parse->setOperations != NULL || parse->cteList != NIL ||
+		(parse->hasAggs && !semloom_plain_filter_count(parse, insert_source)) ||
 		parse->groupClause != NIL || parse->groupingSets != NIL ||
 		parse->havingQual != NULL || parse->hasWindowFuncs ||
 		parse->windowClause != NIL || parse->distinctClause != NIL ||
@@ -240,6 +290,10 @@ semloom_make_filter_path(PlannerInfo *root,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("parameterized SemFilter paths are not supported")));
 	child_target = copy_pathtarget(child_path->pathtarget);
+	{
+		Var *trace = semloom_filter_trace_var(root, rti, rte);
+		if (trace != NULL) add_new_column_to_pathtarget(child_target, (Expr *) trace);
+	}
 	foreach(cell, child_target->exprs)
 	{
 		if (equal(lfirst(cell), input))
@@ -259,7 +313,12 @@ semloom_make_filter_path(PlannerInfo *root,
 		projected_child = (Path *) create_projection_path(root,
 												   rel,
 												   child_path,
-												   child_target);
+													   child_target);
+	}
+	else if (!equal(child_target->exprs, child_path->pathtarget->exprs))
+	{
+		set_pathtarget_cost_width(root, child_target);
+		projected_child = (Path *) create_projection_path(root, rel, child_path, child_target);
 	}
 	if (call->is_exact)
 	{
@@ -385,6 +444,11 @@ semloom_plan_filter_path(PlannerInfo *root,
 	/* Retain the call for PostgreSQL dependencies and native EXECUTE checks. */
 	scan->custom_exprs = list_make1(copyObject(
 		linitial_node(RestrictInfo, best_path->custom_restrictinfo)->clause));
+	{
+		Var *trace = semloom_filter_trace_var(root, rel->relid,
+			planner_rt_fetch(rel->relid, root));
+		if (trace != NULL) scan->custom_exprs = lappend(scan->custom_exprs, trace);
+	}
 	scan->custom_private = copyObject(best_path->custom_private);
 	scan->custom_scan_tlist = copyObject(child_plan->targetlist);
 	scan->methods = &semloom_filter_scan_methods;

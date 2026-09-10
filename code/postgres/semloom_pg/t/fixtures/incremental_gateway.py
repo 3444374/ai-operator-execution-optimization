@@ -43,6 +43,8 @@ async def execute(task, endpoint):
     elif value == "cancel":
         await asyncio.sleep(0.4)
     observe({"event": "model_end", "sequence": task.key.sequence, "input": value})
+    if value == "model-error":
+        return b"invalid controlled model response"
     return json.dumps(
         {
             "model": "model",

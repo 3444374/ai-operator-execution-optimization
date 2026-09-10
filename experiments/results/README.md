@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+2026-09-10：[数据库原始输入与公共查询](postgresql/database_queries_20260910/README.md)：
+PG-source direct、安全WHERE预取、COUNT与原生Movie/LOTUS/Ray入口完成受控验证，真实模型0次。
+2000行原始Movie数据保留重复reviewId并通过PG读回；真实质量、性能及后续机制另行验证。
+
 2026-09-10：[查询计时、错误保留与执行推进修复](postgresql/execution_repairs_20260910/README.md)：
 独立错误/期限/观测配置、永久拒绝、反压和全局推进修复已完成受控验证；PG回归1/1、TAP2043项通过。
 真实PG32行的offer660→62、提交均32次；这说明重复探测被消除，真实模型性能仍待新额度验证。

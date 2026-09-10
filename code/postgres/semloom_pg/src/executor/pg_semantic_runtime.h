@@ -37,6 +37,7 @@ extern void pg_semantic_runtime_drive(PgSemanticRuntime *runtime,
 										  PgSemanticCompletion *completion,
 										  const char *trace_row_id);
 extern void pg_semantic_runtime_record_emitted(PgSemanticRuntime *runtime);
+extern void pg_semantic_runtime_trace_filter_result(PgSemanticRuntime *runtime, bool kept);
 extern void pg_semantic_runtime_close(PgSemanticRuntime *runtime);
 extern void pg_semantic_runtime_explain(const PgSemanticRuntime *runtime,
 										ExplainState *explain_state);

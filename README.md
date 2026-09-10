@@ -14,6 +14,9 @@ lifecycle；数据库管理的有界数据流把规范化任务交给可替换�
 [当前数据执行计划](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)维护次序，
 [首次真实数据尝试](experiments/results/postgresql/data_execution_pilot_20260909/README.md)区分可用结果与失败记录。
 
+[数据库源与公共查询入口](experiments/results/postgresql/database_queries_20260910/README.md)已完成PG、
+direct、原生Ray/LOTUS的受控查询检查，并准备2000条真实Movie输入；真实模型质量与性能比较仍待执行。
+
 前序基线（2026-09-07）：`REL_18_3` extension 已完成受限、deterministic recording `SemMap` 与 exact
 `SemFilter` reference paths、PostgreSQL-private shared runtime、同步单在途 provider seam 和公共
 compatibility tests。这些结果证明 PostgreSQL 可以拥有 ordinary child plan、snapshot、权限、取消、

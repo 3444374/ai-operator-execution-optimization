@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-10：[数据库输入与公共查询接入](../experiments/results/postgresql/database_queries_20260910/README.md)
+完成代码及受控验证：PG-source direct、保守安全WHERE预取、普通PG COUNT(*)、Movie原始Q1/Q2/Q3、
+Movie-derived Map、原生LOTUS和Ray SQL/HTTP入口。两项PG新开关默认OFF；原始reviewId重复与执行行号分开。
+真实源2000行完成生成/PG往返；完整查询fixture5项及子场景1111次本地HTTP、真实模型0次。
+Linux PG合同116项、工具本地/Linux65项、PG回归1/1通过；完整TAP2101项有一条晚到清理事件断言误判，
+修正后对应28项通过，其余16文件无变更。真实模型质量/性能待新额度；PG总量预算、组织、多Job借用及图像仍待实现。
+本包交付后暂停；清理与集成见报告，不自动执行后续工作包。
+
 2026-09-10：A2匹配真实诊断完成18单元、8,448模型POST，423.47秒内正常停止模型和两套诊断PG。
 L64/结果32MiB：offer 23836/24042→862/858，JCT约17→10秒；其他配置无一致改善。
 全部单元出站/绑定/资源核对通过，新臂无相关release前重复offer为0。短查询不构成强D0或组织收益证据。

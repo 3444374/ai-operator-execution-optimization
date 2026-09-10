@@ -37,7 +37,7 @@ class DirectMap:
         completion = decode_backend_completion(await self.transport.execute(request, 'model'))
         if completion_status(self.plan, completion) != MapCompletionStatus.VALID:
             raise ValueError('direct completion violates Map policy')
-        if completion.prompt_tokens != row['input_tokens']:
+        if row.get('input_tokens') is not None and completion.prompt_tokens != row['input_tokens']:
             raise ValueError('direct complete-message token usage differs')
         self.observer(dict(event='direct_completion', key=asdict(key), **asdict(completion)))
         return row['source_example_id'], completion.raw_output

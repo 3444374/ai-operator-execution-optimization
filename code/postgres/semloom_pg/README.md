@@ -1,5 +1,14 @@
 # `semloom_pg` capability spike
 
+Opt-in `semloom_pg.enable_predicate_prefetch` allows only inspected built-in predicates on supported
+SeqScan/Result children. LIMIT and expressions that require demand evaluation keep window one.
+Opt-in `semloom_pg.enable_filter_count` admits a single built-in `COUNT(*)` target above SemFilter;
+PostgreSQL's Aggregate still computes the result. Both settings default to OFF. Other aggregates,
+grouping and security-barrier views remain unsupported. The test-only Filter ID trace checks column
+privileges and records row decisions separately from aggregate output.
+[Database-source query verification](../../../experiments/results/postgresql/database_queries_20260910/README.md)
+includes raw source identity, RLS, strict LIMIT demand, native comparison entries and controlled HTTP.
+
 2026-09-10: after a fixed-reservation v6 offer is backpressured, the tuple pump retains the rejected
 input and pauses further offers until receiving an accepted result releases the relevant storage.
 Rejected rows do not consume sequence numbers or cause duplicate model submission. The shared

@@ -69,7 +69,8 @@ pg_semantic_trace_input(PgSemanticRuntime *runtime, const AiPreparedTask *task,
 	escape_json(&message, row_id);
 	appendStringInfo(&message, ",\"payload_digest\":\"%.*s\"}",
 		(int) task->semantic_payload_digest.length, (const char *) task->semantic_payload_digest.data);
-	elog(LOG, "SEMLOOM_MAP_BINDING %s", message.data);
+	elog(LOG, "%s %s", runtime->plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_FILTER ?
+		"SEMLOOM_FILTER_BINDING" : "SEMLOOM_MAP_BINDING", message.data);
 	pfree(message.data);
 	return runtime->trace_offer;
 }
@@ -78,9 +79,22 @@ static void
 pg_semantic_trace_accepted(PgSemanticRuntime *runtime, uint64 sequence, uint64 offer)
 {
 	if (offer == 0) return;
-	elog(LOG, "SEMLOOM_MAP_BINDING {\"version\":1,\"phase\":\"accepted\",\"backend_pid\":%d,\"stream\":"
+	elog(LOG, "%s {\"version\":1,\"phase\":\"accepted\",\"backend_pid\":%d,\"stream\":"
 		UINT64_FORMAT ",\"offer\":" UINT64_FORMAT ",\"sequence\":" UINT64_FORMAT "}",
+		runtime->plan_spec.operator_kind == SEMLOOM_PLAN_OPERATOR_FILTER ?
+		"SEMLOOM_FILTER_BINDING" : "SEMLOOM_MAP_BINDING",
 		MyProcPid, runtime->trace_stream, offer, sequence);
+}
+
+void
+pg_semantic_runtime_trace_filter_result(PgSemanticRuntime *runtime, bool kept)
+{
+	if (runtime->plan_spec.operator_kind != SEMLOOM_PLAN_OPERATOR_FILTER ||
+		runtime->trace_stream == 0) return;
+	Assert(runtime->next_sequence > 0);
+	elog(LOG, "SEMLOOM_FILTER_BINDING {\"version\":1,\"phase\":\"decision\",\"backend_pid\":%d,\"stream\":"
+		UINT64_FORMAT ",\"sequence\":" UINT64_FORMAT ",\"kept\":%s}",
+		MyProcPid, runtime->trace_stream, runtime->next_sequence - 1, kept ? "true" : "false");
 }
 
 static AiByteSlice pg_semantic_runtime_copy_slice(MemoryContext owner_context,

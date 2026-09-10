@@ -75,6 +75,12 @@ KEN 的作者为 Ferdi Kossmann、Ziniu Wu、Alex Turk、Nesime Tatbul、Lei Cao
 核验日期为 2026-09-10。摘要描述模型级联的执行与资源代价；具体算法、实验条件和代码可运行性
 仍需全文与 artifact 核查。本次只加入待精读清单，不创建完成式笔记或调整 Top 15。
 
+IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](https://github.com/IM-DM4AI/IMLane0)
+固定`072f8257db80569e42c9f5727d839587df529652`；README、MIT LICENSE、安装脚本和CMake已读取。
+仓库提供DuckDB/OceanBase接入示例，未提供PG适配。安装脚本固定Arrow16.1.0rc1和Python3.8轮子等
+依赖，与当前Python3.12/Arrow24驱动不同；需独立环境与编译验证，尚未安装或运行，不能登记为就绪baseline。
+该结论只描述工程可用性，不替代论文方法比较，也不将数据库batch执行重新描述为研究空白。
+
 ### 2.2 LLM 公平调度与程序级执行
 
 | 文献 | 题录状态 | 项目角色 |

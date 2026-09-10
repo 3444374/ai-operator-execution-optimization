@@ -1,0 +1,634 @@
+{
+  "schema": "semloom.database_query_controlled.v1",
+  "actual_model_posts": 0,
+  "performance_qualified": false,
+  "source": {
+    "rows": 2000,
+    "unique_original_review_ids": 1865,
+    "taken_3_rows": 120,
+    "positive_rows": 1485,
+    "taken_3_positive_rows": 14,
+    "prepared_manifest_sha256": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2",
+    "raw_pg_sha256": "88eceb0f234a54fd38e874b49e627406434716c6b4096c0925befa0b1213eade"
+  },
+  "query_units": [
+    {
+      "unit": "cli-lotus",
+      "arm": "lotus",
+      "task": "movie-q3",
+      "status": "passed",
+      "actual_posts": 90,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 90
+      },
+      "recorded_rows": 1,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "row_audit": {
+        "true_positive": 30,
+        "false_positive": 0,
+        "true_negative": 60,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 90,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "cli-pg-source-direct",
+      "arm": "pg-source-direct",
+      "task": "map",
+      "status": "passed",
+      "actual_posts": 120,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 120
+      },
+      "recorded_rows": 120,
+      "quality": {
+        "true_positive": 40,
+        "false_positive": 0,
+        "true_negative": 80,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 120,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "row_audit": null
+    },
+    {
+      "unit": "cli-ray-data",
+      "arm": "ray-data",
+      "task": "map",
+      "status": "passed",
+      "actual_posts": 120,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 120
+      },
+      "recorded_rows": 120,
+      "quality": {
+        "true_positive": 40,
+        "false_positive": 0,
+        "true_negative": 80,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 120,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "row_audit": null
+    },
+    {
+      "unit": "lotus-failure",
+      "arm": "lotus",
+      "task": "movie-q3",
+      "status": "failed",
+      "actual_posts": null,
+      "http": null,
+      "recorded_rows": null,
+      "quality": null,
+      "row_audit": null
+    },
+    {
+      "unit": "lotus-movie-q1",
+      "arm": "lotus",
+      "task": "movie-q1",
+      "status": "passed",
+      "actual_posts": 120,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 120
+      },
+      "recorded_rows": 5,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        }
+      },
+      "row_audit": {
+        "true_positive": 40,
+        "false_positive": 0,
+        "true_negative": 80,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 120,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "lotus-movie-q2",
+      "arm": "lotus",
+      "task": "movie-q2",
+      "status": "passed",
+      "actual_posts": 90,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 90
+      },
+      "recorded_rows": 5,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        }
+      },
+      "row_audit": {
+        "true_positive": 30,
+        "false_positive": 0,
+        "true_negative": 60,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 90,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "lotus-movie-q3",
+      "arm": "lotus",
+      "task": "movie-q3",
+      "status": "passed",
+      "actual_posts": 90,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 90
+      },
+      "recorded_rows": 1,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "row_audit": {
+        "true_positive": 30,
+        "false_positive": 0,
+        "true_negative": 60,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 90,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "lotus-zero",
+      "arm": "lotus",
+      "task": "movie-q3",
+      "status": "passed",
+      "actual_posts": 0,
+      "http": {
+        "peak_http": 0,
+        "final_http_active": 0,
+        "started_requests": 0
+      },
+      "recorded_rows": 1,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "row_audit": {
+        "true_positive": 0,
+        "false_positive": 0,
+        "true_negative": 0,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 0,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "pg-failure",
+      "arm": "pg",
+      "task": "movie-q3",
+      "status": "failed",
+      "actual_posts": null,
+      "http": null,
+      "recorded_rows": null,
+      "quality": null,
+      "row_audit": null
+    },
+    {
+      "unit": "pg-map",
+      "arm": "pg",
+      "task": "map",
+      "status": "passed",
+      "actual_posts": 120,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 120
+      },
+      "recorded_rows": 120,
+      "quality": {
+        "true_positive": 40,
+        "false_positive": 0,
+        "true_negative": 80,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 120,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "row_audit": null
+    },
+    {
+      "unit": "pg-movie-q1",
+      "arm": "pg",
+      "task": "movie-q1",
+      "status": "passed",
+      "actual_posts": 13,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 13
+      },
+      "recorded_rows": 5,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        }
+      },
+      "row_audit": {
+        "true_positive": 5,
+        "false_positive": 0,
+        "true_negative": 8,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 13,
+        "missing_rows": 107,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "pg-movie-q2",
+      "arm": "pg",
+      "task": "movie-q2",
+      "status": "passed",
+      "actual_posts": 13,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 13
+      },
+      "recorded_rows": 5,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        }
+      },
+      "row_audit": {
+        "true_positive": 5,
+        "false_positive": 0,
+        "true_negative": 8,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 13,
+        "missing_rows": 77,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "pg-movie-q3",
+      "arm": "pg",
+      "task": "movie-q3",
+      "status": "passed",
+      "actual_posts": 90,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 90
+      },
+      "recorded_rows": 1,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "row_audit": {
+        "true_positive": 30,
+        "false_positive": 0,
+        "true_negative": 60,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 90,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "pg-source-direct-map",
+      "arm": "pg-source-direct",
+      "task": "map",
+      "status": "passed",
+      "actual_posts": 120,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 120
+      },
+      "recorded_rows": 120,
+      "quality": {
+        "true_positive": 40,
+        "false_positive": 0,
+        "true_negative": 80,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 120,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "row_audit": null
+    },
+    {
+      "unit": "pg-zero",
+      "arm": "pg",
+      "task": "movie-q3",
+      "status": "passed",
+      "actual_posts": 0,
+      "http": {
+        "peak_http": 0,
+        "final_http_active": 0,
+        "started_requests": 0
+      },
+      "recorded_rows": 1,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "row_audit": {
+        "true_positive": 0,
+        "false_positive": 0,
+        "true_negative": 0,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 0,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    },
+    {
+      "unit": "ray-data-map",
+      "arm": "ray-data",
+      "task": "map",
+      "status": "passed",
+      "actual_posts": 120,
+      "http": {
+        "peak_http": 2,
+        "final_http_active": 0,
+        "started_requests": 120
+      },
+      "recorded_rows": 120,
+      "quality": {
+        "true_positive": 40,
+        "false_positive": 0,
+        "true_negative": 80,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 120,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "row_audit": null
+    }
+  ],
+  "fixture_attempts": [
+    {
+      "attempt": "runner-fixture1",
+      "fixture_posts": 661,
+      "actual_model_posts": 0,
+      "active_http": 0,
+      "server_stopped": true,
+      "allocated_requests": 1090
+    },
+    {
+      "attempt": "runner-fixture2",
+      "fixture_posts": 781,
+      "actual_model_posts": 0,
+      "active_http": 0,
+      "server_stopped": true,
+      "allocated_requests": 1090
+    },
+    {
+      "attempt": "runner-fixture3",
+      "fixture_posts": 360,
+      "actual_model_posts": 0,
+      "active_http": 0,
+      "server_stopped": true,
+      "allocated_requests": 360
+    },
+    {
+      "attempt": "runner-cli1",
+      "fixture_posts": 330,
+      "actual_model_posts": 0,
+      "active_http": 0,
+      "server_stopped": true,
+      "allocated_requests": 360
+    },
+    {
+      "attempt": "runner-fixture4",
+      "fixture_posts": 1111,
+      "actual_model_posts": 0,
+      "active_http": 0,
+      "server_stopped": true,
+      "allocated_requests": 1450
+    }
+  ],
+  "log_identities": {
+    "count-build-all.log": {
+      "bytes": 3939,
+      "sha256": "be3617e2214c1aa8adb292ed2a6bb8edeae387c53e349d45953ddebc1b90be1b"
+    },
+    "count-build-install.log": {
+      "bytes": 631,
+      "sha256": "4662976f70fd55ca327218d8a5f6f3d943ea87582eae72ccd0e671bd60e424d7"
+    },
+    "count1.log": {
+      "bytes": 3354,
+      "sha256": "29d57a82a1ef2cc1ca22e5d844080ff54795cdf781b7de14a610c854f5d33248"
+    },
+    "tap-full-b1.log": {
+      "bytes": 251394,
+      "sha256": "bd947ee209afce25ff7f3f8f457f6844da0a9e597337f175672e3f3ac9c09b45"
+    },
+    "predicate-race2.log": {
+      "bytes": 1729,
+      "sha256": "185cfe73e239ddf53b0894505f105d328dd3d9df0f08feebc0d3e1e9361e139a"
+    },
+    "regression-b.log": {
+      "bytes": 154,
+      "sha256": "cba0514691afca6176141a774188b6167286921bba6bea843220d2415b2d8ea5"
+    },
+    "runner-fixture1.log": {
+      "bytes": 431604,
+      "sha256": "f478ad4baaf2609b240e514b8287e110845b462c017dffed346163199bd6ca8b"
+    },
+    "runner-fixture2.log": {
+      "bytes": 19875,
+      "sha256": "c4372449648949c3dbdbab1adc002cfe1e6f4f369671c983f4c65924dcd82fc6"
+    },
+    "runner-fixture3.log": {
+      "bytes": 14370,
+      "sha256": "f2a478f96401629de6d050955ab3a15afacf02ce0b415a30eccea9ba733ab229"
+    },
+    "runner-cli1.log": {
+      "bytes": 243,
+      "sha256": "b9960899f5a612e5b84b0d6372a3c41f1547ad1d2a2a3bff4e6dd3daa9ca52e6"
+    },
+    "runner-fixture4.log": {
+      "bytes": 17854,
+      "sha256": "abca62c1f4319e15ed4589ad20790d35b094ac3148d6fdea1597bc1c485ba725"
+    },
+    "inputs-fixture3.log": {
+      "bytes": 16247,
+      "sha256": "fcdb9cbcbf110c0ff7f87fd566d65659742ee5941225047db8259cfbb15d2b4a"
+    },
+    "inputs-fixture4.log": {
+      "bytes": 288,
+      "sha256": "1d7cb2572f93323ee4c608bf22b46ebe50028b6abe692fe7f7c2b93f51dfa587"
+    },
+    "python-final-0.log": {
+      "bytes": 34762,
+      "sha256": "fd82dc07c611ec746e77f17ec0770d86f95756102e6d00bdafa925381077d9a1"
+    },
+    "python-final2-0.log": {
+      "bytes": 216,
+      "sha256": "3fcb230e1813c3eb5e22dbb50e5bf6ad85871f9abfbb565ce5b85becf22f39e9"
+    },
+    "python-final2-1.log": {
+      "bytes": 1173,
+      "sha256": "94eac4de16cb468ce25b06f9452ce9ba1525142d232d32640d85c4a9164392aa"
+    },
+    "python-final3-tools.log": {
+      "bytes": 1174,
+      "sha256": "0c9bfc7d3151e3068a0cb2babdaac6059a164cef896b7ceadd56ecc4cb36631a"
+    },
+    "cleanup-final.json": {
+      "bytes": 192,
+      "sha256": "9f93700b515971ef4178bf4dcc54d913107928f2f7df86420c27cf38cae9f67e"
+    },
+    "source-comparison.json": {
+      "bytes": 37,
+      "sha256": "b8907363dc7241b6d0ff7e7d7f936ed025cf0737c76a8a2540e3eb097b4b2074"
+    },
+    "pg-stop-final.log": {
+      "bytes": 56,
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    }
+  },
+  "cleanup": {
+    "pg_stop_exit": 0,
+    "pg_pidfile_exists": false,
+    "task_processes": [],
+    "root_acl_restored": true,
+    "gpu_memory_mib": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  "source_verification": {
+    "files": 717,
+    "different": []
+  },
+  "validation": {
+    "pg_regression": {
+      "passed": 1,
+      "total": 1
+    },
+    "pg_tap_full_initial": {
+      "passed": 2100,
+      "total": 2101,
+      "files": 17
+    },
+    "corrected_predicate_tap": {
+      "passed": 28,
+      "total": 28
+    },
+    "linux_pg_python": 116,
+    "local_and_linux_tools": 65,
+    "controlled_query_test_methods": 5,
+    "actual_model_posts": 0,
+    "ray_read_tasks": 2,
+    "ray_rows_per_read_task": 60
+  }
+}

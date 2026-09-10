@@ -16,6 +16,14 @@
       {"module": "openai", "install": "openai>=1.0"},
       {"module": "transformers", "install": "transformers"}
     ],
+    "semantic-benchmarks": [
+      {"module": "pandas", "install": "pandas>=2,<3"},
+      {"module": "duckdb", "install": "duckdb"},
+      {"module": "scipy", "install": "scipy>=1.10"},
+      {"module": "cdlib", "install": "cdlib>=0.4,<0.5"},
+      {"module": "overrides", "install": "overrides>=7,<8"},
+      {"module": "lotus", "install": "lotus-ai==1.2.4"}
+    ],
     "image": [
       {"module": "torch", "install": "torch"},
       {"module": "transformers", "install": "transformers"},

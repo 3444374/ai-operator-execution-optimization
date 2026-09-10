@@ -254,8 +254,9 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             self.assertNotIn("AiProviderSession", machine_source)
             self.assertNotIn("semloom_provider_select", machine_source)
             self.assertNotIn("MemoryContextRegisterResetCallback", machine_source)
-        self.assertNotIn('"true"', runtime_source)
-        self.assertNotIn('"false"', runtime_source)
+        # Runtime may serialize a machine-owned boolean decision in a trace;
+        # it must not take over interpretation of the Filter completion.
+        self.assertNotIn('semloom_filter_exact_apply_completion', runtime_source)
         self.assertNotIn('"unknown"', runtime_source)
         self.assertIn("SEMLOOM_TUPLE_EMIT", map_machine)
         self.assertNotIn('"true"', map_machine)

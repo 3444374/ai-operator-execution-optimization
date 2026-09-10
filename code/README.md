@@ -1,5 +1,11 @@
 # SemLoom Code
 
+Database-source comparison entries now read immutable raw PG columns for direct/Ray Map and original
+SemBench LOTUS queries. Opt-in predicate prefetch and plain Filter COUNT keep PostgreSQL's ordinary
+plan and query lifecycle. [Usage](scripts/README.md#数据库原始输入与公共查询) and
+[controlled evidence](../experiments/results/postgresql/database_queries_20260910/README.md) distinguish
+implemented paths from real-model quality and performance still pending.
+
 Incremental Map shares one Engine across registered Jobs and sessions. PG owns local row buffers
 and query lifetime; the external execution layer allocates and accounts for Job resources.
 The same incremental service loop handles one or multiple Jobs. Synchronous Filter/Map and recording
