@@ -8,7 +8,7 @@
 
 ## 当前执行摘要
 
-`main@0ba12bfa` 已包含受限单 Map v6 多在途、共享 Engine/Job、查询生命周期加固和外部
+`main` 已包含受限单 Map v6 多在途、共享 Engine/Job、查询生命周期加固和外部
 有界多行方法驱动。`incremental-map` 可使用配置窗口；`query-job` 的 Map 仍为窗口 1，
 外部方法驱动尚未接入 PG 方法路径。真实模型功能检查不等于真实数据质量或强静态性能资格。
 
@@ -26,7 +26,7 @@
 各 168 项相关测试、真实 PG 7 项 recorder 检查和 146 行读回；新 ShareGPT 原文准备与 tokenizer 检查通过。
 新账本 SQuAD 10/10 次模型请求通过原始出站、usage、结果关联和小样本答案检查，增量资源归零；
 两次准备失败各 0 POST 保留，临时服务与 ACL 已清理。旧 JCT 不补造，ShareGPT 质量没有因此恢复。
-当前修复在开发分支等待按用户授权合入 main。
+工具修复实现提交 `5085c6ff` 已按用户授权合入 main。
 SQuAD 之后显式安排 SemBench Movie 原始查询与 Movie-derived 全扫描任务，先核验作者版本与 evaluator；
 两者结果目标分别登记，尚未适配或运行。具体后续步骤仍由数据执行计划维护。
 

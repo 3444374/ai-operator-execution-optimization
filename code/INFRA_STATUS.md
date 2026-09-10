@@ -6,7 +6,7 @@
 evaluator 失败、结果上限和超时均保存正确状态。同步/增量 Map 原始出站、token usage 和结果关联通过。
 增量 HTTP 峰值 2，最终资源归零；两次模型启动准备失败各 0 POST，原记录保留，临时服务与 ACL 已清理。
 PG/wire/Engine/调度算法未变；ShareGPT 任务质量、容量/组织性能与双副本仍待验证。
-当前在 `codex/data-evaluation-harness`，待按用户授权提交并合入 main；以下记录按当时状态保留。
+实现提交 `5085c6ff` 已合入 main；669 个非 Markdown 代码目录文件与服务器验收版本相同。以下记录按当时状态保留。
 
 2026-09-09：[首次真实数据尝试](../experiments/results/postgresql/data_execution_pilot_20260909/README.md)
 使用单 GPU/单 endpoint，共 48/68 次请求后停止。SQuAD 同步与增量各 16 行 EM/F1 均为100%；
@@ -15,7 +15,7 @@ ShareGPT 在第12行 length 后停止，并发现摘要质量和一行输入被�
 新增 SQuAD Map 清单/离线评价入口、观测时间戳及缺失预测计零修复；本地/Linux各125项相关测试通过。
 PG、wire、Engine和策略未变；源模型、PG、gateway均已清理。双 endpoint 当前默认装配尚未接入，
 下一步按[数据执行计划](../experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)建立静态画像。
-本轮更改在 `codex/data-execution-pilot` 分支维护，尚未合入 main；以下同日记录属于此前实现历史。
+该轮在 `codex/data-execution-pilot` 分支完成；其实现随 `5085c6ff` 的工具修复一起合入 main。以下同日记录属于此前实现历史。
 
 2026-09-09：[有界多行方法驱动](../experiments/results/scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
 独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。

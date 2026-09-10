@@ -7,7 +7,7 @@
 > [结果与失败审计](../results/postgresql/data_execution_pilot_20260909/README.md)保留原始原因。
 > 工具修复完成本地/Linux 各 168 项相关测试、7 项真实 PG 检查和 SQuAD 新账本 10/10 次模型验收，
 > 见[修复验证](../results/postgresql/data_evaluation_harness_20260910/README.md)。出站一致性与资源回收通过，
-> ShareGPT 任务质量、静态容量、组织性能及双副本验证仍待执行。
+> 实现提交 `5085c6ff` 已合入 main；ShareGPT 任务质量、静态容量、组织性能及双副本验证仍待执行。
 > 已完成合同见 [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
 
 ## 当前 PG 单 Map 数据执行切片

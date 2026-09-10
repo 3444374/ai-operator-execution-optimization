@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-09-10 数据准备与记录修复合入 main
+
+- 实现提交 `5085c6ff` 已由 `codex/data-evaluation-harness` 快进合入 main，包含前序 `687eb8de` 数据执行切片。
+- 合并前服务器 Linux 168 项、真实 PG 7 项和 SQuAD 10/10 次调用通过；原始证据独立核对，服务和 ACL 已清理。
+- 主工作目录 669 个非 Markdown 代码目录文件与服务器测试版本逐项相同；本次登记只修改状态文档。
+- 私有归档留在仓库外；[验收与集成记录](experiments/results/postgresql/data_evaluation_harness_20260910/README.md#主干集成)。
+
 ## 2026-09-10 数据准备与记录修复完成服务器验收
 
 - 按用户授权在服务器 Git 基线 687eb8de 的隔离 worktree 上验证待提交补丁；前后 682 个代码目录文件一致。
