@@ -1,0 +1,5 @@
+{
+  "scope": "Observed local development failure; manual summary, not reconstructed raw log",
+  "failure": "Initial capacity-observation test asserted zero held tasks before returning delivery leases",
+  "result": "1 failing subcase among 17 tests; consumer test fixed to release leases; production release unchanged"
+}

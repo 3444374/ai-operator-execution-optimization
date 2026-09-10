@@ -148,7 +148,8 @@ def organization_factory(config, *, tokenizer=None):
             if observer:
                 identity = asdict(config)
                 identity.pop('tokenizer_path')
-                observer(dict(event='map_organization_config', **identity, calibration_signature=signature))
+                observer(dict(event='map_organization_config', **identity, calibration_signature=signature,
+                              capacity_observation_version=1))
         except BaseException:
             execution.close()
             raise

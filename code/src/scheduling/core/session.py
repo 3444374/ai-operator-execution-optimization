@@ -88,12 +88,16 @@ class SessionEngine:
         credit: IncrementalCreditPolicy | None = None,
         sink: Callable[[str, TaskKey], None] | None = None,
         max_jobs: int = 1,
+        observe_capacity_blocks: bool = False,
         choose_flow: Callable[
             [tuple[ReadyJob, ...], JobSelectionHistory], FlowChoice
         ] = round_robin_flow,
     ):
         if credit is not None and not getattr(credit, "incremental_safe", False):
             raise ValueError("credit must qualify local bounded incremental operation")
+        if type(observe_capacity_blocks) is not bool:
+            raise ValueError('capacity block observation must be boolean')
+        self.observe_capacity_blocks = observe_capacity_blocks
         self.capacity = SessionCapacity(limits)
         self.backend, self.policies, self.clock = backend, policies, clock
         self.credit, self.sink = credit, sink
@@ -230,11 +234,16 @@ class SessionEngine:
                 or session._cancel.is_set()
             ):
                 continue
+            records = session._records()
             if any(
                 r.phase == "QUEUED" and self.capacity.can_dispatch(r, session.limits)
-                for r in session._records()
+                for r in records
             ):
                 ready.setdefault(session.spec.job_id, []).append(session.session_id)
+            elif self.observe_capacity_blocks:
+                blocked = next((r for r in records if r.phase == "QUEUED"), None)
+                if blocked is not None:
+                    self._emit("flow_capacity_blocked", blocked.key)
         if not ready:
             return None
         candidates = tuple(ReadyJob(job, tuple(flows)) for job, flows in ready.items())
@@ -624,6 +633,8 @@ class SchedulingSession:
     def _dispatch(self, record: TaskRecord, now: float) -> bool:
         engine = self.engine
         if not engine.capacity.can_dispatch(record, self.limits):
+            if engine.observe_capacity_blocks:
+                engine._emit("dispatch_capacity_blocked", record.key)
             return False
         endpoint = engine.policies.select(
             record, tuple(r for r in engine.capacity.records.values() if r.compute), now

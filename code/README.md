@@ -8,6 +8,9 @@ implemented paths from real-model quality and performance still pending.
 
 Incremental Map shares one Engine across registered Jobs and sessions. PG owns local row buffers
 and query lifetime; the external execution layer allocates and accounts for Job resources.
+`SessionEngine.observe_capacity_blocks` defaults to false and only enables extra sink events for
+failed capacity decisions. The Map organization adapter enables it when an observer is present;
+request/work policy and release ownership are unchanged.
 The same incremental service loop handles one or multiple Jobs. Synchronous Filter/Map and recording
 handlers retain their semantics and share connection infrastructure with the incremental path.
 See the [multi-Job design](../experiments/plans/semloom_multisession_design.md) and [CLI](scripts/README.md).

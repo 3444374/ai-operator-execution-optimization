@@ -200,7 +200,8 @@ def build_fixed_model_execution(
     )
     try:
         engine = SessionEngine(
-            limits, backend, policies, sink=observe, max_jobs=max_jobs, choose_flow=choose_flow
+            limits, backend, policies, sink=observe, max_jobs=max_jobs, choose_flow=choose_flow,
+            observe_capacity_blocks=organize is not None and observer is not None
         )
         allocate_job(engine)  # Reject impossible resource policies before accepting sockets.
     except BaseException:

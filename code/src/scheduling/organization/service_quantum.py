@@ -1,9 +1,10 @@
-"""Split ordered rows into bounded service-completion units.
+"""Split ordered complete rows into bounded work groups.
 
-A service quantum groups complete rows for one HTTP/Ray completion event.  It
-never splits a row's prompt, so model context and request semantics are
-preserved.  This is an upstream scheduling boundary, not token-level prefill
-chunking inside vLLM.
+The consumer determines how a group maps to physical execution. A backend that
+submits a whole slice may use it as one HTTP/Ray completion unit. Session Map
+instead submits every member as an independent request; its group is neither a
+model batch nor a shared completion boundary, and introduces no group barrier.
+Rows and their prompts are never split into model-internal prefill chunks.
 """
 
 from __future__ import annotations

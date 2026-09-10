@@ -34,6 +34,15 @@ total retention enabled. `organization_evaluation.py` checks complete-request to
 actual POST bytes and server prompt usage, accepted candidate prefixes, group membership, dispatch
 order and active token work. Native Ray/LOTUS execution does not use these controls.
 
+Organization audit v2 reconstructs active request/work reservations from Core submission and
+authoritative terminal events and compares every recorded compute snapshot. It verifies raw member
+submission order without sorting and reports HTTP start order separately. The declared generation
+budget comes from the semantic plan. Optional capacity-refusal observations distinguish failed flow
+eligibility checks from selected-member dispatch checks; their counts include repeated probes.
+Legacy traces without this observation report unknown refusal counts. Rows/work groups still expand
+into independent requests; they do not define a model batch or group completion barrier.
+[Audit and matched real-model diagnostics](../../../../experiments/results/postgresql/cd_validation_20260911/README.md).
+
 Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
 PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality
