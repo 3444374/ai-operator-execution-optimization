@@ -63,6 +63,7 @@ struct SemloomExecPump
 	uint32 count;
 	bool returned;
 	bool exhausted;
+	bool offer_blocked;
 	Size window_bytes;
 	MemoryContext receive_context;
 	MemoryContext owner_context;
@@ -453,9 +454,15 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 		for (index = 0; index < pump->count; index++)
 		{
 			SemloomWindowRow *row = &pump->rows[(pump->head + index) % pump->window];
-			if (!row->ready && !row->sent)
+			if (!row->ready && !row->sent && !pump->offer_blocked)
+			{
 				row->sent = pg_semantic_runtime_offer(pump->runtime, row->input, row->messages,
 					&row->sequence, row->trace_row_id);
+				/* This fixed-reservation v6 path regains storage when receive
+				 * transfers and releases one accepted result.  Unrelated wakes,
+				 * output-slot movement and later rows cannot change that fact. */
+				pump->offer_blocked = !row->sent;
+			}
 			if (row->sent && !row->ready) in_flight++;
 		}
 		if (!pump->count) return ExecClearTuple(scan->ss_ScanTupleSlot);
@@ -472,6 +479,7 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 			uint64 sequence;
 			MemoryContextReset(pump->receive_context);
 			sequence = pg_semantic_runtime_receive(pump->runtime, pump->receive_context, &completion);
+			pump->offer_blocked = false;
 			for (index = 0; index < pump->count; index++)
 			{
 				SemloomWindowRow *row = &pump->rows[(pump->head + index) % pump->window];

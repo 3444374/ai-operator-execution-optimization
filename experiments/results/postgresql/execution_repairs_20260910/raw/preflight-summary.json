@@ -1,0 +1,79 @@
+{
+  "status": "ok",
+  "groups": [
+    "core",
+    "text"
+  ],
+  "checks": [
+    {
+      "check": "command:git",
+      "detail": "/usr/bin/git",
+      "status": "ok"
+    },
+    {
+      "check": "command:psql",
+      "detail": "/usr/bin/psql",
+      "status": "ok"
+    },
+    {
+      "check": "command:nvidia-smi",
+      "detail": "/usr/bin/nvidia-smi",
+      "status": "ok"
+    },
+    {
+      "check": "command:nvcc",
+      "detail": "not found on PATH",
+      "status": "optional_missing"
+    },
+    {
+      "check": "python:core:numpy",
+      "detail": "import=numpy; version=numpy==1.26.4,numpy==1.26.4; install=numpy",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:pyarrow",
+      "detail": "import=pyarrow; version=pyarrow==24.0.0; install=pyarrow>=16,<25",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:ray",
+      "detail": "import=ray; version=ray==2.56.1; install=ray[data,serve]",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:psycopg",
+      "detail": "import=psycopg; version=psycopg==3.3.4; install=psycopg[binary]>=3.2",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:daft",
+      "detail": "import=daft; version=daft==0.7.21; install=daft",
+      "status": "ok"
+    },
+    {
+      "check": "python:core:psutil",
+      "detail": "import=psutil; version=psutil==7.2.2; install=psutil>=5.9",
+      "status": "ok"
+    },
+    {
+      "check": "python:text:aiohttp",
+      "detail": "import=aiohttp; version=aiohttp==3.14.3; install=aiohttp>=3.9",
+      "status": "ok"
+    },
+    {
+      "check": "python:text:httpx",
+      "detail": "import=httpx; version=httpx==0.28.1; install=httpx>=0.27",
+      "status": "ok"
+    },
+    {
+      "check": "python:text:openai",
+      "detail": "import=openai; version=openai==2.50.0; install=openai>=1.0",
+      "status": "ok"
+    },
+    {
+      "check": "python:text:transformers",
+      "detail": "import=transformers; version=transformers==4.57.6,transformers==4.57.6; install=transformers",
+      "status": "ok"
+    }
+  ]
+}

@@ -25,7 +25,7 @@ from src.experiments.attempt_ledger import (
 )
 from src.experiments.gateway_observer import ObservedAdapter, SessionObserver
 from src.baselines.common.redact import redact_json_values
-from src.baselines.common.private_artifacts import content_digest, open_private_text, write_private_json
+from src.baselines.common.private_artifacts import content_digest, open_private_text, write_private_json, require_outside_git
 from src.experiments.expected_requests import ExpectedRequests
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.buffered_events import BufferedEvents, compact_event
@@ -46,6 +46,9 @@ def main(argv=None):
     mode.add_argument("--fixture-only", action="store_true")
     parser.add_argument("--unit-id")
     parser.add_argument("--event-mode", choices=("qualification", "compact-buffered"), default="qualification")
+    parser.add_argument("--event-content", choices=("compact", "full"),
+                        help="full content requires a separate private event file")
+    parser.add_argument("--event-write-mode", choices=("synchronous", "buffered"))
     parser.add_argument("--observer-summary", type=Path)
     parser.add_argument("--event-buffer-bytes", type=int, default=8 * 1024 * 1024)
     parser.add_argument("--dns-release-file", type=Path)
@@ -65,8 +68,21 @@ def main(argv=None):
         parser.error("fixture mode cannot select a real request budget")
     if bool(args.cell_budget) != bool(args.unit_id) or (args.cell_budget and args.budget_id is None):
         parser.error("cell budgets require unit ID, budget identity and limit")
-    if args.event_mode == "compact-buffered" and args.private_events:
-        parser.error("compact events contain hashes; use qualification mode for full private events")
+    content = args.event_content or (
+        "compact" if args.event_mode == "compact-buffered" else "full" if args.private_events else "redacted"
+    )
+    write_mode = args.event_write_mode or (
+        "buffered" if args.event_mode == "compact-buffered" else "synchronous"
+    )
+    if content == "compact" and args.private_events:
+        parser.error("compact events do not write full private content")
+    if content == "full" and not args.private_events:
+        parser.error("full events require --private-events outside Git")
+    if args.private_events:
+        require_outside_git(args.private_events)
+    if content == "redacted":
+        # Legacy redaction removes credentials, not arbitrary input/output content.
+        require_outside_git(args.events)
     if args.event_buffer_bytes < 1:
         parser.error("event buffer must be positive")
     if args.observer_summary and args.observer_summary.exists():
@@ -85,28 +101,30 @@ def main(argv=None):
     expected = (ExpectedRequests.load(args.expected_request_hashes,
                 available_attempts=available)
                 if args.expected_request_hashes else None)
-    if args.event_mode == "qualification":
+    if write_mode == "synchronous":
         args.events.touch(exist_ok=False)
     record_lock = threading.Lock()
     session_observer = SessionObserver(lambda event: None)
     private_handle = None
-    buffered = session_buffered = None
+    buffered = session_buffered = private_buffered = None
 
     def record(event):
         event = dict(
             event, session_id=session_observer.current_session, task=session_observer.current_task,
             monotonic_ns=time.monotonic_ns(),
         )
-        if buffered is not None:
-            buffered.record(compact_event(event))
-            return
-        with record_lock, args.events.open("a", encoding="utf-8") as handle:
+        public_event = redact_json_values(event) if content == "redacted" else compact_event(event)
+        with record_lock:
+            if private_buffered is not None:
+                private_buffered.record(event)
             if private_handle is not None:
                 private_handle.write(json.dumps(event, ensure_ascii=False) + "\n")
                 private_handle.flush()
-            handle.write(
-                json.dumps(redact_json_values(event), ensure_ascii=False, separators=(",", ":")) + "\n"
-            )
+            if buffered is not None:
+                buffered.record(public_event)
+            else:
+                with args.events.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(public_event, ensure_ascii=False, separators=(",", ":")) + "\n")
 
     def observe_completion(request, complete):
         started = time.monotonic()
@@ -170,10 +188,14 @@ def main(argv=None):
     gateway_args = gateway_args[1:] if gateway_args[:1] == ["--"] else gateway_args
     try:
         with ExitStack() as stack:
-            if args.event_mode == "compact-buffered":
+            if write_mode == "buffered":
                 buffered = stack.enter_context(BufferedEvents(args.events, max_pending_bytes=args.event_buffer_bytes))
             if args.private_events:
-                private_handle = stack.enter_context(open_private_text(args.private_events))
+                if write_mode == "buffered":
+                    private_buffered = stack.enter_context(BufferedEvents(args.private_events,
+                                                                         max_pending_bytes=args.event_buffer_bytes))
+                else:
+                    private_handle = stack.enter_context(open_private_text(args.private_events))
             if args.session_events:
                 if buffered is not None:
                     session_buffered = stack.enter_context(BufferedEvents(args.session_events,
@@ -210,10 +232,13 @@ def main(argv=None):
         if args.observer_summary:
             write_private_json(args.observer_summary, {
                 "event_mode": args.event_mode,
+                "event_content": content,
+                "event_write_mode": write_mode,
                 "unit_id": args.unit_id,
                 "observed_attempts": ledger.attempts if ledger else None,
                 "events": buffered.snapshot() if buffered else None,
                 "sessions": session_buffered.snapshot() if session_buffered else None,
+                "private_events": private_buffered.snapshot() if private_buffered else None,
             })
 
 

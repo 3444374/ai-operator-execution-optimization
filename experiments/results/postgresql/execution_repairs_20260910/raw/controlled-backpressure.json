@@ -1,0 +1,24 @@
+{
+  "schema": "semloom.controlled_backpressure.v1",
+  "source_type": "real PostgreSQL and production gateway with controlled backend",
+  "actual_model_requests": 0,
+  "rows": 32,
+  "pg_window": 16,
+  "result_bytes": 2097152,
+  "counts": {
+    "before": {
+      "offers": 660,
+      "accepted": 32,
+      "repeated_without_related_release": 598,
+      "submitted": 32,
+      "raw_events_sha256": "0e44a20003e6066b678e9c0490d1a1244c9528a37ca8a6b862d73d9f8aadc056"
+    },
+    "after": {
+      "offers": 62,
+      "accepted": 32,
+      "repeated_without_related_release": 0,
+      "submitted": 32,
+      "raw_events_sha256": "c70b80050e1120dd2cb2ca8473a27d4aff28210d154c4168a5c3e36b0e783ad7"
+    }
+  }
+}

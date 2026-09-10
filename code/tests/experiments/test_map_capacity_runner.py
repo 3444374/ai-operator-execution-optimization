@@ -26,6 +26,48 @@ def examples():
 
 
 class CapacityTests(unittest.TestCase):
+    def test_partial_summary_does_not_hide_independent_cell_evidence(self):
+        from src.experiments.postgresql.cell_evidence import collect_cell_evidence
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'q0').mkdir()
+            (root / 'q0/execution.json').write_text('{partial')
+            (root / 'observer.json').write_text('{"observed_attempts": 3}')
+            result = collect_cell_evidence(root, SimpleNamespace(queries=1))
+        self.assertIsNone(result['queries'][0]['execution'])
+        self.assertEqual(result['observer']['observed_attempts'], 3)
+        self.assertEqual(result['resource_state'], 'unknown')
+        self.assertIn('q0/execution.json', result['read_errors'])
+
+    def test_sql_error_precedes_producer_capture_and_table_cleanup_failures(self):
+        from contextlib import nullcontext
+        from unittest.mock import Mock
+        from src.experiments.postgresql.cell_evidence import CellErrors
+        from src.experiments.postgresql.map_capacity_runner import _run_pg
+
+        query_error = ValueError("original SQL error")
+        connection = SimpleNamespace(info=SimpleNamespace(backend_pid=1), execute=Mock())
+        connection.execute.side_effect = [None, RuntimeError("table cleanup")]
+        config = CellConfig('cell', 'pg', 'tuning', 12, 1, 3, 3, 3*1048576, 3*1048576, 8388608)
+        errors = CellErrors()
+        module = 'src.experiments.postgresql.map_capacity_runner.'
+        with tempfile.TemporaryDirectory(dir='/tmp') as directory:
+            root = Path(directory)
+            log = root / 'pg.log'
+            log.write_text('')
+            with patch(module + '_prepare_pg', return_value='SELECT fixture'), \
+                 patch(module + 'owned_child_process', return_value=nullcontext(SimpleNamespace(pid=1))), \
+                 patch(module + 'wait_for_path'), \
+                 patch(module + 'ProcessSampler', return_value=nullcontext(SimpleNamespace(phase=None))), \
+                 patch(module + 'record_pg_query', side_effect=query_error), \
+                 patch(module + '_capture_producer', side_effect=OSError('producer capture')):
+                _run_pg(config, [], None, connection, log, root / 'model', root / 'budget',
+                        AttemptBudget('fixture', 12), root, errors)
+        self.assertIs(errors.first, query_error)
+        self.assertEqual(errors.details['query']['type'], 'ValueError')
+        self.assertEqual(errors.details['producer_capture']['type'], 'OSError')
+        self.assertEqual(errors.details['table_cleanup']['type'], 'RuntimeError')
+
     def prepared(self):
         return prepare_capacity_samples(examples(), 'a'*64, Tokenizer(), rows_per_split=12,
                                         seed=33, context_limit=4096, tokenizer_identity={'fixture': True})
@@ -51,6 +93,41 @@ class CapacityTests(unittest.TestCase):
                     seed=1, context_limit=110, tokenizer_identity={})
         self.assertGreater(result['excluded_context_rows'], 0)
         self.assertEqual(result['excluded_context_rows'], sum(not r['fits_context'] for r in result['profile']))
+
+    def test_pg_prepare_and_cleanup_errors_preserve_cell_evidence(self):
+        connection = SimpleNamespace(autocommit=True, closed=False,
+                                     info=SimpleNamespace(transaction_status=0))
+        def execute(sql):
+            if sql.startswith('DROP'):
+                raise RuntimeError('cleanup failed')
+        connection.execute = execute
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = root / 'model.json'
+            model.write_text(json.dumps(dict(endpoint_url='http://localhost/fixture', model_id='fixture', timeout_ms=1000)))
+            budget = AttemptBudget('fixture', 12)
+            ledger = CellBudgetLedger.create(root / 'budget.sqlite', budget, deadline_utc=time.time()+60)
+            config = CellConfig('cell', 'pg', 'tuning', 12, 1, 3, 3, 3*1048576, 3*1048576, 8388608)
+            with patch('src.experiments.postgresql.map_capacity_runner._prepare_pg', side_effect=ValueError('prepare failed')):
+                with self.assertRaisesRegex(ValueError, 'prepare failed'):
+                    run_cell(config, manifest=self.prepared()['manifests']['natural'], fixed_model_file=model,
+                             budget_file=ledger.path, budget=budget, root=root / 'cell', connection=connection,
+                             pg_log=root / 'pg.log')
+            result = json.loads((root / 'cell' / 'summary.json').read_text())
+            self.assertEqual(result['status'], 'failed')
+            self.assertEqual(result['errors']['pg']['type'], 'ValueError')
+            self.assertEqual(result['errors']['table_cleanup']['type'], 'RuntimeError')
+            self.assertEqual(result['evidence']['resource_state'], 'unknown')
+            self.assertEqual(ledger.snapshot()['allocated_requests'], 12)
+
+    def test_capacity_api_rejects_callers_transaction_before_mutation(self):
+        from unittest.mock import Mock
+        connection = SimpleNamespace(autocommit=False, closed=False, execute=Mock())
+        config = CellConfig('cell', 'pg', 'tuning', 12, 1, 3, 3, 3*1048576, 3*1048576, 8388608)
+        with self.assertRaisesRegex(ValueError, 'autocommit'):
+            run_cell(config, manifest=self.prepared()['manifests']['natural'], fixed_model_file=None,
+                     budget_file=None, budget=None, root=None, connection=connection, pg_log=Path('unused'))
+        connection.execute.assert_not_called()
 
     def test_direct_cell_reuses_client_bounds_intake_and_preserves_wrong_answers(self):
         import httpx

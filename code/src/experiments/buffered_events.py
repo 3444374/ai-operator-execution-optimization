@@ -20,7 +20,8 @@ def compact_event(event):
     allowed = {'event', 'session_id', 'task', 'monotonic_ns', 'sequence', 'payload_digest',
                'response_model_id', 'finish_reason', 'prompt_tokens', 'output_tokens', 'usage',
                'attempt', 'request_values_sha256', 'request_bytes_sha256', 'key', 'code',
-               'elapsed_seconds', 'remaining', 'connection_id', 'job_id'}
+               'elapsed_seconds', 'remaining', 'connection_id', 'job_id',
+               'status', 'reason', 'accepted_prefix_count', 'engine_session_id'}
     result = {key: value for key, value in event.items() if key in allowed}
     if isinstance(event.get('raw_output'), str):
         encoded = event['raw_output'].encode('utf-8')

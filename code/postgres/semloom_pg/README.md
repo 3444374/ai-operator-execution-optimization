@@ -1,5 +1,12 @@
 # `semloom_pg` capability spike
 
+2026-09-10: after a fixed-reservation v6 offer is backpressured, the tuple pump retains the rejected
+input and pauses further offers until receiving an accepted result releases the relevant storage.
+Rejected rows do not consume sequence numbers or cause duplicate model submission. The shared
+gateway now continues bounded owner ticks when dispatch or cleanup can proceed, while still
+servicing connections and cancellation. [Controlled verification](../../../experiments/results/postgresql/execution_repairs_20260910/README.md)
+includes 2,043 PG TAP checks; real-model timing for these repairs is pending a separate budget.
+
 2026-09-10: the optional `semloom_pg.test_map_binding_id_column` records a named projected text ID
 through the existing tuple binding before provider offer, with stream/sequence/digest and acceptance.
 It defaults to an empty string and rejects missing or unsupported ID projections. It is a private test

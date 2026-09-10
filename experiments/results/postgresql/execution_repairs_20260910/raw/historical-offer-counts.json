@@ -1,0 +1,309 @@
+{
+  "schema": "semloom.offer_archive_audit.v1",
+  "source_archive_sha256": "d978e5f790f5cc3130740ff4f384203b9ad1159d343e07ecf766b8e01761f69a",
+  "source_type": "retained private experiment archive",
+  "contains_raw_inputs": false,
+  "queries": [
+    {
+      "unit": "bytes-input",
+      "query_log": "q0-producer.log",
+      "offers": 512,
+      "accepted": 512,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "bytes-pg",
+      "query_log": "q0-producer.log",
+      "offers": 512,
+      "accepted": 512,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "bytes-result",
+      "query_log": "q0-producer.log",
+      "offers": 24708,
+      "accepted": 512,
+      "offers_per_accepted": 48.2578125
+    },
+    {
+      "unit": "coarse-pg-c1",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c128",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c16",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c2",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c32",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c4",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c64",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "coarse-pg-c8",
+      "query_log": "q0-producer.log",
+      "offers": 256,
+      "accepted": 256,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "evaluation-pg",
+      "query_log": "q0-producer.log",
+      "offers": 2000,
+      "accepted": 2000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-1-pg16",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-1-pg32",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-2-pg16",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-2-pg32",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-3-pg16",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-3-pg32",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-4-pg16",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-4-pg32",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-5-pg16",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "final-5-pg32",
+      "query_log": "q0-producer.log",
+      "offers": 4000,
+      "accepted": 4000,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "fixture-pg",
+      "query_log": "q0-producer.log",
+      "offers": 0,
+      "accepted": 0,
+      "offers_per_accepted": null
+    },
+    {
+      "unit": "fixture-pg",
+      "query_log": "q1-producer.log",
+      "offers": 0,
+      "accepted": 0,
+      "offers_per_accepted": null
+    },
+    {
+      "unit": "fixture-pg2",
+      "query_log": "q0-producer.log",
+      "offers": 4,
+      "accepted": 4,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "fixture-pg2",
+      "query_log": "q1-producer.log",
+      "offers": 4,
+      "accepted": 4,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "observe-pg-buffered",
+      "query_log": "q0-producer.log",
+      "offers": 512,
+      "accepted": 512,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "observe-pg-no-trace",
+      "query_log": "q0-producer.log",
+      "offers": 0,
+      "accepted": 0,
+      "offers_per_accepted": null
+    },
+    {
+      "unit": "observe-pg-qualification",
+      "query_log": "q0-producer.log",
+      "offers": 512,
+      "accepted": 512,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "observe-tight-no-trace",
+      "query_log": "q0-producer.log",
+      "offers": 0,
+      "accepted": 0,
+      "offers_per_accepted": null
+    },
+    {
+      "unit": "scale-pg-n1024",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "scale-pg-n2048",
+      "query_log": "q0-producer.log",
+      "offers": 2048,
+      "accepted": 2048,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "scale-pg-n4096",
+      "query_log": "q0-producer.log",
+      "offers": 4096,
+      "accepted": 4096,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "scale-pg-n512",
+      "query_log": "q0-producer.log",
+      "offers": 512,
+      "accepted": 512,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "screen-pg-c128",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "screen-pg-c16",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "screen-pg-c64",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "screen-safe-pg64",
+      "query_log": "q0-producer.log",
+      "offers": 512,
+      "accepted": 512,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "warm-pg",
+      "query_log": "q0-producer.log",
+      "offers": 16,
+      "accepted": 16,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "warm-pg",
+      "query_log": "q1-producer.log",
+      "offers": 16,
+      "accepted": 16,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "window-pg-l32",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "window-pg-l64",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    },
+    {
+      "unit": "window-pg-l96",
+      "query_log": "q0-producer.log",
+      "offers": 1024,
+      "accepted": 1024,
+      "offers_per_accepted": 1.0
+    }
+  ]
+}

@@ -51,11 +51,15 @@ class SessionCapacity:
 
     @staticmethod
     def fits(usage: Usage, limits: SessionLimits, task: OfferedTask) -> bool:
-        return (
-            usage.held_tasks + 1 <= limits.held_tasks
-            and usage.input_bytes + len(task.payload) <= limits.input_bytes
-            and usage.result_bytes + task.max_result_bytes <= limits.result_bytes
-        )
+        return SessionCapacity.storage_block(usage, limits, task) is None
+
+    @staticmethod
+    def storage_block(usage, limits, task):
+        for name, amount in (("held_tasks", 1), ("input_bytes", len(task.payload)),
+                             ("result_bytes", task.max_result_bytes)):
+            if getattr(usage, name) + amount > getattr(limits, name):
+                return name
+        return None
 
     def can_dispatch(self, record: TaskRecord, limits: SessionLimits) -> bool:
         bounds = [(self.usage(), self.limits), (self.usage(record.key.session_id), limits)]

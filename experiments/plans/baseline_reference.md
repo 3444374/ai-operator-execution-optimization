@@ -186,6 +186,15 @@ SLO 变化）分表报告。
 
 ### 0.2 PG semantic gateway：A/B/C/D 分层开销对照（设计，待执行）
 
+2026-09-10：近期实现与运行顺序由[独立工作包](data_organization_batching.md#当前实施执行修复与数据库查询套件2026-09-10)
+维护。基础执行修复后的同核心对照全部使用修复实现；专门的修复前后诊断另标代码版本与测量补丁，
+不能把基础缺陷修复称为新调度算法。观测内容完整度、写入方式和查询／清理时点分别固定。
+
+后续 source 身份分别记录：内存 direct（输入已预加载）、PG-source direct（普通 SELECT＋消息构造＋
+独立 HTTP，查询时间包含读取）、PG 语义算子、原生系统。前三类不能冒充 Ray Data／LOTUS 原生执行。
+同 PG 数据源比较使用不可变表，包含计划阶段触发的 COUNT／取样；输入序与完成序、缓存、重试及
+所有 worker 实际出站独立报告。新增路径在通过各自验证前保持 pending。
+
 问题是：额外 UDS/wire、PG carrier 与 SemLoom 执行控制各引入多少成本，在哪些请求规模和并发条件下
 影响端到端表现。它支撑数据组织与提交/路由研究，不是新的研究内容，也不是原生产品的排名。
 架构与实现条件见[主计划](postgresql_ai_semantic_operator_architecture_20260827.md#multi-session-execution)；

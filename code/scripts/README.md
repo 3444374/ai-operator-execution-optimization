@@ -115,6 +115,13 @@ python3 code/scripts/baselines/map_capacity.py cell \
 direct 查询，逐条记录 JCT，不能用其总时长冒充单查询稳态。自然/分层样本分别保留完整 token 画像、
 种子和 context 分区，旧前缀选样入口不变。所有规模都有上限；准备值和评价字典仍随声明行数增长。
 
+另可独立设置 `event_content=compact|full` 与 `event_write_mode=synchronous|buffered`。
+未指定时兼容旧模式：direct qualification 是 compact＋synchronous，PG qualification 是
+full＋synchronous，compact-buffered 为 compact＋buffered。完整事件仅在私有目录保存，PG 的公开
+伴随文件保留紧凑计数／哈希。独立 observer CLI 使用 `--event-content` 和 `--event-write-mode`；
+full 必须另给 `--private-events`。旧 observer qualification 未指定私有伴随文件时仍为 credential-redacted，
+它不移除任意业务文本，因此该输出也必须位于 Git 之外。
+
 单元开始前从 SQLite 账本持久预留 `rows*queries`；只允许一个进程领取一次，HTTP 前扣减不读盘。
 崩溃、未发送和不确定结果都不退款，领取后禁止重新领取/复制到其他进程。旧 v1 小账本保留原格式，
 声明规模超过 64 KiB 可容纳范围时提前拒绝，追加也先检查上限。不能单纯增大旧账本额度做容量实验。
@@ -130,6 +137,17 @@ PG runner 读取实际 server log 中默认关闭的 `semloom_pg.test_map_bindin
 `received_rows` 与 `recorded_rows` 分开；`evaluate_recording(...,mode='stream')` 在查询之后消费文件并核对
 行数/哈希。当前 SQuAD evaluator 仍保留有规模上限的 ID/预测字典，RSS 与查询阶段分开采样。
 外部服务、PG 连接和事务的最终清理时间由其所有者另记。
+
+`semloom.query_timing.v3` 在流上下文退出前保存执行错误和终点，独立保存
+`query_error/cleanup_error/recording_error`；后续错误不覆盖第一原因。`statement_timeout_ms` 同时作为
+两臂查询期限：PG 设置 statement timeout 并用有限客户端取消兜底，direct 使用异步期限。
+PG 容量 API 必须传入专用、空闲、autocommit 连接；通用 recorder 不接管事务。
+准备／执行／评价失败时仍保存可取得的单元证据，未知资源状态不写成零。
+
+真实 PG＋本地 HTTP 的 opt-in 检查入口为
+`python -m unittest tests.experiments.test_pg_query_execution_integration`；设置
+`SEMLOOM_TEST_PG_DSN`、`SEMLOOM_TEST_PG_LOG`、全新私有 `SEMLOOM_TEST_ARTIFACT_ROOT`。
+PG 与 runner 使用同一测试用户；测试不启动模型或替调用者销毁 cluster。
 
 容量事件模式使用字节/条数有上限的队列，后台分批写入，收尾 drain/fsync；满队列或写盘失败使运行失败，
 不丢弃事件继续计性能。`--cell-budget`、`--unit-id`、`--event-mode compact-buffered` 和

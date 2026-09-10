@@ -286,3 +286,6 @@ class CleanupReport:
     events: int
     usage: Usage
     error: str | None
+    has_immediate_work: bool = False
+    next_deadline: float | None = None
+    blocked_reason: str | None = None

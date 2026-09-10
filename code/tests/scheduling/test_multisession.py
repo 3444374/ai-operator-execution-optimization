@@ -45,6 +45,103 @@ def flow(core, handle, name):
 
 
 class MultiSessionTests(unittest.TestCase):
+    def test_storage_refusal_reports_condition_without_self_waking(self):
+        e, _, _ = engine()
+        a = e.register_job("A", replace(budget(), result_bytes=4))
+        s = flow(e, a, "a")
+        s.offer((task(0),))
+        generation = e.wake.generation
+        refused = s.offer((task(1),))
+        self.assertEqual(refused.reason, "job_result_bytes")
+        self.assertEqual(refused.status, "BACKPRESSURE")
+        self.assertEqual((refused.generation, e.wake.generation), (generation, generation))
+
+    def test_single_item_larger_than_job_storage_is_permanently_rejected(self):
+        for constrained in (replace(budget(), input_bytes=3), replace(budget(), result_bytes=3)):
+            with self.subTest(constrained=constrained):
+                e, backend, _ = engine()
+                a = e.register_job("A", constrained)
+                s = flow(e, a, "a")
+                rejected = s.offer((task(0),))
+                self.assertEqual(rejected.status, "REJECTED")
+                self.assertEqual(e.capacity.usage().held_tasks, 0)
+                self.assertEqual(backend.pending, {})
+
+    def test_global_budget_exhaustion_reports_dispatch_without_a_new_wake(self):
+        e, backend, _ = engine(requests=2)
+        a = e.register_job("A", budget(requests=2))
+        s = flow(e, a, "a")
+        s.offer((task(0), task(1)))
+        generation = e.wake.generation
+        first = e.advance(1)
+        self.assertTrue(first.has_immediate_work)
+        self.assertEqual(e.wake.generation, generation)
+        self.assertEqual(len(backend.pending), 1)
+        second = e.advance(1)
+        self.assertFalse(second.has_immediate_work)
+        self.assertEqual(len(backend.pending), 2)
+
+    def test_queued_but_capacity_blocked_waits_until_completion(self):
+        e, backend, clock = engine()
+        a = e.register_job("A", budget())
+        s = flow(e, a, "a")
+        s.offer((task(0), task(1)))
+        progress = e.advance(1)
+        self.assertFalse(progress.has_immediate_work)
+        self.assertEqual(progress.blocked_reason, "WAIT_BACKEND")
+        self.assertGreater(progress.next_deadline, clock.now)
+        backend.complete(TaskKey(s.session_id, 0))
+        self.assertTrue(e.advance(1).has_immediate_work)
+        self.assertFalse(e.advance(1).has_immediate_work)
+        self.assertIn(TaskKey(s.session_id, 1), backend.pending)
+
+    def test_backend_rejection_has_a_retry_deadline_without_busy_loop(self):
+        from src.scheduling.core.session_contract import Acceptance
+
+        e, backend, clock = engine()
+        a = e.register_job("A", budget())
+        s = flow(e, a, "a")
+        s.offer((task(0),))
+        backend.acceptance = Acceptance.NOT_ACCEPTED
+        progress = e.advance(1)
+        self.assertFalse(progress.has_immediate_work)
+        self.assertEqual(progress.next_deadline, clock.now + s.limits.poll_interval_s)
+        e.advance(1)
+        self.assertEqual(len(backend.routes), 1)
+        clock.now = progress.next_deadline
+        backend.acceptance = Acceptance.ACCEPTED
+        e.advance(1)
+        self.assertEqual(len(backend.pending), 1)
+
+    def test_continued_global_ticks_preserve_other_job_and_cancel_opportunities(self):
+        e, backend, _ = engine(requests=2)
+        a = e.register_job("A", budget(requests=2))
+        b = e.register_job("B", budget(requests=2))
+        sa, sb = flow(e, a, "a"), flow(e, b, "b")
+        sa.offer((task(0), task(1)))
+        self.assertTrue(e.advance(1).has_immediate_work)
+        sb.offer((task(0),))
+        e.advance(1)
+        self.assertIn(TaskKey(sb.session_id, 0), backend.pending)
+        sa.request_cancel()
+        progress = e.advance(1)
+        self.assertTrue(progress.has_immediate_work)
+        e.advance(1)
+        self.assertIn(TaskKey(sa.session_id, 0), backend.cancelled)
+        self.assertEqual(sb.state, State.OPEN)
+
+    def test_ready_results_do_not_claim_work_the_global_tick_cannot_do(self):
+        e, backend, _ = engine()
+        a = e.register_job("A", budget())
+        s = flow(e, a, "a")
+        s.offer((task(0),))
+        e.advance()
+        backend.complete(TaskKey(s.session_id, 0))
+        progress = e.advance()
+        self.assertFalse(progress.has_immediate_work)
+        self.assertEqual(progress.blocked_reason, "WAIT_CONSUMER")
+        self.assertIsNone(progress.next_deadline)
+
     def test_consumer_close_reclaims_leases_but_keeps_remote_work(self):
         e, backend, _ = engine(requests=2)
         a = e.register_job("A", budget(requests=2))

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from src.experiments.postgresql.map_query_recording import (
     public_execution_summary, record_execution, record_pg_query, verify_map_completions,
@@ -16,6 +17,49 @@ from src.execution_provider.wire.map_codec import semantic_payload_digest
 
 
 class QueryRecordingTests(unittest.TestCase):
+    def test_evaluation_failure_is_not_overwritten_by_report_write_failure(self):
+        self.execute(self.source([('a', 'answer')]))
+        failure = ValueError('evaluation failed')
+        def evaluate(rows):
+            raise failure
+        with patch('src.experiments.postgresql.map_query_recording.write_private_json',
+                   side_effect=OSError('disk unavailable')):
+            with self.assertRaises(ValueError) as raised:
+                evaluate_recording(self.root, evaluate)
+        self.assertIs(raised.exception, failure)
+        self.assertEqual(public_execution_summary(self.root)['execution_status'], 'completed')
+
+    def test_external_async_cancellation_precedes_slow_cleanup(self):
+        now = [0]
+        @asynccontextmanager
+        async def source():
+            async def rows():
+                now[0] = 2_000_000_000
+                raise asyncio.CancelledError('external cancel')
+                yield
+            try:
+                yield rows()
+            finally:
+                now[0] = 12_000_000_000
+        with self.assertRaises(asyncio.CancelledError):
+            asyncio.run(record_async_execution(self.root, source, max_rows=1, max_result_bytes=4096,
+                                                clock=lambda: now[0]))
+        record = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual(record['t_cancel_triggered_ns'], 2_000_000_000)
+        self.assertEqual(record['query_jct_seconds'], 2)
+        self.assertEqual(record['t_stream_cleanup_ns'], 12_000_000_000)
+
+    def test_invalid_deadlines_fail_before_creating_query_artifacts(self):
+        for value in (float('nan'), float('inf'), 0, -1, True):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    record_execution(self.root, self.source(), max_rows=1, max_result_bytes=4096,
+                                     query_timeout_s=value, cancel_query=lambda: None)
+                with self.assertRaises(ValueError):
+                    asyncio.run(record_async_execution(self.root, None, max_rows=1, max_result_bytes=4096,
+                                                        query_timeout_s=value))
+                self.assertFalse(self.root.exists())
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -83,6 +127,118 @@ class QueryRecordingTests(unittest.TestCase):
         self.assertEqual(summary["execution_status"], "completed")
         self.assertEqual(summary["evaluation_status"], "failed")
         self.assertFalse(summary["performance_qualified"])
+
+    def test_source_failure_precedes_slow_cleanup_and_preserves_sqlstate(self):
+        class QueryFailure(Exception):
+            sqlstate = "54000"
+        for cleanup_fails in (False, True):
+            with self.subTest(cleanup_fails=cleanup_fails):
+                tick = [0]
+                @contextmanager
+                def source():
+                    def rows():
+                        tick[0] = 2_000_000_000
+                        raise QueryFailure("source failed")
+                        yield
+                    try:
+                        yield rows()
+                    finally:
+                        tick[0] = 12_000_000_000
+                        if cleanup_fails:
+                            raise RuntimeError("cleanup failed")
+                directory = Path(self.tmp.name) / str(cleanup_fails)
+                with self.assertRaises(QueryFailure):
+                    record_execution(directory, source, max_rows=2, max_result_bytes=1000,
+                                     clock=lambda: tick[0])
+                result = json.loads((directory / "execution.json").read_text())
+                self.assertEqual(result["query_jct_seconds"], 2)
+                self.assertEqual(result["t_stream_cleanup_ns"], 12_000_000_000)
+                self.assertEqual(result["query_error"]["sqlstate"], "54000")
+                self.assertEqual(result["error"]["type"], "QueryFailure")
+                self.assertEqual(result["cleanup_error"] is not None, cleanup_fails)
+
+    def test_async_source_failure_is_recorded_before_cleanup(self):
+        from contextlib import asynccontextmanager
+        tick = [0]
+        @asynccontextmanager
+        async def source():
+            async def rows():
+                tick[0] = 2_000_000_000
+                raise ValueError("async source failed")
+                yield
+            try:
+                yield rows()
+            finally:
+                tick[0] = 12_000_000_000
+                raise RuntimeError("async cleanup failed")
+        with self.assertRaisesRegex(ValueError, "async source failed"):
+            asyncio.run(record_async_execution(self.root, source, max_rows=2,
+                        max_result_bytes=1000, clock=lambda: tick[0]))
+        result = json.loads((self.root / "execution.json").read_text())
+        self.assertEqual(result["query_jct_seconds"], 2)
+        self.assertEqual(result["cleanup_error"]["type"], "RuntimeError")
+
+    def test_flush_failure_does_not_replace_source_error(self):
+        from src.baselines.common.private_artifacts import open_private_text
+        @contextmanager
+        def fail_close(path):
+            with open_private_text(path) as stream:
+                yield stream
+            raise OSError("synthetic flush failed")
+        with patch('src.experiments.postgresql.map_query_recording.open_private_text', fail_close):
+            with self.assertRaisesRegex(ValueError, "source failed"):
+                self.execute(self.source([('a', 'partial')], ValueError('source failed')))
+        result = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual(result['query_error']['type'], 'ValueError')
+        self.assertEqual(result['recording_error']['type'], 'OSError')
+        self.assertIsNone(result['results_sha256'])
+
+    def test_summary_failure_keeps_primary_error_and_writes_fallback(self):
+        from src.baselines.common.private_artifacts import write_private_json
+        def write(path, value):
+            if path.name == 'execution.json':
+                raise OSError('summary failed')
+            write_private_json(path, value)
+        with patch('src.experiments.postgresql.map_query_recording.write_private_json', write):
+            with self.assertRaisesRegex(ValueError, 'source failed'):
+                self.execute(self.source(failure=ValueError('source failed')))
+        result = json.loads((self.root / 'recording-failure.json').read_text())
+        self.assertEqual(result['error']['type'], 'ValueError')
+        self.assertEqual(result['recording_error']['type'], 'OSError')
+
+    def test_async_query_deadline_stops_before_slow_cleanup(self):
+        @asynccontextmanager
+        async def source():
+            async def rows():
+                await asyncio.sleep(10)
+                yield ('a', 'late')
+            try:
+                yield rows()
+            finally:
+                await asyncio.sleep(.03)
+        with self.assertRaises(TimeoutError):
+            asyncio.run(record_async_execution(self.root, source, max_rows=2,
+                        max_result_bytes=1000, query_timeout_s=.01))
+        result = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual(result['query_error']['type'], 'TimeoutError')
+        self.assertIsNotNone(result['t_cancel_triggered_ns'])
+        self.assertGreater(result['t_stream_cleanup_ns'] - result['t_query_terminal_ns'], 20_000_000)
+
+    def test_sync_deadline_cancels_and_joins_watchdog(self):
+        import threading
+        cancelled = threading.Event()
+        @contextmanager
+        def source():
+            def rows():
+                self.assertTrue(cancelled.wait(2))
+                yield ('a', 'late')
+            yield rows()
+        with self.assertRaises(TimeoutError):
+            record_execution(self.root, source, max_rows=2, max_result_bytes=1000,
+                             query_timeout_s=.01, cancel_query=cancelled.set)
+        result = json.loads((self.root / 'execution.json').read_text())
+        self.assertEqual(result['received_rows'], 0)
+        self.assertIsNotNone(result['t_cancel_triggered_ns'])
 
     def test_empty_result_records_completion_without_quality_claim(self):
         self.execute(self.source())

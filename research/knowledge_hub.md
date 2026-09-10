@@ -6,7 +6,7 @@
 实现事实见 [`../code/INFRA_STATUS.md`](../code/INFRA_STATUS.md)，证据强度见
 [`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
-生成日期：2026-07-16（最近更新：2026-09-03，补充前缀/表示候选的证据审查，不改变两项研究内容）
+生成日期：2026-07-16（最近更新：2026-09-10，加入 KEN 待精读条目，不改变两项研究内容）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -179,6 +179,7 @@ class AdaptiveSubmitActor:
 |---|---|---|---|
 | **Cortex AISQL** | SIGMOD 2026 | 六大 AI SQL 算子生产系统；AI-aware 查询优化、模型级联、语义 Join 重写 | 场景定义来源；闭源不可拆分，不能作为实验 baseline |
 | **Sema** | VLDB 2026 accepted；当前精读 arXiv v1 | 在 DuckDB 中把 SemFilter/SemProj/SemJoin/SemOrderBy/SemAgg 作为一等 plan operator，并实现 expression optimization、fusion、prompt batching 与 AQE | 主要数据库集成架构参照；其 DuckDB 实现和结果不能替代 PostgreSQL extension capability |
+| **KEN: An Execution Engine for Unstructured Database Systems** | PVLDB 19(5): 902–916, 2026；题录与摘要已核验，全文待精读、artifact 未核验 | 摘要描述根据查询负载调整模型级联，并优化级联模型的 GPU 放置与调用调度 | 执行与资源组织的补充参照；尚不据摘要判断与 SemLoom 的具体算法差异或登记可运行 baseline。来源：[作者单位记录](https://experts.arizona.edu/en/publications/ken-an-execution-engine-for-unstructured-database-systems/)，DOI 10.14778/3796195.3796204 |
 | **Smart** (Guo, Li et al.) | VLDB Journal 2025 | SQL+ML 谓词推理重写和成本最优执行，PostgreSQL 实现，最高 1000× | DB4AI 路线代表；优化止于数据库内核 |
 | **GaussML** (Li et al.) | ICDE 2024 | 20+ ML 算子进 openGauss 查询引擎，SIMD 加速，2-6× vs MADlib | DB4AI 最强工程实现；华为+清华 |
 | **NeurDB** (Zhao, Ooi et al.) | CIDR 2025 | AI 原生数据库系统蓝图 | AI×DB 融合远景 |

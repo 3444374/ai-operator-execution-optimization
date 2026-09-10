@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+2026-09-10：[查询计时、错误保留与执行推进修复](postgresql/execution_repairs_20260910/README.md)。
+来源：源码、受控时钟、真实PG/production gateway和本地HTTP fixture；真实模型请求0。
+旧pump受控32行offer660次、修复后62次，接纳/后端提交均32，无相关释放的重复探测598→0；不据此声称模型性能收益。
+Linux调度369、provider51、PG静态116、受影响工具78项通过；PG回归1/1、TAP2043项通过。
+历史bytes-result重新审计24708/512，旧预算对照和direct日志身份补充限定；原数字/失败保留。
+真实模型验证待新额度；专用PG暂供后续工作包受控验证，HTTPfixture/gateway已关闭，最终清理另记。
+
 2026-09-10：[单 Map 容量工具与单卡画像](postgresql/map_capacity_20260910/README.md)。
 来源：源码、真实PG/vLLM与完整私有原始记录；非模拟、非新组织/调度算法。
 96601模型POST、99808预留；62完整查询/1资源拒绝，37成功PG查询独立producer核验，2个关闭观测的诊断另列。

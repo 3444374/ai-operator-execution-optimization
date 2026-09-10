@@ -29,6 +29,7 @@ from .map_direct import DirectMap, request_body
 from .map_bindings import parse_pg_bindings, verify_bound_map_results
 from .map_query_recording import record_pg_query, record_async_execution, evaluate_recording
 from .runtime_helpers import owned_child_process, wait_for_path
+from .cell_evidence import CellErrors, collect_cell_evidence
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,8 @@ class CellConfig:
     event_mode: str = 'compact-buffered'
     flush_rows: int = 64
     producer_trace: bool = True
+    event_content: str | None = None
+    event_write_mode: str | None = None
 
     def __post_init__(self):
         if self.arm not in ('direct', 'pg') or self.split not in ('tuning', 'evaluation'):
@@ -61,6 +64,18 @@ class CellConfig:
             raise ValueError('unknown observation mode')
         if type(self.producer_trace) is not bool:
             raise ValueError('producer_trace must be boolean')
+        if self.event_content not in (None, 'compact', 'full'):
+            raise ValueError('unknown event content')
+        if self.event_write_mode not in (None, 'synchronous', 'buffered'):
+            raise ValueError('unknown event write mode')
+
+    @property
+    def resolved_event_content(self):
+        return self.event_content or ('full' if self.arm == 'pg' and self.event_mode == 'qualification' else 'compact')
+
+    @property
+    def resolved_event_write_mode(self):
+        return self.event_write_mode or ('buffered' if self.event_mode == 'compact-buffered' else 'synchronous')
 
 
 def read_events(path):
@@ -137,7 +152,6 @@ def evaluate_query(directory, rows, *, plan, bindings=None, events=(), sessions=
 
 def _prepare_pg(connection, rows, plan, root, config, socket):
     from psycopg import sql
-    connection.execute('CREATE TEMP TABLE capacity_inputs (source_example_id text PRIMARY KEY,input_text text NOT NULL)')
     inputs = [(r['source_example_id'], r['input_text']) for r in rows]
     with connection.cursor().copy('COPY capacity_inputs FROM STDIN') as copy:
         for row in inputs:
@@ -171,27 +185,32 @@ def run_cell(config, *, manifest, fixed_model_file, budget_file, budget, root, c
         raise ValueError('cell requires enough token-profiled rows')
     if config.arm == 'pg' and (connection is None or pg_log is None):
         raise ValueError('PG cell requires caller connection and server log')
+    if config.arm == 'pg' and (connection.autocommit is not True or connection.closed
+                              or int(connection.info.transaction_status) != 0):
+        raise ValueError('capacity runner requires a dedicated idle autocommit connection')
     model = load_fixed_model_config(fixed_model_file)
     plan = SemanticMapPlan(manifest['instruction'], model.model_id, 64)
     root = Path(root)
     new_private_directory(root)
     snapshot = dict(config=asdict(config), manifest_sha256=manifest['sha256'], semantic_spec_sha256=plan.digest,
                     selected_ids_sha256=content_digest([r['source_example_id'] for r in rows]))
-    write_private_json(root / 'cell.json', snapshot)
-    ledger = CellBudgetLedger(budget_file, budget)
-    ledger.reserve_unit(config.unit_id, config.rows * config.queries)
-    bodies = [request_body(plan, r['input_text']) for r in rows]
-    expected_manifest = expected_request_manifest(body for _ in range(config.queries) for body in bodies)
-    write_private_json(root / 'expected.json', expected_manifest)
     started = time.monotonic_ns()
     summary = dict(status='failed', **snapshot, performance_qualified=False, queries=[])
+    errors = CellErrors()
     sampler = None
     try:
+        write_private_json(root / 'cell.json', snapshot)
+        ledger = CellBudgetLedger(budget_file, budget)
+        ledger.reserve_unit(config.unit_id, config.rows * config.queries)
+        bodies = [request_body(plan, r['input_text']) for r in rows]
+        expected_manifest = expected_request_manifest(body for _ in range(config.queries) for body in bodies)
+        write_private_json(root / 'expected.json', expected_manifest)
         if config.arm == 'direct':
-            executions, observer, sampler = asyncio.run(_run_direct(config, rows, plan, model, ledger, root, expected_manifest))
+            executions, observer, sampler = asyncio.run(_run_direct(config, rows, plan, model, ledger, root, expected_manifest, errors))
         else:
             executions, observer, sampler = _run_pg(config, rows, plan, connection, Path(pg_log), fixed_model_file,
-                                                     budget_file, budget, root)
+                                                     budget_file, budget, root, errors)
+        errors.raise_if_failed()
         summary['t_execution_cleanup_ns'] = time.monotonic_ns()
         events = read_events(root / 'events.jsonl')
         actual = Counter(e['request_values_sha256'] for e in events if e['event'] == 'request')
@@ -217,88 +236,125 @@ def run_cell(config, *, manifest, fixed_model_file, budget_file, budget, root, c
         summary.update(status='passed', producer_binding_verified=config.arm == 'pg' and config.producer_trace,
                        observer=observer, resource_accounting=resource_accounting(events, config), query_resources=sampler.summary(),
                        evaluation_resources=evaluation_sampler.summary(), actual_requests=sum(actual.values()))
-        return summary
+    except BaseException as failure:
+        errors.record('cell', failure)
     finally:
+        summary['evidence'] = errors.attempt('evidence_collection', lambda: collect_cell_evidence(root, config))
+        summary['errors'] = errors.details
+        if errors.first is not None:
+            summary['status'] = 'failed'
         summary.update(started_ns=started, ended_ns=time.monotonic_ns())
-        write_private_json(root / 'summary.json', summary)
+        errors.attempt('summary_write', lambda: write_private_json(root / 'summary.json', summary))
+    errors.raise_if_failed()
+    return summary
 
 
-async def _run_direct(config, rows, plan, model, ledger, root, expected_manifest):
+async def _run_direct(config, rows, plan, model, ledger, root, expected_manifest, errors):
     unit = ledger.claim_unit(config.unit_id)
     guard = ExpectedRequests(expected_manifest, available_attempts=unit.remaining)
-    with ExitStack() as stack:
-        events = (stack.enter_context(BufferedEvents(root / 'events.jsonl'))
-                  if config.event_mode == 'compact-buffered' else None)
-        stream = stack.enter_context(open_private_text(root / 'events.jsonl')) if events is None else None
-        def record(event):
-            event = compact_event(dict(event, monotonic_ns=time.monotonic_ns()))
-            if events is not None:
-                events.record(event)
-            else:
-                stream.write(json.dumps(event) + '\n')
-                stream.flush()
-        def request(attempt, payload):
-            value = json.loads(payload)
-            guard.accept(value)
-            record(dict(event='request', attempt=attempt, request_values_sha256=content_digest(value),
-                        request_bytes_sha256=hashlib.sha256(payload).hexdigest()))
-        direct = DirectMap(model, config.concurrency, plan, record)
-        executions = []
-        try:
-            with observe_async_http_posts(unit, request), ProcessSampler(root / 'query-rss.jsonl', {'consumer_direct': os.getpid()}) as sampler:
-                sampler.phase = 'query'
-                for index in range(config.queries):
-                    executions.append(await record_async_execution(root / f'q{index}',
-                        lambda index=index: direct.rows(rows, index+1), max_rows=len(rows),
-                        max_result_bytes=len(rows)*70000, flush_rows=config.flush_rows))
-        finally:
-            await direct.close()
-        if guard.remaining:
-            raise ValueError('direct requests incomplete')
+    events = sampler = None
+    executions = []
+    try:
+        with ExitStack() as stack:
+            events = (stack.enter_context(BufferedEvents(root / 'events.jsonl'))
+                      if config.resolved_event_write_mode == 'buffered' else None)
+            stream = stack.enter_context(open_private_text(root / 'events.jsonl')) if events is None else None
+            def record(event):
+                event = dict(event, monotonic_ns=time.monotonic_ns())
+                if config.resolved_event_content == 'compact':
+                    event = compact_event(event)
+                if events is not None:
+                    events.record(event)
+                else:
+                    stream.write(json.dumps(event) + '\n')
+                    stream.flush()
+            def request(attempt, payload):
+                value = json.loads(payload)
+                guard.accept(value)
+                record(dict(event='request', attempt=attempt, body=value, request_values_sha256=content_digest(value),
+                            request_bytes_sha256=hashlib.sha256(payload).hexdigest()))
+            direct = DirectMap(model, config.concurrency, plan, record)
+            try:
+                with observe_async_http_posts(unit, request), ProcessSampler(root / 'query-rss.jsonl', {'consumer_direct': os.getpid()}) as sampler:
+                    with errors.capture('query'):
+                        sampler.phase = 'query'
+                        for index in range(config.queries):
+                            executions.append(await record_async_execution(root / f'q{index}',
+                                lambda index=index: direct.rows(rows, index+1), max_rows=len(rows),
+                                max_result_bytes=len(rows)*70000, flush_rows=config.flush_rows,
+                                query_timeout_s=config.statement_timeout_ms / 1000))
+            finally:
+                try:
+                    await direct.close()
+                except BaseException as failure:
+                    errors.record('http_cleanup', failure)
+            if guard.remaining:
+                raise ValueError('direct requests incomplete')
+    except BaseException as failure:
+        errors.record('direct', failure)
     observer = dict(observed_attempts=unit.attempts, events=events.snapshot() if events else None,
-                    event_mode=config.event_mode)
-    write_private_json(root / 'observer.json', observer)
+                    event_mode=config.event_mode,
+                    event_content=config.resolved_event_content, event_write_mode=config.resolved_event_write_mode)
+    errors.attempt('observer_write', lambda: write_private_json(root / 'observer.json', observer))
     return executions, observer, sampler
 
 
-def _run_pg(config, rows, plan, connection, pg_log, fixed_file, budget_file, budget, root):
+def _run_pg(config, rows, plan, connection, pg_log, fixed_file, budget_file, budget, root, errors):
     socket = root / 'g.sock'
     if len(str(socket).encode()) > 100:
         raise ValueError('use a short private artifact root for Unix sockets')
     event_args = (['--events', str(root / 'public-events.jsonl'), '--private-events', str(root / 'events.jsonl')]
-                  if config.event_mode == 'qualification' else ['--events', str(root / 'events.jsonl')])
+                  if config.resolved_event_content == 'full' else ['--events', str(root / 'events.jsonl')])
     command = [sys.executable, '-m', 'src.experiments.choice_gateway_observer', *event_args,
                '--session-events', str(root / 'sessions.jsonl'),
                '--event-mode', config.event_mode, '--observer-summary', str(root / 'observer.json'),
+               '--event-content', config.resolved_event_content,
+               '--event-write-mode', config.resolved_event_write_mode,
                '--expected-request-hashes', str(root / 'expected.json'), '--cell-budget', str(budget_file),
                '--unit-id', config.unit_id, '--budget-id', budget.budget_id, '--max-attempts', str(budget.limit),
                '--', '--socket', str(socket), '--fixed-model-config', str(fixed_file), '--incremental-map',
                '--max-active-jobs', '1', '--max-active-requests', str(config.concurrency),
                '--max-held-tasks', str(config.window), '--input-buffer-bytes', str(config.input_bytes),
                '--result-buffer-bytes', str(config.result_bytes), '--test-max-sessions', str(config.queries)]
-    write_private_json(root / 'gateway-command.json', command)
-    statement = _prepare_pg(connection, rows, plan, root, config, socket)
-    executions = []
+    executions, sampler, table_created = [], None, False
     try:
+        write_private_json(root / 'gateway-command.json', command)
+        connection.execute('CREATE TEMP TABLE capacity_inputs (source_example_id text PRIMARY KEY,input_text text NOT NULL)')
+        table_created = True
+        statement = _prepare_pg(connection, rows, plan, root, config, socket)
         with owned_child_process(command, root, 'gateway', os.environ.copy(), None) as gateway:
-            wait_for_path(socket, gateway)
-            pids = {'consumer': os.getpid(), 'gateway_core': gateway.pid,
-                    'pg_backend': connection.info.backend_pid}
-            with ProcessSampler(root / 'query-rss.jsonl', pids) as sampler:
-                for index in range(config.queries):
-                    log_offset = pg_log.stat().st_size
-                    sampler.phase = 'query'
-                    executions.append(record_pg_query(connection, statement, root / f'q{index}',
-                        max_rows=len(rows), max_result_bytes=len(rows)*70000, flush_rows=config.flush_rows))
-                    sampler.phase = 'between_queries'
-                    with pg_log.open('rb') as log:
-                        log.seek(log_offset)
-                        trace = log.read()
-                    with open_private_text(root / f'q{index}-producer.log') as out:
-                        out.write(trace.decode())
-            gateway.wait(timeout=30)
-            if gateway.returncode != 0 or socket.exists():
-                raise ValueError('gateway did not complete and clean up')
+            with errors.capture('gateway_execution'):
+                wait_for_path(socket, gateway)
+                pids = {'consumer': os.getpid(), 'gateway_core': gateway.pid,
+                        'pg_backend': connection.info.backend_pid}
+                with ProcessSampler(root / 'query-rss.jsonl', pids) as sampler:
+                    with errors.capture('query'):
+                        for index in range(config.queries):
+                            log_offset = pg_log.stat().st_size
+                            sampler.phase = 'query'
+                            try:
+                                with errors.capture('query'):
+                                    executions.append(record_pg_query(connection, statement, root / f'q{index}',
+                                        max_rows=len(rows), max_result_bytes=len(rows)*70000, flush_rows=config.flush_rows,
+                                        query_timeout_s=config.statement_timeout_ms / 1000))
+                            finally:
+                                sampler.phase = 'between_queries'
+                                errors.attempt('producer_capture', lambda index=index, offset=log_offset:
+                                               _capture_producer(pg_log, offset, root / f'q{index}-producer.log'))
+                gateway.wait(timeout=30)
+                if gateway.returncode != 0 or socket.exists():
+                    raise ValueError('gateway did not complete and clean up')
+    except BaseException as failure:
+        errors.record('pg', failure)
     finally:
-        connection.execute('DROP TABLE IF EXISTS capacity_inputs')
-    return executions, json.loads((root / 'observer.json').read_text()), sampler
+        if table_created:
+            errors.attempt('table_cleanup', lambda: connection.execute('DROP TABLE capacity_inputs'))
+    observer = errors.attempt('observer_read', lambda: json.loads((root / 'observer.json').read_text()))
+    return executions, observer, sampler
+
+
+def _capture_producer(pg_log, offset, destination):
+    with pg_log.open('rb') as log, open_private_text(destination) as out:
+        log.seek(offset)
+        for line in log:
+            out.write(line.decode())

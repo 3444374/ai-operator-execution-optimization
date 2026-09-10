@@ -14,6 +14,22 @@ from tests.execution_provider.test_multisession_gateway import service, Client, 
 
 
 class IncrementalSessionTests(unittest.TestCase):
+    def test_permanent_item_rejection_is_a_wire_error_not_retryable_ack(self):
+        from src.scheduling.core.session_contract import OfferResult
+
+        async def execute(task, endpoint):
+            raise AssertionError("rejected input must not start backend work")
+
+        with service(execute, max_jobs=1) as (path, gateway, events):
+            client = Client(path, window=4)
+            try:
+                with patch('src.scheduling.core.session.SchedulingSession.offer',
+                           return_value=OfferResult(0, 'REJECTED', 'invalid batch', 0)):
+                    client.send(v6.build_task_message(client.plan, sequence=0, input_value='x'))
+                    self.assertEqual(client.result(), v6.build_error_message('INVALID_TASK', sequence=0))
+            finally:
+                client.close()
+
     def test_two_inflight_reverse_completion_rejection_and_resubmission(self):
         release, started_two = threading.Event(), threading.Event()
         submitted, members = [], []

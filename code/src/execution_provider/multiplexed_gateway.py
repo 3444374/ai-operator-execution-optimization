@@ -21,7 +21,7 @@ from .query_registration import (
 )
 from .wire.framing import read_frame, encode_frame, RegisteredStream
 from .connection_capacity import ConnectionCapacity
-from ..scheduling.core.session_contract import State
+from ..scheduling.core.session_contract import State, TaskKey
 from .adapters.model_config import MAX_MODEL_RESPONSE_BYTES
 from .wire.framing import MAX_FRAME_BYTES
 from .wire import v6
@@ -418,6 +418,10 @@ class MultiSessionMapGateway:
                     pending = args[0]
                     task = self.execution.prepare_task(pending.request, pending.sequence)
                     result = session.offer((task,))
+                    self.observe({"event": "offer", "key": asdict(TaskKey(session.session_id, task.sequence)),
+                                  "status": result.status, "reason": result.reason,
+                                  "accepted_prefix_count": result.accepted_prefix_count,
+                                  "usage": asdict(self.engine.capacity.usage())})
                 elif operation == "advance":
                     session.set_dispatch_enabled(True)
                     result = replace(session.advance(1), generation=self.progress.generation)
@@ -555,7 +559,13 @@ class MultiSessionMapGateway:
                     deadline = deadline or time.monotonic() + self.execution.drain_timeout_s
                 if deadline and time.monotonic() >= deadline:
                     raise RuntimeError("remote outcome unconfirmed; remaining capacity quarantined")
-                self.engine.wake.wait(generation, self.engine.capacity.limits.poll_interval_s)
+                if not progress.has_immediate_work:
+                    timeout = self.engine.capacity.limits.poll_interval_s
+                    if progress.next_deadline is not None:
+                        timeout = min(timeout, max(0.0, progress.next_deadline - self.engine.clock()))
+                    if deadline is not None:
+                        timeout = min(timeout, max(0.0, deadline - time.monotonic()))
+                    self.engine.wake.wait(generation, timeout)
             if self.engine.error:
                 raise RuntimeError("shared execution pool quarantined")
         finally:

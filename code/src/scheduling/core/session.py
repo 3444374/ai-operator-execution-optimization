@@ -33,6 +33,7 @@ from .session_contract import (
     TaskKey,
     Terminal,
     Uncertain,
+    Usage,
 )
 from .session_policy import IncrementalCreditPolicy, SessionPolicies
 from .task_info import validate_task_info
@@ -181,7 +182,43 @@ class SessionEngine:
                     session._fail("session advancement failed")
                     used += session._cleanup(max(0, maximum - used))
             self._finish_retired()
-            return CleanupReport(used, self.capacity.usage(), self.error)
+            return self._progress(used, self.clock())
+
+    def _progress(self, used, now):
+        """Describe the owner's next tick without invoking stateful policies again."""
+        immediate, queued, consumer, deadlines = False, False, False, []
+        for session in self._sessions.values():
+            records = session._records()
+            terminal = session.state in TERMINAL_STATES
+            if terminal:
+                immediate |= any(
+                    r.phase != "LEASED" and (not r.compute or not r.cancel_sent)
+                    for r in records
+                )
+                continue
+            for record in records:
+                duration = session.limits.phase_timeout(record.phase)
+                if duration is not None:
+                    deadlines.append(record.since + duration)
+                consumer |= record.phase in ("READY", "LEASED")
+                if record.phase != "QUEUED":
+                    continue
+                queued = True
+                if not session._dispatch_enabled:
+                    continue
+                if now < session._retry_at:
+                    deadlines.append(session._retry_at)
+                elif not self.error and self.capacity.can_dispatch(record, session.limits):
+                    immediate = True
+        remote = any(r.compute for r in self.capacity.records.values())
+        if remote or queued:
+            deadlines.append(now + self.capacity.limits.poll_interval_s)
+        reason = None if immediate else (
+            "WAIT_BACKEND" if remote else "WAIT_CAPACITY" if queued
+            else "WAIT_CONSUMER" if consumer else "NEED_INPUT"
+        )
+        return CleanupReport(used, self.capacity.usage(), self.error, bool(immediate),
+                             min(deadlines, default=None), reason)
 
     def _select_job_flow(self, now):
         ready = {}
@@ -476,6 +513,8 @@ class SchedulingSession:
                 or len(task.metadata) > self.limits.metadata_bytes
             ):
                 return False
+            if job_budget is not None and not self.engine.capacity.fits(Usage(), job_budget, task):
+                return False
         return True
 
     def offer(self, tasks: tuple[OfferedTask, ...] | list[OfferedTask]) -> OfferResult:
@@ -493,13 +532,15 @@ class SchedulingSession:
             job_usage = capacity.usage(job_id=self.spec.job_id)
             job_budget = capacity.job_limits.get(self.spec.job_id)
             accepted = 0
+            reason = ""
             now = self.engine.clock()
             for task in tasks:
-                if not capacity.fits(total, capacity.limits, task) or not capacity.fits(
-                    local, self.limits, task
-                ):
-                    break
-                if job_budget is not None and not capacity.fits(job_usage, job_budget, task):
+                bounds = [("global", total, capacity.limits), ("session", local, self.limits)]
+                if job_budget is not None:
+                    bounds.append(("job", job_usage, job_budget))
+                reason = next((f"{scope}_{block}" for scope, usage, bound in bounds
+                               if (block := capacity.storage_block(usage, bound, task)) is not None), "")
+                if reason:
                     break
                 key = TaskKey(self.session_id, task.sequence)
                 candidate[key] = TaskRecord(key, self.spec.resolve(task.profile_name), task, now)
@@ -523,12 +564,13 @@ class SchedulingSession:
                 )
                 accepted += 1
             status = "ACCEPTED" if accepted == len(tasks) else "BACKPRESSURE"
-            result = OfferResult(accepted, status, "", wake.generation + 1)
+            result = OfferResult(accepted, status, reason, wake.generation + bool(accepted))
             if self._cancel.is_set():
                 return OfferResult(0, "REJECTED", "cancel requested", wake.generation)
             capacity.records = candidate
             self._next_sequence += accepted
-            wake.notify()
+            if accepted:
+                wake.notify()
             return result
 
     def seal(self) -> None:
@@ -805,6 +847,7 @@ class SchedulingSession:
             for record in self._records():
                 if record.phase == "LEASED" and record.lease in ordinals:
                     del self.engine.capacity.records[record.key]
+                    self.engine._emit("released", record.key)
             self.engine.wake.notify()
 
     def set_dispatch_enabled(self, enabled: bool) -> None:

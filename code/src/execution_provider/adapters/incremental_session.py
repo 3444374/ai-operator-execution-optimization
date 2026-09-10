@@ -110,9 +110,12 @@ class IncrementalMapProtocol:
                         dict(opened["generation_constraints"]),
                         protocol_version=6,
                     )
-                    accepted = self._session.offer(
+                    offered = self._session.offer(
                         (self.prepare_task(request, sequence),)
-                    ).accepted_prefix_count
+                    )
+                    if offered.status == "REJECTED":
+                        raise CompletionAdapterError("INVALID_TASK")
+                    accepted = offered.accepted_prefix_count
                     if accepted:
                         if self._observer:
                             self._observer({"event": "map_task", "sequence": sequence,

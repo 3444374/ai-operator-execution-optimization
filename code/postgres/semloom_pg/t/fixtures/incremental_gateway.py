@@ -19,6 +19,7 @@ p = argparse.ArgumentParser()
 p.add_argument("--socket", required=True)
 p.add_argument("--events", type=Path, required=True)
 p.add_argument("--max-jobs", type=int, default=1)
+p.add_argument("--result-bytes", type=int)
 p.add_argument("--fault", choices=("ack-version", "sequence", "payload"))
 a = p.parse_args()
 stop = threading.Event()
@@ -77,6 +78,7 @@ adapter = MultiSessionMapGateway(
     frame_timeout_ms=4000,
     max_tasks=65 * a.max_jobs,
     max_active_requests=2 * a.max_jobs,
+    result_bytes=a.result_bytes,
     execute=execute,
     observer=observe,
 )

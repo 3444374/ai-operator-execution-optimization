@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-09-03
+更新日期：2026-09-10
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -58,6 +58,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | Database Perspective on LLM Inference Systems | PVLDB 2025 Tutorial | 推理系统地图与代价估计 open problem |
 | Cortex AISQL | 按实际 Companion/工业轨道引用 | AI SQL 工业需求证据；不写成 CCF-A full paper |
 | IMLane: Composable Framework for Efficient AI Function Execution in Database Engine | PVLDB 19(12): 4223–4236, 2026；DOI 10.14778/3827998.3828028 | DBEnd/ArrowLane bridge、process-level executor、database execution batch、异步提交和 Lane/resource scheduler 的直接 baseline；作者 artifact 已公开 |
+| KEN: An Execution Engine for Unstructured Database Systems | PVLDB 19(5): 902–916, 2026；DOI 10.14778/3796195.3796204 | 核心补充、待全文精读。题录与摘要已核验，作者 artifact 未核验；关注模型级联随查询负载变化的执行、GPU 放置及调用调度，暂不登记为可运行 baseline |
 | NeurDB | CIDR 2025，非 CCF-A | AI-native database vision 与边界对照 |
 | LLM for Data Management | PVLDB 2024 | DB/LLM 研究版图 |
 | Smart、SmartLite、LEADS、InferDB | 正式数据库论文 | 近数据库推理、模型选择和动态执行对照 |
@@ -68,6 +69,11 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 Kalypso 的默认 virtual pinning 不要求 explicit pin API；MLSys 2025 已含多次 LLM 查询、逐行字段序与
 准确率评估；KVFlow、DLPM/D²LPM 与 SPEAR 也覆盖部分组合机制。不能仅凭“PG、流水、多表示、
 质量记录、不改引擎”的名称组合推断新颖性。此增补不调整 Top 15 或既定开题题录。
+
+KEN 的作者为 Ferdi Kossmann、Ziniu Wu、Alex Turk、Nesime Tatbul、Lei Cao 和 Samuel Madden。
+题录及摘要来源为[作者单位记录](https://experts.arizona.edu/en/publications/ken-an-execution-engine-for-unstructured-database-systems/)，
+核验日期为 2026-09-10。摘要描述模型级联的执行与资源代价；具体算法、实验条件和代码可运行性
+仍需全文与 artifact 核查。本次只加入待精读清单，不创建完成式笔记或调整 Top 15。
 
 ### 2.2 LLM 公平调度与程序级执行
 
