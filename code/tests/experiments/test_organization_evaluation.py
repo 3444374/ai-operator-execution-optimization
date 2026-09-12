@@ -44,6 +44,34 @@ def evidence(*, works=(10,20), active_work=64, context=64):
 
 
 class OrganizationEvaluationTests(unittest.TestCase):
+    def test_empty_lazy_open_requires_independent_zero_task_count(self):
+        config, events = evidence()
+        empty = events[:1]
+        report = verify_organization(config, empty, expected_task_count=0)
+        self.assertEqual(report['rows'], 0)
+        self.assertEqual(report['compute_lifecycle']['submissions'], 0)
+        self.assertEqual(report['compute_lifecycle']['snapshots_checked'], 0)
+        with self.assertRaisesRegex(ValueError, 'lifecycle evidence'):
+            verify_organization(config, empty + [dict(event='core_job_opened')], expected_task_count=0)
+        report = verify_organization(config, empty + [dict(event='core_job_opened'), events[-1]],
+                                     expected_task_count=0)
+        self.assertEqual(report['rows'], 0)
+        for expected in (None, 1, -1, True):
+            with self.subTest(expected=expected), self.assertRaises(ValueError):
+                verify_organization(config, empty, expected_task_count=expected)
+
+    def test_expected_zero_cannot_hide_tasks_requests_or_compute(self):
+        config, events = evidence()
+        for extra in ([events[1]], [next(e for e in events if e['event'] == 'request')],
+                      [next(e for e in events if e['event'] == 'core_submitted')],
+                      [dict(event='unexpected', usage=dict(active_work=1, active_requests=1))]):
+            with self.subTest(extra=extra), self.assertRaises(ValueError):
+                verify_organization(config, events[:1] + extra, expected_task_count=0)
+        with self.assertRaises(ValueError):
+            verify_organization(config, events, expected_task_count=0)
+        with self.assertRaises(ValueError):
+            verify_organization(config, events[:-1], expected_task_count=2)
+
     def test_complete_trace_and_consistent_preparation_retry(self):
         config,events=evidence()
         events.insert(2,deepcopy(events[1]))

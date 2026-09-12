@@ -1,6 +1,6 @@
 """Reject altered records and misassociation while retaining model quality errors."""
 from contextlib import contextmanager
-from dataclasses import replace
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import tempfile
@@ -24,6 +24,41 @@ def response(value):
 
 
 class QueryValidationTests(unittest.TestCase):
+    def test_pg_organization_uses_independent_selected_input_count(self):
+        from tests.experiments.test_organization_evaluation import evidence
+        from tests.experiments.test_window_memory import WindowMemoryTests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prepare(root/'data', 'movie', [('z', 'other', 'unused', 'NEGATIVE')],
+                    {'source': 'fixture empty selection'}, max_rows=1)
+            organization, events = evidence()
+            (root/'organization.json').write_text(json.dumps(asdict(organization)))
+            (root/'events.jsonl').write_text(json.dumps(events[0])+'\n')
+            (root/'plan.json').write_text('[{"Plan":{"Node Type":"Custom Scan"}}]')
+            (root/'pg-backend.json').write_text('{"backend_pid":17}')
+            config = QueryConfig('unit', 'pg', 'map', 'rows', movie_id='absent', pg_total_budget=True,
+                                 organization_config='organization.json', organization_sha256='a'*64)
+            memory = WindowMemoryTests().value(retained_limit=config.pg_window_bytes,
+                staging_limit=config.pg_staging_bytes, peak_retained_rows=0, peak_retained_bytes=0)
+            (root/'q0-producer.log').write_text('LOG: SEMLOOM_WINDOW_MEMORY '+json.dumps(memory))
+            @contextmanager
+            def empty(): yield iter(())
+            record_execution(root/'q0', empty, max_rows=1, max_result_bytes=4096)
+            plan = SemanticMapPlan('Classify', 'fixture', 128)
+            def run(selected):
+                import shutil
+                target = root/selected
+                target.mkdir()
+                for name in ('organization.json', 'events.jsonl', 'plan.json', 'pg-backend.json', 'q0-producer.log'):
+                    shutil.copyfile(root/name, target/name)
+                shutil.copytree(root/'q0', target/'q0')
+                return evaluate(replace(config, movie_id=selected), QueryInputs('movie', 'rows', 1),
+                                plan, root/'data/manifest.json', target, None)
+            self.assertEqual(run('absent')['organization']['rows'], 0)
+            # Identical empty execution evidence cannot validate a nonempty selection.
+            with self.assertRaisesRegex(ValueError, 'independent expected task count'):
+                run('other')
+
     def case(self, root, arm, outputs=('POSITIVE','NEGATIVE'), *, same_text=False):
         plan=SemanticMapPlan('Classify','fixture',128)
         texts=['same','same'] if same_text else ['alpha','beta']

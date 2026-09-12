@@ -113,17 +113,10 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
         self.assertEqual(memory['operators'],1)
         self.assertLessEqual(memory['sum_retained_peaks'],memory['sum_retained_limits'])
 
-    def test_organization_controls_bind_tokens_groups_and_actual_pg_rows(self):
-        import psycopg
+    def make_organization_fixture(self):
         from tokenizers import Tokenizer, models, pre_tokenizers
         from transformers import PreTrainedTokenizerFast
         from src.execution_provider.adapters.map_organization import MapOrganizationConfig, tokenizer_fingerprint
-        table=self.table+'_org';root=self.root/'organization-workload'
-        examples=[(str(i),'taken_3','[GOOD] '+('word '*(220,4,40,80)[i%4])+str(i),'POSITIVE') for i in range(36)]
-        prepare(root,'movie',examples,{'source':'synthetic heterogeneous work'},max_rows=36)
-        manifest=root/'manifest.json'
-        with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as connection:
-            install_input_table(connection,QueryInputs('movie',table,36),read_prepared(manifest,'raw.jsonl'))
         tokenizer=Tokenizer(models.WordLevel({'[UNK]':0},unk_token='[UNK]'))
         tokenizer.pre_tokenizer=pre_tokenizers.Whitespace()
         fast=PreTrainedTokenizerFast(tokenizer_object=tokenizer,unk_token='[UNK]')
@@ -131,6 +124,39 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
         path=self.root/'organization-tokenizer';fast.save_pretrained(path)
         config=MapOrganizationConfig('rows',16,4,400,512,'fixture-model','fixture-model-v1',
                                     'controlled-http-v1',str(path),tokenizer_fingerprint(path),512)
+        return config,fast
+
+    def test_organized_empty_selection_keeps_provider_lazy_open(self):
+        from dataclasses import replace
+        config,fast=self.make_organization_fixture()
+        type(self).organization_tokenizer=fast
+        try:
+            for mode in ('rows','work','length'):
+                declared=self.root/('empty-'+mode+'-organization.json')
+                write_private_json(declared,asdict(replace(config,mode=mode)))
+                unit='org-empty-'+mode
+                result=self.run_arm('pg','map',unit=unit,total_budget=True,movie_id='absent',window=16,
+                    organization_config=str(declared),organization_sha256=hashlib.sha256(declared.read_bytes()).hexdigest())
+                self.assertEqual(result['status'],'passed')
+                self.assertEqual(result['evaluation']['actual_posts'],0)
+                self.assertEqual(result['evaluation']['organization']['rows'],0)
+                self.assertEqual(result['evaluation']['drained_jobs'],0)
+                events=[json.loads(line) for line in (self.root/unit/'events.jsonl').read_text().splitlines()]
+                self.assertFalse(any(e['event'] in ('core_job_opened','core_submitted','request') for e in events))
+                sessions=(self.root/unit/'sessions.jsonl').read_text().splitlines()
+                self.assertEqual(sessions,[])
+        finally:
+            type(self).organization_tokenizer=None
+
+    def test_organization_controls_bind_tokens_groups_and_actual_pg_rows(self):
+        import psycopg
+        table=self.table+'_org';root=self.root/'organization-workload'
+        examples=[(str(i),'taken_3','[GOOD] '+('word '*(220,4,40,80)[i%4])+str(i),'POSITIVE') for i in range(36)]
+        prepare(root,'movie',examples,{'source':'synthetic heterogeneous work'},max_rows=36)
+        manifest=root/'manifest.json'
+        with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as connection:
+            install_input_table(connection,QueryInputs('movie',table,36),read_prepared(manifest,'raw.jsonl'))
+        config,fast=self.make_organization_fixture()
         type(self).organization_tokenizer=fast
         histories=[]
         try:

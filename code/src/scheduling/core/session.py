@@ -177,9 +177,11 @@ class SessionEngine:
                 self._last_flow[job_id] = session.session_id
                 try:
                     queued = tuple(r for r in session._records() if r.phase == "QUEUED")
+                    session._capacity_waiting = None
                     record = session._next_record(queued)
                     if record is None or not session._dispatch(record, now):
-                        session._retry_at = now + session.limits.poll_interval_s
+                        if session._capacity_waiting is None:
+                            session._retry_at = now + session.limits.poll_interval_s
                     else:
                         session._pending_members = session._pending_members[1:]
                 except Exception:
@@ -212,7 +214,8 @@ class SessionEngine:
                     continue
                 if now < session._retry_at:
                     deadlines.append(session._retry_at)
-                elif not self.error and self.capacity.can_dispatch(record, session.limits):
+                elif (not self.error and session._capacity_ready()
+                      and self.capacity.can_dispatch(record, session.limits)):
                     immediate = True
         remote = any(r.compute for r in self.capacity.records.values())
         if remote or queued:
@@ -231,6 +234,7 @@ class SessionEngine:
                 session.state in TERMINAL_STATES
                 or not session._dispatch_enabled
                 or now < session._retry_at
+                or not session._capacity_ready()
                 or session._cancel.is_set()
             ):
                 continue
@@ -464,6 +468,7 @@ class SchedulingSession:
         self._cancel = threading.Event()
         self._closed: CloseReport | None = None
         self._retry_at = 0.0
+        self._capacity_waiting: TaskKey | None = None
         self.job: JobHandle | None = None
         self._dispatch_enabled = True
 
@@ -630,12 +635,21 @@ class SchedulingSession:
                 )
                 return
 
+    def _capacity_ready(self) -> bool:
+        """Recheck the blocked member without rerunning selection or backend policy."""
+        if self._capacity_waiting is None:
+            return True
+        record = self.engine.capacity.records.get(self._capacity_waiting)
+        return record is None or self.engine.capacity.can_dispatch(record, self.limits)
+
     def _dispatch(self, record: TaskRecord, now: float) -> bool:
         engine = self.engine
         if not engine.capacity.can_dispatch(record, self.limits):
+            self._capacity_waiting = record.key
             if engine.observe_capacity_blocks:
                 engine._emit("dispatch_capacity_blocked", record.key)
             return False
+        self._capacity_waiting = None
         endpoint = engine.policies.select(
             record, tuple(r for r in engine.capacity.records.values() if r.compute), now
         )
@@ -738,15 +752,17 @@ class SchedulingSession:
                 if self.state in (State.CANCELLED, State.FAILED):
                     self._pending_members = ()
                     self._cleanup(budget)
-                elif now >= self._retry_at:
+                elif now >= self._retry_at and self._capacity_ready():
                     while budget and self.state not in TERMINAL_STATES:
                         queued = tuple(r for r in self._records() if r.phase == "QUEUED")
                         if not queued:
                             break
                         budget -= 1
+                        self._capacity_waiting = None
                         record = self._next_record(queued)
                         if record is None or not self._dispatch(record, now):
-                            self._retry_at = now + self.limits.poll_interval_s
+                            if self._capacity_waiting is None:
+                                self._retry_at = now + self.limits.poll_interval_s
                             break
                         # Only accepted physical submissions advance the batch cursor.
                         self._pending_members = self._pending_members[1:]
@@ -787,6 +803,7 @@ class SchedulingSession:
             or (
                 queued
                 and now >= self._retry_at
+                and self._capacity_ready()
                 # A reordered member can fit even when the input-order head cannot.
                 and any(self.engine.capacity.can_dispatch(r, self.limits) for r in queued)
             )

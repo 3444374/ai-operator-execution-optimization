@@ -101,7 +101,8 @@ def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded
             organization=MapOrganizationConfig.load(root/'organization.json')
             active_work=organization.active_work
             report['organization']=verify_organization(organization,events,max_active_requests=config.concurrency,
-                                                          expected_max_new_tokens=plan.max_tokens)
+                                                          expected_max_new_tokens=plan.max_tokens,
+                                                          expected_task_count=len(selected))
         if config.pg_total_budget:
             report['pg_memory']=verify_window_memory((root/'q0-producer.log').read_text().splitlines(),
                 backend_pid=json.loads((root/'pg-backend.json').read_text())['backend_pid'],

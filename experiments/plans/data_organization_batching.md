@@ -2,6 +2,27 @@
 
 ## 当前实施：执行修复与数据库查询套件（2026-09-10）
 
+### 推进、空查询与发送缓冲复审（2026-09-12）
+
+当前状态：针对 `3a097d36` 的三项剩余意见复现与修订；既有 A/B 公共修订和 D 生命周期/顺序审计保持已完成。
+用户随后明确服务器未开机、暂不进行服务器测试。本次只执行本地回归；以下 PG 诊断和空选择集成仅准备，
+状态为 pending，不能称已验证。模型 POST 上限为 0，不启动排名或重复模型实验。
+本地结果：[修订报告](../results/scheduling/capacity_wait_empty_map_20260912/README.md)。
+定向27项通过，非空21轨迹1,380任务审核结果不变；完整本地结果和缺依赖/环境跳过见报告。
+保留在修订分支，服务器验证后再检查合并条件。
+来源与工程取舍：核对架构 §8.7–8.8 的完成/消费、lazy-open 职责；以该提交的
+`SessionEngine.advance/_progress/_terminal`、`SchedulingSession._dispatch/advance`、
+`SessionCapacity.can_dispatch` 与 `query_evaluation._evaluate_rows` 为自有实现依据；不读取公司材料。
+保持 FIFO/既选组成员、容量公式、未知责任及后端拒绝退避；仅把计算容量等待与定时重试分开。
+离线组织审计从已核验原始输入选择取得预期任务数，允许独立证明的零任务且未开流查询，非空仍要求完整结算。
+
+验证：确定性时钟下覆盖 legacy/registered、组内 FIFO、容量未变/未恢复不反复派发、容量恢复立即推进、
+无关唤醒及其他完成不解除后端退避；零任务/非零任务缺证据对照及 PG 空选择集成；受影响公共旧路径回归。
+PG 诊断复用隔离 PG18.3，普通 SQL 慢速逐行产出，固定 128 行/每行 5 ms，仅改变返回字节（8/128 字节），
+小/大交错各两次，独立记录服务端产出与客户端接收时间；最多 60 秒查询时间，失败停止并保留。
+配置/源版本/preflight/全部结果与清理落入独立结果目录。先核对 REL_18_3 发送缓冲源码，
+不增加逐行 flush、不改变 PG 协议或输入序；普通 SQL 对照不能直接证明旧 SemMap 各层耗时。
+
 2026-09-11 C/D复核：从 `d2f9cc13` 对照用户针对 `c4354cd6` 的审查；A/B公共修订已完成，
 本次先补D组织审计，不重新修改PG/Core执行机制。来源为现有 `SessionEngine._dispatch/_terminal`、
 `BoundedAsyncBackend.poll`、`organization_evaluation.verify_organization` 与固定的既有C/D事件。

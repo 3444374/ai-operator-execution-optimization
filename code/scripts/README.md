@@ -5,6 +5,20 @@
 能力、模型和数据；安装/下载是独立显式子命令。它不导入 PostgreSQL workload，也不
 替代各实验 runner 的正确性门禁。完整流程见 `deploy/runtime/README.md`。
 
+## 普通 PG 结果发送缓冲诊断（待服务器运行）
+
+`experiments/pg_result_buffer_probe.py --describe` 只输出配置，不连接数据库。
+实际运行需先核对隔离PG18.3与runtime preflight，再设置外部`SEMLOOM_TEST_PG_DSN`并指定新的产物目录：
+
+```bash
+PYTHONPATH=code python3 code/scripts/experiments/pg_result_buffer_probe.py --dsn-env SEMLOOM_TEST_PG_DSN --output /path/to/new-buffer-probe
+```
+
+128行、每行5ms，8/128/128/8字节有效载荷，四条查询各15秒statement timeout；无模型调用。
+使用scalar临时函数的逐行服务端标记和客户端接收时间；不使用会全量收集的PL/pgSQL返回集合。
+此脚本本轮仅通过编译和`--describe`，服务器执行按用户要求暂缓。
+[范围与源码依据](../../experiments/results/scheduling/capacity_wait_empty_map_20260912/README.md)。
+
 ## 文件定位
 
 当前数据库原始输入与公共查询入口见[下节](#数据库原始输入与公共查询)，包含准备、安装和有期限的单查询执行。

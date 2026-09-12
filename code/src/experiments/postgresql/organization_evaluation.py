@@ -5,7 +5,8 @@ from dataclasses import asdict
 from src.execution_provider.adapters.map_organization import MapOrganizationConfig
 
 
-def replay_active_work(events, task_work, *, active_work, max_active_requests=None, capacity_observation_version=None):
+def replay_active_work(events, task_work, *, active_work, max_active_requests=None, capacity_observation_version=None,
+                       expected_task_count=None):
     """Reconstruct compute reservations; delivery/HTTP/cancel never release them.
 
     Scope is the current single-Map, no-retry query profile. The terminal event
@@ -19,13 +20,20 @@ def replay_active_work(events, task_work, *, active_work, max_active_requests=No
         raise ValueError('unsupported capacity observation version')
     if capacity_observation_version == 1 and max_active_requests is None:
         raise ValueError('capacity blocking audit requires the declared request limit')
+    if expected_task_count is not None and (
+            type(expected_task_count) is not int or expected_task_count < 0 or expected_task_count != len(task_work)):
+        raise ValueError('described compute tasks differ from independent expected task count')
+    if not task_work and expected_task_count != 0:
+        raise ValueError('empty compute audit requires independent zero task count')
     blocked_counts={name:dict(work=0,requests=0,both=0) for name in (
         'core_flow_capacity_blocked','core_dispatch_capacity_blocked')}
     active = {}
     submitted, terminal = set(), set()
     peak_work = peak_requests = snapshots = drained = uncertain = 0
+    opened = False
     for event in events:
         kind = event['event']
+        opened |= kind in ('core_job_opened', 'core_query_flow_joined')
         if kind in ('core_submitted', 'core_terminal', 'core_uncertain'):
             current = (event['key']['session_id'], event['key']['sequence'])
             if current not in task_work:
@@ -73,7 +81,8 @@ def replay_active_work(events, task_work, *, active_work, max_active_requests=No
             if active or drained or submitted != set(task_work) or terminal != submitted:
                 raise ValueError('job drain precedes complete authoritative settlement')
             drained += 1
-    if active or submitted != set(task_work) or terminal != submitted or drained != 1:
+    unopened_empty = expected_task_count == 0 and drained == 0 and not opened
+    if active or submitted != set(task_work) or terminal != submitted or (drained != 1 and not unopened_empty):
         raise ValueError('incomplete authoritative compute lifecycle evidence')
     request_only_bound = (sum(sorted(task_work.values(), reverse=True)[:max_active_requests])
                           if max_active_requests is not None else None)
@@ -96,8 +105,9 @@ def replay_active_work(events, task_work, *, active_work, max_active_requests=No
                                            'capacity feasibility only; trace has no declared dispatch-refusal observation'))
 
 
-def verify_organization(config, events, *, max_active_requests=None, expected_max_new_tokens=None):
-    """Audit a completed query; preparation retries are allowed only for identical tasks."""
+def verify_organization(config, events, *, max_active_requests=None, expected_max_new_tokens=None,
+                        expected_task_count=None):
+    """Audit a completed query; expected count comes from independently selected inputs."""
     if not isinstance(config, MapOrganizationConfig):
         raise ValueError('typed organization configuration required')
     if expected_max_new_tokens is not None and (type(expected_max_new_tokens) is not int or expected_max_new_tokens<1):
@@ -129,6 +139,9 @@ def verify_organization(config, events, *, max_active_requests=None, expected_ma
         if sequence in descriptions and descriptions[sequence]!=values:
             raise ValueError('preparation retry changed a task')
         descriptions[sequence]=values
+    if expected_task_count is not None and (
+            type(expected_task_count) is not int or expected_task_count < 0 or expected_task_count != len(descriptions)):
+        raise ValueError('described work differs from independent expected task count')
     accepted = [e for e in events if e['event']=='core_map_task']
     if len(accepted)!=len(descriptions) or {e['sequence'] for e in accepted}!=set(descriptions):
         raise ValueError('described work and accepted tasks differ')
@@ -217,7 +230,8 @@ def verify_organization(config, events, *, max_active_requests=None, expected_ma
     lifecycle = replay_active_work(events,
         {key(e['key']):descriptions[e['key']['sequence']]['estimated_work'] for e in submitted},
         active_work=config.active_work,max_active_requests=max_active_requests,
-        capacity_observation_version=records[0].get('capacity_observation_version'))
+        capacity_observation_version=records[0].get('capacity_observation_version'),
+        expected_task_count=expected_task_count)
     order=[e['key']['sequence'] for e in submitted]
     return dict(audit_schema='semloom.map_organization_audit.v2',
                 mode=config.mode,rows=len(descriptions),batches=len(groups),prepare_attempts=prepare_attempts,

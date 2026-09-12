@@ -43,6 +43,12 @@ Legacy traces without this observation report unknown refusal counts. Rows/work 
 into independent requests; they do not define a model batch or group completion barrier.
 [Audit and matched real-model diagnostics](../../../../experiments/results/postgresql/cd_validation_20260911/README.md).
 
+Organization audits accept `expected_task_count` from independently selected raw inputs. Zero tasks
+with no opened flow may finish without a drain event; absent evidence alone is insufficient.
+The [local follow-up](../../../../experiments/results/scheduling/capacity_wait_empty_map_20260912/README.md)
+includes empty/nonempty counterexamples and an unrun PG empty-selection integration test.
+The ordinary SQL buffer probe is prepared separately; client receive time is not SemMap node delivery time.
+
 Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
 PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality
