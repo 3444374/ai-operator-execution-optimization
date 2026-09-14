@@ -1,6 +1,6 @@
 """Trusted Job registration and storage grants over the existing task capacity table."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -92,6 +92,22 @@ def equal_share_job_budget(engine):
     ):
         raise ValueError("each Job needs storage for one bounded request and result")
     return budget
+
+
+def shared_compute_job_budget(engine):
+    """Reserve independent storage; eligible Jobs share the existing compute pool.
+
+    These are ceilings, not extra compute grants. SessionCapacity still checks
+    the global records before every dispatch; unknown remote work stays charged.
+    """
+    budget = equal_share_job_budget(engine)
+    limits = engine.capacity.limits
+    requests = limits.active_requests
+    if (budget.held_tasks < requests
+            or budget.input_bytes < requests * limits.item_input_bytes
+            or budget.result_bytes < requests * limits.item_result_bytes):
+        raise ValueError("each shared-compute Job needs storage for full request capacity")
+    return replace(budget, active_requests=requests, active_work=limits.active_work)
 
 
 @dataclass(frozen=True)

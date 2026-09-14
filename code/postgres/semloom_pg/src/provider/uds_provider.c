@@ -133,7 +133,8 @@ semloom_uds_provider_select(MemoryContext owner_context,
 		if (semloom_provider_spec_is_generate_map(spec))
 		{
 			provider->ops = &semloom_uds_async_ops;
-			provider->max_inflight_tasks = config->max_inflight_tasks = 1;
+			provider->max_inflight_tasks = config->max_inflight_tasks =
+				semloom_query_job_window_enabled() ? semloom_provider_window_tasks() : 1;
 			config->protocol_version = 6;
 			config->semantic_execution_id = "semloom.provider.incremental-map.uds.v6";
 		}

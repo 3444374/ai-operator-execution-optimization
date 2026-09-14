@@ -38,6 +38,10 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="registered incremental Jobs sharing one engine; storage is partitioned",
     )
     parser.add_argument(
+        "--job-compute-policy", choices=("equal-share", "shared"), default="equal-share",
+        help="fixed per-Job compute ceilings or a shared compute pool with reserved Job storage",
+    )
+    parser.add_argument(
         "--max-active-requests", type=int, default=GatewayLimits.max_active_requests
     )
     parser.add_argument(
@@ -130,11 +134,22 @@ def main(
         raise SystemExit("active Jobs must fit connection capacity")
     if args.max_active_jobs != 1 and not args.incremental_map:
         raise SystemExit("multiple active Jobs require --incremental-map")
+    if args.job_compute_policy != "equal-share" and (
+        not args.incremental_map or incremental_execution_factory is not None
+    ):
+        raise SystemExit("shared compute requires incremental execution without a custom factory")
     if args.organization_config is not None:
         if not args.incremental_map or args.max_active_jobs != 1 or incremental_execution_factory is not None:
             raise SystemExit("organization configuration requires single-Job incremental Map and its own factory")
         from .adapters.map_organization import MapOrganizationConfig, organization_factory
         incremental_execution_factory = organization_factory(MapOrganizationConfig.load(args.organization_config))
+    if args.job_compute_policy == "shared":
+        from .adapters.incremental_execution import build_fixed_model_execution
+        from ..scheduling.core.session_jobs import shared_compute_job_budget
+        incremental_execution_factory = partial(
+            incremental_execution_factory or build_fixed_model_execution,
+            allocate_job=shared_compute_job_budget,
+        )
     socket_path = args.socket.resolve()
     golden_fixtures = _load_golden_fixtures(args.golden_fixture)
     completion_adapter: CompletionAdapter

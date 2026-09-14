@@ -27,6 +27,7 @@ static int provider_window_bytes = 8 * 1024 * 1024;
 static bool enable_predicate_prefetch = false;
 static bool enable_filter_count = false;
 static bool enable_total_window_budget = false;
+static bool enable_query_job_window = false;
 static bool test_window_memory = false;
 static int provider_staging_bytes = 16 * 1024 * 1024;
 #ifdef SEMLOOM_FLOW_DIAGNOSTIC
@@ -44,6 +45,7 @@ int semloom_provider_window_bytes(void) { return provider_window_bytes; }
 bool semloom_predicate_prefetch_enabled(void) { return enable_predicate_prefetch; }
 bool semloom_filter_count_enabled(void) { return enable_filter_count; }
 bool semloom_total_window_budget_enabled(void) { return enable_total_window_budget; }
+bool semloom_query_job_window_enabled(void) { return enable_query_job_window; }
 bool semloom_test_window_memory_enabled(void) { return test_window_memory; }
 int semloom_provider_staging_bytes(void) { return provider_staging_bytes; }
 const char *semloom_test_map_binding_column(void)
@@ -130,6 +132,9 @@ _PG_init(void)
 							   NULL);
 	DefineCustomIntVariable("semloom_pg.provider_window_tasks", "Maximum retained Map rows.", NULL,
 		&provider_window_tasks, 2, 1, INT_MAX, PGC_USERSET, 0, NULL, NULL, NULL);
+	DefineCustomBoolVariable("semloom_pg.enable_query_job_window",
+		"Allow the configured safe Map window within a registered query Job.", NULL,
+		&enable_query_job_window, false, PGC_SUSET, 0, NULL, NULL, NULL);
 	DefineCustomIntVariable("semloom_pg.provider_window_bytes", "Maximum retained Map row and task bytes.", NULL,
 		&provider_window_bytes, 8 * 1024 * 1024, 1024 * 1024, 256 * 1024 * 1024, PGC_USERSET, GUC_UNIT_BYTE, NULL, NULL, NULL);
 	DefineCustomBoolVariable("semloom_pg.enable_predicate_prefetch",

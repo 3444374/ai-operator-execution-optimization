@@ -62,7 +62,10 @@ The opt-in `query-job` profile associates ordinary Filter v3 and Map v6 streams 
 execution with one external Job. Use the same `--incremental-map` gateway. Each query has a lazy
 control connection; operator connections join it using a live capability bound to Linux kernel
 peer credentials. Prepared executions and separate cursors receive distinct Jobs. Map uses a
-one-row window in this profile. Choice Filter and rescans remain unsupported here; their existing
+one-row window by default in this profile. Superusers can enable
+`semloom_pg.enable_query_job_window` to use `provider_window_tasks` for generated Map;
+the existing child-plan safety check still reduces unsafe prefetch to one row.
+The gateway's per-flow storage grant must fit that advertised window. Choice Filter and rescans remain unsupported here; their existing
 independent profiles are unchanged.
 
 The execution layer partitions one Job storage grant across its declared streams. Allocate enough

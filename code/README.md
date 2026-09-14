@@ -16,11 +16,14 @@ handlers retain their semantics and share connection infrastructure with the inc
 See the [multi-Job design](../experiments/plans/semloom_multisession_design.md) and [CLI](scripts/README.md).
 Query registration and stream publication roll back unpublished resources. A common connection
 ledger protects promised stream slots; query lifecycle decisions are owned by the registry.
-Static storage shares and request opportunities are supported. The opt-in Linux `query-job` profile
+Static storage shares and request opportunities are supported. `--job-compute-policy shared`
+lets eligible Jobs use idle global compute capacity while keeping independent storage reservations;
+it reuses SessionCapacity and Job/flow round-robin. The default remains `equal-share`.
+The opt-in Linux `query-job` profile
 associates ordinary Filter and Map streams from one PG execution with one Job; see the
 [query design](../experiments/plans/postgresql_query_job_design.md). Bounded external method state
-and broader SQL shapes remain engineering work. Dynamic borrowing is an optional research
-policy; service-capacity/work-based submission and routing do not require a custom GPU allocator,
+and broader SQL shapes remain engineering work. Storage borrowing remains unimplemented;
+service-capacity/work-based submission and routing do not require a custom GPU allocator,
 model-internal batching implementation or low-level GPU scheduler.
 
 Incremental Map separates retained tasks, input/result bytes and active HTTP requests.

@@ -15,6 +15,7 @@ extern int semloom_provider_window_bytes(void);
 extern bool semloom_predicate_prefetch_enabled(void);
 extern bool semloom_filter_count_enabled(void);
 extern bool semloom_total_window_budget_enabled(void);
+extern bool semloom_query_job_window_enabled(void);
 extern bool semloom_test_window_memory_enabled(void);
 #ifdef SEMLOOM_FLOW_DIAGNOSTIC
 extern bool semloom_test_flow_trace_enabled(void);
