@@ -102,7 +102,7 @@ def main():
             summary['plan'] = connection.execute('EXPLAIN (FORMAT JSON) '+QUERY, (8,)).fetchone()[0]
             for index, payload_bytes in enumerate(PAYLOAD_BYTES):
                 summary['cases'].append(run_case(connection, root, index, payload_bytes))
-                write_private_json(root/'summary.json', summary)
+                write_private_json(root/f'case-{index}-summary.json', summary['cases'][-1])
         summary['status'] = 'completed_diagnostic'
         summary['connection_closed'] = True
     except Exception as error:
