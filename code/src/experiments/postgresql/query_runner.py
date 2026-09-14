@@ -27,6 +27,7 @@ from .cell_evidence import CellErrors,collect_cell_evidence
 
 def run_query(config, *, manifest_path, model_path, budget_path, budget, root, dsn,
               pg_log=None, checkout=None, tokenizer_path=None, ray_temp_root=None):
+    preparation_started_ns = time.monotonic_ns()
     manifest_path,model_path,root=Path(manifest_path),Path(model_path),Path(root)
     manifest=load_manifest(manifest_path)
     if config.task!='map' and manifest['kind']!='movie':
@@ -52,6 +53,7 @@ def run_query(config, *, manifest_path, model_path, budget_path, budget, root, d
     reserved=False
     summary=dict(status='failed',config=asdict(config),manifest_sha256=manifest['sha256'],
                  semantic_reference_sha256=semantic_digest,started_ns=time.monotonic_ns(),
+                 query_preparation_started_ns=preparation_started_ns,
                  prompt_parser_owner='LOTUS1.2.4' if config.arm=='lotus' else 'PostgreSQL SemanticPlanSpec',
                  measurement='PG source query; durable shared POST accounting; evaluation after execution',
                  performance_qualified=False)

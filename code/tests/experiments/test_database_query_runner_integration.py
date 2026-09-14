@@ -39,6 +39,9 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
                 body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 with cls.lock:
                     cls.posts.append(body);cls.active+=1
+                capacity = getattr(cls, 'fixture_execution_capacity', None)
+                if capacity is not None:
+                    capacity.acquire()
                 try:
                     text=body['messages'][-1]['content']
                     if 'FORCE_ERROR' in text:
@@ -59,6 +62,8 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
                     self.send_header('Content-Length',str(len(payload)));self.end_headers()
                     with suppress(BrokenPipeError,ConnectionResetError):self.wfile.write(payload)
                 finally:
+                    if capacity is not None:
+                        capacity.release()
                     with cls.lock:cls.active-=1
             def log_message(self,*_):pass
         cls.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
@@ -252,6 +257,97 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
                 report=json.loads((self.root/unit/'supervisor.json').read_text())
                 self.assertEqual(report['status'],'passed')
                 self.assertEqual(report['remaining_owned_pids'],[])
+
+    @unittest.skipUnless(os.environ.get('SEMLOOM_TEST_FLOW_DIAGNOSTIC') == '1',
+                         'requires the explicitly instrumented PG test build')
+    def test_waiting_positions_pilot(self):
+        from dataclasses import replace
+        from statistics import median
+        from unittest.mock import patch
+        import psycopg
+        from src.baselines.text.sembench_movie import MOVIE_MAP_INSTRUCTION
+        from src.execution_provider.semantic_map import canonical_messages
+        from src.experiments.postgresql import query_runner
+        from src.experiments.postgresql.waiting_positions import analyze_waiting_positions
+        config, tokenizer = self.make_organization_fixture()
+        type(self).organization_tokenizer = tokenizer
+        type(self).fixture_execution_capacity = threading.BoundedSemaphore(4)
+        prepared = {}
+        for role, count in (('tuning',16),('evaluation',32)):
+            root = self.root / ('waiting-'+role)
+            texts = ['[GOOD] '+role+' '+('word '*(24,80,144,224)[i%4])+str(i) for i in range(count)]
+            prepare(root,'movie',[(role+'-'+str(i),'taken_3',text,'POSITIVE') for i,text in enumerate(texts)],
+                    {'source':'synthetic waiting fixture; not independent semantic evaluation'},max_rows=count)
+            table = self.table + '_' + role
+            with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as connection:
+                install_input_table(connection,QueryInputs('movie',table,count),read_prepared(root/'manifest.json','raw.jsonl'))
+            work = [len(tokenizer.apply_chat_template(json.loads(canonical_messages(MOVIE_MAP_INSTRUCTION,text)),
+                        tokenize=True,add_generation_prompt=True))+128 for text in texts]
+            self.assertLessEqual(max(work),config.context_tokens)
+            prepared[role] = dict(manifest=root/'manifest.json',table=table,work=work,count=count)
+        window, capacities = 8, (2,4,8)
+        wide = max(config.context_tokens, sum(sorted(prepared['evaluation']['work'],reverse=True)[:max(capacities)]))
+        reports = []
+        original = query_runner.run_pg
+
+        def trace_pg(configuration,inputs,plan,connection,pg_log,model_path,ledger,output,errors):
+            connection.execute('SET semloom_pg.test_flow_trace=on')
+            write_private_json(output/'flow-settings.json',dict(pause_input=-1,pause_ms=0,ready_first=False,
+                clock_source=time.get_clock_info('monotonic').implementation))
+            return original(configuration,inputs,plan,connection,pg_log,model_path,ledger,output,errors)
+
+        def run(role, arm, capacity, repeat):
+            data = prepared[role]
+            unit = f'waiting-{role}-{arm}-{capacity}-{repeat}'
+            options = {}
+            if arm != 'request':
+                organization = replace(config, mode='rows',window_rows=window,batch_rows=window,
+                    active_work=wide if arm=='token-wide' else config.context_tokens,batch_work=wide)
+                declared = self.root/(unit+'-organization.json')
+                write_private_json(declared,asdict(organization))
+                options.update(organization_config=str(declared),organization_sha256=hashlib.sha256(declared.read_bytes()).hexdigest())
+            with patch.object(query_runner,'run_pg',trace_pg):
+                result = self.run_arm('pg','map',unit=unit,table=data['table'],manifest=data['manifest'],
+                    total_budget=True,window=window,concurrency=capacity,max_posts=data['count'],query_timeout_s=15,
+                    input_bytes=8388608,result_bytes=8388608,pg_window_bytes=8388608,pg_staging_bytes=4194304,**options)
+            write_private_json(self.root/unit/'waiting-contract.json',dict(
+                eligibility='sealed-immutable-full-scan-at-invocation',manifest_sha256=result['manifest_sha256'],
+                role=role,arm=arm,capacity=capacity,repeat=repeat,driver='persistent',gateway='new-per-query'))
+            timing = analyze_waiting_positions(self.root/unit,expected_rows=data['count'],window=window)
+            audit = result['evaluation'].get('organization')
+            if audit:
+                self.assertEqual(audit['submitted_sequences'],list(range(data['count'])))
+                blocks = audit['compute_lifecycle']['work_only_block_count']
+                self.assertEqual(blocks == 0, arm == 'token-wide')
+            self.assertEqual(result['evaluation']['quality']['false_negative'],0)
+            write_private_json(self.root/unit/'waiting-positions.json',timing)
+            report = dict(unit=unit,role=role,arm=arm,capacity=capacity,repeat=repeat,timing=timing,
+                          evaluation=result['evaluation'])
+            reports.append(report)
+            return report
+
+        before = len(self.posts)
+        try:
+            for repeat, order in enumerate((capacities, tuple(reversed(capacities)))):
+                for capacity in order:
+                    run('tuning','request',capacity,repeat)
+            selected = min(capacities,key=lambda c:median(r['timing']['preparation_to_eof_seconds']
+                for r in reports if r['capacity']==c))
+            # A smaller work cap must admit each item and still be able to refuse a feasible C-set.
+            self.assertGreater(sum(sorted(prepared['evaluation']['work'],reverse=True)[:selected]),config.context_tokens)
+            write_private_json(self.root/'waiting-selection.json',dict(capacities=list(capacities),selected=selected,
+                rule='minimum median invocation-to-EOF of two tuning queries',wide_work=wide,tight_work=config.context_tokens,
+                evaluation_work=prepared['evaluation']['work'],performance_qualified=False))
+            orders = (('request','token-wide','token-tight'),('token-tight','request','token-wide'),
+                      ('token-wide','token-tight','request'))
+            for repeat, order in enumerate(orders):
+                for arm in order:
+                    run('evaluation',arm,selected,repeat)
+            self.assertEqual(len(self.posts)-before,384)
+            write_private_json(self.root/'waiting-comparison.json',reports)
+        finally:
+            type(self).organization_tokenizer = None
+            type(self).fixture_execution_capacity = None
 
     def test_original_count_then_limit_tasks(self):
         for task,posts in (('movie-q3',90),('movie-q1',120),('movie-q2',90)):

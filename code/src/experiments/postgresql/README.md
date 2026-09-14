@@ -35,6 +35,13 @@ observation/abort time. Written rows remain provisional on timeout; cleanup is t
 receives through independent producer row bindings. It is a finite diagnostic, not a new production
 capacity ledger or a substitute for semantic/resource validation.
 
+`query_runner.py` records invocation time before manifest/model preparation as
+`query_preparation_started_ns`, preserving the existing SQL/stream timing fields.
+`waiting_positions.py` combines this boundary, Core terminal receipts, existing PG stage traces and
+client rows. It applies only to a declared sealed immutable full scan: invocation-to-EOF includes
+new gateway/tokenizer preparation, while the persistent driver and shared model service are outside
+the per-query boundary. Its waiting areas include not-yet-materialized work and are not memory bytes.
+
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.
