@@ -220,6 +220,26 @@ class SharedQueryIntegrationTests(unittest.TestCase):
 
             # Reuse independent PG before-offer bindings and socket peer identity.
             all_events = events()
+            flow_jobs = {e['engine_session_id']: e['job_id'] for e in all_events
+                         if e['event'] == 'core_query_flow_joined'}
+            running = set()
+            for event in all_events:
+                if event['event'] in ('core_submitted', 'core_terminal'):
+                    key = (event['key']['session_id'], event['key']['sequence'])
+                    self.assertIn(key[0], flow_jobs)
+                    if event['event'] == 'core_submitted':
+                        self.assertNotIn(key, running)
+                        running.add(key)
+                    else:
+                        self.assertIn(key, running)
+                        running.remove(key)
+                    self.assertLessEqual(len(running), 4)
+                    self.assertEqual(event['usage']['active_requests'], len(running))
+                if 'usage' in event:
+                    self.assertLessEqual(event['usage']['held_tasks'], 32)
+                if event['event'] == 'core_job_drained':
+                    self.assertTrue(all(v == 0 for v in event['usage'].values()))
+            self.assertFalse(running)
             sessions = [json.loads(line) for line in sessions_file.read_text().splitlines()]
             bindings = parse_pg_bindings(Path(os.environ['SEMLOOM_TEST_PG_LOG']).read_text().splitlines())
             audits = []
@@ -230,6 +250,9 @@ class SharedQueryIntegrationTests(unittest.TestCase):
                         and s.get('peer_pid') == query['backend_pid']}
                 selected = [e for e in all_events if e.get('session_id') in pids
                             and e.get('event') in ('core_map_task', 'core_map_completion')]
+                job_ids = {e['job_id'] for e in all_events if e.get('session_id') in pids
+                           and e.get('event') in ('core_map_task', 'core_filter_task')}
+                self.assertEqual(len(job_ids), 1)
                 expected = values[::2] if query['dependent'] else values
                 audits.append(verify_bound_map_results(
                     [(str(i), text) for i, text in expected],

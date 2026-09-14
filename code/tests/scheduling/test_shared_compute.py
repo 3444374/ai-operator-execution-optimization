@@ -82,6 +82,20 @@ class SharedComputeTests(unittest.TestCase):
         self.assertEqual(core.capacity.usage().active_requests,2)
         self.assertTrue(core.capacity.records[key].compute)
 
+    def test_shared_work_limit_binds_before_request_count_and_recovers(self):
+        core, backend, _ = build(2, 4)
+        _, a = join(core, 'A')
+        _, b = join(core, 'B')
+        a.offer((task(0, estimated_work=3),))
+        b.offer((task(0, estimated_work=3),))
+        core.advance()
+        self.assertEqual(core.capacity.usage().active_requests, 1)
+        self.assertEqual(core.capacity.usage().active_work, 3)
+        backend.complete(TaskKey(a.session_id, 0))
+        core.advance()
+        self.assertIn(TaskKey(b.session_id, 0), backend.pending)
+        self.assertEqual(core.capacity.usage().active_work, 3)
+
     def test_retired_jobs_free_membership_for_more_than_maximum_over_time(self):
         core,backend,_=build(2,2)
         identities=[]
