@@ -35,9 +35,13 @@ class CapacitySelectionTests(unittest.TestCase):
                     def run_query(self,unit,**kwargs):
                         (self.root/unit).mkdir();calls.append((self.config,kwargs))
                         seconds=1 if self.config.concurrency>=selected else 2
+                        evaluation=dict(quality=dict(invalid=0))
+                        if self.config.organization_config and self.config.event_content=='full':
+                            evaluation['organization']=dict(submitted_sequences=list(range(1024)),
+                                compute_lifecycle=dict(work_only_block_count=1 if self.config.unit_id.endswith('tight') else 0))
                         return dict(manifest_sha256='fixture',query_preparation_started_ns=1,
                             execution=dict(t_query_terminal_ns=1+int(seconds*1e9),query_jct_seconds=seconds),
-                            evaluation=dict(quality=dict(invalid=0)))
+                            evaluation=evaluation)
                 def manifest(path):return dict(kind='movie',rows=512 if path.parent.name=='tuning' else 1024,
                     sha256='tune' if path.parent.name=='tuning' else 'eval')
                 with patch.dict('sys.modules',{'psycopg':SimpleNamespace(connect=lambda *a,**k:nullcontext(object()))}), \

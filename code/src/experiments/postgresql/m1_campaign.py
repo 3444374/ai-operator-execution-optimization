@@ -80,6 +80,12 @@ def run_campaign(config_path):
         if group.config.event_content=='full':
             timing=analyze_waiting_positions(output,expected_rows=manifests[split]['rows'],window=128)
             write_private_json(output/'waiting-positions.json',timing)
+        organization=summary['evaluation'].get('organization')
+        if organization is not None:
+            if organization['submitted_sequences'] != list(range(manifests[split]['rows'])):
+                raise ValueError('FIFO comparison changed actual submission order')
+            if arm=='wide' and organization['compute_lifecycle']['work_only_block_count']:
+                raise ValueError('declared wide work limit blocked a request')
         quality=summary['evaluation']['quality']
         if quality['invalid']!=0:raise ValueError('model returned an invalid classification')
         record=dict(group=group.config.unit_id,repeat=repeat,warmup=repeat==0,split=split,arm=arm,
@@ -121,7 +127,11 @@ def run_campaign(config_path):
             shift=0 if repeat==0 else repeat-1
             for index in list(range(6))[shift:]+list(range(6))[:shift]:
                 group,arm=groups[index];query(group,repeat,'evaluation',arm,pids)
-    write_private_json(root/'comparison.json',dict(status='completed',rows=rows,selection=selection,
+    tight_observations=[r['evaluation']['organization']['compute_lifecycle']['work_only_block_count'] for r in rows
+                        if r['split']=='evaluation' and r['arm']=='tight' and r['event_content']=='full']
+    triggered=bool(tight_observations) and all(value>0 for value in tight_observations)
+    write_private_json(root/'comparison.json',dict(status='completed' if triggered else 'inconclusive',
+        work_limit_triggered_in_all_full_queries=triggered,rows=rows,selection=selection,
         actual_posts=sum(512 if r['split']=='tuning' else 1024 for r in rows),
         interpretation='real short-query comparison; no steady-state capacity claim'))
 
