@@ -1,8 +1,8 @@
 # 异步期限修订与 PG 输入、交付节奏诊断
 
-状态：2026-09-14。实现 `0274b121` 已在修订分支通过本地、Linux和正常PG构建回归，受控节奏诊断完成。
-真实模型计划在24次生成请求后因诊断配置准备错误停止；正常PG和PG-source direct验证通过，
-真实模型的交付次序对照及末次写入期限检查尚未执行。未合入main，失败和未执行项不计为通过。
+状态：2026-09-14。实现 `0274b121` 已通过本地、Linux和正常PG构建回归，受控节奏诊断完成。
+首轮真实模型在24次生成请求后因配置准备错误停止；用户随后批准剩余33次，修正配置后全部完成。
+累计57次真实生成请求：56条正常结果及1条预期超时的临时结果。原失败和账本保留，未退款或重跑已完成单元。
 
 ## 目的与设置
 
@@ -48,7 +48,7 @@ execution摘要新增声明的event-loop期限、实际发现时点和发现方�
 | 诊断PG输入/交付对照 | 12个单元、96次fixture HTTP完成 | [日志](raw/flow-comparison-v2.log.gz)、[读回审计](raw/controlled-readback.json.gz) |
 
 定向用例覆盖上下文进入、阻塞源、热迭代、EOF、末次阻塞写入、真实 `DirectMap.rows` 迭代控制流、协作式取消及慢清理。
-这些期限反例均为受控无模型测试。正常direct真实请求完成不等于真实末次写入过期路径已验证。
+这些定向反例均为受控无模型测试；另经下文一次真实模型结果加同步慢写入验证过期期限，仍不声称可以抢占任意阻塞代码。
 表中套件有交叠，不相加作为独立用例总量；34和96只统计两项指定PG集成，完整TAP自行创建的fixture请求没有汇总进这两个数。
 
 ## 受控流时序：全部重复值
@@ -95,7 +95,7 @@ PG事件区分child返回、task准备、offer确认、结果就绪、node retur
 - 单元结果、独立绑定、HTTP占用、完整组织成员和实际组内提交顺序均通过重放；Core计算责任与PG留存最终归零。
   测试构建增加字段和事件开销，两个策略臂使用同一构建；不能将其耗时与正常无追踪构建拼成性能排名。
 
-## 真实模型：已完成部分与停止原因
+## 真实模型首轮：已完成部分与停止原因
 
 [完整运行结果](raw/real-run__campaign-result.json.gz)、[逐单元读回](raw/real-readback.json.gz)。
 计划8个单元，完成前三个；第4个在创建组织配置对象时被拒绝，尚未启动gateway或发出模型请求。
@@ -121,6 +121,44 @@ PG两次峰值留存4行、计费403,360B，最终留存与暂存责任检查通
 模型服务独立访问日志同为24次生成POST；另外4次prefix-reset管理POST均已确认。
 原计划中的末次真实写入跨5秒期限检查未运行，不能据此声称真实过期路径通过。
 
+## 获批补跑：33次请求与真实期限检查
+
+用户明确要求先完成剩余33次后，使用已准备并通过配置构造器/tokenizer检查的独立33次账本继续。
+[新增授权](raw/continuation__continuation-proposal__authorization.json.gz)、
+[环境复检](raw/continuation__continuation-preflight.json.gz)、
+[补跑结果](raw/continuation__real-continuation__campaign-result.json.gz)、
+[独立读回](raw/continuation__continuation-readback.json.gz)。
+四个8行对照采用active work4096、context4096，其余条件和交错次序不变，未重跑首轮已完成的24次。
+
+| 顺序 | 次序 | 生成POST | 节点首行 | 客户端首行 | JCT | 暂停开始时队首是否已就绪 |
+|---|---|---:|---:|---:|---:|---|
+| 1 | 现行 | 8 | 223.700 ms | 419.588 ms | 420.159 ms | 否 |
+| 2 | ready-first | 8 | 189.742 ms | 383.579 ms | 383.771 ms | 否 |
+| 3 | ready-first | 8 | 211.253 ms | 405.562 ms | 405.726 ms | 否 |
+| 4 | 现行 | 8 | 216.627 ms | 406.127 ms | 406.358 ms | 否 |
+
+四次8行输出与首轮正常PG逐条一致，同为6/8分类正确、2个假阴性、0个无效输出；每行请求、结果绑定和组织审计通过。
+实际peak active work812，低于4096；Core work/request最终归零，HTTP峰值4、最终0。
+PG峰值留存4行、计费403,424B，最终留存/待接纳行及字节归零。
+
+**真实输入没有复现fixture中的就绪队首阻挡。** 四次index4暂停开始时队首都是未就绪的行1，
+因此这组真实诊断没有区分ready-first专门针对的分支，不能将两次较短JCT归因为该策略收益。
+它确认了两个测试次序在真实模型下的功能、关联与资源行为；不提供稳定排名，也不修改正常构建默认次序。
+
+最后1次使用真实PG-source direct请求，结果在应用release后约135.130ms收到，再令最后一次同步写入持续跨过5秒绝对期限。
+记录器以 `absolute_check` 在期限后 **51.928ms** 发现过期，实际取消触发时点不回填；
+execution仍为 `failed`，1条69B结果与SHA完整保留、标为临时结果，评分器拒绝执行。
+独立审计重新核对该行原始输入、出站请求与完成关联，HTTP1起1终、最终0；没有对失败结果评分。
+该单元观测到查询终止5.051682s，记录全过程5.054527s，慢写入占4.916414s。
+[期限证据](raw/continuation__real-continuation__deadline__q0__execution.json.gz)、
+[预期错误验收](raw/continuation__real-continuation__deadline__expected-timeout.json.gz)。
+这是真实响应加受控写入阻塞的功能检查，不能描述成模型推理耗时5秒或正常成功查询。
+
+补跑账本与模型访问日志独立确认 **33次生成POST**，另有5次已确认prefix-reset管理POST；5个预留单元全部关闭。
+两段累计57次生成、9次管理请求，累计预留65次但实际57次：首轮失败的8次预留仍保留，未退款。
+补跑从身份核验至清理228.211秒，低于新批准的20分钟。
+[最终清理及833份源码一致性](raw/continuation__continuation-final-check.json.gz)确认模型/PG/任务/GPU无残留、端口关闭；ACL恢复。
+
 ## 保留的失败与清理
 
 1. 首轮正常构建TAP从孤立扩展副本启动，部分测试通过 `FindBin` 寻找仓库scripts/PYTHONPATH时失败。
@@ -135,7 +173,7 @@ PG两次峰值留存4行、计费403,360B，最终留存与暂存责任检查通
 [最终进程检查](raw/local-final-process-check.json.gz)：PG pid文件、任务进程和GPU计算进程均无残留，
 本轮端口关闭，临时ACL已逐字恢复。原数据、模型输出、失败与PGDATA保留在私有数据盘目录。
 
-## 对课题的含义与待批准的补跑
+## 对课题的含义与后续研究
 
 期限正确性修订和受控流时序证据已具备；现行补窗口优先可能延后就绪结果，ready-first又可能改变后续供给。
 本次不修改正常PG的默认次序，也不提出新的调度层。后续应以相同资源、完整与低扰动观测、充足重复比较供给与交付取舍，
@@ -146,11 +184,11 @@ active work改为4096，context仍4096；本批输入完整token work为193/219/
 四个最大请求合计847，因此4096在该输入上不限制提交。模型、输入、C4/L4、80ms暂停和两策略交错次序保持不变。
 [离线预检](raw/continuation-proposal__pre-model-validation.json.gz)已调用实际配置构造器、核验tokenizer并检查完整消息。
 
-待批准范围：仅剩余4个8行flow单元和1个deadline单元，**33次生成POST、单GPU、准备至清理20分钟**，另有5次cache-reset管理POST。
+原补跑方案范围：仅剩余4个8行flow单元和1个deadline单元，**33次生成POST、单GPU、准备至清理20分钟**，另有5次cache-reset管理POST。
 使用独立33次账本，保留原账本32次预留/24次实际；两段累计预定57次实际生成请求，不重跑已完成的24次、不退款、不放宽生产校验。
-首个非预期失败仍停止。补跑的[授权标记为false](raw/continuation-proposal__authorization.json.gz)，
-[执行脚本](raw/run-continuation.py.gz)与[worker](raw/continuation-worker.py.gz)已准备并仅运行inspect，尚未启动模型。
-此前“首个非预期失败停止”的运行规则仍有效，补跑须获用户确认；补齐后再决定main合并。
+首个非预期失败仍停止。此前[未批准的方案快照](raw/continuation-proposal__authorization.json.gz)继续保留；
+用户随后明确批准，新增执行/授权/结果作为独立文件保存，完成情况见上节。
+本轮执行修订验证已完成；后续设计假设与强对照由[当前研究计划](../../../plans/data_organization_batching.md)维护，不能据补跑自动开启新实验。
 
 ## 证据投影说明
 

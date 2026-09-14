@@ -1,9 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
-2026-09-14：[异步期限与输入/交付诊断](../experiments/results/postgresql/async_deadline_flow_20260914/README.md)：同一绝对期限覆盖同步准备、写入及EOF；
-正常PG回归1/1、TAP2138项及12单元96次fixture诊断通过。补输入可延后就绪节点交付，但客户端首行没有一致改善，默认策略保留。
-真实模型完成24次，PG/direct输出一致，各8行2个情感误判；随后因准备配置work2048<context4096被拒绝而停止。
-服务/PG/进程/ACL已清理；修正配置的剩余33次仅完成离线准备，真实flow与末次写入期限验证仍pending，未合并main。
+2026-09-14：[异步期限与输入/交付诊断](../experiments/results/postgresql/async_deadline_flow_20260914/README.md)完成：正常PG回归1/1、TAP2138项、12单元96次fixture通过。
+首轮真实24次因配置准备错误停止并保留；获批补跑33次全部完成，累计57次生成请求。
+56条正常结果关联通过，各8行均2个情感假阴性；1条真实结果在末次同步写入跨期限后保持失败、SHA完整、拒绝评分。
+真实flow四次暂停时队首均未就绪，不能归因ready-first收益；默认次序保留。两段服务/PG/进程/GPU/ACL已清理。
 
 2026-09-14：[容量等待与零任务 Map 服务器验证](../experiments/results/scheduling/capacity_wait_server_20260914/README.md)完成：Linux调度376、provider55、PG Python合同116通过；
 实验工具482通过/15环境跳过，PG选定6项集成另行通过，共262次受控HTTP、真实模型0次。
