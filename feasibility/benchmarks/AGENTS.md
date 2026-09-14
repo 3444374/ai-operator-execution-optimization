@@ -1,21 +1,7 @@
 # feasibility/benchmarks/AGENTS.md
 
-本文件继承根 `AGENTS.md` 与 `feasibility/AGENTS.md`，只增加组件级可行性脚本和公共工具规则。
+继承上级规则。脚本入口见 [README.md](README.md)。
 
-## 可以放
-
-- Ray task、Ray object、Arrow IPC、shuffle、fan-in 等 microbenchmark。
-- 用于生成 `feasibility/results/` 报告的分析脚本。
-- 可行性脚本共享的轻量公共函数。
-
-## 不放
-
-- 数据库 AI 算子端到端主动机脚本。
-- GPU-backed E2E profile 脚本。
-- 正式工程代码。稳定可复用代码应迁移到 `code/`。
-
-## 规则
-
-- 默认输出路径应指向 `feasibility/results/`。
-- 脚本名称要说明被验证的组件，不使用抽象阶段名。
-- 新脚本要同步更新 `README.md` 和 `feasibility/results/README.md`。
+- 保存组件 microbenchmark、可行性分析与局部共享工具；端到端动机脚本进入 `motivation/benchmarks/`，稳定可复用实现进入 `code/`。
+- 默认输出指向 `feasibility/results/`；脚本名称说明被验证的组件。
+- 新脚本登记到本目录 README；生成新结果入口时同步 `feasibility/results/README.md`。

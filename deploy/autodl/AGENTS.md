@@ -5,18 +5,14 @@
 
 ## 网络
 
-- 是否使用 turbo 按**最终访问域名**判断，不按 `git`、`pip`、`wget` 或 Python API 等命令名判断。
-  AutoDL 官方当前列出的内置加速域名是 `github.com`、`githubusercontent.com`、
-  `githubassets.com` 和 `huggingface.co`；访问这些域名前，若 `/etc/network_turbo` 存在，
-  必须在执行命令的**同一 shell 会话**中加载它。
-- 依赖 turbo 的 Git 操作使用 HTTPS remote；不假定 SSH remote 会经过 HTTP(S) 代理。
-  `pip` 若直接下载上述域名上的资源，同样使用 turbo；访问 PyPI、Conda 或其他未列入官方
-  支持清单的站点前取消代理，改用 runbook 指定的镜像或直连路径。不要硬编码 turbo 代理地址。
+- 联网前按最终访问域名选择 turbo，支持域名与命令查本目录 README 的网络部分。
+  若目标域名使用 turbo 且 `/etc/network_turbo` 存在，在执行命令的同一 shell 中加载它；不按工具名判断。
+- 依赖 turbo 的 Git 使用 HTTPS remote；其他域名按 runbook 取消代理并选择镜像或直连，不硬编码代理地址。
 
 ## 磁盘分工
 
-本节适用于安装、下载、导入、构建、服务运行、实验输出和数据迁移，不只适用于 PostgreSQL。
-执行任何可能产生大文件或持续写入的操作前，先确认系统盘与数据盘的实际挂载点、可用空间和目标路径。
+安装、下载、导入、构建、服务运行、实验输出或迁移可能产生大文件或持续写入时，
+先确认系统盘与数据盘的实际挂载点、可用空间和目标路径。
 
 | 存储位置 | 应放内容 | 不应作为 |
 |---|---|---|
@@ -34,6 +30,6 @@
 - PostgreSQL 迁移按失败关闭流程执行：干净停库 → 完整复制 → checksum/文件清单一致
   → 切换 `data_directory` → 启动、连接、行数与表/索引一致性检查。验证通过前保留旧副本；只迁移存储路径时不改数据库连接串。
 
-## 记录边界
+## 记录位置
 
 - 单台服务器的容量、主机身份和迁移校验记录保存在仓库外 artifact 目录。只有可复用部署约定变化才更新项目 runbook 和 `PROJECT_LOG.md`。

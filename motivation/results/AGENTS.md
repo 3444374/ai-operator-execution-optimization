@@ -1,16 +1,7 @@
 # motivation/results/AGENTS.md
 
-本文件继承根 `AGENTS.md` 与 `motivation/AGENTS.md`，只增加端到端动机结果和系统画像规则。
+继承上级规则。结果类型与当前入口见 [README.md](README.md)。
 
-## 子目录
-
-- `gpu/`：生产式 GPU-backed E2E 主动机结果。
-- `cpu/`：CPU baseline 对照。
-- `pg18_4_fake/`：PG18.4 本地同构 fake-model 历史结果。
-- `fake_cpu/`：fake/CPU 历史预研结果。
-
-## 规则
-
-- 能影响课题主线判断的端到端结果放这里。
-- 每个正式报告必须包含运行命令、参数、CSV、阶段计时、结果解释和不能声称的结论。
-- 不把 `pg18_4_fake/` 或 `fake_cpu/` 结果外推成 GPU-backed 结论。
+- 端到端动机结果按 GPU、真实模型 CPU、PG18.4 fake 或 fake/CPU 的实际运行身份归入对应子目录。
+- 正式报告包含运行命令、参数、原始 CSV、阶段计时、结果解释及不能声称的结论。
+- fake-model 结果只能支持对应预演或假设，不能外推为真实 GPU-backed 结论。

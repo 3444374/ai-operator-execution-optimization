@@ -1,23 +1,7 @@
 # feasibility/results/AGENTS.md
 
-本文件继承根 `AGENTS.md` 与 `feasibility/AGENTS.md`，只增加可行性结果、连接验证和 smoke 规则。
+继承上级规则。已有结果见 [README.md](README.md)。
 
-## 可以放
-
-- 组件级 benchmark CSV。
-- 数据库连接验证、脚本 dry-run、small smoke run 结果。
-- 自动生成的 feasibility report。
-
-## 不放
-
-- GPU-backed E2E 主动机结果。
-- 数据库 AI 算子系统画像、瓶颈定位和优化收益报告。
-- 可作为论文主证据的端到端 baseline。
-
-这些结果应放在 `motivation/results/`。
-
-## 规则
-
-- 每个报告必须说明“能证明什么”和“不能证明什么”。
-- CSV 文件名应对应脚本或验证对象。
-- 若旧结果只是历史背景，保留但不要在新计划里当作主证据。
+- 保存组件、连接、dry-run 和 smoke 结果；端到端动机归 `motivation/results/`，方法效果与正式 baseline 比较归 `experiments/results/`。
+- 每份报告说明能证明和不能证明什么；CSV 文件名对应脚本或验证对象。
+- 历史结果保留原用途，不在新计划中作为更强的主证据。

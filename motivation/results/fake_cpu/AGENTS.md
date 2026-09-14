@@ -1,16 +1,6 @@
 # motivation/results/fake_cpu/AGENTS.md
 
-本文件继承根、`motivation/AGENTS.md` 与 `motivation/results/AGENTS.md`，只增加 fake/CPU 历史预研
-结果规则。
+继承上级规则。历史结果见 [README.md](README.md)。
 
-## 作用
-
-- 追溯早期 task/object/fan-in/backpressure 信号。
-- 调试计时边界和脚本框架。
-- 为 GPU-backed E2E 消融设计提供假设来源。
-
-## 边界
-
-- 不能作为真实 GPU-backed 链路瓶颈归因。
-- 不能替代生产式 GPU-backed 主动机实验。
-- 新主线结果不要继续放这里。
+- 仅用于追溯 task/object/fan-in/backpressure 信号、调试阶段计时和脚本，以及提出 GPU E2E 消融假设。
+- 不作为真实 GPU 链路瓶颈归因或主动机证据；新主线结果放入与实际运行类型对应的目录。

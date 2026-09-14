@@ -1,9 +1,5 @@
 # experiments/results/AGENTS.md
 
-本文件继承根 `AGENTS.md` 与 `experiments/AGENTS.md`，只增加正式研究实验结果规则。
+继承上级规则。结果入口见 [README.md](README.md)，报告内容与证据要求按 `experiments/AGENTS.md` 执行。
 
-## 内容
-
-每个结果需包含：对应研究内容和研究问题、实验链路与运行命令、参数和指标、baseline 和消融、真实数据、结论边界、下一步验证。
-
-图表统一放在 `figures/`，本目录只引用不保存图副本。
+每份结果关联对应研究问题和计划；长期图表统一保存在 `figures/`，本目录只引用。

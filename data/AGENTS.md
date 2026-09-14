@@ -1,14 +1,8 @@
 # data/AGENTS.md
 
-本文件继承根 `AGENTS.md`，只增加本地 workload 资产、许可与导入规则。当前资产清单见 `README.md`；
-原始数据默认被 Git 忽略。
+继承根规则。资产清单见 [README.md](README.md)。
 
-## 规则
-
-- Git 只保存数据来源、哈希、schema、导入方式和最小元数据，不提交原始 payload。
-- 下载模型或数据、切换机器或准备 GPU 实验前，先读 `deploy/runtime/AGENTS.md` 和
-  `deploy/runtime/README.md`，按 README 选择 `--groups` 和 `--json-out` 运行只读 preflight，再使用
-  受许可的显式下载命令。
-- 下载完成不代表数据库 workload 已就绪；继续执行 importer，并通过行数、schema、哈希和
-  exactly-once 检查。
-- 不把某台机器的本地文件存在状态写成跨机器事实；README 只描述预期资产和可验证合同。
+- Git 只保存来源、哈希、schema、导入方式和最小元数据，原始 payload 不提交。
+- 下载、换机器或准备 GPU 运行时，按根 §5 和 `deploy/runtime/README.md` 完成只读 preflight，再执行获准的下载。
+- 数据库 workload 需继续完成 importer，并核对行数、schema、哈希和 exactly-once；下载完成不代表可用于查询。
+- README 记录预期资产与验证要求，单台机器的文件存在状态记录到该机器的报告。

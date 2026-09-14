@@ -1,26 +1,9 @@
 # motivation/plans/AGENTS.md
 
-本文件继承根 `AGENTS.md` 与 `motivation/AGENTS.md`，只增加动机路线、场景、workload 和画像计划
-规则；它不承担完整论文实验规划。
+继承上级规则。当前场景与路线见 [README.md](README.md)。
 
-## 可以放
-
-- AI 算子场景和 workload 设计。
-- GPU-backed E2E 主动机实验计划。
-- PostgreSQL / worker / Ray / GPU model service / writeback 集成路线，用于跑通动机画像。
-- 为开题和课题方向服务的 baseline 选择、变量选择和证据边界说明。
-
-## 不放
-
-- 原始 CSV。
-- 已完成实验的正式结果分析。
-- 组件可行性脚本。
-- 两项策略设计 + 端到端验证的完整实验矩阵。
-- 已经进入方法验证、优化收益验证或小改动调优的实验计划；这些应放到 `experiments/plans/`。
-
-## 规则
-
-- 计划必须区分“主动机实验”“baseline”“谨慎消融”“环境检查”。
-- 不把 CPU/fake 计划写成真实 GPU 链路结论。
-- 不把动机测试计划写成完整论文实验规划。
-- 修改计划后同步检查 `motivation/README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md` 和 `overview/current_direction_and_plan.md`。
+- 计划聚焦 AI 算子的场景、workload、GPU-backed E2E 画像和集成路线；区分主动机实验、baseline、消融与环境检查。
+- 方法验证、优化收益、调优和完整论文实验矩阵进入 `experiments/plans/`；原始数据、结果分析和组件脚本进入各自目录。
+- CPU/fake 计划按其实际用途表述，不能作为真实 GPU 链路结论。
+- 计划改变方向、优先级或关键入口时，按根 §7 同步 `motivation/README.md`、`PROJECT_INDEX.md`、
+  `PROJECT_OUTLINE.md` 和 `overview/current_direction_and_plan.md` 中受影响内容；局部文字修订只检查相关引用。
