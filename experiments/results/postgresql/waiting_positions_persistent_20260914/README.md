@@ -1,7 +1,7 @@
 # 常驻服务下的等待位置与并发选择
 
 状态：2026-09-14，受控检查完成。受众：内部研究记录。
-[运行前合同](../../../plans/data_organization_batching.md#m1-persistent)；
+[运行前设计](../../../plans/data_organization_batching.md#m1-persistent)；
 [前两轮结果](../waiting_positions_pilot_20260914/README.md)。研究对象为
 **PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 
@@ -13,7 +13,7 @@ PG拥有每条SQL及结果生命周期，实验group拥有一个gateway/tokenize
 每条查询分别观察EOF、Job归零、socket session结束；只有group结束才记录transport关闭。
 
 - 测量源码`4f06ab1e`，最终实现`e480bc30`补强失败汇总：预算关闭或结果汇总写入失败时不能继续显示成功。
-  后者没有改变成功测量路径；最终Linux合同检查及完整`code/`哈希另行核对。
+  后者没有改变成功测量路径；最终Linux行为检查及完整`code/`哈希另行核对。
 - Linux/Python3.12.3/PG18.3；复用先前`SEMLOOM_FLOW_DIAGNOSTIC=1`、`-O2 -Werror`测试构建，
   逐个C/H源码与已安装库SHA匹配。未重建或重跑无关PG全套；真实模型请求0次。
 - 真实PG→生产gateway→本机受控分类HTTP。服务槽4、listen backlog32、L8；Core输入/结果各8MiB、
@@ -42,7 +42,7 @@ PG就绪→节点交付、节点交付→客户端。权威终态是Core结算�
 各group session1…6、无跨查询事件混入、资源归零与最终transport关闭全部通过。
 HTTP handler按SQL时间区间重新匹配32个请求摘要，不能仅因总请求数相同就认为查询关联正确。
 宽W全部保持提交0…31且无work-only拒绝；紧W同序且均观察到work-only拒绝。
-4×192次额度由group持有，无退款、重置或隐式重试。最终本地/Linux各16项相关合同检查通过。
+4×192次额度由group持有，无退款、重置或隐式重试。最终本地/Linux各16项相关行为检查通过。
 
 ## 全部重复与启动成本
 
@@ -74,7 +74,7 @@ HTTP handler按SQL时间区间重新匹配32个请求摘要，不能仅因总请
 
 ## 资源、失败与清理
 
-所有查询的PG行关联32/32，合成分类invalid/false-positive/false-negative均0；这只证明fixture合同。
+所有查询的PG行关联32/32，合成分类invalid/false-positive/false-negative均0；这只证明预定fixture行为。
 每条查询HTTP及逻辑资源回到0，四个group均完成6个Job；transport关闭仅各一次，最后usage全0。
 RSS按同一采样时点同时包含四个常驻gateway、driver/HTTP fixture与当前PG backend，间隔0.2秒。
 常驻gateway各自观测峰值：C4约47.41MiB、C8约47.66MiB、宽token约803.82MiB、紧token约804.17MiB；
@@ -111,7 +111,7 @@ driver约588.36MiB、PG backend约13.38MiB，同tick合计峰值2304.72MiB。
 ## 证据入口与下一步
 
 - [脱敏原始文件清单与SHA](raw/manifest.json)：保留group与query投影、完整重复、PG/HTTP/资源日志、预检、复核及失败说明。
-- [离线复核汇总](raw/readback.json.gz)、[最终源码和清理核对](raw/final-check.json.gz)、[最终Linux合同检查](raw/final-contracts.log.gz)。
+- [离线复核汇总](raw/readback.json.gz)、[最终源码和清理核对](raw/final-check.json.gz)、[最终Linux行为检查](raw/final-contracts.log.gz)。
 - 入口：`tests.experiments.test_database_query_runner_integration.DatabaseQueryRunnerTests.test_waiting_positions_persistent_gateway`。
   `prepare.py`、`run.py`、`run-legacy.py`与`readback-v2.py`的脱敏版本保存在raw，提供配置/命令与编排过程。
   公开请求内容转换为摘要，原结果SHA不等于公开投影SHA；不能只凭公开摘要重新做语义评价。

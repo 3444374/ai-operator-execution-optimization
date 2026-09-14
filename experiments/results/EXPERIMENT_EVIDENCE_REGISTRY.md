@@ -3,7 +3,7 @@
 2026-09-14：[常驻服务对照](postgresql/waiting_positions_persistent_20260914/README.md)完成：24查询/768受控POST，另以旧入口1查询/120次回归，真实模型0次。
 C8五次均快于对应轮次C4；紧W相对宽W的HTTP P99降低42.23%，完整查询时间却增加233.06%。
 token组一次启动约5.5秒，常驻后每查询准备约14–15毫秒；四实例RSS同时采样，资源/会话/transport均完成回收。
-本地/Linux各16项合同检查、761份code文件哈希核对通过；PG/HTTP/进程/socket/GPU/ACL清理完成。
+本地/Linux各16项行为检查、761份code文件哈希核对通过；PG/HTTP/进程/socket/GPU/ACL清理完成。
 下一步准备新的真实输入、服务签名和有界请求计划；尚无真实模型性能或低扰动观测结论，M2未开始。
 
 2026-09-14：[等待位置小实验](postgresql/waiting_positions_pilot_20260914/README.md)已完成M1首轮受控检查：新增调用至EOF计时和五段等待分解，复用已有FIFO/工作量限制与PG事件。
