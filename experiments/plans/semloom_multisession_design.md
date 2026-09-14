@@ -1,5 +1,8 @@
 # 多 Job / 多 session 增量执行设计
 
+2026-09-14补充：[工作包E](data_organization_batching.md#work-package-e)接入已有全局计算容量与Job/flow轮转，
+用可选`shared`预算策略替代固定计算份额；存储仍静态保留。实施、验证与剩余项只在该节更新。
+
 2026-09-09补充：同查询普通Filter/Map归属的实现与验证由
 [查询级Job详细设计](postgresql_query_job_design.md)维护。下文首版按独立连接登记Job的记录保持历史范围；
 新query-job模式复用同一Engine与网关循环，查询控制连接拥有Job，算子连接只拥有session。

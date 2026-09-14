@@ -8,6 +8,10 @@ Movie review IDs separately from unique row occurrences. `query_config.py` decla
 `query_runner.py` coordinates execution and post-query evaluation. `query_execution.py` owns the PG,
 direct, LOTUS and Ray lifecycles; `query_evaluation.py` verifies actual requests, outputs and decisions.
 `query_supervisor.py` bounds owned worker lifetime and closes its shared POST allocation on exit.
+`filter_bindings.py` and `map_bindings.py` verify producer row identity before comparing decisions
+or outputs. The Filter verifier accepts the query's instruction; `movie_queries.py` retains the
+original Movie-specific entry point. Shared-query integration reuses both verifiers and the existing
+gateway/session observers; its controlled endpoint lives in `tests/experiments/test_shared_query_integration.py`.
 
 All query evaluators now enter through `map_query_recording.evaluate_recording`: completed state,
 full row/byte counts and the recorded SHA are required. `native_map_bindings.py` verifies direct/Ray

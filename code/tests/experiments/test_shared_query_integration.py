@@ -15,6 +15,8 @@ import unittest
 
 from src.baselines.common.private_artifacts import write_private_json
 from src.experiments.postgresql.map_bindings import parse_pg_bindings, verify_bound_map_results
+from src.experiments.postgresql.filter_bindings import verify_filter_decisions
+from src.experiments.postgresql.window_memory import verify_window_memory
 from src.execution_provider.semantic_map import SemanticMapPlan
 
 
@@ -116,23 +118,26 @@ class SharedQueryIntegrationTests(unittest.TestCase):
             conn.execute("SELECT set_config('semloom_pg.gateway_socket', %s, false)", (str(socket_path),))
             conn.execute("SET statement_timeout='10s'; SET semloom_pg.provider_execution_profile='query-job';"
                 "SET semloom_pg.enable_query_job_window=on; SET semloom_pg.provider_window_tasks=4;"
-                "SET semloom_pg.enable_total_window_budget=on; SET semloom_pg.test_map_binding_id_column='id'")
+                "SET semloom_pg.enable_total_window_budget=on; SET semloom_pg.test_map_binding_id_column='id';"
+                "SET semloom_pg.test_filter_binding_id_column='id'; SET semloom_pg.test_window_memory=on;"
+                "SET semloom_pg.provider_staging_bytes=4194304")
             return conn
 
         map_sql = "ai_semantic.map(body,'Echo.', '{\"model\":\"fixture-model\",\"temperature\":0,\"max_tokens\":128}'::jsonb)"
         filter_sql = "ai_semantic.filter(body,'Keep inputs containing [KEEP].', '{\"model\":\"fixture-model\",\"temperature\":0,\"max_tokens\":8}'::jsonb)"
         select = f'SELECT id,{map_sql} FROM ONLY shared_query_inputs'
-        values = [(i, ('[KEEP]' if i % 2 == 0 else '[DROP]') + f' row {i}') for i in range(8)]
+        values = [(str(i), ('[KEEP]' if i % 2 == 0 else '[DROP]') + f' row {i}') for i in range(8)]
 
         def run(label, *, dependent=False, delay=0, barrier=None, conn=None):
             conn = conn or connect()
             entry = dict(label=label, backend_pid=conn.info.backend_pid, dependent=dependent,
-                         release=time.monotonic() + delay)
+                         release_offset_s=delay)
             queries.append(entry)
             try:
                 if barrier:
                     barrier.wait(5)
                 time.sleep(delay)
+                entry['release'] = time.monotonic()
                 entry['start'] = time.monotonic()
                 rows = conn.execute(select + (f' WHERE {filter_sql}' if dependent else '')).fetchall()
                 entry['rows'] = rows
@@ -152,7 +157,7 @@ class SharedQueryIntegrationTests(unittest.TestCase):
             self.assertIsNone(gateway.poll(), (root / 'gateway.log').read_text())
             with connect() as conn:
                 conn.execute('CREATE EXTENSION IF NOT EXISTS semloom_pg')
-                conn.execute('CREATE TABLE shared_query_inputs(id integer PRIMARY KEY, body text)')
+                conn.execute('CREATE TABLE shared_query_inputs(id text PRIMARY KEY, body text)')
                 with conn.cursor() as cursor:
                     cursor.executemany('INSERT INTO shared_query_inputs VALUES (%s,%s)', values)
                 self.assertEqual(conn.execute(select + ' LIMIT 0').fetchall(), [])
@@ -241,9 +246,12 @@ class SharedQueryIntegrationTests(unittest.TestCase):
                     self.assertTrue(all(v == 0 for v in event['usage'].values()))
             self.assertFalse(running)
             sessions = [json.loads(line) for line in sessions_file.read_text().splitlines()]
-            bindings = parse_pg_bindings(Path(os.environ['SEMLOOM_TEST_PG_LOG']).read_text().splitlines())
+            pg_lines = Path(os.environ['SEMLOOM_TEST_PG_LOG']).read_text().splitlines()
+            bindings = parse_pg_bindings(pg_lines)
             audits = []
             for query in queries:
+                query['pg_memory'] = verify_window_memory(pg_lines, backend_pid=query['backend_pid'],
+                    retained_limit=8 * 1024 * 1024, staging_limit=4 * 1024 * 1024, window=4)
                 if query['status'] != 'completed':
                     continue
                 pids = {s['session_id'] for s in sessions if s.get('event') == 'session_start'
@@ -251,8 +259,17 @@ class SharedQueryIntegrationTests(unittest.TestCase):
                 selected = [e for e in all_events if e.get('session_id') in pids
                             and e.get('event') in ('core_map_task', 'core_map_completion')]
                 job_ids = {e['job_id'] for e in all_events if e.get('session_id') in pids
-                           and e.get('event') in ('core_map_task', 'core_filter_task')}
+                           and e.get('event') in ('core_map_task', 'core_filter_completion')}
                 self.assertEqual(len(job_ids), 1)
+                if query['dependent']:
+                    filter_lines = [line for line in pg_lines if 'SEMLOOM_FILTER_BINDING ' in line
+                        and json.loads(line.split('SEMLOOM_FILTER_BINDING ', 1)[1])['backend_pid'] == query['backend_pid']]
+                    decisions = verify_filter_decisions(filter_lines, dict((str(i), text) for i, text in values),
+                        'fixture-model', complete=True, instruction='Keep inputs containing [KEEP].')
+                    self.assertEqual({key for key, kept in decisions.items() if kept}, {str(i) for i, _ in values[::2]})
+                    accepted = [e for e in all_events if e.get('session_id') in pids
+                                and e.get('event') == 'core_filter_completion']
+                    self.assertEqual(len(accepted), 8)
                 expected = values[::2] if query['dependent'] else values
                 audits.append(verify_bound_map_results(
                     [(str(i), text) for i, text in expected],
@@ -284,3 +301,5 @@ class SharedQueryIntegrationTests(unittest.TestCase):
                 http_thread_alive=http_thread.is_alive(), gateway_returncode=gateway.poll() if gateway else None))
             self.assertEqual(active, 0)
             self.assertFalse(http_thread.is_alive())
+            if gateway is not None:
+                self.assertEqual(gateway.returncode, 0)
