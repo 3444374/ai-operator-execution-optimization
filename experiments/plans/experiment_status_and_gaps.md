@@ -14,13 +14,15 @@ A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作
 
 | 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
 |---|---|---|
+| [M1等待位置检查](../results/postgresql/waiting_positions_pilot_20260914/README.md) | 24查询/672受控HTTP；紧W减少HTTP尾延迟却增加SQL总时，查询前准备计入 | 常驻服务/低扰动对照、C4/C8稳定性和新的真实输入/模型验证 |
 | [期限与输入/交付诊断](../results/postgresql/async_deadline_flow_20260914/README.md) | 实现0274b121及验证3f1f5540已合入main；PG TAP2138、96次fixture，真实24+33共57次；一次真实结果跨期限正确保留失败，全部资源清理 | 四次真实暂停均未遇到就绪队首，不能归因ready-first收益；无稳定性能结论 |
 | [C/D真实预算](../results/postgresql/cd_validation_20260911/README.md) | 总留存可用性和work提交限制可检验；紧work三组均更慢，保留一行模型输出差异 | 强请求数FIFO、token表征成本、独立重复；不是token控制天然更好 |
 | [单卡容量画像](../results/postgresql/map_capacity_20260910/README.md) | 96601次真实出站、99808次预留、五次4000行观测与2000行独立验证；当时C32/L64为候选 | 更高C的同规模平台仍未确认，不能将旧签名/配置直接命名为当前强静态 |
 | [数据库原始输入/公共查询](../results/postgresql/database_queries_20260910/README.md)与[关联补充](../results/postgresql/ab_validation_20260911/README.md) | PG/direct/Ray/LOTUS相关入口、SemBench原始任务与独立关联已具备受控证据；PG/direct另有本轮小样本模型验证 | 原生系统真实质量和匹配性能未由本轮补齐 |
 | 既有shared-credit、公平策略、Job/flow及外部MethodDriver | 可复用的机制或接口；不是不存在而需重写 | 当前路径的适配、默认组装、PG方法桥接、动态份额与图像阶段分别核对，不按接口存在推定完成 |
 
-现有原始Movie8/16/128行及其他既用调优数据视为开发材料；新的M1/M2评价划分、全局metadata适配和查询准备外层计时尚未完成。
+现有原始Movie8/16/128行及其他既用调优数据视为开发材料；M1调用起点和等待分解已通过[受控小实验](../results/postgresql/waiting_positions_pilot_20260914/README.md)。
+M1/M2真实评价划分、常驻服务对照、并发稳定性和全局metadata适配尚未完成。
 当前只批准并完成了上述有限验证，M1—M4没有新增模型额度。下方历史矩阵继续只供追溯。
 
 首次ShareGPT尝试48/68请求的失败、后续146行原文准备/PG读回与SQuAD10次小样本检查仍分别引用

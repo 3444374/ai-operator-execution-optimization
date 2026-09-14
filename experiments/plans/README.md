@@ -6,8 +6,9 @@
 
 更新日期：2026-09-14
 
-近期先准备[设计假设与强对照](data_organization_batching.md#design-hypotheses)：
+近期按[设计假设与强对照](data_organization_batching.md#design-hypotheses)：
 检验控制是否改善完整查询、有限候选是否比全局元数据更划算，再据结果选择阶段表示或多查询实验。
+M1已完成[受控等待位置小实验](../results/postgresql/waiting_positions_pilot_20260914/README.md)，下一步先检查常驻服务与并发选择稳定性。
 已有执行与测量能力复用，E/F只补必要适配；旧正式矩阵不自动恢复，新实验仍需具体输入/预算与授权。
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在

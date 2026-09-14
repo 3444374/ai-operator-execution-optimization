@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-09-14：[等待位置小实验](postgresql/waiting_positions_pilot_20260914/README.md)已完成M1首轮受控检查：新增调用至EOF计时和五段等待分解，复用已有FIFO/工作量限制与PG事件。
+两轮24查询/672受控HTTP，实际模型0次；保留首轮backlog5的异常，backlog32跟进固定C8/W3096/512。
+跟进紧W的HTTP P99降低39.03%，SQL至EOF增加181.29%；当前token臂每查询新gateway/tokenizer准备约5秒。
+840份代码一致，PG/HTTP/进程/端口/ACL已清理。M1下一步是常驻服务与C4/C8稳定性检查，尚无真实模型性能结论。
+
 2026-09-14：[查询依赖与共享计算](postgresql/query_sharing_e_20260914/README.md)完成：复用统一责任表与Job/flow轮转，新增可选shared计算策略和query-job Map窗口，存储独立保留。
 Linux385/57/116、PG回归1/TAP2138、专项163次与worker预演63次受控HTTP通过。
 首次真实准备0次失败保留；获确认后63次真实POST、19个Job、55条Map关联与8条Filter决定通过，195.917秒内清理。
