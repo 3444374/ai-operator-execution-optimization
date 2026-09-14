@@ -42,6 +42,12 @@ client rows. It applies only to a declared sealed immutable full scan: invocatio
 new gateway/tokenizer preparation, while the persistent driver and shared model service are outside
 the per-query boundary. Its waiting areas include not-yet-materialized work and are not memory bytes.
 
+`persistent_gateway.py` reuses one gateway/tokenizer for a finite sequence of nonempty full-scan
+Map queries. The group owns startup, shutdown and one durable POST allocation. Each query retains
+its invocation boundary, actual Job drain and socket-session closure; event projections refer to
+unchanged group JSONL byte intervals. Shared startup is reported separately, and peer gateway RSS
+can be sampled together. Query EOF never implies HTTP transport shutdown.
+
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.

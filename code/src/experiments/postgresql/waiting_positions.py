@@ -3,7 +3,8 @@
 The caller declares a sealed, immutable full scan available at run_query invocation.
 This model is unsuitable for dependencies, LIMIT, mutable inputs or arbitrary SQL.
 The persistent driver and shared model service are outside the per-query boundary;
-new gateway/tokenizer preparation and query-specific work are inside it.
+query-specific work is inside it. New-per-query gateway/tokenizer preparation is
+included; a persistent group records its shared service startup separately.
 """
 import json
 from pathlib import Path

@@ -152,7 +152,11 @@ class PersistentMapGateway:
                 errors.record('query', failure)
             finally:
                 summary.update(errors=errors.details, ended_ns=time.monotonic_ns())
-                write_private_json(root/'summary.json', summary)
+                try:
+                    write_private_json(root/'summary.json', summary)
+                except BaseException:
+                    self.failed = True
+                    raise
             errors.raise_if_failed()
             return summary
         finally:
@@ -205,6 +209,8 @@ class PersistentMapGateway:
                 raise ValueError('persistent group did not complete and close cleanly')
             self.summary['status'] = 'passed'
         if value is None: errors.attempt('group_audit', audit)
+        if errors.first is not None:
+            self.summary['status'] = 'failed'
         self.summary['errors'] = errors.details
         errors.attempt('summary_write', lambda: write_private_json(self.root/'summary.json', self.summary))
         if value is None: errors.raise_if_failed()

@@ -34,3 +34,27 @@ class PersistentProjectionTests(unittest.TestCase):
         session[-1]['session_id']=9
         drain[0]['usage']['active_requests']=1
         with self.assertRaises(ValueError): settled_query(drain,session)
+
+    def test_failed_budget_cleanup_cannot_leave_a_passed_group_summary(self):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        from src.experiments.postgresql.persistent_gateway import PersistentMapGateway
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            events = [dict(event='request'),dict(event='core_job_drained'),
+                      dict(event='core_transport_closed',closed=True,usage=dict(active_requests=0))]
+            (root/'events.jsonl').write_text(''.join(json.dumps(e)+'\n' for e in events))
+            def fail_close(_): raise RuntimeError('budget closure failed')
+            group = PersistentMapGateway.__new__(PersistentMapGateway)
+            group.root, group.stack = root, ExitStack()
+            group.reserved, group.failed = True, False
+            group.ledger = SimpleNamespace(close_shared_unit=fail_close)
+            group.config = SimpleNamespace(unit_id='group')
+            group.completed, group.attempted, group.query_count = ['q'], 1, 1
+            group.gateway, group.socket = SimpleNamespace(returncode=0), root/'g.sock'
+            group.manifest, group.summary = dict(rows=1), dict(status='failed')
+            with self.assertRaisesRegex(RuntimeError,'budget closure failed'):
+                group.__exit__(None,None,None)
+            summary = json.loads((root/'summary.json').read_text())
+            self.assertEqual(summary['status'],'failed')
+            self.assertIn('budget_close',summary['errors'])
