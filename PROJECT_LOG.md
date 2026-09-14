@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-09-14：容量等待分支的服务器验证
+
+- 用户启动服务器并授权测试cc0f54f6；Linux调度376/provider55/PG Python116通过，完整实验工具482通过/15环境跳过。
+- code/deploy快照缺仓库fixture/Git导致首次实验工具10项错误；保留输出，改用同提交完整checkout后通过，未修改测试。
+- PG组织非空/空选择/总量查询3项、旧PG/direct记录与SQLSTATE3项通过，262次synthetic HTTP，模型请求0；3种空选择均无Job/provider流。
+- 发送缓冲脚本发现write-once summary冲突，保留失败和两次SQL原始输出；8d4786c9只修诊断写入并补3项回归。
+- 修复后普通SQL8/128/128/8字节四查询完成；小结果客户端首行约0.65秒、大结果约0.25秒，服务端逐行标记跨度均约0.65秒。
+- 原PGDATA与失败保留，两个测试PG/socket/任务进程已停止，原ACL恢复；830份非Markdown代码/配置与本地一致。
+- 完整验证后按既有授权收尾提交并合入main；原C/D性能、质量和E/F状态不作扩写。
+- [服务器报告与全部证据](experiments/results/scheduling/capacity_wait_server_20260914/README.md)。
+
 ## 2026-09-12：容量等待、零任务审计与本地复审
 
 - 根据3a097d36复审修复实际容量恢复后的多余等待；保留后端/端点/选择器退避，覆盖legacy、registered与跨Job释放。

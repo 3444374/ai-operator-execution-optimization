@@ -1,8 +1,9 @@
 # 实验与机制证据台账
 
-2026-09-12：[容量等待与零任务 Map 修订](scheduling/capacity_wait_empty_map_20260912/README.md)在本地关闭容量恢复后旧重试期限阻挡派发、
-以及独立预期为零时组织审计误判。定向27项通过；非空21轨迹1,380任务重放结果不变。
-服务器按用户要求未连接，PG空查询与普通SQL发送缓冲诊断均待运行；本轮修订在分支，未合入main。
+2026-09-14：[容量等待与零任务 Map 服务器验证](scheduling/capacity_wait_server_20260914/README.md)完成：Linux调度376、provider55、PG Python合同116通过；
+实验工具482通过/15环境跳过，PG选定6项集成另行通过，共262次受控HTTP、真实模型0次。
+修复诊断脚本的write-once summary冲突后，普通PG四查询完成：小结果首行约0.65秒、大结果约0.25秒，
+支持发送缓冲解释，不据此归因旧SemMap全部等待。PG/socket/任务进程和ACL已清理，失败记录保留。
 
 2026-09-11：[C/D审计与真实预算诊断](postgresql/cd_validation_20260911/README.md)完成提交→权威终态的work/request独立重建、
 实际组内顺序核验及可选容量拒绝观测。旧9轨迹516任务重放通过；Linux370/55/116及审计19通过。

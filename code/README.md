@@ -27,7 +27,7 @@ Incremental Map separates retained tasks, input/result bytes and active HTTP req
 The incremental adapter decodes settled backend results separately from delivery ownership.
 Capacity refusals retain the selected member identity and recheck existing compute capacity;
 released capacity can resume dispatch immediately, while backend/endpoint refusals retain their retry deadline.
-[Local validation and pending server checks](../experiments/results/scheduling/capacity_wait_empty_map_20260912/README.md).
+[Linux and selected PG validation](../experiments/results/scheduling/capacity_wait_server_20260914/README.md).
 Queue, backend and consumer deadlines can be set independently with `SessionTimeouts`; the gateway
 leaves queue/consumer phase deadlines to PG and socket lifecycle by default. Callers that omit the
 phase policy retain the legacy `wait_timeout_s` behavior.

@@ -45,9 +45,9 @@ into independent requests; they do not define a model batch or group completion 
 
 Organization audits accept `expected_task_count` from independently selected raw inputs. Zero tasks
 with no opened flow may finish without a drain event; absent evidence alone is insufficient.
-The [local follow-up](../../../../experiments/results/scheduling/capacity_wait_empty_map_20260912/README.md)
-includes empty/nonempty counterexamples and an unrun PG empty-selection integration test.
-The ordinary SQL buffer probe is prepared separately; client receive time is not SemMap node delivery time.
+The [server follow-up](../../../../experiments/results/scheduling/capacity_wait_server_20260914/README.md)
+validates empty/nonempty PG queries and ordinary SQL result buffering. The probe uses distinct
+write-once case checkpoints and a final summary. Client receive time is not SemMap node delivery time.
 
 Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
 PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs

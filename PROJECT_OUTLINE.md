@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-12
+更新时间：2026-09-14
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -12,9 +12,11 @@
 
 ## 0. 当前优先级与历史记录范围
 
-2026-09-12：[推进与空查询修订](experiments/results/scheduling/capacity_wait_empty_map_20260912/README.md)
-已完成本地回归：容量恢复后及时派发，独立确认零任务时允许不创建任务流。
-服务器测试按用户要求暂缓；客户端首行延迟的发送缓冲解释仍待实测，未据此改写旧性能结论。
+2026-09-14：[推进、空查询与服务器诊断](experiments/results/scheduling/capacity_wait_server_20260914/README.md)
+已完成Linux和选定PG集成验证，容量恢复后及时派发，零任务选择不创建provider流。
+普通PG查询中，小结果的客户端首行接近查询结束，增加返回字节后首行提前；这一观察支持连接发送缓冲的解释。
+旧SemMap各阶段等待仍需分别测量，本次没有新增真实模型请求或性能排名。
+
 
 2026-09-11：[组织审计与真实预算对照](experiments/results/postgresql/cd_validation_20260911/README.md)
 新增从提交到后端终态的活跃工作量重建，并直接检查实际提交顺序。1,152次模型请求均完成且资源归零。
