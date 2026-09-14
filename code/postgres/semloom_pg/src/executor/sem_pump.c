@@ -6,6 +6,9 @@
  * each operator machine owns NULL and completion interpretation.
  */
 #include "postgres.h"
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+#include <time.h>
+#endif
 
 #include "catalog/objectaccess.h"
 #include "catalog/pg_proc_d.h"
@@ -50,6 +53,9 @@ typedef struct SemloomWindowRow
 	bool ready;
 	Size allocated_bytes;
 	text *result_storage;
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+	uint64 flow_input_index;
+#endif
 } SemloomWindowRow;
 
 struct SemloomExecPump
@@ -91,7 +97,56 @@ struct SemloomExecPump
 	SemloomWindowRow pending;
 	MemoryContext conversion_context;
 	MemoryContextCallback memory_cleanup;
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+	uint64 flow_next_input;
+#endif
 };
+
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+static void
+semloom_flow_trace(SemloomExecPump *pump, const char *event, SemloomWindowRow *row)
+{
+	struct timespec now;
+	uint64 ns;
+	if (!semloom_test_flow_trace_enabled()) return;
+	if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+		elog(ERROR, "cannot read diagnostic monotonic clock");
+	ns = (uint64) now.tv_sec * UINT64CONST(1000000000) + (uint64) now.tv_nsec;
+	elog(LOG, "SEMLOOM_FLOW_TRACE {\"version\":1,\"backend_pid\":%d,\"pump_id\":" UINT64_FORMAT
+		 ",\"event\":\"%s\",\"monotonic_ns\":" UINT64_FORMAT ",\"input_index\":" UINT64_FORMAT
+		 ",\"has_sequence\":%s,\"sequence\":" UINT64_FORMAT ",\"retained_rows\":%u,\"head_present\":%s,\"head_input_index\":" UINT64_FORMAT ",\"head_ready\":%s}",
+		 MyProcPid, pump->memory_id, event, ns, row ? row->flow_input_index : pump->flow_next_input,
+		 row && row->sent ? "true" : "false", row && row->sent ? row->sequence : 0,
+		 pump->count, pump->count ? "true" : "false",
+		 pump->count ? pump->rows[pump->head].flow_input_index : 0,
+		 pump->count && pump->rows[pump->head].ready ? "true" : "false");
+}
+
+static void
+semloom_flow_before_read(SemloomExecPump *pump)
+{
+	if (!semloom_test_flow_trace_enabled()) return;
+	semloom_flow_trace(pump, "child_begin", NULL);
+	if (semloom_test_flow_pause_input() >= 0 &&
+		pump->flow_next_input == (uint64) semloom_test_flow_pause_input() && semloom_test_flow_pause_ms() > 0)
+	{
+		semloom_flow_trace(pump, "child_pause", NULL);
+		pg_usleep((long) semloom_test_flow_pause_ms() * 1000L);
+		CHECK_FOR_INTERRUPTS();
+	}
+}
+
+static void
+semloom_flow_input_ready(SemloomExecPump *pump, SemloomWindowRow *row)
+{
+	row->flow_input_index = pump->flow_next_input++;
+	semloom_flow_trace(pump, "child_ready", row);
+}
+#else
+#define semloom_flow_trace(pump, event, row) ((void) 0)
+#define semloom_flow_before_read(pump) ((void) 0)
+#define semloom_flow_input_ready(pump, row) ((void) 0)
+#endif
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
 										 MemoryContext task_context);
@@ -429,14 +484,17 @@ semloom_window_drop(SemloomWindowRow *row)
 static bool
 semloom_window_read(SemloomExecPump *pump, ScanState *scan, SemloomWindowRow *row)
 {
-	TupleTableSlot *child = ExecProcNode(pump->child_state);
+	TupleTableSlot *child;
 	MemoryContext previous;
 	bool is_null;
 	Datum value;
 	SemloomBoundValue bound;
 	size_t length;
 	uint8 *messages;
+	semloom_flow_before_read(pump);
+	child = ExecProcNode(pump->child_state);
 	if (TupIsNull(child)) { pump->exhausted = true; return false; }
+	semloom_flow_input_ready(pump, row);
 	row->context = AllocSetContextCreate(pump->owner_context, "SemLoom retained row", ALLOCSET_DEFAULT_SIZES);
 	previous = MemoryContextSwitchTo(row->context);
 	row->slot = MakeSingleTupleTableSlot(scan->ss_ScanTupleSlot->tts_tupleDescriptor, &TTSOpsVirtual);
@@ -475,6 +533,7 @@ semloom_window_read(SemloomExecPump *pump, ScanState *scan, SemloomWindowRow *ro
 	if (MemoryContextMemAllocated(row->context, true) + SEMLOOM_MAP_MAX_OUTPUT_BYTES > pump->window_bytes / pump->window)
 		ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("semantic row exceeds its window byte reservation")));
 	MemoryContextSwitchTo(previous);
+	semloom_flow_trace(pump, "task_prepared", row);
 	return true;
 }
 
@@ -495,8 +554,10 @@ semloom_window_read_total(SemloomExecPump *pump, ScanState *scan)
 
 	Assert(row->context == NULL);
 	ResetExprContext(scan->ps.ps_ExprContext);
+	semloom_flow_before_read(pump);
 	child = ExecProcNode(pump->child_state);
 	if (TupIsNull(child)) { pump->exhausted = true; return false; }
+	semloom_flow_input_ready(pump, row);
 	semloom_binding_store(pump->binding, child, borrowed_slot);
 	ExecStoreVirtualTuple(borrowed_slot);
 	if (pump->input_expression != NULL)
@@ -567,6 +628,7 @@ semloom_window_read_total(SemloomExecPump *pump, ScanState *scan)
 	if (row->allocated_bytes > pump->retained_limit - pump->metadata_bytes)
 		ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 			errmsg("semantic row cannot fit alone in total byte budget")));
+	semloom_flow_trace(pump, "task_prepared", row);
 	return true;
 }
 
@@ -595,6 +657,7 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 	uint32 index;
 	if (pump->returned)
 	{
+		semloom_flow_trace(pump, "row_release", &pump->rows[pump->head]);
 		if (pump->total_budget)
 		{
 			pump->retained_bytes -= pump->rows[pump->head].allocated_bytes;
@@ -608,6 +671,15 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 	for (;;)
 	{
 		uint32 in_flight = 0;
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+		if (semloom_test_flow_ready_first() && pump->count && pump->rows[pump->head].ready)
+		{
+			pump->returned = true;
+			semloom_flow_trace(pump, "node_return", &pump->rows[pump->head]);
+			pg_semantic_runtime_record_emitted(pump->runtime);
+			return pump->rows[pump->head].slot;
+		}
+#endif
 		while (!pump->exhausted && pump->count < pump->window && !pump->pending_blocked)
 		{
 			SemloomWindowRow *row = &pump->rows[(pump->head + pump->count) % pump->window];
@@ -643,6 +715,7 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 				 * transfers and releases one accepted result.  Unrelated wakes,
 				 * output-slot movement and later rows cannot change that fact. */
 				pump->offer_blocked = !row->sent;
+				semloom_flow_trace(pump, row->sent ? "offer_accepted" : "offer_refused", row);
 			}
 			if (row->sent && !row->ready) in_flight++;
 		}
@@ -650,6 +723,7 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 		if (pump->rows[pump->head].ready)
 		{
 			pump->returned = true;
+			semloom_flow_trace(pump, "node_return", &pump->rows[pump->head]);
 			pg_semantic_runtime_record_emitted(pump->runtime);
 			return pump->rows[pump->head].slot;
 		}
@@ -659,6 +733,7 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 			PgSemanticCompletion completion;
 			uint64 sequence;
 			MemoryContextReset(pump->receive_context);
+			semloom_flow_trace(pump, "receive_begin", &pump->rows[pump->head]);
 			sequence = pg_semantic_runtime_receive(pump->runtime, pump->receive_context, &completion);
 			pump->peak_receive_bytes = Max(pump->peak_receive_bytes,
 				MemoryContextMemAllocated(pump->receive_context, true));
@@ -671,6 +746,7 @@ semloom_pump_window_next(SemloomExecPump *pump, ScanState *scan)
 					if (pump->total_budget) semloom_window_store_reserved(pump, row, &completion);
 					else semloom_pump_store_completion(row->slot, pump->binding->result_column, &completion, row->context);
 					row->ready = true;
+					semloom_flow_trace(pump, "result_ready", row);
 					break;
 				}
 			}

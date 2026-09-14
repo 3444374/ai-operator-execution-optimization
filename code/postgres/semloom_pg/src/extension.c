@@ -29,6 +29,16 @@ static bool enable_filter_count = false;
 static bool enable_total_window_budget = false;
 static bool test_window_memory = false;
 static int provider_staging_bytes = 16 * 1024 * 1024;
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+static bool test_flow_trace = false;
+static bool test_flow_ready_first = false;
+static int test_flow_pause_input = -1;
+static int test_flow_pause_ms = 0;
+bool semloom_test_flow_trace_enabled(void) { return test_flow_trace; }
+bool semloom_test_flow_ready_first(void) { return test_flow_trace && test_flow_ready_first; }
+int semloom_test_flow_pause_input(void) { return test_flow_pause_input; }
+int semloom_test_flow_pause_ms(void) { return test_flow_pause_ms; }
+#endif
 int semloom_provider_window_tasks(void) { return provider_window_tasks; }
 int semloom_provider_window_bytes(void) { return provider_window_bytes; }
 bool semloom_predicate_prefetch_enabled(void) { return enable_predicate_prefetch; }
@@ -98,6 +108,16 @@ semloom_provider_execution_profile_name(void)
 void
 _PG_init(void)
 {
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+	DefineCustomBoolVariable("semloom_pg.test_flow_trace", "Trace test-build tuple flow using CLOCK_MONOTONIC.", NULL,
+		&test_flow_trace, false, PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
+	DefineCustomBoolVariable("semloom_pg.test_flow_ready_first", "Test-build ready-result-first comparison.", NULL,
+		&test_flow_ready_first, false, PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
+	DefineCustomIntVariable("semloom_pg.test_flow_pause_input", "Zero-based test input pull to pause; -1 disables.", NULL,
+		&test_flow_pause_input, -1, -1, INT_MAX, PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
+	DefineCustomIntVariable("semloom_pg.test_flow_pause_ms", "Bounded test input-pull pause in milliseconds.", NULL,
+		&test_flow_pause_ms, 0, 0, 1000, PGC_SUSET, GUC_NOT_IN_SAMPLE, NULL, NULL, NULL);
+#endif
 	DefineCustomStringVariable("semloom_pg.gateway_socket",
 							   "Unix-domain socket for the external semantic provider.",
 							   NULL,

@@ -1,5 +1,14 @@
 # `semloom_pg` capability spike
 
+For controlled tuple-flow diagnostics only, a clean build with `SEMLOOM_FLOW_DIAGNOSTIC=1`
+includes monotonic stage traces and bounded input-pull pauses. Superuser-only `test_flow_trace`,
+`test_flow_pause_input`, `test_flow_pause_ms` and `test_flow_ready_first` settings enable the experiment.
+The ready-first comparison returns an already-ready head before replenishing the input window;
+it adds no group-completion wait. These fields, settings, trace calls and alternative policy are absent
+from the normal build. Use separate prefixes/build directories when comparing profiles.
+The [current diagnostic plan](../../../experiments/plans/data_organization_batching.md) owns the finite cases;
+this test build is not qualified as a production strategy.
+
 Opt-in `semloom_pg.enable_predicate_prefetch` allows only inspected built-in predicates on supported
 SeqScan/Result children. LIMIT and expressions that require demand evaluation keep window one.
 Opt-in `semloom_pg.enable_filter_count` admits a single built-in `COUNT(*)` target above SemFilter;

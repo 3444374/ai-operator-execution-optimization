@@ -66,6 +66,7 @@ class _Recording:
         self.errors = {name: None for name in ("query_error", "cleanup_error", "recording_error")}
         self.release = self.first = self.last = self.terminal = self.durable = self.cleanup = None
         self.cancel_triggered = None
+        self.async_deadline = None
         self.stream_entered = None
         self.query_status = "not_started"
         self._context = self.stream = None
@@ -170,6 +171,8 @@ class _Recording:
                 "cleanup_scope": "cursor/iterator only; runner records external resource cleanup separately",
                 "partial_results_are_provisional": self.error is not None,
             }
+            if self.async_deadline is not None:
+                self.execution["async_deadline"] = self.async_deadline
             try:
                 write_private_json(self.directory / "execution.json", self.execution)
             except BaseException as failure:
@@ -309,12 +312,30 @@ async def record_async_execution(directory: Path, open_rows, *, max_rows: int, m
                                        or not math.isfinite(query_timeout_s) or query_timeout_s <= 0):
         raise ValueError("query timeout must be positive")
     recording = _Recording(directory, max_rows, max_result_bytes, flush_rows, metadata, clock)
+    loop = asyncio.get_running_loop()
     deadline = asyncio.timeout(query_timeout_s)
+    if query_timeout_s is not None:
+        recording.async_deadline = dict(timeout_s=query_timeout_s, clock='asyncio.loop.time',
+            deadline_s=deadline.when(), observed_s=None, observed_ns=None, detection=None)
+
+    def timeout_failure(detection):
+        observed = clock()
+        if recording.async_deadline is not None and recording.async_deadline['observed_s'] is None:
+            recording.async_deadline.update(observed_s=loop.time(), observed_ns=observed, detection=detection)
+        if recording.cancel_triggered is None:
+            recording.cancel_triggered = observed
+        return TimeoutError('query deadline exceeded')
+
+    def check_deadline():
+        # Synchronous preparation/writes can prevent the timeout callback from
+        # running. Compare against that same deadline before claiming success.
+        when = deadline.when()
+        if when is not None and loop.time() >= when:
+            raise timeout_failure('absolute_check')
+
     def observe_failure(failure):
         if deadline.expired() and isinstance(failure,asyncio.CancelledError):
-            if recording.cancel_triggered is None:
-                recording.cancel_triggered=clock()
-            recording.failed(TimeoutError('query deadline exceeded'))
+            recording.failed(timeout_failure('timeout_callback'))
         else:
             recording.failed(failure)
     token = _failure_observer.set(observe_failure)
@@ -324,16 +345,18 @@ async def record_async_execution(directory: Path, open_rows, *, max_rows: int, m
             async with open_rows() as rows:
                 recording.stream_entered, recording.phase = clock(), "execute_or_stream"
                 try:
+                    check_deadline()
                     async for row in rows:
+                        check_deadline()
                         recording.row(row)
+                        check_deadline()
+                    check_deadline()
                     recording.query_terminal("completed")
                     deadline.reschedule(None)
                 except BaseException as failure:
                     if deadline.expired() and isinstance(failure, asyncio.CancelledError):
-                        if recording.cancel_triggered is None:
-                            recording.cancel_triggered = clock()
                         if recording.failure is None:
-                            recording.failed(TimeoutError("query deadline exceeded"))
+                            recording.failed(timeout_failure('timeout_callback'))
                     else:
                         recording.failed(failure)
                     if not deadline.expired():
@@ -342,8 +365,7 @@ async def record_async_execution(directory: Path, open_rows, *, max_rows: int, m
                     raise
     except BaseException as failure:
         if deadline.expired() and recording.failure is None:
-            recording.cancel_triggered = clock()
-            recording.failed(TimeoutError("query deadline exceeded"))
+            recording.failed(timeout_failure('timeout_callback'))
         elif not (deadline.expired() and isinstance(failure, TimeoutError)
                   and isinstance(recording.failure, TimeoutError)):
             recording.failed(failure)

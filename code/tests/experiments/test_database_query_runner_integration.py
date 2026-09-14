@@ -33,6 +33,7 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
         from tokenizers import Tokenizer,models
         cls.root=Path(os.environ['SEMLOOM_TEST_ARTIFACT_ROOT']);cls.root.mkdir(mode=0o700)
         cls.posts=[];cls.lock=threading.Lock();cls.active=0
+        cls.delay_by_text={}
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
@@ -53,7 +54,7 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
                     payload=json.dumps(dict(id='fixture',object='chat.completion',created=0,model='fixture-model',
                         choices=[dict(index=0,message=dict(role='assistant',content=output),finish_reason='stop')],
                         usage=dict(prompt_tokens=prompt_tokens,completion_tokens=1,total_tokens=prompt_tokens+1))).encode()
-                    time.sleep(.02+prompt_tokens*.0001 if tokenizer else .001)
+                    time.sleep(cls.delay_by_text.get(text,.02+prompt_tokens*.0001 if tokenizer else .001))
                     self.send_response(200);self.send_header('Content-Type','application/json')
                     self.send_header('Content-Length',str(len(payload)));self.end_headers()
                     with suppress(BrokenPipeError,ConnectionResetError):self.wfile.write(payload)
@@ -183,6 +184,56 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
             write_private_json(self.root/'organization-comparison.json',histories)
         finally:
             type(self).organization_tokenizer=None
+
+    @unittest.skipUnless(os.environ.get('SEMLOOM_TEST_FLOW_DIAGNOSTIC') == '1',
+                         'requires the explicitly instrumented PG test build')
+    def test_controlled_input_and_ready_delivery_timeline(self):
+        from dataclasses import replace
+        from unittest.mock import patch
+        import psycopg
+        from src.experiments.postgresql import query_runner
+        from src.experiments.postgresql.flow_timing import analyze_flow
+        table=self.table+'_flow';root=self.root/'flow-workload'
+        texts=['[GOOD] flow row '+str(i) for i in range(8)]
+        prepare(root,'movie',[(str(i),'taken_3',text,'POSITIVE') for i,text in enumerate(texts)],
+                {'source':'synthetic input/delivery flow diagnostic'},max_rows=8)
+        with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as connection:
+            self.assertEqual(connection.execute("SELECT count(*) FROM pg_settings WHERE name LIKE 'semloom_pg.test_flow_%'").fetchone()[0],4)
+            install_input_table(connection,QueryInputs('movie',table,8),read_prepared(root/'manifest.json','raw.jsonl'))
+        config,fast=self.make_organization_fixture()
+        config=replace(config,window_rows=4,batch_rows=4,batch_work=2048,active_work=2048)
+        declared=self.root/'flow-organization.json';write_private_json(declared,asdict(config))
+        original=query_runner.run_pg
+        reports=[];before=len(self.posts)
+        type(self).organization_tokenizer=fast
+        type(self).delay_by_text={text:.12 if i==0 else .002 for i,text in enumerate(texts)}
+        try:
+            for repeat in range(2):
+                for pause in (-1,3,4):
+                    for ready_first in ((False,True) if repeat==0 else (True,False)):
+                        unit=f'flow-{repeat}-{pause}-'+('ready' if ready_first else 'current')
+                        settings=dict(pause_input=pause,pause_ms=80,ready_first=ready_first,
+                                      clock_source=time.get_clock_info('monotonic').implementation)
+                        def run_pg(configuration,inputs,plan,connection,pg_log,model_path,ledger,output,errors):
+                            for name,value in (('test_flow_trace','on'),('test_flow_ready_first','on' if ready_first else 'off'),
+                                               ('test_flow_pause_input',str(pause)),('test_flow_pause_ms','80')):
+                                connection.execute('SELECT set_config(%s,%s,false)',('semloom_pg.'+name,value))
+                            write_private_json(output/'flow-settings.json',settings)
+                            return original(configuration,inputs,plan,connection,pg_log,model_path,ledger,output,errors)
+                        with patch.object(query_runner,'run_pg',run_pg):
+                            self.run_arm('pg','map',unit=unit,table=table,manifest=root/'manifest.json',
+                                total_budget=True,window=4,concurrency=4,max_posts=8,query_timeout_s=10,
+                                pg_window_bytes=8388608,pg_staging_bytes=4194304,
+                                organization_config=str(declared),organization_sha256=hashlib.sha256(declared.read_bytes()).hexdigest())
+                        result=analyze_flow(self.root/unit,expected_rows=8,window=4)
+                        self.assertEqual(result['startup_candidate_rows'],[4])
+                        write_private_json(self.root/unit/'flow-timing.json',result)
+                        reports.append(dict(unit=unit,repeat=repeat,**result))
+            self.assertEqual(len(self.posts)-before,96)
+            write_private_json(self.root/'flow-comparison.json',reports)
+        finally:
+            type(self).organization_tokenizer=None
+            type(self).delay_by_text={}
 
     def test_supervised_native_cli(self):
         for arm,task in (('pg-source-direct','map'),('lotus','movie-q3'),('ray-data','map')):

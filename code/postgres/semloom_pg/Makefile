@@ -47,6 +47,9 @@ TAP_TESTS = 1
 PGFILEDESC = "semloom_pg - planner-visible semantic operator capability spike"
 
 PG_CPPFLAGS = -Isrc
+ifeq ($(SEMLOOM_FLOW_DIAGNOSTIC),1)
+PG_CPPFLAGS += -DSEMLOOM_FLOW_DIAGNOSTIC
+endif
 
 PG_CONFIG ?= pg_config
 SEMLOOM_PG_TARGET_VERSION ?= 18.3

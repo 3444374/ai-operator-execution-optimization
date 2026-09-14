@@ -16,6 +16,12 @@ extern bool semloom_predicate_prefetch_enabled(void);
 extern bool semloom_filter_count_enabled(void);
 extern bool semloom_total_window_budget_enabled(void);
 extern bool semloom_test_window_memory_enabled(void);
+#ifdef SEMLOOM_FLOW_DIAGNOSTIC
+extern bool semloom_test_flow_trace_enabled(void);
+extern bool semloom_test_flow_ready_first(void);
+extern int semloom_test_flow_pause_input(void);
+extern int semloom_test_flow_pause_ms(void);
+#endif
 extern int semloom_provider_staging_bytes(void);
 extern const char *semloom_gateway_socket_path(void);
 extern const char *semloom_reference_calibration_path(void);

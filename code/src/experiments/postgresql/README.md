@@ -23,6 +23,14 @@ Process sampling includes descendants and registered PG readers, with an initial
 Short-lived reader peaks and actual object-store usage may remain unavailable; summed RSS can count
 shared pages more than once. [Validation and remaining work](../../../../experiments/results/postgresql/ab_validation_20260911/README.md).
 
+Timed asynchronous recording checks the existing event-loop deadline after entry, around each row
+write, and before EOF success. `async_deadline` reports the declared loop-clock deadline and the actual
+observation/abort time. Written rows remain provisional on timeout; cleanup is timed separately.
+
+`flow_timing.py` correlates an explicitly instrumented PG test build with Core submissions and client
+receives through independent producer row bindings. It is a finite diagnostic, not a new production
+capacity ledger or a substitute for semantic/resource validation.
+
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.
