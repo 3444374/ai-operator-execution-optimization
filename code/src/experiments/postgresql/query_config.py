@@ -27,10 +27,13 @@ class QueryConfig:
     ray_num_cpus: int = 4
     ray_actors: int = 2
     ray_object_store_bytes: int = 268435456
+    event_content: str = 'full'
 
     def __post_init__(self):
         import math
         import re
+        if self.event_content not in ('full', 'compact') or (self.event_content == 'compact' and (self.arm != 'pg' or self.task != 'map')):
+            raise ValueError('compact query observation requires PG Map')
         if self.arm not in ('pg','pg-source-direct','ray-data','lotus') or self.task not in ('map','movie-q1','movie-q2','movie-q3'):
             raise ValueError('unknown query arm or task')
         if not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}',self.unit_id):

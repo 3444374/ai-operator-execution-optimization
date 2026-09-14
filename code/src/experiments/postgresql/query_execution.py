@@ -23,10 +23,12 @@ def pg_gateway_command(config, plan, model_path, ledger, root):
     socket = root/'g.sock'
     if len(str(socket).encode())>100:
         raise ValueError('PG query requires a short private output directory')
+    event_args = (['--events',str(root/'events.jsonl')] if config.event_content == 'compact' else
+                  ['--events',str(root/'public-events.jsonl'),'--private-events',str(root/'events.jsonl')])
     command=[sys.executable,'-m','src.experiments.choice_gateway_observer',
-        '--events',str(root/'public-events.jsonl'),'--private-events',str(root/'events.jsonl'),
+        *event_args,
         '--session-events',str(root/'sessions.jsonl'),'--observer-summary',str(root/'observer.json'),
-        '--event-content','full','--event-write-mode','buffered','--cell-budget',str(ledger.path),
+        '--event-content',config.event_content,'--event-write-mode','buffered','--cell-budget',str(ledger.path),
         '--shared-unit-budget','--unit-id',config.unit_id,'--budget-id',ledger.budget.budget_id,
         '--max-attempts',str(ledger.budget.limit),'--','--socket',str(socket),
         '--fixed-model-config',str(model_path),'--incremental-map','--max-active-jobs','1',

@@ -440,6 +440,60 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
             type(self).organization_tokenizer = None
             type(self).fixture_execution_capacity = None
 
+    def test_persistent_compact_observation(self):
+        from dataclasses import replace
+        import psycopg
+        from src.baselines.text.sembench_movie import MOVIE_MAP_INSTRUCTION
+        from src.execution_provider.semantic_map import SemanticMapPlan
+        from src.experiments.postgresql.persistent_gateway import PersistentMapGateway
+        from src.experiments.postgresql.query_evaluation import _evaluate_rows
+        organization, tokenizer = self.make_organization_fixture()
+        type(self).organization_tokenizer = tokenizer
+        data = self.root/'observation-input'
+        prepare(data,'movie',[(str(i),'fixture-movie',('[GOOD]' if i%2 else '[BAD]')+f' review {i}',
+            'POSITIVE' if i%2 else 'NEGATIVE') for i in range(16)],{'source':'controlled observation comparison'},max_rows=16)
+        table=self.table+'_observation'
+        with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as connection:
+            install_input_table(connection,QueryInputs('movie',table,16),read_prepared(data/'manifest.json','raw.jsonl'))
+        before=len(self.posts)
+        outputs=[]
+        try:
+            for organized in (False,True):
+                options={}
+                if organized:
+                    path=self.root/'compact-organization.json'
+                    write_private_json(path,asdict(replace(organization,window_rows=8,batch_rows=8,active_work=512,batch_work=2048)))
+                    options.update(organization_config=str(path),organization_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+                for mode in ('full','compact'):
+                    config=QueryConfig(f'observation-{organized}-{mode}','pg','map',table,concurrency=4,window=8,
+                        pg_total_budget=True,event_content=mode,query_timeout_s=15,**options)
+                    plan=SemanticMapPlan(MOVIE_MAP_INSTRUCTION,'fixture-model',128)
+                    with PersistentMapGateway(config,plan=plan,manifest_path=data/'manifest.json',model_path=self.model,
+                            ledger=self.ledger,root=self.root/config.unit_id,query_count=2) as group:
+                        for repeat in range(2):
+                            summary=group.run_query(f'q-{repeat}',dsn=os.environ['SEMLOOM_TEST_PG_DSN'],
+                                pg_log=os.environ['SEMLOOM_TEST_PG_LOG'],trace_flow=mode=='full')
+                            output=group.root/f'q-{repeat}'
+                            predictions=[json.loads(line)['row'] for line in (output/'q0/results.jsonl').read_text().splitlines()]
+                            outputs.append(predictions)
+                            self.assertEqual(summary['evaluation']['association']['matched_rows'],16)
+                            self.assertEqual(summary['evaluation']['quality']['invalid'],0)
+                            if mode=='compact':
+                                events=[json.loads(line) for line in (output/'events.jsonl').read_text().splitlines()]
+                                self.assertTrue(all('body' not in e and 'raw_output' not in e for e in events))
+                                if organized:self.assertEqual(summary['evaluation']['organization_observation']['status'],'unavailable')
+                                # A fresh evaluation cannot accept a changed actual request digest.
+                                request=next(e for e in events if e['event']=='request')
+                                request['request_values_sha256']='0'*64
+                                from unittest.mock import patch
+                                with patch('src.experiments.postgresql.query_evaluation.read_events',return_value=events):
+                                    with self.assertRaisesRegex(ValueError,'request multiset'):
+                                        _evaluate_rows(config,QueryInputs('movie',table,16),plan,data/'manifest.json',output,None,predictions)
+            self.assertEqual(len(self.posts)-before,128)
+            self.assertTrue(all(value==outputs[0] for value in outputs))
+        finally:
+            type(self).organization_tokenizer=None
+
     def test_original_count_then_limit_tasks(self):
         for task,posts in (('movie-q3',90),('movie-q1',120),('movie-q2',90)):
             for arm in ('pg','lotus'):

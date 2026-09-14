@@ -81,8 +81,11 @@ def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded
         selected=raw
     texts={row[1]:inputs.convert(row)['input_text'] for row in selected}
     events=read_events(root/'events.jsonl')
-    requests=[event['body'] for event in events if event['event']=='request']
-    if any(body.get('model')!=plan.model_id for body in requests):
+    request_events=[event for event in events if event['event']=='request']
+    compact = getattr(config, 'event_content', 'full') == 'compact'
+    requests=([event['request_values_sha256'] for event in request_events] if compact else
+              [event['body'] for event in request_events])
+    if not compact and any(body.get('model')!=plan.model_id for body in requests):
         raise ValueError('an outgoing request used another model')
     if config.arm=='lotus' and any(
         body.get('max_completion_tokens',body.get('max_tokens'))!=8 or body.get('temperature')!=0 or
@@ -100,9 +103,14 @@ def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded
             from .organization_evaluation import verify_organization
             organization=MapOrganizationConfig.load(root/'organization.json')
             active_work=organization.active_work
-            report['organization']=verify_organization(organization,events,max_active_requests=config.concurrency,
-                                                          expected_max_new_tokens=plan.max_tokens,
-                                                          expected_task_count=len(selected))
+            if compact:
+                report['organization_observation'] = dict(status='unavailable',
+                    reason='compact events omit organization groups and token descriptions; validate the matched full-observation run',
+                    logical_work_limit_checked=active_work)
+            else:
+                report['organization']=verify_organization(organization,events,max_active_requests=config.concurrency,
+                                                              expected_max_new_tokens=plan.max_tokens,
+                                                              expected_task_count=len(selected))
         if config.pg_total_budget:
             report['pg_memory']=verify_window_memory((root/'q0-producer.log').read_text().splitlines(),
                 backend_pid=json.loads((root/'pg-backend.json').read_text())['backend_pid'],
@@ -116,7 +124,7 @@ def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded
         if len(predictions)!=len(recorded) or set(predictions)!=set(texts) or any(not isinstance(v,str) for v in predictions.values()):
             raise ValueError('Map outputs are not exactly one text per source row')
         expected=Counter(content_digest(request_body(plan,text)) for text in texts.values())
-        if Counter(map(content_digest,requests))!=expected:
+        if Counter(requests if compact else map(content_digest,requests))!=expected:
             raise ValueError('Map actual request multiset differs from raw PG inputs')
         if config.arm=='pg' and selected:
             report['association']=verify_bound_map_results(texts.items(),predictions.items(),
