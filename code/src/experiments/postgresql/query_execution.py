@@ -19,7 +19,7 @@ from .runtime_helpers import owned_child_process, wait_for_path
 from src.experiments.request_identity import request_identity
 
 
-def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors):
+def pg_gateway_command(config, plan, model_path, ledger, root):
     socket = root/'g.sock'
     if len(str(socket).encode())>100:
         raise ValueError('PG query requires a short private output directory')
@@ -45,6 +45,10 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
             raise ValueError('organization differs from query model/window')
         write_private_json(root/'organization.json', json.loads(content))
         command.extend(('--organization-config',str(root/'organization.json')))
+    return command, socket
+
+
+def prepare_pg_query(config, inputs, plan, connection, socket, root):
     settings={'semloom_pg.gateway_socket':str(socket),
         'semloom_pg.provider_execution_profile':'incremental-map' if config.task=='map' else 'query-job',
         'semloom_pg.provider_window_tasks':str(config.window),'semloom_pg.provider_window_bytes':str(config.pg_window_bytes),
@@ -63,6 +67,12 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
     explain=connection.execute(sql.SQL('EXPLAIN (FORMAT JSON) ')+statement).fetchone()[0]
     write_private_json(root/'plan.json',explain)
     write_private_json(root/'pg-backend.json',dict(backend_pid=connection.info.backend_pid))
+    return statement
+
+
+def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors):
+    command, socket = pg_gateway_command(config, plan, model_path, ledger, root)
+    statement = prepare_pg_query(config, inputs, plan, connection, socket, root)
     write_private_json(root/'gateway-command.json',command)
     env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[3])+os.pathsep+os.environ.get('PYTHONPATH',''))
     with owned_child_process(command,root,'gateway',env,None) as gateway:

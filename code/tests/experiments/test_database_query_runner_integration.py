@@ -373,6 +373,73 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
             type(self).organization_tokenizer = None
             type(self).fixture_execution_capacity = None
 
+    def test_waiting_positions_persistent_gateway(self):
+        from contextlib import ExitStack
+        from dataclasses import replace
+        import psycopg
+        from src.baselines.text.sembench_movie import MOVIE_MAP_INSTRUCTION
+        from src.execution_provider.semantic_map import SemanticMapPlan
+        from src.experiments.postgresql.persistent_gateway import PersistentMapGateway
+        from src.experiments.postgresql.waiting_positions import analyze_waiting_positions
+        organization, tokenizer = self.make_organization_fixture()
+        type(self).organization_tokenizer = tokenizer
+        type(self).fixture_execution_capacity = threading.BoundedSemaphore(4)
+        workload = self.root/'persistent-input'
+        texts = ['[GOOD] evaluation '+('word '*(24,80,144,224)[i%4])+str(i) for i in range(32)]
+        prepare(workload,'movie',[(f'evaluation-{i}','taken_3',text,'POSITIVE') for i,text in enumerate(texts)],
+                {'source':'synthetic waiting fixture; not independent semantic evaluation'},max_rows=32)
+        table = self.table+'_warm'
+        with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as connection:
+            install_input_table(connection,QueryInputs('movie',table,32),read_prepared(workload/'manifest.json','raw.jsonl'))
+        arms = (('request-c4',4,None),('request-c8',8,None),('wide-c8',8,3096),('tight-c8',8,512))
+        orders = ((0,1,2,3),(0,1,2,3),(1,2,3,0),(2,3,0,1),(3,0,1,2),(0,1,2,3))
+        write_private_json(self.root/'persistent-design.json',dict(arms=arms,orders=orders,warmup_round=0,
+            queries_per_group=6,fixture_posts=768,actual_model_posts=0,service_slots=4,backlog=self.server.request_queue_size))
+        reports = []
+        before = len(self.posts)
+        try:
+            with ExitStack() as stack:
+                groups = []
+                for name, capacity, work in arms:
+                    options = {}
+                    if work is not None:
+                        declared = self.root/(name+'-organization.json')
+                        write_private_json(declared,asdict(replace(organization,mode='rows',window_rows=8,
+                            batch_rows=8,active_work=work,batch_work=3096)))
+                        options.update(organization_config=str(declared),organization_sha256=hashlib.sha256(declared.read_bytes()).hexdigest())
+                    config = QueryConfig(name,'pg','map',table,concurrency=capacity,window=8,pg_total_budget=True,
+                        input_bytes=8388608,result_bytes=8388608,pg_window_bytes=8388608,pg_staging_bytes=4194304,
+                        query_timeout_s=15,**options)
+                    groups.append(stack.enter_context(PersistentMapGateway(config,
+                        plan=SemanticMapPlan(MOVIE_MAP_INSTRUCTION,'fixture-model',128),manifest_path=workload/'manifest.json',
+                        model_path=self.model,ledger=self.ledger,root=self.root/name,query_count=6)))
+                pids = {arms[i][0]:group.gateway.pid for i,group in enumerate(groups)}
+                for repeat, order in enumerate(orders):
+                    for index in order:
+                        group = groups[index]
+                        unit = f'query-{repeat}'
+                        result = group.run_query(unit,dsn=os.environ['SEMLOOM_TEST_PG_DSN'],
+                            pg_log=os.environ['SEMLOOM_TEST_PG_LOG'],trace_flow=True,peer_pids=pids)
+                        output = group.root/unit
+                        write_private_json(output/'waiting-contract.json',dict(
+                            eligibility='sealed-immutable-full-scan-at-invocation',manifest_sha256=result['manifest_sha256'],
+                            role='warmup' if repeat==0 else 'measurement',arm=arms[index][0],repeat=repeat,
+                            driver='persistent',gateway='persistent'))
+                        timing = analyze_waiting_positions(output,expected_rows=32,window=8)
+                        write_private_json(output/'waiting-positions.json',timing)
+                        self.assertEqual(result['evaluation']['quality']['false_negative'],0)
+                        audit = result['evaluation'].get('organization')
+                        if audit:
+                            self.assertEqual(audit['submitted_sequences'],list(range(32)))
+                            self.assertEqual(audit['compute_lifecycle']['work_only_block_count']==0,index==2)
+                        reports.append(dict(group=arms[index][0],unit=unit,repeat=repeat,warmup=repeat==0,
+                            timing=timing,evaluation=result['evaluation']))
+            self.assertEqual(len(self.posts)-before,768)
+            write_private_json(self.root/'persistent-comparison.json',reports)
+        finally:
+            type(self).organization_tokenizer = None
+            type(self).fixture_execution_capacity = None
+
     def test_original_count_then_limit_tasks(self):
         for task,posts in (('movie-q3',90),('movie-q1',120),('movie-q2',90)):
             for arm in ('pg','lotus'):
