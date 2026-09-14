@@ -37,7 +37,28 @@ Job预算策略只声明存储保留和计算上限；SessionCapacity/Engine拥�
 - 回归覆盖原equal-share、单查询incremental-map、query-job Filter/Map、NULL/LIMIT/权限/取消与正常PG TAP。
   新真实模型验证须在实施和受控检查通过后给出独立有限单元清单、请求/时间上限；此前57次额度已结束。
 
-当前状态：代码审查与规格已完成，实施/受控/服务器集成待完成；不据本节存在登记E已实现。
+当前状态：共享策略、PG窗口与受控集成已完成；Linux调度385/provider57/PG合同116、PG回归1与TAP2138通过。
+共享查询163次受控HTTP验证25个Job结清；真实模型准备脚本另用63次受控请求通过。
+以下真实模型范围已完成：[完整记录](../results/postgresql/query_sharing_e_20260914/README.md)。首次准备实际0次失败，获继续确认后63次真实请求/19个Job关联与回收通过；
+Map逐字复述0/55是质量负结果。PG/模型/进程/GPU/ACL已清理；不将工程完成解释为质量或性能通过。
+
+### E真实模型验证（2026-09-14，独立新额度）
+
+用户明确允许调用真实模型。最多63次生成POST、单GPU，从模型文件核对到清理最多20分钟；
+使用既有Qwen2.5-7B-Instruct revision `a09a35458c702b33eeacc393d103063234e8bc28`、vLLM0.25.1、
+BF16/TP1/context4096、FCFS、max-num-seqs128/max-num-batched-tokens8192、显存比例0.8，prefix cache和chunked prefill开启。
+本轮无预热比较或cache reset，不作性能结论；63次是包括准备后全部实际生成请求的总上限。
+
+- 输入为4个独立文本ID、各自内容`TRUE`，不使用公司数据。Map指令`Echo.`，Filter指令`The input is TRUE.`，
+  指令从验证配置传入通用核验函数；模型/路径/容量由仓库外配置提供。
+- 2个Map查询8次、4个Map查询16次、2个Filter→Map查询最多16次、3个暂停游标与1个活跃Map查询16次、
+  7次顺序LIMIT 1共7次。预计19个Job；Filter若返回合法drop，则相应Map不调用，实际总数可能小于63。
+- 服务C4/Job4/held32，输入和结果各32MiB；PG窗口4、total留存8MiB、单行暂存4MiB。
+  单查询30秒，整个查询worker180秒；总20分钟内预留90秒清理。每个请求先记入既有持久账本，不退款。
+- 复用PG逐行记录器、Filter/Map独立生产者关联、socket peer归属、Core提交/权威终态重放；
+  记录全部原始输出和输入对应关系。模型答错记入质量结果，不能作为错配或调度性能结论。
+- 首次非预期失败或上限到达立即停止，保留所有已完成/失败输出，不重试、不追加额度、不改变运行配置。
+  收尾核对实际HTTP/服务日志/账本、Job与计算责任、PG/模型/网关进程、端口、GPU和临时ACL。
 
 <a id="design-hypotheses"></a>
 ## 当前研究：设计假设、证据与强对照（2026-09-14）
@@ -416,7 +437,7 @@ Ray2.56.1、LOTUS1.2.4 adapter，不访问或复制公司私有材料，不改�
 | PG 窗口预算 | `sem_pump.c` 的 B/L 等份与分配后检查；改为总量与一个有界待接纳行，独立报告暂存/转换分配 | 同 B 的合法大行不随 L 改变合法性；宽行/超限/取消与内存责任检查 | 待实现 |
 | 数据库驻留比较 | PG-source direct、实际 WHERE→Map、原始列构造消息；内存 direct 继续是诊断 | 相同源快照/不可变表、计时含读取转换；安全谓词扩大窗口，其他形状明确回退 | 代码及受控验证完成；真实比较待新额度 |
 | 公共任务与原生执行 | SemBench Movie Q3→Q1/Q2、Movie-derived Map；Ray Data SQL/processor、LOTUS 原生程序 | 原任务/evaluator 固定版本；COUNT/LIMIT/Map 各自评价；未注入 SemLoom 调度 | 代码及受控验证完成；真实比较待新额度 |
-| 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 待实现 |
+| 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 实现、受控与真实执行/资源检查完成；[质量负结果](../results/postgresql/query_sharing_e_20260914/README.md)保留 |
 | 图像 PG→Ray | CLIP encoded bytea→CPU prepare→GPU actor→real[]；先同步 reference 再增量，复用 typed image/method/stage 组件 | PG/解码/受控模型零权重集成；真实 CLIP 另验，不冒充已通过 | 待实现 |
 | 文献与解释 | KEN 核心补充待精读；IMLane artifact 可用性；修正 direct 日志和非单变量对照解释 | 文献/知识库/状态/结果/日志同步，历史数据不改写 | KEN/历史解释完成；IMLane 源码已核查、构建待验证 |
 
