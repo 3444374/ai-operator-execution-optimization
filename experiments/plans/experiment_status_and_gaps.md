@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-更新日期：2026-09-10
+更新日期：2026-09-14
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
@@ -8,33 +8,24 @@
 
 ## 当前执行摘要
 
-[单 Map 单卡容量画像](../results/postgresql/map_capacity_20260910/README.md)完成96601次真实出站、99808次预留，
-得到可复跑工具、完整曲线和每臂五次4000行观测；2000行独立样本验证通过。当前候选C32/L64，
-但C64/128缺少同规模重复平台，强D0尚未成立，组织方法比较不能据此提前登记完成。
-PG 8MiB候选的资源拒绝及756行部分结果保留；服务/ACL已清理。分层样本仅离线准备，双副本不是补齐单卡平台的前置项。
-以下先前验收记录按当时范围保留，当前结论以上述报告为准。
+当前研究顺序由[设计假设、证据与强对照](data_organization_batching.md#design-hypotheses)维护：
+先检验提交控制是否改善完整查询，以及有限候选相对全局元数据的成本；随后按结果选择阶段表示或多查询承诺实验。
+A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作为所有研究的前置条件。
 
-`main` 已包含受限单 Map v6 多在途、共享 Engine/Job、查询生命周期加固和外部
-有界多行方法驱动。`incremental-map` 可使用配置窗口；`query-job` 的 Map 仍为窗口 1，
-外部方法驱动尚未接入 PG 方法路径。真实模型功能检查不等于真实数据质量或强静态性能资格。
+| 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
+|---|---|---|
+| [期限与输入/交付诊断](../results/postgresql/async_deadline_flow_20260914/README.md) | 实现0274b121及验证3f1f5540已合入main；PG TAP2138、96次fixture，真实24+33共57次；一次真实结果跨期限正确保留失败，全部资源清理 | 四次真实暂停均未遇到就绪队首，不能归因ready-first收益；无稳定性能结论 |
+| [C/D真实预算](../results/postgresql/cd_validation_20260911/README.md) | 总留存可用性和work提交限制可检验；紧work三组均更慢，保留一行模型输出差异 | 强请求数FIFO、token表征成本、独立重复；不是token控制天然更好 |
+| [单卡容量画像](../results/postgresql/map_capacity_20260910/README.md) | 96601次真实出站、99808次预留、五次4000行观测与2000行独立验证；当时C32/L64为候选 | 更高C的同规模平台仍未确认，不能将旧签名/配置直接命名为当前强静态 |
+| [数据库原始输入/公共查询](../results/postgresql/database_queries_20260910/README.md)与[关联补充](../results/postgresql/ab_validation_20260911/README.md) | PG/direct/Ray/LOTUS相关入口、SemBench原始任务与独立关联已具备受控证据；PG/direct另有本轮小样本模型验证 | 原生系统真实质量和匹配性能未由本轮补齐 |
+| 既有shared-credit、公平策略、Job/flow及外部MethodDriver | 可复用的机制或接口；不是不存在而需重写 | 当前路径的适配、默认组装、PG方法桥接、动态份额与图像阶段分别核对，不按接口存在推定完成 |
 
-近期执行[单 Map 数据执行切片](data_organization_batching.md#当前-pg-单-map-数据执行切片)：
-先完成真实数据关联/评价和可解释测量，再选静态配置及比较简单组织；之后按需适配已有调度策略。
-默认 work=1、默认装配未注入旧 credit；并不表示 shared-credit/FIFO/DRR/VTC-style/SAOR 不存在。
-旧矩阵与负结果保留，不从附件或下方历史叙述恢复正式运行。
+现有原始Movie8/16/128行及其他既用调优数据视为开发材料；新的M1/M2评价划分、全局metadata适配和查询准备外层计时尚未完成。
+当前只批准并完成了上述有限验证，M1—M4没有新增模型额度。下方历史矩阵继续只供追溯。
 
-[首次真实数据尝试](../results/postgresql/data_execution_pilot_20260909/README.md)已结束：
-48/68次请求，单 GPU；SQuAD 16 行关联与答案检查可用，ShareGPT 输出/任务/源文本身份未通过。
-静态容量、组织性能和双卡接入仍待验证。先扩大有代表性的 SQuAD 调优输入并使用已补足的记录工具，
-双卡性能前验证两个单卡副本的 endpoint 路由；ShareGPT 当次摘要配置暂停，数据源仍保留。
-
-[数据准备与测量工具验收](../results/postgresql/data_evaluation_harness_20260910/README.md)完成本地/Linux
-各 168 项相关测试、真实 PG 7 项 recorder 检查和 146 行读回；新 ShareGPT 原文准备与 tokenizer 检查通过。
-新账本 SQuAD 10/10 次模型请求通过原始出站、usage、结果关联和小样本答案检查，增量资源归零；
-两次准备失败各 0 POST 保留，临时服务与 ACL 已清理。旧 JCT 不补造，ShareGPT 质量没有因此恢复。
-工具修复实现提交 `5085c6ff` 已按用户授权合入 main。
-SQuAD 之后显式安排 SemBench Movie 原始查询与 Movie-derived 全扫描任务，先核验作者版本与 evaluator；
-两者结果目标分别登记，尚未适配或运行。具体后续步骤仍由数据执行计划维护。
+首次ShareGPT尝试48/68请求的失败、后续146行原文准备/PG读回与SQuAD10次小样本检查仍分别引用
+[首次尝试](../results/postgresql/data_execution_pilot_20260909/README.md)和[工具验收](../results/postgresql/data_evaluation_harness_20260910/README.md)；
+它们不表示ShareGPT摘要质量、全局元数据对照或多查询性能已经完成。
 
 ## 截至 2026-09-03 的历史状态（由上方摘要替代）
 

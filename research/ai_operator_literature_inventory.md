@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-09-10
+更新日期：2026-09-14
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -122,6 +122,21 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 - [Beyond Prediction: Tail-Aware Scheduling](https://arxiv.org/abs/2606.18431)
 - [FastServe](https://www.usenix.org/conference/nsdi26/presentation/wu-bingyang)
 - [μ-Serve](https://www.usenix.org/conference/atc24/presentation/qiu)
+
+### 2.4 数据执行的基础理论参照（2026-09-14）
+
+以下只完成官方题录/摘要核对，未新增全文精读或调整Top15；用途与迁移条件由
+[知识库条件卡](knowledge_hub.md#execution-transfer-cards)维护。
+
+| 文献 | 核对版本与来源 | 本轮用途 |
+|---|---|---|
+| *A Proof for the Queuing Formula: L = λW*，John D. C. Little | Operations Research9(3):383–387，1961；[DOI](https://pubsonline.informs.org/doi/10.1287/opre.9.3.383) | 区分平均关系与有限样本面积、尾延迟 |
+| *Achieving Utility-Delay-Reliability Tradeoff in Stochastic Network Optimization with Finite Buffers*，Sucha Supittayapornpong、Michael J. Neely | [arXiv:1501.03457v1](https://arxiv.org/abs/1501.03457)，2015 | 检查有限缓冲保证中的丢包、随机过程和时间平均条件 |
+| *An Optimal Randomized Online Algorithm for Reordering Buffer Management*，Noa Avigdor-Elgrabli、Yuval Rabani | [arXiv:1303.3386v1](https://arxiv.org/abs/1303.3386)，2013；本轮不补推后续正式venue | 有限重排信息和竞争比较的已有理论，不将颜色切换模型等同KV缓存 |
+
+Agentix的NSDI2026正式题录与摘要、MLSys2025关系查询重排、Ray Data arXiv v5和Kalypso v2摘要本轮复核；
+BlendServe采用ASPLOS2026正式题名与摘要，不能用旧预印本题名/实验数字替代。
+IMLane与DLPM复用已有精读，KEN仍待精读；这些核对不表示artifact已在本项目运行。
 
 ## 三、题录核验勘误
 

@@ -6,7 +6,7 @@
 
 | 文件 | 用途 |
 |---|---|
-| `knowledge_hub.md` | 项目知识总汇：机制、文献地图、可迁移策略和研究空白；不维护当前代码状态或实施顺序 |
+| `knowledge_hub.md` | 项目知识总汇：机制、文献地图、研究空白与[数据执行迁移条件](knowledge_hub.md#execution-transfer-cards)；不维护当前代码状态或实施顺序 |
 | `top15_ranked_papers.md` | 当前开题 Top 15；15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单；KEN 已加入待精读，题录与摘要已核验，全文及 artifact 分别待核查 |
 | `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |

@@ -12,6 +12,11 @@
 
 ## 0. 当前优先级与历史记录范围
 
+下一阶段研究重点是说明“哪些工作现在做、哪些稍后做，以及何时值得这样做”。
+[设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
+先比较完整查询等待和局部/全局信息成本，再决定是否需要阶段资源或多查询策略。有限窗口是控制量，不是预先认定的最佳方法。
+资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。
+
 2026-09-14：[异步期限与数据交付诊断](experiments/results/postgresql/async_deadline_flow_20260914/README.md)
 已修订同步工作跨期限后误报完成的问题，并测量PG输入准备、Core提交、节点交付与客户端接收。
 受控对照中，先补输入会延后就绪结果的节点交付，但提前节点交付没有带来一致的客户端首行改善，默认次序保持不变。
@@ -52,7 +57,7 @@
 
 2026-09-09：当前主线转为围绕具体数据执行问题完成测量、对照、机制改进和验证。
 先做真实单 Map 任务与静态容量画像，再比较有限窗口中的数据组织，随后进入多 Job。
-近期合同见[数据执行切片](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)，
+近期合同见[数据执行切片](experiments/plans/data_organization_batching.md#design-hypotheses)，
 实际完成情况见[实现状态](code/INFRA_STATUS.md)与[实验状态](experiments/plans/experiment_status_and_gaps.md)。
 研究对象和两项研究内容保持不变；框架开发优先解决这条实验链暴露的缺口。
 
@@ -550,7 +555,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 先回答“数据库逐步提供的输入怎样组织和提交，才能及时完成查询并减少不必要的数据留存”。
 复用已实现的受限单 Map 多在途、共享执行核心和组织器；真实质量、性能与可比性分别核对。
-具体参数、额度和停止条件只在[数据执行计划](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)维护。
+具体参数、额度和停止条件只在[数据执行计划](experiments/plans/data_organization_batching.md#design-hypotheses)维护。
 
 | 工作对象 | 近期工作 | 与其他工作的依赖 |
 |---|---|---|

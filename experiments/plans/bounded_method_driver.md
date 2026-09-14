@@ -41,7 +41,7 @@ close_consumer 与 AsyncFixedModelTransport，版本为上述基线。MethodRun 
 `length` 后按 Map 合同停止；增量对照未运行。另发现一行准备文本被证据脱敏改写及多条输出
 未遵从摘要任务，不能登记为合格原样数据实验；剩余额度不自动重试。以下保留当时合同。
 
-近期执行顺序由[单 Map 数据执行切片](data_organization_batching.md#当前-pg-单-map-数据执行切片)维护；
+近期执行顺序由[设计假设与强对照](data_organization_batching.md#design-hypotheses)维护；
 本节只拥有 ShareGPT 选样与 34 次请求合同。这是 PG 单 Map 检查，不是 MethodDriver 的 PG 桥接。
 实际固定预算路径选择 `incremental-map`/v6、一个 Job、窗口 2、HTTP 并发上限 2，
 须以 EXPLAIN 和真实事件核对生效值；`query-job` 窗口 1 不替代该路径。

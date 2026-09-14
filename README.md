@@ -9,13 +9,13 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-近期先围绕单 Map 的数据供给与留存完成真实任务测量、静态容量画像和有限窗口组织对照，
-随后进入多 Job。框架开发优先解决这些实验暴露的具体问题；
-[当前数据执行计划](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)维护次序，
-[首次真实数据尝试](experiments/results/postgresql/data_execution_pilot_20260909/README.md)区分可用结果与失败记录。
+近期重点是检验数据执行的设计理由：控制提交是否缩短完整查询，有限候选是否比获取全局元数据更划算，
+以及准备深度和消费次序如何影响留存。随后按观察结果选择阶段执行或多查询竞争实验。
+[当前研究计划](experiments/plans/data_organization_batching.md#design-hypotheses)把已有证据、数学条件、强对照和否定设计的结果对应起来，
+不预设有限窗口或token控制一定更好；[最新验证](experiments/results/postgresql/async_deadline_flow_20260914/README.md)保留57次真实请求及配置失败记录。
 
 [数据库源与公共查询入口](experiments/results/postgresql/database_queries_20260910/README.md)已完成PG、
-direct、原生Ray/LOTUS的受控查询检查，并准备2000条真实Movie输入；真实模型质量与性能比较仍待执行。
+direct、原生Ray/LOTUS的受控查询检查，并准备2000条真实Movie输入；原生Ray/LOTUS真实模型质量与匹配性能仍待验证。
 
 [Map总字节留存](experiments/results/postgresql/pg_window_budget_20260910/README.md)与
 [有限窗口token工作量组织](experiments/results/postgresql/map_organization_20260910/README.md)已完成独立真实诊断，

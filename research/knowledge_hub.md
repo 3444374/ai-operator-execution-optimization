@@ -6,7 +6,7 @@
 实现事实见 [`../code/INFRA_STATUS.md`](../code/INFRA_STATUS.md)，证据强度见
 [`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
-生成日期：2026-07-16（最近更新：2026-09-10，加入 KEN 待精读条目，不改变两项研究内容）
+生成日期：2026-07-16（最近更新：2026-09-14，补充数据执行迁移条件与候选判断；两项研究内容不变）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -37,6 +37,7 @@
 | Ray + vLLM 怎么集成？PrefixCacheAffinityRouter 是什么？ | [§2.3 Ray + vLLM](#23-ray--vllm-集成模式) |
 | 已有文献的全景地图是什么？四个研究岛各有什么？ | [§3 文献全景地图](#3-文献全景地图) |
 | 研究空白究竟在哪里？怎么证明？ | [§4 三个岛之间的空白](#4-三个岛之间的空白) |
+| 如何判断论文机制能否迁移、设计理由缺什么证据？ | [数据执行条件卡](#execution-transfer-cards) |
 | 从文献中提取了哪些设计原则？ | [§5 文献提取的设计原则](#5-文献提取的设计原则) |
 | 预研实验有什么证据？边界在哪里？ | [§6 本项目已有实验证据](#6-本项目已有实验证据) |
 | 当前策略版本是什么？实验怎么设计？ | [§7 策略设计与实验路线](#7-策略设计与实验路线) |
@@ -91,38 +92,38 @@ prompt 是另一种语义算法，不能当作普通组织操作。实际 token/
 
 ### 1.4 Chunked Prefill 与上游策略的安全边界
 
-**详细论述**：`experiments/plans/data_organization_batching.md` §2.5.7；vLLM deep-research 验证报告（2026-07-20）。
+**当前依据**：[vLLM chunked prefill文档](https://docs.vllm.ai/en/latest/configuration/optimization/#chunked-prefill)（2026-09-14核对）与[设计假设计划](../experiments/plans/data_organization_batching.md#design-hypotheses)；旧§2.5.7保留历史讨论。
 
-**核心区分**（事实，来源：vLLM 官方文档 + SOSP'23 论文）：
+**核心区分**（来源：vLLM官方文档；关于本项目权限的要求来自既有语义合同）：
 
 | 操作 | 机制 | 语义影响 |
 |---|---|---|
-| **vLLM `--enable-chunked-prefill`** | 同一请求内部，prefill token 分多个 chunk 与 decode 交错执行；KV cache 连续累积；完整注意力 | ✅ 数学等价（贪婪解码下输出一致） |
+| **vLLM `--enable-chunked-prefill`** | 同一请求内部，prefill token 分多个 chunk 与 decode 交错执行；KV cache 连续累积；完整注意力 | 保留单个完整请求的上下文；不据此保证不同batch/精度实现逐字输出一致 |
 | **手动拆分一份文档为多条请求** | 多条独立请求，KV cache 互不共享（默认），上下文隔离 | ❌ 语义断裂——后半段看不到前半段 |
 
 **对上游策略的约束**（推断）：
 - 上游 Daft/Ray 层的 token-budget 策略决定"多少行合并为一个 batch"——每行仍是独立完整的请求
 - **禁止**在 Ray actor 中自动拆分单行 prompt 内容为多条 vLLM 请求（即使该行 token 量超过 budget）
-- 超长单行的正确处理：预处理截断（truncate）、独占 batch、或从数据集中排除
-- 正确的批量模式：多条**互不相关的独立任务**合并为一个 batch 提交（等效于 vLLM 的批量请求列表）
+- 仅超过组织目标而未超过模型context的行可以单独成组；超过模型context按版本化语义错误规则处理。截断或排除须有输入规范和授权，不能由执行器自行决定
+- 当前Map组仍展开成逐项独立请求；模型物理batch由服务端形成。合法分组不等于一次批量RPC，也不证明更高吞吐
 
 **与 prefix-aware grouping 的关系**：
-- prefix-aware 分组是将共享 system prompt 的独立请求合并提交以利用 APC —— 这是**正确的优化**（每行仍是独立任务）
+- prefix-aware分组可调整完整独立请求的次序以争取前缀复用；是否兑现取决于实际缓存域、逐出与调度，收益仍需对照
 - 它不是"把一份文档拆成多段"——每行仍然是完整的独立请求，只是利用 APC 共享前缀计算
-- 与 chunked prefill 的关系：prefix-aware 操作在 request 粒度（哪些请求一起提交），chunked prefill 操作在 token 粒度（单个请求内部如何计算）——两者在不同层面，互补
+- prefix-aware操作在request粒度，chunked prefill操作在token粒度；控制层不同并不保证收益相加。输出一致性另按[批次不变性条件](https://docs.vllm.ai/en/latest/examples/features/batch_invariance/)与实际模型设置核对
 
 ### 1.5 分组策略设计空间：Length-Align vs Bin-Packing
 
-**详细论述**：`experiments/plans/data_organization_batching.md` §2.5。
+2026-09-14校正：这是选择完整行次序的两个候选，不是已证明的优劣关系；[当前对照](../experiments/plans/data_organization_batching.md#design-hypotheses)取代旧“主推Bin-Packing”建议。
 
-两种 token-budget 驱动的分组策略（操作在"如何选择行放入同一 batch"，而非"如何切割行内文本"）：
-
-| 策略 | 机制 | 与 vLLM chunked prefill 的协同 |
+| 策略 | 实际动作 | 必须验证的条件 |
 |---|---|---|
-| **A: Length-Align** | 相似 token 长度的行分入同一 batch | 长 batch 内无短 decode 可交错 → chunked prefill 优势减弱 |
-| **B: Bin-Packing** | 混合不同长度，使每个 batch 总 token 量均衡 | 天然混合 prefill+decode → chunked prefill 最优场景 |
+| Length-Align | 在允许重排的候选中按输入或估计work相近程度排列 | 相似长度不保证同时处于相同推理阶段；需观察服务配置、输出长度及按序交付代价 |
+| Bin-Packing / 需求混合 | 在可比候选中平衡组work或混合资源需求 | 组work均衡不等于同一GPU batch资源互补；需证明提交和真实执行发生可利用的变化 |
 
-推荐主推 B（Bin-Packing），A 保留为消融对比（尤其在异构 actor pool 场景下）。详见 `data_organization_batching.md` §2.5.6。
+官方文档解释chunked prefill可把prefill和decode放入同一模型批次；它没有证明上游“长短混合”必然胜出。
+BlendServe也明确资源互补与prefix复用可能冲突，不能从两者名字推导联合收益。
+当前不预选赢家，先同信息、同资源比较FIFO/简单长度/合法混合，计入准备与消费成本。
 
 ---
 
@@ -232,7 +233,7 @@ class AdaptiveSubmitActor:
 | 论文/系统 | 出处 | 核心内容 |
 |---|---|---|
 | **Ray** | OSDI 2018 | task/actor 统一抽象、分布式调度、对象存储，AI 应用框架 |
-| **Ray Data Streaming Batch** | arXiv 2025 | CPU/GPU 异构批处理管线，3-8× 吞吐 |
+| **Ray Data Streaming Batch** | arXiv:2501.12407v5，2025 | 动态分区与内存感知异构流水；该版本摘要报告其测试条件下2.5–12×吞吐，不外推到本项目 |
 | **Daft** | 官方文档 | partition/batch/shuffle/join，Ray runner |
 | **Spark SQL** | 官方文档 | partition tuning、coalesce、adaptive query execution |
 | **Velox** | VLDB 2022 (Meta) | C++ 向量化执行引擎，Presto/Spark/PyTorch 统一执行层 |
@@ -416,6 +417,45 @@ README/安装脚本/CMake已读，尚未构建。脚本中的Arrow16.1.0rc1、Py
 5. 不能说“上游调度会加速 GPU 单次推理”；它能改善的是达到容量上限所需的压力、瞬态 ramp、可控排队、多 job 公平和端到端 JCT
 
 ---
+
+<a id="execution-transfer-cards"></a>
+### 4.5 数据执行的可迁移条件与候选判断（2026-09-14）
+
+本节为论文事实与本项目推断的横向索引，不是新的系统实现或运行计划。
+[设计假设与证据链](../experiments/plans/data_organization_batching.md#design-hypotheses)统一维护实验反事实、最小模型和先后次序。
+有限物化不意味着禁止全局轻量信息；接入PG、增加Job或有界异步执行本身不构成研究新颖性。
+
+每行按“看得到什么、能控制什么、优化什么、依赖什么条件、如何用于本课题”记录；末列均为迁移判断。
+
+| 文献与核对范围 | 可见信息 / 动作 | 目标及成立条件 | 在SemLoom中的采用决定与缺口 |
+|---|---|---|---|
+| *IMLane: Composable Framework for Efficient AI Function Execution in Database Engine*，PVLDB2026；复用[正式版本精读](精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md)与已核验作者源码 | 数据库物理批、AI Function与执行资源；进程执行、批次异步提交、资源调度和传输路径 | 数据库AI Function执行效率；具体收益取决于模型、DB和资源，笔记§6.4.4的LLM饱和场景不能由其他ML收益代替 | 作为工程与执行对照；必须让新增组织超过已有异步执行。当前环境artifact可运行性仍待独立验证；本轮官网PDF获取失败，未新增全文核验或改动既有正式题录 |
+| *The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution*，arXiv:2501.12407v5；[原文§3–4](https://arxiv.org/html/2501.12407v5)、[精读](精读文献笔记/ray_data_streaming_batch_nsdi2027/ray_data_streaming_batch_nsdi2027.md) | 物理算子图、分区元数据、资源和中间数据；动态分区、背压、保守或基于profile的推进 | 异构流水吞吐与内存效率；其调度可控制分区及执行资源，恢复依赖任务/数据模型 | 保留原生合理策略作强对照；PG语义与按序消费的增量需单独测量，不能仅称“字节反压创新”；目录名不作为正式会议依据 |
+| *Kalypso: Relational LLM Serving*，arXiv:2607.23815v2；[摘要核对](https://arxiv.org/abs/2607.23815v2)、[既有全文精读](精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md) | 语义查询依赖、跨算子中间元组及KV生命周期；流水与阶段内存分配 | 查询完成与prefix复用；依赖引擎内缓存管理能力，不能把整个机制视为黑盒HTTP天然具备 | 作为上游供给/下游推进冲突的最近邻；本项目无精确KV驻留/显式pinning，新增决策不能假设拥有它们 |
+| *Optimizing LLM Queries in Relational Data Analytics Workloads*，MLSys2025；[正式论文入口](https://proceedings.mlsys.org/paper_files/paper/2025/hash/b5dc49f44db2fadc5c4d717c57f4a424-Abstract-Conference.html)、[精读](精读文献笔记/relational_llm_queries_mlsys2025/relational_llm_queries_mlsys2025.md) | 关系数据及行/字段信息；重排请求和字段以提高prefix复用 | 批量查询完成与成本；依赖输入可获知及相应字段变换语义 | 全局元数据规划必须成为对照。当前固定SemanticPlanSpec只允许合法行调度；字段/提示词变换需独立语义和质量资格，不能悄然加入执行臂 |
+| *BlendServe: Optimizing Offline Inference with Resource-Aware Batching*，ASPLOS2026；[正式摘要](https://doi.org/10.1145/3779212.3790133)、[精读](精读文献笔记/blendserve_asplos2026/blendserve_asplos2026.md) | 离线请求池、计算/内存需求、prefix；资源感知prefix树和请求次序 | 宽松延迟目标下的吞吐；资源互补可能与prefix局部性冲突 | 长度同质化和混合都只能作为待检验动作；估计、树构建及信息取得成本必须计入。不能只把该方法缩成小窗口就声称新算法 |
+| *Fairness in Serving Large Language Models*（VTC），OSDI2024；[官方摘要](https://www.usenix.org/conference/osdi24/presentation/sheng)、[精读](精读文献笔记/vtc_osdi2024/vtc_osdi2024.md) | 已处理输入/输出token与持续积压client；continuous-batching服务选择 | 声明模型下的服务差与工作守恒；服务量不等于请求数，结论依赖引擎可见性和调度时机 | 迁移服务量定义及共同积压评价；外部已提交不可抢占任务需要另建误差/责任模型，不能推出SQL JCT或P99保证 |
+| *Locality-aware Fair Scheduling in LLM Serving*（DLPM/D²LPM），arXiv:2501.14312v1；复用[全文精读](精读文献笔记/dlpm_2025/dlpm_2025.md) | prefix匹配、client/worker deficit；资格选择与路由 | 局部性、公平和负载分配；具体保证依赖其服务模型和记账 | 复用思想作明确命名的内部对照；没有相同引擎接口时不冒充原生artifact，旧精读版本不等于本轮确认最新发表状态 |
+| *Agentix: An Efficient Serving Engine for LLM Agents as General Programs*，NSDI2026；[官方摘要与题录](https://www.usenix.org/conference/nsdi26/presentation/luo) | program/call依赖与已完成调用上下文；调用优先级和抢占 | 程序端到端延迟；引擎能抢占调用，program与SQL查询语义不同 | 采用查询JCT这个独立目标；不照搬抢占到黑盒endpoint。本轮摘要/题录核对不登记为新完成的全文精读 |
+| *KEN: An Execution Engine for Unstructured Database Systems*，PVLDB2026；沿用本库待精读状态 | 已有摘要涉及查询负载、模型级联和模型放置；细节待全文核对 | 需区分少做昂贵调用与内存/移动/放置成本 | 提醒“算子方法×执行方式”应有匹配对照；不从摘要补造保证或可运行baseline |
+
+基础理论也分开登记，不能用公式替代实验条件：
+
+| 来源 / 阅读状态 | 可采用内容 | 不可直接推出 |
+|---|---|---|
+| *A Proof for the Queuing Formula: L = λW*，Operations Research9(3):383–387，1961；[官方题录/摘要](https://pubsonline.informs.org/doi/10.1287/opre.9.3.383) | 系统范围和平均在途量/平均时延的关系；本轮有限样本面积公式另由指示函数直接推导 | 平均式不决定P99、最优窗口或当前有限批任务的稳定性 |
+| *Achieving Utility-Delay-Reliability Tradeoff in Stochastic Network Optimization with Finite Buffers*，arXiv:1501.03457v1；[摘要](https://arxiv.org/abs/1501.03457) | 核对随机网络、时间平均目标、有限缓冲与近似误差条件 | 摘要明确以丢包换取有限缓冲，不能将其保证搬到SQL不能丢必要行的执行器 |
+| *An Optimal Randomized Online Algorithm for Reordering Buffer Management*，arXiv:1303.3386v1；[摘要](https://arxiv.org/abs/1303.3386) | 有限重排已有非平凡竞争分析；证明任务应明确在线信息及离线比较对象 | 其重排成本模型和竞争界不自动适用于真实GPU/KV及SQL消费，不能声称任意有限窗口策略有常数竞争比 |
+
+**候选登记：消费进度感知的有界组织。** 来源为当前执行证据、用户研究审查和上述近邻之间的待证问题，
+不是已证明的新算法。比较少量合法、尚未提交的动作，估计查询推进与驻留代价，预测优势不足时保留调优静态动作。
+需要先用全局元数据、同信息FIFO/长度策略和既有公平控制否定容易成立的解释，才能判断数据库消费位置是否提供新决策价值。
+如果全局信息更便宜有效，或强静态已足够，应收敛为该方案，而不是维护有限窗口偏好。
+
+模型中的每个动作必须对应真实读取、准备、提交或释放变化；精确GPU剩余时长、实时KV驻留、token抢占都不是当前黑盒端点的已知能力。
+后文早期“同质/异质分组更适合某服务模式”和“解析公式直接选择K”的建议继续作为条件性迁移假设，
+不因出现在知识库就视为数学依据。原实验数字只由其原始报告解释，不在本节重算或改写。
+
 
 ## 5. 文献提取的设计原则
 
@@ -1292,7 +1332,7 @@ Snowflake 2025 年已 GA 完整的多模态 AI SQL 算子：
 | [Daft GPU Inference with @daft.cls](https://www.daft.ai/blog/gpu-inference-with-daftcls) | 官方博客 | @daft.cls UDF 机制、GPU 分配参数 |
 | [Flotilla: Daft 新分布式引擎](https://www.daft.ai/blog/introducing-flotilla-simplifying-multimodal-data-processing-at-scale) | 官方博客 | Flotilla 架构、Ray 角色变化 |
 | [Exploring Daft's Swordfish Execution](https://www.daft.ai/blog/exploring-daft-swordfish-execution-mechanism) | 官方博客 | Morsel Push 模型、Tokio 异步 |
-| [Ray Data Streaming Batch (arXiv:2501.12407)](https://arxiv.org/abs/2501.12407) | 论文 | Ray Data 异构执行模型，3-8× 吞吐 |
+| [The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution](https://arxiv.org/html/2501.12407v5) | arXiv v5 | 动态分区、内存感知流水与离线调度参照；不同论文版本的性能数字不能混用 |
 | [Benchmarking Multimodal AI: Ray Data vs Daft](https://www.anyscale.com/blog/ray-data-daft-benchmarking-multimodal-ai-workloads) | Anyscale | 双方 Benchmark 之争 |
 | [EMR Serverless Daft 具身智能实践](https://developer.aliyun.com/article/1747724) | 阿里云 | 视频抽帧→VLM 推理→标注的完整管线 |
 | [Snowflake Cortex Multimodal](https://docs.snowflake.com/en/user-guide/snowflake-cortex/ai-multimodal) | 官方文档 | 多模态 AI SQL 算子参考 |

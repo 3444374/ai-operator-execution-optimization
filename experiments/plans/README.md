@@ -4,11 +4,11 @@
 
 当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享 Engine、查询归属与生命周期已验证；动态资源策略仍需适配。
 
-更新日期：2026-09-09
+更新日期：2026-09-14
 
-近期优先执行[单 Map 数据执行切片](data_organization_batching.md#当前-pg-单-map-数据执行切片)：
-真实数据与评价 → 同消息静态容量画像 → 有限窗口组织对照 → 多 Job。既有策略按需适配，
-框架扩展由实验中的具体缺口驱动；旧正式矩阵不自动恢复。
+近期先准备[设计假设与强对照](data_organization_batching.md#design-hypotheses)：
+检验控制是否改善完整查询、有限候选是否比全局元数据更划算，再据结果选择阶段表示或多查询实验。
+已有执行与测量能力复用，E/F只补必要适配；旧正式矩阵不自动恢复，新实验仍需具体输入/预算与授权。
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -53,7 +53,7 @@ Filter质量/成本资格独立，复杂SQL、方法优化与公司
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
 | [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
-| [`data_organization_batching.md`](data_organization_batching.md) | 当前 PG 单 Map 数据执行、静态画像与有限窗口组织切片；下方历史外部文本矩阵保留原身份 |
+| [`data_organization_batching.md`](data_organization_batching.md) | 当前设计主张/证据表、有限模型、等待位置与全局元数据强对照；保留工程工作包与历史外部矩阵 |
 | [`service_scheduling_backpressure.md`](service_scheduling_backpressure.md) | 静态/shared credit 主证据已完成；动态候选未证明普遍胜出 |
 | [`cross_layer_killer_experiment.md`](cross_layer_killer_experiment.md) | 独立最优拼接与联合搜索的条件性耦合验证 |
 | [`full_grid_sweep_plan.md`](full_grid_sweep_plan.md) | 暂停的可选扩展矩阵；无当前运行授权 |
