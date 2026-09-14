@@ -32,16 +32,19 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
         import psycopg
         from tokenizers import Tokenizer,models
         cls.root=Path(os.environ['SEMLOOM_TEST_ARTIFACT_ROOT']);cls.root.mkdir(mode=0o700)
-        cls.posts=[];cls.lock=threading.Lock();cls.active=0
+        cls.posts=[];cls.lock=threading.Lock();cls.active=0;cls.http_timings=[]
         cls.delay_by_text={}
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                timing=dict(request_values_sha256=content_digest(body),handler_received_ns=time.monotonic_ns())
                 with cls.lock:
                     cls.posts.append(body);cls.active+=1
+                    cls.http_timings.append(timing)
                 capacity = getattr(cls, 'fixture_execution_capacity', None)
                 if capacity is not None:
                     capacity.acquire()
+                timing['service_started_ns']=time.monotonic_ns()
                 try:
                     text=body['messages'][-1]['content']
                     if 'FORCE_ERROR' in text:
@@ -62,11 +65,20 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
                     self.send_header('Content-Length',str(len(payload)));self.end_headers()
                     with suppress(BrokenPipeError,ConnectionResetError):self.wfile.write(payload)
                 finally:
+                    timing['handler_finished_ns']=time.monotonic_ns()
                     if capacity is not None:
                         capacity.release()
                     with cls.lock:cls.active-=1
             def log_message(self,*_):pass
-        cls.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        cls.server=ThreadingHTTPServer(('127.0.0.1',0),Handler,bind_and_activate=False)
+        cls.addClassCleanup(cls.server.server_close)
+        backlog=os.environ.get('SEMLOOM_TEST_HTTP_BACKLOG')
+        if backlog is not None:
+            cls.server.request_queue_size=int(backlog)
+            if cls.server.request_queue_size<1:
+                cls.server.server_close()
+                raise ValueError('positive fixture listen backlog required')
+        cls.server.server_bind();cls.server.server_activate()
         cls.thread=threading.Thread(target=cls.server.serve_forever);cls.thread.start()
         cls.addClassCleanup(cls.close_server)
         cls.model=cls.root/'model.json'
@@ -87,6 +99,8 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
     @classmethod
     def close_server(cls):
         cls.server.shutdown();cls.server.server_close();cls.thread.join(3)
+        write_private_json(cls.root/'fixture-http-timing.json',dict(listen_backlog=cls.server.request_queue_size,
+            rows=cls.http_timings,scope='handler input parsed, execution semaphore acquired, handler response finished'))
         write_private_json(cls.root/'fixture-summary.json',dict(fixture_posts=len(cls.posts),actual_model_posts=0,
             active_http=cls.active,server_stopped=not cls.thread.is_alive(),ledger=cls.ledger.snapshot()))
         if cls.active or cls.thread.is_alive():raise RuntimeError('fixture did not settle')
@@ -328,22 +342,32 @@ class DatabaseQueryRunnerTests(unittest.TestCase):
 
         before = len(self.posts)
         try:
-            for repeat, order in enumerate((capacities, tuple(reversed(capacities)))):
-                for capacity in order:
-                    run('tuning','request',capacity,repeat)
-            selected = min(capacities,key=lambda c:median(r['timing']['preparation_to_eof_seconds']
-                for r in reports if r['capacity']==c))
+            prior_selection = os.environ.get('SEMLOOM_TEST_WAITING_SELECTION')
+            if prior_selection:
+                prior = json.loads(Path(prior_selection).read_text())
+                self.assertEqual(prior['evaluation_work'],prepared['evaluation']['work'])
+                self.assertEqual(prior['wide_work'],wide)
+                self.assertEqual(prior['tight_work'],config.context_tokens)
+                selected = prior['selected']
+                self.assertIn(selected,capacities)
+            else:
+                for repeat, order in enumerate((capacities, tuple(reversed(capacities)))):
+                    for capacity in order:
+                        run('tuning','request',capacity,repeat)
+                selected = min(capacities,key=lambda c:median(r['timing']['preparation_to_eof_seconds']
+                    for r in reports if r['capacity']==c))
             # A smaller work cap must admit each item and still be able to refuse a feasible C-set.
             self.assertGreater(sum(sorted(prepared['evaluation']['work'],reverse=True)[:selected]),config.context_tokens)
             write_private_json(self.root/'waiting-selection.json',dict(capacities=list(capacities),selected=selected,
-                rule='minimum median invocation-to-EOF of two tuning queries',wide_work=wide,tight_work=config.context_tokens,
+                rule='preserved prior selection for transport diagnostic' if prior_selection else 'minimum median invocation-to-EOF of two tuning queries',
+                wide_work=wide,tight_work=config.context_tokens,listen_backlog=self.server.request_queue_size,
                 evaluation_work=prepared['evaluation']['work'],performance_qualified=False))
             orders = (('request','token-wide','token-tight'),('token-tight','request','token-wide'),
                       ('token-wide','token-tight','request'))
             for repeat, order in enumerate(orders):
                 for arm in order:
                     run('evaluation',arm,selected,repeat)
-            self.assertEqual(len(self.posts)-before,384)
+            self.assertEqual(len(self.posts)-before,288 if prior_selection else 384)
             write_private_json(self.root/'waiting-comparison.json',reports)
         finally:
             type(self).organization_tokenizer = None
