@@ -2,7 +2,7 @@
 
 2026-09-14：[M1真实运行准备](../experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
 原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
-拟定最多44544次真实POST、单卡、30分钟的运行表与提前停止条件；**实际模型请求仍为0，具体额度待确认**。
+拟定最多44544次真实POST、单卡、30分钟的运行表与提前停止条件；**实际模型请求仍为0，按用户要求暂缓启动**。
 PG/HTTP/任务进程已清理，ACL恢复；后续实际调用及真实结果复核尚未完成。
 
 2026-09-14：[常驻服务对照](../experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)完成：24查询/768受控POST，另以旧入口1查询/120次回归，真实模型0次。

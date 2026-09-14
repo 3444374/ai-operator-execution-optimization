@@ -14,7 +14,7 @@ A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作
 
 | 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
 |---|---|---|
-| [M1常驻等待位置检查](../results/postgresql/waiting_positions_persistent_20260914/README.md) | 新增24查询/768受控HTTP及120次旧入口回归；常驻后紧W仍增加完整查询时间，C8五次快于C4 | 真实输入及完整/摘要测量开关已准备；44544次/30分钟额度待确认，真实验证未运行 |
+| [M1常驻等待位置检查](../results/postgresql/waiting_positions_persistent_20260914/README.md) | 新增24查询/768受控HTTP及120次旧入口回归；常驻后紧W仍增加完整查询时间，C8五次快于C4 | 真实输入及完整/摘要测量开关已准备；44544次/30分钟为已拟定上限，真实调用按用户要求暂缓 |
 | [期限与输入/交付诊断](../results/postgresql/async_deadline_flow_20260914/README.md) | 实现0274b121及验证3f1f5540已合入main；PG TAP2138、96次fixture，真实24+33共57次；一次真实结果跨期限正确保留失败，全部资源清理 | 四次真实暂停均未遇到就绪队首，不能归因ready-first收益；无稳定性能结论 |
 | [C/D真实预算](../results/postgresql/cd_validation_20260911/README.md) | 总留存可用性和work提交限制可检验；紧work三组均更慢，保留一行模型输出差异 | 强请求数FIFO、token表征成本、独立重复；不是token控制天然更好 |
 | [单卡容量画像](../results/postgresql/map_capacity_20260910/README.md) | 96601次真实出站、99808次预留、五次4000行观测与2000行独立验证；当时C32/L64为候选 | 更高C的同规模平台仍未确认，不能将旧签名/配置直接命名为当前强静态 |
