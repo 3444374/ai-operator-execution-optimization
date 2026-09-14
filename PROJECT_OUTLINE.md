@@ -19,8 +19,10 @@
 
 2026-09-14：[等待位置小实验](experiments/results/postgresql/waiting_positions_pilot_20260914/README.md)已测量查询专属准备及提交前后的等待。
 在受控服务中，更紧的工作量限制降低HTTP尾延迟，却使SQL至EOF时间增加约1.81倍；单请求更快没有转化为查询收益。
-当前每查询启动gateway/tokenizer的准备成本也很大，下一步先比较常驻服务，随后再做新的真实模型实验。
-这两轮为受控机制检查，不代表真实GPU性能或方法贡献。
+后续[常驻服务对照](experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)已完成：
+一次启动约5.5秒与每查询约14–15毫秒准备分别报告；C8五次都比对应轮次C4快。
+紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
+这些受控检查不代表真实GPU性能或方法贡献；下一步准备新的真实输入、服务配置和有限请求计划。
 
 2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_e_20260914/README.md)复用统一计算责任表和查询轮转，
 让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；

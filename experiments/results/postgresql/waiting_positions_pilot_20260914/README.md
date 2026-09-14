@@ -1,5 +1,7 @@
 # 提交控制与等待位置：首轮受控小实验
 
+后续[常驻服务与C4/C8重复检查](../waiting_positions_persistent_20260914/README.md)已完成；本文保留前两轮每查询新gateway的条件与原始结果。
+
 状态：2026-09-14。M1已开始并完成第一轮观测/机制检查，**尚未取得真实模型性能结论**。受众：内部研究记录。
 [运行合同](../../../plans/data_organization_batching.md#m1-pilot)。研究对象为
 **PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
