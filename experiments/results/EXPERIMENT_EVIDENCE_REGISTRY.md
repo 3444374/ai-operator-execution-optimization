@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-09-14：[异步期限与输入/交付诊断](postgresql/async_deadline_flow_20260914/README.md)：同一绝对期限覆盖同步准备、写入及EOF；
+正常PG回归1/1、TAP2138项及12单元96次fixture诊断通过。补输入可延后就绪节点交付，但客户端首行没有一致改善，默认策略保留。
+真实模型完成24次，PG/direct输出一致，各8行2个情感误判；随后因准备配置work2048<context4096被拒绝而停止。
+服务/PG/进程/ACL已清理；修正配置的剩余33次仅完成离线准备，真实flow与末次写入期限验证仍pending，未合并main。
+
 2026-09-14：[容量等待与零任务 Map 服务器验证](scheduling/capacity_wait_server_20260914/README.md)完成：Linux调度376、provider55、PG Python合同116通过；
 实验工具482通过/15环境跳过，PG选定6项集成另行通过，共262次受控HTTP、真实模型0次。
 修复诊断脚本的write-once summary冲突后，普通PG四查询完成：小结果首行约0.65秒、大结果约0.25秒，

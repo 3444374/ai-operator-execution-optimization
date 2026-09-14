@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-09-14：异步期限修订、受控节奏诊断与部分真实模型验证
+
+- 实现提交 `0274b121`：异步记录检查同一event-loop绝对期限，保留实际发现、取消和清理时点；同步阻塞不再越期报成功。
+- 独立PG诊断构建记录输入/就绪/节点/客户端时序，并与ready-first测试次序比较；正常构建无新增策略或追踪字段。
+- 本地定向37通过；Linux provider55、PG Python116、实验工具494通过/16环境跳过；正常PG回归1/1、TAP2138项通过。
+- 首轮TAP因孤立扩展目录缺少相对脚本路径失败，保存后改用同版本完整code布局通过；12个flow单元96次fixture完成并重放。
+- 真实模型实际24次：PG/direct输出一致，各8行有2个假阴性。第4单元的work2048<context4096被配置构造器拒绝，0请求；全轮按预定规则停止。
+- 原账本32预留/24实际保留，服务日志独立计数24；207.535秒内停止模型和PG、恢复ACL，最终进程/GPU/端口无残留。
+- 补跑方案改为work4096，实际四请求最大847，配置与tokenizer离线预检通过。剩余33次新账本、20分钟尚未授权执行；main未合并。
+- [完整报告、失败、逐行时序与待批准方案](experiments/results/postgresql/async_deadline_flow_20260914/README.md)。
+
 ## 2026-09-14：按任务收窄 agent 指令与完成条件
 
 - 参照 OpenAI 官方文章 [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)，检查项目 AGENTS/CLAUDE 入口的读取条件、重复指导与停止条件。
