@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-09-14：按任务收窄 agent 指令与完成条件
+
+- 参照 OpenAI 官方文章 [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)，检查项目 AGENTS/CLAUDE 入口的读取条件、重复指导与停止条件。
+- 根规则明确实现类任务的交付条件，以及已确认隔离的本地 fixture 验证可持续修复、复验；文字修订和已有结果分析不触发环境操作。skill 按具体工作流选择并只读所需分支。
+- `code/AGENTS.md` 保留新增算子、方法、PG 接入及公司移植的工程参照；普通修复、内部重构和测试维护从受影响源码与既有记录开始，压缩通用代码风格指导。
+- `experiments/AGENTS.md` 按设计、报告、进度与局部修订选择材料；执行权限来自用户对当前计划的授权，保留原预算、停止条件和失败记录。`figures/AGENTS.md` 区分论证变化与排版/导出变化，按图类型读取 audit。
+- 数据库语义、研究范围、真实模型与正式实验要求、隐私及原始证据保留规则继续适用。仓库未发现自有 SKILL.md，未修改全局安装的 skill 或模型配置。
+- 本次仅修改内部规则与日志；验证 Markdown 本地链接、关键规则保留情况、`git diff --check` 和定向隐私扫描。任务场景按条款人工复核，未运行模型行为对照，不据此声称 agent 耗时或质量已经改善。
+
 ## 2026-09-14：容量等待分支的服务器验证
 
 - 用户启动服务器并授权测试cc0f54f6；Linux调度376/provider55/PG Python116通过，完整实验工具482通过/15环境跳过。

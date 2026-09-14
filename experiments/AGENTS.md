@@ -1,7 +1,7 @@
 # experiments/AGENTS.md
 
-本文件继承根 `AGENTS.md`，只增加正式研究实验规则。进入计划或结果子目录时继续读取其
-`AGENTS.md` 和 `README.md`。
+本文件继承根 `AGENTS.md`，只增加正式研究实验规则。计划与结果子目录的规则按任务路径加载，
+入口不明时查对应 `README.md`。
 
 ## 1. 职责与边界
 
@@ -16,8 +16,9 @@
 
 - 每个新实验先有一个当前计划，明确研究问题、对应研究内容、系统边界、baseline、变量、消融、
   correctness、资源上限、指标、重复、停止条件和不能声称的结论。
-- 先通过环境 preflight、数据/schema/exactly-once 和最小 correctness；只有计划明确授权后才运行
-  rehearsal/formal。旧计划中的 `formal` 指令不自动获得当前执行授权。
+- rehearsal/formal 需要用户授权覆盖当前计划、环境、资源预算和停止条件，并先通过环境 preflight、
+  数据/schema/exactly-once 和最小 correctness。已有授权在该范围内持续有效；计划文本本身和旧计划
+  中的 `formal` 指令不授予执行权限，失败后不自动重跑、重置预算或放宽阈值。
 - 优化臂必须与强静态点或同上限对照；动态策略只有显著优于同上限静态配置才可晋升。
 - baseline 由被测系统拥有执行与调度。SemLoom 实现的 FIFO/DRR/VTC-style/actor pool/credit 等只能
   作为 SemLoom internal control 或 diagnostic；历史 `Project`/`project_*` 身份继续按原 schema 解释，
@@ -48,11 +49,11 @@
 - microbenchmark、单次 rehearsal 和不同 workload/签名的结果不合并成统一性能结论；
 - 负结果和策略未晋升同样进入证据台账。
 
-详细门禁、指标与措辞检查只从以下长期参考读取：
+按当前问题读取对应材料：
 
-- `plans/baseline_reference.md`；
-- `plans/reference/experiment_report_honesty_checklist.md`；
-- `plans/experiment_status_and_gaps.md` 顶部当前摘要；
-- 目标实验计划与结果 README。
+- 设计或运行实验：`plans/baseline_reference.md` 与目标计划；
+- 撰写或审查结果结论：`plans/reference/experiment_report_honesty_checklist.md` 与目标结果原始证据；
+- 确定当前进度或下一项实验：`plans/experiment_status_and_gaps.md` 顶部当前摘要；
+- 局部文字或链接修订：受影响内容及其目标来源。
 
 实验结论变化后同步实验证据台账、`PROJECT_OUTLINE.md`、受影响的图/开题材料和 `PROJECT_LOG.md`。

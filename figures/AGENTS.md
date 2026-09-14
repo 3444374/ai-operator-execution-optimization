@@ -16,7 +16,8 @@
 
 ## 2. 先定义图的任务
 
-新增或修改图前写清：
+新增图或改变图的论证任务时，在对应 audit 写清以下内容；仅调整排版或导出时复用已有说明，
+核对本次变化并记录验证结果：
 
 1. 类型：动机图、系统/方法图或实验结果图；
 2. 一句话结论；
@@ -69,9 +70,8 @@
 - 以最终导出尺寸实际打开 PNG/SVG，检查文字裁切、卡片边框、箭头起止、图例、对比度和缩放可读性；
 - 在 `audit/` 记录来源、生成命令、目视结果、已知限制和替代关系。
 
-具体尺寸、像素检测与既有架构图经验从
-`audit/strategy_figure_micro_design_points.md`、`audit/system_architecture_ai_data_execution_audit.md`
-和目标图 audit 读取，不在本文件缓存。
+尺寸与导出要求查目标图 audit；调整策略图细节时参考 `audit/strategy_figure_micro_design_points.md`，
+调整系统架构图时参考 `audit/system_architecture_ai_data_execution_audit.md`。
 
 ## 7. 更新与清理
 
