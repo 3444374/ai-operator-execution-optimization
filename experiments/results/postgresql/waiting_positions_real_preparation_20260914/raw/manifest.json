@@ -1424,6 +1424,15 @@
       "compressed_sha256": "d39931f2740fa2b131c15926176ee9f8a5331b0d280495c9351fd2d74fa2a366"
     },
     {
+      "file": "controller-update.json.gz",
+      "source": "controller-update.json",
+      "source_bytes": 381,
+      "source_sha256": "55d310f4ac4f3836b13718c43d37da55a07cf0be4b543c8631fa94b94ec65a31",
+      "published_bytes": 381,
+      "published_sha256": "55d310f4ac4f3836b13718c43d37da55a07cf0be4b543c8631fa94b94ec65a31",
+      "compressed_sha256": "2ac434c46510f0905e170fdfc6a6f3d867a8b10452875975de2e866084652e0c"
+    },
+    {
       "file": "data-preparation.json.gz",
       "source": "data-preparation.json",
       "source_bytes": 1560,
@@ -1577,13 +1586,22 @@
       "compressed_sha256": "71a95250b182ac4b3a341cf4b3e5a949b3962db7d2f99543e8146e84d65f4a30"
     },
     {
-      "file": "run-model.py.gz",
-      "source": "run-model.py",
+      "file": "run-model-before-service-observation.py.gz",
+      "source": "run-model-before-service-observation.py",
       "source_bytes": 12240,
       "source_sha256": "cb71e7d993bc02ad46761c25a581e39ce2a585403c5a987439336f73e2c6bd9b",
       "published_bytes": 12240,
       "published_sha256": "cb71e7d993bc02ad46761c25a581e39ce2a585403c5a987439336f73e2c6bd9b",
       "compressed_sha256": "b73ac5e1f94b039982e1535c9a247ea60302337d4a085d0d2cad56a859db639e"
+    },
+    {
+      "file": "run-model.py.gz",
+      "source": "run-model.py",
+      "source_bytes": 13485,
+      "source_sha256": "4a7a5649b2b9d73c465a41d56c44c1bfa4887bd9006ed777ffc1e7558eeb945a",
+      "published_bytes": 13485,
+      "published_sha256": "4a7a5649b2b9d73c465a41d56c44c1bfa4887bd9006ed777ffc1e7558eeb945a",
+      "compressed_sha256": "5fbaa617098f7777d66e0026f64a4f686ef3531ecbf8a45ec271d827caf7490c"
     },
     {
       "file": "schedule-check-v2.log.gz",
