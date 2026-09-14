@@ -22,7 +22,7 @@
 后续[常驻服务对照](experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)已完成：
 一次启动约5.5秒与每查询约14–15毫秒准备分别报告；C8五次都比对应轮次C4快。
 紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
-这些受控检查不代表真实GPU性能或方法贡献；下一步准备新的真实输入、服务配置和有限请求计划。
+这些受控检查不代表真实GPU性能或方法贡献；[真实输入与有限请求计划](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)已准备，真实模型对照尚未运行。
 
 2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_e_20260914/README.md)复用统一计算责任表和查询轮转，
 让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；

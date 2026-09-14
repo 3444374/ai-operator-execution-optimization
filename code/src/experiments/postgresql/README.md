@@ -48,6 +48,14 @@ its invocation boundary, actual Job drain and socket-session closure; event proj
 unchanged group JSONL byte intervals. Shared startup is reported separately, and peer gateway RSS
 can be sampled together. Query EOF never implies HTTP transport shutdown.
 
+`QueryConfig.event_content="compact"` selects the existing compact gateway observer for PG Map.
+Actual request-value hashes, producer row associations, output hashes and logical resource usage
+remain checked. Organization candidate/group reconstruction is explicitly unavailable in this mode;
+a matched full-observation query supplies that diagnosis. PG stage tracing is a separate query option.
+`movie_partition.py` excludes earlier Movie inputs and selects new movie-disjoint tuning/evaluation
+partitions by deterministic hashes. `m1_campaign.py` implements the finite request schedule and
+stops before evaluation when the selected capacity cannot trigger the declared work limit.
+
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.

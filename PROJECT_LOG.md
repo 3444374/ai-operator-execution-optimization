@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-14：M1真实输入与有限运行表准备
+
+- 按用户要求继续M1真实模型验证准备；原始1444963条评论按电影分组并排除旧实验涉及内容，固定选择512行调参、1024行评价。原文不进入Git。
+- 增加可选compact观测并保留请求摘要、PG独立行关联与资源检查；组织详细重建明确缺项，由匹配full查询承担。8查询/128次受控HTTP通过。
+- 真实调参/对照编排最多51查询、44544次POST、30分钟；选定C无法触发W4096时只完成调参并停止。配置与拒绝未确认额度的检查均已准备，实际模型请求0次。
+- 本地/Linux各22项检查、752份代码文件核对通过；PG/HTTP/任务进程清理、ACL恢复，GPU空闲。
+- [完整准备记录](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)。具体真实额度待确认，真实结果未产生，M2未开始。
+
 ## 2026-09-14：全项目 agent 规则精简
 
 - 按用户要求逐份检查并修订 31 份 AGENTS.md，依据 OpenAI 官方文章 [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra) 收窄材料读取条件、压缩重复说明并明确完成条件。

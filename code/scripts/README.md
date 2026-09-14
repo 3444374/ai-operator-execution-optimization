@@ -44,6 +44,11 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 
 ## 数据库原始输入与公共查询
 
+常驻真实短查询的有限编排为 `PYTHONPATH=code python -m src.experiments.postgresql.m1_campaign <query-config.json>`。
+调用者提供已运行的隔离PG/模型、已有请求账本和输入；配置样例与上限见[当前准备计划](../../experiments/plans/data_organization_batching.md#m1-real-preparation)。
+本模块不启动模型、不创建额度，也不把计划存在当执行许可。
+
+
 `experiments/database_queries.py`提供`prepare-movie`、`prepare-squad`、`install`、`run`。
 完整输入、标签、模型配置、额度SQLite和输出目录均放仓库外；连接串只从环境变量读取。
 源表安装独立计时；查询时间包含PG源读取、消息构造和原生SQL规划/探测。
