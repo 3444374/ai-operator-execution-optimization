@@ -13,8 +13,9 @@
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
 | 近期数据执行研究 | [设计假设与强对照](experiments/plans/data_organization_batching.md#design-hypotheses) | 当前 M1 研究吞吐平台附近的供给与资源；M2 单列全局信息，旧测量反例与已撤下的运行表保留 |
-| M1供给复查 | [记录](experiments/results/postgresql/m1_supply_followup_20260920/README.md) | 容量扫描修复有受控证据；真实C64失败，1552次尝试/1550次服务成功，分支未合入main |
-| C64异常诊断 | [记录](experiments/results/postgresql/m1_c64_errors_20260920/README.md) | 补齐异常记录；四次512行完成，原故障未复现、根因待确定；未合入main |
+| M1供给复查 | [记录](experiments/results/postgresql/m1_supply_followup_20260920/README.md) | 容量扫描修复有受控证据；原C64失败，1552次尝试/1550次服务成功，后续见完整容量复查 |
+| C64异常诊断 | [记录](experiments/results/postgresql/m1_c64_errors_20260920/README.md) | 补齐异常记录；四次512行完成，原故障未复现、根因待确定；后续见完整容量复查 |
+| M1完整容量复查 | [记录](experiments/results/postgresql/m1_full_recheck_20260920/README.md) | 32个查询、16400次请求完成；保留清理告警与随后通过的资源核对，工程已合入main，方法未选点 |
 | M1/M2/F 真实检查 | [记录](experiments/results/postgresql/m1_m2_f_real_20260920/README.md) | 文本8,248次、图像151次；M1未选点，M2信息成本与F数值/生命周期可复核 |
 | M1 调整与验证 | [记录](experiments/results/postgresql/m1_platform_revision_20260920/README.md) | 可达性、分阶段编排与完整吞吐选点；35 项本地检查；后续真实筛查见下一行 |
 | 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](experiments/results/postgresql/map_organization_20260910/README.md) |

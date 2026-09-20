@@ -5,7 +5,7 @@ evaluation. It compares complete throughput against a tuned request-count FIFO a
 or inconclusive results. [Experiment design](../experiments/plans/data_organization_batching.md#m1-throughput-platform)
 and [local validation](../experiments/results/postgresql/m1_platform_revision_20260920/README.md).
 The old fixed request matrix is retired. The [prior finite real trial](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md) completed 8,248 text POSTs; screening found no platform candidate. Experimental PG-source M2 controls now include paid global metadata and explicit reuse, with no stable performance advantage established.
-The [M1 follow-up](../experiments/results/postgresql/m1_supply_followup_20260920/README.md) fixes repeated capacity summation in read-only scans. The [C64 diagnostic](../experiments/results/postgresql/m1_c64_errors_20260920/README.md) adds bounded exception metadata and completes four 512-row C64 queries; the original two uncertain executions did not recur and their cause remains undetermined. The branch remains unmerged.
+The [M1 follow-up](../experiments/results/postgresql/m1_supply_followup_20260920/README.md) fixes repeated capacity summation in read-only scans, and transport errors now retain bounded exception metadata. The [full capacity recheck](../experiments/results/postgresql/m1_full_recheck_20260920/README.md) completes 32 queries and 16,400 requests; an initial cleanup alert is retained alongside a subsequent successful resource audit. These engineering changes are merged into main. The original uncertain executions did not recur and their cause remains undetermined.
 
 
 The opt-in image slice adds `ai_semantic.embed(bytea, jsonb) -> real[]` in extension `0.3.0`.

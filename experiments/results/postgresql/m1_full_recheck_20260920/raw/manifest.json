@@ -1,0 +1,47 @@
+{
+  "format": "gzip with byte-verified decompression",
+  "files": {
+    "run-summary.json.gz": {
+      "bytes": 56811,
+      "sha256": "58ac6ac9729c3aa83021f827c51834dd51476f0fb7171d4d0a7457cb41be5674",
+      "uncompressed_bytes": 188822,
+      "uncompressed_sha256": "fdc931dd68095b73d88e0b863bc7646e763e66490dff8e8aaadae139364c4815"
+    },
+    "completed-queries.json.gz": {
+      "bytes": 401587,
+      "sha256": "a4d538ea3e7f6f94fafe470329d43d0cb8204c640585d7daf84cb5d006602585",
+      "uncompressed_bytes": 4160845,
+      "uncompressed_sha256": "2b8cee8d4463e6f99f8a2586684d0f14d8ae5cce9bd29c5a9388036471205b3a"
+    },
+    "events.jsonl.gz": {
+      "bytes": 3603567,
+      "sha256": "89e99db0ad4aa42478990bf8374ff1a30dd7d12174775d398912acfd2ca9d2f6",
+      "uncompressed_bytes": 26288485,
+      "uncompressed_sha256": "9f51ba1beb022a33691fea1c49e1a658720b74ec351e392467efbce7628e51bd"
+    },
+    "event-counts.json.gz": {
+      "bytes": 238,
+      "sha256": "b756888194a333bb738a1c6af0d79059a5b0016b9154378898b4eacc8e87220a",
+      "uncompressed_bytes": 2119,
+      "uncompressed_sha256": "445d3bc7e248940ffe8410e9c6d50aa1ff6d18faf3d2693b2f9945aee45ab7fa"
+    },
+    "service-observations.json.gz": {
+      "bytes": 343270,
+      "sha256": "016d716c6f4e78c0a0702db0dc4c3f03ab61d9e72283336036461f236927d1eb",
+      "uncompressed_bytes": 7636945,
+      "uncompressed_sha256": "abad6968af6503632a3c64a64f0febd4a8c8e8597a5310b430a64d800069cbbd"
+    },
+    "checks-and-service-logs.json.gz": {
+      "bytes": 35741,
+      "sha256": "f3b175b2ee2c48d96b2f53bb63aff8f24483fae4f9ecd0fe2399c0a60e311580",
+      "uncompressed_bytes": 1671625,
+      "uncompressed_sha256": "213ac30c6f614a44da40dd447652e546e604fa500b1545e2b2bf34823e91a4a5"
+    },
+    "source-record.json.gz": {
+      "bytes": 67019,
+      "sha256": "fd5e4f1696192198078c4424af8c7084f3f6a59648c243230d100008cb52eeba",
+      "uncompressed_bytes": 205276,
+      "uncompressed_sha256": "bbc199aa624ea265bcd3907d906283bb7096125a7551639be60facdb4e5e84cf"
+    }
+  }
+}

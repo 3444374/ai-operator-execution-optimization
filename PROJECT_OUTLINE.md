@@ -21,7 +21,7 @@ GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作�
 [设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
 当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
 资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。
-后续[M1复测](experiments/results/postgresql/m1_supply_followup_20260920/README.md)定位并受控修复了重复容量汇总开销，真实C64出现两项未确认执行后停止。[异常诊断](experiments/results/postgresql/m1_c64_errors_20260920/README.md)补齐类型记录，四次C64各512行完成，但原故障未复现、根因仍待确定。尚无完整筛查、选点或方法结果；代码与证据留在复测分支。
+后续[M1复测](experiments/results/postgresql/m1_supply_followup_20260920/README.md)定位并受控修复了重复容量汇总开销，C64未确认请求推动了异常记录改进。[完整容量复查](experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询、16,400次请求；保留原清理告警，随后资源核对通过，工程改动合入main。原故障未复现、根因待确定；PG/direct均未满足持续供给要求，尚无容量选点或方法结论。
 
 2026-09-14：[等待位置小实验](experiments/results/postgresql/waiting_positions_pilot_20260914/README.md)已测量查询专属准备及提交前后的等待。
 在受控服务中，更紧的工作量限制降低HTTP尾延迟，却使SQL至EOF时间增加约1.81倍；单请求更快没有转化为查询收益。

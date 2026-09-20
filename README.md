@@ -11,7 +11,7 @@ lifecycle；数据库管理的有界数据流把规范化任务交给可替换�
 
 [当前 M1 研究](experiments/plans/data_organization_batching.md#m1-throughput-platform)调整为有效吞吐平台附近的供给与资源代价；
 [前轮真实检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)已完成：M1未取得平台候选，M2完成五种信息条件的实验层对照，尚未支持稳定收益。
-[最新C64诊断](experiments/results/postgresql/m1_c64_errors_20260920/README.md)已补齐异常记录，四次512行复测完成；原故障未复现、根因仍待确定，M1尚未选点，代码与证据仍在分支。
+[完整容量复查](experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询、16,400次请求；原清理告警保留，随后资源核对通过，工程改动已合入main。原故障未复现、根因待确定，M1尚未选点。
 
 [图像工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)已完成显式 `bytea→real[]`
 接入、方法行结果与阶段资源的工程检查；后续151次真实CLIP前向通过数值与指定生命周期检查，GPU计算中故障与匹配性能仍待验证。
