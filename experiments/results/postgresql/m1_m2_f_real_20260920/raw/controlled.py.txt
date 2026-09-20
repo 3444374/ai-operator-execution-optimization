@@ -1,0 +1,28 @@
+from pathlib import Path
+import os,pwd,subprocess,time,json,sys
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster
+from src.baselines.common.redact import redact_text
+base=Path('<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920');source=base/'source';user=pwd.getpwnam('postgres')
+number=sys.argv[1];root=base/('controlled-'+number);root.mkdir(mode=0o700);os.chown(root,user.pw_uid,user.pw_gid)
+parent=Path('<SERVER_ARTIFACTS>/r12fc'+number);parent.mkdir(mode=0o700);os.chown(parent,user.pw_uid,user.pw_gid)
+output=parent/'tests'
+acl={str(p):subprocess.check_output(['getfacl','-p',str(p)],text=True) for p in (Path('<SERVER_HOME>'),base)}
+(root/'acl-before.json').write_text(json.dumps(acl));status=1;started=time.monotonic()
+try:
+ for p in acl:subprocess.run(['setfacl','-m','u:postgres:--x',p],check=True)
+ with isolated_pg18_cluster(Path('/opt/semloom-pg18.3-real-m1m2f'),root,user,port=57731):
+  command=['runuser','-u','postgres','--','env','PYTHONPATH='+str(source/'code'),
+   'SEMLOOM_INFO_PG_DSN=host='+str(root/'socket')+' port=57731 dbname=postgres user=postgres',
+   'SEMLOOM_INFO_PG_LOG='+str(root/'postgres.log'),'SEMLOOM_INFO_TEST_ROOT='+str(output),
+   '<SERVER_ARTIFACTS>/venvs/sembench-query-0910/bin/python','-m','unittest',
+   'tests.experiments.test_information_paths_integration','-v']
+  result=subprocess.run(command,capture_output=True,text=True,timeout=180)
+  (root/'tests.log').write_text(redact_text(result.stdout+result.stderr));status=result.returncode
+finally:
+ for p,value in acl.items():subprocess.run(['setfacl','--restore=-'],input=value,text=True,check=True)
+ after={p:subprocess.check_output(['getfacl','-p',p],text=True) for p in acl}
+ (root/'summary.json').write_text(json.dumps(dict(exit_code=status,elapsed_s=time.monotonic()-started,
+  acl_restored=after==acl,real_model_calls=0,pg_pid_files=[str(p) for p in root.rglob('postmaster.pid')],
+  test_root=str(output)),indent=2))
+print((root/'summary.json').read_text(),flush=True)
+raise SystemExit(status)

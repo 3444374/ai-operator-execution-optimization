@@ -1,0 +1,284 @@
+{
+  "status": "passed",
+  "errors": [],
+  "max_posts": 17000,
+  "max_seconds": 3600,
+  "gpu": "0",
+  "worker_summary": {
+    "status": "passed",
+    "max_posts": 17000,
+    "phases": [
+      {
+        "stage": "correctness",
+        "status": "passed",
+        "actual_posts": 16
+      },
+      {
+        "stage": "m1-screen",
+        "status": "completed",
+        "actual_posts": 3072
+      },
+      {
+        "stage": "m2-correctness",
+        "status": "passed",
+        "actual_posts": 40
+      },
+      {
+        "stage": "m2-evaluation",
+        "status": "passed",
+        "actual_posts": 5120
+      }
+    ],
+    "performance_qualified": false,
+    "m1_screen_selection": {
+      "pg": {
+        "selected": null,
+        "observed_best": 4,
+        "median_rates": {
+          "4": 5.741448148687161,
+          "16": 5.412215894703276,
+          "64": 5.273155075821429
+        },
+        "relative_spread": {
+          "4": 0.01671245906639615,
+          "16": 0.0864195299064858,
+          "64": 0.06328732149543569
+        },
+        "sustained_supply": {
+          "4": false,
+          "16": false,
+          "64": false
+        },
+        "comparisons": {
+          "4": {
+            "status": "within_declared_loss_in_all_pairs",
+            "paired_output_difference_counts": [
+              0,
+              0,
+              0
+            ],
+            "paired_rate_ratios": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "median_rate_ratio": 1.0,
+            "observed_ratio_range": [
+              1.0,
+              1.0
+            ],
+            "uncertainty": "observed paired range only; no confidence or equivalence claim"
+          },
+          "16": {
+            "status": "inconclusive_repeat_variation",
+            "paired_output_difference_counts": [
+              0,
+              0,
+              0
+            ],
+            "paired_rate_ratios": [
+              0.9189509321931051,
+              0.9426569315862988,
+              0.9840674648770764
+            ],
+            "median_rate_ratio": 0.9426569315862988,
+            "observed_ratio_range": [
+              0.9189509321931051,
+              0.9840674648770764
+            ],
+            "uncertainty": "observed paired range only; no confidence or equivalence claim"
+          },
+          "64": {
+            "status": "throughput_loss_in_all_pairs",
+            "paired_output_difference_counts": [
+              0,
+              0,
+              0
+            ],
+            "paired_rate_ratios": [
+              0.9067306445995453,
+              0.9184364186981621,
+              0.9490591063170284
+            ],
+            "median_rate_ratio": 0.9184364186981621,
+            "observed_ratio_range": [
+              0.9067306445995453,
+              0.9490591063170284
+            ],
+            "uncertainty": "observed paired range only; no confidence or equivalence claim"
+          }
+        },
+        "top_pair": {
+          "status": "inconclusive_repeat_variation",
+          "paired_output_difference_counts": [
+            0,
+            0,
+            0
+          ],
+          "paired_rate_ratios": [
+            0.9867019150147706,
+            0.9743061212657943,
+            0.9644248389368091
+          ],
+          "median_rate_ratio": 0.9743061212657943,
+          "observed_ratio_range": [
+            0.9644248389368091,
+            0.9867019150147706
+          ],
+          "uncertainty": "observed paired range only; no confidence or equivalence claim"
+        },
+        "saturation_proven": false,
+        "independent_evaluation_required": true,
+        "status": "inconclusive_supply"
+      },
+      "pg-source-direct": {
+        "selected": null,
+        "observed_best": 64,
+        "median_rates": {
+          "4": 43.12014642768969,
+          "16": 84.0441789441265,
+          "64": 111.46576886934683
+        },
+        "relative_spread": {
+          "4": 0.019608267698124203,
+          "16": 0.013898247163693481,
+          "64": 0.008148052283903117
+        },
+        "sustained_supply": {
+          "4": true,
+          "16": true,
+          "64": false
+        },
+        "comparisons": {
+          "4": {
+            "status": "throughput_loss_in_all_pairs",
+            "paired_output_difference_counts": [
+              0,
+              0,
+              0
+            ],
+            "paired_rate_ratios": [
+              0.3815467053332871,
+              0.3900000528592357,
+              0.3891557933998419
+            ],
+            "median_rate_ratio": 0.3891557933998419,
+            "observed_ratio_range": [
+              0.3815467053332871,
+              0.3900000528592357
+            ],
+            "uncertainty": "observed paired range only; no confidence or equivalence claim"
+          },
+          "16": {
+            "status": "throughput_loss_in_all_pairs",
+            "paired_output_difference_counts": [
+              0,
+              0,
+              0
+            ],
+            "paired_rate_ratios": [
+              0.7539441048416518,
+              0.7619799108118824,
+              0.7453394324808956
+            ],
+            "median_rate_ratio": 0.7539441048416518,
+            "observed_ratio_range": [
+              0.7453394324808956,
+              0.7619799108118824
+            ],
+            "uncertainty": "observed paired range only; no confidence or equivalence claim"
+          },
+          "64": {
+            "status": "within_declared_loss_in_all_pairs",
+            "paired_output_difference_counts": [
+              0,
+              0,
+              0
+            ],
+            "paired_rate_ratios": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "median_rate_ratio": 1.0,
+            "observed_ratio_range": [
+              1.0,
+              1.0
+            ],
+            "uncertainty": "observed paired range only; no confidence or equivalence claim"
+          }
+        },
+        "top_pair": {
+          "status": "within_declared_loss_in_all_pairs",
+          "paired_output_difference_counts": [
+            0,
+            0,
+            0
+          ],
+          "paired_rate_ratios": [
+            1.326358271890761,
+            1.3123705570328088,
+            1.3416705951964132
+          ],
+          "median_rate_ratio": 1.326358271890761,
+          "observed_ratio_range": [
+            1.3123705570328088,
+            1.3416705951964132
+          ],
+          "uncertainty": "observed paired range only; no confidence or equivalence claim"
+        },
+        "saturation_proven": false,
+        "independent_evaluation_required": true,
+        "status": "inconclusive_supply"
+      }
+    },
+    "m1_followup": {
+      "status": "not_run",
+      "reason": "inconclusive_supply",
+      "interpretation": "screening result retained; do not retune or spend later M1 allocations"
+    },
+    "m2_capacity": {
+      "value": 4,
+      "selected_by_m1": false,
+      "scope": "source-information diagnostic; does not establish a service ceiling"
+    },
+    "shared_tokenizer_prepare_s": 0.2916137430584058,
+    "actual_posts": 8248,
+    "allocations": [
+      {
+        "name": "text-correctness",
+        "path": "<SERVER_ARTIFACTS>/r12ft01/run/text-correctness-budget.sqlite",
+        "limit": 16,
+        "actual_posts": 16
+      },
+      {
+        "name": "m1-screen",
+        "path": "<SERVER_ARTIFACTS>/r12ft01/run/m1-screen-budget.sqlite",
+        "limit": 3072,
+        "actual_posts": 3072
+      },
+      {
+        "name": "m2-correctness",
+        "path": "<SERVER_ARTIFACTS>/r12ft01/run/m2-correctness-budget.sqlite",
+        "limit": 40,
+        "actual_posts": 40
+      },
+      {
+        "name": "m2-evaluation",
+        "path": "<SERVER_ARTIFACTS>/r12ft01/run/m2-evaluation-budget.sqlite",
+        "limit": 5120,
+        "actual_posts": 5120
+      }
+    ]
+  },
+  "actual_posts": 8248,
+  "server_posts": 8248,
+  "elapsed_s": 655.9092698097229,
+  "cleanup": {
+    "acl_restored": true,
+    "pg_pid_files": [],
+    "remaining_processes": [],
+    "gpu_processes": "",
+    "model_forced": false
+  }
+}

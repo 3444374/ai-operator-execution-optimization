@@ -13,9 +13,10 @@
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
 | 近期数据执行研究 | [设计假设与强对照](experiments/plans/data_organization_batching.md#design-hypotheses) | 当前 M1 研究吞吐平台附近的供给与资源；M2 单列全局信息，旧测量反例与已撤下的运行表保留 |
-| M1 调整与验证 | [记录](experiments/results/postgresql/m1_platform_revision_20260920/README.md) | 可达性、分阶段编排与完整吞吐选点；35 项本地检查，真实运行暂停 |
+| M1/M2/F 真实检查 | [记录](experiments/results/postgresql/m1_m2_f_real_20260920/README.md) | 文本8,248次、图像151次；M1未选点，M2信息成本与F数值/生命周期可复核 |
+| M1 调整与验证 | [记录](experiments/results/postgresql/m1_platform_revision_20260920/README.md) | 可达性、分阶段编排与完整吞吐选点；35 项本地检查；后续真实筛查见下一行 |
 | 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](experiments/results/postgresql/map_organization_20260910/README.md) |
-| PG 图像类型与阶段执行 | [工作包 F 记录](experiments/results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，真实 CLIP 尚未运行 |
+| PG 图像类型与阶段执行 | [工作包 F 记录](experiments/results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，后续151次CLIP数值检查通过；性能尚未确认 |
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |

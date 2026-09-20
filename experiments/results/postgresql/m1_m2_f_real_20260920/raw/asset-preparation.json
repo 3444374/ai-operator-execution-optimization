@@ -1,0 +1,143 @@
+{
+  "real_model_calls": 0,
+  "inputs": {
+    "tuning": {
+      "manifest_sha256": "b73e85e9f4ffef7a9b0353a651e666c7201b14621d7280541caac19e57a3e4af",
+      "rows": 128,
+      "work_min": 174,
+      "work_max": 251,
+      "work_mean": 200.8984375,
+      "work_sha256": "beb5a5f9f9c4575eb4acca4ed8523384468fe48489554efea5620eec5894c2d1"
+    },
+    "evaluation": {
+      "manifest_sha256": "9d236d940cf74e862ac67e92466d2f6e49ff53384e15af99a1b113fc7b9ffbed",
+      "rows": 256,
+      "work_min": 175,
+      "work_max": 248,
+      "work_mean": 199.90625,
+      "work_sha256": "d02f917c55cfe6e812b28a2211913ce621cf7665552fef67a45fd057cd198a9b"
+    },
+    "correctness": {
+      "manifest_sha256": "3af9a191fe76f0bbae0d8e7c17773270e8dc19e8c203a629a6ef76e742aed44d",
+      "rows": 8,
+      "work_min": 177,
+      "work_max": 209,
+      "work_mean": 200.0,
+      "work_sha256": "5bab9d730932afda2a932b1680ef424c8c9c1164a9bdd3cda44156f06fea7554"
+    }
+  },
+  "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+  "clip": {
+    "plan": {
+      "model_id": "openai/clip-vit-base-patch32",
+      "model_revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+      "processor_id": "openai/clip-vit-base-patch32",
+      "processor_revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+      "dtype": "float32",
+      "dimension": 512,
+      "input_size": 224
+    },
+    "files": {
+      "config.json": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+      "preprocessor_config.json": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd",
+      "pytorch_model.bin": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f",
+      "tokenizer.json": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842",
+      "tokenizer_config.json": "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad",
+      "special_tokens_map.json": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf",
+      "merges.txt": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85",
+      "vocab.json": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363"
+    },
+    "cache_prepared_from_verified_existing_download": true
+  },
+  "images": {
+    "selection": "first 12 lexicographic filenames satisfying existing encoded-byte and dimension limits",
+    "selected": [
+      {
+        "file": "000000000139.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000139.jpg",
+        "bytes": 161811,
+        "sha256": "ffe0f0cec3b2e27aab1967229cdf0a0d7751dcdd5800322f0b8ac0dffb3b8a8d"
+      },
+      {
+        "file": "000000000632.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000632.jpg",
+        "bytes": 155667,
+        "sha256": "a4cd7f45ac1ce27eaafb254b23af7c0b18a064be08870ceaaf03b2147f2ce550"
+      },
+      {
+        "file": "000000000724.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000724.jpg",
+        "bytes": 130107,
+        "sha256": "5c0e559c75d3969c8e3e297b61f61063f78045c9d4802b526ba616361f3823fd"
+      },
+      {
+        "file": "000000000776.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000776.jpg",
+        "bytes": 176410,
+        "sha256": "1dd31e9059c491992be2f562624eb4093e17aee08b4f7baf5ff9ea24543b0a33"
+      },
+      {
+        "file": "000000000785.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000785.jpg",
+        "bytes": 133674,
+        "sha256": "83981537a7baeafbeb9c8cb67b3484dc26433f574b3685d021fa537e277e4726"
+      },
+      {
+        "file": "000000000802.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000802.jpg",
+        "bytes": 62406,
+        "sha256": "d5b79e7fa716f85ca86f46e5f518da9b6c5e26414925624d76e6476861aec495"
+      },
+      {
+        "file": "000000000885.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000000885.jpg",
+        "bytes": 111441,
+        "sha256": "1c67b783f78b18ddb5dd20aaba4d4aacaf98e5277051688a96da096afa9cdf1f"
+      },
+      {
+        "file": "000000001268.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000001268.jpg",
+        "bytes": 180751,
+        "sha256": "8e85a2e71ee512fe748a3a3be9bb40b8591e8c501c0f3896efcb5be5999ec236"
+      },
+      {
+        "file": "000000001296.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000001296.jpg",
+        "bytes": 204829,
+        "sha256": "34a98da7c11bc8811e6eec445145bb16f3d5f4338945ba116edcc1fe554d181b"
+      },
+      {
+        "file": "000000001353.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000001353.jpg",
+        "bytes": 83033,
+        "sha256": "1cccef217a1e5eec2acc74d7c08a105da3ef6fdb8514e221cdea9b0b373b60ea"
+      },
+      {
+        "file": "000000001425.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000001425.jpg",
+        "bytes": 111309,
+        "sha256": "71a37c25cdf944cf0a88b66d00a66cf899a88bd55c7ac80fcf1c76329d617e6c"
+      },
+      {
+        "file": "000000001490.jpg",
+        "path": "<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017/000000001490.jpg",
+        "bytes": 101098,
+        "sha256": "a044804a0b0186a1267acae34975932f14ede96c4a2b78fcee74e6c2fbd8414d"
+      }
+    ],
+    "skipped": [
+      {
+        "file": "000000000285.jpg",
+        "reason": "encoded byte limit"
+      },
+      {
+        "file": "000000000872.jpg",
+        "reason": "encoded byte limit"
+      },
+      {
+        "file": "000000001000.jpg",
+        "reason": "encoded byte limit"
+      }
+    ]
+  }
+}

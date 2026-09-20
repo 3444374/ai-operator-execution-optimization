@@ -1,0 +1,9 @@
+{"status": "failed", "kind": "fixture", "rtol": 1e-05, "atol": 1e-06, "norm_tolerance": 1e-05, "forward_limit": 160, "error": {"type": "ProtocolViolation", "message": "image provider execution failed"}, "forward_attempts": 88, "real_forward_attempts": 0}
+2026-09-20 11:49:34,695	INFO worker.py:2024 -- Started a local Ray instance.
+Traceback (most recent call last):
+  File "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/image-worker.py", line 174, in <module>
+    conn.execute(f'SELECT id,{expr} FROM source WHERE id<=2').fetchall()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<SERVER_HOME>/miniconda3/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.ProtocolViolation: image provider execution failed

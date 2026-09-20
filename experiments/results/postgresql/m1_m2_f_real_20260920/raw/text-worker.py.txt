@@ -1,0 +1,168 @@
+"""Predeclared small real M1/M2 stages. No retry, no stage beyond its fixed maximum."""
+from pathlib import Path
+from dataclasses import replace
+import hashlib,json,os,sqlite3,sys,time
+import psycopg
+from src.baselines.common.private_artifacts import write_private_json
+from src.experiments.attempt_ledger import AttemptBudget
+from src.experiments.cell_budget import CellBudgetLedger
+from src.experiments.postgresql.m1_campaign import SCHEMA,run_campaign,preflight
+from src.experiments.postgresql.query_runner import run_query
+from src.experiments.postgresql.query_config import QueryConfig
+from src.experiments.postgresql.query_inputs import QueryInputs
+from src.experiments.postgresql.query_tables import install_input_table
+from src.experiments.postgresql.query_workloads import load_manifest,read_prepared
+from src.experiments.postgresql.m2_runner import run_information_query
+from src.experiments.postgresql.m1_selection import paired_comparison
+from src.baselines.common.redact import redact_text
+c=json.loads(Path(sys.argv[1]).read_text());root=Path(c['output_root']);root.mkdir(mode=0o700)
+inputs=Path(c['inputs_root']);asset=json.loads(Path(c['asset_record']).read_text());model=Path(c['model_config'])
+stop_at=c['deadline_utc'];ledgers=[];phases=[]
+policy=dict(epsilon=.03,max_relative_spread=.1,min_repeats=3,supply_level=.9,min_supply_fraction=.8,middle_fraction=.6)
+resources=dict(window=128,input_bytes=128*1048576,result_bytes=128*1048576,pg_window_bytes=256*1048576,pg_staging_bytes=4*1048576)
+identity={k:asset['inputs'][k]['manifest_sha256'] for k in ('tuning','evaluation')}
+base=dict(schema=SCHEMA,inputs_root=str(inputs),model_config=str(model),pg_log=os.environ['SEMLOOM_PG_LOG'],
+ model_id=c['model_id'],service_signature=c['service_signature'],manifest_sha256=identity,resources=resources,
+ selection_policy=policy,query_timeout_s=45,context_tokens=4096,model_revision=c['model_revision'],
+ tokenizer_path=c['tokenizer_path'],tokenizer_fingerprint=asset['tokenizer_sha256'],
+ work_sha256={k:asset['inputs'][k]['work_sha256'] for k in ('tuning','evaluation')})
+
+def new_budget(name,limit,seconds):
+ if sum(item['limit'] for item in ledgers)+limit>17000:raise ValueError('text trial allocation exceeds 17000')
+ if time.time()+seconds>=stop_at:raise TimeoutError('insufficient overall time for next declared stage')
+ budget=AttemptBudget(name,limit);path=root/(name+'-budget.sqlite')
+ ledger=CellBudgetLedger.create(path,budget,deadline_utc=time.time()+seconds-5)
+ ledgers.append(dict(name=name,path=str(path),limit=limit));return budget,path,ledger
+
+def orders(groups):
+ keys=[g['id'] for g in groups]
+ return [keys,keys[1:]+keys[:1],list(reversed(keys)),keys[2:]+keys[:2]]
+
+def group(name,capacity,control='request',work=None,event='full',arm='pg'):
+ value=dict(id=name,arm=arm,control=control,capacity=capacity,event_content=event)
+ if work is not None:value['work_limit']=work
+ return value
+
+def stage(name,kind,split,groups,seconds,**extras):
+ limit=asset['inputs'][split]['rows']*len(groups)*4
+ config=dict(base,stage=kind,split=split,groups=groups,orders=orders(groups),max_posts=limit,max_seconds=seconds,
+  output_root=str(root/name),budget_id=name,budget_path=str(root/(name+'-budget.sqlite')),**extras)
+ check=preflight(config)
+ if check['status']!='ready':raise ValueError('real stage static supply check failed')
+ write_private_json(root/(name+'-preflight.json'),check)
+ file=root/(name+'.json');write_private_json(file,config)
+ new_budget(name,limit,seconds)
+ print('START '+name+' maximum_posts='+str(limit),flush=True)
+ run_campaign(file)
+ result=json.loads((root/name/'comparison.json').read_text())
+ phases.append(dict(stage=name,status=result['status'],actual_posts=result['actual_posts']))
+ print('END '+name+' actual_posts='+str(result['actual_posts']),flush=True)
+ return result,root/name/'comparison.json'
+
+def evaluation_decision(name,groups,reason):
+ file=root/(name+'-selection.json')
+ write_private_json(file,dict(status='ready_for_independent_evaluation',reason=reason,
+  tuning_sources=['m1-screen/comparison.json','m1-work/comparison.json'],
+  evaluation_design={**{k:base[k] for k in ('resources','selection_policy','service_signature','manifest_sha256')},'groups':groups}))
+ return dict(selection_source=str(file),selection_sha256=hashlib.sha256(file.read_bytes()).hexdigest())
+
+summary=dict(status='failed',max_posts=17000,phases=phases,performance_qualified=False)
+try:
+ # Matched eight-row correctness, counted separately from tuning and holdout.
+ budget,path,_=new_budget('text-correctness',16,120)
+ manifest=inputs/'correctness/manifest.json'
+ table='real_correctness'
+ with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as conn:
+  install_input_table(conn,QueryInputs('movie',table,8),read_prepared(manifest,'raw.jsonl'))
+ for arm in ('pg','pg-source-direct'):
+  q=QueryConfig('correct-'+arm,arm,'map',table,concurrency=4,pg_total_budget=arm=='pg',**resources,query_timeout_s=45)
+  value=run_query(q,manifest_path=manifest,model_path=model,budget_path=path,budget=budget,
+   root=root/('correct-'+arm),dsn=os.environ['SEMLOOM_TEST_PG_DSN'],pg_log=Path(os.environ['SEMLOOM_PG_LOG']))
+  if value['evaluation']['quality']['invalid']:raise ValueError('invalid correctness classification')
+ phases.append(dict(stage='correctness',status='passed',actual_posts=16))
+ groups=[group(prefix+str(cap),cap,arm=arm) for prefix,arm in [('p','pg'),('d','pg-source-direct')] for cap in (4,16,64)]
+ screen,screen_path=stage('m1-screen','screening','tuning',groups,540)
+ selection=screen['selection']['pg'];summary['m1_screen_selection']=screen['selection']
+ chosen=selection['selected'] if selection['status']=='platform_candidate' else None
+ if chosen is None:
+  summary['m1_followup']=dict(status='not_run',reason=selection['status'],
+   interpretation='screening result retained; do not retune or spend later M1 allocations')
+ else:
+  high=64
+  described=json.loads((inputs/'tuning/work.json').read_text())['work']
+  wide=high*base['context_tokens']
+  controls=[group('request',chosen)]
+  if chosen!=high:controls.append(group('high',high))
+  controls.extend(group('w'+str(work),high,'token',work) for work in (4096,8192,wide))
+  work_result,_=stage('m1-work','strategy-tuning','tuning',controls,480,reference_group='request',
+   screening_source=str(screen_path),screening_sha256=hashlib.sha256(screen_path.read_bytes()).hexdigest())
+  candidate=next((g for g in controls if g['id']==work_result['work_candidate']),None)
+  evaluation=[group('request',chosen)]
+  if chosen!=high:evaluation.append(group('high',high))
+  # The descriptor control admits every legal request at high C; no holdout tuning.
+  wide_eval=wide
+  evaluation.append(group('descriptor',high,'token',wide_eval))
+  if candidate:evaluation.append(group('work',high,'token',candidate['work_limit']))
+  selected=evaluation_decision('m1-evaluate',evaluation,dict(request_capacity=chosen,work_candidate=work_result['work_candidate'],
+   wide_rule='64 times unchanged context4096; no holdout tuning'))
+  stage('m1-evaluate','evaluation','evaluation',evaluation,600,reference_group='request',**selected)
+  observe=[group('full',chosen),group('compact',chosen,event='compact')]
+  selected=evaluation_decision('m1-observe',observe,'representative selected request capacity, only event detail changes')
+  stage('m1-observe','observation','evaluation',observe,360,reference_group='full',**selected)
+ # M2 is a separate source-information diagnostic. If M1 has no stable candidate,
+ # C4 is the predeclared functional reference, never renamed a tuned optimum.
+ capacity=chosen or 4
+ summary['m2_capacity']=dict(value=capacity,selected_by_m1=chosen is not None,
+  scope='source-information diagnostic; does not establish a service ceiling')
+ from transformers import AutoTokenizer
+ before=time.monotonic()
+ tokenizer=AutoTokenizer.from_pretrained(c['tokenizer_path'],local_files_only=True,trust_remote_code=False)
+ summary['shared_tokenizer_prepare_s']=time.monotonic()-before
+ modes=('stream_fifo','window_fifo','window_length','global_length','global_reuse')
+ def information_group(split,number,repeat_count,name,seconds):
+  manifest=inputs/split/'manifest.json';table=name.replace('-','_')
+  budget,path,_=new_budget(name,number*len(modes)*repeat_count,seconds)
+  with psycopg.connect(os.environ['SEMLOOM_TEST_PG_DSN'],autocommit=True) as conn:
+   install_input_table(conn,QueryInputs('movie',table,number),read_prepared(manifest,'raw.jsonl'))
+  records=[];reuse=None
+  # Warmup produces metadata before the reuse arm; measurements rotate in a fixed order.
+  for repeat in range(repeat_count):
+   selected_modes=modes if repeat==0 else modes[repeat-1:]+modes[:repeat-1]
+   for mode in selected_modes:
+    config=dict(unit_id=name+'-'+mode+'-'+str(repeat),mode=mode,table=table,concurrency=capacity,query_timeout_s=60,
+      tokenizer_path=c['tokenizer_path'],tokenizer_sha256=asset['tokenizer_sha256'],
+      source_limits=dict(candidate_rows=64,payload_bytes=16*1048576,metadata_bytes=4*1048576,
+                         result_disk_bytes=64*1048576,context_tokens=4096))
+    if mode=='global_reuse':config['reuse_metadata']=str(reuse)
+    output=root/config['unit_id']
+    result=run_information_query(config,manifest_path=manifest,model_path=model,budget_path=path,budget=budget,
+      root=output,dsn=os.environ['SEMLOOM_TEST_PG_DSN'],tokenizer=tokenizer)
+    if mode=='global_length' and repeat==0:reuse=output/'metadata.sqlite'
+    records.append(dict(mode=mode,repeat=repeat,warmup=repeat==0,status=result['status'],jct_seconds=result['jct_seconds'],
+     rate=result['effective_rows_per_second'],quality=result['evaluation']['quality'],actual_posts=result['evaluation']['actual_posts'],
+     output_values=result['output_values'],resources=result['resources'],token_usage=result['token_usage']))
+    write_private_json(root/(name+'-completed-'+str(len(records))+'.json'),records[-1])
+  write_private_json(root/(name+'-summary.json'),dict(records=records,metadata_reuse_producer=str(reuse),
+   expected_posts=number*len(modes)*repeat_count,actual_posts=sum(r['actual_posts'] for r in records),
+   interpretation='five PG-source information controls on the same direct executor; not semantic CustomScan performance'))
+  phases.append(dict(stage=name,status='passed',actual_posts=sum(r['actual_posts'] for r in records)))
+ information_group('correctness',8,1,'m2-correctness',120)
+ print('START m2-evaluation maximum_posts=5120',flush=True)
+ information_group('evaluation',256,4,'m2-evaluation',720)
+ print('END m2-evaluation actual_posts=5120',flush=True)
+ summary['status']='passed'
+except BaseException as error:
+ summary['error']=dict(type=type(error).__name__,message=redact_text(str(error)))
+ raise
+finally:
+ total=0;allocations=[]
+ for item in ledgers:
+  budget=AttemptBudget(item['name'],item['limit']);ledger=CellBudgetLedger(item['path'],budget)
+  for unit in ledger.snapshot()['units']:ledger.close_shared_unit(unit['unit_id'])
+  with sqlite3.connect(item['path']) as db:
+   exists=db.execute("SELECT count(*) FROM sqlite_master WHERE name='shared_requests'").fetchone()[0]
+   spent=db.execute('SELECT count(*) FROM shared_requests').fetchone()[0] if exists else 0
+  total+=spent;allocations.append(dict(item,actual_posts=spent))
+ summary.update(actual_posts=total,allocations=allocations)
+ write_private_json(root/'summary.json',summary)
+ print(json.dumps(dict(status=summary['status'],actual_posts=total,phases=phases,error=summary.get('error'))),flush=True)

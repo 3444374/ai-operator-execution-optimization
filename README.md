@@ -10,15 +10,15 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
 [当前 M1 研究](experiments/plans/data_organization_batching.md#m1-throughput-platform)调整为有效吞吐平台附近的供给与资源代价；
-旧测量反例保留，固定运行表撤下，真实模型继续暂停。
+[本轮真实检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)已完成：M1未取得平台候选，M2完成五种信息条件的实验层对照，尚未支持稳定收益。
 
 [图像工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)已完成显式 `bytea→real[]`
-接入、方法行结果与阶段资源的工程检查；真实 PG/Ray/解码验证通过，真实 CLIP 和 GPU 性能尚未验证。
+接入、方法行结果与阶段资源的工程检查；后续151次真实CLIP前向通过数值与指定生命周期检查，GPU计算中故障与匹配性能仍待验证。
 
 近期重点是检验数据执行的设计理由：控制提交是否缩短完整查询，有限候选是否比获取全局元数据更划算，
 以及准备深度和消费次序如何影响留存。随后按观察结果选择阶段执行或多查询竞争实验。
 [当前研究计划](experiments/plans/data_organization_batching.md#design-hypotheses)把已有证据、数学条件、强对照和否定设计的结果对应起来，
-不预设有限窗口或token控制一定更好；[最新验证](experiments/results/postgresql/async_deadline_flow_20260914/README.md)保留57次真实请求及配置失败记录。
+不预设有限窗口或token控制一定更好；[最新验证](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)保留8,248次文本请求、151次图像前向及受控准备失败记录。
 
 [数据库源与公共查询入口](experiments/results/postgresql/database_queries_20260910/README.md)已完成PG、
 direct、原生Ray/LOTUS的受控查询检查，并准备2000条真实Movie输入；原生Ray/LOTUS真实模型质量与匹配性能仍待验证。

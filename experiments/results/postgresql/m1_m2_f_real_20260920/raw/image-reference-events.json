@@ -1,0 +1,3545 @@
+[
+  {
+    "event": "job_opened",
+    "job_id": "registered-0",
+    "engine_session_id": 0,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 4096,
+      "active_requests": 1,
+      "active_work": 50176,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 155667,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-0",
+    "engine_session_id": 0,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-0",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-1",
+    "engine_session_id": 1,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 4096,
+      "active_requests": 1,
+      "active_work": 50176,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 155667,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 130107,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 176410,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 133674,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 62406,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 111441,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 180751,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 204829,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 83033,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 111309,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 101098,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 133674,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-1",
+    "engine_session_id": 1,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-1",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-2",
+    "engine_session_id": 2,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 4096,
+      "active_requests": 1,
+      "active_work": 50176,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 155667,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 130107,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 176410,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 133674,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 62406,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 111441,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 180751,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 204829,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 83033,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 111309,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 101098,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 133674,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-2",
+    "engine_session_id": 2,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-2",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-3",
+    "engine_session_id": 3,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 4096,
+      "active_requests": 1,
+      "active_work": 50176,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 155667,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 130107,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 176410,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 133674,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 4
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 62406,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 5
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 111441,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 6
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 180751,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 7
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 204829,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 8
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 83033,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 9
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 111309,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 10
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 101098,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 11
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 161811,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 12
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      1,
+      529154
+    ]
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 133674,
+      "result_bytes": 2048,
+      "active_requests": 1,
+      "active_work": 50176
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 2048,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 13
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      2,
+      1058308
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2116616
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-3",
+    "engine_session_id": 3,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-3",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "transport_closed",
+    "closed": true,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  }
+]

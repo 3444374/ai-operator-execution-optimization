@@ -1,0 +1,169 @@
+"""Task-owned single-GPU real test, with bounded source identity, POSTs and cleanup."""
+from pathlib import Path
+from contextlib import ExitStack
+import hashlib,json,os,pwd,signal,socket,sqlite3,subprocess,sys,time,urllib.request
+import psutil
+from src.infrastructure.environment import load_env_file
+from src.baselines.common.redact import redact_text
+from src.baselines.common.private_artifacts import write_private_json
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster
+from src.experiments.process_sampling import ProcessSampler
+from src.observability.metrics.timing import PeriodicSampler
+from src.observability.metrics.vllm import scrape_prometheus_metrics
+base=Path('<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920');source=base/'source';root=base/'text-real-01'
+root.mkdir(mode=0o700);user=pwd.getpwnam('postgres');os.chown(root,user.pw_uid,user.pw_gid)
+parent=Path('<SERVER_ARTIFACTS>/r12ft01');parent.mkdir(mode=0o700);os.chown(parent,user.pw_uid,user.pw_gid)
+started=time.time();deadline=started+3600;work_until=deadline-120;model_process=None;worker=None;forced=False
+report=dict(status='failed',errors=[],max_posts=17000,max_seconds=3600,gpu='0')
+paths=[Path('<SERVER_HOME>'),base,base/'inputs',*(base/'inputs').rglob('*'),base/'asset-preparation.json']
+acl={str(p):subprocess.check_output(['getfacl','-p',str(p)],text=True) for p in paths}
+write_private_json(root/'acl-before.json',acl)
+
+def verify(path,expected):
+ digest=hashlib.sha256()
+ with Path(path).open('rb') as stream:
+  for data in iter(lambda:stream.read(16*1048576),b''):
+   if time.time()>=work_until:raise TimeoutError('identity check exceeded total time')
+   digest.update(data)
+ if digest.hexdigest()!=expected:raise ValueError('source or model file digest changed: '+Path(path).name)
+
+def stop_worker():
+ if worker is None or worker.poll() is not None:return
+ try:children=psutil.Process(worker.pid).children(recursive=True)
+ except psutil.NoSuchProcess:children=[]
+ for child in children:
+  try:
+   if 'text-worker.py' in ' '.join(child.cmdline()):child.send_signal(signal.SIGINT)
+  except psutil.NoSuchProcess:pass
+ try:worker.wait(10)
+ except subprocess.TimeoutExpired:
+  for child in children:
+   try:child.terminate()
+   except psutil.NoSuchProcess:pass
+  _,alive=psutil.wait_procs(children,timeout=10)
+  for child in alive:
+   try:child.kill()
+   except psutil.NoSuchProcess:pass
+  worker.kill();worker.wait(10)
+
+def stop_model():
+ global forced
+ if model_process is None or (root/'model-stop.json').exists():return
+ if model_process.poll() is None:os.killpg(model_process.pid,signal.SIGTERM)
+ try:model_process.wait(30)
+ except subprocess.TimeoutExpired:
+  forced=True;os.killpg(model_process.pid,signal.SIGKILL);model_process.wait(10)
+ write_private_json(root/'model-stop.json',dict(returncode=model_process.returncode,forced=forced))
+
+try:
+ if json.loads((base/'preflight.json').read_text())['status']!='ok':raise ValueError('runtime preflight failed')
+ if json.loads((base/'controlled-03/summary.json').read_text())['exit_code']!=0:raise ValueError('information path fixture failed')
+ if json.loads((base/'image-fixture-02/summary.json').read_text())['exit_code']!=0:raise ValueError('image fixture failed')
+ snapshot=json.loads((base/'source-snapshot.json').read_text())
+ for name,digest in snapshot['files'].items():verify(source/name,digest)
+ reference=json.loads(Path('<SERVER_ARTIFACTS>/sq-m1real/model-reference.json').read_text())
+ model=Path('<SERVER_ARTIFACTS>/models/Qwen2.5-7B-Instruct')
+ for name,digest in reference['model']['files'].items():verify(model/name,digest)
+ if subprocess.check_output(['nvidia-smi','-i','0','--query-compute-apps=pid','--format=csv,noheader,nounits'],text=True).strip():
+  raise RuntimeError('selected GPU is occupied')
+ for port in (18091,57733):
+  with socket.socket() as probe:probe.bind(('127.0.0.1',port))
+ for p in paths:
+  access='--x' if p in (Path('<SERVER_HOME>'),base) else 'r-x' if p.is_dir() else 'r--'
+  subprocess.run(['setfacl','-m','u:postgres:'+access,str(p)],check=True)
+ write_private_json(root/'identity.json',dict(source=snapshot,model=reference['model'],
+  worker_sha256=hashlib.sha256((base/'text-worker.py').read_bytes()).hexdigest(),
+  library_sha256=hashlib.sha256(Path('/opt/semloom-pg18.3-real-m1m2f/lib/postgresql/semloom_pg.so').read_bytes()).hexdigest()))
+ with ExitStack() as stack:
+  pgroot=root/'pg';pgroot.mkdir(mode=0o700);os.chown(pgroot,user.pw_uid,user.pw_gid)
+  conn=stack.enter_context(isolated_pg18_cluster(Path('/opt/semloom-pg18.3-real-m1m2f'),pgroot,user,port=57733))
+  if conn.execute('SHOW semloom_pg.test_flow_trace').fetchone()[0]!='off':raise ValueError('diagnostic PG identity differs')
+  runtime=load_env_file(Path('<SERVER_ARTIFACTS>/ai-operator-runtime.env'));cache=root/'cache';cache.mkdir(mode=0o700)
+  env=dict(os.environ,CUDA_VISIBLE_DEVICES='0',HF_HUB_OFFLINE='1',CUDA_HOME=runtime['CUDA_HOME'],
+   PATH='<SERVER_ARTIFACTS>/venvs/vllm-4090/bin:'+runtime['CUDA_NVCC_BIN']+':'+os.environ['PATH'],
+   HF_HOME=str(cache/'hf'),XDG_CACHE_HOME=str(cache/'xdg'),VLLM_CACHE_ROOT=str(cache/'vllm'),
+   TORCHINDUCTOR_CACHE_DIR=str(cache/'torch'),FLASHINFER_WORKSPACE_BASE=str(cache/'flashinfer'),
+   TRITON_CACHE_DIR=str(cache/'triton'),TMPDIR=str(cache),TOKENIZERS_PARALLELISM='false')
+  args=['--model',str(model),'--tokenizer',str(model),'--served-model-name','Qwen2.5-7B-Instruct',
+   '--dtype','bfloat16','--max-model-len','4096','--gpu-memory-utilization','0.8','--scheduling-policy','fcfs',
+   '--max-num-seqs','128','--max-num-batched-tokens','8192','--tensor-parallel-size','1',
+   '--host','127.0.0.1','--port','18091','--generation-config','vllm','--no-enable-prefix-caching','--enable-chunked-prefill']
+  command=['<SERVER_ARTIFACTS>/venvs/vllm-4090/bin/python',str(source/'code/scripts/services/launch_vllm_with_identity.py'),
+   '--identity-output',str(root/'vllm-identity.json'),'--port','18091','--',*args]
+  write_private_json(root/'service-command.json',command)
+  log=stack.enter_context((root/'model.log').open('x'));model_process=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env=env,start_new_session=True)
+  stack.callback(stop_model);ready_until=min(work_until,time.time()+300);url='http://127.0.0.1:18091'
+  while time.time()<ready_until:
+   if model_process.poll() is not None:raise RuntimeError('model startup failed; no retry')
+   try:
+    with urllib.request.urlopen(url+'/health',timeout=1) as response:
+     if response.status==200:break
+   except OSError:time.sleep(.5)
+  else:raise TimeoutError('model startup exceeded five minutes')
+  identity=json.loads((root/'vllm-identity.json').read_text())
+  if identity['package_version']!='0.25.1':raise ValueError('vLLM version differs')
+  with urllib.request.urlopen(url+'/v1/models',timeout=2) as response:models=json.load(response)
+  if [v['id'] for v in models['data']]!=['Qwen2.5-7B-Instruct']:raise ValueError('served model identity differs')
+  actual=Path('/proc/'+str(model_process.pid)+'/cmdline').read_bytes().decode().split('\0')[:-1]
+  if actual[-len(args):]!=args:raise ValueError('actual service arguments differ')
+  write_private_json(root/'service-ready.json',dict(ready_utc=time.time(),actual_argv=actual,model_id_verified=True))
+  def sample():
+   value=dict(monotonic_ns=time.monotonic_ns())
+   try:value['metrics']=scrape_prometheus_metrics(url+'/metrics',timeout_s=2)
+   except BaseException as error:value['metrics_error']=redact_text(str(error))
+   try:value['gpu']=subprocess.check_output(['nvidia-smi','-i','0','--query-gpu=memory.used,utilization.gpu,power.draw','--format=csv,noheader,nounits'],text=True,timeout=3).strip()
+   except BaseException as error:value['gpu_error']=redact_text(str(error))
+   return value
+  stack.enter_context(ProcessSampler(root/'model-rss.jsonl',{'model_server':model_process.pid},interval=1,include_children=True))
+  sampler=PeriodicSampler(sample,interval_s=1)
+  def finish_samples():sampler.close();write_private_json(root/'service-samples.json',list(sampler.samples))
+  stack.callback(finish_samples);write_private_json(root/'service-before.json',sample())
+  model_config=parent/'model.json';write_private_json(model_config,dict(endpoint_url=url+'/v1/chat/completions',model_id='Qwen2.5-7B-Instruct',timeout_ms=30000));os.chown(model_config,user.pw_uid,user.pw_gid)
+  config=dict(output_root=str(parent/'run'),inputs_root=str(base/'inputs'),asset_record=str(base/'asset-preparation.json'),
+   model_config=str(model_config),model_id='Qwen2.5-7B-Instruct',model_revision=reference['model']['revision'],
+   service_signature='m1m2-20260920-qwen7b-bf16-gpu0-vllm0251-tp1-context4096-seqs128-batch8192-prefixoff',
+   tokenizer_path=str(model),deadline_utc=work_until)
+  file=parent/'config.json';write_private_json(file,config);os.chown(file,user.pw_uid,user.pw_gid)
+  child=['runuser','-u','postgres','--','env','PYTHONPATH='+str(source/'code'),'OMP_NUM_THREADS=1','OPENBLAS_NUM_THREADS=1','TOKENIZERS_PARALLELISM=false',
+   'SEMLOOM_TEST_PG_DSN=host='+str(pgroot/'socket')+' port=57733 dbname=postgres user=postgres','SEMLOOM_PG_LOG='+str(pgroot/'postgres.log'),
+   '<SERVER_ARTIFACTS>/venvs/sembench-query-0910/bin/python',str(base/'text-worker.py'),str(file)]
+  print('Model identity verified; starting predeclared M1/M2 stages within 17000 POSTs',flush=True)
+  worker=subprocess.Popen(child,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,start_new_session=True)
+  try:output,_=worker.communicate(timeout=max(1,work_until-time.time()-30))
+  except subprocess.TimeoutExpired:
+   stop_worker();output=worker.stdout.read();(root/'worker.log').write_text(redact_text(output));raise
+  (root/'worker.log').write_text(redact_text(output))
+  if worker.returncode:raise RuntimeError('real information worker failed; no retry')
+  result=json.loads((parent/'run/summary.json').read_text());report['worker_summary']=result
+  if result['status']!='passed':raise ValueError('real information stages did not complete')
+  final=sample();write_private_json(root/'service-after.json',final)
+  if any(final.get('metrics',{}).get(k)!=0 for k in ('vllm:num_requests_running','vllm:num_requests_waiting')):raise ValueError('final model occupancy not confirmed idle')
+  report['status']='passed'
+except BaseException as error:report['errors'].append(dict(type=type(error).__name__,message=redact_text(str(error))))
+finally:
+ try:stop_worker()
+ except BaseException as error:report['errors'].append(dict(phase='worker_cleanup',message=redact_text(str(error))))
+ try:stop_model()
+ except BaseException as error:report['errors'].append(dict(phase='model_cleanup',message=redact_text(str(error))))
+ for p,value in acl.items():subprocess.run(['setfacl','--restore=-'],input=value,text=True,check=True)
+ after={p:subprocess.check_output(['getfacl','-p',p],text=True) for p in acl}
+ posts=0
+ for path in (parent/'run').glob('*-budget.sqlite'):
+  with sqlite3.connect(path) as db:
+   exists=db.execute("SELECT count(*) FROM sqlite_master WHERE name='shared_requests'").fetchone()[0]
+   if exists:posts+=db.execute('SELECT count(*) FROM shared_requests').fetchone()[0]
+ log=(root/'model.log').read_text() if (root/'model.log').exists() else ''
+ server_posts=log.count('POST /v1/chat/completions ')
+ gpu=subprocess.check_output(['nvidia-smi','-i','0','--query-compute-apps=pid','--format=csv,noheader,nounits'],text=True).strip()
+ excluded={os.getpid(),*(p.pid for p in psutil.Process().parents())};remaining=[]
+ for process in psutil.process_iter(['cmdline','status']):
+  try:
+   if process.pid not in excluded and process.info['status']!=psutil.STATUS_ZOMBIE and any(str(parent) in a or str(root) in a for a in process.info['cmdline'] or []):remaining.append(process.pid)
+  except (psutil.NoSuchProcess,psutil.AccessDenied):pass
+ report.update(actual_posts=posts,server_posts=server_posts,elapsed_s=time.time()-started,
+   cleanup=dict(acl_restored=acl==after,pg_pid_files=[str(p) for p in root.rglob('postmaster.pid')],remaining_processes=remaining,gpu_processes=gpu,model_forced=forced))
+ if posts!=server_posts or posts>17000:report['errors'].append(dict(message='model request accounting mismatch'))
+ if gpu or remaining or report['cleanup']['pg_pid_files'] or acl!=after or time.time()>deadline:report['errors'].append(dict(message='cleanup or time bound failed'))
+ if report['errors']:report['status']='failed'
+ write_private_json(root/'summary.json',report);print(json.dumps({k:v for k,v in report.items() if k!='worker_summary'}),flush=True)
+raise SystemExit(0 if report['status']=='passed' else 1)

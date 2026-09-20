@@ -14,8 +14,8 @@
 
 2026-09-20：[最后一个工程工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)
 已完成图像类型、同步 reference、MethodDriver 行结果及 CPU/model 阶段接入的受控检查。
-PG18.3 回归与实际 Ray/解码验证通过；模型使用明确的 CPU fixture，真实 CLIP 数值、GPU 故障及性能尚未验证。
-真实模型运行继续暂停，已有工程能力不直接作为方法贡献。
+PG18.3 回归与实际 Ray/解码验证通过；后续[有限真实验证](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)完成151次CLIP前向，三路径逐维一致，指定错误/取消及恢复通过。
+GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作为方法贡献。
 
 下一阶段研究重点是说明“哪些工作现在做、哪些稍后做，以及何时值得这样做”。
 [设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
@@ -27,7 +27,7 @@ PG18.3 回归与实际 Ray/解码验证通过；模型使用明确的 CPU fixtur
 后续[常驻服务对照](experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)已完成：
 一次启动约5.5秒与每查询约14–15毫秒准备分别报告；C8五次都比对应轮次C4快。
 紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
-旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](experiments/plans/data_organization_batching.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施，真实调用继续暂停。
+旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](experiments/plans/data_organization_batching.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施。本轮M1筛查未得到平台候选，后续条件阶段未执行；M2五种PG源信息方式完成固定C4诊断，尚无稳定收益，仍未接入SemMap全局预扫。
 
 2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_e_20260914/README.md)复用统一计算责任表和查询轮转，
 让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；

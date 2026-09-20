@@ -4,7 +4,7 @@ M1 experiment selection now separates reachable capacity screening, work tuning 
 evaluation. It compares complete throughput against a tuned request-count FIFO and retains negative
 or inconclusive results. [Experiment design](../experiments/plans/data_organization_batching.md#m1-throughput-platform)
 and [local validation](../experiments/results/postgresql/m1_platform_revision_20260920/README.md).
-The old fixed request matrix is retired; real-model execution remains paused.
+The old fixed request matrix is retired. The [finite real trial](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md) completed 8,248 text POSTs; screening found no platform candidate. Experimental PG-source M2 controls now include paid global metadata and explicit reuse, with no stable performance advantage established.
 
 
 The opt-in image slice adds `ai_semantic.embed(bytea, jsonb) -> real[]` in extension `0.3.0`.
@@ -12,7 +12,7 @@ It reuses the Map carrier, `MethodDriver`, shared Engine and bounded stage broke
 and Ray model execution. [Image interface](postgres/semloom_pg/README.md#opt-in-image-embedding),
 [CLI](scripts/README.md#图像-provider), and
 [controlled evidence](../experiments/results/postgresql/image_stages_f_20260920/README.md)
-separate verified PG/Ray/decoder behavior from real CLIP and GPU validation still pending.
+document the original fixture scope. The later real trial completed 151 CLIP forwards with matching vectors and controlled post-forward recovery; in-compute GPU interruption, hardware faults and matched performance remain pending.
 
 Database-source comparison entries now read immutable raw PG columns for direct/Ray Map and original
 SemBench LOTUS queries. Opt-in predicate prefetch and plain Filter COUNT keep PostgreSQL's ordinary

@@ -36,7 +36,7 @@ An unreachable actor or unconfirmed device outcome remains charged.
 [Configuration and CLI](../../scripts/README.md#图像-provider) and
 [engineering evidence](../../../experiments/results/postgresql/image_stages_f_20260920/README.md)
 describe the exact tested scope. The integration uses real PG, Ray and image decode with a CPU
-stand-in for model output. Real CLIP numerical, GPU failure and performance validation remain pending.
+stand-in for model output. The later [real CLIP trial](../../../experiments/results/postgresql/m1_m2_f_real_20260920/README.md) completed 151 forwards with identical vectors and controlled post-forward error/cancel recovery. In-compute GPU interruption, hardware failures and matched performance remain pending.
 
 For controlled tuple-flow diagnostics only, a clean build with `SEMLOOM_FLOW_DIAGNOSTIC=1`
 includes monotonic stage traces and bounded input-pull pauses. Superuser-only `test_flow_trace`,

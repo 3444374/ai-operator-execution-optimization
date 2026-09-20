@@ -1,0 +1,231 @@
+"""Finite typed-image validation; real or explicitly named zero-weight fixture."""
+from contextlib import contextmanager
+from dataclasses import asdict
+from functools import partial
+from pathlib import Path
+import hashlib,io,json,os,socket,struct,sys,threading,time
+import numpy as np
+from PIL import Image
+import psycopg
+import ray
+from src.baselines.common.private_artifacts import write_private_json
+from src.baselines.common.redact import redact_text
+from src.experiments.attempt_ledger import AttemptBudget
+from src.experiments.cell_budget import CellBudgetLedger
+from src.execution_provider.semantic_image import SemanticImagePlan
+from src.execution_provider.adapters.image_execution import ImageServiceConfig,build_image_execution
+from src.execution_provider.image_gateway import ImageGateway
+from src.modalities.image.operator import ImagePrepareStage,ImageModelStage,SynchronousImageReference
+from src.modalities.image.execution import SemLoomRayWorkerPool
+from src.scheduling.runtime.stage_broker import StageBrokerLimits
+
+c=json.loads(Path(sys.argv[1]).read_text());root=Path(c['output_root']);root.mkdir(mode=0o700)
+real=c['kind']=='real';budget=AttemptBudget(c['budget_id'],160)
+ledger=CellBudgetLedger(c['budget_path'],budget)
+if real:
+ plan=SemanticImagePlan.from_record(c['plan'])
+ encoded=[]
+ for item in c['images']:
+  data=Path(item['path']).read_bytes()
+  if hashlib.sha256(data).hexdigest()!=item['sha256']:raise ValueError('image identity differs')
+  encoded.append(data)
+else:
+ from tests.execution_provider.image_fixtures import PLAN
+ plan=PLAN;encoded=[]
+ for i in range(12):
+  buf=io.BytesIO();Image.new('RGB',(2,2),(30+i*10,80+i*5,160-i*7)).save(buf,format='PNG');encoded.append(buf.getvalue())
+# Fourteen non-NULL occurrences and one NULL, with duplicate payloads but unique rows.
+encoded=encoded+[encoded[0],encoded[4]]
+inputs=[(i+1,data) for i,data in enumerate(encoded)]+[(15,None)]
+for name,size in [('independent',44),('pg-reference',44),('pg-staged',72)]:ledger.reserve_unit(name,size)
+
+class Prepare(ImagePrepareStage):
+ def __init__(self,selected,kind):
+  if kind=='fixture':
+   from tests.execution_provider.image_fixtures import FixturePreprocessor
+   super().__init__(selected,preprocessor=FixturePreprocessor())
+  else:
+   from src.modalities.image.clip import configure_torch_thread_pools
+   configure_torch_thread_pools(1,1);super().__init__(selected)
+
+class Model(ImageModelStage):
+ def __init__(self,selected,kind,unit):
+  if kind=='fixture':
+   from tests.execution_provider.image_fixtures import FixtureModel
+   super().__init__(selected,device='cpu',model=FixtureModel())
+  else:
+   import torch
+   from src.modalities.image.clip import configure_torch_thread_pools
+   configure_torch_thread_pools(1,1)
+   torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
+   super().__init__(selected)
+  self.claim=CellBudgetLedger(c['budget_path'],budget).claim_shared_unit(unit)
+  self.mode='normal';self.entered=None;self.release=None
+ def set_mode(self,mode,entered=None,release=None):
+  if mode not in ('normal','raise_after_forward','hold_after_forward'):raise ValueError('unknown injected fault')
+  self.mode,self.entered,self.release=mode,entered,release
+ def embed(self,batch):
+  self.claim.reserve(hashlib.sha256(self.plan.digest.encode()+batch.payload.tobytes()).hexdigest())
+  result=super().embed(batch)
+  mode=self.mode;self.mode='normal'
+  if mode=='raise_after_forward':raise RuntimeError('controlled failure after confirmed image forward')
+  if mode=='hold_after_forward':
+   Path(self.entered).write_text('GPU/fixture forward complete; result held\n')
+   until=time.monotonic()+20
+   while not Path(self.release).exists():
+    if time.monotonic()>until:raise TimeoutError('controlled result hold was not released')
+    time.sleep(.01)
+  return result
+
+def wait(predicate,seconds=20):
+ end=time.monotonic()+seconds
+ while not predicate():
+  if time.monotonic()>end:raise TimeoutError('validation condition timeout')
+  time.sleep(.01)
+
+def decode(value):return np.asarray(struct.unpack('!'+str(plan.dimension)+'f',value),dtype=np.float32)
+
+def compare(result,expected):
+ if [row[0] for row in result]!=[row[0] for row in expected]:raise ValueError('image source order/identity differs')
+ maximum=0.;norm_error=0.
+ for (identity,value),(_,target) in zip(result,expected):
+  if target is None:
+   if value is not None:raise ValueError('NULL image returned a vector')
+   continue
+  value=np.asarray(value,dtype=np.float32);target=np.asarray(target,dtype=np.float32)
+  if value.shape!=(plan.dimension,) or not np.isfinite(value).all():raise ValueError('invalid float4 vector')
+  difference=float(np.max(np.abs(value-target)));maximum=max(maximum,difference)
+  norm_error=max(norm_error,abs(float(np.linalg.norm(value))-1))
+  if not np.allclose(value,target,rtol=c['rtol'],atol=c['atol']) or norm_error>c['norm_tolerance']:
+   raise ValueError('declared CLIP numerical tolerance exceeded')
+ return dict(max_abs_error=maximum,max_norm_error=norm_error,rows=len(result),non_null=sum(v is not None for _,v in result))
+
+@contextmanager
+def service(mode,pool=None,reference=None):
+ directory=root/mode;directory.mkdir();path=str(directory/'g.sock')
+ stop,started=threading.Event(),threading.Event();events=[];failures=[];box=[]
+ config=ImageServiceConfig(plan,mode,StageBrokerLimits(524288,2*plan.prepared_bytes,2*plan.input_size**2,1,1),1,1,1,30000)
+ def run():
+  listener=socket.socket(socket.AF_UNIX);gateway=None
+  try:
+   gateway=ImageGateway(config,max_jobs=2,max_connections=3,max_tasks=4,
+    max_active_requests=1 if mode=='reference' else 2,frame_timeout_ms=30000,
+    input_bytes=4*262144,result_bytes=4*plan.result_bytes,observer=events.append,
+    execution_factory=partial(build_image_execution,worker_pool=pool,ray_api=ray,reference=reference))
+   box.append(gateway);listener.bind(path);listener.listen(3);started.set();gateway.serve(listener,stop,handler=None)
+  except BaseException as error:failures.append(error);started.set()
+  finally:
+   listener.close()
+   if gateway is not None and not gateway.close():failures.append(RuntimeError('gateway retained unknown work'))
+ thread=threading.Thread(target=run);thread.start()
+ if not started.wait(120):raise TimeoutError('image service startup timeout')
+ if not box:raise failures[0]
+ try:yield path,box[0],events
+ finally:
+  (root/'release').touch();stop.set();box[0].request_stop();thread.join(40)
+  write_private_json(directory/'events.json',events)
+ if thread.is_alive():raise RuntimeError('image service owner did not stop')
+ if failures:raise failures[0]
+ if any(vars(box[0].engine.capacity.usage()).values()):raise RuntimeError('image engine retained work')
+
+def connect(path,mode):
+ conn=psycopg.connect(os.environ['SEMLOOM_IMAGE_PG_DSN'],autocommit=True)
+ conn.execute("SET search_path=image_validation,public")
+ for key,value in {'semloom_pg.provider_execution_profile':'image-'+mode,'semloom_pg.gateway_socket':path,
+   'semloom_pg.provider_window_tasks':'2','semloom_pg.enable_total_window_budget':'on',
+   'semloom_pg.provider_window_bytes':'8388608','semloom_pg.provider_staging_bytes':'4194304',
+   'statement_timeout':'30000','max_parallel_workers_per_gather':'0','enable_indexscan':'off','enable_bitmapscan':'off'}.items():
+  conn.execute('SELECT set_config(%s,%s,false)',(key,value))
+ return conn
+
+summary=dict(status='failed',kind=c['kind'],plan=plan.to_record(),rtol=c['rtol'],atol=c['atol'],norm_tolerance=c['norm_tolerance'],checks=[],forward_limit=160)
+actors=[]
+try:
+ with psycopg.connect(os.environ['SEMLOOM_IMAGE_PG_DSN'],autocommit=True) as conn:
+  conn.execute("ALTER EXTENSION semloom_pg UPDATE TO '0.3.0'")
+  conn.execute('CREATE SCHEMA image_validation');conn.execute('SET search_path=image_validation,public')
+  conn.execute('CREATE TABLE source(id integer PRIMARY KEY,image bytea)');conn.execute('CREATE TABLE sink(id integer,embedding real[])')
+  for item in inputs:conn.execute('INSERT INTO source VALUES(%s,%s)',item)
+ expr="ai_semantic.embed(image,'"+json.dumps(plan.to_record())+"'::jsonb)"
+ independent=SynchronousImageReference(plan,Prepare(plan,c['kind']),Model(plan,c['kind'],'independent'))
+ for payload in encoded[:2]:independent.embed(payload)
+ reference_rows=None
+ for repeat in range(3):
+  before=time.monotonic();result=[(identity,None if data is None else decode(independent.embed(data)).tolist()) for identity,data in inputs]
+  if reference_rows is None:reference_rows=result
+  summary['checks'].append(dict(path='independent',repeat=repeat,seconds=time.monotonic()-before,**compare(result,reference_rows)))
+ write_private_json(root/'reference-vectors.json',reference_rows)
+ pg_reference=SynchronousImageReference(plan,Prepare(plan,c['kind']),Model(plan,c['kind'],'pg-reference'))
+ with service('reference',reference=pg_reference) as (path,gateway,events):
+  with connect(path,'reference') as conn:
+   conn.execute(f'SELECT id,{expr} FROM source WHERE id<=2').fetchall()
+   for repeat in range(3):
+    before=time.monotonic();result=conn.execute(f'SELECT id,{expr} FROM source').fetchall()
+    summary['checks'].append(dict(path='pg-reference',repeat=repeat,seconds=time.monotonic()-before,**compare(result,reference_rows)))
+   if conn.execute(f'SELECT id,{expr} FROM source LIMIT 0').fetchall()!=[]:raise ValueError('LIMIT 0 differs')
+ ray.init(num_cpus=2,num_gpus=1 if real else 0,include_dashboard=False,object_store_memory=128*1048576,
+          _node_ip_address='127.0.0.1',_temp_dir=c['ray_temp'])
+ cpu=ray.remote(num_cpus=1,max_restarts=0,max_task_retries=0)(Prepare).remote(plan,c['kind'])
+ gpu=ray.remote(num_cpus=1,num_gpus=1 if real else 0,max_restarts=0,max_task_retries=0)(Model).remote(plan,c['kind'],'pg-staged')
+ actors=[cpu,gpu];ray.get([cpu.ready.remote(),gpu.ready.remote()],timeout=120)
+ pool=SemLoomRayWorkerPool((cpu,),(gpu,))
+ with service('staged',pool=pool) as (path,gateway,events):
+  with connect(path,'staged') as conn:
+   conn.execute(f'SELECT id,{expr} FROM source WHERE id<=2').fetchall()
+   for repeat in range(3):
+    before=time.monotonic();result=conn.execute(f'SELECT id,{expr} FROM source').fetchall()
+    summary['checks'].append(dict(path='pg-staged',repeat=repeat,seconds=time.monotonic()-before,**compare(result,reference_rows)))
+   conn.execute(f'SELECT {expr} FROM source LIMIT 0').fetchall()
+   compare(conn.execute(f'SELECT id,{expr} FROM source LIMIT 1').fetchall(),reference_rows[:1])
+   conn.execute('BEGIN');conn.execute(f'INSERT INTO sink SELECT id,{expr} FROM source');conn.execute('ROLLBACK')
+   if conn.execute('SELECT count(*) FROM sink').fetchone()[0]!=0:raise ValueError('image INSERT did not roll back')
+   conn.execute('CREATE TEMP TABLE broken(image bytea)');conn.execute('INSERT INTO broken VALUES(%s)',(b'not-an-image',))
+   try:conn.execute(f'SELECT {expr} FROM broken').fetchall()
+   except psycopg.Error:summary['checks'].append(dict(path='decode-error',expected=True))
+   else:raise ValueError('corrupt image did not fail')
+   wait(lambda:gateway.engine.capacity.usage().held_tasks==0)
+   ray.get(gpu.set_mode.remote('raise_after_forward'))
+   try:conn.execute(f'SELECT {expr} FROM source LIMIT 1').fetchall()
+   except psycopg.Error:summary['checks'].append(dict(path='controlled-after-forward-error',expected=True))
+   else:raise ValueError('controlled model failure was hidden')
+   wait(lambda:gateway.engine.capacity.usage().held_tasks==0)
+   compare(conn.execute(f'SELECT id,{expr} FROM source LIMIT 1').fetchall(),reference_rows[:1])
+  entered,release=root/'entered',root/'release'
+  # service(reference) teardown created its own harmless release marker.
+  if release.exists():release.unlink()
+  ray.get(gpu.set_mode.remote('hold_after_forward',str(entered),str(release)))
+  with connect(path,'staged') as conn:
+   errors=[]
+   def query():
+    try:conn.execute(f'SELECT {expr} FROM source LIMIT 1').fetchall()
+    except psycopg.Error as error:errors.append(error.sqlstate)
+   thread=threading.Thread(target=query);thread.start();wait(entered.exists);conn.cancel();thread.join(5)
+   if thread.is_alive() or errors!=['57014']:raise ValueError('expected PG cancellation not observed')
+   wait(lambda:any(e.get('event')=='cancel_requested' for e in events))
+   if gateway.engine.capacity.usage().active_requests<1 or gateway.engine.backend.snapshot().ready_held_bytes<1:
+    raise ValueError('cancellation released task or tensor before actor completion')
+   release.touch();wait(lambda:gateway.engine.capacity.usage().held_tasks==0)
+   compare(conn.execute(f'SELECT id,{expr} FROM source LIMIT 1').fetchall(),reference_rows[:1])
+   summary['checks'].append(dict(path='cancel-after-forward-before-delivery',sqlstate=errors[0],
+    gpu_forward_already_confirmed=True,shared_worker_reused=True))
+ summary['status']='passed'
+except BaseException as error:
+ summary['error']=dict(type=type(error).__name__,message=redact_text(str(error)))
+ raise
+finally:
+ (root/'release').touch()
+ for actor in actors:
+  try:ray.kill(actor,no_restart=True)
+  except BaseException:pass
+ ray.shutdown()
+ for unit in ledger.snapshot()['units']:ledger.close_shared_unit(unit['unit_id'])
+ import sqlite3
+ with sqlite3.connect(c['budget_path']) as db:
+  exists=db.execute("SELECT count(*) FROM sqlite_master WHERE name='shared_requests'").fetchone()[0]
+  summary['forward_attempts']=db.execute('SELECT count(*) FROM shared_requests').fetchone()[0] if exists else 0
+ summary['real_forward_attempts']=summary['forward_attempts'] if real else 0
+ if summary['status']=='passed' and summary['forward_attempts']!=151:
+  summary['status']='failed';summary['error']=dict(message='image forward accounting differs from 151 declared operations')
+ write_private_json(root/'summary.json',summary)
+ print(json.dumps({k:v for k,v in summary.items() if k not in ('checks','plan')}),flush=True)
+if summary['status']!='passed':raise SystemExit(1)

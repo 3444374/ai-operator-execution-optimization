@@ -1,0 +1,51 @@
+{
+  "reference": {
+    "event_counts": {
+      "job_opened": 4,
+      "image_method_opened": 4,
+      "image_row_accepted": 44,
+      "submitted": 44,
+      "terminal": 44,
+      "released": 44,
+      "image_result_released": 44,
+      "image_method_closed": 4,
+      "connection_closed": 4,
+      "job_drained": 4,
+      "transport_closed": 1
+    },
+    "method_close_count": 4,
+    "method_final_zero": true,
+    "job_drained_count": 4,
+    "core_final_zero": true
+  },
+  "staged": {
+    "event_counts": {
+      "job_opened": 11,
+      "image_method_opened": 11,
+      "image_row_accepted": 64,
+      "accepted": 64,
+      "submitted": 64,
+      "stage_submitted": 127,
+      "prepared": 63,
+      "remote_terminal": 64,
+      "object_refs_released": 64,
+      "terminal_delivered": 64,
+      "terminal": 64,
+      "released": 61,
+      "image_result_released": 61,
+      "image_method_closed": 11,
+      "connection_closed": 11,
+      "job_drained": 11,
+      "remote_unknown": 3,
+      "uncertain": 3,
+      "cancel_requested": 3,
+      "cancel_sent": 3,
+      "actor_completion_confirmed": 3,
+      "transport_closed": 1
+    },
+    "method_close_count": 11,
+    "method_final_zero": true,
+    "job_drained_count": 11,
+    "core_final_zero": true
+  }
+}

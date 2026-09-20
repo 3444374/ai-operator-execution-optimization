@@ -1,0 +1,121 @@
+{
+  "schema": "semloom.m1_campaign.v2",
+  "inputs_root": "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/inputs",
+  "model_config": "<SERVER_ARTIFACTS>/r12ft01/model.json",
+  "pg_log": "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/text-real-01/pg/postgres.log",
+  "model_id": "Qwen2.5-7B-Instruct",
+  "service_signature": "m1m2-20260920-qwen7b-bf16-gpu0-vllm0251-tp1-context4096-seqs128-batch8192-prefixoff",
+  "manifest_sha256": {
+    "tuning": "b73e85e9f4ffef7a9b0353a651e666c7201b14621d7280541caac19e57a3e4af",
+    "evaluation": "9d236d940cf74e862ac67e92466d2f6e49ff53384e15af99a1b113fc7b9ffbed"
+  },
+  "resources": {
+    "window": 128,
+    "input_bytes": 134217728,
+    "result_bytes": 134217728,
+    "pg_window_bytes": 268435456,
+    "pg_staging_bytes": 4194304
+  },
+  "selection_policy": {
+    "epsilon": 0.03,
+    "max_relative_spread": 0.1,
+    "min_repeats": 3,
+    "supply_level": 0.9,
+    "min_supply_fraction": 0.8,
+    "middle_fraction": 0.6
+  },
+  "query_timeout_s": 45,
+  "context_tokens": 4096,
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "tokenizer_path": "<SERVER_ARTIFACTS>/models/Qwen2.5-7B-Instruct",
+  "tokenizer_fingerprint": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+  "work_sha256": {
+    "tuning": "beb5a5f9f9c4575eb4acca4ed8523384468fe48489554efea5620eec5894c2d1",
+    "evaluation": "d02f917c55cfe6e812b28a2211913ce621cf7665552fef67a45fd057cd198a9b"
+  },
+  "stage": "screening",
+  "split": "tuning",
+  "groups": [
+    {
+      "id": "p4",
+      "arm": "pg",
+      "control": "request",
+      "capacity": 4,
+      "event_content": "full"
+    },
+    {
+      "id": "p16",
+      "arm": "pg",
+      "control": "request",
+      "capacity": 16,
+      "event_content": "full"
+    },
+    {
+      "id": "p64",
+      "arm": "pg",
+      "control": "request",
+      "capacity": 64,
+      "event_content": "full"
+    },
+    {
+      "id": "d4",
+      "arm": "pg-source-direct",
+      "control": "request",
+      "capacity": 4,
+      "event_content": "full"
+    },
+    {
+      "id": "d16",
+      "arm": "pg-source-direct",
+      "control": "request",
+      "capacity": 16,
+      "event_content": "full"
+    },
+    {
+      "id": "d64",
+      "arm": "pg-source-direct",
+      "control": "request",
+      "capacity": 64,
+      "event_content": "full"
+    }
+  ],
+  "orders": [
+    [
+      "p4",
+      "p16",
+      "p64",
+      "d4",
+      "d16",
+      "d64"
+    ],
+    [
+      "p16",
+      "p64",
+      "d4",
+      "d16",
+      "d64",
+      "p4"
+    ],
+    [
+      "d64",
+      "d16",
+      "d4",
+      "p64",
+      "p16",
+      "p4"
+    ],
+    [
+      "p64",
+      "d4",
+      "d16",
+      "d64",
+      "p4",
+      "p16"
+    ]
+  ],
+  "max_posts": 3072,
+  "max_seconds": 540,
+  "output_root": "<SERVER_ARTIFACTS>/r12ft01/run/m1-screen",
+  "budget_id": "m1-screen",
+  "budget_path": "<SERVER_ARTIFACTS>/r12ft01/run/m1-screen-budget.sqlite"
+}

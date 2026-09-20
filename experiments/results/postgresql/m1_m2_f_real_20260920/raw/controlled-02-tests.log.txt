@@ -1,0 +1,17 @@
+setUpClass (tests.experiments.test_information_paths_integration.InformationPathIntegrationTests) ... ERROR
+
+======================================================================
+ERROR: setUpClass (tests.experiments.test_information_paths_integration.InformationPathIntegrationTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/source/code/tests/experiments/test_information_paths_integration.py", line 59, in setUpClass
+    cls.fingerprint=tokenizer_fingerprint(cls.tokenizer)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/source/code/src/execution_provider/adapters/map_organization.py", line 74, in tokenizer_fingerprint
+    raise ValueError('missing local tokenizer configuration')
+ValueError: missing local tokenizer configuration
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.503s
+
+FAILED (errors=1)

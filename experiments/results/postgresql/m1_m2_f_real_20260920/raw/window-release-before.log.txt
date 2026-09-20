@@ -1,0 +1,15 @@
+test_exhausted_payload_window_is_released_before_next_fetch (tests.experiments.test_m2_source.InformationSourceTests.test_exhausted_payload_window_is_released_before_next_fetch) ... FAIL
+
+======================================================================
+FAIL: test_exhausted_payload_window_is_released_before_next_fetch (tests.experiments.test_m2_source.InformationSourceTests.test_exhausted_payload_window_is_released_before_next_fetch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<CHECKOUT>/code/tests/experiments/test_m2_source.py", line 115, in test_exhausted_payload_window_is_released_before_next_fetch
+    self.assertLessEqual(max(peaks), self.limits.candidate_rows + 1)
+AssertionError: 6 not less than or equal to 4
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)
+Expected reproduction: previous implementation retains six payload rows with a three-row window.

@@ -1,0 +1,10 @@
+{
+  "package_root": "<SERVER_ARTIFACTS>/venvs/vllm-4090/lib/python3.12/site-packages/vllm",
+  "package_version": "0.25.1",
+  "pid": 271475,
+  "port": 18091,
+  "process_start_time_ticks": "102579986",
+  "python_executable_argv0": "<SERVER_ARTIFACTS>/venvs/vllm-4090/bin/python",
+  "schema_version": 1,
+  "sys_prefix": "<SERVER_ARTIFACTS>/venvs/vllm-4090"
+}

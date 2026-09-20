@@ -1,0 +1,6 @@
+test_exhausted_payload_window_is_released_before_next_fetch (tests.experiments.test_m2_source.InformationSourceTests.test_exhausted_payload_window_is_released_before_next_fetch) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

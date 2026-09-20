@@ -96,6 +96,20 @@ PG-source direct is a bounded execution reference; Ray SQL/HTTP and original Sem
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality
 and performance pending. [Scope, tests and failure history](../../../../experiments/results/postgresql/database_queries_20260910/README.md).
 
+## Source information controls
+
+`m2_source.py` implements five experiment-owned input paths: streaming FIFO, window FIFO,
+window length ordering, paid global length metadata, and explicit reuse of that metadata.
+The window paths share `WorkWindowOrganizer`; global paths keep only row identity, position,
+work and request digest in a size-limited SQLite file. Payload is fetched again from the same
+read-only repeatable-read PG snapshot and checked against the digest before submission.
+`m2_runner.py` uses the existing bounded `DirectMap` client, durable POST allocation and common
+disk result sink, restoring source order for every arm. Scan, tokenization, sorting and rereads
+are included in invocation-to-EOF; reused metadata names its separately measured producer.
+These are `direct_client_control` experiments, not new SemMap planner or carrier capabilities.
+The callable entry is `run_information_query`; the finite experiment schedule is retained with
+the [real trial evidence](../../../../experiments/results/postgresql/m1_m2_f_real_20260920/README.md).
+
 ## Resource collectors
 
 These tools observe the existing synchronous SemMap fixture path. Production SQL, planner, provider and

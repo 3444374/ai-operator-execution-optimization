@@ -1,0 +1,17 @@
+2026-09-20 11:53:11,615	INFO worker.py:2024 -- Started a local Ray instance.
+2026-09-20 11:53:15,184	ERROR worker.py:437 -- Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): [36mray::Prepare.preprocess_staged()[39m (pid=270732, ip=<IP_REDACTED>, actor_id=299d9644f8d4650c2efa4bfb01000000, repr=<image-worker.Prepare object at 0x7fa7bb8de690>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/source/code/src/modalities/image/operator.py", line 65, in preprocess_staged
+    batch = self.prepare(descriptor.row_ids, encoded_images)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/source/code/src/modalities/image/operator.py", line 50, in prepare
+    check_encoded_image(self.plan, encoded_images[0])
+  File "<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920/source/code/src/modalities/image/operator.py", line 24, in check_encoded_image
+    with Image.open(io.BytesIO(encoded)) as image:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<SERVER_HOME>/miniconda3/lib/python3.12/site-packages/PIL/Image.py", line 3711, in open
+    raise UnidentifiedImageError(msg)
+PIL.UnidentifiedImageError: cannot identify image file <_io.BytesIO object at 0x7fa6dc1a7b50>
+{"status": "passed", "kind": "fixture", "rtol": 1e-05, "atol": 1e-06, "norm_tolerance": 1e-05, "forward_limit": 160, "forward_attempts": 151, "real_forward_attempts": 0}

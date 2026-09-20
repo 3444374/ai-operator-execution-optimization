@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "error": null,
+  "kind": "fixture",
+  "worker_sha256": "a3c65d34fa45f10abb91ed8fee4ca7e190dabc89375a22bbcd4f2d76b825b343",
+  "elapsed_s": 16.11625138693489,
+  "forward_attempts": 151,
+  "real_forward_attempts": 0,
+  "acl_restored": true,
+  "pg_pid_files": [],
+  "root": "<SERVER_ARTIFACTS>/r12fi02"
+}

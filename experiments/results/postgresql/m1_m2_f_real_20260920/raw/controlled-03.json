@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "elapsed_s": 7.8989418119890615,
+  "acl_restored": true,
+  "real_model_calls": 0,
+  "pg_pid_files": [],
+  "test_root": "<SERVER_ARTIFACTS>/r12fc03/tests"
+}

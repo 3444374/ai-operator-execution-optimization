@@ -1,0 +1,178 @@
+{
+  "schema": "semloom.m1_campaign.v2",
+  "stage": "screening",
+  "split": "tuning",
+  "expected_posts": 3072,
+  "queries": 24,
+  "checks": {
+    "p4": {
+      "status": "allowed_by_static_estimate",
+      "configured_capacity": 4,
+      "guaranteed_items": 4,
+      "limits": {
+        "client_http": 4,
+        "source_rows": 128,
+        "core_held": 128,
+        "core_results": 128,
+        "core_input": 341,
+        "pg_window": 128,
+        "pg_retained": 213
+      },
+      "blockers": [],
+      "request_bytes_upper": 393571,
+      "pg_row_bytes_upper": 1255122,
+      "pg_staging_bytes_upper": 204800,
+      "result_bytes_per_task": 1048576,
+      "runtime_supply_proven": false,
+      "backend_client": "existing transport sized to query capacity",
+      "service_running_limit": "external service signature; not equated with client in-flight count"
+    },
+    "p16": {
+      "status": "allowed_by_static_estimate",
+      "configured_capacity": 16,
+      "guaranteed_items": 16,
+      "limits": {
+        "client_http": 16,
+        "source_rows": 128,
+        "core_held": 128,
+        "core_results": 128,
+        "core_input": 341,
+        "pg_window": 128,
+        "pg_retained": 213
+      },
+      "blockers": [],
+      "request_bytes_upper": 393571,
+      "pg_row_bytes_upper": 1255122,
+      "pg_staging_bytes_upper": 204800,
+      "result_bytes_per_task": 1048576,
+      "runtime_supply_proven": false,
+      "backend_client": "existing transport sized to query capacity",
+      "service_running_limit": "external service signature; not equated with client in-flight count"
+    },
+    "p64": {
+      "status": "allowed_by_static_estimate",
+      "configured_capacity": 64,
+      "guaranteed_items": 64,
+      "limits": {
+        "client_http": 64,
+        "source_rows": 128,
+        "core_held": 128,
+        "core_results": 128,
+        "core_input": 341,
+        "pg_window": 128,
+        "pg_retained": 213
+      },
+      "blockers": [],
+      "request_bytes_upper": 393571,
+      "pg_row_bytes_upper": 1255122,
+      "pg_staging_bytes_upper": 204800,
+      "result_bytes_per_task": 1048576,
+      "runtime_supply_proven": false,
+      "backend_client": "existing transport sized to query capacity",
+      "service_running_limit": "external service signature; not equated with client in-flight count"
+    },
+    "d4": {
+      "status": "allowed_by_static_estimate",
+      "configured_capacity": 4,
+      "guaranteed_items": 4,
+      "limits": {
+        "client_http": 4,
+        "source_rows": 128
+      },
+      "blockers": [],
+      "request_bytes_upper": 393571,
+      "pg_row_bytes_upper": 1255122,
+      "pg_staging_bytes_upper": 204800,
+      "result_bytes_per_task": 1048576,
+      "runtime_supply_proven": false,
+      "backend_client": "existing transport sized to query capacity",
+      "service_running_limit": "external service signature; not equated with client in-flight count"
+    },
+    "d16": {
+      "status": "allowed_by_static_estimate",
+      "configured_capacity": 16,
+      "guaranteed_items": 16,
+      "limits": {
+        "client_http": 16,
+        "source_rows": 128
+      },
+      "blockers": [],
+      "request_bytes_upper": 393571,
+      "pg_row_bytes_upper": 1255122,
+      "pg_staging_bytes_upper": 204800,
+      "result_bytes_per_task": 1048576,
+      "runtime_supply_proven": false,
+      "backend_client": "existing transport sized to query capacity",
+      "service_running_limit": "external service signature; not equated with client in-flight count"
+    },
+    "d64": {
+      "status": "allowed_by_static_estimate",
+      "configured_capacity": 64,
+      "guaranteed_items": 64,
+      "limits": {
+        "client_http": 64,
+        "source_rows": 128
+      },
+      "blockers": [],
+      "request_bytes_upper": 393571,
+      "pg_row_bytes_upper": 1255122,
+      "pg_staging_bytes_upper": 204800,
+      "result_bytes_per_task": 1048576,
+      "runtime_supply_proven": false,
+      "backend_client": "existing transport sized to query capacity",
+      "service_running_limit": "external service signature; not equated with client in-flight count"
+    }
+  },
+  "status": "ready",
+  "manifests": {
+    "tuning": {
+      "schema": "semloom.pg_query_inputs.v2",
+      "kind": "movie",
+      "rows": 128,
+      "max_source_bytes": 65536,
+      "max_input_bytes": 65536,
+      "provenance": {
+        "parent_manifest_sha256": "69324912cd5a5512a95646fe05b78604e0dc2a50af0e93fec01a4a92f2549d7f",
+        "selection": "first rows of previously hash-selected movie-disjoint partition",
+        "rows": 128
+      },
+      "files": {
+        "raw.jsonl": {
+          "sha256": "02d640c1e777b357e4f5062b31a6b73ab098d3fa0e97197e36b70ab7401fc71e",
+          "bytes": 25420
+        },
+        "references.jsonl": {
+          "sha256": "8b43fda5fc99d4eed4aa40e86c6e5b13ae3fe15e043eea555df280f2e968bf0b",
+          "bytes": 14996
+        }
+      },
+      "sha256": "b73e85e9f4ffef7a9b0353a651e666c7201b14621d7280541caac19e57a3e4af"
+    },
+    "evaluation": {
+      "schema": "semloom.pg_query_inputs.v2",
+      "kind": "movie",
+      "rows": 256,
+      "max_source_bytes": 65536,
+      "max_input_bytes": 65536,
+      "provenance": {
+        "parent_manifest_sha256": "4d07f355e2fe574c78a5b8a292e6e8d3b192035c166c9ed357b52846add7e37e",
+        "selection": "first rows of previously hash-selected movie-disjoint partition",
+        "rows": 256
+      },
+      "files": {
+        "raw.jsonl": {
+          "sha256": "be066d66e6485f668efc2e563b38f4ef1a2043a35dcb6ee8ccff5e0bc43b1040",
+          "bytes": 49758
+        },
+        "references.jsonl": {
+          "sha256": "1476dfcdfd98b684d77f22615f70617507c96a3e3d5833085bcc6984d602d349",
+          "bytes": 30195
+        }
+      },
+      "sha256": "9d236d940cf74e862ac67e92466d2f6e49ff53384e15af99a1b113fc7b9ffbed"
+    }
+  },
+  "work": null,
+  "service_signature": "m1m2-20260920-qwen7b-bf16-gpu0-vllm0251-tp1-context4096-seqs128-batch8192-prefixoff",
+  "real_execution_authorized": false
+}

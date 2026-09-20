@@ -1,0 +1,439 @@
+{
+  "records": [
+    {
+      "mode": "stream_fifo",
+      "repeat": 0,
+      "warmup": true,
+      "status": "passed",
+      "jct_seconds": 0.270287827,
+      "rate": 29.598077311857633,
+      "quality": {
+        "true_positive": 6,
+        "false_positive": 0,
+        "true_negative": 2,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "actual_posts": 8,
+      "resources": {
+        "processes": {
+          "samples": 2,
+          "interval_seconds": 0.2,
+          "peak_rss_bytes": {
+            "preparation:consumer_direct": 902389760,
+            "preparation:pg_backend": 15028224
+          },
+          "processes": {
+            "272830:1789877444.69": {
+              "pid": 272830,
+              "created_at": 1789877444.69,
+              "name": "python",
+              "label": "consumer_direct"
+            },
+            "273704:1789877772.01": {
+              "pid": 273704,
+              "created_at": 1789877772.01,
+              "name": "postgres",
+              "label": "pg_backend"
+            }
+          },
+          "discovered_but_unobserved": [],
+          "include_children": false,
+          "summed_rss_is_unique_physical_memory": false,
+          "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+        },
+        "source": {
+          "source_reads": 8,
+          "source_bytes": 1484,
+          "tokenize_ns": 0,
+          "fetch_ns": 1334232,
+          "organize_ns": 0,
+          "metadata_build_ns": 0,
+          "metadata_rows": 0,
+          "metadata_logical_bytes": 0,
+          "metadata_file_bytes": 0,
+          "peak_candidate_rows": 1,
+          "peak_candidate_payload_bytes": 439,
+          "metadata_reused": false,
+          "input_signature": {
+            "manifest_sha256": "3af9a191fe76f0bbae0d8e7c17773270e8dc19e8c203a629a6ef76e742aed44d",
+            "semantic_digest": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+            "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+            "context_tokens": 4096
+          },
+          "owner": "experimental PG-source information adapter",
+          "snapshot": "repeatable read, read only"
+        },
+        "result_disk_bytes": 16384,
+        "storage_scope": "candidate payload plus at most C pending requests; fixed SQLite page caps; journal/cache overhead separately bounded by finite rows"
+      },
+      "token_usage": {
+        "status": "observed",
+        "prompt_tokens": 576,
+        "output_tokens": 24,
+        "output_token_lengths": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "mode": "window_fifo",
+      "repeat": 0,
+      "warmup": true,
+      "status": "passed",
+      "jct_seconds": 0.305734766,
+      "rate": 26.16647136557574,
+      "quality": {
+        "true_positive": 6,
+        "false_positive": 0,
+        "true_negative": 2,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "actual_posts": 8,
+      "resources": {
+        "processes": {
+          "samples": 2,
+          "interval_seconds": 0.2,
+          "peak_rss_bytes": {
+            "preparation:consumer_direct": 903475200,
+            "preparation:pg_backend": 14934016
+          },
+          "processes": {
+            "272830:1789877444.69": {
+              "pid": 272830,
+              "created_at": 1789877444.69,
+              "name": "python",
+              "label": "consumer_direct"
+            },
+            "273707:1789877772.29": {
+              "pid": 273707,
+              "created_at": 1789877772.29,
+              "name": "postgres",
+              "label": "pg_backend"
+            }
+          },
+          "discovered_but_unobserved": [],
+          "include_children": false,
+          "summed_rss_is_unique_physical_memory": false,
+          "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+        },
+        "source": {
+          "source_reads": 8,
+          "source_bytes": 1484,
+          "tokenize_ns": 23918374,
+          "fetch_ns": 1170180,
+          "organize_ns": 380676,
+          "metadata_build_ns": 0,
+          "metadata_rows": 0,
+          "metadata_logical_bytes": 0,
+          "metadata_file_bytes": 0,
+          "peak_candidate_rows": 8,
+          "peak_candidate_payload_bytes": 2623,
+          "metadata_reused": false,
+          "input_signature": {
+            "manifest_sha256": "3af9a191fe76f0bbae0d8e7c17773270e8dc19e8c203a629a6ef76e742aed44d",
+            "semantic_digest": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+            "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+            "context_tokens": 4096
+          },
+          "owner": "experimental PG-source information adapter",
+          "snapshot": "repeatable read, read only"
+        },
+        "result_disk_bytes": 16384,
+        "storage_scope": "candidate payload plus at most C pending requests; fixed SQLite page caps; journal/cache overhead separately bounded by finite rows"
+      },
+      "token_usage": {
+        "status": "observed",
+        "prompt_tokens": 576,
+        "output_tokens": 24,
+        "output_token_lengths": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "mode": "window_length",
+      "repeat": 0,
+      "warmup": true,
+      "status": "passed",
+      "jct_seconds": 0.262917976,
+      "rate": 30.427740703435205,
+      "quality": {
+        "true_positive": 6,
+        "false_positive": 0,
+        "true_negative": 2,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "actual_posts": 8,
+      "resources": {
+        "processes": {
+          "samples": 2,
+          "interval_seconds": 0.2,
+          "peak_rss_bytes": {
+            "preparation:consumer_direct": 903475200,
+            "preparation:pg_backend": 14934016
+          },
+          "processes": {
+            "272830:1789877444.69": {
+              "pid": 272830,
+              "created_at": 1789877444.69,
+              "name": "python",
+              "label": "consumer_direct"
+            },
+            "273712:1789877772.61": {
+              "pid": 273712,
+              "created_at": 1789877772.61,
+              "name": "postgres",
+              "label": "pg_backend"
+            }
+          },
+          "discovered_but_unobserved": [],
+          "include_children": false,
+          "summed_rss_is_unique_physical_memory": false,
+          "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+        },
+        "source": {
+          "source_reads": 8,
+          "source_bytes": 1484,
+          "tokenize_ns": 4006127,
+          "fetch_ns": 934986,
+          "organize_ns": 288382,
+          "metadata_build_ns": 0,
+          "metadata_rows": 0,
+          "metadata_logical_bytes": 0,
+          "metadata_file_bytes": 0,
+          "peak_candidate_rows": 8,
+          "peak_candidate_payload_bytes": 2623,
+          "metadata_reused": false,
+          "input_signature": {
+            "manifest_sha256": "3af9a191fe76f0bbae0d8e7c17773270e8dc19e8c203a629a6ef76e742aed44d",
+            "semantic_digest": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+            "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+            "context_tokens": 4096
+          },
+          "owner": "experimental PG-source information adapter",
+          "snapshot": "repeatable read, read only"
+        },
+        "result_disk_bytes": 16384,
+        "storage_scope": "candidate payload plus at most C pending requests; fixed SQLite page caps; journal/cache overhead separately bounded by finite rows"
+      },
+      "token_usage": {
+        "status": "observed",
+        "prompt_tokens": 576,
+        "output_tokens": 24,
+        "output_token_lengths": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "mode": "global_length",
+      "repeat": 0,
+      "warmup": true,
+      "status": "passed",
+      "jct_seconds": 0.290716417,
+      "rate": 27.518225776702526,
+      "quality": {
+        "true_positive": 6,
+        "false_positive": 0,
+        "true_negative": 2,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "actual_posts": 8,
+      "resources": {
+        "processes": {
+          "samples": 2,
+          "interval_seconds": 0.2,
+          "peak_rss_bytes": {
+            "preparation:consumer_direct": 903475200,
+            "preparation:pg_backend": 14938112
+          },
+          "processes": {
+            "272830:1789877444.69": {
+              "pid": 272830,
+              "created_at": 1789877444.69,
+              "name": "python",
+              "label": "consumer_direct"
+            },
+            "273715:1789877772.88": {
+              "pid": 273715,
+              "created_at": 1789877772.88,
+              "name": "postgres",
+              "label": "pg_backend"
+            }
+          },
+          "discovered_but_unobserved": [],
+          "include_children": false,
+          "summed_rss_is_unique_physical_memory": false,
+          "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+        },
+        "source": {
+          "source_reads": 16,
+          "source_bytes": 2968,
+          "tokenize_ns": 3830305,
+          "fetch_ns": 3587377,
+          "organize_ns": 692134,
+          "metadata_build_ns": 8500598,
+          "metadata_rows": 8,
+          "metadata_logical_bytes": 809,
+          "metadata_file_bytes": 16384,
+          "peak_candidate_rows": 1,
+          "peak_candidate_payload_bytes": 439,
+          "metadata_reused": false,
+          "input_signature": {
+            "manifest_sha256": "3af9a191fe76f0bbae0d8e7c17773270e8dc19e8c203a629a6ef76e742aed44d",
+            "semantic_digest": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+            "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+            "context_tokens": 4096
+          },
+          "owner": "experimental PG-source information adapter",
+          "snapshot": "repeatable read, read only"
+        },
+        "result_disk_bytes": 16384,
+        "storage_scope": "candidate payload plus at most C pending requests; fixed SQLite page caps; journal/cache overhead separately bounded by finite rows"
+      },
+      "token_usage": {
+        "status": "observed",
+        "prompt_tokens": 576,
+        "output_tokens": 24,
+        "output_token_lengths": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "mode": "global_reuse",
+      "repeat": 0,
+      "warmup": true,
+      "status": "passed",
+      "jct_seconds": 0.278759873,
+      "rate": 28.69853510085363,
+      "quality": {
+        "true_positive": 6,
+        "false_positive": 0,
+        "true_negative": 2,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      },
+      "actual_posts": 8,
+      "resources": {
+        "processes": {
+          "samples": 2,
+          "interval_seconds": 0.2,
+          "peak_rss_bytes": {
+            "preparation:consumer_direct": 903475200,
+            "preparation:pg_backend": 13832192
+          },
+          "processes": {
+            "272830:1789877444.69": {
+              "pid": 272830,
+              "created_at": 1789877444.69,
+              "name": "python",
+              "label": "consumer_direct"
+            },
+            "273718:1789877773.18": {
+              "pid": 273718,
+              "created_at": 1789877773.18,
+              "name": "postgres",
+              "label": "pg_backend"
+            }
+          },
+          "discovered_but_unobserved": [],
+          "include_children": false,
+          "summed_rss_is_unique_physical_memory": false,
+          "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+        },
+        "source": {
+          "source_reads": 8,
+          "source_bytes": 1484,
+          "tokenize_ns": 0,
+          "fetch_ns": 2413625,
+          "organize_ns": 0,
+          "metadata_build_ns": 0,
+          "metadata_rows": 8,
+          "metadata_logical_bytes": 809,
+          "metadata_file_bytes": 16384,
+          "peak_candidate_rows": 1,
+          "peak_candidate_payload_bytes": 439,
+          "metadata_reused": true,
+          "input_signature": {
+            "manifest_sha256": "3af9a191fe76f0bbae0d8e7c17773270e8dc19e8c203a629a6ef76e742aed44d",
+            "semantic_digest": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+            "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+            "context_tokens": 4096
+          },
+          "owner": "experimental PG-source information adapter",
+          "snapshot": "repeatable read, read only",
+          "reuse_build_record": "<SERVER_ARTIFACTS>/r12ft01/run/m2-correctness-global_length-0/metadata.json"
+        },
+        "result_disk_bytes": 16384,
+        "storage_scope": "candidate payload plus at most C pending requests; fixed SQLite page caps; journal/cache overhead separately bounded by finite rows"
+      },
+      "token_usage": {
+        "status": "observed",
+        "prompt_tokens": 576,
+        "output_tokens": 24,
+        "output_token_lengths": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    }
+  ],
+  "metadata_reuse_producer": "<SERVER_ARTIFACTS>/r12ft01/run/m2-correctness-global_length-0/metadata.sqlite",
+  "expected_posts": 40,
+  "actual_posts": 40,
+  "interpretation": "five PG-source information controls on the same direct executor; not semantic CustomScan performance"
+}

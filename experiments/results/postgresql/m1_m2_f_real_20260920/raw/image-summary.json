@@ -1,0 +1,116 @@
+{
+  "status": "passed",
+  "kind": "real",
+  "plan": {
+    "model_id": "openai/clip-vit-base-patch32",
+    "model_revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "processor_id": "openai/clip-vit-base-patch32",
+    "processor_revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "dtype": "float32",
+    "dimension": 512,
+    "input_size": 224
+  },
+  "rtol": 1e-05,
+  "atol": 1e-06,
+  "norm_tolerance": 1e-05,
+  "checks": [
+    {
+      "path": "independent",
+      "repeat": 0,
+      "seconds": 0.21549055993091315,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "independent",
+      "repeat": 1,
+      "seconds": 0.21625095803756267,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "independent",
+      "repeat": 2,
+      "seconds": 0.2108005650807172,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "pg-reference",
+      "repeat": 0,
+      "seconds": 0.5995318960631266,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "pg-reference",
+      "repeat": 1,
+      "seconds": 0.5997638859553263,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "pg-reference",
+      "repeat": 2,
+      "seconds": 0.6139456189703196,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "pg-staged",
+      "repeat": 0,
+      "seconds": 0.5378626810852438,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "pg-staged",
+      "repeat": 1,
+      "seconds": 0.4895048909820616,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "pg-staged",
+      "repeat": 2,
+      "seconds": 0.5014340879861265,
+      "max_abs_error": 0.0,
+      "max_norm_error": 1.1920928955078125e-07,
+      "rows": 15,
+      "non_null": 14
+    },
+    {
+      "path": "decode-error",
+      "expected": true
+    },
+    {
+      "path": "controlled-after-forward-error",
+      "expected": true
+    },
+    {
+      "path": "cancel-after-forward-before-delivery",
+      "sqlstate": "57014",
+      "gpu_forward_already_confirmed": true,
+      "shared_worker_reused": true
+    }
+  ],
+  "forward_limit": 160,
+  "forward_attempts": 151,
+  "real_forward_attempts": 151
+}

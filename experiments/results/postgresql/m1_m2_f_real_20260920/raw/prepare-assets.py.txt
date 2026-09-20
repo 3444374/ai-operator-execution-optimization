@@ -1,0 +1,49 @@
+from pathlib import Path
+import hashlib,json,os,time
+from src.baselines.common.private_artifacts import write_private_json
+from src.experiments.postgresql.query_workloads import load_manifest,read_prepared,prepare
+from src.experiments.postgresql.map_direct import request_body
+from src.execution_provider.semantic_map import SemanticMapPlan
+from src.execution_provider.semantic_image import SemanticImagePlan
+from src.execution_provider.adapters.map_organization import tokenizer_fingerprint
+from src.baselines.text.sembench_movie import MOVIE_MAP_INSTRUCTION
+from src.modalities.text.tokenization import chat_token_count
+from src.modalities.image.operator import check_encoded_image
+base=Path('<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920');inputs=base/'inputs';inputs.mkdir(mode=0o755)
+parent=Path('<SERVER_ARTIFACTS>/sq-m1real/inputs');model=Path('<SERVER_ARTIFACTS>/models/Qwen2.5-7B-Instruct')
+from transformers import AutoTokenizer
+tokenizer=AutoTokenizer.from_pretrained(model,local_files_only=True,trust_remote_code=False)
+plan=SemanticMapPlan(MOVIE_MAP_INSTRUCTION,'Qwen2.5-7B-Instruct',128)
+report=dict(real_model_calls=0,inputs={},tokenizer_sha256=tokenizer_fingerprint(model))
+for split,number in [('tuning',128),('evaluation',256),('correctness',8)]:
+ source=parent/('tuning' if split=='correctness' else split)/'manifest.json'
+ original=load_manifest(source);refs={v['row_id']:v['reference'] for v in read_prepared(source,'references.jsonl')}
+ rows=list(read_prepared(source,'raw.jsonl'))[:number]
+ manifest=prepare(inputs/split,'movie',((r[1],r[2],r[3],refs[r[1]],r[4]) for r in rows),
+  dict(parent_manifest_sha256=original['sha256'],selection='first rows of previously hash-selected movie-disjoint partition',rows=number),max_rows=number)
+ work=[chat_token_count(tokenizer,request_body(plan,r[3])['messages'],max_tokens=3968)+128 for r in rows]
+ write_private_json(inputs/split/'work.json',dict(work=work,manifest_sha256=manifest['sha256'],semantic_digest=plan.digest))
+ report['inputs'][split]=dict(manifest_sha256=manifest['sha256'],rows=number,work_min=min(work),work_max=max(work),
+  work_mean=sum(work)/number,work_sha256=hashlib.sha256((inputs/split/'work.json').read_bytes()).hexdigest())
+clip=Path('<SERVER_ARTIFACTS>/models/clip-vit-base-patch32');revision='3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268'
+snapshot=base/'hf/hub/models--openai--clip-vit-base-patch32/snapshots'/revision;snapshot.mkdir(parents=True)
+files={}
+for name in ('config.json','preprocessor_config.json','pytorch_model.bin','tokenizer.json','tokenizer_config.json','special_tokens_map.json','merges.txt','vocab.json'):
+ p=clip/name;metadata=(clip/'.cache/huggingface/download'/(name+'.metadata')).read_text().splitlines()
+ if metadata[0]!=revision:raise ValueError('CLIP cached file revision differs')
+ data=p.read_bytes();sha=hashlib.sha256(data).hexdigest()
+ etag=sha if len(metadata[1])==64 else hashlib.sha1(('blob '+str(len(data))+'\0').encode()+data).hexdigest()
+ if etag!=metadata[1]:raise ValueError('CLIP original download digest differs')
+ (snapshot/name).symlink_to(p);files[name]=sha
+imageplan=SemanticImagePlan('openai/clip-vit-base-patch32',revision,'openai/clip-vit-base-patch32',revision,'float32',512,224)
+selected=[];skipped=[]
+for p in sorted(Path('<SERVER_ARTIFACTS>/data/raw/coco_val2017/val2017').glob('*.jpg')):
+ if p.stat().st_size>262144:skipped.append(dict(file=p.name,reason='encoded byte limit'));continue
+ data=p.read_bytes();check_encoded_image(imageplan,data)
+ selected.append(dict(file=p.name,path=str(p),bytes=len(data),sha256=hashlib.sha256(data).hexdigest()))
+ if len(selected)==12:break
+if len(selected)!=12:raise ValueError('insufficient eligible COCO images')
+report['clip']=dict(plan=imageplan.to_record(),files=files,cache_prepared_from_verified_existing_download=True)
+report['images']=dict(selection='first 12 lexicographic filenames satisfying existing encoded-byte and dimension limits',selected=selected,skipped=skipped)
+write_private_json(base/'asset-preparation.json',report)
+print(json.dumps(dict(real_model_calls=0,inputs=report['inputs'],clip_revision=revision,images=len(selected),skipped=len(skipped))),flush=True)

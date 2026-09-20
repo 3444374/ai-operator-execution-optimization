@@ -1,0 +1,15 @@
+{
+  "local_markdown_links": 707,
+  "missing_links": 0,
+  "json_projections_parse": true,
+  "git_diff_check": "passed",
+  "added_language_check": "passed",
+  "test_scope": {
+    "final_local_passed": 26,
+    "final_linux_passed": 26,
+    "each_environment_skipped": 2,
+    "owned_pg_fixture_integration_passed": 2
+  },
+  "privacy_scan": "run on staged files before commit; no violations",
+  "additional_model_calls_after_completed_trials": 0
+}

@@ -1,0 +1,83 @@
+from pathlib import Path
+import hashlib,json,os,pwd,signal,sqlite3,subprocess,sys,time
+import psutil
+from src.baselines.common.redact import redact_text
+from src.experiments.attempt_ledger import AttemptBudget
+from src.experiments.cell_budget import CellBudgetLedger
+from src.experiments.postgresql.runtime_helpers import isolated_pg18_cluster
+from src.experiments.process_sampling import ProcessSampler
+base=Path('<SERVER_ARTIFACTS>/sq-real-m1m2f-20260920');source=base/'source';user=pwd.getpwnam('postgres')
+kind,number=sys.argv[1:];parent=Path('<SERVER_ARTIFACTS>/r12fi'+number);parent.mkdir(mode=0o700);os.chown(parent,user.pw_uid,user.pw_gid)
+root=base/('image-'+kind+'-'+number);root.mkdir(mode=0o700);os.chown(root,user.pw_uid,user.pw_gid)
+asset=json.loads((base/'asset-preparation.json').read_text());budget=AttemptBudget('image-'+kind+'-'+number,160)
+limit=1200 if kind=='real' else 360
+ledger=CellBudgetLedger.create(parent/'budget.sqlite',budget,deadline_utc=time.time()+limit-45);os.chown(ledger.path,user.pw_uid,user.pw_gid)
+config=dict(kind=kind,output_root=str(parent/'run'),budget_id=budget.budget_id,budget_path=str(ledger.path),
+ plan=asset['clip']['plan'],images=asset['images']['selected'],rtol=1e-5,atol=1e-6,norm_tolerance=1e-5,ray_temp=str(parent/'ray'))
+file=parent/'config.json';file.write_text(json.dumps(config));os.chown(file,user.pw_uid,user.pw_gid)
+acl={str(p):subprocess.check_output(['getfacl','-p',str(p)],text=True) for p in (Path('<SERVER_HOME>'),base)}
+(root/'acl-before.json').write_text(json.dumps(acl));started=time.monotonic();status=1;error=None
+try:
+ if kind not in ('real','fixture'):raise ValueError('unknown image run kind')
+ if kind=='real':
+  fixture=json.loads((base/'image-fixture-02/summary.json').read_text())
+  if fixture['exit_code']!=0 or fixture['worker_sha256']!=hashlib.sha256((base/'image-worker.py').read_bytes()).hexdigest():
+   raise ValueError('the exact image worker fixture must pass before real weights')
+  if subprocess.check_output(['nvidia-smi','-i','1','--query-compute-apps=pid','--format=csv,noheader,nounits'],text=True).strip():
+   raise ValueError('selected image GPU is occupied')
+  for name,digest in asset['clip']['files'].items():
+   if hashlib.sha256((Path('<SERVER_ARTIFACTS>/models/clip-vit-base-patch32')/name).read_bytes()).hexdigest()!=digest:
+    raise ValueError('CLIP file changed after preparation')
+ for p in acl:subprocess.run(['setfacl','-m','u:postgres:--x',p],check=True)
+ with isolated_pg18_cluster(Path('/opt/semloom-pg18.3-real-m1m2f'),root,user,port=57732):
+  command=['runuser','-u','postgres','--','env','PYTHONPATH='+str(source/'code'),'CUDA_VISIBLE_DEVICES=1',
+   'HF_HOME='+str(base/'hf'),'HF_HUB_CACHE='+str(base/'hf/hub'),'HF_HUB_OFFLINE=1','TRANSFORMERS_OFFLINE=1',
+   'XDG_CACHE_HOME='+str(parent/'xdg'),'TMPDIR='+str(parent),'RAY_USAGE_STATS_ENABLED=0',
+   'OMP_NUM_THREADS=1','OPENBLAS_NUM_THREADS=1','TOKENIZERS_PARALLELISM=false',
+   'SEMLOOM_IMAGE_PG_DSN=host='+str(root/'socket')+' port=57732 dbname=postgres user=postgres',
+   '<SERVER_ARTIFACTS>/venvs/sembench-query-0910/bin/python',str(base/'image-worker.py'),str(file)]
+  worker=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,start_new_session=True)
+  try:
+   with ProcessSampler(root/'worker-processes.jsonl',{'image_driver':worker.pid},interval=.2,include_children=True):
+    output,_=worker.communicate(timeout=limit-40)
+  except subprocess.TimeoutExpired:
+   try:children=psutil.Process(worker.pid).children(recursive=True)
+   except psutil.NoSuchProcess:children=[]
+   for child in children:
+    try:
+     if 'image-worker.py' in ' '.join(child.cmdline()):child.send_signal(signal.SIGINT)
+    except psutil.NoSuchProcess:pass
+   try:output,_=worker.communicate(timeout=15)
+   except subprocess.TimeoutExpired:
+    for child in children:
+     try:child.terminate()
+     except psutil.NoSuchProcess:pass
+    _,alive=psutil.wait_procs(children,timeout=5)
+    for child in alive:
+     try:child.kill()
+     except psutil.NoSuchProcess:pass
+    worker.kill();output,_=worker.communicate(timeout=10)
+   (root/'worker.log').write_text(redact_text(output))
+   raise TimeoutError('image worker exceeded its declared wall time')
+  (root/'worker.log').write_text(redact_text(output));status=worker.returncode
+except BaseException as exception:
+ error=dict(type=type(exception).__name__,message=redact_text(str(exception)));raise
+finally:
+ for p,value in acl.items():subprocess.run(['setfacl','--restore=-'],input=value,text=True,check=True)
+ after={p:subprocess.check_output(['getfacl','-p',p],text=True) for p in acl}
+ for unit in ledger.snapshot()['units']:ledger.close_shared_unit(unit['unit_id'])
+ with sqlite3.connect(ledger.path) as db:
+  exists=db.execute("SELECT count(*) FROM sqlite_master WHERE name='shared_requests'").fetchone()[0]
+  attempts=db.execute('SELECT count(*) FROM shared_requests').fetchone()[0] if exists else 0
+ excluded={os.getpid(),*(p.pid for p in psutil.Process().parents())};remaining=[]
+ for process in psutil.process_iter(['cmdline','status']):
+  try:
+   if process.pid not in excluded and process.info['status']!=psutil.STATUS_ZOMBIE and any(str(parent) in a or str(root) in a for a in process.info['cmdline'] or []):remaining.append(process.pid)
+  except (psutil.NoSuchProcess,psutil.AccessDenied):pass
+ gpu=subprocess.check_output(['nvidia-smi','-i','1','--query-compute-apps=pid','--format=csv,noheader,nounits'],text=True).strip()
+ if remaining or (kind=='real' and gpu) or after!=acl:status=1
+ report=dict(exit_code=status,error=error,kind=kind,remaining_processes=remaining,gpu_processes=gpu,worker_sha256=hashlib.sha256((base/'image-worker.py').read_bytes()).hexdigest(),elapsed_s=time.monotonic()-started,forward_attempts=attempts,
+  real_forward_attempts=attempts if kind=='real' else 0,acl_restored=after==acl,
+  pg_pid_files=[str(p) for p in root.rglob('postmaster.pid')],root=str(parent))
+ (root/'summary.json').write_text(json.dumps(report,indent=2));print(json.dumps(report),flush=True)
+raise SystemExit(status)

@@ -1,0 +1,22 @@
+{
+  "issue": "Previous M2 window list remained referenced during construction of the next payload window.",
+  "actual_run_max_payload_row_references_field": 69,
+  "corrected_conservative_run_bound": 133,
+  "conservative_run_payload_bytes": 42823,
+  "declared_payload_bytes": 16777216,
+  "bound_scope": "Two observed maximum payload windows plus at most C+1 maximum rows; conservative byte estimate, not observed RSS.",
+  "repair": "Clear the exhausted candidate list before fetching the next window; original real-run source preserved.",
+  "validation": {
+    "previous_retained_rows": 6,
+    "window_rows": 3,
+    "repaired_maximum_rows": 4,
+    "local_passed": 26,
+    "linux_passed": 26,
+    "each_skipped": 2,
+    "additional_real_calls": 0
+  },
+  "repaired_files": {
+    "code/src/experiments/postgresql/m2_source.py": "12a39f322bdd1b2b5e1fcc24db2ec6842e2f1635a94c698c6e6c0dbb292e5045",
+    "code/tests/experiments/test_m2_source.py": "1c99e50f74d25ff899ede998abd525aae3b43a383786f296e9883f263faa4f47"
+  }
+}

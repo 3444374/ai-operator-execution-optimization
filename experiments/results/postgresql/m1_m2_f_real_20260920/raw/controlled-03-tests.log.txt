@@ -1,0 +1,7 @@
+test_m1_screening_actual_pg_and_direct (tests.experiments.test_information_paths_integration.InformationPathIntegrationTests.test_m1_screening_actual_pg_and_direct) ... ok
+test_m2_modes_share_actual_snapshot_source_and_preserve_results (tests.experiments.test_information_paths_integration.InformationPathIntegrationTests.test_m2_modes_share_actual_snapshot_source_and_preserve_results) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 6.481s
+
+OK

@@ -1,5 +1,7 @@
 # 工作包 F：PostgreSQL 图像类型与阶段执行
 
+后续状态：[2026-09-20有限真实验证](../m1_m2_f_real_20260920/README.md)已完成；下文保留本次原始运行身份与数字。
+
 状态：**工程代码与受控验证完成，真实 CLIP 验证尚未执行**。研究对象为 PostgreSQL 内置 AI 语义算子的
 外部分布式物理执行与调度优化。本轮新增真实模型调用 **0 次**，Ray 测试实例声明 **0 个 GPU 资源**。
 计划见[工作包 F](../../../plans/data_organization_batching.md#work-package-f)。

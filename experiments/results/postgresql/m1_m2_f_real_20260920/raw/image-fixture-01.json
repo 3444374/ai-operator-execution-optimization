@@ -1,0 +1,11 @@
+{
+  "exit_code": 1,
+  "error": null,
+  "kind": "fixture",
+  "elapsed_s": 13.992135424050502,
+  "forward_attempts": 88,
+  "real_forward_attempts": 0,
+  "acl_restored": true,
+  "pg_pid_files": [],
+  "root": "<SERVER_ARTIFACTS>/r12fi01"
+}

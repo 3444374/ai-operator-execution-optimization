@@ -1,0 +1,212 @@
+"""Paid source-information controls on one immutable PG repeatable-read snapshot.
+
+These are experiment-owned PG-source controls, not semantic CustomScan paths.
+Only ID/work/digest metadata may outlive a bounded payload window. Global ordering
+uses a bounded SQLite file; local ordering reuses WorkWindowOrganizer.
+"""
+from dataclasses import dataclass
+import hashlib
+import itertools
+import json
+from pathlib import Path
+import sqlite3
+import time
+
+from src.baselines.common.private_artifacts import content_digest, write_private_json
+from src.execution_provider.adapters.model_config import MAX_MODEL_RESPONSE_BYTES
+from src.modalities.text.tokenization import chat_token_count
+from src.planning.work import StageWork, WorkDescriptor
+from src.scheduling.core.session_contract import OfferedTask, SessionSpec, TaskInfo, TaskKey
+from src.scheduling.core.session_policy import TaskCandidate
+from src.scheduling.organization.session_window import WorkWindowOrganizer
+from .map_direct import request_body
+
+MODES = ('stream_fifo', 'window_fifo', 'window_length', 'global_length', 'global_reuse')
+
+
+@dataclass(frozen=True)
+class SourceLimits:
+    candidate_rows: int
+    payload_bytes: int
+    metadata_bytes: int
+    result_disk_bytes: int
+    context_tokens: int
+
+    def __post_init__(self):
+        for key, value in vars(self).items():
+            if type(value) is not int or value < 1:
+                raise ValueError('positive source-information limits required')
+        if self.candidate_rows > 256 or min(self.metadata_bytes, self.result_disk_bytes) < 65536:
+            raise ValueError('source window or file allocation unsupported')
+
+
+def open_store(path, limit):
+    # Reserve a new file, never overwrite a previous failed attempt.
+    with Path(path).open('xb'):
+        pass
+    connection = sqlite3.connect(path)
+    connection.execute('PRAGMA page_size=4096')
+    connection.execute('PRAGMA journal_mode=DELETE')
+    connection.execute('PRAGMA temp_store=FILE')
+    connection.execute('PRAGMA cache_size=-64')
+    connection.execute(f'PRAGMA max_page_count={limit//4096}')
+    return connection
+
+
+def local_order(rows, plan, shortest_first):
+    spec = SessionSpec('m2', 'source', plan.model_id, work_unit='tokens')
+    candidates = []
+    for row in rows:
+        sequence = row['source_position']
+        work = row['input_tokens'] + plan.max_tokens
+        descriptor = WorkDescriptor((StageWork('model', work, 'tokens'),), 'model', plan.digest)
+        candidates.append(TaskCandidate(TaskKey(1, sequence), OfferedTask(sequence, b'', work,
+            MAX_MODEL_RESPONSE_BYTES, info=TaskInfo('m2-source', sequence, 'model', descriptor)), spec))
+    order = WorkWindowOrganizer(len(rows), None, shortest_first=shortest_first)(tuple(candidates))
+    by_position = {row['source_position']: row for row in rows}
+    return [by_position[key.sequence] for key in order]
+
+
+class InformationSource:
+    """Caller owns transaction, connection, deadlines, sink and tokenizer lifetime."""
+    def __init__(self, connection, inputs, plan, tokenizer, *, mode, limits, root,
+                 identity, deadline, emit, reuse=None):
+        if mode not in MODES or (mode == 'global_reuse') != (reuse is not None):
+            raise ValueError('invalid information mode or reusable metadata source')
+        self.connection, self.inputs, self.plan, self.tokenizer = connection, inputs, plan, tokenizer
+        self.mode, self.limits, self.root = mode, limits, Path(root)
+        self.identity, self.deadline, self.emit, self.reuse = identity, deadline, emit, reuse
+        self.metrics = dict(source_reads=0, source_bytes=0, tokenize_ns=0, fetch_ns=0, organize_ns=0,
+            metadata_build_ns=0, metadata_rows=0, metadata_logical_bytes=0, metadata_file_bytes=0,
+            peak_candidate_rows=0, peak_candidate_payload_bytes=0,
+            metadata_reused=mode == 'global_reuse', input_signature=identity,
+            owner='experimental PG-source information adapter', snapshot='repeatable read, read only')
+
+    def check_time(self):
+        if time.monotonic() >= self.deadline:
+            raise TimeoutError('source information phase exceeded query deadline')
+
+    def _convert(self, raw, *, tokenize):
+        self.check_time()
+        row = self.inputs.convert(raw)
+        self.metrics['source_reads'] += 1
+        self.metrics['source_bytes'] += row['source_bytes']
+        if tokenize:
+            before = time.monotonic_ns()
+            count = chat_token_count(self.tokenizer, request_body(self.plan, row['input_text'])['messages'],
+                                     max_tokens=self.limits.context_tokens-self.plan.max_tokens)
+            if count + self.plan.max_tokens > self.limits.context_tokens:
+                raise ValueError('complete request exceeds declared context')
+            row['input_tokens'] = count
+            self.metrics['tokenize_ns'] += time.monotonic_ns()-before
+        return row
+
+    def _scan(self, tokenize):
+        statement, parameters = self.inputs.select_sql()
+        count = 0
+        previous = -1
+        with self.connection.cursor(name='m2_information_scan') as cursor:
+            cursor.itersize = 1
+            cursor.execute(statement, parameters)
+            while True:
+                self.check_time()
+                before = time.monotonic_ns()
+                raw = cursor.fetchone()
+                self.metrics['fetch_ns'] += time.monotonic_ns()-before
+                if raw is None:
+                    break
+                count += 1
+                if count > self.inputs.max_rows or raw[0] <= previous:
+                    raise ValueError('source row count or order differs')
+                previous = raw[0]
+                yield self._convert(raw, tokenize=tokenize)
+        if count != self.inputs.max_rows:
+            raise ValueError('source scan is incomplete')
+
+    def _global(self):
+        if self.reuse is not None:
+            path = Path(self.reuse)
+            value = json.loads(path.with_suffix('.json').read_text())
+            if (value['identity'] != self.identity or value['rows'] != self.inputs.max_rows
+                    or path.stat().st_size > self.limits.metadata_bytes
+                    or hashlib.sha256(path.read_bytes()).hexdigest() != value['sha256']):
+                raise ValueError('reusable global metadata identity differs')
+            self.metrics.update(metadata_rows=value['rows'], metadata_file_bytes=path.stat().st_size,
+                                metadata_logical_bytes=value['logical_bytes'], reuse_build_record=str(path.with_suffix('.json')))
+            return path
+        path = self.root/'metadata.sqlite'
+        started = time.monotonic_ns()
+        connection = open_store(path, self.limits.metadata_bytes)
+        try:
+            connection.execute('CREATE TABLE meta(position INTEGER PRIMARY KEY,row_id TEXT UNIQUE,work INTEGER,digest TEXT)')
+            for row in self._scan(tokenize=True):
+                value = (row['source_position'], row['source_example_id'], row['input_tokens']+self.plan.max_tokens,
+                         content_digest(request_body(self.plan,row['input_text'])))
+                size = len(json.dumps(value, ensure_ascii=False).encode())
+                if self.metrics['metadata_logical_bytes']+size > self.limits.metadata_bytes:
+                    raise ValueError('global metadata exceeds declared logical bytes')
+                connection.execute('INSERT INTO meta VALUES(?,?,?,?)', value)
+                self.metrics['metadata_rows'] += 1
+                self.metrics['metadata_logical_bytes'] += size
+            before = time.monotonic_ns()
+            connection.execute('CREATE INDEX work_order ON meta(work,position)')
+            connection.commit()
+            self.metrics['organize_ns'] += time.monotonic_ns()-before
+        finally:
+            connection.close()
+        self.metrics.update(metadata_build_ns=time.monotonic_ns()-started, metadata_file_bytes=path.stat().st_size)
+        write_private_json(path.with_suffix('.json'), dict(identity=self.identity, rows=self.inputs.max_rows,
+            logical_bytes=self.metrics['metadata_logical_bytes'], build_ns=self.metrics['metadata_build_ns'],
+            sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        return path
+
+    def _global_rows(self):
+        path = self._global()
+        # The immutable table is re-read in the same PG snapshot; payload hashes are
+        # checked before each POST even when metadata came from a previous query.
+        metadata = sqlite3.connect(path.as_uri()+'?mode=ro', uri=True)
+        statement, _ = self.inputs.select_sql(ordered=False)
+        try:
+            for position, identity, work, digest in metadata.execute('SELECT * FROM meta ORDER BY work,position'):
+                self.check_time()
+                before = time.monotonic_ns()
+                raw = self.connection.execute(statement+' WHERE source_position=%s', (position,)).fetchone()
+                self.metrics['fetch_ns'] += time.monotonic_ns()-before
+                if raw is None:
+                    raise ValueError('planned source row disappeared')
+                row = self._convert(raw, tokenize=False)
+                if row['source_example_id'] != identity or content_digest(request_body(self.plan,row['input_text'])) != digest:
+                    raise ValueError('planned payload changed before model submission')
+                row['input_tokens'] = work-self.plan.max_tokens
+                yield row
+        finally:
+            metadata.close()
+
+    def rows(self):
+        source = self._global_rows() if self.mode.startswith('global') else self._scan(self.mode != 'stream_fifo')
+        count = 0
+        try:
+            while True:
+                amount = self.limits.candidate_rows if self.mode.startswith('window') else 1
+                batch = list(itertools.islice(source, amount))
+                if not batch:
+                    break
+                payload_bytes = sum(row['source_bytes']+len(row['input_text'].encode()) for row in batch)
+                if payload_bytes > self.limits.payload_bytes:
+                    raise ValueError('source candidates exceed payload byte budget')
+                self.metrics['peak_candidate_rows'] = max(self.metrics['peak_candidate_rows'],len(batch))
+                self.metrics['peak_candidate_payload_bytes'] = max(self.metrics['peak_candidate_payload_bytes'],payload_bytes)
+                if self.mode.startswith('window'):
+                    before = time.monotonic_ns()
+                    batch = local_order(batch,self.plan,self.mode == 'window_length')
+                    self.metrics['organize_ns'] += time.monotonic_ns()-before
+                for row in batch:
+                    count += 1
+                    self.emit(dict(event='source_candidate',mode=self.mode,position=row['source_position'],
+                        row_id=row['source_example_id'],work=row.get('input_tokens'),
+                        candidate_rows=len(batch),candidate_payload_bytes=payload_bytes))
+                    yield row
+            if count != self.inputs.max_rows:
+                raise ValueError('information source lost or duplicated a row')
+        finally:
+            source.close()
