@@ -14,7 +14,7 @@ A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作
 
 | 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
 |---|---|---|
-| [M1常驻等待位置检查](../results/postgresql/waiting_positions_persistent_20260914/README.md) | 新增24查询/768受控HTTP及120次旧入口回归；常驻后紧W仍增加完整查询时间，C8五次快于C4 | 真实输入及完整/摘要测量开关已准备；44544次/30分钟为已拟定上限，真实调用按用户要求暂缓 |
+| [M1常驻等待位置检查](../results/postgresql/waiting_positions_persistent_20260914/README.md) | 新增24查询/768受控HTTP及120次旧入口回归；常驻后紧W仍增加完整查询时间，C8五次快于C4 | 旧测量反例结束；输入/观测开关保留，44,544 次表已撤下；按新 M1 做可达性和平台筛查，真实调用暂停 |
 | [期限与输入/交付诊断](../results/postgresql/async_deadline_flow_20260914/README.md) | 实现0274b121及验证3f1f5540已合入main；PG TAP2138、96次fixture，真实24+33共57次；一次真实结果跨期限正确保留失败，全部资源清理 | 四次真实暂停均未遇到就绪队首，不能归因ready-first收益；无稳定性能结论 |
 | [C/D真实预算](../results/postgresql/cd_validation_20260911/README.md) | 总留存可用性和work提交限制可检验；紧work三组均更慢，保留一行模型输出差异 | 强请求数FIFO、token表征成本、独立重复；不是token控制天然更好 |
 | [单卡容量画像](../results/postgresql/map_capacity_20260910/README.md) | 96601次真实出站、99808次预留、五次4000行观测与2000行独立验证；当时C32/L64为候选 | 更高C的同规模平台仍未确认，不能将旧签名/配置直接命名为当前强静态 |
@@ -22,7 +22,7 @@ A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作
 | 既有shared-credit、公平策略、Job/flow及外部MethodDriver | 可复用的机制或接口；不是不存在而需重写 | 当前路径的适配、默认组装、PG方法桥接、动态份额与图像阶段分别核对，不按接口存在推定完成 |
 
 现有原始Movie8/16/128行及其他既用调优数据视为开发材料；M1调用起点和等待分解已通过[受控小实验](../results/postgresql/waiting_positions_pilot_20260914/README.md)。
-M1常驻服务对照和本fixture内C4/C8稳定性已完成；M1真实评价划分及完整/摘要观测的受控检查已完成，真实模型对照仍待运行；M2全局metadata适配尚未完成。
+M1 旧常驻实验及真实输入划分已完成；当前按[吞吐平台与资源代价](data_organization_batching.md#m1-throughput-platform)重新选点，真实运行暂停。M2 全局元数据适配尚未完成。
 当前只批准并完成了上述有限验证，M1—M4没有新增模型额度。下方历史矩阵继续只供追溯。
 
 首次ShareGPT尝试48/68请求的失败、后续146行原文准备/PG读回与SQuAD10次小样本检查仍分别引用

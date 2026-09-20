@@ -1,0 +1,56 @@
+{
+  "identity": "local synthetic 128-row fixture; no PG or HTTP execution",
+  "cli_returncode": 0,
+  "new_status": "ready",
+  "old_status": "unreachable",
+  "old_pg64": {
+    "status": "unreachable",
+    "configured_capacity": 64,
+    "guaranteed_items": 32,
+    "limits": {
+      "client_http": 64,
+      "source_rows": 128,
+      "core_held": 128,
+      "core_results": 32,
+      "core_input": 341,
+      "pg_window": 128,
+      "pg_retained": 213
+    },
+    "blockers": [
+      "core_results"
+    ],
+    "request_bytes_upper": 393559,
+    "pg_row_bytes_upper": 1255098,
+    "pg_staging_bytes_upper": 204800,
+    "result_bytes_per_task": 1048576,
+    "runtime_supply_proven": false,
+    "backend_client": "existing transport sized to query capacity",
+    "service_running_limit": "external service signature; not equated with client in-flight count"
+  },
+  "new_pg64": {
+    "status": "allowed_by_static_estimate",
+    "configured_capacity": 64,
+    "guaranteed_items": 64,
+    "limits": {
+      "client_http": 64,
+      "source_rows": 128,
+      "core_held": 128,
+      "core_results": 128,
+      "core_input": 341,
+      "pg_window": 128,
+      "pg_retained": 213
+    },
+    "blockers": [],
+    "request_bytes_upper": 393559,
+    "pg_row_bytes_upper": 1255098,
+    "pg_staging_bytes_upper": 204800,
+    "result_bytes_per_task": 1048576,
+    "runtime_supply_proven": false,
+    "backend_client": "existing transport sized to query capacity",
+    "service_running_limit": "external service signature; not equated with client in-flight count"
+  },
+  "explicit_queries": 24,
+  "calculated_fixture_posts": 3072,
+  "actual_http_posts": 0,
+  "real_model_posts": 0
+}

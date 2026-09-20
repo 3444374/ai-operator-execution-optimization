@@ -1,0 +1,114 @@
+{
+  "schema": "semloom.m1_campaign.v2",
+  "description": "128-row fixture schema example only; no real request allocation",
+  "stage": "screening",
+  "split": "tuning",
+  "inputs_root": "/path/to/prepared-inputs",
+  "output_root": "/path/to/new-stage",
+  "model_config": "/path/to/fixed-model.json",
+  "pg_log": "/path/to/isolated-pg.log",
+  "model_id": "fixture",
+  "service_signature": "fixture-only-replace-with-reviewed-machine-model-service-workload-identity",
+  "manifest_sha256": {
+    "tuning": "0000000000000000000000000000000000000000000000000000000000000000",
+    "evaluation": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "resources": {
+    "window": 128,
+    "input_bytes": 134217728,
+    "result_bytes": 134217728,
+    "pg_window_bytes": 268435456,
+    "pg_staging_bytes": 4194304
+  },
+  "groups": [
+    {
+      "id": "pg4",
+      "arm": "pg",
+      "control": "request",
+      "capacity": 4,
+      "event_content": "full"
+    },
+    {
+      "id": "pg16",
+      "arm": "pg",
+      "control": "request",
+      "capacity": 16,
+      "event_content": "full"
+    },
+    {
+      "id": "pg64",
+      "arm": "pg",
+      "control": "request",
+      "capacity": 64,
+      "event_content": "full"
+    },
+    {
+      "id": "direct4",
+      "arm": "pg-source-direct",
+      "control": "request",
+      "capacity": 4,
+      "event_content": "full"
+    },
+    {
+      "id": "direct16",
+      "arm": "pg-source-direct",
+      "control": "request",
+      "capacity": 16,
+      "event_content": "full"
+    },
+    {
+      "id": "direct64",
+      "arm": "pg-source-direct",
+      "control": "request",
+      "capacity": 64,
+      "event_content": "full"
+    }
+  ],
+  "orders": [
+    [
+      "pg4",
+      "pg16",
+      "pg64",
+      "direct4",
+      "direct16",
+      "direct64"
+    ],
+    [
+      "pg16",
+      "pg64",
+      "direct4",
+      "direct16",
+      "direct64",
+      "pg4"
+    ],
+    [
+      "direct64",
+      "direct16",
+      "direct4",
+      "pg64",
+      "pg16",
+      "pg4"
+    ],
+    [
+      "pg64",
+      "direct4",
+      "direct16",
+      "direct64",
+      "pg4",
+      "pg16"
+    ]
+  ],
+  "selection_policy": {
+    "epsilon": 0.03,
+    "max_relative_spread": 0.1,
+    "min_repeats": 3,
+    "supply_level": 0.9,
+    "min_supply_fraction": 0.8,
+    "middle_fraction": 0.6
+  },
+  "max_posts": 3072,
+  "max_seconds": 600,
+  "query_timeout_s": 30,
+  "budget_id": "example-unallocated",
+  "budget_path": "/path/to/existing-stage-budget.sqlite"
+}

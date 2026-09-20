@@ -1,5 +1,12 @@
 # SemLoom Code
 
+M1 experiment selection now separates reachable capacity screening, work tuning and independent
+evaluation. It compares complete throughput against a tuned request-count FIFO and retains negative
+or inconclusive results. [Experiment design](../experiments/plans/data_organization_batching.md#m1-throughput-platform)
+and [local validation](../experiments/results/postgresql/m1_platform_revision_20260920/README.md).
+The old fixed request matrix is retired; real-model execution remains paused.
+
+
 The opt-in image slice adds `ai_semantic.embed(bytea, jsonb) -> real[]` in extension `0.3.0`.
 It reuses the Map carrier, `MethodDriver`, shared Engine and bounded stage broker for CPU preparation
 and Ray model execution. [Image interface](postgres/semloom_pg/README.md#opt-in-image-embedding),

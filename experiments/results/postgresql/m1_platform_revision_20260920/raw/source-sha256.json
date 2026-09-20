@@ -1,0 +1,6 @@
+{
+  "code/src/experiments/postgresql/m1_campaign.py": "4c68e592f6460f5c144ce14a5d91ecdea25ba45eb4e1fdac946e729d405d413b",
+  "code/src/experiments/postgresql/m1_selection.py": "111f632535be6dd44fb198791ce795a24782c7ab828801d21851e1ca5861a2cb",
+  "code/src/experiments/postgresql/m1_measurement.py": "51abdc766f220db7f9bc6fce6e2db3639fae9c6eb0132de913f8c286c9b8b717",
+  "code/tests/experiments/test_m1_campaign.py": "a7f16ffe4f5249788ea6a57e1b178e81fba39177fa2380dc5eeab0bf4a00fd9a"
+}

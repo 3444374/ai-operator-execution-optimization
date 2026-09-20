@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-20：[M1 研究问题与选点调整](../experiments/results/postgresql/m1_platform_revision_20260920/README.md)完成。
+旧 M1 作为测量反例结束，44,544 次表撤下；当前按可达性、容量筛查、工作量调参和独立评价分阶段进行。
+v2 编排拒绝旧配置，复用常驻 gateway/direct，保留实际供给、配对吞吐、质量与资源观测；本地 35 项检查通过。
+本轮没有 PG/HTTP/模型调用，真实运行继续暂停。
+
+
 2026-09-20：[工作包 F 图像接入](../experiments/results/postgresql/image_stages_f_20260920/README.md)完成工程与受控验证。
 扩展 `0.3.0` 显式提供 `ai_semantic.embed(bytea,jsonb)→real[]`，复用 Map carrier、MethodDriver、共享 Engine 与 stage broker；
 schema 5/wire 7 保存图像身份、关联与结果校验，CPU 准备和模型阶段分别保留资源，最终结果发送后释放。
@@ -10,7 +16,7 @@ PG18.3 严格编译、回归 1/1、TAP 2,159 项及 9 组实际 PG/Ray/解码检
 
 2026-09-14：[M1真实运行准备](../experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
 原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
-拟定最多44544次真实POST、单卡、30分钟的运行表与提前停止条件；**实际模型请求仍为0，按用户要求暂缓启动**。
+当时的 44,544 次/30 分钟运行表已于 2026-09-20 撤下；数据与原始准备证据保留，**真实调用仍暂停**。
 PG/HTTP/任务进程已清理，ACL恢复；后续实际调用及真实结果复核尚未完成。
 
 2026-09-14：[常驻服务对照](../experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)完成：24查询/768受控POST，另以旧入口1查询/120次回归，真实模型0次。

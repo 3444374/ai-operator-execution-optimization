@@ -1,5 +1,10 @@
 # 常驻服务下的等待位置与并发选择
 
+2026-09-20 状态说明：本轮作为**已完成的测量反例**保留。后续研究按
+[有效吞吐平台附近的在途工作与资源代价](../../../plans/data_organization_batching.md#m1-throughput-platform)，
+不继续把欠供给下的 HTTP 延迟下降作为优化目标。以下运行设计、结果和当时建议保留历史原文。
+
+
 状态：2026-09-14，受控检查完成。受众：内部研究记录。
 [运行前设计](../../../plans/data_organization_batching.md#m1-persistent)；
 [前两轮结果](../waiting_positions_pilot_20260914/README.md)。研究对象为

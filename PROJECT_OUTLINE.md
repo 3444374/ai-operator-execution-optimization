@@ -19,7 +19,7 @@ PG18.3 回归与实际 Ray/解码验证通过；模型使用明确的 CPU fixtur
 
 下一阶段研究重点是说明“哪些工作现在做、哪些稍后做，以及何时值得这样做”。
 [设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
-先比较完整查询等待和局部/全局信息成本，再决定是否需要阶段资源或多查询策略。有限窗口是控制量，不是预先认定的最佳方法。
+当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
 资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。
 
 2026-09-14：[等待位置小实验](experiments/results/postgresql/waiting_positions_pilot_20260914/README.md)已测量查询专属准备及提交前后的等待。
@@ -27,7 +27,7 @@ PG18.3 回归与实际 Ray/解码验证通过；模型使用明确的 CPU fixtur
 后续[常驻服务对照](experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)已完成：
 一次启动约5.5秒与每查询约14–15毫秒准备分别报告；C8五次都比对应轮次C4快。
 紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
-这些受控检查不代表真实GPU性能或方法贡献；[真实输入与有限请求计划](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)已准备，真实模型对照按用户要求暂缓。
+旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](experiments/plans/data_organization_batching.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施，真实调用继续暂停。
 
 2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_e_20260914/README.md)复用统一计算责任表和查询轮转，
 让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；

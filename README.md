@@ -9,6 +9,9 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
+[当前 M1 研究](experiments/plans/data_organization_batching.md#m1-throughput-platform)调整为有效吞吐平台附近的供给与资源代价；
+旧测量反例保留，固定运行表撤下，真实模型继续暂停。
+
 [图像工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)已完成显式 `bytea→real[]`
 接入、方法行结果与阶段资源的工程检查；真实 PG/Ray/解码验证通过，真实 CLIP 和 GPU 性能尚未验证。
 

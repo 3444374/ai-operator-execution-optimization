@@ -44,9 +44,31 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 
 ## 数据库原始输入与公共查询
 
-常驻真实短查询的有限编排为 `PYTHONPATH=code python -m src.experiments.postgresql.m1_campaign <query-config.json>`。
-调用者提供已运行的隔离PG/模型、已有请求账本和输入；配置样例与上限见[当前准备计划](../../experiments/plans/data_organization_batching.md#m1-real-preparation)。
-本模块不启动模型、不创建额度，也不把计划存在当执行许可。
+M1 的当前入口使用[显式阶段配置示例](../configs/m1_screening.example.json)，先执行只读检查：
+
+```sh
+PYTHONPATH=code python -m src.experiments.postgresql.m1_campaign /path/to/stage.json --preflight
+```
+
+示例仅演示 128 行 fixture、6 组×4 轮的结构；数字不是下一轮真实配置或额度。缺少真实文件时拒绝，
+不能原样执行。替换输入 manifest SHA 后，`max_posts` 必须等于该 split 行数×组数×轮次（含预热）；
+所有组使用同一 `resources`，`orders` 每轮必须各包含全部组一次，判定参数在 `selection_policy` 中显式给出。
+`screening` 只做请求数和路径筛查；`strategy-tuning` 单独调 W；`evaluation` 使用独立输入；
+`observation` 才允许混合日志模式。旧无 schema 的 44,544 次矩阵在访问 PG 前被拒绝。
+
+token 组另提供 `work_limit`；顶层提供固定 `context_tokens`、`model_revision`、`tokenizer_path`、
+`tokenizer_fingerprint` 及各 split 的 `work_sha256`。分词身份与预计算 work 来自既有准备，预检不加载模型。
+非筛查阶段给出 `reference_group`；工作量调参对请求数参照，所有 token 组保持同一保护 C。
+调参另需 `screening_source`/`screening_sha256` 指向已完成的同签名、同存储筛查报告；PG 须有平台候选，
+请求数参照采用其选定 C，token 的保护 C 来自该筛查，并同时保留该 C 的 request 对照。
+独立评价/观测还要求 `selection_source` 与 `selection_sha256`，指向调参后审阅保存的 JSON：
+`status=ready_for_independent_evaluation`，其 `evaluation_design` 完整包含选定 `groups`、`resources`、
+`selection_policy`、`service_signature`、`manifest_sha256`。保留调参报告引用和选择理由；不从评价结果生成该文件。
+
+真实恢复时才去掉 `--preflight`。调用者提供已运行的隔离 PG/模型、已有且未使用的阶段账本、有限期限和外部进程监督；
+本模块不启动服务、不初始化额度。它检查账本剩余期限不超过声明阶段时长，每查询仍有期限；
+外部监督负责卡在准备或清理中的进程。阶段结束不启动下一阶段，失败保留证据且不重试。
+[研究问题、选点与解释规则](../../experiments/plans/data_organization_batching.md#m1-throughput-platform)。
 
 
 `experiments/database_queries.py`提供`prepare-movie`、`prepare-squad`、`install`、`run`。

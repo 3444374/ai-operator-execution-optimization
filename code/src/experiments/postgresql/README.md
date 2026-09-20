@@ -53,8 +53,17 @@ Actual request-value hashes, producer row associations, output hashes and logica
 remain checked. Organization candidate/group reconstruction is explicitly unavailable in this mode;
 a matched full-observation query supplies that diagnosis. PG stage tracing is a separate query option.
 `movie_partition.py` excludes earlier Movie inputs and selects new movie-disjoint tuning/evaluation
-partitions by deterministic hashes. `m1_campaign.py` implements the finite request schedule and
-stops before evaluation when the selected capacity cannot trigger the declared work limit.
+partitions by deterministic hashes. `m1_campaign.py` now requires an explicit v2 stage, shared
+resources, paired run orders and exact stage POST allocation. Legacy fixed matrices are rejected.
+Its offline preflight checks Core response reservations, input bytes and conservative PG retained/staging
+estimates before database access. `m1_selection.py` uses complete throughput, sustained HTTP supply and
+all paired repeats to report a provisional platform or an explicit inconclusive result. These observed
+ranges are not confidence intervals. `m1_measurement.py` reports per-domain residence integrals,
+model-reported token usage and output-value differences without counting reserved bytes as physical RSS.
+Screening reuses `PersistentMapGateway` and the existing PG-source direct runner, then stops;
+work tuning and independent evaluation require separate explicit schedules. Direct includes SQL reading
+and client setup, so it is not a pure service ceiling. Evaluation settings must match a SHA-identified
+tuning decision. [Current M1 design](../../../../experiments/plans/data_organization_batching.md#m1-throughput-platform).
 
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the

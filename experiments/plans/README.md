@@ -6,9 +6,10 @@
 
 更新日期：2026-09-20
 
-近期按[设计假设与强对照](data_organization_batching.md#design-hypotheses)：
-检验控制是否改善完整查询、有限候选是否比全局元数据更划算，再据结果选择阶段表示或多查询实验。
-M1已完成[常驻服务与并发选择检查](../results/postgresql/waiting_positions_persistent_20260914/README.md)，[真实输入与运行表](../results/postgresql/waiting_positions_real_preparation_20260914/README.md)已准备；真实调用按用户要求暂缓。
+近期按[新 M1](data_organization_batching.md#m1-throughput-platform)研究有效吞吐平台附近的在途工作与资源代价：
+先核对可达供给，匹配 direct/PG 筛查，再比较调优请求数与工作量控制。全局信息归 M2，多查询分配另按自身资格推进。
+[旧常驻对照](../results/postgresql/waiting_positions_persistent_20260914/README.md)作为已完成的指标反例保留；
+[真实输入准备](../results/postgresql/waiting_positions_real_preparation_20260914/README.md)继续使用，旧 44,544 次表已撤下，真实调用暂停。
 E 的既定工程范围已完成；[F 图像接入](data_organization_batching.md#work-package-f)也已完成工程与受控验证，真实 CLIP 仍未运行。
 已有执行与测量能力继续复用；旧正式矩阵不自动恢复，新实验仍需具体输入、预算与授权。
 
