@@ -7,7 +7,7 @@
 - 原控制器因最后扫描记录PID301008而返回失败，耗时505.869秒。该PID未保存命令信息；随后只读核对时已不存在，服务/PG/gateway/端口/GPU均已清理，原告警不覆盖。
 - PG/direct均为持续供给不足，未选出平台候选；没有启动第二验证单元、W调参、评价或图像阶段。
 - 本轮Linux provider79项中70通过、9项环境跳过。生产源码保持7d585615；容量扫描和异常记录已有的受控证据保留，本轮只新增复查结果与状态同步。
-- [完整记录](experiments/results/postgresql/m1_full_recheck_20260920/README.md)及7份gzip/字节SHA清单；通过提交检查后，将容量扫描修复、诊断改动和完整证据合入main并推送。
+- [完整记录](experiments/results/postgresql/m1_full_recheck_20260920/README.md)及7份gzip/字节SHA清单；通过提交检查后，将容量扫描修复、诊断改动和完整证据合入main并推送；现行状态表同步为本轮结果。
 
 ## 2026-09-20：C64异常记录与有限复测
 
