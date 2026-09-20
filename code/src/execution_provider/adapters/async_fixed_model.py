@@ -3,6 +3,7 @@
 import asyncio
 import json
 from dataclasses import asdict
+from pathlib import Path
 
 
 class AsyncFixedModelTransport:
@@ -13,6 +14,31 @@ class AsyncFixedModelTransport:
         self._client = None
 
     async def execute(self, request, endpoint):
+        try:
+            return await self._execute(request, endpoint)
+        except BaseException as error:
+            if self._observer:
+                kind = lambda value: (type(value).__module__ + '.' + type(value).__name__)[:160]
+                causes, seen, cause = [], {id(error)}, error.__cause__ or error.__context__
+                while cause is not None and id(cause) not in seen and len(causes) < 4:
+                    causes.append(kind(cause))
+                    seen.add(id(cause))
+                    cause = cause.__cause__ or cause.__context__
+                reason = {'exception_type': kind(error), 'cause_types': causes}
+                trace = error.__traceback__
+                if trace is not None:
+                    while trace.tb_next is not None:
+                        trace = trace.tb_next
+                    reason['origin'] = {'file': Path(trace.tb_frame.f_code.co_filename).name[:128],
+                                        'function': trace.tb_frame.f_code.co_name[:128],
+                                        'line': trace.tb_lineno}
+                try:
+                    self._observer({'event': 'http_error', 'key': asdict(request.key), 'reason': reason})
+                except Exception:
+                    pass  # A failed diagnostic must not replace the execution error.
+            raise
+
+    async def _execute(self, request, endpoint):
         import httpx
 
         if endpoint != "model":

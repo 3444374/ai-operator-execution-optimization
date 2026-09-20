@@ -1,0 +1,47 @@
+{
+  "format": "gzip with byte-verified decompression",
+  "files": {
+    "run-summary.json.gz": {
+      "bytes": 52786,
+      "sha256": "66a5ee1704b59ec220d3a90c90ee3aa0835b52d598c40945d984644a02432281",
+      "uncompressed_bytes": 159883,
+      "uncompressed_sha256": "150c5d7bbb3a6214cb408c1bdced409299d649c5400c99218264d361be343c23"
+    },
+    "completed-queries.json.gz": {
+      "bytes": 147182,
+      "sha256": "4cf744e1c57ae54b061dc59cb5fea45576f0c276a97b1f89fd4a84d3f7b03a3c",
+      "uncompressed_bytes": 1397520,
+      "uncompressed_sha256": "795a1746dcaf853f733971c41549de9354427bb8d138b21de682e37dcce53bb8"
+    },
+    "events.jsonl.gz": {
+      "bytes": 926624,
+      "sha256": "fe653127e663452271bf33c6a1fe868389e849bc93803b55915bffc1609ee0b7",
+      "uncompressed_bytes": 6908069,
+      "uncompressed_sha256": "bc31bcffb20448daa2000a7bc2bfc408957a0d3acb18f68c1aa73dad2f0d76a1"
+    },
+    "event-counts.json.gz": {
+      "bytes": 230,
+      "sha256": "6d1f01db0e832338faed1fd8d2d903cd9e6dbff7cd8cec9c8201dac3518d94b2",
+      "uncompressed_bytes": 1133,
+      "uncompressed_sha256": "01399cc5ef3a7146680666462c03b69990ad15c6d4eee3fc8d55d7ef5d8bd800"
+    },
+    "service-observations.json.gz": {
+      "bytes": 85488,
+      "sha256": "98353201e0a7b97f280b90a3cbffdc512e2d6cb828eca52741fdffe27e2fddcc",
+      "uncompressed_bytes": 1872996,
+      "uncompressed_sha256": "ec5234a5581f24e4951364bd0e4baa7406110cd34b355594c3478d426f39800e"
+    },
+    "checks-and-service-logs.json.gz": {
+      "bytes": 15469,
+      "sha256": "620040ec3df3f4fb2ba74c445590429d0bf53f8c912f648e6c2d4231271abd90",
+      "uncompressed_bytes": 354234,
+      "uncompressed_sha256": "af380b9851c5400623759124ff04f9cbec8f5494e1787fec2f25d8d0d6951d53"
+    },
+    "source-record.json.gz": {
+      "bytes": 55205,
+      "sha256": "86aec0d2efd8ae01fac68811f4e62da856856e2739b11e7e814f73effe50369e",
+      "uncompressed_bytes": 148567,
+      "uncompressed_sha256": "4e19e51f1d5b1200c522d385877ab91da3c6a0f9941f9623843fde58f3265adc"
+    }
+  }
+}
