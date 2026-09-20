@@ -4,7 +4,8 @@ M1 experiment selection now separates reachable capacity screening, work tuning 
 evaluation. It compares complete throughput against a tuned request-count FIFO and retains negative
 or inconclusive results. [Experiment design](../experiments/plans/data_organization_batching.md#m1-throughput-platform)
 and [local validation](../experiments/results/postgresql/m1_platform_revision_20260920/README.md).
-The old fixed request matrix is retired. The [finite real trial](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md) completed 8,248 text POSTs; screening found no platform candidate. Experimental PG-source M2 controls now include paid global metadata and explicit reuse, with no stable performance advantage established.
+The old fixed request matrix is retired. The [prior finite real trial](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md) completed 8,248 text POSTs; screening found no platform candidate. Experimental PG-source M2 controls now include paid global metadata and explicit reuse, with no stable performance advantage established.
+The [M1 follow-up](../experiments/results/postgresql/m1_supply_followup_20260920/README.md) fixes repeated capacity summation in read-only scans, but real C64 screening stopped on two uncertain executions. The branch remains unmerged; 1,552 pre-send attempts and 1,550 server successes are retained separately.
 
 
 The opt-in image slice adds `ai_semantic.embed(bytea, jsonb) -> real[]` in extension `0.3.0`.
@@ -45,6 +46,12 @@ The incremental adapter decodes settled backend results separately from delivery
 Capacity refusals retain the selected member identity and recheck existing compute capacity;
 released capacity can resume dispatch immediately, while backend/endpoint refusals retain their retry deadline.
 [Linux and selected PG validation](../experiments/results/scheduling/capacity_wait_server_20260914/README.md).
+
+Read-only candidate eligibility and progress scans now share derived global/Job/session usage
+within each call. Every subsequent scan and actual dispatch reads the authoritative task table
+again, so completions, cancellation and release do not depend on a cached counter ledger.
+This removes repeated full-table summation for each queued candidate. The owner-tick regression
+also checks that a newly freed request slot immediately admits the next FIFO member.
 Queue, backend and consumer deadlines can be set independently with `SessionTimeouts`; the gateway
 leaves queue/consumer phase deadlines to PG and socket lifecycle by default. Callers that omit the
 phase policy retain the legacy `wait_timeout_s` behavior.

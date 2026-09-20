@@ -1,5 +1,7 @@
 # M1、M2 与 F 的有限真实验证（2026-09-20）
 
+后续：[M1供给复查](../m1_supply_followup_20260920/README.md)完成受控CPU修复，但新一轮真实C64筛查失败并中止；下文保留前次身份和全部结果。
+
 本轮执行[预先声明的清单](../../../plans/data_organization_batching.md#m1-m2-f-real-trial)，
 研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 **文本实际 8,248 次 POST，图像实际 151 次前向；全部调用按账本完成，无真实失败重跑。**

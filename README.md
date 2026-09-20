@@ -10,7 +10,8 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
 [当前 M1 研究](experiments/plans/data_organization_batching.md#m1-throughput-platform)调整为有效吞吐平台附近的供给与资源代价；
-[本轮真实检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)已完成：M1未取得平台候选，M2完成五种信息条件的实验层对照，尚未支持稳定收益。
+[前轮真实检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)已完成：M1未取得平台候选，M2完成五种信息条件的实验层对照，尚未支持稳定收益。
+[最新M1复测](experiments/results/postgresql/m1_supply_followup_20260920/README.md)修复了重复容量汇总开销，但真实C64查询失败后停止；修复与证据仍在分支，未合入main。
 
 [图像工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)已完成显式 `bytea→real[]`
 接入、方法行结果与阶段资源的工程检查；后续151次真实CLIP前向通过数值与指定生命周期检查，GPU计算中故障与匹配性能仍待验证。

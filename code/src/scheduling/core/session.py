@@ -202,6 +202,7 @@ class SessionEngine:
                     for r in records
                 )
                 continue
+            candidates = []
             for record in records:
                 duration = session.limits.phase_timeout(record.phase)
                 if duration is not None:
@@ -210,12 +211,12 @@ class SessionEngine:
                 if record.phase != "QUEUED":
                     continue
                 queued = True
-                if not session._dispatch_enabled:
-                    continue
+                candidates.append(record)
+            if candidates and session._dispatch_enabled:
                 if now < session._retry_at:
                     deadlines.append(session._retry_at)
                 elif (not self.error and session._capacity_ready()
-                      and self.capacity.can_dispatch(record, session.limits)):
+                      and self.capacity.any_dispatchable(candidates, session.limits)):
                     immediate = True
         remote = any(r.compute for r in self.capacity.records.values())
         if remote or queued:
@@ -239,9 +240,8 @@ class SessionEngine:
             ):
                 continue
             records = session._records()
-            if any(
-                r.phase == "QUEUED" and self.capacity.can_dispatch(r, session.limits)
-                for r in records
+            if self.capacity.any_dispatchable(
+                (r for r in records if r.phase == "QUEUED"), session.limits
             ):
                 ready.setdefault(session.spec.job_id, []).append(session.session_id)
             elif self.observe_capacity_blocks:
@@ -805,7 +805,7 @@ class SchedulingSession:
                 and now >= self._retry_at
                 and self._capacity_ready()
                 # A reordered member can fit even when the input-order head cannot.
-                and any(self.engine.capacity.can_dispatch(r, self.limits) for r in queued)
+                and self.engine.capacity.any_dispatchable(queued, self.limits)
             )
         )
         if self.state == State.DRAINING and not records:

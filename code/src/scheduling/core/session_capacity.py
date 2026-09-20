@@ -62,15 +62,26 @@ class SessionCapacity:
         return None
 
     def can_dispatch(self, record: TaskRecord, limits: SessionLimits) -> bool:
-        bounds = [(self.usage(), self.limits), (self.usage(record.key.session_id), limits)]
-        if record.spec.job_id in self.job_limits:
-            bounds.append(
-                (self.usage(job_id=record.spec.job_id), self.job_limits[record.spec.job_id])
-            )
-        for usage, bound in bounds:
-            if (
-                usage.active_requests >= bound.active_requests
-                or usage.active_work + record.task.estimated_work > bound.active_work
-            ):
-                return False
-        return True
+        return self.any_dispatchable((record,), limits)
+
+    def any_dispatchable(self, records, limits: SessionLimits) -> bool:
+        """One read-only candidate scan; reuse derived usage only within this call.
+
+        The owner cannot mutate task state during this scan. No summary survives
+        a return, submission, terminal, cancellation or subsequent owner tick.
+        """
+        global_bound = (self.usage(), self.limits)
+        scoped = {}
+        for record in records:
+            key = (record.key.session_id, record.spec.job_id)
+            if key not in scoped:
+                bounds = [global_bound, (self.usage(record.key.session_id), limits)]
+                if record.spec.job_id in self.job_limits:
+                    bounds.append((self.usage(job_id=record.spec.job_id),
+                                   self.job_limits[record.spec.job_id]))
+                scoped[key] = bounds
+            if all(usage.active_requests < bound.active_requests
+                   and usage.active_work + record.task.estimated_work <= bound.active_work
+                   for usage, bound in scoped[key]):
+                return True
+        return False

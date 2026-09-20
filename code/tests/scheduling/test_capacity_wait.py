@@ -1,6 +1,7 @@
 """Drive real owner loops with heterogeneous FIFO work and a deterministic clock."""
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import Acceptance, SessionSpec, TaskKey
@@ -9,6 +10,29 @@ from tests.scheduling.test_incremental_session import setup, task
 
 
 class CapacityWaitTests(unittest.TestCase):
+    def test_blocked_owner_tick_does_not_rescan_usage_for_each_queued_row(self):
+        template, _, backend, clock = setup(
+            held_tasks=128, input_bytes=512, result_bytes=512,
+            active_requests=4, active_work=4, offer_tasks=128)
+        engine = SessionEngine(template.capacity.limits, backend, template.policies, clock=clock)
+        job = engine.register_job('job', JobBudget(128, 512, 512, 4, 4))
+        session = engine.open(SessionSpec(job.job_id, 'flow', 'fixture'), job=job)
+        session.offer([task(i) for i in range(128)])
+        engine.advance()
+        self.assertEqual(len(backend.pending), 4)
+        with patch.object(engine.capacity, 'usage', wraps=engine.capacity.usage) as usage:
+            progress = engine.advance()
+            delivery = session.advance(1)
+        self.assertFalse(progress.has_immediate_work)
+        self.assertFalse(delivery.has_immediate_work)
+        self.assertEqual(progress.blocked_reason, 'WAIT_BACKEND')
+        # At most a fixed set of global/Job/session summaries per read-only
+        # eligibility/progress scan, independent of the 124 queued candidates.
+        self.assertLessEqual(usage.call_count, 12)
+        backend.complete(TaskKey(session.session_id, 0))
+        engine.advance()
+        self.assertIn(TaskKey(session.session_id, 4), backend.pending)
+
     def make_case(self, registered, organized=False):
         original, _, backend, clock = setup(
             held_tasks=4, input_bytes=16, result_bytes=16,

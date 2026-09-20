@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-20：[M1供给复查](../experiments/results/postgresql/m1_supply_followup_20260920/README.md)已完成容量扫描开销定位和受控修复，真实筛查在C64预热时中止。
+原128行fixture的PG查询约22–26秒，完整修复后约2.1–2.25秒；派生使用量只在一次只读扫描内复用。
+Linux调度386项、图像81项通过；provider76项中9项环境跳过，另2项实际PG/HTTP集成通过。
+真实账本1,552次尝试、服务端成功1,550次；两项执行异常归为MODEL_UNAVAILABLE，具体异常类型缺失。
+443行保持临时结果；测试服务/端口/GPU进程清理、ACL恢复，无自动重跑。
+修复与证据保存在 `codex/m1-supply-followup`，本次不合入main；M1尚未完成选点及后续条件阶段。
+
 2026-09-20：[M1、M2 与 F 有限真实验证](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md)完成本轮清单。
 文本8,248次POST与服务日志/counter一致；M1三种容量均未取得平台候选，后续调参/评价/观测对照未运行。
 M2五种PG源信息方式完成正确性与1+3轮评价，固定C4仅作功能参照，未支持稳定优势；全局规划尚未接入SemMap。
