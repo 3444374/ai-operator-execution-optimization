@@ -89,11 +89,19 @@ def l2_normalize_numpy_embeddings(
 class ClipImagePreprocessor:
     """CPU-only encoded-image to contiguous CLIP pixel tensor adapter."""
 
-    def __init__(self, processor_revision: str):
+    def __init__(self, processor_revision: str, *, revision: str | None = None,
+                 local_files_only: bool = False):
+        if revision is not None and os.path.exists(processor_revision):
+            raise ValueError("a revision-pinned processor requires a repository identifier")
         from transformers import CLIPProcessor
 
         self.processor_revision = processor_revision
-        self.processor = CLIPProcessor.from_pretrained(processor_revision)
+        loading = {}
+        if revision is not None:
+            loading["revision"] = revision
+        if local_files_only:
+            loading["local_files_only"] = True
+        self.processor = CLIPProcessor.from_pretrained(processor_revision, **loading)
 
     def preprocess(self, encoded_images: Sequence[bytes]) -> np.ndarray:
         if not encoded_images:
@@ -179,7 +187,12 @@ class ClipTensorActor:
         detailed_stage_timing: bool = False,
         torch_intraop_threads: int | None = None,
         torch_interop_threads: int | None = None,
+        model_commit: str | None = None,
+        processor_commit: str | None = None,
+        local_files_only: bool = False,
     ) -> None:
+        if model_commit is not None and os.path.exists(model_revision):
+            raise ValueError("a revision-pinned model requires a repository identifier")
         if (torch_intraop_threads is None) != (torch_interop_threads is None):
             raise ValueError("set both Torch thread counts or leave both unset")
         if torch_intraop_threads is not None and torch_interop_threads is not None:
@@ -202,12 +215,17 @@ class ClipTensorActor:
         self._dtype = dtype_by_name[dtype]
         self._normalize = normalize
         self._detailed_stage_timing = detailed_stage_timing
-        self._model = CLIPModel.from_pretrained(model_revision).eval()
+        loading = {}
+        if model_commit is not None:
+            loading["revision"] = model_commit
+        if local_files_only:
+            loading["local_files_only"] = True
+        self._model = CLIPModel.from_pretrained(model_revision, **loading).eval()
         self._model = self._model.to(device=device, dtype=self._dtype)
         projection_dim = int(self._model.config.projection_dim)
         self.semantics = EmbeddingSemantics(
-            model_revision=model_revision,
-            processor_revision=processor_revision or model_revision,
+            model_revision=model_commit or model_revision,
+            processor_revision=processor_commit or processor_revision or model_revision,
             dimension=projection_dim,
             dtype="float32",
             projected=True,
@@ -224,6 +242,11 @@ class ClipTensorActor:
             "torch_intraop_threads": self._torch.get_num_threads(),
             "torch_interop_threads": self._torch.get_num_interop_threads(),
         }
+
+    def synchronize(self) -> None:
+        """Confirm device work has ended, including after a model exception."""
+        if self._device.startswith("cuda"):
+            self._torch.cuda.synchronize(self._device)
 
     def embed(self, batch: ImageEmbeddingBatch) -> ImageEmbeddingResult:
         if batch.input_kind != self.input_kind:

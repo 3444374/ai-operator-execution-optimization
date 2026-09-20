@@ -1,0 +1,23 @@
+{
+  "plan": {
+    "model_id": "openai/clip-vit-base-patch32",
+    "model_revision": "<40 lowercase hexadecimal characters>",
+    "processor_id": "openai/clip-vit-base-patch32",
+    "processor_revision": "<40 lowercase hexadecimal characters>",
+    "dtype": "float32",
+    "dimension": 512,
+    "input_size": 224
+  },
+  "mode": "staged",
+  "stage_limits": {
+    "encoded_bytes": 524288,
+    "ready_bytes": 1204224,
+    "ready_work": 100352,
+    "prepare_inflight": 1,
+    "model_inflight": 1
+  },
+  "cpu_workers": 1,
+  "gpu_workers": 1,
+  "cpu_threads": 1,
+  "timeout_ms": 120000
+}

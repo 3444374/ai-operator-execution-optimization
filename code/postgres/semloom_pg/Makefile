@@ -18,6 +18,9 @@ OBJS = \
 	src/semantics/sem_operator_machine.o \
 	src/semantics/sem_text.o \
 	src/semantics/semantic_map_contract.o \
+	src/semantics/semantic_image_contract.o \
+	src/semantics/image_identity.o \
+	src/planner/sem_image_plan.o \
 	src/planner/sem_plan_spec.o \
 	src/planner/sem_path_common.o \
 	src/planner/semantic_call.o \
@@ -35,11 +38,14 @@ OBJS = \
 	src/executor/pg_query_job.o \
 	src/provider/wire/wire_common.o \
 	src/provider/wire/wire_semantic.o \
+	src/provider/wire/wire_image.o \
 	src/provider/wire/wire_v2.o \
 	src/provider/wire/wire_v3.o \
 	src/provider/wire/wire_v4.o
 
 DATA = sql/semloom_pg--0.1.0.sql \
+	sql/semloom_pg--0.3.0.sql \
+	sql/semloom_pg--0.2.0--0.3.0.sql \
 	sql/semloom_pg--0.2.0.sql \
 	sql/semloom_pg--0.1.0--0.2.0.sql
 REGRESS = semloom_pg

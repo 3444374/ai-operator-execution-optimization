@@ -1,0 +1,10 @@
+{
+  "matched_files": 777,
+  "mismatches": [],
+  "runtime_changes_since_tested_snapshot": [],
+  "new_static_files_since_tested_snapshot": [
+    "code/configs/image_provider.example.json"
+  ],
+  "pg_sources_match_build_snapshot": true,
+  "extension_sha256": "0a350bb2931fe73bd487c2edabf7071ab94811a73bf6478a110c5c8b0b68fec6"
+}

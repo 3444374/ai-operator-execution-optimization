@@ -14,6 +14,7 @@
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
 | 近期数据执行研究 | [设计假设与强对照](experiments/plans/data_organization_batching.md#design-hypotheses) | 设计选择、已知证据、有限模型与可否定的实验；先准备等待位置/全局元数据对照，再按需扩展 |
 | 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](experiments/results/postgresql/map_organization_20260910/README.md) |
+| PG 图像类型与阶段执行 | [工作包 F 记录](experiments/results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，真实 CLIP 尚未运行 |
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |

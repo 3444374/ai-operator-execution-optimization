@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-14
+更新时间：2026-09-20
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -11,6 +11,11 @@
 只供追溯，不覆盖当前执行顺序。
 
 ## 0. 当前优先级与历史记录范围
+
+2026-09-20：[最后一个工程工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)
+已完成图像类型、同步 reference、MethodDriver 行结果及 CPU/model 阶段接入的受控检查。
+PG18.3 回归与实际 Ray/解码验证通过；模型使用明确的 CPU fixture，真实 CLIP 数值、GPU 故障及性能尚未验证。
+真实模型运行继续暂停，已有工程能力不直接作为方法贡献。
 
 下一阶段研究重点是说明“哪些工作现在做、哪些稍后做，以及何时值得这样做”。
 [设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：

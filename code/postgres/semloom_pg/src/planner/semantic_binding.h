@@ -25,6 +25,8 @@ extern SemloomTupleBinding *semloom_binding_projected(List *fields,
 /* Only old carriers may overwrite input; they retain the original tuple layout. */
 extern SemloomTupleBinding *semloom_binding_legacy(AttrNumber input_column,
 	bool produces_result, TupleDesc child, TupleDesc scan);
+extern SemloomTupleBinding *semloom_binding_image(AttrNumber input_column,
+	TupleDesc child, TupleDesc scan);
 extern void semloom_binding_store(const SemloomTupleBinding *binding,
 	TupleTableSlot *child, TupleTableSlot *scan);
 

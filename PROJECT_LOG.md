@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-09-20：工作包 F 图像类型与阶段执行
+
+- 用户确认继续最后一个工作包 F，并允许在服务器完成受控测试；真实模型暂停要求保持有效。
+- 新增显式扩展 `0.3.0` 的 `ai_semantic.embed(bytea,jsonb)→real[]`、图像 schema 5 与 wire 7；默认仍为 `0.2.0`，旧接口与权限保留。
+- 复用 PG Map carrier、MethodDriver、MethodBudgetPool、共享 Engine 和 stage broker；方法结果发送后释放，CPU/model 阶段与未知远端责任分别处理。
+- PG18.3 严格编译、回归 1/1、19 个 TAP 文件共 2,159 项及 9 组实际 PG/Ray/图像解码检查通过。
+  本地/Linux 各完成 provider 76、图像 81、PG 116、方法/阶段 18 项检查；跳过项与服务器单独集成在报告中区分。
+- 修复方法已关闭会话后的重复 `fail`，并验证慢发送保持方法预留、其他查询仍可执行；启动和 fixture 失败记录保留。
+- 真实模型 0 次、Ray GPU 资源 0；测试 PG/Ray/任务进程已停止，临时 ACL 恢复，两张 GPU 均空闲。
+- [完整实现、证据与未验证范围](experiments/results/postgresql/image_stages_f_20260920/README.md)。真实 CLIP 数值、GPU 故障与性能仍需后续独立验证。
+
 ## 2026-09-14：暂缓M1真实模型调用
 
 - 用户明确要求暂时不启动真实模型；当前真实请求0次，运行配置仍未启用。

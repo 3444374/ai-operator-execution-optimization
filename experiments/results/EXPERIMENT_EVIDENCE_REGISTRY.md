@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-09-20：[工作包 F 图像接入](postgresql/image_stages_f_20260920/README.md)完成类型、同步 reference 和有界阶段的工程检查。
+`ai_semantic.embed(bytea,jsonb)→real[]` 使用独立 schema 5/wire 7，复用 MethodDriver、共享 Engine 与阶段资源管理。
+PG18.3 编译、回归 1/1、TAP 2,159 项及最终 9 组 PG/Ray/解码检查通过；17 个 Job 回收，方法与 Core 责任分别核对。
+保留启动路径、fixture 预期及已关闭会话重复失败的记录；最后一次集成全部通过，服务器测试资源与 ACL 已清理。
+真实模型 0 次，CPU 模型 fixture 不构成真实 CLIP 数值、GPU 或性能证据。
+
 2026-09-14：[M1真实运行准备](postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
 原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
 拟定最多44544次真实POST、单卡、30分钟的运行表与提前停止条件；**实际模型请求仍为0，按用户要求暂缓启动**。

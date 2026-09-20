@@ -1,5 +1,12 @@
 # SemLoom Code
 
+The opt-in image slice adds `ai_semantic.embed(bytea, jsonb) -> real[]` in extension `0.3.0`.
+It reuses the Map carrier, `MethodDriver`, shared Engine and bounded stage broker for CPU preparation
+and Ray model execution. [Image interface](postgres/semloom_pg/README.md#opt-in-image-embedding),
+[CLI](scripts/README.md#图像-provider), and
+[controlled evidence](../experiments/results/postgresql/image_stages_f_20260920/README.md)
+separate verified PG/Ray/decoder behavior from real CLIP and GPU validation still pending.
+
 Database-source comparison entries now read immutable raw PG columns for direct/Ray Map and original
 SemBench LOTUS queries. Opt-in predicate prefetch and plain Filter COUNT keep PostgreSQL's ordinary
 plan and query lifecycle. [Usage](scripts/README.md#数据库原始输入与公共查询) and

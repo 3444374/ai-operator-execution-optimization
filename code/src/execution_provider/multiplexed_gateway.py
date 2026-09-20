@@ -254,6 +254,49 @@ class MultiSessionMapGateway:
     def execution_id_for(self, version):
         return v6.EXECUTION_ID if version == 6 else None
 
+    def validate_opening_message(self, opened):
+        """A typed specialization may reject protocols before Job allocation."""
+
+    def standalone_spec(self):
+        return SessionSpec("registered", "map", "fixed-chat", work_unit=self.execution.work_unit)
+
+    def make_connection(self, connection, mailbox, job, limits):
+        return MapConnection(self, connection, mailbox, job, limits)
+
+    def run_connection_protocol(self, state, adapter, connection, opened, handler):
+        mailbox = state.mailbox
+        if state.registration is not None and opened.get("protocol_version") == 3:
+            completion = SharedCompletion(adapter)
+            mailbox.clean = bool(
+                handler(connection, open_message=opened, completion_adapter=completion)
+            )
+        else:
+            def incremental(conn, first):
+                mailbox.clean = bool(adapter.run_incremental(conn, first))
+
+            handler(connection, open_message=opened, incremental_handler=incremental)
+
+    def session_command(self, state, operation, args):
+        session = state.mailbox.session
+        if operation == "offer":
+            pending = args[0]
+            task = self.execution.prepare_task(pending.request, pending.sequence)
+            result = session.offer((task,))
+            self.observe({"event": "offer", "key": asdict(TaskKey(session.session_id, task.sequence)),
+                          "status": result.status, "reason": result.reason,
+                          "accepted_prefix_count": result.accepted_prefix_count,
+                          "usage": asdict(self.engine.capacity.usage())})
+            return result
+        if operation == "advance":
+            session.set_dispatch_enabled(True)
+            return replace(session.advance(1), generation=self.progress.generation)
+        if operation == "release":
+            return session.release(args[0])
+        raise ValueError("unknown owner command")
+
+    def before_connection_release(self, state):
+        """Typed row adapters release their local consumers after the sender stops."""
+
     def observe(self, event):
         if self._observer:
             with self._observer_lock:
@@ -282,6 +325,7 @@ class MultiSessionMapGateway:
             opened = read_frame(connection)
             if opened is None:
                 return
+            self.validate_opening_message(opened)
             kind = opened.get("type")
             if kind in ("query_open", "stream_join"):
                 validate_registration(opened)
@@ -302,18 +346,8 @@ class MultiSessionMapGateway:
             if state.registration is not None:
                 connection = RegisteredStream(connection)
             session = mailbox.session
-            adapter = MapConnection(self, connection, mailbox, state.job, session.limits)
-            if state.registration is not None and opened.get("protocol_version") == 3:
-                completion = SharedCompletion(adapter)
-                mailbox.clean = bool(
-                    handler(connection, open_message=opened, completion_adapter=completion)
-                )
-            else:
-
-                def incremental(conn, first):
-                    mailbox.clean = bool(adapter.run_incremental(conn, first))
-
-                handler(connection, open_message=opened, incremental_handler=incremental)
+            adapter = self.make_connection(connection, mailbox, state.job, session.limits)
+            self.run_connection_protocol(state, adapter, connection, opened, handler)
         except QueryRegistrationError as failure:
             try:
                 connection.sendall(
@@ -380,7 +414,7 @@ class MultiSessionMapGateway:
         else:
             job, session, budget = self.execution.open_job(
                 "pg-connection",
-                SessionSpec("registered", "map", "fixed-chat", work_unit=self.execution.work_unit),
+                self.standalone_spec(),
             )
             state.job, mailbox.session = job, session
             session.set_dispatch_enabled(False)
@@ -414,23 +448,10 @@ class MultiSessionMapGateway:
                     elif operation == "query_open" and not self.queries.has_job_room():
                         raise ValueError("Job capacity exhausted")
                     result = self._register(state, operation, args)
-                elif operation == "offer":
-                    pending = args[0]
-                    task = self.execution.prepare_task(pending.request, pending.sequence)
-                    result = session.offer((task,))
-                    self.observe({"event": "offer", "key": asdict(TaskKey(session.session_id, task.sequence)),
-                                  "status": result.status, "reason": result.reason,
-                                  "accepted_prefix_count": result.accepted_prefix_count,
-                                  "usage": asdict(self.engine.capacity.usage())})
-                elif operation == "advance":
-                    session.set_dispatch_enabled(True)
-                    result = replace(session.advance(1), generation=self.progress.generation)
-                elif operation == "release":
-                    result = session.release(args[0])
                 else:
-                    raise ValueError("unknown owner command")
+                    result = self.session_command(state, operation, args)
             except Exception:
-                if session is not None:
+                if session is not None and session.state not in (State.FINISHED, State.FAILED, State.CANCELLED):
                     session.fail("owner command failed")
                 # Do not retain traceback frames or arbitrary policy exception payloads in replies.
                 if operation in ("query_open", "stream_join"):
@@ -469,6 +490,7 @@ class MultiSessionMapGateway:
             if not mailbox.done.is_set():
                 continue
             state.worker.join()
+            self.before_connection_release(state)
             self.queries.connection_ended(
                 state.job,
                 state.registration,

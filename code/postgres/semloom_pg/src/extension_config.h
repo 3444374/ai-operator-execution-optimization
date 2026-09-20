@@ -8,6 +8,8 @@ typedef enum SemloomProviderExecutionProfile
 	SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED = 1,
 	SEMLOOM_PROVIDER_PROFILE_QUERY_JOB = 4,
 	SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP = 3,
+	SEMLOOM_PROVIDER_PROFILE_IMAGE_REFERENCE = 5,
+	SEMLOOM_PROVIDER_PROFILE_IMAGE_STAGED = 6,
 } SemloomProviderExecutionProfile;
 
 extern int semloom_provider_window_tasks(void);

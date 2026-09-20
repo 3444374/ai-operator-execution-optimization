@@ -1,0 +1,30 @@
+2026-09-20 09:53:35,271	INFO worker.py:2024 -- Started a local Ray instance.
+test_cumulative_queries_release_jobs_and_result_storage (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_cumulative_queries_release_jobs_and_result_storage) ... ok
+test_illegal_options_and_oversized_binary_fail_before_submission (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_illegal_options_and_oversized_binary_fail_before_submission) ... ok
+test_insert_rollback_decode_error_and_old_text_recording (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_insert_rollback_decode_error_and_old_text_recording) ... 2026-09-20 09:53:42,937	ERROR worker.py:437 -- Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): [36mray::Prepare.preprocess_staged()[39m (pid=5447, ip=172.17.0.6, actor_id=05059f7cc3df102660e910cd01000000, repr=<tests.execution_provider.image_fixtures.Prepare object at 0x7f5278196930>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repository>/code/src/modalities/image/operator.py", line 61, in preprocess_staged
+    batch = self.prepare(descriptor.row_ids, encoded_images)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repository>/code/src/modalities/image/operator.py", line 46, in prepare
+    check_encoded_image(self.plan, encoded_images[0])
+  File "<repository>/code/src/modalities/image/operator.py", line 20, in check_encoded_image
+    with Image.open(io.BytesIO(encoded)) as image:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<python-runtime>/lib/python3.12/site-packages/PIL/Image.py", line 3711, in open
+    raise UnidentifiedImageError(msg)
+PIL.UnidentifiedImageError: cannot identify image file <_io.BytesIO object at 0x7f51de9b6ca0>
+ok
+test_limit_and_null_do_not_speculate_invalid_later_images (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_limit_and_null_do_not_speculate_invalid_later_images) ... ok
+test_permissions_and_rls_keep_invisible_images_out_of_workers (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_permissions_and_rls_keep_invisible_images_out_of_workers) ... ok
+test_pg_cancel_waits_for_remote_end_without_killing_shared_worker (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_pg_cancel_waits_for_remote_end_without_killing_shared_worker) ... ok
+test_pg_rejects_tampered_association_evidence_shape_and_nonfinite_float4 (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_pg_rejects_tampered_association_evidence_shape_and_nonfinite_float4) ... ok
+test_reference_staged_types_identity_order_and_null (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_reference_staged_types_identity_order_and_null) ... ok
+test_snapshot_and_prepared_plan_keep_typed_identity (tests.execution_provider.test_image_pg_integration.ImagePostgresTest.test_snapshot_and_prepared_plan_keep_typed_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 29.914s
+
+OK

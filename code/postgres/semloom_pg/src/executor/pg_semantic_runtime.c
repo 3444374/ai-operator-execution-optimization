@@ -1,5 +1,7 @@
 /* PostgreSQL-private provider lifecycle shared by semantic operators. */
 #include "postgres.h"
+#include "semantics/semantic_image_contract.h"
+#include "semantics/image_identity.h"
 
 #include <errno.h>
 
@@ -135,7 +137,18 @@ pg_semantic_runtime_accept_completion(PgSemanticRuntime *runtime,
 	const AiCompletion *provider_completion, MemoryContext result_context, PgSemanticCompletion *completion)
 {
 	AiProviderError error;
-	if (runtime->open_spec.plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	if (runtime->open_spec.plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+	{
+		if (provider_completion->is_null || !semloom_image_vector_valid(
+			provider_completion->output.data, provider_completion->output.length,
+			runtime->open_spec.image_dimension))
+		{
+			semloom_provider_error_set(&error, AI_PROVIDER_ERROR_INVALID_RESPONSE, 0, 0,
+				"image result must contain the declared finite float4 values");
+			pg_semantic_runtime_fail(runtime, &error);
+		}
+	}
+	else if (runtime->open_spec.plan_schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
 		pg_semantic_runtime_validate_map(runtime, provider_completion);
 	else if (runtime->open_spec.model_id.length > 0 &&
 		(provider_completion->is_null ||
@@ -211,6 +224,10 @@ pg_semantic_runtime_begin(MemoryContext owner_context,
 		owner_context, open_spec.physical_algorithm_digest);
 	runtime->open_spec.stop = pg_semantic_runtime_copy_slice(
 		owner_context, open_spec.stop);
+	runtime->open_spec.image_model_revision = pg_semantic_runtime_copy_slice(owner_context, open_spec.image_model_revision);
+	runtime->open_spec.image_processor_id = pg_semantic_runtime_copy_slice(owner_context, open_spec.image_processor_id);
+	runtime->open_spec.image_processor_revision = pg_semantic_runtime_copy_slice(owner_context, open_spec.image_processor_revision);
+	runtime->open_spec.image_dtype = pg_semantic_runtime_copy_slice(owner_context, open_spec.image_dtype);
 	if (open_spec.has_generation_profile)
 	{
 		uint32 index;
@@ -434,12 +451,15 @@ pg_semantic_runtime_explain_counters(const PgSemanticRuntime *runtime,
 			ExplainPropertyUInteger("Model Calls", NULL,
 									 runtime->model_calls,
 									 explain_state);
+			if (runtime->plan_spec.schema_version != SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+			{
 			ExplainPropertyUInteger("Prompt Tokens", NULL,
 									 runtime->prompt_tokens,
 									 explain_state);
 			ExplainPropertyUInteger("Output Tokens", NULL,
-									 runtime->output_tokens,
+								 runtime->output_tokens,
 									 explain_state);
+			}
 		}
 		ExplainPropertyInteger("Accepted Rows", NULL,
 							   runtime->accepted_rows,
@@ -488,6 +508,9 @@ pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
 		case SEMLOOM_PLAN_VALUE_TEXT:
 			open_spec->input_value_kind = AI_PROVIDER_VALUE_TEXT;
 			break;
+		case SEMLOOM_PLAN_VALUE_ENCODED_IMAGE:
+			open_spec->input_value_kind = AI_PROVIDER_VALUE_ENCODED_IMAGE;
+			break;
 		default:
 			elog(ERROR, "unsupported semantic plan input value kind");
 	}
@@ -498,6 +521,9 @@ pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
 			break;
 		case SEMLOOM_PLAN_VALUE_TRISTATE:
 			open_spec->output_value_kind = AI_PROVIDER_VALUE_TRISTATE;
+			break;
+		case SEMLOOM_PLAN_VALUE_FLOAT4_VECTOR:
+			open_spec->output_value_kind = AI_PROVIDER_VALUE_FLOAT4_VECTOR;
 			break;
 		default:
 			elog(ERROR, "unsupported semantic plan output value kind");
@@ -562,6 +588,19 @@ pg_semantic_runtime_build_open_spec(const SemloomPlanSpec *plan_spec,
 	open_spec->has_stop = plan_spec->stop != NULL;
 	open_spec->max_input_bytes = plan_spec->max_input_bytes;
 	open_spec->max_output_bytes = plan_spec->max_output_bytes;
+	if (plan_spec->schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+	{
+#define IMAGE_SLICE(field) open_spec->field = (AiByteSlice) { \
+	(const uint8 *) plan_spec->field, strlen(plan_spec->field)}
+		IMAGE_SLICE(image_model_revision);
+		IMAGE_SLICE(image_processor_id);
+		IMAGE_SLICE(image_processor_revision);
+		IMAGE_SLICE(image_dtype);
+#undef IMAGE_SLICE
+		open_spec->image_dimension = plan_spec->image_dimension;
+		open_spec->image_input_size = plan_spec->image_input_size;
+		open_spec->image_staged = plan_spec->image_staged;
+	}
 	open_spec->has_generation_profile = plan_spec->generation_profile_digest != NULL;
 	if (open_spec->has_generation_profile)
 		open_spec->generation_profile = plan_spec->generation_profile;
@@ -838,6 +877,11 @@ pg_semantic_runtime_payload_digest(
 	int index;
 
 	Assert(open_spec->semantic_spec_digest.length == AI_PROVIDER_SHA256_HEX_LENGTH);
+	if (open_spec->plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+	{
+		semloom_image_payload_digest(open_spec, input, output);
+		return;
+	}
 	context = pg_cryptohash_create(PG_SHA256);
 	if (context == NULL || pg_cryptohash_init(context) < 0)
 	{

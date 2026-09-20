@@ -4,12 +4,13 @@
 
 当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享 Engine、查询归属与生命周期已验证；动态资源策略仍需适配。
 
-更新日期：2026-09-14
+更新日期：2026-09-20
 
 近期按[设计假设与强对照](data_organization_batching.md#design-hypotheses)：
 检验控制是否改善完整查询、有限候选是否比全局元数据更划算，再据结果选择阶段表示或多查询实验。
 M1已完成[常驻服务与并发选择检查](../results/postgresql/waiting_positions_persistent_20260914/README.md)，[真实输入与运行表](../results/postgresql/waiting_positions_real_preparation_20260914/README.md)已准备；真实调用按用户要求暂缓。
-已有执行与测量能力复用，E/F只补必要适配；旧正式矩阵不自动恢复，新实验仍需具体输入/预算与授权。
+E 的既定工程范围已完成；[F 图像接入](data_organization_batching.md#work-package-f)也已完成工程与受控验证，真实 CLIP 仍未运行。
+已有执行与测量能力继续复用；旧正式矩阵不自动恢复，新实验仍需具体输入、预算与授权。
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。

@@ -22,6 +22,8 @@ typedef enum SemloomPlanValueKind
 {
 	SEMLOOM_PLAN_VALUE_TEXT = 1,
 	SEMLOOM_PLAN_VALUE_TRISTATE = 2,
+	SEMLOOM_PLAN_VALUE_ENCODED_IMAGE = 3,
+	SEMLOOM_PLAN_VALUE_FLOAT4_VECTOR = 4,
 } SemloomPlanValueKind;
 
 typedef enum SemloomPlanNullPolicy
@@ -80,6 +82,13 @@ typedef struct SemloomPlanSpec
 	uint32 max_input_bytes;
 	uint32 max_output_bytes;
 	Oid marker_function_oid;
+	const char *image_model_revision;
+	const char *image_processor_id;
+	const char *image_processor_revision;
+	const char *image_dtype;
+	uint32 image_dimension;
+	uint32 image_input_size;
+	bool image_staged;
 } SemloomPlanSpec;
 
 extern List *semloom_plan_spec_make_recording_private(

@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-09-20：[工作包 F 图像类型与阶段执行](postgresql/image_stages_f_20260920/README.md)：
+显式扩展 `0.3.0` 的 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源接入完成。
+PG 回归 1/1、TAP 2,159 项和 9 组实际 PG/Ray/解码检查通过；模型使用 CPU fixture，真实调用 0 次。
+失败与修订记录保留，测试服务和临时权限已清理；真实 CLIP 与 GPU 性能继续待验证。
+
 2026-09-14：[M1真实运行准备](postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
 原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
 拟定最多44544次真实POST、单卡、30分钟的运行表与提前停止条件；**实际模型请求仍为0，按用户要求暂缓启动**。

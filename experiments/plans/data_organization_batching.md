@@ -1,5 +1,8 @@
 # 研究内容一：动态数据组织与批处理构造策略实验计划
 
+2026-09-20：按用户选择完成[工作包 F 的工程与受控检查](#work-package-f)。
+真实 CLIP 和 M1 真实模型运行继续暂停；下方 M1 部分保留已执行的小规模对照及后续研究设计。
+
 <a id="m1-pilot"></a>
 ## 当前实施：等待位置的小规模对照（2026-09-14）
 
@@ -526,7 +529,7 @@ Ray2.56.1、LOTUS1.2.4 adapter，不访问或复制公司私有材料，不改�
 | 数据库驻留比较 | PG-source direct、实际 WHERE→Map、原始列构造消息；内存 direct 继续是诊断 | 相同源快照/不可变表、计时含读取转换；安全谓词扩大窗口，其他形状明确回退 | 代码及受控验证完成；真实比较待新额度 |
 | 公共任务与原生执行 | SemBench Movie Q3→Q1/Q2、Movie-derived Map；Ray Data SQL/processor、LOTUS 原生程序 | 原任务/evaluator 固定版本；COUNT/LIMIT/Map 各自评价；未注入 SemLoom 调度 | 代码及受控验证完成；真实比较待新额度 |
 | 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 实现、受控与真实执行/资源检查完成；[质量负结果](../results/postgresql/query_sharing_e_20260914/README.md)保留 |
-| 图像 PG→Ray | CLIP encoded bytea→CPU prepare→GPU actor→real[]；先同步 reference 再增量，复用 typed image/method/stage 组件 | PG/解码/受控模型零权重集成；真实 CLIP 另验，不冒充已通过 | 待实现 |
+| 图像 PG→Ray | CLIP encoded bytea→CPU prepare→GPU actor→real[]；同步 reference 与增量接入复用 typed image/method/stage 组件 | PG/真实解码/零权重模型集成通过；真实 CLIP 另验 | 代码与受控验证完成；真实模型暂停 |
 | 文献与解释 | KEN 核心补充待精读；IMLane artifact 可用性；修正 direct 日志和非单变量对照解释 | 文献/知识库/状态/结果/日志同步，历史数据不改写 | KEN/历史解释完成；IMLane 源码已核查、构建待验证 |
 
 工作包 A 已完成代码、受控及独立新额度的匹配真实诊断；18单元/8448POST，全部重复与限制见报告。记录器/runner 保存第一原因与独立清理错误；
@@ -534,6 +537,36 @@ Core 全局进展增加兼容字段；永久 Job 单项超限与暂时存储反�
 PG pump 等到对应 receive 释放责任后再探测。真实 PG 受控 32 行为 660→62 次 offer，提交均为32次，
 无相关释放的重复探测598→0；PG回归1/1、TAP2043项通过。证据、失败与当前清理状态见
 [执行修复报告](../results/postgresql/execution_repairs_20260910/README.md)。KEN 与历史解释已完成，IMLane 公开源码核查结果见工作包 B。
+
+<a id="work-package-f"></a>
+### 工作包 F 的工程实施记录（2026-09-20）
+
+用户确认继续最后一个工作包 F；这次完成工程与受控验证，真实模型运行继续暂停。
+不继承文本实验请求额度，不启动旧图像性能矩阵。源码起点为 `2554f94b`。
+
+**代码与受控验证已完成**：[完整记录](../results/postgresql/image_stages_f_20260920/README.md)。
+扩展 `0.3.0` 显式提供 `ai_semantic.embed(bytea,jsonb)→real[]`，默认安装仍为 `0.2.0`。
+schema 5 / wire 7 分别保存图像语义和传输；`MethodDriver` 负责行与最终向量，Ray backend 负责两段物理执行。
+PG 回归 1/1、19 个 TAP 文件共 2,159 项及 9 组 PG/Ray/真实解码检查通过；真实模型 0 次。
+本轮模型由明确的 CPU fixture 代替，不能据此登记真实 CLIP 数值、GPU 故障恢复或性能通过。
+
+- 数据库负责 encoded `bytea` 输入、版本化模型与处理器身份、输出固定维数 `real[]`、NULL、
+  异常、顺序和查询结束。SQL marker 未被计划接管时仍报错；先建立逐项同步执行，再扩大已验证路径。
+- 图像 adapter 复用 `ImageEmbeddingBatch/Result`、CLIP prepare/model 组件与
+  `BoundedStageBroker`。CPU/GPU worker 由服务拥有；查询只拥有任务、数据和结果责任。
+  编码字节、准备后张量、计算名额与未消费结果分别记账；broker 不无限保存已交付任务历史。
+- Ray 保持零重试、零 actor 重启；不因一个查询取消而终止共享 actor。发送取消请求后继续保留
+  名额与数据责任，只有远端方法完成证据才能释放；通信错误保持未确定状态。ObjectRef 放弃与
+  远端终态分别记录，不把 Python future 结束当成 GPU 工作结束。
+- 同步与阶段路径保持同一模型、处理器、projection、dtype、normalize 和输出维数。受控模型
+  使用明确 fixture 身份；真实 CLIP 的数值容差、模型文件和运行额度留待单独核验。
+- 验证覆盖重复输入、NULL 零任务、非法图像、错误维数/非有限 float4、容量拒绝、慢消费者、
+  取消、迟到结果、其他查询继续执行、累计行数超过窗口，以及受影响的旧文本路径。
+
+工程来源沿用主架构 §8.7–8.8 已核对的 PG 类型入口、共享调用与查询独立清理职责；本次没有
+读取或复制公司材料。Ray 的[取消说明](https://docs.ray.io/en/latest/ray-core/api/doc/ray.cancel.html)
+与[actor 故障说明](https://docs.ray.io/en/latest/ray-core/fault_tolerance/actors.html)用于核对取消请求
+不等于计算结束，实际集成还须记录所用 Ray 版本。以上属于工程决定，不作为新调度算法结论。
 
 ### 工作包 A 的最小真实验证清单（已完成）
 

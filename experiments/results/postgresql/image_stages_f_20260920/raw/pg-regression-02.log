@@ -1,0 +1,30 @@
+echo "# +++ regress install-check in  +++" && <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress --inputdir=./ --bindir='<pg-prefix>/bin'    --dbname=contrib_regression semloom_pg
+# +++ regress install-check in  +++
+# using postmaster on <private-artifacts>/socket, port 57720
+ok 1         - semloom_pg                                 27 ms
+1..1
+# All 1 tests passed.
+echo "# +++ tap install-check in  +++" && rm -rf '<repository>/code/postgres/semloom_pg'/tmp_check && /usr/bin/mkdir -p '<repository>/code/postgres/semloom_pg'/tmp_check && cd ./ && TESTLOGDIR='<repository>/code/postgres/semloom_pg/tmp_check/log' TESTDATADIR='<repository>/code/postgres/semloom_pg/tmp_check' PATH="<pg-prefix>/bin:<repository>/code/postgres/semloom_pg:$PATH" PGPORT='65432' PG_REGRESS='<pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/regress/pg_regress' /usr/bin/prove -I <pg-prefix>/lib/postgresql/pgxs/src/makefiles/../../src/test/perl/ -I ./  t/*.pl
+# +++ tap install-check in  +++
+t/001_semloom_pg.pl ........... ok
+t/002_choice_plan.pl .......... ok
+t/003_choice_execution.pl ..... ok
+t/004_filter_insert.pl ........ ok
+t/005_function_identity.pl .... ok
+t/006_map_plan.pl ............. ok
+t/007_map_execution.pl ........ ok
+t/008_filter_and.pl ........... ok
+t/009_binding.pl .............. ok
+t/010_filter_map.pl ........... ok
+t/011_incremental_map.pl ...... ok
+t/012_incremental_window.pl ... ok
+t/013_query_job.pl ............ ok
+t/014_map_producer_trace.pl ... ok
+t/015_map_backpressure.pl ..... ok
+t/016_predicate_prefetch.pl ... ok
+t/017_filter_count.pl ......... ok
+t/018_total_window_budget.pl .. ok
+t/019_image_plan.pl ........... ok
+All tests successful.
+Files=19, Tests=2159, 74 wallclock secs ( 0.49 usr  0.06 sys + 42.56 cusr 11.16 csys = 54.27 CPU)
+Result: PASS

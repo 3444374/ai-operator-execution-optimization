@@ -28,10 +28,9 @@ static bool semloom_map_constant_walker(Node *node, void *context);
 static bool semloom_map_placement_walker(Node *node, void *context);
 static void semloom_validate_map_placement(Query *parse, Oid marker_oid);
 
-int
-semloom_validate_generate_map_source(Query *parse)
+static int
+validate_model_map_source(Query *parse, Oid marker_oid)
 {
-	Oid marker_oid = semloom_generate_map_function_oid();
 	int query_level = 1;
 	ListCell *cell;
 
@@ -64,6 +63,18 @@ semloom_validate_generate_map_source(Query *parse)
 			return query_level;
 	}
 	return 0;
+}
+
+int
+semloom_validate_generate_map_source(Query *parse)
+{
+	int text_level = validate_model_map_source(parse, semloom_generate_map_function_oid());
+	int image_level = validate_model_map_source(parse, semloom_image_function_oid());
+
+	if (text_level != 0 && image_level != 0)
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+			errmsg("one semantic Map output is supported per query")));
+	return text_level != 0 ? text_level : image_level;
 }
 
 static bool
@@ -156,10 +167,13 @@ semloom_map_constant_walker(Node *node, void *context)
 		FuncExpr *marker = (FuncExpr *) node;
 		List *fixed_arguments;
 
-		if (list_length(marker->args) != 3)
+		bool image = marker_oid == semloom_image_function_oid();
+
+		if (list_length(marker->args) != (image ? 2 : 3))
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				errmsg("invalid generative SemMap marker arguments")));
-		fixed_arguments = list_make2(lsecond(marker->args), lthird(marker->args));
+		fixed_arguments = image ? list_make1(lsecond(marker->args)) :
+			list_make2(lsecond(marker->args), lthird(marker->args));
 		if (semloom_map_nonconstant_source((Node *) fixed_arguments, NULL) ||
 			contain_mutable_functions((Node *) fixed_arguments))
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -174,16 +188,19 @@ semloom_map_marker_oid(Query *parse)
 {
 	Oid recording_oid = semloom_map_function_oid();
 	Oid generate_oid = semloom_generate_map_function_oid();
+	Oid image_oid = semloom_image_function_oid();
 	int recording_count = OidIsValid(recording_oid) ?
 		semloom_marker_count((Node *) parse->targetList, recording_oid) : 0;
 	int generate_count = OidIsValid(generate_oid) ?
 		semloom_marker_count((Node *) parse->targetList, generate_oid) : 0;
+	int image_count = OidIsValid(image_oid) ?
+		semloom_marker_count((Node *) parse->targetList, image_oid) : 0;
 
-	if (recording_count > 0 && generate_count > 0)
+	if ((recording_count > 0) + (generate_count > 0) + (image_count > 0) > 1)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("the SemMap capability supports exactly one visible marker")));
-	return generate_count > 0 ? generate_oid : recording_oid;
+	return image_count > 0 ? image_oid : (generate_count > 0 ? generate_oid : recording_oid);
 }
 
 SemloomSemanticCall *

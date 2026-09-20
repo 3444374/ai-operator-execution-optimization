@@ -1,0 +1,27 @@
+setUpClass (tests.execution_provider.test_image_pg_integration.ImagePostgresTest) ... ERROR
+
+======================================================================
+ERROR: setUpClass (tests.execution_provider.test_image_pg_integration.ImagePostgresTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/execution_provider/test_image_pg_integration.py", line 110, in setUpClass
+    ray.init(num_cpus=2, num_gpus=0, include_dashboard=False,
+  File "<python-runtime>/lib/python3.12/site-packages/ray/_private/client_mode_hook.py", line 110, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "<python-runtime>/lib/python3.12/site-packages/ray/_private/worker.py", line 1917, in init
+    _global_node = ray._private.node.Node(
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<python-runtime>/lib/python3.12/site-packages/ray/_private/node.py", line 324, in __init__
+    self._plasma_store_socket_name = self._prepare_socket_file(
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<python-runtime>/lib/python3.12/site-packages/ray/_private/node.py", line 1026, in _prepare_socket_file
+    validate_socket_filepath(result.split("://", 1)[-1])
+  File "<python-runtime>/lib/python3.12/site-packages/ray/_private/utils.py", line 1756, in validate_socket_filepath
+    raise OSError(
+OSError: validate_socket_filename failed: AF_UNIX path length cannot exceed 107 bytes: <private-artifacts>/tests/attempt01/ray/session_2026-09-20_09-45-05_501440_3338/sockets/plasma_store
+
+----------------------------------------------------------------------
+Ran 0 tests in 1.853s
+
+FAILED (errors=1)

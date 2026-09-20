@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-20：[工作包 F 图像接入](../experiments/results/postgresql/image_stages_f_20260920/README.md)完成工程与受控验证。
+扩展 `0.3.0` 显式提供 `ai_semantic.embed(bytea,jsonb)→real[]`，复用 Map carrier、MethodDriver、共享 Engine 与 stage broker；
+schema 5/wire 7 保存图像身份、关联与结果校验，CPU 准备和模型阶段分别保留资源，最终结果发送后释放。
+PG18.3 严格编译、回归 1/1、TAP 2,159 项及 9 组实际 PG/Ray/解码检查通过；17 个 Job 完成资源回收。
+本地/Linux provider 76、图像 81、PG 116、方法/阶段 18 项检查通过，按环境跳过项另列于报告。
+模型由明确的 CPU fixture 代替，真实 CLIP 数值、GPU 故障和性能尚未验证；真实模型调用 0，默认扩展版本仍为 `0.2.0`。
+测试 PG/Ray/任务进程已停止，GPU 空闲，临时 ACL 已恢复。
+
 2026-09-14：[M1真实运行准备](../experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
 原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
 拟定最多44544次真实POST、单卡、30分钟的运行表与提前停止条件；**实际模型请求仍为0，按用户要求暂缓启动**。

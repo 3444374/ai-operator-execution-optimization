@@ -56,6 +56,8 @@ typedef enum AiProviderValueKind
 {
 	AI_PROVIDER_VALUE_TEXT = 1,
 	AI_PROVIDER_VALUE_TRISTATE = 2,
+	AI_PROVIDER_VALUE_ENCODED_IMAGE = 3,
+	AI_PROVIDER_VALUE_FLOAT4_VECTOR = 4,
 } AiProviderValueKind;
 
 typedef enum AiProviderNullPolicy
@@ -121,6 +123,14 @@ typedef struct AiOpenSpec
 	uint32_t max_output_bytes;
 	bool has_generation_profile;
 	AiGenerationProfile generation_profile;
+	/* Image schema five: immutable typed model/processor selection. */
+	AiByteSlice image_model_revision;
+	AiByteSlice image_processor_id;
+	AiByteSlice image_processor_revision;
+	AiByteSlice image_dtype;
+	uint32_t image_dimension;
+	uint32_t image_input_size;
+	bool image_staged;
 } AiOpenSpec;
 
 typedef struct AiPreparedTask

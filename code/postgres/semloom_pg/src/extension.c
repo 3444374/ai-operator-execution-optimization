@@ -60,6 +60,8 @@ static const struct config_enum_entry semloom_execution_profile_options[] = {
 	 false},
 	{"incremental-map", SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP, false},
 	{"query-job", SEMLOOM_PROVIDER_PROFILE_QUERY_JOB, false},
+	{"image-reference", SEMLOOM_PROVIDER_PROFILE_IMAGE_REFERENCE, false},
+	{"image-staged", SEMLOOM_PROVIDER_PROFILE_IMAGE_STAGED, false},
 	{NULL, 0, false},
 };
 
@@ -102,6 +104,10 @@ semloom_provider_execution_profile_name(void)
 {
 	if (semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_ASYNC_MAP)
 		return "incremental-map";
+	if (semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_IMAGE_REFERENCE)
+		return "image-reference";
+	if (semloom_provider_execution_profile() == SEMLOOM_PROVIDER_PROFILE_IMAGE_STAGED)
+		return "image-staged";
 	return semloom_execution_profile ==
 		SEMLOOM_PROVIDER_PROFILE_OPENAI_COMPATIBLE_FIXED ?
 		"openai-compatible-fixed" : "golden";

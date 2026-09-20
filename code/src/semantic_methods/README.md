@@ -1,5 +1,13 @@
 # Semantic method continuations
 
+The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` emits one semantic
+embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
+`ImageGateway` uses this driver for row association, bounded state and final-result retention through
+network send. Its service-wide `MethodBudgetPool` remains separate from core task/result storage.
+The [image verification](../../../experiments/results/postgresql/image_stages_f_20260920/README.md)
+covers that specific PG consumer. The broader method programs discussed below still require their
+own PG integration and semantic verification.
+
 This module lets an authorized semantic method produce several sequential requests for one row.
 It contains no optimization algorithm, model client, SQL binding, or independent scheduler.
 `continuation.py` provides `Method`, `Continue`, `Final`, and the bounded `MethodRun` consumer.
@@ -38,7 +46,7 @@ Invalid continuations fail the run; an unrelated completion leaves the active st
 The contract currently supports zero, one, or several sequential requests. The session can now organize
 accepted tasks using `WorkWindowOrganizer`; its current backend expands each group into independent
 single-member requests. Parallel stage fan-out, calibration over sampled rows, cross-row joins, a
-single physical request with multiple member results, and PG bridging need their own bounded integration. They are not hidden behind this interface or claimed implemented.
+single physical request with multiple member results, and PG bridging beyond the single image call need their own bounded integration.
 
 For future LOTUS reuse, keep scoring, calibration artifacts, threshold decisions, and parsers in a
 versioned method adapter. Translate model calls to `Request`; retain SemLoom's existing admission,
@@ -65,7 +73,8 @@ existing policy, cancels siblings, and waits for their terminal events before re
 
 The producer must offer only work whose evaluation and submission are already permitted. A finite
 window limits speculative volume; it does not establish correct LIMIT, volatile-expression or error
-ordering behavior. Those are verified by the future PG carrier before enlarging its input window.
+ordering behavior. Each PG consumer must verify those before enlarging its input window; the image
+consumer reuses the existing conservative PG prefetch checks.
 
 
 When `SessionPolicies.organize` is configured, it selects batches in place of `choose_task`.
@@ -85,7 +94,7 @@ row-count and work-budget FIFO groups can produce the same actual request order.
 row sequences must strictly increase; call identity is bounded text and payload equality never
 merges rows. The source calls `end_input`, then keeps advancing and consuming until `finished`.
 The service owner continues advancing the shared Engine for registered Jobs; the driver only
-submits and consumes its own session. No PG or gateway path is changed by this opt-in adapter.
+submits and consumes its own session. The image gateway is its first bounded PG row consumer.
 
 Create one `budget.MethodBudgetPool` for the service and explicitly allocate each driver's fixed
 `MethodCapacity`. All grants, including multiple flows of one Job, count against that pool.
@@ -109,7 +118,7 @@ closing all drivers the service owner still drains the Engine and closes its Job
 The [driver tests](../../tests/scheduling/test_method_driver.py) cover aggregate reservations,
 consumer backpressure, multiple Jobs and late completions. The
 [V1 plan](../../../experiments/plans/bounded_method_driver.md) separates this engineering work from
-the first real-data Map experiment. This driver does not implement PG method bridging or LOTUS cascades.
+the first real-data Map experiment. General PG method programs and LOTUS cascades remain pending.
 
 The driver adds `TaskInfo` for row/call/stage association on the organized path. Optional
 `describe_work(row, stage_ordinal, request)` supplies a `WorkDescriptor` using existing work units

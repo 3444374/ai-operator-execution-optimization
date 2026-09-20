@@ -1,0 +1,11 @@
+{
+  "pg_stopped": true,
+  "root_acl_restored": true,
+  "task_processes": [],
+  "ray_processes": [],
+  "gpu_status": [
+    "0, NVIDIA GeForce RTX 4090, 1 MiB, 0 %",
+    "1, NVIDIA GeForce RTX 4090, 1 MiB, 0 %"
+  ],
+  "real_model_calls": 0
+}

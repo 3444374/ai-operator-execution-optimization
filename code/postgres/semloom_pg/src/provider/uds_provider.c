@@ -18,6 +18,8 @@
 #include "provider/wire/wire_v2.h"
 #include "provider/wire/wire_v3.h"
 #include "provider/wire/wire_v4.h"
+#include "provider/wire/wire_image.h"
+#include "semantics/image_identity.h"
 
 typedef struct SemloomUdsProviderConfig
 {
@@ -98,6 +100,17 @@ static const AiProviderOps semloom_uds_async_ops = {
 	.close = semloom_uds_close,
 };
 
+static const AiProviderOps semloom_uds_image_reference_ops = {
+	.adapter_name = "semloom_image_reference",
+	.open = semloom_uds_open, .drive = semloom_uds_drive, .close = semloom_uds_close,
+};
+
+static const AiProviderOps semloom_uds_image_staged_ops = {
+	.adapter_name = "semloom_image_staged",
+	.open = semloom_uds_open, .offer = semloom_uds_offer,
+	.receive = semloom_uds_receive, .close = semloom_uds_close,
+};
+
 void
 semloom_uds_provider_select(MemoryContext owner_context,
 									const char *socket_path,
@@ -118,7 +131,18 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	memcpy(config->socket_path, socket_path, path_length + 1);
 	config->protocol_version = semloom_provider_spec_is_recording(spec) ? 2 :
 		(semloom_provider_spec_is_generate_map(spec) ? 5 : (spec->has_generation_profile ? 4 : 3));
-	if (semloom_provider_spec_is_recording(spec))
+	if (semloom_provider_spec_is_image(spec))
+	{
+		if (profile != (spec->image_staged ? SEMLOOM_PROVIDER_PROFILE_IMAGE_STAGED :
+			SEMLOOM_PROVIDER_PROFILE_IMAGE_REFERENCE))
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("image provider profile differs from the planned algorithm")));
+		config->protocol_version = 7;
+		config->max_inflight_tasks = spec->image_staged ? semloom_provider_window_tasks() : 1;
+		config->semantic_execution_id = semloom_image_execution_id(spec->image_staged);
+		provider->ops = spec->image_staged ? &semloom_uds_image_staged_ops : &semloom_uds_image_reference_ops;
+		provider->max_inflight_tasks = spec->image_staged ? config->max_inflight_tasks : 0;
+	}
+	else if (semloom_provider_spec_is_recording(spec))
 	{
 		provider->ops = &semloom_uds_recording_ops;
 		config->semantic_execution_id = NULL;
@@ -169,9 +193,9 @@ semloom_uds_provider_select(MemoryContext owner_context,
 	else
 		elog(ERROR, "unrecognized SemLoom provider execution profile: %d", profile);
 	provider->config = config;
-	provider->max_input_bytes = config->protocol_version != 2 ?
-		SEMLOOM_WIRE_V3_MAX_INPUT_BYTES : SEMLOOM_WIRE_V2_MAX_INPUT_BYTES;
-	if (config->protocol_version == 6)
+	provider->max_input_bytes = config->protocol_version == 7 ? spec->max_input_bytes :
+		(config->protocol_version != 2 ? SEMLOOM_WIRE_V3_MAX_INPUT_BYTES : SEMLOOM_WIRE_V2_MAX_INPUT_BYTES);
+	if (provider->ops->offer != NULL)
 		provider->retained_metadata_bytes = 2 * (uint64) config->max_inflight_tasks *
 			(sizeof(AiPreparedTask) + AI_PROVIDER_SHA256_HEX_LENGTH) + 64 * 1024;
 }
@@ -190,7 +214,7 @@ semloom_uds_open(const void *config_value,
 	if (config == NULL || session_out == NULL || error == NULL ||
 		(!semloom_provider_spec_is_recording(spec) &&
 		 !semloom_provider_spec_is_exact_filter(spec) &&
-		 !semloom_provider_spec_is_generate_map(spec)))
+		 !semloom_provider_spec_is_generate_map(spec) && !semloom_provider_spec_is_image(spec)))
 	{
 		if (error != NULL)
 				semloom_provider_error_set(error,
@@ -205,7 +229,7 @@ semloom_uds_open(const void *config_value,
 	session->socket_fd = PGINVALID_SOCKET;
 	session->config = config;
 	*session_out = session;
-	if (config->protocol_version == 6)
+	if (config->protocol_version == 6 || (config->protocol_version == 7 && spec->image_staged))
 	{
 		Size entry_bytes = sizeof(*session->pending) + sizeof(*session->payload_digests);
 
@@ -231,6 +255,10 @@ semloom_uds_open(const void *config_value,
 	session->open_spec.physical_algorithm_digest =
 		semloom_uds_copy_slice(spec->physical_algorithm_digest);
 	session->open_spec.stop = semloom_uds_copy_slice(spec->stop);
+	session->open_spec.image_model_revision = semloom_uds_copy_slice(spec->image_model_revision);
+	session->open_spec.image_processor_id = semloom_uds_copy_slice(spec->image_processor_id);
+	session->open_spec.image_processor_revision = semloom_uds_copy_slice(spec->image_processor_revision);
+	session->open_spec.image_dtype = semloom_uds_copy_slice(spec->image_dtype);
 	if (spec->has_generation_profile)
 	{
 		uint32 index;
@@ -246,10 +274,10 @@ semloom_uds_open(const void *config_value,
 	session->completion_context = AllocSetContextCreate(CurrentMemoryContext,
 													  "SemLoom UDS completion",
 													  ALLOCSET_DEFAULT_SIZES);
-	if (config->protocol_version != 2)
+	if (config->protocol_version != 2 && config->protocol_version != 7)
 		semloom_wire_semantic_identity_init(&session->open_spec,
 			config->semantic_execution_id, config->protocol_version, &session->semantic_identity);
-	else
+	else if (config->protocol_version == 2)
 		semloom_wire_v2_identity_init(&session->open_spec,
 										 SEMLOOM_UDS_RECORDING_EXECUTION_ID,
 										 &session->identity);
@@ -291,7 +319,8 @@ semloom_uds_exchange(AiProviderSession *session, const AiPreparedTask *task,
 	previous_context = MemoryContextSwitchTo(session->scratch_context);
 	PG_TRY();
 	{
-		if (session->config->protocol_version == 6)
+		if (session->config->protocol_version == 6 ||
+			(session->config->protocol_version == 7 && session->open_spec.image_staged))
 		{
 			uint32 index;
 			status = accepted != NULL ? semloom_uds_validate_task(session, task, error) : AI_PROVIDER_STATUS_OK;
@@ -305,7 +334,9 @@ semloom_uds_exchange(AiProviderSession *session, const AiPreparedTask *task,
 					*accepted = false;
 				else
 				{
-					status = semloom_wire_semantic_offer(session->socket_fd, task, &session->semantic_identity, accepted, error);
+					status = session->config->protocol_version == 7 ?
+						semloom_wire_image_task(session->socket_fd, &session->open_spec, task, accepted, error) :
+						semloom_wire_semantic_offer(session->socket_fd, task, &session->semantic_identity, accepted, error);
 					if (status == AI_PROVIDER_STATUS_OK && *accepted)
 					{
 						memcpy(session->payload_digests[index], task->semantic_payload_digest.data, AI_PROVIDER_SHA256_HEX_LENGTH);
@@ -317,9 +348,13 @@ semloom_uds_exchange(AiProviderSession *session, const AiPreparedTask *task,
 			}
 			else if (status == AI_PROVIDER_STATUS_OK)
 			{
-				const char *poll = "{\"type\":\"poll\",\"protocol_version\":6}";
+				const char *poll = session->config->protocol_version == 7 ?
+					"{\"type\":\"receive\",\"protocol_version\":7}" : "{\"type\":\"poll\",\"protocol_version\":6}";
 				status = semloom_wire_common_send_frame(session->socket_fd, poll, strlen(poll), error);
-				if (status == AI_PROVIDER_STATUS_OK)
+				if (status == AI_PROVIDER_STATUS_OK && session->config->protocol_version == 7)
+					status = semloom_wire_image_collect(session->socket_fd, &session->open_spec,
+						session->pending, session->config->max_inflight_tasks, &scratch_completion, error);
+				else if (status == AI_PROVIDER_STATUS_OK)
 					status = semloom_wire_semantic_collect(session->socket_fd, &session->open_spec,
 						session->pending, session->config->max_inflight_tasks,
 						&session->semantic_identity, &scratch_completion, error);
@@ -467,6 +502,12 @@ semloom_uds_drive_internal(AiProviderSession *session,
 		if (status != AI_PROVIDER_STATUS_OK)
 			return status;
 	}
+	if (session->config->protocol_version == 7)
+	{
+		status = semloom_wire_image_task(session->socket_fd, &session->open_spec, task, NULL, error);
+		if (status != AI_PROVIDER_STATUS_OK) return status;
+		return semloom_wire_image_collect(session->socket_fd, &session->open_spec, task, 1, completion, error);
+	}
 	if (session->config->protocol_version >= 5)
 		return semloom_wire_semantic_drive(session->socket_fd, &session->open_spec,
 			task, &session->semantic_identity, completion, error);
@@ -503,6 +544,9 @@ semloom_uds_connect(AiProviderSession *session, AiProviderError *error)
 			return status;
 	}
 
+	if (session->config->protocol_version == 7)
+		return semloom_wire_image_open(session->socket_fd, &session->open_spec,
+			session->config->max_inflight_tasks, error);
 	if (session->config->protocol_version >= 5)
 		return semloom_wire_semantic_open(session->socket_fd, &session->open_spec,
 			&session->semantic_identity, error);

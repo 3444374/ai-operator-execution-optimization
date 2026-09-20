@@ -486,6 +486,7 @@ class SemloomPgStaticContractTests(unittest.TestCase):
             "wire_v3.c",
             "wire_v4.c",
             "wire_semantic.c",
+            "wire_image.c",
         }
         transport_identifiers = (
             "pgsocket",

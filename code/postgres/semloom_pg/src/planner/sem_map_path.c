@@ -18,9 +18,11 @@
 #include "planner/sem_map_call.h"
 #include "planner/sem_map_binding.h"
 #include "planner/sem_plan_spec.h"
+#include "planner/sem_image_plan.h"
 #include "planner/marker_identity.h"
 #include "planner/paths.h"
 #include "executor/sem_scan.h"
+#include "extension_config.h"
 
 static List *semloom_generate_map_fields(FuncExpr *marker);
 static void semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid);
@@ -46,17 +48,18 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 	SemloomSemanticCall *call = semloom_map_call(root, marker_oid);
 	FuncExpr *marker = call == NULL ? NULL : call->marker;
 	bool insert_source = semloom_is_insert_source(root);
+	bool image = marker_oid == semloom_image_function_oid();
 	RangeTblRef *range_reference;
 	RangeTblEntry *range_entry;
 
 	if (marker == NULL)
 		return;
-	if (marker_oid == semloom_generate_map_function_oid() &&
+	if ((image || marker_oid == semloom_generate_map_function_oid()) &&
 		!semloom_generate_map_source_checked(root->query_level))
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 			errmsg("generative SemMap must be a direct query output")));
 	if ((root->query_level != 1 && !insert_source) || parse->commandType != CMD_SELECT ||
-		(marker_oid == semloom_generate_map_function_oid() && parse->hasSubLinks) ||
+		((image || marker_oid == semloom_generate_map_function_oid()) && parse->hasSubLinks) ||
 		parse->setOperations != NULL || parse->cteList != NIL || parse->hasAggs ||
 		parse->groupClause != NIL || parse->groupingSets != NIL || parse->havingQual != NULL ||
 		parse->hasWindowFuncs || parse->windowClause != NIL || parse->distinctClause != NIL ||
@@ -92,9 +95,9 @@ semloom_validate_query_shape(PlannerInfo *root, Oid marker_oid)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("ai_semantic.map is only supported as a top-level output expression")));
-	if (list_length(marker->args) != (marker_oid == semloom_generate_map_function_oid() ? 3 : 1) ||
-		exprType((Node *) semloom_call_input(call)) != TEXTOID ||
-		marker->funcresulttype != TEXTOID)
+	if (list_length(marker->args) != (image ? 2 : (marker_oid == semloom_generate_map_function_oid() ? 3 : 1)) ||
+		exprType((Node *) semloom_call_input(call)) != (image ? BYTEAOID : TEXTOID) ||
+		marker->funcresulttype != (image ? FLOAT4ARRAYOID : TEXTOID))
 		ereport(ERROR,
 				(errcode(ERRCODE_DATATYPE_MISMATCH),
 				 errmsg("ai_semantic.map capability requires one text input and text output")));
@@ -187,6 +190,9 @@ semloom_plan_path(PlannerInfo *root,
 	if (semloom_plan_has_filter(linitial_node(Plan, custom_plans)))
 	{
 		SemloomSemanticCall *call = semloom_map_call(root, marker_oid);
+		if (marker_oid == semloom_image_function_oid())
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg("image embedding over a semantic Filter is not yet supported")));
 
 		return semloom_plan_bound_map(target_list, linitial_node(Plan, custom_plans), call,
 			semloom_generate_map_fields(call->marker));
@@ -222,9 +228,19 @@ semloom_plan_path(PlannerInfo *root,
 	scan->flags = CUSTOMPATH_SUPPORT_PROJECTION;
 	scan->custom_plans = custom_plans;
 	scan->custom_exprs = NIL;
-	if (marker_oid == semloom_generate_map_function_oid())
+	if (marker_oid == semloom_generate_map_function_oid() || marker_oid == semloom_image_function_oid())
 	{
-		scan->custom_private = semloom_plan_spec_bind_generate_map(semloom_generate_map_fields(marker),
+		List *fields;
+		if (marker_oid == semloom_image_function_oid())
+		{
+			SemloomProviderExecutionProfile profile = semloom_provider_execution_profile();
+			if (profile != SEMLOOM_PROVIDER_PROFILE_IMAGE_REFERENCE && profile != SEMLOOM_PROVIDER_PROFILE_IMAGE_STAGED)
+				ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("image embedding requires an explicit image provider profile")));
+			fields = semloom_image_plan_fields(marker, profile == SEMLOOM_PROVIDER_PROFILE_IMAGE_STAGED);
+		}
+		else
+			fields = semloom_generate_map_fields(marker);
+		scan->custom_private = semloom_plan_spec_bind_generate_map(fields,
 			(AttrNumber) linitial_int(mapped_columns), marker_oid);
 		record_plan_function_dependency(root, marker_oid);
 	}
@@ -248,7 +264,8 @@ semloom_replace_marker(Node *node, void *context)
 	{
 		FuncExpr *marker = (FuncExpr *) node;
 
-		if (list_length(marker->args) != (marker_oid == semloom_generate_map_function_oid() ? 3 : 1))
+		if (list_length(marker->args) != (marker_oid == semloom_image_function_oid() ? 2 :
+			(marker_oid == semloom_generate_map_function_oid() ? 3 : 1)))
 			ereport(ERROR,
 					(errcode(ERRCODE_INTERNAL_ERROR),
 					 errmsg("invalid SemMap marker arguments during plan lowering")));

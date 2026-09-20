@@ -57,6 +57,14 @@ semloom_filter_function_oid(void)
 }
 
 Oid
+semloom_image_function_oid(void)
+{
+	Oid argument_types[2] = {BYTEAOID, JSONBOID};
+
+	return semloom_lookup_marker("embed", lengthof(argument_types), argument_types);
+}
+
+Oid
 semloom_exact_filter_function_oid(void)
 {
 	Oid argument_types[3] = {TEXTOID, TEXTOID, JSONBOID};
@@ -69,7 +77,9 @@ semloom_is_map_function(Oid function_oid)
 {
 	Oid marker_oid = semloom_map_function_oid();
 	Oid generate_oid = semloom_generate_map_function_oid();
+	Oid image_oid = semloom_image_function_oid();
 
 	return (OidIsValid(marker_oid) && function_oid == marker_oid) ||
-		(OidIsValid(generate_oid) && function_oid == generate_oid);
+		(OidIsValid(generate_oid) && function_oid == generate_oid) ||
+		(OidIsValid(image_oid) && function_oid == image_oid);
 }

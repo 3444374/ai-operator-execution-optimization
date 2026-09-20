@@ -243,6 +243,42 @@ model、timeout 和 bearer-token 环境变量名不进入仓库。
 请求观测事件携带`session_id`与`task`，可关联相同payload的并发请求/完成；
 旧独占会话资源测量器仍不能用于并发资源归因。
 
+### 图像 provider
+
+同一 `services/run_execution_provider_gateway.py` 增加 `--image-config`，与文本模型配置互斥。
+先将[配置示例](../configs/image_provider.example.json)复制到仓库外，填入已核对且已缓存的模型与
+processor revision。示例容量只说明字段与有限资源，不代表已经校准。模型加载使用
+`local_files_only=True`，不会自动下载；真实模型运行仍按专项计划另行确定资源与请求额度。
+
+```bash
+python3 code/scripts/services/run_execution_provider_gateway.py \
+  --socket "$IMAGE_GATEWAY_SOCKET" \
+  --image-config "$IMAGE_SERVICE_CONFIG" \
+  --image-ray-address "$IMAGE_RAY_ADDRESS" \
+  --max-active-jobs 2 --max-held-tasks 4 --max-active-requests 2
+```
+
+`staged` 模式必须明确指定已有 Ray 实例的地址，不接受 `auto` 或 `local`。
+CPU actor 负责解码、resize 和 normalize，模型 actor 只接收准备后的张量；每个模型 actor 使用
+Ray 分配的一张 GPU。任务不重试、actor 不重启。启动等待使用配置中的 `timeout_ms`。
+`reference` 模式不使用 Ray：配置改为 `mode: reference`，去掉 Ray 地址并使用
+`--max-active-requests 1`；GPU 可见性由仓库外运行环境指定。
+
+PG 显式安装或升级至扩展 `0.3.0` 后，使用 `ai_semantic.embed(image, options)`，
+选择匹配的 `image-reference` 或 `image-staged` profile。七个 options 字段与配置的 `plan` 完全一致。
+图像是 Map 的关系行为，复用原有 PG 窗口、权限、快照和事务处理；数据传输使用独立的 wire v7。
+
+各连接的 `MethodDriver` 以已声明的输入、状态、结果最大值计算固定行预留；全服务使用一个既有
+`MethodBudgetPool` 分配这些预留。`method_capacity`、`method_allocated`、`method_used` 与 Core 的
+`usage`、`image_stages` 分开记录。Core 结果交给方法后可释放其槽，最终向量仍计入方法预算，
+发送完成后才释放。编码字节、准备后张量及 CPU/model 名额另由 stage broker 计费；
+解码暂存受单图像像素上限和 CPU actor 数量控制，这些字段不是整个服务的 RSS 上限。
+
+受控集成入口为 `tests.execution_provider.test_image_pg_integration`；只有明确提供隔离环境的
+`SEMLOOM_IMAGE_PG_DSN`、`SEMLOOM_IMAGE_TEST_ROOT` 和短路径 `SEMLOOM_IMAGE_RAY_TEMP` 才执行。
+它启动仅有 CPU 资源的私有 Ray 实例，使用真实 PNG 解码与明确标识的零权重模型；
+不加载真实 CLIP，也不分配 GPU。完整检查及尚未验证项见[结果记录](../../experiments/results/postgresql/image_stages_f_20260920/README.md)。
+
 ### 生成 Map 的增量核心接入
 
 启动同一服务级 Engine 的增量路径（默认一个活动Job）：

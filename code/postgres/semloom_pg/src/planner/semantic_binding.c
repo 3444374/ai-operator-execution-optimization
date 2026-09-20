@@ -147,6 +147,29 @@ semloom_binding_store(const SemloomTupleBinding *binding, TupleTableSlot *child,
 	}
 }
 
+SemloomTupleBinding *
+semloom_binding_image(AttrNumber input_column, TupleDesc child, TupleDesc scan)
+{
+	SemloomTupleBinding *binding = allocate_binding(child, scan);
+	int column;
+
+	if (child->natts != scan->natts || input_column <= 0 || input_column > child->natts ||
+		TupleDescAttr(child, input_column - 1)->atttypid != BYTEAOID ||
+		TupleDescAttr(scan, input_column - 1)->atttypid != FLOAT4ARRAYOID ||
+		TupleDescAttr(child, input_column - 1)->attisdropped ||
+		TupleDescAttr(scan, input_column - 1)->attisdropped)
+		invalid_binding();
+	binding->input_column = binding->result_column = input_column;
+	for (column = 1; column <= scan->natts; column++)
+	{
+		if (column == input_column)
+			continue; /* Typed result is NULL until its completion is installed. */
+		validate_passthrough(child, column, scan, column);
+		binding->child_columns[column - 1] = column;
+	}
+	return binding;
+}
+
 static void
 invalid_binding(void)
 {

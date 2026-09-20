@@ -340,6 +340,37 @@ class BoundedStageBroker:
         except KeyError as error:
             raise KeyError(f"unknown block_id: {block_id}") from error
 
+    def cancel_queued(self, block_id: str) -> None:
+        """Release a block only while no worker owns a lease for it."""
+        state = self.state_of(block_id)
+        descriptor = self._descriptors[block_id]
+        if state == "encoded":
+            self._encoded_queue.remove(block_id)
+            self._encoded_held_bytes -= descriptor.physical_bytes
+        elif state == "ready":
+            self._ready_queue.remove(block_id)
+            self._ready_held_bytes -= descriptor.physical_bytes
+            self._ready_held_work -= descriptor.model_work_units
+        else:
+            raise ValueError("only an unleased block can be cancelled locally")
+        self._states[block_id] = "failed"
+        self._assert_invariants()
+
+    def release_terminal(self, block_id: str) -> None:
+        """Forget a settled block after its external owner accepts the outcome.
+
+        Streaming callers must supply never-reused execution identities. The
+        default historical broker API retains its duplicate-detection history;
+        this explicit operation lets an incremental owner bound that history.
+        """
+        if self.state_of(block_id) not in ("completed", "failed"):
+            raise ValueError("cannot release a block with unfinished work")
+        descriptor = self._descriptors.pop(block_id)
+        del self._states[block_id]
+        self._admitted_rows.difference_update(descriptor.row_ids)
+        self._completed_rows.difference_update(descriptor.row_ids)
+        self._assert_invariants()
+
     def _validate_new_descriptor(self, descriptor: StageBlockDescriptor) -> None:
         if descriptor.block_id in self._states:
             raise ValueError(f"duplicate block_id: {descriptor.block_id}")

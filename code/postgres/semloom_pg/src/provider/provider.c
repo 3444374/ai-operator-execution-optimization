@@ -13,6 +13,8 @@
 #include "provider/provider_private.h"
 #include "semantics/semantic_filter_contract.h"
 #include "semantics/semantic_map_contract.h"
+#include "semantics/semantic_image_contract.h"
+#include "semantics/image_identity.h"
 #include "semantics/sem_text.h"
 #include "extension_config.h"
 
@@ -33,7 +35,7 @@ semloom_provider_select(MemoryContext owner_context,
 	provider->retained_metadata_bytes = 0;
 	if (!semloom_provider_spec_is_recording(spec) &&
 		!semloom_provider_spec_is_exact_filter(spec) &&
-		!semloom_provider_spec_is_generate_map(spec))
+		!semloom_provider_spec_is_generate_map(spec) && !semloom_provider_spec_is_image(spec))
 		elog(ERROR, "unsupported semantic provider plan specification");
 	if (socket_path[0] == '\0' && semloom_provider_spec_is_recording(spec))
 		semloom_recording_provider_select(provider);
@@ -148,6 +150,48 @@ semloom_provider_error_clear(AiProviderError *error)
 {
 	if (error != NULL)
 		MemSet(error, 0, sizeof(*error));
+}
+
+bool
+semloom_provider_spec_is_image(const AiOpenSpec *spec)
+{
+	char semantic[65];
+	char physical[65];
+	uint32 index;
+
+	if (spec == NULL || spec->plan_schema_version != SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION ||
+		spec->operator_kind != AI_PROVIDER_OPERATOR_MAP ||
+		spec->input_value_kind != AI_PROVIDER_VALUE_ENCODED_IMAGE ||
+		spec->output_value_kind != AI_PROVIDER_VALUE_FLOAT4_VECTOR ||
+		spec->null_policy != AI_PROVIDER_NULL_PROPAGATE || spec->error_policy != AI_PROVIDER_ERROR_FAIL_QUERY ||
+		spec->order_policy != AI_PROVIDER_ORDER_INPUT || spec->semantic_spec_version != 1 ||
+		!semloom_slice_equals(&spec->semantic_spec_id, SEMLOOM_IMAGE_SPEC_ID) ||
+		spec->image_dimension < 1 || spec->image_dimension > SEMLOOM_IMAGE_MAX_DIMENSION ||
+		spec->image_input_size < 1 || spec->image_input_size > 1024 ||
+		spec->max_input_bytes != SEMLOOM_IMAGE_MAX_INPUT_BYTES ||
+		spec->max_output_bytes != spec->image_dimension * 4 || spec->has_generation_profile ||
+		spec->model_id.length < 1 || spec->model_id.length > 128 ||
+		spec->image_processor_id.length < 1 || spec->image_processor_id.length > 128 ||
+		!semloom_text_is_utf8_no_nul(spec->model_id.data, spec->model_id.length) ||
+		!semloom_text_is_utf8_no_nul(spec->image_processor_id.data, spec->image_processor_id.length) ||
+		spec->image_model_revision.length != 40 || spec->image_model_revision.data == NULL ||
+		spec->image_processor_revision.length != 40 || spec->image_processor_revision.data == NULL ||
+		(!semloom_slice_equals(&spec->image_dtype, "float32") &&
+		 !semloom_slice_equals(&spec->image_dtype, "float16") && !semloom_slice_equals(&spec->image_dtype, "bfloat16")) ||
+		!semloom_slice_is_sha256(&spec->semantic_spec_digest) ||
+		!semloom_slice_is_sha256(&spec->physical_algorithm_digest))
+		return false;
+	for (index = 0; index < 40; index++)
+		if (spec->image_model_revision.data[index] == 0 || spec->image_processor_revision.data[index] == 0 ||
+			strchr("0123456789abcdef", spec->image_model_revision.data[index]) == NULL ||
+			strchr("0123456789abcdef", spec->image_processor_revision.data[index]) == NULL)
+			return false;
+	semloom_image_spec_digest(spec, semantic);
+	semloom_image_physical_digest(spec->image_staged, physical);
+	return semloom_slice_equals(&spec->semantic_spec_digest, semantic) &&
+		semloom_slice_equals(&spec->physical_algorithm_digest, physical) &&
+		semloom_slice_equals(&spec->physical_algorithm, spec->image_staged ? "IMAGE_STAGED_V1" : "IMAGE_REFERENCE_SYNC_V1") &&
+		semloom_slice_equals(&spec->physical_role, spec->image_staged ? "staged" : "reference");
 }
 
 void

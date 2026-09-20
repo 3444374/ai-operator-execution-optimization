@@ -38,6 +38,7 @@ extern void semloom_provider_select(MemoryContext owner_context,
 extern bool semloom_provider_spec_is_recording(const AiOpenSpec *spec);
 extern bool semloom_provider_spec_is_exact_filter(const AiOpenSpec *spec);
 extern bool semloom_provider_spec_is_generate_map(const AiOpenSpec *spec);
+extern bool semloom_provider_spec_is_image(const AiOpenSpec *spec);
 extern void semloom_provider_error_clear(AiProviderError *error);
 extern void semloom_provider_error_set(AiProviderError *error,
 									uint32 code,

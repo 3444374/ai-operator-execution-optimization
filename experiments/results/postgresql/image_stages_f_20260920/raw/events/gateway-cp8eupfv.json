@@ -1,0 +1,5731 @@
+[
+  {
+    "event": "job_opened",
+    "job_id": "registered-0",
+    "engine_session_id": 0,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 0,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 158,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 158,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 0,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 0,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 0,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 0,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-0",
+    "engine_session_id": 0,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-0",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-1",
+    "engine_session_id": 1,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 158,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 158,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 1,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 1,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-1",
+    "engine_session_id": 1,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-1",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-2",
+    "engine_session_id": 2,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 158,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 158,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 2,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 2,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-2",
+    "engine_session_id": 2,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-2",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-3",
+    "engine_session_id": 3,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 158,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 158,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 3,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 3,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-3",
+    "engine_session_id": 3,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-3",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-4",
+    "engine_session_id": 4,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 4,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 158,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 158,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 4,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 4,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 4,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 4,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-4",
+    "engine_session_id": 4,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-4",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_opened",
+    "job_id": "registered-5",
+    "engine_session_id": 5,
+    "job_budget": {
+      "held_tasks": 2,
+      "input_bytes": 524288,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8,
+      "max_sessions": 1
+    },
+    "connection_buffer_bytes": 5243392
+  },
+  {
+    "event": "image_method_opened",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 5,
+      "sequence": 0
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 158,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 158,
+      "result_bytes": 24,
+      "active_requests": 2,
+      "active_work": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 96,
+      "ready_held_work": 8,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 5,
+      "sequence": 1
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "image_row_accepted",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      2,
+      1050164
+    ]
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "accepted",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 1,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 2,
+      "input_bytes": 79,
+      "result_bytes": 24,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 5,
+      "sequence": 2
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 79,
+      "result_bytes": 12,
+      "active_requests": 1,
+      "active_work": 4
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 1,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 79,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      1,
+      525082
+    ]
+  },
+  {
+    "event": "prepared",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 1,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "stage_submitted",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 1,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 48,
+      "ready_held_work": 4,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "remote_terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "object_refs_released",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 1,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal_delivered",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "image_stages": {
+      "encoded_queued": 0,
+      "prepare_inflight": 0,
+      "ready_queued": 0,
+      "model_inflight": 0,
+      "completed": 0,
+      "failed": 0,
+      "encoded_held_bytes": 0,
+      "ready_held_bytes": 0,
+      "ready_held_work": 0,
+      "encoded_bytes_limit": 524288,
+      "ready_bytes_limit": 96,
+      "ready_work_limit": 8
+    }
+  },
+  {
+    "event": "terminal",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 1,
+      "input_bytes": 0,
+      "result_bytes": 12,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "released",
+    "key": {
+      "session_id": 5,
+      "sequence": 3
+    },
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "image_result_released",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      2,
+      1050164
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "image_method_closed",
+    "engine_session_id": 5,
+    "method_capacity": {
+      "runs": 4,
+      "bytes": 2100328
+    },
+    "method_allocated": [
+      0,
+      0
+    ],
+    "method_used": [
+      0,
+      0
+    ]
+  },
+  {
+    "event": "connection_closed",
+    "job_id": "registered-5",
+    "engine_session_id": 5,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "job_drained",
+    "job_id": "registered-5",
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  },
+  {
+    "event": "transport_closed",
+    "closed": true,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  }
+]

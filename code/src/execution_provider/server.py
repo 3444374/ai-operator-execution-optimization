@@ -70,6 +70,9 @@ def parse_args(argv=None) -> argparse.Namespace:
         type=Path,
         help="repository-external fixed OpenAI-compatible endpoint configuration",
     )
+    adapter_group.add_argument("--image-config", type=Path,
+                               help="repository-external typed image service configuration")
+    parser.add_argument("--image-ray-address", help="explicit existing Ray cluster for staged images")
     parser.add_argument("--test-response-delay-ms", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument(
         "--test-tamper-evidence-digest", action="store_true", help=argparse.SUPPRESS
@@ -132,8 +135,13 @@ def main(
         raise SystemExit("--test-max-sessions must be non-negative")
     if not 1 <= args.max_active_jobs <= limits.max_connections:
         raise SystemExit("active Jobs must fit connection capacity")
-    if args.max_active_jobs != 1 and not args.incremental_map:
+    if args.max_active_jobs != 1 and not (args.incremental_map or args.image_config):
         raise SystemExit("multiple active Jobs require --incremental-map")
+    if args.image_config and (args.incremental_map or args.organization_config
+                              or args.job_compute_policy != "equal-share"):
+        raise SystemExit("image configuration selects its own typed execution profile")
+    if args.image_ray_address and not args.image_config:
+        raise SystemExit("image Ray address requires --image-config")
     if args.job_compute_policy != "equal-share" and (
         not args.incremental_map or incremental_execution_factory is not None
     ):
@@ -160,7 +168,7 @@ def main(
             value is not None
             for value in (args.max_held_tasks, args.input_buffer_bytes, args.result_buffer_bytes)
         )
-        and not args.incremental_map
+        and not (args.incremental_map or args.image_config)
     ):
         raise SystemExit("incremental buffer budgets require --incremental-map")
     if any(
@@ -174,7 +182,40 @@ def main(
         raise SystemExit(
             f"incremental Map v6 requires a fixed model, capacity 1..{MAX_INCREMENTAL_TASKS}"
         )
-    if args.fixed_model_config is None:
+    image_ray = None
+    if args.image_config is not None:
+        from .adapters.image_execution import ImageServiceConfig
+        from .image_gateway import ImageGateway
+        try:
+            if args.image_config.stat().st_size > 65536:
+                raise ValueError("image configuration too large")
+            image_config = ImageServiceConfig.from_record(json.loads(args.image_config.read_text()))
+        except (OSError, ValueError, TypeError, KeyError):
+            raise SystemExit("invalid image service configuration") from None
+        if not 1 <= held_tasks <= MAX_INCREMENTAL_TASKS:
+            raise SystemExit("image held task capacity is invalid")
+        if image_config.mode == "staged":
+            if not args.image_ray_address or args.image_ray_address in ("auto", "local"):
+                raise SystemExit("staged images require an explicit --image-ray-address")
+            import ray as image_ray
+            image_ray.init(address=args.image_ray_address)
+        elif args.image_ray_address:
+            raise SystemExit("synchronous image reference does not use Ray")
+        try:
+            incremental_adapter = ImageGateway(
+                image_config, max_jobs=args.max_active_jobs, max_connections=limits.max_connections,
+                max_tasks=held_tasks, max_active_requests=limits.max_active_requests,
+                frame_timeout_ms=limits.frame_timeout_ms,
+                input_bytes=args.input_buffer_bytes or held_tasks * 262144,
+                result_bytes=args.result_buffer_bytes or held_tasks * image_config.plan.result_bytes,
+                observer=incremental_observer, execution_factory=incremental_execution_factory,
+            )
+        except BaseException:
+            if image_ray is not None:
+                image_ray.shutdown()
+            raise
+        completion_adapter = incremental_adapter
+    elif args.fixed_model_config is None:
         completion_adapter = GoldenCompletionAdapter(golden_fixtures)
     else:
         try:
@@ -225,6 +266,8 @@ def main(
     except BaseException:
         if incremental_adapter is not None:
             incremental_adapter.close()
+        if image_ray is not None:
+            image_ray.shutdown()
         raise
     socket_identity: tuple[int, int] | None = None
     try:
@@ -270,6 +313,8 @@ def main(
                     socket_path.unlink()
         if not transport_closed:
             raise RuntimeError("incremental transport did not close")
+        if image_ray is not None:
+            image_ray.shutdown()
     return 0
 
 

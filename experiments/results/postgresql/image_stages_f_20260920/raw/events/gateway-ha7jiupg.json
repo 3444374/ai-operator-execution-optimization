@@ -1,0 +1,13 @@
+[
+  {
+    "event": "transport_closed",
+    "closed": true,
+    "usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    }
+  }
+]

@@ -3,6 +3,7 @@
 
 #include "semantics/sem_operator_machine.h"
 #include "semantics/semantic_map_contract.h"
+#include "semantics/semantic_image_contract.h"
 
 #define SEMLOOM_MACHINE_OPERATOR_MAP 1
 #define SEMLOOM_MACHINE_OPERATOR_FILTER 2
@@ -32,7 +33,8 @@ semloom_operator_machine_init(SemloomOperatorMachine *machine,
 	machine->instruction_length = instruction_length;
 	machine->invalid_completion_message = NULL;
 	if (operator_kind == SEMLOOM_MACHINE_OPERATOR_MAP &&
-		plan_schema_version == SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION)
+		(plan_schema_version == SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION ||
+		 plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION))
 	{
 		machine->methods = &semloom_map_machine_methods;
 		machine->invalid_completion_message =
@@ -134,7 +136,8 @@ semloom_operator_machine_build_task(const SemloomOperatorMachine *machine,
 	if (machine == NULL || input == NULL || written_length == NULL || input->is_null ||
 		(input->length > 0 && input->data == NULL))
 		return false;
-	if (machine->plan_schema_version == SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION)
+	if (machine->plan_schema_version == SEMLOOM_RECORDING_PLAN_SCHEMA_VERSION ||
+		machine->plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
 	{
 		*written_length = 0;
 		return true;

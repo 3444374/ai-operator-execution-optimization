@@ -1,5 +1,43 @@
 # `semloom_pg` capability spike
 
+## Opt-in image embedding
+
+Extension version `0.3.0` adds `ai_semantic.embed(bytea, jsonb) -> real[]`.
+Install that version explicitly or update an existing `0.2.0` extension to `0.3.0`.
+The default installation remains `0.2.0`; old function identities and privileges survive the upgrade.
+The image marker uses the existing Map CustomScan with an ordinary PostgreSQL child.
+
+The seven constant options are `model_id`, `model_revision`, `processor_id`, `processor_revision`,
+`dtype`, `dimension`, and `input_size`. Revisions are immutable 40-character lowercase hashes.
+Schema five fixes single-frame JPEG/PNG RGB preparation, projection, L2 normalization, finite
+float4 output, NULL propagation, query errors and input order. The encoded input limit is 256 KiB;
+the decoded image limit is 16,777,216 pixels. Output dimensions range from 1 to 4096.
+No image is silently truncated. The prepared tensor is contiguous float32 NCHW.
+
+Choose `semloom_pg.provider_execution_profile='image-reference'` or `'image-staged'` and a matching
+image gateway. Wire seven carries binary image bytes and vector results, with independent plan,
+execution, row and completion digests. The reference uses synchronous PG drive; staged execution
+uses the existing bounded offer/receive pump and input-order restoration. The total retained-row
+budget remains opt-in. Array results fit the existing conservative per-row result reservation.
+
+The supported shapes are one visible image call over one base table, ordinary predicates and
+projections, forward execution, prepared plans and the existing restricted INSERT ... SELECT.
+NULL and LIMIT zero create no tasks. Unsafe prefetch keeps window one. Image calls over semantic
+Filter, query-job image streams, joins, rescans, arbitrary method programs and image classification
+are not implemented by this slice.
+
+`MethodDriver` owns bounded row state and final vectors through socket send. The shared core owns
+task admission and remote outcomes; `BoundedStageBroker` owns encoded/prepared representations and
+CPU/model leases. One semantic image request contains two physical stages. The service owns Ray
+actors; a query cancellation never kills a shared actor. Failed Ray futures retain reservations
+until a subsequent actor confirmation succeeds, including CUDA synchronization for the GPU worker.
+An unreachable actor or unconfirmed device outcome remains charged.
+
+[Configuration and CLI](../../scripts/README.md#图像-provider) and
+[engineering evidence](../../../experiments/results/postgresql/image_stages_f_20260920/README.md)
+describe the exact tested scope. The integration uses real PG, Ray and image decode with a CPU
+stand-in for model output. Real CLIP numerical, GPU failure and performance validation remain pending.
+
 For controlled tuple-flow diagnostics only, a clean build with `SEMLOOM_FLOW_DIAGNOSTIC=1`
 includes monotonic stage traces and bounded input-pull pauses. Superuser-only `test_flow_trace`,
 `test_flow_pause_input`, `test_flow_pause_ms` and `test_flow_ready_first` settings enable the experiment.

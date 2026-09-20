@@ -13,6 +13,8 @@
 #include "semantics/semantic_filter_contract.h"
 #include "semantics/semantic_map_contract.h"
 #include "planner/sem_plan_spec.h"
+#include "planner/sem_image_plan.h"
+#include "semantics/semantic_image_contract.h"
 
 #define SEMLOOM_RECORDING_PLAN_FIELD_COUNT 10
 #define SEMLOOM_EXACT_FILTER_PLAN_FIELD_COUNT 27
@@ -345,6 +347,11 @@ semloom_decode_fields(List *fields, MemoryContext owner_context, SemloomPlanSpec
 	MemSet(plan_spec, 0, sizeof(*plan_spec));
 	if (fields == NIL || !IsA(fields, List))
 		semloom_plan_spec_invalid("invalid semantic plan specification");
+	if (semloom_image_plan_is_fields(fields))
+	{
+		semloom_image_plan_decode(fields, owner_context, plan_spec);
+		return;
+	}
 	foreach(cell, fields)
 	{
 		Node *field_node = (Node *) lfirst(cell);
@@ -559,7 +566,8 @@ semloom_plan_spec_decode(List *custom_private,
 	}
 
 	semloom_decode_fields(fields, owner_context, plan_spec);
-	if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	if (plan_spec->schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION ||
+		plan_spec->schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
 	{
 		List *binding;
 		Const *function_binding;
@@ -709,6 +717,11 @@ void
 semloom_plan_spec_explain(const SemloomPlanSpec *plan_spec, ExplainState *explain_state)
 {
 	ExplainPropertyText("Physical Role", plan_spec->physical_role, explain_state);
+	if (plan_spec->schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+	{
+		semloom_image_plan_explain(plan_spec, explain_state);
+		return;
+	}
 	if (plan_spec->model_id != NULL)
 	{
 		ExplainPropertyText("Semantic Spec", plan_spec->semantic_spec_id, explain_state);
@@ -803,6 +816,9 @@ semloom_plan_spec_mark_seen(uint32 *seen_fields, uint32 field_bit)
 static void
 semloom_plan_spec_validate(const SemloomPlanSpec *plan_spec)
 {
+	/* Image decode reconstructs every semantic value and verifies both digests. */
+	if (plan_spec->schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+		return;
 	if (plan_spec->schema_version == SEMLOOM_PLAN_SPEC_SCHEMA_VERSION)
 	{
 		bool map_spec = plan_spec->operator_kind == SEMLOOM_PLAN_OPERATOR_MAP &&

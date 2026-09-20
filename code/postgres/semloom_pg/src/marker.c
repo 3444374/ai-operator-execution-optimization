@@ -4,6 +4,15 @@
 
 PG_FUNCTION_INFO_V1(semloom_marker_map);
 PG_FUNCTION_INFO_V1(semloom_marker_filter);
+PG_FUNCTION_INFO_V1(semloom_marker_image);
+
+Datum
+semloom_marker_image(PG_FUNCTION_ARGS)
+{
+	ereport(ERROR, (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+		errmsg("ai_semantic.embed marker was not lowered to a semantic plan")));
+	PG_RETURN_NULL();
+}
 
 Datum
 semloom_marker_map(PG_FUNCTION_ARGS)

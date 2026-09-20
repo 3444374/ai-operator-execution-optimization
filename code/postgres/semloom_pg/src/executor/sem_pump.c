@@ -6,6 +6,8 @@
  * each operator machine owns NULL and completion interpretation.
  */
 #include "postgres.h"
+#include "utils/array.h"
+#include "semantics/semantic_image_contract.h"
 #ifdef SEMLOOM_FLOW_DIAGNOSTIC
 #include <time.h>
 #endif
@@ -150,6 +152,7 @@ semloom_flow_input_ready(SemloomExecPump *pump, SemloomWindowRow *row)
 
 static AiByteSlice semloom_pump_bind_text(Datum input,
 										 MemoryContext task_context);
+static void semloom_store_image_array(void *storage, const PgSemanticCompletion *completion);
 static void semloom_pump_store_completion(TupleTableSlot *slot,
 										 AttrNumber result_column,
 										 const PgSemanticCompletion *completion,
@@ -264,11 +267,13 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	}
 	else
 		ExecInitExprList(scan->custom_exprs, &node->ss.ps);
-	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION)
+	if (plan_spec.schema_version == SEMLOOM_MAP_PLAN_SCHEMA_VERSION ||
+		plan_spec.schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
 	{
 		AclResult aclresult;
 
-		if (plan_spec.marker_function_oid != semloom_generate_map_function_oid())
+		if (plan_spec.marker_function_oid != (plan_spec.schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION ?
+			semloom_image_function_oid() : semloom_generate_map_function_oid()))
 			ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
 				errmsg("invalid generative SemMap function binding")));
 		aclresult = object_aclcheck(ProcedureRelationId, plan_spec.marker_function_oid,
@@ -288,7 +293,9 @@ semloom_pump_begin(CustomScanState *node, EState *estate, int executor_flags)
 	pump->runtime = pg_semantic_runtime_begin(owner_context, &plan_spec);
 	pump->child_state =
 		ExecInitNode(linitial_node(Plan, scan->custom_plans), estate, executor_flags);
-	pump->binding = carrier.projected_input ?
+	pump->binding = plan_spec.schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION ?
+		semloom_binding_image(input_column, ExecGetResultType(pump->child_state),
+			node->ss.ss_ScanTupleSlot->tts_tupleDescriptor) : carrier.projected_input ?
 		semloom_binding_projected(carrier.binding_fields, ExecGetResultType(pump->child_state),
 			node->ss.ss_ScanTupleSlot->tts_tupleDescriptor) :
 		semloom_binding_legacy(input_column,
@@ -396,19 +403,18 @@ semloom_pump_next(SemloomExecPump *pump, ScanState *scan_state)
 		}
 		else
 		{
-			AiByteSlice input = semloom_pump_bind_text(
-				input_value,
-				tuple_context);
-			SemloomBoundValue bound_input = {
-				.data = input.data,
-				.length = input.length,
-				.is_null = false,
-			};
+			AiByteSlice input;
+			SemloomBoundValue bound_input;
 			size_t task_length;
 			uint8 *task_data = NULL;
 			PgSemanticCompletion completion = {0};
 			SemloomMachineCompletion machine_completion = {0};
 
+			if (pump->machine.plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+				pg_semantic_runtime_preflight_input(pump->runtime,
+					(AiByteSlice) {NULL, semloom_window_raw_text_bytes(input_value)});
+			input = semloom_pump_bind_text(input_value, tuple_context);
+			bound_input = (SemloomBoundValue) {input.data, input.length, false};
 			pg_semantic_runtime_preflight_input(pump->runtime, input);
 			task_length = semloom_operator_machine_task_size(
 				&pump->machine,
@@ -515,8 +521,12 @@ semloom_window_read(SemloomExecPump *pump, ScanState *scan, SemloomWindowRow *ro
 	row->ready = is_null;
 	if (!is_null)
 	{
-		AiByteSlice borrowed = semloom_pump_bind_text(value, row->context);
+		AiByteSlice borrowed;
 		uint8 *owned;
+		if (pump->machine.plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+			pg_semantic_runtime_preflight_input(pump->runtime,
+				(AiByteSlice) {NULL, semloom_window_raw_text_bytes(value)});
+		borrowed = semloom_pump_bind_text(value, row->context);
 		pg_semantic_runtime_preflight_input(pump->runtime, borrowed);
 		owned = palloc(borrowed.length ? borrowed.length : 1);
 		if (borrowed.length) memcpy(owned, borrowed.data, borrowed.length);
@@ -576,12 +586,14 @@ semloom_window_read_total(SemloomExecPump *pump, ScanState *scan)
 		uint32 raw_bytes = semloom_window_raw_text_bytes(value);
 		/* The length-only preflight must precede any detoast allocation. */
 		pg_semantic_runtime_preflight_input(pump->runtime, (AiByteSlice){NULL, raw_bytes});
-		if (4 * (uint64) raw_bytes + SEMLOOM_WINDOW_CONTEXT_ALLOWANCE > SEMLOOM_WINDOW_CONVERSION_LIMIT)
+		if ((pump->machine.plan_schema_version == SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION ? 1 : 4) *
+			(uint64) raw_bytes + SEMLOOM_WINDOW_CONTEXT_ALLOWANCE > SEMLOOM_WINDOW_CONVERSION_LIMIT)
 			ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("semantic conversion byte limit exceeded")));
 		borrowed = semloom_pump_bind_text(value, pump->conversion_context);
 		bound = (SemloomBoundValue){.data=borrowed.data, .length=borrowed.length, .is_null=false};
 		messages_size = semloom_operator_machine_task_size(&pump->machine, &bound);
-		if (messages_size == 0) elog(ERROR, "could not measure semantic operator task");
+		if (messages_size == 0 && pump->machine.plan_schema_version != SEMLOOM_IMAGE_PLAN_SCHEMA_VERSION)
+			elog(ERROR, "could not measure semantic operator task");
 	}
 	conversion_bytes = MemoryContextMemAllocated(pump->conversion_context, true);
 	pump->peak_conversion_bytes = Max(pump->peak_conversion_bytes, conversion_bytes);
@@ -645,8 +657,13 @@ semloom_window_store_reserved(SemloomExecPump *pump, SemloomWindowRow *row,
 	}
 	if (row->result_storage == NULL || completion->length > SEMLOOM_MAP_MAX_OUTPUT_BYTES)
 		elog(ERROR, "semantic result exceeds its retained reservation");
-	SET_VARSIZE(row->result_storage, VARHDRSZ + completion->length);
-	if (completion->length) memcpy(VARDATA(row->result_storage), completion->data, completion->length);
+	if (TupleDescAttr(row->slot->tts_tupleDescriptor, column - 1)->atttypid == FLOAT4ARRAYOID)
+		semloom_store_image_array(row->result_storage, completion);
+	else
+	{
+		SET_VARSIZE(row->result_storage, VARHDRSZ + completion->length);
+		if (completion->length) memcpy(VARDATA(row->result_storage), completion->data, completion->length);
+	}
 	row->slot->tts_isnull[column - 1] = false;
 	row->slot->tts_values[column - 1] = PointerGetDatum(row->result_storage);
 }
@@ -900,7 +917,13 @@ semloom_pump_store_completion(TupleTableSlot *slot,
 	previous_context = MemoryContextSwitchTo(result_context);
 	PG_TRY();
 	{
-		output_text = cstring_to_text_with_len(output_data, completion->length);
+		if (TupleDescAttr(slot->tts_tupleDescriptor, result_column - 1)->atttypid == FLOAT4ARRAYOID)
+		{
+			output_text = palloc(ARR_OVERHEAD_NONULLS(1) + completion->length);
+			semloom_store_image_array(output_text, completion);
+		}
+		else
+			output_text = cstring_to_text_with_len(output_data, completion->length);
 		MemoryContextSwitchTo(previous_context);
 	}
 	PG_CATCH();
@@ -911,4 +934,31 @@ semloom_pump_store_completion(TupleTableSlot *slot,
 	PG_END_TRY();
 	slot->tts_isnull[result_column - 1] = false;
 	slot->tts_values[result_column - 1] = PointerGetDatum(output_text);
+}
+
+static void
+semloom_store_image_array(void *storage, const PgSemanticCompletion *completion)
+{
+	ArrayType *array = storage;
+	uint32 dimension = completion->length / 4;
+	uint32 index;
+
+	StaticAssertStmt(ARR_OVERHEAD_NONULLS(1) + SEMLOOM_IMAGE_MAX_DIMENSION * 4 <=
+		VARHDRSZ + SEMLOOM_MAP_MAX_OUTPUT_BYTES, "image array fits the existing result reservation");
+	if (!semloom_image_vector_valid(completion->data, completion->length, dimension))
+		ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("invalid image float4 vector")));
+	SET_VARSIZE(array, ARR_OVERHEAD_NONULLS(1) + completion->length);
+	array->ndim = 1;
+	array->dataoffset = 0;
+	ARR_ELEMTYPE(array) = FLOAT4OID;
+	ARR_DIMS(array)[0] = dimension;
+	ARR_LBOUND(array)[0] = 1;
+	for (index = 0; index < dimension; index++)
+	{
+		const uint8 *bytes = completion->data + index * 4;
+		uint32 bits = ((uint32) bytes[0] << 24) | ((uint32) bytes[1] << 16) |
+			((uint32) bytes[2] << 8) | bytes[3];
+
+		memcpy(ARR_DATA_PTR(array) + index * 4, &bits, sizeof(bits));
+	}
 }
