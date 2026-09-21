@@ -2,7 +2,7 @@
 
 日期：2026-07-31
 状态：**方向已 validate，贡献角度未锁**（冷启动 parked）——待导师/学长确认后定。
-来源：学长反馈（`notes/communication_notes.md` §5）+ 工作流 `w6xclfb0g`（Daft 内部核实 + 三痛点先验 + workload fit）+ 之前 scoop（`notes/communication_notes.md` §5.5）。
+来源：学长反馈（2026-07-31 沟通，原记录于 `notes/communication_notes.md` §5，该文件 2026-09-21 随沟通材料吸收原则移除，有效内容并入本文 §6.1/§6.2）+ 工作流 `w6xclfb0g`（Daft 内部核实 + 三痛点先验 + workload fit）。
 不改题目；本文是 academic-pipeline Stage 1 (RESEARCH) 的 scoped 输出。
 
 > **2026-08-01 证据边界修正**：图像 workload 已锁，但“数据搬运是主瓶颈”和
@@ -94,6 +94,30 @@ PolarDB Lakebase “结构性不覆盖”。
 - **批 dataflow 引擎层（竞争范式）**：Ray Data Streaming Batch (arXiv:2501.12407, block-streaming 但无 token/compute/model-load 感知)、Daft Flotilla/Swordfish。
 - **Daft 自身路线图（正在关闭①）**：RFC #5683 (Phase 1 落地 PR #5903, Phase 2/3 open)、RFC #5904、dynamic batching (2026-01)。
 - **可借思路**：Pollux (OSDI'21, goodpass-based right-sizing)。
+
+### 6.1 已被占据、不能再声称的子切片（2026-07-31 检索，原 `notes/communication_notes.md` §5.5（文件已移除）并入）
+
+总判定：partially-scooped（部分子切片已被直接发表）。
+
+| 子切片 | 已发表工作 | 性质 |
+|---|---|---|
+| “首次让上游层感知模型服务内部状态”（一般性声称） | **llm-d**（KV-cache-aware Endpoint Picker，2025 OSS）、**Preble**（ICLR 2025，global prefix-aware routing） | 在线 serving 网关 / 分布式推理场景占据 |
+| “prefix-cache-aware 数据/请求重排用于 DB-LLM 算子”（研究内容一的 prefix 子切片） | **SOLO**（ICML 2026 poster，OpenReview VSY1nFjumI，报 90.3% prefill 吞吐增益）、**Liu et al.**（OpenReview R7bK9yycHp，被引 24×） | **完全相同场景的直接 scoop**——本项目 prefix-affinity routing 在 4-ep/1.5B 上的 +5.9% 信号对应的正是这一切片 |
+| “让 serving 层感知 query 结构做跨算子 KV 复用” | **Kalypso**（arXiv 2607.23815，2026-07-26 提交） | 严重重叠整体 framing；区别：Kalypso 改引擎（KV pinning），本项目不改 vLLM |
+| Daft+Flotilla+vLLM 同栈的 prefix bucketing + 全局 prefix-aware router | **Daft v0.6.9 'vllm-prefix-caching' provider**（Eventual 工程博客 2025-11-04） | **在本项目用的同一个栈上产品化**；其 Future Work 已列出“router 监控 replica 未完成请求数 + 读 serving-engine cache metrics” |
+
+**剩余可防御切片（窄，且实证支撑偏弱）**：在数据库 AI 算子的【离线批处理数据管线】（Daft-on-Ray，区别于在线 serving 网关、区别于推理引擎内部），以【未修改的 vLLM 为黑盒外部观察对象】（区别于 Kalypso 的引擎内 KV pinning），将 live vLLM 内部状态耦合到【提交控制层】——active-work/K 上限、request/work credit replenishment、queue-adaptive flush、多作业公平排队（区别于 llm-d/Preble 的 routing 选副本、区别于 SOLO/Liu 的 batch 内数据/字段组织），并验证文本↔图像模态无关复用性。
+
+**双重诚实风险**：① scoop 风险——prefix 子切片已失，剩余切片很窄，且 Daft 团队正在关闭它；② regime-failure 风险——项目自身证据显示动态状态感知策略在 2-endpoint/2×4090 饱和运行条件下相对同资源上限的静态配置未稳定达到预先规定的 5% 改善幅度（AIMD/flush/service quantum/actor pool 均为负结果）。因此不宜单靠“未被直接 scoop”声称可防御：Related Work 必须显式点名并区分 SOLO / Liu / Kalypso / Daft v0.6.9 / llm-d / Preble / Abacus 七篇，并找到一个剩余切片确有显著收益的运行条件（多 job 高压 / 重 CPU 准备多模态可能是最后机会）。
+
+**仍需补的检索**：SOLO/Kalypso/Liu 全文细读（确认是否也覆盖 submission pacing）；submission control × live serving 状态的精确空白；多模态(VLM/CLIP) batch scheduling on Daft/Ray；Daft v0.6.9 之后 release 是否已出 true state-aware router；ICDE/OSDI/SIGMOD 2026 proceedings 扫描。
+
+### 6.2 PolarDB Lakebase 新颖性边界（2026-07-31 专项核查，原 `notes/communication_notes.md` §5.4（文件已移除）并入）
+
+- **属实且重要**：PolarDB Lakebase 集成**开源 Eventual-Inc/Daft on Ray（非 fork）**，内置 embed/classify/prompt，是迄今最贴近本项目技术栈的工业产品（相关度 4.5/5）。
+- **双刃**：PolarDB 的卖点（CPU/GPU 异构调度、morsel+backpressure、util 60→80%）**逐条对应项目研究方向**——“Daft on Ray + 异构调度 + 背压”已是产品，**项目不能把这一层当新颖性**。
+- **新颖性边界**：PolarDB 做通用**数据流** backpressure（下游慢→减缓上游），**不观测 vLLM 内部状态**（queue/KV/prefix）。项目能占的切片 = **模型服务状态感知的请求成形 + 闭源产品未公开的上游调度策略开放消融**。
+- **命名陷阱**：PolarDB **没有 `AI_COMPLETE`**（Snowflake 命名），等价物是 `polar_ai.*`（SQL，外挂 HTTP）+ Daft `prompt()`（DataFrame）。项目对标的 analog 专门是 **Lakebase 数据湖那条线**，不是 `polar_ai` SQL 扩展。
 
 ## 7. 诚实风险与待决
 

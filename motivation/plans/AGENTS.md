@@ -6,4 +6,4 @@
 - 方法验证、优化收益、调优和完整论文实验矩阵进入 `experiments/plans/`；原始数据、结果分析和组件脚本进入各自目录。
 - CPU/fake 计划按其实际用途表述，不能作为真实 GPU 链路结论。
 - 计划改变方向、优先级或关键入口时，按根 §7 同步 `motivation/README.md`、`PROJECT_INDEX.md`、
-  `PROJECT_OUTLINE.md` 和 `overview/current_direction_and_plan.md` 中受影响内容；局部文字修订只检查相关引用。
+  `PROJECT_OUTLINE.md` 和 `docs/overview.md` 中受影响内容；局部文字修订只检查相关引用。

@@ -9,7 +9,7 @@
 本目录不承担完整研究实验规划。围绕两项研究内容、共同代价估计和多模态泛化做优化、消融与
 结果记录时，使用根目录 `experiments/`。
 
-进入本目录前先读 `AGENTS.md`。正式结果优先读 `results/README.md`。
+进入本目录前先读 `AGENTS.md`。正式结果优先读 `../results/motivation/README.md`。
 
 ## 目录分工
 
@@ -17,20 +17,20 @@
 |---|---|
 | `plans/` | 动机测试相关的场景、路线和实验设计 |
 | `benchmarks/` | 动机实验脚本 |
-| `results/gpu/` | 真实 GPU-backed E2E 主动机结果，当前优先级最高 |
-| `results/pg18_4_fake/` | PG18.4 本地同构 fake-model 历史结果 |
-| `results/fake_cpu/` | fake/CPU 历史预研 CSV 和综合分析 |
+| `../results/motivation/gpu/` | 真实 GPU-backed E2E 主动机结果，当前优先级最高 |
+| `../results/motivation/pg18_4_fake/` | PG18.4 本地同构 fake-model 历史结果 |
+| `../results/motivation/fake_cpu/` | fake/CPU 历史预研 CSV 和综合分析 |
 
 ## 阅读顺序
 
 1. `plans/integration.md`：看真实 AI-SQL-compatible 算子、worker、GPU 模型服务和写回链路怎么组织，用于建立动机画像。
 2. `plans/workloads.md`：看 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY`、`AI_COMPLETE` 三类 baseline 和后续 GPU 动机实验计划。
 3. `plans/image_host_data_path_bottleneck.md`：图像轨道用 R0→R4 容量/表示阶梯判定 GPU feeding 限制，避免预设 PCIe 或 CPU 结论。
-4. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口；查看图像动机证据时先读
+4. `../results/motivation/gpu/README.md`：真实 GPU-backed 主动机结果入口；查看图像动机证据时先读
    `image_host_path_screening_20260802/` 的最新木桶诊断，再用
    `image_clip_native_baseline_20260801/` 看项目自写 Daft UDF 的 fused diagnostic；文本/早期 embedding 再读
    pgai 与 pgvector 对照。
-5. `results/pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构 fake-model 链路中的早期系统信号。
+5. `../results/motivation/pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构 fake-model 链路中的早期系统信号。
 6. `results/fake_cpu/analysis.md`：只在追溯历史 fake/CPU 预研时阅读。
 
 ## 文件索引
@@ -81,5 +81,5 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 - `README.md` 是否需要更新入口、命令或文件索引；
 - `results/README.md` 是否需要登记新结果；
 - 根 `README.md`、`PROJECT_INDEX.md` 是否需要同步阅读路径；
-- `learning/experiment_walkthrough.md` 是否需要补初学者讲解。
+- `docs/design/history/learning/experiment_walkthrough.md` 是否需要补初学者讲解。
 - 如果实验已经从“证明值得做”进入“验证方法是否有效”，需要迁入或同步到 `experiments/`。

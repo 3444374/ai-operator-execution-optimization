@@ -403,7 +403,7 @@ for this supplement.
 - Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `PROJECT_OUTLINE.md`
-- Modify: `overview/current_direction_and_plan.md`
+- Modify: `docs/overview.md`
 - Modify: `PROJECT_LOG.md`
 
 - [ ] **Step 1: Run one warmup and three seeded, interleaved formal repeats**

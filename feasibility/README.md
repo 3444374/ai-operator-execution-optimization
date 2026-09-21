@@ -12,7 +12,7 @@
 `experiments/plans/experiment_status_and_gaps.md`；动机测试结论再看 `motivation/README.md` 和
 `results/motivation/README.md`。本目录中的旧 capability/smoke 不会自动升级为当前待办。
 
-进入本目录前先读 `AGENTS.md`。如果要运行组件 benchmark，优先读 `benchmarks/README.md`；如果要看结果，优先读 `results/README.md`。
+进入本目录前先读 `AGENTS.md`。如果要运行组件 benchmark，优先读 `benchmarks/README.md`；如果要看结果，优先读 `../results/feasibility/README.md`。
 
 ## 目录分工
 
@@ -22,8 +22,8 @@
 | `README.md` | 本目录动态入口和文件索引 |
 | `benchmarks/` | Ray、Arrow、shuffle、fan-in 等组件级 benchmark 脚本 |
 | `benchmarks/README.md` | benchmark 运行命令和脚本说明 |
-| `results/` | 组件 benchmark、环境验证、连接验证和自动报告 |
-| `results/README.md` | 结果文件命名、结果索引和报告生成方式 |
+| `../results/feasibility/` | 组件 benchmark、环境验证、连接验证和自动报告 |
+| `../results/feasibility/README.md` | 结果文件命名、结果索引和报告生成方式 |
 
 ## 结果放置规则
 
@@ -91,5 +91,5 @@ python feasibility/benchmarks/analyze_results.py \
 - `README.md` 是否需要更新入口、命令或文件索引；
 - `benchmarks/README.md` 是否需要更新脚本说明和运行命令；
 - `results/README.md` 是否需要登记新结果；
-- `learning/experiment_walkthrough.md` 是否需要补初学者讲解；
+- `docs/design/history/docs/design/history/learning/experiment_walkthrough.md` 是否需要补初学者讲解；
 - 根 `README.md`、`PROJECT_INDEX.md` 是否需要同步更新当前进展或阅读路径。

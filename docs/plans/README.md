@@ -1,5 +1,9 @@
 # 实验计划与设计文档
 
+本目录回答“提出的方法或系统改动是否有效”的计划侧：当前实验合同、完成度与可复用设计依据。
+实验数据与结论落在 `../../results/`；动机测试（“问题是否存在”）落在 `../../results/motivation/`，
+组件与环境验证落在 `../../results/feasibility/`。不要从历史计划推断当前优先级。
+
 查询级Job身份与最小接入见[详细设计](postgresql_query_job_design.md)；这是现有多Job核心的PG归属扩展。
 
 当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享 Engine、查询归属与生命周期已验证；动态资源策略仍需适配。
@@ -14,7 +18,7 @@ E 的既定工程范围已完成；[F 图像接入](data_organization_batching.m
 已有执行与测量能力继续复用；旧正式矩阵不自动恢复，新实验仍需具体输入、预算与授权。
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
-`../results/`；动机实验落在 `../../results/motivation/`。不要从历史计划推断当前优先级。
+`../../results/`；动机实验落在 `../../results/motivation/`。不要从历史计划推断当前优先级。
 
 ## 1. 权威入口
 

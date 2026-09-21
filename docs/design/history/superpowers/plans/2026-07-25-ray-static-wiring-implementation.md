@@ -32,7 +32,7 @@
 - Modify `code/scripts/profiling/postgres_ai_operator_profile.py`: static task/actor delegation.
 - Create `code/tests/observability/test_postgres_profile_scheduling.py`: static path parity tests.
 - Modify `code/README.md`, `code/scripts/README.md`,
-  `learning/local_vllm_ray_baseline_walkthrough.md`, `PROJECT_INDEX.md`, and
+  `results/data_organization/local_vllm_qwen15b_baseline/walkthrough.md`, `PROJECT_INDEX.md`, and
   `PROJECT_LOG.md`.
 
 ### Task 1: Typed Collection Timings
@@ -555,7 +555,7 @@ git commit -m "refactor: wire static Ray actor scheduler"
 **Files:**
 - Modify: `code/README.md`
 - Modify: `code/scripts/README.md`
-- Modify: `learning/local_vllm_ray_baseline_walkthrough.md`
+- Modify: `results/data_organization/local_vllm_qwen15b_baseline/walkthrough.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 
@@ -603,7 +603,7 @@ git status --short
 Commit:
 
 ```powershell
-git add code/README.md code/scripts/README.md learning/local_vllm_ray_baseline_walkthrough.md PROJECT_INDEX.md PROJECT_LOG.md
+git add code/README.md code/scripts/README.md results/data_organization/local_vllm_qwen15b_baseline/walkthrough.md PROJECT_INDEX.md PROJECT_LOG.md
 git commit -m "docs: document static Ray scheduler wiring"
 ```
 

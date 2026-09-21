@@ -14,7 +14,7 @@
 |---|---|---|---|
 | 开题报告（线上历史发布面；同步暂停） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | revision 289历史快照，不代表当前实验口径 | 恢复同步时从`docs/thesis/report/opening_report.md`重新生成；禁止直接使用历史`opening_report_wiki.md` |
 | 开题报告与开题汇报（旧版历史） | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 旧版历史参考，不再作为当前同步目标 | `docs/thesis/feishu/opening_report_wiki.md` 的历史版本 |
-| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、分阶段性能剖析、实验结论边界 | `docs/thesis/feishu/motivation_feasibility_wiki.md`、`results/motivation/`、`results/feasibility/`、`learning/experiment_walkthrough.md` |
+| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、分阶段性能剖析、实验结论边界 | `docs/thesis/feishu/motivation_feasibility_wiki.md`、`results/motivation/`、`results/feasibility/`、`docs/design/history/docs/design/history/learning/experiment_walkthrough.md` |
 | 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版 PPT 在线版，当前内容和形式先作废，后续需基于新报告重做 | `docs/thesis/slides/README.md`、`docs/thesis/slides/opening_ppt.md` |
 
 ## 同步规则
@@ -38,7 +38,7 @@
 
 ## 实验内容记录标准
 
-飞书上的实验相关内容记录标准与项目本地实验报告保持一致，但讲解方式要参考 `learning/experiment_walkthrough.md`：先让读者看懂实验在整条链路里的位置，再解释变量和结果，最后给出结论边界。
+飞书上的实验相关内容记录标准与项目本地实验报告保持一致，但讲解方式要参考 `docs/design/history/docs/design/history/learning/experiment_walkthrough.md`：先让读者看懂实验在整条链路里的位置，再解释变量和结果，最后给出结论边界。
 
 每个正式实验同步到飞书时，至少包含：
 

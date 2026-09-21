@@ -1,6 +1,6 @@
 # 早期实验学习讲解（已归档）
 
-> **归档日期：2026-07-20。** 本文档覆盖 pre-convergence 时期的实验讲解（§0-8）：组件可行性验证、fake/CPU 动机测试、PG18.4 接入、pgvector scaling 等。这些实验为当前方向提供了早期信号，但不再反映项目当前 AI_COMPLETE + vLLM + Daft 的主线。当前实验讲解见 `learning/experiment_walkthrough.md`。
+> **归档日期：2026-07-20。** 本文档覆盖 pre-convergence 时期的实验讲解（§0-8）：组件可行性验证、fake/CPU 动机测试、PG18.4 接入、pgvector scaling 等。这些实验为当前方向提供了早期信号，但不再反映项目当前 AI_COMPLETE + vLLM + Daft 的主线。当前实验讲解见 `docs/design/history/learning/experiment_walkthrough.md`。
 
 ﻿# 已完成实验学习讲解
 

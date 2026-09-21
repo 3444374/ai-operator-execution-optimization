@@ -1,10 +1,10 @@
 # SemLoom 当前方向与计划
 
-最后更新：2026-09-02
+最后更新：2026-09-21（随全仓库目录重组迁入 `docs/`，路径已同步）
 
 这是两分钟快速参考卡片。完整定义以根 [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) 为准；
-实验完成度以
-[`experiments/plans/experiment_status_and_gaps.md`](../docs/plans/experiment_status_and_gaps.md)
+当前能力摘要见 [`status.md`](status.md)；实验完成度以
+[`plans/experiment_status_and_gaps.md`](plans/experiment_status_and_gaps.md)
 为准；数字只从结果报告和原始数据读取。
 
 ## 1. 一句话定位

@@ -20,7 +20,7 @@
 | M1 调整与验证 | [记录](results/postgresql/m1_platform_revision_20260920/README.md) | 可达性、分阶段编排与完整吞吐选点；35 项本地检查；后续真实筛查见下一行 |
 | 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](results/postgresql/map_organization_20260910/README.md) |
 | PG 图像类型与阶段执行 | [工作包 F 记录](results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，后续151次CLIP数值检查通过；性能尚未确认 |
-| 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
+| 当前方向速览 | [`docs/overview.md`](docs/overview.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`docs/research/knowledge_hub.md`](docs/research/knowledge_hub.md)、[`docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`](docs/research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |
 | PG调用/绑定近期规格 | [详细设计](docs/plans/postgresql_call_binding_design.md) | 公共描述/绑定及一个Filter→一个Map的接入、寿命、兼容与验收；共同调用、V1载体和一个Filter→一个生成Map已在开发分支验证；增量Core另行推进 |
@@ -49,7 +49,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 
 1. [`README.md`](README.md)
 2. [`CONTEXT.md`](CONTEXT.md)
-3. [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md)
+3. [`docs/overview.md`](docs/overview.md)
 4. [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md)
 5. [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md)
 
@@ -74,7 +74,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 1. [`deploy/runtime/AGENTS.md`](deploy/runtime/AGENTS.md)
 2. [`deploy/runtime/README.md`](deploy/runtime/README.md)
 3. 平台 runbook，例如 [`deploy/autodl/README.md`](deploy/autodl/README.md)
-4. [`docs/plans/AGENTS_experiment_rules.md`](docs/plans/AGENTS_experiment_rules.md)
+4. [`docs/plans/AGENTS.md`](docs/plans/AGENTS.md)
 5. [`docs/plans/README.md`](docs/plans/README.md)
 6. 对应实验计划和结果目录 README
 
@@ -101,20 +101,18 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 
 | 目录 | 内容 | 当前入口 | 不放什么 |
 |---|---|---|---|
-| `overview/` | 当前方向速览 | `overview/README.md` | 详细实验历史 |
+| `docs/` | 长期知识总入口（overview.md、status.md） | `docs/README.md` | 项目状态明细与实验数字 |
 | `docs/research/` | 文献、知识和设计依据 | `docs/research/README.md`、`docs/research/knowledge_hub.md` | 运行结果 |
-| `motivation/` | 课题动机与 GPU-backed 系统画像 | `motivation/README.md` | 方法胜出结论 |
-| `feasibility/` | 组件、环境、capability 和 smoke | `feasibility/README.md` | 正式方法排名 |
-| `experiments/` | 方法计划和正式结果 | `experiments/README.md` | 临时环境产物 |
+| `docs/design/` | 本项目设计选择与历史设计记录 | `docs/design/README.md` | 待执行任务 |
+| `docs/plans/` | 方法实验的计划、状态与 baseline 总入口 | `docs/plans/README.md` | 临时环境产物 |
+| `docs/thesis/` | 开题正文、答辩和文献快照 | `docs/thesis/README.md` | 实验原始数据 |
+| `docs/figures/` | 图源、导出和审计 | `docs/figures/README.md` | 无来源截图 |
+| `results/` | 某次测试的完整记录与证据台账 | `results/README.md`、`results/EXPERIMENT_EVIDENCE_REGISTRY.md` | 计划文本 |
+| `motivation/` | 动机画像的任务入口 | `motivation/README.md` | 方法胜出结论 |
+| `feasibility/` | 组件、环境验证的任务入口 | `feasibility/README.md` | 正式方法排名 |
 | `code/` | 可复用实现、CLI 和测试 | `code/README.md` | 一次性图脚本 |
 | `deploy/` | 环境合同、配置和 runbook | `deploy/README.md` | 研究结论 |
 | `data/` | 数据来源、哈希和导入合同 | `data/README.md` | raw payload |
-| `docs/figures/` | 图源、导出和审计 | `docs/figures/README.md` | 无来源截图 |
-| `docs/thesis/` | 开题正文、答辩和文献快照 | `docs/thesis/README.md` | 实验原始数据 |
-| `learning/` | 教学式讲解 | `learning/README.md` | 权威规则 |
-| `notes/` | 导师/企业沟通 | `notes/README.md` | 正式研究证据 |
-| `docs/` | 已完成的跨目录设计记录 | `docs/README.md` | 当前执行指令 |
-| `docs/design/history/` | 已完成代码设计与实施计划 | `docs/design/history/README.md` | 当前代码状态 |
 | `docs/thesis/archive/` | 旧 PPT 工程归档 | `docs/thesis/archive/README.md` | 新开题材料 |
 
 ## 4. 当前实现与代码入口
@@ -149,7 +147,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | 提交与反压 | [`docs/plans/service_scheduling_backpressure.md`](docs/plans/service_scheduling_backpressure.md) | 方法计划 |
 | 图像 workload | [`docs/plans/completed/image_clip_workload_lock_20260731.md`](docs/plans/completed/image_clip_workload_lock_20260731.md) | 静态范围已完成；动态部分见 state-aware 当前计划 |
 
-`docs/plans/archive/`、`docs/` 和 `docs/design/history/` 只用于追溯。若历史计划仍有有效待办，应把它
+`docs/plans/archive/` 和 `docs/design/history/` 只用于追溯。若历史计划仍有有效待办，应把它
 迁入上表对应的当前入口，而不是继续追加历史文件。
 
 ## 6. 证据入口
@@ -185,6 +183,6 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 - 历史结果和失败证据保留原目录，不因结论被替代而删除。
 - 已完成计划在目录 README 中标记状态，并指向当前入口。
 - `docs/thesis/archive/` 保留旧 PPT 工程的输入、输出和验证记录；不再用于生成新材料。
-- `docs/design/history/` 和 `docs/` 的计划文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
+- `docs/design/history/` 与 `docs/plans/archive/` 的文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
 - 本地 `.venv`、`tmp/`、raw workload、模型、缓存和 `__pycache__` 不进入 Git。
 - 新增、移动或删除文件后更新本索引、根 README、受影响目录 README 和 `PROJECT_LOG.md`。

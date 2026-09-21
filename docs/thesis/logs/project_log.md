@@ -504,13 +504,13 @@
 - 根据后续 learning、中期汇报和毕业论文都会复用图表的要求，将正式图资产从 `docs/thesis/assets/` 和 `learning/figures/` 迁移到根目录 `docs/figures/`。
 - 新增 `docs/figures/AGENTS.md`、`docs/figures/README.md`、`docs/figures/audit/figure_plan.md`、`docs/figures/audit/experiment_charts_audit.md` 和 `docs/figures/scripts/README.md`，明确项目级图资产库、正文主图、备份图、审计记录和绘图脚本的职责。
 - 当前正式主图位于 `docs/figures/architecture/` 和 `docs/figures/data/report_main/`；补充说明图位于 `docs/figures/data/backup/`；学习讲解专用图位于 `docs/figures/learning/`。
-- 同步更新 `docs/thesis/report/opening_report.md`、`docs/thesis/feishu/opening_report_wiki.md`、`learning/experiment_walkthrough.md`、`learning/README.md`、`docs/thesis/navigation.md`、`docs/thesis/assets/README.md`、`PROJECT_INDEX.md` 和根目录 `README.md` 中的图路径或入口说明。
+- 同步更新 `docs/thesis/report/opening_report.md`、`docs/thesis/feishu/opening_report_wiki.md`、`docs/design/history/docs/design/history/learning/experiment_walkthrough.md`、`learning/README.md`、`docs/thesis/navigation.md`、`docs/thesis/assets/README.md`、`PROJECT_INDEX.md` 和根目录 `README.md` 中的图路径或入口说明。
 - 删除旧的 `docs/thesis/assets/charts/`、`docs/thesis/assets/figures/`、`learning/figures/` 以及旧 ECharts 生成脚本和重复系统架构图副本。后续如需重生成实验图，应使用 `docs/figures/scripts/` 中的 Python 脚本和原始 CSV。
 
 ## 2026-07-13 开题报告本地调整与旧 PPT 作废
 
 - 根据项目当前主线，将 `docs/thesis/report/opening_report.md` 中研究内容一从“数据组织与批处理执行调度”收束为“数据组织与批处理构造”，减少与研究内容二“GPU 推理服务状态感知的 Ray 并行调度与反压控制”的重叠。
-- 同步更新 `PROJECT_OUTLINE.md`、根目录 `README.md`、`PROJECT_INDEX.md`、`overview/current_direction_and_plan.md`、`docs/thesis/outline.md` 和图表选择说明中的研究内容名称。
+- 同步更新 `PROJECT_OUTLINE.md`、根目录 `README.md`、`PROJECT_INDEX.md`、`docs/overview.md`、`docs/thesis/outline.md` 和图表选择说明中的研究内容名称。
 - 根据用户要求，当前 `docs/thesis/slides/opening_ppt.md` 和 `docs/thesis/slides/opening_defense_20260712.pptx` 的内容和表现形式先作废；保留学校模板中的标题区、正文安全区、图表区和页脚等页面布局经验。
 - 新增 `docs/thesis/slides/README.md` 记录 PPT 当前状态。`docs/thesis/ppt_rules.md` 保留版式规则，并明确旧版 PPT 不再作为正式汇报内容依据。
 - 本轮只调整本地开题报告和相关入口文件；飞书正文与线上文档等用户过目本地报告后再同步。
@@ -547,7 +547,7 @@
 - 根据用户确认，将开题报告题目调整为“面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究”。
 - 重写 `docs/thesis/report/opening_report.md` 的背景、研究目标、研究内容、总体框架和预期创新点：数据库 AI 算子降为 workload 入口和验证场景，Daft/Arrow、Ray、GPU 模型服务、Lance / pgvector / PostgreSQL sink 成为数据执行与存储协同的研究主体。
 - 同步更新 `docs/thesis/feishu/opening_report_wiki.md`、`docs/thesis/slides/opening_ppt.md`、`docs/thesis/outline.md`、`docs/thesis/qa_bank.md`、`docs/thesis/README.md` 和 `docs/thesis/AGENTS.md`。
-- 同步检查并修改项目级规划文档：`README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`overview/current_direction_and_plan.md` 和 `motivation/plans/integration.md`。
+- 同步检查并修改项目级规划文档：`README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`docs/overview.md` 和 `motivation/plans/integration.md`。
 - 尝试使用 user 身份覆盖写入开题飞书 wiki 时，`lark-cli` 因用户目录刷新锁文件权限返回 `Access is denied`；提升权限重试被自动审批拒绝。本地源稿已准备好，线上飞书 wiki 需要后续有权限后再同步。
 
 ## 2026-07-12
@@ -654,7 +654,7 @@
 ## 2026-07-12 开题与项目方向同步
 
 - 根据用户反馈，明确开题材料不是独立展示稿，开题报告中收敛出的题目、研究内容和实验边界会反向影响项目方向与后续实验规划。
-- 更新项目级 `README.md`、`PROJECT_INDEX.md` 和 `overview/current_direction_and_plan.md`，登记当前开题题目“面向数据库 AI 算子的模型服务感知批处理执行与写回协同优化研究”及三项研究内容。
+- 更新项目级 `README.md`、`PROJECT_INDEX.md` 和 `docs/overview.md`，登记当前开题题目“面向数据库 AI 算子的模型服务感知批处理执行与写回协同优化研究”及三项研究内容。
 - 更新 `docs/thesis/README.md` 和 `docs/thesis/work_rules.md`，记录修改开题题目、研究内容或实验边界时必须同步检查项目入口文档，避免 opening 与项目主线割裂。
 
 ## 2026-07-12 飞书开题 wiki 同步
@@ -675,7 +675,7 @@
 
 - 根据用户反馈，进一步明确开题报告和项目规划不是单向关系：开题报告要基于当前项目进展与后续规划撰写；后续开题报告内容和方向调整时，项目整体规划、实验优先级和侧重点也要同步调整。
 - 更新项目级 `README.md` 和 `PROJECT_INDEX.md`，明确开题报告、overview、motivation 计划和项目入口之间必须保持同一方向口径。
-- 更新 `overview/current_direction_and_plan.md`，说明该文件与开题报告保持双向同步，不能长期描述两个不同方向。
+- 更新 `docs/overview.md`，说明该文件与开题报告保持双向同步，不能长期描述两个不同方向。
 - 更新 `docs/thesis/README.md` 和 `docs/thesis/work_rules.md`，将开题调整分为语言格式调整、方向内容调整、实验结论调整三类，并记录对应的同步检查范围。
 
 ## 2026-07-12 调整实验主线入口

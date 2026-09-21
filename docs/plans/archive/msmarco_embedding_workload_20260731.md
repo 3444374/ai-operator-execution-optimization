@@ -11,7 +11,7 @@
 DB/CPU/Ray/H2D/GPU 各阶段可测，不预设传输瓶颈。见
 `../completed/image_clip_workload_lock_20260731.md` 与
 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §10。
-关联：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`（方向 scope）；`notes/communication_notes.md` §5（学长反馈）；`code/INFRA_STATUS.md`（现有管线）。
+关联：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`（方向 scope）；`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §5（学长反馈）；`code/INFRA_STATUS.md`（现有管线）。
 
 > 本 workload 是学长原则"先锁被认可场景"的落地。**机制（冷启动/调度策略）后面再叠加**——先把战场选在 MS MARCO 这个被认可的 benchmark 上跑通，有正指标再扩。不改题目。
 

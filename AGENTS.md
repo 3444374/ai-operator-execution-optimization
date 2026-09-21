@@ -20,16 +20,14 @@
 | 可复用代码、脚本、测试 | `code/AGENTS.md` |
 | 环境、容器、跨机器运行 | `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 与目标平台的 `AGENTS.md`/runbook |
 | 数据资产与导入 | `data/AGENTS.md` |
-| 正式方法实验 | `experiments/AGENTS.md`，再读 `plans/` 或 `results/` 的局部规则 |
+| 方法实验的计划与设计 | `docs/plans/AGENTS.md` |
+| 某次测试的记录与证据 | `results/AGENTS.md` 及目标记录目录 |
 | 动机画像 | `motivation/AGENTS.md` 及目标子目录规则 |
 | 可行性与 smoke | `feasibility/AGENTS.md` 及目标子目录规则 |
 | 文献和知识文件 | `docs/research/AGENTS.md` |
 | 图资产 | `docs/figures/AGENTS.md` |
 | 开题与对外材料 | `docs/thesis/AGENTS.md` |
-| 学习讲解 | `learning/AGENTS.md` |
-| 快速方向卡片 | `overview/AGENTS.md` |
-| 导师/企业沟通记录 | `notes/AGENTS.md` |
-| 历史设计/工程归档 | `docs/AGENTS.md`、`docs/design/history/AGENTS.md`、`docs/thesis/archive/AGENTS.md` |
+| 长期文档导航与历史归档 | `docs/AGENTS.md`、`docs/design/history/AGENTS.md`、`docs/thesis/archive/AGENTS.md` |
 
 ## 2. 项目范围
 
@@ -113,7 +111,7 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 协议 + workload 分布”校准签名；签名变化必须重新做 correctness、scale 和 saturation 校准，正式 run
 期间不在线调参。
 
-正式实验同时遵守 `experiments/AGENTS.md`、对应计划和以下全局要求：
+正式实验同时遵守 `docs/plans/AGENTS.md`、对应计划和以下全局要求：
 
 - baseline 由被测系统拥有执行与调度；SemLoom adapter 只处理 source、sink、质量审计和统一指标；
 - GPU-backed database-E2E 优先，CPU/fake 仅作调试、机制隔离或历史对照；
@@ -180,7 +178,7 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 | 历史引用 | 当前入口 |
 |---|---|
 | 根 §1–3（方向、范围、状态） | 本文件 §2–3；当前事实再查 `PROJECT_OUTLINE.md` 和证据台账 |
-| 根 §5、§7.5（实验与运行） | 本文件 §5、`experiments/AGENTS.md`、baseline reference 与目标计划 |
+| 根 §5、§7.5（实验与运行） | 本文件 §5、`docs/plans/AGENTS.md`、baseline reference 与目标计划 |
 | 根 §6、§6.5（严谨性、文献） | 本文件 §4、§6 与 `docs/research/AGENTS.md` |
-| 根 §8（沟通） | 本文件 §2、§6 与 `notes/AGENTS.md` |
+| 根 §8（沟通） | 本文件 §2、§6；沟通带来的有效信息直接吸收进对应主题文档 |
 | 根 §9–10（变更同步、Git） | 本文件 §7–8 |

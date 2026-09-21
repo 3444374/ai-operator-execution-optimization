@@ -35,7 +35,7 @@
 - `code/tests/observability/test_postgres_profile_scheduling.py`: production construction/cleanup and profiler metric tests.
 - `code/tests/planning/test_packing.py`: canonical membership and packing invariants.
 - `code/tests/planning/test_organizers.py`: Arrow/Daft shared-policy contract.
-- `code/scripts/README.md`, `code/README.md`, `learning/experiment_walkthrough.md`: verified behavior and command documentation.
+- `code/scripts/README.md`, `code/README.md`, `docs/design/history/docs/design/history/learning/experiment_walkthrough.md`: verified behavior and command documentation.
 - `results/data_organization/row_cap_aware_packing_gate_20260726/`: real correctness gate.
 - `results/data_organization/row_cap_aware_packing_512_20260726/`: screening and repeated candidate comparison.
 - `results/data_organization/row_cap_aware_packing_1024_20260726/`: held-out confirmation only when a 512-row candidate survives.
@@ -632,7 +632,7 @@ git commit -m "results: validate row-cap-aware packing gate"
 - Create conditionally after a 512-row winner:
   `results/data_organization/row_cap_aware_packing_1024_20260726/`
 - Modify: `results/README.md`
-- Modify: `overview/current_direction_and_plan.md`
+- Modify: `docs/overview.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
@@ -705,6 +705,6 @@ State exactly which mechanisms survive:
 - or sequential alone.
 
 ```powershell
-git add experiments/results overview/current_direction_and_plan.md PROJECT_OUTLINE.md PROJECT_INDEX.md PROJECT_LOG.md
+git add experiments/results docs/overview.md PROJECT_OUTLINE.md PROJECT_INDEX.md PROJECT_LOG.md
 git commit -m "results: compare row-cap-aware packing mechanisms"
 ```

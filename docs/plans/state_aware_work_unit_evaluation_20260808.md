@@ -1651,12 +1651,12 @@ results 报告为准。不得把 `formal_registration_candidate`、development �
 
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `code/README.md`
-- Modify: `learning/experiment_walkthrough.md`
+- Modify: `docs/design/history/docs/design/history/learning/experiment_walkthrough.md`
 - Modify: `experiments/plans/state_aware_work_unit_evaluation_20260808.md`
 - Modify: `experiments/plans/experiment_status_and_gaps.md`
 - Modify: `experiments/plans/README.md`
 - Modify: `PROJECT_OUTLINE.md`
-- Modify: `overview/current_direction_and_plan.md`
+- Modify: `docs/overview.md`
 - Modify: `PROJECT_LOG.md`
 
 - [x] 更新学习讲解，明确：release-only 非抢占下界、actual-work debt、为什么 barrier 只针对 ready

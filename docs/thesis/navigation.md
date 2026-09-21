@@ -25,14 +25,14 @@ AGENTS.md
 | 需要的内容 | 优先读取 |
 |---|---|
 | 项目总方向、边界、目录职责 | `AGENTS.md`、`README.md`、`PROJECT_INDEX.md` |
-| 当前研究路线和阶段计划 | `overview/current_direction_and_plan.md` |
+| 当前研究路线和阶段计划 | `docs/overview.md` |
 | 数据库 AI 算子场景和 workload | `motivation/plans/workloads.md`、`motivation/plans/ai_sql_surface.md` |
 | 真实 GPU-backed 动机实验结果 | `results/motivation/gpu/README.md` |
 | 阶段拆分和链路画像结果 | `results/motivation/gpu/ai_embed_chain_breakdown_20260712.md` |
 | Ray 多 endpoint 结果 | `results/motivation/gpu/multi_endpoint_ray_motivation_20260712.md` |
 | 历史 fake / CPU 结果 | `results/motivation/fake_cpu/`、`results/motivation/pg18_4_fake/` |
 | 可行性验证 | `results/feasibility/` |
-| 术语、实验讲解、学习版解释 | `learning/experiment_walkthrough.md` |
+| 术语、实验讲解、学习版解释 | `docs/design/history/docs/design/history/learning/experiment_walkthrough.md` |
 | 图表文件 | `docs/figures/` |
 | 外部系统和文献证据 | `docs/research/` |
 | Snowflake / pgai / PostgresML 链路对比 | `docs/research/existing_ai_operator_execution_chains.md` |
@@ -103,7 +103,7 @@ PPT 修改后要反查报告：
 - 题目是否和报告、PPT 一致。
 - 研究内容是否和 `report/opening_report.md` 一致。
 - 实验结论是否来自 `results/motivation/` 或 `results/feasibility/`。
-- 解释方式是否参考 `learning/experiment_walkthrough.md`。
+- 解释方式是否参考 `docs/design/history/docs/design/history/learning/experiment_walkthrough.md`。
 - 是否写清楚“能说明什么”和“不能说明什么”。
 
 ## 常见任务导航
@@ -114,7 +114,7 @@ PPT 修改后要反查报告：
 
 ```text
 docs/thesis/report/opening_report.md
-overview/current_direction_and_plan.md
+docs/overview.md
 docs/research/
 results/motivation/gpu/
 ```
@@ -157,7 +157,7 @@ docs/thesis/report/opening_report.md
 docs/thesis/feishu/opening_report_wiki.md  # 历史快照，只读对照，禁止作为覆盖源
 docs/thesis/slides/opening_ppt.md
 results/motivation/
-learning/experiment_walkthrough.md
+docs/design/history/docs/design/history/learning/experiment_walkthrough.md
 ```
 
 同步后记录：

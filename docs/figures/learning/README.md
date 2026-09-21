@@ -23,5 +23,5 @@ GPU embedding 链路拆分图由下面脚本生成：
 图表解释写在：
 
 ```text
-learning/experiment_walkthrough.md
+docs/design/history/docs/design/history/learning/experiment_walkthrough.md
 ```

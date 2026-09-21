@@ -112,7 +112,7 @@ SQL semantic intent
 
 | 需求 | 权威入口 |
 |---|---|
-| 两分钟了解当前方向 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) |
+| 两分钟了解当前方向 | [`docs/overview.md`](docs/overview.md) |
 | 核对题目、研究内容、证据等级和执行顺序 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) |
 | 查找文件和阅读路径 | [`PROJECT_INDEX.md`](PROJECT_INDEX.md) |
 | 核对项目长期规则和边界 | [`AGENTS.md`](AGENTS.md) |
@@ -152,25 +152,20 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 ```text
 .
 ├── AGENTS.md / CONTEXT.md / PROJECT_OUTLINE.md / PROJECT_INDEX.md  # 规则、术语、总纲、导航
-├── overview/       # 当前方向速览
-├── docs/research/       # 文献、知识与方法依据
-├── motivation/     # 动机画像与 GPU-backed 端到端证据
-├── feasibility/    # 环境、组件和 capability/smoke 验证
-├── experiments/    # 方法计划与正式实验结果
+├── docs/           # 长期知识：research/ 调研、design/ 设计、plans/ 计划、thesis/ 开题、figures/ 图
+│   ├── overview.md / status.md      # 两分钟卡片与当前能力摘要
+│   └── design/history/              # 已完成的历史设计记录（含原 code_doc 与早期学习讲解）
+├── results/        # 某次测试的完整记录：postgresql/ data_organization/ scheduling/ image_execution/
+│                   # system_e2e/ cost_estimation/ motivation/ feasibility/ 及证据台账
+├── motivation/     # 动机画像的任务入口（结果在 results/motivation/）
+├── feasibility/    # 组件、环境验证的任务入口（结果在 results/feasibility/）
 ├── code/           # 可复用实现、脚本和测试
 ├── deploy/         # 跨机器环境合同与运行手册
-├── data/           # 数据来源和导入合同；raw 不进 Git
-├── docs/figures/        # 图资产、生成脚本和审计记录
-├── docs/thesis/        # 开题报告、答辩材料和文献快照
-├── learning/       # 教学式讲解材料
-├── notes/          # 导师/企业沟通记录
-├── docs/           # 已完成的一次性跨目录设计记录
-├── docs/design/history/       # 已完成的代码设计与实施计划
-└── docs/thesis/archive/       # 旧 PPT 生成工程归档
+└── data/           # 数据来源和导入合同；raw 不进 Git
 ```
 
 从根到任务目录逐级加载适用的 `AGENTS.md`，首次进入目录或查找入口时再读相应 README；已读且
-未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、`docs/design/history/`、
+未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/design/history/`、
 `docs/thesis/archive/` 和 `docs/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
 部署 runbook。
 

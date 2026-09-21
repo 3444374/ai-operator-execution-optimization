@@ -89,9 +89,9 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 ## 与项目其他目录的关系
 
 - 实验事实优先来自 `results/motivation/`。
-- 实验讲解和术语口径参考 `learning/experiment_walkthrough.md`。
+- 实验讲解和术语口径参考 `docs/design/history/docs/design/history/learning/experiment_walkthrough.md`。
 - 文献与外部系统证据参考 `docs/research/`。
-- 当前方向和阶段计划参考 `overview/current_direction_and_plan.md`。
+- 当前方向和阶段计划参考 `docs/overview.md`。
 - 开题材料中的实验结论必须回到真实 CSV / 报告，不能只引用聊天结论。
 - 开题报告中收敛出的题目、研究内容和评价边界需要回写项目入口文档，作为后续实验和规划的约束。
 - 如果开题报告改变了研究内容或侧重点，需要同步检查 `motivation/plans/workloads.md`、`motivation/plans/integration.md` 和后续实验优先级，避免实验继续围绕旧问题展开。

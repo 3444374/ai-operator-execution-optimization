@@ -79,7 +79,7 @@ operator_jct（低=好；每 cell 3 formal 中位，CV 见括号）：
 
 2026-08-04 使用 `augment_image_observability.py` 从 schema-v11 原始总量旁置补算；公式、
 数据源和误差边界见脚本生成的 `*.metrics.json` 及
-`learning/observability_metrics_guide.md`。仓库只保留下面的紧凑汇总；完整增强 CSV/JSON 可由
+`code/src/observability/metrics_recording_guide.md`。仓库只保留下面的紧凑汇总；完整增强 CSV/JSON 可由
 归档 raw 重建，避免重复保存同一批逐 run 数据。这些字段没有增加新的 runtime
 instrumentation，不能补出 Ray/Daft 隐藏的逐 batch 或逐图时间。
 

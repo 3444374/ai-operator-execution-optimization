@@ -616,7 +616,7 @@ rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-v
   `docs/thesis/slides/opening_defense_v6_design.md`已被取代且禁止作为生成输入
 - 答辩问答：`docs/thesis/qa_bank.md`
 - 答辩 QA 预演手册：`docs/thesis/report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF）
-- 当前方向速览：`overview/current_direction_and_plan.md`
+- 当前方向速览：`docs/overview.md`
 - 实验状态：`docs/plans/experiment_status_and_gaps.md`
 - 文献与知识：`docs/research/knowledge_hub.md`
 - 十五篇精读方法速览：`docs/research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）

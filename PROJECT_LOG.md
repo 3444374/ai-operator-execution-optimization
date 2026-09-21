@@ -1,5 +1,32 @@
 # 项目日志
 
+## 2026-09-21：全仓库目录重组（分支 codex/repo-reorg）
+
+- 用户给出五条组织原则并撤回上一版分类方案：长期知识按主题收敛；同一次测试的材料放在一起；
+  操作说明跟着实际对象走；不为分类整齐拆开要一起阅读的内容。本次按该方案在分支上完成重组。
+- 长期知识集中 `docs/`：`research/`（原根 research/）、`design/`（新建主题入口 + history/ 承接原
+  code_doc、docs/superpowers 与早期学习讲解）、`plans/`（原 experiments/plans 全部）、`thesis/`
+  （原 opening/）、`figures/`（原根 figures/）、`overview.md`（原 overview/ 卡片）与 `status.md`（新摘要）。
+- 测试记录集中 `results/` 并按验证对象归组：原 experiments/results、motivation/results、
+  feasibility/results 全部迁入 results/{postgresql,data_organization,scheduling,image_execution,
+  system_e2e,cost_estimation,motivation,feasibility}，记录目录整体移动、报告与数据保持相邻；
+  证据台账与 RAW_ARCHIVAL 政策文档移至 results/ 根部。
+- 沟通与讲解材料按内容吸收：`notes/` 的有效判断并入 docs/research/daft_db_gpu_bridge_direction_scope_20260731.md
+  §6.1/§6.2，服务器投资说明入 deploy/autodl/，目录移除；`learning/` 的指标/架构/baseline 说明分别并入
+  code/、docs/research/ 与对应结果记录，两篇历史讲解入 docs/design/history/learning/，目录移除；
+  `overview/` 并入 docs/overview.md 后移除；`projects/` 旧 PPT 工程迁入 docs/thesis/archive/。
+- 瘦身随重组一并落位：2,384 个 per-run 历史 raw（2026-07 文本轨道、rc1_*、multicard_*、pilot 与
+  feasibility 三个 SQuAD 目录）、旧版开题 PPT v4–v8 与 projects 三份 PPTX 导出从 git 跟踪移除；
+  两处镜像 SHA-256 核对一致（镜像保持原目录结构不变），37 个结果 README 加注镜像位置，
+  RAW_ARCHIVAL 文档登记；`.gitignore` 新增 `/results/**/raw/`。原 `codex/repo-slimming` 分支的内容
+  被本分支完全覆盖，该分支可退役（main 上对应的三个瘦身提交此前已被反向提交撤回）。
+- 路径引用全量重写并通过本地链接检查（2,100+ 链接 0 断链，本文件历史条目按日期保留原路径）；
+  完整性审计确认重组前 12,581 个跟踪文件全部有归属。过程中发现并修复两类问题：
+  被移动目录下既有 `*.log` 等文件因 gitignore 规则在重新加入时掉落，已按重组前索引强制补回 1,020 个；
+  历史文档中镜像路径被误当仓库路径重写，已还原为真实镜像路径。
+- 根 AGENTS.md 目录表、根 README、PROJECT_INDEX、PROJECT_OUTLINE 同步入口、docs/AGENTS 与
+  docs/plans/AGENTS、motivation/ 与 feasibility/ 规则文件均已按新结构更新。
+
 ## 2026-09-20：完整容量复查后合并工程改动
 
 - 用户要求再次尝试复现原故障，检查后提交、合并并推送；恢复四个常驻PG gateway和原8组/4轮顺序，独立16,400次/20分钟清单。

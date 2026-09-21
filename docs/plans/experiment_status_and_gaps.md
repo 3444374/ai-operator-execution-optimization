@@ -685,7 +685,7 @@ AI_COMPLETE 的直接证据更明显：固定 16 行 batch 的 token min/max 为
 - **服务端压力指标**：queue time、running/waiting requests
 - **控制器行为指标**：K_max 时间序列、upshift/downshift 时间戳
 
-详细分析见 `learning/metric_selection_methodology.md`。
+详细分析见 `docs/research/metric_selection_methodology.md`。
 
 ---
 
@@ -981,7 +981,7 @@ service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
 - `PROJECT_OUTLINE.md` §当前最重要证据、§近期优先级
 - `PROJECT_LOG.md`
 - `docs/figures/README.md`（如有新增图）
-- `learning/local_vllm_ray_baseline_walkthrough.md`（如实验结果影响讲解）
+- `results/data_organization/local_vllm_qwen15b_baseline/walkthrough.md`（如实验结果影响讲解）
 - 本文件 §6 完整问题审计（标记已修复的问题）
 
 ## 8. 2026-07-25 Request lifecycle 基础设施门禁

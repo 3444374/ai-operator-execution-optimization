@@ -1,17 +1,27 @@
-# 跨目录设计记录
+# docs/
 
-本目录只保存已经完成、但仍有审计或决策追溯价值的一次性设计与实施记录。当前项目方向、
-代码接口和开题正文分别以 `PROJECT_OUTLINE.md`、`code/README.md` 和
-`docs/thesis/report/opening_report.md` 为准。
+长期知识的家：调研研究、本项目设计、工作计划与正式学术材料。本 README 只做导航，
+不复制项目状态、实验数字或代码接口——那些以各自权威入口为准。
 
-## 当前内容
+## 检索方式
 
-| 路径 | 状态 | 作用 |
-|---|---|---|
-| `superpowers/specs/2026-08-23-opening-report-cost-estimation-enhancement-design.md` | 2026-08-24 已完成 | 记录代价估计与两项研究内容关系调整的设计依据 |
-| `superpowers/plans/2026-08-23-opening-report-cost-estimation-enhancement-plan.md` | 2026-08-24 已完成 | 记录对应正文修改的实施步骤 |
-| `superpowers/plans/2026-08-23-opening-report-minimal-figure-corrections.md` | 2026-08-24 已完成 | 记录四张开题图的最小修订步骤 |
+| 想了解什么 | 去哪里 |
+|---|---|
+| 已有工作怎么解决这个问题、机制成立的条件、候选方案与依据 | [`research/`](research/)（知识总入口 `research/knowledge_hub.md`） |
+| 本项目采用什么设计、各部分怎样协作 | [`design/`](design/)；已完成的历史设计记录见 `design/history/` |
+| 下一步做什么、各任务怎样算完成 | [`plans/`](plans/) |
+| 开题报告、答辩与学位论文材料 | [`thesis/`](thesis/) |
+| 多份长期文档共同使用的图 | [`figures/`](figures/) |
+| 项目为什么做、研究什么、总体思路 | [`overview.md`](overview.md)（两分钟卡片） |
+| 主要能力目前做到哪里、各维度验证程度 | [`status.md`](status.md) |
+| 某次具体测试的条件、结果和解释 | 根目录 `results/` 下对应的完整记录 |
+| 怎么实际运行某个东西 | 那个东西所在目录的说明（`code/`、`deploy/`、`data/` 各自 README） |
 
-这些文件均为历史记录，不再提供待执行任务。实际完成结果见
-`docs/thesis/report/opening_report.md`、`docs/figures/README.md` 与 `PROJECT_LOG.md` 的
-2026-08-23 至 2026-08-24 条目。
+## 职责划分
+
+- 主题文档持续更新，告诉你“现在应该如何理解这个系统”；某次测试的记录保留运行时的事实，
+  告诉你“在某个具体版本和条件下实际发生了什么”。两者相互引用，不复制完整内容。
+- 沟通带来的有效信息直接吸收进对应主题文档，不保留一层“沟通过程文档”。
+- 与代码、部署、数据紧密相关的局部说明就近留在 `code/`、`deploy/`、`data/`，不搬进本目录。
+
+进入子目录前按根 `AGENTS.md` §1 加载沿途规则；本目录规则见 [`AGENTS.md`](AGENTS.md)。
