@@ -317,7 +317,7 @@ project frozen-static 与 proposed，完成系统级 matched comparison。原生
 逐请求 timed replay；因此新矩阵必须把 PostgreSQL scan/materialization 放进共同
 source→validated-gather 边界，并通过严格透传 gateway 采集真实 request P99/SLO，不能复制
 Job/shard completion time。冻结规格见
-`../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
+`../../docs/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
 为避免把 arrival-regime 变化误归因给 SAOR，同一新合同还包含 1--2 次短的 Project 内部
 bounded-ready FIFO/DRR/VTC-style/SAOR sanity block；这些臂仍是 Project controls，不是原生
 baseline，且不据此授权 selector formal。

@@ -113,8 +113,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | `opening/` | 开题正文、答辩和文献快照 | `opening/README.md` | 实验原始数据 |
 | `learning/` | 教学式讲解 | `learning/README.md` | 权威规则 |
 | `notes/` | 导师/企业沟通 | `notes/README.md` | 正式研究证据 |
-| `docs/` | 已完成的跨目录设计记录 | `docs/README.md` | 当前执行指令 |
-| `code_doc/` | 已完成代码设计与实施计划 | `code_doc/README.md` | 当前代码状态 |
+| `docs/` | 已完成的设计与实施记录（含原 code_doc 内容） | `docs/README.md` | 当前执行指令 |
 | `projects/` | 旧 PPT 工程归档 | `projects/README.md` | 新开题材料 |
 
 ## 4. 当前实现与代码入口
@@ -149,7 +148,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | 提交与反压 | [`experiments/plans/service_scheduling_backpressure.md`](experiments/plans/service_scheduling_backpressure.md) | 方法计划 |
 | 图像 workload | [`experiments/plans/completed/image_clip_workload_lock_20260731.md`](experiments/plans/completed/image_clip_workload_lock_20260731.md) | 静态范围已完成；动态部分见 state-aware 当前计划 |
 
-`experiments/plans/archive/`、`docs/` 和 `code_doc/` 只用于追溯。若历史计划仍有有效待办，应把它
+`experiments/plans/archive/` 和 `docs/` 只用于追溯。若历史计划仍有有效待办，应把它
 迁入上表对应的当前入口，而不是继续追加历史文件。
 
 ## 6. 证据入口
@@ -185,6 +184,6 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 - 历史结果和失败证据保留原目录，不因结论被替代而删除。
 - 已完成计划在目录 README 中标记状态，并指向当前入口。
 - `projects/` 保留旧 PPT 工程的输入、输出和验证记录；不再用于生成新材料。
-- `code_doc/` 和 `docs/` 的计划文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
+- `docs/` 的计划文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
 - 本地 `.venv`、`tmp/`、raw workload、模型、缓存和 `__pycache__` 不进入 Git。
 - 新增、移动或删除文件后更新本索引、根 README、受影响目录 README 和 `PROJECT_LOG.md`。
