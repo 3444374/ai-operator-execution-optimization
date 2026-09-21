@@ -1,662 +1,36 @@
 # AI 算子执行 Infra 当前状态
 
-2026-09-20：[完整容量复查与工程合并](../results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询单元，16,400次请求与服务端一致，无未确认请求。
-原控制器记录过一个短暂残留PID并返回失败，随后独立只读清理核对通过；原告警和PID身份缺项保留。
-容量扫描修复与异常诊断改动合入main，原故障未复现、根因仍待确定。PG/direct均为持续供给不足，M1尚未选点。
-Linux provider79项中70通过、9项环境跳过；没有启动第二验证单元或后续方法阶段。
-
-2026-09-20：[C64异常诊断与有限复测](../results/postgresql/m1_c64_errors_20260920/README.md)补齐传输异常类型、原因链类型及代码位置记录；原异常传播与不重试行为保留。
-本轮3,088次记账与服务成功一致，C64四次各512条全部完成，无未确认请求；11项聚焦检查通过，Linux provider77项中9项跳过。
-原故障未复现，根因仍待确定；不称已修复连接/模型缺陷，不进行方法选点。测试资源已清理，代码与证据仍在分支。
-
-2026-09-20：[M1供给复查](../results/postgresql/m1_supply_followup_20260920/README.md)已完成容量扫描开销定位和受控修复，真实筛查在C64预热时中止。
-原128行fixture的PG查询约22–26秒，完整修复后约2.1–2.25秒；派生使用量只在一次只读扫描内复用。
-Linux调度386项、图像81项通过；provider76项中9项环境跳过，另2项实际PG/HTTP集成通过。
-真实账本1,552次尝试、服务端成功1,550次；两项执行异常归为MODEL_UNAVAILABLE，具体异常类型缺失。
-443行保持临时结果；测试服务/端口/GPU进程清理、ACL恢复，无自动重跑。
-修复与证据保存在 `codex/m1-supply-followup`，本次不合入main；M1尚未完成选点及后续条件阶段。
-
-2026-09-20：[M1、M2 与 F 有限真实验证](../results/postgresql/m1_m2_f_real_20260920/README.md)完成本轮清单。
-文本8,248次POST与服务日志/counter一致；M1三种容量均未取得平台候选，后续调参/评价/观测对照未运行。
-M2五种PG源信息方式完成正确性与1+3轮评价，固定C4仅作功能参照，未支持稳定优势；全局规划尚未接入SemMap。
-F真实CLIP151次前向完成，三路径逐维差异0，受控前向后错误/取消及恢复通过；不代表GPU计算中抢占或性能验证。
-列表释放修复后本地/Linux各26项通过、2项专用PG跳过；这些PG集成另有2项实际通过。失败原始记录保留。
-模型/PG/Ray/任务进程与自有端口已清理，两GPU空闲，临时ACL恢复。本轮没有剩余额度的追加运行。
-
-以下为按原运行身份保留的历史记录；当时的暂停或未验证描述由上方新结果补充。
-
-2026-09-20：[M1 研究问题与选点调整](../results/postgresql/m1_platform_revision_20260920/README.md)完成。
-旧 M1 作为测量反例结束，44,544 次表撤下；当前按可达性、容量筛查、工作量调参和独立评价分阶段进行。
-v2 编排拒绝旧配置，复用常驻 gateway/direct，保留实际供给、配对吞吐、质量与资源观测；本地 35 项检查通过。
-该次修订没有 PG/HTTP/模型调用；后续真实结果见本页顶部。
-
-
-2026-09-20：[工作包 F 图像接入](../results/postgresql/image_stages_f_20260920/README.md)完成工程与受控验证。
-扩展 `0.3.0` 显式提供 `ai_semantic.embed(bytea,jsonb)→real[]`，复用 Map carrier、MethodDriver、共享 Engine 与 stage broker；
-schema 5/wire 7 保存图像身份、关联与结果校验，CPU 准备和模型阶段分别保留资源，最终结果发送后释放。
-PG18.3 严格编译、回归 1/1、TAP 2,159 项及 9 组实际 PG/Ray/解码检查通过；17 个 Job 完成资源回收。
-本地/Linux provider 76、图像 81、PG 116、方法/阶段 18 项检查通过，按环境跳过项另列于报告。
-模型由明确的 CPU fixture 代替，真实 CLIP 数值、GPU 故障和性能尚未验证；真实模型调用 0，默认扩展版本仍为 `0.2.0`。
-测试 PG/Ray/任务进程已停止，GPU 空闲，临时 ACL 已恢复。
-
-2026-09-14：[M1真实运行准备](../results/postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
-原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
-当时的 44,544 次/30 分钟运行表已于 2026-09-20 撤下；数据与原始准备证据保留，**该准备记录当时没有真实调用**。
-PG/HTTP/任务进程已清理，ACL恢复；后续实际调用及真实结果复核尚未完成。
-
-2026-09-14：[常驻服务对照](../results/postgresql/waiting_positions_persistent_20260914/README.md)完成：24查询/768受控POST，另以旧入口1查询/120次回归，真实模型0次。
-C8五次均快于对应轮次C4；紧W相对宽W的HTTP P99降低42.23%，完整查询时间却增加233.06%。
-token组一次启动约5.5秒，常驻后每查询准备约14–15毫秒；四实例RSS同时采样，资源/会话/transport均完成回收。
-本地/Linux各16项行为检查、761份code文件哈希核对通过；PG/HTTP/进程/socket/GPU/ACL清理完成。
-下一步准备新的真实输入、服务签名和有界请求计划；尚无真实模型性能或低扰动观测结论，M2未开始。
-
-2026-09-14：[等待位置小实验](../results/postgresql/waiting_positions_pilot_20260914/README.md)已完成M1首轮受控检查：新增调用至EOF计时和五段等待分解，复用已有FIFO/工作量限制与PG事件。
-两轮24查询/672受控HTTP，实际模型0次；保留首轮backlog5的异常，backlog32跟进固定C8/W3096/512。
-跟进紧W的HTTP P99降低39.03%，SQL至EOF增加181.29%；当前token臂每查询新gateway/tokenizer准备约5秒。
-840份代码一致，PG/HTTP/进程/端口/ACL已清理。该轮提出的常驻服务/C4-C8检查已由上方新结果完成；两轮原始证据继续保留。
-
-2026-09-14：[查询依赖与共享计算](../results/postgresql/query_sharing_e_20260914/README.md)完成：复用统一责任表与Job/flow轮转，新增可选shared计算策略和query-job Map窗口，存储独立保留。
-Linux385/57/116、PG回归1/TAP2138、专项163次与worker预演63次受控HTTP通过。
-首次真实准备0次失败保留；获确认后63次真实POST、19个Job、55条Map关联与8条Filter决定通过，195.917秒内清理。
-Map逐字复述0/55，保留为质量负结果；不据执行与回收通过声称质量或性能通过。838份源文件一致，PG/模型/进程/GPU/ACL已清理。
-
-2026-09-14：[异步期限与输入/交付诊断](../results/postgresql/async_deadline_flow_20260914/README.md)完成：正常PG回归1/1、TAP2138项、12单元96次fixture通过。
-首轮真实24次因配置准备错误停止并保留；获批补跑33次全部完成，累计57次生成请求。
-56条正常结果关联通过，各8行均2个情感假阴性；1条真实结果在末次同步写入跨期限后保持失败、SHA完整、拒绝评分。
-真实flow四次暂停时队首均未就绪，不能归因ready-first收益；默认次序保留。两段服务/PG/进程/GPU/ACL已清理。
-
-2026-09-14：[容量等待与零任务 Map 服务器验证](../results/scheduling/capacity_wait_server_20260914/README.md)完成：Linux调度376、provider55、PG Python合同116通过；
-实验工具482通过/15环境跳过，PG选定6项集成另行通过，共262次受控HTTP、真实模型0次。
-修复诊断脚本的write-once summary冲突后，普通PG四查询完成：小结果首行约0.65秒、大结果约0.25秒，
-支持发送缓冲解释，不据此归因旧SemMap全部等待。PG/socket/任务进程和ACL已清理，失败记录保留。
-
-2026-09-11：[C/D审计与真实预算诊断](../results/postgresql/cd_validation_20260911/README.md)完成提交→权威终态的work/request独立重建、
-实际组内顺序核验及可选容量拒绝观测。旧9轨迹516任务重放通过；Linux370/55/116及审计19通过。
-新16单元1152模型POST/319.11秒全部有效；同配置C的equal/total约3.75/3.81秒，未显示total更快。
-D在C32下W4096确实限制提交，三种紧预算查询均慢于W16384；rows紧预算有1行模型输出差异，关联正常。
-733份非Markdown代码一致，模型/PG/进程/ACL已清理；单次短诊断，不是性能排名。
-
-2026-09-11：[A/B验证补充](../results/postgresql/ab_validation_20260911/README.md)：统一结果文件校验、direct/Ray逐行关联、
-进入/迭代错误与清理时点、全过程逻辑资源和慢源交付。Ray资源分别声明，短命读取峰值保持未知。
-代码与受控集成验证；新增真实模型请求0，强静态参照、正常容量点开销和原生真实质量仍待验证。
-
-2026-09-10：[PG Map token工作量组织](../results/postgresql/map_organization_20260910/README.md)完成单Job/v6可选rows/work/length控制。
-复用既有组织器与核心，tokenizer SHA、完整消息与实际usage、候选前缀、分组及提交顺序可审计。
-Linux调度369/provider55/PG合同116/审计6、PG TAP2138通过；108受控HTTP及408独立真实POST通过。
-真实128行输入序控制组数16/28但HTTP顺序相同，长度40组并改变顺序；预测一致。仅功能/资源诊断，非稳态性能。
-模型、自有PG、任务进程均结束，临时ACL恢复；C实现4f626bda与D实现d7795a09均已合入并推送main，726份代码与真实运行一致。
-以下暂留PG/ACL的记录为当时状态。
-
-2026-09-10：[PG Map 总字节留存预算](../results/postgresql/pg_window_budget_20260910/README.md)完成可选 total 模式，旧等份模式保留。
-按实际行上下文与固定元数据预留计费，单行暂存独立，结果预分配并于消费后释放。
-PG完整TAP2134项、最终专项37项、回归1项及本地/Linux各116项合同通过；288次独立真实POST全部通过。
-B1MiB/L32实际留存峰值13行、计费峰值1028312字节、责任归零；非整个查询RSS或组织性能结论。
-模型已停止，自有PG与临时ACL暂留D受控验证。
-
-2026-09-10：[数据库输入与公共查询接入](../results/postgresql/database_queries_20260910/README.md)
-完成代码及受控验证：PG-source direct、保守安全WHERE预取、普通PG COUNT(*)、Movie原始Q1/Q2/Q3、
-Movie-derived Map、原生LOTUS和Ray SQL/HTTP入口。两项PG新开关默认OFF；原始reviewId重复与执行行号分开。
-真实源2000行完成生成/PG往返；完整查询fixture5项及子场景1111次本地HTTP、真实模型0次。
-Linux PG合同116项、工具本地/Linux65项、PG回归1/1通过；完整TAP2101项有一条晚到清理事件断言误判，
-修正后对应28项通过，其余16文件无变更。真实模型质量/性能待新额度；PG总量预算、组织、多Job借用及图像仍待实现。
-实现提交4cefe84e；717份代码与服务器一致，PG/任务进程已停止、ACL恢复，两卡各1MiB。
-本包交付后暂停，不自动执行后续工作包。
-
-2026-09-10：A2匹配真实诊断完成18单元、8,448模型POST，423.47秒内正常停止模型和两套诊断PG。
-L64/结果32MiB：offer 23836/24042→862/858，JCT约17→10秒；其他配置无一致改善。
-全部单元出站/绑定/资源核对通过，新臂无相关release前重复offer为0。短查询不构成强D0或组织收益证据。
-[全部重复与限制](../results/postgresql/execution_repairs_20260910/README.md#同配置的真实模型修复前后诊断)。下方旧状态按当时记录保留。
-
-2026-09-10：A匹配诊断首个预热在gateway启动前失败，0模型POST、128预留未领取；模型与两套诊断PG
-已正常关闭。runner已显式传递子进程绝对源码目录，移除调用者PYTHONPATH后实际PG/HTTP及相关37项通过。
-失败与修复见[启动记录](../results/postgresql/execution_repairs_20260910/README.md#真实诊断的零请求启动失败与修复)。
-
-2026-09-10：[执行修复工作包 A](../results/postgresql/execution_repairs_20260910/README.md)
-完成代码和受控验证：查询错误先于流清理记录，三类错误独立保留；共同期限与单元失败证据；观测内容/
-写入方式分开；永久单项超限明确拒绝；PG反压等相关结果释放后再探测；Core/gateway有立即工作时有界推进。
-PG受控32行offer由660降至62，模型后端提交均32次；无容量释放的重复探测598→0。
-Linux调度369项、provider51项、PG静态116项、受影响工具78项；PG回归1/1、TAP2043项通过。
-实际PG＋本地HTTP验证两臂、日志模式、SQL错误与取消；新增真实模型请求0，真实性能验证待新额度。
-PG总量预算、数据库源查询、原生对照、组织控制、多Job借用及图像接入继续按独立工作包实施。
-独立PG暂供后续受控验证，HTTPfixture/gateway已结束，最终PG/ACL清理另行登记。下方保留历史记录。
-
-2026-09-10：容量工具与证据提交 `13d34909` 已快进合入并推送 main；合并后683个非Markdown代码文件与服务器一致。强D0仍为待确认状态。
-
-2026-09-10：[单 Map 测量修复与容量画像](../results/postgresql/map_capacity_20260910/README.md)
-完成独立 PG producer 绑定、单元预留预算、分阶段记录、direct/PG 配置 runner 与有界事件/RSS 观测。
-本地/Linux 各214项、PG回归1/1与TAP2032项通过；683个非Markdown代码文件与服务器一致。
-单卡真实出站96601次，预留99808次；62个完整查询、1个PG低内存配置拒绝，原始失败/部分结果保留。
-每臂五次4000行观测，PG C32/L64中位JCT73.024s，direct C64为62.679s；2000行独立样本验证通过。
-C32/L64是候选，C64/128尚无同规模重复平台，强D0仍未成立；不能登记为组织/多Job/双副本性能资格。
-模型/PG/gateway/采样均已停止，两卡1MiB，ACL恢复，准备至清理77.94min。以下记录按当时状态保留。
-
-2026-09-10：[数据准备与执行记录修复](../results/postgresql/data_evaluation_harness_20260910/README.md)
-已完成本地/Linux 各 168 项相关测试、真实 PG 的 7 项新 recorder 检查与 SQuAD 10/10 次模型请求。
-新 CLI 原样准备 ShareGPT 16 行并完成实际 tokenizer 检查；PG 146 行文本往返相同，部分结果失败、
-evaluator 失败、结果上限和超时均保存正确状态。同步/增量 Map 原始出站、token usage 和结果关联通过。
-增量 HTTP 峰值 2，最终资源归零；两次模型启动准备失败各 0 POST，原记录保留，临时服务与 ACL 已清理。
-PG/wire/Engine/调度算法未变；ShareGPT 任务质量、容量/组织性能与双副本仍待验证。
-实现提交 `5085c6ff` 已合入 main；669 个非 Markdown 代码目录文件与服务器验收版本相同。以下记录按当时状态保留。
-
-2026-09-09：[首次真实数据尝试](../results/postgresql/data_execution_pilot_20260909/README.md)
-使用单 GPU/单 endpoint，共 48/68 次请求后停止。SQuAD 同步与增量各 16 行 EM/F1 均为100%；
-增量检查脚本误把完成顺序当结果顺序，离线按序号/payload 重审通过，原失败和缺失 JCT 保留。
-ShareGPT 在第12行 length 后停止，并发现摘要质量和一行输入被临时脱敏改写；不具备质量/性能资格。
-新增 SQuAD Map 清单/离线评价入口、观测时间戳及缺失预测计零修复；本地/Linux各125项相关测试通过。
-PG、wire、Engine和策略未变；源模型、PG、gateway均已清理。双 endpoint 当前默认装配尚未接入，
-下一步按[数据执行计划](../docs/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)建立静态画像。
-该轮在 `codex/data-execution-pilot` 分支完成；其实现随 `5085c6ff` 的工具修复一起合入 main。以下同日记录属于此前实现历史。
-
-2026-09-09：[有界多行方法驱动](../results/scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
-独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。
-首次0POST失败暴露缺TaskInfo，修复后双Job10次及最终两阶段2次真实POST通过，合计12次；预算与服务均清理。
-这不是PG多阶段方法桥接或质量/性能实验；ShareGPT真实数据切片已规划、尚未运行。
-
-
-
-2026-09-09：查询归属及生命周期加固已合入main（生产源码1138bee7）。合并后654份源码/测试及归档校验一致，
-未修改已验证代码；[集成记录](../results/scheduling/query_lifecycle_20260909/README.md#主干集成)说明范围与清理状态。
-
-2026-09-09：[查询生命周期与连接接纳加固](../results/scheduling/query_lifecycle_20260909/README.md)分开已登记流空闲与帧期限，统一查询/standalone/握手名额，补齐登记与加入失败回滚。
-查询结束策略集中到QueryRegistry，PG runtime持有幂等流句柄，provider不再隐式登记节点。
-旧25c0f090的空闲取消、预留被占用及令牌失败遗留Job已受控复现。Linux521项、PG回归1项/TAP2006项及26次真实POST通过；654份源码一致，测试服务已清理。
-
-
-2026-09-09：[查询级Job归属](../results/scheduling/query_job_20260909/README.md)接入普通Filter v3与Map v6；PG查询上下文、可信登记、流与查询分开结束，复用共享Engine和非阻塞UDS工具。
-外部执行层将一份Job存储预算分给多个流；PG不分配Job份额。Linux517项、PG回归1项/TAP2005项通过，652份源码一致。
-真实复测24次POST通过，12个Job均回收；首轮4次因非空条件返回UNKNOWN失败，单独保留，不视为质量问题已修复。
-测试服务已清理。新模式Map窗口1；choice Filter、重扫、更广SQL形状和方法状态总预算尚未完成。
-
-
-2026-09-09：后续职责表述澄清，当前实现未变化。PG多算子查询归属与外部方法状态预算分别属于接入和执行正确性基础；
-动态借用是可选策略，服务容量/工作量驱动的提交、路由及多Job调度归外部执行层，不要求自研GPU底层管理。
-详见[后续工作分工](../docs/plans/semloom_multisession_design.md#验证完成后的后续项)。
-
-2026-09-08：三项会话接口清理61fa6967已快进合入main。合并前644份源码/配置及74份证据校验一致，未修改已验证源码；
-[集成记录](../results/scheduling/session_api_cleanup_20260908/README.md#main-integration)保留验证范围与后续工作。
-
-2026-09-08：[三项会话接口清理](../results/scheduling/session_api_cleanup_20260908/README.md)完成公开fail/派发控制/消费者关闭、可注入Job选择，以及独立单流适配器退役。
-网关不再访问session私有账本/状态；默认轮转、同步语义参照和未知请求计费规则保留。生产源码净减70行，旧测试迁到生产网关。
-Linux519项、PG回归1项/TAP1963项及最终12/18次真实模型通过；首轮12次记录保留，累计42次POST。最终644项源码/配置身份一致，测试服务已清理。
-消费者释放空间后的wake遗漏已通过失败复现修复；74份原始材料脱敏归档，另清理46个可从现有文件或Git恢复的本地副本。
-
-2026-09-08：增量执行与多Job基础`f6cd2392`已快进合入本地main，源码未改写。
-[主干集成核对](../results/scheduling/multijob_20260908/README.md#main-integration)确认644份源码与验证版本一致；本次不重跑服务器/模型。
-
-2026-09-08：[多Job共享执行与网关复用](../results/scheduling/multijob_20260908/README.md)完成可信Job登记、共享账本、Job轮转、有界连接代理及局部取消/未知结果隔离。
-Job份额策略归外部执行组装层，PG只管本地缓冲和查询生命周期；一个/多个Job使用同一增量循环，同步Filter/Map等复用连接工具并保留协议处理。
-Linux515项、PG回归1项/TAP1963项通过；单Job12次、多Job18次真实请求通过，不同Job HTTP峰值2，9个Job最终归零。644份源码一致，测试服务已清理。
-PG同查询多算子可信归属、动态借用、方法状态总预算和GPU资源模型仍待完成；一次启动端口检查失败为0 POST，原证据保留。
-
-2026-09-08：[消费期限修复与v5桥接退役](../results/scheduling/bridge_retirement_20260908/README.md)补齐结果交付时的消费期限，迁移测试后删除旧窗口1适配器、CLI、PG注册与专属身份，相关实现净减101行。
-Linux503项、本地52项、PG回归1项/TAP1963项通过；迁移前10次、最终窗口1共10次/窗口2共12次真实请求全部通过，最终640份源码一致，测试服务已清理。
-同步语义参考和wire v5保留；旧窗口1名称明确报错，多session/多Job资源管理仍待实现。
-
-2026-09-08：[阶段超时与执行组装整理](../results/scheduling/phase_policy_20260908/README.md)分开排队、后端和消费期限；网关不再用模型超时限制排队。
-HTTP和默认执行组装移出会话模块，可注入已有策略与工作量描述。Linux501项、PG回归1项/TAP1961项及12次真实请求通过，641份源码一致，测试服务已清理。
-v5窗口1桥接、同步参考和单活动session范围仍保留；过渡路径退役与多Job资源管理待后续完成。
-
-2026-09-08：[增量容量与结果回收整理](../results/scheduling/capacity_cleanup_20260908/README.md)拆开接纳任务、输入/结果字节和后端并发预算，移除PG固定64项数组，统一完成解析并修复错误路径的已完成结果回收。
-Linux提供者31项、PG合同115项、PG18.3回归1项/TAP1961项通过；两轮各12次真实请求通过，最终639份源码一致，服务和资源已清理。
-v5窗口1桥接仍保留，多Job动态资源管理尚未实现。
-
-2026-09-08：[公共实现归位](../results/scheduling/shared_modules_20260908/README.md)将共享runtime、Map codec、请求类型、模型配置和策略接口从旧执行模块移出；旧导入保留别名，功能范围不变。
-43个迁移定义及24个原地定义的AST保持一致；Linux495项、PG18.3回归1/1958项TAP和独立12次真实请求通过。
-638份源码一致，同一查询HTTP峰值2，资源归零且测试服务已停止；本轮27份原始材料压缩归档，历史证据未移动或删除。
-
-2026-09-08：[生成Map的PG多在途接入](../results/postgresql/async_window_20260908/README.md)已完成v6 offer/receive、PG有界行槽和按身份返回结果，复用原组织器与增量核心。
-PG18.3严格构建、回归1项、12个TAP共1958项及Linux199项Python检查通过；另核对v6权限、RLS和快照。
-独立12次真实POST全部通过，同一PG查询HTTP峰值2，增量10任务/6会话排空后资源归零，服务已停止。
-633份源码/测试文件与真实运行一致；当前只对受限生成Map显式开启，复杂表达式窗口1，Filter/组合和多活动session仍待完成。
-
-以下为之前的核查与实现记录，不能将旧记录中的待实现项当作最新状态。
-
-2026-09-08：[PG多在途接入前核对](../results/postgresql/incremental_window_one_20260908/README.md#async-readiness)确认现有v5桥接拒绝在途期间的下一帧。
-新增反例及桥接套件本地/Linux各7项通过，旧请求回收后新会话恢复；生产实现未改，多在途仍待实现。
-本轮未启动PG/模型，新增真实模型请求0；不能复用窗口1结果声称已完成多在途。
-
-2026-09-08：[生成Map的PG窗口1接入](../results/postgresql/incremental_window_one_20260908/README.md)新增独立provider执行身份，
-复用现有v5与PG语义、SessionEngine和异步HTTP。一个活动连接共用一个Engine，未知结果停止接纳。
-115项PG合同、23项provider、9项observer测试及PG18.3回归/1926项TAP通过；628份源码一致。
-9次真实POST验证参考SELECT、增量SELECT/INSERT、事务错误、取消57014及新查询恢复；
-其中7个增量任务、5个会话排空后资源归零，PG/网关/传输/模型已退出。临时planner修改已撤回。
-PG多在途、该profile的Filter/组合、多活动session及GPU显存管理仍未实现。
-
-2026-09-08：[有界组织窗口验证](../results/scheduling/organized_window_20260908/README.md)接入既有work分组与显式局部性，
-组织批次展开为独立单成员请求；行/阶段与批次身份贯穿backend和结果，原路径保持兼容。
-最终本地54项、Linux335项通过，624份源码一致；两轮各4次真实请求均通过，峰值并发2，服务已停。
-首轮后新增重排进展用例复现旧判断缺陷，修正并保留失败及两轮记录。
-PG异步、单请求多成员、准备缓冲/方法总预算及多活动session仍待实现。
-
-2026-09-08：[逐行方法框架验证](../results/scheduling/method_framework_20260908/README.md)补充预声明任务能力与有界方法续体，复用现有session账本。
-本地44项、Linux325项通过，621份源码哈希一致；两行各两个生成阶段共4次真实请求通过。
-首次诊断脚本参数错误在0次请求时停止，失败记录保留；修正脚本后复用同一4次预算。
-最终资源归零、传输与模型退出、端口关闭；embedding/级联算法、总方法内存计费及PG接入仍待实现。
-
-2026-09-08最新真实验证：同步[Filter→Map](../results/postgresql/filter_map_real_20260908/README.md)完成12次请求；
-[增量SessionEngine与有界异步HTTP](../results/scheduling/incremental_real_20260908/README.md)完成独立5次请求，实际HTTP并发峰值2。
-新传输单元测试加核心测试本地37项、Linux全调度318项通过，618项源码哈希一致。
-取消后的旧响应只回收旧占用，结束时账本归零、I/O线程/模型退出、端口关闭、GPU空闲。
-PG异步桥接、生产模型协议适配、多成员提交/阶段缓冲与多Job公平仍待完成；未宣称性能或质量资格。
-
-以下为前序切片及对应证据。
-
-2026-09-08：单流增量核心已在`codex/incremental-session`实现，详见[受控验证](../results/scheduling/incremental_session_20260908/README.md)。
-本地33项新增测试、Linux314项全调度测试通过，616项源码哈希一致，零模型请求、Raylet残留0。
-支持前缀接纳、非阻塞推进、完成lease、取消及Engine残余额度；复用既有admission/路由/本地FIFO credit。
-FIFO任务选择独立于账本；数据组织应接入同一执行上下文。真实Backend、多成员提交和PG异步仍待接入。
-旧同步入口仍有消费者，保留原行为；只增加显式退休已完成FIFO Job历史的清理入口。
-
-开发分支`codex/semantic-call-binding`已完成[一个Filter→一个生成Map验证](../results/postgresql/filter_map_binding_20260907/README.md)：
-V1载体分离语义与列绑定，Map使用PG原生ExprState在LIMIT/OFFSET之后计算输入，并写独立结果列。
-本地115、Linux138、PG18.3回归1及10个TAP共1910项通过；611项源码哈希一致，模型请求0，测试服务已停。
-覆盖权限/钩子、RLS、快照、取消恢复及畸形载体。main尚未包含本轮代码；多Map/嵌套与PG异步仍待实现。
-
-共同调用与tuple绑定基础及OFFSET/setrefs原型见[前序验证](../results/postgresql/semantic_binding_20260907/README.md)。
-
-以下为按时间记录的前序状态，当前能力以上述入口为准。
-
-2026-09-07 A1首步已在`codex/semantic-call-binding`完成[Map调用分析提取验证](../results/postgresql/semantic_call_extraction_20260907/README.md)：
-来源/常量/可见调用检查进入`planner/sem_map_call`，路径构造继续使用原有逻辑。15个函数体等价，
-本地115/115、Linux138/138、PG18.3严格编译、regression1/1及TAP1808/1808通过，618源码哈希匹配。
-模型请求0，测试服务已停；此步骤尚未合入main，共同SemanticCall、V1 binding和Filter→Map仍未实现。
-
-近期待实现模块已有[PG调用/绑定规格](../docs/plans/postgresql_call_binding_design.md)与
-[单流增量session规格](../docs/plans/semloom_incremental_session_design.md)。前者先保持旧行为，
-再接一个Filter→一个生成Map并分开输入/结果位置；后者选定非阻塞单步、接受前缀、完成lease与
-Engine残余账本。以上是设计及静态源码复核，动态表征、实现、PG/Core桥接均未因文档更新而完成。
-补充评审已明确交付原子性、取消唯一结算、唤醒/期限与跨session残余归属；新Map改为显式PG权限
-设施并先验证投影位置。后续A1保持现有行为，A2a和B2仍须各自实现及反例验证。
-
-2026-09-07 的[总体架构修订](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
-只调整设计与实施依赖：区分调用/方法/任务/工作单元，明确PG/Core职责、查询与流资源及接纳所有权。
-通用绑定、条件语义值、多阶段方法、增量Core的PG接入与查询级资源控制仍待实现；
-代码保持已推送的`66887463`，本次没有新增运行或扩大下列测试结论。
-
-2026-09-07 的[两个Filter AND与gateway多会话验证](../results/postgresql/semfilter_and_20260907/README.md)
-在`codex/semfilter-and`完成：复用两个独立CustomScan/pump/runtime，分开调用分析与路径构造；
-中间节点不吸收下游输入投影，保留PG原生函数权限检查。gateway分开CLI装配、连接生命周期、
-协议分发与请求容量；默认8连接、1模型请求，无等待队列，未知远端终态保留名额。
-Linux138/138通过，PG18.3严格构建、regression1/1、8个TAP1808/1808，584源码哈希匹配。
-包含RLS/快照/取消、相同VOLATILE输入两次求值和存活gateway的40会话FD/线程回收。
-本轮测试进程已清理，模型请求0；已合并main。Filter→Map、单节点多在途及正式资源仍待完成。
-
-2026-09-07 的[扩展目录重构](../results/postgresql/pg_module_layout_20260907/README.md)
-从独立分支 `codex/pg-module-layout` 快进合入本地main，起点为 `41e103f2`。现有实现按 planner、semantics、executor、
-provider/wire 整理，Map 路径明确命名；总头文件拆为配置、marker 身份、path 与 scan 的实际接口，
-provider 不再依赖 planner 头文件。迁移函数体、SQL、协议和错误语义保持，未增加组合或异步。
-本地112项算子合同、4项网关测试和8项严格C11编译通过；保留并修正了一次旧HTTP deadline测试的
-错误计数假设。用户随后授权服务器补验：`20b22a55`通过Linux112+4项、PG18.3严格构建、
-regression1/1和全部TAP1758/1758，107项源码哈希匹配，安装件与构建件相同。准备过程的下载超时、
-临时驱动PATH与SQL_ASCII环境失败分别保留，最终独立UTF8运行完整通过；未修改源码或断言。
-本轮自有活跃进程0、socket关闭、真实模型请求0；已合并main。下文旧模型结果保持原身份。
-
-最新[两算子合并验证](../results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
-在`5771cef1`通过Linux247/247、PG18.3严格构建、regression1/1和全部TAP1758/1758。
-固定7B模型新9/9请求覆盖Filter v3/v4与Map v5的SELECT/INSERT，NULL零调用、结果/筛选、
-usage和写回均通过；服务退出，旧8/8账本不变。运行时代码仍为`fcd12373`。
-本次确认当前同步单算子能力，未新增同查询组合、异步执行、正式资源或质量/性能证据。
-
-
-最近真实模型验证日期：2026-09-06（Map 真实模型纵向链路及修复后小规模资源诊断通过；正式资源资格、质量/校准和四 D 整体未完成）
-
-合并前清理已迁移四个 TAP 至公共 gateway CLI，并删除旧 Python 兼容入口、重复转发及
-13 个一次性实验驱动；原始证据与固定 Git 源码恢复身份保留。`fcd12373` 的本地 233 项中
-231 通过、2 项 Linux 专属跳过，Linux 233/233 通过；PG18.3 严格构建、四个受影响 TAP
-1297/1297 通过，测试进程残留 0、模型请求 0。详见[清理记录](../results/postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。
-
-最新 [推送前真实模型复验](../results/postgresql/semmap_prepush_20260906/README.md)
-在 `b7eeea53`、PG18.3、固定Qwen2.5-7B/vLLM下使用新8次预算完成完整小规模检查。
-SELECT、独立审计连接下的INSERT、取消/拒绝及恢复六阶段均valid/passed；真实INSERT资源缺口关闭。
-本轮未改生产代码，沿用共享预算/观测。旧32/32账本未改，本轮所有服务已清理；正式压力和质量/
-性能结论仍未获得。旧记录中的“待复查”表示当时状态，当前以上述新证据为准。
-
-
-2026-09-06 资源工具修复分支：已受限重写独占结果目录、阶段采集和最终聚合，新增
-`resource_lifecycle.py` / `resource_phase.py`，修正归因、稳定基线、异常采样和中断证据。
-测量身份为 `semloom.pg.resource.v2.1`，当前修订 `phase-lifecycle-3`；PG/provider/wire 生产路径未修改。
-最终验证集合为本地119项（117通过、2项Linux专属跳过）、Linux130项通过；其中118/129项绑定
-`77a123de`，另追加1项包含三种listener基线反例的测试，运行时代码相同。
-`77a123de` 的隔离PG18.3真实1×100 fixture-only诊断，四场景九阶段均valid/passed，模型请求0；
-同一存活backend/gateway完成清理，各阶段结束FD/线程增量0。前两次不完整/失败运行保留。
-[证据与哈希](../results/postgresql/semmap_resource_lifecycle_20260906/README.md)单独登记。
-正式3×2000未授权、未运行；正式资源资格和四D完成仍pending。
-用户随后授权的[有限真实模型复查](../results/postgresql/semmap_real_followup_20260906/README.md)
-新增7次请求，原账本25→32：SELECT/INSERT输出与usage、NULL零调用、取消/拒绝及恢复功能核对通过；
-SELECT及四个故障/恢复阶段资源通过。真实INSERT的测量受同backend验收JOIN打开系统目录FD影响而
-未通过；已用独立无模型PG反例定位并分离审计连接，原测量不改判；后续真实INSERT复查见顶部新记录。
-全部本轮PG/gateway/vLLM进程已清理。不同run不合并成完整资源通过。
-当前实施依据见 [资源工具生命周期修复](../docs/plans/postgresql_semmap_generation_contract.md)。
-
-后续维护性重构已让 Filter/Map 共用 session observer 与持久预算；`server.main` 显式接入观测，
-不再替换 gateway 全局对象，异常仍关闭自有连接。fixture CLI 拒绝 fixed-model 配置；预算入口
-接受外部 ID/总上限及会话事件，旧 choice 默认保留。隔离 PG 用户/端口可配置，C 客户端从实际
-连接取参数。模型 endpoint/ID/timeout 原已由外部 JSON 拥有。
-本地212项回归中210通过、2项Linux专属跳过，包含v3/v4/v5×golden/合成HTTP的六条接线；
-`b7eeea53` 在Linux212项全部通过；新端口55499的隔离PG18.3 1×100 fixture九阶段全部valid/passed，
-libpq客户端严格编译通过，8个已观测进程均退出，模型请求0。旧32/32账本只读兼容且字节不变。
-历史真实/正式资源结论不变。
-取舍由 Map 合同 §8.4.5 维护，[验证记录](../results/postgresql/semmap_resource_lifecycle_20260906/README.md#reuse-refactor)另列。
+本文件按能力组织：每一项回答“现在有什么、实际验证到哪里、仍然缺什么”。
+某次验证的请求数、测试计数、当时的分支与清理细节保留在对应 `../results/` 记录中；
+逐机制与逐运行的对应关系见 `../results/EXPERIMENT_EVIDENCE_REGISTRY.md`。本文只链接，不复制。
+历史按日期排列的实现记录已从本文移出，2026-09 及之前的逐轮状态由结果记录与 `PROJECT_LOG.md` 承担。
 
 文档角色：本文只记录源码实际模块、已接线能力、运行形态和明确未实现项；接口目标、工作包顺序与
-验收标准由
-[`../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
+验收标准由 [`../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 负责，测试/实验支持的结论由证据台账负责。
 
-本文说明 PostgreSQL 中立语义算子 reference capability 与现有 Daft + Ray 外部物理执行基础设施
-已经完成什么和实际执行流程。当前 recording `SemMap/SemFilter` compatibility paths 与三参数 exact
-`SemFilter` golden/fixed-model paths 不等于第二 physical path 或完整优化系统已经实现；项目
-不修改 vLLM 内部。
+## 能力总览
 
-**已合入主线的身份加固切片**：`codex/pg-function-identity` 已复现并修复同签名非成员误接管，只改 `extension.c`
-中的 PG 对象解析。测试覆盖其他 schema/重载、其他扩展成员、函数定义替换、删除重建与 prepared plan；
-`934f4f61` 增加双物理连接的仅成员 ADD/DROP 手动刷新验证，函数 OID/定义不变，保留刷新前后计划。
-实现与证据已随 `390f666a` 合入 main，服务器验收仍绑定测试源码 `934f4f61`。
-详见[身份验证](../results/postgresql/function_identity_20260902/README.md)。
-最终 PG18.3 warning-free `-O2 -Werror`、regression 1/1、TAP 1022/1022（身份 103 项）、本地/服务器
-各 94/94 与中立 C11 通过。中间 990/990、生产反例与夹具失败保留；没有重跑模型或资源 smoke。
-仅成员变更的跨会话自动计划失效仍 pending；受控使用须暂停查询、结束旧事务/游标，DDL 提交后刷新
-所有相关物理连接（包括连接池）再恢复，不能只刷新 DDL 会话，也不能用成员移除即时撤销权限。
-无法保证所有连接刷新时不使用此临时方案；函数替换/删除重建的既有自动失效测试不延期。
+| 能力 | 现在有什么 | 实际验证到哪里 | 仍缺什么（不能据此声称） |
+|---|---|---|---|
+| PG 语义算子载体 | `REL_18_3` extension：recording `SemMap/SemFilter`、三参 exact `SemFilter`、生成型 `SemMap`（v5、多在途 v6）、图像 `ai_semantic.embed`（schema 5 / wire 7）、planner 版本化 plan spec 与中立 provider seam | PG18.3 严格编译、regression 1/1、TAP 2,159 项；受限 SELECT/INSERT、snapshot、RLS/权限、prepared/invalidation、savepoint、取消与恢复；[载体与生命周期](../results/postgresql/semmap_resource_lifecycle_20260906/README.md) | rescan/EPQ/parallel、`RETURNING`/`ON CONFLICT` 与更宽 query shapes 仍 fail-closed；不证明语义质量、性能或 Filter 第二路径 |
+| 生成型 Map 数据组织 | 固定行数、固定工作量与有限窗口长度分组三种控制；完整消息 token 描述与校准身份 | [真实组织诊断](../results/postgresql/map_organization_20260910/README.md)：408 次真实请求，输入序控制只改组数不改提交顺序，长度排序改变实际顺序，三组预测一致 | 组数不同不等于不同模型批处理；短查询不证明稳态吞吐改善；强静态参照未成立 |
+| 提交与容量控制（M1） | 请求数/工作量上限、供给与等待分解观测、可达性预检、常驻 gateway | [完整容量复查](../results/postgresql/m1_full_recheck_20260920/README.md)：32 查询、16,400 次请求账目一致；PG/direct 均持续供给不足，未选出平台候选；旧“紧工作量降低 HTTP 尾延迟却增加完整查询时间”测量反例成立 | 容量平台选点、W 调参、独立评价均未运行；不证明 work 控制优于调优请求数 |
+| 容量扫描修复与异常诊断 | Core 只读候选扫描重复汇总开销的受控修复（fixture 下 128 行约 22–26s → 2.1–2.25s）、传输异常类型/原因链记录 | [供给复查](../results/postgresql/m1_supply_followup_20260920/README.md)、[C64 诊断](../results/postgresql/m1_c64_errors_20260920/README.md) 与上述复查；修复已合入 main | 原两条未确认请求故障未复现，根因待确定；不称已修复连接/模型缺陷 |
+| 多查询与多 Job 共享 | 共享 Engine、可信 Job 登记、查询级 Job 归属、Job/flow 轮转、可选共享计算策略 | [查询共享 E](../results/postgresql/query_sharing_e_20260914/README.md)：2/4 查询、暂停/取消恢复、63 次真实请求关联与回收通过；[多 Job 网关](../results/scheduling/multijob_20260908/README.md) | 55 条 Map 未逐字复述（0/55）的质量负结果保留；不等于多查询公平性、质量与性能已全面验证 |
+| 图像阶段执行 | `embed(bytea,jsonb)→real[]`、MethodDriver 行结果、CPU/model 阶段资源分别保留 | [工程检查](../results/postgresql/image_stages_f_20260920/README.md) 与 [真实 CLIP 核对](../results/postgresql/m1_m2_f_real_20260920/README.md)：151 次前向、三路径逐维一致，指定错误/取消/恢复通过 | GPU 计算中故障与匹配性能未验证；工程能力不直接作为方法贡献 |
+| 算子代价估计 | 离线 estimator、planner-only calibration artifact builder/validator/loader | [CE5 正式结果](../results/cost_estimation/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md)：429 formal、context-LOO max regret 14.72% 边际通过 | 真实 matched artifact、第二 path、跨时间段/workload/硬件校准与在线决策价值均未验证 |
+| 观测与证据工具 | 持久请求账本、逐行关联、责任重建审计、资源阶段采样、失败保留 | 多轮真实运行完成出站/关联/责任归零核对；原始证据脱敏归档 | 生成型 Map 的正式资源压力资格（固定 RSS/FD 条件）仍未通过；不据 fixture 或小样本声称资源资格 |
 
-**尚未完成项**：仅成员变更自动刷新、四 D 生成型 Map 的资源资格、Filter → Map与单节点多在途；增量
-SchedulingSession、PG accepted-prefix/多在途与公司 adapter。已有值合同的历史验证仍绑定 `d26e210d`。
+## 近期变更入口
 
-**真实 Map 追加结果**：[`main@b19486a1` 的 2026-09-04 检查](../results/postgresql/semmap_real_model_resource_20260904/README.md)
-用精确 PG18.3、wire v5、固定 Qwen2.5-7B/vLLM 0.25.1 完成累计 25/32 个有持久账本的请求。
-SELECT/INSERT 各 10 个非 NULL task，NULL 零调用；空串、Unicode、取消、模型 4xx 拒绝和恢复通过，
-gateway FD/线程回到基线，vLLM 正常清理。fixture 主压力又完成 3×2,000 个 100,000-byte 输入和
-65,536-byte 输出，但 60 秒内至少一个固定 RSS/FD 条件失败；采集器未在断言前保存具体差值，后置
-取消/断连/gateway-exit 子项未运行。因此真实纵向链路已验证，资源与四 D 整体仍未通过。
-四 D 的[合同](../docs/plans/postgresql_semmap_generation_contract.md)已定稿，源码复核已登记于 §8.0。
-独立分支 `codex/semmap-message-contract` 的 `6903cf46` 只实现 C/Python Map 消息编译与公共 JSON writer，
-将 Filter 的 system 内容留在 Filter machine；原 recording/Filter 行为保持。
-[本轮验证](../results/postgresql/semmap_messages_20260903/README.md)：本地/服务器各 107/107，
-精确 PG18.3 重新构建 `-Werror`、regression 1/1、TAP 1022/1022。该消息切片已随下述修改合入本地 main。
-后续 `c338d81b` / `425d2b1c` 已实现并验证 C/Python Map 纯值摘要与完成策略、Python v5 及共享 gateway。
-[本轮资格](../results/postgresql/semmap_values_20260903/README.md)绑定 `425d2b1c`：本地/服务器各
-135/135，PG18.3 `-O2 -Werror`、旧路径 regression 1/1、TAP 1022/1022 重新通过；独立复核问题已修复。
-后续 `a1bbdd30` 补深层 JSON 读帧隔离与同进程恢复，本地 136/136 及 C11 通过；
-见[追加验证](../results/postgresql/semmap_values_20260903/README.md#json-depth-repair)。未重跑服务器 PG 或模型，旧 TAP 仍绑定 `425d2b1c`。
-已从 `63d86c0e` 快进合入 `b0400944`；合并后的本地 main 复跑 136/136 与 C11 通过，
-见[合并检查](../results/postgresql/semmap_values_20260903/README.md#main-integration)。该次集成未推送或部署服务器。
-随后独立分支 `codex/semmap-pg-plan` 的 `2205ccbb` 已完成 schema 4 的 PG 保存、SQL 0.2.0
-新三参 Map 注册/升级、固定参数来源与值检查、计划复制/严格解码、原生 EXECUTE ACL/hook 和函数依赖。
-该历史 plan 切片的 EXPLAIN 为 `plan-only / not-connected`，实际执行拒绝；现已被下方接线替代。
-新重载的 SELECT/直接 INSERT SELECT 规划、缓存计划跨会话撤权、函数替换/删除重建与成员手动刷新
-均有测试。输入/谓词子查询反例已最小修复；仅成员变化的自动刷新仍未实现。
-[PG plan 验证](../results/postgresql/semmap_pg_plan_20260903/README.md)绑定 `2205ccbb`：
-PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260（新 plan 238 项）、本地/服务器各 136/136 与 C11。
-后续 `676615fa` 复现并修复 SQL wrapper 在 custom 模式通过内联绕过来源检查；新 Map 只接管规划前
-已核验的显式输出，整个 Map wrapper 明确拒绝，普通函数内联保留。临时检查状态在嵌套/ERROR 后恢复。
-[追加资格](../results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)：
-PG18.3 regression 1/1、TAP 1283/1283（Map plan 261）、两端各 136/136、`-Werror` 与 8/8 C11 通过。
-随后 `5031bb50` 完成 [C v5/PG golden 资格](../results/postgresql/semmap_pg_wire_20260903/README.md)：
-生成型 Map 已复用现有 runtime 逐行执行，显式 stop absence/limits 与 v5 身份贯通，原来源/ACL 检查保留。
-同时修复常量/等值普通列的输出绑定和非法 UTF-8＋超长完成值的错误优先级；旧版本协议行为不变。
-PG18.3 `-Werror`、regression 1/1、TAP 1741/1741（Map plan 268、execution 451）、两端各 137/137
-与 8/8 C11 通过，保留该次分支验收身份；原主工作树/工具链未覆盖。
-合并前复核在 `f46fe936` 收拢 v5 错误的版本/阶段校验，统一 C/Python 的单字段 usage 范围，
-保留 runtime 跨任务累计溢出检查。新红测分别复现握手误报与合法 usage 被拒绝；修复后重新通过
-PG18.3 `-O2 -Werror`、regression 1/1、TAP 1758/1758（Map execution 468）、两端各 139/139、C11 8/8。
-源码与文档现纳入 main；详细[复核记录](../results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)
-分别保存失败、通过及安装/进程检查，不重新绑定旧 1741 项或历史资源证据。
-后续真实 Map 请求累计 25/32 并通过受限 PG18.3 纵向链路；RSS/FD fixture 主压力虽完成全部 task，
-固定资源条件仍失败，详见本文顶部追加结果。资源 pending 不能由 golden 或真实 completion 代替。
-2026-09-04 静态审查后：资源观测链路已按 metric schema v2 重写（shared-tick 采样、显式 snapshot
-有效性、稳定 FD-identity baseline、SO_PEERCRED 会话归因、same-tick 峰值、stress/cleanup phase
-分离、异常安全落盘、真实 fault case、CLI 退出码 0/1/2/3；合同 §8.4.2 pre-run static-review
-correction 已登记）。这是测量实现修复，不构成资源资格通过。同日诊断运行后二轮审查又修复了
-归因失败假绿、diagnostic 负载失实（归档客户端硬编码 3×2000，参数化 `resource_client_v3.c`
-取代）、缺 role tick 零值替代、cleanup 相 unknown、active session 无门、recovery 相 baseline
-崩溃、数值文件名猜测残留与 persist 前致命检查等路径（合同 §8.4.2 第 9–16 条）。首轮诊断
-（`semmap_resource_v2_diagnostic_20260904`，实际负载 3×2000，README 已更正）确认归因/峰值/
-清理数字真实，但其负载身份与 `--diagnostic` 标记不符；修复后的小规模 diagnostic 需重跑，正式
-3×2,000 qualification 仍待独立授权。
-2026-09-05 三轮审查又修复了状态机组合链缺口（合同 §8.4.2 第 17–21 条）：stress 判定曾因
-cleanup 延迟组合而结构性永远 inconclusive；disconnect/exit 顶层曾可产生合同外状态对（runner
-现全路径经 `compose_status` 组合）；全 tickless 归因窗口与窗口外 fd 复用改标两个假绿/失真面已
-关闭；case 级崩溃与非空结果根目录现输出 runner_failure（退出码 3）。补齐指令点名的
-observer/CLI 测试文件。仍不构成资源资格通过；小规模 diagnostic 与 Linux 全套测试在目标环境
-重验前，正式 qualification 不启动。
-下方历史实现与测试记录保持原提交身份。
+- 2026-09-21：全仓库目录重组（分支 `codex/repo-reorg`），历史 raw 与旧版 PPT 迁出 git，见 `PROJECT_LOG.md`。
+- 2026-09-20：工作包 F 图像接入与 151 次真实 CLIP 核对完成；M1 完整容量复查 16,400 次请求，
+  供给修复与异常诊断合入 main，M1 未选点。逐轮状态见上表链接与 `PROJECT_LOG.md`。
 
-`00cc6bbf` 已实现第四个 SQL option 与 schema 3：完整 profile 保存为 PG 命名节点，严格解码到指定
-context，支持 copyObject、prepared/generic plan 与 invalidation；C encoder 已链接 PGXS，完整规范
-bytes 纳入新的 semantic digest。旧三字段 options/schema 2/digest/wire v3 不变，旧 calibration
-artifact 对新身份返回 `semantic-spec-mismatch`，不使用旧系数。
-该 PG plan 切片当时只支持规划与普通 EXPLAIN，执行以 `0A000` 拒绝；此临时限制现已由下方 C 接线替代。
-测试修订 `134447dd` 已核对真实 provider socket 配置；完整 PG18.3 TAP 537/537、本地/服务器 Python
-68/68、C11 与 warning-free `-O2 -Werror` 构建通过。详细 regression 和日志见
-[PG plan 接入验证](../results/postgresql/choice_pg_plan_20260902/README.md)。
-后续 `7d72d9ad` 已实现 gateway wire v4 的严格 open/task 校验、profile/semantic identity 和
-golden/fixed-model 映射；共享 `wire/semantic.py` 与 `adapters/semantic_session.py`，保留 v3 import/runner。
-外部 fixed config 须显式声明 `choice_format=vllm_structured_outputs`；否则 choice 在 HTTP 前拒绝。
-不降级、不重试、不改写 raw output；现有模型、prompt、生成参数与 HTTP deadline 策略不变。
-本地/服务器各 83/83，PG18.3 warning-free 构建、regression 1/1、TAP 537/537 通过，见
-[gateway v4 验证](../results/postgresql/choice_gateway_v4_20260902/README.md)。这只增加 fixture
-协议与兼容证据：该历史切片没有修改 C/SQL/TAP，也没有真实模型或新资源 smoke。
-`8e7cd92d` / `8674269d` 随后把完整 profile 复制到 query-owned `AiOpenSpec` 和 session-owned UDS spec，
-以 `has_generation_profile` 显式选择 v4；v3 入口拒绝带 profile 的请求。`wire_semantic.c` 共享固定 exact
-编解码，v4 单独校验字段/版本/profile/evidence，并拒绝重复 JSON key。pump 的 `pending_plan` 分支已删除，
-schema 3 SELECT 回到公共 runtime 与原严格 parser；无任务仍不连接 provider。
-最终测试源码 `80bb7fc5` 通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 748/748、本地/服务器各
-83/83 Python 与中立 C11。见 [PG choice 接线验证](../results/postgresql/choice_pg_wire_20260902/README.md)。
-新增 218 项 choice 执行检查含真实 PG→golden/fake HTTP、三值/NULL、Unicode/空串、prepared/invalidation、
-savepoint、错误/取消恢复、旧端拒绝和实际 HTTP 参数对照；不代表真实模型或 RSS/FD 资格。
-该轮用旧 `7d72d9ad` 与 `80bb7fc5` 二进制确认三种 Filter profile 的 `INSERT ... SELECT` 均未 lowering，
-执行报 `55000`，历史证据保留。后续 `8e50addf` 只修改 Filter planner 的源 FromExpr 与 INSERT 检查，
-修复简单源 SELECT 上拉后未被接管的问题，未改 runtime/provider/wire/parser/cost。
-最终 `39007150` 通过 PG18.3 `-O2 -Werror`、regression 1/1、TAP 919/919（新增 INSERT 171）、
-本地/服务器各 83/83 和 C11；见[INSERT 验证](../results/postgresql/semfilter_insert_20260902/README.md)。
-受限单表 recording/exact v3/choice v4 INSERT 已验证实际写入、三值、NULL、LIMIT、prepared、
-savepoint 部分写入回滚、目标约束及 choice RLS/权限/取消恢复。该次未运行资源或真实服务检查。
+---
 
-`4464fe9b` 随后新增实验专用 `choice_resource_checks`、`choice_gateway_observer` 与持久化预算 ledger，
-未改生产 PG/gateway。PG18.3 复用上述已验证二进制，SHA 一致；新受控资源运行的 v3/v4 各 5,164 次
-fixture 调用、10 次取消与 10 次阻塞 DNS/恢复均通过预定阈值。首轮 FD 减少不符合“相等”断言、
-容器 proc 权限诊断失败均保留；受控重跑只在自有表维护完成后关闭该表自动 vacuum，没有放宽阈值。
-预算/HTTP seam 新增 8/8；本地既有 83/83 同时通过。真实模型请求为 0，未重跑构建/TAP，旧 919/919
-仍只绑定 `39007150`。详见[资源验证](../results/postgresql/choice_resources_20260902/README.md)。
-当前 gateway 仍串行服务整个会话；零任务双连接检查复现第二握手等待，不能声称已支持多算子。
-
-四 C 的[受限真实服务检查](../results/postgresql/choice_service_20260902/README.md)随后通过。
-初始工具 `87b7963b` 在首个真实响应后将 BatchEncoding 字段数误作 tokens，整轮失败；`0a1c12d3`
-仅修复采集工具，离线反例与回归测试通过后在新目录完成 14 次 old/choice 请求和两个 NULL 对照。
-本地/服务器各 94/94；实际 JSON 仅差 choice，PG rows/calls/usage 与原始输出一致。累计预算 15/100，
-包含首轮 1 次；启动失败、主动停止和工具失败均保留。未改 PG/runtime/provider 生产代码，未重跑
-TAP/构建；工程接入完成不表示三值判断质量合格、恢复校准或实现第二路径。已完成的专项计划移入
-`docs/plans/completed/`，主计划继续定义真实 Map 与可组合执行，当前集成版本已包含实现与归档。
-
-当前 PG 可执行路径使用 schema v1/v2/v3/v4、wire v2/v3/v4/v5 与同步单在途 port；
-一参 recording Map 保留兼容身份，三参生成型 Map 已通过 PG＋golden，并在 `b19486a1` 上通过受限
-真实模型纵向验收；资源资格仍失败。
-模型与 generation constraints 位于 query-fixed `AiOpenSpec`，不是每个 `AiPreparedTask` 的字段；
-逐项 task 使用 sequence/input/canonical_messages/payload digest/is_null。当前 PG→gateway 协议没有跨进程
-query/operator/task ID 组合、query registry 或显式 provider.cancel；UDS 通过连接与 sequence/摘要关联，
-取消通过 close/disconnect 和 PG cleanup。既有 `SynchronousScheduler` 不等于已实现增量 session。
-
-**固定 endpoint 与部署身份（2026-09-03，核对已集成源码至 `b0400944`，无新增接线）。**
-该日期版本的`execution_provider/server.py`在golden与fixed配置间二选一，串行服务整个session；
-本轮已改为上方有界多会话。仍没有多endpoint
-路由。`adapters/openai_compatible_fixed.py` 的配置必填 endpoint_url/model_id/timeout_ms，可选
-bearer_token_env/choice_format；timeout 为 1–300,000 ms，choice_format 用于显式 choice 能力声明。
-同一个 HTTP(S) Adapter 可以指向本地或获准的第三方服务；它逐请求创建并关闭 HTTP 连接，
-resolver 有独立同步保护，不等于已经完成连接池或多会话资格。token 从指定环境变量读入 gateway
-内存，再用于认证头，并非只留在环境变量中；不进入 PG plan/wire 摘要或公开证据。
-
-`wire_semantic.c` 的 v3/v4 provider digest 仅绑定 domain、协议版本、execution ID、model ID；
-Python v5 也没有增加部署绑定，均不含 endpoint URL/部署实例/timeout。completion evidence 又绑定
-三类身份摘要、payload、sequence、raw output/finish/model/两项 usage，不证明实际模型部署。
-现有 calibration 的 workload/service signature 是外部选择与审计信息，PG 不在线探测部署。
-显式 profile、部署快照与逐任务路由证据设计见
-[主计划 §6.5](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)，
-尚未实现；不据此更改旧摘要、原始资格或四 D v5 的用途。
-
-独立核心研发、真实 PG 接入、Filter 质量与公司环境条件现已分开；顺序只看
-[主计划](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，本页不缓存第二份计划。
-受限 choice 真实执行检查不改变 Filter 校准暂停与原始质量失败结论。
-
-**公司工程参考不是已复用代码的声明**：已只读核对 SQL 函数注册、marker/CustomScan、pgvector
-表达式复用、对象身份、列映射/rescan、prompt/有效请求、批执行与资源回收；完整取舍见主计划 §8.7。
-公司 Filter 为大模型二值判断，embedding cascade 未启用；自有当前
-三值 profile 与其 NULL/error 行为不同，不能据名称认定等价。未来移植包含算子语义/处理/优化与
-SemLoom 执行两部分，目前都没有公司路径验收证据。
-
-**当前工程限制**：生成型 Map 的 PG→C v5→golden 与固定 Qwen2.5-7B 真实链路已接通，资源压力资格
-未通过；planner
-支持至多两个顶层Filter AND，Map/Filter 不组合；rescan/EPQ 明确拒绝；gateway支持有界多会话。函数查找已核验
-扩展成员，并由上方切片验证非成员不被误接管；不据此声称发现权限绕过。后续改动
-与验收要求只在主计划维护；现有 PG-private runtime、neutral port 和严格错误/结果处理继续保留。
-
-**当前实现事实**：按
-`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 已完成 `REL_18_3` extension
-`SemMap` 与 exact `SemFilter` 的当前受限 reference capability、PostgreSQL-private shared runtime、provider-neutral
-`AiOpenSpec → AiPreparedTask → AiCompletion` `open/drive/close` 接口和同步单在途 UDS recording slice；
-协议 v2 的 C/Python semantic-spec/physical-algorithm/provider-execution/payload/completion digest、
-1 MiB 长度帧、adapter-owned 174,080-byte 编码前输入上限、
-Unicode、escaped/raw NUL、严格整数、断连、取消与清理已验证。provider 只在首个非 NULL task 到达时打开，`PROPAGATE_NULL`
-由 PostgreSQL 本地完成；`sem_scan.c` 只保留 CustomScan 回调，`sem_pump.c` 负责 child slot 流，并只转交
-planner 预计算的 cost metadata，不在执行期重新计算 cost，
-`PgSemanticRuntime` 统一负责 query-fixed provider、lazy open/drive/close、sequence、completion copy、
-query-context cleanup、中立错误映射和公共 EXPLAIN 计数；Map/Filter machines 分别处理 emit 与
-TRUE/FALSE/UNKNOWN keep/drop。`sem_plan_spec.c` 由 planner 把当前 recording operator/value/policy、
-semantic spec identity、physical algorithm 与 physical role 编码为版本化、可 copyObject 的 plan 值；
-executor 严格校验字段集合、类型、长度与 schema version，input column 仍是独立 executor binding。
-runtime 是唯一把 PG-private plan spec 转成 `AiOpenSpec` 的位置，machine 不再构造 recording identity。
-中立 header 不包含 PostgreSQL 类型，也不包含 socket/JSON/frame/response-field operation；adapter 通过
-稳定错误类别、`errno`、长度和本地生成的定长脱敏详情保持原 SQLSTATE/消息。recording、
-UDS 和 wire v2 各自隔离；每次 drive 使用可重置 scratch context，结果复制到 per-tuple context，UDS 从
-`connect()` 前即为 nonblocking，并在 UTF8 之外 fail closed。query-context cleanup callback 在任何 lazy
-资源取得前注册，返回型错误终止并关闭 session，直接 interrupt/longjmp 由同一幂等本地清理路径兜底。
-公共 extension 级 PostgreSQL compatibility suite 和第二个真实消费者已经通过，未为 `SemFilter`
-复制 provider lifecycle，也未为 `SemJoin` 或 blocking operator 预造通用执行器。提交 `3b2077e1`
-新增三参数 `ai_semantic.filter(text,text,jsonb)`：planner 只接受常量 instruction 与严格三字段 options，
-schema v2 plan 保存 prompt/parser/model/generation 与 semantic/physical digest；pump 持有 PostgreSQL
-slot/Datum/MemoryContext binding，operator-machine header 已不含 PostgreSQL 类型。独立 wire v3 使用
-163,840-byte 输入上限、严格 open/task/completion 字段与 C/Python digest vectors；gateway golden adapter
-只按测试提供的 payload-digest fixture 返回 raw output，PostgreSQL 本地严格解析 uppercase
-`TRUE/FALSE/UNKNOWN`。提交 `53cf3da8` 又增加共享 `V3SessionRunner + CompletionAdapter` 与固定
-OpenAI-compatible endpoint adapter；endpoint/model/timeout/auth 从仓库外严格配置读取，每 task 一次非流式
-请求且不 retry，PostgreSQL 通过 query-fixed execution profile 选择 distinct provider identity，并继续
-负责 digest/model validation、parser 与 keep/drop。后续 `a4319655` 拒绝 301/302/303/307/308 而不访问
-重定向目标，并以 monotonic deadline 约束慢响应；`ef314618` 进一步把 DNS 解析纳入同一调用截止时间，
-因此调用会在 timeout 内返回，连接/TLS、发送、响应头和响应体仍受同一 deadline 约束。`71a8ef7d`
-又拒绝显式端口 0，并让同一 adapter 的连续 DNS timeout 共享至多一个 in-flight resolver attempt；
-底层系统 resolver 不能被 Python 取消，但不会再按失败调用数累积线程。提交 `47407751`
-又为 exact reference path 增加独立的 `sem_filter_cost` planner metadata：ordinary predicates 重建
-semantic-input rows，NULL 率调整 model calls，并显式报告 output selectivity、estimated prompt/output
-tokens、model role 与 AI work estimate；actual provider calls/usage 另由 `EXPLAIN ANALYZE` 计数。
-`71a8ef7d` 将模型身份改为 `semloom.exact_filter.uncalibrated.v1` 并公开 calibration unavailable。
-`dcde2be5` 又新增 planner-only matched-reference calibration：离线 builder 将严格 training/held-out
-观测分解为 selectivity、calls/input、tokens/call 与 fixed/call/prompt/output service-time 系数，绑定
-semantic/physical/model/provider/workload/service identity；PostgreSQL 独立校验 artifact 后把匹配值复制
-进 cost metadata schema v2，缺失、损坏或失配则继续执行 uncalibrated reference。runtime、provider、
-wire 和 semantic digest 未改变。当前 deterministic fixture 只证明合同和 planner consumption；真实
-model/workload/service artifact 及其 held-out 误差资格仍未完成，因此还不能实现第二 physical path。
-当前尚缺真实 matched artifact、第二 physical path、carrier audit、
-accepted-prefix、多在途和增量 SemLoom provider；实现顺序只从工程计划读取。
-2026-09-01 的[首轮真实校准采集](../results/postgresql/semfilter_reference_calibration_20260901/README.md)
-已运行，但没有产生 artifact：固定 Qwen2.5-1.5B-Instruct 完成 64 条预热，首个 training 查询的第 23
-个响应不符合严格 tristate，PG18.3 按现有合同报 `22000`。完整 training/held-out observation 均为 0，
-未拟合、未加载 artifact，没有修改生产代码、阈值或失败样本。本次 55/55 合同和 6/6 采集检查不代替成本精度。
-后续复核发现旧 builder 的有限精度消元会把完全共线的残差误当非零主元；现已增加拟合前的精确有理数
-设计矩阵检查。最终合成反例复核又将单主元阈值升级为整体检查：列归一化后以精确有理数形成 Gram
-矩阵并求逆，奇异或无穷范数条件数 ≥`1e16` 则拒绝，本地 calibration 测试扩为 10/10。`6c111b24` 的
-[独立小切片](../results/postgresql/semfilter_qualification_20260901/README.md)通过 PG18.3
-`-Werror`、regression 1/1、TAP 437/437 和 Python 合同 59/59。普通 SQL 加入 MCV/dependencies 后
-estimate 从 8 改为 64，与 actual=64 一致。原 generation 与独立 choice 候选的格式结果为 27/30、30/30，
-但预期语义均只符合 12/27，reference 资格未通过。该历史诊断时 choice 仅有版本化实验 plan/generation
-manifest，未进入生产 SQL/spec/wire；后续工程接入见本文顶部。真实 calibration artifact 仍未发布，
-整轮采集继续暂停。
-最终数值补充 `44f6632c` 独立通过 PG18.3 warning-free `-Werror`、regression 1/1、TAP 437/437、Python
-60/60（calibration 10/10）；仅加强整体病态检查，没有重跑模型或改变上述语义资格结论。
-随后完成[单一 prompt/model 对照](../results/postgresql/semfilter_prompt_qualification_20260901/README.md)：
-实际 HTTP messages、服务 tokenize 与模型 chat template 一致；1.5B 新 prompt 旧/新各 5/9，
-matched 7B 新 prompt 为 7/9、6/9，原 prompt 为 8/9、8/9，仍无合格配置。每例重复三次，不能把
-重复响应当独立样本。中止的 7B 默认 repetition-penalty 失配尝试单列保留；修正值来自原基线。
-本轮仅有实验 manifest，生产代码/SQL/plan/wire 未改，held-out 和校准继续暂停；本地/服务器
-Python 60/60 复跑通过，未重跑 PostgreSQL regression/TAP。
-当前源码已有受限的 `SemMap` 与 relation-level `SemFilter CustomPath/CustomScan` recording capability，
-并在 `REL_18_3` 上通过 PGXS regression 与 preload/prepared/generic-plan/invalidation、RLS/权限、
-snapshot/savepoint/cancel/insert 生命周期 TAP；shared runtime 已通过
-中立 `AiOpenSpec/AiPreparedTask/AiCompletion` 值调用 `open/drive/close` in-process recording provider；
-同步单在途 UDS provider 与分离的 semantic-spec、physical-algorithm、provider-execution digest 也已
-实现，物理列号不进入 wire identity。最终结构债务提交 `e89060a7` 的精确 18.3 验收为 warning-free
-`-Werror` build、regression 1/1、TAP 193/193、Python/static 20/20。仓库外资源 smoke 中，
-2,000×100,000-byte SemMap 的 RSS 起始/峰值/结束为 21,340/22,172/22,172 KiB、FD 为 43/43/41；
-20,000 行 SemFilter（15,000 个非 NULL task、5,000 行输出）的 RSS 为 22,172/22,204/22,204 KiB、
-FD 为 43/43/41，未观察到累计 payload 近似线性增长或 FD 泄漏。该 smoke 不提供性能结论。历史
-`d3a22dcf` shared-runtime、`0b9948ee` hardening 与 `d08eda38` seam/resource 证据继续保留并绑定各自提交。
-提交 `868430f9` 已把 Python recording gateway 的权威实现迁到 `code/src/execution_provider/`：
-`wire/framing.py` 保存有界 JSON framing，`wire/v2.py` 保存冻结 recording v2 schema/digest，
-`adapters/recording.py` 保存 recording session，`server.py` 保存 UDS listener；
-当时在 extension 目录保留 import/CLI wrapper，后由 2026-09-06 退役清理删除并迁移全部现役调用方；
-当前 CLI 为 `code/scripts/services/run_execution_provider_gateway.py`。最初迁移没有加入 v3、HTTP 或
-新 plan fields，并在精确 18.3 上通过 regression 1/1、TAP 193/193、Python/static 25/25、`-Werror`
-与 Map/Filter RSS/FD smoke。其后的 `3b2077e1` 已完成工作包 4A：三参数 exact `SemFilter`、schema v2、
-wire v3、deterministic golden、严格 parser 和 completion evidence 均已接线；精确 18.3 通过
-warning-free `-Werror`、regression 1/1、TAP 268/268、gateway/v2/v3/static 32/32 与 neutral C11 header。
-同一 backend 的原有 Map/recording Filter smoke 分别为 RSS 20,932/21,792/21,792 与
-21,792/21,792/21,792 KiB，FD 27/27/25 与 27/27/25；20,000 行 exact Filter 输出 8,000 行，RSS
-17,636/17,636/17,636 KiB、FD 25/25/25。数字只证明当前 workload 未观察到累计内存或 FD 增长。
-后续 `359ffdf3` 完成行为不变的 4A.1 hardening：`wire_common.c` 真正拥有 framing、
-socket wait/connect 与 PostgreSQL JSON primitives，v2/v3 各自保留 schema/error 解释；v3 error
-frame 严格校验四字段、version、nullable/decimal sequence 和 code allowlist。query-fixed provider 在
-open 前公布中立 input limit，pump 通过 runtime 在 canonical-message 扫描/分配前 fail closed，
-UDS drive 仍保留防御检查。精确 18.3 复验为 warning-free `-Werror`、regression 1/1、TAP
-320/320、protocol/static 33/33、gateway migration 5/5 与 neutral/machine C11 compile，并新增 exact
-Unicode instruction/input、空字符串、savepoint/recovery 和严格 error-frame 覆盖。该复验不替换
-`3b2077e1` 的原资源 smoke。
-复核后已将最终 TAP 320/320、PostgreSQL server log、字节级一致的 regression
-actual/expected、commit identity 和 SHA-256 manifest 持久化为仓库外证据包
-`postgresql_semfilter_4a1_hardening_359ffdf3_20260831`。该证据包另包含干净
-`359ffdf3` checkout 使用显式 PostgreSQL 18.3 `pg_config` 生成的 `-O2 -Werror`
-build log、exit code 0 和 `semloom_pg.so`；临时 worktree 删除后 manifest 仍全部通过。
-旧 resource-test gateway 及 socket 也已按精确进程/路径清理；这只说明本切片相关
-测试资源已收回，不扩展为服务器其他工作负载的清理结论。
-工作包 4B `53cf3da8` 已在相同 plan/task/result contract 后接固定 OpenAI-compatible endpoint，并把
-golden/fixed 两个真实 v3 consumer 的 session loop 抽到共享 runner。固定 profile 的 model identity、
-valid/invalid raw output、HTTP 4xx/5xx、timeout、returned-model mismatch、savepoint、statement cancel、
-fresh-session recovery 与 no-task lazy open 已进入 TAP；精确 18.3 通过 warning-free `-Werror`、regression
-1/1、TAP 404/404、Python/static 45/45 与 neutral/machine C11 compile。仓库外证据包
-`postgresql_semfilter_4b_fixed_model_53cf3da8_20260831` 还保留 core/text preflight、build/installcheck、
-失败尝试和小规模真实模型输出。Qwen2.5-1.5B-Instruct/vLLM 0.25.1 capability 对 `yes/no/NULL` 只返回
-`yes` 对应行，并保存 raw `TRUE`、model identity、finish reason 与 usage；这不构成质量、性能或泛化结论。
-工作包 4B.1 的最终提交 `ef314618`（含 `a4319655`）收紧 fixed HTTP boundary：全部常见 3xx 都返回
-`MODEL_RESPONSE_INVALID`，不会访问 Location 或转发 bearer token；DNS 解析和持续小块响应均受单一
-monotonic deadline 约束，超时返回 `MODEL_TIMEOUT`。服务器等价源码树通过 Python/static 48/48、
-warning-free `-O2 -Werror`、regression 1/1、TAP 404/404 与 neutral/machine C11 compile。仓库外证据包
-`postgresql_semfilter_4b1_http_hardening_ef314618_20260831` 保存 source/diff identity、preflight、测试、
-build/installcheck、字节一致的 regression actual/expected、扩展二进制和已校验 SHA-256 manifest；
-测试临时集群已停止。该加固不替换 `53cf3da8` 的真实模型 capability，也不增加质量、性能或资源结论。
-exact-reference cost/cardinality 提交 `47407751` 以第三个 copyObject-safe `custom_private` 元素保存
-cost model ID、reference model role、semantic-input rows、output selectivity、estimated calls/tokens 与
-AI work cost，不改 schema v2 `SemanticPlanSpec` 或摘要。精确 18.3 资格为 warning-free
-`-O2 -Werror`、regression 1/1、TAP 414/414、Python/static+migration 49/49 和 neutral/machine C11
-compile；仓库外证据包 `postgresql_semfilter_cost_cardinality_47407751_20260831` 已校验 manifest。
-复核提交 `71a8ef7d` 拒绝端口 0、把 resolver 工作限制为每 adapter 至多一个 in-flight attempt，并将
-planner estimate 明确标为 uncalibrated/calibration unavailable；精确 18.3 通过 regression 1/1、TAP
-415/415、Python/static+migration 49/49 与 warning-free build。证据包为
-`postgresql_semfilter_gap_hardening_71a8ef7d_20260901`。planner calibration 提交 `dcde2be5` 新增严格
-29-field artifact、跨 Python/PostgreSQL identity、held-out qualification、query-planning loader、稳定拒绝
-原因和 cost metadata schema v2；精确 PostgreSQL 18.3 通过 clean `-O2 -Werror`、regression 1/1、TAP
-437/437、Python/static/gateway 55/55 与 neutral/machine C11 compile。证据包
-`postgresql_semfilter_reference_calibration_dcde2be5_20260901` 的 SHA-256 manifest 已全部校验。该结果只
-证明 deterministic artifact 的生成、验证和 planner 消费；真实 model/workload/service artifact 尚未
-采集，第二 physical path 仍不得实现。归档后本切片测试集群、两个临时 worktree、PGDATA 和 socket
-目录已清理；该结论不覆盖服务器其他工作负载。accepted-prefix、多在途/
-乱序 completion、增量 SemLoom session 和 LOTUS compatibility adapter 仍未实现。
-LOTUS v1.2.4 不再是核心前置依赖。
-下文图像和 SAOR 待办仍是条件性工作，未因独立核心的并行研发安排获得运行授权。
-
-系统所有权接口开始使用 SemLoom 规范名：文本静态执行和图像 Ray/HSE 执行已提供
-`SemLoom*`/`run_semloom_*` 名称；既有 `Project*` import 与 `project_static`、`project_ray` 身份保持
-完全兼容。PostgreSQL source/sink、planning、scheduling 和 serving 接口继续使用领域名称。
-
-全部机制、代码测试和正式结果目录的逐项对应见
-`results/EXPERIMENT_EVIDENCE_REGISTRY.md`。该台账明确区分代码完成、
-真实链路门禁和性能证据。
+以下为机制与实现分层说明（与上表同一事实来源；状态判断以能力总览为准）。
 
 ## 1. 当前端到端流程
 
@@ -971,7 +345,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 |---|---|---|---|
 | 数据读取与 Daft/Ray 主链路 | 高 | 64/512/1024 真实链路 | 已完成基础设施 |
 | Fixed/token-budget batching | 高 | 多轮真实实验 | 机制成立，sequential 默认 |
-| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching **regime-dependent**（2-ep 近似中性、4-ep KV 饱和分化+排名反转，见 `rc1_data_organization/`）；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
+| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching **regime-dependent**（2-ep 近似中性、4-ep KV 饱和分化+排名反转，见 `../results/data_organization/rc1_data_organization/`）；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | VTC-compatible multi-job | 高（代码/配置） | 8-client 四臂 1+3 formal 已完成；phase-change A-only 与三档 pressure 已提前停止 | 8-client 16/16 group、12 formal 通过；动态臂相对同上限 K160 静态点没有独立增量。phase-change 未形成预注册的双端点降档压力，未运行 action/formal；不再写成整体“待部署” |
@@ -993,7 +367,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 1. `REL_18_3` extension/planner-visible `SemMap` 与 exact relation-level `SemFilter` deterministic
    recording reference paths 已验证当前受限 `SELECT` 和 direct `INSERT ... SELECT` 的 ordinary child
    plan、三值/NULL、cardinality、snapshot、取消、rollback/commit、错误恢复和结果生命周期；
-   Filter direct INSERT 的修复已验证，见上方归档；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT`
+   Filter direct INSERT 的修复已验证；rescan/EPQ/parallel、`RETURNING`、`ON CONFLICT`
    与更宽 query shapes 仍保持 fail-closed；
 2. PostgreSQL-private `PgSemanticRuntime`、thin `SemloomExecPump`、独立 Map/Filter machines、provider-neutral
    `AiOpenSpec → AiPreparedTask → AiCompletion`、独立 recording/UDS adapters、协议 v2 canonical digest
@@ -1096,18 +470,18 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
    粒度说明 capacity/overload，不与 request-level E2E 混排；
 8. 两作业 5s staggered 和四 Job 扩展均已完成；weighted/SLO、完整异构 offset、故障迁移与新的
    held-out 组合仍留论文阶段；
-9. Prefix-aware 已在 cache-on 下评估：batching regime-dependent（2-ep 近似中性、4-ep 饱和分化，见 `rc1_data_organization/`）；routing 在 2-ep/7B 中性
+9. Prefix-aware 已在 cache-on 下评估：batching regime-dependent（2-ep 近似中性、4-ep 饱和分化，见 `../results/data_organization/rc1_data_organization/`）；routing 在 2-ep/7B 中性
    （−0.1%），4-ep/1.5B prefix_affinity +5.9% 跨过 5% 门禁但受 model×endpoint×KV
    与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重开，待隔离消融；
    per-arm 命中率待 runner 增采；
 10. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
-   K=8 safety fallback。
+    K=8 safety fallback。
 
 ### 2026-07-29 至 2026-08-02 文本 baseline 校准历史
 
 以下段落按当时发生顺序保留失败、修复与复测依据；其中“当前”“下一步”和“不得继续”只表示
 当时的执行状态，不覆盖本文件前述当前状态。后续 capability、单 Job 1+3、多 Job 观察和 bounded
-容量扫描已经完成，现状以 `results/README.md` 与证据台账为准。
+容量扫描已经完成，现状以 `../results/README.md` 与证据台账为准。
 
 截至 2026-07-29，统一 Chat Completions、不可变 manifest、固定双 endpoint
 分片、bounded HTTP、vLLM Bench、Daft Native/Ray、Ray Data HTTP、
@@ -1213,11 +587,11 @@ start、response headers、body complete、headers wait 和 body read。校准�
   不返回 output usage 时不同 arm 的吞吐口径不一致；Daft barrier 仍不能冒充 request P99。
 - 新复测按 64 行 validity → 512 行独立 calibration → 4,096 held-out、至少 60 秒、
   1 warmup + 3 interleaved repeats 执行。完整合同见
-  `docs/plans/completed/text_native_baseline_rerun_20260802.md`。后续 capability、单 Job 1+3 和多 Job
-  观察矩阵均已完成；真实状态以 `results/README.md` 和 evidence registry 为准。
+  `../docs/plans/completed/text_native_baseline_rerun_20260802.md`。后续 capability、单 Job 1+3 和多 Job
+  观察矩阵均已完成；真实状态以 `../results/README.md` 和 evidence registry 为准。
 
 完整顺序与放弃条件见
-`docs/plans/reference/literature_driven_pipeline_optimization_guide.md`。
+`../docs/plans/reference/literature_driven_pipeline_optimization_guide.md`。
 
 ### Image-first pivot 后的多 GPU、多模态与代价估计
 
