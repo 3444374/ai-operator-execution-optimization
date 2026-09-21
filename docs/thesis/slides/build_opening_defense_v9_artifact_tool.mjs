@@ -86,7 +86,7 @@ const slides = [
     title: "动机证据｜不同执行图形成不同服务状态",
     body: "实验现象：均匀负载下的三种固定配置表现接近；同一受控对话负载中，Daft 两条官方路径出现大量等待与高 KV 占用，Ray Data 当前官方路径则供给不足。\n系统含义：作业完成时间接近或等待队列为零，都不能单独说明运行状态健康；执行图决定请求到达模型服务的节奏。\n设计对应：运行时需联合观察工作速率、运行/等待请求、KV 占用、尾延迟与任务进度。\n比较原则：先验证数据读取、结果写回和输出质量，再观察各官方执行路径的外部服务压力。",
     image: FIG("P06_文本基线_执行路径与可比边界.png"),
-    notes: ["experiments/results/opening_database_e2e_text_refeed_20260808/README.md", "experiments/results/opening_text_native_single_job_formal_20260808/README.md"],
+    notes: ["results/system_e2e/opening_database_e2e_text_refeed_20260808/README.md", "results/system_e2e/opening_text_native_single_job_formal_20260808/README.md"],
   },
   {
     source: 5,
@@ -95,7 +95,7 @@ const slides = [
     title: "动机证据｜行数和静态上限不能描述工作状态",
     body: "实验现象：固定 16 行时，一批输入的 token 工作量最小 474、最大 6,793，相差 14.3 倍；相同的每端点 65,536 在途 token 上限，在高负载与到达受限场景下呈现不同 GPU 活跃度。\n系统含义：容量扫描存在最小近饱和区，继续增加在途工作量的吞吐收益很小，但请求尾延迟继续上升；容量上限不是在线状态。\n设计对应：需要分阶段工作描述、新鲜状态快照与固定容量边界内的控制动作。",
     image: FIG("P07_动机证据_工作量运行状态与容量边界.png"),
-    notes: ["experiments/results/dual_gpu_active_work_saturation_20260729/README.md", "docs/thesis/claim_matrix.md"],
+    notes: ["results/scheduling/dual_gpu_active_work_saturation_20260729/README.md", "docs/thesis/claim_matrix.md"],
   },
   {
     source: 5,
@@ -104,7 +104,7 @@ const slides = [
     title: "动机证据｜图像任务暴露多阶段失配",
     body: "实验现象：实用批次下，CPU 解码与归一化时间约为 GPU 模型执行时间的 13.9–31.0 倍；普通内存、锁页内存和 GPU 常驻输入的传输代价也不同。\n系统含义：活动窗口从 16 增到 32 只有小幅收益，继续增到 64 出现等待或性能回退；图片数量不能代表真实工作量。\n设计对应：跨模态公共接口需要表达数据源、准备、模型和结果四个阶段。",
     image: FIG("P08_图像阶段_准备传输与GPU执行失配.png"),
-    notes: ["motivation/results/gpu/image_clip_preprocess_variants_20260801/README.md", "motivation/results/gpu/image_clip_transfer_ceiling_20260803/README.md"],
+    notes: ["results/motivation/gpu/image_clip_preprocess_variants_20260801/README.md", "results/motivation/gpu/image_clip_transfer_ceiling_20260803/README.md"],
   },
   {
     source: 5,
@@ -113,7 +113,7 @@ const slides = [
     title: "动机证据｜四作业并发同时干扰短作业与长作业",
     body: "实验现象：Daft 本地执行、Daft 分布式执行和 Ray Data 中，短作业与三个长作业的完成时间均退化，但幅度和服务压力形态不同。\n系统含义：模型服务只看到请求，无法直接管理数据库作业的到达、活跃、排空和公平；只保护短作业也不足以描述系统。\n设计对应：需要每作业已完成/剩余工作量、Work Credit（工作额度）、隔离约束与 Jain fairness（Jain 公平指数）。\n比较方式：每条原生路径只与自身单作业隔离运行比较，不做跨框架绝对排名。",
     image: FIG("P09_文本多作业_原生路径并发干扰.png"),
-    notes: ["experiments/results/opening_fourjob_interference_20260809/README.md"],
+    notes: ["results/scheduling/opening_fourjob_interference_20260809/README.md"],
   },
   {
     source: 10,
@@ -163,7 +163,7 @@ const slides = [
     title: "研究内容一｜数据组织权衡工作量均衡与局部性",
     body: "候选策略包括固定行数、按 token/图像帧预算保序成批、长度对齐、最佳适配装箱与行数上限；一次消融中互斥比较。\n图示说明：低压力下五种策略近似中性；高 KV 压力下，重排/装箱会破坏前缀组，缓存命中率与吞吐同步下降。\n策略关系：工作量预算约束单元大小，均衡控制填充，局部性约束重排范围。\n本页结论：先独立搜索最小有效组织策略，再与调度策略拼接。",
     image: FIG("P13_数据组织_服务压力与局部性权衡.png"),
-    notes: ["experiments/results/rc1_data_organization/README.md"],
+    notes: ["results/data_organization/rc1_data_organization/README.md"],
   },
   {
     source: 5,
@@ -181,7 +181,7 @@ const slides = [
     title: "研究内容二｜共享额度权衡效率、隔离与公平",
     body: "实验现象：单作业全容量与四分之一容量控制组先分离额度损失；同一总容量下，共享额度相对静态分区提高作业组吞吐与 MFU（模型浮点运算利用率），但不同作业收益不均，Jain fairness（Jain 公平指数）下降。\n系统含义：提高资源利用并不保证每个作业同时改善，吞吐、隔离和公平是并列目标。\n设计对应：空闲额度借用提高资源利用；每作业保底/上限、工作量欠账和服务目标保护约束隔离。",
     image: FIG("P15_共享调度_效率隔离与公平权衡.png"),
-    notes: ["experiments/results/opening_fourjob_interference_20260809/README.md", "docs/thesis/claim_matrix.md"],
+    notes: ["results/scheduling/opening_fourjob_interference_20260809/README.md", "docs/thesis/claim_matrix.md"],
   },
   {
     source: 5,
@@ -190,7 +190,7 @@ const slides = [
     title: "共同支撑｜代价估计面向配置排序与决策损失",
     body: "实验现象：429 个重复观测覆盖 20 组负载与服务配置，每组比较四个在途工作量候选；混合模型排序准确率 0.808，平均决策损失 2.90%，最坏损失 14.72%。\n系统含义：单点执行时间误差更低，不保证能选对组织、容量或路由配置；当前结果只说明初步可行。\n设计对应：Cost Estimator（算子代价估计器）采用解析工作量特征、少量剖析校准和残差修正，同时报告相对排序准确率与平均、中位、最坏决策损失。",
     image: FIG("P16_代价估计_配置选择与决策质量.png"),
-    notes: ["experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md"],
+    notes: ["results/cost_estimation/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md"],
   },
   {
     source: 5,
@@ -199,7 +199,7 @@ const slides = [
     title: "跨模态验证｜图像基准先确认路径与能力边界",
     body: "实验现象：12 万条同资源重复实验中，本课题固定配置在两个 CPU 配置下均比 Ray Data 缩短作业完成时间，具体幅度随资源配置变化；1.2 万条实验只用于检查执行结构。\n系统含义：直接调用、框架原生路径和本课题方法承担不同角色，不能混为一个总排行榜；Daft 内置路径在 2 万条时出现对象存储空间不足。\n设计对应：先分别建立直接调用、框架原生与本课题方法的可比较设置，再验证状态感知方法的增量；无法完成规定规模或输出语义不一致的路径不报告性能数值。",
     image: FIG("P17_图像基线_执行路径与可比边界.png"),
-    notes: ["experiments/results/image_ai_embed_operator_formal_20260803/README.md", "feasibility/results/vllm_clip_pooling_gate_20260804/README.md"],
+    notes: ["results/image_execution/image_ai_embed_operator_formal_20260803/README.md", "results/feasibility/vllm_clip_pooling_gate_20260804/README.md"],
   },
   {
     source: 5,
@@ -208,7 +208,7 @@ const slides = [
     title: "跨模态验证｜图像四作业重现任务级干扰",
     body: "实验现象：Daft 内置 AI 函数、Ray Data 与本课题执行路径均出现作业级干扰，但短作业和长作业的退化形态不同。\n系统含义：图像同样需要每作业分阶段工作量、活跃/剩余状态、共享额度与隔离约束；现有状态数据尚未用于在线控制。\n设计对应：WorkDescriptor、运行状态快照与额度接口跨模态复用，只有数据源、准备和模型阶段的字段映射不同。\n比较方式：每条路径只与自身单作业隔离运行比较，不做跨框架绝对排名。",
     image: FIG("P18_图像多作业_并发干扰.png"),
-    notes: ["experiments/results/opening_image_native_fourjob_formal_20260810/README.md", "experiments/results/opening_image_project_fourjob_observe_only_formal_20260810/README.md"],
+    notes: ["results/image_execution/opening_image_native_fourjob_formal_20260810/README.md", "results/image_execution/opening_image_project_fourjob_observe_only_formal_20260810/README.md"],
   },
   {
     source: 10,

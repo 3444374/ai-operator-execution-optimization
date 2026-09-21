@@ -70,8 +70,8 @@ python figures\scripts\generate_gpu_experiment_charts.py
 输入数据：
 
 ```text
-motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv
-motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv
+results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv
+results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv
 ```
 
 默认输出目录：
@@ -131,7 +131,7 @@ python figures\scripts\make_chain_breakdown_figures.py
 输入数据：
 
 ```text
-motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv
+results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv
 ```
 
 默认输出目录：
@@ -151,7 +151,7 @@ python figures\scripts\generate_pgai_integrated_gpu_rerun_charts.py
 Input:
 
 ```text
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 
 Outputs:
@@ -178,7 +178,7 @@ python figures\scripts\generate_pgvector_writeback_chart.py
 Input:
 
 ```text
-motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv
 ```
 
 Outputs:

@@ -4,7 +4,7 @@ The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` e
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
 `ImageGateway` uses this driver for row association, bounded state and final-result retention through
 network send. Its service-wide `MethodBudgetPool` remains separate from core task/result storage.
-The [image verification](../../../experiments/results/postgresql/image_stages_f_20260920/README.md)
+The [image verification](../../../results/postgresql/image_stages_f_20260920/README.md)
 covers that specific PG consumer. The broader method programs discussed below still require their
 own PG integration and semantic verification.
 
@@ -56,7 +56,7 @@ behavior against that revision. No LOTUS source has been copied in this slice.
 
 The [two-stage controlled test](../../tests/scheduling/test_method_continuation.py) demonstrates the
 same session with one held-task slot and two declared capabilities. The design and remaining work are
-recorded in [the incremental design](../../../experiments/plans/semloom_incremental_session_design.md).
+recorded in [the incremental design](../../../docs/plans/semloom_incremental_session_design.md).
 
 
 To enter the organized path, the producer adds `TaskInfo` to each offered request after the semantic
@@ -117,7 +117,7 @@ closing all drivers the service owner still drains the Engine and closes its Job
 
 The [driver tests](../../tests/scheduling/test_method_driver.py) cover aggregate reservations,
 consumer backpressure, multiple Jobs and late completions. The
-[V1 plan](../../../experiments/plans/bounded_method_driver.md) separates this engineering work from
+[V1 plan](../../../docs/plans/bounded_method_driver.md) separates this engineering work from
 the first real-data Map experiment. General PG method programs and LOTUS cascades remain pending.
 
 The driver adds `TaskInfo` for row/call/stage association on the organized path. Optional

@@ -87,7 +87,7 @@ def bar_svg(path: Path, title: str, labels: list[str], series: list[tuple[str, l
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", default="motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv")
+    parser.add_argument("--input", default="results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv")
     parser.add_argument("--output-dir", default="docs/figures/learning")
     args = parser.parse_args()
 

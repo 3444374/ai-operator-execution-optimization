@@ -19,7 +19,7 @@
 - Existing writeback modes stay unchanged: `none`, `json_text`, `pgvector`.
 - Do not add LanceDB dependency or `--writeback-mode lance` in this implementation.
 - Daft runner is process-global; configure it once and fail clearly if a process tries to switch runner.
-- Results from smoke runs go under `tmp/`, not formal `motivation/results/`.
+- Results from smoke runs go under `tmp/`, not formal `results/motivation/`.
 - Do not claim performance conclusions from smoke runs.
 
 ---

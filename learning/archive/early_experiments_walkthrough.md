@@ -632,7 +632,7 @@ Python 进程内存中的 embedding 数组
 
 ### 2.1 Ray small task 实验
 
-正式结果：`feasibility/results/ray_small_task.csv`
+正式结果：`results/feasibility/ray_small_task.csv`
 
 **为什么做：**
 如果 Ray 每个小任务本身就很慢，那论文可能要研究 Ray scheduler / runtime。但如果小任务开销很低，就不应该把主线放在“改 Ray 调度器”。
@@ -651,7 +651,7 @@ warm-up 后最高平均 task latency 约 `0.183 ms`。
 
 ### 2.2 Ray object transfer 实验
 
-正式结果：`feasibility/results/ray_object_transfer.csv`
+正式结果：`results/feasibility/ray_object_transfer.csv`
 
 **为什么做：**
 数据库 AI 算子外部执行时，数据会在数据库、Arrow、Ray object store、worker 之间传递。我们要知道“小 object 传来传去”是不是有固定成本。
@@ -667,7 +667,7 @@ warm-up 后最高平均 task latency 约 `0.183 ms`。
 
 ### 2.3 Arrow serialization 实验
 
-正式结果：`feasibility/results/arrow_serialization.csv`
+正式结果：`results/feasibility/arrow_serialization.csv`
 
 **为什么做：**
 如果 Arrow IPC 序列化本身很慢，那么可以考虑做 Arrow buffer / serialization 优化。
@@ -686,7 +686,7 @@ Arrow IPC 本身不是当前最明显瓶颈。
 
 ### 2.4 Shuffle simulation 实验
 
-正式结果：`feasibility/results/shuffle_simulation.csv`
+正式结果：`results/feasibility/shuffle_simulation.csv`
 
 **为什么做：**
 很多分布式数据系统会有 shuffle：数据按 key 重新分组、重新分区。我们想知道 coalescing 是否一定让 shuffle 更快。
@@ -702,7 +702,7 @@ Arrow IPC 本身不是当前最明显瓶颈。
 
 ### 2.5 Ray many objects fan-in 实验
 
-正式结果：`feasibility/results/ray_many_objects.csv`
+正式结果：`results/feasibility/ray_many_objects.csv`
 
 **为什么做：**
 想单独看“object 数量”对 fan-in 的影响。固定总数据量，只改变 object 个数。
@@ -718,7 +718,7 @@ Arrow IPC 本身不是当前最明显瓶颈。
 
 ### 2.6 Ray Arrow fan-out/fan-in 实验
 
-正式结果：`feasibility/results/ray_arrow_fanout_fanin.csv`
+正式结果：`results/feasibility/ray_arrow_fanout_fanin.csv`
 
 **为什么做：**
 前一个实验是普通 object。这个实验换成更接近数据库 AI 链路的 Arrow RecordBatch。
@@ -751,7 +751,7 @@ Arrow IPC 本身不是当前最明显瓶颈。
 
 ### 3.1 fake AI_EMBED(text) 端到端实验
 
-正式结果：`motivation/results/fake_cpu/fake_embed_pipeline.csv`
+正式结果：`results/motivation/fake_cpu/fake_embed_pipeline.csv`
 
 **为什么做：**
 我们不想只测孤立的 Ray object，而是模拟数据库里的 `AI_EMBED(text)`：输入文本，输出 embedding。
@@ -787,7 +787,7 @@ RecordBatch fan-in 的现象迁移到了 fake AI_EMBED 链路。
 
 ### 3.2 三类 AI 算子场景对比
 
-正式结果：`motivation/results/fake_cpu/workload_matrix.csv`
+正式结果：`results/motivation/fake_cpu/workload_matrix.csv`
 
 **为什么做：**
 如果只有 embedding 场景受影响，那问题太窄。我们要看 classify/filter/offline LLM 这类 AI 算子是否也对粒度敏感。
@@ -811,7 +811,7 @@ RecordBatch fan-in 的现象迁移到了 fake AI_EMBED 链路。
 
 ### 3.3 Granularity attribution 实验
 
-正式结果：`motivation/results/fake_cpu/granularity.csv`
+正式结果：`results/motivation/fake_cpu/granularity.csv`
 
 **为什么做：**
 前面的 coalesced 变快了，但到底是因为 fan-in refs 少了，还是 task / operator invocation 少了？这个实验专门拆原因。
@@ -841,7 +841,7 @@ RecordBatch fan-in 的现象迁移到了 fake AI_EMBED 链路。
 
 ### 3.4 Backpressure 模拟实验
 
-正式结果：`motivation/results/fake_cpu/backpressure.csv`
+正式结果：`results/motivation/fake_cpu/backpressure.csv`
 
 **为什么做：**
 AI 模型服务吞吐有限。如果数据库侧无限提交请求，会不会更快？还是只会把队列撑爆？
@@ -892,7 +892,7 @@ PostgreSQL documents 表
 
 ### 4.1 PG18.4 连接验证
 
-正式结果：`feasibility/results/pg18_4_connection_validation.md`
+正式结果：`results/feasibility/pg18_4_connection_validation.md`
 
 **为什么做：**
 之前都是本地 fake benchmark，没有真实数据库触发。这个实验先证明本地 PostgreSQL 18.4 + pgvector 环境能用。
@@ -923,7 +923,7 @@ PostgreSQL documents/job table
 
 ### 4.2 PG18.4 系统画像：python/ray_actor × fine/coalesced
 
-正式结果：`motivation/results/pg18_4_fake/system_profile.md`
+正式结果：`results/motivation/pg18_4_fake/system_profile.md`
 
 **为什么做：**
 数据库真的接上后，要看之前的 fine/coalesced 差异是否还存在。
@@ -956,7 +956,7 @@ PostgreSQL documents/job table
 
 ## 5. Baseline 矩阵：不能默认 actor 就是最好
 
-正式结果：`motivation/results/pg18_4_fake/baseline_matrix.md`
+正式结果：`results/motivation/pg18_4_fake/baseline_matrix.md`
 
 ### 5.1 executor × strategy baseline
 
@@ -998,7 +998,7 @@ batch 太小任务多，batch 太大并行少。actor 数也会影响吞吐。�
 
 ## 6. pgvector 写回实验：确认 writeback 不是 JSON 假象
 
-正式结果：`motivation/results/pg18_4_fake/vector_writeback.md`
+正式结果：`results/motivation/pg18_4_fake/vector_writeback.md`
 
 **为什么做：**
 前面 writeback 用 JSON TEXT。真实 embedding 通常要写到 pgvector `vector(128)`。我们要确认 JSON TEXT 有没有误导。
@@ -1030,7 +1030,7 @@ batch 太小任务多，batch 太大并行少。actor 数也会影响吞吐。�
 
 ## 7. pgvector scaling 实验：看规模扩大后瓶颈怎么变
 
-正式结果：`motivation/results/pg18_4_fake/pgvector_scaling.md`
+正式结果：`results/motivation/pg18_4_fake/pgvector_scaling.md`
 
 **为什么做：**
 4096 行看到 writeback 可见，但行数扩大后瓶颈是否迁移？Ray 并行是否更有用？
@@ -1084,7 +1084,7 @@ Fine 下 writeback 占比反而低，不是因为写回不重要，而是因为 
 
 ## 8. 2026-07-12 优先动机补跑：先确认 GPU 主实验入口，再补最高可行 baseline
 
-正式结果：`motivation/results/pg18_4_fake/simulated_embed_test_20260712.md`
+正式结果：`results/motivation/pg18_4_fake/simulated_embed_test_20260712.md`
 
 **为什么做：**
 
@@ -1105,7 +1105,7 @@ PostgreSQL documents 表
 - 但 `localhost:8000` 没有 OpenAI-compatible embedding endpoint；
 - `localhost:11434` 也没有可用本地模型服务。
 
-所以这次不能把结果放进 `motivation/results/gpu/`。正确做法是：先补最高可行的 PG18.4 fake-model 同构 baseline，并明确它不能代表真实 GPU 链路。
+所以这次不能把结果放进 `results/motivation/gpu/`。正确做法是：先补最高可行的 PG18.4 fake-model 同构 baseline，并明确它不能代表真实 GPU 链路。
 
 **这次跑了什么：**
 
@@ -1163,7 +1163,7 @@ coalesced:
 - 不能说 `nvidia-smi` 可见就代表模型用了 GPU；
 - 不能把 fake model 的 Ray task/actor 排名直接外推到真实模型。
 
-下一步真正该补的是 `motivation/results/gpu/ai_embed_profile.md` 和 `.csv`。条件是先启动一个真实 GPU-backed embedding endpoint，例如 OpenAI-compatible 的：
+下一步真正该补的是 `results/motivation/gpu/ai_embed_profile.md` 和 `.csv`。条件是先启动一个真实 GPU-backed embedding endpoint，例如 OpenAI-compatible 的：
 
 ```text
 http://localhost:8000/v1/embeddings

@@ -619,7 +619,7 @@ Project shared DRR internal control 才能晋级；HSE 作为执行底座，capa
 ### 11.1 证据状态与口径修正
 
 权威结果为
-`../experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md`。40/40 cell、
+`../results/scheduling/saor_active_set_release_formal_20260812_69affc7e/README.md`。40/40 cell、
 0 incident、exactly-once；原始 validation 因 DRR/VTC rep2 `mechanism_not_observed` 而
 fail-closed。离线核对显示 DRR/VTC rep2 两 Job 完成时刻分别只差
 约 5.8 ms/4.8 ms，`active_set_bulk_only_post_samples=0`；因此该失败首先是 post-drain 可观测性问题，不得写成

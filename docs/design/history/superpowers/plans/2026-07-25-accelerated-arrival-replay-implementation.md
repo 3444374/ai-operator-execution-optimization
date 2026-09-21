@@ -153,11 +153,11 @@ git commit -m "feat: expose accelerated arrival replay"
 ### Task 3: Real Gate and Formal Experiment
 
 **Files:**
-- Create: `experiments/results/accelerated_arrival_flush_20260725/manifest.json`
-- Create: `experiments/results/accelerated_arrival_flush_20260725/gate_runs.csv`
-- Create: `experiments/results/accelerated_arrival_flush_20260725/formal_runs.csv`
-- Create: `experiments/results/accelerated_arrival_flush_20260725/*_flush_trace.csv`
-- Create: `experiments/results/accelerated_arrival_flush_20260725/report.md`
+- Create: `results/scheduling/accelerated_arrival_flush_20260725/manifest.json`
+- Create: `results/scheduling/accelerated_arrival_flush_20260725/gate_runs.csv`
+- Create: `results/scheduling/accelerated_arrival_flush_20260725/formal_runs.csv`
+- Create: `results/scheduling/accelerated_arrival_flush_20260725/*_flush_trace.csv`
+- Create: `results/scheduling/accelerated_arrival_flush_20260725/report.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 

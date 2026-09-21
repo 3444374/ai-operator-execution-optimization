@@ -198,7 +198,7 @@ flowchart TB
 ### 1. 可引用的观点（配精确位置）
 
 > §1："overcommitment degrades efficiency long before physical capacity is exhausted"——KV cache 作为共享资源，过度提交在容量耗尽前就降低效率。
-> → **支撑本课题 RC2 的动机**：我们的 shared-vLLM 干扰实验已证明 K_max 无上限时 foreground E2E 恶化 2.3×（`experiments/plans/experiment_status_and_gaps.md` §07-19 Shared-vLLM 实验），与 CONCUR 的"overcommitment 早于容量耗尽就退化"一致。
+> → **支撑本课题 RC2 的动机**：我们的 shared-vLLM 干扰实验已证明 K_max 无上限时 foreground E2E 恶化 2.3×（`docs/plans/experiment_status_and_gaps.md` §07-19 Shared-vLLM 实验），与 CONCUR 的"overcommitment 早于容量耗尽就退化"一致。
 
 > §4.3 Eq 1 + Interpretation：AIMD 控制律，α=2/β=0.5，U_low=0.2/U_high=0.5，双信号（proactive U_t + reactive H_t），死区宽度 0.3。
 > → **直接的设计参考**：这是本课题 RC2 queue-adaptive flush 从负结果（foreground E2E 10.2s vs static K_max=8 7.3s，~40% 更差）转向正结果的最强候选控制律。当前我们的控制器用瞬时 queue-depth 单信号 + 无死区——CONCUR 的双信号 + 宽死区 + AIMD 非对称是三个可立即借鉴的修正。

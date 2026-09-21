@@ -25,7 +25,7 @@ Ray declares `ray_num_cpus=4`, `ray_actors=2`, `ray_object_store_bytes=268435456
 HTTP `concurrency`; each actor requires capacity and SQL reading requires a remaining CPU slot.
 Process sampling includes descendants and registered PG readers, with an initial reader RSS snapshot.
 Short-lived reader peaks and actual object-store usage may remain unavailable; summed RSS can count
-shared pages more than once. [Validation and remaining work](../../../../experiments/results/postgresql/ab_validation_20260911/README.md).
+shared pages more than once. [Validation and remaining work](../../../../results/postgresql/ab_validation_20260911/README.md).
 
 Timed asynchronous recording checks the existing event-loop deadline after entry, around each row
 write, and before EOF success. `async_deadline` reports the declared loop-clock deadline and the actual
@@ -63,12 +63,12 @@ model-reported token usage and output-value differences without counting reserve
 Screening reuses `PersistentMapGateway` and the existing PG-source direct runner, then stops;
 work tuning and independent evaluation require separate explicit schedules. Direct includes SQL reading
 and client setup, so it is not a pure service ceiling. Evaluation settings must match a SHA-identified
-tuning decision. [Current M1 design](../../../../experiments/plans/data_organization_batching.md#m1-throughput-platform).
+tuning decision. [Current M1 design](../../../../docs/plans/data_organization_batching.md#m1-throughput-platform).
 
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
 producer's per-operator memory trace and final release. Its summed peaks are not concurrent query RSS.
-[Controlled and real-model checks](../../../../experiments/results/postgresql/pg_window_budget_20260910/README.md).
+[Controlled and real-model checks](../../../../results/postgresql/pg_window_budget_20260910/README.md).
 
 Optional `organization_config` and `organization_sha256` select a fixed local Map organization file.
 The runner copies the verified configuration into the private unit directory and requires PG Map with
@@ -83,18 +83,18 @@ budget comes from the semantic plan. Optional capacity-refusal observations dist
 eligibility checks from selected-member dispatch checks; their counts include repeated probes.
 Legacy traces without this observation report unknown refusal counts. Rows/work groups still expand
 into independent requests; they do not define a model batch or group completion barrier.
-[Audit and matched real-model diagnostics](../../../../experiments/results/postgresql/cd_validation_20260911/README.md).
+[Audit and matched real-model diagnostics](../../../../results/postgresql/cd_validation_20260911/README.md).
 
 Organization audits accept `expected_task_count` from independently selected raw inputs. Zero tasks
 with no opened flow may finish without a drain event; absent evidence alone is insufficient.
-The [server follow-up](../../../../experiments/results/scheduling/capacity_wait_server_20260914/README.md)
+The [server follow-up](../../../../results/scheduling/capacity_wait_server_20260914/README.md)
 validates empty/nonempty PG queries and ordinary SQL result buffering. The probe uses distinct
 write-once case checkpoints and a final summary. Client receive time is not SemMap node delivery time.
 
 Use `query_cli.py` through [database_queries.py](../../../scripts/experiments/database_queries.py).
 PG-source direct is a bounded execution reference; Ray SQL/HTTP and original SemBench LOTUS programs
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality
-and performance pending. [Scope, tests and failure history](../../../../experiments/results/postgresql/database_queries_20260910/README.md).
+and performance pending. [Scope, tests and failure history](../../../../results/postgresql/database_queries_20260910/README.md).
 
 ## Source information controls
 
@@ -108,12 +108,12 @@ disk result sink, restoring source order for every arm. Scan, tokenization, sort
 are included in invocation-to-EOF; reused metadata names its separately measured producer.
 These are `direct_client_control` experiments, not new SemMap planner or carrier capabilities.
 The callable entry is `run_information_query`; the finite experiment schedule is retained with
-the [real trial evidence](../../../../experiments/results/postgresql/m1_m2_f_real_20260920/README.md).
+the [real trial evidence](../../../../results/postgresql/m1_m2_f_real_20260920/README.md).
 
 ## Resource collectors
 
 These tools observe the existing synchronous SemMap fixture path. Production SQL, planner, provider and
-wire semantics remain in their existing modules. The [Map engineering contract](../../../../experiments/plans/postgresql_semmap_generation_contract.md)
+wire semantics remain in their existing modules. The [Map engineering contract](../../../../docs/plans/postgresql_semmap_generation_contract.md)
 owns the implementation and verification plan.
 
 | Module | Responsibility |
@@ -137,4 +137,4 @@ host, port, role and database. Model endpoint/identity/timeout remain in reposit
 Collector and recorder primitives live in `src/observability/process_resources/`. Test categories are
 lifecycle, collection, attribution, policy, observer and CLI; the old `audit_round2` source-string checks
 have been replaced by observable behavior checks. Diagnostic mode is 1×100 and never grants formal
-qualification. See [CLI usage](../../../scripts/README.md) and [current evidence](../../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md).
+qualification. See [CLI usage](../../../scripts/README.md) and [current evidence](../../../../results/postgresql/semmap_resource_lifecycle_20260906/README.md).

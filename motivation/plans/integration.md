@@ -358,7 +358,7 @@ PostgreSQL 18.3 / PG18.4 同构 GPU-backed 主动机画像最小任务：
 7. 比较主控进程 fan-in 后批量写回与多 worker 各自写回；
 8. 写回 `document_embeddings` 或 Lance/output table；
 9. 输出 CSV 和阶段画像报告，至少包含 DB fetch、Arrow build、submit/put、queue wait、model service、fan-in、writeback、GPU utilization 或缺失原因；
-10. 更新 `motivation/results/` 和 `feasibility/results/` 中的结果分析。
+10. 更新 `results/motivation/` 和 `results/feasibility/` 中的结果分析。
 
 如果 PostgreSQL 18.3 画像显示 object/fan-in、task 过细、operator invocation、模型队列或 backpressure 不是主要瓶颈，应及时调整优化方向。
 

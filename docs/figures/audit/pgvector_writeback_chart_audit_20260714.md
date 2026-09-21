@@ -3,8 +3,8 @@
 ## Data Source
 
 ```text
-motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
-motivation/results/gpu/pgvector_writeback_20260714.md
+results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv
+results/motivation/gpu/pgvector_writeback_20260714.md
 ```
 
 Only `phase=formal` rows are plotted. Warm-up rows are excluded.

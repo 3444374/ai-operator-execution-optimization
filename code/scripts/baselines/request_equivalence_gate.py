@@ -18,7 +18,7 @@ counter delta -- equal deltas rule out a hidden system prompt that the JSON
 builders might not surface.
 
 Evidence (redacted raw JSON, canonical diff, temperature probes, identity, exit
-code) is written under ``feasibility/results/``. This is a single-request gate,
+code) is written under ``results/feasibility/``. This is a single-request gate,
 NOT a long experiment or a 3-arm performance run.
 """
 
@@ -182,7 +182,7 @@ def _parse(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--prompt", default=UNIQUE_PROMPT)
     parser.add_argument(
         "--output-dir", required=True,
-        help="feasibility/results/... dir for evidence (must not exist)",
+        help="results/feasibility/... dir for evidence (must not exist)",
     )
     return parser.parse_args(argv)
 

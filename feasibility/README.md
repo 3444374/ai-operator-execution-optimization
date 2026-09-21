@@ -6,11 +6,11 @@
 - 本地环境、数据库连接、脚本 dry-run 是否可用；
 - 哪些结果只能作为 feasibility evidence，不能作为端到端动机或性能结论。
 
-当前可行性验证优先服务外部执行链路：Ray/Arrow/object/fan-in、外部 worker、writeback 和 backpressure。本目录不承载最终 GPU-backed 链路性能结论；它只负责证明组件、环境和脚本可用。GPU 可用性、驱动、模型服务 smoke test 可以放这里；真正的 GPU-backed 端到端系统画像应放到 `motivation/results/`。
+当前可行性验证优先服务外部执行链路：Ray/Arrow/object/fan-in、外部 worker、writeback 和 backpressure。本目录不承载最终 GPU-backed 链路性能结论；它只负责证明组件、环境和脚本可用。GPU 可用性、驱动、模型服务 smoke test 可以放这里；真正的 GPU-backed 端到端系统画像应放到 `results/motivation/`。
 
 项目当前工程主线与执行顺序先看根 `PROJECT_OUTLINE.md` 和
 `experiments/plans/experiment_status_and_gaps.md`；动机测试结论再看 `motivation/README.md` 和
-`motivation/results/README.md`。本目录中的旧 capability/smoke 不会自动升级为当前待办。
+`results/motivation/README.md`。本目录中的旧 capability/smoke 不会自动升级为当前待办。
 
 进入本目录前先读 `AGENTS.md`。如果要运行组件 benchmark，优先读 `benchmarks/README.md`；如果要看结果，优先读 `results/README.md`。
 
@@ -27,11 +27,11 @@
 
 ## 结果放置规则
 
-- Ray / Arrow / shuffle / object fan-in 等组件级结果放在 `feasibility/results/`。
-- PG18.4 连接验证、smoke test、dry-run 结果放在 `feasibility/results/`。
-- GPU 环境可用性、CUDA/驱动/模型服务 smoke test 放在 `feasibility/results/`。
-- 数据库 AI 算子端到端动机测试、系统画像、瓶颈定位和优化收益分析放在 `motivation/results/`。
-- GPU-backed E2E profile、Ray vs non-Ray、GPU vs CPU 的端到端 baseline 放在 `motivation/results/`，因为它们会影响课题主线判断。
+- Ray / Arrow / shuffle / object fan-in 等组件级结果放在 `results/feasibility/`。
+- PG18.4 连接验证、smoke test、dry-run 结果放在 `results/feasibility/`。
+- GPU 环境可用性、CUDA/驱动/模型服务 smoke test 放在 `results/feasibility/`。
+- 数据库 AI 算子端到端动机测试、系统画像、瓶颈定位和优化收益分析放在 `results/motivation/`。
+- GPU-backed E2E profile、Ray vs non-Ray、GPU vs CPU 的端到端 baseline 放在 `results/motivation/`，因为它们会影响课题主线判断。
 
 ## 常用入口
 
@@ -44,25 +44,25 @@ feasibility/benchmarks/README.md
 结果索引：
 
 ```text
-feasibility/results/README.md
+results/feasibility/README.md
 ```
 
 PG18.4 连接验证：
 
 ```text
-feasibility/results/pg18_4_connection_validation.md
+results/feasibility/pg18_4_connection_validation.md
 ```
 
 图像 staged baseline 资源门禁：
 
 ```text
-feasibility/results/image_staged_resource_gate_20260802/
+results/feasibility/image_staged_resource_gate_20260802/
 ```
 
 vLLM CLIP pooling 本机能力门禁：
 
 ```text
-feasibility/results/vllm_clip_pooling_gate_20260804/
+results/feasibility/vllm_clip_pooling_gate_20260804/
 ```
 
 该结果只说明当前 vLLM/PyTorch/CUDA/容器组合未在 600 秒内返回 embedding；不代表
@@ -71,7 +71,7 @@ vLLM 普遍不支持 CLIP，也不产生可进入系统排名的吞吐数据。
 DuckDB `ai` 文本算子语义门禁：
 
 ```text
-feasibility/results/duckdb_ai_semantic_gate_20260805/
+results/feasibility/duckdb_ai_semantic_gate_20260805/
 ```
 
 该结果证明 DuckDB community `ai` 在当前双 endpoint 环境可执行，同时确认现有

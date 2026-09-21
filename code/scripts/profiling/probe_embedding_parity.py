@@ -26,7 +26,7 @@ Usage
 -----
     python probe_embedding_parity.py \\
         --arm-a daft_builtin.npz --arm-b project_ray.npz \\
-        --out-dir motivation/results/gpu/image_embedding_parity_20260803
+        --out-dir results/motivation/gpu/image_embedding_parity_20260803
 """
 
 import argparse

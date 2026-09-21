@@ -6,7 +6,7 @@ process management, no /proc access, no I/O: every function is a pure
 mapping so unit tests can drive all red/green/inconclusive paths with
 synthetic traces.
 
-Schema registered in experiments/plans/postgresql_semmap_generation_contract.md
+Schema registered in docs/plans/postgresql_semmap_generation_contract.md
 §8.4.2 (2026-09-04, frozen before any v2 rerun; pre-run static-review
 correction pending registration). Thresholds are unchanged from the
 user-confirmed §8.4.1 values; only the measurement implementation

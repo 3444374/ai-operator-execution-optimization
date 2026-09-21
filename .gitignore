@@ -77,3 +77,6 @@ experiments/results/checkpoint_*/
 
 # Full request/trace archives stay on local disk and AutoDL; Git keeps aggregates.
 experiments/results/opening_database_e2e_text_refeed_20260808/raw.tar.gz
+
+# Per-test raw bundles live next to their record but stay out of git (RAW_ARCHIVAL policy).
+/results/**/raw/

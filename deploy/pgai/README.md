@@ -90,7 +90,7 @@ embedding_dims = 384 for 3/3 smoke rows
 验证报告见：
 
 ```text
-feasibility/results/pgai_sql_smoke_20260714.md
+results/feasibility/pgai_sql_smoke_20260714.md
 ```
 
 ## 停止

@@ -179,7 +179,7 @@ class MatchedSystemContractTest(unittest.TestCase):
         scripts = (repository / "code/scripts/README.md").read_text(encoding="utf-8")
         calibration = (
             repository
-            / "experiments/results/state_aware_work_unit/"
+            / "results/scheduling/state_aware_work_unit/"
             "saor_native_system_matched_calibration_20260819/README.md"
         ).read_text(encoding="utf-8")
         self.assertIn('PYTHONPATH=code "$DRIVER_PYTHON"', autodl)

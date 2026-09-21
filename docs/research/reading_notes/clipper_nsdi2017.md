@@ -140,7 +140,7 @@ flowchart TB
 
 - **假设 2："optimal batch size does not fluctuate substantially"（§4.3.1）**
   - 论文依据：feed-forward 模型对固定 batch size 的计算量确定，延迟稳定。
-  - 反例 / 边界：LLM 场景下，"最优 batch size"取决于**在途请求的 token 长度分布**，而该分布随数据库 workload（AI_COMPLETE 的 prompt 长度、输出长度）剧烈波动。本课题的 AI_COMPLETE 中每行 token 量可差 13.9×（见 `experiments/plans/experiment_status_and_gaps.md` §3）。10% 回退在波动剧烈时可能过小（振荡不收敛）或加性增长过激（反复撞 SLO）。
+  - 反例 / 边界：LLM 场景下，"最优 batch size"取决于**在途请求的 token 长度分布**，而该分布随数据库 workload（AI_COMPLETE 的 prompt 长度、输出长度）剧烈波动。本课题的 AI_COMPLETE 中每行 token 量可差 13.9×（见 `docs/plans/experiment_status_and_gaps.md` §3）。10% 回退在波动剧烈时可能过小（振荡不收敛）或加性增长过激（反复撞 SLO）。
 
 - **假设 3：批原子完成（all queries in a batch return together）**
   - 论文依据：§4.3 "requiring all queries in the batch to complete before returning a single prediction"。

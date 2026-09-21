@@ -1,0 +1,326 @@
+# PostgreSQL choice profile 工程接入（工作包四 C）
+
+更新日期：2026-09-02
+状态：`engineering-qualified / completed`
+
+四 C 工程验证已完成：[真实服务结果](../../../results/postgresql/choice_service_20260902/README.md)。
+`0a1c12d3` 的 14 次真实请求与 NULL 对照、各 94/94 工具/合同测试通过，累计预算 15/100；
+此前受控资源结果保持原身份。以下保存实施合同与历史切片，不再作为待开发工作包。
+后续真实 Map、可组合执行及 Filter 质量/校准由[主计划](../postgresql_ai_semantic_operator_architecture_20260827.md)维护。
+当前集成代码包含本专项；工程完成不表示 reference 质量通过。
+
+文档角色：只定义 choice 的 SQL opt-in、版本化字段、兼容性测试、预算和完成条件。
+跨工作包依赖、模块分工和公司接入由[主架构计划](../postgresql_ai_semantic_operator_architecture_20260827.md)维护；
+源码是否已实现看[INFRA_STATUS](../../../code/INFRA_STATUS.md)，运行结果看
+[证据台账](../../../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。文档拆分本身不构成实现或运行证据。
+
+本工作包只增加 Filter 的受约束生成能力。真实生成型 SemMap 由主计划四 D 单独定义，不能照搬
+Filter 的三值 parser、8-token 上限或 choice 输出集合。SemLoom 独立核心研发不以本工作包的模型质量
+通过为前提；真实数据库接入与语义优化仍分别满足主计划的验收条件。
+
+正文保存各实施切片当时的要求与进度；其中“本轮/下一步”不覆盖顶部完成状态或主计划的后续安排。
+本节是该专项工程设计与验收的唯一详细记录。来源是现有源码接口、此前 choice 格式诊断及本次设计
+审查；它是工程决策，不是新的算法或质量实验结论。首个代码切片已实现不可变 profile 值、严格
+校验与独立 C/Python canonical bytes；后续 `00cc6bbf` 已接入 SQL options 和 PG plan，`7d72d9ad`
+已接入 gateway wire v4 与 fixed-model 映射；`8674269d` 接通 C open spec/codec，`80bb7fc5` 完成
+新 SELECT 路径与旧路径兼容验证。随后资源与受限真实模型检查完成，见顶部结果；不外推为模型质量通过。
+
+**目标与非目标。** 证明数据库能显式选择、保存、传输并验证受约束生成配置，保持现有生命周期和
+旧行为；不证明 reference 语义质量、性能收益或成本精度。新配置是 opt-in、unqualified 的工程能力，
+不成为默认 reference，不恢复正式校准，不用于第二路径质量比较。工作包五保留的旧资格失败、
+标签、阈值和 held-out 数据不因本节而改变。“先有语义资格才能编码 choice”的旧实验执行前提，
+只对本节的独立工程接入不再适用；质量采用和成本校准仍须另行验证。
+
+## C.0 算子目的与本次工程参照
+
+Filter 的业务目的为按自然语言条件筛选行，不要求所有模型都输出 UNKNOWN。公司当前实现未命中
+缓存时直接调用大模型，解析 True/False；embedding cascade 只是预留，尚未参与执行。
+本工作包实现此前选定的 `choice.tristate.v1`，不是全项目唯一允许的 Filter 输出模式。已有三值
+接口保持兼容；二值可作为后续明确合同的候选，但不在同一个 profile ID 下删除 UNKNOWN、
+放宽 parser 或把调用失败变成 false，也不因此重新解释旧质量失败。
+在声明的 WHERE 范围内，UNKNOWN 与 FALSE 均不保留行，原始模型输出仍区分；SQL 表面二值不要求
+内部丢失 UNKNOWN。其他 SQL 位置与公司原有 NULL/error 语义另行核对，不能仅凭行集相同宣称全部等价。
+完整工程对照、公共 task 重构、重扫与多会话由主计划维护，不追加到本已完成切片。
+
+2026-09-02 只读核对 `x_semantic` 基于 `4601bf7` 的工作副本；所涉文件均有未提交修改，不当作固定
+release。参考来源只在本计划记录，不写进生产/测试代码或注释；不复制源码、prompt、测试数据或日志。
+
+| 参考文件/符号与观察 | 决定及自有落点 | 验证 |
+|---|---|---|
+| `src/llm/llm_protocol.{h,c}`：`llm_effective_request / llm_resolve_request` 先消解请求默认值，再供编码使用；视图借用 PG/GUC 字符串 | 吸收实际参数单一来源的原则，不移植私有 struct。已有 PG plan 继续拥有语义；本次 gateway 从已严格验证的 open context 生成逐项 completion request，profile 不按任务或环境变量重新选择 | 完整 profile/semantic identity 校验；出站请求去掉唯一 choice 字段后与旧请求逐字段相同；无约束降级或重试 |
+| `src/llm/llm_chat.c` 的响应检查及 `llm_error.h`：截断/协议/内容失败有独立分类 | 保留自有 fixed adapter 的 model/usage/finish_reason、单次调用、deadline 和脱敏错误，不引入公司 HTTP/重试代码 | fixture 的错误模型、缺失 usage、截断、无效 JSON、HTTP 拒绝仍失败，raw output 不改写 |
+| `src/operators/sem_filter.c`：`parse_bool_from_llm` 宽松搜词；无结果/解析失败返回 false；`filter_cascade_check` 固定 disabled | 保留自有严格三值 parser 与 fail-query；本轮不改算子 machine，不实现 cascade 或二值 profile | 旧 PG 测试继续通过；gateway 原样返回 UNKNOWN/非法标签，由当前或后续 PG parser 作关系判断 |
+
+先前 gateway 切片完成严格 wire v4 与 golden/fixed-model 的请求映射；当时 C 未接通，PG 拒绝执行。
+随后下节 C 接线已替代临时拒绝。已有 `wire/framing.py`、session loop、HTTP deadline/resolver 和错误
+路径复用；只在 v3/v4 两个实际协议消费者之间共享固定语义编解码，不建立 registry 或通用框架。
+供应商 choice 字段依据 [vLLM 0.25.1 官方说明](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)
+独立实现，只验证 fixture 出站映射；不把本轮结果写成任意 endpoint 或真实模型已执行约束。
+gateway 的外部 fixed config 新增可选 `choice_format="vllm_structured_outputs"`，缺省为未声明支持；
+未显式设置时拒绝 choice 请求且不发 HTTP，原 v3 不受影响。这是运维对已核验服务的明确选择，
+不是 gateway 自动探测能力。HTTP 只新增 `structured_outputs: {choice: [TRUE,FALSE,UNKNOWN]}`；
+模型文件、prompt、原有生成字段、超时和重定向策略不变。
+
+## C.1 SQL 选择与版本分流
+
+### 本次 C 接线切片的实施记录
+
+2026-09-02 再次只读核对 `x_semantic` 的 `4601bf7` 工作副本中
+`src/llm/llm_protocol.{h,c}:llm_effective_request / llm_resolve_request`，相关文件仍有未提交修改。
+实际参数先消解、编码消费同一份值的观察不变。本次保留自有 plan ownership：runtime 将已验证的
+完整 profile 复制到 query-owned `AiOpenSpec`，UDS 再复制到 session；不移植公司 struct、GUC 继承
+或供应商方言。验证位置为 SQL/EXPLAIN、公开 provider port 与 PG→gateway wire，来源不进入代码注释。
+
+本次已接通 C 路径与 fixture 验证，未启动真实模型或使用 held-out。移除 pump 的 plan-only 临时分支，
+schema 3 回到既有 runtime/machine；无任务仍 lazy/no-connect。C v3/v4 共享固定 exact 编解码及现有
+framing/JSON primitive，不新增 registry 或异步接口。profile 在 open 中完整传输，task/completion 只核验
+其摘要；未知/不匹配配置失败，无隐式 v3 回退。功能测试通过后分别记录尚未完成的资源和真实 smoke。
+
+保持三参 `ai_semantic.filter(input, instruction, options)`。新 options 只比旧配置多一个字段：
+
+```json
+{
+  "model": "<fixed-model-id>",
+  "temperature": 0,
+  "max_tokens": 8,
+  "generation_profile": "semloom.generation.choice.tristate.v1"
+}
+```
+
+上述 options 已可用于规划、EXPLAIN 和当前受支持的 SELECT / 单表 INSERT ... SELECT；需配置相应 gateway。
+本轮只用 fixture 验证，不将示例当作真实模型已执行约束的证据。
+上述 profile selector 是本节唯一名称，不增加
+讨论草案中的其他别名；它由下述 profile ID 和 version 组合得到。
+
+| SQL options | 计划与 wire | 行为 |
+|---|---|---|
+| 恰好原有三个字段 | 原 schema 2 / wire v3 | 原计划内容、digest、wire bytes、错误与稳定 EXPLAIN 字段不变 |
+| 恰好四个字段且 profile 为上述值 | schema 3 / C wire v4 / gateway v4 已接通 | 显式 choice；非默认、未通过质量验证；SELECT 与受限 INSERT 已通过 fixture 验证 |
+| 未知 profile、null、非字符串、缺字段或多余字段 | planning 阶段拒绝 | 不打开 provider，不发送模型请求 |
+
+原有 instruction/options 的计划期常量、类型、长度和数值要求继续成立；schema 1 / recording wire v2
+也保持不变。SQL 不接受任意 choices 列表、供应商 JSON 字段或可变 profile 定义。
+`TRUE/FALSE/UNKNOWN` 是算子输出定义，可以进入生产代码；具体测试输入及其预期分类不进入生产实现。
+
+## C.2 数据库拥有的 profile 与身份
+
+PG 在 planning 时展开一个小型、不可变、自包含的 profile，而不是让 executor/gateway 临时查表决定
+本次生成方式。plan 保存 copyObject-safe 的以下内容，并在 executor 严格解码：
+
+| 内容 | 本轮定义 |
+|---|---|
+| profile ID | `semloom.generation.choice.tristate` |
+| profile version | `1` |
+| constraint kind | `CHOICE` |
+| 有序 choice UTF-8 bytes | `["TRUE", "FALSE", "UNKNOWN"]` |
+| profile digest | 对 ID、version、kind、数量、顺序及逐项 bytes 的规范编码求 SHA-256 |
+
+使用独立 digest domain、现有固定宽度整数及长度前缀 UTF-8 编码规范；具体 canonical bytes 和跨语言
+golden vectors 在实现前的合同测试中固定，不预填未经计算的哈希。完整 profile 内容纳入新 semantic
+plan digest；只改 profile ID 或只依靠 schema version 变化不足以绑定实际约束。
+
+首个值合同切片固定的编码如下：domain 为 ASCII `semloom-generation-profile-v1` 加一个 NUL；
+之后依次是长度前缀 UTF-8 profile ID、uint32 version、长度前缀 `CHOICE`、uint32 choice count、
+三个长度前缀 choice bytes。所有整数及字节长度均为 uint32 big-endian，字符串不带终止符。
+本 profile 共 114 bytes；在写实现前用独立 OpenSSL 对已展开的字节向量计算 SHA-256，结果为
+`941327729217db0ad438a8d0c945750485c6047834229aa40912b254d90a24f7`。
+完整字节常量和拒绝测试见
+[`test_semloom_generation_profile.py`](../../../code/tests/postgres/test_semloom_generation_profile.py)。
+C 只输出供现有 PG SHA-256 消费的规范 bytes，不另写密码算法；当前测试独立验证这些 bytes 的摘要。
+Python record 恰有 `profile_id/profile_version/constraint_kind/choices/profile_digest` 五字段；这是
+已解码值的合同。gateway v4 另在 framing 标记 JSON 重复字段，并在 schema 校验时拒绝；
+v2/v3 的既有解码行为不变。C v4 复用 PG JSON primitive，单独检查重复 key 并保持窄错误捕获。
+
+PG 的 schema 3 在原 27 个命名字段外保存一个嵌套 `generation_profile`，内含上述完整五字段，
+choices 使用有序 String 节点列表。解码结果逐项复制到指定 context，不借用计划树或注册表。
+新 semantic 编码的 domain 为 `semloom-semantic-spec-v3` 加一个 NUL，接 uint32 schema `3`；
+其余字段按 schema 2 的原顺序直到 stop，然后追加 uint32 `114` 和完整 profile canonical bytes。
+不是只哈希 selector 或 profile digest。对 instruction `Classify input.`、model `golden-model-v1`，
+独立 OpenSSL 向量与 PG 实际结果均为
+`3624a95a096a8a6b9e838676ec8865315b1f49c27a0e9594cf67a5440792d6c5`；对应旧 schema 2 为
+`9ec789eab10d6367b60895288fde154b384edeba1ac0fb603ade0b2424ff2fb9`，physical digest 保持不变。
+
+prompt program、parser、operator 逻辑含义及 `MODEL_REFERENCE_SYNC_V1` family 不因新增表示而改名；
+其内容未变的身份继续保留，完整 semantic plan digest 必须不同。`Physical Role=reference` 表示逐个
+非 NULL 输入采用 reference 求值，不表示质量资格通过，也不是第二 optimized path。新 EXPLAIN 显示 profile
+ID/version/digest，并说明尚未经过质量验证及成本校准；不为此建立通用资格 registry。
+
+SQL 选择随 prepared/generic plan 保存，不能被执行时 GUC、gateway 配置或同名 profile 的新解释覆盖。
+provider implementation 仍按查询固定选择；generation profile 与 provider execution identity 分开，
+open/task/completion 必须相互核验，不用切换 provider 来隐式切换生成语义。
+
+## C.3 模块职责与协议兼容
+
+- `sem_filter_path.c` / plan spec：解析 opt-in、展开并保存 profile、计算身份，供现有 EXPLAIN 回调读取。
+- `PgSemanticRuntime`：仍是 PG plan 到中立 `AiOpenSpec` 的唯一转换点；新增值保持固定宽度类型、
+  bytes 与明确所有权，不把 `Datum/Jsonb/MemoryContext` 或供应商参数名带入 port。
+  已实现：`has_generation_profile` 表示完整 profile 是否存在，所有 bytes 复制到 query context；
+  UDS open 再复制为 session-owned bytes。schema 3 共用 runtime/machine，plain EXPLAIN、LIMIT 0、
+  zero-row、NULL-only 和空 prepared 查询不创建连接。v3 codec 拒绝带 profile 的请求。
+- UDS/wire：保留同步单在途、lazy open、借用输入、session-owned completion 与幂等关闭。schema 3
+  使用独立 wire v4 的字段集合、版本检查与摘要；v3 不增加可选字段或扩大为未知参数容器。
+- gateway：校验抽象 `CHOICE` profile，才转换为已核验服务支持的 `structured_outputs.choice`。
+  HTTP 请求不携带 PG 专用 plan 元数据；PG 代码不依赖该供应商字段名。
+
+新旧 codec 复用已有 framing、JSON primitives、session loop、HTTP deadline 与 completion adapter
+机制；只有确有第二个变化分支时才抽取公共 helper。版本独立不等于复制第二套 HTTP/socket/runtime，
+也不引入通用结构化输出框架、动态 profile registry、异步队列或 capability negotiation 协议。
+
+兼容测试覆盖旧/新查询在升级后 gateway 中分别执行，以及新查询被旧 gateway 明确拒绝；不能把
+“旧路径保持可用”写成“旧端支持 choice”。C/Python 对 profile、semantic identity、open bytes、task
+payload 和 completion evidence 使用同一组 golden vectors。新执行身份不得冒用旧 wire-v3 身份。
+
+## C.4 错误、资格与校准隔离
+
+本次 v4 合同在 v3 严格字段集合之外：open 增加完整 `generation_profile` 五字段；opened、task、
+completion 增加 `generation_profile_digest`。其他字段类型和同步 sequence 规则保持；v3 不接受这些字段。
+provider execution、payload、completion 的 domain 分别升级到 `v4`，其编码字段顺序保持；semantic
+digest 使用已验证的 schema 3 编码，physical algorithm digest 不变。gateway 在 task 时从 canonical
+messages 提取 instruction，重算含完整 profile 的 semantic digest；不能只信任客户端提供的摘要。
+error 仍严格为 type/protocol_version/sequence/code 四字段，版本必须为 4，code 使用现有 allowlist。
+
+未知 profile 在 planning/open 的相应位置明确拒绝；已知 profile 被服务拒绝时沿用现有中立错误类别
+和脱敏 SQLSTATE 映射。fixture 必须证明：服务拒绝该请求时只发出一次请求，其中含 choice；没有
+删除约束后重试、切回旧 profile 或修补输出。严格 PG parser 继续检查原始 completion。
+
+“HTTP 200 + 合法标签”不能单独证明服务实际执行了 choice。首版只声明对已核验实现/版本/配置的
+映射支持，检查真实出站请求并保存服务依据，不把所有 OpenAI-compatible endpoint 都列为支持对象。
+若无法核验支持情况，真实 smoke 记为未验证，而不是静默退化。
+
+新 semantic/profile identity 必须使旧 calibration artifact 无法匹配；增加在误配旧 artifact 时执行
+新 profile 的 EXPLAIN 测试，验证旧系数未被采用、`AI Cost Calibration` 仍不可用。可以继续使用
+明确未校准的工程估计，不生成或发布新的真实 calibration artifact。
+
+## C.5 对照、请求预算与资源保证
+
+新旧对照只改变 choice 约束。prompt bytes、模型文件/revision、tokenizer、chat template、服务版本与
+启动配置，以及全部显式和继承生成参数一致；特别记录实际 `repetition_penalty`。自动核对两份实际
+HTTP JSON：去除唯一的 choice 字段后，结构、值及其类型一致。分别保存 body digest 和脱敏运行配置，
+不以 JSON 文本排版差异或只检查两个参数代替完整比较。
+
+绝大多数验证由 deterministic/HTTP fixtures 完成。真实 smoke 复用已有模型与环境，累计最多
+**100 次模型请求尝试**，是整个切片上限而非每 profile/进程的额度；预热、失败、超时、预定重复与
+任何意外重试均计入。验证 runner 在唯一实际出站调用前预留并持久化额度，达到上限或无法核对累计
+次数就拒绝继续；无法确认是否已发送的尝试保守计入。计数可通过测试 adapter/observer 注入，但预算
+和 ledger 属于验证工具，不进入生产 gateway、PG runtime 或新的调度系统。
+
+先完成 runtime preflight；不下载新模型、不新增服务器、不扩 GPU 矩阵、不用校准 held-out，也不为
+得到更好标签而继续搜索 prompt/model。环境不满足时保存 pending 原因，不把本地 fixture 当真实结果。
+
+取消与资源验收分开记录：
+
+- PG statement cancel 及时终止本地查询并关闭 provider session；不声明立即终止远端 GPU 计算。
+- 同步 gateway 可能到 HTTP 完成或其 deadline 才发现 UDS 断连；验证正常 DNS 下 HTTP FD、定时器与
+  accepted socket 无累积，并测试返回时客户端已断开以及随后新查询恢复。
+- 阻塞的系统 DNS worker 不保证在 deadline 消失；验证同一 adapter 最多保留一个未完成解析且重复
+  取消不增长。HTTP deadline 不等于整个 UDS 会话的 deadline。
+- listener socket 文件属于 gateway 进程，单次查询取消后应保留；测试结束时先收回本轮客户端，
+  再验证 gateway 实际退出后的自有 socket 清理。当前空闲连接可能阻塞 graceful shutdown，不能借
+  HTTP timeout 宣称任意情况下都能有限时间退出，也不能把新增取消协议藏在本切片中。
+
+RSS/FD/线程采样复用现有流程，在运行前登记采样方式、预热基线与判定阈值；异常及无效采样保留，
+不在观察结果后放宽阈值。故意阻塞 DNS 的测试与正常恢复测试使用各自明确的判定条件。
+
+### 本轮剩余检查的预先设置（2026-09-02）
+
+只验证四 C，不引入多算子、多会话或新调度。采用显式 PG18.3 独立安装/集群，模型侧先用既有 HTTP
+fixture；同一 backend/gateway 内连续执行各规模，以免通过重启掩盖累积。验证位置为 SQL/EXPLAIN、
+实际 HTTP 请求/完成记录与 OS 进程资源；预算工具只属于实验侧，不进入生产 runtime/provider。
+
+| 检查 | 固定设置与通过条件 |
+|---|---|
+| 正常资源 | 旧 v3 与新 v4 各运行一次；input 为 65,536-byte 合成文本，64 行预热，随后 100/1,000/4,000 行；恒定合法 TRUE fixture。每个查询核对输入、调用、输出行数及 usage；不报告性能优劣 |
+| 采样 | 20 ms 采样 backend/gateway RSS(bytes)、FD 和 OS threads；保留时间序列及各 cell 起始/峰值/结束；每轮结束等待 0.5 s 后采 5 点作为 settled 值 |
+| 正常资源判定 | 相对预热后基线，两进程各自峰值 RSS 增量不超过 16 MiB、settled 增量不超过 4 MiB；settled FD/threads 回到基线，峰值 FD 不超过基线+3、threads 不超过基线+2。报告完整序列，不以本规模 smoke 宣称所有规模无泄漏 |
+| 取消与恢复 | choice 固定 HTTP fixture 延迟 300 ms、HTTP deadline 1 s、PG statement timeout 50 ms，连续 10 次；每次 PG 在 2 s 内报 57014，等待 0.5 s 后资源恢复，随后正常查询成功；listener 仅在 gateway 退出后消失 |
+| 阻塞 DNS | 单独的 qualification 进程在 OS resolver 处注入等待；同一 fixed adapter 连续 10 次超时，HTTP 发送为 0，settled thread 只允许多 1 个 DNS worker，FD 不增长；释放等待后正常完成，worker 退出。不声称真实系统 resolver 可强制取消 |
+| 实际服务 | 使用已有 Qwen2.5-1.5B-Instruct / vLLM 0.25.1，单 GPU、单 endpoint、TP=1、BF16、max length=4096、max sequences=1、batch tokens=4096、memory utilization=0.25、FCFS；不下载、不调模型或 prompt，实际路径/文件 SHA 与继承 generation 配置在运行前核对 |
+| 真实请求 | 指令仍为 `The input asks for writing, explaining, or debugging computer code.`；3 个公开合成输入各运行旧/新配置两次，另每配置 1 次预热，计划共 14 次。包含 SQL NULL 的对照不得产生请求；实际请求只差 choice，原 parser 决定关系结果，不按人工标签评定质量 |
+| 预算与停止 | 整个四 C 共用仓库外固定 ledger，最高 100 次；每次实际 POST 前持久预留，异常/重启/未知发送状态不退款。ledger 损坏、身份不匹配、计数不明或预算耗尽均在发送前停止；choice 被拒绝或返回非法结果即停止 smoke，不无约束重试 |
+
+前置检查：预算模块先在合成 HTTP 与临时文件上验证重启、并发预留、失败不退款与损坏拒绝；实际
+模型请求前核验已有历史尝试数。此处的三条真实输入使用独立公开文本，不读取原校准或 held-out。
+公司来源沿用主计划的有效请求与错误处理观察；本轮不移植公司代码或改其标量函数，参考记录只在文档。
+单会话 gateway 限制另登记为下一组合切片的前置项，不把这轮资源通过写成多会话资源保证。
+
+真实服务检查的输入与记录补充（运行前登记）：使用 `Write a Python function that adds two integers.`、
+`Give me a recipe for tomato soup.`、`Can you explain this?` 三条公开合成文本，不读取校准数据。
+先 old/choice 各预热第一条一次，再按重复号、输入编号、old/choice 的固定交错顺序各两次，共 14 次；
+SQL NULL 对照额外执行但不产生 HTTP。完整实际 JSON 按值及类型比较，completion 与 PG 行集/usage 对照。
+使用已有模型 generation config 的 `repetition_penalty=1.1`，同一进程对两臂一致；同时记录模型、tokenizer、
+chat template 与生成配置 SHA，核对启动参数及前后进程身份。一次运行发生 provider 错误或 choice 非法输出
+即终止并保留已消费额度，不自动重跑；old 的非法输出如实保留。先以 HTTP fixture 验证该采集流程。
+此轮公司参照仍为 §8.7 的有效请求、原始完成和错误分层；落点仅实验采集/核验工具，PG/runtime/provider
+生产实现不变。供应商 choice 字段依据 [vLLM 0.25.1 文档](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)。
+
+资源检查的受控重跑设置：首轮正常 v3/v4 与取消检查通过，但 DNS 阶段 backend FD 从 38 降到 37，
+不满足预先写定的“恰好相等”。追加句柄诊断确认减少的是测试表的 `_fsm` 文件，socket 未增加；
+另一次诊断因容器 root 无权读取其他 UID 的 proc 链接而失败。这些运行全部保留为未通过。
+后续运行先对自有 fixture 表执行 `VACUUM ANALYZE`，仅关闭该表及其 TOAST 的自动 vacuum，避免
+后台表维护改变资源比较状态；不改 RSS/FD/线程阈值、不改生产代码。该控制不覆盖有并发维护的负载。
+
+## C.6 按小步实现与完成条件
+
+| 步骤 | 完成条件 |
+|---|---|
+| 计划与设计（已完成） | 明确工程支持与语义质量分开验收，登记 opt-in/版本/复用范围与预算；该设计切片本身不代表整个工作包完成 |
+| 值合同首个切片（已实现） | C/Python 对照同一 114-byte 向量；拒绝类型/身份/顺序/内容变更和伪造摘要；C 无分配且短 buffer 不写半帧。该历史切片未扩展 AiOpenSpec；后续 C 接线已加入完整 query-owned profile |
+| 表征与红测试 | 旧 SQL/plan/digest/wire/错误/稳定 EXPLAIN 快照通过；新 profile、版本、身份与拒绝测试在旧实现上因目标能力缺失而失败；C/Python canonical vectors 已明确 |
+| PG plan 接入（已实现） | 新 options、schema 3、copyObject-safe 完整 profile、摘要、prepared/generic-plan 与 invalidation；旧校准拒绝、新执行不回落 v3；旧字段和值行为不变 |
+| gateway wire v4（已实现） | `7d72d9ad` 共享固定 exact codec/session，严格 profile/字段/版本/摘要与 terminal error；fixture 验证已知 profile 映射、未声明支持时零 HTTP、拒绝后不降级。83/83 合同与旧 PG18.3 TAP 537/537 通过，未调用真实模型 |
+| C port/wire 接入（已实现） | 完整 profile 复制、独立 v4 字段/版本/identity/evidence 校验，回归公共 runtime；源码 `80bb7fc5`，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83，通过记录见下方 |
+| 功能验证（当前 SELECT / 受限 INSERT 已通过） | 中立 C11、PG18.3 warning-free `-O2 -Werror`、完整 TAP；新旧配置、prepared/invalidation、EXPLAIN/no-task、NULL/空串/Unicode、savepoint/错误/取消、HTTP 参数对照。INSERT 另有真实写入/回滚、源 RLS 与目标权限/约束。只用 fixtures，不外推为真实模型或所有 SQL 形状 |
+| 资源验证（受控 fixture 已通过） | `4464fe9b` 通过 C.5 受控重跑：v3/v4 各 5,164 次、10 次取消和 10 次阻塞 DNS/恢复；保存 RSS/FD/线程时间序列与失败运行。只证明本规模、单会话及无后台表维护条件 |
+| 受限真实 smoke（已通过） | `0a1c12d3` 完成 14 次及 NULL 对照；累计 15/100 包含首轮工具计数失败的 1 次。模型/模板/参数身份及前后状态一致，实际 JSON 只差 choice，PG parser、行数与 usage 核对通过；不评价质量 |
+| 交付 | 记录源码/worktree identity、命令/退出码、构建身份、请求计数、失败及 manifest/SHA；未运行项目明确 pending；按实际状态同步文档，不自动合并或推送 |
+
+新 profile 的工程完成标准不包含“九例全部分类正确”、召回/精确率达标、性能改善或 reference 晋升。
+代码逐项实现；当前值合同的[验证记录](../../../results/postgresql/choice_profile_contract_20260902/README.md)
+不代替上述 SQL/plan/wire、PG lifecycle 或真实模型接入证据。
+
+此前 C 接线证据见[PG choice 验证](../../../results/postgresql/choice_pg_wire_20260902/README.md)。该轮还用旧/新
+二进制复现了 Filter `INSERT ... SELECT` 未 lowering（均为 `55000`）；它是既有 carrier 缺口，不是
+新 profile 回归。下方独立切片已修复并验证受限 INSERT；历史失败保留，不把普通写入事务回滚测试
+当作 Filter INSERT 证据，也不因此开启 core patch 或改写公共 runtime。
+
+### Filter INSERT 的独立修复切片（已完成）
+
+2026-09-02，以 `21f41364` 为起点处理已复现的 `INSERT ... SELECT` 未 lowering。只修改 PG
+carrier 的合法源关系识别，不改 runtime、parser、profile、wire 或 cost 公式，不做 core patch。
+先在 SQL/EXPLAIN 和事务可见结果处建立红测试，再验证 recording、exact v3、choice v4 的写入。
+旧 SELECT、Map INSERT、无任务、prepared/invalidation、RLS/权限、savepoint/abort、provider 错误与
+取消恢复保持；RETURNING、ON CONFLICT、OVERRIDING、join/aggregate 等未支持形状继续拒绝。
+目标是 Filter 位于 ModifyTable 之前，数据库独立负责目标表约束、权限和原子提交/回滚。
+
+参考核对：`x_semantic` 的 `4601bf7` 工作副本中 `src/operators/sem_filter.c:sem_filter` 仍有
+未提交修改；函数直接返回标量 boolean，未提供本项目需要的 planner INSERT lowering。
+本次保留自有 Filter carrier 和严格失败语义，不复制其实现或数据。具体修复依据为官方
+[PG18.3 planner](https://github.com/postgres/postgres/blob/REL_18_3/src/backend/optimizer/plan/planner.c)
+及 `prepjointree.c` 的 query preprocessing，并以真实 PG 测试核对源查询上拉前后的形状。
+参考说明只保存在本计划，不进入生产代码、测试或注释。测试使用自有合成行和本地 fixture；
+不运行真实模型，不消耗 100 次 smoke 预算或访问 held-out。通过后保存新源码身份、完整 PG18.3
+回归及失败原始记录；本切片不替代 C.5 的资源与真实服务验证，也不自动合并或推送。
+
+完成记录：生产修复 `8e50addf` 仅修改 `sem_filter_path.c`；最终测试 `39007150` 通过 PG18.3
+warning-free 构建、regression 1/1、TAP 919/919（含 INSERT 171）、本地/服务器各 83/83 与 C11。
+详见[INSERT 验证](../../../results/postgresql/semfilter_insert_20260902/README.md)。没有修改 runtime、provider、
+wire、parser 或 cost。参考公司经验不限制自有能力；未来移植仍覆盖算子处理/优化与 SemLoom，
+不以单个 Adapter 接通替代整体移植。该历史 INSERT 切片未做资源与真实服务检查，校准继续暂停。
+
+后续[资源与预算工具验证](../../../results/postgresql/choice_resources_20260902/README.md)已完成本节受控
+fixture 检查，生产 PG/gateway 未修改；该历史切片真实模型请求为 0，当时尚有受限真实服务验证。
+该项已由顶部 `0a1c12d3` 结果完成，以下保留原资源检查条件，不重新解释其数字。
+完整工程参照已跟随主计划 §8.7 更新，不只核对多算子；本轮实际修改仅在实验观测与检查工具。
+
+## C.7 暂存的质量决策（不阻塞本工程切片）
+
+后续分别评价与固定 reference 的结果差异、独立标签下的质量及数据库程序正确性。起始候选任务为
+判断一条用户文本是否请求编写、解释或调试代码；只看当前行，已明确代码意图但缺少代码正文仍可为
+TRUE，无法判断对象时才为 UNKNOWN，明确非代码任务为 FALSE。SQL NULL 和执行错误单独处理。
+这些是候选标注说明，不预先断言模型会判断正确。
+
+用户暂定更重视减少漏选，同时限制误选；召回率 95%、精确率 90% 仅为待后续质量计划确认的候选目标，
+不是本切片的验收要求。
+标签来源、最终标注说明、验证集规模及统计判定尚未确定；本节不安排人工标注，也不以少量样例的
+点估计宣称总体达标。未来须先固定独立数据及判定方法，再评价和校准；已有失败样本、旧阈值和
+原始报告不因这组暂定目标而重新判为通过。

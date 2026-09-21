@@ -1264,7 +1264,7 @@ class SaorFormalToolsTests(unittest.TestCase):
     ) -> None:
         matrix = (
             REPOSITORY
-            / "experiments/results/"
+            / "results/"
             "saor_active_set_release_formal_20260812_69affc7e"
         )
         with TemporaryDirectory() as directory:
@@ -1289,7 +1289,7 @@ class SaorFormalToolsTests(unittest.TestCase):
     ) -> None:
         matrix = (
             REPOSITORY
-            / "experiments/results/"
+            / "results/"
             "saor_active_set_release_formal_20260812_69affc7e"
         )
         with TemporaryDirectory() as directory:

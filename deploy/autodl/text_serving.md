@@ -2,7 +2,7 @@
 
 > 本项目按**数据模态**分部署文档：**文本（本篇）**、图像（`image_serving.md`），后续 video/audio 各起一篇。各模态共享同一套"调度策略模态无关"框架（见 `deploy/autodl/README.md` 总览），本篇只写文本独有部分。
 > **共享平台 setup**（实例/venv/network_turbo/代码同步/模型下载方法/PG）在 `deploy/autodl/README.md` §1–§7，本篇不重复。
-> 文本实验结果在 `experiments/results/`（RC1 数据组织、K_max、active-work、routing 等）；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
+> 文本实验结果在 `results/`（RC1 数据组织、K_max、active-work、routing 等）；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
 
 ## 1. 这个"模态"是什么
 
@@ -100,7 +100,7 @@ nohup /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scena
   `code/scripts/analysis/summarize_formal_repeats.py` 生成 CI/CV/regression 统计。
 
 ### 5.2 feeding-saturation 门禁（bounded baseline）
-文本侧的"喂饱 vLLM"参照 = 同协议 bounded HTTP client（`run_official_baseline_gate.py`，batched cells b16/b32）。2-ep/0.9 bounded 真上限 ~79,488 tok/s。注意：bounded gate 原硬限 2 endpoint，现已放宽 ≥2（`gate_runner.py` `!= 2` → `< 2`）。详见 `AGENTS.md` §7.5.C + `experiments/results/rc1_data_organization/`。
+文本侧的"喂饱 vLLM"参照 = 同协议 bounded HTTP client（`run_official_baseline_gate.py`，batched cells b16/b32）。2-ep/0.9 bounded 真上限 ~79,488 tok/s。注意：bounded gate 原硬限 2 endpoint，现已放宽 ≥2（`gate_runner.py` `!= 2` → `< 2`）。详见 `AGENTS.md` §7.5.C + `results/data_organization/rc1_data_organization/`。
 
 ### 5.3 完整流程
 全新/开机恢复/正式启动/gate 的**逐步命令**在 `deploy/autodl/README.md`（"全新实例从零准备" / "开机后完整恢复流程" / "实验 gate 与正式启动"）——本篇只到引擎层。
@@ -120,7 +120,7 @@ nohup /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scena
 ## 7. 关联文档
 - 共享平台 + 总览：`deploy/autodl/README.md`
 - 图像模态（对称篇）：`deploy/autodl/image_serving.md`
-- 文本实验结果：`experiments/results/`（RC1 数据组织、routing、active-work、K_max 等）
+- 文本实验结果：`results/`（RC1 数据组织、routing、active-work、K_max 等）
 - 实验合同 + 喂饱门禁：`AGENTS.md` §7.5
 - 数据生成 + manifest：`data/README.md`
 - 文本实验配置模板：`deploy/autodl/*.example.json`

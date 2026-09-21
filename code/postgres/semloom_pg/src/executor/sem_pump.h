@@ -3,7 +3,7 @@
  *
  * The scan supplies executor state; the pump returns emitted tuples and
  * EXPLAIN properties while hiding the shared runtime and operator machines.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #ifndef SEMLOOM_SEM_PUMP_H
 #define SEMLOOM_SEM_PUMP_H

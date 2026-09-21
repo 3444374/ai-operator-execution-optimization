@@ -3,7 +3,7 @@
  *
  * It snapshots an opaque path, lazily connects on the first drive, copies wire
  * output into session storage, and owns idempotent local FD accounting/cleanup.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #include "postgres.h"
 

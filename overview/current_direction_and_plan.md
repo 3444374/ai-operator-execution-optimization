@@ -4,7 +4,7 @@
 
 这是两分钟快速参考卡片。完整定义以根 [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) 为准；
 实验完成度以
-[`experiments/plans/experiment_status_and_gaps.md`](../experiments/plans/experiment_status_and_gaps.md)
+[`experiments/plans/experiment_status_and_gaps.md`](../docs/plans/experiment_status_and_gaps.md)
 为准；数字只从结果报告和原始数据读取。
 
 ## 1. 一句话定位
@@ -29,7 +29,7 @@ SemLoom 只组织和执行数据库已经封闭的 tasks；completion 回到 Pos
 
 | 对象 | 下一步 |
 |---|---|
-| 自有 PG 算子 | [choice](../experiments/plans/completed/postgresql_choice_profile_engineering.md)当前代码已通过 SELECT/受限 INSERT、受控资源和受限真实服务检查；完整工程对照后先做真实 Map/公共整理，再做可组合执行 |
+| 自有 PG 算子 | [choice](../docs/plans/completed/postgresql_choice_profile_engineering.md)当前代码已通过 SELECT/受限 INSERT、受控资源和受限真实服务检查；完整工程对照后先做真实 Map/公共整理，再做可组合执行 |
 | SemLoom 核心 | 旧行为表征、公开任务/fixture 驱动增量 session、work organization、有界提交与多 Job；不等待 Filter 质量 |
 | Filter 语义优化 | 保留 reference 质量、真实校准、proxy/oracle 第二路径与对应载体审查；校准仍暂停 |
 | 公司工程参照与成果移植 | 完整对照 SQL 注册、PG 载体、算子语义、请求/结果、生命周期与外部执行；保留项目初衷，未来分别移植自有算子方法与 SemLoom |
@@ -39,7 +39,7 @@ carrier 审查随路径增量进行；fixture 不能替代数据库验证。旧 
 不会自动恢复。公司内网复用、外部发布和 AutoDL 部署分别需要授权。
 
 Filter 的共同目的是按条件筛行；自有三值配置可保留，可移植性由明确的结果/NULL/error 映射和测试
-保证，不要求逐项照搬公司行为。详细参考与移植见[主架构计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，
+保证，不要求逐项照搬公司行为。详细参考与移植见[主架构计划](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)，
 分支与主线状态见 [INFRA_STATUS](../code/INFRA_STATUS.md)。
 
 ## 3. 研究内容
@@ -95,9 +95,9 @@ Filter 的共同目的是按条件筛行；自有三值配置可保留，可移�
 |---|---|
 | 项目总纲 | [`PROJECT_OUTLINE.md`](../PROJECT_OUTLINE.md) |
 | 项目导航 | [`PROJECT_INDEX.md`](../PROJECT_INDEX.md) |
-| 实验计划导航 | [`experiments/plans/README.md`](../experiments/plans/README.md) |
-| 实验状态与缺口 | [`experiment_status_and_gaps.md`](../experiments/plans/experiment_status_and_gaps.md) |
-| 正式证据注册表 | [`EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 实验计划导航 | [`experiments/plans/README.md`](../docs/plans/README.md) |
+| 实验状态与缺口 | [`experiment_status_and_gaps.md`](../docs/plans/experiment_status_and_gaps.md) |
+| 正式证据注册表 | [`EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 代码实现状态 | [`code/INFRA_STATUS.md`](../code/INFRA_STATUS.md) |
 | 文献与设计依据 | [`docs/research/knowledge_hub.md`](../docs/research/knowledge_hub.md) |
 | 开题 claim 边界 | [`docs/thesis/claim_matrix.md`](../docs/thesis/claim_matrix.md) |

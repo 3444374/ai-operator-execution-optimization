@@ -3,7 +3,7 @@
 文档角色：内部图资产审计。类型：实验结果图，属于当前校准记录的辅助材料，不进入开题主图。
 
 - 图的任务：分别展示短查询并发诊断、固定并发下的规模检查、窗口诊断和完整重复值，避免混用规模。
-- 数据来源：`experiments/results/postgresql/map_capacity_20260910/raw/queries.csv`；每一行对应实际查询记录。
+- 数据来源：`results/postgresql/map_capacity_20260910/raw/queries.csv`；每一行对应实际查询记录。
 - 使用位置：同目录结果报告；图源为 `docs/figures/scripts/plot_map_capacity_20260910.py`。
 - 不能推出：动态组织收益、全局最优并发、任意 workload 的 GPU 饱和、长期 RSS 上限或所有问题回答正确。
 
@@ -13,7 +13,7 @@
 
 ```sh
 python docs/figures/scripts/plot_map_capacity_20260910.py \
-  --input experiments/results/postgresql/map_capacity_20260910/raw/queries.csv \
+  --input results/postgresql/map_capacity_20260910/raw/queries.csv \
   --output-stem docs/figures/data/backup/map_capacity_20260910
 ```
 

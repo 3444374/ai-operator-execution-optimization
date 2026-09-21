@@ -367,9 +367,9 @@ git commit -m "fix: require one ray cluster for shared credit"
 - Modify: `code/tests/experiments/test_experiment_scenarios.py`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_OUTLINE.md`
-- Modify: `experiments/plans/data_organization_batching.md`
-- Modify: `experiments/plans/service_scheduling_backpressure.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `docs/plans/data_organization_batching.md`
+- Modify: `docs/plans/service_scheduling_backpressure.md`
+- Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `PROJECT_LOG.md`
 
 **Interfaces:**

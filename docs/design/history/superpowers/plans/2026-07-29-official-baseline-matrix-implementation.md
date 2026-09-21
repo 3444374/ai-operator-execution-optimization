@@ -1062,7 +1062,7 @@ git commit -m "feat: add official baseline gate"
   `code/src/baselines/*`, `code/tests/test_*baseline*.py`,
   `deploy/autodl/dual_gpu_official_baseline_gate.example.json`
 - Create results only after a passing gate:
-  `experiments/results/dual_gpu_official_baseline_gate_<unique_id>/`
+  `results/dual_gpu_official_baseline_gate_<unique_id>/`
 
 **Interfaces:**
 - Consumes: a clean pushed `main`, existing AutoDL runtime env and two idle

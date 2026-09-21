@@ -4,7 +4,7 @@
  * Inputs are bounded task/spec bytes plus a connected socket; outputs are
  * validated completion bytes or neutral errors.  It owns framing, JSON,
  * evidence digests, interruptible waits, and no PostgreSQL tuple semantics.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #include "postgres.h"
 

@@ -226,8 +226,8 @@ Implementation updates:
 
 Formal result updates, only after GPU repeats:
 
-- `experiments/results/local_vllm_qwen15b_baseline/README.md`;
-- `experiments/plans/experiment_status_and_gaps.md`;
+- `results/data_organization/local_vllm_qwen15b_baseline/README.md`;
+- `docs/plans/experiment_status_and_gaps.md`;
 - `PROJECT_OUTLINE.md`;
 - `PROJECT_LOG.md`.
 

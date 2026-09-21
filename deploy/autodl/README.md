@@ -259,7 +259,7 @@ SHA、archive SHA、matrix-index SHA、matrix instance、commit 和 config finge
 五臂不全或任一 cell 非 exactly-once 都不能进入 formal；archive 必须是 root 全部文件的逐字节镜像，
 只放一个空 snapshot/单个伪 cell 的 tar 会被拒绝。
 
-本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
+本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`results/motivation/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
 
@@ -300,7 +300,7 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 1. 根 `AGENTS.md`：项目边界与实验规则；
 2. `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 和本目录 `AGENTS.md`：部署、运行时、网络与存储规则；
 3. 根 `PROJECT_OUTLINE.md` 和
-   `experiments/plans/experiment_status_and_gaps.md`：当前唯一实验顺序；
+   `docs/plans/experiment_status_and_gaps.md`：当前唯一实验顺序；
 4. 本节：判断是“全新实例准备”还是“已配置实例开机恢复”；
 5. 本文件对应的详细章节；实验参数只从 `deploy/autodl/*.example.json`
    模板读取。
@@ -439,7 +439,7 @@ if pgrep -f '[g]cs_server\|[r]aylet' >/dev/null 2>&1; then
 fi
 rm -f /tmp/ray/ray_current_cluster
 
-# 2) 同步代码。未跟踪 experiments/results/ 属于实验数据，不得 git clean
+# 2) 同步代码。未跟踪 results/ 属于实验数据，不得 git clean
 git status --short --branch
 source /etc/network_turbo >/dev/null 2>&1
 git fetch origin main
@@ -661,7 +661,7 @@ cd ai-operator
 - **后续同步**：在同一远程 shell 中执行
   `source /etc/network_turbo >/dev/null 2>&1 && cd /root/autodl-tmp/ai-operator && git pull --ff-only`；
   先用 `git remote get-url origin` 确认需要 turbo 的 remote 是 HTTPS。
-- 实验脚本入口在 `code/scripts/`,策略实现在 `code/src/`,依赖清单 `code/requirements.txt`。运行时 cwd 用项目根 `/root/autodl-tmp/ai-operator`(脚本里相对路径 `data/raw/...`、输出 `experiments/results/...` 都基于根)。
+- 实验脚本入口在 `code/scripts/`,策略实现在 `code/src/`,依赖清单 `code/requirements.txt`。运行时 cwd 用项目根 `/root/autodl-tmp/ai-operator`(脚本里相对路径 `data/raw/...`、输出 `results/...` 都基于根)。
 
 ---
 
@@ -671,7 +671,7 @@ cd ai-operator
 | 包 | 版本 | 来源 / 说明 |
 |---|---|---|
 | Python | 3.12.3 | 镜像自带 `/root/miniconda3` |
-| **vllm** | **0.25.1 + `bench` extra** | **与本机 Docker `vllm/vllm-openai:v0.25.1` 对齐**；official baseline 还需同版本 `bench` extra(见 `experiments/results/adaptive_admission_controller_20260726/service.json`) |
+| **vllm** | **0.25.1 + `bench` extra** | **与本机 Docker `vllm/vllm-openai:v0.25.1` 对齐**；official baseline 还需同版本 `bench` extra(见 `results/scheduling/adaptive_admission_controller_20260726/service.json`) |
 | torch | **2.11.0** | vllm 0.25.1 的依赖,pip 会自动把它装上(见下) |
 | ray | 2.56.1 | pip 解析 |
 | daft | 0.7.21 | pip 解析 |
@@ -1056,12 +1056,12 @@ python code/scripts/profiling/postgres_ai_operator_profile.py \
   --completion-model qwen2.5-1.5b --completion-max-tokens 32 \
   --source-workload-name sharegpt_multiturn --data-source daft_postgres --organizer daft \
   --writeback-mode none --experiment-id cloud_single_ep \
-  --output experiments/results/cloud_autodl/single_endpoint.csv
+  --output results/cloud_autodl/single_endpoint.csv
 # 双 endpoint(各占一张 GPU)
 python code/scripts/profiling/postgres_ai_operator_profile.py ... \
   --completion-endpoint-urls http://127.0.0.1:8000/v1/completions,http://127.0.0.1:8001/v1/completions \
   --experiment-id cloud_dual_ep \
-  --output experiments/results/cloud_autodl/dual_endpoint.csv
+  --output results/cloud_autodl/dual_endpoint.csv
 ```
 对比 `operator_wall_s` / `e2e_s` / `rows/s`,回答"独立 GPU 上多 endpoint 路由是否有收益"。
 
@@ -1162,7 +1162,7 @@ python code/scripts/experiments/run_ai_operator_scenarios.py \
   --config deploy/autodl/dual_gpu_capacity_scaling.example.json \
   --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  --output-dir experiments/results/dual_gpu_capacity_scaling \
+  --output-dir results/dual_gpu_capacity_scaling \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```
@@ -1227,7 +1227,7 @@ set -a
 source /root/autodl-tmp/ai-operator-runtime.env
 set +a
 CONFIG=deploy/autodl/dual_gpu_shared_vllm_gate.example.json
-OUTPUT_DIR=experiments/results/dual_gpu_shared_vllm_gate_<unique_id>
+OUTPUT_DIR=results/dual_gpu_shared_vllm_gate_<unique_id>
 RUN_LOG=/root/autodl-tmp/logs/dual_gpu_shared_vllm_gate_<unique_id>.log
 
 # 只读门禁：任一 runner、租约或忙 endpoint 存在时都不启动
@@ -1490,8 +1490,8 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/summarize_saor_active_set.py \
   --mechanism-only \
-  --matrix-root experiments/results/saor_active_set_release_formal_20260812_69affc7e \
-  --output-dir experiments/results/saor_active_set_release_formal_20260812_69affc7e/summary
+  --matrix-root results/saor_active_set_release_formal_20260812_69affc7e \
+  --output-dir results/scheduling/saor_active_set_release_formal_20260812_69affc7e/summary
 ```
 
 下一项 release-only 可达性使用 `saor_priority_reachability.example.json`。三臂只比较 frozen
@@ -2007,7 +2007,7 @@ OceanBase is an optional product baseline, not a substitute for the
 no-Daft/no-Ray bounded HTTP control. Capability gate #1 has PASSED: OceanBase
 Community Edition 4.5.0.0 is statically confirmed to contain `AI_COMPLETE` and
 `DBMS_AI_SERVICE` (observer binary `T_FUN_SYS_AI_COMPLETE` + seed SQL
-`dbms_ai_service_*.sql`); see `experiments/results/oceanbase_b1_gate_20260731/`.
+`dbms_ai_service_*.sql`); see `results/system_e2e/oceanbase_b1_gate_20260731/`.
 The current blocker is DEPLOYMENT, not capability: in this AutoDL container the
 observer clogs at init step 4/18 with errcode -9100 (container seccomp blocks
 clone3 / ENOSYS; unfixable from inside), so it must be re-run in a privileged
@@ -2064,7 +2064,7 @@ DuckDB `ai` community extension 必须先用
 `dual_gpu_duckdb_ai_capability_gate.example.json` 跑 bounded-output 独立轨；不得写成
 DuckDB core 或官方 benchmark，也不得因 ShareGPT length error 放宽失败规则。正式 held-out
 合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
-`experiments/plans/completed/text_native_baseline_rerun_20260802.md`。
+`docs/plans/completed/text_native_baseline_rerun_20260802.md`。
 
 开机后仍先完整执行 §10.5。随后按本节顺序操作：
 
@@ -2090,7 +2090,7 @@ DuckDB core 或官方 benchmark，也不得因 ShareGPT length error 放宽失�
    `max_output_tokens=256` 与 `estimated_output_mode=trace_target`；
    不在远端临时编写 SQL/JSON 转换脚本。
 5. 每个 core cell 只运行一次，两个 endpoint shard 同时启动；输出写到
-   `experiments/results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
+   `results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
    cell/shard 目录。目录已存在即停止，禁止覆盖或 resume 成新 gate。
    使用已提交的 `code/scripts/baselines/run_official_baseline_gate.py` 作为唯一 core
    编排入口；它按配置串行 cell、并行双 shard、保存命令/日志、等待队列归零并
@@ -2230,7 +2230,7 @@ response headers 和 body-read 边界：
 
 ```bash
 CONFIG=deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json
-OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_equivalence_gate_<unique-id>
+OUTPUT_DIR=results/dual_gpu_same_condition_project_equivalence_gate_<unique-id>
 RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_equivalence_gate_<unique-id>.log
 
 test ! -e "$OUTPUT_DIR"
@@ -2257,7 +2257,7 @@ vLLM queue 与 inference，不能单独解释为 server accept 或 GPU compute�
 
 ```bash
 CONFIG=deploy/autodl/dual_gpu_same_condition_project_calibration.example.json
-OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_calibration_<unique-id>
+OUTPUT_DIR=results/dual_gpu_same_condition_project_calibration_<unique-id>
 RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_calibration_<unique-id>.log
 
 test ! -e "$OUTPUT_DIR"
@@ -2430,7 +2430,7 @@ submission 仍发送一个含多条完整 prompt 的 HTTP body。
   --driver-python /root/miniconda3/bin/python \
   --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --output-root \
-    experiments/results/dual_gpu_completions_baseline_gate_<unique-id>
+    results/dual_gpu_completions_baseline_gate_<unique-id>
 ```
 
 再分别运行 project Chat 与 Completions feeding 矩阵：
@@ -2440,7 +2440,7 @@ submission 仍发送一个含多条完整 prompt 的 HTTP body。
   --config deploy/autodl/dual_gpu_project_chat_feeding.example.json \
   --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
-  --output-dir experiments/results/dual_gpu_project_chat_feeding_<unique-id> \
+  --output-dir results/dual_gpu_project_chat_feeding_<unique-id> \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS"
 
@@ -2449,7 +2449,7 @@ submission 仍发送一个含多条完整 prompt 的 HTTP body。
   --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir \
-    experiments/results/dual_gpu_project_completions_feeding_<unique-id> \
+    results/dual_gpu_project_completions_feeding_<unique-id> \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```

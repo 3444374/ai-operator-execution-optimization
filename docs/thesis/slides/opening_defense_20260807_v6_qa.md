@@ -6,7 +6,7 @@
 - 构建器：`docs/thesis/slides/build_opening_defense_v6_artifact_tool.mjs`
 - 设计合同：`docs/thesis/slides/opening_defense_v6_design.md`
 - 模板：`docs/thesis/slides/opening_defense_20260720_v5.pptx`
-- 精确数据：`experiments/results/opening_database_e2e_text_20260807/raw/headline_summary.json`
+- 精确数据：`results/system_e2e/opening_database_e2e_text_20260807/raw/headline_summary.json`
 
 ## 模板与内容审计
 

@@ -276,7 +276,7 @@ Recall/nDCG 需要显式 relevance 真值；P2 由 SLO-scale 字段和 formal-re
 
 ## 8. 下一步与落点
 
-1. **P0 三条优先**——TTFT 分位、ITL 分布、prefix cache hit rate。改动集中在 `code/src/metrics.py` + `code/src/baselines/ceilings/vllm_bench.py`，不触策略代码；先在 cache-ON 路由实验上补采，**直接服务当前 prefix 结论的隔离消融**（4-ep/7B 或 2-ep/1.5B、人为缩 KV 制造可控淘汰率）。登记到 `experiments/plans/experiment_status_and_gaps.md` 指标缺口区。
+1. **P0 三条优先**——TTFT 分位、ITL 分布、prefix cache hit rate。改动集中在 `code/src/metrics.py` + `code/src/baselines/ceilings/vllm_bench.py`，不触策略代码；先在 cache-ON 路由实验上补采，**直接服务当前 prefix 结论的隔离消融**（4-ep/7B 或 2-ep/1.5B、人为缩 KV 制造可控淘汰率）。登记到 `docs/plans/experiment_status_and_gaps.md` 指标缺口区。
 2. **P1 与代价模型/多 Job 正式计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 `docs/research/knowledge_hub.md` §5.7 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、三个 JCT 反事实、empirical service lag/starvation 和 recall@k 作为对应研究内容实验的附加报告项。
 3. **P2 作为报告期统一处理**——Variance/CI、SLO Scale、CV、regression count、调度开销% 在正式结果报告与 `docs/figures/` 绘图阶段一次性补齐。
 4. 本文件作为 `docs/research/` 的指标体系参考入口；后续新实验设计指标时先查本目录 §3，避免重复造指标或漏报文献标准项。
@@ -365,7 +365,7 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 | 压测调度策略 | 继续 ShareGPT/BurstGPT/agent-trace（变长长输出是调度压力源）。 |
 | 多模态泛化 | SemBench image + 向量 benchmark（SIFT/LAION/Cohere 50M）更直接可用。 |
 
-**缺口登记**：本项目目前 workload 偏"LLM serving + 写回"，**未用过 SemBench/LOTUS 式"数据库表上的语义算子"任务**。若开题/论文要把课题定位成"数据库 AI 算子"而不仅是"LLM 推理上游调度"，建议补一个 LOTUS map 任务做定位佐证（P2，多模态/数据库味优先级，不进调度主实验）。待用户确认后登记到 `experiments/plans/experiment_status_and_gaps.md`。
+**缺口登记**：本项目目前 workload 偏"LLM serving + 写回"，**未用过 SemBench/LOTUS 式"数据库表上的语义算子"任务**。若开题/论文要把课题定位成"数据库 AI 算子"而不仅是"LLM 推理上游调度"，建议补一个 LOTUS map 任务做定位佐证（P2，多模态/数据库味优先级，不进调度主实验）。待用户确认后登记到 `docs/plans/experiment_status_and_gaps.md`。
 
 > 本附录的 workload 清单为**文献事实/厂商来源**；AI_COMPLETE 可用性判定为基于算子输出形态的**合理推断**；数据/代码可用性为**官方来源**（已 web 核实）。
 
@@ -878,7 +878,7 @@ operator JCT
 - Prediction fragility and tail risk: [Beyond Prediction: Tail-Aware Scheduling for LLM Serving](https://arxiv.org/abs/2606.18431)
 
 产品场景和可安装性的一手入口统一维护在
-[`experiments/plans/baseline_reference.md` 的厂商清单](../../experiments/plans/baseline_reference.md#数据库厂商-ai-算子与可安装性清单2026-08-04)，
+[`docs/plans/baseline_reference.md` 的厂商清单](../../docs/plans/baseline_reference.md#数据库厂商-ai-算子与可安装性清单2026-08-04)，
 主要包括 [Doris AI Functions](https://doris.apache.org/docs/4.x/sql-manual/sql-functions/ai-functions/overview/)、
 [ClickHouse AI embedding](https://clickhouse.com/blog/clickhouse-release-26-06#aiembed)、
 [OceanBase AI Functions](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)、

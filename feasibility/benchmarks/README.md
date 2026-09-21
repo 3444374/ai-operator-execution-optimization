@@ -36,7 +36,7 @@ python feasibility/benchmarks/ray_many_objects_benchmark.py \
   --total-mb 16 \
   --objects 1 16 64 256 \
   --repeats 3 \
-  --output feasibility/results/ray_many_objects.csv
+  --output results/feasibility/ray_many_objects.csv
 ```
 
 ```bash
@@ -46,10 +46,10 @@ python feasibility/benchmarks/ray_arrow_fanout_fanin_benchmark.py \
   --total-rows 65536 \
   --embedding-dim 128 \
   --repeats 3 \
-  --output feasibility/results/ray_arrow_fanout_fanin.csv
+  --output results/feasibility/ray_arrow_fanout_fanin.csv
 ```
 
-动机脚本运行命令见 [`motivation/results/README.md`](../../motivation/results/README.md)。
+动机脚本运行命令见 [`results/motivation/README.md`](../../results/motivation/README.md)。
 
 生成分析报告：
 

@@ -559,7 +559,7 @@ def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--experiment-id", default="manual")
     parser.add_argument(
         "--output",
-        default="feasibility/results/postgres_ai_operator_profile.csv",
+        default="results/feasibility/postgres_ai_operator_profile.csv",
     )
     parser.add_argument("--dry-run", action="store_true")
 

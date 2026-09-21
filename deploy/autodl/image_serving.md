@@ -2,7 +2,7 @@
 
 > 本项目按**数据模态**分部署文档：文本（`text_serving.md`）、**图像（本篇）**，后续 video/audio 各起一篇。各模态共享同一套"调度策略模态无关"框架（见 `deploy/autodl/README.md` 总览），本篇只写图像独有部分。
 > **共享平台 setup**（实例/venv/network_turbo/代码同步/模型下载方法/PG）在 `deploy/autodl/README.md` §1–§7，本篇不重复。
-> 历史实验合同在 `experiments/plans/completed/image_clip_workload_lock_20260731.md`；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
+> 历史实验合同在 `docs/plans/completed/image_clip_workload_lock_20260731.md`；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
 
 ## 1. 这个"模态"是什么
 
@@ -236,7 +236,7 @@ cd /root/autodl-tmp/ai-operator
 `VLLM_USE_FLASHINFER_SAMPLER=0` 两次离线 gate 均在 600 秒超时，且没有生成
 `result.json`。因此本环境的 pooling baseline 状态是 `blocked`，禁止继续在线、5K 或
 60K 测试。完整证据见
-`feasibility/results/vllm_clip_pooling_gate_20260804/`。日志不足以唯一归因为
+`results/feasibility/vllm_clip_pooling_gate_20260804/`。日志不足以唯一归因为
 FlashInfer、权重加载或其它 EngineCore 初始化步骤；如需解锁，应使用隔离 venv 或可
 profiling 容器，不在现有文本 vLLM 环境原地升级。
 
@@ -355,14 +355,14 @@ Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup �
 模型 worker pool，同时记录 `worker_setup_s`，避免用持久 project actor 对比冷 Daft actor。
 
 2026-08-01 已完成的 fused 正式结果和原始 manifest 在
-`motivation/results/gpu/image_clip_native_baseline_20260801/`。headline 为单卡
+`results/motivation/gpu/image_clip_native_baseline_20260801/`。headline 为单卡
 project 1.296× Daft Native、双卡 project 1.138× Daft Ray。该结果不包含 pgvector，
 也不是相同 CPU reservation 的资源效率证明；复述时必须同时带上报告中的限制。
 Daft-on-Ray staged 与 Ray Data staged 已在 2026-08-02 完成 256-row 双卡 resource/
 correctness gate，输出 digest 与 exactly-once 一致，两卡均激活；Ray Data stats 记录
 4 preprocess + 4 predictor tasks。该规模仍只证明可运行，不能比较两臂吞吐；下一轮
 分别校准 batch、source shards、actor pool 与 in-flight。紧凑报告见
-`feasibility/results/image_staged_resource_gate_20260802/`。
+`results/feasibility/image_staged_resource_gate_20260802/`。
 
 **Ray 资源门禁**：固定 4 个 preprocess actor + 2 个 GPU actor 只给 6 CPU
 会把 SQL read task 饿死，表现为 0 rows 永久等待。runner 现在对 Ray Data 使用
@@ -466,7 +466,7 @@ PYTHONPATH=code /root/miniconda3/bin/python \
   processor 外推，不能故意保留慢实现制造优化空间。
 
 2026-08-01 已按 `f3d17af` 完成 5000 图、6 batch sizes、四变体、5+30 repeats；
-结果已同步到 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
+结果已同步到 `results/motivation/gpu/image_clip_preprocess_variants_20260801/`。
 命令保留作复现入口，不应无条件重复消耗 GPU。
 
 ### 5.7 60K unique × 2 passes project 静态点 formal
@@ -525,7 +525,7 @@ Daft fused、Daft staged、Ray Data staged 分别独立校准，再在相同物�
 做同一 workload、同一随机块顺序的正式比较。
 
 完整的长任务阶段、选择规则、formal 对照和 stop conditions 只在
-`experiments/plans/completed/image_clip_workload_lock_20260731.md` §10 维护；本节只负责服务器
+`docs/plans/completed/image_clip_workload_lock_20260731.md` §10 维护；本节只负责服务器
 启动、监控和恢复命令。
 
 Ray Data 初始 5K screening 找到 `cpu_workers=8, batch=64` 后，使用下面的原生图交叉
@@ -561,7 +561,7 @@ unique×2 logical passes。batch512 相对 batch64 formal 中位数改善不足 
 | scoop 边界 | prefix/state-aware 有强先验，Daft/PolarDB/Ray Data 已覆盖 staged overlap | 不预设“数据搬运空白”；先以 staged baseline 和 R0→R4 证据决定剩余增量 |
 
 ## 7. 关联文档
-- 历史实验 design + go/no-go 门禁：`experiments/plans/completed/image_clip_workload_lock_20260731.md`
+- 历史实验 design + go/no-go 门禁：`docs/plans/completed/image_clip_workload_lock_20260731.md`
 - 方向 scope（DB↔GPU Daft bridge，提案）：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`
 - 评估方法（recall@10、baseline 矩阵）：`docs/research/evaluation_metrics_survey_20260731.md`
 - 文本 track（vLLM）部署：`deploy/autodl/README.md` §8

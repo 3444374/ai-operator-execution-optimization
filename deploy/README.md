@@ -1,6 +1,6 @@
 # deploy/
 
-本目录存放部署配置与指南。`pgai/`、`postgres18.4/` 是本机 Docker Compose 部署；`autodl/` 是 AutoDL 云服务器（2× GPU + 文本 vLLM + 图像 Ray CLIP actor/vLLM pooling baseline + PostgreSQL + Ray/Daft）的部署 runbook。环境启动后，连接验证和 smoke test 结果记录在 `feasibility/results/`。
+本目录存放部署配置与指南。`pgai/`、`postgres18.4/` 是本机 Docker Compose 部署；`autodl/` 是 AutoDL 云服务器（2× GPU + 文本 vLLM + 图像 Ray CLIP actor/vLLM pooling baseline + PostgreSQL + Ray/Daft）的部署 runbook。环境启动后，连接验证和 smoke test 结果记录在 `results/feasibility/`。
 
 ## 子目录
 
@@ -35,7 +35,7 @@ AutoDL 新对话先读 `autodl/AGENTS.md`，再读 `autodl/README.md` 顶部“�
 唯一操作入口”。其中分别给出全新实例环境准备、每次开机恢复、64 行 gate、
 正式后台启动与 `--resume` 恢复流程。具体实验顺序以
 `../PROJECT_OUTLINE.md` 和
-`../experiments/plans/experiment_status_and_gaps.md` 为准，不从旧聊天推断，
+`../docs/plans/experiment_status_and_gaps.md` 为准，不从旧聊天推断，
 也不把多个因果问题合成一个大矩阵。
 
 SAOR 有界优先级开发模板为 `autodl/saor_bounded_priority.example.json`：它冻结 static、
@@ -60,7 +60,7 @@ development rehearsal root；禁止直接启动 formal。
 ## 与其他目录的关系
 
 - 实验脚本：`motivation/benchmarks/`、`code/scripts/`
-- 连接验证结果：`feasibility/results/`
+- 连接验证结果：`results/feasibility/`
 - 集成计划：`motivation/plans/integration.md`
 
 ## 注意

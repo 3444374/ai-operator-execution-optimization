@@ -7,7 +7,7 @@ immutable ``ChatRequest`` shard into a DuckDB table and issues one set-oriented
 ``SELECT ai_try_complete(...)``. The extension owns HTTP call execution and
 concurrency; its retry/cache/rate controls are explicitly frozen by the
 experiment contract. No project scheduling code is injected, matching the policy in
-``experiments/plans/baseline_reference.md``.
+``docs/plans/baseline_reference.md``.
 
 Two operational constraints are documented here so they are not re-discovered:
 

@@ -52,7 +52,7 @@ SemBench Movie原生查询与评价使用`core,text,semantic-benchmarks`：后�
 SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1与Arrow版本。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
 若旧driver缺评价依赖，先审查安装预览，再建独立venv，不混装模型服务环境；
-[本轮环境与验证记录](../../experiments/results/postgresql/database_queries_20260910/README.md)。
+[本轮环境与验证记录](../../results/postgresql/database_queries_20260910/README.md)。
 
 环境文件按以下顺序查找：显式 `--env-file` → `AI_OPERATOR_ENV_FILE` →
 `~/.config/ai-operator/runtime.env`。首次在一台机器运行时仍需从模板创建一次：
@@ -139,7 +139,7 @@ GPU 型号检测不能可靠推导最优 batch/K/actor/active-work。项目采�
 
 现有文本选择器是 `code/scripts/analysis/select_strategy_calibration.py`；静态 workload
 曲面的 GO/NO-GO 由 `summarize_static_{k,credit}_workload_surface.py` 判定。图像轨道继续
-按 `experiments/plans/completed/image_clip_workload_lock_20260731.md` 的 workload 合同独立校准。这里不再发明第二套
+按 `docs/plans/completed/image_clip_workload_lock_20260731.md` 的 workload 合同独立校准。这里不再发明第二套
 选择算法。
 
 “自适应”因此有明确边界：环境/profile 自动选择；现有选择器从可复现校准数据生成冻结

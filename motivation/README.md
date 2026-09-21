@@ -60,7 +60,7 @@
 - GPU-backed E2E 主动机结果放 `results/gpu/`。
 - PG18.4 本地 fake-model 画像放 `results/pg18_4_fake/`。
 - fake/CPU 历史 fake/CPU 预研放 `results/fake_cpu/`。
-- 只证明环境能连接、脚本能 dry-run、数据库能读写的结果放 `feasibility/results/`。
+- 只证明环境能连接、脚本能 dry-run、数据库能读写的结果放 `results/feasibility/`。
 
 ## 常用命令
 
@@ -71,7 +71,7 @@ python motivation/benchmarks/fake_embed_pipeline.py \
   --total-rows 65536 \
   --embedding-dim 128 \
   --repeats 3 \
-  --output motivation/results/fake_cpu/fake_embed_pipeline.csv
+  --output results/motivation/fake_cpu/fake_embed_pipeline.csv
 ```
 
 ## 更新要求

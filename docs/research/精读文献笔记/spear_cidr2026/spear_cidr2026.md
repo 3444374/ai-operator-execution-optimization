@@ -10,7 +10,7 @@
 >
 > **文件名提示**：上传文件名中含有 `vldb2026`，但论文首页正式标注的发表 venue 是 **CIDR 2026**，不是 VLDB。
 >
-> **项目用途**：项目关联与架构示意是阅读分析，不代表已实现能力或新的实施安排。当前任务由[工程计划](../../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)维护，候选机制与新颖性判断另见[研究审查](../../semantic_prefix_reuse_design_audit_20260903.md)。
+> **项目用途**：项目关联与架构示意是阅读分析，不代表已实现能力或新的实施安排。当前任务由[工程计划](../../../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)维护，候选机制与新颖性判断另见[研究审查](../../semantic_prefix_reuse_design_audit_20260903.md)。
 
 ---
 

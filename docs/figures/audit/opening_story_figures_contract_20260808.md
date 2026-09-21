@@ -243,7 +243,7 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十一张彩色与�
 - 右 panel（2026-08-18 曾加“模型预测最优与实际最优的偏离”，后并入 panel b）：曾尝试两种口径。
   其一为 estimator 无关的候选差异——从每 fold 的 `candidates[].actual_mean_s` 取最坏候选、
   `selection.oracle_runtime` 取实际最优，`(最坏候选 − 实际最优)/实际最优×100%`（口径与
-  `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`
+  `results/cost_estimation/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`
   §5.1 表末列一致，是 `/min` 而非 `/max` spread），20 个场景为 2.5%–80.1%、中位 39.7%、
   仅 1/20 ≤5%；但该分布与 estimator 无关、只能画一行，不满足“六种配置各一行”。
   其二为按估计器的“预测最优偏离”——`argmin(candidates[].predicted_mean_s)` 的实际偏离
@@ -291,7 +291,7 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 
 ## 7. Replacement 文本三臂（附录 correctness/语义表）
 
-数据：`experiments/results/opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv`
+数据：`results/system_e2e/opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv`
 与 `summary/audit.json`。旧 `opening_database_e2e_text_20260807` 只作 failed-feeding 诊断，
 不得回填。
 
@@ -332,7 +332,7 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 - `data/report_main/opening_native_single_job_state_fingerprint.{png,svg}`。
 
 - 类型：experimental results；数据为
-  `experiments/results/opening_text_native_single_job_formal_20260808/formal_summary.csv`，
+  `results/system_e2e/opening_text_native_single_job_formal_20260808/formal_summary.csv`，
   4 arms × 3 formal，warm-up 不进统计。
 - F-main 按相同行顺序展示 Job JCT、vLLM waiting、单请求 queue time 与 TTFT；它承担
   “相近 makespan 掩盖请求级排队”的主结论。Job JCT 明确采用

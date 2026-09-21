@@ -299,7 +299,7 @@ warning，失败实验仍保留原始异常作为主错误。
   停止 5K/60K 性能测试。
 
 学习材料只负责解释；正式 baseline 身份、状态和指标以
-[`../experiments/plans/baseline_reference.md`](../experiments/plans/baseline_reference.md)
+[`../docs/plans/baseline_reference.md`](../docs/plans/baseline_reference.md)
 为准。
 
 图像木桶、H2D 与 embedding parity 的当前讲解统一追加在
@@ -535,8 +535,8 @@ boundaries.
 正式 CSV、严谨结果报告和论文式结论仍放在：
 
 ```text
-feasibility/results/
-motivation/results/
+results/feasibility/
+results/motivation/
 ```
 
 `learning/` 负责回答更基础的问题：

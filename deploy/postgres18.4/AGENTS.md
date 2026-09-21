@@ -8,4 +8,4 @@
 - 改变 PG 大版本、扩展版本或数据目录前说明兼容性与迁移影响；模型服务与 Ray 等作为外部 worker/service 部署。
 - 新建环境或改变运行行为后，检查容器 health、PG/扩展版本、最小向量距离查询，以及画像脚本的建表、
   读取和写回；局部说明修订只检查对应文字与引用。
-- 连接验证放 `feasibility/results/`，系统画像放 `motivation/results/`，本目录不保存实验结果。
+- 连接验证放 `results/feasibility/`，系统画像放 `results/motivation/`，本目录不保存实验结果。

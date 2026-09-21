@@ -34,9 +34,9 @@ python figures\scripts\generate_system_architecture_figure.py
 | 图表 | 文件 | 数据来源 | 图表类型 | 主要用途 |
 |---|---|---|---|---|
 | 系统架构图 | `docs/figures/architecture/system_architecture_ai_data_execution.png` / `.svg` | 项目研究边界与系统设计 | 架构图 | 定义数据库 AI 负载 的外部数据执行与存储链路 |
-| 数据库到 GPU 再到写回的链路阶段时延 | `docs/figures/data/report_main/02_gpu_stage_latency_stack.png` / `.svg` | `motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv`、`motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv` | 横向堆叠柱状图 | 展示 DB fetch、Arrow batch build、Ray residual、GPU request wall、fan-in 和 sink writeback 的绝对时延 |
-| 调用粒度对端到端耗时的影响 | `docs/figures/data/report_main/03_invocation_granularity.png` / `.svg` | `motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv` | 双柱状图 | 对比 1024 行下 coalesced 与 fine 的端到端耗时和 endpoint 调用数 |
-| single / dual endpoint 执行方式对比 | `docs/figures/data/report_main/04_executor_endpoint_comparison.png` / `.svg` | `motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv`、`motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv` | 分组柱状图 | 说明单 endpoint 下 Ray 与 Python 接近，双 endpoint 下 Ray 降低 operator wall time |
+| 数据库到 GPU 再到写回的链路阶段时延 | `docs/figures/data/report_main/02_gpu_stage_latency_stack.png` / `.svg` | `results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv`、`results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv` | 横向堆叠柱状图 | 展示 DB fetch、Arrow batch build、Ray residual、GPU request wall、fan-in 和 sink writeback 的绝对时延 |
+| 调用粒度对端到端耗时的影响 | `docs/figures/data/report_main/03_invocation_granularity.png` / `.svg` | `results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv` | 双柱状图 | 对比 1024 行下 coalesced 与 fine 的端到端耗时和 endpoint 调用数 |
+| single / dual endpoint 执行方式对比 | `docs/figures/data/report_main/04_executor_endpoint_comparison.png` / `.svg` | `results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv`、`results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv` | 分组柱状图 | 说明单 endpoint 下 Ray 与 Python 接近，双 endpoint 下 Ray 降低 operator wall time |
 | Ray actor endpoint 扩展与写回约束 | `docs/figures/data/report_main/05_actor_endpoint_scaling_writeback.png` / `.svg` | 同上 | 分组柱状图 | 展示多 endpoint 后写回和 fan-in 仍会限制端到端收益 |
 
 ## 质检结果

@@ -6,7 +6,7 @@
 `text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；
 `text/frameworks/ray_data_pg_http.py`使用Ray2.56.1的SQL reader与HTTP Processor。
 原生系统拥有批次/并发，实际HTTP计数和观测在统一查询时间内；
-[受控验证](../../../experiments/results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
+[受控验证](../../../results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
 
 `text/squad_map.py` 负责当前 PG Map 的 SQuAD 双消息输入身份、context 分组划分和预测关联，
 复用既有答案评分；离线入口见 `code/scripts/baselines/squad_pg_map_pilot.py`。它不拥有执行或调度。
@@ -38,4 +38,4 @@ router、flush、shared credit 或自定义 actor pool 的代码属于项目方�
 `src/scheduling/` / `src/observability/profiling/`，不能倒流进 native baseline。
 
 复测合同见
-`experiments/plans/completed/text_native_baseline_rerun_20260802.md`。
+`docs/plans/completed/text_native_baseline_rerun_20260802.md`。

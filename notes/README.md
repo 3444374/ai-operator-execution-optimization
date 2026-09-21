@@ -13,7 +13,7 @@
 
 - 项目方向和规则：根 `AGENTS.md`、`PROJECT_OUTLINE.md`
 - 调研材料：`docs/research/`
-- 实验结果：`motivation/results/`、`feasibility/results/`
+- 实验结果：`results/motivation/`、`results/feasibility/`
 - 开题材料：`docs/thesis/`
 
 ## 更新规则

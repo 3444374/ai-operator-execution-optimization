@@ -436,4 +436,4 @@
 | CCF-A 2026 新论文 | BatchLLM (MLSys), PKAS (HPDC), PLA-Serve (MLSys), Load-Aware Prefill Deflection, PEACE |
 | 技术报告 (arXiv) | Ray Data Streaming Batch Model, FastServe, Mooncake (v1) |
 | 工业系统文档 | NVIDIA Triton, Ray Serve LLM, Ray Data LLM |
-| 本地实验事实 | 已有 GPU-backed E2E profile 结果（`motivation/results/gpu/`） |
+| 本地实验事实 | 已有 GPU-backed E2E profile 结果（`results/motivation/gpu/`） |

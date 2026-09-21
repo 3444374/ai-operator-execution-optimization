@@ -12,26 +12,26 @@
 | 项目长期规则 | [`AGENTS.md`](AGENTS.md) | 全项目规则、继承顺序与目录规则路由；进入子目录后再读沿途 `AGENTS.md` |
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
-| 近期数据执行研究 | [设计假设与强对照](experiments/plans/data_organization_batching.md#design-hypotheses) | 当前 M1 研究吞吐平台附近的供给与资源；M2 单列全局信息，旧测量反例与已撤下的运行表保留 |
-| M1供给复查 | [记录](experiments/results/postgresql/m1_supply_followup_20260920/README.md) | 容量扫描修复有受控证据；原C64失败，1552次尝试/1550次服务成功，后续见完整容量复查 |
-| C64异常诊断 | [记录](experiments/results/postgresql/m1_c64_errors_20260920/README.md) | 补齐异常记录；四次512行完成，原故障未复现、根因待确定；后续见完整容量复查 |
-| M1完整容量复查 | [记录](experiments/results/postgresql/m1_full_recheck_20260920/README.md) | 32个查询、16400次请求完成；保留清理告警与随后通过的资源核对，工程已合入main，方法未选点 |
-| M1/M2/F 真实检查 | [记录](experiments/results/postgresql/m1_m2_f_real_20260920/README.md) | 文本8,248次、图像151次；M1未选点，M2信息成本与F数值/生命周期可复核 |
-| M1 调整与验证 | [记录](experiments/results/postgresql/m1_platform_revision_20260920/README.md) | 可达性、分阶段编排与完整吞吐选点；35 项本地检查；后续真实筛查见下一行 |
-| 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](experiments/results/postgresql/map_organization_20260910/README.md) |
-| PG 图像类型与阶段执行 | [工作包 F 记录](experiments/results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，后续151次CLIP数值检查通过；性能尚未确认 |
+| 近期数据执行研究 | [设计假设与强对照](docs/plans/data_organization_batching.md#design-hypotheses) | 当前 M1 研究吞吐平台附近的供给与资源；M2 单列全局信息，旧测量反例与已撤下的运行表保留 |
+| M1供给复查 | [记录](results/postgresql/m1_supply_followup_20260920/README.md) | 容量扫描修复有受控证据；原C64失败，1552次尝试/1550次服务成功，后续见完整容量复查 |
+| C64异常诊断 | [记录](results/postgresql/m1_c64_errors_20260920/README.md) | 补齐异常记录；四次512行完成，原故障未复现、根因待确定；后续见完整容量复查 |
+| M1完整容量复查 | [记录](results/postgresql/m1_full_recheck_20260920/README.md) | 32个查询、16400次请求完成；保留清理告警与随后通过的资源核对，工程已合入main，方法未选点 |
+| M1/M2/F 真实检查 | [记录](results/postgresql/m1_m2_f_real_20260920/README.md) | 文本8,248次、图像151次；M1未选点，M2信息成本与F数值/生命周期可复核 |
+| M1 调整与验证 | [记录](results/postgresql/m1_platform_revision_20260920/README.md) | 可达性、分阶段编排与完整吞吐选点；35 项本地检查；后续真实筛查见下一行 |
+| 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](results/postgresql/map_organization_20260910/README.md) |
+| PG 图像类型与阶段执行 | [工作包 F 记录](results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，后续151次CLIP数值检查通过；性能尚未确认 |
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
 | 理论与文献依据 | [`docs/research/knowledge_hub.md`](docs/research/knowledge_hub.md)、[`docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`](docs/research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
-| PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |
-| PG调用/绑定近期规格 | [详细设计](experiments/plans/postgresql_call_binding_design.md) | 公共描述/绑定及一个Filter→一个Map的接入、寿命、兼容与验收；共同调用、V1载体和一个Filter→一个生成Map已在开发分支验证；增量Core另行推进 |
-| 单流增量执行近期规格 | [详细设计](experiments/plans/semloom_incremental_session_design.md) | 方法续体、组织窗口、增量核心及受限生成Map的PG多在途已验证；[最新接入证据](experiments/results/postgresql/async_window_20260908/README.md)；Filter/组合、单请求多成员待实现；多流扩展见下一行 |
-| PG查询级Job归属 | [详细设计](experiments/plans/postgresql_query_job_design.md) | 普通Filter/Map共享查询Job、可信登记与生命周期；[验证](experiments/results/scheduling/query_job_20260909/README.md) |
-| 多Job执行与资源归属 | [详细设计](experiments/plans/semloom_multisession_design.md) | 共享Engine、可信Job登记、份额策略、受控多流与PG独立查询接入 |
-| 生成型 Map 实现规格 | [`experiments/plans/postgresql_semmap_generation_contract.md`](experiments/plans/postgresql_semmap_generation_contract.md) | SQL、消息/文本行为与专项验收；同步PG/真实模型接线已有证据，正式资源资格仍待完成 |
-| choice 已完成实施记录 | [`experiments/plans/completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) | 保留四 C 的字段、版本、预算与验收条件；结果从证据台账查阅，后续顺序由主架构维护 |
-| 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
+| PostgreSQL 工程计划 | [`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |
+| PG调用/绑定近期规格 | [详细设计](docs/plans/postgresql_call_binding_design.md) | 公共描述/绑定及一个Filter→一个Map的接入、寿命、兼容与验收；共同调用、V1载体和一个Filter→一个生成Map已在开发分支验证；增量Core另行推进 |
+| 单流增量执行近期规格 | [详细设计](docs/plans/semloom_incremental_session_design.md) | 方法续体、组织窗口、增量核心及受限生成Map的PG多在途已验证；[最新接入证据](results/postgresql/async_window_20260908/README.md)；Filter/组合、单请求多成员待实现；多流扩展见下一行 |
+| PG查询级Job归属 | [详细设计](docs/plans/postgresql_query_job_design.md) | 普通Filter/Map共享查询Job、可信登记与生命周期；[验证](results/scheduling/query_job_20260909/README.md) |
+| 多Job执行与资源归属 | [详细设计](docs/plans/semloom_multisession_design.md) | 共享Engine、可信Job登记、份额策略、受控多流与PG独立查询接入 |
+| 生成型 Map 实现规格 | [`docs/plans/postgresql_semmap_generation_contract.md`](docs/plans/postgresql_semmap_generation_contract.md) | SQL、消息/文本行为与专项验收；同步PG/真实模型接线已有证据，正式资源资格仍待完成 |
+| choice 已完成实施记录 | [`docs/plans/completed/postgresql_choice_profile_engineering.md`](docs/plans/completed/postgresql_choice_profile_engineering.md) | 保留四 C 的字段、版本、预算与验收条件；结果从证据台账查阅，后续顺序由主架构维护 |
+| 公司工程参考与自有成果移植 | [主架构 §8.7](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
-| 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
+| 实验证据台账 | [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
 | 对外叙事与主张 | [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md)、[`docs/thesis/report/opening_report.md`](docs/thesis/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
 | 变更历史 | [`PROJECT_LOG.md`](PROJECT_LOG.md) | 结构、方向、结论和关键入口变更记录 |
 
@@ -58,15 +58,15 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 1. [`code/AGENTS.md`](code/AGENTS.md)
 2. [`code/README.md`](code/README.md)
 3. [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md)
-4. [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
+4. [`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 
-先读主计划的能力与职责，再按[实施与验收](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+先读主计划的能力与职责，再按[实施与验收](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
 选择数据库调用/绑定、增量Core或共同支撑任务。既有choice、生成型Map及已完成AND的专项和证据入口
 仍保留；不能把历史阶段重新列为当前待实现任务。新增算子/方法/接入前按
-[工程参考表](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)
+[工程参考表](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)
 与pgml参考重查受影响项，公司移植仍有独立授权和验证要求。
 
-旧串行顺序与完整历史条件见[设计快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
+旧串行顺序与完整历史条件见[设计快照](docs/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)，
 当前源码与实验状态不从该快照推断。
 
 ### 运行实验或迁移机器
@@ -74,8 +74,8 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 1. [`deploy/runtime/AGENTS.md`](deploy/runtime/AGENTS.md)
 2. [`deploy/runtime/README.md`](deploy/runtime/README.md)
 3. 平台 runbook，例如 [`deploy/autodl/README.md`](deploy/autodl/README.md)
-4. [`experiments/AGENTS.md`](experiments/AGENTS.md)
-5. [`experiments/plans/README.md`](experiments/plans/README.md)
+4. [`docs/plans/AGENTS_experiment_rules.md`](docs/plans/AGENTS_experiment_rules.md)
+5. [`docs/plans/README.md`](docs/plans/README.md)
 6. 对应实验计划和结果目录 README
 
 任何新机器、依赖、模型或数据任务先运行 `manage_environment.py check`。正式运行使用机器、模型、
@@ -83,8 +83,8 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 
 ### 判断一个结论能否使用
 
-1. [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
-2. 对应 `experiments/results/<experiment>/README.md`
+1. [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)
+2. 对应 `results/<experiment>/README.md`
 3. 同目录 CSV/JSON/manifest/raw
 4. [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md)（若用于开题或对外材料）
 
@@ -142,24 +142,24 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 
 | 主题 | 当前入口 | 状态 |
 |---|---|---|
-| PostgreSQL AI 语义算子整体架构 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 当前工程主线 |
-| baseline 身份与选择 | [`experiments/plans/baseline_reference.md`](experiments/plans/baseline_reference.md) | 当前规则入口 |
-| 全部实验状态与缺口 | [`experiments/plans/experiment_status_and_gaps.md`](experiments/plans/experiment_status_and_gaps.md) | 状态审计；历史“下一步”按日期读取 |
-| 数据组织 | [`experiments/plans/data_organization_batching.md`](experiments/plans/data_organization_batching.md) | 方法计划 |
-| 提交与反压 | [`experiments/plans/service_scheduling_backpressure.md`](experiments/plans/service_scheduling_backpressure.md) | 方法计划 |
-| 图像 workload | [`experiments/plans/completed/image_clip_workload_lock_20260731.md`](experiments/plans/completed/image_clip_workload_lock_20260731.md) | 静态范围已完成；动态部分见 state-aware 当前计划 |
+| PostgreSQL AI 语义算子整体架构 | [`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 当前工程主线 |
+| baseline 身份与选择 | [`docs/plans/baseline_reference.md`](docs/plans/baseline_reference.md) | 当前规则入口 |
+| 全部实验状态与缺口 | [`docs/plans/experiment_status_and_gaps.md`](docs/plans/experiment_status_and_gaps.md) | 状态审计；历史“下一步”按日期读取 |
+| 数据组织 | [`docs/plans/data_organization_batching.md`](docs/plans/data_organization_batching.md) | 方法计划 |
+| 提交与反压 | [`docs/plans/service_scheduling_backpressure.md`](docs/plans/service_scheduling_backpressure.md) | 方法计划 |
+| 图像 workload | [`docs/plans/completed/image_clip_workload_lock_20260731.md`](docs/plans/completed/image_clip_workload_lock_20260731.md) | 静态范围已完成；动态部分见 state-aware 当前计划 |
 
-`experiments/plans/archive/`、`docs/` 和 `docs/design/history/` 只用于追溯。若历史计划仍有有效待办，应把它
+`docs/plans/archive/`、`docs/` 和 `docs/design/history/` 只用于追溯。若历史计划仍有有效待办，应把它
 迁入上表对应的当前入口，而不是继续追加历史文件。
 
 ## 6. 证据入口
 
 | 证据类型 | 入口 |
 |---|---|
-| 正式方法结果 | [`experiments/results/README.md`](experiments/results/README.md) |
-| 机制—实现—证据映射 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| GPU-backed 动机画像 | [`motivation/results/gpu/README.md`](motivation/results/gpu/README.md) |
-| capability/smoke | [`feasibility/results/README.md`](feasibility/results/README.md) |
+| 正式方法结果 | [`results/README.md`](results/README.md) |
+| 机制—实现—证据映射 | [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| GPU-backed 动机画像 | [`results/motivation/gpu/README.md`](results/motivation/gpu/README.md) |
+| capability/smoke | [`results/feasibility/README.md`](results/feasibility/README.md) |
 | 开题 claim 与证据等级 | [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md) |
 
 CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 formal 是不同证据等级；

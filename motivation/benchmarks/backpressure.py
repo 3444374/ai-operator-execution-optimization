@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--tokens-per-second-per-replica", type=float, default=12000.0)
     parser.add_argument("--submit-overhead-us", type=float, default=15.0)
     parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--output", default="motivation/results/fake_cpu/backpressure.csv")
+    parser.add_argument("--output", default="results/motivation/fake_cpu/backpressure.csv")
     return parser.parse_args()
 
 

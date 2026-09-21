@@ -28,10 +28,10 @@ model active window 会让未完成的 prepare dependency 更早进入 GPU actor
 ready tensor。
 
 来源类型：本地实验事实。证据分别见
-`../motivation/results/gpu/image_clip_preprocess_variants_20260801/README.md`、
-`../motivation/results/gpu/image_host_path_screening_20260802/README.md`、
-`../motivation/results/gpu/image_clip_transfer_ceiling_20260803/README.md` 和
-`../experiments/results/image_ai_embed_operator_formal_20260803/README.md`。
+`../results/motivation/gpu/image_clip_preprocess_variants_20260801/README.md`、
+`../results/motivation/gpu/image_host_path_screening_20260802/README.md`、
+`../results/motivation/gpu/image_clip_transfer_ceiling_20260803/README.md` 和
+`../results/image_execution/image_ai_embed_operator_formal_20260803/README.md`。
 
 ### 1.2 研究问题
 

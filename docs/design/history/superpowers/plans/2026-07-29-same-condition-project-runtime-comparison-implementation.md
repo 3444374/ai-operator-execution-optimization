@@ -280,7 +280,7 @@ Run the three focused files, then full unittest discovery. Expected: PASS.
 - Modify: `deploy/autodl/README.md`
 - Modify: `code/scripts/README.md`
 - Modify: `code/INFRA_STATUS.md`
-- Modify: `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
+- Modify: `docs/plans/database_ai_operator_baseline_matrix_20260729.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 - Test: `code/tests/observability/test_postgres_profile_scheduling.py`
@@ -398,9 +398,9 @@ or existing suffix doc ID blocks the write; the legacy upsert path is forbidden
 for this supplement.
 
 **Files:**
-- Create: `experiments/results/dual_gpu_same_condition_baseline_formal_<id>/`
-- Modify: `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Create: `results/dual_gpu_same_condition_baseline_formal_<id>/`
+- Modify: `docs/plans/database_ai_operator_baseline_matrix_20260729.md`
+- Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `overview/current_direction_and_plan.md`

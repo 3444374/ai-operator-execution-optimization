@@ -80,7 +80,7 @@ single-full JCT，静态真实竞争则用 static-four-job 除以该 Job 的 qua
 
 ## 9. GPU-backed 真实 embedding 画像：把真实模型服务接进链路
 
-正式结果：`motivation/results/gpu/ai_embed_profile.md`
+正式结果：`results/motivation/gpu/ai_embed_profile.md`
 
 **为什么做：**
 
@@ -157,7 +157,7 @@ coalesced:
 
 ## 10. CPU/GPU 对比：这些时间到底包括什么
 
-正式结果：`motivation/results/cpu/cpu_vs_gpu_embed_comparison_20260712.md`
+正式结果：`results/motivation/cpu/cpu_vs_gpu_embed_comparison_20260712.md`
 
 学习图：
 
@@ -487,8 +487,8 @@ GPU-backed model service 不等于自动变快
 正式结果：
 
 ```text
-motivation/results/gpu/ai_embed_chain_breakdown_20260712.md
-motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv
+results/motivation/gpu/ai_embed_chain_breakdown_20260712.md
+results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv
 ```
 
 这里曾经出现过一个临时文件名 `clean`。它不是实验术语，只是表示“我修正了计时字段语义以后重新跑的一版干净数据”。正式分析只看：
@@ -715,8 +715,8 @@ AI_FILTER / AI_CLASSIFY 用来补足 AI predicate 场景
 正式结果：
 
 ```text
-motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md
-motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv
+results/motivation/gpu/multi_endpoint_ray_motivation_20260712.md
+results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv
 ```
 
 前面的 4096 行单 endpoint 实验里，Python、Ray task、Ray actor 很接近。这说明：
@@ -790,7 +790,7 @@ Ray 主要降低了 AI operator 阶段
 正式记录：
 
 ```text
-feasibility/results/pgai_sql_smoke_20260714.md
+results/feasibility/pgai_sql_smoke_20260714.md
 deploy/pgai/README.md
 ```
 
@@ -893,7 +893,7 @@ fan-in 和 writeback。
 补充记录：
 
 ```text
-feasibility/results/trigger_surface_validation_20260714.md
+results/feasibility/trigger_surface_validation_20260714.md
 code/scripts/profiling/pgai_sql_operator_profile.py
 ```
 
@@ -929,8 +929,8 @@ code/scripts/profiling/pgai_sql_operator_profile.py
 正式记录：
 
 ```text
-motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+results/motivation/gpu/pgai_integrated_key_rerun_20260714.md
+results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 
 这次复测和前面的 pgai SQL 冒烟验证不是同一类结果。pgai SQL 冒烟验证证明：
@@ -949,7 +949,7 @@ PostgreSQL 18.4 本地预演
 ```
 
 这条链路里，模型 endpoint 明确返回 `device=cuda`，所以它可以放到
-`motivation/results/gpu/`。但它仍然不是 PostgreSQL 18.3 内部平台结果，也不是
+`results/motivation/gpu/`。但它仍然不是 PostgreSQL 18.3 内部平台结果，也不是
 pgai SQL 性能结论。
 
 关键数字：
@@ -991,8 +991,8 @@ pgvector vector(384) writeback
 正式记录：
 
 ```text
-motivation/results/gpu/pgvector_writeback_20260714.md
-motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+results/motivation/gpu/pgvector_writeback_20260714.md
+results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv
 docs/figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png
 ```
 

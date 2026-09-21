@@ -17,13 +17,13 @@ PYTHONPATH=code python3 code/scripts/experiments/pg_result_buffer_probe.py --dsn
 128行、每行5ms，8/128/128/8字节有效载荷，四条查询各15秒statement timeout；无模型调用。
 使用scalar临时函数的逐行服务端标记和客户端接收时间；不使用会全量收集的PL/pgSQL返回集合。
 PG18.3四次普通SQL诊断已完成；每次查询独立写checkpoint，结束时只创建一次最终summary。
-[服务器结果、首轮写入失败与修订](../../experiments/results/scheduling/capacity_wait_server_20260914/README.md)。
+[服务器结果、首轮写入失败与修订](../../results/scheduling/capacity_wait_server_20260914/README.md)。
 
 ## 文件定位
 
 当前数据库原始输入与公共查询入口见[下节](#数据库原始输入与公共查询)，包含准备、安装和有期限的单查询执行。
 PG Map查询配置支持`pg_total_budget=true`与独立`pg_staging_bytes`，由总字节控制实际留存行数；
-逐算子内存观测及真实诊断见[总字节预算报告](../../experiments/results/postgresql/pg_window_budget_20260910/README.md)。
+逐算子内存观测及真实诊断见[总字节预算报告](../../results/postgresql/pg_window_budget_20260910/README.md)。
 PG Map还可提供`organization_config`与该文件的`organization_sha256`，选择下述token工作量组织配置；
 实际消息、token usage、候选前缀、分组及出站顺序均由查询评价器核对。
 
@@ -68,7 +68,7 @@ token 组另提供 `work_limit`；顶层提供固定 `context_tokens`、`model_r
 真实恢复时才去掉 `--preflight`。调用者提供已运行的隔离 PG/模型、已有且未使用的阶段账本、有限期限和外部进程监督；
 本模块不启动服务、不初始化额度。它检查账本剩余期限不超过声明阶段时长，每查询仍有期限；
 外部监督负责卡在准备或清理中的进程。阶段结束不启动下一阶段，失败保留证据且不重试。
-[研究问题、选点与解释规则](../../experiments/plans/data_organization_batching.md#m1-throughput-platform)。
+[研究问题、选点与解释规则](../../docs/plans/data_organization_batching.md#m1-throughput-platform)。
 
 
 `experiments/database_queries.py`提供`prepare-movie`、`prepare-squad`、`install`、`run`。
@@ -103,7 +103,7 @@ PG须加`--pg-log`；Movie须加`--sembench-checkout`，LOTUS可加`--tokenizer`
 Movie schema v2分别存执行行号与原始reviewId，重复原始ID不去重；原任务评价仍用原字段。
 `run`启动独立worker并保存`unit/`和`supervisor.json`；准备期限120秒、query使用配置期限，
 结束后评价/清理期限120秒，TERM/KILL清理间隔10秒。worker失败保留部分输出并退出非零。
-原生数据物化、语义差异、当前测试与真实验证待执行项见[报告](../../experiments/results/postgresql/database_queries_20260910/README.md)。
+原生数据物化、语义差异、当前测试与真实验证待执行项见[报告](../../results/postgresql/database_queries_20260910/README.md)。
 
 ## SQuAD PG Map 数据准备与离线评价
 
@@ -111,7 +111,7 @@ Movie schema v2分别存执行行号与原始reviewId，重复原始ID不去重�
 复用原 SQuAD importer 的官方文件哈希/行数检查与解析器，保留旧 workload 的单消息语义；
 新身份 `squad_v11_pg_map_v1` 明确采用 Map 的 system/user 双消息。按完整 context 分组后，
 生成互不重叠的 tuning/evaluation 子集、`manifest.json` 与只有 ID/input_text 的两份 CSV。
-真实 source/model/SQL 资格与额度见[当前计划](../../experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)。
+真实 source/model/SQL 资格与额度见[当前计划](../../docs/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)。
 
 ```sh
 python3 code/scripts/baselines/squad_pg_map_pilot.py prepare \
@@ -299,7 +299,7 @@ PG 显式安装或升级至扩展 `0.3.0` 后，使用 `ai_semantic.embed(image,
 受控集成入口为 `tests.execution_provider.test_image_pg_integration`；只有明确提供隔离环境的
 `SEMLOOM_IMAGE_PG_DSN`、`SEMLOOM_IMAGE_TEST_ROOT` 和短路径 `SEMLOOM_IMAGE_RAY_TEMP` 才执行。
 它启动仅有 CPU 资源的私有 Ray 实例，使用真实 PNG 解码与明确标识的零权重模型；
-不加载真实 CLIP，也不分配 GPU。完整检查及尚未验证项见[结果记录](../../experiments/results/postgresql/image_stages_f_20260920/README.md)。
+不加载真实 CLIP，也不分配 GPU。完整检查及尚未验证项见[结果记录](../../results/postgresql/image_stages_f_20260920/README.md)。
 
 ### 生成 Map 的增量核心接入
 
@@ -320,7 +320,7 @@ PG多在途路径选择
 任务窗口可以大于后端并发，字节预算不足时通过接纳结果施加背压；这些预算不是GPU显存测量值。
 PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6接纳/结果协议，
 仅支持受限生成Map；EXPLAIN展示实际输入窗口，复杂表达式退回窗口1。
-[验证记录](../../experiments/results/postgresql/async_window_20260908/README.md)包含同一PG查询的真实并发、取消与回收。
+[验证记录](../../results/postgresql/async_window_20260908/README.md)包含同一PG查询的真实并发、取消与回收。
 
 单Job生成Map可额外传`--organization-config /path/to/organization.json`。配置字段为：
 
@@ -364,22 +364,22 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 --max-connections 16`；默认输入/结果字节配置按这32行预留。PG管理员可开启
 `semloom_pg.enable_query_job_window=on`并设`provider_window_tasks=4`，使query-job生成Map使用窗口4；
 两flow查询各分得4行，Filter→Map仍遵守原有child安全预读判断。当前token组织配置仍限单Job Map。
-实施与验证范围见[工作包E](../../experiments/plans/data_organization_batching.md#work-package-e)。
+实施与验证范围见[工作包E](../../docs/plans/data_organization_batching.md#work-package-e)。
 查询登记还在总连接上限内保留一个有期限的握手入口：双流查询至少需要4个socket名额。
 `ConnectionCapacity`统一记录查询承诺与standalone占用，未打开的流名额不能借给其它工作。
 帧期限从已登记流的首字节开始计算；帧间空闲由PG查询寿命管理。未登记与语义open仍有期限，
 控制连接仅等待EOF，额外数据直接拒绝。
-见[详细设计](../../experiments/plans/postgresql_query_job_design.md)及
-[验证记录](../../experiments/results/scheduling/query_job_20260909/README.md)。
+见[详细设计](../../docs/plans/postgresql_query_job_design.md)及
+[验证记录](../../results/scheduling/query_job_20260909/README.md)。
 独立生产器可用`engine.register_job(label, budget)`取得能力句柄，并以`engine.open(..., job=handle)`
 打开多个流；由控制线程调用`engine.advance()`，各流`advance()`只交付结果。字符串标签不能加入Job。
-[多Job设计](../../experiments/plans/semloom_multisession_design.md)说明资源归属、错误范围和待实现项。
+[多Job设计](../../docs/plans/semloom_multisession_design.md)说明资源归属、错误范围和待实现项。
 
 v5过渡桥接 `--incremental-map-window-one` 已移除。单行窗口使用同一条v6路径：
 `--incremental-map --max-held-tasks 1 --max-active-requests 1`，数据库同时设置
 `provider_execution_profile='incremental-map'` 和 `provider_window_tasks=1`。
 旧CLI/PG名称会明确报错；同步语义参考与wire v5仍保留。
-[迁移验证](../../experiments/results/scheduling/bridge_retirement_20260908/README.md)记录旧桥接对照及最终版本的真实模型检查。
+[迁移验证](../../results/scheduling/bridge_retirement_20260908/README.md)记录旧桥接对照及最终版本的真实模型检查。
 取消后保留未确认的远端占用；其它Job仅使用剩余容量，不能通过新建Engine重置额度。
 观测CLI继续使用同一持久请求账本，记录提交、终态、排空和传输关闭，header不进入日志。
 
@@ -407,7 +407,7 @@ Formal results use exit 0 for all required phases/cases passing, 1 for valid fai
 measurement, and 3 for runner/preflight failure. Interrupts preserve available evidence and propagate.
 Fault/recovery connections use the observer's optional fixture barrier that waits up to five seconds for both endpoints
 to be observed before releasing the handshake. Pressure timing is unchanged; these fault timings are not performance evidence.
-See the [Map contract](../../experiments/plans/postgresql_semmap_generation_contract.md) for thresholds and
+See the [Map contract](../../docs/plans/postgresql_semmap_generation_contract.md) for thresholds and
 current authorization. Formal 3×2000 remains unavailable until a valid current diagnostic and separate authorization.
 
 The fixed-model observer can serve Filter or Map using the same implementation:
@@ -431,7 +431,7 @@ only to explain their original runs; future checks must not import their machine
 `experiments/run_choice_resource_checks.py` 是内部、仅限 Linux 的 fixture 资源验证入口。它使用指定的
 PG18.3 安装创建独立集群，测旧/新配置、取消恢复和阻塞 DNS；不启动或调用真实模型。
 运行前遵循 runtime preflight，并使用新的仓库外产物目录，采样与判定条件见
-[choice 专项计划 C.5](../../experiments/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)。
+[choice 专项计划 C.5](../../docs/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)。
 
 ```bash
 python code/scripts/experiments/run_choice_resource_checks.py \
@@ -449,7 +449,7 @@ choice 入口显式提供默认的 100 次预算，其他运行由外部配置�
 两个 NULL 对照。它要求已有持久 ledger；真实模式核对 live service、模型文件及继承参数，fixture 模式
 必须显式指定。记录实际 HTTP JSON、raw completion、SQLSTATE、EXPLAIN 行数/usage，以及前后身份；
 仅删除 choice 字段后仍有值或类型差异则拒绝通过。程序不启动模型、不创建真实预算、不读取 held-out，
-也不评定标签质量；先按同一 [C.5 计划](../../experiments/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)
+也不评定标签质量；先按同一 [C.5 计划](../../docs/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)
 完成 preflight、模型服务与账本核验，再使用 `--help` 中的路径参数运行。
 
 ## Exact SemFilter reference calibration
@@ -885,7 +885,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --db-fetch-rows 128 --ray-batch-rows 64 \
   --model-workers 2 --max-inflight 4 \
   --strategy coalesced \
-  --output feasibility/results/pg18_4_connection_smoke_256_rows.csv
+  --output results/feasibility/pg18_4_connection_smoke_256_rows.csv
 ```
 
 `--submission-granularity service_quantum --service-quantum-tokens N` 同时
@@ -918,9 +918,9 @@ utilization；submission trace 另记 worker ID/index/PID 供归因。
 
 ## 结果位置
 
-- 原始数据：`feasibility/results/pg18_4_connection_smoke_256_rows.csv`
+- 原始数据：`results/feasibility/pg18_4_connection_smoke_256_rows.csv`
 - 设置、过程、表核对、严谨性与结论：
-  `feasibility/results/pg18_4_connection_validation.md`
+  `results/feasibility/pg18_4_connection_validation.md`
 - PostgreSQL 18.4 + pgvector 数据库部署：`deploy/postgres18.4/README.md`
 - pgai SQL 算子触发面预演：`deploy/pgai/README.md`
 
@@ -1316,8 +1316,8 @@ independent request/submission/resource/flush/control traces, and selectable
 fixed or queue-adaptive flush. Its default outputs are:
 
 ```text
-experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_small_20260726.csv
-experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_bulk_20260726.csv
+results/data_organization/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_small_20260726.csv
+results/data_organization/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_bulk_20260726.csv
 ```
 
 脚本现在会拆分 `db_fetch_s` 与 `arrow_build_s`，支持普通 Python baseline，并且只在
@@ -1347,7 +1347,7 @@ GPU-backed model service。推荐参数名是 `compatible_http`，旧的 `http_o
 完整矩阵、CSV 位置与结果解释：
 
 ```text
-motivation/results/pg18_4_fake/system_profile.md
+results/motivation/pg18_4_fake/system_profile.md
 ```
 
 GPU-backed embedding endpoint 配置检查示例：
@@ -1474,11 +1474,11 @@ AI_COMPLETE Ollama native completion smoke 示例：
 正式 GPU-backed 结果应输出到：
 
 ```text
-motivation/results/gpu/ai_embed_profile.csv
+results/motivation/gpu/ai_embed_profile.csv
 ```
 
 只有在 `--model-backend compatible_http` 连接到真实 GPU-backed endpoint 时，结果才可放入
-`motivation/results/gpu/`。
+`results/motivation/gpu/`。
 
 本地真实模型 endpoint 可用 `services/local_embedding_server.py` 启动：
 
@@ -1504,8 +1504,8 @@ $env:TORCH_HOME="D:\Code\ai-operator-execution-optimization\.cache\torch"
 Latest GPU-backed key rerun after pgai SQL trigger-surface validation:
 
 ```text
-motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+results/motivation/gpu/pgai_integrated_key_rerun_20260714.md
+results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 
 This rerun uses `services/local_embedding_server.py` on ports 8000 and 8001 with
@@ -1523,8 +1523,8 @@ documents/job tables.
 Latest GPU-backed sink comparison:
 
 ```text
-motivation/results/gpu/pgvector_writeback_20260714.md
-motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+results/motivation/gpu/pgvector_writeback_20260714.md
+results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv
 ```
 
 ## 2026-07-26 Workload materialization and cost estimation
@@ -1701,8 +1701,8 @@ job/group barrier JCT、服务计数、vLLM running/waiting/KV/TTFT delta 与
 - `deploy/autodl/dual_gpu_official_baseline_gate.example.json`
 - `deploy/autodl/dual_gpu_official_baseline_calibration.example.json`
 - `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json`
-- `experiments/plans/baseline_reference.md`
-- `experiments/plans/completed/text_native_baseline_rerun_20260802.md`
+- `docs/plans/baseline_reference.md`
+- `docs/plans/completed/text_native_baseline_rerun_20260802.md`
 
 模板是预注册规格，不是允许远端临时拼接 formal 命令的替代品。64 行 gate
 通过前不得启动 calibration；calibration 通过前不得启动 2,048 held-out。
@@ -1766,12 +1766,12 @@ python code/scripts/baselines/squad_capability_gate.py \
   --database-url "$DATABASE_URL" \
   --workload-name squad_v11_dev_short_answer \
   --mode sampled --sample-count 256 \
-  --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json \
+  --importer-provenance results/feasibility/squad_v11_dev_import_20260805/provenance.json \
   --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
   --metrics-url http://127.0.0.1:8000/metrics \
   --model qwen2.5-7b-instruct --max-tokens 64 \
   --service-prefix-caching enabled \
-  --output-dir feasibility/results/squad_capability_256_v3_20260805 --force
+  --output-dir results/feasibility/squad_capability_256_v3_20260805 --force
 ```
 
 输出：`report.json`（完整指标 + identity + 归因块）、`sample_manifest.jsonl`
@@ -1795,7 +1795,7 @@ python code/scripts/baselines/squad_truncation_diagnostic.py \
   --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
   --endpoint-base-url http://127.0.0.1:8000/v1 \
   --model qwen2.5-7b --caps 64,128,256 --repeats 3 \
-  --output feasibility/results/squad_truncation_diag_<id>_<date>/diagnostic.json --force
+  --output results/feasibility/squad_truncation_diag_<id>_<date>/diagnostic.json --force
 ```
 
 `baselines/squad_database_e2e_runner.py` 是 SQuAD bounded-output 的 **database-E2E 顶层 runner**
@@ -1821,14 +1821,14 @@ vLLM 配置，REPLACE_ME 字段正式前填）。该 runner 只有一个 `--endp
 ```bash
 python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai \
   --database-url "$DATABASE_URL" --workload-name squad_v11_dev_short_answer \
-  --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json \
+  --importer-provenance results/feasibility/squad_v11_dev_import_20260805/provenance.json \
   --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
   --metrics-url http://127.0.0.1:8000/metrics \
   --model qwen2.5-7b --max-tokens 64 --max-concurrent-requests 32 \
   --service-prefix-caching enabled --service-config-hash <vllm_config_hash> \
   --metrics-settle-s 5 --strict-attribution \
   --writeback-mode json_text --write-batch-rows 500 \
-  --output-dir feasibility/results/squad_database_e2e_duckdb_ai_REPLACE_ME --force
+  --output-dir results/feasibility/squad_database_e2e_duckdb_ai_REPLACE_ME --force
 ```
 
 输出：`report.json`（E2E timing 块 + runner 指标 + identity + 3 状态字段）、`per_row_evidence.csv`
@@ -1881,7 +1881,7 @@ source scan 生成的 prompt fingerprints，再与独立 DB 完整性读取及 i
 ```bash
 python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static \
   --database-url "$DATABASE_URL" --workload-name squad_v11_dev_short_answer \
-  --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json \
+  --importer-provenance results/feasibility/squad_v11_dev_import_20260805/provenance.json \
   --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
   --metrics-url http://127.0.0.1:8000/metrics \
   --model qwen2.5-7b --max-tokens 64 \
@@ -1893,7 +1893,7 @@ python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static 
   --metrics-settle-s 5 --strict-attribution \
   --writeback-mode json_text --write-batch-rows 500 \
   --limit 256 \
-  --output-dir feasibility/results/squad_database_e2e_project_static_smoke_REPLACE_ME --force
+  --output-dir results/feasibility/squad_database_e2e_project_static_smoke_REPLACE_ME --force
 ```
 
 **当前禁止跨臂正式排名**：project_static 的 `database_e2e_wall_s` = profiler `e2e_s`，是比进程内臂

@@ -59,7 +59,7 @@ data source/materializer
 
 ## 5. 代码质量
 
-- 新增算子、方法或 PG 接入切片时，按[架构计划](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
+- 新增算子、方法或 PG 接入切片时，按[架构计划](../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
   §8.7–8.8 核对受影响的工程参照；公司移植使用其中的完整对照。普通缺陷修复、内部重构和测试维护
   以受影响源码、接口与既有切片记录为入口；改变职责、语义或接入设计时再补读对应架构章节。
 - 工程参照的版本/符号、已核对行为、采用或保留决定、自有落点与验证用例写入工程计划或切片记录，
@@ -80,7 +80,7 @@ data source/materializer
 ## 6. 观测、测试与完成条件
 
 - runner 按根实验规则记录版本、配置签名、阶段时间、工作量、失败/重试、资源、质量和 provenance；
-  具体指标定义从 `../experiments/plans/baseline_reference.md` 读取，不在本文件复制。
+  具体指标定义从 `../docs/plans/baseline_reference.md` 读取，不在本文件复制。
 - 行为变化用最小测试/复现验证；重构需有现有测试或稳定输出覆盖需保留的行为，缺少时补行为表征。
   格式、注释等低影响修改不新写同义测试；共享接口、协议和执行层变化须覆盖受影响的旧路径。
 - 检查通过后，仅因新改动、失败或未解决问题才扩大或重跑；本地验证的持续执行按根 §4。

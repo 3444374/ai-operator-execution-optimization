@@ -1,7 +1,7 @@
 # Shared-vLLM 1/2/4-Job Fairness Implementation Plan
 
 > Scope: implement and gate the preregistered experiment in
-> `experiments/plans/service_scheduling_backpressure.md` §13. Do not tune the
+> `docs/plans/service_scheduling_backpressure.md` §13. Do not tune the
 > completed SLO-EWMA controller and do not start a formal matrix before the
 > real dual-GPU gate passes.
 
@@ -109,7 +109,7 @@ Files:
 - Modify `code/scripts/README.md`
 - Modify `code/README.md`
 - Modify `code/INFRA_STATUS.md`
-- Modify `experiments/plans/experiment_status_and_gaps.md`
+- Modify `docs/plans/experiment_status_and_gaps.md`
 - Modify `PROJECT_LOG.md`
 
 Steps:
@@ -145,7 +145,7 @@ Remote progress on 2026-07-29:
 - The first fresh gate directory failed before workload execution because a
   relative profiler path was interpreted from the runner's `code/` child cwd.
   All failure evidence remains in
-  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1047/`.
+  `results/dual_gpu_shared_vllm_gate_20260729_1047/`.
 - A failing CLI regression test was added first. The CLI now resolves every
   filesystem argument before child cwd changes; 142 related tests pass.
 - Publish this fix, fast-forward the idle remote checkout, rerun the full

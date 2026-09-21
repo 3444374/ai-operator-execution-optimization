@@ -3,7 +3,7 @@
 Design specifications and implementation plans for focused engineering tasks.
 
 These files are process artifacts. They do not replace `PROJECT_OUTLINE.md`,
-`experiments/plans/`, or formal experiment records.
+`docs/plans/`, or formal experiment records.
 
 ## Files
 

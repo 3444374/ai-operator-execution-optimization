@@ -1,0 +1,12 @@
+{
+  "schema": "template_fill_pptx_validate.v1",
+  "project": "D:\\Code\\ai-operator-execution-optimization\\projects\\opening_defense_20260712",
+  "export": "D:\\Code\\ai-operator-execution-optimization\\projects\\opening_defense_20260712\\exports\\opening_defense_20260712_fixed.pptx",
+  "readback": "D:\\Code\\ai-operator-execution-optimization\\projects\\opening_defense_20260712\\validation\\readback.md",
+  "summary": {
+    "ok": 181,
+    "warn": 0,
+    "error": 0
+  },
+  "results": []
+}

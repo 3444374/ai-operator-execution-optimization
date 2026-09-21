@@ -3,7 +3,7 @@
 更新日期：2026-09-03（补充前缀/表示专项审查入口；旧版本的审计范围保持）
 
 当前研究判断以 §11 的 2026-08-28 增补为准；实施范围与顺序只由
-[`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
+[`../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)
 定义。§1–10 保留最初从 LOTUS 转向 Sema 时的文献迁移审计；与 §11 冲突时由 §11 取代。
 
 文档角色：本文是**理论、文献和架构迁移依据**，回答 Sema/Cortex/LOTUS/IMLane/Kalypso 已解决什么、

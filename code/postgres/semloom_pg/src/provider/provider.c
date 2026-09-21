@@ -3,7 +3,7 @@
  *
  * Input is PostgreSQL-owned configuration plus an AiOpenSpec; output is an
  * opaque adapter/config pair.  Passing requires this module to perform no I/O.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #include "postgres.h"
 

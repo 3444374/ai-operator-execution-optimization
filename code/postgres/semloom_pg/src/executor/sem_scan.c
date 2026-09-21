@@ -3,7 +3,7 @@
  *
  * It forwards begin/next/stop/explain to SemloomExecPump and retains only the
  * executor callbacks PostgreSQL requires, including explicit rescan/EPQ errors.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #include "postgres.h"
 

@@ -67,7 +67,7 @@
 
 回答"为什么要优化数据库 AI 负载的执行链路"——这是开题的立题依据。
 
-- 5K COCO + CLIP 端到端画像（`motivation/results/gpu/` 多个画像）：**GPU 严重没喂饱**
+- 5K COCO + CLIP 端到端画像（`results/motivation/gpu/` 多个画像）：**GPU 严重没喂饱**
   （Daft 自带 / Ray Data 原生 baseline 的 GPU 利用率都只有 1–4%），真正的瓶颈是 **CPU 上的图像
   decode/resize/normalize**（单张 CPU 准备 4.4–4.8 毫秒，是 GPU 算一张的 13–31 倍），不是 GPU 算力、
   不是数据搬运、也不是数据库读取。
@@ -82,7 +82,7 @@
 - 256-row 3-arm 门禁、3-arm 12K 一致性、2-arm 60K matched-resource（project vs Ray Data，
   cpu8/cpu16 因果隔离）。
 - **每图指标**：joules/image、GPU-s/image、CPU-core-s/image、streaming-onset——
-  图像轨不再机械套用文本的 token 指标（`experiments/results/image_ai_embed_operator_formal_20260803/`）。
+  图像轨不再机械套用文本的 token 指标（`results/image_execution/image_ai_embed_operator_formal_20260803/`）。
 - 项目自写代价模型（CE0–CE6 六档层级 + context-LOO 评价）的 profile 数据采集。
 
 ### 4.3 强 baseline 实现（项目规则：formal baseline 必须由被测系统自有调度）
@@ -113,7 +113,7 @@
 
 ## 5. 量化产出
 
-- **~50 个结果目录**：`experiments/results/` 40+、`motivation/results/gpu/` 9、`feasibility/results/` 3，
+- **~50 个结果目录**：`results/` 40+、`results/motivation/gpu/` 9、`results/feasibility/` 3，
   每个含 README + 原始 CSV/manifest，可在仓库中追溯。
 - **多张可投稿图**（per-image 资源效率、容量压力对比、prefix 命中率归因等）。
 - **可复现的 runner + gate + 观测 pipeline**：matrix runner（single-writer lease + fail-closed gate）、

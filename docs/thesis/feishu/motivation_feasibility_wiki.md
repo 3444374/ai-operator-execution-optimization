@@ -156,7 +156,7 @@ flowchart TB
 
 ## 7. 可行性验证的作用边界
 
-`feasibility/` 目录当前只承担组件级验证职责。它可以说明环境、连接、脚本和数据通路可用，但不能承担项目总大纲职责，也不能替代 `motivation/results/` 中的正式动机证据。
+`feasibility/` 目录当前只承担组件级验证职责。它可以说明环境、连接、脚本和数据通路可用，但不能承担项目总大纲职责，也不能替代 `results/motivation/` 中的正式动机证据。
 
 | 证据来源 | 已完成内容 | 能说明什么 | 不能说明什么 |
 |---|---|---|---|
@@ -193,10 +193,10 @@ flowchart TB
 
 ## 10. 本页引用的本地材料
 
-- `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
-- `motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv`
-- `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
-- `motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv`
-- `motivation/results/fake_cpu/analysis.md`
+- `results/motivation/gpu/ai_embed_chain_breakdown_20260712.md`
+- `results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv`
+- `results/motivation/gpu/multi_endpoint_ray_motivation_20260712.md`
+- `results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv`
+- `results/motivation/fake_cpu/analysis.md`
 - `feasibility/README.md`
 - `PROJECT_OUTLINE.md`

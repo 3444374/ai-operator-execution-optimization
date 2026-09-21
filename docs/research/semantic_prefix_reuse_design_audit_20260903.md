@@ -5,8 +5,8 @@
 本文是内部研究设计审查，回答“瓶颈是什么、为什么某种动作可能有效、相对已有工作还需证明什么”。
 研究对象仍为 **PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 本文不是新的架构主计划、运行合同或已完成贡献；工程次序只由
-[主计划](../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)维护，
-实验对照由 [baseline reference](../../experiments/plans/baseline_reference.md#semantic-prefix-causal-controls)维护。
+[主计划](../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)维护，
+实验对照由 [baseline reference](../../docs/plans/baseline_reference.md#semantic-prefix-causal-controls)维护。
 源码核对基线是 main c7b1e9e6；本次没有运行 PG、tokenizer、模型、缓存或性能实验。
 
 ## 1. 结论：有条件采纳，不按五个创新点开工
@@ -71,7 +71,7 @@ SPEAR 是本次有界补充检索发现的直接相关工作，不并入 Top 15 
 | 亲和引发排队/容量闲置 | 相同资源上限下，等待缓存目标增加的时间大于可节省的工作；其他目标可接受任务 | prefix hit 更高不必然使查询更快 |
 | 数据准备/桥接/重排成本 | A/B/C/D 及同路径消融中的 CPU、bytes、queue、reorder 和 sink 时间 | RSS/FD 不增长不代表开销可忽略；吞吐差不能直接拆成相加的阶段耗时 |
 
-历史[数据组织结果](../../experiments/results/rc1_data_organization/README.md)说明策略效果依赖服务与局部性条件，
+历史[数据组织结果](../../results/data_organization/rc1_data_organization/README.md)说明策略效果依赖服务与局部性条件，
 但其外部 workload 身份不能重标为当前 PG 多算子结果。既有负结果仍有效，不能因为换了候选名称就重置。
 
 ## 4. 第一性原理：优化的是可兑现的工作，不是命中率数字
@@ -202,7 +202,7 @@ PG 统计只用于其能解释的字段分布，统计不足时标明未知，�
 纯语义 Module 构造选定程序；PG planner/carrier 保存合法选择与列/节点关系；PG runtime 管 owned
 tuple、结果关联、取消和释放；gateway 转换版本化任务；SemLoom 组织/准入/路由；模型 Adapter
 解释供应商指标；引擎拥有真正 KV。公共 JSON writer 不计算策略，Filter cost 不成为通用认证中心。
-具体文件、切片及完成条件见[主计划](../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)。
+具体文件、切片及完成条件见[主计划](../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)。
 
 缓存 telemetry 与 SQL 结果有效性分离。有效 SQL completion 不因 cached_tokens 缺失而失败，
 但没有可信命中证据的 run 不能宣称命中归因。可选 telemetry 仍要验证范围、来源、时间与 task/
@@ -212,7 +212,7 @@ deployment 关联；“可选”不表示任意值可信。它可以进入独立
 ## 6. 需要什么证据才能写进论文
 
 详细的 baseline、2×2、质量/任务量混淆、cache-on/off、同窗口与选择 regret 要求见
-[因果对照说明](../../experiments/plans/baseline_reference.md#semantic-prefix-causal-controls)。
+[因果对照说明](../../docs/plans/baseline_reference.md#semantic-prefix-causal-controls)。
 本节只定义每个研究判断需要的证据，不授权运行：
 
 | 待验证命题 | 支持它需要什么 | 否定后怎样收敛 |

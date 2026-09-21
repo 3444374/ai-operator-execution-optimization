@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument("--compute-us-per-row", type=float, default=0.25)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--num-cpus", type=int, default=None)
-    parser.add_argument("--output", default="motivation/results/fake_cpu/granularity.csv")
+    parser.add_argument("--output", default="results/motivation/fake_cpu/granularity.csv")
     return parser.parse_args()
 
 

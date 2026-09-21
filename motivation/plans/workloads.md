@@ -297,13 +297,13 @@ motivation/benchmarks/workload_matrix.py
   --embedding-dim 128 \
   --text-tokens 32 \
   --repeats 3 \
-  --output motivation/results/fake_cpu/workload_matrix.csv
+  --output results/motivation/fake_cpu/workload_matrix.csv
 ```
 
 结果文件：
 
 ```text
-motivation/results/fake_cpu/workload_matrix.csv
+results/motivation/fake_cpu/workload_matrix.csv
 ```
 
 ### 4.1 实验设置
@@ -392,8 +392,8 @@ motivation/results/fake_cpu/workload_matrix.csv
 
 | 实验 | 文件 | 目的 |
 |---|---|---|
-| granularity attribution | `motivation/results/fake_cpu/granularity.csv` | 拆分 task 数、Ray 引用数、fan-in 依赖数和 operator invocation 数 |
-| backpressure simulation | `motivation/results/fake_cpu/backpressure.csv` | 模拟模型服务消费慢时的 queue wait、token backlog 和 backpressure |
+| granularity attribution | `results/motivation/fake_cpu/granularity.csv` | 拆分 task 数、Ray 引用数、fan-in 依赖数和 operator invocation 数 |
+| backpressure simulation | `results/motivation/fake_cpu/backpressure.csv` | 模拟模型服务消费慢时的 queue wait、token backlog 和 backpressure |
 
 关键结果：
 

@@ -34,9 +34,9 @@ until a subsequent actor confirmation succeeds, including CUDA synchronization f
 An unreachable actor or unconfirmed device outcome remains charged.
 
 [Configuration and CLI](../../scripts/README.md#图像-provider) and
-[engineering evidence](../../../experiments/results/postgresql/image_stages_f_20260920/README.md)
+[engineering evidence](../../../results/postgresql/image_stages_f_20260920/README.md)
 describe the exact tested scope. The integration uses real PG, Ray and image decode with a CPU
-stand-in for model output. The later [real CLIP trial](../../../experiments/results/postgresql/m1_m2_f_real_20260920/README.md) completed 151 forwards with identical vectors and controlled post-forward error/cancel recovery. In-compute GPU interruption, hardware failures and matched performance remain pending.
+stand-in for model output. The later [real CLIP trial](../../../results/postgresql/m1_m2_f_real_20260920/README.md) completed 151 forwards with identical vectors and controlled post-forward error/cancel recovery. In-compute GPU interruption, hardware failures and matched performance remain pending.
 
 For controlled tuple-flow diagnostics only, a clean build with `SEMLOOM_FLOW_DIAGNOSTIC=1`
 includes monotonic stage traces and bounded input-pull pauses. Superuser-only `test_flow_trace`,
@@ -44,7 +44,7 @@ includes monotonic stage traces and bounded input-pull pauses. Superuser-only `t
 The ready-first comparison returns an already-ready head before replenishing the input window;
 it adds no group-completion wait. These fields, settings, trace calls and alternative policy are absent
 from the normal build. Use separate prefixes/build directories when comparing profiles.
-The [current diagnostic plan](../../../experiments/plans/data_organization_batching.md) owns the finite cases;
+The [current diagnostic plan](../../../docs/plans/data_organization_batching.md) owns the finite cases;
 this test build is not qualified as a production strategy.
 
 Opt-in `semloom_pg.enable_predicate_prefetch` allows only inspected built-in predicates on supported
@@ -53,24 +53,24 @@ Opt-in `semloom_pg.enable_filter_count` admits a single built-in `COUNT(*)` targ
 PostgreSQL's Aggregate still computes the result. Both settings default to OFF. Other aggregates,
 grouping and security-barrier views remain unsupported. The test-only Filter ID trace checks column
 privileges and records row decisions separately from aggregate output.
-[Database-source query verification](../../../experiments/results/postgresql/database_queries_20260910/README.md)
+[Database-source query verification](../../../results/postgresql/database_queries_20260910/README.md)
 includes raw source identity, RLS, strict LIMIT demand, native comparison entries and controlled HTTP.
 
 2026-09-10: after a fixed-reservation v6 offer is backpressured, the tuple pump retains the rejected
 input and pauses further offers until receiving an accepted result releases the relevant storage.
 Rejected rows do not consume sequence numbers or cause duplicate model submission. The shared
 gateway now continues bounded owner ticks when dispatch or cleanup can proceed, while still
-servicing connections and cancellation. [Controlled verification](../../../experiments/results/postgresql/execution_repairs_20260910/README.md)
+servicing connections and cancellation. [Controlled verification](../../../results/postgresql/execution_repairs_20260910/README.md)
 includes 2,043 PG TAP checks; real-model timing for these repairs is pending a separate budget.
 
 2026-09-10: the optional `semloom_pg.test_map_binding_id_column` records a named projected text ID
 through the existing tuple binding before provider offer, with stream/sequence/digest and acceptance.
 It defaults to an empty string and rejects missing or unsupported ID projections. It is a private test
 observation, not a wire or scheduling change. Strict PG18.3 build, regression 1/1 and TAP 2032/2032 pass;
-real capacity observations and their limitations are in the [capacity report](../../../experiments/results/postgresql/map_capacity_20260910/README.md).
+real capacity observations and their limitations are in the [capacity report](../../../results/postgresql/map_capacity_20260910/README.md).
 
 `semloom_pg` is the current `REL_18_3` reference capability slice from
-`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
+`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
 fail-closed SQL marker can be lowered to a planner-visible `CustomPath`/`CustomScan` with an ordinary
 PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic contract and a gateway-side fixed
 OpenAI-compatible model adapter. HTTP remains outside the PostgreSQL backend. Generated Map can now
@@ -86,12 +86,12 @@ reserved before admission and released after PG consumption. At most one pending
 separate `semloom_pg.provider_staging_bytes` budget (default 16 MiB); conversion has a separate
 1 MiB limit. EXPLAIN ANALYZE reports these limits, measured peaks and memory waits. Ordinary child
 plan memory and protocol receive staging are outside the retained-row budget; this is not a query
-RSS ceiling. See [implementation and validation](../../../experiments/results/postgresql/pg_window_budget_20260910/README.md).
+RSS ceiling. See [implementation and validation](../../../results/postgresql/pg_window_budget_20260910/README.md).
 Plain column/constant inputs on an ordinary child without quals use the configured window;
 other expressions show an effective window of 1 in EXPLAIN. Input order is the current Map
 contract, restored by sequence association without a Sort node. This profile currently serves
 one generated Map per connection. Multiple independent queries share the same Engine;
-see the [multi-Job design](../../../experiments/plans/semloom_multisession_design.md). [Validation](../../../experiments/results/postgresql/async_window_20260908/README.md)
+see the [multi-Job design](../../../docs/plans/semloom_multisession_design.md). [Validation](../../../results/postgresql/async_window_20260908/README.md)
 passes 1958 PG TAP checks and 12 actual model requests, including two overlapping HTTP requests
 from one PG query. Existing synchronous profiles remain available.
 
@@ -112,8 +112,8 @@ streams and one bounded handshake slot. Reserved stream slots cannot be granted 
 Authenticated streams may idle between frames; once a frame starts it must finish within the frame
 deadline. PG runtimes own explicit, idempotently ended flow handles; the provider only borrows them. Adding operators does not increase the Job grant. Query errors and resource-owner cleanup
 close the control connection; ending one stream does not end the Job. See the
-[query attribution design](../../../experiments/plans/postgresql_query_job_design.md) and
-[checks](../../../experiments/results/scheduling/query_job_20260909/README.md).
+[query attribution design](../../../docs/plans/postgresql_query_job_design.md) and
+[checks](../../../results/scheduling/query_job_20260909/README.md).
 
 The task window is a retained-row budget, independent of backend concurrency. Row slots and
 provider metadata are allocated for the configured window and checked against
@@ -126,23 +126,23 @@ The transitional v5 `incremental-map-window-one` profile has been removed after 
 qualification. Use `incremental-map` with PG `provider_window_tasks=1` and gateway
 `--max-held-tasks 1 --max-active-requests 1`. Old profile/CLI names are rejected, not silently
 remapped; synchronous Map v5 remains supported. See the
-[retirement checks](../../../experiments/results/scheduling/bridge_retirement_20260908/README.md).
+[retirement checks](../../../results/scheduling/bridge_retirement_20260908/README.md).
 
 The `codex/semfilter-and` branch adds up to two top-level Filter predicates joined by AND through one
 bounded multi-session gateway. It reuses the existing scans, row pump and synchronous provider port.
-[Verification](../../../experiments/results/postgresql/semfilter_and_20260907/README.md) passes Linux 138
+[Verification](../../../results/postgresql/semfilter_and_20260907/README.md) passes Linux 138
 contracts, strict PG18.3 compilation, regression 1/1 and all eight TAP files (1808 checks). It includes
 independent volatile-input evaluation, native function permissions, RLS, snapshots and cancellation.
 This two-Filter implementation is included in main. The development branch additionally verifies
-[one Filter→one generated Map](../../../experiments/results/postgresql/filter_map_binding_20260907/README.md) with 1910 PG TAP checks.
+[one Filter→one generated Map](../../../results/postgresql/filter_map_binding_20260907/README.md) with 1910 PG TAP checks.
 Asynchronous Filter and composed execution remain pending.
 
-The [2026-09-06 integration checks](../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
+The [2026-09-06 integration checks](../../../results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (1758 checks), and 247 related
 Python/C message tests. Nine real-model requests verify separate Filter v3/v4 and Map v5 SELECT/INSERT
 paths, including NULL controls, results, usage and writeback. The supported shapes below remain unchanged.
 
-The [opt-in choice generation profile](../../../experiments/plans/completed/postgresql_choice_profile_engineering.md)
+The [opt-in choice generation profile](../../../docs/plans/completed/postgresql_choice_profile_engineering.md)
 now has PostgreSQL plan support (`00cc6bbf`). Adding the fourth option
 `"generation_profile":"semloom.generation.choice.tristate.v1"` saves a complete ordered profile in schema 3.
 Ordinary EXPLAIN displays its ID, version, choices, digest and unqualified status; prepared/generic plans retain
@@ -153,18 +153,18 @@ It never silently uses v3, and the original result parser remains strict.
 The bounded C encoder in `src/generation_profile.{h,c}` is now linked into PGXS. Its canonical bytes match
 the Python value and an independently hashed vector; the complete bytes enter the new semantic digest.
 Old calibration artifacts cannot match it. This planning support does not qualify model quality or resume calibration.
-The [PG connection qualification](../../../experiments/results/postgresql/choice_pg_wire_20260902/README.md)
+The [PG connection qualification](../../../results/postgresql/choice_pg_wire_20260902/README.md)
 at `80bb7fc5` passes 83/83 Python contracts, PG18.3 warning-free build, regression 1/1 and TAP 748/748.
 The external config must explicitly opt in with `"choice_format":"vllm_structured_outputs"` before v4 can
 send a constrained HTTP request. Missing support or HTTP rejection never triggers an unconstrained retry.
 These fixture results prove the supported PostgreSQL choice SELECT execution, not a real endpoint's constrained
-decoding or RSS/FD growth limits. The later [controlled resource run](../../../experiments/results/postgresql/choice_resources_20260902/README.md)
+decoding or RSS/FD growth limits. The later [controlled resource run](../../../results/postgresql/choice_resources_20260902/README.md)
 passes at the declared fixture scales, including cancellation and blocked DNS recovery. The subsequent
-[real-service check](../../../experiments/results/postgresql/choice_service_20260902/README.md) completes
+[real-service check](../../../results/postgresql/choice_service_20260902/README.md) completes
 14 old/choice requests and two NULL controls on PG18.3 with Qwen2.5-1.5B/vLLM 0.25.1. All reported usage and
 SQL dispositions match; 15/100 cumulative attempts include one failed token-count audit before its correction.
 This completes choice engineering qualification in the current integrated code, not model quality or calibration.
-The later [Filter INSERT qualification](../../../experiments/results/postgresql/semfilter_insert_20260902/README.md)
+The later [Filter INSERT qualification](../../../results/postgresql/semfilter_insert_20260902/README.md)
 at `39007150` passes PG18.3 regression 1/1, TAP 919/919 and 83/83 Python checks. The planner now handles a
 pulled-up INSERT source while keeping the ordinary PostgreSQL write node. New tests cover recording/exact/choice
 write results, rollback, savepoint recovery, target constraints, permissions and cancellation using fixtures.
@@ -175,35 +175,35 @@ core may be developed with fixtures before Filter qualification, but its PG inte
 
 The integrated message slice at `6903cf46` adds only pure Map message compilation:
 verbatim system/user text, strict UTF-8 and byte limits, with shared JSON encoding and unchanged Filter messages.
-[This slice's checks](../../../experiments/results/postgresql/semmap_messages_20260903/README.md) pass 107/107 locally
+[This slice's checks](../../../results/postgresql/semmap_messages_20260903/README.md) pass 107/107 locally
 and on the server, plus a fresh PG18.3 `-Werror` build, regression 1/1 and TAP 1022/1022 for existing paths.
-The subsequent [values and Python v5 slice](../../../experiments/results/postgresql/semmap_values_20260903/README.md)
+The subsequent [values and Python v5 slice](../../../results/postgresql/semmap_values_20260903/README.md)
 at `425d2b1c` adds C/Python Map identity/completion values and a strict v5 gateway using the shared session and HTTP adapter.
 Its 135/135 local/server checks and fresh PG18.3 build/regression/TAP checks pass for existing SQL paths.
-The [JSON-depth follow-up](../../../experiments/results/postgresql/semmap_values_20260903/README.md#json-depth-repair)
+The [JSON-depth follow-up](../../../results/postgresql/semmap_values_20260903/README.md#json-depth-repair)
 at `a1bbdd30` fixes gateway input isolation with 136/136 local checks; C/SQL are unchanged and PG was not rerun.
 These slices and their evidence are included in local main through `b0400944`;
-the [integration recheck](../../../experiments/results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11 without a new server run.
+the [integration recheck](../../../results/postgresql/semmap_values_20260903/README.md#main-integration) passes 136/136 and C11 without a new server run.
 The integrated Map PG slices add the SQL 0.2.0 `map(text,text,jsonb)` marker and schema 4,
 including fresh installation/upgrade, copied plans, fixed argument validation and native EXECUTE permission checks.
-See the [PG plan checks](../../../experiments/results/postgresql/semmap_pg_plan_20260903/README.md), bound to `2205ccbb`:
+See the [PG plan checks](../../../results/postgresql/semmap_pg_plan_20260903/README.md), bound to `2205ccbb`:
 PG18.3 warning-free build, regression 1/1, TAP 1260/1260 and 136/136 local/server Python checks pass.
-The [wrapper follow-up](../../../experiments/results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)
+The [wrapper follow-up](../../../results/postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check)
 at `676615fa` closes a custom-plan source-check bypass: Map must appear directly in the supported query output,
 not become visible only after inlining a whole-Map SQL wrapper. Ordinary input functions still inline.
 The follow-up reruns PG18.3 regression 1/1, TAP 1283/1283 and 136/136 local/server Python checks.
-The subsequent [C v5/PG golden qualification](../../../experiments/results/postgresql/semmap_pg_wire_20260903/README.md)
+The subsequent [C v5/PG golden qualification](../../../results/postgresql/semmap_pg_wire_20260903/README.md)
 at `5031bb50` connects generated Map to the shared runtime and gateway. Source and EXECUTE checks stay before
 child/provider initialization; plain EXPLAIN selects `uds-golden` without opening a session. Input/output limits
 and absent stop come from the plan. Constant inputs and ordinary columns equal to Map inputs retain distinct
 output positions. Raw text is preserved, including empty text; SQL NULL creates no task. Invalid metadata is
 `08P01`, oversized output is `54000`, and a valid non-stop completion is `22000` without truncation or retry.
 PG18.3 warning-free build, regression 1/1, TAP 1741/1741, local/server 137/137 and 8/8 C11 checks pass.
-The later [merge review](../../../experiments/results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)
+The later [merge review](../../../results/postgresql/semmap_pg_wire_20260903/README.md#merge-review)
 at `f46fe936` centralizes version/phase error validation and removes a C-only combined-usage restriction while
 preserving separate runtime counter-overflow checks. PG18.3 regression 1/1, TAP 1758/1758, local/server
 139/139 and C11 8/8 pass. These slices are included in main. The later
-[real-model/resource check](../../../experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+[real-model/resource check](../../../results/postgresql/semmap_real_model_resource_20260904/README.md)
 at `main@b19486a1` completes 25/32 fixed Qwen2.5-7B requests through PG18.3: SELECT, INSERT, NULL zero-call,
 empty text, cancellation, model rejection, and recovery pass. Its fixture stress functionally completes
 3×2,000 large rows but fails at least one fixed RSS/FD condition; the specific exceeded condition was not persisted.
@@ -218,7 +218,7 @@ may be transferred into the company system. Planner/executor adaptation and prov
 tasks, neither completed. The current tristate profile does not require all future filters to expose UNKNOWN;
 binary semantics and legacy error handling need explicit identities and tests. Concrete reference lookups,
 adoption decisions and preservation of this extension's shared layers belong to the
-[engineering-reference and transfer plan](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+[engineering-reference and transfer plan](../../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
 That comparison covers SQL registration, choice of PG integration, operator semantics, task construction,
 tuple/result binding, lifecycle and external execution, not just multiple operators or gateway concurrency.
 The current thin scan, PG-private runtime and neutral provider interface remain the implementation base.
@@ -227,7 +227,7 @@ The current thin scan, PG-private runtime and neutral provider interface remain 
 
 The extension source is grouped by its existing responsibilities. SQL definitions and TAP assertions keep
 their original locations and behavior. The layout was integrated into local main from `codex/pg-module-layout`; its local
-validation is recorded in the [layout verification](../../../experiments/results/postgresql/pg_module_layout_20260907/README.md).
+validation is recorded in the [layout verification](../../../results/postgresql/pg_module_layout_20260907/README.md).
 Commit `20b22a55` also passes Linux 112+4 contracts, strict PG18.3 compilation, regression 1/1 and all
 seven TAP files (1758 checks). The integration was a fast-forward to `103e2715`; no real model was used in this recheck.
 
@@ -244,7 +244,7 @@ seven TAP files (1758 checks). The integration was a fast-forward to `103e2715`;
 `sem_map_path.c` is the former `sem_path.c`. Map occurrence and source validation now live in
 `planner/sem_map_call.{c,h}`; extension registration and Map path construction consume that interface.
 The extraction preserves all 15 affected function bodies, apart from the collector name, and passes
-[local and PG18.3 checks](../../../experiments/results/postgresql/semantic_call_extraction_20260907/README.md).
+[local and PG18.3 checks](../../../results/postgresql/semantic_call_extraction_20260907/README.md).
 Shared occurrence records and tuple mapping now live in `semantic_call` and `semantic_binding`.
 The pump retains legacy adapters and consumes the new `semantic_carrier` for Filter→Map.
 `sem_map_binding` retains raw inputs and ordinary projections, while the Map node evaluates its native
@@ -271,7 +271,7 @@ have been added at the old locations.
 The integrated function-identity slice requires each resolved marker to belong to `semloom_pg`;
 matching the schema, name and argument types alone is insufficient. Other-schema functions, overloads,
 non-members and members of another extension remain ordinary PostgreSQL functions. Its implementation and
-evidence are included in main. See the [identity verification](../../../experiments/results/postgresql/function_identity_20260902/README.md).
+evidence are included in main. See the [identity verification](../../../results/postgresql/function_identity_20260902/README.md).
 
 Only for `ALTER EXTENSION … ADD/DROP FUNCTION` that leaves the function definition unchanged, use this
 temporary procedure: pause related queries and finish old transactions and cursors; commit the membership
@@ -491,7 +491,7 @@ and a verified SHA-256 manifest. Its deterministic calibration fixture proves bu
 not empirical accuracy for a real model, workload distribution, service, or hardware. A real matched artifact must
 still be collected and held-out qualified before implementing a second physical path.
 
-The [first real collection on 2026-09-01](../../../experiments/results/postgresql/semfilter_reference_calibration_20260901/README.md)
+The [first real collection on 2026-09-01](../../../results/postgresql/semfilter_reference_calibration_20260901/README.md)
 completed 64 warm-up inputs, then stopped on the 23rd response of the first training query: the fixed model returned
 an invalid tristate value and PostgreSQL 18.3 raised `22000`. No complete training observation, held-out measurement,
 fit, or artifact resulted. Production code and the predeclared 20% error limit were unchanged. The next collection
@@ -505,7 +505,7 @@ At that diagnostic point, the constrained-decoding candidate was not part of pro
 The later opt-in choice implementation described above uses wire v4 while preserving the strict C parser;
 it does not retroactively qualify the diagnostic models or resume calibration.
 
-The [independent qualification slice](../../../experiments/results/postgresql/semfilter_qualification_20260901/README.md)
+The [independent qualification slice](../../../results/postgresql/semfilter_qualification_20260901/README.md)
 at `6c111b24` passes PostgreSQL 18.3 `-Werror`, regression 1/1, TAP 437/437 and 59/59 Python contracts.
 Ordinary multicolumn statistics correct the fixture's input estimate from 8 to 64 (actual 64). Native choice decoding
 improves format acceptance from 27/30 to 30/30, but both profiles match only 12/27 predeclared semantic expectations.
@@ -515,7 +515,7 @@ Final numerical hardening `44f6632c` additionally rejects chained near dependenc
 It independently passes PostgreSQL 18.3 `-Werror`, regression 1/1, TAP 437/437 and 60/60 Python contracts
 (10 calibration tests). It does not rerun the model or change the failed semantic qualification.
 
-The subsequent [single-prompt comparison](../../../experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
+The subsequent [single-prompt comparison](../../../results/postgresql/semfilter_prompt_qualification_20260901/README.md)
 verifies actual HTTP messages against the service and model chat-template token IDs. The new prompt passes only
 5/9 old and 5/9 new independent cases on 1.5B, and 7/9 old and 6/9 new cases on matched 7B, each repeated three
 times. No configuration qualifies; production SQL/plan/wire and the strict parser remain unchanged. Full collection

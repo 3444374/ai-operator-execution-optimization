@@ -5,8 +5,8 @@
 Charts generated from:
 
 ```text
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
-motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
+results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
+results/motivation/gpu/pgai_integrated_key_rerun_20260714.md
 ```
 
 Script:

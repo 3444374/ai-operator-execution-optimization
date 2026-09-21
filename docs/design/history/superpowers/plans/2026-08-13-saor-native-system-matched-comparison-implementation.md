@@ -349,8 +349,8 @@ git commit -m "Add balanced SAOR system matrix orchestration"
 - Modify: `code/README.md`
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `learning/experiment_walkthrough.md`
-- Modify: `experiments/plans/state_aware_work_unit_evaluation_20260808.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `docs/plans/state_aware_work_unit_evaluation_20260808.md`
+- Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 

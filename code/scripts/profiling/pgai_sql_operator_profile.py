@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup-runs", type=int, default=0)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--experiment-id", default="pgai_sql_manual")
-    parser.add_argument("--output", default="feasibility/results/pgai_sql_profile.csv")
+    parser.add_argument("--output", default="results/feasibility/pgai_sql_profile.csv")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 

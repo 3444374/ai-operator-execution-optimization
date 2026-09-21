@@ -70,7 +70,7 @@ wget -c --tries=10 --timeout=30 \
 
 **降级为文本轻对照**（2026-07-31 校正，现已归档）。MS MARCO 仍是文本，token ID
 紧凑（约 1KB/行），不能代表图像 host-data-path 条件。历史设计见
-`experiments/plans/archive/msmarco_embedding_workload_20260731.md`。
+`docs/plans/archive/msmarco_embedding_workload_20260731.md`。
 
 AutoDL 上 fetch（HF 需 turbo + 禁 Xet）：
 
@@ -93,8 +93,8 @@ preflight 和 `df -h` 的现场结果决定是否执行。
 
 **图像 workload**（2026-07-31 锁定，当前静态范围已完成）。图像包含较重的 JPEG
 decode/resize 与 pixel tensor，使 DB/CPU/Ray/H2D/GPU 阶段可以分别测量，但不预设哪一段一定是
-瓶颈。完成合同见 `experiments/plans/completed/image_clip_workload_lock_20260731.md`；当前动态工作见
-`experiments/plans/state_aware_work_unit_evaluation_20260808.md`。
+瓶颈。完成合同见 `docs/plans/completed/image_clip_workload_lock_20260731.md`；当前动态工作见
+`docs/plans/state_aware_work_unit_evaluation_20260808.md`。
 
 图像 AI_EMBED workload，用于异构资源调度（CPU decode vs GPU embed）与多模态泛化验证。
 

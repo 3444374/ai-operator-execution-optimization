@@ -30,12 +30,12 @@ def parse_args():
     parser.add_argument("--num-cpus", type=int, default=None)
     parser.add_argument(
         "--write-dir",
-        default="motivation/results/fake_cpu/fake_embed_outputs",
+        default="results/motivation/fake_cpu/fake_embed_outputs",
         help="Directory for per-run Arrow IPC output files. Use an empty string to skip writes.",
     )
     parser.add_argument(
         "--output",
-        default="motivation/results/fake_cpu/fake_embed_pipeline.csv",
+        default="results/motivation/fake_cpu/fake_embed_pipeline.csv",
     )
     return parser.parse_args()
 

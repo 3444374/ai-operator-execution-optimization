@@ -36,9 +36,9 @@
 - `code/tests/planning/test_packing.py`: canonical membership and packing invariants.
 - `code/tests/planning/test_organizers.py`: Arrow/Daft shared-policy contract.
 - `code/scripts/README.md`, `code/README.md`, `learning/experiment_walkthrough.md`: verified behavior and command documentation.
-- `experiments/results/row_cap_aware_packing_gate_20260726/`: real correctness gate.
-- `experiments/results/row_cap_aware_packing_512_20260726/`: screening and repeated candidate comparison.
-- `experiments/results/row_cap_aware_packing_1024_20260726/`: held-out confirmation only when a 512-row candidate survives.
+- `results/data_organization/row_cap_aware_packing_gate_20260726/`: real correctness gate.
+- `results/data_organization/row_cap_aware_packing_512_20260726/`: screening and repeated candidate comparison.
+- `results/data_organization/row_cap_aware_packing_1024_20260726/`: held-out confirmation only when a 512-row candidate survives.
 
 ---
 
@@ -516,10 +516,10 @@ Expected: 12/12 contract checks pass; no fake performance result is recorded.
 ### Task 6: Real 64-Row Gate
 
 **Files:**
-- Create: `experiments/results/row_cap_aware_packing_gate_20260726/scenario_config.json`
+- Create: `results/data_organization/row_cap_aware_packing_gate_20260726/scenario_config.json`
 - Create: generated gate CSV/traces/logs/manifest under the same directory
-- Create: `experiments/results/row_cap_aware_packing_gate_20260726/README.md`
-- Modify: `experiments/results/README.md`
+- Create: `results/data_organization/row_cap_aware_packing_gate_20260726/README.md`
+- Modify: `results/README.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 
@@ -619,7 +619,7 @@ Document setup, design, audit, raw data, fact/inference boundaries, project
 meaning, and next step. State that 64 rows are correctness evidence only.
 
 ```powershell
-git add experiments/results/row_cap_aware_packing_gate_20260726 experiments/results/README.md PROJECT_INDEX.md PROJECT_LOG.md
+git add results/row_cap_aware_packing_gate_20260726 results/README.md PROJECT_INDEX.md PROJECT_LOG.md
 git commit -m "results: validate row-cap-aware packing gate"
 ```
 
@@ -628,10 +628,10 @@ git commit -m "results: validate row-cap-aware packing gate"
 ### Task 7: 512 Screening, Repeats, and 1024 Held-Out Confirmation
 
 **Files:**
-- Create: `experiments/results/row_cap_aware_packing_512_20260726/`
+- Create: `results/data_organization/row_cap_aware_packing_512_20260726/`
 - Create conditionally after a 512-row winner:
-  `experiments/results/row_cap_aware_packing_1024_20260726/`
-- Modify: `experiments/results/README.md`
+  `results/data_organization/row_cap_aware_packing_1024_20260726/`
+- Modify: `results/README.md`
 - Modify: `overview/current_direction_and_plan.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_INDEX.md`

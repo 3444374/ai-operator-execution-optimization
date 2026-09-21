@@ -9,23 +9,23 @@ DB-AIEL（Database-Aware AI Execution Layer）是架构层名称，不作为代�
 原生语义算子系统，PostgreSQL 拥有 SQL、关系 child plan、snapshot、权限、语义计划和 query
 lifecycle；数据库管理的有界数据流把规范化任务交给可替换的 Daft/Ray/vLLM/CLIP backend 执行。
 
-[当前 M1 研究](experiments/plans/data_organization_batching.md#m1-throughput-platform)调整为有效吞吐平台附近的供给与资源代价；
-[前轮真实检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)已完成：M1未取得平台候选，M2完成五种信息条件的实验层对照，尚未支持稳定收益。
-[完整容量复查](experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询、16,400次请求；原清理告警保留，随后资源核对通过，工程改动已合入main。原故障未复现、根因待确定，M1尚未选点。
+[当前 M1 研究](docs/plans/data_organization_batching.md#m1-throughput-platform)调整为有效吞吐平台附近的供给与资源代价；
+[前轮真实检查](results/postgresql/m1_m2_f_real_20260920/README.md)已完成：M1未取得平台候选，M2完成五种信息条件的实验层对照，尚未支持稳定收益。
+[完整容量复查](results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询、16,400次请求；原清理告警保留，随后资源核对通过，工程改动已合入main。原故障未复现、根因待确定，M1尚未选点。
 
-[图像工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)已完成显式 `bytea→real[]`
+[图像工作包 F](results/postgresql/image_stages_f_20260920/README.md)已完成显式 `bytea→real[]`
 接入、方法行结果与阶段资源的工程检查；后续151次真实CLIP前向通过数值与指定生命周期检查，GPU计算中故障与匹配性能仍待验证。
 
 近期重点是检验数据执行的设计理由：控制提交是否缩短完整查询，有限候选是否比获取全局元数据更划算，
 以及准备深度和消费次序如何影响留存。随后按观察结果选择阶段执行或多查询竞争实验。
-[当前研究计划](experiments/plans/data_organization_batching.md#design-hypotheses)把已有证据、数学条件、强对照和否定设计的结果对应起来，
-不预设有限窗口或token控制一定更好；[最新验证](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)保留8,248次文本请求、151次图像前向及受控准备失败记录。
+[当前研究计划](docs/plans/data_organization_batching.md#design-hypotheses)把已有证据、数学条件、强对照和否定设计的结果对应起来，
+不预设有限窗口或token控制一定更好；[最新验证](results/postgresql/m1_m2_f_real_20260920/README.md)保留8,248次文本请求、151次图像前向及受控准备失败记录。
 
-[数据库源与公共查询入口](experiments/results/postgresql/database_queries_20260910/README.md)已完成PG、
+[数据库源与公共查询入口](results/postgresql/database_queries_20260910/README.md)已完成PG、
 direct、原生Ray/LOTUS的受控查询检查，并准备2000条真实Movie输入；原生Ray/LOTUS真实模型质量与匹配性能仍待验证。
 
-[Map总字节留存](experiments/results/postgresql/pg_window_budget_20260910/README.md)与
-[有限窗口token工作量组织](experiments/results/postgresql/map_organization_20260910/README.md)已完成独立真实诊断，
+[Map总字节留存](results/postgresql/pg_window_budget_20260910/README.md)与
+[有限窗口token工作量组织](results/postgresql/map_organization_20260910/README.md)已完成独立真实诊断，
 分别288次和408次请求通过。固定行数与固定工作量的实际提交顺序相同，长度排序改变顺序且预测一致；
 这些短查询说明功能和资源行为，稳态性能仍需扩大验证。模型、测试数据库及临时权限已清理。
 
@@ -48,40 +48,40 @@ main已按 planner、semantics、executor 和 provider 整理现有实现；本�
 固定 endpoint、model identity、timeout 与认证只来自 gateway 进程外配置。reference path 已独立
 区分 semantic-input rows、NULL rate、output selectivity、model calls、prompt/output usage、
 model role 和 AI-work cost，并在执行时分列实际 usage；该工程启发式还没有校准为性能模型。
-最新[两算子完整验证](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
+最新[两算子完整验证](results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)
 覆盖全部 PostgreSQL18.3 回归与 TAP；Filter v3/v4 和生成型 Map v5 的真实 SELECT/INSERT、
 NULL 零调用、结果与写回均通过。main中的两个算子各自同步执行；已推送的`codex/semfilter-and@66887463`增加两个Filter AND与
 有界gateway会话，已合并main；这一历史同步验证不覆盖后文已完成的受限 Map 多在途接入。
-后续开发已完成[Map调用分析提取](experiments/results/postgresql/semantic_call_extraction_20260907/README.md)，
-保持现有行为；当前开发分支的[共同调用与列绑定](experiments/results/postgresql/semantic_binding_20260907/README.md)
-已完成基础验证；[一个Filter→一个生成Map](experiments/results/postgresql/filter_map_binding_20260907/README.md)也已在开发分支通过PG18.3全部1910项TAP检查。
-后续[真实模型组合验证](experiments/results/postgresql/filter_map_real_20260908/README.md)已完成12次请求，覆盖查询与写入。
-[单流增量执行核心](experiments/results/scheduling/incremental_session_20260908/README.md)已完成受控实现；复用已有提交与路由策略，
+后续开发已完成[Map调用分析提取](results/postgresql/semantic_call_extraction_20260907/README.md)，
+保持现有行为；当前开发分支的[共同调用与列绑定](results/postgresql/semantic_binding_20260907/README.md)
+已完成基础验证；[一个Filter→一个生成Map](results/postgresql/filter_map_binding_20260907/README.md)也已在开发分支通过PG18.3全部1910项TAP检查。
+后续[真实模型组合验证](results/postgresql/filter_map_real_20260908/README.md)已完成12次请求，覆盖查询与写入。
+[单流增量执行核心](results/scheduling/incremental_session_20260908/README.md)已完成受控实现；复用已有提交与路由策略，
 [方法续体接口](code/src/semantic_methods/README.md)为后续多阶段算法提供逐行接入方式；
-[组织窗口已接入](experiments/results/scheduling/organized_window_20260908/README.md)，批次展开为各自计费的独立请求；
-为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](experiments/results/scheduling/incremental_real_20260908/README.md)已通过；生成Map已完成[PG有界多在途接入](experiments/results/postgresql/async_window_20260908/README.md)，
-同一PG查询的两个模型请求已验证可同时在途；多流执行见[多Job设计](experiments/plans/semloom_multisession_design.md)。普通Filter与Map现可通过[查询级Job接入](experiments/plans/postgresql_query_job_design.md)共享预算；[生命周期加固](experiments/results/scheduling/query_lifecycle_20260909/README.md)已验证帧间空闲、连接名额与失败回滚。Filter多在途、更广组合和单请求多成员仍待实现。
-[总体设计](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
+[组织窗口已接入](results/scheduling/organized_window_20260908/README.md)，批次展开为各自计费的独立请求；
+为后续数据组织提供同一执行上下文；[有界异步HTTP真实验证](results/scheduling/incremental_real_20260908/README.md)已通过；生成Map已完成[PG有界多在途接入](results/postgresql/async_window_20260908/README.md)，
+同一PG查询的两个模型请求已验证可同时在途；多流执行见[多Job设计](docs/plans/semloom_multisession_design.md)。普通Filter与Map现可通过[查询级Job接入](docs/plans/postgresql_query_job_design.md)共享预算；[生命周期加固](results/scheduling/query_lifecycle_20260909/README.md)已验证帧间空闲、连接名额与失败回滚。Filter多在途、更广组合和单请求多成员仍待实现。
+[总体设计](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)现按长期能力组织：
 PG保有SQL与关系执行，算子方法产生已确定任务，SemLoom负责有界组织和多作业调度；
-[实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+[实施安排](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
 分别推进数据库调用/绑定、增量Core及共同资源/观测，再验证实际桥接。
-近期实现分别由[PG调用与绑定规格](experiments/plans/postgresql_call_binding_design.md)和
-[单流增量执行规格](experiments/plans/semloom_incremental_session_design.md)描述具体对象、时序与验收；
+近期实现分别由[PG调用与绑定规格](docs/plans/postgresql_call_binding_design.md)和
+[单流增量执行规格](docs/plans/semloom_incremental_session_design.md)描述具体对象、时序与验收；
 已实现内容与待完成项分别在设计状态和[实现记录](code/INFRA_STATUS.md)中说明。
-[可选 choice 生成配置](experiments/plans/completed/postgresql_choice_profile_engineering.md)的工程验证已完成；
-已有[生成型Map](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与
-[受限组合](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)
+[可选 choice 生成配置](docs/plans/completed/postgresql_choice_profile_engineering.md)的工程验证已完成；
+已有[生成型Map](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#real-semmap-work-package)与
+[受限组合](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#composable-operators-work-package)
 作为后续接口演进的同步参照；
-生成型 Map 的输入输出与验收要求已确定，详见[实现说明](experiments/plans/postgresql_semmap_generation_contract.md)，
+生成型 Map 的输入输出与验收要求已确定，详见[实现说明](docs/plans/postgresql_semmap_generation_contract.md)，
 消息编译、C/Python 值表示、PG plan/权限和 C client→wire v5→gateway 接线已纳入 main，
-三参 Map 已能通过 PostgreSQL＋golden 返回文本，详见[执行与复核记录](experiments/results/postgresql/semmap_pg_wire_20260903/README.md)。
-后续[真实模型与资源检查](experiments/results/postgresql/semmap_real_model_resource_20260904/README.md)
+三参 Map 已能通过 PostgreSQL＋golden 返回文本，详见[执行与复核记录](results/postgresql/semmap_pg_wire_20260903/README.md)。
+后续[真实模型与资源检查](results/postgresql/semmap_real_model_resource_20260904/README.md)
 以持久账本完成 25/32 个 Qwen2.5-7B 请求：SELECT、INSERT、NULL 零调用、取消、模型拒绝和恢复通过。
 同轮 3×2,000 个大输入/大输出 fixture task 功能完成，但至少一项固定 RSS/FD 条件失败，后置 fault
 子项未运行；因此资源资格和四 D 整体仍待完成。真实或 golden completion 都不代表模型质量或性能。
 choice SELECT 与受限单表 Filter INSERT 已接通 PG plan、公共 runtime 和 gateway v4，并完成合成测试；
-当前代码已完成[受控 fixture 资源检查](experiments/results/postgresql/choice_resources_20260902/README.md)；
-后续[真实服务检查](experiments/results/postgresql/choice_service_20260902/README.md)也已通过，但不表示模型判断质量合格。
+当前代码已完成[受控 fixture 资源检查](results/postgresql/choice_resources_20260902/README.md)；
+后续[真实服务检查](results/postgresql/choice_service_20260902/README.md)也已通过，但不表示模型判断质量合格。
 生成型 Map 的资源补证、多算子组合与 Filter → Map 仍待完成。SemLoom 可以先用公开任务与可控测试验证增量执行、数据组织和调度，不等待 Filter
 分类质量或第二路径；接入 PG 后仍须验证本路径的语义、关联、取消和资源使用，才能做数据库端到端比较。
 Filter 的真实校准仍暂停，其质量、成本与 LOTUS/Cortex-like 第二路径继续单独推进，不降低既有要求。
@@ -93,7 +93,7 @@ carrier 检查随实际路径进行，只有可复现的限制才触发最小 co
 外部执行，选择能服务本项目的工程经验；保持计划内语义、公共执行层和 PG 外的 SemLoom 分工。
 未来可把自有算子语义、处理/优化方法和 SemLoom 执行能力移植到公司系统。算子方法由目标
 planner/executor 承接，执行能力接入同一个 SemLoom 核心，两者分别验证。具体参考对象与取舍见
-[工程参照与成果移植计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+[工程参照与成果移植计划](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
 Filter 的共同目的为按自然语言条件筛行；二值或三值输出由具体任务定义，当前三值配置不限制未来
 所有 Filter。内网代码复用与外部发布/部署分别确认权限，公司移植不作为公开主实现的私有前置依赖。
 
@@ -119,9 +119,9 @@ SQL semantic intent
 | 核对系统名和领域术语 | [`CONTEXT.md`](CONTEXT.md) |
 | 理解 Sema/Cortex/LOTUS/IMLane/Kalypso 等机制与可迁移范围 | [`docs/research/knowledge_hub.md`](docs/research/knowledge_hub.md) |
 | 核对当前源码真实完成度 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) |
-| 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 继续 PostgreSQL AI 语义算子实现（CustomScan、公共层、解耦、core patch 条件与工作包） | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
-| 回查已完成的 choice 配置（字段、版本、预算与验收） | [`completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) |
+| 判断某项机制是否已实现、验证或淘汰 | [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 继续 PostgreSQL AI 语义算子实现（CustomScan、公共层、解耦、core patch 条件与工作包） | [`docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 回查已完成的 choice 配置（字段、版本、预算与验收） | [`completed/postgresql_choice_profile_engineering.md`](docs/plans/completed/postgresql_choice_profile_engineering.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
 | 准备开题报告或答辩 | [`docs/thesis/README.md`](docs/thesis/README.md) |
 
@@ -171,7 +171,7 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 
 从根到任务目录逐级加载适用的 `AGENTS.md`，首次进入目录或查找入口时再读相应 README；已读且
 未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、`docs/design/history/`、
-`docs/thesis/archive/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
+`docs/thesis/archive/` 和 `docs/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
 部署 runbook。
 
 ## 当前证据能支持什么
@@ -188,7 +188,7 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 - 开题报告和图件已在本地完成多轮内容、引用和可读性审计；云文档/Wiki 不作为权威源。
 
 精确数字、运行身份和“能/不能声称”的范围只从结果目录 README、CSV/JSON/manifest 和
-[`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
+[`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)
 引用。
 
 ## 运行与维护

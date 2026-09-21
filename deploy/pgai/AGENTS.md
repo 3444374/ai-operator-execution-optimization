@@ -9,4 +9,4 @@
 - 模型下载前说明网络和磁盘影响，并遵守根 §5 的环境与模型运行要求。
 - 新建环境或改变运行行为后，核对容器 health、`CREATE EXTENSION ai`、`vector`，以及 README 指定模型
   经 `smoke_ai_embed.sql` 生成 embedding 并写入向量列；局部说明修订无需启动服务。
-- 验证结果放 `feasibility/results/`；系统画像和方法结论进入各自目录。
+- 验证结果放 `results/feasibility/`；系统画像和方法结论进入各自目录。

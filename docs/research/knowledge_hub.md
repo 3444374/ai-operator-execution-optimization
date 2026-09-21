@@ -2,9 +2,9 @@
 
 文档角色：本文汇总论文机制、已有系统、可迁移策略和仍需研究的问题，不维护源码完成度、当前工作包
 或实验执行顺序。PostgreSQL 工程计划见
-[`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
+[`../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
 实现事实见 [`../code/INFRA_STATUS.md`](../../code/INFRA_STATUS.md)，证据强度见
-[`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
+[`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
 生成日期：2026-07-16（最近更新：2026-09-14，补充数据执行迁移条件与候选判断；两项研究内容不变）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
@@ -92,7 +92,7 @@ prompt 是另一种语义算法，不能当作普通组织操作。实际 token/
 
 ### 1.4 Chunked Prefill 与上游策略的安全边界
 
-**当前依据**：[vLLM chunked prefill文档](https://docs.vllm.ai/en/latest/configuration/optimization/#chunked-prefill)（2026-09-14核对）与[设计假设计划](../../experiments/plans/data_organization_batching.md#design-hypotheses)；旧§2.5.7保留历史讨论。
+**当前依据**：[vLLM chunked prefill文档](https://docs.vllm.ai/en/latest/configuration/optimization/#chunked-prefill)（2026-09-14核对）与[设计假设计划](../../docs/plans/data_organization_batching.md#design-hypotheses)；旧§2.5.7保留历史讨论。
 
 **核心区分**（来源：vLLM官方文档；关于本项目权限的要求来自既有语义合同）：
 
@@ -114,7 +114,7 @@ prompt 是另一种语义算法，不能当作普通组织操作。实际 token/
 
 ### 1.5 分组策略设计空间：Length-Align vs Bin-Packing
 
-2026-09-14校正：这是选择完整行次序的两个候选，不是已证明的优劣关系；[当前对照](../../experiments/plans/data_organization_batching.md#design-hypotheses)取代旧“主推Bin-Packing”建议。
+2026-09-14校正：这是选择完整行次序的两个候选，不是已证明的优劣关系；[当前对照](../../docs/plans/data_organization_batching.md#design-hypotheses)取代旧“主推Bin-Packing”建议。
 
 | 策略 | 实际动作 | 必须验证的条件 |
 |---|---|---|
@@ -422,7 +422,7 @@ README/安装脚本/CMake已读，尚未构建。脚本中的Arrow16.1.0rc1、Py
 ### 4.5 数据执行的可迁移条件与候选判断（2026-09-14）
 
 本节为论文事实与本项目推断的横向索引，不是新的系统实现或运行计划。
-[设计假设与证据链](../../experiments/plans/data_organization_batching.md#design-hypotheses)统一维护实验反事实、最小模型和先后次序。
+[设计假设与证据链](../../docs/plans/data_organization_batching.md#design-hypotheses)统一维护实验反事实、最小模型和先后次序。
 有限物化不意味着禁止全局轻量信息；接入PG、增加Job或有界异步执行本身不构成研究新颖性。
 
 每行按“看得到什么、能控制什么、优化什么、依赖什么条件、如何用于本课题”记录；末列均为迁移判断。
@@ -832,7 +832,7 @@ weight 变化和 actual work；没有证明时，理论 service bound、DRF shar
 finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向量和 normalized capacity
 未校准前只作 stage mechanism，不冒充 dominant-resource fairness。完整公式与晋级合同见
 `evaluation_metrics_survey_20260731.md` §9.3 和
-`../experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.10–5.2.12。
+`../docs/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.10–5.2.12。
 
 #### 5.7.6.1 Bounded-ready 正结果后的归因审核（2026-08-13）
 
@@ -989,7 +989,7 @@ normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，�
 
 ## 6. 本项目已有实验证据
 
-**预研目录**：`motivation/results/gpu/`
+**预研目录**：`results/motivation/gpu/`
 
 ### 6.1 AI_EMBED 预研（手动 HTTP endpoint，非 vLLM）
 
@@ -1009,7 +1009,7 @@ normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，�
 
 ## 7. 策略设计与实验路线
 
-**主文件**：`experiments/plans/reference/strategy_design_literature_basis.md`（策略口径）、`experiments/plans/reference/strategy_design_implementation_reference.md`（历史实现拆解）
+**主文件**：`docs/plans/reference/strategy_design_literature_basis.md`（策略口径）、`docs/plans/reference/strategy_design_implementation_reference.md`（历史实现拆解）
 
 ### 7.1 理论到系统职责的映射
 
@@ -1052,9 +1052,9 @@ PostgreSQL Sema-like semantic optimizer/executor
 | 要回答的问题 | 唯一入口 |
 |---|---|
 | PostgreSQL 语义算子当前实现到哪里 | [`../code/INFRA_STATUS.md`](../../code/INFRA_STATUS.md) |
-| 当前工程工作包和先后顺序 | [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
-| 文本、图像、调度和代价估计已有何种证据 | [`../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 当前实验缺口和是否允许继续运行 | [`../experiments/plans/experiment_status_and_gaps.md`](../../experiments/plans/experiment_status_and_gaps.md) |
+| 当前工程工作包和先后顺序 | [`../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
+| 文本、图像、调度和代价估计已有何种证据 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 当前实验缺口和是否允许继续运行 | [`../docs/plans/experiment_status_and_gaps.md`](../../docs/plans/experiment_status_and_gaps.md) |
 
 ### 7.3 Baseline 分级
 
@@ -1091,7 +1091,7 @@ PostgreSQL Sema-like semantic optimizer/executor
 | Qwen2.5-VL 等多模态生成是否值得进入正文 | 可选；不阻塞主线 |
 
 候选机制的统一发现流程、来源标签、机制卡、fatal-flaw audit、最小实验和放弃
-条件见 `experiments/plans/reference/literature_driven_pipeline_optimization_guide.md`。
+条件见 `docs/plans/reference/literature_driven_pipeline_optimization_guide.md`。
 
 ---
 
@@ -1137,14 +1137,14 @@ PostgreSQL Sema-like semantic optimizer/executor
 - `docs/thesis/literature/reading_list.md` — 精读/泛读文献清单
 
 **实验计划文件**：
-- `experiments/plans/reference/strategy_design_literature_basis.md` — 策略口径与文献依据
-- `experiments/plans/reference/strategy_design_implementation_reference.md` — 历史实现细节与模块拆解
-- `experiments/plans/archive/research_design_catalog.md` — 方案目录与评分（已归档，设计历史参考）
-- `experiments/plans/baseline_reference.md` — Baseline 矩阵
-- `experiments/plans/data_organization_batching.md` — 研究内容一实验计划
-- `experiments/plans/service_scheduling_backpressure.md` — 研究内容二实验计划
-- `experiments/plans/reference/sink_writeback_coordination.md` — 写回工程参考
-- `experiments/plans/cross_layer_killer_experiment.md` — 耦合验证
+- `docs/plans/reference/strategy_design_literature_basis.md` — 策略口径与文献依据
+- `docs/plans/reference/strategy_design_implementation_reference.md` — 历史实现细节与模块拆解
+- `docs/plans/archive/research_design_catalog.md` — 方案目录与评分（已归档，设计历史参考）
+- `docs/plans/baseline_reference.md` — Baseline 矩阵
+- `docs/plans/data_organization_batching.md` — 研究内容一实验计划
+- `docs/plans/service_scheduling_backpressure.md` — 研究内容二实验计划
+- `docs/plans/reference/sink_writeback_coordination.md` — 写回工程参考
+- `docs/plans/cross_layer_killer_experiment.md` — 耦合验证
 
 ---
 
@@ -1292,7 +1292,7 @@ K_max 动态控制               shuffle_algorithm
 actor pool 分池路由          morsel size（间接）
 ```
 
-**论文中完整的历史优化实验清单**（详见 `experiments/plans/reference/strategy_design_implementation_reference.md` §4.7）：
+**论文中完整的历史优化实验清单**（详见 `docs/plans/reference/strategy_design_implementation_reference.md` §4.7）：
 
 | 优先级 | 实验 | 变量 | 回答的问题 |
 |---|---|---|---|

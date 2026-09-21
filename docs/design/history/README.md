@@ -9,7 +9,7 @@
 - 想了解当前实现完成度：读 `../code/INFRA_STATUS.md`。
 - 想运行脚本：读 `../code/scripts/README.md`。
 - 想核对方法是否已被实验支持：读
-  `../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。
+  `../results/EXPERIMENT_EVIDENCE_REGISTRY.md`。
 - 只有在追溯某项实现为何这样设计时，才进入本目录的 `superpowers/`。
 
 ## 目录

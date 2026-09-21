@@ -99,7 +99,7 @@ def soft_grid(ax: plt.Axes, axis: str = "y") -> None:
 
 
 def figure_serving_capacity() -> None:
-    src = ROOT / "experiments/results/dual_gpu_active_work_saturation_20260729/formal_summary.csv"
+    src = ROOT / "results/scheduling/dual_gpu_active_work_saturation_20260729/formal_summary.csv"
     d = pd.read_csv(src).sort_values("active_work_per_endpoint")
     x = d["active_work_per_endpoint"].to_numpy() / 1024
 
@@ -175,8 +175,8 @@ def _formal_runs(path: Path) -> pd.DataFrame:
 
 def figure_work_organization() -> None:
     paths = {
-        "2 endpoints / large KV pool": ROOT / "experiments/results/rc1_data_organization/dataorg_2ep_1.5b_cacheON_20260731/raw/runs.csv",
-        "4 endpoints / small KV pool": ROOT / "experiments/results/rc1_data_organization/dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv",
+        "2 endpoints / large KV pool": ROOT / "results/data_organization/rc1_data_organization/dataorg_2ep_1.5b_cacheON_20260731/raw/runs.csv",
+        "4 endpoints / small KV pool": ROOT / "results/data_organization/rc1_data_organization/dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv",
     }
     frames = []
     for topology, path in paths.items():
@@ -287,8 +287,8 @@ def figure_work_organization() -> None:
 
 
 def figure_image_matched_resource() -> None:
-    primary = pd.read_csv(ROOT / "experiments/results/image_ai_embed_operator_formal_20260803/summary.csv")
-    confirm = pd.read_csv(ROOT / "experiments/results/image_ai_embed_operator_formal_20260803/summary_schemav12.csv")
+    primary = pd.read_csv(ROOT / "results/image_execution/image_ai_embed_operator_formal_20260803/summary.csv")
+    confirm = pd.read_csv(ROOT / "results/image_execution/image_ai_embed_operator_formal_20260803/summary_schemav12.csv")
     cpu_levels = [8, 16]
     arms = [("ray_data_staged", "Ray Data staged", GREY, "///"), ("project_ray", "Project static", BLUE, "")]
 
@@ -365,7 +365,7 @@ def _load_json_replacing_invalid_utf8(path: Path) -> dict:
 
 
 def figure_cost_decision() -> None:
-    src = ROOT / "experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json"
+    src = ROOT / "results/cost_estimation/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json"
     data = _load_json_replacing_invalid_utf8(src)["estimators"]
     methods = list(data)
     labels = ["Mean", "Analytical", "Lookup", "Ridge", "LightGBM", "Hybrid"]

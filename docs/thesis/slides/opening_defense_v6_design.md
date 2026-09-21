@@ -93,7 +93,7 @@ Database
 - ShareGPT controlled-skew 检查异质 work 是否放大路径差异；
 - correct rows/s 将 cap 语义失败保留在分母中。
 
-正式值必须来自 `experiments/results/opening_database_e2e_text_20260807/raw/formal_summary.csv`。若某一臂 service tokens/s 低于 direct 的 95%，表中标记“未过 feeding 门”，讲稿明确说明该结果不能支持策略性能 claim。
+正式值必须来自 `results/system_e2e/opening_database_e2e_text_20260807/raw/formal_summary.csv`。若某一臂 service tokens/s 低于 direct 的 95%，表中标记“未过 feeding 门”，讲稿明确说明该结果不能支持策略性能 claim。
 
 ## 5. 四图页面合同
 

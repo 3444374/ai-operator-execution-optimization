@@ -955,12 +955,12 @@ git commit -m "feat: run seeded scheduling scenarios"
 ### Task 5: Full Verification and Real Infra Gate
 
 **Files:**
-- Create: `experiments/results/request_lifecycle_gate_20260725/README.md`
-- Create: `experiments/results/request_lifecycle_gate_20260725/manifest.json`
-- Create: `experiments/results/request_lifecycle_gate_20260725/*.csv`
+- Create: `results/scheduling/request_lifecycle_gate_20260725/README.md`
+- Create: `results/scheduling/request_lifecycle_gate_20260725/manifest.json`
+- Create: `results/scheduling/request_lifecycle_gate_20260725/*.csv`
 - Modify: `code/README.md`
-- Modify: `experiments/results/README.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `results/README.md`
+- Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 
@@ -1034,7 +1034,7 @@ The report follows the seven-step experiment explanation structure. State:
 - [ ] **Step 5: Update project records**
 
 Update the listed READMEs, experiment status, index, and log. Because
-`experiments/plans/experiment_status_and_gaps.md` is a knowledge file, follow
+`docs/plans/experiment_status_and_gaps.md` is a knowledge file, follow
 the current user instruction regarding Wiki synchronization at session
 close; do not silently sync.
 

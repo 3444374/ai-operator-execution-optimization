@@ -4,7 +4,7 @@
  * Inputs are fixed-width open specs and borrowed task bytes; outputs are
  * session-owned completions or caller-owned errors.  This header passes its
  * boundary check only while it has no PostgreSQL types or headers.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #ifndef AI_PROVIDER_PORT_H
 #define AI_PROVIDER_PORT_H

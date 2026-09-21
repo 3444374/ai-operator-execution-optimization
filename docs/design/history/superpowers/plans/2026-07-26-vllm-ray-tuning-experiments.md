@@ -122,10 +122,10 @@ git commit -m "feat: validate service experiment metadata"
 ### Task 2: Capture the eager baseline and prepare recoverable service switching
 
 **Files:**
-- Create: `experiments/results/vllm_cuda_graph_512_20260726/eager_service.json`
-- Create: `experiments/results/vllm_cuda_graph_512_20260726/scenario_config_eager.json`
-- Create: `experiments/results/vllm_cuda_graph_512_20260726/scenario_config_eager_gate.json`
-- Create after run: `experiments/results/vllm_cuda_graph_512_20260726/eager/`
+- Create: `results/scheduling/vllm_cuda_graph_512_20260726/eager_service.json`
+- Create: `results/scheduling/vllm_cuda_graph_512_20260726/scenario_config_eager.json`
+- Create: `results/scheduling/vllm_cuda_graph_512_20260726/scenario_config_eager_gate.json`
+- Create after run: `results/scheduling/vllm_cuda_graph_512_20260726/eager/`
 
 **Interfaces:**
 - Consumes the current Docker container `ai-operator-vllm-qwen`.
@@ -259,7 +259,7 @@ Expected: one warm-up plus three formal completed runs, zero incidents.
 - [ ] **Step 5: Commit configuration and audited results**
 
 ```powershell
-git add experiments/results/vllm_cuda_graph_512_20260726
+git add results/vllm_cuda_graph_512_20260726
 git commit -m "results: capture eager vLLM baseline"
 ```
 
@@ -268,9 +268,9 @@ git commit -m "results: capture eager vLLM baseline"
 ### Task 3: Run the CUDA Graph service gate and comparison
 
 **Files:**
-- Create: `experiments/results/vllm_cuda_graph_512_20260726/graph_service.json`
-- Create: `experiments/results/vllm_cuda_graph_512_20260726/scenario_config_graph.json`
-- Create after run: `experiments/results/vllm_cuda_graph_512_20260726/graph/`
+- Create: `results/scheduling/vllm_cuda_graph_512_20260726/graph_service.json`
+- Create: `results/scheduling/vllm_cuda_graph_512_20260726/scenario_config_graph.json`
+- Create after run: `results/scheduling/vllm_cuda_graph_512_20260726/graph/`
 
 **Interfaces:**
 - Uses the same image and read-only model mount as the eager service.
@@ -321,7 +321,7 @@ Expected: four completed runs and zero incidents.
 
 - [ ] **Step 5: Compare and choose the service mode**
 
-Create `experiments/results/vllm_cuda_graph_512_20260726/README.md` with:
+Create `results/scheduling/vllm_cuda_graph_512_20260726/README.md` with:
 
 - means and standard deviations for tokens/s, E2E, P99, SLO goodput, GPU
   utilization, memory, power, energy/1k tokens, and MFU;
@@ -333,7 +333,7 @@ Create `experiments/results/vllm_cuda_graph_512_20260726/README.md` with:
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add experiments/results/vllm_cuda_graph_512_20260726 PROJECT_INDEX.md PROJECT_LOG.md PROJECT_OUTLINE.md
+git add results/vllm_cuda_graph_512_20260726 PROJECT_INDEX.md PROJECT_LOG.md PROJECT_OUTLINE.md
 git commit -m "results: compare eager and CUDA Graph vLLM"
 ```
 
@@ -342,10 +342,10 @@ git commit -m "results: compare eager and CUDA Graph vLLM"
 ### Task 4: Screen Ray task and actor layouts
 
 **Files:**
-- Create: `experiments/results/ray_executor_tuning_512_20260726/scenario_config.json`
-- Create after run: `experiments/results/ray_executor_tuning_512_20260726/screen/`
-- Create after selection: `experiments/results/ray_executor_tuning_512_20260726/formal/`
-- Create: `experiments/results/ray_executor_tuning_512_20260726/README.md`
+- Create: `results/ray_executor_tuning_512_20260726/scenario_config.json`
+- Create after run: `results/ray_executor_tuning_512_20260726/screen/`
+- Create after selection: `results/ray_executor_tuning_512_20260726/formal/`
+- Create: `results/ray_executor_tuning_512_20260726/README.md`
 
 **Interfaces:**
 - Uses the service mode selected in Task 3.
@@ -398,7 +398,7 @@ Report normal system metrics plus actor creation, submit/fan-in, assignment
 balance, and failures.
 
 ```powershell
-git add experiments/results/ray_executor_tuning_512_20260726 PROJECT_INDEX.md PROJECT_LOG.md PROJECT_OUTLINE.md code/INFRA_STATUS.md
+git add results/ray_executor_tuning_512_20260726 PROJECT_INDEX.md PROJECT_LOG.md PROJECT_OUTLINE.md code/INFRA_STATUS.md
 git commit -m "results: select Ray execution layout"
 ```
 
@@ -407,8 +407,8 @@ git commit -m "results: select Ray execution layout"
 ### Task 5: Screen vLLM scheduling capacity
 
 **Files:**
-- Create: `experiments/results/vllm_capacity_tuning_512_20260726/`
-- Create: `experiments/results/vllm_capacity_tuning_512_20260726/README.md`
+- Create: `results/vllm_capacity_tuning_512_20260726/`
+- Create: `results/vllm_capacity_tuning_512_20260726/README.md`
 
 **Interfaces:**
 - Uses the service mode and Ray executor selected by Tasks 3 and 4.
@@ -452,7 +452,7 @@ Write the report with exact container commands and complete service metadata.
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add experiments/results/vllm_capacity_tuning_512_20260726 PROJECT_INDEX.md PROJECT_LOG.md PROJECT_OUTLINE.md code/INFRA_STATUS.md
+git add results/vllm_capacity_tuning_512_20260726 PROJECT_INDEX.md PROJECT_LOG.md PROJECT_OUTLINE.md code/INFRA_STATUS.md
 git commit -m "results: select vLLM scheduling capacity"
 ```
 
@@ -464,7 +464,7 @@ git commit -m "results: select vLLM scheduling capacity"
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `code/README.md`
 - Modify: `code/scripts/README.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
@@ -525,6 +525,6 @@ tracked; `.superpowers/` remains untouched.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/INFRA_STATUS.md code/README.md code/scripts/README.md experiments/plans/experiment_status_and_gaps.md PROJECT_OUTLINE.md PROJECT_INDEX.md PROJECT_LOG.md
+git add code/INFRA_STATUS.md code/README.md code/scripts/README.md docs/plans/experiment_status_and_gaps.md PROJECT_OUTLINE.md PROJECT_INDEX.md PROJECT_LOG.md
 git commit -m "docs: record execution tuning decision"
 ```

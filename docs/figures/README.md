@@ -5,7 +5,7 @@
 ## 2026-09-10：单卡 Map 容量辅助图
 
 [PNG](data/backup/map_capacity_20260910.png) / [SVG](data/backup/map_capacity_20260910.svg)分别展示短查询并发诊断、规模检查、窗口诊断与五次完整重复。
-数据来自[容量报告](../../experiments/results/postgresql/map_capacity_20260910/README.md)，[审计](audit/map_capacity_20260910.md)说明来源、原始值、失败保留和显示检查。
+数据来自[容量报告](../../results/postgresql/map_capacity_20260910/README.md)，[审计](audit/map_capacity_20260910.md)说明来源、原始值、失败保留和显示检查。
 这是当前内部校准辅助图，高并发长查询平台尚待确认，不替代开题主图或方法实验。
 
 当前开题选图统一从 `opening_figure_set/README.md` 进入；权威源位于 `architecture/editable/` 和
@@ -294,11 +294,11 @@ docs/figures/data/backup/
 
 ```text
 docs/figures/
-motivation/results/
-feasibility/results/
+results/motivation/
+results/feasibility/
 ```
 
-其中 `docs/figures/` 保留最终图、绘图脚本和图表审计；`motivation/results/` 与 `feasibility/results/` 保留原始 CSV / 结果报告。生成过程中的中间 PNG / SVG 不长期保留。
+其中 `docs/figures/` 保留最终图、绘图脚本和图表审计；`results/motivation/` 与 `results/feasibility/` 保留原始 CSV / 结果报告。生成过程中的中间 PNG / SVG 不长期保留。
 
 可以删除或不再使用的旧目录包括：
 
@@ -325,7 +325,7 @@ learning/figures/ 中与本目录重复的正式图副本
 ## 2026-07-14 pgai-integrated GPU rerun figures
 
 Latest report-main figures generated from
-`motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv`:
+`results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv`:
 
 ```text
 docs/figures/data/report_main/06_gpu_pgai_rerun_granularity_20260714.png
@@ -348,7 +348,7 @@ opening report needs the latest local pgai-integrated GPU-backed rerun.
 ## 2026-07-14 pgvector(384) writeback figure
 
 Latest sink-mode comparison generated from
-`motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv`:
+`results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv`:
 
 ```text
 docs/figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png

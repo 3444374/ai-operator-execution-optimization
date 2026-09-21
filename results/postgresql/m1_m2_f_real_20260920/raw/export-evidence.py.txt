@@ -1,0 +1,89 @@
+import json,hashlib,re,collections,statistics
+from pathlib import Path
+from src.baselines.common.redact import redact_text
+base=Path('<LOCAL_PRIVATE>'); downloaded=base/'downloaded'; remote=downloaded/'sq-real-m1m2f-20260920'; text=downloaded/'r12ft01/run'; image=downloaded/'r12fi03/run'
+out=Path('results/postgresql/m1_m2_f_real_20260920/raw');out.mkdir(parents=True,exist_ok=True)
+def clean(v):
+ if isinstance(v,dict):return {k:clean(x) for k,x in v.items() if k not in ('output_values','row_id','machine_id','hostname','env_file')}
+ if isinstance(v,list):return [clean(x) for x in v]
+ if isinstance(v,str):
+  v=redact_text(v).replace('<SERVER_ARTIFACTS>','<SERVER_ARTIFACTS>').replace('<SERVER_HOME>','<SERVER_HOME>').replace('<CHECKOUT>','<CHECKOUT>').replace('<LOCAL_PRIVATE>','<LOCAL_PRIVATE>')
+  return re.sub(r'\b(?!(?:127\.0\.0\.1|0\.0\.0\.0)\b)(?:\d{1,3}\.){3}\d{1,3}\b','<IP_REDACTED>',v)
+ return v
+def load(p):return json.loads(p.read_text())
+def write(name,v):(out/name).write_text(json.dumps(clean(v),indent=2,ensure_ascii=False)+'\n')
+def copy(name,p):write(name,load(p))
+copy('text-summary.json',remote/'text-real-01/summary.json')
+copy('m1-config.json',text/'m1-screen/resolved-config.json');copy('m1-preflight.json',text/'m1-screen/preflight.json')
+m1=load(text/'m1-screen/comparison.json');copy('m1-comparison.json',text/'m1-screen/comparison.json')
+for split in ('correctness','evaluation'):copy('m2-'+split+'.json',text/('m2-'+split+'-summary.json'))
+for name in ('asset-preparation.json','source-snapshot.json'):copy(name,remote/name)
+v=load(remote/'preflight.json');v['machine'].pop('machine_id',None)
+write('environment.json',{k:v[k] for k in ('status','groups','machine','profile','platform','python','checks')})
+copy('service-ready.json',remote/'text-real-01/service-ready.json');copy('service-command.json',remote/'text-real-01/service-command.json');copy('vllm-identity.json',remote/'text-real-01/vllm-identity.json')
+for k in ('before','after','samples'):copy('service-'+k+'.json',remote/('text-real-01/service-'+k+'.json'))
+copy('image-summary.json',image/'summary.json');copy('image-cleanup.json',remote/'image-real-03/summary.json');copy('image-config.json',downloaded/'r12fi03/config.json')
+for route in ('reference','staged'):copy('image-'+route+'-events.json',image/route/'events.json')
+for name in ('controlled-01','controlled-02','controlled-03','image-fixture-01','image-fixture-02'):
+ copy(name+'.json',remote/name/'summary.json')
+ for log in ('tests.log','worker.log'):
+  p=remote/name/log
+  if p.exists():(out/(name+'-'+log+'.txt')).write_text(clean(p.read_text()))
+for name in ('final-linux-tests.log','local-tests.log','final-local-tests.log','final-local-tests-corrected.log','final-local-tests-system.log'):
+ (out/(name+'.txt')).write_text(clean((base/name).read_text()))
+for name in ('text-worker.py','text-controller.py','image-worker.py','image-controller.py','controlled.py','prepare-assets.py','image-worker-before-window2.py'):
+ (out/(name+'.txt')).write_text(clean((base/name).read_text()))
+# Public per-unit summaries preserve all timers and resource/association assessments without raw outputs.
+units={}
+for p in text.glob('*/summary.json'):
+ if p.parent.name not in ('m1-screen',):units[p.parent.name]=load(p)
+write('text-units.json',units)
+# Output variation is measured on private per-row digests before the mapping is removed.
+variation=[]
+for records,label,field,reference in ((m1['rows'],'m1','group','p4'),(load(text/'m2-evaluation-summary.json')['records'],'m2','mode','stream_fifo')):
+ for r in records:
+  ref=next(x for x in records if x[field]==reference and x['repeat']==r['repeat'])
+  a,b=r['output_values'],ref['output_values'];assert set(a)==set(b)
+  variation.append(dict(experiment=label,group=r[field],repeat=r['repeat'],warmup=r['warmup'],reference=reference,differing_values=sum(a[k]!=b[k] for k in a),rows=len(a)))
+write('output-variation.json',variation)
+# Observed event/resource audit, no additional model calls.
+facts={}
+for name in ('reference','staged'):
+ ev=load(image/name/'events.json');counts=collections.Counter(e['event'] for e in ev)
+ closed=[e for e in ev if e['event']=='image_method_closed'];drained=[e for e in ev if e['event']=='job_drained']
+ assert all(e['method_allocated']==[0,0] and e['method_used']==[0,0] for e in closed)
+ assert all(not any(e['usage'].values()) for e in drained)
+ facts[name]=dict(event_counts=counts,method_close_count=len(closed),method_final_zero=True,job_drained_count=len(drained),core_final_zero=True)
+write('image-lifecycle-audit.json',facts)
+# Tie every published projection back to the private source set, without private content.
+sources={str(p.relative_to(downloaded)):hashlib.sha256(p.read_bytes()).hexdigest() for p in downloaded.rglob('*.json') if '/cache/' not in str(p) and '/pg/' not in str(p) and '/ray/' not in str(p)}
+write('private-json-sha256.json',sources)
+print('exported',len(list(out.iterdir())),'files')
+copy('final-cleanup.json',remote/'final-cleanup.json');copy('source-identity.json',remote/'text-real-01/identity.json')
+metric_keys=('vllm:num_requests_running','vllm:num_requests_waiting','vllm:kv_cache_usage_perc','vllm:num_preemptions_total','vllm:prefix_cache_hits_total','vllm:prefix_cache_queries_total','vllm:prompt_tokens_total','vllm:generation_tokens_total','vllm:request_success_total')
+for name in ('before','after','samples'):
+ v=load(remote/('text-real-01/service-'+name+'.json'))
+ def project(x):return dict(x,metrics={k:a for k,a in x.get('metrics',{}).items() if k in metric_keys})
+ write('service-'+name+'.json',[project(x) for x in v] if isinstance(v,list) else project(v))
+measurements=[];samples=load(remote/'text-real-01/service-samples.json')
+for p in sorted(text.glob('m1-screen/*/q-*/summary.json'))+sorted(text.glob('m2-evaluation-*/summary.json')):
+ v=load(p);start=v['query_preparation_started_ns'];end=v['execution']['t_query_terminal_ns']
+ selected=[s for s in samples if start<=s['monotonic_ns']<=end]
+ measurements.append(dict(unit=str(p.parent.relative_to(text)),start_ns=start,end_ns=end,samples=len(selected),
+  sampled_peaks={k:max((s['metrics'][k] for s in selected if k in s.get('metrics',{})),default=None) for k in metric_keys[:3]},
+  metric_errors=sum('metrics_error' in s for s in selected)))
+write('service-query-samples.json',dict(scope='Samples strictly inside each invocation-to-EOF; sub-second peaks may be missed; not request-matched service latency.',queries=measurements))
+# RSS samples cover process domains; aggregate peaks remain separate, never unique physical memory.
+for name,p in [('image-process-samples.json',remote/'image-real-03/worker-processes.jsonl'),('text-process-samples.json',remote/'text-real-01/model-rss.jsonl')]:
+ write(name,[json.loads(x) for x in p.read_text().splitlines()])
+(out/'export-evidence.py.txt').write_text(clean(Path(__file__).read_text()))
+for name in ('window-release-before.log','window-release-test.log','after-release-local-tests.log','after-release-linux-tests.log'):
+ (out/(name+'.txt')).write_text(clean((base/name).read_text()))
+write('post-run-review.json',dict(issue='Previous M2 window list remained referenced during construction of the next payload window.',
+ actual_run_max_payload_row_references_field=69,corrected_conservative_run_bound=133,
+ conservative_run_payload_bytes=2*20029+5*553,declared_payload_bytes=16*1048576,
+ bound_scope='Two observed maximum payload windows plus at most C+1 maximum rows; conservative byte estimate, not observed RSS.',
+ repair='Clear the exhausted candidate list before fetching the next window; original real-run source preserved.',
+ validation=dict(previous_retained_rows=6,window_rows=3,repaired_maximum_rows=4,local_passed=26,linux_passed=26,each_skipped=2,additional_real_calls=0),
+ repaired_files={name:hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in ('code/src/experiments/postgresql/m2_source.py','code/tests/experiments/test_m2_source.py')}))
+(out/'export-evidence.py.txt').write_text(clean(Path(__file__).read_text()))

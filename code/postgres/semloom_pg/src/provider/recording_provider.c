@@ -3,7 +3,7 @@
  *
  * It accepts one borrowed text task and returns a session-owned deterministic
  * SemMap or SemFilter completion.  Passing requires no external I/O.
- * Plan: experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
+ * Plan: docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md.
  */
 #include "postgres.h"
 

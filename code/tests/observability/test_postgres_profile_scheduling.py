@@ -2853,7 +2853,7 @@ class ProfilerDryRunContractTests(unittest.TestCase):
         self.assertEqual(
             implicit_trace_row["flush_trace_path"],
             str(
-                Path("feasibility/results/postgres_ai_operator_profile_flush_trace.csv")
+                Path("results/feasibility/postgres_ai_operator_profile_flush_trace.csv")
             ),
         )
 

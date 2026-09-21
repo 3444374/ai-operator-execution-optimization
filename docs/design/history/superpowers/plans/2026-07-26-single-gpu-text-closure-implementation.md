@@ -19,9 +19,9 @@ the data cannot establish.
 ## Task 1: Cross-arrival-rate flush boundary
 
 **Files:**
-- Create: `experiments/results/adaptive_flush_cross_rate_20260726/scenario_config.json`
-- Create: `experiments/results/adaptive_flush_cross_rate_20260726/README.md`
-- Modify: `experiments/results/README.md`
+- Create: `results/scheduling/adaptive_flush_cross_rate_20260726/scenario_config.json`
+- Create: `results/scheduling/adaptive_flush_cross_rate_20260726/README.md`
+- Modify: `results/README.md`
 
 1. Derive low/current/high replay scales from the filtered 512-row arrival
    span; record the derivation rather than naming them production QPS.
@@ -35,8 +35,8 @@ the data cannot establish.
 ## Task 2: 2048-row held-out validation
 
 **Files:**
-- Create: `experiments/results/text_heldout_2048_20260726/scenario_config.json`
-- Create: `experiments/results/text_heldout_2048_20260726/README.md`
+- Create: `results/data_organization/text_heldout_2048_20260726/scenario_config.json`
+- Create: `results/data_organization/text_heldout_2048_20260726/README.md`
 
 1. Run the simplest policy supported by Task 1 against queue-adaptive at 2048
    rows, preserving token budget, `K_max`, prompt filter, model, and output
@@ -66,8 +66,8 @@ a second, incompatible row type to `src/workloads.py`.
 ## Task 4: Prefix-aware batching experiment
 
 **Files:**
-- Create: `experiments/results/prefix_aware_batching_20260726/scenario_config.json`
-- Create: `experiments/results/prefix_aware_batching_20260726/README.md`
+- Create: `results/data_organization/prefix_aware_batching_20260726/scenario_config.json`
+- Create: `results/data_organization/prefix_aware_batching_20260726/README.md`
 
 1. Materialize 0%, 30%, 70%, and 100% controlled-prefix workloads using the
    same selected rows and arrival metadata.
@@ -85,7 +85,7 @@ a second, incompatible row type to `src/workloads.py`.
 - Create: `code/scripts/analysis/estimate_operator_cost.py`
 - Create: `code/tests/planning/test_cost_estimation.py`
 - Create: `code/tests/planning/test_estimate_operator_cost.py`
-- Create: `experiments/results/operator_cost_estimation_20260726/README.md`
+- Create: `results/cost_estimation/operator_cost_estimation_20260726/README.md`
 
 1. Add failing tests for deterministic train/test splitting, feature schema,
    leakage prevention, constant-baseline behavior, MAPE edge cases, and JSON
@@ -103,7 +103,7 @@ a second, incompatible row type to `src/workloads.py`.
 
 **Files:**
 - Modify: `code/INFRA_STATUS.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `docs/plans/experiment_status_and_gaps.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`

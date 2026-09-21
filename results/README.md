@@ -1,0 +1,493 @@
+# Research Experiment Results
+
+2026-09-20：[完整容量复查与工程合并](postgresql/m1_full_recheck_20260920/README.md)完成32个查询单元，16,400次请求与服务端一致，无未确认请求。
+原控制器记录过一个短暂残留PID并返回失败，随后独立只读清理核对通过；原告警和PID身份缺项保留。
+容量扫描修复与异常诊断改动合入main，原故障未复现、根因仍待确定。PG/direct均为持续供给不足，M1尚未选点。
+Linux provider79项中70通过、9项环境跳过；没有启动第二验证单元或后续方法阶段。
+
+2026-09-20：[C64异常诊断与有限复测](postgresql/m1_c64_errors_20260920/README.md)补齐传输异常类型、原因链类型及代码位置记录；原异常传播与不重试行为保留。
+本轮3,088次记账与服务成功一致，C64四次各512条全部完成，无未确认请求；11项聚焦检查通过，Linux provider77项中9项跳过。
+原故障未复现，根因仍待确定；不称已修复连接/模型缺陷，不进行方法选点。测试资源已清理，代码与证据仍在分支。
+
+2026-09-20：[M1供给复查](postgresql/m1_supply_followup_20260920/README.md)已完成容量扫描开销定位和受控修复，真实筛查在C64预热时中止。
+原128行fixture的PG查询约22–26秒，完整修复后约2.1–2.25秒；派生使用量只在一次只读扫描内复用。
+Linux调度386项、图像81项通过；provider76项中9项环境跳过，另2项实际PG/HTTP集成通过。
+真实账本1,552次尝试、服务端成功1,550次；两项执行异常归为MODEL_UNAVAILABLE，具体异常类型缺失。
+443行保持临时结果；测试服务/端口/GPU进程清理、ACL恢复，无自动重跑。
+修复与证据保存在 `codex/m1-supply-followup`，本次不合入main；M1尚未完成选点及后续条件阶段。
+
+2026-09-20：[M1、M2 与 F 有限真实验证](postgresql/m1_m2_f_real_20260920/README.md)完成本轮清单。
+文本8,248次POST与服务日志/counter一致；M1三种容量均未取得平台候选，后续调参/评价/观测对照未运行。
+M2五种PG源信息方式完成正确性与1+3轮评价，固定C4仅作功能参照，未支持稳定优势；全局规划尚未接入SemMap。
+F真实CLIP151次前向完成，三路径逐维差异0，受控前向后错误/取消及恢复通过；不代表GPU计算中抢占或性能验证。
+列表释放修复后本地/Linux各26项通过、2项专用PG跳过；这些PG集成另有2项实际通过。失败原始记录保留。
+模型/PG/Ray/任务进程与自有端口已清理，两GPU空闲，临时ACL恢复。本轮没有剩余额度的追加运行。
+
+以下为按原运行身份保留的历史记录；当时的暂停或未验证描述由上方新结果补充。
+
+2026-09-20：[M1 研究问题与选点调整](postgresql/m1_platform_revision_20260920/README.md)完成。
+旧 M1 作为测量反例结束，44,544 次表撤下；当前按可达性、容量筛查、工作量调参和独立评价分阶段进行。
+v2 编排拒绝旧配置，复用常驻 gateway/direct，保留实际供给、配对吞吐、质量与资源观测；本地 35 项检查通过。
+该次修订没有 PG/HTTP/模型调用；后续真实结果见本页顶部。
+
+
+2026-09-20：[工作包 F 图像类型与阶段执行](postgresql/image_stages_f_20260920/README.md)：
+显式扩展 `0.3.0` 的 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源接入完成。
+PG 回归 1/1、TAP 2,159 项和 9 组实际 PG/Ray/解码检查通过；模型使用 CPU fixture，真实调用 0 次。
+失败与修订记录保留，测试服务和临时权限已清理；真实 CLIP 与 GPU 性能继续待验证。
+
+2026-09-14：[M1真实运行准备](postgresql/waiting_positions_real_preparation_20260914/README.md)完成：排除旧电影/评论后按电影分组，准备512行调参与1024行评价输入；
+原文保留服务器私有目录。完整/摘要观测完成8查询/128次受控HTTP，本地/Linux各22项检查通过。
+当时的 44,544 次/30 分钟运行表已于 2026-09-20 撤下；数据与原始准备证据保留，**该准备记录当时没有真实调用**。
+PG/HTTP/任务进程已清理，ACL恢复；后续实际调用及真实结果复核尚未完成。
+
+2026-09-14：[常驻服务对照](postgresql/waiting_positions_persistent_20260914/README.md)完成：24查询/768受控POST，另以旧入口1查询/120次回归，真实模型0次。
+C8五次均快于对应轮次C4；紧W相对宽W的HTTP P99降低42.23%，完整查询时间却增加233.06%。
+token组一次启动约5.5秒，常驻后每查询准备约14–15毫秒；四实例RSS同时采样，资源/会话/transport均完成回收。
+本地/Linux各16项行为检查、761份code文件哈希核对通过；PG/HTTP/进程/socket/GPU/ACL清理完成。
+下一步准备新的真实输入、服务签名和有界请求计划；尚无真实模型性能或低扰动观测结论，M2未开始。
+
+2026-09-14：[等待位置小实验](postgresql/waiting_positions_pilot_20260914/README.md)已完成M1首轮受控检查：新增调用至EOF计时和五段等待分解，复用已有FIFO/工作量限制与PG事件。
+两轮24查询/672受控HTTP，实际模型0次；保留首轮backlog5的异常，backlog32跟进固定C8/W3096/512。
+跟进紧W的HTTP P99降低39.03%，SQL至EOF增加181.29%；当前token臂每查询新gateway/tokenizer准备约5秒。
+840份代码一致，PG/HTTP/进程/端口/ACL已清理。该轮提出的常驻服务/C4-C8检查已由上方新结果完成；两轮原始证据继续保留。
+
+2026-09-14：[查询依赖与共享计算](postgresql/query_sharing_e_20260914/README.md)完成：复用统一责任表与Job/flow轮转，新增可选shared计算策略和query-job Map窗口，存储独立保留。
+Linux385/57/116、PG回归1/TAP2138、专项163次与worker预演63次受控HTTP通过。
+首次真实准备0次失败保留；获确认后63次真实POST、19个Job、55条Map关联与8条Filter决定通过，195.917秒内清理。
+Map逐字复述0/55，保留为质量负结果；不据执行与回收通过声称质量或性能通过。838份源文件一致，PG/模型/进程/GPU/ACL已清理。
+
+2026-09-14：[异步期限与输入/交付诊断](postgresql/async_deadline_flow_20260914/README.md)完成：正常PG回归1/1、TAP2138项、12单元96次fixture通过。
+首轮真实24次因配置准备错误停止并保留；获批补跑33次全部完成，累计57次生成请求。
+56条正常结果关联通过，各8行均2个情感假阴性；1条真实结果在末次同步写入跨期限后保持失败、SHA完整、拒绝评分。
+真实flow四次暂停时队首均未就绪，不能归因ready-first收益；默认次序保留。两段服务/PG/进程/GPU/ACL已清理。
+
+2026-09-14：[容量等待与零任务 Map 服务器验证](scheduling/capacity_wait_server_20260914/README.md)完成：Linux调度376、provider55、PG Python合同116通过；
+实验工具482通过/15环境跳过，PG选定6项集成另行通过，共262次受控HTTP、真实模型0次。
+修复诊断脚本的write-once summary冲突后，普通PG四查询完成：小结果首行约0.65秒、大结果约0.25秒，
+支持发送缓冲解释，不据此归因旧SemMap全部等待。PG/socket/任务进程和ACL已清理，失败记录保留。
+
+2026-09-11：[C/D审计与真实预算诊断](postgresql/cd_validation_20260911/README.md)完成提交→权威终态的work/request独立重建、
+实际组内顺序核验及可选容量拒绝观测。旧9轨迹516任务重放通过；Linux370/55/116及审计19通过。
+新16单元1152模型POST/319.11秒全部有效；同配置C的equal/total约3.75/3.81秒，未显示total更快。
+D在C32下W4096确实限制提交，三种紧预算查询均慢于W16384；rows紧预算有1行模型输出差异，关联正常。
+733份非Markdown代码一致，模型/PG/进程/ACL已清理；单次短诊断，不是性能排名。
+
+2026-09-11：[A/B验证补充](postgresql/ab_validation_20260911/README.md)：统一结果文件校验、direct/Ray逐行关联、
+进入/迭代错误与清理时点、全过程逻辑资源和慢源交付。Ray资源分别声明，短命读取峰值保持未知。
+代码与受控集成验证；新增真实模型请求0，强静态参照、正常容量点开销和原生真实质量仍待验证。
+
+2026-09-10：[PG Map token工作量组织](postgresql/map_organization_20260910/README.md)：
+三种静态控制复用同一核心，108受控HTTP与408真实POST全部通过；实际token/候选前缀/分组/顺序可复核。
+PG全套2138项通过，模型/PG/任务进程与临时ACL已清理；短查询不作性能结论。
+
+2026-09-10：[PG Map 总字节留存预算](postgresql/pg_window_budget_20260910/README.md)：
+默认关闭的新模式将行数作为上限，实际字节控制留存；受控反例与288次真实POST通过。
+B1MiB/L32实际最多13行、计费峰值1028312字节，最终责任归零；模型已停，PG/ACL暂留D验证。
+
+2026-09-10：[数据库原始输入与公共查询](postgresql/database_queries_20260910/README.md)：
+PG-source direct、安全WHERE预取、COUNT与原生Movie/LOTUS/Ray入口完成受控验证，真实模型0次。
+2000行原始Movie数据保留重复reviewId并通过PG读回；真实质量、性能及后续机制另行验证。
+
+2026-09-10：[查询计时、错误保留与执行推进修复](postgresql/execution_repairs_20260910/README.md)：
+独立错误/期限/观测配置、永久拒绝、反压和全局推进修复已完成受控验证；PG回归1/1、TAP2043项通过。
+真实PG32行的offer660→62、提交均32次；这说明重复探测被消除，真实模型性能仍待新额度验证。
+旧容量数字和所有失败保留，数据库查询、组织控制、多Job与图像接入独立继续。
+
+2026-09-10：[单 Map 测量修复与单卡容量画像](postgresql/map_capacity_20260910/README.md)：
+96601次真实出站、99808次预留，62个完整查询和1个保留的资源拒绝；独立PG绑定、可扩规模预算、分段计时与runner完成。
+本地/Linux各214项、PG回归1/1、TAP2032项通过。五次4000行观测选出C32/L64候选，强D0仍待高并发长查询平台。
+独立样本验证通过，模型/PG/网关/采样及临时ACL已清理；原文和预测私有保存。
+
+2026-09-10：[数据准备与执行记录修复验收](postgresql/data_evaluation_harness_20260910/README.md)：
+本地/Linux 各 168 项相关测试、7 项真实 PG 记录检查通过；新 ShareGPT 原文准备和 PG 146 行读回通过。
+新账本 SQuAD 10/10 次模型请求通过完整消息、token usage、关联及答案检查，增量资源最终归零。
+两次模型准备失败均 0 POST，失败保留，服务/ACL 已清理；旧 48/68 账本与缺失 JCT 不改写。
+实现提交 `5085c6ff` 已合入 main。这是工具与小样本功能验收，ShareGPT 质量、静态容量、组织性能和双副本路由仍待验证。
+
+2026-09-09：[PG 单 Map 真实数据尝试](postgresql/data_execution_pilot_20260909/README.md)：
+48/68 请求后停止。SQuAD 关联与答案检查可用；ShareGPT 输出合同、摘要质量及源输入身份未通过。
+单 GPU 正确性范围，静态容量、组织增量与双卡性能仍未验证；原失败与清理证据保留。
+
+2026-09-09：[有界多行方法驱动](scheduling/method_driver_20260909/README.md)已合入main（实现提交f7de79c3），提供固定共享payload预算、阶段推进、最终结果反压和取消回收。
+独立producer复用同一Engine/组织器/异步HTTP；Linux完整调度361项及最终专项55项通过（有重叠）。
+首次0POST失败暴露缺TaskInfo，修复后双Job10次及最终两阶段2次真实POST通过，合计12次；预算与服务均清理。
+这不是PG多阶段方法桥接或质量/性能实验；ShareGPT真实数据切片已规划、尚未运行。
+
+
+2026-09-09：[查询生命周期与连接接纳加固](scheduling/query_lifecycle_20260909/README.md)分开已登记流空闲与帧期限，统一查询/standalone/握手名额，补齐登记与加入失败回滚。
+查询结束策略集中到QueryRegistry，PG runtime持有幂等流句柄，provider不再隐式登记节点。
+旧25c0f090的空闲取消、预留被占用及令牌失败遗留Job已受控复现。Linux521项、PG回归1项/TAP2006项及26次真实POST通过；654份源码一致，测试服务已清理。
+
+
+2026-09-09：[查询级Job归属](scheduling/query_job_20260909/README.md)接入普通Filter v3与Map v6；PG查询上下文、可信登记、流与查询分开结束，复用共享Engine和非阻塞UDS工具。
+外部执行层将一份Job存储预算分给多个流；PG不分配Job份额。Linux517项、PG回归1项/TAP2005项通过，652份源码一致。
+真实复测24次POST通过，12个Job均回收；首轮4次因非空条件返回UNKNOWN失败，单独保留，不视为质量问题已修复。
+测试服务已清理。新模式Map窗口1；choice Filter、重扫、更广SQL形状和方法状态总预算尚未完成。
+
+
+2026-09-08：[三项会话接口清理](scheduling/session_api_cleanup_20260908/README.md)完成公开fail/派发控制/消费者关闭、可注入Job选择，以及独立单流适配器退役。
+网关不再访问session私有账本/状态；默认轮转、同步语义参照和未知请求计费规则保留。生产源码净减70行，旧测试迁到生产网关。
+Linux519项、PG回归1项/TAP1963项及最终12/18次真实模型通过；首轮12次记录保留，累计42次POST。最终644项源码/配置身份一致，测试服务已清理。
+消费者释放空间后的wake遗漏已通过失败复现修复；74份原始材料脱敏归档，另清理46个可从现有文件或Git恢复的本地副本。
+
+2026-09-08：[多Job共享执行与网关复用](scheduling/multijob_20260908/README.md)完成可信Job登记、共享账本、Job轮转、有界连接代理及局部取消/未知结果隔离。
+Job份额策略归外部执行组装层，PG只管本地缓冲和查询生命周期；一个/多个Job使用同一增量循环，同步Filter/Map等复用连接工具并保留协议处理。
+Linux515项、PG回归1项/TAP1963项通过；单Job12次、多Job18次真实请求通过，不同Job HTTP峰值2，9个Job最终归零。644份源码一致，测试服务已清理。
+PG同查询多算子可信归属、动态借用、方法状态总预算和GPU资源模型仍待完成；一次启动端口检查失败为0 POST，原证据保留。
+
+2026-09-08：[消费期限修复与v5桥接退役](scheduling/bridge_retirement_20260908/README.md)补齐结果交付时的消费期限，迁移测试后删除旧窗口1适配器、CLI、PG注册与专属身份，相关实现净减101行。
+Linux503项、本地52项、PG回归1项/TAP1963项通过；迁移前10次、最终窗口1共10次/窗口2共12次真实请求全部通过，最终640份源码一致，测试服务已清理。
+同步语义参考和wire v5保留；旧窗口1名称明确报错，多session/多Job资源管理仍待实现。
+
+2026-09-08：[阶段超时与执行组装整理](scheduling/phase_policy_20260908/README.md)分开排队、后端和消费期限；网关不再用模型超时限制排队。
+HTTP和默认执行组装移出会话模块，可注入已有策略与工作量描述。Linux501项、PG回归1项/TAP1961项及12次真实请求通过，641份源码一致，测试服务已清理。
+v5窗口1桥接、同步参考和单活动session范围仍保留；过渡路径退役与多Job资源管理待后续完成。
+
+2026-09-08：[增量容量与结果回收整理](scheduling/capacity_cleanup_20260908/README.md)拆开接纳任务、输入/结果字节和后端并发预算，移除PG固定64项数组，统一完成解析并修复错误路径的已完成结果回收。
+Linux提供者31项、PG合同115项、PG18.3回归1项/TAP1961项通过；两轮各12次真实请求通过，最终639份源码一致，服务和资源已清理。
+v5窗口1桥接仍保留，多Job动态资源管理尚未实现。
+
+2026-09-08：[公共实现归位](scheduling/shared_modules_20260908/README.md)将共享runtime、Map codec、请求类型、模型配置和策略接口从旧执行模块移出；旧导入保留别名，功能范围不变。
+43个迁移定义及24个原地定义的AST保持一致；Linux495项、PG18.3回归1/1958项TAP和独立12次真实请求通过。
+638份源码一致，同一查询HTTP峰值2，资源归零且测试服务已停止；本轮27份原始材料压缩归档，历史证据未移动或删除。
+
+2026-09-08：[生成Map的PG多在途接入](postgresql/async_window_20260908/README.md)已完成v6 offer/receive、PG有界行槽和按身份返回结果，复用原组织器与增量核心。
+PG18.3严格构建、回归1项、12个TAP共1958项及Linux199项Python检查通过；另核对v6权限、RLS和快照。
+独立12次真实POST全部通过，同一PG查询HTTP峰值2，增量10任务/6会话排空后资源归零，服务已停止。
+633份源码/测试文件与真实运行一致；当前只对受限生成Map显式开启，复杂表达式窗口1，Filter/组合和多活动session仍待完成。
+
+以下为之前的核查与实现记录，不能将旧记录中的待实现项当作最新状态。
+
+2026-09-08：[生成Map的PG窗口1接入](postgresql/incremental_window_one_20260908/README.md)新增独立provider执行身份，
+复用现有v5与PG语义、SessionEngine和异步HTTP。一个活动连接共用一个Engine，未知结果停止接纳。
+115项PG合同、23项provider、9项observer测试及PG18.3回归/1926项TAP通过；628份源码一致。
+9次真实POST验证参考SELECT、增量SELECT/INSERT、事务错误、取消57014及新查询恢复；
+其中7个增量任务、5个会话排空后资源归零，PG/网关/传输/模型已退出。临时planner修改已撤回。
+PG多在途、该profile的Filter/组合、多活动session及GPU显存管理仍未实现。
+
+2026-09-08：[有界组织窗口验证](scheduling/organized_window_20260908/README.md)接入既有work分组与显式局部性，
+组织批次展开为独立单成员请求；行/阶段与批次身份贯穿backend和结果，原路径保持兼容。
+最终本地54项、Linux335项通过，624份源码一致；两轮各4次真实请求均通过，峰值并发2，服务已停。
+首轮后新增重排进展用例复现旧判断缺陷，修正并保留失败及两轮记录。
+PG异步、单请求多成员、准备缓冲/方法总预算及多活动session仍待实现。
+
+2026-09-08：[逐行方法框架验证](scheduling/method_framework_20260908/README.md)补充预声明任务能力与有界方法续体，复用现有session账本。
+本地44项、Linux325项通过，621份源码哈希一致；两行各两个生成阶段共4次真实请求通过。
+首次诊断脚本参数错误在0次请求时停止，失败记录保留；修正脚本后复用同一4次预算。
+最终资源归零、传输与模型退出、端口关闭；embedding/级联算法、总方法内存计费及PG接入仍待实现。
+
+2026-09-08：[PG同步组合真实验证](postgresql/filter_map_real_20260908/README.md)完成12次模型请求；
+[增量session真实验证](scheduling/incremental_real_20260908/README.md)用独立预算完成5次请求，实际HTTP并发峰值2。
+本地37项核心/传输测试、Linux318项全调度回归通过，618源码哈希一致；账本和服务清理通过。
+两者不等于PG异步接入，不建立模型质量、正式资源或性能结论。旧12次账本在后一次运行后保持原字节。
+
+[单流增量执行验证](scheduling/incremental_session_20260908/README.md)记录2d2dee35之后的受控核心实现：
+接受前缀、结果lease、取消与跨session额度；任务选择复用/适配已有策略，FIFO可替换。
+旧同步入口保持；真实Backend、批处理与PG接入未由本轮完成。
+
+## Filter→Map绑定（2026-09-07）
+
+[Filter→Map验证](postgresql/filter_map_binding_20260907/README.md)以19326609为基线，开发分支支持一个关系Filter接一个生成Map。
+本地115、Linux138、PG18.3回归1及TAP1910项通过；611源码哈希一致，四轮递增测试均通过且分别保留。
+覆盖原生求值、权限/钩子、RLS/快照/取消与计划解码；模型请求0，服务已停，尚未合入main。
+
+以下早期记录保持对应版本的能力与证据范围。
+
+## 统一入口
+
+先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账只登记主要机制结果与证据强度，
+区分“设计预留、功能测试、真实链路验证、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
+它不定义工程架构或下一步实施顺序。
+
+## 共同调用与tuple绑定（2026-09-07）
+
+[验证记录](postgresql/semantic_binding_20260907/README.md)：本地115、Linux138项、PG18.3回归1及
+1848项TAP通过；605项源码哈希一致。原型纠正OFFSET求值预期，组合仍未开放，模型请求0。
+
+## Map调用分析提取（2026-09-07）
+
+[验证记录](postgresql/semantic_call_extraction_20260907/README.md)：15个函数体等价，本地115项、
+Linux138项、PG18.3严格编译及regression1项、TAP1808项通过。只调整模块职责，模型请求0。
+
+## Two Filter AND and bounded gateway sessions (2026-09-07)
+
+[Implementation checks](postgresql/semfilter_and_20260907/README.md) cover two Filter nodes through one
+gateway, independent input evaluation, native permissions and lifecycle. Linux138/138 and PG18.3
+regression1/1 plus TAP1808/1808 pass; seven PG attempts are retained. No real model was used.
+The implementation is now included in main; Filter→Map and per-session asynchronous work remain pending.
+
+## PostgreSQL 扩展目录整理（2026-09-07）
+
+[本地结构与合同检查](postgresql/pg_module_layout_20260907/README.md)对应独立分支
+`codex/pg-module-layout`：112项算子合同、4项网关测试和8项严格C11编译通过。生产实现按职责迁移，
+头文件依赖收窄；一次旧HTTP deadline测试失败及修正单独保留。后续服务器在`20b22a55`通过
+Linux112+4项、PG18.3严格构建、regression1/1和全部TAP1758/1758。准备失败保留，自有测试进程
+已清理；已快进合并本地main，本轮没有真实模型请求。
+
+## SemMap resource measurement repair (2026-09-06)
+
+最新[两算子合并验证](postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)通过
+完整PG18.3 regression/TAP与247项相关测试，并完成Filter v3/v4、Map v5六个真实SELECT/INSERT
+场景，共9次模型请求。仅确认现有同步单算子能力，不改变组合、异步、正式资源或质量/性能状态。
+
+[退役源码索引](postgresql/retired_sources.json)登记本次清理的 19 个文件及已推送 `d93e3f9b` 的
+源码 URL、Git blob 和 SHA-256。历史采样、失败结果和报告保留；旧脚本只从对应版本恢复，
+后续实验使用 `code/` 中的公共入口。清理验证记录在[工具记录](postgresql/semmap_resource_lifecycle_20260906/README.md#retirement)。
+
+后续 [推送前真实模型复验](postgresql/semmap_prepush_20260906/README.md)使用新8次预算，
+SELECT、独立审计连接下的INSERT、取消/拒绝及恢复六阶段全部有效通过；模型和PG/gateway已清理。
+该结果不包含正式fixture3×2000或质量/性能比较，旧失败记录保留。
+
+[Lifecycle repair evidence](postgresql/semmap_resource_lifecycle_20260906/README.md) records the completed
+tool repair, controlled tests and isolated PG18.3 fixture diagnostic at `77a123de`: actual 1×100, all nine
+required phases valid/passed, zero model requests. Formal 3×2000 remains unrun and requires separate authorization.
+
+[有限真实模型复查](postgresql/semmap_real_followup_20260906/README.md)实际增加7次请求，账本25→32。
+SELECT/INSERT输出与usage、NULL、取消/拒绝及恢复功能核对完成；SELECT与四个故障/恢复资源检查通过。
+INSERT原测量受验收JOIN的系统目录FD污染，已修正审计连接，但真实资源复查未重复；不代表完整资源资格。
+
+## PostgreSQL 生成型 Map 真实模型与资源检查（2026-09-04）
+
+[真实链路与资源记录](postgresql/semmap_real_model_resource_20260904/README.md)绑定
+`main@b19486a1`。PostgreSQL 18.3 → wire v5 → gateway → Qwen2.5-7B/vLLM → PostgreSQL
+完成 25/32 个有持久账本的请求：SELECT、INSERT、NULL 零调用、空串、取消、模型 4xx 拒绝和两类恢复通过；
+真实 gateway 的 FD/线程回到基线，服务身份前后一致并正常关闭。这证明受限生成型 Map 的真实纵向链路，
+不证明生成质量或性能。
+
+同轮 fixture-only 资源运行完成 3×2,000 个 100,000-byte 输入和 65,536-byte 输出，但 60 秒内至少
+一项预定 RSS/FD 条件未满足；采集器又未在断言前保存逐点数据，无法判断具体超限项。按停止条件没有
+重跑，也没有继续取消/断连/gateway-exit 资源子项。因此资源资格失败，四 D 仍未全部完成。
+
+## PostgreSQL 生成型 Map C v5/PG golden（2026-09-03）
+
+[实际执行与恢复验证](postgresql/semmap_pg_wire_20260903/README.md)的原资格绑定 `5031bb50`；
+合并前协议复核修复 `f46fe936` 重新通过 PG18.3 `-Werror`、regression 1/1、TAP 1758/1758、
+两端各 139/139 和 8/8 C11，原 1741/1741 与 137/137 证据不重新绑定。
+生成型 Map 可返回完整文本；常量/等值列输出关联、UTF-8 优先级、NULL/空串、INSERT、错误与取消已验证。
+来源/权限保留，实现及复核修复纳入 main。该历史切片当时真实模型为 0/32、资源压力未运行；
+后续真实链路通过而资源资格失败，见上方 2026-09-04 记录。
+
+## PostgreSQL 生成型 Map PG plan/权限（2026-09-03）
+
+[PG plan 与权限验证](postgresql/semmap_pg_plan_20260903/README.md)：独立分支 `2205ccbb`，
+新 SQL 0.2.0/schema 4、固定参数、复制/严格解码、原生 EXECUTE ACL/hook 与缓存计划检查；
+PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260、本地/服务器各 136/136 与 C11 通过。
+该次只验证 plan，实际生成执行明确拒绝；后续执行实现已随上方切片纳入 main。没有新 Map 模型或资源验收，失败与中间结果单独保留。
+后续 [SQL wrapper 修复](postgresql/semmap_pg_plan_20260903/README.md#sql-wrapper-source-check) `676615fa`
+关闭内联后的参数来源旁路，重新通过 PG18.3 TAP 1283/1283、regression 1/1 和两端各 136/136；
+只接管显式 Map，普通 SQL 内联保留；该历史切片没有 C v5 执行或模型资格，后续执行见上方记录。
+
+## PostgreSQL 生成型 Map 纯值与 Python v5（2026-09-03）
+
+[纯值与 gateway 验证](postgresql/semmap_values_20260903/README.md)：独立分支源码 `425d2b1c`，
+C/Python 身份/完成值和严格 Python v5 复用旧 session/HTTP；本地/服务器各 135/135，重新运行
+PG18.3 `-Werror`、regression 1/1、TAP 1022/1022。该次尚未接 PG Map plan/C v5/SQL；未运行真实模型或资源验收。
+独立复核发现的数字输入错误、记录器脱敏和测试标签问题已处理，失败与历史结果保留。
+后续[深层 JSON 输入隔离](postgresql/semmap_values_20260903/README.md#json-depth-repair)在 `a1bbdd30`
+通过本地 136/136 和 C11；仅修 gateway 读帧，未重跑服务器 PG 或真实模型，原验收身份不变。
+上述消息、纯值/v5 与修复已随 `b0400944` 合入本地 main；[合并复查](postgresql/semmap_values_20260903/README.md#main-integration)
+重新通过本地 136/136 与 C11，不新增 PG 或真实模型资格。
+
+## PostgreSQL 生成型 Map 消息编译（2026-09-03）
+
+[规范消息与旧路径兼容](postgresql/semmap_messages_20260903/README.md)：独立分支源码 `6903cf46`，
+C/Python 共享两消息编码，Map 原样文本、Filter 字节不变；本地/服务器各 107/107，重新执行 PG18.3
+`-Werror`、regression 1/1、TAP 1022/1022。只完成消息子切片，不表示完整值/摘要、生成型 SQL/v5、
+golden/真实模型或资源验证通过；后续已随上方修改合入本地 main，原证据范围不变。
+
+## PostgreSQL 函数对象身份（2026-09-02）
+
+[身份加固与准备计划验证](postgresql/function_identity_20260902/README.md)：测试源码 `934f4f61`
+修复同签名非成员误接管，生产仅修改函数查找。最终 PG18.3 `-Werror`、regression 1/1、TAP 1022/1022
+通过，新增身份 103 项包含两个物理连接的仅成员 ADD/DROP 手动刷新。实现与证据已合入 main；仅成员变更的
+跨会话自动失效仍 pending，须按记录刷新所有相关连接。不涉及新模型、Map 生成或多会话执行。
+
+## PostgreSQL choice profile（2026-09-02）
+
+[真实 choice 服务验证](postgresql/choice_service_20260902/README.md)：`0a1c12d3` 的 PG18.3 → gateway
+→ Qwen2.5-1.5B/vLLM 完成 14 次 old/choice 请求及两个 NULL 对照；累计 15/100，含首轮工具失败的 1 次。
+本地/服务器各 94/94。四 C 工程验证完成，质量与校准未通过；启动及计数工具失败、原始输出全部保留，
+无新 TAP/构建；源码与证据已进入当前集成版本。
+
+[资源与预算工具验证](postgresql/choice_resources_20260902/README.md)：`4464fe9b` 的受控 PG18.3
+fixture 检查通过，含 v3/v4 各 5,164 次、取消/阻塞 DNS 各 10 次与恢复；本地 91/91。
+复用旧已验证二进制，未重跑 TAP，真实模型请求为 0；多会话仍是待实现能力。失败和完整时间序列保留。
+
+[Filter INSERT 修复](postgresql/semfilter_insert_20260902/README.md)：`39007150` 的 PG18.3 regression 1/1、
+TAP 919/919、本地/服务器各 83/83 通过。生产只修改 Filter planner，新增 171 项验证真正的写入、
+事务和限制；该次未做资源/真实模型验证，后续结果见上方记录。此前 SELECT 接线与 INSERT 失败证据保持原提交身份。
+
+[PG C/wire v4 接线](postgresql/choice_pg_wire_20260902/README.md)：`80bb7fc5` 的 choice SELECT 共用
+现有 runtime 与严格 parser。本地/服务器各 83/83、PG18.3 regression 1/1、TAP 748/748；实际新旧
+HTTP 请求仅差 choice 字段。该次另用旧/新二进制复现 Filter INSERT 未 lowering，未做资源与真实模型验证；
+后续修复及验收见上方记录。
+
+[gateway v4 与请求映射](postgresql/choice_gateway_v4_20260902/README.md)：`7d72d9ad` 实现严格 v4、
+共享 session 和显式 fixed-model choice 映射。本地/服务器各 83/83，PG18.3 regression 1/1、TAP
+537/537 通过；该历史切片当时未接 C codec/open spec，PG 拒绝执行。未调用真实模型。
+
+[PG plan 接入](postgresql/choice_pg_plan_20260902/README.md)：第四个 option 与 schema 3 已实现，
+保存完整 profile，支持计划复制、prepared plan 和 EXPLAIN；该切片实际执行明确拒绝，未接 wire v4。
+最终 PG18.3 regression 1/1、TAP 537/537、本地/服务器各 68/68 测试通过；没有真实模型调用。
+
+[首个实现切片](postgresql/choice_profile_contract_20260902/README.md)：新增严格 profile 值与 C/Python
+规范字节编码，本地/服务器合同 68/68 通过，另有 C11 和 PG18.3 `-Werror` 编译记录。
+该历史切片尚未接入 SQL/plan/wire、未安装扩展或调用模型；后续 PG 接入以上方记录为准。
+
+## PostgreSQL exact SemFilter reference calibration（2026-09-01）
+
+[单一分类 prompt 对照](postgresql/semfilter_prompt_qualification_20260901/README.md)：实际消息与
+chat template 核对一致。1.5B 唯一新 prompt 的旧/新样例各 5/9，matched 7B 为 7/9、6/9；每例
+三次重复，全部格式合法但没有配置满足全部正确要求。生产配置不变，校准继续暂停。保留中止的
+默认参数失配尝试；两个完整尝试和部分尝试合计 321 次 completion 请求。
+
+[校准前独立小切片](postgresql/semfilter_qualification_20260901/README.md)：builder 拒绝共线观测，
+PG18.3 多列统计将普通谓词估计从 8 修正为 64；choice 格式 30/30，但两种配置的语义预期均只符合
+12/27。reference 资格未通过，整轮采集继续暂停；PG18.3 回归 1/1、TAP 437/437、Python 59/59 通过。
+
+[首轮真实采集](postgresql/semfilter_reference_calibration_20260901/README.md)：64 条预热完成，但首个
+training 查询第 23 个模型响应违反严格输出格式，PG18.3 以 `22000` 终止语句。held-out 未运行，
+没有拟合或 artifact；脱敏逐请求数据、错误、构建/测试日志和 SHA 清单已归档。机制资格不变，
+真实成本校准仍未通过。
+
+## 状态感知 phase-change（2026-08-11）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `phase_change_state_aware_corrected_early_stop_20260811/` | 修正门禁、HTTP tail-drain 与多 Job 全局 arrival clock 后的 A-only + 三档 pressure | A-only 证明 K160 相对 K128 service rate +7.77%；B=2.5/3.5/4.5 均未形成双 endpoint、双周期降档压力，按门禁停止，未跑 action/formal。 |
+| `saor_capacity_development_20260811/` | SAOR 控制 microbenchmark、paired trace replay 与 2×4090 四臂 capacity-only development gate | 4/4 arm、0 incident；SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对简单 threshold −1.46%，未晋级。一次顺序运行且 provenance 有已修复缺口，不作 formal 排名。 |
+| `saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job 六 active-set 臂 + 四 matched-solo，1+3 formal | 40/40、0 incident、exactly-once；resolution-aware v2 完整 validation passed、credit mechanism effective 12/12。SAOR 在 credit 臂内 fg 最好，但 static 显著更强，未晋级。 |
+| `saor_priority_reachability_smoke_20260812_91ffcaa/` | static/SAOR/foreground strict-priority 三臂，两轮 rehearsal-only release 上界短测 | strict-priority 11,791 tok/s、fg JCT/P99 20.04/14.27s、fg SLO 0%；相对 SAOR fg P99 −73.02%，但 formal repeats=0，仅证明 release-only 可达性，不是 proposed/winner。 |
+| `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | static/SAOR/$0.125W_e$/$0.25W_e$ 两轮 bounded-priority development gate | 第 2 轮 $0.25W_e$ debt-recovery=0 被 fail-closed；两 cap fg P99 49–56s、SLO violation 85%–95%，均未晋级。交叉验证定位 ready backlog 未完整暴露给 coordinator；formal/4-Job/reservation 未运行。 |
+| `state_aware_work_unit/saor_bounded_ready_gate_20260813/` | 同 selector、改为项目自有的有界 concrete-ready 预注册后的两轮四臂 development gate | 8/8 cell、0 incident；$0.125W_e$ 两轮全过，均值 12,361 tok/s、fg P99 17.87s、fg SLO 0%、bulk 30s miss 0.662；$0.25W_e$ 被拒绝。候选需先过 project-only matched-observation 归因门，formal 尚未运行；原生 baseline 不使用该机制。 |
+| `state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/` | frozen-static 与同 bounded-ready observation 下 FIFO/DRR/VTC-style/strict-priority/SAOR 的双轮 Project 内部 selector 归因 rehearsal | 12/12 cell、0 incident；DRR/VTC-style 约 12.90K tok/s 且 fg 30s SLO 零违约，SAOR 12.28K tok/s、fg P99 17.85s。SAOR 是观测到的效率—tail 非支配折中点，不是 selector winner；固定顺序 n=2 且 selector 级 non-inferiority margin 未预注册，`formal_authorized=false`。原生 baseline 数量为 0。 |
+| `state_aware_work_unit/saor_ready_observation_bridge_rehearsal_20260813/` | frozen-static→single-head shared FIFO→bounded-ready FIFO 三臂双轮 Project bridge | 6/6 cell、0 incident；共享容量 tok/s +25.96% 但 fg P99 +99.17%，bounded-ready 在相同 FIFO 下再使 tok/s +7.30%、fg P99 −33.62%，仍有约 40% fg SLO violation。分离了效率/隔离与 observation 效应；不是 native baseline/formal。 |
+| `state_aware_work_unit/saor_project_mechanism_rehearsal_20260814/` | frozen-static + 同 bounded-ready observation 的 FIFO/DRR/VTC-style/strict-priority/SAOR 最终六臂 Project mechanism rehearsal | `63d17300` root 6/6、0 incident，validation passed；6,144-request fixed-output-cap audit 通过，SAOR 96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 projection 一致。单次相对 VTC-style lag P95 −13.15%、no-service +0.014%；只进入独立审核，不判排名、不授权 formal。 |
+| `state_aware_work_unit/saor_native_system_matched_manifest_20260819/` | native-system matched 的 Job0/Job1 SHA、512-row、合并顺序与独立 formal 授权模板 | 完整 prompt manifest 留在 Git 外；readiness 逐 Job 校验并要求 combined=Job0+Job1。merge 与 rehearsal 均不自动授权 formal。 |
+| `state_aware_work_unit/saor_native_system_matched_calibration_20260819/` | Project selection 与 Daft Native/Daft Ray/Ray Data 原生执行 selection identity | Daft C1/B1 是 vendor control，Ray Data C8/B16 是一次 development screen 冻结点；只声明身份匹配，不夸大为统计最优。 |
+| `state_aware_work_unit/saor_native_system_matched_gateway_rehearsal_20260821/` | 五臂统一 T0--T4 与 observation-only gateway 的单次 GPU rehearsal | 5/5、exactly-once、archive validation 通过；SAOR 相对同 executor static 吞吐 +31.01%、group JCT −23.70%，但 P99/lag/no-service 变差、Jain −1.50%。只作 rehearsal 观察；0s/5s pre/post isolation 样本不足，formal 未运行。 |
+
+## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `opening_database_e2e_text_refeed_20260808/` | SQuAD + ShareGPT 三静态臂 replacement；24/24 单元、18 formal、统一 PG source/sink、MFU/能耗/服务状态 | correctness/稳定性通过；SQuAD 可核对完成性与答案质量，但 Project 计时额外包含指标采集、记录写入和结束处理，不按不到 1% 的差异排名。ShareGPT C32 后续证实欠供给，旧 1.546 比值不排名；DuckDB 有 4,921/6,144 cap 语义失败。 |
+| `opening_database_e2e_text_20260807/` | 首轮相同三臂合同 | project feeding 89.93%/91.38% 未过门，只保留为 failed-feeding 历史诊断，性能数字已被 replacement 取代。 |
+
+## 开题文本原生框架入口（2026-08-08）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `opening_text_native_gate_20260808/` | bounded、Daft Native/Ray、Ray Data 的 256-row capability gate，以及 Ray Data C4/C8/C16 最小筛选 | 6/6 gate 正确性与 provenance 通过；冻结 C8/B16 measured peak 供正式矩阵使用。n=1 gate 不作框架性能排名。 |
+| `opening_text_native_single_job_formal_20260808/` | 同一 2,048-row ShareGPT manifest 的 bounded C128、Daft Native/Ray、Ray Data 1+3 formal，含 MFU、服务压力与能耗 | 16/16 cells、12 formal 通过；Daft 两臂高 waiting/KV，Ray Data 当前路径低 running/MFU。只报告官方 graph/冻结点外部现象，不称项目胜出。 |
+
+## 开题文本多 Job 干扰（2026-08-09）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `opening_multijob_interference_20260809/` | online exact-short、Project eager full/half/static/shared、三条原生5s overlap观察，以及逐请求阶段/状态分解 | online下shared提高aggregate但伤short/Jain；eager下quota-only +59.00%、matched static竞争+58.77%、shared竞争+28.90%，shared相对static short JCT−48.94%。结论是arrival-regime dependence和idle borrowing动机，不是动态普遍胜出。 |
+| `opening_fourjob_interference_20260809/` | 1 short+3 matched long 的 Project full/quarter/static/shared 因果分解，以及 Daft Native/Ray、Ray Data 原生 single→four-job 三重复 | 按三次 formal 均值，Project shared 相对 static 总吞吐 +8.68%，四个 Job JCT 全部改善，属于效率/JCT 子向量上的 baseline-relative empirical Pareto；但 raw-work Jain 0.960→0.923、long 收益不均，且 long1/2 未达到 quarter-solo 非劣。报告 full/reserved/static 三反事实；历史 compact 数据不足以补 event-level service lag。只作轨内证据，不作完整 Pareto、理论公平性质或跨框架绝对排名。 |
+| `opening_image_native_fourjob_formal_20260810/` | 同一 2K short + 3×3K long、0.5s offset 的 Daft built-in/Ray Data single→four-job 1+3 正式观察 | 40/40 runs、30 formal group 通过；只比较各系统内 Job slowdown，不作跨框架绝对排名，不称 Project/state-aware 胜出。 |
+| `opening_image_project_fourjob_observe_only_formal_20260810/` | 同一图像 manifest 的 Project single/static/proposed-role staged descriptor + observe-only snapshot 1+3 正式门禁 | 24/24 group runs、99K formal rows exactly-once；3,114 个 snapshot 100% fresh、构建均值 0.141 ms；static/proposed group JCT 差 0.98%，只证明观测接入，不称动态胜出。 |
+| `opening_project_short_all_at_t0_diagnostic_20260809/` | 同一 short manifest 的 Project all-at-t0 1+3，统一 T0–T4 timer 与 Daft raw 对齐 | Project T3 model-request window 11.354s vs Daft 11.059s，service tokens/s 与 MFU 差约−2.5%；Daft T0 未采集，完整系统 E2E 不排名。 |
+
+## 图像 AI_EMBED operator（2026-08-03/04）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `image_ai_embed_operator_formal_20260803/` | 60K×2 held-out Ray Data/project 2×2 CPU formal、Daft 12K capacity consistency，以及 schema-v12 派生观测 | Ray/project 同规模 matched-resource 结论有效；Daft 因物化容量上限单列。跨规模只描述独立平台上的 images/s/单位资源，absolute JCT/first output 不混排。 |
+
+## 双 GPU 调度与容量（2026-07-28/29）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `multicard_scale_ramp_enhanced_20260807/` | bounded HTTP + harness-pre-split DuckDB AI 的九档规模曲线，三重复并补齐 during-cell vLLM gauges、身份、能耗和失败 cell 紧凑证据 | bounded 27/27、DuckDB 22/27；两路径身份与计时粒度分开，不作产品原生多 endpoint 排名；逐请求输出和日志留服务器。 |
+| `multicard_lbrr_scale_ramp_enhanced_20260807/` | 单 DuckDB→nginx round-robin→双 vLLM 的九档规模曲线，27/27 三重复紧凑证据 | `gateway_system_diagnostic`，query-barrier 口径；不冒充 DuckDB 原生调度，也不与 request-level E2E 延迟混排。 |
+| `static_credit_prompt_length_screen_20260730/` | Short/long prompt static request/work credit screening, with independent median/CV/equivalent-arm audit. | 48/48 succeeded, but urllib/no-token-ID and 48.5% divergence among no-pressure short arms make the dynamic GO/NO-GO inconclusive. Retained as mechanism-audit evidence; rerun the async equivalence gate. |
+| `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent-full, static-partition and endpoint-shared DRR comparison. | 36/36 succeeded with exact global request/work bounds. Two jobs show no gain; four jobs improve aggregate throughput by 9.57% and max P99 by 22.52%, but repeat-level results are heterogeneous, so this is a high-contention candidate rather than a universal default. |
+| `dual_gpu_slo_ewma_flush_formal_20260729/` | Fixed-50, queue-25/50 and SLO-EWMA-25/50 under high and arrival-limited replay. | 24/24 succeeded; SLO-EWMA changes throughput by -0.52%/+0.10% versus fixed and all arms have zero 30s-SLO violations. It does not meet the promotion gate. |
+| `dual_gpu_service_quantum_20260729/` | Fixed-work batch/512/1024/2048/4096/request completion-granularity comparison. | Fine granularity reduces credit-held by about 16% but changes throughput by at most +1.75%; no fixed quantum meets the promotion gate. |
+| `dual_gpu_actor_pool_shape_20260729/` | Fixed-work, fixed-slot and fixed-Ray-CPU 1×256/2×128/4×64 actor-pool comparison. | Multi-actor shapes gain at most 2.00%, below the preregistered 5% promotion threshold; retain 1×256 for the current single-job homogeneous endpoints. |
+| `dual_gpu_active_work_saturation_20260729/` | Dual-4090 eight-point request-level active-work saturation curve with three formal repeats per cap. | 65,536 is the preregistered smallest saturation point; above it throughput plateaus while P99/SLO worsen. |
+| `dual_gpu_active_work_curve_20260728/` | Earlier five-point active-work curve used to discover that the original upper bound was still rising. | Superseded for capacity selection by the 2026-07-29 extension; retains diagnostic and reproducibility value. |
+| `dual_gpu_request_replay_20260728/` | Whole-submission barrier versus request-level replenishment under K-count controls. | K48 matches batch K16 at nominal matched work; K64 mixes in about 33% more offered work. |
+
+## Output-aware Packing (2026-07-26)
+
+### Current mechanism decision
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `row_cap_aware_packing_512_20260726/` | Prefix-cache-audited 512-row row-cap/token-budget/packing screening plus three-repeat confirmation. | Row-cap-first has a small 512-row signal; cache-enabled exploratory runs are retained only as invalid-ordering audit evidence. |
+| `row_cap_aware_packing_1024_20260726/` | Held-out 1024-row sequential/classic-BFD/row-cap-first comparison with request SLO, energy, and MFU. | Negative default-adoption result: about 1% throughput gain caused SLO violation to rise from 50.39% to 88.67%; sequential remains default. |
+
+### Earlier gates and superseded runs
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `row_cap_aware_packing_gate_20260726/` | 64-row real PostgreSQL→Daft→Ray→vLLM gate for sequential, classic BFD, and BFD-inspired row-cap-first placement. | Infrastructure validation only; 6/6 runs and all request/resource/MFU invariants pass, but one formal repeat cannot support performance ranking. |
+| `output_aware_bfd_gate_20260726/` | Superseded pre-fix 64-row output-aware BFD gate. | Lifecycle/resource evidence remains auditable, but sequential and BFD row caps were not matched; excluded from algorithm comparisons. |
+| `output_aware_bfd_gate_v2_20260726/` | 64-row real-component gate for output-cost modes, sequential/BFD packing, request/resource traces, power, energy, and MFU. | Infrastructure validation only; all token-budget policies share token and row caps. |
+| `output_aware_bfd_512_v2_20260726/` | Six-cell 512-row sequential/BFD × output-cost comparison, with 18 formal runs and plot-ready summaries. | BFD trace is a positive candidate at 512 rows, but n=3 and trace metadata is not a paired output oracle. |
+| `output_aware_bfd_1024_20260726/` | Held-out 1024-row confirmation against same-cost sequential and strongest practical baseline. | Negative scale confirmation: current BFD does not generalize; row-cap-aware joint tuning is required. |
+| `output_aware_bfd_512_20260726/` | Superseded failed run that exposed inconsistent sequential/BFD row caps and a timeout incident. | Audit evidence only; excluded from performance conclusions. |
+
+## Local Baselines
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP C32/C64/C128/C256 容量校准，含 MFU、服务状态与服务器原始归档 SHA。 | C128 实测达到 C256 的 98.22%，是第一个满足预先规定 97% 选择条件的并发点；只用于确定 bounded 对照并纠正旧 C32 欠供给口径，不作框架性能排名。 |
+| `shared_vllm_adaptive_admission_20260726/` | Real shared-endpoint foreground/background K8/K16/AIMD repeats plus adaptive-flush follow-up, with exact request-token accounting. | Static K8 protects foreground tails; AIMD saturates near K16 with zero decreases and provides no feedback gain. Adaptive flush behaves mostly like fixed-50 and has no stable increment. |
+| `adaptive_admission_controller_20260726/` | Real 64-request gate, randomized 512-request static/AIMD/EWMA/PID matrix, and AIMD-vs-static-K16 mechanism control. | Dynamic controllers beat K=8 by converging near K=16, but AIMD is indistinguishable from static K=16; shared-service protection remains unverified. |
+| `vllm_cuda_graph_512_20260726/` | Matched eager/CUDA-Graph 64-request gates plus one warm-up and three formal 512-request repeats per arm, with full prompt/output/request/resource/MFU tracing. | CUDA Graph is the current local steady-state baseline: E2E -71.76% and observed tokens/s +254.05% versus eager; this is deployment tuning, not an upstream scheduling contribution. |
+| `adaptive_flush_cross_rate_20260726/` | Real 512-request fixed-25/fixed-50/adaptive screens at about 51.4 and 12.85 req/s replay intensity. | Fixed-50 remains best or equivalent across the tested range; adaptive does not justify default complexity. |
+| `text_heldout_2048_20260726/` | Natural-EOS 2048-request held-out fixed-50/adaptive comparison with exact request and MFU audits. | Fixed-50 keeps a 1.75% throughput and 2.61% P99 advantage in the single screen; sustained backlog still amplifies tail latency. |
+| `prefix_aware_batching_20260726/` | Controlled 0/30/70/100% shared-prefix workloads, code-semantic audits, and real vLLM screens. | With prefix cache disabled, prefix-only grouping has no stable benefit; sequential token-budget remains default. |
+| `operator_cost_estimation_20260726/` | Formal-only 23-feature decision-context LOO over 204 real formal rows；历史 all-phase 结果已归档。 | CE5 candidate pairwise 0.800、macro/pooled/max regret 4.58%/0.62%/26.23%；row pairwise 0.684 未过门槛，不晋级。 |
+| `operator_cost_profile_pilot_20260804/` | 双 4090 四候选 cost-profile v1/v2 运行合同门禁与完整 raw trace。 | v2 8/8、0 incident、512 unique requests/cell、23 维四向量同 context；n=1 只验证采样合同和约 4 小时 formal 预算，不作配置排名。 |
+| `operator_cost_profile_dual4090_formal_20260804/` | 首次双 4090 320-run formal 的并发 runner 与空 Ray 地址事故审计。 | 两套输出均排除：几乎全程共享 GPU/vLLM 竞争，且 640/640 子运行启动 local Ray；本目录不含性能结论。 |
+| `adaptive_flush_randomized_20260726/` | Natural-EOS gate, randomized 512-request fixed-25/fixed-50/queue-adaptive repeats, and exact output-token/finish tracing. | Fixed-50 and adaptive both beat fixed-25 by about 32% tokens/s and are indistinguishable; fixed-50 is the simplest current candidate. |
+| `joint_batching_submission_512_20260726/` | Real 18-cell token-budget × K_max × flush screen plus randomized repeated validation of independent splice, joint candidate, and fixed-50 mechanism control. | Under the 1% SLO gate, independent splice and joint search are indistinguishable; fixed-50 is the simplest current workload-specific candidate. |
+| `local_vllm_qwen15b_baseline/` | Local `AI_COMPLETE` baseline for `PostgreSQL -> Daft -> Ray -> vLLM Qwen2.5-1.5B`, including synthetic smoke, ShareGPT/BurstGPT fixed row-batch sweep CSVs, and a latency metric probe. | Local PG rehearsal, fixed row-batch baseline only; not a token-aware scheduling result and not a PostgreSQL 18.3 internal-platform result. |
+| `accelerated_arrival_flush_20260725/` | Real single-GPU accelerated-arrival comparison of immediate, fixed-timeout, and queue-adaptive flush, with run, submission, flush, and resource traces. | Controlled accelerated replay on one RTX 5070. Fixed timeout reduced submissions but did not yield a statistically separable throughput gain; the current queue-adaptive rule formed no multi-row batches. |
+| `adaptive_flush_window_20260725/` | Corrected dual-window adaptive flush gates, 1024-row probe, and 512-row repeated comparison with plot-ready traces. | Positive single-GPU candidate evidence under accelerated replay; fixed policy-group order, fixed 16-token output cap, and missing per-request E2E tails still require follow-up. |
+| `request_lifecycle_gate_20260725/` | Real 64-prompt PostgreSQL→Daft→Arrow→Ray→vLLM gate for request lifecycle, seeded runner, SLO fields, and explicit request→submission identity. | Infrastructure validation only: one run per strategy, fixed then adaptive; not policy performance evidence. |
+
+本目录保存正式研究实验结果和小范围优化测试记录。
+
+## 当前状态
+
+正式优化实验已经开始；本目录保存方法实验。早期 GPU-backed 画像和动机实验仍位于：
+
+```text
+results/motivation/gpu/
+results/motivation/pg18_4_fake/
+results/motivation/fake_cpu/
+```
+
+新增结果必须对应两项研究内容、共同代价估计或多模态泛化中的明确问题，并同步
+`EXPERIMENT_EVIDENCE_REGISTRY.md`；不要从本目录列表推断当前执行优先级。
+
+## 结果命名建议
+
+```text
+YYYYMMDD_<research_area>_<short_name>.md
+YYYYMMDD_<research_area>_<short_name>.csv
+```
+
+示例：
+
+```text
+20260720_sink_pgvector_writeback.md
+20260720_scheduling_bounded_inflight.md
+20260720_batching_partition_ablation.md
+```
+
+## 记录要求
+
+- 明确对应研究内容。
+- 明确 baseline 和优化方案。
+- 明确运行命令、参数、CSV 和日志。
+- 明确结论边界，不把局部调优写成完整论文贡献。
+- 如需图表，放入 `docs/figures/` 并在结果报告中引用。

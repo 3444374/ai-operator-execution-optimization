@@ -88,7 +88,7 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 与项目其他目录的关系
 
-- 实验事实优先来自 `motivation/results/`。
+- 实验事实优先来自 `results/motivation/`。
 - 实验讲解和术语口径参考 `learning/experiment_walkthrough.md`。
 - 文献与外部系统证据参考 `docs/research/`。
 - 当前方向和阶段计划参考 `overview/current_direction_and_plan.md`。

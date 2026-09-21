@@ -481,10 +481,10 @@
 
 ## 2026-07-15 策略设计与实现参考沉淀
 
-- 新增 `experiments/plans/strategy_design_implementation_reference.md`，作为后续实验设计和系统实现参考，汇总 Ray、vLLM/Ray Serve/Triton、GPU 数据放置和 DB AI 算子文献机制如何支持本课题三层策略。
+- 新增 `docs/plans/strategy_design_implementation_reference.md`，作为后续实验设计和系统实现参考，汇总 Ray、vLLM/Ray Serve/Triton、GPU 数据放置和 DB AI 算子文献机制如何支持本课题三层策略。
 - 明确三层策略口径：计划层数据组织、运行层入口调度、服务端 dynamic / continuous micro-batching；该口径后续应同步到开题报告、PPT 和答辩讲解中。
 - 进一步补充“系统优化蓝图”和“机制到实现任务优先级”，把文献机制拆成 Workload Profiler、Plan-time Data Organizer、Ray Admission Controller、Endpoint Router、Service-side Micro-batcher 和 E2E Guardrail 六个可实现模块。
-- 已同步 `experiments/plans/README.md`、`experiments/plans/strategy_design_literature_basis.md` 和 `PROJECT_INDEX.md`。
+- 已同步 `docs/plans/README.md`、`docs/plans/strategy_design_literature_basis.md` 和 `PROJECT_INDEX.md`。
 
 ## 2026-07-15 GPU 调度与数据放置补充调研
 
@@ -520,7 +520,7 @@
 - 使用 `D:/Tools/echarts` 中的 ECharts + sharp 生成第一批开题实验图，脚本为 `docs/thesis/assets/generate_echarts_experiment_charts.js`。
 - 输出目录为 `docs/thesis/assets/charts/`，每张图同时生成 SVG 与 PNG，便于报告和 PPT 分别引用。
 - 当前生成三张图：fine vs coalesced 端到端耗时对比、16K 行阶段拆分、双 endpoint 下 Python / Ray task / Ray actor 对比。
-- 数据均来自 `motivation/results/gpu/` 的真实 GPU-backed CSV，排除 warm-up，仅使用 formal repeats 平均；PG18.4 连接验证、dry-run 和 smoke 结果不单独画图，后续保留为表格或文字说明。
+- 数据均来自 `results/motivation/gpu/` 的真实 GPU-backed CSV，排除 warm-up，仅使用 formal repeats 平均；PG18.4 连接验证、dry-run 和 smoke 结果不单独画图，后续保留为表格或文字说明。
 - 运行时 `sharp` 报告 fontconfig cache 不可写，但 SVG 和 PNG 均已生成；暂不修改系统级字体缓存配置。
 
 ## 2026-07-13 系统架构图版式修订
@@ -681,7 +681,7 @@
 ## 2026-07-12 调整实验主线入口
 
 - 根据用户反馈，降级 `feasibility/guide.md` 在项目索引中的地位：该文件只作为早期组件可行性验证指南，不再承担当前实验大纲职责。
-- 重写 `PROJECT_INDEX.md` 第 3 节为“实验主线与证据入口在哪里”，将主入口调整为 `motivation/README.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md`、`motivation/results/README.md` 和 `motivation/results/gpu/README.md`。
+- 重写 `PROJECT_INDEX.md` 第 3 节为“实验主线与证据入口在哪里”，将主入口调整为 `motivation/README.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md`、`results/motivation/README.md` 和 `results/motivation/gpu/README.md`。
 - 更新 `motivation/README.md`，移除 GPU-backed 结果“待补”的过时表述。
 - 更新 `feasibility/README.md` 和 `feasibility/guide.md`，明确 feasibility 只负责组件、环境和脚本可用性，不承载开题主线或 GPU-backed 性能结论。
 
@@ -694,10 +694,10 @@
 ## 2026-07-12 开题报告与飞书内容复核
 
 - 根据当前项目大纲、GPU-backed 动机结果和实验主线入口，复核 `docs/thesis/report/opening_report.md` 与 `docs/thesis/feishu/opening_report_wiki.md`。
-- 确认开题报告整体方向合适：研究内容、技术路线和可行性分析均以 `motivation/results/gpu/` 的真实 GPU-backed 结果作为主证据，并区分 PG18.4、fake/CPU 和 PostgreSQL 18.3 内部平台边界。
+- 确认开题报告整体方向合适：研究内容、技术路线和可行性分析均以 `results/motivation/gpu/` 的真实 GPU-backed 结果作为主证据，并区分 PG18.4、fake/CPU 和 PostgreSQL 18.3 内部平台边界。
 - 清理 `docs/thesis/feishu/opening_report_wiki.md` 开头的本地源稿说明，避免飞书发布面出现工作流元话语。
 - 在飞书后续计划中补充 PostgreSQL 18.3 内部平台复测安排。
-- 修正 `motivation/results/README.md` 中 GPU-backed 结果入口的过时措辞。
+- 修正 `results/motivation/README.md` 中 GPU-backed 结果入口的过时措辞。
 
 ## 2026-07-12 实验结论写作标准
 
@@ -745,7 +745,7 @@
 
 - 根据用户要求，将真实 GPU-backed 实验数据图重新用 Python 生成，脚本放在 `docs/thesis/assets/charts/scripts/generate_gpu_experiment_charts.py`，输出目录为 `docs/thesis/assets/charts/python/`。
 - 新增五张候选正式图：调用粒度对比、single / dual endpoint 执行方式双面板对比、Ray actor 单 / 双 endpoint 扩展对比、链路阶段绝对时延、链路阶段占比。
-- 图表只使用 `motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv` 和 `motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv` 的 formal repeats 平均，排除 warm-up，不混入 fake/CPU 或连接验证结果。
+- 图表只使用 `results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv` 和 `results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv` 的 formal repeats 平均，排除 warm-up，不混入 fake/CPU 或连接验证结果。
 - 已目检 PNG 输出，确认中文、坐标、图例和标签可读；其中执行方式对比图将 single endpoint 和 dual endpoint 放在同一图中，避免单独强调 Ray 更快而忽略适用条件。
 - 更新 `docs/thesis/assets/README.md`、`docs/thesis/assets/charts/scripts/README.md`、`docs/thesis/assets/charts/experiment_charts_audit.md` 和 `learning/README.md`。本批 Python 图暂未替换报告、飞书或 PPT 正式引用，后续替换时需同步图注、正文解释和讲稿备注。
 
@@ -769,7 +769,7 @@
 - 根据用户要求，记录后续图表资产清理规则：最终只保留 `selected/`、生成脚本、审计记录、图表选择说明和系统架构图；`python/`、`all_meaningful/` 和旧 ECharts 根目录图在报告、PPT、飞书均完成路径切换后可以删除。
 # 2026-07-14 PG18.4 pgai-integrated GPU rerun figures and report update
 
-- Generated report-main figures from `motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv` with `docs/figures/scripts/generate_pgai_integrated_gpu_rerun_charts.py`.
+- Generated report-main figures from `results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv` with `docs/figures/scripts/generate_pgai_integrated_gpu_rerun_charts.py`.
 - Added `06_gpu_pgai_rerun_granularity_20260714`, `07_gpu_pgai_rerun_stage_writeback_20260714`, and `08_gpu_pgai_rerun_endpoint_comparison_20260714` under `docs/figures/data/report_main/`.
 - Updated `docs/thesis/report/opening_report.md` to cite the PG18.4 local rehearsal + CUDA endpoint rerun, replacing older 2026-07-12 GPU figures in the current report body.
 - Revised the endpoint-comparison figure wording so the dual-endpoint result is presented as absolute E2E time (`3.62s -> 2.86s`) and stage movement, not as a visually emphasized percentage claim.
@@ -778,8 +778,8 @@
 
 - Completed the same-chain GPU-backed Ray actor writeback comparison for no writeback, JSON text, and pgvector `vector(384)`.
 - Output CSV and report:
-  `motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv` and
-  `motivation/results/gpu/pgvector_writeback_20260714.md`.
+  `results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv` and
+  `results/motivation/gpu/pgvector_writeback_20260714.md`.
 - Generated figure:
   `docs/figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
 - Updated `docs/thesis/report/opening_report.md` with the new figure, table, and boundary note. The result remains PG18.4 local rehearsal, not PostgreSQL 18.3 internal-platform performance.
@@ -858,7 +858,7 @@
 - Work Unit、状态感知、动态调度和共同使能代价估计改为同等严格的动机证据链，每条均需由实验现象导出设计字段/信号/动作。
 - 当前实验增加 ShareGPT Chat 原生单 job 矩阵，以及 Daft Native/Ray、Ray Data 原生两 job 错峰观察；项目另作 static-partition vs shared-work 同上限 A/B。
 - DuckDB 保持为 SQuAD/cap=64 有界输出产品轨，不与语义不兼容的 ShareGPT 框架轨混排。
-- 同步更新 `docs/thesis/claim_matrix.md`、`docs/thesis/opening_defense_outline_20260808.md`、`experiments/plans/state_aware_work_unit_evaluation_20260808.md`、`PROJECT_OUTLINE.md` 和根规则的当前顺序。
+- 同步更新 `docs/thesis/claim_matrix.md`、`docs/thesis/opening_defense_outline_20260808.md`、`docs/plans/state_aware_work_unit_evaluation_20260808.md`、`PROJECT_OUTLINE.md` 和根规则的当前顺序。
 # 2026-08-09 两作业证据与四部件实现边界审计
 
 - 把 5s guaranteed-overlap 的原生观察和项目 static/shared A/B 从“待运行”更新为已完成，
@@ -995,7 +995,7 @@
 # 2026-08-23 PPT 第 29 页与报告图 10 代价估计图修订
 
 - 新图的权威 PNG/SVG/PDF 位于 `docs/figures/data/report_main/`，原始实验 JSON 仍保存在对应的
-  `experiments/results/` 目录；同步覆盖开题专用图集 P16 和报告专用图 10 副本，没有在文档目录复制实验数据。
+  `results/` 目录；同步覆盖开题专用图集 P16 和报告专用图 10 副本，没有在文档目录复制实验数据。
 - 六种估计方法分别使用统一坐标的小图。每个候选用空心真实点、实心预测点和两点间竖线表示，
   可以直接读取真实时间、预测时间及两者相差的秒数；每种方法包含 20 个留出情境 × 4 种上限 = 80 组候选均值。
 - 同页保留四种上限的两两排序和错误选择造成的额外耗时；图中直接标出混合模型中位数 0、平均 2.90%、

@@ -35,4 +35,4 @@ vLLM 成功识别 `CLIPModel` 和 pooling runner，但识别配置不等于已�
 vLLM+CLIP 在所有环境中都不可行。
 
 正式机器证据和不能声称的边界见
-`../feasibility/results/vllm_clip_pooling_gate_20260804/README.md`。
+`../results/feasibility/vllm_clip_pooling_gate_20260804/README.md`。

@@ -268,8 +268,8 @@ For the latest opening-report update, prefer these figures over the older
 Source:
 
 ```text
-motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+results/motivation/gpu/pgai_integrated_key_rerun_20260714.md
+results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 # 2026-07-14 Current Opening-Report Preference
 
