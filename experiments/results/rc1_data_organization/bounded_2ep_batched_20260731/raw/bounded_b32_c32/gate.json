@@ -1,0 +1,18 @@
+{
+  "incidents": [],
+  "metrics": {
+    "endpoint_work": {
+      "0": 792813,
+      "1": 792819
+    },
+    "endpoint_work_skew": 7.567931646441369e-06,
+    "manifest_rows": 2048,
+    "result_endpoint_counts": {
+      "0": 1024,
+      "1": 1024
+    },
+    "result_rows": 2048
+  },
+  "passed": true,
+  "status": "passed"
+}

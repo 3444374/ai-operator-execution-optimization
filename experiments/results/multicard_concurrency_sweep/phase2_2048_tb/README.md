@@ -1,5 +1,4 @@
 # 多卡并发扫描（2×4090，SQuAD 2048，cap=64，c=1..64 完整曲线，1 rep/cell）
-> **原始 trace 存放位置（2026-09-21 迁出 git）**：本目录的 per-run 原始数据（requests/submissions/resources/flush 等 trace、日志、raw/ 内容）已按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策从 git 跟踪移除；迁出前已逐文件 SHA-256 与 git blob 内容核对一致，镜像于 AutoDL `/root/autodl-tmp/ai-operator/experiments/results/` 与本地 `C:\Users\ays\Desktop\results\experiments\results\` 下的同名目录。git 内保留聚合 CSV、summary、manifest 与本 README。
 
 > **定位**：bounded_http / duckdb_ai / project_static 三臂在固定规模 2048 下，从 **C_total=2（c/K=1）到 C_total=128（c=64）的完整并发曲线**，回答"上游并发如何喂饱 GPU、各臂形态如何"。**这是 1 rep/cell 的 diagnostic screening，不是 formal ranking**（无 TOST/equivalence margin/CV，"未检出差异"≠"证明等价"）。
 >

@@ -1,0 +1,8 @@
+{
+  "blocked_cells": [],
+  "completed_cells": [
+    "duckdb_ai_c32"
+  ],
+  "scope": "text_comparison_validity_gate",
+  "status": "passed"
+}

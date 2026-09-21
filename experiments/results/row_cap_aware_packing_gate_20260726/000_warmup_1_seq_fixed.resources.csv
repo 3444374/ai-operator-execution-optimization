@@ -1,0 +1,11 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785009629.330465,snapshot,NVIDIA GeForce RTX 5070,4,10379,12227,41.75,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785009629.6742337,snapshot,NVIDIA GeForce RTX 5070,4,10379,12227,41.79,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785009629.9941194,snapshot,NVIDIA GeForce RTX 5070,4,10379,12227,41.78,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785009630.3389797,snapshot,NVIDIA GeForce RTX 5070,4,10379,12227,41.78,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785009630.6797307,snapshot,NVIDIA GeForce RTX 5070,4,10383,12227,41.82,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785009631.0210369,snapshot,NVIDIA GeForce RTX 5070,4,10390,12227,41.93,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785009631.3442533,snapshot,NVIDIA GeForce RTX 5070,4,10384,12227,41.93,ok,0,0,0.0
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785009631.685187,snapshot,NVIDIA GeForce RTX 5070,4,10383,12227,42.10,ok,32,32,0.025113248033060476
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785009632.0073633,snapshot,NVIDIA GeForce RTX 5070,80,10383,12227,72.21,ok,64,0,0.05364380513391087
+1,row_cap_aware_packing_gate_20260726,warmup,1,919,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785009632.350958,snapshot,NVIDIA GeForce RTX 5070,80,10384,12227,72.21,ok,0,0,0.0

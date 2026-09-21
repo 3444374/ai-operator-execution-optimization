@@ -31,14 +31,7 @@
 按本修订政策已 force-push 撤回（reset 回 c250e19），raw 改存本地。formality 三审记录（6-dim 对抗式 workflow，
 24 候选，T1/T2/T3 分类）见会话 workflow journal 与 PROJECT_LOG 2026-08-07。
 
-## 已迁出的历史 raw（2026-09-21 执行）
+## 仍残留在 git 的 raw tarball（待定夺）
 
 `operator_cost_profile_pilot_20260804/v1_diagnostic_raw.tar.gz` + `v2_raw.tar.gz`（更早 commit 的 pilot/diagnostic
-raw，被该实验 README 引用）已随下方迁出一并从 git 跟踪移除。
-
-2026-09-21 按本政策补做历史迁出：2026-07 文本轨道、`rc1_*`、`multicard_*` 与上述 pilot 共 34 个结果目录的
-2,380 个 per-run 原始文件（requests/submissions/resources/flush 等 trace、日志、raw/ 内容，git blob 合计约
-339 MB）从 git 跟踪移除。迁出前以 git blob 内容（LF 归一化后）为准逐文件 SHA-256 核对，AutoDL
-`/root/autodl-tmp/ai-operator/experiments/results/` 与本地 `C:\Users\ays\Desktop\results\experiments\results\`
-两处镜像均 2,380/2,380 一致。受影响 README 已加注镜像位置；git 内保留聚合 CSV、summary、manifest、
-README。历史内容仍可从 git 历史对象恢复，镜像为现行取用入口。
+raw，被该实验 README 引用）。按新政策属应迁出项，但非本次新增，未单方面删除。

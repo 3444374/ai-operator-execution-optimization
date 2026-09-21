@@ -1,0 +1,11 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785001798.1370027,snapshot,NVIDIA GeForce RTX 5070,7,10921,12227,43.41,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785001798.4791567,snapshot,NVIDIA GeForce RTX 5070,7,10914,12227,43.41,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785001798.7988734,snapshot,NVIDIA GeForce RTX 5070,7,10914,12227,43.28,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785001799.1468868,snapshot,NVIDIA GeForce RTX 5070,7,10906,12227,43.32,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785001799.4872205,snapshot,NVIDIA GeForce RTX 5070,7,10899,12227,43.32,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785001799.8283994,snapshot,NVIDIA GeForce RTX 5070,7,10899,12227,43.35,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785001800.166876,snapshot,NVIDIA GeForce RTX 5070,7,10899,12227,43.27,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785001800.486751,snapshot,NVIDIA GeForce RTX 5070,7,10912,12227,43.27,ok,31,33,0.022649606612095696
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785001800.810282,snapshot,NVIDIA GeForce RTX 5070,7,10912,12227,48.64,ok,43,21,0.04355082253834541
+1,output_aware_bfd_gate_20260726,formal,1,837,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785001801.1357777,snapshot,NVIDIA GeForce RTX 5070,98,10912,12227,104.18,ok,59,0,0.05563061273146308

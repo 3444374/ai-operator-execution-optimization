@@ -1,0 +1,12 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785001835.9521923,snapshot,NVIDIA GeForce RTX 5070,7,10905,12227,43.61,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785001836.28784,snapshot,NVIDIA GeForce RTX 5070,7,10905,12227,43.70,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785001836.626373,snapshot,NVIDIA GeForce RTX 5070,7,10905,12227,43.65,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785001836.9441874,snapshot,NVIDIA GeForce RTX 5070,7,10905,12227,43.65,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785001837.2712593,snapshot,NVIDIA GeForce RTX 5070,7,10899,12227,43.56,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785001837.5945606,snapshot,NVIDIA GeForce RTX 5070,7,10899,12227,43.53,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785001837.9398837,snapshot,NVIDIA GeForce RTX 5070,7,10899,12227,43.53,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785001838.263791,snapshot,NVIDIA GeForce RTX 5070,7,10905,12227,43.49,ok,0,0,0.0
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785001838.5817893,snapshot,NVIDIA GeForce RTX 5070,7,10912,12227,43.66,ok,31,14,0.021854883573074746
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785001838.929431,snapshot,NVIDIA GeForce RTX 5070,7,10912,12227,43.66,ok,64,0,0.05340538822220453
+1,output_aware_bfd_gate_20260726,formal,1,840,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,10,1785001839.2524498,snapshot,NVIDIA GeForce RTX 5070,98,10912,12227,93.76,ok,0,0,0.0

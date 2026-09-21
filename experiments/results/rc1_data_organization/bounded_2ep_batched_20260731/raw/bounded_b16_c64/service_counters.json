@@ -1,0 +1,32 @@
+{
+  "after": {
+    "0": {
+      "generation_tokens": 241158,
+      "prompt_tokens": 585633
+    },
+    "1": {
+      "generation_tokens": 242154,
+      "prompt_tokens": 585330
+    }
+  },
+  "before": {
+    "0": {
+      "generation_tokens": 0,
+      "prompt_tokens": 0
+    },
+    "1": {
+      "generation_tokens": 0,
+      "prompt_tokens": 0
+    }
+  },
+  "delta": {
+    "0": {
+      "generation_tokens": 241158,
+      "prompt_tokens": 585633
+    },
+    "1": {
+      "generation_tokens": 242154,
+      "prompt_tokens": 585330
+    }
+  }
+}

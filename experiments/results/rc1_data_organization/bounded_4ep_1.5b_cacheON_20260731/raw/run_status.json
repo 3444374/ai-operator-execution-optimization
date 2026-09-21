@@ -1,0 +1,9 @@
+{
+  "blocked_cells": [],
+  "completed_cells": [
+    "bounded_b16_c64",
+    "bounded_b32_c32"
+  ],
+  "scope": "core_official_adapters",
+  "status": "passed"
+}

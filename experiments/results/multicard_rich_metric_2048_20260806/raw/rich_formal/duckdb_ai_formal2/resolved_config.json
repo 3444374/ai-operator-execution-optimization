@@ -1,0 +1,57 @@
+{
+  "blocked_cells": [],
+  "cells": [
+    {
+      "adapter": "duckdb_ai",
+      "adapter_args": [
+        "--duckdb-database",
+        ":memory:",
+        "--duckdb-max-concurrent-requests",
+        "32",
+        "--duckdb-retry-count",
+        "0",
+        "--duckdb-retry-backoff-ms",
+        "0",
+        "--duckdb-min-request-interval-ms",
+        "0",
+        "--duckdb-timeout-seconds",
+        "120"
+      ],
+      "batch_size": 1,
+      "comparison_role": "database_product_native_baseline",
+      "concurrency_per_endpoint": 32,
+      "custom_scheduling_code": false,
+      "formal_baseline_eligible": true,
+      "formal_control_eligible": true,
+      "id": "duckdb_ai",
+      "implementation_provenance": "duckdb_community_ai_extension",
+      "python_executable": "/root/autodl-tmp/venvs/text-baselines/bin/python",
+      "qualification_gate": "bounded_output_zero_error_extension_version_and_same_endpoint",
+      "ray_address": null,
+      "scheduler_owner": "duckdb_sql_executor_and_ai_community_extension",
+      "upstream_source": "https://duckdb.org/community_extensions/extensions/ai.html"
+    }
+  ],
+  "completion_protocol": "chat_completions",
+  "driver_python": "/root/autodl-tmp/venvs/text-baselines/bin/python",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "experiment_id": "rich_duckdb_ai",
+  "formal": false,
+  "manifest": "/tmp/squad_eq2048.jsonl",
+  "max_endpoint_work_skew": 0.02,
+  "model": "qwen2.5-7b",
+  "output_root": "/root/autodl-tmp/rich_formal/duckdb_ai_formal2",
+  "rows_total": 2048,
+  "service": {
+    "live_limits": null,
+    "live_prefix_caching": null,
+    "max_num_batched_tokens": -1,
+    "max_num_seqs": -1,
+    "prefix_caching": "enabled"
+  },
+  "tokenizer": null,
+  "vllm_python": "/root/autodl-tmp/venvs/vllm-4090/bin/python"
+}

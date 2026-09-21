@@ -1,0 +1,11 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785003831.983078,snapshot,NVIDIA GeForce RTX 5070,8,10285,12227,44.33,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785003832.3087606,snapshot,NVIDIA GeForce RTX 5070,9,10278,12227,44.28,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785003832.6541162,snapshot,NVIDIA GeForce RTX 5070,9,10278,12227,44.28,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785003832.9741726,snapshot,NVIDIA GeForce RTX 5070,9,10278,12227,44.24,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785003833.3219776,snapshot,NVIDIA GeForce RTX 5070,9,10279,12227,44.26,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785003833.6450155,snapshot,NVIDIA GeForce RTX 5070,9,10279,12227,44.26,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785003833.9688318,snapshot,NVIDIA GeForce RTX 5070,9,10279,12227,44.17,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785003834.318371,snapshot,NVIDIA GeForce RTX 5070,9,10277,12227,44.25,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785003834.638936,snapshot,NVIDIA GeForce RTX 5070,9,10291,12227,44.25,ok,45,19,0.035683064452038504
+1,output_aware_bfd_gate_v2_20260726,warmup,1,866,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785003834.9857798,snapshot,NVIDIA GeForce RTX 5070,9,10291,12227,71.41,ok,64,0,0.05427958356512752

@@ -1,5 +1,4 @@
 # 多卡 rich-metric 饱和 screening（2×4090，SQuAD 2048，1w+3f）
-> **原始 trace 存放位置（2026-09-21 迁出 git）**：本目录的 per-run 原始数据（requests/submissions/resources/flush 等 trace、日志、raw/ 内容）已按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策从 git 跟踪移除；迁出前已逐文件 SHA-256 与 git blob 内容核对一致，镜像于 AutoDL `/root/autodl-tmp/ai-operator/experiments/results/` 与本地 `C:\Users\ays\Desktop\results\experiments\results\` 下的同名目录。git 内保留聚合 CSV、summary、manifest 与本 README。
 
 > **定位**：3 臂（bounded_http 天花板 + **duckdb_ai 2×1 sharded〔身份订正：`harness_pre_split_diagnostic`——harness 预切 manifest + 2 独立 DuckDB 进程，DuckDB `ai` 单 BASE_URL，按协议 §2.6 不算产品原生多 endpoint、不进产品主排名〕** + project_static 2-endpoint）在饱和配置（c=32/K=32）下的 cache-hot 饱和 screening/gate 证据。
 

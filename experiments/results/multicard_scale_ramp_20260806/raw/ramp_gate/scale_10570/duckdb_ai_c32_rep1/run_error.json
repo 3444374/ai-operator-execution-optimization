@@ -1,0 +1,11 @@
+{
+  "arm": "duckdb_ai",
+  "scale": 10570,
+  "concurrency": 32,
+  "rep": 1,
+  "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp/ramp_gate/scale_10570/duckdb_ai_c32_rep1",
+  "kind": "gate",
+  "status": "failed",
+  "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)",
+  "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 230, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)\n"
+}
