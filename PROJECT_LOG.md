@@ -1,13 +1,5 @@
 # 项目日志
 
-## 2026-09-21：旧版开题 PPT 迁出 git 跟踪
-
-- 用户确认清理旧版成品：v4/v5（2026-07-20）、v6（2026-08-07）、v7/v8（2026-08-12）五份 PPTX 及 v6/v7/v8 一次性构建脚本。
-- 移除前逐文件 SHA-256 核对，副本归档于本地 `C:\Users\ays\Desktop\results\opening_slides_archive_20260921\`；历史内容保留在 git 历史对象。
-- v9 成品与其构建脚本、各版本 QA/图文审计记录保留；`opening_defense_v6_design.md` 维持“已取代、禁止作为生成输入”。
-- `opening/slides/README.md` 改写为当前版加历史版本说明，非实验修改同步 `opening/logs/project_log.md`。
-- 另修正 `experiments/results/README.md` 中 pilot 目录仍写“完整 raw trace”的过时描述，指向 2026-09-21 迁出注记。
-
 ## 2026-09-21：历史 raw trace 按存放政策迁出 git
 
 - 用户授权先核对镜像再迁出。按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策补做历史迁出：

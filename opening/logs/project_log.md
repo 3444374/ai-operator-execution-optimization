@@ -1,12 +1,5 @@
 # 开题材料 project log
 
-## 2026-09-21：旧版 PPT 成品迁出 git 跟踪
-
-- 经用户确认清理 v4/v5（2026-07-20）、v6（2026-08-07）、v7/v8（2026-08-12）五份历史 PPTX 及 v6/v7/v8 一次性构建脚本。
-- 移除前逐文件 SHA-256 核对，副本归档于本地 `C:\Users\ays\Desktop\results\opening_slides_archive_20260921\`（含 MANIFEST.sha256），历史内容仍在 git 历史对象中。
-- 各版本 qa/figure_content_audit 记录保留；`opening_defense_v6_design.md` 维持“已取代、禁止作为生成输入”。
-- slides/README 改写为 v9 当前版加历史版本说明；当前 PPTX 与 v9 构建脚本未动。
-
 ## 2026-09-14：开题 agent 规则精简
 
 - 随全项目 AGENTS 检查精简本目录规则：移除重复清单和父级要求，按文献、图形、PPT 与发布任务选择材料。
