@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-09-21：历史 raw trace 按存放政策迁出 git
+
+- 用户授权先核对镜像再迁出。按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策补做历史迁出：
+  2026-07 文本轨道、`rc1_*`、`multicard_*` 与 `operator_cost_profile_pilot_20260804` 共 34 个结果目录的
+  2,380 个 per-run 原始文件（requests/submissions/resources/flush 等 trace、日志、raw/ 内容，git blob 合计约 339 MB）。
+- 迁出前逐文件核对：以 git blob 内容（LF 归一化后）计算 SHA-256，AutoDL
+  `/root/autodl-tmp/ai-operator/experiments/results/` 与本地 `C:\Users\ays\Desktop\results\experiments\results\`
+  两处镜像均 2,380/2,380 一致；工作树文本文件的 CRLF 差异为 autocrlf 转换，blob 与镜像完全一致。
+- git 内保留各目录聚合 CSV、summary、manifest 与 README；34 个受影响 README 加注镜像位置，
+  RAW_ARCHIVAL 文档登记本次迁出并了结 pilot tarball 待定项。历史内容仍可从 git 历史对象恢复。
+- 本次只动实验数据存放，不改代码、实验结论或台账条目；后续旧 PPT 版本与文档历史拆分另按用户决定执行。
+
 ## 2026-09-20：完整容量复查后合并工程改动
 
 - 用户要求再次尝试复现原故障，检查后提交、合并并推送；恢复四个常驻PG gateway和原8组/4轮顺序，独立16,400次/20分钟清单。
