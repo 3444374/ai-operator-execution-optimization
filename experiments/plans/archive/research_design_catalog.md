@@ -2,9 +2,9 @@
 
 生成日期：2026-07-15
 
-> **2026-07-17 口径更新**：本文中的"三层策略""RC3"等旧术语已统一。最新研究内容定义（两项策略 + 多模态泛化验证 + 算子代价估计补充）和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。本文保留原始方案评估矩阵作为设计历史参考。
+> **2026-07-17 口径更新**：本文中的"三层策略""RC3"等旧术语已统一。最新研究内容定义（两项策略 + 多模态泛化验证 + 算子代价估计补充）和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `docs/research/knowledge_hub.md` 为准。本文保留原始方案评估矩阵作为设计历史参考。
 用途：为三个研究内容和跨层协同优化提供可供选择的方案目录，支撑后续实验设计和代码实现决策
-方法：基于 57 篇文献（`research/ai_operator_literature_inventory.md`）和 2026 年 7 月前沿检索，结合 idea-evaluator 五维评分、deep-research 证据纪律和 vibe-research-workflow 工程可行性约束
+方法：基于 57 篇文献（`docs/research/ai_operator_literature_inventory.md`）和 2026 年 7 月前沿检索，结合 idea-evaluator 五维评分、deep-research 证据纪律和 vibe-research-workflow 工程可行性约束
 
 ---
 
@@ -1170,7 +1170,7 @@ Phase 3（~ 4 周，2026-09）
 Phase 4（~ 4 周，2026-10）
 ├── 论文正文撰写（§1-§8）
 ├── 可选增强消融（A2.6 或 A3.6）
-├── 图表制作（figures/）
+├── 图表制作（docs/figures/）
 ├── 开题答辩准备（PPT + 讲稿）
 └── 交付: 完整论文初稿
 ```

@@ -12,11 +12,11 @@
 ## 与其他目录的关系
 
 - 项目方向和规则：根 `AGENTS.md`、`PROJECT_OUTLINE.md`
-- 调研材料：`research/`
+- 调研材料：`docs/research/`
 - 实验结果：`motivation/results/`、`feasibility/results/`
-- 开题材料：`opening/`
+- 开题材料：`docs/thesis/`
 
 ## 更新规则
 
-- 企业侧或导师反馈改变课题边界时，同步检查根 `AGENTS.md`、`PROJECT_OUTLINE.md`、`overview/` 和 `opening/report/`。
+- 企业侧或导师反馈改变课题边界时，同步检查根 `AGENTS.md`、`PROJECT_OUTLINE.md`、`overview/` 和 `docs/thesis/report/`。
 - 已解决、过期或被新结论替代的问题要移出当前待办。

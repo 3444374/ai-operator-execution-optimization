@@ -562,8 +562,8 @@ unique×2 logical passes。batch512 相对 batch64 formal 中位数改善不足 
 
 ## 7. 关联文档
 - 历史实验 design + go/no-go 门禁：`experiments/plans/completed/image_clip_workload_lock_20260731.md`
-- 方向 scope（DB↔GPU Daft bridge，提案）：`research/daft_db_gpu_bridge_direction_scope_20260731.md`
-- 评估方法（recall@10、baseline 矩阵）：`research/evaluation_metrics_survey_20260731.md`
+- 方向 scope（DB↔GPU Daft bridge，提案）：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`
+- 评估方法（recall@10、baseline 矩阵）：`docs/research/evaluation_metrics_survey_20260731.md`
 - 文本 track（vLLM）部署：`deploy/autodl/README.md` §8
 - 共享平台 setup：`deploy/autodl/README.md` §1–§7
 - 数据 fetch 总表：`data/README.md`

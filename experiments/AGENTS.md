@@ -25,7 +25,7 @@
 - 区分 database/source、organization、serialization/put、admission/queue、submit、model、fan-in、sink
   与完整 JCT；优先用 time-series 聚合，单次 snapshot 不代表稳态。
 - 质量、成本、能耗和 fairness 仅在适用且测量定义完整时报告；缺项写 `unavailable + reason`，不填零或猜测。
-- 结果保存到 `results/<方向>/<实验>_<日期>/{README.md,raw/}`；长期图表放 `figures/`，结果目录只引用。
+- 结果保存到 `results/<方向>/<实验>_<日期>/{README.md,raw/}`；长期图表放 `docs/figures/`，结果目录只引用。
 
 ## 3. 报告与结论
 

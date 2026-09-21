@@ -1,6 +1,6 @@
 # AI 算子集成与测试方法
 
-生成日期：2026-07-10（⚠ 最后更新于早期阶段，内容可能过时。当前方向以 `PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准）
+生成日期：2026-07-10（⚠ 最后更新于早期阶段，内容可能过时。当前方向以 `PROJECT_OUTLINE.md` 和 `docs/research/knowledge_hub.md` 为准）
 
 ## 1. 当前约束
 

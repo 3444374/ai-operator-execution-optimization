@@ -14,14 +14,14 @@ CPU decode/processor、约 600KB 的 FP32 pixel tensor 和 GPU forward，因此�
 选择动机，不预设 DB read、Ray copy、PCIe 或 CPU 一定是 binding bottleneck**；具体
 判决以 `motivation/plans/image_host_data_path_bottleneck.md` 的 R0→R4 实验为准。
 CLIP 不绑死在冷启动旗舰上。详见
-`research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
+`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
 
 baseline 的公共分层、原生性、证据等级和最低指标合同只以
 `baseline_reference.md` 为准；本文只维护图像 workload、质量语义和运行矩阵。
 
 > ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，5K 规范跑显示 CPU preprocess 明显重于 GPU actor service）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。该比例来自串行阶段计时，不等同于实测 GPU idle。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
-关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`；`research/evaluation_metrics_survey_20260731.md` 附录 A.4 / B.4；`notes/communication_notes.md` §5；`code/INFRA_STATUS.md` §6–§7；`PROJECT_OUTLINE.md` §5.3（多模态泛化）。
+关联：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`；`docs/research/evaluation_metrics_survey_20260731.md` 附录 A.4 / B.4；`notes/communication_notes.md` §5；`code/INFRA_STATUS.md` §6–§7；`PROJECT_OUTLINE.md` §5.3（多模态泛化）。
 
 > 本方案不改题目。它是把 PROJECT_OUTLINE §5.3 既定的"token-budget → frame-budget 多模态泛化"从 P2 提到当前优先级，作为**体现异构资源调度（学长反馈的第二种 bottleneck：重 CPU 数据准备 → GPU 等）的 flagship workload**，同时给课题加"数据库 AI 算子"定位的 workload 锚点。
 
@@ -370,7 +370,7 @@ direct ceiling 和 CPU-budget-normalized curve；它不再作为 official/native
 > 只作 diagnostic。产品 SQL 仅在能做到同硬件/同模型/同输入时进入数值排名。
 > **Related Work**（只引用 + 定位，不比数字，不同杠杆=语义）：LOTUS / Palimpzest / Abacus（语义优化）、Cortex/Oracle（闭源）、Smart/GaussML（重写/实现）。
 > baseline 的统一分层、准入和指标合同见 `baseline_reference.md`；图像方向的研究边界见
-> `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
+> `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
 
 **晋级门禁**（同项目 §7.5）：
 1. 喂饱 GPU：bounded direct ≥ 95%（图像版 feeding 门禁；尚待补）。

@@ -2,7 +2,7 @@
 
 ## 1. 实验目的
 
-闭合 4-ep/1.5B prefix_affinity 相对 least_queued 收益（原始 run +5.9%）的**机制归因**：到底是 prefix cache 命中率提升（→ KV/prefix 复用故事）还是 endpoint 数驱动的并行度（→ 非 KV）？为此给 runner 补了 `vllm_prefix_cache_hit_rate` 采集（P0 指标，见 `research/evaluation_metrics_survey_20260731.md` §P0#3），重跑同一 4-ep/0.43 配置、同 workload，直接读命中率。
+闭合 4-ep/1.5B prefix_affinity 相对 least_queued 收益（原始 run +5.9%）的**机制归因**：到底是 prefix cache 命中率提升（→ KV/prefix 复用故事）还是 endpoint 数驱动的并行度（→ 非 KV）？为此给 runner 补了 `vllm_prefix_cache_hit_rate` 采集（P0 指标，见 `docs/research/evaluation_metrics_survey_20260731.md` §P0#3），重跑同一 4-ep/0.43 配置、同 workload，直接读命中率。
 
 ## 2. 实验设置
 

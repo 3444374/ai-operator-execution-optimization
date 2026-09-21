@@ -35,7 +35,7 @@ M1旧常驻实验、输入划分及本轮真实筛查已完成，未取得平台
 
 以下保留当时判断和原证据链接，其中“待实现”“下一步”不代表当前执行顺序。
 
-2026-09-03 [前缀/表示设计审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)已完成，
+2026-09-03 [前缀/表示设计审查](../../docs/research/semantic_prefix_reuse_design_audit_20260903.md)已完成，
 没有新增模型、tokenizer、缓存、PG 或性能运行。same-message 组织/提交和新表示质量分别作为候选；
 实际 token 机会、质量、收益与新颖性均待验证，不恢复旧校准/SAOR，也不阻塞 Map 和独立增量核心。
 工程切片与对照分别见主计划 §7、baseline reference §0.3；此处不把方案存在登记为实验完成。
@@ -317,7 +317,7 @@ project frozen-static 与 proposed，完成系统级 matched comparison。原生
 逐请求 timed replay；因此新矩阵必须把 PostgreSQL scan/materialization 放进共同
 source→validated-gather 边界，并通过严格透传 gateway 采集真实 request P99/SLO，不能复制
 Job/shard completion time。冻结规格见
-`../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
+`../../docs/design/history/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
 为避免把 arrival-regime 变化误归因给 SAOR，同一新合同还包含 1--2 次短的 Project 内部
 bounded-ready FIFO/DRR/VTC-style/SAOR sanity block；这些臂仍是 Project controls，不是原生
 baseline，且不据此授权 selector formal。
@@ -383,7 +383,7 @@ comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project �
 
 ## 开题冻结优先级（2026-08-07；2026-08-08 correctness 护栏与 bounded 饱和校准已通过，材料尚未最终冻结）
 
-开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
+开题题目与研究内容按 `docs/thesis/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
 项目臂 feeding 未过门而只作历史诊断；2026-08-08 已按
 `opening_database_e2e_p0_20260807.md` 完成校准、冻结 K128 并整体 replacement：
 
@@ -428,7 +428,7 @@ Daft Native 约 11 s 不得解释为框架性能排名。同 manifest 的 Projec
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
-**方向决定（2026-08-01；本节为该决定的历史记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `completed/image_clip_workload_lock_20260731.md` §0 当时的「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
+**方向决定（2026-08-01；本节为该决定的历史记录——锁定 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `completed/image_clip_workload_lock_20260731.md` §0 当时的「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
 
 **✅ §6 go/no-go 与实现边界复测均已通过（GO）**（2026-08-01）：历史 slow-pt
 路径 CPU 准备/GPU embed=**13.8–18.3**；随后在 `f3d17af` 上用 5000 图、四变体、
@@ -705,7 +705,7 @@ AI_COMPLETE 的直接证据更明显：固定 16 行 batch 的 token min/max 为
 
 ### 候选机制优先级（跨论文，2026-07-24）
 
-设计各阶段实验时，"先试哪个机制"见下表。深度（控制律/旋钮/反馈信号）见对应精读笔记与 `research/knowledge_hub.md` §5；fatal flaw 见 `reference/strategy_design_literature_basis.md` §3.1，不在此重复。
+设计各阶段实验时，"先试哪个机制"见下表。深度（控制律/旋钮/反馈信号）见对应精读笔记与 `docs/research/knowledge_hub.md` §5；fatal flaw 见 `reference/strategy_design_literature_basis.md` §3.1，不在此重复。
 
 | 阶段 | 候选机制 | 来源指针 | 先试? | 隔离实验 |
 |---|---|---|---|---|
@@ -980,7 +980,7 @@ service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
 - `experiments/results/local_vllm_qwen15b_baseline/README.md`
 - `PROJECT_OUTLINE.md` §当前最重要证据、§近期优先级
 - `PROJECT_LOG.md`
-- `figures/README.md`（如有新增图）
+- `docs/figures/README.md`（如有新增图）
 - `learning/local_vllm_ray_baseline_walkthrough.md`（如实验结果影响讲解）
 - 本文件 §6 完整问题审计（标记已修复的问题）
 
@@ -1192,7 +1192,7 @@ vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray acto
 以下从新精读的 SFS (arXiv 2026) 及其他 5 篇代价估计论文中提取的
 提交策略备选技术方案。每个方案标注来源、落地难度、和与当前 K_max +
 queue-adaptive flush 的关系。设计模式全文见
-`research/knowledge_hub.md` §5.7。
+`docs/research/knowledge_hub.md` §5.7。
 
 ### 方案 A：SFS What-If 预演（模式 10）
 

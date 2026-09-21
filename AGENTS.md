@@ -23,13 +23,13 @@
 | 正式方法实验 | `experiments/AGENTS.md`，再读 `plans/` 或 `results/` 的局部规则 |
 | 动机画像 | `motivation/AGENTS.md` 及目标子目录规则 |
 | 可行性与 smoke | `feasibility/AGENTS.md` 及目标子目录规则 |
-| 文献和知识文件 | `research/AGENTS.md` |
-| 图资产 | `figures/AGENTS.md` |
-| 开题与对外材料 | `opening/AGENTS.md` |
+| 文献和知识文件 | `docs/research/AGENTS.md` |
+| 图资产 | `docs/figures/AGENTS.md` |
+| 开题与对外材料 | `docs/thesis/AGENTS.md` |
 | 学习讲解 | `learning/AGENTS.md` |
 | 快速方向卡片 | `overview/AGENTS.md` |
 | 导师/企业沟通记录 | `notes/AGENTS.md` |
-| 历史设计/工程归档 | `docs/AGENTS.md`、`code_doc/AGENTS.md`、`projects/AGENTS.md` |
+| 历史设计/工程归档 | `docs/AGENTS.md`、`docs/design/history/AGENTS.md`、`docs/thesis/archive/AGENTS.md` |
 
 ## 2. 项目范围
 
@@ -92,7 +92,7 @@ GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多�
   本次改动引起的失败并重跑受影响项；无需逐步确认。失败输出保留，环境与正式实验要求仍适用。
 - skill 按具体工作流、协议或工具需要选用；仅有相同关键词不触发加载。多流程 skill 只读取当前
   分支所需材料，已有用户选择与项目规则优先于通用模板。
-- 设计新系统机制前，先查 `research/knowledge_hub.md`、文献清单和
+- 设计新系统机制前，先查 `docs/research/knowledge_hub.md`、文献清单和
   `experiments/plans/baseline_reference.md`；新增候选记录到知识库，不把工程直觉伪装成研究空白。
 - 代码、计划、结果和对外材料分层保存。历史文件可以保留原始叙事，但必须指向当前替代入口。
 - 原始实验数据、失败运行和审计证据默认保留；移动或删除前先检查引用、唯一性与恢复路径。
@@ -134,11 +134,11 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 - 英文缩写、内部结构和指标首次出现时说明中文作用；文献使用正式英文题名，系统名保留英文。
 - 初步结果写“可行性依据、观察信号或待扩大验证”，不写成已经完成的贡献。
 
-报告、PPT 和图形的专项要求按任务读取 `opening/AGENTS.md` 与 `figures/AGENTS.md`。
+报告、PPT 和图形的专项要求按任务读取 `docs/thesis/AGENTS.md` 与 `docs/figures/AGENTS.md`。
 
 ## 7. 目录与变更同步
 
-项目内的 `research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
+项目内的 `docs/research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
 
 | 变更 | 必须同步 |
 |---|---|
@@ -147,7 +147,7 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 | 实验结论 | 原始结果报告、证据台账、`PROJECT_OUTLINE.md`、相关对外材料、`PROJECT_LOG.md` |
 | 目录或关键入口 | 所在目录 README、`PROJECT_INDEX.md`、根 README、`PROJECT_LOG.md` |
 | 规则 | 只改拥有该规则的最窄 `AGENTS.md`；全局行为才改本文件，并记入 `PROJECT_LOG.md` |
-| 图表 | 图源、导出、`figures/README.md`、对应 audit；影响主线时同步开题/论文引用 |
+| 图表 | 图源、导出、`docs/figures/README.md`、对应 audit；影响主线时同步开题/论文引用 |
 
 ### 7.1 文档生命周期
 
@@ -181,6 +181,6 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 |---|---|
 | 根 §1–3（方向、范围、状态） | 本文件 §2–3；当前事实再查 `PROJECT_OUTLINE.md` 和证据台账 |
 | 根 §5、§7.5（实验与运行） | 本文件 §5、`experiments/AGENTS.md`、baseline reference 与目标计划 |
-| 根 §6、§6.5（严谨性、文献） | 本文件 §4、§6 与 `research/AGENTS.md` |
+| 根 §6、§6.5（严谨性、文献） | 本文件 §4、§6 与 `docs/research/AGENTS.md` |
 | 根 §8（沟通） | 本文件 §2、§6 与 `notes/AGENTS.md` |
 | 根 §9–10（变更同步、Git） | 本文件 §7–8 |

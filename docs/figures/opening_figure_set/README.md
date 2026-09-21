@@ -1,0 +1,73 @@
+# 开题专用图集
+
+这是开题 PPT 和开题报告的统一选图入口。原始图仍保留在
+`docs/figures/architecture/editable/` 与 `docs/figures/data/report_main/`；本目录保存按 20 页内容基线
+筛选、按逻辑页码重命名的副本，不替代可复现源数据和原始审计。当前 PPT v9 为 26 页，
+会重组这些素材，因此文件名中的页码不等于 v9 的物理页码。
+
+## 从哪里拿图
+
+| 目录 | 内容 | 使用建议 |
+|---|---|---|
+| `main_png/` | 21 张 PPT 主讲候选图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
+| `main_svg/` | 同一 21 张 PPT 主讲候选图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
+| `editable_drawio/` | 10 张概念图的 Draw.io 编辑源 | 修改文字、卡片、箭头或 icon 时使用 |
+| `backup_png/` | 2 张答辩备份数据图的 PNG | 回答单 Job 排队与状态问题时使用 |
+| `backup_svg/` | 同一 2 张备份图的 SVG | 需要放大或进入文档时使用 |
+
+数据图不使用 Draw.io：它们由已经复核的结果和
+`docs/figures/scripts/generate_opening_story_figures_20260808.py` 可复现生成。
+
+表中的 `P02`、`P03` 等是既有素材文件名里的逻辑页/资产编号，不是实验阶段或优先级代号；
+26 页 v9 会重新编排这些素材。
+
+## 主讲最小集
+
+| 页码 | 可读文件名 | 页面任务 | 权威源 |
+|---:|---|---|---|
+| 02 | `P02_背景_数据库AI算子外部执行链路` | 展示数据库 AI 算子、外部执行层、模型服务状态，以及读取、执行、写回和结果核对的完整路径 | `architecture/editable/opening_background_20260812/06_ai_native_execution_architecture` |
+| 03 | `P03_背景_传统算子与外部AI执行假设` | 对照传统成本字段与 AI 语义算子的通用外部物理执行链路 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` |
+| 04 | `P04_相关工作_跨层执行闭环` | 按层归纳数据库 AI、数据执行、模型服务与代价估计工作，说明数据库作业信息和模型服务状态如何共同指导上游执行 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
+| 05 | `P05_研究空白_AI数据执行层` | 说明按 AI 处理需求描述工作量、联系运行状态与作业进度、共同安排多个作业三项能力 | `architecture/editable/01_research_gap` |
+| 06 | `P06_文本基线_执行路径与可比边界` | 左图核对数据库读写路径的完成性和答案质量，右图比较框架原生路径的模型服务吞吐；两图分别解释 | `data/report_main/opening_text_baseline_evidence_map` |
+| 07A | `P07A_动机证据_记录数与模型工作量` | 动机一：说明相同行数仍可能对应 14.3× 模型工作量差异 | `data/report_main/opening_motivation_work_state_part1_work` |
+| 07B | `P07B_动机证据_运行状态与容量边界` | 动机二：说明判断是否继续提交不能只看固定上限或吞吐；每个 Job 的进度由多 Job 图补充 | `data/report_main/opening_motivation_work_state_part2_state_capacity` |
+| 08A | `P08A_图像阶段_准备阶段失衡` | 原 P08 panel a：说明图像也是分阶段工作量，张数描述不了阶段压力（prepare/GPU 13.9–31.0×） | `data/report_main/opening_image_stage_aware_evidence_part1_prepare` |
+| 08B | `P08B_图像阶段_传输形态与提交窗口` | 动机补充“AI Work 需要分阶段描述”：panel b 输入表示改变阶段执行效率，panel c 阶段供给不匹配导致欠供给或等待堆积 | `data/report_main/opening_image_stage_aware_evidence_part2_transfer_window` |
+| 09 | `P09_文本多作业_原生路径并发干扰` | 证明共享模型服务下的多 Job 干扰是现实现象 | `data/report_main/opening_native_fourjob_normalized_impact` |
+| 11 | `P11_系统架构_数据组织与状态调度闭环` | 展示数据组织、提交控制、模型执行和结果写回，并将数据库计划阶段的代价估计与运行状态分开 | `architecture/editable/02_system_architecture` |
+| 12 | `P12_研究内容一_WorkUnit与数据组织` | 展示分阶段工作描述、可选代价估计结果、候选批次组织方式和同一工作量上限下的评价 | `architecture/editable/03_work_unit` |
+| 12A | `P12A_研究内容一_WorkDescriptor与可调度Work` | WorkDescriptor 三层结构：Work Estimation → 四分类字段（Work/Locality/Job-SLO/Confidence）→ Consumers（Organizer→BatchRequest→Scheduler）；packing 策略移至 P13 | `architecture/editable/03b_work_descriptor` |
+| 13 | `P13_数据组织_服务压力与局部性权衡` | 用数据说明组织策略具有 regime dependency | `data/report_main/opening_work_organization_regime_v2` |
+| 13A | `P13A_研究内容一_WorkOrganizer与BatchRequest` | Work Organizer 定义页：三个设计维度（Budget/Balance/Locality）+ 五臂候选策略（保序/重排分组）→ BatchRequest → Scheduler；统一比较条件框 | `architecture/editable/03c_work_organizer` |
+| 14 | `P14_研究内容二_状态感知提交与多作业调度` | 展示安全准入、共享额度、公平队列、路由与释放 | `architecture/editable/04_state_aware_scheduling` |
+| 15 | `P15_共享调度_效率隔离与公平权衡` | 展示同上限静态/共享 A/B 的条件性收益与代价 | `data/report_main/opening_multijob_interference_tradeoff` |
+| 16 | `P16_代价估计_配置选择与决策质量` | 对比六种估计方法的真实—预测时间差、四种上限排序与错误选择后的额外耗时 | `data/report_main/opening_cost_model_decision_quality_v4` |
+| 17 | `P17_图像基线_执行路径与可比边界` | 区分 12K 诊断和 120K matched-resource 正式对照 | `data/report_main/opening_image_baseline_evidence_map` |
+| 18 | `P18_图像多作业_并发干扰` | 展示图像路径内部的 four-job/isolated slowdown | `data/report_main/opening_image_fourjob_normalized_impact` |
+| 19 | `P19_研究基础与后续工作计划` | 概括已完成基础、后续工作方向与评价维度 | `architecture/editable/05_evidence_gate` |
+
+在 20 页内容基线中，第 10 页承担研究问题归纳，第 20 页承担总结与答辩收束，不需要另画独立大图。
+开题报告正文可从 P05–P19 的拆分候选中按版面选图；P02–P04 是 PPT 背景与相关工作专用图。
+后续已经生成 26 页 v9，但最新报告图文更新尚未完成回灌和差异审查。
+
+## 答辩备份
+
+| 文件名 | 用途 | 权威源 |
+|---|---|---|
+| `B01_文本单作业_请求延迟分解` | 解释相近 Job JCT 为什么可能掩盖 request queue 与 TTFT | `data/report_main/opening_native_single_job_request_latency` |
+| `B02_文本单作业_服务状态指纹` | 联合观察吞吐、运行、排队、缓存和利用率，区分欠供给与过量排队 | `data/report_main/opening_native_single_job_state_fingerprint` |
+
+## 维护规则
+
+1. PPT/Word 只看图时先进入 `main_png/`；正式排版优先替换为 `main_svg/` 同名文件。
+2. 修改概念图时编辑 `editable_drawio/` 对应文件，并同步更新权威源、SVG、PNG 与审计；不要在
+   PNG 上覆盖文字或边框。
+3. 修改数据图时从已经复核的结果重新运行绘图脚本，不手工改图中数值。
+4. 权威源更新后必须同步覆盖本目录同名副本，避免图集与正式结果分叉；概念 SVG 覆盖后运行
+   `python3 docs/figures/scripts/embed_svg_assets.py <SVG文件>` 将相对 icon 重新内嵌，保证单文件可移植。
+5. 不把 static–dynamic 示意曲线、DuckDB 多 Job、Daft 60K×2 容量边界图、ShareGPT
+   database-E2E 三臂性能图或跨框架绝对 short JCT 放入本图集；这些内容目前缺少正式结果或
+   不满足可比合同。
+
+选择与质检记录见 `docs/figures/audit/opening_figure_set_manifest_20260811.md`。

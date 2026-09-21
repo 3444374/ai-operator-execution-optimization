@@ -19,7 +19,7 @@ choice 详细实施条件见[四 C 计划](../completed/postgresql_choice_profil
 
 文档角色：本文是 PostgreSQL 语义算子模块的**工程架构与实施计划**，回答接口如何落地、按什么顺序
 实现以及如何验收。论文机制、可迁移策略和研究空白由
-[`../../research/sema_native_semantic_operator_architecture_reference_20260827.md`](../../../research/sema_native_semantic_operator_architecture_reference_20260827.md)
+[`../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`](../../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md)
 与精读笔记负责；源码事实只从 [`../../code/INFRA_STATUS.md`](../../../code/INFRA_STATUS.md)
 读取，测试和实验结论只从证据台账读取。本文
 引用文献只为说明工程决策来源，不承担第二份理论综述或实现状态台账。
@@ -1639,11 +1639,11 @@ full-system baseline；Kalypso 当前只有论文参照，不预注册 native ba
 ## 14. 一手依据
 
 - 本轮一手来源与迁移审计：
-  [`../../research/sema_native_semantic_operator_architecture_reference_20260827.md`](../../../research/sema_native_semantic_operator_architecture_reference_20260827.md)，
+  [`../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`](../../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md)，
   覆盖 Sema、Cortex AISQL、IMLane、Kalypso、LOTUS 与 PostgreSQL 18 实现机制。
 - Sema：Kangkang Qi et al., *Sema: A High-performance System for LLM-based Semantic Query
   Processing*，当前精读版本为 [arXiv:2603.11622v1](https://arxiv.org/abs/2603.11622)；本地精读见
-  [`../../research/精读文献笔记/sema_vldb2026/sema_vldb2026.md`](../../../research/精读文献笔记/sema_vldb2026/sema_vldb2026.md)。
+  [`../../docs/research/精读文献笔记/sema_vldb2026/sema_vldb2026.md`](../../../docs/research/精读文献笔记/sema_vldb2026/sema_vldb2026.md)。
 - PostgreSQL 18 Custom Scan：<https://www.postgresql.org/docs/18/custom-scan.html>。
 - PostgreSQL 18 PGXS：<https://www.postgresql.org/docs/18/extend-pgxs.html>。
 - PostgreSQL 18.3 source tag：<https://github.com/postgres/postgres/tree/REL_18_3>。
@@ -1653,9 +1653,9 @@ full-system baseline；Kalypso 当前只有论文参照，不预注册 native ba
   <https://github.com/IM-DM4AI/IMLane0>。
 - Kalypso：*Kalypso: Relational LLM Serving*，
   [arXiv:2607.23815v2](https://arxiv.org/abs/2607.23815)；本地精读见
-  [`../../research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`](../../../research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)。
+  [`../../docs/research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`](../../../docs/research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)。
 - LOTUS：Patel et al., *LOTUS: Enabling Semantic Queries with LLMs Over Tables of Unstructured
   and Structured Data*，[PVLDB 2025](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf)；现有源码与接口
-  审计见 [`../../research/lotus_postgresql_execution_layer_fit_20260821.md`](../../../research/lotus_postgresql_execution_layer_fit_20260821.md)。
+  审计见 [`../../docs/research/lotus_postgresql_execution_layer_fit_20260821.md`](../../../docs/research/lotus_postgresql_execution_layer_fit_20260821.md)。
 - 当前实现事实：[`../../code/INFRA_STATUS.md`](../../../code/INFRA_STATUS.md) 与
   [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../../results/EXPERIMENT_EVIDENCE_REGISTRY.md)。

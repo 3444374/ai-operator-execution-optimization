@@ -5,9 +5,9 @@
 **通用环境边界**:PostgreSQL 18.4 本地预演 + pgvector 0.8.2 + Daft + Ray task + vLLM 0.25.1 + Qwen2.5-1.5B BF16 + RTX 5070 12GB(单 GPU);prefix cache off;CUDA Graph on(eager baseline 见 §批次 3);prefix cache off;fixed_output_cap=16 token(除非另注);ChatML prompt envelope;temperature=0。
 
 **绘图脚本与图资产**:
-- `figures/scripts/generate_rc1_data_organization_charts.py`(批次 1)
-- 图输出:`figures/data/report_main/rc1_*.{png,svg}`
-- 图审计:`figures/audit/rc1_data_organization_charts_audit_20260727.md`
+- `docs/figures/scripts/generate_rc1_data_organization_charts.py`(批次 1)
+- 图输出:`docs/figures/data/report_main/rc1_*.{png,svg}`
+- 图审计:`docs/figures/audit/rc1_data_organization_charts_audit_20260727.md`
 
 ---
 
@@ -608,21 +608,21 @@ P2:
 ### 绘图脚本(可在本地用 `.conda/pg-ai-profile/python.exe` 运行)
 
 ```
-figures/scripts/generate_rc1_data_organization_charts.py     # 批次 1
-figures/scripts/generate_rc2_flush_charts.py                 # 批次 2
-figures/scripts/generate_rc2_admission_charts.py             # 批次 3
-figures/scripts/generate_rc2_joint_ablation_charts.py        # 批次 4
-figures/scripts/generate_rc4_cost_estimation_charts.py       # 批次 5
+docs/figures/scripts/generate_rc1_data_organization_charts.py     # 批次 1
+docs/figures/scripts/generate_rc2_flush_charts.py                 # 批次 2
+docs/figures/scripts/generate_rc2_admission_charts.py             # 批次 3
+docs/figures/scripts/generate_rc2_joint_ablation_charts.py        # 批次 4
+docs/figures/scripts/generate_rc4_cost_estimation_charts.py       # 批次 5
 ```
 
 每脚本一行运行,例如:
 ```
-.conda/pg-ai-profile/python.exe figures/scripts/generate_rc1_data_organization_charts.py
+.conda/pg-ai-profile/python.exe docs/figures/scripts/generate_rc1_data_organization_charts.py
 ```
 
 ### 图输出位置
 
-`figures/data/report_main/`:
+`docs/figures/data/report_main/`:
 - 批次 1: `rc1_bfd_scaling_512_vs_1024.{png,svg}`、`rc1_row_cap_first_slo_collapse.{png,svg}`、`rc1_prefix_aware_cache_off_no_signal.{png,svg}`
 - 批次 2: `rc2_flush_three_way_natural_eos.{png,svg}`、`rc2_flush_cross_rate_and_heldout.{png,svg}`
 - 批次 3: `rc2_admission_controller_matrix.{png,svg}`、`rc2_shared_vllm_kmax_guardrail.{png,svg}`、`rc2_aimd_signal_blindspot.{png,svg}`

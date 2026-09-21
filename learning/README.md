@@ -552,7 +552,7 @@ motivation/results/
 ## 阅读顺序
 
 1. `experiment_walkthrough.md`：按项目推进顺序讲解已经完成的实验。
-2. `figures/README.md`：学习用实验图表清单。
+2. `docs/figures/README.md`：学习用实验图表清单。
 
 ## 当前重点章节
 
@@ -569,24 +569,24 @@ motivation/results/
 项目级图资产统一放在：
 
 ```text
-figures/
+docs/figures/
 ```
 
 当前学习材料、开题报告、PPT、中期汇报和毕业论文应复用同一套图：
 
-- `figures/architecture/`：系统架构图和流程结构图；
-- `figures/data/report_main/`：正文主线实验图；
-- `figures/data/backup/`：解释场景选择、变量选择和实验边界的支撑图；
-- `figures/scripts/`：可复现绘图脚本。
+- `docs/figures/architecture/`：系统架构图和流程结构图；
+- `docs/figures/data/report_main/`：正文主线实验图；
+- `docs/figures/data/backup/`：解释场景选择、变量选择和实验边界的支撑图；
+- `docs/figures/scripts/`：可复现绘图脚本。
 
-学习材料可以引用 `figures/data/backup/` 中的支撑图讲解实验来源，但不能改变图中实验事实和证据边界。
+学习材料可以引用 `docs/figures/data/backup/` 中的支撑图讲解实验来源，但不能改变图中实验事实和证据边界。
 
 ## 更新规则
 
 每次完成新实验、代码实现或功能测试后，都要同步检查：
 
 - `learning/experiment_walkthrough.md` 是否需要新增讲解；
-- `figures/` 是否需要新增或更新项目级图；
+- `docs/figures/` 是否需要新增或更新项目级图；
 - 本 README 的阅读入口是否需要更新。
 
 学习材料可以讲得更通俗，但不能改变正式实验事实。

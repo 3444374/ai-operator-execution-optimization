@@ -197,7 +197,7 @@ Ray object store
 - PostgresML README：代表“把 ML/AI 能力带到 PostgreSQL 内部或近数据库侧”的路线。
 - pgai README：代表“PostgreSQL + stateless vectorizer workers”的路线，worker 从配置/队列读取任务，生成 embeddings，再写回数据库；但注意该项目 README 标注 2026 年 2 月起不再维护，所以只能作为架构参考，不能作为后续依赖前提。
 
-更正式的路线判断和证据边界，见 `research/literature_and_evidence_review.md` 的 “PostgreSQL AI 链路的几类工程路线” 小节。学习文档只负责帮你理解这些路线是什么意思；是否影响课题规划，要回到 research / overview / motivation 的证据链里判断。
+更正式的路线判断和证据边界，见 `docs/research/literature_and_evidence_review.md` 的 “PostgreSQL AI 链路的几类工程路线” 小节。学习文档只负责帮你理解这些路线是什么意思；是否影响课题规划，要回到 research / overview / motivation 的证据链里判断。
 
 如果从工业系统角度理解本课题，可以先分成两个参照：
 

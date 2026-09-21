@@ -325,10 +325,10 @@ Interpretation:
 Figure:
 
 ```text
-figures/data/backup/b15_local_vllm_token_budget_throughput.png
-figures/data/backup/b15_local_vllm_token_budget_throughput.svg
-figures/data/backup/b16_local_vllm_token_budget_tail_queue.png
-figures/data/backup/b16_local_vllm_token_budget_tail_queue.svg
+docs/figures/data/backup/b15_local_vllm_token_budget_throughput.png
+docs/figures/data/backup/b15_local_vllm_token_budget_throughput.svg
+docs/figures/data/backup/b16_local_vllm_token_budget_tail_queue.png
+docs/figures/data/backup/b16_local_vllm_token_budget_tail_queue.svg
 ```
 
 ## Arrival-aware K_max Sweep
@@ -420,8 +420,8 @@ successfully and vLLM returned to zero running/waiting requests after the run.
 Figure:
 
 ```text
-figures/data/backup/b17_local_vllm_arrival_kmax_sweep.png
-figures/data/backup/b17_local_vllm_arrival_kmax_sweep.svg
+docs/figures/data/backup/b17_local_vllm_arrival_kmax_sweep.png
+docs/figures/data/backup/b17_local_vllm_arrival_kmax_sweep.svg
 ```
 
 ## Batch Policy x K_max Matrix
@@ -513,12 +513,12 @@ stability.
 Figures:
 
 ```text
-figures/data/backup/b18_local_vllm_batch_kmax_e2e.png
-figures/data/backup/b18_local_vllm_batch_kmax_e2e.svg
-figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.png
-figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.svg
-figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.png
-figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.svg
+docs/figures/data/backup/b18_local_vllm_batch_kmax_e2e.png
+docs/figures/data/backup/b18_local_vllm_batch_kmax_e2e.svg
+docs/figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.png
+docs/figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.svg
+docs/figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.png
+docs/figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.svg
 ```
 
 ## Shared-vLLM K_max Interference
@@ -594,8 +594,8 @@ and arrival offset before making a general fairness/SLO claim.
 Figure:
 
 ```text
-figures/data/backup/b21_local_vllm_kmax_interference_small_job.png
-figures/data/backup/b21_local_vllm_kmax_interference_small_job.svg
+docs/figures/data/backup/b21_local_vllm_kmax_interference_small_job.png
+docs/figures/data/backup/b21_local_vllm_kmax_interference_small_job.svg
 ```
 
 ## Data Organization Ablation: Length-align and Prefix-aware
@@ -654,10 +654,10 @@ Interpretation:
 Figures:
 
 ```text
-figures/data/backup/b22_local_vllm_length_prefix_tail.png
-figures/data/backup/b22_local_vllm_length_prefix_tail.svg
-figures/data/backup/b23_local_vllm_length_prefix_signal.png
-figures/data/backup/b23_local_vllm_length_prefix_signal.svg
+docs/figures/data/backup/b22_local_vllm_length_prefix_tail.png
+docs/figures/data/backup/b22_local_vllm_length_prefix_tail.svg
+docs/figures/data/backup/b23_local_vllm_length_prefix_signal.png
+docs/figures/data/backup/b23_local_vllm_length_prefix_signal.svg
 ```
 
 ## Shared-vLLM K_max and Queue-adaptive Sweep
@@ -737,10 +737,10 @@ next version should avoid the initial overshoot and compare against static
 Figures:
 
 ```text
-figures/data/backup/b24_local_vllm_interference_sweep_small_job.png
-figures/data/backup/b24_local_vllm_interference_sweep_small_job.svg
-figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.png
-figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.svg
+docs/figures/data/backup/b24_local_vllm_interference_sweep_small_job.png
+docs/figures/data/backup/b24_local_vllm_interference_sweep_small_job.svg
+docs/figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.png
+docs/figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.svg
 ```
 
 ## Remaining Formal Experiments

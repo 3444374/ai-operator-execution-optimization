@@ -5,7 +5,7 @@ Reads ../summary.csv (4 cells: Ray Data / project x cpu8 / cpu16) and produces:
   fig1_matched_resource_jct.png/svg  -- the causal 2x2 (operator_jct, lower=better)
   fig2_throughput_vs_gpu_ceiling.png/svg -- all arms vs R0 dual-GPU ceiling (headroom)
 
-Style: Okabe-Ito color-blind-safe (matches figures/scripts/_scipilot_helpers.py),
+Style: Okabe-Ito color-blind-safe (matches docs/figures/scripts/_scipilot_helpers.py),
 matplotlib-only (no seaborn), paper-ready English labels, PNG + SVG.
 
 Reproducible: raw data = ../raw/runs_step{6,8}_*.csv (committed); this script

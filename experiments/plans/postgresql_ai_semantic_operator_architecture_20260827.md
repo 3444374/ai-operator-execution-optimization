@@ -67,7 +67,7 @@ PG新Map先验证权限与OFFSET/LIMIT投影。FIFO、bytes、单成员提交、
 选择CustomScan也不要求接管普通表达式。[PG函数优化信息](https://www.postgresql.org/docs/18/xfunc-optimization.html)
 
 Sema是数据库原生语义算子的主要架构参照；LOTUS用于可选兼容、方法参考与baseline。其能力不直接
-证明PG18.3扩展能够表达相同计划，文献与版本审计见[架构研究](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)。
+证明PG18.3扩展能够表达相同计划，文献与版本审计见[架构研究](../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md)。
 公司demo与pgml的已核对采用范围保留在§8.7–8.8，本轮没有重新访问公司源码或引入其材料。
 
 ## 2. 并行研发与接入依赖
@@ -472,7 +472,7 @@ blocking operator 的新算法仍只作另行立项后的参考。
 ### 7.1 工程能力与研究机制分别推进
 
 需要解释新颖性、前缀瓶颈、布局选择或论文主张时，先读
-[研究审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)；涉及性能归因再读
+[研究审查](../../docs/research/semantic_prefix_reuse_design_audit_20260903.md)；涉及性能归因再读
 [因果对照](baseline_reference.md#semantic-prefix-causal-controls)。本文只规定实现位置与完成条件，
 不复制推导或新建平行研究内容。当前代码能发请求不等于前缀重算是主要瓶颈。
 
@@ -994,14 +994,14 @@ gateway、PG 接入与 SemLoom 增量使用
 
 Sema/Cortex 的数据库语义所有权、LOTUS 的 reference/optimized algorithms、IMLane 的 DB/runtime
 batch placement、Kalypso 的条件性 dependency/KV 参考，统一由
-[架构研究与一手来源审计](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)
-及[知识库](../../research/knowledge_hub.md)说明。本次长期能力划分、接口演进与并行排期是工程决策，不是新的文献结论。
+[架构研究与一手来源审计](../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md)
+及[知识库](../../docs/research/knowledge_hub.md)说明。本次长期能力划分、接口演进与并行排期是工程决策，不是新的文献结论。
 
 本轮部署/路由判断结合 [Cortex AISQL: A Production SQL Engine for Unstructured Data §2](https://arxiv.org/html/2511.07663v3#S2)：
 其模型平台已有引擎调度与 partner endpoint 分派；支持自有 GPU/外部服务、gateway 或 cascade 本身
 不作为自有创新。IMLane 的桥接、资源调度与异步 batch 参照仍按上述一手来源审计和本地精读说明；
 不把其全部进程外设计归因于 GIL，也不由此推断本项目需要相同线程结构。
-[Kalypso 精读 §2.3–2.4](../../research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)与
+[Kalypso 精读 §2.3–2.4](../../docs/research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)与
 [vLLM Automatic Prefix Caching](https://docs.vllm.ai/en/stable/design/prefix_caching/)
 仅支持“相同 token 前缀及缓存状态是复用条件”的判断，不提供当前 SemLoom 的性能或 KV pinning 证据。
 具体实现仍核对选定 serving 版本；多 Job/work 与本地性的方法收益由匹配实验检验，不预写成贡献。

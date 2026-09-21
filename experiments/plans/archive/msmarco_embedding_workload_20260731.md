@@ -10,8 +10,8 @@
 不能用来“证明数据搬运问题不存在”。首选 workload 为图像 CLIP，后者也只负责让
 DB/CPU/Ray/H2D/GPU 各阶段可测，不预设传输瓶颈。见
 `../completed/image_clip_workload_lock_20260731.md` 与
-`research/daft_db_gpu_bridge_direction_scope_20260731.md` §10。
-关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`（方向 scope）；`notes/communication_notes.md` §5（学长反馈）；`code/INFRA_STATUS.md`（现有管线）。
+`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §10。
+关联：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`（方向 scope）；`notes/communication_notes.md` §5（学长反馈）；`code/INFRA_STATUS.md`（现有管线）。
 
 > 本 workload 是学长原则"先锁被认可场景"的落地。**机制（冷启动/调度策略）后面再叠加**——先把战场选在 MS MARCO 这个被认可的 benchmark 上跑通，有正指标再扩。不改题目。
 
@@ -80,7 +80,7 @@ PostgreSQL msmarco_passages
 | **OceanBase AI_EMBED**（无 Daft/Ray，DB 原生算子） | 产品级核心 baseline（B1 门禁已过函数存在性，部署待可部署环境） |
 | pgvector 直采 / 串行 | 诊断，不当正式 baseline（§6 禁 strawman） |
 
-> **直接 baseline**（同杠杆=执行，跑+比数字）vs **Related Work**（不同杠杆=语义，LOTUS/Cortex/Smart/GaussML 等只引用+定位）的区分见 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。MS MARCO 本身作文本轻对照。
+> **直接 baseline**（同杠杆=执行，跑+比数字）vs **Related Work**（不同杠杆=语义，LOTUS/Cortex/Smart/GaussML 等只引用+定位）的区分见 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。MS MARCO 本身作文本轻对照。
 
 **主胜判 = 项目动态 vs 项目静态**（不是 vs Daft Native）。Daft Native 仅作 novelty 对照。
 

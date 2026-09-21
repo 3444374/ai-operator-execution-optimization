@@ -37,11 +37,11 @@ PostgreSQL documents
 这一组图已经拆成四张独立图，而不是塞进一个 dashboard。每张图只回答一个问题，并且前四张都覆盖 6 个 batch 档位。
 
 ```text
-figures/data/backup/b07_local_vllm_ray_throughput.png
-figures/data/backup/b08_local_vllm_ray_e2e_time.png
-figures/data/backup/b09_local_vllm_ray_task_stage_timing.png
-figures/data/backup/b10_local_vllm_request_count_inflight.png
-figures/data/backup/b11_local_vllm_token_tail_performance.png
+docs/figures/data/backup/b07_local_vllm_ray_throughput.png
+docs/figures/data/backup/b08_local_vllm_ray_e2e_time.png
+docs/figures/data/backup/b09_local_vllm_ray_task_stage_timing.png
+docs/figures/data/backup/b10_local_vllm_request_count_inflight.png
+docs/figures/data/backup/b11_local_vllm_token_tail_performance.png
 ```
 
 吞吐图看固定行 batch size 对 rows/s 的影响。Ray task 从 batch=1 的约 36.1 rows/s 上升到 batch=16 的约 259.8 rows/s，batch=32 略降到约 246.0 rows/s。Ray actor 从 batch=1 的约 9.3 rows/s 上升到 batch=32 的约 59.1 rows/s。
@@ -59,8 +59,8 @@ token 图补上了真正的动机缺口：固定行 batch 只能控制每个请�
 图文件：
 
 ```text
-figures/data/backup/b12_local_vllm_latency_probe_breakdown.png
-figures/data/backup/b12_local_vllm_latency_probe_breakdown.svg
+docs/figures/data/backup/b12_local_vllm_latency_probe_breakdown.png
+docs/figures/data/backup/b12_local_vllm_latency_probe_breakdown.svg
 ```
 
 这张图只针对 Ray task、batch=8 的 latency probe，使用 3 次 formal repeat。它的作用不是画完整性能曲线，而是验证当前 harness 能把客户端 batch latency 和 vLLM server-side latency 指标分开。

@@ -323,7 +323,7 @@ shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理�
 
 本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
 
-绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
+绘图、图表复现和素材筛选脚本统一放在 `docs/figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
 
 ## 目录结构
 

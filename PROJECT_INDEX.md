@@ -21,7 +21,7 @@
 | 数据库源与公共查询入口 | [统一CLI](code/scripts/README.md#数据库原始输入与公共查询) | 原始列准备/导入、PG/direct/Ray Map、原始Movie/LOTUS与逐行评价；支持PG总字节留存与有限窗口token组织，见[真实组织诊断](experiments/results/postgresql/map_organization_20260910/README.md) |
 | PG 图像类型与阶段执行 | [工作包 F 记录](experiments/results/postgresql/image_stages_f_20260920/README.md) | 显式 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源；受控验证完成，后续151次CLIP数值检查通过；性能尚未确认 |
 | 当前方向速览 | [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md) | 两分钟交接卡片；只压缩总纲，不形成第二套计划或状态台账 |
-| 理论与文献依据 | [`research/knowledge_hub.md`](research/knowledge_hub.md)、[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
+| 理论与文献依据 | [`docs/research/knowledge_hub.md`](docs/research/knowledge_hub.md)、[`docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`](docs/research/sema_native_semantic_operator_architecture_reference_20260827.md) | 回答已有系统解决什么、策略怎样迁移和研究空白在哪里；不维护当前实现顺序 |
 | PostgreSQL 工程计划 | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) | 维护长期能力、PG/算子方法/Core职责、数据与资源接口，以及实施依赖和验收；源码/证据另有入口 |
 | PG调用/绑定近期规格 | [详细设计](experiments/plans/postgresql_call_binding_design.md) | 公共描述/绑定及一个Filter→一个Map的接入、寿命、兼容与验收；共同调用、V1载体和一个Filter→一个生成Map已在开发分支验证；增量Core另行推进 |
 | 单流增量执行近期规格 | [详细设计](experiments/plans/semloom_incremental_session_design.md) | 方法续体、组织窗口、增量核心及受限生成Map的PG多在途已验证；[最新接入证据](experiments/results/postgresql/async_window_20260908/README.md)；Filter/组合、单请求多成员待实现；多流扩展见下一行 |
@@ -32,7 +32,7 @@
 | 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
 | 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
-| 对外叙事与主张 | [`opening/claim_matrix.md`](opening/claim_matrix.md)、[`opening/report/opening_report.md`](opening/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
+| 对外叙事与主张 | [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md)、[`docs/thesis/report/opening_report.md`](docs/thesis/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
 | 变更历史 | [`PROJECT_LOG.md`](PROJECT_LOG.md) | 结构、方向、结论和关键入口变更记录 |
 
 冲突处理顺序：原始结果/源码 > 领域权威入口 > `PROJECT_OUTLINE.md` > 当前工程计划（仅处理
@@ -51,7 +51,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 2. [`CONTEXT.md`](CONTEXT.md)
 3. [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md)
 4. [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md)
-5. [`opening/claim_matrix.md`](opening/claim_matrix.md)
+5. [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md)
 
 ### 继续当前实现
 
@@ -86,36 +86,36 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 1. [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
 2. 对应 `experiments/results/<experiment>/README.md`
 3. 同目录 CSV/JSON/manifest/raw
-4. [`opening/claim_matrix.md`](opening/claim_matrix.md)（若用于开题或对外材料）
+4. [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md)（若用于开题或对外材料）
 
 ### 写开题材料
 
-1. [`opening/AGENTS.md`](opening/AGENTS.md)
-2. [`opening/README.md`](opening/README.md)
-3. [`opening/report/opening_report.md`](opening/report/opening_report.md)
-4. [`opening/opening_defense_outline_20260808.md`](opening/opening_defense_outline_20260808.md)
-5. [`opening/qa_bank.md`](opening/qa_bank.md)
-6. [`figures/opening_figure_set/README.md`](figures/opening_figure_set/README.md)
+1. [`docs/thesis/AGENTS.md`](docs/thesis/AGENTS.md)
+2. [`docs/thesis/README.md`](docs/thesis/README.md)
+3. [`docs/thesis/report/opening_report.md`](docs/thesis/report/opening_report.md)
+4. [`docs/thesis/opening_defense_outline_20260808.md`](docs/thesis/opening_defense_outline_20260808.md)
+5. [`docs/thesis/qa_bank.md`](docs/thesis/qa_bank.md)
+6. [`docs/figures/opening_figure_set/README.md`](docs/figures/opening_figure_set/README.md)
 
 ## 3. 目录职责
 
 | 目录 | 内容 | 当前入口 | 不放什么 |
 |---|---|---|---|
 | `overview/` | 当前方向速览 | `overview/README.md` | 详细实验历史 |
-| `research/` | 文献、知识和设计依据 | `research/README.md`、`research/knowledge_hub.md` | 运行结果 |
+| `docs/research/` | 文献、知识和设计依据 | `docs/research/README.md`、`docs/research/knowledge_hub.md` | 运行结果 |
 | `motivation/` | 课题动机与 GPU-backed 系统画像 | `motivation/README.md` | 方法胜出结论 |
 | `feasibility/` | 组件、环境、capability 和 smoke | `feasibility/README.md` | 正式方法排名 |
 | `experiments/` | 方法计划和正式结果 | `experiments/README.md` | 临时环境产物 |
 | `code/` | 可复用实现、CLI 和测试 | `code/README.md` | 一次性图脚本 |
 | `deploy/` | 环境合同、配置和 runbook | `deploy/README.md` | 研究结论 |
 | `data/` | 数据来源、哈希和导入合同 | `data/README.md` | raw payload |
-| `figures/` | 图源、导出和审计 | `figures/README.md` | 无来源截图 |
-| `opening/` | 开题正文、答辩和文献快照 | `opening/README.md` | 实验原始数据 |
+| `docs/figures/` | 图源、导出和审计 | `docs/figures/README.md` | 无来源截图 |
+| `docs/thesis/` | 开题正文、答辩和文献快照 | `docs/thesis/README.md` | 实验原始数据 |
 | `learning/` | 教学式讲解 | `learning/README.md` | 权威规则 |
 | `notes/` | 导师/企业沟通 | `notes/README.md` | 正式研究证据 |
 | `docs/` | 已完成的跨目录设计记录 | `docs/README.md` | 当前执行指令 |
-| `code_doc/` | 已完成代码设计与实施计划 | `code_doc/README.md` | 当前代码状态 |
-| `projects/` | 旧 PPT 工程归档 | `projects/README.md` | 新开题材料 |
+| `docs/design/history/` | 已完成代码设计与实施计划 | `docs/design/history/README.md` | 当前代码状态 |
+| `docs/thesis/archive/` | 旧 PPT 工程归档 | `docs/thesis/archive/README.md` | 新开题材料 |
 
 ## 4. 当前实现与代码入口
 
@@ -149,7 +149,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | 提交与反压 | [`experiments/plans/service_scheduling_backpressure.md`](experiments/plans/service_scheduling_backpressure.md) | 方法计划 |
 | 图像 workload | [`experiments/plans/completed/image_clip_workload_lock_20260731.md`](experiments/plans/completed/image_clip_workload_lock_20260731.md) | 静态范围已完成；动态部分见 state-aware 当前计划 |
 
-`experiments/plans/archive/`、`docs/` 和 `code_doc/` 只用于追溯。若历史计划仍有有效待办，应把它
+`experiments/plans/archive/`、`docs/` 和 `docs/design/history/` 只用于追溯。若历史计划仍有有效待办，应把它
 迁入上表对应的当前入口，而不是继续追加历史文件。
 
 ## 6. 证据入口
@@ -160,31 +160,31 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | 机制—实现—证据映射 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | GPU-backed 动机画像 | [`motivation/results/gpu/README.md`](motivation/results/gpu/README.md) |
 | capability/smoke | [`feasibility/results/README.md`](feasibility/results/README.md) |
-| 开题 claim 与证据等级 | [`opening/claim_matrix.md`](opening/claim_matrix.md) |
+| 开题 claim 与证据等级 | [`docs/thesis/claim_matrix.md`](docs/thesis/claim_matrix.md) |
 
 CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 formal 是不同证据等级；
 目录名或“passed”字段不能替代结果报告中的身份和适用范围。
 
 ## 7. 文献与知识
 
-- 总入口：[`research/README.md`](research/README.md)
-- 知识汇总：[`research/knowledge_hub.md`](research/knowledge_hub.md)
-- Sema-like 架构审计：[`research/sema_native_semantic_operator_architecture_reference_20260827.md`](research/sema_native_semantic_operator_architecture_reference_20260827.md)
-- 前缀/表示候选的瓶颈、文献与可证伪设计：[`research/semantic_prefix_reuse_design_audit_20260903.md`](research/semantic_prefix_reuse_design_audit_20260903.md)（研究辅助材料；工程次序仍看主计划）
-- 文献库存：[`research/ai_operator_literature_inventory.md`](research/ai_operator_literature_inventory.md)
-- Top 15：[`research/top15_ranked_papers.md`](research/top15_ranked_papers.md)
-- 泛读笔记：[`research/reading_notes/README.md`](research/reading_notes/README.md)
-- 精读笔记：[`research/精读文献笔记/README.md`](research/精读文献笔记/README.md)
-- Kalypso 核心补充精读：[`research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`](research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)（正文 Figure 1–12 已配图；选图与视觉检查见 [`figures/audit/kalypso_deep_reading_figures_audit_20260827.md`](figures/audit/kalypso_deep_reading_figures_audit_20260827.md)；不进入当前 Top 15、十五篇速览或开题正文）
-- IMLane 正式论文精读：[`research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md`](research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md)（正文 Figure 1–15 已配图；Figures 9–10 共用同页联合裁剪件；选图与视觉检查见 [`figures/audit/imlane_deep_reading_figures_audit_20260828.md`](figures/audit/imlane_deep_reading_figures_audit_20260828.md)）
-- SPEAR 核心补充精读：[`research/精读文献笔记/spear_cidr2026/spear_cidr2026.md`](research/精读文献笔记/spear_cidr2026/spear_cidr2026.md)（CIDR 2026 vision/early-design paper；本次未新增论文原图裁剪件，不调整 Top 15、十五篇速览或开题正文）
-- 本地参考资料索引：[`research/reference/REFERENCE_INDEX.md`](research/reference/REFERENCE_INDEX.md)
+- 总入口：[`docs/research/README.md`](docs/research/README.md)
+- 知识汇总：[`docs/research/knowledge_hub.md`](docs/research/knowledge_hub.md)
+- Sema-like 架构审计：[`docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`](docs/research/sema_native_semantic_operator_architecture_reference_20260827.md)
+- 前缀/表示候选的瓶颈、文献与可证伪设计：[`docs/research/semantic_prefix_reuse_design_audit_20260903.md`](docs/research/semantic_prefix_reuse_design_audit_20260903.md)（研究辅助材料；工程次序仍看主计划）
+- 文献库存：[`docs/research/ai_operator_literature_inventory.md`](docs/research/ai_operator_literature_inventory.md)
+- Top 15：[`docs/research/top15_ranked_papers.md`](docs/research/top15_ranked_papers.md)
+- 泛读笔记：[`docs/research/reading_notes/README.md`](docs/research/reading_notes/README.md)
+- 精读笔记：[`docs/research/精读文献笔记/README.md`](docs/research/精读文献笔记/README.md)
+- Kalypso 核心补充精读：[`docs/research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`](docs/research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md)（正文 Figure 1–12 已配图；选图与视觉检查见 [`docs/figures/audit/kalypso_deep_reading_figures_audit_20260827.md`](docs/figures/audit/kalypso_deep_reading_figures_audit_20260827.md)；不进入当前 Top 15、十五篇速览或开题正文）
+- IMLane 正式论文精读：[`docs/research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md`](docs/research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md)（正文 Figure 1–15 已配图；Figures 9–10 共用同页联合裁剪件；选图与视觉检查见 [`docs/figures/audit/imlane_deep_reading_figures_audit_20260828.md`](docs/figures/audit/imlane_deep_reading_figures_audit_20260828.md)）
+- SPEAR 核心补充精读：[`docs/research/精读文献笔记/spear_cidr2026/spear_cidr2026.md`](docs/research/精读文献笔记/spear_cidr2026/spear_cidr2026.md)（CIDR 2026 vision/early-design paper；本次未新增论文原图裁剪件，不调整 Top 15、十五篇速览或开题正文）
+- 本地参考资料索引：[`docs/research/reference/REFERENCE_INDEX.md`](docs/research/reference/REFERENCE_INDEX.md)
 
 ## 8. 历史与归档规则
 
 - 历史结果和失败证据保留原目录，不因结论被替代而删除。
 - 已完成计划在目录 README 中标记状态，并指向当前入口。
-- `projects/` 保留旧 PPT 工程的输入、输出和验证记录；不再用于生成新材料。
-- `code_doc/` 和 `docs/` 的计划文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
+- `docs/thesis/archive/` 保留旧 PPT 工程的输入、输出和验证记录；不再用于生成新材料。
+- `docs/design/history/` 和 `docs/` 的计划文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
 - 本地 `.venv`、`tmp/`、raw workload、模型、缓存和 `__pycache__` 不进入 Git。
 - 新增、移动或删除文件后更新本索引、根 README、受影响目录 README 和 `PROJECT_LOG.md`。

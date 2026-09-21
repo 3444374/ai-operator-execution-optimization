@@ -417,7 +417,7 @@ BF16/TP1/context4096、FCFS、max-num-seqs128/max-num-batched-tokens8192、显�
 
 当前问题是：提前准备与提交增加并行和局部性机会，也增加数据留存、已提交不可重新分配的工作及查询间干扰。
 需要检验何时这些机会抵得过代价，再决定读取、组织和推进方式。有限窗口、token配额与长度排序都是可比较的控制量，
-不预设它们必然优于强静态或全局信息。理论与论文迁移条件见本节及[知识库条件卡](../../research/knowledge_hub.md#execution-transfer-cards)。
+不预设它们必然优于强静态或全局信息。理论与论文迁移条件见本节及[知识库条件卡](../../docs/research/knowledge_hub.md#execution-transfer-cards)。
 
 **执行状态**：`3f1f5540` 已包含本轮期限修订及完整验证记录。96次受控请求与57次真实生成请求均已登记，
 其中1条真实结果用于预期超时检查，不计成功查询。M1已完成顶部两轮受控观测/机制小实验，其余设计假设尚未运行；本文不新增模型额度。
@@ -528,7 +528,7 @@ $$
 证明候选不会永久饿死某项，至少需要有限或受约束到达、每项可容纳、消费最终继续、资源释放被观察、后端最终给出权威终态、
 选择器具有公平机会等前提；未知终态可能合法保持计费，此时应有限地失败/隔离而不是编造完成。
 尚未证明当前端到端执行在任意黑盒服务下均可推进。Neely有限缓冲研究中的丢包条件与SQL不能丢弃必要行冲突，
-有限重排缓冲的颜色切换成本也不等于KV生命周期；见[理论迁移条件](../../research/knowledge_hub.md#execution-transfer-cards)。
+有限重排缓冲的颜色切换成本也不等于KV生命周期；见[理论迁移条件](../../docs/research/knowledge_hub.md#execution-transfer-cards)。
 
 ### 4. 四项设计假设实验（M1 已调整研究问题）
 
@@ -983,7 +983,7 @@ direct 使用有界客户端和相同 HTTP transport，不使用 SessionEngine �
 | 请求/事件观测 | 容量模式使用有上限的后台写入与紧凑哈希事件；队列满或写盘失败不得静默丢记录；资格模式保留完整私有事件 | 无网络扰动检查及匹配模式对照；执行、消费者、评价 RSS/逻辑预留分别报告 |
 | `squad_map.py` 与官方 SQuAD v1.1 dev | 保留既有短答案语义；按完整消息 token 画像生成确定性自然/分层子集，context 不跨 tuning/evaluation；不得按模型答案选样 | 原始 SHA、完整覆盖画像、原文、分组隔离、种子/样本身份、context 数及长度分布 |
 
-已复核[知识库](../../research/knowledge_hub.md)的 Sema/服务观测及
+已复核[知识库](../../docs/research/knowledge_hub.md)的 Sema/服务观测及
 [baseline reference §0.2](baseline_reference.md#gateway-layered-controls)的 matched direct/PG 分层比较，
 沿用[主架构 §8.7–8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
 中数据库行绑定与客户端复用的职责；未读取或分发公司材料。预算存储参考
@@ -1186,7 +1186,7 @@ ShareGPT 当次摘要配置维持暂停：发现任务执行代替摘要、输�
 对应研究内容：研究内容一
 方法候选编号：A1.1-A1.6（详见 `archive/research_design_catalog.md` §3，已归档）
 
-> **2026-07-16 方向更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。具体优化方法尚未锁定——动态 batching（token-budget / length-align / prefix-aware grouping）是当前重点探索方向，但静态 batch_size 参数穷举的结果仍作为 baseline 对照保留。以下内容中的实验骨架和参数矩阵为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `research/knowledge_hub.md`。
+> **2026-07-16 方向更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。具体优化方法尚未锁定——动态 batching（token-budget / length-align / prefix-aware grouping）是当前重点探索方向，但静态 batch_size 参数穷举的结果仍作为 baseline 对照保留。以下内容中的实验骨架和参数矩阵为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `docs/research/knowledge_hub.md`。
 
 ---
 

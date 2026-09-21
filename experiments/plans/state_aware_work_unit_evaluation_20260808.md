@@ -295,7 +295,7 @@ mean service、即时 action effect、stationary slot 与完整 virtual queue �
 #### 5.2.2.3 `saor-v0.4`：固定总 K，动态 active-set 份额
 
 详细数学模型、证明骨架、benchmark 和一手依据统一见
-`../../research/saor_model_scenario_audit_20260811.md`。本次审计把两个不同问题明确拆开：
+`../../docs/research/saor_model_scenario_audit_20260811.md`。本次审计把两个不同问题明确拆开：
 
 1. **SAOR-Release（主方法候选）**：固定总 request/work envelope，只对 per-Job head request
    做 completion-driven ordered release，并用实际 completion 更新 unfinished work、公平和
@@ -356,7 +356,7 @@ order 动态变化。
 #### 5.2.2.4 `saor-v0.5`：通用接口、2-Job 首验的有界词典序 release
 
 完整推导、release 非饥饿界和反例见
-`../../research/saor_model_scenario_audit_20260811.md` §12。本节只冻结后续实现/实验合同。
+`../../docs/research/saor_model_scenario_audit_20260811.md` §12。本节只冻结后续实现/实验合同。
 
 根因不再表述为“SAOR 的 SLO 权重不够大”：formal 配置强制 `slo_weight=0`，请求剩余 SLO
 预算也未从 scheduler 接入 coordinator；当前 soft score 实际优化 entitlement/fairness，不直接
@@ -572,7 +572,7 @@ Arrow fixed-shape tensor
 
 2026-08-11 的架构迁移审计进一步把两级 broker 扩展成工作名 HSE（Heterogeneous Staged
 Execution）的执行合同，完整设计见
-`../../research/heterogeneous_ai_dataflow_execution_model_20260811.md`。HSE 不修改 Ray/Daft
+`../../docs/research/heterogeneous_ai_dataflow_execution_model_20260811.md`。HSE 不修改 Ray/Daft
 调度器，也不增加第三项研究内容；它只把研究内容一的 staged work/data representation 与
 研究内容二的 admission/Job 调度接在真实队列上：
 
@@ -1044,7 +1044,7 @@ observation-gap 定位臂。
    `document_completions`。group/per-Job JCT 均截止对应模型响应完成；trace 验证在计时边界外。
    这里只能声称
    完整系统的经验表现；详细冻结规格见
-   `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
+   `../../docs/design/history/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
    旧 selector rehearsal 只保留为历史内部消融；本轮 runner 不再生成或排名同批
    FIFO/DRR/VTC-style/strict-priority sanity cells；
 3. **no-bounded-ready control 与 observation 桥接（已完成）**：双轮 6/6 cell、0 incident。

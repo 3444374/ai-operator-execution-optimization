@@ -6,7 +6,7 @@
 
 整理日期：2026-07-15
 
-> **2026-07-29 口径更新**：本文中的"计划层/运行层/服务端层""三层策略""RC3/研究内容三"等旧术语已统一为当前口径。最新定义为两项策略 + 多模态泛化验证 + 贯穿两项策略的算子代价估计；优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。写回是实验设置。本文保留原始设计推演过程作为历史参考，术语不匹配处以上述主文档为准。
+> **2026-07-29 口径更新**：本文中的"计划层/运行层/服务端层""三层策略""RC3/研究内容三"等旧术语已统一为当前口径。最新定义为两项策略 + 多模态泛化验证 + 贯穿两项策略的算子代价估计；优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `docs/research/knowledge_hub.md` 为准。写回是实验设置。本文保留原始设计推演过程作为历史参考，术语不匹配处以上述主文档为准。
 
 用途：在绘制策略设计图、撰写开题报告方法部分和设计正式实验前，先明确“哪些优化思想可以借鉴、哪些只适合作为边界或 baseline、本文自己的策略到底是什么”。
 
@@ -138,8 +138,8 @@
 
 | 论文 | 不适用之处 | 出处 |
 |---|---|---|
-| Clipper (NSDI 2017) | delayed batching 假设 Poisson 到达；数据库批量 AI 算子是 burst 到达，等待收益曲线需重测 | `research/reading_notes/clipper_nsdi2017.md` §4.3.2 |
-| CONCUR (2025) | “中段抖动”前提依赖 ReAct 多步 agent；本课题 DB AI 算子多为无状态单轮，前提可能不成立 | `concur_2025.md`；`research/knowledge_hub.md:364` |
+| Clipper (NSDI 2017) | delayed batching 假设 Poisson 到达；数据库批量 AI 算子是 burst 到达，等待收益曲线需重测 | `docs/research/reading_notes/clipper_nsdi2017.md` §4.3.2 |
+| CONCUR (2025) | “中段抖动”前提依赖 ReAct 多步 agent；本课题 DB AI 算子多为无状态单轮，前提可能不成立 | `concur_2025.md`；`docs/research/knowledge_hub.md:364` |
 | BucketServe (2025) | 并发上限只在 prefill 侧（静态输入）成立；decode 侧输出不可预测，用 continuous batching 规避 | `bucketserve_2025.md:122,132` |
 | vLLM continuous batching | 可能已消化外部 K_max 大部分收益（H2.4 反证） | `service_scheduling_backpressure.md` §9 |
 

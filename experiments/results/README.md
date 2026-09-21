@@ -490,4 +490,4 @@ YYYYMMDD_<research_area>_<short_name>.csv
 - 明确 baseline 和优化方案。
 - 明确运行命令、参数、CSV 和日志。
 - 明确结论边界，不把局部调优写成完整论文贡献。
-- 如需图表，放入 `figures/` 并在结果报告中引用。
+- 如需图表，放入 `docs/figures/` 并在结果报告中引用。

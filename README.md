@@ -117,13 +117,13 @@ SQL semantic intent
 | 查找文件和阅读路径 | [`PROJECT_INDEX.md`](PROJECT_INDEX.md) |
 | 核对项目长期规则和边界 | [`AGENTS.md`](AGENTS.md) |
 | 核对系统名和领域术语 | [`CONTEXT.md`](CONTEXT.md) |
-| 理解 Sema/Cortex/LOTUS/IMLane/Kalypso 等机制与可迁移范围 | [`research/knowledge_hub.md`](research/knowledge_hub.md) |
+| 理解 Sema/Cortex/LOTUS/IMLane/Kalypso 等机制与可迁移范围 | [`docs/research/knowledge_hub.md`](docs/research/knowledge_hub.md) |
 | 核对当前源码真实完成度 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) |
 | 判断某项机制是否已实现、验证或淘汰 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 继续 PostgreSQL AI 语义算子实现（CustomScan、公共层、解耦、core patch 条件与工作包） | [`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md) |
 | 回查已完成的 choice 配置（字段、版本、预算与验收） | [`completed/postgresql_choice_profile_engineering.md`](experiments/plans/completed/postgresql_choice_profile_engineering.md) |
 | 在新机器或 GPU 环境运行 | [`deploy/runtime/README.md`](deploy/runtime/README.md) |
-| 准备开题报告或答辩 | [`opening/README.md`](opening/README.md) |
+| 准备开题报告或答辩 | [`docs/thesis/README.md`](docs/thesis/README.md) |
 
 当文档冲突时，按“原始结果/代码 → 领域权威入口 → 项目总纲 → 快速说明 → 历史计划”的顺序
 核对，不从文件日期或文件名猜当前状态。
@@ -153,25 +153,25 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 .
 ├── AGENTS.md / CONTEXT.md / PROJECT_OUTLINE.md / PROJECT_INDEX.md  # 规则、术语、总纲、导航
 ├── overview/       # 当前方向速览
-├── research/       # 文献、知识与方法依据
+├── docs/research/       # 文献、知识与方法依据
 ├── motivation/     # 动机画像与 GPU-backed 端到端证据
 ├── feasibility/    # 环境、组件和 capability/smoke 验证
 ├── experiments/    # 方法计划与正式实验结果
 ├── code/           # 可复用实现、脚本和测试
 ├── deploy/         # 跨机器环境合同与运行手册
 ├── data/           # 数据来源和导入合同；raw 不进 Git
-├── figures/        # 图资产、生成脚本和审计记录
-├── opening/        # 开题报告、答辩材料和文献快照
+├── docs/figures/        # 图资产、生成脚本和审计记录
+├── docs/thesis/        # 开题报告、答辩材料和文献快照
 ├── learning/       # 教学式讲解材料
 ├── notes/          # 导师/企业沟通记录
 ├── docs/           # 已完成的一次性跨目录设计记录
-├── code_doc/       # 已完成的代码设计与实施计划
-└── projects/       # 旧 PPT 生成工程归档
+├── docs/design/history/       # 已完成的代码设计与实施计划
+└── docs/thesis/archive/       # 旧 PPT 生成工程归档
 ```
 
 从根到任务目录逐级加载适用的 `AGENTS.md`，首次进入目录或查找入口时再读相应 README；已读且
-未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、`code_doc/`、
-`projects/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
+未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、`docs/design/history/`、
+`docs/thesis/archive/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
 部署 runbook。
 
 ## 当前证据能支持什么

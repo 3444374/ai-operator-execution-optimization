@@ -5,7 +5,7 @@
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
-本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
+本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `docs/research/knowledge_hub.md`；开题材料必须服从 `docs/thesis/claim_matrix.md`。
 
 读者说明：本文 §0.3 和 §5 保留历史实验审计与结果。历史配置、诊断名称和当时的后续建议
 只供追溯，不覆盖当前执行顺序。
@@ -567,7 +567,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 6. `opening_image_baseline_evidence_map`：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的功能验证、12K 结构诊断与 120K matched-resource 正式排名范围。
 7. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `figures/opening_figure_set/` 进入：图集当前有 21 张主讲候选图、10 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。当前 PPT 成品为已独立完成 26/26 页渲染和视觉检查的 v9；2026-08-22 至 08-25 的报告图文更新没有自动回灌该 PPT，跨材料差异审查仍待执行。
+权威输出位于 `docs/figures/data/report_main/` 与 `docs/figures/architecture/`，生成脚本为 `docs/figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `docs/figures/audit/opening_story_figures_contract_20260808.md`。无同上限正式结果的 static–dynamic 示意图继续保持 `do-not-draw-no-result`。制作 PPT 或报告时统一从 `docs/figures/opening_figure_set/` 进入：图集当前有 21 张主讲候选图、10 张 Draw.io 编辑源和 2 张备份图，权威数据与可复现源仍留在原目录。当前 PPT 成品为已独立完成 26/26 页渲染和视觉检查的 v9；2026-08-22 至 08-25 的报告图文更新没有自动回灌该 PPT，跨材料差异审查仍待执行。
 
 ## 8. 当前执行顺序
 
@@ -610,16 +610,16 @@ rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-v
 
 ## 10. 同步入口
 
-- 开题报告：`opening/report/opening_report.md`
-- 开题 Claim Matrix：`opening/claim_matrix.md`
-- 当前答辩内容合同：`opening/opening_defense_outline_20260808.md`；历史PPT v6设计
-  `opening/slides/opening_defense_v6_design.md`已被取代且禁止作为生成输入
-- 答辩问答：`opening/qa_bank.md`
-- 答辩 QA 预演手册：`opening/report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF）
+- 开题报告：`docs/thesis/report/opening_report.md`
+- 开题 Claim Matrix：`docs/thesis/claim_matrix.md`
+- 当前答辩内容合同：`docs/thesis/opening_defense_outline_20260808.md`；历史PPT v6设计
+  `docs/thesis/slides/opening_defense_v6_design.md`已被取代且禁止作为生成输入
+- 答辩问答：`docs/thesis/qa_bank.md`
+- 答辩 QA 预演手册：`docs/thesis/report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF）
 - 当前方向速览：`overview/current_direction_and_plan.md`
 - 实验状态：`experiments/plans/experiment_status_and_gaps.md`
-- 文献与知识：`research/knowledge_hub.md`
-- 十五篇精读方法速览：`research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
+- 文献与知识：`docs/research/knowledge_hub.md`
+- 十五篇精读方法速览：`docs/research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`
 
 影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。

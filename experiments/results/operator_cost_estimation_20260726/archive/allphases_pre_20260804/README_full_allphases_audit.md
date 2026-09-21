@@ -218,7 +218,7 @@ pooled regret 0.62%、7/13 pick）；但沿用预注册的行级 pairwise 只有
 ## 后续工作
 
 以下按优先级排列，每项标注对应的文献设计模式（详见
-`research/knowledge_hub.md` §5.7-§5.9）。完整的 15 个设计模式总览
+`docs/research/knowledge_hub.md` §5.7-§5.9）。完整的 15 个设计模式总览
 和优先级矩阵见该文档。
 
 ### 第一批（短期，1-2 轮即可落地）

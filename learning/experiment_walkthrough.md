@@ -161,8 +161,8 @@ coalesced:
 
 学习图：
 
-- `../figures/learning/cpu_gpu_coalesced_e2e_20260712.svg`
-- `../figures/learning/fine_vs_coalesced_e2e_20260712.svg`
+- `../docs/figures/learning/cpu_gpu_coalesced_e2e_20260712.svg`
+- `../docs/figures/learning/fine_vs_coalesced_e2e_20260712.svg`
 
 这一节专门解释你问的那个问题：
 
@@ -315,9 +315,9 @@ operator_wall_s
 
 下面两张图分别画两个现象。图只负责呈现实验数值，解释放在正文里。
 
-![CPU/GPU coalesced e2e comparison](../figures/learning/cpu_gpu_coalesced_e2e_20260712.svg)
+![CPU/GPU coalesced e2e comparison](../docs/figures/learning/cpu_gpu_coalesced_e2e_20260712.svg)
 
-![Fine vs coalesced e2e comparison](../figures/learning/fine_vs_coalesced_e2e_20260712.svg)
+![Fine vs coalesced e2e comparison](../docs/figures/learning/fine_vs_coalesced_e2e_20260712.svg)
 
 几个变量先解释清楚：
 
@@ -564,26 +564,26 @@ e2e_s 也可能约等于 1 秒多一点
 图放在：
 
 ```text
-figures/learning/
+docs/figures/learning/
 ```
 
 这三张图各讲一个问题。图下面的文字只解释怎么看图，图本身只保留标题、坐标轴、图例和数值。
 
 **图 1：1024 行时，fine 和 coalesced 的端到端差异**
 
-![1024 rows: e2e time by invocation granularity](../figures/learning/gpu_embed_1024_granularity_e2e_20260712.svg)
+![1024 rows: e2e time by invocation granularity](../docs/figures/learning/gpu_embed_1024_granularity_e2e_20260712.svg)
 
 这张图看横轴的两个柱子：`coalesced` 是 4 次模型 endpoint 调用，`fine` 是 1024 次模型 endpoint 调用。纵轴是端到端时间，单位是秒。它说明逐行调用真实 GPU embedding endpoint 会把整条链路显著拖慢。
 
 **图 2：4096 行 coalesced 下，不同 executor 的端到端时间**
 
-![4096 rows coalesced: e2e time by executor](../figures/learning/gpu_embed_4096_executor_e2e_20260712.svg)
+![4096 rows coalesced: e2e time by executor](../docs/figures/learning/gpu_embed_4096_executor_e2e_20260712.svg)
 
 这张图比较 `python`、`ray_task`、`ray_actor`。三根柱子很接近，所以当前不能说 Ray 已经明显更快。更严谨的结论是：在单个本地 GPU endpoint、16 个 coalesced batch 的设置下，Ray 和 Python 端到端接近；Ray 的价值需要在多 endpoint、路由、反压、worker 写回等后续实验里验证。
 
 **图 3：16384 行时，AI operator 和 writeback 都已经很大**
 
-![16384 rows ray_actor coalesced: stage time](../figures/learning/gpu_embed_16384_stage_breakdown_20260712.svg)
+![16384 rows ray_actor coalesced: stage time](../docs/figures/learning/gpu_embed_16384_stage_breakdown_20260712.svg)
 
 这张图里的 `AI operator` 不是 PostgreSQL 内部算子，也不是 GPU kernel。它指数据库外部的 AI 算子执行阶段：
 
@@ -993,7 +993,7 @@ pgvector vector(384) writeback
 ```text
 motivation/results/gpu/pgvector_writeback_20260714.md
 motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
-figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png
+docs/figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png
 ```
 
 这次实验只改变 `writeback_mode`，其他条件保持一致：

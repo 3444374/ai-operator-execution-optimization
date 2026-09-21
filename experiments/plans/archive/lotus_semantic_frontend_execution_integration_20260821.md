@@ -505,7 +505,7 @@ freeze LOTUS v1.2.4 identity
 
 ## 13. 依据
 
-- 深入审计：`../../research/lotus_postgresql_execution_layer_fit_20260821.md`
+- 深入审计：`../../docs/research/lotus_postgresql_execution_layer_fit_20260821.md`
 - LOTUS paper：<https://www.vldb.org/pvldb/vol18/p4171-patel.pdf>
 - LOTUS release v1.2.4：<https://github.com/lotus-data/lotus/releases/tag/v1.2.4>
 - LOTUS AST：<https://github.com/lotus-data/lotus/tree/v1.2.4/lotus/ast>

@@ -99,5 +99,5 @@ Filter 的共同目的是按条件筛行；自有三值配置可保留，可移�
 | 实验状态与缺口 | [`experiment_status_and_gaps.md`](../experiments/plans/experiment_status_and_gaps.md) |
 | 正式证据注册表 | [`EXPERIMENT_EVIDENCE_REGISTRY.md`](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 代码实现状态 | [`code/INFRA_STATUS.md`](../code/INFRA_STATUS.md) |
-| 文献与设计依据 | [`research/knowledge_hub.md`](../research/knowledge_hub.md) |
-| 开题 claim 边界 | [`opening/claim_matrix.md`](../opening/claim_matrix.md) |
+| 文献与设计依据 | [`docs/research/knowledge_hub.md`](../docs/research/knowledge_hub.md) |
+| 开题 claim 边界 | [`docs/thesis/claim_matrix.md`](../docs/thesis/claim_matrix.md) |

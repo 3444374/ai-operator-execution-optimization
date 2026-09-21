@@ -52,7 +52,7 @@
 
 ## 6. 文档（写报告前必读，不凭记忆）
 
-- 根 `AGENTS.md`“工作方式与证据纪律/环境与正式实验/对外文档”和 `research/AGENTS.md`。
+- 根 `AGENTS.md`“工作方式与证据纪律/环境与正式实验/对外文档”和 `docs/research/AGENTS.md`。
 - `experiments/plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md`（身份三轨 + gateway + ComparisonRole 语义 + 计时边界）。
 - `code/src/baselines/common/provenance.py`（ComparisonRole Literal——写身份前 grep 这个文件）。
 - `deploy/autodl/README.md`（runtime/profile/资产 + §9.1 calibration 模板 + §10.5 Ray + §2.3 paramiko）。

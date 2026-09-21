@@ -190,4 +190,4 @@ project/direct 的 service ratio **不是本实验有效性的通过条件**，�
 - project 仍快于 direct C128：只能称当前两条完整静态执行路径存在条件性差异；由于 Daft/Ray、token-budget 和 W65,536 同时存在，不能归因于某一数据组织或调度机制。
 - 两臂 database-E2E 差异绝对值小于 5%：按预注册描述为当前签名下近似中性，不追加并发扫描追正。
 
-无论结果方向如何，都不重跑 DuckDB、不增加 C64/C256、不更换 workload/模型/数据库、不调 project K/W/actor，也不把该补测升级为新的开题核心贡献。结果目录名由固定前缀 `opening_sharegpt_c128_database_e2e_` 加实际服务器运行日期组成，目录内保存 `README.md` 与 `raw/`；随后再更新旧结果报告、`opening/claim_matrix.md`、开题正文和 `PROJECT_LOG.md`，并明确旧 116.703 s 仍是有效历史配置结果。
+无论结果方向如何，都不重跑 DuckDB、不增加 C64/C256、不更换 workload/模型/数据库、不调 project K/W/actor，也不把该补测升级为新的开题核心贡献。结果目录名由固定前缀 `opening_sharegpt_c128_database_e2e_` 加实际服务器运行日期组成，目录内保存 `README.md` 与 `raw/`；随后再更新旧结果报告、`docs/thesis/claim_matrix.md`、开题正文和 `PROJECT_LOG.md`，并明确旧 116.703 s 仍是有效历史配置结果。

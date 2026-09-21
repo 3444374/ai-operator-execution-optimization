@@ -722,7 +722,7 @@ code/scripts/experiments/run_ai_operator_scenarios.py
 它既是当前 Phase 1 的实验驱动脚本，也是后续拆分正式 worker 之前的最小端到端实现。当前没有另一份隐藏的连接代码。
 
 本目录只放实验主体、服务启动、数据采集和 profiling 入口。绘图、图表复现和素材筛选
-脚本统一放在 `figures/scripts/`。
+脚本统一放在 `docs/figures/scripts/`。
 
 图像 CLIP 当前有三类不同入口，不能混读：
 

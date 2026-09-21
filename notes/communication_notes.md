@@ -124,7 +124,7 @@
 
 ### 5.1.1 完整反馈（含三痛点 + DB-GPU 桥接场景，2026-07-31 续）
 
-学长进一步明确**场景**与**Daft 三痛点**（详查 `research/daft_db_gpu_bridge_direction_scope_20260731.md`）：
+学长进一步明确**场景**与**Daft 三痛点**（详查 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`）：
 
 **场景**：数据库 ↔ GPU 经 **Daft 桥接**——Daft 是数据库和 GPU 之间的数据搬运/中转桥梁；GPU 旁插几张卡；任务挪到 GPU 上跑、经 Daft 管数据搬运；**GPU 侧算子多样**（以前写好的业务处理逻辑/复杂任务，不止一个 vLLM）；数据量大；流式执行。**不能用 ShareGPT 这种对话式 workload**——它本质上对 CPU 侧数据处理没有大需求，与场景不符。
 

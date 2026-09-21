@@ -13,7 +13,7 @@
 
 - 想 2 分钟了解当前方向 → `current_direction_and_plan.md`
 - 想完整了解研究内容和实验路线 → 根 `PROJECT_OUTLINE.md`
-- 想查文献、机制、策略设计 → `research/knowledge_hub.md`
+- 想查文献、机制、策略设计 → `docs/research/knowledge_hub.md`
 - 想继续 CustomScan、公共执行层、真实算子或 core patch 工程实现 →
   `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`
 - 想核对源码已经实现什么 → `code/INFRA_STATUS.md`
@@ -22,6 +22,6 @@
 ## 与其他目录的关系
 
 - 项目总纲（完整版）：根 `PROJECT_OUTLINE.md`
-- 知识库：`research/knowledge_hub.md`
+- 知识库：`docs/research/knowledge_hub.md`
 - 实验：`motivation/`、`experiments/`
-- 开题报告：`opening/report/opening_report.md`
+- 开题报告：`docs/thesis/report/opening_report.md`
