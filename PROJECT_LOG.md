@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-09-21：瘦身改动改放 codex/repo-slimming 分支
+
+- 用户希望瘦身改动先在分支上调整再合入。原直接提交到 main 的 `9dc2e128`/`6abaf4b8`/`55e38aec`
+  已在 main 上以三个反向提交撤回（不改写历史，证据绑定的历史 SHA 不受影响），同等改动经
+  cherry-pick 落在 `codex/repo-slimming` 分支（`38e91ee7`/`a253ecd4`/`e8d55d80`）。
+- 分支内容与撤回前 main 的瘦身完成态逐字节一致；以下三个 2026-09-21 条目的工作事实不变，
+  存放位置以本条为准：迁移在分支上，待审查后合入 main。
+
 ## 2026-09-21：目录收敛：code_doc 并入 docs、feasibility 大 raw 迁出、projects 导出迁出
 
 - 用户确认执行方案 B/C(b)/D，完成最后一起 push。
