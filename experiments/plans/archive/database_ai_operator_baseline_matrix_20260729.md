@@ -581,9 +581,9 @@ failure、0 failure record，正式矩阵恢复 j1/j2/j4。若未来 actor gate
 
 适配器边界、fatal-flaw audit 和实现模块见：
 
-`../../docs/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`
+`../../code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`
 
 本轮批准的 staged validation 与实施清单见：
 
-- `../../docs/superpowers/specs/2026-07-29-daft-ray-baseline-advantage-validation-design.md`
-- `../../docs/superpowers/plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md`
+- `../../code_doc/superpowers/specs/2026-07-29-daft-ray-baseline-advantage-validation-design.md`
+- `../../code_doc/superpowers/plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md`

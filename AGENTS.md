@@ -29,7 +29,7 @@
 | 学习讲解 | `learning/AGENTS.md` |
 | 快速方向卡片 | `overview/AGENTS.md` |
 | 导师/企业沟通记录 | `notes/AGENTS.md` |
-| 历史设计/工程归档 | `docs/AGENTS.md`、`projects/AGENTS.md` |
+| 历史设计/工程归档 | `docs/AGENTS.md`、`code_doc/AGENTS.md`、`projects/AGENTS.md` |
 
 ## 2. 项目范围
 

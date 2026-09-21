@@ -1,8 +1,6 @@
-# docs/superpowers/plans/
+# code_doc/superpowers/plans/
 
 Design specifications and implementation plans for focused engineering tasks.
-2026-09-21 起由原 `code_doc/superpowers/plans/` 并入，下方文件表为当时部分索引，
-完整清单以目录文件名为准。
 
 These files are process artifacts. They do not replace `PROJECT_OUTLINE.md`,
 `experiments/plans/`, or formal experiment records.

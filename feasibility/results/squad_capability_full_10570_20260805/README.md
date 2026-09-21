@@ -1,5 +1,4 @@
 # SQuAD v1.1 dev FULL 10570 gate — DuckDB-ai arm（2026-08-05，fail-closed FAILURE）
-> **原始 trace 存放位置（2026-09-21 迁出 git）**：本目录的 per-run 原始数据（per-row evidence CSV、sample manifest 等逐行原始数据）已按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策从 git 跟踪移除；迁出前已逐文件 SHA-256 与 git blob 内容核对一致，镜像于 AutoDL `/root/autodl-tmp/ai-operator/feasibility/results/` 与本地 `C:\Users\ays\Desktop\results\feasibility\results\` 下的同名目录。git 内保留聚合 CSV、summary、manifest 与本 README。
 
 > **结果：fail-closed 触发，门禁 FAILURE（非 pass）。** 10570/10570 exactly-once、workload 完整性
 > verified、三个 content hash 一致、attribution 可归因，但 **1/10570 行在 cap=64 下被 DuckDB-ai

@@ -127,7 +127,7 @@ JSONL 的旧 native path 只作诊断。group JCT/database-E2E 含共同 sink；
 完成模型响应，避免把 group 末尾统一 sink barrier 伪装成两个 Job 各自的完成时刻。原生臂没有
 真实共同 request clock 时，P99/SLO 必须写
 `unavailable`。详细规格见
-`../../docs/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
+`../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
 历史 Project 内部 bounded-ready FIFO/DRR/VTC-style/SAOR same-regime 数据只保留为消融归档；
 本轮五臂 runner 不再生成或排名该表，也不据其产生 selector winner/formal claim。
 这里的 FIFO 全名是 `Project bounded-ready + global FIFO matched-control`：bounded-ready 不是
