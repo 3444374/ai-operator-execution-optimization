@@ -1,4 +1,5 @@
 # Prefix-affinity routing 消融——concentrated ShareGPT
+> **原始 trace 存放位置（2026-09-21 迁出 git）**：本目录的 per-run 原始数据（requests/submissions/resources/flush 等 trace、日志、raw/ 内容）已按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策从 git 跟踪移除；迁出前已逐文件 SHA-256 与 git blob 内容核对一致，镜像于 AutoDL `/root/autodl-tmp/ai-operator/experiments/results/` 与本地 `C:\Users\ays\Desktop\results\experiments\results\` 下的同名目录。git 内保留聚合 CSV、summary、manifest 与本 README。
 
 日期：2026-07-30（运行于 2026-07-30，2026-07-31 补数据 + 报告）
 分支：`main`

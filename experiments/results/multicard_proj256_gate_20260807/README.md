@@ -1,4 +1,5 @@
 # project_static 2-endpoint 挂死修复 — 256 go/no-go 验证门（2026-08-07）
+> **原始 trace 存放位置（2026-09-21 迁出 git）**：本目录的 per-run 原始数据（requests/submissions/resources/flush 等 trace、日志、raw/ 内容）已按 `experiments/results/RAW_ARCHIVAL_20260807.md` 政策从 git 跟踪移除；迁出前已逐文件 SHA-256 与 git blob 内容核对一致，镜像于 AutoDL `/root/autodl-tmp/ai-operator/experiments/results/` 与本地 `C:\Users\ays\Desktop\results\experiments\results\` 下的同名目录。git 内保留聚合 CSV、summary、manifest 与本 README。
 
 > **性质（experiments/AGENTS.md §结果边界）**：这是一个**修复验证门（fix-validation gate）**，不是正式性能排名。它只回答一个问题：commit `e49ac53`（bound actor-ready `ray.wait` 90s + bound profiler `subprocess.run` 900s）是否让原本 2-endpoint 无限挂死的 `project_static` 臂**能完成**。**不能**从此门禁的 256 行 wall 时间推断 project_static 相对 baseline 的吞吐优劣（256 行未饱和、operator 工作量极小、db_fetch 主导，见 §4）。
 
