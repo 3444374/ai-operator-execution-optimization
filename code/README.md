@@ -1,11 +1,10 @@
 # SemLoom Code
 
-M1 experiment selection now separates reachable capacity screening, work tuning and independent
-evaluation. It compares complete throughput against a tuned request-count FIFO and retains negative
-or inconclusive results. [Experiment design](../docs/plans/data_organization_batching.md#m1-throughput-platform)
-and [local validation](../results/postgresql/m1_platform_revision_20260920/README.md).
-The old fixed request matrix is retired. The [prior finite real trial](../results/postgresql/m1_m2_f_real_20260920/README.md) completed 8,248 text POSTs; screening found no platform candidate. Experimental PG-source M2 controls now include paid global metadata and explicit reuse, with no stable performance advantage established.
-The [M1 follow-up](../results/postgresql/m1_supply_followup_20260920/README.md) fixes repeated capacity summation in read-only scans, and transport errors now retain bounded exception metadata. The [full capacity recheck](../results/postgresql/m1_full_recheck_20260920/README.md) completes 32 queries and 16,400 requests; an initial cleanup alert is retained alongside a subsequent successful resource audit. These engineering changes are merged into main. The original uncertain executions did not recur and their cause remains undetermined.
+Current capability and verification status is maintained in [INFRA_STATUS](INFRA_STATUS.md)
+(by capability) and [docs/status.md](../docs/status.md) (summary); this file only documents code
+structure, interfaces and how to run things. The M1 experiment code separates reachable capacity
+screening, work tuning and independent evaluation; current results and open questions live in
+[the data-organization plan](../docs/plans/data_organization_batching.md) and the result records.
 
 
 The opt-in image slice adds `ai_semantic.embed(bytea, jsonb) -> real[]` in extension `0.3.0`.
