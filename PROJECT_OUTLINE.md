@@ -1,167 +1,26 @@
 # 项目大纲
 
-更新时间：2026-09-20
+更新时间：2026-09-21
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `docs/research/knowledge_hub.md`；开题材料必须服从 `docs/thesis/claim_matrix.md`。
+逐轮验证过程不在本文记录：某次测试的条件、数据与解释见 `results/` 下对应记录，变更时间线见
+`PROJECT_LOG.md`，当前能力状态见 `code/INFRA_STATUS.md`（按能力组织）。
 
-读者说明：本文 §0.3 和 §5 保留历史实验审计与结果。历史配置、诊断名称和当时的后续建议
-只供追溯，不覆盖当前执行顺序。
-
-## 0. 当前优先级与历史记录范围
-
-2026-09-20：[最后一个工程工作包 F](results/postgresql/image_stages_f_20260920/README.md)
-已完成图像类型、同步 reference、MethodDriver 行结果及 CPU/model 阶段接入的受控检查。
-PG18.3 回归与实际 Ray/解码验证通过；后续[有限真实验证](results/postgresql/m1_m2_f_real_20260920/README.md)完成151次CLIP前向，三路径逐维一致，指定错误/取消及恢复通过。
-GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作为方法贡献。
+## 0. 当前优先级
 
 下一阶段研究重点是说明“哪些工作现在做、哪些稍后做，以及何时值得这样做”。
 [设计主张与证据表](docs/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
-当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
+当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，
+多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
 资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。
-后续[M1复测](results/postgresql/m1_supply_followup_20260920/README.md)定位并受控修复了重复容量汇总开销，C64未确认请求推动了异常记录改进。[完整容量复查](results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询、16,400次请求；保留原清理告警，随后资源核对通过，工程改动合入main。原故障未复现、根因待确定；PG/direct均未满足持续供给要求，尚无容量选点或方法结论。
 
-2026-09-14：[等待位置小实验](results/postgresql/waiting_positions_pilot_20260914/README.md)已测量查询专属准备及提交前后的等待。
-在受控服务中，更紧的工作量限制降低HTTP尾延迟，却使SQL至EOF时间增加约1.81倍；单请求更快没有转化为查询收益。
-后续[常驻服务对照](results/postgresql/waiting_positions_persistent_20260914/README.md)已完成：
-一次启动约5.5秒与每查询约14–15毫秒准备分别报告；C8五次都比对应轮次C4快。
-紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
-旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](docs/plans/data_organization_batching.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施。本轮M1筛查未得到平台候选，后续条件阶段未执行；M2五种PG源信息方式完成固定C4诊断，尚无稳定收益，仍未接入SemMap全局预扫。
-
-2026-09-14：[查询共享实现](results/postgresql/query_sharing_e_20260914/README.md)复用统一计算责任表和查询轮转，
-让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；
-63次真实模型请求的执行、关联和回收已完成；其中55次Map都未逐字复述输入，质量负结果保留。
-这项工程验证已完成，随后开展等待位置和全局元数据对照；执行检查通过不代表生成质量或性能改善。
-
-2026-09-14：[异步期限与数据交付诊断](results/postgresql/async_deadline_flow_20260914/README.md)
-已修订同步工作跨期限后误报完成的问题，并测量PG输入准备、Core提交、节点交付与客户端接收。
-受控对照中，先补输入会延后就绪结果的节点交付，但提前节点交付没有带来一致的客户端首行改善，默认次序保持不变。
-首轮配置错误停止后获批补跑，累计57次真实请求完成：正常输出一致，跨期限写入保留失败。
-真实对照的四次暂停均未遇到就绪队首，不能据此认定提前交付策略有收益。
-
-2026-09-14：[推进、空查询与服务器诊断](results/scheduling/capacity_wait_server_20260914/README.md)
-已完成Linux和选定PG集成验证，容量恢复后及时派发，零任务选择不创建provider流。
-普通PG查询中，小结果的客户端首行接近查询结束，增加返回字节后首行提前；这一观察支持连接发送缓冲的解释。
-旧SemMap各阶段等待仍需分别测量，本次没有新增真实模型请求或性能排名。
-
-
-2026-09-11：[组织审计与真实预算对照](results/postgresql/cd_validation_20260911/README.md)
-新增从提交到后端终态的活跃工作量重建，并直接检查实际提交顺序。1,152次模型请求均完成且资源归零。
-相同行数、存储和并发配置下，总量留存与等份模式耗时约3.81/3.75秒，未观察到前者更快。
-在请求上限32时，工作量预算4096已实际限制提交，三种控制均慢于预算16384；这证明限制生效，不是优化收益。
-其中一个配置有一行模型预测差异，执行关联正常。组织组仍逐项执行，不能据组数称三种不同的模型批处理方法。
-当前需要独立重复、强静态参照及准备/常驻成本消融；模型和测试数据库已停止，临时权限已恢复。
-
-2026-09-10：[按实际字节控制Map数据留存](results/postgresql/pg_window_budget_20260910/README.md)
-与[有限窗口token工作量组织](results/postgresql/map_organization_20260910/README.md)已完成。
-独立288次及408次真实模型请求通过结果对应和资源检查；固定行数与固定工作量只改变分组，
-长度排序改变实际提交顺序，三组预测一致。短查询仅作功能与资源依据，尚不能说明稳态性能提升。
-模型与测试数据库已停止、临时目录权限恢复；后续为静态容量复核、更大组织对照、多查询计算共享和图像接入。
-
-2026-09-10：[数据库源与公共查询入口](results/postgresql/database_queries_20260910/README.md)
-已完成受控验证：PG、直接执行、Ray从原始列构造Map消息，PG与原生LOTUS执行Movie计数和取前五条查询。
-2000条真实评论完整导入，重复原始ID保留；新增真实模型调用0次，质量与性能比较待单独运行。
-当时交付后暂停；此后留存预算与有限窗口组织已按上项继续完成。
-
-2026-09-10：[执行修复的真实对照](results/postgresql/execution_repairs_20260910/README.md#同配置的真实模型修复前后诊断)
-完成18组短查询、8448次模型调用。同资源比较中，L64行且结果预留32MiB时过量接纳探测减少，
-两次耗时由约17秒降至约10秒；其他配置没有一致改善。该观察用于解释基础执行，不代表数据组织收益或稳定容量平台。
-
-2026-09-10：[真实单卡容量画像](results/postgresql/map_capacity_20260910/README.md)完成可复跑测量、
-五次4000行观测与独立样本验证。PG当前候选为活跃请求上限32、保留行窗口64；更高并发的同规模重复平台尚未确认，
-因此静态强参照仍待补齐。下一步先确认平台及普通供给限制，再进行固定资源下的组织对照；不把本次调参结果写成方法贡献。
-
-2026-09-09：当前主线转为围绕具体数据执行问题完成测量、对照、机制改进和验证。
-先做真实单 Map 任务与静态容量画像，再比较有限窗口中的数据组织，随后进入多 Job。
-近期合同见[数据执行切片](docs/plans/data_organization_batching.md#design-hypotheses)，
-实际完成情况见[实现状态](code/INFRA_STATUS.md)与[实验状态](docs/plans/experiment_status_and_gaps.md)。
-研究对象和两项研究内容保持不变；框架开发优先解决这条实验链暴露的缺口。
-
-以下为截至 2026-09-04 的接入背景，不覆盖上述顺序。目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible recording `SemMap`/`SemFilter`
-与三参 exact `SemFilter` golden/fixed-model reference paths 已验证
-`SELECT`、ordinary child plan、snapshot 与 query lifecycle；Map 与 Filter 另有受限 direct `INSERT ... SELECT` 验证，并通过初始
-PostgreSQL-private pump 和 provider-neutral `AiOpenSpec → AiPreparedTask → AiCompletion` 接口调用
-in-process 与同步单在途 Unix-domain socket（UDS）provider。scan/pump、neutral port、
-recording/UDS adapter 与 versioned wire 的职责拆分已完成。
-C/Python 协议 v2 分域 identity/payload/completion digest、长度帧、Unicode、lazy open、PostgreSQL-owned `PROPAGATE_NULL`、
-per-drive scratch、编码前输入上限、UTF8 校验、escaped/raw NUL、严格整数、断连、可取消
-connect/response wait 和资源清理已在 PostgreSQL 18.3 通过。公共 compatibility suite 已覆盖
-RLS/权限、prepared/generic-plan invalidation、savepoint、双 backend、cancel 和 no-task lazy open；
-两个 operators 共用 `PgSemanticRuntime`，Map/Filter machines 分别拥有 emit 与
-TRUE/FALSE/UNKNOWN keep/drop。planner 已将 recording schema v1 和 exact schema v2 真正消费的
-operator/value/policy、instruction、prompt/parser、model/generation、semantic/physical identity 与
-`Physical Role=reference` 写入版本化、可 copyObject 的最小 plan spec；input column 作为 executor
-binding 独立保存，runtime 统一严格解码并映射为 `AiOpenSpec`。
-neutral error interface 不再暴露 socket/JSON/frame operation，adapter 只返回中立类别和本地生成的定长
-脱敏详情。Python gateway 的 framing、wire v2、recording adapter 与 server 已迁入
-`code/src/execution_provider/`；extension 子树中的旧 import/CLI 只负责自定位并转交，不保存协议或 server 逻辑。
-exact-reference 纵切面已实际消费 instruction、prompt program、result parser、model/generation
-constraints 和 policy；wire v3 与 deterministic golden adapter 已端到端验证该最小 plan/task/result
-contract，但 golden fixture 不是模型也不证明自然语言判断质量。之后的 4A.1 已收紧 v3 error frame、
-共享 C transport/JSON 归属和 canonical-message 构造前的
-input-limit preflight，并补齐 Unicode、空串与 savepoint/recovery 证据。
-4B 又在 gateway 内抽出共享 v3 session runner 与 completion adapter，以 query-fixed execution profile
-区分 golden 和固定 OpenAI-compatible endpoint；PostgreSQL 继续拥有 digest/model validation、严格
-tristate parser 与 keep/drop。小规模 Qwen2.5-1.5B-Instruct/vLLM capability 已跑通，但不证明质量或性能。
-提交 `47407751` 已分开 reference 的 semantic-input rows、NULL rate、通用 output-selectivity estimate、
-estimated calls/work 与 provider 返回的实际 usage；`71a8ef7d` 又明确将其标为 uncalibrated。
-`dcde2be5` 已增加离线 reference calibration artifact builder、held-out validator、跨 Python/PostgreSQL
-identity 和 planner-only loader；匹配 artifact 时 EXPLAIN 保存 calibration/workload/service identity、
-预测 service milliseconds 与误差，失配时继续使用 uncalibrated exact reference。该提交只用
-deterministic fixture 验证合同。[2026-09-01 首轮真实采集](results/postgresql/semfilter_reference_calibration_20260901/README.md)
-完成 64 条预热后，因首个 training 查询第 23 个模型输出格式错误而停止；held-out 和拟合均未运行。
-[后续小切片](results/postgresql/semfilter_qualification_20260901/README.md)已修复 builder 的
-可辨识性检查，并在 PG18.3 验证普通多列统计；choice 候选虽有 30/30 合法格式，预期语义仍只符合
-12/27，即 9 个独立样例中 4 个符合预期、各重复三次。
-[单一 prompt 后续对照](results/postgresql/semfilter_prompt_qualification_20260901/README.md)
-未发现实际 messages/template 不一致；新 prompt 在 1.5B 的旧/新样例各 5/9，matched 7B 上为
-7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停。下一工程切片独立接入
-[显式选择的 choice 生成配置](docs/plans/completed/postgresql_choice_profile_engineering.md)，
-让数据库保存并传递三值输出要求。
-首个[值与编码切片](results/postgresql/choice_profile_contract_20260902/README.md)已通过
-C/Python 对照及本地/服务器 68/68 测试，另有 PG18.3 仅构建记录。
-后续 [PG plan 接入](results/postgresql/choice_pg_plan_20260902/README.md)已支持显式 SQL
-option、schema 3、完整 profile 的计划复制与 EXPLAIN；该阶段的新执行曾明确拒绝。
-[gateway v4 切片](results/postgresql/choice_gateway_v4_20260902/README.md)现已实现严格
-profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 regression 1/1、TAP 537/537
-通过。后续 [C 接线](results/postgresql/choice_pg_wire_20260902/README.md)已让 choice SELECT
-进入公共 runtime，PG18.3 regression 1/1、TAP 748/748、本地/服务器各 83/83。该轮发现的 Filter INSERT 缺口已由[独立修复](results/postgresql/semfilter_insert_20260902/README.md)
-解决：`39007150` 的 PG18.3 regression 1/1、TAP 919/919、各 83/83 通过，新增 171 项实际写入与
-事务验证。旧三字段配置继续执行，不把 fixture 接线写成模型质量或整个四 C 已通过。
-后续[受控资源检查](results/postgresql/choice_resources_20260902/README.md)通过 v3/v4 各 5,164 次
-fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice 检查](results/postgresql/choice_service_20260902/README.md)
-完成 14 次 old/choice 请求与两个 NULL 对照，累计 15/100 含首轮工具失败；当前集成版本已包含实现和归档。
-这些只验证接入与本规模资源使用，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
-[总体设计与实施安排](docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
-现按长期能力组织：PG拥有SQL和关系执行，算子方法产生具体任务，SemLoom承担有界组织与多作业调度。
-数据库公共调用/绑定、独立增量Core和共同资源/观测可以协同推进；两个Filter AND与有界多会话已有
-[工程验证](results/postgresql/semfilter_and_20260907/README.md)，现已合并main。
-[函数身份检查](results/postgresql/function_identity_20260902/README.md)已复现并最小修复
-非成员误接管，实现与证据已合入 main；仅成员关系变更仍须按工程计划刷新所有相关物理连接，不支持自动在线变更。
-生成型 Map 的消息编译、C/Python 纯值、Python v5 与深层 JSON 修复已合入本地 main，
-见[分阶段验证](results/postgresql/semmap_values_20260903/README.md)。后续完成并纳入 main 的
-[PG plan/权限及 C v5/golden 执行](results/postgresql/semmap_pg_wire_20260903/README.md)：
-实现已让生成型 Map 返回文本。合并前复核修正协议阶段和 usage 校验后，`f46fe936` 通过
-PG18.3 regression 1/1、TAP 1758/1758 和两端各 139/139；原 `5031bb50` 证据保留原身份。
-2026-09-04 的[追加检查](results/postgresql/semmap_real_model_resource_20260904/README.md)
-完成 PG18.3 → wire v5 → Qwen2.5-7B → PG 的 25/32 次真实请求，SELECT/INSERT、NULL 零调用、取消、
-模型拒绝和恢复通过。fixture 主压力完成 3×2,000 个大输入/大输出 task，但固定资源条件失败且缺少
-断言前采样，后置 fault 子项未运行；不用真实 completion 或 fixture 证明模型质量、性能或四 D 整体通过。
-2026-09-06 的[后续真实复验](results/postgresql/semmap_prepush_20260906/README.md)使用修复后的
-共享观测实现和8次新请求，SELECT、独立连接审计的INSERT、取消/拒绝及恢复均通过；所列小规模
-场景满足资源条件，运行结束后服务全部退出。该检查加入了100ms任务派发等待以观察短连接，
-不能用于性能比较，也不替代修复后的正式资源压力测试或生成质量评估。
-SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量 session、数据组织、有界提交与多 Job，
-不等待 Filter 质量或第二路径。Filter 仍须另行取得合格 reference、真实 matched artifact 与第二 path，
-其失败不会被本次排期调整改判。carrier 审查随各真实路径增量进行；新增 PG 接入、重排与端到端比较
-分别验证对应语义、生命周期和资源，不借用纯核心测试。只有已复现阻断才增加最小 core patch。
-并行研发不自动恢复旧 GPU 矩阵、SAOR 或五臂 formal；外部/emulated 结果保持原身份，新的实验需要
-具体计划与授权。LOTUS compatibility/native baseline 后置且不阻塞主实现。
-
-下方 2026-08-19 至 2026-08-21 的 SAOR/readiness/rehearsal 细节是已完成准备工作的历史记录，
-用于解释证据来源和 formal 为何仍未授权；它们不能覆盖上述当前顺序。
+当前位置（2026-09-21）：工程工作包 A–F 已完成各自受控验证（图像 embed 三路径数值一致）；
+M1 完整容量复查 16,400 次请求账目一致但 PG/direct 均持续供给不足，尚未选出平台候选，
+原偶发故障根因待确定；M2 五种 PG 源信息方式完成固定 C4 诊断、尚无稳定收益。
+能力与结论的逐项限制见[能力总览](code/INFRA_STATUS.md)与[证据台账](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
 ### 0.1 PostgreSQL AI 语义算子实施入口
 
@@ -537,25 +396,25 @@ PostgreSQL SQL `ai_semantic.map(...)`
 
 ## 6. 开题前统一文本 database-E2E
 
-2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 K128 replacement 的 24/24 单元、18 formal 满足预先规定的正确性、写回、身份和稳定性要求；但随后 ShareGPT bounded C32–C256 扫描证明 C32 只有已测峰值的 52.07%，故 ShareGPT 三臂性能排名降级，正式原生矩阵改用达到峰值 98.22% 的最小点 C128。
+开题静态地基比较 `direct_static_sharded`、`duckdb_ai_static_sharded`、`project_frozen_static` 三臂，
+统一条件为 PostgreSQL source、immutable equal-row manifest、双 Qwen2.5-7B vLLM endpoint、
+prefix cache ON、统一 PostgreSQL sink 与外部 database-E2E。全部数字、重复值与失败记录见
+[replacement 记录](results/system_e2e/opening_database_e2e_text_refeed_20260808/README.md)、
+[容量扫描](results/system_e2e/opening_bounded_saturation_calibration_20260808/README.md) 与
+[原生单 job 观察](results/system_e2e/opening_text_native_single_job_formal_20260808/README.md)；
+首轮 failed-feeding 与欠供给对照不作方法排名。
 
-开题静态地基先完成 SQuAD short-answer 均匀控制组与 ShareGPT controlled-skew 异质组。两组均比较：
+这些运行提炼出的认识：
 
-- `direct_static_sharded`；
-- `duckdb_ai_static_sharded`；
-- `project_frozen_static`。
-
-统一合同：PostgreSQL source、immutable equal-row manifest、双 Qwen2.5-7B vLLM endpoint、prefix cache ON、统一 PostgreSQL sink、外部 database-E2E、质量与资源指标、1 warmup + 3 formal。
-
-SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 136.63、136.68、137.77，service tokens/s 为 40,920.72、40,955.99、41,277.95；三臂 EM/F1 接近。Project 路径的外层计时还包含更多指标采集、记录写入和结束处理，因此这些记录值只用于核对完成性与质量，不能根据不到 1% 的差异判断性能高低。
-
-ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91。后续 bounded C32/C64/C128/C256 扫描为 9,454.88/14,057.93/17,834.14/18,158.19 tok/s；C128 实测达到 C256 的 98.22%，是第一个满足预先规定 97% 选择条件的并发点。C256 仅增 1.82%，却使 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s。旧 project/C32-direct=1.5457 因对照欠供给而不作方法排名。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
-
-同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph 在预先选定配置下的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
-
-5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加82.42%/104.84%/32.76%，只作外部观察。项目在线 replay 下 quota-only≈0，static/shared 加入 long 后 short JCT增加3.79%/8.95%；shared 提高总吞吐但 short/Jain回退。统一 eager Project 12 formal 又显示 full→half quota-only 已使short JCT+59.00%，matched half→static+long再+58.77%，matched full→shared+long+28.90%；eager shared 相对static使short JCT−48.94%、总吞吐+31.85%、long JCT−25.75%、Jain 0.894→0.972。两种到达regime方向相反，只作为“多Job管理必须感知arrival/active/drain状态、支持idle borrowing并保留SLO/fairness guard”的证据，不称动态普遍胜出；开题前不再扫offset/weight/更多Job追正。
-
-Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profiler E2E14.957s，T3 earliest model submit→latest completion11.354s，service14,361tok/s、MFU42.93%；Daft Native同一short T3为11.059s、14,727tok/s、MFU44.04%，差异仅约2.5%–2.7%。Daft缺准备前T0，因此完整E2E仍不排名；该结果排除了“Project模型请求路径慢6.4×”。随后Project eager多Job只补full single、half single、static+long、shared+long，不重跑原生三臂；arrival span均为66.76µs、12/12 formal通过。逐阶段显示matched static竞争使short service mean/P99 +50.34%/+78.62%，shared为+14.63%/+28.70%；submit→service仍约2ms。在线replay与eager结论分轨保留。
+- 同协议 bounded C128 是该签名下的最小近饱和参照（实测达 C256 的 98.22%）；高 GPU 利用率不等于
+  喂饱，C256 已出现过量排队。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
+- 官方 graph 在预先选定配置下呈现不同外部压力形态：Daft 两臂过量提前提交（waiting mean 数百、
+  KV 接近满），Ray Data 供给不足（running mean 约 17），bounded C128 位于最小饱和区；
+  这不证明项目方法胜出或某框架内部算法有缺陷。
+- 多 Job 干扰的两种到达形态方向相反：在线 replay 下 shared 提高总吞吐但 short/Jain 回退，
+  eager 下 shared 相对 static 使 short JCT −48.94%、总吞吐 +31.85%；只作为“多 Job 管理必须
+  感知到达/活跃/排空状态、支持空闲借用并保留 SLO/公平保护”的证据，不称动态普遍胜出。
+- 统一 T0–T4 计时排除了“Project 模型请求路径慢 6.4×”（与 Daft Native 的 T3 差异仅约 2.5%）。
 
 ## 7. 开题叙事图
 
