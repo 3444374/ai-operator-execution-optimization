@@ -31,6 +31,6 @@ E已按执行/资源范围完成，用户选择开始M1。先做真实PG与受�
 将fixture backlog显式配置为32，新增handler收到请求/获得4槽服务资格/结束的时间记录。
 仅重做三臂各3次32行，共288次受控HTTP、外层400秒；不重新调优、不增加GPU请求。
 补充观测与backlog一起变化，不能把两轮差异称作严格单变量因果；本轮重点排除测量路径的异常等待。
-跟进已完成288次，未再出现约1秒异常；[两轮完整记录](../../results/postgresql/waiting_positions_pilot_20260914/README.md)。
+跟进已完成288次，未再出现约1秒异常；[两轮完整记录](../../../results/postgresql/waiting_positions_pilot_20260914/README.md)。
 固定C8时，紧W的HTTP P99降低39.03%，SQL至EOF却增加181.29%；当前runner每查询启动tokenizer/gateway的约5秒准备也已计入。
 上述两轮后已完成下方常驻服务对照；本节测量任务已结束，后续按顶部新 M1 设计；M2在该历史记录时尚未开始，当前进展见本文顶部。

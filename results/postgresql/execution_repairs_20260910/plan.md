@@ -41,7 +41,7 @@
 | PG 窗口预算 | `sem_pump.c` 的 B/L 等份与分配后检查；改为总量与一个有界待接纳行，独立报告暂存/转换分配 | 同 B 的合法大行不随 L 改变合法性；宽行/超限/取消与内存责任检查 | 待实现 |
 | 数据库驻留比较 | PG-source direct、实际 WHERE→Map、原始列构造消息；内存 direct 继续是诊断 | 相同源快照/不可变表、计时含读取转换；安全谓词扩大窗口，其他形状明确回退 | 代码及受控验证完成；真实比较待新额度 |
 | 公共任务与原生执行 | SemBench Movie Q3→Q1/Q2、Movie-derived Map；Ray Data SQL/processor、LOTUS 原生程序 | 原任务/evaluator 固定版本；COUNT/LIMIT/Map 各自评价；未注入 SemLoom 调度 | 代码及受控验证完成；真实比较待新额度 |
-| 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 实现、受控与真实执行/资源检查完成；[质量负结果](../../results/postgresql/query_sharing_e_20260914/README.md)保留 |
+| 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 实现、受控与真实执行/资源检查完成；[质量负结果](../../../results/postgresql/query_sharing_e_20260914/README.md)保留 |
 | 图像 PG→Ray | CLIP encoded bytea→CPU prepare→GPU actor→real[]；同步 reference 与增量接入复用 typed image/method/stage 组件 | PG/真实解码/零权重模型集成通过；真实 CLIP 另验 | 代码与受控验证完成；本轮真实清单已执行，结果见本文顶部 |
 | 文献与解释 | KEN 核心补充待精读；IMLane artifact 可用性；修正 direct 日志和非单变量对照解释 | 文献/知识库/状态/结果/日志同步，历史数据不改写 | KEN/历史解释完成；IMLane 源码已核查、构建待验证 |
 
@@ -49,7 +49,7 @@
 Core 全局进展增加兼容字段；永久 Job 单项超限与暂时存储反压分开；v6 不把永久拒绝发成零接纳确认；
 PG pump 等到对应 receive 释放责任后再探测。真实 PG 受控 32 行为 660→62 次 offer，提交均为32次，
 无相关释放的重复探测598→0；PG回归1/1、TAP2043项通过。证据、失败与当前清理状态见
-[执行修复报告](../../results/postgresql/execution_repairs_20260910/README.md)。KEN 与历史解释已完成，IMLane 公开源码核查结果见工作包 B。
+[执行修复报告](../../../results/postgresql/execution_repairs_20260910/README.md)。KEN 与历史解释已完成，IMLane 公开源码核查结果见工作包 B。
 
 ---
 

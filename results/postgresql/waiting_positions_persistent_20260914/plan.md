@@ -3,7 +3,7 @@
 <a id="m1-persistent"></a>
 ### 常驻服务与并发稳定性对照（已完成，保留运行前设计）
 
-[完整结果](../../results/postgresql/waiting_positions_persistent_20260914/README.md)：768次对照及120次旧入口回归完成；
+[完整结果](../../../results/postgresql/waiting_positions_persistent_20260914/README.md)：768次对照及120次旧入口回归完成；
 C8五次均快于C4，紧W仍使完整查询时间增加；没有新增真实模型请求。
 
 复用上述32行evaluation合成输入和语义。四个gateway各启动一次：request C4、request C8、

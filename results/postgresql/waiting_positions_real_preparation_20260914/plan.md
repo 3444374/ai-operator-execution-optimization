@@ -3,7 +3,7 @@
 <a id="m1-real-preparation"></a>
 ### 历史真实输入准备与已撤下的运行表
 
-[2026-09-14 准备记录](../../results/postgresql/waiting_positions_real_preparation_20260914/README.md)
+[2026-09-14 准备记录](../../../results/postgresql/waiting_positions_real_preparation_20260914/README.md)
 保留 512/1024 行独立输入、模型/tokenizer 身份及完整/摘要模式的 128 次受控 HTTP 检查，实际模型调用 0 次。
 电影分组、旧数据排除、哈希和全部原始文件继续保留；真实恢复前重新核对当前机器、模型与服务配置。
 

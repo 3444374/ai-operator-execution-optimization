@@ -1,6 +1,6 @@
 > 本文件是该次验证的运行前声明/实施规格原文，2026-09-21 从当时的主题计划（`docs/plans/data_organization_batching.md`）按“执行说明与测试材料放在一起”的原则移入。其中请求额度、停止条件和“本轮/下一步”均为当时记录；未使用的旧额度不构成今天继续运行的授权。
 
-> **本轮结果（2026-09-10）**：[单卡容量报告](../../results/postgresql/map_capacity_20260910/README.md)保存96601次真实出站、99808次预留与全部失败。
+> **本轮结果（2026-09-10）**：[单卡容量报告](../../../results/postgresql/map_capacity_20260910/README.md)保存96601次真实出站、99808次预留与全部失败。
 > 五次4000行观测选出C32/L64候选；C64/128尚无同规模重复平台，强D0仍待确认。独立样本验证及服务/ACL清理已完成。
 > 下方保留具体合同与先前验收历史；本轮额度已停止使用，不自动追加调用。
 >
@@ -8,11 +8,11 @@
 > 已有外部文本组织实验和 cache-on 双/四 endpoint 结果保留，不能移作当前 PG 路径的性能证据。
 > 本轮先准备真实数据与评价，再测静态容量和有限窗口组织；多 Job 紧随其后，按实测需要复用旧策略。
 > 首次尝试已使用 48/68 次请求并停止：SQuAD 小样本可用，ShareGPT 的请求意图摘要配置与输入准备未通过；
-> [结果与失败审计](../../results/postgresql/data_execution_pilot_20260909/README.md)保留原始原因。
+> [结果与失败审计](../../../results/postgresql/data_execution_pilot_20260909/README.md)保留原始原因。
 > 工具修复完成本地/Linux 各 168 项相关测试、7 项真实 PG 检查和 SQuAD 新账本 10/10 次模型验收，
-> 见[修复验证](../../results/postgresql/data_evaluation_harness_20260910/README.md)。出站一致性与资源回收通过，
+> 见[修复验证](../../../results/postgresql/data_evaluation_harness_20260910/README.md)。出站一致性与资源回收通过，
 > 实现提交 `5085c6ff` 已合入 main；ShareGPT 任务质量、静态容量、组织性能及双副本验证仍待执行。
-> 已完成合同见 [`completed/rc1_data_organization_rerun_20260731.md`](completed/rc1_data_organization_rerun_20260731.md)。
+> 已完成合同见 [`completed/rc1_data_organization_rerun_20260731.md`](../../../docs/plans/completed/rc1_data_organization_rerun_20260731.md)。
 
 ---
 
@@ -41,9 +41,9 @@ direct 使用有界客户端和相同 HTTP transport，不使用 SessionEngine �
 | 请求/事件观测 | 容量模式使用有上限的后台写入与紧凑哈希事件；队列满或写盘失败不得静默丢记录；资格模式保留完整私有事件 | 无网络扰动检查及匹配模式对照；执行、消费者、评价 RSS/逻辑预留分别报告 |
 | `squad_map.py` 与官方 SQuAD v1.1 dev | 保留既有短答案语义；按完整消息 token 画像生成确定性自然/分层子集，context 不跨 tuning/evaluation；不得按模型答案选样 | 原始 SHA、完整覆盖画像、原文、分组隔离、种子/样本身份、context 数及长度分布 |
 
-已复核[知识库](../../docs/research/knowledge_hub.md)的 Sema/服务观测及
-[baseline reference §0.2](baseline_reference.md#gateway-layered-controls)的 matched direct/PG 分层比较，
-沿用[主架构 §8.7–8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
+已复核[知识库](../../../docs/research/knowledge_hub.md)的 Sema/服务观测及
+[baseline reference §0.2](../../../docs/plans/baseline_reference.md#gateway-layered-controls)的 matched direct/PG 分层比较，
+沿用[主架构 §8.7–8.8](../../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
 中数据库行绑定与客户端复用的职责；未读取或分发公司材料。预算存储参考
 [SQLite 原子提交](https://www.sqlite.org/atomiccommit.html)与同步持久化说明，记录消费参考
 [Psycopg Cursor.stream](https://www.psycopg.org/psycopg3/docs/api/cursors.html#psycopg.Cursor.stream)。
@@ -90,8 +90,8 @@ PG 窗口 128、输入/结果预算各 128 MiB、PG 本地窗口 64 MiB，交错
 ### 历史合同范围：首次 68 次尝试
 
 以下至“首次尝试后的决定”保留 2026-09-09 的当时合同和后续建议；当前授权、数据选样和运行条件
-已由上方“当前工作”替代。工程依赖仍由[主设计 §9](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
-维护，完成度见[状态入口](experiment_status_and_gaps.md)；旧正式矩阵没有恢复。
+已由上方“当前工作”替代。工程依赖仍由[主设计 §9](../../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+维护，完成度见[状态入口](../../../docs/plans/experiment_status_and_gaps.md)；旧正式矩阵没有恢复。
 
 ### 问题、顺序与停止条件
 
@@ -103,7 +103,7 @@ PG 窗口 128、输入/结果预算各 128 MiB、PG 本地窗口 64 MiB，交错
 | 次序 | 具体交付 | 继续条件与失败处理 |
 |---|---|---|
 | 真实任务准备 | 复用 SQuAD v1.1 dev 解析器和 EM/F1，生成当前 Map 的 system/user 消息、context 分组的调优/评测子集；检查重复/缺失 ID | 原始 SHA、消息和关联检查通过；先用已知答案测试 evaluator，不能当成模型质量 |
-| 小样本真实检查 | 环境可用时沿用 [ShareGPT 16 行、34 请求合同](bounded_method_driver.md#sharegpt-real-data-slice)；SQuAD 另用 2 行预检＋16 行同步＋16 行增量，共最多 34 请求 | 独立请求账本；超时、身份错误、丢行、重复、资源越界即停，禁止自动重试、截断、更换模型或隐去失败；两数据集总额最多 68 请求 |
+| 小样本真实检查 | 环境可用时沿用 [ShareGPT 16 行、34 请求合同](../../../docs/plans/bounded_method_driver.md#sharegpt-real-data-slice)；SQuAD 另用 2 行预检＋16 行同步＋16 行增量，共最多 34 请求 | 独立请求账本；超时、身份错误、丢行、重复、资源越界即停，禁止自动重试、截断、更换模型或隐去失败；两数据集总额最多 68 请求 |
 | 静态容量画像 | 同消息 direct 服务参照与 PG incremental-map；先服务并发，再 PG 窗口，再检查输入/结果预算 | 小样本通过后，先根据单次耗时另填规模、请求总额和墙钟上限才启动扫描；本轮不直接扩规模 |
 | 单 Map 组织对照 | 固定行数/输入顺序、固定工作预算、同一有限窗口内长度分组 | 复用组织器，非恒定描述来自完整消息的输入 token，并记录 tokenizer/template 与估计开销；不能使用事后输出长度作在线决策 |
 | 多 Job 对照 | 长短同时到达、长先短后、暂停供给后恢复；随后覆盖不同 Job 数 | 先比较固定份额与可利用空闲计算容量的简单控制，再按需求适配已有工作量公平策略；不以两 Job 外推任意规模 |
@@ -218,7 +218,7 @@ Filter 任务测全扫描质量与执行。保留各自结果目标，不删 LIM
 
 2026-09-09 本轮只使用一张 GPU、一个固定模型实例，属于正确性检查。两卡空闲不等于两卡已被
 当前 PG 路径使用；默认装配只有一个 endpoint。后续性能实验分别保留单卡参照与双卡目标拓扑：
-双卡优先采用两个同模型 TP1 副本（每副本独占一张 GPU），先按[多 endpoint 接入设计](postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)
+双卡优先采用两个同模型 TP1 副本（每副本独占一张 GPU），先按[多 endpoint 接入设计](../../../docs/plans/postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)
 核对实际路由、每 endpoint 请求、共享全局容量和生命周期，再纳入单 Map/多 Job 比较。
 不能把单卡结果外推为双卡或分布式扩展，也不能把 TP2 与双副本混成同一扩展曲线。
 这一接入是双卡实验所需的具体工程项，不恢复无关框架扩展。

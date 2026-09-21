@@ -23,7 +23,7 @@
 - D验证先用受控异质work、实际PG与HTTP；确认输入/输出一一对应、窗口有限、未饥饿、取消和所有责任归零。
   原生Ray/LOTUS继续拥有自己的调度，不注入SemLoom组织器。真实组织比较在对应路径/参照有效且获新额度后执行。
 
-C最小真实诊断（已单独授权并完成，见[报告](../../results/postgresql/pg_window_budget_20260910/README.md)）：最多288模型POST、单张4090，从模型准备起15分钟；无重试。
+C最小真实诊断（已单独授权并完成，见[报告](../../../results/postgresql/pg_window_budget_20260910/README.md)）：最多288模型POST、单张4090，从模型准备起15分钟；无重试。
 沿用已固定Qwen2.5-7B-Instruct revision `a09a35458c702b33eeacc393d103063234e8bc28`与vLLM0.25.1，
 BF16/TP1/context4096/max_num_seqs128/max_num_batched_tokens8192/GPU利用率配置0.8，FCFS、prefix cache与chunked prefill。
 Movie-derived Map使用已导入原始源的前128个行出现；不按标签筛选，实际tokenizer检查最大输入131tokens，生成上限128。
@@ -46,7 +46,7 @@ Movie原始前128行与C相同，每种控制先8行预热再128行验证，共6
 生成上限128；逐行检查实际POST/token usage/关联、分组与出站、字节/活跃work及清理。
 只登记真实功能/资源与组织行为，不将短查询差异解释成稳态性能；726份代码与模型准备副本一致。
 实际408/408 POST全部完成、244.96秒；三组128行预测一致，长度分组改变实际HTTP顺序，输入序控制只改变组数。
-模型/PG/任务进程已停止、临时ACL恢复；[完整组织报告与证据](../../results/postgresql/map_organization_20260910/README.md)。
+模型/PG/任务进程已停止、临时ACL恢复；[完整组织报告与证据](../../../results/postgresql/map_organization_20260910/README.md)。
 
 零模型验证依次覆盖 Python、PG18.3 严格构建/回归/TAP、真实 PG+受控 HTTP、共享 gateway 和
 Ray CPU 阶段。真实实验入口先准备完全匹配的 L32/64×结果预算32/64MiB、可达 C32/64/128

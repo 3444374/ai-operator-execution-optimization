@@ -4,7 +4,7 @@
 
 ### 异步期限与输入/交付节奏诊断（2026-09-14）
 
-**本轮状态**：[修订与诊断报告](../../results/postgresql/async_deadline_flow_20260914/README.md)。
+**本轮状态**：[修订与诊断报告](../../../results/postgresql/async_deadline_flow_20260914/README.md)。
 期限与时序工具回归、正常PG 2138项TAP、12个单元96次fixture诊断完成。
 真实模型首轮24次后因active work2048<context4096的准备错误停止；用户再批准33次，修正为4096后全部完成。
 累计57次生成POST：56条正常结果逐行关联通过，1条真实direct结果的末次写入跨期限后保持失败并被拒绝评分。

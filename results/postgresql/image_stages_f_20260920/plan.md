@@ -6,7 +6,7 @@
 该次工程工作包只完成工程与受控验证，当时真实模型暂停；后续151次真实前向见本文顶部结果。
 不继承文本实验请求额度，不启动旧图像性能矩阵。源码起点为 `2554f94b`。
 
-**代码与受控验证已完成**：[完整记录](../../results/postgresql/image_stages_f_20260920/README.md)。
+**代码与受控验证已完成**：[完整记录](../../../results/postgresql/image_stages_f_20260920/README.md)。
 扩展 `0.3.0` 显式提供 `ai_semantic.embed(bytea,jsonb)→real[]`，默认安装仍为 `0.2.0`。
 schema 5 / wire 7 分别保存图像语义和传输；`MethodDriver` 负责行与最终向量，Ray backend 负责两段物理执行。
 PG 回归 1/1、19 个 TAP 文件共 2,159 项及 9 组 PG/Ray/真实解码检查通过；真实模型 0 次。

@@ -27,7 +27,7 @@
 - Movie-derived Map使用独立二值情感指令，标签仍不出站；原COUNT指标外补FP/FN，LIMIT补重复执行行号、
   有效性、行数及额外工作。暂无真实模型新额度；当前受控HTTP结果不登记真实质量或性能。
 
-本包[完整报告](../../results/postgresql/database_queries_20260910/README.md)保存版本、原生身份、失败及检查。
+本包[完整报告](../../../results/postgresql/database_queries_20260910/README.md)保存版本、原生身份、失败及检查。
 Movie v4原始数据由未修改的SemBench generator生成2000行；1865个原始reviewId的135次重复均保留，
 执行行号独立，原始评价字段不改。CLI默认监督自有worker，取消先关闭后续POST，再清理自有进程；
 远端模型结束未知时保持unknown。Ray原生异步批次配置固定为1，避免每actor默认4批导致实际HTTP超出C。
