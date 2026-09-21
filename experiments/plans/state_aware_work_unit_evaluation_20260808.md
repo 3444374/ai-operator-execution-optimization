@@ -1044,7 +1044,7 @@ observation-gap 定位臂。
    `document_completions`。group/per-Job JCT 均截止对应模型响应完成；trace 验证在计时边界外。
    这里只能声称
    完整系统的经验表现；详细冻结规格见
-   `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
+   `../../docs/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
    旧 selector rehearsal 只保留为历史内部消融；本轮 runner 不再生成或排名同批
    FIFO/DRR/VTC-style/strict-priority sanity cells；
 3. **no-bounded-ready control 与 observation 桥接（已完成）**：双轮 6/6 cell、0 incident。

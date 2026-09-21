@@ -164,13 +164,12 @@ semantic patch。项目也不以传统 GPU 查询算子、逐行 HTTP UDF 或
 ├── opening/        # 开题报告、答辩材料和文献快照
 ├── learning/       # 教学式讲解材料
 ├── notes/          # 导师/企业沟通记录
-├── docs/           # 已完成的一次性跨目录设计记录
-├── code_doc/       # 已完成的代码设计与实施计划
+├── docs/           # 已完成的一次性设计与实施记录（含原 code_doc 内容）
 └── projects/       # 旧 PPT 生成工程归档
 ```
 
 从根到任务目录逐级加载适用的 `AGENTS.md`，首次进入目录或查找入口时再读相应 README；已读且
-未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、`code_doc/`、
+未变化的内容直接复用。根规则负责全项目范围与安全，子目录规则增加本地要求。`docs/`、
 `projects/` 和 `experiments/plans/archive/` 是历史追溯面，不得覆盖当前总纲、源码、结果台账或
 部署 runbook。
 

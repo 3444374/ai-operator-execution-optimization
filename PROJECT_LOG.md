@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-09-21：目录收敛：code_doc 并入 docs、feasibility 大 raw 迁出、projects 导出迁出
+
+- 用户确认执行方案 B/C(b)/D，完成最后一起 push。
+- B：`code_doc/` 整体并入 `docs/`——37 个日期戳设计/实施文件以 git mv 迁入 `docs/superpowers/{specs,plans}`，
+  无重名冲突；docs/README 与 docs/AGENTS 吸收原 code_doc 职责（新代码设计改入当前领域计划），
+  code_doc/AGENTS.md 与 code_doc/README.md 删除。根 AGENTS.md §1 表、根 README、PROJECT_INDEX、
+  code/AGENTS.md 及 4 个 plans 文件的引用已更新；被移动的历史文件内部 `code_doc/` 字样按日期保留原文。
+- C(b)：`projects/opening_defense_20260712/exports/` 三份 PPTX 从 git 移除，blob SHA-256 核对后归档于
+  `C:\Users\ays\Desktop\results\projects_opening_defense_20260712_exports\`；analysis/validation 脚本保留，projects/README 已加注。
+- D：feasibility 目录保留；`squad_capability_full_10570_20260805/sample_manifest.jsonl`、
+  该目录 `per_row_evidence.csv` 及两个 `squad_database_e2e_*_20260805/per_row_evidence.csv` 共 4 个
+  逐行原始文件（约 20MB）从 git 移除。AutoDL `/root/autodl-tmp/ai-operator/feasibility/results/` 镜像
+  4/4 SHA-256 一致；本地镜像 `C:\Users\ays\Desktop\results\feasibility\results\` 为本次新建，经 blob 内容
+  逐文件核对 4/4 一致（工作树 CRLF 差异不进入镜像）。三个受影响 README 已注镜像位置。
+- 生成这些文件的 `code/scripts/baselines/` 脚本以路径参数读写数据，不受迁出影响。
+
 ## 2026-09-21：旧版开题 PPT 迁出 git 跟踪
 
 - 用户确认清理旧版成品：v4/v5（2026-07-20）、v6（2026-08-07）、v7/v8（2026-08-12）五份 PPTX 及 v6/v7/v8 一次性构建脚本。

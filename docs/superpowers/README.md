@@ -1,6 +1,8 @@
-# code_doc/superpowers/
+# docs/superpowers/
 
 Local planning artifacts produced through the Superpowers workflow for code changes.
+2026-09-21 起由原 `code_doc/superpowers/` 并入；文件内容保留原文，内部出现的
+`code_doc/` 字样按文件日期阅读。
 
 ## Files
 
