@@ -7,7 +7,7 @@
 - C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒；配对结果有0–2行标签差异，全部原值保留，不声明质量等价、稳定加速或M1容量合格。
 - 首次准备因配置文件重复创建失败且请求为0；修正后4144次fixture预演通过。真实服务未重试或追加请求。首次清理绑定检查遇到TIME_WAIT，保留原结果；自然结束后同一检查通过。
 - 清理36个无引用的空副本目录，删除文件0；服务器自有模型、PG、Ray及gateway均结束，ACL恢复，两张GPU各1MiB、0%利用率。752份源码摘要未变。
-- [真实记录、原始证据与清理清单](experiments/results/postgresql/transport_real_20260927/README.md)。工程修改与两轮证据在`codex/incremental-multimodal-path`管理，未合入main。
+- [真实记录、原始证据与清理清单](experiments/results/postgresql/transport_real_20260927/README.md)。工程修改与两轮证据提交为`0df9a86d`，随后按用户授权快进合入main；同步当前文档中的合并状态。
 
 ## 2026-09-27：精简执行开销并接入可选Daft/Ray文本路径
 
