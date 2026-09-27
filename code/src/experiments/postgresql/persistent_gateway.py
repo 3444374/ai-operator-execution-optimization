@@ -115,6 +115,8 @@ class PersistentMapGateway:
                                      manifest['max_source_bytes'], manifest['max_input_bytes'], None)
                 if config.organization_config is not None:
                     write_private_json(root/'organization.json', json.loads((self.root/'organization.json').read_text()))
+                if config.map_transport_config is not None:
+                    write_private_json(root/'map-transport.json', json.loads((self.root/'map-transport.json').read_text()))
                 import psycopg
                 with psycopg.connect(dsn, autocommit=True) as connection:
                     statement = prepare_pg_query(config, inputs, self.plan, connection, self.socket, root)

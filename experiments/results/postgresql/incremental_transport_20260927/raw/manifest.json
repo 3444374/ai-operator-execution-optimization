@@ -1,0 +1,143 @@
+{
+  "format": "gzip with byte-verified decompression",
+  "files": {
+    "fixture-01.json.gz": {
+      "bytes": 700020,
+      "sha256": "09683a992d404b0b5fa4c329c8e3c15e18bd513b8fd90ac5a6c8cef805bcf9ad",
+      "uncompressed_bytes": 16713520,
+      "uncompressed_sha256": "23a1161430470b5dc58e22bc27df8d62f1752334e8e75f8e7849488ec5b46863"
+    },
+    "fixture-02.json.gz": {
+      "bytes": 700486,
+      "sha256": "1ff6913f517745ca0d8c2205b5461eb02c98282379a9e4f1f80e3e95217919ee",
+      "uncompressed_bytes": 16717299,
+      "uncompressed_sha256": "396e28de6f73310c3b26c2ed9707de5c68f6a6641c7b9d7bbc5171f9ce74e0b0"
+    },
+    "fixture-03.json.gz": {
+      "bytes": 696133,
+      "sha256": "59a39e95e603413b73a42afeaebf0a48ba8c86a1b044310421068a16dc9d81bb",
+      "uncompressed_bytes": 16715660,
+      "uncompressed_sha256": "51e2e40aab885b0a375940b9dc449a5efb0cb5271d8126c50bae806109b71fab"
+    },
+    "fixture-04.json.gz": {
+      "bytes": 657702,
+      "sha256": "b8e29401803da09a1b53d7c46e9719d4223026931333c2402edc323951309599",
+      "uncompressed_bytes": 15642505,
+      "uncompressed_sha256": "19367d6a8fe001f30625e2eedc955c512eb33cb5bd69cc0bf9093891da5c0625"
+    },
+    "fixture-05.json.gz": {
+      "bytes": 656102,
+      "sha256": "c621d68cd6fc5cd68059eb8d08d3e53ad5473f0bcc9781d8dbab33bbd23a0a59",
+      "uncompressed_bytes": 15657946,
+      "uncompressed_sha256": "9021e84cf26e74ebb2012f460adda27591a3eabc5e0ad82d5c438808dbd82a0e"
+    },
+    "fixture-06.json.gz": {
+      "bytes": 695422,
+      "sha256": "cf3b2623e5180e4f2ecaa0b17e6e33e74fae50f4065e0495a423bdebde0c069b",
+      "uncompressed_bytes": 16574938,
+      "uncompressed_sha256": "9bf3abf70fee6baefd732d5b65119a9374f2013ea007eb034112e7ee53c0bf79"
+    },
+    "fixture-07.json.gz": {
+      "bytes": 702652,
+      "sha256": "0270f8ccf644c99d503c0e1f155dccbe12d4c8346b0586e477324faad9001326",
+      "uncompressed_bytes": 16745596,
+      "uncompressed_sha256": "28a3a4a3b350f92daa75c586ccef7b2a2d72ccc0fbe2f295607477d9f8f4d86f"
+    },
+    "fixture-08.json.gz": {
+      "bytes": 676930,
+      "sha256": "8301a56d233bfd2a13034638114a567265bf546dde2115ca325f9dc700301412",
+      "uncompressed_bytes": 16748764,
+      "uncompressed_sha256": "6023334384434e10031b83a9c03418d50a6fe684710ea86d47d9eb821c83d719"
+    },
+    "fixture-09.json.gz": {
+      "bytes": 705417,
+      "sha256": "ff68eb809f1944a4e4b50d580d3c121a74e7bc17f85a0cca5a6a7832a8c4c621",
+      "uncompressed_bytes": 16746070,
+      "uncompressed_sha256": "29903575c691d36a04578fc5127507621bc837194586befb5d89218e0ef75f77"
+    },
+    "fixture-10.json.gz": {
+      "bytes": 43215,
+      "sha256": "fe46fed067f6efc7bfc2fd22abeffa593170f648f97708b24d90c82183bc464c",
+      "uncompressed_bytes": 593540,
+      "uncompressed_sha256": "8640b96e6de6064cd99774df01255824d9ffb52b55def71bc2ffaa8efd7de870"
+    },
+    "fixture-11.json.gz": {
+      "bytes": 33560,
+      "sha256": "fa3dc6291ad075bfa1419b1e09e71cb16edb4ddc52356916b9f3ab3dfd89d871",
+      "uncompressed_bytes": 693748,
+      "uncompressed_sha256": "2414bc20b8d424bf4a9f44e8cc755b3a4bc9747bb946bcb2b16455ab7df1a18f"
+    },
+    "fixture-12.json.gz": {
+      "bytes": 732804,
+      "sha256": "e72fa7d57906f2125520b4bfd5bc0c64d25a833e1c4052d916dc43c8adffbae0",
+      "uncompressed_bytes": 16757046,
+      "uncompressed_sha256": "0a3a91f9570717e5ed1cadec88724a49536979df33eb328038079f5bc5a81571"
+    },
+    "fixture-13.json.gz": {
+      "bytes": 65249,
+      "sha256": "31f1612b60173dab86dc1eeeef11bef0d85ddbf4de411d3f3efa325c17530739",
+      "uncompressed_bytes": 421766,
+      "uncompressed_sha256": "9eeb7a706347ed9689e6aa628c7938ae6d9b494dfee44b5ea688b012bc3efd8b"
+    },
+    "fixture-14.json.gz": {
+      "bytes": 70570,
+      "sha256": "5401087583a9c1a484ddb3b9ebaec0e19c5803ef10e4a6bcbdc016b73250526a",
+      "uncompressed_bytes": 789085,
+      "uncompressed_sha256": "597f341f00ad56cadf4c5bc9dcf5f4e46c06d06e123bc65dd29b9fab5ffed617"
+    },
+    "fixture-15.json.gz": {
+      "bytes": 55874,
+      "sha256": "d28a303fffdd2e83567210edbc755c2584be15cb0cc8706c76e00b29f7333e8c",
+      "uncompressed_bytes": 277824,
+      "uncompressed_sha256": "732084a0a0c0bd94a3765ba15261480e782a3a8fd810ac4ed9a0a4db2e7441a0"
+    },
+    "fixture-comparison.json.gz": {
+      "bytes": 1879,
+      "sha256": "f58aab626a6c2c16ff74c633a328c76d9cb5e4e72c4532152a17d9e8f0a3c196",
+      "uncompressed_bytes": 19704,
+      "uncompressed_sha256": "6e5cd7580f9ebede912e6ab43041d6232cad1722709378ffd153d94590924f26"
+    },
+    "environment.json.gz": {
+      "bytes": 1533,
+      "sha256": "27483a8ea6b39422944f0b1f9b00cad0aa3ffff06e72b75fe984b53cdbc9265d",
+      "uncompressed_bytes": 6331,
+      "uncompressed_sha256": "655aecb29f9408e8e9df374bf0ec3a72b57e37161544b72ef57f5368d4d2097c"
+    },
+    "source-states.json.gz": {
+      "bytes": 251950,
+      "sha256": "96a00e28489ebf68217a8291b10be030c55e7ba8b73c9ae4cda55d58d58e8726",
+      "uncompressed_bytes": 650919,
+      "uncompressed_sha256": "9877aafce87568bf005b2f20e9697f6dbb5c3693d357516cbec3686735660c6a"
+    },
+    "profile.json.gz": {
+      "bytes": 3181,
+      "sha256": "b3ebc0480afb8da6b74227777bf872d394f8aa0386031a35fec2da74900113a3",
+      "uncompressed_bytes": 21982,
+      "uncompressed_sha256": "ce3eca3af012406c760a40974cd6a705647a41ff4267f5c5d99af3abcc608fa7"
+    },
+    "controllers.json.gz": {
+      "bytes": 3643,
+      "sha256": "41e4f386794eb97db9c50c837fb68c1ef77b0f0f76fb3e88463533f717f94d61",
+      "uncompressed_bytes": 13971,
+      "uncompressed_sha256": "0098232c415c558ee75dcab0f9dcecbcd251dadaae458b9896883129bb405352"
+    },
+    "server-test-logs.json.gz": {
+      "bytes": 8689,
+      "sha256": "2b6f2b82a5e0de07c3105caf42e6266dade6bc7e46eda322d4b407c181fbdfe2",
+      "uncompressed_bytes": 92307,
+      "uncompressed_sha256": "dc8cfe34f67287a769e277ebdf3476b5d40db055172d0c7245373f37f0bc509e"
+    },
+    "local-checks.json.gz": {
+      "bytes": 3176,
+      "sha256": "2d2cd88a5107055e7bdc7d52a6b316e54590452e8c8868d6b1611edd35ffff8a",
+      "uncompressed_bytes": 15066,
+      "uncompressed_sha256": "2ce957f7bc03f50212602fd391a16ff5a97d845b39006bbbc4000085e82166f8"
+    },
+    "final-cleanup.json.gz": {
+      "bytes": 230,
+      "sha256": "4d3619682e8cd253ead579db4853a0847d1829a1b07af96dfdd3ad1a70c06f0e",
+      "uncompressed_bytes": 354,
+      "uncompressed_sha256": "dd92b86edf5bbecbf1faab6a134ca933dfb155dc284ed26d4a95f4ff5db9f949"
+    }
+  }
+}

@@ -127,6 +127,7 @@ def build_fixed_model_execution(
     max_jobs=1,
     allocate_job=equal_share_job_budget,
     choose_flow=round_robin_flow,
+    transport_factory=None,
 ):
     """Default single-endpoint assembly; supplied policies/work reuse the same core and transport."""
     if policies is not None and organize is not None:
@@ -179,7 +180,9 @@ def build_fixed_model_execution(
                 max_tasks, max_tasks if active_work is None else active_work
             ),
         )
-    transport = AsyncFixedModelTransport(config, max_active_requests, observer)
+    if transport_factory is not None and execute is not None:
+        raise ValueError("custom execution cannot replace a selected transport")
+    transport = (transport_factory or AsyncFixedModelTransport)(config, max_active_requests, observer)
 
     def observe(event, key):
         if observer:
@@ -191,13 +194,20 @@ def build_fixed_model_execution(
                                   member=asdict(record.member) if record.member else None)
             observer(fields)
 
-    backend = BoundedAsyncBackend(
-        execute or transport.execute,
-        max_tasks=max_active_requests,
-        notify=lambda: engine.wake.notify(),
-        finalize=transport.close,
-        isolate_failures=True,
-    )
+    try:
+        backend = BoundedAsyncBackend(
+            execute or transport.execute,
+            max_tasks=max_active_requests,
+            notify=lambda: engine.wake.notify(),
+            finalize=transport.close,
+            isolate_failures=True,
+            cancel_pending=getattr(transport, "cancel_pending", None),
+        )
+    except BaseException:
+        abort = getattr(transport, "abort_startup", None)
+        if abort is not None:
+            abort()
+        raise
     try:
         engine = SessionEngine(
             limits, backend, policies, sink=observe, max_jobs=max_jobs, choose_flow=choose_flow,

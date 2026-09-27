@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-09-27：[增量执行与可选Daft/Ray接入](postgresql/incremental_transport_20260927/README.md)保留全部诊断与未采用方案。
+PG受控查询、行关联、对象占用及多查询生命周期通过；该受控记录真实模型0次。
+追加[真实模型验证](postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求及清理；C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒，
+配对输出差异0–2行，未据此判定质量等价或稳定性能优势。旧M1未选点状态保持，工程与证据在工作分支，未合入main。
+
 2026-09-20：[完整容量复查与工程合并](postgresql/m1_full_recheck_20260920/README.md)完成32个查询单元，16,400次请求与服务端一致，无未确认请求。
 原控制器记录过一个短暂残留PID并返回失败，随后独立只读清理核对通过；原告警和PID身份缺项保留。
 容量扫描修复与异常诊断改动合入main，原故障未复现、根因仍待确定。PG/direct均为持续供给不足，M1尚未选点。

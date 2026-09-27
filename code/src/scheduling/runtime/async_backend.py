@@ -49,11 +49,13 @@ class BoundedAsyncBackend:
         notify: Callable[[], None],
         finalize: Callable[[], Awaitable[None]] | None = None,
         isolate_failures: bool = False,
+        cancel_pending: Callable[[TaskKey], None] | None = None,
     ):
         if type(max_tasks) is not int or max_tasks <= 0:
             raise ValueError("max_tasks must be positive")
         self._execute, self._finalize = execute, finalize
         self._isolate_failures = isolate_failures
+        self._cancel_pending = cancel_pending
         self._maximum, self._notify = max_tasks, notify
         self._lock = threading.Lock()
         self._slots: dict[TaskKey, _Pending] = {}
@@ -163,6 +165,8 @@ class BoundedAsyncBackend:
             self._lock.release()
 
     def request_cancel(self, key: TaskKey, handle: str | None) -> None:
+        if self._cancel_pending is not None:
+            self._loop.call_soon_threadsafe(self._cancel_pending, key)
         # There is no authoritative remote-cancel operation in this transport.
         # Continue reading the bounded response so the engine can settle it later.
         return None

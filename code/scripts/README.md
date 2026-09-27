@@ -383,6 +383,35 @@ v5过渡桥接 `--incremental-map-window-one` 已移除。单行窗口使用同�
 取消后保留未确认的远端占用；其它Job仅使用剩余容量，不能通过新建Engine重置额度。
 观测CLI继续使用同一持久请求账本，记录提交、终态、排空和传输关闭，header不进入日志。
 
+<a id="optional-daft-ray-map"></a>
+### 可选Daft Native与Ray Core文本传输
+
+默认HTTP路径继续保留。在增量网关参数后追加`--map-transport-config "$MAP_TRANSPORT_CONFIG"`，
+可使用已存在的Ray集群。该JSON文件留在仓库外，由实际环境提供以下字段：
+
+| 字段 | 示例或要求 |
+|---|---|
+| `address` | 明确的Ray集群GCS地址；本地示例为`127.0.0.1:6379`，不接受`auto`或`local` |
+| `workers` | `1`；不得超过`--max-active-requests`，每个worker预留1个Ray CPU slot |
+| `batch_rows` | `2`；不得超过活动请求上限，不等待凑满批次 |
+| `window_bytes` | `2097152`；有限输入窗口的Arrow数据字节，至少容纳一个1MiB协议请求和24字节行键/偏移 |
+| `object_bytes` | `4194304`；Ray对象底层Arrow buffer预留，至少大于窗口8字节 |
+
+PG仍选择`incremental-map`或已有`query-job`，设置对应输入窗口。网关先接收PG已选择的规范输入，
+Daft Native只处理当前有限窗口；Ray Core actor按对象引用和行位置发出独立HTTP请求。
+同一批次中快结果可先返回，PG按原协议恢复行关联。嵌入式调用若已连接Ray，声明的GCS地址必须与当前连接一致。当前不同时指定`--organization-config`；
+`--job-compute-policy shared`和现有多Job机制可继续使用。它不自动启用PG优化器的backend选择。
+
+`QueryConfig`新增可选`map_transport_config`与`map_transport_sha256`，用于完整观测的PG Map验证。
+查询runner核对文件身份，并把配置副本写入各运行目录。正式请求仍使用已有预算化实验入口；
+`choice_gateway_observer`会在Ray RPC前持久预扣，不能只观察gateway进程里的HTTP。
+worker的本地耗时和对象占用分别记录；没有对齐跨节点时钟时，HTTP活跃时间线明确不可用。
+
+窗口与对象额度不等于整个进程RSS或Ray对象存储的总大小。首次SQL查询还可能包含Daft及HTTP客户端的惰性准备。
+已验证单机受控路径，实际范围与失败记录见[本轮报告](../../experiments/results/postgresql/incremental_transport_20260927/README.md)；
+追加[真实模型检查](../../experiments/results/postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求和资源清理。
+图像继续使用上文已有typed阶段路径；新二进制批次的图像字节检查不等于完成了新的图像PG传输协议。
+
 ## SemMap resource measurement
 
 `experiments/run_semmap_resource_checks.py` creates a new, exclusively owned result directory before

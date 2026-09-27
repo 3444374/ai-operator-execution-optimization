@@ -1,5 +1,13 @@
 # SemLoom Code
 
+The optional [Daft/Ray text transport](scripts/README.md#optional-daft-ray-map) partitions finite PG-selected
+payload windows with Daft Native and passes one Ray object reference per batch to asynchronous HTTP actors.
+Rows complete independently through the existing Engine and PG result protocol; the HTTP default remains.
+[Controlled PG evidence](../experiments/results/postgresql/incremental_transport_20260927/README.md) covers single-task and larger windows,
+query cancellation and multiple Jobs. A subsequent [real-model check](../experiments/results/postgresql/transport_real_20260927/README.md)
+completed 12 SQL queries and 4,144 requests with matching budget/server counts and clean teardown.
+Matched outputs differ on zero to two rows per C64 pair; multi-node and sustained-supply qualification remain pending.
+
 M1 experiment selection now separates reachable capacity screening, work tuning and independent
 evaluation. It compares complete throughput against a tuned request-count FIFO and retains negative
 or inconclusive results. [Experiment design](../experiments/plans/data_organization_batching.md#m1-throughput-platform)
@@ -41,7 +49,8 @@ and broader SQL shapes remain engineering work. Storage borrowing remains unimpl
 service-capacity/work-based submission and routing do not require a custom GPU allocator,
 model-internal batching implementation or low-level GPU scheduler.
 
-Incremental Map separates retained tasks, input/result bytes and active HTTP requests.
+Incremental Map separates retained tasks, input/result bytes and accepted backend requests.
+The optional Ray path additionally accounts for shared payload objects; accepted requests can still be preparing data.
 The incremental adapter decodes settled backend results separately from delivery ownership.
 Capacity refusals retain the selected member identity and recheck existing compute capacity;
 released capacity can resume dispatch immediately, while backend/endpoint refusals retain their retry deadline.

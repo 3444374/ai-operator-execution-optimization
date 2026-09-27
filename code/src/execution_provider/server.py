@@ -51,6 +51,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     )
     parser.add_argument("--input-buffer-bytes", type=int, help="incremental input byte budget")
     parser.add_argument("--organization-config", type=Path, help="local Map token-work organization configuration")
+    parser.add_argument("--map-transport-config", type=Path,
+                        help="optional finite Daft/Ray Map transport configuration")
     parser.add_argument(
         "--result-buffer-bytes", type=int, help="incremental reserved result byte budget"
     )
@@ -118,6 +120,7 @@ def main(
     session_wrapper=None,
     incremental_observer=None,
     incremental_execution_factory=None,
+    remote_request_guard=None,
 ) -> int:
     """Serve sessions; optional decorators observe this invocation only."""
     args = parse_args(argv)
@@ -142,8 +145,18 @@ def main(
         raise SystemExit("image configuration selects its own typed execution profile")
     if args.image_ray_address and not args.image_config:
         raise SystemExit("image Ray address requires --image-config")
+    if args.map_transport_config is not None:
+        if (not args.incremental_map or not args.fixed_model_config or args.image_config
+                or args.organization_config or incremental_execution_factory is not None):
+            raise SystemExit("Ray Map transport requires fixed-model incremental Map without another factory")
+        from .adapters.ray_map_transport import RayMapConfig, ray_map_factory
+        try:
+            physical = RayMapConfig.load(args.map_transport_config)
+        except (OSError, ValueError, TypeError):
+            raise SystemExit("invalid Ray Map transport configuration") from None
+        incremental_execution_factory = ray_map_factory(physical, remote_request_guard)
     if args.job_compute_policy != "equal-share" and (
-        not args.incremental_map or incremental_execution_factory is not None
+        not args.incremental_map or (incremental_execution_factory is not None and args.map_transport_config is None)
     ):
         raise SystemExit("shared compute requires incremental execution without a custom factory")
     if args.organization_config is not None:

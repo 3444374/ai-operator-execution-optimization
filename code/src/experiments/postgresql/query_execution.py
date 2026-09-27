@@ -34,6 +34,15 @@ def pg_gateway_command(config, plan, model_path, ledger, root):
         '--fixed-model-config',str(model_path),'--incremental-map','--max-active-jobs','1',
         '--max-active-requests',str(config.concurrency),'--max-held-tasks',str(config.window),
         '--input-buffer-bytes',str(config.input_bytes),'--result-buffer-bytes',str(config.result_bytes)]
+    if config.map_transport_config is not None:
+        from src.execution_provider.adapters.ray_map_transport import RayMapConfig
+        path = Path(config.map_transport_config)
+        RayMapConfig.load(path)
+        content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != config.map_transport_sha256:
+            raise ValueError('Map transport configuration identity differs')
+        write_private_json(root/'map-transport.json', json.loads(content))
+        command.extend(('--map-transport-config', str(root/'map-transport.json')))
     if config.organization_config is not None:
         from src.execution_provider.adapters.map_organization import MapOrganizationConfig
         path = Path(config.organization_config)

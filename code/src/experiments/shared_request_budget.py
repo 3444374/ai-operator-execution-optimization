@@ -1,5 +1,5 @@
 """Process-shared POST accounting for a once-claimed native benchmark unit."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import re
 
@@ -12,6 +12,12 @@ class SharedClaimedUnit:
     path: Path
     budget: AttemptBudget
     unit_id: str
+    _ledger: CellBudgetLedger = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self):
+        # Reuse only the path/budget wrapper, never a connection or transaction.
+        # Each operation still opens and validates the existing durable ledger.
+        object.__setattr__(self, '_ledger', CellBudgetLedger(self.path, self.budget))
 
     def _state(self, connection, allocated):
         row = connection.execute('''SELECT first_attempt,requests,claimed FROM units
@@ -27,7 +33,7 @@ class SharedClaimedUnit:
     def reserve(self, request_sha256):
         if not isinstance(request_sha256, str) or not re.fullmatch('[0-9a-f]{64}', request_sha256):
             raise BudgetError('invalid request digest')
-        ledger = CellBudgetLedger(self.path, self.budget)
+        ledger = self._ledger
         with ledger._transaction() as connection:
             allocated, _ = ledger._active(connection)
             if connection.execute('SELECT 1 FROM closed_shared_units WHERE unit_id=?',(self.unit_id,)).fetchone():
@@ -41,14 +47,14 @@ class SharedClaimedUnit:
 
     @property
     def attempts(self):
-        ledger = CellBudgetLedger(self.path, self.budget)
+        ledger = self._ledger
         with ledger._transaction() as connection:
             allocated, _ = ledger._header(connection)
             return self._state(connection, allocated)[2]
 
     @property
     def remaining(self):
-        ledger = CellBudgetLedger(self.path, self.budget)
+        ledger = self._ledger
         with ledger._transaction() as connection:
             allocated, _ = ledger._header(connection)
             _, maximum, used = self._state(connection, allocated)

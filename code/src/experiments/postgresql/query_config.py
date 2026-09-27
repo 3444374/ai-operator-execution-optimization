@@ -28,6 +28,8 @@ class QueryConfig:
     ray_actors: int = 2
     ray_object_store_bytes: int = 268435456
     event_content: str = 'full'
+    map_transport_config: str | None = None
+    map_transport_sha256: str | None = None
 
     def __post_init__(self):
         import math
@@ -36,6 +38,15 @@ class QueryConfig:
             raise ValueError('compact query observation requires PG Map')
         if self.arm not in ('pg','pg-source-direct','ray-data','lotus') or self.task not in ('map','movie-q1','movie-q2','movie-q3'):
             raise ValueError('unknown query arm or task')
+        if (self.map_transport_config is None) != (self.map_transport_sha256 is None):
+            raise ValueError('Map transport configuration requires its SHA-256')
+        if self.map_transport_config is not None and (
+                self.arm != 'pg' or self.task != 'map' or self.event_content != 'full'
+                or self.organization_config is not None
+                or not isinstance(self.map_transport_config, str) or not self.map_transport_config
+                or not isinstance(self.map_transport_sha256, str)
+                or not re.fullmatch(r'[0-9a-f]{64}', self.map_transport_sha256)):
+            raise ValueError('Ray Map observation requires full PG Map and an identified transport')
         if not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}',self.unit_id):
             raise ValueError('invalid query unit identity')
         if self.arm in ('pg-source-direct','ray-data') and self.task!='map':

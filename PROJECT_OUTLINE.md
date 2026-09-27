@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-20
+更新时间：2026-09-27
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -11,6 +11,11 @@
 只供追溯，不覆盖当前执行顺序。
 
 ## 0. 当前优先级与历史记录范围
+
+2026-09-27：[增量执行工程修订](experiments/results/postgresql/incremental_transport_20260927/README.md)精简重复资源统计与实验记账，
+保留HTTP并接入可选Daft Native分批/Ray Core执行；结果继续返回SQL，暂不扩展持久写表。
+受控PG检查后，[真实模型验证](experiments/results/postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求，计数和资源清理通过。
+C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒，仅作为本次单机观察；输出配对差异0–2行，多节点及M1容量资格仍待完成。
 
 2026-09-20：[最后一个工程工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)
 已完成图像类型、同步 reference、MethodDriver 行结果及 CPU/model 阶段接入的受控检查。

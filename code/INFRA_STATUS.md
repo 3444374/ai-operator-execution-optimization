@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-09-27：[增量执行精简与可选Daft/Ray文本路径](../experiments/results/postgresql/incremental_transport_20260927/README.md)完成受控PG接入。
+容量统计与实验账本重复打开已精简；新增有限二进制数据批次、Ray对象预留及独立行完成，保留HTTP与SQL结果返回。
+前序单任务/C4/C64、多查询、取消与恢复使用本地HTTP fixture。后续[真实模型验证](../experiments/results/postgresql/transport_real_20260927/README.md)完成12条SQL及4144次请求，
+账本与服务成功计数一致；C64三轮查询中位数HTTP 10.552秒、Daft/Ray 5.573秒，输出有0–2行配对差异。多节点和持续供给评价仍待完成，未合入main。
+
 2026-09-20：[完整容量复查与工程合并](../experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询单元，16,400次请求与服务端一致，无未确认请求。
 原控制器记录过一个短暂残留PID并返回失败，随后独立只读清理核对通过；原告警和PID身份缺项保留。
 容量扫描修复与异常诊断改动合入main，原故障未复现、根因仍待确定。PG/direct均为持续供给不足，M1尚未选点。

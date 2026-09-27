@@ -224,6 +224,15 @@ def main(argv=None):
                 options["incremental_observer"] = lambda event: record(
                     dict(event, event="core_" + event["event"])
                 )
+            if ledger is not None:
+                # Pass the guard independently of CLI spelling or abbreviations.
+                # The selected remote transport invokes it immediately before RPC.
+                def guard_remote(task):
+                    body = task.task.payload
+                    attempt = ledger.reserve(hashlib.sha256(body).hexdigest())
+                    observe_request(attempt, body)
+
+                options["remote_request_guard"] = guard_remote
             code = server.main(
                 gateway_args, adapter_wrapper=wrap_adapter, session_wrapper=wrap_session, **options
             )

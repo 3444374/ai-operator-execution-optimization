@@ -1268,7 +1268,14 @@ Project static 的能力、容量和 matched-resource 证据已经完成：Daft 
 - 本课题的调度策略框架的泛化能力：token-budget → frame-budget/duration-budget，queue-adaptive flush 不依赖数据模态
 - 在论文 Discussion (§6) 中可将具身智能多模态数据处理作为 generalization case，不作为主实验
 
-### 10.5.1 工程决策：Daft 文本阶段直接接入（2026-07-17 更新）
+### 10.5.1 Daft文本接入：当前选择与历史设想
+
+2026-09-27工程选择：用户确认保留HTTP并增加可选Daft/Ray路径。当前实现以Daft Native对PG已选输入窗口分批，
+Arrow承载二进制列，Ray Core actor执行独立行请求；源码与受控检查见[接入记录](../experiments/results/postgresql/incremental_transport_20260927/README.md)。
+[Daft接口](https://docs.daft.ai/en/stable/api/dataframe/)与[Ray异步actor](https://docs.ray.io/en/latest/ray-core/actors/async_api.html)
+是工程参照；已安装版本的实际检查高于按在线最新文档推断的能力。这不是新的调度方法或性能结论。
+
+下文保留2026-07-17的历史设想；当前接入方式、完成度与运行顺序分别以源码、证据台账和主计划为准。
 
 **决策（2026-07-17 修订）**：Daft 从文本阶段（AI_COMPLETE + vLLM baseline 建立后）直接作为数据引擎，不再经过 Arrow 中间态。Daft 的 DataFrame API 对文本（`df["prompt"]`）和图像（`df["image"]`）是同一套接口，后续多模态实验只需替换列类型，策略层代码不动。
 

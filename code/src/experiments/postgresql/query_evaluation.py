@@ -50,6 +50,41 @@ def json_metric(value):
     return value
 
 
+def ray_transport_accounting(events, requests):
+    """Check row terminals and object lifetimes without inventing remote occupancy."""
+    completed, live, seen, placed = [], {}, set(), set()
+    peak = 0
+    for event in events:
+        if event['event'] == 'core_ray_http_completed':
+            completed.append((event['key']['session_id'], event['key']['sequence']))
+        if event['event'] == 'core_ray_block_reserved':
+            identity = event['block_id']
+            if identity in seen or event['bytes'] <= 0 or event['rows'] <= 0:
+                raise ValueError('Ray block identity or size differs')
+            seen.add(identity)
+            live[identity] = event['bytes']
+        elif event['event'] == 'core_ray_block_put':
+            identity = event['block_id']
+            if identity not in live or identity in placed or event['bytes'] != live[identity]:
+                raise ValueError('Ray put has no matching reservation')
+            placed.add(identity)
+        elif event['event'] == 'core_ray_block_released':
+            if event['block_id'] not in live:
+                raise ValueError('Ray object release has no matching put')
+            del live[event['block_id']]
+        else:
+            continue
+        actual = sum(live.values())
+        if actual != event['object_bytes'] or actual > event['object_limit_bytes']:
+            raise ValueError('Ray object ownership exceeds or differs from its ledger')
+        peak = max(peak, actual)
+    if live or seen != placed or len(completed) != requests or len(set(completed)) != requests:
+        raise ValueError('Ray requests or objects did not settle exactly once')
+    return dict(completed_requests=len(completed), object_blocks=len(seen),
+                peak_arrow_buffer_bytes=peak, final_arrow_buffer_bytes=0,
+                scope='owned Arrow backing buffers; not total process or Ray object-store memory')
+
+
 def pg_plan_summary(plan):
     """Expose the selected nodes and initialized window without another model run."""
     nodes=[]
@@ -92,9 +127,15 @@ def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded
         body.get('top_p')!=1 or body.get('stop')!=['\n'] or body.get('stream',False) is not False or
         body.get('n',1)!=1 for body in requests):
         raise ValueError('native LOTUS effective generation settings differ')
-    report=dict(actual_posts=len(requests),http=http_accounting(events,config.concurrency))
-    if report['http']['started_requests']!=len(requests):
-        raise ValueError('outgoing POST and HTTP occupancy histories differ')
+    report=dict(actual_posts=len(requests))
+    if getattr(config, 'map_transport_config', None) is None:
+        report['http'] = http_accounting(events,config.concurrency)
+        if report['http']['started_requests']!=len(requests):
+            raise ValueError('outgoing POST and HTTP occupancy histories differ')
+    else:
+        report['http'] = dict(status='unavailable',
+            reason='remote worker clocks are not aligned; completion arrival is not HTTP start time')
+        report['ray_transport'] = ray_transport_accounting(events, len(requests))
     if config.arm=='pg':
         active_work=config.concurrency
         report['plan']=pg_plan_summary(json.loads((root/'plan.json').read_text()))

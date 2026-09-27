@@ -99,8 +99,12 @@ class SharedQueryIntegrationTests(unittest.TestCase):
             '--socket', str(socket_path), '--fixed-model-config', str(config), '--incremental-map',
             '--job-compute-policy', 'shared', '--max-active-jobs', '4', '--max-connections', '16',
             '--max-active-requests', '4', '--max-held-tasks', '32', '--frame-timeout-ms', '500']
+        transport_config = os.environ.get('SEMLOOM_TEST_MAP_TRANSPORT_CONFIG')
+        if transport_config:
+            command.extend(('--map-transport-config', transport_config))
         write_private_json(root / 'contract.json', dict(actual_model=False, max_posts=256,
-            max_seconds=120, queries=4, requests=4, held_tasks=32, query_window=4))
+            max_seconds=120, queries=4, requests=4, held_tasks=32, query_window=4,
+            transport='daft-ray' if transport_config else 'http'))
 
         def events():
             if not events_file.exists():

@@ -160,7 +160,7 @@ class GatewayObservationTests(unittest.TestCase):
                     else:
                         second_done.set()
                     return Completion('TRUE', 'model', 11 if first else 22, 1, 'stop')
-            def drive(args, *, adapter_wrapper, session_wrapper):
+            def drive(args, *, adapter_wrapper, session_wrapper, remote_request_guard=None):
                 adapter = adapter_wrapper(Adapter())
                 def execute(connection):
                     try: return adapter.complete(request)

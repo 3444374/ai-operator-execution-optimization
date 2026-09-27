@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-更新日期：2026-09-20
+更新日期：2026-09-27
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
@@ -14,6 +14,7 @@ A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作
 
 | 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
 |---|---|---|
+| [增量执行与可选Daft/Ray](../results/postgresql/incremental_transport_20260927/README.md) | 保留HTTP，新增有限二进制批次与Ray worker；受控PG及取消/多查询通过；[真实4144次](../results/postgresql/transport_real_20260927/README.md)计数与清理一致 | 跨机器传输、全进程内存和持续供给评价；结果持久写表暂不扩展 |
 | [M1完整容量复查](../results/postgresql/m1_full_recheck_20260920/README.md) | 32个查询、16400次请求完成；原清理扫描告警保留，随后资源核对通过 | 容量扫描修复和异常诊断已合入main；原故障未复现、根因待确定，PG/direct持续供给不足、尚未选点 |
 | [M1/M2/F有限真实验证](../results/postgresql/m1_m2_f_real_20260920/README.md) | 文本8248次；M1未选点；M2五组信息成本；F151次前向数值与指定生命周期通过 | M1供给原因与新校准；M2实际SemMap接入及独立方法证据；F计算中GPU故障和匹配性能 |
 | [M1常驻等待位置检查](../results/postgresql/waiting_positions_persistent_20260914/README.md) | 新增24查询/768受控HTTP及120次旧入口回归；常驻后紧W仍增加完整查询时间，C8五次快于C4 | 旧测量反例结束；输入/观测开关保留，44,544 次表已撤下；新M1真实筛查未得候选，见上行 |

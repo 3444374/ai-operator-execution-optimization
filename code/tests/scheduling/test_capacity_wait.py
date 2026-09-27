@@ -10,6 +10,23 @@ from tests.scheduling.test_incremental_session import setup, task
 
 
 class CapacityWaitTests(unittest.TestCase):
+    def test_full_global_capacity_skips_scoped_summaries_until_completion(self):
+        template, _, backend, clock = setup(
+            held_tasks=4, input_bytes=16, result_bytes=16,
+            active_requests=1, active_work=4)
+        engine = SessionEngine(template.capacity.limits, backend, template.policies, clock=clock)
+        job = engine.register_job('job', JobBudget(4, 16, 16, 1, 4))
+        session = engine.open(SessionSpec(job.job_id, 'flow', 'fixture'), job=job)
+        session.offer([task(0), task(1)])
+        engine.advance()
+        queued = engine.capacity.records[TaskKey(session.session_id, 1)]
+        with patch.object(engine.capacity, 'usage', wraps=engine.capacity.usage) as usage:
+            self.assertFalse(engine.capacity.can_dispatch(queued, session.limits))
+        self.assertEqual(usage.call_args_list, [unittest.mock.call()])
+        backend.complete(TaskKey(session.session_id, 0))
+        engine.advance()
+        self.assertIn(queued.key, backend.pending)
+
     def test_blocked_owner_tick_does_not_rescan_usage_for_each_queued_row(self):
         template, _, backend, clock = setup(
             held_tasks=128, input_bytes=512, result_bytes=512,

@@ -35,19 +35,19 @@ class SessionCapacity:
         self.job_limits = {}
 
     def usage(self, session_id: int | None = None, *, job_id: str | None = None) -> Usage:
-        records = tuple(
-            r
-            for r in self.records.values()
-            if (session_id is None or r.key.session_id == session_id)
-            and (job_id is None or r.spec.job_id == job_id)
-        )
-        return Usage(
-            len(records),
-            sum(len(r.task.payload) for r in records),
-            sum(r.task.max_result_bytes for r in records),
-            sum(r.compute for r in records),
-            sum(r.task.estimated_work for r in records if r.compute),
-        )
+        held = input_bytes = result_bytes = active_requests = active_work = 0
+        for record in self.records.values():
+            if session_id is not None and record.key.session_id != session_id:
+                continue
+            if job_id is not None and record.spec.job_id != job_id:
+                continue
+            held += 1
+            input_bytes += len(record.task.payload)
+            result_bytes += record.task.max_result_bytes
+            if record.compute:
+                active_requests += 1
+                active_work += record.task.estimated_work
+        return Usage(held, input_bytes, result_bytes, active_requests, active_work)
 
     @staticmethod
     def fits(usage: Usage, limits: SessionLimits, task: OfferedTask) -> bool:
@@ -71,8 +71,12 @@ class SessionCapacity:
         a return, submission, terminal, cancellation or subsequent owner tick.
         """
         global_bound = (self.usage(), self.limits)
+        if global_bound[0].active_requests >= self.limits.active_requests:
+            return False
         scoped = {}
         for record in records:
+            if global_bound[0].active_work + record.task.estimated_work > self.limits.active_work:
+                continue
             key = (record.key.session_id, record.spec.job_id)
             if key not in scoped:
                 bounds = [global_bound, (self.usage(record.key.session_id), limits)]
