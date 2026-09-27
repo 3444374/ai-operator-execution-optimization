@@ -83,7 +83,7 @@ AGENTS.md
 
 ### PPT 是现场讲解
 
-当前 `slides/opening_defense_20260812_v9.pptx` 为 26 页对外答辩版，不承担报告的全部细节。PPT 保留学校视觉识别，但内容区按“背景收敛—动机导出—方法对应—验证流程”自由排版；旧 `slides/opening_ppt.md` 只保留历史版式经验，不再作为当前内容入口。v9 已独立通过 26/26 页 QA，但 2026-08-22 至 08-25 的报告图文更新尚未回灌，当前仍需报告—PPT 差异审查。
+`slides/opening_defense_20260812_v9.pptx` 是最近一版 26 页答辩文件，不承担报告的全部细节。PPT 保留学校视觉识别，内容区按“背景收敛—动机导出—方法对应—验证流程”排版。v9 已独立通过 26/26 页 QA，但后续报告更新尚未逐页同步，重新使用前需审查报告与 PPT 的差异。
 
 PPT 修改后要反查报告：
 
@@ -122,7 +122,7 @@ motivation/results/gpu/
 写完后检查：
 
 ```text
-slides/opening_ppt.md
+slides/README.md
 feishu/progress_update.md
 literature/reading_list.md
 logs/project_log.md
@@ -155,7 +155,7 @@ qa_bank.md
 opening/feishu/README.md
 opening/report/opening_report.md
 opening/feishu/opening_report_wiki.md  # 历史快照，只读对照，禁止作为覆盖源
-opening/slides/opening_ppt.md
+opening/slides/README.md
 motivation/results/
 learning/experiment_walkthrough.md
 ```
@@ -198,7 +198,7 @@ opening/ppt_rules.md
 
 - `opening/README.md` 是否需要更新入口或状态。
 - `opening/report/opening_report.md` 是否需要同步口径。
-- `opening/report/opening_report.md` 和 `opening/slides/opening_ppt.md` 是否互相一致。
+- `opening/report/opening_report.md` 和最近一版 PPT 是否互相一致。
 - `opening/feishu/` 是否需要同步。
 - `opening/literature/reading_list.md` 是否需要补文献或调整状态。
 - `opening/logs/project_log.md` 是否记录了非实验类修改。

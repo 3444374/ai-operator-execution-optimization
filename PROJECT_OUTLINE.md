@@ -618,7 +618,7 @@ rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-v
 - 开题报告：`opening/report/opening_report.md`
 - 开题 Claim Matrix：`opening/claim_matrix.md`
 - 当前答辩内容合同：`opening/opening_defense_outline_20260808.md`；历史PPT v6设计
-  `opening/slides/opening_defense_v6_design.md`已被取代且禁止作为生成输入
+  `opening/slides/archive/opening_defense_v6_design.md`已被取代且不作为现行生成输入
 - 答辩问答：`opening/qa_bank.md`
 - 答辩 QA 预演手册：`opening/report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF）
 - 当前方向速览：`overview/current_direction_and_plan.md`

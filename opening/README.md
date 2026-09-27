@@ -74,7 +74,7 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 开题答辩 QA 手册 | `report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF） | 2026-08-25 的 83 题版本；数据库架构部分仍是 LOTUS-first 快照，重新对外使用前需改为 Sema-like 中立语义算子并重新编译、检查 PDF |
 | 开题报告专用图片 | `report/figures/` | 当前正文引用 5 张背景/方案图和 11 张数据图；权威可编辑源在 `../figures/architecture/editable/`，数据图源在 `../figures/opening_figure_set/` 与 `../figures/data/report_main/` |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-30 已登记 PostgreSQL 18.3 recording carrier 功能资格及其不能外推的边界；实验准入、主张等级和材料完成度的当前依据 |
-| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
+| 开题幻灯片 | `slides/README.md` | 最近一版为 26 页 v9；重新使用前核对现行报告与总纲 |
 | 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 26 页上一版架构快照；尚未同步 Sema-like 架构、LOTUS 新角色、PostgreSQL 18.3 实现状态与后续路线，重新对外使用前需做 shape 级增量修改和 26 页视觉检查 |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
