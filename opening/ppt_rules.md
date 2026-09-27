@@ -1,5 +1,7 @@
 # 开题 PPT 制作专项检查清单
 
+> 开题已结束。本清单只用于明确要求修改或再次使用历史 PPT 的任务。
+
 > 本文件不是独立规则源。实际创建、编辑或导出 PPT 时，在根 `AGENTS.md`、`opening/AGENTS.md` 和
 > `figures/AGENTS.md` 之后读取；只修改报告或文献时无需加载。当前 PPT 状态见 `slides/README.md`。
 

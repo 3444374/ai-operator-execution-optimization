@@ -7,7 +7,7 @@
 | 文件 | 用途 |
 |---|---|
 | `knowledge_hub.md` | 项目知识总汇：机制、文献地图、研究空白与[数据执行迁移条件](knowledge_hub.md#execution-transfer-cards)；不维护当前代码状态或实施顺序 |
-| `top15_ranked_papers.md` | 当前开题 Top 15；15/15 为严格 CCF-A 正式 research paper |
+| `top15_ranked_papers.md` | 开题时期 Top 15 历史选目；当时 15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单；KEN 已加入待精读，题录与摘要已核验，全文及 artifact 分别待核查 |
 | `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |
 | `reading_notes/` | 49 篇历史文献笔记；从 2026-08-21 起按泛读、筛选和快速回顾管理 |
@@ -31,7 +31,7 @@
 3. **工程资料**：官方文档、源码和产品资料，只证明接口/工业需求，不证明学术新颖性。
 4. **项目证据**：真实实验 CSV/报告，用于验证本地因果，不由论文结论替代。
 
-当前 Top 15 结构：
+开题时期的 Top 15 结构：
 
 - AI 算子与数据库系统：LOTUS、Galois、GaussML；
 - LLM 推理与公平调度：vLLM、Orca、Sarathi-Serve、SGLang、VTC、Llumnix、DistServe；

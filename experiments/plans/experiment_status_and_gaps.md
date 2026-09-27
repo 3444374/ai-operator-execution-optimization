@@ -382,11 +382,11 @@ comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project �
   `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
-## 开题冻结优先级（2026-08-07；2026-08-08 correctness 护栏与 bounded 饱和校准已通过，材料尚未最终冻结）
+## 开题时期的实验安排（历史；2026-08-07 至 2026-08-08）
 
 开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
 项目臂 feeding 未过门而只作历史诊断；2026-08-08 已按
-`opening_database_e2e_p0_20260807.md` 完成校准、冻结 K128 并整体 replacement：
+`archive/opening_database_e2e_p0_20260807.md` 完成校准、选定 K128 并整体 replacement：
 
 1. SQuAD short-answer/cap=64 的 direct static-sharded、DuckDB AI static-sharded、
    project frozen-static 三臂统一 database-E2E，1 warmup + 3 formal。

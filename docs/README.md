@@ -25,7 +25,7 @@
 | [2026-07-29-same-condition-official-baselines-design.md](designs/2026-07-29-same-condition-official-baselines-design.md) | [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | [2026-07-29-saturated-ray-actor-pool-replenishment-design.md](designs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md) | [代码状态](../code/INFRA_STATUS.md) |
 | [2026-08-13-saor-native-system-matched-comparison-design.md](designs/2026-08-13-saor-native-system-matched-comparison-design.md) | [实验状态](../experiments/plans/experiment_status_and_gaps.md) |
-| [2026-08-23-opening-report-cost-estimation-enhancement-design.md](designs/2026-08-23-opening-report-cost-estimation-enhancement-design.md) | [开题正文](../opening/report/opening_report.md) |
+| [2026-08-23-opening-report-cost-estimation-enhancement-design.md](designs/2026-08-23-opening-report-cost-estimation-enhancement-design.md) | [开题归档](../opening/README.md) |
 
 ### 实施记录
 
@@ -52,8 +52,8 @@
 | [2026-07-29-shared-vllm-fairness-implementation.md](plans/2026-07-29-shared-vllm-fairness-implementation.md) | [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | [2026-07-29-slo-aware-ewma-flush-implementation.md](plans/2026-07-29-slo-aware-ewma-flush-implementation.md) | [代码状态](../code/INFRA_STATUS.md) |
 | [2026-08-13-saor-native-system-matched-comparison-implementation.md](plans/2026-08-13-saor-native-system-matched-comparison-implementation.md) | [实验状态](../experiments/plans/experiment_status_and_gaps.md) |
-| [2026-08-23-opening-report-cost-estimation-enhancement-plan.md](plans/2026-08-23-opening-report-cost-estimation-enhancement-plan.md) | [开题正文](../opening/report/opening_report.md) |
-| [2026-08-23-opening-report-minimal-figure-corrections.md](plans/2026-08-23-opening-report-minimal-figure-corrections.md) | [开题正文](../opening/report/opening_report.md) |
+| [2026-08-23-opening-report-cost-estimation-enhancement-plan.md](plans/2026-08-23-opening-report-cost-estimation-enhancement-plan.md) | [开题归档](../opening/README.md) |
+| [2026-08-23-opening-report-minimal-figure-corrections.md](plans/2026-08-23-opening-report-minimal-figure-corrections.md) | [开题归档](../opening/README.md) |
 
 ## 保留原路径的记录
 

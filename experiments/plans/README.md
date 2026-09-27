@@ -4,7 +4,7 @@
 
 当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享 Engine、查询归属与生命周期已验证；动态资源策略仍需适配。
 
-更新日期：2026-09-20
+更新日期：2026-09-28
 
 近期按[新 M1](data_organization_batching.md#m1-throughput-platform)研究有效吞吐平台附近的在途工作与资源代价：
 先核对可达供给，匹配 direct/PG 筛查，再比较调优请求数与工作量控制。全局信息归 M2，多查询分配另按自身资格推进。
@@ -54,7 +54,6 @@ Filter质量/成本资格独立，复杂SQL、方法优化与公司
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md) | 消息、纯值、PG plan/权限与真实模型功能已验证；新增实际路径继续分别检查 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
-| [`opening_database_e2e_p0_20260807.md`](opening_database_e2e_p0_20260807.md) | 主矩阵已完成；仅 ShareGPT C128 双臂纠正补测待条件满足后执行 |
 | [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
 | [`data_organization_batching.md`](data_organization_batching.md) | 当前设计主张/证据表、有限模型、等待位置与全局元数据强对照；保留工程工作包与历史外部矩阵 |
 | [`service_scheduling_backpressure.md`](service_scheduling_backpressure.md) | 静态/shared credit 主证据已完成；动态候选未证明普遍胜出 |
@@ -83,6 +82,9 @@ Filter质量/成本资格独立，复杂SQL、方法优化与公司
 
 [`archive/`](archive/) 保存被当前方向替代、暂停且没有运行授权的候选方案与旧矩阵。归档不等于删除，
 只表示它们不能覆盖当前总纲和状态文件。
+
+开题已结束；[当时的文本三臂计划](archive/opening_database_e2e_p0_20260807.md)只供回查，
+其中的条件性纠正补测不再列为当前任务。
 
 2026-08-21 的 PostgreSQL+LOTUS 主计划与 LOTUS frontend 子计划已进入归档；其中的 v1.2.4 源码
 审计、Q1–Q23 决策和反例测试仍可追溯，但当前架构不再以 LOTUS 为语义所有者或前置依赖。

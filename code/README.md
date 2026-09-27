@@ -803,8 +803,8 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 开题前的两个文本证据缺口使用 `scripts/baselines/opening_database_e2e_matrix.py`。
 它只运行 direct static sharded、DuckDB AI static sharded 和 project fixed static
 三臂，统一 PostgreSQL source、immutable manifest、双 endpoint、数据库 sink、质量与
-资源口径，并按确定性随机顺序执行 1 warmup + 3 formal。运行前选定且期间不改变的实验条件以
-`../experiments/plans/opening_database_e2e_p0_20260807.md` 为准；该 runner 不作为新增
+资源口径，并按确定性随机顺序执行 1 warmup + 3 formal；当时的实验条件记录在
+`../experiments/plans/archive/opening_database_e2e_p0_20260807.md`。该 runner 不作为新增
 通用 baseline 框架，也不允许加入 adaptive arm 或参数扫描。
 
 `src/baselines/text/orchestration/native_matrix.py` 在运行前记录并固定每臂校准指纹后，

@@ -25,7 +25,7 @@
 | 可行性与 smoke | `feasibility/AGENTS.md` 及目标子目录规则 |
 | 文献和知识文件 | `research/AGENTS.md` |
 | 图资产 | `figures/AGENTS.md` |
-| 开题与对外材料 | `opening/AGENTS.md` |
+| 已归档开题材料 | `opening/AGENTS.md` |
 | 学习讲解 | `learning/AGENTS.md` |
 | 快速方向卡片 | `overview/AGENTS.md` |
 | 导师/企业沟通记录 | `notes/AGENTS.md` |
@@ -134,20 +134,21 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 - 英文缩写、内部结构和指标首次出现时说明中文作用；文献使用正式英文题名，系统名保留英文。
 - 初步结果写“可行性依据、观察信号或待扩大验证”，不写成已经完成的贡献。
 
-报告、PPT 和图形的专项要求按任务读取 `opening/AGENTS.md` 与 `figures/AGENTS.md`。
+仅在明确回查或修改开题历史文件时读取 `opening/AGENTS.md`；图资产任务读取 `figures/AGENTS.md`。
 
 ## 7. 目录与变更同步
 
 项目内的 `research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
+`opening/` 已归档；普通研究、代码和实验变更不触发该目录或开题专用图集的同步。
 
 | 变更 | 必须同步 |
 |---|---|
-| 方向、题目、研究内容 | `PROJECT_OUTLINE.md`、根入口、开题正文/材料、`PROJECT_LOG.md` |
+| 方向、题目、研究内容 | `PROJECT_OUTLINE.md`、根入口、`PROJECT_LOG.md` |
 | 实现状态或关键接口 | 源码/测试、`code/INFRA_STATUS.md`、证据台账、相关 README、`PROJECT_LOG.md` |
-| 实验结论 | 原始结果报告、证据台账、`PROJECT_OUTLINE.md`、相关对外材料、`PROJECT_LOG.md` |
+| 实验结论 | 原始结果报告、证据台账、`PROJECT_OUTLINE.md`、实际仍维护的对外材料、`PROJECT_LOG.md` |
 | 目录或关键入口 | 所在目录 README、`PROJECT_INDEX.md`、根 README、`PROJECT_LOG.md` |
 | 规则 | 只改拥有该规则的最窄 `AGENTS.md`；全局行为才改本文件，并记入 `PROJECT_LOG.md` |
-| 图表 | 图源、导出、`figures/README.md`、对应 audit；影响主线时同步开题/论文引用 |
+| 图表 | 图源、导出、`figures/README.md`、对应 audit；影响主线时同步实际仍维护的论文或材料引用 |
 
 ### 7.1 文档生命周期
 

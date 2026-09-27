@@ -35,7 +35,8 @@
 | 查实验计划、证据和失败记录 | [实验计划](experiments/plans/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 理解相关系统与论文 | [知识库](research/knowledge_hub.md) |
 | 追溯历史设计与实施计划 | [历史设计记录](docs/README.md) |
-| 准备机器或开题材料 | [运行手册](deploy/runtime/README.md)、[开题入口](opening/README.md) |
+| 准备机器 | [运行手册](deploy/runtime/README.md) |
+| 追溯已结束的开题材料 | [归档入口](opening/README.md) |
 
 原始结果和失败记录保留在各实验目录。运行条件与结论以结果报告为准；机器准备和真实实验分别遵守
 [运行手册](deploy/runtime/README.md)及目标计划。

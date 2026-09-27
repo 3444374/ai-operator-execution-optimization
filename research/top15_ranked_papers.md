@@ -1,4 +1,8 @@
-# 项目最相关 Top 15 论文
+# 开题时期 Top 15 论文（归档）
+
+本表保留开题时的选目，不再随项目后续文献工作更新，也不代表当前阅读优先级。
+现行文献依据从 [knowledge_hub.md](knowledge_hub.md) 与
+[ai_operator_literature_inventory.md](ai_operator_literature_inventory.md) 核对。
 
 更新日期：2026-07-29
 选择目标：以正式、可核验的 CCF-A research paper 构成开题核心文献；高度相关但非 CCF-A 的系统、预印本、Tutorial、Companion、Demo 放入“核心补充文献”。
@@ -68,7 +72,7 @@
 | SemBench | PVLDB 19(8), 2026 | semantic query engine benchmark、workload 与指标 | benchmark 依据，方法 Top 15 席位优先给直接算法来源 |
 | FairServe | arXiv 2024 | 多应用 weighted service 与 interaction-aware throttling | 预印本 |
 | DLPM / D2LPM | arXiv 2025 | prefix-locality 与 deficit fairness | 预印本 |
-| Agentix（arXiv v1 名称 Autellix） | NSDI 2026 | program/job-level attained service | 正式系统论文；作为核心补充，不替换当前 Top 15 |
+| Agentix（arXiv v1 名称 Autellix） | NSDI 2026 | program/job-level attained service | 正式系统论文；作为核心补充，不替换开题时期的 Top 15 |
 | Chiron | arXiv 2025 | 分层 backpressure 与 autoscaling | 预印本；autoscaling 超出固定双 GPU边界 |
 | Clipper | NSDI 2017 | AIMD batching 历史来源 | 现有 fixed/adaptive 实验已显示控制器不优于同上限静态策略 |
 | Splitwise | ISCA 2024 | prefill/decode 分池 | 与当前不修改 vLLM 的边界较远 |

@@ -1,6 +1,9 @@
 # 项目图资产
 
-更新日期：2026-09-10
+开题专用图集及下文按日期记录的开题选图说明已归档；后续项目结果不再自动更新开题报告、
+PPT 或其图副本。其他图资产仍按目标任务的原始数据、源图和 audit 核对。
+
+更新日期：2026-09-28
 
 ## 2026-09-10：单卡 Map 容量辅助图
 
@@ -8,7 +11,7 @@
 数据来自[容量报告](../experiments/results/postgresql/map_capacity_20260910/README.md)，[审计](audit/map_capacity_20260910.md)说明来源、原始值、失败保留和显示检查。
 这是当前内部校准辅助图，高并发长查询平台尚待确认，不替代开题主图或方法实验。
 
-当前开题选图统一从 `opening_figure_set/README.md` 进入；权威源位于 `architecture/editable/` 和
+开题阶段的选图从 `opening_figure_set/README.md` 追溯；权威源位于 `architecture/editable/` 和
 `data/report_main/`，审计记录位于 `audit/`。下方按日期保留历史图集和生成记录，日期较早的
 “current/prefer”只对当时版本有效，不能覆盖 2026-08-08 之后的开题叙事图入口。
 
@@ -79,7 +82,7 @@ foreground/background interference, queue balance, and prefix locality.
 
 本目录是项目级图资产库，供 learning 材料、开题报告、开题 PPT、中期汇报和毕业论文共同复用。图不再分散在 `opening/assets/charts/` 和 `opening/assets/figures/` 中；后续新增图也优先放在本目录下，并按用途分子目录。
 
-## 2026-08-08 开题叙事图（当前入口）
+## 2026-08-08 开题叙事图（历史入口）
 
 ### 开题专用图集
 
@@ -245,7 +248,7 @@ figures/architecture/
 figures/data/report_main/
 ```
 
-下表保留早期选图映射用于追溯；当前开题材料不得直接按此表选图，应使用本文件上方
+下表保留早期选图映射用于追溯；当时开题材料不直接按此表选图，而使用本文件上方
 `opening_figure_set/` 入口：
 
 | 文件 | 用途 |

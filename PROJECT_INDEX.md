@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-09-27
+更新时间：2026-09-28
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -33,7 +33,7 @@
 | 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
 | 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
-| 对外叙事与主张 | [`opening/claim_matrix.md`](opening/claim_matrix.md)、[`opening/report/opening_report.md`](opening/report/opening_report.md) | 把总纲和证据转成开题表达；不是实现或实验事实的上游来源 |
+| 开题历史叙事 | [`opening/README.md`](opening/README.md) | 开题已结束，报告、主张、PPT 与发布快照仅供回查 |
 | 变更历史 | [`PROJECT_LOG.md`](PROJECT_LOG.md) | 结构、方向、结论和关键入口变更记录 |
 
 冲突处理顺序：原始结果/源码 > 领域权威入口 > `PROJECT_OUTLINE.md` > 当前工程计划（仅处理
@@ -52,7 +52,6 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 2. [`CONTEXT.md`](CONTEXT.md)
 3. [`overview/current_direction_and_plan.md`](overview/current_direction_and_plan.md)
 4. [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md)
-5. [`opening/claim_matrix.md`](opening/claim_matrix.md)
 
 ### 继续当前实现
 
@@ -87,16 +86,12 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 1. [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
 2. 对应 `experiments/results/<experiment>/README.md`
 3. 同目录 CSV/JSON/manifest/raw
-4. [`opening/claim_matrix.md`](opening/claim_matrix.md)（若用于开题或对外材料）
 
-### 写开题材料
+### 追溯已结束的开题材料
 
 1. [`opening/AGENTS.md`](opening/AGENTS.md)
 2. [`opening/README.md`](opening/README.md)
-3. [`opening/report/opening_report.md`](opening/report/opening_report.md)
-4. [`opening/opening_defense_outline_20260808.md`](opening/opening_defense_outline_20260808.md)
-5. [`opening/qa_bank.md`](opening/qa_bank.md)
-6. [`figures/opening_figure_set/README.md`](figures/opening_figure_set/README.md)
+3. 按该目录的历史索引查报告、答辩文件、图集或发布记录
 
 ## 3. 目录职责
 
@@ -111,7 +106,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | `deploy/` | 环境合同、配置和 runbook | `deploy/README.md` | 研究结论 |
 | `data/` | 数据来源、哈希和导入合同 | `data/README.md` | raw payload |
 | `figures/` | 图源、导出和审计 | `figures/README.md` | 无来源截图 |
-| `opening/` | 开题正文、答辩和文献快照 | `opening/README.md` | 实验原始数据 |
+| `opening/` | 已结束的开题报告、答辩和文献快照 | `opening/README.md` | 当前研究与实验状态 |
 | `learning/` | 教学式讲解 | `learning/README.md` | 权威规则 |
 | `notes/` | 导师/企业沟通 | `notes/README.md` | 正式研究证据 |
 | `docs/` | 历史跨目录与代码设计、实施计划 | `docs/README.md` | 当前执行指令 |
@@ -160,7 +155,7 @@ README 保存目录内容和当前状态。`CLAUDE.md` 只是 Claude Code 的根
 | 机制—实现—证据映射 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | GPU-backed 动机画像 | [`motivation/results/gpu/README.md`](motivation/results/gpu/README.md) |
 | capability/smoke | [`feasibility/results/README.md`](feasibility/results/README.md) |
-| 开题 claim 与证据等级 | [`opening/claim_matrix.md`](opening/claim_matrix.md) |
+| 开题时期的主张和材料 | [`opening/README.md`](opening/README.md) |
 
 CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 formal 是不同证据等级；
 目录名或“passed”字段不能替代结果报告中的身份和适用范围。
@@ -184,7 +179,7 @@ CPU/fake、PG18.4 rehearsal、development gate、diagnostic、rehearsal 和 form
 
 - 历史结果和失败证据保留原目录，不因结论被替代而删除。
 - 已完成计划在目录 README 中标记状态，并指向当前入口。
-- `projects/` 保留旧 PPT 工程的输入、输出和验证记录；不再用于生成新材料。
+- `projects/` 保留旧 PPT 工程的输入、输出和验证记录；不再用于生成现行材料。
 - `docs/` 的计划文本可以包含过时分支名或“下一步”，但必须按文件日期阅读。
 - 本地 `.venv`、`tmp/`、raw workload、模型、缓存和 `__pycache__` 不进入 Git。
 - 新增、移动或删除文件后更新本索引、根 README、受影响目录 README 和 `PROJECT_LOG.md`。

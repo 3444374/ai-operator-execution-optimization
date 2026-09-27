@@ -373,7 +373,10 @@ training 查询第 23 个模型响应违反严格输出格式，PG18.3 以 `2200
 | `state_aware_work_unit/saor_native_system_matched_calibration_20260819/` | Project selection 与 Daft Native/Daft Ray/Ray Data 原生执行 selection identity | Daft C1/B1 是 vendor control，Ray Data C8/B16 是一次 development screen 冻结点；只声明身份匹配，不夸大为统计最优。 |
 | `state_aware_work_unit/saor_native_system_matched_gateway_rehearsal_20260821/` | 五臂统一 T0--T4 与 observation-only gateway 的单次 GPU rehearsal | 5/5、exactly-once、archive validation 通过；SAOR 相对同 executor static 吞吐 +31.01%、group JCT −23.70%，但 P99/lag/no-service 变差、Jain −1.50%。只作 rehearsal 观察；0s/5s pre/post isolation 样本不足，formal 未运行。 |
 
-## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
+## 开题统一文本 database-E2E（2026-08-08 历史结果）
+
+以下开题时期结果按原实验身份保留；开题已结束，不从这些记录自动安排补测。
+归档不改变当时的有效性、失败判定或结果适用范围。
 
 | Directory | Content | Boundary |
 |---|---|---|

@@ -1,13 +1,13 @@
 # 项目大纲
 
-更新时间：2026-09-27
+更新时间：2026-09-28
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
-本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
+本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`。开题已结束，`opening/` 只供历史回查，不作为现行研究判断的依据。
 
-读者说明：本文 §0.3 和 §5 保留历史实验审计与结果。历史配置、诊断名称和当时的后续建议
+读者说明：本文 §0.3、§5–7 保留历史实验与开题时期的叙述。历史配置、诊断名称和当时的后续建议
 只供追溯，不覆盖当前执行顺序。
 
 ## 0. 当前优先级与历史记录范围
@@ -540,7 +540,9 @@ PostgreSQL SQL `ai_semantic.map(...)`
 - 图像路径提升 45.7%；
 - 代价模型已经稳健解决。
 
-## 6. 开题前统一文本 database-E2E
+## 6. 开题前统一文本 database-E2E（历史）
+
+本节保留开题时期的结果解释，不作为后续实验配置或执行顺序。
 
 2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 K128 replacement 的 24/24 单元、18 formal 满足预先规定的正确性、写回、身份和稳定性要求；但随后 ShareGPT bounded C32–C256 扫描证明 C32 只有已测峰值的 52.07%，故 ShareGPT 三臂性能排名降级，正式原生矩阵改用达到峰值 98.22% 的最小点 C128。
 
@@ -562,7 +564,7 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 
 Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profiler E2E14.957s，T3 earliest model submit→latest completion11.354s，service14,361tok/s、MFU42.93%；Daft Native同一short T3为11.059s、14,727tok/s、MFU44.04%，差异仅约2.5%–2.7%。Daft缺准备前T0，因此完整E2E仍不排名；该结果排除了“Project模型请求路径慢6.4×”。随后Project eager多Job只补full single、half single、static+long、shared+long，不重跑原生三臂；arrival span均为66.76µs、12/12 formal通过。逐阶段显示matched static竞争使short service mean/P99 +50.34%/+78.62%，shared为+14.63%/+28.70%；submit→service仍约2ms。在线replay与eager结论分轨保留。
 
-## 7. 开题叙事图
+## 7. 开题叙事图（历史）
 
 1. `opening_motivation_work_state`：固定行隐藏 work、静态上限不是状态、提交压力存在最小近饱和点与边际收益递减区，分别导出 WorkDescriptor、感知和有界控制。
 2. `opening_ai_data_execution_boundary`：两项研究内容并列，算子代价估计作为共同使能部件。
@@ -613,14 +615,9 @@ GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分�
 正式报告、论文、PPT 和图表不使用内部实验缩写。既有 PG18.4 AutoDL 结果必须按实际链路标为
 rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-visible semantic operator。
 
-## 10. 同步入口
+## 10. 当前入口与历史材料
 
-- 开题报告：`opening/report/opening_report.md`
-- 开题 Claim Matrix：`opening/claim_matrix.md`
-- 当前答辩内容合同：`opening/opening_defense_outline_20260808.md`；历史PPT v6设计
-  `opening/slides/archive/opening_defense_v6_design.md`已被取代且不作为现行生成输入
-- 答辩问答：`opening/qa_bank.md`
-- 答辩 QA 预演手册：`opening/report/opening_defense_qa/opening_defense_qa.tex`（同目录本地 PDF）
+- 开题历史材料：`opening/README.md`；不再随项目进展同步
 - 当前方向速览：`overview/current_direction_and_plan.md`
 - 实验状态：`experiments/plans/experiment_status_and_gaps.md`
 - 文献与知识：`research/knowledge_hub.md`

@@ -12,11 +12,11 @@ projects/opening_defense_20260712/
 └── exports/        # 当时生成的 PPTX
 ```
 
-当前开题入口：
+开题历史材料入口：
 
 - 正文：`../opening/report/opening_report.md`
 - 答辩内容：`../opening/opening_defense_outline_20260808.md`
-- 当前幻灯片与设计说明：`../opening/slides/`
+- 最近一版幻灯片与旧版归档：`../opening/slides/README.md`
 - 图资产：`../figures/opening_figure_set/`
 
 除非需要复现 2026-07-12 的生成过程，否则不要运行或修改本目录脚本。归档中的脚本、PPTX、
