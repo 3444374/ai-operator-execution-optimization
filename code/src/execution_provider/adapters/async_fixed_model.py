@@ -6,6 +6,25 @@ from dataclasses import asdict
 from pathlib import Path
 
 
+def exception_details(error):
+    """Bounded diagnostic identity; never include messages, URLs or payloads."""
+    kind = lambda value: (type(value).__module__ + '.' + type(value).__name__)[:160]
+    causes, seen, cause = [], {id(error)}, error.__cause__ or error.__context__
+    while cause is not None and id(cause) not in seen and len(causes) < 4:
+        causes.append(kind(cause))
+        seen.add(id(cause))
+        cause = cause.__cause__ or cause.__context__
+    reason = {'exception_type': kind(error), 'cause_types': causes}
+    trace = error.__traceback__
+    if trace is not None:
+        while trace.tb_next is not None:
+            trace = trace.tb_next
+        reason['origin'] = {'file': Path(trace.tb_frame.f_code.co_filename).name[:128],
+                            'function': trace.tb_frame.f_code.co_name[:128],
+                            'line': trace.tb_lineno}
+    return reason
+
+
 class AsyncFixedModelTransport:
     def __init__(self, config, max_active_requests, observer=None):
         self.config = config
@@ -18,22 +37,9 @@ class AsyncFixedModelTransport:
             return await self._execute(request, endpoint)
         except BaseException as error:
             if self._observer:
-                kind = lambda value: (type(value).__module__ + '.' + type(value).__name__)[:160]
-                causes, seen, cause = [], {id(error)}, error.__cause__ or error.__context__
-                while cause is not None and id(cause) not in seen and len(causes) < 4:
-                    causes.append(kind(cause))
-                    seen.add(id(cause))
-                    cause = cause.__cause__ or cause.__context__
-                reason = {'exception_type': kind(error), 'cause_types': causes}
-                trace = error.__traceback__
-                if trace is not None:
-                    while trace.tb_next is not None:
-                        trace = trace.tb_next
-                    reason['origin'] = {'file': Path(trace.tb_frame.f_code.co_filename).name[:128],
-                                        'function': trace.tb_frame.f_code.co_name[:128],
-                                        'line': trace.tb_lineno}
                 try:
-                    self._observer({'event': 'http_error', 'key': asdict(request.key), 'reason': reason})
+                    self._observer({'event': 'http_error', 'key': asdict(request.key),
+                                    'reason': exception_details(error)})
                 except Exception:
                     pass  # A failed diagnostic must not replace the execution error.
             raise

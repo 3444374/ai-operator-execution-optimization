@@ -4,6 +4,7 @@ This process owns no request scheduling. Cancellation closes the shared POST
 allocation before stopping workers; remote compute completion remains unknown.
 """
 import json
+import math
 import signal
 import subprocess
 import time
@@ -11,13 +12,18 @@ import time
 from src.baselines.common.private_artifacts import open_private_text,write_private_json
 
 
-def supervise(command, root, close_budget, *, query_timeout_s, preparation_s=120, finish_s=120, grace_s=10):
+def supervise(command, root, close_budget, *, query_timeout_s, preparation_s=120, finish_s=120, grace_s=10,
+              max_duration_s=None):
     import psutil
     if min(query_timeout_s,preparation_s,finish_s,grace_s)<=0:
         raise ValueError('supervisor durations must be positive')
+    if max_duration_s is not None and (type(max_duration_s) not in (int, float)
+            or not math.isfinite(max_duration_s) or max_duration_s <= 0):
+        raise ValueError('positive finite overall worker duration required')
     owned={}
     started=time.monotonic()
     deadline=started+preparation_s
+    overall_deadline=started+max_duration_s if max_duration_s is not None else math.inf
     phase='preparation'
     report=dict(status='failed',started_ns=time.monotonic_ns(),remote_compute_end_known=False)
     process=None
@@ -56,6 +62,8 @@ def supervise(command, root, close_budget, *, query_timeout_s, preparation_s=120
                 if phase=='query' and (root/'unit/q0/execution.json').exists():
                     deadline=time.monotonic()+finish_s
                     phase='evaluation_and_cleanup'
+                if time.monotonic()>=overall_deadline:
+                    raise TimeoutError('query worker exceeded overall wall deadline')
                 if time.monotonic()>=deadline:
                     raise TimeoutError('query worker exceeded '+phase+' deadline')
                 time.sleep(.1)

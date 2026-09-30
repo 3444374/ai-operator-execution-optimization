@@ -1,0 +1,6 @@
+# Preserve terminal padding and line endings in exported experiment evidence.
+experiments/results/postgresql/text_map_matched_20260930/raw/**/*.txt whitespace=-blank-at-eol
+experiments/results/postgresql/text_map_main_real_20260930/raw/**/*.txt whitespace=-blank-at-eol
+experiments/results/postgresql/text_map_native_candidates_20260930/raw/**/*.txt whitespace=-blank-at-eol
+experiments/results/postgresql/text_map_matched_20260930/raw/*.csv whitespace=cr-at-eol
+experiments/results/postgresql/text_map_main_real_20260930/raw/**/*.csv whitespace=cr-at-eol

@@ -1,0 +1,8 @@
+{
+  "local_links": 140,
+  "missing_links": [],
+  "terminology_hits": [],
+  "privacy_scan": "scan_git_secrets: no violations across 1035 file(s)\n",
+  "privacy_exit": 0,
+  "diff_check_exit": 0
+}

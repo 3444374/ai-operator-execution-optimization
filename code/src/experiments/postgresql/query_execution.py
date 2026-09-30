@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import time
+from contextlib import contextmanager
 
 from src.baselines.common.private_artifacts import write_private_json, open_private_text, content_digest
 from src.experiments.attempt_ledger import observe_async_http_posts
@@ -82,12 +83,28 @@ def prepare_pg_query(config, inputs, plan, connection, socket, root):
 
 
 def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors):
+    started = time.monotonic_ns()
+    preparation = {}
     command, socket = pg_gateway_command(config, plan, model_path, ledger, root)
+    command_done = time.monotonic_ns()
+    preparation['gateway_command_seconds'] = (command_done-started)/1e9
     statement = prepare_pg_query(config, inputs, plan, connection, socket, root)
+    preparation['pg_plan_seconds'] = (time.monotonic_ns()-command_done)/1e9
     write_private_json(root/'gateway-command.json',command)
     env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[3])+os.pathsep+os.environ.get('PYTHONPATH',''))
+    spawn_started = time.monotonic_ns()
     with owned_child_process(command,root,'gateway',env,None) as gateway:
-        wait_for_path(socket,gateway)
+        wait_started = time.monotonic_ns()
+        preparation['gateway_spawn_seconds'] = (wait_started-spawn_started)/1e9
+        preparation['status'] = 'failed'
+        try:
+            wait_for_path(socket,gateway)
+            preparation['status'] = 'completed'
+        finally:
+            preparation['gateway_ready_wait_seconds'] = (time.monotonic_ns()-wait_started)/1e9
+            preparation['total_seconds'] = (time.monotonic_ns()-started)/1e9
+            preparation['clock_scope'] = 'query driver local durations; excludes run_query input and budget setup'
+            write_private_json(root/'gateway-preparation.json',preparation)
         with ProcessSampler(root/'query-rss.jsonl',{'consumer':os.getpid(),'gateway':gateway.pid,
                                                   'pg_backend':connection.info.backend_pid}) as sampler:
             offset=pg_log.stat().st_size
@@ -103,7 +120,7 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
                 errors.attempt('producer_capture',capture)
     if gateway.returncode!=0 or socket.exists():
         raise ValueError('query gateway did not shut down cleanly')
-    return result,dict(processes=sampler.summary(),gateway_exit=gateway.returncode)
+    return result,dict(processes=sampler.summary(),gateway_exit=gateway.returncode,pg_preparation=preparation)
 
 
 async def run_direct(config, inputs, plan, dsn, model, ledger, root, errors):
@@ -153,20 +170,61 @@ def run_lotus(config, inputs, connection, model, ledger, root, errors, checkout,
                        cache_hits=lm.stats.cache_hits,native_filter_default_on_parse_failure=True)
 
 
+@contextmanager
+def native_ray_runtime(ray, config, ray_temp_root):
+    """Own a driver connection; an explicit shared cluster remains caller-owned."""
+    if ray.__version__ != '2.56.1' or ray.is_initialized():
+        raise RuntimeError('native query requires a fresh driver and pinned Ray 2.56.1')
+    shared = config.ray_address is not None
+    if shared:
+        if ray_temp_root is not None:
+            raise ValueError('shared Ray does not create a query runtime directory')
+    elif ray_temp_root is None or len(str(ray_temp_root).encode()) > 40 or Path(ray_temp_root).exists():
+        raise ValueError('Ray query needs a new short private runtime directory')
+    started = time.monotonic_ns()
+    runtime_env = dict(env_vars={
+        'RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY': str(config.ray_async_batches_per_actor)})
+    try:
+        if shared:
+            ray.init(address=config.ray_address, runtime_env=runtime_env)
+        else:
+            ray.init(address='local',num_cpus=config.ray_num_cpus,num_gpus=0,include_dashboard=False,
+                     _node_ip_address='127.0.0.1',object_store_memory=config.ray_object_store_bytes,
+                     _temp_dir=str(ray_temp_root), runtime_env=runtime_env)
+        resources = ray.cluster_resources()
+        if shared:
+            import socket
+            import psutil
+            local_addresses = {entry.address for entries in psutil.net_if_addrs().values()
+                               for entry in entries if entry.family == socket.AF_INET}
+            nodes = [node for node in ray.nodes() if node['Alive']]
+            if (resources.get('CPU') != config.ray_num_cpus or resources.get('GPU', 0) != 0
+                    or resources.get('object_store_memory') != config.ray_object_store_bytes
+                    or len(nodes) != 1 or nodes[0].get('NodeManagerAddress') not in local_addresses):
+                raise ValueError('shared Ray topology or resources differ from the declared local single-node runtime')
+        report = dict(owner='caller' if shared else 'query',
+            startup='external' if shared else 'included',
+            cluster_resources={key: resources.get(key, 0) for key in ('CPU', 'GPU', 'object_store_memory')},
+            driver_connect_seconds=(time.monotonic_ns()-started)/1e9,
+            shared_cluster_shutdown_requested=False, driver_disconnected=False)
+        yield report
+    finally:
+        # Ray shutdown disconnects this driver; it stops only a locally started runtime.
+        ray.shutdown()
+        if 'report' in locals():
+            report['driver_disconnected'] = not ray.is_initialized()
+
+
 def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_root):
     # Ray reads this native async-batch setting at module import, including in
     # workers. Actor max_concurrency alone does not limit batches within a task.
-    os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']='1'
+    os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']=str(config.ray_async_batches_per_actor)
     import psycopg
     import ray
     from ray.data._internal.planner.plan_udf_map_op import DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY
-    if DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY != 1:
-        raise RuntimeError('Ray query requires a fresh process with native async batch concurrency 1')
+    if DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY != config.ray_async_batches_per_actor:
+        raise RuntimeError('Ray query requires a fresh process with the declared native async batch concurrency')
     from src.baselines.text.frameworks.ray_data_pg_http import open_rows,RaySqlHttpConfig
-    if ray.is_initialized():
-        raise RuntimeError('query runner must own an isolated Ray runtime')
-    if ray_temp_root is None or len(str(ray_temp_root).encode())>40 or Path(ray_temp_root).exists():
-        raise ValueError('Ray query needs a new short private runtime directory')
     shared=ledger.claim_shared_unit(config.unit_id)
     event_root=root/'worker-events';event_root.mkdir()
     factory=NativeSessionFactory(shared,str(event_root),model.endpoint_url,model.timeout_ms/1000)
@@ -190,32 +248,33 @@ def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_roo
     def reader_pids():
         return {'pg_reader:'+str(value['pid']):(value['pid'],value['created_at'])
                 for path in reader_root.glob('*.json') for value in [json.loads(path.read_text())]}
-    ray.init(address='local',num_cpus=config.ray_num_cpus,num_gpus=0,include_dashboard=False,
-             _node_ip_address='127.0.0.1',object_store_memory=config.ray_object_store_bytes,_temp_dir=str(ray_temp_root))
     try:
-        with ProcessSampler(root/'query-rss.jsonl',{'consumer_ray':os.getpid()},
-                            include_children=True,pid_provider=reader_pids) as sampler:
-            headers={'Authorization':'Bearer '+model.bearer_token} if model.bearer_token else None
-            def record_stats(value):
-                with open_private_text(root/'ray-stats.txt') as out:out.write(value)
-            with errors.capture('query'):
-                result=record_execution(root/'q0',lambda:open_rows(inputs,plan,
-                    RaySqlHttpConfig(config.ray_read_blocks,config.ray_read_concurrency,config.ray_actors,config.ray_batch_rows),
-                    connect,factory,headers=headers,record_stats=record_stats),max_rows=inputs.max_rows,max_result_bytes=inputs.max_rows*70000,
-                    flush_rows=64,query_timeout_s=config.query_timeout_s,cancel_query=ray.shutdown)
+        with native_ray_runtime(ray, config, ray_temp_root) as runtime:
+            with ProcessSampler(root/'query-rss.jsonl',{'consumer_ray':os.getpid()},
+                                include_children=True,pid_provider=reader_pids) as sampler:
+                headers={'Authorization':'Bearer '+model.bearer_token} if model.bearer_token else None
+                def record_stats(value):
+                    with open_private_text(root/'ray-stats.txt') as out:out.write(value)
+                with errors.capture('query'):
+                    result=record_execution(root/'q0',lambda:open_rows(inputs,plan,
+                        RaySqlHttpConfig(config.ray_read_blocks,config.ray_read_concurrency,config.ray_actors,config.ray_batch_rows),
+                        connect,factory,headers=headers,record_stats=record_stats),max_rows=inputs.max_rows,max_result_bytes=inputs.max_rows*70000,
+                        flush_rows=64,query_timeout_s=config.query_timeout_s,cancel_query=ray.shutdown)
     finally:
-        ray.shutdown()
         def collect():
             with open_private_text(root/'events.jsonl') as out:
                 for path in sorted(event_root.glob('*.jsonl')):
                     with path.open() as source:
                         for line in source:out.write(line)
         errors.attempt('worker_event_collection',collect)
-    return result,dict(processes=sampler.summary(),ray_runtime_connected=ray.is_initialized(),
+    return result,dict(processes=sampler.summary(),ray_runtime_connected=ray.is_initialized(),ray_runtime=runtime,
         source_retention='native SQL reader materializes each actual shard',
         requested_reader_blocks=config.ray_read_blocks,reader_concurrency=config.ray_read_concurrency,
         ray_logical_cpus=config.ray_num_cpus,ray_actors=config.ray_actors,
         http_capacity=config.concurrency,object_store_allocation_bytes=config.ray_object_store_bytes,
         reader_connection_snapshots=[json.loads(path.read_text()) for path in sorted(reader_root.glob('*.json'))],
         physical_cpu_isolation=False,object_store_used_bytes=None,
-        native_async_batches_per_actor=1,ray_version=ray.__version__)
+        ray_service_process_sampling='unavailable for caller-owned runtime' if config.ray_address else 'owned descendants only',
+        native_async_batches_per_actor=config.ray_async_batches_per_actor,
+        native_http_capacity_upper_bound=config.ray_actors*config.ray_async_batches_per_actor,
+        ray_version=ray.__version__)

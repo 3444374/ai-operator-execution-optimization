@@ -1,0 +1,177 @@
+{
+  "c128-r0": {
+    "uncertain": 0,
+    "ray_execution_errors": 0,
+    "ray_http_completed": 512,
+    "closed": [
+      {
+        "event": "core_job_drained",
+        "job_id": "registered-0",
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693922757414561
+      },
+      {
+        "event": "core_transport_closed",
+        "closed": true,
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693923056494067
+      }
+    ]
+  },
+  "c128-r1": {
+    "uncertain": 0,
+    "ray_execution_errors": 0,
+    "ray_http_completed": 512,
+    "closed": [
+      {
+        "event": "core_job_drained",
+        "job_id": "registered-0",
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693939697923785
+      },
+      {
+        "event": "core_transport_closed",
+        "closed": true,
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693940002409304
+      }
+    ]
+  },
+  "c128-r2": {
+    "uncertain": 0,
+    "ray_execution_errors": 0,
+    "ray_http_completed": 512,
+    "closed": [
+      {
+        "event": "core_job_drained",
+        "job_id": "registered-0",
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693956212877724
+      },
+      {
+        "event": "core_transport_closed",
+        "closed": true,
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693956509029960
+      }
+    ]
+  },
+  "c128-r3": {
+    "uncertain": 0,
+    "ray_execution_errors": 0,
+    "ray_http_completed": 512,
+    "closed": [
+      {
+        "event": "core_job_drained",
+        "job_id": "registered-0",
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693973995241108
+      },
+      {
+        "event": "core_transport_closed",
+        "closed": true,
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693974308596767
+      }
+    ]
+  },
+  "check16": {
+    "uncertain": 0,
+    "ray_execution_errors": 0,
+    "ray_http_completed": 16,
+    "closed": [
+      {
+        "event": "core_job_drained",
+        "job_id": "registered-0",
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693907312237431
+      },
+      {
+        "event": "core_transport_closed",
+        "closed": true,
+        "usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "session_id": null,
+        "task": null,
+        "monotonic_ns": 14693907600499731
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "active_owned_processes": [],
+  "postgres_stopped": true,
+  "gpu_compute_pids": "",
+  "session_initial_acl_equal": true,
+  "passed": true
+}

@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-09-28
+更新时间：2026-10-01
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -12,7 +12,11 @@
 | 项目长期规则 | [`AGENTS.md`](AGENTS.md) | 全项目规则、继承顺序与目录规则路由；进入子目录后再读沿途 `AGENTS.md` |
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
-| 近期数据执行研究 | [设计假设与强对照](experiments/plans/data_organization_batching.md#design-hypotheses) | 当前 M1 研究吞吐平台附近的供给与资源；M2 单列全局信息，旧测量反例与已撤下的运行表保留 |
+| 已完成文本系统比较 | [文本 Map 四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md) | SemLoom Daft/Ray、direct、原生Ray与Daft；68查询、41,024次请求及独立评价完成 |
+| 文本Map准备调优 | [计划](experiments/plans/text_map_preparation_tuning.md)、[无模型结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)、[真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md) | 启动分段、可选worker复用与固定配置真实测量；首批处理仍待细化 |
+| 修订主表真实模型比较 | [记录](experiments/results/postgresql/text_map_main_real_20260930/README.md) | 新评价集、原生Ray/Daft与SemLoom匹配运行；分支审查、批量证据归档与恢复 |
+| 原生候选与baseline补充 | [记录](experiments/results/postgresql/text_map_native_candidates_20260930/README.md) | Ray实际供给、原生Daft执行入口、当前主表与语义系统缺项 |
+| 文本Map服务器验证与比较 | [记录](experiments/results/postgresql/text_map_matched_20260930/README.md) | 共享PG/Ray生命周期、有限执行清单、输入准备、全部失败与真实结果 |
 | 增量执行与可选Daft/Ray | [实现与检查](experiments/results/postgresql/incremental_transport_20260927/README.md) | 容量扫描、实验预扣、有限二进制批次和SQL结果返回；[4144次真实验证](experiments/results/postgresql/transport_real_20260927/README.md)完成，多节点待验证 |
 | M1供给复查 | [记录](experiments/results/postgresql/m1_supply_followup_20260920/README.md) | 容量扫描修复有受控证据；原C64失败，1552次尝试/1550次服务成功，后续见完整容量复查 |
 | C64异常诊断 | [记录](experiments/results/postgresql/m1_c64_errors_20260920/README.md) | 补齐异常记录；四次512行完成，原故障未复现、根因待确定；后续见完整容量复查 |

@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "files_verified": 587,
+  "original_bytes_verified": 44323707,
+  "historical_indexes_verified": 2,
+  "historical_index_entries_verified": 567,
+  "archive_sha256": "56ee4b58ab80e67f583faf9ad561e6d5f83d28814e11422481048211ecdab3bf",
+  "outside_backup_verified": true,
+  "independent_restore_verified": true
+}

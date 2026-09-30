@@ -1,0 +1,302 @@
+{
+  "schema": "semloom.preparation_diagnosis.v1",
+  "real_model_requests": 0,
+  "starting_revision": "07a8cfd9d1626bec1f1b79e96fab4c39fd4a6f1b",
+  "changed_execution_source": {
+    "path": "code/src/execution_provider/adapters/ray_map_transport.py",
+    "sha256": "c378595de71f7fbd94c41cef6f94c1cff054c6783254c7ae3da3735bf2497301"
+  },
+  "runs": {
+    "d01": {
+      "status": "failed",
+      "fixture_posts": 16,
+      "elapsed_seconds": 19.95266428589821,
+      "errors": [
+        {
+          "type": "ValueError",
+          "message": "total retained-window budget currently applies to PG Map"
+        }
+      ],
+      "cleanup": {
+        "pg_stopped": true,
+        "ray_driver_disconnected": true,
+        "http_active": 0,
+        "server_thread_stopped": true,
+        "sample_thread_stopped": true
+      }
+    },
+    "d02": {
+      "status": "passed",
+      "fixture_posts": 12416,
+      "elapsed_seconds": 186.43679096363485,
+      "errors": [],
+      "cleanup": {
+        "pg_stopped": true,
+        "ray_driver_disconnected": true,
+        "http_active": 0,
+        "server_thread_stopped": true,
+        "sample_thread_stopped": true
+      }
+    },
+    "p01": {
+      "status": "failed",
+      "fixture_posts": 295,
+      "elapsed_seconds": 105.15639754198492,
+      "errors": [
+        {
+          "type": "RuntimeError",
+          "message": "query worker failed; see private worker log and unit evidence"
+        }
+      ],
+      "cleanup": {
+        "worker_services_released": true,
+        "pg_stopped": true,
+        "ray_driver_disconnected": true,
+        "http_active": 0,
+        "server_thread_stopped": true,
+        "sample_thread_stopped": true
+      }
+    },
+    "p02": {
+      "status": "passed",
+      "fixture_posts": 8352,
+      "elapsed_seconds": 227.17987743020058,
+      "errors": [],
+      "cleanup": {
+        "worker_services_released": true,
+        "pg_stopped": true,
+        "ray_driver_disconnected": true,
+        "http_active": 0,
+        "server_thread_stopped": true,
+        "sample_thread_stopped": true
+      }
+    }
+  },
+  "profile": {
+    "16:pg-daft-ray": {
+      "jct_seconds": [
+        6.957634139,
+        7.414159221,
+        7.385340121
+      ],
+      "preparation_seconds": [
+        3.195850366,
+        3.09208501,
+        5.371576495
+      ],
+      "release_to_first_row_seconds": [
+        3.76117538,
+        4.321666644,
+        2.013099061
+      ],
+      "stream_seconds": [
+        3.761783773,
+        4.322074211,
+        2.013763626
+      ]
+    },
+    "16:pg-source-direct": {
+      "jct_seconds": [
+        0.367139155,
+        0.35430828,
+        0.361770488
+      ],
+      "preparation_seconds": [
+        0.196020778,
+        0.191092854,
+        0.196017243
+      ],
+      "release_to_first_row_seconds": [
+        0.106124579,
+        0.100226451,
+        0.103385701
+      ],
+      "stream_seconds": [
+        0.171118377,
+        0.163215426,
+        0.165753245
+      ]
+    },
+    "512:pg-daft-ray": {
+      "jct_seconds": [
+        9.378985202,
+        10.234812164,
+        10.205390027
+      ],
+      "preparation_seconds": [
+        2.93109487,
+        3.122555603,
+        5.089084671
+      ],
+      "release_to_first_row_seconds": [
+        5.367494353,
+        6.079208149,
+        3.995036667
+      ],
+      "stream_seconds": [
+        6.447890332,
+        7.112256561,
+        5.116305356
+      ]
+    },
+    "512:pg-source-direct": {
+      "jct_seconds": [
+        1.795224547,
+        1.776604114,
+        1.925547809
+      ],
+      "preparation_seconds": [
+        0.163672423,
+        0.180717107,
+        0.202310813
+      ],
+      "release_to_first_row_seconds": [
+        0.083454745,
+        0.107129236,
+        0.101744372
+      ],
+      "stream_seconds": [
+        1.631552124,
+        1.595887007,
+        1.723236996
+      ]
+    },
+    "1024:pg-daft-ray": {
+      "jct_seconds": [
+        14.452147699,
+        16.149358716,
+        16.719422381
+      ],
+      "preparation_seconds": [
+        2.903221555,
+        5.304571317,
+        5.379405166
+      ],
+      "release_to_first_row_seconds": [
+        6.262499669,
+        5.787151037,
+        6.06366076
+      ],
+      "stream_seconds": [
+        11.548926144,
+        10.844787399,
+        11.340017215
+      ]
+    },
+    "1024:pg-source-direct": {
+      "jct_seconds": [
+        3.417808004,
+        3.569382186,
+        3.599142648
+      ],
+      "preparation_seconds": [
+        0.189925018,
+        0.200550044,
+        0.194307696
+      ],
+      "release_to_first_row_seconds": [
+        0.099636226,
+        0.10144687,
+        0.101302803
+      ],
+      "stream_seconds": [
+        3.227882986,
+        3.368832142,
+        3.404834952
+      ]
+    }
+  },
+  "worker_pool": {
+    "query": {
+      "jct_seconds": [
+        16.263481493,
+        15.795503087,
+        17.12853507
+      ],
+      "preparation_seconds": [
+        4.951493727,
+        4.708286838,
+        5.412999864
+      ],
+      "release_to_first_row_seconds": [
+        6.055111736,
+        5.917508618,
+        6.117739307
+      ],
+      "stream_seconds": [
+        11.311987766,
+        11.087216249,
+        11.715535206
+      ],
+      "peak_http": [
+        5,
+        6,
+        7
+      ],
+      "medians": {
+        "jct_seconds": 16.263481493,
+        "preparation_seconds": 4.951493727,
+        "release_to_first_row_seconds": 6.055111736,
+        "stream_seconds": 11.311987766
+      }
+    },
+    "service": {
+      "jct_seconds": [
+        14.116398007,
+        12.685102305,
+        13.963281503
+      ],
+      "preparation_seconds": [
+        2.657560159,
+        2.978401658,
+        2.887853396
+      ],
+      "release_to_first_row_seconds": [
+        6.000587131,
+        4.230313608,
+        5.564651031
+      ],
+      "stream_seconds": [
+        11.458837848,
+        9.706700647,
+        11.075428107
+      ],
+      "peak_http": [
+        2,
+        2,
+        4
+      ],
+      "medians": {
+        "jct_seconds": 13.963281503,
+        "preparation_seconds": 2.887853396,
+        "release_to_first_row_seconds": 5.564651031,
+        "stream_seconds": 11.075428107
+      }
+    }
+  },
+  "fixture_posts_total": 21079,
+  "ray_service_startup_seconds": 10.208474949002266,
+  "worker_service_startup_seconds": 0.35482892766594887,
+  "actual_ray_checks": [
+    "wrong-model",
+    "wrong-capacity",
+    "busy-worker",
+    "unknown-outcome-quarantined",
+    "uncertain-service-terminated"
+  ],
+  "tcp_start": {
+    "ListenOverflows": 125,
+    "ListenDrops": 125,
+    "TCPBacklogDrop": 0,
+    "TCPAbortOnClose": 4780,
+    "TCPAbortOnData": 1047
+  },
+  "tcp_end": {
+    "ListenOverflows": 125,
+    "ListenDrops": 125,
+    "TCPBacklogDrop": 0,
+    "TCPAbortOnClose": 5021,
+    "TCPAbortOnData": 1113
+  },
+  "worker_service_cleanup_seconds": "unavailable: no separate cleanup clock in controller; cleanup confirmation preserved"
+}

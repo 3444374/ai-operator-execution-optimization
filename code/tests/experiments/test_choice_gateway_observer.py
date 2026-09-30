@@ -32,6 +32,8 @@ class ChoiceObserverTests(unittest.TestCase):
                         ['--event-content', content, '--event-write-mode', mode], full=content == 'full')
                     self.assertEqual(summary['event_content'], content)
                     self.assertEqual(summary['event_write_mode'], mode)
+                    self.assertGreaterEqual(summary['startup']['module_import_seconds'],0)
+                    self.assertGreaterEqual(summary['startup']['observer_setup_seconds'],0)
                     if content == 'compact':
                         self.assertNotIn('raw_output', event)
                         self.assertIn('raw_output_sha256', event)

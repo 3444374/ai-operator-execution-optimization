@@ -3,14 +3,18 @@
 import asyncio
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, replace
+from contextlib import contextmanager, nullcontext
+from dataclasses import asdict, dataclass, replace
 from functools import partial
+import hashlib
 import json
 from pathlib import Path
+import re
 import time
+import uuid
 
 from ...data.materializers.payloads import PayloadBatchLimits, iter_payload_batches
-from .async_fixed_model import AsyncFixedModelTransport
+from .async_fixed_model import AsyncFixedModelTransport, exception_details
 
 
 @dataclass(frozen=True)
@@ -20,6 +24,7 @@ class RayMapConfig:
     batch_rows: int
     window_bytes: int
     object_bytes: int
+    worker_pool: str | None = None
 
     def __post_init__(self):
         if type(self.address) is not str or not self.address or self.address in ("auto", "local"):
@@ -29,6 +34,9 @@ class RayMapConfig:
             raise ValueError("Ray Map capacities must be positive integers")
         if self.object_bytes < self.window_bytes + 8:
             raise ValueError("Ray object capacity must fit one input window")
+        if self.worker_pool is not None and (type(self.worker_pool) is not str
+                or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,47}", self.worker_pool)):
+            raise ValueError("Ray worker pool requires a short explicit service identity")
 
     @classmethod
     def load(cls, path):
@@ -38,32 +46,108 @@ class RayMapConfig:
         return cls(**json.loads(path.read_text()))
 
 
+@dataclass(frozen=True)
+class _RemoteFailure:
+    key: object
+    stage: str
+    reason: dict
+
+
+def _model_identity(config):
+    value = json.dumps(asdict(config), sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(value).hexdigest()
+
+
 class _HttpActor:
-    def __init__(self, config, concurrency):
+    def __init__(self, config, concurrency, managed=False):
         self.transport = AsyncFixedModelTransport(config, concurrency)
         self.active = 0
+        self.managed, self.owner = managed, None
+        self.identity, self.capacity = _model_identity(config), concurrency
 
     async def ready(self):
         return True
 
-    async def execute(self, table, index, template):
+    async def claim(self, owner, identity, capacity):
+        if type(owner) is not str or not re.fullmatch(r"[0-9a-f]{32}", owner):
+            raise ValueError("Ray worker requires an explicit query identity")
+        if not self.managed or identity != self.identity or capacity != self.capacity:
+            raise ValueError("Ray worker model or request capacity differs")
+        if self.owner is not None or self.active:
+            raise RuntimeError("Ray worker already has a query owner")
+        self.owner = owner
+        return True
+
+    async def release(self, owner):
+        if not self.managed or self.owner is None or self.owner != owner or self.active:
+            raise RuntimeError("Ray worker query ownership has not settled")
+        self.owner = None
+        return True
+
+    async def execute(self, table, index, template, owner=None):
         key = template.key
-        if (table["session_id"][index].as_py(), table["sequence"][index].as_py()) != (key.session_id, key.sequence):
-            raise ValueError("Ray payload row identity differs")
-        task = replace(template, task=replace(template.task, payload=table["payload"][index].as_py()))
-        self.active += 1
         start = time.monotonic_ns()
+        stage = "payload"
+        counted = False
         try:
+            if (self.managed and (owner is None or self.owner != owner)) or (not self.managed and owner is not None):
+                raise ValueError("Ray request differs from its query owner")
+            self.active += 1
+            counted = True
+            if (table["session_id"][index].as_py(), table["sequence"][index].as_py()) != (key.session_id, key.sequence):
+                raise ValueError("Ray payload row identity differs")
+            task = replace(template, task=replace(template.task, payload=table["payload"][index].as_py()))
+            stage = "http"
             result = await self.transport.execute(task, "model")
             return key, result, start, time.monotonic_ns()
+        except Exception as error:
+            # Return only safe metadata across Ray; this is not a model receipt.
+            return _RemoteFailure(key, stage, exception_details(error))
         finally:
-            self.active -= 1
+            if counted:
+                self.active -= 1
 
     async def close(self):
-        if self.active:
-            raise RuntimeError("Ray HTTP actor still has active requests")
+        if self.active or self.owner is not None:
+            raise RuntimeError("Ray HTTP actor still has active requests or a query owner")
         await self.transport.close()
         return True
+
+
+def _worker_class(ray, capacity):
+    return ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0,
+                      max_concurrency=capacity)(_HttpActor)
+
+
+@contextmanager
+def owned_map_worker_pool(ray, config, capacity, physical):
+    """Caller-owned named workers; queries claim them exclusively and release them."""
+    if (physical.worker_pool is None or not ray.is_initialized()
+            or ray.get_runtime_context().gcs_address != physical.address
+            or type(capacity) is not int or capacity < max(physical.workers, physical.batch_rows)):
+        raise ValueError("worker service requires its declared live Ray cluster and capacities")
+    actors = []
+    try:
+        actor = _worker_class(ray, capacity)
+        for index in range(physical.workers):
+            actors.append(actor.options(name=f"{physical.worker_pool}-{index}",
+                                        namespace="semloom-map").remote(config, capacity, True))
+        ray.get([a.ready.remote() for a in actors], timeout=30)
+        yield
+    finally:
+        failure = None
+        for actor in actors:
+            try:
+                ray.get(actor.close.remote(), timeout=config.timeout_ms / 1000 + 1)
+            except Exception as error:
+                failure = error
+            finally:
+                try:
+                    ray.kill(actor, no_restart=True)
+                except Exception as error:
+                    failure = error
+        if failure is not None:
+            raise RuntimeError("worker service cleanup could not be confirmed") from failure
 
 
 @dataclass
@@ -94,31 +178,59 @@ class RayMapTransport:
             raise ValueError("batch rows exceed the active request capacity")
         if physical.workers > capacity:
             raise ValueError("Ray worker count exceeds the active request capacity")
-        if ray_api is None:
-            import ray as ray_api
-        self.ray, self.config, self.physical = ray_api, config, physical
+        self.started_ns = time.monotonic_ns()
+        self.config, self.physical = config, physical
         self.capacity, self.observer, self.before_request = capacity, observer, before_request
         self.rows, self.pending, self.blocks = {}, deque(), {}
         self.used_bytes = self.ordinal = self.actor_index = 0
         self.observation_failed = False
         self.changed = asyncio.Event()
         self.flusher, self.running, self.unknown = None, set(), set()
-        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="semloom-payload")
+        with self._startup_stage("library_import"):
+            if ray_api is None:
+                import ray as ray_api
+        self.ray = ray_api
         self.owns_connection = not self.ray.is_initialized()
+        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="semloom-payload")
         self.actors = []
+        self.leased = []
+        self.worker_owner = uuid.uuid4().hex if physical.worker_pool else None
+        self.first_payload = self.first_submit = True
         try:
-            if self.owns_connection:
-                self.ray.init(address=physical.address)
-            elif self.ray.get_runtime_context().gcs_address != physical.address:
-                raise ValueError("initialized Ray connection differs from the declared GCS address")
-            actor = self.ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0,
-                                    max_concurrency=capacity)(_HttpActor)
-            for _ in range(physical.workers):
-                self.actors.append(actor.remote(config, capacity))
-            self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
+            with self._startup_stage("driver_connect"):
+                if self.owns_connection:
+                    self.ray.init(address=physical.address)
+                elif self.ray.get_runtime_context().gcs_address != physical.address:
+                    raise ValueError("initialized Ray connection differs from the declared GCS address")
+            if physical.worker_pool:
+                with self._startup_stage("actor_bind"):
+                    for index in range(physical.workers):
+                        actor = self.ray.get_actor(f"{physical.worker_pool}-{index}", namespace="semloom-map")
+                        if self.ray.get(actor.claim.remote(self.worker_owner, _model_identity(config), capacity), timeout=30) is not True:
+                            raise ValueError("Ray worker query claim was not confirmed")
+                        self.leased.append(actor)
+                        self.actors.append(actor)
+            else:
+                with self._startup_stage("actor_create"):
+                    actor = _worker_class(self.ray, capacity)
+                    for _ in range(physical.workers):
+                        self.actors.append(actor.remote(config, capacity))
+                with self._startup_stage("actor_ready"):
+                    self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
         except BaseException:
             self._dispose()
             raise
+
+    @contextmanager
+    def _startup_stage(self, stage):
+        started = time.monotonic_ns()
+        status = "failed"
+        try:
+            yield
+            status = "completed"
+        finally:
+            self._observe("ray_startup", stage=stage, status=status,
+                          elapsed_seconds=(time.monotonic_ns()-started)/1e9)
 
     def _observe(self, event, **fields):
         if self.observer:
@@ -169,7 +281,10 @@ class RayMapTransport:
                                           batch_rows=self.physical.batch_rows)
             try:
                 while True:
-                    table = await self._work(next, stream, None)
+                    measure = self._startup_stage("first_payload") if self.first_payload else nullcontext()
+                    self.first_payload = False
+                    with measure:
+                        table = await self._work(next, stream, None)
                     if table is None:
                         break
                     # Count backing Arrow buffers, including any shared slice storage.
@@ -243,16 +358,33 @@ class RayMapTransport:
         self.actor_index += 1
         template = replace(row.task, task=replace(row.task.task, payload=b""))
         row.sent = True
+        stage, remote_reason = "ray_submit", None
         try:
-            call = actor.execute.remote(self.blocks[block_id].reference, index, template)
-            actual_key, result, started, ended = await call
+            if self.first_submit:
+                self.first_submit = False
+                self._observe("ray_first_submit", key=dict(session_id=key.session_id, sequence=key.sequence),
+                              elapsed_seconds=(time.monotonic_ns()-self.started_ns)/1e9)
+            arguments = (self.blocks[block_id].reference, index, template)
+            call = actor.execute.remote(*arguments, self.worker_owner) if self.worker_owner else actor.execute.remote(*arguments)
+            stage = "ray_await"
+            reply = await call
+            stage = "result_validation"
+            if isinstance(reply, _RemoteFailure):
+                if reply.key != key or reply.stage not in ("payload", "http"):
+                    raise ValueError("Ray failure differs from its row or execution stage")
+                stage, remote_reason = reply.stage, reply.reason
+                raise RuntimeError("remote actor execution failed")
+            actual_key, result, started, ended = reply
             if actual_key != key or type(result) is not bytes or len(result) > row.task.task.max_result_bytes:
                 raise ValueError("Ray result differs from its row or result capacity")
             self._observe("ray_http_completed", key=dict(session_id=key.session_id, sequence=key.sequence),
                           worker_elapsed_ns=ended-started)
         except Exception as error:
+            reason = remote_reason if remote_reason is not None else exception_details(error)
+            self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
+                          stage=stage, reason=reason, remote_outcome="unconfirmed")
             self.unknown.add(key)
-            row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + type(error).__name__))
+            row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + reason["exception_type"]))
             return
         self._release(block_id, key)
         row.future.set_result(result if not self.observation_failed else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
@@ -260,9 +392,15 @@ class RayMapTransport:
     def _dispose(self):
         failure = None
         try:
-            for actor in self.actors:
+            actors = self.leased if self.worker_owner else self.actors
+            for actor in actors:
                 try:
-                    self.ray.kill(actor, no_restart=True)
+                    if self.worker_owner:
+                        if not self.unknown:
+                            if self.ray.get(actor.release.remote(self.worker_owner), timeout=30) is not True:
+                                raise RuntimeError("Ray worker release was not confirmed")
+                    else:
+                        self.ray.kill(actor, no_restart=True)
                 except Exception as error:
                     failure = error
         finally:
@@ -284,8 +422,9 @@ class RayMapTransport:
                 await asyncio.gather(*self.running)
             if self.unknown:
                 raise RuntimeError("Ray model executions remain unconfirmed")
-            for actor in self.actors:
-                await actor.close.remote()
+            if not self.worker_owner:
+                for actor in self.actors:
+                    await actor.close.remote()
             if self.blocks or self.used_bytes:
                 raise RuntimeError("Ray payload references remain held")
             self._observe("ray_transport_closed", confirmed=True)

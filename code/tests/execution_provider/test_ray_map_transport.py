@@ -47,6 +47,36 @@ class FakeRay:
 
 
 class RayMapStartupTests(unittest.TestCase):
+    def test_startup_durations_use_local_clock_and_preserve_connection_ownership(self):
+        for borrowed in (False, True):
+            with self.subTest(borrowed=borrowed):
+                tick=[0];events=[];ray=FakeRay(None)
+                ray.is_initialized=lambda: borrowed
+                def connect(**kwargs):tick[0]+=2_000_000_000
+                def context():
+                    tick[0]+=2_000_000_000
+                    return SimpleNamespace(gcs_address='fixture-cluster')
+                ray.init=connect;ray.get_runtime_context=context;ray.shutdown=Mock()
+                remote=ray.remote
+                def create(**options):
+                    tick[0]+=3_000_000_000
+                    return remote(**options)
+                def ready(value, **kwargs):
+                    tick[0]+=5_000_000_000
+                    return value
+                ray.remote=create;ray.get=ready
+                with patch('src.execution_provider.adapters.ray_map_transport.time.monotonic_ns',
+                           side_effect=lambda:tick[0]):
+                    transport=RayMapTransport(FixedModelConfig('http://localhost/fixture','model',1000),4,
+                        events.append,physical=RayMapConfig('fixture-cluster',1,2,1024,2048),ray_api=ray)
+                    transport.abort_startup()
+                self.assertEqual([event['stage'] for event in events],
+                                 ['library_import','driver_connect','actor_create','actor_ready'])
+                self.assertEqual([event['elapsed_seconds'] for event in events],[0,2,3,5])
+                self.assertTrue(all(event['status']=='completed' for event in events))
+                self.assertEqual(ray.shutdown.call_count,0 if borrowed else 1)
+                self.assertEqual(len(ray.killed),1)
+
     def test_backend_start_failure_releases_already_created_transport(self):
         from src.execution_provider.adapters.incremental_execution import build_fixed_model_execution
         transport = SimpleNamespace(execute=Mock(), close=Mock(), abort_startup=Mock())
@@ -59,13 +89,17 @@ class RayMapStartupTests(unittest.TestCase):
 
     def test_partial_actor_pool_creation_reclaims_the_first_actor(self):
         ray = FakeRay(None)
+        events=[]
         actor = SimpleNamespace()
         create = Mock(side_effect=[actor, RuntimeError('fixture actor creation failure')])
         ray.remote = lambda **options: lambda cls: SimpleNamespace(remote=create)
         with self.assertRaisesRegex(RuntimeError, 'actor creation failure'):
-            RayMapTransport(FixedModelConfig('http://localhost/fixture', 'model', 1000), 4,
+            RayMapTransport(FixedModelConfig('http://localhost/fixture', 'model', 1000), 4, events.append,
                 physical=RayMapConfig('fixture-cluster', 2, 2, 1024, 2048), ray_api=ray)
         self.assertEqual(ray.killed, [actor])
+        self.assertEqual(events[-1]['stage'],'actor_create')
+        self.assertEqual(events[-1]['status'],'failed')
+        self.assertNotIn('actor_ready',[event['stage'] for event in events])
 
     def test_different_borrowed_cluster_is_rejected_before_actor_creation(self):
         ray = FakeRay(None)
@@ -111,6 +145,8 @@ class RayMapTransportTests(unittest.IsolatedAsyncioTestCase):
             await transport.close()
         self.assertEqual(transport.used_bytes, 0)
         self.assertEqual(len(ray.killed), 1)
+        self.assertEqual(sum(event.get('stage')=='first_payload' for event in events),1)
+        self.assertEqual(sum(event['event']=='ray_first_submit' for event in events),1)
 
     async def test_cancel_before_remote_send_and_guard_failure_spend_no_http(self):
         sent, guarded, events = [], [], []

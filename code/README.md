@@ -11,6 +11,14 @@
 保留 HTTP 路径和 SQL 结果返回；[真实模型检查](../experiments/results/postgresql/transport_real_20260927/README.md)
 完成 12 条 SQL 与 4,144 次请求，配对输出存在差异。完整查询和持续供给仍需独立评价。
 
+[准备调优](../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)增加可选worker服务：
+在调用方已连接的Ray中使用`owned_map_worker_pool(ray, model_config, capacity, physical)`管理创建和结束，
+`RayMapConfig.worker_pool`按服务名选择；查询独占借用并核对模型配置和容量，默认值`None`保持查询创建方式。
+调用方维持创建者进程，避免结束Ray连接；不使用detached lifetime。异常未确认时服务拒绝后续借用，
+由调用方处理结束错误。接口位于[Ray Map传输](src/execution_provider/adapters/ray_map_transport.py)，
+已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
+本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
+
 下节保存已停止的 SAOR 实现说明，供历史代码和证据追溯；它不表示可以重新运行模型实验。
 
 ## Stopped SAOR native-system implementation record
@@ -309,6 +317,7 @@ The versioned adapters now depend on shared modules directly:
 | [execution_provider/multiplexed_gateway.py](src/execution_provider/multiplexed_gateway.py) | Shared owner loop and bounded connection proxies; public session operations own failure and consumer closure |
 | [execution_provider/adapters/incremental_execution.py](src/execution_provider/adapters/incremental_execution.py) | Fixed-model assembly; existing policies, work descriptions and backend can be supplied independently of wire handling |
 | [execution_provider/adapters/async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) | Bounded HTTP I/O, model timeout and client cleanup |
+| [execution_provider/adapters/ray_map_transport.py](src/execution_provider/adapters/ray_map_transport.py) | Daft payload batches, query-owned workers and optional caller-owned named workers with exclusive query claims |
 | [execution_provider/wire/map_codec.py](src/execution_provider/wire/map_codec.py) | Common Map semantic validation and digest construction |
 | [scheduling/core/policy_contracts.py](src/scheduling/core/policy_contracts.py) | Admission/routing/shared-credit interfaces used by both scheduling loops |
 

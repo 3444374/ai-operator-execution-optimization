@@ -16,6 +16,11 @@
       {"module": "openai", "install": "openai>=1.0"},
       {"module": "transformers", "install": "transformers"}
     ],
+    "sql-readers": [
+      {"module": "sqlalchemy", "install": "SQLAlchemy>=2,<3"},
+      {"module": "sqlglot", "install": "sqlglot>=30,<31"},
+      {"module": "connectorx", "install": "connectorx>=0.4,<0.5"}
+    ],
     "semantic-benchmarks": [
       {"module": "pandas", "install": "pandas>=2,<3"},
       {"module": "duckdb", "install": "duckdb"},

@@ -50,6 +50,8 @@ PYTHONPATH=code python code/scripts/environment/manage_environment.py check \
 
 SemBench Movie原生查询与评价使用`core,text,semantic-benchmarks`：后者额外检查pandas、DuckDB、
 SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1与Arrow版本。
+原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
+本轮固定Daft0.7.21的连接工厂返回SQLAlchemy Connection；psycopg通过NullPool的creator接入，只读和statement timeout仍明确设置。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
 若旧driver缺评价依赖，先审查安装预览，再建独立venv，不混装模型服务环境；
 [本轮环境与验证记录](../../experiments/results/postgresql/database_queries_20260910/README.md)。

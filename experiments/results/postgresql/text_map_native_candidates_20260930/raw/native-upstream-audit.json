@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://github.com/Eventual-Inc/Daft/blob/v0.7.21/src/daft-local-execution/src/streaming_sink/async_udf.rs",
+    "sha256": "0deeb9d1b3497fe8f0de907eb8f1d8ee226a37fcc8306c4d12f84a1e34d806a1",
+    "relevant_lines": [
+      {
+        "line": 261,
+        "text": "                            let max_inflight_tasks = params"
+      },
+      {
+        "line": 266,
+        "text": "                            while num_inflight_tasks > max_inflight_tasks {"
+      }
+    ]
+  },
+  {
+    "url": "https://github.com/Eventual-Inc/Daft/blob/v0.7.21/src/daft-dsl/src/python_udf/row_wise.rs",
+    "sha256": "8164ccab2e477374f0b5696644af2babadbdbad350607771c3ac0edaa019fb47",
+    "relevant_lines": [
+      {
+        "line": 459,
+        "text": "                .getattr(pyo3::intern!(py, \"call_async_func_batched\"))?;"
+      }
+    ]
+  }
+]

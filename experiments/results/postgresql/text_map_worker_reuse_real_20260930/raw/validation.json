@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "new_terms": [],
+  "markdown_local_links_checked": 601,
+  "missing_local_links": [],
+  "changed_files_privacy_scan": true,
+  "scan_summary": "scan_git_secrets: no violations across 23 file(s)",
+  "diff_check": "passed",
+  "model_accounting": "passed",
+  "runtime_source_identity": "passed",
+  "cleanup": "passed",
+  "target_related_tests": 89,
+  "recorder_tests": 2,
+  "real_model_posts": 20688,
+  "public_archive": {
+    "status": "passed",
+    "files_verified": 1438,
+    "archive_sha256": "e749a32a438ef438e89a3fa0a07653a1024bd006556459a5cd94495b730c183e",
+    "archive_bytes": 11774681,
+    "published_bytes": 106417009,
+    "privacy": "all selected plaintext scanned before compression, known credentials removed",
+    "outside_originals": [
+      {
+        "archive": "partial-original.tar.gz",
+        "bytes": 506289,
+        "sha256": "0df8af4332ae0722f1820b7798248e2e63b17441bdce950bc3018ed604041b03"
+      },
+      {
+        "archive": "complete-original.tar.gz",
+        "bytes": 15170992,
+        "sha256": "c55116796f2f2e6057e2ea393934ed2684252900483924772f20ceecf838729e"
+      }
+    ],
+    "request_accounting": "0 + 48 + 16 + 20624 = 20688; prior queries not replayed",
+    "source_after_verified": true
+  }
+}

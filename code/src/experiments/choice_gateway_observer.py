@@ -4,6 +4,10 @@ Real POSTs require a pre-existing durable ledger. Fixture runs must explicitly
 select fixture mode; resolver blocking is available only in that mode.
 """
 
+import time
+
+_IMPORT_STARTED_NS = time.monotonic_ns()
+
 import argparse
 from contextlib import ExitStack, nullcontext
 from dataclasses import asdict
@@ -11,7 +15,6 @@ import hashlib
 import json
 from pathlib import Path
 import socket
-import time
 import threading
 
 from src.execution_provider import server
@@ -30,11 +33,14 @@ from src.experiments.expected_requests import ExpectedRequests
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.buffered_events import BufferedEvents, compact_event
 
+_IMPORT_SECONDS = (time.monotonic_ns()-_IMPORT_STARTED_NS)/1e9
 
 CHOICE_BUDGET = AttemptBudget("semloom.choice.4c.v1", 100)
 
 
 def main(argv=None):
+    setup_started_ns = time.monotonic_ns()
+    setup_seconds = None
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--events", type=Path, required=True)
     parser.add_argument("--private-events", type=Path, help="verbatim private events outside Git")
@@ -233,6 +239,7 @@ def main(argv=None):
                     observe_request(attempt, body)
 
                 options["remote_request_guard"] = guard_remote
+            setup_seconds = (time.monotonic_ns()-setup_started_ns)/1e9
             code = server.main(
                 gateway_args, adapter_wrapper=wrap_adapter, session_wrapper=wrap_session, **options
             )
@@ -250,6 +257,9 @@ def main(argv=None):
                 "event_content": content,
                 "event_write_mode": write_mode,
                 "unit_id": args.unit_id,
+                "startup": {"module_import_seconds": _IMPORT_SECONDS,
+                            "observer_setup_seconds": setup_seconds,
+                            "clock_scope": "local process durations; excludes interpreter startup"},
                 "observed_attempts": ledger.attempts if ledger else None,
                 "events": buffered.snapshot() if buffered else None,
                 "sessions": session_buffered.snapshot() if session_buffered else None,

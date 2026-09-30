@@ -1,0 +1,13 @@
+{
+  "matched_source_files": 761,
+  "mismatches": [],
+  "archive_metadata_files": [
+    "code/src/baselines/text/frameworks/._daft_pg_http.py",
+    "code/src/experiments/postgresql/._text_map_candidates.py",
+    "code/src/experiments/postgresql/._query_daft.py",
+    "code/src/experiments/postgresql/._query_config.py",
+    "code/tests/experiments/._test_text_map_native_supply.py",
+    "code/tests/experiments/._test_text_map_shared_integration.py",
+    "code/tests/experiments/._test_text_map_candidates.py"
+  ]
+}

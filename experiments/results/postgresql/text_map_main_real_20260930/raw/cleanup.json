@@ -1,0 +1,16 @@
+{
+  "acl_paths_checked": 20,
+  "acl_mismatches": [],
+  "session_initial_acl_equal": true,
+  "active_observed_processes": [],
+  "zombie_observed_processes": [],
+  "observed_descendant_pids": 146,
+  "listeners": [],
+  "postgres_pid_file_present": false,
+  "gpu_compute_pids": "",
+  "model_stop": {
+    "returncode": 0,
+    "forced": false
+  },
+  "passed": true
+}

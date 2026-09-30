@@ -1,0 +1,95 @@
+test_evaluation_preflight_rejects_retuning_before_any_request (tests.experiments.test_text_map_campaign.CampaignTests.test_evaluation_preflight_rejects_retuning_before_any_request) ... ok
+test_failure_preserves_spent_quota_and_stops_remaining_candidates (tests.experiments.test_text_map_campaign.CampaignTests.test_failure_preserves_spent_quota_and_stops_remaining_candidates) ... ok
+test_main_profile_rejects_undersupplied_ray_and_unequal_native_resources (tests.experiments.test_text_map_campaign.CampaignTests.test_main_profile_rejects_undersupplied_ray_and_unequal_native_resources) ... ok
+test_preflight_requires_exact_complete_schedule_and_existing_identities (tests.experiments.test_text_map_campaign.CampaignTests.test_preflight_requires_exact_complete_schedule_and_existing_identities) ... ok
+test_stage_rejects_changed_configuration_or_wrong_query_identity (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_rejects_changed_configuration_or_wrong_query_identity) ... ok
+test_stage_runs_declared_order_and_never_starts_another_stage (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_runs_declared_order_and_never_starts_another_stage) ... ok
+test_evaluation_checks_tuning_identity_and_configuration (tests.experiments.test_text_map_comparison.ComparisonTests.test_evaluation_checks_tuning_identity_and_configuration) ... ok
+test_failed_record_or_modified_result_cannot_enter_selection (tests.experiments.test_text_map_comparison.ComparisonTests.test_failed_record_or_modified_result_cannot_enter_selection) ... ok
+test_failed_saved_evaluation_is_not_accepted_even_with_matching_result (tests.experiments.test_text_map_comparison.ComparisonTests.test_failed_saved_evaluation_is_not_accepted_even_with_matching_result) ... ok
+test_missing_reused_and_mixed_identity_records_are_rejected (tests.experiments.test_text_map_comparison.ComparisonTests.test_missing_reused_and_mixed_identity_records_are_rejected) ... ok
+test_native_usage_counts_model_reported_tokens_without_inventing_missing_values (tests.experiments.test_text_map_comparison.ComparisonTests.test_native_usage_counts_model_reported_tokens_without_inventing_missing_values) ... ok
+test_shared_and_query_started_ray_results_cannot_mix (tests.experiments.test_text_map_comparison.ComparisonTests.test_shared_and_query_started_ray_results_cannot_mix) ... ok
+test_unique_best_selects_without_platform_or_quality_equivalence (tests.experiments.test_text_map_comparison.ComparisonTests.test_unique_best_selects_without_platform_or_quality_equivalence) ... ok
+test_existing_cluster_selection_is_explicit_and_native_only (tests.experiments.test_text_map_comparison.NativeRuntimeTests.test_existing_cluster_selection_is_explicit_and_native_only) ... ok
+test_existing_cluster_uses_connection_only_and_disconnects_on_error (tests.experiments.test_text_map_comparison.NativeRuntimeTests.test_existing_cluster_uses_connection_only_and_disconnects_on_error) ... ok
+test_mismatched_shared_resources_disconnect_before_work (tests.experiments.test_text_map_comparison.NativeRuntimeTests.test_mismatched_shared_resources_disconnect_before_work) ... ok
+test_native_batch_overlap_is_explicit_bounded_and_sent_to_workers (tests.experiments.test_text_map_comparison.NativeRuntimeTests.test_native_batch_overlap_is_explicit_bounded_and_sent_to_workers) ... ok
+test_owned_runtime_and_version_checks_remain (tests.experiments.test_text_map_comparison.NativeRuntimeTests.test_owned_runtime_and_version_checks_remain) ... ok
+test_ray_reported_interface_address_is_validated_against_local_interfaces (tests.experiments.test_text_map_comparison.NativeRuntimeTests.test_ray_reported_interface_address_is_validated_against_local_interfaces) ... ok
+test_main_candidates_have_equal_opportunities_and_omit_local_ablation (tests.experiments.test_text_map_candidates.NativeCandidatesTests.test_main_candidates_have_equal_opportunities_and_omit_local_ablation) ... ok
+test_main_profile_requires_daft_and_does_not_accept_local_ablation (tests.experiments.test_text_map_candidates.NativeCandidatesTests.test_main_profile_requires_daft_and_does_not_accept_local_ablation) ... ok
+test_native_daft_is_separate_from_semloom_and_non_map_is_rejected (tests.experiments.test_text_map_candidates.NativeCandidatesTests.test_native_daft_is_separate_from_semloom_and_non_map_is_rejected) ... ok
+test_ray_capacity_uses_async_batches_and_sufficient_reader_blocks (tests.experiments.test_text_map_candidates.NativeCandidatesTests.test_ray_capacity_uses_async_batches_and_sufficient_reader_blocks) ... ok
+test_budget_close_failure_still_stops_worker (tests.experiments.test_query_supervisor.QuerySupervisorTests.test_budget_close_failure_still_stops_worker) ... ok
+test_hung_query_is_stopped_and_queued_posts_are_closed (tests.experiments.test_query_supervisor.QuerySupervisorTests.test_hung_query_is_stopped_and_queued_posts_are_closed) ... ok
+test_normal_worker_exits_without_cancellation (tests.experiments.test_query_supervisor.QuerySupervisorTests.test_normal_worker_exits_without_cancellation) ... ok
+test_overall_duration_is_not_reset_when_query_phase_starts (tests.experiments.test_query_supervisor.QuerySupervisorTests.test_overall_duration_is_not_reset_when_query_phase_starts) ... ok
+test_report_failure_does_not_replace_worker_failure (tests.experiments.test_query_supervisor.QuerySupervisorTests.test_report_failure_does_not_replace_worker_failure) ... ok
+test_lotus_query_failure_occurs_in_iteration (tests.experiments.test_native_query_entry.NativeEntryTests.test_lotus_query_failure_occurs_in_iteration) ... ok
+test_pg_preparation_records_wait_even_when_gateway_does_not_become_ready (tests.experiments.test_native_query_entry.NativeEntryTests.test_pg_preparation_records_wait_even_when_gateway_does_not_become_ready) ... ok
+test_ray_sql_plan_failure_occurs_in_iteration (tests.experiments.test_native_query_entry.NativeEntryTests.test_ray_sql_plan_failure_occurs_in_iteration) ... ok
+test_content_and_write_modes_are_independent (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_content_and_write_modes_are_independent) ... ok
+test_full_without_private_destination_is_rejected_before_writing (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_full_without_private_destination_is_rejected_before_writing) ... usage: python3 -m unittest [-h] --events EVENTS
+                           [--private-events PRIVATE_EVENTS]
+                           [--expected-request-hashes EXPECTED_REQUEST_HASHES]
+                           [--ledger LEDGER] [--cell-budget CELL_BUDGET]
+                           [--shared-unit-budget] [--fixture-only]
+                           [--unit-id UNIT_ID]
+                           [--event-mode {qualification,compact-buffered}]
+                           [--event-content {compact,full}]
+                           [--event-write-mode {synchronous,buffered}]
+                           [--observer-summary OBSERVER_SUMMARY]
+                           [--event-buffer-bytes EVENT_BUFFER_BYTES]
+                           [--dns-release-file DNS_RELEASE_FILE]
+                           [--budget-id BUDGET_ID]
+                           [--max-attempts MAX_ATTEMPTS]
+                           [--session-events SESSION_EVENTS]
+python3 -m unittest: error: full events require --private-events outside Git
+ok
+test_legacy_flags_report_actual_content_and_write_mode (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_legacy_flags_report_actual_content_and_write_mode) ... ok
+test_adapter_timeout_observation_is_not_overwritten_after_cleanup (tests.experiments.test_map_query_recording.EntryFailureTests.test_adapter_timeout_observation_is_not_overwritten_after_cleanup) ... ok
+test_explicit_entry_failure_precedes_cleanup_sync_and_async (tests.experiments.test_map_query_recording.EntryFailureTests.test_explicit_entry_failure_precedes_cleanup_sync_and_async) ... ok
+test_duplicates_missing_payload_output_and_length_rejected (tests.experiments.test_map_query_recording.MapAssociationTests.test_duplicates_missing_payload_output_and_length_rejected) ... ok
+test_out_of_order_identical_inputs_keep_distinct_sequences (tests.experiments.test_map_query_recording.MapAssociationTests.test_out_of_order_identical_inputs_keep_distinct_sequences) ... ok
+test_async_query_deadline_stops_before_slow_cleanup (tests.experiments.test_map_query_recording.QueryRecordingTests.test_async_query_deadline_stops_before_slow_cleanup) ... ok
+test_async_source_failure_is_recorded_before_cleanup (tests.experiments.test_map_query_recording.QueryRecordingTests.test_async_source_failure_is_recorded_before_cleanup) ... ok
+test_async_source_uses_same_contract_and_closes_on_failure (tests.experiments.test_map_query_recording.QueryRecordingTests.test_async_source_uses_same_contract_and_closes_on_failure) ... ok
+test_empty_and_partial_error_have_terminals_without_inventing_rows (tests.experiments.test_map_query_recording.QueryRecordingTests.test_empty_and_partial_error_have_terminals_without_inventing_rows) ... ok
+test_empty_result_records_completion_without_quality_claim (tests.experiments.test_map_query_recording.QueryRecordingTests.test_empty_result_records_completion_without_quality_claim) ... ok
+test_evaluation_failure_is_not_overwritten_by_report_write_failure (tests.experiments.test_map_query_recording.QueryRecordingTests.test_evaluation_failure_is_not_overwritten_by_report_write_failure) ... ok
+test_evaluator_failure_keeps_completed_execution (tests.experiments.test_map_query_recording.QueryRecordingTests.test_evaluator_failure_keeps_completed_execution) ... ok
+test_evaluator_sees_saved_terminal_and_raw_results (tests.experiments.test_map_query_recording.QueryRecordingTests.test_evaluator_sees_saved_terminal_and_raw_results) ... ok
+test_existing_root_prevents_execution (tests.experiments.test_map_query_recording.QueryRecordingTests.test_existing_root_prevents_execution) ... ok
+test_external_async_cancellation_precedes_slow_cleanup (tests.experiments.test_map_query_recording.QueryRecordingTests.test_external_async_cancellation_precedes_slow_cleanup) ... ok
+test_failure_before_first_row_still_has_timing (tests.experiments.test_map_query_recording.QueryRecordingTests.test_failure_before_first_row_still_has_timing) ... ok
+test_flush_failure_does_not_replace_source_error (tests.experiments.test_map_query_recording.QueryRecordingTests.test_flush_failure_does_not_replace_source_error) ... ok
+test_incomplete_stream_evaluation_and_changed_results_fail_separately (tests.experiments.test_map_query_recording.QueryRecordingTests.test_incomplete_stream_evaluation_and_changed_results_fail_separately) ... ok
+test_interruption_and_result_limit_close_stream (tests.experiments.test_map_query_recording.QueryRecordingTests.test_interruption_and_result_limit_close_stream) ... ok
+test_invalid_deadlines_fail_before_creating_query_artifacts (tests.experiments.test_map_query_recording.QueryRecordingTests.test_invalid_deadlines_fail_before_creating_query_artifacts) ... ok
+test_non_json_evaluation_result_records_failure (tests.experiments.test_map_query_recording.QueryRecordingTests.test_non_json_evaluation_result_records_failure) ... ok
+test_partial_rows_survive_query_failure (tests.experiments.test_map_query_recording.QueryRecordingTests.test_partial_rows_survive_query_failure) ... ok
+test_pg_wrapper_closes_generator_and_cursor (tests.experiments.test_map_query_recording.QueryRecordingTests.test_pg_wrapper_closes_generator_and_cursor) ... ok
+test_query_terminal_is_after_last_row_and_not_final_fsync (tests.experiments.test_map_query_recording.QueryRecordingTests.test_query_terminal_is_after_last_row_and_not_final_fsync) ... ok
+test_result_limit_distinguishes_received_from_recorded (tests.experiments.test_map_query_recording.QueryRecordingTests.test_result_limit_distinguishes_received_from_recorded) ... ok
+test_source_failure_precedes_slow_cleanup_and_preserves_sqlstate (tests.experiments.test_map_query_recording.QueryRecordingTests.test_source_failure_precedes_slow_cleanup_and_preserves_sqlstate) ... ok
+test_stream_evaluation_checks_all_rows_and_separates_its_time (tests.experiments.test_map_query_recording.QueryRecordingTests.test_stream_evaluation_checks_all_rows_and_separates_its_time) ... ok
+test_summary_failure_keeps_primary_error_and_writes_fallback (tests.experiments.test_map_query_recording.QueryRecordingTests.test_summary_failure_keeps_primary_error_and_writes_fallback) ... ok
+test_sync_deadline_cancels_and_joins_watchdog (tests.experiments.test_map_query_recording.QueryRecordingTests.test_sync_deadline_cancels_and_joins_watchdog) ... ok
+test_backend_start_failure_releases_already_created_transport (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_backend_start_failure_releases_already_created_transport) ... ok
+test_different_borrowed_cluster_is_rejected_before_actor_creation (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_different_borrowed_cluster_is_rejected_before_actor_creation) ... ok
+test_partial_actor_pool_creation_reclaims_the_first_actor (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_partial_actor_pool_creation_reclaims_the_first_actor) ... ok
+test_startup_durations_use_local_clock_and_preserve_connection_ownership (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_startup_durations_use_local_clock_and_preserve_connection_ownership) ... ok
+test_cancel_after_send_waits_for_the_actual_result (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_cancel_after_send_waits_for_the_actual_result) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_cancel_before_remote_send_and_guard_failure_spend_no_http (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_cancel_before_remote_send_and_guard_failure_spend_no_http) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_fast_row_returns_while_same_batch_slow_row_holds_object (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_fast_row_returns_while_same_batch_slow_row_holds_object) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_object_limit_waits_for_release_without_overspending (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_object_limit_waits_for_release_without_overspending) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_remote_error_retains_unknown_object_and_fails_clean_close (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_remote_error_retains_unknown_object_and_fails_clean_close) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_first_payload_and_submit_are_recorded_once_without_loading_daft (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_first_payload_and_submit_are_recorded_once_without_loading_daft) ... ok
+test_remote_http_failure_keeps_cause_key_and_unknown_charge (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_remote_http_failure_keeps_cause_key_and_unknown_charge) ... ok
+test_rpc_and_result_errors_keep_their_distinct_stages (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_rpc_and_result_errors_keep_their_distinct_stages) ... ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 1.850s
+
+OK (skipped=5)

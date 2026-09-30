@@ -1,0 +1,11 @@
+2026-09-30 11:10:02,148	INFO worker.py:2024 -- Started a local Ray instance.
+test_complete_four_path_repeats_and_offline_selection (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_complete_four_path_repeats_and_offline_selection) ... ok
+test_error_then_recovery_for_each_execution_owner (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_error_then_recovery_for_each_execution_owner) ... ok
+test_finite_campaign_uses_supervised_native_and_pg_workers (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_finite_campaign_uses_supervised_native_and_pg_workers) ... ok
+test_native_async_batches_overlap_without_changing_request_count (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_native_async_batches_overlap_without_changing_request_count) ... ok
+test_timeout_during_http_then_recovery_for_ray_paths (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_timeout_during_http_then_recovery_for_ray_paths) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 260.935s
+
+OK

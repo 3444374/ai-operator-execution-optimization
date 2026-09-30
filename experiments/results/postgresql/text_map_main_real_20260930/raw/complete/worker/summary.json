@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "max_posts": 41024,
+  "stages": [
+    {
+      "stage": "qualification",
+      "actual_posts": 64,
+      "queries": 4,
+      "result": {
+        "path": "<run-root>/real03/worker/qualification/result.json",
+        "sha256": "fc1d9b9a1b24d52789ade6585f0290d36187e396b5742a25774b48b2bb4c1461"
+      }
+    },
+    {
+      "stage": "tuning",
+      "actual_posts": 24576,
+      "queries": 48,
+      "result": {
+        "path": "<run-root>/real03/worker/tuning/result.json",
+        "sha256": "c0126ac3848c9118556345e18622c4ee3281c7f2cb1f82de5d5a88b77977569c"
+      }
+    },
+    {
+      "stage": "evaluation",
+      "actual_posts": 16384,
+      "queries": 16,
+      "result": {
+        "path": "<run-root>/real03/worker/evaluation/result.json",
+        "sha256": "1503f99c7aaf00262c9c95c5c9f99101bda697012160e9b478a3e1180f042b84"
+      }
+    }
+  ],
+  "actual_posts": 41024,
+  "ray_driver_disconnected": true
+}

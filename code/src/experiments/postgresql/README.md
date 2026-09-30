@@ -8,6 +8,10 @@ Movie review IDs separately from unique row occurrences. `query_config.py` decla
 `query_runner.py` coordinates execution and post-query evaluation. `query_execution.py` owns the PG,
 direct, LOTUS and Ray lifecycles; `query_evaluation.py` verifies actual requests, outputs and decisions.
 `query_supervisor.py` bounds owned worker lifetime and closes its shared POST allocation on exit.
+Optional `RayMapConfig.worker_pool` binds an existing caller-owned worker service; driver/gateway
+remain per-query. Model identity and capacity must match, and a query exclusively claims workers
+until all outcomes settle. [Synthetic diagnosis and timing scope](../../../../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
+report service startup separately and retain the default query-owned worker control.
 `filter_bindings.py` and `map_bindings.py` verify producer row identity before comparing decisions
 or outputs. The Filter verifier accepts the query's instruction; `movie_queries.py` retains the
 original Movie-specific entry point. Shared-query integration reuses both verifiers and the existing
@@ -96,6 +100,55 @@ PG-source direct is a bounded execution reference; Ray SQL/HTTP and original Sem
 retain native execution ownership. These entries have controlled HTTP evidence, with real model quality
 and performance pending. [Scope, tests and failure history](../../../../experiments/results/postgresql/database_queries_20260910/README.md).
 
+## Matched text Map comparison
+
+`QueryConfig.ray_address` optionally connects native Ray Data to an existing local single-node Ray 2.56.1
+cluster. Shared mode checks the declared CPU/GPU and object-store totals, includes driver connection and
+query-specific graph/worker creation in query time, and disconnects without stopping the caller-owned
+cluster. Omit `ray_temp_root` in this mode. The default query-owned runtime remains available. Shared
+service process RSS is unavailable to the descendant sampler and must not be presented as total memory.
+
+`query_runner` records model-configuration SHA and per-query executor lifetime. `text_map_comparison`
+reads SHA-identified summaries plus their recorded output/evaluation files, requires the execution roles of the selected profile
+and complete repeats, and selects the lowest observed median for each role on tuning inputs. It rejects
+failed, incomplete, modified or differently timed records; ordinary incorrect labels remain in the report.
+Evaluation references the tuning report SHA, matches selected configurations and requires a different
+input manifest. Different manifests do not establish sample independence. Hardware/service provenance,
+data overlap/history, complete resource accounting and predeclared run budgets remain separate checks.
+Old records missing these identities are not silently upgraded. The offline comparator calls no model and
+does not change `m1_selection`. [Plan](../../../../experiments/plans/completed/text_map_matched_comparison.md),
+[local checks](../../../../experiments/results/postgresql/text_map_comparison_preparation_20260928/README.md).
+
+`text_map_campaign` executes one explicitly declared qualification, tuning or evaluation stage through
+the existing supervised query workers. Preflight checks SHA-identified inputs, immutable installation,
+model/environment records, complete candidate orders, shared runtime and exact request totals. Execution
+requires an existing fresh finite ledger and a database environment variable; the stage wall deadline also
+limits each worker. The first error preserves completed records and stops the stage. It never retries,
+replenishes quota or starts a following stage. Map evaluation records model-reported token usage for all
+four paths; fixture responses without usage remain unavailable.
+
+After every worker, the campaign compares the recorded configuration identity and query unit ID with
+the dispatched candidate before accepting results. The first mismatch stops the stage and retains spent
+quota. A stable changed configuration cannot become a tuning choice.
+
+PG startup writes `gateway-preparation.json` and returns `resources.pg_preparation`: command
+construction, PG plan preparation, gateway process creation and socket readiness wait, including failed
+waits. `observer.json.startup` reports gateway module imports and observer setup; interpreter startup
+is outside that import span. Ray Map emits `core_ray_startup` for library import, driver connection,
+actor creation/readiness and first payload materialization, including lazy Daft/Arrow loading.
+`core_ray_first_submit` records the first attempted RPC after its POST guard, not remote HTTP start.
+Durations use one local process clock; nested spans must not be added. The existing preparation-to-EOF
+measurement still includes startup. [Review](../../../../experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review).
+
+Native Ray 2.56.1 HTTP requests are awaited sequentially within one batch. Batch row count is not
+HTTP concurrency. `ray_async_batches_per_actor` separately controls the native asynchronous batch
+limit and is propagated through each job's Ray runtime environment; its default is one. Actor count
+times this limit must fit the declared HTTP allowance. Source block count can further reduce usable
+parallelism, so the observed HTTP peak remains necessary. The initial model comparison used one
+async batch and only two SQL blocks; its slow native result is not a strong Ray baseline.
+[Source audit and follow-up](../../../../experiments/results/postgresql/text_map_matched_20260930/README.md).
+
+
 ## Source information controls
 
 `m2_source.py` implements five experiment-owned input paths: streaming FIFO, window FIFO,
@@ -138,3 +191,26 @@ Collector and recorder primitives live in `src/observability/process_resources/`
 lifecycle, collection, attribution, policy, observer and CLI; the old `audit_round2` source-string checks
 have been replaced by observable behavior checks. Diagnostic mode is 1×100 and never grants formal
 qualification. See [CLI usage](../../../scripts/README.md) and [current evidence](../../../../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md).
+
+`profile="main"` compares PG/SemLoom Daft/Ray, PG-source direct, native Ray Data, and native Daft.
+`profile="local-ablation"` compares the two SemLoom execution backends. The default
+`legacy-four-paths` preserves the original records and their selection identities. Evaluation cannot
+switch profiles after tuning. Main preflight rejects the old under-supplied Ray shape, mismatched
+native CPU declarations and unequal candidate capacity sets.
+
+`text_map_candidates` generates three native supply settings (16/64/128) per main role without
+starting any services or model requests. Ray uses 1/2/4 actors, 16/32/32 async batches per actor,
+one row per batch and four SQL blocks. The new `query_daft` entry uses Daft Native 0.7.21 SQL
+reading and its async batch UDF scheduling. The matched HTTP kernel is not built-in `prompt()`;
+one-row batches with native in-flight settings 15/63/127 yield observed peaks 16/64/128 in the
+held-response fixture. Native startup uses `set_runner_native(num_threads=8)`; this is not physical
+CPU isolation. Timeout closes outgoing POST allocation and the existing supervisor bounds process
+lifetime; no native instantaneous model cancellation is claimed.
+[Candidate coverage and evidence](../../../../experiments/results/postgresql/text_map_native_candidates_20260930/README.md).
+
+### Ray远程错误记录
+
+Ray Map遇到payload准备、HTTP、RPC提交/等待或返回值检查异常时，记录`core_ray_execution_error`。
+事件保留任务key、阶段、安全异常类型/原因链和代码位置；不包含异常消息、请求正文或服务凭据。
+公开事件也保留阶段与`remote_outcome=unconfirmed`；诊断信息不是完成回执，不改变未确认额度或不重试行为。
+实际断连与后续查询恢复记录见[诊断修订](../../../../experiments/results/postgresql/text_map_main_real_20260930/README.md)。

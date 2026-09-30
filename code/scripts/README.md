@@ -44,7 +44,44 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 
 ## 数据库原始输入与公共查询
 
-M1 的当前入口使用[显式阶段配置示例](../configs/m1_screening.example.json)，先执行只读检查：
+当前系统比较见[四路径计划](../../experiments/plans/completed/text_map_matched_comparison.md)。
+主表选择 `profile=main`（SemLoom Daft/Ray、direct、原生Ray、原生Daft），
+本地执行消融选择 `local-ablation`；旧记录默认 `legacy-four-paths`，评价不能更换profile。
+`python3 -m src.experiments.postgresql.text_map_candidates --table TABLE --rows 512
+--ray-address ADDRESS --transport-path FILE --transport-sha256 SHA` 生成12组主表候选；
+整条命令在一行执行。该输出不是可执行阶段，也不会创建额度或启动服务。
+原生Daft是官方SQL reader与异步batch UDF执行图，工作函数只调用同语义HTTP，不称内置prompt。
+
+单阶段执行入口为 `python3 -m src.experiments.postgresql.text_map_campaign SPECIFICATION`，
+加 `--preflight` 只检查本地文件和清单，不连接数据库或模型。执行使用已有查询监督器，要求外部准备好的
+服务、不可变源表、数据库环境变量和全新有限账本；文件采用 `semloom.text_map_campaign.v1`。
+候选、轮次顺序、输入/安装/环境/模型摘要、服务签名、POST 总数和最长时间必须明确。
+失败保留记录并停止；下一阶段由已授权的外层清单显式启动。
+每次worker结束后，实际配置摘要和查询编号必须与下发候选相同，首次不一致即停止。
+PG单查询另存`gateway-preparation.json`；gateway库加载及Ray首批处理观测见
+[查询入口说明](../src/experiments/postgresql/README.md)，真实阶段时间尚待目标环境采集。
+原生Ray的 `ray_async_batches_per_actor` 默认1；actor数×异步批次数不得超过HTTP允许上限。
+批行数不等于HTTP并发，读取块数量也会影响实际供给；以请求轨迹确认，不只看配置值。
+`database_queries.py run` 的原生 Ray 配置可设置 `ray_address="127.0.0.1:6379"` 连接已启动的
+单节点服务，同时省略 `--ray-temp-root`；服务的实际 CPU、GPU 与对象存储总额度必须匹配配置。
+PG＋SemLoom Ray 继续使用独立传输文件；该参数不向原生系统注入 SemLoom 策略。
+
+完成查询后的离线汇总：
+
+```sh
+PYTHONPATH=code python3 -m src.experiments.postgresql.text_map_comparison \
+  /path/to/comparison.json --output /path/to/new-selection.json
+```
+
+输入 JSON 使用 `schema=semloom.text_map_comparison.v1`、`stage=tuning` 或 `evaluation`、
+`repeats`（3–30）以及 `candidates` 列表。每个候选给出唯一 `id`、`role`、`warmup` 与 `measured`；
+两种记录列表的每一项均为 `{"path":"/path/to/unit/summary.json","sha256":"<SHA256>"}`。
+四个角色为 `pg-http`、`pg-daft-ray`、`pg-source-direct`、`ray-data`。至少一次预热，测量次数等于 repeats，
+所有候选完整保留；相同中位数按候选声明顺序选择。评价另给 `tuning_result`，同样使用 path/sha256，
+且每个角色只能使用一个已选配置。输入与输出放仓库外，输出不覆盖已有文件。
+此工具只检查已有证据；不启动查询，不推定容量平台、质量等价或数据无重叠。
+
+M1 的方法实验入口使用[显式阶段配置示例](../configs/m1_screening.example.json)，先执行只读检查：
 
 ```sh
 PYTHONPATH=code python -m src.experiments.postgresql.m1_campaign /path/to/stage.json --preflight

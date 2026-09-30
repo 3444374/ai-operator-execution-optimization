@@ -1,0 +1,68 @@
+{
+  "status": "stopped_after_first_query_failure",
+  "successful_queries": 36,
+  "successful_tuning_queries": 32,
+  "failed_queries": 1,
+  "budget_pre_post_records": 16862,
+  "server_access_posts": 16861,
+  "last_service_sample_delta": {
+    "vllm:request_success_total": 16861.0,
+    "vllm:prompt_tokens_total": 1227904.0,
+    "vllm:generation_tokens_total": 50583.0
+  },
+  "last_service_running": 0.0,
+  "last_service_waiting": 0.0,
+  "service_samples": 440,
+  "sample_errors": 0,
+  "seconds_to_model_ready": 194.91948628425598,
+  "elapsed_seconds": 681.0529305934906,
+  "failed_unit_events": {
+    "core_job_opened": 1,
+    "core_offer": 701,
+    "core_map_task": 414,
+    "core_submitted": 414,
+    "core_ray_block_reserved": 144,
+    "core_ray_block_put": 144,
+    "request": 414,
+    "core_ray_http_completed": 413,
+    "core_ray_block_released": 143,
+    "core_terminal": 413,
+    "core_map_completion": 286,
+    "core_released": 286,
+    "core_uncertain": 1,
+    "core_connection_closed": 1
+  },
+  "uncertain_events": [
+    {
+      "event": "core_uncertain",
+      "key": {
+        "session_id": 0,
+        "sequence": 319
+      },
+      "usage": {
+        "held_tasks": 128,
+        "input_bytes": 60518,
+        "result_bytes": 134217728,
+        "active_requests": 128,
+        "active_work": 128
+      },
+      "session_id": null,
+      "task": null,
+      "monotonic_ns": 14683412487349719
+    }
+  ],
+  "last_core_usage": {
+    "held_tasks": 1,
+    "input_bytes": 541,
+    "result_bytes": 1048576,
+    "active_requests": 1,
+    "active_work": 1
+  },
+  "failed_results_provisional": true,
+  "failed_model_completion_unconfirmed": 1,
+  "failure_cause": "unavailable: remote exception detail not persisted; generic endpoint error is insufficient to identify root cause",
+  "partial_successful_token_counts": {
+    "prompt": 1197908,
+    "output": 49344
+  }
+}

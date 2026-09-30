@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-更新日期：2026-09-27
+更新日期：2026-10-01
 
 文档角色：本文只聚合当前实验完成度、证据缺口和是否允许继续运行；不定义 PostgreSQL
 模块边界或工程实现细节。后者只看
@@ -8,9 +8,15 @@
 
 ## 当前执行摘要
 
-当前研究顺序由[设计假设、证据与强对照](data_organization_batching.md#design-hypotheses)维护：
-先检验提交控制是否改善完整查询，以及有限候选相对全局元数据的成本；随后按结果选择阶段表示或多查询承诺实验。
-A—F是工程能力，不是六项贡献；E/F只补实际实验缺口，不作为所有研究的前置条件。
+已完成[文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)，后续按观测差距定位查询准备成本。
+四路径查询入口已存在；共享 Ray 连接与离线有限选点已有[本地检查](../results/postgresql/text_map_comparison_preparation_20260928/README.md)。
+[新版四路径完整比较](../results/postgresql/text_map_main_real_20260930/README.md)完成68条查询、41,024次请求与独立评价。
+1024行三次中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒；旧失败和诊断单独保留。
+后续[准备诊断与固定配置真实复测](../results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
+复用worker后完整查询中位数16.502→14.794秒、准备4.737→2.831秒；仍慢于direct/Daft，配对输出差0–5行。
+下一项细化首批处理和提交开销；LOTUS/Sema等语义系统缺项仍由baseline总表维护。
+[方法设计](data_organization_batching.md#design-hypotheses)继续负责组织和调度收益的检验；
+旧 M1 未找到平台不作为系统比较的统一前置项。工程能力不直接等于论文贡献。
 
 | 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
 |---|---|---|
