@@ -8,6 +8,10 @@ Movie review IDs separately from unique row occurrences. `query_config.py` decla
 `query_runner.py` coordinates execution and post-query evaluation. `query_execution.py` owns the PG,
 direct, LOTUS and Ray lifecycles; `query_evaluation.py` verifies actual requests, outputs and decisions.
 `query_supervisor.py` bounds owned worker lifetime and closes its shared POST allocation on exit.
+Optional `RayMapConfig.worker_pool` binds an existing caller-owned worker service; driver/gateway
+remain per-query. Model identity and capacity must match, and a query exclusively claims workers
+until all outcomes settle. [Synthetic diagnosis and timing scope](../../../../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
+report service startup separately and retain the default query-owned worker control.
 `filter_bindings.py` and `map_bindings.py` verify producer row identity before comparing decisions
 or outputs. The Filter verifier accepts the query's instruction; `movie_queries.py` retains the
 original Movie-specific entry point. Shared-query integration reuses both verifiers and the existing

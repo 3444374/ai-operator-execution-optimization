@@ -121,7 +121,7 @@ tar -xzf raw/evidence.tar.gz -C /path/to/new-private-directory
 ```
 
 恢复目录含原`raw/`层次，存储清单每行的`path`、`bytes`、`sha256`可逐文件复核。
-实时核对远端确认原提交`9750b6a4`已经推送；此次仅修改本地内容，未改写Git历史。
+实时核对远端确认原提交`9750b6a4`已推送；审查和归档修订后作为`07a8cfd9`推送，未改写Git历史。
 旧提交中的原文件仍在历史中，当前目录减量不表示远端历史体积已经减少。
 
 需求审查复现了阶段校验缺陷：每次结果未与预声明配置及预期查询编号比较，
@@ -138,7 +138,8 @@ tar -xzf raw/evidence.tar.gz -C /path/to/new-private-directory
 Ray连接、actor创建/就绪、首批payload处理和首次RPC提交观测。均使用各进程自己的持续时间，
 不跨worker相减，也不把RPC提交当作模型HTTP开始；各层时间可能嵌套，不能直接相加。
 旧计时和完整查询口径保持原值，没有修改服务生命周期或新增真实模型运行。
-下一项在获准目标环境用无模型fixture读取这些观测，再按实际主要成本选择修改。
+后续[目标环境无模型诊断及worker复用](../text_map_preparation_tuning_20260930/README.md)已完成；
+本节的本地审查记录和原真实数字保持当时身份。
 本轮本地修订与验证的机器汇总见[审查记录](raw/review/validation.json)。
 
 ## 前次失败运行情况

@@ -4,9 +4,15 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-09-30：[准备调优与worker复用](../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
+完成目标环境无模型分段。可选调用方拥有worker服务，查询独占借用并核对模型/容量，未确认执行保留借用与对象计费；
+默认仍由查询创建worker。目标相关87项及最终worker模块11项通过（89个不同用例），实际Ray的5项所有权检查通过。
+24条首轮查询及18条最终内部对照通过，全部诊断含失败累计21,079次fixture请求、模型0次；
+1024行准备中位数4.951→2.888秒、完整查询16.263→13.963秒。资源及原ACL核对通过，真实模型收益待复测。
+
 2026-09-30分支审查：阶段执行现核对实际配置摘要及预期查询编号，首次变化即停止并保留额度；
 68条既有真实记录无配置或编号不一致。已补PG/gateway/Ray启动及首批处理观测，74项本地检查中
-69项通过、5项Daft/Arrow依赖缺失跳过；真实PG/Ray的阶段耗时仍待目标环境无模型采集。
+69项通过、5项Daft/Arrow依赖缺失跳过；后续目标环境结果见上方调优记录。
 三份批量证据已无损压缩并独立恢复核验；[修订与验证](../experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)
 保存旧失败、原摘要和历史状态。本次没有新增模型请求或修改服务生命周期。
 
@@ -14,7 +20,7 @@
 |---|---|---|
 | PostgreSQL 语义算子 | `REL_18_3` extension 拥有受限 Filter/Map 语义、SQL 与查询生命周期；Map 已有有界多在途路径，图像 `embed` 为可选版本。证据分别见[两算子检查](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)、[Map 多在途](../experiments/results/postgresql/async_window_20260908/README.md)及[图像接入](../experiments/results/postgresql/image_stages_f_20260920/README.md)。 | Filter 质量与真实成本校准、第二物理路径、更多组合形态；图像计算中故障与匹配性能。 |
 | 外部执行核心 | 增量 session、任务组织、有界提交、多 Job 资源记账和阶段执行已有源码与受控验证；可选 Daft Native/Ray Core 文本路径保留 HTTP 选择。见[最近工程检查](../experiments/results/postgresql/incremental_transport_20260927/README.md)。 | 多节点运行、持续供给及完整查询收益的独立评价。 |
-| 真实服务检查 | [完整新版主表](../experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，完成调参与独立评价；源码和清理核对通过，旧失败单独保留。 | 查询准备成本分解；旧异常根因、质量等价与稳定性能收益尚无结论。 |
+| 真实服务检查 | [完整新版主表](../experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，完成调参与独立评价；后续无模型准备诊断见上方。 | worker复用的真实模型收益；旧异常根因、质量等价与稳定性能收益尚无结论。 |
 | 方法研究 | [容量复查](../experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成 32 个查询和 16,400 次请求；[全局信息与图像检查](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md)保留全部有限结果。 | 持续供给要求未满足，尚无容量参照；全局信息方式未显示稳定收益。 |
 
 2026-09-30：[四路径完整比较](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：

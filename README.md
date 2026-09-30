@@ -18,8 +18,10 @@
 
 [新版文本Map主表](experiments/results/postgresql/text_map_main_real_20260930/README.md)已完成68条查询、41,024次真实请求及独立评价。
 1024行三次时间中位数：SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒，质量与全部原值并列报告。
-前次失败与诊断保留；下一项按[计划](experiments/plans/completed/text_map_matched_comparison.md)定位SemLoom查询专属准备成本。
-[分支审查](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)已补启动及首批处理观测、修正配置核对，并无损压缩批量证据；目标环境耗时尚待采集。
+前次失败与诊断保留；[准备调优](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
+已定位重复查询的新Ray worker启动成本并验证可选worker服务，无模型准备中位数4.951→2.888秒，真实模型收益待复测。
+[分支审查](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)已补分段观测、修正配置核对并无损压缩批量证据；
+下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)核对首批处理与真实模型复测条件。
 旧容量实验未选点不作为所有系统比较的前置条件。
 
 ## 研究内容

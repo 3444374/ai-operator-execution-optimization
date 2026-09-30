@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "new_terms": [],
+  "markdown_local_links_checked": 629,
+  "missing_local_links": [],
+  "changed_files_privacy_scan": true,
+  "scan_summary": "scan_git_secrets: no violations across 27 file(s)",
+  "diff_check": "passed",
+  "fixture_accounting": "passed",
+  "runtime_source_identity": "passed",
+  "cleanup": "passed",
+  "target_related_tests": 87,
+  "target_final_worker_tests": 11,
+  "target_distinct_tests": 89,
+  "local_related_tests": {
+    "passed": 16,
+    "skipped": 5
+  },
+  "local_final_worker_tests": {
+    "passed": 9,
+    "skipped": 2
+  },
+  "public_archive": {
+    "status": "passed",
+    "published_files_verified": 1733,
+    "archive_sha256": "0727ea666955e3bb2bfb298fb0a234f0ddc40195e279f578d8e7daf80c69fac0",
+    "published_bytes_verified": 142084196,
+    "compressed_bytes": 6561588,
+    "privacy_scan": "all selected plaintext before compression; known credentials absent; scanner scan_line reports zero findings",
+    "outside_original_archives": [
+      {
+        "archive": "profile-original.tar.gz",
+        "bytes": 12921063,
+        "sha256": "8d89f7ea1179f805e62a00e59d571e008440bd81b1d569f5ecd0c451d5ee6d7a"
+      },
+      {
+        "archive": "pool-original.tar.gz",
+        "bytes": 13369432,
+        "sha256": "1e07be6d53acc9ca11b64aff9f6075cfff005d53be109e688f9d9b70e2a9c55b"
+      }
+    ],
+    "source_after_check": "passed; snapshot Python file hashes unchanged"
+  }
+}
