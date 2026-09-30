@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-30
+更新时间：2026-10-01
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -21,7 +21,11 @@ SemLoom本次慢于direct与Daft，短于Ray；后续[无模型诊断与worker�
 定位了重复查询的新Ray worker启动成本。可选服务拥有worker的内部对照中，准备4.951→2.888秒，
 完整查询16.263→13.963秒；仅为有限fixture工程观察，不能更新上述真实排名。
 分支审查已补分段观测并修正阶段配置核对；后续按[计划](experiments/plans/text_map_preparation_tuning.md)
-核对首批处理与真实模型复测条件，旧真实异常根因仍未确定。
+细化首批处理与提交开销，旧真实异常根因仍未确定。
+后续[固定配置真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
+最后同一服务中完成五种身份的1024行重复；复用版SemLoom14.794秒、旧方式16.502秒，
+direct7.660秒、Daft12.307秒、Ray22.756秒。准备减少40.24%、完整查询减少10.35%，
+配对输出差0–5行；这是本次共用部署与已使用输入的工程观察，不是新的独立评价或通用系统优势。
 准备之外的释放至全部消费仍约12.678秒，不能将完整差距归因于准备。68条配置与查询编号逐项一致，
 批量证据已无损归档，详见[审查与恢复](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)。
 原生Ray/Daft拥有各自执行与调度；仅代表本次固定语义Map执行层，不替代LOTUS/Sema等语义系统评价。

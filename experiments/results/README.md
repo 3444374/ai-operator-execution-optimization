@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+2026-10-01：[worker复用后的真实文本Map耗时](postgresql/text_map_worker_reuse_real_20260930/README.md)。
+累计20,688次请求，最后同一服务中的1024行三次中位数：direct7.660、Daft12.307、Ray22.756、
+原SemLoom16.502、复用版14.794秒；准备减少40.24%、完整查询减少10.35%，仍慢于direct与Daft。
+前面中止、0–5行配对差异与混合生命周期单列；可重复合并的8224份小事件文件核验后不重复提交，原件留在仓库外。
+
 2026-09-30：[文本Map准备诊断与worker复用](postgresql/text_map_preparation_tuning_20260930/README.md)。
 目标环境无模型分段与内部对照完成，准备4.951→2.888秒、完整查询16.263→13.963秒；服务启动单列，真实模型收益待复测。
 失败及成功累计21,079次fixture请求、模型0次；89个不同目标检查通过，原始批量文本脱敏归档，资源及ACL恢复核对通过。

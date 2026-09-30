@@ -1,6 +1,6 @@
 # SemLoom 当前方向与计划
 
-更新：2026-09-28。本页用于快速阅读；方向以[项目总纲](../PROJECT_OUTLINE.md)为准，
+更新：2026-10-01。本页用于快速阅读；方向以[项目总纲](../PROJECT_OUTLINE.md)为准，
 实现以[代码状态](../code/INFRA_STATUS.md)和源码为准，数字以[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
 及原始结果为准。
 
@@ -27,7 +27,9 @@
 SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native，比较完整查询时间和质量。
 [新版四路径比较](../experiments/results/postgresql/text_map_main_real_20260930/README.md)完成68条查询、41,024次请求及独立评价。
 1024行中位数：SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒；质量差异和旧失败保留。
-下一项定位SemLoom查询准备成本；本轮不证明质量等价或容量平台。
+后续[worker复用真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求；
+固定配置下完整查询16.502→14.794秒、准备4.737→2.831秒，仍慢于direct与Daft，配对输出0–5行不同。
+下一项细化首批处理与提交成本，不证明质量等价、容量平台或通用优势。
 
 - PostgreSQL 18.3 extension 已完成受限 Filter/Map 语义、公共执行接口、Map 有界多在途及可选图像嵌入的
   工程检查。可选 Daft/Ray 文本传输在[受控查询](../experiments/results/postgresql/incremental_transport_20260927/README.md)

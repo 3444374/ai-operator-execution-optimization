@@ -16,7 +16,8 @@
 `RayMapConfig.worker_pool`按服务名选择；查询独占借用并核对模型配置和容量，默认值`None`保持查询创建方式。
 调用方维持创建者进程，避免结束Ray连接；不使用detached lifetime。异常未确认时服务拒绝后续借用，
 由调用方处理结束错误。接口位于[Ray Map传输](src/execution_provider/adapters/ray_map_transport.py)，
-已通过无模型检查，真实模型收益仍待复测。
+已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
+本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
 
 下节保存已停止的 SAOR 实现说明，供历史代码和证据追溯；它不表示可以重新运行模型实验。
 
