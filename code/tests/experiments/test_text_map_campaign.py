@@ -127,6 +127,29 @@ class CampaignTests(unittest.TestCase):
             self.assertEqual(len(failure['completed']),1)
             self.assertFalse((root/'stage/result.json').exists())
 
+    def test_stage_rejects_changed_configuration_or_wrong_query_identity(self):
+        for field, value in (('concurrency', 3), ('unit_id', 'another-query')):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                root=Path(directory);spec=setup(root)
+                ledger=CellBudgetLedger.create(Path(spec['budget_path']),AttemptBudget('fixture',32),
+                                               deadline_utc=time.time()+290)
+                worker=self.fake_worker(spec)
+                def changed_worker(command, output, close_budget, **kwargs):
+                    worker(command, output, close_budget, **kwargs)
+                    path=output/'unit/summary.json'
+                    saved=json.loads(path.read_text())
+                    saved['config'][field]=value
+                    path.write_text(json.dumps(saved))
+                with patch.dict('os.environ',{'TEXT_MAP_FIXTURE_DSN':'unused fixture'}), \
+                        patch.object(campaign,'supervise',side_effect=changed_worker):
+                    with self.assertRaisesRegex(ValueError,'declared stage identities'):
+                        campaign.run_stage(write_spec(root,spec))
+                self.assertEqual(len(self.launched),1)
+                self.assertEqual(ledger.snapshot()['allocated_requests'],2)
+                failure=json.loads((root/'stage/failure.json').read_text())
+                self.assertEqual(failure['completed'],[])
+                self.assertFalse((root/'stage/result.json').exists())
+
     def test_evaluation_preflight_rejects_retuning_before_any_request(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);spec=setup(root)

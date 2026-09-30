@@ -1,2 +1,0 @@
-{"monotonic_ns": 14694823564661022, "phase": "preparation", "rss_bytes": {"consumer_direct": 51032064, "pg_backend": 11452416}, "cpu_seconds": {"consumer_direct": 0.43, "pg_backend": 0.0}, "summed_rss_bytes": 62484480}
-{"monotonic_ns": 14694823765121691, "phase": "preparation", "rss_bytes": {"consumer_direct": 56000512, "pg_backend": 14979072}, "cpu_seconds": {"consumer_direct": 0.56, "pg_backend": 0.0}, "summed_rss_bytes": 70979584}

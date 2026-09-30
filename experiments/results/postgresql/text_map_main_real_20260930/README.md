@@ -29,8 +29,8 @@
 
 完整查询时间=(全部结果消费时间−查询准备开始时间)/10^9；准确率=(真正例+真负例)/1024。
 CV为使用n−1分母的样本标准差/均值，仅描述三次结果的离散程度，不是置信区间。
-来源：[完整逐次CSV](raw/complete/query-metrics.csv)、[指标与配对差异](raw/complete/query-metrics.json)、
-[调参选择](raw/complete/worker/tuning/result.json)、[独立评价](raw/complete/worker/evaluation/result.json)。
+来源：[完整逐次CSV](raw/complete/query-metrics.csv.gz)、[指标与配对差异](raw/complete/query-metrics.json.gz)、
+[调参选择](raw/complete/worker/tuning/result.json.gz)、[独立评价](raw/complete/worker/evaluation/result.json.gz)。
 
 ### 调参全部候选
 
@@ -87,9 +87,59 @@ SemLoom完整查询约为direct的2.35倍、Daft Native的1.55倍，短于Ray Da
 [源码与事件核对](raw/complete/source-and-error-audit.json)。
 独立清理核对247个采样后代PID、20处ACL及会话初始访问设置，PG已停止、自有端口无监听、GPU0计算进程为空，
 模型父进程退出码0、控制器未强制终止，见[清理](raw/complete/cleanup.json)。
-[材料摘要](raw/complete/artifact-index.json)记录导出文本与脱敏副本身份；[完整运行交付检查](raw/complete/final-checks.json)通过。运行身份以源码摘要为准，后续发布状态以Git历史为准。
+[材料摘要](raw/complete/artifact-index.json.gz)记录导出文本与脱敏副本身份；[完整运行交付检查](raw/complete/final-checks.json)通过。运行身份以源码摘要为准，后续发布状态以Git历史为准。
 
 下面保留前次失败、修订与诊断的原始叙述和数据，不与本轮成功记录合并。
+
+<a id="branch-review"></a>
+
+## 分支审查与证据存储修订
+
+2026-09-30只读审查与本地修订。新增1,647,770行主要来自证据导出，code目录新增1,803行；
+四份服务采样占992,552行，完全相同文件的冗余只有约195KB。不能将独有证据当作无用副本删除。
+三份结果原有1,599个raw文件已按原字节完整归档；报告直引的80份材料继续可读，
+其中30份较大文件使用gzip。逐查询、失败、模型日志及未采用方案全部可恢复。
+
+| 结果 | 原文件数 | 原raw大小（MB） | 完整归档大小（MB） |
+|---|---:|---:|---:|
+| 本报告：完整运行、失败及诊断 | 957 | 55.949 | 3.086 |
+| 旧配置四路径比较 | 587 | 44.324 | 2.349 |
+| 原生候选验证 | 55 | 0.818 | 0.116 |
+
+MB按10^6字节计算；直接引用副本及摘要清单另计。三份完整归档已在仓库外独立解压，
+1,599份原文件的路径、字节数、SHA-256（文件摘要）全部一致；7份历史清单的1,551项引用也通过。
+见[存储清单](raw/storage-manifest.jsonl)、[核验记录](raw/storage-verification.json)及[完整归档](raw/evidence.tar.gz)。
+gzip链接的SHA属于解压后的原文件；历史artifact index的`published_sha256`仍指原文件字节，
+新存储清单另记归档SHA，不改写历史身份。仓库外保留相同归档和独立恢复副本。
+
+恢复本报告的完整原目录时，在本结果目录执行以下命令；目标须为新建的仓库外目录。
+另两份结果采用相同结构；gzip单文件可用`gzip -dc`读取。
+
+```sh
+mkdir -m 700 /path/to/new-private-directory
+tar -xzf raw/evidence.tar.gz -C /path/to/new-private-directory
+```
+
+恢复目录含原`raw/`层次，存储清单每行的`path`、`bytes`、`sha256`可逐文件复核。
+实时核对远端确认原提交`9750b6a4`已经推送；此次仅修改本地内容，未改写Git历史。
+旧提交中的原文件仍在历史中，当前目录减量不表示远端历史体积已经减少。
+
+需求审查复现了阶段校验缺陷：每次结果未与预声明配置及预期查询编号比较，
+配置稳定变化时仍可能生成选点。修订后首次不一致即停止，保留已消费额度和失败记录。
+本轮68份真实记录逐项核对，配置及编号不一致均为0；不因此撤销本轮数据。
+[修订前失败](raw/review/campaign-red.txt)与[本地相关检查](raw/review/related-tests.txt)保留；
+74项中69项通过，5项需要本机未安装的Daft/Arrow而跳过，没有真实PG、Ray或模型请求。
+首批处理观测使用最小替代数据验证，不表示真实Daft性能已验证。
+
+性能审查确认准备三次为5.303、5.280、5.423秒；SQL释放至首行另有4.614、5.258、4.948秒。
+释放至全部消费中位数12.678秒仍高于direct的7.509秒和Daft完整查询的11.668秒，
+因此准备不能解释全部差距。现有导出缺少首条请求事件，无法由旧记录还原其时间。
+本次补充query driver的命令、PG计划、进程启动及就绪等待，gateway自身的库加载，
+Ray连接、actor创建/就绪、首批payload处理和首次RPC提交观测。均使用各进程自己的持续时间，
+不跨worker相减，也不把RPC提交当作模型HTTP开始；各层时间可能嵌套，不能直接相加。
+旧计时和完整查询口径保持原值，没有修改服务生命周期或新增真实模型运行。
+下一项在获准目标环境用无模型fixture读取这些观测，再按实际主要成本选择修改。
+本轮本地修订与验证的机器汇总见[审查记录](raw/review/validation.json)。
 
 ## 前次失败运行情况
 
@@ -97,7 +147,7 @@ SemLoom完整查询约为direct的2.35倍、Daft Native的1.55倍，短于Ray Da
 实际用时681.053秒（约11分21秒），模型服务就绪前194.919秒，后者不计入查询时间。
 四条16行正确性查询及32条512行调参查询通过；第33条调参查询失败。
 调参没有产生选择记录，1024行独立评价未开始。见[控制器](raw/real/controller-summary.json)、
-[阶段失败记录](raw/real/worker/tuning/failure.json)及[派生核对](raw/failure-analysis.json)。
+[阶段失败记录](raw/real/worker/tuning/failure.json.gz)及[派生核对](raw/failure-analysis.json)。
 
 账本有16,862条发送前计数，服务访问日志和最后服务采样均确认16,861次成功；
 不能把两者混写为相同的实际模型POST数。控制器历史字段名`actual_posts`在此读取的是发送前账本记录数。
@@ -108,13 +158,13 @@ SemLoom完整查询约为direct的2.35倍、Daft Native的1.55倍，短于Ray Da
 
 双RTX4090机器仅使用GPU0，GPU1未参与；PG18.3、Ray2.56.1、Daft0.7.21、vLLM0.25.1，
 driver与模型虚拟环境分离。当前`core,text,sql-readers`能力检查通过，见[机器报告](raw/real/preflight-real02.json)。
-运行前比对761份执行源码，本次没有改动可复用执行代码，见[源码摘要](raw/real/source-real02.json)。
+运行前比对761份执行源码，本次没有改动可复用执行代码，见[源码摘要](raw/real/source-real02.json.gz)。
 实验时使用`codex/text-map-matched-comparison`的未提交源码；运行身份由逐文件摘要记录。
 
 Qwen2.5-7B-Instruct revision为`a09a35458c702b33eeacc393d103063234e8bc28`，9份模型/配置文件摘要已核对。
 BF16、单GPU副本、4096上下文、服务序列128、批次token8192、显存比例0.8、FCFS、分块输入处理、关闭前缀缓存。
 请求temperature=0、top_p=1、n=1、最多128输出token，同一消息与标签解析；无模型请求重试。
-[模型与源码身份](raw/real/identity.json)、[实际服务参数](raw/real/service-ready.json)保留记录。
+[模型与源码身份](raw/real/identity.json.gz)、[实际服务参数](raw/real/service-ready.json)保留记录。
 
 开发集512行，正确性取其前16行；新评价1024行、950部电影、667条正标签，
 排除历史输入及旧1024行评价的电影、评论ID、文本，三项交集均为0。
@@ -138,7 +188,7 @@ PG窗口256行，核心输入/结果各128MiB，PG总留存256MiB与4MiB暂存�
 
 PG、模型和共享Ray在查询前启动；各查询独立创建gateway、客户端及执行图。
 时间从查询准备开始至完整结果消费，评价和清理另记。预热一次，随后三轮交错测量；
-实际顺序、参数和额度见[预声明清单](raw/real/worker/tuning/specification.json)。
+实际顺序、参数和额度见[预声明清单](raw/real/worker/tuning/specification.json.gz)。
 不做持久结果写表，因此pgvector/COPY/writeback性能不在本次测量范围。
 
 ## 前次未完成的调参原值
@@ -164,7 +214,7 @@ PG、模型和共享Ray在查询前启动；各查询独立创建gateway、客�
 完整查询时间=(全部结果消费时间−查询准备开始时间)/10^9；准确率=(真正例+真负例)/512。
 每条成功调参查询都完成512次请求，输入/输出token为37,293／1,536，无缺行或非法标签；
 四条正确性查询各16次、1,133／48 token，准确率均93.75%。
-全部成功记录、准备/流式/清理时间和模型工作量见[CSV](raw/partial-query-metrics.csv)及[JSON](raw/partial-query-metrics.json)。
+全部成功记录、准备/流式/清理时间和模型工作量见[CSV](raw/partial-query-metrics.csv)及[JSON](raw/partial-query-metrics.json.gz)。
 分类错误与输出差异均保留；准确率相近不证明质量等价，单/两次测量不足以代替计划中的三次重复。
 
 原生Ray与Daft的三档已完成查询实际HTTP峰值均为16/64/128，确认新版供给配置生效。
@@ -183,7 +233,7 @@ SQL收到`ConnectionFailure`、SQLSTATE `08006`，消息为“SemLoom model endp
 查询gateway未在5秒内退出，被外层监督器强制终止；这项清理异常保留，不能记成正常查询结束。
 
 来源：[失败查询摘要](raw/real/worker/tuning/pg-daft-ray-c128-r2/unit/summary.json)、
-[公开事件](raw/real/worker/tuning/pg-daft-ray-c128-r2/unit/public-events.jsonl)、
+[公开事件](raw/real/worker/tuning/pg-daft-ray-c128-r2/unit/public-events.jsonl.gz)、
 [worker日志](raw/real/worker/tuning/pg-daft-ray-c128-r2/worker.log.txt)。
 失败时的源码[Ray传输](../../../../code/src/execution_provider/adapters/ray_map_transport.py)在远程调用异常时保留未确认任务，
 但只向上转交异常类型；actor没有接入HTTP异常观测器，核心事件也没有底层原因字段。
@@ -203,7 +253,7 @@ HTTP状态与取消/回收结果，再用无模型故障注入核对记录和资
 独立清理检查核对146个采样后代PID、自有端口、PG pid文件、GPU计算进程及20处ACL，全部通过；
 会话初始三处目录ACL也逐字相同，见[清理](raw/cleanup.json)。
 模型父进程退出码0，控制器没有强制终止它；vLLM自己的退出日志仍有子进程回收和信号量告警，
-原值保留在[模型日志](raw/real/model.log.txt)，不将其隐去。
+原值保留在[模型日志](raw/real/model.log.txt.gz)，不将其隐去。
 
 ## 后续错误记录修订与无模型验证
 
@@ -224,12 +274,12 @@ Ray actor现在将安全的异常类型、最多四层原因类型及代码位�
 注入断连的4个任务均保留`httpx.RemoteProtocolError`及`httpcore.RemoteProtocolError`原因类型，
 出错阶段为`http`，并与`core_uncertain`的key逐项关联；随后同一共享服务上的新查询完成8行。
 来源：[Linux检查](raw/fix/errors-unit-final.txt)、[集成日志](raw/fix/controller.log.txt)、
-[实际断连事件](raw/fix/tests/q44/unit/public-events.jsonl)、[逐单元记录](raw/fix/units.json)。
+[实际断连事件](raw/fix/tests/q44/unit/public-events.jsonl)、[逐单元记录](raw/fix/units.json.gz)。
 断连组仍由外层监督器结束无法正常收尾的查询进程；确认自有资源回收后才启动恢复查询，不将其写成正常收尾。
 这证明故障记录与后续查询恢复，不证明旧模型异常也是断连，也不替代真实高并发复测。
 
 [独立清理](raw/fix/cleanup.json)确认测试PG停止、自有进程为空、GPU0计算进程为空、会话ACL保持原样。
-762份当前执行源码与服务器相同，见[当前摘要](raw/fix/source.json)；旧失败的761份源文件在更新前独立归档，
+762份当前执行源码与服务器相同，见[当前摘要](raw/fix/source.json.gz)；旧失败的761份源文件在更新前独立归档，
 见[原源码归档摘要](raw/fix/real02-source-archive.json)。原失败数据和身份不被修订后代码覆盖。
 新诊断清单为16行核对＋容量128的4×512行，共2,064次请求、15分钟，见[计划](../../../plans/completed/text_map_matched_comparison.md)。
 用户随后确认独立诊断清单，执行结果见下节，没有自动续跑旧账本。修订后的[交付检查](raw/fix/final-checks.json)通过；该修订阶段没有执行提交或推送。
@@ -260,11 +310,11 @@ Ray actor现在将安全的异常类型、最多四层原因类型及代码位�
 模型父进程退出码0、控制器未强制终止，28个采样后代进程均不再运行，PG停止，自有端口无监听，GPU0计算进程为空；
 15处本轮ACL及会话初始ACL核对通过，见[独立清理](raw/diagnostic/cleanup.json)。
 本次没有改动执行代码、没有额外模型请求、没有提交或推送；完整导出清单见
-[材料摘要](raw/diagnostic/artifact-index.json)；[诊断交付检查](raw/diagnostic/final-checks.json)通过。
+[材料摘要](raw/diagnostic/artifact-index.json.gz)；[诊断交付检查](raw/diagnostic/final-checks.json)通过。
 
 ## 材料说明
 
-[材料清单](raw/artifact-index.json)区分导出文本摘要与脱敏副本摘要；路径脱敏会改变字节。
+[材料清单](raw/artifact-index.json.gz)区分导出文本摘要与脱敏副本摘要；路径脱敏会改变字节。
 原始请求正文、模型文件、数据库、全部Ray日志和持久账本留在服务器私有目录；本地只保存必要脱敏材料。
 模型请求的成功证据与发送前计数分别报告。运行记录不以提交日期代替实际执行日期；发布状态以Git历史为准。
 

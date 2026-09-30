@@ -1,9 +1,0 @@
-{
-  "unit": "pg-daft-ray-c128-r0",
-  "role": "pg-daft-ray",
-  "summary": {
-    "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c128-r0/unit/summary.json",
-    "sha256": "ac7357c5112a24916c4da14db171524aa37c1dfdc768c1a1bb4172b54208d2d3"
-  },
-  "actual_posts": 512
-}

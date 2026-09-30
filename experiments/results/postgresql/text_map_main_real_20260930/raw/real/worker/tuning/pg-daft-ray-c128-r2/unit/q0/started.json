@@ -1,8 +1,0 @@
-{
-  "schema": "semloom.query_recording.v1",
-  "started_ns": 14683403955070671,
-  "max_rows": 512,
-  "max_result_bytes": 35840000,
-  "flush_rows": 64,
-  "metadata": null
-}

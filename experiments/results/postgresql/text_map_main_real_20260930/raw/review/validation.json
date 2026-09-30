@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "original_revision": "9750b6a4b0cf7f9941c1bc2bbb482b220c69a178",
+  "base_revision": "1480627681774cf4f98e3526b56219692fafc75f",
+  "remote_revision_verified": "9750b6a4b0cf7f9941c1bc2bbb482b220c69a178",
+  "history_rewritten": false,
+  "local_changes_committed": false,
+  "real_record_configuration_audit": {
+    "records": 68,
+    "by_stage": {
+      "qualification": 4,
+      "tuning": 48,
+      "evaluation": 16
+    },
+    "mismatches": [],
+    "source": "matching exported specification and query config dictionaries; private addresses remain redacted"
+  },
+  "local_tests": {
+    "run": 74,
+    "passed": 69,
+    "skipped": 5,
+    "failures": 0,
+    "errors": 0,
+    "skip_reason": "actual Daft/Arrow dependencies absent",
+    "real_model_requests": 0,
+    "real_database_or_ray_started": false
+  },
+  "archived_original_files": 1599,
+  "historical_indexes_verified": 7,
+  "historical_index_entries_verified": 1551,
+  "preparation_cause": "unresolved; source and historical timing review only",
+  "timing_instrumentation_verified_with": "local clocks and mock transports",
+  "evidence": {
+    "campaign-red.txt": "39b27b3dc465975ad418907bf1c504f183f8c03d65750c436c4b716464c0e46a",
+    "related-tests.txt": "f3e476c347ceadad6a6507ec83543a2f760c24e13ed4f2d54eb9e59fa97182b4"
+  },
+  "delivery_checks": {
+    "final_files_vs_main": 144,
+    "approximate_added_text_lines": 7349,
+    "archive_members_verified": 1599,
+    "report_sidecars_verified": 80,
+    "local_markdown_links_checked": 604,
+    "missing_links": 0,
+    "terminology_hits": 0,
+    "secret_violations": 0,
+    "diff_check_passed": true
+  }
+}

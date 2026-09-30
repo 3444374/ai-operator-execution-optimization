@@ -18,6 +18,9 @@ SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP�
 1024行三次时间中位数依次为18.101、7.705、22.849、11.668秒，准确率84.961–85.254%。
 路径配对输出相差1–4行，未证明质量等价、吞吐平台或通用系统优势。
 SemLoom本次慢于direct与Daft，短于Ray；下一项先定位约5.3秒的查询专属准备成本，再决定优化切片。
+分支审查已补PG/gateway/Ray启动及首批处理观测并修正阶段配置核对；下一项在目标环境以无模型fixture采集。
+准备之外的释放至全部消费仍约12.678秒，不能将完整差距归因于准备。68条配置与查询编号逐项一致，
+批量证据已无损归档，详见[审查与恢复](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)。
 原生Ray/Daft拥有各自执行与调度；仅代表本次固定语义Map执行层，不替代LOTUS/Sema等语义系统评价。
 此前真实失败、错误观测修订和2,064次诊断均单独保留，旧根因仍未确定；本次源码身份和清理核对通过。
 旧M1平台结论不变；Movie公共查询与图像参照随后按自身条件推进。

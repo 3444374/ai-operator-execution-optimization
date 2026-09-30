@@ -1,9 +1,0 @@
-{
-  "unit": "pg-daft-ray-c64-r1",
-  "role": "pg-daft-ray",
-  "summary": {
-    "path": "<run-root>/real01/worker/tuning/pg-daft-ray-c64-r1/unit/summary.json",
-    "sha256": "a6736ad9fc3f38e7c5d2fc9c6eff3fdd904976bababfa3534f9414255611d6ed"
-  },
-  "actual_posts": 512
-}

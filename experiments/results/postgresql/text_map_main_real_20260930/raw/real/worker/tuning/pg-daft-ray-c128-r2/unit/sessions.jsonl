@@ -1,2 +1,0 @@
-{"event":"session_start","session_id":1,"monotonic_ns":14683403964954820,"gateway_pid":292530,"accepted_fd":39,"accepted_socket_inode":3062601678,"peer_pid":292529,"peer_uid":105,"peer_gid":108}
-{"event":"session_end","session_id":1,"monotonic_ns":14683412488183973,"termination":"returned","connection_closed":true}

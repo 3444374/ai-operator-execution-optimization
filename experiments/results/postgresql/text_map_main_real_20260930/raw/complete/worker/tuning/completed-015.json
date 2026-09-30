@@ -1,9 +1,0 @@
-{
-  "unit": "pg-source-direct-c128-r1",
-  "role": "pg-source-direct",
-  "summary": {
-    "path": "<run-root>/real03/worker/tuning/pg-source-direct-c128-r1/unit/summary.json",
-    "sha256": "a5512ac2fcb5f34d5c9a014c94c69093b3da4a24f818df60a11d72c7ed9768b9"
-  },
-  "actual_posts": 512
-}

@@ -57,6 +57,9 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 服务、不可变源表、数据库环境变量和全新有限账本；文件采用 `semloom.text_map_campaign.v1`。
 候选、轮次顺序、输入/安装/环境/模型摘要、服务签名、POST 总数和最长时间必须明确。
 失败保留记录并停止；下一阶段由已授权的外层清单显式启动。
+每次worker结束后，实际配置摘要和查询编号必须与下发候选相同，首次不一致即停止。
+PG单查询另存`gateway-preparation.json`；gateway库加载及Ray首批处理观测见
+[查询入口说明](../src/experiments/postgresql/README.md)，真实阶段时间尚待目标环境采集。
 原生Ray的 `ray_async_batches_per_actor` 默认1；actor数×异步批次数不得超过HTTP允许上限。
 批行数不等于HTTP并发，读取块数量也会影响实际供给；以请求轨迹确认，不只看配置值。
 `database_queries.py run` 的原生 Ray 配置可设置 `ray_address="127.0.0.1:6379"` 连接已启动的

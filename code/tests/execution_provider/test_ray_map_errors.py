@@ -3,6 +3,7 @@ import asyncio
 import json
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import httpx
 
@@ -14,6 +15,38 @@ from tests.execution_provider.test_ray_map_transport import FakeRay
 
 
 class RayMapErrorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_first_payload_and_submit_are_recorded_once_without_loading_daft(self):
+        class Table(dict):
+            num_rows=1
+            def get_total_buffer_size(self):return 64
+        for failed in (False,True):
+            with self.subTest(failed=failed):
+                events=[]
+                def batches(rows, *args, **kwargs):
+                    if failed:raise ValueError('fixture payload preparation failure')
+                    for sid,sequence,payload in rows:
+                        yield Table({name:[SimpleNamespace(as_py=lambda value=value:value)]
+                            for name,value in (('session_id',sid),('sequence',sequence),('payload',payload))})
+                async def execute(table,index,template):return template.key,b'ok',1,2
+                ray=FakeRay(execute)
+                transport=RayMapTransport(FixedModelConfig('http://localhost/fixture','model',1000),4,
+                    events.append,physical=RayMapConfig('fixture-cluster',1,1,1024,2048),ray_api=ray)
+                requests=[BackendTask(TaskKey(0,i),SessionSpec('job','flow','fixture'),
+                          OfferedTask(i,b'input',1,1024)) for i in range(2)]
+                with patch('src.execution_provider.adapters.ray_map_transport.iter_payload_batches',side_effect=batches):
+                    try:
+                        results=await asyncio.gather(*(transport.execute(request,'model') for request in requests))
+                        if failed:self.assertTrue(all(b'MODEL_UNAVAILABLE' in value for value in results))
+                        else:self.assertEqual(results,[b'ok',b'ok'])
+                    finally:await transport.close()
+                payload=[e for e in events if e.get('stage')=='first_payload']
+                self.assertEqual(len(payload),1)
+                self.assertEqual(payload[0]['status'],'failed' if failed else 'completed')
+                self.assertGreaterEqual(compact_event(payload[0])['elapsed_seconds'],0)
+                self.assertEqual(sum(e['event']=='ray_first_submit' for e in events),0 if failed else 1)
+                self.assertEqual(transport.used_bytes,0)
+                self.assertEqual(len(ray.killed),1)
+
     async def test_rpc_and_result_errors_keep_their_distinct_stages(self):
         def submit_failure(*_):
             raise ConnectionError('private RPC address')

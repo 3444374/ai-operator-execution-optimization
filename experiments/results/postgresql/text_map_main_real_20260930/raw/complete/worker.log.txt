@@ -1,7 +1,0 @@
-2026-09-30 16:14:47,336	INFO worker.py:2024 -- Started a local Ray instance.
-{"stage": "qualification", "event": "started", "queries": 4, "max_posts": 64}
-{"stage": "qualification", "event": "completed", "actual_posts": 64}
-{"stage": "tuning", "event": "started", "queries": 48, "max_posts": 24576}
-{"stage": "tuning", "event": "completed", "actual_posts": 24576}
-{"stage": "evaluation", "event": "started", "queries": 16, "max_posts": 16384}
-{"stage": "evaluation", "event": "completed", "actual_posts": 16384}

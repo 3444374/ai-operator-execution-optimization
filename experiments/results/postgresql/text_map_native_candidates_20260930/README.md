@@ -4,6 +4,11 @@
 本次只使用合成HTTP服务，**新增真实模型请求0次**；该阶段未执行提交、推送或合并。
 研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
+2026-09-30存储修订：原55份raw文件按原字节保存在[完整归档](raw/evidence.tar.gz)，
+报告直引的大文件改为gzip链接；[原路径与摘要](raw/storage-manifest.jsonl)、
+[独立恢复核验](raw/storage-verification.json)全部通过，包含全部未采用方案与失败。
+恢复方法及本地/远端状态见[分支审查](../text_map_main_real_20260930/README.md#branch-review)。
+
 ## 当前补齐了什么
 
 主表使用 `profile=main`：PG＋SemLoom Daft/Ray、PG-source direct、原生Ray Data、原生Daft Native。
@@ -69,10 +74,10 @@ Daft超时先关闭进一步POST分配；未完成请求由外层监督器和客
 本地96项相关检查与8项环境工具检查通过；测试范围有复用，不把历次计数相加当独立覆盖率。
 最终[六组候选](raw/ns06/result.json)全部通过；[完整流程回归](raw/run07/controller.txt)共6项通过，
 391次合成POST（352正常、22注入错误、8延时、9挂起）。失败为明确注入，并非真实模型错误。
-[96项本地检查](raw/candidates-final-tests.txt)、[8项环境检查](raw/candidates-environment-tests.txt)保留日志。
+[96项本地检查](raw/candidates-final-tests.txt.gz)、[8项环境检查](raw/candidates-environment-tests.txt)保留日志。
 761份执行源码与服务器一致，见[源码核对](raw/source-check.json)；归档伴随文件另列，不计入源码数。
 [独立清理](raw/cleanup.json)确认各专用PG停止、自有进程为空、GPU计算进程为空、会话初始ACL一致。
-[材料清单](raw/artifact-index.json)记录导出文本与脱敏副本摘要；单位汇总为派生材料，不冒充原始逐字节日志。
+[材料清单](raw/artifact-index.json.gz)记录导出文本与脱敏副本摘要；单位汇总为派生材料，不冒充原始逐字节日志。
 此前失败的控制器、worker日志和单位摘要也在清单中。这些材料在该阶段完成时尚未提交；后续发布状态以Git历史为准。
 
 ## 后续真实比较

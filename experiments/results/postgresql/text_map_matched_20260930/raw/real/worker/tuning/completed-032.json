@@ -1,9 +1,0 @@
-{
-  "unit": "pg-http-c64-r2",
-  "role": "pg-http",
-  "summary": {
-    "path": "<run-root>/real01/worker/tuning/pg-http-c64-r2/unit/summary.json",
-    "sha256": "1d0a38bf4b6091d537063279bdc3cca9bac18ec9ac1bdcfbd53a97de8a3d35ba"
-  },
-  "actual_posts": 512
-}

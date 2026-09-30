@@ -1,0 +1,30 @@
+test_stage_rejects_changed_configuration_or_wrong_query_identity (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_rejects_changed_configuration_or_wrong_query_identity) ... 
+  test_stage_rejects_changed_configuration_or_wrong_query_identity (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_rejects_changed_configuration_or_wrong_query_identity) (field='concurrency') ... FAIL
+  test_stage_rejects_changed_configuration_or_wrong_query_identity (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_rejects_changed_configuration_or_wrong_query_identity) (field='unit_id') ... FAIL
+
+======================================================================
+FAIL: test_stage_rejects_changed_configuration_or_wrong_query_identity (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_rejects_changed_configuration_or_wrong_query_identity) (field='concurrency')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/experiments/test_text_map_campaign.py", line 145, in test_stage_rejects_changed_configuration_or_wrong_query_identity
+    with self.assertRaisesRegex(ValueError,'declared stage identities'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_stage_rejects_changed_configuration_or_wrong_query_identity (tests.experiments.test_text_map_campaign.CampaignTests.test_stage_rejects_changed_configuration_or_wrong_query_identity) (field='unit_id')
+----------------------------------------------------------------------
+ValueError: query unit identity was reused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<repository>/code/tests/experiments/test_text_map_campaign.py", line 145, in test_stage_rejects_changed_configuration_or_wrong_query_identity
+    with self.assertRaisesRegex(ValueError,'declared stage identities'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "declared stage identities" does not match "query unit identity was reused"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.167s
+
+FAILED (failures=2)

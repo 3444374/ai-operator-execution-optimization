@@ -4,6 +4,12 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-09-30分支审查：阶段执行现核对实际配置摘要及预期查询编号，首次变化即停止并保留额度；
+68条既有真实记录无配置或编号不一致。已补PG/gateway/Ray启动及首批处理观测，74项本地检查中
+69项通过、5项Daft/Arrow依赖缺失跳过；真实PG/Ray的阶段耗时仍待目标环境无模型采集。
+三份批量证据已无损压缩并独立恢复核验；[修订与验证](../experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)
+保存旧失败、原摘要和历史状态。本次没有新增模型请求或修改服务生命周期。
+
 | 对象 | 已实现及已检查内容 | 仍需完成 |
 |---|---|---|
 | PostgreSQL 语义算子 | `REL_18_3` extension 拥有受限 Filter/Map 语义、SQL 与查询生命周期；Map 已有有界多在途路径，图像 `embed` 为可选版本。证据分别见[两算子检查](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)、[Map 多在途](../experiments/results/postgresql/async_window_20260908/README.md)及[图像接入](../experiments/results/postgresql/image_stages_f_20260920/README.md)。 | Filter 质量与真实成本校准、第二物理路径、更多组合形态；图像计算中故障与匹配性能。 |

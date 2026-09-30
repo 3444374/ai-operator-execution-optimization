@@ -1,7 +1,0 @@
-{
-  "address": "<private-address>:42891",
-  "version": "2.56.1",
-  "owner": "diagnostic",
-  "declared_cpus": 8,
-  "object_store_bytes": 268435456
-}

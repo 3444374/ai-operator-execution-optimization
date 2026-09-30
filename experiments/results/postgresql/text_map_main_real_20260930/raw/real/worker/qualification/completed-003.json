@@ -1,9 +1,0 @@
-{
-  "unit": "ray-data-c16-r0",
-  "role": "ray-data",
-  "summary": {
-    "path": "<run-root>/real02/worker/qualification/ray-data-c16-r0/unit/summary.json",
-    "sha256": "75f582424b3f2dd36177ea05003f823b13e5f9b5f512d27da27d37b04aca5506"
-  },
-  "actual_posts": 16
-}

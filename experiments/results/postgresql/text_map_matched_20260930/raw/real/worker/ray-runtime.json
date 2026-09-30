@@ -1,8 +1,0 @@
-{
-  "version": "2.56.1",
-  "address": "<private-address>:46559",
-  "declared_cpus": 8,
-  "object_store_bytes": 268435456,
-  "owner": "campaign",
-  "gpu_resources": 0
-}

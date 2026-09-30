@@ -5,12 +5,17 @@
 执行依据为[四路径计划](../../../plans/completed/text_map_matched_comparison.md)；此前的
 [本地准备记录](../text_map_comparison_preparation_20260928/README.md)保留当时的82项检查。
 
+2026-09-30存储修订：原587份raw文件按原字节保存在[完整归档](raw/evidence.tar.gz)，
+报告直引的大文件改为gzip链接；[原路径与摘要](raw/storage-manifest.jsonl)、
+[独立恢复核验](raw/storage-verification.json)全部通过，全部失败与输出原值可恢复。
+恢复方法及本地/远端状态见[分支审查](../text_map_main_real_20260930/README.md#branch-review)。
+
 ## 环境、输入与执行身份
 
 使用用户指定的单 RTX4090 服务器，PostgreSQL 18.3、Ray 2.56.1、Daft 0.7.21、vLLM 0.25.1。
 driver 与模型服务使用不同的既有虚拟环境，当前 Map 所需能力检查通过；未据此声称全部可选能力齐备。
 为本轮构建独立 PG18.3 extension 安装目录，数据库、模型缓存、Ray 临时文件和日志均在数据盘。
-真实运行前核对了756份执行源码摘要；当时源码尚未提交，身份见[源码清单](raw/source-final.json)。
+真实运行前核对了756份执行源码摘要；当时源码尚未提交，身份见[源码清单](raw/source-final.json.gz)。
 机器检查与构建记录在[受控材料](raw/controlled-index.json)中，连接地址、密码和真实 runtime env 不入库。
 
 模型为 Qwen2.5-7B-Instruct，revision `a09a35458c702b33eeacc393d103063234e8bc28`，
@@ -55,7 +60,7 @@ run05每个直接测试单元均核对查询actor结束、8个CPU名额归还、
 控制器确认 PG 停止和 Ray driver 断开。原生Ray超时单元允许没有完整查询摘要，保留监督器及部分文件。
 
 本地相关85项检查通过，Linux相关90项检查通过，另有上述4项实际PG/Ray集成通过；这些不是互不重叠的统计总数。
-测试日志见[本地](raw/local-related.txt)、[Linux](raw/controlled/linux-related.txt)、
+测试日志见[本地](raw/local-related.txt.gz)、[Linux](raw/controlled/linux-related.txt.gz)、
 [服务器集成](raw/controlled/run05/controller.txt)。
 新增有限阶段编排、整体worker期限及模型token汇总均复用既有查询路径，不修改 baseline 调度。
 
@@ -68,14 +73,14 @@ run05每个直接测试单元均核对查询actor结束、8个CPU名额归还、
 输入token共2,968,164、输出token共123,072，逐查询用量与服务增量相同。
 从控制器开始（含身份核对及PG准备）到模型服务可用为193.492秒；该数不计入单次查询时间。
 真实模型没有追加请求或失败重跑。见[控制器结果](raw/real/controller-summary.json)、
-[服务前](raw/real/service-before.json)、[服务后](raw/real/service-after.json)。
+[服务前](raw/real/service-before.json.gz)、[服务后](raw/real/service-after.json.gz)。
 
 本次使用修订前的原生Ray候选。运行后发现其实际HTTP供给不足，**不能据此宣称SemLoom优于配置充分的Ray Data**。
 下表保留该清单下的实际观察，完整的外部系统比较仍需修订原生候选后再验证。
 
 ### 有限调参原值
 
-每候选512行，先1次预热，再3次测量。完整预热和重复记录见[逐次CSV](raw/query-metrics.csv)。
+每候选512行，先1次预热，再3次测量。完整预热和重复记录见[逐次CSV](raw/query-metrics.csv.gz)。
 表中容量对原生Ray只是当时声明的HTTP允许上限；实际并发见后文，不能把批行数乘actor数当实测并发。
 
 | 路径 | 声明容量 | 三次完整查询时间（秒） | 中位数（秒） |
@@ -94,7 +99,7 @@ run05每个直接测试单元均核对查询actor结束、8个CPU名额归还、
 | ray-data | 64 | 31.536, 32.431, 32.682 | 32.431 |
 
 已测集合选点：PG HTTP为16，PG Daft/Ray为64，direct为64；原生Ray选4个actor、每批32行。
-选点由[调参结果](raw/real/worker/tuning/result.json)的配置SHA引用，未按评价集重新选点。
+选点由[调参结果](raw/real/worker/tuning/result.json.gz)的配置SHA引用，未按评价集重新选点。
 
 ### 独立1024行评价
 
@@ -111,7 +116,7 @@ run05每个直接测试单元均核对查询actor结束、8个CPU名额归还、
 完整查询时间=(结果全部消费时间−查询准备开始时间)/10^9；准确率=(真正例+真负例)/1024。
 样本CV=使用n−1分母的标准差/均值；它描述三次观测的离散程度，不是置信区间。
 计算对应[离线读取入口](../../../../code/src/experiments/postgresql/text_map_comparison.py)及
-[逐次派生记录](raw/query-metrics.json)，执行结果见[评价汇总](raw/real/worker/evaluation/result.json)。
+[逐次派生记录](raw/query-metrics.json.gz)，执行结果见[评价汇总](raw/real/worker/evaluation/result.json.gz)。
 
 六组路径配对的输出差异为0–5行，详细每轮数值在派生记录中；准确率接近不证明质量等价。
 PG HTTP/direct的中位数之比约2.05；PG两种后端约15.92/16.51秒，Daft/Ray本次没有完整查询优势。
@@ -144,9 +149,9 @@ Ray2.56.1的`HttpRequestUDF`先保存`session.post`返回的待等待对象，�
 修订后本地91项相关检查通过；服务器run06的5项实际PG/Ray集成通过，共235次合成POST
 （208正常、14错误、8延时、5挂起），真实模型0次。新用例每actor异步批次4、批行数1，
 实际HTTP峰值4、恰好8次请求；默认1的旧路径、错误及超时恢复均通过，PG/Ray与GPU清理核对通过。
-见[本地日志](raw/followup/local-tests.txt)、[服务器日志](raw/followup/controller.txt)、
-[逐单元记录](raw/followup/units.json)、[清理](raw/followup/cleanup.json)。
-修订后的756份执行源码与服务器一致，摘要见[后续源码](raw/followup/source-after-followup.json)。
+见[本地日志](raw/followup/local-tests.txt.gz)、[服务器日志](raw/followup/controller.txt)、
+[逐单元记录](raw/followup/units.json.gz)、[清理](raw/followup/cleanup.json)。
+修订后的756份执行源码与服务器一致，摘要见[后续源码](raw/followup/source-after-followup.json.gz)。
 真实41,024次结果的源码清单与服务器源文件快照保持原样，不使用新代码重解释旧运行。
 后续真实清单须重新声明原生候选、读取块、实际供给、服务签名和模型预算；本次剩余额度为0。
 

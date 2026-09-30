@@ -13,7 +13,7 @@
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
 | 已完成文本系统比较 | [文本 Map 四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md) | SemLoom Daft/Ray、direct、原生Ray与Daft；68查询、41,024次请求及独立评价完成 |
-| 修订主表真实模型比较 | [记录](experiments/results/postgresql/text_map_main_real_20260930/README.md) | 新评价集、原生Ray/Daft与SemLoom匹配运行 |
+| 修订主表真实模型比较 | [记录](experiments/results/postgresql/text_map_main_real_20260930/README.md) | 新评价集、原生Ray/Daft与SemLoom匹配运行；分支审查、批量证据归档与恢复 |
 | 原生候选与baseline补充 | [记录](experiments/results/postgresql/text_map_native_candidates_20260930/README.md) | Ray实际供给、原生Daft执行入口、当前主表与语义系统缺项 |
 | 文本Map服务器验证与比较 | [记录](experiments/results/postgresql/text_map_matched_20260930/README.md) | 共享PG/Ray生命周期、有限执行清单、输入准备、全部失败与真实结果 |
 | 增量执行与可选Daft/Ray | [实现与检查](experiments/results/postgresql/incremental_transport_20260927/README.md) | 容量扫描、实验预扣、有限二进制批次和SQL结果返回；[4144次真实验证](experiments/results/postgresql/transport_real_20260927/README.md)完成，多节点待验证 |

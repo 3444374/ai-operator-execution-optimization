@@ -3,6 +3,7 @@
 import asyncio
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, replace
 from functools import partial
 import json
@@ -106,31 +107,49 @@ class RayMapTransport:
             raise ValueError("batch rows exceed the active request capacity")
         if physical.workers > capacity:
             raise ValueError("Ray worker count exceeds the active request capacity")
-        if ray_api is None:
-            import ray as ray_api
-        self.ray, self.config, self.physical = ray_api, config, physical
+        self.started_ns = time.monotonic_ns()
+        self.config, self.physical = config, physical
         self.capacity, self.observer, self.before_request = capacity, observer, before_request
         self.rows, self.pending, self.blocks = {}, deque(), {}
         self.used_bytes = self.ordinal = self.actor_index = 0
         self.observation_failed = False
         self.changed = asyncio.Event()
         self.flusher, self.running, self.unknown = None, set(), set()
-        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="semloom-payload")
+        with self._startup_stage("library_import"):
+            if ray_api is None:
+                import ray as ray_api
+        self.ray = ray_api
         self.owns_connection = not self.ray.is_initialized()
+        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="semloom-payload")
         self.actors = []
+        self.first_payload = self.first_submit = True
         try:
-            if self.owns_connection:
-                self.ray.init(address=physical.address)
-            elif self.ray.get_runtime_context().gcs_address != physical.address:
-                raise ValueError("initialized Ray connection differs from the declared GCS address")
-            actor = self.ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0,
-                                    max_concurrency=capacity)(_HttpActor)
-            for _ in range(physical.workers):
-                self.actors.append(actor.remote(config, capacity))
-            self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
+            with self._startup_stage("driver_connect"):
+                if self.owns_connection:
+                    self.ray.init(address=physical.address)
+                elif self.ray.get_runtime_context().gcs_address != physical.address:
+                    raise ValueError("initialized Ray connection differs from the declared GCS address")
+            with self._startup_stage("actor_create"):
+                actor = self.ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0,
+                                        max_concurrency=capacity)(_HttpActor)
+                for _ in range(physical.workers):
+                    self.actors.append(actor.remote(config, capacity))
+            with self._startup_stage("actor_ready"):
+                self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
         except BaseException:
             self._dispose()
             raise
+
+    @contextmanager
+    def _startup_stage(self, stage):
+        started = time.monotonic_ns()
+        status = "failed"
+        try:
+            yield
+            status = "completed"
+        finally:
+            self._observe("ray_startup", stage=stage, status=status,
+                          elapsed_seconds=(time.monotonic_ns()-started)/1e9)
 
     def _observe(self, event, **fields):
         if self.observer:
@@ -181,7 +200,10 @@ class RayMapTransport:
                                           batch_rows=self.physical.batch_rows)
             try:
                 while True:
-                    table = await self._work(next, stream, None)
+                    measure = self._startup_stage("first_payload") if self.first_payload else nullcontext()
+                    self.first_payload = False
+                    with measure:
+                        table = await self._work(next, stream, None)
                     if table is None:
                         break
                     # Count backing Arrow buffers, including any shared slice storage.
@@ -257,6 +279,10 @@ class RayMapTransport:
         row.sent = True
         stage, remote_reason = "ray_submit", None
         try:
+            if self.first_submit:
+                self.first_submit = False
+                self._observe("ray_first_submit", key=dict(session_id=key.session_id, sequence=key.sequence),
+                              elapsed_seconds=(time.monotonic_ns()-self.started_ns)/1e9)
             call = actor.execute.remote(self.blocks[block_id].reference, index, template)
             stage = "ray_await"
             reply = await call

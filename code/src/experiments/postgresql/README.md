@@ -123,6 +123,19 @@ limits each worker. The first error preserves completed records and stops the st
 replenishes quota or starts a following stage. Map evaluation records model-reported token usage for all
 four paths; fixture responses without usage remain unavailable.
 
+After every worker, the campaign compares the recorded configuration identity and query unit ID with
+the dispatched candidate before accepting results. The first mismatch stops the stage and retains spent
+quota. A stable changed configuration cannot become a tuning choice.
+
+PG startup writes `gateway-preparation.json` and returns `resources.pg_preparation`: command
+construction, PG plan preparation, gateway process creation and socket readiness wait, including failed
+waits. `observer.json.startup` reports gateway module imports and observer setup; interpreter startup
+is outside that import span. Ray Map emits `core_ray_startup` for library import, driver connection,
+actor creation/readiness and first payload materialization, including lazy Daft/Arrow loading.
+`core_ray_first_submit` records the first attempted RPC after its POST guard, not remote HTTP start.
+Durations use one local process clock; nested spans must not be added. The existing preparation-to-EOF
+measurement still includes startup. [Review](../../../../experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review).
+
 Native Ray 2.56.1 HTTP requests are awaited sequentially within one batch. Batch row count is not
 HTTP concurrency. `ray_async_batches_per_actor` separately controls the native asynchronous batch
 limit and is propagated through each job's Ray runtime environment; its default is one. Actor count

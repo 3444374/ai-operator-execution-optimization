@@ -1,9 +1,0 @@
-{
-  "unit": "daft-native-c64-r0",
-  "role": "daft-native",
-  "summary": {
-    "path": "<run-root>/real03/worker/evaluation/daft-native-c64-r0/unit/summary.json",
-    "sha256": "c0f7803b11b6f2724559efa35edcc3b027d948db7cb879bd3c72a9bb3f58859f"
-  },
-  "actual_posts": 1024
-}

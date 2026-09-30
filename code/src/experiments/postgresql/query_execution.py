@@ -83,12 +83,28 @@ def prepare_pg_query(config, inputs, plan, connection, socket, root):
 
 
 def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors):
+    started = time.monotonic_ns()
+    preparation = {}
     command, socket = pg_gateway_command(config, plan, model_path, ledger, root)
+    command_done = time.monotonic_ns()
+    preparation['gateway_command_seconds'] = (command_done-started)/1e9
     statement = prepare_pg_query(config, inputs, plan, connection, socket, root)
+    preparation['pg_plan_seconds'] = (time.monotonic_ns()-command_done)/1e9
     write_private_json(root/'gateway-command.json',command)
     env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[3])+os.pathsep+os.environ.get('PYTHONPATH',''))
+    spawn_started = time.monotonic_ns()
     with owned_child_process(command,root,'gateway',env,None) as gateway:
-        wait_for_path(socket,gateway)
+        wait_started = time.monotonic_ns()
+        preparation['gateway_spawn_seconds'] = (wait_started-spawn_started)/1e9
+        preparation['status'] = 'failed'
+        try:
+            wait_for_path(socket,gateway)
+            preparation['status'] = 'completed'
+        finally:
+            preparation['gateway_ready_wait_seconds'] = (time.monotonic_ns()-wait_started)/1e9
+            preparation['total_seconds'] = (time.monotonic_ns()-started)/1e9
+            preparation['clock_scope'] = 'query driver local durations; excludes run_query input and budget setup'
+            write_private_json(root/'gateway-preparation.json',preparation)
         with ProcessSampler(root/'query-rss.jsonl',{'consumer':os.getpid(),'gateway':gateway.pid,
                                                   'pg_backend':connection.info.backend_pid}) as sampler:
             offset=pg_log.stat().st_size
@@ -104,7 +120,7 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
                 errors.attempt('producer_capture',capture)
     if gateway.returncode!=0 or socket.exists():
         raise ValueError('query gateway did not shut down cleanly')
-    return result,dict(processes=sampler.summary(),gateway_exit=gateway.returncode)
+    return result,dict(processes=sampler.summary(),gateway_exit=gateway.returncode,pg_preparation=preparation)
 
 
 async def run_direct(config, inputs, plan, dsn, model, ledger, root, errors):

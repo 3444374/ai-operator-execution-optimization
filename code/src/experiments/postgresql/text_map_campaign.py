@@ -167,7 +167,9 @@ def run_stage(path):
                 ref = dict(path=str(summary_path), sha256=file_identity(summary_path)['sha256'])
                 record = read_run(ref, candidates[key]['role'])
                 if (record['identities'][0] != checked['manifest_sha256'] or record['rows'] != checked['rows']
-                        or record['identities'][2] != spec['model']['sha256']):
+                        or record['identities'][2] != spec['model']['sha256']
+                        or record['unit_id'] != unit
+                        or record['config_sha256'] != configuration_identity(asdict(config))):
                     raise ValueError('executed query differs from declared stage identities')
                 completed.append(dict(unit=unit, role=candidates[key]['role'], summary=ref, actual_posts=record['actual_posts']))
                 collected[key]['warmup' if repeat == 0 else 'measured'].append(ref)

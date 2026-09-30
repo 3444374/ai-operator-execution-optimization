@@ -1,9 +1,0 @@
-{
-  "unit": "ray-data-c4-r0",
-  "role": "ray-data",
-  "summary": {
-    "path": "<run-root>/real01/worker/qualification/ray-data-c4-r0/unit/summary.json",
-    "sha256": "6b4251a55e6116431ae774d3fa2e525fd8172b9cd67b0a1dc7be7117796d76af"
-  },
-  "actual_posts": 16
-}

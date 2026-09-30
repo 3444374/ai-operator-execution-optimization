@@ -1,5 +1,8 @@
 # Research Experiment Results
 
+2026-09-30：[分支审查与证据存储](postgresql/text_map_main_real_20260930/README.md#branch-review)。
+批量raw按原字节归档并独立恢复核验，直引大文件使用gzip；配置校验修订和启动分段观测只有本地证据。
+
 本次文本Map导出日志保留终端空白，CSV保留导出时的换行格式；仓库`.gitattributes`仅对对应日志/CSV设置空白检查属性。
 公开副本摘要与服务器导出文本摘要分别保留，不通过重写证据字节来消除格式提示。
 
